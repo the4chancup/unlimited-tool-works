@@ -259,6 +259,90 @@ fn the_kit_slot_rows_stand_24_apart() {
     }
 }
 
+// Every box of the Kit slots dialog is one width, Number and Bound team ID
+// alike, wide enough for six digits: a six-digit bound id shows whole in
+// a box as wide as a three-digit one's, so the rows line up.
+#[test]
+fn every_kit_slots_box_is_one_width_that_shows_six_digits() {
+    let path = fixture(PesVersion::Pes17, "kit_slot_box_width");
+    let mut file = EditFile::from_bytes(&fixture_save(PesVersion::Pes17)).unwrap();
+    let slots = file
+        .team_mut(701)
+        .unwrap()
+        .kit_slots
+        .as_mut()
+        .expect("PES 17 kit slots");
+    // PES 17's largest bound id (its 24-bit binding over 64), and a
+    // three-digit one under it.
+    slots[0].binding = 262143 * 64;
+    slots[1].binding = 701 * 64;
+    file.save(&path).unwrap();
+
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut window = Headless::sized(DEFAULT_PANE.x, 700.0);
+    open_team_view(&mut window, &mut view, 701);
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    click(
+        &mut window,
+        node_labeled(&nodes, Role::Button, "Kit slots\u{2026}"),
+        &mut view,
+    );
+    // The modal re-centres once its content's size is known.
+    window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    // A slot's boxes share its label's centre line, as a grid row centres
+    // its cells: the team view's own boxes behind the dialog do not.
+    let centre_y = |bounds: accesskit::Rect| (bounds.y0 + bounds.y1) / 2.0;
+    let boxes: Vec<accesskit::Rect> = (1..=10)
+        .flat_map(|slot| {
+            let row = centre_y(label_bounds(&nodes, &format!("Slot {slot}")));
+            right_of_label(&nodes, &format!("Slot {slot}"), Role::SpinButton)
+                .into_iter()
+                .map(|node| node.bounds().expect("a box's bounds"))
+                .filter(move |bounds| (centre_y(*bounds) - row).abs() <= 1.0)
+        })
+        .collect();
+    assert_eq!(boxes.len(), 20, "a Number and a Bound team ID a slot");
+    let widths: Vec<f64> = boxes.iter().map(accesskit::Rect::width).collect();
+    assert!(
+        widths.iter().all(|width| (width - widths[0]).abs() <= 0.01),
+        "every box one width: {widths:?}"
+    );
+    // Any six digits fit, not only these: each digit's run of six in the
+    // boxes' font, and a box's padding either side.
+    let style = window.ctx.global_style();
+    let font = style.drag_value_text_style.resolve(&style);
+    let widest = window.ctx.fonts_mut(|fonts| {
+        (0..=9)
+            .map(|digit| {
+                fonts
+                    .layout_no_wrap(
+                        digit.to_string().repeat(6),
+                        font.clone(),
+                        egui::Color32::WHITE,
+                    )
+                    .size()
+                    .x
+            })
+            .fold(0.0_f32, f32::max)
+    });
+    let needed = f64::from(widest + 2.0 * style.spacing.button_padding.x);
+    assert!(
+        widths[0] >= needed - 0.01,
+        "a box {} wide, six digits need {needed}",
+        widths[0]
+    );
+    let six = right_of_label(&nodes, "Slot 1", Role::SpinButton)[1];
+    assert_eq!(six.value(), Some("262143"), "premise: slot 1's six digits");
+    let bounds = six.bounds().expect("bounds");
+    let ink = ink(text_shape(&shapes, "262143"));
+    assert!(
+        f64::from(ink.min.x) >= bounds.x0 && f64::from(ink.max.x) <= bounds.x1,
+        "the six digits inside their box ({ink:?} in {bounds:?})"
+    );
+}
+
 #[test]
 fn the_bound_team_id_shows_binding_over_64_and_an_edit_keeps_the_low_bits() {
     let path = fixture(PesVersion::Pes17, "team_kit_slots");

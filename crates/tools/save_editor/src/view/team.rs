@@ -67,6 +67,10 @@ const ID_CELL_PADDING: f32 = 4.0;
 /// own is 40). The number control and its disabled stand-in both take
 /// their width from `interact_size`, so the id units set it.
 const ID_BOX_WIDTH: f32 = 46.0;
+/// The width of every Kit slots box, Number and Bound team ID alike: six
+/// digits (the largest bound team ID, 262143) in the number boxes' font,
+/// 42.7 points, and the box's 4-point padding either side, rounded up.
+const KIT_BOX_WIDTH: f32 = 51.0;
 /// The room under the fields' row before the Tactics bars, now that no
 /// line parts them (the draft's `margin-bottom` on the row): twice the
 /// rows' own gap.
@@ -439,6 +443,9 @@ fn kit_slots(
         .max_value(TeamField::KitSlotTeam(0))
         .expect("the kit slots are drawn only where they are stored")
         / 64;
+    // Every box one width, so the rows line up and a box does not widen
+    // from a 3-digit value to a 6-digit one.
+    ui.spacing_mut().interact_size.x = KIT_BOX_WIDTH;
     egui::Grid::new("team kit slots")
         .spacing(egui::vec2(ui.spacing().item_spacing.x, FIELD_SPACING))
         .show(ui, |ui| {

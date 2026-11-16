@@ -24,7 +24,7 @@ is in `AGENTS.md` ("Working documents").
    `codegen-units` (0.0.2-cgu: not taken).
 5. The cut. The library checkpoints (0.0.2-chk) are in. Before it: the paid review rounds
    (Carbon), the maintainer's looks (`maintainer/tasks.html`), the Save editor's PES 2019
-   writes checked in game (0.0.2-pes19) and three small fixes 0.0.1 left (0.0.2-left01).
+   writes checked in game (0.0.2-pes19).
 
 **The PoC for VGL's organizer:** 0.0.2-poc.5 is built (`4cc-studio-temp/poc/target/dist`,
 archive SHA-256 `cac0447a…`, branch `vgl27` at `61d224c4`: main of 2026-11-12 at
@@ -1234,21 +1234,30 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       field's offset differs; the tactics record is PES 2021's, its instruction values
       PES 2018's table. Nothing writes man marking but Copy preset and the Team TOML, and
       PES 2019's kit slots, measured in the team record, have no schema rows
-    - each field not yet seen, on a copy of the VGL 27 save: an edit per field, values
-      stepped apart, saved by the editor and read off PES 2019's Edit mode (pad and OBS, no
-      focus; no cargo while PES runs), every other team intact (Invitational 1 above all,
-      the case of the dropped tester's report)
-    - a Team TOML import and a `.ted` import (the organizer's first step), loaded in game
+    - each field not yet seen, read off PES 2019's Edit mode (pad and OBS, no focus; no
+      cargo while PES runs), every other team intact (Invitational 1 above all, the case of
+      the dropped tester's report). The save is a copy of the maintainer's own PES 2019
+      save (`.tmp/ingame_saves/backup_19`), not the VGL 27 one, which this install refuses
+      ("Create Edit Data?", 2026-11-13). The Team TOML reaches nearly every field the
+      editor writes, and the GUI's controls write through the same codec, so one Team TOML
+      with every value stepped apart, imported by the CLI into team 701, shows each
+      field's offset:
+      - [x] part 1, 2026-11-16 (SWE-2, `.tmp/0_0_2/pes19/rb/`): the stepped Team TOML
+        imported with no note, exported back unchanged, and only team 701 differs among
+        the save's 210 cup teams; `expected.md` says what each Edit-mode screen should show
+      - [ ] part 2, the read-back in game, four players, the team and its three presets
+        (SWE-2, `.tmp/0_0_2/pes19/brief_rb2.md`), once no cargo runs
+    - a `.ted` import (the organizer's first step) loaded in game: only the window imports
+      a `.ted` (the CLI takes a Team TOML), so it waits for a built-window run with the
+      maintainer's yes
     - PES 2019's case of three per-version looks: its stat names (8.29d's d3b), a Texport
       the panel exports imported by the game (8.9k's k5d), and whether a team-file import
       writes the DLC bin's team name (k5g)
     -> verify: a `manual: checked` line per field group; a wrong field becomes a test, red
     first, and its fix
-  - [ ] 0.0.2-left01 three small fixes 0.0.1 left (Issues, 2026-11-01), before 0.0.2's
-    candidate is staged: the Ruleset editor's tier handle no longer starts a text selection
-    beside its glyph (`.selectable(false)`, a test pressing 2 points outside it);
-    `run_tests.py` writes its timings to cargo's target folder; `make_candidate.py` finds
-    `4cc-studio-temp` from the main tree. SWE-2, one brief
+  - [x] 0.0.2-left01 2026-11-16 (merge `9cfdf0ad`) `run_tests.py`'s timings in cargo's target
+    folder, `make_candidate.py`'s folder beside the main tree, each tested; the tier handle
+    was no defect (Issues)
   - [x] 0.0.2-arrows 2026-11-13 Up and Down step every whole-number box by one (found in
     0.0.2-range's rework; tried in the built window 2026-11-13: the Save editor's Height
     steps, through its own `number_arrows`; the Tactics popover's X stays put after four
@@ -1713,14 +1722,14 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     - [ ] its review (tier 2): SWE-2's round 1 accepted 6 ("S-recents r1"); the rework
       landed (SWE-2, merge `6680c856`); SWE-2's round 2 accepted 4 ("S-recents r2"), which
       ends the SWE-2 loop: its rework landed (SWE-2, merge `2923f863`, with Choose file's
-      tooltip from 0.0.2-answers); next, one Carbon round
+      tooltip from 0.0.2-answers); Carbon's round 1 running (at `d43550fe`, `review35`,
+      `.tmp/carbon_recents1.md`)
   - [ ] 0.0.2-answers the maintainer's answers of 2026-11-16 that change the build (plans and
     DECISIONS edited that day):
-    - [ ] code, in two slices -> verify: each a test red first. SWE-2 (`sk/answers`,
-      `answers/.tmp/brief_answers.md`, running): the lit area, the manager id, the rail,
-      Substitution, the Gameplan's gaps. Opus (`sk/layout`, `layout/.tmp/brief_layout.md`,
-      running): the Physique box, the indent, `Star rating` and its key, the Kit slots'
-      widths:
+    - [x] code, in two slices -> verify: each a test red first. SWE-2 (merge `498ef8e4`):
+      the lit area, the manager id, the rail, Substitution, the Gameplan's gaps. Opus (merge
+      `9c07f067`): the Physique box, the indent, `Star rating` and its key, the Kit slots'
+      widths (51 points, the draft's too):
       - a held starter rated A or B nowhere darkens the whole pitch; an empty slot or no
         ratings still darkens nothing (`team_widgets` `pitch/lit_area.rs`)
       - a Team TOML import writes a `manager_id` equal to the file's team id as the target's
@@ -1745,6 +1754,9 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         `substitution_choices`, help 08, the two comments)
       - [x] Choose file's tooltip reads "starting in the folder of the last opened save":
         landed with the recents round 2 rework (merge `2923f863`)
+    - [ ] the built window beside the drafts: the Stats indent, Appearance with Motion's 24
+      points less room, the Gameplan's 8-point gaps, Kit slots at 51; it takes focus, so it
+      waits for the maintainer's yes
     - [x] the drafts (the lead), each captured and critiqued: Kit slots shows `Bound team
       ID` as the id in boxes of one width (72 points, six digits); Randomize greyed whole;
       the three texts of DECISIONS 2026-11-16 "the drafts take three texts"; `Star rating`;
@@ -1968,14 +1980,14 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       Recent never seen (dropped, then restored by 0.0.2-recents), untested clauses, a
       surviving mutant, stale citations and comments
     - [x] the rework (SWE-2, merge `5b5546d8`)
-    - [ ] round 7: Astra in Carbon's place (the maintainer, 2026-11-15: a cross-check on a
+    - [x] round 7: Astra in Carbon's place (the maintainer, 2026-11-15: a cross-check on a
       loop that has not converged; Astra's round over round 3's surface, "A-bar r3", found one
       gap Carbon never did); it carries A-bar r3-4 (the cancelled Save as test). Done
       2026-11-16 at `2923f863`: 4 of 4 accepted ("A-bar r7"), under five, so the loop ends
       with its rework: the welcome panel scrolls once ten kept recents outgrow a 600-point
       window, a changelog line's "shortcuts are unchanged", Ctrl+Shift+S and Ctrl+W in the
       close-the-menu test, and the plan's File row (fixed by the lead)
-    - [ ] round 7's rework (SWE-2, `sk/barrw7`, `barrw6/.tmp/rework_astra7.md`): running
+    - [x] round 7's rework (SWE-2, merge `d43550fe`): the bars' review loop ends
   - [x] 0.0.2-dragmark (2026-11-15, merge `96aef711`) a Starting eleven or Bench row held over a
     Tactics pitch player marks the player its drop swaps out, as a pitch drag marks its target;
     one hit test (`marker_at`) for the drop and the mark, the keeper and an illegal formation
@@ -3248,24 +3260,13 @@ points there.
 - resolved (2026-11-06) — `zip` 9.0.5 fixed Dependabot's alerts. `cargo deny check advisories`
   runs in no gate (fails on `pulldown-cmark` 0.13.4, five unmaintained crates): Dependabot watches
 
-- open (2026-11-01; fixed in 0.0.2-left01) — the Ruleset editor's tier handle
-  (`ruleset_editor/src/view/sections/tiers.rs` around line 140) is a `dnd_drag_source` whose
-  content is a selectable `ui.label("⠇")`: the defect f1e fixed in the Tactics lineup rows.
-  egui 0.37's hit test hands a press within `interact_radius` of a click-sensing widget inside
-  a drag area to that widget, so a press just beside the handle's glyph starts a text
-  selection instead of the drag. The fix is the same (`.selectable(false)`), with a test
-  pressing 2 points outside the glyph
-- open (2026-11-01; fixed in 0.0.2-left01) — `scripts/gates/run_tests.py` writes its timings to
-  `<repo>/target/run_tests_times.json` (`TIMES`), not to cargo's target folder: a worktree that
-  builds into another tree's target through `CARGO_TARGET_DIR` (the staging worktree
-  `wt-cand-e`) and has no `target/` of its own fails `just test` after every test has passed,
-  before the doc tests and the rest of the gates (0.0.1g's first full run). Worked around by an
-  empty `target/` in the worktree; the fix reads the target folder as `release.target_dir()`
-  does
-- open (2026-11-01; fixed in 0.0.2-left01) — `scripts/release/make_candidate.py` puts the candidate in
-  `<repo>/../4cc-studio-temp/` (`DEST`): run from a worktree under `4cc-studio-temp` (as
-  `wt-cand-e` is), that is `4cc-studio-temp/4cc-studio-temp/`; 0.0.1g was moved up by hand.
-  The fix resolves the folder from the main tree (`git rev-parse --git-common-dir`)
+- resolved (2026-11-01, 0.0.2-left01) — the Ruleset editor's tier handle was no defect: its
+  drag source's rect is the glyph label's own, so the label never wins a press; a drag from
+  beside the glyph is now tested
+- resolved (2026-11-01, 0.0.2-left01) — `run_tests.py` keeps its timings in the target folder
+  cargo names, so a worktree building into another tree's target passes `just test`
+- resolved (2026-11-01, 0.0.2-left01) — `make_candidate.py` puts the candidate in
+  `4cc-studio-temp` beside the main tree, found through git, from any worktree
 - resolved (2026-11-01, cv40) — three `save_editor` view tests raced a worker's reply under load;
   `a_range_turned_by_the_wheel_is_checked_once_it_has_rested`'s cause stayed unconfirmed
 - open 2026-11-01 — the vital scripts' first reviews (`RUNBOOK.md` "Review rounds", checkpoint

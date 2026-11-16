@@ -267,8 +267,6 @@ weak_foot_usage = 1             # 0-3 stored
 weak_foot_accuracy = 1          # 0-3 stored
 form = 3                        # 0-7 stored
 injury_resistance = 0           # 0-2 stored
-# star = 0                        # PES 19+, 0-7 stored
-# playing_attitude = 0            # PES 20+, stored
 
 [players.01.positions]
 registered = "GK"               # "GK" "CB" "LB" "RB" "DMF" "CMF" "LMF" "RMF" "AMF" "LWF" "RWF" "SS" "CF"
@@ -479,8 +477,6 @@ weak_foot_usage = 1             # 0-3 stored
 weak_foot_accuracy = 1          # 0-3 stored
 form = 3                        # 0-7 stored
 injury_resistance = 0           # 0-2 stored
-# star = 0                        # PES 19+, 0-7 stored
-# playing_attitude = 0            # PES 20+, stored
 
 [players.02.positions]
 registered = "SS"               # "GK" "CB" "LB" "RB" "DMF" "CMF" "LMF" "RMF" "AMF" "LWF" "RWF" "SS" "CF"
@@ -691,8 +687,6 @@ weak_foot_usage = 1             # 0-3 stored
 weak_foot_accuracy = 3          # 0-3 stored
 form = 7                        # 0-7 stored
 injury_resistance = 2           # 0-2 stored
-# star = 0                        # PES 19+, 0-7 stored
-# playing_attitude = 0            # PES 20+, stored
 
 [players.03.positions]
 registered = "CF"               # "GK" "CB" "LB" "RB" "DMF" "CMF" "LMF" "RMF" "AMF" "LWF" "RWF" "SS" "CF"
@@ -903,8 +897,6 @@ weak_foot_usage = 3             # 0-3 stored
 weak_foot_accuracy = 3          # 0-3 stored
 form = 3                        # 0-7 stored
 injury_resistance = 0           # 0-2 stored
-# star = 0                        # PES 19+, 0-7 stored
-# playing_attitude = 0            # PES 20+, stored
 
 [players.04.positions]
 registered = "RB"               # "GK" "CB" "LB" "RB" "DMF" "CMF" "LMF" "RMF" "AMF" "LWF" "RWF" "SS" "CF"
@@ -1115,8 +1107,6 @@ weak_foot_usage = 3             # 0-3 stored
 weak_foot_accuracy = 3          # 0-3 stored
 form = 3                        # 0-7 stored
 injury_resistance = 0           # 0-2 stored
-# star = 0                        # PES 19+, 0-7 stored
-# playing_attitude = 0            # PES 20+, stored
 
 [players.05.positions]
 registered = "RB"               # "GK" "CB" "LB" "RB" "DMF" "CMF" "LMF" "RMF" "AMF" "LWF" "RWF" "SS" "CF"
@@ -1327,8 +1317,6 @@ weak_foot_usage = 1             # 0-3 stored
 weak_foot_accuracy = 3          # 0-3 stored
 form = 7                        # 0-7 stored
 injury_resistance = 2           # 0-2 stored
-# star = 0                        # PES 19+, 0-7 stored
-# playing_attitude = 0            # PES 20+, stored
 
 [players.06.positions]
 registered = "CMF"              # "GK" "CB" "LB" "RB" "DMF" "CMF" "LMF" "RMF" "AMF" "LWF" "RWF" "SS" "CF"
@@ -1539,8 +1527,6 @@ weak_foot_usage = 3             # 0-3 stored
 weak_foot_accuracy = 3          # 0-3 stored
 form = 3                        # 0-7 stored
 injury_resistance = 0           # 0-2 stored
-# star = 0                        # PES 19+, 0-7 stored
-# playing_attitude = 0            # PES 20+, stored
 
 [players.07.positions]
 registered = "RB"               # "GK" "CB" "LB" "RB" "DMF" "CMF" "LMF" "RMF" "AMF" "LWF" "RWF" "SS" "CF"
@@ -1751,8 +1737,6 @@ weak_foot_usage = 1             # 0-3 stored
 weak_foot_accuracy = 1          # 0-3 stored
 form = 3                        # 0-7 stored
 injury_resistance = 0           # 0-2 stored
-# star = 0                        # PES 19+, 0-7 stored
-# playing_attitude = 0            # PES 20+, stored
 
 [players.08.positions]
 registered = "CMF"              # "GK" "CB" "LB" "RB" "DMF" "CMF" "LMF" "RMF" "AMF" "LWF" "RWF" "SS" "CF"
@@ -1963,8 +1947,6 @@ weak_foot_usage = 1             # 0-3 stored
 weak_foot_accuracy = 1          # 0-3 stored
 form = 3                        # 0-7 stored
 injury_resistance = 0           # 0-2 stored
-# star = 0                        # PES 19+, 0-7 stored
-# playing_attitude = 0            # PES 20+, stored
 
 [players.09.positions]
 registered = "CB"               # "GK" "CB" "LB" "RB" "DMF" "CMF" "LMF" "RMF" "AMF" "LWF" "RWF" "SS" "CF"
@@ -2175,8 +2157,6 @@ weak_foot_usage = 1             # 0-3 stored
 weak_foot_accuracy = 3          # 0-3 stored
 form = 7                        # 0-7 stored
 injury_resistance = 2           # 0-2 stored
-# star = 0                        # PES 19+, 0-7 stored
-# playing_attitude = 0            # PES 20+, stored
 
 [players.10.positions]
 registered = "SS"               # "GK" "CB" "LB" "RB" "DMF" "CMF" "LMF" "RMF" "AMF" "LWF" "RWF" "SS" "CF"
@@ -2387,8 +2367,6 @@ weak_foot_usage = 1             # 0-3 stored
 weak_foot_accuracy = 3          # 0-3 stored
 form = 7                        # 0-7 stored
 injury_resistance = 2           # 0-2 stored
-# star = 0                        # PES 19+, 0-7 stored
-# playing_attitude = 0            # PES 20+, stored
 
 [players.11.positions]
 registered = "CF"               # "GK" "CB" "LB" "RB" "DMF" "CMF" "LMF" "RMF" "AMF" "LWF" "RWF" "SS" "CF"
@@ -2599,8 +2577,6 @@ weak_foot_usage = 1             # 0-3 stored
 weak_foot_accuracy = 1          # 0-3 stored
 form = 3                        # 0-7 stored
 injury_resistance = 0           # 0-2 stored
-# star = 0                        # PES 19+, 0-7 stored
-# playing_attitude = 0            # PES 20+, stored
 
 [players.12.positions]
 registered = "GK"               # "GK" "CB" "LB" "RB" "DMF" "CMF" "LMF" "RMF" "AMF" "LWF" "RWF" "SS" "CF"
@@ -2811,8 +2787,6 @@ weak_foot_usage = 1             # 0-3 stored
 weak_foot_accuracy = 1          # 0-3 stored
 form = 3                        # 0-7 stored
 injury_resistance = 0           # 0-2 stored
-# star = 0                        # PES 19+, 0-7 stored
-# playing_attitude = 0            # PES 20+, stored
 
 [players.13.positions]
 registered = "CMF"              # "GK" "CB" "LB" "RB" "DMF" "CMF" "LMF" "RMF" "AMF" "LWF" "RWF" "SS" "CF"
@@ -3023,8 +2997,6 @@ weak_foot_usage = 1             # 0-3 stored
 weak_foot_accuracy = 1          # 0-3 stored
 form = 3                        # 0-7 stored
 injury_resistance = 0           # 0-2 stored
-# star = 0                        # PES 19+, 0-7 stored
-# playing_attitude = 0            # PES 20+, stored
 
 [players.14.positions]
 registered = "SS"               # "GK" "CB" "LB" "RB" "DMF" "CMF" "LMF" "RMF" "AMF" "LWF" "RWF" "SS" "CF"
@@ -3235,8 +3207,6 @@ weak_foot_usage = 1             # 0-3 stored
 weak_foot_accuracy = 1          # 0-3 stored
 form = 3                        # 0-7 stored
 injury_resistance = 0           # 0-2 stored
-# star = 0                        # PES 19+, 0-7 stored
-# playing_attitude = 0            # PES 20+, stored
 
 [players.15.positions]
 registered = "CB"               # "GK" "CB" "LB" "RB" "DMF" "CMF" "LMF" "RMF" "AMF" "LWF" "RWF" "SS" "CF"
@@ -3447,8 +3417,6 @@ weak_foot_usage = 3             # 0-3 stored
 weak_foot_accuracy = 3          # 0-3 stored
 form = 3                        # 0-7 stored
 injury_resistance = 0           # 0-2 stored
-# star = 0                        # PES 19+, 0-7 stored
-# playing_attitude = 0            # PES 20+, stored
 
 [players.16.positions]
 registered = "LB"               # "GK" "CB" "LB" "RB" "DMF" "CMF" "LMF" "RMF" "AMF" "LWF" "RWF" "SS" "CF"
@@ -3659,8 +3627,6 @@ weak_foot_usage = 1             # 0-3 stored
 weak_foot_accuracy = 1          # 0-3 stored
 form = 3                        # 0-7 stored
 injury_resistance = 0           # 0-2 stored
-# star = 0                        # PES 19+, 0-7 stored
-# playing_attitude = 0            # PES 20+, stored
 
 [players.17.positions]
 registered = "CMF"              # "GK" "CB" "LB" "RB" "DMF" "CMF" "LMF" "RMF" "AMF" "LWF" "RWF" "SS" "CF"
@@ -3871,8 +3837,6 @@ weak_foot_usage = 1             # 0-3 stored
 weak_foot_accuracy = 1          # 0-3 stored
 form = 3                        # 0-7 stored
 injury_resistance = 0           # 0-2 stored
-# star = 0                        # PES 19+, 0-7 stored
-# playing_attitude = 0            # PES 20+, stored
 
 [players.18.positions]
 registered = "CB"               # "GK" "CB" "LB" "RB" "DMF" "CMF" "LMF" "RMF" "AMF" "LWF" "RWF" "SS" "CF"
@@ -4083,8 +4047,6 @@ weak_foot_usage = 1             # 0-3 stored
 weak_foot_accuracy = 1          # 0-3 stored
 form = 3                        # 0-7 stored
 injury_resistance = 0           # 0-2 stored
-# star = 0                        # PES 19+, 0-7 stored
-# playing_attitude = 0            # PES 20+, stored
 
 [players.19.positions]
 registered = "DMF"              # "GK" "CB" "LB" "RB" "DMF" "CMF" "LMF" "RMF" "AMF" "LWF" "RWF" "SS" "CF"
@@ -4295,8 +4257,6 @@ weak_foot_usage = 3             # 0-3 stored
 weak_foot_accuracy = 3          # 0-3 stored
 form = 3                        # 0-7 stored
 injury_resistance = 0           # 0-2 stored
-# star = 0                        # PES 19+, 0-7 stored
-# playing_attitude = 0            # PES 20+, stored
 
 [players.20.positions]
 registered = "LB"               # "GK" "CB" "LB" "RB" "DMF" "CMF" "LMF" "RMF" "AMF" "LWF" "RWF" "SS" "CF"
@@ -4507,8 +4467,6 @@ weak_foot_usage = 1             # 0-3 stored
 weak_foot_accuracy = 3          # 0-3 stored
 form = 7                        # 0-7 stored
 injury_resistance = 2           # 0-2 stored
-# star = 0                        # PES 19+, 0-7 stored
-# playing_attitude = 0            # PES 20+, stored
 
 [players.21.positions]
 registered = "CB"               # "GK" "CB" "LB" "RB" "DMF" "CMF" "LMF" "RMF" "AMF" "LWF" "RWF" "SS" "CF"
@@ -4719,8 +4677,6 @@ weak_foot_usage = 1             # 0-3 stored
 weak_foot_accuracy = 1          # 0-3 stored
 form = 3                        # 0-7 stored
 injury_resistance = 0           # 0-2 stored
-# star = 0                        # PES 19+, 0-7 stored
-# playing_attitude = 0            # PES 20+, stored
 
 [players.22.positions]
 registered = "DMF"              # "GK" "CB" "LB" "RB" "DMF" "CMF" "LMF" "RMF" "AMF" "LWF" "RWF" "SS" "CF"
@@ -4931,8 +4887,6 @@ weak_foot_usage = 3             # 0-3 stored
 weak_foot_accuracy = 3          # 0-3 stored
 form = 3                        # 0-7 stored
 injury_resistance = 0           # 0-2 stored
-# star = 0                        # PES 19+, 0-7 stored
-# playing_attitude = 0            # PES 20+, stored
 
 [players.23.positions]
 registered = "LB"               # "GK" "CB" "LB" "RB" "DMF" "CMF" "LMF" "RMF" "AMF" "LWF" "RWF" "SS" "CF"

@@ -319,11 +319,36 @@ pub(super) fn welcome_panel(ui: &mut egui::Ui, view: &mut SaveView) {
         view.welcome_discovered = Some(look(view));
     }
     let opens = opens(view.welcome_discovered.as_ref().expect("filled above"));
+    let rect = ui.max_rect();
     let chosen = studio_core::widgets::dialog_page(
         ui,
         egui::Id::unique("save_editor_welcome"),
         "Save editor",
-        |ui| welcome_body(ui, &opens),
+        |ui| {
+            // The body scrolls when the window is too short for the
+            // list. Its room is the page's height less the frame's
+            // margins and the title's row, handed over as the child ui's
+            // max_rect: a scroll area that read the frame's own available
+            // height would get the height the body settled at, shrink to
+            // it and keep its bar drawn.
+            let frame = studio_core::widgets::modal_frame(ui.style())
+                .total_margin()
+                .sum()
+                .y;
+            let title = ui.cursor().top() - ui.min_rect().top();
+            let max_height = rect.height() - frame - title;
+            let room = egui::Rect::from_min_max(
+                ui.cursor().min,
+                egui::pos2(ui.max_rect().right(), ui.cursor().top() + max_height),
+            );
+            ui.scope_builder(egui::UiBuilder::new().max_rect(room), |ui| {
+                egui::ScrollArea::vertical()
+                    .max_height(max_height)
+                    .show(ui, |ui| welcome_body(ui, &opens))
+                    .inner
+            })
+            .inner
+        },
     )
     .inner;
     if let Some(pending) = chosen {

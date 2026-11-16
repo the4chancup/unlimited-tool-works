@@ -149,12 +149,32 @@ fn menu_shown(window: &Headless, nodes: &[accesskit::Node]) -> bool {
 /// `heading`'s label bounds sit between `above` (the separator above its
 /// group) and `below` (the group's first entry's top): the heading over
 /// its group, as the File menu's and the welcome panel's headings stand.
+/// The menu and the panel can share the heading's text, so the bounds
+/// are the label inside the range.
 fn heading_between(nodes: &[accesskit::Node], heading: &str, above: f64, below: f64) {
-    let bounds = label_bounds(nodes, heading);
+    let candidates: Vec<accesskit::Rect> = nodes
+        .iter()
+        .filter(|node| node.role() == Role::Label && node.value() == Some(heading))
+        .filter_map(accesskit::Node::bounds)
+        .collect();
     assert!(
-        above <= bounds.y0 && bounds.y1 <= below,
-        "{heading} between {above} and {below}: {bounds:?}"
+        candidates
+            .iter()
+            .any(|bounds| above <= bounds.y0 && bounds.y1 <= below),
+        "{heading} between {above} and {below}: {candidates:?}"
     );
+}
+
+/// The bounds of `value`'s label closest below `above` (the menu's copy
+/// of a line the welcome panel draws too).
+fn label_below(nodes: &[accesskit::Node], value: &str, above: f64) -> accesskit::Rect {
+    nodes
+        .iter()
+        .filter(|node| node.role() == Role::Label && node.value() == Some(value))
+        .filter_map(accesskit::Node::bounds)
+        .filter(|bounds| bounds.y0 > above)
+        .min_by(|a, b| a.y0.partial_cmp(&b.y0).expect("ordered bounds"))
+        .unwrap_or_else(|| panic!("no {value:?} label below {above}"))
 }
 
 // SE-GUI-26
@@ -385,7 +405,7 @@ fn the_file_menus_separators_stand_only_between_its_groups() {
         &nodes,
         "Open from Documents",
         lines[0],
-        label_bounds(&nodes, "No PES saves were found in Documents.").y0,
+        label_below(&nodes, "No PES saves were found in Documents.", lines[0]).y0,
     );
 
     // Discovered only.
@@ -459,7 +479,7 @@ fn the_file_menus_separators_stand_only_between_its_groups() {
         &nodes,
         "Open from Documents",
         lines[0],
-        label_bounds(&nodes, "No PES saves were found in Documents.").y0,
+        label_below(&nodes, "No PES saves were found in Documents.", lines[0]).y0,
     );
     heading_between(&nodes, "Recent files", lines[1], entries[3].1);
 
@@ -823,7 +843,10 @@ fn bak_of(path: &Path) -> PathBuf {
 /// The Save as picker stubbed to return `answer` (`None` cancels),
 /// recording the path it is handed (the open file's, as `save_as` starts
 /// the picker there).
-fn save_as_stub(view: &mut SaveView, answer: Option<&Path>) -> Rc<RefCell<Vec<PathBuf>>> {
+pub(super) fn save_as_stub(
+    view: &mut SaveView,
+    answer: Option<&Path>,
+) -> Rc<RefCell<Vec<PathBuf>>> {
     let handed = Rc::new(RefCell::new(Vec::new()));
     let record = Rc::clone(&handed);
     let answer = answer.map(Path::to_path_buf);
@@ -1456,6 +1479,155 @@ fn the_welcome_panel_centres_in_the_area_under_the_toolbar() {
     assert!(
         (middle - (top + bottom) / 2.0).abs() <= 1.0,
         "the frame centred in the area: middle {middle}, area {top}..{bottom}"
+    );
+}
+
+// The recents kept between runs beside the discovered saves outgrow the
+// welcome panel at the window that leaves it the least room (1280 x
+// 600: the pane `DEFAULT_PANE.x` by 600 less the status bar's 24; a
+// narrower window scales the view down, which is more room, not less):
+// the body scrolls, the wheel over the panel brings the last entry into
+// its clip, and its click does its action.
+#[test]
+fn the_welcome_panels_long_list_scrolls_to_its_last_entry() {
+    let tree = tree("welcome_scroll");
+    // Ten more account folders, each one a discovered save (PES 19 on
+    // keeps one per account folder): with the tree's three and the kept
+    // recents the list is taller than the room the window leaves it.
+    let layout = save_layout(PesVersion::Pes21);
+    for index in 0..10 {
+        let account = format!("9999999999999999{index:02}");
+        let folder = tree
+            .documents
+            .join("KONAMI")
+            .join(layout.game_folder)
+            .join(account)
+            .join("save");
+        std::fs::create_dir_all(&folder).unwrap();
+        std::fs::write(
+            folder.join(layout.file_name),
+            fixture_save(PesVersion::Pes21),
+        )
+        .unwrap();
+    }
+    let mut view = SaveView::new();
+    // Ten recents (the kept limit), opened oldest first: the first
+    // opened is the list's last entry.
+    let dir = crate::test_support::scratch("welcome_scroll_recents");
+    let mut paths = Vec::new();
+    for index in 0..10 {
+        let folder = dir.join(format!("r{index} VGL26 winter backups"));
+        std::fs::create_dir_all(&folder).unwrap();
+        let path = folder.join("EDIT00000000 - VGL26 winter");
+        std::fs::write(&path, fixture_save(PesVersion::Pes19)).unwrap();
+        view.open(&path);
+        paths.push(path);
+    }
+    view.session = None;
+    discover_counted(&mut view, &tree.documents);
+    let mut window = Headless::sized(DEFAULT_PANE.x, 576.0);
+    idle_frames(&mut window, &mut view, 3);
+
+    // The clip the body's ScrollArea leaves its entries: its bar's span.
+    let clip = |nodes: &[accesskit::Node]| {
+        nodes
+            .iter()
+            .find(|node| node.role() == Role::ScrollBar)
+            .and_then(accesskit::Node::bounds)
+            .map(|bounds| (bounds.y0, bounds.y1))
+    };
+    let entry_bounds = |nodes: &[accesskit::Node]| {
+        entries(nodes, "Open\u{2026}")
+            .last()
+            .and_then(|node| node.bounds())
+    };
+    let inside = |nodes: &[accesskit::Node]| {
+        clip(nodes)
+            .zip(entry_bounds(nodes))
+            .is_some_and(|((top, bottom), bounds)| bounds.y0 >= top && bounds.y1 <= bottom)
+    };
+    let nodes = draw(&mut window, &mut view);
+    assert!(
+        clip(&nodes).is_some(),
+        "premise: the panel's scroll bar is drawn"
+    );
+    assert!(
+        !inside(&nodes),
+        "premise: the last entry starts below the clip"
+    );
+
+    // The wheel over the panel scrolls it; egui spreads a delta over the
+    // next frames, so the entry is reached once its bounds hold for a
+    // frame inside the clip.
+    let mut nodes = nodes;
+    let mut last = None;
+    for _ in 0..24 {
+        if inside(&nodes) && last == entry_bounds(&nodes) {
+            break;
+        }
+        last = entry_bounds(&nodes);
+        let at = centre(menu_item(&nodes, "Open\u{2026}"));
+        let (_, frame_nodes, _) = window.frame(
+            vec![
+                egui::Event::PointerMoved(at),
+                egui::Event::MouseWheel {
+                    unit: egui::MouseWheelUnit::Point,
+                    delta: egui::vec2(0.0, -300.0),
+                    phase: egui::TouchPhase::Move,
+                    source: egui::MouseWheelSource::Wheel,
+                    modifiers: egui::Modifiers::NONE,
+                },
+            ],
+            |ui| show(ui, &mut view, &|| Vec::new()),
+        );
+        nodes = frame_nodes;
+    }
+    assert!(
+        inside(&nodes),
+        "the last entry never scrolled into the panel's clip"
+    );
+
+    // Its click does its action: the oldest recent's save opens.
+    let last_entry = entries(&nodes, "Open\u{2026}")
+        .last()
+        .copied()
+        .expect("the last entry");
+    click(&mut window, last_entry, &mut view);
+    let session = view
+        .session
+        .as_ref()
+        .expect("the last entry opened its save");
+    assert_eq!(
+        session.path(),
+        paths[0].as_path(),
+        "the oldest recent's save"
+    );
+}
+
+// The list that fits the panel draws as it did before the body could
+// scroll: no scroll bar, and the first entry stands where it stood.
+#[test]
+fn the_welcome_panel_draws_as_it_did_while_its_list_fits() {
+    let tree = tree("welcome_unscrolled");
+    let mut view = SaveView::new();
+    view.open(&tree.elsewhere);
+    view.open(&tree.other);
+    view.session = None;
+    discover_counted(&mut view, &tree.documents);
+    let mut window = Headless::new();
+    idle_frames(&mut window, &mut view, 3);
+    let nodes = draw(&mut window, &mut view);
+    assert!(
+        !nodes.iter().any(|node| node.role() == Role::ScrollBar),
+        "no scroll bar while the list fits"
+    );
+    let first = menu_item(&nodes, "Open\u{2026}")
+        .bounds()
+        .expect("the first entry's bounds");
+    assert_eq!(
+        (first.x0, first.y0),
+        (445.0, 312.0),
+        "Open… stands where it stood"
     );
 }
 

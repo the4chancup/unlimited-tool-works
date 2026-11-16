@@ -33,7 +33,6 @@ from pathlib import Path
 import temp_alias
 
 ROOT =Path(__file__).resolve().parents[2]
-TIMES = ROOT / "target" / "run_tests_times.json"
 JOBS = min(4, os.cpu_count() or 1)
 # Files outside every package that no test reads: the mutation runs' exclusions, which change
 # with most review rounds (`scripts/mutation/mutants_test.py`, run in both modes, checks them).
@@ -142,6 +141,13 @@ def binaries(cargo_json: str, pkgs: dict[str, Package]) -> list[Binary]:
     return found
 
 
+def times_file(meta: dict) -> Path:
+    """The timings file, inside the target folder cargo names (`meta`'s `target_directory`,
+    as `release.target_dir()` asks it): a worktree can build into another tree's through
+    `CARGO_TARGET_DIR`, so `<repo>/target` need not exist."""
+    return Path(meta["target_directory"]) / "run_tests_times.json"
+
+
 def runner() -> list[str]:
     """The wrapper `cargo test` puts every test binary in on this platform (`.cargo/config.toml`):
     on Windows the per-process memory cap, which the binaries keep here."""
@@ -187,7 +193,8 @@ def main(argv: list[str]) -> int:
         return build.returncode
     selected = [b for b in binaries(build.stdout, pkgs) if b.package in wanted]
     # Longest first, by the last run's times, so the slowest binary never starts last.
-    times = json.loads(TIMES.read_text(encoding="utf-8")) if TIMES.exists() else {}
+    timings = times_file(meta)
+    times = json.loads(timings.read_text(encoding="utf-8")) if timings.exists() else {}
     selected.sort(key=lambda b: -times.get(b.key, 0.0))
 
     wrapper = runner()
@@ -208,7 +215,7 @@ def main(argv: list[str]) -> int:
                 failed += 1
                 print(f"---- {binary.key} failed (exit {code}) ----\n{output}", flush=True)
     wall = time.monotonic() - start
-    TIMES.write_text(json.dumps(times, indent=1, sort_keys=True), encoding="utf-8")
+    timings.write_text(json.dumps(times, indent=1, sort_keys=True), encoding="utf-8")
     print(f"run_tests: {len(selected)} binaries, {passed} tests passed, {failed} binaries failed, "
           f"{wall:.0f} s, {JOBS} at once")
     if failed:
