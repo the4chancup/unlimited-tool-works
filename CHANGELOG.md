@@ -119,6 +119,15 @@
 - **All tools**: Report a problem, in the sidebar above Help, saves a file to post with a
   report of something that went wrong: what you did in each tool, the files it opened and
   wrote, the log, your settings and your own words. Nothing is sent: you post the file.
+- **Save editor**: the File menu starts with `Open…` (Ctrl+O, until now `Choose
+  file…`), `Save` and `Save as…`, which now has Ctrl+Shift+S. The saves found in Documents
+  and the recent saves follow, each under a heading, then `Close save` (Ctrl+W), which
+  closes the save and brings back the list of saves, and `Exit` (Ctrl+Q).
+- **Save editor**: the recent saves are kept between runs, the last 10, each named by
+  its version, folder and file name (`[PES 2021] backups\EDIT00000000 - VGL26`). With no
+  save open, the middle of the window lists them too.
+- **All tools**: Ctrl+Q closes the window, asking first about unsaved changes, as its
+  close button does.
 
 ### New checks
 

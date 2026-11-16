@@ -556,7 +556,10 @@ vertical room a tab row takes; a toggle on the title's own row takes none.
   tooltip: a save's name alone repeats across versions and backups, and its whole path does
   not fit. The version is stored with the path when the save is opened or saved, so a start
   reads no save to label it. A save opened or saved again moves to the front, and one that
-  no longer exists is dropped when the list is shown.
+  no longer exists is left out when the menu opens or the panel appears, but kept in the
+  setting. Whether each exists is asked then, with the Documents search, not on every frame:
+  a frame is drawn for every mouse move, and a path on a network share that has gone can take
+  seconds to answer.
 
   With one menu open, the pointer entering another menu's button opens that one instead, as a
   menu bar does (`MenuBar` switches on hover).

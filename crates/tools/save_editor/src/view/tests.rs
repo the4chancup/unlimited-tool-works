@@ -343,11 +343,11 @@ fn open_menu(
     nodes
 }
 
-/// The File menu opened and its `Choose file…` clicked, discovery stubbed
+/// The File menu opened and its `Open…` clicked, discovery stubbed
 /// to find no save, so the menu holds the recent files and the picker.
 fn choose_file(window: &mut Headless, view: &mut SaveView) {
     view.discover = Box::new(|_| Vec::new());
-    choose(window, view, "File", "Choose file");
+    choose(window, view, "File", "Open\u{2026}");
 }
 
 /// `menu`'s entry `item` chosen: the menu opened (`open_menu`), then a

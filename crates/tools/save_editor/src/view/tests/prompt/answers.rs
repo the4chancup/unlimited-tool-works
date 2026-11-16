@@ -110,8 +110,11 @@ fn a_window_close_prompts_and_each_answer_does_what_it_says() {
         "nothing wrote while the question waits"
     );
     assert!(tool.view.prompt.is_some(), "the prompt stays up behind it");
+    // A settings write may ask the shell to save the file; no close.
     assert!(
-        requests.try_recv().is_err(),
+        requests
+            .try_iter()
+            .all(|request| request != ShellRequest::Close),
         "no close is asked while the question waits"
     );
 }
@@ -124,7 +127,7 @@ fn opening_another_save_prompts_and_each_answer_does_what_it_says() {
     let other = fixture(PesVersion::Pes21, "prompt_open_second");
     let mut window = Headless::new();
 
-    // A dirty session's Choose file… shows the prompt, not the picker (the
+    // A dirty session's Open… shows the prompt, not the picker (the
     // test-build default dialog panics if it is reached).
     let mut view = dirty_view(&first);
     choose_file(&mut window, &mut view);

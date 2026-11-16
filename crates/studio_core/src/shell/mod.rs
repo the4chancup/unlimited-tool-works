@@ -932,6 +932,15 @@ impl eframe::App for StudioApp {
                 tool.view(ui, &self.ctx);
             }
         });
+        // Ctrl+Q closes the window from any tool, as its close button does —
+        // a text field holding the keyboard does not hold it off, the
+        // first-run dialog neither: it is the shell's key, not a tool's.
+        // Ctrl alone (`consume_ctrl` is the exact modifier), and the ask
+        // goes through the window's own close command, which comes back as
+        // the close event the button sends: every tool is asked first.
+        if ui.input_mut(|input| crate::widgets::consume_ctrl(input, egui::Key::Q)) {
+            ui.ctx().send_viewport_cmd(egui::ViewportCommand::Close);
+        }
         // The dialog is drawn instead of any other window (the draft's `render`), and
         // while it is up F1 opens nothing either.
         if self.first_run.up(&self.ctx) {
@@ -1198,6 +1207,78 @@ mod tests {
             Some(dir.to_path_buf()),
             vec![calls_a, calls_b, calls_c],
         )
+    }
+
+    /// A Ctrl+Q key press: the shell's close key, Ctrl alone.
+    fn ctrl_q() -> egui::Event {
+        egui::Event::Key {
+            key: egui::Key::Q,
+            physical_key: None,
+            pressed: true,
+            repeat: false,
+            modifiers: egui::Modifiers::CTRL,
+        }
+    }
+
+    // ST-RUN-05
+    #[test]
+    fn ctrl_q_requests_the_close_as_the_close_button_does() {
+        let dir = TestDir::new("studio_core_close_ctrl_q");
+        let egui_ctx = test_context();
+        let Shell { mut app, calls, .. } = close_shell(dir.path());
+        *calls[0].unsaved.lock().unwrap() = true;
+        app.set_active(2);
+
+        // Ctrl+Q sends the window's close command; the close event it
+        // becomes then takes the button's own path: the first tool that
+        // reports work holds it, its prompt the active view.
+        let out = frame(&egui_ctx, &mut app, vec![ctrl_q()], true);
+        assert!(
+            out.commands.contains(&egui::ViewportCommand::Close),
+            "Ctrl+Q requests the window's close"
+        );
+        let out = frame_closing(&egui_ctx, &mut app);
+        assert!(out.commands.contains(&egui::ViewportCommand::CancelClose));
+        assert_eq!(app.active, 0, "A's prompt is the active view");
+        entry(&out.nodes, "Discard");
+        entry(&out.nodes, "Cancel");
+
+        click(&egui_ctx, &mut app, entry(&out.nodes, "Cancel"));
+        let out = frame(&egui_ctx, &mut app, Vec::new(), true);
+        assert!(
+            !out.commands.contains(&egui::ViewportCommand::Close),
+            "the cancelled prompt sends no close"
+        );
+
+        // The same while a text field holds the keyboard: the settings
+        // menu's Threads box focused, Ctrl+Q still asks for the close.
+        let nodes = idle(&egui_ctx, &mut app, 2).nodes;
+        click(&egui_ctx, &mut app, entry(&nodes, SETTINGS_LABEL));
+        let nodes = idle(&egui_ctx, &mut app, 10).nodes;
+        assert!(has_text(&nodes, "Threads"), "the settings menu is open");
+        click(
+            &egui_ctx,
+            &mut app,
+            widget_on_row(&nodes, "Threads", egui::accesskit::Role::SpinButton),
+        );
+        frame(&egui_ctx, &mut app, Vec::new(), true);
+        assert!(
+            egui_ctx.egui_wants_keyboard_input(),
+            "premise: the Threads box holds the keyboard"
+        );
+        let out = frame(&egui_ctx, &mut app, vec![ctrl_q()], true);
+        assert!(
+            out.commands.contains(&egui::ViewportCommand::Close),
+            "Ctrl+Q asks for the close with a field holding the keyboard"
+        );
+        let out = frame_closing(&egui_ctx, &mut app);
+        assert!(out.commands.contains(&egui::ViewportCommand::CancelClose));
+        assert_eq!(app.active, 0, "A's prompt is the active view");
+        let nodes = idle(&egui_ctx, &mut app, 10).nodes;
+        assert!(
+            !has_text(&nodes, "Threads"),
+            "the settings menu is gone once the close is held"
+        );
     }
 
     // ST-RUN-05

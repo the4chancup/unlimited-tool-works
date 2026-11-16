@@ -3465,7 +3465,7 @@ fn the_bar_checkboxes_are_remembered_view_settings() {
             "{label}: the restart reads it back"
         );
 
-        // Choose file… opens the next save — the view's and the settings
+        // Open… opens the next save — the view's and the settings
         // table's key both stay false (the open lands inside a
         // `Tool::view` frame, so the frame's own write-back is the check).
         let picked = other_path.clone();
@@ -3475,7 +3475,7 @@ fn the_bar_checkboxes_are_remembered_view_settings() {
         let open = menu_button(&nodes, "File");
         press_release(&mut window, centre(open), |ui| tool2.view(ui, &ctx));
         let (_, nodes, _) = window.frame(Vec::new(), |ui| tool2.view(ui, &ctx));
-        let choose = menu_item(&nodes, "Choose file");
+        let choose = menu_item(&nodes, "Open\u{2026}");
         press_release(&mut window, centre(choose), |ui| tool2.view(ui, &ctx));
         assert_eq!(
             tool2.view.session.as_ref().unwrap().path(),
