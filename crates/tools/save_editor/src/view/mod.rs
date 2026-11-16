@@ -184,11 +184,15 @@ pub(crate) struct SaveView {
     /// The running-game question a Save or Save as first asks while the
     /// save's own PES runs (SE-GUI-21's window rule).
     edit_mode_question: Option<EditModeQuestion>,
-    /// The Discard-on-close answer's ask to close again, drained by
-    /// `Tool::view` into `ctx.request_close()` (the shell owns the send).
+    /// The ask to close the window, set by the File menu's `Exit` and by
+    /// `go_on` running `Pending::Close` — the close prompt's Discard or
+    /// written Save, or its last row's × that left the save clean.
+    /// Drained by `Tool::view` into `ctx.request_close()` (the shell owns
+    /// the send).
     pub(crate) request_close: bool,
-    /// The File menu's `Open…` picker (`rfd`, stubbed in tests).
-    open_dialog: file_menu::OpenDialog,
+    /// The File menu's `Open…` picker (`rfd`, stubbed in tests;
+    /// `pub(crate)` so the crate root's tests reach it too).
+    pub(crate) open_dialog: file_menu::OpenDialog,
     /// Save as's picker (`rfd`, stubbed in tests).
     save_as_dialog: SaveAsDialog,
     /// The File menu's discovery (`discover_savefiles`, stubbed in tests;
@@ -714,10 +718,10 @@ impl SaveView {
     }
 
     /// Close save (the File menu's entry and Ctrl+W; a Discard answering the
-    /// window's close takes the same drop): the session and what the save
-    /// owned — the floating windows of it and the File menu's discovery, so
-    /// the welcome panel rescans — dropped on top of `drop_save`. Nothing
-    /// happens with no save open.
+    /// window's close takes the same drop): the session, its floating panel
+    /// and the Comparator dropped on top of `drop_save`, which drops the
+    /// welcome panel's look too so the panel rescans. Nothing happens with
+    /// no save open.
     pub(crate) fn close_save(&mut self) {
         if self.session.is_none() {
             return;
@@ -725,7 +729,6 @@ impl SaveView {
         self.session = None;
         self.panel = None;
         self.comparator = comparator::Comparator::new();
-        self.discovered = None;
         self.drop_save();
     }
 

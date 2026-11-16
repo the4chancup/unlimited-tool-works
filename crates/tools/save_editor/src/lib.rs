@@ -517,6 +517,7 @@ mod tests {
         // real Documents folder.
         tool.view.discover = Box::new(|_| Vec::new());
         let egui_ctx = egui::Context::default();
+        egui_ctx.enable_accesskit();
         studio_core::theme::install(&egui_ctx);
         OneSave {
             path,
@@ -530,10 +531,69 @@ mod tests {
         }
     }
 
+    /// The screen each `Tool::view` frame here reports (the pane the shell
+    /// leaves a tool at the default window).
+    const SCREEN: egui::Vec2 = egui::vec2(1224.0, 756.0);
+
     /// One `Tool::view` frame on `tool`'s egui context.
     fn view_frame(tool: &mut Tool, egui_ctx: &egui::Context, ctx: &ToolContext) {
-        let output = egui_ctx.run_ui(egui::RawInput::default(), |ui| tool.view(ui, ctx));
+        let output = egui_ctx.run_ui(
+            egui::RawInput {
+                screen_rect: Some(egui::Rect::from_min_size(egui::Pos2::ZERO, SCREEN)),
+                ..Default::default()
+            },
+            |ui| tool.view(ui, ctx),
+        );
         output.drop_without_applying_deltas();
+    }
+
+    /// `view_frame`, returning the frame's AccessKit nodes.
+    fn view_nodes(
+        tool: &mut Tool,
+        egui_ctx: &egui::Context,
+        ctx: &ToolContext,
+        events: Vec<egui::Event>,
+    ) -> Vec<egui::accesskit::Node> {
+        let mut output = egui_ctx.run_ui(
+            egui::RawInput {
+                screen_rect: Some(egui::Rect::from_min_size(egui::Pos2::ZERO, SCREEN)),
+                events,
+                ..Default::default()
+            },
+            |ui| tool.view(ui, ctx),
+        );
+        let nodes = output
+            .platform_output
+            .accesskit_update
+            .take()
+            .expect("AccessKit is enabled on the context")
+            .nodes
+            .into_iter()
+            .map(|(_, node)| node)
+            .collect();
+        output.drop_without_applying_deltas();
+        nodes
+    }
+
+    /// A click at `at` on `tool`'s view: press on one frame, release on the
+    /// next, as the view tests' `pointer_at`.
+    fn view_click(tool: &mut Tool, egui_ctx: &egui::Context, ctx: &ToolContext, at: egui::Pos2) {
+        for pressed in [true, false] {
+            view_nodes(
+                tool,
+                egui_ctx,
+                ctx,
+                vec![
+                    egui::Event::PointerMoved(at),
+                    egui::Event::PointerButton {
+                        pos: at,
+                        button: egui::PointerButton::Primary,
+                        pressed,
+                        modifiers: egui::Modifiers::NONE,
+                    },
+                ],
+            );
+        }
     }
 
     // An open writes `last_folder` into the settings, and the editor started
@@ -626,6 +686,14 @@ mod tests {
 
         let mut restarted = Tool::new();
         restarted.view.discover = Box::new(|_| Vec::new());
+        let starts = std::rc::Rc::new(std::cell::RefCell::new(Vec::new()));
+        let record = std::rc::Rc::clone(&starts);
+        restarted.view.open_dialog = Box::new(move |start| {
+            record
+                .borrow_mut()
+                .push(start.map(std::path::Path::to_path_buf));
+            None
+        });
         view_frame(&mut restarted, &egui_ctx, &ctx);
         assert_eq!(
             restarted.view.recents,
@@ -640,6 +708,66 @@ mod tests {
                 },
             ],
             "read back at the restart in the same order"
+        );
+
+        // And the welcome panel draws them in the same order under Recent
+        // files; its Open… starts the picker in the last opened folder.
+        view_frame(&mut restarted, &egui_ctx, &ctx);
+        let nodes = view_nodes(&mut restarted, &egui_ctx, &ctx, Vec::new());
+        let heading = nodes
+            .iter()
+            .find(|node| {
+                node.role() == egui::accesskit::Role::Label && node.value() == Some("Recent files")
+            })
+            .and_then(egui::accesskit::Node::bounds)
+            .expect("the Recent files heading");
+        let mut listed: Vec<(f64, &str)> = nodes
+            .iter()
+            .filter(|node| node.role() == egui::accesskit::Role::Button)
+            .filter_map(|node| {
+                let bounds = node.bounds()?;
+                let label = node.label()?;
+                (bounds.y0 > heading.y0 && label.starts_with("[PES")).then_some((bounds.y0, label))
+            })
+            .collect();
+        listed.sort_by(|a, b| a.0.partial_cmp(&b.0).expect("ordered bounds"));
+        let sep = std::path::MAIN_SEPARATOR;
+        assert_eq!(
+            listed
+                .iter()
+                .map(|(_, label)| *label)
+                .collect::<Vec<&str>>(),
+            [
+                format!("[PES 2017] other{sep}EDIT00000000"),
+                format!("[PES 2021] backups{sep}EDIT00000000"),
+            ],
+            "both recents under the heading, newest first"
+        );
+
+        let open = nodes
+            .iter()
+            .filter(|node| {
+                node.role() == egui::accesskit::Role::Button
+                    && node
+                        .label()
+                        .is_some_and(|label| label.starts_with("Open\u{2026}"))
+            })
+            .filter_map(egui::accesskit::Node::bounds)
+            .next()
+            .expect("the Open… entry");
+        view_click(
+            &mut restarted,
+            &egui_ctx,
+            &ctx,
+            egui::pos2(
+                ((open.x0 + open.x1) / 2.0) as f32,
+                ((open.y0 + open.y1) / 2.0) as f32,
+            ),
+        );
+        assert_eq!(
+            starts.borrow().as_slice(),
+            [Some(other_dir)],
+            "Open… starts the picker in the last opened folder"
         );
     }
 

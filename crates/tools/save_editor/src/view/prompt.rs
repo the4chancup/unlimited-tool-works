@@ -140,6 +140,9 @@ enum Answer {
 /// impossible on a save read whole, shows as a refusal rather than a
 /// silently empty table.
 pub(crate) fn open(view: &mut SaveView, pending: Pending) {
+    // The popups the view owns would float over the prompt's layer.
+    view.changes_list = None;
+    view.tactics.close_popover();
     let Some(session) = view.session.as_ref() else {
         return;
     };

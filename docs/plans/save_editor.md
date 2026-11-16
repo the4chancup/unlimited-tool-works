@@ -3772,8 +3772,9 @@ SE-GUI-26  GIVEN two PES 21 saves and one PES 19 save under the test's Documents
                 Ctrl+9; then the weak heading Recent files over the recent save, labelled
                 with its version in brackets, its folder and its file name (`[PES 2021]
                 <folder>\<file name>`); then Close save with Ctrl+W, disabled, and Exit with
-                Ctrl+Q; GIVEN no save opened earlier THEN no Recent files heading; WHEN the
-                menu is closed and Ctrl+9 is pressed
+                Ctrl+Q; GIVEN no save opened earlier THEN no Recent files heading; GIVEN two
+                recent saves WHEN the older is clicked THEN it opens and stands first under
+                Recent files; WHEN the menu is closed and Ctrl+9 is pressed
                 THEN the PES 19 save opens, and WHEN Ctrl+7 is pressed (no PES 17 save found)
                 THEN the file picker opens; WHEN Ctrl+Shift+9 is pressed, or Ctrl+9 while the
                 Name field holds the keyboard, THEN nothing opens and no prompt shows; WHEN

@@ -262,6 +262,23 @@ fn the_prompt_lists_each_changed_field_in_the_views_terms() {
     );
 }
 
+// The prompt's layer draws under the popups the view owns: opening one
+// closes the toolbar's changes list (the window's close, `hold_close`'s
+// `prompt::open`, reaches it without the toolbar's shortcut close).
+#[test]
+fn opening_the_prompt_closes_the_changes_list_over_it() {
+    let (mut view, _) = three_changes("prompt_closes_changes_list");
+    let mut window = Headless::new();
+    super::changes_popup::click_label(&mut window, &mut view);
+    assert!(view.changes_list.is_some(), "premise: the list is open");
+
+    prompt::open(&mut view, Pending::Close);
+    draw(&mut window, &mut view);
+    let nodes = draw(&mut window, &mut view);
+    assert!(prompt_drawn(&nodes), "the prompt is drawn");
+    assert!(view.changes_list.is_none(), "the list is closed");
+}
+
 // SE-GUI-05: the prompt is its heading, the table and the three answers —
 // no "unsaved changes" line under the heading and no line about the path
 // above the buttons (the title and the answers already say both).
