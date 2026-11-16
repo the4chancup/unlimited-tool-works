@@ -116,10 +116,11 @@ pub trait StudioTool {
     }
 
     /// The tool's current state written as its format, as `(name, bytes)`
-    /// files the "Report a problem" bundle puts under `state/`, each name
-    /// prefixed by the tool's id: the Save editor's is the open save
-    /// encoded as it would be saved now, named as its file. A tool with
-    /// nothing open gives none. Default: none.
+    /// files for the "Report a problem" bundle: the platform puts each
+    /// under `state/<tool id>/`, so `name` is the tool's own, bare. The
+    /// Save editor's is the open save encoded as it would be saved now,
+    /// named as its file. A tool with nothing open gives none.
+    /// Default: none.
     fn repro_state(&self) -> Vec<(String, Vec<u8>)> {
         Vec::new()
     }

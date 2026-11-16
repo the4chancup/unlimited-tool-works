@@ -185,25 +185,27 @@ impl Recorder {
     /// Writes the bundle to `out`: one zip holding `journal.toml` (the
     /// suite's version as the window shows it, the OS, every step, every
     /// kept file's redacted path, size and SHA-256 beside its zip entry's
-    /// name, the `files` that could not be read under `missing`, and the
-    /// `state` attachments' names), the inputs under `inputs/` and the
-    /// last outputs under `outputs/` (each named `<index>-<file name>`
-    /// so two files of one name never collide), the member's `words` as
-    /// `words.txt`, each of `files` read from disk under its given name,
-    /// and each of `state` under `state/<name>` — bytes the caller holds,
-    /// such as a tool's current state written as its format. Every path
-    /// and step line, and every UTF-8 attachment, is written with the
-    /// home folder as `~`. The zip is written to a sibling temp and
-    /// renamed over `out`, so a failed write never leaves a half zip.
-    /// The journal is cloned under its lock and written from the clone:
-    /// the lock covers a cheap copy of `Arc`s, and a failed or panicking
-    /// write can neither block nor poison the recorders.
+    /// name, the `files` without a path or that could not be read under
+    /// `missing`, and the `state` attachments' names), the inputs under
+    /// `inputs/` and the last outputs under `outputs/` (each named
+    /// `<index>-<file name>` so two files of one name never collide), the
+    /// member's `words` as `words.txt`, each of `files` with a path read
+    /// from disk under its given name (a `None` means the caller has no
+    /// such file, and is never read), and each of `state` under
+    /// `state/<name>` — bytes the caller holds, such as a tool's current
+    /// state written as its format. Every path and step line, and every
+    /// UTF-8 attachment, is written with the home folder as `~`. The zip
+    /// is written to a sibling temp and renamed over `out`, so a failed
+    /// write never leaves a half zip. The journal is cloned under its
+    /// lock and written from the clone: the lock covers a cheap copy of
+    /// `Arc`s, and a failed or panicking write can neither block nor
+    /// poison the recorders.
     #[cfg(not(target_arch = "wasm32"))]
     pub fn write_bundle(
         &self,
         out: &Path,
         words: &str,
-        files: &[(&str, &Path)],
+        files: &[(&str, Option<&Path>)],
         state: &[(&str, &[u8])],
         home: Option<&str>,
     ) -> anyhow::Result<()> {
@@ -212,8 +214,9 @@ impl Recorder {
     }
 
     /// Every tool that recorded anything, as `ToolSummary`s — what the
-    /// "Report a problem" dialog lists under "The file holds:", one line per
-    /// tool, in the sidebar's order. A tool that recorded nothing has no
+    /// "Report a problem" dialog lists under "The file holds:", one line
+    /// per tool, in the order they first recorded (the dialog sorts them
+    /// into the sidebar's order). A tool that recorded nothing has no
     /// entry.
     #[cfg(not(target_arch = "wasm32"))]
     pub(crate) fn tool_summaries(&self) -> Vec<ToolSummary> {
@@ -312,7 +315,8 @@ mod bundle {
         version: String,
         /// The OS the window ran on (`std::env::consts::OS`).
         os: &'static str,
-        /// The `files` names that could not be read; absent when empty.
+        /// The `files` names that had no path or could not be read;
+        /// absent when empty.
         #[serde(skip_serializing_if = "Vec::is_empty")]
         missing: Vec<String>,
         /// The `state` attachments' names, as given; absent when empty.
@@ -411,18 +415,18 @@ mod bundle {
         journal: &Journal,
         out: &Path,
         words: &str,
-        files: &[(&str, &Path)],
+        files: &[(&str, Option<&Path>)],
         state: &[(&str, &[u8])],
         home: Option<&str>,
     ) -> anyhow::Result<()> {
-        // The extras are read before `journal.toml` is built, because an
-        // unreadable one lands in its `missing` list.
+        // The extras are read before `journal.toml` is built, because a
+        // `None` path or an unreadable one lands in its `missing` list.
         let mut extras = Vec::new();
         let mut missing = Vec::new();
         for (name, path) in files {
-            match fs::read(path) {
-                Ok(bytes) => extras.push((*name, bytes)),
-                Err(_) => missing.push((*name).to_owned()),
+            match path.and_then(|path| fs::read(path).ok()) {
+                Some(bytes) => extras.push((*name, bytes)),
+                None => missing.push((*name).to_owned()),
             }
         }
         let doc = toml::to_string_pretty(&Doc {
@@ -613,8 +617,8 @@ pub(crate) mod tests {
                 &out,
                 "the member's words",
                 &[
-                    ("settings.toml", settings.as_path()),
-                    ("utw.log", dir.join("no-such.log").as_path()),
+                    ("settings.toml", Some(settings.as_path())),
+                    ("utw.log", Some(dir.join("no-such.log").as_path())),
                 ],
                 &[("current.save", &b"CURRENT"[..])],
                 Some("/home/member"),
@@ -752,7 +756,7 @@ pub(crate) mod tests {
             .write_bundle(
                 &out,
                 "I copied the save to C:/Users/Alice/Desktop",
-                &[("settings.toml", settings.as_path())],
+                &[("settings.toml", Some(settings.as_path()))],
                 &[("note.txt", &b"the save is at C:/Users/Alice/saves"[..])],
                 Some("C:/Users/Alice"),
             )
@@ -824,6 +828,33 @@ pub(crate) mod tests {
             Arc::from(&b"BYTES"[..]),
         );
         assert_eq!(format!("{recorder:?}"), "Recorder(..)");
+    }
+
+    // A zip write's failure names its context once: the write's error
+    // travels to `replace_file` as an `io::Error` and back, and `{:#}` on
+    // the result must not read "cannot write the bundle" twice.
+    #[test]
+    fn a_failed_bundle_write_names_its_context_once() {
+        let dir = scratch("write_context_once");
+        let recorder = Recorder::default();
+        let out = dir.join("missing/repro.zip");
+        let error = recorder
+            .write_bundle(&out, "", &[], &[], None)
+            .expect_err("a folder that does not exist");
+        let os_error = fs::File::create(dir.join("missing/x.tmp"))
+            .expect_err("the same failure")
+            .to_string();
+
+        let text = format!("{error:#}");
+        assert_eq!(
+            text.matches("cannot write the bundle").count(),
+            1,
+            "the context is named once: {text}"
+        );
+        assert!(
+            text.ends_with(&os_error),
+            "ending with the OS error: {text}"
+        );
     }
 
     // `out` a directory: the write is an error and the temp sibling is
@@ -924,7 +955,7 @@ pub(crate) mod tests {
             .write_bundle(
                 &out,
                 "",
-                &[("packed.bin", packed.as_path())],
+                &[("packed.bin", Some(packed.as_path()))],
                 &[("state.bin", &b"\xFF\x00\xFE"[..])],
                 Some("C:/Users/Alice"),
             )

@@ -41,7 +41,7 @@ indexmap = "2.14.2"
 # Local wall-clock time: the repro dialog's "wrote at hh:mm" and the report file's
 # `utw-report-<date>-<hhmm>.zip` name. std has no time zones, and `time` reads the
 # local offset only while the process is single-threaded, which a window never is.
-jiff = "0.2"
+jiff = "0.2.45"
 # JPEG XL texture sources in `dds_convert`. Pinned exact: the decoder's API is still pre-1.0
 # and changes between minors. Its default `all-simd` minus AVX-512, which added 0.37 MB to
 # the exe (spec "Accepted image formats"): the decoder picks the best compiled level at run
