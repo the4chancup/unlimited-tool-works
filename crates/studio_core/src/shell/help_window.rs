@@ -1315,6 +1315,21 @@ mod tests {
             "opening the help closed the menu"
         );
         assert_eq!(app.help_window.showing(), Some(("b", "beta-topic")));
+
+        // The same with the report dialog open.
+        click(
+            &egui_ctx,
+            &mut app,
+            entry(&nodes, crate::shell::sidebar::REPORT_LABEL),
+        );
+        let nodes = idle(&egui_ctx, &mut app, 10).nodes;
+        assert!(has_label(&nodes, "Save…"), "the report dialog is open");
+        frame(&egui_ctx, &mut app, vec![key(egui::Key::F1, true)], true);
+        let nodes = idle(&egui_ctx, &mut app, 10).nodes;
+        assert!(
+            !has_label(&nodes, "Save…"),
+            "opening the help closed the report dialog"
+        );
     }
 
     #[test]

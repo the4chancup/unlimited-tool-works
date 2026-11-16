@@ -216,7 +216,7 @@ impl Settings {
     }
 
     /// The file's values: `[common]` first, then one table per tool in id order.
-    fn to_table(&self) -> Result<Table, toml::ser::Error> {
+    pub(crate) fn to_table(&self) -> Result<Table, toml::ser::Error> {
         let mut root = Table::new();
         root.insert(COMMON_KEY.to_owned(), Value::try_from(&self.common)?);
         for (id, table) in &self.tools {
