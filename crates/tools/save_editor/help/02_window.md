@@ -4,16 +4,22 @@ The Save editor's window opens a save (`EDIT00000000`, or a copy of it) and edit
 
 The **File** menu lists, from the top:
 
-- the saves found in your Documents folder for every PES version, each named by its version,
-  so your game's save opens in one click (hover an entry to see its full path);
-- the files you opened or saved since the program started, the most recent first;
-- **Choose file…** (Ctrl+O), which picks any file and starts in the folder the last save
-  was opened from when it exists, or in the newest found save's folder;
-- under a line, **Save** (Ctrl+S) and **Save as…**, which write the open save (see **Saving**
-  below) and stay greyed out until a save is open.
+- **Open…** (Ctrl+O), which picks any file and starts in the folder the last save was opened
+  from when it exists, or in the newest found save's folder;
+- **Save** (Ctrl+S) and **Save as…** (Ctrl+Shift+S), which write the open save (see **Saving**
+  below) and stay greyed out until a save is open;
+- under **Open from Documents**, the saves found in your Documents folder for every PES version,
+  each named by its version, so your game's save opens in one click (hover an entry to see
+  its full path);
+- under **Recent files**, the last 10 saves you opened or saved, the most recent first, kept
+  for the next time the program opens; each is named by its version, folder and file name,
+  so two saves of the same name stand apart;
+- **Close save** (Ctrl+W), which closes the save and brings back the list of saves in the
+  middle of the window, and
+  **Exit** (Ctrl+Q), which closes the window as its close button does.
 
-With no save open, the middle of the window offers the same saves and
-**Choose file…**.
+With no save open, the middle of the window offers the same saves, the recent saves and
+**Open…**.
 
 Ctrl+5 to Ctrl+9 open the newest save found for PES 2015 to PES 2019, Ctrl+0 PES 2020's and
 Ctrl+1 PES 2021's, or the file picker when none was found. They do nothing while you type in
@@ -182,9 +188,9 @@ time the editor is opened.
 **Saving**
 
 The **File** menu's **Save**, or Ctrl+S, writes the edits to the file the save was opened
-from (a file it replaces is kept once as a `.bak` copy). **Save as…** writes them to a file
-you pick instead, and the editor then carries on with that file, so the next Save writes
-there too. A file it replaces is kept as a `.bak` copy as well.
+from (a file it replaces is kept once as a `.bak` copy). **Save as…**, or Ctrl+Shift+S,
+writes them to a file you pick instead, and the editor then carries on with that file, so
+the next Save writes there too. A file it replaces is kept as a `.bak` copy as well.
 
 While the save's own PES version is running, saving first shows how to keep the save:
 
@@ -197,9 +203,9 @@ While only a PES of another version is running, saving asks nothing.
 
 **Unsaved changes**
 
-Closing the window or opening another save with unsaved edits asks first, over a table
-of each changed field with its value in the file and in the editor. Save writes the
-edits, Discard loses them, and Cancel keeps everything as it was.
+Closing the save or the window, or opening another save, with unsaved edits asks first,
+over a table of each changed field with its value in the file and in the editor. Save
+writes the edits, Discard loses them, and Cancel keeps everything as it was.
 
 Each row ends with an ×, which puts that one change back as the file has it and keeps
 your other edits, so you can drop a change you did not mean and save the rest. The × is

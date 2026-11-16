@@ -157,6 +157,10 @@ formation_pictures_flat = false
 # Default: false
 formation_pictures_settings = false
 
+# Kept by the window: the recent saves the File menu lists. There is no need to edit it.
+# Default: []
+recent_files = []
+
 [compiler]
 
 # (Usually only needed when making a cup's DLC.)
