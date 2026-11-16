@@ -18435,3 +18435,12 @@ Why: the dialog picks its range as Multi-team AATF does and shares its pickers; 
 both keeps the two ranges read alike, and the id tells apart two teams of one name.
 Plan: `plans/save_editor.md` "Formation pictures" (the range's first bullet); the draft's
 `drawPicturesRange`.
+
+## 2026-11-17 — save_editor — Kit slot assignments: wider columns and a centred grid, after 0.1.0
+Decision: after Release 0.1.0, the Kit slot assignments dialog's columns stand further apart
+and its grid is centred across the dialog. Until then the draft's grid keeps standing 4 points
+right of and below the build's.
+Why: the maintainer, with the draft and the build side by side: neither margin is right,
+because the columns need more room and the grid belongs in the middle. The dialog is rarely
+used, so the work waits rather than taking more of 0.0.2.
+Plan: `plans/save_editor.md` "Editing UI" (the team view's Kit slots… button).

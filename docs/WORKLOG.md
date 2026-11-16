@@ -1631,6 +1631,15 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     - [ ] the built window beside the draft (`.tmp/lead/looks/report/draft_open.png`), run
       through as above on a copy of a save, the zip then read with `save-editor diff`; then
       card ST-REP-05 in `maintainer/tasks.html`; review rounds (tier 2)
+      - [x] run through (lead, 2026-11-17, the release build of `97cc9757`, PES 2021's
+        sandbox save): a skill ticked, the save written, Report a problem, Save…. The zip
+        holds the journal's four steps, both inputs, the output, `state/` and the log;
+        `save-editor diff` of the kept input against the output names the one edit
+        (player 70101, Heading 0 → 1), and `state/` reads the same as the output
+      - [ ] two differences from the draft, over 2 points each: the intro's lines and the
+        list's rows 18 apart (the draft's 15), and the text box 61 tall (the draft's 84,
+        right under its label). Fix in flight (SWE-2, worktree `sk/reportgap`, the brief
+        `.tmp/0_0_2/reportgap/brief.md`); then the look again and the card
   - [x] 0.0.2-namelight 2026-11-15 (SWE-2, merge `40ce82da`): in the light theme a name's
     colour code reading under 4.5 on the panel is darkened until it does, hue kept
     (`theme::darkened_to_read`, which reproduces the lineup lists' hand-made colours); the
@@ -1800,8 +1809,12 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       - [ ] two more differences the recheck met, each to a fix:
         - Kit slots: each label and its box in two grid columns, 8 apart, where the draft
           has them in one cell a space apart (3): every box 5 right of the draft's. Fixed
-          (SWE-2, `4017c877`): one cell each, `SPACE_GAP` apart; the built window's look
-          owed
+          (SWE-2, `4017c877`): one cell each, `SPACE_GAP` apart. Looked at (lead,
+          2026-11-17, the release build of `97cc9757`): each box 3 after its label, the
+          columns within 1 point of the draft's. Left over: the whole grid stands about 4
+          points left of and above the draft's, since the draft's `table.grid` pads its
+          cells 4 left and 3 above where egui's Grid has no outer margin: left as is, the
+          dialog redesigned after 0.1.0 (16.k)
         - the Stats screen: its sections 9 under the title row's line, the draft's 12, so
           the screen stands 4 to 5.5 higher than the draft once the line moved up (SWE-2,
           worktree `sk/statsline`, the brief `.tmp/0_0_2/statsline/brief.md`; it takes in
@@ -2918,7 +2931,11 @@ The phase's steps are itemized when it opens; prepared ahead:
 
 ### Phase 16 — Polish and distribution
 
-Steps are itemized when Phase 15 closes; three are fixed already:
+Steps are itemized when Phase 15 closes; four are fixed already:
+
+- [ ] 16.k the Kit slot assignments dialog's columns further apart and its grid centred across
+  the dialog (DECISIONS 2026-11-17; `plans/save_editor.md` "Editing UI"): draft first, then
+  the build -> verify: the built window beside the draft
 
 - [x] 16.w the release exe's platform floor and size (maintainer, 2026-10-15; DECISIONS
   2026-10-15): Windows 10 x64 and Linux, `+crt-static`, `rhai` `only_i64` (16.w1-16.w3)

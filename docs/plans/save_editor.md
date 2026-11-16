@@ -983,7 +983,9 @@ vertical room a tab row takes; a toggle on the title's own row takes none.
     Each slot's row holds its Number and its `Bound team ID`: the team's id, as Team ID and
     Manager ID show one, not the stored number (the id times 64), which no member reads
     anywhere else. Every box is one width, wide enough for six digits, so the rows line up
-    and a box does not change width between a 3-digit and a 6-digit value.
+    and a box does not change width between a 3-digit and a 6-digit value. After 0.1.0 the
+    dialog's columns stand further apart and the grid is centred across the dialog: the
+    draft and the build both pack it to the left, which reads cramped.
 
   The ids share the fields' row, not one of their own, because the Tactics editor below needs
   the height: with a heading-size title and the ids on a second row its last row ended about 5
