@@ -262,14 +262,19 @@ impl Scene {
     }
 
     /// The range dialog open on `FIRST` to `LAST`, its folder `folder`
-    /// picked with Browse, then Save pictures pressed, and no frame after
-    /// the release's: the next frame is the run's first.
-    fn start_run(&mut self, folder: &Path) {
+    /// picked with Browse, the settings box ticked when `settings`, then
+    /// Save pictures pressed, and no frame after the release's: the next
+    /// frame is the run's first.
+    fn start_run(&mut self, folder: &Path, settings: bool) {
         self.open_range();
         let (first, last) = (self.team_label(FIRST), self.team_label(LAST));
         self.pick(0, &first);
         self.pick(1, &last);
-        let nodes = self.browse(folder);
+        let mut nodes = self.browse(folder);
+        if settings {
+            nodes = self.click(node_labeled(&nodes, Role::CheckBox, SETTINGS_BOX));
+            assert!(ticked(&nodes, SETTINGS_BOX), "the settings box");
+        }
         let save = centre(node_labeled(&nodes, Role::Button, "Save pictures"));
         let Scene {
             tool, ctx, window, ..
@@ -863,7 +868,7 @@ fn a_range_run_writes_one_picture_per_team_and_reports_it() {
         "premise: no folder setting"
     );
 
-    scene.start_run(&folder);
+    scene.start_run(&folder, false);
     // A frame is on screen while the next one runs, so each draws what the
     // next one writes: the first writes nothing, the last two both read
     // `Writing 3 of 3`. Per frame: the team named, the bar, the pictures
@@ -925,6 +930,31 @@ fn a_range_run_writes_one_picture_per_team_and_reports_it() {
     assert!(!label_value(&nodes, RANGE_TITLE), "Close closes the dialog");
 }
 
+// The settings box is the one-team dialog's, and its tick reaches the
+// run's pictures the same way: /f/'s carries the settings column and
+// the Automatic settings line, as `a_ticked_settings_box`'s does.
+// SE-GUI-88
+// SE-GUI-89
+#[test]
+fn a_range_run_with_the_settings_box_writes_the_settings_pictures() {
+    let mut scene = Scene::new("pictures_range_settings");
+    let folder = scene.dir.join("cup pictures");
+
+    scene.start_run(&folder, true);
+    // One picture a frame, the first drawing the line alone: the run
+    // is over on the fourth.
+    for _ in 0..4 {
+        scene.draw();
+    }
+    let nodes = scene.range_nodes();
+    assert_folder_under(&nodes, "3 pictures written, they are here:", &folder);
+    assert_eq!(
+        png_size(&folder.join(scene.file_name(LAST))),
+        (ONE_COLUMN.0 + 12 + 240, ONE_COLUMN.1 + 30),
+        "/f/'s picture with the settings column and the Automatic settings line"
+    );
+}
+
 // SE-GUI-89
 #[test]
 fn stop_ends_the_run_with_the_pictures_written_so_far() {
@@ -934,7 +964,7 @@ fn stop_ends_the_run_with_the_pictures_written_so_far() {
     // Stop pressed while `Writing 2 of 3` is on screen: the frame after it
     // writes the second picture meanwhile, and the click reaches the frame
     // after that one. The two pictures stay, the third is never written.
-    scene.start_run(&kept);
+    scene.start_run(&kept, false);
     let pairs = scene.draw_with(Vec::new());
     let stop = button_id(&pairs, "Stop");
     let nodes = nodes_of(scene.draw_with(Vec::new()));
@@ -977,7 +1007,7 @@ fn stop_ends_the_run_with_the_pictures_written_so_far() {
     // Stop on the run's first frame: no picture written, so no Open folder
     // and the folder setting as it was. The Stop button's id is the same in
     // every run, so the action reaches it on the frame that first draws it.
-    scene.start_run(&none);
+    scene.start_run(&none, false);
     let nodes = nodes_of(scene.draw_with(vec![action_request(stop)]));
     assert!(
         line_starting(&nodes, "Writing 1 of 3: ").is_some(),
@@ -1002,7 +1032,7 @@ fn a_failed_write_ends_the_run_and_names_the_error() {
     std::fs::write(&folder, b"not a folder").unwrap();
     let error = std::fs::create_dir_all(&folder).expect_err("premise: no folder can be made there");
 
-    scene.start_run(&folder);
+    scene.start_run(&folder, false);
     // The first frame draws, the second writes the first picture and fails.
     let nodes = scene.draw();
     assert!(line_starting(&nodes, "Writing 1 of 3: ").is_some());
@@ -1073,7 +1103,7 @@ fn the_dialog_keeps_its_width_through_the_run() {
         .dir
         .join("formation pictures of every team of the cup, from the first to the last");
 
-    scene.start_run(&folder);
+    scene.start_run(&folder, false);
     let picking = scene.dialog_width();
     let style = scene.window.ctx.style_of(scene.window.ctx.theme());
     let font = egui::TextStyle::Body.resolve(&style);

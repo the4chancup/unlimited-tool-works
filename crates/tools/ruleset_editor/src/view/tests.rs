@@ -538,8 +538,8 @@ fn scratch_file(test: &str, name: &str) -> (PathBuf, PathBuf) {
     (dir, file)
 }
 
-/// A view with `ruleset` opened as a new, unsaved document (a template
-/// or Blank pick's result without the pick).
+/// A view with `ruleset` opened as a new document (a template or
+/// Blank pick's result without the pick).
 fn open_document(view: &mut RulesetView, ruleset: aatf::Ruleset) {
     view.set_document(Document::new(ruleset));
 }
