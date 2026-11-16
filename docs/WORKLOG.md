@@ -3206,6 +3206,9 @@ briefs, review loops, gates and mutation runs as for any step.
   onto a sentence it does not support), corrected by the lead. For the full pass: one
   crate per brief, the trial's brief as the model, plus "a pointer or citation moves only
   with the sentence it documents"; the lead reads each edit against the code
+- [ ] after 0.0.2 (the maintainer, 2026-11-16): the Tactics editor's arrangement setting
+  (`plans/save_editor.md`, the "one grid" paragraph's "arrangement"). Waits on the
+  maintainer, who provides 4ccEditor's layout; then the draft, then one slice.
 - [ ] after 0.0.2 (the maintainer, 2026-11-16): a Snap audit of stale comments, beside the
   citation audit: per function, its doc and inline comments, its body and the same file's
   functions it calls; Snap answers whether a comment states something the code does not do.

@@ -1433,6 +1433,13 @@ Win32 original hurt the most):
   width (`spec/core/gui.md` "Scaling with the width") rather than rearranging it, so the grid
   has no narrow fallback. A shorter window scrolls the team view to reach its last row rather
   than squeezing it in.
+
+  After 0.0.2, a remembered view setting picks the grid's **arrangement**: this one, or
+  4ccEditor's, which some members know better (the formation settings below the pitch or
+  left of it, drafted from 4ccEditor's own screen). Each arrangement is a fixed grid with its
+  own draft and its own layout tests. The panels are never moved or resized freely: a free
+  arrangement leaves no layout to check against a draft, and each panel, drawn today for one
+  width, would have to reflow at any width, the pitch included.
 - **The pitch looks like the selected game's own formation screen** (Edit, Teams, a team,
   Game Plan, Team Sheet/Edit Position), each starter shown as the game shows him, by his
   portrait, read from the selected game's `download/` CPKs when that folder is found and holds

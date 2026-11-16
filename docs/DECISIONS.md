@@ -18332,3 +18332,13 @@ Why: a thorough reviewer always finds five such concerns, so the count alone nev
 menu bars' Carbon loop: its fifth and sixth rounds accepted six and nine, none of them a
 real input's defect.
 Plan: RUNBOOK.md "Review rounds", the round rule.
+
+## 2026-11-16 — save_editor — the Tactics editor gets a choice of fixed arrangements, not freely moved panels
+Decision: after 0.0.2, a remembered view setting chooses between the Tactics editor's grid
+and 4ccEditor's arrangement of the same panels, each a fixed grid with its own draft. A mode
+in which the member drags, resizes and snaps the panels is not built.
+Why: some members prefer 4ccEditor's layout, and an arrangement is one more placement of
+panels that are already drawn apart. Free placement needs snapping, overlap and recovery
+code, panels that reflow at any width (the pitch included), and leaves no layout to check
+against a draft.
+Plan: plans/save_editor.md, the Tactics editor's "one grid" paragraph ("arrangement").
