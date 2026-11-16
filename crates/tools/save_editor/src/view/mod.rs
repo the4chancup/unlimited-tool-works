@@ -103,13 +103,11 @@ enum Reveal {
     Top,
 }
 
-/// How the list scrolls to the selected row when something other than a
-/// click on the list moved the selection, or a pick relisted the rows
-/// around a kept one: a team's row goes to the list's top, so its
-/// players stand under it; a player row shows the least that shows it. The
-/// moves that ask `Nearest` for themselves — the arrow keys' walk, the
-/// page toggle's Gameplan jump, a team row's double click — show the
-/// least for a team row too.
+/// How the list scrolls to the selected row when `reveal_selected` asks
+/// for it: a team's row goes to the list's top, so its players stand
+/// under it, and a player's row scrolls only as far as it takes to show
+/// it. The arrow keys, the page toggle's Gameplan jump and a team row's
+/// double click ask for the shorter scroll even on a team's row.
 fn reveal_for(selected: Option<Selection>) -> Reveal {
     if matches!(selected, Some(Selection::Team(_))) {
         Reveal::Top
@@ -158,10 +156,10 @@ pub(crate) struct SaveView {
     /// longer the selected row at the frame's end, so the target lives
     /// only while its team's row stays selected.
     click_kind: Option<clipboard::ClickKind>,
-    /// A selection moved outside the list's own row clicks, or kept
-    /// while a selector's or a category's pick relisted the rows over
-    /// it: the list scrolls to the selected row on the next draw, then
-    /// clears this.
+    /// How the list scrolls to the selected row on its next draw, which
+    /// clears this. Set when something other than a click on the list
+    /// moves the selection, and when a pick in the list's team dropdown or
+    /// category names a team or relists the rows around the selection.
     reveal_selected: Option<Reveal>,
     /// The team view's Tactics state (`team_widgets`' `TacticsView`:
     /// the preset its panels edit, the formation its lists show, the

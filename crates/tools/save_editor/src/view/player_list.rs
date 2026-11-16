@@ -149,18 +149,19 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) -> f32 {
                     .or(view.selected);
         }
     }
-    // A pick that moved the selection or relisted the rows scrolls to
-    // the row still selected: under a typed filter a team pick moves no
-    // rows but lands it on a row off screen, and the rows over a kept
-    // selection change with the teams. A pick that did neither moves
-    // nothing.
+    // A pick scrolls to the row still selected when it named a team, moved
+    // the selection or relisted the rows around it. Naming a team counts on
+    // its own: under a typed filter the team's row may already be selected
+    // and its rows already listed, yet scrolled off screen. Any other pick
+    // moves nothing.
     if view.team != team_before || view.team_category != category_before {
         let listed_before =
             selection::list(session.file(), &team_before, &view.filter, category_before);
         let listed_after =
             selection::list(session.file(), &view.team, &view.filter, view.team_category);
+        let team_picked = view.team != team_before && matches!(view.team, TeamChoice::Team(_));
         if view.selected.is_some()
-            && (view.selected != selected_before || listed_before != listed_after)
+            && (team_picked || view.selected != selected_before || listed_before != listed_after)
         {
             view.reveal_selected = Some(reveal_for(view.selected));
         }
