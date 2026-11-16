@@ -675,7 +675,7 @@ mod tests {
 
     // Opens write `recent_files` into the settings with each save's path
     // and version, the last opened first, and the editor started again from
-    // the same settings lists them in the File menu's recents in that order.
+    // the same settings lists them in the welcome panel's recents in that order.
     // SE-GUI-90
     #[test]
     fn the_recent_saves_survive_a_restart_through_the_settings() {

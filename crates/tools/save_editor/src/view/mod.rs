@@ -718,10 +718,10 @@ impl SaveView {
         self.welcome_discovered = None;
     }
 
-    /// Close save (the File menu's entry and Ctrl+W; a Discard answering the
-    /// window's close takes the same drop): the session, its floating panel
-    /// and the Comparator dropped on top of `drop_save`, which drops the
-    /// welcome panel's look too so the panel rescans.
+    /// Closes the open save (File > Close save, Ctrl+W, and Discard on
+    /// the window's close prompt): clears the session, any open floating
+    /// panel and the Comparator, then resets the save's view state
+    /// (`drop_save`).
     pub(crate) fn close_save(&mut self) {
         self.session = None;
         self.panel = None;
