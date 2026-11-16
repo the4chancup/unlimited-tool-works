@@ -3206,6 +3206,14 @@ briefs, review loops, gates and mutation runs as for any step.
   onto a sentence it does not support), corrected by the lead. For the full pass: one
   crate per brief, the trial's brief as the model, plus "a pointer or citation moves only
   with the sentence it documents"; the lead reads each edit against the code
+- [ ] after 0.0.2 (the maintainer, 2026-11-16): a Snap audit of stale comments, beside the
+  citation audit: per function, its doc and inline comments, its body and the same file's
+  functions it calls; Snap answers whether a comment states something the code does not do.
+  Measure first: the comments the review rounds accepted as stale (`.tmp/duck_rulings.md`,
+  reach (d)), each at the commit its reviewer read, against the same comment after its fix;
+  build the recipe only if Snap separates them about as well as it does citations (AUC 0.995).
+  It shares the Snap client (keys, cache, request) with `citation_audit.py`. It cannot see a
+  comment wrong about another file (a doc listing its callers).
 - [ ] after 0.0.2 (the maintainer, 2026-11-12: "it can wait"): the drafts draw from a palette as the app does (the maintainer,
   2026-11-12: "The draft should ideally use a palette like the app does"): every colour
   that follows the theme is a variable of the host page named as `studio_core`'s
