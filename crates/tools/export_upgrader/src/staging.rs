@@ -246,22 +246,30 @@ mod tests {
             .unwrap()
     }
 
+    // The lock is dropped by the step itself after its first refusal, not by a
+    // thread after a delay: a delayed release raced the 1.9 s retry window and
+    // lost it on a loaded machine.
     #[cfg(windows)]
     #[test]
-    fn finish_staging_retries_the_locked_folder_until_the_lock_clears() {
+    fn a_locked_rename_is_retried_until_the_lock_clears() {
         let root = scratch("staging_locked_once");
         fs::create_dir_all(root.join("staging")).unwrap();
         let held = root.join("staging/held.txt");
         fs::write(&held, b"held").unwrap();
-        let lock = held_without_delete(&held);
-        let dropped = std::thread::spawn(move || {
-            std::thread::sleep(std::time::Duration::from_millis(300));
-            drop(lock);
-        });
+        let mut lock = Some(held_without_delete(&held));
+        let mut attempts = 0;
 
-        finish_staging(&root.join("staging"), &root.join("output"), true).unwrap();
+        retry_while_locked(|| {
+            attempts += 1;
+            let renamed = fs::rename(root.join("staging"), root.join("output"));
+            if renamed.is_err() {
+                drop(lock.take());
+            }
+            renamed
+        })
+        .unwrap();
+        assert_eq!(attempts, 2, "refused while locked, then renamed");
         assert_eq!(fs::read(root.join("output/held.txt")).unwrap(), b"held");
-        dropped.join().unwrap();
     }
 
     #[cfg(windows)]

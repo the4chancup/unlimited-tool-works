@@ -18362,3 +18362,10 @@ Why: with several saves found and ten recent ones, a 960 × 600 window cut off t
 entries, where the welcome panel already scrolls. The middle scrolls, not the whole menu, because
 the commands used on every save would otherwise scroll out of reach.
 Plan: plans/save_editor.md, the File menu's paragraph and SE-GUI-26.
+
+## 2026-11-16 — studio — the crash monitor gets 10 s to come up, not 2 s
+Decision: the window waits up to 10 s for its crash monitor to accept the socket.
+Why: 10 s, not 2 s, because on a machine loaded with builds (or a game) the monitor, a second
+start of the whole binary, took longer: that session then ran with no crash dump (the crashed
+run's log in the gates showed it). The longer bound costs only when the monitor is that slow.
+Plan: no plan edit needed: no plan or spec section states the bound.
