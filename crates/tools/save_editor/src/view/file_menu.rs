@@ -30,7 +30,7 @@ pub(crate) type Discover = Box<dyn Fn(PesVersion) -> Vec<SavefileCandidate>>;
 pub(crate) type OpenDialog = Box<dyn FnMut(Option<&Path>) -> Option<PathBuf>>;
 
 /// `Open…`'s tooltip.
-const OPEN_TIP: &str = "Pick a save file, starting in the folder of the save opened last (or else of the \
+const OPEN_TIP: &str = "Pick a save file, starting in the folder of the last opened save (or else of the \
      newest save found)";
 
 /// Discovery under the shell's Documents folder.
@@ -464,7 +464,7 @@ fn picker_folder(
         .map(Path::to_path_buf)
 }
 
-/// `Open…`'s request, the picker the Open shortcuts fall back to too:
+/// The Open shortcuts' picker request when no look is kept:
 /// `picker_folder`'s rule.
 fn picker_request(
     last_folder: Option<&Path>,

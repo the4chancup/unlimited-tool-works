@@ -10,7 +10,7 @@ row), so the drafts draw text in exactly the files the app does, never in a syst
 | File | What | Source | SHA-256 | Licence |
 |---|---|---|---|---|
 | `RobotoFlex-Regular.ttf` | the body font, at weight 400 | Roboto Flex's variable file as Google Fonts ships it (`github.com/google/fonts`, `ofl/robotoflex/RobotoFlex[GRAD,XOPQ,XTRA,YOPQ,YTAS,YTDE,YTFI,YTLC,YTUC,opsz,slnt,wdth,wght].ttf`, SHA-256 `9b523f7d…`), cut by fontTools' instancer at optical size 12.5, every other axis at its default | `219b3036…` | SIL OFL 1.1 (below) |
-| `RobotoFlex-Semibold.ttf` | the pitch's formation name alone, the weight whose stroke matches the game's label as egui draws it (worklog 0.0.1x) | the same, at weight 600 | `2cbd1950…` | SIL OFL 1.1, as the regular weight's (below) |
+| `RobotoFlex-Semibold.ttf` | the pitch's formation name, the weight whose stroke matches the game's label as egui draws it (worklog 0.0.1x), and the status bar's notices, which it makes easier to see | the same, at weight 600 | `2cbd1950…` | SIL OFL 1.1, as the regular weight's (below) |
 | `Hack-Regular.ttf` | monospace | egui 0.37's own copy (`epaint_default_fonts` 0.37.0) | `15f55cc0…` | below (egui's `Hack-Regular.txt`) |
 | `egui-icons.ttf` | egui's own icons (scale 0.90) | the same crate | `12280655…` | below (egui's `egui-icons.txt`) |
 | `NotoEmoji-Regular.ttf` | egui's monochrome emoji (scale 0.81), after the suite's fonts, for what a member types (`☆`, `♂`) | the same crate, its `monochrome_emoji_fonts` feature | `415dc629…` | SIL OFL 1.1 (below) |

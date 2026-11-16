@@ -753,7 +753,7 @@ catches because the gates run through it. The list: the mutation runs' `mutants.
 `mutants_diff.py` and `extra_mutants.py`; the test runner `run_tests.py` and `test_runner.py`;
 `remote_gates.py`; `scripts/census/` and `scripts/library_parity/`; the release build's
 `release.py`, `build_remapped.py` and `make_candidate.py`. Their review is SWE-2 rounds at
-least (the same loop, until a round accepts fewer than five), Astra when a change reshapes how
+least (the same loop, until the round rule below ends it), Astra when a change reshapes how
 a run measures; the first review of each covers the whole script, later ones the changed
 functions and their callers. Unreviewed, `mutants_diff.py` once deleted the previous run's
 results whenever two runs followed each other. A test a
@@ -763,7 +763,8 @@ each with its test, applied and undone one at a time).
 the loop of Gemini 4 Carbon on High thinking (`duck.py --reviewer carbon`, model
 `gemini-4-carbon-high`: paid, much cheaper than Astra, better than SWE-2 and not as good as
 Astra); then Astra's loop. Each loops
-by the same rule (another round only when five or more were accepted). Every Carbon or Astra
+by the round rule (below: another round only when five or more were accepted, one of them a
+real input's defect). Every Carbon or Astra
 round sits between two SWE-2 subloops, each looping by that rule: one before it, so the dearer
 reviewer sees code SWE-2 has nothing left to say about, and one over its fixes (which is the
 next round's "before"). A paid loop never reruns inside another: an Astra round's fixes get
@@ -779,7 +780,7 @@ surface that writes what the game or a member's save reads (a CPK's content, a c
 model or texture, the savefile codec and its patch, an interchange file, the Export
 upgrader's output, the updater's swap): the three loops above. *Tier 2*, other shipped code
 (a check and its messages, a view, the command line's surface): SWE-2's
-loop, then one round of one paid reviewer, which runs again only by the five-accepted rule.
+loop, then one round of one paid reviewer, which runs again only by the round rule.
 *Tier 3*, scripts, CI, documents and drafts: one SWE-2 round, a second only by that rule (a
 vital script, (e) above, keeps its own: SWE-2 rounds at least, Astra when a change reshapes
 how a run measures). A step's worklog line names its tier when it lands. A loop that waits
@@ -812,9 +813,14 @@ report: a round with a seven-concern cap once had its reasoning trace set out to
 issues that a parent will likely accept, ideally five or more", so whatever it judged unlikely to
 be accepted went unreported, and a later round need not find it again. The ranking by
 reachability (below) is what keeps impossible edge cases at the bottom of the list. So a critique of one surface runs another round only when at
-least five of the last round's concerns were accepted (the signal was real); the next round gets
-the rework diff and the prior rulings so it does not repeat them, and the loop stops at a round
-under five accepted. There is no round ceiling: one loop's first three rounds each returned
+least five of the last round's concerns were accepted (the signal was real) and at least one of
+them changes what a real input produces (reach (a) below); the next round gets the rework diff
+and the prior rulings so it does not repeat them. This is **the round rule**: the loop stops at
+a round under five accepted, or at one whose accepted concerns are all test gaps,
+contradictions and wrong facts. Those are still fixed in the rework, but they do not buy a
+round alone, because a thorough reviewer always finds five of them: the menu bars' fifth and
+sixth Carbon rounds accepted six and nine, none of them a real input's defect, and each ran
+another round. There is no round ceiling: one loop's first three rounds each returned
 seven, all accepted, most of them parity and memory defects rather than padding, so a ceiling
 of three stopped the loop where its signal was strongest. The stop therefore rests on the lead's
 rulings: a concern is rejected, with its one-line reason, when its input cannot reach the code,
@@ -833,7 +839,8 @@ distinguishes no behavior a real export reaches. Weighing was not enough: a lead
 paragraph and the `duck` skill's "technically correct is not enough" both loaded once accepted
 14 of 17, 10 of 11 and 11 of 12 concerns on whether each was true, each fix's clause the next
 round's concern, and two rounds added a rule no real export reaches. So every acceptance names
-its reach (a real export's outcome, a contradiction, an unobservable THEN, a wrong fact), and
+its reach ((a) a real input's outcome, (b) a contradiction, (c) an unobservable THEN, (d) a
+wrong fact), and
 one that names none is rejected; a nit fixed in passing counts toward no round.
 Past the fifth round on one surface the lead reports the counts and the
 classes found to the user and continues unless told otherwise: a check-in, not a stop. A review stopped for quota is queued in the lead's handover. Each
@@ -845,8 +852,8 @@ count *returned* is not a stop signal: a reviewer told to keep the list short wi
 (a round once returned five with its reasoning trace saying it aimed for "3-5 strong
 concerns" because the brief said "do not pad"). So the brief
 never says "do not pad" or names any number of concerns, as a cap or a target; it says to report
-every concern found, ranked by reachability, and that a round with fewer than five accepted ends
-the loop, so a verified concern is never withheld to keep the list short; padding is caught by
+every concern found, ranked by reachability, and that the round rule decides whether the
+loop goes on, so a verified concern is never withheld to keep the list short; padding is caught by
 the accept rate, which is what that rule is for. At converge the surface is one crate (or one
 coupled pair), never the phase. The user can request a critique at any time with `/duck`, and
 the lead runs the `duck` skill itself for every scheduled critique. The accounts' order of

@@ -43,7 +43,7 @@ implementation is measured against.
 
 | 4ccEditor | Fate |
 |-----------|------|
-| Load 15/16/17/18/19/20/21 EDIT file (7 menu items) | One **Open savefile** action; auto-detect the version by master keys / container shape. The loaded file's version governs its codec and editing widgets; never reinterpret the open file, whatever the sidebar's selector holds (the editor reads it for nothing). The File menu lists the saves `pes_savefile`'s discovery finds under `Documents\KONAMI` for every version (labelled by version alone: the account folder's number tells a member nothing, and the entry's tooltip holds the path) as one-click entries, the first entry of each version with its 4ccEditor shortcut (Ctrl+5 to Ctrl+9 for PES 15 to 19, Ctrl+0 for 20, Ctrl+1 for 21), which opens that save from anywhere in the editor, or the file picker when discovery finds none for the version; Ctrl+O is the file picker's, with the saves opened or saved earlier (remembered between runs), above the ordinary file picker, which opens where "The toolbar" says (the folder of the last save opened, else the newest discovered save's); see "Savefile discovery" in the Savefile plan |
+| Load 15/16/17/18/19/20/21 EDIT file (7 menu items) | One **Open savefile** action; auto-detect the version by master keys / container shape. The loaded file's version governs its codec and editing widgets; never reinterpret the open file, whatever the sidebar's selector holds (the editor reads it for nothing). The File menu (its order, its entries' labels and when its shortcuts act: "The toolbar") lists the saves `pes_savefile`'s discovery finds under `Documents\KONAMI` for every version as one-click entries, the first of each version with its 4ccEditor shortcut (Ctrl+5 to Ctrl+9 for PES 15 to 19, Ctrl+0 for 20, Ctrl+1 for 21), and the saves opened or saved earlier, remembered between runs; Ctrl+O is the file picker's; see "Savefile discovery" in the Savefile plan |
 | Save EDIT file (encrypted; always asks for a path; the first save after a load keeps the file it replaces as `<file>.BACKUP`) | Kept; plus **Save as…**, and the file each save replaces kept as `.bak` (one level), at every save rather than the first after a load only |
 | Import Texport file (per-version submenu) | Kept, auto-detected version; plus **Texport export** (new: PES itself can import the result; see [Savefile plan](pes_savefile/README.md)) |
 
@@ -1433,6 +1433,13 @@ Win32 original hurt the most):
   width (`spec/core/gui.md` "Scaling with the width") rather than rearranging it, so the grid
   has no narrow fallback. A shorter window scrolls the team view to reach its last row rather
   than squeezing it in.
+
+  After 0.0.2, a remembered view setting picks the grid's **arrangement**: this one, or
+  4ccEditor's, which some members know better (the formation settings below the pitch or
+  left of it, drafted from 4ccEditor's own screen). Each arrangement is a fixed grid with its
+  own draft and its own layout tests. The panels are never moved or resized freely: a free
+  arrangement leaves no layout to check against a draft, and each panel, drawn today for one
+  width, would have to reflow at any width, the pitch included.
 - **The pitch looks like the selected game's own formation screen** (Edit, Teams, a team,
   Game Plan, Team Sheet/Edit Position), each starter shown as the game shows him, by his
   portrait, read from the selected game's `download/` CPKs when that folder is found and holds
@@ -2602,8 +2609,8 @@ What this editor adds on top of the lib:
 
   The button is never greyed out: before a list is held it copies the line the panel shows
   (`Checking <team>…`, or `No team is open.`), and after a failed check its message as the
-  list words it. A notice `Copied the Live AATF list of <id> <name>.` says the copy was done
-  (`Copied the Live AATF list.` with no team open).
+  list words it. A notice `Live AATF list of <id> <name> copied.` says the copy was done
+  (`Live AATF list copied.` with no team open).
 
   **Its own window**: the pop-out icon at the header's right end (the icon font's arrow out of
   a square, U+E5DE, Phosphor's arrow-square-out; tooltip
@@ -3117,7 +3124,8 @@ SE-GUI-41  GIVEN the PES 17 save open under the official ruleset
                 plain text, its first line the ruleset, the range and the counts, then the
                 team's id and name after a `>`, its `Team-wide issues` line first, then each
                 player's line (or `All clean`), indented two spaces, and each row's severity,
-                rule and sentence four; WHEN the first
+                rule and sentence four, and the notice reads `Results of N teams copied.`;
+                WHEN the first
                 end is moved past the last THEN the last end follows it, and the last end's
                 list starts at the first end's team; WHEN an end changes THEN the list is
                 checked again only once the ends have rested 500 ms, dimmed and marked
@@ -3271,7 +3279,7 @@ SE-GUI-63  GIVEN the PES 17 save open on team 734 under the official rules, Live
                 cards used` first), their rule name in the normal text colour; GIVEN no
                 check returned yet THEN the button is not greyed out and the copied text is
                 `Checking /lit/…`, and with All teams picked and nothing selected `No team is
-                open.`, the notice `Copied the Live AATF list.`; GIVEN a ruleset whose check fails on team 743 THEN the
+                open.`, the notice `Live AATF list copied.`; GIVEN a ruleset whose check fails on team 743 THEN the
                 list holds the failure line and no `All clean`
 SE-GUI-64  GIVEN the save open on a team, no drag held
            WHEN the pointer is over a player row's name
@@ -3355,8 +3363,12 @@ SE-GUI-81  GIVEN a team's Tactics page, a starter's name wider than his badge
                 its hover; WHEN Portraits is unticked THEN the pitch draws no portrait,
                 each badge and name stands where it stood, the captain's mark stands on
                 his badge's top edge at its left end and a Live AATF cross stands on its
-                badge, and no undo entry or unsaved mark follows; GIVEN the editor
-                restarted THEN Portraits is still unticked
+                badge, and no undo entry or unsaved mark follows; WHEN a starter is
+                selected THEN the corner brackets frame his badge, their upright arms its
+                height; GIVEN two starters stacked so the lower one's portrait would
+                cover the upper one's badge WHEN that badge is clicked THEN the upper
+                starter is selected;
+                GIVEN the editor restarted THEN Portraits is still unticked
 SE-GUI-82  GIVEN the save open on team 718's player 05
            WHEN the detail is drawn
            THEN its title row starts at the pane's left with a three-way toggle, Stats on,
@@ -3912,7 +3924,7 @@ SE-GUI-40  GIVEN the PES 21 save open on a player whose registered position is n
                 outlined) as one undoable edit, his ratings unchanged; WHEN Undo is invoked
                 THEN the earlier position is back
 SE-GUI-31  GIVEN the common settings' FPC hide IDs set to 60 (boots) and 12 (gloves), "Edit
-                aesthetics anyway" switched on, and the player's Appearance section open
+                aesthetics anyway" switched on, and the player's Appearance screen open
            WHEN Hide default body is used on a player whose boots and gloves IDs are 0
            THEN his record holds boots 60 and gloves 12 and Appearance reads "The default body is currently hidden";
                 WHEN Show default body is used THEN both are 0 again; GIVEN a player whose boots ID is

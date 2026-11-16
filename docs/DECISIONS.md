@@ -18297,3 +18297,59 @@ Why: the maintainer, after looking at the draft: the indent sets the titles off 
 Appearance screen, and the two screens should agree.
 Plan: plans/save_editor.md "The player view" (the Appearance groups' paragraph, Physique,
 Presentation) and "Tactics editor" (the one grid's gaps).
+
+## 2026-11-16 — pes_savefile, save_editor — the presentation table's star key is `star_rating`
+Decision: in `[appearance.presentation]`, the export's `settings.toml` and the Team TOML's
+`[players.NN.appearance.presentation]` alike, the star key is `star_rating`, matching the
+Save editor's `Star rating` label. An import still reads a 0.0.1 file's `stats.star` into
+the new place, as it read it before.
+Why: the maintainer, 2026-11-16: "Star rating" is the name managers know, and the table is
+new in 0.0.2, so no released file carries `star` there; renamed after the release, it would
+need a migration.
+Plan: plans/pes_savefile/operations.md "Star rating and playing attitude move into
+`[players.NN.appearance]`"; plans/aesthetics_export/settings_toml.md, the presentation
+table and the FPC star paragraph.
+
+## 2026-11-16 — pes_savefile — the Team TOML no longer reads star and playing attitude beside the stats
+Decision: an import reads star rating and playing attitude only from
+`[players.NN.appearance.presentation]` (`star_rating`, `playing_attitude`). A file that
+still holds `star` or `playing_attitude` under `stats`, as every Team TOML written before
+0.0.2 does, is refused as any file with an unknown key is; the member exports the team
+again or deletes the two lines. This replaces the old-place reading of the 2026-11-13 entry
+"Copy stats and the import's gameplay section leave star and playing attitude to the
+target" and of this day's `star_rating` entry.
+Why: the maintainer, 2026-11-16: until 1.0.0 the formats change with no compatibility for
+old files, and the two values are no longer stats.
+Plan: plans/pes_savefile/operations.md "Star rating and playing attitude move into
+`[players.NN.appearance]`".
+
+## 2026-11-16 — review rounds — another round needs a real input's defect among the five accepted
+Decision: a review loop runs another round only when the last round accepted five or more
+concerns and at least one of them is reach (a), a real input whose outcome changes. A round
+whose accepted concerns are all test gaps, contradictions and wrong facts is reworked, and the
+loop ends there.
+Why: a thorough reviewer always finds five such concerns, so the count alone never ended the
+menu bars' Carbon loop: its fifth and sixth rounds accepted six and nine, none of them a
+real input's defect.
+Plan: RUNBOOK.md "Review rounds", the round rule.
+
+## 2026-11-16 — save_editor — the Tactics editor gets a choice of fixed arrangements, not freely moved panels
+Decision: after 0.0.2, a remembered view setting chooses between the Tactics editor's grid
+and 4ccEditor's arrangement of the same panels, each a fixed grid with its own draft. A mode
+in which the member drags, resizes and snaps the panels is not built.
+Why: some members prefer 4ccEditor's layout, and an arrangement is one more placement of
+panels that are already drawn apart. Free placement needs snapping, overlap and recovery
+code, panels that reflow at any width (the pitch included), and leaves no layout to check
+against a draft.
+Plan: plans/save_editor.md, the Tactics editor's "one grid" paragraph ("arrangement").
+
+## 2026-11-16 — save_editor — every field the Save editor writes on PES 2019 is checked in game before 0.0.2
+Decision: before 0.0.2's cut, each field the Save editor writes on a PES 2019 save is edited,
+saved and read back in PES 2019's Edit mode. That covers the player, the team, the tactics,
+Copy/swap stats and the Team TOML and `.ted` imports, each with its values stepped apart. It
+also covers PES 2019's stat names, a Texport imported by the game, and the team name a
+team-file import writes.
+Why: 0.0.2's readme names PES 2019 as supported so that VGL 27's managers can use the
+editor, and so far only an unchanged import and a name edit have been seen in game there.
+Plan: plans/core/development_plan.md "The /vg/ League 27 (VGL): preview 0.0.2"; worklog
+0.0.2-pes19.

@@ -37,7 +37,7 @@ table named as the Save editor's group is:
 
 ```toml
 [appearance.presentation]
-star = 0                        # 0 to 7 (PES 19 and later): how likely the player is to show up as the team's featured player in the pre-match screen
+star_rating = 0                 # 0 to 7 (PES 19 and later): how likely the player is to show up as the team's featured player in the pre-match screen
 playing_attitude = 0            # 0 to 3 (PES 20 and later): only affects cutscenes
 ```
 
@@ -58,9 +58,9 @@ side, so the export could not set them and the Save editor left them outside the
 is where a member looks at a kit's colours while picking one. A player with FPC on and no
 kit-dependent textures (no `kitN` token in his face folder's model and texture paths,
 `spec/model_format.md` "Kit-dependent assets") shows none of the kit there, so the compiler
-writes his star as 0 whatever his `star` key says, so a teammate whose kit shows is more
-likely to stand there. A minus sign keeps the value for such a player: `star = -7` writes 7. The key's
-comment says so, and says the minus is only for special occasions; until 0.1.0 the key takes
+writes his star rating as 0 whatever his `star_rating` key says, so a teammate whose kit
+shows is more likely to stand there. A minus sign keeps the value for such a player:
+`star_rating = -7` writes 7. The key's comment says so, and says the minus is only for special occasions; until 0.1.0 the key takes
 0 to 7 and the comment does not mention it.
 
 **Edits made in PES come back to the export.** PES is the previewer for what only the game

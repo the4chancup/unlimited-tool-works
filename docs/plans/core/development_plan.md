@@ -227,6 +227,9 @@ other steps are built.
 The `<id>.copy` link (8.36c3) waits until after the proof of concept, since no player of the
 example teams uses a copy id. The Save editor's PES 2019 writes are checked in game before the
 proof of concept goes out, as the organizer's order below runs the official save through them.
+0.0.2's readme also names PES 2019 as a version the Save editor supports, for VGL 27's
+managers, so before the cut every field it writes there is read back in PES 2019's Edit mode,
+not only an unchanged import and a name.
 0.0.1 alone could not stand in for the proof of concept: its compile on PES 2019 shows the
 save's looks rather than the compiled ones, failing on exactly what the league needs.
 
