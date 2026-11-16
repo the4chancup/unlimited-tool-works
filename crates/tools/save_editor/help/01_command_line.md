@@ -92,8 +92,8 @@ and leaves the game's own teams out:
 - a player who is in one save alone is `player_only_in`.
 
 `--aesthetics` keeps only the look's fields (appearance id, boots, gloves, base copy, physique,
-strip, face), and `--gameplay` keeps everything else (names, basics, abilities, positions,
-skills, motion).
+strip, face, motions, star rating, playing attitude), and `--gameplay` keeps everything else
+(names, basics, abilities, positions, skills).
 
 With `--json` the report is instead one JSON document on stdout, for scripts to read. It lists
 the players with their changed fields, then the players only one save holds. Nothing else is

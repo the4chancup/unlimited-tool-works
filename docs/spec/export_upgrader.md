@@ -36,7 +36,7 @@ to moving, flattening, or removing files describe that draft, not destructive ed
    maintainer's old exports hold 670 of them, which step 10 would otherwise list one by one.
 
    A Fox model folder's `*.fpk.xml` (`face.fpk.xml`, `boots.fpk.xml`, `glove.fpk.xml`, about
-   5,400 in the maintainer's export folders) is left out the same way, in both modes. It is the
+   5,400 in the maintainer's export folders) is left out the same way. It is the
    source-side list of an FPK's members, which the compiler writes from the folder's own files,
    so carried it would only make a `file_not_used` Warning per model at every compile, while Red
    packed it into the CPK as a file no game reads (the parity tracer's `boots.fpk.xml` rows,
@@ -122,7 +122,7 @@ to moving, flattening, or removing files describe that draft, not destructive ed
    A Fox hair's skeleton is renamed the same way. The old format names it after its game slot,
    `fcl_hair_sim.skl`, while the Studio format pairs a skeleton with its model by the model's
    stem ("SKL pairing" in `spec/aesthetics_export/player_folders.md`), so beside an
-   `fcl_hair.fmdl` it becomes `fcl_hair.skl` (letter case aside, in both modes). Kept as named,
+   `fcl_hair.fmdl` it becomes `fcl_hair.skl` (letter case aside). Kept as named,
    the compile reports it `file_not_used` and injects the template skeleton in its place, and 15
    of the 84 `fcl_hair_sim.skl` beside an FMDL on the maintainer's machine are custom ones the
    hair would lose. A folder holding `fcl_hair.skl` already keeps both as named, the compile's
@@ -798,7 +798,7 @@ to moving, flattening, or removing files describe that draft, not destructive ed
    but for those two spellings.
 
    **The goalkeeper token.** The goalkeeper token **`u0???g`** and a digit (`u0XXXg1.dds` in a
-   `Common/`, which a keeper's model names) becomes `gk_kit` and that digit, in both modes, in
+   `Common/`, which a keeper's model names) becomes `gk_kit` and that digit, in
    file and folder names and in `.mtl`/`face.xml` paths and FMDL path tables alike (`u0714g1` →
    `gk_kit1`). `u0???g0` → `gk_kitN` in those paths but → `gk_kitF` in a file or folder name, as
    `u0???p0` does. Its three characters are any, as the `p` token's, so a model and a file that
@@ -1319,11 +1319,11 @@ three, and a member whose long run ended clean should not lose it to a lock that
 itself.
 
 `--convert-to-gltf` is step 13's, not built (Phase 7): it is an unknown argument (exit 2). The
-view over both commands is not built either (Phase 8, `plans/export_upgrader.md` "GUI").
+view over the command is not built either (Phase 8, `plans/export_upgrader.md` "GUI").
 
 ## GUI
 
-Not built (Phase 8): the view over both commands is `plans/export_upgrader.md` "GUI".
+Not built (Phase 8): the view over the command is `plans/export_upgrader.md` "GUI".
 
 ## Message catalog
 

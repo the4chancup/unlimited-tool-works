@@ -258,10 +258,11 @@ pub enum PlayerDiff {
 }
 
 impl PlayerDiff {
-    /// Aesthetics is the appearance block (the scripts' slice above): its fields (the
-    /// appearance id, the four appearance edit flags, boots/gloves/base-copy IDs, physique,
-    /// strip), every `Face` and `FaceRun` row. Everything else (motion and the other edit
-    /// flags included) is gameplay.
+    /// Aesthetics is a field the appearance block (the scripts' slice above) or a
+    /// `settings.toml` key holds: the block's fields (the appearance id, the four appearance
+    /// edit flags, boots/gloves/base-copy IDs, physique, strip), every key's source field
+    /// (the motions, the star rating and playing attitude included), every `Face` and
+    /// `FaceRun` row. Everything else (the other edit flags included) is gameplay.
     pub fn scope(&self) -> DiffScope;
 }
 pub enum DiffScope { Gameplay, Aesthetics }
@@ -319,8 +320,8 @@ Parity:
 - the appearance block is checked against the transplant script's slice rule on every player of
   every fixture (target record after `copy_appearance` + `write_player` equals the record with
   bytes 4..68 replaced from the donor record, the id kept), and each field is aesthetics exactly
-  when that copy moves it, the appearance id aside (aesthetics, though the copy keeps the
-  target's own);
+  when that copy moves it or a `settings.toml` key sets it, the appearance id aside (aesthetics,
+  though the copy keeps the target's own);
 - the fingerprint and each Midcupping field against the script's bit reads, transcribed as
   literal offsets in the golden test, over every fixture player;
 - the comparator against itself (a player compared with its own copy has no rows, a twin
@@ -589,7 +590,7 @@ pub struct SlidersSection { /* the five sliders, `Option<u8>` each, names as in 
 pub struct InstructionsSection { pub attack: [InstructionEntry; 2], pub defence: [InstructionEntry; 2] }
 pub struct InstructionEntry { pub instruction: Instruction, pub player: u8 }
 /// One `[players.NN]`.
-pub struct PlayerSection { pub name: Option<String>, pub shirt_name: Option<String>, pub number: Option<u16>,
+pub struct PlayerSection { pub name: Option<String>, pub shirt_name: Option<String>, pub shirt_number: Option<u16>,
     pub nationality: Option<u16>, pub age: Option<u8>, pub height: Option<u8>, pub weight: Option<u8>,
     pub boots_id: Option<u32>, pub gloves_id: Option<u32>,
     pub base_copy_id: Option<u32>,

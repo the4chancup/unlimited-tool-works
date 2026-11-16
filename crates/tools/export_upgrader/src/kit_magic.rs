@@ -6,7 +6,7 @@
 //! textures are a kit set read with the outfielders' kit number
 //! (`spec/model_format.md`
 //! "Kit-dependent assets"). Matched in the letter case written, anywhere
-//! and every occurrence, in both modes. In a path segment
+//! and every occurrence. In a path segment
 //! holding a `u0???p` or `u0???g` token, a Studio kit token already there
 //! (`kit1_u0827p1.dds`, which some VGL26 exports write) gets its `kit`
 //! written `kit_tex` so the respelled token stays the only one; a legacy
