@@ -1228,8 +1228,12 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     edited-player flag gates a name (0.0.2-se19; `spec/pes_savefile/model.md` "What the
     player's edit flags gate in game"); the formation looks (2026-11-13); the compiled looks
     of the proof of concept's rehearsal. Left:
-    - a census first: every field the Save editor writes on PES 2019 (player, team, tactics,
-      Copy/swap stats, the imports), against what the checks above already saw in game
+    - [x] a census first, done 2026-11-16 (SWE-2, `.tmp/0_0_2/pes19/census.md`): 107 rows,
+      about 160 stored fields, nearly none seen in game on PES 2019. PES 2019's player
+      record (188 bytes) is laid out apart from PES 2021's (312), so almost every player
+      field's offset differs; the tactics record is PES 2021's, its instruction values
+      PES 2018's table. Nothing writes man marking but Copy preset and the Team TOML, and
+      PES 2019's kit slots, measured in the team record, have no schema rows
     - each field not yet seen, on a copy of the VGL 27 save: an edit per field, values
       stepped apart, saved by the editor and read off PES 2019's Edit mode (pad and OBS, no
       focus; no cargo while PES runs), every other team intact (Invitational 1 above all,
