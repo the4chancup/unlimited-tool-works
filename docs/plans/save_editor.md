@@ -2240,7 +2240,7 @@ aesthetics** but through the switch:
   The setting is off by default because the cup the suite serves first (DBC7) keeps its looks
   in the save. Its row in the settings menu carries the tooltip "On when the cup's looks are
   compiled from exports: the save's aesthetics are then read-only, behind Edit aesthetics
-  anyway in the Appearance section."
+  anyway on the Appearance screen."
 
 Gameplay data (stats, skills, positions), team data and tactics are unaffected: they were never
 the compiler's, and the savefile builder edits them as before.
@@ -3370,7 +3370,9 @@ SE-GUI-81  GIVEN a team's Tactics page, a starter's name wider than his badge
                 selected THEN the corner brackets frame his badge, their upright arms its
                 height; GIVEN two starters stacked so the lower one's portrait would
                 cover the upper one's badge WHEN that badge is clicked THEN the upper
-                starter is selected;
+                starter is selected; WHEN a dragged starter or a bench row is held over
+                that badge THEN the drop's brackets frame the badge, and WHEN released
+                there THEN it swaps with the upper starter;
                 GIVEN the editor restarted THEN Portraits is still unticked
 SE-GUI-82  GIVEN the save open on team 718's player 05
            WHEN the detail is drawn
