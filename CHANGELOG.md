@@ -47,6 +47,7 @@
 
 ### Useful
 
+- **All tools**: an open dropdown list shows half as many items again before it scrolls.
 - **Save editor**: the team dropdown above the list reads All teams in place of ALL, and
   radio buttons at the bottom of the open dropdown narrow it and the list to the 4cc, VGL or
   Invitational teams.
