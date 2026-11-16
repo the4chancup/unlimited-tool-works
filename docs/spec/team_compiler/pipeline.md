@@ -1282,7 +1282,9 @@ not a serial scheduling requirement.
   stands:
   - in a file or folder name below a player, Boots or Gloves folder or in `Common/`;
   - or in a path a model, `.mtl` or `face.xml` there names to a file of the export, its
-    folder's own or the team's Common (checked by the deep pass).
+    folder's own or the team's Common, or, in a player, Boots or Gloves FMDL, to a game
+    folder the upgrader rewrites to `./`: any but the game's kit texture folder and the
+    folders below its common folder (checked by the deep pass).
 
   Before, a file so named packed as an ordinary texture and the exes' `u0???p0` swap still
   served it, so files spelled the old way lived on in exports nobody upgraded. We refuse rather

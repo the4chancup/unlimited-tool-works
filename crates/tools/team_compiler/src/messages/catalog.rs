@@ -745,8 +745,8 @@ pub(super) const CATALOG: &[(&str, CatalogSeverity, &str, &str)] = &[
     (
         "kit_token_old",
         CatalogSeverity::Error,
-        r#"The name of a file or folder inside a player, Boots or Gloves folder or in `Common/`, or a path that a model, `.mtl` or `face.xml` there names, holds the old kit token: `u0`, three letters or digits, then `p` or `g` and a digit, with `u0`, `p` and `g` in lowercase as shown (`kit6_u0827p0.dds`, `Common/u0XXXp1/`, `u0714g1`). A folder so named is reported once, not each file in it."#,
-        r#"The folder holding the name or the file naming the path is left out (in `Common/`, only that file or folder is left out). Spell the token `kit1` to `kit9`, `kitN` or `kitF` (`gk_kit` and the same ending for a keeper's); `export-upgrader upgrade` respells it in an old export (a Midcup export, for a model on its own)."#,
+        r#"The name of a file or folder inside a player, Boots or Gloves folder or in `Common/` holds the old kit token: `u0`, three letters or digits, then `p` or `g` and a digit, with `u0`, `p` and `g` in lowercase as shown (`kit6_u0827p0.dds`, `Common/u0XXXp1/`, `u0714g1`). So does a path to a file of the export that a model or `.mtl` there, or a player's own `face.xml`, names. In a player, Boots or Gloves model, a path into the game's folders counts too, except the game's kit texture folder and the folders below its common folder, which use the game's own names. A folder so named is reported once, not each file in it."#,
+        r#"The player, Boots or Gloves folder is left out, whichever of its files holds the name or names the path. In `Common/` only that file or folder is left out, and the players linking it get `link_target_dropped`. Spell the token `kit1` to `kit9`, `kitN` or `kitF` (`gk_kit` and the same ending for a keeper's); `export-upgrader upgrade` respells it in an old export (a Midcup export, for a model on its own)."#,
     ),
     (
         "folder_pack_failed",
