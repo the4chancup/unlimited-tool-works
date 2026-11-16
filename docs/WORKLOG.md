@@ -1712,8 +1712,18 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         ("C-recents r3"): the scrolled File menu wraps its widest entry, an inserted
         `[save-editor]` writes its recent files above its header, four tests that pass on
         wrong code, SE-GUI-26 at a size that never overflows (lead, `b2f3ecc9`)
-      - [ ] the rework: A3, the settings save (SWE-2, `sk/recrw_a3`); B3, the Save editor
-        (SWE-2, `sk/recrw_b3`): running; then Carbon's round 4
+      - [x] the rework: A3, the settings save (SWE-2, merge `e5889d60`); B3, the Save editor
+        (SWE-2, merge `9a607575`)
+      - [x] Carbon's round 4, 2026-11-16 (at `9a607575`): 6 accepted, none of reach (a)
+        ("C-recents r4"), which ends the loop: four tests that pass on wrong code, two width
+        caps that cap nothing, two docstrings, the plan's 1366 × 768 window height (lead,
+        `5dadddeb`)
+      - [x] the rework C (SWE-2, merge `82a86c32`)
+      - [ ] the built window at 1280 × 691 with thirteen saves found and ten recent: the
+        File menu opens at its full height with no pointer move after the click. Headless,
+        the popup takes its height a frame behind its content and grows about 54 points a
+        frame for four frames; if the real window waits for input between those frames, the
+        menu opens short
   - [ ] 0.0.2-answers the maintainer's answers of 2026-11-16 that change the build (plans and
     DECISIONS edited that day):
     - [x] code, in two slices -> verify: each a test red first. SWE-2 (merge `498ef8e4`):
