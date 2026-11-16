@@ -10,21 +10,21 @@ is in `AGENTS.md` ("Working documents").
 ## Current status
 
 **Now: Release 0.0.2, the VGL preview** (`plans/core/development_plan.md` "The /vg/ League 27
-(VGL)"). The cut holds every open 0.0.2 step (DECISIONS 2026-11-11 "0.0.2 holds every open
-0.0.2 step"), worked in this order:
-1. Update now (0.0.2-upd, its slices below; the command line's notice, 0.0.2-cli, is in;
-   ST-UPD-04 passed on Windows and on Linux).
-   The TLS provider (0.0.2-tls) is settled: `ring` stays.
-2. The illegal formation check (0.0.2c) is in and reviewed, with the pitch held to the
-   movable range (0.0.2-range).
-3. The Save editor asks of 2026-11-03 are in: -clip, -undo, -inst, -drift, -statlbl, and
-   the cup-teams filter (0.0.2-cup), and the arrow keys on every whole-number box
-   (0.0.2-arrows).
-4. The measurements are closed: a compile against Red (0.0.2d: ours 6.2 s, Red 57 s),
-   `codegen-units` (0.0.2-cgu: not taken).
-5. The cut. The library checkpoints (0.0.2-chk) are in. Before it: the paid review rounds
-   (Carbon), the maintainer's looks (`maintainer/tasks.html`), the Save editor's PES 2019
-   writes checked in game (0.0.2-pes19).
+(VGL)"), cut within the day (DECISIONS 2026-11-16 "0.0.2 is cut without Select all similar,
+the Carbon rounds and the PES 2019 check"). After 0.0.2: 0.0.2-similar, every Carbon round a
+0.0.2 step still owes, 0.0.2-pes19 (and with it the readme's PES 2019 claim), and any mutation
+run (mutfast first). Most open steps below wait only for the maintainer's look
+(`maintainer/tasks.html`). What is left before the cut:
+1. In flight: the answers slice's built-window differences (SWE-2, `sk/anslook`), then the
+   title row's line in its rework.
+2. Code: 0.0.2-gaps' leftovers (the Ruleset editor's General checklists, the Tiers fields cut
+   at 40 points); 0.0.2-poc8, the VGL organizer's bundle and its readme; 0.0.2-taskbuild.
+3. The lead's looks: 0.0.2-text's grown labels, 0.0.2-compilername's sidebar and title,
+   0.0.2-mdocs' looks still to check before they become cards, 0.0.2-report's whole chain,
+   its drill and its built window; a Linux bundle for the Reset window card.
+4. In game: the answers' two teams naming one coach record (PES 2021).
+5. The cut: a pipeline without mutants on the last merge (0.0.2-determ's second clean run),
+   the changelog, the release build.
 
 **The PoC for VGL's organizer:** 0.0.2-poc.5 is built (`4cc-studio-temp/poc/target/dist`,
 archive SHA-256 `cac0447a…`, branch `vgl27` at `61d224c4`: main of 2026-11-12 at

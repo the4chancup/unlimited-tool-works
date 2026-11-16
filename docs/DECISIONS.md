@@ -18380,3 +18380,17 @@ Why: read as "two pixels pass", the rule let a title row's line stand 2 points l
 draft's on every screen, though the app places that line itself; together with other gaps, that small offset
 can push a screen into a scroll. Moving an element the app places costs nothing.
 Plan: plans/core/gui.md "Prototypes before implementation", the Overlay and Draft measure bullets.
+
+## 2026-11-16 — release — 0.0.2 is cut without Select all similar, the Carbon rounds and the PES 2019 check
+Decision (the maintainer): 0.0.2 goes out within the day. Select all similar players
+(0.0.2-similar), every Carbon round still owed by a 0.0.2 step, and the Save editor's PES 2019
+writes checked in game (0.0.2-pes19) move to after it. 0.0.2's readme does not call PES 2019 a
+version the Save editor supports until that check has passed. No mutation run starts until the
+mutation speed-up lands, also after 0.0.2. The maintainer's looks stay in the cut: most double
+check what the lead has already compared with the drafts. This narrows "0.0.2 holds every open
+0.0.2 step" (2026-11-11).
+Why: most open steps only wait for a look, so the release need not wait for implementation or
+review hours, and a Carbon round costs hours and usage. A support
+claim for PES 2019 would rest on an import and a name alone.
+Plan: plans/core/development_plan.md "The /vg/ League 27 (VGL)" (the PES 2019 paragraph);
+RUNBOOK "A checkpoint is one command".
