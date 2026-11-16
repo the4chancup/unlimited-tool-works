@@ -1,8 +1,9 @@
 # Fonts
 
 `RobotoFlex-Regular.ttf` and `RobotoFlex-Semibold.ttf` are the suite's body font and its one
-heavier face, for the Tactics pitch's formation name alone (the weight whose stroke matches
-the game's label as egui draws it, `plans/save_editor.md` "The formation's name"): static
+heavier face, for the Tactics pitch's formation name (the weight whose stroke matches the
+game's label as egui draws it, `plans/save_editor.md` "The formation's name") and the status
+bar's notices: static
 instances of Roboto Flex's variable file as Google Fonts ships it
 (`github.com/google/fonts`, `ofl/robotoflex/RobotoFlex[GRAD,XOPQ,XTRA,YOPQ,YTAS,YTDE,YTFI,YTLC,YTUC,opsz,slnt,wdth,wght].ttf`,
 1,787,292 bytes, SHA-256 `9b523f7d…`), cut by fontTools' instancer at optical size 12.5 (the
