@@ -2280,10 +2280,10 @@ briefs, review loops, gates and mutation runs as for any step.
         `substitution_choices`, help 08, the two comments)
       - Choose file's tooltip reads "starting in the folder of the last opened save"
         (`view/file_menu.rs` `OPEN_TIP` and its test)
-    - [ ] the drafts (the lead): Kit slots shows `Bound team ID` as the id, boxes one width;
-      Randomize greyed whole; each captured and critiqued. Done: the three texts of
-      DECISIONS 2026-11-16 "the drafts take three texts", `Star rating`, the Gameplan
-      screen's 8-point gaps
+    - [x] the drafts (the lead), each captured and critiqued: Kit slots shows `Bound team
+      ID` as the id in boxes of one width (72 points, six digits); Randomize greyed whole;
+      the three texts of DECISIONS 2026-11-16 "the drafts take three texts"; `Star rating`;
+      the Gameplan screen's 8-point gaps
     - [ ] in-game (a sidekick, PES 2021): two teams naming one coach record, both in one
       match's prematch screen -> verify: the screen shows each team's coach, or the fault
       the no-manager-id saves showed; result into the savefile plan's "manager id" paragraph

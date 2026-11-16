@@ -1403,9 +1403,9 @@ function topBar() {
       ["Save", save, none], ["Save as…", save, none], ["-"],
       ["Open the sample with a custom check", () => load(TEMPLATES["custom-check"](), "custom-check")]], { frame0: true }),
     menu("Edit", [["Undo  (Ctrl+Z)", doUndo, !undo.length], ["Redo  (Ctrl+Y)", doRedo, !redo.length]], { frame0: true }),
-    menu("Randomize", [["Sensible", () => {}, true, "The generator is not faked in this draft"],
-      ["Weird", () => {}, true, "The generator is not faked in this draft"],
-      ["Crazy", () => {}, true, "The generator is not faked in this draft"]], { frame0: true }),
+    // Greyed whole until the generator is built (step 20.7), as in the build.
+    menu("Randomize", [["Sensible", () => {}], ["Weird", () => {}], ["Crazy", () => {}]],
+      { frame0: true, disabled: true }),
     none ? [] : [h("span", { class: "sep", style: "border-top:0; border-left:1px solid var(--stroke); height:14px; margin:0 4px" }),
       strong(R.name + (JSON.stringify(R) !== saved ? " •" : ""))],
     h("span", { style: "flex:1" }),

@@ -5743,17 +5743,21 @@ function teamFields(t) {
     "Name", nameIn, "Short", shortIn,
     colour("color_1", "Color 1"), colour("color_2", "Color 2")), "team-fields");
 }
-// The kit slot assignments, behind the team view's Kit slots button.
+const KIT_SLOT_BOX = 72;
+// The kit slot assignments, behind the team view's Kit slots button. The binding
+// shows as the team's id, as Team ID and Manager ID do, not the stored id times 64;
+// every box is one width, six digits wide, so the rows line up.
 function kitSlotsTable(t) {
+  const box = "width:" + KIT_SLOT_BOX + "px";
   return t.kit_slots
     ? named(h("table", { class: "grid" }, t.kit_slots.map((ks, i) =>
         h("tr", {}, h("td", { class: "weak" }, "Slot " + (i + 1)),
-          h("td", {}, "Number ", h("input", { type: "number", value: ks.number,
+          h("td", {}, "Number ", h("input", { type: "number", style: box, value: ks.number,
             onchange: e => { const v = parseInt(e.target.value, 10);
               if (!Number.isNaN(v)) { edit("kit slot number", () => { ks.number = v; }); render(); } } })),
-          h("td", {}, "Bound team id ", h("input", { type: "number", style: "width:96px", value: ks.binding,
+          h("td", {}, "Bound team ID ", h("input", { type: "number", style: box, value: Math.floor(ks.binding / 64),
             onchange: e => { const v = parseInt(e.target.value, 10);
-              if (!Number.isNaN(v)) { edit("kit slot binding", () => { ks.binding = v; }); render(); } } }))))), "kit-slots")
+              if (!Number.isNaN(v)) { edit("kit slot binding", () => { ks.binding = v * 64; }); render(); } } }))))), "kit-slots")
     : h("span", { class: "gate", title: "PES 17 only" },
         h("div", { class: "weak" }, "(this version does not store kit slots)"));
 }

@@ -1168,7 +1168,8 @@ function menu(label, items, opts = {}) {
     openMenuButton = btn;
     if (below + m.offsetHeight > win.clientHeight) m.style.top = Math.max(4, top - m.offsetHeight - 2) + "px";
   };
-  return h("button", { class: opts.frame0 ? "frame0" : "", title: opts.title,
+  // opts.disabled greys the whole menu, which then never opens.
+  return h("button", { class: opts.frame0 ? "frame0" : "", title: opts.title, disabled: opts.disabled,
     onclick: e => { e.stopPropagation();
       if (openMenuButton === e.currentTarget) closeMenus(); else open(e.currentTarget); },
     onmouseenter: e => { if (openMenuButton && openMenuButton !== e.currentTarget
