@@ -462,8 +462,10 @@ fn kit_slots(
         .expect("the kit slots are drawn only where they are stored")
         / 64;
     // Every box one width, so the rows line up and a box does not widen
-    // from a 3-digit value to a 6-digit one. No column floor: the label
-    // columns keep their labels' width (the boxes' would make them 51).
+    // from a 3-digit value to a 6-digit one. A field's label and box
+    // share a cell a space apart, as the draft's cells pair them: the
+    // grid's gap parts the cells alone. No column floor: the Slot column
+    // keeps its labels' width (the boxes' would make it 51).
     ui.spacing_mut().interact_size.x = KIT_BOX_WIDTH;
     egui::Grid::new("team kit slots")
         .min_col_width(0.0)
@@ -471,41 +473,47 @@ fn kit_slots(
         .show(ui, |ui| {
             for (index, kit) in slots.iter().enumerate() {
                 ui.weak(format!("Slot {}", index + 1));
-                number(
-                    ui,
-                    session,
-                    team_id,
-                    KIT_NUMBER_LABEL,
-                    kit.number,
-                    0..=u8::MAX,
-                    move |team, shown| {
-                        team.kit_slots
-                            .as_mut()
-                            .expect("the kit slots exist on PES 17")[index]
-                            .number = shown;
-                        if team.edit_flags.strip.is_some() {
-                            team.edit_flags.strip = Some(true);
-                        }
-                    },
-                );
+                ui.horizontal(|ui| {
+                    ui.spacing_mut().item_spacing.x = SPACE_GAP;
+                    number(
+                        ui,
+                        session,
+                        team_id,
+                        KIT_NUMBER_LABEL,
+                        kit.number,
+                        0..=u8::MAX,
+                        move |team, shown| {
+                            team.kit_slots
+                                .as_mut()
+                                .expect("the kit slots exist on PES 17")[index]
+                                .number = shown;
+                            if team.edit_flags.strip.is_some() {
+                                team.edit_flags.strip = Some(true);
+                            }
+                        },
+                    );
+                });
                 let low = kit.binding % 64;
-                number(
-                    ui,
-                    session,
-                    team_id,
-                    BOUND_TEAM_LABEL,
-                    kit.binding / 64,
-                    0..=u32::try_from(bound_max).expect("the binding's bound fits u32"),
-                    move |team, shown| {
-                        team.kit_slots
-                            .as_mut()
-                            .expect("the kit slots exist on PES 17")[index]
-                            .binding = shown * 64 + low;
-                        if team.edit_flags.strip.is_some() {
-                            team.edit_flags.strip = Some(true);
-                        }
-                    },
-                );
+                ui.horizontal(|ui| {
+                    ui.spacing_mut().item_spacing.x = SPACE_GAP;
+                    number(
+                        ui,
+                        session,
+                        team_id,
+                        BOUND_TEAM_LABEL,
+                        kit.binding / 64,
+                        0..=u32::try_from(bound_max).expect("the binding's bound fits u32"),
+                        move |team, shown| {
+                            team.kit_slots
+                                .as_mut()
+                                .expect("the kit slots exist on PES 17")[index]
+                                .binding = shown * 64 + low;
+                            if team.edit_flags.strip.is_some() {
+                                team.edit_flags.strip = Some(true);
+                            }
+                        },
+                    );
+                });
                 ui.end_row();
             }
         });

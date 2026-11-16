@@ -117,6 +117,27 @@ fn open_team_menu(window: &mut Headless, view: &mut SaveView) -> Vec<accesskit::
     nodes
 }
 
+/// The Kit slots dialog open over `team_id`'s view: the view open, the
+/// `Kit slots…` button clicked, then two frames (the modal re-centres
+/// once its content's size is known, so the first frame's bounds are
+/// not the steady ones). The last frame's nodes and shapes.
+fn open_kit_slots(
+    window: &mut Headless,
+    view: &mut SaveView,
+    team_id: u32,
+) -> (Vec<accesskit::Node>, Vec<egui::epaint::ClippedShape>) {
+    open_team_view(window, view, team_id);
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, view, &|| Vec::new()));
+    click(
+        window,
+        node_labeled(&nodes, Role::Button, "Kit slots\u{2026}"),
+        view,
+    );
+    window.frame(Vec::new(), |ui| show(ui, view, &|| Vec::new()));
+    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, view, &|| Vec::new()));
+    (nodes, shapes)
+}
+
 // SE-GUI-10
 #[test]
 fn the_team_fields_edit_and_save_and_the_colour_is_the_nearest_the_save_holds() {
@@ -230,16 +251,7 @@ fn the_kit_slot_rows_stand_24_apart() {
     let mut view = SaveView::new();
     view.open(&path);
     let mut window = Headless::sized(DEFAULT_PANE.x, 700.0);
-    open_team_view(&mut window, &mut view, 701);
-    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
-    click(
-        &mut window,
-        node_labeled(&nodes, Role::Button, "Kit slots\u{2026}"),
-        &mut view,
-    );
-    // The modal re-centres once its content's size is known.
-    window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
-    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let (nodes, _) = open_kit_slots(&mut window, &mut view, 701);
     let tops = |slot: &str| -> Vec<f64> {
         let boxes = right_of_label(&nodes, slot, Role::SpinButton);
         assert_eq!(boxes.len(), 2, "{slot}: Number and Bound team ID");
@@ -281,16 +293,7 @@ fn every_kit_slots_box_is_one_width_that_shows_six_digits() {
     let mut view = SaveView::new();
     view.open(&path);
     let mut window = Headless::sized(DEFAULT_PANE.x, 700.0);
-    open_team_view(&mut window, &mut view, 701);
-    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
-    click(
-        &mut window,
-        node_labeled(&nodes, Role::Button, "Kit slots\u{2026}"),
-        &mut view,
-    );
-    // The modal re-centres once its content's size is known.
-    window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
-    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let (nodes, shapes) = open_kit_slots(&mut window, &mut view, 701);
     // A slot's boxes share its label's centre line, as a grid row centres
     // its cells: the team view's own boxes behind the dialog do not.
     let centre_y = |bounds: accesskit::Rect| (bounds.y0 + bounds.y1) / 2.0;
@@ -370,16 +373,7 @@ fn the_kit_slot_label_columns_are_their_labels_wide() {
     let mut view = SaveView::new();
     view.open(&path);
     let mut window = Headless::sized(DEFAULT_PANE.x, 700.0);
-    open_team_view(&mut window, &mut view, 701);
-    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
-    click(
-        &mut window,
-        node_labeled(&nodes, Role::Button, "Kit slots\u{2026}"),
-        &mut view,
-    );
-    // The modal re-centres once its content's size is known.
-    window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
-    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let (nodes, _) = open_kit_slots(&mut window, &mut view, 701);
 
     let slot = label_bounds(&nodes, "Slot 10");
     let number = label_bounds(&nodes, "Number");
@@ -398,6 +392,49 @@ fn the_kit_slot_label_columns_are_their_labels_wide() {
         "\"Bound team ID\" stands {} after the Number box, the grid's 8-point gap",
         bound.x0 - box_.x1
     );
+}
+
+// The draft puts a field's label and box in one cell ("Number " then the
+// input), so a box stands a space after its label's text, not the grid's
+// gap after it.
+#[test]
+fn the_kit_slot_boxes_stand_a_space_after_their_labels() {
+    let path = fixture(PesVersion::Pes17, "kit_slot_label_box_gap");
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut window = Headless::sized(DEFAULT_PANE.x, 700.0);
+    let (nodes, _) = open_kit_slots(&mut window, &mut view, 701);
+
+    // Slot 1's row by its label's centre line, so a control of the team
+    // view behind the dialog is never measured.
+    let centre_y = |bounds: accesskit::Rect| (bounds.y0 + bounds.y1) / 2.0;
+    let row = centre_y(label_bounds(&nodes, "Slot 1"));
+    let label = |value: &str| -> accesskit::Rect {
+        nodes
+            .iter()
+            .find(|node| {
+                node.role() == Role::Label
+                    && node.value() == Some(value)
+                    && node
+                        .bounds()
+                        .is_some_and(|b| (centre_y(b) - row).abs() <= 1.0)
+            })
+            .and_then(accesskit::Node::bounds)
+            .unwrap_or_else(|| panic!("no {value:?} label on Slot 1's row"))
+    };
+    let boxes: Vec<accesskit::Rect> = right_of_label(&nodes, "Slot 1", Role::SpinButton)
+        .into_iter()
+        .map(|node| node.bounds().expect("a box's bounds"))
+        .filter(|bounds| (centre_y(*bounds) - row).abs() <= 1.0)
+        .collect();
+    assert_eq!(boxes.len(), 2, "slot 1's Number and Bound team ID boxes");
+    for (name, box_) in [("Number", boxes[0]), ("Bound team ID", boxes[1])] {
+        let gap = box_.x0 - label(name).x1;
+        assert!(
+            (gap - 3.0).abs() <= 1.0,
+            "{name}'s box stands {gap} after its label, not a space's 3"
+        );
+    }
 }
 
 #[test]
