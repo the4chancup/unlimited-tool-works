@@ -60,7 +60,7 @@ crates/studio_core/src/
 ├── help/
 │   ├── search.rs     #   substring search over every topic's paragraphs and catalog rows
 │   ├── export.rs     #   `UTW help` printing and `--export` to Markdown files
-│   └── core/         #   the core chapters' Markdown (setting up, data location, updates) + CHANGELOG.md
+│   └── core/         #   the core chapters' Markdown (setting up, data location, updates, reporting) + CHANGELOG.md
 ├── shell/
 │   ├── title.rs      #   window title from activities / held notice / idle; ViewportCommand::Title on change
 │   ├── sidebar.rs    #   logo, version selector (live exe check, running-PES auto-switch), tool list

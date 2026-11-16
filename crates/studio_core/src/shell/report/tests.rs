@@ -73,7 +73,14 @@ fn assert_dialog_open(nodes: &[accesskit::Node]) {
         "the second line"
     );
     assert!(has_text(nodes, "What happened?"), "the box's heading");
-    words_box(nodes);
+    assert_eq!(
+        words_box(nodes).placeholder(),
+        Some(
+            "What you did, what you expected and what you got; also anything done \
+             outside UTW, in the game or another tool"
+        ),
+        "the box's hint"
+    );
     assert!(has_text(nodes, "The file holds:"), "the list's heading");
     assert!(
         has_text(nodes, "the files as they were opened, before any change"),
@@ -137,7 +144,7 @@ fn the_entry_opens_the_dialog_from_the_rail_and_the_opened_sidebar() {
     );
 
     // The opened sidebar's entry opens the same dialog.
-    let mut app = shell().app;
+    let Shell { mut app, _dir, .. } = shell();
     record(&app.ctx, "a", dir.path());
     let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
     let nodes = open_sidebar(&egui_ctx, &mut app, entry(&nodes, "A"), 1.0).nodes;
@@ -283,6 +290,10 @@ fn save_writes_the_bundle_at_the_picked_path_and_the_words_stay() {
     assert!(
         !has_label(&out_nodes.nodes, "Save…"),
         "no Save… once written"
+    );
+    assert!(
+        !has_label(&out_nodes.nodes, "Cancel"),
+        "no Cancel once written"
     );
 
     // The zip: journal.toml with the three steps, the input under inputs/,

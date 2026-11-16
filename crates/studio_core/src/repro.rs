@@ -892,12 +892,12 @@ pub(crate) mod tests {
             Path::new("out/EDIT00000000"),
             Arc::from(&b"OLD"[..]),
         );
-        std::thread::sleep(std::time::Duration::from_millis(10));
         recorder.keep_output(
             "save-editor",
             Path::new("out2/EDIT00000000"),
             Arc::from(&b"OTHER"[..]),
         );
+        std::thread::sleep(std::time::Duration::from_millis(10));
         recorder.keep_output(
             "save-editor",
             Path::new("out/EDIT00000000"),

@@ -1,11 +1,13 @@
-When UTW does something wrong, **Report a problem**, in the sidebar
-just above **Help** (the `⚠` when the sidebar is folded), saves a file to post
-with your report, so whoever looks into it can repeat what you did. Nothing is
-sent: you post the file yourself, wherever you usually report problems.
+When UTW does something wrong, **Report a problem** saves a file to post with
+your report, so whoever looks into it can repeat what you did. It sits in the
+sidebar just above **Help (WIP)** (the `⚠` when the sidebar is folded) and
+opens a dialog. Nothing is sent: you post the file yourself, wherever you
+usually report problems.
 
 For now only the Save editor records what you do in it; the other tools join
 as they are built. The file holds:
 
+- what you write in the dialog's box;
 - every step you took in the Save editor since the window opened: opening a
   save, edits, imports and saves;
 - the files it opened, as they were before any change, the files it wrote,
@@ -13,10 +15,10 @@ as they are built. The file holds:
 - `utw.log`, UTW's version, your settings and the PES installs found.
 
 In the box, write what you did, what you expected and what you got, and
-anything done outside UTW, in the game or in another tool. The words
-stay there until the window closes, so you can close the dialog and finish
-them later.
+anything done outside UTW, in the game or in another tool. The words stay
+there until the window closes, so you can close the dialog and finish them
+later.
 
 **Save…** asks where to put the file, which is named by the date and time
-(`utw-report-2026-11-15-1030.zip`). The file holds your whole save. Your user
-folder is written `~` in the paths it records.
+(`utw-report-2026-11-15-1030.zip`). The file holds your whole save, and your
+user folder is written as `~` in its paths.
