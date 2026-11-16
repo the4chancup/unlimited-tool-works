@@ -110,9 +110,11 @@ struct Open {
 
 impl Open {
     /// The entry's button: its label, with its shortcut at the right in
-    /// weak when it has one.
+    /// weak when it has one. The label keeps one line (`Extend`): the
+    /// menu and the welcome panel widen by the scroll bar's strip rather
+    /// than let a wide label wrap under it.
     fn button(&self) -> egui::Button<'_> {
-        let button = egui::Button::new(&self.label);
+        let button = egui::Button::new(&self.label).wrap_mode(egui::TextWrapMode::Extend);
         if self.shortcut.is_empty() {
             button
         } else {
@@ -238,12 +240,13 @@ pub(super) fn show(ui: &mut egui::Ui, view: &mut SaveView) -> Option<Write> {
         let opens = opens(view.discovered.as_ref().expect("filled above"));
         let mut chosen = None;
         let mut write = None;
-        let mut entry = |ui: &mut egui::Ui, open: &Open| {
-            if ui.add(open.button()).on_hover_text(&open.tip).clicked() {
-                chosen = Some(open.pending.clone());
-            }
-        };
-        entry(ui, &opens.picker);
+        if ui
+            .add(opens.picker.button())
+            .on_hover_text(&opens.picker.tip)
+            .clicked()
+        {
+            chosen = Some(opens.picker.pending.clone());
+        }
         if add_enabled(
             ui,
             save_open,
@@ -265,32 +268,29 @@ pub(super) fn show(ui: &mut egui::Ui, view: &mut SaveView) -> Option<Write> {
         let top_separator = menu_separator(ui);
         // The saves' and recents' part scrolls past the window's bottom:
         // its room is the window's bottom less the bottom rows' and the
-        // popup frame's bottom margin, and the solid bar's strip stands
-        // in the menu's width when it scrolls, so no entry wraps under it.
+        // popup frame's bottom margin.
         let below = top_separator.rect.height()
             + 2.0 * ui.spacing().interact_size.y
             + egui::Frame::popup(ui.style()).total_margin().bottom;
         let max_height = (ui.ctx().content_rect().bottom() - ui.cursor().top() - below).max(0.0);
-        ui.spacing_mut().scroll = egui::style::ScrollStyle::solid();
+        // The solid bar takes its strip out of the scroll's width, which
+        // the popup's sizing pass measured without it: a scrolling menu
+        // asks for the widest entry plus the strip, capped to the window
+        // less the popup frame's margins, so no entry wraps or clips
+        // under the bar. A menu that fits keeps its width.
+        let (widest, height) = measure(ui, |ui| menu_middle(ui, &opens).0);
+        let scroll = egui::style::ScrollStyle::solid();
+        if height > max_height {
+            let room = ui.ctx().content_rect().width()
+                - egui::Frame::popup(ui.style()).total_margin().sum().x;
+            ui.set_min_width((widest + scroll.allocated_width()).min(room));
+        }
+        ui.spacing_mut().scroll = scroll;
         egui::ScrollArea::vertical()
             .max_height(max_height)
             .show(ui, |ui| {
-                group_heading(ui, egui::RichText::new("Open from Documents").weak());
-                if opens.saves.is_empty() {
-                    group_heading(
-                        ui,
-                        egui::RichText::new("No PES saves were found in Documents.").weak(),
-                    );
-                }
-                for open in &opens.saves {
-                    entry(ui, open);
-                }
-                if !opens.recents.is_empty() {
-                    menu_separator(ui);
-                    group_heading(ui, egui::RichText::new("Recent files").weak());
-                    for open in &opens.recents {
-                        entry(ui, open);
-                    }
+                if let Some(pending) = menu_middle(ui, &opens).1 {
+                    chosen = Some(pending);
                 }
             });
         menu_separator(ui);
@@ -319,6 +319,53 @@ pub(super) fn show(ui: &mut egui::Ui, view: &mut SaveView) -> Option<Write> {
         request(view, pending);
     }
     write
+}
+
+/// The File menu's middle, the part that scrolls when the menu runs past
+/// the window's bottom: the `Open from Documents` heading over the
+/// discovered saves (the weak line with none found), then the `Recent
+/// files` heading over the recents. Returns the widest entry's
+/// intrinsic width, which `show` sizes a scrolling menu by, and the
+/// clicked entry's `Pending`.
+fn menu_middle(ui: &mut egui::Ui, opens: &Opens) -> (f32, Option<Pending>) {
+    let mut widest = 0.0_f32;
+    let mut entry = |ui: &mut egui::Ui, open: &Open| {
+        let response = ui.add(open.button());
+        widest = widest.max(response.intrinsic_size().unwrap_or(response.rect.size()).x);
+        response
+            .on_hover_text(&open.tip)
+            .clicked()
+            .then(|| open.pending.clone())
+    };
+    group_heading(ui, egui::RichText::new("Open from Documents").weak());
+    if opens.saves.is_empty() {
+        group_heading(
+            ui,
+            egui::RichText::new("No PES saves were found in Documents.").weak(),
+        );
+    }
+    let mut chosen = None;
+    for open in &opens.saves {
+        chosen = entry(ui, open).or(chosen);
+    }
+    if !opens.recents.is_empty() {
+        menu_separator(ui);
+        group_heading(ui, egui::RichText::new("Recent files").weak());
+        for open in &opens.recents {
+            chosen = entry(ui, open).or(chosen);
+        }
+    }
+    (widest, chosen)
+}
+
+/// Lays `body` out in an invisible child of `ui`, its widgets placed but
+/// never painted or hit, and returns what `body` returns (both callers'
+/// bodies return their widest entry's width) with the height the layout
+/// settles at.
+fn measure(ui: &mut egui::Ui, body: impl FnOnce(&mut egui::Ui) -> f32) -> (f32, f32) {
+    let mut probe = ui.new_child(egui::UiBuilder::new().invisible());
+    let widest = body(&mut probe);
+    (widest, probe.min_rect().height())
 }
 
 /// The welcome panel (the draft's `welcomePanel`), drawn in place of the
@@ -352,14 +399,8 @@ pub(super) fn welcome_panel(ui: &mut egui::Ui, view: &mut SaveView) {
             // The body's width is its widest entry's — never under the
             // frame's floor (`min_rect` after `dialog_page` set it),
             // capped to the pane — the solid bar's strip beside it when
-            // the list scrolls. The invisible child lays the body out
-            // without painting or exposing it, measuring the widest
-            // entry and the body's height.
-            let mut probe = ui.new_child(egui::UiBuilder::new().invisible());
-            let (widest, height) = {
-                let (widest, _) = welcome_body(&mut probe, &opens);
-                (widest, probe.min_rect().height())
-            };
+            // the list scrolls.
+            let (widest, height) = measure(ui, |ui| welcome_body(ui, &opens).0);
             let scroll = egui::style::ScrollStyle::solid();
             let bar = if height > max_height {
                 scroll.allocated_width()
@@ -401,10 +442,11 @@ pub(super) fn welcome_panel(ui: &mut egui::Ui, view: &mut SaveView) {
 /// sizes the body by, and the clicked entry's `Pending`.
 fn welcome_body(ui: &mut egui::Ui, opens: &Opens) -> (f32, Option<Pending>) {
     // Justified: every entry fills the body's width — `welcome_panel`
-    // sets it to the widest entry's, which `Extend` keeps to one line.
+    // sets it to the widest entry's, which `Open::button`'s `Extend`
+    // keeps to one line.
     let mut widest = 0.0_f32;
     let mut entry = |ui: &mut egui::Ui, open: &Open| {
-        let response = ui.add(open.button().wrap_mode(egui::TextWrapMode::Extend));
+        let response = ui.add(open.button());
         widest = widest.max(response.intrinsic_size().unwrap_or(response.rect.size()).x);
         response
             .on_hover_text(&open.tip)

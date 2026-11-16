@@ -178,6 +178,44 @@ fn label_below(nodes: &[accesskit::Node], value: &str, above: f64) -> accesskit:
         .unwrap_or_else(|| panic!("no {value:?} label below {above}"))
 }
 
+/// The opens that outgrow the File menu's and the welcome panel's room:
+/// ten more PES 21 saves under `tree`'s Documents (with its three, a
+/// discovered list of thirteen), and `view`'s recents filled to the
+/// kept ten with PES 19 saves, each in a `r<index> <tail>` folder of
+/// `test`'s own scratch, opened oldest first with the session cleared,
+/// as if every open were an earlier run's. Returns the recents' paths,
+/// oldest first.
+fn ten_found_ten_recents(tree: &Tree, test: &str, tail: &str, view: &mut SaveView) -> Vec<PathBuf> {
+    let layout = save_layout(PesVersion::Pes21);
+    for index in 0..10 {
+        let account = format!("9999999999999999{index:02}");
+        let folder = tree
+            .documents
+            .join("KONAMI")
+            .join(layout.game_folder)
+            .join(account)
+            .join("save");
+        std::fs::create_dir_all(&folder).unwrap();
+        std::fs::write(
+            folder.join(layout.file_name),
+            fixture_save(PesVersion::Pes21),
+        )
+        .unwrap();
+    }
+    let dir = crate::test_support::scratch(&format!("{test}_recents"));
+    let mut paths = Vec::new();
+    for index in 0..10 {
+        let folder = dir.join(format!("r{index} {tail}"));
+        std::fs::create_dir_all(&folder).unwrap();
+        let path = folder.join("EDIT00000000 - VGL26 winter");
+        std::fs::write(&path, fixture_save(PesVersion::Pes19)).unwrap();
+        view.open(&path);
+        paths.push(path);
+    }
+    view.session = None;
+    paths
+}
+
 // SE-GUI-26
 #[test]
 fn the_file_menu_lists_the_writes_then_the_saves_then_close_and_exit() {
@@ -521,69 +559,109 @@ fn the_file_menus_separators_stand_only_between_its_groups() {
 }
 
 // SE-GUI-26's scroll clause: thirteen discovered saves and ten recents
-// in the minimum window — the menu's middle scrolls, Close save and Exit
-// stay on screen, and the wheel reaches the oldest recent.
+// in a 1280 x 600 window — Open…, Close save and Exit stay where they
+// are while the menu's middle scrolls the oldest recent into view, its
+// click opening its save, and no entry wraps under the scroll bar.
 // SE-GUI-26
 #[test]
 fn the_file_menus_saves_and_recents_scroll_past_the_windows_bottom() {
     let tree = tree("menu_scroll");
-    let layout = save_layout(PesVersion::Pes21);
-    for index in 0..10 {
-        let account = format!("9999999999999999{index:02}");
-        let folder = tree
-            .documents
-            .join("KONAMI")
-            .join(layout.game_folder)
-            .join(account)
-            .join("save");
-        std::fs::create_dir_all(&folder).unwrap();
-        std::fs::write(
-            folder.join(layout.file_name),
-            fixture_save(PesVersion::Pes21),
-        )
-        .unwrap();
-    }
     let mut view = SaveView::new();
-    // Ten recents (the kept limit), opened oldest first.
-    let dir = crate::test_support::scratch("menu_scroll_recents");
-    for index in 0..10 {
-        let folder = dir.join(format!("r{index} VGL26 winter backups"));
-        std::fs::create_dir_all(&folder).unwrap();
-        let path = folder.join("EDIT00000000 - VGL26 winter");
-        std::fs::write(&path, fixture_save(PesVersion::Pes19)).unwrap();
-        view.open(&path);
-    }
-    view.session = None;
+    let paths = ten_found_ten_recents(&tree, "menu_scroll", "VGL26 winter backups", &mut view);
     discover_counted(&mut view, &tree.documents);
-    let mut window = Headless::sized(960.0, 600.0);
-    let inside = |node: &accesskit::Node| {
-        node.bounds()
-            .is_some_and(|b| b.x0 >= 0.0 && b.y0 >= 0.0 && b.x1 <= 960.0 && b.y1 <= 600.0)
-    };
+    // The pane of a 1280 x 600 window: `DEFAULT_PANE.x` wide and the
+    // window's height — the menu's popup reaches the window's bottom,
+    // over the status bar's strip the panes stop above.
+    let mut window = Headless::sized(DEFAULT_PANE.x, 600.0);
 
+    // The menu's scroll bar's bounds: the clip the middle's entries sit
+    // in, and where the wheel scrolls. The welcome panel's bar stands in
+    // the panes' middle, so the menu's is the leftmost.
+    let bar = |nodes: &[accesskit::Node]| {
+        nodes
+            .iter()
+            .filter(|node| node.role() == Role::ScrollBar)
+            .filter_map(accesskit::Node::bounds)
+            .min_by(|a, b| a.x0.partial_cmp(&b.x0).expect("ordered bounds"))
+    };
     let nodes = open_menu(&mut window, &mut view, "File", "Open\u{2026}");
-    for entry in ["Close save", "Exit"] {
-        let node = menu_item(&nodes, entry);
-        assert!(inside(node), "{entry} lies inside the window");
+    let clip = bar(&nodes).expect("the menu's scroll bar is drawn");
+
+    // Open… stays under the File button and Exit keeps the popup's
+    // bottom margin inside the window, scrolled or not.
+    let file_button = menu_button(&nodes, "File")
+        .bounds()
+        .expect("the File button's bounds");
+    let screen_bottom = f64::from(window.screen.y);
+    let popup_bottom = f64::from(
+        egui::Frame::popup(&window.ctx.global_style())
+            .total_margin()
+            .bottom,
+    );
+    let pins = |nodes: &[accesskit::Node]| {
+        let open = menu_item(nodes, "Open\u{2026}")
+            .bounds()
+            .expect("Open…'s bounds");
+        let exit = menu_item(nodes, "Exit").bounds().expect("Exit's bounds");
+        assert!(
+            open.y0 >= file_button.y1,
+            "Open… stands below the File button: {open:?} vs {file_button:?}"
+        );
+        assert!(
+            exit.y1 + popup_bottom <= screen_bottom,
+            "Exit and the popup's bottom margin stay inside the window: \
+             {exit:?} + {popup_bottom} vs {screen_bottom}"
+        );
+    };
+    pins(&nodes);
+
+    // Every recent entry is one line high and ends left of the scroll
+    // bar: none wraps or runs under it.
+    let rows = entries(&nodes, "Open\u{2026}");
+    let line = {
+        let bounds = rows[0].bounds().expect("an entry's bounds");
+        bounds.y1 - bounds.y0
+    };
+    let recents: Vec<&accesskit::Node> = rows
+        .iter()
+        .filter(|node| {
+            node.label()
+                .is_some_and(|label| label.starts_with("[PES 2019] r"))
+        })
+        .copied()
+        .collect();
+    assert_eq!(recents.len(), 10, "premise: the ten recents are drawn");
+    for node in &recents {
+        let bounds = node.bounds().expect("a recent entry's bounds");
+        assert!(
+            (bounds.y1 - bounds.y0 - line).abs() <= 0.5,
+            "{:?} wraps past a line: {bounds:?}",
+            node.label()
+        );
+        assert!(
+            bounds.x1 <= clip.x0,
+            "{:?} runs under the scroll bar: {bounds:?} vs {clip:?}",
+            node.label()
+        );
     }
 
-    // The wheel over the middle scrolls it down until the oldest recent
-    // stands inside the window (bounded, so a menu that never scrolls
-    // fails rather than hangs).
+    // The wheel over the scroll bar scrolls the middle down until the
+    // oldest recent stands inside the clip — bounded, so a menu that
+    // never scrolls fails rather than hangs.
     let oldest = "[PES 2019] r0 VGL26 winter backups";
     let mut nodes = nodes;
     for _ in 0..24 {
-        let entry = nodes
-            .iter()
-            .find(|node| {
-                node.role() == Role::Button
-                    && node.label().is_some_and(|label| label.starts_with(oldest))
-            })
-            .expect("the oldest recent's entry");
-        if inside(entry) && inside(menu_item(&nodes, "Exit")) {
+        let clip = bar(&nodes).expect("the menu's scroll bar is drawn");
+        let entry = menu_item(&nodes, oldest)
+            .bounds()
+            .expect("the oldest recent's bounds");
+        if entry.y0 >= clip.y0 && entry.y1 <= clip.y1 {
             break;
         }
-        let at = centre(menu_item(&nodes, PES19_ENTRY));
+        let at = egui::pos2(
+            ((clip.x0 + clip.x1) / 2.0) as f32,
+            ((clip.y0 + clip.y1) / 2.0) as f32,
+        );
         let (_, frame_nodes, _) = window.frame(
             vec![
                 egui::Event::PointerMoved(at),
@@ -599,22 +677,22 @@ fn the_file_menus_saves_and_recents_scroll_past_the_windows_bottom() {
         );
         nodes = frame_nodes;
     }
-    let oldest_entry = nodes
-        .iter()
-        .find(|node| {
-            node.role() == Role::Button
-                && node.label().is_some_and(|label| label.starts_with(oldest))
-        })
-        .expect("the oldest recent's entry");
+    let clip = bar(&nodes).expect("the menu's scroll bar is drawn");
+    let oldest_entry = menu_item(&nodes, oldest);
+    let bounds = oldest_entry.bounds().expect("the oldest recent's bounds");
     assert!(
-        inside(oldest_entry),
-        "the oldest recent scrolled into the window: {:?}",
-        oldest_entry.bounds()
+        bounds.y0 >= clip.y0 && bounds.y1 <= clip.y1,
+        "the oldest recent scrolled into the clip: {bounds:?} vs {clip:?}"
     );
-    assert!(
-        inside(menu_item(&nodes, "Exit")),
-        "Exit still lies inside the window"
-    );
+    pins(&nodes);
+
+    // Its click opens its save.
+    click(&mut window, oldest_entry, &mut view);
+    let session = view
+        .session
+        .as_ref()
+        .expect("the oldest recent's click opened its save");
+    assert_eq!(session.path(), paths[0].as_path());
 
     // A short menu draws no scroll bar (two found saves and one recent).
     let mut view = SaveView::new();
@@ -1683,39 +1761,11 @@ fn the_welcome_panel_centres_in_the_area_under_the_toolbar() {
 #[test]
 fn the_welcome_panels_long_list_scrolls_to_its_last_entry() {
     let tree = tree("welcome_scroll");
+    let mut view = SaveView::new();
     // Ten more account folders, each one a discovered save (PES 19 on
     // keeps one per account folder): with the tree's three and the kept
     // recents the list is taller than the room the window leaves it.
-    let layout = save_layout(PesVersion::Pes21);
-    for index in 0..10 {
-        let account = format!("9999999999999999{index:02}");
-        let folder = tree
-            .documents
-            .join("KONAMI")
-            .join(layout.game_folder)
-            .join(account)
-            .join("save");
-        std::fs::create_dir_all(&folder).unwrap();
-        std::fs::write(
-            folder.join(layout.file_name),
-            fixture_save(PesVersion::Pes21),
-        )
-        .unwrap();
-    }
-    let mut view = SaveView::new();
-    // Ten recents (the kept limit), opened oldest first: the first
-    // opened is the list's last entry.
-    let dir = crate::test_support::scratch("welcome_scroll_recents");
-    let mut paths = Vec::new();
-    for index in 0..10 {
-        let folder = dir.join(format!("r{index} VGL26 winter backups"));
-        std::fs::create_dir_all(&folder).unwrap();
-        let path = folder.join("EDIT00000000 - VGL26 winter");
-        std::fs::write(&path, fixture_save(PesVersion::Pes19)).unwrap();
-        view.open(&path);
-        paths.push(path);
-    }
-    view.session = None;
+    let paths = ten_found_ten_recents(&tree, "welcome_scroll", "VGL26 winter backups", &mut view);
     discover_counted(&mut view, &tree.documents);
     let mut window = Headless::sized(DEFAULT_PANE.x, 576.0);
     idle_frames(&mut window, &mut view, 3);
@@ -1726,7 +1776,6 @@ fn the_welcome_panels_long_list_scrolls_to_its_last_entry() {
             .iter()
             .find(|node| node.role() == Role::ScrollBar)
             .and_then(accesskit::Node::bounds)
-            .map(|bounds| (bounds.y0, bounds.y1))
     };
     let entry_bounds = |nodes: &[accesskit::Node]| {
         entries(nodes, "Open\u{2026}")
@@ -1736,16 +1785,13 @@ fn the_welcome_panels_long_list_scrolls_to_its_last_entry() {
     let inside = |nodes: &[accesskit::Node]| {
         clip(nodes)
             .zip(entry_bounds(nodes))
-            .is_some_and(|((top, bottom), bounds)| bounds.y0 >= top && bounds.y1 <= bottom)
+            .is_some_and(|(bar, bounds)| bounds.y0 >= bar.y0 && bounds.y1 <= bar.y1)
     };
     let nodes = draw(&mut window, &mut view);
-    assert!(
-        clip(&nodes).is_some(),
-        "premise: the panel's scroll bar is drawn"
-    );
+    let bar = clip(&nodes).expect("premise: the panel's scroll bar is drawn");
     // The bar stands between the toolbar band's line and the panes'
     // bottom, over the status bar's margin.
-    let (bar_top, bar_bottom) = clip(&nodes).expect("the scroll bar's span");
+    let (bar_top, bar_bottom) = (bar.y0, bar.y1);
     let band_bottom = {
         let button = menu_button(&nodes, "File")
             .bounds()
@@ -1765,7 +1811,8 @@ fn the_welcome_panels_long_list_scrolls_to_its_last_entry() {
         "the scroll bar starts below the toolbar band: {bar_top} vs {band_bottom}"
     );
     // Plus half the frame's margins: a `max_height` off by the chrome or
-    // the title pushes the bar's bottom past the panes' bottom.
+    // the title pushes the bar's bottom past the panes' bottom, or
+    // leaves it short.
     let panes_bottom = f64::from(window.screen.y) - f64::from(PANE_BOTTOM_MARGIN);
     let chrome = f64::from(
         studio_core::widgets::modal_frame(&window.ctx.global_style())
@@ -1774,15 +1821,16 @@ fn the_welcome_panels_long_list_scrolls_to_its_last_entry() {
             .y,
     );
     assert!(
-        bar_bottom + chrome / 2.0 <= panes_bottom,
-        "the scroll bar ends over the panes' bottom: {bar_bottom} + {chrome}/2 vs {panes_bottom}"
+        (panes_bottom - (bar_bottom + chrome / 2.0)).abs() <= 1.0,
+        "the scroll bar ends at the panes' bottom: {bar_bottom} + {chrome}/2 vs {panes_bottom}"
     );
     assert!(
         !inside(&nodes),
         "premise: the last entry starts below the clip"
     );
 
-    // The wheel over the panel scrolls it; egui spreads a delta over the
+    // The wheel over the bar scrolls the list (a row under the pointer
+    // would scroll out from under it); egui spreads a delta over the
     // next frames, so the entry is reached once its bounds hold for a
     // frame inside the clip.
     let mut nodes = nodes;
@@ -1792,7 +1840,11 @@ fn the_welcome_panels_long_list_scrolls_to_its_last_entry() {
             break;
         }
         last = entry_bounds(&nodes);
-        let at = centre(menu_item(&nodes, "Open\u{2026}"));
+        let bar = clip(&nodes).expect("the panel's scroll bar");
+        let at = egui::pos2(
+            ((bar.x0 + bar.x1) / 2.0) as f32,
+            ((bar.y0 + bar.y1) / 2.0) as f32,
+        );
         let (_, frame_nodes, _) = window.frame(
             vec![
                 egui::Event::PointerMoved(at),
@@ -1841,35 +1893,14 @@ fn the_welcome_panels_long_list_scrolls_to_its_last_entry() {
 #[test]
 fn the_welcome_panels_wide_entries_stay_on_one_line() {
     let tree = tree("welcome_wide");
-    let layout = save_layout(PesVersion::Pes21);
-    for index in 0..10 {
-        let account = format!("9999999999999999{index:02}");
-        let folder = tree
-            .documents
-            .join("KONAMI")
-            .join(layout.game_folder)
-            .join(account)
-            .join("save");
-        std::fs::create_dir_all(&folder).unwrap();
-        std::fs::write(
-            folder.join(layout.file_name),
-            fixture_save(PesVersion::Pes21),
-        )
-        .unwrap();
-    }
     let mut view = SaveView::new();
-    // Ten recents, each folder name long enough to pass the frame's floor.
-    let dir = crate::test_support::scratch("welcome_wide_recents");
-    for index in 0..10 {
-        let folder = dir.join(format!(
-            "r{index} VGL26 winter backups of the organizer's own team folder"
-        ));
-        std::fs::create_dir_all(&folder).unwrap();
-        let path = folder.join("EDIT00000000 - VGL26 winter");
-        std::fs::write(&path, fixture_save(PesVersion::Pes19)).unwrap();
-        view.open(&path);
-    }
-    view.session = None;
+    // Each recent's folder name long enough to pass the frame's floor.
+    ten_found_ten_recents(
+        &tree,
+        "welcome_wide",
+        "VGL26 winter backups of the organizer's own team folder",
+        &mut view,
+    );
     discover_counted(&mut view, &tree.documents);
     let mut window = Headless::sized(DEFAULT_PANE.x, 576.0);
     idle_frames(&mut window, &mut view, 3);
