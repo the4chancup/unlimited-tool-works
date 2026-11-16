@@ -104,6 +104,7 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) -> f32 {
     };
     let team_before = view.team;
     let category_before = view.team_category;
+    let selected_before = view.selected;
     ui.scope(|ui| {
         ui.spacing_mut().combo_width = frame_width;
         team_selector(
@@ -148,16 +149,19 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) -> f32 {
                     .or(view.selected);
         }
     }
-    // A pick that relisted the rows scrolls to the row still selected:
-    // the rows over it change with the teams — a kept one stands under
-    // every team's rows again at All teams — so it would sit off screen.
-    // A pick leaving the listed rows as they were moves nothing.
+    // A pick that moved the selection or relisted the rows scrolls to
+    // the row still selected: under a typed filter a team pick moves no
+    // rows but lands it on a row off screen, and the rows over a kept
+    // selection change with the teams. A pick that did neither moves
+    // nothing.
     if view.team != team_before || view.team_category != category_before {
         let listed_before =
             selection::list(session.file(), &team_before, &view.filter, category_before);
         let listed_after =
             selection::list(session.file(), &view.team, &view.filter, view.team_category);
-        if listed_before != listed_after && view.selected.is_some() {
+        if view.selected.is_some()
+            && (view.selected != selected_before || listed_before != listed_after)
+        {
             view.reveal_selected = Some(reveal_for(view.selected));
         }
     }

@@ -603,23 +603,9 @@ fn the_arrowed_selection_scrolls_only_as_far_as_it_needs() {
     let drawn = listed_selections(&view);
 
     // Wheel the list down until its first row is out of the clip.
-    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
-    let at = centre(
-        nodes
-            .iter()
-            .find(|node| player_row(node))
-            .expect("a player row"),
-    );
-    for _ in 0..64 {
-        notch(&mut window, &mut view, at, false);
-        let nodes = draw(&mut window, &mut view);
-        if !nodes
-            .iter()
-            .any(|node| node.role() == Role::Button && node.label() == Some("701 /3/"))
-        {
-            break;
-        }
-    }
+    wheel_row_out_of_clip(&mut window, &mut view, |node| {
+        node.label() == Some("701 /3/")
+    });
     let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     assert!(
         !nodes
@@ -650,7 +636,7 @@ fn the_arrowed_selection_scrolls_only_as_far_as_it_needs() {
     };
     let frame = list_frame(&window, &shapes);
     let rows = rows_in_view(&nodes);
-    let top_before = rows.first().copied().expect("a top row");
+    let top_before = top_list_row(&nodes);
 
     // Down on the row nearest the clip's middle keeps the offset: the
     // next row was in view already, so the list moves nothing.
@@ -675,10 +661,10 @@ fn the_arrowed_selection_scrolls_only_as_far_as_it_needs() {
         |ui| show(ui, &mut view, &|| Vec::new()),
     );
     assert_eq!(view.selected, Some(drawn[index + 1]), "Down moved one row");
-    let top_after = rows_in_view(&nodes).first().copied().expect("a top row");
-    assert!(
-        (top_after.y0 - top_before.y0).abs() <= 0.5 && (top_after.y1 - top_before.y1).abs() <= 0.5,
-        "the offset kept ({top_after:?} vs {top_before:?})"
+    assert_eq!(
+        top_list_row(&nodes),
+        top_before,
+        "the offset kept the top row"
     );
 
     // Up from the row shown highest brings the row above it to the

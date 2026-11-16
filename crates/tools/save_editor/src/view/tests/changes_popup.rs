@@ -1063,35 +1063,10 @@ fn an_undone_edit_keeps_the_selection() {
     edited.basic.height = 190;
     view.session.as_mut().unwrap().edit_player(1, edited);
 
-    // Wheel down until P02's row is out of the clip (bounded, so a list
-    // that never scrolls him out fails rather than hangs).
-    let at = centre(
-        nodes
-            .iter()
-            .find(|node| player_row(node))
-            .expect("a player row"),
-    );
-    let mut off_clip = false;
-    for _ in 0..64 {
-        let nodes = draw(&mut window, &mut view);
-        if !nodes
-            .iter()
-            .any(|node| node.label().is_some_and(|l| l.starts_with("02 CB P02")))
-        {
-            off_clip = true;
-            break;
-        }
-        notch(&mut window, &mut view, at, false);
-    }
-    assert!(off_clip, "the list scrolled P02's row out of the clip");
-    // Let the wheel's spread-out delta drain before the top row is read:
-    // it would keep scrolling across the undo's frames.
-    for _ in 0..64 {
-        if !window.ctx.input(|input| input.is_scrolling()) {
-            break;
-        }
-        draw(&mut window, &mut view);
-    }
+    // Wheel down until P02's row is out of the clip.
+    wheel_row_out_of_clip(&mut window, &mut view, |node| {
+        node.label().is_some_and(|l| l.starts_with("02 CB P02"))
+    });
     let nodes = draw(&mut window, &mut view);
     let top_row = top_list_row(&nodes);
 
