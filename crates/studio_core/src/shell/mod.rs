@@ -843,13 +843,15 @@ impl eframe::App for StudioApp {
             egui_ctx.send_viewport_cmd(egui::ViewportCommand::CancelClose);
             self.set_active(index);
             // The holder's prompt decides; no shell modal (the settings menu, the About
-            // popup, the update and report dialogs) may cover it.
+            // popup, the update and report dialogs) may cover it. An open popup (a
+            // menu, a dropdown) is no shell modal either, and it paints over the prompt.
             self.settings_menu.close();
             self.sidebar.about_open = false;
             #[cfg(not(target_arch = "wasm32"))]
             self.update_dialog.close();
             #[cfg(not(target_arch = "wasm32"))]
             self.report.close();
+            egui::Popup::close_all(egui_ctx);
             // A held close drops Restart now for good: the member answers the tool's
             // prompt, and a later close is an ordinary one.
             #[cfg(not(target_arch = "wasm32"))]
@@ -1450,6 +1452,42 @@ mod tests {
         assert!(
             out.commands.contains(&egui::ViewportCommand::Close),
             "the prompt is uncovered and answers"
+        );
+    }
+
+    // ST-RUN-05
+    #[test]
+    fn a_held_close_closes_an_open_popup_over_the_prompt() {
+        let dir = TestDir::new("studio_core_close_popup");
+        let egui_ctx = test_context();
+        let (a, calls_a) = stub("a", "A", None);
+        let (b, calls_b) = stub("b", "B", None);
+        let Shell { mut app, calls, .. } = shell_with(
+            test_settings(dir.path()),
+            vec![a, b],
+            &[],
+            Some(dir.path().to_path_buf()),
+            vec![calls_a, calls_b],
+        );
+        *calls[0].unsaved.lock().unwrap() = true;
+        app.set_active(1);
+
+        // A popup (a menu, a dropdown) open over B's view when the close is asked.
+        idle(&egui_ctx, &mut app, 2);
+        egui::Popup::open_id(&egui_ctx, egui::Id::unique("the menu"));
+        assert!(
+            egui::Popup::is_any_open(&egui_ctx),
+            "premise: a popup is open"
+        );
+
+        // The close is held: the popup would paint over A's prompt, so it goes
+        // with the shell's own modals on that same frame.
+        let out = frame_closing(&egui_ctx, &mut app);
+        assert!(out.commands.contains(&egui::ViewportCommand::CancelClose));
+        assert_eq!(app.active, 0);
+        assert!(
+            !egui::Popup::is_any_open(&egui_ctx),
+            "the popup is closed on the frame the close is held"
         );
     }
 
