@@ -18358,8 +18358,9 @@ Plan: plans/core/development_plan.md "The /vg/ League 27 (VGL): preview 0.0.2"; 
 Decision: when the File menu would run past the window's bottom, the part from Open from
 Documents down to the last recent save scrolls; Open…, Save, Save as…, Close save and Exit stay
 on screen.
-Why: with several saves found and ten recent ones, a 960 × 600 window cut off the menu's lower
-entries, where the welcome panel already scrolls. The middle scrolls, not the whole menu, because
+Why: with thirteen saves found and ten recent ones, a 1280 × 600 window (a 1366 × 768 laptop's
+is about 691 points high) cut off the menu's lower entries, where the welcome panel already
+scrolls. A narrower window is zoomed to a 1280-point layout, so its height grows with it. The middle scrolls, not the whole menu, because
 the commands used on every save would otherwise scroll out of reach.
 Plan: plans/save_editor.md, the File menu's paragraph and SE-GUI-26.
 

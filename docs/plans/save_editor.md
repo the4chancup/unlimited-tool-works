@@ -506,8 +506,9 @@ vertical room a tab row takes; a toggle on the title's own row takes none.
     (`Ctrl+Q`).
 
   When the menu would run past the window's bottom (many saves found and ten recent ones,
-  in a window near its 600-point minimum), the part from *Open from Documents* down to the
-  last recent save scrolls, so `Open…`, the writes, `Close save` and `Exit` stay on screen.
+  in a window about 600 points high and 1280 or more wide, as on a 1366 × 768 laptop), the
+  part from *Open from Documents* down to the last recent save scrolls, so `Open…`, the
+  writes, `Close save` and `Exit` stay on screen.
 
   The commands used on every save stand first, and the two headings say where each save
   comes from, so a discovered save's label is its version alone. They are labels, not
@@ -3779,9 +3780,9 @@ SE-GUI-26  GIVEN two PES 21 saves and one PES 19 save under the test's Documents
                 Ctrl+Q; GIVEN no save opened earlier THEN no Recent files heading; GIVEN two
                 recent saves WHEN the older is clicked THEN it opens and stands first under
                 Recent files; GIVEN thirteen discovered saves and ten recent ones in a
-                window at its 960 × 600 minimum WHEN the File menu is opened THEN Close save
-                and Exit stand inside the window, and the saves scroll down to the oldest
-                recent one; WHEN the menu is closed and Ctrl+9 is pressed
+                1280 × 600 window WHEN the File menu is opened THEN Open…, Close save and Exit
+                stand inside the window, and scrolling the menu brings the oldest recent save
+                into view while they stay where they are; WHEN the menu is closed and Ctrl+9 is pressed
                 THEN the PES 19 save opens, and WHEN Ctrl+7 is pressed (no PES 17 save found)
                 THEN the file picker opens; WHEN Ctrl+Shift+9 is pressed, or Ctrl+9 while the
                 Name field holds the keyboard, THEN nothing opens and no prompt shows; WHEN
