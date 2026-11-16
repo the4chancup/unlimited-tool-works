@@ -1242,9 +1242,11 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       editor writes, and the GUI's controls write through the same codec, so one Team TOML
       with every value stepped apart, imported by the CLI into team 701, shows each
       field's offset:
-      - [ ] part 1, the test save and what the game should show per screen (SWE-2,
-        `.tmp/0_0_2/pes19/brief_rb1.md`)
+      - [x] part 1, 2026-11-16 (SWE-2, `.tmp/0_0_2/pes19/rb/`): the stepped Team TOML
+        imported with no note, exported back unchanged, and only team 701 differs among
+        the save's 210 cup teams; `expected.md` says what each Edit-mode screen should show
       - [ ] part 2, the read-back in game, four players, the team and its three presets
+        (SWE-2, `.tmp/0_0_2/pes19/brief_rb2.md`), once no cargo runs
     - a `.ted` import (the organizer's first step) loaded in game: only the window imports
       a `.ted` (the CLI takes a Team TOML), so it waits for a built-window run with the
       maintainer's yes
@@ -1257,7 +1259,7 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     candidate is staged: the Ruleset editor's tier handle no longer starts a text selection
     beside its glyph (`.selectable(false)`, a test pressing 2 points outside it);
     `run_tests.py` writes its timings to cargo's target folder; `make_candidate.py` finds
-    `4cc-studio-temp` from the main tree. SWE-2, one brief
+    `4cc-studio-temp` from the main tree. SWE-2, one brief: running (`sk/left01`)
   - [x] 0.0.2-arrows 2026-11-13 Up and Down step every whole-number box by one (found in
     0.0.2-range's rework; tried in the built window 2026-11-13: the Save editor's Height
     steps, through its own `number_arrows`; the Tactics popover's X stays put after four
@@ -1722,14 +1724,14 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     - [ ] its review (tier 2): SWE-2's round 1 accepted 6 ("S-recents r1"); the rework
       landed (SWE-2, merge `6680c856`); SWE-2's round 2 accepted 4 ("S-recents r2"), which
       ends the SWE-2 loop: its rework landed (SWE-2, merge `2923f863`, with Choose file's
-      tooltip from 0.0.2-answers); next, one Carbon round
+      tooltip from 0.0.2-answers); Carbon's round 1 running (at `d43550fe`, `review35`,
+      `.tmp/carbon_recents1.md`)
   - [ ] 0.0.2-answers the maintainer's answers of 2026-11-16 that change the build (plans and
     DECISIONS edited that day):
-    - [ ] code, in two slices -> verify: each a test red first. SWE-2 (`sk/answers`,
-      `answers/.tmp/brief_answers.md`, running): the lit area, the manager id, the rail,
-      Substitution, the Gameplan's gaps. Opus (`sk/layout`, `layout/.tmp/brief_layout.md`,
-      running): the Physique box, the indent, `Star rating` and its key, the Kit slots'
-      widths:
+    - [x] code, in two slices -> verify: each a test red first. SWE-2 (merge `498ef8e4`):
+      the lit area, the manager id, the rail, Substitution, the Gameplan's gaps. Opus (merge
+      `9c07f067`): the Physique box, the indent, `Star rating` and its key, the Kit slots'
+      widths (51 points, the draft's too):
       - a held starter rated A or B nowhere darkens the whole pitch; an empty slot or no
         ratings still darkens nothing (`team_widgets` `pitch/lit_area.rs`)
       - a Team TOML import writes a `manager_id` equal to the file's team id as the target's
@@ -1754,6 +1756,9 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         `substitution_choices`, help 08, the two comments)
       - [x] Choose file's tooltip reads "starting in the folder of the last opened save":
         landed with the recents round 2 rework (merge `2923f863`)
+    - [ ] the built window beside the drafts: the Stats indent, Appearance with Motion's 24
+      points less room, the Gameplan's 8-point gaps, Kit slots at 51; it takes focus, so it
+      waits for the maintainer's yes
     - [x] the drafts (the lead), each captured and critiqued: Kit slots shows `Bound team
       ID` as the id in boxes of one width (72 points, six digits); Randomize greyed whole;
       the three texts of DECISIONS 2026-11-16 "the drafts take three texts"; `Star rating`;
@@ -1977,14 +1982,14 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       Recent never seen (dropped, then restored by 0.0.2-recents), untested clauses, a
       surviving mutant, stale citations and comments
     - [x] the rework (SWE-2, merge `5b5546d8`)
-    - [ ] round 7: Astra in Carbon's place (the maintainer, 2026-11-15: a cross-check on a
+    - [x] round 7: Astra in Carbon's place (the maintainer, 2026-11-15: a cross-check on a
       loop that has not converged; Astra's round over round 3's surface, "A-bar r3", found one
       gap Carbon never did); it carries A-bar r3-4 (the cancelled Save as test). Done
       2026-11-16 at `2923f863`: 4 of 4 accepted ("A-bar r7"), under five, so the loop ends
       with its rework: the welcome panel scrolls once ten kept recents outgrow a 600-point
       window, a changelog line's "shortcuts are unchanged", Ctrl+Shift+S and Ctrl+W in the
       close-the-menu test, and the plan's File row (fixed by the lead)
-    - [ ] round 7's rework (SWE-2, `sk/barrw7`, `barrw6/.tmp/rework_astra7.md`): running
+    - [x] round 7's rework (SWE-2, merge `d43550fe`): the bars' review loop ends
   - [x] 0.0.2-dragmark (2026-11-15, merge `96aef711`) a Starting eleven or Bench row held over a
     Tactics pitch player marks the player its drop swaps out, as a pitch drag marks its target;
     one hit test (`marker_at`) for the drop and the mark, the keeper and an illegal formation
