@@ -9409,7 +9409,7 @@ function ixExportToml() {
     [button("Save", () => {
       S.ix.exportText = TEAM_TOML_TEXT[S.saveKey + "/" + t.id];
       publishNotice(input.value.split("\\").pop()
-        + " written (the CLI's export-toml text for team " + t.id + ")", null, "success");
+        + " written (team " + t.id + " as a Team TOML)", null, "success");
       closeWindow(); render();
     }), button("Cancel", closeWindow)]);
 }
