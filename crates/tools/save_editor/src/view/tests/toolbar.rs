@@ -4,6 +4,7 @@
 //! marker in the link blue.
 
 use super::changes_popup::{click_label, three_changes};
+use super::file_menu::save_as_stub;
 use super::*;
 
 /// The toolbar's row: the File menu button's vertical span.
@@ -181,18 +182,21 @@ fn a_shortcut_pressed_over_an_open_menu_closes_it() {
         view.session.as_mut().unwrap().edit_player(1, entry);
     }
     // The row's events as the window hears them, `build` having set the
-    // key's premise (an edit, discovery stubbed, a player copied).
+    // key's premise (an edit, discovery stubbed, a player copied, the
+    // Save as picker answered); `check`, the cases that carry one,
+    // asserts the arm the key reached fired.
+    type Check = Box<dyn FnOnce(&mut Headless, &mut SaveView)>;
     type Case = (
         &'static str,
-        &'static dyn Fn(&mut Headless, &mut SaveView) -> Vec<egui::Event>,
+        &'static dyn Fn(&mut Headless, &mut SaveView) -> (Vec<egui::Event>, Option<Check>),
     );
     let cases: Vec<Case> = vec![
         ("Ctrl+S", &|_, _| {
-            vec![key(egui::Key::S, egui::Modifiers::CTRL, true)]
+            (vec![key(egui::Key::S, egui::Modifiers::CTRL, true)], None)
         }),
         ("Ctrl+Z", &|_, view| {
             edited(view);
-            vec![key(egui::Key::Z, egui::Modifiers::CTRL, true)]
+            (vec![key(egui::Key::Z, egui::Modifiers::CTRL, true)], None)
         }),
         ("Ctrl+Y", &|_, view| {
             edited(view);
@@ -200,22 +204,25 @@ fn a_shortcut_pressed_over_an_open_menu_closes_it() {
                 view.session.as_mut().unwrap().undo(),
                 "premise: the edit undid"
             );
-            vec![key(egui::Key::Y, egui::Modifiers::CTRL, true)]
+            (vec![key(egui::Key::Y, egui::Modifiers::CTRL, true)], None)
         }),
         ("Ctrl+F", &|_, _| {
-            vec![key(egui::Key::F, egui::Modifiers::CTRL, true)]
+            (vec![key(egui::Key::F, egui::Modifiers::CTRL, true)], None)
         }),
         ("Ctrl+I", &|_, _| {
-            vec![key(egui::Key::I, egui::Modifiers::CTRL, true)]
+            (vec![key(egui::Key::I, egui::Modifiers::CTRL, true)], None)
         }),
         ("Ctrl+B", &|_, _| {
-            vec![key(egui::Key::B, egui::Modifiers::CTRL, true)]
+            (vec![key(egui::Key::B, egui::Modifiers::CTRL, true)], None)
         }),
-        ("Ctrl+C", &|_, _| vec![egui::Event::Copy]),
+        ("Ctrl+C", &|_, _| (vec![egui::Event::Copy], None)),
         ("Ctrl+9", &|_, view| {
             view.discover = Box::new(|_| Vec::new());
             view.open_dialog = Box::new(|_| None);
-            vec![key(egui::Key::Num9, egui::Modifiers::CTRL, true)]
+            (
+                vec![key(egui::Key::Num9, egui::Modifiers::CTRL, true)],
+                None,
+            )
         }),
         ("Ctrl+V", &|window, view| {
             window.frame(vec![egui::Event::Copy], |ui| show(ui, view, &|| Vec::new()));
@@ -227,10 +234,42 @@ fn a_shortcut_pressed_over_an_open_menu_closes_it() {
                     _ => None,
                 })
                 .expect("the copy put a player on the clipboard");
-            vec![egui::Event::Paste(text)]
+            (vec![egui::Event::Paste(text)], None)
         }),
         ("Page Down", &|_, _| {
-            vec![key(egui::Key::PageDown, egui::Modifiers::NONE, true)]
+            (
+                vec![key(egui::Key::PageDown, egui::Modifiers::NONE, true)],
+                None,
+            )
+        }),
+        ("Ctrl+Shift+S", &|_, view| {
+            let handed = save_as_stub(view, None);
+            (
+                vec![key(
+                    egui::Key::S,
+                    egui::Modifiers::CTRL | egui::Modifiers::SHIFT,
+                    true,
+                )],
+                Some(Box::new(move |_, view: &mut SaveView| {
+                    assert_eq!(
+                        handed.borrow().as_slice(),
+                        [view.save_path().expect("the save is open")],
+                        "the key reached Save as's arm: its picker ran on the open file"
+                    );
+                })),
+            )
+        }),
+        ("Ctrl+W", &|_, view| {
+            edited(view);
+            (
+                vec![key(egui::Key::W, egui::Modifiers::CTRL, true)],
+                Some(Box::new(|window: &mut Headless, view: &mut SaveView| {
+                    assert!(
+                        label_value(&draw(window, view), "Unsaved changes"),
+                        "the key reached Close save's arm: the unsaved-changes prompt is up"
+                    );
+                })),
+            )
         }),
     ];
     for (name, build) in cases {
@@ -238,7 +277,7 @@ fn a_shortcut_pressed_over_an_open_menu_closes_it() {
         let mut view = SaveView::new();
         view.open(&path);
         let mut window = Headless::new();
-        let events = build(&mut window, &mut view);
+        let (events, check) = build(&mut window, &mut view);
         open_menu(&mut window, &mut view, "Player", "Bump all stats");
         assert!(
             egui::Popup::is_any_open(&window.ctx),
@@ -247,6 +286,9 @@ fn a_shortcut_pressed_over_an_open_menu_closes_it() {
 
         window.frame(events, |ui| show(ui, &mut view, &|| Vec::new()));
         draw(&mut window, &mut view);
+        if let Some(check) = check {
+            check(&mut window, &mut view);
+        }
         assert!(
             !egui::Popup::is_any_open(&window.ctx),
             "{name}: the menu closed on the shortcut's frame"
