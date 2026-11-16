@@ -621,8 +621,8 @@ fn hide_and_show_body_apply_the_presets_keeping_own_ids() {
     // Two operations, two undo entries, the player restored.
     assert_eq!(undo_entries(&mut window, &mut view), 2, "one entry each");
 
-    // 70102's own boots ID 627: Hide keeps it, and he reads "FPC: body
-    // shown" — his model hides him, the save cannot tell.
+    // 70102's own boots ID 627: Hide keeps it, and he reads "The default
+    // body is currently shown" — his model hides him, the save cannot tell.
     view.selected = Some(Selection::Player(701, 1));
     let nodes = appearance_frame(&mut window, &mut view);
     click(
@@ -710,8 +710,8 @@ fn hide_and_show_body_apply_the_presets_keeping_own_ids() {
         assert_eq!(strip.3, boots, "slot {}'s boots", slot + 1);
         assert_eq!(strip.4, gloves, "slot {}'s gloves", slot + 1);
     }
-    // One undo (the Remove entry alone) hides them all again; the next is
-    // the Set entry and restores the team's own state.
+    // One undo (the Show entry alone) hides them all again; the next is
+    // the Hide entry and restores the team's own state.
     window.frame(vec![key(egui::Key::Z, egui::Modifiers::CTRL, true)], |ui| {
         show(ui, &mut view, &|| Vec::new())
     });
@@ -724,7 +724,7 @@ fn hide_and_show_body_apply_the_presets_keeping_own_ids() {
         let expected_gloves = if gloves == 0 { 11 } else { gloves };
         assert_eq!(strip.4, expected_gloves, "slot {}'s gloves", slot + 1);
     }
-    assert_eq!(undo_entries(&mut window, &mut view), 1, "the Set entry");
+    assert_eq!(undo_entries(&mut window, &mut view), 1, "the Hide entry");
     for &(_, id, boots, gloves) in &before {
         let strip = strip_of(&view, id);
         assert_eq!(strip.3, boots, "restored");
@@ -1131,9 +1131,9 @@ fn an_out_of_band_hide_id_disables_the_fpc_paths_with_the_error() {
 
 // Every FPC path reads the same settings' hide IDs (`view.hide_ids` =
 // 60 and 12): Ctrl+I hides and shows under them, the Player menu's
-// FPC entry hides the same, and the Team menu's Set and
-// Show default body (Disable FPC) write and clear them on every filled slot
-// whose IDs were 0, a model's own kept.
+// FPC entry hides the same, and the Team menu's Hide default body
+// (Enable FPC) and Show default body (Disable FPC) write and clear them
+// on every filled slot whose IDs were 0, a model's own kept.
 // SE-GUI-31
 #[test]
 fn every_fpc_path_writes_the_settings_hide_ids() {
@@ -1156,7 +1156,7 @@ fn every_fpc_path_writes_the_settings_hide_ids() {
     }
     {
         // Hidden under the previous setting's 55 and 11: under 60 and 12
-        // these are his own IDs, which the team's Set and Remove keep (the
+        // these are his own IDs, which the team's Hide and Show keep (the
         // fixture's other slots all hold 0).
         let player = file.player_mut(70103).unwrap();
         player.appearance.boots_id = 55;
@@ -1212,6 +1212,26 @@ fn every_fpc_path_writes_the_settings_hide_ids() {
         "the menu toggle hides with the settings' IDs"
     );
 
+    // Reopened on him the entry reads Show default body (Disable FPC) —
+    // under the settings' IDs his record reads as hidden — and clears
+    // them the same way. On 70103, whose 55 and 11 are his own under 60
+    // and 12, it stays Hide.
+    let nodes = open_menu(&mut window, &mut view, "Player", "Set all stats");
+    click(
+        &mut window,
+        menu_item(&nodes, "Show default body (Disable FPC)"),
+        &mut view,
+    );
+    assert_eq!(
+        strip_of(&view, 70101),
+        (1, true, 0, 0, 0),
+        "the menu toggle shows him again, the IDs cleared"
+    );
+    view.selected = Some(Selection::Player(701, 2));
+    let nodes = open_menu(&mut window, &mut view, "Player", "Set all stats");
+    menu_item(&nodes, "Hide default body (Enable FPC)");
+    view.selected = Some(Selection::Player(701, 0));
+
     // The Team menu's Hide default body (Enable FPC): the settings' IDs on every
     // filled slot whose IDs were 0 or already the hide IDs, a model's
     // own kept.
@@ -1254,8 +1274,8 @@ fn every_fpc_path_writes_the_settings_hide_ids() {
         "the previous setting's IDs are kept as his own"
     );
 
-    // Show default body (Disable FPC) zeroes the slots the Set wrote (0 or the
-    // hide ID), a model's own kept again.
+    // Show default body (Disable FPC) zeroes the slots the Hide wrote (0 or
+    // the hide ID), a model's own kept again.
     let nodes = open_menu(&mut window, &mut view, "Team", "Set edited flag");
     click(
         &mut window,
@@ -1280,6 +1300,6 @@ fn every_fpc_path_writes_the_settings_hide_ids() {
     assert_eq!(
         (strip_of(&view, 70103).3, strip_of(&view, 70103).4),
         (55, 11),
-        "Remove leaves the previous setting's IDs alone"
+        "Show leaves the previous setting's IDs alone"
     );
 }

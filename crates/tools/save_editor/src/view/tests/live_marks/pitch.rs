@@ -70,12 +70,8 @@ fn a_fielded_violation_crosses_the_starters_portrait_on_the_pitch() {
     assert_eq!(black.color, egui::Color32::BLACK, "the outline is black");
     assert_eq!(
         colour.color,
-        window
-            .ctx
-            .style_of(window.ctx.theme())
-            .visuals
-            .error_fg_color,
-        "the error colour"
+        studio_core::theme::palette(&window.ctx.style_of(window.ctx.theme()).visuals).pitch_error,
+        "the pitch's error colour"
     );
     assert!(
         strokes
@@ -167,12 +163,8 @@ fn a_fielded_warning_crosses_the_starters_portrait_in_the_warning_colour() {
     assert_eq!(black.color, egui::Color32::BLACK, "the outline is black");
     assert_eq!(
         colour.color,
-        window
-            .ctx
-            .style_of(window.ctx.theme())
-            .visuals
-            .warn_fg_color,
-        "the warning colour"
+        studio_core::theme::palette(&window.ctx.style_of(window.ctx.theme()).visuals).pitch_warn,
+        "the pitch's warning colour"
     );
     assert!(
         strokes

@@ -526,9 +526,9 @@ pub(crate) fn marker_point(
     let free = |point: egui::Pos2| {
         later
             .iter()
-            .all(|&other| !marker_rect(centres[other], canvas).contains(point))
+            .all(|&other| !marker_rect(centres[other], canvas, true).contains(point))
     };
-    let rect = marker_rect(centres[index], canvas);
+    let rect = marker_rect(centres[index], canvas, true);
     if free(rect.center()) {
         return rect.center();
     }
@@ -557,9 +557,9 @@ fn grass_point(
 ) -> egui::Pos2 {
     let free = |point: egui::Pos2| {
         !blocked.contains(point)
-            && players
-                .iter()
-                .all(|slot| !marker_rect(badge_centre(canvas.min, *slot), canvas).contains(point))
+            && players.iter().all(|slot| {
+                !marker_rect(badge_centre(canvas.min, *slot), canvas, true).contains(point)
+            })
     };
     (0..=GRID_X)
         .flat_map(|x| (0..=GRID_Y).map(move |y| (x, y)))

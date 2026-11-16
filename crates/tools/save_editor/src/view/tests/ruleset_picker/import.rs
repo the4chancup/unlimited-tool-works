@@ -246,6 +246,7 @@ fn a_file_with_errors_is_refused_listing_its_findings() {
 /// asks first, naming the import it replaces: Cancel changes nothing;
 /// Replace leaves one row, the new file's, which is the ruleset in use.
 // SE-GUI-15
+// SE-GUI-79
 #[test]
 fn a_clean_file_is_copied_listed_and_picked_and_a_reimport_replaces_it() {
     let (mut tool, ctx, requests, dir) = tool_with("ruleset_import_clean", "autumn26");
