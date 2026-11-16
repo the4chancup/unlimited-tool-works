@@ -775,8 +775,8 @@ to moving, flattening, or removing files describe that draft, not destructive ed
    (an FMDL path-table entry, a `.mtl` texture) is one path for this rule.
 
    In a `face.xml`, only the `path` and `material` attributes' values change, the rest of the
-   file byte for byte as written, `<dif>` included. A Common path's folder after `common/`
-   becomes `team_folder` there too, the rest of the value kept
+   file byte for byte as written, `<dif>` included. A Common path's prefix and its folder after
+   `common/` become `team_common_folder/` there, the rest of the value kept
    (`model/character/uniform/common/XXX/oral_hand_l_*.model` →
    `team_common_folder/oral_hand_l_*.model`). The upgrader is the **only** Studio component that
    reads the legacy spelling: the compiler refuses it where the upgrader respells it

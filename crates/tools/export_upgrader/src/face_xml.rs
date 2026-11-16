@@ -318,8 +318,8 @@ fn respell_face_xml<'a>(
             if !(value.starts_with("./") || strip_prefix_ci(value, COMMON_PREFIX).is_some()) {
                 return None;
             }
-            // The folder after `common/` becomes `team_folder`, whatever
-            // it was, then the kit magic as today; a flattened value's
+            // The prefix and the folder after `common/` become
+            // `team_common_folder/`, whatever it was, then the kit magic; a flattened value's
             // `./` has no folder left.
             let respelled = respell_common_segment(value);
             let new = respell(&respelled, Spelling::Path);
@@ -502,9 +502,9 @@ mod tests {
 
     #[test]
     fn a_common_path_s_folder_becomes_team_folder_whatever_it_was() {
-        // `o`, `XXX`, an ID: the compiler refuses any folder after
-        // `common/` but `team_folder`, so whatever stood there is
-        // respelled to it.
+        // `o`, `XXX`, an ID: the compiler reads the team's Common only as
+        // `team_common_folder/`, so whatever stood there is respelled to
+        // it.
         let copies = vec![("Faces/x".to_owned(), "Players/07 - A/face.xml".to_owned())];
         let text = "<config><model path=\"model/character/uniform/common/o/oral_shirt_*.model\" material=\"model/character/uniform/common/XXX/a.mtl\"/></config>";
         let mut read = reader(vec![("Faces/x".to_owned(), text.as_bytes().to_vec())]);
@@ -601,7 +601,7 @@ mod tests {
             rewrite(&refs(), "arbiter"),
             "<config><model path=\"./parts_body.model\"/><model path=\"./oral_x_*.model\" material=\"./kit/kit1.mtl\"/></config>"
         );
-        // A team's: `team_folder`, then the kit magic.
+        // A team's: `team_common_folder/`, then the kit magic.
         assert_eq!(
             rewrite(&team(), "07 - A"),
             "<config><model path=\"team_common_folder/parts_body.model\"/><model path=\"./oral_x_*.model\" material=\"team_common_folder/kit/kit1.mtl\"/></config>"

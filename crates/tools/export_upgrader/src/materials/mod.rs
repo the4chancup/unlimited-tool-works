@@ -345,7 +345,8 @@ struct FileContext<'a> {
     copies: &'a [(String, String)],
     /// The file's input path, for the finding's scope.
     input: &'a str,
-    /// The export's identity, whose path ID respells `???`.
+    /// The export's identity, which says whether a player folder is a
+    /// referee's (`is_referee_file`).
     identity: &'a Identity,
 }
 
