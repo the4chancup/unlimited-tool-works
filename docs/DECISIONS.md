@@ -18322,3 +18322,13 @@ Why: the maintainer, 2026-11-16: until 1.0.0 the formats change with no compatib
 old files, and the two values are no longer stats.
 Plan: plans/pes_savefile/operations.md "Star rating and playing attitude move into
 `[players.NN.appearance]`".
+
+## 2026-11-16 — review rounds — another round needs a real input's defect among the five accepted
+Decision: a review loop runs another round only when the last round accepted five or more
+concerns and at least one of them is reach (a), a real input whose outcome changes. A round
+whose accepted concerns are all test gaps, contradictions and wrong facts is reworked, and the
+loop ends there.
+Why: a thorough reviewer always finds five such concerns, so the count alone never ended the
+menu bars' Carbon loop: its fifth and sixth rounds accepted six and nine, none of them a
+real input's defect.
+Plan: RUNBOOK.md "Review rounds", the round rule.
