@@ -178,13 +178,11 @@ fn label_below(nodes: &[accesskit::Node], value: &str, above: f64) -> accesskit:
         .unwrap_or_else(|| panic!("no {value:?} label below {above}"))
 }
 
-/// The opens that outgrow the File menu's and the welcome panel's room:
-/// ten more PES 21 saves under `tree`'s Documents (with its three, a
-/// discovered list of thirteen), and `view`'s recents filled to the
-/// kept ten with PES 19 saves, each in a `r<index> <tail>` folder of
-/// `test`'s own scratch, opened oldest first with the session cleared,
-/// as if every open were an earlier run's. Returns the recents' paths,
-/// oldest first.
+/// Adds ten PES 21 saves under `tree`'s Documents (thirteen discovered
+/// in all) and opens ten PES 19 saves into `view`'s recents, oldest
+/// first, each in a `r<index> <tail>` folder under `test`'s scratch.
+/// Clears `view.session` so the recents stand as an earlier run's, and
+/// returns their paths oldest first.
 fn ten_found_ten_recents(tree: &Tree, test: &str, tail: &str, view: &mut SaveView) -> Vec<PathBuf> {
     let layout = save_layout(PesVersion::Pes21);
     for index in 0..10 {
@@ -584,36 +582,41 @@ fn the_file_menus_saves_and_recents_scroll_past_the_windows_bottom() {
             .filter_map(accesskit::Node::bounds)
             .min_by(|a, b| a.x0.partial_cmp(&b.x0).expect("ordered bounds"))
     };
-    let nodes = open_menu(&mut window, &mut view, "File", "Open\u{2026}");
+    open_menu(&mut window, &mut view, "File", "Open\u{2026}");
+    // The popup sizes itself a frame behind the scroll's reach: a few
+    // frames for the menu to settle at its full height.
+    idle_frames(&mut window, &mut view, 8);
+    let nodes = draw(&mut window, &mut view);
     let clip = bar(&nodes).expect("the menu's scroll bar is drawn");
 
-    // Open… stays under the File button and Exit keeps the popup's
-    // bottom margin inside the window, scrolled or not.
+    // The rows outside the middle are pinned: Open… stands the popup's
+    // top margin under the File button and Exit's bottom the popup's
+    // bottom margin over the window's — the middle takes all the room
+    // it has — and none of the three moves when the middle scrolls.
     let file_button = menu_button(&nodes, "File")
         .bounds()
         .expect("the File button's bounds");
     let screen_bottom = f64::from(window.screen.y);
-    let popup_bottom = f64::from(
-        egui::Frame::popup(&window.ctx.global_style())
-            .total_margin()
-            .bottom,
+    let popup_margin = egui::Frame::popup(&window.ctx.global_style()).total_margin();
+    let pinned: Vec<accesskit::Rect> = ["Open\u{2026}", "Close save", "Exit"]
+        .iter()
+        .map(|label| {
+            menu_item(&nodes, label)
+                .bounds()
+                .expect("a pinned entry's bounds")
+        })
+        .collect();
+    assert!(
+        pinned[0].y0 - f64::from(popup_margin.top) >= file_button.y1,
+        "Open… stands below the File button: {:?} vs {file_button:?}",
+        pinned[0]
     );
-    let pins = |nodes: &[accesskit::Node]| {
-        let open = menu_item(nodes, "Open\u{2026}")
-            .bounds()
-            .expect("Open…'s bounds");
-        let exit = menu_item(nodes, "Exit").bounds().expect("Exit's bounds");
-        assert!(
-            open.y0 >= file_button.y1,
-            "Open… stands below the File button: {open:?} vs {file_button:?}"
-        );
-        assert!(
-            exit.y1 + popup_bottom <= screen_bottom,
-            "Exit and the popup's bottom margin stay inside the window: \
-             {exit:?} + {popup_bottom} vs {screen_bottom}"
-        );
-    };
-    pins(&nodes);
+    assert!(
+        (screen_bottom - (pinned[2].y1 + f64::from(popup_margin.bottom))).abs() <= 1.0,
+        "Exit's bottom a popup margin over the window's: {:?} + {} vs {screen_bottom}",
+        pinned[2],
+        f64::from(popup_margin.bottom)
+    );
 
     // Every recent entry is one line high and ends left of the scroll
     // bar: none wraps or runs under it.
@@ -649,6 +652,13 @@ fn the_file_menus_saves_and_recents_scroll_past_the_windows_bottom() {
     // oldest recent stands inside the clip — bounded, so a menu that
     // never scrolls fails rather than hangs.
     let oldest = "[PES 2019] r0 VGL26 winter backups";
+    let before = menu_item(&nodes, oldest)
+        .bounds()
+        .expect("the oldest recent's bounds");
+    assert!(
+        !(before.y0 >= clip.y0 && before.y1 <= clip.y1),
+        "premise: the oldest recent starts outside the clip: {before:?} vs {clip:?}"
+    );
     let mut nodes = nodes;
     for _ in 0..24 {
         let clip = bar(&nodes).expect("the menu's scroll bar is drawn");
@@ -684,7 +694,20 @@ fn the_file_menus_saves_and_recents_scroll_past_the_windows_bottom() {
         bounds.y0 >= clip.y0 && bounds.y1 <= clip.y1,
         "the oldest recent scrolled into the clip: {bounds:?} vs {clip:?}"
     );
-    pins(&nodes);
+    let same = |a: &accesskit::Rect, b: &accesskit::Rect| {
+        [(a.x0, b.x0), (a.y0, b.y0), (a.x1, b.x1), (a.y1, b.y1)]
+            .iter()
+            .all(|(a, b)| (a - b).abs() <= 0.5)
+    };
+    for (label, before) in ["Open\u{2026}", "Close save", "Exit"].iter().zip(&pinned) {
+        let now = menu_item(&nodes, label)
+            .bounds()
+            .expect("a pinned entry's bounds");
+        assert!(
+            same(&now, before),
+            "{label} keeps its bounds across the scroll: {before:?} vs {now:?}"
+        );
+    }
 
     // Its click opens its save.
     click(&mut window, oldest_entry, &mut view);
@@ -694,11 +717,13 @@ fn the_file_menus_saves_and_recents_scroll_past_the_windows_bottom() {
         .expect("the oldest recent's click opened its save");
     assert_eq!(session.path(), paths[0].as_path());
 
-    // A short menu draws no scroll bar (two found saves and one recent).
+    // A short menu draws no scroll bar (three found saves and one
+    // recent).
+    let short = self::tree("menu_unscrolled");
     let mut view = SaveView::new();
-    view.open(&tree.elsewhere);
+    view.open(&short.elsewhere);
     view.session = None;
-    discover_counted(&mut view, &tree.documents);
+    discover_counted(&mut view, &short.documents);
     open_menu(&mut window, &mut view, "File", "Open\u{2026}");
     let nodes = draw(&mut window, &mut view);
     assert!(

@@ -275,15 +275,12 @@ pub(super) fn show(ui: &mut egui::Ui, view: &mut SaveView) -> Option<Write> {
         let max_height = (ui.ctx().content_rect().bottom() - ui.cursor().top() - below).max(0.0);
         // The solid bar takes its strip out of the scroll's width, which
         // the popup's sizing pass measured without it: a scrolling menu
-        // asks for the widest entry plus the strip, capped to the window
-        // less the popup frame's margins, so no entry wraps or clips
-        // under the bar. A menu that fits keeps its width.
+        // asks for the widest entry plus the strip, so no entry wraps or
+        // clips under the bar. A menu that fits keeps its width.
         let (widest, height) = measure(ui, |ui| menu_middle(ui, &opens).0);
         let scroll = egui::style::ScrollStyle::solid();
         if height > max_height {
-            let room = ui.ctx().content_rect().width()
-                - egui::Frame::popup(ui.style()).total_margin().sum().x;
-            ui.set_min_width((widest + scroll.allocated_width()).min(room));
+            ui.set_min_width(widest + scroll.allocated_width());
         }
         ui.spacing_mut().scroll = scroll;
         egui::ScrollArea::vertical()
@@ -397,9 +394,8 @@ pub(super) fn welcome_panel(ui: &mut egui::Ui, view: &mut SaveView) {
             let title = ui.cursor().top() - ui.min_rect().top();
             let max_height = rect.height() - chrome.y - title;
             // The body's width is its widest entry's — never under the
-            // frame's floor (`min_rect` after `dialog_page` set it),
-            // capped to the pane — the solid bar's strip beside it when
-            // the list scrolls.
+            // frame's floor (`min_rect` after `dialog_page` set it) — the
+            // solid bar's strip beside it when the list scrolls.
             let (widest, height) = measure(ui, |ui| welcome_body(ui, &opens).0);
             let scroll = egui::style::ScrollStyle::solid();
             let bar = if height > max_height {
@@ -407,10 +403,7 @@ pub(super) fn welcome_panel(ui: &mut egui::Ui, view: &mut SaveView) {
             } else {
                 0.0
             };
-            let width = widest
-                .max(ui.min_rect().width())
-                .min(rect.width() - chrome.x - bar)
-                .max(0.0);
+            let width = widest.max(ui.min_rect().width());
             let room = egui::Rect::from_min_max(
                 ui.cursor().min,
                 egui::pos2(

@@ -402,8 +402,8 @@ fn place_in(table: &mut EditTable, position: isize) {
 /// moves it over: left on the key it would land inside the header's brackets
 /// (`[[# comment\nkey]]`), which is not TOML a save may write. `header` is the decor the
 /// replaced item's own header carried, when it was a table kind. The new item's tables
-/// take this table's position too, so a header renders where the file has its section,
-/// not where `written` put it.
+/// take `header_position(document)` too, so a section's headers stay inside it and a root
+/// inline section renders last, not where `written` put them.
 fn keep_leading_decor(document: &mut EditTable, key: &str, header: Option<toml_edit::Decor>) {
     let position = header_position(document);
     let Some((mut leaf, slot)) = document.iter_mut().find(|(leaf, _)| leaf.get() == key) else {
@@ -961,9 +961,10 @@ mod tests {
             "every comment line of the bundled file: {text}"
         );
         let before_compiler = |text: &str| {
+            let save_editor = text.find("[save-editor]").unwrap();
             let compiler = text.find("[compiler]").unwrap();
             text.match_indices("[[save-editor.recent_files]]")
-                .all(|(index, _)| index < compiler)
+                .all(|(index, _)| save_editor < index && index < compiler)
         };
         assert!(
             before_compiler(&text),
@@ -1029,11 +1030,15 @@ mod tests {
         settings.save(&path).unwrap();
 
         let text = fs::read_to_string(&path).unwrap();
+        let save_editor = text.find("[save-editor]").unwrap();
         let compiler = text.find("[compiler]").unwrap();
         let headers: Vec<_> = text.match_indices("[[save-editor.recent_files]]").collect();
         assert!(
-            headers.len() == 2 && headers.iter().all(|(index, _)| *index < compiler),
-            "both headers inside [save-editor]'s section, before [compiler]: {text}"
+            headers.len() == 2
+                && headers
+                    .iter()
+                    .all(|(index, _)| save_editor < *index && *index < compiler),
+            "both headers inside [save-editor]'s section: {text}"
         );
         assert_eq!(Settings::load(&path).unwrap(), settings);
 
