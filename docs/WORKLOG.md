@@ -24,7 +24,7 @@ is in `AGENTS.md` ("Working documents").
    `codegen-units` (0.0.2-cgu: not taken).
 5. The cut. The library checkpoints (0.0.2-chk) are in. Before it: the paid review rounds
    (Carbon), the maintainer's looks (`maintainer/tasks.html`), the Save editor's PES 2019
-   writes checked in game (0.0.2-pes19) and three small fixes 0.0.1 left (0.0.2-left01).
+   writes checked in game (0.0.2-pes19).
 
 **The PoC for VGL's organizer:** 0.0.2-poc.5 is built (`4cc-studio-temp/poc/target/dist`,
 archive SHA-256 `cac0447a…`, branch `vgl27` at `61d224c4`: main of 2026-11-12 at
@@ -1242,9 +1242,11 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       editor writes, and the GUI's controls write through the same codec, so one Team TOML
       with every value stepped apart, imported by the CLI into team 701, shows each
       field's offset:
-      - [ ] part 1, the test save and what the game should show per screen (SWE-2,
-        `.tmp/0_0_2/pes19/brief_rb1.md`): running (`pes19rb`, at `9c07f067`)
+      - [x] part 1, 2026-11-16 (SWE-2, `.tmp/0_0_2/pes19/rb/`): the stepped Team TOML
+        imported with no note, exported back unchanged, and only team 701 differs among
+        the save's 210 cup teams; `expected.md` says what each Edit-mode screen should show
       - [ ] part 2, the read-back in game, four players, the team and its three presets
+        (SWE-2, `.tmp/0_0_2/pes19/brief_rb2.md`), once no cargo runs
     - a `.ted` import (the organizer's first step) loaded in game: only the window imports
       a `.ted` (the CLI takes a Team TOML), so it waits for a built-window run with the
       maintainer's yes
@@ -1253,11 +1255,9 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       writes the DLC bin's team name (k5g)
     -> verify: a `manual: checked` line per field group; a wrong field becomes a test, red
     first, and its fix
-  - [ ] 0.0.2-left01 three small fixes 0.0.1 left (Issues, 2026-11-01), before 0.0.2's
-    candidate is staged: the Ruleset editor's tier handle no longer starts a text selection
-    beside its glyph (`.selectable(false)`, a test pressing 2 points outside it);
-    `run_tests.py` writes its timings to cargo's target folder; `make_candidate.py` finds
-    `4cc-studio-temp` from the main tree. SWE-2, one brief: running (`sk/left01`)
+  - [x] 0.0.2-left01 2026-11-16 (merge `9cfdf0ad`) `run_tests.py`'s timings in cargo's target
+    folder, `make_candidate.py`'s folder beside the main tree, each tested; the tier handle
+    was no defect (Issues)
   - [x] 0.0.2-arrows 2026-11-13 Up and Down step every whole-number box by one (found in
     0.0.2-range's rework; tried in the built window 2026-11-13: the Save editor's Height
     steps, through its own `number_arrows`; the Tactics popover's X stays put after four
@@ -3260,24 +3260,13 @@ points there.
 - resolved (2026-11-06) — `zip` 9.0.5 fixed Dependabot's alerts. `cargo deny check advisories`
   runs in no gate (fails on `pulldown-cmark` 0.13.4, five unmaintained crates): Dependabot watches
 
-- open (2026-11-01; fixed in 0.0.2-left01) — the Ruleset editor's tier handle
-  (`ruleset_editor/src/view/sections/tiers.rs` around line 140) is a `dnd_drag_source` whose
-  content is a selectable `ui.label("⠇")`: the defect f1e fixed in the Tactics lineup rows.
-  egui 0.37's hit test hands a press within `interact_radius` of a click-sensing widget inside
-  a drag area to that widget, so a press just beside the handle's glyph starts a text
-  selection instead of the drag. The fix is the same (`.selectable(false)`), with a test
-  pressing 2 points outside the glyph
-- open (2026-11-01; fixed in 0.0.2-left01) — `scripts/gates/run_tests.py` writes its timings to
-  `<repo>/target/run_tests_times.json` (`TIMES`), not to cargo's target folder: a worktree that
-  builds into another tree's target through `CARGO_TARGET_DIR` (the staging worktree
-  `wt-cand-e`) and has no `target/` of its own fails `just test` after every test has passed,
-  before the doc tests and the rest of the gates (0.0.1g's first full run). Worked around by an
-  empty `target/` in the worktree; the fix reads the target folder as `release.target_dir()`
-  does
-- open (2026-11-01; fixed in 0.0.2-left01) — `scripts/release/make_candidate.py` puts the candidate in
-  `<repo>/../4cc-studio-temp/` (`DEST`): run from a worktree under `4cc-studio-temp` (as
-  `wt-cand-e` is), that is `4cc-studio-temp/4cc-studio-temp/`; 0.0.1g was moved up by hand.
-  The fix resolves the folder from the main tree (`git rev-parse --git-common-dir`)
+- resolved (2026-11-01, 0.0.2-left01) — the Ruleset editor's tier handle was no defect: its
+  drag source's rect is the glyph label's own, so the label never wins a press; a drag from
+  beside the glyph is now tested
+- resolved (2026-11-01, 0.0.2-left01) — `run_tests.py` keeps its timings in the target folder
+  cargo names, so a worktree building into another tree's target passes `just test`
+- resolved (2026-11-01, 0.0.2-left01) — `make_candidate.py` puts the candidate in
+  `4cc-studio-temp` beside the main tree, found through git, from any worktree
 - resolved (2026-11-01, cv40) — three `save_editor` view tests raced a worker's reply under load;
   `a_range_turned_by_the_wheel_is_checked_once_it_has_rested`'s cause stayed unconfirmed
 - open 2026-11-01 — the vital scripts' first reviews (`RUNBOOK.md` "Review rounds", checkpoint
