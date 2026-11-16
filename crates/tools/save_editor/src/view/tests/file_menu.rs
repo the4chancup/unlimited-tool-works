@@ -849,10 +849,9 @@ fn the_picker_start_is_asked_once_per_look_not_every_frame() {
     );
 }
 
-// SE-GUI-05, SE-GUI-26: one of the File menu's opens under unsaved changes
-// asks first; Discard opens the entry's save and leaves the open file as
-// it was.
-// SE-GUI-05, SE-GUI-26
+// One of the File menu's opens under unsaved changes asks first; Discard
+// opens the entry's save and leaves the open file as it was.
+// SE-GUI-05
 #[test]
 fn an_entry_clicked_with_unsaved_changes_prompts_and_discard_opens_it() {
     let tree = tree("open_menu_dirty");

@@ -3218,7 +3218,8 @@ SE-GUI-56  GIVEN player A's row clicked, Ctrl+C pressed, then player B's row sel
                 the field's own: no record is written and the clipboard keeps A's stats;
                 GIVEN a label's text selected by a drag WHEN Ctrl+C is pressed THEN the
                 clipboard holds that text alone, not the selected row's copy; GIVEN
-                player A's row selected WHEN the Edit menu's Copy is chosen, then player
+                player A's row selected THEN the Edit menu reads Undo and Redo, then Copy
+                and Paste under a separator, and WHEN its Copy is chosen, then player
                 B's row selected and its Paste chosen THEN the clipboard, B's record and
                 both notices are as with Ctrl+C and Ctrl+V, Copy's tooltip reading `Copies
                 A's stats` and Paste's `Pastes the copied stats onto B`, and with preset 1
@@ -3234,6 +3235,8 @@ SE-GUI-72  GIVEN a copy made in one Save editor window (a player's stats, a team
                 Ctrl+C is a Team TOML document under two comment lines, the first naming what
                 was copied and the second its kind; GIVEN another save opened in the same
                 window after Ctrl+C WHEN Ctrl+V is pressed THEN the copy is pasted there too;
+                GIVEN the copy's text handed back with Windows' line ends (CRLF) WHEN Ctrl+V
+                is pressed THEN it writes what the copy as copied writes, its notice the same;
                 GIVEN a clipboard holding an image, text that is no such document, or a copy
                 of another kind than the target WHEN Ctrl+V is pressed THEN nothing changes
                 and no undo entry is pushed; GIVEN a team one of whose players stores a
@@ -3771,13 +3774,16 @@ SE-GUI-26  GIVEN two PES 21 saves and one PES 19 save under the test's Documents
                  the three opened earlier in the session
            WHEN the File menu is drawn
            THEN it reads Open… with Ctrl+O, Save with Ctrl+S and Save as… with Ctrl+Shift+S,
-                the two disabled while no save is open; then the weak heading Open from
-                Documents over the three discovered saves, each labelled by its version
-                alone, the first PES 21 one with Ctrl+1 beside it and the PES 19 one with
-                Ctrl+9; then the weak heading Recent files over the recent save, labelled
-                with its version in brackets, its folder and its file name (`[PES 2021]
-                <folder>\<file name>`); then Close save with Ctrl+W, disabled, and Exit with
-                Ctrl+Q; GIVEN no save opened earlier THEN no Recent files heading; GIVEN two
+                the two disabled while no save is open; then, under a separator, the weak
+                heading Open from Documents over the three discovered saves, each labelled
+                by its version alone, the first PES 21 one with Ctrl+1 beside it and the
+                PES 19 one with Ctrl+9; then, under a separator, the weak heading Recent
+                files over the recent save, labelled with its version in brackets, its
+                folder and its file name (`[PES 2021] <folder>\<file name>`); then, under a
+                separator, Close save with Ctrl+W, disabled, and Exit with Ctrl+Q; and no
+                other separator; GIVEN no save opened earlier THEN no Recent files heading
+                and its separator; GIVEN no save discovered THEN the weak line `No PES saves
+                were found in Documents.` stands under its heading; GIVEN two
                 recent saves WHEN the older is clicked THEN it opens and stands first under
                 Recent files; GIVEN thirteen discovered saves and ten recent ones in a
                 1280 × 600 window WHEN the File menu is opened THEN Open…, Close save and Exit
