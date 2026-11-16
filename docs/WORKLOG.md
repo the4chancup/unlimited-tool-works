@@ -10,9 +10,11 @@ is in `AGENTS.md` ("Working documents").
 ## Current status
 
 **Now: Release 0.0.2, the VGL preview** (`plans/core/development_plan.md` "The /vg/ League 27
-(VGL)"), cut within the day (DECISIONS 2026-11-16 "0.0.2 is cut without Select all similar,
+(VGL)"), aimed at within the day, a target the work chosen for it is not rushed to meet
+(DECISIONS 2026-11-16 "0.0.2 is cut without Select all similar,
 the Carbon rounds and the PES 2019 check"; 2026-11-16 "The no-stretch slices move to after
-0.0.2"). After 0.0.2: 0.0.2-similar, every Carbon round a 0.0.2 step still owes, 0.0.2-pes19
+0.0.2"). After 0.0.2: 0.0.2-similar, every Carbon round a 0.0.2 step still owes (Report a problem's
+excepted, below), 0.0.2-pes19
 (and with it the readme's PES 2019 claim), 0.0.2-nostretch's slices, and any mutation run
 (mutfast first). Most open steps below wait only for the maintainer's look
 (`maintainer/tasks.html`). What is left before the cut:
