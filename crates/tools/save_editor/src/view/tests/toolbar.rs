@@ -606,7 +606,7 @@ fn title_row_and_separator(
 }
 
 /// The player view's title's row stands under the toolbar's band, the
-/// id and name's ink about 11.5 below it (the draft's `.pheader`
+/// id and name's ink about 10 below it (the draft's `.pheader`
 /// margin), the separator under the row before General info's title.
 #[test]
 fn the_player_views_title_row_stands_under_the_toolbar_with_a_separator() {
@@ -626,7 +626,7 @@ fn the_player_views_title_row_stands_under_the_toolbar_with_a_separator() {
         "General info",
     );
     assert!(
-        (above - 11.5).abs() <= 1.0,
+        (above - 10.0).abs() <= 1.0,
         "the title's ink {above} under the toolbar's band"
     );
     assert!(line.is_some(), "a separator under the title's row");
@@ -634,7 +634,7 @@ fn the_player_views_title_row_stands_under_the_toolbar_with_a_separator() {
 
 /// The team view's title's row holds `<id> <name>` after the toggle,
 /// team 701's `701 /3/` in the PES 21 fixture, the id in the weak colour,
-/// its ink about 11.5 below the toolbar's band, the separator under the
+/// its ink about 10 below the toolbar's band, the separator under the
 /// row before the Name field's row.
 #[test]
 fn the_team_views_title_row_reads_id_and_name_under_a_separator() {
@@ -659,7 +659,7 @@ fn the_team_views_title_row_reads_id_and_name_under_a_separator() {
         crate::view::team::TEAM_LABEL,
     );
     assert!(
-        (above - 11.5).abs() <= 1.0,
+        (above - 10.0).abs() <= 1.0,
         "the title's ink {above} under the toolbar's band"
     );
     assert!(line.is_some(), "a separator under the title's row");

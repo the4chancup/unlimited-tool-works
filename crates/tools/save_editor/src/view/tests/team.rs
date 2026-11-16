@@ -294,7 +294,7 @@ fn every_kit_slots_box_is_one_width_that_shows_six_digits() {
     // A slot's boxes share its label's centre line, as a grid row centres
     // its cells: the team view's own boxes behind the dialog do not.
     let centre_y = |bounds: accesskit::Rect| (bounds.y0 + bounds.y1) / 2.0;
-    let boxes: Vec<accesskit::Rect> = (1..=10)
+    let mut boxes: Vec<accesskit::Rect> = (1..=10)
         .flat_map(|slot| {
             let row = centre_y(label_bounds(&nodes, &format!("Slot {slot}")));
             right_of_label(&nodes, &format!("Slot {slot}"), Role::SpinButton)
@@ -302,6 +302,24 @@ fn every_kit_slots_box_is_one_width_that_shows_six_digits() {
                 .map(|node| node.bounds().expect("a box's bounds"))
                 .filter(move |bounds| (centre_y(*bounds) - row).abs() <= 1.0)
         })
+        .collect();
+    // A control on the view behind can share a slot row's centre: the
+    // dialog's two box columns share one left edge each, so only the
+    // groups standing on a shared left edge are the dialog's.
+    let mut columns: Vec<Vec<accesskit::Rect>> = Vec::new();
+    for bounds in boxes.drain(..) {
+        match columns
+            .iter_mut()
+            .find(|group: &&mut Vec<accesskit::Rect>| (group[0].x0 - bounds.x0).abs() <= 0.5)
+        {
+            Some(group) => group.push(bounds),
+            None => columns.push(vec![bounds]),
+        }
+    }
+    let boxes: Vec<accesskit::Rect> = columns
+        .into_iter()
+        .filter(|group| group.len() >= 2)
+        .flatten()
         .collect();
     assert_eq!(boxes.len(), 20, "a Number and a Bound team ID a slot");
     let widths: Vec<f64> = boxes.iter().map(accesskit::Rect::width).collect();
@@ -340,6 +358,45 @@ fn every_kit_slots_box_is_one_width_that_shows_six_digits() {
     assert!(
         f64::from(ink.min.x) >= bounds.x0 && f64::from(ink.max.x) <= bounds.x1,
         "the six digits inside their box ({ink:?} in {bounds:?})"
+    );
+}
+
+// The dialog's label columns are their widest label, not the boxes' width:
+// the grid's 8-point gap parts "Slot 10" from "Number" and the Number box
+// from "Bound team ID", as the draft's cell padding does.
+#[test]
+fn the_kit_slot_label_columns_are_their_labels_wide() {
+    let path = fixture(PesVersion::Pes17, "kit_slot_label_columns");
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut window = Headless::sized(DEFAULT_PANE.x, 700.0);
+    open_team_view(&mut window, &mut view, 701);
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    click(
+        &mut window,
+        node_labeled(&nodes, Role::Button, "Kit slots\u{2026}"),
+        &mut view,
+    );
+    // The modal re-centres once its content's size is known.
+    window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+
+    let slot = label_bounds(&nodes, "Slot 10");
+    let number = label_bounds(&nodes, "Number");
+    assert!(
+        (number.x0 - slot.x1 - 8.0).abs() <= 1.0,
+        "\"Number\" stands {} after \"Slot 10\", the grid's 8-point gap",
+        number.x0 - slot.x1
+    );
+    let box_ = right_of_label(&nodes, "Number", Role::SpinButton)
+        .first()
+        .and_then(|node| node.bounds())
+        .expect("slot 10's Number box");
+    let bound = label_bounds(&nodes, "Bound team ID");
+    assert!(
+        (bound.x0 - box_.x1 - 8.0).abs() <= 1.0,
+        "\"Bound team ID\" stands {} after the Number box, the grid's 8-point gap",
+        bound.x0 - box_.x1
     );
 }
 

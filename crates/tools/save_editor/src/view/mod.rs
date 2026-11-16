@@ -870,12 +870,14 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() ->
         // 6 points over the view, not egui's 8: a view's title then stands
         // as far below the toolbar band's line as its first row stands below
         // the title, in ink (`info_strip::view_title`). None at the right:
-        // the shell's own margin past the pane is the view's edge.
+        // the shell's own margin past the pane is the view's edge. None at
+        // the bottom: the draft's `.detail` has no padding, a tall view's
+        // content ending at the pane's bottom.
         let detail = egui::Frame::central_panel(ui.style()).inner_margin(egui::Margin {
             left: 8,
             right: 0,
             top: TITLE_MARGIN,
-            bottom: 8,
+            bottom: 0,
         });
         egui::CentralPanel::default().frame(detail).show(ui, |ui| {
             egui::ScrollArea::vertical()

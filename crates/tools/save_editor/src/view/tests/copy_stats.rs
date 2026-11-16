@@ -8,9 +8,27 @@ use super::player::{mark_copy_players, rostered, slot_label, with_stats_of};
 use super::*;
 use crate::test_support::cup_save::outside_cup_file;
 
-/// The Source/Destination row's two dropdowns (team, then player).
+/// The Source/Destination row's two dropdowns (team, then player): the
+/// largest group of the row's combos sharing one top edge. The window's
+/// own two stand on one grid row; a control on the view behind can stand
+/// within a point of the row's y without sharing its exact top.
 pub(super) fn row_combos<'a>(nodes: &'a [accesskit::Node], row: &str) -> [&'a accesskit::Node; 2] {
-    let combos = right_of_label(nodes, row, Role::ComboBox);
+    let mut groups: Vec<Vec<&accesskit::Node>> = Vec::new();
+    for combo in right_of_label(nodes, row, Role::ComboBox) {
+        let y0 = combo.bounds().expect("a combo's bounds").y0;
+        match groups
+            .iter_mut()
+            .find(|group: &&mut Vec<&accesskit::Node>| {
+                (group[0].bounds().expect("bounds").y0 - y0).abs() <= 0.5
+            }) {
+            Some(group) => group.push(combo),
+            None => groups.push(vec![combo]),
+        }
+    }
+    let combos = groups
+        .iter()
+        .max_by_key(|group| group.len())
+        .expect("the row's dropdowns");
     assert_eq!(combos.len(), 2, "{row}: the team and player dropdowns");
     [combos[0], combos[1]]
 }

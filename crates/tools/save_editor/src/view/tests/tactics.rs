@@ -1826,21 +1826,109 @@ fn the_automatic_settings_frame_reaches_the_lists_bottom() {
     );
 }
 
-/// The lineup lists' boxes on a frame, left to right: the stroked rects
-/// right of the settings column filled in the extreme background and
-/// taller than the dock's well.
+// At the 1280 x 780 default window the Gameplan view needs no scroll: the
+// fields' row stands 24 tall as the draft's does (the name row's own
+// margins and the id cells' padding), so the rows and the grid take the
+// draft's offsets under the title's line and the detail's content ends
+// inside the pane, the lineup lists' bottom stroke inside the scroll
+// area's clip.
+#[test]
+fn the_team_view_fits_the_pane_at_the_drafts_offsets() {
+    let path = fixture(PesVersion::Pes21, "gameplan_pane_fit");
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut window = Headless::sized(DEFAULT_PANE.x, DEFAULT_PANE.y);
+    open_team_view(&mut window, &mut view, 701);
+    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+
+    // The separator under the title's row: the first stroke line below
+    // the toggle that spans the pane (a short inner line is not it).
+    let stroke = window
+        .ctx
+        .global_style()
+        .visuals
+        .widgets
+        .noninteractive
+        .bg_stroke;
+    let toggle = node_labeled(&nodes, Role::Button, "Gameplan")
+        .bounds()
+        .expect("the Gameplan button");
+    let line = shapes
+        .iter()
+        .filter_map(|clipped| match &clipped.shape {
+            egui::Shape::LineSegment { points, stroke: s }
+                if *s == stroke
+                    && points[0].y == points[1].y
+                    && f64::from(points[0].y) > toggle.y1
+                    && f64::from(points[0].x.min(points[1].x)) < toggle.x0
+                    && f64::from(points[0].x.max(points[1].x))
+                        > f64::from(DEFAULT_PANE.x) - 100.0 =>
+            {
+                Some(f64::from(points[0].y))
+            }
+            _ => None,
+        })
+        .reduce(f64::min)
+        .expect("the title's separator line");
+
+    // The Name box's top, the Preset buttons' top and the Formation
+    // settings' frame top at the draft's offsets under the line.
+    let name = right_of_label(&nodes, "Name", Role::TextInput)
+        .first()
+        .and_then(|node| node.bounds())
+        .expect("the Name box");
+    let preset = right_of_label(&nodes, "Preset", Role::Button)
+        .first()
+        .and_then(|node| node.bounds())
+        .expect("a Preset button");
+    let settings_left = label_bounds(&nodes, "Formation settings").x0 - 7.0;
+    let settings = box_at(&stroked_rects(&window, &shapes, 60.0), settings_left, 1.0);
+    for (what, top, draft) in [
+        ("the Name box", name.y0, 12.0),
+        ("the Preset buttons", preset.y0, 45.0),
+        ("Formation settings' frame", f64::from(settings.min.y), 73.0),
+    ] {
+        assert!(
+            (top - line - draft).abs() <= 1.0,
+            "{what} stands {} under the title's line, the draft's {draft}",
+            top - line
+        );
+    }
+
+    // The lists' frames end inside the pane (its bottom PANE_BOTTOM_MARGIN
+    // over the status bar), their bottom stroke inside the scroll area's
+    // clip: the draft's `.detail` has no bottom padding.
+    let pane_bottom = f64::from(DEFAULT_PANE.y - PANE_BOTTOM_MARGIN);
+    for (rect, clip) in lineup_boxes(&window, &nodes, &shapes) {
+        assert!(
+            rect.max.y <= clip.max.y + 0.5,
+            "a list's frame's bottom inside the scroll's clip ({:?} vs {clip:?})",
+            rect.max.y
+        );
+        assert!(
+            f64::from(rect.max.y) <= pane_bottom + 0.5,
+            "a list's frame ends at {:?}, the pane's bottom is {pane_bottom}",
+            rect.max.y
+        );
+    }
+}
+
+/// The lineup lists' boxes on a frame, left to right, each with the clip
+/// it was painted inside (the scroll area's): the stroked rects right of
+/// the settings column filled in the extreme background and taller than
+/// the dock's well.
 fn lineup_boxes(
     window: &Headless,
     nodes: &[accesskit::Node],
     shapes: &[egui::epaint::ClippedShape],
-) -> Vec<egui::Rect> {
+) -> Vec<(egui::Rect, egui::Rect)> {
     let extreme = window
         .ctx
         .style_of(window.ctx.theme())
         .visuals
         .extreme_bg_color;
     let settings_right = label_bounds(nodes, "Formation settings").x0 - 7.0 + 422.0;
-    let mut boxes: Vec<egui::Rect> = shapes
+    let mut boxes: Vec<(egui::Rect, egui::Rect)> = shapes
         .iter()
         .filter_map(|clipped| match &clipped.shape {
             egui::Shape::Rect(shape)
@@ -1849,12 +1937,12 @@ fn lineup_boxes(
                     && shape.rect.height() >= 200.0
                     && f64::from(shape.rect.min.x) > settings_right =>
             {
-                Some(shape.rect)
+                Some((shape.rect, clipped.clip_rect))
             }
             _ => None,
         })
         .collect();
-    boxes.sort_by(|a, b| a.min.x.total_cmp(&b.min.x));
+    boxes.sort_by(|a, b| a.0.min.x.total_cmp(&b.0.min.x));
     boxes
 }
 
@@ -1889,7 +1977,8 @@ fn the_live_aatf_dock_leaves_the_lineup_lists_their_size() {
     );
     let open = lineup_boxes(&window, &nodes, &shapes);
     assert_eq!(
-        open, closed,
+        open.iter().map(|(rect, _)| *rect).collect::<Vec<_>>(),
+        closed.iter().map(|(rect, _)| *rect).collect::<Vec<_>>(),
         "the lists with the dock open as with it closed"
     );
 }
