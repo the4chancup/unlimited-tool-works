@@ -26,8 +26,7 @@ excepted, below), 0.0.2-pes19
    and DECISIONS written; next its two slices.
 3. Two fixes from the maintainer's looks of 2026-11-17: 0.0.2-namegame (a name's colour
    codes drawn as they are in the light theme too) and 0.0.2-xhover (the changes list's X
-   highlighted on hover); 0.0.2-present (the window presents through a DirectComposition
-   swap chain, so a resize no longer makes the UI jump).
+   highlighted on hover). 0.0.2-present, the resize flicker's fix, landed 2026-11-17.
 4. The cut, only once the maintainer has run the checks of
    `maintainer/tasks.html` (the maintainer, 2026-11-17): a pipeline without mutants on the
    last merge (0.0.2-determ's second clean run), the changelog, the release build, and a
@@ -1689,7 +1688,8 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     player list"; DECISIONS 2026-11-17); `theme::darkened_to_read` stays for the palette's
     colours. SWE-2, after 0.0.2-frames B1 and A2a merge (it touches `team_widgets` and
     `save_editor`'s name callers) -> verify: the light theme's /f/ list and lineup lists
-  - [ ] 0.0.2-present (the maintainer, 2026-11-17) the window presents through a
+  - [x] 0.0.2-present 2026-11-17 (SWE-2, merge `0cbe7637`; the lead's rerun of `studio_core`, 535)
+    the window presents through a
     DirectComposition swap chain, so a resize no longer stretches the last frame and the UI
     stops jumping (`plans/core/gui.md` "The graphics backend"; DECISIONS 2026-11-17). SWE-2,
     `studio_core` `shell/window_size/mod.rs` `wgpu_options` -> verify: a unit test of the
@@ -3182,7 +3182,7 @@ pruned when their phase closes; they stay in git history. A question only the ma
 can answer is not an issue: it goes to `docs/maintainer/questions.html`, and an issue that waits on one
 points there.
 
-- open 2026-11-17 (the maintainer; measured by the lead on the release build of `26ae8f7c`,
+- resolved 2026-11-17 by 0.0.2-present (`0cbe7637`) (the maintainer; measured by the lead on the release build of `26ae8f7c`,
   DX12): while the window is resized, everything away from its middle jumps and comes back on
   each step (the sidebar's lower icons by two points). The cause is wgpu's DX12 swap chain,
   made on the window's handle with stretch scaling: Windows shows the last frame stretched
