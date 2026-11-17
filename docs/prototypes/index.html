@@ -280,6 +280,9 @@
     display: flex; flex-direction: column; overflow: hidden; position: relative;
     transform: translateZ(0); background: var(--panel);
     border: 1px solid #000; box-shadow: 0 8px 32px #000c; }
+  /* A view that draws its scroll bars itself, floating as egui's (the center's own-bars
+     class), needs no strip: the window is drawn at the app's width. */
+  .win.nostrip { --sbw: 0px; }
   /* Resizable from its bottom-right corner, and maximized to fill the page by the title
      bar's button or a double-click on the bar, as Studio Web's window is (plans/core/gui.md
      "Browser deployment: Studio Web"); the column's Window section reads its size live. */
@@ -845,7 +848,9 @@ const SBW = (() => {
 })();
 document.documentElement.style.setProperty("--sbw", SBW + "px");
 // The client area's width, without the border and that strip: the size the app's window has.
-const winWidth = () => document.getElementById("win").clientWidth - SBW;
+// The strip the window is drawn with now: none while the view draws its own bars.
+const strip = () => document.getElementById("win").classList.contains("nostrip") ? 0 : SBW;
+const winWidth = () => document.getElementById("win").clientWidth - strip();
 // The client area's height, below the drawn title bar.
 const winHeight = () => document.getElementById("win").clientHeight
   - document.getElementById("titlebar").offsetHeight;
@@ -855,7 +860,7 @@ const winScale = () => Math.min(1, winWidth() / DESIGN_W);
 function applyScale() {
   const win = document.getElementById("win"), body = document.getElementById("win-body");
   const s = winScale();
-  body.style.width = (s < 1 ? DESIGN_W + SBW : win.clientWidth) + "px";
+  body.style.width = (s < 1 ? DESIGN_W + strip() : win.clientWidth) + "px";
   body.style.height =
     (win.clientHeight - document.getElementById("titlebar").offsetHeight) / s + "px";
   body.style.transform = "scale(" + s + ")";
@@ -883,7 +888,7 @@ function sizeWindow(which) {
   const [w, hgt] = which === "monitor" ? [screen.width, screen.height]
     : which === "smallest" ? [1264, 648]
     : which === "minimum" ? [960, 600]
-    : demo ? fitted(innerWidth - SBW, innerHeight) : fitted(screen.width, screen.height);
+    : demo ? fitted(innerWidth - strip(), innerHeight) : fitted(screen.width, screen.height);
   win.style.setProperty("--win-w", w + "px");
   win.style.setProperty("--win-h", hgt + "px");
   if (which === "default") defaultDims = [win.offsetWidth, win.offsetHeight];
@@ -1645,7 +1650,7 @@ function drawHelp() {
   // window never covers, so measured on #win the window came out 5 taller and 23 higher.
   if (!S.helpWindow) {
     const area = document.getElementById("win-body");
-    const areaW = area.getBoundingClientRect().width / winScale() - SBW;
+    const areaW = area.getBoundingClientRect().width / winScale() - strip();
     const areaH = area.getBoundingClientRect().height / winScale();
     const w = Math.min(1000, Math.round(areaW * 0.9)), hgt = Math.min(600, Math.round(areaH * 0.9));
     S.helpWindow = { x: area.offsetLeft + Math.round((areaW - w) / 2),
@@ -3202,6 +3207,13 @@ document.getElementById("sidebar").addEventListener("focusout", () => {
 // The link the page opened on (set by the last script): applied once, after
 // the named view's firstShow, before its first draw.
 let pendingLink = null, inFirstShow = false;
+// The window's strip follows the view just drawn: none for a view drawing its own bars.
+function syncStrip(center) {
+  const win = document.getElementById("win"), own = center.classList.contains("own-bars");
+  if (win.classList.contains("nostrip") === own) return;
+  win.classList.toggle("nostrip", own);
+  applyScale();
+}
 function renderCenter() {
   const center = document.getElementById("center");
   const oldLog = center.querySelector(".log-body");
@@ -3225,8 +3237,10 @@ function renderCenter() {
       if (view.linkOpen) view.linkOpen(pl.screen, pl.keys);
     }
     view.draw(center); // the view owns the center's content (not cleared)
+    syncStrip(center);
     return;
   }
+  syncStrip(center);
   center.innerHTML = "";
   center.append(h("h2", {}, t.label),
     weak("This view will be drawn in its own draft, tools/" + t.id.replaceAll("-", "_") + ".js."));
@@ -3660,7 +3674,7 @@ function copyLayout() {
   // Rectangles in the window's content area (under #titlebar, inside #win's
   // border), which .main's top left is.
   const winBox = document.getElementById("win").getBoundingClientRect();
-  const wh = Math.round(winBox.width - SBW) + "x" + Math.round(winBox.height);
+  const wh = Math.round(winBox.width - strip()) + "x" + Math.round(winBox.height);
   const zoom = Math.round(devicePixelRatio * 100) + "%";
   const scr = viewScreen();
   const fmt = r => { const p = rectPoints(r);

@@ -237,9 +237,12 @@ otherwise goes back as a fix.</p>
   </ol>
   <p>Every screen right of the list stands 4 points further left: 8 points from the list
   (and its scroll bar's strip) to the first panel, where it was 12, and 12 from the last panel
-  to the window's scroll-bar strip, where it was 8. The panels keep their widths. On the
-  Squad screen the tabs stay where the other screens draw them; its table, which has no list
-  beside it, is unchanged. The build follows once you say the draft is right.</p>
+  to the window's right edge, where it was 8. The panels keep their widths.</p>
+  <p>The pane's scroll bar is now the list's: a 6-point bar in that 12-point margin, floating
+  as the app's does, so the browser's own bar no longer widens the window (it made the gap
+  29 in Firefox). The Squad screen keeps the browser's bars for its table, so there the window
+  is still drawn wider by them; its tabs stay where the other screens draw them. The build
+  follows once you say the draft is right.</p>
   <div class="options">
     <label class="opt"><input type="radio" value="fine"><b>Fine: build it</b></label>
     <label class="opt"><input type="radio" value="change, see note"><b>Something to change</b>

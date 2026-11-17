@@ -1854,7 +1854,11 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     built window beside the draft on every screen
     - [x] the draft 2026-11-17 (lead): `.master` gap 8, the pane's right padding 12, the
       Squad header's gap 8 so its tabs stay put; measured: every screen's frames 4 left,
-      their widths kept
+      their widths kept. Then (the maintainer: Firefox's bar made the gap 29) the pane draws
+      the list's 6-point bar (`vScrollBar`, shared) in its right margin, and the harness
+      drops the window's scroll-bar strip for a view drawing its own bars (`own-bars`,
+      `#win.nostrip`); the Squad screen keeps the strip. Measured in Chromium and Firefox:
+      window 1280, gap 12, the bar 4 after the frames
     - [ ] the maintainer's check of the draft (`tasks.html` `look-pane-shift-draft`); then
       the plan (`save_editor.md` "The player view": 22 after the list, 12 right) and the
       build

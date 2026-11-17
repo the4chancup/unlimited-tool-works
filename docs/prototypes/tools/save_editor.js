@@ -185,9 +185,13 @@ input[type=range]:focus { outline: none; }
 .plist .rows { background: var(--extreme); border: 1px solid var(--stroke); border-radius: 2px;
   flex: 1; min-width: 0; overflow-y: auto; overflow-x: hidden; scrollbar-width: none; }
 .plist .rows::-webkit-scrollbar { display: none; }
-.plist .vbar { flex: none; width: 6px; position: relative; }
-.plist .vbar .thumb { position: absolute; left: 0; right: 0; border-radius: 2px; background: var(--widget); }
-.plist .vbar .thumb:hover, .plist .vbar .thumb.drag { background: var(--hover); }
+.vbar { flex: none; width: 6px; position: relative; }
+.vbar .thumb { position: absolute; left: 0; right: 0; border-radius: 2px; background: var(--widget); }
+.vbar .thumb:hover, .vbar .thumb.drag { background: var(--hover); }
+/* The detail pane's bar floats in the pane's 12-point right margin, 4 after the screens'
+   frames and 2 before the window's edge, as egui's floats over its scroll area's edge. */
+.center.filled .master { position: relative; }
+.master > .vbar.pane-bar { position: absolute; top: 0; bottom: 0; right: -6px; }
 /* A name too long for the row truncates, its dot and mark kept after it. */
 .plist .pname { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 /* A player row's text in the resting widgets' grey, as the app paints a plain name; a team
@@ -744,15 +748,17 @@ table.grid.stats-grid td { padding: 3px 6px; }
 .center.filled .master { flex: 1; min-height: 0; align-items: stretch; }
 /* The detail pane scrolls on its own, its bar in the window's scroll-bar
    strip (the host's .win rule), kept while nothing scrolls: the pane
-   reaches over the view's right margin into the strip and takes it back as
-   padding, 4 more than the margin, so its content ends 12 before the strip
-   while the list's gap before it is 8 (.master): every screen stands 4 left
-   of the view's other rows' span, at the width the app gives it (egui's
-   scroll bar floats and takes none). The pane holds the scroll; the view
-   itself keeps no strip of its own. */
+   reaches over the view's right margin to the window's edge and takes it
+   back as padding, 4 more than the margin, so its content ends 12 before the
+   edge while the list's gap before it is 8 (.master). The browser's bar is
+   hidden: the pane draws the list's bar (vScrollBar) in that margin, floating
+   as egui's does and taking no width, so the view asks for the window without
+   the strip (own-bars). The pane holds the scroll; the view itself keeps no
+   strip of its own. */
 .center.filled { scrollbar-gutter: auto; padding-right: calc(8px + var(--sbw, 0px)); }
-.center.filled .detail { overflow: auto; min-height: 0; scrollbar-gutter: stable;
+.center.filled .detail { overflow: auto; min-height: 0; scrollbar-width: none;
   margin-right: calc(-8px - var(--sbw, 0px)); padding-right: 12px; }
+.center.filled .detail::-webkit-scrollbar { display: none; }
 .live-panel { flex: none; margin-top: 6px; }
 .live-divider { height: 4px; cursor: ns-resize; }
 .live-divider:hover { background: var(--hover); }
@@ -4666,8 +4672,16 @@ function renderView(center) {
   center.append(host);
   if (live) center.append(live);
   host.append(renderToolbar());
-  host.append(S.squad ? squadView()
-    : h("div", { class: "master" }, renderMaster(), renderDetail()));
+  if (S.squad) host.append(squadView());
+  else {
+    // The pane's own bar, as egui's floating one: the window needs no strip for it.
+    center.classList.add("own-bars");
+    const detail = renderDetail();
+    const { vbar, bar } = vScrollBar(detail);
+    vbar.classList.add("pane-bar");
+    detail.addEventListener("scroll", bar);
+    host.append(h("div", { class: "master" }, renderMaster(), detail, vbar));
+  }
   const logo = eventLogo();
   if (logo) host.append(logo);
   const panel = renderPanel();
@@ -4753,6 +4767,36 @@ function teamSelector(withAll) {
     } };
   return sel;
 }
+// egui's scroll bar for `box`, a box whose own bar is hidden: a 6-point bar, its handle as
+// long as the share of the content in view, at least egui's 12 points, dragged to scroll.
+// Returns the bar to place and `bar`, which redraws the handle (call it on scroll).
+function vScrollBar(box) {
+  const thumb = h("div", { class: "thumb" });
+  const vbar = h("div", { class: "vbar" }, thumb);
+  const bar = () => {
+    const view = box.clientHeight, full = box.scrollHeight, track = vbar.clientHeight;
+    thumb.style.display = full > view ? "" : "none";
+    if (full <= view) return;
+    const len = Math.max(12, track * view / full);
+    thumb.style.height = len + "px";
+    thumb.style.top = box.scrollTop / (full - view) * (track - len) + "px";
+  };
+  new ResizeObserver(bar).observe(box);
+  thumb.addEventListener("pointerdown", e => {
+    e.preventDefault();
+    thumb.setPointerCapture(e.pointerId);
+    thumb.classList.add("drag");
+    const y0 = e.clientY, top0 = box.scrollTop;
+    const perPx = (box.scrollHeight - box.clientHeight) / (vbar.clientHeight - thumb.offsetHeight);
+    const move = ev => { box.scrollTop = top0 + (ev.clientY - y0) * perPx; };
+    thumb.addEventListener("pointermove", move);
+    thumb.addEventListener("pointerup", () => {
+      thumb.removeEventListener("pointermove", move);
+      thumb.classList.remove("drag");
+    }, { once: true });
+  });
+  return { vbar, bar };
+}
 function renderMaster() {
   const box = h("div", { class: "plist", "data-panel": "player-list" });
   const sel = teamSelector(true);
@@ -4763,32 +4807,8 @@ function renderMaster() {
     oninput: e => { S.filter = e.target.value; renderList(rows); bar(); updateLink(); } });
   const rows = h("div", { class: "rows", id: "player-rows",
     onscroll: e => { listScroll = e.target.scrollTop; bar(); } });
-  // The scroll bar beside the frame (the .rows-box rule): its handle as long as
-  // the share of the list in view, at least egui's 12 points, dragged to scroll.
-  const thumb = h("div", { class: "thumb" });
-  const vbar = h("div", { class: "vbar" }, thumb);
-  const bar = () => {
-    const view = rows.clientHeight, full = rows.scrollHeight, track = vbar.clientHeight;
-    thumb.style.display = full > view ? "" : "none";
-    if (full <= view) return;
-    const len = Math.max(12, track * view / full);
-    thumb.style.height = len + "px";
-    thumb.style.top = rows.scrollTop / (full - view) * (track - len) + "px";
-  };
-  new ResizeObserver(bar).observe(rows);
-  thumb.addEventListener("pointerdown", e => {
-    e.preventDefault();
-    thumb.setPointerCapture(e.pointerId);
-    thumb.classList.add("drag");
-    const y0 = e.clientY, top0 = rows.scrollTop;
-    const perPx = (rows.scrollHeight - rows.clientHeight) / (vbar.clientHeight - thumb.offsetHeight);
-    const move = ev => { rows.scrollTop = top0 + (ev.clientY - y0) * perPx; };
-    thumb.addEventListener("pointermove", move);
-    thumb.addEventListener("pointerup", () => {
-      thumb.removeEventListener("pointermove", move);
-      thumb.classList.remove("drag");
-    }, { once: true });
-  });
+  // The scroll bar beside the frame (the .rows-box rule).
+  const { vbar, bar } = vScrollBar(rows);
   box.append(sel, filter, h("div", { class: "rows-box" }, rows, vbar), quickActions());
   renderList(rows);
   // Restored once the frame's layout has given the list its height (before
