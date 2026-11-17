@@ -1705,6 +1705,10 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       - [ ] A2 the painted toggles (the Save editor's `.rate` rows, positions grid and view
         tabs; `team_widgets`' Tactics toggles and selectors) and lit buttons, and the rows
         outside `studio_core` A1's sweep names; after B1 merges (both touch `save_editor`)
+      - [ ] C the light theme's panel `#f0f0f0`, text boxes `#fdfdfd`, number boxes drawn as
+        text boxes (`widgets::number_box` at every `DragValue`), and the colours derived from
+        the panel (DECISIONS 2026-11-17 "the light theme's panel is #f0f0f0"); after A1 merges
+        (both touch `theme.rs`)
     - [ ] the Stats screen's frames (`plans/save_editor.md` "Editing UI", the player view)
       - [ ] B1 the panels framed, spanning the pane as Appearance's frames, 8 apart, tops on
         Appearance's, columns ending on one line, the positions grid at List's height

@@ -18502,3 +18502,22 @@ panel), as every other light edge is its fill darkened by 30.
 Why: no draft shows the light theme, and the plan gave the light rule only for edges that
 have a fill; the mirror keeps the unheld side the quietest edge on both themes.
 Plan: `plans/core/gui.md`, "Other UI components", the "Control edges" row.
+
+## 2026-11-17 — core — the light theme's panel is #f0f0f0, its text and number boxes #fdfdfd
+Decision: on the light theme the panel and windows are grey 240 (`#f0f0f0`, was egui's 248),
+a text box is filled 253 (`#fdfdfd`, was white), and a number box is drawn as a text box:
+that fill in every state and the text box's border at rest. The colours derived from the
+panel follow their standing rules: the widget fills keep the dark contrast plus 6 (resting
+200, hovered 186, pressed 207, an open menu's button 216); the warning amber, the success
+green and the lineup lists' four position colours are darkened until they read at 4.5 on the
+new panel (`#956300`, `#1A7E37`, `#7f6d00`, `#007792`, `#2c7d13`, `#d02260`); the error red
+and the link blue already do. The control edges follow: the resting one `#aaaaaa`, an unheld
+toggle side's `#e1e1e1` (the entry above's 233 was on the 248 panel).
+Why: the maintainer asked for the three backgrounds (2026-11-17), applied without a draft
+since no draft shows the light theme. The derived values move because the rules that made
+them are kept, not the old numbers: kept as they were, the warning, success and lineup
+colours would read under 4.5, and the boxes would stand less off the panel than the dark
+ones do. A number box takes the text box's border, not an edge 30 darker than its fill, so
+the two kinds of field read alike.
+Plan: `plans/core/gui.md`, "Other UI components", the "Dark/light theme" and "Control
+edges" rows.
