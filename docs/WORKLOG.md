@@ -1797,7 +1797,10 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
           the badge), the gated hex dimmed, two passes for a new player (the widths stored
           clamped), `total_margin`, the grid 1.5 higher; the layout tests' figures set to the
           draft's as the build measures it (Pitch 88, List 46: the lead, by the draft)
-        - [ ] its SWE-2 round (`.tmp/0_0_2/frames_rev/swe_rw3.md`), then Carbon's round 2 (Stats)
+        - [x] its SWE-2 round 2026-11-17: 4 accepted, none of reach (a), the loop ends after
+          their fixes: the Tier badge untested, two comments, the Skills mark a row's gap (8)
+          after the badge as the draft's (plan edited, `e3fc5b93`)
+        - [ ] rw3 r1 (SWE-2, the same session), then Carbon's round 2 (Stats)
         - [x] the edges part, 2026-11-17: 7 of 10 accepted ("frames C1 — edges"), 1 of reach
           (a): on the light theme a version-gated number's `-` stand-in draws the button grey
           beside white number boxes; the rest a readout grey whose contrast drifted with the
@@ -1807,8 +1810,12 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
           studio_core 548, team_widgets 283, color_tools 78, boglo, clippy, fmt, the colour
           gate): `widgets::number_box_look` shared by the number box and the slider, the
           readout `0x5b`, the docstrings, the tests
-        - [ ] its SWE-2 round (`swe_rw4.md`), then Carbon's round 2 (edges)
-        - [ ] the gated stand-in on `number_box_look` (SWE-2, `sk/gatedlook`)
+        - [x] its SWE-2 round 2026-11-17: three nits fixed (`e3fc5b93`), the loop ended
+        - [x] the gated stand-in 2026-11-17 (SWE-2, `b4efbe98`, merge `1b40ddc8`; the lead's
+          rerun 1060 + 57, clippy, fmt; the two tests' setup shared): on the light theme a
+          version-gated number's `-` draws as a disabled number box
+        - [ ] Carbon's round 2 (edges), running at `e3fc5b93`
+        - [x] the pipeline on `6de96354` 2026-11-17: the checkpoint and the Linux gates passed
     - [ ] the control edges (`plans/core/gui.md` "Other UI components", "Control edges")
       - [x] A1 2026-11-17 `studio_core` (`b98986f7`, merge `53bc3805`): the resting stroke,
         `theme::edge_color`, the checked box's and radio's edge, none on disabled widgets or
