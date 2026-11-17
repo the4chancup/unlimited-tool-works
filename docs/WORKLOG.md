@@ -1915,7 +1915,8 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       the open list scrolled to the held nation; `ID - ?` for an ID the version lacks), a
       test holding the fixture saves' nation IDs to their lists, help 03; then the
       changelog line (under Useful). Built 2026-11-17 (SWE-2, 73 min; `388e5fdf`, merge
-      `5023e59a`; the lead's rerun 1070 + 57, pes_savefile 433, clippy, fmt): the fixture saves carry one ID
+      `5023e59a`; the lead's rerun 1070 + 57, pes_savefile 433, clippy, fmt; its pipeline
+      passed, with the Linux gates): the fixture saves carry one ID
       their version lacks (player 75114, nation 23, on PES 2015 and 2016), so the test
       pins those two, the case `ID - ?` exists for
     - [ ] slice 2 (SWE-2 on `sk/geninfo2`, worktree `4cc-studio-temp/geninfo3`, brief
