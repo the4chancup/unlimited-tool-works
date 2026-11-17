@@ -18,13 +18,12 @@ excepted, below), 0.0.2-pes19
 (and with it the readme's PES 2019 claim), 0.0.2-nostretch's slices, and any mutation run
 (mutfast first). Most open steps below wait only for the maintainer's look
 (`maintainer/tasks.html`). What is left before the cut:
-1. 0.0.2-report's blind drill. The chain was run by hand in the built window on 2026-11-17,
-   the dialog matches its draft (the draft following the build where they differed), and
-   card ST-REP-05 waits for the maintainer.
+1. Card ST-REP-05 (Report a problem, from a save to the zip) waits for the maintainer; the
+   blind drill ran 2026-11-17 and found its planted bug from the bundle alone.
 2. The framed Stats screen (branch `eval/stats-boxes`, a member's request: every panel of the
    Stats screen framed as the Appearance screen's groups), polished and included (the
    maintainer, 2026-11-17).
-3. The cut, only once the drill's results are in and the maintainer has run the checks of
+3. The cut, only once the maintainer has run the checks of
    `maintainer/tasks.html` (the maintainer, 2026-11-17): a pipeline without mutants on the
    last merge (0.0.2-determ's second clean run), the changelog, the release build, and a
    Linux bundle for the Reset window card.
@@ -1614,7 +1613,7 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       Save…, then reads the zip back (`repro::read_bundle`): replay's one `Matches` on the
       write, `state/` the edited save, the input and output kept; red with the tool's
       journal not handed to the dialog (SWE-2, after barrw3)
-    - [ ] a blind drill (the maintainer, 2026-11-15): on a throwaway branch the lead plants a
+    - [x] a blind drill (the maintainer, 2026-11-15): on a throwaway branch the lead plants a
       behaviour bug that shows no error, the kind found in game (an edit that skips the
       edited-player flag PES 2019 needs for a name to show, as the aesthetics patch once
       did), records a bundle through the dialog, and hands a fresh agent, not told the
@@ -1626,6 +1625,18 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       build it reports `Differs` naming the field, so it confirms a fix on the member's own
       data but cannot flag a bug the replaying build shares. What the agent missed becomes
       the bundle's next addition (after the chain test)
+      - [x] run 2026-11-17: the Name field's edit stripped of its flag line, a bundle
+        recorded in the built window on a copy of `EDIT00000000_VGL27_Friendlies` (PES 2019,
+        player 70101 renamed), SWE-2 given only the bundle, the member's words and a copy of
+        the source without history (`.tmp/lead/drill/`; its findings in
+        `4cc-studio-temp/drill_case/work/findings.md`). Found in 12 minutes: the file and line,
+        the one-line fix, and the existing test that fails on it. The journal and `diff`
+        showed a name written and nothing else; the flag's state it read by porting the
+        container's decryption to Python, since nothing in the bundle shows a stored field
+        that did not change (`export-toml` would have, and it did not think of it). Replay
+        was not measured: no command runs it. The next addition (after the chain test):
+        the edited teams' Team TOML before and after, which shows every stored field,
+        edit flags included
     - [ ] the built window beside the draft (`.tmp/lead/looks/report/draft_open.png`), run
       through as above on a copy of a save, the zip then read with `save-editor diff`; then
       card ST-REP-05 in `maintainer/tasks.html`; review rounds (tier 2)
