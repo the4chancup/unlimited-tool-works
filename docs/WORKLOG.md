@@ -24,7 +24,11 @@ when its build merges, and main merged back into the branch, never rebased; then
 keeps the reasons, the behaviour and what no draft shows, such as the light theme, and points
 at the draft for measurements rather than copying them, a copy that drifted once: rows "22
 apart" against the draft's 24), the SWE-2 Flash trial's first comparison (its 0.0.2-lookfix
-run shelved in `4cc-studio-temp/lookfix_flash`, never merged), and any mutation run
+run shelved in `4cc-studio-temp/lookfix_flash`, never merged), Reset window's first click
+on Linux (the maintainer's check of 0.0.2-rc.3, 2026-11-17, "good enough for 0.0.2": the
+first click resets the window but the button stays, a second click changes nothing and the
+button goes, its pointer a hand; likely the window manager leaving the reset window off the
+fitted size, so the button waits for a click the window does not follow), and any mutation run
 (mutfast first). Most open steps below wait only for the maintainer's look
 (`maintainer/tasks.html`). What is left before the cut:
 1. 0.0.2-geninfo: the build (SWE-2, running), its review (a SWE-2 loop, then one paid
@@ -58,8 +62,8 @@ install and the tests' fixture exports. Its in-game check and its hand-over are 
 maintainer's. A Linux bundle, 0.0.2-poc.6, stands beside it (archive SHA-256 `0a68c459…`,
 branch `vgl27` at `a611951c`: main at `177657a3`, so also the settings' four-digit folder
 key, the taskbar fix and Update now's fixes of Carbon's round). It was built on the VPS
-(`just remote just release`), so it asks for glibc 2.39 and serves a test only; it has
-not been started.
+(`just remote just release`), so it asks for glibc 2.39 and serves a test only; the
+maintainer started it once on the Linux virtual machine 2026-11-17: fine.
 **Blocked on:** nothing.
 **Behind 0.0.2:** Phase 8's other views and Release 0.1.0, then the phase order 1–6, 8,
 0.1.0, 7, 9–16 (`plans/core/development_plan.md` "Releases"; the first-class target is the

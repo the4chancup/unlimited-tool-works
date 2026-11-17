@@ -40,27 +40,6 @@ card.</p>
 
 <h2>Tests on another machine or in the game</h2>
 
-<section class="entry" id="linux-reset-window">
-  <h3>Reset window on the Linux virtual machine</h3>
-  <p class="from">From: <code>da241022</code> (Reset window goes away after a click the window did not follow)</p>
-  <p>The bundle: <code>unlimited-tool-works-0.0.2-rc.3-linux.tar.gz</code> in
-  <code>4cc-studio-temp/tasks_build/</code> (SHA-256 <code>519d93f0…</code>), today's main at
-  <code>333ec0cb</code> built on the VPS. It needs glibc 2.39 or newer.</p>
-  <p>On the 1280 × 800 Linux virtual machine, with the bundle unpacked and started:</p>
-  <ol>
-    <li>Click Reset window in a state where the window cannot change (already at its reset
-    size): the button goes away.</li>
-    <li>Resize the window: the button comes back.</li>
-    <li>Hover the button: the pointer is a hand.</li>
-  </ol>
-  <div class="options">
-    <label class="opt"><input type="radio" value="works"><b>All three as described</b></label>
-    <label class="opt"><input type="radio" value="problems, see note"><b>Something differs</b>
-      <div class="note">Say which step below.</div></label>
-  </div>
-  <textarea class="own" placeholder="What you saw (optional)"></textarea>
-</section>
-
 <section class="entry" id="poc5-in-game">
   <h3>The 0.0.2-poc.5 bundle in the game</h3>
   <p class="from">From: worklog 0.0.2-poc; yours since 2026-11-11</p>
@@ -72,20 +51,6 @@ card.</p>
     <label class="opt"><input type="radio" value="done, problems"><b>Done, with problems</b>
       <div class="note">Say what below.</div></label>
     <label class="opt"><input type="radio" value="no longer needed"><b>No longer needed</b></label>
-  </div>
-  <textarea class="own" placeholder="What you saw (optional)"></textarea>
-</section>
-
-<section class="entry" id="poc6-linux-start">
-  <h3>The Linux bundle 0.0.2-poc.6, started once</h3>
-  <p class="from">From: worklog 0.0.2-poc</p>
-  <p>poc.6 was built on the VPS beside poc.5 and, as far as the worklog knows, never started. Your
-  update test with the Linux rc.1 and rc.2 bundles may have covered the same ground.</p>
-  <div class="options">
-    <label class="opt"><input type="radio" value="started, fine"><b>Started, and it worked</b></label>
-    <label class="opt"><input type="radio" value="problems"><b>Started, with problems</b>
-      <div class="note">Say what below.</div></label>
-    <label class="opt"><input type="radio" value="covered by the rc update test"><b>No longer needed: the rc update test covered it</b></label>
   </div>
   <textarea class="own" placeholder="What you saw (optional)"></textarea>
 </section>
