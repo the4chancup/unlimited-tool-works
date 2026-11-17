@@ -13,7 +13,7 @@ use pes_savefile::model::names::display_name;
 use studio_core::widgets::{
     combo_item, combo_separator, ink_span, radio_value, step_choice, text_box, wheel_steps,
 };
-use team_widgets::names::{append_name, name_background, plain_format};
+use team_widgets::names::{append_name, plain_format};
 
 use crate::session::Session;
 use crate::session::cup::cup_teams;
@@ -203,7 +203,6 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
         // selectable occupies).
         row_height: ui.spacing().interact_size.y,
         width: frame_width,
-        list_fill: ui.visuals().extreme_bg_color,
         draggable: view.filter.trim().is_empty(),
     };
     // Live AATF's held check: the rows of the team it is for carry its
@@ -393,7 +392,6 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
                         session.file().player(dragged.row.player_id),
                         &dragged.row,
                         &egui::TextStyle::Body.resolve(ui.style()),
-                        name_background(ui.visuals()),
                     );
                     paint_row_text(
                         ui,
@@ -540,10 +538,6 @@ struct RowLayout {
     /// The row's width, the frame's: the scroll area's own spans the bar's
     /// strip while nothing scrolls.
     width: f32,
-    /// The list's own fill (`extreme_bg_color`, read in `show` because the
-    /// rows' scope clears it): under a resting team row's own fill it is
-    /// the surface the name's codes darken against.
-    list_fill: egui::Color32,
     /// Player rows drag and take drops.
     draggable: bool,
 }
@@ -742,8 +736,7 @@ fn team_row(
         let visuals = paint_row_frame(ui, rect, &response, is_selected);
         // A resting row (not selected, hovered or focused) paints its own
         // fill, which sets it apart from a player row (the draft's
-        // `.trow` backdrop); over the list's fill it is also the surface
-        // the name's codes read on.
+        // `.trow` backdrop).
         let resting = !(is_selected || response.hovered() || response.has_focus());
         let row_fill = studio_core::theme::palette(ui.visuals()).team_row_fill;
         if resting {
@@ -785,13 +778,7 @@ fn team_row(
         }
         x += ui.spacing().item_spacing.x;
         let mut job = egui::text::LayoutJob::default();
-        // The resting row's codes sit on `row_fill` over the list's
-        // fill, a step under the panel `name_background` assumes.
-        let on = match name_background(ui.visuals()) {
-            Some(_) if resting => Some(layout.list_fill.blend(row_fill)),
-            on => on,
-        };
-        append_name(&mut job, &team.name, &font, on);
+        append_name(&mut job, &team.name, &font);
         // The end's room (the gap, the dot, the mark and what sits
         // between them) comes off the truncation width, so a long name
         // never runs under either.
@@ -908,7 +895,7 @@ fn player_row(
     let is_selected = *selected == Some(Selection::Player(row.team_id, row.slot));
     let row_height = layout.row_height;
     let font = egui::TextStyle::Body.resolve(ui.style());
-    let texts = row_text(player, row, &font, name_background(ui.visuals()));
+    let texts = row_text(player, row, &font);
     // The unsaved dot paints at the row's right end, never inside the
     // text: a row the name overflows keeps it. The label and the hover
     // keep its text.
@@ -1115,20 +1102,15 @@ struct RowText {
 }
 
 /// The row's place, position and name for `row`'s player, the name's
-/// runs at `font`; `on` is `append_name`'s.
-fn row_text(
-    player: Option<&PlayerEntry>,
-    row: &Row,
-    font: &egui::FontId,
-    on: Option<egui::Color32>,
-) -> RowText {
+/// runs at `font`.
+fn row_text(player: Option<&PlayerEntry>, row: &Row, font: &egui::FontId) -> RowText {
     let position = player
         .and_then(|player| POSITIONS.get(usize::from(player.positions.registered)))
         .copied()
         .unwrap_or("?");
     let mut name = egui::text::LayoutJob::default();
     match player {
-        Some(player) => append_name(&mut name, &player.name, font, on),
+        Some(player) => append_name(&mut name, &player.name, font),
         None => name.append("?", 0.0, plain_format(font.clone())),
     }
     RowText {

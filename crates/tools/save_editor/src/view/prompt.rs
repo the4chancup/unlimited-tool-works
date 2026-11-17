@@ -906,8 +906,11 @@ pub(super) fn table_with_xs(
                         egui::pos2(column, item.top()),
                         egui::vec2(x_width, item.height()),
                     );
-                    let x =
-                        egui::Button::new(egui::RichText::new("\u{d7}").color(error)).frame(false);
+                    // Frameless at rest, highlighted on hover as a
+                    // frameless button is (the draft's
+                    // `button.frame0:hover`), so it reads as a button.
+                    let x = egui::Button::new(egui::RichText::new("\u{d7}").color(error))
+                        .frame_when_inactive(false);
                     if ui.put(rect, x).on_hover_text(X_TOOLTIP).clicked() {
                         click = Some(TableClick::PutBack(index));
                     }

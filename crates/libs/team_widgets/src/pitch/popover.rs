@@ -9,7 +9,7 @@ use studio_core::widgets::{
 };
 
 use super::{drop_rule, outfield_range, overalls_of, position_label};
-use crate::names::{append_name, name_background};
+use crate::names::append_name;
 use crate::tactics::{RosterRow, TacticsView, raw_name};
 
 /// The slot popover (the draft's `slotPopover`): its top-right corner on
@@ -113,7 +113,6 @@ pub(super) fn slot_popover(
                 &mut name,
                 raw_name(roster, starting_eleven[index]).unwrap_or("(empty roster slot)"),
                 &egui::TextStyle::Body.resolve(ui.style()),
-                name_background(ui.visuals()),
             );
             for section in &mut name.sections {
                 if section.format.color == egui::Color32::PLACEHOLDER {

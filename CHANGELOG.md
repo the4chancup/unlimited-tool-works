@@ -62,8 +62,9 @@
 - **Save editor**: the status bar says what Save, Save as, Output rosters to TSV, Ctrl+C and
   Ctrl+V did, in semibold so it is easier to see.
 - **Save editor**: each row of the unsaved changes list and of the close prompt has an ×,
-  which puts that one change back. In the list, a click on a row's item goes to its player
-  or team. A player dragged in the player list shows there as one `Player order` row.
+  which lights up under the pointer and puts that one change back. In the list, a click on
+  a row's item goes to its player or team. A player dragged in the player list shows there
+  as one `Player order` row.
 - **Save editor**: a player dragged in the player list moves with the pointer, and a line
   shows where he will land.
 - **Save editor**: the Team menu's `Save a picture of the formations…` saves a PNG of the
@@ -209,8 +210,6 @@
   name is spelt.
 - **Save editor and Ruleset editor**: the name color findings, the ruleset summary and the
   hair color comment in `settings.toml` spell "color", as the rest of the program does.
-- **Save editor**: on the light theme, a white or pale color code in a team's or player's
-  name is drawn darker, so the name stays readable on the light background.
 - **Save editor**: the column heads of the unsaved changes list are no longer dimmed.
 - **Save editor**: Undo, Redo and the × of a `Player order` row keep a moved player
   selected, instead of whoever took his place in the list.

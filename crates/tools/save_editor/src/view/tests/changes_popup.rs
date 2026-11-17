@@ -1410,6 +1410,55 @@ fn a_rows_x_puts_that_change_back_alone() {
     assert!(!view.is_dirty(), "the save is clean");
 }
 
+// The X reads as a button: hovered, it paints the frameless button's
+// hover fill behind it (the draft's `button.frame0:hover`); with the
+// pointer elsewhere it paints nothing.
+// SE-GUI-74
+#[test]
+fn a_rows_x_lights_on_hover() {
+    let path = fixture(PesVersion::Pes21, "changes_list_x_hover");
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut edited = player_entry(&view, 70101);
+    assert_ne!(edited.basic.height, 170, "premise: a real change");
+    edited.basic.height = 170;
+    view.session.as_mut().unwrap().edit_player(1, edited);
+    let mut window = Headless::new();
+    click_label(&mut window, &mut view);
+    let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let nodes = list_nodes(&pairs);
+    let x = x_of(&nodes, "PLACEHOLDER · Height").clone();
+    let at = centre(&x);
+    let hover_fill = window
+        .ctx
+        .global_style()
+        .visuals
+        .widgets
+        .hovered
+        .weak_bg_fill;
+    let filled_behind = |shapes: &[egui::epaint::ClippedShape]| {
+        shapes.iter().any(|clipped| match &clipped.shape {
+            egui::Shape::Rect(shape) => shape.rect.contains(at) && shape.fill == hover_fill,
+            _ => false,
+        })
+    };
+
+    // The pointer on the X: the hover fill behind it.
+    let (_, _, shapes) = window.frame(vec![egui::Event::PointerMoved(at)], |ui| {
+        show(ui, &mut view, &|| Vec::new())
+    });
+    assert!(filled_behind(&shapes), "the X's hover fill at {at:?}");
+    // Off it (on the row's own cells): no fill behind it.
+    let (_, _, shapes) = window.frame(
+        vec![egui::Event::PointerMoved(egui::pos2(at.x - 60.0, at.y))],
+        |ui| show(ui, &mut view, &|| Vec::new()),
+    );
+    assert!(
+        !filled_behind(&shapes),
+        "no hover fill with the pointer off the X"
+    );
+}
+
 /// The PES 21 fixture with teams 702, 704, 706 and 708 each imported the
 /// whole Team TOML of another team, one whose every player differs on his
 /// name and every ability stat: thousands of unsaved changes.

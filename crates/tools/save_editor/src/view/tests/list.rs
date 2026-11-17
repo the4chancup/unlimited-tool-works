@@ -220,12 +220,12 @@ fn a_players_name_paints_in_the_colors_his_codes_set() {
     assert_eq!(painted, expected, "the row's painted runs");
 }
 
-// The light theme's rule for a text colour applied to a name's codes:
-// a row's "PEPSI MAN" draws `SI` reading at 4.5 or more on the light
-// panel, and at the code's own white in the dark theme.
+// A name's colour codes draw as they are in the light theme too, the
+// in-game look: a row's "PEPSI MAN" draws `SI` at its code's own white
+// under both themes, faint on the light panel as the game draws it.
 // SE-GUI-01
 #[test]
-fn a_rows_coded_name_reads_on_the_light_panel() {
+fn a_rows_coded_name_draws_its_codes_as_they_are() {
     let path = fixture(PesVersion::Pes21, "name_codes_light");
     let mut file = EditFile::from_bytes(&fixture_save(PesVersion::Pes21)).unwrap();
     file.player_mut(70101).unwrap().name =
@@ -243,6 +243,12 @@ fn a_rows_coded_name_reads_on_the_light_panel() {
             theme == egui::Theme::Dark,
             "premise: the {theme:?} visuals"
         );
+        if theme == egui::Theme::Light {
+            assert!(
+                studio_core::theme::contrast(egui::Color32::WHITE, visuals.panel_fill) < 4.5,
+                "premise: SI's white reads under 4.5 on the light panel"
+            );
+        }
         let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
         let bounds = row(&nodes, "01 CB PEPSI MAN").bounds().expect("the row");
         let shape = text_in_rect(&shapes, "PEPSI MAN", bounds);
@@ -257,27 +263,21 @@ fn a_rows_coded_name_reads_on_the_light_panel() {
             })
             .map(|section| section.format.color)
             .expect("the SI run");
-        match theme {
-            egui::Theme::Light => assert!(
-                studio_core::theme::contrast(si, visuals.panel_fill) >= 4.5,
-                "SI paints {si:?}, under 4.5 on the light panel"
-            ),
-            egui::Theme::Dark => assert_eq!(
-                si,
-                egui::Color32::WHITE,
-                "the dark theme draws the code's white"
-            ),
-        }
+        assert_eq!(
+            si,
+            egui::Color32::WHITE,
+            "the {theme:?} theme draws the code's white"
+        );
     }
 }
 
-// A team row's codes darken against the surface the resting row
-// paints: its own fill over the list's background (grey 231 on the
-// light theme), a step under the panel `name_background` assumes. A
-// code darkened to 4.5 on the panel reads about 3.9 on the row.
+// A team row's coded name draws its code as it is too, the in-game
+// look: "TEAM" at its code's own white on the light theme, faint on the
+// resting row's surface (its own fill over the list's background) as
+// the game draws it.
 // SE-GUI-01
 #[test]
-fn a_team_rows_coded_name_reads_on_its_own_surface() {
+fn a_team_rows_coded_name_keeps_its_white_on_the_light_theme() {
     let path = fixture(PesVersion::Pes21, "name_codes_team_row");
     let mut file = EditFile::from_bytes(&fixture_save(PesVersion::Pes21)).unwrap();
     file.team_mut(701).unwrap().name = "\u{11}cffffffffTEAM".to_owned();
@@ -303,9 +303,10 @@ fn a_team_rows_coded_name_reads_on_its_own_surface() {
         .extreme_bg_color
         .blend(studio_core::theme::palette(&visuals).team_row_fill);
     assert!(
-        studio_core::theme::contrast(code, surface) >= 4.5,
-        "the code paints {code:?}, under 4.5 on the row's {surface:?}"
+        studio_core::theme::contrast(egui::Color32::WHITE, surface) < 4.5,
+        "premise: the code's white reads under 4.5 on the resting row's {surface:?}"
     );
+    assert_eq!(code, egui::Color32::WHITE, "the code's own white");
 }
 
 // SE-GUI-02

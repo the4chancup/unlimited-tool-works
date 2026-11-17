@@ -11,7 +11,7 @@ use studio_core::theme;
 use studio_core::widgets::ink_span;
 
 use super::{LineupDrag, lineup_colour, position_label};
-use crate::names::{append_name, name_background};
+use crate::names::append_name;
 use crate::tactics::{RosterRow, TacticsView, raw_name_at};
 
 /// The gap between the two lists (the draft's `#tac-lists` `gap: 8px`).
@@ -280,7 +280,7 @@ fn lineup_row(
             );
             ui.add_space(name_gap);
             let mut job = egui::text::LayoutJob::default();
-            append_name(&mut job, raw_name, &font, name_background(ui.visuals()));
+            append_name(&mut job, raw_name, &font);
             // Cut at the row's end, the full name hovering on the row:
             // the host gives the lists a fixed width, and a long name
             // would otherwise draw over the column at their right. The
