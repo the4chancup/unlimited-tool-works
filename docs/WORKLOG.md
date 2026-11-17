@@ -1909,15 +1909,17 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     - [x] the nation lists (lead): `scripts/derive_nations.py G:/Games` writes
       `crates/tools/save_editor/data/nations.tsv` (220 IDs; 189, 191, 220, then 214 a
       version)
-    - [ ] the build (SWE-2 on `sk/geninfo`, worktree `4cc-studio-temp/geninfo2`, from
+    - [x] the build (SWE-2 on `sk/geninfo`, worktree `4cc-studio-temp/geninfo2`, from
       `73641390`; brief `.tmp/brief_geninfo.md`): the two panels as the draft's
       `generalPanel`, the nation combo from `nations.tsv` (loaded once, not a frame's work;
       the open list scrolled to the held nation; `ID - ?` for an ID the version lacks), a
       test holding the fixture saves' nation IDs to their lists, help 03; then the
-      changelog line. Built 2026-11-17 (SWE-2, 73 min): the fixture saves carry one ID
+      changelog line (under Useful). Built 2026-11-17 (SWE-2, 73 min; `388e5fdf`, merge
+      `5023e59a`; the lead's rerun 1070 + 57, pes_savefile 433, clippy, fmt): the fixture saves carry one ID
       their version lacks (player 75114, nation 23, on PES 2015 and 2016), so the test
       pins those two, the case `ID - ?` exists for
-    - [ ] slice 2, from the build's merge: `view/terms.rs` words a nation change as the
+    - [ ] slice 2 (SWE-2 on `sk/geninfo2`, worktree `4cc-studio-temp/geninfo3`, brief
+      `.tmp/brief_geninfo2.md`): `view/terms.rs` words a nation change as the
       combo does (`135 - USA`; today numbers, against its own rule "its old and new values
       as that view shows them": the changes list, the close prompt, the Comparator), and
       typed digits pick a nation while the list is open (plan and DECISIONS 2026-11-17)
