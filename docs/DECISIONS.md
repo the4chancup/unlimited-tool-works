@@ -18703,3 +18703,12 @@ that yet. A browser's open list only highlights the match and waits for Enter; p
 once keeps it one gesture, the list still shows what was picked, and the undo stack merges
 the digits into one step.
 Plan: `plans/save_editor.md`, "The player view", General info's Nation.
+
+## 2026-11-17 — distribution — a change members already expect goes under Other stuff, not Important
+Decision (the maintainer): a changelog line for a change that only does what members already expect goes
+under `### Other stuff`, however much work it was. The Save editor listing only the cup's
+teams is the example: a member assumes it does, since most official saves hold no real teams.
+Why: `### Important` is read as "what you must know", and the plan's own example ("a list
+that now shows less") put such a change there. A line there that tells members nothing new
+makes them skim the lines that do.
+Plan: `plans/core/distribution.md` "Changelog and version display", the `### Important` item.
