@@ -310,7 +310,8 @@ mod bundle {
     struct Doc {
         /// The suite's version as the window shows it
         /// (`crate::shell::version_label` — the stage and a debug build's
-        /// mark included).
+        /// mark included). First, so it is the file's first line: the
+        /// bundle's `README.txt` sends its reader there.
         version: String,
         /// The OS the window ran on (`std::env::consts::OS`).
         os: &'static str,

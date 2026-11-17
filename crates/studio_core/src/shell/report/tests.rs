@@ -326,6 +326,17 @@ fn save_writes_the_bundle_at_the_picked_path_and_the_words_stay() {
         format!("{README_CORE}\nSTUB PART\n"),
         "the core part, a blank line, then the stub's part"
     );
+    // Spelled out, not built from `README_CORE`: a core part that lost its
+    // last newline would join the stub's part with no blank line between.
+    assert!(
+        zip(&out, "README.txt").ends_with("first line.\n\nSTUB PART\n"),
+        "a blank line stands between the core part and the stub's"
+    );
+    // The readme sends its reader to this line for the version that ran.
+    assert!(
+        zip(&out, "journal.toml").starts_with("version = "),
+        "journal.toml's first line is the version"
+    );
     let thread_count = |text: &str| {
         toml::from_str::<toml::Table>(text).unwrap()["common"]["thread_count"].as_integer()
     };

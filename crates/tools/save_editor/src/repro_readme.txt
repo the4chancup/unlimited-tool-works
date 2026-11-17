@@ -5,6 +5,10 @@ file names under inputs/ and outputs/:
 
     UTW save-editor diff inputs/0-EDIT00000000 outputs/0-EDIT00000000
 
+Edits the member had not written yet are in the save under state/save-editor/, as it stood
+when the report was saved: give its path in place of the one under outputs/, which holds
+only the last save written, if any.
+
 diff names a field only when it changed. It compares only the players of cup teams (IDs 701
 to 920), and none of a team's own fields. To see every stored field of a team, a field that
 did not change included (an edit flag, say), and the team's own fields, write it as a Team
