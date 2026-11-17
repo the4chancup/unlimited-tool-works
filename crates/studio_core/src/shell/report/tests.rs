@@ -383,10 +383,12 @@ fn save_writes_the_bundle_at_the_picked_path_and_the_words_stay() {
     assert!(!has_text(&nodes, "Saved to"), "no saved line");
 }
 
-// With no tool giving a part, `README.txt` is the core part alone.
+// With a tool that gives no part (the trait's default), `README.txt` is
+// the core part alone: nothing is appended for it, not even a newline.
 #[test]
 fn the_readme_is_the_core_part_alone_when_no_tool_has_a_part() {
-    assert_eq!(super::readme(&[]), README_CORE);
+    let (tool, _calls) = stub("t", "T", None);
+    assert_eq!(super::readme(&[tool]), README_CORE);
 }
 
 // A run with no log installed (a first run has no data location, so none

@@ -1,9 +1,9 @@
 //! The "Report a problem" dialog the sidebar's `⚠` tail entry opens, as the
 //! draft `docs/prototypes/index.html` `drawReport` draws it: the member's own
 //! words and the lines saying what the bundle holds, then Save…, which zips,
-//! to the path the member picks, the session's journal and kept files, every
-//! tool's state, the log, the session's settings, the installs and a
-//! `README.txt` saying how to read them. The words stay for the window's
+//! to the path the member picks, those words, the session's journal and kept
+//! files, every tool's state, the log, the session's settings, the installs
+//! and a `README.txt` saying how to read them. The words stay for the window's
 //! life, so a reopened dialog holds them; a written bundle leaves only
 //! Close, and a failed write shows its error and keeps Save…. Native only:
 //! bundles live on disk.
