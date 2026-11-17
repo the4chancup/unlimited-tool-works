@@ -1147,4 +1147,10 @@ fn the_repro_readme_names_commands_the_cli_parses() {
             .any(|line| line.starts_with("save-editor export-toml ")),
         "a command line names export-toml: {command_lines:?}"
     );
+    // The bundle puts the tool's state under `state/<tool id>/`.
+    let state_folder = format!("state/{}/", studio_core::StudioTool::id(&tool));
+    assert!(
+        readme.contains(&state_folder),
+        "the readme names {state_folder}: {readme}"
+    );
 }

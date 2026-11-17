@@ -3,8 +3,8 @@
 //! words and the lines saying what the bundle holds, then Save…, which zips the
 //! session's journal and kept files, every tool's state, the log, the
 //! session's settings, the installs and a `README.txt` saying how to read
-//! them to the path the member picks. The
-//! words stay for the window's life, so a reopened dialog holds them; a
+//! them to the path the member picks. The words stay for the window's
+//! life, so a reopened dialog holds them; a
 //! written bundle leaves only Close, and a failed write shows its error and
 //! keeps Save…. Native only: bundles live on disk.
 

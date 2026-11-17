@@ -190,8 +190,8 @@ impl Recorder {
     /// `inputs/` and the last outputs under `outputs/` (each named
     /// `<index>-<file name>` so two files of one name never collide), the
     /// member's `words` as `words.txt`, each of `files` the caller has at
-    /// the zip's root under its given name (the log, the settings, the
-    /// installs found), and each of `state` under `state/<name>`: a
+    /// the zip's root under its given name (the readme, the log, the
+    /// settings, the installs found), and each of `state` under `state/<name>`: a
     /// tool's current state written as its format. Every path and step
     /// line, and every UTF-8 attachment, is written with the home folder
     /// as `~`. The zip is written to a sibling temp and renamed over
