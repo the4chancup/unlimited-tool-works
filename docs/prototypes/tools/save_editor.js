@@ -168,10 +168,11 @@ input[type=range]:focus { outline: none; }
 .pbar .fill { height: 100%; background: var(--sel-bg); }
 /* save editor view */
 .toolbar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 4px; }
-/* The list and the detail pane 8 apart, the pane's padding 12 on the right: with the list's
-   scroll-bar strip (10) before the gap, its screens stand as far from the list's bar as from
-   the window's right edge, where 12 and 8 made the left look much wider. */
-.master { display: flex; gap: 8px; align-items: flex-start; }
+/* The list and the detail pane 4 apart: the list's scroll bar stands 4 after its frame
+   (the .rows-box gap), so the bar has 4 on each side. The pane's right padding is 16 (the
+   .detail rule); a 22-point gap after the list against 8 on the right made the left look
+   much wider. */
+.master { display: flex; gap: 4px; align-items: flex-start; }
 .plist { width: 255px; flex: none; display: flex; flex-direction: column; gap: 3px; }
 /* The list's scroll bar stands outside its frame, as egui's solid bar does (4 points from
    the content, 6 wide): a row's fill reaches the frame's edge, and the bar covers no row's
@@ -188,10 +189,10 @@ input[type=range]:focus { outline: none; }
 .vbar { flex: none; width: 6px; position: relative; }
 .vbar .thumb { position: absolute; left: 0; right: 0; border-radius: 2px; background: var(--widget); }
 .vbar .thumb:hover, .vbar .thumb.drag { background: var(--hover); }
-/* The detail pane's bar floats in the pane's 12-point right margin, 4 after the screens'
-   frames and 2 before the window's edge, as egui's floats over its scroll area's edge. */
+/* The detail pane's bar floats in the pane's 16-point right margin, 4 after the screens'
+   frames as the list's stands 4 after the list's, and 6 before the window's edge. */
 .center.filled .master { position: relative; }
-.master > .vbar.pane-bar { position: absolute; top: 0; bottom: 0; right: -6px; }
+.master > .vbar.pane-bar { position: absolute; top: 0; bottom: 0; right: -2px; }
 /* A name too long for the row truncates, its dot and mark kept after it. */
 .plist .pname { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 /* A player row's text in the resting widgets' grey, as the app paints a plain name; a team
@@ -254,7 +255,7 @@ input[type=checkbox]:indeterminate { background-image: url("data:image/svg+xml,%
    registered position columns and the two heading rows stay put (position: sticky stands
    for egui painting them outside the ScrollArea). */
 .squad-view { flex: 1; min-height: 0; display: flex; flex-direction: column; }
-.squad-head { display: flex; gap: 8px; align-items: flex-start; }
+.squad-head { display: flex; gap: 4px; align-items: flex-start; }
 /* As wide as over the player list, and as far from the title: the toggle stays where the
    other screens draw it. */
 .squad-head > select { width: 245px; flex: none; margin-right: 10px; }
@@ -749,15 +750,15 @@ table.grid.stats-grid td { padding: 3px 6px; }
 /* The detail pane scrolls on its own, its bar in the window's scroll-bar
    strip (the host's .win rule), kept while nothing scrolls: the pane
    reaches over the view's right margin to the window's edge and takes it
-   back as padding, 4 more than the margin, so its content ends 12 before the
-   edge while the list's gap before it is 8 (.master). The browser's bar is
+   back as padding, 8 more than the margin, so its content ends 16 before the
+   edge while the list's gap before it is 4 (.master). The browser's bar is
    hidden: the pane draws the list's bar (vScrollBar) in that margin, floating
    as egui's does and taking no width, so the view asks for the window without
    the strip (own-bars). The pane holds the scroll; the view itself keeps no
    strip of its own. */
 .center.filled { scrollbar-gutter: auto; padding-right: calc(8px + var(--sbw, 0px)); }
 .center.filled .detail { overflow: auto; min-height: 0; scrollbar-width: none;
-  margin-right: calc(-8px - var(--sbw, 0px)); padding-right: 12px; }
+  margin-right: calc(-8px - var(--sbw, 0px)); padding-right: 16px; }
 .center.filled .detail::-webkit-scrollbar { display: none; }
 .live-panel { flex: none; margin-top: 6px; }
 .live-divider { height: 4px; cursor: ns-resize; }

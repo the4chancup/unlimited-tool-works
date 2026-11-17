@@ -227,7 +227,7 @@ otherwise goes back as a fix.</p>
 </section>
 
 <section class="entry" id="look-pane-shift-draft">
-  <h3>The screens 4 points to the left (the draft)</h3>
+  <h3>The screens 8 points to the left (the draft)</h3>
   <p class="from">From: your request of 2026-11-17 (the Stats screen's margins)</p>
   <ol>
     <li>Open the drafts (<code>docs/prototypes/index.html</code>) at the Save editor's player
@@ -235,10 +235,12 @@ otherwise goes back as a fix.</p>
     <li>Look at the first panel's left border against the list, and the last panel's right
     border against the window's edge; switch to Appearance, Gameplan and Squad.</li>
   </ol>
-  <p>Every screen right of the list stands 4 points further left: 8 points from the list
-  (and its scroll bar's strip) to the first panel, where it was 12, and 12 from the last panel
-  to the window's right edge, where it was 8. The panels keep their widths.</p>
-  <p>The pane's scroll bar is now the list's: a 6-point bar in that 12-point margin, floating
+  <p>Every screen right of the list stands 8 points further left: the list's scroll bar has
+  4 points on each side, its frame before it and the first panel after it (the panel stood 12
+  after the bar), and the last panel ends 16 from the window's right edge, where it was 8. The
+  panels keep their widths.</p>
+  <p>The pane's scroll bar is now the list's: a 6-point bar in that 16-point margin, 4 after
+  the panels as the list's stands 4 after the list, floating
   as the app's does, so the browser's own bar no longer widens the window (it made the gap
   29 in Firefox). The Squad screen keeps the browser's bars for its table, so there the window
   is still drawn wider by them; its tabs stay where the other screens draw them. The build

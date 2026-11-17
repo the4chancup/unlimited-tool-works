@@ -1855,16 +1855,20 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         through `resting_edge`, the lit Live AATF button's in the selection blue's
         - [ ] the built window beside the draft, with the batch release build
   - [ ] 0.0.2-paneshift (the maintainer's request, 2026-11-17): every screen right of the
-    player list 4 points left, 8 from the list's bar strip (18 with no bar) and 12 from the
-    window's right edge, where 12/22 against 8 made the left look much wider -> verify: the
-    built window beside the draft on every screen
+    player list 8 points left, 4 after the list's bar (as the bar stands 4 after the list's
+    frame; 14 after the frame with no bar) and 16 from the window's right edge, where 12/22
+    against 8 made the left look much wider -> verify: the built window beside the draft on
+    every screen
     - [x] the draft 2026-11-17 (lead): `.master` gap 8, the pane's right padding 12, the
       Squad header's gap 8 so its tabs stay put; measured: every screen's frames 4 left,
       their widths kept. Then (the maintainer: Firefox's bar made the gap 29) the pane draws
       the list's 6-point bar (`vScrollBar`, shared) in its right margin, and the harness
       drops the window's scroll-bar strip for a view drawing its own bars (`own-bars`,
       `#win.nostrip`); the Squad screen keeps the strip. Measured in Chromium and Firefox:
-      window 1280, gap 12, the bar 4 after the frames
+      window 1280, gap 12, the bar 4 after the frames. Then (the maintainer: 4 more, so the
+      list's bar has 4 on each side) `.master` gap 4, the pane's padding 16, Squad's gap 4,
+      the pane's bar 4 after the frames; measured: frames 323 to 1264, tabs at 323 on every
+      screen
     - [ ] the maintainer's check of the draft (`tasks.html` `look-pane-shift-draft`); then
       the plan (`save_editor.md` "The player view": 22 after the list, 12 right) and the
       build
