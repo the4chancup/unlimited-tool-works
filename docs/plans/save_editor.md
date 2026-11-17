@@ -727,8 +727,11 @@ vertical room a tab row takes; a toggle on the title's own row takes none.
        PES 2015, 191 in 2016, 220 in 2017, 214 from 2018, when six were dropped), and so do
        a few names (`UNITED STATES` until PES 2017, `USA` after). The editor carries the
        seven lists, written by a script that reads the games' files once; it does not read
-       them itself, so a save is edited the same without the game installed. A test holds
-       every nation ID the fixture saves carry to their version's list.
+       them itself, so a save is edited the same without the game installed. They are the
+       base game's lists, not the 4cc patch's own table, which renames or adds a few nations
+       on PES 2015 to 2017 (EQUESTRIA, OFFSIDE): the cup no longer edits nations. A test
+       holds the fixture saves' nation IDs to their version's list; the one they carry that
+       their version lacks (23 on PES 2015 and 2016) is the case `ID - ?` exists for.
 
      **Main stats**, Captain in its title's row, then:
      - Captain stands in the title's row over the second half, its label where Weight's stands

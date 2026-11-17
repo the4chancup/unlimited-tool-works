@@ -18712,3 +18712,12 @@ Why: `### Important` is read as "what you must know", and the plan's own example
 that now shows less") put such a change there. A line there that tells members nothing new
 makes them skim the lines that do.
 Plan: `plans/core/distribution.md` "Changelog and version display", the `### Important` item.
+
+## 2026-11-17 — save_editor — the Nation dropdown lists the base game's nations, not the 4cc patch's
+Decision (the maintainer): every version's Nation list is the base game's own, from its
+`Country.bin`; the 4cc patch's table is not used.
+Why: the patch ships its own table, which differs on PES 2015 to 2017 (South Sudan renamed
+Equestria on 2015; six nations added on 2016, Offside and Equestria among them; a 2016-era
+list on 2017, 25 nations shorter), but the cup no longer edits nations, so those entries
+are legacy.
+Plan: `plans/save_editor.md`, "The player view", General info's Nation.

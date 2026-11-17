@@ -1924,8 +1924,8 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       as that view shows them": the changes list, the close prompt, the Comparator), and
       typed digits pick a nation while the list is open (plan and DECISIONS 2026-11-17)
     - [ ] the review: a SWE-2 loop over both slices, then one paid round (Astra's)
-    - [ ] the 4cc patch ships its own nation table, different on PES 2015 to 2017: which
-      list a save shows waits on `maintainer/questions.html` `nation-lists-patch`
+    - [x] the 4cc patch's own nation table (different on PES 2015 to 2017) is not used: the
+      base game's lists stand (the maintainer, 2026-11-17; plan and DECISIONS)
   - [ ] 0.0.2-posheight (the maintainer's change, 2026-11-17): the playable positions grid
     takes its own layout's height, so Pitch and Left leave the panel shorter than List
     (under DBC7 the screen ends on Ability stats' frame, 703 against List's 726 in the

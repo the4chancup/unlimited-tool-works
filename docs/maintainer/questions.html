@@ -34,39 +34,6 @@ in this browser. When you're done, press <b>Copy my answers</b> at the bottom an
 text into the chat. The answered ones then leave this page, and each answer goes into the plan.</p>
 <ul id="toc"></ul>
 
-<h2>Before the release</h2>
-
-<section class="entry" id="nation-lists-patch">
-  <h3>Which game's nations the Nation dropdown lists</h3>
-  <p class="from">From: worklog 0.0.2-geninfo</p>
-  <p>The dropdown lists each version's nations as the base game's own database names them.
-  The 4cc patch ships its own nation table, and it differs on three versions; from PES 2018
-  on the two are the same.</p>
-  <ul>
-    <li>PES 2015: the patch renames 312 SOUTH SUDAN to EQUESTRIA.</li>
-    <li>PES 2016: the patch adds 43 EAST TIMOR, 90 TANZANIA, 130 SAINT KITTS AND NEVIS,
-      184 PALAU, 249 OFFSIDE and 251 EQUESTRIA.</li>
-    <li>PES 2017: the patch has the PES 2016 patch's list (197 nations against the base
-      game's 220): 25 nations fewer (BHUTAN, MONGOLIA, NEPAL and others), plus OFFSIDE and
-      EQUESTRIA; it also spells 54 and 63 THE COMOROS and REPUBLIC OF THE GAMBIA.</li>
-  </ul>
-  <p>A nation the list lacks still shows, as its ID and a question mark, and stays until
-  another is picked. One of the test saves has such a player: nation 23 (Mongolia) on PES
-  2015 and 2016, which neither table lists.</p>
-  <p class="ask">Which list should a PES 2015, 2016 or 2017 save show?</p>
-  <div class="options">
-    <label class="opt"><input type="radio" value="the base game's"><b>The base game's</b>
-      <div class="note">As built now. EQUESTRIA and OFFSIDE show as their IDs and a question mark.</div></label>
-    <label class="opt"><input type="radio" value="the 4cc patch's"><b>The 4cc patch's</b>
-      <div class="note">What a 4cc member's game shows. A save from another patch may then
-      show more question marks.</div></label>
-    <label class="opt"><input type="radio" value="both"><b>Both: the base game's, plus the patch's additions and its names</b>
-      <div class="note">Every ID either table knows is listed, so a PES 2017 save also offers
-      BHUTAN, which a 4cc game lacks.</div></label>
-  </div>
-  <textarea class="own" placeholder="Your own answer or a note (optional)"></textarea>
-</section>
-
 <h2>After the release</h2>
 
 <section class="entry" id="wrist-tape-colours">
