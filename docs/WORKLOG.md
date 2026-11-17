@@ -1792,16 +1792,23 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
           2026-11-17, `ce0ae2b2`, with the plan's stale lines, help 03 and the changelog
           line); a PES 2015/2016 team colour's hex left undimmed; a third pass on every new
           player. Tier 2: a second paid round on the Stats part after the rework
-        - [ ] rw3 (SWE-2, `sk/framesrw3`): the seven code fixes and the lead's positions grid
-          1.5 higher (`TOGGLE_GRID_GAP` 7.5); then its SWE-2 round, Carbon's round 2 (Stats)
+        - [x] rw3 2026-11-17 (SWE-2, `fd1d7eca`, merge `d1594018`; the lead's rerun 1057 +
+          57, clippy, fmt, changelog): a panel title's mark right of the title (on Skills after
+          the badge), the gated hex dimmed, two passes for a new player (the widths stored
+          clamped), `total_margin`, the grid 1.5 higher; the layout tests' figures set to the
+          draft's as the build measures it (Pitch 88, List 46: the lead, by the draft)
+        - [ ] its SWE-2 round (`.tmp/0_0_2/frames_rev/swe_rw3.md`), then Carbon's round 2 (Stats)
         - [x] the edges part, 2026-11-17: 7 of 10 accepted ("frames C1 — edges"), 1 of reach
           (a): on the light theme a version-gated number's `-` stand-in draws the button grey
           beside white number boxes; the rest a readout grey whose contrast drifted with the
           240 panel, two docstrings, duplicated light-look code and four untested looks. The
           changelog's edges line reworded (the lead). Tier 2: a second paid round on the edges
-        - [ ] rw4 (SWE-2, `sk/framesrw4`): `widgets::number_box_look` shared by the number box
-          and the slider, the readout grey, the docstrings, the tests; then its SWE-2 round
-        - [ ] the gated stand-in on `number_box_look` (save_editor), after rw3 and rw4 merge
+        - [x] rw4 2026-11-17 (SWE-2, `bd552eb2`, merge `6de96354`; the lead's rerun of
+          studio_core 548, team_widgets 283, color_tools 78, boglo, clippy, fmt, the colour
+          gate): `widgets::number_box_look` shared by the number box and the slider, the
+          readout `0x5b`, the docstrings, the tests
+        - [ ] its SWE-2 round (`swe_rw4.md`), then Carbon's round 2 (edges)
+        - [ ] the gated stand-in on `number_box_look` (SWE-2, `sk/gatedlook`)
     - [ ] the control edges (`plans/core/gui.md` "Other UI components", "Control edges")
       - [x] A1 2026-11-17 `studio_core` (`b98986f7`, merge `53bc3805`): the resting stroke,
         `theme::edge_color`, the checked box's and radio's edge, none on disabled widgets or
