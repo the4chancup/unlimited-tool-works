@@ -45,14 +45,14 @@ pub fn text_box<'t>(edit: egui::TextEdit<'t>) -> impl egui::Widget + 't {
 /// number box reads as a text box (the text edit's fill in every state
 /// and the text box's border at rest), so the two kinds of field look
 /// alike. It sets the live states' `weak_bg_fill` to the text edit's
-/// fill and, `ui` enabled, the resting `bg_stroke` to `text_box_border`'s
-/// stroke, runs `add` and puts the widgets back. On the dark theme it
-/// only runs `add`: there the box is the grey every control is, the look
-/// the drafts were reviewed in. `bg_fill` stays as the theme has it: a
-/// `DragValue` never reads it, drawing as a button (`weak_bg_fill`,
-/// `bg_stroke`) or, while edited, a `TextEdit` (`text_edit_bg_color`).
-/// A slider's rail and handle are drawn from it, so `slider`'s value box
-/// can share this scope.
+/// fill and, while `ui` is enabled, the resting `bg_stroke` to
+/// `text_box_border`'s stroke, runs `add` and puts the widgets back. On
+/// the dark theme it only runs `add`: there the box is the grey every
+/// control is, the look the drafts were reviewed in. `bg_fill` stays as
+/// the theme has it: a `DragValue` never reads it, drawing as a button
+/// (`weak_bg_fill`, `bg_stroke`) or, while edited, a `TextEdit`
+/// (`text_edit_bg_color`). A slider's rail and handle are drawn from
+/// `bg_fill`, so `slider`'s value box can share this scope.
 pub fn number_box_look<R>(ui: &mut egui::Ui, add: impl FnOnce(&mut egui::Ui) -> R) -> R {
     if ui.visuals().dark_mode {
         return add(ui);

@@ -361,13 +361,12 @@ fn scaled(colour: egui::Color32, factor: f64) -> egui::Color32 {
 
 /// The edge a filled control draws inside its box at rest: `fill` with 30
 /// on each channel on the dark theme, 30 off on the light one (each
-/// saturating; the alpha kept). A filled control's edge is its fill
-/// lightened on the dark theme, darkened on the light, so an empty box
-/// still reads as a control on the panel; the widgets' resting stroke
-/// (`inactive.bg_stroke`) is this on the resting fill, and a control
-/// that paints a fill of its own (the checked box's selection blue, the
-/// palette's) edges it with the same 30. An unheld toggle side has no
-/// fill of its own; it takes [`unheld_edge`].
+/// saturating; the alpha kept), so an empty box still reads as a control
+/// on the panel. The widgets' resting stroke (`inactive.bg_stroke`) is
+/// this colour on the resting fill, and a control that paints a fill of
+/// its own (the checked box's selection blue, a palette fill) edges it
+/// with the same 30. An unheld toggle side has no fill of its own; it
+/// takes [`unheld_edge`].
 pub fn edge_color(visuals: &egui::Visuals, fill: egui::Color32) -> egui::Color32 {
     let channel = |value: u8| {
         if visuals.dark_mode {
