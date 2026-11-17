@@ -18,13 +18,15 @@ excepted, below), 0.0.2-pes19
 (and with it the readme's PES 2019 claim), 0.0.2-nostretch's slices, and any mutation run
 (mutfast first). Most open steps below wait only for the maintainer's look
 (`maintainer/tasks.html`). What is left before the cut:
-1. The framed Stats screen and the control edges (0.0.2-frames): A1, A2a, B1, B2 and C merged;
-   the SWE-2 rounds on A1 to C ruled (every loop ended), their fixes merged (rw1, rw2); the
-   paid round (Carbon) over the whole running, in two parts.
-2. The four fixes from the maintainer's looks of 2026-11-17 (0.0.2-namegame, xhover, allcat,
-   ixtext) and P53's 0.0.2-gatelbl (a version-gated field's label dimmed with its control)
-   merged, gatelbl's SWE-2 loop ended; the five looks checked on the release build of
-   `17bda172`, their cards on the tasks page.
+1. 0.0.2-geninfo: the build (SWE-2, running), its review (a SWE-2 loop, then one Carbon
+   round), the nation's wording in the changes list, the typed-digits slice, its changelog
+   line. 0.0.2-frames, -paneshift, -keepsel and -posheight are merged and reviewed (every
+   loop ended; the last pipeline, on `541f88a6`, passed).
+2. The lead's look on one release build, beside the drafts: the framed Stats screen on both
+   themes, the new margins, DBC7's Pitch against List, Gameplan's fit, the new General info
+   and Main stats; then their cards on the tasks page (with `look-gated-labels`,
+   `-category-teams`, `-x-hover`, `-interchange-text` and `-light-names` already there),
+   the build copied to `4cc-studio-temp/tasks_build/`.
 3. The cut, only once the maintainer has run the checks of
    `maintainer/tasks.html` (the maintainer, 2026-11-17): a pipeline without mutants on the
    last merge (0.0.2-determ's second clean run), the changelog, the release build, and a
