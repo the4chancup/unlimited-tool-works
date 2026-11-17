@@ -1800,7 +1800,10 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         - [x] its SWE-2 round 2026-11-17: 4 accepted, none of reach (a), the loop ends after
           their fixes: the Tier badge untested, two comments, the Skills mark a row's gap (8)
           after the badge as the draft's (plan edited, `e3fc5b93`)
-        - [ ] rw3 r1 (SWE-2, the same session), then Carbon's round 2 (Stats)
+        - [x] rw3 r1 2026-11-17 (SWE-2, `e109b2aa`, merge `9091411a`; the lead's rerun 1060 +
+          57, team_widgets 283, clippy, fmt): the Skills mark the row's gap after the badge,
+          the Tier badge tested by the chip's painted edge, three comments
+        - [ ] Carbon's round 2 (Stats), running at `9091411a`
         - [x] the edges part, 2026-11-17: 7 of 10 accepted ("frames C1 — edges"), 1 of reach
           (a): on the light theme a version-gated number's `-` stand-in draws the button grey
           beside white number boxes; the rest a readout grey whose contrast drifted with the
