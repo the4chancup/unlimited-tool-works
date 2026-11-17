@@ -1005,6 +1005,32 @@ fn on_pes16_the_colours_manager_id_and_kit_slots_draw_disabled_with_their_versio
     }
 }
 
+// On the light theme the Manager ID's `-` stand-in reads as the disabled
+// number box a stored ID's field draws, as a gated stat's does on the
+// Stats screen: the box's fill, and no border.
+#[test]
+fn the_manager_ids_gated_dash_fills_as_a_disabled_number_box_on_the_light_theme() {
+    let path = fixture(PesVersion::Pes16, "team_gated_dash_light");
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut window = Headless::sized(DEFAULT_PANE.x, 700.0);
+    window.ctx.set_theme(egui::Theme::Light);
+    open_team_view(&mut window, &mut view, 701);
+    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let dash = disabled_dash(&nodes, "Manager ID")
+        .bounds()
+        .expect("bounds");
+    assert_eq!(
+        fill_at(&shapes, dash),
+        Some(disabled_number_box_fill(&mut window)),
+        "the Manager ID's stand-in fills as a disabled number box"
+    );
+    assert!(
+        strokes_over(&shapes, dash).is_empty(),
+        "the stand-in draws no border"
+    );
+}
+
 #[test]
 fn the_short_name_upper_cases_caps_at_three_and_sets_the_flags() {
     for (version, test) in [

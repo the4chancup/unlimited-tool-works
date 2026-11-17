@@ -31,8 +31,8 @@ use pes_savefile::model::{PlayerEntry, PlayerPositions, PlayerSkills, PlayerStat
 use pes_savefile::schema::fields::{ABILITY_FIELDS, PlayerField};
 use pes_savefile::schema::first_version_with;
 use studio_core::widgets::{
-    FIELD_SPACING, add_enabled, number_arrows, number_box, number_wheel_steps, resting_edge,
-    step_number,
+    FIELD_SPACING, add_enabled, number_arrows, number_box, number_box_look, number_wheel_steps,
+    resting_edge, step_number,
 };
 use team_widgets::cards;
 use team_widgets::pitch::POSITION_ROWS;
@@ -1448,13 +1448,15 @@ fn number_field<T: egui::emath::Numeric>(
 /// The disabled stand-in for a number the save's version does not store:
 /// `-` inside the control's usual bounds (a Button at the DragValue's
 /// minimum size, so an enabled version's control takes the same rect,
-/// SE-GUI-06) with the `PES NN+` tooltip.
+/// SE-GUI-06) drawn as a disabled number box, with the `PES NN+` tooltip.
 pub(crate) fn gated_number(ui: &mut egui::Ui, field: PlayerField) {
-    add_enabled(
-        ui,
-        false,
-        egui::Button::new("-").min_size(ui.spacing().interact_size),
-    )
+    number_box_look(ui, |ui| {
+        add_enabled(
+            ui,
+            false,
+            egui::Button::new("-").min_size(ui.spacing().interact_size),
+        )
+    })
     .on_disabled_hover_text(gating_tooltip(field));
 }
 

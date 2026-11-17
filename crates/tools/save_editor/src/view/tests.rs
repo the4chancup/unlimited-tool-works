@@ -1218,6 +1218,27 @@ fn disabled_dash<'a>(nodes: &'a [accesskit::Node], label: &str) -> &'a accesskit
         .unwrap_or_else(|| panic!("no disabled '-' after {label:?}"))
 }
 
+/// The fill a disabled `number_box` paints in a frame on the window's
+/// theme: what a gated number's stand-in reads as on the light theme.
+fn disabled_number_box_fill(window: &mut Headless) -> egui::Color32 {
+    let (boxed, _, shapes) = window.frame(Vec::new(), |ui| {
+        studio_core::widgets::add_enabled_ui(ui, false, |ui| {
+            ui.add(studio_core::widgets::number_box(egui::DragValue::new(
+                &mut 0u8,
+            )))
+        })
+        .inner
+    });
+    let rect = boxed.rect;
+    let bounds = accesskit::Rect::new(
+        f64::from(rect.min.x),
+        f64::from(rect.min.y),
+        f64::from(rect.max.x),
+        f64::from(rect.max.y),
+    );
+    fill_at(&shapes, bounds).expect("the box's fill")
+}
+
 /// The tooltip text after the pointer rests at `pos` for a while (bounded:
 /// a missing tooltip fails rather than hangs). The pointer first moves away
 /// for a frame: egui refuses a tooltip while the last click is more recent
