@@ -1914,12 +1914,16 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       `generalPanel`, the nation combo from `nations.tsv` (loaded once, not a frame's work;
       the open list scrolled to the held nation; `ID - ?` for an ID the version lacks), a
       test holding the fixture saves' nation IDs to their lists, help 03; then the
-      changelog line. For its rework: `view/terms.rs` still words a nation change as
-      numbers (`PlayerField::Nationality => numbers(...)`), where its own rule is "its old
-      and new values as that view shows them": the changes list, the close prompt and the
-      Comparator then read `135 - USA`, as the combo does
-    - [ ] typed digits pick a nation while the Nation list is open (no egui combo can yet;
-      plan and DECISIONS 2026-11-17): its own brief after the build lands
+      changelog line. Built 2026-11-17 (SWE-2, 73 min): the fixture saves carry one ID
+      their version lacks (player 75114, nation 23, on PES 2015 and 2016), so the test
+      pins those two, the case `ID - ?` exists for
+    - [ ] slice 2, from the build's merge: `view/terms.rs` words a nation change as the
+      combo does (`135 - USA`; today numbers, against its own rule "its old and new values
+      as that view shows them": the changes list, the close prompt, the Comparator), and
+      typed digits pick a nation while the list is open (plan and DECISIONS 2026-11-17)
+    - [ ] the review: a SWE-2 loop over both slices, then one paid round (Astra's)
+    - [ ] the 4cc patch ships its own nation table, different on PES 2015 to 2017: which
+      list a save shows waits on `maintainer/questions.html` `nation-lists-patch`
   - [ ] 0.0.2-posheight (the maintainer's change, 2026-11-17): the playable positions grid
     takes its own layout's height, so Pitch and Left leave the panel shorter than List
     (under DBC7 the screen ends on Ability stats' frame, 703 against List's 726 in the
