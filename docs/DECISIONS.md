@@ -18494,3 +18494,11 @@ Why: inside the Stats screen's new frames an empty box read as part of the frame
 the maintainer asked for the edge on every screen, and picked its strength after trying 20,
 40 and 30 (2026-11-17), 30 against 15 for the quieter unheld toggle side.
 Plan: `plans/core/gui.md`, "Other UI components", the "Control edges" row.
+
+## 2026-11-17 — core — on the light theme an unheld toggle side's edge is the panel darkened by 15
+Decision: the light theme mirrors the dark one's quieter edge: where a dark unheld toggle
+side's edge is 15 over the panel, a light one's is the panel darkened by 15 (233 on the 248
+panel), as every other light edge is its fill darkened by 30.
+Why: no draft shows the light theme, and the plan gave the light rule only for edges that
+have a fill; the mirror keeps the unheld side the quietest edge on both themes.
+Plan: `plans/core/gui.md`, "Other UI components", the "Control edges" row.
