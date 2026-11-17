@@ -195,12 +195,13 @@ fn each_fields_mark_stands_left_of_its_label() {
 }
 
 /// A row about a panel as a whole marks its header, not a label: exactly
-/// one mark painted in the view, its 11-point box starting 2 points after
-/// the header row's last item — the title on a plain panel, the Cards
-/// used badge or its stand-ins on the Skills header — and lying inside
-/// the panel's frame (left of the title it would fall on the frame's
-/// line, or past the pane's edge in the first column). SE-GUI-36's "the
-/// cross beside the field the violation is about" for the header fields.
+/// one mark painted in the view, its 11-point box starting 2 points
+/// after a panel title's text — the row's item spacing after the Skills
+/// header's last item, as the row's next item would stand — and lying
+/// inside the panel's frame (left of the title it would fall on the
+/// frame's line, or past the pane's edge in the first column).
+/// SE-GUI-36's "the cross beside the field the violation is about" for
+/// the header fields.
 #[test]
 fn a_panel_titles_mark_stands_after_its_header() {
     use aatf::Severity::{Error, Suggestion};
@@ -230,7 +231,18 @@ fn a_panel_titles_mark_stands_after_its_header() {
             Error,
             K::Cards { paid: 4, limit: 3 },
             "Skills",
-            Some(OwnBadge::NoTier),
+            Some(OwnBadge::Tier {
+                label: "Regular".to_owned(),
+                limits: aatf::CardLimits {
+                    paid: 3,
+                    limit: 7,
+                    free: Default::default(),
+                    free_cards: Vec::new(),
+                    required_cards: Vec::new(),
+                    a_positions: 1,
+                    max_a_positions: None,
+                },
+            }),
         ),
         (
             Error,
@@ -242,6 +254,12 @@ fn a_panel_titles_mark_stands_after_its_header() {
         (
             Suggestion,
             unused("cards"),
+            "Skills",
+            Some(OwnBadge::NoTier),
+        ),
+        (
+            Error,
+            K::MinCards { paid: 1, min: 3 },
             "Skills",
             Some(OwnBadge::Failed("the tier check fails".to_owned())),
         ),
@@ -260,6 +278,8 @@ fn a_panel_titles_mark_stands_after_its_header() {
     // frame's two passes, so a `None` result would not stay none.
     let (pending, _badge_hold) = worker::Pending::held(badge_key.clone());
     view.cards.pending = Some(pending);
+    let style = window.ctx.style_of(window.ctx.theme());
+    let row_gap = f64::from(style.spacing.item_spacing.x);
     for (severity, kind, title, badge) in cases {
         view.cards.result = badge.map(|badge| (badge_key.clone(), badge));
         live_result_held(
@@ -296,7 +316,18 @@ fn a_panel_titles_mark_stands_after_its_header() {
             "{kind:?}: the mark is on {title:?}'s row"
         );
         let frame = group_frame(&window, &nodes, &shapes, title);
-        assert_after_header(mark, bounds, frame, &nodes, &format!("{kind:?}"));
+        // A panel title's mark 2 points after its text, the Skills
+        // header's the row's gap after its last item.
+        let gap = if title == "Skills" { row_gap } else { 2.0 };
+        assert_after_header(
+            mark,
+            (bounds, frame),
+            &nodes,
+            &shapes,
+            style.as_ref(),
+            gap,
+            &format!("{kind:?}"),
+        );
     }
 }
 

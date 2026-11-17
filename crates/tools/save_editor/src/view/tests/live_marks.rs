@@ -711,17 +711,23 @@ fn assert_left_of_label(mark: &egui::epaint::TextShape, label: accesskit::Rect, 
     );
 }
 
-/// Asserts `mark`'s 11-point box starts 2 points (± 0.5) after the
-/// rightmost node on `title`'s row inside `frame` (the panel's
-/// `group_frame`), and that the box lies inside `frame`. Both figures are
-/// written out, so a changed constant fails.
+/// Asserts `mark`'s 11-point box starts `gap` points (± 0.5) after the
+/// rightmost item on the row `header` names — the title label's bounds
+/// and the panel's `group_frame` rect — and that the box lies inside the
+/// frame. A badge's chip paints the resting widgets' fill four points
+/// past its text — a node's bounds stop at the label — so the row's last
+/// item is the rightmost of `nodes` and `shapes`' rects of that fill on
+/// the row.
 fn assert_after_header(
     mark: &egui::epaint::TextShape,
-    title: accesskit::Rect,
-    frame: egui::Rect,
+    header: (accesskit::Rect, egui::Rect),
     nodes: &[accesskit::Node],
+    shapes: &[egui::epaint::ClippedShape],
+    style: &egui::Style,
+    gap: f64,
     what: &str,
 ) {
+    let (title, frame) = header;
     let right = nodes
         .iter()
         .filter_map(accesskit::Node::bounds)
@@ -733,10 +739,27 @@ fn assert_after_header(
         })
         .map(|bounds| bounds.x1)
         .fold(f64::MIN, f64::max);
+    let chip_fill = style.visuals.widgets.inactive.weak_bg_fill;
+    let chip = shapes
+        .iter()
+        .filter_map(|clipped| match &clipped.shape {
+            egui::Shape::Rect(shape)
+                if shape.fill == chip_fill
+                    && f64::from(shape.rect.min.y) < title.y1
+                    && f64::from(shape.rect.max.y) > title.y0
+                    && shape.rect.min.x >= frame.min.x
+                    && shape.rect.max.x <= frame.max.x =>
+            {
+                Some(f64::from(shape.rect.max.x))
+            }
+            _ => None,
+        })
+        .fold(f64::MIN, f64::max);
+    let right = right.max(chip);
     let box_left = f64::from(mark_centre(mark).x) - 5.5;
     assert!(
-        (box_left - right - 2.0).abs() <= 0.5,
-        "{what}: the mark's box starts at {box_left}, 2 points after the header's last item at {right}"
+        (box_left - right - gap).abs() <= 0.5,
+        "{what}: the mark's box starts at {box_left}, {gap} points after the header's last item at {right}"
     );
     let mark_box = egui::Rect::from_center_size(
         mark_centre(mark),
