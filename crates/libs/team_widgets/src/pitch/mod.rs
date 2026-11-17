@@ -14,12 +14,12 @@ use pes_savefile::model::formation_rule::{MOVABLE_X, MOVABLE_Y};
 use pes_savefile::model::tactics::{Formation, FormationSlot, TeamTactics};
 use pes_version::PesVersion;
 use studio_core::theme::{self, Palette};
-use studio_core::widgets::{add_enabled_ui, cycle_choice, wheel_steps};
+use studio_core::widgets::{add_enabled_ui, cycle_choice, resting_edge, wheel_steps};
 
 use crate::names::append_name;
 use crate::tactics::{
     Assign, FieldedMark, OpenSlot, RosterRow, TacticsView, bar_selector_spacing, lock_selection,
-    name_at, raw_name_at,
+    name_at, raw_name_at, toggle_edges,
 };
 
 /// The position a marker released on the grass takes.
@@ -326,12 +326,18 @@ pub fn formation_selector(
         }
         let bar = ui.horizontal(|ui| {
             bar_selector_spacing(ui);
+            let (held, unheld) = toggle_edges(ui);
             // The three choices as one control, so the wheel over any
             // steps it.
             FORMATIONS
                 .iter()
                 .enumerate()
-                .map(|(index, label)| ui.selectable_value(&mut view.formation, index, *label))
+                .map(|(index, label)| {
+                    let on = view.formation == index;
+                    let response = ui.selectable_value(&mut view.formation, index, *label);
+                    resting_edge(ui, &response, if on { held } else { unheld });
+                    response
+                })
                 .reduce(|left, right| left | right)
                 .expect("the selector has three choices")
         });

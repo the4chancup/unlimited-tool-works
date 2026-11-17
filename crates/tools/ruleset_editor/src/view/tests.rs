@@ -425,6 +425,28 @@ fn contains_label(nodes: &[accesskit::Node], fragment: &str) -> bool {
     labels(nodes).iter().any(|label| label.contains(fragment))
 }
 
+/// The `Shape::Rect` of `fill` painted over the centre of `bounds`: a
+/// selected rail entry's or a held toggle's blue frame.
+fn rect_of_fill_at(
+    shapes: &[egui::epaint::ClippedShape],
+    bounds: accesskit::Rect,
+    fill: egui::Color32,
+) -> &egui::epaint::RectShape {
+    let centre = egui::pos2(
+        ((bounds.x0 + bounds.x1) / 2.0) as f32,
+        ((bounds.y0 + bounds.y1) / 2.0) as f32,
+    );
+    shapes
+        .iter()
+        .find_map(|clipped| match &clipped.shape {
+            egui::Shape::Rect(shape) if shape.fill == fill && shape.rect.contains(centre) => {
+                Some(shape)
+            }
+            _ => None,
+        })
+        .expect("the fill's frame over the bounds")
+}
+
 /// The panel-coloured fill shapes matching `pred`.
 fn panel_fill_at(
     frame: &Frame,

@@ -685,11 +685,18 @@ fn paint_row_frame(
 ) -> egui::style::WidgetVisuals {
     let visuals = ui.style().interact_selectable(response, is_selected);
     if is_selected || response.hovered() || response.has_focus() {
+        // A row is not a control: at rest its blue draws no edge; hovered
+        // or focused it keeps the state's stroke.
+        let stroke = if studio_core::widgets::at_rest(ui, response) {
+            egui::Stroke::NONE
+        } else {
+            visuals.bg_stroke
+        };
         ui.painter().rect(
             rect.expand(visuals.expansion),
             visuals.corner_radius,
             visuals.bg_fill,
-            visuals.bg_stroke,
+            stroke,
             egui::StrokeKind::Inside,
         );
     }

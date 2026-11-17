@@ -180,6 +180,33 @@ fn a_scope_pick_without_a_pointer_press_still_runs() {
     compared(&mut window, &mut view);
 }
 
+// A Show chip is a row, not a control: the picked one's blue draws no
+// edge at rest.
+#[test]
+fn the_picked_show_chip_draws_its_blue_with_no_edge() {
+    let (mut view, mut window, _) = compared_73401("comparator_chip_edge");
+    let blue = window
+        .ctx
+        .style_of(window.ctx.theme())
+        .visuals
+        .selection
+        .bg_fill;
+    let (_, pairs, shapes) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let (_, all) = comparator_button(&pairs, "All");
+    assert_eq!(
+        all.toggled(),
+        Some(accesskit::Toggled::True),
+        "premise: All is the picked chip"
+    );
+    let bounds = all.bounds().expect("the chip's bounds");
+    let frame = rect_of_fill_at(&shapes, bounds, blue);
+    assert_eq!(
+        frame.stroke,
+        egui::Stroke::NONE,
+        "a chip is a row: no resting edge"
+    );
+}
+
 // The Comparator resizes by its edges (the patch and team-file panels'
 // window shares the helper): the window reports the bottom-right
 // corner's `Splitter` handle.
