@@ -378,19 +378,32 @@ input[type=checkbox]:indeterminate { background-image: url("data:image/svg+xml,%
 .scell select, .scell input[type=number] { width: 118px; box-sizing: border-box; }
 #edit-flags-grid { border-spacing: 0; }
 #edit-flags-grid td { height: 22px; padding: 0 12px 0 0; }
-#player-view { display: grid; grid-template-columns: 1fr auto 1fr auto 1fr auto 1fr;
-  align-items: start; margin: 0 -8px 0 -22px; }
+/* The frames span the Appearance and Gameplan screens' frames, from the pane's left to its
+   right margin, 8 apart: the 22 points from the list's frame to the pane, then General info
+   taking what Skills and Ability stats leave. */
+#player-view { display: grid; grid-template-columns: 22px 1fr 8px auto 8px auto;
+  align-items: start; margin: 0 0 0 -22px; }
 .pcols { display: contents; }
 .pcols > * { grid-row: 2; }
 .pcols > :nth-child(1) { grid-column: 2; }
 .pcols > :nth-child(2) { grid-column: 4; }
 .pcols > :nth-child(3) { grid-column: 6; }
-.pcol { gap: 14px; }
+/* Every panel framed as the Appearance screen's groups (a 1-point stroke, 6
+   points inside it), and 8 apart as those are. */
+.pcol { gap: 8px; }
+.pcols .pcol > [data-panel], .pcols > [data-panel=ability-stats] {
+  border: 1px solid var(--stroke); border-radius: 2px; padding: 6px; }
+/* The three columns end on one line, as the Appearance screen's rows do: each column's
+   last frame takes the room down to the tallest column's bottom. */
+.pcols > * { align-self: stretch; }
+.pcol > :last-child { flex: 1; }
 /* General info's and Other stats' fields stand 6 in from their titles, as
-   the ability stats' cell padding sets theirs: the column is 6 wider than
-   the fields' 344. */
-.pcol.first { width: 350px; }
-.pcols .gen { padding-left: 6px; }
+   the ability stats' cell padding sets theirs, and end 12 from the frame on
+   the right, as the ability stats' boxes do. */
+.pcols .gen { padding-left: 6px; padding-right: 6px; }
+/* Every label 20 points from its box at least: the ability stats' label cells pad 14 on
+   their right, the box's cell 6 on its left. */
+[data-panel=ability-stats] table.stats-grid td.ilabel { padding-right: 14px; }
 /* The three columns' titles on one line: Skills' row is as tall as its Cards
    left badge, which centres the title 3 points lower than a bare title, so
    the row starts 3 above the columns and the columns 3 below the view's top
@@ -399,13 +412,20 @@ input[type=checkbox]:indeterminate { background-image: url("data:image/svg+xml,%
    checkbox, as the team view's titles do: no margin under a title's row (the
    badge's lower half overlaps the gap), the label blocks 3 lower (the ability
    stats' cells pad them 3), the checkbox lists 1.5, the positions grid 1. */
-.pcols > * { margin-top: 3px; }
+/* The 3 points and 1 more: the frames' top edges on the Appearance screen's first groups'. */
+.pcols > * { margin-top: 4px; }
 .pcols .phead { margin: 0; }
 .pcols .phead.badged { margin: -3px 0 -3px; }
 .pcols .gen { padding-top: 3px; }
 .pcols .stats-grid { margin-top: 0; }
 .pcols .skcols { margin-top: 1.5px; }
 .pcols #pos-grid { margin-top: 1px; }
+/* The grid keeps List's height in every layout, so switching never moves the panel's
+   bottom: List's thirteen rows, each a 17-point grade with 1 above and below it, 1 apart.
+   It takes the panel's free room under the toggle, and Pitch's and Left's rows stand
+   centred in it. */
+.pcols #pos-grid { min-height: calc(13 * (17px + 2px) + 12 * 1px); flex: 1;
+  justify-content: center; }
 /* The skills' and COM styles' second columns start at the same x: one
    column width for both panels (and the values' pairs under them). */
 .skcols { display: flex; gap: 14px; align-items: flex-start; }
@@ -425,10 +445,10 @@ input[type=checkbox]:indeterminate { background-image: url("data:image/svg+xml,%
    stats' boxes: 18-point controls, rows 24 apart. */
 .gen { display: flex; flex-direction: column; gap: 6px; }
 .gen .gl.above { display: block; margin-bottom: 1px; }
-/* The first half as wide as the label-left rows' label column, their 12-point
+/* The first half as wide as the label-left rows' label column, their 20-point
    gap and a box, so its boxes start at the x those rows' fields start at; the
-   halves are 28 apart. */
-.gen .pairs { display: grid; grid-template-columns: calc(109px + 12px + 54px) 1fr; column-gap: 28px; row-gap: 6px; }
+   second half ends on the panel's right, the halves at least 18 apart. */
+.gen .pairs { display: grid; grid-template-columns: calc(109px + 20px + 54px) 1fr; column-gap: 18px; row-gap: 6px; }
 /* The count reads as part of its label, and keeps one width as it changes. */
 .gen .count { font-variant-numeric: tabular-nums; color: #5a5a5a; }
 .gen .count.at { color: var(--warn); }
@@ -437,14 +457,14 @@ input[type=checkbox]:indeterminate { background-image: url("data:image/svg+xml,%
    it: a pale fill would wash the light text out. */
 .gen input.overlong { background: color-mix(in srgb, var(--extreme), var(--warn) 25%); }
 .gen input[type=text], .gen select { width: 100%; box-sizing: border-box; }
-.gen .pair { display: flex; align-items: center; justify-content: space-between; gap: 9px; }
+.gen .pair { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
 .gen .pair input[type=number], .gen .pair .box { width: 54px; box-sizing: border-box; flex: none; }
 /* The second half's pairs: the box just after a label column as wide as
-   the half's longest label, "Shirt number", rather than on the half's right
+   the half's longest label, "Shirt number", the two at the half's right
    edge, so its short labels (Nation, Form) keep their boxes close. Live
    AATF's cross sits left of the label, in the gap between the halves. */
 .gen .pairs > .pair:nth-child(even) { display: grid; grid-template-columns: 73px 54px;
-  column-gap: 9px; justify-content: start; }
+  column-gap: 20px; justify-content: end; }
 .gen .pairs > .pair:nth-child(even) .boxed { display: contents; }
 .gen .pairs > .pair:nth-child(even) > .gl { grid-column: 1; grid-row: 1; }
 .gen .pairs > .pair:nth-child(even) input[type=number],
@@ -452,10 +472,9 @@ input[type=checkbox]:indeterminate { background-image: url("data:image/svg+xml,%
 /* The label-left rows (Name and Shirt above the pairs, Stronger foot and the
    combos below them): one label column as wide as the longest of their labels,
    "Registered position", so every field starts at one x, and every field ending
-   flush with the second half's boxes (the first half, the 28-point gap, its
-   72-point label column, 9, the 54-point box), not on the panel's right edge. */
-.gen .combos { display: grid; grid-template-columns: 109px 1fr; column-gap: 12px;
-  row-gap: 6px; align-items: center; width: calc(109px + 12px + 54px + 28px + 73px + 9px + 54px); }
+   flush with the second half's boxes, on the panel's right. */
+.gen .combos { display: grid; grid-template-columns: 109px 1fr; column-gap: 20px;
+  row-gap: 6px; align-items: center; }
 .gen .combos > span:not(.gl), .gen .combos .gate > span { display: block; }
 .gen .combos .rate.lr { display: grid; grid-template-columns: 1fr 1fr; }
 /* Each side 18 tall, a control's height, so the toggles' rows stand 24 apart as the
