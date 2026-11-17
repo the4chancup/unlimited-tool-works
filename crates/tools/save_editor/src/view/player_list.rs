@@ -542,16 +542,17 @@ struct RowLayout {
     draggable: bool,
 }
 
-/// The team selector: `All teams`, then each cup team of `category` by
-/// name in the save's order. With `category`, the popup ends, under a
-/// separator, in the four radio buttons of `TeamCategory::CHOICES` (the
-/// draft's `.combo-foot`): the teams' scroll area above them is as tall
-/// as any dropdown's list, the footer's height added to the popup's
-/// rather than taken from it, so the radios stay in view while the
-/// teams scroll. Picking one leaves the popup open, so the shorter list
-/// shows at once (the popup's `CloseOnClickOutside` keeps it open on a
-/// click inside, and an entry's own `ui.close()` closes it on a pick).
-/// `id_salt` is the combo's: two combos with one salt share their
+/// The team selector: `All teams`, or the category's name in `All`'s
+/// place (`4cc teams`, `VGL teams`, `Invitational teams`), then each cup
+/// team of `category` by name in the save's order. With `category`, the
+/// popup ends, under a separator, in the four radio buttons of
+/// `TeamCategory::CHOICES` (the draft's `.combo-foot`): the teams' scroll
+/// area above them is as tall as any dropdown's list, the footer's height
+/// added to the popup's rather than taken from it, so the radios stay in
+/// view while the teams scroll. Picking one leaves the popup open, so the
+/// shorter list shows at once (the popup's `CloseOnClickOutside` keeps it
+/// open on a click inside, and an entry's own `ui.close()` closes it on a
+/// pick). `id_salt` is the combo's: two combos with one salt share their
 /// popup state, so the comparator's filter passes its own (the player
 /// list's stays `save_editor_team`).
 pub(super) fn team_selector(
@@ -563,8 +564,11 @@ pub(super) fn team_selector(
 ) {
     let mut chosen = *choice;
     let shown = category.as_deref().copied().unwrap_or(TeamCategory::All);
+    // The first entry names the shown category, so a shortened list is
+    // not read as the whole save.
+    let all_label = format!("{} teams", shown.label());
     let text = match chosen {
-        TeamChoice::All => "All teams".to_owned(),
+        TeamChoice::All => all_label.clone(),
         TeamChoice::Team(id) => file
             .team(id)
             .map(|team| display_name(&team.name))
@@ -620,7 +624,7 @@ pub(super) fn team_selector(
                     // `ComboBox` keeps the labels from wrapping, the
                     // narrow popup notwithstanding.
                     ui.style_mut().wrap_mode = Some(egui::TextWrapMode::Extend);
-                    if combo_item(ui, &mut chosen, TeamChoice::All, "All teams").clicked() {
+                    if combo_item(ui, &mut chosen, TeamChoice::All, all_label.as_str()).clicked() {
                         ui.close();
                     }
                     for team in cup_teams(file) {

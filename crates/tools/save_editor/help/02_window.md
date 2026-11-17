@@ -40,8 +40,9 @@ All teams keeps what you had selected.
 
 The radio buttons at the bottom of the open dropdown narrow the dropdown's teams and the
 list to one competition's teams: 4cc, VGL or Invitational; All is every cup team again.
-If the picked team is not in the category, the dropdown shows All teams. The pick is
-remembered for next time.
+With one of them ticked, the dropdown's first entry reads its name in place of All, as in
+VGL teams. If the picked team is not in the category, the dropdown shows that entry. The
+pick is remembered for next time.
 
 Only the cup's teams are listed (ids 701 to 920), with the players on their rosters. A save
 made from the game's own data also holds its clubs and national teams, and players on no cup

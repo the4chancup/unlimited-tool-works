@@ -189,9 +189,10 @@ fn the_filter_box_matches_an_id_from_its_start() {
 }
 
 // The four category radio buttons under the selector's teams shorten the
-// dropdown and the list to one competition's teams: `All teams`, then the
-// category's teams alone, in the popup as in the list; a team the
-// category leaves out gives way to `All teams`, and a selection it leaves
+// dropdown and the list to one competition's teams: the first entry names
+// the category (`All teams` under `All`, `VGL teams` under `VGL`), then
+// the category's teams alone, in the popup as in the list; a team the
+// category leaves out gives way to that entry, and a selection it leaves
 // out moves to the list's first player.
 // SE-GUI-83
 #[test]
@@ -215,15 +216,15 @@ fn the_selectors_categories_shorten_the_dropdown_and_the_list() {
             .collect()
     };
     let all_names = names(701, 920);
-    // The open popup's entries, in order: the `All teams` row and the
-    // listed teams.
-    let entries = |nodes: &[accesskit::Node]| -> Vec<String> {
+    // The open popup's entries, in order: the `first` row (the
+    // category's `<label> teams`) and the listed teams.
+    let entries = |nodes: &[accesskit::Node], first: &str| -> Vec<String> {
         let mut items: Vec<&accesskit::Node> = nodes
             .iter()
             .filter(|node| {
                 node.role() == Role::Button
                     && node.label().is_some_and(|label| {
-                        label == "All teams" || all_names.iter().any(|name| name == label)
+                        label == first || all_names.iter().any(|name| name == label)
                     })
             })
             .collect();
@@ -261,10 +262,8 @@ fn the_selectors_categories_shorten_the_dropdown_and_the_list() {
             })
             .collect()
     };
-    let expected = |names: Vec<String>| -> Vec<String> {
-        std::iter::once("All teams".to_owned())
-            .chain(names)
-            .collect()
+    let expected = |first: &str, names: Vec<String>| -> Vec<String> {
+        std::iter::once(first.to_owned()).chain(names).collect()
     };
 
     // `All teams` first, then the save's teams; under them the four
@@ -278,8 +277,8 @@ fn the_selectors_categories_shorten_the_dropdown_and_the_list() {
     click(&mut window, selector_combo(&nodes), &mut view);
     let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     assert_eq!(
-        entries(&nodes),
-        expected(all_names.clone()),
+        entries(&nodes, "All teams"),
+        expected("All teams", all_names.clone()),
         "All's entries"
     );
     assert_eq!(
@@ -294,7 +293,7 @@ fn the_selectors_categories_shorten_the_dropdown_and_the_list() {
     );
 
     // `VGL` ticked through a pointer click: the popup stays open and
-    // lists `All teams` and the 781 to 850 teams alone.
+    // lists `VGL teams` and the 781 to 850 teams alone.
     click(&mut window, radio(&nodes, "VGL"), &mut view);
     let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     assert_eq!(
@@ -308,9 +307,9 @@ fn the_selectors_categories_shorten_the_dropdown_and_the_list() {
         "VGL ticked, the popup still open"
     );
     assert_eq!(
-        entries(&nodes),
-        expected(names(781, 850)),
-        "`All teams` and the VGL teams alone"
+        entries(&nodes, "VGL teams"),
+        expected("VGL teams", names(781, 850)),
+        "`VGL teams` and the VGL teams alone"
     );
     // The radios stand under the teams' scroll area, in view while the
     // teams scroll: the first radio tops out right under the area's
@@ -320,7 +319,7 @@ fn the_selectors_categories_shorten_the_dropdown_and_the_list() {
         .filter(|node| {
             node.role() == Role::Button
                 && node.label().is_some_and(|label| {
-                    label == "All teams" || all_names.iter().any(|name| name == label)
+                    label == "VGL teams" || all_names.iter().any(|name| name == label)
                 })
         })
         .filter_map(|node| node.bounds().map(|bounds| bounds.y0))
@@ -365,8 +364,12 @@ fn the_selectors_categories_shorten_the_dropdown_and_the_list() {
     // them and no 781.
     click(&mut window, radio(&nodes, "4cc"), &mut view);
     let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
-    let four_cc = entries(&nodes);
-    assert_eq!(four_cc, expected(names(701, 780)), "the 4cc teams alone");
+    let four_cc = entries(&nodes, "4cc teams");
+    assert_eq!(
+        four_cc,
+        expected("4cc teams", names(701, 780)),
+        "the 4cc teams alone"
+    );
     assert!(
         four_cc.iter().any(|name| name == "Backup 9"),
         "780 among them"
@@ -374,8 +377,9 @@ fn the_selectors_categories_shorten_the_dropdown_and_the_list() {
     assert!(!four_cc.iter().any(|name| name == "/@/"), "no 781");
 
     // 781 picked under `VGL`, then `Invitational` ticked: the picked
-    // team is out of the new category, so the selector reads `All
-    // teams` and the selection is Invitational's first player.
+    // team is out of the new category, so the selector reads
+    // `Invitational teams` and the selection is Invitational's first
+    // player.
     click(&mut window, radio(&nodes, "VGL"), &mut view);
     pick_in_selector(&mut window, &mut view, "/@/");
     assert_eq!(view.team, TeamChoice::Team(781), "premise: 781 picked");
@@ -386,18 +390,27 @@ fn the_selectors_categories_shorten_the_dropdown_and_the_list() {
     assert_eq!(
         view.team,
         TeamChoice::All,
-        "the picked team out of the category gives way to All teams"
+        "the picked team out of the category gives way to its entry"
     );
     let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     assert_eq!(
         selector_combo(&nodes).value(),
-        Some("All teams"),
-        "the selector reads All teams"
+        Some("Invitational teams"),
+        "the selector reads Invitational teams"
     );
     assert_eq!(
         view.selected,
         Some(Selection::Player(851, 0)),
         "the selection is the list's first player row"
+    );
+
+    // `All` ticked again: the selector reads `All teams` once more.
+    click(&mut window, radio(&nodes, "All"), &mut view);
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    assert_eq!(
+        selector_combo(&nodes).value(),
+        Some("All teams"),
+        "the selector reads All teams"
     );
 }
 
@@ -478,9 +491,9 @@ fn the_dropdowns_teams_scroll_in_a_full_lists_height() {
     }
 }
 
-// The wheel over the closed selector steps `All teams` and the
-// category's teams alone: under VGL the step after `All teams` is the
-// first VGL team, not the first 4cc one.
+// The wheel over the closed selector steps the category's entry and
+// its teams alone: under VGL the step after `VGL teams` is the first
+// VGL team, not the first 4cc one.
 #[test]
 fn the_closed_selectors_wheel_steps_the_categorys_teams() {
     let path = fixture(PesVersion::Pes21, "team_category_wheel");

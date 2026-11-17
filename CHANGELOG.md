@@ -50,7 +50,8 @@
 - **All tools**: an open dropdown list shows half as many items again before it scrolls.
 - **Save editor**: the team dropdown above the list reads All teams in place of ALL, and
   radio buttons at the bottom of the open dropdown narrow it and the list to the 4cc, VGL or
-  Invitational teams.
+  Invitational teams, its first entry then reading 4cc teams, VGL teams or Invitational
+  teams.
 - **Save editor**: Copy stats and Swap stats are one window, `Copy/swap stats`
   (`Copy/swap stats…` in the Player menu), which stays open: pick the source once, then
   click each player in the list to copy onto.
@@ -227,6 +228,10 @@
   points apart, as on the Appearance screen.
 - **Ruleset editor**: the section list on the left has a little more room between its
   rows.
+
+### Other stuff
+
+- **Save editor**: the text of `Team file interchange` is no longer dimmed.
 
 ## [0.0.1] - 2026-11-03
 
