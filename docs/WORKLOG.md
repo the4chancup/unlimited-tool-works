@@ -1959,7 +1959,8 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
   - [x] 0.0.2-lightfill 2026-11-17 (the maintainer's change; the lead): the light theme's
     control fills 8 lighter, 208, 194 and 215 (plan `core/gui.md`, DECISIONS 2026-11-17);
     gates studio_core 552, save_editor 1077 + 57, ruleset_editor 174 + 13, clippy, fmt; the
-    release build reads 208 on a button, a dropdown and a checkbox
+    release build reads 208 on a button, a dropdown and a checkbox; the pipeline on
+    `daa6c926` passed, with the Linux gates
   - [ ] 0.0.2-posheight (the maintainer's change, 2026-11-17): the playable positions grid
     takes its own layout's height, so Pitch and Left leave the panel shorter than List
     (under DBC7 the screen ends on Ability stats' frame, 703 against List's 726 in the
