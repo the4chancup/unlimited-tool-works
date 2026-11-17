@@ -202,8 +202,8 @@ fn assert_three_columns_at_1280(version: PesVersion) {
             "{label}'s box just after the label column ({bounds:?} vs {box_x})"
         );
     }
-    // The Captain radio centred in its 54-wide box (the draft's `.phead
-    // .captained` `.box`), over the Weight box under it.
+    // The Captain radio centred in its 54-wide box (the draft's
+    // `.phead.captained .box`), over the Weight box under it.
     let captain = right_of_label(&nodes, "Captain", Role::RadioButton)[0]
         .bounds()
         .expect("bounds");

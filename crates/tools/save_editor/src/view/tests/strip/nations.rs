@@ -19,6 +19,11 @@ fn open_with_nation(version: PesVersion, test: &str, id: u16) -> (SaveView, u32)
     (view, player_id)
 }
 
+/// `player_id`'s nationality as the session holds it.
+fn nation_of(view: &SaveView, player_id: u32) -> u16 {
+    player_entry(view, player_id).basic.nationality
+}
+
 /// The Nation combo's node.
 fn nation_combo(nodes: &[accesskit::Node]) -> &accesskit::Node {
     right_of_label(nodes, "Nation", Role::ComboBox)
@@ -28,7 +33,7 @@ fn nation_combo(nodes: &[accesskit::Node]) -> &accesskit::Node {
 }
 
 /// The node of the combo list's row reading `text`.
-fn list_row(pairs: &[(accesskit::NodeId, accesskit::Node)], text: &str) -> accesskit::NodeId {
+fn combo_row(pairs: &[(accesskit::NodeId, accesskit::Node)], text: &str) -> accesskit::NodeId {
     pairs
         .iter()
         .find(|(_, node)| node.role() == Role::Button && node.label() == Some(text))
@@ -43,9 +48,11 @@ fn open_nation_list(window: &mut Headless, view: &mut SaveView) {
     window.frame(Vec::new(), |ui| show(ui, view, &|| Vec::new()));
 }
 
-/// The list's clip this frame: the tightest clip a nation row's text is
-/// clipped by (the closed combo's own text is clipped by the pane).
-fn list_clip(shapes: &[egui::epaint::ClippedShape]) -> Option<egui::Rect> {
+/// The popup's clip this frame: the tightest clip a `" - "` text is
+/// clipped by. The match is wider than the popup's rows — the Registered
+/// position combo's `CB - Centre Back` reads the same — but anything
+/// outside the popup is pane-clipped, so the tightest is the popup's.
+fn popup_clip(shapes: &[egui::epaint::ClippedShape]) -> Option<egui::Rect> {
     shapes
         .iter()
         .filter_map(|clipped| match &clipped.shape {
@@ -65,7 +72,7 @@ fn row_inside_clip(
     text: &str,
 ) -> Option<accesskit::Rect> {
     let (_, pairs, shapes) = window.frame_ids(Vec::new(), |ui| show(ui, view, &|| Vec::new()));
-    let clip = list_clip(&shapes)?;
+    let clip = popup_clip(&shapes)?;
     // A row past the clip reports no bounds.
     let row = pairs
         .iter()
@@ -100,33 +107,40 @@ fn the_nation_combo_shows_the_held_entry_on_the_fields_span() {
 }
 
 // A pick in the open list stores its nation as one undo entry. The
-// list opens showing the held row — there are over 200 entries — and
-// only then: a wheel scroll after leaves it where the member put it.
+// list opens scrolled to the held row — there are over 200 entries —
+// and a wheel scroll after leaves it where the member put it.
 #[test]
 fn a_pick_in_the_nation_list_stores_it_and_the_held_row_shows_on_open() {
     let (mut view, player_id) = open_with_nation(PesVersion::Pes21, "nation_pick", 135);
     let mut window = Headless::sized(DEFAULT_PANE.x, 700.0);
-    let nation = |view: &SaveView| player_entry(view, player_id).basic.nationality;
-    assert_eq!(nation(&view), 135, "premise: 135 held");
+    assert_eq!(nation_of(&view, player_id), 135, "premise: 135 held");
 
     // The closed combo's wheel steps through the entries, as the
     // Registered position combo's does: one notch down takes 136.
     let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     let at = centre(nation_combo(&nodes));
     notch(&mut window, &mut view, at, false);
-    assert_eq!(nation(&view), 136, "a notch down takes the next nation");
+    assert_eq!(
+        nation_of(&view, player_id),
+        136,
+        "a notch down takes the next nation"
+    );
     window.frame(vec![key(egui::Key::Z, egui::Modifiers::CTRL, true)], |ui| {
         show(ui, &mut view, &|| Vec::new())
     });
-    assert_eq!(nation(&view), 135, "the notch undone");
+    assert_eq!(nation_of(&view, player_id), 135, "the notch undone");
 
     // Open the list and pick 231 - SAN MARINO through AccessKit (its
     // row sits past the popup's clip a pointer click reaches).
     let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     click(&mut window, nation_combo(&nodes), &mut view);
     let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
-    action_click(&mut window, &mut view, list_row(&pairs, "231 - SAN MARINO"));
-    assert_eq!(nation(&view), 231, "the pick stored 231");
+    action_click(
+        &mut window,
+        &mut view,
+        combo_row(&pairs, "231 - SAN MARINO"),
+    );
+    assert_eq!(nation_of(&view, player_id), 231, "the pick stored 231");
     // The AccessKit click leaves the popup open (egui closes it on a
     // pointer click or Escape alone): Escape closes it.
     window.frame(
@@ -135,15 +149,16 @@ fn a_pick_in_the_nation_list_stores_it_and_the_held_row_shows_on_open() {
     );
 
     // Reopen: the held row lies inside the list's clip — the open
-    // scrolls it into view, not the list's top. The row settles once
-    // its bounds hold for a frame (the open's scroll animates).
+    // scrolls it into view, not the list's top. The bounds hold still
+    // only once the open's `scroll_to_me` has landed on a pass, so the
+    // row settles once they hold for a frame.
     let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     click(&mut window, nation_combo(&nodes), &mut view);
     let (mut settled, mut last) = (None, None);
     for _ in 0..48 {
         let (_, pairs, shapes) =
             window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
-        let Some(clip) = list_clip(&shapes) else {
+        let Some(clip) = popup_clip(&shapes) else {
             continue;
         };
         // A row past the clip reports no bounds: skip the frame.
@@ -190,7 +205,7 @@ fn a_pick_in_the_nation_list_stores_it_and_the_held_row_shows_on_open() {
     window.frame(vec![key(egui::Key::Z, egui::Modifiers::CTRL, true)], |ui| {
         show(ui, &mut view, &|| Vec::new())
     });
-    assert_eq!(nation(&view), 135, "one undo restores 135");
+    assert_eq!(nation_of(&view, player_id), 135, "one undo restores 135");
     assert!(
         !view.session.as_ref().unwrap().can_undo(),
         "the pick was one undo entry"
@@ -204,8 +219,7 @@ fn a_pick_in_the_nation_list_stores_it_and_the_held_row_shows_on_open() {
 fn typed_digits_pick_a_nation_as_one_undo_entry() {
     let (mut view, player_id) = open_with_nation(PesVersion::Pes21, "nation_digits", 135);
     let mut window = Headless::sized(DEFAULT_PANE.x, 700.0);
-    let nation = |view: &SaveView| player_entry(view, player_id).basic.nationality;
-    assert_eq!(nation(&view), 135, "premise: 135 held");
+    assert_eq!(nation_of(&view, player_id), 135, "premise: 135 held");
 
     open_nation_list(&mut window, &mut view);
     // A digit a frame, each well inside the run's second (a frame's
@@ -215,9 +229,14 @@ fn typed_digits_pick_a_nation_as_one_undo_entry() {
             show(ui, &mut view, &|| Vec::new())
         });
     }
-    assert_eq!(nation(&view), 231, "the typed 231 picked SAN MARINO");
+    assert_eq!(
+        nation_of(&view, player_id),
+        231,
+        "the typed 231 picked SAN MARINO"
+    );
     // The pick scrolled into view: its row lies inside the list's clip
-    // once its bounds hold for a frame (the scroll animates).
+    // once its bounds hold for a frame (the `scroll_to_me` lands on a
+    // later pass).
     let (mut last, mut inside) = (None, None);
     for _ in 0..48 {
         let row = row_inside_clip(&mut window, &mut view, "231 - SAN MARINO");
@@ -237,7 +256,7 @@ fn typed_digits_pick_a_nation_as_one_undo_entry() {
     window.frame(vec![key(egui::Key::Z, egui::Modifiers::CTRL, true)], |ui| {
         show(ui, &mut view, &|| Vec::new())
     });
-    assert_eq!(nation(&view), 135, "one undo restores 135");
+    assert_eq!(nation_of(&view, player_id), 135, "one undo restores 135");
     assert!(
         !view.session.as_ref().unwrap().can_undo(),
         "the typed picks were one undo entry"
@@ -251,39 +270,39 @@ fn typed_digits_pick_a_nation_as_one_undo_entry() {
 fn a_seconds_pause_between_digits_starts_a_new_id() {
     let (mut view, player_id) = open_with_nation(PesVersion::Pes21, "nation_pause", 135);
     let mut window = Headless::sized(DEFAULT_PANE.x, 700.0);
-    let nation = |view: &SaveView| player_entry(view, player_id).basic.nationality;
+    assert_eq!(nation_of(&view, player_id), 135, "premise: 135 held");
 
     open_nation_list(&mut window, &mut view);
     window.frame(vec![egui::Event::Text("2".to_owned())], |ui| {
         show(ui, &mut view, &|| Vec::new())
     });
-    assert_eq!(nation(&view), 2, "the typed 2 picked BAHRAIN");
+    assert_eq!(nation_of(&view, player_id), 2, "the typed 2 picked BAHRAIN");
     // 61 frames with no input move egui's clock past the run's second.
     idle_frames(&mut window, &mut view, 61);
     window.frame(vec![egui::Event::Text("1".to_owned())], |ui| {
         show(ui, &mut view, &|| Vec::new())
     });
     assert_eq!(
-        nation(&view),
+        nation_of(&view, player_id),
         1,
         "the 1 after the pause started a new ID, not 21"
     );
 }
 
 // A digit is a pick only while the list is open and only a digit: a
-// typed 5 with it closed changes nothing, nor does a non-digit in it.
+// typed 5 with it closed changes nothing, and a non-digit in it neither
+// picks nor joins the run — the 2 after it picks 2 on its own.
 #[test]
 fn a_digit_picks_only_in_the_open_list_and_only_a_digit() {
     let (mut view, player_id) = open_with_nation(PesVersion::Pes21, "nation_non_digit", 135);
     let mut window = Headless::sized(DEFAULT_PANE.x, 700.0);
-    let nation = |view: &SaveView| player_entry(view, player_id).basic.nationality;
-    assert_eq!(nation(&view), 135, "premise: 135 held");
+    assert_eq!(nation_of(&view, player_id), 135, "premise: 135 held");
 
     window.frame(vec![egui::Event::Text("5".to_owned())], |ui| {
         show(ui, &mut view, &|| Vec::new())
     });
     assert_eq!(
-        nation(&view),
+        nation_of(&view, player_id),
         135,
         "a digit with the list closed is no pick"
     );
@@ -292,8 +311,110 @@ fn a_digit_picks_only_in_the_open_list_and_only_a_digit() {
         show(ui, &mut view, &|| Vec::new())
     });
     assert_eq!(
-        nation(&view),
+        nation_of(&view, player_id),
         135,
         "a non-digit in the open list is no pick"
+    );
+    window.frame(vec![egui::Event::Text("2".to_owned())], |ui| {
+        show(ui, &mut view, &|| Vec::new())
+    });
+    assert_eq!(
+        nation_of(&view, player_id),
+        2,
+        "the x joined no run: the 2 picks BAHRAIN on its own"
+    );
+}
+
+// A held ID the version lacks draws as `ID - ?`, first and clickable,
+// but it is no typed run's candidate: the run searches the version's
+// own list alone. Held 100 on PES 2021 (whose list lacks it), a typed
+// 1 lands on 1 - AFGHANISTAN, never on the `100 - ?` row the 1 prefixes
+// first.
+#[test]
+fn a_typed_run_searches_the_versions_list_not_the_unlisted_held() {
+    let (mut view, player_id) = open_with_nation(PesVersion::Pes21, "nation_typed_unlisted", 100);
+    let mut window = Headless::sized(DEFAULT_PANE.x, 700.0);
+    assert_eq!(nation_of(&view, player_id), 100, "premise: 100 held");
+
+    open_nation_list(&mut window, &mut view);
+    let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    // The `?` row is drawn first: the topmost of the list's rows.
+    let top = pairs
+        .iter()
+        .filter(|(_, node)| {
+            node.role() == Role::Button
+                && node.label().is_some_and(|label| label.contains(" - "))
+                && node.bounds().is_some()
+        })
+        .min_by(|(_, a), (_, b)| {
+            let y = |node: &accesskit::Node| node.bounds().expect("bounds").y0;
+            y(a).partial_cmp(&y(b)).expect("ordered bounds")
+        })
+        .and_then(|(_, node)| node.label());
+    assert_eq!(top, Some("100 - ?"), "the unlisted held's `?` row is first");
+
+    window.frame(vec![egui::Event::Text("1".to_owned())], |ui| {
+        show(ui, &mut view, &|| Vec::new())
+    });
+    assert_eq!(
+        nation_of(&view, player_id),
+        1,
+        "the typed 1 picked AFGHANISTAN, not the `?` row's no-op 100"
+    );
+}
+
+// A typed pick sets the next frame's one selected row before the rows
+// draw: on the frame a run lands, its row alone reads selected (the
+// held row it leaves is not still marked beside it — AccessKit's
+// toggled state on the row buttons).
+#[test]
+fn a_typed_picks_frame_marks_its_row_alone_selected() {
+    let (mut view, player_id) = open_with_nation(PesVersion::Pes21, "nation_typed_marked", 135);
+    let mut window = Headless::sized(DEFAULT_PANE.x, 700.0);
+    assert_eq!(nation_of(&view, player_id), 135, "premise: 135 held");
+
+    open_nation_list(&mut window, &mut view);
+    let (_, pairs, _) = window.frame_ids(vec![egui::Event::Text("210".to_owned())], |ui| {
+        show(ui, &mut view, &|| Vec::new())
+    });
+    let selected: Vec<Option<&str>> = pairs
+        .iter()
+        .filter(|(_, node)| {
+            node.role() == Role::Button
+                && node.label().is_some_and(|label| label.contains(" - "))
+                && node.toggled() == Some(accesskit::Toggled::True)
+        })
+        .map(|(_, node)| node.label())
+        .collect();
+    assert_eq!(
+        selected,
+        [Some("210 - GERMANY")],
+        "the picked row reads selected, and it alone"
+    );
+    assert_eq!(nation_of(&view, player_id), 210, "the typed 210 stored");
+}
+
+// A run that prefixes no ID picks nothing, and the run it builds stays
+// to prefix the next digit's: the 0 lands on no nation, and the 1
+// inside the run's second makes `01`, still no ID's prefix — not a new
+// run's 1.
+#[test]
+fn a_run_that_prefixes_no_id_picks_nothing() {
+    let (mut view, player_id) = open_with_nation(PesVersion::Pes21, "nation_bad_run", 135);
+    let mut window = Headless::sized(DEFAULT_PANE.x, 700.0);
+    assert_eq!(nation_of(&view, player_id), 135, "premise: 135 held");
+
+    open_nation_list(&mut window, &mut view);
+    window.frame(vec![egui::Event::Text("0".to_owned())], |ui| {
+        show(ui, &mut view, &|| Vec::new())
+    });
+    assert_eq!(nation_of(&view, player_id), 135, "0 prefixes no ID");
+    window.frame(vec![egui::Event::Text("1".to_owned())], |ui| {
+        show(ui, &mut view, &|| Vec::new())
+    });
+    assert_eq!(
+        nation_of(&view, player_id),
+        135,
+        "the run 01 prefixes no ID either"
     );
 }

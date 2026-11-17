@@ -311,7 +311,7 @@ fn player_field_term(version: PesVersion, diff: &PlayerDiff) -> Term {
             let nation = |stored: u32| {
                 crate::nations::nation_text(
                     version,
-                    u16::try_from(stored).expect("a stored nationality is nine bits"),
+                    u16::try_from(stored).expect("a stored nationality is a u16"),
                 )
             };
             term(info_strip::NATION_LABEL, nation(old), nation(new))

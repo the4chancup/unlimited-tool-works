@@ -75,7 +75,7 @@ fn the_stats_marks_line_up_at_the_label_columns_left_edge() {
 /// view, on its field's label's row, its 11-point box ending 2 points
 /// before the label's text — SE-GUI-36's cross beside the field — for
 /// every field a kind reaches but `Pitch` and `Stat` (tested elsewhere)
-/// and the panels' headers (the next test): General info's and Other
+/// and the panels' headers (the next test): General info's and Main
 /// stats' labels and a suggestion on its allowance's field.
 #[test]
 fn each_fields_mark_stands_left_of_its_label() {
@@ -587,7 +587,7 @@ fn a_long_name_truncates_before_the_rows_mark() {
 /// A held check carrying an Error on the selected player for every field
 /// General info and Main stats mark: no cross's painted rect intersects
 /// another text's, every label, box and combo keeps its x with the marks
-/// drawn, and each half's label column has its crosses on one centre x
+/// drawn, and each label column has its crosses on one centre x
 /// whatever the labels' lengths.
 #[test]
 fn no_cross_overlaps_text_and_no_field_moves() {
@@ -647,7 +647,7 @@ fn no_cross_overlaps_text_and_no_field_moves() {
 
     // Each cross 2 points before its label: the first halves' and the
     // label-left rows' crosses on one centre x, the second halves' on
-    // their own column's. A pair row holds two marked fields, so a
+    // their own column's. A pair row can hold two marked fields, so a
     // label's own cross is the rightmost one left of it.
     let cross_before = |label: &str| {
         let bounds = label_starting(&nodes_mark, label);

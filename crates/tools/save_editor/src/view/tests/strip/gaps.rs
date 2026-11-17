@@ -48,6 +48,8 @@ fn the_rows_of_the_first_column_leave_six_between_their_boxes() {
             Role::SpinButton,
             "Injury Resistance to Weak Foot: Usage",
         ),
+        // The foot toggle's buttons are the row's height, so one's top is
+        // the combos' first row's top.
         (
             weak,
             "Stronger foot",
@@ -55,8 +57,6 @@ fn the_rows_of_the_first_column_leave_six_between_their_boxes() {
             "Weak Foot: Usage to the foot toggle",
         ),
     ] {
-        // The foot toggle's buttons are the row's height, so one's top is
-        // the combos' first row's top.
         let below = field(label, role);
         let gap = below.y0 - above.y1;
         assert!((gap - 6.0).abs() <= 0.3, "{what}: a 6-point gap ({gap})");

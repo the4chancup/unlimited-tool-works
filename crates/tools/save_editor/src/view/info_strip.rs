@@ -23,6 +23,7 @@ use studio_core::widgets::{
 use team_widgets::cards;
 use team_widgets::names::append_name;
 
+use crate::nations::{nation_text, nations};
 use crate::session::Session;
 use crate::session::undo::RUN_PAUSE;
 use crate::view::abilities::{
@@ -717,15 +718,15 @@ pub(super) fn main_stats(
     );
 }
 
-/// The Captain pair of Main stats' title row (the draft's `.phead
-/// .captained`): the label where the second half's labels stand and the
-/// radio centred over their boxes — a 54-wide cell ending on the flush
-/// edge — drawn through a child `Ui` at `title`'s rect so its 18-point
-/// box overhangs the bare title's row rather than growing it (the
-/// draft's `margin: -1.5px`), every row under standing where it would
-/// under a bare title. `captain` is whether the selected player's slot
-/// is the team's captain. Returns the radio's id value — the edit's
-/// undo merge key — on a click.
+/// The Captain pair of Main stats' title row (the draft's
+/// `.phead.captained`): the label where the second half's labels stand
+/// and the radio centred over their boxes — a 54-wide cell ending on
+/// the flush edge — drawn through a child `Ui` at `title`'s rect so
+/// its 18-point box overhangs the bare title's row rather than growing
+/// it (the draft's `margin: -1.5px`), every row under standing where it
+/// would under a bare title. `captain` is whether the selected player's
+/// slot is the team's captain. Returns the radio's id value — the
+/// edit's undo merge key — on a click.
 pub(super) fn captain_title(ui: &mut egui::Ui, title: egui::Rect, captain: bool) -> Option<u64> {
     let column = second_half_column(ui);
     let rect = egui::Rect::from_min_max(
@@ -775,18 +776,19 @@ fn nation_row(
     label_col: f32,
     field_width: f32,
 ) {
-    let own = crate::nations::nations(version);
+    let own = nations(version);
     let listed = own.iter().any(|(id, _)| *id == held);
-    let text = crate::nations::nation_text(version, held);
+    let text = nation_text(version, held);
     ui.horizontal(|ui| {
         ui.spacing_mut().item_spacing.x = 0.0;
         let label = ui.label(NATION_LABEL);
         ui.add_space((label_col + LABEL_GAP - label.rect.width()).max(0.0));
         let mut picked = held;
-        // The entries' strings are built only while the list is open,
-        // never for a closed combo's frame. `open` is whether the list
-        // was open last frame: the held row scrolls into view only on
-        // the frame it opens, so the member can scroll away from it.
+        // The entries' `ID - NAME` texts are `nations()`'s, built once
+        // at load; only `ID - ?` is built per frame, for the closed
+        // combo too. `open` is whether the list was open last frame: the
+        // held row scrolls into view only on the frame it opens, so the
+        // member can scroll away from it.
         let open = egui::Id::unique(("general nation list open", player_id));
         let was_open = ui.data(|data| data.get_temp(open)).unwrap_or(false);
         let combo = egui::ComboBox::from_id_salt("general nation")
@@ -794,14 +796,15 @@ fn nation_row(
             .width(field_width)
             .show_ui(ui, |ui| {
                 // A digit typed while the list is open (an all-digit
-                // Text event with no Ctrl or Cmd held) joins the ID run
-                // in progress: the digits that landed within the undo
-                // run's pause of each other, a new ID after it, as a
-                // browser's dropdown does. The run and its last digit's
-                // time are the combo's temp data, dropped as the list
-                // opens; a run that prefixes no ID picks nothing. The
-                // digits' events are taken out of the input so nothing
-                // drawn after reads them again.
+                // Text event; egui-winit drops them while Ctrl or Cmd is
+                // held, so no modifier check here) joins the ID run in
+                // progress: the digits that landed within the undo run's
+                // pause of each other, a new ID after it, as a browser's
+                // dropdown does. The run and its last digit's time are
+                // the combo's temp data, dropped as the list opens; a
+                // run that prefixes no ID picks nothing. The digits'
+                // events are taken out of the input so nothing drawn
+                // after reads them again.
                 let typed = egui::Id::unique(("general nation list typed", player_id));
                 let now = ui.input(|input| input.time);
                 let (mut run, mut at) = ui
@@ -809,9 +812,6 @@ fn nation_row(
                     .filter(|(_, at)| was_open && now - at <= RUN_PAUSE)
                     .unwrap_or_default();
                 let digits: String = ui.input(|input| {
-                    if input.modifiers.ctrl || input.modifiers.command {
-                        return String::new();
-                    }
                     input
                         .events
                         .iter()
@@ -833,31 +833,30 @@ fn nation_row(
                     run.push_str(&digits);
                     at = now;
                 }
+                // The run's candidates are the version's own list alone:
+                // an unlisted held's `?` row stays clickable, but a pick
+                // that landed on it stores nothing, and its prefix's
+                // real nations could never be typed.
                 let typed_pick = if digits.is_empty() {
                     None
                 } else {
-                    (!listed)
-                        .then_some(held)
-                        .into_iter()
-                        .chain(own.iter().map(|(id, _)| *id))
+                    own.iter()
+                        .map(|(id, _)| *id)
                         .find(|id| id.to_string().starts_with(&run))
                 };
                 ui.data_mut(|data| data.insert_temp(typed, (run, at)));
+                // The pick applies before any row draws, so one row
+                // reads selected on the frame it lands.
+                if let Some(next) = typed_pick {
+                    picked = next;
+                }
                 if !listed {
-                    let response = combo_item(
-                        ui,
-                        &mut picked,
-                        held,
-                        crate::nations::nation_text(version, held),
-                    );
-                    if !was_open || typed_pick == Some(held) {
+                    let response = combo_item(ui, &mut picked, held, nation_text(version, held));
+                    if !was_open {
                         response.scroll_to_me(Some(egui::Align::Center));
                     }
                 }
                 for (id, row_text) in own {
-                    if typed_pick == Some(*id) {
-                        picked = *id;
-                    }
                     let response = combo_item(ui, &mut picked, *id, row_text);
                     if (!was_open && *id == held) || typed_pick == Some(*id) {
                         response.scroll_to_me(Some(egui::Align::Center));
@@ -919,12 +918,13 @@ fn small_box(
     }
 }
 
-/// Main stats' four combos, label-left rows on the same label column as
-/// Name's and Shirt name's (`generalPanel`'s `.combos` `109px` grid: its
-/// widest label is the column's "Registered position"), each
-/// `field_width` wide so it ends at the flush edge with the second
-/// half's boxes. `marks` is Live AATF's held check's: the marked
-/// combos' marks stand before their labels.
+/// Main stats' four rows — the foot and hand toggles, the position and
+/// style combos — label-left on the same label column as Name's and
+/// Shirt name's (`generalPanel`'s `.combos` `109px` grid: its widest
+/// label is the column's "Registered position"), each `field_width`
+/// wide so it ends at the flush edge with the second half's boxes.
+/// `marks` is Live AATF's held check's: the marked rows' marks stand
+/// before their labels.
 fn combos(
     ui: &mut egui::Ui,
     session: &mut Session,
