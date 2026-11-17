@@ -3157,6 +3157,21 @@ pruned when their phase closes; they stay in git history. A question only the ma
 can answer is not an issue: it goes to `docs/maintainer/questions.html`, and an issue that waits on one
 points there.
 
+- open 2026-11-17 (the maintainer; measured by the lead on the release build of `26ae8f7c`,
+  DX12, the 100% monitor): while the window is resized, every other frame shows the previous
+  frame stretched to the new size, so what is anchored to the top (the sidebar's tool icons)
+  jumps by its height times the step's ratio and back (the 14th icon 1.4 to 2 points at 3-pixel
+  steps), while what is centred (the welcome popup) moves with the stretch and does not
+  flicker. The width zoom is not the cause: the same alternation at 1600 wide, zoom 1. Nor
+  the frame queue: eframe's default latency is already 1. The cause is vsync: a 3-pixel
+  `SetWindowPos` burst flickers on 220 of 221 grabs with the default `AutoVsync`, on 22 of 100
+  with `AutoNoVsync` or `Mailbox`, on 6 of 103 with `Immediate` (experiment in
+  `4cc-studio-temp/presentx`, scratch: the present mode from `UTW_PRESENT`; harness
+  `.tmp/lead/flicker/variants.py`). Next: the maintainer's hand drag of
+  `tasks_build/UTW-present-test.exe` through its three `Resize test - *.bat` launchers, then a
+  choice of present mode (without vsync an animation repaints as fast as the GPU allows).
+  - With `WGPU_BACKEND=gl` the same build never shows its window: the process spins one
+    core and stops answering messages (window remembered on the 100% monitor).
 - open 2026-11-14 (the lead, 0.0.2-dlgroom's sweep): two built dialogs differ from their
   drafts in ways the step did not touch.
   - The settings window (`.tmp/dlgroom/look/compare_settings.log`, `pair_settings.png`): the
