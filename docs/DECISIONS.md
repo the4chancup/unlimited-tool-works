@@ -18554,3 +18554,14 @@ and never open, as built; the draft, which drew them in full colour, follows.
 Why: the maintainer's look at the built window (2026-11-17), weighed against the draft's
 full colour; nothing in those menus acts without a save.
 Plan: `plans/save_editor.md`, "The toolbar"; the draft's toolbar.
+
+## 2026-11-17 — studio_core — Direct3D 12 presents through a DirectComposition swap chain
+Decision: the window's wgpu instance asks for `Dx12SwapchainKind::DxgiFromVisual`, a
+composition swap chain, in place of wgpu's default made on the window's handle;
+`WGPU_DX12_PRESENTATION_SYSTEM` still overrides it.
+Why: the handle's swap chain stretches the last frame over the window while it is resized,
+so the UI jumps on every step of a drag (230 of 231 captures, and the maintainer saw it);
+the composition one leaves the frame in place (0 of 231, and the maintainer's drag showed
+none). Vsync off only thinned the jumps out and lets animations repaint unthrottled.
+RenderDoc's lost capture is a debugging cost the variable undoes.
+Plan: `plans/core/gui.md`, "The graphics backend".

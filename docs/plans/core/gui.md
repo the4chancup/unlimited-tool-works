@@ -107,6 +107,23 @@ against first.
 The `WGPU_BACKEND` variable still picks one (`vulkan`, `dx12`, `gl`), for a member asked to try
 another. Elsewhere the backends stay wgpu's defaults.
 
+Direct3D 12 presents through a DirectComposition swap chain (wgpu's
+`Dx12SwapchainKind::DxgiFromVisual`), not wgpu's default of one made on the window's handle.
+While the window is resized, Windows keeps showing the last frame until the next one arrives
+at the new size. A handle's swap chain stretches that frame over the whole window, so on
+every step of a drag everything away from the window's middle jumps and comes back (the
+sidebar's lower icons by two points; 230 of 231 captures of a scripted drag, 2026-11-17). A
+composition swap chain leaves the frame at its size in the top left, so nothing moves, and
+only the strip the window grew by stays unpainted until the next frame (0 of 231). Windows
+fills that strip near-black (24), which the dark panel (27) hides; the light theme shows it
+as a thin dark line at the growing edge on about one step in five, still less than the whole
+UI jumping. Turning
+vsync off instead only thinned the jumps out (6 to 22 of about 100 captures), and would let
+an animation repaint as fast as the graphics card allows. A capture by `PrintWindow`, which
+the built-window checks use, still sees the window. RenderDoc cannot capture a composition
+swap chain: `WGPU_DX12_PRESENTATION_SYSTEM=hwnd` brings the handle's back for a debugging
+session.
+
 **Window size classes.** The main tools share one window size: switching between them never
 resizes the window. A special tool, one whose use calls for another size, declares its own
 (`StudioTool::window_size`, `None` for the main tools): today only the Music player, compact so

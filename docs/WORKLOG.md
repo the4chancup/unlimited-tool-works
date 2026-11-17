@@ -26,7 +26,8 @@ excepted, below), 0.0.2-pes19
    and DECISIONS written; next its two slices.
 3. Two fixes from the maintainer's looks of 2026-11-17: 0.0.2-namegame (a name's colour
    codes drawn as they are in the light theme too) and 0.0.2-xhover (the changes list's X
-   highlighted on hover).
+   highlighted on hover); 0.0.2-present (the window presents through a DirectComposition
+   swap chain, so a resize no longer makes the UI jump).
 4. The cut, only once the maintainer has run the checks of
    `maintainer/tasks.html` (the maintainer, 2026-11-17): a pipeline without mutants on the
    last merge (0.0.2-determ's second clean run), the changelog, the release build, and a
@@ -1688,6 +1689,11 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     player list"; DECISIONS 2026-11-17); `theme::darkened_to_read` stays for the palette's
     colours. SWE-2, after 0.0.2-frames B1 and A2a merge (it touches `team_widgets` and
     `save_editor`'s name callers) -> verify: the light theme's /f/ list and lineup lists
+  - [ ] 0.0.2-present (the maintainer, 2026-11-17) the window presents through a
+    DirectComposition swap chain, so a resize no longer stretches the last frame and the UI
+    stops jumping (`plans/core/gui.md` "The graphics backend"; DECISIONS 2026-11-17). SWE-2,
+    `studio_core` `shell/window_size/mod.rs` `wgpu_options` -> verify: a unit test of the
+    pick and its variable, `.tmp/lead/flicker/variants2.py` on the built copy
   - [ ] 0.0.2-xhover the X ending each row of the unsaved changes list and of the close
     prompt highlighted on hover, as the draft's frameless buttons are (the maintainer,
     2026-11-17; `plans/save_editor.md` "An X on each row"). SWE-2, beside
@@ -3175,20 +3181,17 @@ can answer is not an issue: it goes to `docs/maintainer/questions.html`, and an 
 points there.
 
 - open 2026-11-17 (the maintainer; measured by the lead on the release build of `26ae8f7c`,
-  DX12, the 100% monitor): while the window is resized, every other frame shows the previous
-  frame stretched to the new size, so what is anchored to the top (the sidebar's tool icons)
-  jumps by its height times the step's ratio and back (the 14th icon 1.4 to 2 points at 3-pixel
-  steps), while what is centred (the welcome popup) moves with the stretch and does not
-  flicker. The width zoom is not the cause: the same alternation at 1600 wide, zoom 1. Nor
-  the frame queue: eframe's default latency is already 1. The cause is vsync: a 3-pixel
-  `SetWindowPos` burst flickers on 220 of 221 grabs with the default `AutoVsync`, on 22 of 100
-  with `AutoNoVsync` or `Mailbox`, on 6 of 103 with `Immediate` (experiment in
-  `4cc-studio-temp/presentx`, scratch: the present mode from `UTW_PRESENT`; harness
-  `.tmp/lead/flicker/variants.py`). Next: the maintainer's hand drag of
-  `tasks_build/UTW-present-test.exe` through its three `Resize test - *.bat` launchers, then a
-  choice of present mode (without vsync an animation repaints as fast as the GPU allows).
-  - With `WGPU_BACKEND=gl` the same build never shows its window: the process spins one
-    core and stops answering messages (window remembered on the 100% monitor).
+  DX12): while the window is resized, everything away from its middle jumps and comes back on
+  each step (the sidebar's lower icons by two points). The cause is wgpu's DX12 swap chain,
+  made on the window's handle with stretch scaling: Windows shows the last frame stretched
+  over the resized window until the next arrives. A DirectComposition swap chain
+  (`WGPU_DX12_PRESENTATION_SYSTEM=visual`) leaves it in place: 0 of 231 grabs of a scripted
+  drag jumped against 230 of 231, and the maintainer's drag showed none; turning vsync off
+  only thinned the jumps out. Fix: 0.0.2-present (`plans/core/gui.md` "The graphics
+  backend"; harness `.tmp/lead/flicker/variants2.py`).
+- open 2026-11-17 (the lead): with `WGPU_BACKEND=gl` the release build of `26ae8f7c` never
+  shows its window: the process spins one core and stops answering messages (window
+  remembered on the 100% monitor).
 - open 2026-11-14 (the lead, 0.0.2-dlgroom's sweep): two built dialogs differ from their
   drafts in ways the step did not touch.
   - The settings window (`.tmp/dlgroom/look/compare_settings.log`, `pair_settings.png`): the
