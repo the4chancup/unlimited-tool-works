@@ -18598,7 +18598,7 @@ Plan: `plans/save_editor.md`, the Stats screen's paragraph on field labels.
 Decision: a release's bullets may stand under a sixth heading, `### Other stuff`, last, after
 `### Minor fixes`: small changes that are not fixes (a wording, a spacing, a colour, a hint).
 `### Useful` keeps what a member would act on.
-Why: minor items that are not fixes had no heading of their own; Red's changelog ends with
-this one, which members already know.
+Why: minor items in `### Useful` crowded what a member reads it for; Red's changelog ends
+with the same heading.
 Plan: `plans/core/distribution.md`, "Changelog and version display"; `CONTRIBUTING.md`
 "Commits".
