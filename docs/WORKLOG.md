@@ -13,7 +13,8 @@ is in `AGENTS.md` ("Working documents").
 (VGL)"), aimed at within the day, a target the work chosen for it is not rushed to meet
 (DECISIONS 2026-11-16 "0.0.2 is cut without Select all similar,
 the Carbon rounds and the PES 2019 check"; 2026-11-16 "The no-stretch slices move to after
-0.0.2"). After 0.0.2: 0.0.2-similar, every Carbon round a 0.0.2 step still owes (Report a problem's
+0.0.2"). After 0.0.2: Astra's round over 0.0.2-geninfo (`73641390..be99921c`, on Codex
+`brother` once its week resets, Wed 2026-11-18 10:11), 0.0.2-similar, every Carbon round a 0.0.2 step still owes (Report a problem's
 excepted, below), 0.0.2-pes19
 (and with it the readme's PES 2019 claim), 0.0.2-nostretch's slices, the drafts in two
 copies (the maintainer, 2026-11-17: a spec draft of what the build holds and a plan draft for
@@ -38,8 +39,8 @@ mutation run
 (mutfast first). Most open steps below wait only for the maintainer's look
 (`maintainer/tasks.html`). What is left before the cut:
 1. 0.0.2-geninfo: built (both slices), its SWE-2 loop ended (round 1 accepted 15, fixed;
-   round 2 none), the pipeline on `d2eadc87` passed; left: Astra's paid round, once
-   `brother`'s week resets (Wed 2026-11-18 10:11). 0.0.2-frames, -paneshift, -keepsel,
+   round 2 none), the pipeline on `d2eadc87` passed; Astra's round moves to after 0.0.2,
+   which is cut today (the maintainer, 2026-11-17). 0.0.2-frames, -paneshift, -keepsel,
    -posheight and -lookfix are merged and reviewed.
 2. The lead's look on the release build of `be99921c`, beside the drafts: done; the card
    `look-stats-screen` on the tasks page (with `look-gated-labels`, `-category-teams`,
@@ -1950,10 +1951,15 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       typed pick's frame, test gaps; the lead's share done (the draft's Squad table grouped
       under Main stats, SE-GUI-95, `gui.md`); the rest by SWE-2 (19 min, landed first time;
       `527cfcf2`, merge `d2eadc87`; the lead's rerun 1077 + 57, wheel 19, clippy, fmt).
-      Round 2 over the fixes (`.tmp/0_0_2/geninfo_rev2/`); the pipeline on `d2eadc87`
-      passed, with the Linux gates
+      Round 2 over the fixes (`.tmp/0_0_2/geninfo_rev2/`): none accepted, which ends the
+      loop; the pipeline on `d2eadc87` passed, with the Linux gates. Astra's round runs
+      after 0.0.2 (status list)
     - [x] the 4cc patch's own nation table (different on PES 2015 to 2017) is not used: the
       base game's lists stand (the maintainer, 2026-11-17; plan and DECISIONS)
+  - [x] 0.0.2-lightfill 2026-11-17 (the maintainer's change; the lead): the light theme's
+    control fills 8 lighter, 208, 194 and 215 (plan `core/gui.md`, DECISIONS 2026-11-17);
+    gates studio_core 552, save_editor 1077 + 57, ruleset_editor 174 + 13, clippy, fmt; the
+    release build reads 208 on a button, a dropdown and a checkbox
   - [ ] 0.0.2-posheight (the maintainer's change, 2026-11-17): the playable positions grid
     takes its own layout's height, so Pitch and Left leave the panel shorter than List
     (under DBC7 the screen ends on Ability stats' frame, 703 against List's 726 in the

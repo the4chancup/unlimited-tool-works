@@ -578,10 +578,10 @@ fn widgets_dark() -> egui::style::Widgets {
 /// dark 60 reads at 1.56 on 27, and left a resting checkbox, radio button or
 /// number box all but invisible. The resting, hovered and pressed fills are
 /// each a step lighter than the grey of the dark contrast (194, 180 and 201),
-/// all three by the same 6 so the states stay as far apart: at the matched
+/// all three by the same 14 so the states stay as far apart: at the matched
 /// contrast the grey boxes read too dark beside the white text boxes.
 /// The resting stroke, none in egui, is the light theme's own rule for a
-/// control's edge: its fill 30 darker (170 on the resting 200), the dark
+/// control's edge: its fill 30 darker (178 on the resting 208), the dark
 /// theme's edge lightened instead.
 #[cfg(not(target_arch = "wasm32"))]
 fn widgets_light() -> egui::style::Widgets {
@@ -595,24 +595,24 @@ fn widgets_light() -> egui::style::Widgets {
             expansion: 0.0,
         },
         inactive: egui::style::WidgetVisuals {
-            weak_bg_fill: egui::Color32::from_gray(200),
-            bg_fill: egui::Color32::from_gray(200),
-            bg_stroke: egui::Stroke::new(1.0, egui::Color32::from_gray(170)),
+            weak_bg_fill: egui::Color32::from_gray(208),
+            bg_fill: egui::Color32::from_gray(208),
+            bg_stroke: egui::Stroke::new(1.0, egui::Color32::from_gray(178)),
             fg_stroke: egui::Stroke::new(1.0, egui::Color32::from_gray(60)),
             corner_radius: egui::CornerRadius::same(CORNER_RADIUS),
             expansion: 0.0,
         },
         hovered: egui::style::WidgetVisuals {
-            weak_bg_fill: egui::Color32::from_gray(186),
-            bg_fill: egui::Color32::from_gray(186),
+            weak_bg_fill: egui::Color32::from_gray(194),
+            bg_fill: egui::Color32::from_gray(194),
             bg_stroke: egui::Stroke::new(1.0, egui::Color32::from_gray(105)),
             fg_stroke: egui::Stroke::new(1.5, egui::Color32::BLACK),
             corner_radius: egui::CornerRadius::same(CORNER_RADIUS),
             expansion: 0.0,
         },
         active: egui::style::WidgetVisuals {
-            weak_bg_fill: egui::Color32::from_gray(207),
-            bg_fill: egui::Color32::from_gray(207),
+            weak_bg_fill: egui::Color32::from_gray(215),
+            bg_fill: egui::Color32::from_gray(215),
             bg_stroke: egui::Stroke::new(1.0, egui::Color32::BLACK),
             fg_stroke: egui::Stroke::new(2.0, egui::Color32::BLACK),
             corner_radius: egui::CornerRadius::same(CORNER_RADIUS),
@@ -896,7 +896,7 @@ mod tests {
         let ctx = egui::Context::default();
         install(&ctx);
         for (theme, inactive_fill, inactive_text) in
-            [(egui::Theme::Dark, 60, 180), (egui::Theme::Light, 200, 60)]
+            [(egui::Theme::Dark, 60, 180), (egui::Theme::Light, 208, 60)]
         {
             let style = ctx.style_of(theme);
             assert_eq!(style.spacing.button_padding, egui::vec2(4.0, 1.0));
@@ -973,17 +973,17 @@ mod tests {
         let widgets = &light.widgets;
         assert_eq!(
             widgets.inactive.bg_fill,
-            egui::Color32::from_gray(200),
+            egui::Color32::from_gray(208),
             "premise: the light resting fill"
         );
         assert_eq!(
             widgets.inactive.bg_stroke,
-            egui::Stroke::new(1.0, egui::Color32::from_gray(170)),
+            egui::Stroke::new(1.0, egui::Color32::from_gray(178)),
             "premise: the light resting stroke"
         );
         for (fill, expected) in [
             (widgets.inactive.bg_fill, widgets.inactive.bg_stroke.color),
-            (widgets.inactive.bg_fill, egui::Color32::from_gray(170)),
+            (widgets.inactive.bg_fill, egui::Color32::from_gray(178)),
         ] {
             assert_eq!(edge_color(&light, fill), expected, "light {fill:?}'s edge");
         }
@@ -1149,7 +1149,7 @@ mod tests {
 
     // A resting, hovered or pressed light fill is the grey that stands out
     // from the light panel as the dark state's fill does from the dark panel,
-    // made 6 lighter: at the matched contrast the grey boxes read too dark
+    // made 14 lighter: at the matched contrast the grey boxes read too dark
     // beside the white text boxes, and one step for all three keeps the
     // states as far apart. The panel's own fill and an open menu's button
     // keep the matched contrast.
@@ -1184,7 +1184,7 @@ mod tests {
                 let matched = grey_at_contrast(dark_contrast, light.visuals.panel_fill);
                 assert_eq!(
                     light_fill,
-                    egui::Color32::from_gray(matched + 6),
+                    egui::Color32::from_gray(matched + 14),
                     "{name}: the dark fill reads at {dark_contrast:.2} on the dark panel, as \
                      grey {matched} does on the light one"
                 );
@@ -1198,9 +1198,9 @@ mod tests {
         }
         let widgets = &light.visuals.widgets;
         for (name, state, grey) in [
-            ("inactive", &widgets.inactive, 200),
-            ("hovered", &widgets.hovered, 186),
-            ("active", &widgets.active, 207),
+            ("inactive", &widgets.inactive, 208),
+            ("hovered", &widgets.hovered, 194),
+            ("active", &widgets.active, 215),
         ] {
             assert_eq!(
                 state.weak_bg_fill,

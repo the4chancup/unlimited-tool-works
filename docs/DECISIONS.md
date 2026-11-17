@@ -18721,3 +18721,13 @@ Equestria on 2015; six nations added on 2016, Offside and Equestria among them; 
 list on 2017, 25 nations shorter), but the cup no longer edits nations, so those entries
 are legacy.
 Plan: `plans/save_editor.md`, "The player view", General info's Nation.
+
+## 2026-11-17 — studio_core — the light theme's control fills stand 14 lighter than the matched contrast
+Decision (the maintainer): on the light theme, the resting, hovered and pressed fills of
+buttons, dropdowns, number boxes, checkboxes and radio buttons are 208, 194 and 215, 14
+lighter than the greys that match the dark theme's contrast, where they stood 6 lighter
+(200, 186 and 207). The resting edge follows its fill, 30 darker: 178.
+Why: the maintainer asked for the controls a little lighter. One step for all three states keeps them
+as far apart, and at 1.35 on the 240 panel a resting control still stands off it, with its
+edge drawn round it.
+Plan: `plans/core/gui.md`, "Dark/light theme" row.

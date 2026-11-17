@@ -171,7 +171,7 @@ mod tests {
         );
         assert_eq!(
             visuals.widgets.inactive.bg_fill,
-            egui::Color32::from_gray(200),
+            egui::Color32::from_gray(208),
             "premise: the light resting widgets' fill"
         );
         let (value_box, rail) = resting_frames(&ctx);
@@ -183,7 +183,7 @@ mod tests {
         );
         assert_eq!(
             rail.fill,
-            egui::Color32::from_gray(200),
+            egui::Color32::from_gray(208),
             "the rail keeps the resting widgets' fill"
         );
     }
@@ -197,7 +197,7 @@ mod tests {
         let visuals = ctx.style_of(egui::Theme::Light).visuals.clone();
         let rail_height = ctx.global_style().spacing.slider_rail_height;
         let fill = egui::Color32::from_gray(253);
-        let rail_fill = egui::Color32::from_gray(200);
+        let rail_fill = egui::Color32::from_gray(208);
         let mut value = 4u8;
         let mut draw =
             |ui: &mut egui::Ui| slider(ui, &mut value, 0..=10u8, 100.0, ui.scope_id().with("s"));
@@ -262,7 +262,7 @@ mod tests {
         );
         assert_ne!(
             faded(253),
-            faded(200),
+            faded(208),
             "premise: the faded text edit's fill is not the faded control's"
         );
         let rail_height = ctx.global_style().spacing.slider_rail_height;
@@ -287,7 +287,7 @@ mod tests {
             faded(253),
             "the disabled value box keeps the text edit's fill, faded"
         );
-        assert_eq!(rail.fill, faded(200), "the rail keeps the resting fill");
+        assert_eq!(rail.fill, faded(208), "the rail keeps the resting fill");
     }
 
     // On the dark theme the value box is the control every other is: the
