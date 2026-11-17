@@ -18672,3 +18672,17 @@ one card panel fewer, shortens Skills' column) List's height set the whole scree
 Pitch floated in empty room; a layout switch moving the columns' common bottom is the
 lesser cost.
 Plan: `plans/save_editor.md`, "The player view", Playable positions, and SE-GUI-85.
+
+## 2026-11-17 — save_editor — General info and Main stats split the player's fields; the nation a dropdown of the game's nations
+Decision: General info holds Name, Shirt name, Shirt number and Age, and Nation; Main stats,
+in place of Other stats, holds Captain in its title's row over the second half, then Height
+and Weight, Injury resistance and Form, Weak Foot: Usage and Accuracy, Stronger foot and
+hand, Registered position and Playing style. The second half's labels stand in a column as
+wide as its longest label, Accuracy, so each stands near its box. Nation is a combo of the
+open save's version's nations as `ID - NAME`, ordered by ID, from the game's own
+`Country.bin`, seven lists carried by the editor.
+Why: the maintainer's arrangement, approved on its draft. Who the player is and what he
+plays with read as two blocks. The nation's number box needed its ID looked up elsewhere;
+the game's lists, not another editor's, because names and the nations offered change by
+version (six dropped in PES 2018, United States renamed USA) while the IDs never do.
+Plan: `plans/save_editor.md`, "The player view", General info and Main stats.

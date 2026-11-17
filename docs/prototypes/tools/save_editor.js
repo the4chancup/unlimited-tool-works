@@ -5134,50 +5134,98 @@ const textCount = (kind, raw) => {
   c.at = c.n === Math.min(c.max, c.portable);
   return c;
 };
-// The game's nations by ID, the Nation dropdown's entries (PES Next-Gen Editor 2016's
-// nationality table, 188 nations; an ID outside it shows as its number alone).
-const NATIONS = [[1, "Afghanistan"], [2, "Bahrain"], [3, "Bangladesh"], [7, "China"],
-  [8, "Hong Kong"], [9, "India"], [10, "Indonesia"], [11, "Iran"], [12, "Iraq"], [13, "Japan"],
-  [14, "Jordan"], [15, "North Korea"], [16, "South Korea"], [17, "Kuwait"], [18, "Laos"],
-  [19, "Lebanon"], [21, "Malaysia"], [22, "Maldives"], [26, "Oman"], [27, "Pakistan"],
-  [28, "Palestine"], [29, "Philippines"], [30, "Qatar"], [31, "Saudi Arabia"],
-  [32, "Singapore"], [33, "Sri Lanka"], [34, "Syria"], [36, "Thailand"], [37, "U.A.E."],
-  [38, "Vietnam"], [39, "Yemen"], [40, "Kyrgyz Republic"], [41, "Tajikistan"],
-  [42, "Turkmenistan"], [44, "Algeria"], [45, "Angola"], [46, "Benin"], [47, "Botswana"],
-  [48, "Burkina Faso"], [49, "Burundi"], [50, "Cameroon"], [51, "Cape Verde"],
-  [52, "Central African Rep."], [53, "Chad"], [54, "The Comoros"], [55, "DR Congo"],
-  [56, "Ivory Coast"], [58, "Egypt"], [59, "Equatorial Guinea"], [60, "Eritrea"],
-  [61, "Ethiopia"], [62, "Gabon"], [63, "Republic of the Gambia"], [64, "Ghana"],
-  [65, "Guinea"], [66, "Guinea-Bissau"], [67, "Kenya"], [69, "Liberia"], [70, "Libya"],
-  [71, "Madagascar"], [72, "Malawi"], [73, "Mali"], [74, "Mauritania"], [75, "Mauritius"],
-  [76, "Morocco"], [77, "Mozambique"], [78, "Namibia"], [79, "Niger"], [80, "Nigeria"],
-  [81, "Rwanda"], [83, "Senegal"], [85, "Sierra Leone"], [86, "Somalia"], [87, "South Africa"],
-  [88, "Sudan"], [91, "Togo"], [92, "Tunisia"], [93, "Uganda"], [94, "Zambia"],
-  [95, "Zimbabwe"], [98, "Congo"], [100, "Réunion"], [104, "Antigua & Barbuda"],
-  [105, "Aruba"], [107, "Barbados"], [109, "Bermuda"], [110, "Canada"], [112, "Costa Rica"],
-  [113, "Cuba"], [115, "Dominican Republic"], [116, "El Salvador"], [117, "Grenada"],
-  [118, "Guadeloupe"], [119, "Guatemala"], [120, "Haiti"], [121, "Honduras"], [122, "Jamaica"],
-  [123, "Martinique"], [124, "Mexico"], [125, "Montserrat"], [126, "Netherlands Antilles"],
-  [128, "Panama"], [129, "Puerto Rico"], [133, "Trinidad & Tobago"],
-  [134, "Turks & Caicos Is."], [135, "U.S.A."], [138, "French Guiana"], [140, "Curaçao"],
-  [144, "Argentina"], [145, "Bolivia"], [146, "Brazil"], [147, "Chile"], [148, "Colombia"],
-  [149, "Ecuador"], [150, "Paraguay"], [151, "Peru"], [152, "Uruguay"], [153, "Venezuela"],
-  [159, "Gyuana"], [162, "Australia"], [164, "Fiji"], [165, "New Caledonia"],
-  [166, "New Zealand"], [167, "Papua New Guinea"], [168, "Samoa"], [169, "Solomon Islands"],
-  [170, "Tahiti"], [189, "Israel"], [190, "Turkey"], [191, "Albania"], [192, "Andorra"],
-  [193, "Armenia"], [194, "Austria"], [195, "Azerbaijan"], [196, "Belarus"], [197, "Belgium"],
-  [198, "Bosnia & Herzegovina"], [199, "Bulgaria"], [200, "Croatia"], [201, "Cyprus"],
-  [202, "Czech Republic"], [203, "Denmark"], [204, "England"], [205, "Estonia"],
-  [206, "Faroe Islands"], [207, "Finland"], [208, "France"], [209, "Georgia"],
-  [210, "Germany"], [211, "Greece"], [212, "Hungary"], [213, "Iceland"], [214, "Ireland"],
-  [215, "Italy"], [216, "Kazakhstan"], [217, "Latvia"], [218, "Liechtenstein"],
-  [219, "Lithuania"], [220, "Luxembourg"], [221, "Macedonia"], [222, "Malta"],
-  [223, "Moldova"], [224, "Netherlands"], [225, "Northern Ireland"], [226, "Norway"],
-  [227, "Poland"], [228, "Portugal"], [229, "Romania"], [230, "Russia"], [231, "San Marino"],
-  [232, "Scotland"], [234, "Slovakia"], [235, "Slovenia"], [236, "Spain"], [237, "Sweden"],
-  [238, "Switzerland"], [239, "Ukraine"], [240, "Uzbekistan"], [241, "Wales"],
-  [245, "Gibraltar"], [250, "Monaco"], [260, "Others"], [298, "Taiwan"], [303, "Serbia"],
-  [304, "Montenegro"], [310, "Sint Maarten"], [311, "Kosovo"], [312, "South Sudan"]];
+// The game's nations, from each version's common/etc/pesdb/Country.bin (the ID in bits
+// 10 to 18 of a record's first bytes, the English name in its fourth language slot):
+// every ID's newest name, then per version the IDs it lacks and the names it spells
+// otherwise. The IDs never change between versions.
+const NATION_NAMES = {1: "AFGHANISTAN", 2: "BAHRAIN", 3: "BANGLADESH", 4: "BHUTAN",
+  5: "BRUNEI DARUSSALAM", 6: "CAMBODIA", 7: "CHINA", 8: "HONG KONG", 9: "INDIA",
+  10: "INDONESIA", 11: "IRAN", 12: "IRAQ", 13: "JAPAN", 14: "JORDAN", 15: "KOREA DPR",
+  16: "REPUBLIC OF KOREA", 17: "KUWAIT", 18: "LAOS", 19: "LEBANON", 20: "MACAU",
+  21: "MALAYSIA", 22: "MALDIVES", 23: "MONGOLIA", 24: "MYANMAR", 25: "NEPAL", 26: "OMAN",
+  27: "PAKISTAN", 28: "PALESTINE", 29: "PHILIPPINES", 30: "QATAR", 31: "SAUDI ARABIA",
+  32: "SINGAPORE", 33: "SRI LANKA", 34: "SYRIA", 36: "THAILAND", 37: "UNITED ARAB EMIRATES",
+  38: "VIETNAM", 39: "YEMEN", 40: "KYRGYZSTAN", 41: "TAJIKISTAN", 42: "TURKMENISTAN",
+  43: "TIMOR-LESTE", 44: "ALGERIA", 45: "ANGOLA", 46: "BENIN", 47: "BOTSWANA",
+  48: "BURKINA FASO", 49: "BURUNDI", 50: "CAMEROON", 51: "CABO VERDE",
+  52: "CENTRAL AFRICAN REP.", 53: "CHAD", 54: "COMOROS", 55: "CONGO DR", 56: "CÔTE D'IVOIRE",
+  57: "DJIBOUTI", 58: "EGYPT", 59: "EQUATORIAL GUINEA", 60: "ERITREA", 61: "ETHIOPIA",
+  62: "GABON", 63: "GAMBIA", 64: "GHANA", 65: "GUINEA", 66: "GUINEA-BISSAU", 67: "KENYA",
+  68: "LESOTHO", 69: "LIBERIA", 70: "LIBYA", 71: "MADAGASCAR", 72: "MALAWI", 73: "MALI",
+  74: "MAURITANIA", 75: "MAURITIUS", 76: "MOROCCO", 77: "MOZAMBIQUE", 78: "NAMIBIA",
+  79: "NIGER", 80: "NIGERIA", 81: "RWANDA", 82: "SAO TOME AND PRINCIPE", 83: "SENEGAL",
+  84: "SEYCHELLES", 85: "SIERRA LEONE", 86: "SOMALIA", 87: "SOUTH AFRICA", 88: "SUDAN",
+  89: "ESWATINI", 90: "TANZANIA", 91: "TOGO", 92: "TUNISIA", 93: "UGANDA", 94: "ZAMBIA",
+  95: "ZIMBABWE", 98: "CONGO", 100: "RÉUNION", 103: "ANGUILLA", 104: "ANTIGUA AND BARBUDA",
+  105: "ARUBA", 106: "BAHAMAS", 107: "BARBADOS", 108: "BELIZE", 109: "BERMUDA", 110: "CANADA",
+  111: "CAYMAN ISLANDS", 112: "COSTA RICA", 113: "CUBA", 114: "DOMINICA",
+  115: "DOMINICAN REPUBLIC", 116: "EL SALVADOR", 117: "GRENADA", 118: "GUADELOUPE",
+  119: "GUATEMALA", 120: "HAITI", 121: "HONDURAS", 122: "JAMAICA", 123: "MARTINIQUE",
+  124: "MEXICO", 125: "MONTSERRAT", 126: "NETHERLANDS ANTILLES", 127: "NICARAGUA",
+  128: "PANAMA", 129: "PUERTO RICO", 130: "SAINT KITTS AND NEVIS", 131: "SAINT LUCIA",
+  132: "ST VINCENT & GRENADINES", 133: "TRINIDAD AND TOBAGO", 134: "TURKS AND CAICOS IS.",
+  135: "USA", 136: "BRITISH VIRGIN ISLANDS", 137: "US VIRGIN ISLANDS", 138: "FRENCH GUIANA",
+  139: "SURINAME", 140: "CURAÇAO", 144: "ARGENTINA", 145: "BOLIVIA", 146: "BRAZIL",
+  147: "CHILE", 148: "COLOMBIA", 149: "ECUADOR", 150: "PARAGUAY", 151: "PERU", 152: "URUGUAY",
+  153: "VENEZUELA", 159: "GUYANA", 161: "AMERICAN SAMOA", 162: "AUSTRALIA",
+  163: "COOK ISLANDS", 164: "FIJI", 165: "NEW CALEDONIA", 166: "NEW ZEALAND",
+  167: "PAPUA NEW GUINEA", 168: "SAMOA", 169: "SOLOMON ISLANDS", 170: "TAHITI", 171: "TONGA",
+  172: "VANUATU", 176: "GUAM", 184: "PALAU", 189: "ISRAEL", 190: "TURKEY", 191: "ALBANIA",
+  192: "ANDORRA", 193: "ARMENIA", 194: "AUSTRIA", 195: "AZERBAIJAN", 196: "BELARUS",
+  197: "BELGIUM", 198: "BOSNIA AND HERZEGOVINA", 199: "BULGARIA", 200: "CROATIA",
+  201: "CYPRUS", 202: "CZECH REPUBLIC", 203: "DENMARK", 204: "ENGLAND", 205: "ESTONIA",
+  206: "FAROE ISLANDS", 207: "FINLAND", 208: "FRANCE", 209: "GEORGIA", 210: "GERMANY",
+  211: "GREECE", 212: "HUNGARY", 213: "ICELAND", 214: "IRELAND", 215: "ITALY",
+  216: "KAZAKHSTAN", 217: "LATVIA", 218: "LIECHTENSTEIN", 219: "LITHUANIA", 220: "LUXEMBOURG",
+  221: "NORTH MACEDONIA", 222: "MALTA", 223: "MOLDOVA", 224: "NETHERLANDS",
+  225: "NORTHERN IRELAND", 226: "NORWAY", 227: "POLAND", 228: "PORTUGAL", 229: "ROMANIA",
+  230: "RUSSIA", 231: "SAN MARINO", 232: "SCOTLAND", 234: "SLOVAKIA", 235: "SLOVENIA",
+  236: "SPAIN", 237: "SWEDEN", 238: "SWITZERLAND", 239: "UKRAINE", 240: "UZBEKISTAN",
+  241: "WALES", 245: "GIBRALTAR", 250: "MONACO", 260: "Others", 298: "CHINESE TAIPEI",
+  303: "SERBIA", 304: "MONTENEGRO", 310: "SINT MAARTEN", 311: "KOSOVO", 312: "SOUTH SUDAN"};
+const NATION_DIFFS = {
+  15: {
+    lacks: [4, 5, 6, 20, 23, 24, 25, 43, 57, 68, 82, 84, 89, 90, 103, 106, 108, 111, 114, 127,
+      130, 131, 132, 136, 137, 161, 163, 171, 172, 176, 184],
+    spelt: { 15: "NORTH KOREA", 16: "SOUTH KOREA", 37: "UAE", 40: "KYRGYZ REPUBLIC",
+      51: "CAPE VERDE", 54: "THE COMOROS", 63: "REPUBLIC OF THE GAMBIA", 135: "UNITED STATES",
+      221: "MACEDONIA", 298: "TAIWAN" },
+  },
+  16: {
+    lacks: [4, 5, 6, 20, 23, 25, 43, 57, 68, 84, 89, 90, 103, 106, 108, 111, 114, 127, 130,
+      131, 132, 136, 137, 161, 163, 171, 172, 176, 184],
+    spelt: { 15: "NORTH KOREA", 16: "SOUTH KOREA", 37: "UAE", 40: "KYRGYZ REPUBLIC",
+      51: "CAPE VERDE", 54: "THE COMOROS", 63: "REPUBLIC OF THE GAMBIA",
+      82: "SÃO TOMÉ AND PRÍNCIPE", 135: "UNITED STATES", 221: "MACEDONIA", 298: "TAIWAN" },
+  },
+  17: {
+    lacks: [],
+    spelt: { 5: "BRUNEI", 15: "NORTH KOREA", 16: "SOUTH KOREA", 20: "MACAO", 37: "UAE",
+      40: "KYRGYZ REPUBLIC", 43: "EAST TIMOR", 51: "CAPE VERDE", 82: "SÃO TOMÉ AND PRÍNCIPE",
+      89: "SWAZILAND", 106: "THE BAHAMAS", 135: "UNITED STATES", 137: "U.S. VIRGIN ISLANDS",
+      221: "MACEDONIA", 298: "TAIWAN" },
+  },
+  18: {
+    lacks: [100, 118, 123, 126, 138, 310],
+    spelt: { 51: "CAPE VERDE", 89: "SWAZILAND", 221: "FYR MACEDONIA", 298: "TAIWAN" },
+  },
+  19: {
+    lacks: [100, 118, 123, 126, 138, 310],
+    spelt: { 51: "CAPE VERDE", 89: "SWAZILAND", 221: "FYR MACEDONIA" },
+  },
+  20: {
+    lacks: [100, 118, 123, 126, 138, 310],
+    spelt: { 51: "CAPE VERDE" },
+  },
+  21: {
+    lacks: [100, 118, 123, 126, 138, 310],
+    spelt: {},
+  },
+};
+// The open save's version's nations, [id, name] by ID.
+const nations = v => Object.keys(NATION_NAMES).map(Number)
+  .filter(id => !NATION_DIFFS[v].lacks.includes(id))
+  .map(id => [id, (NATION_DIFFS[v].spelt || {})[id] ?? NATION_NAMES[id]]);
 // The General info and Main stats panels (save_editor.md "Editing UI"): who
 // the player is (the names with their counts, the shirt number, the age, the
 // nation) and what he plays with (height, weight, the small stats, the sides,
@@ -5245,9 +5293,10 @@ function generalPanel(p, team) {
   hand.id = "f-hand";
   // The nation as "ID - Name", ordered by ID, so typing an ID's digits in the closed
   // dropdown finds it; an ID outside the table keeps its number.
-  const nations = NATIONS.some(([id]) => id === p.nationality) ? NATIONS
-    : [[p.nationality, "?"], ...NATIONS];
-  const nation = combo(nations.map(([id, name]) => [String(id), id + " - " + name]),
+  const own = nations(version());
+  const listed = own.some(([id]) => id === p.nationality) ? own
+    : [[p.nationality, "?"], ...own];
+  const nation = combo(listed.map(([id, name]) => [String(id), id + " - " + name]),
     String(p.nationality),
     v => { set(p, x => x.nationality, (x, v2) => x.nationality = v2, parseInt(v, 10), "nation"); });
   nation.id = "f-nation";

@@ -118,7 +118,7 @@ Planned files that do not exist yet:
 - `src/view/`, the view, in the pre-move tree's shape:
   - `mod.rs` (master-detail layout, open/save actions, unsaved-changes prompt)
   - `player_list.rs` (drag-to-reorder, dirty dots, colour-coded names)
-  - `info_strip.rs` (General info and Other stats)
+  - `info_strip.rs` (General info and Main stats)
   - `quick_actions.rs` (the Make buttons and Set stats under the list)
   - the player view's other panels (`abilities.rs`: the positions, skills, COM styles and
     ability stats; `appearance/`)
@@ -191,8 +191,8 @@ vertical room a tab row takes; a toggle on the title's own row takes none.
 │  ≡ 1 GK /3/ QUADS ON…│ [QUADS ONLY       ]  ☐ Flip Flap ☐ …        Ball Control     77│
 │  ≡ 2 CB /3/ UNCANN… ●│ Shirt name (11/18)   ⋮                      ⋮                  │
 │  ⋮ (drag to reorder) │ [PLACEHOLDER      ]  Tricks, COM playing styles                │
-│ 718 ■■ /f/           │ Height [189] Number [1]   ☐ Trickster ☐ Long Ball Expert       │
-│  ⋮                   │ ⋮  Other stats, Playable positions                             │
+│ 718 ■■ /f/           │ Number [1]   Age [21]     ☐ Trickster ☐ Long Ball Expert       │
+│  ⋮                   │ ⋮  Main stats, Playable positions                              │
 │ [Make Gold][Make Silver]                                                              │
 │ [Set stats] [77]     │ ▸ Appearance                                                    │
 └──────────────────────┴────────────────────────────────────────────────────────────────┘
@@ -687,24 +687,51 @@ vertical room a tab row takes; a toggle on the title's own row takes none.
   1. **General info**, its column taking the width Skills and Ability stats leave: the
      fields and their labels 6 in from the title, as the ability stats stand in from theirs
      (their cells' padding), so a panel's title heads its body, and the fields ending 12
-     from the frame on the right, as the ability stats' boxes do. Other stats stands the
-     same way.
+     from the frame on the right, as the ability stats' boxes do. Main stats under it stands
+     the same way.
 
      At the 1280 × 780 window that width is room for the longest pair label, "Injury
      resistance", 20 points from its box on each half, with the three columns on one row
      beside the 255-point list.
 
-     They are laid out as 4ccEditor's General Info:
+     The two panels split 4ccEditor's General Info by what a member looks for: General info
+     says who the player is, Main stats what he plays with.
+
+     General info:
      - Name, then Shirt name, each a row with its label on the left and its field on the right.
-     - Then label-left pairs on two halves at least 18 points apart (the first as wide as the
-       label-left rows' label column, their 20-point gap and a box, so its boxes start at the
-       x those rows' fields start at; the second ending at the panel's right margin, the
-       halves taking the room between): Height and Shirt number, Weight and Nation, Age and
-       Captain. Each box is 54 points wide: on the first half at the half's right edge, on the
-       second just after a label column as wide as that half's longest label ("Shirt
-       number"), the two at the half's right edge, so a short label (Nation, Form) keeps its
-       box close. Captain's radio is centred in its box's width, under the Nation box above
-       it.
+     - Then Shirt number and Age, a label-left pair on each of two halves at least 18 points
+       apart (the first as wide as the label-left rows' label column, their 20-point gap and a
+       box, so its box starts at the x those rows' fields start at; the second ending at the
+       panel's right margin, the halves taking the room between). Each box is 54 points wide:
+       on the first half at the half's right edge, on the second just after a label column as
+       wide as the second halves' longest label in either panel ("Accuracy"), the two at the
+       half's right edge, so a short label (Age, Form) stands as near its box as the longest
+       allows, every second-half label of both panels at one x.
+     - Then Nation, a combo of the open save's version's nations, each entry `ID - NAME`
+       (`231 - SAN MARINO`, the game's own spelling, in its capitals), ordered by ID, so
+       typing an ID's digits in it finds that nation, where the number box it replaces
+       needed the ID looked up elsewhere. The open list shows the held nation, not the list's
+       top: there are over 200. An ID the version lacks shows as `ID - ?` and stays until
+       another is picked.
+
+       The nations are the game's, from each version's `common/etc/pesdb/Country.bin` (in
+       `dt10`): a WESYS-wrapped zlib stream of records of 1,348 bytes up to PES 2018 and
+       1,420 from PES 2019, each record's ID in bits 10 to 18 of its first four bytes (the
+       save's 9-bit nationality) and its English name in its fourth 70-byte language slot,
+       from offset 288. The IDs never change between versions; the lists do (189 nations in
+       PES 2015, 191 in 2016, 220 in 2017, 214 from 2018, when six were dropped), and so do
+       a few names (`UNITED STATES` until PES 2017, `USA` after). The editor carries the
+       seven lists, written by a script that reads the games' files once; it does not read
+       them itself, so a save is edited the same without the game installed. A test holds
+       every nation ID the fixture saves carry to their version's list.
+
+     **Main stats**, Captain in its title's row, then:
+     - Captain stands in the title's row over the second half, its label where Weight's stands
+       and its radio centred over Weight's box; its 18-point box overhangs the row by 1.5
+       points above and below, so the title stands where a bare title does.
+     - Height and Weight, Injury resistance and Form, then "Weak Foot: Usage" and "Accuracy"
+       (the two sharing one label), pairs on General info's halves so every box of both panels
+       lines up; the four small stats drawn at the game's numbers.
      - Then Stronger foot and Stronger hand (20+), each a two-choice toggle, Left | Right, its
        chosen side filled in the quiet grey of the positions' C (`#5a5a5a`), not the
        selection's blue: a foot or a hand is rarely what a member looks for, and the accent
@@ -716,17 +743,13 @@ vertical room a tab row takes; a toggle on the title's own row takes none.
        output and Set player names to positions keep 4ccEditor's names, Center Back, as their
        parity requires), and Playing style.
 
-     Name, Shirt name and these four rows share one label column, as wide as their longest label
-     ("Registered position"), so every one of those fields starts at one x, and each ends
-     flush with the second half's boxes, at the panel's right margin. Within a block (Name
-     and Shirt name; the pairs; Stronger foot to Playing style) rows stand 22 apart, the form
-     grids' pitch (`core/gui.md` "Other UI components", Form grids), the toggles 18 tall like
-     every control. The blocks stand 6 apart, 2 more than their rows, as the draft's `.gen`,
-     so each block reads as one.
-
-     Under it **Other stats**: Injury resistance and Form, then "Weak Foot: Usage" and
-     "Accuracy" (the two sharing one label), on General info's halves so every box of both
-     panels lines up.
+     Name, Shirt name, Nation and these four rows share one label column, as wide as their
+     longest label ("Registered position"), so every one of those fields starts at one x, and
+     each ends flush with the second half's boxes, at the panel's right margin. Within a block
+     (Name and Shirt name; the pairs; Stronger foot to Playing style) rows stand 22 apart, the
+     form grids' pitch (`core/gui.md` "Other UI components", Form grids), the toggles 18 tall
+     like every control. The blocks stand 6 apart, 2 more than their rows, as the draft's
+     `.gen`, so each block reads as one.
 
      Under that **Playable positions**: the 13 positions with C/B/A ratings in five rows by
      line of the pitch, each left wing to right wing (LWF CF SS RWF / LMF AMF RMF / CMF DMF /
@@ -1244,12 +1267,12 @@ lists no All teams there, since the table shows one team.
 The draft is `docs/prototypes/tools/save_editor.js` (`squadView`).
 
 - **Columns.** Every value of the Stats screen, under its group's heading in the Stats
-  screen's order: General info, Other stats (at the game's numbers), Playable positions,
-  Ability stats, Skills, the ruleset's Tricks or Free cards, COM playing styles. A value the
-  save's version does not have gets no column, rather than a disabled one, since a column of
-  dashes would take the room the table exists to save. The slot, the name and the registered
-  position stay at the left, and the two heading rows at the top, while the rest scrolls both
-  ways. The name is not edited here, but on Stats.
+  screen's order: General info, Main stats (its small stats at the game's numbers), Playable
+  positions, Ability stats, Skills, the ruleset's Tricks or Free cards, COM playing styles. A
+  value the save's version does not have gets no column, rather than a disabled one, since a
+  column of dashes would take the room the table exists to save. The slot, the name and the
+  registered position stay at the left, and the two heading rows at the top, while the rest
+  scrolls both ways. The name is not edited here, but on Stats.
 - **Headings** read upwards, so a column is only as wide as its values, and give their full
   name in a tooltip that opens at once, since a member scanning for a column cannot wait for
   egui's usual delay. A position's heading is its code.
@@ -2749,7 +2772,7 @@ What this editor adds on top of the lib:
     label's box over the margin before it, so no label moves or wraps (after the label, the
     Registered position and `Weak Foot: Usage` labels wrapped to a second line) and the marks
     of a column of labels line up whatever the labels' lengths:
-    - General info's and Other stats' labels;
+    - General info's and Main stats' labels;
     - an ability stat's at its label cell's left edge instead (over the cell's padding), where
       the column's left-aligned labels start, so the stats' marks share one column.
 
@@ -3754,7 +3777,7 @@ SE-GUI-94  GIVEN the save open on All teams, /gd/'s player 72205 selected on his
 SE-GUI-95  GIVEN the save open on /gd/, the official ruleset picked
            WHEN Squad is drawn
            THEN the slot, the name and Pos (the registered position) stand left of the group headings General info,
-                Other stats, Playable positions, Ability stats, Skills, Tricks and COM playing
+                Main stats, Playable positions, Ability stats, Skills, Tricks and COM playing
                 styles, in that order; Scissors Feint is a column of Tricks, not of Skills; Ability
                 stats has a Tight Possession and an Aggression column and General info a
                 Stronger hand column; WHEN the pointer rests on the Speed heading THEN its

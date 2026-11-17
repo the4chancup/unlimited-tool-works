@@ -1826,7 +1826,7 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
           57, studio_core 548, clippy, fmt): both parts' round-2 code fixes (the disabled and
           hovered boxes' tests, one `gated_number`, one pass-count test, three comments); the
           frames' review loops end here
-        - [ ] the pipeline on `11be9f8f`
+        - [x] the pipeline on `11be9f8f` 2026-11-17: the checkpoint and the Linux gates passed
         - [x] the pipeline on `6de96354` 2026-11-17: the checkpoint and the Linux gates passed
     - [ ] the control edges (`plans/core/gui.md` "Other UI components", "Control edges")
       - [x] A1 2026-11-17 `studio_core` (`b98986f7`, merge `53bc3805`): the resting stroke,
@@ -1886,15 +1886,18 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     - [x] the draft (`teamSelector`, `a083b48c`), approved by the maintainer
     - [x] the plan (`save_editor.md`, "Editing UI", picking a team) and DECISIONS
     - [ ] the build, with 0.0.2-paneshift's
-  - [ ] geninfo-eval (the maintainer's request, 2026-11-17): General info (Name, Shirt name,
-    Shirt number | Age, Nation as an "ID - Name" dropdown) and Main stats in place of Other
-    stats (Height | Captain, Weight, Injury Resistance | Form, Weak Foot: Usage | Accuracy,
-    the sides, Registered position, Playing style), the panels' widths unchanged -> verify:
-    the maintainer's verdict on the draft
-    - [x] the draft on `eval/geninfo` (`dd2ea333`, worktree `4cc-studio-temp/geninfo`); the
-      nations from PES Next-Gen Editor 2016's table (188, by ID)
-    - [ ] the maintainer's verdict; if kept: merge the draft, the plan, DECISIONS, the build
-      (the open list scrolled to the held nation; the table checked against PES 2017-2021)
+  - [ ] 0.0.2-geninfo (the maintainer's request, 2026-11-17): General info (Name, Shirt
+    name, Shirt number | Age, Nation as an `ID - NAME` dropdown) and Main stats in place of
+    Other stats (Captain in its title's row, Height | Weight, Injury Resistance | Form, Weak
+    Foot: Usage | Accuracy, the sides, Registered position, Playing style), the panels'
+    widths unchanged -> verify: the built window beside the draft; the nation lists' test
+    - [x] the draft, evaluated on `eval/geninfo` and approved for 0.0.2 by the maintainer;
+      merged; the nations then taken from the games' own `Country.bin` per version (lead,
+      `.tmp/lead/nations/`: `unwesys.py`, `table.py`, the seven `pes<NN>.tsv`)
+    - [x] the plan ("The player view") and DECISIONS
+    - [ ] the nation lists' data file and its generating script (lead), then the build
+      (SWE-2, after 0.0.2-paneshift merges: both touch the Stats screen), help 03, the
+      changelog line
   - [ ] 0.0.2-posheight (the maintainer's change, 2026-11-17): the playable positions grid
     takes its own layout's height, so Pitch and Left leave the panel shorter than List
     (under DBC7 the screen ends on Ability stats' frame, 703 against List's 726 in the
