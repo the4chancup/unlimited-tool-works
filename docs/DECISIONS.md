@@ -18444,3 +18444,14 @@ Why: the maintainer, with the draft and the build side by side: neither margin i
 because the columns need more room and the grid belongs in the middle. The dialog is rarely
 used, so the work waits rather than taking more of 0.0.2.
 Plan: `plans/save_editor.md` "Editing UI" (the team view's Kit slots… button).
+
+## 2026-11-17 — save_editor, core — the Stats screen's and Report a problem's drafts follow the build
+Decision: the drafts take the build's look in two places. The player and team views' title
+line stands at 56.5 and the Playable positions selector and grid 0.5 and 1.5 nearer the
+panel's heading (`viewTitle`'s line, `#pos-layout`). Report a problem's draft spaces its
+sentences 8 apart, as every dialog does, and draws its text box as a block, with no room
+kept under it (`drawReport`).
+Why: the maintainer, over both pairs of pictures: "We can keep the app's look on both cases.
+Change the draft." The differences were the lead's tolerance adding up past 2 points, not a
+look anyone chose; the build's spacing is the dialogs' shared rule.
+Plan: no plan edit needed: the plans set neither offset; `docs/prototypes/` carries both.

@@ -1640,10 +1640,11 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         list's rows 18 apart (the draft's 15), and the text box 61 tall (the draft's 84,
         right under its label). Fixed (SWE-2, merge `32649d79`), looked at in the release
         build of `32649d79`: rows 15 apart, the box 84 right under its label
-      - [ ] the lower half 8 higher than the draft's from the title (the draft's 10-point
+      - [x] the lower half 8 higher than the draft's from the title (the draft's 10-point
         sentence gaps against the dialogs' 8, the room a browser keeps under an inline box):
-        asked, `maintainer/questions.html` "Report a problem: the lower half 8 points higher
-        than the draft's"; then card ST-REP-05
+        the draft follows the build (the maintainer, DECISIONS 2026-11-17); every row now
+        stands where the build's does
+      - [ ] card ST-REP-05 in `maintainer/tasks.html`
   - [x] 0.0.2-namelight 2026-11-15 (SWE-2, merge `40ce82da`): in the light theme a name's
     colour code reading under 4.5 on the panel is darkened until it does, hue kept
     (`theme::darkened_to_read`, which reproduces the lineup lists' hand-made colours); the
@@ -1824,9 +1825,13 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
           (SWE-2, merge `f8e4d661`; it takes in 0.0.2-gaps' Player screen item), looked at
           in the release build of `f8e4d661`: headings 1 higher than the draft's (the line
           at 56.5 against 57, and the text's pixel snapping), each first row within 0.5 of
-          the draft's under its heading. The positions grid stands 2.5 higher (1.5 nearer
-          its heading): asked, `maintainer/questions.html` "Stats screen: the Playable
-          positions grid 2.5 points higher than the draft's"
+          the draft's under its heading. The positions grid stood 2.5 higher (1.5 nearer
+          its heading): the draft follows the build (the maintainer, DECISIONS 2026-11-17),
+          the screen now within 1 point everywhere (Gameplan rechecked too). The layout
+          tests still cite the old draft's numbers in their comments (the toggle's 22.5,
+          the grid's 63.7 under its title, `view/tests/abilities/layout.rs`); their values
+          pin the build, which did not move, though headless they measure the grid 1.3
+          lower than the real window does: respell when next touched
     - [x] the drafts (the lead), each captured and critiqued: Kit slots shows `Bound team
       ID` as the id in boxes of one width (72 points, six digits); Randomize greyed whole;
       the three texts of DECISIONS 2026-11-16 "the drafts take three texts"; `Star rating`;

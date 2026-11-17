@@ -2671,12 +2671,13 @@ function drawReport() {
       h("div", {}, "Saves what UTW did since it opened, so the problem can be reproduced."),
       h("div", {}, "The file is not sent automatically, please post it wherever you usually "
         + "report problems."),
-      h("div", { style: "margin-top:10px" }, "What happened?"),
-      h("textarea", { style: "width:100%; height:84px; box-sizing:border-box; font: inherit",
+      // The dialogs' 8 between sentences; the box a block, so no room stays under it.
+      h("div", { style: "margin-top:8px" }, "What happened?"),
+      h("textarea", { style: "display:block; width:100%; height:84px; box-sizing:border-box; font: inherit",
         placeholder: "What you did, what you expected and what you got; also anything "
           + "done outside UTW, in the game or another tool",
         oninput: e => { r.words = e.target.value; } }, r.words),
-      h("div", { style: "margin-top:10px" }, "The file holds:"),
+      h("div", { style: "margin-top:8px" }, "The file holds:"),
       h("ul", { style: "margin:4px 0 8px 18px; padding:0" },
         sample.tools.map(t => item(t.label + ": " + t.steps + " steps; opened "
           + t.opened + "; wrote " + t.wrote)),
