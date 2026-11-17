@@ -459,7 +459,9 @@ numbered phase: its deliverables are the slice of Phase 16 an early release cann
 pulled forward.
 
 **Ships:** the Compiler (Phases 3–5: native FMDL/`.model` sources, CPU texture encoding,
-compile-time aesthetics, written to the savefile through the aesthetics patch),
+compile-time aesthetics, written to the savefile through the aesthetics patch, and the
+tactical patch from the exports' Team TOMLs, applied only when the organizer says yes:
+`team_compiler/pipeline.md` "6. Post-processing"),
 the Save editor (Phase 5 logic and the full Phase 8 view), and the
 Export upgrader (Phase 6, structural migration; its glTF pass waits for Phase 7), as the Windows
 portable bundle.

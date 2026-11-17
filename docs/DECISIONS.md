@@ -18602,3 +18602,14 @@ Why: minor items in `### Useful` crowded what a member reads it for; Red's chang
 with the same heading.
 Plan: `plans/core/distribution.md`, "Changelog and version display"; `CONTRIBUTING.md`
 "Commits".
+
+## 2026-11-17 — team_compiler — a tactical patch from the exports' Team TOMLs, applied only on the organizer's yes (maintainer)
+Decision: for Release 0.1.0, the Compiler recognises a Team TOML inside a team export, takes
+the team's tactics from it, writes every such team's tactics as one tactical patch to the
+download folder, and asks at the run's end "A tactical patch was made with the following
+teams: [list]. Do you want to apply it to the save?". Only a yes writes them; the command line
+asks on an interactive terminal and applies nothing when it cannot ask.
+Why: explicit and asked, so a team cannot slip a Team TOML in during a cup and change its
+tactics in the official save unseen.
+Plan: `plans/team_compiler/pipeline.md`, "6. Post-processing"; `plans/core/development_plan.md`,
+"Release 0.1.0".

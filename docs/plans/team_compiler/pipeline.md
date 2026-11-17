@@ -164,6 +164,20 @@ What exists of this is in `spec/team_compiler/pipeline.md` "6. Post-processing".
   the deployment back at the end. The end-of-run read stays as it is, since the file can change
   between the two. With `savefile_path = auto` the preflight rarely finds anything, which costs
   one header read.
+- **Tactical patch** (Release 0.1.0): a team export may carry a Team TOML (the file the Save
+  editor's export writes), from which the compile takes the team's tactics alone. The run
+  gathers every such team's tactics into one tactical patch written to the download folder,
+  then asks at its end: *"A tactical patch was made with the following teams: /a/, /co/,
+  /egg/. Do you want to apply it to the save?"* Only a yes writes the tactics to the save;
+  no, or no answer, leaves the save's tactics as they were, the patch kept beside the CPKs.
+
+  It is asked, never applied with the aesthetics patch, because a team's tactics in the
+  official save are the organizer's to change: a team that slips a Team TOML into its export
+  in the middle of a cup must not change its tactics unseen. The list names every team, so
+  the organizer sees whose tactics would change before saying yes. The command line asks the
+  same on an interactive terminal (`quick_compile.bat`) and applies nothing when it cannot
+  ask. Where the Team TOML sits in the export, and how a Team TOML carrying more than tactics
+  is read, are the phase's to settle with `aesthetics_export/README.md`'s folder rules.
 - **Run PES**: optional launch of `PES20{version}.exe`, only after the complete deployment
   transaction succeeds. Built in Phase 8 together with sideload mode's Launch PES button, as one
   launcher: both start the same exe the same way, and the GUI phase is where its only manual
