@@ -1,47 +1,5 @@
 use super::*;
 
-/// The `Frame::group` rect holding `point`: the smallest rect among
-/// `shapes` carrying `stroke` (the group frame's own) and covering it —
-/// a titled group's painted frame.
-fn frame_around(
-    shapes: &[egui::epaint::ClippedShape],
-    stroke: egui::Stroke,
-    point: egui::Pos2,
-) -> egui::Rect {
-    shapes
-        .iter()
-        .filter_map(|clipped| match &clipped.shape {
-            egui::Shape::Rect(rect) if rect.rect.contains(point) && rect.stroke == stroke => {
-                Some(rect.rect)
-            }
-            _ => None,
-        })
-        .min_by(|a, b| a.area().partial_cmp(&b.area()).expect("ordered areas"))
-        .expect("a group frame around the point")
-}
-
-/// The `Frame::group` rect around the group titled `title` on the drawn
-/// frame (`frame_around` on the title label's point).
-fn group_frame(
-    window: &Headless,
-    nodes: &[accesskit::Node],
-    shapes: &[egui::epaint::ClippedShape],
-    title: &str,
-) -> egui::Rect {
-    let bounds = label_bounds(nodes, title);
-    frame_around(
-        shapes,
-        window
-            .ctx
-            .global_style()
-            .visuals
-            .widgets
-            .noninteractive
-            .bg_stroke,
-        egui::pos2(bounds.x0 as f32 + 2.0, bounds.y0 as f32 + 2.0),
-    )
-}
-
 /// The leftmost node drawn inside `frame` under its title `title` (the
 /// title's own label left out): the group's content's first left, a
 /// label's or a control's alike.

@@ -86,9 +86,8 @@ fn dot_right(ui: &egui::Ui, right_end: f32, mark_width: Option<f32>) -> f32 {
 
 /// The selector, the filter box, the rows and the quick actions, top to
 /// bottom of the side panel: the list's scroll area takes the height left
-/// above the actions. Returns the right edge of the rows' frame, where the
-/// player view counts its first gap from.
-pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) -> f32 {
+/// above the actions.
+pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
     // egui's solid scroll bar stands outside the rows' frame, in a strip
     // (its 4-point gap and 6-point bar) kept at the column's right whether
     // or not the list scrolls, so a filter leaving few rows keeps the
@@ -98,9 +97,8 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) -> f32 {
     // one box.
     let scroll = egui::style::ScrollStyle::solid();
     let frame_width = ui.available_width() - scroll.allocated_width();
-    let frame_right = ui.max_rect().min.x + frame_width;
     let Some(session) = view.session.as_ref() else {
-        return frame_right;
+        return;
     };
     let team_before = view.team;
     let category_before = view.team_category;
@@ -440,7 +438,6 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) -> f32 {
         ui.visuals().widgets.noninteractive.bg_stroke,
         egui::StrokeKind::Inside,
     );
-    frame_right
 }
 
 /// The step the page keys move by while the list holds at most one team

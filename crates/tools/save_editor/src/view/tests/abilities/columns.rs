@@ -310,19 +310,20 @@ fn assert_three_columns_at_1280(version: PesVersion) {
         "the second columns share an x ({skills_xs:?} vs {com_xs:?})"
     );
 
-    // The columns one gap apart: Skills' left is General info's 350-point
-    // column and a gap after its left (the fields' flush edge is the
-    // measured label-left rows' width inside the column, so the gap to
-    // the fields' edge moves with the body font), Ability stats' the same
-    // gap after the cards' right edge.
-    let after_general = titles[1].x0 - titles[0].x0 - 350.0;
-    let cards_right = skills_xs[1] + f64::from(team_widgets::cards::CARD_COLUMN_WIDTH);
-    let after_cards = titles[2].x0 - cards_right;
-    assert!(
-        (after_general - after_cards).abs() <= 0.5,
-        "the columns one gap apart ({after_general} after General info, {after_cards} after \
-         the cards)"
+    // The columns stand 8 apart: Skills' frame starts 8 after General
+    // info's ends, Ability stats' 8 after Skills' ends.
+    let frame = |title: &str| group_frame(&window, &nodes, &shapes, title);
+    let (general, skills, ability) = (
+        frame("General info"),
+        frame("Skills"),
+        frame("Ability stats"),
     );
+    for (left, right) in [(general, skills), (skills, ability)] {
+        assert!(
+            (right.min.x - left.max.x - 8.0).abs() <= 0.5,
+            "the columns 8 apart ({left:?} then {right:?})"
+        );
+    }
 
     // Nothing drawn past the pane's right edge.
     let pane_right = f64::from(PANE_RIGHT);
@@ -347,65 +348,187 @@ fn assert_three_columns_at_1280(version: PesVersion) {
     }
 }
 
-// The room the three fixed columns leave is split into four equal gaps:
-// after the player list, counted from its frame, between the columns, and
-// after Ability stats to the window's edge; 28.9 points each at the
-// 1280 x 780 window (the cards' column 336 wide with its 6-point inset,
-// as the draft measures), and still equal on a wider one. The title's row
-// starts at the pane's left edge, the toggle first.
-// The gaps read the columns' widths the previous frame measured (egui
-// memory), so three settle frames run before the read.
+/// The Stats screen's frames for the selected player at `width` and the
+/// Appearance screen's for the same player after it: `(stats frames by
+/// title, appearance's Strip style frame)` — Strip style spans the
+/// screen's own edges.
+fn stats_frames(
+    test: &str,
+    width: f32,
+) -> (std::collections::HashMap<String, egui::Rect>, egui::Rect) {
+    let (mut view, mut window) = positions_view(test, width);
+    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let stats = [
+        "General info",
+        "Other stats",
+        "Playable positions",
+        "Skills",
+        "Tricks",
+        "COM playing styles",
+        "Ability stats",
+    ]
+    .map(|title| {
+        (
+            title.to_owned(),
+            group_frame(&window, &nodes, &shapes, title),
+        )
+    });
+    open_appearance(&mut window, &mut view);
+    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    (
+        stats.into_iter().collect(),
+        group_frame(&window, &nodes, &shapes, "Strip style"),
+    )
+}
+
+// The Stats screen's frames span the pane as the Appearance screen's
+// groups' do: the leftmost frame's left edge and the rightmost's right
+// edge on the groups' own, the columns and the panels of a column 8
+// apart — and General info's column alone takes a wider window's extra
+// room (the draft's `1fr`), the two fixed columns keeping their widths.
+// The title's row still starts at the pane's left edge, the toggle first.
 #[test]
-fn the_player_view_splits_its_room_into_four_equal_gaps() {
-    let path = fixture(PesVersion::Pes21, "view_gaps");
+fn the_stats_screens_frames_span_the_pane_as_appearances_do() {
+    let mut span = Vec::new();
+    for wider in [0.0_f32, 300.0] {
+        let (frames, strip) =
+            stats_frames(&format!("stats_span_{wider:.0}"), DEFAULT_PANE.x + wider);
+        let general = frames["General info"];
+        let ability = frames["Ability stats"];
+        assert!(
+            (general.min.x - strip.min.x).abs() <= 0.5
+                && (ability.max.x - strip.max.x).abs() <= 0.5,
+            "the columns' span on the groups' edges ({general:?}..{ability:?} vs {strip:?} at \
+             {wider})"
+        );
+        for pair in ["General info", "Skills", "Ability stats"].windows(2) {
+            let (left, right) = (frames[pair[0]], frames[pair[1]]);
+            assert!(
+                (right.min.x - left.max.x - 8.0).abs() <= 0.5,
+                "the columns 8 apart ({left:?} then {right:?} at {wider})"
+            );
+        }
+        for pair in [
+            ["General info", "Other stats"],
+            ["Other stats", "Playable positions"],
+            ["Skills", "Tricks"],
+            ["Tricks", "COM playing styles"],
+        ] {
+            let (above, below) = (frames[pair[0]], frames[pair[1]]);
+            assert!(
+                (below.min.y - above.max.y - 8.0).abs() <= 0.5,
+                "the panels of a column 8 apart ({above:?} then {below:?} at {wider})"
+            );
+        }
+        span.push((general.width(), frames["Skills"].width(), ability.width()));
+    }
+    assert!(
+        (span[1].0 - span[0].0 - 300.0).abs() <= 0.5,
+        "General info's frame 300 wider ({span:?})"
+    );
+    assert!(
+        (span[1].1 - span[0].1).abs() <= 0.5 && (span[1].2 - span[0].2).abs() <= 0.5,
+        "the fixed columns keep their widths ({span:?})"
+    );
+
+    // The title's row starts at the pane's left edge with the toggle.
+    let path = fixture(PesVersion::Pes21, "stats_span_title");
     let mut view = SaveView::new();
     view.open(&path);
     view.selected = Some(Selection::Player(701, 0));
-    for screen_w in [DEFAULT_PANE.x, DEFAULT_PANE.x + 300.0] {
-        let mut window = Headless::sized(screen_w, DEFAULT_PANE.y);
-        for _ in 0..3 {
-            window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
-        }
-        let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
-        let widths: [f32; 3] = window
-            .ctx
-            .data(|data| data.get_temp(egui::Id::unique(crate::view::abilities::COLUMN_WIDTHS_ID)))
-            .expect("the columns' measured widths");
-        let frame_right = f64::from(list_frame(&window, &shapes).max.x);
-        let lefts = ["General info", "Skills", "Ability stats"].map(|t| label_bounds(&nodes, t).x0);
-        let gaps = [
-            lefts[0] - frame_right,
-            lefts[1] - lefts[0] - f64::from(widths[0]),
-            lefts[2] - lefts[1] - f64::from(widths[1]),
-            f64::from(screen_w) - lefts[2] - f64::from(widths[2]),
-        ];
-        let (least, most) = gaps.iter().fold((f64::MAX, f64::MIN), |(lo, hi), &gap| {
-            (lo.min(gap), hi.max(gap))
-        });
-        assert!(
-            most - least <= 0.5,
-            "the four gaps equal at {screen_w}: {gaps:?}"
-        );
-        if screen_w == DEFAULT_PANE.x {
-            for gap in gaps {
-                assert!(
-                    (gap - 28.9).abs() <= 0.5,
-                    "each gap 28.9 at the 1280 x 780 window: {gaps:?}, the frame's right {frame_right}, the columns {widths:?}"
-                );
-            }
-        }
+    let mut window = Headless::sized(DEFAULT_PANE.x, DEFAULT_PANE.y);
+    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let pane_left = f64::from(pane_frame(&shapes, window.screen).min.x + PANEL_MARGIN);
+    let stats = node_labeled(&nodes, Role::Button, "Stats")
+        .bounds()
+        .expect("the Stats segment");
+    assert!(
+        (stats.x0 - pane_left).abs() <= 0.5,
+        "the title's row at the pane's left ({stats:?} vs {pane_left})"
+    );
+}
 
-        // The title's row starts at the pane's left edge with the toggle
-        // (the title started at General info's title's x before).
-        let pane_left = f64::from(pane_frame(&shapes, window.screen).min.x + PANEL_MARGIN);
-        let stats = node_labeled(&nodes, Role::Button, "Stats")
-            .bounds()
-            .expect("the Stats segment");
+// A window resize runs no discarded pass on the Stats screen: the
+// stored widths are the two fixed columns' alone, so General info's
+// flexible width is computed inside the pass that draws it rather than
+// discarded as stale a frame later.
+#[test]
+fn a_window_resize_asks_for_no_discarded_pass() {
+    let (mut view, mut window) = positions_view("resize_no_discard", DEFAULT_PANE.x);
+    window.screen.x += 300.0;
+    let mut discards = Vec::new();
+    window.frame(Vec::new(), |ui| {
+        show(ui, &mut view, &|| Vec::new());
+        discards.push(ui.ctx().will_discard());
+    });
+    assert!(
+        discards.iter().all(|discard| !discard),
+        "no pass asked for a discard on the resize: {discards:?}"
+    );
+}
+
+// The three columns' first frames' tops stand where the Appearance
+// screen's first groups' do (`GROUP_GAP` under the title's line), so a
+// switch between the screens moves no frame line.
+#[test]
+fn the_columns_first_frames_stand_where_appearances_groups_do() {
+    let (mut view, mut window) = positions_view("stats_frame_tops", DEFAULT_PANE.x);
+    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let tops = ["General info", "Skills", "Ability stats"]
+        .map(|title| group_frame(&window, &nodes, &shapes, title).min.y);
+    open_appearance(&mut window, &mut view);
+    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let group_top = group_frame(&window, &nodes, &shapes, "Full Player Customization")
+        .min
+        .y;
+    for (title, top) in ["General info", "Skills", "Ability stats"].iter().zip(tops) {
         assert!(
-            (stats.x0 - pane_left).abs() <= 0.5,
-            "the title's row at the pane's left ({stats:?} vs {pane_left})"
+            (top - group_top).abs() <= 0.5,
+            "{title}'s frame top on the groups' line ({top} vs {group_top})"
         );
     }
+}
+
+// The three columns end on one line: each column's last frame runs down
+// to the tallest column's bottom (the draft's `.pcol > :last-child {
+// flex: 1 }`).
+#[test]
+fn the_columns_last_frames_end_on_one_line() {
+    let (mut view, mut window) = positions_view("stats_frame_bottoms", DEFAULT_PANE.x);
+    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let frame = |title: &str| group_frame(&window, &nodes, &shapes, title);
+    let bottoms = [
+        frame("Playable positions").max.y,
+        frame("COM playing styles").max.y,
+        frame("Ability stats").max.y,
+    ];
+    // The premise: the columns' contents differ in height, so the line
+    // is a stretch's work and not three equal columns by chance.
+    let aggression = label_bounds(&nodes, "Aggression").y1;
+    let com_title = label_bounds(&nodes, "COM playing styles");
+    let com_bottom = nodes
+        .iter()
+        .filter(|node| node.role() == Role::CheckBox)
+        .filter_map(accesskit::Node::bounds)
+        .filter(|b| b.y0 > com_title.y0)
+        .map(|b| b.y1)
+        .fold(0.0, f64::max);
+    let gk = rating_buttons(&nodes, "GK")
+        .iter()
+        .map(|node| node.bounds().expect("bounds").y1)
+        .fold(0.0, f64::max);
+    let contents = [gk, com_bottom, aggression];
+    let (least, most) = contents
+        .iter()
+        .fold((f64::MAX, f64::MIN), |(lo, hi), &y| (lo.min(y), hi.max(y)));
+    assert!(
+        most - least > 1.0,
+        "premise: the columns' contents differ in height ({contents:?})"
+    );
+    assert!(
+        (bottoms[0] - bottoms[1]).abs() <= 0.5 && (bottoms[1] - bottoms[2]).abs() <= 0.5,
+        "the last frames' bottoms on one line ({bottoms:?})"
+    );
 }
 
 // The player view's pane ends where the draft's `.detail` content does,
@@ -502,10 +625,12 @@ fn every_panels_content_stands_six_in_from_its_title() {
     assert!(wrong.is_empty(), "{wrong:#?}");
 }
 
-// The Ability stats column is the draft's 169.4 points: each row a label
-// cell and a value cell with 6 points of padding a side (the draft's
-// `stats-grid` cells), so the widest label stands 6 in from the title and
-// the boxes end 6 short of the column's right edge.
+// The Ability stats column is the draft's 183.4 points: the stats grid's
+// 169.4 of cells (each row a label cell and a value cell with 6 points of
+// padding a side, the draft's `stats-grid`) inside the 6-point group
+// frame, so the widest label stands 6 in from the title and the boxes
+// end 13 short of the frame's right edge (the cell's 6, the frame's own
+// 6 and its point of stroke).
 #[test]
 fn the_ability_stats_column_is_the_drafts_width() {
     let path = fixture(PesVersion::Pes21, "ability_column");
@@ -516,14 +641,14 @@ fn the_ability_stats_column_is_the_drafts_width() {
     for _ in 0..3 {
         window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     }
-    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
-    let widths: [f32; 3] = window
+    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let widths: [f32; 2] = window
         .ctx
         .data(|data| data.get_temp(egui::Id::unique(crate::view::abilities::COLUMN_WIDTHS_ID)))
-        .expect("the columns' measured widths");
+        .expect("the fixed columns' measured widths");
     assert!(
-        (widths[2] - 169.4).abs() <= 0.5,
-        "the Ability stats column 169.4 wide ({widths:?})"
+        (widths[1] - 183.4).abs() <= 0.5,
+        "the Ability stats column 183.4 wide ({widths:?})"
     );
 
     let title = label_bounds(&nodes, "Ability stats").x0;
@@ -548,10 +673,10 @@ fn the_ability_stats_column_is_the_drafts_width() {
         .filter(|bounds| bounds.x0 >= title)
         .map(|bounds| bounds.x1)
         .fold(f64::MIN, f64::max);
-    let column_right = title + f64::from(widths[2]);
+    let frame_right = f64::from(group_frame(&window, &nodes, &shapes, "Ability stats").max.x);
     assert!(
-        (column_right - boxes_right - 6.0).abs() <= 0.5,
-        "the boxes end 6 short of the column's right edge ({boxes_right} vs {column_right})"
+        (frame_right - boxes_right - 13.0).abs() <= 0.5,
+        "the boxes end 13 short of the frame's right edge ({boxes_right} vs {frame_right})"
     );
 }
 
