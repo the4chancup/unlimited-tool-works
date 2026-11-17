@@ -22,9 +22,10 @@ excepted, below), 0.0.2-pes19
    round, Astra's: the lead's handover holds when it can run), the nation's wording in the changes list, the typed-digits slice, its changelog
    line. 0.0.2-frames, -paneshift, -keepsel and -posheight are merged and reviewed (every
    loop ended; the last pipeline, on `541f88a6`, passed).
-2. The lead's look on one release build, beside the drafts: the framed Stats screen on both
+2. The lead's look on one release build, beside the drafts: done on `1804f30e`'s, two
+   mismatches being fixed (0.0.2-lookfix); then the cards for the framed Stats screen on both
    themes, the new margins, DBC7's Pitch against List, Gameplan's fit, the new General info
-   and Main stats; then their cards on the tasks page (with `look-gated-labels`,
+   and Main stats on the tasks page (with `look-gated-labels`,
    `-category-teams`, `-x-hover`, `-interchange-text` and `-light-names` already there),
    the build copied to `4cc-studio-temp/tasks_build/`.
 3. The cut, only once the maintainer has run the checks of
@@ -1939,6 +1940,20 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     release build (the Report a problem look's) copied to `4cc-studio-temp/tasks_build/`,
     the page's intro naming that path and the commit it was built from; refreshed whenever
     a card is added from a later commit (RUNBOOK "Looks owed have one home each")
+  - [ ] 0.0.2-lookfix (the lead's look on the release build of `1804f30e`, 2026-11-17): the
+    player screen beside its draft, dark: every frame edge equal under the default ruleset,
+    General info and Main stats within 1, Gameplan's frames equal, DBC7's Pitch ending on
+    Ability stats' frame above List's; light looked at (no draft). Two mismatches, both the
+    build's -> verify: the built window beside the draft again
+    - the status bar's left and middle slots stand at the bar's top, where the draft centres
+      every slot (`v0.0.1 pre-alpha` 2.9 high on every screen)
+    - Ability stats drops the draft's 3 of cell padding under its last row, so under DBC7 the
+      columns end at 700, the draft's 703
+    - [ ] the fix (SWE-2, running; worktree `4cc-studio-temp/lookfix`, `.tmp/brief_lookfix.md`)
+    - Not a mismatch: the quick actions stand 23 lower than the draft's, which also draws
+      0.0.2-similar's button, built after 0.0.2. Not checked in the window: typed digits in
+      the Nation list (the capture tool's posted keys type no text; the headless tests hold
+      them)
   - [x] 0.0.2-shirtno the Team TOML player key `number` is `shirt_number` (`fb42b800`, merge
     `5e4cb83a`): an error naming `players.03.number` read as the player's ID; a 0.0.1 file
     holding `number` is refused as any unknown key, and the changelog's Important line says so
