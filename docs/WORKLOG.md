@@ -1611,8 +1611,9 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       of "Pending looks" as cards; every pointer moved, the two files removed
     - [ ] the lead checks each look of `tasks.html`'s "Coming once the lead has checked them"
       beside its draft (`scripts/built_window/`), each then a card with its capture pair
-    - [ ] a Linux bundle built from main for the Reset window card: 0.0.2's own Linux bundle,
-      built at the cut on the VPS, named on the card
+    - [x] a Linux bundle built from main for the Reset window card 2026-11-17: 0.0.2-rc.3 of
+      `333ec0cb` (branch `linux-rc3` at `7febf590`, never merged), built on the VPS, in
+      `4cc-studio-temp/tasks_build/`, named on the card (SHA-256 `519d93f0…`)
   - [x] 0.0.2-tplclean 2026-11-15 (merge `c20e6b29`): a template or Blank opens in the Ruleset
     editor with no unsaved changes (RE-GUI-02, 15)
   - [x] 0.0.2-teamscroll 2026-11-15 (merge `c20e6b29`): every dropdown's list 300 points tall
