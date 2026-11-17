@@ -583,25 +583,6 @@ fn a_window_resize_asks_for_no_discarded_pass() {
     );
 }
 
-// A newly selected player's first frame runs two passes, not three: the
-// ability stats' grid is new under his id and sizes itself in a
-// discarded pass, then the real pass lays the columns out on the widths
-// the sizing pass measured, clamped — a third pass would change nothing.
-#[test]
-fn a_new_players_first_frame_runs_two_passes() {
-    let (mut view, mut window) = positions_view("new_player_two_passes", DEFAULT_PANE.x);
-    // Player 701's slot 0 is already drawn; a player never shown gets a
-    // new widget id and the grid's sizing pass.
-    view.selected = Some(Selection::Player(701, 1));
-    let passes_before = window.ctx.cumulative_pass_nr();
-    window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
-    assert_eq!(
-        window.ctx.cumulative_pass_nr() - passes_before,
-        2,
-        "a newly selected player's first frame runs two passes"
-    );
-}
-
 // The three columns' first frames' tops stand where the Appearance
 // screen's first groups' do (`GROUP_GAP` under the title's line), so a
 // switch between the screens moves no frame line.

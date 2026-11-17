@@ -74,7 +74,7 @@ pub(super) fn held_violations<'a>(
     Some((*team_id, Cow::Owned(shown)))
 }
 
-/// The field a violation's mark stands before: `marked_field` maps a kind
+/// The field a violation's mark stands beside: `marked_field` maps a kind
 /// to one, `None` for the kinds about no single field and the team's own.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub(super) enum MarkedField {
@@ -322,7 +322,7 @@ impl FieldMark {
 }
 
 /// The rows on `marks`' slot whose kind maps to `field`, as the mark
-/// before it draws them (`None`: no row, nothing is drawn).
+/// beside it draws them (`None`: no row, nothing is drawn).
 fn field_mark(marks: &Marks<'_>, field: MarkedField) -> Option<FieldMark> {
     let marked: Vec<&aatf::Violation> = marks
         .violations

@@ -656,7 +656,7 @@ pub(super) fn small_stat(
         }
         None => {
             gated_label(ui, small.shown, gating_tooltip(small.field));
-            gated_number(ui, small.field);
+            gated_number(ui, gating_tooltip(small.field));
         }
     }
 }
@@ -1146,7 +1146,7 @@ fn ability_stats(
                     }
                     // The gated control keeps its cell too.
                     None => {
-                        gated_number(ui, ABILITY_FIELDS[index]);
+                        gated_number(ui, gating_tooltip(ABILITY_FIELDS[index]));
                     }
                 }
                 ui.end_row();
@@ -1450,8 +1450,9 @@ fn number_field<T: egui::emath::Numeric>(
 /// The disabled stand-in for a number the save's version does not store:
 /// `-` inside the control's usual bounds (a Button at the DragValue's
 /// minimum size, so an enabled version's control takes the same rect,
-/// SE-GUI-06) drawn as a disabled number box, with the `PES NN+` tooltip.
-pub(crate) fn gated_number(ui: &mut egui::Ui, field: PlayerField) {
+/// SE-GUI-06) drawn as a disabled number box, under `tooltip` (the `PES
+/// NN+` tooltip, as `gated_label`'s).
+pub(super) fn gated_number(ui: &mut egui::Ui, tooltip: String) {
     number_box_look(ui, |ui| {
         add_enabled(
             ui,
@@ -1459,7 +1460,7 @@ pub(crate) fn gated_number(ui: &mut egui::Ui, field: PlayerField) {
             egui::Button::new("-").min_size(ui.spacing().interact_size),
         )
     })
-    .on_disabled_hover_text(gating_tooltip(field));
+    .on_disabled_hover_text(tooltip);
 }
 
 /// The label of a field the save's version does not store: dimmed as its

@@ -73,11 +73,10 @@ fn the_stats_marks_line_up_at_the_label_columns_left_edge() {
 
 /// One row alone on the selected player: exactly one mark painted in the
 /// view, on its field's label's row, its 11-point box ending 2 points
-/// before the label's text — SE-GUI-36's "the cross beside the field the
-/// violation is about" for every field a kind reaches but `Pitch` and
-/// `Stat` (tested elsewhere) and the panels' headers (the next test):
-/// General info's and Other stats' labels and a suggestion on its
-/// allowance's field.
+/// before the label's text — SE-GUI-36's cross beside the field — for
+/// every field a kind reaches but `Pitch` and `Stat` (tested elsewhere)
+/// and the panels' headers (the next test): General info's and Other
+/// stats' labels and a suggestion on its allowance's field.
 #[test]
 fn each_fields_mark_stands_left_of_its_label() {
     use aatf::Severity::{Error, Suggestion};
@@ -200,8 +199,6 @@ fn each_fields_mark_stands_left_of_its_label() {
 /// header's last item, as the row's next item would stand — and lying
 /// inside the panel's frame (left of the title it would fall on the
 /// frame's line, or past the pane's edge in the first column).
-/// SE-GUI-36's "the cross beside the field the violation is about" for
-/// the header fields.
 #[test]
 fn a_panel_titles_mark_stands_after_its_header() {
     use aatf::Severity::{Error, Suggestion};

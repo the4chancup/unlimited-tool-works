@@ -265,6 +265,11 @@ mod tests {
             fill,
             "the hovered number box's fill"
         );
+        assert_eq!(
+            frame_at(&shapes, boxed.rect).stroke,
+            visuals.widgets.hovered.bg_stroke,
+            "the hovered number box's stroke is the hovered widgets'"
+        );
 
         // Pressed: the same fill, where the widgets' own pressed fill is
         // darker still.
@@ -292,16 +297,35 @@ mod tests {
             fill,
             "the pressed number box's fill"
         );
+        assert_eq!(
+            frame_at(&shapes, boxed.rect).stroke,
+            visuals.widgets.active.bg_stroke,
+            "the pressed number box's stroke is the pressed widgets'"
+        );
     }
 
     // A disabled light number box draws no border, as a disabled control
     // draws none: the scope's resting stroke stays out and the look does
-    // not put the text box's in.
+    // not put the text box's in. Its fill stays the text edit's, faded by
+    // the disabled scope as every disabled widget's is.
     #[test]
     fn a_disabled_light_number_box_draws_no_border() {
         let ctx = egui::Context::default();
         crate::theme::install(&ctx);
         ctx.set_theme(egui::Theme::Light);
+        let visuals = ctx.style_of(egui::Theme::Light).visuals.clone();
+        let faded =
+            |grey: u8| egui::Color32::from_gray(grey).gamma_multiply(visuals.disabled_alpha());
+        assert_eq!(
+            visuals.text_edit_bg_color(),
+            egui::Color32::from_gray(253),
+            "premise: the light text edit's fill"
+        );
+        assert_ne!(
+            faded(253),
+            faded(200),
+            "premise: the faded text edit's fill is not the faded control's"
+        );
         let mut value = 4u8;
         let mut draw = |ui: &mut egui::Ui| {
             crate::widgets::add_enabled_ui(ui, false, |ui| {
@@ -312,10 +336,16 @@ mod tests {
         // egui styles a widget from its state on the frame before.
         frame(&ctx, Vec::new(), &mut draw);
         let (shapes, boxed) = frame(&ctx, Vec::new(), &mut draw);
+        let painted = frame_at(&shapes, boxed.rect);
         assert_eq!(
-            frame_at(&shapes, boxed.rect).stroke,
+            painted.stroke,
             egui::Stroke::NONE,
             "a disabled number box draws no border"
+        );
+        assert_eq!(
+            painted.fill,
+            faded(253),
+            "the disabled number box keeps the text edit's fill, faded"
         );
     }
 

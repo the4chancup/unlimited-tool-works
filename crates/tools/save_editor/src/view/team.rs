@@ -20,12 +20,12 @@ use pes_savefile::schema::fields::{TeamField, TeamText};
 use pes_savefile::schema::{VersionSchema, first_version_with_team, schema_for};
 use pes_version::PesVersion;
 use studio_core::widgets::{
-    FIELD_SPACING, add_enabled, add_enabled_ui, modal, modal_buttons, number_arrows, number_box,
-    number_box_look, number_wheel_steps, step_number, text_box,
+    FIELD_SPACING, add_enabled_ui, modal, modal_buttons, number_arrows, number_box,
+    number_wheel_steps, step_number, text_box,
 };
 
 use crate::session::Session;
-use crate::view::abilities::gated_label;
+use crate::view::abilities::{gated_label, gated_number};
 use crate::view::{SaveView, edit_team, info_strip, selected_team, tactics};
 
 /// One unit of the header's row: a label with its field, or the button.
@@ -403,7 +403,7 @@ fn manager_unit(
         }
         None => {
             gated_label(ui, MANAGER_LABEL, gating_tooltip(TeamField::ManagerId));
-            gated_number(ui, TeamField::ManagerId);
+            gated_number(ui, gating_tooltip(TeamField::ManagerId));
         }
     }
 }
@@ -440,7 +440,7 @@ fn stadium_unit(
         }
         None => {
             ui.label(STADIUM_LABEL);
-            gated_number(ui, TeamField::StadiumId);
+            gated_number(ui, gating_tooltip(TeamField::StadiumId));
         }
     }
 }
@@ -587,22 +587,6 @@ fn number<T: egui::emath::Numeric>(
             store(team, shown);
         });
     }
-}
-
-/// The disabled stand-in for a number the version does not store: `-`
-/// inside the control's usual bounds (a Button at the DragValue's minimum
-/// size, so an enabled version's control takes the same rect) drawn as a
-/// disabled number box, with the `PES NN+` tooltip (`abilities`'
-/// `gated_number` for team fields).
-fn gated_number(ui: &mut egui::Ui, field: TeamField) {
-    number_box_look(ui, |ui| {
-        add_enabled(
-            ui,
-            false,
-            egui::Button::new("-").min_size(ui.spacing().interact_size),
-        )
-    })
-    .on_disabled_hover_text(gating_tooltip(field));
 }
 
 /// The tooltip naming the first version that stores `field` (`PES NN+`):
