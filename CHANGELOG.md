@@ -47,7 +47,6 @@
 
 ### Useful
 
-- **All tools**: an open dropdown list shows half as many items again before it scrolls.
 - **Save editor**: the team dropdown above the list reads All teams in place of ALL, and
   radio buttons at the bottom of the open dropdown narrow it and the list to the 4cc, VGL or
   Invitational teams, its first entry then reading 4cc teams, VGL teams or Invitational
@@ -110,11 +109,6 @@
   13 positions as they stand on the pitch, as the same rows from one left edge, or one
   position a row, and the choice is remembered. The letters of the ratings not chosen are
   darker, so the chosen one stands out.
-- **Save editor**: a Team TOML now opens by saying that a key left out of it changes nothing
-  on import, and its stats table says the game shows weak foot, form and injury resistance
-  one higher than the file.
-- **Export upgrader**: the comments of a kit's `config.toml` start at one column, so a
-  two-digit value no longer pushes its comment out of line.
 - **Save editor**: with no save open, the middle of the window offers `Open…` (Ctrl+O),
   the saves found in Documents (the newest of each version with its shortcut) and the
   recent saves.
@@ -176,9 +170,6 @@
 
 - **All tools**: resizing the window no longer makes its contents jump on every step of
   the drag.
-- **All tools**: warnings are amber instead of orange and errors a softer red, so the two
-  stand apart. The success green and the link blue changed with them, and on the light
-  theme links are easier to read.
 - **Save editor**: the portraits and Set PES path follow the open save's PES version, not
   the sidebar's, and no warning says the two differ. The file picker starts in the folder of
   the last save opened.
@@ -201,17 +192,6 @@
   share one corner rounding again.
 - **Save editor**: an event logo that opens the event's page is framed like a button while
   the pointer is on it, as the 4cc logo is.
-- **Save editor**: a Team TOML export opens with a line saying what the file is, and its
-  stats and instructions tables each carry a short note.
-- **Export upgrader**: a kit `config.toml`'s comments sit at one column whatever the
-  value's width.
-- **Save editor**: the note about wrist or ankle taping under a hidden body says to take
-  the taping off unless it is meant to show.
-- **Save editor**: in a Team TOML export, the comment beside `skills` says how a skill's
-  name is spelt.
-- **Save editor and Ruleset editor**: the name color findings, the ruleset summary and the
-  hair color comment in `settings.toml` spell "color", as the rest of the program does.
-- **Save editor**: the column heads of the unsaved changes list are no longer dimmed.
 - **Save editor**: Undo, Redo and the × of a `Player order` row keep a moved player
   selected, instead of whoever took his place in the list.
 - **Save editor**: the unsaved changes list grows as wide as its longest row, up to the
@@ -220,18 +200,38 @@
   its squad, no longer every player whose ID holds 820 somewhere.
 - **Save editor**: Page Up and Page Down bring the team row they select to the top of the
   list, with its players under it.
-- **Save editor**: the player list's team rows stand out more from its player rows, on both
-  themes.
 - **Save editor**: on the Gameplan screen, a held player rated A or B at no position
   darkens the whole pitch, as in the game, where nothing was darkened.
-- **Save editor**: on the Gameplan screen, the panels and the two lineup lists stand 8
-  points apart, as on the Appearance screen.
-- **Ruleset editor**: the section list on the left has a little more room between its
-  rows.
 
 ### Other stuff
 
+- **All tools**: an open dropdown list shows half as many items again before it scrolls.
+- **All tools**: warnings are amber instead of orange and errors a softer red, so the two
+  stand apart. The success green and the link blue changed with them, and on the light
+  theme links are easier to read.
+- **All tools**: every box, dropdown, toggle and button draws a thin edge, so an empty one
+  no longer melts into the panel behind it.
+- **Save editor**: the Stats screen's panels stand in frames, lined up with the Appearance
+  screen's groups, and each label stands further from its box.
+- **Save editor**: in General info, Shirt reads Shirt name, and in the team view Short,
+  Col. 1 and Col. 2 read Short name, Color 1 and Color 2.
+- **Save editor**: the player list's team rows stand out more from its player rows, on both
+  themes.
+- **Save editor**: the column heads of the unsaved changes list are no longer dimmed.
 - **Save editor**: the text of `Team file interchange` is no longer dimmed.
+- **Save editor**: on the Gameplan screen, the panels and the two lineup lists stand 8
+  points apart, as on the Appearance screen.
+- **Save editor**: a Team TOML export opens by saying what the file is, and that a key
+  left out of it changes nothing on import. A note on its stats table says the game shows
+  weak foot, form and injury resistance one higher than the file.
+- **Save editor**: in a Team TOML export, the comment beside `skills` says how a skill's
+  name is spelt.
+- **Save editor**: the note about wrist or ankle taping under a hidden body says to take
+  the taping off unless it is meant to show.
+- **Save editor and Ruleset editor**: the name color findings, the ruleset summary and the
+  hair color comment in `settings.toml` spell "color", as the rest of the program does.
+- **Ruleset editor**: the section list on the left has a little more room between its
+  rows.
 
 ## [0.0.1] - 2026-11-03
 

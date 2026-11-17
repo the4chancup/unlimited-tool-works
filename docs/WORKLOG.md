@@ -18,15 +18,12 @@ excepted, below), 0.0.2-pes19
 (and with it the readme's PES 2019 claim), 0.0.2-nostretch's slices, and any mutation run
 (mutfast first). Most open steps below wait only for the maintainer's look
 (`maintainer/tasks.html`). What is left before the cut:
-1. The framed Stats screen and the control edges (0.0.2-frames): the draft settled
-   2026-11-17 (`eval/stats-boxes`, a member's request, the maintainer's polish), the plan
-   and DECISIONS written; next its two slices.
-2. Four fixes from the maintainer's looks of 2026-11-17: 0.0.2-namegame (a name's colour
-   codes drawn as they are in the light theme too), 0.0.2-xhover (the changes list's X
-   highlighted on hover), 0.0.2-allcat (All teams reads `VGL teams` under VGL, and so on)
-   and 0.0.2-ixtext (the interchange window's lines in the normal text colour); and P53,
-   accepted for 0.0.2: 0.0.2-gatelbl (a version-gated control's label dimmed with it).
-   0.0.2-present, the resize flicker's fix, landed 2026-11-17.
+1. The framed Stats screen and the control edges (0.0.2-frames): A1, A2a, B1 and B2 merged;
+   C (the light theme's backgrounds) running; the SWE-2 review round 1 on the four merged
+   parts running, then C's, then one paid round over the whole.
+2. The four fixes from the maintainer's looks of 2026-11-17 (0.0.2-namegame, xhover, allcat,
+   ixtext) merged; P53's 0.0.2-gatelbl (a version-gated control's label dimmed with it) after
+   C, which touches the same files. Their looks wait for one release build after gatelbl.
 3. The cut, only once the maintainer has run the checks of
    `maintainer/tasks.html` (the maintainer, 2026-11-17): a pipeline without mutants on the
    last merge (0.0.2-determ's second clean run), the changelog, the release build, and a
@@ -1755,6 +1752,8 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     framed" and "every live box, dropdown, toggle and button draws a 1-point edge") -> verify:
     the built window beside the draft on the Stats, Appearance and Gameplan screens; a tasks
     card; review rounds (a SWE-2 loop and one paid round)
+    - [ ] the review rounds: SWE-2 round 1 on A1, A2a, B1 and B2 (2026-11-17, from a worktree
+      at `74d85558`, `.tmp/0_0_2/frames_rev/`), C's once it merges, then one paid round
     - [ ] the control edges (`plans/core/gui.md` "Other UI components", "Control edges")
       - [x] A1 2026-11-17 `studio_core` (`b98986f7`, merge `53bc3805`): the resting stroke,
         `theme::edge_color`, the checked box's and radio's edge, none on disabled widgets or
@@ -1774,12 +1773,13 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         tops on Appearance's, columns ending on one line, the positions grid at List's height;
         the shared frame helpers in `view/group_frame.rs`. Column 1 is the tallest in every
         bundled ruleset on PES 2015, 2017 and 2021 (measured), so the grid never stretches
-      - [ ] B2 General info's 6 and 12 margins, the 20-point label gaps, the halves 18 apart
-        (and the labels `Shirt name`, `Short name`, `Color 1`/`Color 2`, DECISIONS 2026-11-17);
-        with A2a's `resting_edge`, the Save editor's own toggle edges (the `.rate` rows, the
-        view tabs, the positions layout, the ratings) and the lit Live AATF button; after B1
-        and A2a merge; at its merge one CHANGELOG line for those labels and for Playing
-        attitude's new note (already in the code)
+      - [x] B2 2026-11-17 (SWE-2; merge `74d85558`; the lead's rerun on the merge): General
+        info's fields end 12 inside the frame at any width, every label 20 before its field,
+        the halves at least 18 apart; the labels `Shirt name`, `Short name`, `Color 1`/`Color 2`
+        (DECISIONS 2026-11-17, a changelog line under Other stuff; Playing attitude's note
+        needs none, its screen is new in 0.0.2); the Save editor's toggle and rating edges
+        through `resting_edge`, the lit Live AATF button's in the selection blue's
+        - [ ] the built window beside the draft, with the batch release build
   - [x] 0.0.2-taskbuild 2026-11-17: the tasks page names the build its cards run on -> verify: the next
     release build (the Report a problem look's) copied to `4cc-studio-temp/tasks_build/`,
     the page's intro naming that path and the commit it was built from; refreshed whenever

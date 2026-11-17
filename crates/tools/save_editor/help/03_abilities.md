@@ -1,5 +1,5 @@
-Clicking a player's row opens the player view: his id and name on top, then three columns
-side by side, with the collapsed **Appearance** section underneath.
+Clicking a player's row opens the player view: his id and name on top, then the **Stats**
+screen's three columns side by side. The toggle left of his name switches to **Appearance**.
 
 **The three columns**
 
@@ -29,7 +29,7 @@ for a tier, a position or the captain.
 
 **Counts**
 
-The Name and Shirt labels count what the field holds, as typed: `(12/61)` reads
+The Name and Shirt name labels count what the field holds, as typed: `(12/61)` reads
 as 12 bytes used of the 61 the field holds (a color code counts as the ten
 bytes it stores). The shirt name counts letters, 18 on most versions and 16 on
 PES 2016. When a name or shirt name is longer than an older version can hold, the

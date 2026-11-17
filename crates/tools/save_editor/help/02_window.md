@@ -78,7 +78,7 @@ fields. The toggle left of the name switches between **Stats**, three columns of
 and **Appearance**, his look. Click a team's row, or **Gameplan** on the toggle, to see the
 team's fields and its tactics.
 
-A player's Name and Shirt labels count what the field holds (`(12/61)` reads as 12 used
+A player's Name and Shirt name labels count what the field holds (`(12/61)` reads as 12 used
 of 61). When it is longer than an older version can hold, the field takes an amber tint and
 its count turns red. A `\x11c` plus 8 hex digits inside a name is a color code, and the field
 keeps it as typed.
