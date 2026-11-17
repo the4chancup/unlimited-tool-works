@@ -245,6 +245,7 @@ fn save_writes_the_bundle_at_the_picked_path_and_the_words_stay() {
     record(&ctx, "a", dir.path());
     *calls[0].repro_state.lock().unwrap() =
         vec![("EDIT00000000".to_owned(), b"THE SAVE AS NOW".to_vec())];
+    *calls[0].repro_readme.lock().unwrap() = Some("STUB PART\n");
     // The window's log, and the settings file the shell's first frame
     // writes, which the bundle's settings are compared against.
     let log = dir.path().join("utw.log");
@@ -320,6 +321,11 @@ fn save_writes_the_bundle_at_the_picked_path_and_the_words_stay() {
         "the stub's repro_state prefixed by its tool id"
     );
     assert_eq!(zip(&out, "utw.log"), "the window's log lines\n");
+    assert_eq!(
+        zip(&out, "README.txt"),
+        format!("{README_CORE}\nSTUB PART\n"),
+        "the core part, a blank line, then the stub's part"
+    );
     let thread_count = |text: &str| {
         toml::from_str::<toml::Table>(text).unwrap()["common"]["thread_count"].as_integer()
     };
@@ -364,6 +370,31 @@ fn save_writes_the_bundle_at_the_picked_path_and_the_words_stay() {
     assert_eq!(words_box(&nodes).value(), Some(words.as_str()));
     assert!(has_label(&nodes, "Save…"), "Save… is offered again");
     assert!(!has_text(&nodes, "Saved to"), "no saved line");
+}
+
+// ST-REP-02's `README.txt` when no tool gives a `repro_readme` part (the
+// stubs' default): the file is the core part alone.
+// ST-REP-02
+#[test]
+fn the_readme_is_the_core_part_alone_when_no_tool_has_a_part() {
+    let dir = TestDir::new("studio_core_report_readme");
+    let out = dir.path().join("utw-report.zip");
+    let Shell { mut app, _dir, .. } = shell();
+    let egui_ctx = test_context();
+    let out_path = out.clone();
+    app.report.save_dialog = Box::new(move |_| Some(out_path.clone()));
+
+    let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
+    click(&egui_ctx, &mut app, entry(&nodes, REPORT_LABEL));
+    let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
+    click(&egui_ctx, &mut app, entry(&nodes, "Save…"));
+    assert!(out.exists(), "the zip was written");
+
+    assert_eq!(
+        crate::repro::tests::zip_text(&out, "README.txt"),
+        README_CORE,
+        "the stubs' repro_readme is None: no tool part is appended"
+    );
 }
 
 // A run with no log installed (a first run has no data location, so none

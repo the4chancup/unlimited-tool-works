@@ -363,6 +363,12 @@ impl StudioTool for Tool {
         self.view.repro_state()
     }
 
+    /// The tool's part of the bundle's `README.txt`: the commands that read
+    /// the saves it keeps.
+    fn repro_readme(&self) -> Option<&'static str> {
+        Some(include_str!("repro_readme.txt"))
+    }
+
     fn cli_run(&self, matches: &clap::ArgMatches, ctx: &ToolContext) -> Result<u8, CliError> {
         cli::run(matches, ctx, self.running)
     }

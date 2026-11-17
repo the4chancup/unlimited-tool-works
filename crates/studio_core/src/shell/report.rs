@@ -29,6 +29,9 @@ const MEGABYTE: f64 = 1_048_576.0;
 const KILOBYTE: f64 = 1024.0;
 /// The text box's height, the draft's `textarea` 84 points.
 const WORDS_HEIGHT: f32 = 84.0;
+/// `README.txt`'s core part: what each part of the bundle holds. The
+/// tools' own `repro_readme` parts are appended under it.
+const README_CORE: &str = include_str!("report_readme.txt");
 
 /// The dialog's state: open or not, the member's words (kept for the window's
 /// life, so a reopened dialog holds them), the lines under "The file holds:"
@@ -223,10 +226,10 @@ impl Report {
 }
 
 /// The bundle at `out`: `write_bundle` with the window's log, the session's
-/// settings and `installs.txt` at the zip's root, and every tool's
-/// `repro_state` under its id in `state`. The settings are the ones the
-/// session runs under, not the file on disk, which a failed settings save
-/// leaves out of date.
+/// settings, `installs.txt` and `README.txt` at the zip's root, and every
+/// tool's `repro_state` under its id in `state`. The settings are the ones
+/// the session runs under, not the file on disk, which a failed settings
+/// save leaves out of date.
 fn write_report(
     out: &Path,
     tools: &[Box<dyn StudioTool>],
@@ -243,10 +246,12 @@ fn write_report(
         .and_then(|table| toml::to_string_pretty(&table))
         .context("cannot write the settings for the bundle")?;
     let installs = installs(ctx);
+    let readme = readme(tools);
     let files = [
         ("utw.log", log.as_deref()),
         ("settings.toml", Some(settings.as_bytes())),
         ("installs.txt", Some(installs.as_bytes())),
+        ("README.txt", Some(readme.as_bytes())),
     ];
     let mut state: Vec<(String, Vec<u8>)> = Vec::new();
     for tool in tools {
@@ -378,6 +383,19 @@ fn installs(ctx: &ToolContext) -> String {
         })
         .collect::<Vec<_>>()
         .join("\n")
+}
+
+/// `README.txt`: the core part, then each tool's `repro_readme` part in
+/// `tools`' order, a blank line before it.
+fn readme(tools: &[Box<dyn StudioTool>]) -> String {
+    let mut readme = README_CORE.to_owned();
+    for tool in tools {
+        if let Some(part) = tool.repro_readme() {
+            readme.push('\n');
+            readme.push_str(part);
+        }
+    }
+    readme
 }
 
 #[cfg(test)]

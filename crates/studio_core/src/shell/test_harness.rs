@@ -81,6 +81,9 @@ pub(super) struct Calls {
     /// What `repro_state` reports: the `(name, bytes)` files the dialog puts
     /// under `state/`, empty until a test fills them.
     pub(super) repro_state: Mutex<Vec<(String, Vec<u8>)>>,
+    /// What `repro_readme` reports: the stub's part of the bundle's
+    /// `README.txt`, `None` until a test fills it.
+    pub(super) repro_readme: Mutex<Option<&'static str>>,
 }
 
 impl Calls {
@@ -266,6 +269,9 @@ impl StudioTool for StubTool {
     }
     fn repro_state(&self) -> Vec<(String, Vec<u8>)> {
         self.calls.repro_state.lock().unwrap().clone()
+    }
+    fn repro_readme(&self) -> Option<&'static str> {
+        *self.calls.repro_readme.lock().unwrap()
     }
 }
 

@@ -1108,3 +1108,43 @@ fn closing_the_save_records_a_step() {
 fn the_repro_state_is_empty_with_no_save_open() {
     assert!(studio_core::StudioTool::repro_state(&crate::Tool::new()).is_empty());
 }
+
+// ST-REP-04's readme clause: the part the tool gives the bundle's
+// README.txt names `diff` and `export-toml` in command lines its own CLI
+// parses.
+// ST-REP-04
+#[test]
+fn the_repro_readme_names_commands_the_cli_parses() {
+    let tool = crate::Tool::new();
+    let Some(readme) = studio_core::StudioTool::repro_readme(&tool) else {
+        panic!("the Save editor has a part in the bundle's README.txt")
+    };
+    // A command line stands indented: four spaces, then `UTW ` and the
+    // command as the shell would argv it, the tool's id the first word.
+    let command_lines: Vec<&str> = readme
+        .lines()
+        .filter_map(|line| line.strip_prefix("    UTW "))
+        .collect();
+    assert_eq!(
+        command_lines.len(),
+        2,
+        "the readme's command lines: {readme}"
+    );
+    for line in &command_lines {
+        studio_core::StudioTool::cli_command(&tool)
+            .try_get_matches_from(line.split(' '))
+            .unwrap_or_else(|error| panic!("the CLI parses {line:?}: {error}"));
+    }
+    assert!(
+        command_lines
+            .iter()
+            .any(|line| line.starts_with("save-editor diff ")),
+        "a command line names diff: {command_lines:?}"
+    );
+    assert!(
+        command_lines
+            .iter()
+            .any(|line| line.starts_with("save-editor export-toml ")),
+        "a command line names export-toml: {command_lines:?}"
+    );
+}
