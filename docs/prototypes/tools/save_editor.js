@@ -4719,7 +4719,11 @@ function catTeams() {
 // The Team selector: over the player list, and on the Squad screen's title row, where the
 // table shows one team, so without All teams (`withAll` false).
 function teamSelector(withAll) {
-  const sel = combo((withAll ? [["all", "All teams"]] : []).concat(catTeams().map(t => [String(t.id), t.name])),
+  // The category's name takes All's place (VGL teams), so the shortened list is not read as
+  // the whole save.
+  const cat = TEAM_CATS.find(c => c[0] === (S.teamCat || "all"));
+  const allLabel = cat[1] + " teams";
+  const sel = combo((withAll ? [["all", allLabel]] : []).concat(catTeams().map(t => [String(t.id), t.name])),
     // A team picked selects its team row, so the view shows its tactics; ALL
     // keeps the selection.
     S.teamSel, v => { S.teamSel = v; if (v !== "all") S.sel = { team: Number(v) }; });

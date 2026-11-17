@@ -18565,3 +18565,11 @@ the composition one leaves the frame in place (0 of 231, and the maintainer's dr
 none). Vsync off only thinned the jumps out and lets animations repaint unthrottled.
 RenderDoc's lost capture is a debugging cost the variable undoes.
 Plan: `plans/core/gui.md`, "The graphics backend".
+
+## 2026-11-17 — save_editor — the team selector's first entry names its category, as VGL teams (maintainer)
+Decision: with the team selector's category on 4cc, VGL or Invitational, the category's name
+takes the place of All in its All teams entry: `4cc teams`, `VGL teams`, `Invitational
+teams`, in the dropdown and on the closed selector; under All it reads `All teams`. The
+Comparator's filter, which no category shortens, keeps `All teams`.
+Why: a shortened list under a plain `All teams` reads as every team of the save.
+Plan: `plans/save_editor.md`, the team selector's category paragraph and SE-GUI-83.

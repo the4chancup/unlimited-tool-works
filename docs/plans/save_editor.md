@@ -222,11 +222,14 @@ vertical room a tab row takes; a toggle on the title's own row takes none.
   while the teams scroll, in an area as tall as any dropdown's list (300 points, `core/gui.md`
   "Dark/light theme"), the radios added under it, not taken from it: `All`, `4cc` (IDs 701 to 780, the Backup rows included), `VGL` (781
   to 850) and `Invitational` (851 to 920), the teams list's own sections. The category
-  shortens the dropdown's teams and the player list alike: `All teams` under `VGL` lists
-  the VGL teams' rows and players alone, since a category that shortened the dropdown and
-  not the list would have the two disagree. Picking one leaves the dropdown open, so the
-  shorter list is seen at once. A team picked that the new category leaves out gives way to
-  `All teams`, and a selection it leaves out moves to the list's first player. A click
+  shortens the dropdown's teams and the player list alike. Its name takes the place of
+  `All` in the dropdown's first entry, which reads `4cc teams`, `VGL teams` or
+  `Invitational teams` (`All teams` under `All`), on the closed selector too, so a
+  shortened list is not read as the whole save. `VGL teams` lists the VGL teams' rows and
+  players alone, since a category that shortened the dropdown and not the list would have
+  the two disagree. Picking one leaves the dropdown open, so the shorter list is seen at
+  once. A team picked that the new category leaves out gives way to that first entry, and a
+  selection it leaves out moves to the list's first player. A click
   elsewhere that selects a team's row or a player (a violation's row, an unsaved change's
   row, the import window's `Select the team with this file's ID`) widens a category that
   leaves his team out to `All`, since the list must show the row it selects. The category
@@ -3413,13 +3416,14 @@ SE-GUI-83  GIVEN a cup save open on All teams
            WHEN the team selector is opened
            THEN its first entry reads `All teams`, and under the teams and a separator stand
                 four radio buttons, All ticked, 4cc, VGL, Invitational; WHEN VGL is ticked
-                THEN the dropdown stays open and lists All teams and teams 781 to 850
+                THEN the dropdown stays open and lists `VGL teams` and teams 781 to 850
                 alone, the player list holds those teams' rows and players alone, and the
                 selection is the list's first player; WHEN 4cc is ticked THEN teams 701 to
-                780 are listed, Backup 9 (780) among them; GIVEN team 781 picked WHEN
-                Invitational is ticked THEN the selector reads All teams; GIVEN the editor
-                restarted THEN the category is still ticked (`team_category` in the tool's
-                settings); and the Comparator's team filter reads `All teams` and lists
+                780 are listed under `4cc teams`, Backup 9 (780) among them; GIVEN team 781
+                picked WHEN Invitational is ticked THEN the selector reads
+                `Invitational teams`; WHEN All is ticked THEN it reads `All teams`; GIVEN
+                the editor restarted THEN the category is still ticked (`team_category` in
+                the tool's settings); and the Comparator's team filter reads `All teams` and lists
                 every cup team whatever the category; GIVEN VGL ticked WHEN the unsaved
                 changes list's row of a change to team 701 is clicked THEN All is ticked and
                 701's row is selected and shown; the same for a player of 701 and for the
