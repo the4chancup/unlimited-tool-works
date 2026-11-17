@@ -15,7 +15,12 @@ is in `AGENTS.md` ("Working documents").
 the Carbon rounds and the PES 2019 check"; 2026-11-16 "The no-stretch slices move to after
 0.0.2"). After 0.0.2: 0.0.2-similar, every Carbon round a 0.0.2 step still owes (Report a problem's
 excepted, below), 0.0.2-pes19
-(and with it the readme's PES 2019 claim), 0.0.2-nostretch's slices, and any mutation run
+(and with it the readme's PES 2019 claim), 0.0.2-nostretch's slices, the drafts in two
+copies (the maintainer, 2026-11-17: a spec draft of what the build holds and a plan draft for
+prototyping, which the app's unbuilt sections open with `demo=1`; then the plan and spec text
+keeps the reasons, the behaviour and what no draft shows, such as the light theme, and points
+at the draft for measurements rather than copying them, a copy that drifted once: rows "22
+apart" against the draft's 24), and any mutation run
 (mutfast first). Most open steps below wait only for the maintainer's look
 (`maintainer/tasks.html`). What is left before the cut:
 1. 0.0.2-geninfo: the build (SWE-2, running), its review (a SWE-2 loop, then one paid
