@@ -18521,3 +18521,12 @@ ones do. A number box takes the text box's border, not an edge 30 darker than it
 the two kinds of field read alike.
 Plan: `plans/core/gui.md`, "Other UI components", the "Dark/light theme" and "Control
 edges" rows.
+
+## 2026-11-17 — save_editor — the labels Shirt, Short and Col. are spelled out
+Decision: the player's `Shirt` field is labelled `Shirt name`, the team's `Short` field
+`Short name`, and its colours `Color 1` and `Color 2` (were `Col. 1`, `Col. 2`), on screen
+and in the changes lists, which name a field by its label.
+Why: the maintainer asked for the whole words (2026-11-17); the draft shows the team row
+still on one line at the default window and `Shirt name (11/18)` inside General info's label
+column, which "Registered position" sets.
+Plan: `plans/save_editor.md`, "The player view" and "The team view".

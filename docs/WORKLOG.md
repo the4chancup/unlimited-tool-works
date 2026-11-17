@@ -1714,6 +1714,7 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         Appearance's, columns ending on one line, the positions grid at List's height
         (SWE-2, `sk/statsframes`)
       - [ ] B2 General info's 6 and 12 margins, the 20-point label gaps, the halves 18 apart
+        (and the labels `Shirt name`, `Short name`, `Color 1`/`Color 2`, DECISIONS 2026-11-17)
   - [x] 0.0.2-taskbuild 2026-11-17: the tasks page names the build its cards run on -> verify: the next
     release build (the Report a problem look's) copied to `4cc-studio-temp/tasks_build/`,
     the page's intro naming that path and the commit it was built from; refreshed whenever

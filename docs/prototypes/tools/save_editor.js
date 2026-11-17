@@ -5152,7 +5152,7 @@ function generalPanel(p, team) {
     h("div", { class: "gen" },
       h("div", { class: "combos" },
         ...counted("Name", "name", p.name, nameIn, unescName, fieldMark(p, "name")),
-        ...counted("Shirt", "shirt", p.shirt_name, shirtIn, t => t)),
+        ...counted("Shirt name", "shirt", p.shirt_name, shirtIn, t => t)),
       h("div", { class: "pairs" },
         num("Height", p2 => p2.height, (x, v) => x.height = v, "height"),
         num("Shirt number", p2 => p2.number, (x, v) => x.number = v),
@@ -5759,11 +5759,11 @@ function teamFields(t) {
         if (b) b.style.background = cand ? rgbToHex(cand) : shownHex(t[key]); },
       D.pickerSugg ? PICKER_SAMPLE_SUGGESTIONS : [],
       "Stored " + t[key].join(", ") + ", shown " + shown.toUpperCase());
-    return h("span", {}, label.replace("Color", "Col."), " ", fld, " ",
+    return h("span", {}, label, " ", fld, " ",
       h("span", { class: "mono weak" }, shown.toUpperCase()));
   };
   return named(h("div", { class: "row", id: "team-fields" },
-    "Name", nameIn, "Short", shortIn,
+    "Name", nameIn, "Short name", shortIn,
     colour("color_1", "Color 1"), colour("color_2", "Color 2")), "team-fields");
 }
 const KIT_SLOT_BOX = 51;
@@ -7901,7 +7901,7 @@ const FIELD_TERMS = {
   WristTapeColorRight: T_pal("Right wrist tape", "wrist"),
   SpectaclesColor: T_pal("Spectacles", "spectacles"),
   PlayerGlovesColor: T_pal("Gloves", "gloves"),
-  Name: T_text("Name"), ShirtName: T_text("Shirt"),
+  Name: T_text("Name"), ShirtName: T_text("Shirt name"),
 };
 const pascal = s => s.replace(/(^|_)\w/g, m => m.slice(-1).toUpperCase());
 // The physique sliders: stored 0-14, shown -7 to +7, labelled like the field.

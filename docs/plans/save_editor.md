@@ -186,7 +186,7 @@ vertical room a tab row takes; a toggle on the title's own row takes none.
 │ [filter 🔍]          │ General info         Skills  Gold: 6 of 8   Ability stats      │
 │ 701 ■■ /3/           │ Name (10/61)         ☐ Heading  ☐ Man Mar…  Attacking Prowess 77│
 │  ≡ 1 GK /3/ QUADS ON…│ [QUADS ONLY       ]  ☐ Flip Flap ☐ …        Ball Control     77│
-│  ≡ 2 CB /3/ UNCANN… ●│ Shirt (11/18)        ⋮                      ⋮                  │
+│  ≡ 2 CB /3/ UNCANN… ●│ Shirt name (11/18)   ⋮                      ⋮                  │
 │  ⋮ (drag to reorder) │ [PLACEHOLDER      ]  Tricks, COM playing styles                │
 │ 718 ■■ /f/           │ Height [189] Number [1]   ☐ Trickster ☐ Long Ball Expert       │
 │  ⋮                   │ ⋮  Other stats, Playable positions                             │
@@ -679,7 +679,7 @@ vertical room a tab row takes; a toggle on the title's own row takes none.
      beside the 255-point list.
 
      They are laid out as 4ccEditor's General Info:
-     - Name, then Shirt, each a row with its label on the left and its field on the right.
+     - Name, then Shirt name, each a row with its label on the left and its field on the right.
      - Then label-left pairs on two halves at least 18 points apart (the first as wide as the
        label-left rows' label column, their 20-point gap and a box, so its boxes start at the
        x those rows' fields start at; the second ending at the panel's right margin, the
@@ -700,10 +700,10 @@ vertical room a tab row takes; a toggle on the title's own row takes none.
        output and Set player names to positions keep 4ccEditor's names, Center Back, as their
        parity requires), and Playing style.
 
-     Name, Shirt and these four rows share one label column, as wide as their longest label
+     Name, Shirt name and these four rows share one label column, as wide as their longest label
      ("Registered position"), so every one of those fields starts at one x, and each ends
      flush with the second half's boxes, at the panel's right margin. Within a block (Name
-     and Shirt; the pairs; Stronger foot to Playing style) rows stand 22 apart, the form
+     and Shirt name; the pairs; Stronger foot to Playing style) rows stand 22 apart, the form
      grids' pitch (`core/gui.md` "Other UI components", Form grids), the toggles 18 tall like
      every control. The blocks stand 6 apart, 2 more than their rows, as the draft's `.gen`,
      so each block reads as one.
@@ -821,7 +821,7 @@ vertical room a tab row takes; a toggle on the title's own row takes none.
 - **The view fills its pane**: the list and the quick actions under it take the pane's whole
   height, and the detail ends at the pane's bottom, with no margin below that would give the
   pane a scroll bar of its own.
-- **Name and Shirt.** Each label carries a count in brackets, `Name (28/46)`, that follows the
+- **Name and Shirt name.** Each label carries a count in brackets, `Name (28/46)`, that follows the
   field as typed: the name's bytes against the open save's field, the shirt name's letters
   against the 18 every version shows (PES 16's 16), so a longer name a PES 20/21 save holds
   reads `(20/18)`.
@@ -838,7 +838,7 @@ vertical room a tab row takes; a toggle on the title's own row takes none.
   and symbols are not.").
 
   The save is where a member writes the names a tactical export carries to a cup of any
-  version, so its Name and Shirt fields follow `pes_savefile`'s portable limits
+  version, so its Name and Shirt name fields follow `pes_savefile`'s portable limits
   (`spec/pes_savefile/operations.md` "Team TOML"):
   - **Name**: the open save's own field (61 bytes on PES 20/21, 46 before), so `(10/61)` on a PES
     21 save (a colour code counts ten, an accented letter two or more). A name past 46
@@ -846,7 +846,7 @@ vertical room a tab row takes; a toggle on the title's own row takes none.
     and the hover "In PES 2019 and older the game cuts this name to «…»", the name as
     `crop_player_text` would cut it. A tint of the theme's warning colour, not a pale yellow
     fill: the theme is dark and its text light, which a pale fill would wash out.
-  - **Shirt**: 18 letters on every version but PES 16 (its field holds 16), so `(11/18)`. A
+  - **Shirt name**: 18 letters on every version but PES 16 (its field holds 16), so `(11/18)`. A
     shirt name the save already holds past 18 (PES 20/21 allow more) is kept, drawn with the
     same tint and the hover "PES 2019 and older show 18 letters of a shirt name (PES 2016 shows
     16)"; an edit may shorten it but not lengthen it, so it can be fixed a keystroke at a time.
@@ -976,12 +976,11 @@ vertical room a tab row takes; a toggle on the title's own row takes none.
     reach PES 18's and 19's last celebrations (127, 140); the measured tops do neither.
 - **The team view**: `<id> <name>` as its title (above), in the body text's strong weight
   rather than a heading's size. Then one row holding:
-  - the team's name (`Name`, a 140-point box: the title already says it is the team's, as
-    `Short` names its short name),
-  - short name, its box taking three characters (the game shows a three-letter abbreviation;
+  - the team's name (`Name`, a 140-point box: the title already says it is the team's),
+  - short name (`Short name`), its box taking three characters (the game shows a three-letter abbreviation;
     every version stores it in 4 bytes, so a longer one typed would not reach the game as
     typed),
-  - colours 1-2 (RGB, each colour's picker and its hex, labelled `Col. 1` and `Col. 2`),
+  - colours 1-2 (RGB, each colour's picker and its hex, labelled `Color 1` and `Color 2`),
   - manager ID (17+) and stadium ID,
   - and a **Kit slots…** button opening the kit slot assignments in a dialog (rarely edited,
     so not a panel that pushes the tactics down; a version that stores none says so in it).
@@ -3694,7 +3693,7 @@ SE-GUI-91  GIVEN the PES 2021 save on /gd/ (722), its player 10 selected (LB; 12
 SE-GUI-92  GIVEN /gd/'s players 10, 12, 17 and 19 selected together
            WHEN the view is drawn
            THEN it is titled `4 players`, the toggle's Appearance disabled; Height reads 175
-                and Speed 82, both editable; the Name and Shirt boxes, the Registered
+                and Speed 82, both editable; the Name and Shirt name boxes, the Registered
                 position combo, the Stronger foot toggle and the LB and RB ratings are empty
                 and locked; no AATF mark and no Cards used badge are drawn; WHEN Speed is set
                 to 85 THEN all four read 85, the unsaved changes list shows four Speed rows,
@@ -3930,13 +3929,13 @@ SE-GUI-38  GIVEN the save, player 70101's name set to the colour code `\x11cff00
            WHEN he is selected
            THEN the Name label reads "Name (12/61)", its count in the theme's quiet count grey (`#5a5a5a`, a
                 disabled card label's, on the dark theme; `#9f9f9f` on the light one), and the Shirt
-                label "Shirt (20/18)", the shirt field tinted with the warning colour, its count
+                name label "Shirt name (20/18)", the shirt field tinted with the warning colour, its count
                 in the error colour, and its hover the "PES 2019
                 and older show 18 letters" sentence; WHEN a letter is deleted from the shirt
-                name THEN it reads "Shirt (19/18)", still tinted, and a letter typed after it is
+                name THEN it reads "Shirt name (19/18)", still tinted, and a letter typed after it is
                 refused; WHEN another is deleted THEN "(18/18)" is in the warning colour and the
                 field untinted, and at "(17/18)" the count is in that grey; WHEN 47 bytes are typed as his name THEN "Name (47/61)", tinted, its hover
-                the cut PES 2019 makes; GIVEN the PES 16 save THEN a player's Shirt label's
+                the cut PES 2019 makes; GIVEN the PES 16 save THEN a player's Shirt name label's
                 limit is 16 and its Name label's 46
 SE-GUI-39  GIVEN the PES 21 save with team 718's preset 1, team 722's three presets and team
                 701's Kick-off set to the formations of the draft's PES 21 sample save (the
