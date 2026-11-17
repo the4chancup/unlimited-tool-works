@@ -6,14 +6,17 @@ use std::ops::RangeInclusive;
 
 use egui::emath::Numeric;
 
+use super::text_box::text_box_border;
 use super::wheel::{number_direction, step_number, wheel_steps};
 
 /// A slider on `value` inside `range`, its rail `rail_width` long and its
 /// value box at the rail's right. The rail's fill and the handle take the
 /// selection blue: egui fills the handle with the widget state's
 /// `bg_fill`, the rail's grey, and has no field for the handle's fill
-/// alone, so it is painted over. A stored value outside `range` draws as
-/// stored; only an edit is clamped. The wheel over the rail steps the
+/// alone, so it is painted over. On the light theme the value box draws
+/// as a number box: the text edit's fill and the text box's border. A
+/// stored value outside `range` draws as stored; only an edit is
+/// clamped. The wheel over the rail steps the
 /// value by one a notch as the rail reads, wheel down one more and wheel
 /// up one less, whatever `Invert number scrolling` holds; over the value
 /// box it steps as every number box does, the switch included: the box
@@ -32,6 +35,28 @@ pub fn slider<N: Numeric>(
 ) -> egui::Response {
     let kept_width = ui.spacing().slider_width;
     ui.spacing_mut().slider_width = rail_width;
+    // On the light theme the value box reads as a number box: the text
+    // edit's fill on the live states and the text box's border at rest,
+    // set on the fields the box's `DragValue`, a button, is drawn from.
+    // `number_box`'s loop is not shared: it also fills `bg_fill`, which
+    // the rail and the handle are drawn from.
+    let widgets = (!ui.visuals().dark_mode).then(|| ui.visuals().widgets.clone());
+    if widgets.is_some() {
+        let (border, _) = text_box_border(ui.visuals());
+        let fill = ui.visuals().text_edit_bg_color();
+        let enabled = ui.is_enabled();
+        let states = &mut ui.visuals_mut().widgets;
+        for state in [
+            &mut states.inactive,
+            &mut states.hovered,
+            &mut states.active,
+        ] {
+            state.weak_bg_fill = fill;
+        }
+        if enabled {
+            states.inactive.bg_stroke = border;
+        }
+    }
     // egui's slider answers for the rail and the value box together: the
     // wheel over either is hovering it.
     let mut response = ui.add(
@@ -40,6 +65,9 @@ pub fn slider<N: Numeric>(
             .trailing_fill(true),
     );
     ui.spacing_mut().slider_width = kept_width;
+    if let Some(widgets) = widgets {
+        ui.visuals_mut().widgets = widgets;
+    }
     // The handle's rect as egui computes it (its slider geometry is
     // private, so it is recomputed here): the rail widget is the first
     // `rail_width` of the row `response` shares with the value box, its
@@ -88,4 +116,111 @@ pub fn slider<N: Numeric>(
         response.mark_changed();
     }
     response
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::widgets::test_support::{context, frame};
+
+    /// A resting `slider`'s painted frames in `ctx`: its value box's frame,
+    /// the rect shape reaching the row's right edge, and its rail, the
+    /// widest bar of the rail's thickness.
+    fn resting_frames(ctx: &egui::Context) -> (egui::epaint::RectShape, egui::epaint::RectShape) {
+        let mut value = 4u8;
+        let mut draw =
+            |ui: &mut egui::Ui| slider(ui, &mut value, 0..=10u8, 100.0, ui.scope_id().with("s"));
+        // egui styles a widget from its state on the frame before.
+        frame(ctx, Vec::new(), &mut draw);
+        let (shapes, response) = frame(ctx, Vec::new(), &mut draw);
+        let rail_height = ctx.global_style().spacing.slider_rail_height;
+        let value_box = shapes
+            .iter()
+            .find_map(|shape| match shape {
+                egui::epaint::Shape::Rect(shape) if shape.rect.max.x == response.rect.max.x => {
+                    Some(shape.clone())
+                }
+                _ => None,
+            })
+            .expect("the value box's frame");
+        let rail = shapes
+            .iter()
+            .filter_map(|shape| match shape {
+                egui::epaint::Shape::Rect(shape) if shape.rect.height() == rail_height => {
+                    Some(shape)
+                }
+                _ => None,
+            })
+            .max_by(|a, b| a.rect.width().total_cmp(&b.rect.width()))
+            .cloned()
+            .expect("the rail's bar");
+        (value_box, rail)
+    }
+
+    // On the light theme the value box draws as a number box: the text
+    // edit's fill and the text box's border, where a control's resting
+    // fill is the widgets' grey. The rail keeps the resting fill.
+    #[test]
+    fn a_light_sliders_value_box_draws_as_a_number_box() {
+        let ctx = context(egui::Theme::Light);
+        let visuals = ctx.style_of(egui::Theme::Light).visuals.clone();
+        let fill = egui::Color32::from_gray(253);
+        let border = egui::Color32::from_gray(190);
+        assert_eq!(
+            visuals.text_edit_bg_color(),
+            fill,
+            "premise: the light text edit's fill"
+        );
+        assert_eq!(
+            visuals.widgets.noninteractive.bg_stroke.color, border,
+            "premise: the light theme's quiet line"
+        );
+        assert_ne!(
+            visuals.widgets.inactive.weak_bg_fill, fill,
+            "premise: a control's resting fill is not the text edit's"
+        );
+        assert_eq!(
+            visuals.widgets.inactive.bg_fill,
+            egui::Color32::from_gray(200),
+            "premise: the light resting widgets' fill"
+        );
+        let (value_box, rail) = resting_frames(&ctx);
+        assert_eq!(value_box.fill, fill, "the resting value box's fill");
+        assert_eq!(
+            value_box.stroke,
+            egui::Stroke::new(1.0, border),
+            "the resting value box's border"
+        );
+        assert_eq!(
+            rail.fill,
+            egui::Color32::from_gray(200),
+            "the rail keeps the resting widgets' fill"
+        );
+    }
+
+    // On the dark theme the value box is the control every other is: the
+    // resting widgets' fill and edge, as an unwrapped `DragValue` draws.
+    #[test]
+    fn a_dark_sliders_value_box_is_the_controls_grey() {
+        let ctx = context(egui::Theme::Dark);
+        let visuals = ctx.style_of(egui::Theme::Dark).visuals.clone();
+        assert_eq!(
+            visuals.widgets.inactive.weak_bg_fill,
+            egui::Color32::from_gray(60),
+            "premise: the dark resting fill"
+        );
+        let (value_box, rail) = resting_frames(&ctx);
+        assert_eq!(
+            (value_box.fill, value_box.stroke),
+            (
+                visuals.widgets.inactive.weak_bg_fill,
+                visuals.widgets.inactive.bg_stroke
+            ),
+            "the resting widgets' fill and edge"
+        );
+        assert_eq!(
+            rail.fill, visuals.widgets.inactive.bg_fill,
+            "the rail's fill"
+        );
+    }
 }

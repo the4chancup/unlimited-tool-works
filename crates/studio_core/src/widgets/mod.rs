@@ -33,6 +33,8 @@ mod menu_button;
 mod modal;
 mod settings_row;
 mod slider;
+#[cfg(test)]
+mod test_support;
 mod text_box;
 mod toolbar;
 mod wheel;
