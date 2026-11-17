@@ -18469,3 +18469,28 @@ lines a bundle and helps a person reading a report as much as an agent; the TOML
 to every bundle and are best added where a test can show they are written (the maintainer,
 2026-11-17: the readme now, the Team TOMLs later for the chain test).
 Plan: `plans/core/architecture.md` "Repro bundles", the bundle's list and the paragraph after it.
+
+## 2026-11-17 — save_editor — the Stats screen's panels are framed as the Appearance screen's groups
+Decision: every panel of the Stats screen stands in a frame (a 1-point stroke, 6 points
+inside), the frames spanning the pane from 22 points after the player list to the pane's
+right margin, 8 apart, their tops on the Appearance screen's first groups' and the three
+columns ending on one line. General info takes the width Skills and Ability stats leave; a
+label stands at least 20 points from its box; General info's halves at least 18 apart;
+General info and Other stats end 12 from their frames, as Ability stats does; the playable
+positions keep List's height in every layout, Pitch's and Left's rows centred in it.
+Why: a member asked for it; framed, each panel reads as one block with its title, and the
+view lines up with the Appearance and Gameplan screens' frames, where the unframed view's
+four equal gaps lined up with nothing. The numbers are the maintainer's, from passes over
+the draft (2026-11-17): labels 9 to 12 points from their boxes read as part of the next
+field, and a positions panel whose height followed its layout moved everything under it.
+Plan: `plans/save_editor.md` "Editing UI", the player view (the Stats screen).
+
+## 2026-11-17 — core — every live box, dropdown, toggle and button draws a 1-point edge
+Decision: each live control draws a 1-point edge inside its box, 30 lighter than its fill
+(`#5a5a5a` on the widgets' grey), and a toggle's unheld side, which has no fill, 15 over
+the panel; text boxes keep their own border, frameless buttons stay frameless, disabled
+controls draw none, hover and press keep their own looks.
+Why: inside the Stats screen's new frames an empty box read as part of the frame's fill;
+the maintainer asked for the edge on every screen, and picked its strength after trying 20,
+40 and 30 (2026-11-17), 30 against 15 for the quieter unheld toggle side.
+Plan: `plans/core/gui.md`, "Other UI components", the "Control edges" row.

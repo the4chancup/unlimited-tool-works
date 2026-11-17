@@ -647,14 +647,16 @@ vertical room a tab row takes; a toggle on the title's own row takes none.
   below. The gaps are evened in ink instead: the drafts set the title 2 lower, and the app,
   whose title sat low instead, takes a 6-point margin over it and room under it (11 and 11
   measured).
-- **The player view** (the Stats screen): three columns side by side. The room the
-  fixed columns leave is split into four equal gaps: after the player list, between the
-  columns, and after Ability stats (28.9 points each at the 1280 × 780 window). The first
-  counts from the list's frame, 22 points before the pane (the list's 10-point bar strip and
-  the 12 between), and the last runs to the window's edge, past the pane's own 12-point right
-  margin. The eye reads the gap from the list's last ink and to the window's edge, and a view
-  centred in the pane alone left the gap after the list wider than the gaps between the
-  columns (37 against 27).
+- **The player view** (the Stats screen): three columns side by side, every panel in them
+  framed as the Appearance screen's groups are: a 1-point stroke in the frames' colour, the
+  corners rounded as the widgets' are, the content 6 points inside. The frames span the pane,
+  from 22 points after the player list's frame (the list's 10-point bar strip and the 12
+  between) to the pane's 12-point right margin, so their outer edges line up with the
+  Appearance and Gameplan screens' frames. The columns stand 8 points apart, and the panels
+  of one column 8 apart too. Skills and Ability stats take the width their content needs;
+  General info takes the rest. The frames' top edges stand where the Appearance screen's first
+  groups' do, so a switch between the two screens moves no frame line. The three columns end
+  on one line: each column's last frame runs down to the tallest column's bottom.
 
   The view's title line and Appearance start at General info's title. With General info's
   6-point inset below, its labels stand 35 points from the list's frame, room for Live AATF's
@@ -665,26 +667,28 @@ vertical room a tab row takes; a toggle on the title's own row takes none.
   with the width") and the player list keeps its 255 points, so the columns sit side by side
   at every size, each panel in its design's columns, with no wrap to keep.
 
-  Column by column, each panel's title over its content and the panels of one column 14
-  points apart:
-  1. **General info**, its column 350 points wide: the title at the column's left edge, the
-     fields and their labels 6 in from it, as the ability stats stand in from theirs (their
-     cells' padding), so a panel's title heads its body. Other stats stands the same way.
+  Column by column, each panel's title over its content:
+  1. **General info**, its column taking the width Skills and Ability stats leave: the
+     fields and their labels 6 in from the title, as the ability stats stand in from theirs
+     (their cells' padding), so a panel's title heads its body, and the fields ending 12
+     from the frame on the right, as the ability stats' boxes do. Other stats stands the
+     same way.
 
-     The fields are 344 points wide, the draft's width. That is room for the longest pair
-     label, "Injury resistance", beside its box on each half, and for the label-left rows,
-     339 points in the body font. They are no wider, so the three columns stay on one row
+     At the 1280 × 780 window that width is room for the longest pair label, "Injury
+     resistance", 20 points from its box on each half, with the three columns on one row
      beside the 255-point list.
 
      They are laid out as 4ccEditor's General Info:
      - Name, then Shirt, each a row with its label on the left and its field on the right.
-     - Then label-left pairs on two halves 28 points apart (the first as wide as the
-       label-left rows' label column, their 12-point gap and a box, so its boxes start at the
-       x those rows' fields start at): Height and Shirt number, Weight and Nation, Age and
+     - Then label-left pairs on two halves at least 18 points apart (the first as wide as the
+       label-left rows' label column, their 20-point gap and a box, so its boxes start at the
+       x those rows' fields start at; the second ending at the panel's right margin, the
+       halves taking the room between): Height and Shirt number, Weight and Nation, Age and
        Captain. Each box is 54 points wide: on the first half at the half's right edge, on the
        second just after a label column as wide as that half's longest label ("Shirt
-       number"), so a short label (Nation, Form) keeps its box close. Captain's radio is
-       centred in its box's width, under the Nation box above it.
+       number"), the two at the half's right edge, so a short label (Nation, Form) keeps its
+       box close. Captain's radio is centred in its box's width, under the Nation box above
+       it.
      - Then Stronger foot and Stronger hand (20+), each a two-choice toggle, Left | Right, its
        chosen side filled in the quiet grey of the positions' C (`#5a5a5a`), not the
        selection's blue: a foot or a hand is rarely what a member looks for, and the accent
@@ -698,7 +702,7 @@ vertical room a tab row takes; a toggle on the title's own row takes none.
 
      Name, Shirt and these four rows share one label column, as wide as their longest label
      ("Registered position"), so every one of those fields starts at one x, and each ends
-     flush with the second half's boxes, not on the panel's right edge. Within a block (Name
+     flush with the second half's boxes, at the panel's right margin. Within a block (Name
      and Shirt; the pairs; Stronger foot to Playing style) rows stand 22 apart, the form
      grids' pitch (`core/gui.md` "Other UI components", Form grids), the toggles 18 tall like
      every control. The blocks stand 6 apart, 2 more than their rows, as the draft's `.gen`,
@@ -725,7 +729,9 @@ vertical room a tab row takes; a toggle on the title's own row takes none.
      The choice is a view setting (`positions_layout`, as `scroll_names` is), Pitch by
      default. It is set once and forgotten, so the held choice is filled in the quiet grey
      of the Stronger foot toggle's, not the selection's blue. Every layout shows whole at the
-     default window.
+     default window. The grid keeps List's height in every layout (thirteen 17-point rows,
+     each with 1 point above and below it, 1 apart), so a switch never moves the panel's
+     bottom; Pitch's and Left's rows stand centred in that height.
 
      The registered position is outlined, its corners rounded as the widgets' are (every
      frame and field in the view is rounded; the theme's own radius, not a second one). The
@@ -750,9 +756,8 @@ vertical room a tab row takes; a toggle on the title's own row takes none.
      version-gated card's label is, dimmed with its disabled `-` and with the same `PES NN+`
      tooltip, so the row reads as a stat this game does not have rather than as one left to
      fill.
-     A label and its field are never closer than 9 points on a pair and 12 in the label-left
-     rows and Ability stats; the room this takes comes off the margins either side of the
-     centred view.
+     A label and its field are never closer than 20 points, on the pairs, in the label-left
+     rows and in Ability stats.
   2. **Skills**, the Cards used badge in its header, the version's skills (up to 41,
      version-gated) but the active ruleset's tricks or free cards, as checkboxes in two columns
      filled column by column.

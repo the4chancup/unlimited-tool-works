@@ -21,9 +21,9 @@ excepted, below), 0.0.2-pes19
 1. Report a problem: the bundle's `README.txt` (0.0.2-report, the drill's result), then
    card ST-REP-05 for the maintainer; the blind drill ran 2026-11-17 and found its planted
    bug from the bundle alone.
-2. The framed Stats screen (branch `eval/stats-boxes`, a member's request: every panel of the
-   Stats screen framed as the Appearance screen's groups), polished and included (the
-   maintainer, 2026-11-17).
+2. The framed Stats screen and the control edges (0.0.2-frames): the draft settled
+   2026-11-17 (`eval/stats-boxes`, a member's request, the maintainer's polish), the plan
+   and DECISIONS written; next its two slices.
 3. The cut, only once the maintainer has run the checks of
    `maintainer/tasks.html` (the maintainer, 2026-11-17): a pipeline without mutants on the
    last merge (0.0.2-determ's second clean run), the changelog, the release build, and a
@@ -1695,6 +1695,14 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     - [x] no row pops in during a fast scroll (2026-11-16, SWE-2, merge `8db25bd4`):
       `a_fast_scroll_keeps_the_box_covered`, red with the drawn range one row short at
       either edge and with the wheel off the list
+  - [ ] 0.0.2-frames (a member's request; DECISIONS 2026-11-17 "the Stats screen's panels are
+    framed" and "every live box, dropdown, toggle and button draws a 1-point edge") -> verify:
+    the built window beside the draft on the Stats, Appearance and Gameplan screens; a tasks
+    card; review rounds (a SWE-2 loop and one paid round)
+    - [ ] the control edges (`plans/core/gui.md` "Other UI components", "Control edges"):
+      `studio_core`'s theme and widgets, and any tool's own painted toggles (SWE-2)
+    - [ ] the Stats screen's frames (`plans/save_editor.md` "Editing UI", the player view):
+      `save_editor` (SWE-2), after the edges merge if the two meet in one file
   - [x] 0.0.2-taskbuild 2026-11-17: the tasks page names the build its cards run on -> verify: the next
     release build (the Report a problem look's) copied to `4cc-studio-temp/tasks_build/`,
     the page's intro naming that path and the commit it was built from; refreshed whenever
