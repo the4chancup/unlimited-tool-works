@@ -1860,7 +1860,8 @@ ST-REP-02   GIVEN ST-REP-01's dialog with words typed
             THEN the zip at the path holds `journal.toml` with the three steps, the input
                  under `inputs/`, the output under `outputs/`, the stub's `repro_state`
                  under `state/`, `utw.log`,
-                 `settings.toml`, `installs.txt` and `words.txt` with the words, the home
+                 `settings.toml`, `installs.txt`, `README.txt` (what each part holds, then the
+                 stub's `repro_readme`) and `words.txt` with the words, the home
                  folder written `~`; the dialog says where it was saved and offers only
                  Close; WHEN it is closed and opened again THEN the words are still there
 ST-REP-03   GIVEN the dialog open
@@ -1870,7 +1871,8 @@ ST-REP-03   GIVEN the dialog open
 ST-REP-04   GIVEN the real Save editor with a save opened and one player's field edited
             WHEN its `repro_state` is taken
             THEN it is one file named as the save, which opens as a save holding the edited
-                 field; GIVEN no save open THEN it is empty
+                 field; GIVEN no save open THEN it is empty; AND its `repro_readme` names
+                 `save-editor diff` and `export-toml` in command lines the CLI accepts
 ST-REP-05   manual  GIVEN the release build on Windows, a save opened, edited and saved
             WHEN "Report a problem", then Save…, is clicked
             THEN the system's save dialog offers `utw-report-<date>-<hhmm>.zip` in local
