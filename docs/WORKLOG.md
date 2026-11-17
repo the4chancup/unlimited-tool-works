@@ -64,7 +64,8 @@ mutation run
    profile left open (the plan's "A pitch player dropped on another"; the third check, read
    blind, gave the predicted 78, 79, 77, 88). The fixture `overall_points.tsv` gained a
    physical contact column and the checks' 12 rows; none of its 351 earlier rows changes.
-   Gates: pes_savefile, team_widgets, save_editor, clippy, fmt. Left: its pipeline.
+   Gates: pes_savefile, team_widgets, save_editor, clippy, fmt; the pipeline passed on
+   `5f4286f9`.
 4. The cut, only once the maintainer has run the checks of
    `maintainer/tasks.html` (the maintainer, 2026-11-17): a pipeline without mutants on the
    last merge (0.0.2-determ's second clean run), the changelog, the release build. The Linux
