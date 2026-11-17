@@ -157,7 +157,7 @@ fn every_ranges_top_fits_the_fields_bit_width() {
     }
 }
 
-// The Other stats' labels are fixed strings, not looked up per version:
+// The Main stats' labels are fixed strings, not looked up per version:
 // they are PES 2017's names, the one version whose names are read off
 // its game. A version found to name them otherwise needs them looked up
 // through `stat_name` like the ability column.
@@ -172,7 +172,7 @@ fn the_small_stats_labels_are_the_games_names() {
         let small = SMALL_STATS
             .iter()
             .find(|small| small.field == field)
-            .expect("an Other stats field");
+            .expect("a Main stats field");
         assert_eq!(small.label, stat_name(PesVersion::Pes17, stat), "{field:?}");
     }
 }

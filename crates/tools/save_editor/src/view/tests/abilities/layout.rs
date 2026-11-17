@@ -82,7 +82,7 @@ fn every_panel_title_stands_six_above_its_first_drawn_row() {
     let col2 = titles[1].x0;
     let col3 = titles[2].x0;
     let right = |title: &str| match title {
-        "General info" | "Other stats" | "Playable positions" => col2,
+        "General info" | "Main stats" | "Playable positions" => col2,
         "Skills" | "Tricks" | "COM playing styles" => col3,
         _ => f64::MAX,
     };
@@ -103,8 +103,8 @@ fn every_panel_title_stands_six_above_its_first_drawn_row() {
             6.0,
         ),
         (
-            "Other stats",
-            first_rect_under(&nodes, &shapes, "Other stats", right("Other stats"), false),
+            "Main stats",
+            first_rect_under(&nodes, &shapes, "Main stats", right("Main stats"), false),
             6.0,
         ),
         (
@@ -165,8 +165,8 @@ fn every_panel_title_stands_six_above_its_first_drawn_row() {
 // columns' first frames `GROUP_GAP` under the title's row (its
 // `.pcols > *` `margin-top`) and every heading's text 7 inside its
 // frame, so every heading's text top stands ~18.5 under the line;
-// under a heading the first field rows' labels 22.5 and Height's 70.5
-// (the `.col` gap, the `.gen` margin and the rows' pitch), the first
+// under a heading the first field rows' labels 22.5 and the pair row's
+// 70.5 (the `.col` gap, the `.gen` margin and the rows' pitch), the first
 // checkbox's box 19.5 (the `.skcols` `margin-top`); the layout toggle
 // 22.5 (`#pos-layout`'s own margin); and COM playing styles' heading
 // where the draft's stands under Tricks'.
@@ -184,8 +184,8 @@ fn the_stats_screens_sections_stand_at_the_drafts_offsets() {
     }
     for (what, offset, draft) in [
         (
-            "Height under General info's heading",
-            label_bounds(&nodes, "Height").y0 - heading("General info"),
+            "Shirt number under General info's heading",
+            label_bounds(&nodes, "Shirt number").y0 - heading("General info"),
             70.5,
         ),
         (
@@ -1025,8 +1025,8 @@ fn the_stats_screens_fields_stand_24_apart_and_its_checkboxes_22() {
         "Shirt name (",
         Role::TextInput,
     ));
-    let height = first_right_of("Height", Role::SpinButton);
-    let age = first_right_of("Age", Role::SpinButton);
+    let number = first_right_of("Shirt number", Role::SpinButton);
+    let weak = first_right_of("Weak Foot: Usage", Role::SpinButton);
     let foot = first_right_of("Stronger foot", Role::Button);
     let hand = first_right_of("Stronger hand", Role::Button);
     let registered = first_right_of("Registered position", Role::ComboBox);
@@ -1050,8 +1050,18 @@ fn the_stats_screens_fields_stand_24_apart_and_its_checkboxes_22() {
         .fold(f64::INFINITY, f64::min);
     for (upper, lower, expected, what) in [
         (name, shirt, 24.0, "the Shirt box under the Name box"),
-        (shirt, height, 24.0, "the Height box under the Shirt box"),
-        (age, foot, 24.0, "the Stronger foot row under the Age box"),
+        (
+            shirt,
+            number,
+            24.0,
+            "the Shirt number box under the Shirt box",
+        ),
+        (
+            weak,
+            foot,
+            24.0,
+            "the Stronger foot row under the Weak Foot: Usage box",
+        ),
         (
             hand,
             registered,
