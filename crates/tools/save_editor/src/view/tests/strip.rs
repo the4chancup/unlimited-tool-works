@@ -1525,7 +1525,7 @@ fn the_player_header_tops_the_player_view_alone() {
 // A field's label in the General info panels and in Ability stats is
 // drawn in the normal text colour, as the checkboxes' labels are: every
 // field label the panels name — the pairs', the combos', the counted
-// labels', Ability stats' — and the team view's Team and Short name paint the
+// labels', Ability stats' — and the team view's Name and Short name paint the
 // normal colour, not the weak one, which read too dark beside them.
 #[test]
 fn the_field_labels_paint_the_normal_text_colour() {
@@ -1746,6 +1746,61 @@ fn a_toggles_sides_edge_by_their_fills_and_a_disabled_one_draws_none() {
             strokes_over(&shapes, side.bounds().expect("bounds")).is_empty(),
             "a disabled side draws no edge"
         );
+    }
+}
+
+// A disabled toggle's words dim as every disabled control's do: on a
+// version with no stronger hand both sides take the scope's `disabled_text`
+// faded, and on one that stores it the unheld side reads the normal text
+// grey and the held one the strong.
+#[test]
+fn the_disabled_hands_words_take_the_disabled_grey() {
+    for (version, test, dimmed) in [
+        (PesVersion::Pes17, "hand_words_17", true),
+        (PesVersion::Pes21, "hand_words_21", false),
+    ] {
+        let path = fixture(version, test);
+        let mut view = SaveView::new();
+        view.open(&path);
+        let Some(Selection::Player(team_id, slot)) = view.selected else {
+            panic!("a player row is selected")
+        };
+        let player_id = team_entry(&view, team_id).roster[usize::from(slot)].player_id;
+        let held = player_entry(&view, player_id).positions.stronger_hand;
+        let mut window = Headless::new();
+        let visuals = window.ctx.style_of(window.ctx.theme()).visuals.clone();
+        // What a disabled scope's words paint: its `disabled_text` faded.
+        let dim = studio_core::theme::palette(&visuals)
+            .disabled_text
+            .gamma_multiply(visuals.disabled_alpha());
+        let (normal, strong) = (visuals.text_color(), visuals.strong_text_color());
+        for _ in 0..3 {
+            window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+        }
+        let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+        let sides = right_of_label(&nodes, "Stronger hand", Role::Button);
+        assert_eq!(sides.len(), 2, "{version:?}: the hand is two choices");
+        if dimmed {
+            assert!(
+                sides.iter().all(|side| side.is_disabled()),
+                "{version:?}: premise: the hand's sides are disabled"
+            );
+        }
+        // Left is drawn first (stored 1), Right second (stored 0).
+        for (node, stored, label) in [(sides[0], 1u8, "Left"), (sides[1], 0, "Right")] {
+            let expected = if dimmed {
+                dim
+            } else if held == Some(stored) {
+                strong
+            } else {
+                normal
+            };
+            assert_eq!(
+                painted_text_color(&shapes, label, node.bounds().expect("bounds")),
+                expected,
+                "{version:?}: {label}'s colour"
+            );
+        }
     }
 }
 

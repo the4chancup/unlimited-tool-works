@@ -150,11 +150,15 @@ fn color_button(ui: &mut Ui, rgb: [u8; 3], open: bool) -> Response {
         )
     });
     if ui.is_rect_visible(rect) {
-        // The resting widgets' stroke is none (the buttons share it), which leaves a
-        // colour as dark as the panel with no box at all.
+        // The field is drawn as a text box, so it keeps the text box's
+        // border, not a control's edge: the quiet line lets a colour as
+        // dark as the panel still read as a field. Disabled it draws
+        // none, as a disabled control does.
         let (border, corner_radius) = text_box_border(ui.visuals());
         let mut widgets = ui.visuals().widgets.clone();
-        widgets.inactive.bg_stroke = border;
+        if ui.is_enabled() {
+            widgets.inactive.bg_stroke = border;
+        }
         let visuals = if open {
             widgets.open
         } else {
