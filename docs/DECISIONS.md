@@ -18731,3 +18731,16 @@ Why: the maintainer asked for the controls a little lighter. One step for all th
 as far apart, and at 1.35 on the 240 panel a resting control still stands off it, with its
 edge drawn round it.
 Plan: `plans/core/gui.md`, "Dark/light theme" row.
+
+## 2026-11-17 — studio_core, save_editor — light controls `#e1e1e1`, a held side `#c2c2c2`; the Save editor's view 10 from the sidebar and 14 from the edge
+Decision (the maintainer, at the tasks check): on the light theme, the controls' resting fill
+is `#e1e1e1` (225), hovered 211 and pressed 232, the same 31 over the matched contrast for
+all three, the resting edge 195; a held toggle side and a chosen C rating are `#c2c2c2`, not
+the `#999999` that matches the dark grey's contrast. The Save editor's view stands 10 after
+the sidebar, its menu bar with it, and its screens end 14 before the window's edge, the
+detail pane keeping its width.
+Why: the maintainer found the light controls and held sides still too strong at 208 and
+`#999999`. The margins are the maintainer's: a 10-point gap after the sidebar and 14 at the
+right, where 8 and 16 had stood.
+Plan: `plans/core/gui.md`, the "Dark/light theme" row (the margins live in the draft's
+stylesheet, `save_editor.js`'s `.center.filled` rules, which no plan text restates).

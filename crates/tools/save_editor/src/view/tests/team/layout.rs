@@ -476,7 +476,7 @@ fn the_team_views_line_ends_16_from_the_windows_edge() {
     let (_, _, _, _, line_right) = title_line("team_pane_right");
     assert!(
         (line_right - f64::from(PANE_RIGHT)).abs() <= 1.0,
-        "the line ends at {PANE_RIGHT}, 16 before the edge ({line_right})"
+        "the line ends at {PANE_RIGHT}, 14 before the edge ({line_right})"
     );
 }
 

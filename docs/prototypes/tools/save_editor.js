@@ -169,7 +169,7 @@ input[type=range]:focus { outline: none; }
 /* save editor view */
 .toolbar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 4px; }
 /* The list and the detail pane 4 apart: the list's scroll bar stands 4 after its frame
-   (the .rows-box gap), so the bar has 4 on each side. The pane's right padding is 16 (the
+   (the .rows-box gap), so the bar has 4 on each side. The pane's right padding is 14 (the
    .detail rule); a 22-point gap after the list against 8 on the right made the left look
    much wider. */
 .master { display: flex; gap: 4px; align-items: flex-start; }
@@ -189,10 +189,10 @@ input[type=range]:focus { outline: none; }
 .vbar { flex: none; width: 6px; position: relative; }
 .vbar .thumb { position: absolute; left: 0; right: 0; border-radius: 2px; background: var(--widget); }
 .vbar .thumb:hover, .vbar .thumb.drag { background: var(--hover); }
-/* The detail pane's bar floats in the pane's 16-point right margin, 4 after the screens'
-   frames as the list's stands 4 after the list's, and 6 before the window's edge. */
+/* The detail pane's bar floats in the pane's 14-point right margin, 4 after the screens'
+   frames as the list's stands 4 after the list's, and 4 before the window's edge. */
 .center.filled .master { position: relative; }
-.master > .vbar.pane-bar { position: absolute; top: 0; bottom: 0; right: -2px; }
+.master > .vbar.pane-bar { position: absolute; top: 0; bottom: 0; right: -4px; }
 /* A name too long for the row truncates, its dot and mark kept after it. */
 .plist .pname { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 /* A player row's text in the resting widgets' grey, as the app paints a plain name; a team
@@ -757,15 +757,16 @@ table.grid.stats-grid td { padding: 3px 6px; }
 /* The detail pane scrolls on its own, its bar in the window's scroll-bar
    strip (the host's .win rule), kept while nothing scrolls: the pane
    reaches over the view's right margin to the window's edge and takes it
-   back as padding, 8 more than the margin, so its content ends 16 before the
-   edge while the list's gap before it is 4 (.master). The browser's bar is
+   back as padding, 6 more than the margin, so its content ends 14 before the
+   edge while the list's gap before it is 4 (.master). The view stands 10 after the
+   sidebar, 2 more than the host's margin, the toolbar's band reaching back over it. The browser's bar is
    hidden: the pane draws the list's bar (vScrollBar) in that margin, floating
    as egui's does and taking no width, so the view asks for the window without
    the strip (own-bars). The pane holds the scroll; the view itself keeps no
    strip of its own. */
-.center.filled { scrollbar-gutter: auto; padding-right: calc(8px + var(--sbw, 0px)); }
+.center.filled { scrollbar-gutter: auto; padding-left: 10px; padding-right: calc(8px + var(--sbw, 0px)); }
 .center.filled .detail { overflow: auto; min-height: 0; scrollbar-width: none;
-  margin-right: calc(-8px - var(--sbw, 0px)); padding-right: 16px; }
+  margin-right: calc(-8px - var(--sbw, 0px)); padding-right: 14px; }
 .center.filled .detail::-webkit-scrollbar { display: none; }
 .live-panel { flex: none; margin-top: 6px; }
 .live-divider { height: 4px; cursor: ns-resize; }
@@ -3914,7 +3915,7 @@ function editMenu() {
 function renderToolbar() {
   const tsep = () => h("span", { class: "tsep" });
   return h("div", { class: "toolbar top", "data-panel": "toolbar",
-    style: "margin: -8px calc(-8px - var(--sbw, 0px)) 4px -8px" },
+    style: "margin: -8px calc(-8px - var(--sbw, 0px)) 4px -10px; padding-left: 10px" },
     // With no save open the save's three menus are greyed and never open, as
     // the editor draws them: nothing in them acts without a save.
     fileMenu(), editMenu(), ...(S.save ? [playerMenu(), teamMenu(), databaseMenu()]

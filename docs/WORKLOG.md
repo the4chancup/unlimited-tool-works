@@ -13,7 +13,11 @@ is in `AGENTS.md` ("Working documents").
 (VGL)"), aimed at within the day, a target the work chosen for it is not rushed to meet
 (DECISIONS 2026-11-16 "0.0.2 is cut without Select all similar,
 the Carbon rounds and the PES 2019 check"; 2026-11-16 "The no-stretch slices move to after
-0.0.2"). After 0.0.2: Astra's round over 0.0.2-geninfo (`73641390..be99921c`, on Codex
+0.0.2"). After 0.0.2: the Nation list (the maintainer, 2026-11-17): it opens already
+scrolled to the held nation, where it mostly scrolls down to it from the top; typing a
+nation's name picks it as an ID does (members rarely know the IDs); Escape puts the old
+nation back. The draft's greyed number boxes read `-` as the build's do (the maintainer
+kept the build's, `look-gated-labels`). Astra's round over 0.0.2-geninfo (`73641390..be99921c`, on Codex
 `brother` once its week resets, Wed 2026-11-18 10:11), 0.0.2-similar, every Carbon round a 0.0.2 step still owes (Report a problem's
 excepted, below), 0.0.2-pes19
 (and with it the readme's PES 2019 claim), 0.0.2-nostretch's slices, the drafts in two
@@ -42,10 +46,13 @@ mutation run
    round 2 none), the pipeline on `d2eadc87` passed; Astra's round moves to after 0.0.2,
    which is cut today (the maintainer, 2026-11-17). 0.0.2-frames, -paneshift, -keepsel,
    -posheight and -lookfix are merged and reviewed.
-2. The lead's look on the release build of `be99921c`, beside the drafts: done; the card
-   `look-stats-screen` on the tasks page (with `look-gated-labels`, `-category-teams`,
-   `-x-hover`, `-interchange-text` and `-light-names`), the build in
-   `4cc-studio-temp/tasks_build/`.
+2. The maintainer's look 2026-11-17 at the `aec5a709` build: `look-stats-screen`,
+   `look-gated-labels`, `-category-teams`, `-x-hover`, `-interchange-text` and `-light-names`
+   fine. From the Stats screen's notes, two changes before the cut: the light theme's controls
+   at `#e1e1e1` (hovered and pressed the same 31 over the matched contrast) and a held toggle
+   side or chosen C rating at `#c2c2c2`; the Save editor's view 10 after the sidebar (the menu
+   bar with it) and its screens ending 14 before the window's edge, everything else in place.
+   Then the lead's look beside the draft, and a card.
 3. The cut, only once the maintainer has run the checks of
    `maintainer/tasks.html` (the maintainer, 2026-11-17): a pipeline without mutants on the
    last merge (0.0.2-determ's second clean run), the changelog, the release build. The Linux
@@ -1713,7 +1720,7 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       it is, `name_background` gone; the darkening's changelog line removed (never released)
     - [x] the built window (lead, 2026-11-17, the release build of `17bda172`): on the light theme every code drawn
       as stored, so a white or pale part nearly vanishes on the white list; card
-      `look-light-names`
+      `look-light-names`; the maintainer's look 2026-11-17: fine as stored
   - [x] 0.0.2-present 2026-11-17 (SWE-2, merge `0cbe7637`; the lead's rerun of `studio_core`, 535)
     the window presents through a
     DirectComposition swap chain, so a resize no longer stretches the last frame and the UI
@@ -1730,7 +1737,7 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     - [x] landed 2026-11-17 (merge `29991c8b`): `frame_when_inactive(false)`;
       `a_rows_x_lights_on_hover`; the changelog's × line says it lights up
     - [x] the built window (lead, 2026-11-17, the release build of `17bda172`): framed under the pointer as the
-      draft's; card `look-x-hover`
+      draft's; card `look-x-hover`; the maintainer's look 2026-11-17: fine
   - [x] 0.0.2-allcat under 4cc, VGL or Invitational the team selector's All teams entry reads
     `4cc teams`, `VGL teams`, `Invitational teams`, open and closed (the maintainer, 2026-11-17;
     `plans/save_editor.md` the team selector's category paragraph, SE-GUI-83; DECISIONS
@@ -1740,7 +1747,7 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     - [x] landed 2026-11-17 (SWE-2, merge `df9833a8`, with 0.0.2-ixtext; the lead's rerun:
       save_editor 1048): `format!("{} teams", shown.label())`; help page 02 says so
     - [x] the built window under VGL (lead, 2026-11-17, the release build of `17bda172`): `VGL teams` open and
-      closed, as the draft's; card `look-category-teams`
+      closed, as the draft's; card `look-category-teams`; the maintainer's look 2026-11-17: fine
   - [x] 0.0.2-ixtext the Team file interchange window's sentences and labels in the normal
     text colour, the Skills labels', not the weak grey (the maintainer, 2026-11-17;
     `plans/save_editor.md` "Interchange formats in the UI"; DECISIONS 2026-11-17; draft
@@ -1751,7 +1758,7 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       changelog under the new Other stuff heading
     - [x] the built window beside the draft (lead, 2026-11-17, the release build of `17bda172`): the text colours
       match; the import row is the draft's fake file list against the build's file
-      dialog, by design; card `look-interchange-text`
+      dialog, by design; card `look-interchange-text`; the maintainer's look 2026-11-17: fine
   - [ ] 0.0.2-gatelbl (P53, accepted for 0.0.2 by the maintainer, 2026-11-17) every
     version-gated control's label dimmed with it and carrying its `PES NN+` tooltip, as the
     Ability stats' are (`plans/save_editor.md` the Stats screen's paragraph on field labels;
@@ -1770,7 +1777,8 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     - [x] the built window beside the draft (lead, 2026-11-17, the release build of `17bda172`): PES 2017's
       Stats and Appearance and PES 2016's team row dimmed as the draft's (the drafts
       hold no PES 2016 save); the build's gated boxes read `-`, the draft's `0`, a
-      difference older than this step, asked on the card `look-gated-labels`
+      difference older than this step, asked on the card `look-gated-labels`; the
+      maintainer's look 2026-11-17: fine, the build's `-` kept
   - [x] 0.0.2-undosel 2026-11-15 (SWE-2, merge `e0ebd784`): Undo, Redo and a `Player order`
     row's X keep the moved player selected (`view/mod.rs` `following_selection`,
     `Session::record_of`). Look checked, card `look-undo-selection`; the maintainer's look 2026-11-17: fine

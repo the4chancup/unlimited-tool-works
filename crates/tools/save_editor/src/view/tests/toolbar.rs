@@ -99,7 +99,7 @@ fn the_toolbar_reads_its_groups_in_order_with_a_separator_between_each() {
 }
 
 /// The row stands `BAND_MARGIN` inside its band (the draft's `.top`
-/// padding): the File menu button 8 in from the left edge and 3 under the
+/// padding): the File menu button 10 in from the left edge and 3 under the
 /// band's top, the band's bottom line's top edge 3 under the button.
 #[test]
 fn the_toolbars_row_stands_inside_the_bands_margin() {
@@ -111,7 +111,7 @@ fn the_toolbars_row_stands_inside_the_bands_margin() {
     let file = menu_button(&nodes, "File")
         .bounds()
         .expect("the File menu button's bounds");
-    assert_eq!(file.x0, 8.0, "the File menu 8 in from the left edge");
+    assert_eq!(file.x0, 10.0, "the File menu 10 in from the left edge");
     assert_eq!(file.y0, 3.0, "and 3 under the top");
     let stroke = window
         .ctx

@@ -2130,50 +2130,50 @@ fn the_tactics_bars_items_stand_where_the_drafts_do() {
 
     let rail = 1280.0 - f64::from(DEFAULT_PANE.x);
     let items: [(&str, accesskit::Rect, f64, Option<f64>); 11] = [
-        ("1", button_bounds(&nodes, "1"), 360.48, Some(17.13)),
-        ("2", button_bounds(&nodes, "2"), 379.61, Some(17.13)),
-        ("3", button_bounds(&nodes, "3"), 398.73, Some(17.13)),
+        ("1", button_bounds(&nodes, "1"), 362.48, Some(17.13)),
+        ("2", button_bounds(&nodes, "2"), 381.61, Some(17.13)),
+        ("3", button_bounds(&nodes, "3"), 400.73, Some(17.13)),
         (
             "Fluid formation",
             check_bounds(&nodes, "Fluid formation"),
-            423.86,
+            425.86,
             None,
         ),
         (
             "Kick-off",
             button_bounds(&nodes, "Kick-off"),
-            753.0,
+            755.0,
             Some(52.92),
         ),
         (
             "In-possession",
             button_bounds(&nodes, "In-possession"),
-            807.92,
+            809.92,
             Some(88.5),
         ),
         (
             "Out-of-possession",
             button_bounds(&nodes, "Out-of-possession"),
-            898.42,
+            900.42,
             Some(113.77),
         ),
         (
             "the formations' Copy/swap",
             copy_swap_bounds(&nodes)[1],
-            1020.19,
+            1022.19,
             None,
         ),
-        ("Scroll", check_bounds(&nodes, "Scroll"), 1113.55, None),
+        ("Scroll", check_bounds(&nodes, "Scroll"), 1115.55, None),
         (
             "Portraits",
             check_bounds(&nodes, "Portraits"),
-            1171.31,
+            1173.31,
             None,
         ),
         (
             "Player assignments",
             label_bounds(&nodes, "Player assignments"),
-            1090.0,
+            1092.0,
             None,
         ),
     ];

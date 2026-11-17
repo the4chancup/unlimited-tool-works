@@ -1539,14 +1539,14 @@ const DEFAULT_PANE: egui::Vec2 = egui::vec2(1224.0, 756.0);
 const PANEL_MARGIN: f32 = 8.0;
 
 /// The screens' frames' right edge at `DEFAULT_PANE`: the draft's
-/// `.detail` content ends 16 before the window's right edge (1264 of
+/// `.detail` content ends 14 before the window's right edge (1266 of
 /// the 1280-point client).
-const PANE_RIGHT: f32 = DEFAULT_PANE.x - 16.0;
+const PANE_RIGHT: f32 = DEFAULT_PANE.x - 14.0;
 
 /// The detail pane's scroll bar's right edge at `DEFAULT_PANE`: the pane
-/// reaches 2 points into the shell's right margin for it (the draft's
-/// `.pane-bar`), so the 6-point bar ends 6 before the window's edge.
-const PANE_BAR_RIGHT: f32 = DEFAULT_PANE.x - 6.0;
+/// reaches 4 points into the shell's right margin for it (the draft's
+/// `.pane-bar`), so the 6-point bar ends 4 before the window's edge.
+const PANE_BAR_RIGHT: f32 = DEFAULT_PANE.x - 4.0;
 
 /// The bounds of the Label node showing `value` (a grid's label cell).
 fn label_bounds(nodes: &[accesskit::Node], value: &str) -> accesskit::Rect {

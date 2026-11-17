@@ -55,10 +55,11 @@ pub struct Palette {
     pub team_row_fill: egui::Color32,
     /// The positions grid's chosen C rating's fill, and a held side toggle's
     /// (the draft's `.sel.on.rc` `#5a5a5a`): the quiet grey a chosen rating or
-    /// side gets where the accent would pull the eye. Its light value has the
-    /// same contrast with the panel, 2.5, as the dark grey has with the dark
-    /// one, and the light theme's dark text reads on it at 2.8 (on the dark
-    /// grey itself, at 1.2).
+    /// side gets where the accent would pull the eye. Its light value,
+    /// `#c2c2c2`, stands off the light panel at 1.56, not at the dark grey's
+    /// 2.5: at the grey that matched it (`#999999`) a held side read stronger
+    /// than the light theme's controls around it. The light theme's text
+    /// reads on it at 6.2.
     pub rating_c_fill: egui::Color32,
     /// The positions grid's chosen A rating's fill (the draft's `.sel.on.ra`
     /// `#129648`): a green deep enough to carry a white letter, where the
@@ -210,7 +211,7 @@ impl Palette {
         // light theme keeps egui's fade.
         disabled_text: egui::Color32::from_gray(60),
         team_row_fill: egui::Color32::from_rgba_unmultiplied_const(127, 127, 127, 48),
-        rating_c_fill: egui::Color32::from_gray(0x99),
+        rating_c_fill: egui::Color32::from_gray(0xc2),
         rating_a_fill: egui::Color32::from_rgb(0x12, 0x96, 0x48),
         rating_a_text: egui::Color32::WHITE,
         swatch_edge: egui::Color32::BLACK,
@@ -578,10 +579,10 @@ fn widgets_dark() -> egui::style::Widgets {
 /// dark 60 reads at 1.56 on 27, and left a resting checkbox, radio button or
 /// number box all but invisible. The resting, hovered and pressed fills are
 /// each a step lighter than the grey of the dark contrast (194, 180 and 201),
-/// all three by the same 14 so the states stay as far apart: at the matched
+/// all three by the same 31 so the states stay as far apart: at the matched
 /// contrast the grey boxes read too dark beside the white text boxes.
 /// The resting stroke, none in egui, is the light theme's own rule for a
-/// control's edge: its fill 30 darker (178 on the resting 208), the dark
+/// control's edge: its fill 30 darker (195 on the resting 225), the dark
 /// theme's edge lightened instead.
 #[cfg(not(target_arch = "wasm32"))]
 fn widgets_light() -> egui::style::Widgets {
@@ -595,24 +596,24 @@ fn widgets_light() -> egui::style::Widgets {
             expansion: 0.0,
         },
         inactive: egui::style::WidgetVisuals {
-            weak_bg_fill: egui::Color32::from_gray(208),
-            bg_fill: egui::Color32::from_gray(208),
-            bg_stroke: egui::Stroke::new(1.0, egui::Color32::from_gray(178)),
+            weak_bg_fill: egui::Color32::from_gray(225),
+            bg_fill: egui::Color32::from_gray(225),
+            bg_stroke: egui::Stroke::new(1.0, egui::Color32::from_gray(195)),
             fg_stroke: egui::Stroke::new(1.0, egui::Color32::from_gray(60)),
             corner_radius: egui::CornerRadius::same(CORNER_RADIUS),
             expansion: 0.0,
         },
         hovered: egui::style::WidgetVisuals {
-            weak_bg_fill: egui::Color32::from_gray(194),
-            bg_fill: egui::Color32::from_gray(194),
+            weak_bg_fill: egui::Color32::from_gray(211),
+            bg_fill: egui::Color32::from_gray(211),
             bg_stroke: egui::Stroke::new(1.0, egui::Color32::from_gray(105)),
             fg_stroke: egui::Stroke::new(1.5, egui::Color32::BLACK),
             corner_radius: egui::CornerRadius::same(CORNER_RADIUS),
             expansion: 0.0,
         },
         active: egui::style::WidgetVisuals {
-            weak_bg_fill: egui::Color32::from_gray(215),
-            bg_fill: egui::Color32::from_gray(215),
+            weak_bg_fill: egui::Color32::from_gray(232),
+            bg_fill: egui::Color32::from_gray(232),
             bg_stroke: egui::Stroke::new(1.0, egui::Color32::BLACK),
             fg_stroke: egui::Stroke::new(2.0, egui::Color32::BLACK),
             corner_radius: egui::CornerRadius::same(CORNER_RADIUS),
@@ -896,7 +897,7 @@ mod tests {
         let ctx = egui::Context::default();
         install(&ctx);
         for (theme, inactive_fill, inactive_text) in
-            [(egui::Theme::Dark, 60, 180), (egui::Theme::Light, 208, 60)]
+            [(egui::Theme::Dark, 60, 180), (egui::Theme::Light, 225, 60)]
         {
             let style = ctx.style_of(theme);
             assert_eq!(style.spacing.button_padding, egui::vec2(4.0, 1.0));
@@ -973,17 +974,17 @@ mod tests {
         let widgets = &light.widgets;
         assert_eq!(
             widgets.inactive.bg_fill,
-            egui::Color32::from_gray(208),
+            egui::Color32::from_gray(225),
             "premise: the light resting fill"
         );
         assert_eq!(
             widgets.inactive.bg_stroke,
-            egui::Stroke::new(1.0, egui::Color32::from_gray(178)),
+            egui::Stroke::new(1.0, egui::Color32::from_gray(195)),
             "premise: the light resting stroke"
         );
         for (fill, expected) in [
             (widgets.inactive.bg_fill, widgets.inactive.bg_stroke.color),
-            (widgets.inactive.bg_fill, egui::Color32::from_gray(178)),
+            (widgets.inactive.bg_fill, egui::Color32::from_gray(195)),
         ] {
             assert_eq!(edge_color(&light, fill), expected, "light {fill:?}'s edge");
         }
@@ -1149,7 +1150,7 @@ mod tests {
 
     // A resting, hovered or pressed light fill is the grey that stands out
     // from the light panel as the dark state's fill does from the dark panel,
-    // made 14 lighter: at the matched contrast the grey boxes read too dark
+    // made 31 lighter: at the matched contrast the grey boxes read too dark
     // beside the white text boxes, and one step for all three keeps the
     // states as far apart. The panel's own fill and an open menu's button
     // keep the matched contrast.
@@ -1184,7 +1185,7 @@ mod tests {
                 let matched = grey_at_contrast(dark_contrast, light.visuals.panel_fill);
                 assert_eq!(
                     light_fill,
-                    egui::Color32::from_gray(matched + 14),
+                    egui::Color32::from_gray(matched + 31),
                     "{name}: the dark fill reads at {dark_contrast:.2} on the dark panel, as \
                      grey {matched} does on the light one"
                 );
@@ -1198,9 +1199,9 @@ mod tests {
         }
         let widgets = &light.visuals.widgets;
         for (name, state, grey) in [
-            ("inactive", &widgets.inactive, 208),
-            ("hovered", &widgets.hovered, 194),
-            ("active", &widgets.active, 215),
+            ("inactive", &widgets.inactive, 225),
+            ("hovered", &widgets.hovered, 211),
+            ("active", &widgets.active, 232),
         ] {
             assert_eq!(
                 state.weak_bg_fill,
@@ -1367,11 +1368,12 @@ mod tests {
         }
     }
 
-    // The quiet greys (a count under its limit, the chosen C rating's
-    // fill, the boots range's readout) keep the dark grey's contrast with
-    // its background on the light theme's, so they stay as quiet when the
-    // theme moves: the count and the rating sit on the panel, the readout
-    // on the faint box the panel blended with `faint_bg_color` gives.
+    // The quiet greys (a count under its limit, the boots range's
+    // readout) keep the dark grey's contrast with its background on the
+    // light theme's, so they stay as quiet when the theme moves: the count
+    // sits on the panel, the readout on the faint box the panel blended
+    // with `faint_bg_color` gives. The chosen C rating's fill is lighter
+    // than that on purpose (`Palette::rating_c_fill`).
     #[test]
     fn the_quiet_greys_keep_the_dark_contrast_on_the_light_theme() {
         let ctx = egui::Context::default();
@@ -1394,13 +1396,6 @@ mod tests {
                 "count_grey",
                 Palette::DARK.count_grey,
                 Palette::LIGHT.count_grey,
-                dark.panel_fill,
-                light.panel_fill,
-            ),
-            (
-                "rating_c_fill",
-                Palette::DARK.rating_c_fill,
-                Palette::LIGHT.rating_c_fill,
                 dark.panel_fill,
                 light.panel_fill,
             ),

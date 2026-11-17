@@ -802,8 +802,16 @@ const PANE_BOTTOM_MARGIN: f32 = 6.0;
 /// The room between the window's right edge and the detail pane's own
 /// scroll bar (the draft's `.pane-bar`): the pane reaches into the
 /// shell's right margin for it, as it reaches into the bottom margin
-/// for `PANE_BOTTOM_MARGIN`.
-const PANE_BAR_MARGIN: f32 = 6.0;
+/// for `PANE_BOTTOM_MARGIN`. With the bar's 10-point strip, the screens'
+/// frames end 14 before the window's edge.
+const PANE_BAR_MARGIN: f32 = 4.0;
+
+/// The panes' room past the shell's 8-point left margin: the player
+/// list's column stands 10 after the sidebar (the draft's
+/// `.center.filled` left padding), the toolbar's first menu over it
+/// (`BAND_MARGIN`). The detail pane keeps its width: it starts this much
+/// later and reaches as much further right (`PANE_BAR_MARGIN`).
+const PANES_LEFT_INSET: f32 = 2.0;
 
 /// Shows the window for one frame. `running` is the running-PES probe,
 /// called only when Save runs (a process snapshot is not a frame's cost).
@@ -854,6 +862,7 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() ->
     // that margin by the difference. The shell's panel clips to its
     // whole rect, margins included, so nothing of theirs is cut.
     let mut panes = ui.available_rect_before_wrap();
+    panes.min.x += PANES_LEFT_INSET;
     panes.max.y +=
         f32::from(egui::Frame::central_panel(ui.style()).inner_margin.bottom) - PANE_BOTTOM_MARGIN;
     if view.session.is_none() {
@@ -904,7 +913,7 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() ->
         let ui = &mut ui.new_child(egui::UiBuilder::new().max_rect(detail_rect));
         // `TITLE_MARGIN` over the view's title. None at the sides: the
         // frames take the draft's 14 after the list's frame from the list
-        // pane's own 4 and its scroll bar's strip, and end the draft's 16
+        // pane's own 4 and its scroll bar's strip, and end the draft's 14
         // before the window's edge, the pane's bar strip past them. None
         // at the bottom: the draft's `.detail` has no padding, a tall
         // view's content ending at the pane's bottom.
@@ -1367,9 +1376,11 @@ fn toolbar(
 }
 
 /// The room around the toolbar's row inside its band (the draft's `.top`
-/// padding): 3 points over and under the row, 8 before it and after it.
+/// padding): 3 points over and under the row, 10 before it, so its first
+/// menu stands over the player list's left edge (`PANES_LEFT_INSET`), and
+/// 8 after it.
 const BAND_MARGIN: egui::Margin = egui::Margin {
-    left: 8,
+    left: 10,
     right: 8,
     top: 3,
     bottom: 3,

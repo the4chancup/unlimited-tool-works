@@ -566,10 +566,10 @@ fn the_stats_screens_frames_span_the_pane_as_appearances_do() {
 // The screens' frames span the pane as the draft lays it (its `.master`
 // gap and `.detail` padding): their left edge 14 after the player list's
 // rows frame — the list's 10-point scroll bar strip and the 4-point gap —
-// their right edge 16 before the window's, and the same two edges on
+// their right edge 14 before the window's, and the same two edges on
 // Stats, Appearance and Gameplan alike.
 #[test]
-fn the_screens_frames_stand_14_after_the_list_and_16_before_the_edge() {
+fn the_screens_frames_stand_14_after_the_list_and_14_before_the_edge() {
     let (mut view, mut window) = positions_view("screen_frame_edges", DEFAULT_PANE.x);
     let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     let (left, right) = {
@@ -581,8 +581,8 @@ fn the_screens_frames_stand_14_after_the_list_and_16_before_the_edge() {
             "the frames' left edge 14 after the list's frame ({general:?} vs {list:?})"
         );
         assert!(
-            (ability.max.x - (DEFAULT_PANE.x - 16.0)).abs() <= 0.5,
-            "the frames' right edge 16 before the window's edge ({ability:?})"
+            (ability.max.x - (DEFAULT_PANE.x - 14.0)).abs() <= 0.5,
+            "the frames' right edge 14 before the window's edge ({ability:?})"
         );
         (general.min.x, ability.max.x)
     };
@@ -735,7 +735,7 @@ fn the_panes_scroll_bar_stands_in_the_right_strip() {
     );
     assert!(
         (bar.x1 - f64::from(PANE_BAR_RIGHT)).abs() <= 0.5,
-        "the bar ends 6 before the window's edge ({bar:?} vs {PANE_BAR_RIGHT})"
+        "the bar ends 4 before the window's edge ({bar:?} vs {PANE_BAR_RIGHT})"
     );
 }
 
@@ -893,7 +893,7 @@ fn a_chosen_c_rating_takes_each_themes_grey() {
     let mut window = Headless::sized(DEFAULT_PANE.x, 800.0);
     for (theme, grey) in [
         (egui::Theme::Dark, egui::Color32::from_gray(0x5a)),
-        (egui::Theme::Light, egui::Color32::from_gray(0x99)),
+        (egui::Theme::Light, egui::Color32::from_gray(0xc2)),
     ] {
         window.ctx.set_theme(theme);
         draw(&mut window, &mut view);

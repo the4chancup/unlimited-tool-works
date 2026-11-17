@@ -943,11 +943,12 @@ fn the_lists_frame_stands_where_the_drafts_does() {
     window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     let (_, _, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     let frame = list_frame(&window, &shapes);
-    let right = PANEL_MARGIN + 245.0;
+    // The shell's margin and the panes' 2 more: 10 after the sidebar.
+    let left = PANEL_MARGIN + 2.0;
+    let right = left + 245.0;
     assert!(
-        (frame.min.x - PANEL_MARGIN).abs() <= 0.5 && (frame.max.x - right).abs() <= 0.5,
-        "the frame from the view's left edge {PANEL_MARGIN} to {right}, as the draft's \
-         ({frame:?})"
+        (frame.min.x - left).abs() <= 0.5 && (frame.max.x - right).abs() <= 0.5,
+        "the frame from {left}, 10 after the sidebar, to {right}, as the draft's ({frame:?})"
     );
 }
 
