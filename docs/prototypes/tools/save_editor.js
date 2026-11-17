@@ -5216,14 +5216,16 @@ function generalPanel(p, team) {
 // of margin and 5 more.
 function viewTitle(id, name, plain) {
   // The line under the row is the one the team view drew under its fields: it parts the
-  // toggle from the screen it switches, on all three. The line keeps 7.5 over it (the
-  // row's own 4 collapses into it), so it stands at 56.5, where the build draws it.
+  // toggle from the screen it switches, on all three. The line keeps 8.25 over it (the
+  // row's own 4 collapses into it), so it stands at 58, and the screen's first frames 13
+  // under it, at 71, where the player list's frame starts: their tops line up. The row
+  // keeps 5.75 over it, so its gaps above and below stay equal.
   return h("div", {},
-    h("div", { class: "pheader strong", style: "margin:5px 0 4px; display:flex; align-items:center; gap:8px" },
+    h("div", { class: "pheader strong", style: "margin:5.75px 0 4px; display:flex; align-items:center; gap:8px" },
       pageToggle(),
       plain ? h("span", {}, plain)
         : h("span", {}, h("span", { class: "weak" }, String(id)), " ", ...nameSpans(name))),
-    h("div", { class: "sep", style: "margin-top:7.5px" }));
+    h("div", { class: "sep", style: "margin-top:8.25px" }));
 }
 // The three screens, as one sliding toggle left of the name (4ccEditor's tabs, which
 // members asked back): Stats and Appearance are the selected player's, Gameplan his
@@ -5749,9 +5751,10 @@ function squadFilters() {
 function squadView() {
   const team = selTeam();
   const title = h("div", { class: "squad-title" },
-    h("div", { class: "pheader strong", style: "margin:5px 0 4px; display:flex; align-items:center; gap:8px" },
+    // The row and its line where the other screens draw them (viewTitle's margins).
+    h("div", { class: "pheader strong", style: "margin:5.75px 0 4px; display:flex; align-items:center; gap:8px" },
       pageToggle(), h("span", {}, h("span", { class: "weak" }, String(team.id)), " ", ...nameSpans(team.name))),
-    h("div", { class: "sep" }), squadFilters());
+    h("div", { class: "sep", style: "margin-top:8.25px" }), squadFilters());
   return h("div", { class: "squad-view", "data-panel": "squad" },
     h("div", { class: "squad-head" }, teamSelector(false), title), squadTable(team));
 }

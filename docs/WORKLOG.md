@@ -1868,7 +1868,9 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       window 1280, gap 12, the bar 4 after the frames. Then (the maintainer: 4 more, so the
       list's bar has 4 on each side) `.master` gap 4, the pane's padding 16, Squad's gap 4,
       the pane's bar 4 after the frames; measured: frames 323 to 1264, tabs at 323 on every
-      screen
+      screen. Then (the maintainer) the frames' tops on the list's frame: the screens and the
+      line above them 1.5 lower, the tabs row 0.75 (viewTitle's margins, Squad's alike);
+      measured: frames and list at 71, the line at 58, the tabs at 34.75 on every screen
     - [ ] the maintainer's check of the draft (`tasks.html` `look-pane-shift-draft`); then
       the plan (`save_editor.md` "The player view": 22 after the list, 12 right) and the
       build
