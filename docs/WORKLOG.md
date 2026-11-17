@@ -19,11 +19,11 @@ excepted, below), 0.0.2-pes19
 (mutfast first). Most open steps below wait only for the maintainer's look
 (`maintainer/tasks.html`). What is left before the cut:
 1. The framed Stats screen and the control edges (0.0.2-frames): A1, A2a, B1, B2 and C merged;
-   the SWE-2 rounds on A1 to C ruled (every loop ended), round 1's fixes merged; the slider's
-   light value box (rw2) running; then one paid round over the whole.
+   the SWE-2 rounds on A1 to C ruled (every loop ended), their fixes merged (rw1, rw2); the
+   paid round (Carbon) over the whole running, in two parts.
 2. The four fixes from the maintainer's looks of 2026-11-17 (0.0.2-namegame, xhover, allcat,
-   ixtext) merged; P53's 0.0.2-gatelbl (a version-gated control's label dimmed with it)
-   running. Their looks wait for one release build after gatelbl.
+   ixtext) and P53's 0.0.2-gatelbl (a version-gated field's label dimmed with its control)
+   merged; gatelbl's SWE-2 round running. Their looks are next, on one release build.
 3. The cut, only once the maintainer has run the checks of
    `maintainer/tasks.html` (the maintainer, 2026-11-17): a pipeline without mutants on the
    last merge (0.0.2-determ's second clean run), the changelog, the release build, and a
@@ -1728,6 +1728,13 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     draft; then the draft; then SWE-2 on a brief, after 0.0.2-frames B2 merges (General
     info and the team view) -> verify: a test per place reads the label's painted colour,
     red first; the built window beside the draft on a PES 2016 and a PES 2019 save
+    - [x] landed 2026-11-17 (SWE-2, `a0d7afa7`, merge `1e317853`): `abilities::gated_label`
+      for Stronger hand, Star rating, Playing attitude, Dribbling motion and a PES 2015 or
+      2016 team's Color 1, Color 2 and Manager ID; the changelog's ability-stat line names
+      them all; help page 03's Greyed controls. The lead's rerun: save_editor 1055 + 57,
+      clippy, fmt
+    - [ ] one SWE-2 round (Tier 2's loop), then the paid round's Stats part
+    - [ ] the built window beside the draft, with the batch release build
   - [x] 0.0.2-undosel 2026-11-15 (SWE-2, merge `e0ebd784`): Undo, Redo and a `Player order`
     row's X keep the moved player selected (`view/mod.rs` `following_selection`,
     `Session::record_of`). Look checked, card `look-undo-selection`; the maintainer's look 2026-11-17: fine
@@ -1758,7 +1765,13 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       `de984144`; the lead's rerun of the five crates, clippy, fmt)
       - [x] C's SWE-2 round 2026-11-17: 2 accepted (one already fixed), the loop ended; the
         slider's value box drawn as a number box on the light theme is rw2 (SWE-2)
-      - [ ] rw2 lands, then one paid round over A1 to C and the reworks
+      - [x] rw2 2026-11-17 (SWE-2, `9d3195c1`, merge `17bda172`): a slider's value box drawn
+        as a number box on the light theme, its rail and handle unchanged; the widgets'
+        tests share `test_support`. The lead's rerun: studio_core 545, team_widgets 282,
+        save_editor 1055 + 57, clippy, fmt, the colour gate
+      - [ ] one paid round (Carbon) at `17bda172`, two parts by concern: the edges and the
+        light theme (A1, A2a, C, rw1, rw2), then the Stats screen (B1, B2, rw1, gatelbl)
+        after gatelbl's SWE-2 round
     - [ ] the control edges (`plans/core/gui.md` "Other UI components", "Control edges")
       - [x] A1 2026-11-17 `studio_core` (`b98986f7`, merge `53bc3805`): the resting stroke,
         `theme::edge_color`, the checked box's and radio's edge, none on disabled widgets or
