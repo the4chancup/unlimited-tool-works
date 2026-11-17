@@ -15,8 +15,9 @@ use crate::pitch::FORMATIONS;
 /// The icon font's subset does not.
 pub const CROSS: char = '\u{2716}';
 
-/// The gap between a Live AATF field mark's box and the label's text it
-/// stands before: one figure so every mark's spacing agrees.
+/// The gap between a Live AATF mark's box and the text it stands beside
+/// (before a field's label, after a panel's title): one figure so every
+/// mark's spacing agrees.
 pub const MARK_GAP: f32 = 2.0;
 
 /// A rostered player as the list's group header shows him.

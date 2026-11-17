@@ -3,8 +3,9 @@
 //! `fieldMark`). While the toggle is on and the dock's check holds one
 //! team's result, the list's rows carry a `✖` or `✔` and the selected
 //! player's fields a row is about carry a `✖`, `⚠` or `ⓘ` left of their
-//! labels. `held_violations` is the one read of the held check every mark
-//! goes through.
+//! labels — a row about a panel as a whole marks the panel's header,
+//! after the header's last item. `held_violations` is the one read of
+//! the held check every mark goes through.
 
 use std::borrow::Cow;
 
@@ -246,19 +247,22 @@ impl Marks<'_> {
     }
 
     /// The same mark after `item` (a panel's header, the title through
-    /// the row's last item): the box starting `MARK_GAP` after its right
-    /// edge, centred on its height. A title stands the frame's margin
-    /// inside its panel, so a mark on its left would fall on the frame's
-    /// line, or past the pane's edge in the first column.
+    /// the row's last item): the box starting `gap` after its right
+    /// edge, centred on its height — `MARK_GAP` after a panel title's
+    /// text, the header row's item spacing after the Skills header's
+    /// last item, as the row's next item would stand. A title stands the
+    /// frame's margin inside its panel, so a mark on its left would fall
+    /// on the frame's line, or past the pane's edge in the first column.
     pub(super) fn paint_after(
         &self,
         ui: &mut egui::Ui,
         item: egui::Rect,
         field: MarkedField,
+        gap: f32,
     ) -> Option<egui::Response> {
         self.paint_box(
             ui,
-            egui::pos2(item.max.x + MARK_GAP + MARK_BOX / 2.0, item.center().y),
+            egui::pos2(item.max.x + gap + MARK_BOX / 2.0, item.center().y),
             field,
         )
     }

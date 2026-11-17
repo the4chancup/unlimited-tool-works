@@ -500,7 +500,7 @@ fn panel(
                 |ui| {
                     let title = ui.strong(title);
                     if let Some((marks, field)) = mark {
-                        marks.paint_after(ui, title.rect, field);
+                        marks.paint_after(ui, title.rect, field, live_marks::MARK_GAP);
                     }
                 },
             );
@@ -1255,14 +1255,16 @@ fn skills_panel(
             }
         }
     });
-    // The header's mark after the row's last item — the badge, its
-    // stand-in or the title — not inside the row: painted there it would
-    // shift the badge whenever one showed.
+    // The header's mark stands after the row's last item — the badge,
+    // its stand-in or the title — the row's item spacing off it, as the
+    // next item would stand: after the title it would overlap the badge,
+    // before the badge it would shift the badge whenever one showed.
     if let Some(marks) = marks {
         marks.paint_after(
             ui,
             title_rect.with_max_x(header.response.rect.max.x),
             live_marks::MarkedField::Skills,
+            ui.spacing().item_spacing.x,
         );
     }
     ui.spacing_mut().interact_size.y = control_height;
