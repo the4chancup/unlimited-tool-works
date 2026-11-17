@@ -56,17 +56,41 @@ card.</p>
 </section>
 
 <section class="entry" id="drag-rule-save">
-  <h3>A save for the drag rule's stat pairs</h3>
+  <h3>The overall with each stat pair far apart</h3>
   <p class="from">From: worklog 0.0.1y's y4</p>
-  <p>The drag rule maps kicking power to swerve and body control to physical contact, and adds
-  a B bonus in the overall. Checking it on PES 2017 needs a save where those stats differ
-  within each pair.</p>
+  <p>The overall on the Gameplan pitch, which the drag rule also uses to pick a dragged
+  player's new position, is our reading of PES 2016's formula. Two things in it are still
+  unchecked on PES 2017. Which stat of each pair it reads (Kicking Power or Swerve, Body
+  Control or Physical Contact) made no difference in the saves checked so far, since the two
+  stats of each pair were close there. A B position's bonus was never seen. Four players with
+  each pair far apart, two of them at B positions, settle both.</p>
+  <ol>
+    <li>Copy your PES 2017 save somewhere safe: the check edits it.</li>
+    <li>Open it in the build, pick a team and click <b>Gameplan</b>. Choose four outfield
+    starters at four different positions (a CB, a CMF, an AMF and a CF, say) and write down
+    their names, in order.</li>
+    <li>On the Stats screen, give players 1 and 2 <b>Kicking Power</b> 99, <b>Swerve</b> 40,
+    <b>Body Control</b> 40 and <b>Physical Contact</b> 99, and players 3 and 4 the reverse:
+    40, 99, 99 and 40.</li>
+    <li>Still on the Stats screen, set each one's position on the pitch this way:
+      <ul>
+        <li>player 1: <b>Registered position</b> is the position he plays on the pitch;</li>
+        <li>player 3: Registered position is another one, and under <b>Playable positions</b>
+        his pitch position is A;</li>
+        <li>players 2 and 4: Registered position is another one, and their pitch position
+        is B.</li>
+      </ul></li>
+    <li>Back on Gameplan, write down each one's overall on the pitch.</li>
+    <li>Save, start PES 2017, load the save and open the same team's Game Plan. Write down
+    the four overalls the game shows.</li>
+    <li>Put back the copy from step 1.</li>
+  </ol>
   <div class="options">
-    <label class="opt"><input type="radio" value="here is one, see note"><b>I have one</b>
-      <div class="note">Write its path below.</div></label>
-    <label class="opt"><input type="radio" value="none"><b>I don't have one</b></label>
+    <label class="opt"><input type="radio" value="all four match"><b>All four match</b></label>
+    <label class="opt"><input type="radio" value="some differ, see note"><b>Some differ</b>
+      <div class="note">Write both lists below.</div></label>
   </div>
-  <textarea class="own" placeholder="The save's path (optional)"></textarea>
+  <textarea class="own" placeholder="The four names with the editor's and the game's overall (optional)"></textarea>
 </section>
 
 <h2>Looks the lead has checked first</h2>
