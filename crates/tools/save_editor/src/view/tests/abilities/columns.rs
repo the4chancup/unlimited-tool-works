@@ -202,18 +202,8 @@ fn assert_three_columns_at_1280(version: PesVersion) {
             "{label}'s box just after the label column ({bounds:?} vs {box_x})"
         );
     }
-    // The Captain radio centred in its 54-wide box (the draft's
-    // `.phead.captained .box`), over the Weight box under it.
-    let captain = right_of_label(&nodes, "Captain", Role::RadioButton)[0]
-        .bounds()
-        .expect("bounds");
-    let weight = right_of_label(&nodes, "Weight", Role::SpinButton)[0]
-        .bounds()
-        .expect("bounds");
-    assert!(
-        ((captain.x0 + captain.x1) / 2.0 - (weight.x0 + weight.x1) / 2.0).abs() < 0.5,
-        "the Captain radio centred over the Weight box ({captain:?} vs {weight:?})"
-    );
+    // Captain's circle over the Weight box: the strip's
+    // `the_second_halfs_labels_share_one_column_and_captain_stands_on_it`.
 
     // A label and its field are never closer than 20: on the pairs, in
     // the label-left rows and in Ability stats, the narrowest of each at

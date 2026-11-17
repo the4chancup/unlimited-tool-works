@@ -17,8 +17,8 @@ use pes_savefile::schema::fields::{PlayerField, PlayerText, RosterField};
 use pes_savefile::schema::{VersionSchema, portable_text_max, schema_for};
 use pes_version::PesVersion;
 use studio_core::widgets::{
-    FIELD_SPACING, add_enabled_ui, combo_item, number_arrows, number_wheel_steps, radio,
-    resting_edge, step_choice, step_number, text_box, wheel_steps,
+    FIELD_SPACING, RADIO_ICON_WIDTH, add_enabled_ui, combo_item, number_arrows, number_wheel_steps,
+    radio, resting_edge, step_choice, step_number, text_box, wheel_steps,
 };
 use team_widgets::cards;
 use team_widgets::names::append_name;
@@ -749,12 +749,23 @@ pub(super) fn captain_title(ui: &mut egui::Ui, title: egui::Rect, captain: bool)
     child.allocate_ui(
         egui::vec2(BOX_WIDTH, child.spacing().interact_size.y),
         |ui| {
-            ui.centered_and_justified(|ui| {
-                let response = radio(ui, captain, "");
-                if response.clicked() {
-                    clicked = Some(response.id.value());
-                }
-            });
+            // The circle centred over the boxes' column, as the draft's.
+            // An unlabelled radio is `interact_size.y` square with its
+            // circle at its left, so centring the radio itself would
+            // stand the circle left of the column's centre.
+            let side = ui.spacing().interact_size.y;
+            let rect = egui::Rect::from_center_size(
+                ui.max_rect().center() + egui::vec2((side - RADIO_ICON_WIDTH) / 2.0, 0.0),
+                egui::vec2(side, side),
+            );
+            let response = ui
+                .scope_builder(egui::UiBuilder::new().max_rect(rect), |ui| {
+                    radio(ui, captain, "")
+                })
+                .inner;
+            if response.clicked() {
+                clicked = Some(response.id.value());
+            }
         },
     );
     clicked

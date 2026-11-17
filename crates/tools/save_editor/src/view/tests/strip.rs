@@ -231,7 +231,7 @@ fn the_second_halfs_labels_share_one_column_and_captain_stands_on_it() {
     for _ in 0..3 {
         window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     }
-    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
 
     let left = label_bounds(&nodes, "Age").x0;
     for label in ["Weight", "Form", "Accuracy", "Captain"] {
@@ -255,17 +255,30 @@ fn the_second_halfs_labels_share_one_column_and_captain_stands_on_it() {
             "{label}'s box 20 after the widest second-half label"
         );
     }
-    // Captain's radio centred over Weight's box, its label where
-    // Weight's stands.
+    // Captain's circle centred over Weight's box, 14 across with its
+    // edge as the draft's: the circle, not the radio's rect, which
+    // reaches past it.
     let captain = right_of_label(&nodes, "Captain", Role::RadioButton)[0]
         .bounds()
         .expect("bounds");
     let weight = right_of_label(&nodes, "Weight", Role::SpinButton)[0]
         .bounds()
         .expect("bounds");
+    // egui's circle and dot, and the blue ones painted over them when
+    // ticked: the outermost is the circle.
+    let circle = circles_in(&shapes, captain)
+        .into_iter()
+        .max_by(|a, b| a.radius.total_cmp(&b.radius))
+        .expect("Captain's circle");
     assert!(
-        ((captain.x0 + captain.x1) / 2.0 - (weight.x0 + weight.x1) / 2.0).abs() <= 0.5,
-        "the radio centred over Weight's box ({captain:?} vs {weight:?})"
+        (f64::from(circle.center.x) - (weight.x0 + weight.x1) / 2.0).abs() <= 0.5,
+        "the circle centred over Weight's box ({:?} vs {weight:?})",
+        circle.center
+    );
+    assert_eq!(
+        circle.radius + circle.stroke.width / 2.0,
+        7.0,
+        "the circle 14 across with its edge"
     );
 }
 
