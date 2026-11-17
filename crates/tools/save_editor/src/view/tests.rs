@@ -535,6 +535,48 @@ fn scroll_into_view(
     panic!("the target never scrolled into view")
 }
 
+/// The toolbar's row: the File menu button's vertical span.
+fn toolbar_band(nodes: &[accesskit::Node]) -> (f64, f64) {
+    let file = menu_button(nodes, "File")
+        .bounds()
+        .expect("the File menu button's bounds");
+    (file.y0, file.y1)
+}
+
+/// The bottom of the toolbar band's line: the horizontal line in the
+/// panel's stroke that starts at the view's left edge, the first under the
+/// toolbar's buttons. It is the band's lower edge as the eye sees it.
+fn band_bottom(
+    window: &Headless,
+    nodes: &[accesskit::Node],
+    shapes: &[egui::epaint::ClippedShape],
+) -> f64 {
+    let stroke = window
+        .ctx
+        .global_style()
+        .visuals
+        .widgets
+        .noninteractive
+        .bg_stroke;
+    let buttons = toolbar_band(nodes).1 as f32;
+    let line = shapes
+        .iter()
+        .filter_map(|clipped| match &clipped.shape {
+            egui::Shape::LineSegment { points, stroke: s }
+                if *s == stroke
+                    && points[0].y == points[1].y
+                    && points[0].x.min(points[1].x) == 0.0
+                    && points[0].y >= buttons =>
+            {
+                Some(points[0].y)
+            }
+            _ => None,
+        })
+        .min_by(|a, b| a.partial_cmp(b).expect("ordered lines"))
+        .expect("the band's line under the toolbar's buttons");
+    f64::from(line + 0.5 * stroke.width)
+}
+
 /// The painted text shape whose galley text starts with `starts_with`.
 fn text_shape<'a>(
     shapes: &'a [egui::epaint::ClippedShape],
@@ -1496,10 +1538,15 @@ const DEFAULT_PANE: egui::Vec2 = egui::vec2(1224.0, 756.0);
 /// the view has none (`PANE_RIGHT`).
 const PANEL_MARGIN: f32 = 8.0;
 
-/// The detail pane's right edge at `DEFAULT_PANE`: the view's, the shell's
-/// margin short of the window's edge, as the draft's `.detail` content
-/// ends (1272 of the 1280-point client).
-const PANE_RIGHT: f32 = DEFAULT_PANE.x - PANEL_MARGIN;
+/// The screens' frames' right edge at `DEFAULT_PANE`: the draft's
+/// `.detail` content ends 16 before the window's right edge (1264 of
+/// the 1280-point client).
+const PANE_RIGHT: f32 = DEFAULT_PANE.x - 16.0;
+
+/// The detail pane's scroll bar's right edge at `DEFAULT_PANE`: the pane
+/// reaches 2 points into the shell's right margin for it (the draft's
+/// `.pane-bar`), so the 6-point bar ends 6 before the window's edge.
+const PANE_BAR_RIGHT: f32 = DEFAULT_PANE.x - 6.0;
 
 /// The bounds of the Label node showing `value` (a grid's label cell).
 fn label_bounds(nodes: &[accesskit::Node], value: &str) -> accesskit::Rect {

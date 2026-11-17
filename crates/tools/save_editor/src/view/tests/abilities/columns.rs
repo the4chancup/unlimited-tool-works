@@ -554,13 +554,64 @@ fn the_stats_screens_frames_span_the_pane_as_appearances_do() {
     view.selected = Some(Selection::Player(701, 0));
     let mut window = Headless::sized(DEFAULT_PANE.x, DEFAULT_PANE.y);
     let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
-    let pane_left = f64::from(pane_frame(&shapes, window.screen).min.x + PANEL_MARGIN);
+    let pane_left = f64::from(pane_frame(&shapes, window.screen).min.x);
     let stats = node_labeled(&nodes, Role::Button, "Stats")
         .bounds()
         .expect("the Stats segment");
     assert!(
         (stats.x0 - pane_left).abs() <= 0.5,
         "the title's row at the pane's left ({stats:?} vs {pane_left})"
+    );
+}
+
+// The screens' frames span the pane as the draft lays it (its `.master`
+// gap and `.detail` padding): their left edge 14 after the player list's
+// rows frame — the list's 10-point scroll bar strip and the 4-point gap —
+// their right edge 16 before the window's, and the same two edges on
+// Stats, Appearance and Gameplan alike.
+#[test]
+fn the_screens_frames_stand_14_after_the_list_and_16_before_the_edge() {
+    let (mut view, mut window) = positions_view("screen_frame_edges", DEFAULT_PANE.x);
+    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let (left, right) = {
+        let list = list_frame(&window, &shapes);
+        let general = group_frame(&window, &nodes, &shapes, "General info");
+        let ability = group_frame(&window, &nodes, &shapes, "Ability stats");
+        assert!(
+            (general.min.x - list.max.x - 14.0).abs() <= 0.5,
+            "the frames' left edge 14 after the list's frame ({general:?} vs {list:?})"
+        );
+        assert!(
+            (ability.max.x - (DEFAULT_PANE.x - 16.0)).abs() <= 0.5,
+            "the frames' right edge 16 before the window's edge ({ability:?})"
+        );
+        (general.min.x, ability.max.x)
+    };
+
+    // Appearance's row: Full Player Customization's left edge, Colors'
+    // right edge.
+    open_appearance(&mut window, &mut view);
+    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let (fpc, colors) = (
+        group_frame(&window, &nodes, &shapes, "Full Player Customization"),
+        group_frame(&window, &nodes, &shapes, "Colors"),
+    );
+    assert!(
+        (fpc.min.x - left).abs() <= 0.5 && (colors.max.x - right).abs() <= 0.5,
+        "the Appearance frames on the Stats edges ({fpc:?}..{colors:?} vs {left}..{right})"
+    );
+
+    // The team view's first row: Formation settings' left edge, Player
+    // assignments' right edge.
+    open_team_view(&mut window, &mut view, 701);
+    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let (settings, assigns) = (
+        group_frame(&window, &nodes, &shapes, "Formation settings"),
+        group_frame(&window, &nodes, &shapes, "Player assignments"),
+    );
+    assert!(
+        (settings.min.x - left).abs() <= 0.5 && (assigns.max.x - right).abs() <= 0.5,
+        "the Gameplan frames on the Stats edges ({settings:?}..{assigns:?} vs {left}..{right})"
     );
 }
 
@@ -647,13 +698,14 @@ fn the_columns_last_frames_end_on_one_line() {
     );
 }
 
-// The player view's pane ends where the draft's `.detail` content does,
-// at the view's right edge, 8 points short of the window's: with
-// Appearance open the pane scrolls, and its floating bar's right edge is
-// the pane's.
+// The pane's own scroll bar is egui's solid bar, as the player list's
+// is: it stands in the pane's right strip, 4 after the screens' frames
+// and its 6 points ending 6 before the window's edge, the pane reaching
+// 2 into the shell's right margin for it (the draft's `.pane-bar`,
+// `right: -2px` past the pane). With Appearance open the pane scrolls.
 #[test]
-fn the_player_views_pane_ends_8_from_the_windows_edge() {
-    let path = fixture(PesVersion::Pes21, "player_pane_right");
+fn the_panes_scroll_bar_stands_in_the_right_strip() {
+    let path = fixture(PesVersion::Pes21, "player_pane_bar");
     let mut view = SaveView::new();
     view.open(&path);
     view.selected = Some(Selection::Player(701, 0));
@@ -679,8 +731,12 @@ fn the_player_views_pane_ends_8_from_the_windows_edge() {
         "premise: the rightmost bar is the detail pane's, not the list's ({bar:?})"
     );
     assert!(
-        (bar.x1 - f64::from(PANE_RIGHT)).abs() <= 1.0,
-        "the pane's right edge at {PANE_RIGHT}, the draft's 1272 ({bar:?})"
+        (bar.x0 - f64::from(PANE_RIGHT) - 4.0).abs() <= 0.5,
+        "the bar 4 after the frames' right edge ({bar:?} vs {PANE_RIGHT})"
+    );
+    assert!(
+        (bar.x1 - f64::from(PANE_BAR_RIGHT)).abs() <= 0.5,
+        "the bar ends 6 before the window's edge ({bar:?} vs {PANE_BAR_RIGHT})"
     );
 }
 

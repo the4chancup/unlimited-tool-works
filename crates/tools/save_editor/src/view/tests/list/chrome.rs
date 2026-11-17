@@ -68,6 +68,33 @@ fn picking_a_team_in_the_selector_selects_its_team_row() {
     );
 }
 
+// Picking the team the selection is already on keeps it, a selected
+// player included: narrowing the list to his own team shows his
+// teammates, not a way off him (that team's row heads the list, a click
+// away). Another team's pick still selects its row.
+#[test]
+fn picking_the_selected_players_own_team_keeps_him_selected() {
+    let path = fixture(PesVersion::Pes21, "selector_keeps_player");
+    let mut view = SaveView::new();
+    view.open(&path);
+    view.selected = Some(Selection::Player(702, 3));
+    let mut window = Headless::new();
+
+    pick_in_selector(&mut window, &mut view, "/a/");
+    assert_eq!(
+        view.selected,
+        Some(Selection::Player(702, 3)),
+        "picking /a/ keeps the player of 702 selected"
+    );
+
+    pick_in_selector(&mut window, &mut view, "/3/");
+    assert_eq!(
+        view.selected,
+        Some(Selection::Team(701)),
+        "picking /3/ selects its team row"
+    );
+}
+
 // The team selector names a team by its display name, its shown text and
 // its entries alike: a colour code's control character and hex digits
 // never show.

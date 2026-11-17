@@ -164,7 +164,7 @@ fn every_panel_title_stands_six_above_its_first_drawn_row() {
 // The sections' places under the title's line, at the draft's: the
 // columns' first frames `GROUP_GAP` under the title's row (its
 // `.pcols > *` `margin-top`) and every heading's text 7 inside its
-// frame, so every heading's text top stands 20 under the line;
+// frame, so every heading's text top stands ~18.5 under the line;
 // under a heading the first field rows' labels 22.5 and Height's 70.5
 // (the `.col` gap, the `.gen` margin and the rows' pitch), the first
 // checkbox's box 19.5 (the `.skcols` `margin-top`); the layout toggle
@@ -178,7 +178,7 @@ fn the_stats_screens_sections_stand_at_the_drafts_offsets() {
     for title in ["General info", "Ability stats"] {
         near_draft(
             heading(title) - line,
-            20.0,
+            18.5,
             &format!("{title}'s heading under the line"),
         );
     }
@@ -275,52 +275,123 @@ fn the_positions_grid_stands_at_the_drafts_pitch() {
     }
 }
 
-// The positions grid keeps List's height in every layout (thirteen
-// 17-point rows a point apart, the draft's `#pos-grid` `min-height`), so
-// a layout switch never moves the panel's bottom — and in Pitch the
-// rows stand centred in the grid's height, the first row as far under
-// its top as the last is above its bottom.
+// The grid takes its layout's own rows' height (the draft's `#pos-grid`
+// dropping its `min-height`): under DBC7, whose one card panel fewer
+// leaves Skills' column shorter than Ability stats', Pitch's own rows
+// make the positions panel shorter than the columns' shared bottom —
+// the three columns' last frames end on Ability stats' frame's bottom,
+// where under List they end on the positions' own (the draft's 703
+// against 726).
+// SE-GUI-85
 #[test]
-fn the_positions_grid_keeps_lists_height_in_every_layout() {
-    let (mut view, mut window) = positions_view("grid_height", DEFAULT_PANE.x);
-    let mut heights = Vec::new();
-    let mut pitch_gaps = None;
-    for at in 0..3 {
-        let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
-        let frame = group_frame(&window, &nodes, &shapes, "Playable positions");
-        heights.push(frame.height());
-        if at == 0 {
-            // The grid's top is `TOGGLE_GRID_GAP` under the segments,
-            // its bottom the frame's inside (the frame's lower margin
-            // and stroke); the rows' first top is LWF's label, the
-            // last's bottom GK's squares.
-            let group = egui::Frame::group(&window.ctx.global_style());
-            let below = f32::from(group.inner_margin.bottom) + group.stroke.width;
-            let grid_top = layout_segments(&nodes)
-                .iter()
-                .map(|node| node.bounds().expect("bounds").y1)
-                .fold(0.0, f64::max)
-                + f64::from(crate::view::abilities::TOGGLE_GRID_GAP);
-            let grid_bottom = f64::from(frame.max.y - below);
-            let first = label_bounds(&nodes, "LWF").y0;
-            let last = rating_buttons(&nodes, "GK")[0].bounds().expect("bounds").y1;
-            pitch_gaps = Some((first - grid_top, grid_bottom - last));
-        }
-        if at < 2 {
-            click(&mut window, layout_segments(&nodes)[at + 1], &mut view);
-        }
-    }
-    for pair in heights.windows(2) {
-        assert!(
-            (pair[0] - pair[1]).abs() <= 0.5,
-            "the frame's height kept across layouts ({heights:?})"
-        );
-    }
-    let (top_gap, bottom_gap) = pitch_gaps.expect("the Pitch gaps were measured");
+fn under_dbc7_pitch_leaves_the_panel_shorter_than_list() {
+    let (mut view, mut window) = positions_view("dbc7_pitch", DEFAULT_PANE.x);
+    view.aatf_ruleset = "dbc7".to_owned();
+    badge_landed(&mut window, &mut view);
+    let bottoms = |window: &mut Headless, view: &mut SaveView| {
+        let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, view, &|| Vec::new()));
+        [
+            group_frame(window, &nodes, &shapes, "Playable positions")
+                .max
+                .y,
+            group_frame(window, &nodes, &shapes, "COM playing styles")
+                .max
+                .y,
+            group_frame(window, &nodes, &shapes, "Ability stats").max.y,
+        ]
+    };
+    // Pitch is held on a fresh view: the positions panel's own rows
+    // leave it shorter than the columns' shared bottom — the last
+    // frames end on Ability stats' own bottom, not the grid's.
+    let pitch = bottoms(&mut window, &mut view);
     assert!(
-        (top_gap - bottom_gap).abs() <= 0.5,
-        "Pitch's rows centred in the grid's height ({top_gap} over, {bottom_gap} under)"
+        (pitch[0] - pitch[2]).abs() <= 0.5 && (pitch[1] - pitch[2]).abs() <= 0.5,
+        "Pitch: the last frames end on Ability stats' bottom ({pitch:?})"
     );
+
+    // List: the positions' own rows' height is the tallest again — the
+    // columns' shared bottom is the positions' own, a card panel lower.
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    click(&mut window, layout_segments(&nodes)[2], &mut view);
+    let list = bottoms(&mut window, &mut view);
+    assert!(
+        (list[0] - list[2]).abs() <= 0.5 && (list[1] - list[2]).abs() <= 0.5,
+        "List: the last frames still end on one line ({list:?})"
+    );
+    assert!(
+        list[0] > pitch[0] + 10.0,
+        "List's shared bottom a card panel under Pitch's ({list:?} vs {pitch:?})"
+    );
+}
+
+// Where the panel's column is stretched to a taller column's bottom (the
+// default ruleset's Skills column is the tallest), the rows stand
+// centred in the room the stretch gives the grid under the toggle — the
+// draft's `#pos-grid { flex: 1; justify-content: center }`, not at its
+// top — and the panel's bottom is the other columns'. A layout switch
+// settles in two passes a switch.
+#[test]
+fn the_positions_rows_centre_in_the_grids_stretched_room() {
+    let (mut view, mut window) = positions_view("grid_room", DEFAULT_PANE.x);
+    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    // The premise: another column is the tallest — the positions panel's
+    // bottom is the columns' shared bottom, past its own content.
+    let panel = group_frame(&window, &nodes, &shapes, "Playable positions");
+    let com = group_frame(&window, &nodes, &shapes, "COM playing styles");
+    assert!(
+        (panel.max.y - com.max.y).abs() <= 0.5,
+        "premise: the panel's bottom is the other columns' ({panel:?} vs {com:?})"
+    );
+    // The grid's room is under the toggle to the panel's inside; the
+    // rows' block — LWF's label to GK's squares — is centred in it.
+    let group = egui::Frame::group(&window.ctx.global_style());
+    let below = f32::from(group.inner_margin.bottom) + group.stroke.width;
+    let grid_top = layout_segments(&nodes)
+        .iter()
+        .map(|node| node.bounds().expect("bounds").y1)
+        .fold(0.0, f64::max)
+        + f64::from(crate::view::abilities::TOGGLE_GRID_GAP);
+    let grid_bottom = f64::from(panel.max.y - below);
+    let first = label_bounds(&nodes, "LWF").y0;
+    let last = rating_buttons(&nodes, "GK")[0].bounds().expect("bounds").y1;
+    let (top_gap, bottom_gap) = (first - grid_top, grid_bottom - last);
+    assert!(
+        (top_gap - bottom_gap).abs() <= 1.0,
+        "the rows' block centred in the grid's room ({top_gap} over, {bottom_gap} under)"
+    );
+
+    // A switch Pitch, List, Pitch settles in two passes a switch: the
+    // room the last pass measured is discarded once for the new one.
+    for label in ["List", "Pitch"] {
+        let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+        let segment = pairs
+            .iter()
+            .find(|(_, node)| {
+                node.role() == Role::Button
+                    && node.label() == Some(label)
+                    && node
+                        .bounds()
+                        .is_some_and(|b| b.y0 > label_bounds(&nodes, "Playable positions").y1)
+            })
+            .map(|(id, _)| *id)
+            .unwrap_or_else(|| panic!("the {label} segment"));
+        let mut passes = 0;
+        window.frame(
+            vec![egui::Event::AccessKitActionRequest(
+                accesskit::ActionRequest {
+                    action: accesskit::Action::Click,
+                    target_tree: accesskit::TreeId::ROOT,
+                    target_node: segment,
+                    data: None,
+                },
+            )],
+            |ui| {
+                show(ui, &mut view, &|| Vec::new());
+                passes += 1;
+            },
+        );
+        assert_eq!(passes, 2, "the {label} switch settles in two passes");
+    }
 }
 
 /// The layout toggle's segments under the Playable positions title, in x

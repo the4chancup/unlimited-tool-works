@@ -785,8 +785,10 @@ const LIST_WIDTH: f32 = 255.0;
 pub(super) const NUMBER_BOX: f32 = 52.0;
 
 /// The detail pane's margin over a view's title's row (the draft's
-/// `.pheader` margin-top).
-const TITLE_MARGIN: i8 = 5;
+/// `.pheader` margin-top): with the panes' start and the half point
+/// `info_strip::view_title` adds, the row stands 9.5 under the toolbar
+/// band's line.
+const TITLE_MARGIN: i8 = 6;
 
 /// The player list's margin over its team combo. The panes start one item
 /// spacing (3 points) under the toolbar band's line, so the combo stands 4
@@ -796,6 +798,12 @@ const LIST_TOP_MARGIN: i8 = 1;
 /// The room between the panes' bottom and the status bar (the draft's
 /// `.center.filled` bottom padding).
 const PANE_BOTTOM_MARGIN: f32 = 6.0;
+
+/// The room between the window's right edge and the detail pane's own
+/// scroll bar (the draft's `.pane-bar`): the pane reaches into the
+/// shell's right margin for it, as it reaches into the bottom margin
+/// for `PANE_BOTTOM_MARGIN`.
+const PANE_BAR_MARGIN: f32 = 6.0;
 
 /// Shows the window for one frame. `running` is the running-PES probe,
 /// called only when Save runs (a process snapshot is not a frame's cost).
@@ -862,12 +870,13 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() ->
             live_aatf::show(ui, view);
         }
         // No margin before the list, so its frame stands at the view's
-        // left edge, and 4 points after it: with the detail's own 8-point
-        // margin, the detail stands 12 after the list's scroll bar, the
-        // draft's gap. No separator line between the panes, as the draft
-        // draws none. No bottom margin: the quick actions' band is the
-        // panel's content's last item and runs to the pane's bottom, so
-        // the pane gets no scroll bar of its own.
+        // left edge, and 4 points after it: with no margin of the
+        // detail's own, the screens' frames stand the draft's 14 after
+        // the list's rows frame — its 10-point scroll bar strip and the
+        // 4. No separator line between the panes, as the draft draws
+        // none. No bottom margin: the quick actions' band is the panel's
+        // content's last item and runs to the pane's bottom, so the pane
+        // gets no scroll bar of its own.
         let margin = egui::Margin {
             left: 0,
             right: 4,
@@ -885,42 +894,62 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() ->
             .default_size(LIST_WIDTH + margin.sum().x)
             .frame(egui::Frame::side_top_panel(ui.style()).inner_margin(margin))
             .show(ui, |ui| player_list::show(ui, view));
-        // 6 points over the view, not egui's 8: a view's title then stands
-        // as far below the toolbar band's line as its first row stands below
-        // the title, in ink (`info_strip::view_title`). None at the right:
-        // the shell's own margin past the pane is the view's edge. None at
-        // the bottom: the draft's `.detail` has no padding, a tall view's
-        // content ending at the pane's bottom.
+        // The detail pane reaches `PANE_BAR_MARGIN` less than the shell's
+        // margin into the right edge, for its scroll bar's strip (the
+        // draft's `.pane-bar` standing past the pane), as the panes reach
+        // into the bottom margin for `PANE_BOTTOM_MARGIN`.
+        let mut detail_rect = ui.available_rect_before_wrap();
+        detail_rect.max.x +=
+            f32::from(egui::Frame::central_panel(ui.style()).inner_margin.right) - PANE_BAR_MARGIN;
+        let ui = &mut ui.new_child(egui::UiBuilder::new().max_rect(detail_rect));
+        // `TITLE_MARGIN` over the view's title. None at the sides: the
+        // frames take the draft's 14 after the list's frame from the list
+        // pane's own 4 and its scroll bar's strip, and end the draft's 16
+        // before the window's edge, the pane's bar strip past them. None
+        // at the bottom: the draft's `.detail` has no padding, a tall
+        // view's content ending at the pane's bottom.
         let detail = egui::Frame::central_panel(ui.style()).inner_margin(egui::Margin {
-            left: 8,
+            left: 0,
             right: 0,
             top: TITLE_MARGIN,
             bottom: 0,
         });
         egui::CentralPanel::default().frame(detail).show(ui, |ui| {
+            // egui's solid scroll bar, as the list's, stands 4 after the
+            // content in a 10-point strip: the strip is kept whether or
+            // not the pane scrolls, so the screens' frames end at one x
+            // — the content caps at the strip's left edge, and the bar,
+            // when it shows, fills the strip's 6, ending
+            // `PANE_BAR_MARGIN` before the window's edge.
+            ui.spacing_mut().scroll = egui::style::ScrollStyle::solid();
+            let content_width = ui.available_width() - ui.spacing().scroll.allocated_width();
             egui::ScrollArea::vertical()
                 .auto_shrink([false, false])
-                .show(ui, |ui| match view.selected {
-                    Some(Selection::Team(_)) => team::show(ui, view),
-                    Some(Selection::Player(..)) | None => {
-                        // The pitch that owns the slot popover is gone
-                        // with the team view: close it here, since its
-                        // own outside-press handling no longer runs and
-                        // the arrows' gate reads it.
-                        view.tactics.close_popover();
-                        // The player last shown on his team is the row the
-                        // toggle's player screens go back to from the
-                        // team's row.
-                        if let Some((team_id, slot, _)) = selected_player(view) {
-                            view.last_shown.insert(team_id, slot);
-                        }
-                        // The title's row first, at the pane's left edge:
-                        // a toggle that stood elsewhere on another screen
-                        // would slip from under the pointer.
-                        info_strip::show(ui, view);
-                        match view.page {
-                            PlayerScreen::Appearance => appearance::show(ui, view),
-                            PlayerScreen::Stats => abilities::show(ui, view),
+                .show(ui, |ui| {
+                    ui.set_max_width(content_width);
+                    match view.selected {
+                        Some(Selection::Team(_)) => team::show(ui, view),
+                        Some(Selection::Player(..)) | None => {
+                            // The pitch that owns the slot popover is gone
+                            // with the team view: close it here, since its
+                            // own outside-press handling no longer runs and
+                            // the arrows' gate reads it.
+                            view.tactics.close_popover();
+                            // The player last shown on his team is the row
+                            // the toggle's player screens go back to from
+                            // the team's row.
+                            if let Some((team_id, slot, _)) = selected_player(view) {
+                                view.last_shown.insert(team_id, slot);
+                            }
+                            // The title's row first, at the pane's left
+                            // edge: a toggle that stood elsewhere on
+                            // another screen would slip from under the
+                            // pointer.
+                            info_strip::show(ui, view);
+                            match view.page {
+                                PlayerScreen::Appearance => appearance::show(ui, view),
+                                PlayerScreen::Stats => abilities::show(ui, view),
+                            }
                         }
                     }
                 });

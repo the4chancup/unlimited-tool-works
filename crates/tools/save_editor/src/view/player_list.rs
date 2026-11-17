@@ -20,7 +20,9 @@ use crate::session::cup::cup_teams;
 use crate::session::selection::{self, ListRow, Row, TeamCategory, TeamChoice};
 use crate::view::clipboard::{ClickKind, pressed};
 use crate::view::team::channel_to_show;
-use crate::view::{Reveal, SaveView, Selection, live_marks, quick_actions, reveal_for};
+use crate::view::{
+    Reveal, SaveView, Selection, live_marks, quick_actions, reveal_for, selected_team_id,
+};
 
 /// A swatch square's side (the draft's 10px).
 const SWATCH: f32 = 10.0;
@@ -115,9 +117,13 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
     });
     // Picking a team selects its team row, so the detail shows that team's
     // view, its tactics with it: a manager who picks a team usually wants
-    // its tactics next. Picking All teams keeps the selection.
+    // its tactics next — but not when the selection is already on that
+    // team, a selected player included: narrowing the list to his own
+    // team is a way to see his teammates, not to leave him. Picking All
+    // teams keeps the selection.
     if view.team != team_before
         && let TeamChoice::Team(id) = view.team
+        && selected_team_id(view) != Some(id)
     {
         view.selected = Some(Selection::Team(id));
     }
