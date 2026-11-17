@@ -18583,3 +18583,13 @@ and shirt numbers, a note row's place, and the `(none)` and `(empty slot)` place
 lead's line between the two, from the draft's tables).
 Why: the maintainer found most of the window too dark to read.
 Plan: `plans/save_editor.md`, "Interchange formats in the UI".
+
+## 2026-11-17 — save_editor — a field the save's version lacks has its label dimmed with its control, on every screen (maintainer, P53)
+Decision: the rule the Ability stats column follows (0.0.2-statlbl) holds for every
+version-gated control of the editor: Stronger hand, the star, playing attitude, a PES 2016
+team's colours, Manager ID and kit slots, and any other control drawn disabled with a
+`PES NN+` tooltip has its label dimmed with it, carrying the same tooltip. For 0.0.2.
+Why: one reading for every such row; a label in the normal colour beside a disabled control
+reads as a field left to fill. Accepted knowing the Appearance section also dims when the
+aesthetics switch locks it.
+Plan: `plans/save_editor.md`, the Stats screen's paragraph on field labels.

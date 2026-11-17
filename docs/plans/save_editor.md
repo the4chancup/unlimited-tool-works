@@ -757,11 +757,13 @@ vertical room a tab row takes; a toggle on the title's own row takes none.
 
      A field's label in these panels and in Ability stats is drawn in the normal text colour,
      as the checkboxes' labels are, not the weak one: the weak grey read too dark beside them.
-     The label of an ability stat the save's version does not store (Tight Possession and
-     Aggression before PES 2020, among others) is the exception: it is drawn as a
-     version-gated card's label is, dimmed with its disabled `-` and with the same `PES NN+`
-     tooltip, so the row reads as a stat this game does not have rather than as one left to
-     fill.
+     The label of a field the save's version does not store is the exception, here and on
+     every screen of the editor: an ability stat (Tight Possession and Aggression before PES
+     2020, among others), Stronger hand before PES 2020, the star before PES 2019, playing
+     attitude before PES 2020, a PES 2016 team's colours, Manager ID and kit slots, and every
+     other control drawn disabled with a `PES NN+` tooltip. Its label is dimmed with its
+     disabled control, as a version-gated card's is, and carries the same tooltip, so the row
+     reads as a field this game does not have rather than as one left to fill.
      A label and its field are never closer than 20 points, on the pairs, in the label-left
      rows and in Ability stats.
   2. **Skills**, the Cards used badge in its header, the version's skills (up to 41,

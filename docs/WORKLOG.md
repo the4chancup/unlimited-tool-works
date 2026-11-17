@@ -18,23 +18,22 @@ excepted, below), 0.0.2-pes19
 (and with it the readme's PES 2019 claim), 0.0.2-nostretch's slices, and any mutation run
 (mutfast first). Most open steps below wait only for the maintainer's look
 (`maintainer/tasks.html`). What is left before the cut:
-1. Report a problem: the bundle's `README.txt` (0.0.2-report, the drill's result), then
-   card ST-REP-05 for the maintainer; the blind drill ran 2026-11-17 and found its planted
-   bug from the bundle alone.
-2. The framed Stats screen and the control edges (0.0.2-frames): the draft settled
+1. The framed Stats screen and the control edges (0.0.2-frames): the draft settled
    2026-11-17 (`eval/stats-boxes`, a member's request, the maintainer's polish), the plan
    and DECISIONS written; next its two slices.
-3. Four fixes from the maintainer's looks of 2026-11-17: 0.0.2-namegame (a name's colour
+2. Four fixes from the maintainer's looks of 2026-11-17: 0.0.2-namegame (a name's colour
    codes drawn as they are in the light theme too), 0.0.2-xhover (the changes list's X
    highlighted on hover), 0.0.2-allcat (All teams reads `VGL teams` under VGL, and so on)
-   and 0.0.2-ixtext (the interchange window's lines in the normal text colour).
+   and 0.0.2-ixtext (the interchange window's lines in the normal text colour); and P53,
+   accepted for 0.0.2: 0.0.2-gatelbl (a version-gated control's label dimmed with it).
    0.0.2-present, the resize flicker's fix, landed 2026-11-17.
-4. The cut, only once the maintainer has run the checks of
+3. The cut, only once the maintainer has run the checks of
    `maintainer/tasks.html` (the maintainer, 2026-11-17): a pipeline without mutants on the
    last merge (0.0.2-determ's second clean run), the changelog, the release build, and a
    Linux bundle for the Reset window card.
 
-Done since 2026-11-16: the answers' recheck (Kit slots and the Stats screen fixed and looked
+Done since 2026-11-16: Report a problem for 0.0.2 (the maintainer ran ST-REP-05 from a
+save to the zip, 2026-11-17: works), the answers' recheck (Kit slots and the Stats screen fixed and looked
 at), the Report a problem dialog's spacing, `gui.py`'s review round. Reviews: every 0.0.2 loop
 has ended; Report a problem, a Tier 1 surface (DECISIONS 2026-11-16), has had its whole review
 (Carbon's loop ended at round 3, its fixes merged at `b3e8f007`, Astra's round 1 accepted
@@ -1496,13 +1495,13 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       titled `N players` with its locks)
     - [ ] slice 2: the edits written to every selected player as one undo step (the fields,
       the quick actions, Set and Bump all stats, Ctrl+V)
-  - [ ] 0.0.2-flatpitch the two formation picture dialogs (8.33, 8.34; `plans/save_editor.md`
+  - [x] 0.0.2-flatpitch the two formation picture dialogs (8.33, 8.34; `plans/save_editor.md`
     "Formation pictures", with the maintainer's additions of 2026-11-13; SE-GUI-86 to 89;
     DECISIONS 2026-11-14 "formation pictures are painted off screen by the view's own
     painters"; code map `.tmp/flatpitch/code_map.md` and `part2.md`) -> verify: the
     scenarios headless, the pictures looked at
-    - [ ] slice 1: the one-team dialog and the picture without the settings (SE-GUI-86,
-      87)
+    - [x] slice 1: the one-team dialog and the picture without the settings (SE-GUI-86,
+      87); card `look-picture-dialog`; the maintainer's look 2026-11-17: fine
       - [x] 1a (2026-11-14, `349ca307`) the picture's painter: the pitch's painting split
         from the widget, the off-screen frame and its rasterizer, the shape rule, the file
         name; nothing calls it outside its tests yet
@@ -1610,7 +1609,7 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     (`theme.rs` `combo_height`); the teams dropdown keeps the whole 300 with the radios under
     it, in a popup the selector opens itself (an egui ComboBox's popup stops at 400)
     - [x] the built window beside the draft: checked 2026-11-15 at `c20e6b29`, card
-      `look-team-dropdown` in `docs/maintainer/tasks.html`
+      `look-team-dropdown`; the maintainer's look 2026-11-17: fine
   - [x] 0.0.2-picsettings 2026-11-15 (merge `b13767aa`): the picture dialogs' settings box is
     the `formation_pictures_settings` setting, shared by both; a picture with the settings
     keeps its plain name
@@ -1657,11 +1656,11 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         was not measured: no command runs it. The bundle's next additions (DECISIONS
         2026-11-17 "a Report a problem bundle carries a readme"): its `README.txt` now,
         the edited teams' Team TOMLs before and after with the chain test
-    - [ ] the bundle's `README.txt` (`plans/core/architecture.md` "Repro bundles"): what
+    - [x] the bundle's `README.txt` (`plans/core/architecture.md` "Repro bundles"): what
       each part holds, then each tool's `repro_readme`, the Save editor's naming `diff` and
       `export-toml` (SWE-2) -> verify: a written bundle's readme holds the core part and
       the Save editor's, red without the method's override; a SWE-2 review round
-    - [ ] the built window beside the draft (`.tmp/lead/looks/report/draft_open.png`), run
+    - [x] the built window beside the draft (`.tmp/lead/looks/report/draft_open.png`), run
       through as above on a copy of a save, the zip then read with `save-editor diff`; then
       card ST-REP-05 in `maintainer/tasks.html`; review rounds (tier 2)
       - [x] run through (lead, 2026-11-17, the release build of `97cc9757`, PES 2021's
@@ -1677,8 +1676,7 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         sentence gaps against the dialogs' 8, the room a browser keeps under an inline box):
         the draft follows the build (the maintainer, DECISIONS 2026-11-17); every row now
         stands where the build's does
-      - [x] card ST-REP-05 in `maintainer/tasks.html` (2026-11-17), the maintainer's run
-        waiting there
+      - [x] card ST-REP-05 (2026-11-17): the maintainer's run from a save to the zip works
   - [x] 0.0.2-namelight 2026-11-15 (SWE-2, merge `40ce82da`): in the light theme a name's
     colour code reading under 4.5 on the panel is darkened until it does, hue kept
     (`theme::darkened_to_read`, which reproduces the lineup lists' hand-made colours); the
@@ -1712,23 +1710,30 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     `interchangePanel`). In the same SWE-2 run as 0.0.2-allcat (`interchange.rs` is one of
     0.0.2-namegame's name callers) -> verify: a painted-colour test, the built window beside
     the draft
+  - [ ] 0.0.2-gatelbl (P53, accepted for 0.0.2 by the maintainer, 2026-11-17) every
+    version-gated control's label dimmed with it and carrying its `PES NN+` tooltip, as the
+    Ability stats' are (`plans/save_editor.md` the Stats screen's paragraph on field labels;
+    DECISIONS 2026-11-17). First a SWE-2 map of every such control and its label, build and
+    draft; then the draft; then SWE-2 on a brief, after 0.0.2-frames B2 merges (General
+    info and the team view) -> verify: a test per place reads the label's painted colour,
+    red first; the built window beside the draft on a PES 2016 and a PES 2019 save
   - [x] 0.0.2-undosel 2026-11-15 (SWE-2, merge `e0ebd784`): Undo, Redo and a `Player order`
     row's X keep the moved player selected (`view/mod.rs` `following_selection`,
-    `Session::record_of`). Look checked, card `look-undo-selection`
+    `Session::record_of`). Look checked, card `look-undo-selection`; the maintainer's look 2026-11-17: fine
   - [x] 0.0.2-leeway 2026-11-15 (SWE-2, merge `addf0000`): `SHAPE_TOLERANCE` 3; /kfg/'s
-    preset 1 draws Kick-off alone. Look checked, card `look-kfg-leeway`
+    preset 1 draws Kick-off alone. Look checked, card `look-kfg-leeway`; the maintainer's look 2026-11-17: fine
   - [x] 0.0.2-idfilter 2026-11-15 (SWE-2, merge `addf0000`): IDs match from their start, a
     team's ID listing its squad (SE-GUI-102)
   - [x] 0.0.2-pgtop 2026-11-15 (SWE-2, merge `addf0000`): a team row the page keys select
-    scrolls to the list's top (SE-GUI-103). Look checked, card `look-pgdn-team-top`
+    scrolls to the list's top (SE-GUI-103). Look checked, card `look-pgdn-team-top`; the maintainer's look 2026-11-17: fine
   - [x] 0.0.2-ownteam 2026-11-15 (SWE-2, merge `addf0000`): the import window's
     `Select <name> (<id>)` (SE-GUI-104). Look checked beside the draft, card
-    `look-own-team-button`
+    `look-own-team-button`; the maintainer's look 2026-11-17: fine (the button on its own row under the line, as built)
   - [x] 0.0.2-changesperf 2026-11-15 (SWE-2, merge `a6bba169`): the changes table lays out
     only the rows in view, each cell measured once beside its rows (`prompt::TableLayout`);
     a release frame of the list with four teams' 2,494 rows 17.45 ms -> 1.01 ms, the close
     prompt 8.73 -> 0.97. Scrolled in the built window with two imports; card
-    `test-changes-scroll` asks the maintainer to try four
+    `test-changes-scroll`: the maintainer's try 2026-11-17 scrolls well
     - [x] no row pops in during a fast scroll (2026-11-16, SWE-2, merge `8db25bd4`):
       `a_fast_scroll_keeps_the_box_covered`, red with the drawn range one row short at
       either edge and with the wheel off the list
@@ -1772,7 +1777,7 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     after the selection (`35902abc`, merge `f4c1d2db`): the list gives its scroll area the
     reveal's offset before layout (egui lays the area out from its stored offset first);
     SE-GUI-103's same-frame clauses tested on the key's own frame. Built list checked at
-    `9d536eb4` (the draft has no page keys), card `test-held-pgdn`
+    `9d536eb4` (the draft has no page keys), card `test-held-pgdn`: the maintainer's try 2026-11-17 steady
   - [x] 0.0.2-promptx the close prompt's table gets the toolbar list's X column, its last
     row's X letting the close or open go on (`55f398a9`, merge `29299fe3`)
   - [x] 0.0.2-popwidth the toolbar's changes list is as wide as its widest row up to the
@@ -1941,7 +1946,8 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     -> verify: a test measures both gaps from the drawn frames, red first (10 and 8 before);
     landed (SWE-2, merge `cb074624`); the pitch's turf corners rounded with it (0.0.2-pitchround,
     merge `b700d3fa`). Built window measured at `b700d3fa` (both gaps 6), card
-    `look-tactics-gaps`
+    `look-tactics-gaps`: the gaps fine (the maintainer, 2026-11-17); the grey ring inside
+    the rounded corners is to take the turf's green, after 0.0.2 (0.1-pitchring)
   - [x] 0.0.2-picwidth (`be3913bf`, merge `5dfad4e2`) the pictures dialog kept its width only
     for some folder paths: egui rounds a wrap's width to a whole point, so a line landing in
     the fraction reported wider than the pinned width; the run's labels now wrap at its floor,
@@ -2368,7 +2374,7 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       helpers gone; six tests for SE-GUI-72, one from PES 2019 to PES 2021. Both of the
       brief's doubts held: a stats document writes what Copy stats writes, a preset and a
       formation survive the document. Tried in two real windows 2026-11-15 at `4b9f2258`, card
-      `look-clipboard`. Open: a paste notice with a tail ends without a full stop, unlike
+      `look-clipboard`; the maintainer's look 2026-11-17: fine. Open: a paste notice with a tail ends without a full stop, unlike
       every other notice (DECISIONS 2026-11-15 "Every copy and paste notice ends with a full
       stop"); fixed by 0.0.2-namelight (`40ce82da`)
     - [x] its review rounds (tier 2): SWE-2, then Carbon. SWE-2 "S-clip
@@ -2720,7 +2726,7 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       own team rows. A team viewed from a Team TOML with no tactics would hold all-zero
       formations and warn: nothing reaches that today, the Team creator's check will
       (to settle in its phase). Look: checked 2026-11-15 at `4b9f2258`, card
-      `look-illegal-formation` in `docs/maintainer/tasks.html`
+      `look-illegal-formation`; the maintainer's look 2026-11-17: fine
     - [x] b's SWE-2 review 2026-11-13 (S-warn r1, 1 of 2 accepted, the loop ends): the
       pitch's own range let a member make what the check warns about, which is 0.0.2-range
   - [x] 0.0.2-range with illegal formations off, the pitch holds an outfielder in the game's
@@ -2780,6 +2786,13 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
   (0.0.2-clip), and the writer lists every unset key as a commented line: about 305 lines
   for a player's stats, 143 for a preset. A form without the unset keys needs a writer
   option in `pes_savefile`'s `team_toml`
+- [ ] after 0.0.2 (the maintainer, 2026-11-17, card `look-tactics-gaps`): 0.1-pitchring,
+  the Tactics pitch's turf reaches its border's inner curve, as `plans/save_editor.md` (the
+  Tactics screen's item 2) says: 0.0.2-pitchround (`1f958e81`) rounds the turf by the
+  border's whole radius, so grey shows between the border's inner curve and the turf in
+  each corner (the maintainer's capture on the 4K screen, at 200%)
+  -> verify: a test reads the painted turf's corner radius against the border's inner one,
+  red first; the corners looked at at 100% and 200%
 - [ ] after 0.0.2 (the maintainer, 2026-11-15; DECISIONS 2026-11-15 "the File menu: the
   picker and the writes first"): the Ruleset editor's File menu takes the Save editor's
   layout: its picker, Save, Save as… with Ctrl+Shift+S, Recent files, Close file with

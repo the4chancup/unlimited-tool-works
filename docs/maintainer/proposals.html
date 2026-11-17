@@ -153,30 +153,6 @@ in <code>DECISIONS.md</code>.</p>
   <textarea class="own" placeholder="Your own ruling or a note (optional)"></textarea>
 </section>
 
-<section class="entry" id="p53">
-  <h3>P53: Every version-gated field's label is dimmed with its control</h3>
-  <p class="from">From: your ask of 2026-11-03 to dim the name of an ability stat the save's version lacks (0.0.2-statlbl, which did it for the Ability stats column alone)</p>
-  <p>The Save editor has other fields a version lacks, each drawn disabled in place with its
-  <code>PES NN+</code> tooltip while its label keeps the normal text colour:</p>
-  <ul>
-    <li>Stronger hand in General info, before PES 2020;</li>
-    <li>in the Cutscenes group, the star before PES 2019 and playing attitude before PES 2020;</li>
-    <li>on a PES 2016 save's team view, the colours, the Manager ID and the kit slots.</li>
-  </ul>
-  <p><b>Adds:</b> one rule for the whole editor, "a field the save's version lacks has its
-  label dimmed with its control", so a member reads every such row the same way.</p>
-  <p><b>Costs:</b> the label at each of those places is drawn through the disabled-widget
-  helper, each with its line in a test. And the Appearance section also dims, when the
-  aesthetics switch locks it, so a member who reads a dimmed label as locked by that switch
-  has one more thing dimmed there.</p>
-  <div class="options">
-    <label class="opt"><input type="radio" value="accept"><b>Accept</b></label>
-    <label class="opt"><input type="radio" value="accept, after 0.0.2"><b>Accept, for after 0.0.2</b></label>
-    <label class="opt"><input type="radio" value="veto"><b>Veto</b></label>
-  </div>
-  <textarea class="own" placeholder="Your own ruling or a note (optional)"></textarea>
-</section>
-
 <section class="entry" id="p55">
   <h3>P55: The Compiler's help as two topics</h3>
   <p class="from">From: the text rereading of 2026-11-13 (worklog 0.0.2-text)</p>
