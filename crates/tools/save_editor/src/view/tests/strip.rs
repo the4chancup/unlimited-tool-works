@@ -1769,10 +1769,7 @@ fn the_disabled_hands_words_take_the_disabled_grey() {
         let held = player_entry(&view, player_id).positions.stronger_hand;
         let mut window = Headless::new();
         let visuals = window.ctx.style_of(window.ctx.theme()).visuals.clone();
-        // What a disabled scope's words paint: its `disabled_text` faded.
-        let dim = studio_core::theme::palette(&visuals)
-            .disabled_text
-            .gamma_multiply(visuals.disabled_alpha());
+        let dim = dimmed_text_color(&visuals);
         let (normal, strong) = (visuals.text_color(), visuals.strong_text_color());
         for _ in 0..3 {
             window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));

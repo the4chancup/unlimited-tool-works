@@ -646,7 +646,7 @@ pub(super) fn small_stat(
             );
         }
         None => {
-            ui.label(small.shown);
+            gated_label(ui, small.shown, gating_tooltip(small.field));
             gated_number(ui, small.field);
         }
     }
@@ -1116,18 +1116,11 @@ fn ability_stats(
             for (index, &label) in ABILITY_STATS.iter().enumerate() {
                 let name = stat_name(version, label);
                 // A stat the version lacks reads dimmed with its `-`, as a
-                // version-gated card's name is, under the same tooltip: the
-                // click sense sends the label's text through the widget
-                // colours `add_enabled` dims (a hover-sensed one paints the
-                // plain text colour). `CLICK` alone, not `Sense::click()`,
-                // whose focus bit would offer a focus the disabled label
-                // can never take.
+                // version-gated card's name is, under the same tooltip.
                 let label_cell = if abilities[index].is_some() {
                     ui.label(name).rect
                 } else {
-                    add_enabled(ui, false, egui::Label::new(name).sense(egui::Sense::CLICK))
-                        .on_disabled_hover_text(gating_tooltip(ABILITY_FIELDS[index]))
-                        .rect
+                    gated_label(ui, &name, gating_tooltip(ABILITY_FIELDS[index])).rect
                 };
                 match abilities[index] {
                     Some(value) => {
@@ -1449,6 +1442,18 @@ pub(crate) fn gated_number(ui: &mut egui::Ui, field: PlayerField) {
         egui::Button::new("-").min_size(ui.spacing().interact_size),
     )
     .on_disabled_hover_text(gating_tooltip(field));
+}
+
+/// The label of a field the save's version does not store: dimmed as its
+/// disabled control is, under the control's `PES NN+` tooltip, so the row
+/// reads as a field this game does not have rather than one left to
+/// fill. `Sense::CLICK` sends the label's text through the widget colours
+/// `add_enabled` dims (a hover-sensed label paints the plain text colour);
+/// `CLICK` alone, not `Sense::click()`, whose focus bit would offer a
+/// focus the disabled label can never take.
+pub(crate) fn gated_label(ui: &mut egui::Ui, text: &str, tooltip: String) -> egui::Response {
+    add_enabled(ui, false, egui::Label::new(text).sense(egui::Sense::CLICK))
+        .on_disabled_hover_text(tooltip)
 }
 
 /// The tooltip naming the first version that stores `field` (`PES NN+`).

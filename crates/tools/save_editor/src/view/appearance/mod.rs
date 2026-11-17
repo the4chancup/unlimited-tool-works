@@ -31,7 +31,9 @@ use studio_core::widgets::{
 };
 
 use crate::session::Session;
-use crate::view::abilities::{self, gating_tooltip, maybe_end_row, number, small_stat};
+use crate::view::abilities::{
+    self, gated_label, gating_tooltip, maybe_end_row, number, small_stat,
+};
 use crate::view::appearance::fields::{
     MOTIONS, MotionField, PHYSIQUE, Palette, STRIP_ENUMS, combo_options, number_range, palette,
 };
@@ -1070,7 +1072,15 @@ fn motion_grid(
             // The dribbling motion sits between the kicks and the celebrations
             // (the draft's fourth row's last cell); a version without it draws
             // it disabled at 0 with the `PES NN+` tooltip.
-            ui.label(DRIBBLING_MOTION_LABEL);
+            if motion.dribbling.is_some() {
+                ui.label(DRIBBLING_MOTION_LABEL);
+            } else {
+                gated_label(
+                    ui,
+                    DRIBBLING_MOTION_LABEL,
+                    gating_tooltip(PlayerField::DribblingMotion),
+                );
+            }
             match motion.dribbling {
                 Some(stored) => {
                     let mut shown = stored;

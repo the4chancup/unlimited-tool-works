@@ -32,6 +32,18 @@ fn randomize_draws_within_pes21s_measured_tops_one_undo_entry() {
     assert_eq!(before.dribbling, Some(2), "premise: the dribbling motion");
     assert_ne!(before.goal_celebration_1, 162, "premise: gc1 starts else");
 
+    // The stored dribbling motion's label paints the normal text colour.
+    scroll_into_view(&mut window, &mut view, |node| {
+        node.role() == Role::Label && node.value() == Some("Dribbling motion")
+    });
+    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let text_color = window.ctx.style_of(window.ctx.theme()).visuals.text_color();
+    assert_eq!(
+        painted_label_color(&nodes, &shapes, "Dribbling motion"),
+        text_color,
+        "the stored dribbling motion's label paints the normal text colour"
+    );
+
     // The button sits below the fold under the player header: the click
     // goes through its AccessKit action (a pointer click lands only
     // inside the scroll's clip).
@@ -102,6 +114,29 @@ fn randomize_draws_within_pes15s_measured_tops_one_undo_entry() {
         tooltip_after_hover(&mut window, &mut view, centre(dribbling)),
         Some("PES 20+".to_string()),
         "the dribbling motion's tooltip"
+    );
+    // Its label is dimmed with the stand-in and answers the same hover.
+    let visuals = window.ctx.style_of(window.ctx.theme()).visuals.clone();
+    let dimmed = dimmed_text_color(&visuals);
+    assert_ne!(
+        dimmed,
+        visuals.text_color(),
+        "premise: the disabled grey is not the normal text colour"
+    );
+    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    assert_eq!(
+        painted_label_color(&nodes, &shapes, "Dribbling motion"),
+        dimmed,
+        "the dribbling motion's label dimmed with its stand-in"
+    );
+    let label = nodes
+        .iter()
+        .find(|node| node.role() == Role::Label && node.value() == Some("Dribbling motion"))
+        .expect("the dribbling motion's label");
+    assert_eq!(
+        tooltip_after_hover(&mut window, &mut view, centre(label)),
+        Some("PES 20+".to_string()),
+        "the label's hover names the same first version"
     );
     // Below the fold: the click goes through the AccessKit action.
     let (_, nodes, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));

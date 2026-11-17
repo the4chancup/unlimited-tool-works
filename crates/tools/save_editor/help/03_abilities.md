@@ -44,8 +44,8 @@ outside a range is shown as stored, and it changes only when you edit it.
 
 **Greyed controls**
 
-A greyed control is one the save's PES version does not have: hover it and the
-tooltip names the first version that does (for example PES 19+). The same fields
+A control greyed out with its name is one the save's PES version does not have: hover
+it and the tooltip names the first version that does (for example PES 19+). The same fields
 stay in the same places on every version, so the page never rearranges.
 
 **Cards used**

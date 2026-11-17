@@ -179,7 +179,9 @@
   Tactics slot popover open.
 - **Save editor**: after opening another save, medal outlines and Cards used badges no longer
   show the previous save's for a moment.
-- **Save editor**: an ability stat the save's version lacks is dimmed like its `-`.
+- **Save editor**: the name of a field the save's PES version lacks is dimmed with its
+  control: an ability stat, Stronger hand, Star rating, Playing attitude and Dribbling
+  motion, and on PES 2015 and 2016 a team's Color 1, Color 2 and Manager ID.
 - **Sidebar**: in a short window, the tool entries scroll, and Report a problem, Help and
   Settings stay pinned below them.
 - **Status bar**: on a small screen, the Reset window button no longer stays after a click

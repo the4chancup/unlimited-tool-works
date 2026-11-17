@@ -25,6 +25,7 @@ use studio_core::widgets::{
 };
 
 use crate::session::Session;
+use crate::view::abilities::gated_label;
 use crate::view::{SaveView, edit_team, info_strip, selected_team, tactics};
 
 /// One unit of the header's row: a label with its field, or the button.
@@ -318,7 +319,15 @@ fn colour_unit(
     team: &TeamEntry,
     index: usize,
 ) {
-    ui.label(COLOUR_LABELS[index]);
+    if team.colors.is_some() {
+        ui.label(COLOUR_LABELS[index]);
+    } else {
+        gated_label(
+            ui,
+            COLOUR_LABELS[index],
+            gating_tooltip([TeamField::Color1Red, TeamField::Color2Red][index]),
+        );
+    }
     match &team.colors {
         Some(colors) => {
             let mut shown = [
@@ -392,7 +401,7 @@ fn manager_unit(
             );
         }
         None => {
-            ui.label(MANAGER_LABEL);
+            gated_label(ui, MANAGER_LABEL, gating_tooltip(TeamField::ManagerId));
             gated_number(ui, TeamField::ManagerId);
         }
     }
