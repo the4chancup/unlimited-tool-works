@@ -18370,3 +18370,88 @@ Why: 10 s, not 2 s, because on a machine loaded with builds (or a game) the moni
 start of the whole binary, took longer: that session then ran with no crash dump (the crashed
 run's log in the gates showed it). The longer bound costs only when the monitor is that slow.
 Plan: no plan edit needed: no plan or spec section states the bound.
+
+## 2026-11-16 — gui — Two pixels from a draft are accepted only where moving closer costs code
+Decision: the drafts' tolerance stays one pixel. A second pixel is accepted only for an element
+that cannot be moved closer without extra code (text and borders a browser and egui round
+apart). An element the app places by a margin, a gap or a size of its own is moved to within one
+pixel, whatever its offset.
+Why: read as "two pixels pass", the rule let a title row's line stand 2 points lower than the
+draft's on every screen, though the app places that line itself; together with other gaps, that small offset
+can push a screen into a scroll. Moving an element the app places costs nothing.
+Plan: plans/core/gui.md "Prototypes before implementation", the Overlay and Draft measure bullets.
+
+## 2026-11-16 — release — 0.0.2 is cut without Select all similar, the Carbon rounds and the PES 2019 check
+Decision (the maintainer): 0.0.2 goes out within the day. Select all similar players
+(0.0.2-similar), every Carbon round still owed by a 0.0.2 step, and the Save editor's PES 2019
+writes checked in game (0.0.2-pes19) move to after it. 0.0.2's readme does not call PES 2019 a
+version the Save editor supports until that check has passed. No mutation run starts until the
+mutation speed-up lands, also after 0.0.2. The maintainer's looks stay in the cut: most double
+check what the lead has already compared with the drafts. This narrows "0.0.2 holds every open
+0.0.2 step" (2026-11-11).
+Why: most open steps only wait for a look, so the release need not wait for implementation or
+review hours, and a Carbon round costs hours and usage. A support
+claim for PES 2019 would rest on an import and a name alone.
+Plan: plans/core/development_plan.md "The /vg/ League 27 (VGL)" (the PES 2019 paragraph);
+RUNBOOK "A checkpoint is one command".
+
+## 2026-11-16 — release — The no-stretch slices move to after 0.0.2
+Decision (the maintainer): the views keeping their default layout in a larger window
+(0.0.2-nostretch, `plans/core/gui.md` "A window larger than the default") are built after 0.0.2,
+not in it. 0.0.2 keeps today's behaviour, where a larger window spreads the views. This narrows
+"0.0.2 is cut without Select all similar, the Carbon rounds and the PES 2019 check" (this day),
+whose worklog kept the slices in.
+Why: a slice per tool is real layout work on files the cut's other fixes also change, and the
+release is due within the day.
+Plan: plans/core/gui.md "A window larger than the default" (unchanged; only its release moves).
+
+## 2026-11-16 — team_compiler — kit_token_old follows the upgrader into a player FMDL's game folders
+Decision: in a player, Boots or Gloves FMDL, `kit_token_old` checks a texture path into the game's
+folders too, except the game's kit texture folder (`/Assets/pes16/model/character/uniform/texture/`
+and below) and the folders below the game's common folder other than `team_folder`. A `Common/`
+model still checks only its own folder's paths and the team's Common.
+Why: the rule is "refused where the Export upgrader respells it", and the upgrader rewrites every
+other game-folder directory of such a model to `./`, respelling the token. The 2026-11-11 entry's
+premise that it leaves every game-folder path as written held for `Common/` models only, so an
+un-upgraded Blender model naming `/Assets/pes16/model/character/face/real/00000/sourceimages/u0XXXp1.dds`
+compiled with no finding and a texture the game lacks.
+Plan: `spec/team_compiler/messages.md` the `kit_token_old` row; `spec/team_compiler/pipeline.md`
+"Kit-dependent assets"; TC-MOD-107.
+
+## 2026-11-16 — review — Report a problem is reviewed at Tier 1
+Decision: the "Report a problem" bundle and the code that writes it are a Tier 1 surface: SWE-2's
+loop, then Carbon's and Astra's, each followed by a SWE-2 loop. Its rounds run in 0.0.2, beside
+the cut's other work, although 0.0.2 otherwise defers the Carbon rounds.
+Why: the bundle is the instrument a bug is debugged from. A wrong or silently incomplete one
+sends the fix down the wrong path, which costs more than a view's defect; Tier 2's single paid
+round is not enough for that.
+Plan: `RUNBOOK.md` "Review rounds" (Tier 1's list); `WORKLOG.md` current status.
+
+## 2026-11-17 — save_editor — the range pictures' team pickers show each team's id and name
+Decision: "Save formation pictures for a range of teams" lists each team in its two pickers as
+its id and name (`701 /3/`), as Multi-team AATF's pickers do; the draft, which showed the name
+alone, follows the build.
+Why: the dialog picks its range as Multi-team AATF does and shares its pickers; one label for
+both keeps the two ranges read alike, and the id tells apart two teams of one name.
+Plan: `plans/save_editor.md` "Formation pictures" (the range's first bullet); the draft's
+`drawPicturesRange`.
+
+## 2026-11-17 — save_editor — Kit slot assignments: wider columns and a centred grid, after 0.1.0
+Decision: after Release 0.1.0, the Kit slot assignments dialog's columns stand further apart
+and its grid is centred across the dialog. Until then the draft's grid keeps standing 4 points
+right of and below the build's.
+Why: the maintainer, with the draft and the build side by side: neither margin is right,
+because the columns need more room and the grid belongs in the middle. The dialog is rarely
+used, so the work waits rather than taking more of 0.0.2.
+Plan: `plans/save_editor.md` "Editing UI" (the team view's Kit slots… button).
+
+## 2026-11-17 — save_editor, core — the Stats screen's and Report a problem's drafts follow the build
+Decision: the drafts take the build's look in two places. The player and team views' title
+line stands at 56.5 and the Playable positions selector and grid 0.5 and 1.5 nearer the
+panel's heading (`viewTitle`'s line, `#pos-layout`). Report a problem's draft spaces its
+sentences 8 apart, as every dialog does, and draws its text box as a block, with no room
+kept under it (`drawReport`).
+Why: the maintainer, over both pairs of pictures: "We can keep the app's look on both cases.
+Change the draft." The differences were the lead's tolerance adding up past 2 points, not a
+look anyone chose; the build's spacing is the dialogs' shared rule.
+Plan: no plan edit needed: the plans set neither offset; `docs/prototypes/` carries both.

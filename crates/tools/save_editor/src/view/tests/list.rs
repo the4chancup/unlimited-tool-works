@@ -271,6 +271,43 @@ fn a_rows_coded_name_reads_on_the_light_panel() {
     }
 }
 
+// A team row's codes darken against the surface the resting row
+// paints: its own fill over the list's background (grey 231 on the
+// light theme), a step under the panel `name_background` assumes. A
+// code darkened to 4.5 on the panel reads about 3.9 on the row.
+// SE-GUI-01
+#[test]
+fn a_team_rows_coded_name_reads_on_its_own_surface() {
+    let path = fixture(PesVersion::Pes21, "name_codes_team_row");
+    let mut file = EditFile::from_bytes(&fixture_save(PesVersion::Pes21)).unwrap();
+    file.team_mut(701).unwrap().name = "\u{11}cffffffffTEAM".to_owned();
+    file.save(&path).unwrap();
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut window = Headless::new();
+    window.ctx.set_theme(egui::Theme::Light);
+    let visuals = window.ctx.style_of(egui::Theme::Light).visuals.clone();
+    assert!(!visuals.dark_mode, "premise: the light theme's visuals");
+    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let bounds = team_row(&nodes, &view, 701).bounds().expect("bounds");
+    let shape = text_in_rect(&shapes, "TEAM", bounds);
+    let code = shape
+        .galley
+        .job
+        .sections
+        .iter()
+        .map(|section| section.format.color)
+        .find(|color| *color != egui::Color32::PLACEHOLDER)
+        .expect("the name's coded run");
+    let surface = visuals
+        .extreme_bg_color
+        .blend(studio_core::theme::palette(&visuals).team_row_fill);
+    assert!(
+        studio_core::theme::contrast(code, surface) >= 4.5,
+        "the code paints {code:?}, under 4.5 on the row's {surface:?}"
+    );
+}
+
 // SE-GUI-02
 #[test]
 fn the_filter_finds_a_player_of_another_team_and_selecting_shows_him() {

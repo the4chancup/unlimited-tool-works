@@ -642,6 +642,34 @@ fn the_tier_grids_stand_as_the_drafts() {
     }
 }
 
+// A row's Label field is 100 points wide and its Id field 80, the
+// widths `tier_row` asks and the draft's `text` boxes take. egui's
+// `TextEdit` caps its box at the width a grid cell offers, and an
+// `egui::Grid` offers a column only what a cell of it has measured
+// already — `interact_size`'s 40 until then — so a field left to the
+// cap would stay at 40, "Bronze" and "silver" cut.
+#[test]
+fn the_label_and_id_fields_take_their_asked_widths() {
+    let (ctx, _events, _path, mut view) = official_opened("tier_field_widths");
+    let mut window = Headless::new();
+    view.section = Section::Tiers;
+    let frame = settled(&mut window, &mut view, &ctx);
+    // The Label column's TextInputs hold the tiers' labels, the Id
+    // column's the ids; "Bronze" and "silver" name the one field each.
+    for (value, expected) in [("Bronze", 100.0), ("silver", 80.0)] {
+        let bounds = find(&frame.nodes, "a drawn field", |node| {
+            node.role() == Role::TextInput && node.value() == Some(value)
+        })
+        .bounds()
+        .expect("a drawn field");
+        let width = bounds.x1 - bounds.x0;
+        assert!(
+            (width - expected).abs() <= 1.0,
+            "the {value} field: {width} wide, expected {expected}"
+        );
+    }
+}
+
 // RE-GUI-06
 #[test]
 fn the_medal_checkbox_moves_a_tier_into_and_out_of_the_systems() {
@@ -1325,9 +1353,9 @@ fn the_open_expanders_stat_grid_spans_the_table() {
     // And its cell is the last column's own: a cell recorded a column
     // past it adds only scroll space — dead room right of the table —
     // so on a window the section just fits (its right edge measures a
-    // few points inside the 1292-wide viewport), a rightward wheel
+    // few points inside the 1408-wide viewport), a rightward wheel
     // scroll over the table moves nothing.
-    window.screen = egui::vec2(1300.0, 900.0);
+    window.screen = egui::vec2(1416.0, 900.0);
     let frame = settled(&mut window, &mut view, &ctx);
     let before = handle_x(&frame.nodes);
     let over = centre(node(&frame.nodes, "Rate"));

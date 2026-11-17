@@ -89,22 +89,49 @@ pub(crate) fn show(ui: &mut egui::Ui, ruleset: &mut Ruleset, logo: &mut LogoFiel
          on it opens the event page.",
     );
     ui.separator();
-    ui.strong("Rating stats");
-    ui.weak(
+    checklist_block(
+        ui,
+        ruleset,
+        "Rating stats",
         "A player's rating is the highest of these stats, and it picks his tier. The \
          values a stat may take come from its target, the warning band and the stat \
          total, not from the rating.",
+        Checklist::Rating,
+        &ABILITY_STATS,
     );
-    checklist(ui, ruleset, Checklist::Rating, &ABILITY_STATS);
     ui.separator();
-    ui.strong("May sit below the target");
-    ui.weak("Every other stat must equal its target exactly.");
     let all: Vec<&str> = ABILITY_STATS
         .iter()
         .copied()
         .chain(NON_STAT_TARGETS)
         .collect();
-    checklist(ui, ruleset, Checklist::AtMost, &all);
+    checklist_block(
+        ui,
+        ruleset,
+        "May sit below the target",
+        "Every other stat must equal its target exactly.",
+        Checklist::AtMost,
+        &all,
+    );
+}
+
+/// The `heading`, its `help` line and the checklist under them (the
+/// draft's `strong`, `weak` and `statGrid`): the three stacked without
+/// a gap, as the draft's marginless children stand.
+fn checklist_block(
+    ui: &mut egui::Ui,
+    ruleset: &mut Ruleset,
+    heading: &str,
+    help: &str,
+    list: Checklist,
+    names: &[&str],
+) {
+    ui.scope(|ui| {
+        ui.spacing_mut().item_spacing.y = 0.0;
+        ui.strong(heading);
+        ui.weak(help);
+        checklist(ui, ruleset, list, names);
+    });
 }
 
 /// The Event page box: an emptied box stores no page.
@@ -228,7 +255,9 @@ fn scaled_side(side: u32, numerator: u32, denominator: u32) -> u32 {
 }
 
 /// A checklist grid over `names`, five columns as the draft's
-/// `statGrid`; each checkbox toggles `name` in `list`.
+/// `statGrid`; each checkbox toggles `name` in `list`. Each row is the
+/// draft's `tr`: 22 tall — the checkbox's 18 and the cell's 4-point
+/// padding — meeting the next flush, the checkbox centred in it.
 fn checklist(ui: &mut egui::Ui, ruleset: &mut Ruleset, list: Checklist, names: &[&str]) {
     egui::Grid::new((
         "checklist",
@@ -238,7 +267,8 @@ fn checklist(ui: &mut egui::Ui, ruleset: &mut Ruleset, list: Checklist, names: &
         },
     ))
     .num_columns(5)
-    .spacing(egui::vec2(ui.spacing().item_spacing.x, CHECKBOX_SPACING))
+    .min_row_height(ui.spacing().interact_size.y + CHECKBOX_SPACING)
+    .spacing(egui::vec2(ui.spacing().item_spacing.x, 0.0))
     .show(ui, |ui| {
         for (index, &name) in names.iter().enumerate() {
             let mut on = holds(ruleset, list, name);

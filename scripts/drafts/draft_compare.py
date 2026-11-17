@@ -2,11 +2,13 @@
 
 Every named element of one screen is measured on both sides and matched by its text, and each
 pair's offset is sorted into a band of the drafts' tolerance (`plans/core/gui.md` "Prototypes
-before implementation": a pixel accepted, two where matching closer would complicate the
-implementation, more a mismatch to fix or rule):
+before implementation": a pixel accepted; two only for an element that cannot be moved closer
+without extra code, never for one the app places by a margin, gap or size of its own; more a
+mismatch to fix or rule):
 
 - **over 2 px**: a mismatch;
-- **1 to 2 px**: accepted only where matching closer costs code, so each is looked at;
+- **1 to 2 px**: each looked at, and accepted only where the element cannot be moved closer
+  without extra code;
 - **within 1 px**: accepted (an offset of exactly 1 included).
 
 A pair's offset is the largest of its left, top, width and height differences. A pair whose

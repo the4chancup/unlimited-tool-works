@@ -22,9 +22,11 @@ save: a check only reads it and never presses Save.
 ## The rules `gui.py` keeps
 
 Input goes only into the app's own window: every point is in client coordinates and asserted
-inside the client rect and with the app's window under it (a notification over the app once
-took a click meant for it), and nothing is sent until the app's window is the foreground window:
-keys sent while another window held the focus once typed into the user's chat box. Captures use
+inside the client rect. Clicks, drags, the wheel and keys are posted to the app's window as
+window messages, so they need neither the foreground nor the real pointer, and no key can reach
+another program (keys once sent through the real keyboard typed into the user's chat box). The
+hover commands, which move the real pointer, bring the app to the front first and refuse a point
+another window covers (a notification over the app once took a click meant for it). Captures use
 PrintWindow, never a screen grab, so another window over the app does not end up in the
 picture. `close` sends `WM_CLOSE`, as the window's close button does; the app is never killed.
 A check that opens a save opens a copy, or opens it read-only and never saves: the user's saves

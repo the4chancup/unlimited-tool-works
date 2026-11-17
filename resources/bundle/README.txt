@@ -19,12 +19,11 @@ Getting started
 
 1. Unpack this archive into a folder of its own, anywhere you like.
 2. Open UTW.exe (utw on Linux). It keeps its settings in the data folder beside it.
-3. The window starts on PES 2017, the game the DBC is played on. VGL's organizer picks
-   PES 2019 on the sidebar before opening a save. quick_compile.bat compiles for the PES
-   picked there; quick_upgrade.bat upgrades for the PES of the savefile dropped onto it,
-   whatever the sidebar says. If the PES number on the sidebar turns yellow or red, click
-   the Settings gear at the bottom of the bar and set "PES folder" to the path of the
-   folder that holds the PES exe.
+3. Click the gear at the bottom of the sidebar to open the settings. "PES version" starts
+   on PES 2017, the game the DBC is played on: VGL's organizer picks PES 2019 there. Set
+   "PES folder" to the folder that holds the PES exe. quick_compile.bat compiles for the
+   PES picked there, while quick_upgrade.bat upgrades for the PES of the savefile dropped
+   onto it. The Save editor always works on the PES of the save it opens.
 4. VGL's organizer: read "For VGL's organizer", at the end, before running either launcher.
    It starts with three things to do before the first compile (back up the game's download
    folder, install the cup's official DpFileList.bin, change one setting), then gives the

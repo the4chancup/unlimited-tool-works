@@ -78,6 +78,14 @@ instead, and the game puts the picked kit's number in place of the `N`. A textur
 (`pants_kitF.dds`) is the set's fallback, the file a kit number with no variant of its own
 gets. It is never used under its own name, so a model naming `pants_kitF` finds nothing.
 
+Old exports named a kit's textures with `u0`, three letters or digits, then `p` (or `g`, the
+goalkeeper's) and a digit (`kit6_u0827p0.dds`, `u0714g1`). That spelling is refused with the
+error `kit_token_old`: a player, Boots or Gloves folder holding it in a file or folder name,
+or in a path one of its models, `.mtl` files or its `face.xml` names, is left out, and in
+`Common/` only that file or folder is. Write `kit1` to `kit9`, `kitN` or `kitF` instead
+(`gk_kit` and the same ending for a goalkeeper's); `export-upgrader upgrade` respells it in
+an old export.
+
 When the team has a kit number (a `p1` to `p9` folder in `Kits`, and the goalkeeper's `g1` goes
 with the number picked) with no texture of its own, it gets the set's fallback (`kitF`, else
 the lowest variant). For PES 2018 to 2021 the fallback is written once as `pants_kitN`. For PES

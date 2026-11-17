@@ -29,9 +29,10 @@ pub(crate) struct StemPair {
     pub(crate) ftex: (String, String),
 }
 
-/// The name `name` claims in a directory's texture namespace, as the shared
-/// validation's claim reads it: a texture's own, or a texture `.common`
-/// link's target name.
+/// The name `name` claims in a directory's texture namespace: a texture's
+/// own, or a texture `.common` link's target name, in every folder (the
+/// shared validation counts a link in fewer places, but an old export holds
+/// no links).
 fn texture_claim(name: &str) -> Option<String> {
     match classify(name) {
         FileKind::Texture => Some(name.to_owned()),

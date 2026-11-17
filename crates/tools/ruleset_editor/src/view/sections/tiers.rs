@@ -161,11 +161,13 @@ fn tier_row(
         .filter(|(row, _)| *row == index)
         .map_or_else(|| ruleset.tiers[index].id.clone(), |(_, text)| text.clone());
     let response = cell(ui, index, drop, |ui| {
-        ui.add(text_box(
-            egui::TextEdit::singleline(&mut id)
-                .desired_width(80.0)
-                .font(egui::TextStyle::Monospace),
-        ))
+        // The draft's Id column: an 80-point box, sized so the grid's
+        // cell offer cannot cap it (the same `add_sized` `widgets::text`
+        // uses).
+        ui.add_sized(
+            egui::vec2(80.0, ui.spacing().interact_size.y),
+            text_box(egui::TextEdit::singleline(&mut id).font(egui::TextStyle::Monospace)),
+        )
         .on_hover_text("What conditions and other tiers refer to")
     });
     if response.lost_focus() && id != ruleset.tiers[index].id {
@@ -377,11 +379,12 @@ fn name_color_cell(ui: &mut egui::Ui, ruleset: &mut Ruleset, index: usize) {
         tier.name_color = Some(code_with_alpha(rgb, tier.name_color.as_deref()));
     }
     if let Some(code) = &mut tier.name_color {
-        ui.add(text_box(
-            egui::TextEdit::singleline(code)
-                .desired_width(76.0)
-                .font(egui::TextStyle::Monospace),
-        ))
+        // The draft's 76-point hex box, sized so the grid's cell offer
+        // cannot cap it.
+        ui.add_sized(
+            egui::vec2(76.0, ui.spacing().interact_size.y),
+            text_box(egui::TextEdit::singleline(code).font(egui::TextStyle::Monospace)),
+        )
         .on_hover_text("The eight characters after \\x11c in the player's name");
     }
 }

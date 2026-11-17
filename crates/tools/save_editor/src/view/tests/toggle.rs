@@ -303,9 +303,10 @@ fn the_toggle_moves_the_detail_between_the_three_screens() {
     );
 }
 
-/// The bottom of the team view's fields' row (its tallest control, read
-/// off the topmost Short label's row, its controls right of the pane's
-/// left edge — the player list's rows stand left of it).
+/// The bottom of the team view's fields' row: its tallest control's
+/// bottom plus the centring under it (the row is 24 tall, the controls
+/// centred in it), read off the topmost Short label's row, its controls
+/// right of the pane's left edge — the player list's rows stand left of it.
 fn fields_row_bottom(nodes: &[accesskit::Node], pane_left: f64) -> f64 {
     let short = nodes
         .iter()
@@ -325,6 +326,7 @@ fn fields_row_bottom(nodes: &[accesskit::Node], pane_left: f64) -> f64 {
         .filter(|b| b.x0 >= pane_left && b.y0 < short.y1 && b.y1 > short.y0)
         .map(|b| b.y1)
         .fold(short.y1, f64::max)
+        + 3.0
 }
 
 /// The team view after the separator moved under the title's row: no

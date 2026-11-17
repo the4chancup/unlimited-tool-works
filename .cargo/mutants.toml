@@ -209,14 +209,6 @@ exclude_re = [
     # plans no face task. So answering the face for him changes no output. The answer is kept
     # because it is the true one, should a consumer start reading it.
     "replace match guard self\\.ingame_face with false in ModelFolder::own_package",
-    # export_upgrader: in `model_folders::run`, the skip of a copy whose `.mtl` or `face.xml`
-    # is rewritten, `||` -> `&&`, is equivalent: no file is both, so nothing is skipped, and
-    # every copy written is then replaced by its rewrite, written after every copy. Pinned to
-    # its site: the two `==` beside it stay measured. The same skip in `upgrade::run` is
-    # equivalent the same way: its rewrites (`kits.written`, `materials.written`, `face_xml`)
-    # are written after every copy.
-    "export_upgrader/src/model_folders\\.rs:389:13: replace \\|\\| with && in run",
-    "export_upgrader/src/upgrade\\.rs:628:13: replace \\|\\| with && in run",
     # export_upgrader: `Tool::default_settings` returns an empty table, which is what
     # `Default::default()` returns: the tool has no settings.
     "export_upgrader/src/lib\\.rs:\\d+:\\d+: replace <impl StudioTool for Tool>::default_settings -> toml::Table with Default::default\\(\\)",

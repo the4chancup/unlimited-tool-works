@@ -28,7 +28,8 @@ pub struct PlayerEntry {
     pub stats: PlayerStats,         // the ability values, form, injury, weak foot, and the
                                     // version-gated ones: physical_contact (17+),
                                     // catching (15), clearing/reflexes/coverage (16+),
-                                    // star (19+), tight_possession (20+)
+                                    // star (19+), tight_possession, aggression
+                                    // and playing_attitude (20+)
     pub positions: PlayerPositions, // registered position, play_pos[13] (A/B/C), playstyle
     pub skills: PlayerSkills,       // play_skill[..41], com_style[7]
     pub motion: PlayerMotion,       // hunching, arm movement, kick motions, gc1/gc2
@@ -188,6 +189,8 @@ known code and is left alone.
   (hunching, arm movement, kick motions, gc1/gc2, dribbling motion on 20+; visual choices a
   team makes, so aesthetics), and every field of the ingame-face run (sliders, colours, hair,
   the eleven feature types; the run is fully decoded, "The ingame-face run" below);
+- the star rating (19+) and playing attitude (20+), under `appearance.presentation`: stats
+  in the save's record, set as part of a player's look;
 - the boots/gloves model IDs **within the stock band** (0 to 100; custom IDs are derived by the
   compiler from the models and links present, see the Aesthetics export spec's "Player
   settings in exports").
@@ -209,7 +212,7 @@ pub enum SettingKey { BootsId, GlovesId, SkinColor, IrisColor, NeckLength,
                       /* … every key of the block, in its order */ LowerLipType }
 
 /// Every leaf is `Option`; the struct mirrors the TOML tables (top level, `appearance`,
-/// `appearance.physique`, `.strip`, `.motion`, `.face`, `.hair`) with the model's
+/// `appearance.physique`, `.strip`, `.motion`, `.presentation`, `.face`, `.hair`) with the model's
 /// storage types (`u8`/`bool`): the string labels and the signed physique numbers exist
 /// only at the parse/emit boundary. A `None` appearance key applies its `KeySpec` default
 /// (the template's shown value), so a compiled player's look is his file and nothing else;

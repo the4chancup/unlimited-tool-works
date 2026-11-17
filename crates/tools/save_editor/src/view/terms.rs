@@ -386,8 +386,9 @@ fn player_field_term(version: PesVersion, diff: &PlayerDiff) -> Term {
     }
 }
 
-/// A `Face` row's term: the gloves dropdown and the palettes are drawn,
-/// the rest of the run's fields are not (named in words).
+/// A `Face` row's term: the outfielder gloves and the three colours read
+/// as their controls show them, the run's other fields in words
+/// (`report_term`).
 fn face_field_term(version: PesVersion, diff: &PlayerDiff) -> Term {
     let PlayerDiff::Face { field, old, new } = *diff else {
         unreachable!("face_field_term gets a Face row")

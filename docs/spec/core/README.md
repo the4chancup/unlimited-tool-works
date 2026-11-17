@@ -172,6 +172,7 @@ Key reasons:
 | `indexmap` | `music_export`'s slot map, the `.4ccm` slots in file order (the plan's `Model` names it); already in the build through `toml_edit` | Production-ready (2.14.2 in use) |
 | `roxmltree` | Read-only XML tree for `.mtl` material sets, `face.xml`, `face_diff.xml` (`pes_model`, the Compiler) and `fox2`'s XML form; writing those small fixed shapes is done by hand so Konami's formatting is reproducible | Production-ready (0.21.1 in use) |
 | `base64` | Decoding the vertex blocks of a Fox `face_diff.xml` (the Compiler); chosen over a hand-written decoder because it leaves no bit-twiddling to own and mutation-test | Production-ready |
+| `jiff` | Local time for the Report a problem dialog's summary and the bundle's file name (`utw-report-<date>-<time>.zip`): the system time zone, which `std` does not read | 0.2.45 in use |
 | `directories` | User config dir resolution (data-location choice) and `pes_savefile`'s save discovery under the user's Documents folder | Production-ready |
 | `toml` | Export text formats (`settings.toml`, `config.toml`; `materials.toml` joins with glTF), app settings | Production-ready |
 | `toml_edit` | Comment/formatting-preserving edits to the auto-generated tomls (`settings.toml`, `config.toml`; `materials.toml` joins with glTF); comments are app-injected (predefined per-field documentation) and preserved across edits | Production-ready (the `toml` crate's own foundation) |

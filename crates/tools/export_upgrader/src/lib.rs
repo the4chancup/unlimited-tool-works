@@ -104,7 +104,8 @@ impl StudioTool for Tool {
         cli::run(matches, ctx)
     }
 
-    /// An export is upgraded against the version the sidebar's selector holds.
+    /// An upgrade runs against a save of the version the sidebar's selector
+    /// holds (the window's discovery finds that version's).
     fn targets_pes_version(&self) -> bool {
         true
     }
@@ -121,5 +122,6 @@ mod tests {
         assert_eq!(tool.label(), "Export upgrader");
         assert!(tool.default_settings().is_empty());
         assert_eq!(tool.help().topics.len(), 2);
+        assert!(tool.targets_pes_version());
     }
 }

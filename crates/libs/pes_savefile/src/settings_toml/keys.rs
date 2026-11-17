@@ -99,7 +99,7 @@ pub enum SettingKey {
     GoalCelebration1,
     /// `[appearance.motion] goal_celebration_2`
     GoalCelebration2,
-    /// `[appearance.presentation] star` (PES 19+)
+    /// `[appearance.presentation] star_rating` (PES 19+)
     Star,
     /// `[appearance.presentation] playing_attitude` (PES 20+)
     PlayingAttitude,

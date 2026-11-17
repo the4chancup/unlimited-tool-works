@@ -1,9 +1,11 @@
 //! The update check: whether a newer release is out, and what the offer keeps
 //! of it. The window checks when it starts and again every `CHECK_PERIOD`
-//! while it stays open, each on a thread of its own so no frame waits on the
-//! network (`start_check`), reads the newest release by semver out of the
-//! fetched body (`newest_release`), and offers it when it is newer than the
-//! built version and not the skipped one (`offers`). The `Release` the offer
+//! while it stays open, and a tool command once per run, taking the reply
+//! when its run is over. Each check runs on a thread of its own, so no frame
+//! and no command's work waits on the network (`start_check`). The check
+//! reads the newest release by semver out of the fetched body
+//! (`newest_release`), and offers it when it is newer than the built version
+//! and not the skipped one (`offers`). The `Release` the offer
 //! keeps (notes, page URL and assets) feeds the Details dialog and the
 //! download. "Update now" is `install`: it downloads the release's archive,
 //! checks it, unpacks it and swaps it in (`install` and `swap`). Native only:

@@ -1,22 +1,30 @@
 """Input and captures for the built app's own window only: the portable copy `setup.py` fills
 (`UTW.exe` in the folder `UTW_APP` names, `.tmp/0_0_1s4t_v2/app` by default). Every point is in
-client coordinates (on a 96 dpi monitor points = pixels) and asserted inside the client rect and
-not covered by another window, so a wrong point never lands in another program; input is sent
-only once the app's window is the foreground window. Captures use PrintWindow, never a screen grab, so a window over the app does
-not end up in the picture.
+client coordinates (on a 96 dpi monitor points = pixels) and asserted inside the client rect.
+Captures use PrintWindow, never a screen grab, so a window over the app does not end up in the
+picture.
+
+Clicks, drags, the wheel and keys are posted to the app's window as window messages: the real
+pointer does not move, no key reaches another program, and the window need not be in front, so
+the maintainer can keep working beside a check. Hover cannot be posted (Windows tells the app
+the pointer left as soon as a posted move enters, since the real pointer is elsewhere), so
+`move`, `burst` and a drag's capture while held move the real pointer: they bring the app to
+the front first and refuse a point another window covers.
 
 Usage:
   gui.py info                         client rect and window rect
   gui.py close                        WM_CLOSE to the app's window (never kill it)
   gui.py shot OUT.png                 one PrintWindow capture of the client area
   gui.py wshot OUT.png                the whole window, its title bar included
-  gui.py click X,Y [X,Y ...]          left clicks
-  gui.py move X,Y                     pointer to a point (hover)
-  gui.py drag X1,Y1 X2,Y2 [OUT.png]   press, move in 20 steps, release; with OUT.png, a
-                                      capture while still held (what shows before a drop)
-  gui.py wheel X,Y NOTCHES            wheel at a point (negative scrolls down)
-  gui.py keys ctrl+z | esc | ...      one chord sent to the foreground app
-  gui.py burst X,Y OUT_PREFIX N MS    pointer to X,Y then N captures MS apart
+  gui.py click X,Y [X,Y ...]          left clicks (posted)
+  gui.py move X,Y                     the real pointer to a point (hover; takes the foreground)
+  gui.py drag X1,Y1 X2,Y2 [OUT.png]   press, move in 20 steps, release (posted); with OUT.png,
+                                      a capture while still held (what shows before a drop),
+                                      by the real pointer (takes the foreground)
+  gui.py wheel X,Y NOTCHES            wheel at a point, negative scrolls down (posted)
+  gui.py keys ctrl+z | esc | ...      one chord (posted)
+  gui.py burst X,Y OUT_PREFIX N MS    the real pointer to X,Y, then N captures MS apart (takes
+                                      the foreground)
   gui.py open PATH | folder PATH      fill the app's own Open / folder dialog and confirm it
   gui.py cancel                       cancel the app's open dialog
   gui.py size W H | maximize          resize (outer size) or maximize the window
@@ -34,6 +42,11 @@ from PIL import Image
 
 user32 = ctypes.windll.user32
 gdi32 = ctypes.windll.gdi32
+kernel32 = ctypes.windll.kernel32
+user32.PostMessageW.argtypes = [wt.HWND, wt.UINT, wt.WPARAM, wt.LPARAM]
+WM_KEYDOWN, WM_KEYUP = 0x0100, 0x0101
+WM_MOUSEMOVE, WM_LBUTTONDOWN, WM_LBUTTONUP, WM_MOUSEWHEEL = 0x0200, 0x0201, 0x0202, 0x020A
+MK_LBUTTON = 0x0001
 user32.WindowFromPoint.argtypes = [wt.POINT]
 user32.WindowFromPoint.restype = wt.HWND
 user32.GetAncestor.argtypes = [wt.HWND, wt.UINT]
@@ -84,7 +97,6 @@ def foreground():
     # Windows refuses SetForegroundWindow to a process that does not hold the foreground; joined
     # to the foreground window's input thread for the call, this one may (no key is sent).
     if user32.GetForegroundWindow() != HWND:
-        kernel32 = ctypes.windll.kernel32
         fg_thread = user32.GetWindowThreadProcessId(user32.GetForegroundWindow(), None)
         own = kernel32.GetCurrentThreadId()
         user32.AttachThreadInput(own, fg_thread, True)
@@ -111,6 +123,59 @@ def to_screen(arg):
 def move(arg):
     pt = to_screen(arg)
     user32.SetCursorPos(pt.x, pt.y)
+
+
+def client_point(arg):
+    """`X,Y` as a mouse message's lParam, asserted inside the client rect."""
+    x, y = (int(float(v)) for v in arg.split(","))
+    rect = client()
+    assert 0 < x < rect.right and 0 < y < rect.bottom, f"{arg} is outside the client rect"
+    return (y << 16) | x
+
+
+def post_pointer_at(lparam, buttons=0):
+    """Post a move to the point. winit reports a move only when the position changed, and the
+    leave notice Windows sends after a posted move (the real pointer is elsewhere) clears
+    egui's pointer: so a move to the next pixel first, and whatever must happen at the point
+    is posted right after this, ahead of that notice."""
+    user32.PostMessageW(HWND, WM_MOUSEMOVE, buttons, lparam + 1)
+    user32.PostMessageW(HWND, WM_MOUSEMOVE, buttons, lparam)
+
+
+def post_click(arg):
+    lparam = client_point(arg)
+    post_pointer_at(lparam)
+    user32.PostMessageW(HWND, WM_LBUTTONDOWN, MK_LBUTTON, lparam)
+    user32.PostMessageW(HWND, WM_LBUTTONUP, 0, lparam)
+    time.sleep(0.6)
+
+
+def post_wheel(arg, notches):
+    lparam = client_point(arg)
+    pt = wt.POINT(lparam & 0xFFFF, lparam >> 16)
+    user32.ClientToScreen(HWND, ctypes.byref(pt))  # the wheel's point is in screen coordinates
+    post_pointer_at(lparam)
+    delta = (notches * 120) & 0xFFFF
+    user32.PostMessageW(HWND, WM_MOUSEWHEEL, delta << 16, ((pt.y & 0xFFFF) << 16) | (pt.x & 0xFFFF))
+    time.sleep(0.6)
+
+
+def post_drag(start, end):
+    (x1, y1), (x2, y2) = ((float(v) for v in a.split(",")) for a in (start, end))
+    client_point(end)
+    first = client_point(start)
+    post_pointer_at(first)
+    user32.PostMessageW(HWND, WM_LBUTTONDOWN, MK_LBUTTON, first)
+    time.sleep(0.2)
+    for step in range(1, 21):
+        point = client_point(f"{x1 + (x2 - x1) * step / 20},{y1 + (y2 - y1) * step / 20}")
+        user32.PostMessageW(HWND, WM_MOUSEMOVE, MK_LBUTTON, point)
+        time.sleep(0.03)
+    # The release with a fresh move at the drop point, so egui has the point it drops on.
+    last = client_point(end)
+    post_pointer_at(last, MK_LBUTTON)
+    user32.PostMessageW(HWND, WM_LBUTTONUP, 0, last)
+    time.sleep(0.6)
 
 
 def shot(out, whole=False):
@@ -155,14 +220,38 @@ KEYS = {
 EXTENDED = {0x2E, 0x24, 0x23, 0x21, 0x22, 0x25, 0x26, 0x27, 0x28}
 
 
+# The modifiers and their left-hand keys: winit reads them from the keyboard state, not from the
+# key messages.
+MODIFIERS = {0x11: 0xA2, 0x10: 0xA0, 0x12: 0xA4}
+
+
 def keys(chord):
+    """Post the chord's key to the app's window. Its modifiers are marked held in the app's
+    keyboard state alone: this thread joins the app's input thread (the two then share one
+    keyboard state), sets the state, and puts it back once the app has read the keys."""
     codes = [KEYS.get(k) or ord(k.upper()) for k in chord.split("+")]
-    for flag, order in ((0, codes), (2, list(reversed(codes)))):  # down, then KEYEVENTF_KEYUP
-        for code in order:
-            scan = user32.MapVirtualKeyW(code, 0)  # MAPVK_VK_TO_VSC
-            user32.keybd_event(code, scan, flag | (1 if code in EXTENDED else 0), None)
-            time.sleep(0.03)
-    time.sleep(0.4)
+    app_thread = user32.GetWindowThreadProcessId(HWND, None)
+    own = kernel32.GetCurrentThreadId()
+    assert user32.AttachThreadInput(own, app_thread, True), "AttachThreadInput refused"
+    saved = (ctypes.c_ubyte * 256)()
+    user32.GetKeyboardState(saved)
+    try:
+        held = (ctypes.c_ubyte * 256)(*saved)
+        for code in codes:
+            if code in MODIFIERS:
+                held[code] = held[MODIFIERS[code]] = 0x80
+        user32.SetKeyboardState(held)
+        plain = [code for code in codes if code not in MODIFIERS]
+        for message, order, up in ((WM_KEYDOWN, plain, 0), (WM_KEYUP, plain[::-1], 3 << 30)):
+            for code in order:
+                scan = user32.MapVirtualKeyW(code, 0)  # MAPVK_VK_TO_VSC
+                extended = (1 << 24) if code in EXTENDED else 0
+                user32.PostMessageW(HWND, message, code, (scan << 16) | extended | up | 1)
+        time.sleep(0.5)
+    finally:
+        user32.SetKeyboardState(saved)
+        user32.AttachThreadInput(own, app_thread, False)
+    time.sleep(0.2)
     print(f"sent {chord}")
 
 
@@ -286,21 +375,19 @@ elif cmd == "shot":
 elif cmd == "wshot":
     shot(args[0], whole=True)
 elif cmd == "click":
-    foreground()
     for arg in args:
-        move(arg)
-        time.sleep(0.15)
-        user32.mouse_event(2, 0, 0, 0, None)
-        time.sleep(0.06)
-        user32.mouse_event(4, 0, 0, 0, None)
-        time.sleep(0.6)
+        post_click(arg)
         print(f"clicked {arg}")
 elif cmd == "move":
     foreground()
     move(args[0])
     time.sleep(0.5)
     print(f"pointer at {args[0]}")
+elif cmd == "drag" and len(args) == 2:
+    post_drag(args[0], args[1])
+    print(f"dragged {args[0]} -> {args[1]}")
 elif cmd == "drag":
+    # A capture while held needs a pointer that stays on the window: the real one.
     foreground()
     (x1, y1), (x2, y2) = ((float(v) for v in a.split(",")) for a in args[:2])
     to_screen(args[1])
@@ -318,14 +405,9 @@ elif cmd == "drag":
     time.sleep(0.6)
     print(f"dragged {args[0]} -> {args[1]}")
 elif cmd == "wheel":
-    foreground()
-    move(args[0])
-    time.sleep(0.2)
-    user32.mouse_event(0x0800, 0, 0, int(args[1]) * 120, None)
-    time.sleep(0.6)
+    post_wheel(args[0], int(args[1]))
     print(f"wheel {args[1]} at {args[0]}")
 elif cmd == "keys":
-    foreground()
     keys(args[0])
 elif cmd == "burst":
     prefix, count, gap = args[1], int(args[2]), float(args[3]) / 1000

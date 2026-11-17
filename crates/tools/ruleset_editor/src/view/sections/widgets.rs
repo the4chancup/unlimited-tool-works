@@ -28,11 +28,16 @@ pub(crate) fn number(
     response
 }
 
-/// A single-line text field `width` points wide (the draft's `text`).
+/// A single-line text field `width` points wide (the draft's `text`),
+/// `add_sized` rather than `desired_width`: a `TextEdit` caps its box
+/// at the width a grid cell offers, and an `egui::Grid` offers a column
+/// only what a cell of it has drawn — `interact_size` until then, which
+/// the cap would keep it at for good.
 pub(crate) fn text(ui: &mut egui::Ui, value: &mut String, width: f32) -> egui::Response {
-    ui.add(text_box(
-        egui::TextEdit::singleline(value).desired_width(width),
-    ))
+    ui.add_sized(
+        egui::vec2(width, ui.spacing().interact_size.y),
+        text_box(egui::TextEdit::singleline(value)),
+    )
 }
 
 /// The weak "—" a cell draws where the row has no value.

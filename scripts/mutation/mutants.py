@@ -109,6 +109,9 @@ EXTRA_KINDS = ("bool", "literal", "normalize", "order")
 # `#[cfg(windows)]`: on Linux every test's backup deletes whole, so
 # remove_temp's mark write and remove_temp_folder's not-found arm have no
 # other catcher.
+# taskbar's set_relaunch and set_relaunch_values are `#[cfg(windows)]`, and so
+# is every test that reaches them: the Linux half compiles neither, so their
+# mutants all come back missed there.
 WINDOWS_ONLY_TESTS = [
     re.compile(
         r"crates/tools/team_compiler/src/output/deploy\.rs:\d+:\d+: .* in "
@@ -127,6 +130,11 @@ WINDOWS_ONLY_TESTS = [
     re.compile(
         r"crates/studio/src/gui_log\.rs:\d+:\d+: "
         r"(replace redact_any_spelling -> |.* in redact_(any_spelling|home)$)"
+    ),
+    re.compile(
+        r"crates/studio_core/src/shell/taskbar\.rs:\d+:\d+: "
+        r"(replace set_relaunch with \(\)|replace set_relaunch_values -> "
+        r"|.* in (set_relaunch|set_relaunch_values)$)"
     ),
 ]
 # The remote half's systemd unit: a transient service so its cgroup is

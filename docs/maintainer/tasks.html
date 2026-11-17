@@ -31,6 +31,9 @@ the page.
 game, a look at a window the lead has already compared with its draft, or a file only you have.
 Mark how it went, or write it in the box under it; your marks stay in this browser. When
 you're done, press <b>Copy my answers</b> at the bottom and paste the text into the chat.</p>
+<p class="intro">Run the cards on this build:
+<code>C:\Data\4cc\Tools_Mine\4cc-studio-temp\tasks_build\UTW.exe</code>, built from main at
+<code>32649d79</code> on 2026-11-17. It uses your own settings, as an installed copy would.</p>
 <ul id="toc"></ul>
 
 <h2>Tests on another machine or in the game</h2>
@@ -97,6 +100,36 @@ you're done, press <b>Copy my answers</b> at the bottom and paste the text into 
     <label class="opt"><input type="radio" value="none"><b>I don't have one</b></label>
   </div>
   <textarea class="own" placeholder="The save's path (optional)"></textarea>
+</section>
+
+<section class="entry" id="st-rep-05">
+  <h3>Report a problem, from a save to the zip (ST-REP-05)</h3>
+  <p class="from">From: worklog 0.0.2-report; <code>plans/core/gui.md</code> ST-REP-05</p>
+  <p>The lead ran this on a copy of a PES 2021 save. The zip held what it should, and
+  <code>UTW save-editor diff</code> of the save as opened against the save as written showed
+  only the one change made. The dialog now matches its draft.</p>
+  <ol>
+    <li>Start the page's build and open a copy of a save, any version.</li>
+    <li>Change something (tick a skill, say), then File &gt; Save.</li>
+    <li>Click <b>Report a problem</b>, the triangle near the bottom of the sidebar. Type a line
+    under "What happened?" if you like.</li>
+    <li>Click <b>Save…</b>. Windows' save dialog should suggest
+    <code>utw-report-&lt;date&gt;-&lt;hhmm&gt;.zip</code>, with today's date and your local time.</li>
+    <li>Save it, then open the zip in Explorer. It should hold <code>journal.toml</code>,
+    <code>inputs\</code> (the save as opened), <code>outputs\</code> (the save as written),
+    <code>state\save-editor\</code> (the save as it stood), <code>utw.log</code>,
+    <code>settings.toml</code>, <code>installs.txt</code> and <code>words.txt</code> (what you
+    typed).</li>
+  </ol>
+  <div class="shots">
+    <figure><a href="img/report_rows_built.png"><img src="img/report_rows_built.png" alt="The Report a problem dialog"></a><figcaption>The dialog in the lead's run</figcaption></figure>
+  </div>
+  <div class="options">
+    <label class="opt"><input type="radio" value="works"><b>All as described</b></label>
+    <label class="opt"><input type="radio" value="problems, see note"><b>Something differs</b>
+      <div class="note">Say which step below.</div></label>
+  </div>
+  <textarea class="own" placeholder="What you saw (optional)"></textarea>
 </section>
 
 <h2>Looks the lead has checked first</h2>

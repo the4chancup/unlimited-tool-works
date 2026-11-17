@@ -357,6 +357,161 @@ fn a_cut_value_ends_in_an_ellipsis_and_hovers_the_whole_row() {
     );
 }
 
+// The open save's cut ends inside the row's right inset (the draft's
+// `.drow` padding: 4 points in from the edge), clearing the hover outline
+// and the scroll bar; the lower bound keeps the cut as wide as the room.
+// SE-GUI-13
+#[test]
+fn a_cut_new_value_ends_inside_the_rows_right_inset() {
+    let (_view, _window, row) = compared_long_name("comparator_cut_inset", true);
+    let new = text_in_row(&row.shapes, row.bounds, LONG_NAME);
+    // The cut's right end: where the value's room runs out, `pos.x` plus
+    // the galley's wrap width. `galley.size` is up to a glyph short of it.
+    let end = f64::from(new.pos.x + new.galley.job.wrap.max_width);
+    assert!(
+        end <= row.bounds.x1 - 4.0,
+        "the cut ends at the inset ({end} vs {})",
+        row.bounds.x1 - 4.0
+    );
+    assert!(
+        end >= row.bounds.x1 - 5.0,
+        "the cut still reaches the inset ({end} vs {})",
+        row.bounds.x1 - 5.0
+    );
+}
+
+// A cut row of a player no roster holds hovers the whole name alone:
+// nothing to switch to, so no switch hint. 73410's place on 734's roster
+// given to 74301, so no roster holds him, and his name long in the picked
+// save so the row is cut.
+// SE-GUI-13
+#[test]
+fn a_cut_row_with_nothing_to_switch_to_hovers_the_name_alone() {
+    let dir = crate::test_support::scratch("comparator_cut_no_switch");
+    let open_path = picked_save(&dir, "open", |file| {
+        file.team_mut(734).expect("team 734").roster[9].player_id = 74301;
+    });
+    let picked = picked_save(&dir, "picked", |file| {
+        file.player_mut(73410).expect("73410 is a player").name = LONG_NAME.to_owned();
+    });
+    let mut view = SaveView::new();
+    view.open(&open_path);
+    view.panel = Some(Panel::Comparator);
+    let mut window = Headless::sized(DEFAULT_PANE.x, 800.0);
+    pick(&mut window, &mut view, picked);
+    compared(&mut window, &mut view);
+    let name = format!("Name {LONG_NAME} \u{2192} DFW");
+    let pairs = scroll_to(&mut window, &mut view, &name);
+    let row = pairs
+        .iter()
+        .find(|(_, node)| node.role() == Role::Label && node.value() == Some(name.as_str()))
+        .map(|(_, node)| node)
+        .unwrap_or_else(|| panic!("no row {name:?}"));
+    let at = centre(row);
+    assert_eq!(
+        tooltip_containing(&mut window, &mut view, at, "EXTRAORDINARILY").as_deref(),
+        Some(name.as_str()),
+        "the cut row hovers the whole name alone, no switch hint"
+    );
+}
+
+// Dragged to its narrowest, the window keeps the three heads whole and
+// each column's cut value ends in the ellipsis: 73401 named long in both
+// saves, so the Picked save's 200-point column and the Open save's rest
+// are cut alike.
+// SE-GUI-13
+#[test]
+fn dragged_to_its_narrowest_the_window_keeps_heads_whole_and_cuts_elided() {
+    let (mut view, mut window) = open_734_with("comparator_narrow", &[73401], 183);
+    let mut entry = player_entry(&view, 73401);
+    entry.name = LONG_NAME.to_owned();
+    view.session
+        .as_mut()
+        .expect("the save opened")
+        .edit_players(vec![entry]);
+    let picked = picked_save(&scratch_of(&view), "picked", |file| {
+        file.player_mut(73401).expect("73401 is a player").name = format!("{LONG_NAME}X");
+    });
+    view.panel = Some(Panel::Comparator);
+    pick(&mut window, &mut view, picked);
+    compared(&mut window, &mut view);
+
+    // Drag the window's bottom-right resize corner far left, past where
+    // the narrowest width puts it.
+    let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let frame = pairs
+        .iter()
+        .find(|(_, node)| {
+            node.role() == Role::Window
+                && node
+                    .label()
+                    .is_some_and(|label| label.starts_with("Comparator"))
+        })
+        .and_then(|(_, node)| node.bounds())
+        .expect("the Comparator window");
+    let (_, handle) = pairs
+        .iter()
+        .filter(|(_, node)| {
+            node.role() == Role::Splitter
+                && node.label() == Some("Resize window bottom-right corner")
+        })
+        .min_by(|(_, a), (_, b)| {
+            ((a.bounds().unwrap().x1 - frame.x1).abs())
+                .total_cmp(&(b.bounds().unwrap().x1 - frame.x1).abs())
+        })
+        .expect("the resize corner");
+    let from = centre(handle);
+    drag(
+        &mut window,
+        from,
+        egui::pos2(frame.x0 as f32 + 20.0, from.y),
+        &mut view,
+    );
+
+    let name = format!("Name {LONG_NAME}X \u{2192} {LONG_NAME}");
+    scroll_to(&mut window, &mut view, &name);
+    let (_, pairs, shapes) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let head_row = pairs
+        .iter()
+        .find(|(_, node)| node.value() == Some("Item Picked save Open save"))
+        .and_then(|(_, node)| node.bounds())
+        .expect("the columns' head");
+    let row = comparator_button(&pairs, &name)
+        .1
+        .bounds()
+        .expect("the row's bounds");
+    for title in ["Item", "Picked save", "Open save"] {
+        let shape = shapes
+            .iter()
+            .filter_map(|clipped| match &clipped.shape {
+                egui::Shape::Text(shape) if shape.galley.job.text == title => Some(shape),
+                _ => None,
+            })
+            .next()
+            .unwrap_or_else(|| panic!("{title:?} painted"));
+        assert!(
+            f64::from(shape.pos.x + shape.galley.size().x) <= head_row.x1 + 0.5,
+            "{title:?} whole inside the head row: {:?} vs {head_row:?}",
+            shape.pos
+        );
+    }
+    for value in [format!("{LONG_NAME}X"), LONG_NAME.to_owned()] {
+        let shape = text_in_row(&shapes, row, &value);
+        assert!(shape.galley.elided, "{value:?} is cut");
+        let last = shape
+            .galley
+            .rows
+            .last()
+            .and_then(|row| row.row.glyphs.last())
+            .map(|glyph| glyph.chr);
+        assert_eq!(
+            last,
+            Some('\u{2026}'),
+            "{value:?}'s cut ends in the ellipsis"
+        );
+    }
+}
+
 // The open save's value is cut too, at the rest of the row: 73401's long
 // name as the open save's value, the picked save keeping `Muh Spooks`,
 // starts at 410, ends in the ellipsis within the row, and the row's hover

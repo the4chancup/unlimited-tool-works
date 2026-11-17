@@ -140,6 +140,89 @@ fn the_colors_squares_stand_two_apart() {
     );
 }
 
+// The Colors frame is the draft's 230 wide: its label column the labels'
+// own width, the grid's 8-point gap to the first square, and the swatch
+// cell's right padding inside the frame's right edge.
+#[test]
+fn the_colors_frame_is_the_drafts_230_wide() {
+    let path = fixture(PesVersion::Pes21, "colors_frame_width");
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut window = Headless::sized(DEFAULT_PANE.x, DEFAULT_PANE.y);
+    open_appearance(&mut window, &mut view);
+    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+
+    let colors = group_frame(&window, &nodes, &shapes, "Colors");
+    assert!(
+        (colors.width() - 230.0).abs() <= 1.0,
+        "the Colors frame {} wide, the draft's 230",
+        colors.width()
+    );
+    let skin = label_bounds(&nodes, "Skin");
+    let square = right_of_label(&nodes, "Skin", Role::ColorWell)
+        .first()
+        .and_then(|node| node.bounds())
+        .expect("the first skin square");
+    assert!(
+        (square.x0 - skin.x1 - 8.0).abs() <= 1.0,
+        "the first square {} after \"Skin\", the grid's 8-point gap",
+        square.x0 - skin.x1
+    );
+}
+
+// The Appearance screen's number boxes are the draft's `input[type=number]`
+// width, 52: the motion fields', Presentation's and Copy from ID's. What
+// stands beside each keeps the draft's gap: the next column's label 8 after
+// a motion box, a row's note 8 after its box, and a space's width after Copy
+// from ID's label, the cell the pair shares.
+#[test]
+fn the_appearance_number_boxes_are_the_drafts_52_wide() {
+    let path = fixture(PesVersion::Pes21, "appearance_number_boxes");
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut window = Headless::sized(DEFAULT_PANE.x, DEFAULT_PANE.y);
+    open_appearance(&mut window, &mut view);
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+
+    let box_right_of = |label: &str| {
+        right_of_label(&nodes, label, Role::SpinButton)
+            .first()
+            .and_then(|node| node.bounds())
+            .unwrap_or_else(|| panic!("the {label} box"))
+    };
+    let motion = box_right_of("Hunching (dribbling)");
+    let star = box_right_of("Star rating");
+    let copy = box_right_of("Copy from ID");
+    for (name, bounds) in [("motion", motion), ("star", star), ("copy", copy)] {
+        assert!(
+            (bounds.x1 - bounds.x0 - 52.0).abs() <= 0.5,
+            "the {name} box {} wide, the draft's 52",
+            bounds.x1 - bounds.x0
+        );
+    }
+    let running = label_bounds(&nodes, "Hunching (running)");
+    assert!(
+        (running.x0 - motion.x1 - 8.0).abs() <= 1.0,
+        "the second column's label {} after the box, the grid's 8-point gap",
+        running.x0 - motion.x1
+    );
+    let note = label_bounds(
+        &nodes,
+        "How likely the player is to show up as the team's featured player in the pre-match screen.",
+    );
+    assert!(
+        (note.x0 - star.x1 - 8.0).abs() <= 1.0,
+        "the star note {} after its box, the grid's 8-point gap",
+        note.x0 - star.x1
+    );
+    let label = label_bounds(&nodes, "Copy from ID");
+    assert!(
+        (copy.x0 - label.x1 - 3.0).abs() <= 1.0,
+        "the box {} after its label, a space's width",
+        copy.x0 - label.x1
+    );
+}
+
 // SE-GUI-84
 #[test]
 fn the_groups_stand_in_the_drafts_order() {
@@ -247,6 +330,25 @@ fn the_group_titles_leave_title_gap_under_them() {
     assert!(
         (flags_gap - 8.0).abs() <= 1.0,
         "\"Edit flags\" leaves TITLE_GAP under it ({flags_gap} vs 8.0)"
+    );
+}
+
+// The first group's heading text stands 20 under the title's line, as
+// the draft's does (its `.sep`, the `.group` `margin-top` and the
+// frame's padding): unlocked, no ownership rows over it.
+#[test]
+fn the_first_groups_heading_stands_twenty_under_the_titles_line() {
+    let path = fixture(PesVersion::Pes21, "first_group_under_line");
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut window = Headless::sized(DEFAULT_PANE.x, DEFAULT_PANE.y);
+    open_appearance(&mut window, &mut view);
+    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let (line, _) = line_and_pane_top(&window, &nodes, &shapes);
+    assert!(
+        (label_bounds(&nodes, "Full Player Customization").y0 - line - 20.0).abs() <= 1.0,
+        "the heading stands {} under the title's line, the draft's 20",
+        label_bounds(&nodes, "Full Player Customization").y0 - line
     );
 }
 
@@ -453,6 +555,27 @@ fn the_strip_grid_stands_three_columns_by_five_rows_with_its_lines() {
         }),
         "the line at the third column's left on rows four and five"
     );
+    let row1 = centre("Boots ID");
+    let row2 = centre("Gloves ID");
+    let row3 = centre("Wrist taping");
+    for (field_before, next_label) in [("Boots ID", "Sleeves"), ("Sleeves", "Inners")] {
+        let field_right = control_right_of(&nodes, field_before)
+            .bounds()
+            .expect("bounds")
+            .x1 as f32;
+        let label_left = label_bounds(&nodes, next_label).x0 as f32;
+        assert!(
+            lines.iter().any(|&[a, b]| {
+                a.x == b.x
+                    && a.x > field_right
+                    && a.x < label_left
+                    && a.y.min(b.y) <= row1.y
+                    && a.y.max(b.y) >= row2.y
+                    && a.y.max(b.y) < row3.y
+            }),
+            "the line before {next_label:?}'s column on rows one and two only"
+        );
+    }
 }
 
 // SE-GUI-84

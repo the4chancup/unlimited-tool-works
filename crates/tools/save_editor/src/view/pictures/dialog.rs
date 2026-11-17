@@ -223,8 +223,9 @@ pub(super) fn picture_boxes(
 
 /// Writes team `team_id`'s picture as `file_name` in `folder`
 /// (`write_picture`), for either picture dialog: on success the folder is
-/// kept as the `formation_pictures_folder` setting and the journal gets a
-/// `wrote` step; a failure is a `could not write` step.
+/// kept as the `formation_pictures_folder` setting, the journal gets a
+/// `wrote` step and the PNG is kept as an output, as every file the member
+/// saves is; a failure is a `could not write` step.
 pub(super) fn save_picture(
     visuals: &egui::Visuals,
     view: &mut SaveView,
@@ -242,30 +243,33 @@ pub(super) fn save_picture(
         pes_folder: view.pes_folder.as_deref(),
     };
     let path = Path::new(folder).join(file_name);
-    let written = write_picture(&team, visuals, options, Path::new(folder), file_name);
-    match &written {
-        Ok(()) => {
-            session
-                .recorder()
-                .step(TOOL_ID, format!("wrote {}", path.display()));
+    match write_picture(&team, visuals, options, Path::new(folder), file_name) {
+        Ok(png) => {
+            let recorder = session.recorder();
+            recorder.step(TOOL_ID, format!("wrote {}", path.display()));
+            recorder.keep_output(TOOL_ID, &path, png.into());
             view.formation_pictures_folder = folder.to_owned();
+            Ok(())
         }
-        Err(error) => journal::write_failed(&path, session.recorder(), error),
+        Err(error) => {
+            journal::write_failed(&path, session.recorder(), &error);
+            Err(error)
+        }
     }
-    written
 }
 
 /// `team`'s picture painted in `visuals` and written as a PNG named
-/// `file_name` in `folder`, the folder created when missing. The PNG is
-/// written to a temporary file beside it, then renamed onto its name, so a
-/// failed write leaves the picture that was there before whole.
+/// `file_name` in `folder`, the folder created when missing; returns the
+/// PNG's bytes. The PNG is written to a temporary file beside it, then
+/// renamed onto its name, so a failed write leaves the picture that was
+/// there before whole.
 fn write_picture(
     team: &PictureTeam<'_>,
     visuals: &egui::Visuals,
     options: PictureOptions,
     folder: &Path,
     file_name: &str,
-) -> io::Result<()> {
+) -> io::Result<Vec<u8>> {
     std::fs::create_dir_all(folder)?;
     let image = formations_picture(team, visuals, options);
     let mut png = io::Cursor::new(Vec::new());
@@ -274,5 +278,6 @@ fn write_picture(
         .map_err(io::Error::other)?;
     studio_core::files::replace_file(&folder.join(file_name), |temporary| {
         std::fs::write(temporary, png.get_ref())
-    })
+    })?;
+    Ok(png.into_inner())
 }

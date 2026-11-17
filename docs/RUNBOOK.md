@@ -39,6 +39,12 @@ past the gate. We do not keep the last gated commit as a typed note, nor the two
 separate steps to remember: three loops once closed with neither run, and a push went red on
 a broken pointer.
 
+**No mutation run starts until the worklog's mutfast step lands** (after 0.0.2): every
+checkpoint meanwhile runs without one, `just pipeline --no-mutants` (or `just checkpoint
+--no-mutants`), and no `just mutants`, `mutants-diff` or `extra-mutants` is started by hand.
+Save_editor's runs had grown to about five minutes a mutant and most of a day a checkpoint,
+and the step that makes a mutant stop at its first failing test comes before the next one.
+
 **The checkpoint runs beside the work, not in front of it.** `just pipeline` runs the
 checkpoint and then `just gates-remote` on the commit main's HEAD is on, from the gate
 worktree (`../4cc-studio-temp/gate`, with its own `target/`), so main's tree stays free:
@@ -76,7 +82,10 @@ worklog's "Pending looks" section, ordered by what a wrong result would cost; th
 maintainer can make are cards in `docs/maintainer/tasks.html`. A step or a decision that says
 "not checked in game" adds its line or card in the same edit. The lead
 sends what the harness can do to a SWE-2 in-game run whenever the list holds a
-game-facing write, and hands the maintainer the rest as one batch per game session.
+game-facing write, and hands the maintainer the rest as one batch per game session. The
+cards run on one build, a release build copied to `4cc-studio-temp/tasks_build/` and named in
+the tasks page's intro with its commit; a card that needs a later commit refreshes the copy
+and the intro in the same edit (never while the maintainer has it open: copy beside it then).
 
 **No look reaches the maintainer unchecked.** A built-window look goes on the tasks page, into a
 checklist or into a report only after the lead or an Opus sidekick has made it first: the
@@ -467,9 +476,12 @@ gets a second background command beside it, `python ~/.claude/skills/duck/devin_
 for 20 minutes neither the session's `last_activity_at` in Devin's `sessions.db` moved nor the
 run's process tree burned CPU (a build or test burns it without any step). The watcher never
 stops the run: what to do is the lead's call, after reading `git diff`, since a stalled run can
-leave a half-done edit or a perturbation in the tree. A
-session that stalled after its one allowed resume is not resumed again; the lead finishes the
-brief's remaining items itself or briefs a fresh session.
+leave a half-done edit or a perturbation in the tree. Resumes are not counted: a run stopped
+midway (a stall, an interruption, a server error) carries about the context an uninterrupted
+run would, so the stop costs nothing. The limit is the CLI's own autocompactor, which fires near
+the session's limit and drops context the task still needed: before a resume the lead reads the
+session's context size, and when the work left would carry it there, the lead finishes the brief's
+remaining items itself or briefs a fresh session.
 
 **A Devin CLI run is started detached**: `python
 ~/.claude/tools/run_detached.py <brief>.run.log "git add -A && python
@@ -778,7 +790,8 @@ next loop in the order runs meanwhile.
 **How deep a surface is reviewed follows what a defect in it would cost.** *Tier 1*, a
 surface that writes what the game or a member's save reads (a CPK's content, a converted
 model or texture, the savefile codec and its patch, an interchange file, the Export
-upgrader's output, the updater's swap): the three loops above. *Tier 2*, other shipped code
+upgrader's output, the updater's swap, the "Report a problem" bundle, which the maintainer
+debugs from, so a wrong one misleads the fix): the three loops above. *Tier 2*, other shipped code
 (a check and its messages, a view, the command line's surface): SWE-2's
 loop, then one round of one paid reviewer, which runs again only by the round rule.
 *Tier 3*, scripts, CI, documents and drafts: one SWE-2 round, a second only by that rule (a

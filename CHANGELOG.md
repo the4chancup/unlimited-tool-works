@@ -47,6 +47,7 @@
 
 ### Useful
 
+- **All tools**: an open dropdown list shows half as many items again before it scrolls.
 - **Save editor**: the team dropdown above the list reads All teams in place of ALL, and
   radio buttons at the bottom of the open dropdown narrow it and the list to the 4cc, VGL or
   Invitational teams.
@@ -61,8 +62,8 @@
 - **Save editor**: the status bar says what Save, Save as, Output rosters to TSV, Ctrl+C and
   Ctrl+V did, in semibold so it is easier to see.
 - **Save editor**: each row of the unsaved changes list and of the close prompt has an ×,
-  which puts that one change back, and a click on the row's item goes to its player or
-  team. A player dragged in the player list shows there as one `Player order` row.
+  which puts that one change back. In the list, a click on a row's item goes to its player
+  or team. A player dragged in the player list shows there as one `Player order` row.
 - **Save editor**: a player dragged in the player list moves with the pointer, and a line
   shows where he will land.
 - **Save editor**: the Team menu's `Save a picture of the formations…` saves a PNG of the
@@ -124,8 +125,9 @@
   file…`), a button under `Import into` selects the team the picked file was exported
   from, so you can import back onto it without looking for it in the list.
 - **All tools**: Report a problem, in the sidebar above Help, saves a file to post with a
-  report of something that went wrong: what you did in each tool, the files it opened and
-  wrote, the log, your settings and your own words. Nothing is sent: you post the file.
+  report of something that went wrong: the log, your settings and your own words, and what
+  you did in the Save editor with the files it opened and wrote (the other tools join
+  later). Nothing is sent: you post the file.
 - **Save editor**: the File menu starts with `Open…` (Ctrl+O, until now `Choose
   file…`), `Save` and `Save as…`, which now has Ctrl+Shift+S. The saves found in
   Documents and the recent saves follow, each under its own heading. Below them are
@@ -183,8 +185,8 @@
 - **Save editor**: after opening another save, medal outlines and Cards used badges no longer
   show the previous save's for a moment.
 - **Save editor**: an ability stat the save's version lacks is dimmed like its `-`.
-- **Sidebar**: in a short window, the tool entries scroll, and Help and Settings stay pinned
-  below them.
+- **Sidebar**: in a short window, the tool entries scroll, and Report a problem, Help and
+  Settings stay pinned below them.
 - **Status bar**: on a small screen, the Reset window button no longer stays after a click
   that changed nothing.
 - **Windows**: a Shift+click or a middle click on the program's taskbar button opens another

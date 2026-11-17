@@ -509,8 +509,9 @@ table.grid.stats-grid td { padding: 3px 6px; }
    first rows stand below theirs; then the grid. Left starts every row at the
    block's left edge, List gives each position a row of its own (the label in
    a fixed-width cell, its C B A right of it); both keep the block centred in
-   the panel, as Pitch's rows are. */
-#pos-layout { margin: 4.5px 0 4px; }
+   the panel, as Pitch's rows are. The build's place: the toggle 22 under the
+   panel's heading, the grid's first labels 46. */
+#pos-layout { margin: 4px 0 3px; }
 /* Set and forget: the held choice in the stronger foot's quiet grey, not the
    selection colour that draws the eye. */
 #pos-layout .sel.on { background: #5a5a5a; color: var(--strong); }
@@ -5167,13 +5168,14 @@ function generalPanel(p, team) {
 // of margin and 5 more.
 function viewTitle(id, name, plain) {
   // The line under the row is the one the team view drew under its fields: it parts the
-  // toggle from the screen it switches, on all three.
+  // toggle from the screen it switches, on all three. The line keeps 7.5 over it (the
+  // row's own 4 collapses into it), so it stands at 56.5, where the build draws it.
   return h("div", {},
     h("div", { class: "pheader strong", style: "margin:5px 0 4px; display:flex; align-items:center; gap:8px" },
       pageToggle(),
       plain ? h("span", {}, plain)
         : h("span", {}, h("span", { class: "weak" }, String(id)), " ", ...nameSpans(name))),
-    h("div", { class: "sep" }));
+    h("div", { class: "sep", style: "margin-top:7.5px" }));
 }
 // The three screens, as one sliding toggle left of the name (4ccEditor's tabs, which
 // members asked back): Stats and Appearance are the selected player's, Gameplan his
@@ -7736,10 +7738,10 @@ function drawPicturesRange() {
   let body, buttons;
   if (!run) {
     const teams = picTeamsIn(picRange.from, picRange.to);
-    // The two ends picked as the player list's team selector picks a team
-    // (its combo of the save's teams by name), not typed as ids.
+    // The two ends picked as Multi-team AATF picks its range (the save's
+    // teams by id and name), not typed as ids.
     const pick = key => {
-      const s = combo(rangeChoices(picRange, key).map(t => [String(t.id), t.name]),
+      const s = combo(rangeChoices(picRange, key).map(t => [String(t.id), t.id + " " + displayName(t.name)]),
         String(picRange[key]), v => { setRangeEnd(picRange, key, Number(v)); render(); });
       s.id = "pic-" + key;
       return s;

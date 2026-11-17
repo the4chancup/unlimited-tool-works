@@ -1,21 +1,22 @@
 //! The "Report a problem" dialog the sidebar's `⚠` tail entry opens, as the
 //! draft `docs/prototypes/index.html` `drawReport` draws it: the member's own
 //! words and the lines saying what the bundle holds, then Save…, which zips the
-//! session's journal and kept files, every tool's state, the log, the settings
-//! and the installs to the path the member picks. The words stay for the
-//! window's life, so a reopened dialog holds them; a written bundle leaves
-//! only Close, and a failed write shows its error and keeps Save…. Native
-//! only: bundles live on disk.
+//! session's journal and kept files, every tool's state, the log, the
+//! session's settings and the installs to the path the member picks. The
+//! words stay for the window's life, so a reopened dialog holds them; a
+//! written bundle leaves only Close, and a failed write shows its error and
+//! keeps Save…. Native only: bundles live on disk.
 
+use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::SystemTime;
 
+use anyhow::Context;
 use directories::BaseDirs;
 use pes_version::PesVersion;
 
 use crate::redact::redact_home;
 use crate::repro::{Recorder, ToolSummary};
-use crate::settings::SETTINGS_FILE_NAME;
 use crate::tool::{ExeCheck, StudioTool, ToolContext};
 use crate::widgets::{modal, modal_buttons, modal_sentence_gap, text_box};
 
@@ -24,23 +25,31 @@ const WIDTH: f32 = 540.0;
 /// The bytes in one MB, as the "opened" clause's size counts them (the update
 /// dialog's download line writes them the same way).
 const MEGABYTE: f64 = 1_048_576.0;
-/// The text box's height in rows, the draft's textarea 84 points.
-const WORDS_ROWS: usize = 4;
+/// The bytes in one KB, the "opened" clause's unit under 0.1 MB.
+const KILOBYTE: f64 = 1024.0;
+/// The text box's height, the draft's `textarea` 84 points.
+const WORDS_HEIGHT: f32 = 84.0;
 
 /// The dialog's state: open or not, the member's words (kept for the window's
-/// life, so a reopened dialog holds them), the bundle last written or the
-/// write's error — both cleared by a reopening — the member's home folder for
-/// the `~` rewrite, and the Save… file picker, which the tests replace (a
-/// native dialog cannot be clicked headless; the tools' pickers are stubbed
-/// the same way).
+/// life, so a reopened dialog holds them), the lines under "The file holds:"
+/// as built at the opening, the bundle last written or the write's error —
+/// both cleared by a reopening — the member's home folder for the `~`
+/// rewrite, and the Save… file picker, which the tests replace (a native
+/// dialog cannot be clicked headless; the tools' pickers are stubbed the same
+/// way).
 pub(super) struct Report {
     /// The modal is drawn while set.
     open: bool,
     /// The member's own words, the text box's content.
     words: String,
-    /// The path the last write went to, shown under the list; `None` until the
-    /// first one.
-    saved_to: Option<PathBuf>,
+    /// The lines under "The file holds:", built when the dialog opens:
+    /// reading the journal and the system's time zone is work no frame
+    /// should repeat. The dialog is modal, so no tool records while it is
+    /// up.
+    lines: Vec<String>,
+    /// The "Saved to …" line of the last write, shown under the list; `None`
+    /// until the first one.
+    saved_to: Option<String>,
     /// The failed write's error, shown under the buttons; `None` while there
     /// is none to show.
     error: Option<String>,
@@ -81,6 +90,7 @@ impl Report {
         Report {
             open: false,
             words: String::new(),
+            lines: Vec::new(),
             saved_to: None,
             error: None,
             home: BaseDirs::new().map(|dirs| dirs.home_dir().display().to_string()),
@@ -88,10 +98,12 @@ impl Report {
         }
     }
 
-    /// Opens the dialog, fresh for a new report: the words stay (a member may
+    /// Opens the dialog, fresh for a new report: the lines are built from
+    /// `tools` and what `recorder` holds now, the words stay (a member may
     /// reopen mid-writing), the last write's mark and error do not.
-    pub(super) fn open(&mut self) {
+    pub(super) fn open(&mut self, tools: &[Box<dyn StudioTool>], recorder: &Recorder) {
         self.open = true;
+        self.lines = lines(tools, recorder);
         self.saved_to = None;
         self.error = None;
     }
@@ -115,52 +127,55 @@ impl Report {
         if !self.open {
             return;
         }
-        let lines = lines(tools, ctx.recorder());
         let modal = modal(
             egui_ctx,
             egui::Id::unique("report-a-problem"),
             crate::shell::sidebar::REPORT_LABEL,
             |ui| {
                 ui.set_width(WIDTH);
-                ui.label(format!(
-                    "Saves what {} did since it opened, so the problem can be reproduced.",
-                    crate::EXE_NAME
-                ));
-                ui.label(
-                    "The file is not sent automatically, please post it wherever you usually \
-                     report problems.",
-                );
-                modal_sentence_gap(ui);
-                ui.label("What happened?");
-                ui.add(text_box(
-                    egui::TextEdit::multiline(&mut self.words)
-                        .hint_text(format!(
-                            "What you did, what you expected and what you got; also anything \
-                             done outside {}, in the game or another tool",
-                            crate::EXE_NAME
-                        ))
-                        .desired_width(f32::INFINITY)
-                        .desired_rows(WORDS_ROWS),
-                ));
-                modal_sentence_gap(ui);
-                ui.label("The file holds:");
-                for line in &lines {
-                    // The draft's `<li>`: the bullet carries the row, a
-                    // wrapped line hangs under the text.
-                    ui.horizontal(|ui| {
-                        ui.label("•");
-                        ui.label(line);
-                    });
-                }
-                modal_sentence_gap(ui);
-                ui.label("Your username is rewritten as ~.");
-                if let Some(path) = &self.saved_to {
+                ui.scope(|ui| {
+                    // The draft's text rows stand 15 apart, one under the
+                    // other, so egui's 3-point widget gap is dropped for
+                    // them; the sentence gaps stay `modal_sentence_gap`'s.
+                    ui.spacing_mut().item_spacing.y = 0.0;
+                    ui.label(
+                        "Saves what UTW did since it opened, so the problem can be reproduced.",
+                    );
+                    ui.label(
+                        "The file is not sent automatically, please post it wherever you usually \
+                         report problems.",
+                    );
                     modal_sentence_gap(ui);
-                    ui.label(format!(
-                        "Saved to {}",
-                        redact_home(&path.display().to_string(), self.home.as_deref())
+                    ui.label("What happened?");
+                    ui.add(text_box(
+                        egui::TextEdit::multiline(&mut self.words)
+                            .hint_text(
+                                "What you did, what you expected and what you got; also anything \
+                                 done outside UTW, in the game or another tool",
+                            )
+                            .desired_width(f32::INFINITY)
+                            .min_size(egui::vec2(0.0, WORDS_HEIGHT)),
                     ));
-                }
+                    modal_sentence_gap(ui);
+                    ui.label("The file holds:");
+                    // The draft's `ul` keeps its first line 4 under the
+                    // heading.
+                    ui.add_space(4.0);
+                    for line in &self.lines {
+                        // The draft's `<li>`: the bullet at the first line's top,
+                        // a wrapped line hanging under the text.
+                        ui.horizontal_top(|ui| {
+                            ui.label("•");
+                            ui.add(egui::Label::new(line.as_str()).wrap());
+                        });
+                    }
+                    modal_sentence_gap(ui);
+                    ui.label("Your user folder is written as ~ in the file's paths.");
+                    if let Some(saved_to) = &self.saved_to {
+                        modal_sentence_gap(ui);
+                        ui.label(saved_to.as_str());
+                    }
+                });
                 // Reading order Save…, Cancel; `modal_buttons` adds them from
                 // the right, so the last one comes first.
                 let (save, close) = if self.saved_to.is_some() {
@@ -186,48 +201,65 @@ impl Report {
         }
     }
 
-    /// Save…'s work: the picker answers a path (a cancel writes nothing), then
-    /// `write_bundle` with the window's log and the settings file in `files`,
-    /// every tool's `repro_state` prefixed by its id and `installs.txt` in
-    /// `state`. The outcome lands in `saved_to` or `error`.
+    /// Save…'s work: the picker answers a path (a cancel writes nothing),
+    /// then `write_report` writes the bundle there. The outcome lands in
+    /// `saved_to` or `error`.
     fn save(&mut self, tools: &[Box<dyn StudioTool>], ctx: &ToolContext, log_file: Option<&Path>) {
         let Some(out) = (self.save_dialog)(&bundle_name(&jiff::Zoned::now().datetime())) else {
             return;
         };
-        let mut files: Vec<(&str, &Path)> = Vec::new();
-        if let Some(path) = log_file {
-            files.push(("utw.log", path));
-        }
-        let settings = ctx
-            .paths()
-            .data_dir
-            .as_ref()
-            .map(|dir| dir.join(SETTINGS_FILE_NAME));
-        if let Some(path) = &settings {
-            files.push(("settings.toml", path));
-        }
-        let mut state: Vec<(String, Vec<u8>)> = Vec::new();
-        for tool in tools {
-            for (name, bytes) in tool.repro_state() {
-                state.push((format!("{}/{}", tool.id(), name), bytes));
-            }
-        }
-        state.push(("installs.txt".to_owned(), installs(ctx).into_bytes()));
-        let state: Vec<(&str, &[u8])> = state
-            .iter()
-            .map(|(name, bytes)| (name.as_str(), bytes.as_slice()))
-            .collect();
-        match ctx
-            .recorder()
-            .write_bundle(&out, &self.words, &files, &state, self.home.as_deref())
-        {
+        let home = self.home.as_deref();
+        match write_report(&out, tools, ctx, log_file, &self.words, home) {
             Ok(()) => {
-                self.saved_to = Some(out);
+                self.saved_to = Some(format!(
+                    "Saved to {}",
+                    redact_home(&out.display().to_string(), home)
+                ));
                 self.error = None;
             }
             Err(error) => self.error = Some(format!("{error:#}")),
         }
     }
+}
+
+/// The bundle at `out`: `write_bundle` with the window's log, the session's
+/// settings and `installs.txt` at the zip's root, and every tool's
+/// `repro_state` under its id in `state`. The settings are the ones the
+/// session runs under, not the file on disk, which a failed settings save
+/// leaves out of date.
+fn write_report(
+    out: &Path,
+    tools: &[Box<dyn StudioTool>],
+    ctx: &ToolContext,
+    log_file: Option<&Path>,
+    words: &str,
+    home: Option<&str>,
+) -> anyhow::Result<()> {
+    // `utw.log` is named even when the run has no log or it cannot be
+    // read, so the journal's `missing` says why the bundle lacks it.
+    let log = log_file.and_then(|path| fs::read(path).ok());
+    let settings = ctx.settings().lock().unwrap().to_table();
+    let settings = settings
+        .and_then(|table| toml::to_string_pretty(&table))
+        .context("cannot write the settings for the bundle")?;
+    let installs = installs(ctx);
+    let files = [
+        ("utw.log", log.as_deref()),
+        ("settings.toml", Some(settings.as_bytes())),
+        ("installs.txt", Some(installs.as_bytes())),
+    ];
+    let mut state: Vec<(String, Vec<u8>)> = Vec::new();
+    for tool in tools {
+        for (name, bytes) in tool.repro_state() {
+            state.push((format!("{}/{}", tool.id(), name), bytes));
+        }
+    }
+    let state: Vec<(&str, &[u8])> = state
+        .iter()
+        .map(|(name, bytes)| (name.as_str(), bytes.as_slice()))
+        .collect();
+    ctx.recorder()
+        .write_bundle(out, words, &files, &state, home)
 }
 
 impl Default for Report {
@@ -254,17 +286,17 @@ fn lines(tools: &[Box<dyn StudioTool>], recorder: &Recorder) -> Vec<String> {
     lines
 }
 
-/// One tool's line after its label: `<n> steps`, then `; opened <file name>
-/// (<size> MB)` — `, and <k> more` when it opened others — and `; wrote <file
-/// name> at <hh:mm>`. A clause with nothing to name is left out.
+/// One tool's line after its label: `<n> steps` (`1 step`), then `; opened
+/// <file name> (<size>)` — `, and <k> more` when it opened others — and
+/// `; wrote <file name> at <hh:mm>`. A clause with nothing to name is left
+/// out.
 fn summary_text(summary: &ToolSummary) -> String {
-    let mut text = format!("{} steps", summary.steps);
+    let mut text = match summary.steps {
+        1 => "1 step".to_owned(),
+        steps => format!("{steps} steps"),
+    };
     if let Some((path, size)) = &summary.first_input {
-        text += &format!(
-            "; opened {} ({:.1} MB)",
-            file_name(path),
-            *size as f64 / MEGABYTE
-        );
+        text += &format!("; opened {} ({})", file_name(path), size_text(*size));
         if summary.inputs > 1 {
             text += &format!(", and {} more", summary.inputs - 1);
         }
@@ -277,6 +309,17 @@ fn summary_text(summary: &ToolSummary) -> String {
         );
     }
     text
+}
+
+/// `size` bytes as the "opened" clause writes them: `7.4 MB`, or rounded KB
+/// (`25 KB`) under 0.1 MB, where MB would read `0.0` for a rules file.
+fn size_text(size: usize) -> String {
+    let size = size as f64;
+    if size < MEGABYTE / 10.0 {
+        format!("{:.0} KB", size / KILOBYTE)
+    } else {
+        format!("{:.1} MB", size / MEGABYTE)
+    }
 }
 
 /// `path`'s file name, the whole path where it has none (a drive root).

@@ -260,6 +260,7 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
     };
     let mut open = true;
     panel_window(ui, "Comparator", "save_editor_comparator")
+        .min_width(min_window_width(ui))
         .open(&mut open)
         .show(ui.ctx(), |ui| {
             // One line: the label, the path truncated to the room the
@@ -439,6 +440,32 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
     if !open {
         *panel = None;
     }
+}
+
+/// The narrowest the Comparator's window resizes to: the `Item`, `Picked
+/// save` and `Open save` heads whole at their places and each column left
+/// room for at least an ellipsis, the window frame's margin on top. Only
+/// this panel gets one (`panel_window` is shared): a narrower window cuts
+/// a head mid-word and clips the values with no ellipsis.
+fn min_window_width(ui: &egui::Ui) -> f32 {
+    let font = egui::TextStyle::Body.resolve(ui.style());
+    let weak = ui.visuals().weak_text_color();
+    let galley = |text: &str| {
+        ui.painter()
+            .layout_no_wrap(text.to_owned(), font.clone(), weak)
+            .size()
+            .x
+    };
+    let ellipsis = galley("\u{2026}");
+    let (offsets, _) = column_offsets(0.0);
+    let (inset, _, _) = drow_columns(0.0, RULE_COL);
+    let row = offsets
+        .into_iter()
+        .zip(["Item", "Picked save", "Open save"])
+        .map(|(x, head)| x + galley(head).max(ellipsis))
+        .fold(0.0_f32, f32::max)
+        + inset;
+    row + egui::Frame::window(ui.style()).total_margin().sum().x
 }
 
 /// A floating panel's window (the Comparator's, the patch panel's, the team
@@ -752,12 +779,17 @@ fn line(ui: &mut egui::Ui, line: &Line) -> Option<SelectedPlayer> {
 }
 
 /// The x offsets from a field row's left edge of its three columns, Item,
-/// Picked save and Open save: `drow_columns`' two, the label's column
-/// `RULE_COL` wide, then the Open save `RULE_GAP` past the Picked save's
-/// `OLD_COL`.
-fn column_offsets(width: f32) -> [f32; 3] {
-    let (label_x, old_x, _) = drow_columns(width, RULE_COL);
-    [label_x, old_x, old_x + OLD_COL + RULE_GAP]
+/// Picked save and Open save, and the Open save's room: `drow_columns`' two,
+/// the label's column `RULE_COL` wide, then the Open save `RULE_GAP` past
+/// the Picked save's `OLD_COL`, its text cut `drow_columns`' right inset
+/// inside the row's right edge (the draft's `.drow` padding, so it clears
+/// the hover outline and the scroll bar).
+fn column_offsets(width: f32) -> ([f32; 3], f32) {
+    let (label_x, old_x, rest) = drow_columns(width, RULE_COL);
+    (
+        [label_x, old_x, old_x + OLD_COL + RULE_GAP],
+        (rest - OLD_COL - RULE_GAP).max(0.0),
+    )
 }
 
 /// The rows' head (the draft's `#cmp-rows .drow.head`): `Item`, `Picked
@@ -767,7 +799,7 @@ fn column_offsets(width: f32) -> [f32; 3] {
 fn columns_head(ui: &mut egui::Ui) {
     let weak = ui.visuals().weak_text_color();
     let font = egui::TextStyle::Body.resolve(ui.style());
-    let offsets = column_offsets(ui.available_width());
+    let (offsets, _) = column_offsets(ui.available_width());
     let galleys = ["Item", "Picked save", "Open save"].map(|title| {
         ui.painter()
             .layout_no_wrap(title.to_owned(), font.clone(), weak)
@@ -868,7 +900,7 @@ fn cut_galley(
 /// A field's row (the draft's `#cmp-rows .drow`) at `column_offsets`'
 /// three places: `label` in `RULE_COL` points of the plain text color, one
 /// line cut with an ellipsis as the AATF rows' names are, then `old` cut
-/// the same way at `OLD_COL` and `new` at the rest of the row's width,
+/// the same way at `OLD_COL` and `new` at the row's `column_offsets` room,
 /// both in the strong color. `<label> <old> → <new>` is the AccessKit
 /// label, one name a screen reader reads; a row that cut any of the three
 /// hovers that name too, above the switch hint on a row that selects.
@@ -884,16 +916,10 @@ fn field_row(
         (visuals.text_color(), visuals.strong_text_color())
     };
     let font = egui::TextStyle::Body.resolve(ui.style());
-    let [label_x, old_x, new_x] = column_offsets(ui.available_width());
+    let ([label_x, old_x, new_x], new_width) = column_offsets(ui.available_width());
     let label_galley = cut_galley(ui, label, font.clone(), text_color, RULE_COL);
     let old_galley = cut_galley(ui, old, font.clone(), strong_color, OLD_COL);
-    let new_galley = cut_galley(
-        ui,
-        new,
-        font,
-        strong_color,
-        (ui.available_width() - new_x).max(0.0),
-    );
+    let new_galley = cut_galley(ui, new, font, strong_color, new_width);
     let height = label_galley
         .size()
         .y

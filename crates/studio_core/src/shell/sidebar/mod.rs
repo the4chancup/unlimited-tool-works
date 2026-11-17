@@ -37,7 +37,8 @@ const RAIL_PADDING: i8 = 6;
 const ICON_SIZE: f32 = 24.0;
 /// One entry row: the 24-point icon and its padding. With egui's item spacing of 3
 /// between them, fourteen rows take 459 points of the 756-point rail at the default
-/// window, leaving the logo, the version dropdown, the help and the gear their room.
+/// window, leaving the logo, the version dropdown, the Report entry, the help and the gear
+/// their room.
 const ENTRY_HEIGHT: f32 = 30.0;
 /// The height a rail line takes: its 1-point stroke with the draft's `.sidebar .sep`
 /// margin 4 above and below it.
@@ -572,8 +573,9 @@ impl Sidebar {
     /// by the live exe check. A change writes the common setting and asks the shell to save.
     /// Under a tool that does not target the version (ST-SIDE-09) it stands disabled and
     /// empty, keeping its box so the entries under it never move: a `PES 2019` beside a PES
-    /// 2017 save would read as governing the tool. The exe check still runs and is still
-    /// published: the check is the shell's, not the selector's.
+    /// 2017 save would read as governing the tool. The exe check does not run then either:
+    /// the selector is the only reader of its verdict, the settings menu's version row
+    /// asking `exe_check` itself when it is open.
     /// `rail` picks the rail's form, the year alone (`21`) centred on the button without
     /// the arrow; the overlay shows `PES 2021` at the left with the arrow.
     fn version_selector(&mut self, ui: &mut egui::Ui, args: &SidebarFrame, rail: bool) {
@@ -583,8 +585,18 @@ impl Sidebar {
             .tools
             .get(args.active)
             .is_some_and(|tool| tool.targets_pes_version());
-        let check = self.exe_check(&common, ui.input(|input| input.focused));
-        args.ctx.set_pes_exe_check(check);
+        let focused = ui.input(|input| input.focused);
+        let check = if targets {
+            Some(self.exe_check(&common, focused))
+        } else {
+            // The check goes unread, so the folder is not listed. The focus
+            // edge is still consumed into a dropped verdict: a folder repaired
+            // while the window was away is listed again on the next ask.
+            if self.focus_regained(focused) {
+                self.exe_check = None;
+            }
+            None
+        };
         // A list opened under another tool is still open when a request, not a
         // click, made this one active: a disabled combo keeps drawing its open
         // list, live. Close it before the combo is drawn.
@@ -595,7 +607,7 @@ impl Sidebar {
         let mut picked = common.pes_version;
         let combo_response = add_enabled_ui(ui, targets && blocker.is_none(), |ui| {
             ui.scope(|ui| {
-                if targets {
+                if let Some(check) = check {
                     ui.visuals_mut().override_text_color = selector_color(check, ui.visuals());
                 }
                 let combo = egui::ComboBox::from_id_salt("pes-version");
@@ -657,20 +669,16 @@ impl Sidebar {
         self.combo_popup_id = Some(combo_response.id.with("popup"));
         // A disabled widget keeps no hover response of its own: the reason goes on the
         // selector's own response, which still reports the pointer over its rect (ST-SIDE-04).
-        if !targets {
-            combo_response.on_disabled_hover_text("This tool does not use the PES version");
-        } else {
-            match blocker {
-                Some((label, reason)) => {
-                    combo_response.on_disabled_hover_text(format!("{label}: {reason}"));
-                }
-                None => {
-                    combo_response.on_hover_text(exe_tooltip(
-                        check,
-                        &common.pes_folder(),
-                        "this tool",
-                    ));
-                }
+        // `check` is `Some` exactly while the active tool targets the version.
+        match (check, blocker) {
+            (None, _) => {
+                combo_response.on_disabled_hover_text("This tool does not use the PES version");
+            }
+            (Some(_), Some((label, reason))) => {
+                combo_response.on_disabled_hover_text(format!("{label}: {reason}"));
+            }
+            (Some(check), None) => {
+                combo_response.on_hover_text(exe_tooltip(check, &common.pes_folder(), "this tool"));
             }
         }
 
@@ -772,14 +780,21 @@ impl Sidebar {
             }
             None => true,
         };
-        let gained_focus = focused && !self.was_focused;
-        self.was_focused = focused;
-        if stale || gained_focus {
+        let regained = self.focus_regained(focused);
+        if stale || regained {
             self.exe_listings += 1;
             let found = crate::pes_process::check_pes_folder(common.pes_version, &folder);
             self.exe_check = Some((common.pes_version, folder, found));
         }
         self.exe_check.as_ref().expect("a check ran above").2
+    }
+
+    /// Whether the window got its focus back since the last frame that asked: the edge
+    /// on which a folder repaired while the window was away is listed again.
+    fn focus_regained(&mut self, focused: bool) -> bool {
+        let regained = focused && !self.was_focused;
+        self.was_focused = focused;
+        regained
     }
 }
 

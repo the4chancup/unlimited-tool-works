@@ -2,7 +2,9 @@ use super::*;
 
 // Every panel title of the view stands `TITLE_GAP` above the first thing
 // drawn under it — a field's frame, a checkbox's painted square, the
-// positions' label row's text — as the team view's titles do.
+// positions' label row's text — as the team view's titles do: the card
+// panels' `.skcols` margin and the positions' `#pos-layout` margin add
+// their own over it, per the draft.
 #[test]
 fn every_panel_title_stands_six_above_its_first_drawn_row() {
     /// The first opaque rect shape under `title`'s label, in its column:
@@ -84,8 +86,11 @@ fn every_panel_title_stands_six_above_its_first_drawn_row() {
         "Skills" | "Tricks" | "COM playing styles" => col3,
         _ => f64::MAX,
     };
-    const GAP: f64 = 6.0;
-    for (title, under) in [
+    // The positions panel's first drawn text is its selector's, which the
+    // draft's `#pos-layout` `margin-top` stands lower than a first field
+    // row; the card panels' squares take the `.skcols` `margin-top`'s
+    // extra half point.
+    for (title, under, gap) in [
         (
             "General info",
             first_rect_under(
@@ -95,10 +100,12 @@ fn every_panel_title_stands_six_above_its_first_drawn_row() {
                 right("General info"),
                 false,
             ),
+            6.0,
         ),
         (
             "Other stats",
             first_rect_under(&nodes, &shapes, "Other stats", right("Other stats"), false),
+            6.0,
         ),
         (
             "Playable positions",
@@ -108,14 +115,17 @@ fn every_panel_title_stands_six_above_its_first_drawn_row() {
                 "Playable positions",
                 right("Playable positions"),
             ),
+            7.5,
         ),
         (
             "Skills",
             first_rect_under(&nodes, &shapes, "Skills", right("Skills"), true),
+            6.5,
         ),
         (
             "Tricks",
             first_rect_under(&nodes, &shapes, "Tricks", right("Tricks"), true),
+            6.5,
         ),
         (
             "COM playing styles",
@@ -126,6 +136,7 @@ fn every_panel_title_stands_six_above_its_first_drawn_row() {
                 right("COM playing styles"),
                 true,
             ),
+            6.5,
         ),
         (
             "Ability stats",
@@ -136,6 +147,7 @@ fn every_panel_title_stands_six_above_its_first_drawn_row() {
                 right("Ability stats"),
                 false,
             ),
+            6.0,
         ),
     ] {
         let bottom = label_bounds(&nodes, title).y1;
@@ -143,10 +155,74 @@ fn every_panel_title_stands_six_above_its_first_drawn_row() {
         // a hair under the gap ("Playable positions" stands 5.84), never
         // over it.
         assert!(
-            (-0.25..=0.0).contains(&(under - bottom - GAP)),
-            "{title} stands {GAP} above its first drawn row ({under} vs {bottom})"
+            (-0.25..=0.0).contains(&(under - bottom - gap)),
+            "{title} stands {gap} above its first drawn row ({under} vs {bottom})"
         );
     }
+}
+
+// The sections' places under the title's line, at the draft's: the
+// columns' tops 3 under the title's separator (its `.pcols > *`
+// `margin-top`), so every heading's text top stands 12 under the line;
+// under a heading the first field rows' labels 22.5 and Height's 70.5
+// (the `.col` gap, the `.gen` margin and the rows' pitch), the first
+// checkbox's box 19.5 (the `.skcols` `margin-top`); the layout toggle
+// 22.5 (`#pos-layout`'s own margin); and COM playing styles' heading
+// where the draft's stands under Tricks'.
+#[test]
+fn the_stats_screens_sections_stand_at_the_drafts_offsets() {
+    let (window, nodes, shapes) = settled_player_view("stats_offsets");
+    let (line, _) = line_and_pane_top(&window, &nodes, &shapes);
+    let heading = |title: &str| label_bounds(&nodes, title).y0;
+    for title in ["General info", "Ability stats"] {
+        near_draft(
+            heading(title) - line,
+            12.0,
+            &format!("{title}'s heading under the line"),
+        );
+    }
+    for (what, offset, draft) in [
+        (
+            "Height under General info's heading",
+            label_bounds(&nodes, "Height").y0 - heading("General info"),
+            70.5,
+        ),
+        (
+            "Attacking Prowess under Ability stats' heading",
+            label_bounds(&nodes, "Attacking Prowess").y0 - heading("Ability stats"),
+            22.5,
+        ),
+        (
+            "the layout toggle under Playable positions' heading",
+            layout_segments(&nodes)[0]
+                .bounds()
+                .expect("the Pitch segment's bounds")
+                .y0
+                - heading("Playable positions"),
+            22.5,
+        ),
+    ] {
+        assert!(
+            (offset - draft).abs() <= 0.5,
+            "{what}: {offset} against the draft's {draft}"
+        );
+    }
+    // The first checkbox's box at the draft's, the `.skcols` own
+    // margin's half point made out.
+    let heading_check = node_labeled(&nodes, Role::CheckBox, "Heading")
+        .bounds()
+        .expect("the Heading checkbox's bounds")
+        .y0
+        - heading("Skills");
+    assert!(
+        (heading_check - 19.5).abs() <= 0.25,
+        "the Heading checkbox under Skills' heading: {heading_check} against the draft's 19.5"
+    );
+    near_draft(
+        heading("COM playing styles") - heading("Tricks"),
+        161.5,
+        "COM playing styles' heading under Tricks'",
+    );
 }
 
 /// Player 701's slot 0's Stats screen at the default pane, the badge's

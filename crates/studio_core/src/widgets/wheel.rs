@@ -673,7 +673,7 @@ mod tests {
 
     // ST-WHEEL-06
     #[test]
-    fn the_invert_switch_turns_only_the_number_boxs_steps() {
+    fn the_invert_switch_turns_only_the_number_boxes_steps() {
         let mut window = Window::new();
         set_inverted(&window.ctx, true);
         window.notch(window.drag_rect.center(), false);

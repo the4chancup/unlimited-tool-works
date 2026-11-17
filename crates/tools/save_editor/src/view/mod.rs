@@ -118,7 +118,7 @@ fn reveal_for(selected: Option<Selection>) -> Reveal {
 /// The window's state: the open save and what the master-detail shows of it.
 pub(crate) struct SaveView {
     /// The open save, if one was opened.
-    session: Option<Session>,
+    pub(crate) session: Option<Session>,
     /// The repro journal `Session::open` and the session's changes record
     /// into: `Tool::view` refreshes it from `ctx.recorder()` each frame, a
     /// default one in the tests' view-only frames.
@@ -308,6 +308,11 @@ pub(crate) struct SaveView {
     /// with `pes_exe_check`: the Set PES path button's tooltip names it.
     /// `None` in the tests' view-only frames until a test sets it.
     pub(crate) pes_folder: Option<PathBuf>,
+    /// The exe check `select_portraits` last saw: `Found` after another
+    /// verdict restarts the portrait source, the folder having been repaired
+    /// where a worker answered empty. A re-picked folder restarts where the
+    /// pick lands (`tactics::show`).
+    portraits_check: Option<ExeCheck>,
     /// The save's version and the folder the Set PES path button's picker
     /// returned, drained by `Tool::view` into `ctx.set_pes_folder_for` (the
     /// shell owns the settings).
@@ -582,6 +587,7 @@ impl SaveView {
             exe_dir: PathBuf::new(),
             pes_exe_check: None,
             pes_folder: None,
+            portraits_check: None,
             picked_pes_folder: None,
             notice: None,
             live_aatf: false,
@@ -611,13 +617,23 @@ impl SaveView {
 
     /// Points the pitch's portrait source at `pes_folder` for `version`: `Tool::view` calls it
     /// each frame with the open save's PES and its version's PES folder, as it refreshes `hide_ids`.
+    /// The exe check turning `Found` restarts the source: the folder it answers for was
+    /// repaired where a worker read empty, so its `None` answers are stale.
     pub(crate) fn select_portraits(
         &mut self,
         ctx: &egui::Context,
         pes_folder: &Path,
         version: PesVersion,
     ) {
+        let repaired = self.pes_exe_check == Some(ExeCheck::Found)
+            && self
+                .portraits_check
+                .is_some_and(|check| check != ExeCheck::Found);
+        self.portraits_check = self.pes_exe_check;
         self.portraits.select(ctx, pes_folder, version);
+        if repaired {
+            self.portraits.restart(ctx);
+        }
     }
 
     /// The aesthetics lock: on while the "Aesthetics from exports" setting
@@ -718,12 +734,14 @@ impl SaveView {
         self.welcome_discovered = None;
     }
 
-    /// Close save (the File menu's entry and Ctrl+W; a Discard answering the
-    /// window's close takes the same drop): the session, its floating panel
-    /// and the Comparator dropped on top of `drop_save`, which drops the
-    /// welcome panel's look too so the panel rescans.
+    /// Closes the open save (File > Close save, Ctrl+W, and Discard on
+    /// the window's close prompt): records the close in the journal, clears
+    /// the session, any open floating panel and the Comparator, then resets
+    /// the save's view state (`drop_save`).
     pub(crate) fn close_save(&mut self) {
-        self.session = None;
+        if let Some(session) = self.session.take() {
+            journal::closed(session.path(), session.recorder());
+        }
         self.panel = None;
         self.comparator = comparator::Comparator::new();
         self.drop_save();
@@ -870,12 +888,14 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() ->
         // 6 points over the view, not egui's 8: a view's title then stands
         // as far below the toolbar band's line as its first row stands below
         // the title, in ink (`info_strip::view_title`). None at the right:
-        // the shell's own margin past the pane is the view's edge.
+        // the shell's own margin past the pane is the view's edge. None at
+        // the bottom: the draft's `.detail` has no padding, a tall view's
+        // content ending at the pane's bottom.
         let detail = egui::Frame::central_panel(ui.style()).inner_margin(egui::Margin {
             left: 8,
             right: 0,
             top: TITLE_MARGIN,
-            bottom: 8,
+            bottom: 0,
         });
         egui::CentralPanel::default().frame(detail).show(ui, |ui| {
             egui::ScrollArea::vertical()

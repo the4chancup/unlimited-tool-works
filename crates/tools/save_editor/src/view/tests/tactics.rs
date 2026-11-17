@@ -1826,21 +1826,109 @@ fn the_automatic_settings_frame_reaches_the_lists_bottom() {
     );
 }
 
-/// The lineup lists' boxes on a frame, left to right: the stroked rects
-/// right of the settings column filled in the extreme background and
-/// taller than the dock's well.
+// At the 1280 x 780 default window the Gameplan view needs no scroll: the
+// fields' row stands 24 tall as the draft's does (the name row's own
+// margins and the id cells' padding), so the rows and the grid take the
+// draft's offsets under the title's line and the detail's content ends
+// inside the pane, the lineup lists' bottom stroke inside the scroll
+// area's clip.
+#[test]
+fn the_team_view_fits_the_pane_at_the_drafts_offsets() {
+    let path = fixture(PesVersion::Pes21, "gameplan_pane_fit");
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut window = Headless::sized(DEFAULT_PANE.x, DEFAULT_PANE.y);
+    open_team_view(&mut window, &mut view, 701);
+    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+
+    // The separator under the title's row: the first stroke line below
+    // the toggle that spans the pane (a short inner line is not it).
+    let stroke = window
+        .ctx
+        .global_style()
+        .visuals
+        .widgets
+        .noninteractive
+        .bg_stroke;
+    let toggle = node_labeled(&nodes, Role::Button, "Gameplan")
+        .bounds()
+        .expect("the Gameplan button");
+    let line = shapes
+        .iter()
+        .filter_map(|clipped| match &clipped.shape {
+            egui::Shape::LineSegment { points, stroke: s }
+                if *s == stroke
+                    && points[0].y == points[1].y
+                    && f64::from(points[0].y) > toggle.y1
+                    && f64::from(points[0].x.min(points[1].x)) < toggle.x0
+                    && f64::from(points[0].x.max(points[1].x))
+                        > f64::from(DEFAULT_PANE.x) - 100.0 =>
+            {
+                Some(f64::from(points[0].y))
+            }
+            _ => None,
+        })
+        .reduce(f64::min)
+        .expect("the title's separator line");
+
+    // The Name box's top, the Preset buttons' top and the Formation
+    // settings' frame top at the draft's offsets under the line.
+    let name = right_of_label(&nodes, "Name", Role::TextInput)
+        .first()
+        .and_then(|node| node.bounds())
+        .expect("the Name box");
+    let preset = right_of_label(&nodes, "Preset", Role::Button)
+        .first()
+        .and_then(|node| node.bounds())
+        .expect("a Preset button");
+    let settings_left = label_bounds(&nodes, "Formation settings").x0 - 7.0;
+    let settings = box_at(&stroked_rects(&window, &shapes, 60.0), settings_left, 1.0);
+    for (what, top, draft) in [
+        ("the Name box", name.y0, 12.0),
+        ("the Preset buttons", preset.y0, 45.0),
+        ("Formation settings' frame", f64::from(settings.min.y), 73.0),
+    ] {
+        assert!(
+            (top - line - draft).abs() <= 1.0,
+            "{what} stands {} under the title's line, the draft's {draft}",
+            top - line
+        );
+    }
+
+    // The lists' frames end inside the pane (its bottom PANE_BOTTOM_MARGIN
+    // over the status bar), their bottom stroke inside the scroll area's
+    // clip: the draft's `.detail` has no bottom padding.
+    let pane_bottom = f64::from(DEFAULT_PANE.y - PANE_BOTTOM_MARGIN);
+    for (rect, clip) in lineup_boxes(&window, &nodes, &shapes) {
+        assert!(
+            rect.max.y <= clip.max.y + 0.5,
+            "a list's frame's bottom inside the scroll's clip ({:?} vs {clip:?})",
+            rect.max.y
+        );
+        assert!(
+            f64::from(rect.max.y) <= pane_bottom + 0.5,
+            "a list's frame ends at {:?}, the pane's bottom is {pane_bottom}",
+            rect.max.y
+        );
+    }
+}
+
+/// The lineup lists' boxes on a frame, left to right, each with the clip
+/// it was painted inside (the scroll area's): the stroked rects right of
+/// the settings column filled in the extreme background and taller than
+/// the dock's well.
 fn lineup_boxes(
     window: &Headless,
     nodes: &[accesskit::Node],
     shapes: &[egui::epaint::ClippedShape],
-) -> Vec<egui::Rect> {
+) -> Vec<(egui::Rect, egui::Rect)> {
     let extreme = window
         .ctx
         .style_of(window.ctx.theme())
         .visuals
         .extreme_bg_color;
     let settings_right = label_bounds(nodes, "Formation settings").x0 - 7.0 + 422.0;
-    let mut boxes: Vec<egui::Rect> = shapes
+    let mut boxes: Vec<(egui::Rect, egui::Rect)> = shapes
         .iter()
         .filter_map(|clipped| match &clipped.shape {
             egui::Shape::Rect(shape)
@@ -1849,12 +1937,12 @@ fn lineup_boxes(
                     && shape.rect.height() >= 200.0
                     && f64::from(shape.rect.min.x) > settings_right =>
             {
-                Some(shape.rect)
+                Some((shape.rect, clipped.clip_rect))
             }
             _ => None,
         })
         .collect();
-    boxes.sort_by(|a, b| a.min.x.total_cmp(&b.min.x));
+    boxes.sort_by(|a, b| a.0.min.x.total_cmp(&b.0.min.x));
     boxes
 }
 
@@ -1889,7 +1977,8 @@ fn the_live_aatf_dock_leaves_the_lineup_lists_their_size() {
     );
     let open = lineup_boxes(&window, &nodes, &shapes);
     assert_eq!(
-        open, closed,
+        open.iter().map(|(rect, _)| *rect).collect::<Vec<_>>(),
+        closed.iter().map(|(rect, _)| *rect).collect::<Vec<_>>(),
         "the lists with the dock open as with it closed"
     );
 }
@@ -2803,39 +2892,12 @@ fn the_pitch_draws_a_starter_s_portrait_from_the_selected_game() {
         let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
         let canvas = canvas_of(&nodes);
         let canvas_rect = egui::Rect::from_min_max(canvas_min(canvas), canvas_max(canvas));
-        let centre = clamped_centre(
-            canvas,
-            team_entry(&view, 701).tactics.presets[0].formations[0].players[4],
-        );
-        let expected = egui::pos2(centre.x, centre.y - 32.0);
-        let portraits: Vec<(egui::Rect, egui::TextureId)> = shapes
-            .iter()
-            .filter_map(|clipped| match &clipped.shape {
-                egui::Shape::Mesh(mesh) => {
-                    Some((clipped.shape.visual_bounding_rect(), mesh.texture_id))
-                }
-                _ => None,
-            })
-            .filter(|(rect, _)| {
-                canvas_rect.contains_rect(*rect)
-                    && (rect.size() - egui::vec2(50.0, 50.0)).length() < 0.5
-            })
-            .collect();
+        let expected = portrait_spot(&view, canvas, 701, 4);
+        let portraits = portrait_meshes(canvas_rect, &shapes);
         // Until the worker answers, every marker paints the placeholder's one
         // texture; the starter's arriving shows as a texture id no other
         // portrait shares, at his spot.
-        let his: Vec<egui::TextureId> = portraits
-            .iter()
-            .filter(|(rect, _)| (rect.center() - expected).length() < 1.0)
-            .map(|(_, texture)| *texture)
-            .collect();
-        if his.len() == 1
-            && portraits
-                .iter()
-                .filter(|(_, texture)| *texture == his[0])
-                .count()
-                == 1
-        {
+        if lone_portrait_at(&portraits, expected).is_some() {
             break;
         }
         assert!(
@@ -2843,6 +2905,73 @@ fn the_pitch_draws_a_starter_s_portrait_from_the_selected_game() {
             "the starter's marker never painted his portrait"
         );
     }
+}
+
+/// The pitch's portrait meshes in `shapes`: each 50-point image mesh drawn
+/// inside `canvas`, with its texture.
+fn portrait_meshes(
+    canvas: egui::Rect,
+    shapes: &[egui::epaint::ClippedShape],
+) -> Vec<(egui::Rect, egui::TextureId)> {
+    shapes
+        .iter()
+        .filter_map(|clipped| match &clipped.shape {
+            egui::Shape::Mesh(mesh) => {
+                Some((clipped.shape.visual_bounding_rect(), mesh.texture_id))
+            }
+            _ => None,
+        })
+        .filter(|(rect, _)| {
+            canvas.contains_rect(*rect) && (rect.size() - egui::vec2(50.0, 50.0)).length() < 0.5
+        })
+        .collect()
+}
+
+/// The texture at the portrait spot centred `expected`, when exactly one of
+/// the pitch's portraits carries it: `None` while every marker shares the
+/// placeholder or the spot has none (the worker's answer has not landed).
+fn lone_portrait_at(
+    portraits: &[(egui::Rect, egui::TextureId)],
+    expected: egui::Pos2,
+) -> Option<egui::TextureId> {
+    let at: Vec<egui::TextureId> = portraits
+        .iter()
+        .filter(|(rect, _)| (rect.center() - expected).length() < 1.0)
+        .map(|(_, texture)| *texture)
+        .collect();
+    (at.len() == 1
+        && portraits
+            .iter()
+            .filter(|(_, texture)| *texture == at[0])
+            .count()
+            == 1)
+        .then_some(at[0])
+}
+
+/// `player_id`'s formation position in `team_id`'s starting eleven.
+fn starter_position(view: &SaveView, team_id: u32, player_id: u32) -> usize {
+    let entry = team_entry(view, team_id);
+    entry
+        .tactics
+        .starting_eleven
+        .iter()
+        .position(|slot| entry.roster[usize::from(*slot)].player_id == player_id)
+        .unwrap_or_else(|| panic!("{player_id} starts on {team_id}"))
+}
+
+/// The centre of the portrait spot of `team_id`'s formation position
+/// `position` on `canvas`.
+fn portrait_spot(
+    view: &SaveView,
+    canvas: accesskit::Rect,
+    team_id: u32,
+    position: usize,
+) -> egui::Pos2 {
+    let centre = clamped_centre(
+        canvas,
+        team_entry(view, team_id).tactics.presets[0].formations[0].players[position],
+    );
+    egui::pos2(centre.x, centre.y - 32.0)
 }
 
 /// The Set PES path button's bounds, if the frame drew it.
@@ -2919,18 +3048,8 @@ fn a_set_pes_folder_button_stands_over_the_pitch_while_the_exe_check_fails() {
         egui::pos2(canvas.x0 as f32, canvas.y0 as f32),
         egui::pos2(canvas.x1 as f32, canvas.y1 as f32),
     );
-    let portraits: Vec<egui::TextureId> = shapes
-        .iter()
-        .filter_map(|clipped| match &clipped.shape {
-            egui::Shape::Mesh(mesh) => {
-                Some((clipped.shape.visual_bounding_rect(), mesh.texture_id))
-            }
-            _ => None,
-        })
-        .filter(|(rect, _)| {
-            canvas_rect.contains_rect(*rect)
-                && (rect.size() - egui::vec2(50.0, 50.0)).length() < 0.5
-        })
+    let portraits: Vec<egui::TextureId> = portrait_meshes(canvas_rect, &shapes)
+        .into_iter()
         .map(|(_, texture)| texture)
         .collect();
     assert_eq!(
@@ -2995,7 +3114,7 @@ fn tool_frame(
 }
 
 // The editor reads the sidebar's selector for nothing: over a PES 2017 save
-// and a selector on PES 2019, the button and the placeholders follow PES
+// and a selector on PES 2021, the button and the placeholders follow PES
 // 2017's folder, the tooltip names PES 2017, and a picked folder is stored
 // for PES 2017 with the selector unmoved.
 // SE-GUI-50
@@ -3004,20 +3123,22 @@ fn the_editor_follows_the_open_saves_version_not_the_selectors() {
     use studio_core::StudioTool;
 
     let dir = crate::test_support::scratch("tactics_sel_pes");
-    // `games`: PES 2019's folder holds its exe; PES 2017's does not exist.
-    // `games_ok`: PES 2017's folder holds it. `games_wrong`: it holds PES
-    // 2019's.
+    // `games`: PES 2021's folder holds its exe; PES 2017's does not exist.
+    // `games_ok`: PES 2017's folder holds it, and the portraits. `games_wrong`:
+    // it holds PES 2019's.
     let games = dir.join("games");
-    std::fs::create_dir_all(games.join("PES 2019")).unwrap();
-    std::fs::write(games.join("PES 2019/PES2019.exe"), b"").unwrap();
+    std::fs::create_dir_all(games.join("PES 2021")).unwrap();
+    std::fs::write(games.join("PES 2021/PES2021.exe"), b"").unwrap();
     let games_ok = dir.join("games_ok");
-    std::fs::create_dir_all(games_ok.join("PES 2017")).unwrap();
-    std::fs::write(games_ok.join("PES 2017/PES2017.exe"), b"").unwrap();
+    let games_ok_17 = games_ok.join("PES 2017");
+    std::fs::create_dir_all(&games_ok_17).unwrap();
+    std::fs::write(games_ok_17.join("PES2017.exe"), b"").unwrap();
+    game_portraits(&games_ok_17, 71808);
     let games_wrong = dir.join("games_wrong");
     std::fs::create_dir_all(games_wrong.join("PES 2017")).unwrap();
     std::fs::write(games_wrong.join("PES 2017/PES2019.exe"), b"").unwrap();
     let mut settings = studio_core::Settings::default();
-    settings.common.pes_version = PesVersion::Pes19;
+    settings.common.pes_version = PesVersion::Pes21;
     let (ctx, shared, _events_rx, _requests_rx) =
         crate::test_support::shared_tool_context(&dir, settings);
     let set_pattern = |pattern: &std::path::Path| {
@@ -3030,11 +3151,12 @@ fn the_editor_follows_the_open_saves_version_not_the_selectors() {
     let path = fixture(PesVersion::Pes17, "tactics_sel_pes_save");
     tool.view.open(&path);
     tool.view.selected = Some(Selection::Team(718));
+    let position = starter_position(&tool.view, 718, 71808);
     let mut window = Headless::sized(1600.0, 1400.0);
 
     // PES 2017's folder missing: the button stands in its corner, the
     // tooltip names PES 2017's folder, and every starter paints the
-    // placeholder.
+    // placeholder — PES 2017's, not the selector's PES 2021's.
     let (nodes, shapes) = tool_frame(&mut window, &mut tool, &ctx);
     assert_eq!(
         tool.view.pes_exe_check,
@@ -3044,7 +3166,7 @@ fn the_editor_follows_the_open_saves_version_not_the_selectors() {
     assert_eq!(
         tool.view.portrait_folder(),
         Some(games.join("PES 2017").as_path()),
-        "the portraits read PES 2017's folder, not PES 2019's"
+        "the portraits read PES 2017's folder, not PES 2021's"
     );
     assert_set_path_margins(&nodes, 226.0, 9.0, "PES 2017");
     let canvas = canvas_of(&nodes);
@@ -3052,18 +3174,8 @@ fn the_editor_follows_the_open_saves_version_not_the_selectors() {
         egui::pos2(canvas.x0 as f32, canvas.y0 as f32),
         egui::pos2(canvas.x1 as f32, canvas.y1 as f32),
     );
-    let portraits: Vec<egui::TextureId> = shapes
-        .iter()
-        .filter_map(|clipped| match &clipped.shape {
-            egui::Shape::Mesh(mesh) => {
-                Some((clipped.shape.visual_bounding_rect(), mesh.texture_id))
-            }
-            _ => None,
-        })
-        .filter(|(rect, _)| {
-            canvas_rect.contains_rect(*rect)
-                && (rect.size() - egui::vec2(50.0, 50.0)).length() < 0.5
-        })
+    let portraits: Vec<egui::TextureId> = portrait_meshes(canvas_rect, &shapes)
+        .into_iter()
         .map(|(_, texture)| texture)
         .collect();
     assert_eq!(
@@ -3074,6 +3186,11 @@ fn the_editor_follows_the_open_saves_version_not_the_selectors() {
     assert!(
         portraits.iter().all(|texture| *texture == portraits[0]),
         "every starter paints the one placeholder texture"
+    );
+    assert_eq!(
+        Some(portraits[0]),
+        tool.view.portraits.placeholder_id(PesVersion::Pes17),
+        "PES 2017's placeholder, not the selector's PES 2021's"
     );
 
     // The tooltip: where the portraits are read from, then what the check
@@ -3108,7 +3225,8 @@ fn the_editor_follows_the_open_saves_version_not_the_selectors() {
     );
 
     // PES 2017's folder found: the button is gone and the portraits are read
-    // from it, not from PES 2019's.
+    // from it, not from PES 2021's — the starter's own `player_` portrait, a
+    // path only a pre-Fox version asks for.
     set_pattern(&games_ok);
     let (nodes, _) = tool_frame(&mut window, &mut tool, &ctx);
     assert_eq!(
@@ -3119,8 +3237,10 @@ fn the_editor_follows_the_open_saves_version_not_the_selectors() {
     assert_eq!(
         tool.view.portrait_folder(),
         Some(games_ok.join("PES 2017").as_path()),
-        "the portraits read the folder PES 2017 resolves, not PES 2019's"
+        "the portraits read the folder PES 2017 resolves, not PES 2021's"
     );
+    let spot = portrait_spot(&tool.view, canvas, 718, position);
+    portrait_drawn(&mut window, &mut tool.view, spot);
 
     // Another version's exe in it: the button is back.
     set_pattern(&games_wrong);
@@ -3151,9 +3271,192 @@ fn the_editor_follows_the_open_saves_version_not_the_selectors() {
     );
     assert_eq!(
         common.pes_version,
-        PesVersion::Pes19,
+        PesVersion::Pes21,
         "the selector's setting unchanged"
     );
+}
+
+/// A WESYS-wrapped portrait DDS as a pre-Fox game ships it (`game_portraits`
+/// writes it under whichever `player_` entry a test's starter owns; the bytes
+/// are a real PES 2017 portrait's).
+const PES17_PORTRAIT: &[u8] =
+    include_bytes!("../../../tests/fixtures/portraits/player_71801_pes17.dds");
+
+/// `folder` made to hold the game's portrait files: `download/DpFileList.bin`
+/// listing `4cc_40_faces.cpk`, which holds `player_id`'s portrait.
+fn game_portraits(folder: &Path, player_id: u32) {
+    let download = folder.join("download");
+    std::fs::create_dir_all(&download).unwrap();
+    std::fs::write(
+        download.join("DpFileList.bin"),
+        crate::test_support::dp_file_list(&["4cc_40_faces.cpk"]),
+    )
+    .unwrap();
+    let entry = pes_savefile::portrait::portrait_path(PesVersion::Pes17, player_id);
+    crate::test_support::write_cpk(
+        &download.join("4cc_40_faces.cpk"),
+        &[(entry.as_str(), PES17_PORTRAIT)],
+    );
+}
+
+/// Frames until `view`'s portrait source answered `player_id`, a real nap
+/// between polls: the bound makes a worker that never answers a failure,
+/// not a hang.
+fn portrait_answered(window: &mut Headless, view: &mut SaveView, player_id: u32) {
+    let deadline = Instant::now() + Duration::from_secs(120);
+    loop {
+        window.frame(Vec::new(), |ui| show(ui, view, &|| Vec::new()));
+        if view.portraits.answered(player_id).is_some() {
+            return;
+        }
+        assert!(
+            Instant::now() < deadline,
+            "no answer for {player_id} in 120 s"
+        );
+        std::thread::sleep(Duration::from_millis(10));
+    }
+}
+
+/// Frames until the starter's marker paints a texture no other shares (his
+/// portrait, the placeholder being the one texture every unanswered marker
+/// carries).
+fn portrait_drawn(window: &mut Headless, view: &mut SaveView, canvas_spot: egui::Pos2) {
+    let deadline = Instant::now() + Duration::from_secs(120);
+    loop {
+        let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, view, &|| Vec::new()));
+        let canvas = canvas_of(&nodes);
+        let canvas_rect = egui::Rect::from_min_max(
+            egui::pos2(canvas.x0 as f32, canvas.y0 as f32),
+            egui::pos2(canvas.x1 as f32, canvas.y1 as f32),
+        );
+        if lone_portrait_at(&portrait_meshes(canvas_rect, &shapes), canvas_spot).is_some() {
+            return;
+        }
+        assert!(
+            Instant::now() < deadline,
+            "the starter's marker never painted his portrait"
+        );
+        std::thread::sleep(Duration::from_millis(10));
+    }
+}
+
+// A folder whose portraits came back empty is read again when the member
+// picks it once more with Set PES path, the game unpacked into it since:
+// the starter's portrait, not the placeholder. 71808 starts on the PES 17
+// save's team 718 (roster slot 7); the button shows while the exe check
+// fails, so `NoExe` on the same folder.
+// SE-GUI-50
+#[test]
+fn a_repicked_pes_folder_restarts_the_portrait_source() {
+    let path = fixture(PesVersion::Pes17, "tactics_repicked_pes");
+    let scratch = path.parent().expect("the save's folder").to_path_buf();
+    let folder = scratch.join("PES 2017");
+    std::fs::create_dir_all(&folder).unwrap();
+    let mut view = SaveView::new();
+    view.open(&path);
+    view.pes_exe_check = Some(ExeCheck::NoExe);
+    view.pes_folder = Some(folder.clone());
+    view.selected = Some(Selection::Team(718));
+    let mut window = Headless::sized(1600.0, 1400.0);
+    view.select_portraits(&window.ctx, &folder, PesVersion::Pes17);
+    let position = starter_position(&view, 718, 71808);
+
+    // The empty folder's worker answers him empty: the placeholder.
+    portrait_answered(&mut window, &mut view, 71808);
+    assert_eq!(
+        view.portraits.answered(71808),
+        Some(None),
+        "premise: the empty folder's answer landed"
+    );
+
+    // The game unpacked into the same folder, picked again with Set PES path.
+    game_portraits(&folder, 71808);
+    view.pick_folder_dialog = {
+        let folder = folder.clone();
+        Box::new(move || Some(folder.clone()))
+    };
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    click(
+        &mut window,
+        node_labeled(&nodes, Role::Button, "Set PES path"),
+        &mut view,
+    );
+    assert_eq!(
+        view.picked_pes_folder,
+        Some((PesVersion::Pes17, folder)),
+        "the pick went to the settings"
+    );
+    assert_eq!(
+        view.portraits.answered(71808),
+        None,
+        "the pick re-asks the answered id"
+    );
+
+    let canvas = canvas_of(&nodes);
+    let spot = portrait_spot(&view, canvas, 718, position);
+    portrait_drawn(&mut window, &mut view, spot);
+}
+
+// The window coming back to a folder repaired on disk: the exe check reads
+// Found where it read no exe, and the portrait source starts again, the
+// starter's portrait, not the placeholder. `set_pes_folder_for`'s drop of
+// the version's cached verdict stands in for the window's regained focus,
+// which the shell serves the same way; the folder gains its exe with the
+// portrait files.
+// SE-GUI-50
+#[test]
+fn the_portrait_source_restarts_when_the_check_reads_found() {
+    let dir = crate::test_support::scratch("tactics_repaired_pes");
+    let folder = dir.join("PES 2017");
+    std::fs::create_dir_all(&folder).unwrap();
+    let mut settings = studio_core::Settings::default();
+    settings.common.pes_version = PesVersion::Pes21;
+    settings
+        .common
+        .pes_folders
+        .insert(PesVersion::Pes17, folder.display().to_string());
+    let (ctx, _events_rx, _requests_rx) = tool_context(&dir, settings);
+    let mut tool = crate::Tool::new();
+    let path = fixture(PesVersion::Pes17, "tactics_repaired_save");
+    tool.view.open(&path);
+    tool.view.selected = Some(Selection::Team(718));
+    let mut window = Headless::sized(1600.0, 1400.0);
+    let position = starter_position(&tool.view, 718, 71808);
+
+    // The empty folder: no exe, and the worker answers him empty.
+    tool_frame(&mut window, &mut tool, &ctx);
+    assert_eq!(
+        tool.view.pes_exe_check,
+        Some(ExeCheck::NoExe),
+        "premise: no exe"
+    );
+    portrait_answered(&mut window, &mut tool.view, 71808);
+    assert_eq!(
+        tool.view.portraits.answered(71808),
+        Some(None),
+        "premise: the empty folder's answer landed"
+    );
+
+    // The game unpacked into the same folder: exe and portraits. The
+    // cached verdict's drop has the next frame's ask list the folder again.
+    game_portraits(&folder, 71808);
+    std::fs::write(folder.join("PES2017.exe"), b"").unwrap();
+    ctx.set_pes_folder_for(&folder, PesVersion::Pes17);
+    let (nodes, _) = tool_frame(&mut window, &mut tool, &ctx);
+    assert_eq!(
+        tool.view.pes_exe_check,
+        Some(ExeCheck::Found),
+        "the repaired folder reads Found"
+    );
+    assert_eq!(
+        tool.view.portraits.answered(71808),
+        None,
+        "the verdict's turn re-asks the answered id"
+    );
+
+    let canvas = canvas_of(&nodes);
+    let spot = portrait_spot(&tool.view, canvas, 718, position);
+    portrait_drawn(&mut window, &mut tool.view, spot);
 }
 
 // An empty PES folder setting (the default where no install path is known)

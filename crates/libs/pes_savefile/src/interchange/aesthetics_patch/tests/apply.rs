@@ -158,7 +158,7 @@ fn apply_writes_the_look_names_and_ids_and_nothing_else() {
 }
 
 /// The presentation keys land in the save as the other appearance keys
-/// do: a patch carrying `star` and `playing_attitude` writes both on PES
+/// do: a patch carrying `star_rating` and `playing_attitude` writes both on PES
 /// 21.
 #[test]
 fn a_patchs_presentation_keys_land_in_the_save() {

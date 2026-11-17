@@ -38,7 +38,7 @@ Height, weight, every
 ability, form, injury, weak foot, positions, playing style, skills and COM
 styles, stronger foot and hand, and the gameplay edit
 flags move with the stats. Names, nationality, age, every motion, the star
-and playing attitude, and every appearance field stay as they are.
+rating and playing attitude, and every appearance field stay as they are.
 
 **Generating a player folder**
 
@@ -46,7 +46,7 @@ The menu's **Generate settings.toml…** and **Generate in-game face…** write 
 player's look to a player folder of your choice, the files a team moving to
 compile-time aesthetics is built from. `settings.toml` holds everything but the
 in-game face: the names, the stock boots and gloves IDs, skin color, physique,
-strip, motions, and the star and playing attitude. `ingame_face.toml` holds
+strip, motions, and the star rating and playing attitude. `ingame_face.toml` holds
 the in-game face itself: iris color, face and hair.
 
 The save cannot say which players wear the in-game face, so you choose per

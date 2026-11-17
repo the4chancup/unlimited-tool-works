@@ -208,6 +208,12 @@ pub(crate) fn imported(picked: &Path, copy: &Path, recorder: &Recorder) {
     );
 }
 
+/// The `closed <path>` step for the save the member closed: a journal that
+/// ends on edits and a close is why the bundle holds no current state.
+pub(crate) fn closed(path: &Path, recorder: &Recorder) {
+    recorder.step(TOOL_ID, format!("closed {}", path.display()));
+}
+
 /// The `removed <path>` step for a file a member's action deleted: an
 /// import's replaced copies, the ×'s own copy.
 pub(crate) fn removed(path: &Path, recorder: &Recorder) {

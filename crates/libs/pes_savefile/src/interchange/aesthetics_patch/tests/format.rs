@@ -262,7 +262,7 @@ fn every_comment_of_the_spec_block_is_emitted() {
 }
 
 /// The presentation table carries each key the patch's version holds:
-/// both on PES 21, `star` alone on PES 19, which stores no playing
+/// both on PES 21, `star_rating` alone on PES 19, which stores no playing
 /// attitude.
 #[test]
 fn the_presentation_table_carries_the_keys_the_patched_version_holds() {

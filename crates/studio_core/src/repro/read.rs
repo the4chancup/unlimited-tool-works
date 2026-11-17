@@ -279,6 +279,44 @@ mod tests {
         );
     }
 
+    // A zip without a journal, a row whose entry the zip lacks and an
+    // entry whose size differs from its row's are each refused, saying
+    // which.
+    #[test]
+    fn a_bundle_missing_its_journal_or_an_entry_or_with_a_wrong_size_is_refused() {
+        let dir = scratch("read_refusals");
+        let path = dir.join("repro.zip");
+        let entry = "inputs/0-EDIT00000000";
+        let journal = |size| journal_with_input(entry, size, &sha256(b"SAVE"));
+        for (entries, refusal) in [
+            (
+                vec![(entry, b"SAVE".to_vec())],
+                "not a bundle (no journal.toml)".to_owned(),
+            ),
+            (
+                vec![("journal.toml", journal(4).into_bytes())],
+                format!("the journal's {entry} is not in the bundle"),
+            ),
+            (
+                vec![
+                    ("journal.toml", journal(5).into_bytes()),
+                    (entry, b"SAVE".to_vec()),
+                ],
+                format!("{entry} is 4 bytes, the journal says 5"),
+            ),
+        ] {
+            let entries: Vec<(&str, &[u8])> = entries
+                .iter()
+                .map(|(name, bytes)| (*name, bytes.as_slice()))
+                .collect();
+            zip_of(&path, &entries);
+            assert_eq!(
+                bundle_err(&path).to_string(),
+                format!("{}: {refusal}", path.display())
+            );
+        }
+    }
+
     // A file that is not a zip is refused as not a bundle, naming the path.
     #[test]
     fn a_file_that_is_not_a_zip_is_refused() {

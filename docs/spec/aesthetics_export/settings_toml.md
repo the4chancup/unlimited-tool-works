@@ -49,6 +49,8 @@ the compiler-owned edit flags and base-copy ID. That is:
 
 - physique, strip style, wrist-tape and spectacle colours, skin and iris colour;
 - the motion block;
+- the star rating (PES 19+) and playing attitude (PES 20+), under `[appearance.presentation]`,
+  which the save stores among the player's stats;
 - every setting of the ingame-face run (face sliders and feature types, eyebrow and facial-hair
   colours, in-game hair);
 - stock boots/gloves IDs (below).
@@ -170,6 +172,10 @@ penalty_kick = 1                # 1 to 4 (PES 20 and 21: 1 to 7)
 dribbling = 0                   # 0 to 3 (PES 20 and 21 only)
 goal_celebration_1 = 0          # 0 none, then PES 15: 1 to 112, 16 and 17: 1 to 122, 18: 1 to 127, 19: 1 to 140, 20: 1 to 152, 21: 1 to 162
 goal_celebration_2 = 0          # 0 none, then PES 15: 1 to 112, 16 and 17: 1 to 122, 18: 1 to 127, 19: 1 to 140, 20: 1 to 152, 21: 1 to 162
+
+[appearance.presentation]
+star_rating = 0                 # 0 to 7 (PES 19 and later): how likely the player is to show up as the team's featured player in the pre-match screen
+playing_attitude = 0            # 0 to 3 (PES 20 and later): only affects cutscenes
 ```
 
 **`ingame_face.toml`.** The marker's file: a folder holding it wears the in-game face, which the

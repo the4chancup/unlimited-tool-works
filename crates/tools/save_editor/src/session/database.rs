@@ -480,7 +480,6 @@ mod tests {
         );
     }
 
-    // SE-GUI-27
     #[test]
     fn the_repair_reports_only_the_entries_it_changes() {
         let mut file = save(PesVersion::Pes17);

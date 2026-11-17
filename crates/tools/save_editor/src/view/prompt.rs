@@ -94,8 +94,8 @@ pub(super) struct ChangeRow {
 }
 
 /// One row of the unsaved changes (`rows`): its cells, and the change it
-/// shows — what its X in the toolbar's list puts back and what its
-/// item's click switches to.
+/// shows — what its X puts back, in the toolbar's list and the close
+/// prompt alike, and what its item's click in the list switches to.
 pub(super) struct UnsavedRow {
     /// The row's three cells.
     pub(super) cells: ChangeRow,
@@ -815,9 +815,13 @@ fn draw_value(
     );
 }
 
-/// A cell of the changes table: `text` on one line.
+/// A cell of the changes table: `text` on one line, or a `Player order`
+/// value's places one per line. Every line starts at the cell's left
+/// edge: `put_cell`'s centred layout would centre each line on its own.
 fn cell(text: impl Into<egui::WidgetText>) -> egui::Label {
-    egui::Label::new(text).wrap_mode(egui::TextWrapMode::Extend)
+    egui::Label::new(text)
+        .wrap_mode(egui::TextWrapMode::Extend)
+        .halign(egui::Align::Min)
 }
 
 /// The tooltip of a row's X.

@@ -59,7 +59,7 @@ pub(super) const TEAM_ROW: [(HeaderUnit, f32); 7] = [
 ];
 /// A space at the body size: the gap the draft's text leaves between a
 /// colour's label, picker and hex, and between an id's label and its box.
-const SPACE_GAP: f32 = 3.0;
+pub(super) const SPACE_GAP: f32 = 3.0;
 /// The padding on each side of the draft's id cells (the Manager and
 /// Stadium IDs are cells of one grid there).
 const ID_CELL_PADDING: f32 = 4.0;
@@ -71,6 +71,9 @@ const ID_BOX_WIDTH: f32 = 46.0;
 /// digits (the largest bound team ID, 262143) in the number boxes' font,
 /// 42.7 points, and the box's 4-point padding either side, rounded up.
 const KIT_BOX_WIDTH: f32 = 51.0;
+/// The fields' row's height: the draft's row stands 24 (the name row's own
+/// margin and the id cells' padding around its 18-point controls, centred).
+const FIELDS_ROW_H: f32 = 24.0;
 /// The room under the fields' row before the Tactics bars, now that no
 /// line parts them (the draft's `margin-bottom` on the row): twice the
 /// rows' own gap.
@@ -137,47 +140,62 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
         info_strip::view_title(ui, view, team_id, &team.name);
         // The fields, the ids and the button on one row, since the Tactics
         // editor below needs the height, each unit one `allocate_ui` at its
-        // claim. The pane is never narrower than the row (a narrower window
-        // scales the whole UI down instead), so it never wraps.
+        // claim, the controls centred on the row's height (a horizontal's
+        // own is only an `interact_size`). The pane is never narrower than
+        // the row (a narrower window scales the whole UI down instead), so
+        // it never wraps. `advance_cursor_after_rect` claims the row's
+        // height under the controls: the child ui's own min_rect is only
+        // the units'.
+        let row = egui::Rect::from_min_size(
+            ui.cursor().min,
+            egui::vec2(ui.available_width(), FIELDS_ROW_H),
+        );
         let mut open_kit_slots = false;
-        ui.horizontal(|ui| {
-            let row_gap = ui.spacing().item_spacing.x;
-            for (unit, width) in TEAM_ROW {
-                ui.add_space(id_cell_padding_before(unit, row_gap));
-                ui.allocate_ui_with_layout(
-                    egui::vec2(width, ui.spacing().interact_size.y),
-                    egui::Layout::left_to_right(egui::Align::Center),
-                    |ui| {
-                        ui.spacing_mut().item_spacing.x = parts_gap(unit, row_gap);
-                        let Some(session) = view.session.as_mut() else {
-                            return;
-                        };
-                        match unit {
-                            HeaderUnit::Name => name_pair(ui, session, team_id, version, &team),
-                            HeaderUnit::Short => short_pair(ui, session, team_id, version, &team),
-                            HeaderUnit::Colour(index) => {
-                                colour_unit(ui, session, team_id, &team, index);
-                            }
-                            HeaderUnit::Manager => {
-                                manager_unit(ui, session, team_id, schema, &team)
-                            }
-                            HeaderUnit::Stadium => {
-                                stadium_unit(ui, session, team_id, schema, &team)
-                            }
-                            HeaderUnit::KitSlots => {
-                                if ui
-                                    .button(KIT_SLOTS_LABEL)
-                                    .on_hover_text("The kit slot assignments, rarely edited")
-                                    .clicked()
-                                {
-                                    open_kit_slots = true;
+        ui.allocate_ui_with_layout(
+            row.size(),
+            egui::Layout::left_to_right(egui::Align::Center).with_main_wrap(false),
+            |ui| {
+                let row_gap = ui.spacing().item_spacing.x;
+                for (unit, width) in TEAM_ROW {
+                    ui.add_space(id_cell_padding_before(unit, row_gap));
+                    ui.allocate_ui_with_layout(
+                        egui::vec2(width, ui.spacing().interact_size.y),
+                        egui::Layout::left_to_right(egui::Align::Center),
+                        |ui| {
+                            ui.spacing_mut().item_spacing.x = parts_gap(unit, row_gap);
+                            let Some(session) = view.session.as_mut() else {
+                                return;
+                            };
+                            match unit {
+                                HeaderUnit::Name => name_pair(ui, session, team_id, version, &team),
+                                HeaderUnit::Short => {
+                                    short_pair(ui, session, team_id, version, &team)
+                                }
+                                HeaderUnit::Colour(index) => {
+                                    colour_unit(ui, session, team_id, &team, index);
+                                }
+                                HeaderUnit::Manager => {
+                                    manager_unit(ui, session, team_id, schema, &team)
+                                }
+                                HeaderUnit::Stadium => {
+                                    stadium_unit(ui, session, team_id, schema, &team)
+                                }
+                                HeaderUnit::KitSlots => {
+                                    if ui
+                                        .button(KIT_SLOTS_LABEL)
+                                        .on_hover_text("The kit slot assignments, rarely edited")
+                                        .clicked()
+                                    {
+                                        open_kit_slots = true;
+                                    }
                                 }
                             }
-                        }
-                    },
-                );
-            }
-        });
+                        },
+                    );
+                }
+            },
+        );
+        ui.advance_cursor_after_rect(row);
         if open_kit_slots {
             view.kit_slots = Some(team_id);
         }
@@ -444,48 +462,58 @@ fn kit_slots(
         .expect("the kit slots are drawn only where they are stored")
         / 64;
     // Every box one width, so the rows line up and a box does not widen
-    // from a 3-digit value to a 6-digit one.
+    // from a 3-digit value to a 6-digit one. A field's label and box
+    // share a cell a space apart, as the draft's cells pair them: the
+    // grid's gap parts the cells alone. No column floor: the Slot column
+    // keeps its labels' width (the boxes' would make it 51).
     ui.spacing_mut().interact_size.x = KIT_BOX_WIDTH;
     egui::Grid::new("team kit slots")
+        .min_col_width(0.0)
         .spacing(egui::vec2(ui.spacing().item_spacing.x, FIELD_SPACING))
         .show(ui, |ui| {
             for (index, kit) in slots.iter().enumerate() {
                 ui.weak(format!("Slot {}", index + 1));
-                number(
-                    ui,
-                    session,
-                    team_id,
-                    KIT_NUMBER_LABEL,
-                    kit.number,
-                    0..=u8::MAX,
-                    move |team, shown| {
-                        team.kit_slots
-                            .as_mut()
-                            .expect("the kit slots exist on PES 17")[index]
-                            .number = shown;
-                        if team.edit_flags.strip.is_some() {
-                            team.edit_flags.strip = Some(true);
-                        }
-                    },
-                );
+                ui.horizontal(|ui| {
+                    ui.spacing_mut().item_spacing.x = SPACE_GAP;
+                    number(
+                        ui,
+                        session,
+                        team_id,
+                        KIT_NUMBER_LABEL,
+                        kit.number,
+                        0..=u8::MAX,
+                        move |team, shown| {
+                            team.kit_slots
+                                .as_mut()
+                                .expect("the kit slots exist on PES 17")[index]
+                                .number = shown;
+                            if team.edit_flags.strip.is_some() {
+                                team.edit_flags.strip = Some(true);
+                            }
+                        },
+                    );
+                });
                 let low = kit.binding % 64;
-                number(
-                    ui,
-                    session,
-                    team_id,
-                    BOUND_TEAM_LABEL,
-                    kit.binding / 64,
-                    0..=u32::try_from(bound_max).expect("the binding's bound fits u32"),
-                    move |team, shown| {
-                        team.kit_slots
-                            .as_mut()
-                            .expect("the kit slots exist on PES 17")[index]
-                            .binding = shown * 64 + low;
-                        if team.edit_flags.strip.is_some() {
-                            team.edit_flags.strip = Some(true);
-                        }
-                    },
-                );
+                ui.horizontal(|ui| {
+                    ui.spacing_mut().item_spacing.x = SPACE_GAP;
+                    number(
+                        ui,
+                        session,
+                        team_id,
+                        BOUND_TEAM_LABEL,
+                        kit.binding / 64,
+                        0..=u32::try_from(bound_max).expect("the binding's bound fits u32"),
+                        move |team, shown| {
+                            team.kit_slots
+                                .as_mut()
+                                .expect("the kit slots exist on PES 17")[index]
+                                .binding = shown * 64 + low;
+                            if team.edit_flags.strip.is_some() {
+                                team.edit_flags.strip = Some(true);
+                            }
+                        },
+                    );
+                });
                 ui.end_row();
             }
         });

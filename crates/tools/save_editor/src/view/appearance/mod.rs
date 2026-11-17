@@ -1,5 +1,5 @@
 //! The Appearance screen (the draft's `appearanceTab` and `paletteRow`):
-//! six titled groups in `Frame::group` frames, laid out to show whole in
+//! seven titled groups in `Frame::group` frames, laid out to show whole in
 //! the default window — Full Player Customization with Colors at its
 //! right, Strip style, Physique with Motion over Edit flags at its right,
 //! and Presentation last (star and playing attitude, aesthetics like the
@@ -35,7 +35,8 @@ use crate::view::abilities::{self, gating_tooltip, maybe_end_row, number, small_
 use crate::view::appearance::fields::{
     MOTIONS, MotionField, PHYSIQUE, Palette, STRIP_ENUMS, combo_options, number_range, palette,
 };
-use crate::view::{Panel, SaveView, edit_player, selected_player};
+use crate::view::team::SPACE_GAP;
+use crate::view::{NUMBER_BOX, Panel, SaveView, edit_player, selected_player};
 
 /// `edit_flags`' Face checkbox.
 pub(super) const FACE_LABEL: &str = "Face";
@@ -118,6 +119,8 @@ const FLAG_CELL_GAP: f32 = 12.0;
 const SWATCH_ROW_SPACING: f32 = 3.0;
 /// Between two squares of a Colors row (the draft's `.palette` `gap`).
 const SWATCH_GAP: f32 = 2.0;
+/// The padding inside a swatch row's cell (the draft's `td`, a side).
+const SWATCH_CELL_PAD: f32 = 4.0;
 
 /// The Appearance screen's content for the selected player.
 pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
@@ -160,7 +163,6 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
             if *edit_aesthetics {
                 ui.weak("A later patch overwrites whatever is edited by hand.");
             }
-            ui.add_space(GROUP_GAP);
         }
         add_enabled_ui(ui, !locked, |ui| {
             groups(
@@ -195,6 +197,10 @@ fn groups(
     hide_ids: Result<fpc::HideIds, fpc::HideIdsError>,
 ) {
     ui.spacing_mut().item_spacing.y = 0.0;
+    // The draft's `.group` `margin-top` stands the first group off the
+    // title's line as the between-group gaps stand each group off the
+    // last.
+    ui.add_space(GROUP_GAP);
     fpc_colors_row(ui, session, player_id, version, player, hide_ids);
     ui.add_space(GROUP_GAP);
     group(ui, "Strip style", |ui| {
@@ -504,10 +510,14 @@ fn fpc_group(
 /// weak colour. `PRESENTATION_STATS` because the pair shares the Profile
 /// fields' `SmallStat` shape.
 fn presentation(ui: &mut egui::Ui, session: &mut Session, player_id: u32, stats: &PlayerStats) {
+    // The boxes at the draft's number-input width; no column floor, so
+    // the label column keeps its labels' width.
     egui::Grid::new("appearance presentation")
         .num_columns(3)
+        .min_col_width(0.0)
         .spacing(egui::vec2(ui.spacing().item_spacing.x, FIELD_SPACING))
         .show(ui, |ui| {
+            ui.spacing_mut().interact_size.x = NUMBER_BOX;
             for (small, note) in fields::PRESENTATION_STATS
                 .iter()
                 .zip([STAR_NOTE, ATTITUDE_NOTE])
@@ -589,9 +599,13 @@ fn edit_flags_grid(
             ui.end_row();
         });
     // Copy from ID's box stands as if centred on a `FLAG_CELL_H` row of its own
-    // under the flags, as the draft's grid row draws it.
+    // under the flags, as the draft's grid row draws it. The draft's label
+    // and box share the cell: a space parts them, and the box is the number
+    // input's width.
     ui.add_space((FLAG_CELL_H - ui.spacing().interact_size.y) / 2.0 - ui.spacing().item_spacing.y);
     ui.horizontal(|ui| {
+        ui.spacing_mut().item_spacing.x = SPACE_GAP;
+        ui.spacing_mut().interact_size.x = NUMBER_BOX;
         number(
             ui,
             session,
@@ -1052,10 +1066,14 @@ fn motion_grid(
     draw: &mut dyn FnMut(u8) -> u8,
 ) {
     // Two pairs a row (the draft's `COL_PANELS` motion `[2, 194, 14]`).
+    // The boxes at the draft's number-input width; no column floor, so
+    // the label columns keep their labels' width.
     let per_row = 2;
     egui::Grid::new("appearance motion")
+        .min_col_width(0.0)
         .spacing(egui::vec2(ui.spacing().item_spacing.x, FIELD_SPACING))
         .show(ui, |ui| {
+            ui.spacing_mut().interact_size.x = NUMBER_BOX;
             let mut pair = 0usize;
             for field in &MOTIONS[..7] {
                 motion_number(ui, session, player_id, version, field, motion);
@@ -1063,7 +1081,7 @@ fn motion_grid(
                 maybe_end_row(ui, pair, per_row);
             }
             // The dribbling motion sits between the kicks and the celebrations
-            // (the draft's second row's last cell); a version without it draws
+            // (the draft's fourth row's last cell); a version without it draws
             // it disabled at 0 with the `PES NN+` tooltip.
             ui.label(DRIBBLING_MOTION_LABEL);
             match motion.dribbling {
@@ -1193,6 +1211,7 @@ fn colour_rows(
 ) {
     egui::Grid::new("appearance colours")
         .num_columns(2)
+        .min_col_width(0.0)
         .spacing(egui::vec2(ui.spacing().item_spacing.x, SWATCH_ROW_SPACING))
         .show(ui, |ui| {
             for key in [SettingKey::SkinColor, SettingKey::IrisColor] {
@@ -1202,7 +1221,11 @@ fn colour_rows(
                 let palette = palette(version, key);
                 let stored = face(appearance, field);
                 ui.label(palette.label);
-                ui.horizontal(|ui| {
+                // A scope, not a horizontal: a horizontal claims the whole
+                // remaining width as its frame, and the grid's last column
+                // would carry it to the pane's edge. `add_space` adds to
+                // the item spacing already claimed after the swatches.
+                ui.scope(|ui| {
                     palette_row(ui, session, player_id, &palette, stored, |player, shown| {
                         player
                             .appearance
@@ -1210,6 +1233,7 @@ fn colour_rows(
                             .set(field, shown)
                             .expect("a loaded player's face run holds the section's colour fields");
                     });
+                    ui.add_space(SWATCH_CELL_PAD - ui.spacing().item_spacing.x);
                 });
                 ui.end_row();
             }

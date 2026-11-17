@@ -100,23 +100,29 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
 /// `.sep` the fields' row carried), which parts the title from the screen
 /// the toggle switches.
 pub(super) fn view_title(ui: &mut egui::Ui, view: &mut SaveView, id: u32, name: &str) {
-    ui.horizontal(|ui| {
-        page_toggle(ui, view);
-        let body = egui::TextStyle::Body.resolve(ui.style());
-        let mut title = egui::text::LayoutJob::default();
-        title.append(
-            &format!("{id} "),
-            0.0,
-            egui::TextFormat::simple(body.clone(), ui.visuals().weak_text_color()),
-        );
-        append_name(&mut title, name, &body, name_background(ui.visuals()));
-        let strong = ui.visuals().strong_text_color();
-        for section in &mut title.sections {
-            if section.format.color == egui::Color32::PLACEHOLDER {
-                section.format.color = strong;
+    // The draft's `.pheader` is text-high like the `.sel`s in it;
+    // `ui.horizontal` allocates its row a control's `interact_size` tall,
+    // which would stand the separator 3 points lower.
+    ui.scope(|ui| {
+        ui.spacing_mut().interact_size.y = ui.text_style_height(&egui::TextStyle::Body);
+        ui.horizontal(|ui| {
+            page_toggle(ui, view);
+            let body = egui::TextStyle::Body.resolve(ui.style());
+            let mut title = egui::text::LayoutJob::default();
+            title.append(
+                &format!("{id} "),
+                0.0,
+                egui::TextFormat::simple(body.clone(), ui.visuals().weak_text_color()),
+            );
+            append_name(&mut title, name, &body, name_background(ui.visuals()));
+            let strong = ui.visuals().strong_text_color();
+            for section in &mut title.sections {
+                if section.format.color == egui::Color32::PLACEHOLDER {
+                    section.format.color = strong;
+                }
             }
-        }
-        ui.label(title);
+            ui.label(title);
+        });
     });
     // The `.sep` under the row (its 8-point margin each side of the
     // painted row carries the room the draft's `margin-bottom` adds).
@@ -165,7 +171,7 @@ fn page_toggle(ui: &mut egui::Ui, view: &mut SaveView) {
     };
     let on = match view.selected {
         Some(Selection::Team(_)) => Segment::Gameplan,
-        _ => match view.page {
+        Some(Selection::Player(..)) | None => match view.page {
             PlayerScreen::Stats => Segment::Stats,
             PlayerScreen::Appearance => Segment::Appearance,
         },

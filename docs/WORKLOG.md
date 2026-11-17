@@ -10,21 +10,28 @@ is in `AGENTS.md` ("Working documents").
 ## Current status
 
 **Now: Release 0.0.2, the VGL preview** (`plans/core/development_plan.md` "The /vg/ League 27
-(VGL)"). The cut holds every open 0.0.2 step (DECISIONS 2026-11-11 "0.0.2 holds every open
-0.0.2 step"), worked in this order:
-1. Update now (0.0.2-upd, its slices below; the command line's notice, 0.0.2-cli, is in;
-   ST-UPD-04 passed on Windows and on Linux).
-   The TLS provider (0.0.2-tls) is settled: `ring` stays.
-2. The illegal formation check (0.0.2c) is in and reviewed, with the pitch held to the
-   movable range (0.0.2-range).
-3. The Save editor asks of 2026-11-03 are in: -clip, -undo, -inst, -drift, -statlbl, and
-   the cup-teams filter (0.0.2-cup), and the arrow keys on every whole-number box
-   (0.0.2-arrows).
-4. The measurements are closed: a compile against Red (0.0.2d: ours 6.2 s, Red 57 s),
-   `codegen-units` (0.0.2-cgu: not taken).
-5. The cut. The library checkpoints (0.0.2-chk) are in. Before it: the paid review rounds
-   (Carbon), the maintainer's looks (`maintainer/tasks.html`), the Save editor's PES 2019
-   writes checked in game (0.0.2-pes19).
+(VGL)"), aimed at within the day, a target the work chosen for it is not rushed to meet
+(DECISIONS 2026-11-16 "0.0.2 is cut without Select all similar,
+the Carbon rounds and the PES 2019 check"; 2026-11-16 "The no-stretch slices move to after
+0.0.2"). After 0.0.2: 0.0.2-similar, every Carbon round a 0.0.2 step still owes (Report a problem's
+excepted, below), 0.0.2-pes19
+(and with it the readme's PES 2019 claim), 0.0.2-nostretch's slices, and any mutation run
+(mutfast first). Most open steps below wait only for the maintainer's look
+(`maintainer/tasks.html`). What is left before the cut:
+1. 0.0.2-report's blind drill. The chain was run by hand in the built window on 2026-11-17,
+   the dialog matches its draft (the draft following the build where they differed), and
+   card ST-REP-05 waits for the maintainer.
+2. In game (a sidekick): the answers' two teams naming one coach record, on PES 2017.
+3. The cut, only once the drill's results are in and the maintainer has run the checks of
+   `maintainer/tasks.html` (the maintainer, 2026-11-17): a pipeline without mutants on the
+   last merge (0.0.2-determ's second clean run), the changelog, the release build, and a
+   Linux bundle for the Reset window card.
+
+Done since 2026-11-16: the answers' recheck (Kit slots and the Stats screen fixed and looked
+at), the Report a problem dialog's spacing, `gui.py`'s review round. Reviews: every 0.0.2 loop
+has ended; Report a problem, a Tier 1 surface (DECISIONS 2026-11-16), has had its whole review
+(Carbon's loop ended at round 3, its fixes merged at `b3e8f007`, Astra's round 1 accepted
+nothing).
 
 **The PoC for VGL's organizer:** 0.0.2-poc.5 is built (`4cc-studio-temp/poc/target/dist`,
 archive SHA-256 `cac0447a…`, branch `vgl27` at `61d224c4`: main of 2026-11-12 at
@@ -1361,7 +1368,8 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     - [x] 2026-11-13 (`7baef557` on the branch) the Export upgrader's help page on what each `unmigrated_content` cause means, and
       the stale `upgrade-models` sentence about `u0731p2.dds` beside `u0XXXp2.dds`
       (`brief_eu_reasons.md`, SWE-2, running on the branch since 2026-11-13)
-    - [ ] labels that grew, to look at in the built window (`ap_view.report.md` section 5:
+    - [x] labels that grew, looked at in the built window 2026-11-16 at `1df4a139` (each read
+      whole, none cut; `.tmp/lead/looks0002/`) (`ap_view.report.md` section 5:
       the Comparator's Export tooltip, the import Pick tooltip, the Team TOML tooltip, the
       boots and gloves dialog's option column)
     - [x] 2026-11-15 (SWE-2, merged `63bb0696`) the member texts left spell "color" (violations, the
@@ -1431,8 +1439,9 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     history, the built window's sidebar and title
     Code half merged 2026-11-14 (`31f44cda`, SWE-2, one comment fixed by the lead; workspace
     gates green but for the two overlap tests below, green alone). Docs half 2026-11-14 (SWE-2,
-    84 files; the lead rejoined five links the swap had split). Open: the sidebar and title in
-    the built window, on the looks pass's next release build
+    84 files; the lead rejoined five links the swap had split). The sidebar and title in
+    the built window checked 2026-11-16 at `1df4a139`: "The Compiler" grayed on the sidebar
+    and as the help's chapter, as the draft names it
   - [x] 0.0.2-noticeerr (2026-11-14, `7ac5df69`) `NoticeKind::Error` in the theme's error red; both themes' error, warning and link colours and the success green are GitHub's pairs; the pitch's crosses take the dark red and amber in both themes; ST-BAR-04 with four kinds
   - [x] 0.0.2-nomodels (2026-11-14, `8ac5658c`) the Export upgrader's model-folder mode removed: `upgrade-models` is refused as an unknown command (EU-CLI-16), EU-MF archived in `spec/withdrawn_ids.md`, the compiler's remedies point at a Midcup export
   - [ ] 0.0.2-determ (the maintainer, 2026-11-14: "we really can't keep having tests that fail
@@ -1529,16 +1538,34 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       - the Player screen: the view's content 1 higher than the draft, each section's first
         row 0.5 nearer its heading and the Pitch/Left/List selector 1.5 nearer "Playable
         positions", adding up to 2.5 at the columns' foot (`draft_compare.py player`)
-      - the Ruleset editor's General: each checklist 4 lower under its help line (21
-        against the draft's 17)
+      - [x] the Ruleset editor's General: each checklist 4 lower under its help line (21
+        against the draft's 17): fixed (SWE-2, 2026-11-16, merge `30cca13d`), the heading,
+        help and grid stacked flush as the draft's
+      - the Ruleset editor's Tiers help line over its table, and Medal systems' heading, help
+        and grid, stand 3 to 4 lower than their drafts for the same cause (`item_spacing`
+        between the stacked lines, which the draft has none of): moved to Phase 20 (the
+        Ruleset editor waits for 0.1.0), whose built window is off its draft page-wide
+        (lead, 2026-11-17, `.tmp/lead/ans2/cmp_rs_*.txt`): General's page title in the weak
+        colour and 4 higher, its form 4 left of the draft's indent and 12.5 higher, the
+        checklists 12 and 17 higher; Tiers' table columns 2 to 106 right of the draft's,
+        its headers wrapped otherwise, its rows 19 to 32 higher
+    - [x] the built window (lead, 2026-11-17, the release build of `a9ec4919`): the two
+      picture dialogs within 1.3 (the forms' row labels, accepted); the range dialog's team
+      pickers read `701 /3/` where the draft's read `/3/`, kept as built (the maintainer,
+      DECISIONS 2026-11-17; the draft follows): the build took
+      Multi-team AATF's pickers (`b213ee6a`), as the plan's "as Multi-team AATF picks its
+      range" says, while the draft's are older; `draft_compare.py` pairs by text, so it
+      listed the two labels as unmatched and flagged nothing. The Player screen: see the
+      answers slice's recheck (the Stats screen's sections)
     - [x] 2026-11-15 (lead) each difference the check met outside these slices traced to its
       cause, and the looks asked in QUESTIONS ("The 0.0.2 Save editor report"): the Ruleset
       editor's page list, the Appearance screen's Physique and Colors boxes, Randomize, and
       the texts wave 4 reworded that the drafts never took. Three of them were never
       measured because `draft_compare.py` lists no screen of theirs
-    - [ ] the Tiers' Label and Id fields are drawn about 40 points wide, where `tier_row` asks
-      100 and 80 as the draft does, so "Bronze" and "silver" are cut: a red test on the
-      fields' width in a Tiers frame, then the cause
+    - [x] the Tiers' Label and Id fields are drawn about 40 points wide, where `tier_row` asks
+      100 and 80 as the draft does, so "Bronze" and "silver" are cut (SWE-2, 2026-11-16,
+      merge `30cca13d`): a `TextEdit` in a grid cell is capped at the column's drawn width,
+      so the fields, and the hex box with them, are `add_sized`
     - [x] 2026-11-15 (lead) `draft_compare.py` lists the Appearance screen (the draft's link
       takes `page=appearance`) and the Ruleset editor's General and Tiers pages (`rs_general`,
       `rs_tiers`), so a slice there is measured, not looked at
@@ -1554,8 +1581,8 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       of "Pending looks" as cards; every pointer moved, the two files removed
     - [ ] the lead checks each look of `tasks.html`'s "Coming once the lead has checked them"
       beside its draft (`scripts/built_window/`), each then a card with its capture pair
-    - [ ] a Linux bundle built from main for the Reset window card (`just remote just
-      release`, once the VPS's mutation run is done), named on the card
+    - [ ] a Linux bundle built from main for the Reset window card: 0.0.2's own Linux bundle,
+      built at the cut on the VPS, named on the card
   - [x] 0.0.2-tplclean 2026-11-15 (merge `c20e6b29`): a template or Blank opens in the Ruleset
     editor with no unsaved changes (RE-GUI-02, 15)
   - [x] 0.0.2-teamscroll 2026-11-15 (merge `c20e6b29`): every dropdown's list 300 points tall
@@ -1575,7 +1602,9 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     -> verify: ST-REP-01 to 04 (`plans/core/gui.md`), the built window beside the draft
     - [x] built (2026-11-15, SWE-2 and the lead; merge `ced67b83`): ST-REP-01 to 04 pass, a
       help chapter of its own ("Reporting a problem") and the changelog line
-    - [ ] the whole chain once, as a member runs it: the tests cover it in pieces (the
+    - [ ] (after 0.0.2: no headless shell other crates can drive exists yet; for 0.0.2 the
+      chain is run by hand in the built window below) the whole chain once, as a member runs
+      it: the tests cover it in pieces (the
       dialog writing a stub tool's bundle, ST-REP-02; the Save editor's state, ST-REP-04; a
       recorded `Session`'s bundle replaying to a matching write, `replay.rs`), never through
       the shell with the real Save editor -> verify: a test with the Save editor registered in
@@ -1598,6 +1627,21 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     - [ ] the built window beside the draft (`.tmp/lead/looks/report/draft_open.png`), run
       through as above on a copy of a save, the zip then read with `save-editor diff`; then
       card ST-REP-05 in `maintainer/tasks.html`; review rounds (tier 2)
+      - [x] run through (lead, 2026-11-17, the release build of `97cc9757`, PES 2021's
+        sandbox save): a skill ticked, the save written, Report a problem, Save…. The zip
+        holds the journal's four steps, both inputs, the output, `state/` and the log;
+        `save-editor diff` of the kept input against the output names the one edit
+        (player 70101, Heading 0 → 1), and `state/` reads the same as the output
+      - [x] two differences from the draft, over 2 points each: the intro's lines and the
+        list's rows 18 apart (the draft's 15), and the text box 61 tall (the draft's 84,
+        right under its label). Fixed (SWE-2, merge `32649d79`), looked at in the release
+        build of `32649d79`: rows 15 apart, the box 84 right under its label
+      - [x] the lower half 8 higher than the draft's from the title (the draft's 10-point
+        sentence gaps against the dialogs' 8, the room a browser keeps under an inline box):
+        the draft follows the build (the maintainer, DECISIONS 2026-11-17); every row now
+        stands where the build's does
+      - [x] card ST-REP-05 in `maintainer/tasks.html` (2026-11-17), the maintainer's run
+        waiting there
   - [x] 0.0.2-namelight 2026-11-15 (SWE-2, merge `40ce82da`): in the light theme a name's
     colour code reading under 4.5 on the panel is darkened until it does, hue kept
     (`theme::darkened_to_read`, which reproduces the lineup lists' hand-made colours); the
@@ -1621,11 +1665,10 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     a release frame of the list with four teams' 2,494 rows 17.45 ms -> 1.01 ms, the close
     prompt 8.73 -> 0.97. Scrolled in the built window with two imports; card
     `test-changes-scroll` asks the maintainer to try four
-    - [ ] no row pops in during a fast scroll -> verify: a test in `tests/changes_popup.rs`
-      wheeling the four-team list fast and asserting, on every frame until it settles, that
-      the drawn rows cover the list's box top to bottom; red with the drawn range one row
-      short (SWE-2, after updrw2)
-  - [ ] 0.0.2-taskbuild the tasks page names the build its cards run on -> verify: the next
+    - [x] no row pops in during a fast scroll (2026-11-16, SWE-2, merge `8db25bd4`):
+      `a_fast_scroll_keeps_the_box_covered`, red with the drawn range one row short at
+      either edge and with the wheel off the list
+  - [x] 0.0.2-taskbuild 2026-11-17: the tasks page names the build its cards run on -> verify: the next
     release build (the Report a problem look's) copied to `4cc-studio-temp/tasks_build/`,
     the page's intro naming that path and the commit it was built from; refreshed whenever
     a card is added from a later commit (RUNBOOK "Looks owed have one home each")
@@ -1658,6 +1701,9 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     - [ ] screens and layout (tier 2): `923607d9` (pagetoggle, teamdrop), `2ef1bfe4`
       (poslayout), `5f82ef3f` (sideopen), `887e2ae2` (dlgroom), `40ce82da` (namelight),
       `b13767aa` (picsettings), `be3913bf` (picwidth), `c20e6b29` (tplclean, teamscroll)
+      - [x] SWE-2's loop over parts A to C ("S-scr", "S-scrc"); part C's last fixes (a team
+        row's name codes, the range run's settings box) merged (`08b518ba`)
+      - [ ] one Carbon round, after 0.0.2
     - [ ] the changes list and the close prompt (tier 2): `a6bba169` (changesperf),
       `55f398a9` (promptx)
     - [ ] interchange and export settings (tier 1): `fb42b800` (shirtno), `7b2e9ea2`,
@@ -1712,8 +1758,17 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         ("C-recents r3"): the scrolled File menu wraps its widest entry, an inserted
         `[save-editor]` writes its recent files above its header, four tests that pass on
         wrong code, SE-GUI-26 at a size that never overflows (lead, `b2f3ecc9`)
-      - [ ] the rework: A3, the settings save (SWE-2, `sk/recrw_a3`); B3, the Save editor
-        (SWE-2, `sk/recrw_b3`): running; then Carbon's round 4
+      - [x] the rework: A3, the settings save (SWE-2, merge `e5889d60`); B3, the Save editor
+        (SWE-2, merge `9a607575`)
+      - [x] Carbon's round 4, 2026-11-16 (at `9a607575`): 6 accepted, none of reach (a)
+        ("C-recents r4"), which ends the loop: four tests that pass on wrong code, two width
+        caps that cap nothing, two docstrings, the plan's 1366 × 768 window height (lead,
+        `5dadddeb`)
+      - [x] the rework C (SWE-2, merge `82a86c32`)
+      - [x] the built window at 1280 × 691 with thirteen saves found and ten recent,
+        2026-11-16: the File menu stands at its full height 1.5 s after the click with no
+        pointer move (headless, the popup grows over four frames; the real window runs them
+        unasked), its middle scrolls, and no entry wraps under the bar
   - [ ] 0.0.2-answers the maintainer's answers of 2026-11-16 that change the build (plans and
     DECISIONS edited that day):
     - [x] code, in two slices -> verify: each a test red first. SWE-2 (merge `498ef8e4`):
@@ -1744,14 +1799,42 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         `substitution_choices`, help 08, the two comments)
       - [x] Choose file's tooltip reads "starting in the folder of the last opened save":
         landed with the recents round 2 rework (merge `2923f863`)
-    - [ ] the built window beside the drafts: the Stats indent, Appearance with Motion's 24
-      points less room, the Gameplan's 8-point gaps, Kit slots at 51; it takes focus, so it
-      waits for the maintainer's yes
+    - [x] the built window beside the drafts: the Stats indent, Appearance with Motion's 24
+      points less room, the Gameplan's 8-point gaps, Kit slots at 51. Looked at (lead,
+      2026-11-16, the release build of `5e086fbe`): the indent, Motion's place, the 8-point
+      gaps, Automatic settings level with the lists and the boxes' one width match the draft.
+      - [x] five differences fixed (SWE-2, merge `a34bfa97`): Kit slots' label columns no
+        longer 51 wide, the Gameplan unscrolled at the default window, Colors 230 wide, the
+        Motion, Presentation and Copy from ID boxes 52, the title row's line at 56.5 (the
+        draft's 57). Rechecked (lead, 2026-11-17, the release build of `a9ec4919`, captures
+        in `.tmp/lead/ans2/`): each within 1 point of the draft
+      - [x] two more differences the recheck met, each to a fix:
+        - Kit slots: each label and its box in two grid columns, 8 apart, where the draft
+          has them in one cell a space apart (3): every box 5 right of the draft's. Fixed
+          (SWE-2, `4017c877`): one cell each, `SPACE_GAP` apart. Looked at (lead,
+          2026-11-17, the release build of `97cc9757`): each box 3 after its label, the
+          columns within 1 point of the draft's. Left over: the whole grid stands about 4
+          points left of and above the draft's, since the draft's `table.grid` pads its
+          cells 4 left and 3 above where egui's Grid has no outer margin: left as is, the
+          dialog redesigned after 0.1.0 (16.k)
+        - the Stats screen: its sections 9 under the title row's line, the draft's 12, so
+          the screen stands 4 to 5.5 higher than the draft once the line moved up. Fixed
+          (SWE-2, merge `f8e4d661`; it takes in 0.0.2-gaps' Player screen item), looked at
+          in the release build of `f8e4d661`: headings 1 higher than the draft's (the line
+          at 56.5 against 57, and the text's pixel snapping), each first row within 0.5 of
+          the draft's under its heading. The positions grid stood 2.5 higher (1.5 nearer
+          its heading): the draft follows the build (the maintainer, DECISIONS 2026-11-17),
+          the screen now within 1 point everywhere (Gameplan rechecked too). The layout
+          tests still cite the old draft's numbers in their comments (the toggle's 22.5,
+          the grid's 63.7 under its title, `view/tests/abilities/layout.rs`); their values
+          pin the build, which did not move, though headless they measure the grid 1.3
+          lower than the real window does: respell when next touched
     - [x] the drafts (the lead), each captured and critiqued: Kit slots shows `Bound team
       ID` as the id in boxes of one width (72 points, six digits); Randomize greyed whole;
       the three texts of DECISIONS 2026-11-16 "the drafts take three texts"; `Star rating`;
       the Gameplan screen's 8-point gaps
-    - [ ] in-game (a sidekick, PES 2021): two teams naming one coach record, both in one
+    - [ ] in-game (a sidekick, PES 2017, the one game supported officially so far; the
+      maintainer, 2026-11-17): two teams naming one coach record, both in one
       match's prematch screen -> verify: the screen shows each team's coach, or the fault
       the no-manager-id saves showed; result into the savefile plan's "manager id" paragraph
     - [ ] PES 2019's playing attitude (the maintainer: not in Edit mode on 2019 or 2021, a
@@ -1771,18 +1854,6 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     for some folder paths: egui rounds a wrap's width to a whole point, so a line landing in
     the fraction reported wider than the pinned width; the run's labels now wrap at its floor,
     a unit test sweeping line lengths at three fractional widths
-  - [ ] 0.0.2-mutfast save_editor's mutation runs stop at a mutant's first failing test.
-    Its last diff run (`gate/mutants.diff.old/save_editor`, 247 mutants a side): a mutant's
-    build 20-27 s median, its tests 486 s locally and 590 s on the VPS; a caught mutant's
-    tests 468 s median against the full suite's 578, since libtest runs every test after
-    the first failure: the caught mutants are 80% of the hours (25.6 of 31.9 h locally).
-    -> verify: the same 20 save_editor mutants run with libtest and with cargo-nextest
-    (`test_tool = "nextest"`, fail-fast by default; installed here, check the VPS), wall
-    time per caught and per missed mutant compared, the per-test process cost through
-    `scripts/gates/test_runner.cmd` included; adopted only if it wins. Also: a crate whose
-    estimate passes a budget (about an hour a side) runs detached from the checkpoint,
-    which closes on the rest (this one held it ~12.5 h); `0.0.2-picwidth` keeps the
-    baseline from depending on the tree's path
   - [x] 0.0.2-teamfill (2026-11-15, merge `457f30c8`) the player list's team rows take the
     draft's `#202020`: the palette's `team_row_fill`, mid grey at 48 of 255, one value for both
     themes (grey 231 on the light list); the built list beside the draft, both themes, sampled
@@ -1799,7 +1870,7 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       (height), the Ruleset editor's rail and shown preview and the player list take the room;
       measured at default (unchanged) and at 1920 x 1080 with
       `.tmp/stretch/drafts/measure.py`, captures `.tmp/stretch/drafts/*_monitor.png`
-    - [ ] a slice per tool
+    - [ ] a slice per tool (after 0.0.2: DECISIONS 2026-11-16)
   - [x] 0.0.2-lib the library rerun against checkpoint `p11`, 2026-11-13: checkpoint `002`
     (422 clean inputs; `.tmp/library_parity/checkpoints/diff_p11_002.txt`), every change
     traced to a commit since `3c512628`: VGL27's team IDs (`6268280c`), the short Common
@@ -2677,6 +2748,21 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
   value as the Save editor's does (`plans/ruleset_editor.md`, the undo paragraph; DECISIONS
   "A run of undo steps is keyed by the widget call") -> verify: ten wheel notches on a
   tier's count, one Undo
+- [ ] after 0.0.2, first (the maintainer, 2026-11-16: no mutation run starts until this
+  lands; checkpoints run `--no-mutants` meanwhile, RUNBOOK "A checkpoint is one command")
+  mutfast: save_editor's mutation runs stop at a mutant's first failing test. Its last
+  diff run (`gate/mutants.diff.old/save_editor`, 247 mutants a side): a mutant's build
+  20-27 s median, its tests 486 s locally and 590 s on the VPS; a caught mutant's tests
+  468 s median against the full suite's 578, since libtest runs every test after the first
+  failure: the caught mutants are 80% of the hours (25.6 of 31.9 h locally). The run of
+  2026-11-16 (`gate/mutants.out`, 198 mutants here) took about 4.7 minutes a mutant with
+  two at a time. -> verify: the same 20 save_editor mutants run with libtest and with
+  cargo-nextest (`test_tool = "nextest"`, fail-fast by default; installed here, check the
+  VPS), wall time per caught and per missed mutant compared, the per-test process cost
+  through `scripts/gates/test_runner.cmd` included; adopted only if it wins. Also: a crate
+  whose estimate passes a budget (about an hour a side) runs detached from the checkpoint,
+  which closes on the rest (this one held it ~12.5 h); `0.0.2-picwidth` keeps the baseline
+  from depending on the tree's path
 - [ ] after 0.0.2 (from 0.0.1's f6, the whole-crate mutation runs' two design findings):
   - `team_widgets` `pitch/popover.rs` `slot_popover`'s outside-press focus surrender is
     unobservable under egui 0.37 (`Focus::end_pass` drops an undrawn widget's focus; the
@@ -2795,7 +2881,7 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
   reopening the save (the maintainer, 2026-11-01). Then the draft (the button's place
   against the Set PES path button's bottom right), the plan's paragraph (what a malformed
   or ambiguous export does, off the UI thread as the CPK read is), its scenarios, and a slice
-- [ ] after 0.0.2 (the maintainer, 2026-11-15), if `0.0.2-mutfast`'s trial finds that
+- [ ] after 0.0.2 (the maintainer, 2026-11-15), if mutfast's trial finds that
   cargo-nextest's process per test slows the suite too much: a test runner of our own that
   keeps the standard runner's single process and stops at the first failure, as nextest does.
   Checked 2026-11-15: `libtest-mimic` 0.8.2 runs tests on threads in one process (its
@@ -2856,7 +2942,11 @@ The phase's steps are itemized when it opens; prepared ahead:
 
 ### Phase 16 — Polish and distribution
 
-Steps are itemized when Phase 15 closes; three are fixed already:
+Steps are itemized when Phase 15 closes; four are fixed already:
+
+- [ ] 16.k the Kit slot assignments dialog's columns further apart and its grid centred across
+  the dialog (DECISIONS 2026-11-17; `plans/save_editor.md` "Editing UI"): draft first, then
+  the build -> verify: the built window beside the draft
 
 - [x] 16.w the release exe's platform floor and size (maintainer, 2026-10-15; DECISIONS
   2026-10-15): Windows 10 x64 and Linux, `+crt-static`, `rhai` `only_i64` (16.w1-16.w3)
@@ -2949,6 +3039,9 @@ request (2026-10-14), to show the members who offered to help shape the ruleset 
   toolbar's entries, the CLI's `random` (RE-RND, RE-CLI-04) → verify: 1,000 seeds per preset,
   and the share of seeds that needed a redraw measured and reported
 - [ ] 20.8 the help chapter, and the Ruleset editor active on the shell's sidebar
+- [ ] 20.8a the built window beside the drafts, page by page (`draft_compare.py rs_general`,
+  `rs_tiers`, and a screen for each page they do not list): every row within 1 point.
+  General and Tiers were off page-wide on 2026-11-17 (the numbers in 0.0.2-gaps' Tiers item)
 - [ ] 20.9 converge (RUNBOOK.md "Closing a phase"), RE-GUI-16 checked by hand
 
 ---
@@ -2996,7 +3089,7 @@ one of them means that page).
 - The Fox ownership line's Apply link in the built window; PES 2018 to 2021; 8.38; harness
 - The Save editor's eight help chapters and the two core ones read in the built window; any
   PES; 8.29e's e1; harness
-- The Appearance screen in the built window at 1280 × 800: the six groups whole with no
+- The Appearance screen in the built window at 1280 × 800: the seven groups whole with no
   scroll bar, lock off and on, the strip grid's lines; any PES; 0.0.2-applayout; harness
 - The Live AATF pitch's warning cross (`#D29922` from 0.0.2-noticeerr), drawn for a Warning-severity position mark (no
   real save under 4cc Autumn 26 raises one); any PES; 8.9m's m4; harness
@@ -3019,7 +3112,22 @@ points there.
     so its labels stand 12 points further right of the title and its Save editor section
     20 lower; its rows also stand 3 to 4 points lower against the title than the build's.
   - The range picture dialog's team selectors: the build writes each team's ID before its
-    name (`701 /3/`), the draft only the name (`/a/`).
+    name (`701 /3/`), the draft only the name (`/a/`): resolved 2026-11-17, the maintainer
+    keeps the build's (DECISIONS 2026-11-17), the draft follows.
+- open 2026-11-17 (the lead, the answers recheck): with a 200% primary monitor and a 100%
+  one beside it, two things go wrong on the 100% one (Windows 10, the release build of
+  `a9ec4919`).
+  - A window remembered there (`window_main` with scale 1.0) reopens at the primary's 200%,
+    twice its size, straddling both monitors, and records scale 2.0 on close: the window is
+    created at the primary's scale, and Windows moves it to 100% only when most of it lies
+    on the 100% monitor. Seen with the place at (-1608, 453) on a 100% monitor at
+    (-1920, 323); a place far enough left, (-1900, 330), came back at 100%.
+  - Once the window is at 100% there, UI Automation (AccessKit) reports every widget's
+    rectangle at twice its screen position and size (`uia_dump.ps1`: `v0.0.1 pre-alpha` at
+    -3768,2240 160x26 for -1884,1120 80x13): a screen reader would point at the wrong
+    places. Likely egui's AccessKit adapter keeping the creation scale: check upstream
+    before a fix. `.tmp/lead/looks/compare_halved.py` halves the rectangles for
+    `draft_compare.py` meanwhile.
 - resolved 2026-11-14 (SWE-2, `513ef0af`): the copies of "write a temporary file beside it,
   then rename it onto the name" are one function, `studio_core::files::replace_file`, called
   by five sites (the repro bundle, the ruleset editor's `write_text`, the rules import, the

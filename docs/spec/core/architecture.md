@@ -135,10 +135,15 @@ crates/studio_core/src/
 │                     #   notify), CliError, AppPaths, ShellRequest
 ├── events.rs         # PipelineEvent, PipelineEventEnvelope, FolderStatus, Message + Severity/Disposition, EventLines (an event's one-line text)
 ├── status.rs         # ShellCondition, ToolActivity, Notice — the status bar's typed items
+├── files.rs          # a write that never leaves a half-written file, and a written-to folder
+│                     #   opened in the system's file manager
 ├── pes_process.rs    # the running-PES probe (below): which PES games run now, and from where
 ├── redact.rs         # the home folder written `~` in the log's lines and a repro bundle's text
 ├── repro.rs          # the repro journal: the steps that changed a tool's model and the files it
 │                     #   read and wrote, for "Report a problem" to bundle
+├── repro/
+│   └── read.rs       #   reading a bundle back for `replay`: each kept file checked against its
+│                     #   row's size and SHA-256
 ├── icons.rs          # the icon font's glyphs the shell and the tools draw
 ├── theme.rs          # the shared look: the fonts, the style, the `theme` setting applied
 ├── help/
@@ -150,8 +155,12 @@ crates/studio_core/src/
 │   └── location.rs   #   data-location resolution (portable data/ vs config dir)
 ├── shell/
 │   ├── mod.rs        #   StudioApp: eframe::App, panel layout, logic/ui split, tool registry
-│   └── launch.rs     #   argument parsing for the four launch modes (the --gui autorun is
-│                     #   refused until Phase 8)
+│   ├── launch.rs     #   argument parsing for the four launch modes (the --gui autorun is
+│   │                 #   refused until Phase 8)
+│   ├── first_run.rs  #   the first-run dialog: where settings and data live
+│   ├── taskbar.rs    #   on Windows, what a Shift+click or middle click on the taskbar starts
+│   ├── update_dialog.rs  # the update offer, Update now's progress and the restart
+│   └── report.rs     #   the Report a problem dialog: the bundle's summary, words and Save
 ├── updater/
 │   ├── mod.rs        #   the update check: the newest release, whether it is offered, the notices
 │   ├── install.rs    #   Update now: download, checksum, unpack
