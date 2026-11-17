@@ -1878,19 +1878,21 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       maintainer's, 2026-11-17; drafts to `a083b48c`); the draft approved by the maintainer
       2026-11-17
     - [x] the plan (`save_editor.md` "Editing UI" and "The player view") and DECISIONS
-    - [ ] the build, one SWE-2 brief with 0.0.2-keepsel's and 0.0.2-posheight's (SWE-2,
-      `sk/paneshift`, from `11be9f8f`): first run green (1063 + 57); its contradiction found
-      the draft's Gameplan 1 past the pane (the lead: 8 under the fields, `58cb2b94`); r1
-      runs: the gap 8, and the build's Tactics 2 taller than the draft's found and fixed,
-      not compensated (`UNDER_FIELDS` 7 rejected). For the look: under DBC7 the build's
-      Pitch ends at 700 and List at 725, the draft's 703 and 726 (Ability stats' and the
-      positions' own heights, before this step)
+    - [x] the build 2026-11-17, with 0.0.2-keepsel's and 0.0.2-posheight's (SWE-2, one
+      rework; `aeed1e34`, merge `541f88a6`; the lead's rerun 1063 + 57, clippy, fmt): its
+      contradiction found the draft's Gameplan 1 past the pane (the lead: 8 under the
+      fields, `58cb2b94`); r1 set the 8 and measured every Tactics block on the draft's
+      within 0.5 (the first run's "2 taller" was its own arithmetic). For the look: under
+      DBC7 the build's Pitch ends at 700 and List at 725, the draft's 703 and 726 (Ability
+      stats' and the positions' own heights, before this step)
+    - [ ] the pipeline on `541f88a6`; the changelog lines for the three steps (after the
+      maintainer's own CHANGELOG edit, uncommitted on 2026-11-17, lands)
   - [ ] 0.0.2-keepsel (the maintainer's ruling, 2026-11-17): picking in the team dropdown
     the team the selection is already on keeps the selection (a player stays selected)
     -> verify: a test per case (his team keeps him, another team selects its row)
     - [x] the draft (`teamSelector`, `a083b48c`), approved by the maintainer
     - [x] the plan (`save_editor.md`, "Editing UI", picking a team) and DECISIONS
-    - [ ] the build, with 0.0.2-paneshift's
+    - [x] the build 2026-11-17, with 0.0.2-paneshift's (`541f88a6`)
   - [ ] 0.0.2-geninfo (the maintainer's request, 2026-11-17): General info (Name, Shirt
     name, Shirt number | Age, Nation as an `ID - NAME` dropdown) and Main stats in place of
     Other stats (Captain in its title's row, Height | Weight, Injury Resistance | Form, Weak
@@ -1903,7 +1905,7 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     - [x] the nation lists (lead): `scripts/derive_nations.py G:/Games` writes
       `crates/tools/save_editor/data/nations.tsv` (220 IDs; 189, 191, 220, then 214 a
       version)
-    - [ ] the build (SWE-2, after 0.0.2-paneshift merges: both touch the Stats screen): the
+    - [ ] the build (SWE-2, from `541f88a6` or later): the
       two panels as the draft's `generalPanel`, the nation combo from `nations.tsv` (loaded
       once, not a frame's work; the open list scrolled to the held nation; `ID - ?` for an
       ID the version lacks), a test holding the fixture saves' nation IDs to their lists,
@@ -1913,7 +1915,7 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     (under DBC7 the screen ends on Ability stats' frame, 703 against List's 726 in the
     draft) -> verify: SE-GUI-85's DBC7 clause; the built window beside the draft
     - [x] the draft (`#pos-grid` loses its `min-height`), the plan and DECISIONS
-    - [ ] the build (`abilities.rs` `GRID_HEIGHT`), with 0.0.2-paneshift's
+    - [x] the build 2026-11-17, with 0.0.2-paneshift's (`541f88a6`; `GRID_HEIGHT` gone)
   - [x] 0.0.2-taskbuild 2026-11-17: the tasks page names the build its cards run on -> verify: the next
     release build (the Report a problem look's) copied to `4cc-studio-temp/tasks_build/`,
     the page's intro naming that path and the commit it was built from; refreshed whenever
