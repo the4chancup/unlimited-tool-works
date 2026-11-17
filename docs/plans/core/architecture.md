@@ -569,7 +569,17 @@ Compiler and the Export upgrader, then the rest as they are built.
   - the Studio version as the window shows it, the OS, the settings and the game installs
     found;
   - the member's own words from a text box in the dialog, for what happened outside Studio
-    (a step in game, another tool touching the save).
+    (a step in game, another tool touching the save);
+  - `README.txt`, for whoever reads the bundle: what each part holds, then each tool's own
+    lines on reading its files (the `StudioTool` method `repro_readme`; the Save editor's
+    name `save-editor diff` and `export-toml`).
+
+  The readme points at the tools rather than adding decoded copies of what the saves
+  already hold. In the blind drill (2026-11-17) an agent found a planted bug from the
+  bundle alone but read a flag that did not change by porting the save's decryption,
+  where `export-toml` on the kept save would have shown it. The Team TOML of each team the
+  Save editor's steps touched, before and after, joins the bundle with the whole chain's
+  test, which can show it is there.
 
   The dialog says the bundle holds the member's whole save and paths, written as `~` as in
   the log. Nothing is ever sent: the member posts the file.

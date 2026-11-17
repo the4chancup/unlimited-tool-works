@@ -18455,3 +18455,17 @@ Why: the maintainer, over both pairs of pictures: "We can keep the app's look on
 Change the draft." The differences were the lead's tolerance adding up past 2 points, not a
 look anyone chose; the build's spacing is the dialogs' shared rule.
 Plan: no plan edit needed: the plans set neither offset; `docs/prototypes/` carries both.
+
+## 2026-11-17 — core, save_editor — a Report a problem bundle carries a readme; the Team TOMLs wait for the chain test
+Decision: every bundle holds a `README.txt` at its root, saying what each part holds and
+then, from each tool through `StudioTool::repro_readme`, how to read that tool's files: the
+Save editor's names `save-editor diff` between the kept input and output and `export-toml`
+for every stored field. It ships in 0.0.2. Each touched team's Team TOML before and after
+joins the bundle later, with the whole chain's test.
+Why: in the blind drill an agent found the planted bug from the bundle alone, but read an
+unchanged flag by porting the save's decryption, where `export-toml` on the kept save would
+have shown it. The data was there; a pointer to the tools was not. The readme costs a few
+lines a bundle and helps a person reading a report as much as an agent; the TOMLs add files
+to every bundle and are best added where a test can show they are written (the maintainer,
+2026-11-17: the readme now, the Team TOMLs later for the chain test).
+Plan: `plans/core/architecture.md` "Repro bundles", the bundle's list and the paragraph after it.

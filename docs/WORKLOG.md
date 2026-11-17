@@ -18,8 +18,9 @@ excepted, below), 0.0.2-pes19
 (and with it the readme's PES 2019 claim), 0.0.2-nostretch's slices, and any mutation run
 (mutfast first). Most open steps below wait only for the maintainer's look
 (`maintainer/tasks.html`). What is left before the cut:
-1. Card ST-REP-05 (Report a problem, from a save to the zip) waits for the maintainer; the
-   blind drill ran 2026-11-17 and found its planted bug from the bundle alone.
+1. Report a problem: the bundle's `README.txt` (0.0.2-report, the drill's result), then
+   card ST-REP-05 for the maintainer; the blind drill ran 2026-11-17 and found its planted
+   bug from the bundle alone.
 2. The framed Stats screen (branch `eval/stats-boxes`, a member's request: every panel of the
    Stats screen framed as the Appearance screen's groups), polished and included (the
    maintainer, 2026-11-17).
@@ -1634,9 +1635,13 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         showed a name written and nothing else; the flag's state it read by porting the
         container's decryption to Python, since nothing in the bundle shows a stored field
         that did not change (`export-toml` would have, and it did not think of it). Replay
-        was not measured: no command runs it. The next addition (after the chain test):
-        the edited teams' Team TOML before and after, which shows every stored field,
-        edit flags included
+        was not measured: no command runs it. The bundle's next additions (DECISIONS
+        2026-11-17 "a Report a problem bundle carries a readme"): its `README.txt` now,
+        the edited teams' Team TOMLs before and after with the chain test
+    - [ ] the bundle's `README.txt` (`plans/core/architecture.md` "Repro bundles"): what
+      each part holds, then each tool's `repro_readme`, the Save editor's naming `diff` and
+      `export-toml` (SWE-2) -> verify: a written bundle's readme holds the core part and
+      the Save editor's, red without the method's override; a SWE-2 review round
     - [ ] the built window beside the draft (`.tmp/lead/looks/report/draft_open.png`), run
       through as above on a copy of a save, the zip then read with `save-editor diff`; then
       card ST-REP-05 in `maintainer/tasks.html`; review rounds (tier 2)
