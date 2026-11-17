@@ -125,6 +125,15 @@ pub trait StudioTool {
     fn repro_state(&self) -> Vec<(String, Vec<u8>)> {
         Vec::new()
     }
+
+    /// The tool's part of the bundle's `README.txt`: how to read the files
+    /// it puts under `inputs/`, `outputs/` and `state/`, written for
+    /// whoever opens the zip. The platform appends it under its own part,
+    /// which says what each part of the bundle holds. A tool with nothing
+    /// to tell gives none. Default: none.
+    fn repro_readme(&self) -> Option<&'static str> {
+        None
+    }
 }
 
 /// A suite tool a build does not register. `studio` keeps
