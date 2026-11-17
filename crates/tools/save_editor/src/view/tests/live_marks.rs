@@ -711,6 +711,43 @@ fn assert_left_of_label(mark: &egui::epaint::TextShape, label: accesskit::Rect, 
     );
 }
 
+/// Asserts `mark`'s 11-point box starts 2 points (± 0.5) after the
+/// rightmost node on `title`'s row inside `frame` (the panel's
+/// `group_frame`), and that the box lies inside `frame`. Both figures are
+/// written out, so a changed constant fails.
+fn assert_after_header(
+    mark: &egui::epaint::TextShape,
+    title: accesskit::Rect,
+    frame: egui::Rect,
+    nodes: &[accesskit::Node],
+    what: &str,
+) {
+    let right = nodes
+        .iter()
+        .filter_map(accesskit::Node::bounds)
+        .filter(|bounds| {
+            bounds.y0 < title.y1
+                && bounds.y1 > title.y0
+                && bounds.x0 >= f64::from(frame.min.x)
+                && bounds.x1 <= f64::from(frame.max.x)
+        })
+        .map(|bounds| bounds.x1)
+        .fold(f64::MIN, f64::max);
+    let box_left = f64::from(mark_centre(mark).x) - 5.5;
+    assert!(
+        (box_left - right - 2.0).abs() <= 0.5,
+        "{what}: the mark's box starts at {box_left}, 2 points after the header's last item at {right}"
+    );
+    let mark_box = egui::Rect::from_center_size(
+        mark_centre(mark),
+        egui::vec2(11.0, mark.galley.rect.height()),
+    );
+    assert!(
+        frame.contains_rect(mark_box),
+        "{what}: the mark's box {mark_box:?} inside the panel's frame {frame:?}"
+    );
+}
+
 /// Asserts an ability stat's `mark` has its 11-point box end 2 points
 /// (± 0.5) before the stats' label column, whose left edge is the leftmost
 /// stat label's (the labels are left-aligned, so every one starts the

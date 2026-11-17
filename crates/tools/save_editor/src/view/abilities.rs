@@ -39,7 +39,7 @@ use team_widgets::pitch::POSITION_ROWS;
 use team_widgets::violations::Wording;
 
 use crate::session::Session;
-use crate::view::group_frame::{GROUP_GAP, frame_margin, stretch_to};
+use crate::view::group_frame::{GROUP_GAP, stretch_to};
 use crate::view::worker::{Pending, WorkerResult};
 use crate::view::{
     ActiveRules, BadgeKey, OwnBadge, Refusal, SaveView, edit_player, info_strip, live_marks,
@@ -146,9 +146,10 @@ fn first_column_width() -> f32 {
 }
 
 /// The egui memory id `show` writes the two fixed columns' measured
-/// widths to each pass — Skills' then Ability stats' (a pass that
-/// measures different ones is discarded). General info's flexible width
-/// is not stored: it is already right in the pass that computes it.
+/// widths to each pass — Skills' then Ability stats', clamped to their
+/// floors (a pass that measures different ones is discarded). General
+/// info's flexible width is not stored: it is already right in the pass
+/// that computes it.
 pub(super) const COLUMN_WIDTHS_ID: &str = "save_editor player column widths";
 
 /// The Skills column's narrowest width, and the first pass's estimate:
@@ -351,14 +352,22 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
                     });
             })]
         });
-        let widths = [second.rect.width(), third.rect.width()];
+        // The widths the next pass lays the fixed columns out on: this
+        // pass's measured ones clamped to the floors, so a sizing pass's
+        // narrow measure hands the next pass the floors this pass
+        // already allocated.
+        let widths = [
+            second.rect.width().max(SECOND_COLUMN_MIN),
+            third.rect.width().max(THIRD_COLUMN_MIN),
+        ];
         ui.ctx().data_mut(|data| {
             data.insert_temp(egui::Id::unique(COLUMN_WIDTHS_ID), widths);
         });
-        // This pass laid the fixed columns out on other widths (none yet,
-        // or a new grid's narrow sizing pass): lay it out again on these,
-        // so a player's first frame is drawn where every later one is.
-        if measured != Some(widths) {
+        // Discard the pass only when it laid out on other widths than
+        // the clamped ones it just measured — the sizing pass's measure
+        // clamps to what it allocated, so a new player's first frame
+        // stays two passes, not three.
+        if [second_width, third_width] != widths {
             ui.ctx()
                 .request_discard("the player view's column widths changed");
         }
@@ -444,7 +453,7 @@ fn column(
 /// columns end on one line as the Appearance screen's rows do (the
 /// draft's `.pcol > :last-child { flex: 1 }`).
 fn finish_columns(ui: &egui::Ui, columns: [(&mut Column, f32); 3], row_bottom: f32) {
-    let margin = frame_margin(&egui::Frame::group(ui.style()));
+    let margin = egui::Frame::group(ui.style()).total_margin().sum();
     for (column, width) in columns {
         let last = column.panels.len() - 1;
         for (at, prepared) in column.panels.iter_mut().enumerate() {
@@ -471,7 +480,7 @@ fn finish_columns(ui: &egui::Ui, columns: [(&mut Column, f32); 3], row_bottom: f
 /// title of the view shares the one line — `ui.horizontal`'s row would
 /// centre it in the `interact_size` height and sit it lower. `mark` is
 /// Live AATF's held check's with the panel's field: its mark stands
-/// before the header. `add` draws through `inset`, `CELL_PADDING` in
+/// after the title. `add` draws through `inset`, `CELL_PADDING` in
 /// from the title, `spacing` (the pane's own) restored inside. The
 /// returned frame's space is allocated but unpainted: `finish_columns`
 /// stretches and paints it.
@@ -491,7 +500,7 @@ fn panel(
                 |ui| {
                     let title = ui.strong(title);
                     if let Some((marks, field)) = mark {
-                        marks.paint(ui, title.rect, field);
+                        marks.paint_after(ui, title.rect, field);
                     }
                 },
             );
@@ -659,8 +668,8 @@ const RATING_SIDE: f32 = 17.0;
 /// The positions grid's height in every layout (the draft's `#pos-grid`
 /// `min-height`): List's thirteen `RATING_SIDE` rows, a point above and
 /// below each, a point apart — so a layout switch never moves the
-/// panel's bottom, and a stretched panel's free room centres Pitch's and
-/// Left's rows in it.
+/// panel's bottom. The rows stand centred in it; a stretched panel's
+/// free room goes under the grid, not around them.
 const GRID_HEIGHT: f32 = 13.0 * (RATING_SIDE + 2.0) + 12.0;
 /// The gap between a cell's rating squares (the draft's `.rate` 2px).
 const RATING_GAP: f32 = 2.0;
@@ -678,13 +687,10 @@ const POS_ROW_GAP: f32 = 9.0;
 /// draft's 4.5 against ~3): the positions' selector stands this much
 /// lower under the panel's title than a field's row.
 const POS_LAYOUT_MARGIN: f32 = 1.5;
-/// The gap between the layout toggle and the grid under it: the room
-/// that puts the first row's squares at the draft's offset under the
-/// title — the draft's own `#pos-layout` `margin-bottom` and `#pos-grid`
-/// `margin-top` measure ~8 there, with what its `.poscell` top padding
-/// adds inside the first cell, which the build packs into `POS_ROW_GAP`
-/// rather than inside them.
-pub(super) const TOGGLE_GRID_GAP: f32 = 9.0;
+/// The gap between the layout toggle and the grid under it: the draft's
+/// `#pos-layout` bottom to its `#pos-grid` top (7), plus the half point
+/// by which the build's toggle stands higher than the draft's.
+pub(super) const TOGGLE_GRID_GAP: f32 = 7.5;
 /// The gap between the List layout's rows: a cell's padding, 1 above and
 /// 1 below, and the `#pos-grid.list` 1px gap between them.
 const LIST_ROW_GAP: f32 = 3.0;
@@ -1161,7 +1167,7 @@ fn ability_stats(
 /// lands the kept one is drawn: the same player's (only the revision
 /// moved), nothing for another player or ruleset. `marks` is Live AATF's
 /// held check's: the header's mark, the skills' and the card budget's in
-/// one, stands before the title.
+/// one, stands after the header row's last item.
 fn skills_panel(
     ui: &mut egui::Ui,
     (rules, aside): (Option<&ActiveRules>, Option<&[u8]>),
@@ -1216,11 +1222,9 @@ fn skills_panel(
     // every card under the title lower than the draft's.
     let control_height = ui.spacing().interact_size.y;
     ui.spacing_mut().interact_size.y = ui.text_style_height(&egui::TextStyle::Body);
-    ui.horizontal_wrapped(|ui| {
-        let title = ui.strong("Skills");
-        if let Some(marks) = marks {
-            marks.paint(ui, title.rect, live_marks::MarkedField::Skills);
-        }
+    let mut title_rect = egui::Rect::NOTHING;
+    let header = ui.horizontal_wrapped(|ui| {
+        title_rect = ui.strong("Skills").rect;
         if let Some(error) = &tier_error {
             ui.label("Cards used:");
             let response = ui
@@ -1251,6 +1255,16 @@ fn skills_panel(
             }
         }
     });
+    // The header's mark after the row's last item — the badge, its
+    // stand-in or the title — not inside the row: painted there it would
+    // shift the badge whenever one showed.
+    if let Some(marks) = marks {
+        marks.paint_after(
+            ui,
+            title_rect.with_max_x(header.response.rect.max.x),
+            live_marks::MarkedField::Skills,
+        );
+    }
     ui.spacing_mut().interact_size.y = control_height;
     // The title stands `TITLE_GAP` above the first card row's painted
     // square, as `panel`'s do, the card columns' own margin with it.

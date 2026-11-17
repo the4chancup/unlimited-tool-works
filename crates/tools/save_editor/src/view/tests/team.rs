@@ -942,6 +942,30 @@ fn on_pes16_the_colours_manager_id_and_kit_slots_draw_disabled_with_their_versio
             "{label}'s label answers a hover with the same version"
         );
     }
+    // The hex beside a gated colour field is dimmed with it and answers
+    // the same hover.
+    let hexes: Vec<accesskit::Rect> = nodes
+        .iter()
+        .filter(|node| node.role() == Role::Label && node.value() == Some("#000000"))
+        .filter_map(accesskit::Node::bounds)
+        .collect();
+    assert_eq!(hexes.len(), 2, "the two colour fields' hexes");
+    for bounds in hexes {
+        assert_eq!(
+            painted_text_color(&shapes, "#000000", bounds),
+            dimmed,
+            "the gated colour's hex dimmed with its field"
+        );
+    }
+    let hex = nodes
+        .iter()
+        .find(|node| node.role() == Role::Label && node.value() == Some("#000000"))
+        .expect("a gated colour's hex");
+    assert_eq!(
+        tooltip_after_hover(&mut window, &mut view, centre(hex)),
+        Some("PES 17+".to_string()),
+        "the hex answers a hover with the same version"
+    );
     // The Stadium ID, which every version stores: a live number showing
     // the team's own.
     let stadium = team_entry(&view, 701)

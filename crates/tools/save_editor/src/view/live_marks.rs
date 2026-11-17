@@ -225,18 +225,52 @@ pub(super) struct Marks<'a> {
 
 impl Marks<'_> {
     /// The mark of `field`'s rows on the selected player, painted before
-    /// `label` (the field's label or its panel's header, its text drawn
-    /// from the rect's left edge): a `MARK_BOX`-wide box ending
-    /// `MARK_GAP` before the text, its glyph centred in it and on the
-    /// label's height, its tooltip the rows' lines. Painted over the
-    /// margin before the label, so no label moves or wraps and a column
-    /// of labels has its marks on one centre whatever the labels' lengths.
-    /// Draws nothing, and returns `None`, when no row of the slot is about
-    /// `field`.
+    /// `label` (the field's label, its text drawn from the rect's left
+    /// edge): a `MARK_BOX`-wide box ending `MARK_GAP` before the text, its
+    /// glyph centred in it and on the label's height, its tooltip the
+    /// rows' lines. Painted over the margin before the label, so no label
+    /// moves or wraps and a column of labels has its marks on one centre
+    /// whatever the labels' lengths. Draws nothing, and returns `None`,
+    /// when no row of the slot is about `field`.
     pub(super) fn paint(
         &self,
         ui: &mut egui::Ui,
         label: egui::Rect,
+        field: MarkedField,
+    ) -> Option<egui::Response> {
+        self.paint_box(
+            ui,
+            egui::pos2(label.min.x - MARK_GAP - MARK_BOX / 2.0, label.center().y),
+            field,
+        )
+    }
+
+    /// The same mark after `item` (a panel's header, the title through
+    /// the row's last item): the box starting `MARK_GAP` after its right
+    /// edge, centred on its height. A title stands the frame's margin
+    /// inside its panel, so a mark on its left would fall on the frame's
+    /// line, or past the pane's edge in the first column.
+    pub(super) fn paint_after(
+        &self,
+        ui: &mut egui::Ui,
+        item: egui::Rect,
+        field: MarkedField,
+    ) -> Option<egui::Response> {
+        self.paint_box(
+            ui,
+            egui::pos2(item.max.x + MARK_GAP + MARK_BOX / 2.0, item.center().y),
+            field,
+        )
+    }
+
+    /// `field`'s mark in the `MARK_BOX`-wide box centred at `centre`, its
+    /// glyph centred in the box, its tooltip the rows' lines. Draws
+    /// nothing, and returns `None`, when no row of the slot is about
+    /// `field`.
+    fn paint_box(
+        &self,
+        ui: &mut egui::Ui,
+        centre: egui::Pos2,
         field: MarkedField,
     ) -> Option<egui::Response> {
         let mark = field_mark(self, field)?;
@@ -246,10 +280,7 @@ impl Marks<'_> {
             egui::TextStyle::Body.resolve(ui.style()),
             color,
         );
-        let mark_box = egui::Rect::from_center_size(
-            egui::pos2(label.min.x - MARK_GAP - MARK_BOX / 2.0, label.center().y),
-            egui::vec2(MARK_BOX, galley.size().y),
-        );
+        let mark_box = egui::Rect::from_center_size(centre, egui::vec2(MARK_BOX, galley.size().y));
         let pos = mark_box.center() - galley.size() / 2.0;
         ui.painter().galley(pos, galley, color);
         Some(

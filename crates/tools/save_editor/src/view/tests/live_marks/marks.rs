@@ -75,9 +75,9 @@ fn the_stats_marks_line_up_at_the_label_columns_left_edge() {
 /// view, on its field's label's row, its 11-point box ending 2 points
 /// before the label's text — SE-GUI-36's "the cross beside the field the
 /// violation is about" for every field a kind reaches but `Pitch` and
-/// `Stat` (tested elsewhere): General info's and Other stats' labels and
-/// the panels' headers, the card budget on the Skills header and a
-/// suggestion on its allowance's field.
+/// `Stat` (tested elsewhere) and the panels' headers (the next test):
+/// General info's and Other stats' labels and a suggestion on its
+/// allowance's field.
 #[test]
 fn each_fields_mark_stands_left_of_its_label() {
     use aatf::Severity::{Error, Suggestion};
@@ -148,16 +148,6 @@ fn each_fields_mark_stands_left_of_its_label() {
             "Registered position",
         ),
         (Error, K::PlayingStyleRange, "Playing style"),
-        (Error, K::BRating { rated_b: vec![] }, "Playable positions"),
-        (Error, K::SkillCardCap { count: 11, max: 10 }, "Skills"),
-        (Error, K::Cards { paid: 4, limit: 3 }, "Skills"),
-        (
-            Error,
-            K::ComStyleCap { count: 3, max: 2 },
-            "COM playing styles",
-        ),
-        (Suggestion, unused("tricks"), "Tricks"),
-        (Suggestion, unused("cards"), "Skills"),
         (Suggestion, unused("weak_foot_usage"), "Weak Foot: Usage"),
         (Suggestion, unused("weak_foot_accuracy"), "Accuracy"),
     ];
@@ -201,6 +191,112 @@ fn each_fields_mark_stands_left_of_its_label() {
             "{kind:?}: the mark is on {label:?}'s row"
         );
         assert_left_of_label(mark, bounds, &format!("{kind:?}"));
+    }
+}
+
+/// A row about a panel as a whole marks its header, not a label: exactly
+/// one mark painted in the view, its 11-point box starting 2 points after
+/// the header row's last item — the title on a plain panel, the Cards
+/// used badge or its stand-ins on the Skills header — and lying inside
+/// the panel's frame (left of the title it would fall on the frame's
+/// line, or past the pane's edge in the first column). SE-GUI-36's "the
+/// cross beside the field the violation is about" for the header fields.
+#[test]
+fn a_panel_titles_mark_stands_after_its_header() {
+    use aatf::Severity::{Error, Suggestion};
+    use aatf::ViolationKind as K;
+    let unused = |allowance: &str| K::Unused {
+        allowance: allowance.to_owned(),
+        used: 1,
+        allowed: 2,
+    };
+    // `None` leaves the title the row's last item (no badge held, so the
+    // row draws nothing after it); `Some` injects a held badge whose key
+    // matches the current one, so the badge or its stand-in is it.
+    let cases: Vec<(aatf::Severity, K, &str, Option<OwnBadge>)> = vec![
+        (
+            Error,
+            K::BRating { rated_b: vec![] },
+            "Playable positions",
+            None,
+        ),
+        (
+            Error,
+            K::SkillCardCap { count: 11, max: 10 },
+            "Skills",
+            None,
+        ),
+        (
+            Error,
+            K::Cards { paid: 4, limit: 3 },
+            "Skills",
+            Some(OwnBadge::NoTier),
+        ),
+        (
+            Error,
+            K::ComStyleCap { count: 3, max: 2 },
+            "COM playing styles",
+            None,
+        ),
+        (Suggestion, unused("tricks"), "Tricks", None),
+        (
+            Suggestion,
+            unused("cards"),
+            "Skills",
+            Some(OwnBadge::Failed("the tier check fails".to_owned())),
+        ),
+    ];
+    let (mut view, mut window) = open_734("live_marks_header");
+    view.live_aatf = true;
+    view.live_suggestions = true;
+    let revision = view.session.as_ref().expect("the save opened").revision();
+    let badge_key = BadgeKey {
+        revision,
+        team: 734,
+        slot: 0,
+        ruleset: "autumn26".to_owned(),
+    };
+    // The badge's run held in flight: a real run can reply between a
+    // frame's two passes, so a `None` result would not stay none.
+    let (pending, _badge_hold) = worker::Pending::held(badge_key.clone());
+    view.cards.pending = Some(pending);
+    for (severity, kind, title, badge) in cases {
+        view.cards.result = badge.map(|badge| (badge_key.clone(), badge));
+        live_result_held(
+            &mut window,
+            &mut view,
+            (
+                aatf_check::CheckKey {
+                    revision,
+                    ids: vec![734],
+                    ruleset: "autumn26".to_owned(),
+                    suggestions: true,
+                },
+                vec![checked(vec![violation(Some(0), severity, kind.clone())])],
+            ),
+        );
+        // The dock's bottom panel can clip a low header (the COM one at
+        // ~582 sits below it at 800 tall): scroll the title into view, a
+        // no-op when it already shows.
+        scroll_into_view(&mut window, &mut view, |node| {
+            node.value().is_some_and(|value| value.starts_with(title))
+        });
+        let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+        let marks = field_marks(&shapes);
+        let [mark] = *marks.as_slice() else {
+            panic!(
+                "{kind:?}: expected one mark in the view, got {}",
+                marks.len()
+            )
+        };
+        let bounds = label_starting(&nodes, title);
+        assert_eq!(
+            mark_on_row(&marks, bounds, title).pos,
+            mark.pos,
+            "{kind:?}: the mark is on {title:?}'s row"
+        );
+        let frame = group_frame(&window, &nodes, &shapes, title);
+        assert_after_header(mark, bounds, frame, &nodes, &format!("{kind:?}"));
     }
 }
 

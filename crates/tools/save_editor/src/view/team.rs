@@ -361,16 +361,17 @@ fn colour_unit(
         None => {
             add_enabled_ui(ui, false, |ui| {
                 color_tools::picker::color_field(ui, ("team colour", index), &mut [0, 0, 0], &[]);
+                // `Sense::CLICK` sends the hex through the widget colours
+                // the scope dims, as `gated_label` sends a field's label.
+                ui.add(
+                    egui::Label::new(egui::RichText::new(format_hex([0, 0, 0])).monospace())
+                        .sense(egui::Sense::CLICK),
+                );
             })
             .response
             .on_disabled_hover_text(gating_tooltip(
                 [TeamField::Color1Red, TeamField::Color2Red][index],
             ));
-            ui.label(
-                egui::RichText::new(format_hex([0, 0, 0]))
-                    .monospace()
-                    .weak(),
-            );
         }
     }
 }
