@@ -1750,8 +1750,9 @@ Win32 original hurt the most):
 - **A starter's badge shows his overall and his medal tier**, as the game's shows the
   overall. The overall is his per-position overall at his slot's position (the formula the
   pitch drop's rule uses, below), so a position change on the popover or a swap redraws it;
-  it is exact on PES 2017 and within 2 of the game's on PES 2021 (108 of 201 read there
-  equal), the precision the drop's paragraph states.
+  it matched every PES 2017 overall read before the paired-abilities check, which it misses
+  by up to 5 ("A pitch player dropped on another"), and is within 2 of the game's on PES
+  2021 (108 of 201 read there equal), the precision the drop's paragraph states.
 
   A player the active ruleset recognizes as a medal tier (the tier ids `gold`, `silver`,
   `bronze` every ruleset shares) gets a 1.5-point outline inside the badge's edge in the
@@ -1999,6 +2000,10 @@ What the controls write, where the draft and 4ccEditor's tab (`tab_four_dlg_proc
   players dragged in its Lineup/Edit Position (CF's y 40 among them) fall where PES 2016's
   tables put them, and PES 2016's formula gives every one of 150 overalls read there (23
   players, nine positions, registered, A and C), so its drag is the rule as it stands.
+  But those 150 could not tell apart which ability the kicking power, swerve and body
+  control rows read, and four players with each pair far apart (PES 2017, 2026-11-17) read
+  81, 80, 78 and 88 in game against the formula's 77, 77, 75 and 93: those rows' readings
+  are open again (the worklog's "After 0.0.2"). The B bonus held.
 
   A dragged lineup row is drawn with the point first pressed under the pointer, as the browser
   draws the draft's (egui alone would centre it on the pointer; SE-GUI-65). A lineup row
