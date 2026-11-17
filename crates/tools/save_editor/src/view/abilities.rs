@@ -139,6 +139,9 @@ const CARD_COLS_MARGIN: f32 = 0.5;
 /// group's content stands in from its title (`inset`), so a title heads
 /// its body.
 pub(super) const CELL_PADDING: i8 = 6;
+/// The padding of the ability stats' cells under a box (the draft's
+/// `stats-grid` `td`), half of `FIELD_SPACING`.
+const CELL_BOTTOM_PADDING: i8 = 3;
 
 /// The first column's floor, which the column never goes under: General
 /// info's nominal width and its inset.
@@ -381,12 +384,13 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
         // Column 3: the ability stats, one pair a row.
         let mut third = column(ui, third_rect, |ui| {
             vec![panel(ui, spacing, "Ability stats", None, 0.0, |ui| {
-                // The cells' padding after each box (the panel's inset is
-                // the one before each label), so the column is the
-                // draft's.
+                // The cells' padding after each box and under the last
+                // row's boxes (the panel's inset is the one before each
+                // label), so the column is the draft's.
                 egui::Frame::NONE
                     .inner_margin(egui::Margin {
                         right: CELL_PADDING,
+                        bottom: CELL_BOTTOM_PADDING,
                         ..egui::Margin::ZERO
                     })
                     .show(ui, |ui| {

@@ -324,6 +324,32 @@ fn under_dbc7_pitch_leaves_the_panel_shorter_than_list() {
     );
 }
 
+// The stats grid's cells keep the draft's padding under a box too (its
+// `stats-grid` `td` pads 3 under a box as it does 6 right of one):
+// Ability stats' frame ends the cell padding, the panel's inset and its
+// border under the last row's box, the draft's 10; under DBC7, where its
+// column is the tallest, that bottom is the columns' end.
+// SE-GUI-85
+#[test]
+fn ability_stats_keeps_the_cell_padding_under_its_last_row() {
+    let (mut view, mut window) = positions_view("dbc7_cell_pad", DEFAULT_PANE.x);
+    view.aatf_ruleset = "dbc7".to_owned();
+    badge_landed(&mut window, &mut view);
+    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+
+    let frame_bottom = f64::from(group_frame(&window, &nodes, &shapes, "Ability stats").max.y);
+    let box_bottom = right_of_label(&nodes, "Aggression", Role::SpinButton)
+        .first()
+        .expect("Aggression's number box")
+        .bounds()
+        .expect("bounds")
+        .y1;
+    assert!(
+        (frame_bottom - box_bottom - 10.0).abs() <= 0.5,
+        "the frame ends the draft's 10 under the last box ({frame_bottom} - {box_bottom})"
+    );
+}
+
 // Where the panel's column is stretched to a taller column's bottom (the
 // default ruleset's Skills column is the tallest), the rows stand
 // centred in the room the stretch gives the grid under the toggle — the
