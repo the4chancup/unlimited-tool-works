@@ -393,12 +393,6 @@ input[type=checkbox]:indeterminate { background-image: url("data:image/svg+xml,%
 .pcol { gap: 8px; }
 .pcols .pcol > [data-panel], .pcols > [data-panel=ability-stats] {
   border: 1px solid var(--stroke); border-radius: 2px; padding: 6px; }
-/* A try: on the Stats screen, every checkbox, radio button (Captain) and number box draws
-   a subtle 1-point edge inside it, a step lighter than its fill, so an empty box still
-   reads as a box inside the frames. A hovered checkbox keeps its brighter edge. */
-.pcols input[type=number],
-.pcols :is(input[type=checkbox], input[type=radio]):not(:disabled):not(:hover):not(label.cb:hover > input) {
-  box-shadow: inset 0 0 0 1px #505050; }
 /* The three columns end on one line, as the Appearance screen's rows do: each column's
    last frame takes the room down to the tallest column's bottom. */
 .pcols > * { align-self: stretch; }

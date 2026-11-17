@@ -487,6 +487,21 @@
   .sel { padding: 1px 5px; border-radius: 2px; cursor: default; user-select: none; color: #b4b4b4; }
   .sel:hover { background: var(--hover); color: #f0f0f0; }
   .sel.on { background: var(--sel-bg); color: var(--sel-fg); }
+  /* A try: every live box, dropdown and toggle draws a 1-point edge inside it, 40 lighter
+     than its fill (two steps of 20), so an empty box or an unheld toggle still reads as a
+     control: on the widgets' grey #3c3c3c it is #646464, on the selection's blue #2884a8,
+     on the quiet grey #5a5a5a #828282, on A's green #3abe70. A toggle's unheld side has no
+     fill, so its edge is one step over the panel, #2f2f2f, the quietest. A text box keeps
+     its own border, already #3c3c3c on its #0a0a0a. Hover and press keep their own edges,
+     an open dropdown its own, and a disabled control draws none. */
+  input[type=number]:not(:disabled), select:not(:disabled, .open), .slval,
+  input:is([type=checkbox], [type=radio]):not(:disabled) { box-shadow: inset 0 0 0 1px #646464; }
+  input:is([type=checkbox], [type=radio]):checked:not(:disabled) { box-shadow: inset 0 0 0 1px #2884a8; }
+  :is(.rate, .wsel):not(.off) > .sel { box-shadow: inset 0 0 0 1px #2f2f2f; }
+  :is(.rate, .wsel):not(.off) > .sel.on { box-shadow: inset 0 0 0 1px #2884a8; }
+  :is(.rate.lr, #pos-layout):not(.off) > .sel.on, .rate:not(.off) > .sel.on.rc {
+    box-shadow: inset 0 0 0 1px #828282; }
+  .rate:not(.off) > .sel.on.ra { box-shadow: inset 0 0 0 1px #3abe70; }
   .rail .sel { padding: 3px 6px; display: flex; justify-content: space-between; }
   table.grid { border-collapse: collapse; }
   table.grid td, table.grid th { padding: 2px 4px; text-align: left; vertical-align: middle; }
