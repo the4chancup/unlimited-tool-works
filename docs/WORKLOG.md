@@ -18,12 +18,13 @@ excepted, below), 0.0.2-pes19
 (and with it the readme's PES 2019 claim), 0.0.2-nostretch's slices, and any mutation run
 (mutfast first). Most open steps below wait only for the maintainer's look
 (`maintainer/tasks.html`). What is left before the cut:
-1. The framed Stats screen and the control edges (0.0.2-frames): A1, A2a, B1 and B2 merged;
-   C (the light theme's backgrounds) running; the SWE-2 review round 1 on the four merged
-   parts running, then C's, then one paid round over the whole.
+1. The framed Stats screen and the control edges (0.0.2-frames): A1, A2a, B1, B2 and C merged;
+   the SWE-2 review round 1 on A1 to B2 ruled (every loop ended), its fixes in the rework
+   (`.tmp/brief_frames_rw1.md`); then C's SWE-2 round and one paid round over the whole.
 2. The four fixes from the maintainer's looks of 2026-11-17 (0.0.2-namegame, xhover, allcat,
    ixtext) merged; P53's 0.0.2-gatelbl (a version-gated control's label dimmed with it) after
-   C, which touches the same files. Their looks wait for one release build after gatelbl.
+   the rework, which touches the same files. Their looks wait for one release build after
+   gatelbl.
 3. The cut, only once the maintainer has run the checks of
    `maintainer/tasks.html` (the maintainer, 2026-11-17): a pipeline without mutants on the
    last merge (0.0.2-determ's second clean run), the changelog, the release build, and a
@@ -1753,7 +1754,9 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     the built window beside the draft on the Stats, Appearance and Gameplan screens; a tasks
     card; review rounds (a SWE-2 loop and one paid round)
     - [ ] the review rounds: SWE-2 round 1 on A1, A2a, B1 and B2 (2026-11-17, from a worktree
-      at `74d85558`, `.tmp/0_0_2/frames_rev/`), C's once it merges, then one paid round
+      at `74d85558`, `.tmp/0_0_2/frames_rev/`; rulings `.tmp/duck_rulings.md` "frames r1"):
+      2, 2, 2 and 4 accepted, every loop ended; the fixes on SWE-2 (`.tmp/brief_frames_rw1.md`)
+      - [ ] C's SWE-2 round, then one paid round over A1 to C and the rework
     - [ ] the control edges (`plans/core/gui.md` "Other UI components", "Control edges")
       - [x] A1 2026-11-17 `studio_core` (`b98986f7`, merge `53bc3805`): the resting stroke,
         `theme::edge_color`, the checked box's and radio's edge, none on disabled widgets or
@@ -1763,10 +1766,12 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         the rows outside `studio_core` (the comparator's chips, the player list, the ruleset
         rail, Show preview) and the picker's swatches; the toggle edges of `team_widgets`'
         selectors and Tactics toggles; the armed role chip (SWE-2, `sk/edges2`)
-      - [ ] C the light theme's panel `#f0f0f0`, text boxes `#fdfdfd`, number boxes drawn as
-        text boxes (`widgets::number_box` at every `DragValue`), and the colours derived from
-        the panel (DECISIONS 2026-11-17 "the light theme's panel is #f0f0f0"); after B2 merges
-        (it meets A2a in `theme.rs` and B2 in the Save editor's number boxes)
+      - [x] C 2026-11-17 (SWE-2; merge `9abed142`; the lead's rerun of the five crates): the
+        light panel 240, text boxes 253, `widgets::number_box` at every `DragValue` (no clippy
+        rule: it would flag the call inside the wrap at every site); the derived fills, amber,
+        green and lineup colours as DECISIONS lists them, and the quiet greys (count, C
+        rating) at 153, keeping the dark 2.5 as the plan's rule says (the lead's, at review)
+        - [ ] the built window on the light theme, with the batch release build
     - [ ] the Stats screen's frames (`plans/save_editor.md` "Editing UI", the player view)
       - [x] B1 2026-11-17 (SWE-2, one rework; merge `a663b4e9`; the lead's rerun 1044 + 57,
         clippy, fmt): the panels framed, spanning the pane as Appearance's frames, 8 apart,

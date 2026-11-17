@@ -211,6 +211,8 @@
   theme links are easier to read.
 - **All tools**: every box, dropdown, toggle and button draws a thin edge, so an empty one
   no longer melts into the panel behind it.
+- **All tools**: on the light theme the background is a shade darker, so boxes and buttons
+  stand off it, and a number box looks like a text box.
 - **Save editor**: the Stats screen's panels stand in frames, lined up with the Appearance
   screen's groups, and each label stands further from its box.
 - **Save editor**: in General info, Shirt reads Shirt name, and in the team view Short,
