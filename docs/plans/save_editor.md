@@ -370,11 +370,10 @@ vertical room a tab row takes; a toggle on the title's own row takes none.
   the name edit field keeps the raw string so codes survive a roundtrip untouched. A code's
   first six bytes are the RGB hex; its alpha is not drawn, and a code whose six are not hex
   leaves the text the normal color (the game does not check them: `spec/pes_savefile/codec.md`
-  "Name colour codes, as measured"). In the light theme a code's colour that reads under 4.5
-  on the panel is darkened until it reads at 4.5, its hue kept, the light theme's rule for a
-  text colour (`core/gui.md` "Dark/light theme"), since drawn as they are, white and pale
-  codes vanish on the light panel. The dark theme draws every code as it is, the in-game
-  look.
+  "Name colour codes, as measured"). Both themes draw every code as it is, the in-game
+  look, so a white or pale code reads faintly on the light panel: a name keeps the game's
+  colours, and the light theme's 4.5 rule for a text colour (`core/gui.md` "Dark/light
+  theme") does not apply to it.
 - **The quick actions** under the list, in two columns: on the left the medal tiers' Make
   buttons (the tiers whose ids are `gold`, `silver` and `bronze`, in the ruleset's order: Make
   Gold, Make Silver, Make Bronze under the official one), on the right the other tiers' (Make
@@ -429,10 +428,13 @@ vertical room a tab row takes; a toggle on the title's own row takes none.
   edits the Copy stats field set ("Feature inventory", Player operations):
   - a field every selected player shares shows its value, and an edit writes it to all of
     them as one undo step;
-  - a field they do not share is empty and locked: a number box empty, a skill's or COM
-    style's checkbox in its mixed state, a position's C B A with none lit (and no position
-    marked registered when the registered position differs), a combo or a toggle with no
-    choice shown;
+  - a field they do not share is empty and locked: a number box empty, a position's C B A
+    with none lit (and no position marked registered when the registered position
+    differs), a combo or a toggle with no choice shown;
+  - a skill or COM style only some of them hold shows its checkbox's mixed mark and stays
+    live: a click takes the card from every selected player, the next click gives it to
+    every one, each one undo step. A card is held or not, so a click knows what to write
+    to every player, where an empty number box has no value to offer;
   - the fields outside the set (the name, the shirt name, the shirt number, the nation, the
     age, the captain) are empty and locked.
 
@@ -489,7 +491,8 @@ vertical room a tab row takes; a toggle on the title's own row takes none.
   `studio_core` wrapper that would only forward to it.
 
   Its contents, in order:
-  - the `File`, `Edit`, `Player`, `Team` and `Savefile` menus; a separator;
+  - the `File`, `Edit`, `Player`, `Team` and `Savefile` menus, the last three greyed and
+    never opening with no save open, since nothing in them acts without one; a separator;
   - the ruleset dropdown and Live AATF (with `Show suggestions` while it is on);
   - then `• unsaved changes`, in the link blue (`Visuals::hyperlink_color`, the blue of Live
     AATF's suggestion marks), not the weak grey, which hid the one piece saying the save
@@ -1151,7 +1154,8 @@ vertical room a tab row takes; a toggle on the title's own row takes none.
   under it, so it never leaves the view: the X's and their head are drawn right of the
   sideways scroll area, inside the one that scrolls up and down, each on its row's line. At
   the row's start it would never leave the view either, but there it reads as an error mark.
-  Its tooltip is "Undoes this change alone". It writes the row's old value back into its
+  Its tooltip is "Undoes this change alone"; hovered, it is highlighted as a frameless button
+  is (the draft's `button.frame0:hover`), so it reads as a button. It writes the row's old value back into its
   field as one undo step, so Undo brings the change back, and the list stays open, a row
   shorter. It is no step taken out of the undo stack: later
   steps may build on an earlier one, while a row is a field's difference from the file and

@@ -3892,10 +3892,10 @@ function renderToolbar() {
   const tsep = () => h("span", { class: "tsep" });
   return h("div", { class: "toolbar top", "data-panel": "toolbar",
     style: "margin: -8px calc(-8px - var(--sbw, 0px)) 4px -8px" },
-    // With no save open the save's menus are stand-ins: the draft has no
-    // entries to show in them (the editor draws them, their entries disabled).
+    // With no save open the save's three menus are greyed and never open, as
+    // the editor draws them: nothing in them acts without a save.
     fileMenu(), editMenu(), ...(S.save ? [playerMenu(), teamMenu(), databaseMenu()]
-      : ["Player", "Team", "Savefile"].map(name => menu(name, [], { frame0: true }))), tsep(),
+      : ["Player", "Team", "Savefile"].map(name => menu(name, [], { frame0: true, disabled: true }))), tsep(),
     rulesetPicker(), liveButton(), LIVE.on ? suggestionsToggle() : null,
     // The save's path is in the window title (`titleDetail`): beside the
     // unsaved mark it could wrap the toolbar onto a second row.
@@ -5010,10 +5010,12 @@ function lockGroupView(root, players) {
     if (!same(x => x.positions.playable[pos])) lock(cell.querySelector(".rate"));
     if (!same(x => x.positions.registered)) { cell.classList.remove("reg"); cell.querySelector(".plabel").classList.add("inert"); }
   });
-  // A card some of them hold: the mixed mark, locked.
+  // A card some of them hold: the mixed mark, live. Checked under the mark, so the
+  // browser's click unticks it: the first click takes the card from every one of them,
+  // the next gives it to every one.
   const mixed = (sel, has) => root.querySelectorAll(sel).forEach(cb => {
     const n = players.filter(x => has(x, cb)).length;
-    if (n && n < players.length) { lock(cb); cb.indeterminate = true; }
+    if (n && n < players.length) { cb.checked = true; cb.indeterminate = true; }
   });
   mixed("[data-skill]", (x, cb) => x.skills.includes(cb.dataset.skill));
   mixed("[data-com]", (x, cb) => x.com_styles.includes(cb.dataset.com));

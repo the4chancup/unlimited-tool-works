@@ -24,7 +24,10 @@ excepted, below), 0.0.2-pes19
 2. The framed Stats screen and the control edges (0.0.2-frames): the draft settled
    2026-11-17 (`eval/stats-boxes`, a member's request, the maintainer's polish), the plan
    and DECISIONS written; next its two slices.
-3. The cut, only once the maintainer has run the checks of
+3. Two fixes from the maintainer's looks of 2026-11-17: 0.0.2-namegame (a name's colour
+   codes drawn as they are in the light theme too) and 0.0.2-xhover (the changes list's X
+   highlighted on hover).
+4. The cut, only once the maintainer has run the checks of
    `maintainer/tasks.html` (the maintainer, 2026-11-17): a pipeline without mutants on the
    last merge (0.0.2-determ's second clean run), the changelog, the release build, and a
    Linux bundle for the Reset window card.
@@ -1394,7 +1397,7 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
   - [x] 0.0.2-pitchbar (2026-11-13, `bba7eee1`) the formation bar's `Scroll` and `Portraits` checkboxes with their hovers, the `portraits` setting, the captain's mark and Live AATF's cross on the badge with portraits off; help page 08. Left: a look at the built window
   - [x] 0.0.2-pagetoggle (2026-11-13, `923607d9`) the title's row carries a `Stats | Appearance | Gameplan` toggle at its left, on the player's screens and the team view; Appearance is a screen of its own; a player segment pressed on a team row selects the team's last shown player, else its first; `[click for gameplan]` gone; help pages 02 and 04. Left: a look at the built window
   - [ ] 0.0.2-applayout (code done 2026-11-14, Opus sidekick after SWE-2 hit its output limit twice; the built window's check open, Pending looks) the Appearance screen's layout: framed groups, Strip style's grid and lines, the colour dropdowns, `Outfielder gloves`, the Presentation group last. The built screen has 17 points to spare with the lock's lines showing, where the plan's 38 is the draft's -> verify: SE-GUI-07 and 84, the built window
-  - [ ] 0.0.2-welcome (the maintainer, 2026-11-14: in 0.0.2 if simple) the Save editor shows a
+  - [x] 0.0.2-welcome (the maintainer, 2026-11-14: in 0.0.2 if simple) the Save editor shows a
     welcome panel when no save is open, in place of "No save is open.": the File menu's opens,
     framed in the middle of the view (`plans/save_editor.md` "Editing UI", the toolbar's
     bullet; SE-GUI-90; the draft's `welcomePanel`). Code done 2026-11-14 (`6fb65133`, SWE-2):
@@ -1405,17 +1408,18 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     0.0.2-chpop (it owns save_editor `src/view/`), `dialog_page` takes `modal`'s 360-point
     minimum and the entries fill the frame, in this panel and in the Ruleset start page
     (whose template buttons are as wide as their text). Done 2026-11-14 (`852b5f91`, the
-    lead, tests red first); the built window matches both drafts. Left: the maintainer's look
-    (Pending looks)
-  - [ ] 0.0.2-chpop (the maintainer, 2026-11-14) the toolbar's unsaved changes list: a row's
+    lead, tests red first); the built window matches both drafts. The maintainer's look
+    2026-11-17: fine
+  - [x] 0.0.2-chpop (the maintainer, 2026-11-14) the toolbar's unsaved changes list: a row's
     item switches to its player or team, the list staying open; the X's are the error red,
     centred under an `Undo` head; a thin line parts each row of the changes table, prompt and
     patch panel too
     (`plans/save_editor.md` "Editing UI", SE-GUI-43, SE-GUI-74; the draft's `changesTable`).
     Code done 2026-11-14 (`c8ba1be7`, SWE-2): the rows' click targets computed with the rows,
     a player no roster holds offering none. The built window matches the draft (the lead,
-    2026-11-14). Left: the maintainer's look (Pending looks)
-  - [ ] 0.0.2-startdlg (the maintainer, 2026-11-14, in the built window; DECISIONS "a page that
+    2026-11-14). The maintainer's look 2026-11-17: fine, the X's to be highlighted on hover
+    (0.0.2-xhover)
+  - [x] 0.0.2-startdlg (the maintainer, 2026-11-14, in the built window; DECISIONS "a page that
     looks like a dialog") the Ruleset editor draws its start page as a plain full page where the
     draft shows a dialog; it becomes a page under the toolbar with its entries in the middle,
     framed and titled like the dialog, with no backdrop, so the sidebar still switches tools
@@ -1423,11 +1427,11 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     `dialog_page` draws the modal's frame and title centred, with no modal layer; the
     toolbar stands over it, its document items disabled (`6fb65133`). The built window,
     checked 2026-11-14: the toolbar and File menu match; the draft now draws Random's buttons
-    beside its label and "Recent files" under Open file…, as the editor and the plan do. Left:
-    the maintainer's look (Pending looks)
+    beside its label and "Recent files" under Open file…, as the editor and the plan do. The
+    maintainer's look 2026-11-17: fine
   - [x] 0.0.2-rebar (2026-11-14, SWE-2) with a document open the Ruleset editor runs to the window's edges as its draft does, toolbar, rail, bottom bar and preview; the rail is the draft's 150 wide, each entry highlighted across its row with a problem's mark at the right end; its headless tests draw inside the shell's panel. Left: the built window, with the start dialog's look
   - [x] 0.0.2-sideopen (2026-11-14, `5f82ef3f`) a sidebar opened in a tall window stays inside the window when it shrinks, its entries scrolling between the logo and the Help and Settings rows; it used to keep the height it measured in the tall window
-  - [x] 0.0.2-poslayout (2026-11-14, `2ef1bfe4`) a `Pitch | Left | List` toggle under Playable positions, kept as the `positions_layout` setting; the grid where the draft puts it under the toggle (63.7 under the title, List 45.9); the unchosen rating letters in the normal text colour; SE-GUI-85 headless, the built window in Pending looks
+  - [x] 0.0.2-poslayout (2026-11-14, `2ef1bfe4`) a `Pitch | Left | List` toggle under Playable positions, kept as the `positions_layout` setting; the grid where the draft puts it under the toggle (63.7 under the title, List 45.9); the unchosen rating letters in the normal text colour; SE-GUI-85 headless, the maintainer's look at the built window 2026-11-17: fine
   - [x] 0.0.2-teamdrop (2026-11-13, `923607d9`) `ALL` reads `All teams` in every team dropdown; the list's dropdown ends with All, 4cc, VGL and Invitational radio buttons, which narrow it and the list, remembered as the `team_category` setting; help page 02
   - [x] 0.0.2-presentation (2026-11-14, `7b2e9ea2` merging `3667be9b`, and `b222d710`) star and playing attitude are `settings.toml` keys under `appearance.presentation`, which the patch and the upgrader carry; the Comparator counts them and every motion as Aesthetics, Copy/swap stats leaves them to the target, a 0.0.1 Team TOML still imports; the Save editor's Presentation group under the lock
   - [ ] 0.0.2-compilername (the maintainer, 2026-11-13; DECISIONS "named Compiler from 0.0.2")
@@ -1480,7 +1484,11 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     2026-11-14 (`plans/save_editor.md` "Editing UI", the bullets "Select all similar players"
     and "Several players selected"; SE-GUI-91 to 93; DECISIONS 2026-11-14; the draft's
     `dlgSimilar`, `toggleInGroup`, `lockGroupView`; captures `.tmp/similar/draft_*.png`).
-    Next: the maintainer's look at the draft, then two slices -> verify: headless tests, the
+    The maintainer's look 2026-11-17: agreed but for one call, so a card only some of the
+    selected players hold shows the mixed mark and stays live, a click taking it from all
+    of them and the next giving it to all (the draft's `lockGroupView`; DECISIONS
+    2026-11-17). Next: two slices, slice 2's scenarios gaining that click (/gd/'s 10 and 13
+    differ in Interception in the draft's PES 2021 sample) -> verify: headless tests, the
     built window
     - [ ] slice 1: several rows selected (the window, Ctrl+click, the filled rows, the view
       titled `N players` with its locks)
@@ -1508,10 +1516,10 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     - [x] slice 3 (2026-11-14, `3c9b7baf`, Opus) the Savefile menu's range dialog: one picture
       per team of a range, the progress line naming the picture being written, Stop keeping
       what was written, the dialog's width held through the run (SE-GUI-89); help page 07.
-      Looked at beside the draft by the lead (Pending looks)
+      Looked at beside the draft by the lead; the maintainer's look 2026-11-17: fine
     - [x] slice 3c (2026-11-14, `513b72bf`, Opus) after the maintainer's look: the range
       dialog's count ends the Teams row where Browse ends, and both results put the folder on
-      a line of their own; the built look waits (Pending looks)
+      a line of their own; the maintainer's look 2026-11-17: fine
   - [x] 0.0.2-dlgroom (2026-11-14, merged `887e2ae2`) every dialog's spacing as ruled
     (`plans/core/gui.md` the Modals and Form grids rows): the title 12 above the body, a
     dialog's own form's rows 27 apart and 6 above what follows (`widgets::dialog_form`),
@@ -1674,7 +1682,16 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     (`theme::darkened_to_read`, which reproduces the lineup lists' hand-made colours); the
     pitch's turf and the dark theme draw codes as they are. The changes table's heads are
     strong and the paste notice's tails end with a full stop. Look checked in the built
-    window, card `look-name-colours`
+    window; the maintainer keeps the game's colours instead (2026-11-17): 0.0.2-namegame
+  - [ ] 0.0.2-namegame the light theme draws a name's colour codes as they are, the
+    darkening above taken out (the maintainer, 2026-11-17; `plans/save_editor.md` "The
+    player list"; DECISIONS 2026-11-17); `theme::darkened_to_read` stays for the palette's
+    colours. SWE-2, after 0.0.2-frames B1 and A2a merge (it touches `team_widgets` and
+    `save_editor`'s name callers) -> verify: the light theme's /f/ list and lineup lists
+  - [ ] 0.0.2-xhover the X ending each row of the unsaved changes list and of the close
+    prompt highlighted on hover, as the draft's frameless buttons are (the maintainer,
+    2026-11-17; `plans/save_editor.md` "An X on each row"). SWE-2, beside
+    0.0.2-namegame -> verify: a headless hover test, the built window
   - [x] 0.0.2-undosel 2026-11-15 (SWE-2, merge `e0ebd784`): Undo, Redo and a `Player order`
     row's X keep the moved player selected (`view/mod.rs` `following_selection`,
     `Session::record_of`). Look checked, card `look-undo-selection`
@@ -2063,8 +2080,8 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       that never wraps and the logo is always drawn (DECISIONS 2026-11-12); a view's title
       is measured from the band's line, and everything under the bar stands 1 point higher
     - [x] the look in the built window, both tools, both themes: checked 2026-11-15 at
-      `4b9f2258`, card `look-menu-bar` in `docs/maintainer/tasks.html` (asks whether the
-      three menus stay greyed with no save open, as built, or take the draft's full colour)
+      `4b9f2258`; the maintainer's look 2026-11-17: fine, the three menus greyed with no save
+      open as built (the draft follows since)
     - [x] the Ruleset editor's start page draws no separator after Randomize (merge
       `c20e6b29`)
     - [x] its SWE-2 loop, 2026-11-12 (`b1f3c85e`; two rounds, 6 of 11 then 1 of 2): the
@@ -2123,8 +2140,8 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       labels; under 4cc Autumn 26 locked with "Used only while Attack/defence levels is on,
       in Automatic settings" until the flag is ticked, then editable; under /vg/ League 27
       locked with "Not editable in the game from PES 2017 on" with the flag ticked
-    - [x] the look in the built window, both themes: checked 2026-11-15 at `4b9f2258`, card
-      `look-auto-levels` in `docs/maintainer/tasks.html`
+    - [x] the look in the built window, both themes: checked 2026-11-15 at `4b9f2258`; the
+      maintainer's look 2026-11-17: fine
   - [x] 0.0.2-num17 2026-11-14 (`b518585a`; lead, Opus sidekick): who reads the two numbers
     in PES 2017, inconclusive. A live memory watch (`.tmp/num17/`) and a static search of the
     dump in Ghidra (`4cc-studio-temp/pes17_re`, report `out/report_re.md`) found only copiers,
@@ -2151,8 +2168,8 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       fail; the lead's text: the help's PES version paragraph and Set PES path trigger, the
       architecture section, a changelog line (`cef04d9c`)
     - [ ] the rework (SWE-2, `sk/selrw`, after `sk/barrw` merges), then Carbon's round 2
-    - [x] the look in the built window, both themes: checked 2026-11-15 at `4b9f2258`, card
-      `look-pes-selector` in `docs/maintainer/tasks.html`
+    - [x] the look in the built window, both themes: checked 2026-11-15 at `4b9f2258`; the
+      maintainer's look 2026-11-17: fine
   - [x] 0.0.2-undo an X on each row of the unsaved changes list undoing that change alone,
     if a design for changes spanning many fields holds (the maintainer, 2026-11-03). It
     holds once a move is one row (the maintainer, 2026-11-12; DECISIONS 2026-11-12;
@@ -2165,8 +2182,8 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       undo entry keeps the trade itself so an undo past a save still reads right, the
       list compares a player with the record he came from, and each group of places
       that traded players is one `Player order` row. Two overlapping drags give groups
-      that match neither drag (the cycles). Look: checked 2026-11-15 at `4b9f2258`, card
-      `look-undo-x` in `docs/maintainer/tasks.html`
+      that match neither drag (the cycles). Look: checked 2026-11-15 at `4b9f2258`; the
+      maintainer's look 2026-11-17: fine
     - [x] a's SWE-2 review 2026-11-13 (S-undo-a r1, 1 of 5 accepted, the loop ends; its
       fix, a moved player renamed after the move, landed with b)
     - [x] the draft 2026-11-12 (the lead): `changesTable` draws the `Player order` row,
@@ -2174,15 +2191,15 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       column fixed at the list's right edge while a wide row scrolls under it (the
       maintainer, 2026-11-12: first in the row it read as an error mark); renders
       `.tmp/0_0_2/undo/x_list.png`, `x_wide.png`, `x_wide_scrolled.png` by `shot_x.py`
-      and `shot_x_wide.py` beside them. The maintainer's look at the fixed X is pending
+      and `shot_x_wide.py` beside them. The maintainer's look 2026-11-17: fine
     - [x] b 2026-11-13 (Opus, the same session, and the lead; merge `f682295e`; the
       lead's rerun of `pes_savefile`, `aatf`, `team_widgets` and `save_editor` on the
       merged tree, clippy, fmt; SE-GUI-74): an X ends each row of the toolbar's list and
       puts that change back as one sealed undo step, the list open a row shorter; a row
       is put back by reversing its diff and applying it (`PlayerDiff::reversed`,
       `TeamDiff::reversed`, `apply_team`), a `Player order` row through the drag's own
-      trade; the close prompt has no X. Look: checked 2026-11-15 at `4b9f2258`, card
-      `look-undo-x`. Open: the table's heads (Item, Old value, New value, Undo) are drawn
+      trade; the close prompt has no X. Look: checked 2026-11-15 at `4b9f2258`; the
+      maintainer's look 2026-11-17: fine, the X to be highlighted on hover (0.0.2-xhover). Open: the table's heads (Item, Old value, New value, Undo) are drawn
       weak, grey 95 measured, where the draft's `table.grid th` draws them in the strong
       colour, 220; the close prompt's share them (`view/prompt.rs` `changes_table`); fixed
       by 0.0.2-namelight (`40ce82da`)
@@ -2201,7 +2218,7 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       clippy, fmt): three painter calls in `player_row`, the SE-GUI-75 test reading the
       line's and serifs' segments. Measured by the sidekick: the list's clip cuts the half
       of the line outside a row flush with the view's edge. Look: checked 2026-11-15 at
-      `4b9f2258`, card `look-drop-line` in `docs/maintainer/tasks.html`
+      `4b9f2258`; the maintainer's look 2026-11-17: fine
     - [x] its SWE-2 review: "S-line r1" 2026-11-13, 5 of 7 accepted (`.tmp/duck_rulings.md`):
       the next row's fill covered the line's lower half (a team row under ALL, a selected
       row), and a pointer on the edge two rows share drew two lines; the mark is painted
@@ -2248,7 +2265,7 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     egui's radii in both themes and the suite's own painting reads the style
     (ST-CORNER-01); the captain's mark keeps the game's radii, radio buttons stay circles.
     The update download's bar is painted in no test. Look: the corners checked 2026-11-15 at
-    `4b9f2258`, card `look-corners`; the bar waits for the first real update (no hook fakes one)
+    `4b9f2258`, the maintainer's look 2026-11-17: fine; the bar waits for the first real update (no hook fakes one)
   - [x] 0.0.2-gap no gap between the choices of a menu or a list (the maintainer,
     2026-11-12: a click in the thin gap between two entries of a toolbar menu picks
     nothing, as the team dropdown did before `699a77ab`; "We should try to solve this at

@@ -18530,3 +18530,27 @@ Why: the maintainer asked for the whole words (2026-11-17); the draft shows the 
 still on one line at the default window and `Shirt name (11/18)` inside General info's label
 column, which "Registered position" sets.
 Plan: `plans/save_editor.md`, "The player view" and "The team view".
+
+## 2026-11-17 — save_editor — a name's colour codes are drawn as they are in the light theme too
+Decision: the light theme draws a name's colour codes as the game does, as the dark theme
+always has; the darkening of a code reading under 4.5 on the light panel (0.0.2-namelight)
+is taken out in 0.0.2. `theme::darkened_to_read` stays for the palette's own colours.
+Why: the maintainer looked at both and chose the game's colours (2026-11-17), knowing a
+white or pale code then reads faintly on the light panel.
+Plan: `plans/save_editor.md`, "The player list" (the colour codes' paragraph).
+
+## 2026-11-17 — save_editor — a card some selected players hold stays live
+Decision: with several players selected, a skill or COM style only some of them hold shows
+its checkbox's mixed mark and stays live: a click takes the card from every selected
+player, the next click gives it to every one, each one undo step. Other fields they do not
+share stay empty and locked. The build follows with 0.0.2-similar, after 0.0.2.
+Why: the maintainer's look at the draft (2026-11-17); a card is one choice per player, so a
+click has a value to write to all of them, where an empty number box has none.
+Plan: `plans/save_editor.md`, "Several players selected"; the draft's `lockGroupView`.
+
+## 2026-11-17 — save_editor — the save's menus stay greyed with no save open
+Decision: with no save open, the toolbar's `Player`, `Team` and `Savefile` menus are greyed
+and never open, as built; the draft, which drew them in full colour, follows.
+Why: the maintainer's look at the built window (2026-11-17), weighed against the draft's
+full colour; nothing in those menus acts without a save.
+Plan: `plans/save_editor.md`, "The toolbar"; the draft's toolbar.
