@@ -17,7 +17,10 @@ the Carbon rounds and the PES 2019 check"; 2026-11-16 "The no-stretch slices mov
 excepted, below), 0.0.2-pes19
 (and with it the readme's PES 2019 claim), 0.0.2-nostretch's slices, the drafts in two
 copies (the maintainer, 2026-11-17: a spec draft of what the build holds and a plan draft for
-prototyping, which the app's unbuilt sections open with `demo=1`; then the plan and spec text
+prototyping, which the app's unbuilt sections open with `demo=1`. Git keeps the two: the spec
+draft is `docs/prototypes/` on main, which `draft_compare`, the looks and the tasks cards read;
+the plan draft a long-lived branch in its own worktree, a step's draft commits merged into main
+when its build merges, and main merged back into the branch, never rebased; then the plan and spec text
 keeps the reasons, the behaviour and what no draft shows, such as the light theme, and points
 at the draft for measurements rather than copying them, a copy that drifted once: rows "22
 apart" against the draft's 24), and any mutation run
