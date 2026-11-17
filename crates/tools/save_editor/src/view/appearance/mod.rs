@@ -85,7 +85,7 @@ const PRESENTATION_LABEL: &str = "Presentation";
 const STAR_NOTE: &str =
     "How likely the player is to show up as the team's featured player in the pre-match screen.";
 /// The playing attitude box's note.
-const ATTITUDE_NOTE: &str = "Only affects cutscenes.";
+const ATTITUDE_NOTE: &str = "How temperamental the player is in cutscenes.";
 
 /// Between two groups one under another (the draft's `.group` margin).
 const GROUP_GAP: f32 = 4.0;

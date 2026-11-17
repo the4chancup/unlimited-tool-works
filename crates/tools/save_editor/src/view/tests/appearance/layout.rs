@@ -271,7 +271,7 @@ fn the_groups_stand_in_the_drafts_order() {
             "Star rating",
             "How likely the player is to show up as the team's featured player in the pre-match screen.",
         ),
-        ("Playing attitude", "Only affects cutscenes."),
+        ("Playing attitude", "How temperamental the player is in cutscenes."),
     ] {
         let bounds = right_of_label(&nodes, label, Role::SpinButton)
             .first()

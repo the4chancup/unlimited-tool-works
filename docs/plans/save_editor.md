@@ -953,7 +953,7 @@ vertical room a tab row takes; a toggle on the title's own row takes none.
     - **Presentation**, the pane's width, last: `Star rating` (19+, the name managers know it
       by) and `Playing attitude` (20+), one under the other, each with its note at its right:
       "How likely the player is to show up
-      as the team's featured player in the pre-match screen." and "Only affects cutscenes."
+      as the team's featured player in the pre-match screen." and "How temperamental the player is in cutscenes."
       A note beside its box needs no room of its own, which a note on the title's row took.
       Both are aesthetics, keys of the export (`plans/aesthetics_export/settings_toml.md`),
       so the group is under the lock.

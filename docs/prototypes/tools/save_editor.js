@@ -6008,7 +6008,7 @@ function appearanceTab(p) {
       h("tr", {}, lbl("Star rating"), fld(starIn, 19),
         h("td", {}, weak("How likely the player is to show up as the team's featured player in the pre-match screen."))),
       h("tr", {}, lbl("Playing attitude"), fld(attIn, 20),
-        h("td", {}, weak("Only affects cutscenes."))))), "cutscenes");
+        h("td", {}, weak("How temperamental the player is in cutscenes."))))), "cutscenes");
   // The ownership line and the switch draw only while the setting is on;
   // off, the groups edit without either.
   const lines = D.aesFromExports ? [row(own), row(sw)] : [];
