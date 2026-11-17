@@ -4114,6 +4114,14 @@ SE-REP-06  GIVEN a file that is not a zip, then SE-REP-01's bundle with one byte
            WHEN `save-editor replay` is run on each
            THEN each prints why it is not a bundle it can replay (not a zip; the input's
                 bytes do not match the journal's SHA-256), replays nothing and exits 2
+SE-REP-07  GIVEN SE-REP-01's steps kept as an earlier session (`plans/core/architecture.md`
+                "Repro bundles", "Earlier sessions are kept on disk"), its save opened and
+                written as decrypted sections and salt, once for a save of each version the
+                tests hold
+           WHEN `save-editor replay` is run on the bundle holding it
+           THEN each save rebuilds to the journal's SHA-256 and the write matches; GIVEN one
+                byte of a decrypted section changed THEN it prints that the rebuilt save does
+                not match its SHA-256, replays nothing and exits 2
 ```
 
 The full-look patch's `apply-patch` scenarios (SE-PAT-07 to 11) moved to

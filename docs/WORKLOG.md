@@ -16,8 +16,9 @@ the Carbon rounds and the PES 2019 check"; 2026-11-16 "The no-stretch slices mov
 0.0.2"). After 0.0.2: the Nation list (the maintainer, 2026-11-17): it opens already
 scrolled to the held nation, where it mostly scrolls down to it from the top; typing a
 nation's name picks it as an ID does (members rarely know the IDs); Escape puts the old
-nation back. The draft's greyed number boxes read `-` as the build's do (the maintainer
-kept the build's, `look-gated-labels`). Astra's round over 0.0.2-geninfo (`73641390..be99921c`, on Codex
+nation back. Earlier sessions in Report a problem: the repro bundles issue's slice (5). The
+draft's greyed number boxes read `-` as the build's do (the maintainer kept the build's,
+`look-gated-labels`). Astra's round over 0.0.2-geninfo (`73641390..be99921c`, on Codex
 `brother` once its week resets, Wed 2026-11-18 10:11), 0.0.2-similar, every Carbon round a 0.0.2 step still owes (Report a problem's
 excepted, below), 0.0.2-pes19
 (and with it the readme's PES 2019 claim), 0.0.2-nostretch's slices, the drafts in two
@@ -3693,9 +3694,13 @@ points there.
   "Report a problem" button and dialog in the shell (the draft's `drawReport`), each tool's
   current state through the tool interface, and replay comparing that state last: slice 2
   built the writer and nothing calls it outside tests yet, so no member can write a bundle
-  until this lands, and it lands after (3) so the first bundles members post replay; (5) the
-  panic hook's bundle; (6) the Compiler and the Export upgrader; the rest as each tool
-  is built. Each slice gets SWE-2, Argon and Astra rounds (a new `pub` interface across
+  until this lands, and it lands after (3) so the first bundles members post replay; (5)
+  earlier sessions, after 0.0.2 (the maintainer, 2026-11-17): each window's crash monitor
+  writes the session to the data folder as it happens, the last five kept, the saves
+  decrypted, and Report a problem's unticked box adds them (`plans/core/architecture.md`
+  "Repro bundles", "Earlier sessions are kept on disk"; ST-REP-06 to 12, SE-REP-07; the help
+  page's line). It replaces the panic hook's bundle, which was never built; (6) the Compiler
+  and the Export upgrader; the rest as each tool is built. Each slice gets SWE-2, Argon and Astra rounds (a new `pub` interface across
   crates).
 - open (2026-11-06) — Whole-crate mutation runs on the VPS alone (`RUNBOOK.md` "Mutation
   runs and the VPS", the maintainer's directive). Slice 1 done 2026-11-09 (SWE-2 sidekick,

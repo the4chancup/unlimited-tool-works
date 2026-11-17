@@ -1896,6 +1896,39 @@ ST-REP-05   manual  GIVEN the release build on Windows, a save opened, edited an
             THEN the system's save dialog offers `utw-report-<date>-<hhmm>.zip` in local
                  time, and the zip it writes opens in Explorer with ST-REP-02's files and
                  the save under `state/`
+ST-REP-06   GIVEN the session writer given a stub tool's messages in order: a step, a kept
+                 input, a kept output, a second write of the output's path, then the closing
+                 message
+            WHEN its folder is read
+            THEN `journal.toml` holds the version, the OS, the start time, the step, the input
+                 and output rows and `[end]` `closed`; `inputs/` holds the input and
+                 `outputs/` the second write only
+ST-REP-07   GIVEN ST-REP-06's messages without the closing one, then the link dropped
+            THEN `[end]` says `ended`; GIVEN a crash request instead THEN `crashed`; GIVEN a
+                 `journal.toml` whose last `[[step]]` block is cut in half WHEN it is read
+                 THEN the earlier steps read and the cut block is dropped
+ST-REP-08   GIVEN seven session folders WHEN a new session writes its first message THEN its
+                 folder and the five newest of the seven remain; GIVEN a window that records
+                 nothing WHEN it closes THEN it has made no folder
+ST-REP-09   GIVEN two earlier session folders and the window's own
+            WHEN "Report a problem" is opened
+            THEN an unticked "Include earlier sessions" box lists the two, not the window's
+                 own, each with its start time, first file opened, last write's time and
+                 ending; WHEN it is ticked and the bundle saved THEN the zip holds
+                 `sessions/<folder name>.zip` for each, each read back by `read_bundle`;
+                 unticked, THEN it holds none
+ST-REP-10   GIVEN a monitor that reads nothing, so the window's queue fills
+            WHEN steps are recorded THEN no frame waits on the link and the log holds one line
+                 about the dropped messages; GIVEN no monitor THEN the window's own writer
+                 thread writes the folder as ST-REP-06's
+ST-REP-11   GIVEN the real monitor process and a window that sends two steps and exits without
+                 its closing message
+            THEN the folder holds the two steps and `[end]` `ended`
+ST-REP-12   manual  GIVEN the release build on Windows, a save opened, edited and saved, and
+                 the window closed
+            WHEN Studio is opened again and "Report a problem" opened
+            THEN the box lists that session, ended `closed`; ticked, the saved zip holds it,
+                 and `save-editor replay` on its inner zip says the write matches
 ```
 
 **Log panel widget**

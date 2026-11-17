@@ -18754,3 +18754,18 @@ could not tell the readings apart. Three in-game checks on PES 2017 (four player
 of abilities set far apart, 12 overalls, the third check read blind) leave one reading of
 those tried. The profile's first reading missed those twelve by up to 7.
 Plan: `plans/save_editor.md`, "A pitch player dropped on another" and the starter's badge.
+## 2026-11-17 — studio_core, save_editor — earlier sessions kept on disk, written by the crash monitor
+Decision: each window's session is also written to `<data location>/sessions/`, as it
+happens, by the window's crash monitor: the steps appended to `journal.toml`, each save
+opened and the last written kept decrypted with its salt, and how the session ended. The last
+five are kept. Report a problem gets an unticked "Include earlier sessions" box that adds
+them, each as a bundle of its own. This replaces the panic hook's bundle. Queued for after
+0.0.2 (the maintainer).
+Why: members often close Studio before finding the problem in game, and a bundle written
+after reopening it held nothing of that session. The monitor, not the window, writes each
+message as it arrives, so the window does no file work and a crash, a hang ended from Task
+Manager or the monitor's own death loses at most the messages in flight; saving only at the
+close would lose them all. A save is kept decrypted because it then compresses 25 to 46
+times and encrypts back to the file byte for byte, so a session takes about half a MB.
+Plan: `plans/core/architecture.md`, "Repro bundles" ("Earlier sessions are kept on disk",
+the dialog's box); `plans/core/gui.md` ST-REP-06 to 12; `plans/save_editor.md` SE-REP-07.
