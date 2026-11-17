@@ -5905,8 +5905,10 @@ function teamView(t) {
     viewTitle(t.id, t.name),
     // The ids and the Kit slots button on the fields' row (the maintainer,
     // 2026-10-26: the Tactics below need the height).
-    // Twice the rows' own gap under the fields, now that no line parts them from the Tactics.
-    h("div", { class: "row", style: "margin-bottom:9px" },
+    // 8 under the fields, now that no line parts them from the Tactics: twice the rows' own
+    // gap less the point the screens moved down to stand level with the player list, which
+    // would otherwise take the Tactics' bottom 1 past the pane's and scroll it.
+    h("div", { class: "row", style: "margin-bottom:8px" },
       teamFields(t),
       namedCols(h("table", { class: "grid info-grid" },
         chunk([num("Manager ID", "manager_id", 17), num("Stadium ID", "stadium_id", 15)],

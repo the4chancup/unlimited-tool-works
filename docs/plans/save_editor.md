@@ -177,8 +177,9 @@ sliding toggle at the left of the title's row, `Stats | Appearance | Gameplan` (
   much room over it, under the toolbar's line, as under it, over the separator (about 9.5
   points each); the separator stands 11 points over the screen's first frames, whose tops
   are level with the player list's frame ("The player view"). The team view
-  has no second line under its fields' row: the row keeps 9 points under it instead, twice
-  the rows' gap.
+  has no second line under its fields' row: the row keeps 8 points under it instead, twice
+  the rows' gap less the point the screens moved down to stand level with the player list,
+  which would otherwise take the Tactics' bottom past the pane's and scroll it.
 
 Members used to 4ccEditor asked for its tabs back. The first arrangement dropped them for the
 vertical room a tab row takes; a toggle on the title's own row takes none.
