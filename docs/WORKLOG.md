@@ -23,8 +23,13 @@ and 88 in game, the formula 77, 77, 75 and 93. Eight readings fit all four
 (`.tmp/lead/dragpairs/overall.py`): the kicking power row reads swerve or body control,
 the swerve row kicking power or physical contact, and the body control row the mean of
 body control and physical contact or of kicking power and swerve (both pairs sum to 139
-in all four). The B bonus fits as built. Next: a second check with values that separate
-the eight, or PES 2017's executable read (the maintainer's call). The draft's greyed
+in all four). The B bonus fits as built. A second check, 2026-11-17 (the maintainer's
+call: in game, the executable after 0.0.2 only if it fails): the same four at the same
+slots, Kicking Power / Swerve / Body Control / Physical Contact 44/45/49/92, 94/74/77/82,
+89/49/90/65 and 42/65/83/97 (`.tmp/lead/dragpairs/check2.toml`, imported into the main
+save; its earlier state `EDIT00000000.before_check2` beside it); the formula reads 76, 81,
+80, 90, and each of the eight its own four (`design.py`, at least 5 apart in sum). The
+draft's greyed
 number boxes read `-` as the build's do (the maintainer
 kept the build's, `look-gated-labels`). Astra's round over 0.0.2-geninfo (`73641390..be99921c`, on Codex
 `brother` once its week resets, Wed 2026-11-18 10:11), 0.0.2-similar, every Carbon round a 0.0.2 step still owes (Report a problem's

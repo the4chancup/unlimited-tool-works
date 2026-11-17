@@ -280,6 +280,14 @@ fn the_second_halfs_labels_share_one_column_and_captain_stands_on_it() {
         7.0,
         "the circle 14 across with its edge"
     );
+    // And 1 above its row's middle, as the draft's radio stands: the
+    // row runs 18 down from the label's top.
+    let label = label_bounds(&nodes, "Captain");
+    assert!(
+        (f64::from(circle.center.y) - (label.y0 + 9.0 - 1.0)).abs() <= 0.25,
+        "the circle 1 above its row's middle ({:?} vs {label:?})",
+        circle.center
+    );
 }
 
 // General info's and Main stats' rows stand where the draft's do, 24

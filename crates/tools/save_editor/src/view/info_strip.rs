@@ -718,6 +718,11 @@ pub(super) fn main_stats(
     );
 }
 
+/// How far Captain's circle stands above its row's middle: the draft's
+/// radio, the browser's own, stands 1 point high in its box (measured at
+/// 1280, its circle's centre at y 219 where the row's middle is 220).
+const CAPTAIN_RADIO_RISE: f32 = 1.0;
+
 /// The Captain pair of Main stats' title row (the draft's
 /// `.phead.captained`): the label where the second half's labels stand
 /// and the radio centred over their boxes — a 54-wide cell ending on
@@ -749,13 +754,15 @@ pub(super) fn captain_title(ui: &mut egui::Ui, title: egui::Rect, captain: bool)
     child.allocate_ui(
         egui::vec2(BOX_WIDTH, child.spacing().interact_size.y),
         |ui| {
-            // The circle centred over the boxes' column, as the draft's.
-            // An unlabelled radio is `interact_size.y` square with its
+            // The circle centred over the boxes' column, as the draft's,
+            // and `CAPTAIN_RADIO_RISE` above the row's middle. An
+            // unlabelled radio is `interact_size.y` square with its
             // circle at its left, so centring the radio itself would
             // stand the circle left of the column's centre.
             let side = ui.spacing().interact_size.y;
             let rect = egui::Rect::from_center_size(
-                ui.max_rect().center() + egui::vec2((side - RADIO_ICON_WIDTH) / 2.0, 0.0),
+                ui.max_rect().center()
+                    + egui::vec2((side - RADIO_ICON_WIDTH) / 2.0, -CAPTAIN_RADIO_RISE),
                 egui::vec2(side, side),
             );
             let response = ui
