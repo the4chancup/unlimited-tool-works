@@ -1369,7 +1369,7 @@ fn title_shape<'a>(
 }
 
 // A count under its limit in the dark theme's grey (`#5a5a5a`) and in its
-// light twin (`#9f9f9f`) on the light theme: General info's Name count for
+// light twin (`#999999`) on the light theme: General info's Name count for
 // 70101, the PES 21 fixture's first player.
 #[test]
 fn a_count_under_its_limit_takes_each_themes_grey() {
@@ -1380,7 +1380,7 @@ fn a_count_under_its_limit_takes_each_themes_grey() {
     let mut window = Headless::sized(DEFAULT_PANE.x, 700.0);
     for (theme, grey) in [
         (egui::Theme::Dark, egui::Color32::from_gray(0x5a)),
-        (egui::Theme::Light, egui::Color32::from_gray(0x9f)),
+        (egui::Theme::Light, egui::Color32::from_gray(0x99)),
     ] {
         window.ctx.set_theme(theme);
         draw(&mut window, &mut view);

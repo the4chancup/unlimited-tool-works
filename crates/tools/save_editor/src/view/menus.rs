@@ -15,7 +15,7 @@ use pes_savefile::EditFile;
 use pes_savefile::model::names::display_name;
 use studio_core::widgets::{
     add_enabled, add_enabled_ui, menu_button, menu_separator, modal, modal_buttons,
-    modal_fit_contents, number_arrows, number_wheel_steps, radio_value, step_number,
+    modal_fit_contents, number_arrows, number_box, number_wheel_steps, radio_value, step_number,
 };
 
 use studio_core::{Notice, NoticeKind};
@@ -665,7 +665,10 @@ pub(crate) fn boglo_dialog(ui: &mut egui::Ui, view: &mut SaveView) {
                         );
                     });
                     let start = number_arrows(ui, &mut boglo.start, 0..=u32::MAX, |ui, value| {
-                        ui.add_sized(field_size(ui, NUMBER_BOX), egui::DragValue::new(value))
+                        ui.add_sized(
+                            field_size(ui, NUMBER_BOX),
+                            number_box(egui::DragValue::new(value)),
+                        )
                     });
                     step_number(
                         &mut boglo.start,
@@ -688,7 +691,10 @@ pub(crate) fn boglo_dialog(ui: &mut egui::Ui, view: &mut SaveView) {
                     });
                     let boots_id =
                         number_arrows(ui, &mut boglo.boots_id, 0..=u32::MAX, |ui, value| {
-                            ui.add_sized(field_size(ui, columns.field), egui::DragValue::new(value))
+                            ui.add_sized(
+                                field_size(ui, columns.field),
+                                number_box(egui::DragValue::new(value)),
+                            )
                         });
                     step_number(
                         &mut boglo.boots_id,
@@ -724,7 +730,10 @@ pub(crate) fn boglo_dialog(ui: &mut egui::Ui, view: &mut SaveView) {
                     });
                     let gloves_id =
                         number_arrows(ui, &mut boglo.gloves_id, 0..=u32::MAX, |ui, value| {
-                            ui.add_sized(field_size(ui, columns.field), egui::DragValue::new(value))
+                            ui.add_sized(
+                                field_size(ui, columns.field),
+                                number_box(egui::DragValue::new(value)),
+                            )
                         });
                     step_number(
                         &mut boglo.gloves_id,
@@ -894,11 +903,11 @@ pub(crate) fn stat_num_dialog(ui: &mut egui::Ui, view: &mut SaveView) {
                 |ui| {
                     let field =
                         number_arrows(ui, &mut stat_num.value, range.clone(), |ui, value| {
-                            ui.add(
+                            ui.add(number_box(
                                 egui::DragValue::new(value)
                                     .range(range.clone())
                                     .min_size(egui::vec2(NUMBER_BOX, row.y)),
-                            )
+                            ))
                         });
                     ui.with_layout(egui::Layout::left_to_right(egui::Align::Center), |ui| {
                         ui.label(sentence)

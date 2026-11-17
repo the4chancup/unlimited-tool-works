@@ -7,7 +7,9 @@
 //! failed `apply_tier` leaves the player as he was and shows the error in
 //! the refusal dialog.
 
-use studio_core::widgets::{add_enabled_ui, number_arrows, number_wheel_steps, step_number};
+use studio_core::widgets::{
+    add_enabled_ui, number_arrows, number_box, number_wheel_steps, step_number,
+};
 
 use crate::session::Session;
 use crate::view::{NUMBER_BOX, Refusal, SaveView, selected_player, surrender_focus};
@@ -160,11 +162,11 @@ fn set_stats_cell(
             // minimum would be the 40-point `interact_size`.
             let field = add_enabled_ui(ui, enabled, |ui| {
                 number_arrows(ui, stat_value, 40..=99, |ui, value| {
-                    ui.add(
+                    ui.add(number_box(
                         egui::DragValue::new(value)
                             .range(40..=99)
                             .min_size(egui::vec2(NUMBER_BOX, size.y)),
-                    )
+                    ))
                 })
             })
             .inner;

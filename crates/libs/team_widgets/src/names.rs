@@ -66,7 +66,16 @@ mod tests {
     // its colour. A plain run stays `PLACEHOLDER`.
     #[test]
     fn a_code_keeps_its_colour_in_the_light_theme() {
-        let panel = egui::Visuals::light().panel_fill;
+        let panel = crate::test_support::Headless::new()
+            .ctx
+            .style_of(egui::Theme::Light)
+            .visuals
+            .panel_fill;
+        assert_eq!(
+            panel,
+            egui::Color32::from_gray(240),
+            "premise: the light panel"
+        );
         let pep = egui::Color32::from_rgb(0xc9, 0x00, 0x2b);
         assert!(
             studio_core::theme::contrast(pep, panel) >= 4.5,

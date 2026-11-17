@@ -34,16 +34,50 @@ pub fn text_box<'t>(edit: egui::TextEdit<'t>) -> impl egui::Widget + 't {
     }
 }
 
+/// `drag` drawn as a text box on the light theme: a light text box is
+/// nearly white and a light number box reads as one, the text edit's
+/// fill in every state and the text box's border at rest
+/// (`text_box_border`), so the two kinds of field look alike. The dark
+/// theme's is not touched: there the box is the grey every control is,
+/// the look the drafts were reviewed in. The light look is set on the
+/// box's own `Ui` for the one widget, as `text_box` sets its border.
+/// Add it as any widget (`ui.add(number_box(…))`, `ui.add_sized(…)`);
+/// every `egui::DragValue` the suite adds goes through it.
+pub fn number_box<'a>(drag: egui::DragValue<'a>) -> impl egui::Widget + 'a {
+    move |ui: &mut egui::Ui| {
+        if ui.visuals().dark_mode {
+            return ui.add(drag);
+        }
+        let widgets = ui.visuals().widgets.clone();
+        let (border, _) = text_box_border(ui.visuals());
+        let fill = ui.visuals().text_edit_bg_color();
+        let states = &mut ui.visuals_mut().widgets;
+        for state in [
+            &mut states.inactive,
+            &mut states.hovered,
+            &mut states.active,
+        ] {
+            state.weak_bg_fill = fill;
+            state.bg_fill = fill;
+        }
+        states.inactive.bg_stroke = border;
+        let response = ui.add(drag);
+        ui.visuals_mut().widgets = widgets;
+        response
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use egui::epaint::Shape;
 
     use super::*;
 
-    /// One 400 by 200 frame of `contents` on the suite's `theme`, pointer
-    /// far from it; the frame's shapes and what `contents` returned.
+    /// One 400 by 200 frame of `contents` with `events` as its input; the
+    /// frame's shapes and what `contents` returned.
     fn frame<R>(
         ctx: &egui::Context,
+        events: Vec<egui::Event>,
         contents: &mut impl FnMut(&mut egui::Ui) -> R,
     ) -> (Vec<Shape>, R) {
         let input = egui::RawInput {
@@ -51,6 +85,7 @@ mod tests {
                 egui::Pos2::ZERO,
                 egui::vec2(400.0, 200.0),
             )),
+            events,
             ..Default::default()
         };
         let mut result = None;
@@ -100,8 +135,8 @@ mod tests {
                 (boxed, egui_own, button, frameless)
             };
             // egui styles a text box from its state on the frame before.
-            frame(&ctx, &mut draw);
-            let (shapes, (boxed, egui_own, button, frameless)) = frame(&ctx, &mut draw);
+            frame(&ctx, Vec::new(), &mut draw);
+            let (shapes, (boxed, egui_own, button, frameless)) = frame(&ctx, Vec::new(), &mut draw);
             let visuals = ctx.style_of(ctx.theme()).visuals.clone();
             assert_eq!(
                 visuals.widgets.noninteractive.bg_stroke.color, border,
@@ -145,8 +180,8 @@ mod tests {
             );
 
             ctx.memory_mut(|memory| memory.request_focus(boxed.id));
-            frame(&ctx, &mut draw);
-            let (shapes, (boxed, _, _, _)) = frame(&ctx, &mut draw);
+            frame(&ctx, Vec::new(), &mut draw);
+            let (shapes, (boxed, _, _, _)) = frame(&ctx, Vec::new(), &mut draw);
             assert!(boxed.has_focus(), "premise: the box holds the keyboard");
             assert_eq!(
                 frame_at(&shapes, boxed.rect).stroke,
@@ -154,5 +189,104 @@ mod tests {
                 "{theme:?}: the focus outline"
             );
         }
+    }
+
+    // On the light theme a number box draws as a text box: the text edit's
+    // fill at rest and hovered, the text box's border at rest.
+    #[test]
+    fn a_light_number_box_draws_as_a_text_box() {
+        let ctx = egui::Context::default();
+        crate::theme::install(&ctx);
+        ctx.set_theme(egui::Theme::Light);
+        let visuals = ctx.style_of(egui::Theme::Light).visuals.clone();
+        let fill = egui::Color32::from_gray(253);
+        let border = egui::Color32::from_gray(190);
+        assert_eq!(
+            visuals.text_edit_bg_color(),
+            fill,
+            "premise: the light text edit's fill"
+        );
+        assert_eq!(
+            visuals.widgets.noninteractive.bg_stroke.color, border,
+            "premise: the light theme's quiet line"
+        );
+        let mut value = 4u8;
+        let mut text = "4".to_owned();
+        let mut draw = |ui: &mut egui::Ui| {
+            (
+                ui.add(number_box(egui::DragValue::new(&mut value))),
+                ui.add(text_box(egui::TextEdit::singleline(&mut text))),
+            )
+        };
+        frame(&ctx, Vec::new(), &mut draw);
+        let (shapes, (boxed, edit)) = frame(&ctx, Vec::new(), &mut draw);
+        let painted = frame_at(&shapes, boxed.rect);
+        assert_eq!(painted.fill, fill, "the resting number box's fill");
+        assert_eq!(
+            painted.stroke,
+            egui::Stroke::new(1.0, border),
+            "the resting number box's border"
+        );
+        assert_eq!(
+            frame_at(&shapes, edit.rect).fill,
+            fill,
+            "the resting text box's fill"
+        );
+
+        // Hovered: the same fill, where the widgets' own hovered fill is
+        // darker.
+        assert_ne!(
+            visuals.widgets.hovered.weak_bg_fill, fill,
+            "premise: a control's hovered fill is not the text edit's"
+        );
+        let at = boxed.rect.center();
+        frame(&ctx, vec![egui::Event::PointerMoved(at)], &mut draw);
+        let (shapes, (boxed, _)) = frame(&ctx, vec![egui::Event::PointerMoved(at)], &mut draw);
+        assert!(boxed.hovered(), "premise: the pointer is over the box");
+        assert_eq!(
+            frame_at(&shapes, boxed.rect).fill,
+            fill,
+            "the hovered number box's fill"
+        );
+    }
+
+    // On the dark theme a number box is the control every other is: the
+    // resting widgets' fill and edge, as an unwrapped `DragValue` draws.
+    #[test]
+    fn a_dark_number_box_is_an_unwrapped_drag_value() {
+        let ctx = egui::Context::default();
+        crate::theme::install(&ctx);
+        ctx.set_theme(egui::Theme::Dark);
+        let visuals = ctx.style_of(egui::Theme::Dark).visuals.clone();
+        assert_eq!(
+            visuals.widgets.inactive.weak_bg_fill,
+            egui::Color32::from_gray(60),
+            "premise: the dark resting fill"
+        );
+        let mut boxed = 4u8;
+        let mut plain = 5u8;
+        let mut draw = |ui: &mut egui::Ui| {
+            (
+                ui.add(number_box(egui::DragValue::new(&mut boxed))),
+                ui.add(egui::DragValue::new(&mut plain)),
+            )
+        };
+        frame(&ctx, Vec::new(), &mut draw);
+        let (shapes, (boxed, plain)) = frame(&ctx, Vec::new(), &mut draw);
+        let painted = frame_at(&shapes, boxed.rect);
+        let unwrapped = frame_at(&shapes, plain.rect);
+        assert_eq!(
+            (painted.fill, painted.stroke),
+            (unwrapped.fill, unwrapped.stroke),
+            "the wrap is an unwrapped `DragValue` on the dark theme"
+        );
+        assert_eq!(
+            (painted.fill, painted.stroke),
+            (
+                visuals.widgets.inactive.weak_bg_fill,
+                visuals.widgets.inactive.bg_stroke,
+            ),
+            "the resting widgets' fill and edge"
+        );
     }
 }

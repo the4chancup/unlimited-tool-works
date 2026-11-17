@@ -2,7 +2,7 @@
 //! weak "—" helpers): a number with a range, a text field of a given
 //! width and the dash a cell draws where the row has no value.
 
-use studio_core::widgets::{number_arrows, number_wheel_steps, step_number, text_box};
+use studio_core::widgets::{number_arrows, number_box, number_wheel_steps, step_number, text_box};
 
 /// A `DragValue` over `value` whose edits stay inside `range`, the
 /// stored value drawn as it is (the draft's `drag`); every section's
@@ -16,11 +16,11 @@ pub(crate) fn number(
     range: std::ops::RangeInclusive<u8>,
 ) -> egui::Response {
     let mut response = number_arrows(ui, value, range.clone(), |ui, value| {
-        ui.add(
+        ui.add(number_box(
             egui::DragValue::new(value)
                 .range(range.clone())
                 .clamp_existing_to_range(false),
-        )
+        ))
     });
     if step_number(value, number_wheel_steps(ui, &response), range) {
         response.mark_changed();

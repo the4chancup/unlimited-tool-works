@@ -326,7 +326,7 @@ pub fn number_arrows<N: Numeric>(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::widgets::{add_enabled, combo_item};
+    use crate::widgets::{add_enabled, combo_item, number_box};
 
     /// The controls' scroll area: this tall, inside a taller content.
     const VIEW_HEIGHT: f32 = 200.0;
@@ -411,7 +411,7 @@ mod tests {
                             add_enabled(
                                 ui,
                                 drag_enabled,
-                                egui::DragValue::new(value).range(0..=255),
+                                number_box(egui::DragValue::new(value).range(0..=255)),
                             )
                         });
                         if step_number(&mut value, number_wheel_steps(ui, &drag), 0..=255) {

@@ -13,7 +13,7 @@ use egui::{
 };
 use studio_core::theme;
 use studio_core::widgets::{
-    at_rest, number_arrows, number_wheel_steps, step_number, text_box, text_box_border,
+    at_rest, number_arrows, number_box, number_wheel_steps, step_number, text_box, text_box_border,
 };
 
 /// The most recent colors the session keeps: newest first, no duplicates.
@@ -602,7 +602,7 @@ fn popup_body(
         for (index, prefix) in ["R ", "G ", "B "].iter().enumerate() {
             let mut channel = channels[index];
             let response = number_arrows(ui, &mut channel, 0..=u8::MAX, |ui, value| {
-                ui.add(DragValue::new(value).speed(0.5).prefix(*prefix))
+                ui.add(number_box(DragValue::new(value).speed(0.5).prefix(*prefix)))
             });
             let wheeled = step_number(&mut channel, number_wheel_steps(ui, &response), 0..=u8::MAX);
             channels[index] = channel;

@@ -23,8 +23,8 @@ use crate::settings::{CommonSettings, Theme, pes_folder_pattern};
 use crate::tool::{ShellRequest, StudioTool, ToolContext};
 use crate::widgets::{
     CHECKBOX_ROW_HEIGHT, FIELD_SPACING, PathCommit, add_enabled, add_enabled_ui, checkbox,
-    checkbox_row, checkbox_without_text, combo_item, number_arrows, number_wheel_steps, path_row,
-    path_row_commit, row_label, step_choice, step_number, wheel_steps,
+    checkbox_row, checkbox_without_text, combo_item, number_arrows, number_box, number_wheel_steps,
+    path_row, path_row_commit, row_label, step_choice, step_number, wheel_steps,
 };
 
 use super::sidebar::{SETTINGS_LABEL, Sidebar, exe_tooltip, version_blocker, version_label};
@@ -251,11 +251,11 @@ impl SettingsMenu {
                 // the menu would rewrite a hand-set value (a portable folder's thread count
                 // from a bigger PC).
                 let mut response = number_arrows(ui, &mut thread_count, 0..=max, |ui, value| {
-                    ui.add(
+                    ui.add(number_box(
                         egui::DragValue::new(value)
                             .range(0..=max)
                             .clamp_existing_to_range(false),
-                    )
+                    ))
                 })
                 .labelled_by(threads.id);
                 if step_number(
@@ -283,11 +283,11 @@ impl SettingsMenu {
                 // where a suffix would draw it inside the box.
                 let mut response = ui
                     .horizontal(|ui| {
-                        let response = ui.add(
+                        let response = ui.add(number_box(
                             egui::DragValue::new(&mut memory_cap)
                                 .range(0.1..=100.0)
                                 .clamp_existing_to_range(false),
-                        );
+                        ));
                         ui.label("%");
                         response
                     })
@@ -317,11 +317,11 @@ impl SettingsMenu {
                 let mut hide_boots_id = common.fpc_hide_boots_id;
                 let mut response =
                     number_arrows(ui, &mut hide_boots_id, fpc::HideIds::BOOTS, |ui, value| {
-                        ui.add(
+                        ui.add(number_box(
                             egui::DragValue::new(value)
                                 .range(fpc::HideIds::BOOTS)
                                 .clamp_existing_to_range(false),
-                        )
+                        ))
                     })
                     .labelled_by(hide_boots.id);
                 let steps = number_wheel_steps(ui, &response);
@@ -348,11 +348,11 @@ impl SettingsMenu {
                     &mut hide_gloves_id,
                     fpc::HideIds::GLOVES,
                     |ui, value| {
-                        ui.add(
+                        ui.add(number_box(
                             egui::DragValue::new(value)
                                 .range(fpc::HideIds::GLOVES)
                                 .clamp_existing_to_range(false),
-                        )
+                        ))
                     },
                 )
                 .labelled_by(hide_gloves.id);
