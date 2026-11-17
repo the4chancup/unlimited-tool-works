@@ -18628,3 +18628,15 @@ decision or log entry describes one, so music stays its own export kind until on
 Plan: `plans/aesthetics_export/object_model.md` "Validation semantics";
 `plans/team_compiler/pipeline.md` "6. Post-processing"; `plans/team_creator.md` "7. Finish",
 "Output".
+
+## 2026-11-17 — save_editor — a panel title's Live AATF mark stands right of the title
+Decision: a mark on a Stats panel's header (Playable positions, Skills, Tricks or Free cards,
+COM playing styles) stands right of the header's last item, 2 points from the title's text;
+the Skills header's mark stands after the Cards used badge.
+Why: since the panels are framed, a title stands 7 points inside its frame, so a mark left of
+it, as a label's is, fell on the frame line, and in the first column past the pane's edge,
+clipped. Not indenting the titles to make room, because the titles line up with the Appearance
+screen's group titles, which a switch between the screens keeps in place. Not right of the
+Skills title, because it would overlap the Cards used badge; not before the badge, because it
+would shift the badge whenever it showed.
+Plan: `plans/save_editor.md`, "Configurable AATF rules", Live AATF's field marks.

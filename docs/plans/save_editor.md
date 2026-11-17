@@ -664,9 +664,10 @@ vertical room a tab row takes; a toggle on the title's own row takes none.
   groups' do, so a switch between the two screens moves no frame line. The three columns end
   on one line: each column's last frame runs down to the tallest column's bottom.
 
-  The view's title line and Appearance start at General info's title. With General info's
-  6-point inset below, its labels stand 35 points from the list's frame, room for Live AATF's
-  marks left of them (at 36-point gaps centred in the pane they were clipped at its edge).
+  The view's title line starts at the frames' left edge, where the Appearance screen's groups
+  start. With the frame's stroke and margin and General info's 6-point inset, its labels stand
+  35 points from the list's frame, room for Live AATF's marks left of them (at 36-point gaps
+  centred in the pane they were clipped at its edge).
 
   At the 1280 × 780 window it fits the pane with no scrolling (the draft's check), and the pane
   is never narrower: a narrower window scales the whole UI down (`spec/core/gui.md` "Scaling
@@ -760,8 +761,10 @@ vertical room a tab row takes; a toggle on the title's own row takes none.
      The label of a field the save's version does not store is the exception, here and on
      every screen of the editor: an ability stat (Tight Possession and Aggression before PES
      2020, among others), Stronger hand before PES 2020, the star before PES 2019, playing
-     attitude before PES 2020, a PES 2016 team's colours, Manager ID and kit slots, and every
-     other control drawn disabled with a `PES NN+` tooltip. Its label is dimmed with its
+     attitude before PES 2020, Dribbling motion where the version lacks it, a PES 2015 or 2016
+     team's colours and Manager ID, and every other control drawn disabled with a `PES NN+`
+     tooltip (the `Kit slots…` button is not one: it opens on every version, and outside PES
+     2017 its window says the version stores no kit slots). Its label is dimmed with its
      disabled control, as a version-gated card's is, and carries the same tooltip, so the row
      reads as a field this game does not have rather than as one left to fill.
      A label and its field are never closer than 20 points, on the pairs, in the label-left
@@ -1004,7 +1007,7 @@ vertical room a tab row takes; a toggle on the title's own row takes none.
   points past the 1280 x 800 window's pane.
 
   The row's units stand 8 points apart, egui's item spacing, as in every row of the drafts
-  (the Name and Short labels are units of their own, 8 from their boxes). A colour's label,
+  (the Name and Short name labels are units of their own, 8 from their boxes). A colour's label,
   picker and hex (the hex in the weak grey, the picker's swatch carrying the colour), or an
   id's label and its box, stand a space apart (3 points). The ids' grid cells are padded 4
   points on each side (so 12 before Manager ID, 8 between the ids), and each id's box is 46 wide
@@ -2734,15 +2737,18 @@ What this editor adds on top of the lib:
     of a column of labels line up whatever the labels' lengths:
     - General info's and Other stats' labels;
     - an ability stat's at its label cell's left edge instead (over the cell's padding), where
-      the column's left-aligned labels start, so the stats' marks share one column;
-    - a panel's header for a row about the panel as a whole (the positions grid, the skills,
-      the Tricks or Free cards panel, the COM styles).
+      the column's left-aligned labels start, so the stats' marks share one column.
 
-    The Skills header's Cards used badge has no mark of its own: its rows mark the Skills
-    header, the group holding the card counts, in one mark with the skills' own (the highest
-    severity of both, both in its tooltip), since a mark in the row before the badge would
-    shift the badge whenever it showed. The first column's marks stand in the gap after the
-    list, which General info's inset widens enough ("The player view").
+    A row about a panel as a whole (the positions grid, the skills, the Tricks or Free cards
+    panel, the COM styles) marks the panel's header, and that mark stands right of the
+    header's last item, 2 points from the title's text: a title stands 7 inside its frame, so
+    a mark left of it would fall on the frame line, and in the first column past the pane's
+    edge. The Skills header's Cards used badge has no mark of its own: its rows mark the
+    Skills header, the group holding the card counts, in one mark with the skills' own (the
+    highest severity of both, both in its tooltip), after the badge, the header's last item:
+    right of the title it would overlap the badge, and before the badge it would shift the
+    badge whenever it showed. The first column's label marks stand in the room the panels'
+    inset leaves before the labels ("The player view").
 
     The fields:
     - the Height box for `Height`;

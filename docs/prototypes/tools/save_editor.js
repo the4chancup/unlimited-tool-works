@@ -815,6 +815,10 @@ button.livebtn.on { background: var(--sel-bg); color: var(--sel-fg); }
 .xmark { display: inline-block; width: 11px; text-align: center; }
 .marked { position: relative; }
 .marked > .xmark { position: absolute; right: calc(100% + 2px); top: 50%; transform: translateY(-50%); }
+/* A panel title's mark (markedTitle) stands right of the title, its box 2 px from the text:
+   the title stands 7 inside its frame, too close for a mark on its left, which would fall on
+   the frame line, or past the pane's edge in the first column. */
+.tmarked > .xmark { margin-left: 2px; }
 /* A stat's mark stands at its label cell's left edge, where every label of the column
    starts, so a column of stats' marks lines up whatever the labels' lengths; drawn over the
    cell's 6 px padding and the gap before it, it moves no label. */
@@ -5857,7 +5861,7 @@ function positionsPanel(p) {
         h("div", { class: "plabel", title: "Make " + pos + " the registered position",
           onclick: () => register(pos) }, pos), rating(pos))))));
   return namedCols(h("div", { class: "col" },
-    h("div", { class: "row phead" }, markedLabel(strong("Playable positions"), fieldMark(p, "positions"))),
+    h("div", { class: "row phead" }, markedTitle(strong("Playable positions"), fieldMark(p, "positions"))),
     posLayoutToggle(), posTable), "positions");
 }
 // The grid's arrangement, a tool setting (`positions_layout`; localStorage
@@ -5916,10 +5920,11 @@ function skillsPanel(p, team) {
   const aside = asideCards().cards;
   return namedCols(h("div", { class: "col" },
     // The card budget's rows mark the Skills header with the skills' own, one
-    // mark for the group holding the card counts: a mark in the row before the
-    // badge would shift it whenever it showed.
-    h("div", { class: "row phead badged" }, markedLabel(strong("Skills"), fieldMark(p, "skills", "cards")),
-      cardBadges(p, team)),
+    // mark for the group holding the card counts, after the badge, the row's
+    // last item: right of the title it would overlap the badge, and a mark
+    // before the badge would shift it whenever it showed.
+    h("div", { class: "row phead badged" }, strong("Skills"), cardBadges(p, team),
+      fieldMark(p, "skills", "cards")),
     skillColumns(p, SKILLS.filter(k => !aside.includes(k)), "skills")), "skills");
 }
 // The Tricks or Free cards panel: the cards the ruleset usually leaves out of
@@ -5928,7 +5933,7 @@ function skillsPanel(p, team) {
 function asidePanel(p) {
   const { title, cards } = asideCards();
   if (!cards.length) return null;
-  return namedCols(h("div", { class: "col" }, markedLabel(strong(title), fieldMark(p, "aside")),
+  return namedCols(h("div", { class: "col" }, markedTitle(strong(title), fieldMark(p, "aside")),
     skillColumns(p, cards, "aside")), "aside");
 }
 // The COM playing styles, two columns of checkboxes as wide as the skills
@@ -5945,7 +5950,7 @@ function comStylesPanel(p) {
         render(); } }), " ", cardName(k));
   const cols = colCount("com-styles"), per = Math.ceil(COM_STYLES.length / cols);
   return namedCols(h("div", { class: "col" },
-    h("div", { class: "row phead" }, markedLabel(strong("COM playing styles"), fieldMark(p, "com_styles"))),
+    h("div", { class: "row phead" }, markedTitle(strong("COM playing styles"), fieldMark(p, "com_styles"))),
     h("div", { class: "skcols" },
       Array.from({ length: cols }, (_, c) =>
         h("div", { class: "col" }, COM_STYLES.slice(c * per, (c + 1) * per).map(comCb))))),
@@ -8618,11 +8623,16 @@ function fieldMark(p, ...fields) {
     title: rows.map(r => ruleName(r[3]) + ": " + violationSentence(r[3], kvOf(r[4]), r[0])).join("\n") },
     { err: "✖", warn: "⚠", sugg: "ⓘ" }[sev]);
 }
-// A label or a panel's header with its field's cross left of it, 2 points from
+// A label with its field's cross left of it, 2 points from
 // the text: drawn outside the label's box, over the margin before it, so no
 // label moves or wraps and the crosses of a column of labels line up.
 function markedLabel(el, mark) {
   if (el && mark) { el.classList.add("marked"); el.append(mark); }
+  return el;
+}
+// A panel's title with its field's cross right of it, 2 points from the text (.tmarked).
+function markedTitle(el, mark) {
+  if (el && mark) { el.classList.add("tmarked"); el.append(mark); }
   return el;
 }
 const liveTeam = () => selTeam();
