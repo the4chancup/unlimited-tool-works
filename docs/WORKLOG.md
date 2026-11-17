@@ -23,7 +23,8 @@ excepted, below), 0.0.2-pes19
    paid round (Carbon) over the whole running, in two parts.
 2. The four fixes from the maintainer's looks of 2026-11-17 (0.0.2-namegame, xhover, allcat,
    ixtext) and P53's 0.0.2-gatelbl (a version-gated field's label dimmed with its control)
-   merged; gatelbl's SWE-2 round running. Their looks are next, on one release build.
+   merged, gatelbl's SWE-2 loop ended; the five looks checked on the release build of
+   `17bda172`, their cards on the tasks page.
 3. The cut, only once the maintainer has run the checks of
    `maintainer/tasks.html` (the maintainer, 2026-11-17): a pipeline without mutants on the
    last merge (0.0.2-determ's second clean run), the changelog, the release build, and a
@@ -1688,21 +1689,26 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     - [x] landed 2026-11-17 (SWE-2, merge `29991c8b`, with 0.0.2-xhover; the lead's rerun:
       save_editor 1047, studio_core 538, team_widgets 282): `append_name` draws every code as
       it is, `name_background` gone; the darkening's changelog line removed (never released)
-    - [ ] the built window: the light theme's /f/ list and lineup lists, with the batch
-      release build after 0.0.2-gatelbl
+    - [x] the built window (lead, 2026-11-17, the release build of `17bda172`): on the light theme every code drawn
+      as stored, so a white or pale part nearly vanishes on the white list; card
+      `look-light-names`
   - [x] 0.0.2-present 2026-11-17 (SWE-2, merge `0cbe7637`; the lead's rerun of `studio_core`, 535)
     the window presents through a
     DirectComposition swap chain, so a resize no longer stretches the last frame and the UI
     stops jumping (`plans/core/gui.md` "The graphics backend"; DECISIONS 2026-11-17). SWE-2,
     `studio_core` `shell/window_size/mod.rs` `wgpu_options` -> verify: a unit test of the
     pick and its variable, `.tmp/lead/flicker/variants2.py` on the built copy
+    - [x] `variants2.py` on the release build of `17bda172` (lead, 2026-11-17): 121 grabs per variant, no
+      feature off its trend in either (the default, now DirectComposition, and the
+      variable's)
   - [ ] 0.0.2-xhover the X ending each row of the unsaved changes list and of the close
     prompt highlighted on hover, as the draft's frameless buttons are (the maintainer,
     2026-11-17; `plans/save_editor.md` "An X on each row"). SWE-2, beside
     0.0.2-namegame -> verify: a headless hover test, the built window
     - [x] landed 2026-11-17 (merge `29991c8b`): `frame_when_inactive(false)`;
       `a_rows_x_lights_on_hover`; the changelog's × line says it lights up
-    - [ ] the built window, with the batch release build after 0.0.2-gatelbl
+    - [x] the built window (lead, 2026-11-17, the release build of `17bda172`): framed under the pointer as the
+      draft's; card `look-x-hover`
   - [x] 0.0.2-allcat under 4cc, VGL or Invitational the team selector's All teams entry reads
     `4cc teams`, `VGL teams`, `Invitational teams`, open and closed (the maintainer, 2026-11-17;
     `plans/save_editor.md` the team selector's category paragraph, SE-GUI-83; DECISIONS
@@ -1711,7 +1717,8 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     test turned around, the built window under VGL
     - [x] landed 2026-11-17 (SWE-2, merge `df9833a8`, with 0.0.2-ixtext; the lead's rerun:
       save_editor 1048): `format!("{} teams", shown.label())`; help page 02 says so
-    - [ ] the built window under VGL, with the batch release build after 0.0.2-gatelbl
+    - [x] the built window under VGL (lead, 2026-11-17, the release build of `17bda172`): `VGL teams` open and
+      closed, as the draft's; card `look-category-teams`
   - [x] 0.0.2-ixtext the Team file interchange window's sentences and labels in the normal
     text colour, the Skills labels', not the weak grey (the maintainer, 2026-11-17;
     `plans/save_editor.md` "Interchange formats in the UI"; DECISIONS 2026-11-17; draft
@@ -1720,7 +1727,9 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     the draft
     - [x] landed 2026-11-17 (merge `df9833a8`): `the_panels_sentences_paint_the_normal_text_colour`;
       changelog under the new Other stuff heading
-    - [ ] the built window beside the draft, with the batch release build
+    - [x] the built window beside the draft (lead, 2026-11-17, the release build of `17bda172`): the text colours
+      match; the import row is the draft's fake file list against the build's file
+      dialog, by design; card `look-interchange-text`
   - [ ] 0.0.2-gatelbl (P53, accepted for 0.0.2 by the maintainer, 2026-11-17) every
     version-gated control's label dimmed with it and carrying its `PES NN+` tooltip, as the
     Ability stats' are (`plans/save_editor.md` the Stats screen's paragraph on field labels;
@@ -1733,8 +1742,13 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       2016 team's Color 1, Color 2 and Manager ID; the changelog's ability-stat line names
       them all; help page 03's Greyed controls. The lead's rerun: save_editor 1055 + 57,
       clippy, fmt
-    - [ ] one SWE-2 round (Tier 2's loop), then the paid round's Stats part
-    - [ ] the built window beside the draft, with the batch release build
+    - [x] SWE-2 round 1 2026-11-17 (`.tmp/0_0_2/frames_rev/swe_gatelbl.findings.md`): 0
+      accepted (two unreachable arms, a nit), the loop ended; the paid round's Stats
+      part follows
+    - [x] the built window beside the draft (lead, 2026-11-17, the release build of `17bda172`): PES 2017's
+      Stats and Appearance and PES 2016's team row dimmed as the draft's (the drafts
+      hold no PES 2016 save); the build's gated boxes read `-`, the draft's `0`, a
+      difference older than this step, asked on the card `look-gated-labels`
   - [x] 0.0.2-undosel 2026-11-15 (SWE-2, merge `e0ebd784`): Undo, Redo and a `Player order`
     row's X keep the moved player selected (`view/mod.rs` `following_selection`,
     `Session::record_of`). Look checked, card `look-undo-selection`; the maintainer's look 2026-11-17: fine
@@ -1786,7 +1800,8 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         rule: it would flag the call inside the wrap at every site); the derived fills, amber,
         green and lineup colours as DECISIONS lists them, and the quiet greys (count, C
         rating) at 153, keeping the dark 2.5 as the plan's rule says (the lead's, at review)
-        - [ ] the built window on the light theme, with the batch release build
+        - [ ] the built window on the light theme: captured (lead, 2026-11-17, the release build of `17bda172`;
+          the drafts have no light theme), the card after the Stats rework
     - [ ] the Stats screen's frames (`plans/save_editor.md` "Editing UI", the player view)
       - [x] B1 2026-11-17 (SWE-2, one rework; merge `a663b4e9`; the lead's rerun 1044 + 57,
         clippy, fmt): the panels framed, spanning the pane as Appearance's frames, 8 apart,
