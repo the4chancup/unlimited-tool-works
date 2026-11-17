@@ -424,6 +424,16 @@ input[type=checkbox]:indeterminate { background-image: url("data:image/svg+xml,%
 .pcols > * { margin-top: 4px; }
 .pcols .phead { margin: 0; }
 .pcols .phead.badged { margin: -3px 0 -3px; }
+/* Main stats' title row holds Captain at the right, laid out as the panel's second column:
+   its label where Weight's stands, its radio centred in a number box's width over Weight's
+   box. The 18-point box overhangs the row by 1.5 above and below, so the title stands where
+   a bare title does. */
+.pcols .phead.captained { margin: -1.5px 0; display: flex; align-items: center;
+  justify-content: space-between; }
+.pcols .phead.captained > .pair { display: grid; grid-template-columns: 52px 54px;
+  column-gap: 20px; align-items: center; margin-right: 6px; }
+.pcols .phead.captained .box { display: flex; justify-content: center; align-items: center;
+  width: 54px; height: 18px; }
 .pcols .gen { padding-top: 3px; }
 .pcols .stats-grid { margin-top: 0; }
 .pcols .skcols { margin-top: 1.5px; }
@@ -466,10 +476,11 @@ input[type=checkbox]:indeterminate { background-image: url("data:image/svg+xml,%
 .gen .pair { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
 .gen .pair input[type=number], .gen .pair .box { width: 54px; box-sizing: border-box; flex: none; }
 /* The second half's pairs: the box just after a label column as wide as
-   the half's longest label, "Shirt number", the two at the half's right
-   edge, so its short labels (Nation, Form) keep their boxes close. Live
-   AATF's cross sits left of the label, in the gap between the halves. */
-.gen .pairs > .pair:nth-child(even) { display: grid; grid-template-columns: 73px 54px;
+   the half's longest label, "Accuracy" (51.75 in the draft's font), the two
+   at the half's right edge, so its labels stand as near their boxes as the
+   longest allows, one left edge in both panels. Live AATF's cross sits left
+   of the label, in the gap between the halves. */
+.gen .pairs > .pair:nth-child(even) { display: grid; grid-template-columns: 52px 54px;
   column-gap: 20px; justify-content: end; }
 .gen .pairs > .pair:nth-child(even) .boxed { display: contents; }
 .gen .pairs > .pair:nth-child(even) > .gl { grid-column: 1; grid-row: 1; }
@@ -492,8 +503,6 @@ input[type=checkbox]:indeterminate { background-image: url("data:image/svg+xml,%
    chosen side reads white. */
 .gen .combos .rate.lr .sel.on { background: #5a5a5a; color: var(--strong); }
 .gen .combos .rate.lr .sel:not(.on):hover { color: #f0f0f0; }
-/* The Captain checkbox centred in its box's width, under the box above it. */
-.gen .pair > .box { display: flex; justify-content: center; }
 .info-grid td { padding: 1px 6px 1px 0; }
 .info-grid input[type=text] { width: 190px; }
 .info-grid input.shirt { width: 110px; }
@@ -5125,11 +5134,56 @@ const textCount = (kind, raw) => {
   c.at = c.n === Math.min(c.max, c.portable);
   return c;
 };
-// The General info column, laid out as 4ccEditor's General Info
-// (save_editor.md "Editing UI"): the name's and the shirt name's labels,
-// each with its count, above fields the panel's width, the numbers as
-// label-left pairs in fixed boxes, then the combos sharing one label
-// column. Every field ends on the panel's right edge or its half's. Every
+// The game's nations by ID, the Nation dropdown's entries (PES Next-Gen Editor 2016's
+// nationality table, 188 nations; an ID outside it shows as its number alone).
+const NATIONS = [[1, "Afghanistan"], [2, "Bahrain"], [3, "Bangladesh"], [7, "China"],
+  [8, "Hong Kong"], [9, "India"], [10, "Indonesia"], [11, "Iran"], [12, "Iraq"], [13, "Japan"],
+  [14, "Jordan"], [15, "North Korea"], [16, "South Korea"], [17, "Kuwait"], [18, "Laos"],
+  [19, "Lebanon"], [21, "Malaysia"], [22, "Maldives"], [26, "Oman"], [27, "Pakistan"],
+  [28, "Palestine"], [29, "Philippines"], [30, "Qatar"], [31, "Saudi Arabia"],
+  [32, "Singapore"], [33, "Sri Lanka"], [34, "Syria"], [36, "Thailand"], [37, "U.A.E."],
+  [38, "Vietnam"], [39, "Yemen"], [40, "Kyrgyz Republic"], [41, "Tajikistan"],
+  [42, "Turkmenistan"], [44, "Algeria"], [45, "Angola"], [46, "Benin"], [47, "Botswana"],
+  [48, "Burkina Faso"], [49, "Burundi"], [50, "Cameroon"], [51, "Cape Verde"],
+  [52, "Central African Rep."], [53, "Chad"], [54, "The Comoros"], [55, "DR Congo"],
+  [56, "Ivory Coast"], [58, "Egypt"], [59, "Equatorial Guinea"], [60, "Eritrea"],
+  [61, "Ethiopia"], [62, "Gabon"], [63, "Republic of the Gambia"], [64, "Ghana"],
+  [65, "Guinea"], [66, "Guinea-Bissau"], [67, "Kenya"], [69, "Liberia"], [70, "Libya"],
+  [71, "Madagascar"], [72, "Malawi"], [73, "Mali"], [74, "Mauritania"], [75, "Mauritius"],
+  [76, "Morocco"], [77, "Mozambique"], [78, "Namibia"], [79, "Niger"], [80, "Nigeria"],
+  [81, "Rwanda"], [83, "Senegal"], [85, "Sierra Leone"], [86, "Somalia"], [87, "South Africa"],
+  [88, "Sudan"], [91, "Togo"], [92, "Tunisia"], [93, "Uganda"], [94, "Zambia"],
+  [95, "Zimbabwe"], [98, "Congo"], [100, "Réunion"], [104, "Antigua & Barbuda"],
+  [105, "Aruba"], [107, "Barbados"], [109, "Bermuda"], [110, "Canada"], [112, "Costa Rica"],
+  [113, "Cuba"], [115, "Dominican Republic"], [116, "El Salvador"], [117, "Grenada"],
+  [118, "Guadeloupe"], [119, "Guatemala"], [120, "Haiti"], [121, "Honduras"], [122, "Jamaica"],
+  [123, "Martinique"], [124, "Mexico"], [125, "Montserrat"], [126, "Netherlands Antilles"],
+  [128, "Panama"], [129, "Puerto Rico"], [133, "Trinidad & Tobago"],
+  [134, "Turks & Caicos Is."], [135, "U.S.A."], [138, "French Guiana"], [140, "Curaçao"],
+  [144, "Argentina"], [145, "Bolivia"], [146, "Brazil"], [147, "Chile"], [148, "Colombia"],
+  [149, "Ecuador"], [150, "Paraguay"], [151, "Peru"], [152, "Uruguay"], [153, "Venezuela"],
+  [159, "Gyuana"], [162, "Australia"], [164, "Fiji"], [165, "New Caledonia"],
+  [166, "New Zealand"], [167, "Papua New Guinea"], [168, "Samoa"], [169, "Solomon Islands"],
+  [170, "Tahiti"], [189, "Israel"], [190, "Turkey"], [191, "Albania"], [192, "Andorra"],
+  [193, "Armenia"], [194, "Austria"], [195, "Azerbaijan"], [196, "Belarus"], [197, "Belgium"],
+  [198, "Bosnia & Herzegovina"], [199, "Bulgaria"], [200, "Croatia"], [201, "Cyprus"],
+  [202, "Czech Republic"], [203, "Denmark"], [204, "England"], [205, "Estonia"],
+  [206, "Faroe Islands"], [207, "Finland"], [208, "France"], [209, "Georgia"],
+  [210, "Germany"], [211, "Greece"], [212, "Hungary"], [213, "Iceland"], [214, "Ireland"],
+  [215, "Italy"], [216, "Kazakhstan"], [217, "Latvia"], [218, "Liechtenstein"],
+  [219, "Lithuania"], [220, "Luxembourg"], [221, "Macedonia"], [222, "Malta"],
+  [223, "Moldova"], [224, "Netherlands"], [225, "Northern Ireland"], [226, "Norway"],
+  [227, "Poland"], [228, "Portugal"], [229, "Romania"], [230, "Russia"], [231, "San Marino"],
+  [232, "Scotland"], [234, "Slovakia"], [235, "Slovenia"], [236, "Spain"], [237, "Sweden"],
+  [238, "Switzerland"], [239, "Ukraine"], [240, "Uzbekistan"], [241, "Wales"],
+  [245, "Gibraltar"], [250, "Monaco"], [260, "Others"], [298, "Taiwan"], [303, "Serbia"],
+  [304, "Montenegro"], [310, "Sint Maarten"], [311, "Kosovo"], [312, "South Sudan"]];
+// The General info and Main stats panels (save_editor.md "Editing UI"): who
+// the player is (the names with their counts, the shirt number, the age, the
+// nation) and what he plays with (height, weight, the small stats, the sides,
+// the position and style), each as label-left rows sharing one label column
+// and label-left pairs in fixed boxes. Every field ends on the panel's right
+// edge or its half's. Every
 // field is an undoable edit. The name field keeps the raw string (colour
 // codes shown as \x11c sequences); Captain marks him in the team's set
 // pieces. The id is the view's title's prefix (viewTitle).
@@ -5189,25 +5243,54 @@ function generalPanel(p, team) {
   const hand = sides(p.positions.stronger_hand ?? "right",
     v => { set(p, x => x.positions.stronger_hand, (x, v2) => x.positions.stronger_hand = v2, v, "stronger hand"); render(); });
   hand.id = "f-hand";
-  return named(h("div", { class: "col" }, strong("General info"),
+  // The nation as "ID - Name", ordered by ID, so typing an ID's digits in the closed
+  // dropdown finds it; an ID outside the table keeps its number.
+  const nations = NATIONS.some(([id]) => id === p.nationality) ? NATIONS
+    : [[p.nationality, "?"], ...NATIONS];
+  const nation = combo(nations.map(([id, name]) => [String(id), id + " - " + name]),
+    String(p.nationality),
+    v => { set(p, x => x.nationality, (x, v2) => x.nationality = v2, parseInt(v, 10), "nation"); });
+  nation.id = "f-nation";
+  // Main stats' four small numbers, drawn at the game's numbers (stored one lower).
+  // `shown` is the label drawn, `label` the edit's name in the undo list.
+  const small = (shown, label, get, put, max, field) => h("div", { class: "pair" },
+    markedLabel(gl(shown), fieldMark(p, field)),
+    h("span", { class: "boxed" },
+      h("input", { type: "number", value: get(p) + 1, min: 1, max,
+        onchange: e => { const v = parseInt(e.target.value, 10) - 1;
+          if (v >= 0) { set(p, get, (x, v2) => put(x, v2), v, label); render(); } } })));
+  const general = named(h("div", { class: "col" }, strong("General info"),
     h("div", { class: "gen" },
       h("div", { class: "combos" },
         ...counted("Name", "name", p.name, nameIn, unescName, fieldMark(p, "name")),
         ...counted("Shirt name", "shirt", p.shirt_name, shirtIn, t => t)),
       h("div", { class: "pairs" },
-        num("Height", p2 => p2.height, (x, v) => x.height = v, "height"),
         num("Shirt number", p2 => p2.number, (x, v) => x.number = v),
+        num("Age", p2 => p2.age, (x, v) => x.age = v, "age")),
+      h("div", { class: "combos" }, gl("Nation"), nation))), "general");
+  // Captain in the title's row, over the second column (`.phead.captained`).
+  // The weak foot's two share one label: "Weak Foot: Usage", then "Accuracy".
+  const main = named(h("div", { class: "col" },
+    h("div", { class: "row phead captained" }, strong("Main stats"),
+      h("div", { class: "pair" }, gl("Captain"), h("span", { class: "box" }, captain))),
+    h("div", { class: "gen" },
+      h("div", { class: "pairs" },
+        num("Height", p2 => p2.height, (x, v) => x.height = v, "height"),
         num("Weight", p2 => p2.weight, (x, v) => x.weight = v, "weight"),
-        num("Nation", p2 => p2.nationality, (x, v) => x.nationality = v),
-        num("Age", p2 => p2.age, (x, v) => x.age = v, "age"),
-        // The checkbox centred under the box above it.
-        h("div", { class: "pair" }, gl("Captain"), h("span", { class: "box" }, captain))),
+        small("Injury Resistance", "Injury Resistance",
+          x => x.stats.injury_resistance, (x, v) => x.stats.injury_resistance = v, 3, "injury_resistance"),
+        small("Form", "Form", x => x.stats.form, (x, v) => x.stats.form = v, 8, "form"),
+        small("Weak Foot: Usage", "Weak Foot Usage",
+          x => x.stats.weak_foot_usage, (x, v) => x.stats.weak_foot_usage = v, 4, "weak_foot_usage"),
+        small("Accuracy", "Weak Foot Accuracy",
+          x => x.stats.weak_foot_accuracy, (x, v) => x.stats.weak_foot_accuracy = v, 4, "weak_foot_accuracy")),
       h("div", { class: "combos" },
         gl("Stronger foot"), foot,
         version() < 20 ? h("span", { class: "gl off", title: "PES 20+" }, "Stronger hand")
           : gl("Stronger hand"), gated(h("span", {}, hand), 20),
         marked("Registered position", "registered"), reg,
-        marked("Playing style", "playing_style"), style))), "general");
+        marked("Playing style", "playing_style"), style))), "main-stats");
+  return [general, main];
 }
 // A view's title, the player view's and the team view's alike: the id, weak
 // as the list rows draw ids, then the name drawn with its colour codes. Its
@@ -5329,7 +5412,7 @@ function playerView(p, team) {
 function playerColumns(p, team) {
   return h("div", { id: "player-view" },
     h("div", { class: "pcols" },
-      h("div", { class: "col pcol first" }, generalPanel(p, team), otherStatsPanel(p),
+      h("div", { class: "col pcol first" }, ...generalPanel(p, team),
         positionsPanel(p)),
       h("div", { class: "col pcol" }, skillsPanel(p, team), asidePanel(p), comStylesPanel(p)),
       abilityPanel(p)));
@@ -5986,30 +6069,6 @@ function comStylesPanel(p) {
       Array.from({ length: cols }, (_, c) =>
         h("div", { class: "col" }, COM_STYLES.slice(c * per, (c + 1) * per).map(comCb))))),
     "com-styles");
-}
-// Other stats: the four non-ability values under General info, drawn at
-// the game's numbers (stored one lower), as two label-left pairs per row on
-// General info's grid, so their boxes line up with Height's and Number's.
-function otherStatsPanel(p) {
-  // `shown` is the label drawn, `label` the edit's name in the undo list.
-  // `field` names the box for Live AATF's cross, as General info's pairs.
-  const small = (shown, label, get, put, max, field) => h("div", { class: "pair" },
-    markedLabel(h("span", { class: "gl" }, shown), fieldMark(p, field)),
-    h("span", { class: "boxed" },
-      h("input", { type: "number", value: get(p) + 1, min: 1, max,
-        onchange: e => { const v = parseInt(e.target.value, 10) - 1;
-          if (v >= 0) { set(p, get, (x, v2) => put(x, v2), v, label); render(); } } })));
-  // The weak foot's two share one label: "Weak foot: Usage", then "Accuracy".
-  return named(h("div", { class: "col" }, strong("Other stats"),
-    h("div", { class: "gen" }, h("div", { class: "pairs" },
-      small("Injury Resistance", "Injury Resistance",
-        x => x.stats.injury_resistance, (x, v) => x.stats.injury_resistance = v, 3, "injury_resistance"),
-      small("Form", "Form", x => x.stats.form, (x, v) => x.stats.form = v, 8, "form"),
-      small("Weak Foot: Usage", "Weak Foot Usage",
-        x => x.stats.weak_foot_usage, (x, v) => x.stats.weak_foot_usage = v, 4, "weak_foot_usage"),
-      small("Accuracy", "Weak Foot Accuracy",
-        x => x.stats.weak_foot_accuracy, (x, v) => x.stats.weak_foot_accuracy = v, 4, "weak_foot_accuracy")))),
-    "other-stats");
 }
 
 // ---- Appearance (SE-GUI-07, 20, 35) ----
