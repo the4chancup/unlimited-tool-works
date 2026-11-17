@@ -811,10 +811,12 @@ mod tests {
         );
     }
 
-    // `targets_pes_version` defaults to false: a tool that does not say it
-    // works for the selected game keeps the selector disabled and empty.
+    // A tool that overrides nothing takes the trait's defaults:
+    // `targets_pes_version` false (a tool that does not say it works for the
+    // selected game keeps the selector disabled and empty), and no part of
+    // the bundle's readme.
     #[test]
-    fn targets_pes_version_defaults_to_false() {
+    fn a_tool_that_overrides_nothing_takes_the_defaults() {
         struct Bare;
         impl StudioTool for Bare {
             fn id(&self) -> &'static str {
@@ -845,5 +847,9 @@ mod tests {
             }
         }
         assert!(!Bare.targets_pes_version());
+        assert!(
+            Bare.repro_readme().is_none(),
+            "a tool gives no readme part by default"
+        );
     }
 }

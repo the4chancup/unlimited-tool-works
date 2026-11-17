@@ -8,7 +8,8 @@ What each part holds:
   inputs/ and outputs/.
 - inputs/: each file a tool read, as it was before any change.
 - outputs/: the last version of each file a tool wrote.
-- state/<tool>/: what each tool held when the report was saved, written as its own file.
+- state/<tool>/: what each tool held when the report was saved, unsaved edits included,
+  each in its usual file format.
 - utw.log: the window's log.
 - settings.toml: UTW's settings.
 - installs.txt: each PES version's folder in the settings, and what UTW found in it.
