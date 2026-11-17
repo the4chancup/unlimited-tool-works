@@ -40,7 +40,9 @@ mod text_box;
 mod toolbar;
 mod wheel;
 
-pub use choice::{checkbox, checkbox_row, checkbox_without_text, radio, radio_value};
+pub use choice::{
+    RADIO_ICON_WIDTH, checkbox, checkbox_row, checkbox_without_text, radio, radio_value,
+};
 pub use collapsing_header::collapsing_header;
 pub use combo::{combo_item, combo_label, combo_separator};
 pub use dock::BottomDock;

@@ -13,22 +13,64 @@ is in `AGENTS.md` ("Working documents").
 (VGL)"), aimed at within the day, a target the work chosen for it is not rushed to meet
 (DECISIONS 2026-11-16 "0.0.2 is cut without Select all similar,
 the Carbon rounds and the PES 2019 check"; 2026-11-16 "The no-stretch slices move to after
-0.0.2"). After 0.0.2: 0.0.2-similar, every Carbon round a 0.0.2 step still owes (Report a problem's
+0.0.2"). After 0.0.2: the Nation list (the maintainer, 2026-11-17): it opens already
+scrolled to the held nation, where it mostly scrolls down to it from the top; typing a
+nation's name picks it as an ID does (members rarely know the IDs); Escape puts the old
+nation back. Earlier sessions in Report a problem: the repro bundles issue's slice (5). The
+draft's greyed number boxes read `-` as the build's do (the maintainer kept the build's,
+`look-gated-labels`). Astra's round over 0.0.2-geninfo (`73641390..be99921c`, on Codex
+`brother` once its week resets, Wed 2026-11-18 10:11), 0.0.2-similar, every Carbon round a 0.0.2 step still owes (Report a problem's
 excepted, below), 0.0.2-pes19
-(and with it the readme's PES 2019 claim), 0.0.2-nostretch's slices, and any mutation run
+(and with it the readme's PES 2019 claim), 0.0.2-nostretch's slices, the drafts in two
+copies (the maintainer, 2026-11-17: a spec draft of what the build holds and a plan draft for
+prototyping, which the app's unbuilt sections open with `demo=1`. Git keeps the two: the spec
+draft is `docs/prototypes/` on main, which `draft_compare`, the looks and the tasks cards read;
+the plan draft a long-lived branch in its own worktree, a step's draft commits merged into main
+when its build merges, and main merged back into the branch, never rebased; then the plan and spec text
+keeps the reasons, the behaviour and what no draft shows, such as the light theme, and points
+at the draft for measurements rather than copying them, a copy that drifted once: rows "22
+apart" against the draft's 24), the SWE-2 Flash trial's first comparison (its 0.0.2-lookfix
+run shelved in `4cc-studio-temp/lookfix_flash`, never merged), Reset window's first click
+on Linux (the maintainer's check of 0.0.2-rc.3, 2026-11-17, "good enough for 0.0.2": the
+first click resets the window but the button stays, a second click changes nothing and the
+button goes, its pointer a hand; likely the window manager leaving the reset window off the
+fitted size, so the button waits for a click the window does not follow), the DpFileList
+upgrade on a PES 2019 DLC (the VGL organizer's poc.5 report, 2026-11-17: after
+`upgrade-dpfl` the game ran vanilla and made a new save of the real teams; the official
+list has no stem for the PES 2019 list's `03_base`, `10_scoreboard`, `11_interface`,
+`12_cutscenes`, `13_competition`, so they drop out, and PES 2019's records carry a
+countdown at byte 36 ours lack; the maintainer is settling it with the organizer), and any
+mutation run
 (mutfast first). Most open steps below wait only for the maintainer's look
 (`maintainer/tasks.html`). What is left before the cut:
-1. The framed Stats screen and the control edges (0.0.2-frames): A1, A2a, B1, B2 and C merged;
-   the SWE-2 rounds on A1 to C ruled (every loop ended), their fixes merged (rw1, rw2); the
-   paid round (Carbon) over the whole running, in two parts.
-2. The four fixes from the maintainer's looks of 2026-11-17 (0.0.2-namegame, xhover, allcat,
-   ixtext) and P53's 0.0.2-gatelbl (a version-gated field's label dimmed with its control)
-   merged, gatelbl's SWE-2 loop ended; the five looks checked on the release build of
-   `17bda172`, their cards on the tasks page.
-3. The cut, only once the maintainer has run the checks of
+1. 0.0.2-geninfo: built (both slices), its SWE-2 loop ended (round 1 accepted 15, fixed;
+   round 2 none), the pipeline on `d2eadc87` passed; Astra's round moves to after 0.0.2,
+   which is cut today (the maintainer, 2026-11-17). 0.0.2-frames, -paneshift, -keepsel,
+   -posheight and -lookfix are merged and reviewed.
+2. The maintainer's look 2026-11-17 at the `aec5a709` build: `look-stats-screen`,
+   `look-gated-labels`, `-category-teams`, `-x-hover`, `-interchange-text` and `-light-names`
+   fine. From the Stats screen's notes, two changes before the cut: the light theme's controls
+   at `#e1e1e1` (hovered and pressed the same 31 over the matched contrast) and a held toggle
+   side or chosen C rating at `#c2c2c2`; the Save editor's view 10 after the sidebar (the menu
+   bar with it) and its screens ending 14 before the window's edge, everything else in place.
+   Built at `2d1d41fe` (gates: studio_core 552, save_editor 1077 + 57, ruleset_editor
+   174 + 13, clippy, fmt); the lead's look matched the draft (the list at x 66, the frames
+   ending at 1266, File at 71, in both); card `look-light-margins` on build
+   `UTW-2d1d41fe.exe`, which the maintainer found fine. Radio circles are now 14 across with
+   their edge, as in the draft, and Captain's stands over its column, 1 point above its row's
+   middle (`69f3a70f`, `d9fc23bf`). The pipeline passed on `ccfb10f0`, which carries all of
+   it.
+3. The overall's paired abilities, fixed for 0.0.2 (the maintainer, 2026-11-17): three
+   in-game checks on team 702 of the PES 2017 main save settled the three rows the weights'
+   profile left open (the plan's "A pitch player dropped on another"; the third check, read
+   blind, gave the predicted 78, 79, 77, 88). The fixture `overall_points.tsv` gained a
+   physical contact column and the checks' 12 rows; none of its 351 earlier rows changes.
+   Gates: pes_savefile, team_widgets, save_editor, clippy, fmt; the pipeline passed on
+   `5f4286f9`.
+4. The cut, only once the maintainer has run the checks of
    `maintainer/tasks.html` (the maintainer, 2026-11-17): a pipeline without mutants on the
-   last merge (0.0.2-determ's second clean run), the changelog, the release build, and a
-   Linux bundle for the Reset window card.
+   last merge (0.0.2-determ's second clean run), the changelog, the release build. The Linux
+   checks are in (Reset window good enough for 0.0.2; poc.6 starts).
 
 Done since 2026-11-16: Report a problem for 0.0.2 (the maintainer ran ST-REP-05 from a
 save to the zip, 2026-11-17: works), the answers' recheck (Kit slots and the Stats screen fixed and looked
@@ -46,8 +88,8 @@ install and the tests' fixture exports. Its in-game check and its hand-over are 
 maintainer's. A Linux bundle, 0.0.2-poc.6, stands beside it (archive SHA-256 `0a68c459…`,
 branch `vgl27` at `a611951c`: main at `177657a3`, so also the settings' four-digit folder
 key, the taskbar fix and Update now's fixes of Carbon's round). It was built on the VPS
-(`just remote just release`), so it asks for glibc 2.39 and serves a test only; it has
-not been started.
+(`just remote just release`), so it asks for glibc 2.39 and serves a test only; the
+maintainer started it once on the Linux virtual machine 2026-11-17: fine.
 **Blocked on:** nothing.
 **Behind 0.0.2:** Phase 8's other views and Release 0.1.0, then the phase order 1–6, 8,
 0.1.0, 7, 9–16 (`plans/core/development_plan.md` "Releases"; the first-class target is the
@@ -1599,8 +1641,9 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       of "Pending looks" as cards; every pointer moved, the two files removed
     - [ ] the lead checks each look of `tasks.html`'s "Coming once the lead has checked them"
       beside its draft (`scripts/built_window/`), each then a card with its capture pair
-    - [ ] a Linux bundle built from main for the Reset window card: 0.0.2's own Linux bundle,
-      built at the cut on the VPS, named on the card
+    - [x] a Linux bundle built from main for the Reset window card 2026-11-17: 0.0.2-rc.3 of
+      `333ec0cb` (branch `linux-rc3` at `7febf590`, never merged), built on the VPS, in
+      `4cc-studio-temp/tasks_build/`, named on the card (SHA-256 `519d93f0…`)
   - [x] 0.0.2-tplclean 2026-11-15 (merge `c20e6b29`): a template or Blank opens in the Ruleset
     editor with no unsaved changes (RE-GUI-02, 15)
   - [x] 0.0.2-teamscroll 2026-11-15 (merge `c20e6b29`): every dropdown's list 300 points tall
@@ -1691,7 +1734,7 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       it is, `name_background` gone; the darkening's changelog line removed (never released)
     - [x] the built window (lead, 2026-11-17, the release build of `17bda172`): on the light theme every code drawn
       as stored, so a white or pale part nearly vanishes on the white list; card
-      `look-light-names`
+      `look-light-names`; the maintainer's look 2026-11-17: fine as stored
   - [x] 0.0.2-present 2026-11-17 (SWE-2, merge `0cbe7637`; the lead's rerun of `studio_core`, 535)
     the window presents through a
     DirectComposition swap chain, so a resize no longer stretches the last frame and the UI
@@ -1708,7 +1751,7 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     - [x] landed 2026-11-17 (merge `29991c8b`): `frame_when_inactive(false)`;
       `a_rows_x_lights_on_hover`; the changelog's × line says it lights up
     - [x] the built window (lead, 2026-11-17, the release build of `17bda172`): framed under the pointer as the
-      draft's; card `look-x-hover`
+      draft's; card `look-x-hover`; the maintainer's look 2026-11-17: fine
   - [x] 0.0.2-allcat under 4cc, VGL or Invitational the team selector's All teams entry reads
     `4cc teams`, `VGL teams`, `Invitational teams`, open and closed (the maintainer, 2026-11-17;
     `plans/save_editor.md` the team selector's category paragraph, SE-GUI-83; DECISIONS
@@ -1718,7 +1761,7 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     - [x] landed 2026-11-17 (SWE-2, merge `df9833a8`, with 0.0.2-ixtext; the lead's rerun:
       save_editor 1048): `format!("{} teams", shown.label())`; help page 02 says so
     - [x] the built window under VGL (lead, 2026-11-17, the release build of `17bda172`): `VGL teams` open and
-      closed, as the draft's; card `look-category-teams`
+      closed, as the draft's; card `look-category-teams`; the maintainer's look 2026-11-17: fine
   - [x] 0.0.2-ixtext the Team file interchange window's sentences and labels in the normal
     text colour, the Skills labels', not the weak grey (the maintainer, 2026-11-17;
     `plans/save_editor.md` "Interchange formats in the UI"; DECISIONS 2026-11-17; draft
@@ -1729,7 +1772,7 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       changelog under the new Other stuff heading
     - [x] the built window beside the draft (lead, 2026-11-17, the release build of `17bda172`): the text colours
       match; the import row is the draft's fake file list against the build's file
-      dialog, by design; card `look-interchange-text`
+      dialog, by design; card `look-interchange-text`; the maintainer's look 2026-11-17: fine
   - [ ] 0.0.2-gatelbl (P53, accepted for 0.0.2 by the maintainer, 2026-11-17) every
     version-gated control's label dimmed with it and carrying its `PES NN+` tooltip, as the
     Ability stats' are (`plans/save_editor.md` the Stats screen's paragraph on field labels;
@@ -1748,7 +1791,8 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     - [x] the built window beside the draft (lead, 2026-11-17, the release build of `17bda172`): PES 2017's
       Stats and Appearance and PES 2016's team row dimmed as the draft's (the drafts
       hold no PES 2016 save); the build's gated boxes read `-`, the draft's `0`, a
-      difference older than this step, asked on the card `look-gated-labels`
+      difference older than this step, asked on the card `look-gated-labels`; the
+      maintainer's look 2026-11-17: fine, the build's `-` kept
   - [x] 0.0.2-undosel 2026-11-15 (SWE-2, merge `e0ebd784`): Undo, Redo and a `Player order`
     row's X keep the moved player selected (`view/mod.rs` `following_selection`,
     `Session::record_of`). Look checked, card `look-undo-selection`; the maintainer's look 2026-11-17: fine
@@ -1886,8 +1930,9 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       DBC7 the build's Pitch ends at 700 and List at 725, the draft's 703 and 726 (Ability
       stats' and the positions' own heights, before this step)
     - [x] the pipeline on `541f88a6` 2026-11-17: passed, with the Linux gates
-    - [ ] the changelog lines for the three steps (after the maintainer's own CHANGELOG
-      edit, uncommitted on 2026-11-17, lands)
+    - [x] the changelog 2026-11-17: keepsel's line under Other stuff; the margins and the
+      positions height refine lines already there (the maintainer's own pass runs on branch
+      `docs/changelog`, worktree `4cc-studio-temp/changelog`)
   - [ ] 0.0.2-keepsel (the maintainer's ruling, 2026-11-17): picking in the team dropdown
     the team the selection is already on keeps the selection (a player stays selected)
     -> verify: a test per case (his team keeps him, another team selects its row)
@@ -1906,17 +1951,38 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     - [x] the nation lists (lead): `scripts/derive_nations.py G:/Games` writes
       `crates/tools/save_editor/data/nations.tsv` (220 IDs; 189, 191, 220, then 214 a
       version)
-    - [ ] the build (SWE-2 on `sk/geninfo`, worktree `4cc-studio-temp/geninfo2`, from
+    - [x] the build (SWE-2 on `sk/geninfo`, worktree `4cc-studio-temp/geninfo2`, from
       `73641390`; brief `.tmp/brief_geninfo.md`): the two panels as the draft's
       `generalPanel`, the nation combo from `nations.tsv` (loaded once, not a frame's work;
       the open list scrolled to the held nation; `ID - ?` for an ID the version lacks), a
       test holding the fixture saves' nation IDs to their lists, help 03; then the
-      changelog line. For its rework: `view/terms.rs` still words a nation change as
-      numbers (`PlayerField::Nationality => numbers(...)`), where its own rule is "its old
-      and new values as that view shows them": the changes list, the close prompt and the
-      Comparator then read `135 - USA`, as the combo does
-    - [ ] typed digits pick a nation while the Nation list is open (no egui combo can yet;
-      plan and DECISIONS 2026-11-17): its own brief after the build lands
+      changelog line (under Useful). Built 2026-11-17 (SWE-2, 73 min; `388e5fdf`, merge
+      `5023e59a`; the lead's rerun 1070 + 57, pes_savefile 433, clippy, fmt; its pipeline
+      passed, with the Linux gates): the fixture saves carry one ID
+      their version lacks (player 75114, nation 23, on PES 2015 and 2016), so the test
+      pins those two, the case `ID - ?` exists for
+    - [x] slice 2 2026-11-17 (SWE-2, one rework: the entries' texts cached at load, the
+      maintainer's; `1804f30e`; the lead's rerun 1073 + 57, clippy, fmt): `view/terms.rs` words a nation change as the
+      combo does (`135 - USA`; today numbers, against its own rule "its old and new values
+      as that view shows them": the changes list, the close prompt, the Comparator), and
+      typed digits pick a nation while the list is open (plan and DECISIONS 2026-11-17);
+      its pipeline passed, with the Linux gates
+    - [ ] the review: a SWE-2 loop over both slices, then one paid round (Astra's). Round 1
+      2026-11-17 at `1804f30e`, five parts (`.tmp/0_0_2/geninfo_rev/`): 15 accepted, among
+      them a typed `2` unreachable while an unlisted nation is held, two rows selected on a
+      typed pick's frame, test gaps; the lead's share done (the draft's Squad table grouped
+      under Main stats, SE-GUI-95, `gui.md`); the rest by SWE-2 (19 min, landed first time;
+      `527cfcf2`, merge `d2eadc87`; the lead's rerun 1077 + 57, wheel 19, clippy, fmt).
+      Round 2 over the fixes (`.tmp/0_0_2/geninfo_rev2/`): none accepted, which ends the
+      loop; the pipeline on `d2eadc87` passed, with the Linux gates. Astra's round runs
+      after 0.0.2 (status list)
+    - [x] the 4cc patch's own nation table (different on PES 2015 to 2017) is not used: the
+      base game's lists stand (the maintainer, 2026-11-17; plan and DECISIONS)
+  - [x] 0.0.2-lightfill 2026-11-17 (the maintainer's change; the lead): the light theme's
+    control fills 8 lighter, 208, 194 and 215 (plan `core/gui.md`, DECISIONS 2026-11-17);
+    gates studio_core 552, save_editor 1077 + 57, ruleset_editor 174 + 13, clippy, fmt; the
+    release build reads 208 on a button, a dropdown and a checkbox; the pipeline on
+    `daa6c926` passed, with the Linux gates
   - [ ] 0.0.2-posheight (the maintainer's change, 2026-11-17): the playable positions grid
     takes its own layout's height, so Pitch and Left leave the panel shorter than List
     (under DBC7 the screen ends on Ability stats' frame, 703 against List's 726 in the
@@ -1927,6 +1993,25 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     release build (the Report a problem look's) copied to `4cc-studio-temp/tasks_build/`,
     the page's intro naming that path and the commit it was built from; refreshed whenever
     a card is added from a later commit (RUNBOOK "Looks owed have one home each")
+  - [ ] 0.0.2-lookfix (the lead's look on the release build of `1804f30e`, 2026-11-17): the
+    player screen beside its draft, dark: every frame edge equal under the default ruleset,
+    General info and Main stats within 1, Gameplan's frames equal, DBC7's Pitch ending on
+    Ability stats' frame above List's; light looked at (no draft). Two mismatches, both the
+    build's -> verify: the built window beside the draft again
+    - the status bar's left and middle slots stand at the bar's top, where the draft centres
+      every slot (`v0.0.1 pre-alpha` 2.9 high on every screen)
+    - Ability stats drops the draft's 3 of cell padding under its last row, so under DBC7 the
+      columns end at 700, the draft's 703
+    - [x] the fix 2026-11-17 (SWE-2, 22 min, landed first time; `254262b2`, merge `333ec0cb`;
+      the lead's rerun: status bar 20, save_editor 1074 + 57, clippy, fmt): the left and
+      middle slots `horizontal_centered`; Ability stats' frame pads 3 under its last row
+    - [x] the built window beside the draft again 2026-11-17 (release build of `be99921c`): the
+      version label centred in its bar, DBC7's Pitch ending at the draft's 703; the card
+      `look-stats-screen` on the tasks page, the build in `tasks_build/`
+    - Not a mismatch: the quick actions stand 23 lower than the draft's, which also draws
+      0.0.2-similar's button, built after 0.0.2. Not checked in the window: typed digits in
+      the Nation list (the capture tool's posted keys type no text; the headless tests hold
+      them)
   - [x] 0.0.2-shirtno the Team TOML player key `number` is `shirt_number` (`fb42b800`, merge
     `5e4cb83a`): an error naming `players.03.number` read as the player's ID; a 0.0.1 file
     holding `number` is refused as any unknown key, and the changelog's Important line says so
@@ -3609,9 +3694,13 @@ points there.
   "Report a problem" button and dialog in the shell (the draft's `drawReport`), each tool's
   current state through the tool interface, and replay comparing that state last: slice 2
   built the writer and nothing calls it outside tests yet, so no member can write a bundle
-  until this lands, and it lands after (3) so the first bundles members post replay; (5) the
-  panic hook's bundle; (6) the Compiler and the Export upgrader; the rest as each tool
-  is built. Each slice gets SWE-2, Argon and Astra rounds (a new `pub` interface across
+  until this lands, and it lands after (3) so the first bundles members post replay; (5)
+  earlier sessions, after 0.0.2 (the maintainer, 2026-11-17): each window's crash monitor
+  writes the session to the data folder as it happens, the last five kept, the saves
+  decrypted, and Report a problem's unticked box adds them (`plans/core/architecture.md`
+  "Repro bundles", "Earlier sessions are kept on disk"; ST-REP-06 to 12, SE-REP-07; the help
+  page's line). It replaces the panic hook's bundle, which was never built; (6) the Compiler
+  and the Export upgrader; the rest as each tool is built. Each slice gets SWE-2, Argon and Astra rounds (a new `pub` interface across
   crates).
 - open (2026-11-06) — Whole-crate mutation runs on the VPS alone (`RUNBOOK.md` "Mutation
   runs and the VPS", the maintainer's directive). Slice 1 done 2026-11-09 (SWE-2 sidekick,

@@ -166,7 +166,7 @@ impl StatusBar {
             |ui| {
                 if let Some(notice) = &self.notice {
                     ui.with_layout(egui::Layout::top_down(egui::Align::Center), |ui| {
-                        ui.horizontal(|ui| {
+                        ui.horizontal_centered(|ui| {
                             let color = crate::theme::notice_color(notice.kind, ui.visuals());
                             let spacing = ui.spacing().item_spacing.x;
                             let button = egui::TextStyle::Button.resolve(ui.style());
@@ -254,7 +254,7 @@ impl StatusBar {
         let zoom = ui.ctx().zoom_factor();
         let mut effect = None;
         let right = ui
-            .horizontal(|ui| {
+            .horizontal_centered(|ui| {
                 ui.label(
                     egui::RichText::new(crate::shell::version_label())
                         .small()
@@ -1184,6 +1184,94 @@ mod tests {
             (centre - (slot_left + slot_right) / 2.0).abs() <= 1.0,
             "the notice group centres in {slot_left}..{slot_right}, centre at {centre}"
         );
+    }
+
+    // ST-BAR-01's left slot centres its content in the bar's height (the
+    // draft's `.bottom > span` `align-items: center`), not at its top.
+    // ST-BAR-01
+    #[test]
+    fn the_version_label_centres_in_the_bars_height() {
+        let Shell { mut app, .. } = shell();
+        let egui_ctx = test_context();
+        let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
+
+        let version = crate::shell::version_label();
+        let bounds = nodes
+            .iter()
+            .find(|node| node.value() == Some(version.as_str()))
+            .expect("the version label is drawn")
+            .bounds()
+            .unwrap();
+        // The bar is the 800x600 screen's bottom 24: its centre is 588.
+        assert!(
+            ((bounds.y0 + bounds.y1) / 2.0 - 588.0).abs() <= 0.5,
+            "the version label's box centred in the bar: {bounds:?}"
+        );
+    }
+
+    // ST-BAR-02's right slot centres its activity in the bar's height the
+    // same way: the one slot already drawn centred, so this test is the
+    // centring checks' control.
+    // ST-BAR-02
+    #[test]
+    fn the_activity_label_centres_in_the_bars_height() {
+        let Shell {
+            mut app,
+            calls,
+            _dir,
+            ..
+        } = shell();
+        let egui_ctx = test_context();
+        calls[1].set_activity("B", Some((12, 48)), Duration::from_secs(72));
+        let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
+
+        let bounds = nodes
+            .iter()
+            .find(|node| node.value() == Some("B · 12/48 · 01:12"))
+            .expect("the second tool's activity is drawn")
+            .bounds()
+            .unwrap();
+        assert!(
+            ((bounds.y0 + bounds.y1) / 2.0 - 588.0).abs() <= 0.5,
+            "the activity's label centred in the bar: {bounds:?}"
+        );
+    }
+
+    // ST-BAR-03's middle slot: the notice's row — its text, its action and
+    // the dismiss X — centres in the bar's height as the side slots' do.
+    // ST-BAR-03
+    #[test]
+    fn the_notice_row_centres_in_the_bars_height() {
+        let Shell {
+            mut app, ctx, _dir, ..
+        } = shell();
+        let egui_ctx = test_context();
+        ctx.notify(Notice {
+            text: "ready".to_owned(),
+            kind: NoticeKind::Info,
+            action: Some(NoticeAction {
+                label: "Go".to_owned(),
+                effect: ActionEffect::SwitchTool("b".to_owned()),
+            }),
+        });
+        let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
+
+        let text = nodes
+            .iter()
+            .find(|node| node.role() == Role::Label && node.value() == Some("ready"))
+            .expect("the notice's text label")
+            .bounds()
+            .unwrap();
+        for (what, bounds) in [
+            ("the text", text),
+            ("the action", entry(&nodes, "Go").bounds().unwrap()),
+            ("the dismiss X", entry(&nodes, "Dismiss").bounds().unwrap()),
+        ] {
+            assert!(
+                ((bounds.y0 + bounds.y1) / 2.0 - 588.0).abs() <= 0.5,
+                "{what} centred in the bar: {bounds:?}"
+            );
+        }
     }
 
     // ST-BAR-04

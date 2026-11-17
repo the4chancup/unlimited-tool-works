@@ -18712,3 +18712,60 @@ Why: `### Important` is read as "what you must know", and the plan's own example
 that now shows less") put such a change there. A line there that tells members nothing new
 makes them skim the lines that do.
 Plan: `plans/core/distribution.md` "Changelog and version display", the `### Important` item.
+
+## 2026-11-17 — save_editor — the Nation dropdown lists the base game's nations, not the 4cc patch's
+Decision (the maintainer): every version's Nation list is the base game's own, from its
+`Country.bin`; the 4cc patch's table is not used.
+Why: the patch ships its own table, which differs on PES 2015 to 2017 (South Sudan renamed
+Equestria on 2015; six nations added on 2016, Offside and Equestria among them; a 2016-era
+list on 2017, 25 nations shorter), but the cup no longer edits nations, so those entries
+are legacy.
+Plan: `plans/save_editor.md`, "The player view", General info's Nation.
+
+## 2026-11-17 — studio_core — the light theme's control fills stand 14 lighter than the matched contrast
+Decision (the maintainer): on the light theme, the resting, hovered and pressed fills of
+buttons, dropdowns, checkboxes and radio buttons are 208, 194 and 215, 14
+lighter than the greys that match the dark theme's contrast, where they stood 6 lighter
+(200, 186 and 207). The resting edge follows its fill, 30 darker: 178.
+Why: the maintainer asked for the controls a little lighter. One step for all three states keeps them
+as far apart, and at 1.35 on the 240 panel a resting control still stands off it, with its
+edge drawn round it.
+Plan: `plans/core/gui.md`, "Dark/light theme" row.
+
+## 2026-11-17 — studio_core, save_editor — light controls `#e1e1e1`, a held side `#c2c2c2`; the Save editor's view 10 from the sidebar and 14 from the edge
+Decision (the maintainer, at the tasks check): on the light theme, the controls' resting fill
+is `#e1e1e1` (225), hovered 211 and pressed 232, the same 31 over the matched contrast for
+all three, the resting edge 195; a held toggle side and a chosen C rating are `#c2c2c2`, not
+the `#999999` that matches the dark grey's contrast. The Save editor's view stands 10 after
+the sidebar, its menu bar with it, and its screens end 14 before the window's edge, the
+detail pane keeping its width.
+Why: the maintainer found the light controls and held sides still too strong at 208 and
+`#999999`. The margins are the maintainer's: a 10-point gap after the sidebar and 14 at the
+right, where 8 and 16 had stood.
+Plan: `plans/core/gui.md`, the "Dark/light theme" row (the margins live in the draft's
+stylesheet, `save_editor.js`'s `.center.filled` rules, which no plan text restates).
+## 2026-11-17 — pes_savefile — the overall's three open rows: swerve, kicking power, and body control with physical contact
+Decision: in the overall formula, the row weighing DMF 12 reads swerve, the row weighing SS 6
+reads kicking power, and the row weighing DMF 13 reads the mean of body control and physical
+contact, rounded down (body control alone on PES 2015, which stores no physical contact).
+The fix goes into 0.0.2 (the maintainer).
+Why: the weights' profile left those three rows open, and the 351 overalls read in October
+could not tell the readings apart. Three in-game checks on PES 2017 (four players, each pair
+of abilities set far apart, 12 overalls, the third check read blind) leave one reading of
+those tried. The profile's first reading missed those twelve by up to 7.
+Plan: `plans/save_editor.md`, "A pitch player dropped on another" and the starter's badge.
+## 2026-11-17 — studio_core, save_editor — earlier sessions kept on disk, written by the crash monitor
+Decision: each window's session is also written to `<data location>/sessions/`, as it
+happens, by the window's crash monitor: the steps appended to `journal.toml`, each save
+opened and the last written kept decrypted with its salt, and how the session ended. The last
+five are kept. Report a problem gets an unticked "Include earlier sessions" box that adds
+them, each as a bundle of its own. This replaces the panic hook's bundle. Queued for after
+0.0.2 (the maintainer).
+Why: members often close Studio before finding the problem in game, and a bundle written
+after reopening it held nothing of that session. The monitor, not the window, writes each
+message as it arrives, so the window does no file work and a crash, a hang ended from Task
+Manager or the monitor's own death loses at most the messages in flight; saving only at the
+close would lose them all. A save is kept decrypted because it then compresses 25 to 46
+times and encrypts back to the file byte for byte, so a session takes about half a MB.
+Plan: `plans/core/architecture.md`, "Repro bundles" ("Earlier sessions are kept on disk",
+the dialog's box); `plans/core/gui.md` ST-REP-06 to 12; `plans/save_editor.md` SE-REP-07.

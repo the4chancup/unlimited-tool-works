@@ -1539,14 +1539,36 @@ const DEFAULT_PANE: egui::Vec2 = egui::vec2(1224.0, 756.0);
 const PANEL_MARGIN: f32 = 8.0;
 
 /// The screens' frames' right edge at `DEFAULT_PANE`: the draft's
-/// `.detail` content ends 16 before the window's right edge (1264 of
+/// `.detail` content ends 14 before the window's right edge (1266 of
 /// the 1280-point client).
-const PANE_RIGHT: f32 = DEFAULT_PANE.x - 16.0;
+const PANE_RIGHT: f32 = DEFAULT_PANE.x - 14.0;
 
 /// The detail pane's scroll bar's right edge at `DEFAULT_PANE`: the pane
-/// reaches 2 points into the shell's right margin for it (the draft's
-/// `.pane-bar`), so the 6-point bar ends 6 before the window's edge.
-const PANE_BAR_RIGHT: f32 = DEFAULT_PANE.x - 6.0;
+/// reaches 4 points into the shell's right margin for it (the draft's
+/// `.pane-bar`), so the 6-point bar ends 4 before the window's edge.
+const PANE_BAR_RIGHT: f32 = DEFAULT_PANE.x - 4.0;
+
+/// The circles painted inside `bounds` (a radio button's painted mark;
+/// the popup's shapes may nest inside `Shape::Vec`s).
+fn circles_in(
+    shapes: &[egui::epaint::ClippedShape],
+    bounds: accesskit::Rect,
+) -> Vec<&egui::epaint::CircleShape> {
+    let rect = egui::Rect::from_min_max(
+        egui::pos2(bounds.x0 as f32, bounds.y0 as f32),
+        egui::pos2(bounds.x1 as f32, bounds.y1 as f32),
+    );
+    let mut stack: Vec<&egui::Shape> = shapes.iter().map(|clipped| &clipped.shape).collect();
+    let mut found = Vec::new();
+    while let Some(shape) = stack.pop() {
+        match shape {
+            egui::Shape::Vec(children) => stack.extend(children.iter()),
+            egui::Shape::Circle(circle) if rect.contains(circle.center) => found.push(circle),
+            _ => {}
+        }
+    }
+    found
+}
 
 /// The bounds of the Label node showing `value` (a grid's label cell).
 fn label_bounds(nodes: &[accesskit::Node], value: &str) -> accesskit::Rect {

@@ -175,17 +175,18 @@ fn the_name_and_shirt_fields_share_the_rows_edges() {
     let shirt = shirt_field(&nodes).bounds().expect("bounds");
     assert_eq!(name.x0, shirt.x0, "the two fields start at one x");
     assert_eq!(name.x1, shirt.x1, "the two fields end on one x");
-    let shirt_box = right_of_label(&nodes, "Shirt number", Role::SpinButton)[0]
+    let age_box = right_of_label(&nodes, "Age", Role::SpinButton)[0]
         .bounds()
         .expect("bounds");
     assert!(
-        (name.x1 - shirt_box.x1).abs() < 0.5,
-        "the fields end flush with the second half's boxes ({name:?} vs {shirt_box:?})"
+        (name.x1 - age_box.x1).abs() < 0.5,
+        "the fields end flush with the second half's boxes ({name:?} vs {age_box:?})"
     );
 }
 
-// General info's and Other stats' pair rows stand 24 apart, as the draft's
-// `.pairs` rows do: an 18-point box and the 6 points between boxes.
+// General info's and Main stats' pair rows stand 24 apart, as the draft's
+// `.pairs` rows do: an 18-point box and the 6 points between boxes — the
+// label-left rows under a pair row stand on the same pitch.
 #[test]
 fn the_pair_rows_stand_24_apart() {
     let path = fixture(PesVersion::Pes21, "pair_row_pitch");
@@ -197,9 +198,11 @@ fn the_pair_rows_stand_24_apart() {
     }
     let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     for pair in [
-        ["Height", "Weight"],
-        ["Weight", "Age"],
+        ["Shirt number", "Nation"],
+        ["Height", "Injury Resistance"],
         ["Injury Resistance", "Weak Foot: Usage"],
+        ["Weight", "Form"],
+        ["Form", "Accuracy"],
     ] {
         let upper = label_bounds(&nodes, pair[0]).y0;
         let lower = label_bounds(&nodes, pair[1]).y0;
@@ -213,11 +216,84 @@ fn the_pair_rows_stand_24_apart() {
     }
 }
 
-// General info's rows stand where the draft's do, 24 apart within its
-// blocks (Name and Shirt name; the pairs; Stronger foot to Playing style) and
-// between them: each label's top below the panel title's top is the
-// draft's, measured in a browser, and Other stats under the panel moves
-// with them.
+// The second half's label column is as wide as the widest second-half
+// label of both panels — Age, Weight, Form, Accuracy and Captain share
+// one left x — and every second-half box starts 20 after it (the
+// draft's `.pair:nth-child(even)` grid). Captain stands in Main stats'
+// title's row on the same column, its radio centred over Weight's box
+// (the draft's `.phead.captained`).
+#[test]
+fn the_second_halfs_labels_share_one_column_and_captain_stands_on_it() {
+    let path = fixture(PesVersion::Pes21, "second_half_column");
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut window = Headless::sized(DEFAULT_PANE.x, 700.0);
+    for _ in 0..3 {
+        window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    }
+    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+
+    let left = label_bounds(&nodes, "Age").x0;
+    for label in ["Weight", "Form", "Accuracy", "Captain"] {
+        assert!(
+            (label_bounds(&nodes, label).x0 - left).abs() <= 0.5,
+            "{label}'s label shares the second half's left edge"
+        );
+    }
+    // Every second-half box starts 20 after the column's widest label.
+    let box_x = ["Age", "Weight", "Form", "Accuracy", "Captain"]
+        .map(|label| label_bounds(&nodes, label).x1)
+        .into_iter()
+        .fold(f64::MIN, f64::max)
+        + 20.0;
+    for label in ["Age", "Weight", "Form", "Accuracy"] {
+        let bounds = right_of_label(&nodes, label, Role::SpinButton)[0]
+            .bounds()
+            .expect("bounds");
+        assert!(
+            (bounds.x0 - box_x).abs() <= 0.5,
+            "{label}'s box 20 after the widest second-half label"
+        );
+    }
+    // Captain's circle centred over Weight's box, 14 across with its
+    // edge as the draft's: the circle, not the radio's rect, which
+    // reaches past it.
+    let captain = right_of_label(&nodes, "Captain", Role::RadioButton)[0]
+        .bounds()
+        .expect("bounds");
+    let weight = right_of_label(&nodes, "Weight", Role::SpinButton)[0]
+        .bounds()
+        .expect("bounds");
+    // egui's circle and dot, and the blue ones painted over them when
+    // ticked: the outermost is the circle.
+    let circle = circles_in(&shapes, captain)
+        .into_iter()
+        .max_by(|a, b| a.radius.total_cmp(&b.radius))
+        .expect("Captain's circle");
+    assert!(
+        (f64::from(circle.center.x) - (weight.x0 + weight.x1) / 2.0).abs() <= 0.5,
+        "the circle centred over Weight's box ({:?} vs {weight:?})",
+        circle.center
+    );
+    assert_eq!(
+        circle.radius + circle.stroke.width / 2.0,
+        7.0,
+        "the circle 14 across with its edge"
+    );
+    // And 1 above its row's middle, as the draft's radio stands: the
+    // row runs 18 down from the label's top.
+    let label = label_bounds(&nodes, "Captain");
+    assert!(
+        (f64::from(circle.center.y) - (label.y0 + 9.0 - 1.0)).abs() <= 0.25,
+        "the circle 1 above its row's middle ({:?} vs {label:?})",
+        circle.center
+    );
+}
+
+// General info's and Main stats' rows stand where the draft's do, 24
+// apart within their blocks and between them: each label's top below
+// General info's title's top is the draft's, measured in a browser —
+// Captain's in Main stats' title's row.
 #[test]
 fn general_infos_rows_stand_where_the_drafts_do() {
     let path = fixture(PesVersion::Pes21, "general_blocks");
@@ -229,43 +305,40 @@ fn general_infos_rows_stand_where_the_drafts_do() {
     }
     let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     let title = label_bounds(&nodes, "General info").y0;
-    let name = nodes
-        .iter()
-        .find(|node| {
-            node.role() == Role::Label && node.value().is_some_and(|v| v.starts_with("Name ("))
-        })
-        .and_then(accesskit::Node::bounds)
-        .expect("the Name (n/max) label")
-        .y0;
-    let mut offsets = vec![("Name", name - title)];
-    for label in [
-        "Height",
-        "Weight",
-        "Age",
-        "Stronger foot",
-        "Stronger hand",
-        "Registered position",
-        "Playing style",
-        "Other stats",
-        "Injury Resistance",
-        "Weak Foot: Usage",
-    ] {
-        offsets.push((label, label_bounds(&nodes, label).y0 - title));
-    }
-    let draft = [
+    let counted = |prefix: &str| {
+        nodes
+            .iter()
+            .find(|node| {
+                node.role() == Role::Label && node.value().is_some_and(|v| v.starts_with(prefix))
+            })
+            .and_then(accesskit::Node::bounds)
+            .unwrap_or_else(|| panic!("the {prefix}counted label"))
+            .y0
+            - title
+    };
+    for (label, expected) in [
         ("Name", 22.5),
-        ("Height", 70.5),
-        ("Weight", 94.5),
-        ("Age", 118.5),
-        ("Stronger foot", 142.5),
-        ("Stronger hand", 166.5),
-        ("Registered position", 190.5),
-        ("Playing style", 214.5),
-        ("Other stats", 253.0),
-        ("Injury Resistance", 275.5),
-        ("Weak Foot: Usage", 299.5),
-    ];
-    for ((label, offset), (_, expected)) in offsets.iter().zip(draft) {
+        ("Shirt name", 46.5),
+        ("Shirt number", 70.5),
+        ("Age", 70.5),
+        ("Nation", 94.5),
+        ("Main stats", 133.0),
+        ("Captain", 133.0),
+        ("Height", 155.5),
+        ("Weight", 155.5),
+        ("Injury Resistance", 179.5),
+        ("Form", 179.5),
+        ("Weak Foot: Usage", 203.5),
+        ("Accuracy", 203.5),
+        ("Stronger foot", 227.5),
+        ("Stronger hand", 251.5),
+        ("Registered position", 275.5),
+        ("Playing style", 299.5),
+    ] {
+        let offset = match label {
+            "Name" | "Shirt name" => counted(&format!("{label} (")),
+            _ => label_bounds(&nodes, label).y0 - title,
+        };
         assert!(
             (offset - expected).abs() <= 1.0,
             "{label} stands {offset} under the title, the draft's {expected}"
@@ -1473,7 +1546,7 @@ fn the_player_header_tops_the_player_view_alone() {
         // labels carry their counts, matched by prefix.
         for label in [
             "General info",
-            "Other stats",
+            "Main stats",
             "Playable positions",
             "Skills",
             "Tricks",
@@ -1953,3 +2026,4 @@ fn the_shirt_and_short_names_are_upper_cased_as_typed() {
 
 mod gaps;
 mod labels;
+mod nations;

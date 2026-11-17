@@ -307,7 +307,15 @@ fn player_field_term(version: PesVersion, diff: &PlayerDiff) -> Term {
         PlayerField::Height => numbers(info_strip::HEIGHT_LABEL, old, new),
         PlayerField::Weight => numbers(info_strip::WEIGHT_LABEL, old, new),
         PlayerField::Age => numbers(info_strip::AGE_LABEL, old, new),
-        PlayerField::Nationality => numbers(info_strip::NATION_LABEL, old, new),
+        PlayerField::Nationality => {
+            let nation = |stored: u32| {
+                crate::nations::nation_text(
+                    version,
+                    u16::try_from(stored).expect("a stored nationality is a u16"),
+                )
+            };
+            term(info_strip::NATION_LABEL, nation(old), nation(new))
+        }
         PlayerField::RegisteredPosition => term(
             abilities::REGISTERED_POSITION_LABEL,
             abilities::position_label(stored_u8(old)),

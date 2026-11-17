@@ -42,8 +42,9 @@ pub(crate) enum Change {
 
 /// How long, in seconds, a run of steps to one value stays joinable after
 /// its last push: a wheel spun in one go stays one undo entry, while a
-/// value nudged again a while later is a new one.
-const RUN_PAUSE: f64 = 1.0;
+/// value nudged again a while later is a new one. The Nation combo's
+/// typed digits run by the same pause.
+pub(crate) const RUN_PAUSE: f64 = 1.0;
 
 /// One undo step: the widget whose gesture made it (the merge key) and the
 /// model entries it changed.

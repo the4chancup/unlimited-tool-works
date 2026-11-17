@@ -75,7 +75,7 @@ fn the_stats_marks_line_up_at_the_label_columns_left_edge() {
 /// view, on its field's label's row, its 11-point box ending 2 points
 /// before the label's text — SE-GUI-36's cross beside the field — for
 /// every field a kind reaches but `Pitch` and `Stat` (tested elsewhere)
-/// and the panels' headers (the next test): General info's and Other
+/// and the panels' headers (the next test): General info's and Main
 /// stats' labels and a suggestion on its allowance's field.
 #[test]
 fn each_fields_mark_stands_left_of_its_label() {
@@ -585,10 +585,10 @@ fn a_long_name_truncates_before_the_rows_mark() {
 }
 
 /// A held check carrying an Error on the selected player for every field
-/// General info and Other stats mark: no cross's painted rect intersects
+/// General info and Main stats mark: no cross's painted rect intersects
 /// another text's, every label, box and combo keeps its x with the marks
-/// drawn, and General info's first column of labels has its crosses on
-/// one centre x whatever the labels' lengths.
+/// drawn, and each label column has its crosses on one centre x
+/// whatever the labels' lengths.
 #[test]
 fn no_cross_overlaps_text_and_no_field_moves() {
     use aatf::ViolationKind as K;
@@ -645,28 +645,58 @@ fn no_cross_overlaps_text_and_no_field_moves() {
         .collect();
     assert_eq!(crosses.len(), 10, "one cross per marked field");
 
-    // General info's first column: each cross 2 points before its label,
-    // all on one centre x.
-    let column: Vec<f32> = [
+    // Each cross 2 points before its label: the first halves' and the
+    // label-left rows' crosses on one centre x, the second halves' on
+    // their own column's. A pair row can hold two marked fields, so a
+    // label's own cross is the rightmost one left of it.
+    let cross_before = |label: &str| {
+        let bounds = label_starting(&nodes_mark, label);
+        crosses
+            .iter()
+            .filter(|mark| {
+                let centre = mark_centre(mark);
+                f64::from(centre.y) >= bounds.y0 - 1.0
+                    && f64::from(centre.y) <= bounds.y1 + 1.0
+                    && centre.x < bounds.x0 as f32
+            })
+            .max_by(|a, b| {
+                mark_centre(a)
+                    .x
+                    .partial_cmp(&mark_centre(b).x)
+                    .expect("ordered marks")
+            })
+            .copied()
+            .unwrap_or_else(|| panic!("{label}: a cross before its label"))
+    };
+    let column = |labels: &[&str]| {
+        labels
+            .iter()
+            .map(|label| {
+                let cross = cross_before(label);
+                let bounds = label_starting(&nodes_mark, label);
+                assert_left_of_label(cross, bounds, label);
+                mark_centre(cross).x
+            })
+            .collect::<Vec<f32>>()
+    };
+    let first = column(&[
         "Name (",
         "Height",
-        "Weight",
-        "Age",
+        "Injury Resistance",
+        "Weak Foot: Usage",
         "Registered position",
         "Playing style",
-    ]
-    .into_iter()
-    .map(|label| {
-        let bounds = label_starting(&nodes_mark, label);
-        let cross = mark_on_row(&crosses, bounds, label);
-        assert_left_of_label(cross, bounds, label);
-        mark_centre(cross).x
-    })
-    .collect();
-    assert!(
-        column.iter().all(|x| (x - column[0]).abs() <= 0.01),
-        "General info's crosses share one centre x: {column:?}"
-    );
+    ]);
+    let second = column(&["Weight", "Age", "Form", "Accuracy"]);
+    for (column, what) in [
+        (first, "the left margin's crosses"),
+        (second, "the second halves' crosses"),
+    ] {
+        assert!(
+            column.iter().all(|x| (x - column[0]).abs() <= 0.01),
+            "{what} share one centre x: {column:?}"
+        );
+    }
 
     // No cross touches another text's galley; the narrowest clearance
     // between a cross and any text sharing its row is reported. The

@@ -32,34 +32,13 @@ game, a look at a window the lead has already compared with its draft, or a file
 Mark how it went, or write it in the box under it; your marks stay in this browser. When
 you're done, press <b>Copy my answers</b> at the bottom and paste the text into the chat.</p>
 <p class="intro">Run the cards on this build:
-<code>C:\Data\4cc\Tools_Mine\4cc-studio-temp\tasks_build\UTW-17bda172.exe</code>, built from
-main at <code>17bda172</code> on 2026-11-17. It uses your own settings, as an installed copy
+<code>C:\Data\4cc\Tools_Mine\4cc-studio-temp\tasks_build\UTW-d9fc23bf.exe</code>, built from
+main at <code>d9fc23bf</code> on 2026-11-17. It uses your own settings, as an installed copy
 would. The other <code>.exe</code> files beside it are earlier builds; use this one for every
 card.</p>
 <ul id="toc"></ul>
 
 <h2>Tests on another machine or in the game</h2>
-
-<section class="entry" id="linux-reset-window">
-  <h3>Reset window on the Linux virtual machine</h3>
-  <p class="from">From: <code>da241022</code> (Reset window goes away after a click the window did not follow)</p>
-  <p><b>Not ready yet:</b> it needs a Linux bundle built from today's main, which the lead
-  builds on the VPS and then names here. Like the earlier Linux bundles, it needs glibc 2.39
-  or newer.</p>
-  <p>On the 1280 × 800 Linux virtual machine, with the bundle unpacked and started:</p>
-  <ol>
-    <li>Click Reset window in a state where the window cannot change (already at its reset
-    size): the button goes away.</li>
-    <li>Resize the window: the button comes back.</li>
-    <li>Hover the button: the pointer is a hand.</li>
-  </ol>
-  <div class="options">
-    <label class="opt"><input type="radio" value="works"><b>All three as described</b></label>
-    <label class="opt"><input type="radio" value="problems, see note"><b>Something differs</b>
-      <div class="note">Say which step below.</div></label>
-  </div>
-  <textarea class="own" placeholder="What you saw (optional)"></textarea>
-</section>
 
 <section class="entry" id="poc5-in-game">
   <h3>The 0.0.2-poc.5 bundle in the game</h3>
@@ -76,183 +55,33 @@ card.</p>
   <textarea class="own" placeholder="What you saw (optional)"></textarea>
 </section>
 
-<section class="entry" id="poc6-linux-start">
-  <h3>The Linux bundle 0.0.2-poc.6, started once</h3>
-  <p class="from">From: worklog 0.0.2-poc</p>
-  <p>poc.6 was built on the VPS beside poc.5 and, as far as the worklog knows, never started. Your
-  update test with the Linux rc.1 and rc.2 bundles may have covered the same ground.</p>
-  <div class="options">
-    <label class="opt"><input type="radio" value="started, fine"><b>Started, and it worked</b></label>
-    <label class="opt"><input type="radio" value="problems"><b>Started, with problems</b>
-      <div class="note">Say what below.</div></label>
-    <label class="opt"><input type="radio" value="covered by the rc update test"><b>No longer needed: the rc update test covered it</b></label>
-  </div>
-  <textarea class="own" placeholder="What you saw (optional)"></textarea>
-</section>
-
-<section class="entry" id="drag-rule-save">
-  <h3>A save for the drag rule's stat pairs</h3>
-  <p class="from">From: worklog 0.0.1y's y4</p>
-  <p>The drag rule maps kicking power to swerve and body control to physical contact, and adds
-  a B bonus in the overall. Checking it on PES 2017 needs a save where those stats differ
-  within each pair.</p>
-  <div class="options">
-    <label class="opt"><input type="radio" value="here is one, see note"><b>I have one</b>
-      <div class="note">Write its path below.</div></label>
-    <label class="opt"><input type="radio" value="none"><b>I don't have one</b></label>
-  </div>
-  <textarea class="own" placeholder="The save's path (optional)"></textarea>
-</section>
-
 <h2>Looks the lead has checked first</h2>
 <p class="group-intro">Each matched its draft when the lead compared them; anything you see
 otherwise goes back as a fix.</p>
 
-<section class="entry" id="look-gated-labels">
-  <h3>A field the save's PES version lacks has its name greyed too</h3>
-  <p class="from">From: worklog 0.0.2-gatelbl (your P53)</p>
+<section class="entry" id="look-light-margins">
+  <h3>Lighter light-theme controls, the Save editor's new margins and Captain's radio</h3>
+  <p class="from">From: your notes on the Stats screen's card</p>
   <ol>
-    <li>Open a PES 2017 save and click a player. On the Stats screen, <b>Stronger hand</b> is
-    greyed with its toggle; hovering the name says <code>PES 20+</code>.</li>
-    <li>Click <b>Appearance</b> (tick <b>Edit aesthetics anyway</b> if the screen is locked).
-    <b>Dribbling motion</b>, <b>Star rating</b> and <b>Playing attitude</b> are greyed with
-    their boxes.</li>
-    <li>Open a PES 2016 save and click a team row: <b>Color 1</b>, <b>Color 2</b> and
-    <b>Manager ID</b> are greyed with their controls, hovering says <code>PES 17+</code>.</li>
+    <li>Open a save and click a player. The player list's column, and <b>File</b> above it,
+    stand 10 points after the sidebar. The screens' frames end 14 points before the window's
+    right edge. Captain's radio is 14 points across, as the draft's, centred over the boxes
+    under it.</li>
+    <li>Switch to the light theme in Settings. Buttons, dropdowns, checkboxes and radio
+    buttons are <code>#e1e1e1</code>; the held side of <b>Stronger foot</b>, <b>Stronger hand</b> and
+    <b>Pitch | Left | List</b>, and a chosen C rating, are <code>#c2c2c2</code>.</li>
   </ol>
-  <p>One difference that predates this change: on PES 2017 the build's greyed Star rating
-  and Playing attitude boxes read <code>-</code>, as every greyed number in the program does,
-  while the draft's read <code>0</code>. The drafts hold no PES 2016 save, so the team row has
-  no draft picture.</p>
+  <p>Hovered and pressed buttons are lighter by the same step as the resting ones, so the
+  three stay as far apart. The screens keep their width, moved 2 points right. In the dark
+  theme the list's, the frames' and File's edges match the draft's to the point.</p>
   <div class="shots">
-    <figure><a href="img/gated_labels_stats17.png"><img src="img/gated_labels_stats17.png" alt="General info on PES 2017, draft and build"></a><figcaption>PES 2017, General info: the draft left, the build right</figcaption></figure>
-    <figure><a href="img/gated_labels_appearance17.png"><img src="img/gated_labels_appearance17.png" alt="Motion and Presentation on PES 2017, draft and build"></a><figcaption>PES 2017, Motion and Presentation: the draft above, the build below</figcaption></figure>
-    <figure><a href="img/gated_labels_team16.png"><img src="img/gated_labels_team16.png" alt="The team row on PES 2016 in the build"></a><figcaption>PES 2016, the team row: the build</figcaption></figure>
+    <figure><a href="img/margins_dark.png"><img src="img/margins_dark.png" alt="The Stats screen, draft and build"></a><figcaption>The margins: the draft left, the build right</figcaption></figure>
+    <figure><a href="img/light_controls.png"><img src="img/light_controls.png" alt="The Stats screen in the light theme"></a><figcaption>The light theme: the build</figcaption></figure>
   </div>
   <div class="options">
-    <label class="opt"><input type="radio" value="fine, keep the build's -"><b>Fine, and the greyed boxes keep their <code>-</code></b></label>
-    <label class="opt"><input type="radio" value="fine, but the greyed boxes should read 0"><b>Fine, but greyed boxes should read <code>0</code>, as the draft's</b></label>
+    <label class="opt"><input type="radio" value="fine"><b>All as described</b></label>
     <label class="opt"><input type="radio" value="problems, see note"><b>Something differs</b>
-      <div class="note">Say what below.</div></label>
-  </div>
-  <textarea class="own" placeholder="What you saw (optional)"></textarea>
-</section>
-
-<section class="entry" id="look-category-teams">
-  <h3>The team selector names its category</h3>
-  <p class="from">From: worklog 0.0.2-allcat</p>
-  <ol>
-    <li>Open any save. Open the team selector over the player list and pick <b>VGL</b>
-    under the teams.</li>
-    <li>The first entry of the open list, and the closed selector, read <b>VGL teams</b>;
-    <b>4cc</b> gives <b>4cc teams</b>, <b>Invitational</b> gives <b>Invitational teams</b>.</li>
-  </ol>
-  <div class="shots">
-    <figure><a href="img/vgl_teams_open.png"><img src="img/vgl_teams_open.png" alt="The open selector under VGL, draft and build"></a><figcaption>Open: the draft left (its sample save holds no VGL team), the build right</figcaption></figure>
-    <figure><a href="img/vgl_teams_closed.png"><img src="img/vgl_teams_closed.png" alt="The closed selector under VGL, draft and build"></a><figcaption>Closed: the draft above, the build below</figcaption></figure>
-  </div>
-  <div class="options">
-    <label class="opt"><input type="radio" value="fine"><b>Fine</b></label>
-    <label class="opt"><input type="radio" value="problems, see note"><b>Something differs</b>
-      <div class="note">Say what below.</div></label>
-  </div>
-  <textarea class="own" placeholder="What you saw (optional)"></textarea>
-</section>
-
-<section class="entry" id="look-x-hover">
-  <h3>The X on a row of unsaved changes lights up under the pointer</h3>
-  <p class="from">From: worklog 0.0.2-xhover</p>
-  <ol>
-    <li>Open a save and change something (tick a skill).</li>
-    <li>Click <b>• unsaved changes</b> at the right of the toolbar, then rest the pointer on the
-    row's red X: a frame lights up around it. Click it to undo the change.</li>
-    <li>The close prompt's rows (File &gt; Open another save with a change made) do the
-    same.</li>
-  </ol>
-  <div class="shots">
-    <figure><a href="img/x_rest.png"><img src="img/x_rest.png" alt="The row's X at rest, draft and build"></a><figcaption>At rest: the draft left, the build right</figcaption></figure>
-    <figure><a href="img/x_hover.png"><img src="img/x_hover.png" alt="The row's X under the pointer, draft and build"></a><figcaption>Under the pointer</figcaption></figure>
-  </div>
-  <div class="options">
-    <label class="opt"><input type="radio" value="fine"><b>Fine</b></label>
-    <label class="opt"><input type="radio" value="problems, see note"><b>Something differs</b>
-      <div class="note">Say what below.</div></label>
-  </div>
-  <textarea class="own" placeholder="What you saw (optional)"></textarea>
-</section>
-
-<section class="entry" id="look-interchange-text">
-  <h3>Team file interchange in the normal text colour</h3>
-  <p class="from">From: worklog 0.0.2-ixtext</p>
-  <ol>
-    <li>Open a save, click a team row, then Team &gt; <b>Import / export team file…</b>.</li>
-    <li>The window's sentences read in the colour of the Skills labels, not the dim grey.</li>
-  </ol>
-  <p>The import row differs from the draft by design: the draft fakes a list of sample files,
-  while the program opens Windows' file dialog from <b>Pick…</b>.</p>
-  <div class="shots">
-    <figure><a href="img/interchange_text.png"><img src="img/interchange_text.png" alt="The Team file interchange window, draft and build"></a><figcaption>The draft above (dark), the build below (light)</figcaption></figure>
-  </div>
-  <div class="options">
-    <label class="opt"><input type="radio" value="fine"><b>Fine</b></label>
-    <label class="opt"><input type="radio" value="problems, see note"><b>Something differs</b>
-      <div class="note">Say what below.</div></label>
-  </div>
-  <textarea class="own" placeholder="What you saw (optional)"></textarea>
-</section>
-
-<section class="entry" id="look-light-names">
-  <h3>Colored names on the light theme</h3>
-  <p class="from">From: worklog 0.0.2-namegame</p>
-  <ol>
-    <li>Settings &gt; Theme: Light. Open a save with colored player names (the /f/ team's,
-    say) and look at the player list.</li>
-    <li>Click the team row, then <b>Gameplan</b>, and look at the two lineup lists under the
-    pitch.</li>
-  </ol>
-  <p>Every color is drawn as the save stores it, so a white or very pale part of a name
-  nearly vanishes on the white list (in the picture: <i>GARDEVOIR</i>, <i>BILLY
-  HERRINGTON</i>, <i>XIAO MEI MEI</i>). The drafts have no light theme, so the pictures are
-  the build's alone.</p>
-  <div class="shots">
-    <figure><a href="img/light_f_list.png"><img src="img/light_f_list.png" alt="The /f/ player list on the light theme"></a><figcaption>The player list</figcaption></figure>
-    <figure><a href="img/light_lineups.png"><img src="img/light_lineups.png" alt="The Gameplan screen's lineup lists on the light theme"></a><figcaption>The Gameplan screen</figcaption></figure>
-  </div>
-  <div class="options">
-    <label class="opt"><input type="radio" value="fine as stored"><b>Fine: names as the save stores them</b></label>
-    <label class="opt"><input type="radio" value="pale parts need help, see note"><b>The pale parts need something</b>
-      <div class="note">Say what below.</div></label>
-  </div>
-  <textarea class="own" placeholder="What you saw (optional)"></textarea>
-</section>
-
-<section class="entry" id="look-pane-shift-draft">
-  <h3>The screens 8 points to the left (the draft)</h3>
-  <p class="from">From: your request of 2026-11-17 (the Stats screen's margins)</p>
-  <ol>
-    <li>Open the drafts (<code>docs/prototypes/index.html</code>) at the Save editor's player
-    screen: <code>#save_editor/player?pes=2021&amp;player=701.1</code>.</li>
-    <li>Look at the first panel's left border against the list, and the last panel's right
-    border against the window's edge; switch to Appearance, Gameplan and Squad.</li>
-  </ol>
-  <p>Every screen right of the list stands 8 points further left: the list's scroll bar has
-  4 points on each side, its frame before it and the first panel after it (the panel stood 12
-  after the bar), and the last panel ends 16 from the window's right edge, where it was 8. The
-  panels keep their widths.</p>
-  <p>The screens also stand 1.5 points lower, so the first panels' top edges line up with the
-  player list's, and the line above them moves with them; the row of screen buttons moves
-  0.75, keeping its gaps above and below equal. The Squad screen's row and line stand where
-  the others' do.</p>
-  <p>The pane's scroll bar is now the list's: a 6-point bar in that 16-point margin, 4 after
-  the panels as the list's stands 4 after the list, floating
-  as the app's does, so the browser's own bar no longer widens the window (it made the gap
-  29 in Firefox). The Squad screen keeps the browser's bars for its table, so there the window
-  is still drawn wider by them; its tabs stay where the other screens draw them. The build
-  follows once you say the draft is right.</p>
-  <div class="options">
-    <label class="opt"><input type="radio" value="fine"><b>Fine: build it</b></label>
-    <label class="opt"><input type="radio" value="change, see note"><b>Something to change</b>
-      <div class="note">Say what below.</div></label>
+      <div class="note">Say which step below.</div></label>
   </div>
   <textarea class="own" placeholder="What you saw (optional)"></textarea>
 </section>
@@ -260,11 +89,7 @@ otherwise goes back as a fix.</p>
 <h2>Coming once the lead has checked them</h2>
 <p class="group-intro">Yours by the worklog, but not yet compared with their drafts by the lead,
 who does that first. Nothing to do here yet; each moves up as a card once checked.</p>
-<ul>
-  <li>The framed Stats screen and the thin edges on every control, both themes (worklog
-  0.0.2-frames): after the review's rework, which moves the positions grid 1.5 points up to
-  its draft's place.</li>
-</ul>
+<p>Nothing waiting.</p>
 
 <div class="picks">
   <button id="copy">Copy my answers</button>

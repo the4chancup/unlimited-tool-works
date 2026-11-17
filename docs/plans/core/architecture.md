@@ -584,18 +584,68 @@ Compiler and the Export upgrader, then the rest as they are built.
   The dialog says the bundle holds the member's whole save and paths, written as `~` as in
   the log. Nothing is ever sent: the member posts the file.
 - **Always recording, written on request.** The journal and the kept inputs live in memory
-  from the first open. A bundle is written in two ways:
-
-  - "Report a problem" in the sidebar's tail, above Help, opens the dialog that writes the
-    bundle (the draft: `docs/prototypes/index.html` `drawReport`). It sits in the tail, not
-    beside the log, because the Save editor has no log panel and a member looks for it
-    wherever they are.
-  - The panic hook writes one beside the crash's log, since a crash is where a member is
-    least able to say what they did.
+  from the first open, and every session is also kept on disk (below). A bundle is written
+  from "Report a problem" in the sidebar's tail, above Help, which opens the dialog that
+  writes it (the draft: `docs/prototypes/index.html` `drawReport`). It sits in the tail, not
+  beside the log, because the Save editor has no log panel and a member looks for it
+  wherever they are.
 
   A journal is never cleared while the window is open: a second open adds to the first's
   record. A file that fails to open is recorded with its bytes like one that succeeds, since
   the file that failed is the one a member reports.
+- **Earlier sessions are kept on disk.** A member often closes Studio before finding the
+  problem in game, and a bundle written after reopening it would hold nothing of the session
+  that caused it. So each window's session is also written, as it happens, to
+  `<data location>/sessions/<yyyy>-<mm>-<dd>-<hhmmss>-<process id>/`:
+
+  - `journal.toml`: the Studio version, the OS and the start time, then each step appended
+    as a `[[step]]` block and each kept file as an `[[input]]` or `[[output]]` row. A last
+    block cut off mid-write is dropped on reading.
+  - `inputs/`: each file opened, written once, when it is opened.
+  - `outputs/`: the last file written per path, replaced at each write; of a path's
+    `[[output]]` rows, the last counts.
+  - An `[end]` table appended last, saying how the session ended: `closed` (the window sent
+    its closing message), `crashed` (the monitor handled the crash) or `ended` (the window
+    went away without either, as when it is ended from Task Manager). A session with no
+    `[end]` is one still open in another window, or one whose monitor died too (a power cut).
+
+  The folder is made at the session's first message, so a window that records nothing, as
+  when Studio is opened only to report, leaves none.
+
+  **The crash monitor writes it; the window never does.** The window sends each step and
+  each kept file to its monitor ("Diagnostic logging", the monitor) over the link the monitor
+  already serves (`minidumper`'s `send_message`), and the monitor writes each message as it
+  arrives:
+
+  - The window does no file work for the session, so the session can never stall it.
+  - A step is on disk moments after it happens, so a crash, a hang ended from Task Manager or
+    the monitor's own death loses at most the messages in flight. A monitor that saved only
+    at the close would lose them all.
+  - The window never waits on the monitor: the recorder queues each message and a thread
+    sends it. A full queue drops messages and logs one line, rather than blocking the window.
+  - A window whose monitor did not start runs the same writer on a thread of its own, so its
+    session is still kept.
+  - The writer is one function from a message to the folder, which tests call in-process;
+    one test covers the link.
+  - Each window has its own monitor, so two windows open at once keep two folders.
+
+  **A save is kept decrypted.** An encrypted PES save does not compress: 5 to 11 MB each.
+  Decrypted, its sections compress 25 to 46 times: PES 2015 5.8 MB to 156 KB, PES 2016 6.0 MB
+  to 235 KB, PES 2017 5.3 MB to 183 KB, PES 2021 11.0 MB to 239 KB (measured 2026-11-17, one
+  save each). With the file's 320-byte salt, the same four saves encrypt back to the file
+  byte for byte. So the Save editor gives the recorder each save's decrypted sections and
+  salt beside its bytes, the session keeps those, and a session takes about half a MB.
+
+  - Reading a session back rebuilds each save and checks it against the journal's SHA-256,
+    so a fault in the decrypter shows as a failed rebuild, never as a wrong file read.
+  - `studio_core` stays blind to saves: the decrypting and the rebuild are the Save
+    editor's.
+  - A bundle of the current session keeps each save as it was, which loads in the game
+    without a rebuild.
+
+  **The last five are kept.** When a session makes its folder, its monitor deletes all but
+  the five newest folders besides its own. The help page's Report a problem topic says that
+  the data folder keeps them, with the saves they opened and wrote; no setting turns it off.
 - **The dialog** lists each tool that recorded anything: its name, its step count, the first
   file it opened with its size (", and 2 more" when it opened others), and the last file it
   wrote with the time of the write. A tool that recorded nothing is left out.
@@ -615,6 +665,10 @@ Compiler and the Export upgrader, then the rest as they are built.
     named as its file; a tool with nothing open gives none.
   - The tick box for whole exports comes with the first tool that opens exports, the
     Compiler.
+  - Under the list, an unticked box, "Include earlier sessions", lists each kept session
+    but the window's own, one line each: when it started, the first file it opened, when it
+    last wrote one, and how it ended. Ticked, each goes into the bundle as
+    `sessions/<folder name>.zip`, a bundle of its own, which `replay` reads as it is.
 - **Replay is the payoff.** `utw <tool-id> replay <bundle>` applies the journal to the kept
   inputs and compares the result with the bundle's written files, byte for byte.
 

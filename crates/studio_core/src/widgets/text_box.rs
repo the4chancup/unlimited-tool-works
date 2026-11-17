@@ -323,7 +323,7 @@ mod tests {
         );
         assert_ne!(
             faded(253),
-            faded(200),
+            faded(225),
             "premise: the faded text edit's fill is not the faded control's"
         );
         let mut value = 4u8;

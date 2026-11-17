@@ -55,6 +55,7 @@ fn points() -> Vec<Point> {
             s.speed = number("speed");
             s.explosive_power = number("explosive_power");
             s.body_control = number("body_control");
+            s.physical_contact = Some(number("physical_contact"));
             s.jump = number("jump");
             s.goalkeeping = number("goalkeeping");
             s.coverage = Some(number("coverage"));
@@ -91,7 +92,7 @@ fn points() -> Vec<Point> {
 fn overalls_read_in_game() {
     let points = points();
     let count = |version: &str| points.iter().filter(|p| p.version == version).count();
-    assert_eq!((count("pes17"), count("pes21")), (150, 201));
+    assert_eq!((count("pes17"), count("pes21")), (162, 201));
     for p in &points {
         let got = p.player.overall_at(p.position);
         assert_eq!(

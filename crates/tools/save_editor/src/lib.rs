@@ -11,6 +11,7 @@ mod cli;
 mod diff;
 mod events;
 mod messages;
+mod nations;
 /// Replaying a repro bundle's journal (native only: bundles live on disk).
 #[cfg(not(target_arch = "wasm32"))]
 #[cfg_attr(

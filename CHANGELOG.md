@@ -101,6 +101,9 @@
   team's export carries them, Copy/swap stats leaves them as they were, and the Comparator
   lists them, and every motion, under Aesthetics. A team file keeps them under
   `appearance.presentation`, as `star_rating` and `playing_attitude`.
+- **Save editor**: Nation is a dropdown of the nations the save's PES version has, each after
+  its ID; typing an ID in the open list picks it. Captain, Height and Weight move to **Main
+  stats**, which replaces Other stats.
 - **Save editor**: a Pitch | Left | List toggle under the Playable positions heading shows the
   13 positions as they stand on the pitch, as the same rows from one left edge, or one
   position a row, and the choice is remembered. The letters of the ratings not chosen are
@@ -161,6 +164,10 @@
 - **Save editor**: a Team TOML imported onto another team keeps that team's own manager,
   where it gave it the manager of the team the file came from. A file naming any other
   manager still sets him.
+- **Save editor**: a starter's overall on the Tactics pitch could be up to 7 off PES 2017's
+  when his Kicking Power and Swerve, or his Body Control and Physical Contact, were far
+  apart. It now matches. Where two positions' areas meet, the overalls decide which one a
+  dropped player takes, so that choice now matches the game's too.
 
 ### Minor fixes
 
@@ -212,6 +219,8 @@
 - **Save editor**: lists only the cup's teams (IDs 701 to 920) and their players, and Fix
   database repairs only those; the game's own clubs and national teams stay in the save
   untouched. On the command line, `diff` and `export-toml --all-teams` do the same.
+- **Save editor**: picking the selected player's own team in the team dropdown keeps him
+  selected, instead of selecting the team's row.
 - **Save editor**: the Stats screen's panels stand in frames, lined up with the Appearance
   screen's groups, and each label stands further from its box.
 - **Save editor**: in General info, Shirt reads Shirt name, and in the team view Short,

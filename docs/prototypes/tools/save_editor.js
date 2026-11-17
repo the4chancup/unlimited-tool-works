@@ -169,7 +169,7 @@ input[type=range]:focus { outline: none; }
 /* save editor view */
 .toolbar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 4px; }
 /* The list and the detail pane 4 apart: the list's scroll bar stands 4 after its frame
-   (the .rows-box gap), so the bar has 4 on each side. The pane's right padding is 16 (the
+   (the .rows-box gap), so the bar has 4 on each side. The pane's right padding is 14 (the
    .detail rule); a 22-point gap after the list against 8 on the right made the left look
    much wider. */
 .master { display: flex; gap: 4px; align-items: flex-start; }
@@ -189,10 +189,10 @@ input[type=range]:focus { outline: none; }
 .vbar { flex: none; width: 6px; position: relative; }
 .vbar .thumb { position: absolute; left: 0; right: 0; border-radius: 2px; background: var(--widget); }
 .vbar .thumb:hover, .vbar .thumb.drag { background: var(--hover); }
-/* The detail pane's bar floats in the pane's 16-point right margin, 4 after the screens'
-   frames as the list's stands 4 after the list's, and 6 before the window's edge. */
+/* The detail pane's bar floats in the pane's 14-point right margin, 4 after the screens'
+   frames as the list's stands 4 after the list's, and 4 before the window's edge. */
 .center.filled .master { position: relative; }
-.master > .vbar.pane-bar { position: absolute; top: 0; bottom: 0; right: -2px; }
+.master > .vbar.pane-bar { position: absolute; top: 0; bottom: 0; right: -4px; }
 /* A name too long for the row truncates, its dot and mark kept after it. */
 .plist .pname { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 /* A player row's text in the resting widgets' grey, as the app paints a plain name; a team
@@ -405,7 +405,7 @@ input[type=checkbox]:indeterminate { background-image: url("data:image/svg+xml,%
    last frame takes the room down to the tallest column's bottom. */
 .pcols > * { align-self: stretch; }
 .pcol > :last-child { flex: 1; }
-/* General info's and Other stats' fields stand 6 in from their titles, as
+/* General info's and Main stats' fields stand 6 in from their titles, as
    the ability stats' cell padding sets theirs, and end 12 from the frame on
    the right, as the ability stats' boxes do. */
 .pcols .gen { padding-left: 6px; padding-right: 6px; }
@@ -450,7 +450,7 @@ input[type=checkbox]:indeterminate { background-image: url("data:image/svg+xml,%
 /* A disabled card's wrapper as tall as its checkbox: inline-block, its line
    box added 2 points a cell, and the two columns' rows drifted apart. */
 .skcols .gate { display: flex; }
-/* General info and Other stats, laid out as 4ccEditor's: blocks whose
+/* General info and Main stats, laid out as 4ccEditor's: blocks whose
    label sits above the field, label-left pairs on two halves (each label at
    its half's left, its fixed box on the half's right edge, so every box of
    both panels lines up whatever its label's length), then the combos,
@@ -757,15 +757,16 @@ table.grid.stats-grid td { padding: 3px 6px; }
 /* The detail pane scrolls on its own, its bar in the window's scroll-bar
    strip (the host's .win rule), kept while nothing scrolls: the pane
    reaches over the view's right margin to the window's edge and takes it
-   back as padding, 8 more than the margin, so its content ends 16 before the
-   edge while the list's gap before it is 4 (.master). The browser's bar is
+   back as padding, 6 more than the margin, so its content ends 14 before the
+   edge while the list's gap before it is 4 (.master). The view stands 10 after the
+   sidebar, 2 more than the host's margin, the toolbar's band reaching back over it. The browser's bar is
    hidden: the pane draws the list's bar (vScrollBar) in that margin, floating
    as egui's does and taking no width, so the view asks for the window without
    the strip (own-bars). The pane holds the scroll; the view itself keeps no
    strip of its own. */
-.center.filled { scrollbar-gutter: auto; padding-right: calc(8px + var(--sbw, 0px)); }
+.center.filled { scrollbar-gutter: auto; padding-left: 10px; padding-right: calc(8px + var(--sbw, 0px)); }
 .center.filled .detail { overflow: auto; min-height: 0; scrollbar-width: none;
-  margin-right: calc(-8px - var(--sbw, 0px)); padding-right: 16px; }
+  margin-right: calc(-8px - var(--sbw, 0px)); padding-right: 14px; }
 .center.filled .detail::-webkit-scrollbar { display: none; }
 .live-panel { flex: none; margin-top: 6px; }
 .live-divider { height: 4px; cursor: ns-resize; }
@@ -3914,7 +3915,7 @@ function editMenu() {
 function renderToolbar() {
   const tsep = () => h("span", { class: "tsep" });
   return h("div", { class: "toolbar top", "data-panel": "toolbar",
-    style: "margin: -8px calc(-8px - var(--sbw, 0px)) 4px -8px" },
+    style: "margin: -8px calc(-8px - var(--sbw, 0px)) 4px -10px; padding-left: 10px" },
     // With no save open the save's three menus are greyed and never open, as
     // the editor draws them: nothing in them acts without a save.
     fileMenu(), editMenu(), ...(S.save ? [playerMenu(), teamMenu(), databaseMenu()]
@@ -5036,7 +5037,7 @@ function lockGroupView(root, players) {
   lock(root.querySelector("#f-name"));
   lock(root.querySelector("#f-shirt"));
   root.querySelectorAll(".count").forEach(c => { c.textContent = ""; });
-  // General info's and Other stats' boxes, by their labels: the four outside the set
+  // General info's and Main stats' boxes, by their labels: the four outside the set
   // (shirt number, nation, age, captain) always, the others when not shared.
   const pairs = { "Height": x => x.height, "Weight": x => x.weight,
     "Injury Resistance": x => x.stats.injury_resistance, "Form": x => x.stats.form,
@@ -5475,15 +5476,17 @@ function playerColumns(p, team) {
 // selector stands on the title row, where the list's top is on the other screens.
 // The column groups, in the Stats screen's order; `aside` is the ruleset's Tricks or Free
 // cards (asideCards), split from Skills there too.
-const SQUAD_GROUPS = ["general", "other", "positions", "abilities", "skills", "aside", "com"];
-const squadGroupTitle = g => ({ general: "General info", other: "Other stats",
+const SQUAD_GROUPS = ["general", "main", "positions", "abilities", "skills", "aside", "com"];
+const squadGroupTitle = g => ({ general: "General info", main: "Main stats",
   positions: "Playable positions", abilities: "Ability stats", skills: "Skills",
   aside: asideCards().title, com: "COM playing styles" })[g];
 // The groups shown and the cards-held mode: a tool setting, as the positions' layout is
 // (localStorage stands for the settings file).
 const SQUAD_SHOW = (() => {
   const saved = JSON.parse(localStorage.getItem("save_editor.squad") || "null") || {};
-  return { groups: saved.groups || SQUAD_GROUPS.slice(), held: !!saved.held };
+  // A list saved before Other stats became Main stats names it `other`.
+  const groups = saved.groups && saved.groups.map(g => g === "other" ? "main" : g);
+  return { groups: groups || SQUAD_GROUPS.slice(), held: !!saved.held };
 })();
 const saveSquadShow = () => localStorage.setItem("save_editor.squad", JSON.stringify(SQUAD_SHOW));
 // The cell selection (row and column indices of the table as drawn), the value being typed,
@@ -5511,25 +5514,25 @@ function squadColumns(team) {
     { key: "registered", group: "frozen", label: "Registered position", short: "Pos", kind: "pick",
       field: "registered", choices: POSITIONS.map(x => [x, x]), get: p => p.positions.registered,
       put: (p, x) => { p.positions.registered = x; } },
-    num("height", "general", "Height", p => p.height, (p, x) => { p.height = x; }, 0, 255, "height"),
-    num("weight", "general", "Weight", p => p.weight, (p, x) => { p.weight = x; }, 0, 255, "weight"),
-    num("age", "general", "Age", p => p.age, (p, x) => { p.age = x; }, 0, 255, "age"),
     num("number", "general", "Shirt number", p => p.number, (p, x) => { p.number = x; }, 1, 99),
+    num("age", "general", "Age", p => p.age, (p, x) => { p.age = x; }, 0, 255, "age"),
     num("nation", "general", "Nation", p => p.nationality, (p, x) => { p.nationality = x; }, 0, 999),
-    { key: "captain", group: "general", label: "Captain", kind: "radio",
+    { key: "captain", group: "main", label: "Captain", kind: "radio",
       get: p => team.captain === p.slot - 1, put: (p, on) => { if (on) team.captain = p.slot - 1; } },
-    { key: "foot", group: "general", label: "Stronger foot", kind: "side",
-      get: p => p.positions.stronger_foot, put: (p, x) => { p.positions.stronger_foot = x; } },
+    num("height", "main", "Height", p => p.height, (p, x) => { p.height = x; }, 0, 255, "height"),
+    num("weight", "main", "Weight", p => p.weight, (p, x) => { p.weight = x; }, 0, 255, "weight"),
   ];
-  if (v >= 20) cols.push({ key: "hand", group: "general", label: "Stronger hand", kind: "side",
-    get: p => p.positions.stronger_hand ?? "right", put: (p, x) => { p.positions.stronger_hand = x; } });
-  cols.push({ key: "style", group: "general", label: "Playing style", kind: "pick",
-    field: "playing_style", choices: PLAY_STYLES.map(x => [x, cardName(x)]), get: p => p.positions.playing_style,
-    put: (p, x) => { p.positions.playing_style = x; } });
-  // Drawn at the game's numbers, stored one lower, as the Other stats panel does.
+  // Drawn at the game's numbers, stored one lower, as the Main stats panel does.
   for (const [key, label, max] of [["injury_resistance", "Injury Resistance", 3], ["form", "Form", 8],
       ["weak_foot_usage", "Weak Foot Usage", 4], ["weak_foot_accuracy", "Weak Foot Accuracy", 4]])
-    cols.push(num(key, "other", label, p => p.stats[key] + 1, (p, x) => { p.stats[key] = x - 1; }, 1, max, key));
+    cols.push(num(key, "main", label, p => p.stats[key] + 1, (p, x) => { p.stats[key] = x - 1; }, 1, max, key));
+  cols.push({ key: "foot", group: "main", label: "Stronger foot", kind: "side",
+    get: p => p.positions.stronger_foot, put: (p, x) => { p.positions.stronger_foot = x; } });
+  if (v >= 20) cols.push({ key: "hand", group: "main", label: "Stronger hand", kind: "side",
+    get: p => p.positions.stronger_hand ?? "right", put: (p, x) => { p.positions.stronger_hand = x; } });
+  cols.push({ key: "style", group: "main", label: "Playing style", kind: "pick",
+    field: "playing_style", choices: PLAY_STYLES.map(x => [x, cardName(x)]), get: p => p.positions.playing_style,
+    put: (p, x) => { p.positions.playing_style = x; } });
   for (const pos of POSITIONS)
     cols.push({ key: "pos:" + pos, group: "positions", label: POS_FULL[pos], short: pos, kind: "rating",
       field: "positions", markOn: p => p.positions.playable[pos] !== "C",

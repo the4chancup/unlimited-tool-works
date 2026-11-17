@@ -1,7 +1,8 @@
 //! The player view's three columns (the draft's `playerView`/`.pcols`):
 //! every panel a `Frame::group` as the Appearance screen's groups are,
 //! the frames spanning the pane as theirs do — General info
-//! (`info_strip::general`), Other stats and Playable positions in the
+//! (`info_strip::general`), Main stats (`info_strip::main_stats`,
+//! Captain in its title's row) and Playable positions in the
 //! first column, its width what the fixed columns leave; Skills with the
 //! Cards used badge in its header row, the ruleset's apart cards (its
 //! `tricks` group, else the skills its `free_cards` effects name) and COM
@@ -42,8 +43,8 @@ use crate::session::Session;
 use crate::view::group_frame::{GROUP_GAP, stretch_to};
 use crate::view::worker::{Pending, WorkerResult};
 use crate::view::{
-    ActiveRules, BadgeKey, OwnBadge, Refusal, SaveView, edit_player, info_strip, live_marks,
-    selected_player,
+    ActiveRules, BadgeKey, OwnBadge, Refusal, SaveView, edit_player, edit_team, info_strip,
+    live_marks, selected_player,
 };
 
 /// The Profile grid's registered-position combo.
@@ -138,6 +139,9 @@ const CARD_COLS_MARGIN: f32 = 0.5;
 /// group's content stands in from its title (`inset`), so a title heads
 /// its body.
 pub(super) const CELL_PADDING: i8 = 6;
+/// The padding of the ability stats' cells under a box (the draft's
+/// `stats-grid` `td`), half of `FIELD_SPACING`.
+const CELL_BOTTOM_PADDING: i8 = 3;
 
 /// The first column's floor, which the column never goes under: General
 /// info's nominal width and its inset.
@@ -178,17 +182,19 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
     let Some((team_id, slot, player_id)) = selected_player(view) else {
         return;
     };
-    let (version, positions, stats, mut skills) = {
+    let (version, positions, stats, mut skills, captain) = {
         let Some(session) = view.session.as_ref() else {
             return;
         };
         let file = session.file();
         let player = file.player(player_id).expect("the selected player");
+        let team = file.team(team_id).expect("the selected team");
         (
             file.version(),
             player.positions.clone(),
             player.stats.clone(),
             player.skills.clone(),
+            team.tactics.set_pieces.captain == slot,
         )
     };
     // Every widget id under the content is the player's within this open: a
@@ -265,35 +271,52 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
         let first_rect = next_rect(first_width);
         let second_rect = next_rect(second_width);
         let third_rect = next_rect(third_width);
-        // Column 1: General info, Other stats, Playable positions.
+        // Column 1: General info, Main stats (Captain in its title's
+        // row: its click returns the undo merge key and the `edit_team`
+        // lands after `panel_with`, since the title row and the fields
+        // cannot share `session`), Playable positions.
         let mut first = column(ui, first_rect, |ui| {
-            vec![
-                panel(ui, spacing, "General info", None, 0.0, |ui| {
+            let general = panel(ui, spacing, "General info", None, 0.0, |ui| {
+                ui.spacing_mut().item_spacing.y = FIELD_SPACING;
+                info_strip::general(ui, session, team_id, slot, player_id, marks);
+            });
+            let (captained, main) = panel_with(
+                ui,
+                spacing,
+                "Main stats",
+                None,
+                0.0,
+                |ui, title| info_strip::captain_title(ui, title, captain),
+                |ui| {
                     ui.spacing_mut().item_spacing.y = FIELD_SPACING;
-                    info_strip::general(ui, session, team_id, slot, player_id, marks);
-                }),
-                panel(ui, spacing, "Other stats", None, 0.0, |ui| {
-                    ui.spacing_mut().item_spacing.y = FIELD_SPACING;
-                    info_strip::other_stats(ui, session, player_id, &stats, marks);
-                }),
-                panel(
-                    ui,
-                    spacing,
-                    PLAYABLE_POSITIONS_LABEL,
-                    marks.map(|marks| (marks, live_marks::MarkedField::PlayablePositions)),
-                    0.0,
-                    |ui| {
-                        playable_positions(
-                            ui,
-                            session,
-                            player_id,
-                            &positions,
-                            positions_layout,
-                            grid_room,
-                        );
-                    },
-                ),
-            ]
+                    info_strip::main_stats(
+                        ui, session, player_id, &stats, &positions, version, marks,
+                    );
+                },
+            );
+            if let Some(key) = captained {
+                edit_team(session, team_id, key, |team| {
+                    team.tactics.set_pieces.captain = slot;
+                });
+            }
+            let positions_panel = panel(
+                ui,
+                spacing,
+                PLAYABLE_POSITIONS_LABEL,
+                marks.map(|marks| (marks, live_marks::MarkedField::PlayablePositions)),
+                0.0,
+                |ui| {
+                    playable_positions(
+                        ui,
+                        session,
+                        player_id,
+                        &positions,
+                        positions_layout,
+                        grid_room,
+                    );
+                },
+            );
+            vec![general, main, positions_panel]
         });
         // Column 2: Skills (the Cards used badge in its header row), then
         // the ruleset's apart cards in their own panel when it names them,
@@ -361,12 +384,13 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
         // Column 3: the ability stats, one pair a row.
         let mut third = column(ui, third_rect, |ui| {
             vec![panel(ui, spacing, "Ability stats", None, 0.0, |ui| {
-                // The cells' padding after each box (the panel's inset is
-                // the one before each label), so the column is the
-                // draft's.
+                // The cells' padding after each box and under the last
+                // row's boxes (the panel's inset is the one before each
+                // label), so the column is the draft's.
                 egui::Frame::NONE
                     .inner_margin(egui::Margin {
                         right: CELL_PADDING,
+                        bottom: CELL_BOTTOM_PADDING,
                         ..egui::Margin::ZERO
                     })
                     .show(ui, |ui| {
@@ -525,7 +549,25 @@ fn panel(
     first_inset: f32,
     add: impl FnOnce(&mut egui::Ui),
 ) -> egui::containers::frame::Prepared {
-    panel_frame(ui, |ui| {
+    panel_with(ui, spacing, title, mark, first_inset, |_, _| (), add).1
+}
+
+/// `panel` with `title_row` drawn on the title's row after the title,
+/// given the title's rect to stand on — Main stats' Captain pair. Its
+/// result returns with the frame's. What it draws must leave the row a
+/// bare title's height (a child `Ui` at a rect, not a widget the row
+/// lays out), or every row under moves.
+fn panel_with<R>(
+    ui: &mut egui::Ui,
+    spacing: egui::Vec2,
+    title: &str,
+    mark: Option<(live_marks::Marks<'_>, live_marks::MarkedField)>,
+    first_inset: f32,
+    title_row: impl FnOnce(&mut egui::Ui, egui::Rect) -> R,
+    add: impl FnOnce(&mut egui::Ui),
+) -> (R, egui::containers::frame::Prepared) {
+    let mut extra = None;
+    let prepared = panel_frame(ui, |ui| {
         ui.vertical(|ui| {
             ui.spacing_mut().item_spacing = spacing;
             ui.scope_builder(
@@ -535,12 +577,14 @@ fn panel(
                     if let Some((marks, field)) = mark {
                         marks.paint_after(ui, title.rect, field, live_marks::MARK_GAP);
                     }
+                    extra = Some(title_row(ui, title.rect));
                 },
             );
             ui.add_space(TITLE_GAP - spacing.y - first_inset);
             inset(ui, add);
         });
-    })
+    });
+    (extra.expect("the title row ran"), prepared)
 }
 
 /// `add` inside a `Frame::group` begun in `ui`, the frame's space in the
@@ -588,7 +632,7 @@ pub(crate) fn maybe_end_row(ui: &mut egui::Ui, index: usize, per_row: usize) {
     }
 }
 
-/// One small stored field of the Other stats panel or the Appearance
+/// One small stored field of the Main stats panel or the Appearance
 /// screen's Presentation group: the term's name, the drawn label, its
 /// schema field, the shown range and the shift between shown and stored
 /// (the shifted fields are stored one below the game's numbers, the
@@ -615,7 +659,7 @@ pub(super) struct SmallStat {
     pub(super) set: fn(&mut PlayerStats, u8),
 }
 
-/// The Other stats panel's four stored fields, in the draft's order: form
+/// The Main stats panel's four stored fields, in the draft's order: form
 /// 1-8, injury resistance 1-3, weak foot usage and accuracy 1-4 (each
 /// stored one lower). Star and playing attitude sit on the Appearance
 /// screen, in `appearance::fields::PRESENTATION_STATS`.
@@ -665,7 +709,7 @@ pub(super) const SMALL_STATS: [SmallStat; 4] = [
 /// One `SmallStat`'s label/control pair: `number` for a stored field, the
 /// `-` stand-in for a gated one (the label stays too: the gated control
 /// keeps its cell). The Appearance screen's Presentation group uses it;
-/// the Other stats panel's `small` pairs draw the halves apart.
+/// the Main stats panel's `small` pairs draw the halves apart.
 pub(super) fn small_stat(
     ui: &mut egui::Ui,
     session: &mut Session,

@@ -441,28 +441,6 @@ fn the_selectors_categories_shorten_the_dropdown_and_the_list() {
     );
 }
 
-/// The circles painted inside `bounds` (a radio button's painted mark;
-/// the popup's shapes may nest inside `Shape::Vec`s).
-fn circles_in(
-    shapes: &[egui::epaint::ClippedShape],
-    bounds: accesskit::Rect,
-) -> Vec<&egui::epaint::CircleShape> {
-    let rect = egui::Rect::from_min_max(
-        egui::pos2(bounds.x0 as f32, bounds.y0 as f32),
-        egui::pos2(bounds.x1 as f32, bounds.y1 as f32),
-    );
-    let mut stack: Vec<&egui::Shape> = shapes.iter().map(|clipped| &clipped.shape).collect();
-    let mut found = Vec::new();
-    while let Some(shape) = stack.pop() {
-        match shape {
-            egui::Shape::Vec(children) => stack.extend(children.iter()),
-            egui::Shape::Circle(circle) if rect.contains(circle.center) => found.push(circle),
-            _ => {}
-        }
-    }
-    found
-}
-
 // The category radios are controls, not menu rows: inside the menu
 // popup, which strips the widgets' resting edge for its rows, the
 // checked radio's blue circle carries the selection's own edge and an
@@ -943,11 +921,12 @@ fn the_lists_frame_stands_where_the_drafts_does() {
     window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     let (_, _, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     let frame = list_frame(&window, &shapes);
-    let right = PANEL_MARGIN + 245.0;
+    // The shell's margin and the panes' 2 more: 10 after the sidebar.
+    let left = PANEL_MARGIN + 2.0;
+    let right = left + 245.0;
     assert!(
-        (frame.min.x - PANEL_MARGIN).abs() <= 0.5 && (frame.max.x - right).abs() <= 0.5,
-        "the frame from the view's left edge {PANEL_MARGIN} to {right}, as the draft's \
-         ({frame:?})"
+        (frame.min.x - left).abs() <= 0.5 && (frame.max.x - right).abs() <= 0.5,
+        "the frame from {left}, 10 after the sidebar, to {right}, as the draft's ({frame:?})"
     );
 }
 

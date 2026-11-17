@@ -67,8 +67,17 @@ fn the_info_strips_fields() {
     assert_term(
         &row_term(version, &field(PlayerField::Nationality, 210, 0)),
         "Nation",
-        "210",
-        "0",
+        "210 - GERMANY",
+        "0 - ?",
+    );
+    assert_term(
+        &row_term(
+            PesVersion::Pes21,
+            &field(PlayerField::Nationality, 135, 100),
+        ),
+        "Nation",
+        "135 - USA",
+        "100 - ?",
     );
     assert_eq!(player.name, "Muh Spooks", "premise: 73401's name");
     assert_term(

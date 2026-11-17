@@ -727,8 +727,11 @@ vertical room a tab row takes; a toggle on the title's own row takes none.
        PES 2015, 191 in 2016, 220 in 2017, 214 from 2018, when six were dropped), and so do
        a few names (`UNITED STATES` until PES 2017, `USA` after). The editor carries the
        seven lists, written by a script that reads the games' files once; it does not read
-       them itself, so a save is edited the same without the game installed. A test holds
-       every nation ID the fixture saves carry to their version's list.
+       them itself, so a save is edited the same without the game installed. They are the
+       base game's lists, not the 4cc patch's own table, which renames or adds a few nations
+       on PES 2015 to 2017 (EQUESTRIA, OFFSIDE): the cup no longer edits nations. A test
+       holds the fixture saves' nation IDs to their version's list; the one they carry that
+       their version lacks (23 on PES 2015 and 2016) is the case `ID - ?` exists for.
 
      **Main stats**, Captain in its title's row, then:
      - Captain stands in the title's row over the second half, its label where Weight's stands
@@ -750,11 +753,10 @@ vertical room a tab row takes; a toggle on the title's own row takes none.
 
      Name, Shirt name, Nation and these four rows share one label column, as wide as their
      longest label ("Registered position"), so every one of those fields starts at one x, and
-     each ends flush with the second half's boxes, at the panel's right margin. Within a block
-     (Name and Shirt name; the pairs; Stronger foot to Playing style) rows stand 22 apart, the
-     form grids' pitch (`core/gui.md` "Other UI components", Form grids), the toggles 18 tall
-     like every control. The blocks stand 6 apart, 2 more than their rows, as the draft's
-     `.gen`, so each block reads as one.
+     each ends flush with the second half's boxes, at the panel's right margin. Every row stands
+     6 under the one above, within a block (Name and Shirt name; the pairs; Stronger foot to
+     Playing style) and between blocks alike, so with every control 18 tall (the toggles too)
+     the rows stand 24 apart, as the draft's `.gen` and `.pairs` gap them.
 
      Under that **Playable positions**: the 13 positions with C/B/A ratings in five rows by
      line of the pitch, each left wing to right wing (LWF CF SS RWF / LMF AMF RMF / CMF DMF /
@@ -1748,8 +1750,8 @@ Win32 original hurt the most):
 - **A starter's badge shows his overall and his medal tier**, as the game's shows the
   overall. The overall is his per-position overall at his slot's position (the formula the
   pitch drop's rule uses, below), so a position change on the popover or a swap redraws it;
-  it is exact on PES 2017 and within 2 of the game's on PES 2021 (108 of 201 read there
-  equal), the precision the drop's paragraph states.
+  it equals every PES 2017 overall read (162) and is within 2 of the game's on PES 2021 (108
+  of 201 read there equal), the precision the drop's paragraph states.
 
   A player the active ruleset recognizes as a medal tier (the tier ids `gold`, `silver`,
   `bronze` every ruleset shares) gets a 1.5-point outline inside the badge's edge in the
@@ -1981,22 +1983,33 @@ What the controls write, where the draft and 4ccEditor's tab (`tab_four_dlg_proc
   a position in, the overall out): twenty abilities weighted per position, the position's
   bonus (registered, A, B; C none), and at the registered position, unless it is GK, a blend
   with the first nineteen abilities' mean through a lookup table, clamped to 40-109. The two
-  keeper terms are each the mean of a few keeper abilities. PES 2015 stores no clearing,
-  reflexes or coverage, so its means take the ones it stores rather than counting the missing
-  ones as 0, which would sink every PES 2015 keeper (one keeper ability at 0 takes a 70 keeper
-  to the floor of 40).
+  keeper terms are each the mean of a few keeper abilities, and one term is the mean of body
+  control and physical contact. PES 2015 stores no clearing, reflexes, coverage or physical
+  contact, so its means take the ones it stores rather than counting the missing ones as 0,
+  which would sink every PES 2015 keeper (one keeper ability at 0 takes a 70 keeper to the
+  floor of 40).
 
   Its weights, bonuses and lookup are PES 2016's tables, a measurement hand-written by the
   lead. Which ability each weight reads is inferred from its profile (the code reads them
-  unnamed), and the two alternatives tried (kicking power and swerve swapped, physical contact
-  for body control) change no overall read in PES 2017 or 2021. One function serves the
-  drop's rule and the badge's number; the host hands `team_widgets` each starter's thirteen
-  per-position overalls in his `RosterRow`, since the widgets read no player record.
+  unnamed), except for three rows the profile left open, which in-game checks settled
+  (below). One function serves the drop's rule and the badge's number; the host hands
+  `team_widgets` each starter's thirteen per-position overalls in his `RosterRow`, since the
+  widgets read no player record.
 
   PES 2017, the game DBC7 plays, follows both exactly: ten rectangle edges crossed by six
   players dragged in its Lineup/Edit Position (CF's y 40 among them) fall where PES 2016's
-  tables put them, and PES 2016's formula gives every one of 150 overalls read there (23
-  players, nine positions, registered, A and C), so its drag is the rule as it stands.
+  tables put them, and the formula gives every one of 162 overalls read there (27 players,
+  nine positions; registered, A, B and C), so its drag is the rule as it stands. The first
+  150 could not tell apart which abilities three rows read, so four players were set up
+  three times with those abilities far apart and read in game (2026-11-17). Of the readings
+  tried (each row reading any of the four abilities, or either pair's mean), one alone gives
+  all twelve overalls:
+  - the row weighing DMF 12 reads swerve, not kicking power;
+  - the row weighing SS 6 reads kicking power, not swerve;
+  - the row weighing DMF 13 reads the mean of body control and physical contact, rounded
+    down, not body control alone.
+
+  The profile's first reading missed those twelve by up to 7.
 
   A dragged lineup row is drawn with the point first pressed under the pointer, as the browser
   draws the draft's (egui alone would centre it on the pointer; SE-GUI-65). A lineup row
@@ -3784,7 +3797,7 @@ SE-GUI-95  GIVEN the save open on /gd/, the official ruleset picked
            THEN the slot, the name and Pos (the registered position) stand left of the group headings General info,
                 Main stats, Playable positions, Ability stats, Skills, Tricks and COM playing
                 styles, in that order; Scissors Feint is a column of Tricks, not of Skills; Ability
-                stats has a Tight Possession and an Aggression column and General info a
+                stats has a Tight Possession and an Aggression column and Main stats a
                 Stronger hand column; WHEN the pointer rests on the Speed heading THEN its
                 tooltip `Speed` shows in that frame; WHEN the table is scrolled to its right
                 and bottom ends THEN the slot, name and Pos columns and both heading rows are
@@ -4101,6 +4114,14 @@ SE-REP-06  GIVEN a file that is not a zip, then SE-REP-01's bundle with one byte
            WHEN `save-editor replay` is run on each
            THEN each prints why it is not a bundle it can replay (not a zip; the input's
                 bytes do not match the journal's SHA-256), replays nothing and exits 2
+SE-REP-07  GIVEN SE-REP-01's steps kept as an earlier session (`plans/core/architecture.md`
+                "Repro bundles", "Earlier sessions are kept on disk"), its save opened and
+                written as decrypted sections and salt, once for a save of each version the
+                tests hold
+           WHEN `save-editor replay` is run on the bundle holding it
+           THEN each save rebuilds to the journal's SHA-256 and the write matches; GIVEN one
+                byte of a decrypted section changed THEN it prints that the rebuilt save does
+                not match its SHA-256, replays nothing and exits 2
 ```
 
 The full-look patch's `apply-patch` scenarios (SE-PAT-07 to 11) moved to

@@ -1979,7 +1979,7 @@ fn the_welcome_panel_draws_as_it_did_while_its_list_fits() {
         .expect("the first entry's bounds");
     assert_eq!(
         (first.x0, first.y0),
-        (445.0, 312.0),
+        (446.0, 312.0),
         "Open… stands where it stood"
     );
 }

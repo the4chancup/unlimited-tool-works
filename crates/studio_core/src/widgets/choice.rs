@@ -60,15 +60,28 @@ pub fn checkbox_row<R>(ui: &mut egui::Ui, add_contents: impl FnOnce(&mut egui::U
     .inner
 }
 
+/// The width a radio button's circle is laid out at: 1 under the theme's
+/// `icon_width` (14), which a checkbox keeps. egui strokes a circle on its
+/// radius, so the 1-point edge reaches half a point past it on each side:
+/// at 13 the circle spans 14 with its edge, as the draft's radio does,
+/// where at 14 it spanned 15 and read larger than the draft's. The gap to
+/// the label takes the point back, so the button keeps egui's own room
+/// and its label stands where egui's would.
+pub const RADIO_ICON_WIDTH: f32 = 13.0;
+
 /// A radio button labelled `text`, drawn `selected` or not: egui's
 /// `RadioButton`, a selected one filled in the selection blue with its dot in
-/// the selection's text colour, for the same reason as [`checkbox`]. A click
-/// is the caller's to answer; [`radio_value`] answers it.
+/// the selection's text colour, for the same reason as [`checkbox`]. Its
+/// circle is laid out `RADIO_ICON_WIDTH` wide. A click is the caller's to
+/// answer; [`radio_value`] answers it.
 pub fn radio(
     ui: &mut egui::Ui,
     selected: bool,
     text: impl Into<egui::WidgetText>,
 ) -> egui::Response {
+    let (icon_width, icon_spacing) = (ui.spacing().icon_width, ui.spacing().icon_spacing);
+    ui.spacing_mut().icon_width = RADIO_ICON_WIDTH;
+    ui.spacing_mut().icon_spacing = icon_spacing + icon_width - RADIO_ICON_WIDTH;
     #[expect(
         clippy::disallowed_methods,
         reason = "the suite's radio button is egui's with the blue painted over it"
@@ -77,6 +90,8 @@ pub fn radio(
     if selected {
         paint_selected_radio(ui, &response);
     }
+    ui.spacing_mut().icon_width = icon_width;
+    ui.spacing_mut().icon_spacing = icon_spacing;
     response
 }
 
@@ -379,13 +394,14 @@ mod tests {
             ]
         });
         let selected = circles_in(&shapes, rects[0]);
-        let center = egui::pos2(rects[0].left() + 7.0, rects[0].center().y);
+        let center = egui::pos2(rects[0].left() + 6.5, rects[0].center().y);
         assert!(
             selected.iter().any(|circle| circle.fill == BLUE
                 && circle.center == center
-                && circle.radius == 7.0
+                && circle.radius == 6.5
                 && circle.stroke == egui::Stroke::new(1.0, BLUE_EDGE)),
-            "a 14-point blue circle at the button, its edge 30 lighter: {selected:?}"
+            "a blue circle 14 across with its edge at the button, the edge 30 lighter: \
+             {selected:?}"
         );
         assert!(
             selected.iter().any(|circle| circle.fill == TICK
@@ -402,8 +418,8 @@ mod tests {
         );
     }
 
-    // The Save editor's captain radio: no label, centred in a justified cell
-    // 54 points wide, where egui draws the circle in the cell's middle.
+    // A radio with no label centred in a justified cell 54 points wide,
+    // where egui draws the circle in the cell's middle.
     #[test]
     fn in_a_centred_cell_the_blue_covers_egui_s_own_circle() {
         let (shapes, rects) = settled(None, |ui| {
@@ -415,10 +431,10 @@ mod tests {
         let circles = circles_in(&shapes, rects[0]);
         let egui_s = circles
             .iter()
-            .find(|circle| circle.radius == 7.0 && circle.fill != BLUE)
+            .find(|circle| circle.radius == 6.5 && circle.fill != BLUE)
             .unwrap_or_else(|| panic!("egui's own circle: {circles:?}"));
         assert!(
-            egui_s.center.x - (rects[0].left() + 7.0) > 1.0,
+            egui_s.center.x - (rects[0].left() + 6.5) > 1.0,
             "egui's circle is not at the cell's left (premise): {circles:?}"
         );
         assert!(
