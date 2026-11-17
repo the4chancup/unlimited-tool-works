@@ -208,8 +208,9 @@
 - **All tools**: warnings are amber instead of orange and errors a softer red, so the two
   stand apart. The success green and the link blue changed with them, and on the light
   theme links are easier to read.
-- **All tools**: every box, dropdown, toggle and button draws a thin edge, so an empty one
-  no longer melts into the panel behind it.
+- **All tools**: checkboxes, radio buttons, number boxes, dropdowns, toggles and buttons have
+  a thin outline, so an empty box or the unpicked side of a toggle no longer blends into the
+  background.
 - **All tools**: on the light theme the background is a shade darker, so boxes and buttons
   stand off it, and a number box looks like a text box.
 - **Save editor**: the Stats screen's panels stand in frames, lined up with the Appearance

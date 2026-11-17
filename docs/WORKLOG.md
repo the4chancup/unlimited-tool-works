@@ -1786,6 +1786,22 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       - [ ] one paid round (Carbon) at `17bda172`, two parts by concern: the edges and the
         light theme (A1, A2a, C, rw1, rw2), then the Stats screen (B1, B2, rw1, gatelbl)
         after gatelbl's SWE-2 round
+        - [x] the Stats part, 2026-11-17: 8 of 11 accepted ("frames C1 — Stats"), 3 of reach
+          (a): a panel title's Live AATF mark fell on its frame line, or past the pane's edge
+          in column 1 (the draft's too: the lead moved it right of the title, DECISIONS
+          2026-11-17, `ce0ae2b2`, with the plan's stale lines, help 03 and the changelog
+          line); a PES 2015/2016 team colour's hex left undimmed; a third pass on every new
+          player. Tier 2: a second paid round on the Stats part after the rework
+        - [ ] rw3 (SWE-2, `sk/framesrw3`): the seven code fixes and the lead's positions grid
+          1.5 higher (`TOGGLE_GRID_GAP` 7.5); then its SWE-2 round, Carbon's round 2 (Stats)
+        - [x] the edges part, 2026-11-17: 7 of 10 accepted ("frames C1 — edges"), 1 of reach
+          (a): on the light theme a version-gated number's `-` stand-in draws the button grey
+          beside white number boxes; the rest a readout grey whose contrast drifted with the
+          240 panel, two docstrings, duplicated light-look code and four untested looks. The
+          changelog's edges line reworded (the lead). Tier 2: a second paid round on the edges
+        - [ ] rw4 (SWE-2, `sk/framesrw4`): `widgets::number_box_look` shared by the number box
+          and the slider, the readout grey, the docstrings, the tests; then its SWE-2 round
+        - [ ] the gated stand-in on `number_box_look` (save_editor), after rw3 and rw4 merge
     - [ ] the control edges (`plans/core/gui.md` "Other UI components", "Control edges")
       - [x] A1 2026-11-17 `studio_core` (`b98986f7`, merge `53bc3805`): the resting stroke,
         `theme::edge_color`, the checked box's and radio's edge, none on disabled widgets or
