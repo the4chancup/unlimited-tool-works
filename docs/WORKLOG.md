@@ -1706,18 +1706,24 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     - [x] landed 2026-11-17 (merge `29991c8b`): `frame_when_inactive(false)`;
       `a_rows_x_lights_on_hover`; the changelog's × line says it lights up
     - [ ] the built window, with the batch release build after 0.0.2-gatelbl
-  - [ ] 0.0.2-allcat under 4cc, VGL or Invitational the team selector's All teams entry reads
+  - [x] 0.0.2-allcat under 4cc, VGL or Invitational the team selector's All teams entry reads
     `4cc teams`, `VGL teams`, `Invitational teams`, open and closed (the maintainer, 2026-11-17;
     `plans/save_editor.md` the team selector's category paragraph, SE-GUI-83; DECISIONS
     2026-11-17; draft `teamSelector`). SWE-2 on `.tmp/brief_allcat.md`, after 0.0.2-frames B2
     and 0.0.2-namegame merge (all three touch `view/player_list.rs`) -> verify: the category
     test turned around, the built window under VGL
-  - [ ] 0.0.2-ixtext the Team file interchange window's sentences and labels in the normal
+    - [x] landed 2026-11-17 (SWE-2, merge `df9833a8`, with 0.0.2-ixtext; the lead's rerun:
+      save_editor 1048): `format!("{} teams", shown.label())`; help page 02 says so
+    - [ ] the built window under VGL, with the batch release build after 0.0.2-gatelbl
+  - [x] 0.0.2-ixtext the Team file interchange window's sentences and labels in the normal
     text colour, the Skills labels', not the weak grey (the maintainer, 2026-11-17;
     `plans/save_editor.md` "Interchange formats in the UI"; DECISIONS 2026-11-17; draft
     `interchangePanel`). In the same SWE-2 run as 0.0.2-allcat (`interchange.rs` is one of
     0.0.2-namegame's name callers) -> verify: a painted-colour test, the built window beside
     the draft
+    - [x] landed 2026-11-17 (merge `df9833a8`): `the_panels_sentences_paint_the_normal_text_colour`;
+      changelog under the new Other stuff heading
+    - [ ] the built window beside the draft, with the batch release build
   - [ ] 0.0.2-gatelbl (P53, accepted for 0.0.2 by the maintainer, 2026-11-17) every
     version-gated control's label dimmed with it and carrying its `PES NN+` tooltip, as the
     Ability stats' are (`plans/save_editor.md` the Stats screen's paragraph on field labels;
