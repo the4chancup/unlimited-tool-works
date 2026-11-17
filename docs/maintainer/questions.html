@@ -34,6 +34,70 @@ in this browser. When you're done, press <b>Copy my answers</b> at the bottom an
 text into the chat. The answered ones then leave this page, and each answer goes into the plan.</p>
 <ul id="toc"></ul>
 
+<h2>Before the release</h2>
+
+<section class="entry" id="positions-grid-height">
+  <h3>Stats screen: the Playable positions grid 2.5 points higher than the draft's</h3>
+  <p class="from">From: worklog 0.0.2-gaps, the Stats screen's look after its fix</p>
+  <p>On the Save editor's Stats screen, every heading and first row now stands within a point
+  of the draft. The positions grid (the position names and their C, B, A buttons) stands 2.5
+  points higher than in the draft:</p>
+  <ul>
+    <li>1.5 of it is the grid itself, which stands that much nearer the panel's heading than
+    the draft's;</li>
+    <li>1 is the whole screen, which stands a point higher than the draft, because the line
+    under the title row is half a point higher and the text snaps to whole pixels.</li>
+  </ul>
+  <p>The lead let both through as within its tolerance; nobody chose them.</p>
+  <div class="shots">
+    <figure><a href="img/pos_grid_draft.png"><img src="img/pos_grid_draft.png" alt="The draft's Playable positions panel"></a><figcaption>The draft</figcaption></figure>
+    <figure><a href="img/pos_grid_built.png"><img src="img/pos_grid_built.png" alt="The app's Playable positions panel"></a><figcaption>The app</figcaption></figure>
+  </div>
+  <p class="ask">Which should change?</p>
+  <div class="options">
+    <label class="opt"><input type="radio" value="the app"><b>The app</b>
+      <div class="note">The grid moves down to the draft's place.</div></label>
+    <label class="opt"><input type="radio" value="the draft"><b>The draft</b>
+      <div class="note">The draft's grid moves up to where the app has it.</div></label>
+    <label class="opt"><input type="radio" value="neither"><b>Neither</b>
+      <div class="note">The 2.5 points stay, noted as a known difference.</div></label>
+  </div>
+  <textarea class="own" placeholder="Your own answer or a note (optional)"></textarea>
+</section>
+
+<section class="entry" id="report-dialog-gaps">
+  <h3>Report a problem: the lower half 8 points higher than the draft's</h3>
+  <p class="from">From: worklog 0.0.2-report, the built window beside the draft</p>
+  <p>In the Report a problem dialog, the rows and the text box now have the draft's sizes. The
+  lower half still starts higher: "The file holds:" stands 8 points nearer the title than in
+  the draft. Three things add up to it:</p>
+  <ul>
+    <li>the intro stands 1 point higher;</li>
+    <li>"What happened?" and "The file holds:" each stand 10 points under the line before them
+    in the draft, 8 in the app, where 8 is every dialog's gap between sentences;</li>
+    <li>under the text box the draft leaves 3 more points, room a browser keeps under a box
+    set in a line of text, which the app does not draw.</li>
+  </ul>
+  <p>The draft shows more lines because its sample ran the Compiler too; that part is not a
+  difference.</p>
+  <div class="shots">
+    <figure><a href="img/report_rows_draft.png"><img src="img/report_rows_draft.png" alt="The draft's Report a problem dialog"></a><figcaption>The draft</figcaption></figure>
+    <figure><a href="img/report_rows_built.png"><img src="img/report_rows_built.png" alt="The app's Report a problem dialog"></a><figcaption>The app</figcaption></figure>
+  </div>
+  <p class="ask">Which should change?</p>
+  <div class="options">
+    <label class="opt"><input type="radio" value="the app"><b>The app</b>
+      <div class="note">This dialog takes the draft's 10-point gaps and the 3 points under its
+      box.</div></label>
+    <label class="opt"><input type="radio" value="the draft"><b>The draft</b>
+      <div class="note">The draft takes the 8-point gaps of the other dialogs, its box no
+      longer set in a line of text.</div></label>
+    <label class="opt"><input type="radio" value="neither"><b>Neither</b>
+      <div class="note">The 8 points stay, noted as a known difference.</div></label>
+  </div>
+  <textarea class="own" placeholder="Your own answer or a note (optional)"></textarea>
+</section>
+
 <h2>After the release</h2>
 
 <section class="entry" id="wrist-tape-colours">

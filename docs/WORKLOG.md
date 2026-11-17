@@ -1636,10 +1636,14 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         holds the journal's four steps, both inputs, the output, `state/` and the log;
         `save-editor diff` of the kept input against the output names the one edit
         (player 70101, Heading 0 → 1), and `state/` reads the same as the output
-      - [ ] two differences from the draft, over 2 points each: the intro's lines and the
+      - [x] two differences from the draft, over 2 points each: the intro's lines and the
         list's rows 18 apart (the draft's 15), and the text box 61 tall (the draft's 84,
-        right under its label). Fix in flight (SWE-2, worktree `sk/reportgap`, the brief
-        `.tmp/0_0_2/reportgap/brief.md`); then the look again and the card
+        right under its label). Fixed (SWE-2, merge `32649d79`), looked at in the release
+        build of `32649d79`: rows 15 apart, the box 84 right under its label
+      - [ ] the lower half 8 higher than the draft's from the title (the draft's 10-point
+        sentence gaps against the dialogs' 8, the room a browser keeps under an inline box):
+        asked, `maintainer/questions.html` "Report a problem: the lower half 8 points higher
+        than the draft's"; then card ST-REP-05
   - [x] 0.0.2-namelight 2026-11-15 (SWE-2, merge `40ce82da`): in the light theme a name's
     colour code reading under 4.5 on the panel is darkened until it does, hue kept
     (`theme::darkened_to_read`, which reproduces the lineup lists' hand-made colours); the
@@ -1816,9 +1820,13 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
           cells 4 left and 3 above where egui's Grid has no outer margin: left as is, the
           dialog redesigned after 0.1.0 (16.k)
         - the Stats screen: its sections 9 under the title row's line, the draft's 12, so
-          the screen stands 4 to 5.5 higher than the draft once the line moved up (SWE-2,
-          worktree `sk/statsline`, the brief `.tmp/0_0_2/statsline/brief.md`; it takes in
-          0.0.2-gaps' Player screen item)
+          the screen stands 4 to 5.5 higher than the draft once the line moved up. Fixed
+          (SWE-2, merge `f8e4d661`; it takes in 0.0.2-gaps' Player screen item), looked at
+          in the release build of `f8e4d661`: headings 1 higher than the draft's (the line
+          at 56.5 against 57, and the text's pixel snapping), each first row within 0.5 of
+          the draft's under its heading. The positions grid stands 2.5 higher (1.5 nearer
+          its heading): asked, `maintainer/questions.html` "Stats screen: the Playable
+          positions grid 2.5 points higher than the draft's"
     - [x] the drafts (the lead), each captured and critiqued: Kit slots shows `Bound team
       ID` as the id in boxes of one width (72 points, six digits); Randomize greyed whole;
       the three texts of DECISIONS 2026-11-16 "the drafts take three texts"; `Star rating`;
