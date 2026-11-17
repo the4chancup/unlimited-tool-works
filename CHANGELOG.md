@@ -4,20 +4,16 @@
 
 ### Important
 
-- **The Compiler**: the first preview, for /vg/ League 27 on PES 2019. It checks the teams'
-  aesthetics exports, compiles them into the CPKs the game loads, and writes the aesthetics
-  patch that carries their settings into the official save. Its window comes later: run
-  `quick_compile.bat`, which keeps the whole report in `compile_log.txt`, or its command line.
-- **Export upgrader**: the first preview. It upgrades exports made in the old format to the
+- **The Compiler**: a first preview, for the /vg/ League 27 on PES 2019. It handles a new
+  format of aesthetics export, which includes the savefiles' aesthetics settings, and, in
+  addition to CPKs, prepares a savefile patch file with all of the aesthetics settings, ready
+  for applying to the official save. More details about the new format will be publicized
+  later. This tool's window comes later: to use the compiler run `quick_compile.bat`, which
+  keeps the whole report in `compile_log.txt`, or call the exe from the command line.
+- **Export upgrader**: a first preview. It upgrades exports made in the old format to the
   one the Compiler reads, and leaves the old export as it was. Its window comes later
-  too: drop the official save onto `quick_upgrade.bat` to upgrade every export in
+  too: drop an official save onto `quick_upgrade.bat` to upgrade every export in
   `old_exports`, or use its command line.
-- **Compiler**: its command line is `UTW.exe compiler`, and its settings sit under `[compiler]`
-  in `settings.toml`. A `[team-compiler]` table left there by an earlier build is not read:
-  move its settings under `[compiler]`.
-- **Save editor**: lists only the cup's teams (IDs 701 to 920) and their players, and Fix
-  database repairs only those; the game's own clubs and national teams stay in the save
-  untouched. On the command line, `diff` and `export-toml --all-teams` do the same.
 - **Save editor and Ruleset editor**: the toolbar is a menu bar. Open, Save and Save as are
   in the **File** menu, Undo and Redo in the **Edit** menu, and their existing shortcuts
   still work.
@@ -213,6 +209,9 @@
   background.
 - **All tools**: on the light theme the background is a shade darker, so boxes and buttons
   stand off it, and a number box looks like a text box.
+- **Save editor**: lists only the cup's teams (IDs 701 to 920) and their players, and Fix
+  database repairs only those; the game's own clubs and national teams stay in the save
+  untouched. On the command line, `diff` and `export-toml --all-teams` do the same.
 - **Save editor**: the Stats screen's panels stand in frames, lined up with the Appearance
   screen's groups, and each label stands further from its box.
 - **Save editor**: in General info, Shirt reads Shirt name, and in the team view Short,
