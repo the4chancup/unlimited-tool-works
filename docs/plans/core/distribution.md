@@ -447,13 +447,28 @@ as its first heading):
   find it;
 - `### Minor fixes`: corner cases few members ever reach (a popover left open while a page key
   moves the selection elsewhere) and cosmetic ones;
-- `### Other stuff`: small changes that are not fixes (a wording, a spacing, a colour, a
-  hint), Red's own last heading, so `### Useful` keeps what a member would act on.
+- `### Other stuff`: small changes that are not fixes (a wording, a colour, a hint), Red's own
+  last heading, so `### Useful` keeps what a member would act on. A spacing or size tweak gets
+  no line: nobody notices it, and nobody works differently for it.
 
 A bullet says what changed and where, in one or two lines; how each step works is the help
-topic's, which the bullet can name. A list of 40 bullets of four lines each was read by
-nobody. A fix for a PES version no release has promised (0.0.1 promised the Save editor on
-PES 2017) gets no entry: no member met the bug. Every reader below shows the `###` headings
+topic's. A list of 40 bullets of four lines each was read by nobody. Each bullet says it is a
+change: "added" for something new, "now" for a changed behavior, "no longer" for one gone,
+since in the plain present it reads as what the tool always did. Changes to one feature share
+a bullet (the menu bar's menus and shortcuts, a file format's renames). A fix names its cause
+in a member's terms ("because the manager ID wasn't being written"), and a change that breaks
+a member's habit says why it was needed. A bullet leaves out:
+
+- what every change of its kind does anyway (both themes, a help topic);
+- what follows from a sentence already there ("a line left in `settings.toml` does nothing"
+  after "the setting is gone");
+- a detail a member meets the first time they try the feature;
+- praise ("so it is easier to see").
+
+Each "new" or "now" is checked against the last release, not against the commits: a commit
+that reworked a look may have kept the part a bullet would call new. A PES version no release
+has promised (0.0.1 promised the Save editor on PES 2017) gets no entry, a fix or a file
+refused alike: no member met it. Every reader below shows the `###` headings
 as written, so the help window's renderer handles them.
 
 The changelog is written in the step that changes the behavior, like the help topic (see

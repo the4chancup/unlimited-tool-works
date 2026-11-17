@@ -67,7 +67,15 @@ mutation run
    physical contact column and the checks' 12 rows; none of its 351 earlier rows changes.
    Gates: pes_savefile, team_widgets, save_editor, clippy, fmt; the pipeline passed on
    `5f4286f9`.
-4. The cut, only once the maintainer has run the checks of
+4. Team TOML's numbers read as the game and the Save editor show them, for 0.0.2 (the
+   maintainer, 2026-11-18): form, injury resistance and weak foot one above the stored value,
+   `[tactics]` roster slots counted from 1, man_marking 1 to 11, 0 = nobody (`c48437e5`;
+   gates: pes_savefile, aatf, save_editor, ruleset_editor, team_widgets, clippy, fmt; the two
+   new tests ran red on the old code). The pipeline runs on `c48437e5`. After 0.0.2, by the
+   same rule: team colours in 8 bits as on screen (the file holds the save's 0 to 63),
+   `[tactics.auto] substitution` and the appearance colours by name; dribbling motion, star
+   rating and playing attitude wait on `maintainer/questions.html#shown-as-numbers`.
+5. The cut, only once the maintainer has run the checks of
    `maintainer/tasks.html` (the maintainer, 2026-11-17): a pipeline without mutants on the
    last merge (0.0.2-determ's second clean run), the changelog, the release build. The Linux
    checks are in (Reset window good enough for 0.0.2; poc.6 starts).

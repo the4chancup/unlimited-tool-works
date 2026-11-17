@@ -18791,3 +18791,16 @@ the game or the screens show is one they get wrong: `captain = 22` meant `[playe
 maintainer noted that 0.0.2 already breaks older files elsewhere, and before 1.0 no older
 format is kept.
 Plan: `spec/pes_savefile/operations.md`, the Team TOML goals and its example block.
+
+## 2026-11-18 — distribution — a changelog bullet says it is a change, and leaves out what nobody acts on
+Decision: each bullet marks itself as a change ("added", "now", "no longer"); changes to one
+feature share a bullet; a fix names its cause in a member's terms; a change that breaks a habit
+says why. A bullet leaves out what every change of its kind does anyway, what follows from a
+sentence already there, a detail met on first use, and praise. A spacing or size tweak gets no
+line, and nor does any change that reaches only a PES version no release has promised (a file
+refused included). Each "new" or "now" is checked against the last release.
+Why: the maintainer's edit of the 0.0.2 changelog, which cut or reworded every one of these
+cases. A line in the plain present reads as what the tool always did, and a line nobody acts on
+hides the ones they need. Spacing had been listed under Other stuff; nobody notices it.
+Plan: plans/core/distribution.md#changelog-and-version-display edited; CONTRIBUTING.md "Commits"
+follows for the unpromised versions.

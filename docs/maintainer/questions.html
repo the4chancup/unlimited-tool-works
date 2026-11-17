@@ -50,6 +50,22 @@ text into the chat. The answered ones then leave this page, and each answer goes
   <textarea class="own" placeholder="Your own answer or a note (optional)"></textarea>
 </section>
 
+<section class="entry" id="shown-as-numbers">
+  <h3>Dribbling motion, star rating and playing attitude in the game</h3>
+  <p class="from">From: worklog 0.0.2, Team TOML's numbers</p>
+  <p>A team file now writes each value as the game shows it. Three values are still written as
+  the save stores them, from 0, both in the file and in the Save editor: the dribbling motion
+  (PES 2020 and 2021), the star rating (PES 2019 on) and the playing attitude (PES 2020 on).</p>
+  <p class="ask">How does the game's Edit mode show each of the three?</p>
+  <div class="options">
+    <label class="opt"><input type="radio" value="numbers from 1"><b>As numbers starting at 1</b></label>
+    <label class="opt"><input type="radio" value="numbers from 0"><b>As numbers starting at 0</b></label>
+    <label class="opt"><input type="radio" value="differs, see note"><b>Not the same for all three</b>
+      <div class="note">Write below how each one shows (a number, stars, a name).</div></label>
+  </div>
+  <textarea class="own" placeholder="Your own answer or a note (optional)"></textarea>
+</section>
+
 <div class="picks">
   <button id="copy">Copy my answers</button>
   <button id="clear">Clear my answers</button>

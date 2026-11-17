@@ -540,9 +540,9 @@ changes something a member notices against the last release (a fix for a bug a r
 a new or changed behavior, a speed-up worth telling) adds its line under `[Unreleased]` in
 `CHANGELOG.md` itself, under the heading `plans/core/distribution.md` "Changelog and version
 display" gives it (a corner-case fix under `### Minor fixes`, a small change that is no fix
-under `### Other stuff`), in one or two lines; a fix for
-something no release has shipped, or for a PES version no release has promised, adds none,
-and neither does a change to a tool no release has presented in its notes or the `README.md`:
+under `### Other stuff`), in one or two lines. A fix for something no release has shipped adds
+none; neither does a change that reaches only a PES version no release has promised, nor a
+change to a tool no release has presented in its notes or the `README.md`:
 the release that first presents it describes it whole, in one bullet (0.0.2 does for the
 Compiler and the Export upgrader), and `just changelog` fails on an entry for a tool on its
 list of those not presented yet. There is one `fix` type for both:
