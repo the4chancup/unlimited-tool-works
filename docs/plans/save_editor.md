@@ -2739,16 +2739,17 @@ What this editor adds on top of the lib:
     - an ability stat's at its label cell's left edge instead (over the cell's padding), where
       the column's left-aligned labels start, so the stats' marks share one column.
 
-    A row about a panel as a whole (the positions grid, the skills, the Tricks or Free cards
-    panel, the COM styles) marks the panel's header, and that mark stands right of the
-    header's last item, 2 points from the title's text: a title stands 7 inside its frame, so
-    a mark left of it would fall on the frame line, and in the first column past the pane's
-    edge. The Skills header's Cards used badge has no mark of its own: its rows mark the
-    Skills header, the group holding the card counts, in one mark with the skills' own (the
-    highest severity of both, both in its tooltip), after the badge, the header's last item,
-    as the row's next item would stand (8 points after it): right of the title it would
-    overlap the badge, and before the badge it would shift the badge whenever it showed. The first column's label marks stand in the room the panels'
-    inset leaves before the labels ("The player view").
+    A row about a panel as a whole marks the panel's header. On Playable positions, the
+    Tricks or Free cards panel and COM playing styles, the mark stands 2 points right of the
+    title's text: a title stands 7 inside its frame, so a mark left of it would fall on the
+    frame line, and in the first column past the pane's edge.
+
+    On Skills, the Cards used badge has no mark of its own: its rows and the skills' share one
+    mark (the highest severity of both, both in its tooltip). It stands after the header's
+    last item, 8 points after it as the row's next item would stand, since right of the title
+    it would overlap the badge, and before the badge it would shift the badge whenever it
+    showed. The first column's label marks stand in the room the panels' inset leaves before
+    the labels ("The player view").
 
     The fields:
     - the Height box for `Height`;

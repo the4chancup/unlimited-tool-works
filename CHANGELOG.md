@@ -223,8 +223,8 @@
 - **Save editor**: the text of `Team file interchange` is no longer dimmed.
 - **Save editor**: the name of a field the save's PES version lacks is dimmed with its
   control, and hovering it names the first version that has the field.
-- **Save editor**: Live AATF's mark on a Stats panel's title stands after the title, and
-  on the Skills title after the Cards used badge.
+- **Save editor**: Live AATF's mark on a panel of the Stats screen stands after its title,
+  and on Skills after the Cards used badge.
 - **Save editor**: on the Gameplan screen, the panels and the two lineup lists stand 8
   points apart, as on the Appearance screen.
 - **Save editor**: a Team TOML export opens by saying what the file is, and that a key
