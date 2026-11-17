@@ -1,4 +1,6 @@
-//! The suite's text box: egui's `TextEdit` with the drafts' resting border.
+//! The suite's text and number boxes: `text_box`, egui's `TextEdit` with
+//! the drafts' resting border, and `number_box`, the `DragValue` drawn as
+//! one on the light theme.
 
 /// A resting text box's outline under `visuals`: the 1-point border in the
 /// theme's quiet line colour (the noninteractive stroke, grey 60 on the dark
@@ -79,33 +81,7 @@ mod tests {
     use egui::epaint::Shape;
 
     use super::*;
-
-    /// One 400 by 200 frame of `contents` with `events` as its input; the
-    /// frame's shapes and what `contents` returned.
-    fn frame<R>(
-        ctx: &egui::Context,
-        events: Vec<egui::Event>,
-        contents: &mut impl FnMut(&mut egui::Ui) -> R,
-    ) -> (Vec<Shape>, R) {
-        let input = egui::RawInput {
-            screen_rect: Some(egui::Rect::from_min_size(
-                egui::Pos2::ZERO,
-                egui::vec2(400.0, 200.0),
-            )),
-            events,
-            ..Default::default()
-        };
-        let mut result = None;
-        let mut output = ctx.run_ui(input, |ui| result = Some(contents(ui)));
-        let shapes = std::mem::take(&mut output.shapes)
-            .into_iter()
-            .map(|clipped| clipped.shape)
-            .collect();
-        // Nothing renders here, so the frame's texture deltas are dropped on
-        // purpose.
-        output.drop_without_applying_deltas();
-        (shapes, result.expect("run_ui calls the closure"))
-    }
+    use crate::widgets::test_support::frame;
 
     /// The rect shape painted exactly over `rect`.
     fn frame_at(shapes: &[Shape], rect: egui::Rect) -> egui::epaint::RectShape {

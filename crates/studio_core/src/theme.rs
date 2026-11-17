@@ -477,7 +477,8 @@ pub fn install(ctx: &egui::Context) {
                     // below): egui's #FF0000, fully saturated, glares on
                     // the dark panel although it reads at only 4.3
                     // there, its orange stands too close to that red,
-                    // and its light link blue reads at 2.8.
+                    // and its light link blue reads at 2.8 on egui's own
+                    // 248 light panel.
                     style.visuals.error_fg_color = egui::Color32::from_rgb(0xF8, 0x51, 0x49);
                     style.visuals.warn_fg_color = egui::Color32::from_rgb(0xD2, 0x99, 0x22);
                     style.visuals.hyperlink_color = egui::Color32::from_rgb(0x58, 0xA6, 0xFF);
@@ -494,7 +495,8 @@ pub fn install(ctx: &egui::Context) {
                     // GitHub's darkened by `darkened_to_read`'s rule on
                     // this panel, the red and the blue GitHub's as they
                     // are, each reading at 4.5 or more on it, where
-                    // egui's light orange and link blue read at 2.8.
+                    // egui's light orange and link blue read at 2.8 on
+                    // egui's own 248 panel.
                     style.visuals.error_fg_color = egui::Color32::from_rgb(0xD1, 0x24, 0x2F);
                     style.visuals.warn_fg_color = egui::Color32::from_rgb(0x95, 0x63, 0x00);
                     style.visuals.hyperlink_color = egui::Color32::from_rgb(0x09, 0x69, 0xDA);
@@ -1211,7 +1213,7 @@ mod tests {
     // The warning colours are GitHub's attention amber pair, replacing
     // egui's oranges, which stood too close to the error red; the light
     // one reads at 4.5 on the light panel, where egui's `#FF6400` read
-    // at 2.8.
+    // at 2.8 on egui's own 248 panel.
     #[test]
     fn install_sets_githubs_attention_amber_for_warnings() {
         let ctx = egui::Context::default();
@@ -1259,7 +1261,7 @@ mod tests {
 
     // The link blue is GitHub's pair too, so the four notice kinds'
     // colours come from one set: egui's light `#009BFF` reads at 2.8 on
-    // the light panel.
+    // egui's own 248 light panel.
     #[test]
     fn install_sets_githubs_link_blue() {
         let ctx = egui::Context::default();

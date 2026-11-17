@@ -71,15 +71,7 @@ fn dim_resting(ui: &mut egui::Ui) {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    /// A context with the suite's look installed, as the window has it, in
-    /// `theme`.
-    fn context(theme: egui::Theme) -> egui::Context {
-        let ctx = egui::Context::default();
-        crate::theme::install(&ctx);
-        ctx.set_theme(theme);
-        ctx
-    }
+    use crate::widgets::test_support::context;
 
     /// One 800 by 600 frame drawing `contents` with `events` as its input;
     /// the frame's shapes.
