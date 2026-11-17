@@ -205,3 +205,50 @@ fn one_floating_panel_at_a_time() {
         "the team file panel closes"
     );
 }
+
+// The panel's sentences and labels paint in the normal text colour, the
+// weak grey kept on what a table's reader skips past: the pairing's slot
+// numbers, arrows and shirt numbers.
+#[test]
+fn the_panels_sentences_paint_the_normal_text_colour() {
+    let (mut view, mut window) = open_on(PesVersion::Pes19, "interchange_text_colour", CO);
+    let visuals = window.ctx.style_of(window.ctx.theme()).visuals.clone();
+    assert_ne!(
+        visuals.text_color(),
+        visuals.weak_text_color(),
+        "premise: the normal and weak colours differ"
+    );
+
+    open_panel(&mut window, &mut view);
+    assert_eq!(
+        painted(
+            &mut window,
+            &mut view,
+            "Team TOML, .4ccs, .4cct and Texport files are accepted."
+        ),
+        visuals.text_color(),
+        "the pick sentence in the normal colour"
+    );
+
+    picked(
+        &mut window,
+        &mut view,
+        "pes19_squad.4ccs",
+        &lib_fixture("pes19_squad.4ccs"),
+    );
+    let (_, pairs, shapes) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let panel: Vec<accesskit::Node> = nodes_in_window(&pairs, TITLE)
+        .into_iter()
+        .map(|(_, node)| node.clone())
+        .collect();
+    assert_eq!(
+        painted_label_color(&panel, &shapes, "Who gets which record"),
+        visuals.text_color(),
+        "the pairing's heading in the normal colour"
+    );
+    assert_eq!(
+        painted_label_color(&panel, &shapes, "01"),
+        visuals.weak_text_color(),
+        "a pairing row's slot keeps the weak grey"
+    );
+}

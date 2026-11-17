@@ -932,12 +932,12 @@ fn contents(
     revision: u64,
 ) -> Option<Action> {
     let Some(team) = target else {
-        ui.weak("Pick a team row to export or import.");
+        ui.label("Pick a team row to export or import.");
         return None;
     };
     let mut action = None;
     ui.horizontal_wrapped(|ui| {
-        ui.weak(format!(
+        ui.label(format!(
             "Export {} ({}) as ",
             display_name(&team.name),
             team.id
@@ -967,7 +967,7 @@ fn contents(
     // One line, as the Comparator's pick row: the label, the file's name
     // truncated to the room the button leaves, the button at the right.
     ui.horizontal_top(|ui| {
-        ui.weak(format!(
+        ui.label(format!(
             "Import into {} ({}) ",
             display_name(&team.name),
             team.id
@@ -1033,7 +1033,7 @@ fn contents(
         }
     }
     let Some(picked) = &interchange.picked else {
-        ui.weak("Team TOML, .4ccs, .4cct and Texport files are accepted.");
+        ui.label("Team TOML, .4ccs, .4cct and Texport files are accepted.");
         return action;
     };
     let error = ui.visuals().error_fg_color;
@@ -1049,10 +1049,10 @@ fn contents(
         }
         None => return action,
     };
-    ui.weak(intro(picked.format, staged.version, version));
+    ui.label(intro(picked.format, staged.version, version));
     let notes_follow = matches!(&staged.import, Ok(import) if !import.notes.is_empty());
     if !staged.pairing.is_empty() {
-        ui.weak("Who gets which record");
+        ui.label("Who gets which record");
         // Under the pairing: the section choices, the notes' heading or a
         // refusal, Apply and the line under it. Notes to come keep half the
         // room.
@@ -1062,7 +1062,7 @@ fn contents(
     }
     let sections = &mut interchange.sections;
     ui.horizontal_wrapped(|ui| {
-        ui.weak("Sections ");
+        ui.label("Sections ");
         if staged.held.stats {
             checkbox(ui, &mut sections.stats, "Stats");
         }
@@ -1085,7 +1085,7 @@ fn contents(
         }
         Ok(import) if !import.notes.is_empty() => {
             // A document naming no version is read as the save's.
-            ui.weak(format!(
+            ui.label(format!(
                 "Import notes ({} file onto a {version} save)",
                 staged.version.unwrap_or(version)
             ));
@@ -1114,12 +1114,12 @@ fn contents(
         {
             action = Some(Action::Apply);
         }
-        ui.weak("The changes can be undone and stay unsaved until you click Save.");
+        ui.label("The changes can be undone and stay unsaved until you click Save.");
     });
     if interchange.applied == Some(revision) {
-        ui.weak(format!("Applied {}.", file_name(&picked.path)));
+        ui.label(format!("Applied {}.", file_name(&picked.path)));
     } else if unchanged {
-        ui.weak("The team already holds every value of the chosen sections.");
+        ui.label("The team already holds every value of the chosen sections.");
     }
     action
 }
@@ -1195,7 +1195,7 @@ fn pairing_rows(ui: &mut egui::Ui, rows: &[Pairing], max_height: f32) {
 
 /// The notes in a scroll area at most `max_height` tall (the draft's
 /// `#ix-warnings`): per code, in first-seen order, the catalog's text as
-/// one weak line, then the code's groups. A team key's group is one line
+/// one small line, then the code's groups. A team key's group is one line
 /// in the warning colour (`subject_line`); a players' group is a collapsed
 /// header `<subject> · <n> players` over one row per player.
 fn notes(ui: &mut egui::Ui, groups: &[NoteGroup], max_height: f32) {
@@ -1214,7 +1214,7 @@ fn notes(ui: &mut egui::Ui, groups: &[NoteGroup], max_height: f32) {
             for code in codes {
                 let of_code: Vec<&NoteGroup> =
                     groups.iter().filter(|group| group.code == code).collect();
-                ui.label(egui::RichText::new(&of_code[0].text).small().weak());
+                ui.label(egui::RichText::new(&of_code[0].text).small());
                 for group in of_code {
                     let players = group
                         .notes
@@ -1254,7 +1254,7 @@ fn subject_line(group: &NoteGroup) -> String {
 
 /// A players' group's rows: the place (weak), the player's name in its
 /// color codes as the pairing list draws it (`(empty slot)` when the
-/// place holds none), and the note's detail (weak).
+/// place holds none), and the note's detail.
 fn note_rows(ui: &mut egui::Ui, notes: &[NoteRow]) {
     let font = egui::TextStyle::Body.resolve(ui.style());
     for note in notes {
@@ -1274,7 +1274,7 @@ fn note_rows(ui: &mut egui::Ui, notes: &[NoteRow]) {
                 }
             }
             if !note.detail.is_empty() {
-                ui.weak(&note.detail);
+                ui.label(&note.detail);
             }
         });
     }
