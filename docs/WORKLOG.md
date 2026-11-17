@@ -18,12 +18,11 @@ excepted, below), 0.0.2-pes19
 (and with it the readme's PES 2019 claim), 0.0.2-nostretch's slices, and any mutation run
 (mutfast first). Most open steps below wait only for the maintainer's look
 (`maintainer/tasks.html`). What is left before the cut:
-1. 0.0.2-taskbuild: one build named on the tasks page for all its cards.
-2. 0.0.2-report's blind drill. The chain was run by hand in the built window on 2026-11-17,
+1. 0.0.2-report's blind drill. The chain was run by hand in the built window on 2026-11-17,
    the dialog matches its draft (the draft following the build where they differed), and
    card ST-REP-05 waits for the maintainer.
-3. In game (a sidekick): the answers' two teams naming one coach record, on PES 2017.
-4. The cut: a pipeline without mutants on the last merge (0.0.2-determ's second clean run),
+2. In game (a sidekick): the answers' two teams naming one coach record, on PES 2017.
+3. The cut: a pipeline without mutants on the last merge (0.0.2-determ's second clean run),
    the changelog, the release build, and a Linux bundle for the Reset window card.
 
 Done since 2026-11-16: the answers' recheck (Kit slots and the Stats screen fixed and looked
@@ -1667,7 +1666,7 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     - [x] no row pops in during a fast scroll (2026-11-16, SWE-2, merge `8db25bd4`):
       `a_fast_scroll_keeps_the_box_covered`, red with the drawn range one row short at
       either edge and with the wheel off the list
-  - [ ] 0.0.2-taskbuild the tasks page names the build its cards run on -> verify: the next
+  - [x] 0.0.2-taskbuild 2026-11-17: the tasks page names the build its cards run on -> verify: the next
     release build (the Report a problem look's) copied to `4cc-studio-temp/tasks_build/`,
     the page's intro naming that path and the commit it was built from; refreshed whenever
     a card is added from a later commit (RUNBOOK "Looks owed have one home each")

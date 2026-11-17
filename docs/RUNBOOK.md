@@ -82,7 +82,10 @@ worklog's "Pending looks" section, ordered by what a wrong result would cost; th
 maintainer can make are cards in `docs/maintainer/tasks.html`. A step or a decision that says
 "not checked in game" adds its line or card in the same edit. The lead
 sends what the harness can do to a SWE-2 in-game run whenever the list holds a
-game-facing write, and hands the maintainer the rest as one batch per game session.
+game-facing write, and hands the maintainer the rest as one batch per game session. The
+cards run on one build, a release build copied to `4cc-studio-temp/tasks_build/` and named in
+the tasks page's intro with its commit; a card that needs a later commit refreshes the copy
+and the intro in the same edit (never while the maintainer has it open: copy beside it then).
 
 **No look reaches the maintainer unchecked.** A built-window look goes on the tasks page, into a
 checklist or into a report only after the lead or an Opus sidekick has made it first: the
