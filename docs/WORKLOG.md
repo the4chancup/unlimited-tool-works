@@ -21,7 +21,9 @@ excepted, below), 0.0.2-pes19
 1. 0.0.2-report's blind drill. The chain was run by hand in the built window on 2026-11-17,
    the dialog matches its draft (the draft following the build where they differed), and
    card ST-REP-05 waits for the maintainer.
-2. In game (a sidekick): the answers' two teams naming one coach record, on PES 2017.
+2. The framed Stats screen (branch `eval/stats-boxes`, a member's request: every panel of the
+   Stats screen framed as the Appearance screen's groups), polished and included (the
+   maintainer, 2026-11-17).
 3. The cut, only once the drill's results are in and the maintainer has run the checks of
    `maintainer/tasks.html` (the maintainer, 2026-11-17): a pipeline without mutants on the
    last merge (0.0.2-determ's second clean run), the changelog, the release build, and a
@@ -1833,10 +1835,9 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       ID` as the id in boxes of one width (72 points, six digits); Randomize greyed whole;
       the three texts of DECISIONS 2026-11-16 "the drafts take three texts"; `Star rating`;
       the Gameplan screen's 8-point gaps
-    - [ ] in-game (a sidekick, PES 2017, the one game supported officially so far; the
-      maintainer, 2026-11-17): two teams naming one coach record, both in one
-      match's prematch screen -> verify: the screen shows each team's coach, or the fault
-      the no-manager-id saves showed; result into the savefile plan's "manager id" paragraph
+    - [x] in-game, PES 2017, 2026-11-17 (SWE-2, `.tmp/0_0_2/ingame/coach17/findings.md`):
+      two teams naming one coach record show no fault, but the first lines up with the
+      second's starting eleven; in the savefile plan's "manager id" paragraph
     - [ ] PES 2019's playing attitude (the maintainer: not in Edit mode on 2019 or 2021, a
       hidden stat; star ratings neither): look for it in
       the PES 2019 save folder's `EDIT00000000 - defaultdb` (Documents, `KONAMI\PRO

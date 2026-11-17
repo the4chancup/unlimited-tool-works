@@ -63,11 +63,17 @@ writes a `manager_id` equal to the file's `[team] id` as the target team's own i
 already does for a `base_copy_id` equal to the file's own player id. In a member's PES 2021
 save (2026-11-12) every team's manager id is its own team id, and a file exported from team
 876 and imported onto 886 left both naming coach 876. A `manager_id` that differs from the
-file's team id is written as it is: it names a coach the member chose. Whether the game minds
-two teams sharing one coach record is not known; an in-game look on PES 2021 (both teams in
-one match's prematch screen, where a team naming no coach shows at once) settles it, and
-until then the rule stands on its own: a team's export imported onto another should not leave
-it naming the first team's coach.
+file's team id is written as it is: it names a coach the member chose.
+
+Two teams sharing one coach record is a fault the game does not show as one. On PES 2017
+(2026-11-17), teams 701 and 702 both named record 701. Every pre-match and Edit screen drew
+both teams whole, with no blank, error or crash. But team 701 lined up with team 702's saved
+starting eleven, its own players standing in 702's slots and 702's captain slot, while 702
+kept its own. So the game plan a match uses is found through the manager id, the last team
+naming it winning (inferred from the one pair seen). An import that left a team naming
+another's coach would quietly change that team's lineup, which is why the rule holds. The
+maintainer's PES 2017 save holds a swap, /k/ (732) and Invitational 12 (862) each naming the
+other's record; what a swap shows in game is not measured.
 
 **Star rating and playing attitude move into `[players.NN.appearance]`.** They are
 aesthetics (the rule above), so the Team TOML carries them where it carries the export's
