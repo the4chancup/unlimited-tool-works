@@ -466,10 +466,11 @@ input[type=checkbox]:indeterminate { background-image: url("data:image/svg+xml,%
 .gen .pair { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
 .gen .pair input[type=number], .gen .pair .box { width: 54px; box-sizing: border-box; flex: none; }
 /* The second half's pairs: the box just after a label column as wide as
-   the half's longest label, "Shirt number", the two at the half's right
-   edge, so its short labels (Nation, Form) keep their boxes close. Live
-   AATF's cross sits left of the label, in the gap between the halves. */
-.gen .pairs > .pair:nth-child(even) { display: grid; grid-template-columns: 73px 54px;
+   the half's longest label, "Accuracy" (51.75 in the draft's font), the two
+   at the half's right edge, so its labels stand as near their boxes as the
+   longest allows, one left edge in both panels. Live AATF's cross sits left
+   of the label, in the gap between the halves. */
+.gen .pairs > .pair:nth-child(even) { display: grid; grid-template-columns: 52px 54px;
   column-gap: 20px; justify-content: end; }
 .gen .pairs > .pair:nth-child(even) .boxed { display: contents; }
 .gen .pairs > .pair:nth-child(even) > .gl { grid-column: 1; grid-row: 1; }
@@ -492,8 +493,9 @@ input[type=checkbox]:indeterminate { background-image: url("data:image/svg+xml,%
    chosen side reads white. */
 .gen .combos .rate.lr .sel.on { background: #5a5a5a; color: var(--strong); }
 .gen .combos .rate.lr .sel:not(.on):hover { color: #f0f0f0; }
-/* The Captain checkbox centred in its box's width, under the box above it. */
-.gen .pair > .box { display: flex; justify-content: center; }
+/* The Captain radio centred in a box as wide and tall as a number box, over Height's, so
+   its row steps down as the box rows do. */
+.gen .pair > .box { display: flex; justify-content: center; align-items: center; height: 18px; }
 .info-grid td { padding: 1px 6px 1px 0; }
 .info-grid input[type=text] { width: 190px; }
 .info-grid input.shirt { width: 110px; }
@@ -5259,16 +5261,16 @@ function generalPanel(p, team) {
         num("Shirt number", p2 => p2.number, (x, v) => x.number = v),
         num("Age", p2 => p2.age, (x, v) => x.age = v, "age")),
       h("div", { class: "combos" }, gl("Nation"), nation))), "general");
-  // Weight has no partner: an empty right half keeps the pairs' grid in step.
+  // Captain has no partner: an empty right half keeps the pairs' grid in step.
   // The weak foot's two share one label: "Weak Foot: Usage", then "Accuracy".
   const main = named(h("div", { class: "col" }, strong("Main stats"),
     h("div", { class: "gen" },
       h("div", { class: "pairs" },
-        num("Height", p2 => p2.height, (x, v) => x.height = v, "height"),
-        // The radio centred in a box's width, as the boxes beside it.
+        // The radio centred in a box's width, over Height's box.
         h("div", { class: "pair" }, gl("Captain"), h("span", { class: "box" }, captain)),
-        num("Weight", p2 => p2.weight, (x, v) => x.weight = v, "weight"),
         h("div", { class: "pair" }),
+        num("Height", p2 => p2.height, (x, v) => x.height = v, "height"),
+        num("Weight", p2 => p2.weight, (x, v) => x.weight = v, "weight"),
         small("Injury Resistance", "Injury Resistance",
           x => x.stats.injury_resistance, (x, v) => x.stats.injury_resistance = v, 3, "injury_resistance"),
         small("Form", "Form", x => x.stats.form, (x, v) => x.stats.form = v, 8, "form"),
