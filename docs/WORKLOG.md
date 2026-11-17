@@ -1924,7 +1924,8 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       maintainer's; `1804f30e`; the lead's rerun 1073 + 57, clippy, fmt): `view/terms.rs` words a nation change as the
       combo does (`135 - USA`; today numbers, against its own rule "its old and new values
       as that view shows them": the changes list, the close prompt, the Comparator), and
-      typed digits pick a nation while the list is open (plan and DECISIONS 2026-11-17)
+      typed digits pick a nation while the list is open (plan and DECISIONS 2026-11-17);
+      its pipeline passed, with the Linux gates
     - [ ] the review: a SWE-2 loop over both slices, then one paid round (Astra's). Round 1
       running 2026-11-17 at `1804f30e`, five parts (`.tmp/0_0_2/geninfo_rev/`, worktree
       `4cc-studio-temp/review_geninfo`)

@@ -753,11 +753,10 @@ vertical room a tab row takes; a toggle on the title's own row takes none.
 
      Name, Shirt name, Nation and these four rows share one label column, as wide as their
      longest label ("Registered position"), so every one of those fields starts at one x, and
-     each ends flush with the second half's boxes, at the panel's right margin. Within a block
-     (Name and Shirt name; the pairs; Stronger foot to Playing style) rows stand 22 apart, the
-     form grids' pitch (`core/gui.md` "Other UI components", Form grids), the toggles 18 tall
-     like every control. The blocks stand 6 apart, 2 more than their rows, as the draft's
-     `.gen`, so each block reads as one.
+     each ends flush with the second half's boxes, at the panel's right margin. Every row stands
+     6 under the one above, within a block (Name and Shirt name; the pairs; Stronger foot to
+     Playing style) and between blocks alike, so with every control 18 tall (the toggles too)
+     the rows stand 24 apart, as the draft's `.gen` and `.pairs` gap them.
 
      Under that **Playable positions**: the 13 positions with C/B/A ratings in five rows by
      line of the pitch, each left wing to right wing (LWF CF SS RWF / LMF AMF RMF / CMF DMF /
