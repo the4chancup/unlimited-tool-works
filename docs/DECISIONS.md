@@ -18686,3 +18686,11 @@ plays with read as two blocks. The nation's number box needed its ID looked up e
 the game's lists, not another editor's, because names and the nations offered change by
 version (six dropped in PES 2018, United States renamed USA) while the IDs never do.
 Plan: `plans/save_editor.md`, "The player view", General info and Main stats.
+
+## 2026-11-17 — save_editor — the team view keeps 8 points under its fields' row, not 9
+Decision: the Gameplan screen's fields' row keeps 8 points under it before the Tactics.
+Why: lowering the screens 1.5 points to stand level with the player list took the draft's
+Tactics 1 point past the pane's bottom, so Gameplan scrolled by a point (found by the
+build's sidekick). One point less under the fields keeps the screen in the pane; moving
+the row up instead would part Gameplan's separator gap from the other screens'.
+Plan: `plans/save_editor.md`, "Editing UI", the title's row bullet.
