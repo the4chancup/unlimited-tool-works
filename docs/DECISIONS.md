@@ -18724,7 +18724,7 @@ Plan: `plans/save_editor.md`, "The player view", General info's Nation.
 
 ## 2026-11-17 — studio_core — the light theme's control fills stand 14 lighter than the matched contrast
 Decision (the maintainer): on the light theme, the resting, hovered and pressed fills of
-buttons, dropdowns, number boxes, checkboxes and radio buttons are 208, 194 and 215, 14
+buttons, dropdowns, checkboxes and radio buttons are 208, 194 and 215, 14
 lighter than the greys that match the dark theme's contrast, where they stood 6 lighter
 (200, 186 and 207). The resting edge follows its fill, 30 darker: 178.
 Why: the maintainer asked for the controls a little lighter. One step for all three states keeps them

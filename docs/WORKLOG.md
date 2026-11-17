@@ -52,7 +52,10 @@ mutation run
    at `#e1e1e1` (hovered and pressed the same 31 over the matched contrast) and a held toggle
    side or chosen C rating at `#c2c2c2`; the Save editor's view 10 after the sidebar (the menu
    bar with it) and its screens ending 14 before the window's edge, everything else in place.
-   Then the lead's look beside the draft, and a card.
+   Built at `2d1d41fe` (gates: studio_core 552, save_editor 1077 + 57, ruleset_editor
+   174 + 13, clippy, fmt); the lead's look matched the draft (the list at x 66, the frames
+   ending at 1266, File at 71, in both); card `look-light-margins` on build
+   `UTW-2d1d41fe.exe`. Left: its pipeline.
 3. The cut, only once the maintainer has run the checks of
    `maintainer/tasks.html` (the maintainer, 2026-11-17): a pipeline without mutants on the
    last merge (0.0.2-determ's second clean run), the changelog, the release build. The Linux
