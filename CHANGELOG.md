@@ -102,7 +102,8 @@
   lists them, and every motion, under Aesthetics. A team file keeps them under
   `appearance.presentation`, as `star_rating` and `playing_attitude`.
 - **Save editor**: Nation is a dropdown of the nations the save's PES version has, each after
-  its ID. Captain, Height and Weight move to **Main stats**, which replaces Other stats.
+  its ID; typing an ID in the open list picks it. Captain, Height and Weight move to **Main
+  stats**, which replaces Other stats.
 - **Save editor**: a Pitch | Left | List toggle under the Playable positions heading shows the
   13 positions as they stand on the pitch, as the same rows from one left edge, or one
   position a row, and the choice is remembered. The letters of the ratings not chosen are

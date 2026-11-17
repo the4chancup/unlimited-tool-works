@@ -1919,8 +1919,8 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       passed, with the Linux gates): the fixture saves carry one ID
       their version lacks (player 75114, nation 23, on PES 2015 and 2016), so the test
       pins those two, the case `ID - ?` exists for
-    - [ ] slice 2 (SWE-2 on `sk/geninfo2`, worktree `4cc-studio-temp/geninfo3`, brief
-      `.tmp/brief_geninfo2.md`): `view/terms.rs` words a nation change as the
+    - [x] slice 2 2026-11-17 (SWE-2, one rework: the entries' texts cached at load, the
+      maintainer's; `1804f30e`; the lead's rerun 1073 + 57, clippy, fmt): `view/terms.rs` words a nation change as the
       combo does (`135 - USA`; today numbers, against its own rule "its old and new values
       as that view shows them": the changes list, the close prompt, the Comparator), and
       typed digits pick a nation while the list is open (plan and DECISIONS 2026-11-17)
