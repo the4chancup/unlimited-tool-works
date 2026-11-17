@@ -212,6 +212,8 @@
 - **Save editor**: lists only the cup's teams (IDs 701 to 920) and their players, and Fix
   database repairs only those; the game's own clubs and national teams stay in the save
   untouched. On the command line, `diff` and `export-toml --all-teams` do the same.
+- **Save editor**: picking the selected player's own team in the team dropdown keeps him
+  selected, instead of selecting the team's row.
 - **Save editor**: the Stats screen's panels stand in frames, lined up with the Appearance
   screen's groups, and each label stands further from its box.
 - **Save editor**: in General info, Shirt reads Shirt name, and in the team view Short,

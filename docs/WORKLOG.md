@@ -1886,9 +1886,9 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       DBC7 the build's Pitch ends at 700 and List at 725, the draft's 703 and 726 (Ability
       stats' and the positions' own heights, before this step)
     - [x] the pipeline on `541f88a6` 2026-11-17: passed, with the Linux gates
-    - [ ] the changelog lines for the three steps, once the maintainer's own pass merges
-      (branch `docs/changelog`, worktree `4cc-studio-temp/changelog`, from `10cc9f45`;
-      `CHANGELOG.md` is not edited on main until then)
+    - [x] the changelog 2026-11-17: keepsel's line under Other stuff; the margins and the
+      positions height refine lines already there (the maintainer's own pass runs on branch
+      `docs/changelog`, worktree `4cc-studio-temp/changelog`)
   - [ ] 0.0.2-keepsel (the maintainer's ruling, 2026-11-17): picking in the team dropdown
     the team the selection is already on keeps the selection (a player stays selected)
     -> verify: a test per case (his team keeps him, another team selects its row)
