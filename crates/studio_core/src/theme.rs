@@ -437,7 +437,7 @@ pub fn install(ctx: &egui::Context) {
     install_fonts(ctx);
     // Three passes a frame at most, not egui's two: a new `Grid` discards the
     // first for its own sizing, so a view that lays out from the widths a
-    // pass measured (the Save editor's centred player columns) needs a third
+    // pass measured (the Save editor's player columns) needs a third
     // to discard the second, which was laid out on the sizing pass's widths.
     ctx.options_mut(|options| {
         options.max_passes = std::num::NonZeroUsize::new(3).expect("3 is not zero");

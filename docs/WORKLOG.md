@@ -1726,7 +1726,8 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       - [x] A1 2026-11-17 `studio_core` (`b98986f7`, merge `53bc3805`): the resting stroke,
         `theme::edge_color`, the checked box's and radio's edge, none on disabled widgets or
         rows (the combo's, the log chips', the help tree's, the sidebar's)
-      - [ ] A2a `widgets::row` and `widgets::resting_edge`, `theme::unheld_edge`: no edge on
+      - [x] A2a 2026-11-17 (SWE-2, one rework; merge on `e09fe74d`; the lead's rerun of the
+        five crates) `widgets::row` and `widgets::resting_edge`, `theme::unheld_edge`: no edge on
         the rows outside `studio_core` (the comparator's chips, the player list, the ruleset
         rail, Show preview) and the picker's swatches; the toggle edges of `team_widgets`'
         selectors and Tactics toggles; the armed role chip (SWE-2, `sk/edges2`)
