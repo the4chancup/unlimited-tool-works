@@ -230,6 +230,10 @@ pub fn step_choice<T: PartialEq>(
     current: &T,
     steps: i32,
 ) -> Option<T> {
+    // Most frames carry no wheel input: never collect the list for them.
+    if steps == 0 {
+        return None;
+    }
     let mut values: Vec<T> = values.into_iter().collect();
     let at = values.iter().position(|value| value == current)?;
     let distance = usize::try_from(steps.unsigned_abs()).expect("the targets have a 32-bit usize");
@@ -769,6 +773,12 @@ mod tests {
         assert_eq!(step_choice(["a", "b", "c"], &"a", -5), Some("c"));
         assert_eq!(step_choice(["a", "b", "c"], &"b", 0), None);
         assert_eq!(step_choice(["a", "b", "c"], &"z", 1), None);
+    }
+
+    #[test]
+    fn a_choice_with_no_step_never_reads_the_list() {
+        let collect = || -> Option<u8> { panic!("iterated") };
+        assert_eq!(step_choice(std::iter::from_fn(collect), &0, 0), None);
     }
 
     #[test]

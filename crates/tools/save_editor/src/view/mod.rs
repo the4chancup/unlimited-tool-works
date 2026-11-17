@@ -1595,8 +1595,9 @@ pub(crate) fn edit_player(
     session.edit_player(key, edited);
 }
 
-/// `edit_player` for the team's entry (General info's Shirt number and
-/// Captain, the team view's fields, the Tactics editor's edited clone).
+/// `edit_player` for the team's entry (General info's Shirt number,
+/// Main stats' Captain, the team view's fields, the Tactics editor's
+/// edited clone).
 pub(crate) fn edit_team(
     session: &mut Session,
     id: u32,
