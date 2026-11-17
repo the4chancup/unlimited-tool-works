@@ -469,6 +469,63 @@ fn a_stat_the_version_lacks_has_its_label_dimmed_as_a_gated_card() {
     }
 }
 
+/// A PES 2017 save's Stats screen on `theme`, Tight Possession (a stat
+/// PES 2017 lacks) scrolled inside the pane's clip: the window, the frame's
+/// shapes and the stat's `-` stand-in's bounds.
+fn tight_possession_dash(
+    theme: egui::Theme,
+    name: &str,
+) -> (Headless, Vec<egui::epaint::ClippedShape>, accesskit::Rect) {
+    let path = fixture(PesVersion::Pes17, name);
+    let mut view = SaveView::new();
+    view.open(&path);
+    view.selected = Some(Selection::Player(701, 0));
+    let mut window = Headless::sized(DEFAULT_PANE.x, 700.0);
+    window.ctx.set_theme(theme);
+    scroll_into_view(&mut window, &mut view, |node| {
+        node.role() == Role::Label && node.value() == Some("Tight Possession")
+    });
+    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let dash = disabled_dash(&nodes, "Tight Possession")
+        .bounds()
+        .expect("bounds");
+    (window, shapes, dash)
+}
+
+// On the light theme a gated stat's `-` stand-in reads as the disabled
+// number box a stored stat's field draws: the box's fill, and no border.
+#[test]
+fn a_gated_stats_dash_fills_as_a_disabled_number_box_on_the_light_theme() {
+    let (mut window, shapes, dash) = tight_possession_dash(egui::Theme::Light, "gated_dash_light");
+    assert_eq!(
+        fill_at(&shapes, dash),
+        Some(disabled_number_box_fill(&mut window)),
+        "Tight Possession's stand-in fills as a disabled number box"
+    );
+    assert!(
+        strokes_over(&shapes, dash).is_empty(),
+        "the stand-in draws no border"
+    );
+}
+
+// On the dark theme the stand-in keeps the grey every disabled control
+// draws: there a number box is the theme's plain control fill.
+#[test]
+fn a_gated_stats_dash_keeps_the_disabled_grey_on_the_dark_theme() {
+    let (window, shapes, dash) = tight_possession_dash(egui::Theme::Dark, "gated_dash_dark");
+    let visuals = window.ctx.style_of(egui::Theme::Dark).visuals.clone();
+    let resting = visuals
+        .widgets
+        .inactive
+        .weak_bg_fill
+        .gamma_multiply(visuals.disabled_alpha());
+    assert_eq!(
+        fill_at(&shapes, dash),
+        Some(resting),
+        "the stand-in keeps the disabled resting fill"
+    );
+}
+
 // The ability stats sit in one column in the game's order, each label
 // beside its number: the 25 stats run top to bottom, their labels'
 // left edges at one x, each label's SpinButton on its row.

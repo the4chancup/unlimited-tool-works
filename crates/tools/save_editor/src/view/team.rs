@@ -21,7 +21,7 @@ use pes_savefile::schema::{VersionSchema, first_version_with_team, schema_for};
 use pes_version::PesVersion;
 use studio_core::widgets::{
     FIELD_SPACING, add_enabled, add_enabled_ui, modal, modal_buttons, number_arrows, number_box,
-    number_wheel_steps, step_number, text_box,
+    number_box_look, number_wheel_steps, step_number, text_box,
 };
 
 use crate::session::Session;
@@ -591,14 +591,17 @@ fn number<T: egui::emath::Numeric>(
 
 /// The disabled stand-in for a number the version does not store: `-`
 /// inside the control's usual bounds (a Button at the DragValue's minimum
-/// size, so an enabled version's control takes the same rect) with the
-/// `PES NN+` tooltip (`abilities`' `gated_number` for team fields).
+/// size, so an enabled version's control takes the same rect) drawn as a
+/// disabled number box, with the `PES NN+` tooltip (`abilities`'
+/// `gated_number` for team fields).
 fn gated_number(ui: &mut egui::Ui, field: TeamField) {
-    add_enabled(
-        ui,
-        false,
-        egui::Button::new("-").min_size(ui.spacing().interact_size),
-    )
+    number_box_look(ui, |ui| {
+        add_enabled(
+            ui,
+            false,
+            egui::Button::new("-").min_size(ui.spacing().interact_size),
+        )
+    })
     .on_disabled_hover_text(gating_tooltip(field));
 }
 
