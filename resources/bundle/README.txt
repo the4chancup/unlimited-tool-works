@@ -1,4 +1,4 @@
-Unlimited Tool Works 0.0.1
+Unlimited Tool Works 0.0.2
 ==========================
 
 A preview version for the DBC's managers and VGL's organizer.

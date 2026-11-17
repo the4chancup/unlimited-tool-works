@@ -5,13 +5,12 @@ Compiler (aesthetics exports to CPK archives), a save editor, and the smaller to
 them (kit configs, referees, balls, music, match tracking, model conversion), in a single binary
 that is both a GUI and a CLI.
 
-**Status: in development, with a first preview out.** 0.0.1, released 2026-11-03, is the save
+**Status: in development, with two previews out.** 0.0.1, released 2026-11-03, is the save
 editor alone, for the Divegrass Before Christmas cup on PES 2017: players, teams and tactics,
 the aesthetics patch, the roster sheet, Live and Multi-team AATF checks, the comparator, undo
-and redo, and a command line for batch work. The next preview, 0.0.2, adds the Compiler
+and redo, and a command line for batch work. 0.0.2, released 2026-11-17, adds the Compiler
 and the Export upgrader for /vg/ League 27 on PES 2019, run from two launchers
-(`quick_upgrade.bat`, `quick_compile.bat`); a pre-release build of it is being tried before
-it goes to the league's organizer. `CHANGELOG.md` lists what each release changed.
+(`quick_upgrade.bat`, `quick_compile.bat`). `CHANGELOG.md` lists what each release changed.
 
 Six of twenty phases are done:
 
@@ -28,7 +27,7 @@ Six of twenty phases are done:
 - **Phase 6**, the Export upgrader: an export in the old layout migrated once to the new one.
 
 Phase 8, the window, is under way: the shell (sidebar, help, log panel, settings), the color
-picker, the AATF card pickers, and the save editor's views, the ones 0.0.1 ships. The `.4ccm`
+picker, the AATF card pickers, and the save editor's views, the ones 0.0.1 and 0.0.2 ship. The `.4ccm`
 music format (Rigdio's) and the first parts of the Ruleset editor are built ahead of their
 phases.
 

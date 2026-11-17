@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.0.2] - 2026-11-17
+
 ### Important
 
 - **The Compiler**: the first preview, for /vg/ League 27 on PES 2019. It checks the teams'
