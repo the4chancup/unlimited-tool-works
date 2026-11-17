@@ -18,24 +18,19 @@ excepted, below), 0.0.2-pes19
 (and with it the readme's PES 2019 claim), 0.0.2-nostretch's slices, and any mutation run
 (mutfast first). Most open steps below wait only for the maintainer's look
 (`maintainer/tasks.html`). What is left before the cut:
-1. In flight: two differences the answers slice's recheck found (SWE-2): Kit slots' labels a
-   space from their boxes, and the Stats screen's sections 12 under the title row's line
-   (`sk/statsline`, which also settles 0.0.2-gaps' Player screen item).
-2. Code: 0.0.2-gaps' built window is checked, its Ruleset editor items moved to Phase 20;
-   0.0.2-poc8, the VGL organizer's bundle and its readme; 0.0.2-taskbuild. Carbon's
-   round-1 reworks (accepted concerns, fixed in 0.0.2 with no round 2) are all merged.
-   Reviews: SWE-2 loops for 0.0.2-revdebt's groups and 0.0.2-wheelside, all ended, no
-   Carbon round. Report a problem, a Tier 1 surface (DECISIONS 2026-11-16), has had its
-   whole review: Carbon's loop ended at round 3 (6 accepted, none a defect a real input
-   reaches), its fixes and SWE-2's loops over them are merged (`b3e8f007`), and Astra's
-   round 1 accepted nothing.
-3. The lead's looks: 0.0.2-report's whole chain, its drill and its built window; a Linux
-   bundle for the Reset window card (at the cut). The grown labels and the Compiler's
-   sidebar and title were looked at on 2026-11-16, and `tasks.html` holds no look waiting
-   for the lead.
-4. In game: the answers' two teams naming one coach record (PES 2021).
-5. The cut: a pipeline without mutants on the last merge (0.0.2-determ's second clean run),
-   the changelog, the release build.
+1. 0.0.2-taskbuild: one build named on the tasks page for all its cards.
+2. 0.0.2-report's blind drill. The chain was run by hand in the built window on 2026-11-17,
+   the dialog matches its draft (the draft following the build where they differed), and
+   card ST-REP-05 waits for the maintainer.
+3. In game (a sidekick): the answers' two teams naming one coach record, on PES 2017.
+4. The cut: a pipeline without mutants on the last merge (0.0.2-determ's second clean run),
+   the changelog, the release build, and a Linux bundle for the Reset window card.
+
+Done since 2026-11-16: the answers' recheck (Kit slots and the Stats screen fixed and looked
+at), the Report a problem dialog's spacing, `gui.py`'s review round. Reviews: every 0.0.2 loop
+has ended; Report a problem, a Tier 1 surface (DECISIONS 2026-11-16), has had its whole review
+(Carbon's loop ended at round 3, its fixes merged at `b3e8f007`, Astra's round 1 accepted
+nothing).
 
 **The PoC for VGL's organizer:** 0.0.2-poc.5 is built (`4cc-studio-temp/poc/target/dist`,
 archive SHA-256 `cac0447a…`, branch `vgl27` at `61d224c4`: main of 2026-11-12 at
@@ -1803,7 +1798,7 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         `substitution_choices`, help 08, the two comments)
       - [x] Choose file's tooltip reads "starting in the folder of the last opened save":
         landed with the recents round 2 rework (merge `2923f863`)
-    - [ ] the built window beside the drafts: the Stats indent, Appearance with Motion's 24
+    - [x] the built window beside the drafts: the Stats indent, Appearance with Motion's 24
       points less room, the Gameplan's 8-point gaps, Kit slots at 51. Looked at (lead,
       2026-11-16, the release build of `5e086fbe`): the indent, Motion's place, the 8-point
       gaps, Automatic settings level with the lists and the boxes' one width match the draft.
@@ -1812,7 +1807,7 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         Motion, Presentation and Copy from ID boxes 52, the title row's line at 56.5 (the
         draft's 57). Rechecked (lead, 2026-11-17, the release build of `a9ec4919`, captures
         in `.tmp/lead/ans2/`): each within 1 point of the draft
-      - [ ] two more differences the recheck met, each to a fix:
+      - [x] two more differences the recheck met, each to a fix:
         - Kit slots: each label and its box in two grid columns, 8 apart, where the draft
           has them in one cell a space apart (3): every box 5 right of the draft's. Fixed
           (SWE-2, `4017c877`): one cell each, `SPACE_GAP` apart. Looked at (lead,
@@ -1837,7 +1832,8 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       ID` as the id in boxes of one width (72 points, six digits); Randomize greyed whole;
       the three texts of DECISIONS 2026-11-16 "the drafts take three texts"; `Star rating`;
       the Gameplan screen's 8-point gaps
-    - [ ] in-game (a sidekick, PES 2021): two teams naming one coach record, both in one
+    - [ ] in-game (a sidekick, PES 2017, the one game supported officially so far; the
+      maintainer, 2026-11-17): two teams naming one coach record, both in one
       match's prematch screen -> verify: the screen shows each team's coach, or the fault
       the no-manager-id saves showed; result into the savefile plan's "manager id" paragraph
     - [ ] PES 2019's playing attitude (the maintainer: not in Edit mode on 2019 or 2021, a
