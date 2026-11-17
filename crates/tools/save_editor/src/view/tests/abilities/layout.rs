@@ -882,9 +882,10 @@ fn the_foot_and_hand_sides_fill_the_held_side_and_store_the_pick() {
 }
 
 // The frame that first shows a player draws him where every later frame
-// does: its ability stats grid is new, so egui lays the frame's first
-// pass out narrow and discards it, and the pass that reaches the screen
-// must not lay out on the widths that discarded pass measured.
+// does, in two passes: its ability stats grid is new, so egui lays the
+// frame's first pass out narrow and discards it, and the pass that
+// reaches the screen must not lay out on the widths that discarded pass
+// measured — a third pass would change nothing.
 #[test]
 fn a_players_first_frame_draws_where_every_later_one_does() {
     let path = fixture(PesVersion::Pes17, "player_first_frame");
@@ -913,6 +914,11 @@ fn a_players_first_frame_draws_where_every_later_one_does() {
         let measured = stored(ui);
         passes.push((read, measured, ui.ctx().will_discard()));
     });
+    assert_eq!(
+        passes.len(),
+        2,
+        "the selecting frame runs two passes: {passes:?}"
+    );
     let (&(read, measured, _), discarded) = passes.split_last().expect("a frame runs a pass");
     assert!(
         discarded.iter().all(|&(_, _, discard)| discard),

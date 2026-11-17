@@ -189,11 +189,12 @@ mod tests {
     }
 
     // Hovered and pressed, the light value box keeps the text edit's fill,
-    // where the widgets' own fills are darker; the rail keeps the resting
-    // fill in either state.
+    // where the widgets' own fills are darker, and draws the state's own
+    // stroke; the rail keeps the resting fill in either state.
     #[test]
     fn a_light_sliders_value_box_keeps_the_fill_hovered_and_pressed() {
         let ctx = context(egui::Theme::Light);
+        let visuals = ctx.style_of(egui::Theme::Light).visuals.clone();
         let rail_height = ctx.global_style().spacing.slider_rail_height;
         let fill = egui::Color32::from_gray(253);
         let rail_fill = egui::Color32::from_gray(200);
@@ -205,8 +206,13 @@ mod tests {
         let (shapes, response) = frame(&ctx, Vec::new(), &mut draw);
         let (value_box, _) = row_frames(&shapes, response.rect, rail_height);
         let at = value_box.rect.center();
-        for (state, events) in [
-            ("hovered", vec![egui::Event::PointerMoved(at)]),
+        for (state, events, stroke, pressed) in [
+            (
+                "hovered",
+                vec![egui::Event::PointerMoved(at)],
+                visuals.widgets.hovered.bg_stroke,
+                false,
+            ),
             (
                 "pressed",
                 vec![
@@ -218,22 +224,47 @@ mod tests {
                         modifiers: egui::Modifiers::NONE,
                     },
                 ],
+                visuals.widgets.active.bg_stroke,
+                true,
             ),
         ] {
             frame(&ctx, events.clone(), &mut draw);
             let (shapes, response) = frame(&ctx, events, &mut draw);
+            assert!(
+                response.hovered(),
+                "premise: the pointer is over the {state} row"
+            );
+            assert_eq!(
+                response.is_pointer_button_down_on(),
+                pressed,
+                "premise: the {state} row's press"
+            );
             let (value_box, rail) = row_frames(&shapes, response.rect, rail_height);
             assert_eq!(value_box.fill, fill, "the {state} value box's fill");
+            assert_eq!(value_box.stroke, stroke, "the {state} value box's stroke");
             assert_eq!(rail.fill, rail_fill, "the {state} rail's fill");
         }
     }
 
     // A disabled light slider's value box draws no border, as a disabled
-    // control draws none; the rail keeps the resting fill, faded by the
-    // disabled scope.
+    // control draws none; its fill stays the text edit's and the rail's the
+    // resting fill, both faded by the disabled scope.
     #[test]
     fn a_disabled_light_sliders_value_box_draws_no_border() {
         let ctx = context(egui::Theme::Light);
+        let visuals = ctx.style_of(egui::Theme::Light).visuals.clone();
+        let faded =
+            |grey: u8| egui::Color32::from_gray(grey).gamma_multiply(visuals.disabled_alpha());
+        assert_eq!(
+            visuals.text_edit_bg_color(),
+            egui::Color32::from_gray(253),
+            "premise: the light text edit's fill"
+        );
+        assert_ne!(
+            faded(253),
+            faded(200),
+            "premise: the faded text edit's fill is not the faded control's"
+        );
         let rail_height = ctx.global_style().spacing.slider_rail_height;
         let mut value = 4u8;
         let mut draw = |ui: &mut egui::Ui| {
@@ -251,9 +282,12 @@ mod tests {
             egui::Stroke::NONE,
             "a disabled value box draws no border"
         );
-        let faded = egui::Color32::from_gray(200)
-            .gamma_multiply(ctx.style_of(egui::Theme::Light).visuals.disabled_alpha());
-        assert_eq!(rail.fill, faded, "the rail keeps the resting fill");
+        assert_eq!(
+            value_box.fill,
+            faded(253),
+            "the disabled value box keeps the text edit's fill, faded"
+        );
+        assert_eq!(rail.fill, faded(200), "the rail keeps the resting fill");
     }
 
     // On the dark theme the value box is the control every other is: the
