@@ -1700,22 +1700,27 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     the built window beside the draft on the Stats, Appearance and Gameplan screens; a tasks
     card; review rounds (a SWE-2 loop and one paid round)
     - [ ] the control edges (`plans/core/gui.md` "Other UI components", "Control edges")
-      - [ ] A1 `studio_core`: the resting stroke, `theme::edge_color`, the checked box's and
-        radio's edge, none on disabled widgets or rows (SWE-2, `sk/edges`)
-      - [ ] A2 the painted toggles (the Save editor's `.rate` rows, positions grid and view
-        tabs; `team_widgets`' Tactics toggles and selectors) and lit buttons, and the rows
-        outside `studio_core` A1's sweep names; after B1 merges (both touch `save_editor`)
+      - [x] A1 2026-11-17 `studio_core` (`b98986f7`, merge `53bc3805`): the resting stroke,
+        `theme::edge_color`, the checked box's and radio's edge, none on disabled widgets or
+        rows (the combo's, the log chips', the help tree's, the sidebar's)
+      - [ ] A2a `widgets::row` and `widgets::resting_edge`, `theme::unheld_edge`: no edge on
+        the rows outside `studio_core` (the comparator's chips, the player list, the ruleset
+        rail, Show preview) and the picker's swatches; the toggle edges of `team_widgets`'
+        selectors and Tactics toggles; the armed role chip (SWE-2, `sk/edges2`)
       - [ ] C the light theme's panel `#f0f0f0`, text boxes `#fdfdfd`, number boxes drawn as
         text boxes (`widgets::number_box` at every `DragValue`), and the colours derived from
-        the panel (DECISIONS 2026-11-17 "the light theme's panel is #f0f0f0"); after A1 merges
-        (both touch `theme.rs`)
+        the panel (DECISIONS 2026-11-17 "the light theme's panel is #f0f0f0"); after B2 merges
+        (it meets A2a in `theme.rs` and B2 in the Save editor's number boxes)
     - [ ] the Stats screen's frames (`plans/save_editor.md` "Editing UI", the player view)
       - [ ] B1 the panels framed, spanning the pane as Appearance's frames, 8 apart, tops on
         Appearance's, columns ending on one line, the positions grid at List's height
         (SWE-2, `sk/statsframes`)
       - [ ] B2 General info's 6 and 12 margins, the 20-point label gaps, the halves 18 apart
-        (and the labels `Shirt name`, `Short name`, `Color 1`/`Color 2`, DECISIONS 2026-11-17); at its merge one CHANGELOG
-        line for those labels and for Playing attitude's new note (already in the code)
+        (and the labels `Shirt name`, `Short name`, `Color 1`/`Color 2`, DECISIONS 2026-11-17);
+        with A2a's `resting_edge`, the Save editor's own toggle edges (the `.rate` rows, the
+        view tabs, the positions layout, the ratings) and the lit Live AATF button; after B1
+        and A2a merge; at its merge one CHANGELOG line for those labels and for Playing
+        attitude's new note (already in the code)
   - [x] 0.0.2-taskbuild 2026-11-17: the tasks page names the build its cards run on -> verify: the next
     release build (the Report a problem look's) copied to `4cc-studio-temp/tasks_build/`,
     the page's intro naming that path and the commit it was built from; refreshed whenever
