@@ -18,8 +18,8 @@ excepted, below), 0.0.2-pes19
 (and with it the readme's PES 2019 claim), 0.0.2-nostretch's slices, and any mutation run
 (mutfast first). Most open steps below wait only for the maintainer's look
 (`maintainer/tasks.html`). What is left before the cut:
-1. 0.0.2-geninfo: the build (SWE-2, running), its review (a SWE-2 loop, then one Carbon
-   round), the nation's wording in the changes list, the typed-digits slice, its changelog
+1. 0.0.2-geninfo: the build (SWE-2, running), its review (a SWE-2 loop, then one paid
+   round, Astra's: the lead's handover holds when it can run), the nation's wording in the changes list, the typed-digits slice, its changelog
    line. 0.0.2-frames, -paneshift, -keepsel and -posheight are merged and reviewed (every
    loop ended; the last pipeline, on `541f88a6`, passed).
 2. The lead's look on one release build, beside the drafts: the framed Stats screen on both
