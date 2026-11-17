@@ -22,8 +22,10 @@ excepted, below), 0.0.2-pes19
    the dialog matches its draft (the draft following the build where they differed), and
    card ST-REP-05 waits for the maintainer.
 2. In game (a sidekick): the answers' two teams naming one coach record, on PES 2017.
-3. The cut: a pipeline without mutants on the last merge (0.0.2-determ's second clean run),
-   the changelog, the release build, and a Linux bundle for the Reset window card.
+3. The cut, only once the drill's results are in and the maintainer has run the checks of
+   `maintainer/tasks.html` (the maintainer, 2026-11-17): a pipeline without mutants on the
+   last merge (0.0.2-determ's second clean run), the changelog, the release build, and a
+   Linux bundle for the Reset window card.
 
 Done since 2026-11-16: the answers' recheck (Kit slots and the Stats screen fixed and looked
 at), the Report a problem dialog's spacing, `gui.py`'s review round. Reviews: every 0.0.2 loop
