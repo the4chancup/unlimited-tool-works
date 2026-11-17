@@ -18593,3 +18593,12 @@ Why: one reading for every such row; a label in the normal colour beside a disab
 reads as a field left to fill. Accepted knowing the Appearance section also dims when the
 aesthetics switch locks it.
 Plan: `plans/save_editor.md`, the Stats screen's paragraph on field labels.
+
+## 2026-11-17 — distribution — the changelog gains Red's "Other stuff" heading (maintainer)
+Decision: a release's bullets may stand under a sixth heading, `### Other stuff`, last, after
+`### Minor fixes`: small changes that are not fixes (a wording, a spacing, a colour, a hint).
+`### Useful` keeps what a member would act on.
+Why: minor items that are not fixes had no heading of their own; Red's changelog ends with
+this one, which members already know.
+Plan: `plans/core/distribution.md`, "Changelog and version display"; `CONTRIBUTING.md`
+"Commits".

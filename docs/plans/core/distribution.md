@@ -427,7 +427,7 @@ bullet opens with its tool (`**The Compiler**: …`, `**Save editor**: …`, `**
 what every tool shares), because that is how a member reads it even though the version axis is
 one.
 
-Inside a section the bullets stand under up to five headings, in this order, sorted by how much
+Inside a section the bullets stand under up to six headings, in this order, sorted by how much
 a member needs them (Red's changelog does the same, and members read a long list only as far
 as its first heading):
 
@@ -444,7 +444,9 @@ as its first heading):
   data or wrong file written however rare its case, because the member it reached needs to
   find it;
 - `### Minor fixes`: corner cases few members ever reach (a popover left open while a page key
-  moves the selection elsewhere) and cosmetic ones.
+  moves the selection elsewhere) and cosmetic ones;
+- `### Other stuff`: small changes that are not fixes (a wording, a spacing, a colour, a
+  hint), Red's own last heading, so `### Useful` keeps what a member would act on.
 
 A bullet says what changed and where, in one or two lines; how each step works is the help
 topic's, which the bullet can name. A list of 40 bullets of four lines each was read by
