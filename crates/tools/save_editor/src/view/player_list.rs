@@ -643,9 +643,15 @@ pub(super) fn team_selector(
                 });
             if let Some(category) = category {
                 combo_separator(ui);
-                for button in TeamCategory::CHOICES {
-                    radio_value(ui, category, button, button.label());
-                }
+                // The menu's own widget visuals take the resting edge off,
+                // a menu row's look; the radios are controls, so the block
+                // draws on the theme's own again.
+                ui.scope(|ui| {
+                    ui.set_style(ui.ctx().global_style());
+                    for button in TeamCategory::CHOICES {
+                        radio_value(ui, category, button, button.label());
+                    }
+                });
             }
         });
     if popup.is_some() {

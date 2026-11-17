@@ -48,14 +48,12 @@ pub(super) const NATION_LABEL: &str = "Nation";
 /// The General info panel's Shirt number field.
 pub(super) const NUMBER_LABEL: &str = "Shirt number";
 
-/// General info's fields' width (the draft's 344px: room for the longest
-/// pair label, "Injury Resistance", beside its box on each half and for
-/// the label-left rows; no wider, so the player view's three columns stay
-/// on one row beside the 255-point list).
+/// General info's fields' width, the panel's nominal width in the draft
+/// (344px): with the content's inset it is the first column's floor.
 pub(super) const GENERAL_WIDTH: f32 = 344.0;
 /// A pair's box width (the draft's `.pair` fields).
 const BOX_WIDTH: f32 = 54.0;
-/// The gap between a label and its field (the draft's `.pair` and
+/// The gap between a label and its field (the draft's `.pair` `gap` and
 /// `.combos` `column-gap`, 20 points), the same everywhere in the panels:
 /// on the label-left rows, on both of a pair's halves and in Ability
 /// stats.
@@ -746,7 +744,7 @@ fn small_box(
 }
 
 /// The four combos, label-left rows on the same label column as Name's
-/// and Shirt name's (`generalPanel`'s `.combos` `107px` grid: its widest label
+/// and Shirt name's (`generalPanel`'s `.combos` `109px` grid: its widest label
 /// is the column's "Registered position"), each `field_width` wide so it
 /// ends at the flush edge with the second half's boxes. `marks` is Live
 /// AATF's held check's: the marked combos' marks stand before their
@@ -847,7 +845,9 @@ fn combos(
 /// `(value, label, width)`, a point apart, the held one filled the
 /// positions grid's C grey with the strong text colour, the others'
 /// words in the normal text grey (the draft's `.sel.on` and
-/// `.sel:not(.on):hover`). An unheld segment is a resting button, whose
+/// `.sel:not(.on):hover`). In a disabled scope both colours give way to
+/// the scope's dimmed text, as a disabled control's words do. An unheld
+/// segment is a resting button, whose
 /// own grey is lighter than the normal text grey the draft wants here:
 /// the resting colour is set to the normal text grey inside the row,
 /// where only these segments draw, and a hover still takes the hovered
@@ -866,7 +866,14 @@ pub(super) fn segment_row<T: Copy + PartialEq>(
     ui.horizontal(|ui| {
         ui.spacing_mut().item_spacing.x = 1.0;
         let strong = ui.visuals().strong_text_color();
-        ui.visuals_mut().widgets.inactive.fg_stroke.color = ui.visuals().text_color();
+        if ui.is_enabled() {
+            ui.visuals_mut().widgets.inactive.fg_stroke.color = ui.visuals().text_color();
+        } else {
+            // A selected button's word is the selection's stroke: a
+            // disabled held side's word dims like every disabled
+            // control's.
+            ui.visuals_mut().selection.stroke.color = ui.visuals().widgets.inactive.fg_stroke.color;
+        }
         // The resting edges a toggle's sides paint: the held side's edge
         // is its fill's own (`edge_color`), an unheld side's the panel's
         // (`unheld_edge`) — a disabled segment draws none.
@@ -877,12 +884,17 @@ pub(super) fn segment_row<T: Copy + PartialEq>(
         let unheld = studio_core::theme::unheld_edge(ui.visuals());
         for (value, label, width) in segments {
             let on = *value == held;
-            let button = if on {
-                egui::Button::selectable(true, egui::RichText::new(*label).color(strong))
-                    .fill(studio_core::theme::palette(ui.visuals()).rating_c_fill)
+            // The held side's strong word is the live look: disabled it
+            // takes the dimmed selection stroke above.
+            let text: egui::WidgetText = if on && ui.is_enabled() {
+                egui::RichText::new(*label).color(strong).into()
             } else {
-                egui::Button::selectable(false, *label)
+                (*label).into()
             };
+            let mut button = egui::Button::selectable(on, text);
+            if on {
+                button = button.fill(studio_core::theme::palette(ui.visuals()).rating_c_fill);
+            }
             let button = if small { button.small() } else { button };
             let response = ui.add_sized([*width, ui.spacing().interact_size.y], button);
             resting_edge(ui, &response, if on { held_edge } else { unheld });

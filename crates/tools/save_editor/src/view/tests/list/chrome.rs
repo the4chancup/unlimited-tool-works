@@ -414,6 +414,79 @@ fn the_selectors_categories_shorten_the_dropdown_and_the_list() {
     );
 }
 
+/// The circles painted inside `bounds` (a radio button's painted mark;
+/// the popup's shapes may nest inside `Shape::Vec`s).
+fn circles_in(
+    shapes: &[egui::epaint::ClippedShape],
+    bounds: accesskit::Rect,
+) -> Vec<&egui::epaint::CircleShape> {
+    let rect = egui::Rect::from_min_max(
+        egui::pos2(bounds.x0 as f32, bounds.y0 as f32),
+        egui::pos2(bounds.x1 as f32, bounds.y1 as f32),
+    );
+    let mut stack: Vec<&egui::Shape> = shapes.iter().map(|clipped| &clipped.shape).collect();
+    let mut found = Vec::new();
+    while let Some(shape) = stack.pop() {
+        match shape {
+            egui::Shape::Vec(children) => stack.extend(children.iter()),
+            egui::Shape::Circle(circle) if rect.contains(circle.center) => found.push(circle),
+            _ => {}
+        }
+    }
+    found
+}
+
+// The category radios are controls, not menu rows: inside the menu
+// popup, which strips the widgets' resting edge for its rows, the
+// checked radio's blue circle carries the selection's own edge and an
+// unchecked one's circle the resting edge, as the same radios draw
+// outside a menu.
+#[test]
+fn the_category_radios_draw_their_edges_inside_the_menu_popup() {
+    let path = fixture(PesVersion::Pes21, "radio_edges");
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut window = Headless::new();
+    let visuals = window.ctx.style_of(window.ctx.theme()).visuals.clone();
+    let resting = visuals.widgets.inactive.bg_stroke;
+    let blue_edge = studio_core::theme::edge_color(&visuals, visuals.selection.bg_fill);
+    assert_eq!(
+        (resting, blue_edge),
+        (
+            egui::Stroke::new(1.0, egui::Color32::from_gray(90)),
+            egui::Color32::from_rgb(0x1e, 0x7a, 0x9e),
+        ),
+        "premise: the resting edge and the blue's own"
+    );
+
+    // The selector open, VGL ticked: the popup stays up. The pointer then
+    // moves off the radios, or the one under it takes the hovered look.
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    click(&mut window, selector_combo(&nodes), &mut view);
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    click(&mut window, radio(&nodes, "VGL"), &mut view);
+    window.frame(vec![egui::Event::PointerMoved(egui::Pos2::ZERO)], |ui| {
+        show(ui, &mut view, &|| Vec::new())
+    });
+    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+
+    // VGL held: the painted blue circle's edge is the blue's own.
+    let held = circles_in(&shapes, radio(&nodes, "VGL").bounds().expect("bounds"));
+    assert!(
+        held.iter().any(|circle| {
+            circle.fill == visuals.selection.bg_fill
+                && circle.stroke == egui::Stroke::new(1.0, blue_edge)
+        }),
+        "the held radio's blue edge: {held:?}"
+    );
+    // 4cc unchecked: egui's circle carries the resting edge.
+    let unheld = circles_in(&shapes, radio(&nodes, "4cc").bounds().expect("bounds"));
+    assert!(
+        unheld.iter().any(|circle| circle.stroke == resting),
+        "an unchecked radio's resting edge: {unheld:?}"
+    );
+}
+
 // The teams' scroll area is as tall as any dropdown's list (the theme's
 // `combo_height`, the draft's `.combo-pop > div`), the separator and the four category
 // radios standing under it inside the popup, their height added to the

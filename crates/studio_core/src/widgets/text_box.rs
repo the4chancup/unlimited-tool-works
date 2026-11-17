@@ -16,8 +16,9 @@ pub fn text_box_border(visuals: &egui::Visuals) -> (egui::Stroke, egui::CornerRa
 /// in the theme's quiet line colour (the noninteractive stroke, grey 60 on
 /// the dark theme), its corners the theme's radius (`text_box_border`);
 /// hovered and focused as egui draws them, the focus outline in the
-/// selection's stroke. The box's outer size is egui's: the border takes its
-/// width off the inner margin.
+/// selection's stroke. A disabled box draws none, as a disabled control
+/// does. The box's outer size is egui's: the border takes its width off the
+/// inner margin.
 /// egui draws a resting text box with the resting widgets' stroke, the
 /// control's edge the buttons share, and its hook for a text box's look is
 /// public only behind its `experimental` feature, so the quieter border is
@@ -25,6 +26,9 @@ pub fn text_box_border(visuals: &egui::Visuals) -> (egui::Stroke, egui::CornerRa
 /// (`ui.add(text_box(…))`, `ui.add_sized(…)`).
 pub fn text_box<'t>(edit: egui::TextEdit<'t>) -> impl egui::Widget + 't {
     move |ui: &mut egui::Ui| {
+        if !ui.is_enabled() {
+            return ui.add(edit);
+        }
         let widgets = ui.visuals().widgets.clone();
         let (border, _) = text_box_border(ui.visuals());
         ui.visuals_mut().widgets.inactive.bg_stroke = border;
@@ -51,6 +55,7 @@ pub fn number_box<'a>(drag: egui::DragValue<'a>) -> impl egui::Widget + 'a {
         let widgets = ui.visuals().widgets.clone();
         let (border, _) = text_box_border(ui.visuals());
         let fill = ui.visuals().text_edit_bg_color();
+        let enabled = ui.is_enabled();
         let states = &mut ui.visuals_mut().widgets;
         for state in [
             &mut states.inactive,
@@ -60,7 +65,9 @@ pub fn number_box<'a>(drag: egui::DragValue<'a>) -> impl egui::Widget + 'a {
             state.weak_bg_fill = fill;
             state.bg_fill = fill;
         }
-        states.inactive.bg_stroke = border;
+        if enabled {
+            states.inactive.bg_stroke = border;
+        }
         let response = ui.add(drag);
         ui.visuals_mut().widgets = widgets;
         response
@@ -189,6 +196,30 @@ mod tests {
                 "{theme:?}: the focus outline"
             );
         }
+    }
+
+    // A disabled text box draws no border, as a disabled control draws
+    // none: the disabled scope's resting stroke stays out.
+    #[test]
+    fn a_disabled_text_box_draws_no_border() {
+        let ctx = egui::Context::default();
+        crate::theme::install(&ctx);
+        ctx.set_theme(egui::Theme::Dark);
+        let mut text = "QUADS ONLY".to_owned();
+        let mut draw = |ui: &mut egui::Ui| {
+            crate::widgets::add_enabled_ui(ui, false, |ui| {
+                ui.add(text_box(egui::TextEdit::singleline(&mut text)))
+            })
+            .inner
+        };
+        // egui styles a text box from its state on the frame before.
+        frame(&ctx, Vec::new(), &mut draw);
+        let (shapes, boxed) = frame(&ctx, Vec::new(), &mut draw);
+        assert_eq!(
+            frame_at(&shapes, boxed.rect).stroke,
+            egui::Stroke::NONE,
+            "a disabled text box draws no border"
+        );
     }
 
     // On the light theme a number box draws as a text box: the text edit's

@@ -478,7 +478,8 @@ fn the_swatch_is_outlined_as_a_resting_text_box() {
 }
 
 // A suggestion swatch is no control: at rest it draws none of the
-// resting edge the theme gives live controls.
+// resting edge the theme gives live controls; hovered it takes the
+// hovered state's stroke, as a hovered widget does.
 #[test]
 fn a_suggestion_swatch_draws_no_stroke_at_rest() {
     let mut window = Headless::new();
@@ -500,6 +501,21 @@ fn a_suggestion_swatch_draws_no_stroke_at_rest() {
         "a swatch draws no resting edge"
     );
     assert_eq!(fill.fill, Color32::from_rgb(255, 0, 0));
+
+    // Hovered: the hovered state's stroke (egui styles a widget from
+    // its state on the frame before, so the pointer moves twice).
+    let hover = vec![egui::Event::PointerMoved(centre(swatch))];
+    window.field(&mut color, &[[255, 0, 0]], hover.clone());
+    let (nodes, _) = window.field(&mut color, &[[255, 0, 0]], hover);
+    let hovered = window
+        .ctx
+        .style_of(window.ctx.theme())
+        .visuals
+        .widgets
+        .hovered
+        .bg_stroke;
+    let (outline, _) = swatch_shapes(&window.shapes, egui_rect(entry(&nodes, "#FF0000")));
+    assert_eq!(outline.stroke, hovered, "the hovered swatch's stroke");
 }
 
 // A committed hex text is one change.

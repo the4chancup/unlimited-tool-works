@@ -371,6 +371,57 @@ fn every_player_row_spans_the_team_rows_width_and_selects_at_its_end() {
     );
 }
 
+// A selected row's blue draws no edge at rest (a row is not a control),
+// but hovered it keeps the hovered state's stroke, as a hovered widget
+// does.
+#[test]
+fn a_hovered_selected_row_keeps_the_hovered_states_edge() {
+    let path = fixture(PesVersion::Pes21, "row_hover_edge");
+    let mut view = SaveView::new();
+    view.open(&path);
+    view.team = TeamChoice::Team(701);
+    view.selected = Some(Selection::Player(701, 0));
+    let mut window = Headless::new();
+    let hovered = window
+        .ctx
+        .style_of(window.ctx.theme())
+        .visuals
+        .widgets
+        .hovered
+        .bg_stroke;
+    assert!(!hovered.is_empty(), "premise: the hovered state strokes");
+
+    let selected_bounds = |nodes: &[accesskit::Node]| {
+        nodes
+            .iter()
+            .filter(|node| list_row(node))
+            .find(|node| node.toggled() == Some(accesskit::Toggled::True))
+            .and_then(accesskit::Node::bounds)
+            .expect("the selected row's bounds")
+    };
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let bounds = selected_bounds(&nodes);
+    let at = egui::pos2(
+        ((bounds.x0 + bounds.x1) / 2.0) as f32,
+        ((bounds.y0 + bounds.y1) / 2.0) as f32,
+    );
+    // egui styles the row from its state on the frame before.
+    window.frame(vec![egui::Event::PointerMoved(at)], |ui| {
+        show(ui, &mut view, &|| Vec::new())
+    });
+    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    assert_eq!(
+        selected_bounds(&nodes),
+        bounds,
+        "premise: the row did not move"
+    );
+    assert_eq!(
+        strokes_over(&shapes, bounds).last(),
+        Some(&hovered),
+        "the hovered selected row keeps the hovered state's edge"
+    );
+}
+
 // SE-GUI-37's team-row dot: a team's own unsaved changes mark its row's
 // right end — after a short-name edit the `●` paints there in the
 // warning colour, right of the painted name — and no player row's label

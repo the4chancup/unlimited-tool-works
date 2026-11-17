@@ -139,8 +139,8 @@ const CARD_COLS_MARGIN: f32 = 0.5;
 /// its body.
 pub(super) const CELL_PADDING: i8 = 6;
 
-/// The first column's width (the draft's `.pcol.first` 350px): General
-/// info's fields and their inset.
+/// The first column's floor, which the column never goes under: General
+/// info's nominal width and its inset.
 fn first_column_width() -> f32 {
     info_strip::GENERAL_WIDTH + f32::from(CELL_PADDING)
 }
@@ -152,9 +152,9 @@ fn first_column_width() -> f32 {
 pub(super) const COLUMN_WIDTHS_ID: &str = "save_editor player column widths";
 
 /// The Skills column's narrowest width, and the first pass's estimate:
-/// the card columns' 330 with their inset and the frame (the draft's
-/// `.pcol` 336 with its padding and border). A grid's discarded sizing
-/// pass measures narrower and must not hand the first column the room.
+/// the card columns' 330 with their 6-point inset inside the frame's
+/// own. A grid's discarded sizing pass measures narrower and must not
+/// hand the first column the room.
 const SECOND_COLUMN_MIN: f32 = 350.0;
 /// The Ability stats column's narrowest width, and the first pass's
 /// estimate: the stats grid's 177.4 inside the frame.
@@ -410,10 +410,11 @@ struct Column {
     rect: egui::Rect,
 }
 
-/// One of the view's three columns, drawn in `rect` (the columns' rects
-/// are known before any draws, so `show` can draw them out of left-to-
-/// right order): its panels `PANEL_GAP` apart and `GROUP_GAP` under the
-/// title's line, as the Appearance screen's groups stand.
+/// One of the view's three columns, drawn left to right in `rect` (the
+/// rects are known before any draws, so each draws at its own place
+/// rather than as the next item in a left-to-right row): its panels
+/// `PANEL_GAP` apart and `GROUP_GAP` under the title's line, as the
+/// Appearance screen's groups stand.
 fn column(
     ui: &mut egui::Ui,
     rect: egui::Rect,

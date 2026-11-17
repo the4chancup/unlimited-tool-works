@@ -4,7 +4,12 @@ use super::*;
 /// badge's run landed and the columns' widths settled over the first
 /// frames.
 fn positions_view(test: &str, width: f32) -> (SaveView, Headless) {
-    let path = fixture(PesVersion::Pes21, test);
+    positions_view_on(test, PesVersion::Pes21, width)
+}
+
+/// `positions_view` on `version`'s fixture save.
+fn positions_view_on(test: &str, version: PesVersion, width: f32) -> (SaveView, Headless) {
+    let path = fixture(version, test);
     let mut view = SaveView::new();
     view.open(&path);
     view.selected = Some(Selection::Player(701, 0));

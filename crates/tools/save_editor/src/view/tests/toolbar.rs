@@ -835,6 +835,16 @@ fn the_live_aatf_toggle_edges_in_the_selection_blues_while_on() {
         Some(&egui::Stroke::new(1.0, edge)),
         "the held toggle's edge"
     );
+
+    // Off: the resting widgets' edge, like any live control's.
+    view.live_aatf = false;
+    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let button = node_labeled(&nodes, Role::Button, "\u{25b6} Live AATF");
+    assert_eq!(
+        strokes_over(&shapes, button.bounds().expect("bounds")).last(),
+        Some(&visuals.widgets.inactive.bg_stroke),
+        "the off toggle's edge is the resting widgets'"
+    );
 }
 
 /// A dirty session's `• unsaved changes` paints in the link blue, not the

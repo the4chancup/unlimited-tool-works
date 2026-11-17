@@ -877,9 +877,10 @@ fn on_pes16_the_colours_manager_id_and_kit_slots_draw_disabled_with_their_versio
     view.open(&path);
     let mut window = Headless::sized(DEFAULT_PANE.x, 700.0);
     open_team_view(&mut window, &mut view, 701);
-    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
 
-    // The two colour fields, disabled with "PES 17+".
+    // The two colour fields, disabled with "PES 17+": no edge either, as
+    // a disabled control draws none.
     let mut colours: Vec<&accesskit::Node> = nodes
         .iter()
         .filter(|node| {
@@ -899,6 +900,10 @@ fn on_pes16_the_colours_manager_id_and_kit_slots_draw_disabled_with_their_versio
     assert_eq!(colours.len(), 2, "two colour fields");
     for field in &colours {
         assert!(field.is_disabled(), "the colour field is disabled");
+        assert!(
+            strokes_over(&shapes, field.bounds().expect("bounds")).is_empty(),
+            "a disabled colour field draws no edge"
+        );
         assert_eq!(
             tooltip_after_hover(&mut window, &mut view, centre(field)),
             Some("PES 17+".to_string()),

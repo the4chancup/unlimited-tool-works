@@ -180,7 +180,7 @@ fn assert_three_columns_at_1280(version: PesVersion) {
         "the second half at least 18 after the first ({shirt_label:?} vs {height_box:?})"
     );
     // The second half's boxes sit just after a label column as wide as
-    // "Shirt number" and its 20-point gap (the draft's `72px 54px` grid,
+    // "Shirt number" and its 20-point gap (the draft's `73px 54px` grid,
     // the column's `column-gap`): one x across General info's and Other
     // stats' rows, so a short label (Nation, Form) keeps its box close.
     let box_x = shirt_label.x1 + 20.0;
@@ -450,15 +450,16 @@ fn the_panels_fields_end_twelve_inside_their_frames_at_any_width() {
     }
 }
 
-/// The Stats screen's frames for the selected player at `width` and the
-/// Appearance screen's for the same player after it: `(stats frames by
-/// title, appearance's Strip style frame)` — Strip style spans the
-/// screen's own edges.
+/// The Stats screen's frames for `version`'s selected player at `width`
+/// and the Appearance screen's for the same player after it: `(stats
+/// frames by title, appearance's Strip style frame)` — Strip style spans
+/// the screen's own edges.
 fn stats_frames(
     test: &str,
+    version: PesVersion,
     width: f32,
 ) -> (std::collections::HashMap<String, egui::Rect>, egui::Rect) {
-    let (mut view, mut window) = positions_view(test, width);
+    let (mut view, mut window) = positions_view_on(test, version, width);
     let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     let stats = [
         "General info",
@@ -487,51 +488,58 @@ fn stats_frames(
 // groups' do: the leftmost frame's left edge and the rightmost's right
 // edge on the groups' own, the columns and the panels of a column 8
 // apart — and General info's column alone takes a wider window's extra
-// room (the draft's `1fr`), the two fixed columns keeping their widths.
-// The title's row still starts at the pane's left edge, the toggle first.
+// room (the draft's `1fr`), the two fixed columns keeping their widths,
+// on every engine the columns are settled on. The title's row still
+// starts at the pane's left edge, the toggle first.
 #[test]
 fn the_stats_screens_frames_span_the_pane_as_appearances_do() {
-    let mut span = Vec::new();
-    for wider in [0.0_f32, 300.0] {
-        let (frames, strip) =
-            stats_frames(&format!("stats_span_{wider:.0}"), DEFAULT_PANE.x + wider);
-        let general = frames["General info"];
-        let ability = frames["Ability stats"];
+    for version in [PesVersion::Pes21, PesVersion::Pes15, PesVersion::Pes17] {
+        let mut span = Vec::new();
+        for wider in [0.0_f32, 300.0] {
+            let (frames, strip) = stats_frames(
+                &format!("stats_span_{version:?}_{wider:.0}"),
+                version,
+                DEFAULT_PANE.x + wider,
+            );
+            let general = frames["General info"];
+            let ability = frames["Ability stats"];
+            assert!(
+                (general.min.x - strip.min.x).abs() <= 0.5
+                    && (ability.max.x - strip.max.x).abs() <= 0.5,
+                "the columns' span on the groups' edges ({general:?}..{ability:?} vs {strip:?} \
+                 at {version:?} {wider})"
+            );
+            for pair in ["General info", "Skills", "Ability stats"].windows(2) {
+                let (left, right) = (frames[pair[0]], frames[pair[1]]);
+                assert!(
+                    (right.min.x - left.max.x - 8.0).abs() <= 0.5,
+                    "the columns 8 apart ({left:?} then {right:?} at {version:?} {wider})"
+                );
+            }
+            for pair in [
+                ["General info", "Other stats"],
+                ["Other stats", "Playable positions"],
+                ["Skills", "Tricks"],
+                ["Tricks", "COM playing styles"],
+            ] {
+                let (above, below) = (frames[pair[0]], frames[pair[1]]);
+                assert!(
+                    (below.min.y - above.max.y - 8.0).abs() <= 0.5,
+                    "the panels of a column 8 apart ({above:?} then {below:?} at {version:?} \
+                     {wider})"
+                );
+            }
+            span.push((general.width(), frames["Skills"].width(), ability.width()));
+        }
         assert!(
-            (general.min.x - strip.min.x).abs() <= 0.5
-                && (ability.max.x - strip.max.x).abs() <= 0.5,
-            "the columns' span on the groups' edges ({general:?}..{ability:?} vs {strip:?} at \
-             {wider})"
+            (span[1].0 - span[0].0 - 300.0).abs() <= 0.5,
+            "General info's frame 300 wider ({span:?} at {version:?})"
         );
-        for pair in ["General info", "Skills", "Ability stats"].windows(2) {
-            let (left, right) = (frames[pair[0]], frames[pair[1]]);
-            assert!(
-                (right.min.x - left.max.x - 8.0).abs() <= 0.5,
-                "the columns 8 apart ({left:?} then {right:?} at {wider})"
-            );
-        }
-        for pair in [
-            ["General info", "Other stats"],
-            ["Other stats", "Playable positions"],
-            ["Skills", "Tricks"],
-            ["Tricks", "COM playing styles"],
-        ] {
-            let (above, below) = (frames[pair[0]], frames[pair[1]]);
-            assert!(
-                (below.min.y - above.max.y - 8.0).abs() <= 0.5,
-                "the panels of a column 8 apart ({above:?} then {below:?} at {wider})"
-            );
-        }
-        span.push((general.width(), frames["Skills"].width(), ability.width()));
+        assert!(
+            (span[1].1 - span[0].1).abs() <= 0.5 && (span[1].2 - span[0].2).abs() <= 0.5,
+            "the fixed columns keep their widths ({span:?} at {version:?})"
+        );
     }
-    assert!(
-        (span[1].0 - span[0].0 - 300.0).abs() <= 0.5,
-        "General info's frame 300 wider ({span:?})"
-    );
-    assert!(
-        (span[1].1 - span[0].1).abs() <= 0.5 && (span[1].2 - span[0].2).abs() <= 0.5,
-        "the fixed columns keep their widths ({span:?})"
-    );
 
     // The title's row starts at the pane's left edge with the toggle.
     let path = fixture(PesVersion::Pes21, "stats_span_title");

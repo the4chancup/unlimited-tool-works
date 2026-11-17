@@ -15,8 +15,9 @@
 //! use (`in_use_frame`), the slider with its value box (`slider`), the wheel stepping a combo box or a drag value (`wheel`), the modal window
 //! every dialog draws through (`modal`), the spacing of stacked fields
 //! and checkboxes (`FIELD_SPACING`, `CHECKBOX_SPACING`, `checkbox_row`) and of a
-//! grid of text rows (`TEXT_ROW_SPACING`), and the resting-edge questions a
-//! widget painting its own state asks (`at_rest`, `row`, `resting_edge`).
+//! grid of text rows (`TEXT_ROW_SPACING`), and the resting edge a widget
+//! painting its own state draws (`at_rest`, `resting_edge`) or a row
+//! takes out (`row`).
 //! Where they sit in a tool's view is that tool's choice; the widgets
 //! themselves know no tool.
 
