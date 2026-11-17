@@ -11,7 +11,7 @@ its path, so a member who never saved has none there.
 
 diff names a field only when it changed. It compares only the players of cup teams (IDs 701
 to 920): none of a team's own fields, so neither its tactics nor its roster, which holds
-the players' shirt numbers. To see a team's fields and its players', including those that did
-not change (an edit flag, say), write the team to a TOML file from any of the saves:
+the players' shirt numbers. To see a team's fields and its players', including those that
+did not change (an edit flag, say), write the team to a TOML file from any of the saves:
 
     UTW save-editor export-toml --team 701 -o before.toml inputs/0-EDIT00000000
