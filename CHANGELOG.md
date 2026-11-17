@@ -172,6 +172,8 @@
 
 ### Minor fixes
 
+- **All tools**: resizing the window no longer makes its contents jump on every step of
+  the drag.
 - **All tools**: warnings are amber instead of orange and errors a softer red, so the two
   stand apart. The success green and the link blue changed with them, and on the light
   theme links are easier to read.
