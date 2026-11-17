@@ -943,7 +943,11 @@ fn the_stats_screens_fields_stand_24_apart_and_its_checkboxes_22() {
             .unwrap_or_else(|| panic!("a {role:?} right of {label}")))
     };
     let name = top(field_right_of_label(&nodes, "Name (", Role::TextInput));
-    let shirt = top(field_right_of_label(&nodes, "Shirt (", Role::TextInput));
+    let shirt = top(field_right_of_label(
+        &nodes,
+        "Shirt name (",
+        Role::TextInput,
+    ));
     let height = first_right_of("Height", Role::SpinButton);
     let age = first_right_of("Age", Role::SpinButton);
     let foot = first_right_of("Stronger foot", Role::Button);

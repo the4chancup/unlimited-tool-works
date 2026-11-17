@@ -49,8 +49,8 @@ use std::sync::Arc;
 use pes_savefile::model::{PlayerEntry, TeamEntry};
 use pes_version::PesVersion;
 use studio_core::widgets::{
-    add_enabled, consume_ctrl, menu_button, menu_separator, modal, modal_buttons, toolbar_framed,
-    toolbar_separator,
+    add_enabled, consume_ctrl, menu_button, menu_separator, modal, modal_buttons, resting_edge,
+    toolbar_framed, toolbar_separator,
 };
 use studio_core::{ExeCheck, Notice, NoticeKind, Recorder, RunningPes};
 
@@ -1251,11 +1251,19 @@ fn toolbar(
             // then the name (a check mark beside it read as on while it
             // was off), the selection fill while on; a selectable label
             // read as a label beside the menus.
-            if ui
+            let response = ui
                 .add(egui::Button::new("\u{25b6} Live AATF").selected(view.live_aatf))
-                .on_hover_text("Check the open team after every edit (the setting is remembered)")
-                .clicked()
-            {
+                .on_hover_text("Check the open team after every edit (the setting is remembered)");
+            if view.live_aatf {
+                // The held toggle's edge is its fill's — the selection
+                // blue's own (`edge_color`); off it keeps the resting edge.
+                resting_edge(
+                    ui,
+                    &response,
+                    studio_core::theme::edge_color(ui.visuals(), ui.visuals().selection.bg_fill),
+                );
+            }
+            if response.clicked() {
                 surrender_focus(ui);
                 view.live_aatf = !view.live_aatf;
             }

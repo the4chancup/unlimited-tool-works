@@ -244,7 +244,7 @@ const CO_ROWS: [[&str; 3]; 6] = [
     ["PLACEHOLDER \u{b7} Hunching (dribbling)", "1", "2"],
     ["PLACEHOLDER \u{b7} Copy from ID", "7511", "71403"],
     ["PLACEHOLDER \u{b7} Name", "PLACEHOLDER", "PATCHED"],
-    ["PLACEHOLDER \u{b7} Shirt", "PLACEHOLDER", "PATCHED"],
+    ["PLACEHOLDER \u{b7} Shirt name", "PLACEHOLDER", "PATCHED"],
 ];
 
 /// `rows` under the table's header row, as `panel_lines` reads them: cell

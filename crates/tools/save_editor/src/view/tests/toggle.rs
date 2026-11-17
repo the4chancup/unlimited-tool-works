@@ -305,15 +305,15 @@ fn the_toggle_moves_the_detail_between_the_three_screens() {
 
 /// The bottom of the team view's fields' row: its tallest control's
 /// bottom plus the centring under it (the row is 24 tall, the controls
-/// centred in it), read off the topmost Short label's row, its controls
+/// centred in it), read off the topmost Short name label's row, its controls
 /// right of the pane's left edge — the player list's rows stand left of it.
 fn fields_row_bottom(nodes: &[accesskit::Node], pane_left: f64) -> f64 {
     let short = nodes
         .iter()
-        .filter(|node| node.role() == Role::Label && node.value() == Some("Short"))
+        .filter(|node| node.role() == Role::Label && node.value() == Some("Short name"))
         .filter_map(accesskit::Node::bounds)
         .min_by(|a, b| a.y0.partial_cmp(&b.y0).expect("ordered bounds"))
-        .expect("the fields' row's Short label");
+        .expect("the fields' row's Short name label");
     nodes
         .iter()
         .filter(|node| {

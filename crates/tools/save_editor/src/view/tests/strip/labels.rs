@@ -1,5 +1,5 @@
 //! The counted labels' AccessKit reports: `Name (n/max)` and
-//! `Shirt (n/max)` hand-set their `WidgetInfo` (the label is painted by
+//! `Shirt name (n/max)` hand-set their `WidgetInfo` (the label is painted by
 //! hand, not a widget), so a disabled report would read a working label
 //! as greyed out to a screen reader.
 
@@ -13,7 +13,7 @@ fn the_counted_labels_report_enabled() {
     view.open(&path);
     let mut window = Headless::new();
     let nodes = draw(&mut window, &mut view);
-    for prefix in ["Name (", "Shirt ("] {
+    for prefix in ["Name (", "Shirt name ("] {
         let label = nodes
             .iter()
             .find(|node| {

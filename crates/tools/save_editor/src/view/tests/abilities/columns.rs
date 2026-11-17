@@ -86,7 +86,7 @@ fn assert_three_columns_at_1280(version: PesVersion) {
         "no Appearance header under the columns"
     );
 
-    // The six label-left rows (Name, Shirt and the four combos) share
+    // The six label-left rows (Name, Shirt name and the four combos) share
     // one label column: their fields start at one x and end flush with
     // the second half's boxes, not on the panel's edge.
     let name = name_field(&nodes).bounds().expect("bounds");
@@ -132,7 +132,7 @@ fn assert_three_columns_at_1280(version: PesVersion) {
     }
     // The counted labels sit on their field's row (the label's vertical
     // centre inside the field's bounds).
-    for prefix in ["Name (", "Shirt ("] {
+    for prefix in ["Name (", "Shirt name ("] {
         let label = nodes
             .iter()
             .find(|node| {
@@ -141,7 +141,7 @@ fn assert_three_columns_at_1280(version: PesVersion) {
             })
             .and_then(|node| node.bounds())
             .unwrap_or_else(|| panic!("no counted label {prefix:?}"));
-        let field = if prefix.starts_with("Shirt") {
+        let field = if prefix.starts_with("Shirt name") {
             shirt
         } else {
             name
@@ -153,10 +153,10 @@ fn assert_three_columns_at_1280(version: PesVersion) {
         );
     }
 
-    // The pairs' halves 28 points apart: the first half's boxes start at
-    // the rows' fields' left edge (the first half is the rows' label
-    // column, their 12 and a box), the second half's left edge 28 after
-    // its box's right edge.
+    // The pairs' halves at least 18 apart: the first half's boxes start
+    // at the rows' fields' left edge (the first half is the rows' label
+    // column, their 20 and a box), the second half's left edge 18 or
+    // more after its box's right edge.
     let height_box = right_of_label(&nodes, "Height", Role::SpinButton)[0]
         .bounds()
         .expect("bounds");
@@ -176,14 +176,14 @@ fn assert_three_columns_at_1280(version: PesVersion) {
         );
     }
     assert!(
-        (shirt_label.x0 - height_box.x1 - 28.0).abs() < 0.5,
-        "the second half 28 after the first ({shirt_label:?} vs {height_box:?})"
+        shirt_label.x0 - height_box.x1 >= 17.5,
+        "the second half at least 18 after the first ({shirt_label:?} vs {height_box:?})"
     );
     // The second half's boxes sit just after a label column as wide as
-    // "Shirt number" and its 9-point gap (the draft's `72px 54px` grid,
+    // "Shirt number" and its 20-point gap (the draft's `72px 54px` grid,
     // the column's `column-gap`): one x across General info's and Other
     // stats' rows, so a short label (Nation, Form) keeps its box close.
-    let box_x = shirt_label.x1 + 9.0;
+    let box_x = shirt_label.x1 + 20.0;
     for (label, role) in [
         ("Shirt number", Role::SpinButton),
         ("Nation", Role::SpinButton),
@@ -211,9 +211,9 @@ fn assert_three_columns_at_1280(version: PesVersion) {
         "the Captain radio centred under the Nation box ({captain:?} vs {nation:?})"
     );
 
-    // A label and its field are never closer than these minimums: 9 on
-    // every pair, 12 in the label-left rows and Ability stats, the
-    // narrowest of each at its minimum.
+    // A label and its field are never closer than 20: on the pairs, in
+    // the label-left rows and in Ability stats, the narrowest of each at
+    // its minimum.
     let pair_min = min_gap(
         &nodes,
         &[
@@ -230,8 +230,8 @@ fn assert_three_columns_at_1280(version: PesVersion) {
         ],
     );
     assert!(
-        (pair_min - 9.0).abs() < 0.5,
-        "the narrowest pair gap at 9 ({pair_min})"
+        (pair_min - 20.0).abs() < 0.5,
+        "the narrowest pair gap at 20 ({pair_min})"
     );
     let mut row_min = min_gap(
         &nodes,
@@ -242,7 +242,7 @@ fn assert_three_columns_at_1280(version: PesVersion) {
             ("Playing style", Role::ComboBox),
         ],
     );
-    for prefix in ["Name (", "Shirt ("] {
+    for prefix in ["Name (", "Shirt name ("] {
         let label_rect = nodes
             .iter()
             .find(|node| {
@@ -255,12 +255,12 @@ fn assert_three_columns_at_1280(version: PesVersion) {
             .bounds()
             .expect("bounds");
         let gap = field.x0 - label_rect.x1;
-        assert!(gap >= 11.5, "{prefix}gap {gap} under 12");
+        assert!(gap >= 19.5, "{prefix}gap {gap} under 20");
         row_min = row_min.min(gap);
     }
     assert!(
-        (row_min - 12.0).abs() < 0.5,
-        "the narrowest row gap at 12 ({row_min})"
+        (row_min - 20.0).abs() < 0.5,
+        "the narrowest row gap at 20 ({row_min})"
     );
     let stat_pairs: Vec<(String, Role)> =
         pes_savefile::interchange::team_toml::labels::ABILITY_STATS
@@ -282,8 +282,8 @@ fn assert_three_columns_at_1280(version: PesVersion) {
             .collect();
     let stat_min = min_gap(&nodes, &stat_pairs);
     assert!(
-        (stat_min - 12.0).abs() < 0.5,
-        "the narrowest stat gap at 12 ({stat_min})"
+        (stat_min - 20.0).abs() < 0.5,
+        "the narrowest stat gap at 20 ({stat_min})"
     );
 
     // The COM styles' second column starts at the skills' second column's x.
@@ -345,6 +345,108 @@ fn assert_three_columns_at_1280(version: PesVersion) {
                 node.label().unwrap_or("?")
             );
         }
+    }
+}
+
+// Every field of General info's and Other stats' panels ends 12 inside
+// its frame on the right (the content's own 6-point padding, the frame's
+// 6 and its point of stroke): the counted fields, the foot toggle, the
+// combos and both halves' boxes on one flush x, in both panels alike. At
+// a window 300 wider the column takes the room, the pairs' halves stand
+// 300 further apart and the first half's boxes have not moved.
+#[test]
+fn the_panels_fields_end_twelve_inside_their_frames_at_any_width() {
+    let mut halves_gap: Option<f64> = None;
+    let mut first_boxes = Vec::new();
+    for wider in [0.0_f32, 300.0] {
+        let (mut view, mut window) =
+            positions_view(&format!("fields_flush_{wider:.0}"), DEFAULT_PANE.x + wider);
+        let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+        let frame =
+            |title: &str| f64::from(group_frame(&window, &nodes, &shapes, title).max.x) - 13.0;
+        let (general, other) = (frame("General info"), frame("Other stats"));
+        let right = |node: &accesskit::Node| node.bounds().expect("bounds").x1;
+        let box_right = |label: &str, role: Role| {
+            right_of_label(&nodes, label, role)
+                .first()
+                .copied()
+                .unwrap_or_else(|| panic!("the {label} field"))
+                .bounds()
+                .expect("bounds")
+                .x1
+        };
+        let foot = right_of_label(&nodes, "Stronger foot", Role::Button)
+            .last()
+            .copied()
+            .expect("the foot toggle's right side");
+        for (what, field_x1, edge) in [
+            ("the Name field", right(name_field(&nodes)), general),
+            ("the Shirt name field", right(shirt_field(&nodes)), general),
+            ("the Stronger foot toggle", right(foot), general),
+            (
+                "the Registered position combo",
+                box_right("Registered position", Role::ComboBox),
+                general,
+            ),
+            (
+                "the Shirt number box",
+                box_right("Shirt number", Role::SpinButton),
+                general,
+            ),
+            (
+                "the Nation box",
+                box_right("Nation", Role::SpinButton),
+                general,
+            ),
+            ("the Form box", box_right("Form", Role::SpinButton), other),
+            (
+                "the Accuracy box",
+                box_right("Accuracy", Role::SpinButton),
+                other,
+            ),
+        ] {
+            assert!(
+                (field_x1 - edge).abs() <= 0.5,
+                "{what} ends 12 inside its frame ({field_x1} vs {edge} at {wider})"
+            );
+        }
+        // The halves' gap and the first half's boxes' left edges.
+        let shirt_label = label_bounds(&nodes, "Shirt number");
+        let height_box = right_of_label(&nodes, "Height", Role::SpinButton)[0]
+            .bounds()
+            .expect("bounds");
+        let gap = shirt_label.x0 - height_box.x1;
+        if let Some(before) = halves_gap {
+            assert!(
+                (gap - before - 300.0).abs() <= 0.5,
+                "the halves 300 further apart ({gap} vs {before})"
+            );
+        }
+        halves_gap = Some(gap);
+        let boxes: Vec<f64> = [
+            ("Height", Role::SpinButton),
+            ("Weight", Role::SpinButton),
+            ("Age", Role::SpinButton),
+            ("Injury Resistance", Role::SpinButton),
+            ("Weak Foot: Usage", Role::SpinButton),
+        ]
+        .iter()
+        .map(|(label, role)| {
+            right_of_label(&nodes, label, *role)[0]
+                .bounds()
+                .expect("bounds")
+                .x0
+        })
+        .collect();
+        if !first_boxes.is_empty() {
+            for (label, (before, now)) in first_boxes.iter().zip(&boxes).enumerate() {
+                assert!(
+                    (now - before).abs() <= 0.5,
+                    "the first half's box {label} has not moved ({now} vs {before} at {wider})"
+                );
+            }
+        }
+        first_boxes = boxes;
     }
 }
 
@@ -625,8 +727,8 @@ fn every_panels_content_stands_six_in_from_its_title() {
     assert!(wrong.is_empty(), "{wrong:#?}");
 }
 
-// The Ability stats column is the draft's 183.4 points: the stats grid's
-// 169.4 of cells (each row a label cell and a value cell with 6 points of
+// The Ability stats column is the draft's 191.4 points: the stats grid's
+// 177.4 of cells (each row a label cell and a value cell with 6 points of
 // padding a side, the draft's `stats-grid`) inside the 6-point group
 // frame, so the widest label stands 6 in from the title and the boxes
 // end 13 short of the frame's right edge (the cell's 6, the frame's own
@@ -647,8 +749,8 @@ fn the_ability_stats_column_is_the_drafts_width() {
         .data(|data| data.get_temp(egui::Id::unique(crate::view::abilities::COLUMN_WIDTHS_ID)))
         .expect("the fixed columns' measured widths");
     assert!(
-        (widths[1] - 183.4).abs() <= 0.5,
-        "the Ability stats column 183.4 wide ({widths:?})"
+        (widths[1] - 191.4).abs() <= 0.5,
+        "the Ability stats column 191.4 wide ({widths:?})"
     );
 
     let title = label_bounds(&nodes, "Ability stats").x0;
@@ -821,6 +923,103 @@ fn the_chosen_ratings_paint_their_fills_and_letters() {
             letter_color(&shapes, letter, bounds),
             text,
             "{position}'s {letter} letter in {text:?}"
+        );
+    }
+}
+
+// The ratings' squares edge the same way at rest: the chosen one's edge
+// its own fill's (`#30b466` on A's green, the selection blue's `#1e7a9e`
+// on B, `#787878` on C's quiet grey), an unchosen one's the panel's quiet
+// edge (`#2a2a2a`). The positions layout's held side, filled in the same
+// quiet grey, edges `#787878` too.
+#[test]
+fn a_positions_cells_ratings_edge_by_their_fills_and_the_layout_toggle() {
+    let path = fixture(PesVersion::Pes21, "rating_edges");
+    let mut file = EditFile::from_bytes(&fixture_save(PesVersion::Pes21)).unwrap();
+    let mut playable = file.player(70101).unwrap().positions.playable;
+    // CF at A (stored 2), SS at B (1), LWF at C (0), the first three
+    // `playable` entries standing for them.
+    assert_ne!(
+        [playable[0], playable[1], playable[2]],
+        [2, 1, 0],
+        "premise: the fixture does not already hold A, B, C"
+    );
+    playable[0] = 2;
+    playable[1] = 1;
+    playable[2] = 0;
+    file.player_mut(70101).unwrap().positions.playable = playable;
+    file.save(&path).unwrap();
+
+    let mut view = SaveView::new();
+    view.open(&path);
+    view.selected = Some(Selection::Player(701, 0));
+    let mut window = Headless::sized(DEFAULT_PANE.x, 800.0);
+    let visuals = window.ctx.style_of(window.ctx.theme()).visuals.clone();
+    let palette = studio_core::theme::palette(&visuals);
+    let (edge_of, unheld) = (
+        |fill| studio_core::theme::edge_color(&visuals, fill),
+        studio_core::theme::unheld_edge(&visuals),
+    );
+    assert_eq!(
+        (
+            edge_of(palette.rating_a_fill),
+            edge_of(visuals.selection.bg_fill),
+            edge_of(palette.rating_c_fill),
+            unheld,
+        ),
+        (
+            egui::Color32::from_rgb(0x30, 0xb4, 0x66),
+            egui::Color32::from_rgb(0x1e, 0x7a, 0x9e),
+            egui::Color32::from_rgb(0x78, 0x78, 0x78),
+            egui::Color32::from_rgb(0x2a, 0x2a, 0x2a),
+        ),
+        "premise: A's, B's, C's and the panel's edges"
+    );
+
+    for _ in 0..3 {
+        window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    }
+    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    for (position, rating, fill) in [
+        ("CF", 2, palette.rating_a_fill),
+        ("SS", 1, visuals.selection.bg_fill),
+        ("LWF", 0, palette.rating_c_fill),
+    ] {
+        for (index, node) in rating_buttons(&nodes, position).iter().enumerate() {
+            let expected = if index == rating {
+                edge_of(fill)
+            } else {
+                unheld
+            };
+            assert_eq!(
+                strokes_over(&shapes, node.bounds().expect("bounds")).last(),
+                Some(&egui::Stroke::new(1.0, expected)),
+                "{position}'s {} square's edge",
+                ["C", "B", "A"][index]
+            );
+        }
+    }
+    // The layout toggle's segments: Pitch held at open, the quiet grey's
+    // edge; the other two the panel's. `Left` is found on Pitch's row —
+    // the foot's own Left | Right toggle shares the word.
+    let pitch = node_labeled(&nodes, Role::Button, "Pitch")
+        .bounds()
+        .expect("bounds");
+    for (label, expected) in [
+        ("Pitch", edge_of(palette.rating_c_fill)),
+        ("Left", unheld),
+        ("List", unheld),
+    ] {
+        let bounds = nodes
+            .iter()
+            .filter(|node| node.role() == Role::Button && node.label() == Some(label))
+            .filter_map(accesskit::Node::bounds)
+            .find(|b| (b.y0 - pitch.y0).abs() < 4.0)
+            .unwrap_or_else(|| panic!("the {label} segment"));
+        assert_eq!(
+            strokes_over(&shapes, bounds).last(),
+            Some(&egui::Stroke::new(1.0, expected)),
+            "the {label} segment's edge"
         );
     }
 }

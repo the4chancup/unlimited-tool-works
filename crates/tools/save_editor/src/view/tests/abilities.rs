@@ -501,7 +501,7 @@ fn the_stats_are_named_as_the_saves_game_names_them() {
 // The ability stats' labels stand left-aligned in one column: every
 // label's left edge at the label cell's, the cell padding (6) in from the
 // panel's title, a short label (Jump) at the same x as a long one
-// (Defensive Prowess). Every box starts at one x, 12 points after the
+// (Defensive Prowess). Every box starts at one x, 20 points after the
 // widest label's right edge, and each label is centred on its box's row.
 #[test]
 fn the_stats_labels_start_at_one_x_and_their_boxes_at_another() {
@@ -535,7 +535,7 @@ fn the_stats_labels_start_at_one_x_and_their_boxes_at_another() {
             bounds.x1 - bounds.x0
         })
         .fold(f64::MIN, f64::max);
-    let box_left = cell_left + widest + 12.0;
+    let box_left = cell_left + widest + 20.0;
     for label in &labels {
         let bounds = label_bounds(&nodes, label);
         let field = right_of_label(&nodes, label, Role::SpinButton)
@@ -550,7 +550,7 @@ fn the_stats_labels_start_at_one_x_and_their_boxes_at_another() {
         );
         assert!(
             (field.x0 - box_left).abs() <= 0.5,
-            "{label}'s box at {}, 12 after the widest label at {box_left}",
+            "{label}'s box at {}, 20 after the widest label at {box_left}",
             field.x0
         );
         assert!(

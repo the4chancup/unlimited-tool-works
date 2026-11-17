@@ -811,6 +811,32 @@ fn the_dropdown_and_the_toggle_paint_frames_where_the_menus_paint_none() {
     );
 }
 
+// The Live AATF toggle's frame edges in the selection blue's own while
+// it is on (`#1e7a9e`, a held toggle side's edge); off it keeps the
+// theme's resting edge like any live control.
+#[test]
+fn the_live_aatf_toggle_edges_in_the_selection_blues_while_on() {
+    let path = fixture(PesVersion::Pes21, "live_aatf_edge");
+    let mut view = SaveView::new();
+    view.open(&path);
+    view.live_aatf = true;
+    let mut window = Headless::new();
+    let visuals = window.ctx.style_of(window.ctx.theme()).visuals.clone();
+    let edge = studio_core::theme::edge_color(&visuals, visuals.selection.bg_fill);
+    assert_eq!(
+        edge,
+        egui::Color32::from_rgb(0x1e, 0x7a, 0x9e),
+        "premise: the selection blue's edge"
+    );
+    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let button = node_labeled(&nodes, Role::Button, "\u{25b6} Live AATF");
+    assert_eq!(
+        strokes_over(&shapes, button.bounds().expect("bounds")).last(),
+        Some(&egui::Stroke::new(1.0, edge)),
+        "the held toggle's edge"
+    );
+}
+
 /// A dirty session's `• unsaved changes` paints in the link blue, not the
 /// weak grey that hid it among the toolbar's quieter text.
 #[test]

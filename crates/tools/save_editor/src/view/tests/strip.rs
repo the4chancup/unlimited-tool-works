@@ -94,7 +94,7 @@ fn a_second_saves_name_field_carries_none_of_the_first_saves_undo_history() {
             .clone()
     };
     /// The Name field's node: the enabled text edit right of the "Name
-    /// (n/max)" label, holding `value` (the Shirt field carries the same
+    /// (n/max)" label, holding `value` (the Shirt name field carries the same
     /// text on this fixture, so position, not value alone, names it).
     fn name_field<'a>(nodes: &'a [accesskit::Node], value: &str) -> &'a accesskit::Node {
         let field = field_right_of_label(nodes, "Name (", Role::TextInput);
@@ -157,7 +157,7 @@ fn a_second_saves_name_field_carries_none_of_the_first_saves_undo_history() {
     );
 }
 
-// The Name and Shirt fields' left edges share the rows' label column and
+// The Name and Shirt name fields' left edges share the rows' label column and
 // its gap, their right edges flush with the second half's boxes (the
 // draft's `.combos` `1fr` field), not on the panel's right edge.
 #[test]
@@ -214,7 +214,7 @@ fn the_pair_rows_stand_24_apart() {
 }
 
 // General info's rows stand where the draft's do, 24 apart within its
-// blocks (Name and Shirt; the pairs; Stronger foot to Playing style) and
+// blocks (Name and Shirt name; the pairs; Stronger foot to Playing style) and
 // between them: each label's top below the panel title's top is the
 // draft's, measured in a browser, and Other stats under the panel moves
 // with them.
@@ -393,7 +393,7 @@ fn a_stored_shirt_past_18_is_tinted_and_shortens_never_lengthens() {
     assert_eq!(
         field.value(),
         Some("S".repeat(20).as_str()),
-        "the Shirt field holds the 20 letters"
+        "the Shirt name field holds the 20 letters"
     );
     let bounds = field.bounds().expect("bounds");
     assert_eq!(
@@ -543,7 +543,7 @@ fn a_pes16_strip_refuses_a_17th_shirt_letter() {
     );
 }
 
-// The Shirt field's hover says the limit the field enforces — the smaller
+// The Shirt name field's hover says the limit the field enforces — the smaller
 // of the portable 18 and the version's own field — so PES 21's 61-wide
 // field still says 18.
 #[test]
@@ -566,7 +566,7 @@ fn the_shirt_hover_names_the_limit_the_field_enforces() {
     );
 }
 
-// The Shirt field's hover on PES 16: its own 16-letter field binds under the
+// The Shirt name field's hover on PES 16: its own 16-letter field binds under the
 // portable 18, and the hover says so.
 #[test]
 fn the_pes16_shirt_hover_names_its_own_field() {
@@ -616,7 +616,7 @@ fn the_name_hover_names_the_versions_byte_limit_and_the_colour_code() {
 #[test]
 fn the_name_and_shirt_counts_follow_the_fields_and_the_portable_limits() {
     /// The painted colour of `text`'s counted-label run `run`
-    /// (`"Name (n/max)"`/`"Shirt (n/max)"`: 0 the label, 1 the `(n/max)`
+    /// (`"Name (n/max)"`/`"Shirt name (n/max)"`: 0 the label, 1 the `(n/max)`
     /// count): the job's format at the run's byte (adjacent same-format
     /// runs merge in one galley section, so the run is a byte range, not
     /// a section).
@@ -662,7 +662,10 @@ fn the_name_and_shirt_counts_follow_the_fields_and_the_portable_limits() {
     // The labels read the counts, the colour code counting its ten bytes.
     let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     assert!(label_value(&nodes, "Name (12/61)"), "the name's count");
-    assert!(label_value(&nodes, "Shirt (20/18)"), "the shirt's count");
+    assert!(
+        label_value(&nodes, "Shirt name (20/18)"),
+        "the shirt's count"
+    );
     let shirt = shirt_field(&nodes);
     assert_eq!(
         fill_at(&shapes, shirt.bounds().expect("bounds")),
@@ -684,12 +687,12 @@ fn the_name_and_shirt_counts_follow_the_fields_and_the_portable_limits() {
         "the name count under the limit is grey"
     );
     assert_eq!(
-        run_color(&shapes, "Shirt (20/18)", 0),
+        run_color(&shapes, "Shirt name (20/18)", 0),
         text_color,
         "the shirt's label run stays normal"
     );
     assert_eq!(
-        run_color(&shapes, "Shirt (20/18)", 1),
+        run_color(&shapes, "Shirt name (20/18)", 1),
         visuals.error_fg_color,
         "the shirt count past the limit is drawn in the error colour"
     );
@@ -702,7 +705,7 @@ fn the_name_and_shirt_counts_follow_the_fields_and_the_portable_limits() {
         Some("PES 2019 and older show 18 letters of a shirt name (PES 2016 shows 16)".to_owned()),
         "the shirt hover"
     );
-    let count = label_bounds(&nodes, "Shirt (20/18)");
+    let count = label_bounds(&nodes, "Shirt name (20/18)");
     let label_tip = tooltip_after_hover(
         &mut window,
         &mut view,
@@ -724,16 +727,16 @@ fn the_name_and_shirt_counts_follow_the_fields_and_the_portable_limits() {
     );
     let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     assert!(
-        label_value(&nodes, "Shirt (19/18)"),
+        label_value(&nodes, "Shirt name (19/18)"),
         "the count follows the deleted letter"
     );
     assert_eq!(
-        run_color(&shapes, "Shirt (19/18)", 0),
+        run_color(&shapes, "Shirt name (19/18)", 0),
         text_color,
         "the label run stays normal"
     );
     assert_eq!(
-        run_color(&shapes, "Shirt (19/18)", 1),
+        run_color(&shapes, "Shirt name (19/18)", 1),
         visuals.error_fg_color,
         "still past the limit"
     );
@@ -764,8 +767,8 @@ fn the_name_and_shirt_counts_follow_the_fields_and_the_portable_limits() {
     // Another deleted: "(18/18)" on the limit, in the warning colour, the
     // field untinted; at "(17/18)" the count is grey.
     for (count, colour, what) in [
-        ("Shirt (18/18)", visuals.warn_fg_color, "on the limit"),
-        ("Shirt (17/18)", grey, "under the limit"),
+        ("Shirt name (18/18)", visuals.warn_fg_color, "on the limit"),
+        ("Shirt name (17/18)", grey, "under the limit"),
     ] {
         let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
         click(&mut window, shirt_field(&nodes), &mut view);
@@ -852,7 +855,7 @@ fn the_name_and_shirt_counts_follow_the_fields_and_the_portable_limits() {
         "É is two bytes in the name's count"
     );
     assert!(
-        label_value(&nodes, "Shirt (2/18)"),
+        label_value(&nodes, "Shirt name (2/18)"),
         "É is one letter in the shirt's count"
     );
 
@@ -872,7 +875,7 @@ fn the_name_and_shirt_counts_follow_the_fields_and_the_portable_limits() {
         "PES 16's name limit is 46"
     );
     assert!(
-        label_value(&nodes, &format!("Shirt ({shirt_n}/16)")),
+        label_value(&nodes, &format!("Shirt name ({shirt_n}/16)")),
         "PES 16's shirt limit is 16"
     );
 }
@@ -967,7 +970,7 @@ fn a_shirt_at_the_portable_limit_draws_no_tint() {
     assert_eq!(
         field.value(),
         Some("S".repeat(18).as_str()),
-        "the Shirt field holds the 18 letters"
+        "the Shirt name field holds the 18 letters"
     );
     let bounds = field.bounds().expect("bounds");
     assert_ne!(
@@ -1491,7 +1494,7 @@ fn the_player_header_tops_the_player_view_alone() {
         ] {
             assert!(label_value(&nodes, label), "{label} drawn");
         }
-        for prefix in ["Name (", "Shirt ("] {
+        for prefix in ["Name (", "Shirt name ("] {
             assert!(
                 nodes.iter().any(|node| {
                     node.role() == Role::Label
@@ -1522,7 +1525,7 @@ fn the_player_header_tops_the_player_view_alone() {
 // A field's label in the General info panels and in Ability stats is
 // drawn in the normal text colour, as the checkboxes' labels are: every
 // field label the panels name — the pairs', the combos', the counted
-// labels', Ability stats' — and the team view's Team and Short paint the
+// labels', Ability stats' — and the team view's Team and Short name paint the
 // normal colour, not the weak one, which read too dark beside them.
 #[test]
 fn the_field_labels_paint_the_normal_text_colour() {
@@ -1564,8 +1567,8 @@ fn the_field_labels_paint_the_normal_text_colour() {
             "{label} in the normal text colour"
         );
     }
-    // The counted labels' first run too ("Name "/"Shirt " before the count).
-    for prefix in ["Name (", "Shirt ("] {
+    // The counted labels' first run too ("Name "/"Shirt name " before the count).
+    for prefix in ["Name (", "Shirt name ("] {
         let value = nodes
             .iter()
             .find(|node| {
@@ -1595,7 +1598,7 @@ fn the_field_labels_paint_the_normal_text_colour() {
     // The team view's field labels.
     open_team_view(&mut window, &mut view, 701);
     let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
-    for label in ["Name", "Short"] {
+    for label in ["Name", "Short name"] {
         assert_eq!(
             painted_label_color(&nodes, &shapes, label),
             text_color,
@@ -1657,6 +1660,92 @@ fn the_foot_toggles_held_side_reads_white() {
                 "the held side's fill is the positions' C grey"
             );
         }
+    }
+}
+
+// A toggle's sides edge at rest, as the draft's `.rate` `.sel`s do: the
+// held side's edge its own fill's — `#787878` on the quiet grey the foot
+// fills with, `#1e7a9e` on the screens' toggle's selection blue — the
+// unheld side's the panel's quiet edge (`#2a2a2a`, the theme's
+// `unheld_edge`), since the theme's resting stroke is the widgets'
+// grey's and neither side fills with that. A disabled toggle (the
+// Stronger hand on a version without the field) draws none.
+#[test]
+fn a_toggles_sides_edge_by_their_fills_and_a_disabled_one_draws_none() {
+    let path = fixture(PesVersion::Pes17, "toggle_side_edges");
+    let mut view = SaveView::new();
+    view.open(&path);
+    view.team = TeamChoice::Team(734);
+    view.selected = Some(Selection::Player(734, 0));
+    let player_id = team_entry(&view, 734).roster[0].player_id;
+    let held = player_entry(&view, player_id).positions.stronger_foot;
+    let mut window = Headless::new();
+    let visuals = window.ctx.style_of(window.ctx.theme()).visuals.clone();
+    let quiet = studio_core::theme::palette(&visuals).rating_c_fill;
+    let (foot_edge, unheld, blue_edge) = (
+        studio_core::theme::edge_color(&visuals, quiet),
+        studio_core::theme::unheld_edge(&visuals),
+        studio_core::theme::edge_color(&visuals, visuals.selection.bg_fill),
+    );
+    assert_eq!(
+        (foot_edge, unheld, blue_edge),
+        (
+            egui::Color32::from_rgb(0x78, 0x78, 0x78),
+            egui::Color32::from_rgb(0x2a, 0x2a, 0x2a),
+            egui::Color32::from_rgb(0x1e, 0x7a, 0x9e),
+        ),
+        "premise: the quiet grey's, the panel's and the blue's edges"
+    );
+
+    // The sides' resting edge paints over the widget's own frame: the last
+    // stroke over each side's bounds is its edge's.
+    for _ in 0..3 {
+        window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    }
+    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let sides = right_of_label(&nodes, "Stronger foot", Role::Button);
+    assert_eq!(sides.len(), 2, "the foot's two sides");
+    // Left is drawn first (stored 1), Right second (stored 0).
+    for (node, stored, label) in [(sides[0], 1u8, "Left"), (sides[1], 0, "Right")] {
+        let expected = if held == stored { foot_edge } else { unheld };
+        assert_eq!(
+            strokes_over(&shapes, node.bounds().expect("bounds")).last(),
+            Some(&egui::Stroke::new(1.0, expected)),
+            "the foot's {label} side's edge"
+        );
+    }
+    // The screens' toggle, Stats held on a player: its held side edges in
+    // the selection blue's own, an unheld side's in the panel's.
+    for (label, expected) in [
+        ("Stats", blue_edge),
+        ("Appearance", unheld),
+        ("Gameplan", unheld),
+    ] {
+        let bounds = node_labeled(&nodes, Role::Button, label)
+            .bounds()
+            .expect("bounds");
+        assert_eq!(
+            strokes_over(&shapes, bounds).last(),
+            Some(&egui::Stroke::new(1.0, expected)),
+            "the {label} tab's edge"
+        );
+    }
+
+    // PES 15 has no stronger hand: its sides draw disabled, no edge.
+    let path = fixture(PesVersion::Pes15, "toggle_side_edges_off");
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut window = Headless::new();
+    for _ in 0..3 {
+        window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    }
+    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    for side in right_of_label(&nodes, "Stronger hand", Role::Button) {
+        assert!(side.is_disabled(), "premise: the hand is gated on PES 15");
+        assert!(
+            strokes_over(&shapes, side.bounds().expect("bounds")).is_empty(),
+            "a disabled side draws no edge"
+        );
     }
 }
 
@@ -1789,10 +1878,10 @@ fn the_shirt_and_short_names_are_upper_cased_as_typed() {
     // The team's short name the same, on its view.
     open_team_view(&mut window, &mut view, 734);
     let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
-    let short = right_of_label(&nodes, "Short", Role::TextInput)
+    let short = right_of_label(&nodes, "Short name", Role::TextInput)
         .first()
         .copied()
-        .expect("the Short field");
+        .expect("the Short name field");
     click(&mut window, short, &mut view);
     type_text(&mut window, &mut view, "abc");
     assert_eq!(
@@ -1802,7 +1891,7 @@ fn the_shirt_and_short_names_are_upper_cased_as_typed() {
     );
     let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     assert_eq!(
-        right_of_label(&nodes, "Short", Role::TextInput)
+        right_of_label(&nodes, "Short name", Role::TextInput)
             .first()
             .and_then(|node| node.value()),
         Some("ABC"),
