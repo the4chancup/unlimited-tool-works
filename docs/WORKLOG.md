@@ -1688,6 +1688,11 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     player list"; DECISIONS 2026-11-17); `theme::darkened_to_read` stays for the palette's
     colours. SWE-2, after 0.0.2-frames B1 and A2a merge (it touches `team_widgets` and
     `save_editor`'s name callers) -> verify: the light theme's /f/ list and lineup lists
+    - [x] landed 2026-11-17 (SWE-2, merge `29991c8b`, with 0.0.2-xhover; the lead's rerun:
+      save_editor 1047, studio_core 538, team_widgets 282): `append_name` draws every code as
+      it is, `name_background` gone; the darkening's changelog line removed (never released)
+    - [ ] the built window: the light theme's /f/ list and lineup lists, with the batch
+      release build after 0.0.2-gatelbl
   - [x] 0.0.2-present 2026-11-17 (SWE-2, merge `0cbe7637`; the lead's rerun of `studio_core`, 535)
     the window presents through a
     DirectComposition swap chain, so a resize no longer stretches the last frame and the UI
@@ -1698,6 +1703,9 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     prompt highlighted on hover, as the draft's frameless buttons are (the maintainer,
     2026-11-17; `plans/save_editor.md` "An X on each row"). SWE-2, beside
     0.0.2-namegame -> verify: a headless hover test, the built window
+    - [x] landed 2026-11-17 (merge `29991c8b`): `frame_when_inactive(false)`;
+      `a_rows_x_lights_on_hover`; the changelog's × line says it lights up
+    - [ ] the built window, with the batch release build after 0.0.2-gatelbl
   - [ ] 0.0.2-allcat under 4cc, VGL or Invitational the team selector's All teams entry reads
     `4cc teams`, `VGL teams`, `Invitational teams`, open and closed (the maintainer, 2026-11-17;
     `plans/save_editor.md` the team selector's category paragraph, SE-GUI-83; DECISIONS
