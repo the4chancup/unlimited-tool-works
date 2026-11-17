@@ -1886,6 +1886,15 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     - [x] the draft (`teamSelector`, `a083b48c`), approved by the maintainer
     - [x] the plan (`save_editor.md`, "Editing UI", picking a team) and DECISIONS
     - [ ] the build, with 0.0.2-paneshift's
+  - [ ] geninfo-eval (the maintainer's request, 2026-11-17): General info (Name, Shirt name,
+    Shirt number | Age, Nation as an "ID - Name" dropdown) and Main stats in place of Other
+    stats (Height | Captain, Weight, Injury Resistance | Form, Weak Foot: Usage | Accuracy,
+    the sides, Registered position, Playing style), the panels' widths unchanged -> verify:
+    the maintainer's verdict on the draft
+    - [x] the draft on `eval/geninfo` (`dd2ea333`, worktree `4cc-studio-temp/geninfo`); the
+      nations from PES Next-Gen Editor 2016's table (188, by ID)
+    - [ ] the maintainer's verdict; if kept: merge the draft, the plan, DECISIONS, the build
+      (the open list scrolled to the held nation; the table checked against PES 2017-2021)
   - [ ] 0.0.2-posheight (the maintainer's change, 2026-11-17): the playable positions grid
     takes its own layout's height, so Pitch and Left leave the panel shorter than List
     (under DBC7 the screen ends on Ability stats' frame, 703 against List's 726 in the
