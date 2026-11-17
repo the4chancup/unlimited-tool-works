@@ -1884,14 +1884,67 @@ fn the_team_view_fits_the_pane_at_the_drafts_offsets() {
     let settings_left = label_bounds(&nodes, "Formation settings").x0 - 7.0;
     let settings = box_at(&stroked_rects(&window, &shapes, 60.0), settings_left, 1.0);
     for (what, top, draft) in [
-        ("the Name box", name.y0, 12.0),
-        ("the Preset buttons", preset.y0, 45.0),
-        ("Formation settings' frame", f64::from(settings.min.y), 73.0),
+        ("the Name box", name.y0, 10.5),
+        ("the Preset buttons", preset.y0, 42.5),
+        ("Formation settings' frame", f64::from(settings.min.y), 70.5),
     ] {
         assert!(
             (top - line - draft).abs() <= 1.0,
             "{what} stands {} under the title's line, the draft's {draft}",
             top - line
+        );
+    }
+
+    // The editor's blocks at the draft's offsets and sizes under the
+    // line's top edge (the draft at 1280 x 780): the pitch's group 71
+    // under it and 386 tall as every row-2 group's; the settings column's
+    // panels under it, Advanced instructions 465 under the line's top and
+    // 134 tall, Automatic settings 84 tall and 8 under the first; the
+    // two lineup lists 226 tall beside them, so the screen's lowest edge
+    // is the pane's bottom.
+    let sep_top = line - f64::from(stroke.width) / 2.0;
+    let rects = stroked_rects(&window, &shapes, 60.0);
+    let pitch_left = settings_left + 422.0 + 8.0;
+    let pitch = box_at(&rects, pitch_left, 1.0);
+    let column1: Vec<egui::Rect> = rects
+        .iter()
+        .copied()
+        .filter(|rect| (f64::from(rect.min.x) - settings_left).abs() <= 1.0)
+        .collect();
+    let advanced = *column1
+        .iter()
+        .find(|rect| (f64::from(rect.min.y) - sep_top - 465.0).abs() <= 4.0)
+        .expect("the Advanced instructions box");
+    let automatic = *column1
+        .iter()
+        .find(|rect| rect.min.y > advanced.max.y)
+        .expect("the Automatic settings box");
+    for (what, rect, draft_top, draft_height) in [
+        ("the pitch's group", pitch, 71.0, 386.0),
+        ("Advanced instructions", advanced, 465.0, 134.0),
+        ("Automatic settings", automatic, 607.0, 84.0),
+    ] {
+        let (top, height) = (f64::from(rect.min.y) - sep_top, f64::from(rect.height()));
+        assert!(
+            (top - draft_top).abs() <= 0.5 && (height - draft_height).abs() <= 0.5,
+            "{what}: top {top}, height {height} against the draft's {draft_top}, {draft_height}"
+        );
+    }
+    assert!(
+        (f64::from(automatic.min.y - advanced.max.y) - 8.0).abs() <= 0.5,
+        "the second row's panels 8 apart ({advanced:?} then {automatic:?})"
+    );
+    for (rect, name) in lineup_boxes(&window, &nodes, &shapes)
+        .iter()
+        .zip(["the starting eleven", "the bench"])
+    {
+        let (top, height) = (
+            f64::from(rect.0.min.y) - sep_top,
+            f64::from(rect.0.height()),
+        );
+        assert!(
+            (top - 465.0).abs() <= 0.5 && (height - 226.0).abs() <= 0.5,
+            "{name}: top {top}, height {height} against the draft's 465, 226"
         );
     }
 
@@ -2077,50 +2130,50 @@ fn the_tactics_bars_items_stand_where_the_drafts_do() {
 
     let rail = 1280.0 - f64::from(DEFAULT_PANE.x);
     let items: [(&str, accesskit::Rect, f64, Option<f64>); 11] = [
-        ("1", button_bounds(&nodes, "1"), 368.48, Some(17.13)),
-        ("2", button_bounds(&nodes, "2"), 387.61, Some(17.13)),
-        ("3", button_bounds(&nodes, "3"), 406.73, Some(17.13)),
+        ("1", button_bounds(&nodes, "1"), 360.48, Some(17.13)),
+        ("2", button_bounds(&nodes, "2"), 379.61, Some(17.13)),
+        ("3", button_bounds(&nodes, "3"), 398.73, Some(17.13)),
         (
             "Fluid formation",
             check_bounds(&nodes, "Fluid formation"),
-            431.86,
+            423.86,
             None,
         ),
         (
             "Kick-off",
             button_bounds(&nodes, "Kick-off"),
-            761.0,
+            753.0,
             Some(52.92),
         ),
         (
             "In-possession",
             button_bounds(&nodes, "In-possession"),
-            815.92,
+            807.92,
             Some(88.5),
         ),
         (
             "Out-of-possession",
             button_bounds(&nodes, "Out-of-possession"),
-            906.42,
+            898.42,
             Some(113.77),
         ),
         (
             "the formations' Copy/swap",
             copy_swap_bounds(&nodes)[1],
-            1028.19,
+            1020.19,
             None,
         ),
-        ("Scroll", check_bounds(&nodes, "Scroll"), 1121.55, None),
+        ("Scroll", check_bounds(&nodes, "Scroll"), 1113.55, None),
         (
             "Portraits",
             check_bounds(&nodes, "Portraits"),
-            1179.31,
+            1171.31,
             None,
         ),
         (
             "Player assignments",
             label_bounds(&nodes, "Player assignments"),
-            1098.0,
+            1090.0,
             None,
         ),
     ];

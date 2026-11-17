@@ -97,6 +97,10 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
 /// `.sep` the fields' row carried), which parts the title from the screen
 /// the toggle switches.
 pub(super) fn view_title(ui: &mut egui::Ui, view: &mut SaveView, id: u32, name: &str) {
+    // The row's room over it is the pane's `TITLE_MARGIN`, the panes' own
+    // start and this half point — 9.5, the same as its room under it to
+    // the separator (the draft's `.pheader` 5.75 over, `.sep` 9.25 under).
+    ui.add_space(0.5);
     // The draft's `.pheader` is text-high like the `.sel`s in it;
     // `ui.horizontal` allocates its row a control's `interact_size` tall,
     // which would stand the separator 3 points lower.
@@ -121,15 +125,18 @@ pub(super) fn view_title(ui: &mut egui::Ui, view: &mut SaveView, id: u32, name: 
             ui.label(title);
         });
     });
-    // The `.sep` under the row (its 8-point margin each side of the
-    // painted row carries the room the draft's `margin-bottom` adds).
+    // The `.sep` under the row, its centre 9.5 under it: this 2.5 plus
+    // `SEPARATOR_MARGIN` over the painted row (the draft's 9.25), and
+    // `SEPARATOR_MARGIN` under it — 11.5 over the first frames' tops.
+    ui.add_space(2.5);
     let trailing = ui.spacing().item_spacing.y;
     let stroke = ui.visuals().widgets.noninteractive.bg_stroke.width;
     ui.add(egui::Separator::default().spacing(2.0 * (SEPARATOR_MARGIN - trailing) + stroke));
 }
 
-/// The `.sep`'s margin each side of its painted row.
-const SEPARATOR_MARGIN: f32 = 8.0;
+/// The `.sep`'s margin under its painted row (the draft's margin-bottom):
+/// its centre then stands 11.5 over the first frames' tops.
+const SEPARATOR_MARGIN: f32 = 7.0;
 
 /// One segment of the title's toggle: the two player screens and the
 /// team view.

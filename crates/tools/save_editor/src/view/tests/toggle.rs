@@ -135,7 +135,7 @@ fn the_toggle_moves_the_detail_between_the_three_screens() {
     // segments, Stats on, then the id and the name; a separator under the
     // row; no Appearance header in the detail.
     let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
-    let pane_left = f64::from(pane_frame(&shapes, window.screen).min.x + PANEL_MARGIN);
+    let pane_left = f64::from(pane_frame(&shapes, window.screen).min.x);
     let stats = segment(&nodes, "Stats").bounds().expect("bounds");
     assert!(
         (stats.x0 - pane_left).abs() <= 0.5,
@@ -303,6 +303,129 @@ fn the_toggle_moves_the_detail_between_the_three_screens() {
     );
 }
 
+// The title's row stands in the pane's top margin as the draft places it
+// (its `.pheader` and `.sep` margins): as much room over the row, from the
+// toolbar band's line, as under it, to the separator's upper edge; the
+// separator's centre 11.5 over the first frames' tops — and those tops
+// level with the player list's frame, on all three screens alike.
+#[test]
+fn the_title_row_and_the_first_frames_stand_where_the_drafts_do() {
+    /// The measurements of one drawn frame: the band's line's lower edge,
+    /// the toggle's rect, the separator's painted centre and the player
+    /// list's frame's top.
+    fn measure(
+        window: &Headless,
+        nodes: &[accesskit::Node],
+        shapes: &[egui::epaint::ClippedShape],
+    ) -> (f64, accesskit::Rect, f64, f64) {
+        let band = band_bottom(window, nodes, shapes);
+        let toggle = toggle_rect(nodes);
+        let stroke = window
+            .ctx
+            .global_style()
+            .visuals
+            .widgets
+            .noninteractive
+            .bg_stroke;
+        let sep = pane_line_below(
+            shapes,
+            stroke,
+            toggle.y1,
+            f64::from(pane_frame(shapes, window.screen).min.x),
+            f64::from(PANE_RIGHT),
+        )
+        .expect("the separator under the title's row");
+        let list_top = f64::from(list_frame(window, shapes).min.y);
+        (band, toggle, sep, list_top)
+    }
+    /// The three targets, `first_top` the screen's first content's top
+    /// under the separator.
+    fn check(
+        window: &Headless,
+        nodes: &[accesskit::Node],
+        shapes: &[egui::epaint::ClippedShape],
+        first_top: f64,
+        screen: &str,
+    ) {
+        let stroke = window
+            .ctx
+            .global_style()
+            .visuals
+            .widgets
+            .noninteractive
+            .bg_stroke;
+        let (band, toggle, sep, list_top) = measure(window, nodes, shapes);
+        let over = toggle.y0 - band;
+        let under = sep - f64::from(stroke.width) / 2.0 - toggle.y1;
+        assert!(
+            (over - under).abs() <= 0.5,
+            "{screen}: the title row's room over ({over}) and under ({under}) it"
+        );
+        assert!(
+            (first_top - sep - 11.5).abs() <= 0.25,
+            "{screen}: the separator {sep} 11.5 over the first frames' top {first_top}"
+        );
+        assert!(
+            (first_top - list_top).abs() <= 0.25,
+            "{screen}: the first frames' top {first_top} level with the list's {list_top}"
+        );
+    }
+
+    // Stats and Appearance of one player, then his team's Gameplan.
+    let path = fixture(PesVersion::Pes21, "title_row_rooms");
+    let mut view = SaveView::new();
+    view.open(&path);
+    view.selected = Some(Selection::Player(701, 0));
+    let mut window = Headless::sized(DEFAULT_PANE.x, DEFAULT_PANE.y);
+    for _ in 0..3 {
+        window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    }
+    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let stats_top = f64::from(group_frame(&window, &nodes, &shapes, "General info").min.y);
+    check(&window, &nodes, &shapes, stats_top, "Stats");
+
+    open_appearance(&mut window, &mut view);
+    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let appearance_top = f64::from(
+        group_frame(&window, &nodes, &shapes, "Full Player Customization")
+            .min
+            .y,
+    );
+    check(&window, &nodes, &shapes, appearance_top, "Appearance");
+
+    open_team_view(&mut window, &mut view, 701);
+    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    // Gameplan's first content is the fields' row, not a frame: the
+    // level target does not reach it — its controls stand 11 under the
+    // separator's top edge, where the draft's stand (the row keeps its
+    // own place under the line).
+    let (band, toggle, sep, _) = measure(&window, &nodes, &shapes);
+    let fields_top = nodes
+        .iter()
+        .filter_map(accesskit::Node::bounds)
+        .filter(|b| b.y0 > sep && b.y0 > toggle.y1 && b.x0 > 300.0)
+        .map(|b| b.y0)
+        .fold(f64::MAX, f64::min);
+    let stroke = window
+        .ctx
+        .global_style()
+        .visuals
+        .widgets
+        .noninteractive
+        .bg_stroke;
+    let sep_top = sep - f64::from(stroke.width) / 2.0;
+    let over = toggle.y0 - band;
+    let under = sep_top - toggle.y1;
+    assert!(
+        (over - under).abs() <= 0.5,
+        "Gameplan: the title row's room over ({over}) and under ({under}) it"
+    );
+    assert!(
+        (fields_top - sep_top - 11.0).abs() <= 0.5,
+        "Gameplan: the first control's top {fields_top} 11 under the separator's top {sep_top}"
+    );
+}
+
 /// The bottom of the team view's fields' row: its tallest control's
 /// bottom plus the centring under it (the row is 24 tall, the controls
 /// centred in it), read off the topmost Short name label's row, its controls
@@ -331,19 +454,19 @@ fn fields_row_bottom(nodes: &[accesskit::Node], pane_left: f64) -> f64 {
 
 /// The team view after the separator moved under the title's row: no
 /// line between the fields' row and the Tactics bars, and the row keeps
-/// 9 points under it.
+/// 8 points under it.
 // SE-GUI-82
 #[test]
-fn the_team_view_keeps_9_under_the_fields_row_with_no_separator() {
+fn the_team_view_keeps_8_under_the_fields_row_with_no_separator() {
     let path = fixture(PesVersion::Pes21, "toggle_team_nine");
     let mut view = SaveView::new();
     view.open(&path);
     let mut window = Headless::sized(DEFAULT_PANE.x, DEFAULT_PANE.y);
     open_team_view(&mut window, &mut view, 701);
     let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
-    let pane_left = f64::from(pane_frame(&shapes, window.screen).min.x + PANEL_MARGIN);
+    let pane_left = f64::from(pane_frame(&shapes, window.screen).min.x);
     let row_bottom = fields_row_bottom(&nodes, pane_left);
-    // The bars' first choices stand 12 under the row's bottom: the 9
+    // The bars' first choices stand 11 under the row's bottom: the 8
     // points the row keeps plus the bar's own margin over a choice. The
     // preset selector's and the formation selector's, the topmost of
     // each label.
@@ -365,8 +488,8 @@ fn the_team_view_keeps_9_under_the_fields_row_with_no_separator() {
     ] {
         let choice = topmost(label);
         assert!(
-            (choice.y0 - row_bottom - 12.0).abs() <= 1.0,
-            "{label} starts 12 under the fields' row ({} vs {row_bottom})",
+            (choice.y0 - row_bottom - 11.0).abs() <= 1.0,
+            "{label} starts 11 under the fields' row ({} vs {row_bottom})",
             choice.y0
         );
     }

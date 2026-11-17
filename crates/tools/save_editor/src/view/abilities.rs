@@ -152,6 +152,14 @@ fn first_column_width() -> f32 {
 /// that computes it.
 pub(super) const COLUMN_WIDTHS_ID: &str = "save_editor player column widths";
 
+/// The egui memory id `show` writes the positions grid's extra room to
+/// each pass — the tallest column's bottom less the first column's own
+/// bottom measured with the grid at its rows' height (a pass that
+/// measures a different one is discarded). The room is known only after
+/// the columns are laid out, so the grid gets it a pass late, as the
+/// fixed columns' widths are.
+const GRID_ROOM_ID: &str = "save_editor positions grid room";
+
 /// The Skills column's narrowest width, and the first pass's estimate:
 /// the card columns' 330 with their 6-point inset inside the frame's
 /// own. A grid's discarded sizing pass measures narrower and must not
@@ -233,6 +241,13 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
             .ctx()
             .data(|data| data.get_temp(egui::Id::unique(COLUMN_WIDTHS_ID)));
         let saved = measured.unwrap_or([SECOND_COLUMN_MIN, THIRD_COLUMN_MIN]);
+        // The room the grid got on the last pass (its rows' height is all
+        // it asks itself): laid out over it, the rows centre in the
+        // stretch like the column widths' own late pass.
+        let grid_room: f32 = ui
+            .ctx()
+            .data(|data| data.get_temp(egui::Id::unique(GRID_ROOM_ID)))
+            .unwrap_or(0.0);
         // The columns' rects before any draws — General info's takes the
         // room the fixed columns leave (the draft's `1fr`).
         let second_width = saved[0].max(SECOND_COLUMN_MIN);
@@ -268,7 +283,14 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
                     marks.map(|marks| (marks, live_marks::MarkedField::PlayablePositions)),
                     0.0,
                     |ui| {
-                        playable_positions(ui, session, player_id, &positions, positions_layout);
+                        playable_positions(
+                            ui,
+                            session,
+                            player_id,
+                            &positions,
+                            positions_layout,
+                            grid_room,
+                        );
                     },
                 ),
             ]
@@ -371,16 +393,27 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
             ui.ctx()
                 .request_discard("the player view's column widths changed");
         }
+        // The room the grid's next pass lays out over its rows: the
+        // tallest column's bottom less the first column's own — the drawn
+        // bottom stands only half the stored room lower (its rows are
+        // centred in it), which is all that is taken back; measured with
+        // the whole room, the column could never shrink back.
+        let own_first_bottom = first.rect.max.y - grid_room / 2.0;
+        let row_bottom = own_first_bottom
+            .max(second.rect.max.y)
+            .max(third.rect.max.y);
+        let room = (row_bottom - own_first_bottom).max(0.0);
+        ui.ctx().data_mut(|data| {
+            data.insert_temp(egui::Id::unique(GRID_ROOM_ID), room);
+        });
+        if room != grid_room {
+            ui.ctx()
+                .request_discard("the positions grid's room changed");
+        }
         // The three columns end on one line: each column's last frame
         // runs down to the tallest's bottom, as the Appearance screen's
         // rows do (`finish_columns`).
         let (second_drawn, third_drawn) = (second.rect.width(), third.rect.width());
-        let row_bottom = first
-            .rect
-            .max
-            .y
-            .max(second.rect.max.y)
-            .max(third.rect.max.y);
         finish_columns(
             ui,
             [
@@ -665,12 +698,6 @@ pub(super) fn small_stat(
 const POS_CELL_WIDTH: f32 = 62.0;
 /// A rating square's side (the draft's `.rate .sel` 17px).
 const RATING_SIDE: f32 = 17.0;
-/// The positions grid's height in every layout (the draft's `#pos-grid`
-/// `min-height`): List's thirteen `RATING_SIDE` rows, a point above and
-/// below each, a point apart — so a layout switch never moves the
-/// panel's bottom. The rows stand centred in it; a stretched panel's
-/// free room goes under the grid, not around them.
-const GRID_HEIGHT: f32 = 13.0 * (RATING_SIDE + 2.0) + 12.0;
 /// The gap between a cell's rating squares (the draft's `.rate` 2px).
 const RATING_GAP: f32 = 2.0;
 /// A cell's three rating squares' width.
@@ -795,16 +822,19 @@ fn layout_toggle(ui: &mut egui::Ui, layout: &mut PositionsLayout) {
 /// left of its ratings, the column centred (`#pos-grid.list`). The
 /// registered position's cell is outlined in the selection colour (the
 /// draft's `.poscell.reg`) in every layout. `playable[i]` is
-/// `POSITIONS[PLAYABLE_POSITIONS[i]]`'s rating. The grid keeps List's
-/// height in every layout, its rows centred in it (the draft's
-/// `justify-content: center`), so a layout switch never moves the
-/// panel's bottom.
+/// `POSITIONS[PLAYABLE_POSITIONS[i]]`'s rating. The grid takes the
+/// layout's own rows' height plus `room`, the stretch the tallest
+/// column gave it on the last pass (`GRID_ROOM_ID`): Pitch and Left
+/// leave the panel shorter than List does, and the rows stand centred
+/// in the whole room under the toggle (the draft's `#pos-grid`
+/// `justify-content: center`), not at its top.
 fn playable_positions(
     ui: &mut egui::Ui,
     session: &mut Session,
     player_id: u32,
     positions: &PlayerPositions,
     layout: &mut PositionsLayout,
+    room: f32,
 ) {
     // `item_spacing.y` is consumed by the advance after each drawn row:
     // the gap under the toggle stands before `layout_toggle`, the rows'
@@ -843,17 +873,14 @@ fn playable_positions(
                 + (POSITION_LIST.len() - 1) as f32 * LIST_ROW_GAP
         }
     };
-    // The rows stand centred in the grid's region (the draft's
+    // The rows stand centred in the grid's room (the draft's
     // `justify-content: center`): `add_space` advances the cursor
     // outright, no item spacing.
-    let lead = ((GRID_HEIGHT - rows) / 2.0).max(0.0);
+    let lead = room / 2.0;
     ui.allocate_ui_with_layout(
-        egui::vec2(ui.available_width(), GRID_HEIGHT),
+        egui::vec2(ui.available_width(), rows + room),
         egui::Layout::top_down(egui::Align::Min),
         |ui| {
-            // The region's whole height, drawn or not, so the panel's
-            // height does not change with the layout.
-            ui.set_min_height(GRID_HEIGHT);
             ui.add_space(lead);
             ui.spacing_mut().item_spacing.y = row_gap;
             match *layout {

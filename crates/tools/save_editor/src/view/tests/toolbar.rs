@@ -7,14 +7,6 @@ use super::changes_popup::{click_label, three_changes};
 use super::file_menu::save_as_stub;
 use super::*;
 
-/// The toolbar's row: the File menu button's vertical span.
-fn toolbar_band(nodes: &[accesskit::Node]) -> (f64, f64) {
-    let file = menu_button(nodes, "File")
-        .bounds()
-        .expect("the File menu button's bounds");
-    (file.y0, file.y1)
-}
-
 /// The x of each toolbar separator's line, left to right: the vertical
 /// lines in the panel's stroke colour inside the toolbar's band.
 fn separator_xs(
@@ -531,40 +523,6 @@ fn text_below<'a>(
         .unwrap_or_else(|| panic!("no painted {text:?} below {below}"))
 }
 
-/// The bottom of the toolbar band's line: the horizontal line in the
-/// panel's stroke that starts at the view's left edge, the first under the
-/// toolbar's buttons. It is the bar's lower edge as the eye sees it.
-fn band_bottom(
-    window: &Headless,
-    nodes: &[accesskit::Node],
-    shapes: &[egui::epaint::ClippedShape],
-) -> f64 {
-    let stroke = window
-        .ctx
-        .global_style()
-        .visuals
-        .widgets
-        .noninteractive
-        .bg_stroke;
-    let buttons = toolbar_band(nodes).1 as f32;
-    let line = shapes
-        .iter()
-        .filter_map(|clipped| match &clipped.shape {
-            egui::Shape::LineSegment { points, stroke: s }
-                if *s == stroke
-                    && points[0].y == points[1].y
-                    && points[0].x.min(points[1].x) == 0.0
-                    && points[0].y >= buttons =>
-            {
-                Some(points[0].y)
-            }
-            _ => None,
-        })
-        .min_by(|a, b| a.partial_cmp(b).expect("ordered lines"))
-        .expect("the band's line under the toolbar's buttons");
-    f64::from(line + 0.5 * stroke.width)
-}
-
 /// The ink gap under a view's title's row and the separator's painted
 /// row: the band's bottom to the title's ink, and whether a
 /// stroke-coloured line spanning the pane stands between the title's ink
@@ -606,7 +564,7 @@ fn title_row_and_separator(
 }
 
 /// The player view's title's row stands under the toolbar's band, the
-/// id and name's ink about 10 below it (the draft's `.pheader`
+/// id and name's ink about 11.5 below it (the draft's `.pheader`
 /// margin), the separator under the row before General info's title.
 #[test]
 fn the_player_views_title_row_stands_under_the_toolbar_with_a_separator() {
@@ -626,7 +584,7 @@ fn the_player_views_title_row_stands_under_the_toolbar_with_a_separator() {
         "General info",
     );
     assert!(
-        (above - 10.0).abs() <= 1.0,
+        (above - 11.5).abs() <= 1.0,
         "the title's ink {above} under the toolbar's band"
     );
     assert!(line.is_some(), "a separator under the title's row");
@@ -634,7 +592,7 @@ fn the_player_views_title_row_stands_under_the_toolbar_with_a_separator() {
 
 /// The team view's title's row holds `<id> <name>` after the toggle,
 /// team 701's `701 /3/` in the PES 21 fixture, the id in the weak colour,
-/// its ink about 10 below the toolbar's band, the separator under the
+/// its ink about 11.5 below the toolbar's band, the separator under the
 /// row before the Name field's row.
 #[test]
 fn the_team_views_title_row_reads_id_and_name_under_a_separator() {
@@ -659,7 +617,7 @@ fn the_team_views_title_row_reads_id_and_name_under_a_separator() {
         crate::view::team::TEAM_LABEL,
     );
     assert!(
-        (above - 10.0).abs() <= 1.0,
+        (above - 11.5).abs() <= 1.0,
         "the title's ink {above} under the toolbar's band"
     );
     assert!(line.is_some(), "a separator under the title's row");

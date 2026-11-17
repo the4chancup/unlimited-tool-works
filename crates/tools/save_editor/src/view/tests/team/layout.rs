@@ -351,8 +351,9 @@ fn the_rows_controls_stand_still_on_a_version_without_the_manager_id() {
 
 // The ids share the fields' row because the Tactics editor below needs
 // the height: at the default pane the view's lowest drawn stroke (the
-// lists' and Automatic settings' frame bottoms) paints on the row the
-// draft's frames' bottom edges cover, 749 in the 1280 x 780 client. The
+// lists' and Automatic settings' frame bottoms) paints at the pane's own
+// bottom edge — 750 where the draft's frames' bottom edges cover 749
+// (the raised separator leaves the view a point past the draft). The
 // `.detail` has no bottom padding, so the content ends at the pane's
 // bottom.
 #[test]
@@ -382,8 +383,8 @@ fn the_team_view_fits_the_default_pane() {
     // A 1-point stroke paints the row above its bounding bottom.
     let last_row = bottom - 1.0;
     assert!(
-        (last_row - 748.0).abs() <= 0.5,
-        "the lowest stroke paints 748, the row above the draft's last of 749 ({last_row})"
+        (last_row - 749.0).abs() <= 0.5,
+        "the lowest stroke paints 749, the pane's bottom edge ({last_row})"
     );
 }
 
@@ -442,10 +443,10 @@ fn title_line(test: &str) -> (Vec<accesskit::Node>, f64, f64, f64, f64) {
     (nodes, row_bottom, painted_row, line_left, line_right)
 }
 
-// The draft's `.sep` under the title's row: its painted row 8.5 below the
-// row's bottom (the line's own 8-point margin), the fields' row's first
-// control 11.5 below that row: the margin's other half carries the row's
-// top, and its 3 points of centring carry the control inside it.
+// The draft's `.sep` under the title's row: its painted row ~10 below
+// the row's bottom (the line's own 9.5 margin over it), the fields'
+// row's first control 11.5 below that row: the line stands 11.5 over
+// where the screens' first frames' tops stand.
 #[test]
 fn the_line_under_the_title_stands_its_margin_off_row_and_fields() {
     let (nodes, row_bottom, line, line_left, _) = title_line("title_separator_gaps");
@@ -458,8 +459,8 @@ fn the_line_under_the_title_stands_its_margin_off_row_and_fields() {
         .map(|b| b.y0)
         .fold(f64::MAX, f64::min);
     assert!(
-        (line - row_bottom - 8.5).abs() <= 1.0,
-        "the line's row stands 8.5 below the title's row ({line} vs {row_bottom})"
+        (line - row_bottom - 10.0).abs() <= 1.0,
+        "the line's row stands ~10 below the title's row ({line} vs {row_bottom})"
     );
     assert!(
         (fields_top - line - 11.5).abs() <= 1.0,
@@ -467,28 +468,28 @@ fn the_line_under_the_title_stands_its_margin_off_row_and_fields() {
     );
 }
 
-// The team view's pane ends where the draft's `.detail` content does, at
-// the view's right edge, 8 points short of the window's: the separator
-// under the title's row, which spans the pane, ends there, as the draft's
-// `.sep` does at 1272.
+// The team view's separator under the title's row spans the screens'
+// content: it ends 16 before the window's right edge, where every
+// screen's frames end (the draft's `.sep` inside `.detail`'s padding).
 #[test]
-fn the_team_views_line_ends_8_from_the_windows_edge() {
+fn the_team_views_line_ends_16_from_the_windows_edge() {
     let (_, _, _, _, line_right) = title_line("team_pane_right");
     assert!(
         (line_right - f64::from(PANE_RIGHT)).abs() <= 1.0,
-        "the line ends at {PANE_RIGHT}, the draft's 1272 ({line_right})"
+        "the line ends at {PANE_RIGHT}, 16 before the edge ({line_right})"
     );
 }
 
-// The `.sep` stands 28 under the `.detail`'s top on every screen, the
-// draft's place: the title's row is text-high there (the `.pheader`),
-// the line's 8-point margin under it.
+// The `.sep` stands 31 under the `.detail`'s top on every screen, the
+// draft's place: the title's row stands 9.5 under the toolbar band's
+// line and the separator's painted row 9.5 under that (the draft's
+// `.pheader` and `.sep` margins).
 #[test]
-fn the_title_line_stands_28_under_the_panes_top_on_every_screen() {
+fn the_title_line_stands_31_under_the_panes_top_on_every_screen() {
     // The Stats screen of a rostered player, and the Gameplan of his team.
     for (test, selection) in [
-        ("title_line_28_stats", Selection::Player(701, 0)),
-        ("title_line_28_team", Selection::Team(701)),
+        ("title_line_31_stats", Selection::Player(701, 0)),
+        ("title_line_31_team", Selection::Team(701)),
     ] {
         let path = fixture(PesVersion::Pes21, test);
         let mut view = SaveView::new();
@@ -499,8 +500,8 @@ fn the_title_line_stands_28_under_the_panes_top_on_every_screen() {
         let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
         let (line, pane_top) = line_and_pane_top(&window, &nodes, &shapes);
         assert!(
-            (line - pane_top - 28.0).abs() <= 1.0,
-            "{test}: the line stands {} under the pane's top, the draft's 28",
+            (line - pane_top - 31.0).abs() <= 1.0,
+            "{test}: the line stands {} under the pane's top, the draft's 31",
             line - pane_top
         );
     }

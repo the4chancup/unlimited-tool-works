@@ -76,9 +76,10 @@ const KIT_BOX_WIDTH: f32 = 51.0;
 /// margin and the id cells' padding around its 18-point controls, centred).
 const FIELDS_ROW_H: f32 = 24.0;
 /// The room under the fields' row before the Tactics bars, now that no
-/// line parts them (the draft's `margin-bottom` on the row): twice the
-/// rows' own gap.
-const UNDER_FIELDS: f32 = 9.0;
+/// line parts them (the draft's `margin-bottom` on the row): the draft's
+/// 8 — the screens moved down to stand level with the player list, so 9
+/// would take the Tactics' bottom past the pane's.
+const UNDER_FIELDS: f32 = 8.0;
 
 /// The room the id cells' padding adds before `unit`, past the row's gap
 /// `row_gap`: 12 from the colours to Manager ID, 8 between the two cells
@@ -200,8 +201,8 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
         if open_kit_slots {
             view.kit_slots = Some(team_id);
         }
-        // The row keeps 9 points under it before the Tactics bars: the
-        // item spacing and the rest added to it.
+        // The row keeps `UNDER_FIELDS` under it before the Tactics bars:
+        // the item spacing and the rest added to it.
         ui.add_space(UNDER_FIELDS - ui.spacing().item_spacing.y);
         tactics::show(ui, view);
     });
