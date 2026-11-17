@@ -819,8 +819,8 @@ button.livebtn.on { background: var(--sel-bg); color: var(--sel-fg); }
    starts, so a column of stats' marks lines up whatever the labels' lengths; drawn over the
    cell's 6 px padding and the gap before it, it moves no label. */
 [data-panel=ability-stats] td.ilabel { position: relative; }
-/* The label of a stat the version lacks, faded as .gate fades a gated card's. */
-[data-panel=ability-stats] td.ilabel.off { opacity: .6; }
+/* The label of a field the version lacks, faded as .gate fades its control (P53). */
+td.ilabel.off, .gl.off { opacity: .6; }
 [data-panel=ability-stats] td.ilabel .xmark { position: absolute; right: calc(100% - 4px); top: 50%;
   transform: translateY(-50%); margin: 0; }
 .gen .pair .boxed { display: flex; align-items: center; flex: none; }
@@ -5033,6 +5033,9 @@ function lockGroupView(root, players) {
 const lbl = t => h("td", { class: "ilabel" }, t);
 // A field cell of a label/field grid, its widget version-gated.
 const fld = (el, minV) => h("td", {}, gated(h("span", {}, el), minV || 15));
+// The label cell of a field the version lacks: faded with its control, with its tooltip.
+const gatedLbl = (t, minV) => version() < minV
+  ? h("td", { class: "ilabel off", title: "PES " + minV + "+" }, t) : lbl(t);
 // A Slider and its value's box. While the handle is dragged the rail's fill
 // and the box follow it, as egui's do; the release commits the value.
 function rangeField(min, max, value, commit) {
@@ -5169,7 +5172,8 @@ function generalPanel(p, team) {
         h("div", { class: "pair" }, gl("Captain"), h("span", { class: "box" }, captain))),
       h("div", { class: "combos" },
         gl("Stronger foot"), foot,
-        gl("Stronger hand"), gated(h("span", {}, hand), 20),
+        version() < 20 ? h("span", { class: "gl off", title: "PES 20+" }, "Stronger hand")
+          : gl("Stronger hand"), gated(h("span", {}, hand), 20),
         marked("Registered position", "registered"), reg,
         marked("Playing style", "playing_style"), style))), "general");
 }
@@ -6011,9 +6015,9 @@ function appearanceTab(p) {
   const cutscenes = named(h("div", { class: "group", id: "cutscenes" },
     h("div", { class: "row", style: "margin:0" }, strong("Presentation")),
     h("table", { class: "grid" },
-      h("tr", {}, lbl("Star rating"), fld(starIn, 19),
+      h("tr", {}, gatedLbl("Star rating", 19), fld(starIn, 19),
         h("td", {}, weak("How likely the player is to show up as the team's featured player in the pre-match screen."))),
-      h("tr", {}, lbl("Playing attitude"), fld(attIn, 20),
+      h("tr", {}, gatedLbl("Playing attitude", 20), fld(attIn, 20),
         h("td", {}, weak("How temperamental the player is in cutscenes."))))), "cutscenes");
   // The ownership line and the switch draw only while the setting is on;
   // off, the groups edit without either.
@@ -6138,7 +6142,7 @@ function appearanceTab(p) {
         mv("Corner kick", "corner_kick", 1, top("corner_kick")),
         mv("Free kick", "free_kick", 1, top("free_kick")),
         mv("Penalty kick", "penalty_kick", 1, top("penalty_kick")),
-        [lbl("Dribbling motion"), fld(dribbleIn, 20)],
+        [gatedLbl("Dribbling motion", 20), fld(dribbleIn, 20)],
         mv("Goal celebration 1", "goal_celebration_1", 0, top("goal_celebration_1")),
         mv("Goal celebration 2", "goal_celebration_2", 0, top("goal_celebration_2"))],
         colCount("motion")).map(row => h("tr", {}, row.flat()))),
