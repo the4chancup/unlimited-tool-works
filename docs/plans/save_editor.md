@@ -2397,6 +2397,11 @@ the editor exposes them as:
   4ccEditor's squad load (gameplay / aesthetics / tactics), and applies cross-version
   conversion with a warning list when the file's version differs.
 
+  The window's sentences and labels are in the normal text colour, that of the Skills
+  panel's labels, not the weak grey, which read too dark across a whole window of them. The
+  weak grey stays on what a table's reader skips past: the slot and place numbers, the arrow
+  and the shirt number of `Who gets which record`, and the `(empty slot)` placeholder.
+
   A picked file that names the team it was exported from (a Team TOML's `[team] id`, a
   Texport's or a `.4cct`'s team) puts a button under the `Import into` line when that team is
   not the target: `Select the team with this file's ID (<id> <name>)`, the save's name for that

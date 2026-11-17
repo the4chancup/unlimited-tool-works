@@ -9533,7 +9533,7 @@ function interchangePanel() {
   if (S.tedFile) files.push(["ted", S.tedFile.label]);
   const c = h("div", {},
     h("div", { class: "row" },
-      weak("Export " + t.name + " (" + t.id + ") as "),
+      "Export " + t.name + " (" + t.id + ") as ",
       h("span", { title: ixTomlHeld(t) ? "" : "The draft holds no export text for this team" },
         button("Team TOML\u2026", ixExportToml,
           { disabled: !ixTomlHeld(t),
@@ -9545,8 +9545,8 @@ function interchangePanel() {
           disabled: version() < 17,
           title: version() >= 17 ? "A file PES itself can import" : "The editor cannot write a PES 2015 or 2016 Texport" }))),
     h("div", { class: "sep" }),
-    h("div", { class: "row" }, weak("Import into " + t.name + " (" + t.id + ") "),
-      weak("file "),
+    h("div", { class: "row" }, "Import into " + t.name + " (" + t.id + ") ",
+      "file ",
       combo([[null, "(pick a file)"]].concat(files), S.ix.file,
         v => { S.ix.file = v; S.ix.applied = null; },
         { title: "Pick the team file to import; its extension decides how it is read" })),
@@ -9555,13 +9555,13 @@ function interchangePanel() {
     ixOwnTeamButton(S.ix.file && ixFile(S.ix.file), t));
   const d = S.ix.file && ixFile(S.ix.file);
   if (!d) {
-    c.append(h("div", { class: "row weak" },
+    c.append(h("div", { class: "row" },
       "Team TOML, .4ccs, .4cct and Texport files are accepted."
       + (version() < 18 ? "" : " A .ted you export this session is listed too.")));
     return c;
   }
   const held = ixSectionsHeld(d), foreign = d.version !== version();
-  c.append(h("div", { class: "row weak" },
+  c.append(h("div", { class: "row" },
     (d.format === "toml" ? "A Team TOML" : d.format === "4ccs" ? "A legacy squad file (.4ccs)"
       : d.format === "4cct" ? "A legacy tactics file (.4cct)" : "A Texport")
     + " written from a PES 20" + d.version + " save"
@@ -9579,7 +9579,7 @@ function interchangePanel() {
             h("span", { class: "mono weak" }, String(dst.number)), " ",
             ...nameSpans(dst.name))
             : h("span", { class: "warn" }, "(empty slot)"))));
-    c.append(h("div", { class: "grp weak" }, "Who gets which record"), list);
+    c.append(h("div", { class: "grp" }, "Who gets which record"), list);
   }
   const refusal = ixRefusal(d);
   // A .4ccs with more records than the roster is refused whatever the
@@ -9602,7 +9602,7 @@ function interchangePanel() {
         " " + label));
   };
   const labels = { gameplay: "Stats", aesthetics: "Aesthetics", tactics: "Gameplan" };
-  c.append(h("div", { class: "row" }, weak("Sections "),
+  c.append(h("div", { class: "row" }, "Sections ",
     held.map(k => sec(k, labels[k]))));
   if (refusal)
     c.append(h("div", { class: "row err", id: "ix-refused" }, refusal));
@@ -9615,7 +9615,7 @@ function interchangePanel() {
       const groups = ixWarningGroups(warnings);
       const codes = [...new Set(groups.map(g => g.code))];
       const grp = h("div", { id: "ix-warnings" }, codes.map(code => h("div", {},
-        h("div", { class: "weak small" }, IX_NOTE_TEXT[code]),
+        h("div", { class: "small" }, IX_NOTE_TEXT[code]),
         groups.filter(g => g.code === code).map(g => {
           const players = g.lines.filter(l => l.place);
           if (!players.length) {
@@ -9630,10 +9630,10 @@ function interchangePanel() {
             return h("div", { class: "prow" },
               h("span", { class: "num weak" }, l.place), " ",
               p ? h("span", {}, ...nameSpans(p.name)) : h("span", { class: "weak" }, "(empty slot)"),
-              l.detail ? h("span", { class: "weak" }, "  " + l.detail) : null);
+              l.detail ? h("span", {}, "  " + l.detail) : null);
           }));
         }))));
-      c.append(h("div", { class: "grp weak" },
+      c.append(h("div", { class: "grp" },
         "Import notes (PES 20" + d.version + " file onto a PES 20" + version() + " save)"), grp);
     }
   }
@@ -9647,11 +9647,11 @@ function interchangePanel() {
     button("Apply", () => { ixApply(d); S.ix.applied = d.label; render(); },
       { disabled: !!refusal || !chosen || unchanged,
         title: "Write the chosen sections as one undoable edit" }),
-    weak("The changes can be undone and stay unsaved until you click Save.")));
+    "The changes can be undone and stay unsaved until you click Save."));
   if (S.ix.applied)
-    c.append(h("div", { class: "row" }, weak("Applied " + S.ix.applied + ".")));
+    c.append(h("div", { class: "row" }, "Applied " + S.ix.applied + "."));
   else if (unchanged)
-    c.append(h("div", { class: "row" }, weak("The team already holds every value of the chosen sections.")));
+    c.append(h("div", { class: "row" }, "The team already holds every value of the chosen sections."));
   return c;
 }
 

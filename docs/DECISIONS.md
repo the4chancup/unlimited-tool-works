@@ -18573,3 +18573,13 @@ teams`, in the dropdown and on the closed selector; under All it reads `All team
 Comparator's filter, which no category shortens, keeps `All teams`.
 Why: a shortened list under a plain `All teams` reads as every team of the save.
 Plan: `plans/save_editor.md`, the team selector's category paragraph and SE-GUI-83.
+
+## 2026-11-17 — save_editor — the Team file interchange window's lines in the normal text colour (maintainer)
+Decision: the interchange window's sentences and labels (the Export and Import into lines, the
+file's description, the headings, Sections, the notes' text and details, the lines after
+Apply) are drawn in the normal text colour, the Skills panel's labels', not egui's weak grey.
+The weak grey stays on what a table's reader skips past: the pairing's slot numbers, arrows
+and shirt numbers, a note row's place, and the `(none)` and `(empty slot)` placeholders (the
+lead's line between the two, from the draft's tables).
+Why: the maintainer found most of the window too dark to read.
+Plan: `plans/save_editor.md`, "Interchange formats in the UI".

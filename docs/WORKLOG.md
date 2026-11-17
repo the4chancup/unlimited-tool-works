@@ -24,9 +24,10 @@ excepted, below), 0.0.2-pes19
 2. The framed Stats screen and the control edges (0.0.2-frames): the draft settled
    2026-11-17 (`eval/stats-boxes`, a member's request, the maintainer's polish), the plan
    and DECISIONS written; next its two slices.
-3. Three fixes from the maintainer's looks of 2026-11-17: 0.0.2-namegame (a name's colour
+3. Four fixes from the maintainer's looks of 2026-11-17: 0.0.2-namegame (a name's colour
    codes drawn as they are in the light theme too), 0.0.2-xhover (the changes list's X
-   highlighted on hover) and 0.0.2-allcat (All teams reads `VGL teams` under VGL, and so on).
+   highlighted on hover), 0.0.2-allcat (All teams reads `VGL teams` under VGL, and so on)
+   and 0.0.2-ixtext (the interchange window's lines in the normal text colour).
    0.0.2-present, the resize flicker's fix, landed 2026-11-17.
 4. The cut, only once the maintainer has run the checks of
    `maintainer/tasks.html` (the maintainer, 2026-11-17): a pipeline without mutants on the
@@ -1705,6 +1706,12 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     2026-11-17; draft `teamSelector`). SWE-2 on `.tmp/brief_allcat.md`, after 0.0.2-frames B2
     and 0.0.2-namegame merge (all three touch `view/player_list.rs`) -> verify: the category
     test turned around, the built window under VGL
+  - [ ] 0.0.2-ixtext the Team file interchange window's sentences and labels in the normal
+    text colour, the Skills labels', not the weak grey (the maintainer, 2026-11-17;
+    `plans/save_editor.md` "Interchange formats in the UI"; DECISIONS 2026-11-17; draft
+    `interchangePanel`). In the same SWE-2 run as 0.0.2-allcat (`interchange.rs` is one of
+    0.0.2-namegame's name callers) -> verify: a painted-colour test, the built window beside
+    the draft
   - [x] 0.0.2-undosel 2026-11-15 (SWE-2, merge `e0ebd784`): Undo, Redo and a `Player order`
     row's X keep the moved player selected (`view/mod.rs` `following_selection`,
     `Session::record_of`). Look checked, card `look-undo-selection`
