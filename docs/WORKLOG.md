@@ -1644,7 +1644,8 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         sentence gaps against the dialogs' 8, the room a browser keeps under an inline box):
         the draft follows the build (the maintainer, DECISIONS 2026-11-17); every row now
         stands where the build's does
-      - [ ] card ST-REP-05 in `maintainer/tasks.html`
+      - [x] card ST-REP-05 in `maintainer/tasks.html` (2026-11-17), the maintainer's run
+        waiting there
   - [x] 0.0.2-namelight 2026-11-15 (SWE-2, merge `40ce82da`): in the light theme a name's
     colour code reading under 4.5 on the panel is darkened until it does, hue kept
     (`theme::darkened_to_read`, which reproduces the lineup lists' hand-made colours); the
