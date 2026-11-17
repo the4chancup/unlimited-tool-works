@@ -3700,7 +3700,10 @@ points there.
   decrypted, and Report a problem's unticked box adds them (`plans/core/architecture.md`
   "Repro bundles", "Earlier sessions are kept on disk"; ST-REP-06 to 12, SE-REP-07; the help
   page's line). It replaces the panic hook's bundle, which was never built; (6) the Compiler
-  and the Export upgrader; the rest as each tool is built. Each slice gets SWE-2, Argon and Astra rounds (a new `pub` interface across
+  and the Export upgrader; the rest as each tool is built. Before (5), on its own after
+  0.0.2 (the maintainer, 2026-11-17): the crash monitor's start tried once more after a
+  failure at once (`plans/core/architecture.md` "Diagnostic logging", "A failed start is
+  tried once more"; ST-RUN-13). Each slice gets SWE-2, Argon and Astra rounds (a new `pub` interface across
   crates).
 - open (2026-11-06) — Whole-crate mutation runs on the VPS alone (`RUNBOOK.md` "Mutation
   runs and the VPS", the maintainer's directive). Slice 1 done 2026-11-09 (SWE-2 sidekick,

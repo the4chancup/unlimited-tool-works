@@ -18769,3 +18769,13 @@ close would lose them all. A save is kept decrypted because it then compresses 2
 times and encrypts back to the file byte for byte, so a session takes about half a MB.
 Plan: `plans/core/architecture.md`, "Repro bundles" ("Earlier sessions are kept on disk",
 the dialog's box); `plans/core/gui.md` ST-REP-06 to 12; `plans/save_editor.md` SE-REP-07.
+## 2026-11-17 — studio — the crash monitor's start is tried once more after a failure at once
+Decision: when the crash monitor does not start, or exits before its socket connects, the
+window starts it once more; a monitor that does not answer within the two seconds is not
+retried. Mid-session, a broken link to the monitor gets one new monitor, then the window's
+own session writer (earlier sessions). Queued for after 0.0.2 (the maintainer).
+Why: today one quick failure leaves the whole session without crash dumps and, once
+earlier sessions land, without the monitor's writer. A failure at once costs nothing to retry;
+a timeout would double the two seconds the window waits before opening.
+Plan: `plans/core/architecture.md` "Diagnostic logging" (the monitor's link) and "Repro
+bundles" (earlier sessions); `plans/core/gui.md` ST-RUN-13, ST-REP-10.

@@ -484,6 +484,13 @@ What exists of this is in `spec/core/architecture.md` "Diagnostic logging".
 
   The window waits at most two seconds for the monitor to answer.
 
+  **A failed start is tried once more** when it fails at once: the monitor did not start, or
+  exited before its socket connected. Those cost nothing to retry, and a cause that passes
+  (an antivirus scanning the exe as it starts, say) leaves the window watched. A monitor that does
+  not answer within the two seconds is not tried again, since the window waits for it before
+  opening and a second wait would double that. A start that fails twice logs its warning
+  and the window runs without a monitor.
+
   **The size.** The three crates were accepted on a growth of at most 10 MB, and add 221 KiB
   to a probe exe built with the release profile (measured at 0.0.1k4, with and without the
   monitor, the hook and a stack overflow wired). Ours should grow less, since it already holds
@@ -625,6 +632,9 @@ Compiler and the Export upgrader, then the rest as they are built.
     sends it. A full queue drops messages and logs one line, rather than blocking the window.
   - A window whose monitor did not start runs the same writer on a thread of its own, so its
     session is still kept.
+  - A link that breaks mid-session (the monitor died) gets one new monitor, which keeps
+    crash dumps for the rest of the session and writes on into the same folder. If that one
+    does not start either, the window's own writer takes the folder over.
   - The writer is one function from a message to the folder, which tests call in-process;
     one test covers the link.
   - Each window has its own monitor, so two windows open at once keep two folders.

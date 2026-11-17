@@ -1920,7 +1920,10 @@ ST-REP-09   GIVEN two earlier session folders and the window's own
 ST-REP-10   GIVEN a monitor that reads nothing, so the window's queue fills
             WHEN steps are recorded THEN no frame waits on the link and the log holds one line
                  about the dropped messages; GIVEN no monitor THEN the window's own writer
-                 thread writes the folder as ST-REP-06's
+                 thread writes the folder as ST-REP-06's; GIVEN the monitor ended mid-session
+                 THEN a new one is started and the next steps land in the same folder, and
+                 GIVEN the new one does not start THEN the window's own writer writes them
+                 there
 ST-REP-11   GIVEN the real monitor process and a window that sends two steps and exits without
                  its closing message
             THEN the folder holds the two steps and `[end]` `ended`
@@ -2023,6 +2026,14 @@ ST-RUN-12   GIVEN a window running over a data location
                  `utw.2.log`, and the first copy's `utw.log` keeps growing; WHEN both
                  close and one starts again THEN it logs to `utw.log`, reporting the
                  earlier session closed
+ST-RUN-13   GIVEN a monitor program that exits at once the first time it is started and
+                 serves the second time
+            WHEN the window starts
+            THEN it is watched (ST-RUN-10's dump is written on a crash) and the log holds no
+                 warning; GIVEN one that exits at once both times THEN the start gives up
+                 after the second, logs one warning and the window opens; GIVEN one that
+                 never answers THEN it is started once, and the window opens after the two
+                 seconds' wait with the warning
 ST-CLI-01   GIVEN a data directory that cannot be written
             WHEN a CLI command runs
             THEN stderr starts with the settings_save_failed condition as one line, and a notice a
