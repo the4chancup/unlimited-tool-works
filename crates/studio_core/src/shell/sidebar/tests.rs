@@ -65,6 +65,22 @@ fn filled_at(out: &FrameOutput, bounds: accesskit::Rect) -> bool {
     })
 }
 
+/// The `Rect` painted over `bounds` (within 2 points, for the visuals'
+/// expansion): the row's frame, whatever its fill or stroke.
+fn frame_shape_at(out: &FrameOutput, bounds: accesskit::Rect) -> Option<&egui::epaint::RectShape> {
+    out.shapes.iter().find_map(|clipped| match &clipped.shape {
+        egui::Shape::Rect(shape)
+            if (f64::from(shape.rect.min.x) - bounds.x0).abs() <= 2.0
+                && (f64::from(shape.rect.min.y) - bounds.y0).abs() <= 2.0
+                && (f64::from(shape.rect.max.x) - bounds.x1).abs() <= 2.0
+                && (f64::from(shape.rect.max.y) - bounds.y1).abs() <= 2.0 =>
+        {
+            Some(shape)
+        }
+        _ => None,
+    })
+}
+
 /// The frame's `color` fill `ACTIVE_BAR_WIDTH` wide over the full height at
 /// `bounds`' left edge: the active entry's accent bar.
 fn accent_bar_at(
@@ -764,6 +780,42 @@ fn an_inactive_row_paints_no_background_until_it_is_touched() {
     assert!(
         filled_at(&out, entry(&out.nodes, "B").bounds().unwrap()),
         "the hovered row paints its background"
+    );
+}
+
+// A row is not a control, so the theme's resting stroke, a live control's
+// edge, does not reach it: the active row at rest paints its fill with no
+// edge, and a hovered one the hovered stroke it has.
+#[test]
+fn an_active_row_paints_no_edge_at_rest_and_the_hover_stroke_hovered() {
+    let Shell { mut app, _dir, .. } = shell();
+    let egui_ctx = test_context();
+
+    let out = frame_at(&egui_ctx, &mut app, Vec::new(), true, Some(0.9));
+    let visuals = egui_ctx.global_style().visuals.clone();
+    let active = entry(&out.nodes, "A").bounds().unwrap();
+    let frame = frame_shape_at(&out, active).expect("the active row's frame");
+    assert_eq!(
+        frame.fill, visuals.selection.bg_fill,
+        "premise: the frame is the selected row's"
+    );
+    assert_eq!(
+        frame.stroke,
+        egui::Stroke::NONE,
+        "a row at rest paints no edge"
+    );
+
+    let out = frame_at(
+        &egui_ctx,
+        &mut app,
+        hover(entry(&out.nodes, "A")),
+        true,
+        Some(1.0),
+    );
+    let frame = frame_shape_at(&out, active).expect("the hovered row's frame");
+    assert_eq!(
+        frame.stroke, visuals.widgets.hovered.bg_stroke,
+        "a hovered row paints the hovered stroke"
     );
 }
 

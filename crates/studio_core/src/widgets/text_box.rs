@@ -18,10 +18,10 @@ pub fn text_box_border(visuals: &egui::Visuals) -> (egui::Stroke, egui::CornerRa
 /// hovered and focused as egui draws them, the focus outline in the
 /// selection's stroke. The box's outer size is egui's: the border takes its
 /// width off the inner margin.
-/// egui draws a resting text box with the resting widgets' stroke, which the
-/// buttons share and which is none, and its hook for a text box's look is
-/// public only behind its `experimental` feature, so the border is set on
-/// the box's own `Ui` for the one widget. Add it as any widget
+/// egui draws a resting text box with the resting widgets' stroke, the
+/// control's edge the buttons share, and its hook for a text box's look is
+/// public only behind its `experimental` feature, so the quieter border is
+/// set on the box's own `Ui` for the one widget. Add it as any widget
 /// (`ui.add(text_box(…))`, `ui.add_sized(…)`).
 pub fn text_box<'t>(edit: egui::TextEdit<'t>) -> impl egui::Widget + 't {
     move |ui: &mut egui::Ui| {
@@ -78,8 +78,9 @@ mod tests {
 
     // A resting text box: a 1-point border in the theme's noninteractive
     // stroke, the theme's corner radius, at egui's own outer size, on both
-    // themes; a button beside it keeps no border, and a focused box takes
-    // the selection's stroke.
+    // themes; a button beside it draws the resting edge, not the box's
+    // border, a frameless one none, and a focused box takes the selection's
+    // stroke.
     #[test]
     fn a_resting_text_box_draws_the_drafts_border() {
         for (theme, border) in [
@@ -95,11 +96,12 @@ mod tests {
                 let boxed = ui.add(text_box(egui::TextEdit::singleline(&mut text)));
                 let egui_own = ui.add(egui::TextEdit::singleline(&mut plain));
                 let button = ui.button("Save");
-                (boxed, egui_own, button)
+                let frameless = ui.add(egui::Button::new("x").frame(false));
+                (boxed, egui_own, button, frameless)
             };
             // egui styles a text box from its state on the frame before.
             frame(&ctx, &mut draw);
-            let (shapes, (boxed, egui_own, button)) = frame(&ctx, &mut draw);
+            let (shapes, (boxed, egui_own, button, frameless)) = frame(&ctx, &mut draw);
             let visuals = ctx.style_of(ctx.theme()).visuals.clone();
             assert_eq!(
                 visuals.widgets.noninteractive.bg_stroke.color, border,
@@ -123,14 +125,28 @@ mod tests {
             );
             assert_eq!(boxed.rect.height(), 18.0, "{theme:?}: 18 tall");
             assert_eq!(
-                frame_at(&shapes, button.rect).stroke.width,
-                0.0,
-                "{theme:?}: a button drawn after it keeps no border"
+                frame_at(&shapes, button.rect).stroke,
+                visuals.widgets.inactive.bg_stroke,
+                "{theme:?}: a button drawn after it keeps the resting edge, \
+                 not the box's border"
+            );
+            let frameless_frames: Vec<_> = shapes
+                .iter()
+                .filter(|shape| {
+                    matches!(shape, egui::Shape::Rect(rect)
+                        if rect.rect == frameless.rect
+                            && (rect.fill != egui::Color32::TRANSPARENT
+                                || !rect.stroke.is_empty()))
+                })
+                .collect();
+            assert!(
+                frameless_frames.is_empty(),
+                "{theme:?}: a frameless button paints no frame: {frameless_frames:?}"
             );
 
             ctx.memory_mut(|memory| memory.request_focus(boxed.id));
             frame(&ctx, &mut draw);
-            let (shapes, (boxed, _, _)) = frame(&ctx, &mut draw);
+            let (shapes, (boxed, _, _, _)) = frame(&ctx, &mut draw);
             assert!(boxed.has_focus(), "premise: the box holds the keyboard");
             assert_eq!(
                 frame_at(&shapes, boxed.rect).stroke,

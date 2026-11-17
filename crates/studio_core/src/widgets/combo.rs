@@ -24,12 +24,15 @@ pub(crate) fn rows_meet(spacing: &mut egui::style::Spacing) {
 /// meeting the rows above and below it. A row cannot change its
 /// neighbours, so it sets the list's own `Ui` (`rows_meet`), as every row
 /// does; a widget added to the list after a row therefore touches it too.
+/// It also takes the resting stroke out, the control's edge: a row is not
+/// a control, so the picked row's blue draws none.
 pub fn combo_label(
     ui: &mut egui::Ui,
     checked: bool,
     text: impl Into<egui::WidgetText>,
 ) -> egui::Response {
     rows_meet(ui.spacing_mut());
+    ui.visuals_mut().widgets.inactive.bg_stroke = egui::Stroke::NONE;
     ui.selectable_label(checked, text)
 }
 
@@ -86,6 +89,8 @@ mod tests {
         button: egui::Rect,
         scroll: bool,
         nodes: Vec<accesskit::Node>,
+        /// The last frame's painted shapes.
+        shapes: Vec<egui::epaint::ClippedShape>,
     }
 
     impl Window {
@@ -101,6 +106,7 @@ mod tests {
                 button: egui::Rect::NOTHING,
                 scroll,
                 nodes: Vec::new(),
+                shapes: Vec::new(),
             }
         }
 
@@ -144,6 +150,7 @@ mod tests {
                 .into_iter()
                 .map(|(_, node)| node)
                 .collect();
+            let shapes = std::mem::take(&mut output.shapes);
             // Nothing renders here, so the frame's texture deltas are dropped
             // on purpose.
             output.drop_without_applying_deltas();
@@ -152,6 +159,7 @@ mod tests {
             self.ids = ids;
             self.button = button;
             self.nodes = nodes;
+            self.shapes = shapes;
         }
 
         /// A press and a release at `pos`, one frame each.
@@ -282,5 +290,41 @@ mod tests {
             .map(|node| node.label())
             .collect();
         assert_eq!(marked, [Some(ITEMS[1])], "the current row, and it alone");
+    }
+
+    // A row is not a control: the picked row fills in the selection blue and
+    // draws no resting edge, the stroke the theme gives live controls.
+    #[test]
+    fn the_picked_row_draws_its_blue_with_no_edge() {
+        let mut window = Window::new(false);
+        open(&mut window);
+        // The popup fades in over its first frames; a settled one paints
+        // the fill at full alpha.
+        for _ in 0..20 {
+            window.frame(Vec::new());
+        }
+        let blue = window.ctx.global_style().visuals.selection.bg_fill;
+        let row = window.rows[1];
+        // The popup's shapes nest in `Shape::Vec`s under its own layer.
+        let mut stack: Vec<&egui::Shape> =
+            window.shapes.iter().map(|clipped| &clipped.shape).collect();
+        let mut frames = Vec::new();
+        while let Some(shape) = stack.pop() {
+            match shape {
+                egui::Shape::Vec(children) => stack.extend(children.iter()),
+                egui::Shape::Rect(rect) if rect.rect == row && rect.fill == blue => {
+                    frames.push(rect)
+                }
+                _ => {}
+            }
+        }
+        let [frame] = frames[..] else {
+            panic!("one blue frame over the picked row {row:?}: {frames:?}")
+        };
+        assert_eq!(
+            frame.stroke,
+            egui::Stroke::NONE,
+            "a row draws no resting edge"
+        );
     }
 }

@@ -358,6 +358,29 @@ fn scaled(colour: egui::Color32, factor: f64) -> egui::Color32 {
     )
 }
 
+/// The edge a live control draws inside its box at rest: `fill` with 30
+/// on each channel on the dark theme, 30 off on the light one (each
+/// saturating; the alpha kept). A control's edge is its fill lightened,
+/// so an empty box or an unheld toggle still reads as a control on the
+/// panel; the widgets' resting stroke (`inactive.bg_stroke`) is this on
+/// the resting fill. A control that paints a fill of its own (the
+/// checked box's selection blue, the palette's) edges it with the same 30.
+pub fn edge_color(visuals: &egui::Visuals, fill: egui::Color32) -> egui::Color32 {
+    let channel = |value: u8| {
+        if visuals.dark_mode {
+            value.saturating_add(30)
+        } else {
+            value.saturating_sub(30)
+        }
+    };
+    egui::Color32::from_rgba_unmultiplied(
+        channel(fill.r()),
+        channel(fill.g()),
+        channel(fill.b()),
+        fill.a(),
+    )
+}
+
 /// The one corner radius everything drawn with corners rounds by, the
 /// drafts' `border-radius: 2px`: `install` pins it on every radius egui
 /// draws (the window's, the menu's and each widget state's), and the
@@ -450,11 +473,15 @@ pub fn install(ctx: &egui::Context) {
 }
 
 /// egui 0.36.1's `Widgets::dark()`, field for field but for the pressed
-/// state's text colour (the strong text colour, below) and the corner
-/// radii, `CORNER_RADIUS` on every state (0.36 rounded a hovered widget
-/// to 3): the drafts' stylesheet draws widgets in these colors, and
-/// 0.37's `Widgets::dark()` moved them (the buttons to grey 50 with text
-/// at 215, the radii to 4 to 6 points), so it cannot supply them.
+/// state's text colour (the strong text colour, below), the resting
+/// state's background stroke and the corner radii, `CORNER_RADIUS` on
+/// every state (0.36 rounded a hovered widget to 3). The resting stroke,
+/// none in egui, is a live control's edge: its fill 30 lighter, `#5a5a5a`
+/// on the resting 60, so an empty box or an unheld toggle still reads as
+/// a control on the panel. The drafts' stylesheet draws widgets in these
+/// colors, and 0.37's `Widgets::dark()` moved them (the buttons to grey
+/// 50 with text at 215, the radii to 4 to 6 points), so it cannot supply
+/// them.
 #[cfg(not(target_arch = "wasm32"))]
 fn widgets_dark() -> egui::style::Widgets {
     egui::style::Widgets {
@@ -469,7 +496,7 @@ fn widgets_dark() -> egui::style::Widgets {
         inactive: egui::style::WidgetVisuals {
             weak_bg_fill: egui::Color32::from_gray(60),
             bg_fill: egui::Color32::from_gray(60),
-            bg_stroke: egui::Stroke::default(),
+            bg_stroke: egui::Stroke::new(1.0, egui::Color32::from_gray(90)),
             fg_stroke: egui::Stroke::new(1.0, egui::Color32::from_gray(180)),
             corner_radius: egui::CornerRadius::same(CORNER_RADIUS),
             expansion: 0.0,
@@ -505,9 +532,10 @@ fn widgets_dark() -> egui::style::Widgets {
     }
 }
 
-/// egui 0.36.1's `Widgets::light()`, field for field but for the fills and
-/// the corner radii, `CORNER_RADIUS` on every state, for the same reason as
-/// `widgets_dark`: 0.37's `Widgets::light()` rounded every
+/// egui 0.36.1's `Widgets::light()`, field for field but for the fills, the
+/// resting state's background stroke and the corner radii, `CORNER_RADIUS`
+/// on every state, for the same reason as `widgets_dark`: 0.37's
+/// `Widgets::light()` rounded every
 /// state to 6 points, which is not the look the drafts were reviewed in.
 /// The fills are near the dark states' contrast with their panel instead of
 /// 0.36's greys, whose resting 230 reads at 1.18 on the 248 panel, where the
@@ -516,6 +544,9 @@ fn widgets_dark() -> egui::style::Widgets {
 /// each a step lighter than the grey of the dark contrast (201, 186 and 208),
 /// all three by the same 6 so the states stay as far apart: at the matched
 /// contrast the grey boxes read too dark beside the white text boxes.
+/// The resting stroke, none in egui, is the light theme's own rule for a
+/// control's edge: its fill 30 darker (177 on the resting 207), the dark
+/// theme's edge lightened instead.
 #[cfg(not(target_arch = "wasm32"))]
 fn widgets_light() -> egui::style::Widgets {
     egui::style::Widgets {
@@ -530,7 +561,7 @@ fn widgets_light() -> egui::style::Widgets {
         inactive: egui::style::WidgetVisuals {
             weak_bg_fill: egui::Color32::from_gray(207),
             bg_fill: egui::Color32::from_gray(207),
-            bg_stroke: egui::Stroke::default(),
+            bg_stroke: egui::Stroke::new(1.0, egui::Color32::from_gray(177)),
             fg_stroke: egui::Stroke::new(1.0, egui::Color32::from_gray(60)),
             corner_radius: egui::CornerRadius::same(CORNER_RADIUS),
             expansion: 0.0,
@@ -855,6 +886,70 @@ mod tests {
             ] {
                 assert_eq!(radius, egui::CornerRadius::same(2), "{theme:?} {name}");
             }
+        }
+    }
+
+    // A live control's edge is its fill 30 lighter on the dark theme, 30
+    // darker on the light one: the installed style's resting stroke is the
+    // rule on the resting fill, and `edge_color` gives it on every fill a
+    // control paints (the selection blue, the palette's quiet grey and
+    // green).
+    #[test]
+    fn the_resting_edge_is_its_fill_thirty_lighter_or_darker() {
+        let ctx = egui::Context::default();
+        install(&ctx);
+        let dark = ctx.style_of(egui::Theme::Dark).visuals.clone();
+        let widgets = &dark.widgets;
+        assert_eq!(
+            widgets.inactive.bg_fill,
+            egui::Color32::from_gray(60),
+            "premise: the dark resting fill"
+        );
+        assert_eq!(
+            widgets.inactive.bg_stroke,
+            egui::Stroke::new(1.0, egui::Color32::from_gray(90)),
+            "premise: the dark resting stroke"
+        );
+        assert_eq!(
+            dark.selection.bg_fill,
+            egui::Color32::from_rgb(0x00, 0x5c, 0x80),
+            "premise: the selection blue"
+        );
+        for (fill, expected) in [
+            (widgets.inactive.bg_fill, widgets.inactive.bg_stroke.color),
+            (
+                dark.selection.bg_fill,
+                egui::Color32::from_rgb(0x1e, 0x7a, 0x9e),
+            ),
+            (
+                egui::Color32::from_rgb(0x5a, 0x5a, 0x5a),
+                egui::Color32::from_rgb(0x78, 0x78, 0x78),
+            ),
+            (
+                egui::Color32::from_rgb(0x12, 0x96, 0x48),
+                egui::Color32::from_rgb(0x30, 0xb4, 0x66),
+            ),
+        ] {
+            assert_eq!(edge_color(&dark, fill), expected, "{fill:?}'s edge");
+        }
+
+        let light = ctx.style_of(egui::Theme::Light).visuals.clone();
+        let widgets = &light.widgets;
+        assert_eq!(
+            widgets.inactive.bg_fill,
+            egui::Color32::from_gray(207),
+            "premise: the light resting fill"
+        );
+        assert_eq!(
+            widgets.inactive.bg_stroke,
+            egui::Stroke::new(1.0, egui::Color32::from_gray(177)),
+            "premise: the light resting stroke"
+        );
+        for (fill, expected) in [
+            (widgets.inactive.bg_fill, widgets.inactive.bg_stroke.color),
+            (widgets.inactive.bg_fill, egui::Color32::from_gray(177)),
+        ] {
+            assert_eq!(edge_color(&light, fill), expected, "light {fill:?}'s edge");
         }
     }
 

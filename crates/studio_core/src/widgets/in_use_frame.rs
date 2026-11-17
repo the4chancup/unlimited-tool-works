@@ -4,7 +4,9 @@
 /// The frame a widget of `response` shows over `rect` while it is in use
 /// (`active`, hovered, pressed or focused), in the button look egui gives a
 /// selectable widget in that state: `None` while it is not in use, or while
-/// `ui` is disabled. A caller painting a picture over the frame paints the
+/// `ui` is disabled. A row is not a control, so the frame takes no edge
+/// while the row is only `active` at rest: the theme's resting stroke is a
+/// control's. A caller painting a picture over the frame paints the
 /// frame first (or into a slot reserved before the picture), since the
 /// frame is filled.
 pub fn in_use_frame(
@@ -21,12 +23,17 @@ pub fn in_use_frame(
         return None;
     }
     let visuals = ui.style().interact_selectable(response, active);
+    let stroke = if super::at_rest(ui, response) {
+        egui::Stroke::NONE
+    } else {
+        visuals.bg_stroke
+    };
     Some(
         egui::epaint::RectShape::new(
             rect.expand(visuals.expansion),
             visuals.corner_radius,
             visuals.weak_bg_fill,
-            visuals.bg_stroke,
+            stroke,
             egui::StrokeKind::Inside,
         )
         .into(),

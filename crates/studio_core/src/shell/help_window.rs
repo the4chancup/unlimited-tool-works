@@ -235,6 +235,10 @@ impl HelpWindow {
                 header = header.open(Some(true));
             }
             header.show(ui, |ui| {
+                // A topic's row is not a control: the shown topic's fills in
+                // the selection blue and draws no resting edge, the stroke
+                // the theme gives live controls.
+                ui.visuals_mut().widgets.inactive.bg_stroke = egui::Stroke::NONE;
                 for (topic, entry) in section.topics.iter().enumerate() {
                     if ui
                         .selectable_label(
@@ -2310,6 +2314,61 @@ mod tests {
             (edge - content_left - 220.0).abs() <= 1.0,
             "the tree's width: {}",
             edge - content_left
+        );
+    }
+
+    // A topic's row in the tree is not a control: the shown topic fills in
+    // the selection blue and draws no resting edge, the stroke the theme
+    // gives live controls.
+    #[test]
+    fn the_shown_topics_row_draws_its_blue_with_no_edge() {
+        let dir = TestDir::new("studio_core_help_tree_row_edge");
+        let (tool, calls) = stub_help("save-editor", "Save editor", None, terminal_section());
+        let shell = shell_with(
+            test_settings(dir.path()),
+            vec![tool],
+            &[],
+            Some(dir.path().to_path_buf()),
+            vec![calls],
+        );
+        shell.ctx.switch_to_tool("save-editor");
+        let Shell { mut app, .. } = shell;
+        let egui_ctx = test_context();
+
+        frame(&egui_ctx, &mut app, vec![key(egui::Key::F1, true)], true);
+        let out = idle(&egui_ctx, &mut app, 15);
+        let topic = out
+            .nodes
+            .iter()
+            .find(|node| {
+                node.role() == Role::Button && node.label() == Some("Running from a terminal")
+            })
+            .and_then(accesskit::Node::bounds)
+            .expect("the topic's row");
+        let blue = egui_ctx.global_style().visuals.selection.bg_fill;
+        let frames: Vec<_> = out
+            .shapes
+            .iter()
+            .filter_map(|clipped| match &clipped.shape {
+                egui::Shape::Rect(shape)
+                    if shape.fill == blue
+                        && (f64::from(shape.rect.min.x) - topic.x0).abs() <= 2.0
+                        && (f64::from(shape.rect.min.y) - topic.y0).abs() <= 2.0
+                        && (f64::from(shape.rect.max.x) - topic.x1).abs() <= 2.0
+                        && (f64::from(shape.rect.max.y) - topic.y1).abs() <= 2.0 =>
+                {
+                    Some(shape)
+                }
+                _ => None,
+            })
+            .collect();
+        let [frame] = frames[..] else {
+            panic!("one blue frame over the shown topic's row: {frames:?}")
+        };
+        assert_eq!(
+            frame.stroke,
+            egui::Stroke::NONE,
+            "a row draws no resting edge"
         );
     }
 }

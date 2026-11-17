@@ -148,11 +148,17 @@ impl LogPanel {
         self.dock.show(
             ui,
             |ui| {
+                // A chip is a row, not a control: a picked one fills in the
+                // selection blue and draws no resting edge, the stroke the
+                // theme gives live controls.
+                let widgets = ui.visuals().widgets.clone();
+                ui.visuals_mut().widgets.inactive.bg_stroke = egui::Stroke::NONE;
                 for (choice, label) in Filter::CHIPS {
                     if ui.selectable_label(filter.get() == choice, label).clicked() {
                         filter.set(choice);
                     }
                 }
+                ui.visuals_mut().widgets = widgets;
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                     ui.weak(count_text(filter.get(), lines));
                 });
