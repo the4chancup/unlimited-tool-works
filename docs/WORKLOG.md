@@ -1900,9 +1900,14 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       merged; the nations then taken from the games' own `Country.bin` per version (lead,
       `.tmp/lead/nations/`: `unwesys.py`, `table.py`, the seven `pes<NN>.tsv`)
     - [x] the plan ("The player view") and DECISIONS
-    - [ ] the nation lists' data file and its generating script (lead), then the build
-      (SWE-2, after 0.0.2-paneshift merges: both touch the Stats screen), help 03, the
-      changelog line
+    - [x] the nation lists (lead): `scripts/derive_nations.py G:/Games` writes
+      `crates/tools/save_editor/data/nations.tsv` (220 IDs; 189, 191, 220, then 214 a
+      version)
+    - [ ] the build (SWE-2, after 0.0.2-paneshift merges: both touch the Stats screen): the
+      two panels as the draft's `generalPanel`, the nation combo from `nations.tsv` (loaded
+      once, not a frame's work; the open list scrolled to the held nation; `ID - ?` for an
+      ID the version lacks), a test holding the fixture saves' nation IDs to their lists,
+      help 03, the changelog line
   - [ ] 0.0.2-posheight (the maintainer's change, 2026-11-17): the playable positions grid
     takes its own layout's height, so Pitch and Left leave the panel shorter than List
     (under DBC7 the screen ends on Ability stats' frame, 703 against List's 726 in the
