@@ -239,7 +239,7 @@ fn near_draft(actual: f64, draft: f64, what: &str) {
 // square 17 by 17, the cells of a row 66 apart (the 62-point `.poscell`
 // and the `.posrow`'s 4-point gap), the rows 43 apart (a cell's 2 and 3
 // points of padding and the grid's 4-point gap), the rows centred in the
-// grid's List-height region — the first row's squares ~91 under the
+// grid's List-height region — the first row's squares ~88 under the
 // panel's title here.
 #[test]
 fn the_positions_grid_stands_at_the_drafts_pitch() {
@@ -264,7 +264,7 @@ fn the_positions_grid_stands_at_the_drafts_pitch() {
         }
     }
     let rows = ["LWF", "LMF", "CMF", "LB", "GK"].map(|position| c_of(position).y0);
-    near_draft(rows[0] - title_top, 90.9, "the first row under the title");
+    near_draft(rows[0] - title_top, 88.0, "the first row under the title");
     for pair in rows.windows(2) {
         near_draft(pair[1] - pair[0], 43.0, "the rows' pitch");
     }
@@ -482,7 +482,7 @@ fn the_layout_toggle_picks_one_of_three_grids() {
         );
     }
     // The first row's square stands centred in the grid's List-height
-    // region — ~47.5 under the title here — and the rows at the draft's
+    // region — ~46 under the title here — and the rows at the draft's
     // pitch.
     let title_top = label_bounds(&nodes, "Playable positions").y0;
     let squares = LIST_ORDER.map(|position| {
@@ -493,7 +493,7 @@ fn the_layout_toggle_picks_one_of_three_grids() {
     });
     near_draft(
         squares[0] - title_top,
-        47.5,
+        46.0,
         "the first List row under the title",
     );
     for pair in squares.windows(2) {

@@ -37,7 +37,7 @@ use crate::view::abilities::{
 use crate::view::appearance::fields::{
     MOTIONS, MotionField, PHYSIQUE, Palette, STRIP_ENUMS, combo_options, number_range, palette,
 };
-use crate::view::group_frame::{GROUP_GAP, frame_margin, stretch_to};
+use crate::view::group_frame::{GROUP_GAP, stretch_to};
 use crate::view::team::SPACE_GAP;
 use crate::view::{NUMBER_BOX, Panel, SaveView, edit_player, selected_player};
 
@@ -325,7 +325,7 @@ fn physique_motion_flags_row(
     draw: &mut dyn FnMut(u8) -> u8,
 ) {
     let group_frame = egui::Frame::group(ui.style());
-    let margin = frame_margin(&group_frame).y;
+    let margin = group_frame.total_margin().sum().y;
     ui.scope_builder(
         egui::UiBuilder::new().layout(egui::Layout::left_to_right(egui::Align::Min)),
         |ui| {
