@@ -23,7 +23,8 @@ the plan draft a long-lived branch in its own worktree, a step's draft commits m
 when its build merges, and main merged back into the branch, never rebased; then the plan and spec text
 keeps the reasons, the behaviour and what no draft shows, such as the light theme, and points
 at the draft for measurements rather than copying them, a copy that drifted once: rows "22
-apart" against the draft's 24), and any mutation run
+apart" against the draft's 24), the SWE-2 Flash trial's first comparison (its 0.0.2-lookfix
+run shelved in `4cc-studio-temp/lookfix_flash`, never merged), and any mutation run
 (mutfast first). Most open steps below wait only for the maintainer's look
 (`maintainer/tasks.html`). What is left before the cut:
 1. 0.0.2-geninfo: the build (SWE-2, running), its review (a SWE-2 loop, then one paid
