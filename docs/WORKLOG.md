@@ -1871,9 +1871,16 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       screen. Then (the maintainer) the frames' tops on the list's frame: the screens and the
       line above them 1.5 lower, the tabs row 0.75 (viewTitle's margins, Squad's alike);
       measured: frames and list at 71, the line at 58, the tabs at 34.75 on every screen
-    - [ ] the maintainer's check of the draft (`tasks.html` `look-pane-shift-draft`); then
-      the plan (`save_editor.md` "The player view": 22 after the list, 12 right) and the
-      build
+    - [x] the frames' tops on the list's (71), the line at 59, the tabs at 34.75 (the
+      maintainer's, 2026-11-17; drafts to `a083b48c`); the draft approved by the maintainer
+      2026-11-17
+    - [ ] the plan (`save_editor.md` "The player view") and DECISIONS, then the build
+  - [ ] 0.0.2-keepsel (the maintainer's ruling, 2026-11-17): picking in the team dropdown
+    the team the selection is already on keeps the selection (a player stays selected)
+    -> verify: a test per case (his team keeps him, another team selects its row)
+    - [x] the draft (`teamSelector`, `a083b48c`)
+    - [ ] the plan (`save_editor.md`, "Picking a different team selects its team row"),
+      DECISIONS, the build with 0.0.2-paneshift's
   - [x] 0.0.2-taskbuild 2026-11-17: the tasks page names the build its cards run on -> verify: the next
     release build (the Report a problem look's) copied to `4cc-studio-temp/tasks_build/`,
     the page's intro naming that path and the commit it was built from; refreshed whenever
