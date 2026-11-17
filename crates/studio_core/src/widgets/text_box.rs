@@ -49,9 +49,9 @@ pub fn text_box<'t>(edit: egui::TextEdit<'t>) -> impl egui::Widget + 't {
 /// stroke, runs `add` and puts the widgets back. On the dark theme it
 /// only runs `add`: there the box is the grey every control is, the look
 /// the drafts were reviewed in. `bg_fill` stays as the theme has it: a
-/// `DragValue` draws as a button (`weak_bg_fill`, `bg_stroke`) or, while
-/// edited, a `TextEdit` (`text_edit_bg_color`), never reading it, while a
-/// slider's rail and handle are drawn from it, so `slider`'s value box
+/// `DragValue` never reads it, drawing as a button (`weak_bg_fill`,
+/// `bg_stroke`) or, while edited, a `TextEdit` (`text_edit_bg_color`).
+/// A slider's rail and handle are drawn from it, so `slider`'s value box
 /// can share this scope.
 pub fn number_box_look<R>(ui: &mut egui::Ui, add: impl FnOnce(&mut egui::Ui) -> R) -> R {
     if ui.visuals().dark_mode {

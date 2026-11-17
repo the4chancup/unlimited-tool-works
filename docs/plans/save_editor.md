@@ -2745,9 +2745,9 @@ What this editor adds on top of the lib:
     a mark left of it would fall on the frame line, and in the first column past the pane's
     edge. The Skills header's Cards used badge has no mark of its own: its rows mark the
     Skills header, the group holding the card counts, in one mark with the skills' own (the
-    highest severity of both, both in its tooltip), after the badge, the header's last item:
-    right of the title it would overlap the badge, and before the badge it would shift the
-    badge whenever it showed. The first column's label marks stand in the room the panels'
+    highest severity of both, both in its tooltip), after the badge, the header's last item,
+    as the row's next item would stand (8 points after it): right of the title it would
+    overlap the badge, and before the badge it would shift the badge whenever it showed. The first column's label marks stand in the room the panels'
     inset leaves before the labels ("The player view").
 
     The fields:

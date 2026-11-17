@@ -514,7 +514,7 @@ pub fn install(ctx: &egui::Context) {
 /// every state (0.36 rounded a hovered widget to 3). The resting stroke,
 /// none in egui, is a filled control's edge: its fill 30 lighter, `#5a5a5a`
 /// on the resting 60, so an empty box still reads as a control on the
-/// panel; an unheld toggle side takes `unheld_edge`. The drafts'
+/// panel; an unheld toggle side takes [`unheld_edge`]. The drafts'
 /// stylesheet draws widgets in these colors, and 0.37's `Widgets::dark()`
 /// moved them (the buttons to grey 50 with text at 215, the radii to 4
 /// to 6 points), so it cannot supply them.
@@ -1374,7 +1374,7 @@ mod tests {
     // theme moves: the count and the rating sit on the panel, the readout
     // on the faint box the panel blended with `faint_bg_color` gives.
     #[test]
-    fn the_quiet_greys_keep_the_dark_contrast_on_the_light_panel() {
+    fn the_quiet_greys_keep_the_dark_contrast_on_the_light_theme() {
         let ctx = egui::Context::default();
         install(&ctx);
         let (dark, light) = (
