@@ -3786,7 +3786,7 @@ SE-GUI-95  GIVEN the save open on /gd/, the official ruleset picked
            THEN the slot, the name and Pos (the registered position) stand left of the group headings General info,
                 Main stats, Playable positions, Ability stats, Skills, Tricks and COM playing
                 styles, in that order; Scissors Feint is a column of Tricks, not of Skills; Ability
-                stats has a Tight Possession and an Aggression column and General info a
+                stats has a Tight Possession and an Aggression column and Main stats a
                 Stronger hand column; WHEN the pointer rests on the Speed heading THEN its
                 tooltip `Speed` shows in that frame; WHEN the table is scrolled to its right
                 and bottom ends THEN the slot, name and Pos columns and both heading rows are
