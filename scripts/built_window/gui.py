@@ -97,7 +97,6 @@ def foreground():
     # Windows refuses SetForegroundWindow to a process that does not hold the foreground; joined
     # to the foreground window's input thread for the call, this one may (no key is sent).
     if user32.GetForegroundWindow() != HWND:
-        kernel32 = ctypes.windll.kernel32
         fg_thread = user32.GetWindowThreadProcessId(user32.GetForegroundWindow(), None)
         own = kernel32.GetCurrentThreadId()
         user32.AttachThreadInput(own, fg_thread, True)
@@ -234,9 +233,9 @@ def keys(chord):
     app_thread = user32.GetWindowThreadProcessId(HWND, None)
     own = kernel32.GetCurrentThreadId()
     assert user32.AttachThreadInput(own, app_thread, True), "AttachThreadInput refused"
+    saved = (ctypes.c_ubyte * 256)()
+    user32.GetKeyboardState(saved)
     try:
-        saved = (ctypes.c_ubyte * 256)()
-        user32.GetKeyboardState(saved)
         held = (ctypes.c_ubyte * 256)(*saved)
         for code in codes:
             if code in MODIFIERS:
@@ -249,8 +248,8 @@ def keys(chord):
                 extended = (1 << 24) if code in EXTENDED else 0
                 user32.PostMessageW(HWND, message, code, (scan << 16) | extended | up | 1)
         time.sleep(0.5)
-        user32.SetKeyboardState(saved)
     finally:
+        user32.SetKeyboardState(saved)
         user32.AttachThreadInput(own, app_thread, False)
     time.sleep(0.2)
     print(f"sent {chord}")
