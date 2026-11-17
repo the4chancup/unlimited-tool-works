@@ -1750,9 +1750,8 @@ Win32 original hurt the most):
 - **A starter's badge shows his overall and his medal tier**, as the game's shows the
   overall. The overall is his per-position overall at his slot's position (the formula the
   pitch drop's rule uses, below), so a position change on the popover or a swap redraws it;
-  it matched every PES 2017 overall read before the paired-abilities check, which it misses
-  by up to 5 ("A pitch player dropped on another"), and is within 2 of the game's on PES
-  2021 (108 of 201 read there equal), the precision the drop's paragraph states.
+  it equals every PES 2017 overall read (162) and is within 2 of the game's on PES 2021 (108
+  of 201 read there equal), the precision the drop's paragraph states.
 
   A player the active ruleset recognizes as a medal tier (the tier ids `gold`, `silver`,
   `bronze` every ruleset shares) gets a 1.5-point outline inside the badge's edge in the
@@ -1984,26 +1983,33 @@ What the controls write, where the draft and 4ccEditor's tab (`tab_four_dlg_proc
   a position in, the overall out): twenty abilities weighted per position, the position's
   bonus (registered, A, B; C none), and at the registered position, unless it is GK, a blend
   with the first nineteen abilities' mean through a lookup table, clamped to 40-109. The two
-  keeper terms are each the mean of a few keeper abilities. PES 2015 stores no clearing,
-  reflexes or coverage, so its means take the ones it stores rather than counting the missing
-  ones as 0, which would sink every PES 2015 keeper (one keeper ability at 0 takes a 70 keeper
-  to the floor of 40).
+  keeper terms are each the mean of a few keeper abilities, and one term is the mean of body
+  control and physical contact. PES 2015 stores no clearing, reflexes, coverage or physical
+  contact, so its means take the ones it stores rather than counting the missing ones as 0,
+  which would sink every PES 2015 keeper (one keeper ability at 0 takes a 70 keeper to the
+  floor of 40).
 
   Its weights, bonuses and lookup are PES 2016's tables, a measurement hand-written by the
   lead. Which ability each weight reads is inferred from its profile (the code reads them
-  unnamed), and the two alternatives tried (kicking power and swerve swapped, physical contact
-  for body control) change no overall read in PES 2017 or 2021. One function serves the
-  drop's rule and the badge's number; the host hands `team_widgets` each starter's thirteen
-  per-position overalls in his `RosterRow`, since the widgets read no player record.
+  unnamed), except for three rows the profile left open, which in-game checks settled
+  (below). One function serves the drop's rule and the badge's number; the host hands
+  `team_widgets` each starter's thirteen per-position overalls in his `RosterRow`, since the
+  widgets read no player record.
 
   PES 2017, the game DBC7 plays, follows both exactly: ten rectangle edges crossed by six
   players dragged in its Lineup/Edit Position (CF's y 40 among them) fall where PES 2016's
-  tables put them, and PES 2016's formula gives every one of 150 overalls read there (23
-  players, nine positions, registered, A and C), so its drag is the rule as it stands.
-  But those 150 could not tell apart which ability the kicking power, swerve and body
-  control rows read, and four players with each pair far apart (PES 2017, 2026-11-17) read
-  81, 80, 78 and 88 in game against the formula's 77, 77, 75 and 93: those rows' readings
-  are open again (the worklog's "After 0.0.2"). The B bonus held.
+  tables put them, and the formula gives every one of 162 overalls read there (27 players,
+  nine positions; registered, A, B and C), so its drag is the rule as it stands. The first
+  150 could not tell apart which abilities three rows read, so four players were set up
+  three times with those abilities far apart and read in game (2026-11-17). Of the readings
+  tried (each row reading any of the four abilities, or either pair's mean), one alone gives
+  all twelve overalls:
+  - the row weighing DMF 12 reads swerve, not kicking power;
+  - the row weighing SS 6 reads kicking power, not swerve;
+  - the row weighing DMF 13 reads the mean of body control and physical contact, rounded
+    down, not body control alone.
+
+  The profile's first reading missed those twelve by up to 7.
 
   A dragged lineup row is drawn with the point first pressed under the pointer, as the browser
   draws the draft's (egui alone would centre it on the pointer; SE-GUI-65). A lineup row

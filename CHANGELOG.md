@@ -164,6 +164,10 @@
 - **Save editor**: a Team TOML imported onto another team keeps that team's own manager,
   where it gave it the manager of the team the file came from. A file naming any other
   manager still sets him.
+- **Save editor**: a starter's overall on the Tactics pitch could be up to 7 off PES 2017's
+  when his Kicking Power and Swerve, or his Body Control and Physical Contact, were far
+  apart. It now matches. Where two positions' areas meet, the overalls decide which one a
+  dropped player takes, so that choice now matches the game's too.
 
 ### Minor fixes
 

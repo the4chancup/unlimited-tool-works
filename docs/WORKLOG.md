@@ -16,27 +16,7 @@ the Carbon rounds and the PES 2019 check"; 2026-11-16 "The no-stretch slices mov
 0.0.2"). After 0.0.2: the Nation list (the maintainer, 2026-11-17): it opens already
 scrolled to the held nation, where it mostly scrolls down to it from the top; typing a
 nation's name picks it as an ID does (members rarely know the IDs); Escape puts the old
-nation back. The overall's paired abilities (the maintainer's check 2026-11-17, card
-`drag-rule-save`; team 702 of the PES 2017 main save): Inferno Cop at CB (registered),
-Panzer Vor at LB (B), Lelouch at DMF (A) and Pierce the heavens at SS (B) read 81, 80, 78
-and 88 in game, the formula 77, 77, 75 and 93. Eight readings fit all four
-(`.tmp/lead/dragpairs/overall.py`): the kicking power row reads swerve or body control,
-the swerve row kicking power or physical contact, and the body control row the mean of
-body control and physical contact or of kicking power and swerve (both pairs sum to 139
-in all four). The B bonus fits as built. A second check, 2026-11-17 (the maintainer's
-call: in game, the executable after 0.0.2 only if it fails): the same four at the same
-slots, Kicking Power / Swerve / Body Control / Physical Contact 44/45/49/92, 94/74/77/82,
-89/49/90/65 and 42/65/83/97 (`.tmp/lead/dragpairs/check2.toml`, imported into the main
-save; its earlier state `EDIT00000000.before_check2` beside it); the formula reads 76, 81,
-80, 90, and each of the eight its own four (`design.py`, at least 5 apart in sum). The
-game read 79, 81, 73, 89: one reading alone, the kicking power row reading swerve, the
-swerve row kicking power, and the body control row the mean of body control and physical
-contact rounded down (rounded up misses two of the eight readings; `confirm.py`). A third
-check confirms it before the fix, which goes into 0.0.2 (the maintainer, 2026-11-17):
-`check3.toml` imported (earlier state `EDIT00000000.before_check3`), its prediction in
-`.tmp/lead/dragpairs/check3_prediction.txt`, kept from the maintainer for a blind read. The
-draft's greyed
-number boxes read `-` as the build's do (the maintainer
+nation back. The draft's greyed number boxes read `-` as the build's do (the maintainer
 kept the build's, `look-gated-labels`). Astra's round over 0.0.2-geninfo (`73641390..be99921c`, on Codex
 `brother` once its week resets, Wed 2026-11-18 10:11), 0.0.2-similar, every Carbon round a 0.0.2 step still owes (Report a problem's
 excepted, below), 0.0.2-pes19
@@ -75,8 +55,17 @@ mutation run
    Built at `2d1d41fe` (gates: studio_core 552, save_editor 1077 + 57, ruleset_editor
    174 + 13, clippy, fmt); the lead's look matched the draft (the list at x 66, the frames
    ending at 1266, File at 71, in both); card `look-light-margins` on build
-   `UTW-2d1d41fe.exe`. Left: its pipeline.
-3. The cut, only once the maintainer has run the checks of
+   `UTW-2d1d41fe.exe`, which the maintainer found fine. Radio circles are now 14 across with
+   their edge, as in the draft, and Captain's stands over its column, 1 point above its row's
+   middle (`69f3a70f`, `d9fc23bf`). The pipeline passed on `ccfb10f0`, which carries all of
+   it.
+3. The overall's paired abilities, fixed for 0.0.2 (the maintainer, 2026-11-17): three
+   in-game checks on team 702 of the PES 2017 main save settled the three rows the weights'
+   profile left open (the plan's "A pitch player dropped on another"; the third check, read
+   blind, gave the predicted 78, 79, 77, 88). The fixture `overall_points.tsv` gained a
+   physical contact column and the checks' 12 rows; none of its 351 earlier rows changes.
+   Gates: pes_savefile, team_widgets, save_editor, clippy, fmt. Left: its pipeline.
+4. The cut, only once the maintainer has run the checks of
    `maintainer/tasks.html` (the maintainer, 2026-11-17): a pipeline without mutants on the
    last merge (0.0.2-determ's second clean run), the changelog, the release build. The Linux
    checks are in (Reset window good enough for 0.0.2; poc.6 starts).

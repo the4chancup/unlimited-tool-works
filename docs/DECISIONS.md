@@ -18744,3 +18744,13 @@ Why: the maintainer found the light controls and held sides still too strong at 
 right, where 8 and 16 had stood.
 Plan: `plans/core/gui.md`, the "Dark/light theme" row (the margins live in the draft's
 stylesheet, `save_editor.js`'s `.center.filled` rules, which no plan text restates).
+## 2026-11-17 — pes_savefile — the overall's three open rows: swerve, kicking power, and body control with physical contact
+Decision: in the overall formula, the row weighing DMF 12 reads swerve, the row weighing SS 6
+reads kicking power, and the row weighing DMF 13 reads the mean of body control and physical
+contact, rounded down (body control alone on PES 2015, which stores no physical contact).
+The fix goes into 0.0.2 (the maintainer).
+Why: the weights' profile left those three rows open, and the 351 overalls read in October
+could not tell the readings apart. Three in-game checks on PES 2017 (four players, each pair
+of abilities set far apart, 12 overalls, the third check read blind) leave one reading of
+those tried. The profile's first reading missed those twelve by up to 7.
+Plan: `plans/save_editor.md`, "A pitch player dropped on another" and the starter's badge.

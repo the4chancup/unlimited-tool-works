@@ -1,23 +1,26 @@
 //! A player's overall rating at a position: PES 2016's own computation, read
-//! from its executable. PES 2017 shows the number it gives for every player
-//! checked (150 overalls, nine positions); PES 2021's own differs from it by
-//! up to 2. Every version uses it, no other version's being read.
+//! from its executable, with three rows' abilities settled by in-game checks.
+//! PES 2017 shows the number it gives for every player checked (162
+//! overalls, nine positions); PES 2021's own differs from it by up to 2.
+//! Every version uses it, no other version's being read.
 
 use super::player::{PlayerEntry, PlayerStats};
 
 /// Which abilities a weight row reads. The executable reads its abilities
 /// unnamed; each row's ability is the one its weights' profile names (the
-/// finishing row weighs CF 36, the heading row CB 23), and the two swaps that
-/// profile leaves open (kicking power with swerve, physical contact for body
-/// control) change no overall read in PES 2017 or 2021.
+/// finishing row weighs CF 36, the heading row CB 23). PES 2017's overalls
+/// settled the three rows it left open: the row weighing DMF 12 reads
+/// swerve, not kicking power; the one weighing SS 6 reads kicking power; and
+/// the one weighing DMF 13 reads the mean of body control and physical
+/// contact, not body control alone.
 #[derive(Clone, Copy)]
 enum Term {
     /// One ability.
     Ability(fn(&PlayerStats) -> u8),
-    /// The mean, rounded down, of the keeper abilities the save's version
-    /// stores: PES 2015 has no clearing, reflexes or coverage, and a mean
-    /// over the ones it has keeps its keepers' terms on the same scale.
-    KeeperMean(&'static [fn(&PlayerStats) -> Option<u8>]),
+    /// The mean, rounded down, of the abilities the save's version stores:
+    /// PES 2015 has no clearing, reflexes, coverage or physical contact, and
+    /// a mean over the ones it has keeps the term on the same scale.
+    Mean(&'static [fn(&PlayerStats) -> Option<u8>]),
     /// A 2-bit field, which counts 1 whatever it holds: every term enters as
     /// `max(1, value - 25)`.
     TwoBit,
@@ -27,16 +30,17 @@ impl Term {
     fn value(self, stats: &PlayerStats) -> u32 {
         match self {
             Term::Ability(get) => u32::from(get(stats)),
-            Term::KeeperMean(gets) => {
+            Term::Mean(gets) => {
                 let (sum, count) = gets
                     .iter()
                     .filter_map(|get| get(stats))
                     .fold((0, 0), |(sum, count), value| {
                         (sum + u32::from(value), count + 1)
                     });
-                // Every version stores goalkeeping and catching (Saving on
-                // PES 15); a bare record holding neither counts 0 rather
-                // than dividing by zero.
+                // Every version stores each mean's first ability
+                // (goalkeeping, catching as PES 15's Saving, body control);
+                // a bare record holding none counts 0 rather than dividing
+                // by zero.
                 sum / count.max(1)
             }
             Term::TwoBit => 1,
@@ -75,7 +79,7 @@ const WEIGHTS: [(Term, [u32; 13]); 20] = [
     ),
     (Term::Ability(|s| s.place_kicking), [0; 13]),
     (
-        Term::Ability(|s| s.kicking_power),
+        Term::Ability(|s| s.swerve),
         [0, 0, 0, 0, 12, 0, 4, 4, 0, 0, 0, 0, 0],
     ),
     (
@@ -91,7 +95,7 @@ const WEIGHTS: [(Term, [u32; 13]); 20] = [
         [0, 26, 13, 13, 4, 0, 0, 0, 0, 0, 0, 0, 0],
     ),
     (
-        Term::Ability(|s| s.swerve),
+        Term::Ability(|s| s.kicking_power),
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 5, 6, 3],
     ),
     (
@@ -103,7 +107,7 @@ const WEIGHTS: [(Term, [u32; 13]); 20] = [
         [0, 0, 14, 14, 3, 6, 22, 22, 7, 15, 15, 22, 5],
     ),
     (
-        Term::Ability(|s| s.body_control),
+        Term::Mean(&[|s| Some(s.body_control), |s| s.physical_contact]),
         [11, 20, 12, 12, 13, 5, 0, 0, 5, 6, 6, 7, 9],
     ),
     (
@@ -111,11 +115,11 @@ const WEIGHTS: [(Term, [u32; 13]); 20] = [
         [11, 20, 12, 12, 5, 0, 0, 0, 0, 0, 0, 0, 3],
     ),
     (
-        Term::KeeperMean(&[|s| Some(s.goalkeeping), |s| s.coverage]),
+        Term::Mean(&[|s| Some(s.goalkeeping), |s| s.coverage]),
         [49, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     ),
     (
-        Term::KeeperMean(&[|s| s.catching, |s| s.clearing, |s| s.reflexes]),
+        Term::Mean(&[|s| s.catching, |s| s.clearing, |s| s.reflexes]),
         [49, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     ),
     (
