@@ -1962,26 +1962,43 @@ mod tests {
             // check's the only requester.
             app.sidebar.auto_switch_used = true;
             let egui_ctx = test_context();
+            // Each request is read on its own, not the frames' merged
+            // `repaint_delay`: the check's worker wakes the window right after
+            // sending its reply (`updater::start_check`), and on a loaded
+            // machine that wake lands during the frames below, merging them to
+            // 0 s. The test sends such a wake itself, so the race runs every
+            // time.
+            let requested = std::sync::Arc::new(std::sync::Mutex::new(Vec::new()));
+            let delays = std::sync::Arc::clone(&requested);
+            egui_ctx.set_repaint_observer(move |info| {
+                delays.lock().unwrap().push(info.delay);
+            });
 
             // A drained check leaves the poll Idle with the next one a period
             // out; the frames after it keep waking for that moment.
             if check_on {
                 frame_until_drained(&egui_ctx, &mut app);
             }
-            let out = idle(&egui_ctx, &mut app, 3);
-            let delay = out.repaint_delay.as_secs_f64();
+            requested.lock().unwrap().clear();
+            idle(&egui_ctx, &mut app, 2);
+            egui_ctx.request_repaint();
+            idle(&egui_ctx, &mut app, 1);
+            let delays = requested.lock().unwrap();
             // The five minutes ST-UPD-01 pins, spelled out so a moved
             // `CHECK_PERIOD` moves nothing here.
             let period = Duration::from_secs(5 * 60).as_secs_f64();
+            let wakes_for_the_check = delays
+                .iter()
+                .any(|delay| (period - 10.0..=period).contains(&delay.as_secs_f64()));
             if check_on {
                 assert!(
-                    (period - 10.0..=period).contains(&delay),
-                    "the repaint is asked for the check's due moment, got {delay} s"
+                    wakes_for_the_check,
+                    "the repaint is asked for the check's due moment, asked for {delays:?}"
                 );
             } else {
                 assert!(
-                    !(period - 10.0..=period).contains(&delay),
-                    "checks off: no due moment to wake for, got {delay} s"
+                    !wakes_for_the_check,
+                    "checks off: no due moment to wake for, asked for {delays:?}"
                 );
             }
         }

@@ -1461,8 +1461,11 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     sidekick's and an in-game run. But GitHub's CI on the pushed `32649d79` failed one test,
     `shell::tests::an_idle_window_wakes_for_the_moment_a_check_falls_due` ("the repaint is
     asked for the check's due moment, got 0 s", `shell/mod.rs:1977`; run 43983909058),
-    which passed in both local runs: something else asked for an immediate repaint. To
-    diagnose and make deterministic before the cut.
+    which passed in both local runs. Fixed 2026-11-17: the check's worker wakes the window
+    right after sending its reply, and on a loaded runner that wake landed during the
+    test's idle frames, merging their delay to 0 s (reproduced by sending it from the
+    test). The test now reads each request through egui's repaint observer and sends
+    such a wake itself every run.
     The watch list's two, both seen failing under load on 2026-11-16, fixed: the staging
     test's lock is released by the retried step itself, and the crash monitor's connect
     bound is 10 s (the crashed run's log showed the monitor missing 2 s)
