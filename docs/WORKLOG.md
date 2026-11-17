@@ -1456,7 +1456,9 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     test), 3 clicks on a dialog a reply can move, 4 suspects, and 5-10 s hang bounds; the
     slice merged 2026-11-14 (`c4eee271`): a held-run seam (`Pending::held`), the copy test's
     check held, range picks after the dialog's check, every hang bound 120 s; mutation runs'
-    test timeout at least 150 s to match (`.cargo/mutants.toml`). Open: two clean pipelines.
+    test timeout at least 150 s to match (`.cargo/mutants.toml`). Open: two clean pipelines;
+    the first ran 2026-11-17 on `eb72467a` (the checkpoint and the Linux gates), beside a
+    sidekick's and an in-game run.
     The watch list's two, both seen failing under load on 2026-11-16, fixed: the staging
     test's lock is released by the retried step itself, and the crash monitor's connect
     bound is 10 s (the crashed run's log showed the monitor missing 2 s)
