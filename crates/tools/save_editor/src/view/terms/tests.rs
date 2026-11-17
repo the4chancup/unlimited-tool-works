@@ -94,7 +94,7 @@ fn the_info_strips_fields() {
                 new: "NO NAME".to_owned(),
             },
         ),
-        "Shirt",
+        "Shirt name",
         "SEXY MAX",
         "NO NAME",
     );
@@ -713,7 +713,7 @@ fn roster_rows<'a>(rows: &'a [(String, String, Option<u8>)]) -> Vec<RosterRow<'a
 }
 
 /// A team colour's three channel diffs merge into the swatch's one
-/// row: `Col. 1`, the baseline's and the current's stored channels'
+/// row: `Color 1`, the baseline's and the current's stored channels'
 /// hex as the view draws them.
 #[test]
 fn a_colour_edit_is_one_hex_row() {
@@ -760,7 +760,7 @@ fn a_colour_edit_is_one_hex_row() {
         ],
     );
     assert_eq!(terms.len(), 1, "the three channels merge");
-    assert_term(&terms[0].0, "Col. 1", "#FFAA41", "#4182C2");
+    assert_term(&terms[0].0, "Color 1", "#FFAA41", "#4182C2");
     assert_eq!(
         terms[0].1.len(),
         3,
@@ -783,7 +783,7 @@ fn a_colour_edit_is_one_hex_row() {
         }],
     );
     assert_eq!(terms.len(), 1);
-    assert_term(&terms[0].0, "Col. 1", "#FFAA41", "#00AA41");
+    assert_term(&terms[0].0, "Color 1", "#FFAA41", "#00AA41");
 }
 
 /// Colour 2's three channels merge into its swatch's one row the same
@@ -831,7 +831,7 @@ fn colour_2s_channels_merge_into_one_hex_row() {
         ],
     );
     assert_eq!(terms.len(), 1, "the three channels merge");
-    assert_term(&terms[0].0, "Col. 2", "#000000", "#4182C2");
+    assert_term(&terms[0].0, "Color 2", "#000000", "#4182C2");
 }
 
 /// A name edit's two diffs in `compare_teams`' order: the side-effect

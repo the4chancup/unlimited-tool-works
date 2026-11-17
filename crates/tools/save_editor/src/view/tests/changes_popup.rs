@@ -226,7 +226,7 @@ fn the_labels_click_lists_the_changes_without_the_prompts_answers() {
                 "90".to_owned()
             ),
             (
-                "/3/ · Col. 1".to_owned(),
+                "/3/ · Color 1".to_owned(),
                 old_hex.clone(),
                 new_hex.to_owned()
             ),
@@ -293,7 +293,7 @@ fn a_rows_item_switches_to_its_player_or_team() {
         "and still lists the rows"
     );
 
-    let colour = item(&mut window, &mut view, "/3/ · Col. 1");
+    let colour = item(&mut window, &mut view, "/3/ · Color 1");
     assert_eq!(
         tooltip_containing(&mut window, &mut view, centre(&colour), "this team").as_deref(),
         Some("Click to switch to this team")
@@ -333,7 +333,7 @@ fn a_rows_click_widens_a_category_leaving_the_team_out() {
 
     // The team change's row: `All` ticked and 701's own row selected,
     // listed by `selection::list` for the view.
-    let colour = item(&mut window, &mut view, "/3/ · Col. 1");
+    let colour = item(&mut window, &mut view, "/3/ · Color 1");
     click(&mut window, &colour, &mut view);
     assert_eq!(
         view.team_category,
@@ -482,7 +482,7 @@ fn a_team_rows_click_scrolls_the_list_to_its_row() {
         "premise: 718's row is below the clip"
     );
 
-    let colour = item(&mut window, &mut view, "/f/ · Col. 1");
+    let colour = item(&mut window, &mut view, "/f/ · Color 1");
     click(&mut window, &colour, &mut view);
     assert_eq!(
         view.selected,
@@ -1857,7 +1857,7 @@ fn every_x_is_red_under_the_undo_head() {
     for item in [
         "PLACEHOLDER · Height",
         "PLACEHOLDER · Speed",
-        "/3/ · Col. 1",
+        "/3/ · Color 1",
     ] {
         let x = x_of(&nodes, item).bounds().expect("an X's bounds");
         assert_eq!(
@@ -2012,7 +2012,7 @@ fn a_line_parts_each_row_from_the_next() {
             "Item",
             "PLACEHOLDER · Height",
             "PLACEHOLDER · Speed",
-            "/3/ · Col. 1",
+            "/3/ · Color 1",
         ]
         .iter()
         .map(|value| {

@@ -1,6 +1,6 @@
 //! The player view's title and the first column's panels (the draft's
 //! `playerHeader`, `generalPanel` and `otherStatsPanel`): `<id> <name>` at
-//! the heading size, then General info — Name and Shirt, each a
+//! the heading size, then General info — Name and Shirt name, each a
 //! label-left row carrying its `(n/max)` count beside its field, the
 //! label-left pairs on two halves (each box 54 wide: on the first half's
 //! right edge, after the label column on the second), then the combos
@@ -17,14 +17,14 @@ use pes_savefile::schema::{VersionSchema, portable_text_max, schema_for};
 use pes_version::PesVersion;
 use studio_core::widgets::{
     FIELD_SPACING, add_enabled_ui, combo_item, number_arrows, number_wheel_steps, radio,
-    step_choice, step_number, text_box, wheel_steps,
+    resting_edge, step_choice, step_number, text_box, wheel_steps,
 };
 use team_widgets::cards;
 use team_widgets::names::{append_name, name_background};
 
 use crate::session::Session;
 use crate::view::abilities::{
-    PLAYING_STYLE_LABEL, REGISTERED_POSITION_LABEL, SMALL_STATS, STRONGER_FOOT_LABEL,
+    CELL_PADDING, PLAYING_STYLE_LABEL, REGISTERED_POSITION_LABEL, SMALL_STATS, STRONGER_FOOT_LABEL,
     STRONGER_HAND_LABEL, SmallStat, gating_tooltip, position_label,
 };
 use crate::view::live_marks::{MarkedField, Marks};
@@ -36,7 +36,7 @@ use crate::view::{
 /// The General info panel's Name field.
 pub(super) const NAME_LABEL: &str = "Name";
 /// The General info panel's Shirt name field.
-pub(super) const SHIRT_LABEL: &str = "Shirt";
+pub(super) const SHIRT_LABEL: &str = "Shirt name";
 /// The General info panel's Height field.
 pub(super) const HEIGHT_LABEL: &str = "Height";
 /// The General info panel's Weight field.
@@ -55,16 +55,15 @@ pub(super) const NUMBER_LABEL: &str = "Shirt number";
 pub(super) const GENERAL_WIDTH: f32 = 344.0;
 /// A pair's box width (the draft's `.pair` fields).
 const BOX_WIDTH: f32 = 54.0;
-/// The gap between the second half's label column and its box (the
-/// draft's `.pair:nth-child(even)` `column-gap`, 9 points).
-const SECOND_LABEL_GAP: f32 = 9.0;
-/// The gap between a label-left row's label column and its field (the
-/// draft's `.combos` `column-gap`, 12 points; Ability stats' rows share
-/// it).
-pub(super) const FIELD_ROW_GAP: f32 = 12.0;
-/// The gap between a pair row's two halves (the draft's `.pairs`
-/// `column-gap`, 28 points).
-const PAIR_HALF_GAP: f32 = 28.0;
+/// The gap between a label and its field (the draft's `.pair` and
+/// `.combos` `column-gap`, 20 points), the same everywhere in the panels:
+/// on the label-left rows, on both of a pair's halves and in Ability
+/// stats.
+pub(super) const LABEL_GAP: f32 = 20.0;
+/// The least room between a pair row's two halves (the draft's `.pairs`
+/// `column-gap`, 18 points); the second half ends on the panel's flush
+/// edge and the halves take what room is between them.
+const MIN_HALF_GAP: f32 = 18.0;
 
 /// A player name as the strip draws it: its `\x11` spelled as the four
 /// characters `\\x11` (the draft's `escName`); the field turns it back on
@@ -186,12 +185,18 @@ fn page_toggle(ui: &mut egui::Ui, view: &mut SaveView) {
             // Every segment is drawn before the press is acted on: stopping
             // at the pressed one left the segments after it undrawn for a
             // frame, and the title stood beside it.
+            let held_edge =
+                studio_core::theme::edge_color(ui.visuals(), ui.visuals().selection.bg_fill);
+            let unheld = studio_core::theme::unheld_edge(ui.visuals());
             let mut pressed = None;
             for segment in [Segment::Stats, Segment::Appearance, Segment::Gameplan] {
-                if ui
-                    .add(egui::Button::selectable(on == segment, segment.label()))
-                    .clicked()
-                {
+                let response = ui.add(egui::Button::selectable(on == segment, segment.label()));
+                resting_edge(
+                    ui,
+                    &response,
+                    if on == segment { held_edge } else { unheld },
+                );
+                if response.clicked() {
                     pressed = Some(segment);
                 }
             }
@@ -242,7 +247,7 @@ fn last_shown_slot(view: &SaveView, team_id: u32) -> Option<u8> {
 }
 
 /// The General info panel's content (`generalPanel`): the Name and Shirt
-/// counted fields, the pair rows, then the combos. `marks` is Live
+/// name counted fields, the pair rows, then the combos. `marks` is Live
 /// AATF's held check's, while it is the selected player's team's: each
 /// marked field's mark then stands before its label (`Marks::paint`).
 pub(super) fn general(
@@ -289,14 +294,15 @@ pub(super) fn general(
     let captain = stored_captain == slot;
     let (height, weight, age) = basics;
 
-    // The rows' layout, measured once (the draft's `.combos` `width`):
-    // the label column, its 12-point gap, the fields to the flush edge —
-    // the first half (label column, gap, box), the 28, the second half's
-    // label column, its 9 and a box. Past `GENERAL_WIDTH` the panel
-    // overflows rather than shrinking a gap.
+    // The rows' layout (the draft's `.combos` grid): the label column,
+    // the 20-point gap, the fields to the flush edge (12 inside the
+    // frame's border). The pairs share it: the first half is the label
+    // column, the gap and a box, the second its own label column, the
+    // gap and a box on the same edge. Content needing more room than the
+    // panel's overflows rather than shrinking a gap.
     let label_col = label_width(ui, REGISTERED_POSITION_LABEL);
-    let field_x = ui.max_rect().min.x + label_col + FIELD_ROW_GAP;
-    let flush_x = ui.max_rect().min.x + general_content_width(ui);
+    let field_x = ui.max_rect().min.x + label_col + LABEL_GAP;
+    let flush_x = flush_edge(ui);
     let field_width = flush_x - field_x;
 
     // Each a label-left row: the `label (n/max)` label's rect taken at
@@ -306,7 +312,7 @@ pub(super) fn general(
     // its count carry one hover.
     let overlong = stored_name.len() > portable_text_max(PlayerText::Name);
     ui.horizontal(|ui| {
-        ui.spacing_mut().item_spacing.x = FIELD_ROW_GAP;
+        ui.spacing_mut().item_spacing.x = LABEL_GAP;
         let (name_label_id, name_label) = ui.allocate_space(egui::vec2(
             label_col,
             ui.text_style_height(&egui::TextStyle::Body),
@@ -369,7 +375,7 @@ pub(super) fn general(
 
     let shirt_overlong = stored_shirt.chars().count() > portable_text_max(PlayerText::ShirtName);
     ui.horizontal(|ui| {
-        ui.spacing_mut().item_spacing.x = FIELD_ROW_GAP;
+        ui.spacing_mut().item_spacing.x = LABEL_GAP;
         let (shirt_label_id, shirt_label) = ui.allocate_space(egui::vec2(
             label_col,
             ui.text_style_height(&egui::TextStyle::Body),
@@ -522,7 +528,7 @@ pub(super) fn general(
         });
     });
 
-    // The combos, on the same label-left rows as Name's and Shirt's.
+    // The combos, on the same label-left rows as Name's and Shirt name's.
     combos(
         ui,
         session,
@@ -534,18 +540,19 @@ pub(super) fn general(
     );
 }
 
-/// One row of the pairs' two halves, `PAIR_HALF_GAP` points apart.
+/// One row of the pairs' two halves, the room between them at least
+/// `MIN_HALF_GAP`.
 fn pair_row(ui: &mut egui::Ui, add: impl FnOnce(&mut egui::Ui)) {
     ui.horizontal(|ui| {
-        ui.spacing_mut().item_spacing.x = PAIR_HALF_GAP;
+        ui.spacing_mut().item_spacing.x = 0.0;
         add(ui);
     });
 }
 
 /// Which of a pair row's two halves a pair sits on: the first takes the
-/// half's own width and puts its box on its right edge, the second — the
-/// row's last item — takes only what its content draws, just after its
-/// label column.
+/// half's own width and puts its box on its right edge, the second —
+/// the row's last item — ends on the flush edge, after the room the
+/// first half leaves it.
 #[derive(Clone, Copy)]
 enum Half {
     /// The row's left half (the draft's `.pair` flex row).
@@ -556,10 +563,11 @@ enum Half {
 
 /// One `label`-left pair of a `pair_row`: the label at the half's left;
 /// on `Half::First` `add_box`'s 54-wide box on the half's right edge (the
-/// half is the label-left rows' label column, their 12 and a box wide,
-/// so its boxes start at the x those rows' fields start at), on
-/// `Half::Second` just after the `label_width(NUMBER_LABEL)` label
-/// column and its gap, so both panels' second-half boxes share one x.
+/// half is the label-left rows' label column, their `LABEL_GAP` and a
+/// box wide, so its boxes start at the x those rows' fields start at),
+/// on `Half::Second` just after the `label_width(NUMBER_LABEL)` label
+/// column and its gap, at the row's right end (`MIN_HALF_GAP` or more
+/// after the first half), so both panels' second-half boxes share one x.
 /// `mark` is the field Live AATF's mark is about on this half, painted
 /// before the label (`Marks::paint`).
 fn pair_half(
@@ -571,7 +579,7 @@ fn pair_half(
 ) {
     match half {
         Half::First => {
-            let width = label_width(ui, REGISTERED_POSITION_LABEL) + FIELD_ROW_GAP + BOX_WIDTH;
+            let width = label_width(ui, REGISTERED_POSITION_LABEL) + LABEL_GAP + BOX_WIDTH;
             ui.allocate_ui(egui::vec2(width, ui.spacing().interact_size.y), |ui| {
                 ui.horizontal(|ui| {
                     let response = ui.label(label);
@@ -583,15 +591,18 @@ fn pair_half(
             });
         }
         Half::Second => {
+            // The draft's `.pair:nth-child(even)` grid at the row's right:
+            // the label column `label_width(NUMBER_LABEL)` wide, the gap
+            // and the box ending on the flush edge. `add_space` advances
+            // the cursor outright, no item spacing.
+            let column = label_width(ui, NUMBER_LABEL);
+            let lead = (flush_edge(ui) - column - LABEL_GAP - BOX_WIDTH - ui.cursor().min.x)
+                .max(MIN_HALF_GAP);
+            ui.add_space(lead);
             ui.horizontal(|ui| {
                 ui.spacing_mut().item_spacing.x = 0.0;
                 let response = ui.label(label);
-                let column = label_width(ui, NUMBER_LABEL);
-                // The draft's `.pair:nth-child(even)` grid: the box after a
-                // label column `label_width(NUMBER_LABEL)` wide and its gap, so
-                // both panels' second-half boxes share one x. `add_space`
-                // advances the cursor outright, no item spacing.
-                ui.add_space((column + SECOND_LABEL_GAP - response.rect.width()).max(0.0));
+                ui.add_space((column + LABEL_GAP - response.rect.width()).max(0.0));
                 if let Some((marks, field)) = mark {
                     marks.paint(ui, response.rect, field);
                 }
@@ -599,6 +610,13 @@ fn pair_half(
             });
         }
     }
+}
+
+/// The panels' fields' shared right edge: `CELL_PADDING` in from the
+/// panel frame's content edge, so a field ends 12 inside the frame's
+/// border (the draft's `.gen` `padding-right` inside the frame's own).
+fn flush_edge(ui: &egui::Ui) -> f32 {
+    ui.max_rect().max.x - f32::from(CELL_PADDING)
 }
 
 /// `label`'s galley width at the body font (the panels' label columns
@@ -610,23 +628,6 @@ pub(super) fn label_width(ui: &egui::Ui, label: &str) -> f32 {
         .layout_no_wrap(label.to_owned(), body, egui::Color32::PLACEHOLDER)
         .size()
         .x
-}
-
-/// The General info column's content width: the flush edge the label-left
-/// rows' fields and the pairs' second-half boxes draw to — the rows'
-/// label column, the 12, a box, the 28, the second half's label column,
-/// the 9 and a box (the draft's `.combos` `width`). Wider than
-/// `GENERAL_WIDTH` if egui's text runs wide; the panel overflows its
-/// nominal 344 then rather than shrinking a gap.
-pub(super) fn general_content_width(ui: &egui::Ui) -> f32 {
-    // The rows' label column is the longest of their six labels,
-    // "Registered position"; the second half's its longest, "Shirt number".
-    label_width(ui, REGISTERED_POSITION_LABEL)
-        + label_width(ui, NUMBER_LABEL)
-        + FIELD_ROW_GAP
-        + 2.0 * BOX_WIDTH
-        + PAIR_HALF_GAP
-        + SECOND_LABEL_GAP
 }
 
 /// One pair's 54-wide `DragValue` over `shown` capped at `max`; a change
@@ -741,7 +742,7 @@ fn small_box(
 }
 
 /// The four combos, label-left rows on the same label column as Name's
-/// and Shirt's (`generalPanel`'s `.combos` `107px` grid: its widest label
+/// and Shirt name's (`generalPanel`'s `.combos` `107px` grid: its widest label
 /// is the column's "Registered position"), each `field_width` wide so it
 /// ends at the flush edge with the second half's boxes. `marks` is Live
 /// AATF's held check's: the marked combos' marks stand before their
@@ -757,7 +758,7 @@ fn combos(
 ) {
     egui::Grid::new("general combos")
         .num_columns(2)
-        .spacing(egui::vec2(FIELD_ROW_GAP, FIELD_SPACING))
+        .spacing(egui::vec2(LABEL_GAP, FIELD_SPACING))
         .show(ui, |ui| {
             ui.label(STRONGER_FOOT_LABEL);
             if let Some((side, key)) = side_row(ui, field_width, positions.stronger_foot) {
@@ -862,8 +863,17 @@ pub(super) fn segment_row<T: Copy + PartialEq>(
         ui.spacing_mut().item_spacing.x = 1.0;
         let strong = ui.visuals().strong_text_color();
         ui.visuals_mut().widgets.inactive.fg_stroke.color = ui.visuals().text_color();
+        // The resting edges a toggle's sides paint: the held side's edge
+        // is its fill's own (`edge_color`), an unheld side's the panel's
+        // (`unheld_edge`) — a disabled segment draws none.
+        let held_edge = studio_core::theme::edge_color(
+            ui.visuals(),
+            studio_core::theme::palette(ui.visuals()).rating_c_fill,
+        );
+        let unheld = studio_core::theme::unheld_edge(ui.visuals());
         for (value, label, width) in segments {
-            let button = if *value == held {
+            let on = *value == held;
+            let button = if on {
                 egui::Button::selectable(true, egui::RichText::new(*label).color(strong))
                     .fill(studio_core::theme::palette(ui.visuals()).rating_c_fill)
             } else {
@@ -871,7 +881,8 @@ pub(super) fn segment_row<T: Copy + PartialEq>(
             };
             let button = if small { button.small() } else { button };
             let response = ui.add_sized([*width, ui.spacing().interact_size.y], button);
-            if response.clicked() && *value != held {
+            resting_edge(ui, &response, if on { held_edge } else { unheld });
+            if response.clicked() && !on {
                 picked = Some((*value, response.id.value()));
             }
         }

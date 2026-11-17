@@ -31,7 +31,7 @@ use pes_savefile::model::{PlayerEntry, PlayerPositions, PlayerSkills, PlayerStat
 use pes_savefile::schema::fields::{ABILITY_FIELDS, PlayerField};
 use pes_savefile::schema::first_version_with;
 use studio_core::widgets::{
-    FIELD_SPACING, add_enabled, number_arrows, number_wheel_steps, step_number,
+    FIELD_SPACING, add_enabled, number_arrows, number_wheel_steps, resting_edge, step_number,
 };
 use team_widgets::cards;
 use team_widgets::pitch::POSITION_ROWS;
@@ -156,8 +156,8 @@ pub(super) const COLUMN_WIDTHS_ID: &str = "save_editor player column widths";
 /// pass measures narrower and must not hand the first column the room.
 const SECOND_COLUMN_MIN: f32 = 350.0;
 /// The Ability stats column's narrowest width, and the first pass's
-/// estimate: the stats grid's 169.4 inside the frame.
-const THIRD_COLUMN_MIN: f32 = 183.4;
+/// estimate: the stats grid's 177.4 inside the frame.
+const THIRD_COLUMN_MIN: f32 = 191.4;
 
 /// The columns for the selected player, under `info_strip`'s title: the
 /// three columns side by side spanning the pane — Skills' and Ability
@@ -1037,21 +1037,32 @@ fn rating_squares(
     at: usize,
 ) {
     ui.visuals_mut().widgets.inactive.fg_stroke.color = ui.visuals().text_color();
+    let unheld = studio_core::theme::unheld_edge(ui.visuals());
     for (label, rating) in RATING_LABELS {
-        let response = if playable[at] == rating {
+        let on = playable[at] == rating;
+        // The chosen square's edge is its fill's (`edge_color`), an
+        // unchosen one's the panel's (`unheld_edge`).
+        let (response, edge) = if on {
             // The chosen rating filled (the draft's `.sel.on.*`).
             let (fill, text) = rating_colors(ui, rating);
-            ui.add(
-                egui::Button::selectable(true, egui::RichText::new(label).color(text))
-                    .min_size(egui::vec2(RATING_SIDE, RATING_SIDE))
-                    .fill(fill),
+            (
+                ui.add(
+                    egui::Button::selectable(true, egui::RichText::new(label).color(text))
+                        .min_size(egui::vec2(RATING_SIDE, RATING_SIDE))
+                        .fill(fill),
+                ),
+                studio_core::theme::edge_color(ui.visuals(), fill),
             )
         } else {
-            ui.add(
-                egui::Button::selectable(false, label)
-                    .min_size(egui::vec2(RATING_SIDE, RATING_SIDE)),
+            (
+                ui.add(
+                    egui::Button::selectable(false, label)
+                        .min_size(egui::vec2(RATING_SIDE, RATING_SIDE)),
+                ),
+                unheld,
             )
         };
+        resting_edge(ui, &response, edge);
         if response.clicked() && playable[at] != rating {
             playable[at] = rating;
             let written = *playable;
@@ -1098,7 +1109,7 @@ fn ability_stats(
     let version = session.version();
     egui::Grid::new("abilities stats")
         .num_columns(2)
-        .spacing(egui::vec2(info_strip::FIELD_ROW_GAP, FIELD_SPACING))
+        .spacing(egui::vec2(info_strip::LABEL_GAP, FIELD_SPACING))
         .show(ui, |ui| {
             for (index, &label) in ABILITY_STATS.iter().enumerate() {
                 let name = stat_name(version, label);

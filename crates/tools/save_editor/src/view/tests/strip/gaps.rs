@@ -20,9 +20,9 @@ fn the_rows_of_general_info_leave_six_between_their_boxes() {
             .bounds()
             .expect("the field's bounds")
     };
-    let shirt = field_right_of_label(&nodes, "Shirt (", Role::TextInput)
+    let shirt = field_right_of_label(&nodes, "Shirt name (", Role::TextInput)
         .bounds()
-        .expect("the Shirt box");
+        .expect("the Shirt name box");
     let height = field("Height");
     let weight = field("Weight");
     let age = field("Age");
@@ -34,7 +34,7 @@ fn the_rows_of_general_info_leave_six_between_their_boxes() {
         .bounds()
         .expect("the foot toggle's bounds");
     for (above, below, expected, what) in [
-        (shirt, height, 6.0, "Shirt to Height"),
+        (shirt, height, 6.0, "Shirt name to Height"),
         (height, weight, 6.0, "Height to Weight"),
         (weight, age, 6.0, "Weight to Age"),
         (age, foot, 6.0, "Age to the foot toggle"),

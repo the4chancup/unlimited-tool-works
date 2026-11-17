@@ -507,7 +507,7 @@ fn the_prompts_colour_row_draws_a_swatch_before_each_hex() {
     assert_eq!(
         table_rows(&nodes),
         [(
-            "/3/ · Col. 1".to_owned(),
+            "/3/ · Color 1".to_owned(),
             old_hex.clone(),
             "#285179".to_owned()
         )],
@@ -599,7 +599,7 @@ fn the_prompts_x_puts_the_row_back_and_keeps_the_prompt() {
     for item in [
         "PLACEHOLDER · Height",
         "PLACEHOLDER · Speed",
-        "/3/ · Col. 1",
+        "/3/ · Color 1",
     ] {
         let x = x_of(&dialog, item).bounds().expect("an X's bounds");
         assert!(
@@ -625,7 +625,7 @@ fn the_prompts_x_puts_the_row_back_and_keeps_the_prompt() {
         panic!("a row shorter: {rows:?}")
     };
     assert_eq!(speed.0, "PLACEHOLDER · Speed");
-    assert_eq!(colour.0, "/3/ · Col. 1");
+    assert_eq!(colour.0, "/3/ · Color 1");
 
     click_label(&mut window, &mut view, "Cancel");
     assert!(view.prompt.is_none(), "Cancel closes it");

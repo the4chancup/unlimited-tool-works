@@ -689,10 +689,10 @@ fn a_char_the_short_name_field_cannot_store_is_not_taken() {
         "the stored short name stands"
     );
     let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
-    let field = right_of_label(&nodes, "Short", Role::TextInput)
+    let field = right_of_label(&nodes, "Short name", Role::TextInput)
         .first()
         .copied()
-        .expect("the Short field");
+        .expect("the Short name field");
     assert_eq!(field.value(), Some("3"), "the field shows the stored name");
 }
 
@@ -724,30 +724,30 @@ fn the_header_units_draw_inside_their_claims() {
     let spans = [
         span("Name", right_x(bar_name_field(&nodes))),
         span(
-            "Short",
+            "Short name",
             right_x(
-                right_of_label(&nodes, "Short", Role::TextInput)
+                right_of_label(&nodes, "Short name", Role::TextInput)
                     .first()
                     .copied()
-                    .expect("the Short field"),
+                    .expect("the Short name field"),
             ),
         ),
         span(
-            "Col. 1",
+            "Color 1",
             right_x(
-                right_of_label(&nodes, "Col. 1", Role::Label)
+                right_of_label(&nodes, "Color 1", Role::Label)
                     .into_iter()
                     .find(|node| node.value().is_some_and(|v| v.starts_with('#')))
-                    .expect("Col. 1's hex"),
+                    .expect("Color 1's hex"),
             ),
         ),
         span(
-            "Col. 2",
+            "Color 2",
             right_x(
-                right_of_label(&nodes, "Col. 2", Role::Label)
+                right_of_label(&nodes, "Color 2", Role::Label)
                     .into_iter()
                     .find(|node| node.value().is_some_and(|v| v.starts_with('#')))
-                    .expect("Col. 2's hex"),
+                    .expect("Color 2's hex"),
             ),
         ),
         span(
@@ -1059,10 +1059,10 @@ fn the_team_view_draws_its_fields_and_edits_them_undoable() {
     // A short-name edit lands in the team's entry as one undoable edit.
     let before = team_entry(&view, 734).short_name;
     assert_ne!(before, "LTZ", "premise: a real change");
-    let short = right_of_label(&nodes, "Short", Role::TextInput)
+    let short = right_of_label(&nodes, "Short name", Role::TextInput)
         .first()
         .copied()
-        .expect("the view's Short field");
+        .expect("the view's Short name field");
     click(&mut window, short, &mut view);
     type_text(&mut window, &mut view, "ltz");
     assert_eq!(

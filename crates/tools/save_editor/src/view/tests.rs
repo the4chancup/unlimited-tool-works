@@ -726,10 +726,34 @@ fn rect_of_fill_at(
         .expect("the fill's frame over the bounds")
 }
 
-/// The Shirt field's `TextInput` node (the text edit right of the "Shirt
-/// (n/max)" label).
+/// The non-empty strokes of the rect shapes painted exactly over
+/// `bounds` (within half a point), in paint order: a widget's frame and
+/// any edge painted over it.
+fn strokes_over(
+    shapes: &[egui::epaint::ClippedShape],
+    bounds: accesskit::Rect,
+) -> Vec<egui::Stroke> {
+    shapes
+        .iter()
+        .filter_map(|clipped| match &clipped.shape {
+            egui::Shape::Rect(shape)
+                if !shape.stroke.is_empty()
+                    && (f64::from(shape.rect.min.x) - bounds.x0).abs() <= 0.5
+                    && (f64::from(shape.rect.min.y) - bounds.y0).abs() <= 0.5
+                    && (f64::from(shape.rect.max.x) - bounds.x1).abs() <= 0.5
+                    && (f64::from(shape.rect.max.y) - bounds.y1).abs() <= 0.5 =>
+            {
+                Some(shape.stroke)
+            }
+            _ => None,
+        })
+        .collect()
+}
+
+/// The Shirt name field's `TextInput` node (the text edit right of the
+/// "Shirt name (n/max)" label).
 fn shirt_field(nodes: &[accesskit::Node]) -> &accesskit::Node {
-    field_right_of_label(nodes, "Shirt (", Role::TextInput)
+    field_right_of_label(nodes, "Shirt name (", Role::TextInput)
 }
 
 /// Asserts drawing the open save edited nothing: no unsaved change, no
@@ -1086,7 +1110,7 @@ fn right_of<'a>(
 
 /// The `role` node on the row of the label whose value starts with
 /// `prefix`, to its right — the counted fields' label-left layout puts
-/// the field right of its `Name (n/max)`/`Shirt (n/max)` label.
+/// the field right of its `Name (n/max)`/`Shirt name (n/max)` label.
 fn field_right_of_label<'a>(
     nodes: &'a [accesskit::Node],
     prefix: &str,

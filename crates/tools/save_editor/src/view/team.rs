@@ -32,9 +32,9 @@ use crate::view::{SaveView, edit_team, info_strip, selected_team, tactics};
 pub(super) enum HeaderUnit {
     /// The `Name` pair.
     Name,
-    /// The `Short` pair.
+    /// The `Short name` pair.
     Short,
-    /// `Col. 1` (0) or `Col. 2` (1), its picker and hex.
+    /// `Color 1` (0) or `Color 2` (1), its picker and hex.
     Colour(usize),
     /// The `Manager ID` pair.
     Manager,
@@ -50,9 +50,9 @@ pub(super) enum HeaderUnit {
 /// changes nothing), each unit one `allocate_ui` at its claim.
 pub(super) const TEAM_ROW: [(HeaderUnit, f32); 7] = [
     (HeaderUnit::Name, 182.0),
-    (HeaderUnit::Short, 79.0),
-    (HeaderUnit::Colour(0), 111.0),
-    (HeaderUnit::Colour(1), 111.0),
+    (HeaderUnit::Short, 113.5),
+    (HeaderUnit::Colour(0), 119.5),
+    (HeaderUnit::Colour(1), 119.5),
     (HeaderUnit::Manager, 114.5),
     (HeaderUnit::Stadium, 111.0),
     (HeaderUnit::KitSlots, 64.0),
@@ -102,10 +102,10 @@ fn parts_gap(unit: HeaderUnit, row_gap: f32) -> f32 {
 
 /// The view's name field (the title already says it is the team's).
 pub(super) const TEAM_LABEL: &str = "Name";
-/// The view's Short field.
-pub(super) const SHORT_LABEL: &str = "Short";
-/// The two colours' labels (the draft's `Col.` shortening).
-pub(super) const COLOUR_LABELS: [&str; 2] = ["Col. 1", "Col. 2"];
+/// The view's Short name field.
+pub(super) const SHORT_LABEL: &str = "Short name";
+/// The two colours' labels.
+pub(super) const COLOUR_LABELS: [&str; 2] = ["Color 1", "Color 2"];
 /// The view's Manager ID field.
 pub(super) const MANAGER_LABEL: &str = "Manager ID";
 /// The view's Stadium ID field.

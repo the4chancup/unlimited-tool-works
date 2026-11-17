@@ -126,7 +126,7 @@ fn the_colour_codes_are_in_the_weak_grey() {
             egui::TextStyle::Monospace.resolve(&style),
         )
     };
-    for label in ["Col. 1", "Col. 2"] {
+    for label in ["Color 1", "Color 2"] {
         let hex = right_of_label(&nodes, label, Role::Label)
             .into_iter()
             .find(|node| node.value().is_some_and(|v| v.starts_with('#')))
@@ -148,7 +148,7 @@ fn the_colour_codes_are_in_the_weak_grey() {
 
 // At the 1280 x 780 default pane the team view's fields, the ids and the
 // `Kit slots…` button share one row, the name box is the draft's 140
-// points and the colours are labelled `Col. 1`/`Col. 2`.
+// points and the colours are labelled `Color 1`/`Color 2`.
 #[test]
 fn the_fields_ids_and_kit_slots_button_share_one_row_at_the_default_pane() {
     let path = fixture(PesVersion::Pes21, "team_header_row");
@@ -158,8 +158,8 @@ fn the_fields_ids_and_kit_slots_button_share_one_row_at_the_default_pane() {
     open_team_view(&mut window, &mut view, 701);
     let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
 
-    let row_y = label_bounds(&nodes, "Short").y0;
-    for label in ["Name", "Col. 1", "Col. 2", "Manager ID", "Stadium ID"] {
+    let row_y = label_bounds(&nodes, "Short name").y0;
+    for label in ["Name", "Color 1", "Color 2", "Manager ID", "Stadium ID"] {
         let bounds = nodes
             .iter()
             .filter(|node| node.role() == Role::Label && node.value() == Some(label))
@@ -214,23 +214,35 @@ fn the_rows_controls_stand_where_the_drafts_do_from_the_name_box() {
         .x0;
     let label = |text: &str| label_bounds(&nodes, text).x0;
     let edges = [
-        ("the Short label", label("Short"), 148.0),
-        ("the Short box", left_of("Short", Role::TextInput), 186.6),
-        ("Col. 1's swatch", left_of("Col. 1", Role::ColorWell), 270.0),
-        ("Col. 2's swatch", left_of("Col. 2", Role::ColorWell), 389.2),
-        ("the Manager ID label", label("Manager ID"), 476.8),
+        ("the Short name label", label("Short name"), 148.0),
+        (
+            "the Short name box",
+            left_of("Short name", Role::TextInput),
+            221.3,
+        ),
+        (
+            "Color 1's swatch",
+            left_of("Color 1", Role::ColorWell),
+            312.7,
+        ),
+        (
+            "Color 2's swatch",
+            left_of("Color 2", Role::ColorWell),
+            439.9,
+        ),
+        ("the Manager ID label", label("Manager ID"), 527.5),
         (
             "the Manager ID box",
             left_of("Manager ID", Role::SpinButton),
-            544.9,
+            595.6,
         ),
-        ("the Stadium ID label", label("Stadium ID"), 598.9),
+        ("the Stadium ID label", label("Stadium ID"), 649.6),
         (
             "the Stadium ID box",
             left_of("Stadium ID", Role::SpinButton),
-            663.7,
+            714.3,
         ),
-        ("the Kit slots button", kit_slots, 721.7),
+        ("the Kit slots button", kit_slots, 772.3),
     ];
     for (control, left, draft) in edges {
         assert!(
@@ -243,7 +255,7 @@ fn the_rows_controls_stand_where_the_drafts_do_from_the_name_box() {
 
 // The id cells' padding, 4 on each side, stands them apart exactly: the
 // Stadium ID label starts 8 past the Manager ID box (the two paddings, no
-// row gap between the cells) and the Manager ID label 12 past Col. 2's hex
+// row gap between the cells) and the Manager ID label 12 past Color 2's hex
 // (the row's gap and Manager ID's padding).
 #[test]
 fn the_id_cells_stand_their_paddings_apart() {
@@ -254,10 +266,10 @@ fn the_id_cells_stand_their_paddings_apart() {
     open_team_view(&mut window, &mut view, 701);
     let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
 
-    let colour_hex_right = right_of_label(&nodes, "Col. 2", Role::Label)
+    let colour_hex_right = right_of_label(&nodes, "Color 2", Role::Label)
         .into_iter()
         .find(|node| node.value().is_some_and(|v| v.starts_with('#')))
-        .expect("Col. 2's hex")
+        .expect("Color 2's hex")
         .bounds()
         .expect("bounds")
         .x1;
@@ -270,7 +282,7 @@ fn the_id_cells_stand_their_paddings_apart() {
         .x1;
     let gaps = [
         (
-            "Col. 2's hex to the Manager ID label",
+            "Color 2's hex to the Manager ID label",
             label_bounds(&nodes, "Manager ID").x0 - colour_hex_right,
             12.0,
         ),
@@ -302,9 +314,9 @@ fn row_edges(version: PesVersion, test: &str) -> [f64; 6] {
     let name = bar_name_field(&nodes).bounds().expect("bounds").x0;
     let left = |node: &accesskit::Node| node.bounds().expect("bounds").x0 - name;
     [
-        left(control_right_of(&nodes, "Short")),
-        left(control_right_of(&nodes, "Col. 1")),
-        left(control_right_of(&nodes, "Col. 2")),
+        left(control_right_of(&nodes, "Short name")),
+        left(control_right_of(&nodes, "Color 1")),
+        left(control_right_of(&nodes, "Color 2")),
         left(control_right_of(&nodes, "Manager ID")),
         left(control_right_of(&nodes, "Stadium ID")),
         left(node_labeled(
@@ -320,9 +332,9 @@ fn row_edges(version: PesVersion, test: &str) -> [f64; 6] {
 #[test]
 fn the_rows_controls_stand_still_on_a_version_without_the_manager_id() {
     const CONTROLS: [&str; 6] = [
-        "the Short box",
-        "Col. 1's swatch",
-        "Col. 2's swatch",
+        "the Short name box",
+        "Color 1's swatch",
+        "Color 2's swatch",
         "the Manager ID control",
         "the Stadium ID control",
         "the Kit slots button",
