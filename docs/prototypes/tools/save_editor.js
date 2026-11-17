@@ -398,11 +398,12 @@ input[type=checkbox]:indeterminate { background-image: url("data:image/svg+xml,%
 .pcols > * { align-self: stretch; }
 .pcol > :last-child { flex: 1; }
 /* General info's and Other stats' fields stand 6 in from their titles, as
-   the ability stats' cell padding sets theirs. */
-.pcols .gen { padding-left: 6px; }
-/* Every label 22 points from its box at least: the ability stats' label cells pad 16 on
+   the ability stats' cell padding sets theirs, and end 12 from the frame on
+   the right, as the ability stats' boxes do. */
+.pcols .gen { padding-left: 6px; padding-right: 6px; }
+/* Every label 20 points from its box at least: the ability stats' label cells pad 14 on
    their right, the box's cell 6 on its left. */
-[data-panel=ability-stats] table.stats-grid td.ilabel { padding-right: 16px; }
+[data-panel=ability-stats] table.stats-grid td.ilabel { padding-right: 14px; }
 /* The three columns' titles on one line: Skills' row is as tall as its Cards
    left badge, which centres the title 3 points lower than a bare title, so
    the row starts 3 above the columns and the columns 3 below the view's top
@@ -444,10 +445,10 @@ input[type=checkbox]:indeterminate { background-image: url("data:image/svg+xml,%
    stats' boxes: 18-point controls, rows 24 apart. */
 .gen { display: flex; flex-direction: column; gap: 6px; }
 .gen .gl.above { display: block; margin-bottom: 1px; }
-/* The first half as wide as the label-left rows' label column, their 22-point
+/* The first half as wide as the label-left rows' label column, their 20-point
    gap and a box, so its boxes start at the x those rows' fields start at; the
-   second half ends on the panel's right, the halves taking the room between. */
-.gen .pairs { display: grid; grid-template-columns: calc(109px + 22px + 54px) 1fr; column-gap: 20px; row-gap: 6px; }
+   second half ends on the panel's right, the halves at least 18 apart. */
+.gen .pairs { display: grid; grid-template-columns: calc(109px + 20px + 54px) 1fr; column-gap: 18px; row-gap: 6px; }
 /* The count reads as part of its label, and keeps one width as it changes. */
 .gen .count { font-variant-numeric: tabular-nums; color: #5a5a5a; }
 .gen .count.at { color: var(--warn); }
@@ -456,14 +457,14 @@ input[type=checkbox]:indeterminate { background-image: url("data:image/svg+xml,%
    it: a pale fill would wash the light text out. */
 .gen input.overlong { background: color-mix(in srgb, var(--extreme), var(--warn) 25%); }
 .gen input[type=text], .gen select { width: 100%; box-sizing: border-box; }
-.gen .pair { display: flex; align-items: center; justify-content: space-between; gap: 22px; }
+.gen .pair { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
 .gen .pair input[type=number], .gen .pair .box { width: 54px; box-sizing: border-box; flex: none; }
 /* The second half's pairs: the box just after a label column as wide as
    the half's longest label, "Shirt number", the two at the half's right
    edge, so its short labels (Nation, Form) keep their boxes close. Live
    AATF's cross sits left of the label, in the gap between the halves. */
 .gen .pairs > .pair:nth-child(even) { display: grid; grid-template-columns: 73px 54px;
-  column-gap: 22px; justify-content: end; }
+  column-gap: 20px; justify-content: end; }
 .gen .pairs > .pair:nth-child(even) .boxed { display: contents; }
 .gen .pairs > .pair:nth-child(even) > .gl { grid-column: 1; grid-row: 1; }
 .gen .pairs > .pair:nth-child(even) input[type=number],
@@ -472,7 +473,7 @@ input[type=checkbox]:indeterminate { background-image: url("data:image/svg+xml,%
    combos below them): one label column as wide as the longest of their labels,
    "Registered position", so every field starts at one x, and every field ending
    flush with the second half's boxes, on the panel's right. */
-.gen .combos { display: grid; grid-template-columns: 109px 1fr; column-gap: 22px;
+.gen .combos { display: grid; grid-template-columns: 109px 1fr; column-gap: 20px;
   row-gap: 6px; align-items: center; }
 .gen .combos > span:not(.gl), .gen .combos .gate > span { display: block; }
 .gen .combos .rate.lr { display: grid; grid-template-columns: 1fr 1fr; }
