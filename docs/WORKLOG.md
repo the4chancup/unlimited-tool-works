@@ -1958,7 +1958,10 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       every slot (`v0.0.1 pre-alpha` 2.9 high on every screen)
     - Ability stats drops the draft's 3 of cell padding under its last row, so under DBC7 the
       columns end at 700, the draft's 703
-    - [ ] the fix (SWE-2, running; worktree `4cc-studio-temp/lookfix`, `.tmp/brief_lookfix.md`)
+    - [x] the fix 2026-11-17 (SWE-2, 22 min, landed first time; `254262b2`, merge `333ec0cb`;
+      the lead's rerun: status bar 20, save_editor 1074 + 57, clippy, fmt): the left and
+      middle slots `horizontal_centered`; Ability stats' frame pads 3 under its last row
+    - [ ] the built window beside the draft again, with the review's fixes' build
     - Not a mismatch: the quick actions stand 23 lower than the draft's, which also draws
       0.0.2-similar's button, built after 0.0.2. Not checked in the window: typed digits in
       the Nation list (the capture tool's posted keys type no text; the headless tests hold
