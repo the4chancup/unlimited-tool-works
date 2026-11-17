@@ -19,12 +19,11 @@ excepted, below), 0.0.2-pes19
 (mutfast first). Most open steps below wait only for the maintainer's look
 (`maintainer/tasks.html`). What is left before the cut:
 1. The framed Stats screen and the control edges (0.0.2-frames): A1, A2a, B1, B2 and C merged;
-   the SWE-2 review round 1 on A1 to B2 ruled (every loop ended), its fixes in the rework
-   (`.tmp/brief_frames_rw1.md`); then C's SWE-2 round and one paid round over the whole.
+   the SWE-2 rounds on A1 to C ruled (every loop ended), round 1's fixes merged; the slider's
+   light value box (rw2) running; then one paid round over the whole.
 2. The four fixes from the maintainer's looks of 2026-11-17 (0.0.2-namegame, xhover, allcat,
-   ixtext) merged; P53's 0.0.2-gatelbl (a version-gated control's label dimmed with it) after
-   the rework, which touches the same files. Their looks wait for one release build after
-   gatelbl.
+   ixtext) merged; P53's 0.0.2-gatelbl (a version-gated control's label dimmed with it)
+   running. Their looks wait for one release build after gatelbl.
 3. The cut, only once the maintainer has run the checks of
    `maintainer/tasks.html` (the maintainer, 2026-11-17): a pipeline without mutants on the
    last merge (0.0.2-determ's second clean run), the changelog, the release build, and a
@@ -1755,8 +1754,11 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     card; review rounds (a SWE-2 loop and one paid round)
     - [ ] the review rounds: SWE-2 round 1 on A1, A2a, B1 and B2 (2026-11-17, from a worktree
       at `74d85558`, `.tmp/0_0_2/frames_rev/`; the rulings file's "frames r1"):
-      2, 2, 2 and 4 accepted, every loop ended; the fixes on SWE-2 (`.tmp/brief_frames_rw1.md`)
-      - [ ] C's SWE-2 round, then one paid round over A1 to C and the rework
+      2, 2, 2 and 4 accepted, every loop ended; the fixes landed 2026-11-17 (SWE-2 rw1, merge
+      `de984144`; the lead's rerun of the five crates, clippy, fmt)
+      - [x] C's SWE-2 round 2026-11-17: 2 accepted (one already fixed), the loop ended; the
+        slider's value box drawn as a number box on the light theme is rw2 (SWE-2)
+      - [ ] rw2 lands, then one paid round over A1 to C and the reworks
     - [ ] the control edges (`plans/core/gui.md` "Other UI components", "Control edges")
       - [x] A1 2026-11-17 `studio_core` (`b98986f7`, merge `53bc3805`): the resting stroke,
         `theme::edge_color`, the checked box's and radio's edge, none on disabled widgets or
@@ -3551,6 +3553,12 @@ points there.
   78 characters pass. The dialog's layout moves with the text and the tests' two-frame settle
   no longer finds the button. Fix when next touched: settle until the layout stops moving
   (bounded), or click the button by its id, so a rewording cannot pass for a broken click
+- open — `plans/core/gui.md` "Dark/light theme" says a disabled selector's selected entry
+  "keeps the selection's colours, faded, as the drafts' locked formation picker does
+  (`.fsel.off`)", but the draft dims it (`.fsel.off .sel.on { background: #2b2b2b; color:
+  #5a5a5a; }`, and `.rate.off .sel` alike). The rate rows follow the draft since the frames
+  rework of 2026-11-17; the formation picker and the plan sentence are to be checked against
+  the draft and made to agree (found at that rework's review)
 - open — Studio Web (phase 18): `theme::install_fonts` is native-only, so on wasm the named
   families the views draw in, `icons` (the sidebar) and `label` (the Tactics pitch's formation
   name, 0.0.1x4), are unbound, and epaint warns and draws no glyph for them (read in epaint
