@@ -785,7 +785,7 @@ fn nation_row(
         ui.add_space((label_col + LABEL_GAP - label.rect.width()).max(0.0));
         let mut picked = held;
         // The entries' `ID - NAME` texts are `nations()`'s, built once
-        // at load; only `ID - ?` is built per frame, for the closed
+        // on first read; only `ID - ?` is built per frame, for the closed
         // combo too. `open` is whether the list was open last frame: the
         // held row scrolls into view only on the frame it opens, so the
         // member can scroll away from it.
@@ -835,8 +835,8 @@ fn nation_row(
                 }
                 // The run's candidates are the version's own list alone:
                 // an unlisted held's `?` row stays clickable, but a pick
-                // that landed on it stores nothing, and its prefix's
-                // real nations could never be typed.
+                // that landed on it would store nothing, and the real
+                // nations its ID's digits start could never be typed.
                 let typed_pick = if digits.is_empty() {
                     None
                 } else {
