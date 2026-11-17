@@ -1,13 +1,14 @@
-//! The player view's title and the first column's panels (the draft's
-//! `playerHeader`, `generalPanel` and `otherStatsPanel`): `<id> <name>` at
-//! the heading size, then General info — Name and Shirt name, each a
+//! The player view's title and the first column's first two panels (the
+//! draft's `playerHeader` and `generalPanel`): `<id> <name>` at the
+//! heading size, then General info — Name and Shirt name, each a
 //! label-left row carrying its `(n/max)` count beside its field, the
-//! label-left pairs on two halves (each box 54 wide: on the first half's
-//! right edge, after the label column on the second), then the combos
-//! whose labels share one column — and Other stats under it on the same
-//! halves so every box lines up. Each control edits a copy of the entry
-//! and, when it changes, pushes it under its own `egui::Id` (the undo
-//! stack's merge key).
+//! Shirt number | Age pair on two halves (each box 54 wide: on the
+//! first half's right edge, after the label column on the second), then
+//! the Nation combo — and Main stats under it, Captain in its title's
+//! row, the pair rows on the same halves so every box of both panels
+//! lines up, then the combos whose labels share one column. Each
+//! control edits a copy of the entry and, when it changes, pushes it
+//! under its own `egui::Id` (the undo stack's merge key).
 
 use pes_savefile::interchange::team_toml::labels::POSITIONS;
 use pes_savefile::model::names::{crop_player_text, name_fits, shirt_name_edit_fits};
@@ -37,9 +38,9 @@ use crate::view::{
 pub(super) const NAME_LABEL: &str = "Name";
 /// The General info panel's Shirt name field.
 pub(super) const SHIRT_LABEL: &str = "Shirt name";
-/// The General info panel's Height field.
+/// The Main stats panel's Height field.
 pub(super) const HEIGHT_LABEL: &str = "Height";
-/// The General info panel's Weight field.
+/// The Main stats panel's Weight field.
 pub(super) const WEIGHT_LABEL: &str = "Weight";
 /// The General info panel's Age field.
 pub(super) const AGE_LABEL: &str = "Age";
@@ -47,6 +48,8 @@ pub(super) const AGE_LABEL: &str = "Age";
 pub(super) const NATION_LABEL: &str = "Nation";
 /// The General info panel's Shirt number field.
 pub(super) const NUMBER_LABEL: &str = "Shirt number";
+/// The Main stats panel's Captain field, in its title's row.
+pub(super) const CAPTAIN_LABEL: &str = "Captain";
 
 /// General info's fields' width, the panel's nominal width in the draft
 /// (344px): with the content's inset it is the first column's floor.
@@ -251,10 +254,11 @@ fn last_shown_slot(view: &SaveView, team_id: u32) -> Option<u8> {
         .find(|&slot| shown(slot))
 }
 
-/// The General info panel's content (`generalPanel`): the Name and Shirt
-/// name counted fields, the pair rows, then the combos. `marks` is Live
-/// AATF's held check's, while it is the selected player's team's: each
-/// marked field's mark then stands before its label (`Marks::paint`).
+/// The General info panel's content (`generalPanel`'s `general`): the
+/// Name and Shirt name counted fields, the Shirt number | Age pair row,
+/// then the Nation combo. `marks` is Live AATF's held check's, while it
+/// is the selected player's team's: each marked field's mark then
+/// stands before its label (`Marks::paint`).
 pub(super) fn general(
     ui: &mut egui::Ui,
     session: &mut Session,
@@ -263,18 +267,7 @@ pub(super) fn general(
     player_id: u32,
     marks: Option<Marks<'_>>,
 ) {
-    let (
-        mut name,
-        stored_name,
-        mut shirt,
-        stored_shirt,
-        nation,
-        mut shirt_number,
-        basics,
-        stored_captain,
-        positions,
-        schema,
-    ) = {
+    let (mut name, stored_name, mut shirt, stored_shirt, nation, mut shirt_number, age, schema) = {
         let file = session.file();
         let player = file.player(player_id).expect("the selected player");
         let team = file.team(team_id).expect("the selected team");
@@ -290,14 +283,10 @@ pub(super) fn general(
             team.roster
                 .get(usize::from(slot))
                 .map_or(0, |slot| slot.number),
-            (player.basic.height, player.basic.weight, player.basic.age),
-            team.tactics.set_pieces.captain,
-            player.positions.clone(),
+            player.basic.age,
             schema_for(file.version()),
         )
     };
-    let captain = stored_captain == slot;
-    let (height, weight, age) = basics;
 
     // The rows' layout (the draft's `.combos` grid): the label column,
     // the 20-point gap, the fields to the flush edge (12 inside the
@@ -432,27 +421,10 @@ pub(super) fn general(
         }
     });
 
-    // The label-left pairs on two halves: each label at its half's left,
-    // its 54-wide box on the first half's right edge, after the label
-    // column on the second.
+    // The label-left pair on two halves: Shirt number on the first
+    // (its `edit_team` roster-number edit), Age on the second.
     pair_row(ui, |ui| {
-        pair_half(
-            ui,
-            Half::First,
-            HEIGHT_LABEL,
-            marks.map(|marks| (marks, MarkedField::Height)),
-            |ui| {
-                number_box(
-                    ui,
-                    session,
-                    player_id,
-                    height,
-                    max(schema, PlayerField::Height),
-                    |player, shown| player.basic.height = shown,
-                );
-            },
-        );
-        pair_half(ui, Half::Second, NUMBER_LABEL, None, |ui| {
+        pair_half(ui, Half::First, NUMBER_LABEL, None, |ui| {
             let range = 0..=roster_number_max(schema);
             let mut response = number_arrows(ui, &mut shirt_number, range.clone(), |ui, value| {
                 ui.add_sized(
@@ -471,39 +443,9 @@ pub(super) fn general(
                 });
             }
         });
-    });
-    pair_row(ui, |ui| {
         pair_half(
             ui,
-            Half::First,
-            WEIGHT_LABEL,
-            marks.map(|marks| (marks, MarkedField::Weight)),
-            |ui| {
-                number_box(
-                    ui,
-                    session,
-                    player_id,
-                    weight,
-                    max(schema, PlayerField::Weight),
-                    |player, shown| player.basic.weight = shown,
-                );
-            },
-        );
-        pair_half(ui, Half::Second, NATION_LABEL, None, |ui| {
-            number_box(
-                ui,
-                session,
-                player_id,
-                nation,
-                max(schema, PlayerField::Nationality),
-                |player, shown| player.basic.nationality = shown,
-            );
-        });
-    });
-    pair_row(ui, |ui| {
-        pair_half(
-            ui,
-            Half::First,
+            Half::Second,
             AGE_LABEL,
             marks.map(|marks| (marks, MarkedField::Age)),
             |ui| {
@@ -517,33 +459,16 @@ pub(super) fn general(
                 );
             },
         );
-        pair_half(ui, Half::Second, "Captain", None, |ui| {
-            // The team's `captain` is this roster slot, 0-based as stored: a
-            // radio the second click cannot untick (the captain belongs to
-            // the slot) — centred in its 54-wide box, under the Nation box
-            // (the draft's `.pair > .box` `justify-content: center`).
-            ui.allocate_ui(egui::vec2(BOX_WIDTH, ui.spacing().interact_size.y), |ui| {
-                ui.centered_and_justified(|ui| {
-                    let response = radio(ui, captain, "");
-                    if response.clicked() {
-                        edit_team(session, team_id, response.id.value(), |team| {
-                            team.tactics.set_pieces.captain = slot;
-                        });
-                    }
-                });
-            });
-        });
     });
 
-    // The combos, on the same label-left rows as Name's and Shirt name's.
-    combos(
+    nation_row(
         ui,
         session,
         player_id,
-        &positions,
+        nation,
         schema.version,
+        label_col,
         field_width,
-        marks,
     );
 }
 
@@ -572,9 +497,9 @@ enum Half {
 /// on `Half::First` `add_box`'s 54-wide box on the half's right edge (the
 /// half is the label-left rows' label column, their `LABEL_GAP` and a
 /// box wide, so its boxes start at the x those rows' fields start at),
-/// on `Half::Second` just after the `label_width(NUMBER_LABEL)` label
-/// column and its gap, at the row's right end (`MIN_HALF_GAP` or more
-/// after the first half), so both panels' second-half boxes share one x.
+/// on `Half::Second` just after the `second_half_column` label column
+/// and its gap, at the row's right end (`MIN_HALF_GAP` or more after
+/// the first half), so both panels' second-half boxes share one x.
 /// `mark` is the field Live AATF's mark is about on this half, painted
 /// before the label (`Marks::paint`).
 fn pair_half(
@@ -599,10 +524,10 @@ fn pair_half(
         }
         Half::Second => {
             // The draft's `.pair:nth-child(even)` grid at the row's right:
-            // the label column `label_width(NUMBER_LABEL)` wide, the gap
-            // and the box ending on the flush edge. `add_space` advances
-            // the cursor outright, no item spacing.
-            let column = label_width(ui, NUMBER_LABEL);
+            // the `second_half_column` label column, the gap and the box
+            // ending on the flush edge. `add_space` advances the cursor
+            // outright, no item spacing.
+            let column = second_half_column(ui);
             let lead = (flush_edge(ui) - column - LABEL_GAP - BOX_WIDTH - ui.cursor().min.x)
                 .max(MIN_HALF_GAP);
             ui.add_space(lead);
@@ -617,6 +542,24 @@ fn pair_half(
             });
         }
     }
+}
+
+/// The second half's label column's width (the draft's `.pair
+/// :nth-child(even)` label column): the widest second-half label of
+/// both panels, measured as `label_width` measures, so a short label
+/// (Age, Form) stands as near its box as the widest allows, every
+/// second-half label of both panels at one x.
+fn second_half_column(ui: &egui::Ui) -> f32 {
+    [
+        AGE_LABEL,
+        WEIGHT_LABEL,
+        SMALL_STATS[0].shown,
+        SMALL_STATS[3].shown,
+        CAPTAIN_LABEL,
+    ]
+    .into_iter()
+    .map(|label| label_width(ui, label))
+    .fold(0.0, f32::max)
 }
 
 /// The panels' fields' shared right edge: `CELL_PADDING` in from the
@@ -665,18 +608,65 @@ fn number_box<N: egui::emath::Numeric + TryFrom<u64>>(
     }
 }
 
-/// The Other stats panel's content (`otherStatsPanel`): the four shifted
-/// stored fields on General info's halves, so every box of both panels
-/// lines up — Injury Resistance with Form, then "Weak Foot: Usage" and
-/// "Accuracy" (the two sharing one label). `marks` is Live AATF's held
-/// check's, while it is the selected player's team's.
-pub(super) fn other_stats(
+/// The Main stats panel's content (`generalPanel`'s `main`): the pair
+/// rows on General info's halves, so every box of both panels lines up
+/// — Height with Weight, then the four shifted stored fields, Injury
+/// Resistance with Form, then "Weak Foot: Usage" and "Accuracy" (the
+/// two sharing one label) — then the combos (Stronger foot and hand,
+/// Registered position, Playing style) on the label-left rows' column.
+/// `marks` is Live AATF's held check's, while it is the selected
+/// player's team's.
+pub(super) fn main_stats(
     ui: &mut egui::Ui,
     session: &mut Session,
     player_id: u32,
     stats: &PlayerStats,
+    positions: &PlayerPositions,
+    version: PesVersion,
     marks: Option<Marks<'_>>,
 ) {
+    let (height, weight) = {
+        let player = session
+            .file()
+            .player(player_id)
+            .expect("the selected player");
+        (player.basic.height, player.basic.weight)
+    };
+    let schema = schema_for(version);
+    pair_row(ui, |ui| {
+        pair_half(
+            ui,
+            Half::First,
+            HEIGHT_LABEL,
+            marks.map(|marks| (marks, MarkedField::Height)),
+            |ui| {
+                number_box(
+                    ui,
+                    session,
+                    player_id,
+                    height,
+                    max(schema, PlayerField::Height),
+                    |player, shown| player.basic.height = shown,
+                );
+            },
+        );
+        pair_half(
+            ui,
+            Half::Second,
+            WEIGHT_LABEL,
+            marks.map(|marks| (marks, MarkedField::Weight)),
+            |ui| {
+                number_box(
+                    ui,
+                    session,
+                    player_id,
+                    weight,
+                    max(schema, PlayerField::Weight),
+                    |player, shown| player.basic.weight = shown,
+                );
+            },
+        );
+    });
     let pairs = [
         [
             (&SMALL_STATS[1], MarkedField::InjuryResistance),
@@ -709,11 +699,134 @@ pub(super) fn other_stats(
             );
         });
     }
+
+    // The combos, on the same label-left rows as Name's and Shirt
+    // name's in General info.
+    let label_col = label_width(ui, REGISTERED_POSITION_LABEL);
+    let field_x = ui.max_rect().min.x + label_col + LABEL_GAP;
+    let field_width = flush_edge(ui) - field_x;
+    combos(
+        ui,
+        session,
+        player_id,
+        positions,
+        version,
+        field_width,
+        marks,
+    );
+}
+
+/// The Captain pair of Main stats' title row (the draft's `.phead
+/// .captained`): the label where the second half's labels stand and the
+/// radio centred over their boxes — a 54-wide cell ending on the flush
+/// edge — drawn through a child `Ui` at `title`'s rect so its 18-point
+/// box overhangs the bare title's row rather than growing it (the
+/// draft's `margin: -1.5px`), every row under standing where it would
+/// under a bare title. `captain` is whether the selected player's slot
+/// is the team's captain. Returns the radio's id value — the edit's
+/// undo merge key — on a click.
+pub(super) fn captain_title(ui: &mut egui::Ui, title: egui::Rect, captain: bool) -> Option<u64> {
+    let column = second_half_column(ui);
+    let rect = egui::Rect::from_min_max(
+        egui::pos2(flush_edge(ui) - BOX_WIDTH - LABEL_GAP - column, title.min.y),
+        egui::pos2(flush_edge(ui), title.max.y),
+    );
+    // A `new_child`, not a `scope`: the child's min rect never reaches
+    // the parent's, so the overhanging box leaves the title's row a
+    // bare title's height.
+    let mut child = ui.new_child(
+        egui::UiBuilder::new()
+            .id_salt("captain")
+            .max_rect(rect)
+            .layout(egui::Layout::left_to_right(egui::Align::Center)),
+    );
+    child.spacing_mut().item_spacing.x = 0.0;
+    let label = child.label(CAPTAIN_LABEL);
+    child.add_space((column + LABEL_GAP - label.rect.width()).max(0.0));
+    let mut clicked = None;
+    child.allocate_ui(
+        egui::vec2(BOX_WIDTH, child.spacing().interact_size.y),
+        |ui| {
+            ui.centered_and_justified(|ui| {
+                let response = radio(ui, captain, "");
+                if response.clicked() {
+                    clicked = Some(response.id.value());
+                }
+            });
+        },
+    );
+    clicked
+}
+
+/// The Nation row (`generalPanel`'s `nation`): a label-left row on the
+/// same column as Name's (`label_col` wide, the field `field_width` to
+/// the flush edge) — the open save's version's own nations `ID - NAME`
+/// ordered by ID (`nations::nations`). An ID the version lacks keeps
+/// its number, shown `ID - ?` first in the list until another is
+/// picked. The wheel over the closed combo steps through the entries,
+/// as Registered position's does.
+fn nation_row(
+    ui: &mut egui::Ui,
+    session: &mut Session,
+    player_id: u32,
+    held: u16,
+    version: PesVersion,
+    label_col: f32,
+    field_width: f32,
+) {
+    let own = crate::nations::nations(version);
+    let listed = own.iter().any(|(id, _)| *id == held);
+    let text = own.iter().find(|(id, _)| *id == held).map_or_else(
+        || format!("{held} - ?"),
+        |(id, name)| format!("{id} - {name}"),
+    );
+    ui.horizontal(|ui| {
+        ui.spacing_mut().item_spacing.x = 0.0;
+        let label = ui.label(NATION_LABEL);
+        ui.add_space((label_col + LABEL_GAP - label.rect.width()).max(0.0));
+        let mut picked = held;
+        // The entries' strings are built only while the list is open,
+        // never for a closed combo's frame. `open` is whether the list
+        // was open last frame: the held row scrolls into view only on
+        // the frame it opens, so the member can scroll away from it.
+        let open = egui::Id::unique(("general nation list open", player_id));
+        let was_open = ui.data(|data| data.get_temp(open)).unwrap_or(false);
+        let combo = egui::ComboBox::from_id_salt("general nation")
+            .selected_text(text)
+            .width(field_width)
+            .show_ui(ui, |ui| {
+                if !listed {
+                    let response = combo_item(ui, &mut picked, held, format!("{held} - ?"));
+                    if !was_open {
+                        response.scroll_to_me(Some(egui::Align::Center));
+                    }
+                }
+                for (id, name) in own {
+                    let response = combo_item(ui, &mut picked, *id, format!("{id} - {name}"));
+                    if !was_open && *id == held {
+                        response.scroll_to_me(Some(egui::Align::Center));
+                    }
+                }
+            });
+        ui.data_mut(|data| data.insert_temp(open, combo.inner.is_some()));
+        let ids = (!listed)
+            .then_some(held)
+            .into_iter()
+            .chain(own.iter().map(|(id, _)| *id));
+        if let Some(next) = step_choice(ids, &picked, wheel_steps(ui, &combo.response)) {
+            picked = next;
+        }
+        if picked != held {
+            edit_player(session, player_id, combo.response.id.value(), |player| {
+                player.basic.nationality = picked;
+            });
+        }
+    });
 }
 
 /// `small`'s box for a pair half: the shifted `DragValue` (a stored value
 /// past the shown range drawn as stored). `SmallStat::get` stays an
-/// `Option` for the Appearance section's gated stats; the Other stats
+/// `Option` for the Appearance section's gated stats; the Main stats
 /// panel's four are stored on every version, so the gated `-` stand-in
 /// has no draw here.
 fn small_box(
@@ -750,12 +863,12 @@ fn small_box(
     }
 }
 
-/// The four combos, label-left rows on the same label column as Name's
-/// and Shirt name's (`generalPanel`'s `.combos` `109px` grid: its widest label
-/// is the column's "Registered position"), each `field_width` wide so it
-/// ends at the flush edge with the second half's boxes. `marks` is Live
-/// AATF's held check's: the marked combos' marks stand before their
-/// labels.
+/// Main stats' four combos, label-left rows on the same label column as
+/// Name's and Shirt name's (`generalPanel`'s `.combos` `109px` grid: its
+/// widest label is the column's "Registered position"), each
+/// `field_width` wide so it ends at the flush edge with the second
+/// half's boxes. `marks` is Live AATF's held check's: the marked
+/// combos' marks stand before their labels.
 fn combos(
     ui: &mut egui::Ui,
     session: &mut Session,

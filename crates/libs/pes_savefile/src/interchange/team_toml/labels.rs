@@ -218,7 +218,7 @@ pub fn card_name(id: &str) -> String {
 /// Edit screen calls `heading` Header and every other stat by its spelling
 /// title-cased. The other versions' names are not read off their games yet,
 /// so they fall back to the title case. The AATF rows' rule column and the
-/// Other stats' labels name Form, Injury Resistance and the weak foot's
+/// Main stats' labels name Form, Injury Resistance and the weak foot's
 /// halves with fixed strings instead, equal to the names here on every
 /// version so far.
 pub fn stat_name(version: PesVersion, stat: &str) -> String {

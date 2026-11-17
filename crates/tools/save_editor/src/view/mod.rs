@@ -3,7 +3,7 @@
 //! actions under it) and, right, the screen the selected row and the
 //! title's toggle name: `Gameplan`, the team view (`team`), on a team
 //! row; the player's `Stats` — the three columns (`abilities` with
-//! `info_strip`'s General info and Other stats) — or `Appearance`
+//! `info_strip`'s General info and Main stats) — or `Appearance`
 //! (`appearance`) on a player row; every screen under the same title's
 //! row (`info_strip`) with the toggle at its left. Render-only over the
 //! session's state: it opens a save, filters and selects players, reorders

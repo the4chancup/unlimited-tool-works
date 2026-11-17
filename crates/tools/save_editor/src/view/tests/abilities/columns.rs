@@ -86,21 +86,20 @@ fn assert_three_columns_at_1280(version: PesVersion) {
         "no Appearance header under the columns"
     );
 
-    // The six label-left rows (Name, Shirt name and the four combos) share
-    // one label column: their fields start at one x and end flush with
-    // the second half's boxes, not on the panel's edge.
+    // The label-left rows (Name, Shirt name, Nation and the four combos)
+    // share one label column: their fields start at one x and end flush
+    // with the second half's boxes, not on the panel's edge.
     let name = name_field(&nodes).bounds().expect("bounds");
     let shirt = shirt_field(&nodes).bounds().expect("bounds");
-    let shirt_label = label_bounds(&nodes, "Shirt number");
-    let shirt_box = right_of_label(&nodes, "Shirt number", Role::SpinButton)[0]
+    let flush = right_of_label(&nodes, "Age", Role::SpinButton)[0]
         .bounds()
-        .expect("bounds");
-    let flush = shirt_box.x1;
+        .expect("bounds")
+        .x1;
     assert!(
         (name.x1 - flush).abs() < 0.5 && (shirt.x1 - flush).abs() < 0.5,
         "the counted fields end at the flush edge ({name:?}, {shirt:?} vs {flush})"
     );
-    for label in ["Registered position", "Playing style"] {
+    for label in ["Nation", "Registered position", "Playing style"] {
         let combo = right_of_label(&nodes, label, Role::ComboBox)[0]
             .bounds()
             .expect("bounds");
@@ -157,13 +156,12 @@ fn assert_three_columns_at_1280(version: PesVersion) {
     // at the rows' fields' left edge (the first half is the rows' label
     // column, their 20 and a box), the second half's left edge 18 or
     // more after its box's right edge.
-    let height_box = right_of_label(&nodes, "Height", Role::SpinButton)[0]
+    let number_box = right_of_label(&nodes, "Shirt number", Role::SpinButton)[0]
         .bounds()
         .expect("bounds");
     for (label, role) in [
+        ("Shirt number", Role::SpinButton),
         ("Height", Role::SpinButton),
-        ("Weight", Role::SpinButton),
-        ("Age", Role::SpinButton),
         ("Injury Resistance", Role::SpinButton),
         ("Weak Foot: Usage", Role::SpinButton),
     ] {
@@ -175,18 +173,24 @@ fn assert_three_columns_at_1280(version: PesVersion) {
             "{label}'s box starts at the rows' field x ({bounds:?} vs {name:?})"
         );
     }
+    let age_label = label_bounds(&nodes, "Age");
     assert!(
-        shirt_label.x0 - height_box.x1 >= 17.5,
-        "the second half at least 18 after the first ({shirt_label:?} vs {height_box:?})"
+        age_label.x0 - number_box.x1 >= 17.5,
+        "the second half at least 18 after the first ({age_label:?} vs {number_box:?})"
     );
     // The second half's boxes sit just after a label column as wide as
-    // "Shirt number" and its 20-point gap (the draft's `73px 54px` grid,
-    // the column's `column-gap`): one x across General info's and Other
-    // stats' rows, so a short label (Nation, Form) keeps its box close.
-    let box_x = shirt_label.x1 + 20.0;
+    // the half's widest label and its 20-point gap (the draft's
+    // `.pair:nth-child(even)` grid, the column's `column-gap`): one x
+    // across General info's and Main stats' rows, so a short label
+    // (Age, Form) keeps its box close.
+    let box_x = ["Age", "Weight", "Form", "Accuracy", "Captain"]
+        .map(|label| label_bounds(&nodes, label).x1)
+        .into_iter()
+        .fold(f64::MIN, f64::max)
+        + 20.0;
     for (label, role) in [
-        ("Shirt number", Role::SpinButton),
-        ("Nation", Role::SpinButton),
+        ("Age", Role::SpinButton),
+        ("Weight", Role::SpinButton),
         ("Form", Role::SpinButton),
         ("Accuracy", Role::SpinButton),
     ] {
@@ -198,17 +202,17 @@ fn assert_three_columns_at_1280(version: PesVersion) {
             "{label}'s box just after the label column ({bounds:?} vs {box_x})"
         );
     }
-    // The Captain radio centred in its 54-wide box (the draft's `.pair
-    // > .box` `justify-content: center`), under the Nation box above it.
+    // The Captain radio centred in its 54-wide box (the draft's `.phead
+    // .captained` `.box`), over the Weight box under it.
     let captain = right_of_label(&nodes, "Captain", Role::RadioButton)[0]
         .bounds()
         .expect("bounds");
-    let nation = right_of_label(&nodes, "Nation", Role::SpinButton)[0]
+    let weight = right_of_label(&nodes, "Weight", Role::SpinButton)[0]
         .bounds()
         .expect("bounds");
     assert!(
-        ((captain.x0 + captain.x1) / 2.0 - (nation.x0 + nation.x1) / 2.0).abs() < 0.5,
-        "the Captain radio centred under the Nation box ({captain:?} vs {nation:?})"
+        ((captain.x0 + captain.x1) / 2.0 - (weight.x0 + weight.x1) / 2.0).abs() < 0.5,
+        "the Captain radio centred over the Weight box ({captain:?} vs {weight:?})"
     );
 
     // A label and its field are never closer than 20: on the pairs, in
@@ -217,16 +221,16 @@ fn assert_three_columns_at_1280(version: PesVersion) {
     let pair_min = min_gap(
         &nodes,
         &[
-            ("Height", Role::SpinButton),
-            ("Weight", Role::SpinButton),
-            ("Age", Role::SpinButton),
             ("Shirt number", Role::SpinButton),
-            ("Nation", Role::SpinButton),
-            ("Captain", Role::RadioButton),
+            ("Height", Role::SpinButton),
             ("Injury Resistance", Role::SpinButton),
             ("Weak Foot: Usage", Role::SpinButton),
+            ("Age", Role::SpinButton),
+            ("Weight", Role::SpinButton),
             ("Form", Role::SpinButton),
             ("Accuracy", Role::SpinButton),
+            ("Nation", Role::ComboBox),
+            ("Captain", Role::RadioButton),
         ],
     );
     assert!(
@@ -348,7 +352,7 @@ fn assert_three_columns_at_1280(version: PesVersion) {
     }
 }
 
-// Every field of General info's and Other stats' panels ends 12 inside
+// Every field of General info's and Main stats' panels ends 12 inside
 // its frame on the right (the content's own 6-point padding, the frame's
 // 6 and its point of stroke): the counted fields, the foot toggle, the
 // combos and both halves' boxes on one flush x, in both panels alike. At
@@ -364,7 +368,7 @@ fn the_panels_fields_end_twelve_inside_their_frames_at_any_width() {
         let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
         let frame =
             |title: &str| f64::from(group_frame(&window, &nodes, &shapes, title).max.x) - 13.0;
-        let (general, other) = (frame("General info"), frame("Other stats"));
+        let (general, main) = (frame("General info"), frame("Main stats"));
         let right = |node: &accesskit::Node| node.bounds().expect("bounds").x1;
         let box_right = |label: &str, role: Role| {
             right_of_label(&nodes, label, role)
@@ -382,27 +386,23 @@ fn the_panels_fields_end_twelve_inside_their_frames_at_any_width() {
         for (what, field_x1, edge) in [
             ("the Name field", right(name_field(&nodes)), general),
             ("the Shirt name field", right(shirt_field(&nodes)), general),
-            ("the Stronger foot toggle", right(foot), general),
+            ("the Stronger foot toggle", right(foot), main),
             (
                 "the Registered position combo",
                 box_right("Registered position", Role::ComboBox),
-                general,
+                main,
             ),
             (
-                "the Shirt number box",
-                box_right("Shirt number", Role::SpinButton),
+                "the Nation combo",
+                box_right("Nation", Role::ComboBox),
                 general,
             ),
-            (
-                "the Nation box",
-                box_right("Nation", Role::SpinButton),
-                general,
-            ),
-            ("the Form box", box_right("Form", Role::SpinButton), other),
+            ("the Age box", box_right("Age", Role::SpinButton), general),
+            ("the Form box", box_right("Form", Role::SpinButton), main),
             (
                 "the Accuracy box",
                 box_right("Accuracy", Role::SpinButton),
-                other,
+                main,
             ),
         ] {
             assert!(
@@ -411,11 +411,11 @@ fn the_panels_fields_end_twelve_inside_their_frames_at_any_width() {
             );
         }
         // The halves' gap and the first half's boxes' left edges.
-        let shirt_label = label_bounds(&nodes, "Shirt number");
-        let height_box = right_of_label(&nodes, "Height", Role::SpinButton)[0]
+        let age_label = label_bounds(&nodes, "Age");
+        let number_box = right_of_label(&nodes, "Shirt number", Role::SpinButton)[0]
             .bounds()
             .expect("bounds");
-        let gap = shirt_label.x0 - height_box.x1;
+        let gap = age_label.x0 - number_box.x1;
         if let Some(before) = halves_gap {
             assert!(
                 (gap - before - 300.0).abs() <= 0.5,
@@ -424,9 +424,8 @@ fn the_panels_fields_end_twelve_inside_their_frames_at_any_width() {
         }
         halves_gap = Some(gap);
         let boxes: Vec<f64> = [
+            ("Shirt number", Role::SpinButton),
             ("Height", Role::SpinButton),
-            ("Weight", Role::SpinButton),
-            ("Age", Role::SpinButton),
             ("Injury Resistance", Role::SpinButton),
             ("Weak Foot: Usage", Role::SpinButton),
         ]
@@ -463,7 +462,7 @@ fn stats_frames(
     let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     let stats = [
         "General info",
-        "Other stats",
+        "Main stats",
         "Playable positions",
         "Skills",
         "Tricks",
@@ -517,8 +516,8 @@ fn the_stats_screens_frames_span_the_pane_as_appearances_do() {
                 );
             }
             for pair in [
-                ["General info", "Other stats"],
-                ["Other stats", "Playable positions"],
+                ["General info", "Main stats"],
+                ["Main stats", "Playable positions"],
                 ["Skills", "Tricks"],
                 ["Tricks", "COM playing styles"],
             ] {
@@ -757,7 +756,7 @@ fn every_panels_content_stands_six_in_from_its_title() {
     }
     let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     let columns: [&[&str]; 3] = [
-        &["General info", "Other stats", "Playable positions"],
+        &["General info", "Main stats", "Playable positions"],
         &["Skills", "Tricks", "COM playing styles"],
         &["Ability stats"],
     ];

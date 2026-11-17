@@ -566,7 +566,7 @@ fn the_stats_fill_one_column_in_the_games_order() {
 }
 
 // The stats are named as the save's game names them: PES 2017 calls
-// heading Header, PES 2021 keeps Heading. The Other stats read Injury
+// heading Header, PES 2021 keeps Heading. The Main stats read Injury
 // Resistance and Weak Foot: Usage on both. The Skills panel's Heading is a
 // card, a checkbox, so only the labels are read.
 #[test]

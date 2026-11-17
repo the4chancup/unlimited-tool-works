@@ -3,12 +3,14 @@ screen's three columns side by side. The toggle left of his name switches to **A
 
 **The three columns**
 
-The first column is his **General info**: name and shirt name, height, weight,
-age, nationality, shirt number and captaincy, stronger foot and hand, registered
-position and playing style. Under it are **Other stats** (form, injury
-resistance, weak foot usage and accuracy) and his **Playable positions** with
-their C/B/A ratings. The second column is his **Skills** and **COM playing
-styles**. The third is his **Ability stats**.
+The first column is his **General info**: name and shirt name, shirt number,
+age and nation. Nation is picked from the game's own nations for the save's
+version, each shown after its ID; one that version lacks shows as its ID and a
+question mark. Under it, **Main stats** holds his captaincy, height and
+weight, injury resistance, form, weak foot usage and accuracy, stronger foot
+and hand, registered position and playing style. Then come his **Playable
+positions** with their C/B/A ratings. The second column is his **Skills** and
+**COM playing styles**. The third is his **Ability stats**.
 
 **Playable positions**
 
