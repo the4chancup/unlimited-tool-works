@@ -2800,6 +2800,9 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
   the organizer's yes to the run's closing question (`plans/team_compiler/pipeline.md` "6.
   Post-processing"), from `team.toml` at the export's root (DECISIONS 2026-11-17); its
   scenarios first
+  - [ ] before it: the maintainer's "universal export" (the Team TOML and music in one
+    export), remembered as devised but written nowhere; to be talked through with the
+    maintainer when its time comes (2026-11-17)
 - [ ] after 0.0.2 (the maintainer, 2026-11-17, card `look-tactics-gaps`): 0.1-pitchring,
   the Tactics pitch's turf reaches its border's inner curve, as `plans/save_editor.md` (the
   Tactics screen's item 2) says: 0.0.2-pitchround (`1f958e81`) rounds the turf by the
