@@ -295,7 +295,7 @@ fn version_gated_controls_are_disabled_in_place_with_their_first_version() {
         let mut view = SaveView::new();
         view.open(&path);
         let mut window = Headless::sized(DEFAULT_PANE.x, 700.0);
-        let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+        let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
         let sides = right_of_label(&nodes, "Stronger hand", Role::Button);
         assert_eq!(sides.len(), 2, "the hand is two choices");
         let span = |node: &accesskit::Node| node.bounds().expect("bounds");
@@ -305,10 +305,11 @@ fn version_gated_controls_are_disabled_in_place_with_their_first_version() {
             span(sides[0]).y0,
             span(sides[1]).y1,
         );
-        (view, window, nodes, hand)
+        (view, window, nodes, shapes, hand)
     };
-    let (mut view17, mut window17, nodes17, hand17) = bounds_of(PesVersion::Pes17, "gated_17");
-    let (_view21, _window21, nodes21, hand21) = bounds_of(PesVersion::Pes21, "gated_21");
+    let (mut view17, mut window17, nodes17, shapes17, hand17) =
+        bounds_of(PesVersion::Pes17, "gated_17");
+    let (_view21, _window21, nodes21, shapes21, hand21) = bounds_of(PesVersion::Pes21, "gated_21");
 
     let sides17 = right_of_label(&nodes17, "Stronger hand", Role::Button);
     assert!(
@@ -325,11 +326,38 @@ fn version_gated_controls_are_disabled_in_place_with_their_first_version() {
         Some("PES 20+".to_string()),
         "the hand's tooltip"
     );
+    // The label is dimmed with the toggle and answers the same hover.
+    let visuals = window17.ctx.style_of(window17.ctx.theme()).visuals.clone();
+    let text_color = visuals.text_color();
+    let dimmed = dimmed_text_color(&visuals);
+    assert_ne!(
+        dimmed, text_color,
+        "premise: the disabled grey is not the normal text colour"
+    );
+    assert_eq!(
+        painted_label_color(&nodes17, &shapes17, "Stronger hand"),
+        dimmed,
+        "the Stronger hand label dimmed with its toggle"
+    );
+    let label = nodes17
+        .iter()
+        .find(|node| node.role() == Role::Label && node.value() == Some("Stronger hand"))
+        .expect("the Stronger hand label");
+    assert_eq!(
+        tooltip_after_hover(&mut window17, &mut view17, centre(label)),
+        Some("PES 20+".to_string()),
+        "the label's hover names the same first version"
+    );
 
     // Enabled on PES 21, the toggle in the same span as its PES 17 stand-in.
     assert!(
         !control_right_of(&nodes21, "Stronger hand").is_disabled(),
         "Stronger hand is enabled on PES 21"
+    );
+    assert_eq!(
+        painted_label_color(&nodes21, &shapes21, "Stronger hand"),
+        text_color,
+        "the stored hand's label paints the normal text colour"
     );
     assert_eq!(hand17, hand21, "the Stronger hand control's span");
 }

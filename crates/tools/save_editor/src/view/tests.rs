@@ -596,6 +596,14 @@ fn painted_label_color(
     painted_text_color(shapes, value, label_bounds(nodes, value))
 }
 
+/// The colour a disabled scope's words paint in: the palette's
+/// `disabled_text`, faded by the visuals' disabled alpha.
+fn dimmed_text_color(visuals: &egui::Visuals) -> egui::Color32 {
+    studio_core::theme::palette(visuals)
+        .disabled_text
+        .gamma_multiply(visuals.disabled_alpha())
+}
+
 /// The colour the checkbox labeled `label` painted its text in: a card's
 /// name is the checkbox's own text, not a Label node.
 fn painted_checkbox_color(

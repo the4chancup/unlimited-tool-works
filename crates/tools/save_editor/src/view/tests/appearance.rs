@@ -271,39 +271,69 @@ fn the_gated_star_and_attitude_draw_disabled_in_place_on_pes17() {
         open_appearance(&mut window, &mut view);
         // The group's controls sit below the fold: the hovers need them
         // inside the scroll's clip (the attitude's row is the lower one).
-        let nodes = scroll_into_view(&mut window, &mut view, |node| {
+        scroll_into_view(&mut window, &mut view, |node| {
             node.role() == Role::Label && node.value() == Some("Playing attitude")
         });
+        let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
         let star = control_right_of(&nodes, "Star rating")
             .bounds()
             .expect("bounds");
         let attitude = control_right_of(&nodes, "Playing attitude")
             .bounds()
             .expect("bounds");
-        (view, window, nodes, (star, attitude))
+        (view, window, nodes, shapes, (star, attitude))
     };
-    let (mut view17, mut window17, _nodes17, (star17, attitude17)) =
+    let (mut view17, mut window17, _nodes17, _shapes17, (star17, attitude17)) =
         bounds_of(PesVersion::Pes17, "gated_presentation_17");
-    let (_view21, _window21, nodes21, (star21, attitude21)) =
+    let (_view21, _window21, nodes21, shapes21, (star21, attitude21)) =
         bounds_of(PesVersion::Pes21, "gated_presentation_21");
 
+    let visuals = window17.ctx.style_of(window17.ctx.theme()).visuals.clone();
+    let text_color = visuals.text_color();
+    let dimmed = dimmed_text_color(&visuals);
+    assert_ne!(
+        dimmed, text_color,
+        "premise: the disabled grey is not the normal text colour"
+    );
     for (control, tooltip) in [("Star rating", "PES 19+"), ("Playing attitude", "PES 20+")] {
         // Each hover needs its own dash inside the clip: scrolling for one
         // can push the other out.
-        let nodes = scroll_into_view(&mut window17, &mut view17, |node| {
+        scroll_into_view(&mut window17, &mut view17, |node| {
             node.role() == Role::Label && node.value() == Some(control)
         });
+        let (_, nodes, shapes) =
+            window17.frame(Vec::new(), |ui| show(ui, &mut view17, &|| Vec::new()));
         let button = disabled_dash(&nodes, control);
         assert_eq!(
             tooltip_after_hover(&mut window17, &mut view17, centre(button)),
             Some(tooltip.to_string()),
             "{control}'s tooltip"
         );
+        // The label is dimmed with its `-` and answers the same hover.
+        assert_eq!(
+            painted_label_color(&nodes, &shapes, control),
+            dimmed,
+            "{control}'s label dimmed with its `-`"
+        );
+        let label = nodes
+            .iter()
+            .find(|node| node.role() == Role::Label && node.value() == Some(control))
+            .expect("the gated label");
+        assert_eq!(
+            tooltip_after_hover(&mut window17, &mut view17, centre(label)),
+            Some(tooltip.to_string()),
+            "{control}'s label answers a hover with the same version"
+        );
     }
     for label in ["Star rating", "Playing attitude"] {
         assert!(
             !control_right_of(&nodes21, label).is_disabled(),
             "{label} is enabled on PES 21"
+        );
+        assert_eq!(
+            painted_label_color(&nodes21, &shapes21, label),
+            text_color,
+            "{label} stored on PES 21 paints the normal text colour"
         );
     }
     assert_eq!(star17, star21, "the Star control's rect");

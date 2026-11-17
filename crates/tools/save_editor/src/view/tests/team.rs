@@ -917,6 +917,31 @@ fn on_pes16_the_colours_manager_id_and_kit_slots_draw_disabled_with_their_versio
         Some("PES 17+".to_string()),
         "the Manager ID's tooltip"
     );
+    // The labels dim with their controls and answer the same hover.
+    let visuals = window.ctx.style_of(window.ctx.theme()).visuals.clone();
+    let text_color = visuals.text_color();
+    let dimmed = dimmed_text_color(&visuals);
+    assert_ne!(
+        dimmed, text_color,
+        "premise: the disabled grey is not the normal text colour"
+    );
+    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    for label in ["Color 1", "Color 2", "Manager ID"] {
+        assert_eq!(
+            painted_label_color(&nodes, &shapes, label),
+            dimmed,
+            "{label}'s label dimmed with its control"
+        );
+        let node = nodes
+            .iter()
+            .find(|node| node.role() == Role::Label && node.value() == Some(label))
+            .expect("the gated label");
+        assert_eq!(
+            tooltip_after_hover(&mut window, &mut view, centre(node)),
+            Some("PES 17+".to_string()),
+            "{label}'s label answers a hover with the same version"
+        );
+    }
     // The Stadium ID, which every version stores: a live number showing
     // the team's own.
     let stadium = team_entry(&view, 701)
@@ -939,6 +964,21 @@ fn on_pes16_the_colours_manager_id_and_kit_slots_draw_disabled_with_their_versio
         label_value(&nodes, "(this version does not store kit slots)"),
         "the no-records line"
     );
+
+    // On a version that stores them, the same labels paint the normal colour.
+    let path = fixture(PesVersion::Pes21, "team_view_gated_21");
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut window = Headless::sized(DEFAULT_PANE.x, 700.0);
+    open_team_view(&mut window, &mut view, 701);
+    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    for label in ["Color 1", "Color 2", "Manager ID"] {
+        assert_eq!(
+            painted_label_color(&nodes, &shapes, label),
+            text_color,
+            "{label} stored on PES 21 paints the normal text colour"
+        );
+    }
 }
 
 #[test]

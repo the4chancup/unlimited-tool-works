@@ -25,7 +25,7 @@ use team_widgets::names::append_name;
 use crate::session::Session;
 use crate::view::abilities::{
     CELL_PADDING, PLAYING_STYLE_LABEL, REGISTERED_POSITION_LABEL, SMALL_STATS, STRONGER_FOOT_LABEL,
-    STRONGER_HAND_LABEL, SmallStat, gating_tooltip, position_label,
+    STRONGER_HAND_LABEL, SmallStat, gated_label, gating_tooltip, position_label,
 };
 use crate::view::live_marks::{MarkedField, Marks};
 use crate::view::{
@@ -769,7 +769,15 @@ fn combos(
                 });
             }
             ui.end_row();
-            ui.label(STRONGER_HAND_LABEL);
+            if positions.stronger_hand.is_some() {
+                ui.label(STRONGER_HAND_LABEL);
+            } else {
+                gated_label(
+                    ui,
+                    STRONGER_HAND_LABEL,
+                    gating_tooltip(PlayerField::StrongerHand),
+                );
+            }
             match positions.stronger_hand {
                 Some(stored) => {
                     if let Some((side, key)) = side_row(ui, field_width, stored) {
