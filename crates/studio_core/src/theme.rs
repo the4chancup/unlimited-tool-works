@@ -5,7 +5,8 @@
 //! test measures is the size a member sees. The spacing and both themes'
 //! widget states are egui 0.36's, the look the drafts were reviewed in, but
 //! for the light fills, each a step lighter than the grey that keeps the dark
-//! fill's contrast with the panel. The rest of the presets stays egui's own
+//! fill's contrast with the panel, and the light panel itself, a darker grey
+//! the boxes stand off. The rest of the presets stays egui's own
 //! `Visuals` until the curated one lands, but for the error, warning and link
 //! colours, GitHub's pairs in both themes, and the corner radii: one radius,
 //! 2 points, on every corner egui or the suite draws.
@@ -23,8 +24,8 @@ pub struct Palette {
     /// The success notices' bright green (the draft's `--success`). egui's
     /// `Visuals` has a warning colour and an error colour but no success one,
     /// so the suite carries its own. On the light theme a darker green: the
-    /// dark one reads at a contrast of 2.4 against egui's light panel, where
-    /// the darker one reads at 4.8 (the light theme's own link and warning
+    /// dark one reads at a contrast of 2.2 on the light panel, where
+    /// the darker one reads at 4.5 (the light theme's own link and warning
     /// colours are darker for the same reason).
     pub success: egui::Color32,
     /// The boots/gloves dialog's range end ID (the draft's
@@ -37,7 +38,7 @@ pub struct Palette {
     /// disabled card label's `#5a5a5a`): quiet, so a count draws the eye only
     /// once the field reaches its limit. Its light value keeps the same quiet
     /// contrast, 2.5, on the light panel, where the dark grey itself would read
-    /// at 6.5, as loud as the text.
+    /// at 6.1, as loud as the text.
     pub count_grey: egui::Color32,
     /// The resting text colour of the widgets in a disabled scope, before
     /// egui fades the whole scope to half opacity: a disabled button's,
@@ -56,7 +57,7 @@ pub struct Palette {
     /// (the draft's `.sel.on.rc` `#5a5a5a`): the quiet grey a chosen rating or
     /// side gets where the accent would pull the eye. Its light value has the
     /// same contrast with the panel, 2.5, as the dark grey has with the dark
-    /// one, and the light theme's dark text reads on it at 3.05 (on the dark
+    /// one, and the light theme's dark text reads on it at 2.8 (on the dark
     /// grey itself, at 1.2).
     pub rating_c_fill: egui::Color32,
     /// The positions grid's chosen A rating's fill (the draft's `.sel.on.ra`
@@ -85,7 +86,7 @@ pub struct Palette {
     /// The keeper's position text in the lineup lists, which sit on the
     /// panel: the pitch's `keeper` on the dark theme, and on the light one
     /// its hue darkened to read at 4.5 on the light panel, where the pitch's
-    /// yellow reads at 1.26. The pitch keeps its own on its badges.
+    /// yellow reads at 1.17. The pitch keeps its own on its badges.
     pub lineup_keeper: egui::Color32,
     /// A defender's position text in the lineup lists, as `lineup_keeper`:
     /// the pitch's `defender` on the dark theme, darkened to read at 4.5 on
@@ -202,14 +203,14 @@ impl Palette {
     /// Each is written out rather than copied from `DARK`, so a colour added
     /// to the struct is a compile error here until it has a light value.
     pub const LIGHT: Palette = Palette {
-        success: egui::Color32::from_rgb(0x1a, 0x7f, 0x37),
+        success: egui::Color32::from_rgb(0x1a, 0x7e, 0x37),
         readout: egui::Color32::from_gray(0x5f),
-        count_grey: egui::Color32::from_gray(0x9f),
+        count_grey: egui::Color32::from_gray(0x99),
         // The light resting text unchanged: the drafts are dark only, so the
         // light theme keeps egui's fade.
         disabled_text: egui::Color32::from_gray(60),
         team_row_fill: egui::Color32::from_rgba_unmultiplied_const(127, 127, 127, 48),
-        rating_c_fill: egui::Color32::from_gray(0x9f),
+        rating_c_fill: egui::Color32::from_gray(0x99),
         rating_a_fill: egui::Color32::from_rgb(0x12, 0x96, 0x48),
         rating_a_text: egui::Color32::WHITE,
         swatch_edge: egui::Color32::BLACK,
@@ -220,10 +221,10 @@ impl Palette {
         defender: egui::Color32::from_rgb(0x00, 0xd2, 0xff),
         midfielder: egui::Color32::from_rgb(0x57, 0xe4, 0x2b),
         forward: egui::Color32::from_rgb(0xff, 0x2c, 0x77),
-        lineup_keeper: egui::Color32::from_rgb(0x84, 0x72, 0x00),
-        lineup_defender: egui::Color32::from_rgb(0x00, 0x7d, 0x99),
-        lineup_midfielder: egui::Color32::from_rgb(0x2f, 0x83, 0x14),
-        lineup_forward: egui::Color32::from_rgb(0xd9, 0x24, 0x64),
+        lineup_keeper: egui::Color32::from_rgb(0x7f, 0x6d, 0x00),
+        lineup_defender: egui::Color32::from_rgb(0x00, 0x77, 0x92),
+        lineup_midfielder: egui::Color32::from_rgb(0x2c, 0x7d, 0x13),
+        lineup_forward: egui::Color32::from_rgb(0xd0, 0x22, 0x60),
         selected_corners: egui::Color32::from_rgb(0x14, 0xfb, 0xff),
         candidate_corners: egui::Color32::from_rgb(0xff, 0x4e, 0x7f),
         pitch_text: egui::Color32::WHITE,
@@ -482,12 +483,20 @@ pub fn install(ctx: &egui::Context) {
                     style.visuals.hyperlink_color = egui::Color32::from_rgb(0x58, 0xA6, 0xFF);
                 }
                 egui::Theme::Light => {
+                    // Grey 240, darker than egui's 248, so the boxes
+                    // stand off the panel; a text box nearly white.
+                    style.visuals.panel_fill = egui::Color32::from_gray(240);
+                    style.visuals.window_fill = egui::Color32::from_gray(240);
+                    style.visuals.text_edit_bg_color = Some(egui::Color32::from_gray(253));
                     style.visuals.widgets = widgets_light();
-                    // The light values of the same three pairs, each
-                    // reading at 4.5 or more on the light panel, where
+                    // The light values of the same three pairs: the
+                    // amber and the success green (the palette's) are
+                    // GitHub's darkened by `darkened_to_read`'s rule on
+                    // this panel, the red and the blue GitHub's as they
+                    // are, each reading at 4.5 or more on it, where
                     // egui's light orange and link blue read at 2.8.
                     style.visuals.error_fg_color = egui::Color32::from_rgb(0xD1, 0x24, 0x2F);
-                    style.visuals.warn_fg_color = egui::Color32::from_rgb(0x9A, 0x67, 0x00);
+                    style.visuals.warn_fg_color = egui::Color32::from_rgb(0x95, 0x63, 0x00);
                     style.visuals.hyperlink_color = egui::Color32::from_rgb(0x09, 0x69, 0xDA);
                 }
             }
@@ -560,53 +569,54 @@ fn widgets_dark() -> egui::style::Widgets {
 /// on every state, for the same reason as `widgets_dark`: 0.37's
 /// `Widgets::light()` rounded every
 /// state to 6 points, which is not the look the drafts were reviewed in.
-/// The fills are near the dark states' contrast with their panel instead of
-/// 0.36's greys, whose resting 230 reads at 1.18 on the 248 panel, where the
+/// The noninteractive fills are the panel's own grey (240). The rest are
+/// near the dark states' contrast with their panel instead of
+/// 0.36's greys, whose resting 230 reads at 1.10 on the 240 panel, where the
 /// dark 60 reads at 1.56 on 27, and left a resting checkbox, radio button or
 /// number box all but invisible. The resting, hovered and pressed fills are
-/// each a step lighter than the grey of the dark contrast (201, 186 and 208),
+/// each a step lighter than the grey of the dark contrast (194, 180 and 201),
 /// all three by the same 6 so the states stay as far apart: at the matched
 /// contrast the grey boxes read too dark beside the white text boxes.
 /// The resting stroke, none in egui, is the light theme's own rule for a
-/// control's edge: its fill 30 darker (177 on the resting 207), the dark
+/// control's edge: its fill 30 darker (170 on the resting 200), the dark
 /// theme's edge lightened instead.
 #[cfg(not(target_arch = "wasm32"))]
 fn widgets_light() -> egui::style::Widgets {
     egui::style::Widgets {
         noninteractive: egui::style::WidgetVisuals {
-            weak_bg_fill: egui::Color32::from_gray(248),
-            bg_fill: egui::Color32::from_gray(248),
+            weak_bg_fill: egui::Color32::from_gray(240),
+            bg_fill: egui::Color32::from_gray(240),
             bg_stroke: egui::Stroke::new(1.0, egui::Color32::from_gray(190)),
             fg_stroke: egui::Stroke::new(1.0, egui::Color32::from_gray(80)),
             corner_radius: egui::CornerRadius::same(CORNER_RADIUS),
             expansion: 0.0,
         },
         inactive: egui::style::WidgetVisuals {
-            weak_bg_fill: egui::Color32::from_gray(207),
-            bg_fill: egui::Color32::from_gray(207),
-            bg_stroke: egui::Stroke::new(1.0, egui::Color32::from_gray(177)),
+            weak_bg_fill: egui::Color32::from_gray(200),
+            bg_fill: egui::Color32::from_gray(200),
+            bg_stroke: egui::Stroke::new(1.0, egui::Color32::from_gray(170)),
             fg_stroke: egui::Stroke::new(1.0, egui::Color32::from_gray(60)),
             corner_radius: egui::CornerRadius::same(CORNER_RADIUS),
             expansion: 0.0,
         },
         hovered: egui::style::WidgetVisuals {
-            weak_bg_fill: egui::Color32::from_gray(192),
-            bg_fill: egui::Color32::from_gray(192),
+            weak_bg_fill: egui::Color32::from_gray(186),
+            bg_fill: egui::Color32::from_gray(186),
             bg_stroke: egui::Stroke::new(1.0, egui::Color32::from_gray(105)),
             fg_stroke: egui::Stroke::new(1.5, egui::Color32::BLACK),
             corner_radius: egui::CornerRadius::same(CORNER_RADIUS),
             expansion: 0.0,
         },
         active: egui::style::WidgetVisuals {
-            weak_bg_fill: egui::Color32::from_gray(214),
-            bg_fill: egui::Color32::from_gray(214),
+            weak_bg_fill: egui::Color32::from_gray(207),
+            bg_fill: egui::Color32::from_gray(207),
             bg_stroke: egui::Stroke::new(1.0, egui::Color32::BLACK),
             fg_stroke: egui::Stroke::new(2.0, egui::Color32::BLACK),
             corner_radius: egui::CornerRadius::same(CORNER_RADIUS),
             expansion: 0.0,
         },
         open: egui::style::WidgetVisuals {
-            weak_bg_fill: egui::Color32::from_gray(223),
+            weak_bg_fill: egui::Color32::from_gray(216),
             bg_fill: egui::Color32::from_gray(220),
             bg_stroke: egui::Stroke::new(1.0, egui::Color32::from_gray(160)),
             fg_stroke: egui::Stroke::new(1.0, egui::Color32::BLACK),
@@ -883,7 +893,7 @@ mod tests {
         let ctx = egui::Context::default();
         install(&ctx);
         for (theme, inactive_fill, inactive_text) in
-            [(egui::Theme::Dark, 60, 180), (egui::Theme::Light, 207, 60)]
+            [(egui::Theme::Dark, 60, 180), (egui::Theme::Light, 200, 60)]
         {
             let style = ctx.style_of(theme);
             assert_eq!(style.spacing.button_padding, egui::vec2(4.0, 1.0));
@@ -960,17 +970,17 @@ mod tests {
         let widgets = &light.widgets;
         assert_eq!(
             widgets.inactive.bg_fill,
-            egui::Color32::from_gray(207),
+            egui::Color32::from_gray(200),
             "premise: the light resting fill"
         );
         assert_eq!(
             widgets.inactive.bg_stroke,
-            egui::Stroke::new(1.0, egui::Color32::from_gray(177)),
+            egui::Stroke::new(1.0, egui::Color32::from_gray(170)),
             "premise: the light resting stroke"
         );
         for (fill, expected) in [
             (widgets.inactive.bg_fill, widgets.inactive.bg_stroke.color),
-            (widgets.inactive.bg_fill, egui::Color32::from_gray(177)),
+            (widgets.inactive.bg_fill, egui::Color32::from_gray(170)),
         ] {
             assert_eq!(edge_color(&light, fill), expected, "light {fill:?}'s edge");
         }
@@ -1110,6 +1120,30 @@ mod tests {
             .expect("the range holds at least 0")
     }
 
+    // The light panel and windows are grey 240, darker than egui's 248, so
+    // the boxes stand off them; a text box's fill is 253, nearly white.
+    #[test]
+    fn the_light_panel_is_240_and_a_text_box_253() {
+        let ctx = egui::Context::default();
+        install(&ctx);
+        let visuals = &ctx.style_of(egui::Theme::Light).visuals;
+        assert_eq!(
+            visuals.panel_fill,
+            egui::Color32::from_gray(240),
+            "the light panel"
+        );
+        assert_eq!(
+            visuals.window_fill,
+            egui::Color32::from_gray(240),
+            "a light window's fill"
+        );
+        assert_eq!(
+            visuals.text_edit_bg_color(),
+            egui::Color32::from_gray(253),
+            "a text box's fill"
+        );
+    }
+
     // A resting, hovered or pressed light fill is the grey that stands out
     // from the light panel as the dark state's fill does from the dark panel,
     // made 6 lighter: at the matched contrast the grey boxes read too dark
@@ -1134,7 +1168,7 @@ mod tests {
         );
         assert_eq!(
             light.visuals.panel_fill,
-            egui::Color32::from_gray(248),
+            egui::Color32::from_gray(240),
             "premise: the light panel"
         );
         for ((name, dark_fill), (_, light_fill)) in state_fills(&dark.visuals.widgets)
@@ -1161,9 +1195,9 @@ mod tests {
         }
         let widgets = &light.visuals.widgets;
         for (name, state, grey) in [
-            ("inactive", &widgets.inactive, 207),
-            ("hovered", &widgets.hovered, 192),
-            ("active", &widgets.active, 214),
+            ("inactive", &widgets.inactive, 200),
+            ("hovered", &widgets.hovered, 186),
+            ("active", &widgets.active, 207),
         ] {
             assert_eq!(
                 state.weak_bg_fill,
@@ -1176,7 +1210,7 @@ mod tests {
 
     // The warning colours are GitHub's attention amber pair, replacing
     // egui's oranges, which stood too close to the error red; the light
-    // one reads at 4.6 on the light panel, where egui's `#FF6400` read
+    // one reads at 4.5 on the light panel, where egui's `#FF6400` read
     // at 2.8.
     #[test]
     fn install_sets_githubs_attention_amber_for_warnings() {
@@ -1186,7 +1220,7 @@ mod tests {
             (egui::Theme::Dark, egui::Color32::from_rgb(0xD2, 0x99, 0x22)),
             (
                 egui::Theme::Light,
-                egui::Color32::from_rgb(0x9A, 0x67, 0x00),
+                egui::Color32::from_rgb(0x95, 0x63, 0x00),
             ),
         ] {
             let style = ctx.style_of(theme);
@@ -1248,10 +1282,18 @@ mod tests {
     }
 
     // The palette's success green is GitHub's pair from the same set:
-    // the light one reads at 4.8 on the light panel, where the dark
-    // green itself reads at 2.4.
+    // the light one reads at 4.5 on the light panel, where the dark
+    // green itself reads at 2.2.
     #[test]
     fn the_palettes_success_green_is_githubs() {
+        let ctx = egui::Context::default();
+        install(&ctx);
+        let light_panel = ctx.style_of(egui::Theme::Light).visuals.panel_fill;
+        assert_eq!(
+            light_panel,
+            egui::Color32::from_gray(240),
+            "premise: the light panel"
+        );
         for (name, success, expected, panel) in [
             (
                 "dark",
@@ -1262,8 +1304,8 @@ mod tests {
             (
                 "light",
                 Palette::LIGHT.success,
-                egui::Color32::from_rgb(0x1A, 0x7F, 0x37),
-                egui::Visuals::light().panel_fill,
+                egui::Color32::from_rgb(0x1A, 0x7E, 0x37),
+                light_panel,
             ),
         ] {
             assert_eq!(success, expected, "{name}");
@@ -1282,10 +1324,12 @@ mod tests {
     // position colours darkened until they read on the panel).
     #[test]
     fn darkened_to_read_darkens_until_the_colour_reads_at_4_5() {
-        let panel = egui::Visuals::light().panel_fill;
+        let ctx = egui::Context::default();
+        install(&ctx);
+        let panel = ctx.style_of(egui::Theme::Light).visuals.panel_fill;
         assert_eq!(
             panel,
-            egui::Color32::from_gray(248),
+            egui::Color32::from_gray(240),
             "premise: the light panel"
         );
         let white = darkened_to_read(egui::Color32::WHITE, panel);
@@ -1320,15 +1364,53 @@ mod tests {
         }
     }
 
+    // The quiet greys (a count under its limit, the chosen C rating's fill)
+    // keep the dark grey's contrast with its panel on the light panel, so
+    // they stay as quiet when the panel moves.
+    #[test]
+    fn the_quiet_greys_keep_the_dark_contrast_on_the_light_panel() {
+        let ctx = egui::Context::default();
+        install(&ctx);
+        let (dark_panel, light_panel) = (
+            ctx.style_of(egui::Theme::Dark).visuals.panel_fill,
+            ctx.style_of(egui::Theme::Light).visuals.panel_fill,
+        );
+        assert_eq!(
+            light_panel,
+            egui::Color32::from_gray(240),
+            "premise: the light panel"
+        );
+        for (name, dark, light) in [
+            (
+                "count_grey",
+                Palette::DARK.count_grey,
+                Palette::LIGHT.count_grey,
+            ),
+            (
+                "rating_c_fill",
+                Palette::DARK.rating_c_fill,
+                Palette::LIGHT.rating_c_fill,
+            ),
+        ] {
+            let (want, got) = (contrast(dark, dark_panel), contrast(light, light_panel));
+            assert!(
+                (want - got).abs() < 0.05,
+                "{name}: {got:.2} on the light panel, {want:.2} on the dark"
+            );
+        }
+    }
+
     // The lineup lists' position colours: the pitch's on the dark theme; on
-    // the light one each reads at 4.5 on the light panel (grey 248) and no
+    // the light one each reads at 4.5 on the light panel (grey 240) and no
     // darker than it needs to, so it keeps its hue.
     #[test]
     fn the_lineup_colours_read_at_4_5_on_the_light_panel() {
-        let panel = egui::Visuals::light().panel_fill;
+        let ctx = egui::Context::default();
+        install(&ctx);
+        let panel = ctx.style_of(egui::Theme::Light).visuals.panel_fill;
         assert_eq!(
             panel,
-            egui::Color32::from_gray(248),
+            egui::Color32::from_gray(240),
             "premise: the light panel"
         );
         let (dark, light) = (&Palette::DARK, &Palette::LIGHT);

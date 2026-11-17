@@ -31,7 +31,8 @@ use pes_savefile::model::{PlayerEntry, PlayerPositions, PlayerSkills, PlayerStat
 use pes_savefile::schema::fields::{ABILITY_FIELDS, PlayerField};
 use pes_savefile::schema::first_version_with;
 use studio_core::widgets::{
-    FIELD_SPACING, add_enabled, number_arrows, number_wheel_steps, resting_edge, step_number,
+    FIELD_SPACING, add_enabled, number_arrows, number_box, number_wheel_steps, resting_edge,
+    step_number,
 };
 use team_widgets::cards;
 use team_widgets::pitch::POSITION_ROWS;
@@ -1419,11 +1420,11 @@ fn number_field<T: egui::emath::Numeric>(
 ) -> egui::Response {
     let mut shown = shown;
     let mut response = number_arrows(ui, &mut shown, range.clone(), |ui, value| {
-        ui.add(
+        ui.add(number_box(
             egui::DragValue::new(value)
                 .range(range.clone())
                 .clamp_existing_to_range(false),
-        )
+        ))
     });
     if step_number(&mut shown, number_wheel_steps(ui, &response), range) {
         response.mark_changed();

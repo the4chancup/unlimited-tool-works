@@ -809,7 +809,7 @@ fn letter_color(
 }
 
 // A chosen C rating's square in the dark theme's grey (`#5a5a5a`) and in
-// its light twin (`#9f9f9f`) on the light theme, where the light theme's
+// its light twin (`#999999`) on the light theme, where the light theme's
 // dark letter still reads on it.
 #[test]
 fn a_chosen_c_rating_takes_each_themes_grey() {
@@ -824,7 +824,7 @@ fn a_chosen_c_rating_takes_each_themes_grey() {
     let mut window = Headless::sized(DEFAULT_PANE.x, 800.0);
     for (theme, grey) in [
         (egui::Theme::Dark, egui::Color32::from_gray(0x5a)),
-        (egui::Theme::Light, egui::Color32::from_gray(0x9f)),
+        (egui::Theme::Light, egui::Color32::from_gray(0x99)),
     ] {
         window.ctx.set_theme(theme);
         draw(&mut window, &mut view);

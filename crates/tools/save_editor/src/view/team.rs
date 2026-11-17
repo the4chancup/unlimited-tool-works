@@ -20,7 +20,7 @@ use pes_savefile::schema::fields::{TeamField, TeamText};
 use pes_savefile::schema::{VersionSchema, first_version_with_team, schema_for};
 use pes_version::PesVersion;
 use studio_core::widgets::{
-    FIELD_SPACING, add_enabled, add_enabled_ui, modal, modal_buttons, number_arrows,
+    FIELD_SPACING, add_enabled, add_enabled_ui, modal, modal_buttons, number_arrows, number_box,
     number_wheel_steps, step_number, text_box,
 };
 
@@ -563,11 +563,11 @@ fn number<T: egui::emath::Numeric>(
     let mut shown = shown;
     ui.label(label);
     let mut response = number_arrows(ui, &mut shown, range.clone(), |ui, value| {
-        ui.add(
+        ui.add(number_box(
             egui::DragValue::new(value)
                 .range(range.clone())
                 .clamp_existing_to_range(false),
-        )
+        ))
     });
     if step_number(&mut shown, number_wheel_steps(ui, &response), range) {
         response.mark_changed();

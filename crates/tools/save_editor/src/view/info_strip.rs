@@ -452,7 +452,9 @@ pub(super) fn general(
             let mut response = number_arrows(ui, &mut shirt_number, range.clone(), |ui, value| {
                 ui.add_sized(
                     [BOX_WIDTH, ui.spacing().interact_size.y],
-                    egui::DragValue::new(value).range(range.clone()),
+                    studio_core::widgets::number_box(
+                        egui::DragValue::new(value).range(range.clone()),
+                    ),
                 )
             });
             if step_number(&mut shirt_number, number_wheel_steps(ui, &response), range) {
@@ -645,7 +647,7 @@ fn number_box<N: egui::emath::Numeric + TryFrom<u64>>(
     let mut response = number_arrows(ui, &mut shown, range.clone(), |ui, value| {
         ui.add_sized(
             [BOX_WIDTH, ui.spacing().interact_size.y],
-            egui::DragValue::new(value).range(range.clone()),
+            studio_core::widgets::number_box(egui::DragValue::new(value).range(range.clone())),
         )
     });
     if step_number(&mut shown, number_wheel_steps(ui, &response), range) {
@@ -722,9 +724,11 @@ fn small_box(
     let mut response = number_arrows(ui, &mut shown, range.clone(), |ui, value| {
         ui.add_sized(
             [BOX_WIDTH, ui.spacing().interact_size.y],
-            egui::DragValue::new(value)
-                .range(range.clone())
-                .clamp_existing_to_range(false),
+            studio_core::widgets::number_box(
+                egui::DragValue::new(value)
+                    .range(range.clone())
+                    .clamp_existing_to_range(false),
+            ),
         )
     });
     if step_number(

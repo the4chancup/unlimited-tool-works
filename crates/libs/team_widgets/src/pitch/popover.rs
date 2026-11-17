@@ -4,8 +4,8 @@
 
 use pes_savefile::model::tactics::TeamTactics;
 use studio_core::widgets::{
-    add_enabled, add_enabled_ui, combo_item, number_arrows, number_wheel_steps, step_choice,
-    step_number, wheel_steps,
+    add_enabled, add_enabled_ui, combo_item, number_arrows, number_box, number_wheel_steps,
+    step_choice, step_number, wheel_steps,
 };
 
 use super::{drop_rule, outfield_range, overalls_of, position_label};
@@ -298,10 +298,12 @@ fn stepper(ui: &mut egui::Ui, value: &mut u8, min: u8, max: u8, enabled: bool) {
                 add_enabled(
                     ui,
                     enabled,
-                    egui::DragValue::new(value)
-                        .range(min..=max)
-                        .clamp_existing_to_range(false)
-                        .min_size(size),
+                    number_box(
+                        egui::DragValue::new(value)
+                            .range(min..=max)
+                            .clamp_existing_to_range(false)
+                            .min_size(size),
+                    ),
                 )
                 .on_disabled_hover_text(SPOT_FIXED)
             })
