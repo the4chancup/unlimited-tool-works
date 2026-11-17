@@ -1458,7 +1458,11 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     check held, range picks after the dialog's check, every hang bound 120 s; mutation runs'
     test timeout at least 150 s to match (`.cargo/mutants.toml`). Open: two clean pipelines;
     the first ran 2026-11-17 on `eb72467a` (the checkpoint and the Linux gates), beside a
-    sidekick's and an in-game run.
+    sidekick's and an in-game run. But GitHub's CI on the pushed `32649d79` failed one test,
+    `shell::tests::an_idle_window_wakes_for_the_moment_a_check_falls_due` ("the repaint is
+    asked for the check's due moment, got 0 s", `shell/mod.rs:1977`; run 43983909058),
+    which passed in both local runs: something else asked for an immediate repaint. To
+    diagnose and make deterministic before the cut.
     The watch list's two, both seen failing under load on 2026-11-16, fixed: the staging
     test's lock is released by the retried step itself, and the crash monitor's connect
     bound is 10 s (the crashed run's log showed the monitor missing 2 s)
