@@ -1937,8 +1937,11 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       typed digits pick a nation while the list is open (plan and DECISIONS 2026-11-17);
       its pipeline passed, with the Linux gates
     - [ ] the review: a SWE-2 loop over both slices, then one paid round (Astra's). Round 1
-      running 2026-11-17 at `1804f30e`, five parts (`.tmp/0_0_2/geninfo_rev/`, worktree
-      `4cc-studio-temp/review_geninfo`)
+      2026-11-17 at `1804f30e`, five parts (`.tmp/0_0_2/geninfo_rev/`): 15 accepted, among
+      them a typed `2` unreachable while an unlisted nation is held, two rows selected on a
+      typed pick's frame, test gaps; the lead's share done (the draft's Squad table grouped
+      under Main stats, SE-GUI-95, `gui.md`); the rest to SWE-2 (running, worktree
+      `4cc-studio-temp/geninfo_r1`, `.tmp/brief_geninfo_r1fix.md`); then round 2
     - [x] the 4cc patch's own nation table (different on PES 2015 to 2017) is not used: the
       base game's lists stand (the maintainer, 2026-11-17; plan and DECISIONS)
   - [ ] 0.0.2-posheight (the maintainer's change, 2026-11-17): the playable positions grid
