@@ -1822,8 +1822,11 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         - [x] Carbon's round 2 (edges) 2026-11-17 at `e3fc5b93`: 4 accepted, none of reach (a),
           the loop ends after their fixes (the plan's readout grey and two docstrings by the
           lead, `4526244e`; the rest in rw5)
-        - [ ] rw5 (SWE-2, `sk/framesrw5`): both parts' round-2 code fixes (the disabled and
-          hovered boxes' tests, one `gated_number`, one pass-count test, three comments)
+        - [x] rw5 2026-11-17 (SWE-2, `f2e0c127`, merge `11be9f8f`; the lead's rerun 1059 +
+          57, studio_core 548, clippy, fmt): both parts' round-2 code fixes (the disabled and
+          hovered boxes' tests, one `gated_number`, one pass-count test, three comments); the
+          frames' review loops end here
+        - [ ] the pipeline on `11be9f8f`
         - [x] the pipeline on `6de96354` 2026-11-17: the checkpoint and the Linux gates passed
     - [ ] the control edges (`plans/core/gui.md` "Other UI components", "Control edges")
       - [x] A1 2026-11-17 `studio_core` (`b98986f7`, merge `53bc3805`): the resting stroke,
@@ -1875,7 +1878,8 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       maintainer's, 2026-11-17; drafts to `a083b48c`); the draft approved by the maintainer
       2026-11-17
     - [x] the plan (`save_editor.md` "Editing UI" and "The player view") and DECISIONS
-    - [ ] the build, one SWE-2 brief with 0.0.2-keepsel's and 0.0.2-posheight's
+    - [ ] the build, one SWE-2 brief with 0.0.2-keepsel's and 0.0.2-posheight's (SWE-2,
+      `sk/paneshift`, from `11be9f8f`)
   - [ ] 0.0.2-keepsel (the maintainer's ruling, 2026-11-17): picking in the team dropdown
     the team the selection is already on keeps the selection (a player stays selected)
     -> verify: a test per case (his team keeps him, another team selects its row)
