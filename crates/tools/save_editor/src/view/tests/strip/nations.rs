@@ -36,6 +36,44 @@ fn list_row(pairs: &[(accesskit::NodeId, accesskit::Node)], text: &str) -> acces
         .unwrap_or_else(|| panic!("the {text:?} row"))
 }
 
+/// The combo's list opened and one frame to draw it.
+fn open_nation_list(window: &mut Headless, view: &mut SaveView) {
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, view, &|| Vec::new()));
+    click(window, nation_combo(&nodes), view);
+    window.frame(Vec::new(), |ui| show(ui, view, &|| Vec::new()));
+}
+
+/// The list's clip this frame: the tightest clip a nation row's text is
+/// clipped by (the closed combo's own text is clipped by the pane).
+fn list_clip(shapes: &[egui::epaint::ClippedShape]) -> Option<egui::Rect> {
+    shapes
+        .iter()
+        .filter_map(|clipped| match &clipped.shape {
+            egui::Shape::Text(shape) if shape.galley.job.text.contains(" - ") => {
+                Some(clipped.clip_rect)
+            }
+            _ => None,
+        })
+        .min_by(|a, b| a.area().total_cmp(&b.area()))
+}
+
+/// `text`'s row bounds when they lie inside the list's clip this frame,
+/// `None` while the row is off it or undrawn.
+fn row_inside_clip(
+    window: &mut Headless,
+    view: &mut SaveView,
+    text: &str,
+) -> Option<accesskit::Rect> {
+    let (_, pairs, shapes) = window.frame_ids(Vec::new(), |ui| show(ui, view, &|| Vec::new()));
+    let clip = list_clip(&shapes)?;
+    // A row past the clip reports no bounds.
+    let row = pairs
+        .iter()
+        .find(|(_, node)| node.role() == Role::Button && node.label() == Some(text))
+        .and_then(|(_, node)| node.bounds())?;
+    (row.y0 >= f64::from(clip.min.y) - 0.5 && row.y1 <= f64::from(clip.max.y) + 0.5).then_some(row)
+}
+
 // The closed combo reads the held nation as the version's own list
 // spells it — `ID - NAME`, the game's own spelling, USA against
 // UNITED STATES — and an ID the version lacks shows `ID - ?`. It
@@ -105,19 +143,7 @@ fn a_pick_in_the_nation_list_stores_it_and_the_held_row_shows_on_open() {
     for _ in 0..48 {
         let (_, pairs, shapes) =
             window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
-        // The list's clip: the tightest clip a nation row's text is
-        // clipped by (the closed combo's own text is clipped by the
-        // pane).
-        let Some(clip) = shapes
-            .iter()
-            .filter_map(|clipped| match &clipped.shape {
-                egui::Shape::Text(shape) if shape.galley.job.text.contains(" - ") => {
-                    Some(clipped.clip_rect)
-                }
-                _ => None,
-            })
-            .min_by(|a, b| a.area().total_cmp(&b.area()))
-        else {
+        let Some(clip) = list_clip(&shapes) else {
             continue;
         };
         // A row past the clip reports no bounds: skip the frame.
@@ -168,5 +194,106 @@ fn a_pick_in_the_nation_list_stores_it_and_the_held_row_shows_on_open() {
     assert!(
         !view.session.as_ref().unwrap().can_undo(),
         "the pick was one undo entry"
+    );
+}
+
+// Digits typed in the open list build the ID as typed: 2, 3 and 1 land
+// on 231 - SAN MARINO, each pick under the combo's key, so the three of
+// them are one undo entry and one Ctrl+Z puts 135 back.
+#[test]
+fn typed_digits_pick_a_nation_as_one_undo_entry() {
+    let (mut view, player_id) = open_with_nation(PesVersion::Pes21, "nation_digits", 135);
+    let mut window = Headless::sized(DEFAULT_PANE.x, 700.0);
+    let nation = |view: &SaveView| player_entry(view, player_id).basic.nationality;
+    assert_eq!(nation(&view), 135, "premise: 135 held");
+
+    open_nation_list(&mut window, &mut view);
+    // A digit a frame, each well inside the run's second (a frame's
+    // clock step is 1/60 s).
+    for digit in ["2", "3", "1"] {
+        window.frame(vec![egui::Event::Text(digit.to_owned())], |ui| {
+            show(ui, &mut view, &|| Vec::new())
+        });
+    }
+    assert_eq!(nation(&view), 231, "the typed 231 picked SAN MARINO");
+    // The pick scrolled into view: its row lies inside the list's clip
+    // once its bounds hold for a frame (the scroll animates).
+    let (mut last, mut inside) = (None, None);
+    for _ in 0..48 {
+        let row = row_inside_clip(&mut window, &mut view, "231 - SAN MARINO");
+        if row.is_some() && row == last {
+            inside = row;
+            break;
+        }
+        last = row;
+    }
+    inside.expect("the picked row never settled inside the list's clip");
+
+    // Escape closes the list; one Ctrl+Z restores 135, nothing left.
+    window.frame(
+        vec![key(egui::Key::Escape, egui::Modifiers::NONE, true)],
+        |ui| show(ui, &mut view, &|| Vec::new()),
+    );
+    window.frame(vec![key(egui::Key::Z, egui::Modifiers::CTRL, true)], |ui| {
+        show(ui, &mut view, &|| Vec::new())
+    });
+    assert_eq!(nation(&view), 135, "one undo restores 135");
+    assert!(
+        !view.session.as_ref().unwrap().can_undo(),
+        "the typed picks were one undo entry"
+    );
+}
+
+// A second's pause between digits starts a new ID: after the typed 2
+// picked BAHRAIN, a 1 landing once the run's second has passed picks
+// 1 - AFGHANISTAN, not a continuation to 21.
+#[test]
+fn a_seconds_pause_between_digits_starts_a_new_id() {
+    let (mut view, player_id) = open_with_nation(PesVersion::Pes21, "nation_pause", 135);
+    let mut window = Headless::sized(DEFAULT_PANE.x, 700.0);
+    let nation = |view: &SaveView| player_entry(view, player_id).basic.nationality;
+
+    open_nation_list(&mut window, &mut view);
+    window.frame(vec![egui::Event::Text("2".to_owned())], |ui| {
+        show(ui, &mut view, &|| Vec::new())
+    });
+    assert_eq!(nation(&view), 2, "the typed 2 picked BAHRAIN");
+    // 61 frames with no input move egui's clock past the run's second.
+    idle_frames(&mut window, &mut view, 61);
+    window.frame(vec![egui::Event::Text("1".to_owned())], |ui| {
+        show(ui, &mut view, &|| Vec::new())
+    });
+    assert_eq!(
+        nation(&view),
+        1,
+        "the 1 after the pause started a new ID, not 21"
+    );
+}
+
+// A digit is a pick only while the list is open and only a digit: a
+// typed 5 with it closed changes nothing, nor does a non-digit in it.
+#[test]
+fn a_digit_picks_only_in_the_open_list_and_only_a_digit() {
+    let (mut view, player_id) = open_with_nation(PesVersion::Pes21, "nation_non_digit", 135);
+    let mut window = Headless::sized(DEFAULT_PANE.x, 700.0);
+    let nation = |view: &SaveView| player_entry(view, player_id).basic.nationality;
+    assert_eq!(nation(&view), 135, "premise: 135 held");
+
+    window.frame(vec![egui::Event::Text("5".to_owned())], |ui| {
+        show(ui, &mut view, &|| Vec::new())
+    });
+    assert_eq!(
+        nation(&view),
+        135,
+        "a digit with the list closed is no pick"
+    );
+    open_nation_list(&mut window, &mut view);
+    window.frame(vec![egui::Event::Text("x".to_owned())], |ui| {
+        show(ui, &mut view, &|| Vec::new())
+    });
+    assert_eq!(
+        nation(&view),
+        135,
+        "a non-digit in the open list is no pick"
     );
 }

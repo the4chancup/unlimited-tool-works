@@ -5,17 +5,18 @@
 //! panel's Nation combo shows the open save's version's own list, so a
 //! save is edited the same without the game installed.
 
+use std::borrow::Cow;
+
 use pes_version::PesVersion;
 
 /// The versions' nation lists, parsed from the TSV on first read: one
 /// row per ID found in any version, its English name in each version's
 /// column, empty where that version lacks it.
-static NATIONS: std::sync::LazyLock<[Vec<(u16, &'static str)>; 7]> =
-    std::sync::LazyLock::new(parse);
+static NATIONS: std::sync::LazyLock<[Vec<(u16, String)>; 7]> = std::sync::LazyLock::new(parse);
 
-/// `version`'s nations `(id, name)` ordered by ID — the Nation combo's
-/// entries, each `"{id} - {name}"`.
-pub(crate) fn nations(version: PesVersion) -> &'static [(u16, &'static str)] {
+/// `version`'s nations ordered by ID — the Nation combo's entries, each
+/// `(id, its "{id} - {name}" text built at load)`.
+pub(crate) fn nations(version: PesVersion) -> &'static [(u16, String)] {
     let index = PesVersion::ALL
         .iter()
         .position(|&v| v == version)
@@ -23,11 +24,25 @@ pub(crate) fn nations(version: PesVersion) -> &'static [(u16, &'static str)] {
     &NATIONS[index]
 }
 
+/// `id` worded as the Nation combo words it (`"{id} - {name}"`, or
+/// `"{id} - ?"` where `version`'s list lacks the ID): the combo's text
+/// and the changes' Nation rows share the one wording. The listed case
+/// borrows the text built at load; only the `?` allocates.
+pub(crate) fn nation_text(version: PesVersion, id: u16) -> Cow<'static, str> {
+    let own = nations(version);
+    match own.binary_search_by_key(&id, |(nation, _)| *nation) {
+        Ok(at) => Cow::Borrowed(own[at].1.as_str()),
+        Err(_) => Cow::Owned(format!("{id} - ?")),
+    }
+}
+
 /// The TSV parsed: a header row `id` then `PesVersion::ALL`'s `Display`
 /// names in order — asserted, since a reordered file is a programming
 /// error — then one row per ID, an empty cell meaning the version
-/// lacks it.
-fn parse() -> [Vec<(u16, &'static str)>; 7] {
+/// lacks it. Each row keeps its `"{id} - {name}"` text rather than the
+/// bare name: the text is all the combo and the diff rows ever show,
+/// and building it here pays it once for every frame and row.
+fn parse() -> [Vec<(u16, String)>; 7] {
     let mut lines = include_str!("../data/nations.tsv").lines();
     let header = lines.next().expect("nations.tsv is empty");
     let mut columns = header.split('\t');
@@ -41,7 +56,7 @@ fn parse() -> [Vec<(u16, &'static str)>; 7] {
         );
     }
     assert_eq!(columns.next(), None, "nations.tsv header: {header}");
-    let mut lists: [Vec<(u16, &'static str)>; 7] = std::array::from_fn(|_| Vec::new());
+    let mut lists: [Vec<(u16, String)>; 7] = std::array::from_fn(|_| Vec::new());
     for line in lines {
         let mut cells = line.split('\t');
         let id: u16 = cells
@@ -51,7 +66,7 @@ fn parse() -> [Vec<(u16, &'static str)>; 7] {
         for list in &mut lists {
             match cells.next() {
                 Some("") => {}
-                Some(name) => list.push((id, name)),
+                Some(name) => list.push((id, format!("{id} - {name}"))),
                 None => panic!("nations.tsv row {line:?} ends early"),
             }
         }
@@ -66,12 +81,13 @@ mod tests {
 
     use super::*;
 
-    /// `version`'s nation `id`'s name, `None` where the version lacks it.
-    fn name(version: PesVersion, id: u16) -> Option<&'static str> {
+    /// `version`'s nation `id`'s `"{id} - {name}"` text, `None` where the
+    /// version lacks it.
+    fn text(version: PesVersion, id: u16) -> Option<&'static str> {
         nations(version)
             .iter()
             .find(|(nation, _)| *nation == id)
-            .map(|(_, name)| *name)
+            .map(|(_, text)| text.as_str())
     }
 
     // The lists are each version's own: 189 nations in PES 2015, 191 in
@@ -95,11 +111,11 @@ mod tests {
     // spells it.
     #[test]
     fn the_names_and_ids_follow_the_versions() {
-        assert_eq!(name(PesVersion::Pes17, 135), Some("UNITED STATES"));
-        assert_eq!(name(PesVersion::Pes21, 135), Some("USA"));
-        assert_eq!(name(PesVersion::Pes15, 4), None, "PES 2015 lacks BHUTAN");
-        assert_eq!(name(PesVersion::Pes21, 100), None, "PES 2021 lacks RÉUNION");
-        assert_eq!(name(PesVersion::Pes21, 260), Some("Others"));
+        assert_eq!(text(PesVersion::Pes17, 135), Some("135 - UNITED STATES"));
+        assert_eq!(text(PesVersion::Pes21, 135), Some("135 - USA"));
+        assert_eq!(text(PesVersion::Pes15, 4), None, "PES 2015 lacks BHUTAN");
+        assert_eq!(text(PesVersion::Pes21, 100), None, "PES 2021 lacks RÉUNION");
+        assert_eq!(text(PesVersion::Pes21, 260), Some("260 - Others"));
     }
 
     // Every list is ordered by ID, none twice.

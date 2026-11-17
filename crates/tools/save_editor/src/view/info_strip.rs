@@ -24,6 +24,7 @@ use team_widgets::cards;
 use team_widgets::names::append_name;
 
 use crate::session::Session;
+use crate::session::undo::RUN_PAUSE;
 use crate::view::abilities::{
     CELL_PADDING, PLAYING_STYLE_LABEL, REGISTERED_POSITION_LABEL, SMALL_STATS, STRONGER_FOOT_LABEL,
     STRONGER_HAND_LABEL, SmallStat, gated_label, gating_tooltip, position_label,
@@ -776,10 +777,7 @@ fn nation_row(
 ) {
     let own = crate::nations::nations(version);
     let listed = own.iter().any(|(id, _)| *id == held);
-    let text = own.iter().find(|(id, _)| *id == held).map_or_else(
-        || format!("{held} - ?"),
-        |(id, name)| format!("{id} - {name}"),
-    );
+    let text = crate::nations::nation_text(version, held);
     ui.horizontal(|ui| {
         ui.spacing_mut().item_spacing.x = 0.0;
         let label = ui.label(NATION_LABEL);
@@ -795,15 +793,73 @@ fn nation_row(
             .selected_text(text)
             .width(field_width)
             .show_ui(ui, |ui| {
+                // A digit typed while the list is open (an all-digit
+                // Text event with no Ctrl or Cmd held) joins the ID run
+                // in progress: the digits that landed within the undo
+                // run's pause of each other, a new ID after it, as a
+                // browser's dropdown does. The run and its last digit's
+                // time are the combo's temp data, dropped as the list
+                // opens; a run that prefixes no ID picks nothing. The
+                // digits' events are taken out of the input so nothing
+                // drawn after reads them again.
+                let typed = egui::Id::unique(("general nation list typed", player_id));
+                let now = ui.input(|input| input.time);
+                let (mut run, mut at) = ui
+                    .data(|data| data.get_temp::<(String, f64)>(typed))
+                    .filter(|(_, at)| was_open && now - at <= RUN_PAUSE)
+                    .unwrap_or_default();
+                let digits: String = ui.input(|input| {
+                    if input.modifiers.ctrl || input.modifiers.command {
+                        return String::new();
+                    }
+                    input
+                        .events
+                        .iter()
+                        .filter_map(|event| match event {
+                            egui::Event::Text(text) if text.chars().all(|c| c.is_ascii_digit()) => {
+                                Some(text.as_str())
+                            }
+                            _ => None,
+                        })
+                        .collect()
+                });
+                if !digits.is_empty() {
+                    ui.input_mut(|input| {
+                        input.events.retain(|event| {
+                            !matches!(event, egui::Event::Text(text)
+                                if text.chars().all(|c| c.is_ascii_digit()))
+                        });
+                    });
+                    run.push_str(&digits);
+                    at = now;
+                }
+                let typed_pick = if digits.is_empty() {
+                    None
+                } else {
+                    (!listed)
+                        .then_some(held)
+                        .into_iter()
+                        .chain(own.iter().map(|(id, _)| *id))
+                        .find(|id| id.to_string().starts_with(&run))
+                };
+                ui.data_mut(|data| data.insert_temp(typed, (run, at)));
                 if !listed {
-                    let response = combo_item(ui, &mut picked, held, format!("{held} - ?"));
-                    if !was_open {
+                    let response = combo_item(
+                        ui,
+                        &mut picked,
+                        held,
+                        crate::nations::nation_text(version, held),
+                    );
+                    if !was_open || typed_pick == Some(held) {
                         response.scroll_to_me(Some(egui::Align::Center));
                     }
                 }
-                for (id, name) in own {
-                    let response = combo_item(ui, &mut picked, *id, format!("{id} - {name}"));
-                    if !was_open && *id == held {
+                for (id, row_text) in own {
+                    if typed_pick == Some(*id) {
+                        picked = *id;
+                    }
+                    let response = combo_item(ui, &mut picked, *id, row_text);
+                    if (!was_open && *id == held) || typed_pick == Some(*id) {
                         response.scroll_to_me(Some(egui::Align::Center));
                     }
                 }
