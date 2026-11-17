@@ -18779,3 +18779,15 @@ earlier sessions land, without the monitor's writer. A failure at once costs not
 a timeout would double the two seconds the window waits before opening.
 Plan: `plans/core/architecture.md` "Diagnostic logging" (the monitor's link) and "Repro
 bundles" (earlier sessions); `plans/core/gui.md` ST-RUN-13, ST-REP-10.
+## 2026-11-18 — pes_savefile — Team TOML's numbers read as the game or the Save editor shows them
+Decision: form, injury resistance and weak foot are written as the game shows them, one above
+the stored value. A roster slot in `[tactics]` (the starting eleven, the bench, the players
+joining the attack, the set-piece takers and the captain, an instruction's target) counts
+from 1, as `[players.NN]` does, and a marked opponent is his starter 1 to 11; each is 0 for
+nobody. A file exported by 0.0.1 is not read the old way (the maintainer, at the 0.0.2
+changelog).
+Why: Team TOML is plain text so managers can edit it directly, and a number unlike the one
+the game or the screens show is one they get wrong: `captain = 22` meant `[players.23]`. The
+maintainer noted that 0.0.2 already breaks older files elsewhere, and before 1.0 no older
+format is kept.
+Plan: `spec/pes_savefile/operations.md`, the Team TOML goals and its example block.

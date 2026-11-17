@@ -343,6 +343,12 @@ positions, motion, edit flags, and the complete aesthetics including the
 ingame-face parameters (which the legacy formats omit)). Goals:
 
 - Readable and editable in a text editor without opening Unlimited Tool Works.
+- A number reads as the game or the Save editor shows it, not as the save stores it:
+  - form, injury resistance and weak foot, stored one lower, are written 1 to 8, 1 to 3
+    and 1 to 4;
+  - a roster slot in `[tactics]` counts from 1, as `[players.NN]` does, and a marked
+    opponent is his starter 1 to 11, each 0 for nobody (stored counting from 0, 255 for
+    nobody).
 - The per-player authorable appearance tables use the exact `PlayerSettings` schema from
   `settings.toml`. Full player records additionally retain boots/gloves IDs over their whole
   stored range for save interchange, at player level; `settings.toml`'s own top-level
@@ -403,18 +409,18 @@ stadium = false                 # PES 20 and later
 strip = false                   # PES 17 only
 
 [tactics]
-starting_eleven = [0, 10, 3, 1, 5, 4, 9, 2, 6, 7, 8]  # roster slots, counting from 0
-bench_order = [11, 12, ...]     # the bench: 12 roster slots, counting from 0
-players_to_join_attack = [255, 255, 255]             # roster slots, counting from 0; 255 = nobody
+starting_eleven = [1, 11, 4, 2, 6, 5, 10, 3, 7, 8, 9] # roster slots, numbered as the [players.NN] tables
+bench_order = [12, 13, ...]     # the bench: 12 roster slots, numbered as the [players.NN] tables; 0 = nobody
+players_to_join_attack = [0, 0, 0]                   # roster slots, numbered as the [players.NN] tables; 0 = nobody
 
-[tactics.set_pieces]            # roster slots, counting from 0; 255 = nobody
-free_kick_long = 3
-free_kick_short = 3
-free_kick_second = 4
-corner_left = 5
-corner_right = 5
-penalty = 9
-captain = 0
+[tactics.set_pieces]            # roster slots, numbered as the [players.NN] tables; 0 = nobody
+free_kick_long = 4
+free_kick_short = 4
+free_kick_second = 5
+corner_left = 6
+corner_right = 6
+penalty = 10
+captain = 1
 
 [tactics.auto]
 substitution = 0                # as the game stores it
@@ -423,7 +429,7 @@ preset_change = false
 attack_defence_levels = false   # PES 17 and later
 
 [tactics.preset_1]
-man_marking = [255, 255, 255, 255, 10, 255, 255, 2, 4, 255, 5]   # for each formation slot, the opponent's formation slot he marks; 255 = nobody
+man_marking = [0, 0, 0, 0, 11, 0, 0, 3, 5, 0, 6]                 # for each starter, in starting_eleven's order, the opponent's starter he marks (1 to 11); 0 = nobody
 [tactics.preset_1.style]
 attacking_style = "possession"  # "counter_attack" | "possession"
 attacking_zone = "wide"         # "centre" | "wide"
@@ -439,12 +445,12 @@ defensive_line = 3              # 1 to 10
 compactness = 7                 # 1 to 10
 numbers_in_attack = 3           # 1 few, 2 medium, 3 many
 numbers_in_defence = 3          # 1 few, 2 medium, 3 many
-# players: where each starting_eleven player stands, in its order; roster slot 0 is [players.01]
+# players: where each starting_eleven player stands, in its order
 [tactics.preset_1.formation_1]  # formation_1 kick-off, formation_2 in possession, formation_3 out of possession
 players = [{ position = "GK", x = 52, y = 2 }, ...]
 [tactics.preset_1.instructions] # PES 17 and later; names converted to the target version's on import
-attack = [{ instruction = "hug_the_touchline", player = 3 }, { instruction = "off", player = 0 }]
-defence = [{ instruction = "off", player = 0 }, { instruction = "off", player = 0 }]
+attack = [{ instruction = "hug_the_touchline", player = 4 }, { instruction = "off", player = 1 }]
+defence = [{ instruction = "off", player = 1 }, { instruction = "off", player = 1 }]
 
 [players.01]                    # roster slot 01 to 40 (01 to 32 on PES 15 to 18)
 name = "YOUR SKILL: A FAILURE"
@@ -458,7 +464,7 @@ boots_id = 3601
 gloves_id = 0
 base_copy_id = 84101            # the player whose look this one copies; his own id (the team id times 100 plus the slot) means none and becomes the target player's own id on import
 
-[players.01.stats]              # stored values: the game shows weak foot, form and injury resistance one higher
+[players.01.stats]
 attacking_prowess = 77
 ball_control = 77
 dribbling = 77
@@ -484,10 +490,10 @@ catching = 40
 clearing = 40                   # PES 16 and later
 reflexes = 40                   # PES 16 and later
 coverage = 40                   # PES 16 and later
-weak_foot_usage = 1             # 0 to 3
-weak_foot_accuracy = 1          # 0 to 3
-form = 3                        # 0 to 7
-injury_resistance = 1           # 0 to 2
+weak_foot_usage = 2             # 1 to 4
+weak_foot_accuracy = 2          # 1 to 4
+form = 4                        # 1 to 8
+injury_resistance = 2           # 1 to 3
 
 [players.01.positions]
 registered = "CF"               # "GK" "CB" "LB" "RB" "DMF" "CMF" "LMF" "RMF" "AMF" "LWF" "RWF" "SS" "CF"

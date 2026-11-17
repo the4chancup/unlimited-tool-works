@@ -11,18 +11,18 @@ short_name = "SMP"
 # kit_slots = [{ number = 0, binding = 0 }] # PES 17
 
 [tactics]
-starting_eleven = [0, 22, 12, 5, 4, 20, 21, 17, 9, 2, 10]
-bench_order = [11, 19, 15, 14, 8, 6, 3, 16, 7, 18, 13, 1]
-players_to_join_attack = [255, 255, 255] # roster slots; 255 = none
+starting_eleven = [1, 23, 13, 6, 5, 21, 22, 18, 10, 3, 11] # roster slots, numbered as the [players.NN] tables
+bench_order = [12, 20, 16, 15, 9, 7, 4, 17, 8, 19, 14, 2] # the bench: 12 roster slots, numbered as the [players.NN] tables; 0 = nobody
+players_to_join_attack = [0, 0, 0]       # roster slots, numbered as the [players.NN] tables; 0 = nobody
 
 [tactics.set_pieces]
-free_kick_long = 20             # roster slots; 255 = none
-free_kick_short = 9             # roster slots; 255 = none
-free_kick_second = 2            # roster slots; 255 = none
-corner_left = 22                # roster slots; 255 = none
-corner_right = 4                # roster slots; 255 = none
-penalty = 10                    # roster slots; 255 = none
-captain = 10                    # roster slots; 255 = none
+free_kick_long = 21             # roster slots, numbered as the [players.NN] tables; 0 = nobody
+free_kick_short = 10            # roster slots, numbered as the [players.NN] tables; 0 = nobody
+free_kick_second = 3            # roster slots, numbered as the [players.NN] tables; 0 = nobody
+corner_left = 23                # roster slots, numbered as the [players.NN] tables; 0 = nobody
+corner_right = 5                # roster slots, numbered as the [players.NN] tables; 0 = nobody
+penalty = 11                    # roster slots, numbered as the [players.NN] tables; 0 = nobody
+captain = 11                    # roster slots, numbered as the [players.NN] tables; 0 = nobody
 
 [tactics.auto]
 substitution = 0                # PES 15+; the stored setting byte
@@ -31,7 +31,7 @@ preset_change = false           # PES 15+
 # attack_defence_levels = false   # PES 17+
 
 [tactics.preset_1]
-man_marking = [255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255] # marked opponent's formation slot per own slot; 255 = none
+man_marking = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]                       # for each starter, in starting_eleven's order, the opponent's starter he marks (1 to 11); 0 = nobody
 
 [tactics.preset_1.style]
 attacking_style = "counter_attack" # "counter_attack" | "possession"
@@ -96,7 +96,7 @@ players = [
 ]
 
 [tactics.preset_2]
-man_marking = [255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255] # marked opponent's formation slot per own slot; 255 = none
+man_marking = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]                       # for each starter, in starting_eleven's order, the opponent's starter he marks (1 to 11); 0 = nobody
 
 [tactics.preset_2.style]
 attacking_style = "possession"  # "counter_attack" | "possession"
@@ -161,7 +161,7 @@ players = [
 ]
 
 [tactics.preset_3]
-man_marking = [255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255] # marked opponent's formation slot per own slot; 255 = none
+man_marking = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]                       # for each starter, in starting_eleven's order, the opponent's starter he marks (1 to 11); 0 = nobody
 
 [tactics.preset_3.style]
 attacking_style = "counter_attack" # "counter_attack" | "possession"
@@ -263,10 +263,10 @@ catching = 74
 # clearing = 40                   # PES 16+
 # reflexes = 40                   # PES 16+
 # coverage = 40                   # PES 16+
-weak_foot_usage = 1             # 0-3 stored
-weak_foot_accuracy = 1          # 0-3 stored
-form = 3                        # 0-7 stored
-injury_resistance = 0           # 0-2 stored
+weak_foot_usage = 2             # 1 to 4
+weak_foot_accuracy = 2          # 1 to 4
+form = 4                        # 1 to 8
+injury_resistance = 1           # 1 to 3
 
 [players.01.positions]
 registered = "GK"               # "GK" "CB" "LB" "RB" "DMF" "CMF" "LMF" "RMF" "AMF" "LWF" "RWF" "SS" "CF"
@@ -473,10 +473,10 @@ catching = 77
 # clearing = 40                   # PES 16+
 # reflexes = 40                   # PES 16+
 # coverage = 40                   # PES 16+
-weak_foot_usage = 1             # 0-3 stored
-weak_foot_accuracy = 1          # 0-3 stored
-form = 3                        # 0-7 stored
-injury_resistance = 0           # 0-2 stored
+weak_foot_usage = 2             # 1 to 4
+weak_foot_accuracy = 2          # 1 to 4
+form = 4                        # 1 to 8
+injury_resistance = 1           # 1 to 3
 
 [players.02.positions]
 registered = "SS"               # "GK" "CB" "LB" "RB" "DMF" "CMF" "LMF" "RMF" "AMF" "LWF" "RWF" "SS" "CF"
@@ -683,10 +683,10 @@ catching = 99
 # clearing = 40                   # PES 16+
 # reflexes = 40                   # PES 16+
 # coverage = 40                   # PES 16+
-weak_foot_usage = 1             # 0-3 stored
-weak_foot_accuracy = 3          # 0-3 stored
-form = 7                        # 0-7 stored
-injury_resistance = 2           # 0-2 stored
+weak_foot_usage = 2             # 1 to 4
+weak_foot_accuracy = 4          # 1 to 4
+form = 8                        # 1 to 8
+injury_resistance = 3           # 1 to 3
 
 [players.03.positions]
 registered = "CF"               # "GK" "CB" "LB" "RB" "DMF" "CMF" "LMF" "RMF" "AMF" "LWF" "RWF" "SS" "CF"
@@ -893,10 +893,10 @@ catching = 77
 # clearing = 40                   # PES 16+
 # reflexes = 40                   # PES 16+
 # coverage = 40                   # PES 16+
-weak_foot_usage = 3             # 0-3 stored
-weak_foot_accuracy = 3          # 0-3 stored
-form = 3                        # 0-7 stored
-injury_resistance = 0           # 0-2 stored
+weak_foot_usage = 4             # 1 to 4
+weak_foot_accuracy = 4          # 1 to 4
+form = 4                        # 1 to 8
+injury_resistance = 1           # 1 to 3
 
 [players.04.positions]
 registered = "RB"               # "GK" "CB" "LB" "RB" "DMF" "CMF" "LMF" "RMF" "AMF" "LWF" "RWF" "SS" "CF"
@@ -1103,10 +1103,10 @@ catching = 77
 # clearing = 40                   # PES 16+
 # reflexes = 40                   # PES 16+
 # coverage = 40                   # PES 16+
-weak_foot_usage = 3             # 0-3 stored
-weak_foot_accuracy = 3          # 0-3 stored
-form = 3                        # 0-7 stored
-injury_resistance = 0           # 0-2 stored
+weak_foot_usage = 4             # 1 to 4
+weak_foot_accuracy = 4          # 1 to 4
+form = 4                        # 1 to 8
+injury_resistance = 1           # 1 to 3
 
 [players.05.positions]
 registered = "RB"               # "GK" "CB" "LB" "RB" "DMF" "CMF" "LMF" "RMF" "AMF" "LWF" "RWF" "SS" "CF"
@@ -1313,10 +1313,10 @@ catching = 88
 # clearing = 40                   # PES 16+
 # reflexes = 40                   # PES 16+
 # coverage = 40                   # PES 16+
-weak_foot_usage = 1             # 0-3 stored
-weak_foot_accuracy = 3          # 0-3 stored
-form = 7                        # 0-7 stored
-injury_resistance = 2           # 0-2 stored
+weak_foot_usage = 2             # 1 to 4
+weak_foot_accuracy = 4          # 1 to 4
+form = 8                        # 1 to 8
+injury_resistance = 3           # 1 to 3
 
 [players.06.positions]
 registered = "CMF"              # "GK" "CB" "LB" "RB" "DMF" "CMF" "LMF" "RMF" "AMF" "LWF" "RWF" "SS" "CF"
@@ -1523,10 +1523,10 @@ catching = 77
 # clearing = 40                   # PES 16+
 # reflexes = 40                   # PES 16+
 # coverage = 40                   # PES 16+
-weak_foot_usage = 3             # 0-3 stored
-weak_foot_accuracy = 3          # 0-3 stored
-form = 3                        # 0-7 stored
-injury_resistance = 0           # 0-2 stored
+weak_foot_usage = 4             # 1 to 4
+weak_foot_accuracy = 4          # 1 to 4
+form = 4                        # 1 to 8
+injury_resistance = 1           # 1 to 3
 
 [players.07.positions]
 registered = "RB"               # "GK" "CB" "LB" "RB" "DMF" "CMF" "LMF" "RMF" "AMF" "LWF" "RWF" "SS" "CF"
@@ -1733,10 +1733,10 @@ catching = 77
 # clearing = 40                   # PES 16+
 # reflexes = 40                   # PES 16+
 # coverage = 40                   # PES 16+
-weak_foot_usage = 1             # 0-3 stored
-weak_foot_accuracy = 1          # 0-3 stored
-form = 3                        # 0-7 stored
-injury_resistance = 0           # 0-2 stored
+weak_foot_usage = 2             # 1 to 4
+weak_foot_accuracy = 2          # 1 to 4
+form = 4                        # 1 to 8
+injury_resistance = 1           # 1 to 3
 
 [players.08.positions]
 registered = "CMF"              # "GK" "CB" "LB" "RB" "DMF" "CMF" "LMF" "RMF" "AMF" "LWF" "RWF" "SS" "CF"
@@ -1943,10 +1943,10 @@ catching = 77
 # clearing = 40                   # PES 16+
 # reflexes = 40                   # PES 16+
 # coverage = 40                   # PES 16+
-weak_foot_usage = 1             # 0-3 stored
-weak_foot_accuracy = 1          # 0-3 stored
-form = 3                        # 0-7 stored
-injury_resistance = 0           # 0-2 stored
+weak_foot_usage = 2             # 1 to 4
+weak_foot_accuracy = 2          # 1 to 4
+form = 4                        # 1 to 8
+injury_resistance = 1           # 1 to 3
 
 [players.09.positions]
 registered = "CB"               # "GK" "CB" "LB" "RB" "DMF" "CMF" "LMF" "RMF" "AMF" "LWF" "RWF" "SS" "CF"
@@ -2153,10 +2153,10 @@ catching = 88
 # clearing = 40                   # PES 16+
 # reflexes = 40                   # PES 16+
 # coverage = 40                   # PES 16+
-weak_foot_usage = 1             # 0-3 stored
-weak_foot_accuracy = 3          # 0-3 stored
-form = 7                        # 0-7 stored
-injury_resistance = 2           # 0-2 stored
+weak_foot_usage = 2             # 1 to 4
+weak_foot_accuracy = 4          # 1 to 4
+form = 8                        # 1 to 8
+injury_resistance = 3           # 1 to 3
 
 [players.10.positions]
 registered = "SS"               # "GK" "CB" "LB" "RB" "DMF" "CMF" "LMF" "RMF" "AMF" "LWF" "RWF" "SS" "CF"
@@ -2363,10 +2363,10 @@ catching = 99
 # clearing = 40                   # PES 16+
 # reflexes = 40                   # PES 16+
 # coverage = 40                   # PES 16+
-weak_foot_usage = 1             # 0-3 stored
-weak_foot_accuracy = 3          # 0-3 stored
-form = 7                        # 0-7 stored
-injury_resistance = 2           # 0-2 stored
+weak_foot_usage = 2             # 1 to 4
+weak_foot_accuracy = 4          # 1 to 4
+form = 8                        # 1 to 8
+injury_resistance = 3           # 1 to 3
 
 [players.11.positions]
 registered = "CF"               # "GK" "CB" "LB" "RB" "DMF" "CMF" "LMF" "RMF" "AMF" "LWF" "RWF" "SS" "CF"
@@ -2573,10 +2573,10 @@ catching = 74
 # clearing = 40                   # PES 16+
 # reflexes = 40                   # PES 16+
 # coverage = 40                   # PES 16+
-weak_foot_usage = 1             # 0-3 stored
-weak_foot_accuracy = 1          # 0-3 stored
-form = 3                        # 0-7 stored
-injury_resistance = 0           # 0-2 stored
+weak_foot_usage = 2             # 1 to 4
+weak_foot_accuracy = 2          # 1 to 4
+form = 4                        # 1 to 8
+injury_resistance = 1           # 1 to 3
 
 [players.12.positions]
 registered = "GK"               # "GK" "CB" "LB" "RB" "DMF" "CMF" "LMF" "RMF" "AMF" "LWF" "RWF" "SS" "CF"
@@ -2783,10 +2783,10 @@ catching = 77
 # clearing = 40                   # PES 16+
 # reflexes = 40                   # PES 16+
 # coverage = 40                   # PES 16+
-weak_foot_usage = 1             # 0-3 stored
-weak_foot_accuracy = 1          # 0-3 stored
-form = 3                        # 0-7 stored
-injury_resistance = 0           # 0-2 stored
+weak_foot_usage = 2             # 1 to 4
+weak_foot_accuracy = 2          # 1 to 4
+form = 4                        # 1 to 8
+injury_resistance = 1           # 1 to 3
 
 [players.13.positions]
 registered = "CMF"              # "GK" "CB" "LB" "RB" "DMF" "CMF" "LMF" "RMF" "AMF" "LWF" "RWF" "SS" "CF"
@@ -2993,10 +2993,10 @@ catching = 77
 # clearing = 40                   # PES 16+
 # reflexes = 40                   # PES 16+
 # coverage = 40                   # PES 16+
-weak_foot_usage = 1             # 0-3 stored
-weak_foot_accuracy = 1          # 0-3 stored
-form = 3                        # 0-7 stored
-injury_resistance = 0           # 0-2 stored
+weak_foot_usage = 2             # 1 to 4
+weak_foot_accuracy = 2          # 1 to 4
+form = 4                        # 1 to 8
+injury_resistance = 1           # 1 to 3
 
 [players.14.positions]
 registered = "SS"               # "GK" "CB" "LB" "RB" "DMF" "CMF" "LMF" "RMF" "AMF" "LWF" "RWF" "SS" "CF"
@@ -3203,10 +3203,10 @@ catching = 77
 # clearing = 40                   # PES 16+
 # reflexes = 40                   # PES 16+
 # coverage = 40                   # PES 16+
-weak_foot_usage = 1             # 0-3 stored
-weak_foot_accuracy = 1          # 0-3 stored
-form = 3                        # 0-7 stored
-injury_resistance = 0           # 0-2 stored
+weak_foot_usage = 2             # 1 to 4
+weak_foot_accuracy = 2          # 1 to 4
+form = 4                        # 1 to 8
+injury_resistance = 1           # 1 to 3
 
 [players.15.positions]
 registered = "CB"               # "GK" "CB" "LB" "RB" "DMF" "CMF" "LMF" "RMF" "AMF" "LWF" "RWF" "SS" "CF"
@@ -3413,10 +3413,10 @@ catching = 77
 # clearing = 40                   # PES 16+
 # reflexes = 40                   # PES 16+
 # coverage = 40                   # PES 16+
-weak_foot_usage = 3             # 0-3 stored
-weak_foot_accuracy = 3          # 0-3 stored
-form = 3                        # 0-7 stored
-injury_resistance = 0           # 0-2 stored
+weak_foot_usage = 4             # 1 to 4
+weak_foot_accuracy = 4          # 1 to 4
+form = 4                        # 1 to 8
+injury_resistance = 1           # 1 to 3
 
 [players.16.positions]
 registered = "LB"               # "GK" "CB" "LB" "RB" "DMF" "CMF" "LMF" "RMF" "AMF" "LWF" "RWF" "SS" "CF"
@@ -3623,10 +3623,10 @@ catching = 77
 # clearing = 40                   # PES 16+
 # reflexes = 40                   # PES 16+
 # coverage = 40                   # PES 16+
-weak_foot_usage = 1             # 0-3 stored
-weak_foot_accuracy = 1          # 0-3 stored
-form = 3                        # 0-7 stored
-injury_resistance = 0           # 0-2 stored
+weak_foot_usage = 2             # 1 to 4
+weak_foot_accuracy = 2          # 1 to 4
+form = 4                        # 1 to 8
+injury_resistance = 1           # 1 to 3
 
 [players.17.positions]
 registered = "CMF"              # "GK" "CB" "LB" "RB" "DMF" "CMF" "LMF" "RMF" "AMF" "LWF" "RWF" "SS" "CF"
@@ -3833,10 +3833,10 @@ catching = 77
 # clearing = 40                   # PES 16+
 # reflexes = 40                   # PES 16+
 # coverage = 40                   # PES 16+
-weak_foot_usage = 1             # 0-3 stored
-weak_foot_accuracy = 1          # 0-3 stored
-form = 3                        # 0-7 stored
-injury_resistance = 0           # 0-2 stored
+weak_foot_usage = 2             # 1 to 4
+weak_foot_accuracy = 2          # 1 to 4
+form = 4                        # 1 to 8
+injury_resistance = 1           # 1 to 3
 
 [players.18.positions]
 registered = "CB"               # "GK" "CB" "LB" "RB" "DMF" "CMF" "LMF" "RMF" "AMF" "LWF" "RWF" "SS" "CF"
@@ -4043,10 +4043,10 @@ catching = 77
 # clearing = 40                   # PES 16+
 # reflexes = 40                   # PES 16+
 # coverage = 40                   # PES 16+
-weak_foot_usage = 1             # 0-3 stored
-weak_foot_accuracy = 1          # 0-3 stored
-form = 3                        # 0-7 stored
-injury_resistance = 0           # 0-2 stored
+weak_foot_usage = 2             # 1 to 4
+weak_foot_accuracy = 2          # 1 to 4
+form = 4                        # 1 to 8
+injury_resistance = 1           # 1 to 3
 
 [players.19.positions]
 registered = "DMF"              # "GK" "CB" "LB" "RB" "DMF" "CMF" "LMF" "RMF" "AMF" "LWF" "RWF" "SS" "CF"
@@ -4253,10 +4253,10 @@ catching = 77
 # clearing = 40                   # PES 16+
 # reflexes = 40                   # PES 16+
 # coverage = 40                   # PES 16+
-weak_foot_usage = 3             # 0-3 stored
-weak_foot_accuracy = 3          # 0-3 stored
-form = 3                        # 0-7 stored
-injury_resistance = 0           # 0-2 stored
+weak_foot_usage = 4             # 1 to 4
+weak_foot_accuracy = 4          # 1 to 4
+form = 4                        # 1 to 8
+injury_resistance = 1           # 1 to 3
 
 [players.20.positions]
 registered = "LB"               # "GK" "CB" "LB" "RB" "DMF" "CMF" "LMF" "RMF" "AMF" "LWF" "RWF" "SS" "CF"
@@ -4463,10 +4463,10 @@ catching = 88
 # clearing = 40                   # PES 16+
 # reflexes = 40                   # PES 16+
 # coverage = 40                   # PES 16+
-weak_foot_usage = 1             # 0-3 stored
-weak_foot_accuracy = 3          # 0-3 stored
-form = 7                        # 0-7 stored
-injury_resistance = 2           # 0-2 stored
+weak_foot_usage = 2             # 1 to 4
+weak_foot_accuracy = 4          # 1 to 4
+form = 8                        # 1 to 8
+injury_resistance = 3           # 1 to 3
 
 [players.21.positions]
 registered = "CB"               # "GK" "CB" "LB" "RB" "DMF" "CMF" "LMF" "RMF" "AMF" "LWF" "RWF" "SS" "CF"
@@ -4673,10 +4673,10 @@ catching = 77
 # clearing = 40                   # PES 16+
 # reflexes = 40                   # PES 16+
 # coverage = 40                   # PES 16+
-weak_foot_usage = 1             # 0-3 stored
-weak_foot_accuracy = 1          # 0-3 stored
-form = 3                        # 0-7 stored
-injury_resistance = 0           # 0-2 stored
+weak_foot_usage = 2             # 1 to 4
+weak_foot_accuracy = 2          # 1 to 4
+form = 4                        # 1 to 8
+injury_resistance = 1           # 1 to 3
 
 [players.22.positions]
 registered = "DMF"              # "GK" "CB" "LB" "RB" "DMF" "CMF" "LMF" "RMF" "AMF" "LWF" "RWF" "SS" "CF"
@@ -4883,10 +4883,10 @@ catching = 77
 # clearing = 40                   # PES 16+
 # reflexes = 40                   # PES 16+
 # coverage = 40                   # PES 16+
-weak_foot_usage = 3             # 0-3 stored
-weak_foot_accuracy = 3          # 0-3 stored
-form = 3                        # 0-7 stored
-injury_resistance = 0           # 0-2 stored
+weak_foot_usage = 4             # 1 to 4
+weak_foot_accuracy = 4          # 1 to 4
+form = 4                        # 1 to 8
+injury_resistance = 1           # 1 to 3
 
 [players.23.positions]
 registered = "LB"               # "GK" "CB" "LB" "RB" "DMF" "CMF" "LMF" "RMF" "AMF" "LWF" "RWF" "SS" "CF"

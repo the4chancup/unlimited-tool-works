@@ -26,6 +26,10 @@ pub(crate) enum Kind {
     /// A stored integer: 0 to the widest `FieldSpec` bit width's maximum,
     /// measured over every version's player and appearance record schemas.
     Stored,
+    /// A small stat the save stores one below the game's number (form,
+    /// injury resistance, weak foot): the file holds the game's, 1 to the
+    /// stored maximum + 1, so a manager reads and types what the game shows.
+    Shown,
     /// true | false.
     Bool,
     /// 0 to 65535.
@@ -301,22 +305,22 @@ impl PlayerKey {
             PlayerKey::Coverage => ability("stats.coverage", F::Coverage, "PES 16 and later"),
             PlayerKey::WeakFootUsage => spec(
                 "stats.weak_foot_usage",
-                Kind::Stored,
+                Kind::Shown,
                 F::WeakFootUsage,
-                "0 to 3",
+                "1 to 4",
             ),
             PlayerKey::WeakFootAccuracy => spec(
                 "stats.weak_foot_accuracy",
-                Kind::Stored,
+                Kind::Shown,
                 F::WeakFootAccuracy,
-                "0 to 3",
+                "1 to 4",
             ),
-            PlayerKey::Form => spec("stats.form", Kind::Stored, F::Form, "0 to 7"),
+            PlayerKey::Form => spec("stats.form", Kind::Shown, F::Form, "1 to 8"),
             PlayerKey::InjuryResistance => spec(
                 "stats.injury_resistance",
-                Kind::Stored,
+                Kind::Shown,
                 F::InjuryResistance,
-                "0 to 2",
+                "1 to 3",
             ),
             PlayerKey::Registered => spec(
                 "positions.registered",
@@ -464,9 +468,11 @@ impl PlayerKey {
         value: u32,
     ) -> Result<(), TeamTomlError> {
         if !self.accepts(value) {
+            // The value in the file's terms, as `range_text` gives the range.
+            let shown = i64::from(value) + i64::from(matches!(self.spec().kind, Kind::Shown));
             return Err(TeamTomlError::OutOfRange {
                 key: format!("players.NN.{}", self.spec().path),
-                value: i64::from(value),
+                value: shown,
                 range: self.range_text(),
             });
         }
@@ -542,7 +548,7 @@ impl PlayerKey {
     /// `parse` accepts).
     fn accepts(self, value: u32) -> bool {
         match self.spec().kind {
-            Kind::Ability | Kind::Stored => i64::from(value) <= self.stored_max(),
+            Kind::Ability | Kind::Stored | Kind::Shown => i64::from(value) <= self.stored_max(),
             Kind::Bool => value <= 1,
             Kind::U16 => value <= u32::from(u16::MAX),
             Kind::U32 => true,
@@ -577,6 +583,7 @@ impl PlayerKey {
     fn range_text(self) -> String {
         match self.spec().kind {
             Kind::Ability | Kind::Stored => format!("0 to {}", self.stored_max()),
+            Kind::Shown => format!("1 to {}", self.stored_max() + 1),
             Kind::Bool => "true, false".to_string(),
             Kind::U16 => "0 to 65535".to_string(),
             Kind::U32 => "0 to 4294967295".to_string(),
@@ -599,19 +606,18 @@ impl PlayerKey {
                 })
         };
         match self.spec().kind {
-            Kind::Ability | Kind::Stored | Kind::U16 | Kind::U32 => {
+            Kind::Ability | Kind::Stored | Kind::Shown | Kind::U16 | Kind::U32 => {
                 let value = integer("an integer")?;
                 // The editor clamps abilities to 40-99 (the comment documents
                 // that); a real save can hold anything the bits do (edited
                 // saves carry 100), so interchange accepts the stored range.
-                let max = match self.spec().kind {
-                    Kind::Ability => self.stored_max(),
-                    Kind::Stored => self.stored_max(),
-                    Kind::U16 => 65535,
-                    Kind::U32 => i64::from(u32::MAX),
+                let (min, max) = match self.spec().kind {
+                    Kind::Ability | Kind::Stored => (0, self.stored_max()),
+                    Kind::Shown => (1, self.stored_max() + 1),
+                    Kind::U16 => (0, 65535),
+                    Kind::U32 => (0, i64::from(u32::MAX)),
                     Kind::Bool | Kind::Label(_) => unreachable!("matched above"),
                 };
-                let min = 0;
                 if !(min..=max).contains(&value) {
                     return Err(TeamTomlError::OutOfRange {
                         key: path.to_string(),
@@ -619,7 +625,8 @@ impl PlayerKey {
                         range: self.range_text(),
                     });
                 }
-                u32::try_from(value).map_err(|_| TeamTomlError::OutOfRange {
+                // A `Shown` key's range starts at 1, the stored 0.
+                u32::try_from(value - min).map_err(|_| TeamTomlError::OutOfRange {
                     key: path.to_string(),
                     value,
                     range: self.range_text(),
@@ -658,6 +665,7 @@ impl PlayerKey {
                     range: self.range_text(),
                 }),
             Kind::Bool => Ok(if value == 0 { "false" } else { "true" }.to_string()),
+            Kind::Shown => Ok((value + 1).to_string()),
             Kind::Ability | Kind::Stored | Kind::U16 | Kind::U32 => Ok(value.to_string()),
         }
     }
@@ -667,6 +675,7 @@ impl PlayerKey {
         match self.spec().kind {
             Kind::Ability => "40".to_string(),
             Kind::Bool => "false".to_string(),
+            Kind::Shown => "1".to_string(),
             Kind::Stored | Kind::U16 | Kind::U32 => "0".to_string(),
             Kind::Label(labels) => format!("\"{}\"", labels[0]),
         }
@@ -728,14 +737,44 @@ mod tests {
         let err = PlayerKey::Form
             .set_section(&mut section, 8)
             .expect_err("past the width");
+        // Reported in the file's terms, the game's numbers: stored 8 is 9.
         assert!(
             matches!(
                 err,
-                TeamTomlError::OutOfRange { ref range, .. } if range == "0 to 7"
+                TeamTomlError::OutOfRange { ref range, value: 9, .. } if range == "1 to 8"
             ),
             "{err:?}"
         );
         assert_eq!(section.stats.form, Some(7), "the refused write left it");
+    }
+
+    /// Form, injury resistance and weak foot read in the file as the game
+    /// shows them, one above the stored value: written stored + 1, read
+    /// back - 1, and the file's 0 is refused.
+    #[test]
+    fn the_small_stats_read_as_the_game_shows_them() {
+        let path = "players.01.stats.form";
+        let read = |text: &str| {
+            PlayerKey::Form.parse(&toml_edit::value(text.parse::<i64>().unwrap()), path)
+        };
+        assert_eq!(PlayerKey::Form.text(0).unwrap(), "1");
+        assert_eq!(PlayerKey::Form.text(7).unwrap(), "8");
+        assert_eq!(read("1").unwrap(), 0);
+        assert_eq!(read("8").unwrap(), 7);
+        for refused in ["0", "9"] {
+            assert!(
+                matches!(read(refused), Err(TeamTomlError::OutOfRange { ref range, .. }) if range == "1 to 8"),
+                "{refused}"
+            );
+        }
+        for key in [
+            PlayerKey::WeakFootUsage,
+            PlayerKey::WeakFootAccuracy,
+            PlayerKey::InjuryResistance,
+        ] {
+            assert_eq!(key.text(0).unwrap(), "1", "{key:?}");
+            assert_eq!(key.neutral(), "1", "{key:?}");
+        }
     }
 
     /// An ability past its stored range is refused with that range, the one

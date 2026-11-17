@@ -682,7 +682,7 @@ mod tests {
     fn a_one_key_document_changes_exactly_that_key() {
         let (file, _) = open(PesVersion::Pes19);
         let team = file.teams().first().expect("a team");
-        let doc = TeamToml::parse("[tactics.set_pieces]\npenalty = 3\n").expect("parses");
+        let doc = TeamToml::parse("[tactics.set_pieces]\npenalty = 4\n").expect("parses");
         let mut target = team.clone();
         let notes = doc
             .apply(PesVersion::Pes19, &mut target, &mut [])
@@ -706,21 +706,19 @@ mod tests {
         assert_eq!(doc.tactics.presets[2].man_marking, Some([255; 11]));
         let text = doc.to_toml().expect("to_toml");
         assert!(
-            text.contains(
-                "[tactics.preset_1]\nman_marking = [255, 255, 255, 255, 255, 255, 10, 255, 255, 255, 255]"
-            ),
+            text.contains("[tactics.preset_1]\nman_marking = [0, 0, 0, 0, 0, 0, 11, 0, 0, 0, 0]"),
             "{text}"
         );
     }
 
-    /// `man_marking` takes eleven integers, each 0 to 10 or 255: anything
-    /// else is refused at its key path.
+    /// `man_marking` takes eleven integers, each 0 (nobody) or 1 to 11:
+    /// anything else is refused at its key path.
     #[test]
     fn a_man_marking_value_past_the_formation_slots_is_refused() {
         let err = TeamToml::parse(
-            "[tactics.preset_1]\nman_marking = [11, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255]\n",
+            "[tactics.preset_1]\nman_marking = [12, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]\n",
         )
-        .expect_err("11 is no formation slot");
+        .expect_err("12 is no starter");
         assert!(
             matches!(
                 &err,
@@ -729,11 +727,11 @@ mod tests {
             ),
             "{err:?}"
         );
-        // 10, the last formation slot, is a marking.
+        // 11, the last starter, is a marking: stored as formation slot 10.
         let doc = TeamToml::parse(
-            "[tactics.preset_1]\nman_marking = [10, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255]\n",
+            "[tactics.preset_1]\nman_marking = [11, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]\n",
         )
-        .expect("10 is a formation slot");
+        .expect("11 is a starter");
         assert_eq!(doc.tactics.presets[0].man_marking.map(|m| m[0]), Some(10));
     }
 
@@ -851,8 +849,8 @@ mod tests {
     #[test]
     fn an_unencodable_instruction_is_a_note_and_no_table_is_silent() {
         let text = "pes_version = 19\n\n[tactics.preset_1.instructions]\n\
-            attack = [{ instruction = \"wing_back\", player = 2 }, { instruction = \"off\", player = 0 }]\n\
-            defence = [{ instruction = \"off\", player = 0 }, { instruction = \"off\", player = 0 }]\n";
+            attack = [{ instruction = \"wing_back\", player = 3 }, { instruction = \"off\", player = 1 }]\n\
+            defence = [{ instruction = \"off\", player = 1 }, { instruction = \"off\", player = 1 }]\n";
         let doc = TeamToml::parse(text).expect("parses");
 
         let (file17, _) = open(PesVersion::Pes17);
@@ -979,7 +977,7 @@ mod tests {
             .expect("from_team")
             .to_toml()
             .expect("to_toml");
-        let note = "# players: where each starting_eleven player stands, in its order; roster slot 0 is [players.01]";
+        let note = "# players: where each starting_eleven player stands, in its order";
         assert!(text.contains(&format!("{note}\n[tactics.preset_1.formation_1]")));
         assert_eq!(text.matches(note).count(), 1, "the note once");
     }
@@ -1070,7 +1068,7 @@ mod tests {
             .expect("to_toml");
         for comment in crate::test_support::spec_block_comments(
             "docs/spec/pes_savefile/operations.md",
-            "starting_eleven = [0, 10, 3, 1, 5, 4, 9, 2, 6, 7, 8]",
+            "starting_eleven = [1, 11, 4, 2, 6, 5, 10, 3, 7, 8, 9]",
         ) {
             assert!(
                 text.contains(&comment),
@@ -1266,6 +1264,50 @@ mod tests {
         }
     }
 
+    /// Roster slots and marked opponents read as the screens count them: from
+    /// 1, `[players.05]` being slot 5, and 0 for nobody, over the stored slots
+    /// counting from 0 and 255. Written back the same, and a marked opponent
+    /// past the eleventh refused.
+    #[test]
+    fn slots_count_from_one_and_zero_is_nobody() {
+        let (file, _) = open(PesVersion::Pes17);
+        let mut target = file.team(701).expect("team 701").clone();
+        let doc = TeamToml::parse(
+            "[tactics.set_pieces]\ncaptain = 5\npenalty = 0\n\n\
+             [tactics.preset_1]\nman_marking = [0, 0, 0, 0, 11, 0, 0, 3, 0, 0, 1]\n",
+        )
+        .expect("parses");
+        doc.apply(PesVersion::Pes17, &mut target, &mut [])
+            .expect("applies");
+        assert_eq!(target.tactics.set_pieces.captain, 4);
+        assert_eq!(target.tactics.set_pieces.penalty, 255);
+        assert_eq!(
+            target.tactics.presets[0].man_marking,
+            [255, 255, 255, 255, 10, 255, 255, 2, 255, 255, 0]
+        );
+
+        let players: Vec<&PlayerEntry> = file.players().iter().collect();
+        let text = TeamToml::from_team(PesVersion::Pes17, &target, &players)
+            .expect("from_team")
+            .to_toml()
+            .expect("to_toml");
+        for line in [
+            "captain = 5",
+            "penalty = 0",
+            "man_marking = [0, 0, 0, 0, 11, 0, 0, 3, 0, 0, 1]",
+        ] {
+            assert!(text.contains(line), "{line} missing from:\n{text}");
+        }
+
+        let past = TeamToml::parse(
+            "[tactics.preset_1]\nman_marking = [12, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]\n",
+        );
+        assert!(
+            matches!(past, Err(TeamTomlError::OutOfRange { value: 12, .. })),
+            "{past:?}"
+        );
+    }
+
     /// An array one element short of its fixed length is `WrongType` at its
     /// key, never read with the missing element defaulted: the starting
     /// eleven, a team colour, the kit slots and an instruction pair.
@@ -1439,7 +1481,7 @@ mod tests {
             .to_toml()
             .expect("to_toml");
         assert!(
-            text.contains("bench_order = [18, 16, 22, 14, 6, 15, 1, 17, 4, 13, 20, 12]"),
+            text.contains("bench_order = [19, 17, 23, 15, 7, 16, 2, 18, 5, 14, 21, 13]"),
             "{text}"
         );
     }
@@ -1482,22 +1524,22 @@ mod tests {
         );
         for (document, target_eleven, target_bench) in [
             (
-                "[tactics]\nstarting_eleven = [0, 3, 2, 5, 11, 7, 9, 19, 21, 8, 10]\nbench_order = [18, 16, 22, 14, 6, 15, 1, 17, 4, 13, 20, 12]\n",
+                "[tactics]\nstarting_eleven = [1, 4, 3, 6, 12, 8, 10, 20, 22, 9, 11]\nbench_order = [19, 17, 23, 15, 7, 16, 2, 18, 5, 14, 21, 13]\n",
                 real_eleven,
                 [255; 21],
             ),
             (
-                "[tactics]\nbench_order = [18, 16, 22, 14, 6, 15, 1, 17, 4, 13, 20, 12]\n",
+                "[tactics]\nbench_order = [19, 17, 23, 15, 7, 16, 2, 18, 5, 14, 21, 13]\n",
                 real_eleven,
                 [255; 21],
             ),
             (
-                "[tactics]\nstarting_eleven = [0, 3, 2, 5, 11, 7, 9, 19, 21, 8, 10]\nbench_order = [18, 16, 22, 14, 6, 15, 1, 17, 4, 13, 20, 12]\n",
+                "[tactics]\nstarting_eleven = [1, 4, 3, 6, 12, 8, 10, 20, 22, 9, 11]\nbench_order = [19, 17, 23, 15, 7, 16, 2, 18, 5, 14, 21, 13]\n",
                 [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
                 [255; 21],
             ),
             (
-                "[tactics]\nstarting_eleven = [0, 3, 2, 5, 11, 7, 9, 19, 21, 8, 10]\nbench_order = [18, 16, 22, 14, 6, 15, 1, 17, 4, 13, 20, 12]\n",
+                "[tactics]\nstarting_eleven = [1, 4, 3, 6, 12, 8, 10, 20, 22, 9, 11]\nbench_order = [19, 17, 23, 15, 7, 16, 2, 18, 5, 14, 21, 13]\n",
                 swapped_eleven,
                 held_bench,
             ),

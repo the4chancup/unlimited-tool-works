@@ -190,11 +190,7 @@ fn emit_player(
     }
 
     out.push('\n');
-    out.push_str(&padded(
-        &format!("[{path}.stats]"),
-        "stored values: the game shows weak foot, form and injury resistance one higher",
-    ));
-    out.push('\n');
+    out.push_str(&format!("[{path}.stats]\n"));
     for key in PlayerKey::ALL {
         if key.table() == "stats" {
             emit_key(out, section, key)?;

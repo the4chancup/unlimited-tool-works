@@ -31,68 +31,80 @@ pub(super) fn emit_tactics(
     emit(
         out,
         "starting_eleven",
-        tactics.starting_eleven.map(array_text),
+        tactics.starting_eleven.map(slots_text),
         "[]",
-        "roster slots, counting from 0",
+        "roster slots, numbered as the [players.NN] tables",
     );
     emit(
         out,
         "bench_order",
-        tactics.bench_order.map(array_text),
+        tactics.bench_order.map(slots_text),
         "[]",
-        "the bench: 12 roster slots, counting from 0",
+        "the bench: 12 roster slots, numbered as the [players.NN] tables; 0 = nobody",
     );
     emit(
         out,
         "players_to_join_attack",
-        tactics.players_to_join_attack.map(array_text),
+        tactics.players_to_join_attack.map(slots_text),
         "[]",
-        "roster slots, counting from 0; 255 = nobody",
+        "roster slots, numbered as the [players.NN] tables; 0 = nobody",
     );
     let sp = &tactics.set_pieces;
     out.push('\n');
     out.push_str(&padded(
         "[tactics.set_pieces]",
-        "roster slots, counting from 0; 255 = nobody",
+        "roster slots, numbered as the [players.NN] tables; 0 = nobody",
     ));
     out.push('\n');
     emit(
         out,
         "free_kick_long",
-        sp.free_kick_long.map(|v| v.to_string()),
-        "255",
+        sp.free_kick_long.map(|v| slot_shown(v).to_string()),
+        "0",
         "",
     );
     emit(
         out,
         "free_kick_short",
-        sp.free_kick_short.map(|v| v.to_string()),
-        "255",
+        sp.free_kick_short.map(|v| slot_shown(v).to_string()),
+        "0",
         "",
     );
     emit(
         out,
         "free_kick_second",
-        sp.free_kick_second.map(|v| v.to_string()),
-        "255",
+        sp.free_kick_second.map(|v| slot_shown(v).to_string()),
+        "0",
         "",
     );
     emit(
         out,
         "corner_left",
-        sp.corner_left.map(|v| v.to_string()),
-        "255",
+        sp.corner_left.map(|v| slot_shown(v).to_string()),
+        "0",
         "",
     );
     emit(
         out,
         "corner_right",
-        sp.corner_right.map(|v| v.to_string()),
-        "255",
+        sp.corner_right.map(|v| slot_shown(v).to_string()),
+        "0",
         "",
     );
-    emit(out, "penalty", sp.penalty.map(|v| v.to_string()), "255", "");
-    emit(out, "captain", sp.captain.map(|v| v.to_string()), "255", "");
+    emit(
+        out,
+        "penalty",
+        sp.penalty.map(|v| slot_shown(v).to_string()),
+        "0",
+        "",
+    );
+    emit(
+        out,
+        "captain",
+        sp.captain.map(|v| slot_shown(v).to_string()),
+        "0",
+        "",
+    );
     let auto = &tactics.auto;
     out.push_str("\n[tactics.auto]\n");
     emit(
@@ -129,9 +141,9 @@ pub(super) fn emit_tactics(
         emit(
             out,
             "man_marking",
-            preset.man_marking.map(array_text),
-            "[255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255]",
-            "for each formation slot, the opponent's formation slot he marks; 255 = nobody",
+            preset.man_marking.map(slots_text),
+            "[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]",
+            "for each starter, in starting_eleven's order, the opponent's starter he marks (1 to 11); 0 = nobody",
         );
         out.push_str(&format!("\n[tactics.preset_{n}.style]\n"));
         let style = &preset.style;
@@ -202,8 +214,7 @@ pub(super) fn emit_tactics(
             let Some(players) = formation else { continue };
             if n == 1 && f == 0 {
                 out.push_str(
-                    "\n# players: where each starting_eleven player stands, in its order; \
-                     roster slot 0 is [players.01]\n",
+                    "\n# players: where each starting_eleven player stands, in its order\n",
                 );
                 out.push_str(&padded(
                     &format!("[tactics.preset_{n}.formation_{}]", f + 1),
@@ -245,6 +256,37 @@ fn array_text<const N: usize>(a: [u8; N]) -> String {
     format!("[{}]", items.join(", "))
 }
 
+/// The stored "nobody" of a roster slot or a marked opponent.
+const NOBODY: u8 = 255;
+
+/// A stored slot (counted from 0, `NOBODY` for none) as the file writes it: counted
+/// from 1, as `[players.NN]` and the Save editor count, and 0 for nobody, so a
+/// manager reads the number the screens show.
+fn slot_shown(stored: u8) -> u8 {
+    if stored == NOBODY { 0 } else { stored + 1 }
+}
+
+/// `slot_shown` undone: the file's 0 is nobody, any other number one above the
+/// stored slot.
+fn slot_stored(shown: u8) -> u8 {
+    if shown == 0 { NOBODY } else { shown - 1 }
+}
+
+/// An array of stored slots as the file writes it.
+fn slots_text<const N: usize>(stored: [u8; N]) -> String {
+    array_text(stored.map(slot_shown))
+}
+
+/// An array of slots as the file writes them, read back to the stored ones.
+fn slots<const N: usize>(item: &Item, key: &str) -> Result<[u8; N], TeamTomlError> {
+    Ok(int_array::<N>(item, key)?.map(slot_stored))
+}
+
+/// One slot as the file writes it, read back to the stored one.
+fn slot(item: &Item, key: &str) -> Result<u8, TeamTomlError> {
+    Ok(slot_stored(u8_val(item, key)?))
+}
+
 fn slot_text(slot: &FormationSlot, key: &str) -> Result<String, TeamTomlError> {
     let position = labels::POSITIONS
         .get(usize::from(slot.position))
@@ -267,28 +309,28 @@ fn instruction_text(entry: &InstructionEntry) -> String {
     format!(
         "{{ instruction = \"{}\", player = {} }}",
         labels::INSTRUCTIONS[index],
-        entry.player
+        slot_shown(entry.player)
     )
 }
 
 pub(super) fn parse_tactics(item: &Item) -> Result<TacticsSection, TeamTomlError> {
     let table = as_table(item, "tactics")?;
     let mut tactics = TacticsSection {
-        starting_eleven: opt(table, "tactics", "starting_eleven", int_array)?,
+        starting_eleven: opt(table, "tactics", "starting_eleven", slots)?,
         bench_order: opt(table, "tactics", "bench_order", bench_order)?,
-        players_to_join_attack: opt(table, "tactics", "players_to_join_attack", int_array)?,
+        players_to_join_attack: opt(table, "tactics", "players_to_join_attack", slots)?,
         ..TacticsSection::default()
     };
     if let Some(item) = table.get("set_pieces") {
         let t = as_table(item, "tactics.set_pieces")?;
         tactics.set_pieces = SetPiecesSection {
-            free_kick_long: opt(t, "tactics.set_pieces", "free_kick_long", u8_val)?,
-            free_kick_short: opt(t, "tactics.set_pieces", "free_kick_short", u8_val)?,
-            free_kick_second: opt(t, "tactics.set_pieces", "free_kick_second", u8_val)?,
-            corner_left: opt(t, "tactics.set_pieces", "corner_left", u8_val)?,
-            corner_right: opt(t, "tactics.set_pieces", "corner_right", u8_val)?,
-            penalty: opt(t, "tactics.set_pieces", "penalty", u8_val)?,
-            captain: opt(t, "tactics.set_pieces", "captain", u8_val)?,
+            free_kick_long: opt(t, "tactics.set_pieces", "free_kick_long", slot)?,
+            free_kick_short: opt(t, "tactics.set_pieces", "free_kick_short", slot)?,
+            free_kick_second: opt(t, "tactics.set_pieces", "free_kick_second", slot)?,
+            corner_left: opt(t, "tactics.set_pieces", "corner_left", slot)?,
+            corner_right: opt(t, "tactics.set_pieces", "corner_right", slot)?,
+            penalty: opt(t, "tactics.set_pieces", "penalty", slot)?,
+            captain: opt(t, "tactics.set_pieces", "captain", slot)?,
         };
         reject(
             t,
@@ -455,25 +497,26 @@ fn parse_preset(item: &Item, path: &str) -> Result<PresetSection, TeamTomlError>
 }
 
 /// `man_marking`'s eleven integers: an own formation slot's assignment is the
-/// marked opponent's formation slot (0 to 10) or 255 for none.
+/// marked opponent's starter as the file counts him (1 to 11) or 0 for none,
+/// read back to the stored formation slot (0 to 10, `NOBODY`).
 pub(super) fn man_marking(item: &Item, key: &str) -> Result<[u8; 11], TeamTomlError> {
     let marking = int_array::<11>(item, key)?;
     for &value in marking.iter() {
-        if value > 10 && value != 255 {
+        if value > 11 {
             return Err(TeamTomlError::OutOfRange {
                 key: key.to_string(),
                 value: i64::from(value),
-                range: "0 to 10 or 255".to_string(),
+                range: "0 (nobody) or 1 to 11".to_string(),
             });
         }
     }
-    Ok(marking)
+    Ok(marking.map(slot_stored))
 }
 
 /// `bench_order`'s twelve integers (the bench: the record's first
 /// twelve bench entries of twenty-one).
 pub(super) fn bench_order(item: &Item, key: &str) -> Result<[u8; 12], TeamTomlError> {
-    int_array::<12>(item, key).map_err(|error| match error {
+    slots::<12>(item, key).map_err(|error| match error {
         TeamTomlError::WrongType { key, .. } => TeamTomlError::WrongType {
             key,
             expected: "an array of twelve integers",
@@ -577,7 +620,7 @@ pub(super) fn instruction_entries(
             })?;
         *entry = InstructionEntry {
             instruction: Instruction::ALL[index],
-            player: ranged(&Item::Value(player.clone()), key, 0, 255)?,
+            player: slot(&Item::Value(player.clone()), key)?,
         };
     }
     Ok(entries)
