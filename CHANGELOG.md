@@ -34,14 +34,14 @@
   `star` and `playing_attitude` lines under each `[players.NN.stats]` heading, which leaves
   those two values as they are in the save.
 - **Updates**: the offer of a newer version has an Update now button, which downloads and
-  installs it, and a run of `quick_compile.bat`, `quick_upgrade.bat` or another command
-  mentions a newer version too. The Help
-  window's new Updates chapter explains each step. The window checks each time it starts and
-  every 5 minutes while it stays open, so the setting for the time between checks is gone: a
-  `check_interval_minutes` line left in `settings.toml` does nothing.
+  installs it, and the Help window's new Updates chapter explains each step. A run of
+  `quick_compile.bat`, `quick_upgrade.bat` or another command mentions a newer version too.
+  The window checks each time it starts and every 5 minutes while it stays open, so the
+  setting for the time between checks is gone: a `check_interval_minutes` line left in
+  `settings.toml` does nothing.
 - **All tools**: wheel down now moves a slider or a toggle to the right, and a dropdown to
   the item below, with the scrolling setting on or off. That setting, renamed Invert number
-  scrolling, now turns number boxes only, the box beside a slider included: if you had
+  scrolling, now applies to number boxes only, the box beside a slider included: if you had
   Invert value scrolling ticked, tick the new one in Settings (an `invert_value_scrolling`
   line left in `settings.toml` does nothing).
 
@@ -49,7 +49,7 @@
 
 - **Save editor**: the team dropdown above the list reads All teams in place of ALL, and
   radio buttons at the bottom of the open dropdown narrow it and the list to the 4cc, VGL or
-  Invitational teams, its first entry then reading 4cc teams, VGL teams or Invitational
+  Invitational teams, and its first entry then reads 4cc teams, VGL teams or Invitational
   teams.
 - **Save editor**: Copy stats and Swap stats are one window, `Copy/swap stats`
   (`Copy/swap stats…` in the Player menu), which stays open: pick the source once, then
@@ -183,11 +183,11 @@
   Settings stay pinned below them.
 - **Status bar**: on a small screen, the Reset window button no longer stays after a click
   that changed nothing.
-- **Windows**: a Shift+click or a middle click on the program's taskbar button opens another
-  window.
-- **General**: a click between two entries of a menu or dropdown list no longer closes it
+- **All tools**: on Windows, a Shift+click or a middle click on the program's taskbar button
+  opens another window.
+- **All tools**: a click between two entries of a menu or dropdown list no longer closes it
   with nothing picked.
-- **General**: menus, dialogs, dropdown lists, text fields and the update's progress bar
+- **All tools**: menus, dialogs, dropdown lists, text fields and the update's progress bar
   share one corner rounding again.
 - **Save editor**: an event logo that opens the event's page is framed like a button while
   the pointer is on it, as the 4cc logo is.
