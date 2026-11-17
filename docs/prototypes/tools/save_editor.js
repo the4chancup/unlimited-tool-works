@@ -424,6 +424,16 @@ input[type=checkbox]:indeterminate { background-image: url("data:image/svg+xml,%
 .pcols > * { margin-top: 4px; }
 .pcols .phead { margin: 0; }
 .pcols .phead.badged { margin: -3px 0 -3px; }
+/* Main stats' title row holds Captain at the right, laid out as the panel's second column:
+   its label where Weight's stands, its radio centred in a number box's width over Weight's
+   box. The 18-point box overhangs the row by 1.5 above and below, so the title stands where
+   a bare title does. */
+.pcols .phead.captained { margin: -1.5px 0; display: flex; align-items: center;
+  justify-content: space-between; }
+.pcols .phead.captained > .pair { display: grid; grid-template-columns: 52px 54px;
+  column-gap: 20px; align-items: center; margin-right: 6px; }
+.pcols .phead.captained .box { display: flex; justify-content: center; align-items: center;
+  width: 54px; height: 18px; }
 .pcols .gen { padding-top: 3px; }
 .pcols .stats-grid { margin-top: 0; }
 .pcols .skcols { margin-top: 1.5px; }
@@ -493,9 +503,6 @@ input[type=checkbox]:indeterminate { background-image: url("data:image/svg+xml,%
    chosen side reads white. */
 .gen .combos .rate.lr .sel.on { background: #5a5a5a; color: var(--strong); }
 .gen .combos .rate.lr .sel:not(.on):hover { color: #f0f0f0; }
-/* The Captain radio centred in a box as wide and tall as a number box, over Height's, so
-   its row steps down as the box rows do. */
-.gen .pair > .box { display: flex; justify-content: center; align-items: center; height: 18px; }
 .info-grid td { padding: 1px 6px 1px 0; }
 .info-grid input[type=text] { width: 190px; }
 .info-grid input.shirt { width: 110px; }
@@ -5261,14 +5268,13 @@ function generalPanel(p, team) {
         num("Shirt number", p2 => p2.number, (x, v) => x.number = v),
         num("Age", p2 => p2.age, (x, v) => x.age = v, "age")),
       h("div", { class: "combos" }, gl("Nation"), nation))), "general");
-  // Captain has no partner: an empty right half keeps the pairs' grid in step.
+  // Captain in the title's row, over the second column (`.phead.captained`).
   // The weak foot's two share one label: "Weak Foot: Usage", then "Accuracy".
-  const main = named(h("div", { class: "col" }, strong("Main stats"),
+  const main = named(h("div", { class: "col" },
+    h("div", { class: "row phead captained" }, strong("Main stats"),
+      h("div", { class: "pair" }, gl("Captain"), h("span", { class: "box" }, captain))),
     h("div", { class: "gen" },
       h("div", { class: "pairs" },
-        // The radio centred in a box's width, over Height's box.
-        h("div", { class: "pair" }, gl("Captain"), h("span", { class: "box" }, captain)),
-        h("div", { class: "pair" }),
         num("Height", p2 => p2.height, (x, v) => x.height = v, "height"),
         num("Weight", p2 => p2.weight, (x, v) => x.weight = v, "weight"),
         small("Injury Resistance", "Injury Resistance",
