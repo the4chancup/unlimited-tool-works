@@ -18694,3 +18694,12 @@ Tactics 1 point past the pane's bottom, so Gameplan scrolled by a point (found b
 build's sidekick). One point less under the fields keeps the screen in the pane; moving
 the row up instead would part Gameplan's separator gap from the other screens'.
 Plan: `plans/save_editor.md`, "Editing UI", the title's row bullet.
+
+## 2026-11-17 — save_editor — typed digits pick a nation while the Nation list is open
+Decision: in the open Nation list, typed digits pick the first nation whose ID starts with
+them, scrolled into view; a second's pause starts a new ID, and other keys do nothing.
+Why: the plan asked that typing an ID's digits find its nation, and no egui combo can do
+that yet. A browser's open list only highlights the match and waits for Enter; picking at
+once keeps it one gesture, the list still shows what was picked, and the undo stack merges
+the digits into one step.
+Plan: `plans/save_editor.md`, "The player view", General info's Nation.

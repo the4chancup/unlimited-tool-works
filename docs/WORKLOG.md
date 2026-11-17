@@ -1910,10 +1910,12 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       `generalPanel`, the nation combo from `nations.tsv` (loaded once, not a frame's work;
       the open list scrolled to the held nation; `ID - ?` for an ID the version lacks), a
       test holding the fixture saves' nation IDs to their lists, help 03; then the
-      changelog line
-    - [ ] typing an ID's digits in the Nation combo finds that nation (the plan's "so typing
-      an ID's digits in it finds that nation"; no egui combo has it yet): its own brief
-      after the build lands
+      changelog line. For its rework: `view/terms.rs` still words a nation change as
+      numbers (`PlayerField::Nationality => numbers(...)`), where its own rule is "its old
+      and new values as that view shows them": the changes list, the close prompt and the
+      Comparator then read `135 - USA`, as the combo does
+    - [ ] typed digits pick a nation while the Nation list is open (no egui combo can yet;
+      plan and DECISIONS 2026-11-17): its own brief after the build lands
   - [ ] 0.0.2-posheight (the maintainer's change, 2026-11-17): the playable positions grid
     takes its own layout's height, so Pitch and Left leave the panel shorter than List
     (under DBC7 the screen ends on Ability stats' frame, 703 against List's 726 in the

@@ -712,8 +712,12 @@ vertical room a tab row takes; a toggle on the title's own row takes none.
        (`231 - SAN MARINO`, the game's own spelling, in its capitals), ordered by ID, so
        typing an ID's digits in it finds that nation, where the number box it replaces
        needed the ID looked up elsewhere. The open list shows the held nation, not the list's
-       top: there are over 200. An ID the version lacks shows as `ID - ?` and stays until
-       another is picked.
+       top: there are over 200. While it is open, typed digits pick the first nation whose
+       ID starts with them and scroll to it, so 2, 3 and 1 land on `231 - SAN MARINO` and
+       one undo takes them back; a second's pause starts a new ID, as in a browser's
+       dropdown, and anything but a digit does nothing. Picking at once, not highlighting
+       for Enter to confirm, keeps it one gesture. An ID the version lacks shows as
+       `ID - ?` and stays until another is picked.
 
        The nations are the game's, from each version's `common/etc/pesdb/Country.bin` (in
        `dt10`): a WESYS-wrapped zlib stream of records of 1,348 bytes up to PES 2018 and
