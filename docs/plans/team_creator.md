@@ -217,11 +217,11 @@ Shows what will be written and where, then writes it:
   token (editable). **Never over an existing folder**: the creator makes new teams; an existing
   export is edited with the other tools. The folder is assembled in a temporary sibling and
   renamed into place, so a failure leaves nothing half-written.
-- The Team TOML **beside** the export, `<token> - team.toml`, not inside it, because the two
-  files have different recipients (the aesthetics helper gets the export, the savefile builder
-  gets the roster; the same split the aesthetics patch exists for), and a Team TOML inside an
-  export would be an unknown root file to the compiler. The file carries only what the creator
-  decided: keys it does not write leave the save's values untouched on import.
+- The Team TOML **inside** the export, `team.toml` at its root, a known root file: the
+  compiler takes its tactics for the tactical patch, applied only on the organizer's yes
+  (`team_compiler/pipeline.md` "6. Post-processing"), and the savefile builder imports the
+  roster from it with the Save editor. The file carries only what the creator decided: keys it
+  does not write leave the save's values untouched on import.
 - `README.txt` in the export root (a known root file the compiler ignores):
   - the players and which starter each got;
   - how to replace a starter with a real model (a "blender", in the community's word) through
@@ -293,8 +293,8 @@ What a finished run leaves behind, for a team `xx` with three players and two ki
 
 ```
 exports/
-├── xx - team.toml                (Team TOML: roster, roles, tactics preset 1 — for the save editor)
 └── xx/
+    ├── team.toml             (Team TOML: roster, roles, tactics preset 1)
     ├── README.txt
     ├── colors.txt
     ├── logo.png

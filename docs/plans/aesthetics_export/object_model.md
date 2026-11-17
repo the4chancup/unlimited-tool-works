@@ -12,6 +12,12 @@ A team export's `write_names` marker is also admitted at the root: the aesthetic
 its players' names ("Player settings in exports" in
 [`settings_toml.md`](settings_toml.md)).
 
+A team export's `team.toml` is admitted at the root too (Release 0.1.0): the team's Team TOML,
+the file the Save editor's export writes, from which the compile takes the tactics alone for
+its tactical patch (`team_compiler/pipeline.md` "6. Post-processing"). Its other tables (the
+team, its players) reach no output: the roster is the Save editor's to import. A `team.toml`
+that is not a Team TOML is an Error naming the file, and the export compiles without it.
+
 ### `aesthetics_export` crate layout
 
 What exists of this is in `spec/aesthetics_export/object_model.md` "`aesthetics_export` crate layout".

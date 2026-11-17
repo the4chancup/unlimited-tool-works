@@ -18613,3 +18613,18 @@ Why: explicit and asked, so a team cannot slip a Team TOML in during a cup and c
 tactics in the official save unseen.
 Plan: `plans/team_compiler/pipeline.md`, "6. Post-processing"; `plans/core/development_plan.md`,
 "Release 0.1.0".
+
+## 2026-11-17 — aesthetics_export — a team export carries its Team TOML as team.toml at its root
+Decision: `team.toml` at a team export's root is a known root file, the team's Team TOML: the
+Compiler takes its tactics for the tactical patch and nothing else, and the Team creator
+writes its Team TOML there, no longer beside the export as `<token> - team.toml`. A
+`team.toml` that does not read as a Team TOML is an Error naming it, and the export compiles
+without it.
+Why: the maintainer's tactical patch reads Team TOMLs inside team exports. The old reason for
+keeping the file beside the export (two recipients, the aesthetics helper and the savefile
+builder) is met by the patch itself, which is applied only on the organizer's yes. The
+maintainer remembered a "universal export" format holding the Team TOML and music; no plan,
+decision or log entry describes one, so music stays its own export kind until one is ruled.
+Plan: `plans/aesthetics_export/object_model.md` "Validation semantics";
+`plans/team_compiler/pipeline.md` "6. Post-processing"; `plans/team_creator.md` "7. Finish",
+"Output".
