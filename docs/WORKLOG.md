@@ -37,20 +37,18 @@ countdown at byte 36 ours lack; the maintainer is settling it with the organizer
 mutation run
 (mutfast first). Most open steps below wait only for the maintainer's look
 (`maintainer/tasks.html`). What is left before the cut:
-1. 0.0.2-geninfo: the build (SWE-2, running), its review (a SWE-2 loop, then one paid
-   round, Astra's: the lead's handover holds when it can run), the nation's wording in the changes list, the typed-digits slice, its changelog
-   line. 0.0.2-frames, -paneshift, -keepsel and -posheight are merged and reviewed (every
-   loop ended; the last pipeline, on `541f88a6`, passed).
-2. The lead's look on one release build, beside the drafts: done on `1804f30e`'s, two
-   mismatches being fixed (0.0.2-lookfix); then the cards for the framed Stats screen on both
-   themes, the new margins, DBC7's Pitch against List, Gameplan's fit, the new General info
-   and Main stats on the tasks page (with `look-gated-labels`,
-   `-category-teams`, `-x-hover`, `-interchange-text` and `-light-names` already there),
-   the build copied to `4cc-studio-temp/tasks_build/`.
+1. 0.0.2-geninfo: built (both slices), its SWE-2 loop ended (round 1 accepted 15, fixed;
+   round 2 none), the pipeline on `d2eadc87` passed; left: Astra's paid round, once
+   `brother`'s week resets (Wed 2026-11-18 10:11). 0.0.2-frames, -paneshift, -keepsel,
+   -posheight and -lookfix are merged and reviewed.
+2. The lead's look on the release build of `be99921c`, beside the drafts: done; the card
+   `look-stats-screen` on the tasks page (with `look-gated-labels`, `-category-teams`,
+   `-x-hover`, `-interchange-text` and `-light-names`), the build in
+   `4cc-studio-temp/tasks_build/`.
 3. The cut, only once the maintainer has run the checks of
    `maintainer/tasks.html` (the maintainer, 2026-11-17): a pipeline without mutants on the
-   last merge (0.0.2-determ's second clean run), the changelog, the release build, and a
-   Linux bundle for the Reset window card.
+   last merge (0.0.2-determ's second clean run), the changelog, the release build. The Linux
+   checks are in (Reset window good enough for 0.0.2; poc.6 starts).
 
 Done since 2026-11-16: Report a problem for 0.0.2 (the maintainer ran ST-REP-05 from a
 save to the zip, 2026-11-17: works), the answers' recheck (Kit slots and the Stats screen fixed and looked
@@ -1978,7 +1976,9 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     - [x] the fix 2026-11-17 (SWE-2, 22 min, landed first time; `254262b2`, merge `333ec0cb`;
       the lead's rerun: status bar 20, save_editor 1074 + 57, clippy, fmt): the left and
       middle slots `horizontal_centered`; Ability stats' frame pads 3 under its last row
-    - [ ] the built window beside the draft again, with the review's fixes' build
+    - [x] the built window beside the draft again 2026-11-17 (release build of `be99921c`): the
+      version label centred in its bar, DBC7's Pitch ending at the draft's 703; the card
+      `look-stats-screen` on the tasks page, the build in `tasks_build/`
     - Not a mismatch: the quick actions stand 23 lower than the draft's, which also draws
       0.0.2-similar's button, built after 0.0.2. Not checked in the window: typed digits in
       the Nation list (the capture tool's posted keys type no text; the headless tests hold

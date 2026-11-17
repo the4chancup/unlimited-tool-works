@@ -32,8 +32,8 @@ game, a look at a window the lead has already compared with its draft, or a file
 Mark how it went, or write it in the box under it; your marks stay in this browser. When
 you're done, press <b>Copy my answers</b> at the bottom and paste the text into the chat.</p>
 <p class="intro">Run the cards on this build:
-<code>C:\Data\4cc\Tools_Mine\4cc-studio-temp\tasks_build\UTW-17bda172.exe</code>, built from
-main at <code>17bda172</code> on 2026-11-17. It uses your own settings, as an installed copy
+<code>C:\Data\4cc\Tools_Mine\4cc-studio-temp\tasks_build\UTW-be99921c.exe</code>, built from
+main at <code>be99921c</code> on 2026-11-17. It uses your own settings, as an installed copy
 would. The other <code>.exe</code> files beside it are earlier builds; use this one for every
 card.</p>
 <ul id="toc"></ul>
@@ -191,33 +191,43 @@ otherwise goes back as a fix.</p>
   <textarea class="own" placeholder="What you saw (optional)"></textarea>
 </section>
 
-<section class="entry" id="look-pane-shift-draft">
-  <h3>The screens 8 points to the left (the draft)</h3>
-  <p class="from">From: your request of 2026-11-17 (the Stats screen's margins)</p>
+<section class="entry" id="look-stats-screen">
+  <h3>The Stats screen: frames, margins, General info and Main stats, the Nation list</h3>
+  <p class="from">From: worklog 0.0.2-frames, -paneshift, -posheight, -geninfo and -lookfix</p>
   <ol>
-    <li>Open the drafts (<code>docs/prototypes/index.html</code>) at the Save editor's player
-    screen: <code>#save_editor/player?pes=2021&amp;player=701.1</code>.</li>
-    <li>Look at the first panel's left border against the list, and the last panel's right
-    border against the window's edge; switch to Appearance, Gameplan and Squad.</li>
+    <li>Open your PES 2021 save and click a player. Check the Stats screen in the dark theme:
+    the framed panels, the screens 8 points further left, General info (Name, Shirt name,
+    Shirt number and Age, Nation) and Main stats (Captain in its title row, Height and Weight,
+    the four small stats, the feet, Registered position, Playing style).</li>
+    <li>Open the Nation list: it opens on the player's nation. With the list open, type a
+    nation's ID (<code>135</code>, say): the list jumps to it and the player takes it. One
+    Ctrl+Z puts the old nation back.</li>
+    <li>Pick <b>Divegrass Before Christmas 7</b> in the toolbar's rules list. With
+    <b>Pitch</b> held under Playable positions, the three columns end level with Ability stats'
+    frame; with <b>List</b> they end lower, on the positions' own. Pick your usual rules file
+    again.</li>
+    <li>Click <b>Gameplan</b>: everything fits the window, with no scroll bar.</li>
+    <li>Switch to the light theme in Settings and look at the Stats screen again.</li>
   </ol>
-  <p>Every screen right of the list stands 8 points further left: the list's scroll bar has
-  4 points on each side, its frame before it and the first panel after it (the panel stood 12
-  after the bar), and the last panel ends 16 from the window's right edge, where it was 8. The
-  panels keep their widths.</p>
-  <p>The screens also stand 1.5 points lower, so the first panels' top edges line up with the
-  player list's, and the line above them moves with them; the row of screen buttons moves
-  0.75, keeping its gaps above and below equal. The Squad screen's row and line stand where
-  the others' do.</p>
-  <p>The pane's scroll bar is now the list's: a 6-point bar in that 16-point margin, 4 after
-  the panels as the list's stands 4 after the list, floating
-  as the app's does, so the browser's own bar no longer widens the window (it made the gap
-  29 in Firefox). The Squad screen keeps the browser's bars for its table, so there the window
-  is still drawn wider by them; its tabs stay where the other screens draw them. The build
-  follows once you say the draft is right.</p>
+  <p>Every frame edge matched its draft, the rest of the screen within a point. The look check
+  found two things 3 points off, both fixed and checked again in this build: the version line
+  at the bottom left now stands in the middle of its bar, and Ability stats keeps 3 points
+  under its last row, so under Divegrass Before Christmas 7 the columns end where the draft's
+  do. The quick actions under the player list stand lower than in the draft because the draft
+  also draws <b>Select all similar players</b>, which comes after 0.0.2. The drafts have no
+  light theme, so the light capture has no draft beside it.</p>
+  <div class="shots">
+    <figure><a href="img/stats_screen_dark.png"><img src="img/stats_screen_dark.png" alt="The Stats screen, draft and build"></a><figcaption>The Stats screen: the draft left, the build right</figcaption></figure>
+    <figure><a href="img/nation_list_open.png"><img src="img/nation_list_open.png" alt="The Nation list open in the build"></a><figcaption>The Nation list open on the player's nation: the build</figcaption></figure>
+    <figure><a href="img/stats_dbc7_pitch.png"><img src="img/stats_dbc7_pitch.png" alt="Divegrass Before Christmas 7 with Pitch, draft and build"></a><figcaption>Divegrass Before Christmas 7, Pitch: the draft left, the build right</figcaption></figure>
+    <figure><a href="img/stats_dbc7_pitch_list.png"><img src="img/stats_dbc7_pitch_list.png" alt="Pitch and List in the build"></a><figcaption>The same in the build: Pitch left, List right</figcaption></figure>
+    <figure><a href="img/gameplan_fit.png"><img src="img/gameplan_fit.png" alt="Gameplan, draft and build"></a><figcaption>Gameplan: the draft left, the build right</figcaption></figure>
+    <figure><a href="img/stats_screen_light.png"><img src="img/stats_screen_light.png" alt="The Stats screen in the light theme"></a><figcaption>The light theme: the build</figcaption></figure>
+  </div>
   <div class="options">
-    <label class="opt"><input type="radio" value="fine"><b>Fine: build it</b></label>
-    <label class="opt"><input type="radio" value="change, see note"><b>Something to change</b>
-      <div class="note">Say what below.</div></label>
+    <label class="opt"><input type="radio" value="fine"><b>All as described</b></label>
+    <label class="opt"><input type="radio" value="problems, see note"><b>Something differs</b>
+      <div class="note">Say which step below.</div></label>
   </div>
   <textarea class="own" placeholder="What you saw (optional)"></textarea>
 </section>
@@ -225,11 +235,7 @@ otherwise goes back as a fix.</p>
 <h2>Coming once the lead has checked them</h2>
 <p class="group-intro">Yours by the worklog, but not yet compared with their drafts by the lead,
 who does that first. Nothing to do here yet; each moves up as a card once checked.</p>
-<ul>
-  <li>The framed Stats screen and the thin edges on every control, both themes (worklog
-  0.0.2-frames): after the review's rework, which moves the positions grid 1.5 points up to
-  its draft's place.</li>
-</ul>
+<p>Nothing waiting.</p>
 
 <div class="picks">
   <button id="copy">Copy my answers</button>
