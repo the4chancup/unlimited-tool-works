@@ -29,6 +29,12 @@ slots, Kicking Power / Swerve / Body Control / Physical Contact 44/45/49/92, 94/
 89/49/90/65 and 42/65/83/97 (`.tmp/lead/dragpairs/check2.toml`, imported into the main
 save; its earlier state `EDIT00000000.before_check2` beside it); the formula reads 76, 81,
 80, 90, and each of the eight its own four (`design.py`, at least 5 apart in sum). The
+game read 79, 81, 73, 89: one reading alone, the kicking power row reading swerve, the
+swerve row kicking power, and the body control row the mean of body control and physical
+contact rounded down (rounded up misses two of the eight readings; `confirm.py`). A third
+check confirms it before the fix, which goes into 0.0.2 (the maintainer, 2026-11-17):
+`check3.toml` imported (earlier state `EDIT00000000.before_check3`), its prediction in
+`.tmp/lead/dragpairs/check3_prediction.txt`, kept from the maintainer for a blind read. The
 draft's greyed
 number boxes read `-` as the build's do (the maintainer
 kept the build's, `look-gated-labels`). Astra's round over 0.0.2-geninfo (`73641390..be99921c`, on Codex
