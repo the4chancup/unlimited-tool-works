@@ -1879,7 +1879,12 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       2026-11-17
     - [x] the plan (`save_editor.md` "Editing UI" and "The player view") and DECISIONS
     - [ ] the build, one SWE-2 brief with 0.0.2-keepsel's and 0.0.2-posheight's (SWE-2,
-      `sk/paneshift`, from `11be9f8f`)
+      `sk/paneshift`, from `11be9f8f`): first run green (1063 + 57); its contradiction found
+      the draft's Gameplan 1 past the pane (the lead: 8 under the fields, `58cb2b94`); r1
+      runs: the gap 8, and the build's Tactics 2 taller than the draft's found and fixed,
+      not compensated (`UNDER_FIELDS` 7 rejected). For the look: under DBC7 the build's
+      Pitch ends at 700 and List at 725, the draft's 703 and 726 (Ability stats' and the
+      positions' own heights, before this step)
   - [ ] 0.0.2-keepsel (the maintainer's ruling, 2026-11-17): picking in the team dropdown
     the team the selection is already on keeps the selection (a player stays selected)
     -> verify: a test per case (his team keeps him, another team selects its row)
