@@ -1803,7 +1803,9 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         - [x] rw3 r1 2026-11-17 (SWE-2, `e109b2aa`, merge `9091411a`; the lead's rerun 1060 +
           57, team_widgets 283, clippy, fmt): the Skills mark the row's gap after the badge,
           the Tier badge tested by the chip's painted edge, three comments
-        - [ ] Carbon's round 2 (Stats), running at `9091411a`
+        - [x] Carbon's round 2 (Stats) 2026-11-17 at `9091411a`: 4 accepted, none of reach (a),
+          the loop ends after their fixes (help 02, the plan's marks paragraph and the
+          changelog line by the lead, `01f8b455`; the rest in rw5)
         - [x] the edges part, 2026-11-17: 7 of 10 accepted ("frames C1 — edges"), 1 of reach
           (a): on the light theme a version-gated number's `-` stand-in draws the button grey
           beside white number boxes; the rest a readout grey whose contrast drifted with the
@@ -1817,7 +1819,11 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         - [x] the gated stand-in 2026-11-17 (SWE-2, `b4efbe98`, merge `1b40ddc8`; the lead's
           rerun 1060 + 57, clippy, fmt; the two tests' setup shared): on the light theme a
           version-gated number's `-` draws as a disabled number box
-        - [ ] Carbon's round 2 (edges), running at `e3fc5b93`
+        - [x] Carbon's round 2 (edges) 2026-11-17 at `e3fc5b93`: 4 accepted, none of reach (a),
+          the loop ends after their fixes (the plan's readout grey and two docstrings by the
+          lead, `4526244e`; the rest in rw5)
+        - [ ] rw5 (SWE-2, `sk/framesrw5`): both parts' round-2 code fixes (the disabled and
+          hovered boxes' tests, one `gated_number`, one pass-count test, three comments)
         - [x] the pipeline on `6de96354` 2026-11-17: the checkpoint and the Linux gates passed
     - [ ] the control edges (`plans/core/gui.md` "Other UI components", "Control edges")
       - [x] A1 2026-11-17 `studio_core` (`b98986f7`, merge `53bc3805`): the resting stroke,
