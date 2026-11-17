@@ -1754,7 +1754,7 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     the built window beside the draft on the Stats, Appearance and Gameplan screens; a tasks
     card; review rounds (a SWE-2 loop and one paid round)
     - [ ] the review rounds: SWE-2 round 1 on A1, A2a, B1 and B2 (2026-11-17, from a worktree
-      at `74d85558`, `.tmp/0_0_2/frames_rev/`; rulings `.tmp/duck_rulings.md` "frames r1"):
+      at `74d85558`, `.tmp/0_0_2/frames_rev/`; the rulings file's "frames r1"):
       2, 2, 2 and 4 accepted, every loop ended; the fixes on SWE-2 (`.tmp/brief_frames_rw1.md`)
       - [ ] C's SWE-2 round, then one paid round over A1 to C and the rework
     - [ ] the control edges (`plans/core/gui.md` "Other UI components", "Control edges")
