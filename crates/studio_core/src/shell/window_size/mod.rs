@@ -293,14 +293,38 @@ fn window_backends(asked: Option<eframe::wgpu::Backends>, windows: bool) -> efra
     }
 }
 
+/// The presentation system a Direct3D 12 swap chain is made on: `asked` (what
+/// the `WGPU_DX12_PRESENTATION_SYSTEM` variable resolved to) when there is
+/// one, else `DxgiFromVisual`, a DirectComposition swap chain. wgpu's default
+/// of one made on the window's handle stretches the last frame over the whole
+/// window on every step of a resize; the composition one leaves it in place.
+/// RenderDoc cannot capture a composition swap chain, so `hwnd` brings the
+/// handle's back for a debugging session.
+#[cfg(not(target_arch = "wasm32"))]
+fn presentation_system(
+    asked: Option<eframe::wgpu::Dx12SwapchainKind>,
+) -> eframe::wgpu::Dx12SwapchainKind {
+    if let Some(kind) = asked {
+        return kind;
+    }
+    eframe::wgpu::Dx12SwapchainKind::DxgiFromVisual
+}
+
 /// The window's wgpu configuration: the one `NativeOptions` carries by
 /// default, its new instance's backends replaced by `window_backends`'s pick
-/// of the `WGPU_BACKEND` variable.
+/// of the `WGPU_BACKEND` variable and its Direct3D 12 presentation system by
+/// `presentation_system`'s pick of `WGPU_DX12_PRESENTATION_SYSTEM` (ignored
+/// where no Direct3D 12 backend runs).
 #[cfg(not(target_arch = "wasm32"))]
 fn wgpu_options() -> eframe::egui_wgpu::WgpuConfiguration {
     let mut create_new = eframe::egui_wgpu::WgpuSetupCreateNew::without_display_handle();
     create_new.instance_descriptor.backends =
         window_backends(eframe::wgpu::Backends::from_env(), cfg!(windows));
+    create_new
+        .instance_descriptor
+        .backend_options
+        .dx12
+        .presentation_system = presentation_system(eframe::wgpu::Dx12SwapchainKind::from_env());
     let mut options = eframe::NativeOptions::default().wgpu_options;
     options.wgpu_setup = eframe::egui_wgpu::WgpuSetup::CreateNew(create_new);
     options

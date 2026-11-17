@@ -573,16 +573,38 @@ fn the_backend_variable_keeps_its_pick() {
     }
 }
 
+// The presentation system defaults to the DirectComposition swap chain, and
+// a `WGPU_DX12_PRESENTATION_SYSTEM` pick still wins.
+#[cfg(not(target_arch = "wasm32"))]
+#[test]
+fn the_presentation_system_defaults_to_the_composition_swap_chain() {
+    assert_eq!(
+        presentation_system(None),
+        eframe::wgpu::Dx12SwapchainKind::DxgiFromVisual
+    );
+    assert_eq!(
+        presentation_system(Some(eframe::wgpu::Dx12SwapchainKind::DxgiFromHwnd)),
+        eframe::wgpu::Dx12SwapchainKind::DxgiFromHwnd
+    );
+}
+
 // Both openings set the same wgpu setup: a new instance asked only for
-// `window_backends`'s pick of the `WGPU_BACKEND` variable.
+// `window_backends`'s pick of the `WGPU_BACKEND` variable and
+// `presentation_system`'s pick of `WGPU_DX12_PRESENTATION_SYSTEM`.
 #[cfg(not(target_arch = "wasm32"))]
 #[test]
 fn both_openings_carry_the_picked_backends() {
     #[cfg(target_os = "windows")]
-    assert!(
-        std::env::var_os("WGPU_BACKEND").is_none(),
-        "the test's premise: the variable unset in the test process"
-    );
+    {
+        assert!(
+            std::env::var_os("WGPU_BACKEND").is_none(),
+            "the test's premise: the variable unset in the test process"
+        );
+        assert!(
+            std::env::var_os("WGPU_DX12_PRESENTATION_SYSTEM").is_none(),
+            "the test's premise: the variable unset in the test process"
+        );
+    }
     let place = WindowPlace {
         x: 100.0,
         y: 50.0,
@@ -599,6 +621,15 @@ fn both_openings_carry_the_picked_backends() {
             panic!("the wgpu setup creates a new instance")
         };
         assert_eq!(create_new.instance_descriptor.backends, expected);
+        assert_eq!(
+            create_new
+                .instance_descriptor
+                .backend_options
+                .dx12
+                .presentation_system,
+            presentation_system(eframe::wgpu::Dx12SwapchainKind::from_env()),
+            "the Direct3D 12 presentation system is `presentation_system`'s pick"
+        );
         #[cfg(target_os = "windows")]
         assert!(
             !create_new
