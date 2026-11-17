@@ -20,7 +20,7 @@ use studio_core::widgets::{
     step_choice, step_number, text_box, wheel_steps,
 };
 use team_widgets::cards;
-use team_widgets::names::{append_name, name_background};
+use team_widgets::names::append_name;
 
 use crate::session::Session;
 use crate::view::abilities::{
@@ -114,7 +114,7 @@ pub(super) fn view_title(ui: &mut egui::Ui, view: &mut SaveView, id: u32, name: 
                 0.0,
                 egui::TextFormat::simple(body.clone(), ui.visuals().weak_text_color()),
             );
-            append_name(&mut title, name, &body, name_background(ui.visuals()));
+            append_name(&mut title, name, &body);
             let strong = ui.visuals().strong_text_color();
             for section in &mut title.sections {
                 if section.format.color == egui::Color32::PLACEHOLDER {

@@ -1994,35 +1994,42 @@ fn the_rows_and_the_popover_header_draw_the_names_colours() {
             .collect::<Vec<egui::Color32>>()
     };
 
-    let (nodes, shapes) = window.lineup_paint(PesVersion::Pes21, &mut tactics, &mut view, &roster);
-    assert_eq!(
-        lineup_rows(&nodes)[3].last().and_then(|name| name.value()),
-        Some("PEPSI MAN"),
-        "the eleven's row 3 names its roster slot's player"
-    );
-    let colors = run_colors(&shapes, "PEP");
-    assert_eq!(colors.len(), 2, "the eleven row's and the bench row's name");
-    for color in colors {
+    // On both themes: the light one draws a code as it is too, the
+    // in-game look, so SI's white keeps its colour on the light panel.
+    for theme in [egui::Theme::Dark, egui::Theme::Light] {
+        window.ctx.set_theme(theme);
+        let (nodes, shapes) =
+            window.lineup_paint(PesVersion::Pes21, &mut tactics, &mut view, &roster);
         assert_eq!(
-            color,
-            egui::Color32::from_rgb(0xc9, 0x00, 0x2b),
-            "PEP's run keeps its code's colour"
+            lineup_rows(&nodes)[3].last().and_then(|name| name.value()),
+            Some("PEPSI MAN"),
+            "the eleven's row 3 names its roster slot's player"
         );
+        let colors = run_colors(&shapes, "PEP");
+        assert_eq!(colors.len(), 2, "the eleven row's and the bench row's name");
+        for color in colors {
+            assert_eq!(
+                color,
+                egui::Color32::from_rgb(0xc9, 0x00, 0x2b),
+                "PEP's run keeps its code's colour on {theme:?}"
+            );
+        }
+        for color in run_colors(&shapes, "SI ") {
+            assert_eq!(
+                color,
+                egui::Color32::from_rgb(0xff, 0xff, 0xff),
+                "SI's run keeps its code's colour on {theme:?}"
+            );
+        }
+        for color in run_colors(&shapes, "MAN") {
+            assert_eq!(
+                color,
+                egui::Color32::from_rgb(0x00, 0x4b, 0x93),
+                "MAN's run keeps its code's colour on {theme:?}"
+            );
+        }
     }
-    for color in run_colors(&shapes, "SI ") {
-        assert_eq!(
-            color,
-            egui::Color32::from_rgb(0xff, 0xff, 0xff),
-            "SI's run keeps its code's colour"
-        );
-    }
-    for color in run_colors(&shapes, "MAN") {
-        assert_eq!(
-            color,
-            egui::Color32::from_rgb(0x00, 0x4b, 0x93),
-            "MAN's run keeps its code's colour"
-        );
-    }
+    window.ctx.set_theme(egui::Theme::Dark);
 
     // The popover header's — and the marker's, which draws the same
     // coloured name below the badge (wider than the badge: two copies).
