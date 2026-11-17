@@ -1848,6 +1848,16 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         needs none, its screen is new in 0.0.2); the Save editor's toggle and rating edges
         through `resting_edge`, the lit Live AATF button's in the selection blue's
         - [ ] the built window beside the draft, with the batch release build
+  - [ ] 0.0.2-paneshift (the maintainer's request, 2026-11-17): every screen right of the
+    player list 4 points left, 8 from the list's bar strip (18 with no bar) and 12 from the
+    window's right edge, where 12/22 against 8 made the left look much wider -> verify: the
+    built window beside the draft on every screen
+    - [x] the draft 2026-11-17 (lead): `.master` gap 8, the pane's right padding 12, the
+      Squad header's gap 8 so its tabs stay put; measured: every screen's frames 4 left,
+      their widths kept
+    - [ ] the maintainer's check of the draft (`tasks.html` `look-pane-shift-draft`); then
+      the plan (`save_editor.md` "The player view": 22 after the list, 12 right) and the
+      build
   - [x] 0.0.2-taskbuild 2026-11-17: the tasks page names the build its cards run on -> verify: the next
     release build (the Report a problem look's) copied to `4cc-studio-temp/tasks_build/`,
     the page's intro naming that path and the commit it was built from; refreshed whenever

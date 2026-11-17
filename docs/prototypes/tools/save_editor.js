@@ -168,7 +168,10 @@ input[type=range]:focus { outline: none; }
 .pbar .fill { height: 100%; background: var(--sel-bg); }
 /* save editor view */
 .toolbar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 4px; }
-.master { display: flex; gap: 12px; align-items: flex-start; }
+/* The list and the detail pane 8 apart, the pane's padding 12 on the right: with the list's
+   scroll-bar strip (10) before the gap, its screens stand as far from the list's bar as from
+   the window's right edge, where 12 and 8 made the left look much wider. */
+.master { display: flex; gap: 8px; align-items: flex-start; }
 .plist { width: 255px; flex: none; display: flex; flex-direction: column; gap: 3px; }
 /* The list's scroll bar stands outside its frame, as egui's solid bar does (4 points from
    the content, 6 wide): a row's fill reaches the frame's edge, and the bar covers no row's
@@ -247,7 +250,7 @@ input[type=checkbox]:indeterminate { background-image: url("data:image/svg+xml,%
    registered position columns and the two heading rows stay put (position: sticky stands
    for egui painting them outside the ScrollArea). */
 .squad-view { flex: 1; min-height: 0; display: flex; flex-direction: column; }
-.squad-head { display: flex; gap: 12px; align-items: flex-start; }
+.squad-head { display: flex; gap: 8px; align-items: flex-start; }
 /* As wide as over the player list, and as far from the title: the toggle stays where the
    other screens draw it. */
 .squad-head > select { width: 245px; flex: none; margin-right: 10px; }
@@ -741,13 +744,15 @@ table.grid.stats-grid td { padding: 3px 6px; }
 .center.filled .master { flex: 1; min-height: 0; align-items: stretch; }
 /* The detail pane scrolls on its own, its bar in the window's scroll-bar
    strip (the host's .win rule), kept while nothing scrolls: the pane
-   reaches over the view's right margin into the strip and takes the margin
-   back as padding, so its content ends where the view's other rows do, at
-   the width the app gives it (egui's scroll bar floats and takes none). The
-   pane holds the scroll; the view itself keeps no strip of its own. */
+   reaches over the view's right margin into the strip and takes it back as
+   padding, 4 more than the margin, so its content ends 12 before the strip
+   while the list's gap before it is 8 (.master): every screen stands 4 left
+   of the view's other rows' span, at the width the app gives it (egui's
+   scroll bar floats and takes none). The pane holds the scroll; the view
+   itself keeps no strip of its own. */
 .center.filled { scrollbar-gutter: auto; padding-right: calc(8px + var(--sbw, 0px)); }
 .center.filled .detail { overflow: auto; min-height: 0; scrollbar-gutter: stable;
-  margin-right: calc(-8px - var(--sbw, 0px)); padding-right: 8px; }
+  margin-right: calc(-8px - var(--sbw, 0px)); padding-right: 12px; }
 .live-panel { flex: none; margin-top: 6px; }
 .live-divider { height: 4px; cursor: ns-resize; }
 .live-divider:hover { background: var(--hover); }
