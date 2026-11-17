@@ -1874,13 +1874,20 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     - [x] the frames' tops on the list's (71), the line at 59, the tabs at 34.75 (the
       maintainer's, 2026-11-17; drafts to `a083b48c`); the draft approved by the maintainer
       2026-11-17
-    - [ ] the plan (`save_editor.md` "The player view") and DECISIONS, then the build
+    - [x] the plan (`save_editor.md` "Editing UI" and "The player view") and DECISIONS
+    - [ ] the build, one SWE-2 brief with 0.0.2-keepsel's and 0.0.2-posheight's
   - [ ] 0.0.2-keepsel (the maintainer's ruling, 2026-11-17): picking in the team dropdown
     the team the selection is already on keeps the selection (a player stays selected)
     -> verify: a test per case (his team keeps him, another team selects its row)
-    - [x] the draft (`teamSelector`, `a083b48c`)
-    - [ ] the plan (`save_editor.md`, "Picking a different team selects its team row"),
-      DECISIONS, the build with 0.0.2-paneshift's
+    - [x] the draft (`teamSelector`, `a083b48c`), approved by the maintainer
+    - [x] the plan (`save_editor.md`, "Editing UI", picking a team) and DECISIONS
+    - [ ] the build, with 0.0.2-paneshift's
+  - [ ] 0.0.2-posheight (the maintainer's change, 2026-11-17): the playable positions grid
+    takes its own layout's height, so Pitch and Left leave the panel shorter than List
+    (under DBC7 the screen ends on Ability stats' frame, 703 against List's 726 in the
+    draft) -> verify: SE-GUI-85's DBC7 clause; the built window beside the draft
+    - [x] the draft (`#pos-grid` loses its `min-height`), the plan and DECISIONS
+    - [ ] the build (`abilities.rs` `GRID_HEIGHT`), with 0.0.2-paneshift's
   - [x] 0.0.2-taskbuild 2026-11-17: the tasks page names the build its cards run on -> verify: the next
     release build (the Report a problem look's) copied to `4cc-studio-temp/tasks_build/`,
     the page's intro naming that path and the commit it was built from; refreshed whenever

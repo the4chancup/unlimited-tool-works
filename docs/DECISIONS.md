@@ -18640,3 +18640,35 @@ screen's group titles, which a switch between the screens keeps in place. Not ri
 Skills title, because it would overlap the Cards used badge; not before the badge, because it
 would shift the badge whenever it showed.
 Plan: `plans/save_editor.md`, "Configurable AATF rules", Live AATF's field marks.
+
+## 2026-11-17 — save_editor — the screens right of the player list stand 14 after its frame and 16 from the window's edge
+Decision: every screen's frames start 14 points after the player list's frame (its 10-point
+bar strip and 4 more, so the list's 6-point bar has 4 on each side) and end 16 before the
+window's right edge, the pane's own scroll bar 4 after them. The first frames' tops stand
+level with the list's frame, the separator over them 11 points higher, and the title's row
+has as much room under the toolbar's line as over the separator (about 9.5 points each).
+Why: the maintainer's, from passes over the draft. With 12 between the list's bar and the
+frames against 8 at the right, the left margin read as much wider, and wider still (22)
+once a short list hid its bar. The frames' tops sat 1.5 points under the list's, and the
+separator 1 point closer to the row than the toolbar's line was.
+Plan: `plans/save_editor.md`, "Editing UI" (the title's row) and "The player view".
+
+## 2026-11-17 — save_editor — picking the selected player's own team keeps him selected
+Decision: in the team dropdown, picking the team the selection is already on keeps the
+selection, a selected player included; another team still selects its team row, and All
+teams keeps the selection.
+Why: the maintainer's ruling. Narrowing the list to a player's own team is a way to see his
+teammates, not to leave him; the jump to the team's row and its Gameplan screen lost the
+player the member was working on.
+Plan: `plans/save_editor.md`, "Editing UI", the paragraph on picking a team.
+
+## 2026-11-17 — save_editor — the playable positions grid takes its own layout's height
+Decision: the positions grid is as tall as its layout needs, so Pitch and Left leave the
+panel shorter than List does; a panel stretched to a taller column's bottom gives the grid
+the room under the toggle, its rows centred in it. This replaces the grid held at List's
+height in every layout (the framed Stats screen's entry, 2026-11-17).
+Why: the maintainer changed their mind. Where the panel's column is the tallest (DBC7, with
+one card panel fewer, shortens Skills' column) List's height set the whole screen's, and
+Pitch floated in empty room; a layout switch moving the columns' common bottom is the
+lesser cost.
+Plan: `plans/save_editor.md`, "The player view", Playable positions, and SE-GUI-85.

@@ -173,7 +173,10 @@ sliding toggle at the left of the title's row, `Stats | Appearance | Gameplan` (
   save was opened, its first player when none was.
 - **The title's row is the same on all three screens**: the toggle, then the ID and the
   name, starting at the pane's left edge, with a separator line under the row. A toggle
-  that stood elsewhere on another screen would slip from under the pointer. The team view
+  that stood elsewhere on another screen would slip from under the pointer. The row has as
+  much room over it, under the toolbar's line, as under it, over the separator (about 9.5
+  points each); the separator stands 11 points over the screen's first frames, whose tops
+  are level with the player list's frame ("The player view"). The team view
   has no second line under its fields' row: the row keeps 9 points under it instead, twice
   the rows' gap.
 
@@ -214,9 +217,11 @@ vertical room a tab row takes; a toggle on the title's own row takes none.
   list holds that team alone ("show me this team"). The row's tooltip says so (`Double-click to
   filter to this team`), and the help topic on the list names it.
 
-  Picking a different team selects its team row, so the detail shows that team's view, its
-  tactics with it: a manager who picks a team usually wants its tactics next. Picking All teams, or
-  the team already shown, keeps the selection (that team's row heads the list, a click away).
+  Picking another team selects its team row, so the detail shows that team's view, its
+  tactics with it: a manager who picks a team usually wants its tactics next. Picking All
+  teams, or the team the selection is already on, keeps the selection, a selected player
+  included: narrowing the list to the player's own team is a way to see his teammates, not
+  to leave him (that team's row heads the list, a click away).
 
   The open dropdown ends, under a separator, with four radio buttons in a column that stay
   while the teams scroll, in an area as tall as any dropdown's list (300 points, `core/gui.md`
@@ -656,13 +661,17 @@ vertical room a tab row takes; a toggle on the title's own row takes none.
 - **The player view** (the Stats screen): three columns side by side, every panel in them
   framed as the Appearance screen's groups are: a 1-point stroke in the frames' colour, the
   corners rounded as the widgets' are, the content 6 points inside. The frames span the pane,
-  from 22 points after the player list's frame (the list's 10-point bar strip and the 12
-  between) to the pane's 12-point right margin, so their outer edges line up with the
-  Appearance and Gameplan screens' frames. The columns stand 8 points apart, and the panels
-  of one column 8 apart too. Skills and Ability stats take the width their content needs;
-  General info takes the rest. The frames' top edges stand where the Appearance screen's first
-  groups' do, so a switch between the two screens moves no frame line. The three columns end
-  on one line: each column's last frame runs down to the tallest column's bottom.
+  from 14 points after the player list's frame to 16 points before the window's right edge,
+  so their outer edges line up with the Appearance and Gameplan screens' frames. The 14 are
+  the list's 10-point bar strip and 4 more, so the list's 6-point scroll bar has 4 points on
+  each side; the pane's own scroll bar stands in its right margin, 4 after the frames. With
+  12 between the list's bar and the frames and 8 at the right, the left read as the much
+  wider margin, and wider still (22) when the list was short enough to hide its bar. The
+  columns stand 8 points apart, and the panels of one column 8 apart too. Skills and Ability
+  stats take the width their content needs; General info takes the rest. The frames' top
+  edges stand level with the player list's frame, as the Appearance screen's first groups'
+  do, so a switch between the two screens moves no frame line. The three columns end on one
+  line: each column's last frame runs down to the tallest column's bottom.
 
   The view's title line starts at the frames' left edge, where the Appearance screen's groups
   start. With the frame's stroke and margin and General info's 6-point inset, its labels stand
@@ -736,9 +745,13 @@ vertical room a tab row takes; a toggle on the title's own row takes none.
      The choice is a view setting (`positions_layout`, as `scroll_names` is), Pitch by
      default. It is set once and forgotten, so the held choice is filled in the quiet grey
      of the Stronger foot toggle's, not the selection's blue. Every layout shows whole at the
-     default window. The grid keeps List's height in every layout (thirteen 17-point rows,
-     each with 1 point above and below it, 1 apart), so a switch never moves the panel's
-     bottom; Pitch's and Left's rows stand centred in that height.
+     default window. The grid takes its own layout's height, List's thirteen rows being the
+     tallest, so Pitch and Left leave the panel shorter. Where another column is taller, the
+     panel still runs down to the columns' common bottom, and the rows stand centred in the
+     room under the toggle. A grid held at List's height in every layout kept the switch
+     from moving anything, but where the panel's column is the tallest (a ruleset with
+     fewer cards, such as DBC7, shortens Skills) it set the whole screen's height and left
+     Pitch floating in empty room.
 
      The registered position is outlined, its corners rounded as the widgets' are (every
      frame and field in the view is rounded; the theme's own radius, not a second one). The
@@ -3469,7 +3482,9 @@ SE-GUI-85  GIVEN a PES 2021 save open at the default window, a player's Stats sc
                 LMF RMF CMF DMF LB RB CB GK, their lefts equal, each position's ratings at
                 its label's right; the pane has no scroll bar in any of the three; in each,
                 a rating not chosen draws its letter in the normal text colour, darker than
-                a button's; WHEN the editor restarts THEN List is still held
+                a button's; WHEN the editor restarts THEN List is still held; GIVEN the
+                DBC7 ruleset WHEN Pitch is pressed THEN the three columns' frames end
+                higher than under List, on Ability stats' frame's bottom
 SE-GUI-86  GIVEN the save open on team 718 /f/, `formation_pictures_folder` absent, the
                 formation bar's Portraits ticked
            WHEN Team, `Save a picture of the formations…` is pressed

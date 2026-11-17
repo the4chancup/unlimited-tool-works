@@ -428,12 +428,10 @@ input[type=checkbox]:indeterminate { background-image: url("data:image/svg+xml,%
 .pcols .stats-grid { margin-top: 0; }
 .pcols .skcols { margin-top: 1.5px; }
 .pcols #pos-grid { margin-top: 1px; }
-/* The grid keeps List's height in every layout, so switching never moves the panel's
-   bottom: List's thirteen rows, each a 17-point grade with 1 above and below it, 1 apart.
-   It takes the panel's free room under the toggle, and Pitch's and Left's rows stand
-   centred in it. */
-.pcols #pos-grid { min-height: calc(13 * (17px + 2px) + 12 * 1px); flex: 1;
-  justify-content: center; }
+/* The grid takes its own layout's height, so Pitch and Left leave the panel shorter than
+   List does; a column stretched to a taller one's bottom gives the grid the room left
+   under the toggle, its rows centred in it. */
+.pcols #pos-grid { flex: 1; justify-content: center; }
 /* The skills' and COM styles' second columns start at the same x: one
    column width for both panels (and the values' pairs under them). */
 .skcols { display: flex; gap: 14px; align-items: flex-start; }
