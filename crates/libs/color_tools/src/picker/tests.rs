@@ -518,6 +518,132 @@ fn a_suggestion_swatch_draws_no_stroke_at_rest() {
     assert_eq!(outline.stroke, hovered, "the hovered swatch's stroke");
 }
 
+/// The strokes of the rect shapes painted exactly over `rect` with no
+/// fill, in paint order: a widget's outline and any edge over it.
+fn outline_strokes(shapes: &[egui::epaint::ClippedShape], rect: egui::Rect) -> Vec<Stroke> {
+    shapes
+        .iter()
+        .filter_map(|clipped| match &clipped.shape {
+            egui::Shape::Rect(shape)
+                if shape.rect == rect && shape.fill == Color32::TRANSPARENT =>
+            {
+                Some(shape.stroke)
+            }
+            _ => None,
+        })
+        .collect()
+}
+
+// The square and the strip are no buttons: at rest they draw none of the
+// resting edge the theme gives live controls; under the pointer they
+// take the hovered state's stroke, as a hovered widget does.
+#[test]
+fn the_square_and_strip_draw_the_hovered_stroke_only_under_the_pointer() {
+    let mut window = Headless::new();
+    let mut color = [255, 128, 0];
+    let (nodes, _) = window.field(&mut color, &[], Vec::new());
+    window.click_at(centre(field_button(&nodes, 0)), &mut color, &[]);
+    // The popup's first frame is a sizing pass and its contents fade in
+    // over the next ones; a settled frame paints them at full alpha.
+    let mut nodes = Vec::new();
+    for _ in 0..20 {
+        let (drawn, _) = window.field(&mut color, &[], Vec::new());
+        nodes = drawn;
+    }
+    let hovered = window
+        .ctx
+        .style_of(window.ctx.theme())
+        .visuals
+        .widgets
+        .hovered
+        .bg_stroke;
+    for label in ["saturation and value", "hue"] {
+        let rect = egui_rect(entry(&nodes, label));
+        assert_eq!(
+            outline_strokes(&window.shapes, rect),
+            [Stroke::NONE],
+            "{label} draws no resting edge"
+        );
+        // egui styles a widget from its state on the frame before, so
+        // the pointer moves twice.
+        let hover = vec![egui::Event::PointerMoved(rect.center())];
+        window.field(&mut color, &[], hover.clone());
+        window.field(&mut color, &[], hover);
+        assert_eq!(
+            outline_strokes(&window.shapes, rect),
+            [hovered],
+            "{label}'s stroke under the pointer"
+        );
+    }
+}
+
+// A disabled field draws no outline, as a disabled control draws no
+// edge: the resting text box's border is an enabled field's.
+#[test]
+fn a_disabled_field_draws_no_outline() {
+    let mut window = Headless::new();
+    let mut color = [0, 0, 0];
+    let mut out = None;
+    window.frame(Vec::new(), |ui| {
+        studio_core::widgets::add_enabled_ui(ui, false, |ui| {
+            out = Some(color_field(ui, "field", &mut color, &[]));
+        });
+    });
+    let rect = out.expect("the field ran").response.rect;
+    let (outline, _) = swatch_shapes(&window.shapes, rect);
+    assert_eq!(
+        outline.stroke,
+        Stroke::NONE,
+        "a disabled field draws no edge"
+    );
+}
+
+// On the light theme the R/G/B fields draw as the number boxes they
+// are: the text box's fill and border.
+#[test]
+fn the_rgb_fields_draw_as_text_boxes_on_the_light_theme() {
+    let mut window = Headless::new();
+    window.ctx.set_theme(egui::Theme::Light);
+    let visuals = window.ctx.style_of(egui::Theme::Light).visuals.clone();
+    let fill = visuals.text_edit_bg_color();
+    let border = visuals.widgets.noninteractive.bg_stroke;
+    assert_eq!(
+        fill,
+        Color32::from_gray(253),
+        "premise: the text box's fill"
+    );
+    assert_eq!(
+        border,
+        Stroke::new(1.0, Color32::from_gray(190)),
+        "premise: the text box's border"
+    );
+    assert_ne!(
+        visuals.widgets.inactive.weak_bg_fill, fill,
+        "premise: a control's resting fill is not the text box's"
+    );
+    let mut color = [255, 128, 0];
+    let (nodes, _) = window.field(&mut color, &[], Vec::new());
+    window.click_at(centre(field_button(&nodes, 0)), &mut color, &[]);
+    let mut nodes = Vec::new();
+    for _ in 0..20 {
+        let (drawn, _) = window.field(&mut color, &[], Vec::new());
+        nodes = drawn;
+    }
+    for prefix in ["R ", "G ", "B "] {
+        let rect = egui_rect(spin_field(&nodes, prefix));
+        let frame = window
+            .shapes
+            .iter()
+            .find_map(|clipped| match &clipped.shape {
+                egui::Shape::Rect(shape) if shape.rect == rect => Some(shape),
+                _ => None,
+            })
+            .unwrap_or_else(|| panic!("no frame painted over the {prefix:?} field"));
+        assert_eq!(frame.fill, fill, "the {prefix:?} field's fill");
+        assert_eq!(frame.stroke, border, "the {prefix:?} field's border");
+    }
+}
+
 // A committed hex text is one change.
 #[test]
 fn hex_text_committed_with_enter_is_one_change() {
