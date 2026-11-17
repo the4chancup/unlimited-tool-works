@@ -162,8 +162,9 @@ fn every_panel_title_stands_six_above_its_first_drawn_row() {
 }
 
 // The sections' places under the title's line, at the draft's: the
-// columns' tops 3 under the title's separator (its `.pcols > *`
-// `margin-top`), so every heading's text top stands 12 under the line;
+// columns' first frames `GROUP_GAP` under the title's row (its
+// `.pcols > *` `margin-top`) and every heading's text 7 inside its
+// frame, so every heading's text top stands 20 under the line;
 // under a heading the first field rows' labels 22.5 and Height's 70.5
 // (the `.col` gap, the `.gen` margin and the rows' pitch), the first
 // checkbox's box 19.5 (the `.skcols` `margin-top`); the layout toggle
@@ -177,7 +178,7 @@ fn the_stats_screens_sections_stand_at_the_drafts_offsets() {
     for title in ["General info", "Ability stats"] {
         near_draft(
             heading(title) - line,
-            12.0,
+            20.0,
             &format!("{title}'s heading under the line"),
         );
     }
@@ -220,36 +221,9 @@ fn the_stats_screens_sections_stand_at_the_drafts_offsets() {
     );
     near_draft(
         heading("COM playing styles") - heading("Tricks"),
-        161.5,
+        169.5,
         "COM playing styles' heading under Tricks'",
     );
-}
-
-/// Player 701's slot 0's Stats screen at the default pane, the badge's
-/// run landed and the columns' widths settled over the first frames.
-fn positions_view(test: &str) -> (SaveView, Headless) {
-    let path = fixture(PesVersion::Pes21, test);
-    let mut view = SaveView::new();
-    view.open(&path);
-    view.selected = Some(Selection::Player(701, 0));
-    let mut window = Headless::sized(DEFAULT_PANE.x, DEFAULT_PANE.y);
-    badge_landed(&mut window, &mut view);
-    (view, window)
-}
-
-/// The settled frame of player 701's slot 0 at the default pane: the
-/// columns' widths settle over the first frames and the Cards used
-/// badge's run lands.
-fn settled_player_view(
-    test: &str,
-) -> (
-    Headless,
-    Vec<accesskit::Node>,
-    Vec<egui::epaint::ClippedShape>,
-) {
-    let (mut view, mut window) = positions_view(test);
-    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
-    (window, nodes, shapes)
 }
 
 /// `actual` within a point of the draft's `draft`, `what` naming it.
@@ -264,9 +238,9 @@ fn near_draft(actual: f64, draft: f64, what: &str) {
 // The positions grid at the draft's pitch (`#pos-grid`): each rating
 // square 17 by 17, the cells of a row 66 apart (the 62-point `.poscell`
 // and the `.posrow`'s 4-point gap), the rows 43 apart (a cell's 2 and 3
-// points of padding and the grid's 4-point gap), the first row's squares
-// 63.7 under the panel's title — the draft measures it so with the
-// layout toggle above the grid.
+// points of padding and the grid's 4-point gap), the rows centred in the
+// grid's List-height region — the first row's squares ~91 under the
+// panel's title here.
 #[test]
 fn the_positions_grid_stands_at_the_drafts_pitch() {
     let (_, nodes, _) = settled_player_view("positions_pitch");
@@ -290,7 +264,7 @@ fn the_positions_grid_stands_at_the_drafts_pitch() {
         }
     }
     let rows = ["LWF", "LMF", "CMF", "LB", "GK"].map(|position| c_of(position).y0);
-    near_draft(rows[0] - title_top, 63.7, "the first row under the title");
+    near_draft(rows[0] - title_top, 90.9, "the first row under the title");
     for pair in rows.windows(2) {
         near_draft(pair[1] - pair[0], 43.0, "the rows' pitch");
     }
@@ -299,6 +273,54 @@ fn the_positions_grid_stands_at_the_drafts_pitch() {
         near_draft(bounds.width(), 17.0, "a rating's width");
         near_draft(bounds.height(), 17.0, "a rating's height");
     }
+}
+
+// The positions grid keeps List's height in every layout (thirteen
+// 17-point rows a point apart, the draft's `#pos-grid` `min-height`), so
+// a layout switch never moves the panel's bottom — and in Pitch the
+// rows stand centred in the grid's height, the first row as far under
+// its top as the last is above its bottom.
+#[test]
+fn the_positions_grid_keeps_lists_height_in_every_layout() {
+    let (mut view, mut window) = positions_view("grid_height", DEFAULT_PANE.x);
+    let mut heights = Vec::new();
+    let mut pitch_gaps = None;
+    for at in 0..3 {
+        let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+        let frame = group_frame(&window, &nodes, &shapes, "Playable positions");
+        heights.push(frame.height());
+        if at == 0 {
+            // The grid's top is `TOGGLE_GRID_GAP` under the segments,
+            // its bottom the frame's inside (the frame's lower margin
+            // and stroke); the rows' first top is LWF's label, the
+            // last's bottom GK's squares.
+            let group = egui::Frame::group(&window.ctx.global_style());
+            let below = f32::from(group.inner_margin.bottom) + group.stroke.width;
+            let grid_top = layout_segments(&nodes)
+                .iter()
+                .map(|node| node.bounds().expect("bounds").y1)
+                .fold(0.0, f64::max)
+                + f64::from(crate::view::abilities::TOGGLE_GRID_GAP);
+            let grid_bottom = f64::from(frame.max.y - below);
+            let first = label_bounds(&nodes, "LWF").y0;
+            let last = rating_buttons(&nodes, "GK")[0].bounds().expect("bounds").y1;
+            pitch_gaps = Some((first - grid_top, grid_bottom - last));
+        }
+        if at < 2 {
+            click(&mut window, layout_segments(&nodes)[at + 1], &mut view);
+        }
+    }
+    for pair in heights.windows(2) {
+        assert!(
+            (pair[0] - pair[1]).abs() <= 0.5,
+            "the frame's height kept across layouts ({heights:?})"
+        );
+    }
+    let (top_gap, bottom_gap) = pitch_gaps.expect("the Pitch gaps were measured");
+    assert!(
+        (top_gap - bottom_gap).abs() <= 0.5,
+        "Pitch's rows centred in the grid's height ({top_gap} over, {bottom_gap} under)"
+    );
 }
 
 /// The layout toggle's segments under the Playable positions title, in x
@@ -361,7 +383,7 @@ fn detail_scroll_free(nodes: &[accesskit::Node]) -> bool {
 // SE-GUI-85
 #[test]
 fn the_layout_toggle_picks_one_of_three_grids() {
-    let (mut view, mut window) = positions_view("layout_toggle");
+    let (mut view, mut window) = positions_view("layout_toggle", DEFAULT_PANE.x);
     let nodes = draw(&mut window, &mut view);
     let segments = layout_segments(&nodes);
     assert_eq!(
@@ -386,7 +408,7 @@ fn the_layout_toggle_picks_one_of_three_grids() {
     // ratings stand 3.5 in from its edge) and the widest row's block is
     // centred in the panel.
     click(&mut window, segments[1], &mut view);
-    let nodes = draw(&mut window, &mut view);
+    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     assert_eq!(
         layout_segments(&nodes)[1].toggled(),
         Some(accesskit::Toggled::True),
@@ -405,7 +427,11 @@ fn the_layout_toggle_picks_one_of_three_grids() {
             c_of(position).x0
         );
     }
-    let column_centre = label_bounds(&nodes, "General info").x0 + 350.0 / 2.0;
+    let column_centre = f64::from(
+        group_frame(&window, &nodes, &shapes, "Playable positions")
+            .center()
+            .x,
+    );
     let block_centre = (c_of("LWF").x0
         + rating_buttons(&nodes, "RWF")[2]
             .bounds()
@@ -455,8 +481,9 @@ fn the_layout_toggle_picks_one_of_three_grids() {
             "{position}'s ratings right of its label"
         );
     }
-    // The first row's square stands at the draft's measure under the
-    // title and the rows at the draft's pitch.
+    // The first row's square stands centred in the grid's List-height
+    // region — ~47.5 under the title here — and the rows at the draft's
+    // pitch.
     let title_top = label_bounds(&nodes, "Playable positions").y0;
     let squares = LIST_ORDER.map(|position| {
         row_ratings(&nodes, label_bounds(&nodes, position))[0]
@@ -466,7 +493,7 @@ fn the_layout_toggle_picks_one_of_three_grids() {
     });
     near_draft(
         squares[0] - title_top,
-        45.9,
+        47.5,
         "the first List row under the title",
     );
     for pair in squares.windows(2) {
@@ -484,7 +511,7 @@ fn the_layout_toggle_picks_one_of_three_grids() {
 // SE-GUI-85
 #[test]
 fn an_unchosen_rating_paints_the_normal_text_colour() {
-    let (mut view, mut window) = positions_view("unchosen_letter");
+    let (mut view, mut window) = positions_view("unchosen_letter", DEFAULT_PANE.x);
     let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     let visuals = &window.ctx.style_of(window.ctx.theme()).visuals;
     let text_color = visuals.text_color();
@@ -854,10 +881,10 @@ fn the_foot_and_hand_sides_fill_the_held_side_and_store_the_pick() {
     );
 }
 
-// The frame that first shows a player is centred where every later frame
-// centres him: its ability stats grid is new, so egui lays the frame's first
+// The frame that first shows a player draws him where every later frame
+// does: its ability stats grid is new, so egui lays the frame's first
 // pass out narrow and discards it, and the pass that reaches the screen
-// must not centre on the widths that discarded pass measured.
+// must not lay out on the widths that discarded pass measured.
 #[test]
 fn a_players_first_frame_draws_where_every_later_one_does() {
     let path = fixture(PesVersion::Pes17, "player_first_frame");
@@ -870,15 +897,20 @@ fn a_players_first_frame_draws_where_every_later_one_does() {
         window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     }
 
-    // Each pass of the frame selecting the next player: the columns' width
-    // the centring pad reads, the width the pass measures, and whether egui
+    // Each pass of the frame selecting the next player: the columns'
+    // widths the pass reads, the widths it measures, and whether egui
     // discards it.
+    let stored = |ui: &egui::Ui| {
+        ui.ctx().data(|data| {
+            data.get_temp::<[f32; 2]>(egui::Id::unique(crate::view::abilities::COLUMN_WIDTHS_ID))
+        })
+    };
     view.selected = Some(Selection::Player(734, 1));
     let mut passes = Vec::new();
     let (_, first, _) = window.frame(Vec::new(), |ui| {
-        let read = crate::view::abilities::columns_width(ui);
+        let read = stored(ui);
         show(ui, &mut view, &|| Vec::new());
-        let measured = crate::view::abilities::columns_width(ui);
+        let measured = stored(ui);
         passes.push((read, measured, ui.ctx().will_discard()));
     });
     let (&(read, measured, _), discarded) = passes.split_last().expect("a frame runs a pass");

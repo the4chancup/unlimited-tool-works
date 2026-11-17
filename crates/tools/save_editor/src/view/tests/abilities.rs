@@ -1,5 +1,33 @@
 use super::*;
 
+/// Player 701's slot 0's Stats screen on a `width`-wide window, the
+/// badge's run landed and the columns' widths settled over the first
+/// frames.
+fn positions_view(test: &str, width: f32) -> (SaveView, Headless) {
+    let path = fixture(PesVersion::Pes21, test);
+    let mut view = SaveView::new();
+    view.open(&path);
+    view.selected = Some(Selection::Player(701, 0));
+    let mut window = Headless::sized(width, DEFAULT_PANE.y);
+    badge_landed(&mut window, &mut view);
+    (view, window)
+}
+
+/// The settled frame of player 701's slot 0 at the default pane: the
+/// columns' widths settle over the first frames and the Cards used
+/// badge's run lands.
+fn settled_player_view(
+    test: &str,
+) -> (
+    Headless,
+    Vec<accesskit::Node>,
+    Vec<egui::epaint::ClippedShape>,
+) {
+    let (mut view, mut window) = positions_view(test, DEFAULT_PANE.x);
+    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    (window, nodes, shapes)
+}
+
 /// The bounds of the Skills column's header (`ui.strong("Skills")`):
 /// what the Cards used row's tests scope to.
 fn skills_header(nodes: &[accesskit::Node]) -> accesskit::Rect {
@@ -713,12 +741,15 @@ fn the_positions_grid_draws_five_centered_rows_with_the_registered_outlined() {
         }
     }
 
-    // Each row centred in the column: the cells' span's centre at the
-    // column's centre (the 62-wide cells' edges sit 3.5 outside the
+    // Each row centred in the panel: the cells' span's centre at the
+    // frame's centre (the 62-wide cells' edges sit 3.5 outside the
     // centred ratings row, so the outside ratings' bounds bound the
     // span).
-    let column_left = label_bounds(&nodes, "General info").x0;
-    let column_centre = column_left + 350.0 / 2.0;
+    let column_centre = f64::from(
+        group_frame(&window, &nodes, &shapes, "Playable positions")
+            .center()
+            .x,
+    );
     for row in EXPECTED {
         let first_c = rating_buttons(&nodes, row[0])[0].bounds().expect("bounds");
         let last_a = rating_buttons(&nodes, row[row.len() - 1])[2]

@@ -261,9 +261,9 @@ fn general_infos_rows_stand_where_the_drafts_do() {
         ("Stronger hand", 166.5),
         ("Registered position", 190.5),
         ("Playing style", 214.5),
-        ("Other stats", 245.0),
-        ("Injury Resistance", 267.5),
-        ("Weak Foot: Usage", 291.5),
+        ("Other stats", 253.0),
+        ("Injury Resistance", 275.5),
+        ("Weak Foot: Usage", 299.5),
     ];
     for ((label, offset), (_, expected)) in offsets.iter().zip(draft) {
         assert!(

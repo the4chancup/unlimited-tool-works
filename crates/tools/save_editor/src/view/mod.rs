@@ -21,6 +21,7 @@ mod copy_stats;
 mod event_logo;
 mod file_menu;
 mod generate;
+mod group_frame;
 mod info_strip;
 mod interchange;
 mod live_aatf;
@@ -873,7 +874,7 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() ->
             top: LIST_TOP_MARGIN,
             bottom: 0,
         };
-        let list_panel = egui::Panel::left("save_editor_players")
+        egui::Panel::left("save_editor_players")
             // The draft's `.plist`: a 255-point column (the rows' frame and
             // the scroll bar's strip), not resizable. egui's panel size
             // counts its margins too. Under the design width the window
@@ -884,7 +885,6 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() ->
             .default_size(LIST_WIDTH + margin.sum().x)
             .frame(egui::Frame::side_top_panel(ui.style()).inner_margin(margin))
             .show(ui, |ui| player_list::show(ui, view));
-        let frame_right = list_panel.inner;
         // 6 points over the view, not egui's 8: a view's title then stands
         // as far below the toolbar band's line as its first row stands below
         // the title, in ink (`info_strip::view_title`). None at the right:
@@ -920,36 +920,7 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() ->
                         info_strip::show(ui, view);
                         match view.page {
                             PlayerScreen::Appearance => appearance::show(ui, view),
-                            PlayerScreen::Stats => {
-                                // The three fixed columns, centred as the
-                                // Stats screen's: the room they leave
-                                // between the player list's frame and the
-                                // window's right edge is split into four
-                                // equal gaps: before the first column,
-                                // between the columns and after the last.
-                                // The eye reads the first gap from the
-                                // list's last ink and the last to the
-                                // window's edge, so the pane's own margins
-                                // count in neither: centred in the pane,
-                                // the gap after the list read wider than
-                                // those between the columns.
-                                // `columns_width` is the last pass's
-                                // measured width; `abilities::show`
-                                // discards a pass that measures others.
-                                let columns = abilities::columns_width(ui);
-                                let window_right = ui.ctx().content_rect().max.x;
-                                let gap = ((window_right - frame_right - columns) / 4.0).max(0.0);
-                                let pad = (frame_right + gap - ui.cursor().min.x).max(0.0);
-                                ui.horizontal(|ui| {
-                                    ui.add_space(pad);
-                                    ui.vertical(|ui| {
-                                        // The columns' stored total and
-                                        // the two gaps between them.
-                                        ui.set_width(columns + 2.0 * gap);
-                                        abilities::show(ui, view, gap);
-                                    });
-                                });
-                            }
+                            PlayerScreen::Stats => abilities::show(ui, view),
                         }
                     }
                 });

@@ -35,6 +35,7 @@ use crate::view::abilities::{self, gating_tooltip, maybe_end_row, number, small_
 use crate::view::appearance::fields::{
     MOTIONS, MotionField, PHYSIQUE, Palette, STRIP_ENUMS, combo_options, number_range, palette,
 };
+use crate::view::group_frame::{GROUP_GAP, frame_margin, stretch_to};
 use crate::view::team::SPACE_GAP;
 use crate::view::{NUMBER_BOX, Panel, SaveView, edit_player, selected_player};
 
@@ -87,8 +88,6 @@ const STAR_NOTE: &str =
 /// The playing attitude box's note.
 const ATTITUDE_NOTE: &str = "Only affects cutscenes.";
 
-/// Between two groups one under another (the draft's `.group` margin).
-const GROUP_GAP: f32 = 4.0;
 /// Between two groups side by side (the draft's `.aprow` `gap`).
 const SIDE_GAP: f32 = 8.0;
 /// A strip cell's label slot (the draft's `.slabel`).
@@ -197,9 +196,8 @@ fn groups(
     hide_ids: Result<fpc::HideIds, fpc::HideIdsError>,
 ) {
     ui.spacing_mut().item_spacing.y = 0.0;
-    // The draft's `.group` `margin-top` stands the first group off the
-    // title's line as the between-group gaps stand each group off the
-    // last.
+    // `GROUP_GAP` stands the first group off the title's line as it
+    // stands each group off the last.
     ui.add_space(GROUP_GAP);
     fpc_colors_row(ui, session, player_id, version, player, hide_ids);
     ui.add_space(GROUP_GAP);
@@ -229,23 +227,12 @@ fn group(ui: &mut egui::Ui, title: &str, add: impl FnOnce(&mut egui::Ui)) {
 }
 
 /// `prepared`'s `content_ui` grown to `height` before its frame paints:
-/// `Frame::begin` reserves the frame's shape, so the `paint` after the
-/// stretch draws the taller frame (the bottom padding takes the extra).
+/// `stretch_to` for the height alone.
 fn stretch(prepared: &mut egui::containers::frame::Prepared, height: f32) {
-    let min = prepared.content_ui.min_rect();
-    prepared
-        .content_ui
-        .advance_cursor_after_rect(egui::Rect::from_min_max(
-            min.min,
-            egui::pos2(min.max.x, min.min.y + height),
-        ));
-}
-
-/// A group frame's margin on one axis: inner margin and stroke, which
-/// `Prepared::outer_rect` adds to the content's `min_rect` (its outer
-/// margin is 0 for `Frame::group`).
-fn frame_margin(frame: &egui::Frame) -> f32 {
-    frame.inner_margin.sum().y + frame.stroke.width * 2.0
+    stretch_to(
+        prepared,
+        egui::vec2(prepared.content_ui.min_rect().width(), height),
+    );
 }
 
 /// A group frame's inside for the rows: a top-down scope from the frame's
@@ -336,7 +323,7 @@ fn physique_motion_flags_row(
     draw: &mut dyn FnMut(u8) -> u8,
 ) {
     let group_frame = egui::Frame::group(ui.style());
-    let margin = frame_margin(&group_frame);
+    let margin = frame_margin(&group_frame).y;
     ui.scope_builder(
         egui::UiBuilder::new().layout(egui::Layout::left_to_right(egui::Align::Min)),
         |ui| {
