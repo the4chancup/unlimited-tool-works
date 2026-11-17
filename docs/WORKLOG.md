@@ -28,7 +28,13 @@ run shelved in `4cc-studio-temp/lookfix_flash`, never merged), Reset window's fi
 on Linux (the maintainer's check of 0.0.2-rc.3, 2026-11-17, "good enough for 0.0.2": the
 first click resets the window but the button stays, a second click changes nothing and the
 button goes, its pointer a hand; likely the window manager leaving the reset window off the
-fitted size, so the button waits for a click the window does not follow), and any mutation run
+fitted size, so the button waits for a click the window does not follow), the DpFileList
+upgrade on a PES 2019 DLC (the VGL organizer's poc.5 report, 2026-11-17: after
+`upgrade-dpfl` the game ran vanilla and made a new save of the real teams; the official
+list has no stem for the PES 2019 list's `03_base`, `10_scoreboard`, `11_interface`,
+`12_cutscenes`, `13_competition`, so they drop out, and PES 2019's records carry a
+countdown at byte 36 ours lack; the maintainer is settling it with the organizer), and any
+mutation run
 (mutfast first). Most open steps below wait only for the maintainer's look
 (`maintainer/tasks.html`). What is left before the cut:
 1. 0.0.2-geninfo: the build (SWE-2, running), its review (a SWE-2 loop, then one paid
@@ -1946,8 +1952,8 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       typed pick's frame, test gaps; the lead's share done (the draft's Squad table grouped
       under Main stats, SE-GUI-95, `gui.md`); the rest by SWE-2 (19 min, landed first time;
       `527cfcf2`, merge `d2eadc87`; the lead's rerun 1077 + 57, wheel 19, clippy, fmt).
-      Round 2 running over the fixes (`.tmp/0_0_2/geninfo_rev2/`); the pipeline on
-      `d2eadc87` running
+      Round 2 over the fixes (`.tmp/0_0_2/geninfo_rev2/`); the pipeline on `d2eadc87`
+      passed, with the Linux gates
     - [x] the 4cc patch's own nation table (different on PES 2015 to 2017) is not used: the
       base game's lists stand (the maintainer, 2026-11-17; plan and DECISIONS)
   - [ ] 0.0.2-posheight (the maintainer's change, 2026-11-17): the playable positions grid
