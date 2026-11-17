@@ -2798,7 +2798,8 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
   from the exports' Team TOMLs"): the Compiler's tactical patch, a team export's Team TOML's
   tactics gathered into one patch in the download folder and applied to the save only on
   the organizer's yes to the run's closing question (`plans/team_compiler/pipeline.md` "6.
-  Post-processing"); the Team TOML's place in the export settled first, with its scenarios
+  Post-processing"), from `team.toml` at the export's root (DECISIONS 2026-11-17); its
+  scenarios first
 - [ ] after 0.0.2 (the maintainer, 2026-11-17, card `look-tactics-gaps`): 0.1-pitchring,
   the Tactics pitch's turf reaches its border's inner curve, as `plans/save_editor.md` (the
   Tactics screen's item 2) says: 0.0.2-pitchround (`1f958e81`) rounds the turf by the
