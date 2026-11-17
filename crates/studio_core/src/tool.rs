@@ -129,8 +129,9 @@ pub trait StudioTool {
     /// The tool's part of the bundle's `README.txt`: how to read the files
     /// it puts under `inputs/`, `outputs/` and `state/`, written for
     /// whoever opens the zip. The platform appends it under its own part,
-    /// which says what each part of the bundle holds. A tool with nothing
-    /// to tell gives none. Default: none.
+    /// which says what each part of the bundle holds, after a blank line, so
+    /// the part ends in a newline. A tool with nothing to tell gives none.
+    /// Default: none.
     fn repro_readme(&self) -> Option<&'static str> {
         None
     }
