@@ -69,6 +69,19 @@ pub const TEXT_ROW_SPACING: f32 = 4.0;
 /// than a field: see `CHECKBOX_SPACING` and `CHECKBOX_ROW_HEIGHT`.
 pub const FIELD_SPACING: f32 = 6.0;
 
+/// Whether `response` is a live widget at rest: enabled, and in the state
+/// egui's `Widgets::style` answers with the `inactive` visuals (not hovered,
+/// highlighted, pressed, focused or clicked). A control's edge at rest is
+/// the theme's resting stroke; the painted marks' and rows' edges follow it,
+/// so they read it here rather than each re-deriving the state.
+fn at_rest(ui: &egui::Ui, response: &egui::Response) -> bool {
+    response.enabled()
+        && std::ptr::eq(
+            ui.style().interact(response),
+            &ui.visuals().widgets.inactive,
+        )
+}
+
 /// The space between checkboxes stacked one under another, as the
 /// `item_spacing.y` of their vertical layout or the row spacing of a grid of
 /// checkboxes alone: their 18-point rows stand 22 apart, which leaves 8 points

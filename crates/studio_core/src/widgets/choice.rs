@@ -100,6 +100,23 @@ fn icon_rectangles(ui: &egui::Ui, response: &egui::Response) -> (egui::Rect, egu
         .icon_rectangles(egui::Rect::from_x_y_ranges(x_range, rect.y_range()))
 }
 
+/// The stroke `response`'s painted blue is edged with: at rest (`at_rest`)
+/// the selection's own edge, the control-edge rule on the blue fill; the
+/// theme's resting stroke is the rule on the resting grey, not on the blue.
+/// Hovered, pressed or focused the state's stroke stays. A disabled mark
+/// draws none: its scope's resting stroke is already none.
+fn blue_stroke(ui: &egui::Ui, response: &egui::Response) -> egui::Stroke {
+    let visuals = ui.style().interact(response);
+    if super::at_rest(ui, response) {
+        egui::Stroke::new(
+            visuals.bg_stroke.width,
+            crate::theme::edge_color(ui.visuals(), ui.visuals().selection.bg_fill),
+        )
+    } else {
+        visuals.bg_stroke
+    }
+}
+
 /// Paints a checked box over the one egui drew for `response`: the
 /// selection blue inside the state's border and corners, then the tick
 /// across the box's central 8 points, where egui draws its own.
@@ -112,7 +129,7 @@ fn paint_checked_box(ui: &egui::Ui, response: &egui::Response) {
         frame,
         visuals.corner_radius,
         selection.bg_fill,
-        visuals.bg_stroke,
+        blue_stroke(ui, response),
         egui::StrokeKind::Inside,
     );
     painter.line(
@@ -133,7 +150,7 @@ fn paint_selected_radio(ui: &egui::Ui, response: &egui::Response) {
         frame.center(),
         frame.width() / 2.0 + visuals.expansion,
         selection.bg_fill,
-        visuals.bg_stroke,
+        blue_stroke(ui, response),
     );
     painter.circle_filled(dot.center(), dot.width() / 3.0, selection.stroke.color);
 }
@@ -162,6 +179,12 @@ mod tests {
 
     /// The selection blue a checked box or selected radio button is filled in.
     const BLUE: egui::Color32 = egui::Color32::from_rgb(0x00, 0x5c, 0x80);
+    /// The 1-point edge a checked box's or selected radio's blue takes at
+    /// rest, 30 lighter than it (`edge_color`).
+    const BLUE_EDGE: egui::Color32 = egui::Color32::from_rgb(0x1e, 0x7a, 0x9e);
+    /// The 1-point edge a resting box takes on the widgets' grey, 30 lighter
+    /// than its fill.
+    const EDGE: egui::Color32 = egui::Color32::from_gray(90);
     /// The selection's text colour the tick and the dot are drawn in.
     const TICK: egui::Color32 = egui::Color32::from_rgb(0xc0, 0xde, 0xff);
     /// The 1-point border a hovered box gets inside its edge.
@@ -313,13 +336,27 @@ mod tests {
     #[test]
     fn a_checked_checkbox_is_filled_blue_with_a_two_point_tick() {
         let (shapes, rects) = settled(None, two_checkboxes);
-        assert_checked_box(&shapes, rects[0], egui::Stroke::NONE, 2);
-        assert!(
-            rects_in(&shapes, rects[1])
-                .iter()
-                .all(|rect| rect.fill != BLUE),
-            "an unchecked box keeps egui's grey"
+        assert_checked_box(&shapes, rects[0], egui::Stroke::new(1.0, BLUE_EDGE), 2);
+        let box_at = |area: egui::Rect| {
+            egui::Rect::from_center_size(
+                egui::pos2(area.left() + 7.0, area.center().y),
+                egui::vec2(14.0, 14.0),
+            )
+        };
+        let [unchecked] = rects_in(&shapes, rects[1])
+            .into_iter()
+            .filter(|rect| rect.rect == box_at(rects[1]))
+            .collect::<Vec<_>>()[..]
+        else {
+            panic!("one box painted under the unchecked checkbox's mark");
+        };
+        assert_ne!(unchecked.fill, BLUE, "an unchecked box keeps egui's grey");
+        assert_eq!(
+            unchecked.stroke,
+            egui::Stroke::new(1.0, EDGE),
+            "the resting box's edge, 30 lighter than its fill"
         );
+        assert_eq!(unchecked.stroke_kind, egui::StrokeKind::Inside);
     }
 
     #[test]
@@ -346,8 +383,9 @@ mod tests {
         assert!(
             selected.iter().any(|circle| circle.fill == BLUE
                 && circle.center == center
-                && circle.radius == 7.0),
-            "a 14-point blue circle at the button: {selected:?}"
+                && circle.radius == 7.0
+                && circle.stroke == egui::Stroke::new(1.0, BLUE_EDGE)),
+            "a 14-point blue circle at the button, its edge 30 lighter: {selected:?}"
         );
         assert!(
             selected.iter().any(|circle| circle.fill == TICK
