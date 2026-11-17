@@ -381,6 +381,29 @@ pub fn edge_color(visuals: &egui::Visuals, fill: egui::Color32) -> egui::Color32
     )
 }
 
+/// The edge an unheld toggle side draws at rest: the panel 15 lighter
+/// on the dark theme, 15 darker on the light one (each channel
+/// saturating, the alpha kept), `#2a2a2a` on the dark `#1b1b1b` panel.
+/// An unheld side has no fill of its own, so its edge rises from the
+/// panel behind it — the quietest edge — where a held side's rises
+/// from its fill ([`edge_color`]).
+pub fn unheld_edge(visuals: &egui::Visuals) -> egui::Color32 {
+    let channel = |value: u8| {
+        if visuals.dark_mode {
+            value.saturating_add(15)
+        } else {
+            value.saturating_sub(15)
+        }
+    };
+    let panel = visuals.panel_fill;
+    egui::Color32::from_rgba_unmultiplied(
+        channel(panel.r()),
+        channel(panel.g()),
+        channel(panel.b()),
+        panel.a(),
+    )
+}
+
 /// The one corner radius everything drawn with corners rounds by, the
 /// drafts' `border-radius: 2px`: `install` pins it on every radius egui
 /// draws (the window's, the menu's and each widget state's), and the
@@ -951,6 +974,33 @@ mod tests {
         ] {
             assert_eq!(edge_color(&light, fill), expected, "light {fill:?}'s edge");
         }
+    }
+
+    // An unheld toggle side has no fill of its own, so its edge rises
+    // from the panel: 15 lighter on the dark theme (`#2a2a2a` on
+    // `#1b1b1b`), 15 darker on the light one.
+    #[test]
+    fn the_unheld_sides_edge_is_the_panel_fifteen_lighter_or_darker() {
+        let ctx = egui::Context::default();
+        install(&ctx);
+        let dark = ctx.style_of(egui::Theme::Dark).visuals.clone();
+        assert_eq!(
+            dark.panel_fill,
+            egui::Color32::from_gray(27),
+            "premise: the dark panel"
+        );
+        assert_eq!(
+            unheld_edge(&dark),
+            egui::Color32::from_gray(0x2a),
+            "the dark theme's unheld edge"
+        );
+        let light = ctx.style_of(egui::Theme::Light).visuals.clone();
+        let panel = light.panel_fill;
+        assert_eq!(
+            unheld_edge(&light),
+            egui::Color32::from_rgb(panel.r() - 15, panel.g() - 15, panel.b() - 15,),
+            "the light theme's unheld edge is its panel 15 darker"
+        );
     }
 
     /// Every `.rs` file under `dir`, recursively.

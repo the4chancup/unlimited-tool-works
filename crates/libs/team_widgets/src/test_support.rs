@@ -481,7 +481,8 @@ pub(crate) fn pointer_at(pos: egui::Pos2, pressed: bool) -> Vec<egui::Event> {
 }
 
 /// The fill of the last rect shape painted over `at` (what a member
-/// sees there).
+/// sees there): a transparent fill, an edge's or a frame's hollow
+/// shape, paints nothing, so it is skipped for the fill under it.
 pub(crate) fn last_rect_fill(
     shapes: &[egui::epaint::ClippedShape],
     at: egui::Pos2,
@@ -490,9 +491,37 @@ pub(crate) fn last_rect_fill(
         .iter()
         .rev()
         .find_map(|clipped| match &clipped.shape {
-            egui::Shape::Rect(shape) if shape.rect.contains(at) => Some(shape.fill),
+            egui::Shape::Rect(shape)
+                if shape.rect.contains(at) && shape.fill != egui::Color32::TRANSPARENT =>
+            {
+                Some(shape.fill)
+            }
             _ => None,
         })
+}
+
+/// The non-empty strokes of the rect shapes painted exactly over
+/// `bounds` (within half a point), in paint order: a widget's frame and
+/// any edge painted over it.
+pub(crate) fn strokes_over(
+    shapes: &[egui::epaint::ClippedShape],
+    bounds: accesskit::Rect,
+) -> Vec<egui::Stroke> {
+    shapes
+        .iter()
+        .filter_map(|clipped| match &clipped.shape {
+            egui::Shape::Rect(shape)
+                if !shape.stroke.is_empty()
+                    && (f64::from(shape.rect.min.x) - bounds.x0).abs() <= 0.5
+                    && (f64::from(shape.rect.min.y) - bounds.y0).abs() <= 0.5
+                    && (f64::from(shape.rect.max.x) - bounds.x1).abs() <= 0.5
+                    && (f64::from(shape.rect.max.y) - bounds.y1).abs() <= 0.5 =>
+            {
+                Some(shape.stroke)
+            }
+            _ => None,
+        })
+        .collect()
 }
 
 /// Whether `fill` is `blue` at any alpha: a disabled scope paints the

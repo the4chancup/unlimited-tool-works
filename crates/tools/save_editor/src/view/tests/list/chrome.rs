@@ -1285,3 +1285,38 @@ fn the_positions_layout_setting_survives_a_restart() {
         "the unknown value stays in the file"
     );
 }
+
+// A list row is not a control: the selected row's blue draws no edge at
+// rest, the state's stroke only hovered or focused.
+#[test]
+fn the_selected_player_row_draws_its_blue_with_no_edge() {
+    let path = fixture(PesVersion::Pes21, "selected_row_edge");
+    let mut view = SaveView::new();
+    view.open(&path);
+    assert_eq!(
+        view.selected,
+        Some(Selection::Player(701, 0)),
+        "premise: the first row selected"
+    );
+    let mut window = Headless::new();
+    let blue = window
+        .ctx
+        .style_of(window.ctx.theme())
+        .visuals
+        .selection
+        .bg_fill;
+    window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let selected = nodes
+        .iter()
+        .filter(|node| player_row(node))
+        .find(|node| node.toggled() == Some(accesskit::Toggled::True))
+        .and_then(accesskit::Node::bounds)
+        .expect("the selected row");
+    let frame = rect_of_fill_at(&shapes, selected, blue);
+    assert_eq!(
+        frame.stroke,
+        egui::Stroke::NONE,
+        "a row draws no resting edge"
+    );
+}

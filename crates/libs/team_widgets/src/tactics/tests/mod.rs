@@ -11,7 +11,7 @@ use super::*;
 use crate::test_support::{
     Headless, SettingsContext, centre, chip_under, chips_below, combo_row, control_below,
     control_right_of, controls_below, entry, entry_id, fixture_rows, fixture_tactics, is_selection,
-    last_rect_fill, pointer_at, roster_rows, tactics_settings,
+    last_rect_fill, pointer_at, roster_rows, strokes_over, tactics_settings,
 };
 
 impl Headless {
@@ -3119,4 +3119,168 @@ fn the_bar_selectors_are_two_apart_padded_five_and_seventeen_tall() {
         &widths,
         "the formation selector",
     );
+}
+
+/// The theme's toggle edges for `ctx`'s dark visuals: the held side's
+/// (the selection blue's edge, `#1e7a9e`) and an unheld side's (the
+/// panel's quiet edge, `#2a2a2a`).
+fn toggle_edge_colors(ctx: &egui::Context) -> (egui::Color32, egui::Color32) {
+    let visuals = ctx.global_style().visuals.clone();
+    let pair = (
+        studio_core::theme::edge_color(&visuals, visuals.selection.bg_fill),
+        studio_core::theme::unheld_edge(&visuals),
+    );
+    assert_eq!(
+        pair.0,
+        egui::Color32::from_rgb(0x1e, 0x7a, 0x9e),
+        "premise: the held side's edge"
+    );
+    assert_eq!(
+        pair.1,
+        egui::Color32::from_gray(0x2a),
+        "premise: the unheld side's edge"
+    );
+    pair
+}
+
+/// Asserts the held side of a toggle paints its frame's edge last in the
+/// blue's `held` stroke over `bounds`, its fill the selection blue.
+fn assert_held_side(
+    shapes: &[egui::epaint::ClippedShape],
+    bounds: accesskit::Rect,
+    held: egui::Color32,
+    blue: egui::Color32,
+    what: &str,
+) {
+    let strokes = strokes_over(shapes, bounds);
+    assert_eq!(
+        strokes.last(),
+        Some(&egui::Stroke::new(1.0, held)),
+        "{what}: the held side's edge paints over the frame's {strokes:?}"
+    );
+    let centre = egui::pos2(
+        ((bounds.x0 + bounds.x1) / 2.0) as f32,
+        ((bounds.y0 + bounds.y1) / 2.0) as f32,
+    );
+    let fill = last_rect_fill(shapes, centre).expect("{what}: a fill under the edge");
+    assert!(
+        is_selection(fill, blue),
+        "{what}: the held side's blue {fill:?}"
+    );
+}
+
+// A selector's sides edge as the draft's `.wsel` `.sel`s: the held
+// side's stroke the blue's edge over egui's own frame, an unheld side's
+// the quiet edge — the theme's resting stroke is the widgets' grey's,
+// which neither side fills with.
+#[test]
+fn the_preset_selectors_sides_edge_held_and_unheld() {
+    let mut window = Headless::new();
+    let (held, unheld) = toggle_edge_colors(&window.ctx);
+    let blue = window.ctx.global_style().visuals.selection.bg_fill;
+    let mut view = TacticsView::default();
+    let (nodes, shapes) = window.frame(vec![], |ui| {
+        preset_selector(ui, &mut view);
+    });
+    let bounds = |label: &str| {
+        entry(&nodes, Role::Button, label)
+            .bounds()
+            .expect("the side's bounds")
+    };
+    // Preset 1 is held at open.
+    assert_held_side(&shapes, bounds("1"), held, blue, "the preset selector");
+    for label in ["2", "3"] {
+        assert_eq!(
+            strokes_over(&shapes, bounds(label)),
+            [egui::Stroke::new(1.0, unheld)],
+            "{label:?}'s quiet edge"
+        );
+    }
+}
+
+// The same on a style pair (the draft's `.rate`): its two sides, the
+// held one's edge the blue's, the unheld's the quiet one.
+#[test]
+fn a_style_pairs_sides_edge_held_and_unheld() {
+    let mut window = Headless::sized(422.0, 900.0);
+    let (held, unheld) = toggle_edge_colors(&window.ctx);
+    let blue = window.ctx.global_style().visuals.selection.bg_fill;
+    let version = PesVersion::Pes21;
+    let mut tactics = fixture_tactics(version);
+    // Counter Attack held (the left side), Possession unheld.
+    tactics.presets[0].style.attacking_style = false;
+    let mut view = TacticsView::default();
+    let rows = fixture_rows(version);
+    let roster = roster_rows(&rows);
+    let (nodes, shapes) = window.settings_frame(version, &mut tactics, &mut view, &roster);
+    let half = settings_half(&nodes);
+    let choices = controls_below(&nodes, "Attacking style", Role::Button, half);
+    assert_eq!(choices.len(), 2, "premise: the pair");
+    assert_held_side(
+        &shapes,
+        choices[0].bounds().expect("bounds"),
+        held,
+        blue,
+        "Attacking style",
+    );
+    assert_eq!(
+        strokes_over(&shapes, choices[1].bounds().expect("bounds")),
+        [egui::Stroke::new(1.0, unheld)],
+        "the unheld side's quiet edge"
+    );
+}
+
+// The same on a numbers toggle (the draft's `.rate.tri`): Few | Medium |
+// Many, Medium held here.
+#[test]
+fn a_numbers_toggles_sides_edge_held_and_unheld() {
+    let mut window = Headless::sized(422.0, 900.0);
+    let (held, unheld) = toggle_edge_colors(&window.ctx);
+    let blue = window.ctx.global_style().visuals.selection.bg_fill;
+    // PES 2015: the numbers' toggles are editable on the game's own plan.
+    let version = PesVersion::Pes15;
+    let mut tactics = fixture_tactics(version);
+    tactics.presets[0].sliders.numbers_in_attack = 2;
+    let mut view = TacticsView::default();
+    let rows = fixture_rows(version);
+    let roster = roster_rows(&rows);
+    let (nodes, shapes) = window.settings_frame(version, &mut tactics, &mut view, &roster);
+    let half = settings_half(&nodes);
+    let choices = controls_below(&nodes, "Numbers in attack", Role::Button, half);
+    assert_eq!(choices.len(), 3, "premise: the three choices");
+    for (index, name) in ["Few", "Medium", "Many"].iter().enumerate() {
+        let bounds = choices[index].bounds().expect("bounds");
+        if *name == "Medium" {
+            assert_held_side(&shapes, bounds, held, blue, "Numbers in attack");
+        } else {
+            assert_eq!(
+                strokes_over(&shapes, bounds),
+                [egui::Stroke::new(1.0, unheld)],
+                "{name}'s quiet edge"
+            );
+        }
+    }
+}
+
+// A locked selector (the draft's `.rate.off`) draws no edge on any
+// side: its choices are disabled buttons, the held one's fill locked.
+#[test]
+fn a_locked_formation_selector_draws_no_edge_on_any_side() {
+    let mut window = Headless::new();
+    let version = PesVersion::Pes21;
+    let mut tactics = fixture_tactics(version);
+    // Fluid off: the preset fields its Kick-off formation alone.
+    tactics.presets[0].style.fluid = Some(false);
+    let mut view = TacticsView::default();
+    let (nodes, shapes) = window.frame(vec![], |ui| {
+        crate::pitch::formation_selector(ui, &tactics, &mut view);
+    });
+    for label in FORMATIONS {
+        let node = entry(&nodes, Role::Button, label);
+        assert!(node.is_disabled(), "{label:?} is locked");
+        assert!(
+            strokes_over(&shapes, node.bounds().expect("bounds")).is_empty(),
+            "{label:?} draws no edge"
+        );
+    }
 }

@@ -14,7 +14,8 @@
 //! use (`in_use_frame`), the slider with its value box (`slider`), the wheel stepping a combo box or a drag value (`wheel`), the modal window
 //! every dialog draws through (`modal`), the spacing of stacked fields
 //! and checkboxes (`FIELD_SPACING`, `CHECKBOX_SPACING`, `checkbox_row`) and of a
-//! grid of text rows (`TEXT_ROW_SPACING`).
+//! grid of text rows (`TEXT_ROW_SPACING`), and the resting-edge questions a
+//! widget painting its own state asks (`at_rest`, `row`, `resting_edge`).
 //! Where they sit in a tool's view is that tool's choice; the widgets
 //! themselves know no tool.
 
@@ -74,12 +75,42 @@ pub const FIELD_SPACING: f32 = 6.0;
 /// highlighted, pressed, focused or clicked). A control's edge at rest is
 /// the theme's resting stroke; the painted marks' and rows' edges follow it,
 /// so they read it here rather than each re-deriving the state.
-fn at_rest(ui: &egui::Ui, response: &egui::Response) -> bool {
+pub fn at_rest(ui: &egui::Ui, response: &egui::Response) -> bool {
     response.enabled()
         && std::ptr::eq(
             ui.style().interact(response),
             &ui.visuals().widgets.inactive,
         )
+}
+
+/// Adds `widget` with the theme's resting stroke taken out for that one
+/// widget (saved and put back around the `ui.add`), because a row is not a
+/// control: a picked row's blue draws no edge, and the next widget in `ui`
+/// keeps its own.
+pub fn row(ui: &mut egui::Ui, widget: impl egui::Widget) -> egui::Response {
+    let resting = ui.visuals().widgets.inactive.bg_stroke;
+    ui.visuals_mut().widgets.inactive.bg_stroke = egui::Stroke::NONE;
+    let response = ui.add(widget);
+    ui.visuals_mut().widgets.inactive.bg_stroke = resting;
+    response
+}
+
+/// The edge a widget painting its own resting state asks for: `color`
+/// stroked 1 point inside `response.rect` with the theme's corner radius
+/// while the widget is at rest (`at_rest`), nothing in another state — a
+/// hovered, pressed or focused widget keeps the frame egui draws. A toggle's
+/// held side takes its fill's edge (the theme's `edge_color`), its unheld
+/// side the panel's (`unheld_edge`), each a colour the theme's resting
+/// stroke on the widgets' grey cannot give.
+pub fn resting_edge(ui: &egui::Ui, response: &egui::Response, color: egui::Color32) {
+    if at_rest(ui, response) {
+        ui.painter().rect_stroke(
+            response.rect,
+            ui.visuals().widgets.inactive.corner_radius,
+            egui::Stroke::new(1.0, color),
+            egui::StrokeKind::Inside,
+        );
+    }
 }
 
 /// The space between checkboxes stacked one under another, as the
@@ -95,3 +126,141 @@ pub const CHECKBOX_SPACING: f32 = 4.0;
 /// of a checkbox row above it and 7 above the next field's box. A checkbox's own
 /// 18-point row would leave 10 between two squares. `checkbox_row` draws one.
 pub const CHECKBOX_ROW_HEIGHT: f32 = 16.0;
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// A context with the suite's look installed, as the window has it.
+    fn context() -> egui::Context {
+        let ctx = egui::Context::default();
+        crate::theme::install(&ctx);
+        ctx
+    }
+
+    /// One 800 by 600 frame drawing `contents` with `events` as its
+    /// input; the frame's shapes.
+    fn frame(
+        ctx: &egui::Context,
+        events: Vec<egui::Event>,
+        contents: impl FnMut(&mut egui::Ui),
+    ) -> Vec<egui::epaint::Shape> {
+        let input = egui::RawInput {
+            screen_rect: Some(egui::Rect::from_min_size(
+                egui::Pos2::ZERO,
+                egui::vec2(800.0, 600.0),
+            )),
+            events,
+            ..Default::default()
+        };
+        let mut contents = contents;
+        let mut output = ctx.run_ui(input, |ui| contents(ui));
+        let shapes = std::mem::take(&mut output.shapes)
+            .into_iter()
+            .map(|clipped| clipped.shape)
+            .collect();
+        // Nothing renders here, so the frame's texture deltas are dropped
+        // on purpose.
+        output.drop_without_applying_deltas();
+        shapes
+    }
+
+    /// The rect shapes painted exactly over `rect`.
+    fn frames_at(
+        shapes: &[egui::epaint::Shape],
+        rect: egui::Rect,
+    ) -> Vec<&egui::epaint::RectShape> {
+        shapes
+            .iter()
+            .filter_map(|shape| match shape {
+                egui::Shape::Rect(shape) if shape.rect == rect => Some(shape),
+                _ => None,
+            })
+            .collect()
+    }
+
+    /// The strokes of the rect shapes painted exactly over `rect`, the
+    /// empty ones left out (an invisible frame strokes nothing).
+    fn strokes_at(shapes: &[egui::epaint::Shape], rect: egui::Rect) -> Vec<egui::Stroke> {
+        frames_at(shapes, rect)
+            .into_iter()
+            .map(|frame| frame.stroke)
+            .filter(|stroke| !stroke.is_empty())
+            .collect()
+    }
+
+    // A row is not a control: the picked row fills in the selection blue
+    // and draws no edge, while the next widget keeps the theme's resting
+    // stroke (`row` takes it out for the one widget alone).
+    #[test]
+    fn a_row_draws_its_blue_with_no_edge_and_the_next_widget_keeps_its_own() {
+        let ctx = context();
+        let visuals = ctx.style_of(egui::Theme::Dark).visuals.clone();
+        let edge = visuals.widgets.inactive.bg_stroke;
+        assert_eq!(
+            edge,
+            egui::Stroke::new(1.0, egui::Color32::from_gray(90)),
+            "premise: the dark theme's resting edge"
+        );
+        let mut rects = (egui::Rect::NOTHING, egui::Rect::NOTHING);
+        let mut draw = |ui: &mut egui::Ui| {
+            rects = (
+                row(ui, egui::Button::selectable(true, "Pick")).rect,
+                ui.button("Plain").rect,
+            );
+        };
+        // egui styles a widget from its state on the frame before.
+        frame(&ctx, Vec::new(), &mut draw);
+        let shapes = frame(&ctx, Vec::new(), &mut draw);
+        let [picked] = frames_at(&shapes, rects.0)[..] else {
+            panic!("one frame over the picked row {:?}", rects.0);
+        };
+        assert_eq!(
+            picked.fill, visuals.selection.bg_fill,
+            "the picked row's blue"
+        );
+        assert_eq!(
+            picked.stroke,
+            egui::Stroke::NONE,
+            "a row draws no resting edge"
+        );
+        let [plain] = frames_at(&shapes, rects.1)[..] else {
+            panic!("one frame over the plain button {:?}", rects.1);
+        };
+        assert_eq!(plain.stroke, edge, "the next widget keeps the edge");
+    }
+
+    // The self-painted edge shows at rest alone: hovered, the widget's
+    // own frame carries the state's stroke and `resting_edge` paints
+    // nothing over it.
+    #[test]
+    fn resting_edge_paints_its_color_only_at_rest() {
+        let ctx = context();
+        let visuals = ctx.style_of(egui::Theme::Dark).visuals.clone();
+        let color = crate::theme::edge_color(&visuals, visuals.selection.bg_fill);
+        let rect_cell = std::cell::Cell::new(egui::Rect::NOTHING);
+        let mut draw = |ui: &mut egui::Ui| {
+            let response = ui.add(egui::Button::selectable(false, "Side"));
+            resting_edge(ui, &response, color);
+            rect_cell.set(response.rect);
+        };
+        frame(&ctx, Vec::new(), &mut draw);
+        let shapes = frame(&ctx, Vec::new(), &mut draw);
+        let rect = rect_cell.get();
+        assert_eq!(
+            strokes_at(&shapes, rect),
+            [egui::Stroke::new(1.0, color)],
+            "at rest the side's edge is the painted one"
+        );
+
+        // Hovered: egui's own frame alone, nothing painted over it.
+        let at = rect.center();
+        frame(&ctx, vec![egui::Event::PointerMoved(at)], &mut draw);
+        let shapes = frame(&ctx, vec![egui::Event::PointerMoved(at)], &mut draw);
+        assert_eq!(
+            strokes_at(&shapes, rect),
+            [visuals.widgets.hovered.bg_stroke],
+            "hovered keeps egui's own frame"
+        );
+    }
+}

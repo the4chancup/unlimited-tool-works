@@ -13,7 +13,7 @@ use egui::{
 };
 use studio_core::theme;
 use studio_core::widgets::{
-    number_arrows, number_wheel_steps, step_number, text_box, text_box_border,
+    at_rest, number_arrows, number_wheel_steps, step_number, text_box, text_box_border,
 };
 
 /// The most recent colors the session keeps: newest first, no duplicates.
@@ -321,6 +321,17 @@ const SQUARE_H: f32 = 120.0;
 /// The hue strip's height (the draft's `PK_HUE`).
 const STRIP_H: f32 = 14.0;
 
+/// The outline the square, the strip and a swatch draw: none at rest, the
+/// theme's resting stroke being a live control's edge and none of them a
+/// button; the state's stroke hovered or pressed.
+fn resting_stroke(ui: &Ui, response: &Response) -> Stroke {
+    if at_rest(ui, response) {
+        Stroke::NONE
+    } else {
+        ui.style().interact(response).bg_stroke
+    }
+}
+
 /// The saturation-value square (egui's `color_slider_2d`, drawn the same way: a
 /// vertex-colored mesh): `x` is saturation, `y` is value, `interact_pointer_pos` edits
 /// `hsva` while a press or a drag is held.
@@ -369,12 +380,8 @@ fn sv_square(ui: &mut Ui, hsva: &mut Hsva) -> Response {
             }
         }
         ui.painter().add(Shape::mesh(mesh));
-        ui.painter().rect_stroke(
-            rect,
-            0.0,
-            ui.style().interact(&response).bg_stroke,
-            StrokeKind::Inside,
-        );
+        ui.painter()
+            .rect_stroke(rect, 0.0, resting_stroke(ui, &response), StrokeKind::Inside);
         // The ring marks the working color's point, as the draft draws it.
         let center = pos2(
             lerp(rect.left()..=rect.right(), hsva.s),
@@ -419,12 +426,8 @@ fn hue_strip(ui: &mut Ui, hsva: &mut Hsva) -> Response {
             mesh.add_triangle(left + 1, left + 3, left + 2);
         }
         ui.painter().add(Shape::mesh(mesh));
-        ui.painter().rect_stroke(
-            rect,
-            0.0,
-            ui.style().interact(&response).bg_stroke,
-            StrokeKind::Inside,
-        );
+        ui.painter()
+            .rect_stroke(rect, 0.0, resting_stroke(ui, &response), StrokeKind::Inside);
         // The draft's 3px white bar with a black edge marks the hue's x.
         let x = lerp(rect.left()..=rect.right(), hsva.h);
         let marker =
@@ -455,7 +458,7 @@ fn color_swatch(ui: &mut Ui, rgb: [u8; 3]) -> Response {
         ui.painter().rect_stroke(
             rect,
             visuals.corner_radius,
-            visuals.bg_stroke,
+            resting_stroke(ui, &response),
             StrokeKind::Inside,
         );
     }

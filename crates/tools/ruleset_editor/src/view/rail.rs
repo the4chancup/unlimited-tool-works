@@ -34,14 +34,15 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut RulesetView) {
                 }
                 let bad = problems.iter().any(|error| section_of(error) == section);
                 // The draft's `.rail .sel`: the row fills the rail's
-                // width, its mark at the right end.
+                // width, its mark at the right end. A row is not a control
+                // (`row`), so the selected entry's blue draws no edge.
                 let mut entry = egui::Button::selectable(view.section == section, section.label())
                     .min_size(egui::vec2(ui.available_width(), 0.0));
                 if bad {
                     entry = entry
                         .right_text(egui::RichText::new("⚠").color(ui.visuals().error_fg_color));
                 }
-                if ui.add(entry).clicked() {
+                if studio_core::widgets::row(ui, entry).clicked() {
                     view.section = section;
                 }
             }

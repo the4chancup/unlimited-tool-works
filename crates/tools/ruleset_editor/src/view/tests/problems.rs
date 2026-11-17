@@ -144,6 +144,27 @@ fn the_rails_and_bottom_bars_fills_start_at_the_views_left_edge() {
     );
 }
 
+// A rail entry is a row, not a control: the selected one's blue draws
+// no edge at rest (the draft's `.rail .sel` carries none, held or not).
+#[test]
+fn the_selected_rail_entry_draws_its_blue_with_no_edge() {
+    let (ctx, _events, mut window, mut view) = fresh_blank();
+    let frame = settled(&mut window, &mut view, &ctx);
+    let blue = window.ctx.global_style().visuals.selection.bg_fill;
+    let entry = frame
+        .nodes
+        .iter()
+        .find(|node| node.role() == Role::Button && node.label() == Some("General"))
+        .and_then(accesskit::Node::bounds)
+        .expect("the selected rail entry");
+    let row = rect_of_fill_at(&frame.shapes, entry, blue);
+    assert_eq!(
+        row.stroke,
+        egui::Stroke::NONE,
+        "a row draws no resting edge"
+    );
+}
+
 // A rail entry fills its row (the draft's `.rail .sel`), 6 in from the
 // rail's edge each side.
 #[test]

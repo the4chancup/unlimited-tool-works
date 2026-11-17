@@ -24,16 +24,15 @@ pub(crate) fn rows_meet(spacing: &mut egui::style::Spacing) {
 /// meeting the rows above and below it. A row cannot change its
 /// neighbours, so it sets the list's own `Ui` (`rows_meet`), as every row
 /// does; a widget added to the list after a row therefore touches it too.
-/// It also takes the resting stroke out, the control's edge: a row is not
-/// a control, so the picked row's blue draws none.
+/// The row is added through `row`, which takes the resting stroke out:
+/// a row is not a control, so the picked row's blue draws no edge.
 pub fn combo_label(
     ui: &mut egui::Ui,
     checked: bool,
     text: impl Into<egui::WidgetText>,
 ) -> egui::Response {
     rows_meet(ui.spacing_mut());
-    ui.visuals_mut().widgets.inactive.bg_stroke = egui::Stroke::NONE;
-    ui.selectable_label(checked, text)
+    super::row(ui, egui::Button::selectable(checked, text))
 }
 
 /// The height `combo_separator` takes in a combo's open list.

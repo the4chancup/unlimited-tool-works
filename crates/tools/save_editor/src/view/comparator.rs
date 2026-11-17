@@ -353,10 +353,14 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
                         (Some(DiffScope::Gameplay), "Gameplay"),
                         (Some(DiffScope::Aesthetics), "Aesthetics"),
                     ] {
-                        if ui
-                            .selectable_value(&mut comparator.scope, scope, label)
-                            .clicked()
-                        {
+                        // A chip is a row, not a control (`row`): the
+                        // picked one's blue draws no resting edge.
+                        let chip = studio_core::widgets::row(
+                            ui,
+                            egui::Button::selectable(comparator.scope == scope, label),
+                        );
+                        if chip.clicked() {
+                            comparator.scope = scope;
                             surrender_focus(ui);
                         }
                     }

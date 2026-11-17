@@ -13,10 +13,10 @@ use pes_savefile::schema::fields::{
 };
 use pes_savefile::schema::{instruction, schema_for};
 use pes_version::PesVersion;
-use studio_core::theme::Palette;
+use studio_core::theme::{self, Palette};
 use studio_core::widgets::{
-    add_enabled, add_enabled_ui, checkbox, combo_item, cycle_choice, slider as suite_slider,
-    step_choice, wheel_steps,
+    add_enabled, add_enabled_ui, checkbox, combo_item, cycle_choice, resting_edge,
+    slider as suite_slider, step_choice, wheel_steps,
 };
 
 use crate::pitch::{FORMATIONS, position_label};
@@ -430,9 +430,16 @@ pub fn preset_selector(ui: &mut egui::Ui, view: &mut TacticsView) -> egui::Respo
     ui.horizontal(|ui| {
         bar_selector_spacing(ui);
         ui.weak("Preset");
+        let (held, unheld) = toggle_edges(ui);
         // The three choices as one control, so the wheel over any steps it.
         let control = (0usize..3)
-            .map(|preset| ui.selectable_value(&mut view.preset, preset, (preset + 1).to_string()))
+            .map(|preset| {
+                let on = view.preset == preset;
+                let response =
+                    ui.selectable_value(&mut view.preset, preset, (preset + 1).to_string());
+                resting_edge(ui, &response, if on { held } else { unheld });
+                response
+            })
             .reduce(|left, right| left | right)
             .expect("the selector has three choices");
         // Wheel down moves right, and `cycle_choice` steps down to a later
@@ -444,6 +451,19 @@ pub fn preset_selector(ui: &mut egui::Ui, view: &mut TacticsView) -> egui::Respo
         control
     })
     .inner
+}
+
+/// The resting edges a toggle's sides paint (the draft's `.rate` and
+/// `.wsel` `.sel`s): the held side's, its fill's edge over the selection
+/// blue, and the unheld side's, the quiet edge over the panel — both
+/// colours the theme's resting stroke, the rule on the widgets' grey,
+/// cannot give. `resting_edge` paints them only at rest.
+pub(crate) fn toggle_edges(ui: &egui::Ui) -> (egui::Color32, egui::Color32) {
+    let visuals = ui.visuals();
+    (
+        theme::edge_color(visuals, visuals.selection.bg_fill),
+        theme::unheld_edge(visuals),
+    )
 }
 
 /// The spacing of a bar's selector, the preset's and the formation's (the
@@ -660,16 +680,19 @@ fn style_choices(ui: &mut egui::Ui, style: &mut TacticStyle, toggle: &StyleToggl
     ui.spacing_mut().button_padding = CHOICE_PADDING;
     let width = (ui.available_width() - CHOICE_GAP) / 2.0;
     let mut value = (toggle.get)(style);
+    let (held, unheld) = toggle_edges(ui);
     // Both choices as one control, so the wheel over either moves it.
     let control = [(false, toggle.off), (true, toggle.on)]
         .into_iter()
         .map(|(picked, full)| {
+            let on = value == picked;
             let response = ui
                 .add_sized(
                     egui::vec2(width, ui.spacing().interact_size.y),
-                    egui::Button::selectable(value == picked, style_short(full)).truncate(),
+                    egui::Button::selectable(on, style_short(full)).truncate(),
                 )
                 .on_hover_text(full);
+            resting_edge(ui, &response, if on { held } else { unheld });
             if response.clicked() {
                 value = picked;
             }
@@ -710,6 +733,7 @@ fn number_choices(
     let editable = lock.is_none();
     // The three choices as one control, so the wheel over any moves it.
     let control = add_enabled_ui(ui, editable, |ui| {
+        let (held, unheld) = toggle_edges(ui);
         if !editable {
             lock_selection(ui);
         }
@@ -717,10 +741,12 @@ fn number_choices(
             .iter()
             .zip(1u8..=3)
             .map(|(name, choice)| {
+                let on = value == choice;
                 let response = ui.add_sized(
                     egui::vec2(width, ui.spacing().interact_size.y),
-                    egui::Button::selectable(value == choice, *name).truncate(),
+                    egui::Button::selectable(on, *name).truncate(),
                 );
+                resting_edge(ui, &response, if on { held } else { unheld });
                 if response.clicked() {
                     value = choice;
                 }

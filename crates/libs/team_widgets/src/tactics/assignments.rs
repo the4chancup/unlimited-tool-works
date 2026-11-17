@@ -8,6 +8,8 @@ use pes_savefile::model::tactics::{SetPieceTakers, TeamTactics};
 use pes_savefile::schema::fields::{InstructionSide, TacticsField};
 use pes_savefile::schema::instruction;
 use pes_version::PesVersion;
+use studio_core::theme::edge_color;
+use studio_core::widgets::resting_edge;
 
 use super::{RosterRow, TacticsView, name_at};
 
@@ -310,6 +312,12 @@ pub(super) fn chip(
             .stroke(egui::Stroke::NONE)
     };
     let response = ui.add(button);
+    // An armed chip edges its fill's blue (the draft's `.rolechip.armed`);
+    // an unarmed one keeps the theme's resting edge, being a button.
+    if armed {
+        let edge = edge_color(ui.visuals(), ui.visuals().selection.bg_fill);
+        resting_edge(ui, &response, edge);
+    }
     let chrome = 2.0 * ui.spacing().button_padding.x;
     if super::text_width(ui, name) > width - chrome {
         response.on_hover_text(name.to_owned())
@@ -329,7 +337,7 @@ mod tests {
     use crate::tactics::tests::{click, named_roster};
     use crate::test_support::{
         Headless, SettingsContext, chips_below, fixture_tactics, named_assignments, roster_rows,
-        tactics_settings,
+        strokes_over, tactics_settings,
     };
 
     // The draft's "Player assignments" column (`.tachalf`): each of the
@@ -571,6 +579,73 @@ mod tests {
                 "the join chips step {interact} plus the 2-point gap ({above:?} vs {below:?})"
             );
         }
+    }
+
+    // An armed chip edges its fill's blue (the draft's `.rolechip.armed`);
+    // an unarmed one, a button, keeps the theme's resting edge.
+    #[test]
+    fn an_armed_chip_edges_its_blue_an_unarmed_one_the_widgets_resting() {
+        let mut window = Headless::sized(800.0, 1200.0);
+        let (held, resting) = {
+            let visuals = window.ctx.global_style().visuals.clone();
+            (
+                edge_color(&visuals, visuals.selection.bg_fill),
+                visuals.widgets.inactive.bg_stroke,
+            )
+        };
+        assert_eq!(
+            held,
+            egui::Color32::from_rgb(0x1e, 0x7a, 0x9e),
+            "premise: the blue's edge"
+        );
+        assert_eq!(
+            resting,
+            egui::Stroke::new(1.0, egui::Color32::from_gray(90)),
+            "premise: the theme's resting edge"
+        );
+        let version = PesVersion::Pes21;
+        let mut tactics = fixture_tactics(version);
+        named_assignments(&mut tactics);
+        // The penalty chip armed, the others not.
+        let mut view = TacticsView {
+            assign: Some(Assign::Role(5)),
+            ..Default::default()
+        };
+        let rows = named_roster();
+        let roster = roster_rows(&rows);
+        let illegal_formations = window.illegal_formations;
+        let (nodes, shapes) = window.frame(vec![], |ui| {
+            tactics_settings(
+                ui,
+                "tactics",
+                version,
+                &mut tactics,
+                SettingsContext {
+                    opened: None,
+                    illegal_formations,
+                },
+                &mut view,
+                &roster,
+            );
+        });
+        let armed = chips_below(&nodes, "Penalty kick")[0];
+        assert_eq!(
+            armed.toggled(),
+            Some(accesskit::Toggled::True),
+            "premise: the chip is armed"
+        );
+        let strokes = strokes_over(&shapes, armed.bounds().expect("bounds"));
+        assert_eq!(
+            strokes.last(),
+            Some(&egui::Stroke::new(1.0, held)),
+            "the armed chip's edge paints over the frame's {strokes:?}"
+        );
+        let unarmed = chips_below(&nodes, "Long free kick")[0];
+        assert_eq!(
+            strokes_over(&shapes, unarmed.bounds().expect("bounds")),
+            [resting],
+            "an unarmed chip keeps the theme's resting edge"
+        );
     }
 
     // A disabled chip (an instruction that takes no target) keeps no

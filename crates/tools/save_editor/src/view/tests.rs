@@ -704,6 +704,28 @@ fn fill_at(
         .map(|(fill, _)| fill)
 }
 
+/// The `Shape::Rect` of `fill` painted over the centre of `bounds`: a
+/// selected row's or a picked chip's blue frame.
+fn rect_of_fill_at(
+    shapes: &[egui::epaint::ClippedShape],
+    bounds: accesskit::Rect,
+    fill: egui::Color32,
+) -> &egui::epaint::RectShape {
+    let centre = egui::pos2(
+        ((bounds.x0 + bounds.x1) / 2.0) as f32,
+        ((bounds.y0 + bounds.y1) / 2.0) as f32,
+    );
+    shapes
+        .iter()
+        .find_map(|clipped| match &clipped.shape {
+            egui::Shape::Rect(shape) if shape.fill == fill && shape.rect.contains(centre) => {
+                Some(shape)
+            }
+            _ => None,
+        })
+        .expect("the fill's frame over the bounds")
+}
+
 /// The Shirt field's `TextInput` node (the text edit right of the "Shirt
 /// (n/max)" label).
 fn shirt_field(nodes: &[accesskit::Node]) -> &accesskit::Node {

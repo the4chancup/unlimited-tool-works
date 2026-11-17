@@ -235,28 +235,31 @@ impl HelpWindow {
                 header = header.open(Some(true));
             }
             header.show(ui, |ui| {
-                // A topic's row is not a control: the shown topic's fills in
-                // the selection blue and draws no resting edge, the stroke
-                // the theme gives live controls.
-                ui.visuals_mut().widgets.inactive.bg_stroke = egui::Stroke::NONE;
+                // A topic's row is not a control (`row`): the shown topic's
+                // fills in the selection blue and draws none of the resting
+                // edge the theme gives live controls.
                 for (topic, entry) in section.topics.iter().enumerate() {
-                    if ui
-                        .selectable_label(
+                    if crate::widgets::row(
+                        ui,
+                        egui::Button::selectable(
                             chapter == self.chapter && topic == self.topic,
                             entry.title,
-                        )
-                        .clicked()
+                        ),
+                    )
+                    .clicked()
                     {
                         clicked = Some((chapter, topic));
                     }
                 }
                 if !section.messages.is_empty()
-                    && ui
-                        .selectable_label(
+                    && crate::widgets::row(
+                        ui,
+                        egui::Button::selectable(
                             chapter == self.chapter && self.topic == section.topics.len(),
                             "Messages",
-                        )
-                        .clicked()
+                        ),
+                    )
+                    .clicked()
                 {
                     clicked = Some((chapter, section.topics.len()));
                 }

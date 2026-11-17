@@ -477,6 +477,31 @@ fn the_swatch_is_outlined_as_a_resting_text_box() {
     assert_eq!(fill.corner_radius, widgets.noninteractive.corner_radius);
 }
 
+// A suggestion swatch is no control: at rest it draws none of the
+// resting edge the theme gives live controls.
+#[test]
+fn a_suggestion_swatch_draws_no_stroke_at_rest() {
+    let mut window = Headless::new();
+    let mut color = [0, 0, 0];
+    let (nodes, _) = window.field(&mut color, &[], Vec::new());
+    window.click_at(centre(field_button(&nodes, 0)), &mut color, &[]);
+    // The popup's first frame is a sizing pass and its contents fade
+    // in over the next ones; a settled frame paints them at full alpha.
+    let mut nodes = Vec::new();
+    for _ in 0..20 {
+        let (drawn, _) = window.field(&mut color, &[[255, 0, 0]], Vec::new());
+        nodes = drawn;
+    }
+    let swatch = entry(&nodes, "#FF0000");
+    let (outline, fill) = swatch_shapes(&window.shapes, egui_rect(swatch));
+    assert_eq!(
+        outline.stroke,
+        Stroke::NONE,
+        "a swatch draws no resting edge"
+    );
+    assert_eq!(fill.fill, Color32::from_rgb(255, 0, 0));
+}
+
 // A committed hex text is one change.
 #[test]
 fn hex_text_committed_with_enter_is_one_change() {
