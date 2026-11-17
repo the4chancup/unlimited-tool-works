@@ -1,6 +1,7 @@
 //! The suite's text and number boxes: `text_box`, egui's `TextEdit` with
-//! the drafts' resting border, and `number_box`, the `DragValue` drawn as
-//! one on the light theme.
+//! the drafts' resting border, `number_box`, the `DragValue` drawn as one
+//! on the light theme, and `number_box_look`, that light look as a scope
+//! `slider`'s value box shares.
 
 /// A resting text box's outline under `visuals`: the 1-point border in the
 /// theme's quiet line colour (the noninteractive stroke, grey 60 on the dark
@@ -40,40 +41,49 @@ pub fn text_box<'t>(edit: egui::TextEdit<'t>) -> impl egui::Widget + 't {
     }
 }
 
-/// `drag` drawn as a text box on the light theme: a light text box is
-/// nearly white and a light number box reads as one, the text edit's
-/// fill in every state and the text box's border at rest
-/// (`text_box_border`), so the two kinds of field look alike. The dark
-/// theme's is not touched: there the box is the grey every control is,
-/// the look the drafts were reviewed in. The light look is set on the
-/// box's own `Ui` for the one widget, as `text_box` sets its border.
+/// The light theme's number-box look around `add`: on the light theme a
+/// number box reads as a text box (the text edit's fill in every state
+/// and the text box's border at rest), so the two kinds of field look
+/// alike. It sets the live states' `weak_bg_fill` to the text edit's
+/// fill and, `ui` enabled, the resting `bg_stroke` to `text_box_border`'s
+/// stroke, runs `add` and puts the widgets back. On the dark theme it
+/// only runs `add`: there the box is the grey every control is, the look
+/// the drafts were reviewed in. `bg_fill` stays as the theme has it: a
+/// `DragValue` draws as a button (`weak_bg_fill`, `bg_stroke`) or, while
+/// edited, a `TextEdit` (`text_edit_bg_color`), never reading it, while a
+/// slider's rail and handle are drawn from it, so `slider`'s value box
+/// can share this scope.
+pub fn number_box_look<R>(ui: &mut egui::Ui, add: impl FnOnce(&mut egui::Ui) -> R) -> R {
+    if ui.visuals().dark_mode {
+        return add(ui);
+    }
+    let widgets = ui.visuals().widgets.clone();
+    let (border, _) = text_box_border(ui.visuals());
+    let fill = ui.visuals().text_edit_bg_color();
+    let enabled = ui.is_enabled();
+    let states = &mut ui.visuals_mut().widgets;
+    for state in [
+        &mut states.inactive,
+        &mut states.hovered,
+        &mut states.active,
+    ] {
+        state.weak_bg_fill = fill;
+    }
+    if enabled {
+        states.inactive.bg_stroke = border;
+    }
+    let result = add(ui);
+    ui.visuals_mut().widgets = widgets;
+    result
+}
+
+/// `drag` drawn as a text box on the light theme (`number_box_look`):
+/// a light text box is nearly white and a light number box reads as one,
+/// so the two kinds of field look alike.
 /// Add it as any widget (`ui.add(number_box(…))`, `ui.add_sized(…)`);
 /// every `egui::DragValue` the suite adds goes through it.
 pub fn number_box<'a>(drag: egui::DragValue<'a>) -> impl egui::Widget + 'a {
-    move |ui: &mut egui::Ui| {
-        if ui.visuals().dark_mode {
-            return ui.add(drag);
-        }
-        let widgets = ui.visuals().widgets.clone();
-        let (border, _) = text_box_border(ui.visuals());
-        let fill = ui.visuals().text_edit_bg_color();
-        let enabled = ui.is_enabled();
-        let states = &mut ui.visuals_mut().widgets;
-        for state in [
-            &mut states.inactive,
-            &mut states.hovered,
-            &mut states.active,
-        ] {
-            state.weak_bg_fill = fill;
-            state.bg_fill = fill;
-        }
-        if enabled {
-            states.inactive.bg_stroke = border;
-        }
-        let response = ui.add(drag);
-        ui.visuals_mut().widgets = widgets;
-        response
-    }
+    move |ui: &mut egui::Ui| number_box_look(ui, |ui| ui.add(drag))
 }
 
 #[cfg(test)]
@@ -254,6 +264,58 @@ mod tests {
             frame_at(&shapes, boxed.rect).fill,
             fill,
             "the hovered number box's fill"
+        );
+
+        // Pressed: the same fill, where the widgets' own pressed fill is
+        // darker still.
+        assert_ne!(
+            visuals.widgets.active.weak_bg_fill, fill,
+            "premise: a control's pressed fill is not the text edit's"
+        );
+        let press = vec![
+            egui::Event::PointerMoved(at),
+            egui::Event::PointerButton {
+                pos: at,
+                button: egui::PointerButton::Primary,
+                pressed: true,
+                modifiers: egui::Modifiers::NONE,
+            },
+        ];
+        frame(&ctx, press.clone(), &mut draw);
+        let (shapes, (boxed, _)) = frame(&ctx, press, &mut draw);
+        assert!(
+            boxed.is_pointer_button_down_on(),
+            "premise: the pointer holds the box"
+        );
+        assert_eq!(
+            frame_at(&shapes, boxed.rect).fill,
+            fill,
+            "the pressed number box's fill"
+        );
+    }
+
+    // A disabled light number box draws no border, as a disabled control
+    // draws none: the scope's resting stroke stays out and the look does
+    // not put the text box's in.
+    #[test]
+    fn a_disabled_light_number_box_draws_no_border() {
+        let ctx = egui::Context::default();
+        crate::theme::install(&ctx);
+        ctx.set_theme(egui::Theme::Light);
+        let mut value = 4u8;
+        let mut draw = |ui: &mut egui::Ui| {
+            crate::widgets::add_enabled_ui(ui, false, |ui| {
+                ui.add(number_box(egui::DragValue::new(&mut value)))
+            })
+            .inner
+        };
+        // egui styles a widget from its state on the frame before.
+        frame(&ctx, Vec::new(), &mut draw);
+        let (shapes, boxed) = frame(&ctx, Vec::new(), &mut draw);
+        assert_eq!(
+            frame_at(&shapes, boxed.rect).stroke,
+            egui::Stroke::NONE,
+            "a disabled number box draws no border"
         );
     }
 

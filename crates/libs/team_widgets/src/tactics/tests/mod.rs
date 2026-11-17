@@ -3284,3 +3284,41 @@ fn a_locked_formation_selector_draws_no_edge_on_any_side() {
         );
     }
 }
+
+// An unlocked selector (fluid on) edges as the draft's `.wsel` `.sel`s:
+// the held formation's edge the selection blue's, each unheld one's the
+// quiet edge — the edges the preset selector draws.
+#[test]
+fn an_unlocked_formation_selector_edges_held_and_unheld() {
+    let mut window = Headless::new();
+    let (held, unheld) = toggle_edge_colors(&window.ctx);
+    let blue = window.ctx.global_style().visuals.selection.bg_fill;
+    let version = PesVersion::Pes21;
+    let mut tactics = fixture_tactics(version);
+    // Fluid on: the preset fields all three formations.
+    tactics.presets[0].style.fluid = Some(true);
+    let mut view = TacticsView::default();
+    let (nodes, shapes) = window.frame(vec![], |ui| {
+        crate::pitch::formation_selector(ui, &tactics, &mut view);
+    });
+    let bounds = |label: &str| {
+        entry(&nodes, Role::Button, label)
+            .bounds()
+            .expect("the side's bounds")
+    };
+    // Kick-off is held at open.
+    assert_held_side(
+        &shapes,
+        bounds(FORMATIONS[0]),
+        held,
+        blue,
+        "the formation selector",
+    );
+    for label in &FORMATIONS[1..] {
+        assert_eq!(
+            strokes_over(&shapes, bounds(label)),
+            [egui::Stroke::new(1.0, unheld)],
+            "{label:?}'s quiet edge"
+        );
+    }
+}

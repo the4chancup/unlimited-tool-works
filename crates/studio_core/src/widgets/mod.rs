@@ -6,7 +6,8 @@
 //! the settings rows (`settings_row`) the menu's
 //! sections share, the checkbox and radio button every view draws
 //! (`choice`), the text and number boxes every view draws (`text_box`,
-//! `number_box`) and the text box's resting
+//! `number_box`), the number box's light look as a scope
+//! (`number_box_look`) and the text box's resting
 //! outline (`text_box_border`), the collapsing
 //! header every view draws (`collapsing_header`), a tool's
 //! toolbar row with its group separator, its framed scope and the Ctrl-only
@@ -54,7 +55,7 @@ pub use modal::{
 };
 pub(crate) use settings_row::{PathCommit, path_row, path_row_commit, row_label};
 pub use slider::slider;
-pub use text_box::{number_box, text_box, text_box_border};
+pub use text_box::{number_box, number_box_look, text_box, text_box_border};
 pub use toolbar::{consume_ctrl, toolbar, toolbar_framed, toolbar_separator};
 pub use wheel::{
     cycle_choice, number_arrows, number_wheel_steps, set_inverted, step_choice, step_number,

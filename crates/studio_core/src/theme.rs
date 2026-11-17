@@ -31,8 +31,8 @@ pub struct Palette {
     /// The boots/gloves dialog's range end ID (the draft's
     /// `.boglo input.readout`): egui's weak grey on the box is as faded as a
     /// disabled field's text, which is barely readable. Its light value keeps
-    /// the dark one's contrast, 6.3, on the light theme's faint box, where the
-    /// dark grey itself would read at 2.6.
+    /// the dark one's contrast, 6.2, on the light theme's faint box, where the
+    /// dark grey itself would read at 2.4.
     pub readout: egui::Color32,
     /// A counted label's count under its limit (the draft's `.gen .count`, a
     /// disabled card label's `#5a5a5a`): quiet, so a count draws the eye only
@@ -204,7 +204,7 @@ impl Palette {
     /// to the struct is a compile error here until it has a light value.
     pub const LIGHT: Palette = Palette {
         success: egui::Color32::from_rgb(0x1a, 0x7e, 0x37),
-        readout: egui::Color32::from_gray(0x5f),
+        readout: egui::Color32::from_gray(0x5b),
         count_grey: egui::Color32::from_gray(0x99),
         // The light resting text unchanged: the drafts are dark only, so the
         // light theme keeps egui's fade.
@@ -359,13 +359,15 @@ fn scaled(colour: egui::Color32, factor: f64) -> egui::Color32 {
     )
 }
 
-/// The edge a live control draws inside its box at rest: `fill` with 30
+/// The edge a filled control draws inside its box at rest: `fill` with 30
 /// on each channel on the dark theme, 30 off on the light one (each
-/// saturating; the alpha kept). A control's edge is its fill lightened,
-/// so an empty box or an unheld toggle still reads as a control on the
-/// panel; the widgets' resting stroke (`inactive.bg_stroke`) is this on
-/// the resting fill. A control that paints a fill of its own (the
-/// checked box's selection blue, the palette's) edges it with the same 30.
+/// saturating; the alpha kept). A filled control's edge is its fill
+/// lightened on the dark theme, darkened on the light, so an empty box
+/// still reads as a control on the panel; the widgets' resting stroke
+/// (`inactive.bg_stroke`) is this on the resting fill, and a control
+/// that paints a fill of its own (the checked box's selection blue, the
+/// palette's) edges it with the same 30. An unheld toggle side has no
+/// fill of its own; it takes [`unheld_edge`].
 pub fn edge_color(visuals: &egui::Visuals, fill: egui::Color32) -> egui::Color32 {
     let channel = |value: u8| {
         if visuals.dark_mode {
@@ -510,12 +512,12 @@ pub fn install(ctx: &egui::Context) {
 /// state's text colour (the strong text colour, below), the resting
 /// state's background stroke and the corner radii, `CORNER_RADIUS` on
 /// every state (0.36 rounded a hovered widget to 3). The resting stroke,
-/// none in egui, is a live control's edge: its fill 30 lighter, `#5a5a5a`
-/// on the resting 60, so an empty box or an unheld toggle still reads as
-/// a control on the panel. The drafts' stylesheet draws widgets in these
-/// colors, and 0.37's `Widgets::dark()` moved them (the buttons to grey
-/// 50 with text at 215, the radii to 4 to 6 points), so it cannot supply
-/// them.
+/// none in egui, is a filled control's edge: its fill 30 lighter, `#5a5a5a`
+/// on the resting 60, so an empty box still reads as a control on the
+/// panel; an unheld toggle side takes `unheld_edge`. The drafts'
+/// stylesheet draws widgets in these colors, and 0.37's `Widgets::dark()`
+/// moved them (the buttons to grey 50 with text at 215, the radii to 4
+/// to 6 points), so it cannot supply them.
 #[cfg(not(target_arch = "wasm32"))]
 fn widgets_dark() -> egui::style::Widgets {
     egui::style::Widgets {
@@ -1366,40 +1368,66 @@ mod tests {
         }
     }
 
-    // The quiet greys (a count under its limit, the chosen C rating's fill)
-    // keep the dark grey's contrast with its panel on the light panel, so
-    // they stay as quiet when the panel moves.
+    // The quiet greys (a count under its limit, the chosen C rating's
+    // fill, the boots range's readout) keep the dark grey's contrast with
+    // its background on the light theme's, so they stay as quiet when the
+    // theme moves: the count and the rating sit on the panel, the readout
+    // on the faint box the panel blended with `faint_bg_color` gives.
     #[test]
     fn the_quiet_greys_keep_the_dark_contrast_on_the_light_panel() {
         let ctx = egui::Context::default();
         install(&ctx);
-        let (dark_panel, light_panel) = (
-            ctx.style_of(egui::Theme::Dark).visuals.panel_fill,
-            ctx.style_of(egui::Theme::Light).visuals.panel_fill,
+        let (dark, light) = (
+            ctx.style_of(egui::Theme::Dark).visuals.clone(),
+            ctx.style_of(egui::Theme::Light).visuals.clone(),
         );
         assert_eq!(
-            light_panel,
+            light.panel_fill,
             egui::Color32::from_gray(240),
             "premise: the light panel"
         );
-        for (name, dark, light) in [
+        let (dark_box, light_box) = (
+            dark.panel_fill.blend(dark.faint_bg_color),
+            light.panel_fill.blend(light.faint_bg_color),
+        );
+        for (name, dark_grey, light_grey, dark_on, light_on) in [
             (
                 "count_grey",
                 Palette::DARK.count_grey,
                 Palette::LIGHT.count_grey,
+                dark.panel_fill,
+                light.panel_fill,
             ),
             (
                 "rating_c_fill",
                 Palette::DARK.rating_c_fill,
                 Palette::LIGHT.rating_c_fill,
+                dark.panel_fill,
+                light.panel_fill,
+            ),
+            (
+                "readout",
+                Palette::DARK.readout,
+                Palette::LIGHT.readout,
+                dark_box,
+                light_box,
             ),
         ] {
-            let (want, got) = (contrast(dark, dark_panel), contrast(light, light_panel));
+            let (want, got) = (contrast(dark_grey, dark_on), contrast(light_grey, light_on));
             assert!(
                 (want - got).abs() < 0.05,
-                "{name}: {got:.2} on the light panel, {want:.2} on the dark"
+                "{name}: {got:.2} on its light background, {want:.2} on the dark"
             );
         }
+        // The light readout is not only near: it is the grey whose
+        // contrast on the light faint box is nearest the dark's.
+        assert_eq!(
+            Palette::LIGHT.readout,
+            egui::Color32::from_gray(grey_at_contrast(
+                contrast(Palette::DARK.readout, dark_box),
+                light_box
+            )),
+        );
     }
 
     // The lineup lists' position colours: the pitch's on the dark theme; on
