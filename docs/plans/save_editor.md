@@ -751,7 +751,8 @@ vertical room a tab row takes; a toggle on the title's own row takes none.
      room under the toggle. A grid held at List's height in every layout kept the switch
      from moving anything, but where the panel's column is the tallest (a ruleset with
      fewer cards, such as DBC7, shortens Skills) it set the whole screen's height and left
-     Pitch floating in empty room.
+     Pitch, the default most members keep, floating in empty room under every panel: a
+     bottom that moves on the rare switch costs less.
 
      The registered position is outlined, its corners rounded as the widgets' are (every
      frame and field in the view is rounded; the theme's own radius, not a second one). The
