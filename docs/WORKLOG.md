@@ -1885,8 +1885,9 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       within 0.5 (the first run's "2 taller" was its own arithmetic). For the look: under
       DBC7 the build's Pitch ends at 700 and List at 725, the draft's 703 and 726 (Ability
       stats' and the positions' own heights, before this step)
-    - [ ] the pipeline on `541f88a6`; the changelog lines for the three steps (after the
-      maintainer's own CHANGELOG edit, uncommitted on 2026-11-17, lands)
+    - [x] the pipeline on `541f88a6` 2026-11-17: passed, with the Linux gates
+    - [ ] the changelog lines for the three steps (after the maintainer's own CHANGELOG
+      edit, uncommitted on 2026-11-17, lands)
   - [ ] 0.0.2-keepsel (the maintainer's ruling, 2026-11-17): picking in the team dropdown
     the team the selection is already on keeps the selection (a player stays selected)
     -> verify: a test per case (his team keeps him, another team selects its row)
@@ -3384,6 +3385,11 @@ points there.
   drag jumped against 230 of 231, and the maintainer's drag showed none; turning vsync off
   only thinned the jumps out. Fix: 0.0.2-present (`plans/core/gui.md` "The graphics
   backend"; harness `.tmp/lead/flicker/variants2.py`).
+- open 2026-11-17 (the lead): the checkpoint's `wasm_check.py` warns that
+  `ShellCondition`'s `SettingsSaveFailed`, `UpdateAvailable` and `UpdateReady` are never
+  constructed (`studio_core/src/status.rs`): the code that builds them is native only. The
+  gate passes, and the warning was already in earlier runs (`pipeline_1117_rw5.log`), but it
+  is noise every run prints, and a new warning could hide behind it.
 - open 2026-11-17 (the lead): with `WGPU_BACKEND=gl` the release build of `26ae8f7c` never
   shows its window: the process spins one core and stops answering messages (window
   remembered on the 100% monitor).
