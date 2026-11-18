@@ -219,6 +219,7 @@
 - **Save editor and Ruleset editor**: the name color findings, the ruleset summary and the
   hair color comment in `settings.toml` now spell "color", as the rest of the program does.
 
+
 ## [0.0.1] - 2026-11-03
 
 - **Save editor**: the first preview, for the DBC7's managers on PES 2017: players, teams and

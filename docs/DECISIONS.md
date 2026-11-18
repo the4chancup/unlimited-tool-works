@@ -18804,3 +18804,9 @@ cases. A line in the plain present reads as what the tool always did, and a line
 hides the ones they need. Spacing had been listed under Other stuff; nobody notices it.
 Plan: plans/core/distribution.md#changelog-and-version-display edited; CONTRIBUTING.md "Commits"
 follows for the unpromised versions.
+
+## 2026-11-18 — distribution — two blank lines between the changelog's versions
+Decision: `CHANGELOG.md` puts two blank lines between one version's section and the next.
+Why: the maintainer's preference: with several versions in the file, a reader scrolling it
+finds where each starts. One blank line, Keep a Changelog's own, runs the versions together.
+Plan: plans/core/distribution.md#changelog-and-version-display edited.

@@ -422,10 +422,11 @@ A settings menu button that does the swap and relaunches is a proposal, not plan
 ### Changelog and version display
 
 **One changelog, three readers.** `CHANGELOG.md` at the repository root, in the Keep a Changelog
-shape: `## [Unreleased]` on top, then one `## [1.4.0] - 2026-10-02` section per release. Each
-bullet opens with its tool (`**The Compiler**: …`, `**Save editor**: …`, `**General**: …` for
-what every tool shares), because that is how a member reads it even though the version axis is
-one.
+shape: `## [Unreleased]` on top, then one `## [1.4.0] - 2026-10-02` section per release, with
+two blank lines between one version's section and the next, so a reader scrolling the file sees
+where each version starts. Each bullet opens with its tool (`**The Compiler**: …`,
+`**Save editor**: …`, `**General**: …` for what every tool shares), because that is how a
+member reads it even though the version axis is one.
 
 Inside a section the bullets stand under up to six headings, in this order, sorted by how much
 a member needs them (Red's changelog does the same, and members read a long list only as far
