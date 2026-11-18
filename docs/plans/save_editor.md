@@ -1386,8 +1386,8 @@ Full parity with 4ccEditor's Tactics tab, drawn in the team view under the team'
   another, a Gameplan pasted from another team, an imported Team TOML) still carries its
   numbers, and the AATF check says nothing about them, since the toggles' lock is all a cup
   needs: it stops the one route a member takes on purpose;
-- formation settings toggles (attacking style, zone, buildup, positioning, defensive style,
-  containment, pressure);
+- formation settings toggles (attacking styles, attacking area, build up, positioning,
+  defensive styles, containment area, pressuring), named as the game names them;
 - advanced instructions (2 attack + 2 defense, with target player where applicable);
 - set-piece takers (FK long/short/2, CK L/R, PK), captain;
 - auto flags (substitution, offside trap, atk/def levels, preset change);
@@ -1462,8 +1462,8 @@ Win32 original hurt the most):
      to the border's inner curve.
 
      Formation settings runs row by row, each offensive setting beside its defensive pair
-     (Attacking style beside Defensive style, Buildup beside Containment area, Attacking zone
-     beside Pressure, Positioning beside Defensive line, Support range beside Compactness,
+     (Attacking styles beside Defensive styles, Build up beside Containment area, Attacking
+     area beside Pressuring, Positioning beside Defensive line, Support range beside Compactness,
      Numbers in attack beside Numbers in defence: the original's arrangement). Every row is
      the same height, the panel's free height shared among them. Each label stands over its
      control, every control in a box 24 points tall, so a toggle's centre is level with a

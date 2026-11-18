@@ -162,7 +162,7 @@ pub struct PresetSection {
 pub struct StyleSection {
     /// "counter_attack" | "possession".
     pub attacking_style: Option<bool>,
-    /// "centre" | "wide".
+    /// "wide" | "centre".
     pub attacking_zone: Option<bool>,
     /// "long_pass" | "short_pass".
     pub buildup: Option<bool>,

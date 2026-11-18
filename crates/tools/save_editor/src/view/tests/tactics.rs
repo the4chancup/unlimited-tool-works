@@ -2227,7 +2227,7 @@ fn copy_swap_bounds(nodes: &[accesskit::Node]) -> Vec<accesskit::Rect> {
 }
 
 // The draft's `.rate` toggles write their field, one undo entry: a
-// click on Defensive style's "All Out Def." stores the flag.
+// click on Defensive style's "All-out Def." stores the flag.
 #[test]
 fn a_style_toggle_click_is_one_undo_entry() {
     let path = fixture(PesVersion::Pes21, "tactics_toggle_undo");
@@ -2240,7 +2240,7 @@ fn a_style_toggle_click_is_one_undo_entry() {
         .defensive_style;
 
     let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
-    let choice = node_labeled(&nodes, Role::Button, "All Out Def.");
+    let choice = node_labeled(&nodes, Role::Button, "All-out Def.");
     click(&mut window, choice, &mut view);
     assert_eq!(
         team_entry(&view, 701).tactics.presets[0]
@@ -2270,7 +2270,7 @@ fn frontline_press_fits_its_choice_at_the_settings_width() {
     open_team_view(&mut window, &mut view, 701);
     let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
 
-    let choice = choice_below(&nodes, "Defensive style", "Frontline Press.");
+    let choice = choice_below(&nodes, "Defensive styles", "Frontline Press.");
     let bounds = choice.bounds().expect("the choice's bounds");
     let choice_width = bounds.x1 - bounds.x0;
     let style = window.ctx.global_style();

@@ -75,7 +75,14 @@ mutation run
    same rule: team colours in 8 bits as on screen (the file holds the save's 0 to 63),
    `[tactics.auto] substitution` and the appearance colours by name; dribbling motion, star
    rating and playing attitude wait on `maintainer/questions.html#shown-as-numbers`.
-5. The cut, only once the maintainer has run the checks of
+5. Attacking area, fixed for 0.0.2 (the maintainer's PES 2017 check, 2026-11-18): the save
+   stores Wide as 0 and Centre as 1, where the Save editor showed them the other way round.
+   Centre still sits on the left. The formation settings now use the game's names (Attacking
+   styles, Build up, Attacking area, Defensive styles, Pressuring; Long-pass, Short-pass,
+   All-out Defence), and Team TOML's `[tactics.preset_N.style]` keys follow them. Gates:
+   team_widgets, pes_savefile, aatf, save_editor, clippy, fmt; the Attacking area toggle test
+   and the two tests of a preset's settings list ran red on the old mapping.
+6. The cut, only once the maintainer has run the checks of
    `maintainer/tasks.html` (the maintainer, 2026-11-17): a pipeline without mutants on the
    last merge (0.0.2-determ's second clean run), the changelog, the release build. The Linux
    checks are in (Reset window good enough for 0.0.2; poc.6 starts).

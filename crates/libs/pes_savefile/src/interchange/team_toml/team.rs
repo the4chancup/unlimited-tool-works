@@ -903,13 +903,13 @@ mod tests {
             ),
             "{err:?}"
         );
-        let err = TeamToml::parse("[tactics.preset_1.style]\nattacking_style = \"posession\"\n")
+        let err = TeamToml::parse("[tactics.preset_1.style]\nattacking_styles = \"posession\"\n")
             .expect_err("unknown label");
         assert!(
             matches!(
                 &err,
                 TeamTomlError::UnknownLabel { key, label, allowed }
-                    if key == "tactics.preset_1.style.attacking_style"
+                    if key == "tactics.preset_1.style.attacking_styles"
                         && label == "posession"
                         && allowed == "\"counter_attack\", \"possession\""
             ),

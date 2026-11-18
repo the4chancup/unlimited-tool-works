@@ -1158,15 +1158,15 @@ mod tests {
         };
         let mut expected = vec![heading(0.0, "Formation settings")];
         for (at, label, value) in [
-            (1.0, "Attacking style", "Counter Attack"),
-            (2.0, "Buildup", "Short Pass"),
-            (3.0, "Attacking zone", "Wide"),
+            (1.0, "Attacking styles", "Counter Attack"),
+            (2.0, "Build up", "Short-pass"),
+            (3.0, "Attacking area", "Centre"),
             (4.0, "Positioning", "Maintain"),
             (5.0, "Support range", "4"),
             (6.0, "Auto attack level", "Medium"),
-            (7.5, "Defensive style", "Frontline Pressure"),
+            (7.5, "Defensive styles", "Frontline Pressure"),
             (8.5, "Containment area", "Middle"),
-            (9.5, "Pressure", "Conservative"),
+            (9.5, "Pressuring", "Conservative"),
             (10.5, "Defensive line", "5"),
             (11.5, "Compactness", "5"),
             (12.5, "Auto defence level", "Medium"),

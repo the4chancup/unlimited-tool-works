@@ -374,7 +374,7 @@ pub enum PresetField {
     AttackingStyle,
     /// 0 long pass, 1 short pass.
     Buildup,
-    /// 0 centre, 1 wide.
+    /// 0 wide, 1 centre.
     AttackingZone,
     /// 0 maintain, 1 flexible.
     Positioning,

@@ -416,13 +416,13 @@ fn parse_preset(item: &Item, path: &str) -> Result<PresetSection, TeamTomlError>
             t,
             &style_path,
             &[
-                "attacking_style",
-                "attacking_zone",
-                "buildup",
+                "attacking_styles",
+                "attacking_area",
+                "build_up",
                 "positioning",
-                "defensive_style",
+                "defensive_styles",
                 "containment_area",
-                "pressure",
+                "pressuring",
                 "fluid",
             ],
         )?;
@@ -789,19 +789,19 @@ pub(super) fn apply_tactics(
             (
                 style.attacking_style,
                 PresetField::AttackingStyle,
-                "attacking_style",
+                "attacking_styles",
                 &mut target_style.attacking_style,
             ),
             (
                 style.attacking_zone,
                 PresetField::AttackingZone,
-                "attacking_zone",
+                "attacking_area",
                 &mut target_style.attacking_zone,
             ),
             (
                 style.buildup,
                 PresetField::Buildup,
-                "buildup",
+                "build_up",
                 &mut target_style.buildup,
             ),
             (
@@ -813,7 +813,7 @@ pub(super) fn apply_tactics(
             (
                 style.defensive_style,
                 PresetField::DefensiveStyle,
-                "defensive_style",
+                "defensive_styles",
                 &mut target_style.defensive_style,
             ),
             (
@@ -825,7 +825,7 @@ pub(super) fn apply_tactics(
             (
                 style.pressure,
                 PresetField::Pressure,
-                "pressure",
+                "pressuring",
                 &mut target_style.pressure,
             ),
         ];

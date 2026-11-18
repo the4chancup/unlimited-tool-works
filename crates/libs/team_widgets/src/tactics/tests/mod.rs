@@ -727,37 +727,38 @@ fn each_settings_control_writes_its_own_field() {
         },
         Case {
             name: "Attacking style on",
-            control: Control::Choice("Attacking style", "Possession"),
+            control: Control::Choice("Attacking styles", "Possession"),
             setup: |t| t.presets[0].style.attacking_style = false,
             expect: |t| t.presets[0].style.attacking_style = true,
         },
         Case {
             name: "Attacking style off",
-            control: Control::Choice("Attacking style", "Counter Attack"),
+            control: Control::Choice("Attacking styles", "Counter Attack"),
             setup: |t| t.presets[0].style.attacking_style = true,
             expect: |t| t.presets[0].style.attacking_style = false,
         },
         Case {
+            // The save's 1 is Centre, its 0 Wide (the game's screen).
             name: "Attacking zone on",
-            control: Control::Choice("Attacking zone", "Wide"),
+            control: Control::Choice("Attacking area", "Centre"),
             setup: |t| t.presets[0].style.attacking_zone = false,
             expect: |t| t.presets[0].style.attacking_zone = true,
         },
         Case {
             name: "Attacking zone off",
-            control: Control::Choice("Attacking zone", "Centre"),
+            control: Control::Choice("Attacking area", "Wide"),
             setup: |t| t.presets[0].style.attacking_zone = true,
             expect: |t| t.presets[0].style.attacking_zone = false,
         },
         Case {
             name: "Buildup on",
-            control: Control::Choice("Buildup", "Short Pass"),
+            control: Control::Choice("Build up", "Short-pass"),
             setup: |t| t.presets[0].style.buildup = false,
             expect: |t| t.presets[0].style.buildup = true,
         },
         Case {
             name: "Buildup off",
-            control: Control::Choice("Buildup", "Long Pass"),
+            control: Control::Choice("Build up", "Long-pass"),
             setup: |t| t.presets[0].style.buildup = true,
             expect: |t| t.presets[0].style.buildup = false,
         },
@@ -775,13 +776,13 @@ fn each_settings_control_writes_its_own_field() {
         },
         Case {
             name: "Defensive style on",
-            control: Control::Choice("Defensive style", "All Out Def."),
+            control: Control::Choice("Defensive styles", "All-out Def."),
             setup: |t| t.presets[0].style.defensive_style = false,
             expect: |t| t.presets[0].style.defensive_style = true,
         },
         Case {
             name: "Defensive style off",
-            control: Control::Choice("Defensive style", "Frontline Press."),
+            control: Control::Choice("Defensive styles", "Frontline Press."),
             setup: |t| t.presets[0].style.defensive_style = true,
             expect: |t| t.presets[0].style.defensive_style = false,
         },
@@ -799,13 +800,13 @@ fn each_settings_control_writes_its_own_field() {
         },
         Case {
             name: "Pressure on",
-            control: Control::Choice("Pressure", "Conservative"),
+            control: Control::Choice("Pressuring", "Conservative"),
             setup: |t| t.presets[0].style.pressure = false,
             expect: |t| t.presets[0].style.pressure = true,
         },
         Case {
             name: "Pressure off",
-            control: Control::Choice("Pressure", "Aggressive"),
+            control: Control::Choice("Pressuring", "Aggressive"),
             setup: |t| t.presets[0].style.pressure = true,
             expect: |t| t.presets[0].style.pressure = false,
         },
@@ -905,12 +906,12 @@ fn each_settings_control_writes_its_own_field() {
 /// The Formation settings' labels, the draft's row order (each
 /// offensive setting, then its defensive pair).
 const FORMATION_LABELS: [&str; 12] = [
-    "Attacking style",
-    "Defensive style",
-    "Buildup",
+    "Attacking styles",
+    "Defensive styles",
+    "Build up",
     "Containment area",
-    "Attacking zone",
-    "Pressure",
+    "Attacking area",
+    "Pressuring",
     "Positioning",
     "Defensive line",
     "Support range",
@@ -973,13 +974,13 @@ fn the_settings_are_six_even_rows_of_pairs() {
     // The box's inner edge is the labels' left x (a uniform margin).
     let heading = label_bounds(&nodes, "Formation settings");
     let group = group_box(&shapes, heading);
-    let inner = group.shrink(label_bounds(&nodes, "Attacking style").x0 as f32 - group.min.x);
+    let inner = group.shrink(label_bounds(&nodes, "Attacking styles").x0 as f32 - group.min.x);
     let half = (inner.width() - 16.0) / 2.0;
 
     let pairs: [(&str, &str); 6] = [
-        ("Attacking style", "Defensive style"),
-        ("Buildup", "Containment area"),
-        ("Attacking zone", "Pressure"),
+        ("Attacking styles", "Defensive styles"),
+        ("Build up", "Containment area"),
+        ("Attacking area", "Pressuring"),
         ("Positioning", "Defensive line"),
         ("Support range", "Compactness"),
         ("Auto attack level", "Auto defence level"),
@@ -1151,12 +1152,12 @@ fn the_two_choice_toggle_spans_its_half() {
     let (nodes, _) = window.tactics(version, &mut tactics, &mut view, &roster, vec![]);
     let half = settings_half(&nodes);
 
-    let choices = controls_below(&nodes, "Defensive style", Role::Button, half);
+    let choices = controls_below(&nodes, "Defensive styles", Role::Button, half);
     assert_eq!(choices.len(), 2, "the two choices");
     let frontline = choices[0];
     let all_out = choices[1];
     assert_eq!(frontline.label(), Some("Frontline Press."));
-    assert_eq!(all_out.label(), Some("All Out Def."));
+    assert_eq!(all_out.label(), Some("All-out Def."));
     let width = |node: &accesskit::Node| {
         let b = node.bounds().expect("bounds");
         b.x1 - b.x0
@@ -1597,7 +1598,7 @@ fn the_preset_fields_terms() {
             1
         ),
         (
-            "Preset 1 · Attacking style".to_owned(),
+            "Preset 1 · Attacking styles".to_owned(),
             "Counter Attack".to_owned(),
             "Possession".to_owned()
         )
@@ -1612,8 +1613,8 @@ fn the_preset_fields_terms() {
             0
         ),
         (
-            "Preset 3 · Defensive style".to_owned(),
-            "All Out Defence".to_owned(),
+            "Preset 3 · Defensive styles".to_owned(),
+            "All-out Defence".to_owned(),
             "Frontline Pressure".to_owned()
         )
     );
@@ -2048,23 +2049,23 @@ fn every_table_entry_keys_its_own_label() {
         ),
         (
             preset(PresetField::AttackingStyle),
-            "Preset 1 · Attacking style",
+            "Preset 1 · Attacking styles",
         ),
         (
             preset(PresetField::AttackingZone),
-            "Preset 1 · Attacking zone",
+            "Preset 1 · Attacking area",
         ),
-        (preset(PresetField::Buildup), "Preset 1 · Buildup"),
+        (preset(PresetField::Buildup), "Preset 1 · Build up"),
         (preset(PresetField::Positioning), "Preset 1 · Positioning"),
         (
             preset(PresetField::DefensiveStyle),
-            "Preset 1 · Defensive style",
+            "Preset 1 · Defensive styles",
         ),
         (
             preset(PresetField::ContainmentArea),
             "Preset 1 · Containment area",
         ),
-        (preset(PresetField::Pressure), "Preset 1 · Pressure"),
+        (preset(PresetField::Pressure), "Preset 1 · Pressuring"),
         (TacticsField::FreeKickTakerLong, "Long free kick"),
         (TacticsField::FreeKickTakerShort, "Short free kick"),
         (TacticsField::FreeKickTakerSecond, "Second free kick"),
@@ -2872,7 +2873,7 @@ fn the_wheel_moves_a_style_pair_down_to_the_right_and_up_to_the_left() {
     let roster = roster_rows(&rows);
     let (nodes, _) = window.tactics(version, &mut tactics, &mut view, &roster, vec![]);
     let half = settings_half(&nodes);
-    let choices = controls_below(&nodes, "Attacking style", Role::Button, half);
+    let choices = controls_below(&nodes, "Attacking styles", Role::Button, half);
     let labels: Vec<Option<&str>> = choices.iter().map(|node| node.label()).collect();
     assert_eq!(
         labels,
@@ -3214,14 +3215,14 @@ fn a_style_pairs_sides_edge_held_and_unheld() {
     let roster = roster_rows(&rows);
     let (nodes, shapes) = window.settings_frame(version, &mut tactics, &mut view, &roster);
     let half = settings_half(&nodes);
-    let choices = controls_below(&nodes, "Attacking style", Role::Button, half);
+    let choices = controls_below(&nodes, "Attacking styles", Role::Button, half);
     assert_eq!(choices.len(), 2, "premise: the pair");
     assert_held_side(
         &shapes,
         choices[0].bounds().expect("bounds"),
         held,
         blue,
-        "Attacking style",
+        "Attacking styles",
     );
     assert_eq!(
         strokes_over(&shapes, choices[1].bounds().expect("bounds")),

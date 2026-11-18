@@ -150,9 +150,9 @@ decides whether the game uses the second and third formations.
 **Formation settings** pairs each attacking setting with its defensive
 counterpart in six rows:
 
-- attacking style beside defensive style;
-- buildup beside containment area;
-- attacking zone beside pressure;
+- attacking styles beside defensive styles;
+- build up beside containment area;
+- attacking area beside pressuring;
 - positioning beside defensive line;
 - support range beside compactness;
 - numbers in attack beside numbers in defence.

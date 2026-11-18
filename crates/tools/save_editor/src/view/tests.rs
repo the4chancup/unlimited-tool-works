@@ -1659,7 +1659,7 @@ fn chip_under<'a>(nodes: &'a [accesskit::Node], combo: &accesskit::Node) -> &'a 
 /// the left's and the 16-point gap.
 fn settings_half(nodes: &[accesskit::Node]) -> f64 {
     let xs = |label: &str| label_bounds(nodes, label).x0;
-    xs("Defensive style") - xs("Attacking style") - 16.0
+    xs("Defensive styles") - xs("Attacking styles") - 16.0
 }
 
 /// The `role` widgets under `label`'s, in its Formation settings

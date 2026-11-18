@@ -276,6 +276,10 @@ struct StyleToggle {
     off: &'static str,
     /// The stored 1's text.
     on: &'static str,
+    /// The stored 1's choice is drawn first (left): Attacking area's
+    /// Centre, which the game stores as 1, reads before Wide as Middle
+    /// does in Containment area.
+    on_first: bool,
     /// The stored flag.
     get: fn(&TacticStyle) -> bool,
     /// The stored write.
@@ -285,26 +289,29 @@ struct StyleToggle {
 /// The seven style pairs, in the draft's order.
 const STYLE_TOGGLES: [StyleToggle; 7] = [
     StyleToggle {
-        label: "Attacking style",
+        label: "Attacking styles",
         field: PresetField::AttackingStyle,
         off: "Counter Attack",
         on: "Possession",
+        on_first: false,
         get: |style| style.attacking_style,
         set: |style, value| style.attacking_style = value,
     },
     StyleToggle {
-        label: "Attacking zone",
+        label: "Attacking area",
         field: PresetField::AttackingZone,
-        off: "Centre",
-        on: "Wide",
+        off: "Wide",
+        on: "Centre",
+        on_first: true,
         get: |style| style.attacking_zone,
         set: |style, value| style.attacking_zone = value,
     },
     StyleToggle {
-        label: "Buildup",
+        label: "Build up",
         field: PresetField::Buildup,
-        off: "Long Pass",
-        on: "Short Pass",
+        off: "Long-pass",
+        on: "Short-pass",
+        on_first: false,
         get: |style| style.buildup,
         set: |style, value| style.buildup = value,
     },
@@ -313,14 +320,16 @@ const STYLE_TOGGLES: [StyleToggle; 7] = [
         field: PresetField::Positioning,
         off: "Maintain",
         on: "Flexible",
+        on_first: false,
         get: |style| style.positioning,
         set: |style, value| style.positioning = value,
     },
     StyleToggle {
-        label: "Defensive style",
+        label: "Defensive styles",
         field: PresetField::DefensiveStyle,
         off: "Frontline Pressure",
-        on: "All Out Defence",
+        on: "All-out Defence",
+        on_first: false,
         get: |style| style.defensive_style,
         set: |style, value| style.defensive_style = value,
     },
@@ -329,14 +338,16 @@ const STYLE_TOGGLES: [StyleToggle; 7] = [
         field: PresetField::ContainmentArea,
         off: "Middle",
         on: "Wide",
+        on_first: false,
         get: |style| style.containment_area,
         set: |style, value| style.containment_area = value,
     },
     StyleToggle {
-        label: "Pressure",
+        label: "Pressuring",
         field: PresetField::Pressure,
         off: "Aggressive",
         on: "Conservative",
+        on_first: false,
         get: |style| style.pressure,
         set: |style, value| style.pressure = value,
     },
@@ -348,7 +359,7 @@ const STYLE_TOGGLES: [StyleToggle; 7] = [
 fn style_short(full: &'static str) -> &'static str {
     match full {
         "Frontline Pressure" => "Frontline Press.",
-        "All Out Defence" => "All Out Def.",
+        "All-out Defence" => "All-out Def.",
         _ => full,
     }
 }
@@ -681,8 +692,13 @@ fn style_choices(ui: &mut egui::Ui, style: &mut TacticStyle, toggle: &StyleToggl
     let width = (ui.available_width() - CHOICE_GAP) / 2.0;
     let mut value = (toggle.get)(style);
     let (held, unheld) = toggle_edges(ui);
+    let drawn = if toggle.on_first {
+        [(true, toggle.on), (false, toggle.off)]
+    } else {
+        [(false, toggle.off), (true, toggle.on)]
+    };
     // Both choices as one control, so the wheel over either moves it.
-    let control = [(false, toggle.off), (true, toggle.on)]
+    let control = drawn
         .into_iter()
         .map(|(picked, full)| {
             let on = value == picked;
@@ -702,7 +718,11 @@ fn style_choices(ui: &mut egui::Ui, style: &mut TacticStyle, toggle: &StyleToggl
         .expect("a pair has two choices");
     // Wheel down moves right, and `cycle_choice` steps down to a later item,
     // so it takes the steps as counted over the choices in drawn order.
-    if let Some(next) = cycle_choice([false, true], &value, wheel_steps(ui, &control)) {
+    if let Some(next) = cycle_choice(
+        drawn.map(|(stored, _)| stored),
+        &value,
+        wheel_steps(ui, &control),
+    ) {
         value = next;
     }
     if value != (toggle.get)(style) {

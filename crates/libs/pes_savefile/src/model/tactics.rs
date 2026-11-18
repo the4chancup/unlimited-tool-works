@@ -74,7 +74,7 @@ pub struct TacticsPreset {
 pub struct TacticStyle {
     /// 0 counter attack, 1 possession.
     pub attacking_style: bool,
-    /// 0 centre, 1 wide.
+    /// 0 wide, 1 centre.
     pub attacking_zone: bool,
     /// 0 long pass, 1 short pass.
     pub buildup: bool,

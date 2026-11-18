@@ -7,13 +7,16 @@ use pes_version::PesVersion;
 
 /// `[tactics.preset_N.style]`: `(key, [false label, true label])` in emit order.
 pub(crate) const STYLE_SWITCHES: [(&str, [&str; 2]); 7] = [
-    ("attacking_style", ["counter_attack", "possession"]),
-    ("attacking_zone", ["centre", "wide"]),
-    ("buildup", ["long_pass", "short_pass"]),
+    ("attacking_styles", ["counter_attack", "possession"]),
+    ("attacking_area", ["wide", "centre"]),
+    ("build_up", ["long_pass", "short_pass"]),
     ("positioning", ["maintain", "flexible"]),
-    ("defensive_style", ["frontline_pressure", "all_out_defence"]),
+    (
+        "defensive_styles",
+        ["frontline_pressure", "all_out_defence"],
+    ),
     ("containment_area", ["middle", "wide"]),
-    ("pressure", ["aggressive", "conservative"]),
+    ("pressuring", ["aggressive", "conservative"]),
 ];
 
 /// Formation/registered-position names; index = the stored position byte.

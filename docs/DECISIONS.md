@@ -18839,3 +18839,26 @@ known not to show. With nothing on screen to match, the dribbling motion follows
 beside it, which the game stores from 0 and shows from 1; the other two have no such siblings.
 Plan: `spec/pes_savefile/operations.md`, the Team TOML goals; the `dribbling` key's comment in
 `spec/aesthetics_export/settings_toml.md`.
+
+## 2026-11-18 — pes_savefile, team_widgets — Attacking area's stored 0 is Wide, and Centre is still drawn first
+Decision: the preset's attacking area byte reads 0 as Wide and 1 as Centre on every version, in
+the Save editor, Team TOML (`"wide"` is 0) and every change list. The Save editor's pair still
+draws Centre on the left and Wide on the right, through a flag on that one pair
+(`StyleToggle::on_first`), so the stored 0's choice is not always the left one.
+Why: the maintainer found the setting inverted in PES 2017, and SEN_P-AI's team table for PES
+2021 (`TeamDataTable.h`: "0: Wide, 1: Center") agrees, while matching our reading of the other
+six style bytes; the byte sits at the same place on PES 2015 to 2021. Centre stays left because
+the maintainer prefers it, as Middle stands left of Wide in Containment area.
+Plan: `spec/pes_savefile/operations.md`, the `.4cct` block's style bytes.
+
+## 2026-11-18 — team_widgets, pes_savefile — the formation settings' style pairs use the game's names
+Decision: the rows read Attacking styles, Build up, Attacking area, Positioning, Defensive styles,
+Containment area and Pressuring, in the app's sentence case; the choices Long-pass, Short-pass
+and All-out Defence (All-out Def. where shortened), as the game spells them. Possession and
+Maintain stay short of the game's Possession Game and Maintain Formation. Team TOML's keys
+follow the rows (`attacking_styles`, `build_up`, `attacking_area`, `defensive_styles`,
+`pressuring`); the values are unchanged.
+Why: the maintainer, from PES's own screen: the editor should read as the game does. The two
+longer texts would not fit the half-width toggles without redesigning the layout. Team TOML
+files already break in 0.0.2, so its keys rename now rather than in a later release.
+Plan: `plans/save_editor.md`, the Formation settings passages; `spec/pes_savefile/operations.md`.

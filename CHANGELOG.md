@@ -31,8 +31,8 @@
   editor show them. Form, injury resistance and weak foot are one higher than before. The
   starting eleven, the bench, the set-piece takers, the captain and an instruction's target
   count roster slots from 1, as the `[players.NN]` tables do, and a marked opponent is his
-  starter, 1 to 11; 0 means nobody. A file exported by 0.0.1 reads these values wrongly:
-  export it again.
+  starter, 1 to 11; 0 means nobody. The tactics' style keys now use the game's names. A
+  file exported by 0.0.1 reads these values wrongly: export it again.
 - **Save editor**: the values in General info and Other stats have been rearranged so that
   General info only holds non-tactical values (name, age, etc.) and the new Main stats panel,
   which replaces Other stats, holds the rest. This was required to optimize the upcoming
@@ -120,6 +120,9 @@
 
 ### Fixes
 
+- **Save editor**: the Attacking zone setting, now named Attacking area, showed Centre and
+  Wide the wrong way round, in the editor and in Team TOML files: a team set to Wide played
+  Centre in the game. It now matches the game.
 - **Save editor**: a PES 2017 Texport written and imported into an invitational slot showed
   nobody in the kick-off screen's Starting Lineup, because the manager ID wasn't being
   written. Texports now include the manager ID, as the game writes them.
@@ -205,6 +208,7 @@
   selected, instead of selecting the team's row.
 - **Save editor**: in General info, Shirt now reads Shirt name, and in the team view Short,
   Col. 1 and Col. 2 now read Short name, Color 1 and Color 2.
+- **Save editor**: the formation settings now use the game's names.
 - **Save editor**: the player list's team rows now stand out more from its player rows.
 - **Save editor**: the column heads of the unsaved changes list are no longer dimmed.
 - **Save editor**: the text of `Team file interchange` is no longer dimmed.

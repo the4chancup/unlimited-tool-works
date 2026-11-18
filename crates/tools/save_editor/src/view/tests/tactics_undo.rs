@@ -781,7 +781,7 @@ fn wheel_notches_over_the_tactics_controls_are_one_undo_step_each() {
     let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     let rail = centre_below(&nodes, "Support range", Role::Slider);
     let value_box = centre_below(&nodes, "Support range", Role::SpinButton);
-    let attacking_style = centre_below(&nodes, "Attacking style", Role::Button);
+    let attacking_style = centre_below(&nodes, "Attacking styles", Role::Button);
     let numbers_in_attack = centre_below(&nodes, "Auto attack level", Role::Button);
     let preset_two = centre(node_labeled(&nodes, Role::Button, "2"));
 
@@ -938,7 +938,7 @@ fn wheel_notches_wrap_round_at_the_toggles_ends() {
     assert_eq!(view.tactics.preset, 0, "premise: preset 1 is held");
 
     let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
-    let attacking_style = centre_below(&nodes, "Attacking style", Role::Button);
+    let attacking_style = centre_below(&nodes, "Attacking styles", Role::Button);
     let numbers_in_attack = centre_below(&nodes, "Auto attack level", Role::Button);
     let preset_two = centre(node_labeled(&nodes, Role::Button, "2"));
 

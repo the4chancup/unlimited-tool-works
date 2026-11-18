@@ -435,13 +435,13 @@ attack_defence_levels = false   # PES 17 and later
 [tactics.preset_1]
 man_marking = [0, 0, 0, 0, 11, 0, 0, 3, 5, 0, 6]                 # for each starter, in starting_eleven's order, the opponent's starter he marks (1 to 11); 0 = nobody
 [tactics.preset_1.style]
-attacking_style = "possession"  # "counter_attack" | "possession"
-attacking_zone = "wide"         # "centre" | "wide"
-buildup = "short_pass"          # "long_pass" | "short_pass"
+attacking_styles = "possession" # "counter_attack" | "possession"
+attacking_area = "centre"       # "wide" | "centre"
+build_up = "short_pass"         # "long_pass" | "short_pass"
 positioning = "flexible"        # "maintain" | "flexible"
-defensive_style = "frontline_pressure"   # "frontline_pressure" | "all_out_defence"
+defensive_styles = "frontline_pressure" # "frontline_pressure" | "all_out_defence"
 containment_area = "middle"     # "middle" | "wide"
-pressure = "aggressive"         # "aggressive" | "conservative"
+pressuring = "aggressive"       # "aggressive" | "conservative"
 fluid = false                   # PES 16 and later
 [tactics.preset_1.sliders]
 support_range = 4               # 1 to 10
@@ -1014,8 +1014,11 @@ Both are raw dumps of the reference editor's in-memory structs; both parse into 
   squad never applies and then fails to save.
 - **`.4cct` "nightly" tactics files**: `"001"` + 2-char PES version + 8-char team id (ASCII,
   NUL-padded) + the **405-byte tactics block**:
-  - per preset, 3 × (11 position bytes, then 11 y/x pairs), 7 style bytes (attacking style,
-    buildup, attacking zone, positioning, defensive style, containment area, pressure), 2 + 2
+  - per preset, 3 × (11 position bytes, then 11 y/x pairs), 7 style bytes (attacking styles,
+    build up, attacking area, positioning, defensive styles, containment area, pressuring; each
+    0 or 1, 0 being Counter Attack, Long-pass, Wide, Maintain, Frontline Pressure, Middle and
+    Aggressive: Attacking area's 0 is Wide, as the maintainer saw in PES 2017 and SEN_P-AI's
+    team table reads it in PES 2021, though the Save editor draws Centre first), 2 + 2
     instructions each as canonical byte + player byte, support range, numbers in attack,
     defensive line, compactness, numbers in defence, fluid;
   - then starting XI (11), bench (21), 6 set-piece takers (FK long, FK short, FK 2, CK left, CK

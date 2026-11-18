@@ -34,13 +34,13 @@ preset_change = false           # PES 15+
 man_marking = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]                       # for each starter, in starting_eleven's order, the opponent's starter he marks (1 to 11); 0 = nobody
 
 [tactics.preset_1.style]
-attacking_style = "counter_attack" # "counter_attack" | "possession"
-attacking_zone = "wide"         # "centre" | "wide"
-buildup = "short_pass"          # "long_pass" | "short_pass"
+attacking_styles = "counter_attack" # "counter_attack" | "possession"
+attacking_area = "centre"       # "wide" | "centre"
+build_up = "short_pass"         # "long_pass" | "short_pass"
 positioning = "maintain"        # "maintain" | "flexible"
-defensive_style = "frontline_pressure" # "frontline_pressure" | "all_out_defence"
+defensive_styles = "frontline_pressure" # "frontline_pressure" | "all_out_defence"
 containment_area = "middle"     # "middle" | "wide"
-pressure = "aggressive"         # "aggressive" | "conservative"
+pressuring = "aggressive"       # "aggressive" | "conservative"
 # fluid = false                   # PES 16+
 
 [tactics.preset_1.sliders]
@@ -99,13 +99,13 @@ players = [
 man_marking = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]                       # for each starter, in starting_eleven's order, the opponent's starter he marks (1 to 11); 0 = nobody
 
 [tactics.preset_2.style]
-attacking_style = "possession"  # "counter_attack" | "possession"
-attacking_zone = "wide"         # "centre" | "wide"
-buildup = "short_pass"          # "long_pass" | "short_pass"
+attacking_styles = "possession" # "counter_attack" | "possession"
+attacking_area = "centre"       # "wide" | "centre"
+build_up = "short_pass"         # "long_pass" | "short_pass"
 positioning = "maintain"        # "maintain" | "flexible"
-defensive_style = "frontline_pressure" # "frontline_pressure" | "all_out_defence"
+defensive_styles = "frontline_pressure" # "frontline_pressure" | "all_out_defence"
 containment_area = "middle"     # "middle" | "wide"
-pressure = "aggressive"         # "aggressive" | "conservative"
+pressuring = "aggressive"       # "aggressive" | "conservative"
 # fluid = false                   # PES 16+
 
 [tactics.preset_2.sliders]
@@ -164,13 +164,13 @@ players = [
 man_marking = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]                       # for each starter, in starting_eleven's order, the opponent's starter he marks (1 to 11); 0 = nobody
 
 [tactics.preset_3.style]
-attacking_style = "counter_attack" # "counter_attack" | "possession"
-attacking_zone = "wide"         # "centre" | "wide"
-buildup = "short_pass"          # "long_pass" | "short_pass"
+attacking_styles = "counter_attack" # "counter_attack" | "possession"
+attacking_area = "centre"       # "wide" | "centre"
+build_up = "short_pass"         # "long_pass" | "short_pass"
 positioning = "maintain"        # "maintain" | "flexible"
-defensive_style = "frontline_pressure" # "frontline_pressure" | "all_out_defence"
+defensive_styles = "frontline_pressure" # "frontline_pressure" | "all_out_defence"
 containment_area = "middle"     # "middle" | "wide"
-pressure = "aggressive"         # "aggressive" | "conservative"
+pressuring = "aggressive"       # "aggressive" | "conservative"
 # fluid = false                   # PES 16+
 
 [tactics.preset_3.sliders]

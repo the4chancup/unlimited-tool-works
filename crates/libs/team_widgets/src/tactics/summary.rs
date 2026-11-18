@@ -21,7 +21,7 @@ pub enum SettingsLine {
     Heading(&'static str),
     /// A setting's label and its value as the editor's control names it.
     Setting {
-        /// The setting's label, "Attacking style" or "Attack 1".
+        /// The setting's label, "Attacking styles" or "Attack 1".
         label: String,
         /// Its value, "Counter Attack" or "Hug the Touchline".
         value: String,
@@ -155,16 +155,16 @@ mod tests {
     fn formation_settings(numbers: [&str; 2]) -> Vec<SettingsLine> {
         vec![
             SettingsLine::Heading("Formation settings"),
-            setting("Attacking style", "Counter Attack"),
-            setting("Buildup", "Short Pass"),
-            setting("Attacking zone", "Centre"),
+            setting("Attacking styles", "Counter Attack"),
+            setting("Build up", "Short-pass"),
+            setting("Attacking area", "Wide"),
             setting("Positioning", "Maintain"),
             setting("Support range", "4"),
             setting(numbers[0], "Medium"),
             SettingsLine::Gap,
-            setting("Defensive style", "Frontline Pressure"),
+            setting("Defensive styles", "Frontline Pressure"),
             setting("Containment area", "Middle"),
-            setting("Pressure", "Conservative"),
+            setting("Pressuring", "Conservative"),
             setting("Defensive line", "5"),
             setting("Compactness", "5"),
             setting(numbers[1], "Many"),
