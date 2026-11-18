@@ -139,12 +139,13 @@ fn a_key_the_target_lacks_is_not_reported() {
     let mut settings = PlayerSettings::parse("[appearance.motion]\ndribbling = 2\n")
         .expect("inside the widest range");
     assert_eq!(settings.narrow_to(PesVersion::Pes18), []);
-    assert_eq!(settings.get(SettingKey::Dribbling), Some(2));
-    // On PES 20 the key is held and 2 is inside its 0 to 3.
+    // The file counts from 1, as the other motions: 2 is stored 1.
+    assert_eq!(settings.get(SettingKey::Dribbling), Some(1));
+    // On PES 20 the key is held and 2 is inside its 1 to 4.
     let mut settings = PlayerSettings::parse("[appearance.motion]\ndribbling = 2\n")
         .expect("inside the widest range");
     assert_eq!(settings.narrow_to(PesVersion::Pes20), []);
-    assert_eq!(settings.get(SettingKey::Dribbling), Some(2));
+    assert_eq!(settings.get(SettingKey::Dribbling), Some(1));
 }
 
 /// `version_kind` is `None` exactly where `held_on` is, and narrows only

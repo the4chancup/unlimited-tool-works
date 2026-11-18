@@ -350,8 +350,8 @@ fn the_motion_fields_rows() {
             &field(PlayerField::DribblingMotion, 3, 0),
         ),
         "Dribbling motion",
-        "3",
-        "0",
+        "4",
+        "1",
     );
 }
 

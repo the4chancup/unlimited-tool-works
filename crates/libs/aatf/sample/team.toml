@@ -338,7 +338,7 @@ com_styles = []                 # "trickster" "mazing_run" "speeding_bullet" "in
 # corner_kick = 1                 # 1 to 6 (PES 20 and 21: 1 to 10)
 # free_kick = 1                   # 1 to 16 (PES 20 and 21: 1 to 20)
 # penalty_kick = 1                # 1 to 4 (PES 20 and 21: 1 to 7)
-# dribbling = 0                   # 0 to 3, PES 20 and 21 only
+# dribbling = 1                   # 1 to 4, PES 20 and 21 only
 # goal_celebration_1 = 0          # 0 none, then PES 15: 1 to 112, 16 and 17: 1 to 122, 18: 1 to 127, 19: 1 to 140, 20: 1 to 152, 21: 1 to 162
 # goal_celebration_2 = 0          # 0 none, then PES 15: 1 to 112, 16 and 17: 1 to 122, 18: 1 to 127, 19: 1 to 140, 20: 1 to 152, 21: 1 to 162
 
@@ -548,7 +548,7 @@ com_styles = []                 # "trickster" "mazing_run" "speeding_bullet" "in
 # corner_kick = 1                 # 1 to 6 (PES 20 and 21: 1 to 10)
 # free_kick = 1                   # 1 to 16 (PES 20 and 21: 1 to 20)
 # penalty_kick = 1                # 1 to 4 (PES 20 and 21: 1 to 7)
-# dribbling = 0                   # 0 to 3, PES 20 and 21 only
+# dribbling = 1                   # 1 to 4, PES 20 and 21 only
 # goal_celebration_1 = 0          # 0 none, then PES 15: 1 to 112, 16 and 17: 1 to 122, 18: 1 to 127, 19: 1 to 140, 20: 1 to 152, 21: 1 to 162
 # goal_celebration_2 = 0          # 0 none, then PES 15: 1 to 112, 16 and 17: 1 to 122, 18: 1 to 127, 19: 1 to 140, 20: 1 to 152, 21: 1 to 162
 
@@ -758,7 +758,7 @@ com_styles = ["trickster", "mazing_run"] # "trickster" "mazing_run" "speeding_bu
 # corner_kick = 1                 # 1 to 6 (PES 20 and 21: 1 to 10)
 # free_kick = 1                   # 1 to 16 (PES 20 and 21: 1 to 20)
 # penalty_kick = 1                # 1 to 4 (PES 20 and 21: 1 to 7)
-# dribbling = 0                   # 0 to 3, PES 20 and 21 only
+# dribbling = 1                   # 1 to 4, PES 20 and 21 only
 # goal_celebration_1 = 0          # 0 none, then PES 15: 1 to 112, 16 and 17: 1 to 122, 18: 1 to 127, 19: 1 to 140, 20: 1 to 152, 21: 1 to 162
 # goal_celebration_2 = 0          # 0 none, then PES 15: 1 to 112, 16 and 17: 1 to 122, 18: 1 to 127, 19: 1 to 140, 20: 1 to 152, 21: 1 to 162
 
@@ -968,7 +968,7 @@ com_styles = []                 # "trickster" "mazing_run" "speeding_bullet" "in
 # corner_kick = 1                 # 1 to 6 (PES 20 and 21: 1 to 10)
 # free_kick = 1                   # 1 to 16 (PES 20 and 21: 1 to 20)
 # penalty_kick = 1                # 1 to 4 (PES 20 and 21: 1 to 7)
-# dribbling = 0                   # 0 to 3, PES 20 and 21 only
+# dribbling = 1                   # 1 to 4, PES 20 and 21 only
 # goal_celebration_1 = 0          # 0 none, then PES 15: 1 to 112, 16 and 17: 1 to 122, 18: 1 to 127, 19: 1 to 140, 20: 1 to 152, 21: 1 to 162
 # goal_celebration_2 = 0          # 0 none, then PES 15: 1 to 112, 16 and 17: 1 to 122, 18: 1 to 127, 19: 1 to 140, 20: 1 to 152, 21: 1 to 162
 
@@ -1178,7 +1178,7 @@ com_styles = []                 # "trickster" "mazing_run" "speeding_bullet" "in
 # corner_kick = 1                 # 1 to 6 (PES 20 and 21: 1 to 10)
 # free_kick = 1                   # 1 to 16 (PES 20 and 21: 1 to 20)
 # penalty_kick = 1                # 1 to 4 (PES 20 and 21: 1 to 7)
-# dribbling = 0                   # 0 to 3, PES 20 and 21 only
+# dribbling = 1                   # 1 to 4, PES 20 and 21 only
 # goal_celebration_1 = 0          # 0 none, then PES 15: 1 to 112, 16 and 17: 1 to 122, 18: 1 to 127, 19: 1 to 140, 20: 1 to 152, 21: 1 to 162
 # goal_celebration_2 = 0          # 0 none, then PES 15: 1 to 112, 16 and 17: 1 to 122, 18: 1 to 127, 19: 1 to 140, 20: 1 to 152, 21: 1 to 162
 
@@ -1388,7 +1388,7 @@ com_styles = ["speeding_bullet"] # "trickster" "mazing_run" "speeding_bullet" "i
 # corner_kick = 1                 # 1 to 6 (PES 20 and 21: 1 to 10)
 # free_kick = 1                   # 1 to 16 (PES 20 and 21: 1 to 20)
 # penalty_kick = 1                # 1 to 4 (PES 20 and 21: 1 to 7)
-# dribbling = 0                   # 0 to 3, PES 20 and 21 only
+# dribbling = 1                   # 1 to 4, PES 20 and 21 only
 # goal_celebration_1 = 0          # 0 none, then PES 15: 1 to 112, 16 and 17: 1 to 122, 18: 1 to 127, 19: 1 to 140, 20: 1 to 152, 21: 1 to 162
 # goal_celebration_2 = 0          # 0 none, then PES 15: 1 to 112, 16 and 17: 1 to 122, 18: 1 to 127, 19: 1 to 140, 20: 1 to 152, 21: 1 to 162
 
@@ -1598,7 +1598,7 @@ com_styles = []                 # "trickster" "mazing_run" "speeding_bullet" "in
 # corner_kick = 1                 # 1 to 6 (PES 20 and 21: 1 to 10)
 # free_kick = 1                   # 1 to 16 (PES 20 and 21: 1 to 20)
 # penalty_kick = 1                # 1 to 4 (PES 20 and 21: 1 to 7)
-# dribbling = 0                   # 0 to 3, PES 20 and 21 only
+# dribbling = 1                   # 1 to 4, PES 20 and 21 only
 # goal_celebration_1 = 0          # 0 none, then PES 15: 1 to 112, 16 and 17: 1 to 122, 18: 1 to 127, 19: 1 to 140, 20: 1 to 152, 21: 1 to 162
 # goal_celebration_2 = 0          # 0 none, then PES 15: 1 to 112, 16 and 17: 1 to 122, 18: 1 to 127, 19: 1 to 140, 20: 1 to 152, 21: 1 to 162
 
@@ -1808,7 +1808,7 @@ com_styles = ["long_ball_expert"] # "trickster" "mazing_run" "speeding_bullet" "
 # corner_kick = 1                 # 1 to 6 (PES 20 and 21: 1 to 10)
 # free_kick = 1                   # 1 to 16 (PES 20 and 21: 1 to 20)
 # penalty_kick = 1                # 1 to 4 (PES 20 and 21: 1 to 7)
-# dribbling = 0                   # 0 to 3, PES 20 and 21 only
+# dribbling = 1                   # 1 to 4, PES 20 and 21 only
 # goal_celebration_1 = 0          # 0 none, then PES 15: 1 to 112, 16 and 17: 1 to 122, 18: 1 to 127, 19: 1 to 140, 20: 1 to 152, 21: 1 to 162
 # goal_celebration_2 = 0          # 0 none, then PES 15: 1 to 112, 16 and 17: 1 to 122, 18: 1 to 127, 19: 1 to 140, 20: 1 to 152, 21: 1 to 162
 
@@ -2018,7 +2018,7 @@ com_styles = []                 # "trickster" "mazing_run" "speeding_bullet" "in
 # corner_kick = 1                 # 1 to 6 (PES 20 and 21: 1 to 10)
 # free_kick = 1                   # 1 to 16 (PES 20 and 21: 1 to 20)
 # penalty_kick = 1                # 1 to 4 (PES 20 and 21: 1 to 7)
-# dribbling = 0                   # 0 to 3, PES 20 and 21 only
+# dribbling = 1                   # 1 to 4, PES 20 and 21 only
 # goal_celebration_1 = 0          # 0 none, then PES 15: 1 to 112, 16 and 17: 1 to 122, 18: 1 to 127, 19: 1 to 140, 20: 1 to 152, 21: 1 to 162
 # goal_celebration_2 = 0          # 0 none, then PES 15: 1 to 112, 16 and 17: 1 to 122, 18: 1 to 127, 19: 1 to 140, 20: 1 to 152, 21: 1 to 162
 
@@ -2228,7 +2228,7 @@ com_styles = ["speeding_bullet"] # "trickster" "mazing_run" "speeding_bullet" "i
 # corner_kick = 1                 # 1 to 6 (PES 20 and 21: 1 to 10)
 # free_kick = 1                   # 1 to 16 (PES 20 and 21: 1 to 20)
 # penalty_kick = 1                # 1 to 4 (PES 20 and 21: 1 to 7)
-# dribbling = 0                   # 0 to 3, PES 20 and 21 only
+# dribbling = 1                   # 1 to 4, PES 20 and 21 only
 # goal_celebration_1 = 0          # 0 none, then PES 15: 1 to 112, 16 and 17: 1 to 122, 18: 1 to 127, 19: 1 to 140, 20: 1 to 152, 21: 1 to 162
 # goal_celebration_2 = 0          # 0 none, then PES 15: 1 to 112, 16 and 17: 1 to 122, 18: 1 to 127, 19: 1 to 140, 20: 1 to 152, 21: 1 to 162
 
@@ -2438,7 +2438,7 @@ com_styles = ["speeding_bullet", "long_ranger"] # "trickster" "mazing_run" "spee
 # corner_kick = 1                 # 1 to 6 (PES 20 and 21: 1 to 10)
 # free_kick = 1                   # 1 to 16 (PES 20 and 21: 1 to 20)
 # penalty_kick = 1                # 1 to 4 (PES 20 and 21: 1 to 7)
-# dribbling = 0                   # 0 to 3, PES 20 and 21 only
+# dribbling = 1                   # 1 to 4, PES 20 and 21 only
 # goal_celebration_1 = 0          # 0 none, then PES 15: 1 to 112, 16 and 17: 1 to 122, 18: 1 to 127, 19: 1 to 140, 20: 1 to 152, 21: 1 to 162
 # goal_celebration_2 = 0          # 0 none, then PES 15: 1 to 112, 16 and 17: 1 to 122, 18: 1 to 127, 19: 1 to 140, 20: 1 to 152, 21: 1 to 162
 
@@ -2648,7 +2648,7 @@ com_styles = []                 # "trickster" "mazing_run" "speeding_bullet" "in
 # corner_kick = 1                 # 1 to 6 (PES 20 and 21: 1 to 10)
 # free_kick = 1                   # 1 to 16 (PES 20 and 21: 1 to 20)
 # penalty_kick = 1                # 1 to 4 (PES 20 and 21: 1 to 7)
-# dribbling = 0                   # 0 to 3, PES 20 and 21 only
+# dribbling = 1                   # 1 to 4, PES 20 and 21 only
 # goal_celebration_1 = 0          # 0 none, then PES 15: 1 to 112, 16 and 17: 1 to 122, 18: 1 to 127, 19: 1 to 140, 20: 1 to 152, 21: 1 to 162
 # goal_celebration_2 = 0          # 0 none, then PES 15: 1 to 112, 16 and 17: 1 to 122, 18: 1 to 127, 19: 1 to 140, 20: 1 to 152, 21: 1 to 162
 
@@ -2858,7 +2858,7 @@ com_styles = ["long_ball_expert"] # "trickster" "mazing_run" "speeding_bullet" "
 # corner_kick = 1                 # 1 to 6 (PES 20 and 21: 1 to 10)
 # free_kick = 1                   # 1 to 16 (PES 20 and 21: 1 to 20)
 # penalty_kick = 1                # 1 to 4 (PES 20 and 21: 1 to 7)
-# dribbling = 0                   # 0 to 3, PES 20 and 21 only
+# dribbling = 1                   # 1 to 4, PES 20 and 21 only
 # goal_celebration_1 = 0          # 0 none, then PES 15: 1 to 112, 16 and 17: 1 to 122, 18: 1 to 127, 19: 1 to 140, 20: 1 to 152, 21: 1 to 162
 # goal_celebration_2 = 0          # 0 none, then PES 15: 1 to 112, 16 and 17: 1 to 122, 18: 1 to 127, 19: 1 to 140, 20: 1 to 152, 21: 1 to 162
 
@@ -3068,7 +3068,7 @@ com_styles = []                 # "trickster" "mazing_run" "speeding_bullet" "in
 # corner_kick = 1                 # 1 to 6 (PES 20 and 21: 1 to 10)
 # free_kick = 1                   # 1 to 16 (PES 20 and 21: 1 to 20)
 # penalty_kick = 1                # 1 to 4 (PES 20 and 21: 1 to 7)
-# dribbling = 0                   # 0 to 3, PES 20 and 21 only
+# dribbling = 1                   # 1 to 4, PES 20 and 21 only
 # goal_celebration_1 = 0          # 0 none, then PES 15: 1 to 112, 16 and 17: 1 to 122, 18: 1 to 127, 19: 1 to 140, 20: 1 to 152, 21: 1 to 162
 # goal_celebration_2 = 0          # 0 none, then PES 15: 1 to 112, 16 and 17: 1 to 122, 18: 1 to 127, 19: 1 to 140, 20: 1 to 152, 21: 1 to 162
 
@@ -3278,7 +3278,7 @@ com_styles = []                 # "trickster" "mazing_run" "speeding_bullet" "in
 # corner_kick = 1                 # 1 to 6 (PES 20 and 21: 1 to 10)
 # free_kick = 1                   # 1 to 16 (PES 20 and 21: 1 to 20)
 # penalty_kick = 1                # 1 to 4 (PES 20 and 21: 1 to 7)
-# dribbling = 0                   # 0 to 3, PES 20 and 21 only
+# dribbling = 1                   # 1 to 4, PES 20 and 21 only
 # goal_celebration_1 = 0          # 0 none, then PES 15: 1 to 112, 16 and 17: 1 to 122, 18: 1 to 127, 19: 1 to 140, 20: 1 to 152, 21: 1 to 162
 # goal_celebration_2 = 0          # 0 none, then PES 15: 1 to 112, 16 and 17: 1 to 122, 18: 1 to 127, 19: 1 to 140, 20: 1 to 152, 21: 1 to 162
 
@@ -3488,7 +3488,7 @@ com_styles = []                 # "trickster" "mazing_run" "speeding_bullet" "in
 # corner_kick = 1                 # 1 to 6 (PES 20 and 21: 1 to 10)
 # free_kick = 1                   # 1 to 16 (PES 20 and 21: 1 to 20)
 # penalty_kick = 1                # 1 to 4 (PES 20 and 21: 1 to 7)
-# dribbling = 0                   # 0 to 3, PES 20 and 21 only
+# dribbling = 1                   # 1 to 4, PES 20 and 21 only
 # goal_celebration_1 = 0          # 0 none, then PES 15: 1 to 112, 16 and 17: 1 to 122, 18: 1 to 127, 19: 1 to 140, 20: 1 to 152, 21: 1 to 162
 # goal_celebration_2 = 0          # 0 none, then PES 15: 1 to 112, 16 and 17: 1 to 122, 18: 1 to 127, 19: 1 to 140, 20: 1 to 152, 21: 1 to 162
 
@@ -3698,7 +3698,7 @@ com_styles = ["long_ball_expert"] # "trickster" "mazing_run" "speeding_bullet" "
 # corner_kick = 1                 # 1 to 6 (PES 20 and 21: 1 to 10)
 # free_kick = 1                   # 1 to 16 (PES 20 and 21: 1 to 20)
 # penalty_kick = 1                # 1 to 4 (PES 20 and 21: 1 to 7)
-# dribbling = 0                   # 0 to 3, PES 20 and 21 only
+# dribbling = 1                   # 1 to 4, PES 20 and 21 only
 # goal_celebration_1 = 0          # 0 none, then PES 15: 1 to 112, 16 and 17: 1 to 122, 18: 1 to 127, 19: 1 to 140, 20: 1 to 152, 21: 1 to 162
 # goal_celebration_2 = 0          # 0 none, then PES 15: 1 to 112, 16 and 17: 1 to 122, 18: 1 to 127, 19: 1 to 140, 20: 1 to 152, 21: 1 to 162
 
@@ -3908,7 +3908,7 @@ com_styles = []                 # "trickster" "mazing_run" "speeding_bullet" "in
 # corner_kick = 1                 # 1 to 6 (PES 20 and 21: 1 to 10)
 # free_kick = 1                   # 1 to 16 (PES 20 and 21: 1 to 20)
 # penalty_kick = 1                # 1 to 4 (PES 20 and 21: 1 to 7)
-# dribbling = 0                   # 0 to 3, PES 20 and 21 only
+# dribbling = 1                   # 1 to 4, PES 20 and 21 only
 # goal_celebration_1 = 0          # 0 none, then PES 15: 1 to 112, 16 and 17: 1 to 122, 18: 1 to 127, 19: 1 to 140, 20: 1 to 152, 21: 1 to 162
 # goal_celebration_2 = 0          # 0 none, then PES 15: 1 to 112, 16 and 17: 1 to 122, 18: 1 to 127, 19: 1 to 140, 20: 1 to 152, 21: 1 to 162
 
@@ -4118,7 +4118,7 @@ com_styles = []                 # "trickster" "mazing_run" "speeding_bullet" "in
 # corner_kick = 1                 # 1 to 6 (PES 20 and 21: 1 to 10)
 # free_kick = 1                   # 1 to 16 (PES 20 and 21: 1 to 20)
 # penalty_kick = 1                # 1 to 4 (PES 20 and 21: 1 to 7)
-# dribbling = 0                   # 0 to 3, PES 20 and 21 only
+# dribbling = 1                   # 1 to 4, PES 20 and 21 only
 # goal_celebration_1 = 0          # 0 none, then PES 15: 1 to 112, 16 and 17: 1 to 122, 18: 1 to 127, 19: 1 to 140, 20: 1 to 152, 21: 1 to 162
 # goal_celebration_2 = 0          # 0 none, then PES 15: 1 to 112, 16 and 17: 1 to 122, 18: 1 to 127, 19: 1 to 140, 20: 1 to 152, 21: 1 to 162
 
@@ -4328,7 +4328,7 @@ com_styles = []                 # "trickster" "mazing_run" "speeding_bullet" "in
 # corner_kick = 1                 # 1 to 6 (PES 20 and 21: 1 to 10)
 # free_kick = 1                   # 1 to 16 (PES 20 and 21: 1 to 20)
 # penalty_kick = 1                # 1 to 4 (PES 20 and 21: 1 to 7)
-# dribbling = 0                   # 0 to 3, PES 20 and 21 only
+# dribbling = 1                   # 1 to 4, PES 20 and 21 only
 # goal_celebration_1 = 0          # 0 none, then PES 15: 1 to 112, 16 and 17: 1 to 122, 18: 1 to 127, 19: 1 to 140, 20: 1 to 152, 21: 1 to 162
 # goal_celebration_2 = 0          # 0 none, then PES 15: 1 to 112, 16 and 17: 1 to 122, 18: 1 to 127, 19: 1 to 140, 20: 1 to 152, 21: 1 to 162
 
@@ -4538,7 +4538,7 @@ com_styles = ["long_ball_expert"] # "trickster" "mazing_run" "speeding_bullet" "
 # corner_kick = 1                 # 1 to 6 (PES 20 and 21: 1 to 10)
 # free_kick = 1                   # 1 to 16 (PES 20 and 21: 1 to 20)
 # penalty_kick = 1                # 1 to 4 (PES 20 and 21: 1 to 7)
-# dribbling = 0                   # 0 to 3, PES 20 and 21 only
+# dribbling = 1                   # 1 to 4, PES 20 and 21 only
 # goal_celebration_1 = 0          # 0 none, then PES 15: 1 to 112, 16 and 17: 1 to 122, 18: 1 to 127, 19: 1 to 140, 20: 1 to 152, 21: 1 to 162
 # goal_celebration_2 = 0          # 0 none, then PES 15: 1 to 112, 16 and 17: 1 to 122, 18: 1 to 127, 19: 1 to 140, 20: 1 to 152, 21: 1 to 162
 
@@ -4748,7 +4748,7 @@ com_styles = []                 # "trickster" "mazing_run" "speeding_bullet" "in
 # corner_kick = 1                 # 1 to 6 (PES 20 and 21: 1 to 10)
 # free_kick = 1                   # 1 to 16 (PES 20 and 21: 1 to 20)
 # penalty_kick = 1                # 1 to 4 (PES 20 and 21: 1 to 7)
-# dribbling = 0                   # 0 to 3, PES 20 and 21 only
+# dribbling = 1                   # 1 to 4, PES 20 and 21 only
 # goal_celebration_1 = 0          # 0 none, then PES 15: 1 to 112, 16 and 17: 1 to 122, 18: 1 to 127, 19: 1 to 140, 20: 1 to 152, 21: 1 to 162
 # goal_celebration_2 = 0          # 0 none, then PES 15: 1 to 112, 16 and 17: 1 to 122, 18: 1 to 127, 19: 1 to 140, 20: 1 to 152, 21: 1 to 162
 
@@ -4958,7 +4958,7 @@ com_styles = []                 # "trickster" "mazing_run" "speeding_bullet" "in
 # corner_kick = 1                 # 1 to 6 (PES 20 and 21: 1 to 10)
 # free_kick = 1                   # 1 to 16 (PES 20 and 21: 1 to 20)
 # penalty_kick = 1                # 1 to 4 (PES 20 and 21: 1 to 7)
-# dribbling = 0                   # 0 to 3, PES 20 and 21 only
+# dribbling = 1                   # 1 to 4, PES 20 and 21 only
 # goal_celebration_1 = 0          # 0 none, then PES 15: 1 to 112, 16 and 17: 1 to 122, 18: 1 to 127, 19: 1 to 140, 20: 1 to 152, 21: 1 to 162
 # goal_celebration_2 = 0          # 0 none, then PES 15: 1 to 112, 16 and 17: 1 to 122, 18: 1 to 127, 19: 1 to 140, 20: 1 to 152, 21: 1 to 162
 

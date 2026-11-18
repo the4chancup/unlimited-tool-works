@@ -357,7 +357,10 @@ fn player_field_term(version: PesVersion, diff: &PlayerDiff) -> Term {
             on_off(old),
             on_off(new),
         ),
-        PlayerField::DribblingMotion => numbers(appearance::DRIBBLING_MOTION_LABEL, old, new),
+        // Shown from 1, as its box on the Appearance screen.
+        PlayerField::DribblingMotion => {
+            numbers(appearance::DRIBBLING_MOTION_LABEL, old + 1, new + 1)
+        }
         PlayerField::BootsId => numbers(appearance::BOOTS_ID_LABEL, old, new),
         PlayerField::GlovesId => numbers(appearance::GLOVES_ID_LABEL, old, new),
         PlayerField::BaseCopyId => numbers(appearance::COPY_FROM_ID_LABEL, old, new),

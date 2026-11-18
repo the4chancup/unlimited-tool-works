@@ -719,8 +719,11 @@ impl SettingKey {
             SettingKey::Dribbling => KeySpec {
                 table: KeyTable::Motion,
                 name: "dribbling",
-                kind: Kind::Number { min: 0, max: 3 },
-                comment: "0 to 3 (PES 20 and 21 only)",
+                // A 2-bit field the game's Motion screen never shows: it
+                // counts from 1 as the motions beside it do.
+                kind: Kind::OneBased { max: 4 },
+                comment: "1 to 4 (PES 20 and 21 only)",
+                // The block's `1`, stored -1.
                 default: Some(0),
             },
             SettingKey::GoalCelebration1 => {

@@ -79,7 +79,7 @@ arm_movement_running = 1
 corner_kick = 1
 free_kick = 4
 penalty_kick = 1
-dribbling = 0
+dribbling = 1
 goal_celebration_1 = 0
 goal_celebration_2 = 0
 

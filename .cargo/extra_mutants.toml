@@ -190,7 +190,7 @@ why = "open is read only while the undo stack holds an entry; a new stack holds 
 path = "crates/tools/save_editor/src/view/appearance/mod.rs"
 kind = "bool"
 description = "in motion_grid: egui::DragValue::new(value) .range(range.clone()).clamp_existing_to_range arg 1: false becomes true | removed: false"
-why = "the dribbling motion is a 2-bit field (PES 20 and 21 only): every stored value lies in the control's 0 to 3, so the clamp never moves one"
+why = "the dribbling motion is a 2-bit field (PES 20 and 21 only): every stored value shows in the control's 1 to 4, so the clamp never moves one"
 
 [[exclude]]
 path = "crates/tools/save_editor/src/view/mod.rs"

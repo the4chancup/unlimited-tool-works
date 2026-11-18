@@ -1378,7 +1378,7 @@ fn the_key_specs_match_the_plan_table() {
         "1 to 6 (PES 20 and 21: 1 to 10)",
         "1 to 16 (PES 20 and 21: 1 to 20)",
         "1 to 4 (PES 20 and 21: 1 to 7)",
-        "0 to 3 (PES 20 and 21 only)",
+        "1 to 4 (PES 20 and 21 only)",
         "0 none, then PES 15: 1 to 112, 16 and 17: 1 to 122, 18: 1 to 127, 19: 1 to 140, 20: 1 to 152, 21: 1 to 162",
         "0 none, then PES 15: 1 to 112, 16 and 17: 1 to 122, 18: 1 to 127, 19: 1 to 140, 20: 1 to 152, 21: 1 to 162",
         "0 to 7 (PES 19 and later): how likely the player is to show up as the team's featured player in the pre-match screen",

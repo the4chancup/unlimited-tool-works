@@ -18810,3 +18810,32 @@ Decision: `CHANGELOG.md` puts two blank lines between one version's section and 
 Why: the maintainer's preference: with several versions in the file, a reader scrolling it
 finds where each starts. One blank line, Keep a Changelog's own, runs the versions together.
 Plan: plans/core/distribution.md#changelog-and-version-display edited.
+
+## 2026-11-18 — distribution — the cut renames [Unreleased], and the next entry adds it again
+Decision: at a release's cut, `CHANGELOG.md`'s `## [Unreleased]` heading becomes the release's
+own (`## [0.0.2] - 2026-11-18`); no empty `[Unreleased]` stays above it. The first entry after
+the release adds the heading again.
+Why: the file is the help window's What's new chapter, embedded in the build, so a kept empty
+heading would open the released build's chapter with "Unreleased" over nothing. The plan was
+silent on the cut.
+Plan: plans/core/distribution.md#changelog-and-version-display edited.
+
+## 2026-11-18 — tooling — the release script's tests run in gate 3
+Decision: `just test` and `just test-changed` run `scripts/release/release_test.py`, beside the
+other script tests, not only `just release` in the Release workflow.
+Why: 0.0.2's tag reached CI with the workspace at 0.0.2 and the bundled readme's title still at
+0.0.1; only the Release job ran the test that compares them, so the tag had to be made again.
+In the gates, a version bump without the readme fails before the commit is tagged.
+Plan: no plan edit needed: the gates' script tests are the justfile's list, which no plan
+section enumerates.
+
+## 2026-11-18 — pes_savefile — the dribbling motion counts from 1; star rating and playing attitude from 0
+Decision: the dribbling motion (PES 2020 and 2021) is written 1 to 4, its stored value + 1, in
+`settings.toml`, Team TOML and the Save editor alike. The star rating and the playing attitude
+stay as the save stores them, from 0.
+Why: the maintainer's answer: PES 2021's Motion screen lists the dribbling hunching and arm
+movement but not the separate dribbling motion, and the star rating and playing attitude are
+known not to show. With nothing on screen to match, the dribbling motion follows the motions
+beside it, which the game stores from 0 and shows from 1; the other two have no such siblings.
+Plan: `spec/pes_savefile/operations.md`, the Team TOML goals; the `dribbling` key's comment in
+`spec/aesthetics_export/settings_toml.md`.

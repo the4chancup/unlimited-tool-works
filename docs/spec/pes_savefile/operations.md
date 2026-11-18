@@ -348,7 +348,11 @@ ingame-face parameters (which the legacy formats omit)). Goals:
     and 1 to 4;
   - a roster slot in `[tactics]` counts from 1, as `[players.NN]` does, and a marked
     opponent is his starter 1 to 11, each 0 for nobody (stored counting from 0, 255 for
-    nobody).
+    nobody);
+  - the dribbling motion of PES 2020 and 2021, which the game's Motion screen leaves out,
+    counts from 1 as the motions beside it do (stored from 0), in `settings.toml` too;
+  - the star rating and the playing attitude, which the game never shows, are written as
+    stored, from 0.
 - The per-player authorable appearance tables use the exact `PlayerSettings` schema from
   `settings.toml`. Full player records additionally retain boots/gloves IDs over their whole
   stored range for save interchange, at player level; `settings.toml`'s own top-level

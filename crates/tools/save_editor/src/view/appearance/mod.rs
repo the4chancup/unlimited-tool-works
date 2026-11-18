@@ -35,7 +35,7 @@ use crate::view::abilities::{
     self, gated_label, gating_tooltip, maybe_end_row, number, small_stat,
 };
 use crate::view::appearance::fields::{
-    MOTIONS, MotionField, PHYSIQUE, Palette, STRIP_ENUMS, combo_options, number_range, palette,
+    MOTIONS, MotionField, PHYSIQUE, Palette, STRIP_ENUMS, combo_options, palette,
 };
 use crate::view::group_frame::{GROUP_GAP, stretch_to};
 use crate::view::team::SPACE_GAP;
@@ -1083,8 +1083,9 @@ fn motion_grid(
             }
             match motion.dribbling {
                 Some(stored) => {
-                    let mut shown = stored;
-                    let range = number_range(SettingKey::Dribbling);
+                    // Shown from 1, as the motions beside it are.
+                    let mut shown = stored + 1;
+                    let range = dribbling_range();
                     let mut response = number_arrows(ui, &mut shown, range.clone(), |ui, value| {
                         ui.add(number_box(
                             egui::DragValue::new(value)
@@ -1097,15 +1098,14 @@ fn motion_grid(
                     }
                     if response.changed() {
                         edit_player(session, player_id, response.id.value(), |player| {
-                            player.motion.dribbling = Some(shown);
+                            player.motion.dribbling = Some(shown - 1);
                         });
                     }
                 }
                 None => {
                     add_enabled_ui(ui, false, |ui| {
                         ui.add(number_box(
-                            egui::DragValue::new(&mut 0u8)
-                                .range(number_range(SettingKey::Dribbling)),
+                            egui::DragValue::new(&mut 1u8).range(dribbling_range()),
                         ));
                     })
                     .response
@@ -1167,6 +1167,15 @@ fn motion_number(
             );
         },
     );
+}
+
+/// The dribbling motion's shown range, 1 to its key's top: the
+/// `settings.toml` key's, whose stored values count from 0.
+fn dribbling_range() -> std::ops::RangeInclusive<u8> {
+    let Kind::OneBased { max } = SettingKey::Dribbling.spec().kind else {
+        unreachable!("the dribbling motion's key counts from 1")
+    };
+    1..=max
 }
 
 /// Randomize (the draft's button): every motion but the dribbling motion
