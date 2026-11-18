@@ -364,14 +364,17 @@ mod tests {
             PathBuf::from(r"C:\Windows\System32\PING.EXE"),
             ["-n", "30", "127.0.0.1"],
         );
+        // Not `sleep`: on Ubuntu 26.04 the coreutils are one program that picks
+        // the tool by its own file name, so a copy named PES2020.exe exits at
+        // once and the probe sees it only when a poll lands in that instant.
         #[cfg(target_os = "linux")]
         let (sleeper, arguments) = (
-            ["/bin/sleep", "/usr/bin/sleep"]
+            ["/usr/bin/perl", "/bin/perl"]
                 .into_iter()
                 .map(PathBuf::from)
                 .find(|path| path.is_file())
-                .expect("sleep lives in /bin or /usr/bin"),
-            ["30"],
+                .expect("perl lives in /usr/bin or /bin"),
+            ["-e", "sleep 30"],
         );
         std::fs::copy(&sleeper, &exe).expect("the sleeper program copies");
 
