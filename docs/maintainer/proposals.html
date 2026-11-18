@@ -130,29 +130,6 @@ in <code>DECISIONS.md</code>.</p>
   <textarea class="own" placeholder="Your own ruling or a note (optional)"></textarea>
 </section>
 
-<section class="entry" id="p52">
-  <h3>P52: The window checks for updates at every start</h3>
-  <p class="from">From: reading the check's schedule for the command line's notice (0.0.2-cli, 2026-11-12)</p>
-  <p>The window checks for an update when the last check is older than the interval (120
-  minutes by default), at startup and while it stays open, and the offer it finds lasts for
-  that session only. So a member who sees <code>Update available</code>, closes the program
-  and opens it again within the interval finds no offer until the interval has passed: the
-  plan's "the next check offers it again" is then up to two hours away. The command line's
-  notice makes this more likely, since it sends the member to the window.</p>
-  <p><b>Adds:</b> the window checks once at every start, when Check for updates is on, and the
-  interval governs only the checks that follow while it stays open. An offer seen once is
-  there again at the next start.</p>
-  <p><b>Costs:</b> one request to GitHub per start instead of at most one per interval (GitHub
-  allows 60 an hour per address without a login). The last check's time stops deciding the
-  first check, and the plan's step 1 and its tests change with it.</p>
-  <div class="options">
-    <label class="opt"><input type="radio" value="accept"><b>Accept</b></label>
-    <label class="opt"><input type="radio" value="accept, after 0.0.2"><b>Accept, for after 0.0.2</b></label>
-    <label class="opt"><input type="radio" value="veto"><b>Veto</b></label>
-  </div>
-  <textarea class="own" placeholder="Your own ruling or a note (optional)"></textarea>
-</section>
-
 <section class="entry" id="p55">
   <h3>P55: The Compiler's help as two topics</h3>
   <p class="from">From: the text rereading of 2026-11-13 (worklog 0.0.2-text)</p>

@@ -480,6 +480,10 @@ The changelog is written in the step that changes the behavior, like the help to
 - a new or changed behavior;
 - a speed-up worth telling.
 
+The cut renames `## [Unreleased]` to the release's own heading, and the first entry after it
+adds `## [Unreleased]` again. An empty one is not kept at the cut: the release's What's new
+chapter would open with a heading over nothing.
+
 A fix for something no release has shipped gets none, so the file itself tells the two kinds of
 fix apart and commit types do not have to.
 

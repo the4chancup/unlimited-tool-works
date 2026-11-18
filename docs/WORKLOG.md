@@ -9,11 +9,11 @@ is in `AGENTS.md` ("Working documents").
 
 ## Current status
 
-**Now: Release 0.0.2, the VGL preview** (`plans/core/development_plan.md` "The /vg/ League 27
-(VGL)"), aimed at within the day, a target the work chosen for it is not rushed to meet
-(DECISIONS 2026-11-16 "0.0.2 is cut without Select all similar,
-the Carbon rounds and the PES 2019 check"; 2026-11-16 "The no-stretch slices move to after
-0.0.2"). After 0.0.2: the Nation list (the maintainer, 2026-11-17): it opens already
+**Release 0.0.2, the VGL preview, is cut** (`plans/core/development_plan.md` "The /vg/ League
+27 (VGL)"): tagged `v0.0.2` on 2026-11-18, with the draft release CI builds from the tag
+left for the maintainer to check and publish (DECISIONS 2026-11-16 "0.0.2 is cut without
+Select all similar, the Carbon rounds and the PES 2019 check"; 2026-11-16 "The no-stretch
+slices move to after 0.0.2"). After 0.0.2: the Nation list (the maintainer, 2026-11-17): it opens already
 scrolled to the held nation, where it mostly scrolls down to it from the top; typing a
 nation's name picks it as an ID does (members rarely know the IDs); Escape puts the old
 nation back. Earlier sessions in Report a problem: the repro bundles issue's slice (5). The
@@ -71,10 +71,14 @@ mutation run
    maintainer, 2026-11-18): form, injury resistance and weak foot one above the stored value,
    `[tactics]` roster slots counted from 1, man_marking 1 to 11, 0 = nobody (`c48437e5`;
    gates: pes_savefile, aatf, save_editor, ruleset_editor, team_widgets, clippy, fmt; the two
-   new tests ran red on the old code). The pipeline runs on `c48437e5`. After 0.0.2, by the
+   new tests ran red on the old code). The pipeline passed on `c48437e5`. After 0.0.2, by the
    same rule: team colours in 8 bits as on screen (the file holds the save's 0 to 63),
-   `[tactics.auto] substitution` and the appearance colours by name; dribbling motion, star
-   rating and playing attitude wait on `maintainer/questions.html#shown-as-numbers`.
+   `[tactics.auto] substitution` and the appearance colours by name. The dribbling motion,
+   which the game never shows, now counts from 1 as the other motions do, in `settings.toml`
+   and the Save editor too; star rating and playing attitude stay from 0. After 0.0.2 too: the
+   Save editor draft's sample Team TOML texts (`docs/prototypes/tools/save_editor.js`, the
+   `"pes17/718"` entry and its kind) still show the old numbering (255 for nobody, slots
+   from 0, the stats one lower); regenerate them from today's export.
 5. Attacking area, fixed for 0.0.2 (the maintainer's PES 2017 check, 2026-11-18): the save
    stores Wide as 0 and Centre as 1, where the Save editor showed them the other way round.
    Centre still sits on the left. The formation settings now use the game's names (Attacking
@@ -82,10 +86,9 @@ mutation run
    All-out Defence), and Team TOML's `[tactics.preset_N.style]` keys follow them. Gates:
    team_widgets, pes_savefile, aatf, save_editor, clippy, fmt; the Attacking area toggle test
    and the two tests of a preset's settings list ran red on the old mapping.
-6. The cut, only once the maintainer has run the checks of
-   `maintainer/tasks.html` (the maintainer, 2026-11-17): a pipeline without mutants on the
-   last merge (0.0.2-determ's second clean run), the changelog, the release build. The Linux
-   checks are in (Reset window good enough for 0.0.2; poc.6 starts).
+6. The cut, 2026-11-18, on the maintainer's word: the workspace at 0.0.2, the changelog's
+   `[Unreleased]` renamed `[0.0.2] - 2026-11-18`, the README's status, tag `v0.0.2`. The
+   maintainer checks CI's draft release and publishes it. Card `poc5-in-game` stays open.
 
 Done since 2026-11-16: Report a problem for 0.0.2 (the maintainer ran ST-REP-05 from a
 save to the zip, 2026-11-17: works), the answers' recheck (Kit slots and the Stats screen fixed and looked
