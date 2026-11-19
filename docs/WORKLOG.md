@@ -58,7 +58,7 @@ steps.
     click changes nothing and the button goes, its pointer a hand; likely the window manager
     leaving the reset window off the fitted size, so the button waits for a click the window
     does not follow).
-12. Any mutation run, mutfast first.
+12. Any mutation run (mutfast landed: each mutant's tests run under cargo-nextest).
 
 Most open steps below wait only for the maintainer's look (`maintainer/tasks.html`).
 
@@ -3096,42 +3096,13 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
   value as the Save editor's does (`plans/ruleset_editor.md`, the undo paragraph; DECISIONS
   "A run of undo steps is keyed by the widget call") -> verify: ten wheel notches on a
   tier's count, one Undo
-- [ ] after 0.0.2, first (the maintainer, 2026-11-16: no mutation run starts until this
-  lands; checkpoints run `--no-mutants` meanwhile, RUNBOOK "A checkpoint is one command")
-  mutfast: save_editor's mutation runs stop at a mutant's first failing test. Its last
-  diff run (`gate/mutants.diff.old/save_editor`, 247 mutants a side): a mutant's build
-  20-27 s median, its tests 486 s locally and 590 s on the VPS; a caught mutant's tests
-  468 s median against the full suite's 578, since libtest runs every test after the first
-  failure: the caught mutants are 80% of the hours (25.6 of 31.9 h locally). The run of
-  2026-11-16 (`gate/mutants.out`, 198 mutants here) took about 4.7 minutes a mutant with
-  two at a time. -> verify: the same 20 save_editor mutants run with libtest and with
-  cargo-nextest (`test_tool = "nextest"`, fail-fast by default; installed here, check the
-  VPS), wall time per caught and per missed mutant compared, the per-test process cost
-  through `scripts/gates/test_runner.cmd` included; adopted only if it wins. Also: a crate
-  whose estimate passes a budget (about an hour a side) runs detached from the checkpoint,
-  which closes on the rest (this one held it ~12.5 h); `0.0.2-picwidth` keeps the baseline
-  from depending on the tree's path
-  - the trial (2026-11-19, `.tmp/mutfast/`, `make_small.py`) was short: under libtest a
-    mutant's tests cost the whole suite whatever the mutant, so only nextest ran, its baseline
-    and five mutants that 2026-11-16 caught, one at a time. Nextest wins:
-    - a caught mutant's tests took 28-162 s (median 64), against 303-771 s for the same five
-      under libtest on 2026-11-16 (two at a time then, so part of that gap is load);
-    - the baseline, which is also what a missed mutant costs, took 444 s against libtest's
-      418 s at `3fb58170`, under the same load and with the memory-cap wrapper's process per
-      test included, so a runner of our own is not needed (that item is dropped);
-    - on 2026-11-16's hours (80% of them caught mutants), that estimates about two thirds less
-      time a run;
-    - the workspace has no doctests, which nextest does not run
-  - adopted here on 2026-11-19: `.cargo/mutants.toml` sets `test_tool = "nextest"`, and
-    `sized_config` (`scripts/mutation/mutants.py`) passes build jobs as `--build-jobs` (nextest
-    reads `--jobs` as its test threads) and the test threads without libtest's `--`
-  - left: the VPS has only cargo-mutants, so a remote half would fail. It gets cargo-nextest at
-    this machine's version (0.9.146) once its disk is back over the 26 GiB floor (26.0 GiB free
-    on 2026-11-19; the remote cleanup in RUNBOOK "The scratch folder"). Then the step closes,
-    and RUNBOOK's "No mutation run starts until the worklog's mutfast step lands" goes
-  - found on the way: cargo-mutants 27.1.0 filters no "delete field" mutant through
-    `examine_re` or `exclude_re` (config or `-E`), so an exclusion of one would be silently
-    ignored; `mutants.toml` has none today
+- [x] mutfast (2026-11-19, `7feea20c`, `aa9928dd`): mutation runs test each mutant with
+  cargo-nextest, which stops at its first failing test: a caught save_editor mutant's tests
+  took 28-162 s against 303-771 s under `cargo test`, and the whole suite about the same
+  (444 s against 418 s). The VPS has cargo-nextest 0.9.146
+- [ ] after 0.0.2: a crate whose mutation-run estimate passes a budget (about an hour a
+  side) runs detached from the checkpoint, which closes on the rest (save_editor's held one
+  ~12.5 h before mutfast)
 - [ ] after 0.0.2 (from 0.0.1's f6, the whole-crate mutation runs' two design findings):
   - `team_widgets` `pitch/popover.rs` `slot_popover`'s outside-press focus surrender is
     unobservable under egui 0.37 (`Focus::end_pass` drops an undrawn widget's focus; the

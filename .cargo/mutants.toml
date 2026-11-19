@@ -14,7 +14,7 @@
 # The tests run under cargo-nextest, which stops a mutant at its first failing test, where
 # `cargo test` runs the rest of the suite first: on five caught save_editor mutants their tests
 # took 28-162 s against 303-771 s, while the whole suite (a baseline, or a missed mutant) cost
-# about the same (444 s against 418 s, 2026-11-19), its process per test included. Nextest reads
+# about the same (444 s against 418 s, 2026-11-19), nextest's process per test included. Nextest reads
 # `--jobs` as its test threads, so the build jobs go as `--build-jobs`, and its options take no
 # `--`. The workspace has no doctests, which nextest does not run.
 test_tool = "nextest"

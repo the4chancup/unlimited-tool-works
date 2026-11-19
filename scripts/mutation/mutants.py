@@ -41,9 +41,10 @@ whose collection summarizes the local `mutants.out`. A
 running half is stopped by hand with `sudo systemctl stop studio-mutants` on
 the host.
 
-The remote needs: git, a C toolchain, rustup, cargo-mutants and `just` (for
-`just gates-remote`) at the local versions (the pinned toolchain installs itself
-on first use inside the tree), `sudo -n systemd-run` for the ssh user, `ionice`,
+The remote needs: git, a C toolchain, rustup, cargo-mutants, cargo-nextest and
+`just` (for `just gates-remote`) at the local versions (the pinned toolchain
+installs itself on first use inside the tree; cargo installs from inside it, the
+host having no default toolchain), `sudo -n systemd-run` for the ssh user, `ionice`,
 `tar`, `nproc`, `awk`, cgroup v2 (the unit's `memory.peak`) and `python3` (`just gates`'
 scripts).
 """
