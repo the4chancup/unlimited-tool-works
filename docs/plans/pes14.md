@@ -32,7 +32,11 @@ disabled:
   like the other events' rulesets. Its logo is the event's
   (`C:\Data\Pictures\4ccpics\Akko_League_VII_Logo_1.png`), scaled to 84 pixels high (137 × 84)
   as the other rulesets' logos are; its page is
-  `https://implyingrigged.info/wiki/Akko_League_VII`;
+  `https://implyingrigged.info/wiki/Akko_League_VII`. No game has a list of trick cards: a cup's
+  organizer names the cards that hardly change play, which are then free or have their own
+  limit. Akko VII's page sets the free tricks per medal but names no cards, so its ruleset's
+  `card_groups.tricks` is the official 4cc list (`autumn26.rhai`'s), limited to the cards PES
+  2014 has;
 - the edit flags the game needs to show what was edited (below).
 
 **Build 2, the Gameplan screen:** the tactics record's fields on screen and editable, each
@@ -83,21 +87,50 @@ From the fork's codec, checked against the vanilla save and the Akko saves (2026
 - **Bit order.** Fields are little-endian bitfields: a field's bit `i` is the record's bit
   `start + i`, counted from the least significant bit of each byte. An MSB-first reading decodes
   garbage.
-- **Sections**, at fixed offsets in a payload of constant size:
+- **Sections**, at fixed offsets in a payload of constant size, each with a u16 record count in
+  the payload's header (the Akko saves' count, then the vanilla save's):
 
-  | Section | Offset | Record size | Count |
-  |---|---|---|---|
-  | Players | 0x4C | 0x6C (108) | 5060 in the Akko saves |
-  | Appearance | 0x29332C | 0x58 (88) | u16 count at 0x36 |
-  | Teams | 0x36A0AC | 0x13C (316) | |
-  | Rosters | 0x3E5D78 | 0xA4 (164) | |
-  | Tactics | 0x40858C | 0x3EC (1004) | about 424, unmapped |
+  | Section | Offset | Record size | Count at | Counts |
+  |---|---|---|---|---|
+  | Players | 0x4C | 0x6C (108) | 0x34 | 5060, 11998 |
+  | Appearance | 0x29332C | 0x58 (88) | 0x36 | 5060, 0 |
+  | Teams | 0x36A0AC | 0x13C (316) | 0x38 | 222, 478 |
+  | Rosters | 0x3E5D78 | 0xA4 (164) | 0x42 or 0x46 | 222, 478 |
+  | Tactics | 0x4081A0 | 0x1F6 (502) | 0x46 or 0x42 | 222, 478 |
+
+  Which of 0x42 and 0x46 counts which is not known yet (both hold the team count in both
+  saves); 0x3A (45 in both) and 0x3C (18 in the vanilla save, 0 in the Akko ones) count
+  something else.
+
+  A tactics record starts with its team's id as a u32, in the team section's order (checked on
+  every record of both saves). The fork's notes had it at 0x40858C with 1004-byte records: two
+  records read as one, which is why its keys skipped every other team.
+  A team record's u32 at +0 is the team's id in its low 16 bits and 0xFFFF in its high 16.
 
 - **Edit flags are per section.** Bits 2 to 7 of byte 0x28 and bits 1 to 7 of byte 0x29 of a
   player record flag which parts of the player were edited; the game shows base data for every
   part whose flag is clear. The organizer's merge set only bit 0x29:1 and the game showed
   placeholder names and flat stats; setting the rest fixed it (checked in game by the
   organizer). Bit 0x29:0 is left alone: it may mark a base copy.
+- **Pinned in game, run `flags1`** (2026-11-19, one edit on each of ten created players of the
+  vanilla save; the saves `flags1_base` and `flags1` are kept in the worktree's
+  `.tmp/ingame_saves/saves_14/`). Bit positions are a byte of the 108-byte player record and a
+  bit counted from its least significant one; each edit changed the lowest bit of its value,
+  so a field's width is still open:
+  - Age 17 to 18: byte +0x10 went 0x11 to 0x12, the age itself;
+  - Height 180 to 181: bit 0x0C:0;
+  - Attacking Prowess 80 to 81: bit 0x11:4;
+  - CF position grade C to B: bit 0x13:6;
+  - Dribbling motion 1 to 2: bit 0x27:6 (one bit for one step, so stored from 0);
+  - the Goal Poacher playing style on: bit 0x20:4;
+  - Name Print set to `FLAG`: text at +0x5C;
+  - face, hair and boots edits wrote no player-record bit: each created a record in the
+    appearance table (its u16 count at 0x36 went up).
+
+  A created player gets bits 0x28:2 and 0x29:1 when it is created, and no part edit moved a
+  flag but Basic Settings', which set 0x28:6: a created player has no base data for the game to
+  fall back to, so its part flags do not matter. They are mapped on the Akko saves' players
+  instead, whose flags are clear (5036 of 5060 in `.akko7v2`).
 - Two more tables sit in the payload, unread by the fork: a second team table near 0x374C44
   (team ID at +0, name near +0x78) and a player table keyed by player ID right after the
   appearance table, at 0x2DABAC. The vanilla save leaves both empty.
@@ -109,11 +142,13 @@ the save" above.
 
 - **Edit flags:** which bit of 0x28 and 0x29 belongs to which of the ten parts of the game's
   player menu, by editing one part per player and saving.
-- **The tactics record:** how its records are keyed (about 424 records for 222 teams, so not
-  one per team), the captain, and every run the codec writes (formations, man marking,
-  presets), so a record reads and writes back unchanged.
+- **The tactics record:** the captain, and every run the codec writes (formations, man
+  marking, presets), so a record reads and writes back unchanged.
 - **The player record:** every field the fork decodes, checked against the game; Tenacity;
   goal celebrations; the playstyle list (18 styles) and the motion tops.
+- **The cards:** the game's card list, slot by slot, with each card's name and description as
+  the game shows them. The fork calls one card Precise Touch where later games have Cut Behind
+  & Turn: the same card under an older name is a trick, a different card is not.
 - **The appearance record:** face, hair, physique, boots, gloves, accessories and the strip
   style.
 - **The team record:** team colours, in the bytes between +0x04 and +0x2B that vary between
@@ -175,7 +210,12 @@ main's release.
   players by name.
 - **In game.** PES 2014 is installed at `E:\PES2014`, driven by `scripts/ingame/game.py 14`
   (a pad, OBS shots, no keyboard focus). The mapping saves are made there, and Build 1 ends
-  with the edited `/4ccg/` looked at in Edit mode.
+  with the edited `/4ccg/` looked at in Edit mode. Where the editable players are:
+  - in the vanilla save, the leagues' squads are "Unregistered" dummy slots whose edits the
+    game drops; created players (Edit > Players > Create Player, a name required) keep theirs;
+  - in the Akko saves, the first league (English League) holds the 4cc teams, blank (23
+    PLACEHOLDER players each); Akko is an invitational, so its own teams, `/4ccg/` among them,
+    are in one of the lower leagues.
 
 ## Process
 
