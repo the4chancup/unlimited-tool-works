@@ -58,7 +58,7 @@ steps.
     click changes nothing and the button goes, its pointer a hand; likely the window manager
     leaving the reset window off the fitted size, so the button waits for a click the window
     does not follow).
-12. Any mutation run, mutfast first.
+12. Any mutation run (mutfast landed: each mutant's tests run under cargo-nextest).
 
 Most open steps below wait only for the maintainer's look (`maintainer/tasks.html`).
 
@@ -3096,21 +3096,13 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
   value as the Save editor's does (`plans/ruleset_editor.md`, the undo paragraph; DECISIONS
   "A run of undo steps is keyed by the widget call") -> verify: ten wheel notches on a
   tier's count, one Undo
-- [ ] after 0.0.2, first (the maintainer, 2026-11-16: no mutation run starts until this
-  lands; checkpoints run `--no-mutants` meanwhile, RUNBOOK "A checkpoint is one command")
-  mutfast: save_editor's mutation runs stop at a mutant's first failing test. Its last
-  diff run (`gate/mutants.diff.old/save_editor`, 247 mutants a side): a mutant's build
-  20-27 s median, its tests 486 s locally and 590 s on the VPS; a caught mutant's tests
-  468 s median against the full suite's 578, since libtest runs every test after the first
-  failure: the caught mutants are 80% of the hours (25.6 of 31.9 h locally). The run of
-  2026-11-16 (`gate/mutants.out`, 198 mutants here) took about 4.7 minutes a mutant with
-  two at a time. -> verify: the same 20 save_editor mutants run with libtest and with
-  cargo-nextest (`test_tool = "nextest"`, fail-fast by default; installed here, check the
-  VPS), wall time per caught and per missed mutant compared, the per-test process cost
-  through `scripts/gates/test_runner.cmd` included; adopted only if it wins. Also: a crate
-  whose estimate passes a budget (about an hour a side) runs detached from the checkpoint,
-  which closes on the rest (this one held it ~12.5 h); `0.0.2-picwidth` keeps the baseline
-  from depending on the tree's path
+- [x] mutfast (2026-11-19, `7feea20c`, `aa9928dd`): mutation runs test each mutant with
+  cargo-nextest, which stops at its first failing test: a caught save_editor mutant's tests
+  took 28-162 s against 303-771 s under `cargo test`, and the whole suite about the same
+  (444 s against 418 s). The VPS has cargo-nextest 0.9.146
+- [ ] after 0.0.2: a crate whose mutation-run estimate passes a budget (about an hour a
+  side) runs detached from the checkpoint, which closes on the rest (save_editor's held one
+  ~12.5 h before mutfast)
 - [ ] after 0.0.2 (from 0.0.1's f6, the whole-crate mutation runs' two design findings):
   - `team_widgets` `pitch/popover.rs` `slot_popover`'s outside-press focus surrender is
     unobservable under egui 0.37 (`Focus::end_pass` drops an undrawn widget's focus; the
@@ -3229,16 +3221,6 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
   reopening the save (the maintainer, 2026-11-01). Then the draft (the button's place
   against the Set PES path button's bottom right), the plan's paragraph (what a malformed
   or ambiguous export does, off the UI thread as the CPK read is), its scenarios, and a slice
-- [ ] after 0.0.2 (the maintainer, 2026-11-15), if mutfast's trial finds that
-  cargo-nextest's process per test slows the suite too much: a test runner of our own that
-  keeps the standard runner's single process and stops at the first failure, as nextest does.
-  Checked 2026-11-15: `libtest-mimic` 0.8.2 runs tests on threads in one process (its
-  `--test-threads`) but has no fail-fast flag; a shared "one has failed" flag its test
-  closures read would add one. Its cost is the harness itself: with `harness = false`
-  nothing collects `#[test]` functions, so every test (954 in save_editor alone) is
-  registered through a collecting macro or by hand. cargo-mutants passes its own arguments
-  through to the runner (`additional_cargo_test_args`, `-- --`). → measure on the trial's 20
-  save_editor mutants; a new crate or dependency waits for the maintainer's yes
 
 ### Phase 10 — Music tools
 

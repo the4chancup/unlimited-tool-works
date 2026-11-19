@@ -41,9 +41,10 @@ whose collection summarizes the local `mutants.out`. A
 running half is stopped by hand with `sudo systemctl stop studio-mutants` on
 the host.
 
-The remote needs: git, a C toolchain, rustup, cargo-mutants and `just` (for
-`just gates-remote`) at the local versions (the pinned toolchain installs itself
-on first use inside the tree), `sudo -n systemd-run` for the ssh user, `ionice`,
+The remote needs: git, a C toolchain, rustup, cargo-mutants, cargo-nextest and
+`just` (for `just gates-remote`) at the local versions (the pinned toolchain
+installs itself on first use inside the tree; cargo installs from inside it, the
+host having no default toolchain), `sudo -n systemd-run` for the ssh user, `ionice`,
 `tar`, `nproc`, `awk`, cgroup v2 (the unit's `memory.peak`) and `python3` (`just gates`'
 scripts).
 """
@@ -478,8 +479,10 @@ def sized_config(
     rather than replacing it."""
     config = tomllib.loads((source / ".cargo/mutants.toml").read_text(encoding="utf-8"))
     half = max(1, cpus // 2)
-    config["additional_cargo_args"] = ["--jobs", str(build_jobs or half)]
-    config["additional_cargo_test_args"] = ["--", f"--test-threads={half}"]
+    # The file's `test_tool` is nextest, which reads `--jobs` as its test
+    # threads and takes its own options without libtest's `--`.
+    config["additional_cargo_args"] = ["--build-jobs", str(build_jobs or half)]
+    config["additional_cargo_test_args"] = [f"--test-threads={half}"]
     for key, value in (extra or {}).items():
         base = config.get(key)
         config[key] = (

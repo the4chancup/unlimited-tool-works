@@ -25,9 +25,23 @@ gates-remote:
 remote +command:
     {{python}} scripts/mutation/remote_gates.py {{command}}
 
+# Each argument reaches cargo as given, spaces included (`just cargo mutants --re "replace show with"`):
+# a recipe line would go through PowerShell, which splits them again, so on Windows the
+# arguments go straight to low_priority.py, with no shell between.
+#
 # Any cargo command at the recipes' lowered priority, for what no recipe covers (`just cargo test -p save_editor pictures`, `just cargo build --release -p studio`)
+[windows]
+[positional-arguments]
+[script("python")]
 cargo +args:
-    cargo {{args}}
+    import subprocess, sys
+    sys.exit(subprocess.run([sys.executable, "scripts/gates/low_priority.py", "cargo", *sys.argv[1:]]).returncode)
+
+# The same on Linux and macOS, where `sh` keeps each argument whole in "$@"
+[unix]
+[positional-arguments]
+cargo +args:
+    cargo "$@"
 
 # Gate 1: formatting
 fmt-check:

@@ -497,6 +497,13 @@ up to that group's free count; every held card in `free_cards`. The **limit** is
 `cards` plus every `cards` effect, less one per A position beyond the allowance (`a_positions`
 plus effects; B ratings counted with the A positions under `b_uses_a_allowance`).
 
+**Trick cards** are the skill cards a cup's organizer counts as hardly changing how a match
+plays, such as Scissors Feint or Rabona, which is why cups usually make them free or give them
+a limit of their own. No game marks a card as a trick, so each ruleset names its own as its
+`tricks` card group, and a tier's `free.tricks` says how many a player of that tier holds free.
+The lists differ by cup: the official one has eleven cards, VGL's add Malicia, and DBC7's and
+VTL's rulesets have none.
+
 Each of these is a violation:
 
 - paid cards over the limit, the limit falling below zero when the extra A positions outnumber
