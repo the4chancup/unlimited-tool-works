@@ -110,11 +110,12 @@ From the fork's codec, checked against the vanilla save and the Akko saves (2026
   1004-byte records: two records read as one, which is why its keys skipped every other team.
   A team record's u32 at +0 is the team's id in its low 16 bits and 0xFFFF in its high 16.
 
-- **Edit flags are per section.** Bits 2 to 7 of byte 0x28 and bits 1 to 7 of byte 0x29 of a
-  player record flag which parts of the player were edited; the game shows base data for every
-  part whose flag is clear. The organizer's merge set only bit 0x29:1 and the game showed
-  placeholder names and flat stats; setting the rest fixed it (checked in game by the
-  organizer). Bit 0x29:0 is left alone: it may mark a base copy.
+- **Edit flags, as the organizer found them.** The organizer's merge set only bit 0x29:1 of
+  each player record, and the game showed placeholder names and flat stats; setting bits 2 to 7
+  of byte 0x28 and 1 to 7 of byte 0x29 as well fixed it (checked in game by the organizer). So
+  those bits were read as one flag per edited part, the game showing base data for a part whose
+  flag is clear. The runs below have not found one bit per part. Bit 0x29:0 is left alone: it
+  may mark a base copy.
 - **Pinned in game, run `flags1`** (2026-11-19, one edit on each of ten created players of the
   vanilla save; the saves `flags1_base` and `flags1` are kept in the worktree's
   `.tmp/ingame_saves/saves_14/`). Bit positions are a byte of the 108-byte player record and a
@@ -134,6 +135,22 @@ From the fork's codec, checked against the vanilla save and the Akko saves (2026
   flag but Basic Settings', which set 0x28:6: a created player has no base data for the game to
   fall back to, so its part flags do not matter. They are mapped on the Akko saves' players
   instead, whose flags are clear (5036 of 5060 in `.akko7v2`).
+- **Pinned in game, run `flags2`** (2026-11-20, the same ten edits on `/3/`'s players 1 to 10 in
+  `.akko7v2`, whose flags were clear; kept as `flags2`). The game set no flag per part: every
+  edit stored in the player record set bit 0x29:1 alone, and Basic Settings also set 0x28:6, as
+  on a created player. The organizer's `.akko7v2_flags` sets 0x28 to 0xFC and 0x29 to 0xFE on
+  every player instead. Whether 0x29:1 alone keeps the edits once the save is loaded again is
+  open: the run re-read each part before saving, never after a reload. The values it moved
+  agree with `flags1`'s offsets, and add:
+  - Age is the low 6 bits of +0x10 (24 read 0x58, 25 0x59);
+  - Height 180 cm is 0x30 at +0x0C, so the byte likely holds the height less 132;
+  - the face, hair and boots edits wrote only the player's appearance record. A face edit
+    cleared its u32 at +0x04, which in 5037 of `.akko7v2`'s 5060 records repeats the player's
+    id; it set bits 0x0B:7, 0x0F:7 and 0x4E:3 and moved bytes at +0x20 and +0x23 (the build
+    point). A hairstyle edit set bits 0x0F:7 and 0x4E:3 and nothing else. Boots to the next
+    entry wrote 0x00 0xC0 to 0xFD 0xC3 at +0x08;
+  - the Motion edit on list position 10 changed no record of player 10, but bit 0x27:6 of
+    player 9's, the Dribbling bit `flags1` found: it likely landed on player 9.
 - **Pinned in game, run `tactics1`** (2026-11-20, one Game Plan change on each of teams 2 to 7
   of `.akko7v2`'s English League, kept as `tactics1`). Offsets are bytes of the 502-byte
   tactics record:
@@ -165,8 +182,9 @@ From the fork's codec, checked against the vanilla save and the Akko saves (2026
 Each item ends with its offsets, widths and value orders written into "What is known about
 the save" above.
 
-- **Edit flags:** which bit of 0x28 and 0x29 belongs to which of the ten parts of the game's
-  player menu, by editing one part per player and saving.
+- **Edit flags:** which bits of 0x28 and 0x29 an edited player needs for every edit to show
+  after the save is loaded again: first whether the game's own 0x29:1 is enough (run `flags3`,
+  reloading `flags2`).
 - **The tactics record:** the captain, and every run the codec writes (formations, man
   marking, presets), so a record reads and writes back unchanged.
 - **The player record:** every field the fork decodes, checked against the game; Tenacity;
