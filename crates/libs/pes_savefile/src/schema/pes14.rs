@@ -113,9 +113,9 @@ pub(crate) static TACTICS: TacticsSchema = TacticsSchema {
             bit_offset: 0,
             bit_width: 32,
         },
-        // Byte +0x1cc: moving the captain from #1 to #2 wrote 0 to 1 (run `tactics1`). Whether
-        // it counts lineup positions or roster slots is open; they agree while the lineup is
-        // in roster order, as in every team of the Akko VII saves.
+        // Byte +0x1cc, the captain's roster slot: moving the captain from #1 to #2 wrote 0 to 1
+        // (run `tactics1`), and the captain stayed with his player when he swapped places on
+        // the pitch (run `tactics2`).
         FieldSpec {
             field: TacticsField::Captain,
             bit_offset: 3680,

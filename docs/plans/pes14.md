@@ -166,8 +166,10 @@ From the fork's codec, checked against the vanilla save and the Akko saves (2026
     screen then showed. A formation change (8-1-1 to 4-3-1-2) rewrote one byte every 4 from
     +0x12 to +0x2E and u16 values from +0x32 to +0x58. A swap of two starters exchanged their
     bytes in presets 2 and 3 (0x6C and 0xD8 later), not in preset 1;
-  - open: whether the captain and taker bytes count lineup positions or roster slots, since
-    every changed team had its lineup in roster order.
+  - the captain byte counts roster slots, not lineup positions (run `tactics2`, kept as
+    `tactics2`): on `/b/`, whose #12 plays #11's centre-forward spot, the captain could be put
+    on #12, and on `/a/` the C mark followed #2 when he swapped places with #3. Whether the
+    taker bytes count the same way is open.
 
   Saving also rewrote the competition data after the team records (from 0x3AB9E4, "Club
   International Cup") and the header byte 0x4A. The Edit Player cards are PES 2015's names:
