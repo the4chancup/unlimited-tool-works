@@ -478,8 +478,10 @@ def sized_config(
     rather than replacing it."""
     config = tomllib.loads((source / ".cargo/mutants.toml").read_text(encoding="utf-8"))
     half = max(1, cpus // 2)
-    config["additional_cargo_args"] = ["--jobs", str(build_jobs or half)]
-    config["additional_cargo_test_args"] = ["--", f"--test-threads={half}"]
+    # The file's `test_tool` is nextest, which reads `--jobs` as its test
+    # threads and takes its own options without libtest's `--`.
+    config["additional_cargo_args"] = ["--build-jobs", str(build_jobs or half)]
+    config["additional_cargo_test_args"] = [f"--test-threads={half}"]
     for key, value in (extra or {}).items():
         base = config.get(key)
         config[key] = (

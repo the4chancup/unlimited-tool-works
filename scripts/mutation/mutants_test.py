@@ -327,7 +327,8 @@ class SizedConfig(unittest.TestCase):
         )
         self.assertEqual(parsed["timeout_multiplier"], 7.0)
         self.assertIsInstance(parsed["timeout_multiplier"], float)
-        self.assertEqual(parsed["additional_cargo_args"], ["--jobs", "8"])
+        self.assertEqual(parsed["additional_cargo_args"], ["--build-jobs", "8"])
+        self.assertEqual(parsed["additional_cargo_test_args"], ["--test-threads=8"])
 
 
 class Partition(unittest.TestCase):

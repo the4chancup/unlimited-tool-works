@@ -8,10 +8,18 @@
 # cargo-mutants at below-normal priority, so the run uses every CPU the user's own work leaves
 # idle rather than holding two back. A bare run keeps the old fixed budget: half of CPUs minus two
 # per process, build jobs by cargo's negative form (CPUs - 9 = 7 on the maintainer's 16-thread
-# machine; cargo floors it at 1 elsewhere), test threads a hard 7 because libtest has no relative
-# form. Local tooling only; CI never runs mutants.
-additional_cargo_args = ["--jobs", "-9"]
-additional_cargo_test_args = ["--", "--test-threads=7"]
+# machine; cargo floors it at 1 elsewhere), test threads a hard 7. Local tooling only; CI never
+# runs mutants.
+#
+# The tests run under cargo-nextest, which stops a mutant at its first failing test, where
+# `cargo test` runs the rest of the suite first: on five caught save_editor mutants their tests
+# took 28-162 s against 303-771 s, while the whole suite (a baseline, or a missed mutant) cost
+# about the same (444 s against 418 s, 2026-11-19), its process per test included. Nextest reads
+# `--jobs` as its test threads, so the build jobs go as `--build-jobs`, and its options take no
+# `--`. The workspace has no doctests, which nextest does not run.
+test_tool = "nextest"
+additional_cargo_args = ["--build-jobs", "-9"]
+additional_cargo_test_args = ["--test-threads=7"]
 
 # A mutant's tests time out at five times the baseline's test time, cargo-mutants' default,
 # which leaves a starved low-priority local run (RUNBOOK "Mutation runs") room before a slow

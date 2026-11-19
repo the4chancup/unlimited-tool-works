@@ -3122,11 +3122,13 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     - on 2026-11-16's hours (80% of them caught mutants), that estimates about two thirds less
       time a run;
     - the workspace has no doctests, which nextest does not run
-  - next, adopt it: `.cargo/mutants.toml` gets `test_tool = "nextest"`, and `sized_config`
-    (`scripts/mutation/mutants.py`) passes build jobs as `--build-jobs` (nextest reads `--jobs`
-    as its test threads) and the test threads without libtest's `--`. The VPS has only
-    cargo-mutants: it gets cargo-nextest at this machine's version (0.9.146) once its disk is
-    back over the 26 GiB floor (26.0 GiB free on 2026-11-19; the remote cleanup in RUNBOOK "The scratch folder")
+  - adopted here on 2026-11-19: `.cargo/mutants.toml` sets `test_tool = "nextest"`, and
+    `sized_config` (`scripts/mutation/mutants.py`) passes build jobs as `--build-jobs` (nextest
+    reads `--jobs` as its test threads) and the test threads without libtest's `--`
+  - left: the VPS has only cargo-mutants, so a remote half would fail. It gets cargo-nextest at
+    this machine's version (0.9.146) once its disk is back over the 26 GiB floor (26.0 GiB free
+    on 2026-11-19; the remote cleanup in RUNBOOK "The scratch folder"). Then the step closes,
+    and RUNBOOK's "No mutation run starts until the worklog's mutfast step lands" goes
   - found on the way: cargo-mutants 27.1.0 filters no "delete field" mutant through
     `examine_re` or `exclude_re` (config or `-E`), so an exclusion of one would be silently
     ignored; `mutants.toml` has none today
