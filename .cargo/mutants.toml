@@ -11,12 +11,15 @@
 # machine; cargo floors it at 1 elsewhere), test threads a hard 7. Local tooling only; CI never
 # runs mutants.
 #
-# The tests run under cargo-nextest, which stops a mutant at its first failing test, where
-# `cargo test` runs the rest of the suite first: on five caught save_editor mutants their tests
-# took 28-162 s against 303-771 s, while the whole suite (a baseline, or a missed mutant) cost
-# about the same (444 s against 418 s, 2026-11-19), nextest's process per test included. Nextest reads
-# `--jobs` as its test threads, so the build jobs go as `--build-jobs`, and its options take no
-# `--`. The workspace has no doctests, which nextest does not run.
+# The tests run under cargo-nextest, which starts no test after a mutant's first failing one
+# (those already running finish), where `cargo test` runs the rest of the suite first: on five
+# caught save_editor mutants their tests took 28-162 s against 303-771 s, while the whole suite
+# (a baseline, or a missed mutant) cost about the same (444 s against 418 s, 2026-11-19),
+# nextest's process per test included. Ending the running tests at once
+# (`--max-fail=1:immediate`) saved nothing measurable (155-167 s against 162 s on the slowest),
+# and a test never waits past 120 s, inside every timeout. Nextest reads `--jobs` as its test
+# threads, so the build jobs go as `--build-jobs`, and its options take no `--`. The workspace
+# has no doctests, which nextest does not run.
 test_tool = "nextest"
 additional_cargo_args = ["--build-jobs", "-9"]
 additional_cargo_test_args = ["--test-threads=7"]

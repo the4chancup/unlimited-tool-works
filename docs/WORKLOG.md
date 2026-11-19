@@ -3100,6 +3100,9 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
   cargo-nextest, which stops at its first failing test: a caught save_editor mutant's tests
   took 28-162 s against 303-771 s under `cargo test`, and the whole suite about the same
   (444 s against 418 s). The VPS has cargo-nextest 0.9.146
+  - [ ] a Carbon round on the change (`7feea20c..62e5b4ff`), since the mutation runs are vital
+    tooling (the maintainer, 2026-11-20), once paid Devin runs are allowed again (Devin
+    `work`'s weekly reset, 2026-11-22 09:00); Astra's round ran on 2026-11-20
 - [ ] after 0.0.2: a crate whose mutation-run estimate passes a budget (about an hour a
   side) runs detached from the checkpoint, which closes on the rest (save_editor's held one
   ~12.5 h before mutfast)

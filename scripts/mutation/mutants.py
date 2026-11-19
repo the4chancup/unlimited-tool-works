@@ -571,6 +571,15 @@ KILLED_BUILD_SIGNS = (
 )
 
 
+def caught_by_tests(outcome: dict) -> bool:
+    """Whether a caught mutant's test phase ended as nextest ends a run in which
+    tests failed: exit code 100 (`{"Failure": 100}` in outcomes.json)."""
+    return any(
+        phase["phase"] == "Test" and phase.get("process_status") == {"Failure": 100}
+        for phase in outcome.get("phase_results", [])
+    )
+
+
 def killed_builds(out_dir: Path) -> list[str]:
     """The mutants under `out_dir` (a `mutants.out`) that went untested: those
     cargo-mutants reported unviable because a build process was killed, not
@@ -583,13 +592,21 @@ def killed_builds(out_dir: Path) -> list[str]:
     half's 19 mutants, eframe's dependency tree outgrowing 6 GiB. Windows has
     no OOM killer: a rustc out of memory there aborts with "memory allocation
     of N bytes failed". A build that lost its console fails to start with
-    0xC0000142 (4.y-conv: 273 of 274 mutants filed unviable that way)."""
+    0xC0000142 (4.y-conv: 273 of 274 mutants filed unviable that way).
+
+    Also those it filed as caught although no test failed: cargo-mutants counts
+    any nonzero exit of the test phase as a catch, and nextest exits 100 only
+    when tests failed (`caught_by_tests`); any other code means its run broke
+    before or around the tests, as a process that lost its console would."""
     path = out_dir / "outcomes.json"
     if not path.exists():
         return []
     killed = []
     for outcome in json.loads(path.read_text(encoding="utf-8"))["outcomes"]:
         if outcome["summary"] == "Failure" and isinstance(outcome["scenario"], dict):
+            killed.append(outcome["scenario"]["Mutant"]["name"])
+            continue
+        if outcome["summary"] == "CaughtMutant" and not caught_by_tests(outcome):
             killed.append(outcome["scenario"]["Mutant"]["name"])
             continue
         if outcome["summary"] != "Unviable" or not outcome.get("log_path"):
@@ -1036,7 +1053,12 @@ caught = set()
 try:
     with open("mutants.out/outcomes.json", encoding="utf-8") as f:
         for outcome in json.load(f)["outcomes"]:
-            if outcome["summary"] == "CaughtMutant" and outcome.get("log_path"):
+            # As caught_by_tests: a catch whose tests never failed keeps its log.
+            tested = any(
+                phase["phase"] == "Test" and phase.get("process_status") == {"Failure": 100}
+                for phase in outcome.get("phase_results", [])
+            )
+            if outcome["summary"] == "CaughtMutant" and outcome.get("log_path") and tested:
                 caught.add(os.path.normpath(os.path.join("mutants.out", outcome["log_path"])))
 except Exception:
     caught = set()
@@ -1355,8 +1377,9 @@ def report_killed(code: int, *, local_half: bool) -> int:
         return code
     print(
         f"{len(here) + len(remote)} mutants were NOT tested: a build process was killed "
-        "for memory or lost its console, a link failed (their logs say which), or cargo was "
-        "ended by a signal, and cargo-mutants counted them as unviable or in no list."
+        "for memory or lost its console, a link failed (their logs say which), cargo was "
+        "ended by a signal, or nextest failed without a failing test, and cargo-mutants "
+        "counted them as unviable, caught or in no list."
     )
     if remote:
         print(
