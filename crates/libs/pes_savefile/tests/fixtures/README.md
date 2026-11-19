@@ -14,6 +14,7 @@ Per version `NN`:
 
 | Version | Source save | Payload / logo / serial (bytes, UTF-16 units) | Notes |
 |---|---|---|---|
+| 14 | `Documents/KONAMI/Pro Evolution Soccer 2014/save/EDIT.bin.orig` (the maintainer's PES 2014 save of September 2016: 11998 players, 478 teams, no 4cc team) | 4726440 / 72770 / - | seed byte 157; payload MD5 `5eb287d4075e1077f3ae6a1f1e9a54ae` equals the head's third digest; PES 15's container |
 | 15 | `Tools_4cc/Midcupping/EDIT.bin` (a 4cc PES 15 cup save; identical to the PES 15 KONAMI save on the machine) | 5782808 / 28795 / - | seed byte 195; payload MD5 `c8d4d78bf43317b02b66786b92ce2d0c` equals the head's third digest |
 | 16 | `Documents/KONAMI/Pro Evolution Soccer 2016/save/EDIT00000000` | 5886176 / 67218 / 46 | header 176; identifier ends `EDIT` + zeros |
 | 17 | `Documents/KONAMI/Pro Evolution Soccer 2017/save/EDIT00000000` | 5266180 / 28689 / 46 | header 176 |
