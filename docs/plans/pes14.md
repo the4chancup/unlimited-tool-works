@@ -230,9 +230,9 @@ main's release.
     game drops; created players (Edit > Players > Create Player, a name required) keep theirs;
   - in the Akko saves, the first league (English League) holds the 4cc teams, blank (23
     PLACEHOLDER players each). Akko is an invitational, so the teams playing it, `/4ccg/`
-    among them, are in one of the lower leagues, under ids of their own: `/4ccg/` is 857
-    there, while the save's team 784, the 4cc teams list's id for `/4ccg/`, is a blank 4cc team
-    named "VGL 4".
+    among them, are in one of the lower leagues and in the save's Invitational team section
+    (ids 851–920, `spec/libs/teams_list.md`): `/4ccg/` is 857 there, while 784, its id in the
+    /vg/ League section, holds a blank team named "VGL 4".
 
 ## Process
 
