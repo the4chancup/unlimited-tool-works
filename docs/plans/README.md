@@ -13,6 +13,7 @@ Compiler, the libraries, the savefile) holds only its unbuilt parts here.
 | [Core](core/README.md) | Platform architecture and cross-cutting decisions |
 | [Compiler](team_compiler/README.md) | The flagship tool: pipeline, planning, processing, packing, deployment, GUI grid, referee support |
 | [Aesthetics export](aesthetics_export/README.md) | The `aesthetics_export` lib and the Studio aesthetics export format: object model + validation progression, player folders, `settings.toml`, FPC markers (shared by the compiler, upgrader, kit config editor, refs arranger, and Team creator) |
+| [PES 2014 saves](pes14.md) | The `pes14` branch only: the Save editor on PES 2014 saves for Akko League VII, built and released apart from main |
 | [Save editor](save_editor.md) | 4ccEditor + Midcupping successor: editing UI, tactics editor, AATF checks, comparator, transplant; also specs the `team_widgets` lib shared with the Team creator |
 | [AATF rules](aatf_rules.md) | The `aatf` lib: the ruleset schema (tiers, heights, cards, conditional specials), the generic Rhai interpreter carried in every rules file, suggestions, the host API, the official Autumn 26 and VGL26 rulesets (shared by the Save editor, Team creator and Ruleset editor) |
 | [Ruleset editor](ruleset_editor.md) | Forms over the ruleset schema for invitational organizers: tiers, heights, cards, specials, suggestions; rules file open/save with logic identity, rules summary |

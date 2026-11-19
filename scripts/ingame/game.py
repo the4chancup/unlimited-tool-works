@@ -30,7 +30,7 @@ Each command is one process call, so whoever drives a check reads a screenshot b
   python scripts/ingame/game.py status GAME              is the game running, where is its window
   python scripts/ingame/game.py close GAME               terminate the game process (and Sider's)
 
-GAME is a key of `GAMES` below (17, 19, 20 or 21), the one place the install paths are set.
+GAME is a key of `GAMES` below (14 to 21), the one place the install paths are set.
 Keys are DirectInput scan codes (pydirectinput), which the game reads only from the foreground,
 so the window is brought to the front before keys or a shot. `pad` and `obs-shot` leave the
 focus where it is: the game reads a virtual pad (`vgamepad`, over the ViGEmBus driver) in the
@@ -50,7 +50,8 @@ import time
 # Per game: the install folder, the game's executable in it, Sider's executable relative to it,
 # and the process name tasklist shows for the running game.
 GAMES = {
-    # No Sider (15, 16, 18): used for save measurements, which load no CPK of ours.
+    # No Sider (14, 15, 16, 18): used for save measurements, which load no CPK of ours.
+    "14": {"dir": "E:/PES2014", "exe": "PES2014.exe", "sider": None, "proc": "pes2014.exe"},
     "15": {"dir": "G:/Games/PES2015", "exe": "PES2015.exe", "sider": None, "proc": "pes2015.exe"},
     "16":{"dir": "G:/Games/PES2016", "exe": "PES2016.exe", "sider": None, "proc": "pes2016.exe"},
     "17": {"dir": "E:/PES2017", "exe": "PES2017.exe", "sider": "Sider/sider.exe", "proc": "pes2017.exe"},
