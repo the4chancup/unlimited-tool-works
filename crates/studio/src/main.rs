@@ -793,7 +793,7 @@ mod tests {
 
     /// A releases list whose one release is newer than any version of the program.
     const NEWER_RELEASE: &str =
-        r#"[{"tag_name": "v999.0.0", "body": null, "html_url": "u", "assets": []}]"#;
+        r#"[{"tag_name": "pes14-v999.0.0", "body": null, "html_url": "u", "assets": []}]"#;
 
     /// A hang bound on another thread's report, never a speed bound: a
     /// passing wait returns as soon as the report comes.

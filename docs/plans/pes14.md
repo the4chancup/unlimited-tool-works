@@ -279,8 +279,8 @@ on main. Main is merged into the branch, never rebased onto it.
    edit flags, the Gameplan screen and the out-of-scope features greyed.
 5. The Akko VII ruleset (`akko7.rhai`, its logo and page); `/4ccg/` in `.akko7v2` passes as it
    does in the fork's fixed build.
-6. Releases: the `pes14-v` tag prefix in the update check and `release.yml`, the version
-   `0.0.2-pes14.1`.
+6. Releases: the `pes14-v` tag prefix in the update check and `release.yml`. The version
+   `0.0.2-pes14.1` is set at the cut, in step 7.
 7. Build 1's check: `/4ccg/` edited in the build, saved, looked at in game in Edit mode; then
    the release.
 8. Build 2: the Gameplan screen.

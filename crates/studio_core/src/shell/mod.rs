@@ -2085,7 +2085,7 @@ mod tests {
         /// `updater::RELEASES_FIXTURE`'s.
         const NEWER_FIXTURE: &str = r#"[
             {
-                "tag_name": "v0.0.3",
+                "tag_name": "pes14-v0.0.3",
                 "body": "Newer still.\n",
                 "html_url": "https://github.com/the4chancup/unlimited-tool-works/releases/tag/v0.0.3",
                 "assets": []
