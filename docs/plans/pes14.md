@@ -95,16 +95,19 @@ From the fork's codec, checked against the vanilla save and the Akko saves (2026
   | Players | 0x4C | 0x6C (108) | 0x34 | 5060, 11998 |
   | Appearance | 0x29332C | 0x58 (88) | 0x36 | 5060, 0 |
   | Teams | 0x36A0AC | 0x13C (316) | 0x38 | 222, 478 |
-  | Rosters | 0x3E5D78 | 0xA4 (164) | 0x42 or 0x46 | 222, 478 |
+  | Rosters | 0x3E5CD4 | 0xA4 (164) | 0x42 or 0x46 | 222, 478 |
   | Tactics | 0x4081A0 | 0x1F6 (502) | 0x46 or 0x42 | 222, 478 |
 
-  Which of 0x42 and 0x46 counts which is not known yet (both hold the team count in both
-  saves); 0x3A (45 in both) and 0x3C (18 in the vanilla save, 0 in the Akko ones) count
-  something else.
+  Which of 0x42 and 0x46 counts which is not known (both hold the team count in both saves),
+  and it does not matter: the editor counts both sections by the team count at 0x38, as on
+  PES 2015, since each holds one record per team. 0x3A (45 in both) and 0x3C (18 in the
+  vanilla save, 0 in the Akko ones) count something else.
 
-  A tactics record starts with its team's id as a u32, in the team section's order (checked on
-  every record of both saves). The fork's notes had it at 0x40858C with 1004-byte records: two
-  records read as one, which is why its keys skipped every other team.
+  A roster record and a tactics record each start with their team's id as a u32, in the team
+  section's order (checked on every record of the vanilla save and `.akko7v2`). The fork's
+  notes put both sections elsewhere. Its rosters started at 0x3E5D78, one record late, where
+  the first record is the second team's. Its tactics started at 0x40858C with
+  1004-byte records: two records read as one, which is why its keys skipped every other team.
   A team record's u32 at +0 is the team's id in its low 16 bits and 0xFFFF in its high 16.
 
 - **Edit flags are per section.** Bits 2 to 7 of byte 0x28 and bits 1 to 7 of byte 0x29 of a
