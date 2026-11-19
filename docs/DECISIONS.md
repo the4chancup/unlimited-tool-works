@@ -18862,3 +18862,18 @@ Why: the maintainer, from PES's own screen: the editor should read as the game d
 longer texts would not fit the half-width toggles without redesigning the layout. Team TOML
 files already break in 0.0.2, so its keys rename now rather than in a later release.
 Plan: `plans/save_editor.md`, the Formation settings passages; `spec/pes_savefile/operations.md`.
+
+## 2026-11-19 — development plan — PES 2014 support lives on its own branch
+Decision: the Save editor learns PES 2014 saves, for Akko League VII, on the long-lived branch
+`pes14`. Main is merged into the branch, never the branch into main, and nothing is rebased.
+The branch's `docs/plans/pes14.md` holds its plan, decisions and steps. `PesVersion::Pes14`
+stays out of `PesVersion::ALL`, so only the Save editor reaches it, by detecting the file; the
+other tools refuse it. The first build matches the 4ccEditor build made for Akko VII, with the
+Gameplan screen disabled; the Gameplan screen follows in a second build. Builds are
+unofficial: a GitHub prerelease if main's builds can be kept from offering it as an update,
+otherwise a zip handed to the organizer. Reviews are SWE-2 rounds only, and no mutation runs.
+Why: no official cup plays PES 2014, so on main the support would be dead code that every
+change must keep building and testing; the branch keeps it ready for the day one does.
+Leaving `Pes14` out of `ALL` keeps the version pickers and the per-version test loops as they
+are, so main's merges into the branch stay small.
+Plan: no plan edit on main; the branch's `docs/plans/pes14.md` holds the design.

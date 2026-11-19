@@ -9,93 +9,67 @@ is in `AGENTS.md` ("Working documents").
 
 ## Current status
 
-**Release 0.0.2, the VGL preview, is cut** (`plans/core/development_plan.md` "The /vg/ League
-27 (VGL)"): tagged `v0.0.2` on 2026-11-18, with the draft release CI builds from the tag
-left for the maintainer to check and publish (DECISIONS 2026-11-16 "0.0.2 is cut without
-Select all similar, the Carbon rounds and the PES 2019 check"; 2026-11-16 "The no-stretch
-slices move to after 0.0.2"). After 0.0.2: the Nation list (the maintainer, 2026-11-17): it opens already
-scrolled to the held nation, where it mostly scrolls down to it from the top; typing a
-nation's name picks it as an ID does (members rarely know the IDs); Escape puts the old
-nation back. Earlier sessions in Report a problem: the repro bundles issue's slice (5). The
-draft's greyed number boxes read `-` as the build's do (the maintainer kept the build's,
-`look-gated-labels`). Astra's round over 0.0.2-geninfo (`73641390..be99921c`, on Codex
-`brother` once its week resets, Wed 2026-11-18 10:11), 0.0.2-similar, every Carbon round a 0.0.2 step still owes (Report a problem's
-excepted, below), 0.0.2-pes19
-(and with it the readme's PES 2019 claim), 0.0.2-nostretch's slices, the drafts in two
-copies (the maintainer, 2026-11-17: a spec draft of what the build holds and a plan draft for
-prototyping, which the app's unbuilt sections open with `demo=1`. Git keeps the two: the spec
-draft is `docs/prototypes/` on main, which `draft_compare`, the looks and the tasks cards read;
-the plan draft a long-lived branch in its own worktree, a step's draft commits merged into main
-when its build merges, and main merged back into the branch, never rebased; then the plan and spec text
-keeps the reasons, the behaviour and what no draft shows, such as the light theme, and points
-at the draft for measurements rather than copying them, a copy that drifted once: rows "22
-apart" against the draft's 24), the SWE-2 Flash trial's first comparison (its 0.0.2-lookfix
-run shelved in `4cc-studio-temp/lookfix_flash`, never merged), Reset window's first click
-on Linux (the maintainer's check of 0.0.2-rc.3, 2026-11-17, "good enough for 0.0.2": the
-first click resets the window but the button stays, a second click changes nothing and the
-button goes, its pointer a hand; likely the window manager leaving the reset window off the
-fitted size, so the button waits for a click the window does not follow), the DpFileList
-upgrade on a PES 2019 DLC (the VGL organizer's poc.5 report, 2026-11-17: after
-`upgrade-dpfl` the game ran vanilla and made a new save of the real teams; the official
-list has no stem for the PES 2019 list's `03_base`, `10_scoreboard`, `11_interface`,
-`12_cutscenes`, `13_competition`, so they drop out, and PES 2019's records carry a
-countdown at byte 36 ours lack; the maintainer is settling it with the organizer), and any
-mutation run
-(mutfast first). Most open steps below wait only for the maintainer's look
-(`maintainer/tasks.html`). What is left before the cut:
-1. 0.0.2-geninfo: built (both slices), its SWE-2 loop ended (round 1 accepted 15, fixed;
-   round 2 none), the pipeline on `d2eadc87` passed; Astra's round moves to after 0.0.2,
-   which is cut today (the maintainer, 2026-11-17). 0.0.2-frames, -paneshift, -keepsel,
-   -posheight and -lookfix are merged and reviewed.
-2. The maintainer's look 2026-11-17 at the `aec5a709` build: `look-stats-screen`,
-   `look-gated-labels`, `-category-teams`, `-x-hover`, `-interchange-text` and `-light-names`
-   fine. From the Stats screen's notes, two changes before the cut: the light theme's controls
-   at `#e1e1e1` (hovered and pressed the same 31 over the matched contrast) and a held toggle
-   side or chosen C rating at `#c2c2c2`; the Save editor's view 10 after the sidebar (the menu
-   bar with it) and its screens ending 14 before the window's edge, everything else in place.
-   Built at `2d1d41fe` (gates: studio_core 552, save_editor 1077 + 57, ruleset_editor
-   174 + 13, clippy, fmt); the lead's look matched the draft (the list at x 66, the frames
-   ending at 1266, File at 71, in both); card `look-light-margins` on build
-   `UTW-2d1d41fe.exe`, which the maintainer found fine. Radio circles are now 14 across with
-   their edge, as in the draft, and Captain's stands over its column, 1 point above its row's
-   middle (`69f3a70f`, `d9fc23bf`). The pipeline passed on `ccfb10f0`, which carries all of
-   it.
-3. The overall's paired abilities, fixed for 0.0.2 (the maintainer, 2026-11-17): three
-   in-game checks on team 702 of the PES 2017 main save settled the three rows the weights'
-   profile left open (the plan's "A pitch player dropped on another"; the third check, read
-   blind, gave the predicted 78, 79, 77, 88). The fixture `overall_points.tsv` gained a
-   physical contact column and the checks' 12 rows; none of its 351 earlier rows changes.
-   Gates: pes_savefile, team_widgets, save_editor, clippy, fmt; the pipeline passed on
-   `5f4286f9`.
-4. Team TOML's numbers read as the game and the Save editor show them, for 0.0.2 (the
-   maintainer, 2026-11-18): form, injury resistance and weak foot one above the stored value,
-   `[tactics]` roster slots counted from 1, man_marking 1 to 11, 0 = nobody (`c48437e5`;
-   gates: pes_savefile, aatf, save_editor, ruleset_editor, team_widgets, clippy, fmt; the two
-   new tests ran red on the old code). The pipeline passed on `c48437e5`. After 0.0.2, by the
-   same rule: team colours in 8 bits as on screen (the file holds the save's 0 to 63),
-   `[tactics.auto] substitution` and the appearance colours by name. The dribbling motion,
-   which the game never shows, now counts from 1 as the other motions do, in `settings.toml`
-   and the Save editor too; star rating and playing attitude stay from 0. After 0.0.2 too: the
-   Save editor draft's sample Team TOML texts (`docs/prototypes/tools/save_editor.js`, the
-   `"pes17/718"` entry and its kind) still show the old numbering (255 for nobody, slots
-   from 0, the stats one lower); regenerate them from today's export.
-5. Attacking area, fixed for 0.0.2 (the maintainer's PES 2017 check, 2026-11-18): the save
-   stores Wide as 0 and Centre as 1, where the Save editor showed them the other way round.
-   Centre still sits on the left. The formation settings now use the game's names (Attacking
-   styles, Build up, Attacking area, Defensive styles, Pressuring; Long-pass, Short-pass,
-   All-out Defence), and Team TOML's `[tactics.preset_N.style]` keys follow them. Gates:
-   team_widgets, pes_savefile, aatf, save_editor, clippy, fmt; the Attacking area toggle test
-   and the two tests of a preset's settings list ran red on the old mapping.
-6. The cut, 2026-11-18, on the maintainer's word: the workspace at 0.0.2, the changelog's
-   `[Unreleased]` renamed `[0.0.2] - 2026-11-18`, the README's status, tag `v0.0.2`. The
-   maintainer checks CI's draft release and publishes it. Card `poc5-in-game` stays open.
+**Release 0.0.2, the VGL preview, is out** (`plans/core/development_plan.md` "The /vg/ League
+27 (VGL)"): tagged `v0.0.2` on `aab124dc` and published by the maintainer 2026-11-18, once CI
+and the Release run had passed. It went out without Select all similar, the Carbon rounds and
+the PES 2019 check (DECISIONS 2026-11-16 "0.0.2 is cut without Select all similar, the Carbon
+rounds and the PES 2019 check"), and the no-stretch slices moved to after it (2026-11-16 "The
+no-stretch slices move to after 0.0.2"). Card `poc5-in-game` stays open.
 
-Done since 2026-11-16: Report a problem for 0.0.2 (the maintainer ran ST-REP-05 from a
-save to the zip, 2026-11-17: works), the answers' recheck (Kit slots and the Stats screen fixed and looked
-at), the Report a problem dialog's spacing, `gui.py`'s review round. Reviews: every 0.0.2 loop
-has ended; Report a problem, a Tier 1 surface (DECISIONS 2026-11-16), has had its whole review
-(Carbon's loop ended at round 3, its fixes merged at `b3e8f007`, Astra's round 1 accepted
-nothing).
+**Now, a detour: PES 2014 saves for Akko League VII.** The Save editor learns PES 2014 on the
+long-lived branch `pes14`, which never merges into main (DECISIONS 2026-11-19 "PES 2014 support
+lives on its own branch"). The branch's `docs/plans/pes14.md` holds its plan, decisions and
+steps.
+
+**After the detour**, in this order:
+1. The Nation list (the maintainer, 2026-11-17): it opens already scrolled to the held nation,
+   where it mostly scrolls down to it from the top; typing a nation's name picks it as an ID
+   does (members rarely know the IDs); Escape puts the old nation back.
+2. 0.0.2-nostretch's slices.
+3. Earlier sessions in Report a problem: the repro bundles issue's slice (5).
+4. Review rounds owed: Astra's round over 0.0.2-geninfo (`73641390..be99921c`), 0.0.2-similar,
+   and every Carbon round a 0.0.2 step still owes (Report a problem has had its whole review).
+5. 0.0.2-pes19, and with it the readme's PES 2019 claim.
+6. The drafts in two copies (the maintainer, 2026-11-17: a spec draft of what the build holds
+   and a plan draft for prototyping, which the app's unbuilt sections open with `demo=1`. Git
+   keeps the two: the spec draft is `docs/prototypes/` on main, which `draft_compare`, the
+   looks and the tasks cards read; the plan draft a long-lived branch in its own worktree, a
+   step's draft commits merged into main when its build merges, and main merged back into the
+   branch, never rebased; then the plan and spec text keeps the reasons, the behaviour and what
+   no draft shows, such as the light theme, and points at the draft for measurements rather
+   than copying them, a copy that drifted once: rows "22 apart" against the draft's 24).
+7. The DpFileList upgrade on a PES 2019 DLC (the VGL organizer's poc.5 report, 2026-11-17:
+   after `upgrade-dpfl` the game ran vanilla and made a new save of the real teams; the
+   official list has no stem for the PES 2019 list's `03_base`, `10_scoreboard`,
+   `11_interface`, `12_cutscenes`, `13_competition`, so they drop out, and PES 2019's records
+   carry a countdown at byte 36 ours lack; the maintainer is settling it with the organizer).
+8. The rest of Team TOML's numbers as the game shows them, as 0.0.2 did for form, injury
+   resistance and weak foot: team colours in 8 bits as on screen (the file holds the save's 0
+   to 63), `[tactics.auto] substitution` and the appearance colours by name. The Save editor
+   draft's sample Team TOML texts (`docs/prototypes/tools/save_editor.js`, the `"pes17/718"`
+   entry and its kind) still show the old numbering (255 for nobody, slots from 0, the stats
+   one lower): regenerate them from today's export.
+9. The draft's greyed number boxes read `-`, as the build's do (the maintainer kept the build's,
+   `look-gated-labels`).
+10. The SWE-2 Flash trial's first comparison (its 0.0.2-lookfix run shelved in
+    `4cc-studio-temp/lookfix_flash`, never merged).
+11. Reset window's first click on Linux (the maintainer's check of 0.0.2-rc.3, 2026-11-17,
+    "good enough for 0.0.2": the first click resets the window but the button stays, a second
+    click changes nothing and the button goes, its pointer a hand; likely the window manager
+    leaving the reset window off the fitted size, so the button waits for a click the window
+    does not follow).
+12. Any mutation run, mutfast first.
+
+Most open steps below wait only for the maintainer's look (`maintainer/tasks.html`).
+
+**Done for 0.0.2 since 2026-11-16:** 0.0.2-geninfo (both slices; its SWE-2 loop ended),
+-frames, -paneshift, -keepsel, -posheight and -lookfix; the light theme's control colours and
+the Save editor's margins (`2d1d41fe`, `69f3a70f`, `d9fc23bf`); the overall's paired abilities,
+settled by three in-game checks (`overall_points.tsv` gained a physical contact column and 12
+rows); Team TOML's numbers as the game shows them (`c48437e5`), the dribbling motion counted
+from 1; Attacking area's Wide as 0 and the formation settings in the game's names; Report a
+problem (the maintainer ran ST-REP-05; Carbon's loop and Astra's round done, fixes at
+`b3e8f007`); the answers' recheck; `gui.py`'s review round.
 
 **The PoC for VGL's organizer:** 0.0.2-poc.5 is built (`4cc-studio-temp/poc/target/dist`,
 archive SHA-256 `cac0447a…`, branch `vgl27` at `61d224c4`: main of 2026-11-12 at
