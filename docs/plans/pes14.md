@@ -134,6 +134,28 @@ From the fork's codec, checked against the vanilla save and the Akko saves (2026
   flag but Basic Settings', which set 0x28:6: a created player has no base data for the game to
   fall back to, so its part flags do not matter. They are mapped on the Akko saves' players
   instead, whose flags are clear (5036 of 5060 in `.akko7v2`).
+- **Pinned in game, run `tactics1`** (2026-11-20, one Game Plan change on each of teams 2 to 7
+  of `.akko7v2`'s English League, kept as `tactics1`). Offsets are bytes of the 502-byte
+  tactics record:
+  - the captain at +0x1CC, one byte: #1 to #2 wrote 0 to 1;
+  - the Long FK taker at +0x1C6: #1 to #2 wrote 0 to 1, and the game moved the byte at
+    +0x1C8 from 1 to 2 with it (the next taker in the list, as it avoids one player in two
+    slots);
+  - the lineup at +0x146, 32 u32s: entry k is the roster slot playing position k. Swapping two
+    players exchanges their entries. Every team of `.akko7v2` has the lineup in roster order;
+  - three preset blocks, 0x6C bytes apart (Preset Tactics 1 to 3). In Preset Tactics 1, the
+    Strategy is at +0x5A (Custom 0, Long Ball 1, the dropdown's order), and picking Long Ball
+    also set +0x60 to 5 and +0x61 to 15, the Defensive Compactness and Shifting to Attack the
+    screen then showed. A formation change (8-1-1 to 4-3-1-2) rewrote one byte every 4 from
+    +0x12 to +0x2E and u16 values from +0x32 to +0x58. A swap of two starters exchanged their
+    bytes in presets 2 and 3 (0x6C and 0xD8 later), not in preset 1;
+  - open: whether the captain and taker bytes count lineup positions or roster slots, since
+    every changed team had its lineup in roster order.
+
+  Saving also rewrote the competition data after the team records (from 0x3AB9E4, "Club
+  International Cup") and the header byte 0x4A. The Edit Player cards are PES 2015's names:
+  18 playing styles, 7 COM styles and 20 skills, Precise Touch among them (no Cut Behind &
+  Turn: Precise Touch's description names the Cut Behind move).
 - Two more tables sit in the payload, unread by the fork: a second team table near 0x374C44
   (team ID at +0, name near +0x78) and a player table keyed by player ID right after the
   appearance table, at 0x2DABAC. The vanilla save leaves both empty.
@@ -191,6 +213,12 @@ version, not the version selector.
   (the game's player menu has ten parts: Player Name, Basic Settings, Position, Ability
   settings, Player Index, Face, Hairstyle, Physique, Accessories, Motion). On the other versions
   an ordinary edit sets no flag, as on main.
+- **The tactics record in Build 1.** PES 2015's formation and man-marking layouts do not fit
+  PES 2014's record: one formation per preset, a lineup of roster slots and no player ids.
+  So `TacticsSchema`'s `formations` and `man_marking_bit` become `Option`s, `None` on PES 2014,
+  and the codec writes no formation or man-marking run there. PES 2014's table maps the team
+  id and the captain, which the AATF needs, and every other byte of the record is kept as
+  read. The takers, the lineup and the presets wait for Build 2.
 - **The Gameplan screen in Build 1.** The Gameplan segment is greyed with a "PES 2014: in the
   next build" tooltip; the import panel's Gameplan section and the Preset and Formation copy
   targets go with it. The captain is read for the AATF and kept as the game set it; it is
