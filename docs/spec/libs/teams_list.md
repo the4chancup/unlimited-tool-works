@@ -62,6 +62,21 @@ naming the file. The embedded list's /vg/ League block (781–834) has since bee
 each league's own allocation (VGL27's 781–832 at 0.0.2-poc, 833–834 the placeholders `VGL 53`
 and `VGL 54`).
 
+The ids follow the four team sections of a cup save:
+
+| Section | Ids | Holds |
+|---|---|---|
+| 4cc | 701–771 | the 4cc's teams |
+| Backup | 772–780 | new 4cc teams that do not fit the 4cc section, until the teams are redistributed |
+| /vg/ League | 781–850 | the teams of the /vg/ League (VGL) |
+| Invitational | 851–920 | every other team, for one event at a time |
+
+**Invitationals** are smaller, unofficial events which, despite their name, any team may enter.
+Most are themed (the VGL's Mobabowl takes teams based on mobage games), and some take any kind
+of team, even a "fake" one that belongs to no official event and was made for that invitational
+alone. The /vt/ League (VTL) is official in its own right but has no section of its own, so its
+teams use the Invitational section too.
+
 The list changes with every allocation, so its tests check only what any version holds (one row
 per ID 701–920, in order; an unchanged write-back byte for byte), never which team holds which
 ID. The parser's cases (fold, placeholders, carried columns) are tested on lists of their own,
