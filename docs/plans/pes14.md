@@ -177,6 +177,11 @@ version, not the version selector.
   advanced instructions (none), Texport (none), the stat-name renames, the nations list
   (an eighth column), the save's folder and file name, and the pitch the formation screen
   draws (PES 2017's, the fallback for unmeasured versions).
+- **Appearance records.** On PES 2014 only a player whose look was edited, or who was created
+  in the save, has an appearance record: the vanilla save has none for its 11998 players, the
+  Akko saves one for each of their 5060. A player without one reads no appearance fields and
+  writes none. On PES 2015 and 2016 every player has one, and a missing record still refuses
+  the save.
 - **Tenacity** is a PES 2014 stat no other version has. It gets its own `Option` stat, its
   `PlayerField` and its AATF stat name. On another version's save its greyed box's tooltip
   reads "PES 2014 only", since the "PES NN+" wording would claim later versions store it.
