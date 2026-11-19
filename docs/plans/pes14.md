@@ -214,16 +214,25 @@ main's release.
   `pes14_payload.bin.zz` beside the other versions' fixtures.
 - **Real saves, local only.** The Akko saves (`EDIT.bin.akko`, `.akko7v2`, `.akko7v2_flags`,
   in the PES 2014 save folder) stay out of git. A local check opens each, saves it unchanged,
-  and compares the payloads byte for byte; it opens `/4ccg/` in `.akko7v2` and checks its 23
-  players by name.
+  and compares the payloads byte for byte; it opens `/4ccg/` (team 857) in `.akko7v2` and
+  checks its 23 players by name.
+- **`/4ccg/`'s VGL 26 export.** `/4ccg/` is a VGL team invited to Akko VII, and its Akko team
+  was ported from its VGL 26 aesthetics export: a Fox-era export with kits, each player's
+  settings and `colors.txt`, whose team colours are 48 146 82 and 221 0 0. A copy, upgraded to
+  Studio's export format, is in the main tree's `.tmp/0_0_2/ingame/poc/run/exports/`. So the export is a second reading of
+  what the Akko save should hold for those 23 players and their team, such as names, order,
+  appearance settings and colours. Team 857's record does not hold those two colours as plain
+  bytes, so where PES 2014 keeps team colours is still to be found.
 - **In game.** PES 2014 is installed at `E:\PES2014`, driven by `scripts/ingame/game.py 14`
   (a pad, OBS shots, no keyboard focus). The mapping saves are made there, and Build 1 ends
   with the edited `/4ccg/` looked at in Edit mode. Where the editable players are:
   - in the vanilla save, the leagues' squads are "Unregistered" dummy slots whose edits the
     game drops; created players (Edit > Players > Create Player, a name required) keep theirs;
   - in the Akko saves, the first league (English League) holds the 4cc teams, blank (23
-    PLACEHOLDER players each); Akko is an invitational, so its own teams, `/4ccg/` among them,
-    are in one of the lower leagues.
+    PLACEHOLDER players each). Akko is an invitational, so the teams playing it, `/4ccg/`
+    among them, are in one of the lower leagues, under ids of their own: `/4ccg/` is 857
+    there, while the save's team 784, the 4cc teams list's id for `/4ccg/`, is a blank 4cc team
+    named "VGL 4".
 
 ## Process
 
