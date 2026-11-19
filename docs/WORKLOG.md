@@ -3111,6 +3111,25 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
   whose estimate passes a budget (about an hour a side) runs detached from the checkpoint,
   which closes on the rest (this one held it ~12.5 h); `0.0.2-picwidth` keeps the baseline
   from depending on the tree's path
+  - the trial (2026-11-19, `.tmp/mutfast/`, `make_small.py`) was short: under libtest a
+    mutant's tests cost the whole suite whatever the mutant, so only nextest ran, its baseline
+    and five mutants that 2026-11-16 caught, one at a time. Nextest wins:
+    - a caught mutant's tests took 28-162 s (median 64), against 303-771 s for the same five
+      under libtest on 2026-11-16 (two at a time then, so part of that gap is load);
+    - the baseline, which is also what a missed mutant costs, took 444 s against libtest's
+      418 s at `3fb58170`, under the same load and with the memory-cap wrapper's process per
+      test included, so a runner of our own is not needed (that item is dropped);
+    - on 2026-11-16's hours (80% of them caught mutants), that estimates about two thirds less
+      time a run;
+    - the workspace has no doctests, which nextest does not run
+  - next, adopt it: `.cargo/mutants.toml` gets `test_tool = "nextest"`, and `sized_config`
+    (`scripts/mutation/mutants.py`) passes build jobs as `--build-jobs` (nextest reads `--jobs`
+    as its test threads) and the test threads without libtest's `--`. The VPS has only
+    cargo-mutants: it gets cargo-nextest at this machine's version (0.9.146) once its disk is
+    back over the 26 GiB floor (26.0 GiB free on 2026-11-19; the remote cleanup in RUNBOOK "The scratch folder")
+  - found on the way: cargo-mutants 27.1.0 filters no "delete field" mutant through
+    `examine_re` or `exclude_re` (config or `-E`), so an exclusion of one would be silently
+    ignored; `mutants.toml` has none today
 - [ ] after 0.0.2 (from 0.0.1's f6, the whole-crate mutation runs' two design findings):
   - `team_widgets` `pitch/popover.rs` `slot_popover`'s outside-press focus surrender is
     unobservable under egui 0.37 (`Focus::end_pass` drops an undrawn widget's focus; the
@@ -3229,16 +3248,6 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
   reopening the save (the maintainer, 2026-11-01). Then the draft (the button's place
   against the Set PES path button's bottom right), the plan's paragraph (what a malformed
   or ambiguous export does, off the UI thread as the CPK read is), its scenarios, and a slice
-- [ ] after 0.0.2 (the maintainer, 2026-11-15), if mutfast's trial finds that
-  cargo-nextest's process per test slows the suite too much: a test runner of our own that
-  keeps the standard runner's single process and stops at the first failure, as nextest does.
-  Checked 2026-11-15: `libtest-mimic` 0.8.2 runs tests on threads in one process (its
-  `--test-threads`) but has no fail-fast flag; a shared "one has failed" flag its test
-  closures read would add one. Its cost is the harness itself: with `harness = false`
-  nothing collects `#[test]` functions, so every test (954 in save_editor alone) is
-  registered through a collecting macro or by hand. cargo-mutants passes its own arguments
-  through to the runner (`additional_cargo_test_args`, `-- --`). → measure on the trial's 20
-  save_editor mutants; a new crate or dependency waits for the maintainer's yes
 
 ### Phase 10 — Music tools
 
