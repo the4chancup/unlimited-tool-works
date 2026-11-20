@@ -281,7 +281,10 @@ version, not the version selector.
   the save.
 - **Tenacity** is a PES 2014 stat no other version has. It gets its own `Option` stat, its
   `PlayerField` and its AATF stat name. On another version's save its greyed box's tooltip
-  reads "PES 2014 only", since the "PES NN+" wording would claim later versions store it.
+  reads "PES 2014 only", since the "PES NN+" wording would claim later versions store it. It is
+  the last ability stat, after Aggression, so that every table indexed by ability stat (a
+  ruleset's stats, the Ruleset editor's columns) keeps its indices. It is no Team TOML key,
+  since Team TOML is not available on PES 2014.
 - **Stored values.** PES 2014 stores each stat less 40, the height less 132 and the weight less
   30 (run `player1`). The codec adds those offsets when it reads a PES 2014 record and takes
   them off when it writes one, so the model, the screens and the AATF hold the values the game

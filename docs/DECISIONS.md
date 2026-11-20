@@ -18933,3 +18933,10 @@ says they scale. 4/4 for the short players, not the 8/8 their "any amount" would
 because both height tables give 4/4 and the Akko fork of 4ccEditor checks 4/4. No age,
 weight, formation or team-settings rule because the page sets none.
 Plan: `plans/pes14.md` "Goal and scope", the AATF item.
+
+## 2026-11-20 — pes_savefile (pes14 branch) — Tenacity is the last ability stat, and no Team TOML key
+Decision: Tenacity joins the ability stats last, after Aggression. It gets no Team TOML key.
+Why: last, not in the middle of the list, because every table indexed by ability stat (a
+ruleset's stats, the Ruleset editor's columns, the tests) would otherwise shift. No key,
+because Team TOML is not available on PES 2014, so no file could carry one.
+Plan: `plans/pes14.md` "PES 2014 in the code", "Tenacity".
