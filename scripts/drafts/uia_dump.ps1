@@ -7,10 +7,15 @@
 param([int]$ProcessId)
 # UTF-8 out, as the caller decodes it: the console's code page turns `…` and `⏷` into `.` and `?`.
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-# Per-monitor DPI aware, as the caller is: a process aware only of the main monitor's scale
-# gets rectangles scaled to it for a window on a monitor of another scale.
+# Per-monitor DPI aware (-4, PER_MONITOR_AWARE_V2), so a window on a monitor of another scale
+# than the main one reads in real pixels. It must come before UI Automation is first used:
+# that first use makes the process aware of the main monitor's scale only, which cannot be
+# changed afterwards, and every rectangle then reads at the main monitor's scale (twice its
+# size on a 200% main monitor).
 Add-Type -Namespace Native -Name Dpi -MemberDefinition '[DllImport("user32.dll")] public static extern bool SetProcessDpiAwarenessContext(System.IntPtr value);'
-[void][Native.Dpi]::SetProcessDpiAwarenessContext([System.IntPtr]::new(-4))
+if (-not [Native.Dpi]::SetProcessDpiAwarenessContext([System.IntPtr]::new(-4))) {
+  Write-Output "could not make the process per-monitor DPI aware"; exit 1
+}
 Add-Type -AssemblyName UIAutomationClient, UIAutomationTypes
 $A = [System.Windows.Automation.AutomationElement]
 $T = [System.Windows.Automation.TreeScope]
