@@ -524,6 +524,7 @@ impl Session {
     /// (`moved_record`), and `origins` follows. Every entry is computed
     /// before the first write: an id the save lacks aborts the whole trade.
     fn trade_records(&mut self, took: Vec<(u32, u32)>) {
+        let ingame_face = schema_for(self.version()).has_ingame_face();
         let mut edited = Vec::new();
         for &(slot_id, record_id) in &took {
             let (Some(dest), Some(source)) =
@@ -531,7 +532,7 @@ impl Session {
             else {
                 return;
             };
-            edited.push(moved_record(source, dest));
+            edited.push(moved_record(source, dest, ingame_face));
         }
         // Records equal on every traded id write nothing, so the trade is
         // not kept either: the unsaved changes stay as empty as the save.
@@ -765,7 +766,7 @@ impl Session {
                         .baseline_players
                         .get(from)
                         .expect("an origin is an id of the baseline");
-                    moved = moved_record(source, own);
+                    moved = moved_record(source, own, schema.has_ingame_face());
                     &moved
                 }
                 None => own,
@@ -1019,13 +1020,17 @@ impl Session {
 /// are `dest`'s — `id`, `appearance_id`, `base_copy_id`, and the in-game face
 /// run apart from `EXPORT_FACE_FIELDS`, whose four the export holds and so
 /// moves (its appearance section ends at `iris_col`; the face structure and
-/// the hair are not in the struct).
-fn moved_record(source: &PlayerEntry, dest: &PlayerEntry) -> PlayerEntry {
+/// the hair are not in the struct). `ingame_face` is the save's version's:
+/// a version that maps no face run has no face fields to move.
+fn moved_record(source: &PlayerEntry, dest: &PlayerEntry, ingame_face: bool) -> PlayerEntry {
     let mut record = source.clone();
     record.id = dest.id;
     record.appearance_id = dest.appearance_id;
     record.appearance.base_copy_id = dest.appearance.base_copy_id;
     record.appearance.ingame_face = dest.appearance.ingame_face.clone();
+    if !ingame_face {
+        return record;
+    }
     // A loaded save reads every player's whole run, and both layouts hold
     // the four fields, so neither call can fail on a record of the save.
     for field in EXPORT_FACE_FIELDS {

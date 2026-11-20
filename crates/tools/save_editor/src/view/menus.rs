@@ -13,6 +13,9 @@ use std::ops::RangeInclusive;
 
 use pes_savefile::EditFile;
 use pes_savefile::model::names::display_name;
+use pes_savefile::schema::fields::PlayerField;
+use pes_savefile::schema::{player_max_value, schema_for};
+use pes_version::PesVersion;
 use studio_core::widgets::{
     add_enabled, add_enabled_ui, menu_button, menu_separator, modal, modal_buttons,
     modal_fit_contents, number_arrows, number_box, number_wheel_steps, radio_value, step_number,
@@ -23,12 +26,20 @@ use studio_core::{Notice, NoticeKind};
 use crate::session::Session;
 use crate::session::database;
 use crate::session::team_ops::{BootsMode, GlovesMode};
-use crate::view::appearance::OWNERSHIP_TIP;
+use crate::view::appearance::{OWNERSHIP_TIP, PES14_TIP};
 use crate::view::generate;
 use crate::view::{
     NUMBER_BOX, Panel, Refusal, SaveView, comparator, copy_stats, interchange, pictures,
     refuse_save_being_read, selected_player, selected_team_id,
 };
+
+/// Whether `version` is a save whose build leaves these features out
+/// entirely: PES 2014's, where the team file, the comparator, the patch
+/// and the formation pictures are not in scope, so the version itself
+/// gates them rather than a field the record lacks.
+fn out_of_scope(version: PesVersion) -> bool {
+    version == PesVersion::Pes14
+}
 
 /// The Team menu button (the draft's `teamMenu`): Set edited flag, the
 /// boots/gloves dialog, Set player names to positions, Clear visual flags
@@ -39,7 +50,10 @@ use crate::view::{
 /// disabled only with no row selected; the boots/gloves dialog prefills
 /// from the selected player, on a team row from the team's first filled
 /// roster slot; the aesthetics items carry the ownership line as their
-/// disabled hover (SE-GUI-22).
+/// disabled hover (SE-GUI-22). A save whose records carry no in-game face
+/// run never offers the FPC items or the boots and gloves dialog, and the
+/// team file and formation picture items are off where they are out of
+/// scope — each disabled item says which on hover.
 pub(crate) fn team_menu(ui: &mut egui::Ui, view: &mut SaveView) {
     let Some(team_id) = selected_team_id(view) else {
         add_enabled_ui(ui, false, |ui| {
@@ -64,6 +78,11 @@ pub(crate) fn team_menu(ui: &mut egui::Ui, view: &mut SaveView) {
         Ok(_) => (unlocked, OWNERSHIP_TIP.to_owned()),
         Err(error) => (false, error.to_string()),
     };
+    let version = view.session.as_ref().expect("checked above").version();
+    // A version with no in-game face run never offers the FPC items, one
+    // that stores no boots id never the boots and gloves dialog.
+    let ingame_face = schema_for(version).has_ingame_face();
+    let boots_stored = player_max_value(version, PlayerField::BootsId).is_some();
     menu_button(ui, "Team", |ui| {
         let Some(session) = view.session.as_mut() else {
             return;
@@ -74,10 +93,14 @@ pub(crate) fn team_menu(ui: &mut egui::Ui, view: &mut SaveView) {
         }
         if add_enabled(
             ui,
-            unlocked,
+            unlocked && boots_stored,
             egui::Button::new("Set boots and gloves IDs for everyone\u{2026}"),
         )
-        .on_disabled_hover_text(OWNERSHIP_TIP)
+        .on_disabled_hover_text(if boots_stored {
+            OWNERSHIP_TIP
+        } else {
+            PES14_TIP
+        })
         .clicked()
             && let Some(player_id) = prefill
         {
@@ -102,10 +125,14 @@ pub(crate) fn team_menu(ui: &mut egui::Ui, view: &mut SaveView) {
         }
         if add_enabled(
             ui,
-            fpc_ok,
+            fpc_ok && ingame_face,
             egui::Button::new("Hide default body (Enable FPC)"),
         )
-        .on_disabled_hover_text(&fpc_tip)
+        .on_disabled_hover_text(if ingame_face {
+            fpc_tip.as_str()
+        } else {
+            PES14_TIP
+        })
         .clicked()
             && let Ok(ids) = hide_ids
         {
@@ -114,10 +141,14 @@ pub(crate) fn team_menu(ui: &mut egui::Ui, view: &mut SaveView) {
         }
         if add_enabled(
             ui,
-            fpc_ok,
+            fpc_ok && ingame_face,
             egui::Button::new("Show default body (Disable FPC)"),
         )
-        .on_disabled_hover_text(&fpc_tip)
+        .on_disabled_hover_text(if ingame_face {
+            fpc_tip.as_str()
+        } else {
+            PES14_TIP
+        })
         .clicked()
             && let Ok(ids) = hide_ids
         {
@@ -125,13 +156,24 @@ pub(crate) fn team_menu(ui: &mut egui::Ui, view: &mut SaveView) {
             ui.close();
         }
         menu_separator(ui);
-        if ui.button("Import / export team file\u{2026}").clicked() {
+        if add_enabled(
+            ui,
+            !out_of_scope(version),
+            egui::Button::new("Import / export team file\u{2026}"),
+        )
+        .on_disabled_hover_text(PES14_TIP)
+        .clicked()
+        {
             view.panel = Some(Panel::Interchange);
             ui.close();
         }
-        if ui
-            .button("Save a picture of the formations\u{2026}")
-            .clicked()
+        if add_enabled(
+            ui,
+            !out_of_scope(version),
+            egui::Button::new("Save a picture of the formations\u{2026}"),
+        )
+        .on_disabled_hover_text(PES14_TIP)
+        .clicked()
         {
             let team = session.file().team(team_id).expect("the selected team");
             view.picture = Some(pictures::PictureDialog::open(
@@ -157,7 +199,9 @@ pub(crate) fn team_menu(ui: &mut egui::Ui, view: &mut SaveView) {
 /// a team row every entry but Copy/swap stats… is disabled with the
 /// pick-a-player hover, since the window picks both players itself.
 /// With no save open or no row selected the whole menu is disabled, as
-/// the Team menu is.
+/// the Team menu is. On a save whose records carry no in-game face run
+/// the FPC entry and the two Generate items are greyed with the version's
+/// own hover.
 pub(crate) fn player_menu(ui: &mut egui::Ui, view: &mut SaveView) {
     if view.session.is_none() || selected_team_id(view).is_none() {
         add_enabled_ui(ui, false, |ui| {
@@ -173,6 +217,10 @@ pub(crate) fn player_menu(ui: &mut egui::Ui, view: &mut SaveView) {
         Ok(_) => (unlocked, OWNERSHIP_TIP.to_owned()),
         Err(error) => (false, error.to_string()),
     };
+    // The FPC entry and the two Generate items need the in-game face run
+    // the version's records carry; without it both are greyed.
+    let ingame_face =
+        schema_for(view.session.as_ref().expect("checked above").version()).has_ingame_face();
     menu_button(ui, "Player", |ui| {
         let Some(session) = view.session.as_mut() else {
             return;
@@ -215,12 +263,14 @@ pub(crate) fn player_menu(ui: &mut egui::Ui, view: &mut SaveView) {
         };
         let fpc_tip = if player_id.is_none() {
             player_tip
+        } else if !ingame_face {
+            PES14_TIP
         } else {
             fpc_tip.as_str()
         };
         if add_enabled(
             ui,
-            player_id.is_some() && fpc_ok,
+            player_id.is_some() && fpc_ok && ingame_face,
             egui::Button::new(fpc_label).shortcut_text("Ctrl+I"),
         )
         .on_disabled_hover_text(fpc_tip)
@@ -249,7 +299,18 @@ pub(crate) fn player_menu(ui: &mut egui::Ui, view: &mut SaveView) {
                 generate::GenFile::IngameFace,
             ),
         ] {
-            if player_entry(ui, egui::Button::new(label)).clicked()
+            let tip = if player_id.is_none() {
+                player_tip
+            } else {
+                PES14_TIP
+            };
+            if add_enabled(
+                ui,
+                player_id.is_some() && ingame_face,
+                egui::Button::new(label),
+            )
+            .on_disabled_hover_text(tip)
+            .clicked()
                 && let Some(player_id) = player_id
             {
                 view.generate = Some(generate::Generate::new(player_id, file));
@@ -284,7 +345,9 @@ pub(crate) fn default_rosters_dialog() -> comparator::SaveFileDialog {
 /// Save formation pictures for a range of teams, a read too
 /// (`pictures`), and Multi-team AATF, another (`multi_aatf`); then Fix
 /// database, under the aesthetics lock with the ownership line as its
-/// disabled hover (SE-GUI-22). The menu is disabled with no save open.
+/// disabled hover (SE-GUI-22). The menu is disabled with no save open;
+/// the Comparator, patch and formation-picture items are disabled where
+/// they are out of scope, with the version's own hover.
 pub(crate) fn savefile_menu(ui: &mut egui::Ui, view: &mut SaveView) {
     if view.session.is_none() {
         add_enabled_ui(ui, false, |ui| {
@@ -293,15 +356,30 @@ pub(crate) fn savefile_menu(ui: &mut egui::Ui, view: &mut SaveView) {
         return;
     }
     let unlocked = !view.aesthetics_locked();
+    let version = view.session.as_ref().expect("checked above").version();
     menu_button(ui, "Savefile", |ui| {
         let Some(session) = view.session.as_mut() else {
             return;
         };
-        if ui.button("Comparator\u{2026}").clicked() {
+        if add_enabled(
+            ui,
+            !out_of_scope(version),
+            egui::Button::new("Comparator\u{2026}"),
+        )
+        .on_disabled_hover_text(PES14_TIP)
+        .clicked()
+        {
             view.panel = Some(Panel::Comparator);
             ui.close();
         }
-        if ui.button("Apply aesthetics patch\u{2026}").clicked() {
+        if add_enabled(
+            ui,
+            !out_of_scope(version),
+            egui::Button::new("Apply aesthetics patch\u{2026}"),
+        )
+        .on_disabled_hover_text(PES14_TIP)
+        .clicked()
+        {
             view.panel = Some(Panel::Patch);
             ui.close();
         }
@@ -335,9 +413,13 @@ pub(crate) fn savefile_menu(ui: &mut egui::Ui, view: &mut SaveView) {
             }
             ui.close();
         }
-        if ui
-            .button("Save formation pictures for a range of teams\u{2026}")
-            .clicked()
+        if add_enabled(
+            ui,
+            !out_of_scope(version),
+            egui::Button::new("Save formation pictures for a range of teams\u{2026}"),
+        )
+        .on_disabled_hover_text(PES14_TIP)
+        .clicked()
         {
             view.pictures_range = pictures::RangeDialog::open(
                 session.file(),

@@ -16,13 +16,15 @@
 
 pub(super) mod fields;
 
+use std::collections::HashSet;
+
 use pes_savefile::model::{
     PlayerAppearance, PlayerEditFlags, PlayerEntry, PlayerMotion, PlayerStats,
 };
 use pes_savefile::schema::fields::PlayerField;
 use pes_savefile::schema::ingame_face::IngameFaceField;
 use pes_savefile::schema::limits::motion_top;
-use pes_savefile::schema::player_max_value;
+use pes_savefile::schema::{player_max_value, schema_for};
 use pes_savefile::settings_toml::{Kind, SettingKey};
 use pes_version::PesVersion;
 use studio_core::widgets::{
@@ -32,7 +34,7 @@ use studio_core::widgets::{
 
 use crate::session::Session;
 use crate::view::abilities::{
-    self, gated_label, gating_tooltip, maybe_end_row, number, small_stat,
+    self, gated_label, gated_number, gating_tooltip, maybe_end_row, number, small_stat,
 };
 use crate::view::appearance::fields::{
     MOTIONS, MotionField, PHYSIQUE, Palette, STRIP_ENUMS, combo_options, palette,
@@ -198,17 +200,32 @@ fn groups(
     hide_ids: Result<fpc::HideIds, fpc::HideIdsError>,
 ) {
     ui.spacing_mut().item_spacing.y = 0.0;
+    // A control whose field the version's records do not map draws greyed:
+    // `stored` gates the record fields, `face_run` the in-game face run's.
+    let schema = schema_for(version);
+    let stored = schema.player_field_set();
+    let face_run = schema.has_ingame_face();
     // `GROUP_GAP` stands the first group off the title's line as it
     // stands each group off the last.
     ui.add_space(GROUP_GAP);
-    fpc_colors_row(ui, session, player_id, version, player, hide_ids);
+    fpc_colors_row(ui, session, player_id, version, player, hide_ids, face_run);
     ui.add_space(GROUP_GAP);
     group(ui, "Strip style", |ui| {
         ui.set_min_width(ui.available_width());
-        strip_grid(ui, session, player_id, version, &player.appearance);
+        strip_grid(
+            ui,
+            session,
+            player_id,
+            version,
+            &player.appearance,
+            &StripGates {
+                stored: &stored,
+                face_run,
+            },
+        );
     });
     ui.add_space(GROUP_GAP);
-    physique_motion_flags_row(ui, session, player_id, version, player, draw);
+    physique_motion_flags_row(ui, session, player_id, version, player, draw, &stored);
     ui.add_space(GROUP_GAP);
     group(ui, PRESENTATION_LABEL, |ui| {
         ui.set_min_width(ui.available_width());
@@ -268,6 +285,7 @@ fn fpc_colors_row(
     version: PesVersion,
     player: &PlayerEntry,
     hide_ids: Result<fpc::HideIds, fpc::HideIdsError>,
+    face_run: bool,
 ) {
     let group_frame = egui::Frame::group(ui.style());
     let width_id = egui::Id::unique(COLORS_WIDTH_ID);
@@ -285,12 +303,19 @@ fn fpc_colors_row(
             fpc.content_ui
                 .set_min_width(fpc_width - group_frame.total_margin().sum().x);
             frame_content(&mut fpc.content_ui, "Full Player Customization", |ui| {
-                fpc_group(ui, session, player_id, player, hide_ids);
+                fpc_group(ui, session, player_id, player, hide_ids, face_run);
             });
             fpc.allocate_space(ui);
             let mut colors = group_frame.begin(ui);
             frame_content(&mut colors.content_ui, "Colors", |ui| {
-                colour_rows(ui, session, player_id, version, &player.appearance);
+                colour_rows(
+                    ui,
+                    session,
+                    player_id,
+                    version,
+                    &player.appearance,
+                    face_run,
+                );
             });
             let width = colors.allocate_space(ui).rect.width();
             ui.ctx().data_mut(|data| data.insert_temp(width_id, width));
@@ -323,6 +348,7 @@ fn physique_motion_flags_row(
     version: PesVersion,
     player: &PlayerEntry,
     draw: &mut dyn FnMut(u8) -> u8,
+    stored: &HashSet<PlayerField>,
 ) {
     let group_frame = egui::Frame::group(ui.style());
     let margin = group_frame.total_margin().sum().y;
@@ -332,7 +358,7 @@ fn physique_motion_flags_row(
             ui.spacing_mut().item_spacing.x = SIDE_GAP;
             let mut physique = group_frame.begin(ui);
             frame_content(&mut physique.content_ui, PHYSIQUE_LABEL, |ui| {
-                physique_grid(ui, session, player_id, &player.appearance)
+                physique_grid(ui, session, player_id, &player.appearance, stored)
             });
             physique.allocate_space(ui);
             let physique_outer = physique.content_ui.min_rect().height() + margin;
@@ -345,7 +371,15 @@ fn physique_motion_flags_row(
                         let mut motion = group_frame.begin(ui);
                         frame_content(&mut motion.content_ui, MOTION_LABEL, |ui| {
                             ui.set_min_width(ui.available_width());
-                            motion_grid(ui, session, player_id, version, &player.motion, draw);
+                            motion_grid(
+                                ui,
+                                session,
+                                player_id,
+                                version,
+                                &player.motion,
+                                draw,
+                                stored,
+                            );
                         });
                         let motion_outer = motion.content_ui.min_rect().height() + margin;
                         motion.end(ui);
@@ -358,6 +392,7 @@ fn physique_motion_flags_row(
                                 player_id,
                                 &player.edit_flags,
                                 player.appearance.base_copy_id,
+                                stored,
                             );
                         });
                         flags.allocate_space(ui);
@@ -402,6 +437,11 @@ pub(crate) const OWNERSHIP_TIP: &str = "The team's export owns the aesthetics, s
                                         settings.toml (or its ingame_face.toml, for the face, \
                                         hair and iris), recompile, then apply the patch.";
 
+/// The disabled hover of a control a PES 2014 save never offers: the cells
+/// of the in-game face run (whose records the version maps none of) and the
+/// menus' out-of-scope items, which share it (`menus.rs`).
+pub(crate) const PES14_TIP: &str = "Not available on PES 2014 saves";
+
 /// The FPC group, the first row's left side (the draft's `fpcGroup`): the
 /// classifier's reading (`is_fpc_player` under `hide_ids`, the settings'
 /// hide IDs — a player hidden by his model's own boots ID reads as shown,
@@ -412,14 +452,26 @@ pub(crate) const OWNERSHIP_TIP: &str = "The team's export owns the aesthetics, s
 /// since they read and do not write. `hide_ids` an `Err` (a setting outside
 /// its band): the line reads the error's text instead of the default-body
 /// reading and both buttons are disabled with it as their hover; the
-/// classifier has no IDs to read, so no findings either.
+/// classifier has no IDs to read, so no findings either. On a version
+/// whose records carry no in-game face run the reading, the buttons and
+/// the findings all go through a run that is not there: the group is the
+/// two buttons, disabled with `PES14_TIP`.
 fn fpc_group(
     ui: &mut egui::Ui,
     session: &mut Session,
     player_id: u32,
     player: &PlayerEntry,
     hide_ids: Result<fpc::HideIds, fpc::HideIdsError>,
+    face_run: bool,
 ) {
+    if !face_run {
+        ui.horizontal_wrapped(|ui| {
+            for label in ["Hide default body", "Show default body"] {
+                add_enabled(ui, false, egui::Button::new(label)).on_disabled_hover_text(PES14_TIP);
+            }
+        });
+        return;
+    }
     let ids = match hide_ids {
         Ok(ids) => ids,
         Err(error) => {
@@ -529,42 +581,30 @@ fn edit_flags_grid(
     player_id: u32,
     flags: &PlayerEditFlags,
     base_copy_id: u32,
+    stored: &HashSet<PlayerField>,
 ) {
     egui::Grid::new("appearance edit flags")
         .num_columns(3)
         .min_row_height(FLAG_CELL_H)
         .spacing(egui::vec2(FLAG_CELL_GAP, 0.0))
         .show(ui, |ui| {
-            checkbox(ui, session, player_id, FACE_LABEL, flags.face, |p, v| {
-                p.edit_flags.face = v;
-            });
-            checkbox(ui, session, player_id, HAIR_LABEL, flags.hair, |p, v| {
-                p.edit_flags.hair = v;
-            });
-            checkbox(
-                ui,
-                session,
-                player_id,
-                PHYSIQUE_LABEL,
-                flags.physique,
-                |p, v| {
-                    p.edit_flags.physique = v;
-                },
-            );
-            ui.end_row();
-            checkbox(ui, session, player_id, STRIP_LABEL, flags.strip, |p, v| {
-                p.edit_flags.strip = v;
-            });
-            checkbox(
-                ui,
-                session,
-                player_id,
-                MOTION_LABEL,
-                flags.motion,
-                |p, v| {
-                    p.edit_flags.motion = v;
-                },
-            );
+            for (index, &(field, label, get, set)) in FLAG_CELLS.iter().enumerate() {
+                // A flag the version stores edits; elsewhere the box keeps
+                // its place, disabled as `base_copy`'s is.
+                if stored.contains(&field) {
+                    checkbox(ui, session, player_id, label, get(flags), |p, v| {
+                        set(&mut p.edit_flags, v)
+                    });
+                } else {
+                    add_enabled(ui, false, |ui: &mut egui::Ui| {
+                        studio_core::widgets::checkbox(ui, &mut false, label)
+                    })
+                    .on_disabled_hover_text(gating_tooltip(field));
+                }
+                if index == 2 {
+                    ui.end_row();
+                }
+            }
             match flags.base_copy {
                 Some(held) => checkbox(ui, session, player_id, BASE_COPY_LABEL, held, |p, v| {
                     p.edit_flags.base_copy = Some(v);
@@ -595,19 +635,72 @@ fn edit_flags_grid(
     ui.horizontal(|ui| {
         ui.spacing_mut().item_spacing.x = SPACE_GAP;
         ui.spacing_mut().interact_size.x = NUMBER_BOX;
-        number(
-            ui,
-            session,
-            player_id,
-            COPY_FROM_ID_LABEL,
-            base_copy_id,
-            0..=u32::MAX,
-            |player, shown| {
-                player.appearance.base_copy_id = shown;
-            },
-        );
+        if stored.contains(&PlayerField::BaseCopyId) {
+            number(
+                ui,
+                session,
+                player_id,
+                COPY_FROM_ID_LABEL,
+                base_copy_id,
+                0..=u32::MAX,
+                |player, shown| {
+                    player.appearance.base_copy_id = shown;
+                },
+            );
+        } else {
+            gated_label(
+                ui,
+                COPY_FROM_ID_LABEL,
+                gating_tooltip(PlayerField::BaseCopyId),
+            );
+            gated_number(ui, gating_tooltip(PlayerField::BaseCopyId));
+        }
     });
 }
+
+/// One flag cell of the edit-flags grid: the schema field the box gates on,
+/// its label, and the `PlayerEditFlags` accessors.
+type FlagCell = (
+    PlayerField,
+    &'static str,
+    fn(&PlayerEditFlags) -> bool,
+    fn(&mut PlayerEditFlags, bool),
+);
+
+/// The five plain flag cells in the draft's grid order: face, hair,
+/// physique, strip, motion (`base_copy` keeps its `Option` arm below).
+const FLAG_CELLS: [FlagCell; 5] = [
+    (
+        PlayerField::EditedFace,
+        FACE_LABEL,
+        |f| f.face,
+        |f, v| f.face = v,
+    ),
+    (
+        PlayerField::EditedHair,
+        HAIR_LABEL,
+        |f| f.hair,
+        |f, v| f.hair = v,
+    ),
+    (
+        PlayerField::EditedPhysique,
+        PHYSIQUE_LABEL,
+        |f| f.physique,
+        |f, v| f.physique = v,
+    ),
+    (
+        PlayerField::EditedStrip,
+        STRIP_LABEL,
+        |f| f.strip,
+        |f, v| f.strip = v,
+    ),
+    (
+        PlayerField::EditedMotion,
+        MOTION_LABEL,
+        |f| f.motion,
+        |f, v| f.motion = v,
+    ),
+];
 
 /// The 14 physique fields in an aligned grid of label and slider cells,
 /// two pairs a row on `PHYSIQUE_ROW_H`-tall rows, each slider's rail
@@ -623,6 +716,7 @@ fn physique_grid(
     session: &mut Session,
     player_id: u32,
     appearance: &PlayerAppearance,
+    stored: &HashSet<PlayerField>,
 ) {
     let padding = abilities::CELL_PADDING;
     egui::Frame::NONE
@@ -637,12 +731,21 @@ fn physique_grid(
                 .spacing(egui::vec2(2.0 * f32::from(padding), 0.0))
                 .show(ui, |ui| {
                     for (index, (label, key, get, set)) in PHYSIQUE.iter().enumerate() {
+                        let field = key
+                            .player_field()
+                            .expect("a physique key writes a player field");
+                        if !stored.contains(&field) {
+                            gated_label(ui, label, gating_tooltip(field));
+                            gated_number(ui, gating_tooltip(field));
+                            maybe_end_row(ui, index + 1, 2);
+                            continue;
+                        }
                         let Kind::Signed { limit } = key.spec().kind else {
                             unreachable!("the physique keys are Signed");
                         };
                         let limit = i32::from(limit);
-                        let stored = get(appearance);
-                        let mut shown = i32::from(stored) - limit;
+                        let held = get(appearance);
+                        let mut shown = i32::from(held) - limit;
                         ui.label(*label);
                         let wheel_id = ui.scope_id().with(*label);
                         let response =
@@ -729,6 +832,36 @@ const STRIP_ORDER: [[StripCell; 3]; 5] = [
     ],
 ];
 
+/// The strip cells' two gates: the fields `version`'s records store, and
+/// whether they carry the in-game face run the two gloves cells write.
+struct StripGates<'a> {
+    /// The version's stored player fields (`player_field_set`).
+    stored: &'a HashSet<PlayerField>,
+    /// Whether the records carry an in-game face run (`has_ingame_face`).
+    face_run: bool,
+}
+
+/// `cell`'s gate: the `PlayerField` it writes, or `None` for the two cells
+/// of the in-game face run, whose gate is the run itself.
+fn cell_field(cell: StripCell) -> Option<PlayerField> {
+    match cell {
+        StripCell::BootsId => Some(PlayerField::BootsId),
+        StripCell::GlovesId => Some(PlayerField::GlovesId),
+        StripCell::Enum(&(_, key, _, _)) => Some(
+            key.player_field()
+                .expect("a strip cell's key writes a player field"),
+        ),
+        StripCell::WristTaping => Some(PlayerField::WristTaping),
+        StripCell::WristTapeLeft => Some(PlayerField::WristTapeColorLeft),
+        StripCell::WristTapeRight => Some(PlayerField::WristTapeColorRight),
+        StripCell::OutfielderGloves | StripCell::GlovesColor => None,
+        StripCell::AnkleTaping => Some(PlayerField::AnkleTaping),
+        StripCell::Spectacles => Some(PlayerField::SpectaclesStyle),
+        StripCell::SpectaclesColor => Some(PlayerField::SpectaclesColor),
+        StripCell::ShirttailOut => Some(PlayerField::Untucked),
+    }
+}
+
 /// `cell`'s label, drawn in its `LABEL_W` slot.
 fn cell_label(cell: StripCell) -> &'static str {
     match cell {
@@ -762,6 +895,7 @@ fn strip_grid(
     player_id: u32,
     version: PesVersion,
     appearance: &PlayerAppearance,
+    gates: &StripGates,
 ) {
     let mut rows = Vec::with_capacity(STRIP_ORDER.len());
     ui.spacing_mut().item_spacing.y = 0.0;
@@ -770,7 +904,7 @@ fn strip_grid(
             ui.spacing_mut().item_spacing.x = 0.0;
             ui.set_min_height(STRIP_ROW_H);
             for cell in row {
-                strip_cell(ui, session, player_id, version, appearance, cell);
+                strip_cell(ui, session, player_id, version, appearance, cell, gates);
             }
         });
         rows.push(inner.response.rect);
@@ -810,7 +944,9 @@ fn strip_grid(
 }
 
 /// One strip cell: `cell`'s label in its `LABEL_W` slot, `LABEL_FIELD_GAP`,
-/// then its field in the `FIELD_W` slot, `CELL_GAP` after it.
+/// then its field in the `FIELD_W` slot, `CELL_GAP` after it. A cell whose
+/// field the version's records do not store — or whose in-game face run is
+/// not there — draws the gated stand-in instead, label dimmed with it.
 fn strip_cell(
     ui: &mut egui::Ui,
     session: &mut Session,
@@ -818,13 +954,26 @@ fn strip_cell(
     version: PesVersion,
     appearance: &PlayerAppearance,
     cell: StripCell,
+    gates: &StripGates,
 ) {
+    // The gated stand-in's tooltip is computed only where it shows:
+    // `gating_tooltip` has no `PES NN+` for a field a single version alone
+    // stores, so it panics on a stored version-only field.
+    let (enabled, tip) = match cell_field(cell) {
+        Some(field) if gates.stored.contains(&field) => (true, String::new()),
+        Some(field) => (false, gating_tooltip(field)),
+        None => (gates.face_run, PES14_TIP.to_owned()),
+    };
     ui.allocate_ui_with_layout(
         egui::vec2(LABEL_W, STRIP_ROW_H),
         egui::Layout::left_to_right(egui::Align::Center),
         |ui| {
             ui.set_min_size(egui::vec2(LABEL_W, STRIP_ROW_H));
-            ui.label(cell_label(cell));
+            if enabled {
+                ui.label(cell_label(cell));
+            } else {
+                gated_label(ui, cell_label(cell), tip.clone());
+            }
         },
     );
     ui.add_space(LABEL_FIELD_GAP);
@@ -833,7 +982,11 @@ fn strip_cell(
         egui::Layout::left_to_right(egui::Align::Center),
         |ui| {
             ui.set_min_size(egui::vec2(FIELD_W, STRIP_ROW_H));
-            strip_field(ui, session, player_id, version, appearance, cell);
+            if enabled {
+                strip_field(ui, session, player_id, version, appearance, cell);
+            } else {
+                gated_number(ui, tip);
+            }
         },
     );
     ui.add_space(CELL_GAP);
@@ -1053,6 +1206,7 @@ fn motion_grid(
     version: PesVersion,
     motion: &PlayerMotion,
     draw: &mut dyn FnMut(u8) -> u8,
+    stored: &HashSet<PlayerField>,
 ) {
     // Two pairs a row (the draft's `COL_PANELS` motion `[2, 194, 14]`).
     // The boxes at the draft's number-input width; no column floor, so
@@ -1065,7 +1219,7 @@ fn motion_grid(
             ui.spacing_mut().interact_size.x = NUMBER_BOX;
             let mut pair = 0usize;
             for field in &MOTIONS[..7] {
-                motion_number(ui, session, player_id, version, field, motion);
+                motion_number(ui, session, player_id, version, field, motion, stored);
                 pair += 1;
                 maybe_end_row(ui, pair, per_row);
             }
@@ -1115,7 +1269,7 @@ fn motion_grid(
             pair += 1;
             maybe_end_row(ui, pair, per_row);
             for field in &MOTIONS[7..] {
-                motion_number(ui, session, player_id, version, field, motion);
+                motion_number(ui, session, player_id, version, field, motion, stored);
                 pair += 1;
                 maybe_end_row(ui, pair, per_row);
             }
@@ -1135,7 +1289,8 @@ fn motion_grid(
 
 /// One motion's label/`DragValue` pair on the shown scale: a 1-based motion
 /// shows 1 to `motion_top` + 1 (stored one below), a celebration 0 to the
-/// top (stored as shown).
+/// top (stored as shown). A motion the version does not store draws the
+/// gated stand-in.
 fn motion_number(
     ui: &mut egui::Ui,
     session: &mut Session,
@@ -1143,13 +1298,19 @@ fn motion_number(
     version: PesVersion,
     field: &MotionField,
     motion: &PlayerMotion,
+    stored: &HashSet<PlayerField>,
 ) {
-    let top = motion_top(version, field.field).expect("a motion field has a top");
-    let stored = (field.get)(motion);
+    if !stored.contains(&field.field) {
+        gated_label(ui, field.label, gating_tooltip(field.field));
+        gated_number(ui, gating_tooltip(field.field));
+        return;
+    }
+    let top = motion_top(version, field.field).expect("a stored motion has a measured top");
+    let held = (field.get)(motion);
     let (shown, range) = if field.one_based {
-        (stored + 1, 1..=top + 1)
+        (held + 1, 1..=top + 1)
     } else {
-        (stored, 0..=top)
+        (held, 0..=top)
     };
     let set = field.set;
     let one_based = field.one_based;
@@ -1192,7 +1353,11 @@ fn randomize(
         egui::Id::unique(("appearance randomize", player_id)).value(),
         |player| {
             for field in MOTIONS {
-                let top = motion_top(version, field.field).expect("a motion field has a top");
+                // A motion the version does not store has no top and is
+                // left alone (its stand-in is drawn disabled).
+                let Some(top) = motion_top(version, field.field) else {
+                    continue;
+                };
                 let shown_top = if field.one_based { top + 1 } else { top };
                 let drawn = draw(shown_top);
                 (field.set)(
@@ -1214,6 +1379,7 @@ fn colour_rows(
     player_id: u32,
     version: PesVersion,
     appearance: &PlayerAppearance,
+    face_run: bool,
 ) {
     egui::Grid::new("appearance colours")
         .num_columns(2)
@@ -1225,20 +1391,28 @@ fn colour_rows(
                     .face_field()
                     .expect("a colour palette's is a face field");
                 let palette = palette(version, key);
-                let stored = face(appearance, field);
-                ui.label(palette.label);
+                // A version without an in-game face run draws the rows
+                // greyed: no stored value to read and nothing to write.
+                let stored = if face_run { face(appearance, field) } else { 0 };
+                if face_run {
+                    ui.label(palette.label);
+                } else {
+                    gated_label(ui, palette.label, PES14_TIP.to_owned());
+                }
                 // A scope, not a horizontal: a horizontal claims the whole
                 // remaining width as its frame, and the grid's last column
                 // would carry it to the pane's edge. `add_space` adds to
                 // the item spacing already claimed after the swatches.
                 ui.scope(|ui| {
-                    palette_row(ui, session, player_id, &palette, stored, |player, shown| {
-                        player
-                            .appearance
-                            .ingame_face
-                            .set(field, shown)
-                            .expect("a loaded player's face run holds the section's colour fields");
-                    });
+                    add_enabled_ui(ui, face_run, |ui| {
+                        palette_row(ui, session, player_id, &palette, stored, |player, shown| {
+                            player.appearance.ingame_face.set(field, shown).expect(
+                                "a loaded player's face run holds the section's colour fields",
+                            );
+                        });
+                    })
+                    .response
+                    .on_disabled_hover_text(PES14_TIP);
                     ui.add_space(SWATCH_CELL_PAD - ui.spacing().item_spacing.x);
                 });
                 ui.end_row();
