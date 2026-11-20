@@ -732,10 +732,10 @@ on main. Main is merged into the branch, never rebased onto it.
        the built window beside the draft.
      - 2c-2, the game's help texts as tooltips: landed (`5fd1a8ef`); its look in the built
        window is owed.
-     - 2c-3, the review fixes of both: running. From 2c-1's review, a test that a wheel notch
-       skips a greyed strategy, three rules made crate-private and the module's doc; from
-       2c-2's, more tooltip placements tested from the screen and a plainer closure; and
-       three comments the comment check flags.
+     - 2c-3, the review fixes of both: landed (merge `44b1b8d5`), its own review running.
+       From 2c-1's review, a test that a wheel notch skips a greyed strategy, three rules
+       made crate-private and the module's doc; from 2c-2's, more tooltip placements tested
+       from the screen and a plainer closure; and three comments the comment check flags.
    - Slice 2d: free moves and the overall on the pitch, once the game's code gives their
      rules.
    - The command line refuses the commands out of scope on a PES 2014 save ("Not in scope").
