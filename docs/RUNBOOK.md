@@ -351,9 +351,10 @@ the repository: the maintainer browses that folder, and seventeen `4cc-studio-*`
 buried the repository. **A slice's worktree and branch go once it is merged and its review
 loop has ended**, its `.tmp/` first copied to main's `.tmp/worktrees/<folder>/`: never pruned,
 they once reached 168 worktrees and 171 branches, every `git worktree list` and branch picker
-a page of finished work. Left alone
-by every agent: `review`, `review3`, `review5`, `review6`, `release`, `wt-m`, `ingame`, and
-`wt-cand-e`, the release staging worktree (its `CARGO_TARGET_DIR` is main's target). The
+a page of finished work. A review's, a release's or an in-game build's worktree goes the same
+way once its work is done. None but the pipeline's `gate` (above) is kept for reuse: a new one
+at the commit in question is quick to add, and eight kept that way once sat untouched for
+weeks. The
 history was reworded and force-pushed on 2026-11-04 (old refs in `refs/archive/pre-reword/`):
 a clone or worktree made before holds the old history, so it refetches and never merges
 it back. **A script likely to be run again
@@ -515,7 +516,7 @@ build in one worktree takes another's output as up to date: one `save_editor` bu
 linked another worktree's `aatf` (a constant reported missing in a tree that has it). Cargo's
 lock on a shared folder serializes builds but does not stop this, so a shared folder makes
 every sidekick's test results suspect. Each folder costs a full build and its disk. The one
-exception is the staging worktree (`wt-cand-e`), which builds a candidate into the main tree's
+exception is a release candidate's staging worktree, which builds the candidate into the main tree's
 `target/` to spare a full build; afterwards the main tree's next build takes the candidate's
 crates as up to date (main's `gates-changed` once failed to compile against the candidate's
 `pes_savefile`). So after staging, touch every file `git diff --name-only
