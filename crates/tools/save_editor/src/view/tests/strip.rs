@@ -484,7 +484,10 @@ fn a_stored_shirt_past_18_is_tinted_and_shortens_never_lengthens() {
     );
     assert_eq!(
         tooltip,
-        Some("PES 2019 and older show 18 letters of a shirt name (PES 2016 shows 16)".to_string()),
+        Some(
+            "PES 2019 and older show 18 letters of a shirt name (PES 2014 and 2016 show 16)"
+                .to_string(),
+        ),
         "the shirt hover"
     );
 
@@ -775,7 +778,10 @@ fn the_name_and_shirt_counts_follow_the_fields_and_the_portable_limits() {
     let tooltip = tooltip_after_hover(&mut window, &mut view, centre(shirt));
     assert_eq!(
         tooltip,
-        Some("PES 2019 and older show 18 letters of a shirt name (PES 2016 shows 16)".to_owned()),
+        Some(
+            "PES 2019 and older show 18 letters of a shirt name (PES 2014 and 2016 show 16)"
+                .to_owned(),
+        ),
         "the shirt hover"
     );
     let count = label_bounds(&nodes, "Shirt name (20/18)");

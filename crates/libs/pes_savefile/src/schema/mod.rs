@@ -371,7 +371,7 @@ pub fn player_max_value(version: PesVersion, field: PlayerField) -> Option<u64> 
 /// the weight less 30 (measured in game); every other version stores the
 /// shown value, so 0. The codec adds the offset on read and refuses a
 /// write below it.
-pub(crate) fn stored_offset(version: PesVersion, field: PlayerField) -> u32 {
+pub fn stored_offset(version: PesVersion, field: PlayerField) -> u32 {
     if version != PesVersion::Pes14 {
         return 0;
     }

@@ -784,6 +784,11 @@ const LIST_WIDTH: f32 = 255.0;
 /// least widget width is 40.
 pub(super) const NUMBER_BOX: f32 = 52.0;
 
+/// The disabled hover of the Gameplan features a PES 2014 save leaves out
+/// (its tactics record maps the captain alone in this build): the toggle's
+/// Gameplan segment, a team row's copy targets and the tactics stand-in.
+pub(super) const GAMEPLAN_TIP: &str = "PES 2014: in the next build";
+
 /// The detail pane's margin over a view's title's row (the draft's
 /// `.pheader` margin-top): with the panes' start and the half point
 /// `info_strip::view_title` adds, the row stands 9.5 under the toolbar
@@ -1444,19 +1449,26 @@ fn edit_menu(ui: &mut egui::Ui, view: &SaveView) -> Option<EditAction> {
         .as_ref()
         .map(|session| (session.can_undo(), session.can_redo()))
         .unwrap_or((false, false));
-    let entry =
-        |ui: &mut egui::Ui, enabled: bool, label: &str, shortcut: &str, tip: Option<&str>| {
-            let button = egui::Button::new(label).shortcut_text(shortcut);
-            let mut response = add_enabled(ui, enabled, button);
-            if let Some(tip) = tip {
-                response = response.on_hover_text(tip);
-            }
-            let clicked = response.clicked();
-            if clicked {
-                ui.close();
-            }
-            clicked
-        };
+    let entry = |ui: &mut egui::Ui,
+                 enabled: bool,
+                 label: &str,
+                 shortcut: &str,
+                 tip: Option<&str>,
+                 disabled_tip: Option<&str>| {
+        let button = egui::Button::new(label).shortcut_text(shortcut);
+        let mut response = add_enabled(ui, enabled, button);
+        if let Some(tip) = tip {
+            response = response.on_hover_text(tip);
+        }
+        if let Some(disabled_tip) = disabled_tip {
+            response = response.on_disabled_hover_text(disabled_tip);
+        }
+        let clicked = response.clicked();
+        if clicked {
+            ui.close();
+        }
+        clicked
+    };
     menu_button(ui, "Edit", |ui| {
         // Inside the menu's draw: the copy's answer builds an export, so
         // it is asked only while the menu is open.
@@ -1464,17 +1476,26 @@ fn edit_menu(ui: &mut egui::Ui, view: &SaveView) -> Option<EditAction> {
         let (copy_tip, paste_tip) = tips.as_ref().map_or((None, None), |(copy, paste)| {
             (Some(copy.as_str()), Some(paste.as_str()))
         });
-        let undo = entry(ui, can_undo, "Undo", "Ctrl+Z", None).then_some(EditAction::Undo);
-        let redo = entry(ui, can_redo, "Redo", "Ctrl+Y", None).then_some(EditAction::Redo);
+        let refused_tip = clipboard::out_of_scope_tip(view);
+        let undo = entry(ui, can_undo, "Undo", "Ctrl+Z", None, None).then_some(EditAction::Undo);
+        let redo = entry(ui, can_redo, "Redo", "Ctrl+Y", None, None).then_some(EditAction::Redo);
         menu_separator(ui);
-        let copy = entry(ui, clipboard::can_copy(view), "Copy", "Ctrl+C", copy_tip)
-            .then_some(EditAction::Copy);
+        let copy = entry(
+            ui,
+            clipboard::can_copy(view),
+            "Copy",
+            "Ctrl+C",
+            copy_tip,
+            refused_tip,
+        )
+        .then_some(EditAction::Copy);
         let paste = entry(
             ui,
             clipboard::has_target(view),
             "Paste",
             "Ctrl+V",
             paste_tip,
+            refused_tip,
         )
         .then_some(EditAction::Paste);
         undo.or(redo).or(copy).or(paste)
