@@ -7053,7 +7053,8 @@ function paintPitch(g, t, f0, live) {
   // and his corners are drawn over both.
   // A lineup row held over the pitch marks the starter its drop swaps out
   // the same way (`S.lineupOver`, set by the canvas's dragover).
-  const target = d && d.moved ? dropTarget(t, d.px, d.py, d.i)
+  // On PES 2014 every teammate, the keeper too, is a target, whatever the ruleset.
+  const target = d && d.moved ? (version() === 14 ? hitMarker(t, d.px, d.py, d.i) : dropTarget(t, d.px, d.py, d.i))
     : live && S.lineupOver !== undefined ? S.lineupOver : -1;
   const crosses = [];
   for (const i of order) {
@@ -7065,13 +7066,15 @@ function paintPitch(g, t, f0, live) {
     // rule at his spot from his stored position, or, over a teammate, the
     // teammate's. The game's badge shows the same.
     const shown = !dragged ? s.position : target >= 0 ? f[target].position
-      : ruledPosition(t, f0, i, ...heldSpot(d), s.position);
+      : version() === 14 ? s.position : ruledPosition(t, f0, i, ...heldSpot(d), s.position);
     const bl = x - MARKER.badgeW / 2, bt = y - MARKER.badgeH / 2;
     // The view's Portraits checkbox, or the picture dialog's own.
     const faces = live ? S.pitchPortraits !== false : S.picturesPortraits !== false;
-    const img = faces ? portraitOf(p) : null;
+    const img = faces && version() !== 14 ? portraitOf(p) : null;
     if (img) g.drawImage(img, x - MARKER.portrait / 2, bt - MARKER.gap - MARKER.portrait,
       MARKER.portrait, MARKER.portrait);
+    // PES 2014's pitch has no portraits: each player is a white shirt with his number.
+    if (version() === 14 && p) drawShirt14(g, x, bt - MARKER.gap, p.number);
     g.fillStyle = live && S.assign && S.assign.kind === "join" && joined.includes(roster) ? "#005c80" : "#242b2d";
     g.beginPath(); g.roundRect(bl, bt, MARKER.badgeW, MARKER.badgeH, 2); g.fill();
     // His tier under the active ruleset outlines the badge in the medal's
@@ -7650,6 +7653,26 @@ function tacticsTab(t) {
 }
 
 // ---- PES 2014's Gameplan (plans/pes14.md step 8) ----
+// A player on PES 2014's pitch, as the game draws him: a white shirt, his
+// number on it in black, its foot at `bottom` above his badge. The shirt's
+// size is the game's at the pitch's scale (the game's pitch is 322 wide at
+// 720p, as this one is 320).
+const SHIRT14 = { w: 34, h: 30, font: "bold 13px " + FONT_BODY };
+function drawShirt14(g, x, bottom, number) {
+  const { w, h: hh } = SHIRT14, l = x - w / 2, top = bottom - hh;
+  const pts = [[10, 0], [13, 0], [17, 4], [21, 0], [24, 0], [34, 7], [30, 14], [27, 12],
+    [27, 30], [7, 30], [7, 12], [4, 14], [0, 7]];
+  g.beginPath();
+  pts.forEach(([px, py], k) => k ? g.lineTo(l + px * w / 34, top + py * hh / 30)
+    : g.moveTo(l + px * w / 34, top + py * hh / 30));
+  g.closePath();
+  g.fillStyle = "#f4f4f4"; g.fill();
+  g.strokeStyle = "#5a5a5a"; g.lineWidth = 1; g.stroke();
+  g.fillStyle = "#111111"; g.font = SHIRT14.font;
+  g.textAlign = "center"; g.textBaseline = "middle";
+  g.fillText(String(number), x, top + hh * 0.6);
+  g.textAlign = "left";
+}
 // The game's own Game Plan, not the later versions' pitch editor: a position
 // changes only by picking one of the formation list's entries or by swapping
 // two players, and a player's role is shown, not chosen (run tactics1). Each
@@ -7665,13 +7688,34 @@ const SLIDERS14 = [["player_support", "Player support"], ["support_range", "Supp
   ["position_switch", "Position switch"], ["front_line_pressure", "Front line pressure"],
   ["defensive_line", "Defensive line"], ["defensive_compactness", "Defensive compactness"],
   ["shifting_to_attack", "Shifting to attack"], ["attack_defence_level", "Attack/defence level"]];
-// The sliders a Strategy pick sets, in SLIDERS14's order, as the game set them
-// on an Akko team (runs tactics3 and formations1). Custom sets none. Whether a
-// pick writes all eight from other values, and whether a slider moved
-// afterwards puts the Strategy back to Custom, is not pinned (run tactics4):
-// the draft writes all eight and leaves the Strategy as picked.
-const STRATEGY_SLIDERS14 = [null, [0, 20, 0, 0, 0, 5, 15, 0], [10, 10, 0, 15, 15, 15, 15, 10],
-  [15, 10, 0, 10, 10, 10, 0, 10], [0, 20, 0, 0, 0, 10, 0, 0], [0, 20, 0, 15, 15, 0, 15, 20]];
+// The sliders a Strategy pick sets, in SLIDERS14's order; null leaves a slider
+// as it is. A pick writes only some (run tactics4: Long Ball left Player
+// Support, Position Switch and Defensive Line as they were), so each strategy
+// sets the sliders its pick changed on an Akko team (runs tactics3 and
+// formations1); one the pick left at the Akko value is taken as left alone.
+// Custom sets none, and a slider moved afterwards keeps the strategy, as the
+// game does (run tactics4).
+const STRATEGY_SLIDERS14 = [[],
+  [null, null, null, null, null, 5, 15, null],
+  [10, 10, null, 15, 15, 15, 15, 10],
+  [15, 10, null, 10, 10, 10, null, 10],
+  [null, null, null, null, null, 10, null, null],
+  [null, null, null, 15, 15, null, 15, 20]];
+// Combination Play explained, for managers new to PES 2014 (the game's own
+// help page, run tactics1's g_12_cp). sample wording.
+const COMBINATION_TIP14 = "Set moves the team runs in attack. Each slot pairs a move with an "
+  + "area of the pitch, one move to an area. In a match, "
+  + "when the ball is in a slot's area and the Combination Play icon shows, press LT twice: "
+  + "the players link up to make space or lose their markers.";
+// Where each area lies, as the game's area screen draws them (run tactics1's
+// g_13_cp). sample wording.
+const COMBINATION_AREA_TIP14 = "Where the move runs: 1 and 2 on the wings beside the "
+  + "opponent's box, 3 to 5 in front of it (left to right), 6 to 8 further back in their "
+  + "half, 9 to 11 just inside ours";
+// The Tactical Assistance switch, read from its name as the other three
+// automatic settings are: the game starts the moves itself (not seen in a match).
+const COMBINATION_SWITCH_TIP14 = "On, the team also starts its combination plays by itself, "
+  + "with no button press";
 // Combination Play's strategies in the game's picker order: [stored id, name,
 // the area the game's area picker opens on, the areas it takes]. Run
 // formations1 pinned the opening areas, and the areas of the two crosses and
@@ -7699,8 +7743,8 @@ function pickFormation14(t, k) {
 function pickStrategy14(pre, v) {
   edit("Strategy", () => {
     pre.strategy = v;
-    const set = STRATEGY_SLIDERS14[v];
-    if (set) SLIDERS14.forEach(([key], i) => { pre.sliders[key] = set[i]; });
+    STRATEGY_SLIDERS14[v].forEach((value, i) => {
+      if (value !== null) pre.sliders[SLIDERS14[i][0]] = value; });
   });
 }
 // A Combination Play slot: its strategy, then its area, one strategy to an
@@ -7785,23 +7829,18 @@ function tacticsTab14(t) {
       v => { edit("Auto substitution", () => { auto.substitution = parseInt(v, 10); }); render(); }));
   const combination = h("div", { class: "tacinstr", style: "grid-template-columns: auto 1fr 52px auto" },
     h("span"), h("div", {}, "Strategy"),
-    h("div", {}, "Area"), h("span"),
+    h("div", { title: COMBINATION_AREA_TIP14 }, "Area"), h("span"),
     [0, 1, 2].flatMap(i => [h("span", { class: "weak" }, String(i + 1)), ...combinationRow(t, i)]));
   const scrollNames = h("label", { class: "cb",
       title: "Scroll long names on the pitch, as the game does. Off, they stand still, cut short." },
     h("input", { type: "checkbox", checked: S.scrollNames !== false, id: "scroll-names",
       onchange: e => { S.scrollNames = e.target.checked; drawPitch(t); } }),
     " Scroll");
-  const pitchPortraits = h("label", { class: "cb",
-      title: "Show the players' portraits on the pitch. Off, the formation's shape is easier to see." },
-    h("input", { type: "checkbox", checked: S.pitchPortraits !== false, id: "pitch-portraits",
-      onchange: e => { S.pitchPortraits = e.target.checked; drawPitch(t); } }),
-    " Portraits");
   const pitchWrap = h("div", { style: "position:relative; width:fit-content" }, pitchCanvas(t));
   const frame = h("div", {},
     h("div", { class: "tacgrid" },
       h("div", { class: "tacbar" }, presetSel, presetMenu),
-      h("div", { class: "tacbar", id: "tac-formbar" }, scrollNames, pitchPortraits),
+      h("div", { class: "tacbar", id: "tac-formbar" }, scrollNames),
       namedCols(h("div", { class: "group", id: "tac-settings" }, strong("Preset tactics"),
         formRows), "tactics-settings"),
       h("div", { "data-panel": "tactics-pitch" }, pitchWrap),
@@ -7810,12 +7849,13 @@ function tacticsTab14(t) {
           SET_PIECES.map(([k, l]) => h("div", { class: "tset" }, h("div", {}, l), roleChip(k, l))),
           h("div", { class: "tset" }, h("div", {}, "Join the attack"), joinChips))), "tactics-side"),
       h("div", { class: "tacstack" },
-        h("div", { class: "group", id: "tac-combination" }, strong("Combination play"), combination),
+        h("div", { class: "group", id: "tac-combination" },
+          h("span", { class: "strong", title: COMBINATION_TIP14 }, "Combination play"), combination),
         h("div", { class: "group", id: "tac-auto" }, strong("Automatic settings"),
           h("div", { class: "tacauto" },
             substitution, autoCb("preset_change", "Preset change"),
             autoCb("offside_trap", "Offside trap"),
-            autoCb("combination_play", "Combination play")))),
+            h("span", { title: COMBINATION_SWITCH_TIP14 }, autoCb("combination_play", "Combination play"))))),
       named(h("div", { id: "tac-lists" }, lineupList(t), benchList(t)), "tactics-lists")));
   setTimeout(() => drawPitch(selTeam()), 0);
   return frame;

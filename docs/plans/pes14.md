@@ -484,19 +484,22 @@ version, not the version selector.
     game's order. The dropdown lists the game's 11 formations; one the list does not hold,
     such as the Akko teams' 8-1-1, is shown by its shape and listed first. A pick writes the
     entry's roles and spots and puts the keeper at depth 3, as the game's pick does; each
-    player keeps his place in the lineup. Picking a strategy sets the sliders to the values
-    the game set on an Akko team. Moving a slider leaves the strategy as it is until run
-    `tactics4` shows what the game does there.
-  - **The pitch** has no free moves. Dropping a player on another swaps the two, the keeper
-    included, even under a ruleset that allows illegal formations; nothing else moves a
-    player. A click opens no player box, since a role is not picked, and a held player lights
-    no areas.
+    player keeps his place in the lineup. Picking a strategy sets only the sliders the
+    game's pick sets, and Custom sets none; moving a slider afterwards keeps the strategy,
+    as the game does (run `tactics4`).
+  - **The pitch** draws each player as the game's pitch does, a white shirt with his number,
+    since PES 2014 shows no portraits there. It has no free moves. Dropping a player on
+    another swaps the two, the keeper included, even under a ruleset that allows illegal
+    formations; while he is held, the teammate a drop would swap with is marked. Nothing
+    else moves a player. A click opens no player box, since a role is not picked, and a held
+    player lights no areas.
   - **No overall** shows on the pitch's badges: PES 2014's own formula is not known, and PES
     2016's reads stats PES 2014 does not store.
   - **The second free kick taker** moves to the next roster slot when he becomes the long or
     short free kick taker, as the game does.
   - **Combination play** is a panel of its own: three slots, each a strategy and an area, one
-    strategy to an area, with a Clear button. The area list holds the strategy's areas that
+    strategy to an area, with a Clear button. Its tooltip says what the setting does, from
+    the game's own help page, since most managers have never played PES 2014. The area list holds the strategy's areas that
     the other two slots leave free; for a strategy run `formations1` did not pin, every free
     area.
   - **Automatic settings** gain Combination Play's switch, and Substitution offers all four

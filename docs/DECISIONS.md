@@ -19041,3 +19041,16 @@ that. The keeper's place is inferred, not seen in game: the run of places holds 
 every version, and a formation picked in game wrote 3, the depth the other versions store.
 Plan: `plans/pes14.md` "What is known about the save" (run `formations1`), "PES 2014 in the
 code" ("The tactics record in Build 2").
+
+## 2026-11-20 — save_editor (pes14 branch) — A PES 2014 Strategy pick sets only the sliders the game's sets; the pitch draws shirts
+Decision: on PES 2014 a Strategy pick sets only the sliders the game's pick was seen to set,
+Custom none, and a slider moved afterwards keeps the Strategy. This replaces the same day's
+"a strategy pick sets the eight sliders". The pitch draws each player as a white shirt with
+his number, and Combination Play has a tooltip saying what it does.
+Why: run `tactics4` showed the game keep Quick Counter after a slider moved, keep Custom's
+sliders as they were, and Long Ball leave Player Support, Position Switch and Defensive Line
+alone. A slider a pick left at its Akko value is taken as one it does not set, since nothing
+seen tells the two apart. Shirts, not portraits, because PES 2014's pitch shows none (the
+maintainer's review of the draft), and the tooltip because most Akko managers never played
+PES 2014: its text follows the game's own help page.
+Plan: `plans/pes14.md` "PES 2014 in the code" ("The Gameplan screen in Build 2").
