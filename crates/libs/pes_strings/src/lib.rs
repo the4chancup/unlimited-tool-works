@@ -388,6 +388,39 @@ mod tests {
     }
 
     #[test]
+    fn a_table_or_section_ending_on_the_last_byte_reads() {
+        // No sections: the table, empty, ends where the 8-byte header does.
+        let empty = [0, 0, 0, 0, 8, 0, 0, 0];
+        assert!(read(&empty).unwrap().sections.is_empty());
+        // A section with no strings: its 8-byte header, at 26, is the file's end.
+        let payload = one_section(b"Alpha", &[]);
+        assert_eq!(payload.len(), 34, "premise: the header ends the file");
+        assert!(
+            read(&payload)
+                .unwrap()
+                .section("Alpha")
+                .unwrap()
+                .strings
+                .is_empty()
+        );
+    }
+
+    #[test]
+    fn a_section_header_cut_by_the_end_names_where_it_would_end() {
+        // The section starts at 26 and its header would end at 34; the file
+        // stops at 30, inside it.
+        let payload = &one_section(b"Alpha", &[])[..30];
+        assert!(matches!(
+            read(payload),
+            Err(Error::SectionTooShort {
+                end: 34,
+                len: 30,
+                ..
+            })
+        ));
+    }
+
+    #[test]
     fn a_text_offset_past_the_end_is_an_error() {
         let mut payload = one_section(b"Alpha", &[(1, b"hi")]);
         // The entry's text offset, at 26 + 8 + 8, pointed past the payload.
