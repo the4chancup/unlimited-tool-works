@@ -19,7 +19,11 @@ no-stretch slices move to after 0.0.2"). Card `poc5-in-game` stays open.
 **Now, a detour: PES 2014 saves for Akko League VII.** The Save editor learns PES 2014 on the
 long-lived branch `pes14`, which never merges into main (DECISIONS 2026-11-19 "PES 2014 support
 lives on its own branch"). The branch's `docs/plans/pes14.md` holds its plan, decisions and
-steps.
+steps. Its slice 2c reads the game's own texts for its tooltips (`string/all.str`), so a lib
+crate that reads the games' string files comes first, planned and built on main for every
+version. The String editor that will edit those files (replacing the PES2021 STR Editor and
+the gametips scripts in `C:/Data/4cc/0Tools/`) is low priority and plan-only for now: its plan
+is written from a lookup run's findings (`4cc-studio-temp/str_re/out/findings.md`, running).
 
 **After the detour**, in this order:
 1. The Nation list (the maintainer, 2026-11-17): it opens already scrolled to the held nation,
