@@ -18975,3 +18975,13 @@ none, and no team record holds one (run `colors1`). Its colours belong to a kit,
 once that kit is edited in game, and the editor has no kit screen on any version. Showing a
 kit's shirt colour as the team's would invent a field the game does not have.
 Plan: `plans/pes14.md` "Goal and scope", "What is known about the save" (run `colors1`).
+
+## 2026-11-20 — save_editor (pes14 branch) — The default ruleset stays the official one; managers pick Akko VII once
+Decision: the Save editor's default AATF ruleset stays `autumn26` on the branch. The build's
+changelog tells managers to pick Akko League VII in the toolbar's ruleset dropdown, where it
+comes first; the setting keeps the pick.
+Why: one pick, not a branch default, because the Save editor's tests check the live AATF, its
+marks and the ruleset picker under the default, so a default of `akko7` would rewrite those
+tests' expectations on the branch, and every main merge touching them would conflict. The
+pick costs a manager a few seconds, once.
+Plan: `plans/pes14.md` "Goal and scope" (the AATF check).
