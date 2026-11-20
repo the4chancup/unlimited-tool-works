@@ -375,6 +375,9 @@ on main. Main is merged into the branch, never rebased onto it.
      PES 2014 does not map. Each such read follows the schema (a field it lacks is greyed), and
      a test opens the Akko save and draws every segment, menu and drag with a player and a team
      selected;
+   - a box's range on PES 2014: `schema::player_max_value` gives the run's highest stored
+     value (63 for a stat), while the model holds shown values, so a box's range adds the
+     stored offset at both ends (a stat's run holds 40 to 103, the height's 132 to 387);
    - a field only PES 2014 stores (Tenacity): `first_version_with` searches
      `PesVersion::ALL`, so its greyed box's tooltip would find no version; it reads "PES 2014
      only" (above);
