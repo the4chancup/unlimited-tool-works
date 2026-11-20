@@ -16,16 +16,16 @@ use pes_version::PesVersion;
 /// The portrait folder's prefix in a `download` CPK (`75823.dds` below it).
 const PORTRAITS: &str = "common/render/symbol/player/";
 
-/// PES 2015's `player-dummy.png` (`resources/portraits/`).
+/// The suite's drawing of PES 2015's `player-dummy.png` (`resources/portraits/`).
 const DUMMY_15: &[u8] = include_bytes!("../../../../../resources/portraits/player-dummy_15.png");
-/// PES 2016's through 2018's `player-dummy.png` (`resources/portraits/`).
+/// The suite's drawing of PES 2016's through 2018's `player-dummy.png` (`resources/portraits/`).
 const DUMMY_16: &[u8] = include_bytes!("../../../../../resources/portraits/player-dummy_16.png");
-/// PES 2019's through 2021's `player-dummy.png` (`resources/portraits/`).
+/// The suite's drawing of PES 2019's through 2021's `player-dummy.png` (`resources/portraits/`).
 const DUMMY_19: &[u8] = include_bytes!("../../../../../resources/portraits/player-dummy_19.png");
 
 /// `version`'s bundled placeholder portrait (`resources/portraits/`): its file's name and
-/// PNG bytes. The game changed `player-dummy.png` twice, so the versions of a range share
-/// one file.
+/// PNG bytes. The game changed its `player-dummy.png` twice, so the versions of a range share
+/// one drawing.
 fn placeholder_file(version: PesVersion) -> (&'static str, &'static [u8]) {
     match version {
         PesVersion::Pes15 => ("player-dummy_15.png", DUMMY_15),
@@ -236,9 +236,10 @@ impl Portraits {
     }
 }
 
-/// `version`'s bundled placeholder portrait decoded (`placeholder_file`): the game's own
-/// portrait for a player who has none. A bundled file that does not decode is a build
-/// defect, so a decode failure panics naming the file rather than drawing nothing.
+/// `version`'s bundled placeholder portrait decoded (`placeholder_file`): what the game shows
+/// for a player who has no portrait, as the suite draws it. A bundled file that does not
+/// decode is a build defect, so a decode failure panics naming the file rather than drawing
+/// nothing.
 pub(crate) fn placeholder_image(version: PesVersion) -> egui::ColorImage {
     let (name, png) = placeholder_file(version);
     let decoded = dds_convert::decode(png, dds_convert::SourceFormat::Png).expect(name);

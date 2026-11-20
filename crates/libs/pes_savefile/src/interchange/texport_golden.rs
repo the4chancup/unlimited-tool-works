@@ -419,8 +419,11 @@ fn a_pes17_texport_is_written_from_its_own_records() {
     description.extend_from_slice(name);
     description.resize(384, 0);
     assert_eq!(container.description, description, "the description");
-    assert_eq!(container.logo.len(), 31_590, "the game's thumbnail");
-    assert_eq!(container.logo, include_bytes!("pes17_texport_logo.png"));
+    assert_eq!(
+        container.logo,
+        include_bytes!("../../../../../resources/thumbnails/team_export.png"),
+        "the thumbnail"
+    );
     let mut identifier = vec![0; MasterKey::Pes17.header_size() - 80];
     identifier[64..71].copy_from_slice(b"TEXPORT");
     assert_eq!(container.identifier, identifier, "the identifier");

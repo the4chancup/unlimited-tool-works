@@ -8,6 +8,11 @@
   game's own referee head floating over it. He now gets an empty face, as a team player in the
   same case does.
 
+### Other stuff
+
+- **Save editor**: a PES 2017 Texport now carries the 4cc clover as its thumbnail, in place of
+  the game's own picture.
+
 ## [0.0.2] - 2026-11-18
 
 ### Important

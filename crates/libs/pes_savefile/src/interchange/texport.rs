@@ -429,8 +429,9 @@ fn ted_plaintext(
     Ok(plain)
 }
 
-/// The game's own thumbnail, the same in every PES 2017 Texport it writes.
-const PES17_LOGO: &[u8] = include_bytes!("pes17_texport_logo.png");
+/// The thumbnail every written PES 2017 Texport carries: the 4cc clover
+/// (`resources/thumbnails/`), the suite's own image in place of the game's.
+const THUMBNAIL: &[u8] = include_bytes!("../../../../../resources/thumbnails/team_export.png");
 
 /// A fresh PES 2017 container: a payload zero but for `PES17`'s template
 /// and the records (`lay_records`) at `texport_old`'s offsets, under the
@@ -463,7 +464,7 @@ fn pes17_container(
     Ok(SaveContainer {
         scheme: Scheme::Keyed(MasterKey::Pes17),
         description,
-        logo: PES17_LOGO.to_vec(),
+        logo: THUMBNAIL.to_vec(),
         payload,
         identifier,
         serial: serial.to_vec(),
