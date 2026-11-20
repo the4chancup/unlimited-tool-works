@@ -1630,11 +1630,14 @@ Win32 original hurt the most):
     A starter whose portrait the editor cannot show, for any reason, shows the game's own
     placeholder in its place, drawn as a portrait. The reasons are none in the CPKs, one that
     does not decode, a folder, list or CPK that cannot be read, no PES folder set, or one still
-    being read, which would otherwise draw nothing and then the portrait. The placeholder is the
-    selected game's `common/render/symbol/blank/player-dummy.png`, a 128 x 128 PNG in one of
-    three versions (PES 2015; PES 2016-2018; PES 2019-2021). The three are bundled
-    (`resources/portraits/`), not read from the install, so the pitch draws them with no PES
-    folder set or reachable.
+    being read, which would otherwise draw nothing and then the portrait. The placeholder looks
+    like the selected game's `common/render/symbol/blank/player-dummy.png`, a 128 x 128 PNG in
+    one of three versions (PES 2015; PES 2016-2018; PES 2019-2021), but it is the suite's own
+    drawing of each: an SVG in `resources/portraits/`, drawn from simple shapes in the game's
+    colours and proportions (not traced), rendered by a script to the 128 x 128 PNG the binary
+    embeds. They are bundled, not read from the install, so the pitch draws them with no PES
+    folder set or reachable. They are drawn, not copied, because the suite ships Konami
+    material only to make files the games read.
 
     Markers are drawn from the top of the canvas down, a lower marker covering the one above
     as the game's do (the keeper's portrait over a centre-back's badge), the dragged one last;

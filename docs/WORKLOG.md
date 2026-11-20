@@ -59,6 +59,11 @@ steps.
     leaving the reset window off the fitted size, so the button waits for a click the window
     does not follow).
 11. Any mutation run (mutfast landed: each mutant's tests run under cargo-nextest).
+12. The suite's own images (DECISIONS 2026-11-20 "the placeholder portraits and the Team
+    Export thumbnail are the suite's own"): the three placeholder portraits drawn as SVGs and
+    the 4cc clover thumbnail, both rendered to the PNGs the binary embeds by one script; a
+    look of each beside the game's; PES 2017 imports a Team Export carrying the clover (SWE-2,
+    in game). Can run beside the detour: it touches no PES 2014 file.
 
 Most open steps below wait only for the maintainer's look (`maintainer/tasks.html`).
 

@@ -18957,3 +18957,16 @@ Why: the dot (`dev.1`, not `dev1`) makes semver count the number, so `dev.10` so
 `dev.9`, as `0.0.2-poc.1` did (2026-11-08); both sort below `0.0.3`, so the release replaces
 them. The organizer is compiling VGL27's refs now, and two reviewers have read the change.
 Plan: no plan edit needed: the 2026-11-08 entry's method, applied to a new version.
+
+## 2026-11-20 — save_editor, pes_savefile — the placeholder portraits and the Team Export thumbnail are the suite's own
+Decision: the pitch's three placeholder portraits become the suite's own drawings of the
+games' `player-dummy.png` (SVGs from simple shapes in the game's colours, not traced, rendered
+by a script to the 128 x 128 PNGs the binary embeds), and the PES 2017 Team Export file's
+thumbnail becomes the 4cc clover (320 x 176, rendered from the clover's SVGs) in place of the
+game's PES 2017 picture.
+Why: the suite ships Konami material only to make files the games read (the README's
+licence notice). The portraits are only shown and the thumbnail only labels the file, so
+neither needs the game's own picture; they were the only Konami images the binary embedded
+for another use. Drawing rather than tracing keeps the drawings ours.
+Plan: `plans/save_editor.md` "Tactics editor" (the placeholder paragraph);
+`plans/pes_savefile/operations.md` (the Texport writer's container list).
