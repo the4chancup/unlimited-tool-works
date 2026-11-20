@@ -24,11 +24,13 @@ steps.
 **After the detour**, in this order:
 1. The Nation list (the maintainer, 2026-11-17): it opens already scrolled to the held nation,
    where it mostly scrolls down to it from the top; typing a nation's name picks it as an ID
-   does (members rarely know the IDs); Escape puts the old nation back.
+   does (members rarely know the IDs); Escape puts the old nation back. With it, Astra's three
+   code fixes from the General info review (rulings "geninfo A1": the typed row takes the
+   keyboard focus, a Captain click test, one nation lookup a draw), SE-GUI-106 cited by the
+   nation tests.
 2. 0.0.2-nostretch's slices.
 3. Earlier sessions in Report a problem: the repro bundles issue's slice (5).
-4. Review rounds owed: Astra's round over 0.0.2-geninfo (`73641390..be99921c`), 0.0.2-similar,
-   and every Carbon round a 0.0.2 step still owes (Report a problem has had its whole review).
+4. Review rounds owed: 0.0.2-similar's, and every Carbon round a 0.0.2 step still owes (Report a problem has had its whole review).
 5. 0.0.2-pes19, and with it the readme's PES 2019 claim.
 6. The drafts in two copies (the maintainer, 2026-11-17: a spec draft of what the build holds
    and a plan draft for prototyping, which the app's unbuilt sections open with `demo=1`. Git
@@ -1966,8 +1968,13 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       under Main stats, SE-GUI-95, `gui.md`); the rest by SWE-2 (19 min, landed first time;
       `527cfcf2`, merge `d2eadc87`; the lead's rerun 1077 + 57, wheel 19, clippy, fmt).
       Round 2 over the fixes (`.tmp/0_0_2/geninfo_rev2/`): none accepted, which ends the
-      loop; the pipeline on `d2eadc87` passed, with the Linux gates. Astra's round runs
-      after 0.0.2 (status list)
+      loop; the pipeline on `d2eadc87` passed, with the Linux gates. Astra's round
+      2026-11-20 over `73641390..be99921c` (rulings "geninfo A1"): 4 accepted, which ends
+      its loop. The plan's two (SE-GUI-106, the nationality's 16 bits) are done; the code's
+      three go to the Nation list step (status list): Enter after Down and typed digits
+      picks the focused row, not the typed one; no test clicks a non-captain's Captain
+      radio; one nation lookup a draw, not two. Their SWE-2 loop runs with that step's
+      review
     - [x] the 4cc patch's own nation table (different on PES 2015 to 2017) is not used: the
       base game's lists stand (the maintainer, 2026-11-17; plan and DECISIONS)
   - [x] 0.0.2-lightfill 2026-11-17 (the maintainer's change; the lead): the light theme's

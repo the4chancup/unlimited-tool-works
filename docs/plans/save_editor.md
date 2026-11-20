@@ -721,8 +721,9 @@ vertical room a tab row takes; a toggle on the title's own row takes none.
 
        The nations are the game's, from each version's `common/etc/pesdb/Country.bin` (in
        `dt10`): a WESYS-wrapped zlib stream of records of 1,348 bytes up to PES 2018 and
-       1,420 from PES 2019, each record's ID in bits 10 to 18 of its first four bytes (the
-       save's 9-bit nationality) and its English name in its fourth 70-byte language slot,
+       1,420 from PES 2019, each record's ID in bits 10 to 18 of its first four bytes (a
+       9-bit ID, which the save holds in a 16-bit field) and its English name in its fourth
+       70-byte language slot,
        from offset 288. The IDs never change between versions; the lists do (189 nations in
        PES 2015, 191 in 2016, 220 in 2017, 214 from 2018, when six were dropped), and so do
        a few names (`UNITED STATES` until PES 2017, `USA` after). The editor carries the
@@ -3898,6 +3899,16 @@ SE-GUI-105 GIVEN the PES 2021 save open with one unsaved edit
                 Ctrl+W is pressed while the Name field holds the keyboard THEN the save stays
                 open; WHEN Exit is clicked THEN the window's close is requested, as by its
                 close button
+SE-GUI-106 GIVEN the PES 2021 save open, a player holding nation 135 selected
+           WHEN the view is drawn
+           THEN the Nation combo reads `135 - USA` on the Name field's span (`135 - UNITED
+                STATES` on the PES 2017 save; a held 100, which PES 2021 lacks, reads `100 -
+                ?`); WHEN the list is opened THEN it lists the version's nations by ID,
+                scrolled to the held row; WHEN 231 is typed in the open list THEN `231 - SAN
+                MARINO` is picked and scrolled into view, and one Undo puts 135 back; WHEN a
+                pause of over a second parts two digits THEN the second starts a new ID; WHEN
+                Down is pressed in the open list, then 231 typed and Enter pressed THEN 231
+                stays picked
 SE-GUI-27  GIVEN the save open
            WHEN Output rosters to TSV runs
            THEN the file written holds, for every cup team, its name on a line of its own, then one
