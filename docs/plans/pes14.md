@@ -566,6 +566,27 @@ version, not the version selector.
     screen numbers the areas, in rows from its top: the game has no text for them, and its
     screen does not say which end is whose. The game's own wording is kept where it reads
     oddly ("automatically changes Change Preset Tactics").
+
+    The game's texts are read from the member's install, never shipped with the suite: the
+    English language archive's `string/all.str` (`dt21_eng.cpk` on PES 2014), one table
+    in the code naming each tooltip's section and number. They are read once, off the UI
+    thread, as the portraits are. With no PES folder set, or one that cannot be read, those
+    tooltips are absent, and the pitch's button already asks for the folder. The area
+    column's tooltip is the suite's own text and always shows. We read rather than bundle
+    because the descriptions are Konami's prose, and the suite ships Konami material only
+    to make files the games read, while a member editing a save can be expected to have the
+    game installed.
+
+    The file (read 2026-11-20 on PES 2014, 2017 and 2021, the same in all three; nothing is
+    encrypted): five bytes `WESYS` at offset 3, the zlib stream's length at 8 and its
+    inflated length at 12 (u32 little-endian), the stream at 0x10. Inflated: a section
+    count and the table's offset (8), then per section its data's offset and length and the
+    offset of its 8-byte ASCII name. A section holds a string count, a u32 not needed, then
+    per string its number, two u16 lengths (with and without the NUL) and its offset within
+    the section; strings are NUL-terminated UTF-8, with the game's inline marks (`i1`…`i0`
+    emphasis, `\n`). Names and texts sit in paired sections, `…W` and `…T` (`F8W` and
+    `F8T` for the Game Plan's), whose numbers do not always match ("Long Ball" is `F8W` 84,
+    its text `F8T` 46), hence the table.
   - **Automatic settings** gain Combination Play's switch, and Substitution offers all four
     timings.
 

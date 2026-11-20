@@ -19132,3 +19132,15 @@ without the formula and the spots each role allows. Moving the player and keepin
 role could write a role and spot the game never pairs.
 Plan: `plans/pes14.md` "What is known about the save" (run `tactics6`), "PES 2014 in the
 code" ("The pitch", "No overall"), "Steps", step 8.
+
+## 2026-11-20 — save_editor (pes14 branch) — PES 2014's tooltips read the game's text from the install
+Decision: the Gameplan's tooltips that carry the game's own help texts read them from the
+member's install (the English language archive's `string/all.str`), through one table naming
+each tooltip's section and number; the suite ships none of that text. With no PES folder set,
+or one that cannot be read, those tooltips are absent. English, not the install's language,
+because every other word of the suite is English.
+Why: the descriptions are Konami's prose. The suite ships Konami material only to make files
+the games read, and a member editing a save can be expected to have the game installed (the
+pitch's button already asks for its folder). Bundling would also mean collecting each game's
+wording, which changes between versions.
+Plan: `plans/pes14.md` "PES 2014 in the code", the Tooltips bullet.
