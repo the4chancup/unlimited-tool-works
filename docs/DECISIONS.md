@@ -18940,3 +18940,20 @@ Why: last, not in the middle of the list, because every table indexed by ability
 ruleset's stats, the Ruleset editor's columns, the tests) would otherwise shift. No key,
 because Team TOML is not available on PES 2014, so no file could carry one.
 Plan: `plans/pes14.md` "PES 2014 in the code", "Tenacity".
+
+## 2026-11-20 — pes_savefile, save_editor (pes14 branch) — PES 2014 looks: two orders translated, the game's words, and no record created by the editor
+Decision: the codec translates Sleeves and Shirttail, which PES 2014 stores in another order,
+so the model holds the same meaning on every version. On PES 2014, three dropdowns use the
+game's words: Sleeves' Auto, Undershorts' Off and On, and the Spectacles grid's cell numbers.
+A player with no appearance record has the look controls greyed: the editor never creates a
+record, and the Team menu's boots dialog refuses a team with such a player. The Copy from ID
+stays unmapped.
+Why: translated in the codec, not shown raw with PES 2014's own lists, because the model then
+means one thing on every version, as it does for the stats' stored offsets. The game's words,
+not the other versions', where a value differs in kind (one bit of undershorts, not four) or
+its name is unmatched (the glasses). No record created, because the game fills a new record
+with the player's whole look from base data the save does not hold, so one made by the editor
+would reset every part it did not set; the Akko saves hold a record for every player. The
+Copy from ID is the fork's reading of +0x04, not pinned in game.
+Plan: `plans/pes14.md` "What is mapped in game", "PES 2014 in the code" ("Appearance records",
+"The Appearance screen"), step 4's list.

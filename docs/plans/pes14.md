@@ -294,7 +294,9 @@ the save" above.
 - **The appearance record**, what runs `appear1` and `appear2` left (above): hairstyle, hair
   variation and hair colour; forehead and wrinkles; the hair-accessory colour; the skin type
   and the neck; the iris colour; the face's build points, sliders and upper and lower face
-  items; and which edit sets 0x28:6 and 0x28:7. Build 1 needs none of them: the Save editor
+  items; the Copy from ID, which the fork reads at +0x04 (the u32 that repeats the player's
+  id, and which a face edit cleared in run `flags2`); and which edit sets 0x28:6 and 0x28:7.
+  Build 1 needs none of them: the Save editor
   edits these looks only through the in-game face run, which stays greyed on PES 2014, and the
   game keeps an edit without 0x28:6 and 0x28:7 (run `flags3`).
 - **The team record:** team colours, in the bytes between +0x04 and +0x2B that vary between
@@ -327,8 +329,11 @@ version, not the version selector.
 - **Appearance records.** On PES 2014 only a player whose look was edited, or who was created
   in the save, has an appearance record: the vanilla save has none for its 11998 players, the
   Akko saves one for each of their 5060. A player without one reads no appearance fields and
-  writes none. On PES 2015 and 2016 every player has one, and a missing record still refuses
-  the save.
+  writes none, and the player's look controls are greyed. The editor never creates a record: the game
+  fills a new one with the player's whole look, taken from base data the save does not hold,
+  so a record the editor made would reset every look part it did not set (inferred: a record
+  holds every look field, and the save holds no other copy of them). On PES 2015 and 2016
+  every player has one, and a missing record still refuses the save.
 - **Tenacity** is a PES 2014 stat no other version has. It gets its own `Option` stat, its
   `PlayerField` and its AATF stat name. On another version's save its greyed box's tooltip
   reads "PES 2014 only", since the "PES NN+" wording would claim later versions store it. It is
@@ -381,6 +386,15 @@ version, not the version selector.
   has no in-game face run, so the FPC buttons, the glove and skin cells and the colour palettes
   are greyed there, as are the motions it does not store (corner kick, hunching, arm
   movement); Punt Kick joins the motions.
+
+  Two look items are stored in another order than on the other versions: Sleeves (Short 0,
+  Long 1, Auto 2) and Shirttail (Untucked 0, Tucked In 1, where the other versions store
+  "untucked" as 1). The codec translates them on read and write, as it adds the stats'
+  offsets, so the model holds the same meaning on every version. Where the game names a value
+  otherwise, PES 2014's dropdown uses its words: Sleeves' Auto (the other versions' Seasonal),
+  Undershorts' Off and On (one bit, where the other versions store four kinds), and the
+  Spectacles grid's cell numbers (Off, then 2 to 8), whose glasses are not matched to the
+  other versions' names.
 - **The 1-to-8 settings.** On PES 2014 Form, Injury Resistance, Weak Foot Usage and Weak Foot
   Accuracy each run from 1 to 8 (run `player1`: each shows a bar of 8), where the other
   versions' boxes stop injury resistance at 3 and the weak foot at 4.
@@ -440,8 +454,7 @@ on main. Main is merged into the branch, never rebased onto it.
    - the Texport's payload size in the detection (above);
    - the save's discovery: the editor's list of saves loops over `PesVersion::ALL`, so it never
      lists a PES 2014 save;
-   - an appearance record for a player who has none, the first time the editor changes his
-     look;
+   - the look controls greyed for a player who has no appearance record (above);
    - the face-type caps, which read each field's bit maximum until measured;
    - Tenacity among the ability stats (`PlayerStats::abilities()`, `ABILITY_STATS`) with its
      AATF name, which step 5 needs: slice 1 (the player record mapped) left it out;
@@ -461,9 +474,9 @@ on main. Main is merged into the branch, never rebased onto it.
    - skill card 4 reads "Precise Touch" on PES 2014, the game's older name for Cut Behind &
      Turn (`labels::card_name` takes no version today);
    - the Team menu's boots and gloves dialog on PES 2014, once its boots are mapped: PES 2014
-     stores no gloves id, so the dialog sets the boots alone. Today the item is greyed while
-     the boots are unmapped, and once they are, it would refuse with "store no boots or gloves
-     IDs".
+     stores no gloves id, so the dialog sets the boots alone, and refuses when one of the
+     team's players has no appearance record. Today the item is greyed while the boots are
+     unmapped, and once they are, it would refuse with "store no boots or gloves IDs".
 5. The Akko VII ruleset (`akko7.rhai`, its logo and page); `/4ccg/` in `.akko7v2` passes as it
    does in the fork's fixed build.
 6. Releases: the `pes14-v` tag prefix in the update check and `release.yml`. The version
