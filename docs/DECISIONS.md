@@ -19278,3 +19278,15 @@ Why: greyed, not offered, because picking it would leave the slot with no area, 
 stores an area with every strategy; the game's own picker was never seen in that case, so the
 editor writes nothing it might refuse.
 Plan: `plans/pes14.md` "PES 2014 in the code", the Combination play bullet.
+
+## 2026-11-20 — save_editor (pes14 branch) — The Gameplan's tooltips take a block of a shared text, drop emphasis marks and write LT for the button
+Decision: the four Automatic settings' tooltips come from one text of the game's file, `F3T`
+93, which holds a block per setting headed `<Offside Trap>`, `<Substitutions>` and so on; each
+tooltip shows its own block, the table naming the text and the heading. The game's inline
+emphasis marks (`i1`, `i0`) are dropped, and the one button code the tooltips meet, `ll` in
+Combination play's text, is written "LT", as the game draws it. Line breaks stay.
+Why: one tooltip per setting, not the four blocks under each, because a manager reads the
+setting under the pointer; the marks dropped, not shown, because a tooltip draws no emphasis
+and the raw codes would print as stray letters; "LT" written, not dropped, because "press
+twice" would lose the instruction.
+Plan: `plans/pes14.md` "PES 2014 in the code", the Tooltips paragraph.

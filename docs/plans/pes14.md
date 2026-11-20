@@ -580,10 +580,15 @@ version, not the version selector.
     game installed.
 
     The file is read through the `pes_strings` lib crate, built on main and merged in
-    before this slice; its plan on main (`plans/libs/pes_strings.md`) holds the format. The
-    texts carry the game's inline marks (`i1`…`i0` emphasis, `\n`). Names and texts sit in
-    paired sections, `…W` and `…T` (`F8W` and `F8T` for the Game Plan's), whose numbers do
-    not always match ("Long Ball" is `F8W` 84, its text `F8T` 46), hence the table.
+    before this slice; its plan on main (`plans/libs/pes_strings.md`) holds the format. Names
+    and texts sit in paired sections, `…W` and `…T` (`F8W` and `F8T` for the Game Plan's),
+    whose numbers do not always match ("Long Ball" is `F8W` 84, its text `F8T` 46), hence the
+    table. The four Automatic settings share one text, `F3T` 93, a block per setting headed by
+    its name in angle brackets (`<Offside Trap>`), so their table entries name the block as
+    well, and each tooltip shows its own block. Two of the texts carry the game's inline codes:
+    `F3T` 93 its emphasis marks (`i1` … `i0`), which a tooltip cannot draw and drops, and
+    `F3T` 102, Combination play's, the button code `ll`, which the game draws as LT and the
+    tooltip writes "LT". Line breaks are kept.
   - **Automatic settings** gain Combination Play's switch, and Substitution offers all four
     timings.
 
