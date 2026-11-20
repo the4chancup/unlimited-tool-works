@@ -53,14 +53,12 @@ steps.
    one lower): regenerate them from today's export.
 9. The draft's greyed number boxes read `-`, as the build's do (the maintainer kept the build's,
    `look-gated-labels`).
-10. The SWE-2 Flash trial's first comparison (its 0.0.2-lookfix run shelved in
-    `4cc-studio-temp/lookfix_flash`, never merged).
-11. Reset window's first click on Linux (the maintainer's check of 0.0.2-rc.3, 2026-11-17,
+10. Reset window's first click on Linux (the maintainer's check of 0.0.2-rc.3, 2026-11-17,
     "good enough for 0.0.2": the first click resets the window but the button stays, a second
     click changes nothing and the button goes, its pointer a hand; likely the window manager
     leaving the reset window off the fitted size, so the button waits for a click the window
     does not follow).
-12. Any mutation run (mutfast landed: each mutant's tests run under cargo-nextest).
+11. Any mutation run (mutfast landed: each mutant's tests run under cargo-nextest).
 
 Most open steps below wait only for the maintainer's look (`maintainer/tasks.html`).
 
