@@ -1208,20 +1208,26 @@ fn paint_portrait_cross(
 /// PES 2014's marker figure (the draft's `drawShirt14` over
 /// `SHIRT_POINTS`): the white shirt standing on `badge`'s top and
 /// centred on it, `number` on it in black at six tenths of its height.
-/// The fill is `SHIRT_PIECES`' convex polygons — the outline's concave
-/// turns (the neck, the armpits) would take a fan fill over their
-/// notches — with the outline's `closed_line` stroked over them.
+/// The fill is `SHIRT_PIECES` as one mesh, each piece convex and fanned
+/// from its first point — a mesh's triangles are not feathered, so no
+/// seam shows between pieces where a filled path per piece would fade
+/// both sides of their shared edges — with the outline's `closed_line`
+/// stroked over them.
 fn paint_shirt(painter: &egui::Painter, badge: egui::Rect, number: u16) {
     let left = badge.center().x - SHIRT_SIZE.x / 2.0;
     let top = badge.top() - SHIRT_SIZE.y;
     let at = |[x, y]: [f32; 2]| egui::pos2(left + x, top + y);
+    let mut mesh = egui::Mesh::default();
     for piece in SHIRT_PIECES {
-        painter.add(egui::Shape::convex_polygon(
-            piece.iter().map(|&point| at(point)).collect(),
-            rgb(SHIRT_FILL),
-            egui::Stroke::NONE,
-        ));
+        let base = mesh.vertices.len() as u32;
+        for &point in piece {
+            mesh.colored_vertex(at(point), rgb(SHIRT_FILL));
+        }
+        for i in 1..piece.len() as u32 - 1 {
+            mesh.add_triangle(base, base + i, base + i + 1);
+        }
     }
+    painter.add(egui::Shape::mesh(mesh));
     painter.add(egui::Shape::closed_line(
         SHIRT_POINTS.iter().map(|&point| at(point)).collect(),
         egui::Stroke::new(1.0, rgb(SHIRT_EDGE)),

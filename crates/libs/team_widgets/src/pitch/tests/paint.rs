@@ -4086,15 +4086,22 @@ fn on_pes14_a_marker_click_opens_no_popover_and_the_pitch_draws_shirts() {
         "no badge holds the overall"
     );
     let fill = egui::Color32::from_rgb(SHIRT_FILL[0], SHIRT_FILL[1], SHIRT_FILL[2]);
-    let pieces = shapes
+    // The shirts paint as meshes, one per starter — no `Shape::Path`
+    // carries the fill.
+    let shirt_meshes: Vec<&egui::Mesh> = shapes
         .iter()
-        .filter(|clipped| matches!(&clipped.shape, egui::Shape::Path(path) if path.fill == fill))
-        .count();
-    assert_eq!(
-        pieces,
-        11 * SHIRT_PIECES.len(),
-        "one shirt per starter, {} fills each",
-        SHIRT_PIECES.len()
+        .filter_map(|clipped| match &clipped.shape {
+            egui::Shape::Mesh(mesh) if mesh.vertices.iter().all(|vertex| vertex.color == fill) => {
+                Some(mesh.as_ref())
+            }
+            _ => None,
+        })
+        .collect();
+    assert_eq!(shirt_meshes.len(), 11, "one shirt mesh per starter");
+    assert!(
+        !shapes.iter().any(|clipped| matches!(&clipped.shape,
+            egui::Shape::Path(path) if path.fill == fill)),
+        "no path carries the shirt's fill"
     );
     // Every starter's number painted once, his shirt's fills and number
     // inside his portrait box — the shirt stands where the portrait
@@ -4121,20 +4128,31 @@ fn on_pes14_a_marker_click_opens_no_popover_and_the_pitch_draws_shirts() {
             portrait.contains(texts[0].pos + texts[0].galley.size() / 2.0),
             "the number inside his portrait box"
         );
-        let fills = shapes
+        let inside: Vec<&&egui::Mesh> = shirt_meshes
             .iter()
-            .filter(|clipped| match &clipped.shape {
-                egui::Shape::Path(path) => {
-                    path.fill == fill && path.points.iter().all(|point| portrait.contains(*point))
-                }
-                _ => false,
+            .filter(|mesh| {
+                mesh.vertices
+                    .iter()
+                    .all(|vertex| portrait.contains(vertex.pos))
             })
-            .count();
+            .collect();
         assert_eq!(
-            fills,
-            SHIRT_PIECES.len(),
-            "starter {}'s shirt's fills inside his portrait box",
+            inside.len(),
+            1,
+            "one shirt mesh inside starter {}'s portrait box",
             index + 1
+        );
+        let vertices: usize = SHIRT_PIECES.iter().map(|piece| piece.len()).sum();
+        assert_eq!(
+            inside[0].vertices.len(),
+            vertices,
+            "the shirt's vertices are the pieces' points"
+        );
+        let triangles: usize = SHIRT_PIECES.iter().map(|piece| piece.len() - 2).sum();
+        assert_eq!(
+            inside[0].indices.len(),
+            triangles * 3,
+            "a fan of triangles per piece"
         );
     }
 }
