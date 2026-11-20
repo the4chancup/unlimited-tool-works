@@ -333,12 +333,16 @@ class SizedConfig(unittest.TestCase):
             )
             text = mutants.sized_config(
                 16,
+                4,
                 extra={
                     "examine_globs": ["crates/libs/cpk/src/read.rs"],
                     "exclude_globs": ["crates/libs/cpk/src/write.rs"],
                 },
                 source=source,
             )
+            # The local half passes no jobserver count: cargo-mutants' default
+            # (the machine's CPUs) stands.
+            local = mutants.sized_config(16, source=source)
         parsed = tomllib.loads(text)
         self.assertEqual(parsed["examine_globs"], ["crates/libs/cpk/src/read.rs"])
         self.assertEqual(
@@ -347,8 +351,9 @@ class SizedConfig(unittest.TestCase):
         )
         self.assertEqual(parsed["timeout_multiplier"], 7.0)
         self.assertIsInstance(parsed["timeout_multiplier"], float)
-        self.assertEqual(parsed["additional_cargo_args"], ["--build-jobs", "8"])
+        self.assertEqual(parsed["additional_cargo_args"], ["--jobserver-tasks", "4"])
         self.assertEqual(parsed["additional_cargo_test_args"], ["--test-threads=8"])
+        self.assertNotIn("additional_cargo_args", tomllib.loads(local))
 
 
 class Partition(unittest.TestCase):
@@ -540,7 +545,7 @@ class PlanFileSplit(unittest.TestCase):
             configs[str(path)] = extra
             return path
 
-        def sized_config(nproc, build_jobs, extra, source):
+        def sized_config(nproc, jobserver_tasks, extra, source):
             return json.dumps(extra)
 
         def list_mutants(selection, config, source):
@@ -1424,6 +1429,28 @@ class SummaryLists(unittest.TestCase):
         self.assertIn("1 mutants were NOT tested", out)
         self.assertIn("  replace pad -> usize with 0", out)
 
+    def test_an_untested_mutant_outranks_a_survivor(self):
+        """A run with a missed mutant (cargo-mutants' 2) and a catch whose tests
+        never failed (this script's untested 1) exits 1: the survivor is in
+        `missed_all.txt`, the untested mutant is in no list."""
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            local = root / "mutants.out"
+            write_run(
+                local, 2,
+                [
+                    {"scenario": mutant("a"), "summary": "MissedMutant"},
+                    caught_outcome("b", {"Failure": 104}),
+                ],
+            )
+            (local / "missed.txt").write_text(
+                "crates/libs/cpk/src/lib.rs:10:5: replace pad -> usize with 0\n",
+                encoding="utf-8",
+            )
+            code, out = self.summarize(root)
+        self.assertEqual(code, 1)
+        self.assertIn("NOT tested", out)
+
     def test_the_fetched_extra_record_merges_and_a_missing_one_fails(self):
         """A whole run's extra pass record comes home with the fetch: its counts
         join the table and its `missed_<crate>.txt` the merged list; a run that
@@ -1463,6 +1490,55 @@ class SummaryLists(unittest.TestCase):
             )
         self.assertGreaterEqual(code, 1)
         self.assertIn("the extra pass left no record: see the remote log", out)
+
+
+class RecheckWindows(unittest.TestCase):
+    """The Windows recheck of a remote half's missed mutants: a mutant counts as
+    caught here under the same rule as everywhere else — its nextest run failed
+    tests, not merely exited nonzero (cargo-mutants files any nonzero exit in
+    `caught.txt`)."""
+
+    def test_a_catch_whose_tests_never_failed_leaves_the_mutant_missed(self):
+        missed = [
+            "crates/libs/cpk/src/lib.rs:10:5: replace pad -> usize with 0",
+            "crates/libs/cpk/src/read.rs:20:9: replace read -> u8 with 0",
+        ]
+
+        def local_mutants(args, source, config=None):
+            out = Path(args[args.index("--output") + 1])
+            write_run(
+                out / "mutants.out", len(missed),
+                [
+                    caught_outcome(missed[0], {"Failure": 100}),
+                    # Nextest's exit when it cannot list the tests: none ran.
+                    caught_outcome(missed[1], {"Failure": 104}),
+                ],
+            )
+            return subprocess.CompletedProcess(args, 0)
+
+        def git(*args, **kwargs):
+            return subprocess.CompletedProcess(args, 0, stdout="sometree")
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            out = io.StringIO()
+            with (
+                mock.patch.multiple(
+                    mutants,
+                    ROOT=root,
+                    git=git,
+                    local_mutants=local_mutants,
+                    mutant_crate=lambda file: "cpk",
+                    snapshot_source=lambda tree: contextlib.nullcontext(root),
+                ),
+                contextlib.redirect_stdout(out),
+            ):
+                caught = mutants.recheck_windows(missed)
+                code = mutants.report_killed(0, local_half=False)
+        self.assertEqual(caught, {missed[0]})
+        self.assertEqual(code, 1)
+        self.assertIn("1 mutants were NOT tested", out.getvalue())
+        self.assertIn(missed[1], out.getvalue())
 
 
 class DiffRun(unittest.TestCase):
@@ -1527,7 +1603,8 @@ class DiffRun(unittest.TestCase):
             return 3
 
         code, out = self.run_diff(run_crate)
-        self.assertEqual(code, 3)
+        # A refused crate's mutants went untested: its 1 outranks the other's 3.
+        self.assertEqual(code, 1)
         self.assertIn("mutants_diff: the remote half launched on bonfire is not collected", out)
         self.assertFalse((self.results / "cpk").exists(), "a refused crate files no results")
         self.assertEqual(
