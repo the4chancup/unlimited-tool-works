@@ -273,12 +273,26 @@ version, not the version selector.
 - **Tenacity** is a PES 2014 stat no other version has. It gets its own `Option` stat, its
   `PlayerField` and its AATF stat name. On another version's save its greyed box's tooltip
   reads "PES 2014 only", since the "PES NN+" wording would claim later versions store it.
+- **Stored values.** PES 2014 stores each stat less 40, the height less 132 and the weight less
+  30 (run `player1`). The codec adds those offsets when it reads a PES 2014 record and takes
+  them off when it writes one, so the model, the screens and the AATF hold the values the game
+  shows, as on every other version. A value below its offset is refused, not wrapped.
+- **Playing styles.** PES 2014's list is PES 2015's with two other names: The Instigator at
+  15, where PES 2015 has Build Up, and Solid Player at 16, the slot PES 2015 leaves empty. Each
+  is a playing style of its own, not Build Up renamed, because nothing measured says they are
+  the same style, and a ruleset naming Build Up would otherwise pass a PES 2014 Instigator. No
+  other version stores either.
+- **Motions.** PES 2014 has four: Dribbling (a field PES 2020 stores too), Free Kick, Penalty Kick and
+  Punt Kick. Punt Kick is a PES 2014-only `Option`, like Tenacity. The corner kick, hunching
+  and arm-movement motions are not stored.
 - **Edit flags.** The game reads a player's record only when bit 0x29:1 is set (run
   `player1`), so the editor sets the flags the game sets, which keep every edit after a reload
   (run `flags3`): 0x29:1 on each player whose player record it changes, and 0x28:6 as well
   when the change is in the game's Basic Settings part, and 0x28:2 when it changes the Player
   Name, without which the game shows a rostered player as "PLACEHOLDER" (run `player2`). An
-  appearance-only change sets no flag. The organizer's
+  appearance-only change sets no flag. The flags are set when the save is written, by
+  comparing each player record with the bytes it replaces, so every route that changes a
+  player (a screen, an AATF fix, an import) sets them alike. The organizer's
   0xFC/0xFE on every player is not copied, since the game never writes it; a save that
   carries it keeps it, since the editor sets these bits and never clears one. On the other
   versions an ordinary edit sets no flag, as on main.

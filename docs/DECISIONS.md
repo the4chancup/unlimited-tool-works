@@ -18891,3 +18891,22 @@ in the source, not a build-time environment variable, because a build made witho
 variable would quietly become a main build and offer main's releases to a side line's members.
 Plan: `docs/RUNBOOK.md` "Releasing a side line" added; `plans/core/distribution.md`
 "Self-update" step 1 and `spec/core/distribution.md` "Release builds in CI" point at it.
+
+## 2026-11-20 — pes_savefile (pes14 branch) — PES 2014's stored offsets live in the codec, and the edit flags are set at write time
+Decision: PES 2014 stores the stats less 40, the height less 132 and the weight less 30; the
+codec adds the offset on read and takes it off on write, for PES 2014 only, and refuses a value
+below its offset. The game's edit flags (0x29:1, 0x28:2, 0x28:6) are set when the save is
+written, by comparing each player record with the bytes it replaces.
+Why: the model holds shown values, not stored ones, because every consumer (the screens, the
+AATF, a ruleset) already reads shown values on the other versions and would misread a PES 2014
+stat of 80 stored as 40. Flags at write time, not in each editing path, because a path that
+forgot them would leave an edit the game never shows ("PLACEHOLDER" names).
+Plan: `plans/pes14.md` "PES 2014 in the code", "Stored values" and "Edit flags".
+
+## 2026-11-20 — pes_savefile (pes14 branch) — The Instigator and Solid Player are playing styles of their own
+Decision: PES 2014's styles 15 and 16, The Instigator and Solid Player, become two new
+`PlayStyle` values, stored by no other version. Punt Kick becomes a PES 2014-only motion.
+Why: own values, not The Instigator read as Build Up (the style at its index on PES 2015),
+because nothing measured says they are one style, and a ruleset naming Build Up would pass a
+PES 2014 Instigator.
+Plan: `plans/pes14.md` "PES 2014 in the code", "Playing styles" and "Motions".
