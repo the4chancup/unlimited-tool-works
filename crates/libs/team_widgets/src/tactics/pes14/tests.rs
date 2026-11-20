@@ -138,6 +138,86 @@ fn pick_strategy_writes_the_strategy_and_its_sliders() {
     );
 }
 
+/// Three Combination Play slots, each `(area, strategy)`.
+fn slots(entries: [(u8, u8); 3]) -> [CombinationSlot; 3] {
+    entries.map(|(area, strategy)| CombinationSlot { area, strategy })
+}
+
+// A strategy's free areas are its own less those the other two slots
+// hold. An empty slot holds nothing, its area 0 or a stale byte alike,
+// and the slot asked about does not hold its own area. Cut Inside takes
+// 3 and 5, Overlap and Pull Back 4, 5, 7 and 10.
+#[test]
+fn free_areas_leave_out_the_other_slots_areas() {
+    let cut_inside = 3;
+    let overlap_and_pull_back = 8;
+    for (entries, index, id, expected) in [
+        ([(0, 0), (3, 1), (5, 2)], 0, cut_inside, vec![]),
+        ([(0, 0), (3, 1), (0, 0)], 0, cut_inside, vec![5]),
+        ([(0, 0), (3, 1), (5, 0)], 0, cut_inside, vec![5]),
+        ([(3, 3), (6, 1), (0, 0)], 0, cut_inside, vec![3, 5]),
+        (
+            [(7, 9), (0, 0), (4, 8)],
+            1,
+            overlap_and_pull_back,
+            vec![5, 10],
+        ),
+        ([(0, 0), (0, 0), (0, 0)], 0, 15, vec![]),
+    ] {
+        assert_eq!(
+            free_areas(&slots(entries), index, id),
+            expected,
+            "strategy {id} in slot {index} of {entries:?}"
+        );
+    }
+}
+
+// A pick keeps the slot's area when it is free, else moves to the area
+// the game's picker opens on, else to the first free one: Overlap and
+// Pull Back opens on 7, and with 7 held lands on 4; Hold up the ball in
+// area 5 becoming Cut Inside stays in 5, not Cut Inside's opening 3.
+#[test]
+fn pick_combination_keeps_a_free_area_or_moves_to_the_opening_one() {
+    let cut_inside = 3;
+    let overlap_and_pull_back = 8;
+    for (entries, index, id, expected) in [
+        (
+            [(0, 0), (0, 0), (0, 0)],
+            0,
+            overlap_and_pull_back,
+            [(7, 8), (0, 0), (0, 0)],
+        ),
+        (
+            [(0, 0), (7, 9), (0, 0)],
+            0,
+            overlap_and_pull_back,
+            [(4, 8), (7, 9), (0, 0)],
+        ),
+        (
+            [(5, 1), (0, 0), (0, 0)],
+            0,
+            cut_inside,
+            [(5, 3), (0, 0), (0, 0)],
+        ),
+    ] {
+        let mut picked = slots(entries);
+        pick_combination(&mut picked, index, id);
+        assert_eq!(
+            picked,
+            slots(expected),
+            "strategy {id} into slot {index} of {entries:?}"
+        );
+    }
+}
+
+// Clear stores strategy 0 and area 0 in its slot alone.
+#[test]
+fn clear_combination_empties_its_slot_alone() {
+    let mut cleared = slots([(2, 10), (6, 1), (8, 5)]);
+    clear_combination(&mut cleared, 1);
+    assert_eq!(cleared, slots([(2, 10), (0, 0), (8, 5)]));
+}
+
 // The two dropdowns stand `CELL_GAP` under their labels, as the draft's
 // selects do: the Formation combo's top is the "Formation" label's
 // bottom plus it, and the Strategy combo's likewise.

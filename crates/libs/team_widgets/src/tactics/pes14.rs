@@ -4,14 +4,14 @@
 //! sets.
 
 use pes_savefile::model::tactics::{
-    Formation, FormationSlot, GamePlan, TacticsPreset, TeamTactics,
+    CombinationSlot, Formation, FormationSlot, GamePlan, TacticsPreset, TeamTactics,
 };
 use pes_savefile::schema::fields::PresetField;
-use studio_core::widgets::slider as suite_slider;
+use studio_core::widgets::{add_enabled, add_enabled_ui, slider as suite_slider};
 
 use super::{
-    CELL_GAP, GAME_PLAN_SLIDERS, HALVES_GAP, STRATEGY_LABEL, TITLE_GAP, TacticsView, choice_combo,
-    control_box, panel,
+    CELL_GAP, COMBINATION_PLAY_LABEL, GAME_PLAN_SLIDERS, HALVES_GAP, STRATEGY_LABEL, TITLE_GAP,
+    TacticsView, choice_combo, control_box, greyed_choice_combo, panel, text_width,
 };
 use crate::pitch::formation_name;
 
@@ -240,6 +240,330 @@ const STRATEGY_SLIDERS: [[Option<u8>; 8]; 6] = [
         Some(20),
     ],
 ];
+
+/// One Combination Play strategy: its stored `id` (1 to 14, not the
+/// picker's order), its `name`, the area the game's area picker opens on
+/// and the `areas` it can run in, in the game's area numbers (rows from
+/// the top of its area screen: 1 and 2, 3 to 5, 6 to 8, 9 to 11).
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct Combination {
+    /// The stored strategy id.
+    pub id: u8,
+    /// The strategy's name in the game's picker.
+    pub name: &'static str,
+    /// The area the game's area picker opens on.
+    pub opens_on: u8,
+    /// The areas the strategy can run in.
+    pub areas: &'static [u8],
+}
+
+/// The six midfield areas most strategies take.
+const MIDFIELD: &[u8] = &[3, 4, 5, 6, 7, 8];
+
+/// Combination Play's strategies in the game's picker order, each with
+/// the areas it takes when the other two slots are empty.
+pub const COMBINATIONS: [Combination; 14] = [
+    Combination {
+        id: 10,
+        name: "Dummy Run and Cross",
+        opens_on: 1,
+        areas: &[1, 2, 3, 5],
+    },
+    Combination {
+        id: 11,
+        name: "Cross and Pull Back",
+        opens_on: 1,
+        areas: &[1, 2, 3, 5],
+    },
+    Combination {
+        id: 12,
+        name: "Cross and Dummy",
+        opens_on: 1,
+        areas: &[1, 2, 3, 5],
+    },
+    Combination {
+        id: 13,
+        name: "Switch Flanks",
+        opens_on: 6,
+        areas: &[6, 8, 9, 11],
+    },
+    Combination {
+        id: 14,
+        name: "Dummy and Lay Off",
+        opens_on: 3,
+        areas: MIDFIELD,
+    },
+    Combination {
+        id: 1,
+        name: "Hold up the ball",
+        opens_on: 3,
+        areas: MIDFIELD,
+    },
+    Combination {
+        id: 2,
+        name: "Diagonal Run",
+        opens_on: 3,
+        areas: MIDFIELD,
+    },
+    Combination {
+        id: 3,
+        name: "Cut Inside",
+        opens_on: 3,
+        areas: &[3, 5],
+    },
+    Combination {
+        id: 4,
+        name: "Diagonal Dribble",
+        opens_on: 3,
+        areas: MIDFIELD,
+    },
+    Combination {
+        id: 5,
+        name: "Hold Up and Overlap",
+        opens_on: 3,
+        areas: MIDFIELD,
+    },
+    Combination {
+        id: 6,
+        name: "Straight Run",
+        opens_on: 3,
+        areas: MIDFIELD,
+    },
+    Combination {
+        id: 7,
+        name: "Hold Up and Switch",
+        opens_on: 3,
+        areas: &[3, 5, 6, 8],
+    },
+    Combination {
+        id: 8,
+        name: "Overlap and Pull Back",
+        opens_on: 7,
+        areas: &[4, 5, 7, 10],
+    },
+    Combination {
+        id: 9,
+        name: "Drop Deep and Overlap",
+        opens_on: 7,
+        areas: &[4, 5, 7, 10],
+    },
+];
+
+/// The strategy id of an empty Combination Play slot.
+const NO_COMBINATION: u8 = 0;
+
+/// A stored Combination Play strategy id as the panel names it: "None
+/// Selected" for an empty slot, the strategy's name, or the number for
+/// an id `COMBINATIONS` does not hold.
+pub(crate) fn combination_text(id: u8) -> String {
+    if id == NO_COMBINATION {
+        return "None Selected".to_owned();
+    }
+    COMBINATIONS
+        .iter()
+        .find(|combination| combination.id == id)
+        .map_or_else(|| id.to_string(), |combination| combination.name.to_owned())
+}
+
+/// The areas strategy `id` could run in from slot `index`: its own areas
+/// less those the other two slots hold. A slot whose strategy is 0 is
+/// empty, so its area holds nothing, whatever the byte says. Empty for an
+/// id `COMBINATIONS` does not hold.
+pub fn free_areas(slots: &[CombinationSlot; 3], index: usize, id: u8) -> Vec<u8> {
+    let Some(combination) = COMBINATIONS.iter().find(|combination| combination.id == id) else {
+        return Vec::new();
+    };
+    let held = |area: u8| {
+        slots.iter().enumerate().any(|(other, slot)| {
+            other != index && slot.strategy != NO_COMBINATION && slot.area == area
+        })
+    };
+    combination
+        .areas
+        .iter()
+        .copied()
+        .filter(|area| !held(*area))
+        .collect()
+}
+
+/// Puts strategy `id` in slot `index`, as the game's pick does: the
+/// slot's area stays when it is one of `free_areas`, else it becomes the
+/// area the game's picker opens on when that one is free, else the first
+/// free one. `id` must have a free area: the panel greys one that has
+/// none.
+pub fn pick_combination(slots: &mut [CombinationSlot; 3], index: usize, id: u8) {
+    let free = free_areas(slots, index, id);
+    let opens_on = COMBINATIONS
+        .iter()
+        .find(|combination| combination.id == id)
+        .map(|combination| combination.opens_on);
+    let slot = &mut slots[index];
+    if !free.contains(&slot.area) {
+        slot.area = match opens_on {
+            Some(area) if free.contains(&area) => area,
+            _ => *free
+                .first()
+                .expect("the panel offers no strategy without a free area"),
+        };
+    }
+    slot.strategy = id;
+}
+
+/// Empties slot `index` as the game's Clear does: strategy 0 and area 0.
+pub fn clear_combination(slots: &mut [CombinationSlot; 3], index: usize) {
+    slots[index] = CombinationSlot {
+        area: 0,
+        strategy: NO_COMBINATION,
+    };
+}
+
+/// The Area header's tooltip. The game has no text for the areas, so it
+/// gives the game's numbering, with no claim about which end is whose.
+const COMBINATION_AREA_TIP: &str = "The game's area screen numbers the pitch in rows, from \
+                                    its top: 1 and 2, then 3 to 5, 6 to 8, and 9 to 11.";
+/// The Combination play grid's column and row gaps (the draft's
+/// `.tacinstr`).
+const COMBINATION_COLUMN_GAP: f32 = 8.0;
+const COMBINATION_ROW_GAP: f32 = 3.0;
+/// The area column's width (the draft's `52px` track).
+const AREA_WIDTH: f32 = 52.0;
+
+/// The "Combination play" panel (the draft's `#tac-combination`): the
+/// Strategy and Area headers, then the three slots, each its number, its
+/// strategy combo, its area combo and a Clear button. Draws nothing on a
+/// record that stores no Combination Play. Answers `true` only when
+/// `tactics` changed this frame.
+pub fn combination_play(ui: &mut egui::Ui, tactics: &mut TeamTactics) -> bool {
+    let Some(slots) = tactics.combination.as_mut() else {
+        return false;
+    };
+    let before = *slots;
+    panel(ui, COMBINATION_PLAY_LABEL, |ui| {
+        // `add_space` adds to the item gap: the rows start `TITLE_GAP`
+        // under the heading, as the other panels' do.
+        ui.add_space(TITLE_GAP - ui.spacing().item_spacing.y);
+        combination_grid(ui, slots);
+    });
+    *slots != before
+}
+
+/// The panel's grid (the draft's columns `auto 1fr 52px auto`): the
+/// numbers, the strategy combos filling the free width, the area combos
+/// and the Clear buttons, under a header row one line of text tall.
+fn combination_grid(ui: &mut egui::Ui, slots: &mut [CombinationSlot; 3]) {
+    let inner = ui.max_rect();
+    let number_width = ["1", "2", "3"]
+        .map(|number| text_width(ui, number))
+        .into_iter()
+        .fold(0.0, f32::max);
+    let clear_width = text_width(ui, "Clear") + 2.0 * ui.spacing().button_padding.x;
+    let strategy_x = inner.min.x + number_width + COMBINATION_COLUMN_GAP;
+    let strategy_width =
+        inner.width() - number_width - AREA_WIDTH - clear_width - 3.0 * COMBINATION_COLUMN_GAP;
+    let area_x = strategy_x + strategy_width + COMBINATION_COLUMN_GAP;
+    let clear_x = area_x + AREA_WIDTH + COMBINATION_COLUMN_GAP;
+    let combo_height = ui.spacing().interact_size.y;
+    let header_height = ui.text_style_height(&egui::TextStyle::Body);
+    let mut top = ui.cursor().min.y;
+    grid_cell(ui, strategy_x, top, strategy_width, header_height).label(STRATEGY_LABEL);
+    grid_cell(ui, area_x, top, AREA_WIDTH, header_height)
+        .label("Area")
+        .on_hover_text(COMBINATION_AREA_TIP);
+    top += header_height + COMBINATION_ROW_GAP;
+    for index in 0..slots.len() {
+        grid_cell(ui, inner.min.x, top, number_width, combo_height).weak((index + 1).to_string());
+        strategy_combo_cell(
+            &mut grid_cell(ui, strategy_x, top, strategy_width, combo_height),
+            slots,
+            index,
+        );
+        area_combo_cell(
+            &mut grid_cell(ui, area_x, top, AREA_WIDTH, combo_height),
+            slots,
+            index,
+        );
+        let empty = slots[index].strategy == NO_COMBINATION;
+        if add_enabled(
+            &mut grid_cell(ui, clear_x, top, clear_width, combo_height),
+            !empty,
+            egui::Button::new("Clear"),
+        )
+        .clicked()
+        {
+            clear_combination(slots, index);
+        }
+        top += combo_height + COMBINATION_ROW_GAP;
+    }
+    // `new_child` cells don't grow this `Ui`'s `min_rect`: advance over
+    // the grid's whole extent so the frame wraps the last row.
+    ui.advance_cursor_after_rect(egui::Rect::from_min_max(
+        inner.min,
+        egui::pos2(inner.max.x, top - COMBINATION_ROW_GAP),
+    ));
+}
+
+/// A cell of the Combination play grid at `left`, `top`, its content
+/// centred in its height.
+fn grid_cell(ui: &mut egui::Ui, left: f32, top: f32, width: f32, height: f32) -> egui::Ui {
+    ui.new_child(
+        egui::UiBuilder::new()
+            .max_rect(egui::Rect::from_min_size(
+                egui::pos2(left, top),
+                egui::vec2(width, height),
+            ))
+            .layout(egui::Layout::left_to_right(egui::Align::Center)),
+    )
+}
+
+/// Slot `index`'s strategy combo: "None Selected" first while the slot
+/// is empty, then `COMBINATIONS`' names, those with no free area for the
+/// slot greyed, since the game could store no area for them. A stored id
+/// the table does not hold is offered as its number. A pick calls
+/// `pick_combination`.
+fn strategy_combo_cell(ui: &mut egui::Ui, slots: &mut [CombinationSlot; 3], index: usize) {
+    let held = slots[index].strategy;
+    let mut choices: Vec<(u8, String)> = Vec::new();
+    if held == NO_COMBINATION {
+        choices.push((NO_COMBINATION, combination_text(NO_COMBINATION)));
+    }
+    choices.extend(
+        COMBINATIONS
+            .iter()
+            .map(|combination| (combination.id, combination.name.to_owned())),
+    );
+    if !choices.iter().any(|(id, _)| *id == held) {
+        choices.push((held, combination_text(held)));
+    }
+    let pick = greyed_choice_combo(ui, ("combination strategy", index), &choices, held, |id| {
+        id == NO_COMBINATION || !free_areas(slots, index, id).is_empty()
+    });
+    if pick != held {
+        pick_combination(slots, index, pick);
+    }
+}
+
+/// Slot `index`'s area combo: the areas `free_areas` leaves its strategy,
+/// as numbers, a stored area outside them offered too, so the combo
+/// never misreports the save. Empty and disabled for an empty slot. A
+/// pick sets the slot's area alone.
+fn area_combo_cell(ui: &mut egui::Ui, slots: &mut [CombinationSlot; 3], index: usize) {
+    let slot = slots[index];
+    let id_salt = ("combination area", index);
+    if slot.strategy == NO_COMBINATION {
+        add_enabled_ui(ui, false, |ui| {
+            choice_combo(ui, id_salt, &[(slot.area, String::new())], slot.area)
+        });
+        return;
+    }
+    let mut choices: Vec<(u8, String)> = free_areas(slots, index, slot.strategy)
+        .into_iter()
+        .map(|area| (area, area.to_string()))
+        .collect();
+    if !choices.iter().any(|(area, _)| *area == slot.area) {
+        choices.push((slot.area, slot.area.to_string()));
+    }
+    slots[index].area = choice_combo(ui, id_salt, &choices, slot.area);
+}
 
 /// The list entry `formation` is, `None` for one the list does not
 /// hold: the entry whose ten outfielders equal slots 1 to 10 in
