@@ -1199,6 +1199,7 @@ fn a_gameplan_survives_the_document() {
                 offside_trap: flipped(ours.auto.offside_trap),
                 preset_change: flipped(ours.auto.preset_change),
                 attack_defence_levels: flipped(ours.auto.attack_defence_levels),
+                combination_play: ours.auto.combination_play,
             };
             through_text(&document)
                 .apply(version, &mut target, &mut [])

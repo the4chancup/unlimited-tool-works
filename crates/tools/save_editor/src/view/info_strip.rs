@@ -199,8 +199,8 @@ fn page_toggle(ui: &mut egui::Ui, view: &mut SaveView) {
                 studio_core::theme::edge_color(ui.visuals(), ui.visuals().selection.bg_fill);
             let unheld = studio_core::theme::unheld_edge(ui.visuals());
             let mut pressed = None;
-            // PES 2014's tactics record maps the captain alone in this
-            // build, so its Gameplan segment stays disabled.
+            // PES 2014's Gameplan screen is not built yet, so its
+            // Gameplan segment stays disabled.
             let pes14 = view
                 .session
                 .as_ref()

@@ -1,7 +1,9 @@
 //! `TeamTactics`: the tactics record's contents, version-independent. The
 //! record carries three presets of style flags, sliders, three formations each
 //! and (PES 17+) advanced instructions, plus the shared starting eleven, bench
-//! order, set-piece takers and auto flags.
+//! order, set-piece takers and auto flags. On PES 2014 a preset instead carries
+//! a Game Plan (the Strategy and eight sliders) and one formation, and the
+//! record a Combination Play panel.
 
 use pes_version::PesVersion;
 
@@ -27,6 +29,9 @@ pub struct TeamTactics {
     pub players_to_join_attack: [u8; 3],
     /// The automatic-settings flags.
     pub auto: TeamAutoFlags,
+    /// Combination Play's three slots (PES 2014); `None` until a PES 2014
+    /// record is read.
+    pub combination: Option<[CombinationSlot; 3]>,
 }
 
 /// The nine bench entries past the twelve, as the game writes them: the
@@ -58,7 +63,8 @@ pub struct TacticsPreset {
     pub style: TacticStyle,
     /// The five sliders.
     pub sliders: TacticSliders,
-    /// Kick-off, in-possession and out-of-possession formations.
+    /// Kick-off, in-possession and out-of-possession formations. PES 2014
+    /// stores the first alone; the other two keep their defaults.
     pub formations: [Formation; 3],
     /// The two attacking instructions (PES 17+).
     pub attack_instructions: Option<[AdvancedInstruction; 2]>,
@@ -67,6 +73,8 @@ pub struct TacticsPreset {
     /// Man marking: own formation slot `i`'s assignment is the marked
     /// opponent's formation slot, 0xFF none (PES 15+).
     pub man_marking: [u8; 11],
+    /// The Game Plan (PES 2014); `None` until a PES 2014 record is read.
+    pub game_plan: Option<GamePlan>,
 }
 
 /// The style switches; each is one byte on disk carrying 0 or 1.
@@ -105,6 +113,18 @@ pub struct TacticSliders {
     pub numbers_in_defence: u8,
 }
 
+/// One preset's Game Plan (PES 2014): the Strategy dropdown and the panel's
+/// eight sliders, each holding the value the game shows.
+#[derive(Debug, Clone, Copy, PartialEq, Default)]
+pub struct GamePlan {
+    /// The Strategy dropdown's index (Custom 0 to All-out Attack 5).
+    pub strategy: u8,
+    /// The eight sliders, 0 to 20, in the panel's order: Player Support,
+    /// Support Range, Position Switch, Front line pressure, Defensive Line,
+    /// Defensive Compactness, Shifting to Attack, Attack/Defence Level.
+    pub sliders: [u8; 8],
+}
+
 /// One formation: eleven slot layouts.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct Formation {
@@ -130,6 +150,15 @@ pub struct AdvancedInstruction {
     pub instruction: u8,
     /// The targeted player, for instructions that take one (roster slot).
     pub player: u8,
+}
+
+/// One Combination Play slot (PES 2014): an area and the strategy run there.
+#[derive(Debug, Clone, Copy, PartialEq, Default)]
+pub struct CombinationSlot {
+    /// The area (1 to 11; 0 an empty slot).
+    pub area: u8,
+    /// The strategy's id (1 to 14; 0 an empty slot).
+    pub strategy: u8,
 }
 
 /// The set-piece takers, roster slots with 0xFF for none.
@@ -206,14 +235,32 @@ impl TacticsPreset {
 /// except `substitution`, a setting byte.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct TeamAutoFlags {
-    /// Auto substitution setting (PES 15+).
+    /// Auto substitution setting (PES 14+).
     pub substitution: Option<u8>,
-    /// Auto offside trap (PES 15+).
+    /// Auto offside trap (PES 14+).
     pub offside_trap: Option<bool>,
-    /// Auto preset change (PES 15+).
+    /// Auto preset change (PES 14+).
     pub preset_change: Option<bool>,
     /// Auto attack/defence level change (PES 17+).
     pub attack_defence_levels: Option<bool>,
+    /// Auto Combination Play (PES 2014).
+    pub combination_play: Option<bool>,
+}
+
+/// The Game Plan slider stored as 20 less the value shown: Support Range,
+/// slider 1 of the panel's order.
+const SUPPORT_RANGE_SLIDER: u8 = 1;
+
+/// Translates Support Range between stored and shown: the record stores 20
+/// less the value shown, so one subtract serves both ways. A value over 20
+/// has no counterpart and is refused.
+fn support_range(field: TacticsField, value: u32) -> Result<u32, CodecError> {
+    20u32
+        .checked_sub(value)
+        .ok_or_else(|| CodecError::OutsideStoredOrder {
+            field: format!("{field:?}"),
+            value,
+        })
 }
 
 impl TeamEntry {
@@ -243,6 +290,21 @@ impl TeamEntry {
                     PresetField::Compactness => u32::from(p.sliders.compactness),
                     PresetField::NumbersInAttack => u32::from(p.sliders.numbers_in_attack),
                     PresetField::NumbersInDefence => u32::from(p.sliders.numbers_in_defence),
+                    PresetField::Strategy => {
+                        u32::from(p.game_plan.ok_or_else(|| codec::missing(field))?.strategy)
+                    }
+                    PresetField::GamePlanSlider(i) => {
+                        let plan = p.game_plan.ok_or_else(|| codec::missing(field))?;
+                        let shown = *plan
+                            .sliders
+                            .get(usize::from(i))
+                            .ok_or_else(|| codec::index(field, i))?;
+                        if i == SUPPORT_RANGE_SLIDER {
+                            support_range(field, u32::from(shown))?
+                        } else {
+                            u32::from(shown)
+                        }
+                    }
                 }
             }
             TacticsField::Formation {
@@ -332,6 +394,12 @@ impl TeamEntry {
                     .attack_defence_levels
                     .ok_or_else(|| codec::missing(field))?,
             ),
+            TacticsField::AutoCombinationPlay => u32::from(
+                self.tactics
+                    .auto
+                    .combination_play
+                    .ok_or_else(|| codec::missing(field))?,
+            ),
             TacticsField::Starting(i) => u32::from(
                 *self
                     .tactics
@@ -352,6 +420,24 @@ impl TeamEntry {
                     .players_to_join_attack
                     .get(usize::from(i))
                     .ok_or_else(|| codec::index(field, i))?,
+            ),
+            TacticsField::CombinationArea(i) => u32::from(
+                self.tactics
+                    .combination
+                    .as_ref()
+                    .ok_or_else(|| codec::missing(field))?
+                    .get(usize::from(i))
+                    .ok_or_else(|| codec::index(field, i))?
+                    .area,
+            ),
+            TacticsField::CombinationStrategy(i) => u32::from(
+                self.tactics
+                    .combination
+                    .as_ref()
+                    .ok_or_else(|| codec::missing(field))?
+                    .get(usize::from(i))
+                    .ok_or_else(|| codec::index(field, i))?
+                    .strategy,
             ),
         };
         Ok(v)
@@ -397,6 +483,22 @@ impl TeamEntry {
                     PresetField::Compactness => p.sliders.compactness = value as u8,
                     PresetField::NumbersInAttack => p.sliders.numbers_in_attack = value as u8,
                     PresetField::NumbersInDefence => p.sliders.numbers_in_defence = value as u8,
+                    PresetField::Strategy => {
+                        p.game_plan.get_or_insert_default().strategy = value as u8;
+                    }
+                    PresetField::GamePlanSlider(i) => {
+                        // Support Range stores 20 less the value shown.
+                        let value = if i == SUPPORT_RANGE_SLIDER {
+                            support_range(field, value)?
+                        } else {
+                            value
+                        };
+                        *p.game_plan
+                            .get_or_insert_default()
+                            .sliders
+                            .get_mut(usize::from(i))
+                            .ok_or_else(|| codec::index(field, i))? = value as u8;
+                    }
                 }
             }
             TacticsField::Formation {
@@ -479,6 +581,9 @@ impl TeamEntry {
             TacticsField::AutoAttackDefenceLevels => {
                 self.tactics.auto.attack_defence_levels = Some(codec::boolean(field, value)?);
             }
+            TacticsField::AutoCombinationPlay => {
+                self.tactics.auto.combination_play = Some(codec::boolean(field, value)?);
+            }
             TacticsField::Starting(i) => {
                 *self
                     .tactics
@@ -499,6 +604,22 @@ impl TeamEntry {
                     .players_to_join_attack
                     .get_mut(usize::from(i))
                     .ok_or_else(|| codec::index(field, i))? = value as u8;
+            }
+            TacticsField::CombinationArea(i) => {
+                self.tactics
+                    .combination
+                    .get_or_insert_default()
+                    .get_mut(usize::from(i))
+                    .ok_or_else(|| codec::index(field, i))?
+                    .area = value as u8;
+            }
+            TacticsField::CombinationStrategy(i) => {
+                self.tactics
+                    .combination
+                    .get_or_insert_default()
+                    .get_mut(usize::from(i))
+                    .ok_or_else(|| codec::index(field, i))?
+                    .strategy = value as u8;
             }
         }
         Ok(())

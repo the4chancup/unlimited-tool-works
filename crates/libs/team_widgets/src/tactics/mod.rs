@@ -429,6 +429,21 @@ const OFFSIDE_TRAP_LABEL: &str = "Offside trap";
 const PRESET_CHANGE_LABEL: &str = "Preset change";
 /// The attack/defence-levels checkbox's label.
 const ATTACK_DEFENCE_LABEL: &str = "Attack/defence levels";
+/// The Combination Play switch's and slots' label (PES 2014).
+const COMBINATION_PLAY_LABEL: &str = "Combination play";
+/// The Game Plan's Strategy dropdown's label (PES 2014).
+const STRATEGY_LABEL: &str = "Strategy";
+/// The eight Game Plan sliders' labels, in the panel's order (PES 2014).
+const GAME_PLAN_SLIDERS: [&str; 8] = [
+    "Player support",
+    "Support range",
+    "Position switch",
+    "Front line pressure",
+    "Defensive line",
+    "Defensive compactness",
+    "Shifting to attack",
+    "Attack/defence level",
+];
 
 /// The preset selector (the draft's `presetSel`, in the tab's `tacbar`
 /// beside the menus that act on the shown preset): "Preset" then 1, 2
@@ -1253,6 +1268,21 @@ pub fn tactics_term(
             role_holder(old_roster, byte(old)),
             role_holder(new_roster, byte(new)),
         ),
+        TacticsField::AutoCombinationPlay => (
+            COMBINATION_PLAY_LABEL.to_owned(),
+            on_off(old).to_owned(),
+            on_off(new).to_owned(),
+        ),
+        TacticsField::CombinationArea(index) => (
+            format!("{COMBINATION_PLAY_LABEL} · {} · Area", index + 1),
+            old.to_string(),
+            new.to_string(),
+        ),
+        TacticsField::CombinationStrategy(index) => (
+            format!("{COMBINATION_PLAY_LABEL} · {} · Strategy", index + 1),
+            old.to_string(),
+            new.to_string(),
+        ),
     }
 }
 
@@ -1274,6 +1304,12 @@ fn instruction_text(version: PesVersion, stored: u8) -> String {
 fn preset_label(version: PesVersion, field: PresetField) -> &'static str {
     if field == PresetField::FluidFormation {
         return FLUID_LABEL;
+    }
+    if field == PresetField::Strategy {
+        return STRATEGY_LABEL;
+    }
+    if let PresetField::GamePlanSlider(index) = field {
+        return GAME_PLAN_SLIDERS[usize::from(index)];
     }
     SLIDERS
         .iter()

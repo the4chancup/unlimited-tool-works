@@ -367,12 +367,18 @@ pub enum TacticsField {
     AutoPresetChange,
     /// Auto attack/defence level change.
     AutoAttackDefenceLevels,
+    /// Auto Combination Play (PES 2014).
+    AutoCombinationPlay,
     /// Starting eleven position `n`: roster slot.
     Starting(u8),
     /// Bench order entry `n`: roster slot.
     Bench(u8),
     /// Player `n` joining the attack.
     PlayerToJoinAttack(u8),
+    /// Combination Play slot `n`'s area, 1 to 11, 0 empty (PES 2014).
+    CombinationArea(u8),
+    /// Combination Play slot `n`'s strategy id, 1 to 14, 0 empty (PES 2014).
+    CombinationStrategy(u8),
 }
 
 /// A per-preset tactics setting.
@@ -404,6 +410,14 @@ pub enum PresetField {
     NumbersInAttack,
     /// Numbers in defence, 1 few to 3 many.
     NumbersInDefence,
+    /// The Game Plan's Strategy dropdown index (PES 2014): Custom 0 to
+    /// All-out Attack 5.
+    Strategy,
+    /// Game Plan slider `n` of the panel's order (PES 2014), 0 to 20:
+    /// 0 Player Support, 1 Support Range, 2 Position Switch, 3 Front line
+    /// pressure, 4 Defensive Line, 5 Defensive Compactness, 6 Shifting to
+    /// Attack, 7 Attack/Defence Level.
+    GamePlanSlider(u8),
 }
 
 /// Which value of a formation slot.

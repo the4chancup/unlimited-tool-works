@@ -72,8 +72,7 @@ impl TeamToml {
         let edit = &team.edit_flags;
         let tactics = &team.tactics;
         // A field the version's record does not store is `None` (emitted
-        // commented), not the default the model happens to hold: PES 2014's
-        // tactics record maps the team id and the captain alone.
+        // commented), not the default the model happens to hold.
         let tactic = schema_for(version).tactic;
         let has = |field| tactic.has(field);
         let has_preset = |field| tactic.has_preset(field);

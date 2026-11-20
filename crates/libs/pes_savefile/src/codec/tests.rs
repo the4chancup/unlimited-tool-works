@@ -9,6 +9,7 @@ use super::{
 };
 use crate::model::ingame_face::IngameFace;
 use crate::model::player::{PlayerEntry, STRIPPED_APPEARANCE_ID};
+use crate::model::tactics::{CombinationSlot, Formation, FormationSlot, GamePlan};
 use crate::model::team::{RosterSlot, TeamEntry};
 use crate::schema::fields::{
     FormationPart, InstructionSide, PlayerField, PlayerText, PresetField, RosterField,
@@ -1473,6 +1474,271 @@ fn tactics_literals() {
     assert_eq!(team.tactics.starting_eleven, [255; 11]);
 }
 
+/// PES 2014's first tactics record (team 1, IRELAND): the takers, the
+/// captain, the auto switches, the lineup, Combination Play's slots and,
+/// per preset, the Game Plan's Strategy and sliders and the one
+/// formation. Support Range reads as the game shows it (stored 12 is
+/// shown 8), and formation slot 0 has a place but no position byte.
+#[test]
+fn pes14_tactics_literals() {
+    let payload = payload(PesVersion::Pes14);
+    let schema = schema_for(PesVersion::Pes14);
+    let rec = record(&payload, &schema.tactics, schema.tactic.size, 0);
+    assert_eq!(tactics_id(rec, schema.tactic), 1, "team 1's record first");
+    let mut team = TeamEntry {
+        id: 1,
+        ..TeamEntry::default()
+    };
+    read_tactics_into(&mut team, rec, schema.tactic).expect("decode tactics");
+    let tactics = &team.tactics;
+    assert_eq!(tactics.set_pieces.captain, 10);
+    assert_eq!(
+        [
+            tactics.set_pieces.free_kick_long,
+            tactics.set_pieces.free_kick_short,
+            tactics.set_pieces.free_kick_second,
+            tactics.set_pieces.corner_left,
+            tactics.set_pieces.corner_right,
+            tactics.set_pieces.penalty,
+        ],
+        [6, 6, 7, 6, 6, 8]
+    );
+    assert_eq!(tactics.players_to_join_attack, [255, 255, 255]);
+    assert_eq!(tactics.auto.substitution, Some(0));
+    assert_eq!(tactics.auto.offside_trap, Some(false));
+    assert_eq!(tactics.auto.preset_change, Some(false));
+    assert_eq!(tactics.auto.combination_play, Some(false));
+    assert_eq!(
+        tactics.combination,
+        Some([
+            CombinationSlot {
+                area: 2,
+                strategy: 10
+            },
+            CombinationSlot {
+                area: 6,
+                strategy: 1
+            },
+            CombinationSlot {
+                area: 8,
+                strategy: 5
+            },
+        ])
+    );
+    assert_eq!(tactics.starting_eleven, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+    assert_eq!(
+        tactics.bench_order,
+        [
+            11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31
+        ]
+    );
+    for (index, strategy) in [(0usize, 1u8), (1, 3), (2, 4)] {
+        let preset = &tactics.presets[index];
+        assert_eq!(
+            preset.game_plan,
+            Some(GamePlan {
+                strategy,
+                sliders: [13, 8, 9, 9, 8, 12, 10, 10],
+            }),
+            "preset {}'s Game Plan",
+            index + 1
+        );
+        let formation = &preset.formations[0];
+        assert_eq!(
+            formation.players[0],
+            FormationSlot {
+                position: 0,
+                x: 52,
+                y: 4
+            },
+            "the keeper's place, his role byte not stored"
+        );
+        assert_eq!(
+            formation.players[1..]
+                .iter()
+                .map(|s| (s.position, s.x, s.y))
+                .collect::<Vec<_>>(),
+            [
+                (1, 63, 9),
+                (1, 41, 9),
+                (3, 86, 11),
+                (2, 17, 11),
+                (5, 63, 25),
+                (5, 44, 24),
+                (7, 84, 29),
+                (6, 20, 30),
+                (11, 43, 38),
+                (12, 63, 40),
+            ],
+            "preset {}'s outfield roles and places",
+            index + 1
+        );
+        assert_eq!(preset.formations[1], Formation::default());
+        assert_eq!(preset.formations[2], Formation::default());
+    }
+}
+
+/// A PES 2014 tactics record written with every mapped field set to a
+/// value the record does not hold: each lands at its offset — a preset-2
+/// Strategy and a formation slot prove the preset stride — Support Range
+/// stores 20 less the value shown, and every other byte stays as read.
+#[test]
+fn pes14_tactics_write_lands_each_field_at_its_offset() {
+    let payload = payload(PesVersion::Pes14);
+    let schema = schema_for(PesVersion::Pes14);
+    let rec = record(&payload, &schema.tactics, schema.tactic.size, 0);
+    let mut team = TeamEntry {
+        id: 1,
+        ..TeamEntry::default()
+    };
+    read_tactics_into(&mut team, rec, schema.tactic).expect("decode tactics");
+    let tactics = &mut team.tactics;
+    tactics.set_pieces.free_kick_long = 21;
+    tactics.set_pieces.free_kick_short = 22;
+    tactics.set_pieces.free_kick_second = 23;
+    tactics.set_pieces.corner_left = 24;
+    tactics.set_pieces.corner_right = 25;
+    tactics.set_pieces.penalty = 26;
+    tactics.players_to_join_attack = [3, 7, 12];
+    tactics.auto.substitution = Some(2);
+    tactics.auto.offside_trap = Some(true);
+    tactics.auto.preset_change = Some(true);
+    tactics.auto.combination_play = Some(true);
+    tactics.combination = Some([
+        CombinationSlot {
+            area: 1,
+            strategy: 2,
+        },
+        CombinationSlot {
+            area: 3,
+            strategy: 4,
+        },
+        CombinationSlot {
+            area: 5,
+            strategy: 6,
+        },
+    ]);
+    tactics.starting_eleven = [30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40];
+    for (i, slot) in tactics.bench_order.iter_mut().enumerate() {
+        *slot = 50 + i as u8;
+    }
+    let plan = tactics.presets[0].game_plan.get_or_insert_default();
+    assert_ne!(plan.strategy, 0, "premise: another strategy");
+    plan.strategy = 0;
+    assert_ne!(
+        plan.sliders,
+        [0, 5, 1, 2, 3, 4, 6, 7],
+        "premise: other sliders"
+    );
+    plan.sliders = [0, 5, 1, 2, 3, 4, 6, 7];
+    // Preset 2 proves the stride: another Strategy, and formation slot 5
+    // at another place. Slot 0's position is set in the model too: its
+    // byte must not move, the keeper's role being unwritten.
+    let second = &mut tactics.presets[1];
+    second.game_plan.get_or_insert_default().strategy = 2;
+    second.formations[0].players[5] = FormationSlot {
+        position: 8,
+        x: 70,
+        y: 30,
+    };
+    tactics.presets[0].formations[0].players[0].position = 7;
+    let mut written = rec.to_vec();
+    write_tactics(&team, &mut written, schema.tactic).expect("encode tactics");
+    let changed: Vec<usize> = (0..rec.len()).filter(|&i| written[i] != rec[i]).collect();
+    let mut expected: Vec<usize> = vec![0x5A, 0xC6];
+    expected.extend(0x5B..=0x62);
+    expected.extend([0x82, 0xAE, 0xB0]);
+    expected.extend((0..11).map(|i| 0x146 + 4 * i));
+    expected.extend((0..21).map(|i| 0x172 + 4 * i));
+    expected.extend(0x1C6..=0x1CB);
+    expected.extend(0x1CD..=0x1D3);
+    expected.extend(0x1D6..=0x1DB);
+    expected.sort_unstable();
+    assert_eq!(changed, expected);
+    // Each landed at its offset; Support Range stored 20 less the shown 5.
+    assert_eq!(written[0x5A], 0, "preset 1's Strategy");
+    assert_eq!(written[0x5C], 15, "Support Range: shown 5 stored as 15");
+    assert_eq!(written[0xC6], 2, "preset 2's Strategy");
+    assert_eq!(
+        (written[0x82], written[0xAE], written[0xB0]),
+        (8, 30, 70),
+        "preset 2's formation slot 5"
+    );
+    assert_eq!(written[0x1C6], 21, "the long free kick taker");
+    assert_eq!(written[0x1D0], 2, "the substitution setting");
+    assert_eq!(written[0x1D3], 1, "Combination Play's switch");
+    assert_eq!(
+        (0..6).map(|i| written[0x1D6 + i]).collect::<Vec<_>>(),
+        [1, 2, 3, 4, 5, 6],
+        "the combination slots' area then strategy bytes"
+    );
+    assert_eq!(written[0x146], 30, "the lineup's first entry");
+    assert_eq!(written[0x172], 50, "the bench order's first entry");
+}
+
+/// `has` follows the formation layout's `count` and `first_role_slot`:
+/// PES 2014 stores one formation whose slot 0 has a place but no role
+/// byte; PES 2015 stores three with every slot's role, as before.
+#[test]
+fn tactics_has_follows_the_formation_layouts_bounds() {
+    let field = |formation, slot, part| TacticsField::Formation {
+        preset: 0,
+        formation,
+        slot,
+        part,
+    };
+    let pes14 = schema_for(PesVersion::Pes14).tactic;
+    assert!(
+        !pes14.has(field(1, 1, FormationPart::Position)),
+        "PES 2014 stores one formation"
+    );
+    assert!(
+        !pes14.has(field(0, 0, FormationPart::Position)),
+        "the keeper's role is not stored"
+    );
+    for part in [FormationPart::X, FormationPart::Y] {
+        assert!(pes14.has(field(0, 0, part)), "the keeper's place is stored");
+    }
+    assert!(pes14.has(field(0, 1, FormationPart::Position)));
+    let pes15 = schema_for(PesVersion::Pes15).tactic;
+    for formation in 0..3 {
+        for slot in 0..11 {
+            for part in [FormationPart::Position, FormationPart::X, FormationPart::Y] {
+                assert!(
+                    pes15.has(field(formation, slot, part)),
+                    "PES 2015 maps formation {formation} slot {slot} {part:?}"
+                );
+            }
+        }
+    }
+}
+
+/// A Game Plan Support Range over 20 has no stored value: the write is
+/// refused rather than wrapped.
+#[test]
+fn a_game_plan_support_range_over_20_is_refused() {
+    let payload = payload(PesVersion::Pes14);
+    let schema = schema_for(PesVersion::Pes14);
+    let rec = record(&payload, &schema.tactics, schema.tactic.size, 0);
+    let mut team = TeamEntry {
+        id: 1,
+        ..TeamEntry::default()
+    };
+    read_tactics_into(&mut team, rec, schema.tactic).expect("decode tactics");
+    team.tactics.presets[0].game_plan = Some(GamePlan {
+        strategy: 0,
+        sliders: [0, 21, 0, 0, 0, 0, 0, 0],
+    });
+    let mut written = rec.to_vec();
+    match write_tactics(&team, &mut written, schema.tactic) {
+        Err(CodecError::OutsideStoredOrder { field, value }) => {
+            assert!(field.contains("GamePlanSlider(1)"), "{field}");
+            assert_eq!(value, 21);
+        }
+        other => panic!("expected CodecError::OutsideStoredOrder, got {other:?}"),
+    }
+}
+
 /// The man-marking runs, measured in-game: each preset's
 /// eleven own-formation-slot bytes, each the marked opponent's formation
 /// slot or 0xFF for none.
@@ -1655,35 +1921,26 @@ fn man_marking_and_pes15_auto_flags_write_and_reread() {
     }
 }
 
-/// A tactics record written through a schema with no formation or
-/// man-marking layout keeps every byte outside the fields it maps: PES
-/// 2014's, which maps the team id and the captain alone, changes only the
-/// captain's byte.
+/// A tactics record written through a schema with no man-marking layout
+/// keeps every byte outside the fields it maps: PES 2014's, which maps
+/// the Game Plan but no man marking, changes only the captain's byte.
 #[test]
-fn a_schema_without_formations_or_man_marking_keeps_their_bytes() {
+fn a_schema_without_man_marking_keeps_its_bytes() {
     let payload = payload(PesVersion::Pes14);
     let schema = schema_for(PesVersion::Pes14);
-    for field in [
-        TacticsField::Formation {
-            preset: 0,
-            formation: 0,
-            slot: 0,
-            part: FormationPart::Position,
-        },
-        TacticsField::ManMarking { preset: 0, slot: 0 },
-    ] {
-        assert!(!schema.tactic.has(field), "{field:?} unmapped");
-    }
+    assert!(
+        !schema
+            .tactic
+            .has(TacticsField::ManMarking { preset: 0, slot: 0 }),
+        "PES 2014 maps no man marking"
+    );
     // The shared `tactics_runs` emits no run for a `None` layout, so the
     // unmapped bytes are neither read nor written.
     assert!(
-        tactics_runs(schema.tactic).iter().all(|(field, _, _)| {
-            !matches!(
-                field,
-                TacticsField::Formation { .. } | TacticsField::ManMarking { .. }
-            )
-        }),
-        "no formation or man-marking run is emitted"
+        tactics_runs(schema.tactic)
+            .iter()
+            .all(|(field, _, _)| !matches!(field, TacticsField::ManMarking { .. })),
+        "no man-marking run is emitted"
     );
     let rec = record(&payload, &schema.tactics, schema.tactic.size, 0);
     let mut team = TeamEntry {
@@ -1718,7 +1975,7 @@ fn the_tactics_census_matches_the_measured_ranges() {
             read_tactics_into(&mut team, rec, schema.tactic).expect("decode tactics");
             for preset in &team.tactics.presets {
                 // The model checks read only fields the version's preset
-                // table maps (PES 2014's maps none).
+                // table maps (PES 2014's maps none of these).
                 for (field, value) in [
                     (PresetField::SupportRange, preset.sliders.support_range),
                     (PresetField::DefensiveLine, preset.sliders.defensive_line),

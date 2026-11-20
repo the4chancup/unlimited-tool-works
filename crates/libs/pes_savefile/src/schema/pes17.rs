@@ -757,6 +757,8 @@ pub(crate) static TACTICS: TacticsSchema = TacticsSchema {
         },
     ],
     formations: Some(FormationLayout {
+        count: 3,
+        first_role_slot: 0,
         base_bit: 32,
         formation_stride_bits: 264,
         slot_stride_bits: 8,

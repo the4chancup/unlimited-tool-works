@@ -5,9 +5,12 @@
 
 use pes_version::PesVersion;
 
-use super::fields::{PlayerField, PlayerText, RosterField, TacticsField, TeamField, TeamText};
+use super::fields::{
+    PlayerField, PlayerText, PresetField, RosterField, TacticsField, TeamField, TeamText,
+};
 use super::{
-    ArraySpec, FieldSpec, RecordSchema, SectionLayout, TacticsSchema, TextSpec, VersionSchema,
+    ArraySpec, FieldSpec, FormationLayout, PresetSpec, RecordSchema, SectionLayout, TacticsSchema,
+    TextSpec, VersionSchema,
 };
 
 /// The PES 2014 player record.
@@ -630,9 +633,10 @@ pub(crate) static ROSTER: RecordSchema<RosterField, TeamText> = RecordSchema {
     ingame_face: None,
 };
 
-/// The PES 2014 tactics record. Only the team id and the captain are mapped: the record keeps
-/// one formation per preset and a lineup of roster slots, which PES 2015's layouts do not
-/// describe, so the rest is kept as read.
+/// The PES 2014 tactics record (runs `tactics1`/`tactics2`, `tactics3` and `formations1`):
+/// the set-piece takers, the captain, the players to join the attack, the auto switches,
+/// the 32-entry lineup of roster slots, Combination Play's slots, and per preset the Game
+/// Plan's Strategy and eight sliders and one formation. The rest is kept as read.
 pub(crate) static TACTICS: TacticsSchema = TacticsSchema {
     size: 502,
     fields: &[
@@ -641,21 +645,169 @@ pub(crate) static TACTICS: TacticsSchema = TacticsSchema {
             bit_offset: 0,
             bit_width: 32,
         },
-        // Byte +0x1cc, the captain's roster slot: moving the captain from #1 to #2 wrote 0 to 1
+        // The set-piece takers at +0x1C6 to +0x1CB, each a roster slot (run `tactics3`).
+        FieldSpec {
+            field: TacticsField::FreeKickTakerLong,
+            bit_offset: 0x1C6 * 8,
+            bit_width: 8,
+        },
+        FieldSpec {
+            field: TacticsField::FreeKickTakerShort,
+            bit_offset: 0x1C7 * 8,
+            bit_width: 8,
+        },
+        FieldSpec {
+            field: TacticsField::FreeKickTakerSecond,
+            bit_offset: 0x1C8 * 8,
+            bit_width: 8,
+        },
+        FieldSpec {
+            field: TacticsField::CornerTakerLeft,
+            bit_offset: 0x1C9 * 8,
+            bit_width: 8,
+        },
+        FieldSpec {
+            field: TacticsField::CornerTakerRight,
+            bit_offset: 0x1CA * 8,
+            bit_width: 8,
+        },
+        FieldSpec {
+            field: TacticsField::PenaltyTaker,
+            bit_offset: 0x1CB * 8,
+            bit_width: 8,
+        },
+        // The captain at +0x1CC, a roster slot: moving the captain from #1 to #2 wrote 0 to 1
         // (run `tactics1`), and the captain stayed with his player when he swapped places on
         // the pitch (run `tactics2`).
         FieldSpec {
             field: TacticsField::Captain,
-            bit_offset: 3680,
+            bit_offset: 0x1CC * 8,
+            bit_width: 8,
+        },
+        // The auto switches: Substitutions (OFF 0 to Very Early 3), then OFF 0 and ON 1 the
+        // Offside Trap, Change Preset Tactics and Combination Play (run `tactics3`).
+        FieldSpec {
+            field: TacticsField::AutoSubstitution,
+            bit_offset: 0x1D0 * 8,
+            bit_width: 8,
+        },
+        FieldSpec {
+            field: TacticsField::AutoOffsideTrap,
+            bit_offset: 0x1D1 * 8,
+            bit_width: 8,
+        },
+        FieldSpec {
+            field: TacticsField::AutoPresetChange,
+            bit_offset: 0x1D2 * 8,
+            bit_width: 8,
+        },
+        FieldSpec {
+            field: TacticsField::AutoCombinationPlay,
+            bit_offset: 0x1D3 * 8,
             bit_width: 8,
         },
     ],
-    arrays: &[],
-    // The preset blocks are 0x6c bytes apart; no preset setting is mapped yet.
+    arrays: &[
+        // The lineup at +0x146: 32 u32s, entry k the roster slot playing position k (run
+        // `tactics1`). The first 11 are the starting eleven, the next 21 the bench; each
+        // field reads the u32's low byte.
+        ArraySpec {
+            make: TacticsField::Starting,
+            count: 11,
+            base_bit: 0x146 * 8,
+            stride_bits: 32,
+            bit_width: 8,
+        },
+        ArraySpec {
+            make: TacticsField::Bench,
+            count: 21,
+            base_bit: 0x172 * 8,
+            stride_bits: 32,
+            bit_width: 8,
+        },
+        // The players to join the attack at +0x1CD, a roster slot each, 0xFF empty (run
+        // `tactics3`).
+        ArraySpec {
+            make: TacticsField::PlayerToJoinAttack,
+            count: 3,
+            base_bit: 0x1CD * 8,
+            stride_bits: 8,
+            bit_width: 8,
+        },
+        // Combination Play's three slots from +0x1D6, two bytes each: the area, then the
+        // strategy's id (run `tactics3`).
+        ArraySpec {
+            make: TacticsField::CombinationArea,
+            count: 3,
+            base_bit: 0x1D6 * 8,
+            stride_bits: 16,
+            bit_width: 8,
+        },
+        ArraySpec {
+            make: TacticsField::CombinationStrategy,
+            count: 3,
+            base_bit: 0x1D7 * 8,
+            stride_bits: 16,
+            bit_width: 8,
+        },
+    ],
+    // The preset blocks are 0x6c bytes apart (run `tactics3`).
     preset_stride_bits: 864,
     man_marking_bit: None,
-    presets: &[],
-    formations: None,
+    presets: &[
+        // The Strategy dropdown's index at +0x5A (Custom 0 to All-out Attack 5), then the
+        // eight Game Plan sliders at +0x5B in the panel's order (runs `tactics3`,
+        // `formations1`).
+        PresetSpec {
+            field: PresetField::Strategy,
+            bit_offset: 0x5A * 8,
+        },
+        PresetSpec {
+            field: PresetField::GamePlanSlider(0),
+            bit_offset: 0x5B * 8,
+        },
+        PresetSpec {
+            field: PresetField::GamePlanSlider(1),
+            bit_offset: 0x5C * 8,
+        },
+        PresetSpec {
+            field: PresetField::GamePlanSlider(2),
+            bit_offset: 0x5D * 8,
+        },
+        PresetSpec {
+            field: PresetField::GamePlanSlider(3),
+            bit_offset: 0x5E * 8,
+        },
+        PresetSpec {
+            field: PresetField::GamePlanSlider(4),
+            bit_offset: 0x5F * 8,
+        },
+        PresetSpec {
+            field: PresetField::GamePlanSlider(5),
+            bit_offset: 0x60 * 8,
+        },
+        PresetSpec {
+            field: PresetField::GamePlanSlider(6),
+            bit_offset: 0x61 * 8,
+        },
+        PresetSpec {
+            field: PresetField::GamePlanSlider(7),
+            bit_offset: 0x62 * 8,
+        },
+    ],
+    // One formation per preset: the role bytes at +0x06, one every four, for slots 1 to 10
+    // (the keeper, slot 0, has a place but no role byte), then the eleven place pairs from
+    // +0x2E, each the depth's low byte then the width's (run `formations1`).
+    formations: Some(FormationLayout {
+        count: 1,
+        first_role_slot: 1,
+        base_bit: 0x02 * 8,
+        slot_stride_bits: 32,
+        y_offset_bits: 0x2C * 8,
+        x_offset_bits: 0x2E * 8,
+        pair_stride_bits: 32,
+        formation_stride_bits: 0,
+    }),
     instructions: None,
 };
 

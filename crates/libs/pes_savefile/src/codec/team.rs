@@ -8,7 +8,8 @@ use crate::schema::{RecordSchema, TacticsSchema};
 
 /// Every bit run of a tactics record: the `fields`, the expanded `arrays`,
 /// then for each of the three presets every `PresetSpec` byte, the eleven
-/// man-marking bytes, every formation slot (position, y, x), and every
+/// man-marking bytes, every slot of the layout's `count` formations
+/// (position only from `first_role_slot` on, then y and x), and every
 /// instruction part — each block only where the schema maps it.
 pub(crate) fn tactics_runs(schema: &TacticsSchema) -> Vec<(TacticsField, u32, u32)> {
     use crate::schema::fields::{FormationPart, InstructionPart, InstructionSide};
@@ -47,15 +48,23 @@ pub(crate) fn tactics_runs(schema: &TacticsSchema) -> Vec<(TacticsField, u32, u3
             }
         }
         if let Some(f) = &schema.formations {
-            for formation in 0..3u8 {
+            for formation in 0..f.count {
                 let base =
                     preset_base + f.base_bit + u32::from(formation) * f.formation_stride_bits;
                 for slot in 0..11u8 {
-                    for (part, offset) in [
-                        (
-                            FormationPart::Position,
+                    if slot >= f.first_role_slot {
+                        out.push((
+                            TacticsField::Formation {
+                                preset,
+                                formation,
+                                slot,
+                                part: FormationPart::Position,
+                            },
                             base + u32::from(slot) * f.slot_stride_bits,
-                        ),
+                            8,
+                        ));
+                    }
+                    for (part, offset) in [
                         (
                             FormationPart::Y,
                             base + f.y_offset_bits + u32::from(slot) * f.pair_stride_bits,

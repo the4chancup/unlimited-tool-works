@@ -208,9 +208,9 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
         // the item spacing and the rest added to it.
         ui.add_space(UNDER_FIELDS - ui.spacing().item_spacing.y);
         if version == PesVersion::Pes14 {
-            // PES 2014's tactics record maps the captain alone in this
-            // build, so the editor stands in as a greyed line: drawn, it
-            // would show a record of zeros whose edits the save drops.
+            // PES 2014's Gameplan screen is not built yet, so the editor
+            // stands in as a greyed line: the other versions' editor
+            // offers settings PES 2014's record does not hold.
             gated_label(ui, PES14_TACTICS_LINE, GAMEPLAN_TIP.to_owned());
         } else {
             tactics::show(ui, view);

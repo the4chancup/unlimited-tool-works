@@ -180,8 +180,8 @@ fn target(view: &SaveView) -> Option<Target> {
 }
 
 /// Whether the open save's tactics record is out of this build's scope:
-/// PES 2014's maps the captain alone, so the Gameplan copy targets are
-/// refused there.
+/// PES 2014's Gameplan screen is not built yet, so the Gameplan copy
+/// targets are refused there.
 fn gameplan_off(view: &SaveView) -> bool {
     view.session
         .as_ref()

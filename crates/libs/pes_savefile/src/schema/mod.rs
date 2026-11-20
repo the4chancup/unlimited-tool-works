@@ -35,7 +35,8 @@ pub mod texport;
 use pes_version::PesVersion;
 
 use fields::{
-    PlayerField, PlayerText, PresetField, RosterField, TacticsField, TeamField, TeamText,
+    FormationPart, PlayerField, PlayerText, PresetField, RosterField, TacticsField, TeamField,
+    TeamText,
 };
 
 /// One bit run of a record.
@@ -132,10 +133,19 @@ pub struct PresetSpec {
     pub bit_offset: u32,
 }
 
-/// The 3 x 3 formation blocks: player `slot`'s position byte at
+/// The formation blocks inside a preset: `count` formations, player `slot`'s
+/// position byte at
 /// `base + preset * preset_stride + formation * formation_stride + slot * slot_stride`, its
 /// y then x bytes at `.. + y_offset + slot * pair_stride` and `.. + x_offset + ..`.
+/// The position byte is stored only from `first_role_slot` on (PES 2014 stores
+/// none for the keeper, whose place is stored without a role).
 pub struct FormationLayout {
+    /// The formations a preset block holds (3 everywhere but PES 2014,
+    /// which stores one; the model's other two keep their defaults).
+    pub count: u8,
+    /// The first slot whose position byte is stored (PES 2014's 1; its
+    /// keeper has a place but no role byte).
+    pub first_role_slot: u8,
     /// Bit position of formation 0's first slot within a preset block.
     pub base_bit: u32,
     /// Bits between consecutive formations.
@@ -180,9 +190,8 @@ pub struct TacticsSchema {
     pub man_marking_bit: Option<u32>,
     /// The per-preset settings.
     pub presets: &'static [PresetSpec],
-    /// The formation block layout; `None` where the record's formations do
-    /// not fit it (PES 2014's: one formation per preset and a lineup of
-    /// roster slots, no player ids).
+    /// The formation block layout; `None` where the record stores no
+    /// formation the layout describes.
     pub formations: Option<FormationLayout>,
     /// The advanced-instruction block layout; `None` on PES 14 to 16.
     pub instructions: Option<InstructionLayout>,
@@ -190,16 +199,26 @@ pub struct TacticsSchema {
 
 impl TacticsSchema {
     /// Whether the tactics record stores `field` (scalar fields and arrays, as
-    /// `RecordSchema::has`; preset settings via `has_preset`,
-    /// formations and man marking when their layouts are `Some` — man
-    /// marking for a preset of 0 to 2 and a slot of 0 to 10 — instructions
+    /// `RecordSchema::has`; preset settings via `has_preset`; a `Formation`
+    /// whose `formation` is below the layout's `count`, its `Position` only
+    /// from `first_role_slot` on; `ManMarking` when `man_marking_bit` is
+    /// `Some`, for a preset of 0 to 2 and a slot of 0 to 10; instructions
     /// when `instructions` is `Some`).
     pub fn has(&self, field: TacticsField) -> bool {
         if let TacticsField::Preset { field, .. } = field {
             return self.has_preset(field);
         }
-        if let TacticsField::Formation { .. } = field {
-            return self.formations.is_some();
+        if let TacticsField::Formation {
+            formation,
+            slot,
+            part,
+            ..
+        } = field
+        {
+            return self.formations.as_ref().is_some_and(|layout| {
+                formation < layout.count
+                    && (part != FormationPart::Position || slot >= layout.first_role_slot)
+            });
         }
         if let TacticsField::Instruction { .. } = field {
             return self.instructions.is_some();

@@ -763,6 +763,8 @@ def tactics_rs(name, rec, doc, man_marking_bit):
         out.append(f"        PresetSpec {{ field: PresetField::{variant}, bit_offset: {o} }},")
     out.append("    ],")
     out.append("    formations: Some(FormationLayout {")
+    out.append("        count: 3,")
+    out.append("        first_role_slot: 0,")
     out.append(f"        base_bit: {base},")
     out.append(f"        formation_stride_bits: {fstride},")
     out.append(f"        slot_stride_bits: {slot_stride},")

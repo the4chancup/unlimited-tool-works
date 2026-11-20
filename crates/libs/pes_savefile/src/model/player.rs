@@ -760,6 +760,11 @@ mod tests {
                 schema.tactic.has(TacticsField::AutoAttackDefenceLevels),
                 "{version:?} attack_defence_levels"
             );
+            assert_eq!(
+                auto.combination_play.is_some_and(|value| !value),
+                schema.tactic.has(TacticsField::AutoCombinationPlay),
+                "{version:?} combination_play"
+            );
         }
         // The gated fields the versions differ on, spelled out.
         let pes15 = PlayerEntry::bare(PesVersion::Pes15);
