@@ -19028,3 +19028,16 @@ wrong misleads a manager more than no number. What the game does to the Strategy
 moves is not pinned, so the editor changes nothing the game was not seen to change; run
 `tactics4` settles it, with the other open points.
 Plan: `plans/pes14.md` "PES 2014 in the code" ("The Gameplan screen in Build 2"), "Steps", step 8.
+
+## 2026-11-20 — pes_savefile (pes14 branch) — PES 2014's Strategy and sliders get a part of their own; +0x2E and +0x30 are the keeper's place
+Decision: the PES 2014 Strategy, its eight sliders and Combination Play are parts of the model
+only PES 2014 fills (`TacticsPreset::game_plan`, `TeamTactics::combination`), each holding the
+value the game shows. The formation goes through `FormationLayout`, which learns a formation
+count and a first slot with a stored role, and +0x2E and +0x30 are read as the keeper's place.
+Why: parts of their own, not the shared sliders, because the shared Support Range and
+Defensive Line run from 1 to 10 and every reader of them would take PES 2014's 0 to 20 for
+that. The keeper's place is inferred, not seen in game: the run of places holds 11 pairs from
++0x2E, its first reads 4, 52 on every vanilla and Akko team, the width 52 is the keeper's on
+every version, and a formation picked in game wrote 3, the depth the other versions store.
+Plan: `plans/pes14.md` "What is known about the save" (run `formations1`), "PES 2014 in the
+code" ("The tactics record in Build 2").

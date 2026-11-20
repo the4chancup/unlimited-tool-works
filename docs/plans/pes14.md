@@ -233,7 +233,12 @@ From the fork's codec, checked against the vanilla save and the Akko saves (2026
     the depth from the own goal, then the width, larger on the right (4-4-2's centre backs
     stand at 10, 63 and 10, 41, its full-backs at 12, 89 and 12, 15). A pick wrote no slider
     or Strategy byte. It also set +0x2E from 4 to 3 on every team, whatever the formation,
-    and left +0x30 (52 on every team) alone: what either holds is not known;
+    and left +0x30 (52 on every team) alone. The two are the keeper's place (inferred): the
+    places run holds 11 pairs from +0x2E, the keeper's first. The width 52 is the keeper's on
+    every version, the other versions store his depth as 3, and every team and preset of the
+    vanilla save and of `.akko7v2` holds 4, 52 there. The keeper's role has no byte: a
+    preset block's first six bytes hold the team id and zeros in preset 1, 0xFFFF and zeros
+    in the others;
   - the Strategy's three middle values: Quick Counter 2, Possession Game 3, All-out Defence 4.
     Each pick sets sliders too, shown in the panel's order: Quick Counter 10, 10, 0, 15, 15,
     15, 15, 10; Possession Game 15, 10, 0, 10, 10, 10, 0, 10; All-out Defence changes
@@ -446,6 +451,22 @@ version, not the version selector.
   and the codec writes no formation or man-marking run there. PES 2014's table maps the team
   id and the captain, which the AATF needs, and every other byte of the record is kept as
   read. The takers, the lineup and the presets wait for Build 2.
+- **The tactics record in Build 2** maps the rest of what the Game Plan sets:
+  - The formation goes through `FormationLayout`, which learns two things: how many
+    formations a preset holds (one on PES 2014, read into the model's first; the other two
+    stay at their defaults), and the first slot whose role is stored (1 on PES 2014, whose
+    keeper has a place but no role byte). Each place is two u16s, read as their low bytes,
+    since no place passes 104.
+  - The lineup at +0x146 fills `starting_eleven` and `bench_order` (11 and 21 entries, the
+    record's 32), each the low byte of its u32. The takers, the captain, the players to join
+    the attack and the four switches are plain fields.
+  - The Strategy and the eight sliders are a part of the preset that only PES 2014 has
+    (`TacticsPreset::game_plan`, `None` on the other versions); Combination Play's three
+    slots and its switch are likewise a part of the team's. Each holds the value the game shows, so Support Range is
+    translated as the stats' offsets are. Their own part, not the shared sliders, because the
+    ranges differ: the shared Support Range and Defensive Line run from 1 to 10, and every
+    reader of them (the Team TOML, the legacy files, the diff, the Gameplan widgets) would
+    take PES 2014's 0 to 20 for that.
 - **The Gameplan screen in Build 1.** The Gameplan segment is greyed with a "PES 2014: in the
   next build" tooltip; the import panel's Gameplan section and the Preset and Formation copy
   targets go with it. The captain is read for the AATF and kept as the game set it; it is
@@ -460,11 +481,12 @@ version, not the version selector.
   starting eleven and the bench, and Automatic settings. What differs:
   - **Preset tactics** takes the place of the other versions' Formation settings panel. It
     holds the Formation dropdown, the Strategy dropdown and the eight sliders, 0 to 20, in the
-    game's order. The dropdown lists the game's 11 formations; one the list does not hold, such as the Akko teams' 8-1-1, is
-    shown by its shape and listed first. A pick writes the entry's roles and spots, and 3 at
-    +0x2E, as the game's pick does; each player keeps his place in the lineup. Picking a
-    strategy sets the sliders to the values the game set on an Akko team. Moving a slider
-    leaves the strategy as it is until run `tactics4` shows what the game does there.
+    game's order. The dropdown lists the game's 11 formations; one the list does not hold,
+    such as the Akko teams' 8-1-1, is shown by its shape and listed first. A pick writes the
+    entry's roles and spots and puts the keeper at depth 3, as the game's pick does; each
+    player keeps his place in the lineup. Picking a strategy sets the sliders to the values
+    the game set on an Akko team. Moving a slider leaves the strategy as it is until run
+    `tactics4` shows what the game does there.
   - **The pitch** has no free moves. Dropping a player on another swaps the two, the keeper
     included, even under a ruleset that allows illegal formations; nothing else moves a
     player. A click opens no player box, since a role is not picked, and a held player lights
@@ -602,5 +624,5 @@ on main. Main is merged into the branch, never rebased onto it.
    - Run `tactics4` (in game), what the draft could not pin. Does moving a slider put the
      Strategy back to Custom? Does a strategy picked over other values set all eight sliders?
      What bytes does Combination Play's Clear write? Which areas does each strategy take,
-     with the other two slots empty? What do +0x2E and +0x30 hold?
+     with the other two slots empty?
    - Slices: the record's fields in the schema and the model, then the screen.
