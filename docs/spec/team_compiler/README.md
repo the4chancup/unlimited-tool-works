@@ -64,6 +64,7 @@ The spec is split into parts:
 | [Message catalog](messages.md) | Message catalog |
 | [Settings](settings.md) | Settings |
 | [Referee exports](referees.md) | Referee export processing |
+| [Divergences from Red](red_divergences.md) | Every intended difference from Red's output, with its evidence |
 | [GUI grid](../../plans/team_compiler/gui.md) | GUI: the live-validating team grid; Live validation (no Check or Refresh buttons); Cell states; Toolbar |
 | [Testing](testing.md) | Testing: parity against Red (adapted from Blue) |
 

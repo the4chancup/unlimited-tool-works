@@ -18926,3 +18926,22 @@ or template file came from, or what the parallel pipeline improved on, stay.
 Plan: `team_compiler/referees.md` (spec and plans, new); `spec/team_compiler/README.md`
 "Relationship to the older compilers"; `spec/team_compiler/pipeline.md` opening; `AGENTS.md`
 "Fundamental concepts"; every citation of `blue_port.md` repointed.
+
+## 2026-11-20 — team_compiler, export_upgrader — A difference from Red's output is intended only once checked against the real exports
+Decision: `spec/team_compiler/red_divergences.md` is the one list of the places where the
+compiler's output, or an upgraded export once compiled, knowingly differs from Red's. Each
+entry gives Red's output, ours, why, the evidence and a status: Checked, No census needed,
+Not checked or Records disagree. A difference is Checked only when the evidence says which
+real exports reach the case, what Red's output did for each and that ours is right; a
+maintainer's ruling alone, or a measurement of the game's own files, leaves it Not checked.
+A new difference gets its entry before a parity row or a library-parity class records it.
+Why: the referee rule of 2026-10-09 gave a referee with no face model no face, on a premise
+nobody checked against the real refs exports, and the parity test then recorded the
+difference from Red as intended. The VGL organizer's VGL27 refs export showed the floating
+heads it caused. A list that says which differences were checked keeps an unchecked one from
+reading as settled. The first pass gathered 94 entries from the parity tests, the fixture
+READMEs, the spec, the plans and this log: 30 Checked, 9 No census needed, 52 Not checked,
+3 Records disagree.
+Plan: `spec/team_compiler/red_divergences.md` (new), `spec/team_compiler/README.md` parts
+table, `spec/team_compiler/testing.md` "Testing: parity against Red"; the worklog issue holds
+the unchecked entries and the pointers still owed.

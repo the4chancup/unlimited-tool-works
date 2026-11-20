@@ -3443,6 +3443,12 @@ pruned when their phase closes; they stay in git history. A question only the ma
 can answer is not an issue: it goes to `docs/maintainer/questions.html`, and an issue that waits on one
 points there.
 
+- open (2026-11-20) — `spec/team_compiler/red_divergences.md` holds 52 differences from Red's
+  output marked Not checked, and 3 where two records disagree (RD-17, RD-23, RD-53). Each
+  needs the check the file's head describes: which real exports reach it, what Red's output
+  did for each, that ours is right. Its Status then becomes Checked, or the behavior changes
+  where ours is wrong. Also owed: the parity rows' reasons, the spec's "unlike Red" sentences
+  and `scripts/library_parity/classes.md`'s I-classes point at the entries, not restate them.
 - open (2026-11-20) — tests leave their scratch folders in `%TEMP%`: about 15,000 on the
   maintainer's machine, 680 MiB, mostly `export_upgrader_*` (`test_support.rs` `scratch`) and
   `studio_core_repro_*` / `studio_core_files_*`. Each folder's name ends in the test process's
