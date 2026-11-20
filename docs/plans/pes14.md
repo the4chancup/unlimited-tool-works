@@ -194,6 +194,33 @@ From the fork's codec, checked against the vanilla save and the Akko saves (2026
   International Cup") and the header byte 0x4A. The Edit Player cards are PES 2015's names:
   18 playing styles, 7 COM styles and 20 skills, Precise Touch among them (no Cut Behind &
   Turn: Precise Touch's description names the Cut Behind move).
+- **Pinned in game, run `tactics3`** (2026-11-20, one Game Plan change on each of 24 teams of
+  `.akko7v2`, kept as `tactics3`). Offsets are bytes of the tactics record; a preset's offsets
+  are those of Preset Tactics 1, and Preset Tactics 2 and 3 sit 0x6C and 0xD8 later (Player Support in
+  Preset Tactics 2 moved +0xC7):
+  - the eight sliders at +0x5B to +0x62, one byte each in the panel's order: Player Support,
+    Support Range, Position Switch, Front line pressure, Defensive Line, Defensive Compactness,
+    Shifting to Attack, Attack/Defence Level. Each runs from 0 to 20. Support Range is stored as
+    20 less the value shown: shown 20 is 0, and 19 is 1;
+  - the Strategy at +0x5A is the dropdown's index: Custom 0, Long Ball 1, Quick Counter,
+    Possession Game, All-out Defence, All-out Attack 5 (the middle three by their place in the
+    list; run `formations1` picks them). A pick sets some sliders as well: All-out Attack set
+    Front line pressure, Defensive Line and Shifting to Attack to 15 and Attack/Defence Level to
+    20;
+  - the takers, one byte each holding a roster slot: Long FK +0x1C6, Short FK +0x1C7, FK Taker 2
+    +0x1C8, Left CK +0x1C9, Right CK +0x1CA, PK +0x1CB (the captain follows at +0x1CC). When a
+    new Long FK or Short FK taker is the FK Taker 2, the game moves FK Taker 2 to the next roster slot;
+  - Players to Join Attack at +0x1CD to +0x1CF: roster slots, 0xFF in an empty one;
+  - Tactical Assistance: Substitutions at +0x1D0 (OFF 0, "Very Early" 3: a list of timings, not
+    a switch), then one byte each, OFF 0 and ON 1: Offside Trap +0x1D1, Change Preset Tactics
+    +0x1D2, Combination Play +0x1D3;
+  - Combination Play's three slots from +0x1D6, two bytes each: the area (1 to 11), then the
+    strategy's id. The ids are not the picker's order: every team of `.akko7v2` holds Dummy Run
+    and Cross (10) in area 2, Hold up the ball (1) in area 6 and Hold Up and Overlap (5) in area
+    8, and Cross and Pull Back is 11;
+  - One-Touch Settings (Data Management) is not in the team's record: switching it off changed
+    no byte of `/f/`'s record, nor any outside the competition data every save rewrites. The
+    Gameplan screen leaves it out.
 - **Pinned in game, run `player1`** (2026-11-20, five `/4ccg/` players of `.akko7v2` read
   against the fork's decoding, nothing changed; findings in the worktree's
   `.tmp/pes14_ingame/player1/`). The game reads a player's record only when bit 0x29:1 is set
@@ -513,12 +540,10 @@ on main. Main is merged into the branch, never rebased onto it.
    only by picking one of the formation list's entries or swapping two players, and a
    player's role is shown, not chosen (run `tactics1`). So the screen is the game's own
    Game Plan, not the other versions' pitch editor.
-   - Run `tactics3` (in game): every Game Plan setting not yet pinned, one change per team:
-     the eight sliders one step each, then all eight at their maximum on one team (their
-     widths); the Strategy's last entry; the six other set-piece settings; One-Touch
-     Settings; the four Tactical Assistance switches; a Combination Play slot's strategy and
-     area; one slider in Preset Tactics 2 (the 0x6C stride).
+   - Run `tactics3` (in game): done, pinned in "What is known about the save".
    - Run `formations1` (in game): each entry of the formation list set once, so the editor
-     writes a formation as the game stores it.
+     writes a formation as the game stores it; and, each on a team of its own, the three
+     Strategies not yet picked, every Combination Play strategy's id, every Substitutions
+     timing, and how many Players to Join Attack the screen takes.
    - The draft: the Gameplan screen on a PES 2014 save (the lead).
    - Slices: the record's fields in the schema and the model, then the screen.
