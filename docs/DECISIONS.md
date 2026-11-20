@@ -18957,3 +18957,11 @@ would reset every part it did not set; the Akko saves hold a record for every pl
 Copy from ID is the fork's reading of +0x04, not pinned in game.
 Plan: `plans/pes14.md` "What is mapped in game", "PES 2014 in the code" ("Appearance records",
 "The Appearance screen"), step 4's list.
+
+## 2026-11-20 — save_editor (pes14 branch) — Punt Kick takes the Corner kick cell on PES 2014
+Decision: on a PES 2014 save the Motion group's Corner kick cell becomes Punt kick; the other
+versions keep Corner kick there and show no Punt kick at all. Randomize draws it with the
+other motions.
+Why: the cell, not a row of its own, because PES 2014 stores no corner kick, so the cell is
+free there, while a new row would stand greyed on every other version. The fork does the same.
+Plan: `plans/pes14.md` "PES 2014 in the code" ("The Appearance screen").

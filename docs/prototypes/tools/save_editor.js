@@ -6291,7 +6291,9 @@ function appearanceTab(p) {
         mv("Hunching (running)", "hunching_running", 1, top("hunching_running")),
         mv("Arm movement (dribbling)", "arm_movement_dribbling", 1, top("arm_movement_dribbling")),
         mv("Arm movement (running)", "arm_movement_running", 1, top("arm_movement_running")),
-        mv("Corner kick", "corner_kick", 1, top("corner_kick")),
+        // PES 2014 stores no corner kick: its punt kick (1 to 4) takes the cell.
+        version() === 14 ? mv("Punt kick", "punt_kick", 1, 4)
+          : mv("Corner kick", "corner_kick", 1, top("corner_kick")),
         mv("Free kick", "free_kick", 1, top("free_kick")),
         mv("Penalty kick", "penalty_kick", 1, top("penalty_kick")),
         [gatedLbl("Dribbling motion", 20), fld(dribbleIn, 20)],

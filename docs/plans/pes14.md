@@ -387,8 +387,10 @@ version, not the version selector.
 - **The Appearance screen** follows the schema: a control whose field the version's records
   do not map is greyed, so PES 2014's controls come alive as their fields are mapped. PES 2014
   has no in-game face run, so the FPC buttons, the glove and skin cells and the colour palettes
-  are greyed there, as are the motions it does not store (corner kick, hunching, arm
-  movement); Punt Kick joins the motions.
+  are greyed there, as are the hunching and arm-movement motions, which it does not store.
+  Punt Kick takes the Corner kick cell, since PES 2014 stores no corner kick either: a row of
+  its own would stand greyed on every other version, and the fork does the same. Randomize
+  draws it with the other motions.
 
   Two look items are stored in another order than on the other versions: Sleeves (Short 0,
   Long 1, Auto 2) and Shirttail (Untucked 0, Tucked In 1, where the other versions store
