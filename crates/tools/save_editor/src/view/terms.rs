@@ -8,7 +8,7 @@
 //! report's text.
 
 use pes_savefile::interchange::team_toml::labels::{
-    ABILITY_STATS, COM_STYLES, PLAYABLE_POSITIONS, POSITIONS, SKILLS, card_name, stat_name,
+    ABILITY_STATS, COM_STYLES, PLAYABLE_POSITIONS, POSITIONS, SKILLS, card_name_in, stat_name,
 };
 use pes_savefile::model::TeamEntry;
 use pes_savefile::ops::compare::{PlayerDiff, TeamDiff};
@@ -255,10 +255,10 @@ fn report_fields(field: impl std::fmt::Debug, old: u32, new: u32) -> (String, St
 }
 
 /// A `Field` row's term: the views' own tables first (`SMALL_STATS`,
-/// `PRESENTATION_STATS`, `MOTIONS`, `PHYSIQUE`, `STRIP_ENUMS`, the ability
-/// stats), then the fields the views draw one-off, then a field no view
-/// draws named in words — the `_` arm IS the rule for those, not an
-/// oversight.
+/// `PRESENTATION_STATS`, `motions(version)`, `PHYSIQUE`, `STRIP_ENUMS`,
+/// the ability stats), then the fields the views draw one-off, then a
+/// field no view draws named in words — the `_` arm IS the rule for
+/// those, not an oversight.
 fn player_field_term(version: PesVersion, diff: &PlayerDiff) -> Term {
     let PlayerDiff::Field { field, old, new } = *diff else {
         unreachable!("player_field_term gets a Field row")
@@ -274,7 +274,10 @@ fn player_field_term(version: PesVersion, diff: &PlayerDiff) -> Term {
     if let Some(index) = ABILITY_FIELDS.iter().position(|ability| *ability == field) {
         return numbers(stat_name(version, ABILITY_STATS[index]), old, new);
     }
-    if let Some(motion) = fields::MOTIONS.iter().find(|row| row.field == field) {
+    if let Some(motion) = fields::motions(version)
+        .iter()
+        .find(|row| row.field == field)
+    {
         let shift = u32::from(motion.one_based);
         return numbers(motion.label, old + shift, new + shift);
     }
@@ -348,12 +351,12 @@ fn player_field_term(version: PesVersion, diff: &PlayerDiff) -> Term {
             rating_label(new),
         ),
         PlayerField::Skill(index) => term(
-            card_name(SKILLS[usize::from(index)]),
+            card_name_in(version, SKILLS[usize::from(index)]),
             on_off(old),
             on_off(new),
         ),
         PlayerField::ComStyle(index) => term(
-            card_name(COM_STYLES[usize::from(index)]),
+            card_name_in(version, COM_STYLES[usize::from(index)]),
             on_off(old),
             on_off(new),
         ),
@@ -361,8 +364,6 @@ fn player_field_term(version: PesVersion, diff: &PlayerDiff) -> Term {
         PlayerField::DribblingMotion => {
             numbers(appearance::DRIBBLING_MOTION_LABEL, old + 1, new + 1)
         }
-        // Shown from 1, as `PenaltyKickMotion`.
-        PlayerField::PuntKickMotion => numbers("Punt Kick", old + 1, new + 1),
         PlayerField::BootsId => numbers(appearance::BOOTS_ID_LABEL, old, new),
         PlayerField::GlovesId => numbers(appearance::GLOVES_ID_LABEL, old, new),
         PlayerField::BaseCopyId => numbers(appearance::COPY_FROM_ID_LABEL, old, new),

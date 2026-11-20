@@ -5,7 +5,7 @@
 //! tiers each say how many paid ones he may hold, so the pickers show what
 //! the tier he is read as leaves him.
 
-use pes_savefile::interchange::team_toml::labels::{self, card_name};
+use pes_savefile::interchange::team_toml::labels::{self, card_name, card_name_in};
 use pes_savefile::model::playstyle::PlayStyle;
 use pes_savefile::schema::fields::PlayerField;
 use pes_savefile::schema::{playstyle, schema_for};
@@ -78,12 +78,13 @@ pub fn card_columns(
                     let index = usize::from(index);
                     if fields.contains(&field) {
                         changed |=
-                            checkbox(ui, &mut cards[index], card_name(names[index])).changed();
+                            checkbox(ui, &mut cards[index], card_name_in(version, names[index]))
+                                .changed();
                     } else {
                         // A card the version cannot store stays, disabled,
                         // its tooltip naming the first version that has it.
                         add_enabled(ui, false, |ui: &mut egui::Ui| {
-                            checkbox(ui, &mut cards[index], card_name(names[index]))
+                            checkbox(ui, &mut cards[index], card_name_in(version, names[index]))
                         })
                         .on_disabled_hover_text(format!("PES {}+", first_with(field).number()));
                     }
@@ -481,6 +482,31 @@ mod tests {
         let (drawn_skills, drawn_coms) = drawn_cards(&nodes);
         assert_eq!((drawn_skills.len(), drawn_coms.len()), (41, 7));
         assert!(disabled(&nodes).is_empty(), "PES 21 stores every card");
+    }
+
+    // PES 2014's skill card list calls `cut_behind_and_turn` Precise
+    // Touch, the game's older name for the card; every other version's
+    // column labels it Cut Behind & Turn.
+    #[test]
+    fn the_columns_read_precise_touch_on_pes14_alone() {
+        let mut window = Headless::new();
+        let mut skills = PlayerSkills::default();
+        let (nodes, _) = window.columns(PesVersion::Pes14, &mut skills, vec![]);
+        entry(&nodes, Role::CheckBox, "Precise Touch");
+        assert!(
+            !nodes
+                .iter()
+                .any(|node| node.label() == Some("Cut Behind & Turn")),
+            "no checkbox reads Cut Behind & Turn on PES 2014"
+        );
+        let (nodes, _) = window.columns(PesVersion::Pes15, &mut skills, vec![]);
+        entry(&nodes, Role::CheckBox, "Cut Behind & Turn");
+        assert!(
+            !nodes
+                .iter()
+                .any(|node| node.label() == Some("Precise Touch")),
+            "no checkbox reads Precise Touch on PES 15"
+        );
     }
 
     // The skills' checkboxes fill two columns column by column: the first

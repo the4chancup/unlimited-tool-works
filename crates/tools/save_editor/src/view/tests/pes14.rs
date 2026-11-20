@@ -133,12 +133,10 @@ fn a_pes14_save_draws_screens_and_menus_and_drags_without_panics() {
     for label in ["Boots ID", "Gloves ID", "Sleeves", "Outfielder gloves"] {
         disabled_dash(&nodes, label);
     }
-    for label in ["Corner kick", "Hunching (dribbling)"] {
-        let nodes = scroll_into_view(&mut window, &mut view, |node| {
-            node.role() == Role::Label && node.value() == Some(label)
-        });
-        disabled_dash(&nodes, label);
-    }
+    let nodes = scroll_into_view(&mut window, &mut view, |node| {
+        node.role() == Role::Label && node.value() == Some("Hunching (dribbling)")
+    });
+    disabled_dash(&nodes, "Hunching (dribbling)");
     let nodes = scroll_into_view(&mut window, &mut view, |node| {
         node.role() == Role::Label && node.value() == Some("Free kick")
     });
@@ -565,6 +563,103 @@ fn strip_options_gives_pes14s_own_words() {
     assert_eq!(
         strip_options(PesVersion::Pes15, SettingKey::Sleeves),
         ["Seasonal", "Short", "Long"]
+    );
+}
+
+// PES 2014 stores a punt kick and no corner kick, so the Motion group's
+// Corner kick cell draws Punt kick on a PES 2014 save: enabled as a
+// stored motion, its box storing one below the shown value, and Randomize
+// draws it with the rest.
+#[test]
+fn a_pes14_save_draws_punt_kick_in_the_corner_kick_cell() {
+    let path = fixture(PesVersion::Pes14, "pes14_punt");
+    let mut file = EditFile::from_bytes(&fixture_save(PesVersion::Pes14)).unwrap();
+    file.team_mut(1).expect("the vanilla first team").id = 701;
+    file.save(&path).unwrap();
+    let mut view = SaveView::new();
+    view.open(&path);
+    view.randomize_draw = Box::new(|top| top);
+    let mut window = Headless::new();
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    click(
+        &mut window,
+        nodes
+            .iter()
+            .find(|node| player_row(node))
+            .expect("a player row"),
+        &mut view,
+    );
+    open_appearance(&mut window, &mut view);
+    let player_id = selected_player(&view).expect("a player selected").2;
+    let punt_kick = |view: &SaveView| player_entry(view, player_id).motion.punt_kick;
+    assert_ne!(punt_kick(&view), Some(1), "premise: not already 1 stored");
+
+    // The cell draws Punt kick enabled and no Corner kick at all.
+    let nodes = scroll_into_view(&mut window, &mut view, |node| {
+        node.role() == Role::Label && node.value() == Some("Punt kick")
+    });
+    assert!(
+        !control_right_of(&nodes, "Punt kick").is_disabled(),
+        "the punt kick motion is stored on PES 2014"
+    );
+    assert!(
+        !nodes
+            .iter()
+            .any(|node| node.role() == Role::Label && node.value() == Some("Corner kick")),
+        "PES 2014 stores no corner kick"
+    );
+
+    // A 2 typed into the box stores 1, the motion shown from 1.
+    let punt = right_of_label(&nodes, "Punt kick", Role::SpinButton)
+        .first()
+        .copied()
+        .expect("the Punt kick control");
+    click(&mut window, punt, &mut view);
+    type_text(&mut window, &mut view, "2");
+    assert_eq!(punt_kick(&view), Some(1), "shown 2 stores 1");
+
+    // Randomize draws the punt kick too: the pinned source lands it at
+    // its shown top of 4, stored 3.
+    let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let (button, _) = pairs
+        .iter()
+        .find(|(_, node)| node.role() == Role::Button && node.label() == Some("Randomize"))
+        .expect("the Randomize button");
+    action_click(&mut window, &mut view, *button);
+    assert_eq!(
+        punt_kick(&view),
+        Some(3),
+        "Randomize stores the shown top less 1"
+    );
+}
+
+// The cell is the corner kick's on every other version: a PES 2015 save's
+// Motion group draws Corner kick and no Punt kick, the version storing
+// none.
+#[test]
+fn a_pes15_save_keeps_corner_kick_in_the_cell() {
+    let path = fixture(PesVersion::Pes15, "pes15_corner");
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut window = Headless::new();
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    click(
+        &mut window,
+        nodes
+            .iter()
+            .find(|node| player_row(node))
+            .expect("a player row"),
+        &mut view,
+    );
+    open_appearance(&mut window, &mut view);
+    let nodes = scroll_into_view(&mut window, &mut view, |node| {
+        node.role() == Role::Label && node.value() == Some("Corner kick")
+    });
+    assert!(
+        !nodes
+            .iter()
+            .any(|node| node.role() == Role::Label && node.value() == Some("Punt kick")),
+        "PES 2015 stores no punt kick"
     );
 }
 

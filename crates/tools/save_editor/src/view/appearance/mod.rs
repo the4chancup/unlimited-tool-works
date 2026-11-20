@@ -35,7 +35,7 @@ use crate::view::abilities::{
     self, gated_label, gated_number, gating_tooltip, maybe_end_row, number, small_stat,
 };
 use crate::view::appearance::fields::{
-    MOTIONS, MotionField, PHYSIQUE, Palette, STRIP_ENUMS, combo_options, palette, strip_options,
+    MotionField, PHYSIQUE, Palette, STRIP_ENUMS, combo_options, motions, palette, strip_options,
 };
 use crate::view::group_frame::{GROUP_GAP, stretch_to};
 use crate::view::team::SPACE_GAP;
@@ -1237,10 +1237,11 @@ fn id_box(
     response
 }
 
-/// The Motion group: the nine measured motions in the draft's order as
-/// label/field pairs, two a row, the dribbling motion between the kicks
-/// and the celebrations (PES 20+, drawn disabled with the version tooltip
-/// before it), Randomize under the grid.
+/// The Motion group: `motions(version)`'s nine controls in the draft's
+/// order as label/field pairs, two a row, the dribbling motion between
+/// the kicks and the celebrations (PES 20+ and PES 2014, a version without
+/// it drawing it disabled with the version tooltip), Randomize under the
+/// grid.
 fn motion_grid(
     ui: &mut egui::Ui,
     session: &mut Session,
@@ -1253,6 +1254,7 @@ fn motion_grid(
     // Two pairs a row (the draft's `COL_PANELS` motion `[2, 194, 14]`).
     // The boxes at the draft's number-input width; no column floor, so
     // the label columns keep their labels' width.
+    let fields = motions(version);
     let per_row = 2;
     egui::Grid::new("appearance motion")
         .min_col_width(0.0)
@@ -1260,7 +1262,7 @@ fn motion_grid(
         .show(ui, |ui| {
             ui.spacing_mut().interact_size.x = NUMBER_BOX;
             let mut pair = 0usize;
-            for field in &MOTIONS[..7] {
+            for field in &fields[..7] {
                 motion_number(ui, session, player_id, version, field, motion, schema);
                 pair += 1;
                 maybe_end_row(ui, pair, per_row);
@@ -1310,7 +1312,7 @@ fn motion_grid(
             }
             pair += 1;
             maybe_end_row(ui, pair, per_row);
-            for field in &MOTIONS[7..] {
+            for field in &fields[7..] {
                 motion_number(ui, session, player_id, version, field, motion, schema);
                 pair += 1;
                 maybe_end_row(ui, pair, per_row);
@@ -1394,7 +1396,7 @@ fn randomize(
         player_id,
         egui::Id::unique(("appearance randomize", player_id)).value(),
         |player| {
-            for field in MOTIONS {
+            for field in motions(version) {
                 // A motion the version does not store has no top and is
                 // left alone (its stand-in is drawn disabled).
                 let Some(top) = motion_top(version, field.field) else {

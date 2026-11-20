@@ -218,6 +218,19 @@ pub fn card_name(id: &str) -> String {
         .join(" ")
 }
 
+/// The name the game of `version` shows for the card spelled `id` (a
+/// `SKILLS` or `COM_STYLES` entry): `card_name`'s reading except where the
+/// version's game calls the card by another name. PES 2014 alone renames
+/// one: its skill card list predates the later games', and its Cut Behind
+/// & Turn reads Precise Touch. Everywhere the save's version is known a
+/// card reads as the member's game shows it.
+pub fn card_name_in(version: PesVersion, id: &str) -> String {
+    if version == PesVersion::Pes14 && id == "cut_behind_and_turn" {
+        return "Precise Touch".to_owned();
+    }
+    card_name(id)
+}
+
 /// The name the game of `version` shows for the stat spelled `stat` (an
 /// `ABILITY_STATS` entry, or `form`, `injury_resistance`, `weak_foot_usage`,
 /// `weak_foot_accuracy`): the place a stat's shown name comes from wherever
@@ -498,6 +511,25 @@ mod tests {
                 assert_eq!(card_name(id), *name, "{id}");
             }
         }
+    }
+
+    /// PES 2014's skill card list calls `cut_behind_and_turn` Precise
+    /// Touch, the game's older name for the card; every other version and
+    /// every other card keeps `card_name`'s reading.
+    #[test]
+    fn card_name_in_reads_precise_touch_on_pes14_alone() {
+        assert_eq!(
+            card_name_in(PesVersion::Pes14, "cut_behind_and_turn"),
+            "Precise Touch"
+        );
+        assert_eq!(
+            card_name_in(PesVersion::Pes15, "cut_behind_and_turn"),
+            "Cut Behind & Turn"
+        );
+        assert_eq!(
+            card_name_in(PesVersion::Pes14, "scissors_feint"),
+            "Scissors Feint"
+        );
     }
 
     /// PES 2017's Edit screen lists its 23 abilities, then the weak foot's
