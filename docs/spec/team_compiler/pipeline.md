@@ -7,10 +7,8 @@ Part of the [Compiler spec](README.md).
 This section specifies, step by step, what happens to a single export. The steps describe *behavior
 to reproduce*, not code to translate (see `README.md` "Relationship to the older compilers"): the implementation
 operates on the object model, and only the game-facing output must match Red's. Red module names
-(`Engines/python/`) mark where each behavior is authoritatively specified; Blue module names
-(`lib/python/pipeline/` for orchestration and `lib/python/processing/` for processing steps) mark
-where the pipeline shape it maps onto was prototyped. The structure is adapted throughout to the new
-export format.
+(`Engines/python/`) mark where each behavior is authoritatively specified. The structure is
+adapted throughout to the new export format.
 
 ### 1. Reader
 
@@ -26,7 +24,7 @@ export format.
    produce only an informational log entry.
 
    The scan runs once per run, the Compile button's (`gui_run.rs`, which runs the CLI's
-   `compile`) included. (Blue: `reader.exports_find`)
+   `compile`) included.
 2. **Export display name and team name**: `export_display_name` is the complete archive/folder
    stem and is used only for source identity and presentation. The first non-empty token of that
    name (split on `.`, whitespace, `-`, `+`, `_`; a name with no token is rejected) is lowercased
@@ -281,7 +279,7 @@ export format.
    A successful lookup produces `ExportIdentity::Team { id, name }`; a referee export produces
    `ExportIdentity::Referees` without entering the normal teams list. The referee pipeline
    renders the game's fixed numeric ID 999 only at game-format boundaries. Either identity is
-   wrapped in `ResolvedAestheticsExport` before run planning. (Red/Blue: `team_id_get.py`)
+   wrapped in `ResolvedAestheticsExport` before run planning. (Red: `team_id_get.py`)
 4. **Portrait extraction**: for `ExportIdentity::Team { id, .. }`, a player folder's `portrait.*`
    (any accepted image; a non-DDS source is encoded as "Portraits" in the export spec says) is
    renamed and staged with the portraits. The name is `player_{id}{NN}.dds` for PES ≤18 and
@@ -301,7 +299,7 @@ export format.
    without the marker and without a face model, whatever else it holds: a portrait alone,
    textures alone, a boots link alone, an empty `face/`, nothing. Referee folders follow the
    same rule: referees are full FPC, and a referee without a face model is one whose
-   full-body model, split as boots, brings his head (`blue_port.md` "Referee export
+   full-body model, split as boots, brings his head (`referees.md` "Referee export
    processing").
 
    The blank folder is:
@@ -362,7 +360,7 @@ export format.
 
    `teamnotes.txt` is rendered only after final export outcomes are known: it is a
    deterministic UTF-8/LF run artifact, atomically replaced, ordered by canonical export order,
-   and contains only accepted exports with non-empty valid notes. (Blue: `note_txt_append`) An
+   and contains only accepted exports with non-empty valid notes. An
    *accepted* export is one run planning keeps, the set whose team colors are applied. The
    note's text is read while the export's source is open for validation, as the root
    `colors.txt` is, so no task reads it.
@@ -472,7 +470,7 @@ duplicate check folds).
 All identity, allocation, roster, portrait-conflict, and run-global collision checks finish
 before tasks are dispatched. Deep task failures may be at most `DropFolder` unless the writer can
 roll back the whole export. Each planned face/boots/gloves model folder is then processed as an
-independent parallel task (Blue: `coordinator._model_folder_task`, Red: `export_move.py`):
+independent parallel task (Red: `export_move.py`):
 
 1. **Format conversion**: when several source representations coexist (e.g. `boots.fmdl` +
    `boots.model` + `boots.glb`), selection is **target-native first, then glTF, then conversion
@@ -886,7 +884,7 @@ independent parallel task (Blue: `coordinator._model_folder_task`, Red: `export_
    Fox mode packs allowed types (`.bin`, `.fmdl`, `.skl`, `.fclo`) into an FPK plus a generated
    empty `.fpkd` (player-owned and merge-copied textures having been relocated to the
    per-player common subfolder; plain shared-output textures remain in that model's own texture
-   location). Packed entries are emitted to the writer queue. (Blue: `contents_packing.py`)
+   location). Packed entries are emitted to the writer queue.
 
    In a gloves output on PES 15-17 (a shared folder's, or an `ingame_face` player's own, both
    built by the same code; his textures name game paths, so only the `.mtl` names change for
@@ -918,7 +916,7 @@ independent parallel task (Blue: `coordinator._model_folder_task`, Red: `export_
 ### 4. Per-export non-model steps
 
 These are logical per-export steps (Red: `export_move.py`, plus `bins_update.py` for its
-namesake step; Blue: `export_move_non_model`). They are ordinary manifest tasks and may run
+namesake step). They are ordinary manifest tasks and may run
 alongside model tasks once their dependencies are satisfied: this section describes behavior,
 not a serial scheduling requirement.
 
@@ -1239,7 +1237,7 @@ not a serial scheduling requirement.
   list of the IDs claimed so far catches duplicates without any advance cross-checking: the
   later claimant in canonical export order reports `collar_id_conflict` and its collar is
   discarded. The list starts with the suite's own two claims, 105 (the FPC collar: replacing it
-  would break FPC teams everywhere) and 77 (the referees' marker collar, `blue_port.md` "Referee
+  would break FPC teams everywhere) and 77 (the referees' marker collar, `referees.md` "Referee
   export processing"), so a team's file named for either is the same conflict, not an invalid
   ID: the ID is a real collar that someone else holds. An export holds one collar: the configs
   take one ID, so a second valid `collar_<ID>` file of the same export, in path order, is the
@@ -1266,7 +1264,7 @@ not a serial scheduling requirement.
   it with the subfolder, and a `.common` link by sitting at the same path below a player or
   shared folder (`refkit/legs.model.common`, "Link files" in `model_format.md`). Red packed the
   whole folder, and the referee exports' `Common/refkit/` ("Referee export processing" in
-  `blue_port.md`) is the one real use.
+  `referees.md`) is the one real use.
 
   On PES 18-21 a subfolder's file is read only through a `.common` link: one at its path below
   a player or shared folder (step 6), or one whose linked model or `.mtl` brings it ("Common
@@ -1493,7 +1491,7 @@ not a serial scheduling requirement.
   Kit configs are staged for `UniformParameter.bin` compilation (Fox only; Red's
   `UniformParameter{18,19}.bin` are only its bundled per-version fallback bases), the referee
   template tree's among them when a refs export commits ("Referee export processing" in
-  `blue_port.md`). When the team's kit-FPC status is On, kit slots absent from the export are
+  `referees.md`). When the team's kit-FPC status is On, kit slots absent from the export are
   FPC-patched from the installed cup content (see "FPC toggle" in the [Aesthetics export
   spec](../aesthetics_export/fpc_toggle.md)).
 
@@ -1614,7 +1612,7 @@ not a serial scheduling requirement.
    The refs export's entries never go into the team CPK, the teams parts or the bins CPK. The
    team side is written only when a team export commits something, there are overrides, or, on
    PES 18-21, the referee template tree's kit configs went out: each is also the entry of its
-   name in `UniformParameter.bin` ("Referee export processing" in `blue_port.md`). So a run
+   name in `UniformParameter.bin` ("Referee export processing" in `referees.md`). So a run
    whose only committing export is the refs export writes:
    - on PES 18-21, the refs CPK and the team side for the bins, in multi-CPK mode the teams
      parts with it, every slot the placeholder (step 6: the mode compiles the whole DLC from
@@ -2281,9 +2279,9 @@ promotion, and the test and sideload trees are "Deploy CPKs" and "5. Writer" abo
 | Collars | `common/character0/model/character/uniform/nocloth/` | `Asset/model/character/uniform/nocloth/#Win/` |
 | Common | `common/character1/model/character/uniform/common/{team_id}/` | `Asset/model/character/common/{team_id}/` |
 | Referee faces (NN = slot 01-35) | `common/character0/model/character/face/real/referee0NN.cpk` | `Asset/model/character/face/real/referee0NN/#Win/` (`face.fpk` and `face.fpkd`; textures under `referee0NN/sourceimages/#windx11/`) |
-| Referee boots | `common/character0/model/character/boots/k99NN/` (only `ingame_face`'s relocated parts: a referee's local boots ride in his `face.xml`, `blue_port.md` "Referee export processing") | `Asset/model/character/boots/k99NN/#Win/` (`boots.fpk` and `boots.fpkd`) |
+| Referee boots | `common/character0/model/character/boots/k99NN/` (only `ingame_face`'s relocated parts: a referee's local boots ride in his `face.xml`, `referees.md` "Referee export processing") | `Asset/model/character/boots/k99NN/#Win/` (`boots.fpk` and `boots.fpkd`) |
 | Referee gloves | `common/character0/model/character/glove/g99NN/` (as the boots row) | `Asset/model/character/glove/g99NN/#Win/` (`glove.fpk` and `glove.fpkd`) |
-| Referee kit configs (loose, `blue_port.md` "Referee export processing") | `common/character0/model/character/uniform/team/referee/` | same |
+| Referee kit configs (loose, `referees.md` "Referee export processing") | `common/character0/model/character/uniform/team/referee/` | same |
 | Referee common (per referee folder) | `common/character1/model/character/uniform/common/999/{folder}/` (MTL/XML paths `model/character/uniform/common/999/{folder}/`) | `Asset/model/character/common/999/{folder}/sourceimages/#windx11/` (FMDL paths `/Assets/pes16/model/character/common/999/{folder}/sourceimages/`) |
 | Portraits | `common/render/symbol/player/` | same |
 | Logos | `common/render/symbol/flag/` | same |

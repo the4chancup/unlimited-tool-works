@@ -73,7 +73,7 @@ test's table carries each row):
 - the `.fpkd` files and the 31 template entries are byte-identical;
 - Red writes a `referee0NN` face FPK holding `face_diff.bin` alone for each slot, the folder's
   own; the compiler writes the same face for a referee whose folder holds no face model, its
-  `face_diff.bin` the bundled template's (`spec/team_compiler/blue_port.md` "Referee export
+  `face_diff.bin` the bundled template's (`spec/team_compiler/referees.md` "Referee export
   processing"), and reports the folder's as `face_file_not_used`;
 - Red copies the source-side `*.fpk.xml` files into the output; the Studio format drops them;
 - the compiler also writes the team side, `4cc_99_test.cpk`, for the bins alone: on PES 18-21

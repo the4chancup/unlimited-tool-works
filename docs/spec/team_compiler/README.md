@@ -29,12 +29,30 @@ None of them is followed to the letter:
 - **The implementation is built around the object model** (typed structs representing each
   element of an export: see the [Aesthetics export spec](../aesthetics_export/README.md)), not
   around Red's disk-shuffling stages or Blue's path-string processing functions. References to
-  Red/Blue modules in this document identify *where the behavior to reproduce is specified*,
+  Red's modules in this document identify *where the behavior to reproduce is specified*,
   not code to translate.
 - **Warning/error messaging is overhauled**, not ported: the pipeline emits
   structured `PipelineEvent`s (see the core spec) carrying export/folder identity,
   and the GUI/CLI decide presentation. Red's console-text messages serve only as a
   checklist of conditions worth reporting.
+
+### Red features the compiled app replaces
+
+These Red features exist because Red is a Python script run from its folder; in the compiled
+app each is gone or done another way:
+
+| Feature | Red location | Why it disappears |
+|---------|-------------|-------------------|
+| Self-healing / dependency check | `dependency_check.py`, `file_management.py` | Single binary with embedded templates/fallback bins (see `pipeline.md` "Resolved decisions"): no missing files or packages |
+| Admin privilege elevation | `admin_tools.py` | The shared `elevation` lib (manifest execution level + elevated relaunch) |
+| Step-by-step run modes | `compiler_main.py:72-93` | CLI subcommands for automation |
+| `pes_uniparam_edit` standalone tool | `pes_uniparam_edit.py` | Covered by `uniparam` format parser |
+| Auto-update system | `updating.py` (22KB) | GUI "check for updates" dialog; Rust HTTP via `reqwest` |
+| First-run wizard | `settings_management.py:67-128` | GUI settings dialog |
+| Settings transfer between versions | `settings_management.py:130-211` | Settings versioning in the GUI |
+| Interactive settings editing | `settings_management.py:23-66` | GUI form fields |
+| Comment-preserving INI parser | `commentedconfigparser` dependency | Not needed; GUI manages settings |
+| Log username cleaner | `log_username_clean.py` | `utw.log` writes the home directory as `~` (`spec/core/architecture.md` "Diagnostic logging") |
 
 ---
 
@@ -45,7 +63,7 @@ The spec is split into parts:
 | [Pipeline](pipeline.md) | Per-export pipeline walkthrough |
 | [Message catalog](messages.md) | Message catalog |
 | [Settings](settings.md) | Settings |
-| [Blue features to port](blue_port.md) | Unimplemented Blue Features to Port |
+| [Referee exports](referees.md) | Referee export processing |
 | [GUI grid](../../plans/team_compiler/gui.md) | GUI: the live-validating team grid; Live validation (no Check or Refresh buttons); Cell states; Toolbar |
 | [Testing](testing.md) | Testing: parity against Red (adapted from Blue) |
 
@@ -320,7 +338,7 @@ Phase 7).
 
 A refs export plans no colors record (its `colors.txt` is not read), no `team_colors_missing`,
 no kits and no patch entries of its own. This is because the game's referee hook loads slot
-NN's `k99NN`/`g99NN` by number, and the referees' kits are the template tree's (`blue_port.md`
+NN's `k99NN`/`g99NN` by number, and the referees' kits are the template tree's (`referees.md`
 "Referee export processing"). So a refs export's kits, logo, portraits and collars are
 `file_not_used`.
 

@@ -414,8 +414,8 @@ the cup's current `4cc_35_referees.cpk` (the template's prop pair and clover, wh
 compiler writes, step 4.19f) draws the clover on the ground under each of the three
 officials in every scene (a walkout in the black Void stadium, the maintainer's
 screenshot). That CPK's clover is a plain 5.6 MB DDS, the form the compiler writes there
-(`blue_port.md`), so the plain-DDS half is answered too. Why the lead's runs D and G (a
-plain checker through the test slot) showed no marker is not known: the marker does not
+(`team_compiler/referees.md`), so the plain-DDS half is answered too. Why the lead's runs D
+and G (a plain checker through the test slot) showed no marker is not known: the marker does not
 scale with a small referee (the maintainer), so a missed official does not explain it.
 (b) closed, its QUESTIONS entry removed.
 manual: checked 2026-10-12, the first PES 20 `.ted` (g): team /3/ exported from
@@ -3911,9 +3911,9 @@ points there.
   settings get their validation pass (Phase 8's settings view at the latest): refuse such a
   path on the command line and in the settings view, comparing the canonical paths.
 - open (2026-10-11, Phase 5 Acceptance) — a referee export's `settings.toml` reaches no table or
-  patch: a referee's look is the template's `RefereeAppearance.bin` (`blue_port.md`), whose rows
-  nothing writes, and `blue_port.md` has `fpc_off` apply its settings preset to a referee on
-  PES 18-21. Settle with a Fox refkit (the issue on a referee's body under `fpc_off`): which
+  patch: a referee's look is the template's `RefereeAppearance.bin`
+  (`team_compiler/referees.md`), whose rows nothing writes, and `team_compiler/referees.md` has
+  `fpc_off` apply its settings preset to a referee on PES 18-21. Settle with a Fox refkit (the issue on a referee's body under `fpc_off`): which
   route a referee's settings take (the aesthetics patch, as team 999, since 8.36 writes no
   player tables, or the template's table), and TC-REF-19's outcome then; with it, lift
   `settings_id_messages`' team-only gate (`validation.rs`).
@@ -3961,7 +3961,7 @@ points there.
   `.mtl` search's two folders, the file's then the model folder's, are the likely answer):
   for Phase 7's plan pass, when glTF sources are planned.
 - open (2026-10-09) — a Fox referee's body under `fpc_off` waits on a Fox refkit, an FMDL
-  body the maintainer will make ("We'll make one later"; `team_compiler/blue_port.md` "The referee
+  body the maintainer will make ("We'll make one later"; `team_compiler/referees.md` "The referee
   body"): then the Fox referee template ships it and a step merges it into an `fpc_off`
   referee's face package. Until then `fpc_off` applies its settings preset alone on Fox.
 - open (2026-10-09) — per-kit face packages on Fox wait on FoxDen (`model_format.md`

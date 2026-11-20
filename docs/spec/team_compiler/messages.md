@@ -479,7 +479,7 @@ the fixtures (the pre-Fox tracer's Fumos folder: `./face_high_*.model` beside
     depth) names a file in that subfolder of `Common/`, which the team's Common output packs at
     its own path (`pipeline.md` "Common"), and in a refs export a file of the referee
     template's `common/999/` tree counts too when the export does not hold one of that path
-    (`blue_port.md` "Referee export processing").
+    (`referees.md` "Referee export processing").
 
   We write `team_folder`, not the team's ID or `XXX`, because the Studio format holds no team ID
   of any kind: an export compiles under whatever ID the teams list gives its team, and `XXX` is
@@ -674,15 +674,15 @@ deferred until the cup next plays a pre-Fox version (worklog step 4.y-sub, slice
 | `logo_fit_applied` | I | a non-square source was made square; names the file and the mode (`fit` by default, or the file's tag) (context: `file`, `mode`) | - |
 | `logo_upscaled` | W | a source is smaller than its largest target (512² for main, 128² for small): its long side for `fit`, its short side for `crop` and `stretch` (context: `file`, `size` as `300x300`, `target`) | emitted upscaled |
 | `collar_id_invalid` | E | collar filename doesn't parse as `collar_<ID>` (zero padding optional), or the ID is not a stock collar of the target version that a kit config can name (each version's set counted in its install's base data CPK, `dt35`'s `nocloth` collars: PES 15: 1-101 and 901-904; PES 16: 1-105 and 901-904; PES 17 and 18: 1-116 and 901-916; PES 19: 1-124 and 901-916; PES 20: 1-127 and 901-913; PES 21: 1-131 and 901-913; the 9xx collars are stock but a kit config holds a collar in one byte, so no team's kit could wear one: invalid too). The suite's reserved IDs are checked first (`collar_id_conflict`), so `collar_105` is a conflict on PES 15 too | collar file discarded |
-| `collar_id_conflict` | E | the stock collar ID is already claimed: by another export earlier in this run (canonical export order), or by the suite itself, which reserves 105 (FPC) and 77 (the referees' marker, `blue_port.md` "Referee export processing") (context: the claimant, an export's name or `FPC` / `referees`) | the collar is discarded and its team's configs are not rewritten |
+| `collar_id_conflict` | E | the stock collar ID is already claimed: by another export earlier in this run (canonical export order), or by the suite itself, which reserves 105 (FPC) and 77 (the referees' marker, `referees.md` "Referee export processing") (context: the claimant, an export's name or `FPC` / `referees`) | the collar is discarded and its team's configs are not rewritten |
 | `common_file_disallowed` | E/I | as `file_type_disallowed`, Common scope | files discarded / kept |
 
-**Referees**: referee exports use the same player-folder format (see `blue_port.md` "Referee
+**Referees**: referee exports use the same player-folder format (see `referees.md` "Referee
 export processing"), so all player-folder, texture, and XML/MTL messages above apply as-is.
 
 The referee marker needs no code of its own on a refs export. On both engines it is a model on
 the referees' reserved collar and a texture in their Common output, both inside the refs CPK
-(`blue_port.md` "Referee export processing"), so its failures are the texture codes above, on
+(`referees.md` "Referee export processing"), so its failures are the texture codes above, on
 `ref_marker.dds`. Red's injection into the system `dt00_x64.cpk`, and with it
 `ref_marker_needs_consent` and `dt00_write_failed`, is gone.
 

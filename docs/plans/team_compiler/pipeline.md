@@ -381,7 +381,7 @@ phase that owns them):
   Deployment is transactional across generated CPKs and the savefile, with backups and
   rollback. PES launches only after the complete transaction succeeds. (No system CPK is part
   of it: the Fox referee marker is a reserved collar inside the refs CPK,
-  `spec/team_compiler/blue_port.md` "Referee export processing".)
+  `spec/team_compiler/referees.md` "Referee export processing".)
 - **Superseded installed outputs.** Within the teams slot run this is solved: every slot is written
   each multi-CPK run (content or the empty placeholder), so stale parts cannot survive. What
   remains:

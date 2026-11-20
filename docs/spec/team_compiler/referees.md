@@ -1,15 +1,10 @@
-# Unlimited Tool Works: Compiler spec: Blue features to port
+# Unlimited Tool Works: Compiler spec: Referee exports
 
 Part of the [Compiler spec](README.md).
 
-## Unimplemented Blue Features to Port
+## Referee export processing
 
-Blue is a prototype missing features that Red has. The Rust rewrite must implement these.
-
-### Referee export processing (Red is the behavioral spec)
-
-Blue explicitly skips referee exports (`coordinator.py:218`); Red's
-`Engines/python/lib/referee_tools.py`, together with its referee-related path editing in
+Red's `Engines/python/lib/referee_tools.py`, together with its referee-related path editing in
 `fmdl_editing.py` and export routing in `export_move.py`, is the authoritative behavioral
 specification.
 
@@ -187,33 +182,3 @@ group, usually named `static`, that is no bone of the body skeleton.
 The marker shows on the ground under each official in every scene (checked on PES 17 by the
 maintainer with the cup's referee CPK, in the form the compiler writes, worklog 4.y-ingame2
 (b)). Why the lead's harness runs with a test texture showed none is not known.
-
-### Features that disappear in a compiled GUI app
-
-These Red features are consequences of being a distributed Python script and are eliminated by the
-Rust + GUI architecture:
-
-| Feature | Red location | Why it disappears |
-|---------|-------------|-------------------|
-| Self-healing / dependency check | `dependency_check.py`, `file_management.py` | Single binary with embedded templates/fallback bins (see `pipeline.md` "Resolved decisions"): no missing files or packages |
-| Admin privilege elevation | `admin_tools.py` | The shared `elevation` lib (manifest execution level + elevated relaunch) |
-| Step-by-step run modes | `compiler_main.py:72-93` | CLI subcommands for automation |
-| `pes_uniparam_edit` standalone tool | `pes_uniparam_edit.py` | Covered by `uniparam` format parser |
-
-### Size deltas in shared modules
-
-Red's shared modules are larger than Blue's due to referee-related edge cases and additional
-validation:
-
-| Module | Red | Blue | Delta |
-|--------|-----|------|-------|
-| `export_move.py` | 31KB | 23KB | 8KB (referee path logic) |
-| `bins_update.py` | 18KB | 12KB | 6KB (more bin-packing logic) |
-| `fmdl_editing.py` | 19KB | 12KB | 7KB (`fmdl_texture_paths_change` for referees) |
-| `xml_editing.py` | 22.2KB | 14.8KB | 7.4KB (more template manipulation) |
-| `export_check.py` | 44KB | 41KB | 3KB (minor) |
-
-These deltas represent logic that must be accounted for in the Rust port. Use Red as the reference
-for completeness.
-
----

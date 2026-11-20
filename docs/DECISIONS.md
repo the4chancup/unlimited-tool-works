@@ -18908,3 +18908,21 @@ floating head either way, referees being full FPC, so the old rule protected no 
 Plan: `team_compiler/pipeline.md` step 1, `team_compiler/blue_port.md` "Referee export
 processing"; `team_compiler/README.md` TC-REF-10, TC-REF-11 and TC-REF-13 withdrawn, TC-REF-21
 to TC-REF-28.
+
+## 2026-11-20 — docs — Blue is no evidence: blue_port.md retired, its referee section now referees.md
+Decision: the Compiler's `blue_port.md` ("Blue features to port", in the spec and the plans) is
+retired. Its referee section is `team_compiler/referees.md` "Referee export processing" in both
+trees, unchanged but for its opening. Its two tables of Red features the compiled app has no
+need for are one section of the spec README, "Red features the compiled app replaces". Its
+"Size deltas in shared modules" table is dropped. Blue leaves the list of legacy tools that
+count as evidence (`AGENTS.md`, the glossary), the spec's "(Blue: …)" pointers go, and so does
+the libs README's "Format references in Blue" table.
+Why: Blue was a prototype, never used for a cup and never properly tested; what the suite took
+from it is the in-memory parallel pipeline, nothing of its behavior. A file named for porting
+Blue's features read as if Blue were a source of behavior, while what it held was Red's
+referee behavior and a list of Red features. The size table compared Red's and Blue's module
+sizes, which says nothing about what the suite must do. Mentions that record where a fixture
+or template file came from, or what the parallel pipeline improved on, stay.
+Plan: `team_compiler/referees.md` (spec and plans, new); `spec/team_compiler/README.md`
+"Relationship to the older compilers"; `spec/team_compiler/pipeline.md` opening; `AGENTS.md`
+"Fundamental concepts"; every citation of `blue_port.md` repointed.

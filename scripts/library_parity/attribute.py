@@ -298,7 +298,7 @@ def cause_of(job, side, red, ours, class_, detail, version):
     referee = os.path.basename(job.source).lower().startswith("refs")
     if referee and (class_ == "ours_only" and (kind == "bins" or re.search(r"ref_marker\.|collar_077\.", lower))
                     or class_ == "red_only" and re.search(r"/common/999/[^/]+/sourceimages/#windx11/portrait\.ftex$", lower)):
-        return ("I21 a refs export's template output: the bins and the marker (blue_port.md), "
+        return ("I21 a refs export's template output: the bins and the marker (referees.md), "
                 "a referee's portrait not packed (no referee shows one)")
     if class_ in ("cpk_differs", "fpk_differs", "relocated_id_differs") and "a member differs" in detail:
         return "container (its member lines)"

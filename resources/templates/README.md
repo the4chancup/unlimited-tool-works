@@ -62,8 +62,8 @@ official-list check of every compile (step 4.25).
 
 The Fox referee template tree: every file of it goes into the referee CPK of a Fox compile that
 compiles a refs export, at the path it has below this folder (the Compiler's plan, `pipeline.md`
-"5. Writer" step 5 and "Resolved decisions", embedded templates; `blue_port.md` "Referee
-export processing"). An override replaces one file: `templates/referees_fox/<the same path>`
+"5. Writer" step 5 and "Resolved decisions", embedded templates; `team_compiler/referees.md`
+"Referee export processing"). An override replaces one file: `templates/referees_fox/<the same path>`
 in the data directory.
 
 Source: Red's `Engines/templates/refscpk_fox/`, Red at commit `e12aa01` (the same files at
@@ -83,14 +83,14 @@ a one-off copy, nothing to regenerate).
 The kit configs are five distinct files, each repeated under every competition's name with
 the same number (`referee_ACL_1.bin` is `referee_CL_1.bin`), as Red ships them. The five
 kit textures are one texture, five times. The kit configs are loose files of the referee
-CPK, never entries of the bins CPK's `UniformParameter.bin` (`blue_port.md`).
+CPK, never entries of the bins CPK's `UniformParameter.bin` (`team_compiler/referees.md`).
 
 ## `referees_prefox/`
 
 The pre-Fox referee template tree, the `referees_fox/` tree's twin for PES 2015 to 2017: every
 file of it goes into the referee CPK of a pre-Fox compile that compiles a refs export, at the
-path it has below this folder (the Compiler's plan, worklog step 4.19d; `blue_port.md` "Referee
-export processing"). An override replaces one file: `templates/referees_prefox/<the same path>`
+path it has below this folder (the Compiler's plan, worklog step 4.19d;
+`team_compiler/referees.md` "Referee export processing"). An override replaces one file: `templates/referees_prefox/<the same path>`
 in the data directory.
 
 Source: Red's `Engines/templates/refscpk_prefox/`, Red at commit `e12aa01`; the tree came in
@@ -126,8 +126,8 @@ texture of the `referee_prop.model` the game draws under the referee by itself (
 ## `referee_marker.fmdl`
 
 The Fox referee marker: the model a Fox compile writes into the referee CPK as collar 77 when
-the refs export holds `ref_marker.dds` (the Compiler's plan, `blue_port.md` "Referee export
-processing"). A square 1.5 m wide on the ground: one mesh, 4 vertices, material
+the refs export holds `ref_marker.dds` (the Compiler's plan, `team_compiler/referees.md`
+"Referee export processing"). A square 1.5 m wide on the ground: one mesh, 4 vertices, material
 `judge_watch` (shader `fox3ddf_blin`), each vertex weighted 255 to the bone `static` and to
 nothing else, so no animation moves it (static painting). Its textures are
 `Base_Tex_SRGB` `/Assets/pes16/model/character/common/000/sourceimages/cup_logo.dds`, which
