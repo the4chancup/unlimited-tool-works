@@ -7749,12 +7749,13 @@ const STRATEGY_SLIDERS14 = [[],
   [15, 10, null, 10, 10, 10, null, 10],
   [null, null, null, null, null, 10, null, null],
   [null, null, null, 15, 15, null, 15, 20]];
+// The game's text, its line breaks kept: they split it into its three points.
 const COMBINATION_TIP14 = "While you can select up to 3 different types of combined "
-  + "strategies, they can only be implemented one at a time in each area. Please select the "
-  + "combined strategies of your choice and the areas where they are to be implemented. When "
-  + "implemented, players will link up in an attempt to create space or to lose their markers "
-  + "in the selected areas. To implement combined strategies, press LT twice when the "
-  + "Combination Play icon is shown on screen.";
+  + "strategies, they can only be implemented one at a time in each area.\nPlease select the "
+  + "combined strategies of your choice and the areas where they are to be implemented.\n\n"
+  + "When implemented, players will link up in an attempt to create space or to lose their "
+  + "markers in the selected areas.\n\nTo implement combined strategies, press LT twice when "
+  + "the Combination Play icon is shown on screen.";
 // The game has no text for the areas: this is its area screen's numbering
 // (run tactics4's t5_slots), with no claim about which end is whose.
 const COMBINATION_AREA_TIP14 = "The game's area screen numbers the pitch in rows, from its "
