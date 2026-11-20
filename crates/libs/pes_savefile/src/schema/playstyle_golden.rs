@@ -157,6 +157,14 @@ fn every_fixture_player_decodes_and_goalkeepers_carry_goalkeeper_styles() {
     for version in FIXTURES {
         let payload = payload(version);
         let schema = schema_for(version);
+        // PES 2014's player record maps no playstyle index; the census has
+        // nothing to decode.
+        if !schema
+            .player
+            .has(crate::schema::fields::PlayerField::PlayingStyle)
+        {
+            continue;
+        }
         let (mut gk_styled, mut gk_styled_as_gk) = (0u32, 0u32);
         for i in 0..count(&payload, &schema.players) {
             let rec = record(&payload, &schema.players, schema.player.size, i);

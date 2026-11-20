@@ -844,6 +844,9 @@ fn read(player: &PlayerEntry, key: SettingKey) -> Result<Option<u8>, SettingsErr
         Source::Player(field) => {
             Some(u8::try_from(player.get(field)?).expect("an appearance or motion field is a byte"))
         }
+        // A player read without a run (PES 2014's unedited look) holds
+        // none of its keys; `get` on the empty run would error instead.
+        Source::Face(_) | Source::NoseAngle if face.bytes().is_empty() => None,
         // The run, not a version, says which layout's keys the player has:
         // `get` refuses a field of the other layout.
         Source::Face(_) | Source::NoseAngle if !held_in(key, face.layout()) => None,
@@ -871,7 +874,9 @@ fn held_in(key: SettingKey, layout: FaceLayout) -> bool {
 pub(crate) fn held_on(key: SettingKey, version: PesVersion) -> bool {
     match key.source() {
         Source::Player(field) => schema_for(version).player_has(field),
-        Source::Face(_) | Source::NoseAngle => held_in(key, FaceLayout::of(version)),
+        Source::Face(_) | Source::NoseAngle => {
+            schema_for(version).ingame_face_run().is_some() && held_in(key, FaceLayout::of(version))
+        }
     }
 }
 

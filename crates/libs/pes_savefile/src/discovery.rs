@@ -34,6 +34,7 @@ pub struct SavefileCandidate {
 /// The game folder name and layout for `version`.
 pub fn save_layout(version: PesVersion) -> SaveLayout {
     let (game_folder, account_folders, file_name) = match version {
+        PesVersion::Pes14 => ("Pro Evolution Soccer 2014", false, "EDIT.bin"),
         PesVersion::Pes15 => ("Pro Evolution Soccer 2015", false, "EDIT.bin"),
         PesVersion::Pes16 => ("Pro Evolution Soccer 2016", false, "EDIT00000000"),
         PesVersion::Pes17 => ("Pro Evolution Soccer 2017", false, "EDIT00000000"),
@@ -121,6 +122,16 @@ mod tests {
             std::fs::remove_dir_all(&dir).expect("cleanup");
         }
         dir
+    }
+
+    /// PES 2014's layout: the flat `EDIT.bin` of the pre-account versions,
+    /// in its own game folder.
+    #[test]
+    fn pes14s_layout_is_a_flat_edit_bin() {
+        let layout = save_layout(PesVersion::Pes14);
+        assert_eq!(layout.game_folder, "Pro Evolution Soccer 2014");
+        assert!(!layout.account_folders);
+        assert_eq!(layout.file_name, "EDIT.bin");
     }
 
     /// The native entry point is `discover_savefiles_in` over the shell's

@@ -704,7 +704,7 @@ pub(crate) static TACTICS: TacticsSchema = TacticsSchema {
         },
     ],
     preset_stride_bits: 976,
-    man_marking_bit: 920,
+    man_marking_bit: Some(920),
     presets: &[
         PresetSpec {
             field: PresetField::AttackingStyle,
@@ -755,14 +755,14 @@ pub(crate) static TACTICS: TacticsSchema = TacticsSchema {
             bit_offset: 912,
         },
     ],
-    formations: FormationLayout {
+    formations: Some(FormationLayout {
         base_bit: 32,
         formation_stride_bits: 264,
         slot_stride_bits: 8,
         y_offset_bits: 88,
         x_offset_bits: 96,
         pair_stride_bits: 16,
-    },
+    }),
     instructions: None,
 };
 

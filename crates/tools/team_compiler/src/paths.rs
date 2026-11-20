@@ -480,7 +480,8 @@ pub(crate) fn kit_config(team_id: u16, entry_name: &str) -> String {
 /// `emblem_0{team id}` up to PES 2019 and `e_000{team id}` from PES 2020.
 pub(crate) fn logo(version: PesVersion, team_id: u16) -> [String; 3] {
     let stem = match version {
-        PesVersion::Pes15
+        PesVersion::Pes14
+        | PesVersion::Pes15
         | PesVersion::Pes16
         | PesVersion::Pes17
         | PesVersion::Pes18

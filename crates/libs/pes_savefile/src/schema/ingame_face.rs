@@ -21,10 +21,11 @@ pub enum FaceLayout {
 }
 
 impl FaceLayout {
-    /// The layout of `version`'s run.
+    /// The layout of `version`'s run. PES 2014's schema maps no run, so
+    /// its answer, PES 15's, is never read.
     pub fn of(version: PesVersion) -> Self {
         match version {
-            PesVersion::Pes15 => FaceLayout::Pes15,
+            PesVersion::Pes14 | PesVersion::Pes15 => FaceLayout::Pes15,
             PesVersion::Pes16
             | PesVersion::Pes17
             | PesVersion::Pes18

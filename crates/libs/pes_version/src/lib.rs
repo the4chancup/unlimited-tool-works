@@ -9,10 +9,14 @@ use std::str::FromStr;
 
 use serde::{Deserialize, Serialize};
 
-/// A PES release the suite supports, `PES 2015` through `PES 2021`.
+/// A PES release the suite supports, `PES 2015` through `PES 2021` — and
+/// `PES 2014`, which no picker, `ALL` loop or `from_number` names: it exists
+/// only so the Save editor can follow a PES 2014 save's own version.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 #[serde(try_from = "u16", into = "u16")]
 pub enum PesVersion {
+    /// PES 2014: only the Save editor reaches it, from a save it opens.
+    Pes14,
     /// PES 2015 (pre-Fox engine).
     Pes15,
     /// PES 2016 (pre-Fox engine).
@@ -53,6 +57,7 @@ impl PesVersion {
     /// The short number the community uses (`16` for PES 2016).
     pub fn number(self) -> u16 {
         match self {
+            PesVersion::Pes14 => 14,
             PesVersion::Pes15 => 15,
             PesVersion::Pes16 => 16,
             PesVersion::Pes17 => 17,
@@ -71,7 +76,9 @@ impl PesVersion {
     /// Which engine the version's models and textures use.
     pub fn engine(self) -> Engine {
         match self {
-            PesVersion::Pes15 | PesVersion::Pes16 | PesVersion::Pes17 => Engine::PreFox,
+            PesVersion::Pes14 | PesVersion::Pes15 | PesVersion::Pes16 | PesVersion::Pes17 => {
+                Engine::PreFox
+            }
             PesVersion::Pes18 | PesVersion::Pes19 | PesVersion::Pes20 | PesVersion::Pes21 => {
                 Engine::Fox
             }
@@ -148,6 +155,19 @@ impl fmt::Display for PesVersion {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// PES 2014 exists so the Save editor can follow an opened save's
+    /// version: it numbers 14, is pre-Fox and sorts oldest, but `ALL`,
+    /// `from_number` and every version picker stay as they were.
+    #[test]
+    fn pes14_exists_but_nothing_but_a_save_names_it() {
+        assert_eq!(PesVersion::Pes14.number(), 14);
+        assert_eq!(PesVersion::Pes14.engine(), Engine::PreFox);
+        assert!(PesVersion::Pes14 < PesVersion::Pes15);
+        assert!(!PesVersion::ALL.contains(&PesVersion::Pes14));
+        assert_eq!(PesVersion::from_number(14), None);
+        assert_eq!(PesVersion::from_number(2014), None);
+    }
 
     #[test]
     fn engine_of_every_version() {

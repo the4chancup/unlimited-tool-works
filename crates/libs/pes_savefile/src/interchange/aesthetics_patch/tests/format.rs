@@ -424,11 +424,15 @@ fn to_toml_refuses_a_player_key_outside_01_to_99() {
 fn every_version_round_trips() {
     for version in FIXTURES {
         let mut appearance = AppearanceSettings::default().resolved(version);
-        appearance.skin_color = Some(4);
-        appearance.strip.sleeves = Some(2);
-        appearance.motion.free_kick = Some(3);
-        appearance.face.cheekbones = Some(5);
-        appearance.hair.color_red = Some(9);
+        // PES 2014's save holds no appearance keys: the look resolves empty,
+        // and the patch entry carries `appearance: None`.
+        if version != PesVersion::Pes14 {
+            appearance.skin_color = Some(4);
+            appearance.strip.sleeves = Some(2);
+            appearance.motion.free_kick = Some(3);
+            appearance.face.cheekbones = Some(5);
+            appearance.hair.color_red = Some(9);
+        }
         let patch = AestheticsPatch {
             pes_version: version,
             tool_version: "0.1.0".to_string(),
@@ -447,7 +451,7 @@ fn every_version_round_trips() {
                             boots_id: Some(643),
                             gloves_id: Some(0),
                             base_copy_id: None,
-                            appearance: Some(appearance),
+                            appearance: (version != PesVersion::Pes14).then_some(appearance),
                         },
                     )]),
                 },
@@ -469,20 +473,32 @@ fn every_version_round_trips() {
             ],
         };
         let text = patch.to_toml().expect("emit");
-        let look_at = text.find("[teams.players.05.appearance]").expect("a look");
-        let end = text[look_at..]
-            .find("\n[[teams]]")
-            .map(|i| look_at + i)
-            .unwrap_or(text.len());
-        assert!(
-            !text[look_at..end].lines().any(|line| line.contains('#')),
-            "{version:?}: no comments in a patch's [appearance]"
-        );
-        assert_eq!(
-            AestheticsPatch::parse(&text).expect("round trip"),
-            patch,
-            "{version:?}"
-        );
+        // PES 2014's entry carries no `[appearance]` at all.
+        if version != PesVersion::Pes14 {
+            let look_at = text.find("[teams.players.05.appearance]").expect("a look");
+            let end = text[look_at..]
+                .find("\n[[teams]]")
+                .map(|i| look_at + i)
+                .unwrap_or(text.len());
+            assert!(
+                !text[look_at..end].lines().any(|line| line.contains('#')),
+                "{version:?}: no comments in a patch's [appearance]"
+            );
+        }
+        if version == PesVersion::Pes14 {
+            // `pes_version = 14` emits but refuses to parse (`from_number`
+            // refuses 14: no patch targets PES 2014).
+            assert!(matches!(
+                AestheticsPatch::parse(&text),
+                Err(PatchError::Settings(SettingsError::WrongType { .. }))
+            ));
+        } else {
+            assert_eq!(
+                AestheticsPatch::parse(&text).expect("round trip"),
+                patch,
+                "{version:?}"
+            );
+        }
     }
 }
 

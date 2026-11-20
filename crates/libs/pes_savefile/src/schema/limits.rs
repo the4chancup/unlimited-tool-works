@@ -125,7 +125,7 @@ pub fn face_type_cap(version: PesVersion, field: IngameFaceField) -> Option<u8> 
         PesVersion::Pes15 => Some(pes15),
         PesVersion::Pes16 => Some(pes16),
         // The unmeasured columns are the field's bit maximum.
-        PesVersion::Pes17 | PesVersion::Pes18 => bit_max(field),
+        PesVersion::Pes14 | PesVersion::Pes17 | PesVersion::Pes18 => bit_max(field),
         PesVersion::Pes19 => pes19.or_else(|| bit_max(field)),
         PesVersion::Pes20 | PesVersion::Pes21 => Some(newer),
     }
@@ -249,6 +249,8 @@ pub fn motion_top(version: PesVersion, field: PlayerField) -> Option<u8> {
         | PlayerField::AnkleTaping => return None,
     };
     match version {
+        // PES 2015's until PES 2014's tops are measured.
+        PesVersion::Pes14 => Some(pes15),
         PesVersion::Pes15 => Some(pes15),
         PesVersion::Pes16 => Some(pes16),
         PesVersion::Pes17 => Some(pes17),

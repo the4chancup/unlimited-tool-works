@@ -11,7 +11,8 @@ use crate::schema::{SectionLayout, VersionSchema};
 pub(crate) use crate::fixtures::{fixture_container, payload, test_salt};
 
 /// The versions a committed payload fixture exists for.
-pub(crate) const FIXTURES: [PesVersion; 7] = [
+pub(crate) const FIXTURES: [PesVersion; 8] = [
+    PesVersion::Pes14,
     PesVersion::Pes15,
     PesVersion::Pes16,
     PesVersion::Pes17,
@@ -40,7 +41,9 @@ pub(crate) fn record<'a>(
     &payload[section.offset + i * size..section.offset + (i + 1) * size]
 }
 
-/// The PES 15/16 appearance record of a decoded player id.
+/// The PES 15/16 appearance record of a decoded player id, applied like
+/// `EditFile`'s own read: a record a version may not hold for the player
+/// (PES 2014) is skipped rather than panicking.
 pub(crate) fn appearance_for(payload: &[u8], schema: &VersionSchema, player: &mut PlayerEntry) {
     if let Some((section, appearance)) = &schema.appearance {
         for i in 0..count(payload, section) {
@@ -50,11 +53,14 @@ pub(crate) fn appearance_for(payload: &[u8], schema: &VersionSchema, player: &mu
                 return;
             }
         }
-        panic!("no appearance record for player {}", player.id);
+        if schema.appearance_for_every_player() {
+            panic!("no appearance record for player {}", player.id);
+        }
     }
 }
 
-/// The decoded player with `id` (appearance fields included on 15/16).
+/// The decoded player with `id` (appearance fields included where the
+/// version's separate appearance record exists and holds him).
 pub(crate) fn find_player(payload: &[u8], schema: &VersionSchema, id: u32) -> PlayerEntry {
     for i in 0..count(payload, &schema.players) {
         let rec = record(payload, &schema.players, schema.player.size, i);

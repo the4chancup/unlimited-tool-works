@@ -8,7 +8,12 @@ use pes_version::PesVersion;
 /// PES 2019.
 pub fn portrait_path(version: PesVersion, player_id: u32) -> String {
     let prefix = match version {
-        PesVersion::Pes15 | PesVersion::Pes16 | PesVersion::Pes17 | PesVersion::Pes18 => "player_",
+        // PES 2014's prefix is unmeasured; PES 2015's until it is.
+        PesVersion::Pes14
+        | PesVersion::Pes15
+        | PesVersion::Pes16
+        | PesVersion::Pes17
+        | PesVersion::Pes18 => "player_",
         PesVersion::Pes19 | PesVersion::Pes20 | PesVersion::Pes21 => "",
     };
     format!("common/render/symbol/player/{prefix}{player_id}.dds")

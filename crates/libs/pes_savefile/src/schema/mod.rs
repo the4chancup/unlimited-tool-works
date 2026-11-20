@@ -16,6 +16,7 @@ pub mod instruction;
 mod instruction_golden;
 /// The per-version caps on the ingame-face type fields.
 pub mod limits;
+mod pes14;
 mod pes15;
 mod pes16;
 mod pes17;
@@ -173,12 +174,15 @@ pub struct TacticsSchema {
     /// Bits between consecutive preset blocks.
     pub preset_stride_bits: u32,
     /// Bit position of the preset's eleven man-marking bytes within a preset
-    /// block (byte `i` is own formation slot `i`'s assignment).
-    pub man_marking_bit: u32,
+    /// block (byte `i` is own formation slot `i`'s assignment); `None` where
+    /// the record's man-marking bytes are unmapped (PES 2014).
+    pub man_marking_bit: Option<u32>,
     /// The per-preset settings.
     pub presets: &'static [PresetSpec],
-    /// The formation block layout.
-    pub formations: FormationLayout,
+    /// The formation block layout; `None` where the record's formations do
+    /// not fit it (PES 2014's: one formation per preset and a lineup of
+    /// roster slots, no player ids).
+    pub formations: Option<FormationLayout>,
     /// The advanced-instruction block layout; `None` on PES 15/16.
     pub instructions: Option<InstructionLayout>,
 }
@@ -186,20 +190,21 @@ pub struct TacticsSchema {
 impl TacticsSchema {
     /// Whether the tactics record stores `field` (scalar fields and arrays, as
     /// `RecordSchema::has`; preset settings via `has_preset`,
-    /// formations always, instructions when `instructions` is `Some`, man
-    /// marking for a preset of 0 to 2 and a slot of 0 to 10).
+    /// formations and man marking when their layouts are `Some` — man
+    /// marking for a preset of 0 to 2 and a slot of 0 to 10 — instructions
+    /// when `instructions` is `Some`).
     pub fn has(&self, field: TacticsField) -> bool {
         if let TacticsField::Preset { field, .. } = field {
             return self.has_preset(field);
         }
         if let TacticsField::Formation { .. } = field {
-            return true;
+            return self.formations.is_some();
         }
         if let TacticsField::Instruction { .. } = field {
             return self.instructions.is_some();
         }
         if let TacticsField::ManMarking { preset, slot } = field {
-            return preset < 3 && slot < 11;
+            return self.man_marking_bit.is_some() && preset < 3 && slot < 11;
         }
         self.fields.iter().any(|spec| spec.field == field)
             || self
@@ -271,6 +276,32 @@ impl VersionSchema {
                 .is_some_and(|(_, appearance)| appearance.has(field))
     }
 
+    /// The `ingame_face` byte run of the record carrying the appearance
+    /// block, where the version maps one (PES 2014 maps none).
+    pub(crate) fn ingame_face_run(&self) -> Option<&ByteRun> {
+        match &self.appearance {
+            Some((_, appearance)) => appearance.ingame_face.as_ref(),
+            None => self.player.ingame_face.as_ref(),
+        }
+    }
+
+    /// Whether the version's appearance section holds one record per
+    /// player: every version but PES 2014, whose section holds a record
+    /// only for a player whose look was edited or who was created in the
+    /// save, so a player without one is no error there.
+    pub(crate) fn appearance_for_every_player(&self) -> bool {
+        match self.version {
+            PesVersion::Pes14 => false,
+            PesVersion::Pes15
+            | PesVersion::Pes16
+            | PesVersion::Pes17
+            | PesVersion::Pes18
+            | PesVersion::Pes19
+            | PesVersion::Pes20
+            | PesVersion::Pes21 => true,
+        }
+    }
+
     /// Every `PlayerField` `player_has` answers `true` for, as a set: callers
     /// gating many keys against one version build it once instead of paying
     /// `player_has`'s field-table scan per key.
@@ -297,6 +328,7 @@ impl VersionSchema {
 /// PES 21's team record carries its own layout.
 pub fn schema_for(version: PesVersion) -> &'static VersionSchema {
     match version {
+        PesVersion::Pes14 => &pes14::PES14,
         PesVersion::Pes15 => &pes15::PES15,
         PesVersion::Pes16 => &pes16::PES16,
         PesVersion::Pes17 => &pes17::PES17,

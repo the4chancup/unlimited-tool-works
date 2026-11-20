@@ -195,7 +195,8 @@ fn pre_fox_written(
 /// versions' `uniform.mtl` defines no `uni_collar`.
 fn stock_collar_materials(model: &mut pes_model::model::Model, version: PesVersion) {
     let defines_uni_collar = match version {
-        PesVersion::Pes15 | PesVersion::Pes16 => false,
+        // PES 2014's `uniform.mtl` is unread; the 15/16 answer until it is.
+        PesVersion::Pes14 | PesVersion::Pes15 | PesVersion::Pes16 => false,
         PesVersion::Pes17 => true,
         PesVersion::Pes18 | PesVersion::Pes19 | PesVersion::Pes20 | PesVersion::Pes21 => {
             unreachable!("a `.model` is written for PES 15-17 alone")

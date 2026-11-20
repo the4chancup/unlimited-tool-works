@@ -139,7 +139,7 @@ pub fn texport_writes(version: PesVersion) -> bool {
         | PesVersion::Pes19
         | PesVersion::Pes20
         | PesVersion::Pes21 => true,
-        PesVersion::Pes15 | PesVersion::Pes16 => false,
+        PesVersion::Pes14 | PesVersion::Pes15 | PesVersion::Pes16 => false,
     }
 }
 
@@ -150,7 +150,7 @@ pub fn texport_layout(version: PesVersion) -> Option<&'static TexportLayout> {
         PesVersion::Pes19 => Some(&PES19),
         PesVersion::Pes20 => Some(&PES20),
         PesVersion::Pes21 => Some(&PES21),
-        PesVersion::Pes15 | PesVersion::Pes16 | PesVersion::Pes17 => None,
+        PesVersion::Pes14 | PesVersion::Pes15 | PesVersion::Pes16 | PesVersion::Pes17 => None,
     }
 }
 
@@ -163,7 +163,11 @@ pub(crate) fn texport_old(version: PesVersion) -> Option<TexportOld> {
         PesVersion::Pes15 => (0x10298, 0x51065C, 0),
         PesVersion::Pes16 => (0x10298, 0x510660, 0),
         PesVersion::Pes17 => (0x10330, 0x510840, 88),
-        PesVersion::Pes18 | PesVersion::Pes19 | PesVersion::Pes20 | PesVersion::Pes21 => {
+        PesVersion::Pes14
+        | PesVersion::Pes18
+        | PesVersion::Pes19
+        | PesVersion::Pes20
+        | PesVersion::Pes21 => {
             return None;
         }
     };

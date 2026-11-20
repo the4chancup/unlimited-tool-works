@@ -106,9 +106,12 @@ const PES2021: &[Option<PlayStyle>] = &[
     Some(P::DefensiveGoalkeeper),
 ];
 
-/// The list `version`'s stored values index.
+/// The list `version`'s stored values index. PES 2014's is an empty list
+/// until it is measured, so every stored index decodes as unknown rather
+/// than as another version's style.
 fn list(version: PesVersion) -> &'static [Option<PlayStyle>] {
     match version {
+        PesVersion::Pes14 => &[],
         PesVersion::Pes15 | PesVersion::Pes16 => PES16,
         PesVersion::Pes17 | PesVersion::Pes18 => PES1718,
         PesVersion::Pes19 => PES19,

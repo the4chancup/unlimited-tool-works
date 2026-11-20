@@ -21,7 +21,8 @@ use crate::violation::{FormationStarter, Violation, ViolationKind};
 pub(crate) fn illegal_formations(team: &TeamView) -> Vec<Violation> {
     match team.version {
         PesVersion::Pes17 | PesVersion::Pes19 => {}
-        PesVersion::Pes15
+        PesVersion::Pes14
+        | PesVersion::Pes15
         | PesVersion::Pes16
         | PesVersion::Pes18
         | PesVersion::Pes20

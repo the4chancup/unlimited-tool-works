@@ -516,9 +516,10 @@ pub(super) fn open_shortcut(view: &mut SaveView, shortcut: Shortcut) {
 }
 
 /// The digit that, with Ctrl, opens `version`'s newest discovered save:
-/// 5 to 9 for PES 2015 to PES 2019, then 0 for PES 2020 and 1 for PES 2021.
+/// 4 to 9 for PES 2014 to PES 2019, then 0 for PES 2020 and 1 for PES 2021.
 fn shortcut_key(version: PesVersion) -> egui::Key {
     match version {
+        PesVersion::Pes14 => egui::Key::Num4,
         PesVersion::Pes15 => egui::Key::Num5,
         PesVersion::Pes16 => egui::Key::Num6,
         PesVersion::Pes17 => egui::Key::Num7,

@@ -118,6 +118,8 @@ static PES21: LazyLock<VersionSkeletons> = LazyLock::new(|| version_skeletons(PE
 /// assumed to equal PES21.
 pub fn skeletons(version: PesVersion) -> &'static VersionSkeletons {
     match version {
+        // No model tool reaches PES 2014; PES 2015's until one does.
+        PesVersion::Pes14 => &PES15,
         PesVersion::Pes15 => &PES15,
         PesVersion::Pes16 => &PES16,
         PesVersion::Pes17 => &PES17,

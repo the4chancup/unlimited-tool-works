@@ -120,6 +120,11 @@ fn the_comparators_aesthetics_rows_match_the_compare_scripts_diff_on_every_fixtu
     for version in FIXTURES {
         let payload = payload(version);
         let schema = schema_for(version);
+        // PES 2014 maps no appearance block at all: the script's block
+        // rule has nothing to read.
+        if schema.ingame_face_run().is_none() {
+            continue;
+        }
         let all: Vec<PlayerEntry> = (0..count(&payload, &schema.players))
             .map(|i| {
                 let rec = record(&payload, &schema.players, schema.player.size, i);

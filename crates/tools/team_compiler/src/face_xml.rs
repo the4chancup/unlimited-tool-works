@@ -94,7 +94,8 @@ pub(crate) fn is_generated_type(xml_type: &str) -> bool {
 pub(crate) fn version_type(version: PesVersion, xml_type: &str) -> &str {
     match version {
         PesVersion::Pes15 if xml_type == "uniform" => "uniform_sub",
-        PesVersion::Pes15
+        PesVersion::Pes14
+        | PesVersion::Pes15
         | PesVersion::Pes16
         | PesVersion::Pes17
         | PesVersion::Pes18

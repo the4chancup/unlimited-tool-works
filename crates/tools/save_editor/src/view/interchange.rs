@@ -60,7 +60,9 @@ fn pick_filters(version: PesVersion) -> [(&'static str, &'static [&'static str])
     let team_files: (&str, &[&str]) = ("Team files", &["toml", "4ccs", "4cct", "ted"]);
     let all_files: (&str, &[&str]) = ("All files", &["*"]);
     match version {
-        PesVersion::Pes15 | PesVersion::Pes16 | PesVersion::Pes17 => [all_files, team_files],
+        PesVersion::Pes14 | PesVersion::Pes15 | PesVersion::Pes16 | PesVersion::Pes17 => {
+            [all_files, team_files]
+        }
         PesVersion::Pes18 | PesVersion::Pes19 | PesVersion::Pes20 | PesVersion::Pes21 => {
             [team_files, all_files]
         }
@@ -192,7 +194,8 @@ impl Export {
                 format!("{file}.toml")
             }
             Export::Texport => match version {
-                PesVersion::Pes15 | PesVersion::Pes16 | PesVersion::Pes17 => (0..=u32::MAX)
+                PesVersion::Pes14 | PesVersion::Pes15 | PesVersion::Pes16 | PesVersion::Pes17 => (0
+                    ..=u32::MAX)
                     .map(|number| format!("TEXPORT{number:08X}"))
                     .find(|name| !save.with_file_name(name).exists())
                     .expect("a folder holds fewer files than eight hex digits count"),
@@ -1295,7 +1298,9 @@ mod tests {
     fn the_pick_dialog_opens_on_all_files_for_pes_2015_to_2017() {
         for version in PesVersion::ALL {
             let first = match version {
-                PesVersion::Pes15 | PesVersion::Pes16 | PesVersion::Pes17 => "All files",
+                PesVersion::Pes14 | PesVersion::Pes15 | PesVersion::Pes16 | PesVersion::Pes17 => {
+                    "All files"
+                }
                 PesVersion::Pes18 | PesVersion::Pes19 | PesVersion::Pes20 | PesVersion::Pes21 => {
                     "Team files"
                 }
