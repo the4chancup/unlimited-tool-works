@@ -1181,6 +1181,73 @@ fn an_out_of_range_injury_resistance_draws_as_stored_without_marking_the_player(
     );
 }
 
+/// `view`'s first named rostered player whose stored injury resistance
+/// is not `already` (so the typed value cannot pass unwritten), as
+/// `(team_id, roster slot, player_id)`.
+fn rostered_player(view: &SaveView, already: u8) -> (u32, u8, u32) {
+    let file = view.session.as_ref().unwrap().file();
+    file.teams()
+        .iter()
+        .find_map(|team| {
+            team.roster
+                .iter()
+                .enumerate()
+                .find(|(_, slot)| {
+                    slot.player_id != 0
+                        && file.player(slot.player_id).is_some_and(|player| {
+                            !player.name.is_empty() && player.stats.injury_resistance != already
+                        })
+                })
+                .map(|(index, slot)| (team.id, index as u8, slot.player_id))
+        })
+        .expect("a rostered named player")
+}
+
+// PES 2014 runs the four small stats 1 to 8 where the other versions
+// stop injury resistance at 3 and the weak foot at 4: a typed 8 stores
+// 7 there, clamps to the shown 3 (stored 2) on PES 2015.
+#[test]
+fn the_injury_resistance_box_runs_to_eight_on_pes14() {
+    for (version, expected) in [(PesVersion::Pes14, 7), (PesVersion::Pes15, 2)] {
+        let path = fixture(version, &format!("injury_range_{version:?}").to_lowercase());
+        let mut view = SaveView::new();
+        view.open(&path);
+        let (team, slot, player_id) = rostered_player(&view, expected);
+        view.selected = Some(Selection::Player(team, slot));
+        let mut window = Headless::sized(DEFAULT_PANE.x, 700.0);
+        let nodes = scroll_into_view(&mut window, &mut view, |node| {
+            node.role() == Role::Label && node.value() == Some("Injury Resistance")
+        });
+        let control = right_of_label(&nodes, "Injury Resistance", Role::SpinButton)
+            .first()
+            .copied()
+            .expect("the Injury Resistance control");
+        assert_ne!(
+            control.value(),
+            Some("8"),
+            "premise: the box does not start at the typed value"
+        );
+        click(&mut window, control, &mut view);
+        window.frame(vec![egui::Event::Text("8".to_owned())], |ui| {
+            show(ui, &mut view, &|| Vec::new())
+        });
+        window.frame(
+            vec![key(egui::Key::Enter, egui::Modifiers::NONE, true)],
+            |ui| show(ui, &mut view, &|| Vec::new()),
+        );
+        let stored = view
+            .session
+            .as_ref()
+            .unwrap()
+            .file()
+            .player(player_id)
+            .unwrap()
+            .stats
+            .injury_resistance;
+        assert_eq!(stored, expected, "{version}: a typed 8 stores {expected}");
+    }
+}
+
 mod badges;
 mod cards;
 mod columns;

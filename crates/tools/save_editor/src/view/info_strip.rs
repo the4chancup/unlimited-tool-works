@@ -28,7 +28,7 @@ use crate::session::Session;
 use crate::session::undo::RUN_PAUSE;
 use crate::view::abilities::{
     CELL_PADDING, PLAYING_STYLE_LABEL, REGISTERED_POSITION_LABEL, SMALL_STATS, STRONGER_FOOT_LABEL,
-    STRONGER_HAND_LABEL, SmallStat, gated_label, gating_tooltip, position_label,
+    STRONGER_HAND_LABEL, SmallStat, gated_label, gating_tooltip, position_label, small_stat_max,
 };
 use crate::view::live_marks::{MarkedField, Marks};
 use crate::view::{
@@ -911,7 +911,7 @@ fn small_box(
 ) {
     let stored = (small.get)(stats).expect("SMALL_STATS' four fields are stored on every version");
     let mut shown = stored + small.shift;
-    let range = small.min..=small.max;
+    let range = small.min..=small_stat_max(session.version(), small);
     let mut response = number_arrows(ui, &mut shown, range.clone(), |ui, value| {
         ui.add_sized(
             [BOX_WIDTH, ui.spacing().interact_size.y],
@@ -922,11 +922,7 @@ fn small_box(
             ),
         )
     });
-    if step_number(
-        &mut shown,
-        number_wheel_steps(ui, &response),
-        small.min..=small.max,
-    ) {
+    if step_number(&mut shown, number_wheel_steps(ui, &response), range) {
         response.mark_changed();
     }
     if response.changed() {

@@ -177,6 +177,18 @@ fn the_small_stats_labels_are_the_games_names() {
     }
 }
 
+// A field only PES 2014 stores is greyed on the other versions under a
+// `PES 2014 only` tooltip: `first_version_with` searches
+// `PesVersion::ALL`, which PES 2014 stays out of, so it finds none. A
+// field another version stores keeps its `PES NN+`.
+#[test]
+fn a_pes14_only_fields_tooltip_says_pes_2014_only() {
+    for field in [PlayerField::Tenacity, PlayerField::PuntKickMotion] {
+        assert_eq!(super::gating_tooltip(field), "PES 2014 only", "{field:?}");
+    }
+    assert_eq!(super::gating_tooltip(PlayerField::Clearing), "PES 16+");
+}
+
 /// An empty roster slot fails the badge's check, naming the slot as
 /// the player list numbers it: from 01, not the 0-based slot.
 #[test]

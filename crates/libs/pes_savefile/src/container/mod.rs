@@ -94,14 +94,26 @@ pub enum ContainerError {
 /// The PES 2014 EDIT payload's size: the one thing telling a PES 2014
 /// save from a PES 2015 one, both decrypting under `Scheme::Pes15`.
 const PES14_PAYLOAD_LEN: usize = 4_726_440;
+/// The PES 2014 `TEXPORTnn.bin` payload's size, which names the
+/// container PES 2014 as `PES14_PAYLOAD_LEN` does: no PES 2015 file is
+/// this size (PES 2015's EDIT payload is 5 782 808 bytes, its
+/// Texport's 5 577 964).
+const PES14_TEXPORT_PAYLOAD_LEN: usize = 5_316_176;
 
 impl SaveContainer {
     /// The game version the container belongs to. A `Scheme::Pes15`
-    /// container is PES 2014's when its payload is `PES14_PAYLOAD_LEN`,
-    /// PES 2015's otherwise.
+    /// container is PES 2014's when its payload is `PES14_PAYLOAD_LEN` or
+    /// `PES14_TEXPORT_PAYLOAD_LEN`, PES 2015's otherwise.
     pub fn version(&self) -> PesVersion {
         match self.scheme {
-            Scheme::Pes15 if self.payload.len() == PES14_PAYLOAD_LEN => PesVersion::Pes14,
+            Scheme::Pes15
+                if matches!(
+                    self.payload.len(),
+                    PES14_PAYLOAD_LEN | PES14_TEXPORT_PAYLOAD_LEN
+                ) =>
+            {
+                PesVersion::Pes14
+            }
             Scheme::Pes15 => PesVersion::Pes15,
             Scheme::Keyed(key) => key.version(),
         }
@@ -493,6 +505,20 @@ mod tests {
             crate::fixtures::fixture_container(PesVersion::Pes15).version(),
             PesVersion::Pes15
         );
+    }
+
+    /// A PES 2014 `TEXPORTnn.bin`'s payload size names its `Scheme::Pes15`
+    /// container PES 2014 as the EDIT's does, so it is refused as a
+    /// Texport with no layout rather than read at PES 2015's offsets;
+    /// PES 2015's Texport's size still names PES 2015.
+    #[test]
+    fn a_pes14_texport_payload_reports_pes14() {
+        let with = |len| SaveContainer {
+            payload: vec![0; len],
+            ..crate::fixtures::fixture_container(PesVersion::Pes15)
+        };
+        assert_eq!(with(5_316_176).version(), PesVersion::Pes14);
+        assert_eq!(with(5_577_964).version(), PesVersion::Pes15);
     }
 
     #[test]

@@ -30,7 +30,8 @@ use pes_savefile::interchange::team_toml::labels::{
 };
 use pes_savefile::model::{PlayerEntry, PlayerPositions, PlayerSkills, PlayerStats};
 use pes_savefile::schema::fields::{ABILITY_FIELDS, PlayerField};
-use pes_savefile::schema::first_version_with;
+use pes_savefile::schema::{first_version_with, schema_for};
+use pes_version::PesVersion;
 use studio_core::widgets::{
     FIELD_SPACING, add_enabled, number_arrows, number_box, number_box_look, number_wheel_steps,
     resting_edge, step_number,
@@ -661,8 +662,9 @@ pub(super) struct SmallStat {
 
 /// The Main stats panel's four stored fields, in the draft's order: form
 /// 1-8, injury resistance 1-3, weak foot usage and accuracy 1-4 (each
-/// stored one lower). Star and playing attitude sit on the Appearance
-/// screen, in `appearance::fields::PRESENTATION_STATS`.
+/// stored one lower), all four running 1-8 on PES 2014 (`small_stat_max`).
+/// Star and playing attitude sit on the Appearance screen, in
+/// `appearance::fields::PRESENTATION_STATS`.
 pub(super) const SMALL_STATS: [SmallStat; 4] = [
     SmallStat {
         label: "Form",
@@ -706,6 +708,17 @@ pub(super) const SMALL_STATS: [SmallStat; 4] = [
     },
 ];
 
+/// The shown top of `small`'s range on `version`: on PES 2014 the four
+/// Main stats each run from 1 to 8, where the other versions stop injury
+/// resistance at 3 and the weak foot at 4 (`small.max` holds those).
+pub(super) fn small_stat_max(version: PesVersion, small: &SmallStat) -> u8 {
+    if version == PesVersion::Pes14 {
+        8
+    } else {
+        small.max
+    }
+}
+
 /// One `SmallStat`'s label/control pair: `number` for a stored field, the
 /// `-` stand-in for a gated one (the label stays too: the gated control
 /// keeps its cell). The Appearance screen's Presentation group uses it;
@@ -725,7 +738,7 @@ pub(super) fn small_stat(
                 player_id,
                 small.shown,
                 stored + small.shift,
-                small.min..=small.max,
+                small.min..=small_stat_max(session.version(), small),
                 move |player, shown| {
                     (small.set)(&mut player.stats, shown - small.shift);
                 },
@@ -1546,14 +1559,21 @@ pub(crate) fn gated_label(ui: &mut egui::Ui, text: &str, tooltip: String) -> egu
         .on_disabled_hover_text(tooltip)
 }
 
-/// The tooltip naming the first version that stores `field` (`PES NN+`).
+/// The tooltip naming the first version that stores `field` (`PES NN+`),
+/// or `PES 2014 only` for a field PES 2014 alone stores: `first_version_with`
+/// searches `PesVersion::ALL`, which PES 2014 stays out of, so it finds
+/// none for one.
 pub(crate) fn gating_tooltip(field: PlayerField) -> String {
-    format!(
-        "PES {}+",
-        first_version_with(field)
-            .expect("a gated field is stored by some version")
-            .number()
-    )
+    match first_version_with(field) {
+        Some(version) => format!("PES {}+", version.number()),
+        None if schema_for(PesVersion::Pes14)
+            .player_field_set()
+            .contains(&field) =>
+        {
+            "PES 2014 only".to_owned()
+        }
+        None => panic!("a gated field is stored by some version"),
+    }
 }
 
 /// The registered position's full names in `POSITIONS` order (the draft's

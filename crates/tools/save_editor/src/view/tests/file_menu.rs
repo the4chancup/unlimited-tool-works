@@ -334,7 +334,11 @@ fn the_file_menu_lists_the_writes_then_the_saves_then_close_and_exit() {
         menu_shown(&window, &nodes),
         "premise: the menu is still open"
     );
-    assert_eq!(calls.get(), PesVersion::ALL.len(), "one call per version");
+    assert_eq!(
+        calls.get(),
+        crate::view::file_menu::discovered_versions().count(),
+        "one call per discovered version"
+    );
 
     // A discovered entry opens its save.
     click(&mut window, menu_item(&nodes, PES19_ENTRY), &mut view);
@@ -1996,8 +2000,8 @@ fn the_welcome_panel_scans_once_not_every_frame() {
     idle_frames(&mut window, &mut view, 5);
     assert_eq!(
         calls.get(),
-        PesVersion::ALL.len(),
-        "one discovery call per version, once for the panel's whole stay"
+        crate::view::file_menu::discovered_versions().count(),
+        "one discovery call per discovered version, once for the panel's whole stay"
     );
 }
 

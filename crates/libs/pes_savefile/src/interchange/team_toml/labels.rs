@@ -219,9 +219,11 @@ pub fn card_name(id: &str) -> String {
 /// `ABILITY_STATS` entry, or `form`, `injury_resistance`, `weak_foot_usage`,
 /// `weak_foot_accuracy`): the place a stat's shown name comes from wherever
 /// it depends on the version, so the player view, the changes lists and the
-/// AATF rows' sentences read the names the member's game shows. PES 2017's
-/// Edit screen calls `heading` Header and every other stat by its spelling
-/// title-cased. The other versions' names are not read off their games yet,
+/// AATF rows' sentences read the names the member's game shows. PES 2014's
+/// Ability settings names `swerve` Controlled Spin, `heading` Header,
+/// `body_control` Body Balance and `catching` Saving, every other stat by
+/// its spelling title-cased; PES 2017's Edit screen calls `heading`
+/// Header. The other versions' names are not read off their games yet,
 /// so they fall back to the title case. The AATF rows' rule column and the
 /// Main stats' labels name Form, Injury Resistance and the weak foot's
 /// halves with fixed strings instead, equal to the names here on every
@@ -229,9 +231,14 @@ pub fn card_name(id: &str) -> String {
 pub fn stat_name(version: PesVersion, stat: &str) -> String {
     // Each version's stats whose name is not their spelling title-cased.
     let renamed: &[(&str, &str)] = match version {
+        PesVersion::Pes14 => &[
+            ("swerve", "Controlled Spin"),
+            ("heading", "Header"),
+            ("body_control", "Body Balance"),
+            ("catching", "Saving"),
+        ],
         PesVersion::Pes17 => &[("heading", "Header")],
-        PesVersion::Pes14
-        | PesVersion::Pes15
+        PesVersion::Pes15
         | PesVersion::Pes16
         | PesVersion::Pes18
         | PesVersion::Pes19
@@ -495,6 +502,22 @@ mod tests {
             assert_eq!(stat_name(PesVersion::Pes17, stat), name, "{stat}");
         }
         assert_eq!(stat_name(PesVersion::Pes21, "heading"), "Heading");
+    }
+
+    /// PES 2014's Ability settings names four stats its own way; every
+    /// other stat's title case already matches the game.
+    #[test]
+    fn pes_2014_names_its_stats_as_its_ability_settings_does() {
+        for (stat, name) in [
+            ("swerve", "Controlled Spin"),
+            ("heading", "Header"),
+            ("body_control", "Body Balance"),
+            ("catching", "Saving"),
+        ] {
+            assert_eq!(stat_name(PesVersion::Pes14, stat), name, "{stat}");
+        }
+        assert_eq!(stat_name(PesVersion::Pes14, "speed"), "Speed");
+        assert_eq!(stat_name(PesVersion::Pes15, "swerve"), "Swerve");
     }
 
     #[test]

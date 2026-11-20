@@ -141,8 +141,8 @@ struct Opens {
 /// gone can take seconds to answer whether it exists.
 #[derive(Clone)]
 pub(super) struct Found {
-    /// The discovered saves, each with its version, in `PesVersion::ALL`'s
-    /// order.
+    /// The discovered saves, each with its version, oldest first
+    /// (PES 2014, then `PesVersion::ALL`'s order).
     saves: Vec<(PesVersion, SavefileCandidate)>,
     /// `view`'s recent saves still on disk; one that is gone is skipped but
     /// stays in the setting.
@@ -489,8 +489,7 @@ pub(super) fn consume_shortcut(input: &mut egui::InputState) -> Option<Shortcut>
     if consume_ctrl(input, egui::Key::O) {
         return Some(Shortcut::Picker);
     }
-    PesVersion::ALL
-        .into_iter()
+    discovered_versions()
         .find(|version| consume_ctrl(input, shortcut_key(*version)))
         .map(Shortcut::Save)
 }
@@ -535,11 +534,17 @@ fn shortcut_text(version: PesVersion) -> String {
     format!("Ctrl+{}", shortcut_key(version).name())
 }
 
-/// Every version's saves under Documents, each with its version, in
-/// `PesVersion::ALL`'s order (`view.discover`, stubbed in the tests).
+/// The versions whose saves the File menu lists and its Open shortcuts
+/// open, oldest first: `PesVersion::ALL` with PES 2014 before it, the
+/// editor being the one tool a PES 2014 save reaches.
+pub(super) fn discovered_versions() -> impl Iterator<Item = PesVersion> {
+    [PesVersion::Pes14].into_iter().chain(PesVersion::ALL)
+}
+
+/// Every discovered version's saves under Documents, each with its
+/// version, oldest first (`view.discover`, stubbed in the tests).
 fn discover_all(view: &SaveView) -> Vec<(PesVersion, SavefileCandidate)> {
-    PesVersion::ALL
-        .into_iter()
+    discovered_versions()
         .flat_map(|version| {
             (view.discover)(version)
                 .into_iter()
@@ -619,6 +624,54 @@ mod tests {
                 version: *version,
             })
             .collect()
+    }
+
+    // Discovery covers PES 2014 beside `PesVersion::ALL`, oldest first:
+    // its save stands first, then the other versions' in `ALL`'s order.
+    #[test]
+    fn discover_all_lists_pes14_first_then_all_in_order() {
+        let mut view = SaveView::new();
+        view.discover = Box::new(|version| {
+            vec![SavefileCandidate {
+                path: PathBuf::from(format!("{version}/save")),
+                account: None,
+                modified: std::time::SystemTime::UNIX_EPOCH,
+            }]
+        });
+        let saves = discover_all(&view);
+        let versions: Vec<PesVersion> = saves.iter().map(|(version, _)| *version).collect();
+        assert_eq!(
+            versions,
+            [PesVersion::Pes14]
+                .into_iter()
+                .chain(PesVersion::ALL)
+                .collect::<Vec<PesVersion>>(),
+            "PES 2014 first, then `PesVersion::ALL`'s order"
+        );
+        assert_eq!(
+            saves[0].1.path,
+            PathBuf::from("PES 2014/save"),
+            "the PES 2014 entry carries its candidate"
+        );
+    }
+
+    // Ctrl+4 asks for PES 2014's newest save, as 5 to 9, 0 and 1 do the
+    // other versions'.
+    #[test]
+    fn ctrl_plus_4_consumes_to_pes14s_open_shortcut() {
+        let mut input = egui::InputState::default();
+        input.events = vec![egui::Event::Key {
+            key: egui::Key::Num4,
+            physical_key: None,
+            pressed: true,
+            repeat: false,
+            modifiers: egui::Modifiers::CTRL,
+        }];
+        assert!(matches!(
+            consume_shortcut(&mut input),
+            Some(Shortcut::Save(PesVersion::Pes14))
+        ));
+        assert!(input.events.is_empty(), "the press is consumed");
     }
 
     // Every version's Open shortcut is the digit the File menu's entries
