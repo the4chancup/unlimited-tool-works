@@ -728,6 +728,14 @@ on main. Main is merged into the branch, never rebased onto it.
    - Slice 2b, the pitch's PES 2014 rules (shirts, swaps): done.
    - Slice 2c: Combination play, Automatic settings and the tooltips; the changes rows name
      a Strategy as the dropdown does, and show Support Range as the game does.
+     - 2c-1, Combination play, its switch and the changes rows: done (`64468241`), seen in
+       the built window beside the draft.
+     - 2c-2, the game's help texts as tooltips: landed (`5fd1a8ef`); its look in the built
+       window is owed.
+     - 2c-3, the review fixes of both: running. From 2c-1's review, a test that a wheel notch
+       skips a greyed strategy, three rules made crate-private and the module's doc; from
+       2c-2's, more tooltip placements tested from the screen and a plainer closure; and
+       three comments the comment check flags.
    - Slice 2d: free moves and the overall on the pitch, once the game's code gives their
      rules.
    - The command line refuses the commands out of scope on a PES 2014 save ("Not in scope").
