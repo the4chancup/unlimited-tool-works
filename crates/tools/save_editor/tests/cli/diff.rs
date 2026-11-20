@@ -342,13 +342,16 @@ fn the_appearance_id_is_an_ordinary_row() {
 }
 
 #[test]
-fn a_pes_2014_save_is_refused() {
+fn a_pes_2014_save_is_refused_first_or_second() {
     let sandbox = Sandbox::new("diff_pes14");
-    // Two of one version, so the version-mismatch refusal cannot be the one seen.
+    // Each pair mixes versions, so a side whose save is let through shows as the
+    // version-mismatch refusal, which names the versions but not the PES 2014 save's path.
     sandbox.fixture(PesVersion::Pes14, "EDIT14");
-    sandbox.fixture(PesVersion::Pes14, "EDIT14B");
-
-    sandbox
-        .diff("EDIT14", "EDIT14B", &[])
-        .assert_refused(2, &["PES 2014"]);
+    sandbox.fixture(PesVersion::Pes21, "EDIT21");
+    let refusal = format!("{}: not available on PES 2014 saves", sandbox.arg("EDIT14"));
+    for (first, second) in [("EDIT14", "EDIT21"), ("EDIT21", "EDIT14")] {
+        sandbox
+            .diff(first, second, &[])
+            .assert_refused(2, &[refusal.as_str()]);
+    }
 }
