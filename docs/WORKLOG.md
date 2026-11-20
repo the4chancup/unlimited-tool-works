@@ -3459,8 +3459,8 @@ points there.
   `studio_core_repro_*` / `studio_core_files_*`. Each folder's name ends in the test process's
   ID, and `scratch` only clears a folder of the same name before a test, so every test run
   (a mutation run's hundreds included) leaves its own. Fix: a scratch guard whose `Drop`
-  removes the folder, in each crate's helper. The folders already there are the maintainer's
-  to delete.
+  removes the folder, in each crate's helper. The 17,280 folders found then (657 MiB) were
+  deleted; about 700 more, whose process ID a running program now holds, were kept.
 - resolved 2026-11-17 by 0.0.2-present (`0cbe7637`) (the maintainer; measured by the lead on the release build of `26ae8f7c`,
   DX12): while the window is resized, everything away from its middle jumps and comes back on
   each step (the sidebar's lower icons by two points). The cause is wgpu's DX12 swap chain,
