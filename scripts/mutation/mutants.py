@@ -42,9 +42,10 @@ running half is stopped by hand with `sudo systemctl stop studio-mutants` on
 the host.
 
 The remote needs: git, a C toolchain, rustup, cargo-mutants, cargo-nextest and
-`just` (for `just gates-remote`) at the local versions (the pinned toolchain
-installs itself on first use inside the tree; cargo installs from inside it, the
-host having no default toolchain), `sudo -n systemd-run` for the ssh user, `ionice`,
+`just` (for `just gates-remote`) at the local versions, installed with
+`cargo install` run inside `~/studio-mutants/tree` where the pinned toolchain
+applies (the host has no default toolchain; the toolchain itself installs on
+first use there), `sudo -n systemd-run` for the ssh user, `ionice`,
 `tar`, `nproc`, `awk`, cgroup v2 (the unit's `memory.peak`) and `python3` (`just gates`'
 scripts).
 """
@@ -152,12 +153,19 @@ GATES_UNIT = "studio-gates"
 # either wasted what was free or squeezed the host. A service that grows during
 # a run eats into this margin, so it is not cut finer.
 REMOTE_MEMORY_RESERVE = 2**30
-# Build jobs per remote cargo process (two run at once): fewer than the
-# remote's half-the-CPUs test threads, because a build's memory grows with
-# its parallel rustc processes and the GUI crates' dependencies (naga, wgpu,
-# wayland) are the largest the workspace builds. At 2, a rerun peaked at the
-# 9 GiB cap with three builds killed.
+# `CARGO_BUILD_JOBS` for the remote's extra-mutant pass (`--remote-extra`):
+# the one place it takes effect, the pass running outside cargo-mutants and
+# its jobserver. A build's memory grows with its parallel rustc processes and
+# the GUI crates' dependencies (naga, wgpu, wayland) are the largest the
+# workspace builds; at 2, a rerun peaked at the 9 GiB cap with three builds
+# killed.
 REMOTE_BUILD_JOBS = 1
+# The remote half's `--jobserver-tasks`: the build cap, since under
+# cargo-mutants 27.1's jobserver cargo ignores `-j`/`--build-jobs`. `None` is
+# the host's CPU count (`nproc`, already probed for the config), the default
+# every remote run built under; a number lowers it when builds are killed at
+# the unit's memory cap.
+REMOTE_JOBSERVER_TASKS: int | None = None
 # Crates whose mutants never go to the remote because their builds outgrow the
 # cap even at one build job. A `mutants-diff` holding any of their mutants runs
 # locally whole. Empty now: team_compiler was listed after two of its builds
@@ -466,22 +474,25 @@ def transfer(host: str, remote_head: str | None) -> None:
 
 
 def sized_config(
-    cpus: int, build_jobs: int | None = None, extra: dict | None = None, *, source: Path
+    cpus: int, jobserver_tasks: int | None = None, extra: dict | None = None, *, source: Path
 ) -> str:
     """`source`'s `.cargo/mutants.toml` (the run's copy, `snapshot_source`) as text,
     with each of the two cargo processes (`--jobs
-    2`) given half of `cpus` logical CPUs, for test threads and, unless
-    `build_jobs` sets fewer, build jobs, so together they use every CPU
-    without oversubscribing it. The scripts run cargo-mutants at a low
+    2`) given half of `cpus` logical CPUs for test threads, so together they
+    use every CPU without oversubscribing it. The scripts run cargo-mutants at a low
     priority instead of holding CPUs back (`below_normal`), so the machine
-    stays usable. `extra` sets more keys — a file split's `examine_globs` or
-    `exclude_globs`; a list value extends the base file's list of that key
-    rather than replacing it."""
+    stays usable. `jobserver_tasks` sizes the jobserver cargo-mutants runs,
+    the only build cap there is (cargo ignores `-j`/`--build-jobs` under it):
+    the remote passes its count so the cap is a knob; `None` keeps
+    cargo-mutants' default, the machine's CPU count. `extra` sets more keys —
+    a file split's `examine_globs` or `exclude_globs`; a list value extends
+    the base file's list of that key rather than replacing it."""
     config = tomllib.loads((source / ".cargo/mutants.toml").read_text(encoding="utf-8"))
     half = max(1, cpus // 2)
     # The file's `test_tool` is nextest, which reads `--jobs` as its test
     # threads and takes its own options without libtest's `--`.
-    config["additional_cargo_args"] = ["--build-jobs", str(build_jobs or half)]
+    if jobserver_tasks is not None:
+        config["additional_cargo_args"] = ["--jobserver-tasks", str(jobserver_tasks)]
     config["additional_cargo_test_args"] = [f"--test-threads={half}"]
     for key, value in (extra or {}).items():
         base = config.get(key)
@@ -503,10 +514,12 @@ def sized_config(
 
 def remote_config(host: str, nproc: int, source: Path, extra: dict | None = None) -> None:
     """Write the remote's mutants.toml from `source`'s, sized for the remote's CPUs, its
-    builds held to `REMOTE_BUILD_JOBS` for the memory cap; `extra` carries a file
-    split's `exclude_globs`."""
+    jobserver at `REMOTE_JOBSERVER_TASKS` (`nproc` while unset) for the memory cap;
+    `extra` carries a file split's `exclude_globs`."""
     ssh(host, f"cat > {REMOTE_BASE}/mutants.remote.toml",
-        input=sized_config(nproc, REMOTE_BUILD_JOBS, extra, source=source),
+        input=sized_config(
+            nproc, REMOTE_JOBSERVER_TASKS or nproc, extra, source=source
+        ),
         text=True, check=True)
 
 
@@ -1166,11 +1179,22 @@ def never_ran(out_dir: Path) -> tuple[int, int] | None:
     return (ran, selected) if ran < selected else None
 
 
+def run_code(codes: Iterable[int]) -> int:
+    """The exit code a run's results combine to: this script's 1 (mutants went
+    untested) outranks cargo-mutants' 2 (missed) and 3 (timed out) — a survivor
+    is in `missed_all.txt`, an untested mutant is in no list. A baseline's 4
+    and a split coverage gap's 5 stay on top."""
+    top = max(codes)
+    return 1 if 1 in codes and top < 4 else top
+
+
 def recheck_windows(missed: list[str]) -> set[str]:
     """Rerun the remote half's `missed` survivors (missed.txt lines) in one
     cargo-mutants run on this machine, the tests that catch them being
     `#[cfg(windows)]` (WINDOWS_ONLY_TESTS) so the Linux remote cannot, and
-    return the lines it caught. `--re` names each mutant escaped and anchored,
+    return the lines it caught: a `CaughtMutant` outcome counts only with
+    failed tests (`caught_by_tests`), cargo-mutants filing any nonzero test
+    exit in `caught.txt`. `--re` names each mutant escaped and anchored,
     `-p` the crates they live in, `--output` a folder of its own under
     `mutants.out/` so the local half's results stay. It runs on the tree the
     remote half ran (`REMOTE_REF`), whose lines the survivors name. A run that
@@ -1188,18 +1212,19 @@ def recheck_windows(missed: list[str]) -> set[str]:
     with snapshot_source(tree) as source:
         run = local_mutants(args, source)
     results = out / "mutants.out"
-    if run.returncode == 4 or not (results / "outcomes.json").exists():
+    outcomes_path = results / "outcomes.json"
+    if run.returncode == 4 or not outcomes_path.exists():
         print(
             f"the recheck did not finish (exit {run.returncode}); "
             f"the {len(missed)} mutants stay missed"
         )
         return set()
-    caught = (
-        (results / "caught.txt").read_text(encoding="utf-8").splitlines()
-        if (results / "caught.txt").exists()
-        else []
-    )
-    return set(caught) & set(missed)
+    caught = {
+        outcome["scenario"]["Mutant"]["name"]
+        for outcome in json.loads(outcomes_path.read_text(encoding="utf-8"))["outcomes"]
+        if outcome["summary"] == "CaughtMutant" and caught_by_tests(outcome)
+    }
+    return caught & set(missed)
 
 
 def summarize(
@@ -1322,20 +1347,21 @@ def summarize(
         code = max(code, 2)
     elif code == 2:
         code = 0
-    if extra_missing:
-        code = max(code, 1)
+    # The script's own 1 is not folded with max(): it must outrank a 2 or 3
+    # (`run_code` does that in `report_killed`).
+    untested = extra_missing
     # A local half stopped before cargo-mutants wrote its selection leaves nothing to count
     # (`never_ran` has no selection to compare), and its zero row would read as clean: the
     # fetch creates `mutants.out` for the remote half's copy whether the local half ran or not.
     if local_half and not REMOTE_ONLY and not (local / "mutants.json").exists():
         print("the local half never started: none of its mutants ran")
-        code = max(code, 1)
+        untested = True
     for label, base, _ in halves:
         short = never_ran(base)
         if short is not None:
             ran, selected = short
             print(f"the {label} half stopped early: {selected - ran} of its {selected} mutants never ran")
-            code = max(code, 1)
+            untested = True
     # A whole-crate split run records its whole listing's names
     # (split_run_record): whichever method shared them, the two halves'
     # merged outcomes must name each listed mutant exactly once — anything
@@ -1362,40 +1388,46 @@ def summarize(
                     + ", ".join(sorted(names)[:5])
                 )
                 code = max(code, 5)
-    return report_killed(code, local_half=local_half)
+    return report_killed(code, local_half=local_half, untested=untested)
 
 
-def report_killed(code: int, *, local_half: bool) -> int:
-    """Lists the mutants whose build was killed (`killed_builds`), local half
-    when the run had one and remote half, and turns `code` into a failure when
-    there are any: those
-    mutants were never tested, and the counts above file them as unviable."""
+def report_killed(code: int, *, local_half: bool, untested: bool = False) -> int:
+    """Lists the mutants that went untested (`killed_builds`: a killed build, a
+    signal-ended cargo, a nextest run that broke before failing a test) under
+    the local half's `mutants.out` when the run had one, the remote half's and
+    the Windows recheck's, and turns `code` into a failure when `untested` or
+    a list is nonempty (`run_code` ranks it): those mutants were never tested,
+    and the counts file them as unviable, caught or in no list."""
     local = ROOT / "mutants.out"
-    here = killed_builds(local) if local_half else []
-    remote = killed_builds(local / "remote" / "mutants.out")
-    if not here and not remote:
-        return code
-    print(
-        f"{len(here) + len(remote)} mutants were NOT tested: a build process was killed "
-        "for memory or lost its console, a link failed (their logs say which), cargo was "
-        "ended by a signal, or nextest failed without a failing test, and cargo-mutants "
-        "counted them as unviable, caught or in no list."
+    # The recheck ran on this machine too: its untested mutants rerun the same way.
+    here = (killed_builds(local) if local_half else []) + killed_builds(
+        local / "recheck" / "mutants.out"
     )
-    if remote:
+    remote = killed_builds(local / "remote" / "mutants.out")
+    if here or remote:
         print(
-            "On the remote: a diff run reruns them on this machine (the same `just` "
-            "command with STUDIO_MUTANTS_REMOTE set empty); a whole run has no local "
-            "half, so rerun it there. If the remote half's peak reached its cap, "
-            "free memory on the host or lower REMOTE_BUILD_JOBS "
-            f"(now {REMOTE_BUILD_JOBS}) in scripts/mutation/mutants.py:"
+            f"{len(here) + len(remote)} mutants were NOT tested: a build process was killed "
+            "for memory or lost its console, a link failed (their logs say which), cargo was "
+            "ended by a signal, or nextest failed without a failing test, and cargo-mutants "
+            "counted them as unviable, caught or in no list."
         )
-        for name in remote:
-            print(f"  {name}")
-    if here:
-        print("On this machine: rerun them with less running here:")
-        for name in here:
-            print(f"  {name}")
-    return max(code, 1)
+        untested = True
+        if remote:
+            tasks = REMOTE_JOBSERVER_TASKS or "the host's CPU count"
+            print(
+                "On the remote: a diff run reruns them on this machine (the same `just` "
+                "command with STUDIO_MUTANTS_REMOTE set empty); a whole run has no local "
+                "half, so rerun it there. If the remote half's peak reached its cap, "
+                "free memory on the host or lower REMOTE_JOBSERVER_TASKS "
+                f"(now {tasks}) in scripts/mutation/mutants.py:"
+            )
+            for name in remote:
+                print(f"  {name}")
+        if here:
+            print("On this machine: rerun them with less running here:")
+            for name in here:
+                print(f"  {name}")
+    return run_code([code, 1] if untested else [code])
 
 
 def collect(host: str) -> int:
@@ -1813,7 +1845,8 @@ def plan_file_split(selection: list[str], nproc: int, source: Path) -> dict:
     # config's, and the remote config's text in a local file — must recombine
     # to the whole listing with no name missing or doubled.
     remote_text = sized_config(
-        nproc, REMOTE_BUILD_JOBS, extra={"exclude_globs": sorted(local_files)}, source=source
+        nproc, REMOTE_JOBSERVER_TASKS or nproc,
+        extra={"exclude_globs": sorted(local_files)}, source=source
     )
     remote_tmp = tempfile.NamedTemporaryFile(suffix=".toml", delete=False)
     try:

@@ -122,7 +122,7 @@ def run(diff_path: str, tree: str, source: Path) -> int:
             out.rename(results / crate)
     if not results.exists():
         print(f"mutants_diff: no crate's results landed (the last run's, if any: {results.name}.old)")
-        return max(codes.values())
+        return mutants.run_code(codes.values())
     survivors = [line for crate in sorted(codes) for line in missed_lines(results / crate)]
     (results / "missed_all.txt").write_text(
         "".join(line + "\n" for line in survivors), encoding="utf-8"
@@ -134,7 +134,7 @@ def run(diff_path: str, tree: str, source: Path) -> int:
         print(f"missed or timed out ({len(survivors)}), in {results.name}/missed_all.txt:")
         for line in survivors:
             print(f"  {line}")
-    return max(codes.values())
+    return mutants.run_code(codes.values())
 
 
 def run_crate(diff_path: str, tree: str, source: Path, crate: str, count: int) -> int:

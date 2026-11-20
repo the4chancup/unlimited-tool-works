@@ -99,9 +99,16 @@ class Run(unittest.TestCase):
         self.assertEqual(repo.moved, [(checkpoint.REF, "started")])
 
     def test_surviving_mutants_do_not_stop_the_ref(self):
-        repo = Repo(codes={"mutants-diff": 1})
-        self.assertEqual(repo.run(), 0)
-        self.assertEqual(repo.moved, [(checkpoint.REF, "started")])
+        for code in (2, 3):  # missed mutants, timeouts: every mutant ran; survivors are listed
+            repo = Repo(codes={"mutants-diff": code})
+            self.assertEqual(repo.run(), 0, code)
+            self.assertEqual(repo.moved, [(checkpoint.REF, "started")], code)
+
+    def test_an_untested_run_keeps_the_ref_and_fails(self):
+        for code in (1, 4):  # untested mutants, a failed baseline: not every mutant ran
+            repo = Repo(codes={"mutants-diff": code})
+            self.assertEqual(repo.run(), code, code)
+            self.assertEqual(repo.moved, [], code)
 
     def test_without_mutants_only_the_gates_run(self):
         repo = Repo()
