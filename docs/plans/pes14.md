@@ -36,7 +36,8 @@ disabled:
   organizer names the cards that hardly change play, which are then free or have their own
   limit. Akko VII's page sets the free tricks per medal but names no cards, so its ruleset's
   `card_groups.tricks` is the official 4cc list (`autumn26.rhai`'s), limited to the cards PES
-  2014 has: Scissors Feint, Flip Flap, Marseille Turn, Sombrero and Cut Behind & Turn. The
+  2014 has: Scissors Feint, Flip Flap, Marseille Turn, Sombrero and Cut Behind & Turn (Precise
+  Touch on PES 2014's screen). The
   page's numbers fit later games, where Injury Resistance stops at 3 and the weak foot at 4,
   while PES 2014 shows both on bars of 8. The ruleset reads each number the page gives as the
   value the game shows, so a weak foot capped at 2 is a 2 on PES 2014's bar. Where the page
@@ -234,6 +235,40 @@ From the fork's codec, checked against the vanilla save and the Akko saves (2026
   The save's leagues as the game lists them: English League holds the 4cc teams, Ligue 1 the
   Backup teams, Italian League the Invitational teams and `/4ccg/`, LIGA BBVA the /vg/ League
   teams, and Other the created players.
+- **Pinned in game, run `appear1`** (2026-11-20, on `/4ccg/`'s player 85720 in `.akko7v2`:
+  every look item set to its lowest and saved, kept as `appear1_min`, then to its highest,
+  kept as `appear1_max`; findings in the worktree's `.tmp/pes14_ingame/appear1/`). Offsets are
+  byte:bit of the 88-byte appearance record, and each list is stored in the screen's order
+  from 0. The fork reads the same offsets for every item below that it reads:
+  - boots 0x08:0, 14 bits, a boot code: the grid's first boot (Predator LZ TRX) is 1011, its
+    last (WEPES SP2000) 83. Bits 0x09:6 and 0x09:7, above it, read 1 in all three saves;
+  - the face's edited flag 0x0B:7 and the hairstyle's 0x0F:7, each set by its part's edit (a
+    Default hairstyle sets none);
+  - skin colour 0x0C:0, 3 bits, the swatch (1 to 6) less 1;
+  - the 14 physique sliders, -7 to +7, 4 bits each holding the value plus 7, from 0x45:0 in
+    this order: Neck Length, Neck Size, Shoulder Height, Shoulder Width, Chest, Waist, Arm
+    Length, Arm Size (Arm Length first, unlike the screen), Thigh, Calf, Leg Length, Head
+    Length, Head Width, Head Depth. The Face screen's head rows are the same three fields;
+  - wristband 0x52:5, 2 bits (Off, Right, Left, Both); undershorts 0x52:7; sleeves 0x53:1, 2
+    bits (Short, Long, Auto); sock length 0x53:3, 2 bits (Normal, Long, Short); spectacles
+    0x54:6, 3 bits, the grid's cell less 1; player gloves 0x56:2 (Off, Auto); tape 0x56:3;
+    shirttail 0x56:4 (Untucked, Tucked In);
+  - inferred, each the one changed run its item fits: long-sleeved inners 0x53:5, 2 bits (Off,
+    Normal, Turtle Neck); skin type 0x4C:5, 4 bits, less 1; neck 0x4E:0, 3 bits, less 1.
+
+  Not told apart, since both passes changed them together: hairstyle, hair variation, hair
+  colour, forehead and wrinkles, and the wristband and spectacles colours. Forehead or
+  wrinkles fits the 3-bit run at 0x4E:3, but run `flags2`'s hairstyle edit set bit 0x4E:3
+  alone. The hair accessory colour did not store: its row is greyed under the hairstyle the
+  second pass chose. The face's build points, its sliders and its upper and lower face items were
+  left alone. Across `.akko7v2`'s 5060 appearance records only the ids, the boots, the skin
+  colour, byte 0x13 (the fork's hair-accessory red), byte 0x34 (the fork's iris colour, 0x34:4,
+  4 bits), the sliders and bytes 0x53 to 0x56 vary: the Akko players otherwise share one look.
+
+  The save also changed the player record. It set bits 0x28:6 and 0x28:7, which `flags2`'s
+  face, hair and boots edits did not set, so a physique, accessory or strip item did. And it
+  wrote "PLACEHOLDER", the name the game showed while 0x28:2 was clear, over the Player Name
+  at +0x2E.
 - Two more tables sit in the payload, unread by the fork: a second team table near 0x374C44
   (team ID at +0, name near +0x78) and a player table keyed by player ID right after the
   appearance table, at 0x2DABAC. The vanilla save leaves both empty.
@@ -245,8 +280,10 @@ the save" above.
 
 - **The tactics record:** the captain, and every run the codec writes (formations, man
   marking, presets), so a record reads and writes back unchanged.
-- **The appearance record:** face, hair, physique, boots, gloves, accessories and the strip
-  style.
+- **The appearance record**, what run `appear1` left (above): hairstyle, hair variation and
+  hair colour; forehead and wrinkles; the wristband, spectacles and hair-accessory colours;
+  the three inferred items; the iris colour; the face's build points, sliders and upper and
+  lower face items; and which item sets 0x28:6 and 0x28:7.
 - **The team record:** team colours, in the bytes between +0x04 and +0x2B that vary between
   teams.
 
@@ -407,7 +444,9 @@ on main. Main is merged into the branch, never rebased onto it.
    - a field only PES 2014 stores (Tenacity): `first_version_with` searches
      `PesVersion::ALL`, so its greyed box's tooltip would find no version; it reads "PES 2014
      only" (above);
-   - the overlong shirt name's tooltip "(PES 2016 shows 16)" names PES 2014 too.
+   - the overlong shirt name's tooltip "(PES 2016 shows 16)" names PES 2014 too;
+   - skill card 4 reads "Precise Touch" on PES 2014, the game's older name for Cut Behind &
+     Turn (`labels::card_name` takes no version today).
 5. The Akko VII ruleset (`akko7.rhai`, its logo and page); `/4ccg/` in `.akko7v2` passes as it
    does in the fork's fixed build.
 6. Releases: the `pes14-v` tag prefix in the update check and `release.yml`. The version
