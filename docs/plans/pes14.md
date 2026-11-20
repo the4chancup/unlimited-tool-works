@@ -31,9 +31,9 @@ disabled:
 - the tactics record, mapped whole so the editor reads and writes it exactly and the AATF
   knows the captain (below);
 - the AATF check against the Akko VII ruleset, embedded as `crates/libs/aatf/rulesets/akko7.rhai`
-  like the other events' rulesets, first in the ruleset dropdown. The Save editor's default
-  stays the official ruleset, and the build's changelog tells managers to pick Akko VII there
-  once, which the settings keep. Its logo is the event's
+  like the other events' rulesets, first in the ruleset dropdown. The build's bundled
+  settings pick it, as DBC's build picked DBC's, while the Save editor's own default stays
+  the official ruleset. Its logo is the event's
   (`C:\Data\Pictures\4ccpics\Akko_League_VII_Logo_1.png`), scaled to 84 pixels high (137 × 84)
   as the other rulesets' logos are; its page is
   `https://implyingrigged.info/wiki/Akko_League_VII:_/fluff/_Bottomed_Girls`. No game has a list of trick cards: a cup's
@@ -432,7 +432,9 @@ main. The branch's update check reads only `pes14-v<semver>` tags, so a PES 2014
 offered main's next release, which cannot open PES 2014 saves. The branch's `release.yml` runs
 on `pes14-v*` tags (GitHub reads the workflow file at the tagged commit, so main's file is
 unchanged). A prerelease is never marked Latest, so the repository's front page keeps showing
-main's release.
+main's release. Each cut opens `CHANGELOG.md` with the build's own section, what it does on PES
+2014 and what is still greyed there, above main's: the app's What's new chapter shows the
+bundled changelog, which would otherwise present main's last release as the build's news.
 
 ## Verification
 

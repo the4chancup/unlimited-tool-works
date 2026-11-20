@@ -1,5 +1,36 @@
 # Changelog
 
+## [0.0.2-pes14.1] - 2026-11-20
+
+### Important
+
+- **PES 2014**: an unofficial build for Akko League VII, whose saves are PES 2014's. This
+  build's Save editor opens and saves PES 2014's `EDIT.bin`. The build updates only to later
+  PES 2014 builds, and the regular builds never offer it.
+- **AATF**: added the Akko League VII ruleset, which the build checks against from its first
+  start.
+
+### Added
+
+- **Save editor**, on a PES 2014 save:
+  - a player's name, positions, stats (Tenacity among them), skill and COM cards, playing
+    style, motions (Punt kick among them) and goal celebrations;
+  - a player's boots ID, physique and strip style, where the save holds his look: every player
+    of the Akko saves, and elsewhere a player whose look was edited in the game;
+  - a team's name, roster and shirt numbers;
+  - the game's own words: Precise Touch for Cut Behind & Turn, Auto for the sleeves' Seasonal.
+
+### Not yet on PES 2014
+
+Greyed, each with a tooltip saying why:
+
+- the Gameplan screen, which comes in the next build. Until then, set the captain in the
+  game's own Game Plan: the AATF check reads it;
+- the face, hair and skin, the gloves and the FPC buttons;
+- the team's colours, which PES 2014 does not store;
+- Team TOML export and import, aesthetics patches, comparing two saves, the teams-list export
+  and the two Generate items.
+
 ## [0.0.2] - 2026-11-18
 
 ### Important

@@ -90,10 +90,10 @@ recent_files = []
 [save-editor]
 
 # The ruleset the AATF checks use, the same as the toolbar's ruleset dropdown.
-# Accepted values: a built-in ruleset's name (like "dbc7" or "autumn26"), or the file
+# Accepted values: a built-in ruleset's name (like "akko7" or "autumn26"), or the file
 # name of a ruleset imported into the rules folder, next to this file.
 # Default: "autumn26"
-aatf_ruleset = "dbc7"
+aatf_ruleset = "akko7"
 
 # If true, Live AATF is on: after every edit, the open team's rule breaks are listed.
 # The same as the toolbar's Live AATF button.

@@ -778,7 +778,7 @@ mod tests {
 
         let expected = SETTINGS_TEMPLATE
             .replace("pes_version = 17", "pes_version = 19")
-            .replace("aatf_ruleset = \"dbc7\"", "aatf_ruleset = \"autumn26\"")
+            .replace("aatf_ruleset = \"akko7\"", "aatf_ruleset = \"autumn26\"")
             .replace(BUNDLED_PES_FOLDER_LINE, FRESH_PES_FOLDER_LINE);
         let written = fs::read_to_string(&path).unwrap();
         for (line, (written, wanted)) in written.lines().zip(expected.lines()).enumerate() {

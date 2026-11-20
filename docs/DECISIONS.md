@@ -18985,3 +18985,21 @@ marks and the ruleset picker under the default, so a default of `akko7` would re
 tests' expectations on the branch, and every main merge touching them would conflict. The
 pick costs a manager a few seconds, once.
 Plan: `plans/pes14.md` "Goal and scope" (the AATF check).
+
+## 2026-11-20 — release (pes14 branch) — Each PES 2014 build opens the changelog with its own section
+Decision: a cut on the branch adds a `[<version>]` section at the top of `CHANGELOG.md`, saying
+what the build does on PES 2014 and what is still greyed there, above main's sections.
+Why: a section of its own, not main's changelog as is, because the app's What's new chapter
+shows the bundled changelog, and without it a PES 2014 build would present main's last
+release's notes as its news.
+Plan: `plans/pes14.md` "Releases".
+
+## 2026-11-20 — release (pes14 branch) — The PES 2014 bundle's settings pick Akko League VII
+Decision: the bundled `data/settings.toml` sets `aatf_ruleset = "akko7"`, as DBC's build set
+`dbc7`; the Save editor's own default stays `autumn26`, and the changelog no longer asks
+managers to pick the ruleset. This replaces the same day's "managers pick Akko VII once".
+Why: the bundle, not the code default, because the bundle is what DBC's build already used to
+open on its cup's ruleset, and it costs one line plus the release test that pins it, none of
+the Save editor's tests. `common.pes_version` stays 17: the settings refuse 14, and the Save
+editor does not read it.
+Plan: `plans/pes14.md` "Goal and scope" (the AATF check).

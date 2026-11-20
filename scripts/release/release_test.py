@@ -266,9 +266,9 @@ class Pure(unittest.TestCase):
         settings = tomllib.loads(
             (ROOT / "resources/bundle/data/settings.toml").read_text(encoding="utf-8")
         )
-        # DBC7's, for DBC's window testers; a stem `aatf` does not build in would fall back
-        # to the first built-in with a notice on every start.
-        self.assertEqual(settings["save-editor"]["aatf_ruleset"], "dbc7")
+        # Akko League VII's, the cup the PES 2014 builds are for; a stem `aatf` does not
+        # build in would fall back to the first built-in with a notice on every start.
+        self.assertEqual(settings["save-editor"]["aatf_ruleset"], "akko7")
         # PES 2017, DBC's game, so the window opens on the save its testers bring.
         self.assertEqual(settings["common"]["pes_version"], 17)
         source = (ROOT / "crates/libs/aatf/src/templates.rs").read_text(encoding="utf-8")
