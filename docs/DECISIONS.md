@@ -19269,3 +19269,12 @@ the first slice of its view is briefed.
 Why: the view is about to be built for the VGL organizer, and a change made in the draft costs
 less than one made in the build.
 Plan: `plans/core/development_plan.md` "Phase 8: GUI" (the paragraph on the Compiler's view).
+
+## 2026-11-20 — save_editor (pes14 branch) — A Combination Play strategy with no free area is greyed in the list
+Decision: in a Combination Play slot's strategy list, a strategy whose areas the other two
+slots all hold is greyed and cannot be picked. Cut Inside, which takes only areas 3 and 5, is
+the strategy this reaches.
+Why: greyed, not offered, because picking it would leave the slot with no area, and the game
+stores an area with every strategy; the game's own picker was never seen in that case, so the
+editor writes nothing it might refuse.
+Plan: `plans/pes14.md` "PES 2014 in the code", the Combination play bullet.

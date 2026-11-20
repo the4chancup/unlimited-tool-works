@@ -557,7 +557,9 @@ version, not the version selector.
     short free kick taker, as the game does.
   - **Combination play** is a panel of its own: three slots, each a strategy and an area, one
     strategy to an area, with a Clear button. The area list holds the strategy's areas that
-    the other two slots leave free. An empty slot reads "None Selected", as in the game.
+    the other two slots leave free. A strategy whose areas they all hold (Cut Inside takes
+    only 3 and 5) is greyed in the strategy list, since picking it would leave the slot with
+    no area the game could store. An empty slot reads "None Selected", as in the game.
   - **Tooltips** are the game's own help texts, word for word (run `help1`), since most
     managers have never played PES 2014: on each slider's label, each set-piece label and
     Join the attack, each Automatic setting, and Combination play's title. The Formation and
