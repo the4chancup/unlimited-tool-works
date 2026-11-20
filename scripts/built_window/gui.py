@@ -340,6 +340,14 @@ def folder_dialog(path):
     user32.SendMessageW(edit, 0x000C, 0, ctypes.c_wchar_p(path))  # WM_SETTEXT
     time.sleep(0.3)
     user32.PostMessageW(dialogs[0], 0x0111, 1, 0)  # WM_COMMAND IDOK
+    # A typed folder other than the one the dialog shows is not picked by OK: the dialog moves
+    # into it and leaves its name in the box, so a second OK picks it. The name is checked
+    # first, since an OK posted under an error box would act on whatever the box holds.
+    time.sleep(1.0)
+    box = ctypes.create_unicode_buffer(1024)
+    user32.SendMessageW(edit, 0x000D, 1024, box)  # WM_GETTEXT
+    if user32.IsWindowVisible(dialogs[0]) and box.value == os.path.basename(path.rstrip("\\")):
+        user32.PostMessageW(dialogs[0], 0x0111, 1, 0)
     confirm_closed(dialogs[0], path)
     print(f"picked {path}")
 
