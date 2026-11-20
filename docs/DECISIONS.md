@@ -19054,3 +19054,13 @@ seen tells the two apart. Shirts, not portraits, because PES 2014's pitch shows 
 maintainer's review of the draft), and the tooltip because most Akko managers never played
 PES 2014: its text follows the game's own help page.
 Plan: `plans/pes14.md` "PES 2014 in the code" ("The Gameplan screen in Build 2").
+
+## 2026-11-20 — save_editor (pes14 branch) — A formation off the game's list says so; the Game Plan's tooltips use the game's descriptions
+Decision: on PES 2014 a formation the game's list does not hold reads "(not in the game's
+list)" after its shape in the Formation dropdown. The screen's tooltips use the game's own
+descriptions, which run `help1` reads; until then the Combination Play switch has none. The
+pitch's shirts take the team's kit colours later, from the kit configs.
+Why: the maintainer's rulings on the draft. The mark tells a manager why the team's own
+formation stands apart from the list. A description inferred from a setting's name could
+state what the game does not do; the game's own text cannot.
+Plan: `plans/pes14.md` "PES 2014 in the code" ("The Gameplan screen in Build 2"), "Steps", step 8.

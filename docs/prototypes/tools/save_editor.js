@@ -7712,10 +7712,6 @@ const COMBINATION_TIP14 = "Set moves the team runs in attack. Each slot pairs a 
 const COMBINATION_AREA_TIP14 = "Where the move runs: 1 and 2 on the wings beside the "
   + "opponent's box, 3 to 5 in front of it (left to right), 6 to 8 further back in their "
   + "half, 9 to 11 just inside ours";
-// The Tactical Assistance switch, read from its name as the other three
-// automatic settings are: the game starts the moves itself (not seen in a match).
-const COMBINATION_SWITCH_TIP14 = "On, the team also starts its combination plays by itself, "
-  + "with no button press";
 // Combination Play's strategies in the game's picker order: [stored id, name,
 // the area the game's area picker opens on, the areas it takes]. Run
 // formations1 pinned the opening areas, and the areas of the two crosses and
@@ -7785,10 +7781,11 @@ function tacticsTab14(t) {
     others.map(b => ["Copy to " + (b + 1), () => { copyPreset(t, pa, b); render(); }]).concat(
     others.map(b => ["Swap with " + (b + 1), () => { swapPreset(t, pa, b); render(); }])));
   // The formation: the list's entries; one the list does not hold is shown by
-  // its shape and offered first, a pick of it changing nothing.
+  // its shape, marked as such, and offered first, a pick of it changing nothing.
+  // sample wording: the mark.
   const listed = listFormation14(f);
   const formation = h("div", { class: "tset" }, h("div", {}, "Formation"),
-    combo((listed < 0 ? [["-1", formationName(f)]] : []).concat(
+    combo((listed < 0 ? [["-1", formationName(f) + " (not in the game's list)"]] : []).concat(
       PES14_SAMPLE.formations.map((e, k) => [String(k), e.name])), String(listed),
       v => { const k = parseInt(v, 10); if (k >= 0 && k !== listed) { pickFormation14(t, k); render(); } }));
   const strategy = h("div", { class: "tset" }, h("div", {}, "Strategy"),
@@ -7855,7 +7852,7 @@ function tacticsTab14(t) {
           h("div", { class: "tacauto" },
             substitution, autoCb("preset_change", "Preset change"),
             autoCb("offside_trap", "Offside trap"),
-            h("span", { title: COMBINATION_SWITCH_TIP14 }, autoCb("combination_play", "Combination play"))))),
+            autoCb("combination_play", "Combination play")))),
       named(h("div", { id: "tac-lists" }, lineupList(t), benchList(t)), "tactics-lists")));
   setTimeout(() => drawPitch(selTeam()), 0);
   return frame;

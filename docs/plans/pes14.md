@@ -482,7 +482,8 @@ version, not the version selector.
   - **Preset tactics** takes the place of the other versions' Formation settings panel. It
     holds the Formation dropdown, the Strategy dropdown and the eight sliders, 0 to 20, in the
     game's order. The dropdown lists the game's 11 formations; one the list does not hold,
-    such as the Akko teams' 8-1-1, is shown by its shape and listed first. A pick writes the
+    such as the Akko teams' 8-1-1, is shown by its shape, marked "(not in the game's
+    list)", and listed first. A pick writes the
     entry's roles and spots and puts the keeper at depth 3, as the game's pick does; each
     player keeps his place in the lineup. Picking a strategy sets only the sliders the
     game's pick sets, and Custom sets none; moving a slider afterwards keeps the strategy,
@@ -499,7 +500,8 @@ version, not the version selector.
     short free kick taker, as the game does.
   - **Combination play** is a panel of its own: three slots, each a strategy and an area, one
     strategy to an area, with a Clear button. Its tooltip says what the setting does, from
-    the game's own help page, since most managers have never played PES 2014. The area list holds the strategy's areas that
+    the game's own help page, since most managers have never played PES 2014. The screen's
+    other tooltips take the game's own descriptions too, once run `help1` has read them. The area list holds the strategy's areas that
     the other two slots leave free; for a strategy run `formations1` did not pin, every free
     area.
   - **Automatic settings** gain Combination Play's switch, and Substitution offers all four
@@ -628,4 +630,9 @@ on main. Main is merged into the branch, never rebased onto it.
      Strategy back to Custom? Does a strategy picked over other values set all eight sliders?
      What bytes does Combination Play's Clear write? Which areas does each strategy take,
      with the other two slots empty?
+   - Run `help1` (in game, nothing changed or saved): each Game Plan item's description,
+     shown by the game's help button, for the screen's tooltips.
    - Slices: the record's fields in the schema and the model, then the screen.
+   - Later: the pitch's shirts in the team's kit colours and icon pattern, as PES 2015's
+     Game Plan kit icons (patterns 0 to 23), read from the kit configs in the download
+     folder.
