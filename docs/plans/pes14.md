@@ -365,10 +365,9 @@ on main. Main is merged into the branch, never rebased onto it.
      lists a PES 2014 save;
    - an appearance record for a player who has none, the first time the editor changes his
      look;
-   - the playstyle list, empty in step 3, now measured (run `player1`, above): until it is
-     filled the AATF cannot read a PES 2014 player's playing style, and step 5 depends on it;
-   - the motion tops, measured (run `player2`, above), and the face-type caps, which read each
-     field's bit maximum until measured;
+   - the face-type caps, which read each field's bit maximum until measured;
+   - Tenacity among the ability stats (`PlayerStats::abilities()`, `ABILITY_STATS`) with its
+     AATF name, which step 5 needs: slice 1 (the player record mapped) left it out;
    - no panic on a PES 2014 save. The screens assume what every other version stores: the
      Age, Height and Weight boxes take their field's maximum, and the Appearance segment, the
      player and team menus' FPC entries and a roster drag read the in-game face run, which
