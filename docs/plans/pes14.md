@@ -718,7 +718,7 @@ on main. Main is merged into the branch, never rebased onto it.
      confirms it.
    - Slice 1, the record's fields in the schema and the model: done.
    - Slice 2a, the screen opens with the Preset tactics panel: done.
-   - Slice 2b: the pitch's PES 2014 rules (shirts, swaps).
+   - Slice 2b, the pitch's PES 2014 rules (shirts, swaps): done.
    - Slice 2c: Combination play, Automatic settings and the tooltips; the changes rows name
      a Strategy as the dropdown does, and show Support Range as the game does.
    - Slice 2d: free moves and the overall on the pitch, once the game's code gives their
