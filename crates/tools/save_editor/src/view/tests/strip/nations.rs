@@ -88,6 +88,7 @@ fn row_inside_clip(
 #[test]
 fn the_nation_combo_shows_the_held_entry_on_the_fields_span() {
     for (version, id, shown) in [
+        (PesVersion::Pes14, 231, "231 - SAN MARINO"),
         (PesVersion::Pes21, 135, "135 - USA"),
         (PesVersion::Pes17, 135, "135 - UNITED STATES"),
         (PesVersion::Pes21, 100, "100 - ?"),
