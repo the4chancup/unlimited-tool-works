@@ -939,6 +939,9 @@ fn auto_row(
     right: impl FnOnce(&mut egui::Ui),
 ) {
     let column = (ui.available_width() - AUTO_COLUMN_GAP) / 2.0;
+    // Each cell keeps the screen's gap between a label and its control
+    // (the draft's `.row`): the cells would otherwise inherit the 16.
+    let gap = ui.spacing().item_spacing.x;
     ui.horizontal(|ui| {
         ui.spacing_mut().item_spacing.x = AUTO_COLUMN_GAP;
         // `allocate_ui_with_layout` advances the row by the child's
@@ -949,6 +952,7 @@ fn auto_row(
             egui::vec2(column, AUTO_ROW_HEIGHT),
             egui::Layout::left_to_right(egui::Align::Center).with_main_align(egui::Align::LEFT),
             |ui| {
+                ui.spacing_mut().item_spacing.x = gap;
                 ui.set_min_size(egui::vec2(column, AUTO_ROW_HEIGHT));
                 left(ui);
             },
@@ -957,6 +961,7 @@ fn auto_row(
             egui::vec2(column, AUTO_ROW_HEIGHT),
             egui::Layout::left_to_right(egui::Align::Center).with_main_align(egui::Align::LEFT),
             |ui| {
+                ui.spacing_mut().item_spacing.x = gap;
                 ui.set_min_size(egui::vec2(column, AUTO_ROW_HEIGHT));
                 right(ui);
             },

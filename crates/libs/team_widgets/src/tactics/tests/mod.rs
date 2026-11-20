@@ -2347,6 +2347,14 @@ fn the_automatic_settings_are_a_two_column_grid() {
         let b = combo.bounds().expect("combo bounds");
         (b.y0 + b.y1) / 2.0
     });
+    // Inside a cell the draft's `.row` gap holds, 8 from the label to
+    // its combo: the 16 is between the columns only.
+    let combo_x0 = combo.bounds().expect("combo bounds").x0;
+    assert!(
+        (combo_x0 - substitution_label.x1 - 8.0).abs() <= 0.5,
+        "the combo starts 8 after its label ({combo_x0}, label ends {})",
+        substitution_label.x1
+    );
     xs.sort_by(|a, b| a.partial_cmp(b).expect("ordered"));
     xs.dedup_by(|a, b| (*b - *a).abs() < 1.0);
     assert_eq!(xs.len(), 2, "the controls take two columns ({xs:?})");
