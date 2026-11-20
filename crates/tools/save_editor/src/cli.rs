@@ -196,6 +196,20 @@ fn open(path: &Path) -> Result<Session, CliError> {
     Session::open(path, Recorder::default()).map_err(invalid)
 }
 
+/// `open` for a command whose feature the PES 2014 build leaves out (`export-toml`,
+/// `import-toml`, `apply-patch`, `diff` and `export-teams-list`): the window greys each of
+/// them on a PES 2014 save, and the command line refuses in the same words.
+fn open_in_scope(path: &Path) -> Result<Session, CliError> {
+    let session = open(path)?;
+    if session.version() == PesVersion::Pes14 {
+        return Err(invalid(anyhow!(
+            "{}: not available on PES 2014 saves",
+            path.display()
+        )));
+    }
+    Ok(session)
+}
+
 /// Reads the text file a command applies; an unreadable one is a refusal naming it.
 fn read_text(path: &Path) -> Result<String, CliError> {
     fs::read_to_string(path).map_err(|error| {
@@ -232,7 +246,7 @@ fn import_toml(
     running: fn() -> Vec<RunningPes>,
     report: &mut Report,
 ) -> Result<(), CliError> {
-    let mut session = open(&args.base)?;
+    let mut session = open_in_scope(&args.base)?;
     refuse_while_running(&running(), session.version(), args.edit_mode_closed)?;
     let text = read_text(&args.file)?;
     let document = TeamToml::parse(&text)
@@ -257,7 +271,7 @@ fn apply_patch(
     running: fn() -> Vec<RunningPes>,
     report: &mut Report,
 ) -> Result<(), CliError> {
-    let mut session = open(&args.base)?;
+    let mut session = open_in_scope(&args.base)?;
     refuse_while_running(&running(), session.version(), args.edit_mode_closed)?;
     let text = read_text(&args.file)?;
     let patch = AestheticsPatch::parse(&text)
@@ -303,7 +317,7 @@ fn apply_patch(
 /// `export-toml`: every team's text is built before the first file is written, so a team
 /// that cannot be exported refuses the command with nothing written.
 fn export_toml(args: &ExportTomlArgs, report: &mut Report) -> Result<(), CliError> {
-    let session = open(&args.save)?;
+    let session = open_in_scope(&args.save)?;
     let files: Vec<(u32, PathBuf, String)> = match (args.team, &args.out, &args.out_dir) {
         (Some(id), Some(out), _) => {
             // An --out naming the save itself is refused before anything is written: the
@@ -373,8 +387,8 @@ fn version_mismatch(
 /// `diff`: the comparator's report as findings; differences are its output, so the exit
 /// code is 0, and two versions are refused.
 fn diff_saves(args: &DiffArgs, report: &mut Report) -> Result<(), CliError> {
-    let first = open(&args.first)?;
-    let second = open(&args.second)?;
+    let first = open_in_scope(&args.first)?;
+    let second = open_in_scope(&args.second)?;
     let scope = match (args.aesthetics, args.gameplay) {
         (true, false) => Some(DiffScope::Aesthetics),
         (false, true) => Some(DiffScope::Gameplay),
@@ -549,7 +563,7 @@ fn export_teams_list(
     data_dir: Option<&Path>,
     report: &mut Report,
 ) -> Result<(), CliError> {
-    let session = open(&args.save)?;
+    let session = open_in_scope(&args.save)?;
     // The working list is read before the first finding: a refusal emits nothing, and a
     // list that cannot be read is one (the upstream list is never merged over it).
     let path = data_dir.map(|dir| dir.join(teams_list::FILE_NAME));

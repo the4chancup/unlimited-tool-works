@@ -265,3 +265,13 @@ fn a_later_team_of_a_name_the_save_holds_twice_is_left_out_as_an_error() {
     );
     assert!(list.name_of(id(u16::try_from(dropped).unwrap())).is_none());
 }
+
+#[test]
+fn a_pes_2014_save_is_refused() {
+    let sandbox = Sandbox::new("teams_list_pes14");
+    sandbox.fixture(PesVersion::Pes14, "EDIT14");
+
+    let run = sandbox.export_teams_list("EDIT14", &["--yes"]);
+    run.assert_refused(2, &["PES 2014"]);
+    assert!(!sandbox.path("data/teams_list.txt").exists());
+}

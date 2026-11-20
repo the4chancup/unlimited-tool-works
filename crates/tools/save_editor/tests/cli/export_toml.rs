@@ -150,3 +150,21 @@ fn an_out_naming_the_save_itself_is_refused_and_the_save_unchanged() {
         "the save is unchanged"
     );
 }
+
+#[test]
+fn a_pes_2014_save_is_refused() {
+    let sandbox = Sandbox::new("export_toml_pes14");
+    sandbox.fixture(PesVersion::Pes14, "EDIT14");
+
+    // Team 1 is the vanilla PES 2014 fixture's first record (the cup ids start on PES 15).
+    let run = sandbox.run(&[
+        "export-toml",
+        &sandbox.arg("EDIT14"),
+        "--team",
+        "1",
+        "--out",
+        &sandbox.arg("1.toml"),
+    ]);
+    run.assert_refused(2, &["PES 2014"]);
+    assert!(!sandbox.path("1.toml").exists());
+}

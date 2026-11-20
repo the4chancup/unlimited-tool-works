@@ -272,3 +272,19 @@ fn a_write_goes_ahead_while_its_pes_runs_given_edit_mode_closed() {
 fn a_write_goes_ahead_while_only_another_versions_pes_runs() {
     IMPORT_TOML.assert_written_while_another_version_runs();
 }
+
+#[test]
+fn a_pes_2014_save_is_refused() {
+    let sandbox = Sandbox::new("import_pes14");
+    sandbox.fixture(PesVersion::Pes14, "EDIT14");
+    // Team 1 is the vanilla PES 2014 fixture's first record (the cup ids start on PES 15).
+    fs::write(
+        sandbox.path("co.toml"),
+        "[team]\nid = 1\n\n[players.03]\nname = \"PATCH\"\n",
+    )
+    .unwrap();
+
+    let run = sandbox.import("co.toml", "EDIT14", "OUT");
+    run.assert_refused(2, &["PES 2014"]);
+    assert!(!sandbox.path("OUT").exists());
+}

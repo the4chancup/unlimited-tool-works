@@ -525,6 +525,35 @@ fn a_patch_is_written_while_only_another_versions_pes_runs() {
     APPLY_PATCH.assert_written_while_another_version_runs();
 }
 
+#[test]
+fn a_pes_2014_save_is_refused() {
+    let sandbox = Sandbox::new("patch_pes14");
+    sandbox.fixture(PesVersion::Pes14, "EDIT14");
+    // `pes_version = 14` on purpose: a patch of a real version would already be refused at
+    // version mismatch, and that message names "PES 2014" too, so the gate could not be told
+    // apart from it.
+    let text = patch_text(
+        PesVersion::Pes14,
+        ALLOCATION_SCHEME_VERSION,
+        vec![team(
+            701,
+            "/3/",
+            BTreeMap::from([(
+                1,
+                PatchPlayer {
+                    name: Some("PATCHED".to_owned()),
+                    ..bare()
+                },
+            )]),
+        )],
+    );
+    fs::write(sandbox.path("patch.toml"), &text).unwrap();
+
+    let run = sandbox.apply("patch.toml", "EDIT14", "OUT");
+    run.assert_refused(2, &["PES 2014"]);
+    assert!(!sandbox.path("OUT").exists());
+}
+
 /// `base` rewritten through `edit` at its path, as the scenarios' GIVENs
 /// set their fields.
 fn set_up_save(sandbox: &Sandbox, base: &str, edit: impl FnOnce(&mut EditFile)) {

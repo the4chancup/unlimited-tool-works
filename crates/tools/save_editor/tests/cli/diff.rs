@@ -340,3 +340,15 @@ fn the_appearance_id_is_an_ordinary_row() {
         }])
     );
 }
+
+#[test]
+fn a_pes_2014_save_is_refused() {
+    let sandbox = Sandbox::new("diff_pes14");
+    // Two of one version, so the version-mismatch refusal cannot be the one seen.
+    sandbox.fixture(PesVersion::Pes14, "EDIT14");
+    sandbox.fixture(PesVersion::Pes14, "EDIT14B");
+
+    sandbox
+        .diff("EDIT14", "EDIT14B", &[])
+        .assert_refused(2, &["PES 2014"]);
+}
