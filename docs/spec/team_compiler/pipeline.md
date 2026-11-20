@@ -299,9 +299,9 @@ export format.
    must exist (the rule of Red's unreleased development branch; released Red generates no face
    folder, packing only those members ship). That holds for every roster-mapped player folder
    without the marker and without a face model, whatever else it holds: a portrait alone,
-   textures alone, a boots link alone, an empty `face/`, nothing. A referee folder is the
-   exception: with no face model it gets no face folder, since a referee has no FPC body to
-   bring a head and the game's own referee head must stay (`blue_port.md` "Referee export
+   textures alone, a boots link alone, an empty `face/`, nothing. Referee folders follow the
+   same rule: referees are full FPC, and a referee without a face model is one whose
+   full-body model, split as boots, brings his head (`blue_port.md` "Referee export
    processing").
 
    The blank folder is:

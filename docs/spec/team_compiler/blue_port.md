@@ -54,9 +54,12 @@ on Fox the referee's local parts are merged in, as for a player's own folder. On
 link is written there alone, never copied into his `face.xml` as well, because the game loads
 `k99XX` by slot and a second copy in the face would dress him twice.
 
-A referee folder with no face model gets no face folder, where a team player's gets a blank one
-(the FPC rule, `pipeline.md` step 1). A referee has no FPC body to bring a head, so a blank face
-would leave him headless, and the game's own referee head stays.
+A referee folder with no face model gets the blank face, as a team player's does (the FPC rule,
+`pipeline.md` step 1). Referees are full FPC, so a referee without a face model is one whose
+body brings his head: a full-body model split as boots, with the face folder only blanking the
+game's head (Red packed such a referee's `face/`, holding `face_diff.bin` alone, the same way).
+Without the blank face, the game's referee head floats over that body. A referee who should
+keep the game's head holds `ingame_face`, as a player does.
 
 **The referee body (`refkit`, PES 15-17).** Referee teams are full FPC, so a head-only
 referee shows no body unless his face lists one. The referee template tree ships one at

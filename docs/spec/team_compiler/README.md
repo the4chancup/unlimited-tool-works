@@ -2411,12 +2411,7 @@ TC-REF-09  GIVEN TC-REF-01's refs export
                 parts entry, no boots folder k99NN (the template tree's k0062 alone under
                 common/character0/model/character/boots/), and one skin.dds under
                 common/character1/model/character/uniform/common/999/Ref A/
-TC-REF-10  GIVEN a refs export whose players.txt maps Ref A to slots 01 and 20, Ref A holding
-           only a link to the shared folder Boots/Studs, which holds boots.fmdl
-           WHEN the root is compiled for PES 21
-           THEN the referee CPK holds boots folders k9901 and k9920, each with the shared
-                boots model, no other boots folder, and no face/real/referee001 or
-                referee020 folder
+TC-REF-10  withdrawn: restated as TC-REF-24 (a referee with no face model gets the blank face)
 TC-REF-11  GIVEN a refs export holding Kits/p1 with kit.dds beside a mapped referee folder holding
            a face model
            WHEN the root is compiled for PES 21 (or PES 17)
@@ -2433,13 +2428,7 @@ TC-REF-12  GIVEN a refs export with ref_marker.dds
                 byte for byte, each with collar 77, and whose other entries equal the installed
                 or bundled bin's; the team CPK holds no 999 path and no loose referee config;
                 compiled for PES 17, no team CPK is written
-TC-REF-13  GIVEN TC-REF-10's refs export (Ref A in slots 01 and 20, holding only a link to the
-           shared folder Boots/Studs, which holds boots.fmdl)
-           WHEN the root is compiled for PES 17
-           THEN the referee CPK holds boots folders k9901 and k9920, each with the shared boots
-                model converted, and no referee001.cpk or referee020.cpk: the link is not
-                copied into a face, and a referee folder with no face model gets no face
-                folder, the game's referee head staying (a team player's gets a blank one)
+TC-REF-13  withdrawn: restated as TC-REF-21 (a referee with no face model gets the blank face)
 TC-REF-14  GIVEN a refs export whose root colors.txt holds a line that does not parse
            WHEN the export is checked
            THEN no color_entry_invalid is reported
@@ -2464,6 +2453,30 @@ TC-REF-18  GIVEN a refs export whose Ref A holds face_high.model and boots/boots
            THEN player_layout_proto is reported on Ref A naming boots (context folder) with the
                 hint naming the Export upgrader and Ref A is dropped, while slot 05 is valid
                 with boots/ a subfolder of his own
+TC-REF-21  GIVEN TC-REF-24's refs export (Ref A in slots 01 and 20, holding only a link to the
+           shared folder Boots/Studs, which holds boots.fmdl)
+           WHEN the root is compiled for PES 17
+           THEN the referee CPK holds boots folders k9901 and k9920, each with the shared boots
+                model converted, and referee001.cpk and referee020.cpk each hold the blank
+                face, whose face.xml lists the face_neck dummy and no boots: a referee folder
+                with no face model gets the blank face, as a team player's does, and the link
+                is not copied into it (restates TC-REF-13)
+TC-REF-22  GIVEN a refs export whose players.txt maps Ref A to slot 01, Ref A holding boots.fmdl,
+                 boots.skl, glove_l.fmdl, glove_r.fmdl and face_diff.bin, and no face model
+                 (a full-body model split as boots, as the VGL27 refs export's 1999_apple)
+           WHEN it is compiled for PES 19
+           THEN the referee CPK holds referee001's face.fpk holding the template face_diff.bin
+                alone, k9901's boots and g9901's gloves, and face_file_not_used is reported
+                for Ref A's face_diff.bin
+TC-REF-23  GIVEN TC-REF-22's Ref A also holding ingame_face.toml
+           WHEN it is compiled for PES 19
+           THEN the referee CPK holds no referee001 face, so the game's referee head stays
+TC-REF-24  GIVEN a refs export whose players.txt maps Ref A to slots 01 and 20, Ref A holding
+           only a link to the shared folder Boots/Studs, which holds boots.fmdl
+           WHEN the root is compiled for PES 21
+           THEN the referee CPK holds boots folders k9901 and k9920, each with the shared
+                boots model, no other boots folder, and face/real/referee001 and referee020
+                each holding the blank face (restates TC-REF-10)
 ```
 
 **Output modes, deployment, multi-CPK**

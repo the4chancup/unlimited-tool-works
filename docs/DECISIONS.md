@@ -18891,3 +18891,20 @@ in the source, not a build-time environment variable, because a build made witho
 variable would quietly become a main build and offer main's releases to a side line's members.
 Plan: `docs/RUNBOOK.md` "Releasing a side line" added; `plans/core/distribution.md`
 "Self-update" step 1 and `spec/core/distribution.md` "Release builds in CI" point at it.
+
+## 2026-11-20 — team_compiler — A referee folder with no face model gets the blank face, as a team player's does
+Decision: a referee folder without `ingame_face` and without a face model gets the blank face on
+both engines, the rule a team player's folder already follows (`pipeline.md` step 1). This
+reverses the 2026-10-09 entry's first half; its pre-Fox shared-link half stands. A referee who
+should keep the game's head holds `ingame_face`.
+Why: the 2026-10-09 entry assumed a referee has no FPC body to bring a head, but a referee
+without a face model is exactly one whose full-body model, split as boots, brings it. The VGL
+organizer compiled the VGL27 refs export (PES 19) and saw the game's referee heads floating
+over those bodies. In every real refs export, the 15 referees with no face model hold a boots
+model (VGL27, `refs lan party`, `refs fox test`), and the other 147 hold a face model. Red
+packed such a referee's `face/` holding `face_diff.bin` alone, the blank face, and the parity
+test had recorded the difference as intended. A referee with neither a face nor a body shows a
+floating head either way, referees being full FPC, so the old rule protected no case.
+Plan: `team_compiler/pipeline.md` step 1, `team_compiler/blue_port.md` "Referee export
+processing"; `team_compiler/README.md` TC-REF-10 and TC-REF-13 withdrawn, TC-REF-21 to
+TC-REF-24.
