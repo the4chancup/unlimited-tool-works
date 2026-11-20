@@ -18982,3 +18982,16 @@ Why: one tool with two modes would put the cup organizer's once-a-cup tips workf
 curate, fill the game's tip slots) behind a mode of a screen built for browsing sections and
 strings; the two share only the format, which belongs in the lib crate either way.
 Plan: `plans/string_editor.md`, `plans/gametips_editor.md` (new stubs), the plan index.
+
+## 2026-11-20 — pes_strings — a lib crate reads the games' `all.str`; its writer waits for the first editor that needs it
+Decision: a new lib crate, `pes_strings`, reads the games' text file (`all.str`, every version
+from PES 2014 to 2021, wrapped or not) into sections of numbered strings, with a lookup by
+section name and string id. The reader is built now, on main, for the PES 2014 Gameplan
+tooltips; the writer is planned and built with the String editor or the Gametips editor. Two
+real files are committed as test fixtures, PES 2017's and PES 2014's, one per place the file
+keeps its section names.
+Why: the Save editor needs the game's descriptions now, and both planned editors need the same
+format, so one crate holds it rather than each tool. A writer built now would have no caller.
+Two whole game files (628 KB together) beat a synthetic file because only real files show
+both name layouts and the inline codes as the games store them.
+Plan: `plans/libs/pes_strings.md` (new); the String and Gametips editors' stubs point at it.

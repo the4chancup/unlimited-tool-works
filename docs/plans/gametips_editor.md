@@ -11,8 +11,8 @@ Its input is the raw file the tips submission form produces: one entry per submi
 as `timestamp%sep%title%sep%body%sep%`, where a body may run over several lines. The file holds
 what the form received, so it also holds test entries and the same tip sent twice. The organizer
 curates it in the tool (drops entries, fixes text, picks which tips to use), and the tool writes
-the chosen tips into the game's tip strings in `all.str`, through the same string-file lib crate
-the [String editor](string_editor.md) uses.
+the chosen tips into the game's tip strings in `all.str`, through the same
+[`pes_strings`](libs/pes_strings.md) lib crate the [String editor](string_editor.md) uses.
 
 **Two tools, not one with two modes.** The String editor starts from the game's file and shows
 its sections; this tool starts from the submissions and treats the game's file as where they

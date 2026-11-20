@@ -9,8 +9,8 @@ program the community uses today. It is low priority: this plan is written ahead
 phase that builds it.
 
 It opens the file, shows its sections and their numbered strings, and saves the edited file.
-Reading and writing the format belong to a string-file lib crate, which the Save editor also
-uses to show the game's own texts.
+Reading and writing the format belong to the [`pes_strings`](libs/pes_strings.md) lib crate,
+which the Save editor also uses to show the game's own texts.
 
 The cup's loading-screen tips are not edited here: the [Gametips editor](gametips_editor.md)
 does that, from the members' submissions. The String editor has one tie to it, the Gametips
