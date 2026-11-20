@@ -4,9 +4,10 @@
 //! sets; the Combination play panel's three slots, each a strategy from
 //! `COMBINATIONS` and one of the areas it can run in (`free_areas`, a
 //! pick keeping the slot's area when it stays free and greying the
-//! strategies that have none); and `Tips`, the tooltips' texts with the
-//! `*_TIPS` tables naming each one's string in the install's `all.str`,
-//! which the host resolves and hands in.
+//! strategies that have none); and `Tips`, the tooltips' texts, which the
+//! host resolves from the install's `all.str` and hands in. The `*_TIPS`
+//! tables and `COMBINATION_TITLE_TIP` name each one's string; the
+//! automatic settings share `AUTO_TIP`'s, cut at their `*_BLOCK` heading.
 
 use pes_savefile::model::tactics::{
     CombinationSlot, Formation, FormationSlot, GamePlan, TacticsPreset, TeamTactics,

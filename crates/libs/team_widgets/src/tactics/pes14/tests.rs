@@ -1,6 +1,8 @@
-//! The `pes14` module's tests: the formation list's matching and writes
-//! and the Strategy picks' slider writes, on synthetic formations and
-//! game plans.
+//! The `pes14` module's tests: the formation list's matching and writes,
+//! the Strategy picks' slider writes and the Combination play slots'
+//! rules, on synthetic formations and game plans; then two headless draws
+//! on the fixture's save (the wheel skipping a greyed strategy, the
+//! dropdowns' place under their labels).
 
 use egui::accesskit::Role;
 use pes_savefile::EditFile;
