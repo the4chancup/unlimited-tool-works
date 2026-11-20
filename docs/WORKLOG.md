@@ -37,7 +37,11 @@ run's findings (`4cc-studio-temp/str_re/out/findings.md`).
 3. Earlier sessions in Report a problem: the repro bundles issue's slice (5).
 4. Review rounds owed: 0.0.2-similar's, and every Carbon round a 0.0.2 step still owes (Report a problem has had its whole review).
 5. 0.0.2-pes19, and with it the readme's PES 2019 claim.
-6. The drafts in two copies (the maintainer, 2026-11-17: a spec draft of what the build holds
+6. The Compiler's view in the build, unpolished, for the VGL organizer (the maintainer,
+   2026-11-20; `plans/core/development_plan.md` "Phase 8: GUI"): step 8.10's grid first,
+   showing which of an export's components has an error or a warning and what it says;
+   the row actions and the finish in later builds.
+7. The drafts in two copies (the maintainer, 2026-11-17: a spec draft of what the build holds
    and a plan draft for prototyping, which the app's unbuilt sections open with `demo=1`. Git
    keeps the two: the spec draft is `docs/prototypes/` on main, which `draft_compare`, the
    looks and the tasks cards read; the plan draft a long-lived branch in its own worktree, a
@@ -45,32 +49,33 @@ run's findings (`4cc-studio-temp/str_re/out/findings.md`).
    branch, never rebased; then the plan and spec text keeps the reasons, the behaviour and what
    no draft shows, such as the light theme, and points at the draft for measurements rather
    than copying them, a copy that drifted once: rows "22 apart" against the draft's 24).
-7. The DpFileList upgrade on a PES 2019 DLC (the VGL organizer's poc.5 report, 2026-11-17:
+8. The DpFileList upgrade on a PES 2019 DLC (the VGL organizer's poc.5 report, 2026-11-17:
    after `upgrade-dpfl` the game ran vanilla and made a new save of the real teams; the
    official list has no stem for the PES 2019 list's `03_base`, `10_scoreboard`,
    `11_interface`, `12_cutscenes`, `13_competition`, so they drop out, and PES 2019's records
    carry a countdown at byte 36 ours lack; the maintainer is settling it with the organizer).
-8. The rest of Team TOML's numbers as the game shows them, as 0.0.2 did for form, injury
+9. The rest of Team TOML's numbers as the game shows them, as 0.0.2 did for form, injury
    resistance and weak foot: team colours in 8 bits as on screen (the file holds the save's 0
    to 63), `[tactics.auto] substitution` and the appearance colours by name. The Save editor
    draft's sample Team TOML texts (`docs/prototypes/tools/save_editor.js`, the `"pes17/718"`
    entry and its kind) still show the old numbering (255 for nobody, slots from 0, the stats
    one lower): regenerate them from today's export.
-9. The draft's greyed number boxes read `-`, as the build's do (the maintainer kept the build's,
+10. The draft's greyed number boxes read `-`, as the build's do (the maintainer kept the build's,
    `look-gated-labels`).
-10. Reset window's first click on Linux (the maintainer's check of 0.0.2-rc.3, 2026-11-17,
+11. Reset window's first click on Linux (the maintainer's check of 0.0.2-rc.3, 2026-11-17,
     "good enough for 0.0.2": the first click resets the window but the button stays, a second
     click changes nothing and the button goes, its pointer a hand; likely the window manager
     leaving the reset window off the fitted size, so the button waits for a click the window
     does not follow).
-11. Any mutation run (mutfast landed: each mutant's tests run under cargo-nextest).
-12. The suite's own images (DECISIONS 2026-11-20 "the placeholder portraits and the Team
+12. Any mutation run (mutfast landed: each mutant's tests run under cargo-nextest).
+13. The suite's own images (DECISIONS 2026-11-20 "the placeholder portraits and the Team
     Export thumbnail are the suite's own"): the three placeholder portraits drawn as SVGs and
     the 4cc clover thumbnail, both rendered to the PNGs the binary embeds by one script; a
     look of each beside the game's; PES 2017 imports a Team Export carrying the clover (SWE-2,
     in game). Can run beside the detour: it touches no PES 2014 file.
 
-Most open steps below wait only for the maintainer's look (`maintainer/tasks.html`).
+Most open steps below wait only on a check in the game or the built window that the lead's
+harness makes ("Pending looks" below), not on the maintainer.
 
 **Done for 0.0.2 since 2026-11-16:** 0.0.2-geninfo (both slices; its SWE-2 loop ended),
 -frames, -paneshift, -keepsel, -posheight and -lookfix; the light theme's control colours and

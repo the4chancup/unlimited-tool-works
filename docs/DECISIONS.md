@@ -18995,3 +18995,16 @@ format, so one crate holds it rather than each tool. A writer built now would ha
 Two whole game files (628 KB together) beat a synthetic file because only real files show
 both name layouts and the inline codes as the games store them.
 Plan: `plans/libs/pes_strings.md` (new); the String and Gametips editors' stubs point at it.
+
+## 2026-11-20 — team_compiler, development plan — the Compiler's view comes next after PES 2014 and 0.0.2-pes19, unpolished, for the VGL organizer
+Decision: once the PES 2014 work for Akko VII and the high-priority items up to 0.0.2-pes19 are
+done, the Compiler's view (step 8.10) is the next focus, ahead of the drafts in two copies and
+the rest of the after-the-detour list. It reaches the VGL organizer in a build before it is
+polished; its first job is showing which component of each export has an error or a warning,
+and what it says. The row actions and the finish follow in later builds.
+Why: the organizer compiles from the console today, where a warning among the run's other lines is
+easy to miss, and finding a bad component before the cup is what the Compiler is for. An
+unpolished grid that shows the findings helps now; a polished one would wait for the whole of
+8.10.
+Plan: `plans/core/development_plan.md` "Phase 8: GUI" (the paragraph on the Compiler's view
+first).
