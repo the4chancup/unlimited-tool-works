@@ -48,7 +48,8 @@ def main(version: str) -> int:
                wsl_path(str(root / "scripts/release/wsl/build.sh")),
                wsl_path(git_dir), commit, version, wsl_path(str(dist))]
     if subprocess.run(command).returncode:
-        print(f"error: the WSL build failed (a first build needs the setup: {SETUP})", file=sys.stderr)
+        print(f"error: the WSL build failed, as said above (a first build needs the setup: {SETUP})",
+              file=sys.stderr)
         return 1
     return 0
 
