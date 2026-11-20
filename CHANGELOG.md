@@ -5,8 +5,8 @@
 ### Important
 
 - **PES 2014**: an unofficial build for Akko League VII, whose saves are PES 2014's. This
-  build's Save editor opens and saves PES 2014's `EDIT.bin`. The build updates only to later
-  PES 2014 builds, and the regular builds never offer it.
+  build's Save editor opens and saves PES 2014's `EDIT.bin`, and it only updates to later
+  PES 2014 builds. The regular builds never offer it as an update.
 - **AATF**: added the Akko League VII ruleset, which the build checks against from its first
   start.
 
