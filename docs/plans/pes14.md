@@ -329,17 +329,20 @@ version, not the version selector.
 - **Appearance records.** On PES 2014 only a player whose look was edited, or who was created
   in the save, has an appearance record: the vanilla save has none for its 11998 players, the
   Akko saves one for each of their 5060. A player without one reads no appearance fields and
-  writes none, and the player's look controls are greyed. The editor never creates a record: the game
-  fills a new one with the player's whole look, taken from base data the save does not hold,
-  so a record the editor made would reset every look part it did not set (inferred: a record
-  holds every look field, and the save holds no other copy of them). On PES 2015 and 2016
-  every player has one, and a missing record still refuses the save.
+  writes none, and the player's look controls are greyed. The editor never creates a record:
+  the game fills a new one with the player's whole look, taken from base data the save does
+  not hold, so a record the editor made would reset every look part it did not set (inferred:
+  a record holds every look field, and the save holds no other copy of them). On PES 2015 and
+  2016 every player has one, and a missing record still refuses the save.
 - **Tenacity** is a PES 2014 stat no other version has. It gets its own `Option` stat, its
   `PlayerField` and its AATF stat name. On another version's save its greyed box's tooltip
   reads "PES 2014 only", since the "PES NN+" wording would claim later versions store it. It is
   the last ability stat, after Aggression, so that every table indexed by ability stat (a
   ruleset's stats, the Ruleset editor's columns) keeps its indices. It is no Team TOML key,
-  since Team TOML is not available on PES 2014.
+  since Team TOML is not available on PES 2014. The AATF logic lists it among the ability
+  stats, so the branch's logic is `ruleset-logic 2`: a released logic's hash is frozen, and a
+  ruleset file saved with version 1 still reads as official. Main's next logic change will
+  meet this one when main is merged into the branch.
 - **Stored values.** PES 2014 stores each stat less 40, the height less 132 and the weight less
   30 (run `player1`). The codec adds those offsets when it reads a PES 2014 record and takes
   them off when it writes one, so the model, the screens and the AATF hold the values the game
@@ -481,6 +484,8 @@ on main. Main is merged into the branch, never rebased onto it.
    does in the fork's fixed build.
 6. Releases: the `pes14-v` tag prefix in the update check and `release.yml`. The version
    `0.0.2-pes14.1` is set at the cut, in step 7.
-7. Build 1's check: `/4ccg/` edited in the build, saved, looked at in game in Edit mode; then
-   the release.
+7. Build 1's check: `/4ccg/` edited in the build, saved, looked at in game in Edit mode. The
+   built window is captured where the branch changed a look: Ability stats with Tenacity's
+   row, on PES 2014 and on a later version, where the row is greyed, and the Ruleset editor's
+   stat grid with its Tenacity column. Then the release.
 8. Build 2: the Gameplan screen.
