@@ -255,6 +255,14 @@ impl Session {
         &self.file
     }
 
+    /// Whether `id`'s player has an appearance record: `true` for every
+    /// player on a version that holds the look for all; on PES 2014 only
+    /// an edited or created player's (the editor never makes one) — the
+    /// look controls' and the boots and gloves operation's gate.
+    pub(crate) fn has_appearance_record(&self, id: u32) -> bool {
+        self.file.has_appearance_record(id)
+    }
+
     /// The session's repro journal: the sites that keep a file the member
     /// picked (an export, the roster sheet) record through it — the same
     /// journal `changed`, `open` and `write` record to.

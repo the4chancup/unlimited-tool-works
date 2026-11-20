@@ -292,6 +292,18 @@ impl VersionSchema {
         self.ingame_face_run().is_some()
     }
 
+    /// Whether `field` is stored in the separate appearance record and
+    /// not in the player record: the look fields a PES 2014 player
+    /// without an appearance record carries no value for (the version
+    /// holds one per edited or created player alone), whose controls are
+    /// greyed on him.
+    pub fn appearance_only(&self, field: PlayerField) -> bool {
+        match &self.appearance {
+            Some((_, appearance)) => appearance.has(field) && !self.player.has(field),
+            None => false,
+        }
+    }
+
     /// Whether the version's appearance section holds one record per
     /// player: every version but PES 2014, whose section holds a record
     /// only for a player whose look was edited or who was created in the
@@ -399,6 +411,26 @@ pub fn stored_offset(version: PesVersion, field: PlayerField) -> u32 {
         | PlayerField::BodyControl
         | PlayerField::Heading => 40,
         _ => 0,
+    }
+}
+
+/// The model values `version`'s record stores for `field`, entry `i` the
+/// model value stored value `i` decodes to: PES 2014 stores two look
+/// items in another order than the other versions — Sleeves' stored
+/// Short 0, Long 1, Auto 2 against the model's Seasonal 0, Short 1, Long
+/// 2 (stored 3 kept as 3), and the shirttail's stored 0 is untucked
+/// where the other versions store it as 1. The codec translates through
+/// the table on read and write, so the model means the same on every
+/// version. `None` for a field stored in the model's own order: every
+/// other field and every other version.
+pub(crate) fn stored_order(version: PesVersion, field: PlayerField) -> Option<&'static [u32]> {
+    if version != PesVersion::Pes14 {
+        return None;
+    }
+    match field {
+        PlayerField::Sleeves => Some(&[1, 2, 0, 3]),
+        PlayerField::Untucked => Some(&[1, 0]),
+        _ => None,
     }
 }
 

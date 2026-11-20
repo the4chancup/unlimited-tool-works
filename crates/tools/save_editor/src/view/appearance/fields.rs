@@ -422,6 +422,36 @@ pub(super) fn combo_options(key: SettingKey) -> Vec<String> {
     }
 }
 
+/// `key`'s option labels as `version`'s game words them, in the model's
+/// value order — the strip combos' and the diff rows' lists:
+/// `combo_options`' on every other key and version. PES 2014 names
+/// Sleeves' Seasonal "Auto", stores Undershorts as one bit (Off, On)
+/// where the other versions store four kinds, and numbers the Spectacles
+/// grid's cells rather than naming its glasses.
+pub(crate) fn strip_options(version: PesVersion, key: SettingKey) -> Vec<String> {
+    if version == PesVersion::Pes14 {
+        let words: &[&str] = match key {
+            SettingKey::Sleeves => &["Auto", "Short", "Long"],
+            SettingKey::Undershorts => &["Off", "On"],
+            SettingKey::Spectacles => &["Off", "2", "3", "4", "5", "6", "7", "8"],
+            _ => &[],
+        };
+        if !words.is_empty() {
+            return words.iter().map(|word| (*word).to_owned()).collect();
+        }
+    }
+    combo_options(key)
+}
+
+/// `strip_options`' entry at `stored`, its number past the list (a stored
+/// value the list cannot name) — `option_name`'s version-aware twin.
+pub(crate) fn strip_option_name(version: PesVersion, key: SettingKey, stored: u8) -> String {
+    strip_options(version, key)
+        .get(usize::from(stored))
+        .cloned()
+        .unwrap_or_else(|| stored.to_string())
+}
+
 /// The label `key`'s `stored` index shows as: a combo's selected text and
 /// a palette's swatch name — `combo_options`' entry at `stored`, its
 /// number when past the list (a stored value the key cannot represent).

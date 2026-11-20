@@ -299,8 +299,8 @@ fn player_field_term(version: PesVersion, diff: &PlayerDiff) -> Term {
     {
         return term(
             *label,
-            fields::option_name(*key, stored_u8(old)),
-            fields::option_name(*key, stored_u8(new)),
+            fields::strip_option_name(version, *key, stored_u8(old)),
+            fields::strip_option_name(version, *key, stored_u8(new)),
         );
     }
     match field {
@@ -366,8 +366,10 @@ fn player_field_term(version: PesVersion, diff: &PlayerDiff) -> Term {
         PlayerField::BootsId => numbers(appearance::BOOTS_ID_LABEL, old, new),
         PlayerField::GlovesId => numbers(appearance::GLOVES_ID_LABEL, old, new),
         PlayerField::BaseCopyId => numbers(appearance::COPY_FROM_ID_LABEL, old, new),
-        PlayerField::WristTaping => keyed(field, appearance::WRIST_TAPING_LABEL, old, new),
-        PlayerField::SpectaclesStyle => keyed(field, appearance::SPECTACLES_LABEL, old, new),
+        PlayerField::WristTaping => keyed(version, field, appearance::WRIST_TAPING_LABEL, old, new),
+        PlayerField::SpectaclesStyle => {
+            keyed(version, field, appearance::SPECTACLES_LABEL, old, new)
+        }
         PlayerField::Untucked => flag(appearance::SHIRTTAIL_OUT_LABEL, old, new),
         PlayerField::AnkleTaping => flag(appearance::ANKLE_TAPING_LABEL, old, new),
         PlayerField::EditedFace => flag(appearance::FACE_LABEL, old, new),
@@ -377,10 +379,10 @@ fn player_field_term(version: PesVersion, diff: &PlayerDiff) -> Term {
         PlayerField::EditedMotion => flag(appearance::MOTION_LABEL, old, new),
         PlayerField::BaseCopy => flag(appearance::BASE_COPY_LABEL, old, new),
         PlayerField::WristTapeColorLeft => {
-            keyed(field, appearance::WRIST_TAPE_LEFT_LABEL, old, new)
+            keyed(version, field, appearance::WRIST_TAPE_LEFT_LABEL, old, new)
         }
         PlayerField::WristTapeColorRight => {
-            keyed(field, appearance::WRIST_TAPE_RIGHT_LABEL, old, new)
+            keyed(version, field, appearance::WRIST_TAPE_RIGHT_LABEL, old, new)
         }
         PlayerField::SpectaclesColor => {
             let key = key_writing(|key| key.player_field() == Some(field))
@@ -431,14 +433,14 @@ fn face_field_term(version: PesVersion, diff: &PlayerDiff) -> Term {
 }
 
 /// A `SettingKey`-keyed field's term: the combo's selected text at the
-/// stored index (`fields::option_name`).
-fn keyed(field: PlayerField, label: &'static str, old: u32, new: u32) -> Term {
+/// stored index (`fields::strip_option_name`, `version`'s labels).
+fn keyed(version: PesVersion, field: PlayerField, label: &'static str, old: u32, new: u32) -> Term {
     let key = key_writing(|key| key.player_field() == Some(field))
         .expect("the keyed fields have settings keys");
     term(
         label,
-        fields::option_name(key, stored_u8(old)),
-        fields::option_name(key, stored_u8(new)),
+        fields::strip_option_name(version, key, stored_u8(old)),
+        fields::strip_option_name(version, key, stored_u8(new)),
     )
 }
 

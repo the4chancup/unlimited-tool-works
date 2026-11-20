@@ -35,7 +35,7 @@ use crate::view::abilities::{
     self, gated_label, gated_number, gating_tooltip, maybe_end_row, number, small_stat,
 };
 use crate::view::appearance::fields::{
-    MOTIONS, MotionField, PHYSIQUE, Palette, STRIP_ENUMS, combo_options, palette,
+    MOTIONS, MotionField, PHYSIQUE, Palette, STRIP_ENUMS, combo_options, palette, strip_options,
 };
 use crate::view::group_frame::{GROUP_GAP, stretch_to};
 use crate::view::team::SPACE_GAP;
@@ -203,6 +203,11 @@ fn groups(
     // in-game face run's.
     let schema = schema_for(version);
     let face_run = schema.has_ingame_face();
+    // PES 2014 holds an appearance record for an edited or created
+    // player alone: one lookup per draw decides whether the record's own
+    // fields edit or grey under `NO_LOOK_TIP` (every other version holds
+    // one per player).
+    let has_record = session.has_appearance_record(player_id);
     // `GROUP_GAP` stands the first group off the title's line as it
     // stands each group off the last.
     ui.add_space(GROUP_GAP);
@@ -216,11 +221,15 @@ fn groups(
             player_id,
             version,
             &player.appearance,
-            &StripGates { schema, face_run },
+            &StripGates {
+                schema,
+                face_run,
+                has_record,
+            },
         );
     });
     ui.add_space(GROUP_GAP);
-    physique_motion_flags_row(ui, session, player_id, version, player, draw, schema);
+    physique_motion_flags_row(ui, session, player_id, player, draw, schema, has_record);
     ui.add_space(GROUP_GAP);
     group(ui, PRESENTATION_LABEL, |ui| {
         ui.set_min_width(ui.available_width());
@@ -340,10 +349,10 @@ fn physique_motion_flags_row(
     ui: &mut egui::Ui,
     session: &mut Session,
     player_id: u32,
-    version: PesVersion,
     player: &PlayerEntry,
     draw: &mut dyn FnMut(u8) -> u8,
     schema: &VersionSchema,
+    has_record: bool,
 ) {
     let group_frame = egui::Frame::group(ui.style());
     let margin = group_frame.total_margin().sum().y;
@@ -353,7 +362,14 @@ fn physique_motion_flags_row(
             ui.spacing_mut().item_spacing.x = SIDE_GAP;
             let mut physique = group_frame.begin(ui);
             frame_content(&mut physique.content_ui, PHYSIQUE_LABEL, |ui| {
-                physique_grid(ui, session, player_id, &player.appearance, schema)
+                physique_grid(
+                    ui,
+                    session,
+                    player_id,
+                    &player.appearance,
+                    schema,
+                    has_record,
+                )
             });
             physique.allocate_space(ui);
             let physique_outer = physique.content_ui.min_rect().height() + margin;
@@ -370,7 +386,7 @@ fn physique_motion_flags_row(
                                 ui,
                                 session,
                                 player_id,
-                                version,
+                                schema.version,
                                 &player.motion,
                                 draw,
                                 schema,
@@ -388,6 +404,7 @@ fn physique_motion_flags_row(
                                 &player.edit_flags,
                                 player.appearance.base_copy_id,
                                 schema,
+                                has_record,
                             );
                         });
                         flags.allocate_space(ui);
@@ -436,6 +453,13 @@ pub(crate) const OWNERSHIP_TIP: &str = "The team's export owns the aesthetics, s
 /// of the in-game face run (whose records the version maps none of) and the
 /// menus' out-of-scope items, which share it (`menus.rs`).
 pub(crate) const PES14_TIP: &str = "Not available on PES 2014 saves";
+
+/// The disabled hover of a look control on a PES 2014 player the save
+/// holds no appearance record for (the version stores one for an edited
+/// or created player alone): the game fills a record in on an in-game
+/// edit; the editor never makes one.
+pub(crate) const NO_LOOK_TIP: &str =
+    "PES 2014 stores no look for this player yet: edit it in game first";
 
 /// The FPC group, the first row's left side (the draft's `fpcGroup`): the
 /// classifier's reading (`is_fpc_player` under `hide_ids`, the settings'
@@ -565,6 +589,22 @@ fn presentation(ui: &mut egui::Ui, session: &mut Session, player_id: u32, stats:
         });
 }
 
+/// A record field's gate for the selected player: the version stores it
+/// (`player_has`, else the `PES NN+` stand-in) and, on PES 2014, the
+/// player has the appearance record the field's run sits in (else the
+/// `NO_LOOK_TIP` stand-in — the record holds the look of an edited or
+/// created player alone). A field of the player record, a motion's say,
+/// is never record-gated.
+fn field_gate(schema: &VersionSchema, has_record: bool, field: PlayerField) -> (bool, String) {
+    if !schema.player_has(field) {
+        return (false, gating_tooltip(field));
+    }
+    if !has_record && schema.appearance_only(field) {
+        return (false, NO_LOOK_TIP.to_owned());
+    }
+    (true, String::new())
+}
+
 /// The edit flags' grid (the draft's `#edit-flags-grid`): the six flags
 /// three a row, `Copy from ID` on a row of its own under them. `base_copy`
 /// exists on PES 15 to 18 only; like a gated field it keeps its place,
@@ -577,6 +617,7 @@ fn edit_flags_grid(
     flags: &PlayerEditFlags,
     base_copy_id: u32,
     schema: &VersionSchema,
+    has_record: bool,
 ) {
     egui::Grid::new("appearance edit flags")
         .num_columns(3)
@@ -586,7 +627,8 @@ fn edit_flags_grid(
             for (index, &(field, label, get, set)) in FLAG_CELLS.iter().enumerate() {
                 // A flag the version stores edits; elsewhere the box keeps
                 // its place, disabled as `base_copy`'s is.
-                if schema.player_has(field) {
+                let (enabled, tip) = field_gate(schema, has_record, field);
+                if enabled {
                     checkbox(ui, session, player_id, label, get(flags), |p, v| {
                         set(&mut p.edit_flags, v)
                     });
@@ -594,7 +636,7 @@ fn edit_flags_grid(
                     add_enabled(ui, false, |ui: &mut egui::Ui| {
                         studio_core::widgets::checkbox(ui, &mut false, label)
                     })
-                    .on_disabled_hover_text(gating_tooltip(field));
+                    .on_disabled_hover_text(tip);
                 }
                 if index == 2 {
                     ui.end_row();
@@ -712,6 +754,7 @@ fn physique_grid(
     player_id: u32,
     appearance: &PlayerAppearance,
     schema: &VersionSchema,
+    has_record: bool,
 ) {
     let padding = abilities::CELL_PADDING;
     egui::Frame::NONE
@@ -729,9 +772,10 @@ fn physique_grid(
                         let field = key
                             .player_field()
                             .expect("a physique key writes a player field");
-                        if !schema.player_has(field) {
-                            gated_label(ui, label, gating_tooltip(field));
-                            gated_number(ui, gating_tooltip(field));
+                        let (enabled, tip) = field_gate(schema, has_record, field);
+                        if !enabled {
+                            gated_label(ui, label, tip.clone());
+                            gated_number(ui, tip);
                             maybe_end_row(ui, index + 1, 2);
                             continue;
                         }
@@ -827,13 +871,18 @@ const STRIP_ORDER: [[StripCell; 3]; 5] = [
     ],
 ];
 
-/// The strip cells' two gates: the fields `version`'s records store, and
-/// whether they carry the in-game face run the two gloves cells write.
+/// The strip cells' three gates: the fields `version`'s records store,
+/// whether they carry the in-game face run the two gloves cells write,
+/// and whether the player has the appearance record the record's own
+/// fields sit in (every player's on the other versions; PES 2014's
+/// edited or created players' alone).
 struct StripGates<'a> {
     /// The version's schema (`player_has` gates each cell's field).
     schema: &'a VersionSchema,
     /// Whether the records carry an in-game face run (`has_ingame_face`).
     face_run: bool,
+    /// Whether the player has an appearance record (`has_appearance_record`).
+    has_record: bool,
 }
 
 /// `cell`'s gate: the `PlayerField` it writes, or `None` for the two cells
@@ -954,8 +1003,7 @@ fn strip_cell(
     // The gated stand-in's tooltip is computed only where it shows:
     // `gating_tooltip` panics on a field no version stores.
     let (enabled, tip) = match cell_field(cell) {
-        Some(field) if gates.schema.player_has(field) => (true, String::new()),
-        Some(field) => (false, gating_tooltip(field)),
+        Some(field) => field_gate(gates.schema, gates.has_record, field),
         None => (gates.face_run, PES14_TIP.to_owned()),
     };
     ui.allocate_ui_with_layout(
@@ -1031,7 +1079,7 @@ fn strip_field(
                 session,
                 player_id,
                 label,
-                &combo_options(key),
+                &strip_options(version, key),
                 get(appearance),
                 move |player, shown| {
                     set(&mut player.appearance, shown);
@@ -1043,7 +1091,7 @@ fn strip_field(
             session,
             player_id,
             WRIST_TAPING_LABEL,
-            &combo_options(SettingKey::WristTaping),
+            &strip_options(version, SettingKey::WristTaping),
             appearance.wrist_taping,
             |player, shown| {
                 player.appearance.wrist_taping = shown;
@@ -1054,7 +1102,7 @@ fn strip_field(
             session,
             player_id,
             WRIST_TAPE_LEFT_LABEL,
-            &combo_options(SettingKey::WristTapeColorLeft),
+            &strip_options(version, SettingKey::WristTapeColorLeft),
             appearance.wrist_tape_color_left,
             |player, shown| {
                 player.appearance.wrist_tape_color_left = shown;
@@ -1065,7 +1113,7 @@ fn strip_field(
             session,
             player_id,
             WRIST_TAPE_RIGHT_LABEL,
-            &combo_options(SettingKey::WristTapeColorRight),
+            &strip_options(version, SettingKey::WristTapeColorRight),
             appearance.wrist_tape_color_right,
             |player, shown| {
                 player.appearance.wrist_tape_color_right = shown;
@@ -1096,7 +1144,7 @@ fn strip_field(
                 session,
                 player_id,
                 GLOVES_COLOR_LABEL,
-                &combo_options(SettingKey::GlovesColor),
+                &strip_options(version, SettingKey::GlovesColor),
                 stored,
                 |player, shown| {
                     player
@@ -1124,7 +1172,7 @@ fn strip_field(
             session,
             player_id,
             SPECTACLES_LABEL,
-            &combo_options(SettingKey::Spectacles),
+            &strip_options(version, SettingKey::Spectacles),
             appearance.spectacles_style,
             |player, shown| {
                 player.appearance.spectacles_style = shown;
@@ -1136,7 +1184,7 @@ fn strip_field(
                 session,
                 player_id,
                 SPECTACLES_COLOR_LABEL,
-                &combo_options(SettingKey::SpectaclesColor),
+                &strip_options(version, SettingKey::SpectaclesColor),
                 appearance.spectacles_color,
                 |player, shown| {
                     player.appearance.spectacles_color = shown;
