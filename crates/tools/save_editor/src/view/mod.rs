@@ -311,9 +311,9 @@ pub(crate) struct SaveView {
     /// `None` in the tests' view-only frames until a test sets it.
     pub(crate) pes_folder: Option<PathBuf>,
     /// The exe check `select_portraits` last saw: `Found` after another
-    /// verdict restarts the portrait source, the folder having been repaired
-    /// where a worker answered empty. A re-picked folder restarts where the
-    /// pick lands (`tactics::show`).
+    /// verdict restarts the portrait and Gameplan tooltip sources, the
+    /// folder having been repaired where a worker answered empty. A
+    /// re-picked folder restarts where the pick lands (`tactics::show`).
     portraits_check: Option<ExeCheck>,
     /// The save's version and the folder the Set PES path button's picker
     /// returned, drained by `Tool::view` into `ctx.set_pes_folder_for` (the

@@ -1,7 +1,12 @@
 //! PES 2014's Game Plan (the draft's `tacticsTab14`): the Preset tactics
 //! panel's Formation and Strategy dropdowns and its eight sliders, the
 //! game's formation list a pick writes, and the sliders a Strategy pick
-//! sets.
+//! sets; the Combination play panel's three slots, each a strategy from
+//! `COMBINATIONS` and one of the areas it can run in (`free_areas`, a
+//! pick keeping the slot's area when it stays free and greying the
+//! strategies that have none); and `Tips`, the tooltips' texts with the
+//! `*_TIPS` tables naming each one's string in the install's `all.str`,
+//! which the host resolves and hands in.
 
 use pes_savefile::model::tactics::{
     CombinationSlot, Formation, FormationSlot, GamePlan, TacticsPreset, TeamTactics,
@@ -369,7 +374,7 @@ pub(crate) fn combination_text(id: u8) -> String {
 /// less those the other two slots hold. A slot whose strategy is 0 is
 /// empty, so its area holds nothing, whatever the byte says. Empty for an
 /// id `COMBINATIONS` does not hold.
-pub fn free_areas(slots: &[CombinationSlot; 3], index: usize, id: u8) -> Vec<u8> {
+pub(crate) fn free_areas(slots: &[CombinationSlot; 3], index: usize, id: u8) -> Vec<u8> {
     let Some(combination) = COMBINATIONS.iter().find(|combination| combination.id == id) else {
         return Vec::new();
     };
@@ -391,7 +396,7 @@ pub fn free_areas(slots: &[CombinationSlot; 3], index: usize, id: u8) -> Vec<u8>
 /// area the game's picker opens on when that one is free, else the first
 /// free one. `id` must have a free area: the panel greys one that has
 /// none.
-pub fn pick_combination(slots: &mut [CombinationSlot; 3], index: usize, id: u8) {
+pub(crate) fn pick_combination(slots: &mut [CombinationSlot; 3], index: usize, id: u8) {
     let free = free_areas(slots, index, id);
     let opens_on = COMBINATIONS
         .iter()
@@ -410,7 +415,7 @@ pub fn pick_combination(slots: &mut [CombinationSlot; 3], index: usize, id: u8) 
 }
 
 /// Empties slot `index` as the game's Clear does: strategy 0 and area 0.
-pub fn clear_combination(slots: &mut [CombinationSlot; 3], index: usize) {
+pub(crate) fn clear_combination(slots: &mut [CombinationSlot; 3], index: usize) {
     slots[index] = CombinationSlot {
         area: 0,
         strategy: NO_COMBINATION,

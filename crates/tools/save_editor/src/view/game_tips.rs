@@ -155,7 +155,7 @@ fn resolve(file: &pes_strings::StrFile) -> Tips {
             .map(clean)
             .filter(|text| !text.is_empty())
     };
-    let block = |heading: &'static str| {
+    let auto_block = |heading: &'static str| {
         file.section(pes14::AUTO_TIP.0)
             .and_then(|section| section.text(pes14::AUTO_TIP.1))
             .and_then(|text| block(text, heading))
@@ -174,10 +174,10 @@ fn resolve(file: &pes_strings::StrFile) -> Tips {
         *held = text(*tip);
     }
     tips.join_attack = text(pes14::SET_PIECE_TIPS[6]);
-    tips.substitution = block(pes14::SUBSTITUTION_BLOCK);
-    tips.preset_change = block(pes14::PRESET_CHANGE_BLOCK);
-    tips.offside_trap = block(pes14::OFFSIDE_TRAP_BLOCK);
-    tips.combination_play = block(pes14::COMBINATION_PLAY_BLOCK);
+    tips.substitution = auto_block(pes14::SUBSTITUTION_BLOCK);
+    tips.preset_change = auto_block(pes14::PRESET_CHANGE_BLOCK);
+    tips.offside_trap = auto_block(pes14::OFFSIDE_TRAP_BLOCK);
+    tips.combination_play = auto_block(pes14::COMBINATION_PLAY_BLOCK);
     tips.combination_title = text(pes14::COMBINATION_TITLE_TIP);
     tips
 }
