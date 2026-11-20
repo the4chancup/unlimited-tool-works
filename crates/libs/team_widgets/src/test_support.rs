@@ -228,6 +228,8 @@ pub(crate) fn roster_rows(rows: &[(String, String, Option<u8>)]) -> Vec<RosterRo
             name: name.as_str(),
             raw_name: raw_name.as_str(),
             registered_position: *position,
+            // No shirt numbers until a test sets them.
+            number: None,
             portrait: None,
             medal: None,
             overalls: None,

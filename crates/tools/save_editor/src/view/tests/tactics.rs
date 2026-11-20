@@ -4298,7 +4298,7 @@ fn the_tactics_rows_mark_the_positions_a_player_is_rated_a_or_b_at() {
     expected[2] = true;
     expected[6] = true;
     assert_eq!(
-        crate::view::tactics::roster_slot(Some(housefires)).4,
+        crate::view::tactics::roster_slot(Some(housefires), None).5,
         Some(expected),
         "LB and LMF alone"
     );
@@ -4308,10 +4308,37 @@ fn the_tactics_rows_mark_the_positions_a_player_is_rated_a_or_b_at() {
         .find(|slot| file.player(slot.player_id).is_none())
         .expect("team 721 has an empty roster slot");
     assert_eq!(
-        crate::view::tactics::roster_slot(file.player(empty.player_id)).4,
+        crate::view::tactics::roster_slot(file.player(empty.player_id), None).5,
         None,
         "an empty slot: no ratings"
     );
+}
+
+// The shirt numbers ride the same rows (`roster_slots`): a filled slot's
+// roster number reaches its row; an empty slot's row holds none.
+#[test]
+fn the_tactics_rows_carry_the_roster_slots_shirt_number() {
+    let file = EditFile::from_bytes(&fixture_save(PesVersion::Pes17)).unwrap();
+    let team = file.team(721).expect("team 721 is in the fixture");
+    let slots = crate::view::tactics::roster_slots(&file, team);
+    let (index, rostered) = team
+        .roster
+        .iter()
+        .enumerate()
+        .find(|(_, slot)| file.player(slot.player_id).is_some())
+        .expect("team 721 has a filled roster slot");
+    assert_eq!(
+        slots[index].3,
+        Some(rostered.number),
+        "a filled slot's number"
+    );
+    let index = team
+        .roster
+        .iter()
+        .enumerate()
+        .find_map(|(index, slot)| file.player(slot.player_id).is_none().then_some(index))
+        .expect("team 721 has an empty roster slot");
+    assert_eq!(slots[index].3, None, "an empty slot: no number");
 }
 
 // The maintainer's round trip on the PES 17 fixture's real team 701,

@@ -1885,7 +1885,7 @@ pub(super) fn badge_texts(shapes: &[egui::epaint::ClippedShape], badge: egui::Re
 }
 
 /// The frame's darkening fills: the rects filled black at alpha 153.
-fn dim_fills(shapes: &[egui::epaint::ClippedShape]) -> Vec<egui::Rect> {
+pub(super) fn dim_fills(shapes: &[egui::epaint::ClippedShape]) -> Vec<egui::Rect> {
     shapes
         .iter()
         .filter_map(|clipped| match &clipped.shape {
@@ -2463,5 +2463,281 @@ fn an_interior_rated_area_lights_half_a_unit_out_on_every_side() {
         &mut view,
         &roster,
         pointer_at(held, false),
+    );
+}
+
+// PES 2014's swap of two starters writes what the game's own Game Plan
+// writes, in the preset shown alone: with preset 1 shown the two
+// lineup entries exchange and presets 2 and 3 exchange the two slots
+// of their formation 0, so each player stands there where he stood;
+// with preset 2 or 3 shown that preset's two slots exchange alone, the
+// lineup and the other presets untouched.
+#[test]
+fn on_pes14_a_swap_of_two_starters_moves_them_in_the_shown_preset_alone() {
+    let (mut tactics, _rows) = team_1();
+    // The premises the fixture holds: the identity lineup and the same
+    // formation on every preset. The three presets' formation 0 are
+    // made to differ (preset 2's mirrored in x, preset 3's in y), so a
+    // write says which presets exchanged.
+    assert_eq!(
+        tactics.starting_eleven,
+        [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+        "premise: IRELAND's lineup is the roster's order"
+    );
+    let formation = tactics.presets[0].formations[0].clone();
+    for preset in &mut tactics.presets {
+        assert_eq!(
+            preset.formations[0], formation,
+            "premise: every preset holds IRELAND's formation"
+        );
+    }
+    for (preset, mirror_x, mirror_y) in [(1usize, true, false), (2, false, true)] {
+        for slot in &mut tactics.presets[preset].formations[0].players {
+            if mirror_x {
+                slot.x = 104 - slot.x;
+            }
+            if mirror_y {
+                slot.y = 48 - slot.y;
+            }
+        }
+    }
+    let before = tactics.clone();
+    for preset in 0..3 {
+        let players = before.presets[preset].formations[0].players;
+        assert_ne!(
+            players[9],
+            players[10],
+            "premise: preset {}'s slots 9 and 10 differ",
+            preset + 1
+        );
+    }
+
+    // With preset 1 shown: the lineup's 9 and 10 exchange, preset 1's
+    // formation stays, presets 2 and 3 exchange their slots 9 and 10.
+    let mut shown = before.clone();
+    swap_starters_14(&mut shown, 0, 9, 10);
+    let mut expect = before.clone();
+    expect.starting_eleven.swap(9, 10);
+    for preset in [1, 2] {
+        expect.presets[preset].formations[0].players.swap(9, 10);
+    }
+    assert_eq!(
+        shown, expect,
+        "preset 1 shown: the lineup exchanges, presets 2 and 3 their slots"
+    );
+
+    // With preset 2 shown: its formation 0 alone exchanges slots 9 and
+    // 10, the lineup and presets 1 and 3 untouched.
+    let mut shown = before.clone();
+    swap_starters_14(&mut shown, 1, 9, 10);
+    let mut expect = before.clone();
+    expect.presets[1].formations[0].players.swap(9, 10);
+    assert_eq!(
+        shown, expect,
+        "preset 2 shown: its formation alone exchanges"
+    );
+
+    // With preset 3 shown: likewise, its own formation alone.
+    let mut shown = before.clone();
+    swap_starters_14(&mut shown, 2, 9, 10);
+    let mut expect = before;
+    expect.presets[2].formations[0].players.swap(9, 10);
+    assert_eq!(
+        shown, expect,
+        "preset 3 shown: its formation alone exchanges"
+    );
+}
+
+// On PES 2014 a marker released over another swaps the two starters
+// through `swap_starters_14`, the keeper's marker dragged like the
+// others and a target like the rest: starter 9 dropped on starter 10
+// writes the preset-1 swap (the lineup's two exchange, presets 2 and
+// 3 their slots, preset 1's formation untouched), the keeper dropped
+// on starter 1 swaps those two, and a release on open grass writes
+// nothing — a free move's role rule is the game's, not ours.
+#[test]
+fn on_pes14_a_marker_released_over_another_swaps_the_two_starters() {
+    let mut window = Headless::sized(600.0, 450.0);
+    let (mut tactics, rows) = team_1();
+    let mut view = TacticsView::default();
+    let roster = roster_rows(&rows);
+    let before = tactics.clone();
+    let players = before.presets[0].formations[0].players;
+    let (nodes, _) = window.pitch(PesVersion::Pes14, &mut tactics, &mut view, &roster, vec![]);
+    let from = marker_point(&nodes, &players, 9);
+    let over = marker_point(&nodes, &players, 10);
+
+    let changed = window.drag_pitch(
+        from,
+        over,
+        PesVersion::Pes14,
+        &mut tactics,
+        &mut view,
+        &roster,
+    );
+    assert!(changed, "the drop changed the record");
+    let mut expect = before.clone();
+    swap_starters_14(&mut expect, 0, 9, 10);
+    assert_eq!(tactics, expect, "the drop wrote preset 1's swap");
+
+    // The keeper dragged onto starter 1 swaps those two.
+    let players = tactics.presets[0].formations[0].players;
+    let before = tactics.clone();
+    let (nodes, _) = window.pitch(PesVersion::Pes14, &mut tactics, &mut view, &roster, vec![]);
+    let from = marker_point(&nodes, &players, 0);
+    let over = marker_point(&nodes, &players, 1);
+    let changed = window.drag_pitch(
+        from,
+        over,
+        PesVersion::Pes14,
+        &mut tactics,
+        &mut view,
+        &roster,
+    );
+    assert!(changed, "the keeper's drop changed the record");
+    let mut expect = before;
+    swap_starters_14(&mut expect, 0, 0, 1);
+    assert_eq!(tactics, expect, "the keeper swapped with starter 1");
+
+    // A release on open grass writes nothing.
+    let players = tactics.presets[0].formations[0].players;
+    let before = tactics.clone();
+    let (nodes, _) = window.pitch(PesVersion::Pes14, &mut tactics, &mut view, &roster, vec![]);
+    let canvas = canvas_rect(&nodes);
+    let from = marker_point(&nodes, &players, 9);
+    let onto = grass_point(canvas, &players, egui::Rect::NOTHING);
+    assert!(
+        canvas.contains(onto),
+        "premise: the release lands on the pitch"
+    );
+    let changed = window.drag_pitch(
+        from,
+        onto,
+        PesVersion::Pes14,
+        &mut tactics,
+        &mut view,
+        &roster,
+    );
+    assert!(!changed, "a release on the grass writes nothing");
+    assert_eq!(tactics, before, "the record is untouched");
+}
+
+// With a later Preset Tactics shown the swap writes that preset's
+// formation alone (run tactics5): a marker dropped on another and a
+// starting-eleven row dropped on a row each exchange the shown preset's
+// slots 9 and 10, the lineup and the other presets untouched. With
+// Preset Tactics 1 shown a row on a row writes the lineup's exchange
+// and presets 2 and 3's (run tactics1).
+#[test]
+fn on_pes14_a_drop_swaps_the_two_in_the_shown_preset_alone() {
+    let mut window = Headless::sized(600.0, 450.0);
+    let (mut tactics, rows) = team_1();
+    let mut view = TacticsView {
+        preset: 1,
+        ..TacticsView::default()
+    };
+    let roster = roster_rows(&rows);
+    let before = tactics.clone();
+    let players = before.presets[1].formations[0].players;
+    let (nodes, _) = window.pitch(PesVersion::Pes14, &mut tactics, &mut view, &roster, vec![]);
+    let from = marker_point(&nodes, &players, 9);
+    let over = marker_point(&nodes, &players, 10);
+
+    let changed = window.drag_pitch(
+        from,
+        over,
+        PesVersion::Pes14,
+        &mut tactics,
+        &mut view,
+        &roster,
+    );
+    assert!(changed, "the marker drop changed the record");
+    let mut expect = before.clone();
+    expect.presets[1].formations[0].players.swap(9, 10);
+    assert_eq!(tactics, expect, "preset 2's slots alone exchanged");
+
+    // An eleven row dropped on a row writes the same.
+    let before = tactics.clone();
+    let (nodes, _) = window.lineup(PesVersion::Pes14, &mut tactics, &mut view, &roster, vec![]);
+    let row9 = row_centre(&nodes, 9);
+    let row10 = row_centre(&nodes, 10);
+    let changed = window.drag_lineup(
+        row9,
+        row10,
+        PesVersion::Pes14,
+        &mut tactics,
+        &mut view,
+        &roster,
+    );
+    assert!(changed, "the row drop changed the record");
+    let mut expect = before.clone();
+    expect.presets[1].formations[0].players.swap(9, 10);
+    assert_eq!(
+        tactics, expect,
+        "preset 2's slots alone, the lineup untouched"
+    );
+
+    // With Preset Tactics 1 shown, a row on a row writes the lineup's
+    // exchange and presets 2 and 3's slots.
+    view.preset = 0;
+    let before = tactics.clone();
+    let changed = window.drag_lineup(
+        row9,
+        row10,
+        PesVersion::Pes14,
+        &mut tactics,
+        &mut view,
+        &roster,
+    );
+    assert!(changed, "the row drop changed the record");
+    let mut expect = before;
+    swap_starters_14(&mut expect, 0, 9, 10);
+    assert_eq!(
+        tactics, expect,
+        "the lineup exchanges and presets 2 and 3 their slots"
+    );
+}
+
+// On every other version the same drag keeps moving the marker freely:
+// on a PES 2015 save a starter released on the grass lands at the
+// snapped spot, as `a_marker_dragged_to_grass_writes_the_snapped_point`
+// shows on PES 2021.
+#[test]
+fn on_pes15_a_marker_dragged_to_grass_still_moves() {
+    let mut window = Headless::sized(600.0, 450.0);
+    let mut tactics = fixture_tactics(PesVersion::Pes15);
+    let mut view = TacticsView::default();
+    let rows = fixture_rows(PesVersion::Pes15);
+    let roster = roster_rows(&rows);
+    let before = tactics.clone();
+    let players = before.presets[0].formations[0].players;
+    let (nodes, _) = window.pitch(PesVersion::Pes15, &mut tactics, &mut view, &roster, vec![]);
+    let canvas = canvas_rect(&nodes);
+    let from = marker_point(&nodes, &players, 9);
+    let onto = grass_point(canvas, &players, egui::Rect::NOTHING);
+
+    let changed = window.drag_pitch(
+        from,
+        onto,
+        PesVersion::Pes15,
+        &mut tactics,
+        &mut view,
+        &roster,
+    );
+    assert!(changed, "the grass drop still moves him");
+    let (x, y) = snap(
+        onto - press_offset(canvas, players[9], from),
+        canvas.min,
+        &outfield_range(false),
+    );
+    let mut expect = before;
+    expect.presets[0].formations[0].players[9] = FormationSlot {
+        position: players[9].position,
+        x,
+        y,
+    };
+    assert_eq!(
+        tactics, expect,
+        "the dragged slot alone moved, in preset 1's Kick-off"
     );
 }

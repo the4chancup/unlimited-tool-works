@@ -328,11 +328,14 @@ fn preset_cell(ui: &mut egui::Ui, preset: &mut TacticsPreset, index: usize) {
     match index {
         0 => {
             ui.label("Formation");
-            control_box(ui, |ui| formation_combo(ui, &mut preset.formations[0]));
+            // The dropdowns stand straight under their labels, as the
+            // draft's selects do — no `control_box`, which centres a
+            // control in a taller box than the draft's.
+            formation_combo(ui, &mut preset.formations[0]);
         }
         1 => {
             ui.label(STRATEGY_LABEL);
-            control_box(ui, |ui| strategy_combo(ui, preset));
+            strategy_combo(ui, preset);
         }
         _ => {
             let slider = index - 2;

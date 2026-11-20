@@ -2,7 +2,12 @@
 //! and the Strategy picks' slider writes, on synthetic formations and
 //! game plans.
 
+use egui::accesskit::Role;
+use pes_savefile::EditFile;
+use pes_version::PesVersion;
+
 use super::*;
+use crate::test_support::{Headless, control_below};
 
 /// `entry`'s formation as a `Formation`, `keeper` its slot 0.
 fn listed(entry: usize, keeper: FormationSlot) -> Formation {
@@ -131,4 +136,39 @@ fn pick_strategy_writes_the_strategy_and_its_sliders() {
         },
         "Custom sets no slider"
     );
+}
+
+// The two dropdowns stand `CELL_GAP` under their labels, as the draft's
+// selects do: the Formation combo's top is the "Formation" label's
+// bottom plus it, and the Strategy combo's likewise.
+#[test]
+fn the_dropdowns_stand_cell_gap_under_their_labels() {
+    let mut window = Headless::new();
+    let file =
+        EditFile::from_bytes(&pes_savefile::fixture_save(PesVersion::Pes14)).expect("fixture save");
+    let mut tactics = file
+        .team(1)
+        .expect("team 1 is in the fixture")
+        .tactics
+        .clone();
+    let view = TacticsView::default();
+    let (nodes, _) = window.frame(vec![], |ui| {
+        preset_tactics(ui, &mut tactics, &view);
+    });
+    for label in ["Formation", STRATEGY_LABEL] {
+        let bounds = nodes
+            .iter()
+            .find(|node| node.role() == Role::Label && node.value() == Some(label))
+            .and_then(|node| node.bounds())
+            .unwrap_or_else(|| panic!("no label {label:?}"));
+        let top = control_below(&nodes, label, Role::ComboBox, 100.0)
+            .bounds()
+            .expect("the combo's bounds");
+        assert!(
+            (top.y0 - (bounds.y1 + f64::from(CELL_GAP))).abs() <= 0.5,
+            "{label}: the combo's top {} is the label's bottom {} plus {CELL_GAP}",
+            top.y0,
+            bounds.y1,
+        );
+    }
 }

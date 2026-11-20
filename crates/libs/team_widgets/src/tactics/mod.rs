@@ -111,6 +111,9 @@ pub struct RosterRow<'a> {
     pub raw_name: &'a str,
     /// The player's registered position byte; `None` an empty slot.
     pub registered_position: Option<u8>,
+    /// The roster slot's shirt number; `None` an empty slot. PES 2014's
+    /// pitch markers are shirts with the number, not portraits.
+    pub number: Option<u16>,
     /// The player's portrait, already uploaded by the host; `None` when none
     /// was found (or the host reads none): the marker then draws without one.
     pub portrait: Option<egui::TextureId>,

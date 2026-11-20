@@ -57,13 +57,14 @@ const SET_FOLDER_LABEL: &str = "Set PES path";
 const SET_FOLDER_SIDE_PADDING: f32 = 2.0;
 
 /// One roster slot's row data before the `RosterRow`s borrow it: the
-/// display name, the raw name, the registered position, the thirteen
-/// per-position overalls and the positions he is rated A or B at (the
-/// three `Option`s `None` on an empty slot).
+/// display name, the raw name, the registered position, the shirt
+/// number, the thirteen per-position overalls and the positions he is
+/// rated A or B at (the `Option`s `None` on an empty slot).
 pub(super) type RosterSlot = (
     String,
     String,
     Option<u8>,
+    Option<u16>,
     Option<[u8; 13]>,
     Option<[bool; 13]>,
 );
@@ -72,7 +73,10 @@ pub(super) type RosterSlot = (
 pub(super) fn roster_slots(file: &EditFile, team: &TeamEntry) -> Vec<RosterSlot> {
     team.roster
         .iter()
-        .map(|slot| roster_slot(file.player(slot.player_id)))
+        .map(|slot| {
+            // The shirt number is the slot's own field, not the player's.
+            roster_slot(file.player(slot.player_id), Some(slot.number))
+        })
         .collect()
 }
 
@@ -149,10 +153,11 @@ pub(super) fn roster_rows<'a>(
         .zip(portraits)
         .enumerate()
         .map(
-            |(index, ((name, raw_name, position, overalls, rated), portrait))| RosterRow {
+            |(index, ((name, raw_name, position, number, overalls, rated), portrait))| RosterRow {
                 name: name.as_str(),
                 raw_name: raw_name.as_str(),
                 registered_position: *position,
+                number: *number,
                 portrait,
                 medal: medals.and_then(|marks| marks.get(index)).copied().flatten(),
                 overalls: *overalls,
@@ -165,13 +170,15 @@ pub(super) fn roster_rows<'a>(
 
 /// The `RosterSlot` of the roster slot holding `player`: his display name
 /// as the player list shows it, his raw name for the colour-coded rows,
-/// his registered position, the thirteen per-position overalls the
+/// his registered position, the slot's shirt `number` (the pitch's PES
+/// 2014 shirt), the thirteen per-position overalls the
 /// badge's number and the drag's position pick read, and the positions he
 /// is rated A or B at, which a held marker lights. `None`, an empty slot,
-/// gives the empty row: "" names, `None` position, overalls and ratings.
-pub(super) fn roster_slot(player: Option<&PlayerEntry>) -> RosterSlot {
+/// gives the empty row: "" names, `None` position, number, overalls and
+/// ratings.
+pub(super) fn roster_slot(player: Option<&PlayerEntry>, number: Option<u16>) -> RosterSlot {
     let Some(player) = player else {
-        return (String::new(), String::new(), None, None, None);
+        return (String::new(), String::new(), None, None, None, None);
     };
     let mut overalls = [0; 13];
     for (position, overall) in (0u8..).zip(&mut overalls) {
@@ -190,6 +197,7 @@ pub(super) fn roster_slot(player: Option<&PlayerEntry>) -> RosterSlot {
         display_name(&player.name),
         player.name.clone(),
         Some(player.positions.registered),
+        number,
         Some(overalls),
         Some(rated),
     )

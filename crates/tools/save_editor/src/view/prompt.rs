@@ -415,6 +415,7 @@ pub(super) fn roster_for<'a>(
                 name: names[index].as_str(),
                 raw_name: player.map_or("", |player| player.name.as_str()),
                 registered_position: player.map(|player| player.positions.registered),
+                number: player.map(|_| slot.number),
                 portrait: None,
                 medal: None,
                 overalls: None,

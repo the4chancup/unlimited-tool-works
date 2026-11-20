@@ -1,10 +1,10 @@
 //! The geometry and paint tests: the screen's spot mapping and its snap,
 //! the turf and the lines, the markers' badge, position, name, portrait
-//! and corners, the rows' coloured names.
+//! (PES 2014's shirt) and corners, the rows' coloured names.
 
 use pes_version::PesVersion;
 
-use super::drops::badge_texts;
+use super::drops::{badge_texts, dim_fills};
 use super::*;
 use crate::tactics::{FieldedMark, Medal};
 use crate::test_support::{
@@ -3912,4 +3912,229 @@ fn the_wheel_steps_the_formation_selector_wrapping_round() {
     );
     assert_eq!(view.formation, 0, "the locked selector does not step");
     assert_eq!(tactics, before, "the record is untouched");
+}
+
+// On PES 2014 a held starter's swap mark is on the teammate a release
+// would swap with, the keeper included, and his badge reads that
+// teammate's position: held over starter 10 the mark is on 10 and his
+// badge reads 10's position; held over the keeper the mark is on him.
+#[test]
+fn on_pes14_a_held_marker_marks_the_teammate_a_release_would_swap_with() {
+    let mut window = Headless::sized(600.0, 450.0);
+    let (mut tactics, rows) = team_1();
+    let mut view = TacticsView::default();
+    let roster = roster_rows(&rows);
+    let players = tactics.presets[0].formations[0].players;
+    let (dragged, target) = (9, 10);
+    assert_ne!(
+        players[dragged].position, players[target].position,
+        "premise: the two hold different positions, so the badge tells them apart"
+    );
+
+    let (nodes, _) = window.pitch(PesVersion::Pes14, &mut tactics, &mut view, &roster, vec![]);
+    let canvas = canvas_rect(&nodes);
+    let centres = centres_of(canvas, &players);
+    let order = draw_order(&centres);
+    let from = marker_point(&nodes, &players, dragged);
+    let over = marker_point(&nodes, &players, target);
+    assert!(
+        !marker_rect(centres[dragged], canvas, true).contains(over),
+        "premise: the hold is off the dragged marker's own spot"
+    );
+    assert_eq!(
+        marker_at(over, canvas, &centres, &order, true, Some(dragged)),
+        Some(target),
+        "premise: the hold resolves to the teammate"
+    );
+
+    window.pitch(
+        PesVersion::Pes14,
+        &mut tactics,
+        &mut view,
+        &roster,
+        pointer_at(from, true),
+    );
+    let (_, shapes) = window.frame(vec![egui::Event::PointerMoved(over)], |ui| {
+        pitch(
+            ui,
+            "pitch",
+            PesVersion::Pes14,
+            &mut tactics,
+            &mut view,
+            &roster,
+            false,
+        );
+    });
+    assert_swap_mark_on(&shapes, centres[target]);
+    assert!(
+        dim_fills(&shapes).is_empty(),
+        "a held marker lights no areas on PES 2014"
+    );
+    let dragged_badge = egui::Rect::from_center_size(
+        held_centre(canvas, players[dragged], from, over, false),
+        egui::vec2(50.0, 14.0),
+    );
+    let texts = badge_texts(&shapes, dragged_badge);
+    assert_eq!(
+        texts.last().map(String::as_str),
+        Some(position_label(players[target].position)),
+        "over the swap target his badge reads the teammate's position: {texts:?}"
+    );
+
+    // Over the keeper, the mark is on him.
+    let over_gk = marker_point(&nodes, &players, 0);
+    assert_eq!(
+        marker_at(over_gk, canvas, &centres, &order, true, Some(dragged)),
+        Some(0),
+        "premise: the hold resolves to the keeper"
+    );
+    let (_, shapes) = window.frame(vec![egui::Event::PointerMoved(over_gk)], |ui| {
+        pitch(
+            ui,
+            "pitch",
+            PesVersion::Pes14,
+            &mut tactics,
+            &mut view,
+            &roster,
+            false,
+        );
+    });
+    assert_swap_mark_on(&shapes, centres[0]);
+    assert!(
+        dim_fills(&shapes).is_empty(),
+        "held over the keeper, still no areas lit"
+    );
+
+    // Over open grass the held badge reads his own position, no mark
+    // and no lit area.
+    let grass = grass_point(canvas, &players, egui::Rect::NOTHING);
+    let (_, shapes) = window.frame(vec![egui::Event::PointerMoved(grass)], |ui| {
+        pitch(
+            ui,
+            "pitch",
+            PesVersion::Pes14,
+            &mut tactics,
+            &mut view,
+            &roster,
+            false,
+        );
+    });
+    assert!(
+        dim_fills(&shapes).is_empty(),
+        "held over the grass, no areas lit"
+    );
+    let dragged_badge = egui::Rect::from_center_size(
+        held_centre(canvas, players[dragged], from, grass, false),
+        egui::vec2(50.0, 14.0),
+    );
+    let texts = badge_texts(&shapes, dragged_badge);
+    assert_eq!(
+        texts.last().map(String::as_str),
+        Some(position_label(players[dragged].position)),
+        "over grass his badge reads his own position: {texts:?}"
+    );
+}
+
+// PES 2014's Game Plan opens no player box: a click on a marker with no
+// assignment armed opens no popover. Its pitch draws each starter with
+// a number a white shirt (the game's "Strip Icon" display), and its
+// badges hold no overall.
+#[test]
+fn on_pes14_a_marker_click_opens_no_popover_and_the_pitch_draws_shirts() {
+    let mut window = Headless::sized(600.0, 450.0);
+    let (mut tactics, rows) = team_1();
+    let mut view = TacticsView::default();
+    let mut roster = roster_rows(&rows);
+    // Every starter numbered, each given an overall the badge must not
+    // show: the number makes his shirt, the overall proves it is not
+    // painted.
+    for index in 0..11 {
+        let slot = usize::from(tactics.starting_eleven[index]);
+        roster[slot].number = Some(u16::try_from(index + 1).expect("eleven starters"));
+        roster[slot].overalls = Some([88; 13]);
+    }
+    let players = tactics.presets[0].formations[0].players;
+    let (nodes, _) = window.pitch(PesVersion::Pes14, &mut tactics, &mut view, &roster, vec![]);
+    let at = marker_point(&nodes, &players, 9);
+    // An armed assignment still takes the click: the write, the disarm,
+    // no popover.
+    view.assign = Some(Assign::Role(5));
+    window.click_pitch(at, PesVersion::Pes14, &mut tactics, &mut view, &roster);
+    assert_eq!(
+        tactics.set_pieces.penalty, tactics.starting_eleven[9],
+        "the armed click wrote starter 9 to the penalty role"
+    );
+    assert_eq!(view.assign, None, "the write disarmed the mode");
+    assert_eq!(view.popover, None, "the armed click opened no popover");
+    window.click_pitch(at, PesVersion::Pes14, &mut tactics, &mut view, &roster);
+    assert_eq!(view.popover, None, "a click opens no popover");
+
+    let (_, shapes) = window.frame(vec![], |ui| {
+        pitch(
+            ui,
+            "pitch",
+            PesVersion::Pes14,
+            &mut tactics,
+            &mut view,
+            &roster,
+            false,
+        );
+    });
+    assert!(
+        !shapes.iter().any(|clipped| matches!(&clipped.shape,
+            egui::Shape::Text(shape) if shape.galley.job.text == "88")),
+        "no badge holds the overall"
+    );
+    let fill = egui::Color32::from_rgb(SHIRT_FILL[0], SHIRT_FILL[1], SHIRT_FILL[2]);
+    let pieces = shapes
+        .iter()
+        .filter(|clipped| matches!(&clipped.shape, egui::Shape::Path(path) if path.fill == fill))
+        .count();
+    assert_eq!(
+        pieces,
+        11 * SHIRT_PIECES.len(),
+        "one shirt per starter, {} fills each",
+        SHIRT_PIECES.len()
+    );
+    // Every starter's number painted once, his shirt's fills and number
+    // inside his portrait box — the shirt stands where the portrait
+    // would, the marker's reach.
+    let canvas = canvas_rect(&nodes);
+    let centres = centres_of(canvas, &players);
+    for (index, centre) in centres.iter().enumerate() {
+        let portrait = portrait_rect(badge_rect(*centre));
+        let number = (index + 1).to_string();
+        let texts: Vec<&egui::epaint::TextShape> = shapes
+            .iter()
+            .filter_map(|clipped| match &clipped.shape {
+                egui::Shape::Text(shape) if shape.galley.job.text == number => Some(shape),
+                _ => None,
+            })
+            .collect();
+        assert_eq!(
+            texts.len(),
+            1,
+            "starter {}'s number painted once",
+            index + 1
+        );
+        assert!(
+            portrait.contains(texts[0].pos + texts[0].galley.size() / 2.0),
+            "the number inside his portrait box"
+        );
+        let fills = shapes
+            .iter()
+            .filter(|clipped| match &clipped.shape {
+                egui::Shape::Path(path) => {
+                    path.fill == fill && path.points.iter().all(|point| portrait.contains(*point))
+                }
+                _ => false,
+            })
+            .count();
+        assert_eq!(
+            fills,
+            SHIRT_PIECES.len(),
+            "starter {}'s shirt's fills inside his portrait box",
+            index + 1
+        );
+    }
 }

@@ -728,6 +728,7 @@ fn roster_rows<'a>(rows: &'a [(String, String, Option<u8>)]) -> Vec<RosterRow<'a
             name: name.as_str(),
             raw_name: raw_name.as_str(),
             registered_position: *position,
+            number: None,
             portrait: None,
             medal: None,
             overalls: None,

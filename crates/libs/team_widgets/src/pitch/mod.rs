@@ -5,7 +5,12 @@
 //! the bench, swapped by drag. The canvas is painted as the
 //! version's own formation screen: its texture's turf bands and lines,
 //! the screen's slot-to-spot mapping and markers of portrait, badge and
-//! coloured name.
+//! coloured name. On a PES 2014 save the pitch plays by that version's
+//! own Game Plan: a starter is a white shirt with his number, never a
+//! portrait and no overall on the badge; a marker released over another
+//! swaps the two starters through `swap_starters_14` — the keeper's
+//! marker dragged like the others — and a release anywhere else writes
+//! nothing; a click opens no popover and a held marker lights no areas.
 
 use std::ops::RangeInclusive;
 
@@ -66,7 +71,9 @@ pub(crate) enum LineupDrag {
     /// another marker swaps their two slots in the shown formation, and
     /// the grass move (a row's release there never fires) is its alone.
     /// Under a ruleset that allows illegal formations another marker is
-    /// no target: a release on him is a grass move.
+    /// no target: a release on him is a grass move. On PES 2014 another
+    /// marker, the keeper included, swaps through `swap_starters_14`
+    /// under every ruleset, and there is no grass move.
     Marker(usize),
 }
 
@@ -149,6 +156,54 @@ const ABOVE_CENTRE: f32 = 57.0;
 const BELOW_CENTRE: f32 = 20.0;
 /// The name's centre under the badge centre's.
 const NAME_DY: f32 = 13.0;
+
+/// PES 2014's marker figure (the draft's `SHIRT14` and `drawShirt14`):
+/// a white shirt standing on the badge's top, centred on it, the
+/// starter's number on it in black — the game's Game Plan pitch shows
+/// no portraits (its "Strip Icon" display). Its outline's points on the
+/// game's 34 by 30 grid, scaled to 34 by 30 points.
+const SHIRT_POINTS: [[f32; 2]; 13] = [
+    [10.0, 0.0],
+    [13.0, 0.0],
+    [17.0, 4.0],
+    [21.0, 0.0],
+    [24.0, 0.0],
+    [34.0, 7.0],
+    [30.0, 14.0],
+    [27.0, 12.0],
+    [27.0, 30.0],
+    [7.0, 30.0],
+    [7.0, 12.0],
+    [4.0, 14.0],
+    [0.0, 7.0],
+];
+/// The shirt's width and height in points (the game's at the pitch's
+/// scale: its pitch is 322 wide at 720p, as this one is 320).
+const SHIRT_SIZE: egui::Vec2 = egui::vec2(34.0, 30.0);
+/// The shirt's fill as convex pieces of its outline's grid — the
+/// outline is concave at the neck and the two armpits, which a fan fill
+/// would cover: the torso, the two sleeves, the chest either side of
+/// the neck and the triangle under it.
+const SHIRT_PIECES: [&[[f32; 2]]; 6] = [
+    &[[7.0, 12.0], [27.0, 12.0], [27.0, 30.0], [7.0, 30.0]],
+    &[[0.0, 7.0], [10.0, 0.0], [7.0, 12.0], [4.0, 14.0]],
+    &[[10.0, 0.0], [13.0, 0.0], [17.0, 4.0], [7.0, 12.0]],
+    &[[17.0, 4.0], [7.0, 12.0], [27.0, 12.0]],
+    &[[17.0, 4.0], [21.0, 0.0], [24.0, 0.0], [27.0, 12.0]],
+    &[[24.0, 0.0], [34.0, 7.0], [30.0, 14.0], [27.0, 12.0]],
+];
+/// The shirt's fill (`#f4f4f4`), outline (`#5a5a5a`) and number
+/// (`#111111`), the game's own, held as channels like `PitchLook`'s
+/// turf colours: pitch colours, not themed ones.
+const SHIRT_FILL: [u8; 3] = [0xf4, 0xf4, 0xf4];
+const SHIRT_EDGE: [u8; 3] = [0x5a, 0x5a, 0x5a];
+const SHIRT_TEXT: [u8; 3] = [0x11, 0x11, 0x11];
+
+/// RGB channels as a `Color32`, for a colour the module holds as a
+/// channel triple (the turf's, the shirt's).
+fn rgb([r, g, b]: [u8; 3]) -> egui::Color32 {
+    egui::Color32::from_rgb(r, g, b)
+}
 
 /// Live AATF's pitch cross: its ends' inset from the portrait's edges,
 /// its coloured strokes' width and the black outline's width beside
@@ -359,6 +414,14 @@ pub fn formation_selector(
     scope.inner
 }
 
+/// Whether a marker carries a figure in the portrait's box: the
+/// portraits while `view.portraits` is on, or PES 2014's shirt, which
+/// stands in the portrait's box whatever `view.portraits` holds — the
+/// marker's box, corners and cross frame it the same way.
+fn figures(view: &TacticsView, version: PesVersion) -> bool {
+    view.portraits || version == PesVersion::Pes14
+}
+
 /// Puts `view` on Kick-off while the shown preset of `tactics` fields its
 /// Kick-off formation alone (its Fluid formation off, always so on PES
 /// 2015, which has no switch): the game uses the other two only while it
@@ -372,6 +435,26 @@ fn lock_to_fielded(tactics: &TeamTactics, view: &mut TacticsView) -> bool {
         view.formation = 0;
     }
     locked
+}
+
+/// PES 2014's swap of two starters (the draft's `swapStarters` under its
+/// PES 14 branch): the two players move in the shown preset alone,
+/// writing what the game writes — with preset 0 shown their
+/// `starting_eleven` entries exchange, and presets 1 and 2 exchange
+/// their formation 0's slots `a` and `b` so each stands there where he
+/// stood; with preset 1 or 2 shown that preset's formation 0 slots `a`
+/// and `b` exchange alone, the lineup and the other presets untouched.
+pub(crate) fn swap_starters_14(tactics: &mut TeamTactics, shown_preset: usize, a: usize, b: usize) {
+    if shown_preset == 0 {
+        tactics.starting_eleven.swap(a, b);
+        for preset in &mut tactics.presets[1..] {
+            preset.formations[0].players.swap(a, b);
+        }
+    } else {
+        tactics.presets[shown_preset].formations[0]
+            .players
+            .swap(a, b);
+    }
 }
 
 /// The draft's `.pitch`: the canvas inside its 1 px border — a marker
@@ -413,6 +496,19 @@ fn lock_to_fielded(tactics: &TeamTactics, view: &mut TacticsView) -> bool {
 /// Rows dropped on or held over markers, the keeper's slot and the
 /// darkening are as with it off.
 ///
+/// On a PES 2014 save the pitch follows that version's own Game Plan
+/// (the draft's `version() === 14` branches): a starter is a white
+/// shirt with his roster slot's number in the portrait's place and the
+/// badge carries no overall; every marker, the keeper's included, is a
+/// drag source and a swap target under every ruleset — a release over
+/// another swaps the two starters through `swap_starters_14`, the
+/// shown preset alone — a release anywhere else writes nothing (the
+/// game's free move sets the role by a rule of its own); while a marker
+/// is held the teammate a release would swap with carries the swap mark
+/// and the held badge reads his position, a click serves only the armed
+/// assignment and opens no popover, and no areas light. The marker's
+/// box covers the shirt as it covers a portrait.
+///
 /// Answers `true` only when `tactics` changed this frame.
 pub fn pitch(
     ui: &mut egui::Ui,
@@ -425,6 +521,8 @@ pub fn pitch(
 ) -> bool {
     ui.push_id(id_salt, |ui| {
         lock_to_fielded(tactics, view);
+        let pes14 = version == PesVersion::Pes14;
+        let faces = figures(view, version);
         // The answer is the deep compare, as `tactics_settings`' is.
         let before = tactics.clone();
         // The popover's slot is of the scope, preset and formation it
@@ -509,9 +607,10 @@ pub fn pitch(
         }
         // The held marker: the outfield one egui reports dragged. The
         // keeper's is skipped: his slot is fixed, he is painted at his
-        // spot, never moved.
+        // spot, never moved — on PES 2014 his marker is dragged like
+        // the others.
         let dragged = order.iter().copied().find(|&index| {
-            players[index].position != 0
+            (pes14 || players[index].position != 0)
                 && responses[index]
                     .as_ref()
                     .expect("every marker interacted")
@@ -546,7 +645,10 @@ pub fn pitch(
                     snap(pos - held.offset, canvas.min, &range)
                 });
             let formation = &tactics.presets[view.preset.min(2)].formations[view.formation.min(2)];
-            let position = if illegal_formations {
+            // PES 2014 has no free-move rule to apply: a held marker
+            // keeps his stored position until a swap target lends him
+            // his.
+            let position = if illegal_formations || pes14 {
                 players[index].position
             } else {
                 drop_rule::dropped_position(
@@ -567,7 +669,7 @@ pub fn pitch(
         let mut dropped = ui
             .ctx()
             .pointer_interact_pos()
-            .and_then(|pos| marker_at(pos, canvas, &centres, &order, view.portraits))
+            .and_then(|pos| marker_at(pos, canvas, &centres, &order, faces, None))
             .and_then(|index| {
                 responses[index]
                     .as_ref()
@@ -582,7 +684,11 @@ pub fn pitch(
         match dropped {
             Some((Some(onto), LineupDrag::Bench(from))) => swap_in(version, tactics, onto, from),
             Some((Some(onto), LineupDrag::Starter(from))) if onto != from => {
-                tactics.starting_eleven.swap(from, onto);
+                if pes14 {
+                    swap_starters_14(tactics, view.preset.min(2), from, onto);
+                } else {
+                    tactics.starting_eleven.swap(from, onto);
+                }
             }
             // A dragged marker's release reads `swap_target` — the same
             // pick the swap mark shows: over another outfield starter
@@ -600,33 +706,46 @@ pub fn pitch(
             // as his click (the pointer moved within the click distance,
             // though past his edge) is that click, which `marker` served:
             // no drop.
+            // On PES 2014 a release only swaps the two players, the
+            // keeper among them and under every ruleset, through
+            // `swap_starters_14`; a release anywhere else writes
+            // nothing, the free move's role rule being the game's own.
             Some((_, LineupDrag::Marker(from)))
                 if !responses[from]
                     .as_ref()
                     .is_some_and(egui::Response::clicked) =>
             {
                 if let Some(pos) = ui.ctx().pointer_interact_pos() {
-                    let overalls = overalls_of(roster, tactics, from);
-                    let formation =
-                        &mut tactics.presets[view.preset.min(2)].formations[view.formation.min(2)];
-                    let onto = if illegal_formations {
-                        None
+                    if pes14 {
+                        if let Some(onto) =
+                            marker_at(pos, canvas, &centres, &order, faces, Some(from))
+                        {
+                            swap_starters_14(tactics, view.preset.min(2), from, onto);
+                        }
                     } else {
-                        swap_target(&players, &centres, canvas, pos, from, view.portraits)
-                    };
-                    match onto {
-                        Some(onto) => formation.players.swap(from, onto),
-                        None => {
-                            let offset = previous
-                                .filter(|held| held.slot == from)
-                                .map_or(egui::Vec2::ZERO, |held| held.offset);
-                            let (x, y) = snap(pos - offset, canvas.min, &range);
-                            if !illegal_formations {
-                                formation.players[from].position =
-                                    drop_rule::dropped_position(formation, from, x, y, overalls);
+                        let overalls = overalls_of(roster, tactics, from);
+                        let formation = &mut tactics.presets[view.preset.min(2)].formations
+                            [view.formation.min(2)];
+                        let onto = if illegal_formations {
+                            None
+                        } else {
+                            swap_target(&players, &centres, canvas, pos, from, faces)
+                        };
+                        match onto {
+                            Some(onto) => formation.players.swap(from, onto),
+                            None => {
+                                let offset = previous
+                                    .filter(|held| held.slot == from)
+                                    .map_or(egui::Vec2::ZERO, |held| held.offset);
+                                let (x, y) = snap(pos - offset, canvas.min, &range);
+                                if !illegal_formations {
+                                    formation.players[from].position = drop_rule::dropped_position(
+                                        formation, from, x, y, overalls,
+                                    );
+                                }
+                                formation.players[from].x = x;
+                                formation.players[from].y = y;
                             }
-                            formation.players[from].x = x;
-                            formation.players[from].y = y;
                         }
                     }
                 }
@@ -651,8 +770,9 @@ pub fn pitch(
         // While an outfield starter is held, the pitch outside the areas
         // he is rated at is darkened, under every marker. A row with no
         // ratings at all (an empty slot, or a host that reads none)
-        // darkens nothing.
-        if let Some(index) = dragged
+        // darkens nothing. On PES 2014 a held marker lights no areas: a
+        // drop there only swaps two players.
+        if let Some(index) = dragged.filter(|_| !pes14)
             && let Some(rated) = roster
                 .get(usize::from(tactics.starting_eleven[index]))
                 .and_then(|row| row.rated)
@@ -663,14 +783,21 @@ pub fn pitch(
         // (the draft's `drawPitch` target mark). A held marker and a held
         // lineup row each pick him as their drop does, so the mark and
         // the release always agree. A held marker's pick is
-        // `swap_target`'s. The dragged marker sits on him, so it goes half
-        // transparent over him and his corners are painted over both.
-        // Under illegal formations a marker's release swaps nothing, so
-        // there is none.
-        let swap = dragged.filter(|_| !illegal_formations).and_then(|index| {
-            ui.ctx()
-                .pointer_interact_pos()
-                .and_then(|pos| swap_target(&players, &centres, canvas, pos, index, view.portraits))
+        // `swap_target`'s, PES 2014's `marker_at`'s — every teammate
+        // a target, the keeper included. The dragged marker sits on him,
+        // so it goes half transparent over him and his corners are painted
+        // over both. On the other versions under illegal formations a
+        // marker's release swaps nothing, so there is none.
+        let swap = dragged.and_then(|index| {
+            ui.ctx().pointer_interact_pos().and_then(|pos| {
+                if pes14 {
+                    marker_at(pos, canvas, &centres, &order, faces, Some(index))
+                } else if illegal_formations {
+                    None
+                } else {
+                    swap_target(&players, &centres, canvas, pos, index, faces)
+                }
+            })
         });
         // A held lineup row's pick is `marker_at`'s: a row's drop swaps
         // out whoever it lands on, the keeper too and under every
@@ -680,7 +807,7 @@ pub fn pitch(
         let row_swap = ui
             .ctx()
             .pointer_interact_pos()
-            .and_then(|pos| marker_at(pos, canvas, &centres, &order, view.portraits))
+            .and_then(|pos| marker_at(pos, canvas, &centres, &order, faces, None))
             .filter(|&index| {
                 let payload = responses[index]
                     .as_ref()
@@ -701,7 +828,7 @@ pub fn pitch(
             if Some(index) != dragged {
                 record(paint_marker(
                     &painter,
-                    palette,
+                    version,
                     tactics,
                     view,
                     roster,
@@ -715,8 +842,17 @@ pub fn pitch(
             }
         }
         // The held marker's drawn place, his spot at this step (clamped
-        // like every marker's): the cross pass reads it too.
-        let dragged_at = held.map(|(_, slot)| clamp_centre(badge_centre(canvas.min, slot), canvas));
+        // like every marker's): the cross pass reads it too. On PES 2014
+        // a held keeper stands at the pointer like the others, his
+        // centre through the outfield mapping.
+        let dragged_at = held.map(|(_, slot)| {
+            let centre = if pes14 && slot.position == 0 {
+                outfield_centre(canvas.min, slot)
+            } else {
+                badge_centre(canvas.min, slot)
+            };
+            clamp_centre(centre, canvas)
+        });
         if let Some((index, slot)) = held {
             // He goes half transparent while he sits on a swap target.
             let mut painter = painter.clone();
@@ -732,7 +868,7 @@ pub fn pitch(
             };
             record(paint_marker(
                 &painter,
-                palette,
+                version,
                 tactics,
                 view,
                 roster,
@@ -756,7 +892,7 @@ pub fn pitch(
             paint_corners(
                 &painter,
                 badge_rect(centres[target]),
-                view.portraits,
+                faces,
                 palette.selected_corners,
             );
         }
@@ -784,7 +920,7 @@ pub fn pitch(
             } else {
                 centres[index]
             };
-            let portrait = paint_marks_cross(&painter, palette, view, centre, &marks);
+            let portrait = paint_marks_cross(&painter, palette, faces, centre, &marks);
             ui.interact(
                 portrait,
                 ui.scope_id().with(("live aatf pitch cross", index)),
@@ -853,6 +989,8 @@ pub fn still_pitch(
         .players
         .map(|slot| clamp_centre(badge_centre(canvas.min, slot), canvas));
     let order = draw_order(&centres);
+    // A PES 2014 picture draws the shirts, as its pitch does.
+    let faces = figures(&view, version);
     for index in order {
         let spot = Spot {
             index,
@@ -860,14 +998,14 @@ pub fn still_pitch(
             centre: centres[index],
         };
         // Still names never move, so there is no next move to wait for.
-        paint_marker(&painter, palette, tactics, &view, roster, spot, 0.0);
+        paint_marker(&painter, version, tactics, &view, roster, spot, 0.0);
     }
     paint_formation_name(&painter, canvas, formation, palette);
     for index in order {
         let position = formation.players[index].position;
         let marks = slot_marks(roster, tactics, view.preset.min(2), index, position);
         if !marks.is_empty() {
-            paint_marks_cross(&painter, palette, &view, centres[index], &marks);
+            paint_marks_cross(&painter, palette, faces, centres[index], &marks);
         }
     }
 }
@@ -894,6 +1032,14 @@ fn badge_centre(origin: egui::Pos2, slot: FormationSlot) -> egui::Pos2 {
     if slot.position == 0 {
         return origin + egui::vec2(KEEPER_X, KEEPER_Y);
     }
+    outfield_centre(origin, slot)
+}
+
+/// `slot`'s badge centre through the outfield mapping alone — what
+/// `badge_centre` gives an outfielder. PES 2014's keeper drags like the
+/// others, so a held marker's centre reads this even for a position-0
+/// slot, where `badge_centre` would pin him to the keeper's spot.
+fn outfield_centre(origin: egui::Pos2, slot: FormationSlot) -> egui::Pos2 {
     origin
         + egui::vec2(
             SPOT_X0 + SPOT_XS * f32::from(slot.x),
@@ -958,20 +1104,21 @@ fn draw_order(centres: &[egui::Pos2; 11]) -> [usize; 11] {
 
 /// The marker drawn on top whose box holds `pos` (the draft's
 /// `hitMarker`): the one a drop at `pos` lands on, and the one a lineup
-/// row held there marks. `order` is `draw_order`'s. `None` over the
-/// grass.
+/// row held there marks. `order` is `draw_order`'s; `skip` sets a spot
+/// aside, the dragged marker's own, which is never a swap target, so a
+/// release over a teammate under his spot still lands on the teammate.
+/// `None` over the grass.
 fn marker_at(
     pos: egui::Pos2,
     canvas: egui::Rect,
     centres: &[egui::Pos2; 11],
     order: &[usize; 11],
     portraits: bool,
+    skip: Option<usize>,
 ) -> Option<usize> {
-    order
-        .iter()
-        .rev()
-        .copied()
-        .find(|&index| marker_rect(centres[index], canvas, portraits).contains(pos))
+    order.iter().rev().copied().find(|&index| {
+        Some(index) != skip && marker_rect(centres[index], canvas, portraits).contains(pos)
+    })
 }
 
 /// The starter a release at `pos` would swap with (the draft's
@@ -988,13 +1135,15 @@ fn swap_target(
     skip: usize,
     portraits: bool,
 ) -> Option<usize> {
-    draw_order(centres)
-        .into_iter()
-        .rev()
-        .find(|&index| {
-            index != skip && marker_rect(centres[index], canvas, portraits).contains(pos)
-        })
-        .filter(|&index| players[index].position != 0)
+    marker_at(
+        pos,
+        canvas,
+        centres,
+        &draw_order(centres),
+        portraits,
+        Some(skip),
+    )
+    .filter(|&index| players[index].position != 0)
 }
 
 /// The badge's rect around its centre (50 x 14).
@@ -1013,8 +1162,8 @@ fn portrait_rect(badge: egui::Rect) -> egui::Rect {
 /// The cross's centre over `portrait`: its own while the portraits are
 /// on; standing on the badge with them off, centred over it with the
 /// cross's lower ends touching its top.
-fn cross_centre(portrait: egui::Rect, view: &TacticsView) -> egui::Pos2 {
-    if view.portraits {
+fn cross_centre(portrait: egui::Rect, portraits: bool) -> egui::Pos2 {
+    if portraits {
         return portrait.center();
     }
     let r = BADGE_W / 2.0 - CROSS_INSET;
@@ -1056,6 +1205,36 @@ fn paint_portrait_cross(
     }
 }
 
+/// PES 2014's marker figure (the draft's `drawShirt14` over
+/// `SHIRT_POINTS`): the white shirt standing on `badge`'s top and
+/// centred on it, `number` on it in black at six tenths of its height.
+/// The fill is `SHIRT_PIECES`' convex polygons — the outline's concave
+/// turns (the neck, the armpits) would take a fan fill over their
+/// notches — with the outline's `closed_line` stroked over them.
+fn paint_shirt(painter: &egui::Painter, badge: egui::Rect, number: u16) {
+    let left = badge.center().x - SHIRT_SIZE.x / 2.0;
+    let top = badge.top() - SHIRT_SIZE.y;
+    let at = |[x, y]: [f32; 2]| egui::pos2(left + x, top + y);
+    for piece in SHIRT_PIECES {
+        painter.add(egui::Shape::convex_polygon(
+            piece.iter().map(|&point| at(point)).collect(),
+            rgb(SHIRT_FILL),
+            egui::Stroke::NONE,
+        ));
+    }
+    painter.add(egui::Shape::closed_line(
+        SHIRT_POINTS.iter().map(|&point| at(point)).collect(),
+        egui::Stroke::new(1.0, rgb(SHIRT_EDGE)),
+    ));
+    painter.text(
+        egui::pos2(badge.center().x, top + SHIRT_SIZE.y * 0.6),
+        egui::Align2::CENTER_CENTER,
+        number.to_string(),
+        egui::FontId::new(13.0, egui::FontFamily::Name("label".into())),
+        rgb(SHIRT_TEXT),
+    );
+}
+
 /// The `FieldedNotA` marks of the starter in `index` of the eleven that
 /// name preset `preset` (0 to 2) and the `position` his slot holds there;
 /// none for an empty slot.
@@ -1078,12 +1257,14 @@ fn slot_marks<'a>(
 }
 
 /// Live AATF's cross for `marks` over the marker whose badge is centred
-/// at `centre`, in the colour of their highest severity. Answers the
+/// at `centre`, in the colour of their highest severity. `portraits` is
+/// the marker's drawn kind: the portrait's box or the badge's (PES
+/// 2014's shirt stands where the portrait's would). Answers the
 /// portrait's box, where the cross's tooltip is hovered.
 fn paint_marks_cross(
     painter: &egui::Painter,
     palette: &Palette,
-    view: &TacticsView,
+    portraits: bool,
     centre: egui::Pos2,
     marks: &[&FieldedMark],
 ) -> egui::Rect {
@@ -1093,7 +1274,7 @@ fn paint_marks_cross(
     } else {
         palette.pitch_warn
     };
-    paint_portrait_cross(painter, cross_centre(portrait, view), color, palette);
+    paint_portrait_cross(painter, cross_centre(portrait, portraits), color, palette);
     portrait
 }
 
@@ -1346,7 +1527,8 @@ fn paint_pitch(
 /// others but sets no drag payload, so his marker never moves — and his
 /// release is his click however far the pointer moved (the draft's
 /// `d.gk`). A click serves the armed mode when one is armed, else opens
-/// the slot's popover. The answer is the marker's
+/// the slot's popover. On PES 2014 the keeper is a drag source like the
+/// others, and a click opens no popover. The answer is the marker's
 /// response, for the caller's drop check; `paint_marker` draws it.
 fn marker(
     ui: &mut egui::Ui,
@@ -1357,13 +1539,15 @@ fn marker(
     roster: &[RosterRow<'_>],
     spot: Spot,
 ) -> egui::Response {
+    let pes14 = version == PesVersion::Pes14;
+    let faces = figures(view, version);
     let keeper = spot.slot.position == 0;
     // The keeper senses drag like the others although he never moves:
     // egui's hit test answers a drag with the topmost drag-sensing
     // widget, so click-only would send a press on him to the marker
     // underneath.
     let response = ui.interact(
-        marker_rect(spot.centre, canvas, view.portraits),
+        marker_rect(spot.centre, canvas, faces),
         ui.scope_id().with(("pitch marker", spot.index)),
         egui::Sense::click_and_drag(),
     );
@@ -1375,33 +1559,38 @@ fn marker(
             format!("{} {}", position_label(spot.slot.position), name),
         )
     });
-    if !keeper {
+    if !keeper || pes14 {
         response.dnd_set_drag_payload(LineupDrag::Marker(spot.index));
     }
     // The keeper's release is his click however far the pointer moved:
     // his marker never moves (the draft's `d.gk` never sets `moved`), so
-    // a dragged press on him is no drag.
-    if response.clicked() || (keeper && response.drag_stopped()) {
+    // a dragged press on him is no drag — on PES 2014, where he is a
+    // drag source like the others, his release is a drop like theirs.
+    // A PES 2014 click still serves the armed mode but opens no popover.
+    if response.clicked() || (keeper && !pes14 && response.drag_stopped()) {
         match view.assign {
             Some(assign) => assign.write(version, tactics, view, spot.index),
-            None => {
+            None if !pes14 => {
                 view.popover = Some(OpenSlot {
                     scope: ui.scope_id(),
                     preset: view.preset,
                     formation: view.formation,
                     slot: spot.index,
-                    at: marker_rect(spot.centre, canvas, view.portraits).left_bottom() - canvas.min,
+                    at: marker_rect(spot.centre, canvas, faces).left_bottom() - canvas.min,
                 });
             }
+            None => {}
         }
     }
     response
 }
 
 /// One marker painted (the draft's `drawPitch` body): the portrait
-/// (none while `view.portraits` is off), the
+/// (none while `view.portraits` is off; PES 2014's shirt with his
+/// number in its place, whatever `view.portraits` holds), the
 /// badge with the position's abbreviation in its group's colour, the
 /// starter's overall at the slot's position at its right end in white
+/// (none on PES 2014, whose overall formula is not known yet)
 /// and his medal's outline when he has a tier, the name in its colour
 /// codes' colours (white where it has none), the captain's mark when he
 /// is the starter, and the selection corners the screen's marks lend
@@ -1413,24 +1602,29 @@ fn marker(
 /// when it fits and never moves.
 fn paint_marker(
     painter: &egui::Painter,
-    palette: &Palette,
+    version: PesVersion,
     tactics: &TeamTactics,
     view: &TacticsView,
     roster: &[RosterRow<'_>],
     spot: Spot,
     seconds: f32,
 ) -> Option<f32> {
+    let pes14 = version == PesVersion::Pes14;
+    let faces = figures(view, version);
     let roster_slot = tactics.starting_eleven[spot.index];
     let badge = badge_rect(spot.centre);
-    let radius = painter
-        .ctx()
-        .global_style()
-        .visuals
-        .widgets
-        .noninteractive
-        .corner_radius;
+    let style = painter.ctx().global_style();
+    let palette = theme::palette(&style.visuals);
+    let radius = style.visuals.widgets.noninteractive.corner_radius;
     let portrait = portrait_rect(badge);
-    if view.portraits
+    if pes14 {
+        if let Some(number) = roster
+            .get(usize::from(roster_slot))
+            .and_then(|row| row.number)
+        {
+            paint_shirt(painter, badge, number);
+        }
+    } else if view.portraits
         && let Some(texture) = roster
             .get(usize::from(roster_slot))
             .and_then(|row| row.portrait)
@@ -1473,11 +1667,13 @@ fn paint_marker(
         position_colour(palette, spot.slot.position),
     );
     // His overall at the slot's position at the badge's right end,
-    // where the game draws it, white as the game's.
-    if let Some(overall) = roster
-        .get(usize::from(roster_slot))
-        .and_then(|row| row.overalls)
-        .and_then(|overalls| overalls.get(usize::from(spot.slot.position)).copied())
+    // where the game draws it, white as the game's — none on PES 2014,
+    // whose overall the badges do not carry.
+    if !pes14
+        && let Some(overall) = roster
+            .get(usize::from(roster_slot))
+            .and_then(|row| row.overalls)
+            .and_then(|overalls| overalls.get(usize::from(spot.slot.position)).copied())
     {
         painter.text(
             egui::pos2(badge.right() - BADGE_TEXT_INSET, badge.center().y),
@@ -1532,7 +1728,7 @@ fn paint_marker(
         // game's: on a light portrait the box would have no edge. With
         // the portraits off the mark stands on the badge's top edge at
         // its left end, where it would otherwise float over the turf.
-        let (left, bottom) = if view.portraits {
+        let (left, bottom) = if faces {
             (badge.left() + 1.0, badge.top() - 4.0)
         } else {
             (badge.left(), badge.top())
@@ -1573,7 +1769,7 @@ fn paint_marker(
         None
     };
     if let Some(color) = corners {
-        paint_corners(painter, badge, view.portraits, color);
+        paint_corners(painter, badge, faces, color);
     }
     (wide && view.scroll_names).then(|| name_still_for(size.x, seconds))
 }

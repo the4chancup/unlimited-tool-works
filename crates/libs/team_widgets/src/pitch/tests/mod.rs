@@ -728,6 +728,21 @@ fn team_702() -> (TeamTactics, [u8; 13]) {
     (tactics, overalls)
 }
 
+/// The PES 2014 fixture save's team 1, IRELAND (the vanilla fixture
+/// holds no team 701, so `fixture_tactics` does not serve PES 2014):
+/// its tactics, and its roster's rows as `roster_rows` takes them.
+fn team_1() -> (TeamTactics, Vec<(String, String, Option<u8>)>) {
+    let file = pes_savefile::EditFile::from_bytes(&pes_savefile::fixture_save(PesVersion::Pes14))
+        .expect("fixture save");
+    (
+        file.team(1)
+            .expect("team 1, IRELAND, is in the fixture")
+            .tactics
+            .clone(),
+        crate::test_support::team_rows(&file, 1),
+    )
+}
+
 /// Team 718's preset 1 formation 3.
 fn formation_718_3() -> Formation {
     formation_of([

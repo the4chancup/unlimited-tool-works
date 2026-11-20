@@ -10,7 +10,7 @@ use pes_version::PesVersion;
 use studio_core::theme;
 use studio_core::widgets::ink_span;
 
-use super::{LineupDrag, lineup_colour, position_label};
+use super::{LineupDrag, lineup_colour, position_label, swap_starters_14};
 use crate::names::append_name;
 use crate::tactics::{RosterRow, TacticsView, raw_name_at};
 
@@ -38,7 +38,10 @@ const POSITION_WIDTH: f32 = 30.0;
 /// — no headings, so every panel of the grid's row lines up. Each row a
 /// drag handle, a position and a name (the positions are
 /// `view.formation`'s). Drops: a starter on a
-/// starter exchanges the two, a bench row on a starter (or a starter on
+/// starter exchanges the two (on PES 2014 `swap_starters_14`'s write,
+/// which with Preset 2 or 3 shown exchanges that preset's two positions
+/// and leaves the rows' players where they are), a bench row on a
+/// starter (or a starter on
 /// a bench row) swaps them in `swap_in`'s sense, a bench row on a bench
 /// row exchanges the two. `roster`
 /// gives each roster slot's row, indexed by slot; a `bench_order` entry
@@ -80,7 +83,15 @@ pub fn lineup(
         let mut eleven = cell(ui, top.x);
         list(&mut eleven, "starting eleven", |ui| {
             for (index, position) in positions.iter().enumerate() {
-                starter_row(ui, version, tactics, roster, *position, index);
+                starter_row(
+                    ui,
+                    version,
+                    tactics,
+                    view.preset.min(2),
+                    roster,
+                    *position,
+                    index,
+                );
             }
         });
         let mut bench = cell(ui, top.x + half + LIST_GAP);
@@ -151,11 +162,13 @@ fn list(ui: &mut egui::Ui, id_salt: &'static str, add: impl FnOnce(&mut egui::Ui
 /// position and the player's name, always a drag source and a drop
 /// target — the goalkeeper a starter like the others. Drops: a starter
 /// exchanges the two slots' players (both stay on the pitch, so no role
-/// moves); a bench player swaps in (`swap_in`).
+/// moves — on PES 2014 `swap_starters_14`'s preset-scoped write over
+/// `shown_preset`); a bench player swaps in (`swap_in`).
 fn starter_row(
     ui: &mut egui::Ui,
     version: PesVersion,
     tactics: &mut TeamTactics,
+    shown_preset: usize,
     roster: &[RosterRow<'_>],
     position: u8,
     index: usize,
@@ -170,6 +183,11 @@ fn starter_row(
     );
     if let Some(dropped) = response.dnd_release_payload::<LineupDrag>() {
         match *dropped {
+            LineupDrag::Starter(from) | LineupDrag::Marker(from)
+                if version == PesVersion::Pes14 =>
+            {
+                swap_starters_14(tactics, shown_preset, from, index);
+            }
             LineupDrag::Starter(from) | LineupDrag::Marker(from) => {
                 tactics.starting_eleven.swap(from, index);
             }
