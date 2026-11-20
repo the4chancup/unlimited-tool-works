@@ -211,8 +211,12 @@ version, not the version selector.
 
 - **Detection.** A PES 2014 save decrypts as PES 2015 (`Scheme::Pes15`), and
   `SaveContainer::version()` is the one place that would misname it. It checks the payload: a
-  `Scheme::Pes15` payload of 4 726 440 bytes is PES 2014. A PES 2014 `TEXPORTnn.bin` is then
-  named PES 2014 too, and refused as a Texport with no layout.
+  `Scheme::Pes15` payload of 4 726 440 bytes, an `EDIT.bin`'s, is PES 2014. A PES 2014
+  `TEXPORTnn.bin` has a payload of its own size, 5 316 176 bytes (the Akko export's), so the
+  check names it PES 2014 too, and it is refused as a Texport with no layout; read as PES 2015,
+  it would be read at PES 2015's offsets. PES 2015's Texport files on this PC are 5 606 501
+  bytes whole; the step adding the check measures their payload first, to show the size names
+  no PES 2015 file.
 - **Schema.** `schema/pes14.rs`, hand-written (the other versions' tables are generated from
   measurements PES 2014 does not have), with the five sections above. Each per-version table
   gains a PES 2014 arm: playstyles (18, measured), motion tops and face-type caps (measured),
@@ -296,7 +300,14 @@ on main. Main is merged into the branch, never rebased onto it.
 3. Open and save: `Pes14`, detection, the save's folder, the fixture, `schema/pes14.rs`; the
    fixture and the Akko saves written back byte for byte. No screen work.
 4. The Save editor on PES 2014: Tenacity, the labels, playstyles, motions and nations, the
-   edit flags, the Gameplan screen and the out-of-scope features greyed.
+   edit flags, the Gameplan screen and the out-of-scope features greyed. Step 3 left to it:
+   - the Texport's payload size in the detection (above);
+   - the save's discovery: the editor's list of saves loops over `PesVersion::ALL`, so it never
+     lists a PES 2014 save;
+   - an appearance record for a player who has none, the first time the editor changes his
+     look;
+   - the playstyle list, empty until measured: until then the AATF cannot read a PES 2014
+     player's playing style, and step 5 depends on it.
 5. The Akko VII ruleset (`akko7.rhai`, its logo and page); `/4ccg/` in `.akko7v2` passes as it
    does in the fork's fixed build.
 6. Releases: the `pes14-v` tag prefix in the update check and `release.yml`. The version
