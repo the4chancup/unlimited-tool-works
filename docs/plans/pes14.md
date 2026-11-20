@@ -342,7 +342,8 @@ version, not the version selector.
   measurements PES 2014 does not have), with the five sections above. Each per-version table
   gains a PES 2014 arm: playstyles (18, measured), motion tops and face-type caps (measured),
   advanced instructions (none), Texport (none), the stat-name renames, the nations list
-  (an eighth column), the save's folder and file name, and the pitch the formation screen
+  (an eighth column: the 182 nations of PES 2014's own `Country.bin`, which are PES 2015's
+  less seven, each shared ID named alike), the save's folder and file name, and the pitch the formation screen
   draws (PES 2017's, the fallback for unmeasured versions).
 - **Appearance records.** On PES 2014 only a player whose look was edited, or who was created
   in the save, has an appearance record: the vanilla save has none for its 11998 players, the
