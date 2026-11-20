@@ -81,7 +81,7 @@ impl PlayerView {
                 SavePlayStyle::ALL
                     .iter()
                     .position(|s| *s == style)
-                    .map(|i| PlayStyle(u8::try_from(i).expect("22 styles")))
+                    .map(|i| PlayStyle(u8::try_from(i).expect("the style index fits u8")))
             });
         let mut ratings = [0u8; 13];
         for (i, rating) in entry.positions.playable.iter().enumerate() {

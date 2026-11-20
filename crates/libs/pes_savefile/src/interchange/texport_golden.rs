@@ -233,11 +233,17 @@ fn codec_reads(
         .map(|i| {
             let at = players_at + i * stride;
             let mut player =
-                read_player(&plain[at..at + schema.player.size], schema.player).expect("decodes");
+                read_player(version, &plain[at..at + schema.player.size], schema.player)
+                    .expect("decodes");
             if let Some((_, appearance)) = &schema.appearance {
                 let at = at + schema.player.size;
-                read_player_into(&mut player, &plain[at..at + appearance.size], appearance)
-                    .expect("appearance decodes");
+                read_player_into(
+                    version,
+                    &mut player,
+                    &plain[at..at + appearance.size],
+                    appearance,
+                )
+                .expect("appearance decodes");
             }
             player
         })

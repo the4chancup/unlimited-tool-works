@@ -200,6 +200,13 @@ pub enum PlayerField {
     Untucked,
     /// Ankle taping.
     AnkleTaping,
+    /// Tenacity (PES 2014 only).
+    Tenacity,
+    /// Punt kick motion (PES 2014 only).
+    PuntKickMotion,
+    /// The Player Name was edited (PES 2014: without it the game shows a
+    /// rostered player's name as PLACEHOLDER).
+    EditedName,
 }
 
 /// A text field of the player record.

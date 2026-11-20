@@ -514,10 +514,12 @@ fn build(
         next.appearance.gloves_id = u32::from(id);
     }
     let mut record = vec![0u8; schema.player.size];
-    write_player(&next, &mut record, schema.player).map_err(SettingsError::Codec)?;
+    write_player(schema.version, &next, &mut record, schema.player)
+        .map_err(SettingsError::Codec)?;
     if let Some((_, appearance_schema)) = schema.appearance {
         let mut record = vec![0u8; appearance_schema.size];
-        write_player(&next, &mut record, appearance_schema).map_err(SettingsError::Codec)?;
+        write_player(schema.version, &next, &mut record, appearance_schema)
+            .map_err(SettingsError::Codec)?;
     }
     Ok(next)
 }

@@ -147,18 +147,27 @@ fn bit_max(field: IngameFaceField) -> Option<u8> {
 /// are not motions with a measured range (`Dribbling` included). The 1-based motions store
 /// one below what the editor shows; the goal celebrations are stored as shown, 0 being OFF.
 pub fn motion_top(version: PesVersion, field: PlayerField) -> Option<u8> {
-    // (PES 15, PES 16, PES 17, PES 18, PES 19, PES 20, PES 21): the spec's
-    // measured table, in stored values.
-    let (pes15, pes16, pes17, pes18, pes19, pes20, pes21) = match field {
-        PlayerField::HunchingDribbling | PlayerField::HunchingRunning => (2, 2, 2, 2, 2, 4, 4),
-        PlayerField::ArmMovementDribbling | PlayerField::ArmMovementRunning => {
-            (4, 7, 7, 7, 7, 9, 9)
+    // (PES 14, PES 15, PES 16, PES 17, PES 18, PES 19, PES 20, PES 21): the
+    // spec's measured table, in stored values. PES 2014's column is `None`
+    // where the version stores no such motion.
+    let (pes14, pes15, pes16, pes17, pes18, pes19, pes20, pes21) = match field {
+        PlayerField::HunchingDribbling | PlayerField::HunchingRunning => {
+            (None, 2, 2, 2, 2, 2, 4, 4)
         }
-        PlayerField::CornerKickMotion => (5, 5, 5, 5, 5, 9, 9),
-        PlayerField::FreeKickMotion => (15, 15, 15, 15, 15, 19, 19),
-        PlayerField::PenaltyKickMotion => (3, 3, 3, 3, 3, 6, 6),
+        PlayerField::ArmMovementDribbling | PlayerField::ArmMovementRunning => {
+            (None, 4, 7, 7, 7, 7, 9, 9)
+        }
+        PlayerField::CornerKickMotion => (None, 5, 5, 5, 5, 5, 9, 9),
+        PlayerField::FreeKickMotion => (Some(11), 15, 15, 15, 15, 15, 19, 19),
+        PlayerField::PenaltyKickMotion => (Some(3), 3, 3, 3, 3, 3, 6, 6),
+        // PES 2014 alone stores the dribbling and punt-kick motions.
+        PlayerField::DribblingMotion | PlayerField::PuntKickMotion => {
+            return (version == PesVersion::Pes14).then_some(3);
+        }
+        // PES 2014's goal celebrations' tops are not measured; PES 2015's
+        // kept.
         PlayerField::GoalCelebration1 | PlayerField::GoalCelebration2 => {
-            (112, 122, 122, 127, 140, 152, 162)
+            (Some(112), 112, 122, 122, 127, 140, 152, 162)
         }
         PlayerField::Id
         | PlayerField::Nationality
@@ -209,7 +218,6 @@ pub fn motion_top(version: PesVersion, field: PlayerField) -> Option<u8> {
         | PlayerField::ComStyle(_)
         | PlayerField::Skill(_)
         | PlayerField::Star
-        | PlayerField::DribblingMotion
         | PlayerField::TightPossession
         | PlayerField::Aggression
         | PlayerField::PlayingAttitude
@@ -246,11 +254,12 @@ pub fn motion_top(version: PesVersion, field: PlayerField) -> Option<u8> {
         | PlayerField::Socks
         | PlayerField::Undershorts
         | PlayerField::Untucked
-        | PlayerField::AnkleTaping => return None,
+        | PlayerField::AnkleTaping
+        | PlayerField::Tenacity
+        | PlayerField::EditedName => return None,
     };
     match version {
-        // PES 2015's until PES 2014's tops are measured.
-        PesVersion::Pes14 => Some(pes15),
+        PesVersion::Pes14 => pes14,
         PesVersion::Pes15 => Some(pes15),
         PesVersion::Pes16 => Some(pes16),
         PesVersion::Pes17 => Some(pes17),
@@ -409,6 +418,32 @@ mod tests {
                     "{version:?} {field:?}"
                 );
             }
+        }
+    }
+
+    /// PES 2014's measured tops (stored values): the four motions it
+    /// stores, `None` for the ones it does not, and the celebrations on
+    /// PES 2015's tops, unmeasured there.
+    #[test]
+    fn pes14_motion_tops() {
+        for (field, top) in [
+            (PlayerField::DribblingMotion, 3),
+            (PlayerField::FreeKickMotion, 11),
+            (PlayerField::PenaltyKickMotion, 3),
+            (PlayerField::PuntKickMotion, 3),
+            (PlayerField::GoalCelebration1, 112),
+            (PlayerField::GoalCelebration2, 112),
+        ] {
+            assert_eq!(motion_top(V::Pes14, field), Some(top), "{field:?}");
+        }
+        for field in [
+            PlayerField::HunchingDribbling,
+            PlayerField::HunchingRunning,
+            PlayerField::ArmMovementDribbling,
+            PlayerField::ArmMovementRunning,
+            PlayerField::CornerKickMotion,
+        ] {
+            assert_eq!(motion_top(V::Pes14, field), None, "{field:?}");
         }
     }
 

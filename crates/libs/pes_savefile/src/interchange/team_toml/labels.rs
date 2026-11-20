@@ -59,7 +59,7 @@ pub const RATINGS: [&str; 4] = ["C", "B", "A", "3"];
 pub const PLAYABLE_POSITIONS: [usize; 13] = [12, 11, 9, 10, 8, 4, 5, 6, 7, 1, 2, 3, 0];
 
 /// `PlayStyle` names in canonical order (`PlayStyle::ALL`'s index).
-pub const PLAY_STYLES: [&str; 22] = [
+pub const PLAY_STYLES: [&str; 24] = [
     "none",
     "goal_poacher",
     "dummy_runner",
@@ -82,6 +82,8 @@ pub const PLAY_STYLES: [&str; 22] = [
     "extra_frontman",
     "offensive_goalkeeper",
     "defensive_goalkeeper",
+    "the_instigator",
+    "solid_player",
 ];
 
 /// Player-skill names; index = the canonical skill slot (0 Scissors Feint to
@@ -439,6 +441,8 @@ mod tests {
             "Extra Frontman",
             "Offensive Goalkeeper",
             "Defensive Goalkeeper",
+            "The Instigator",
+            "Solid Player",
         ];
         for (ids, names) in [
             (SKILLS.as_slice(), skills.as_slice()),

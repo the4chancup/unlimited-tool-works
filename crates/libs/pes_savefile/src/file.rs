@@ -174,7 +174,7 @@ impl EditFile {
             section_records(payload, &schema.players, schema.player.size, "players")?;
         let mut players = Vec::with_capacity(player_records.len());
         for rec in &player_records {
-            players.push(read_player(rec, schema.player)?);
+            players.push(read_player(schema.version, rec, schema.player)?);
         }
 
         let mut appearance_records = Vec::with_capacity(players.len());
@@ -199,7 +199,7 @@ impl EditFile {
                     appearance_records.push(None);
                     continue;
                 };
-                read_player_into(player, records[index], appearance)?;
+                read_player_into(schema.version, player, records[index], appearance)?;
                 appearance_records.push(Some(index));
             }
         }
@@ -361,16 +361,32 @@ impl EditFile {
         for (i, player) in self.players.iter().enumerate() {
             let at = schema.players.offset + i * schema.player.size;
             write_player(
+                schema.version,
                 player,
                 &mut payload[at..at + schema.player.size],
                 schema.player,
             )?;
+            // PES 2014's game reads a rostered player's record only under
+            // the flags it sets itself on an edit, so a changed record is
+            // marked as the game marks it.
+            if schema.version == PesVersion::Pes14 {
+                crate::codec::mark_edit_flags(
+                    &self.container.payload[at..at + schema.player.size],
+                    &mut payload[at..at + schema.player.size],
+                    schema.player,
+                );
+            }
         }
         if let Some((section, appearance)) = &schema.appearance {
             for (i, player) in self.players.iter().enumerate() {
                 if let Some(index) = self.appearance_records[i] {
                     let at = section.offset + index * appearance.size;
-                    write_player(player, &mut payload[at..at + appearance.size], appearance)?;
+                    write_player(
+                        schema.version,
+                        player,
+                        &mut payload[at..at + appearance.size],
+                        appearance,
+                    )?;
                 }
             }
         }
@@ -747,6 +763,43 @@ mod tests {
         }
     }
 
+    /// A PES 2014 write marks each changed player record the way the game
+    /// marks its own edits: `EditedPlayer` on any change, `EditedName` on
+    /// a name change and `EditedBasicSettings` on a nationality, age or
+    /// stronger-foot change; an untouched record keeps its flags as read.
+    #[test]
+    fn a_pes14_player_edit_sets_the_flags_the_game_sets() {
+        let (mut file, bytes) = open(PesVersion::Pes14);
+        // An unchanged save still writes back byte for byte.
+        assert_eq!(file.to_bytes(&test_salt()).expect("the save writes"), bytes);
+        // Three players with every flag clear, and a fourth left alone.
+        let ids: Vec<u32> = file
+            .players()
+            .iter()
+            .filter(|player| {
+                let flags = &player.edit_flags;
+                !(flags.player || flags.name || flags.basic_settings)
+            })
+            .take(4)
+            .map(|player| player.id)
+            .collect();
+        assert_eq!(ids.len(), 4, "four players with every flag clear");
+        file.player_mut(ids[0]).expect("a player").basic.height += 1;
+        file.player_mut(ids[1]).expect("a player").name = "RENAMED".to_string();
+        file.player_mut(ids[2]).expect("a player").basic.age += 1;
+
+        let out = file.to_bytes(&test_salt()).expect("the save writes");
+        let back = EditFile::from_bytes(&out).expect("the save reopens");
+        let flags = |id: u32| {
+            let flags = &back.player(id).expect("the player").edit_flags;
+            (flags.player, flags.name, flags.basic_settings)
+        };
+        assert_eq!(flags(ids[0]), (true, false, false), "a height edit");
+        assert_eq!(flags(ids[1]), (true, true, false), "a name edit");
+        assert_eq!(flags(ids[2]), (true, false, true), "an age edit");
+        assert_eq!(flags(ids[3]), (false, false, false), "untouched");
+    }
+
     /// A PES 17 team given team 702's manager and stadium 46 (the PES 19
     /// fixture's team 100 plays there) writes them at +4 (u32) and +10
     /// (u16); a PES 16 team given stadium 15 (where 38 teams of a real
@@ -970,6 +1023,107 @@ mod tests {
                 assert_eq!(records, 5060, "the appearance-record count");
             }
         }
+    }
+
+    /// `player2`, the PES 2014 `EDIT.bin` saved by the game after player
+    /// 85723 was edited field by field: every measured field reads the
+    /// value the game stored.
+    #[test]
+    #[cfg(not(target_arch = "wasm32"))]
+    #[ignore = "reads the maintainer's PES 2014 saves"]
+    fn the_ingame_player2_save_reads_the_measured_fields() {
+        let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../../.tmp/ingame_saves/saves_14/player2");
+        let bytes = std::fs::read(&path).expect("the save reads");
+        let file = EditFile::from_bytes(&bytes).expect("the save opens");
+        let player = file.player(85723).expect("player 85723");
+        assert_eq!(player.name, "STEPNAME");
+        // The game's screen order, each stat set to 60 plus its index.
+        let stats = [
+            player.stats.attacking_prowess,
+            player.stats.ball_control,
+            player.stats.dribbling,
+            player.stats.low_pass,
+            player.stats.lofted_pass,
+            player.stats.finishing,
+            player.stats.place_kicking,
+            player.stats.swerve,
+            player.stats.heading,
+            player.stats.defensive_prowess,
+            player.stats.ball_winning,
+            player.stats.kicking_power,
+            player.stats.speed,
+            player.stats.explosive_power,
+            player.stats.body_control,
+            player.stats.jump,
+            player.stats.goalkeeping,
+            player.stats.catching.expect("PES 2014 stores Saving"),
+            player.stats.tenacity.expect("PES 2014 stores Tenacity"),
+            player.stats.stamina,
+        ];
+        assert_eq!(stats.to_vec(), (60..=79).collect::<Vec<u8>>());
+        assert_eq!(player.stats.form, 0);
+        assert_eq!(player.stats.injury_resistance, 1);
+        assert_eq!(player.stats.weak_foot_usage, 2);
+        assert_eq!(player.stats.weak_foot_accuracy, 4);
+        assert_eq!(
+            player.positions.playable,
+            [0, 1, 2, 0, 1, 2, 1, 2, 0, 2, 0, 1, 0]
+        );
+        assert_eq!(player.motion.dribbling, Some(3));
+        assert_eq!(player.motion.free_kick, 11);
+        assert_eq!(player.motion.penalty_kick, 3);
+        assert_eq!(player.motion.punt_kick, Some(3));
+        assert!(player.edit_flags.player && player.edit_flags.name);
+    }
+
+    /// `.akko7v2`'s `/4ccg/` players: the basics, Tenacity, playing style,
+    /// stronger foot, skills and COM styles as the game stores them.
+    #[test]
+    #[cfg(not(target_arch = "wasm32"))]
+    #[ignore = "reads the maintainer's PES 2014 saves"]
+    fn the_akko7v2_save_reads_the_measured_player_fields() {
+        use crate::model::playstyle::PlayStyle;
+
+        let folder =
+            std::path::Path::new("C:/Data/Documents/KONAMI/Pro Evolution Soccer 2014/save");
+        let bytes = std::fs::read(folder.join("EDIT.bin.akko7v2")).expect("the save reads");
+        let file = EditFile::from_bytes(&bytes).expect("the save opens");
+        for (id, height, weight, age, tenacity, style, foot) in [
+            (85702u32, 189, 85, 15, 77, PlayStyle::OffensiveGoalkeeper, 0),
+            (85708, 189, 79, 20, 77, PlayStyle::AnchorMan, 0),
+            (85720, 185, 74, 20, 92, PlayStyle::HolePlayer, 0),
+            (85722, 194, 77, 20, 95, PlayStyle::DummyRunner, 0),
+            (85723, 194, 85, 20, 95, PlayStyle::GoalPoacher, 1),
+        ] {
+            let player = file.player(id).expect("the player");
+            assert_eq!(
+                (
+                    player.basic.height,
+                    player.basic.weight,
+                    player.basic.age,
+                    player.stats.tenacity.expect("PES 2014 stores Tenacity"),
+                    player.positions.stronger_foot,
+                    player.basic.nationality,
+                ),
+                (height, weight, age, tenacity, foot, 146),
+                "player {id}"
+            );
+            assert_eq!(
+                crate::schema::playstyle::decode(PesVersion::Pes14, player.positions.playing_style)
+                    .expect("a listed style"),
+                style,
+                "player {id}"
+            );
+        }
+        // 85702's skills are GK Long Throw and Super-sub alone; 85723's
+        // COM styles Speeding Bullet and Long Ranger alone.
+        let skills = &file.player(85702).expect("the player").skills.skills;
+        assert_eq!(skills.iter().filter(|held| **held).count(), 2);
+        assert!(skills[20] && skills[26]);
+        let com_styles = &file.player(85723).expect("the player").skills.com_styles;
+        assert_eq!(com_styles.iter().filter(|held| **held).count(), 2);
+        assert!(com_styles[2] && com_styles[6]);
     }
 
     /// A unique temp folder for the native save/load test.

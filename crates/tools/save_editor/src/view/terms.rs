@@ -361,6 +361,8 @@ fn player_field_term(version: PesVersion, diff: &PlayerDiff) -> Term {
         PlayerField::DribblingMotion => {
             numbers(appearance::DRIBBLING_MOTION_LABEL, old + 1, new + 1)
         }
+        // Shown from 1, as `PenaltyKickMotion`.
+        PlayerField::PuntKickMotion => numbers("Punt Kick", old + 1, new + 1),
         PlayerField::BootsId => numbers(appearance::BOOTS_ID_LABEL, old, new),
         PlayerField::GlovesId => numbers(appearance::GLOVES_ID_LABEL, old, new),
         PlayerField::BaseCopyId => numbers(appearance::COPY_FROM_ID_LABEL, old, new),

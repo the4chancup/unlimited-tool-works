@@ -130,7 +130,7 @@ fn the_twelve_reference_arrays_are_reproduced() {
 
 #[test]
 fn every_list_round_trips_and_none_is_zero_everywhere() {
-    for version in PesVersion::ALL {
+    for version in std::iter::once(PesVersion::Pes14).chain(PesVersion::ALL) {
         assert_eq!(encode(version, PlayStyle::None), Some(0), "{version:?}");
         for style in PlayStyle::ALL {
             if let Some(i) = encode(version, style) {
@@ -152,23 +152,44 @@ fn every_list_round_trips_and_none_is_zero_everywhere() {
     ));
 }
 
+/// PES 2014's own list: PES 15/16's with The Instigator at 15, where
+/// 15/16 has Build Up, and Solid Player filling the hole at 16. Neither
+/// style exists on another version's list.
+#[test]
+fn pes14_decodes_its_own_two_styles() {
+    for (index, style) in [
+        (15, PlayStyle::TheInstigator),
+        (16, PlayStyle::SolidPlayer),
+        (17, PlayStyle::OffensiveGoalkeeper),
+        (18, PlayStyle::DefensiveGoalkeeper),
+    ] {
+        assert_eq!(
+            decode(PesVersion::Pes14, index).ok(),
+            Some(style),
+            "stored {index}"
+        );
+        assert_eq!(encode(PesVersion::Pes14, style), Some(index), "{style:?}");
+    }
+    assert!(matches!(
+        decode(PesVersion::Pes14, 19),
+        Err(CodecError::UnknownPlayingStyle { value: 19, .. })
+    ));
+    for style in [PlayStyle::TheInstigator, PlayStyle::SolidPlayer] {
+        for version in PesVersion::ALL {
+            assert_eq!(encode(version, style), None, "{version:?} {style:?}");
+        }
+    }
+}
+
 #[test]
 fn every_fixture_player_decodes_and_goalkeepers_carry_goalkeeper_styles() {
     for version in FIXTURES {
         let payload = payload(version);
         let schema = schema_for(version);
-        // PES 2014's player record maps no playstyle index; the census has
-        // nothing to decode.
-        if !schema
-            .player
-            .has(crate::schema::fields::PlayerField::PlayingStyle)
-        {
-            continue;
-        }
         let (mut gk_styled, mut gk_styled_as_gk) = (0u32, 0u32);
         for i in 0..count(&payload, &schema.players) {
             let rec = record(&payload, &schema.players, schema.player.size, i);
-            let p = read_player(rec, schema.player).expect("decode");
+            let p = read_player(version, rec, schema.player).expect("decode");
             let style = decode(version, p.positions.playing_style)
                 .unwrap_or_else(|e| panic!("{version:?} player {}: {e}", p.id));
             if p.positions.registered == 0 && style != PlayStyle::None {

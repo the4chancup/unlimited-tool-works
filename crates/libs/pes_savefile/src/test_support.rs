@@ -49,7 +49,8 @@ pub(crate) fn appearance_for(payload: &[u8], schema: &VersionSchema, player: &mu
         for i in 0..count(payload, section) {
             let rec = record(payload, section, appearance.size, i);
             if u32::from_le_bytes(rec[..4].try_into().expect("id")) == player.id {
-                read_player_into(player, rec, appearance).expect("appearance decodes");
+                read_player_into(schema.version, player, rec, appearance)
+                    .expect("appearance decodes");
                 return;
             }
         }
@@ -64,7 +65,7 @@ pub(crate) fn appearance_for(payload: &[u8], schema: &VersionSchema, player: &mu
 pub(crate) fn find_player(payload: &[u8], schema: &VersionSchema, id: u32) -> PlayerEntry {
     for i in 0..count(payload, &schema.players) {
         let rec = record(payload, &schema.players, schema.player.size, i);
-        let mut player = read_player(rec, schema.player).expect("decode");
+        let mut player = read_player(schema.version, rec, schema.player).expect("decode");
         if player.id == id {
             appearance_for(payload, schema, &mut player);
             return player;

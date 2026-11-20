@@ -1,18 +1,23 @@
 //! The player record codec: `read_player`/`read_player_into`/`write_player`.
 
+use pes_version::PesVersion;
+
 use super::{CodecError, bits, runs, single_byte, text_bytes, write_record, write_text};
 use crate::model::ingame_face::IngameFace;
 use crate::model::player::PlayerEntry;
-use crate::schema::RecordSchema;
 use crate::schema::fields::{PlayerField, PlayerText};
+use crate::schema::{RecordSchema, stored_offset};
 
-/// Decodes one player record into a fresh `PlayerEntry`.
+/// Decodes one player record into a fresh `PlayerEntry`. `version` is the
+/// save's own, whatever the schema names: it picks the stored offsets the
+/// read adds (`stored_offset`).
 pub fn read_player(
+    version: PesVersion,
     record: &[u8],
     schema: &RecordSchema<PlayerField, PlayerText>,
 ) -> Result<PlayerEntry, CodecError> {
     let mut player = PlayerEntry::default();
-    read_player_into(&mut player, record, schema)?;
+    read_player_into(version, &mut player, record, schema)?;
     Ok(player)
 }
 
@@ -20,6 +25,7 @@ pub fn read_player(
 /// appearance record is applied with. Only the fields and texts the schema
 /// lists are touched.
 pub fn read_player_into(
+    version: PesVersion,
     player: &mut PlayerEntry,
     record: &[u8],
     schema: &RecordSchema<PlayerField, PlayerText>,
@@ -31,7 +37,8 @@ pub fn read_player_into(
         });
     }
     for (field, offset, width) in runs(schema) {
-        player.set(field, bits::read_bits(record, offset, width))?;
+        let stored = bits::read_bits(record, offset, width);
+        player.set(field, stored + stored_offset(version, field))?;
     }
     for spec in schema.texts {
         let bytes = text_bytes(record, spec.byte_offset, spec.len);
@@ -59,11 +66,22 @@ pub fn read_player_into(
 /// Patches the schema's fields and texts of `player` into `record`; every byte
 /// outside those runs is left as it was.
 pub fn write_player(
+    version: PesVersion,
     player: &PlayerEntry,
     record: &mut [u8],
     schema: &RecordSchema<PlayerField, PlayerText>,
 ) -> Result<(), CodecError> {
-    write_record(schema, record, |field| player.get(field))?;
+    write_record(schema, record, |field| {
+        let value = player.get(field)?;
+        let offset = stored_offset(version, field);
+        value
+            .checked_sub(offset)
+            .ok_or(CodecError::BelowStoredOffset {
+                field: format!("{field:?}"),
+                value,
+                offset,
+            })
+    })?;
     for spec in schema.texts {
         let bytes = match spec.text {
             PlayerText::Name => player.name.as_bytes().to_vec(),
@@ -89,4 +107,51 @@ pub fn write_player(
         record[at..at + run.len as usize].copy_from_slice(bytes);
     }
     Ok(())
+}
+
+/// Sets the flags the game sets on a PES 2014 player record it changed:
+/// `EditedPlayer` when `record` differs from the record as loaded in any
+/// byte, `EditedName` when the Name text's bytes differ, and
+/// `EditedBasicSettings` when the nationality, age or stronger-foot run
+/// differs. Every run is found through `schema`; bits are set, never
+/// cleared.
+pub(crate) fn mark_edit_flags(
+    loaded: &[u8],
+    record: &mut [u8],
+    schema: &RecordSchema<PlayerField, PlayerText>,
+) {
+    if loaded == record {
+        return;
+    }
+    set_flag(record, schema, PlayerField::EditedPlayer);
+    let name = schema
+        .texts
+        .iter()
+        .find(|spec| spec.text == PlayerText::Name)
+        .expect("the player record maps the Name text");
+    let (start, len) = (name.byte_offset as usize, name.len as usize);
+    if loaded[start..start + len] != record[start..start + len] {
+        set_flag(record, schema, PlayerField::EditedName);
+    }
+    for wanted in [
+        PlayerField::Nationality,
+        PlayerField::Age,
+        PlayerField::StrongerFoot,
+    ] {
+        let (_, offset, width) = runs(schema)
+            .find(|(field, _, _)| *field == wanted)
+            .expect("the player record maps the basic settings");
+        if bits::read_bits(loaded, offset, width) != bits::read_bits(record, offset, width) {
+            set_flag(record, schema, PlayerField::EditedBasicSettings);
+            break;
+        }
+    }
+}
+
+/// Sets `field`'s bit in `record`, its run found through `schema`.
+fn set_flag(record: &mut [u8], schema: &RecordSchema<PlayerField, PlayerText>, flag: PlayerField) {
+    let (_, offset, width) = runs(schema)
+        .find(|(field, _, _)| *field == flag)
+        .expect("the player record maps the flag");
+    bits::write_bits(record, offset, width, 1);
 }

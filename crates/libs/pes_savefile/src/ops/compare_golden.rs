@@ -22,7 +22,7 @@ fn block(p: &PlayerEntry, schema: &VersionSchema) -> Vec<u8> {
     };
     let start = run.expect("run").byte_offset as usize - 22;
     let mut rec = vec![0u8; record_schema.size];
-    write_player(p, &mut rec, record_schema).expect("write");
+    write_player(schema.version, p, &mut rec, record_schema).expect("write");
     rec[start..].to_vec()
 }
 
@@ -128,7 +128,7 @@ fn the_comparators_aesthetics_rows_match_the_compare_scripts_diff_on_every_fixtu
         let all: Vec<PlayerEntry> = (0..count(&payload, &schema.players))
             .map(|i| {
                 let rec = record(&payload, &schema.players, schema.player.size, i);
-                let mut p = read_player(rec, schema.player).expect("decode");
+                let mut p = read_player(schema.version, rec, schema.player).expect("decode");
                 appearance_for(&payload, schema, &mut p);
                 p
             })

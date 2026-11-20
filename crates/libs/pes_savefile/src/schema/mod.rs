@@ -360,6 +360,42 @@ pub fn player_max_value(version: PesVersion, field: PlayerField) -> Option<u64> 
     bit_width(version, field).map(|width| (1u64 << width) - 1)
 }
 
+/// What `version`'s player record subtracts from the value the game shows
+/// for `field`: PES 2014 stores each stat less 40, the height less 132 and
+/// the weight less 30 (measured in game); every other version stores the
+/// shown value, so 0. The codec adds the offset on read and refuses a
+/// write below it.
+pub(crate) fn stored_offset(version: PesVersion, field: PlayerField) -> u32 {
+    if version != PesVersion::Pes14 {
+        return 0;
+    }
+    match field {
+        PlayerField::Height => 132,
+        PlayerField::Weight => 30,
+        PlayerField::Tenacity
+        | PlayerField::AttackingProwess
+        | PlayerField::DefensiveProwess
+        | PlayerField::Goalkeeping
+        | PlayerField::Dribbling
+        | PlayerField::BallControl
+        | PlayerField::Finishing
+        | PlayerField::LowPass
+        | PlayerField::LoftedPass
+        | PlayerField::BallWinning
+        | PlayerField::PlaceKicking
+        | PlayerField::Swerve
+        | PlayerField::Catching
+        | PlayerField::Speed
+        | PlayerField::KickingPower
+        | PlayerField::ExplosivePower
+        | PlayerField::Jump
+        | PlayerField::Stamina
+        | PlayerField::BodyControl
+        | PlayerField::Heading => 40,
+        _ => 0,
+    }
+}
+
 /// `field`'s bit width in `version`'s player or appearance record — the
 /// bound Team TOML's `apply` holds a stored value to so `write_player`
 /// cannot refuse it afterwards. `None` where the version does not store the

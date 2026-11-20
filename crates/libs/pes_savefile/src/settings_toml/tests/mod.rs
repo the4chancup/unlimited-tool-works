@@ -36,6 +36,7 @@ fn player_record_index(payload: &[u8], schema: &crate::schema::VersionSchema, id
     (0..count(payload, &schema.players))
         .find(|&i| {
             read_player(
+                schema.version,
                 record(payload, &schema.players, schema.player.size, i),
                 schema.player,
             )

@@ -374,6 +374,7 @@ mod tests {
         let index = (0..count(&payload, &schema.players))
             .find(|&i| {
                 read_player(
+                    schema.version,
                     record(&payload, &schema.players, schema.player.size, i),
                     schema.player,
                 )
@@ -383,7 +384,7 @@ mod tests {
             .expect("player 70101's record");
         let rec = record(&payload, &schema.players, schema.player.size, index);
         let mut written = rec.to_vec();
-        write_player(&player, &mut written, schema.player).expect("encode");
+        write_player(schema.version, &player, &mut written, schema.player).expect("encode");
 
         let run = schema.player.ingame_face.as_ref().expect("a run on PES 19");
         let skin = INGAME_FACE_FIELDS
