@@ -32,7 +32,7 @@ disabled:
   like the other events' rulesets. Its logo is the event's
   (`C:\Data\Pictures\4ccpics\Akko_League_VII_Logo_1.png`), scaled to 84 pixels high (137 × 84)
   as the other rulesets' logos are; its page is
-  `https://implyingrigged.info/wiki/Akko_League_VII`. No game has a list of trick cards: a cup's
+  `https://implyingrigged.info/wiki/Akko_League_VII:_/fluff/_Bottomed_Girls`. No game has a list of trick cards: a cup's
   organizer names the cards that hardly change play, which are then free or have their own
   limit. Akko VII's page sets the free tricks per medal but names no cards, so its ruleset's
   `card_groups.tricks` is the official 4cc list (`autumn26.rhai`'s), limited to the cards PES
