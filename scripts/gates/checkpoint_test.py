@@ -33,6 +33,7 @@ class Repo:
         self.dirty = ""
         self.moved = []
         self.ran = []
+        self.output = ""
         self.during = during or {}
         self.codes = codes or {}
 
@@ -57,12 +58,15 @@ class Repo:
         return types.SimpleNamespace(returncode=self.codes.get(recipe, 0))
 
     def run(self, mutants=True):
+        out = io.StringIO()
         with mock.patch.object(checkpoint, "git", self.git), \
                 mock.patch.object(checkpoint, "gated", lambda: "gated-before"), \
                 mock.patch.object(checkpoint, "status", lambda limit: 0), \
                 mock.patch.object(checkpoint.subprocess, "run", self.just), \
-                contextlib.redirect_stdout(io.StringIO()):
-            return checkpoint.run(mutants)
+                contextlib.redirect_stdout(out):
+            code = checkpoint.run(mutants)
+        self.output = out.getvalue()
+        return code
 
 
 def commit(repo):
@@ -103,12 +107,15 @@ class Run(unittest.TestCase):
             repo = Repo(codes={"mutants-diff": code})
             self.assertEqual(repo.run(), 0, code)
             self.assertEqual(repo.moved, [(checkpoint.REF, "started")], code)
+            self.assertIn("missed_all.txt", repo.output, code)
 
     def test_an_untested_run_keeps_the_ref_and_fails(self):
-        for code in (1, 4):  # untested mutants, a failed baseline: not every mutant ran
+        for code in (1, 4, 5):  # untested mutants, a failed baseline, a coverage gap
             repo = Repo(codes={"mutants-diff": code})
             self.assertEqual(repo.run(), code, code)
             self.assertEqual(repo.moved, [], code)
+            # A run that landed nothing wrote no missed_all.txt to point at.
+            self.assertNotIn("missed_all.txt", repo.output, code)
 
     def test_without_mutants_only_the_gates_run(self):
         repo = Repo()

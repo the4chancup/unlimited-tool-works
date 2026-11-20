@@ -8,9 +8,9 @@
 # (a baseline, or a missed mutant) cost about the same (444 s against 418 s, 2026-11-19),
 # nextest's process per test included. Ending the running tests at once
 # (`--max-fail=1:immediate`) saved nothing measurable (155-167 s against 162 s on the slowest),
-# and a test never waits past 120 s, inside `minimum_test_timeout` below. Nextest reads `--jobs`
-# as its test threads, and its options take no `--`. The workspace has no doctests, which
-# nextest does not run.
+# and a test never waits past 120 s, inside `minimum_test_timeout` below. Nextest takes
+# `--test-threads` directly, without `--`. The workspace has no doctests, which nextest
+# does not run.
 test_tool = "nextest"
 
 # This line sizes a bare `cargo mutants` only. `just mutants`/`mutants-diff` run two cargo
@@ -19,7 +19,8 @@ test_tool = "nextest"
 # cargo-mutants at below-normal priority, so the run uses every CPU the user's own work leaves
 # idle rather than holding two back. A bare run keeps the old fixed budget of 7 test threads;
 # build concurrency needs no line: cargo-mutants runs a jobserver sized to the machine's CPUs
-# (a remote run's is set in `sized_config`), under which cargo ignores `-j`. Local tooling
+# (a remote run's goes on its `cargo mutants` line, `launch_remote` in
+# `scripts/mutation/mutants.py`), under which cargo ignores `-j`. Local tooling
 # only; CI never runs mutants.
 additional_cargo_test_args = ["--test-threads=7"]
 
