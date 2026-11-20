@@ -247,8 +247,9 @@ processor.
 1. **Check** (on a plain background thread): if `check_for_updates` is on, the window checks
    when it starts and every 5 minutes while it stays open, and a command-line run checks once
    as it starts (below). A check reads the repository's list of GitHub releases and takes the
-   highest `v<version>` tag by semver, pre-releases included, then compares it with the
-   built-in `CARGO_PKG_VERSION`.
+   highest `v<version>` tag by semver, pre-releases included (the `v` is the updater's
+   `TAG_PREFIX`, which a side line changes: RUNBOOK "Releasing a side line"), then compares it
+   with the built-in `CARGO_PKG_VERSION`.
 
    No interval holds a check off across starts. Red spaced its checks out because a check
    slowed the compile's start; here every check runs beside the work and nothing waits for

@@ -18877,3 +18877,17 @@ change must keep building and testing; the branch keeps it ready for the day one
 Leaving `Pes14` out of `ALL` keeps the version pickers and the per-version test loops as they
 are, so main's merges into the branch stay small.
 Plan: no plan edit on main; the branch's `docs/plans/pes14.md` holds the design.
+
+## 2026-11-20 — studio_core, release workflow — a release line's tag prefix is one constant
+Decision: the update check reads the releases whose tag is `updater::TAG_PREFIX` and a semver
+(`v` on main), and every updater test builds its tags from the constant. The release workflow
+reads the same prefix from one `TAG_PREFIX` env value, except the tag pattern under `on:`,
+which GitHub does not expand, and marks a release pre-release by its version's pre-release part
+rather than by the tag. A side line (a branch released on its own, such as `pes14`) changes
+the constant, the env value and the pattern, and gives its version a `-<line>.<n>` part.
+Why: one constant, not the `v` spelled in `release()` and a dozen test literals, because a side
+line had to edit every literal and each later merge from main conflicted on them. A constant
+in the source, not a build-time environment variable, because a build made without the
+variable would quietly become a main build and offer main's releases to a side line's members.
+Plan: `docs/RUNBOOK.md` "Releasing a side line" added; `plans/core/distribution.md`
+"Self-update" step 1 and `spec/core/distribution.md` "Release builds in CI" point at it.

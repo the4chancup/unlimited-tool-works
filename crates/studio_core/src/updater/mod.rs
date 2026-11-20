@@ -37,10 +37,11 @@ use crate::shell::version_label_of;
 const RELEASES_URL: &str =
     "https://api.github.com/repos/the4chancup/unlimited-tool-works/releases?per_page=30";
 
-/// The prefix a PES 2014 release's tag carries: `pes14-v<semver>`. The branch's
-/// releases share the repository with main's `v` tags, whose builds cannot open
-/// PES 2014 saves.
-const TAG_PREFIX: &str = "pes14-v";
+/// The prefix every release tag of this line carries before its semver
+/// (`v0.0.2` on main). A side line sets its own, so the check offers each
+/// build only its own line's releases; the rest is `docs/RUNBOOK.md`
+/// "Releasing a side line".
+pub const TAG_PREFIX: &str = "pes14-v";
 
 /// The environment variable that replaces `RELEASES_URL`: the end-to-end
 /// test's hook, so a test build reads a list served from this PC or a test
@@ -64,12 +65,12 @@ struct ReleaseAsset {
 }
 
 /// A release from the repository's releases list: its version parsed out of
-/// the `pes14-v<semver>` tag, its notes (`body`), its page URL and its assets.
-/// The offer keeps it whole: the Details dialog shows the notes and opens the
-/// page, the download picks an asset.
+/// the tag (`TAG_PREFIX` and a semver), its notes (`body`), its page URL and
+/// its assets. The offer keeps it whole: the Details dialog shows the notes
+/// and opens the page, the download picks an asset.
 #[derive(Debug)]
 pub struct Release {
-    /// The tag's semver, its `pes14-v` stripped.
+    /// The tag's semver, its `TAG_PREFIX` stripped.
     pub version: Version,
     /// The release's notes, shown as Markdown in the Details dialog.
     pub(crate) notes: String,
@@ -83,8 +84,9 @@ pub struct Release {
 /// tag passes through to `Release` unchanged.
 #[derive(Deserialize)]
 struct RawRelease {
-    /// The git tag the release was published from (`pes14-v0.0.2-pes14.1`,
-    /// `nightly`).
+    /// The git tag the release was published from: `TAG_PREFIX` and a semver
+    /// for this line's releases (`v0.0.2` on main), another shape for the rest
+    /// (`nightly`).
     tag_name: String,
     /// The release's notes; GitHub writes `null` for a release without any.
     body: Option<String>,
@@ -105,8 +107,8 @@ struct RawAsset {
     size: u64,
 }
 
-/// `raw` as a `Release`, or `None` when its tag is not `pes14-v` followed by a
-/// semver: `pes14-v0.0.2-pes14.1` parses, `nightly` does not.
+/// `raw` as a `Release`, or `None` when its tag is not `TAG_PREFIX` followed
+/// by a semver: `v0.0.2` parses on main, `nightly` does not.
 fn release(raw: RawRelease) -> Option<Release> {
     let version = raw
         .tag_name
@@ -147,11 +149,10 @@ pub enum UpdateError {
 pub type Fetch = dyn Fn() -> Result<String, UpdateError> + Send + Sync;
 
 /// The newest release in a fetched releases list: the highest tag of the
-/// `pes14-v<semver>` shape, pre-releases ordered as semver orders them
-/// (`0.0.1-rc.2` under `0.0.1`). A tag of another shape, main's `v<semver>`
-/// tags among them, is passed over; `releases/latest` would skip a release
-/// marked Pre-release, which a 0.0.x may be. `None` comes back when no tag
-/// parses.
+/// `TAG_PREFIX`-and-semver shape, pre-releases ordered as semver orders them
+/// (`0.0.1-rc.2` under `0.0.1`). A tag of another shape is passed over;
+/// `releases/latest` would skip a release marked Pre-release, which a 0.0.x
+/// may be. `None` comes back when no tag parses.
 ///
 /// Errors when `body` is not the list's JSON: a failed check, same as a
 /// failed fetch.
@@ -179,7 +180,7 @@ pub(crate) fn offers(release: &Release, own: &Version, skipped: Option<&str>) ->
 pub(crate) const CHECK_PERIOD: Duration = Duration::from_secs(5 * 60);
 
 /// A check's reply: the newest release (`None` when the list holds no
-/// `pes14-v<semver>` tag), or the check's failure.
+/// `TAG_PREFIX`-and-semver tag), or the check's failure.
 pub type CheckReply = Result<Option<Release>, UpdateError>;
 
 /// Starts the check on a thread of its own and returns the reply's channel:
@@ -296,50 +297,55 @@ pub(crate) fn open_url(url: &str) -> Result<Box<dyn Read + Send>, ureq::Error> {
     Ok(Box::new(response.into_body().into_reader()))
 }
 
-/// The releases list the updater's and the shell's tests share: `pes14-v0.0.1`
-/// first, then `pes14-v0.0.2` (GitHub's `prerelease` flag on, which
+/// The releases list the updater's and the shell's tests share: the `0.0.1`
+/// release first, then `0.0.2` (GitHub's `prerelease` flag on, which
 /// `releases/latest` would skip) and a `nightly` tag that is no semver last,
-/// so the newest by semver is neither the first nor the last entry.
+/// so the newest by semver is neither the first nor the last entry. The
+/// release tags carry `TAG_PREFIX` (`v0.0.1`, `v0.0.2` on main).
 #[cfg(test)]
-pub(crate) const RELEASES_FIXTURE: &str = r#"[
-    {
-        "tag_name": "pes14-v0.0.1",
+pub(crate) fn releases_fixture() -> String {
+    format!(
+        r#"[
+    {{
+        "tag_name": "{TAG_PREFIX}0.0.1",
         "prerelease": false,
         "body": "The preview.\n",
         "html_url": "https://github.com/the4chancup/unlimited-tool-works/releases/tag/v0.0.1",
         "assets": []
-    },
-    {
-        "tag_name": "pes14-v0.0.2",
+    }},
+    {{
+        "tag_name": "{TAG_PREFIX}0.0.2",
         "prerelease": true,
         "body": "Fixes and **polish**.\n",
         "html_url": "https://github.com/the4chancup/unlimited-tool-works/releases/tag/v0.0.2",
         "assets": [
-            {
+            {{
                 "name": "unlimited-tool-works-0.0.2-windows.7z",
                 "browser_download_url": "https://github.com/the4chancup/unlimited-tool-works/releases/download/v0.0.2/unlimited-tool-works-0.0.2-windows.7z",
                 "size": 11234567
-            },
-            {
+            }},
+            {{
                 "name": "unlimited-tool-works-0.0.2-linux.tar.gz",
                 "browser_download_url": "https://github.com/the4chancup/unlimited-tool-works/releases/download/v0.0.2/unlimited-tool-works-0.0.2-linux.tar.gz",
                 "size": 12345678
-            },
-            {
+            }},
+            {{
                 "name": "SHA256SUMS.txt",
                 "browser_download_url": "https://github.com/the4chancup/unlimited-tool-works/releases/download/v0.0.2/SHA256SUMS.txt",
                 "size": 123
-            }
+            }}
         ]
-    },
-    {
+    }},
+    {{
         "tag_name": "nightly",
         "prerelease": false,
         "body": null,
         "html_url": "https://github.com/the4chancup/unlimited-tool-works/releases/tag/nightly",
         "assets": []
-    }
-]"#;
+    }}
+]"#
+    )
+}
 
 #[cfg(test)]
 mod tests {
@@ -347,8 +353,8 @@ mod tests {
 
     // ST-UPD-01
     #[test]
-    fn the_newest_release_is_the_highest_v_semver_tag() {
-        let release = newest_release(RELEASES_FIXTURE)
+    fn the_newest_release_is_the_highest_semver_tag() {
+        let release = newest_release(&releases_fixture())
             .expect("the fixture parses")
             .expect("a release is found");
         assert_eq!(release.version, Version::new(0, 0, 2));
@@ -376,56 +382,16 @@ mod tests {
 
     // ST-UPD-01
     #[test]
-    fn the_offer_is_refused_for_the_skipped_version() {
-        let release = newest_release(RELEASES_FIXTURE)
-            .expect("the fixture parses")
-            .expect("a release is found");
-        let own = Version::new(0, 0, 1);
-        assert!(offers(&release, &own, None));
-        assert!(
-            offers(&release, &own, Some("0.0.3")),
-            "a skip of another version still offers"
-        );
-        assert!(!offers(&release, &own, Some("0.0.2")));
-    }
-
-    // ST-UPD-01
-    #[test]
-    fn a_release_no_newer_than_the_build_is_not_offered() {
-        let body = r#"[{"tag_name": "pes14-v0.0.1", "body": null, "html_url": "u", "assets": []}]"#;
-        let release = newest_release(body)
-            .expect("the fixture parses")
-            .expect("a release is found");
-        assert_eq!(release.version, Version::new(0, 0, 1), "the premise");
-        assert!(!offers(&release, &Version::new(0, 0, 1), None));
-    }
-
-    // ST-UPD-01
-    #[test]
-    fn pre_releases_order_as_semver_orders_them() {
-        let release = newest_release(
+    fn another_lines_tags_are_passed_over() {
+        let release = newest_release(&format!(
             r#"[
-                {"tag_name": "pes14-v0.0.1-rc.2", "body": null, "html_url": "u", "assets": []},
-                {"tag_name": "pes14-v0.0.1-rc.1", "body": null, "html_url": "u", "assets": []}
-            ]"#,
-        )
+                {{"tag_name": "side-{TAG_PREFIX}9.9.9", "body": null, "html_url": "u", "assets": []}},
+                {{"tag_name": "{TAG_PREFIX}0.0.2", "body": null, "html_url": "u", "assets": []}}
+            ]"#
+        ))
         .expect("the fixture parses")
         .expect("a release is found");
-        assert_eq!(release.version.to_string(), "0.0.1-rc.2");
-
-        let release = newest_release(
-            r#"[
-                {"tag_name": "pes14-v0.0.1-rc.2", "body": null, "html_url": "u", "assets": []},
-                {"tag_name": "pes14-v0.0.1", "body": null, "html_url": "u", "assets": []}
-            ]"#,
-        )
-        .expect("the fixture parses")
-        .expect("a release is found");
-        assert_eq!(
-            release.version,
-            Version::new(0, 0, 1),
-            "a pre-release ranks under its release"
-        );
+        assert_eq!(release.version, Version::new(0, 0, 2));
     }
 
     // ST-UPD-01
@@ -443,12 +409,68 @@ mod tests {
         assert_eq!(release.version.to_string(), "0.0.2-pes14.2");
     }
 
+    // ST-UPD-01
+    #[test]
+    fn the_offer_is_refused_for_the_skipped_version() {
+        let release = newest_release(&releases_fixture())
+            .expect("the fixture parses")
+            .expect("a release is found");
+        let own = Version::new(0, 0, 1);
+        assert!(offers(&release, &own, None));
+        assert!(
+            offers(&release, &own, Some("0.0.3")),
+            "a skip of another version still offers"
+        );
+        assert!(!offers(&release, &own, Some("0.0.2")));
+    }
+
+    // ST-UPD-01
+    #[test]
+    fn a_release_no_newer_than_the_build_is_not_offered() {
+        let body = format!(
+            r#"[{{"tag_name": "{TAG_PREFIX}0.0.1", "body": null, "html_url": "u", "assets": []}}]"#
+        );
+        let release = newest_release(&body)
+            .expect("the fixture parses")
+            .expect("a release is found");
+        assert_eq!(release.version, Version::new(0, 0, 1), "the premise");
+        assert!(!offers(&release, &Version::new(0, 0, 1), None));
+    }
+
+    // ST-UPD-01
+    #[test]
+    fn pre_releases_order_as_semver_orders_them() {
+        let release = newest_release(&format!(
+            r#"[
+                {{"tag_name": "{TAG_PREFIX}0.0.1-rc.2", "body": null, "html_url": "u", "assets": []}},
+                {{"tag_name": "{TAG_PREFIX}0.0.1-rc.1", "body": null, "html_url": "u", "assets": []}}
+            ]"#
+        ))
+        .expect("the fixture parses")
+        .expect("a release is found");
+        assert_eq!(release.version.to_string(), "0.0.1-rc.2");
+
+        let release = newest_release(&format!(
+            r#"[
+                {{"tag_name": "{TAG_PREFIX}0.0.1-rc.2", "body": null, "html_url": "u", "assets": []}},
+                {{"tag_name": "{TAG_PREFIX}0.0.1", "body": null, "html_url": "u", "assets": []}}
+            ]"#
+        ))
+        .expect("the fixture parses")
+        .expect("a release is found");
+        assert_eq!(
+            release.version,
+            Version::new(0, 0, 1),
+            "a pre-release ranks under its release"
+        );
+    }
+
     // ST-CLI-05
     #[test]
     fn the_command_line_notice_names_a_release_the_offer_is_made_for() {
         let release = |version: &str| {
             newest_release(&format!(
-                r#"[{{"tag_name": "pes14-v{version}", "body": null, "html_url": "u", "assets": []}}]"#
+                r#"[{{"tag_name": "{TAG_PREFIX}{version}", "body": null, "html_url": "u", "assets": []}}]"#
             ))
             .expect("the list parses")
         };

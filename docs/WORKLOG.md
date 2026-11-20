@@ -3100,6 +3100,10 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
   cargo-nextest, which stops at its first failing test: a caught save_editor mutant's tests
   took 28-162 s against 303-771 s under `cargo test`, and the whole suite about the same
   (444 s against 418 s). The VPS has cargo-nextest 0.9.146
+  - [ ] a Carbon round on the change (`7feea20c..aa0f62ee`), since the mutation runs are vital
+    tooling (the maintainer, 2026-11-20); Astra's round ran on 2026-11-20
+    - [x] Carbon's round 1, 2026-11-20: 8 accepted (rulings `.tmp/duck_rulings_nextest.md`)
+    - [ ] the rework (SWE-2, `sk/mutrw`), then Carbon's round 2
 - [ ] after 0.0.2: a crate whose mutation-run estimate passes a budget (about an hour a
   side) runs detached from the checkpoint, which closes on the rest (save_editor's held one
   ~12.5 h before mutfast)

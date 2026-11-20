@@ -80,7 +80,7 @@ fn offer_shell_in(name: &str, bundle_files: &Files) -> (Shell, PathBuf, PathBuf)
     };
     let mut shell = shell_in(settings, vec![a], &[], &[], paths, None, vec![calls_a]);
     shell.app.version = "0.0.1";
-    shell.app.update_fetch = Arc::new(|| Ok(crate::updater::RELEASES_FIXTURE.to_owned()));
+    shell.app.update_fetch = Arc::new(|| Ok(crate::updater::releases_fixture()));
     shell._dir = Some(dir);
     (shell, data, bundle)
 }
@@ -213,7 +213,7 @@ fn count_fetches(app: &mut StudioApp) -> Arc<AtomicUsize> {
     let counted = Arc::clone(&fetches);
     app.update_fetch = Arc::new(move || {
         counted.fetch_add(1, Ordering::SeqCst);
-        Ok(crate::updater::RELEASES_FIXTURE.to_owned())
+        Ok(crate::updater::releases_fixture())
     });
     fetches
 }
@@ -648,7 +648,7 @@ const LONG_NOTES: &str = "The Compiler and Export upgrader: the launchers show w
 fn the_offer_back_after_a_cancel_is_laid_out_as_it_first_was() {
     let (mut shell, _bundle, go_on) = update_shell("dialog_cancel_layout", running_assets(None));
     shell.app.update_fetch = Arc::new(|| {
-        Ok(crate::updater::RELEASES_FIXTURE.replace("Fixes and **polish**.", LONG_NOTES))
+        Ok(crate::updater::releases_fixture().replace("Fixes and **polish**.", LONG_NOTES))
     });
     let egui_ctx = test_context();
     // The dialog's left and right ends: its first and last buttons' bounds.

@@ -1659,7 +1659,7 @@ mod tests {
                     503,
                 )));
             }
-            Ok(crate::updater::RELEASES_FIXTURE.to_owned())
+            Ok(crate::updater::releases_fixture())
         });
         let egui_ctx = test_context();
         let requested = std::sync::Arc::new(std::sync::Mutex::new(Vec::new()));
@@ -1720,8 +1720,7 @@ mod tests {
             // it runs, which is not the build's: an offer there means the
             // build's was read. The 0.0.1 case's is newer but skipped.
             app.version = version;
-            app.update_fetch =
-                std::sync::Arc::new(|| Ok(crate::updater::RELEASES_FIXTURE.to_owned()));
+            app.update_fetch = std::sync::Arc::new(|| Ok(crate::updater::releases_fixture()));
             let egui_ctx = test_context();
 
             // Wait on the drain: before it, "no offer" holds of a check still
@@ -1757,7 +1756,7 @@ mod tests {
         );
         app.update_fetch = std::sync::Arc::new(move || {
             started_tx.send(()).expect("the test listens");
-            Ok(crate::updater::RELEASES_FIXTURE.to_owned())
+            Ok(crate::updater::releases_fixture())
         });
         idle(&egui_ctx, &mut app, 3);
         // A started check shows in the state the frame sets itself,
@@ -1821,7 +1820,7 @@ mod tests {
         app.version = "0.0.1";
         app.update_fetch = std::sync::Arc::new(move || {
             count.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
-            Ok(crate::updater::RELEASES_FIXTURE.to_owned())
+            Ok(crate::updater::releases_fixture())
         });
         // The sidebar's poll asks for its own repaint to a nearer deadline;
         // spending the once-per-life auto-switch leaves the check's the only
@@ -2042,7 +2041,7 @@ mod tests {
             // own, so what the frame asks for is all an idle window gets.
             let (tx, rx) = bounded(1);
             let reply: crate::updater::CheckReply = if succeeds {
-                Ok(crate::updater::newest_release(crate::updater::RELEASES_FIXTURE).unwrap())
+                Ok(crate::updater::newest_release(&crate::updater::releases_fixture()).unwrap())
             } else {
                 Err(crate::updater::UpdateError::Fetch(ureq::Error::StatusCode(
                     503,
@@ -2077,20 +2076,28 @@ mod tests {
         }
     }
 
+    /// A releases list whose newest is the `0.0.3` release (its tag
+    /// `TAG_PREFIX` and the semver, `v0.0.3` on main), the same shape as
+    /// `updater::releases_fixture()`'s.
+    #[cfg(not(target_arch = "wasm32"))]
+    fn newer_fixture() -> String {
+        format!(
+            r#"[
+            {{
+                "tag_name": "{TAG_PREFIX}0.0.3",
+                "body": "Newer still.\n",
+                "html_url": "https://github.com/the4chancup/unlimited-tool-works/releases/tag/v0.0.3",
+                "assets": []
+            }}
+        ]"#,
+            TAG_PREFIX = crate::updater::TAG_PREFIX
+        )
+    }
+
     #[cfg(not(target_arch = "wasm32"))]
     // ST-UPD-01
     #[test]
     fn a_later_checks_newer_release_replaces_the_offer() {
-        /// A releases list whose newest is `v0.0.3`, the same shape as
-        /// `updater::RELEASES_FIXTURE`'s.
-        const NEWER_FIXTURE: &str = r#"[
-            {
-                "tag_name": "pes14-v0.0.3",
-                "body": "Newer still.\n",
-                "html_url": "https://github.com/the4chancup/unlimited-tool-works/releases/tag/v0.0.3",
-                "assets": []
-            }
-        ]"#;
         let dir = TestDir::new("studio_core_update_newer");
         let (a, calls_a) = stub("a", "A", None);
         let mut settings = test_settings(dir.path());
@@ -2107,9 +2114,9 @@ mod tests {
         app.version = "0.0.1";
         app.update_fetch = std::sync::Arc::new(move || {
             if count.fetch_add(1, std::sync::atomic::Ordering::SeqCst) == 0 {
-                Ok(crate::updater::RELEASES_FIXTURE.to_owned())
+                Ok(crate::updater::releases_fixture())
             } else {
-                Ok(NEWER_FIXTURE.to_owned())
+                Ok(newer_fixture())
             }
         });
         let egui_ctx = test_context();
@@ -2173,7 +2180,7 @@ mod tests {
         let counted = std::sync::Arc::clone(&fetches);
         let fetch: std::sync::Arc<crate::updater::Fetch> = std::sync::Arc::new(move || {
             counted.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
-            Ok(crate::updater::RELEASES_FIXTURE.to_owned())
+            Ok(crate::updater::releases_fixture())
         });
         let Shell { mut app, ctx, .. } =
             shell_with(settings, vec![a], &[], Some(data.clone()), vec![calls_a]);

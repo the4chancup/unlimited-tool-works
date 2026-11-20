@@ -90,13 +90,21 @@ def write_run(
     out: Path, selected: int, outcomes: list[dict], logs: dict[str, str] | None = None
 ) -> None:
     """A `mutants.out` at `out`: a selection of `selected` mutants, the baseline and
-    `outcomes`, and each `logs` entry as the log file of that name."""
+    `outcomes`, and each `logs` entry as the log file of that name. A phase result an
+    outcome leaves without its name and exit status gets them as cargo-mutants writes
+    a test phase: nextest's 100 for a catch, success otherwise."""
     out.mkdir(parents=True, exist_ok=True)
     (out / "mutants.json").write_text(json.dumps([{}] * selected), encoding="utf-8")
     baseline = {"scenario": "Baseline", "summary": "Success", "phase_results": [{"duration": 1.0}]}
-    (out / "outcomes.json").write_text(
-        json.dumps({"outcomes": [baseline, *outcomes]}), encoding="utf-8"
-    )
+    written = []
+    for outcome in [baseline, *outcomes]:
+        status = {"Failure": 100} if outcome["summary"] == "CaughtMutant" else "Success"
+        phases = [
+            {"phase": "Test", "process_status": status, **phase}
+            for phase in outcome.get("phase_results", [{"duration": 1.0}])
+        ]
+        written.append({**outcome, "phase_results": phases})
+    (out / "outcomes.json").write_text(json.dumps({"outcomes": written}), encoding="utf-8")
     for name, text in (logs or {}).items():
         (out / name).parent.mkdir(parents=True, exist_ok=True)
         (out / name).write_text(text, encoding="utf-8")
@@ -124,6 +132,16 @@ class NeverRan(unittest.TestCase):
             self.assertIsNone(mutants.never_ran(out))
 
 
+def caught_outcome(name: str, status: dict) -> dict:
+    """Mutant `name`'s outcomes.json entry as cargo-mutants writes a catch, its test
+    phase ended with `status`, its log at `log/<name>.log`."""
+    test = {"phase": "Test", "duration": 1.0, "process_status": status}
+    return {
+        "scenario": mutant(name), "summary": "CaughtMutant",
+        "log_path": f"log/{name}.log", "phase_results": [test],
+    }
+
+
 class KilledBuilds(unittest.TestCase):
     def test_every_spelling_of_a_killed_build_and_a_signal_ended_cargo_count(self):
         logs = {
@@ -142,13 +160,15 @@ class KilledBuilds(unittest.TestCase):
             for name in ("oom", "linker", "llvm", "windows", "console", "link", "mutant")
         ]
         outcomes.append({"scenario": mutant("signal"), "summary": "Failure"})
-        outcomes.append({"scenario": mutant("caught"), "summary": "CaughtMutant"})
+        outcomes.append(caught_outcome("caught", {"Failure": 100}))
+        # Nextest's exit when it cannot list the tests: no test ran, so nothing caught it.
+        outcomes.append(caught_outcome("no_tests_ran", {"Failure": 104}))
         with tempfile.TemporaryDirectory() as tmp:
             out = Path(tmp)
             write_run(out, len(outcomes), outcomes, logs)
             self.assertEqual(
                 mutants.killed_builds(out),
-                ["oom", "linker", "llvm", "windows", "console", "link", "signal"],
+                ["oom", "linker", "llvm", "windows", "console", "link", "signal", "no_tests_ran"],
             )
 
 
@@ -1684,7 +1704,7 @@ class Fetch(unittest.TestCase):
         clone = self.root / "clone"
         logs = clone / "mutants.out" / "log"
         logs.mkdir(parents=True, exist_ok=True)
-        for name in ("caught.log", "unviable.log", "missed.log"):
+        for name in ("caught.log", "unviable.log", "missed.log", "untested.log"):
             (logs / name).write_text("log\n", encoding="utf-8")
         (clone / "mutants.out" / "caught.txt").write_text("x\n", encoding="utf-8")
         if outcomes is None:
@@ -1698,23 +1718,24 @@ class Fetch(unittest.TestCase):
         return {Path(line).as_posix() for line in printed.splitlines()}
 
     def test_the_fetch_list_leaves_out_only_the_caught_mutants_logs(self):
+        # Nextest's 104: it could not list the tests, so none failed and the log is kept.
         outcomes = {"outcomes": [
-            {"summary": "CaughtMutant", "log_path": "log/caught.log"},
+            caught_outcome("caught", {"Failure": 100}),
+            caught_outcome("untested", {"Failure": 104}),
             {"summary": "Unviable", "log_path": "log/unviable.log"},
             {"summary": "MissedMutant", "log_path": "log/missed.log"},
         ]}
         self.assertEqual(self.listed(json.dumps(outcomes)), {
             "mutants.out/caught.txt", "mutants.out/outcomes.json",
             "mutants.out/log/unviable.log", "mutants.out/log/missed.log",
+            "mutants.out/log/untested.log",
         })
 
     def test_the_fetch_list_brings_a_whole_runs_extra_pass_home(self):
         """A whole run's extra pass leaves its record under the clone's
         `extra_mutants.out/` — `run.json`, `missed_<crate>.txt`, the outcomes
         tsvs — all small, all fetched, while the caught-log filter still holds."""
-        outcomes = {"outcomes": [
-            {"summary": "CaughtMutant", "log_path": "log/caught.log"},
-        ]}
+        outcomes = {"outcomes": [caught_outcome("caught", {"Failure": 100})]}
         extra = self.root / "clone" / "extra_mutants.out"
         extra.mkdir(parents=True)
         (extra / "run.json").write_text("{}\n", encoding="utf-8")
@@ -1730,13 +1751,14 @@ class Fetch(unittest.TestCase):
         logs = {
             "mutants.out/caught.txt", "mutants.out/log/caught.log",
             "mutants.out/log/unviable.log", "mutants.out/log/missed.log",
+            "mutants.out/log/untested.log",
         }
         self.assertEqual(self.listed(None), logs)
         self.assertEqual(self.listed('{"outcomes": [{"summ'), logs | {"mutants.out/outcomes.json"})
         # Another shape, the first outcome's log already taken as caught before the second
         # fails: the list still keeps it.
         other_shape = json.dumps({"outcomes": [
-            {"summary": "CaughtMutant", "log_path": "log/caught.log"}, {"log_path": "x"},
+            caught_outcome("caught", {"Failure": 100}), {"log_path": "x"},
         ]})
         self.assertEqual(self.listed(other_shape), logs | {"mutants.out/outcomes.json"})
 

@@ -638,6 +638,24 @@ previews can afford the concession, and its members get fixes sooner than a rele
 for days would give them. The runs come after the cut, and their survivors' tests go into
 the next release, or a patch when a survivor hides a real bug.
 
+**Releasing a side line.** A side line is a branch released on its own from the same
+repository, such as the PES 2014 builds on `pes14`. Its releases need a tag prefix of their
+own, so that the update check never offers a side line's build to a member on main, nor
+main's build to a member on the side line. On the branch:
+
+1. set `TAG_PREFIX` in `crates/studio_core/src/updater/mod.rs` to `<line>-v` (`pes14-v`);
+2. in `.github/workflows/release.yml`, set the `TAG_PREFIX` env value to the same prefix and
+   the tag pattern under `on: push: tags` to `<line>-v*` (GitHub reads no variable there);
+3. give the workspace version a pre-release part naming the line, `<version>-<line>.<n>`
+   (`0.0.2-pes14.1`), at the cut: in `Cargo.toml`'s `workspace.package.version`, in
+   `resources/bundle/README.txt`'s first line, and in `Cargo.lock` (any build updates it). The
+   workflow marks a version with a pre-release part as a pre-release, so GitHub never shows a
+   side line's build as the repository's latest release. Without that part nothing fails: the
+   build is published as a full release and takes the Latest badge from main's.
+
+Main's check passes over the side line's tags because they do not start with `v`, so main
+needs no change.
+
 ## Lead and sidekick
 
 **Lead and sidekick.** Sessions run as a lead model that plans, briefs, reviews and talks to the

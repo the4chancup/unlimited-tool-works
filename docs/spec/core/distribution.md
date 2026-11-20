@@ -117,9 +117,10 @@ The workflow, `.github/workflows/release.yml`, runs `release.py` on `windows-lat
 `ubuntu-22.04`. Each job checks its own binary with the recipe's checks (no build-machine path
 in it, the static C runtime on Windows, the listing equal to the staged set), then:
 
-- **A tag `v<version>`** (a semver: `v0.0.1`, `v0.0.1-rc.1`) whose version is the workspace's
-  creates a **draft** GitHub release named for the tag, marked pre-release when the version has
-  a pre-release part. It holds three assets:
+- **A tag `v<version>`** (a semver: `v0.0.1`, `v0.0.1-rc.1`; a side line has its own prefix,
+  RUNBOOK "Releasing a side line") whose version is the workspace's creates a **draft** GitHub
+  release named for the tag, marked pre-release when the version has a pre-release part. It
+  holds three assets:
   - the Windows `.7z`;
   - the Linux `.tar.gz`;
   - `SHA256SUMS.txt`, both archives' `sha256sum` lines, the file the updater checks a download
