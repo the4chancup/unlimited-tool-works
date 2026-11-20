@@ -1254,6 +1254,9 @@ class SplitShares(unittest.TestCase):
         # The remote's build cap: cargo-mutants' own option on its command
         # line (`additional_cargo_args` would reach `cargo nextest run`).
         self.assertIn("--jobserver-tasks 8 ", job)
+        # `REMOTE_JOBSERVER_TASKS` is the knob to lower it with.
+        with mock.patch.object(mutants, "REMOTE_JOBSERVER_TASKS", 2):
+            self.assertIn("--jobserver-tasks 2 ", self.job(whole=False))
 
     def test_a_split_refuses_before_it_touches_any_result(self):
         """A refusal the caller counted as a run filed the last run's `mutants.out` as its
@@ -1466,14 +1469,15 @@ class SummaryLists(unittest.TestCase):
         in no list."""
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            remote = root / "mutants.out" / "remote" / "mutants.out"
-            write_run(remote, 1, [{"scenario": mutant("r"), "summary": "MissedMutant"}])
-            (remote / "missed.txt").write_text(
-                "crates/libs/cpk/src/read.rs:2:2: a remote survivor\n", encoding="utf-8"
+            local = root / "mutants.out"
+            write_run(local, 1, [{"scenario": mutant("l"), "summary": "MissedMutant"}])
+            (local / "missed.txt").write_text(
+                "crates/libs/cpk/src/lib.rs:2:2: a local survivor\n", encoding="utf-8"
             )
-            # A remote code outside 0/2/3 makes the summary tail this log.
+            # The remote half wrote nothing: it died before its selection. Its
+            # code (1) makes the summary tail this log.
             (root / "remote_console.txt").write_text("died\n", encoding="utf-8")
-            code, _ = self.summarize(root, local_half=False, codes=(0, 1))
+            code, _ = self.summarize(root, codes=(2, 1))
         self.assertEqual(code, 1)
 
     def test_an_extra_passs_untested_mutants_fail_the_run(self):
@@ -1541,11 +1545,29 @@ class SummaryLists(unittest.TestCase):
                 ["crates/libs/cpk/src/lib.rs:5: [bool] flip it"],
             )
             self.assertIn("extra", out)
-            record.unlink()
-            code, out = self.summarize(
-                root, local_half=False, extra_run=record
+            # A survivor beside the missing record: the rerun's code really is 2.
+            write_run(remote, 2, [
+                {"scenario": mutant("r"), "summary": "CaughtMutant"},
+                {"scenario": mutant("m"), "summary": "MissedMutant"},
+            ])
+            (remote / "missed.txt").write_text(
+                "crates/libs/cpk/src/read.rs:7:7: a remote survivor\n", encoding="utf-8"
             )
-        # A missing record over a survivor is still 1: untested outranks missed.
+            record.unlink()
+            seen = []
+            real = mutants.report_killed
+
+            def spy(code, **kwargs):
+                seen.append(code)
+                return real(code, **kwargs)
+
+            with mock.patch.object(mutants, "report_killed", spy):
+                code, out = self.summarize(
+                    root, local_half=False, extra_run=record
+                )
+        # A missing record over a survivor is still 1: untested outranks missed,
+        # and the survivor really reached `report_killed` as a 2.
+        self.assertEqual(seen, [2])
         self.assertEqual(code, 1)
         self.assertIn("the extra pass left no record: see the remote log", out)
 
@@ -1617,6 +1639,46 @@ class RecheckWindows(unittest.TestCase):
                 code = mutants.report_killed(0, local_half=False)
         self.assertEqual(code, 0)
         self.assertNotIn("NOT tested", out.getvalue())
+
+    def test_a_failed_recheck_leaves_no_stale_results(self):
+        """A recheck that dies before cargo-mutants writes its own results must
+        not read an earlier recheck's: `recheck_windows` clears the folder
+        first, so the failed run catches nothing and lists no killed build."""
+        missed = ["crates/libs/cpk/src/lib.rs:10:5: replace pad -> usize with 0"]
+
+        def local_mutants(args, source, config=None):
+            return subprocess.CompletedProcess(args, 1)
+
+        def git(*args, **kwargs):
+            return subprocess.CompletedProcess(args, 0, stdout="sometree")
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            # An earlier recheck's folder: a catch of this survivor and a
+            # killed build, which this run must not inherit.
+            write_run(
+                root / "mutants.out" / "recheck" / "mutants.out", 2,
+                [
+                    caught_outcome(missed[0], {"Failure": 100}),
+                    caught_outcome("killed", {"Failure": 104}),
+                ],
+            )
+            out = io.StringIO()
+            with (
+                mock.patch.multiple(
+                    mutants,
+                    ROOT=root,
+                    git=git,
+                    local_mutants=local_mutants,
+                    mutant_crate=lambda file: "cpk",
+                    snapshot_source=lambda tree: contextlib.nullcontext(root),
+                ),
+                contextlib.redirect_stdout(out),
+            ):
+                caught = mutants.recheck_windows(missed)
+                code = mutants.report_killed(0, local_half=False, rechecked=True)
+        self.assertEqual(caught, set())
+        self.assertEqual(code, 0)
 
 
 class DiffRun(unittest.TestCase):

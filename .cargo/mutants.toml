@@ -18,9 +18,9 @@ test_tool = "nextest"
 # (`sized_config`) writes per machine, giving each process half the logical CPUs, and start
 # cargo-mutants at below-normal priority, so the run uses every CPU the user's own work leaves
 # idle rather than holding two back. A bare run keeps the old fixed budget of 7 test threads;
-# build concurrency needs no line: cargo-mutants runs a jobserver sized to the machine's CPUs
-# (a remote run's goes on its `cargo mutants` line, `launch_remote` in
-# `scripts/mutation/mutants.py`), under which cargo ignores `-j`. Local tooling
+# build concurrency needs no line: cargo-mutants runs a jobserver, under which cargo ignores
+# `-j`, sized to the machine's CPUs; a remote run's cap is the `--jobserver-tasks` on its
+# `cargo mutants` line (`launch_remote` in `scripts/mutation/mutants.py`). Local tooling
 # only; CI never runs mutants.
 additional_cargo_test_args = ["--test-threads=7"]
 
