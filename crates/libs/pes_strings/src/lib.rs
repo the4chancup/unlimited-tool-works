@@ -31,13 +31,13 @@ pub enum Error {
         count: u32,
     },
     /// A section's name has no NUL ending it before the payload's end.
-    #[error("section {0} has no NUL ending its name")]
+    #[error("section record {0} has no NUL ending its name")]
     NameWithoutNul(usize),
     /// A section's name is not UTF-8.
-    #[error("section {0}'s name is not UTF-8")]
+    #[error("section record {0}'s name is not UTF-8")]
     NameNotUtf8(usize),
     /// A section's header or its string records reach past the payload's end.
-    #[error("section {name} needs {end} bytes for its strings; the payload is {len} bytes")]
+    #[error("section {name} needs {end} bytes; the payload is {len} bytes")]
     SectionTooShort {
         /// The section's name.
         name: String,
@@ -118,8 +118,8 @@ pub fn read(bytes: &[u8]) -> Result<StrFile, Error> {
         .ok_or(Error::ShorterThanHeader(payload.len()))?;
     let section_count = u32::from_le_bytes([header[0], header[1], header[2], header[3]]);
     let table_offset = u32::from_le_bytes([header[4], header[5], header[6], header[7]]);
-    // Table records and offsets are u32s; the arithmetic stays in u64 so a
-    // payload just under 4 GiB cannot overflow it.
+    // The arithmetic stays in u64: the section count is the file's own, so
+    // `offset + 12 * count` can pass u32's range however small the payload.
     let table_end = u64::from(table_offset) + 12 * u64::from(section_count);
     if table_end > payload.len() as u64 {
         return Err(Error::TooShortForTable {
@@ -372,6 +372,10 @@ mod tests {
         let mut payload = one_section(b"Alpha", &[(1, b"hi")]);
         // The section's string count, at its start (26), grown to 255.
         payload[26..30].copy_from_slice(&255u32.to_le_bytes());
+        assert!(matches!(read(&payload), Err(Error::SectionTooShort { .. })));
+        // The table record's data offset, at 8, pointed past the payload.
+        let mut payload = one_section(b"Alpha", &[(1, b"hi")]);
+        payload[8..12].copy_from_slice(&u32::MAX.to_le_bytes());
         assert!(matches!(read(&payload), Err(Error::SectionTooShort { .. })));
     }
 
