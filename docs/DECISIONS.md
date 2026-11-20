@@ -19064,3 +19064,24 @@ Why: the maintainer's rulings on the draft. The mark tells a manager why the tea
 formation stands apart from the list. A description inferred from a setting's name could
 state what the game does not do; the game's own text cannot.
 Plan: `plans/pes14.md` "PES 2014 in the code" ("The Gameplan screen in Build 2"), "Steps", step 8.
+
+## 2026-11-20 — save_editor (pes14 branch) — The command line refuses PES 2014 saves where the GUI greys the feature
+Decision: `export-toml`, `import-toml`, `apply-patch`, `diff` and `export-teams-list` refuse a
+PES 2014 save with "Not available on PES 2014 saves", the words the GUI's greyed controls
+carry. `check-aatf` and the other commands in scope run as on every version.
+Why: Build 1 greyed these features in the GUI alone, so the command line still ran them. Since
+Build 2 maps the tactics record, `export-toml` would write formation tables PES 2014 does not
+store, and `import-toml` would drop their edits silently. A refusal at the command keeps one rule
+for both routes; gating each format on the record's layout would make them work halfway on a
+version the plan leaves out.
+Plan: `plans/pes14.md` "Not in scope".
+
+## 2026-11-20 — save_editor (pes14 branch) — A PES 2014 swap moves the two players in the preset shown alone
+Decision: on PES 2014, swapping two starters (on the pitch or in the lineup list) exchanges
+their lineup entries and, in the other two presets, the two positions' roles and spots, so the
+players stand there where they stood.
+Why: run `tactics1`'s save shows the game doing so for a swap made in Preset Tactics 1. Swapping
+the lineup alone would move the two players in every preset, which the game does not do. "The
+other two presets" rather than "presets 2 and 3" is inferred until run `tactics5` swaps in
+Preset Tactics 2.
+Plan: `plans/pes14.md` "PES 2014 in the code" ("The Gameplan screen in Build 2"), "Steps", step 8.

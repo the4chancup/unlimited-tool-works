@@ -67,7 +67,9 @@ Build 1 the largest piece of reverse engineering, and makes Build 2 mostly scree
 **Not in scope:** Team TOML export and import, patches, diff, the teams-list export, Texport,
 and the player menu's Generate settings.toml and Generate in-game face, unless one works on PES
 2014 with no work beyond a test. The rest stay greyed out for PES 2014, with a tooltip saying
-so. The two Generate items cannot work yet: PES 2014's face, hair and skin are not mapped, so
+so. The command line refuses their commands on a PES 2014 save in the same words
+(`export-toml`, `import-toml`, `apply-patch`, `diff`, `export-teams-list`), so both routes keep
+one rule. The two Generate items cannot work yet: PES 2014's face, hair and skin are not mapped, so
 a generated file would carry zeros for them.
 
 ## Re-derived, not copied
@@ -513,6 +515,13 @@ version, not the version selector.
     formations; while he is held, the teammate a drop would swap with is marked. Nothing
     else moves a player. A click opens no player box, since a role is not picked, and a held
     player lights no areas.
+  - **A swap of two starters**, on the pitch or in the lineup list, moves them in the preset
+    shown alone, as the game's swap does: the two exchange lineup entries, and the other two
+    presets exchange the two positions' roles and spots, so each player stands there where he
+    stood. In run `tactics1`'s save, a swap made in Preset Tactics 1 exchanged lineup
+    entries 1 and 3 and slots 1 and 3 of presets 2 and 3, and left preset 1's alone. That the
+    rule is "the other two presets", not "presets 2 and 3" whatever the preset shown, is
+    inferred until run `tactics5` swaps in Preset Tactics 2.
   - **No overall** shows on the pitch's badges: PES 2014's own formula is not known, and PES
     2016's reads stats PES 2014 does not store.
   - **The second free kick taker** moves to the next roster slot when he becomes the long or
@@ -648,7 +657,10 @@ on main. Main is merged into the branch, never rebased onto it.
    - Run `tactics4` (in game): done, pinned in "What is known about the save".
    - Run `help1` (in game, nothing changed or saved): each Game Plan item's description,
      shown by the game's help button, for the screen's tooltips.
+   - Run `tactics5` (in game): a swap of two starters made in Preset Tactics 2, to pin which
+     presets' slots the game exchanges.
    - Slices: the record's fields in the schema and the model, then the screen.
+   - The command line refuses the commands out of scope on a PES 2014 save ("Not in scope").
    - Later: the pitch's shirts in the team's kit colours and icon pattern, as PES 2015's
      Game Plan kit icons (patterns 0 to 23), read from the kit configs in the download
      folder.
