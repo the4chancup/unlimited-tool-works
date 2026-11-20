@@ -1627,8 +1627,8 @@ Win32 original hurt the most):
     otherwise have no edge), sits 5 px above the badge over the portrait, its outline 1 px
     inside the badge's left edge (measured on a 720p capture).
 
-    A starter whose portrait the editor cannot show, for any reason, shows the game's own
-    placeholder in its place, drawn as a portrait. The reasons are none in the CPKs, one that
+    A starter whose portrait the editor cannot show, for any reason, shows a placeholder in
+    its place, drawn as a portrait. The reasons are none in the CPKs, one that
     does not decode, a folder, list or CPK that cannot be read, no PES folder set, or one still
     being read, which would otherwise draw nothing and then the portrait. The placeholder looks
     like the selected game's `common/render/symbol/blank/player-dummy.png`, a 128 x 128 PNG in
