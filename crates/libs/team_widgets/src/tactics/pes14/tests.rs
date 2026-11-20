@@ -233,7 +233,7 @@ fn the_dropdowns_stand_cell_gap_under_their_labels() {
         .clone();
     let view = TacticsView::default();
     let (nodes, _) = window.frame(vec![], |ui| {
-        preset_tactics(ui, &mut tactics, &view);
+        preset_tactics(ui, &mut tactics, &view, None);
     });
     for label in ["Formation", STRATEGY_LABEL] {
         let bounds = nodes

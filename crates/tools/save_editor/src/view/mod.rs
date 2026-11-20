@@ -20,6 +20,7 @@ mod comparator;
 mod copy_stats;
 mod event_logo;
 mod file_menu;
+mod game_tips;
 mod generate;
 mod group_frame;
 mod info_strip;
@@ -361,6 +362,10 @@ pub(crate) struct SaveView {
     /// `download/` CPKs off the UI thread (`select_portraits` points it at
     /// the PES folder each frame).
     portraits: portraits::Portraits,
+    /// The PES 2014 Gameplan's tooltips, the game's own help texts read
+    /// from the selected game's `all.str` off the UI thread, pointed at the
+    /// PES folder as the portraits are (`select_portraits`).
+    game_tips: game_tips::GameTips,
     /// Which open this is: part of the pushed widget id and of the
     /// list's scroll area id, so egui widget and scroll state (a text
     /// field's undo history, a control's in-progress edit, the scrolled
@@ -601,6 +606,7 @@ impl SaveView {
             cards: abilities::Cards::new(),
             medals: tactics::Medals::new(),
             portraits: portraits::Portraits::new(),
+            game_tips: game_tips::GameTips::new(),
             generation: 0,
             aesthetics_from_exports: false,
             edit_aesthetics: false,
@@ -616,10 +622,12 @@ impl SaveView {
         }
     }
 
-    /// Points the pitch's portrait source at `pes_folder` for `version`: `Tool::view` calls it
-    /// each frame with the open save's PES and its version's PES folder, as it refreshes `hide_ids`.
-    /// The exe check turning `Found` restarts the source: the folder it answers for was
-    /// repaired where a worker read empty, so its `None` answers are stale.
+    /// Points the pitch's portrait source and the Gameplan tooltips' text
+    /// source at `pes_folder` for `version`: `Tool::view` calls it each frame
+    /// with the open save's PES and its version's PES folder, as it refreshes
+    /// `hide_ids`. The exe check turning `Found` restarts both: the folder they
+    /// answer for was repaired where a worker read empty, so their answers are
+    /// stale.
     pub(crate) fn select_portraits(
         &mut self,
         ctx: &egui::Context,
@@ -632,8 +640,10 @@ impl SaveView {
                 .is_some_and(|check| check != ExeCheck::Found);
         self.portraits_check = self.pes_exe_check;
         self.portraits.select(ctx, pes_folder, version);
+        self.game_tips.select(ctx, pes_folder, version);
         if repaired {
             self.portraits.restart(ctx);
+            self.game_tips.restart(ctx);
         }
     }
 

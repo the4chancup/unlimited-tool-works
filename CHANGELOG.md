@@ -6,7 +6,8 @@
 
 - **Save editor**: added the Gameplan screen for PES 2014 saves. Its Preset tactics panel
   holds the game's Formation and Strategy dropdowns and its eight sliders. Its Combination
-  play panel holds the game's three slots, each a strategy and the area it runs in.
+  play panel holds the game's three slots, each a strategy and the area it runs in. Once a
+  PES 2014 folder is set, hovering a setting or a dropdown shows the game's own help text.
 
 ### Fixed
 

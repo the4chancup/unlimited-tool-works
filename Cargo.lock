@@ -4309,6 +4309,7 @@ dependencies = [
  "image",
  "log",
  "pes_savefile",
+ "pes_strings",
  "pes_version",
  "rayon",
  "rfd",

@@ -64,9 +64,9 @@ pub(crate) fn tactics_settings(
             roster,
             context.illegal_formations,
         ) | cell(ui, |ui| {
-            player_assignments(ui, tactics, view, roster);
+            player_assignments(ui, tactics, view, roster, None);
             false
-        }) | automatic_settings(ui, tactics)
+        }) | automatic_settings(ui, tactics, None)
     })
     .inner
 }

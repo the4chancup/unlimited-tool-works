@@ -439,7 +439,7 @@ const ATTACK_DEFENCE_LABEL: &str = "Attack/defence levels";
 /// The Combination Play panel's title and its switch's and slots'
 /// label (PES 2014).
 const COMBINATION_PLAY_LABEL: &str = "Combination play";
-/// The Game Plan's Strategy dropdown's label (PES 2014).
+/// The Gameplan screen's Strategy dropdown's label (PES 2014).
 const STRATEGY_LABEL: &str = "Strategy";
 /// The eight Game Plan sliders' labels, in the panel's order (PES 2014).
 const GAME_PLAN_SLIDERS: [&str; 8] = [
@@ -572,7 +572,7 @@ pub fn formation_settings(
     // The answer is the deep compare, not the responses' `changed()`: a
     // control re-picked at its own value reports nothing.
     let before = preset.clone();
-    panel(ui, "Formation settings", |ui| {
+    panel(ui, "Formation settings", None, |ui| {
         // The frame's bottom is the cell's, as the pitch's is (the
         // grid's row of equal-height cells).
         ui.set_min_height(ui.available_height());
@@ -677,13 +677,22 @@ fn control_box(ui: &mut egui::Ui, add: impl FnOnce(&mut egui::Ui)) {
 
 /// A settings panel of the grid (the draft's `.group` boxes): the
 /// bordered box with its `strong` heading inside, spanning the cell the
-/// host gives it.
-fn panel(ui: &mut egui::Ui, heading: &'static str, add: impl FnOnce(&mut egui::Ui)) {
+/// host gives it. `tip` is the heading's own tooltip where it has one
+/// (PES 2014's Combination play).
+fn panel(
+    ui: &mut egui::Ui,
+    heading: &'static str,
+    tip: Option<&str>,
+    add: impl FnOnce(&mut egui::Ui),
+) {
     egui::Frame::group(ui.style()).show(ui, |ui| {
         // The box spans the cell even where its content is narrower
         // (Player assignments fills the rest of the grid's row).
         ui.set_min_width(ui.available_width());
-        ui.strong(heading);
+        let heading = ui.strong(heading);
+        if let Some(tip) = tip {
+            heading.on_hover_text(tip);
+        }
         add(ui);
     });
 }
@@ -852,7 +861,7 @@ pub fn advanced_instructions(
     let preset = &mut tactics.presets[shown];
     let opened = opened.and_then(|tactics| tactics.presets.get(shown));
     let before = preset.clone();
-    panel(ui, "Advanced instructions", |ui| {
+    panel(ui, "Advanced instructions", None, |ui| {
         // `add_space` adds to the item gap: the rows start `TITLE_GAP`
         // under the heading, as Formation settings' do.
         ui.add_space(TITLE_GAP - ui.spacing().item_spacing.y);
@@ -872,14 +881,17 @@ pub fn advanced_instructions(
 /// The "Player assignments" panel (the draft's `#tac-side` group): the
 /// set-piece takers', the captain's and the join-attack chips
 /// (`assignments::player_assignments`). They arm `view`'s mode and can
-/// never write the record.
+/// never write the record. `tips` is PES 2014's resolved help texts on
+/// its screen, `None` on the other versions' (their labels carry no
+/// tooltip).
 pub fn player_assignments(
     ui: &mut egui::Ui,
     tactics: &TeamTactics,
     view: &mut TacticsView,
     roster: &[RosterRow<'_>],
+    tips: Option<&pes14::Tips>,
 ) {
-    panel(ui, "Player assignments", |ui| {
+    panel(ui, "Player assignments", None, |ui| {
         // `add_space` adds to the item gap: the rows start `TITLE_GAP`
         // under the heading, as Formation settings' do.
         ui.add_space(TITLE_GAP - ui.spacing().item_spacing.y);
@@ -889,6 +901,7 @@ pub fn player_assignments(
             &tactics.players_to_join_attack,
             view,
             roster,
+            tips,
         );
     });
 }
@@ -898,12 +911,20 @@ pub fn player_assignments(
 /// Substitution beside Preset change, Offside trap beside
 /// Attack/defence levels, or beside Combination play on a record that
 /// stores its switch (PES 2014) — its frame grown to the lists' bottom the
-/// host bounds the cell to, the rows centred in it. Answers `true`
-/// only when `tactics` changed this frame.
-pub fn automatic_settings(ui: &mut egui::Ui, tactics: &mut TeamTactics) -> bool {
+/// host bounds the cell to, the rows centred in it. `tips` is PES 2014's
+/// resolved help texts on its screen (`None` on the other versions'): each
+/// setting's label and control then carry its block of the game's shared
+/// text. Answers `true` only when `tactics` changed this frame.
+pub fn automatic_settings(
+    ui: &mut egui::Ui,
+    tactics: &mut TeamTactics,
+    tips: Option<&pes14::Tips>,
+) -> bool {
     let auto = &mut tactics.auto;
+    let tip =
+        |pick: fn(&pes14::Tips) -> &Option<String>| tips.and_then(|tips| pick(tips).as_deref());
     let before = auto.clone();
-    panel(ui, "Automatic settings", |ui| {
+    panel(ui, "Automatic settings", None, |ui| {
         // `#tac-auto { flex: 1 }`: the frame fills the cell the host
         // bounds to the lists' bottom.
         ui.set_min_height(ui.available_height());
@@ -916,13 +937,14 @@ pub fn automatic_settings(ui: &mut egui::Ui, tactics: &mut TeamTactics) -> bool 
         ui.spacing_mut().item_spacing.y = 0.0;
         auto_row(
             ui,
-            |ui| substitution_cell(ui, &mut auto.substitution),
+            |ui| substitution_cell(ui, &mut auto.substitution, tip(|tips| &tips.substitution)),
             |ui| {
                 auto_flag(
                     ui,
                     PRESET_CHANGE_LABEL,
                     &mut auto.preset_change,
                     TacticsField::AutoPresetChange,
+                    tip(|tips| &tips.preset_change),
                 );
             },
         );
@@ -934,6 +956,7 @@ pub fn automatic_settings(ui: &mut egui::Ui, tactics: &mut TeamTactics) -> bool 
                     OFFSIDE_TRAP_LABEL,
                     &mut auto.offside_trap,
                     TacticsField::AutoOffsideTrap,
+                    tip(|tips| &tips.offside_trap),
                 );
             },
             |ui| {
@@ -945,6 +968,7 @@ pub fn automatic_settings(ui: &mut egui::Ui, tactics: &mut TeamTactics) -> bool 
                         COMBINATION_PLAY_LABEL,
                         &mut auto.combination_play,
                         TacticsField::AutoCombinationPlay,
+                        tip(|tips| &tips.combination_play),
                     );
                 } else {
                     auto_flag(
@@ -952,6 +976,7 @@ pub fn automatic_settings(ui: &mut egui::Ui, tactics: &mut TeamTactics) -> bool 
                         ATTACK_DEFENCE_LABEL,
                         &mut auto.attack_defence_levels,
                         TacticsField::AutoAttackDefenceLevels,
+                        None,
                     );
                 }
             },
@@ -1026,13 +1051,14 @@ fn substitution_text(stored: u8) -> String {
 /// A combo over `choices` (each a value and its label), filling the
 /// cell's width and showing `held`'s label: a click on an entry or a
 /// wheel notch over the combo picks. Answers the pick, `held` when
-/// none. `held` must be one of `choices`.
+/// none, and the combo's response (a PES 2014 dropdown's tooltip hangs
+/// on it). `held` must be one of `choices`.
 fn choice_combo<T: Copy + PartialEq>(
     ui: &mut egui::Ui,
     id_salt: impl egui::AsIdSalt,
     choices: &[(T, String)],
     held: T,
-) -> T {
+) -> (T, egui::Response) {
     greyed_choice_combo(ui, id_salt, choices, held, |_| true)
 }
 
@@ -1045,7 +1071,7 @@ fn greyed_choice_combo<T: Copy + PartialEq>(
     choices: &[(T, String)],
     held: T,
     pickable: impl Fn(T) -> bool,
-) -> T {
+) -> (T, egui::Response) {
     let mut pick = held;
     let combo = egui::ComboBox::from_id_salt(id_salt)
         .width(ui.available_width())
@@ -1072,16 +1098,20 @@ fn greyed_choice_combo<T: Copy + PartialEq>(
     if let Some(next) = step_choice(values, &pick, wheel_steps(ui, &combo)) {
         pick = next;
     }
-    pick
+    (pick, combo)
 }
 
 /// The Substitution cell (the draft's `subs` row): the label, then the
 /// combo of the game's four choices filling the rest of the cell; a
 /// stored value outside them appended as its number, so the combo never
 /// misreports the save. A version that stores none keeps the disabled
-/// cell and the `PES NN+` tooltip.
-fn substitution_cell(ui: &mut egui::Ui, substitution: &mut Option<u8>) {
-    ui.label(SUBSTITUTION_LABEL);
+/// cell and the `PES NN+` tooltip. `tip` is the row's own tooltip on
+/// PES 2014 (the draft's `title` spans label and combo).
+fn substitution_cell(ui: &mut egui::Ui, substitution: &mut Option<u8>, tip: Option<&str>) {
+    let label = ui.label(SUBSTITUTION_LABEL);
+    if let Some(tip) = tip {
+        label.on_hover_text(tip);
+    }
     match substitution {
         Some(stored) => {
             let mut choices: Vec<(u8, String)> = substitution_choices()
@@ -1093,7 +1123,10 @@ fn substitution_cell(ui: &mut egui::Ui, substitution: &mut Option<u8>) {
             if !choices.iter().any(|(value, _)| value == stored) {
                 choices.push((*stored, stored.to_string()));
             }
-            let pick = choice_combo(ui, "automatic substitution", &choices, *stored);
+            let (pick, response) = choice_combo(ui, "automatic substitution", &choices, *stored);
+            if let Some(tip) = tip {
+                response.on_hover_text(tip);
+            }
             if pick != *stored {
                 *stored = pick;
             }
@@ -1109,12 +1142,22 @@ fn substitution_cell(ui: &mut egui::Ui, substitution: &mut Option<u8>) {
     }
 }
 
-/// One automatic-settings flag's checkbox; a version that does not store
-/// it keeps it, disabled with the `PES NN+` tooltip.
-fn auto_flag(ui: &mut egui::Ui, label: &str, value: &mut Option<bool>, field: TacticsField) {
+/// One automatic-settings flag's checkbox, `tip` its label's tooltip
+/// where PES 2014's screen has one; a version that does not store it
+/// keeps it, disabled with the `PES NN+` tooltip.
+fn auto_flag(
+    ui: &mut egui::Ui,
+    label: &str,
+    value: &mut Option<bool>,
+    field: TacticsField,
+    tip: Option<&str>,
+) {
     match value {
         Some(flag) => {
-            checkbox(ui, flag, label);
+            let check = checkbox(ui, flag, label);
+            if let Some(tip) = tip {
+                check.on_hover_text(tip);
+            }
         }
         None => {
             let mut off = false;

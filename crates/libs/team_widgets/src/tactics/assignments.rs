@@ -11,7 +11,7 @@ use pes_version::PesVersion;
 use studio_core::theme::edge_color;
 use studio_core::widgets::resting_edge;
 
-use super::{RosterRow, TacticsView, name_at};
+use super::{RosterRow, TacticsView, name_at, pes14};
 
 /// The armed click-to-assign mode (the draft's `S.assign`): which field
 /// the next pitch click writes.
@@ -224,12 +224,16 @@ pub(super) fn role_label(field: TacticsField) -> Option<&'static str> {
 /// armed chip disarms it (the draft's `roleChip`/`joinChip`), and any
 /// of the three join chips arms the one join mode, all three filled
 /// while it is armed. The panel's heading is the caller's `panel`.
+/// `tips` is PES 2014's resolved help texts, `None` on the other
+/// versions: a label then carries its text where one resolves (the
+/// captain's has none).
 pub(super) fn player_assignments(
     ui: &mut egui::Ui,
     set_pieces: &SetPieceTakers,
     joined: &[u8; 3],
     view: &mut TacticsView,
     roster: &[RosterRow<'_>],
+    tips: Option<&pes14::Tips>,
 ) {
     // The frame fills the cell the host gives the panel (the pitch's
     // height), as `formation_settings`' does.
@@ -237,7 +241,12 @@ pub(super) fn player_assignments(
     // `.tachalf`: a label 2 above its chip, 4 under the one above.
     ui.spacing_mut().item_spacing.y = 2.0;
     for (index, role) in SET_PIECES.iter().enumerate() {
-        ui.label(role.label);
+        let label = ui.label(role.label);
+        if let Some(tip) =
+            tips.and_then(|tips| tips.set_pieces.get(index).and_then(|tip| tip.as_deref()))
+        {
+            label.on_hover_text(tip);
+        }
         let holder = (role.get)(set_pieces);
         let name = if holder == u8::MAX {
             "Unassigned".to_owned()
@@ -255,7 +264,10 @@ pub(super) fn player_assignments(
     // "Join the attack" shows its three players as three rows, one per
     // joining player — `Unassigned` where fewer join — all three the
     // one picker's chips.
-    ui.label("Join the attack");
+    let label = ui.label("Join the attack");
+    if let Some(tip) = tips.and_then(|tips| tips.join_attack.as_deref()) {
+        label.on_hover_text(tip);
+    }
     let join_armed = view.assign == Some(Assign::Join);
     let members: Vec<u8> = joined
         .iter()
