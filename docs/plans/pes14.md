@@ -454,6 +454,34 @@ version, not the version selector.
   opens the team's header (name and short name, the colour cells greyed), with the tactics
   editor below it replaced by a greyed line saying the same. The formation pictures and the
   Gameplan copy targets are greyed too, since they would picture or copy a record of zeros.
+- **The Gameplan screen in Build 2** is drafted in `docs/prototypes/tools/save_editor.js`
+  (`tacticsTab14`), on the draft's PES 14 sample: five Akko teams as run `formations1` kept
+  them. It keeps the other versions' frame: the preset bar, the pitch, Player assignments, the
+  starting eleven and the bench, and Automatic settings. What differs:
+  - **Preset tactics** takes the place of the other versions' Formation settings panel. It
+    holds the Formation dropdown, the Strategy dropdown and the eight sliders, 0 to 20, in the
+    game's order. The dropdown lists the game's 11 formations; one the list does not hold, such as the Akko teams' 8-1-1, is
+    shown by its shape and listed first. A pick writes the entry's roles and spots, and 3 at
+    +0x2E, as the game's pick does; each player keeps his place in the lineup. Picking a
+    strategy sets the sliders to the values the game set on an Akko team. Moving a slider
+    leaves the strategy as it is until run `tactics4` shows what the game does there.
+  - **The pitch** has no free moves. Dropping a player on another swaps the two, the keeper
+    included, even under a ruleset that allows illegal formations; nothing else moves a
+    player. A click opens no player box, since a role is not picked, and a held player lights
+    no areas.
+  - **No overall** shows on the pitch's badges: PES 2014's own formula is not known, and PES
+    2016's reads stats PES 2014 does not store.
+  - **The second free kick taker** moves to the next roster slot when he becomes the long or
+    short free kick taker, as the game does.
+  - **Combination play** is a panel of its own: three slots, each a strategy and an area, one
+    strategy to an area, with a Clear button. The area list holds the strategy's areas that
+    the other two slots leave free; for a strategy run `formations1` did not pin, every free
+    area.
+  - **Automatic settings** gain Combination Play's switch, and Substitution offers all four
+    timings.
+
+  Names are the other versions' where the setting is shared (Automatic settings, Preset
+  change), and the game's where it is PES 2014's alone.
 - **The recent-saves list** stores a PES 2014 save's version as 14, the one settings entry
   that names it: a recent save is a file the editor opened, not a version a member picks.
   Refusing 14 there would make the whole settings table unreadable after one PES 2014 save was
@@ -570,5 +598,9 @@ on main. Main is merged into the branch, never rebased onto it.
    Game Plan, not the other versions' pitch editor.
    - Run `tactics3` (in game): done, pinned in "What is known about the save".
    - Run `formations1` (in game): done, pinned in "What is known about the save".
-   - The draft: the Gameplan screen on a PES 2014 save (the lead).
+   - The draft (the lead): done, "The Gameplan screen in Build 2" above.
+   - Run `tactics4` (in game), what the draft could not pin. Does moving a slider put the
+     Strategy back to Custom? Does a strategy picked over other values set all eight sliders?
+     What bytes does Combination Play's Clear write? Which areas does each strategy take,
+     with the other two slots empty? What do +0x2E and +0x30 hold?
    - Slices: the record's fields in the schema and the model, then the screen.

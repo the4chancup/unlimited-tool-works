@@ -59,7 +59,36 @@ card.</p>
 <p class="group-intro">Each matched its draft when the lead compared them; anything you see
 otherwise goes back as a fix.</p>
 
-<p>Nothing waiting.</p>
+<section class="entry" id="pes14-gameplan-draft">
+  <h3>The PES 2014 Gameplan screen, drafted</h3>
+  <p class="from">From: plans/pes14.md step 8 (the draft), on the pes14 branch</p>
+  <p>Build 2's Gameplan screen for PES 2014 saves, drafted before it is built. It follows the
+  game's own Game Plan, not the other versions' pitch editor, since PES 2014 cannot place a
+  player freely.</p>
+  <ol>
+    <li>Open
+    <code>C:\Data\4cc\Tools_Mine\4cc-studio-temp\pes14\docs\prototypes\index.html#save_editor/team?save=pes14&amp;selteam=857</code>
+    in your browser. It shows /4ccg/ from the Akko League VII save.</li>
+    <li>Under <b>Preset tactics</b>, pick a formation, then a strategy. The formation redraws
+    the pitch, and the strategy sets the eight sliders as the game does.</li>
+    <li>Drag a player onto another on the pitch: the two swap. A player dropped on the grass
+    goes back.</li>
+    <li>Under <b>Combination play</b>, clear a slot, then pick a strategy for it. Its area
+    list leaves out the areas the other two slots hold.</li>
+  </ol>
+  <p>The pitch's badges show no overall, since PES 2014's formula is not known. In the team
+  list, /a/, /out/, /pol/ and /vm/ each carry one change made in the game.</p>
+  <div class="shots">
+    <figure><a href="img/pes14_gameplan_4ccg.png"><img src="img/pes14_gameplan_4ccg.png" alt="The Gameplan screen of /4ccg/"></a><figcaption>/4ccg/ as the save holds it</figcaption></figure>
+    <figure><a href="img/pes14_gameplan_out.png"><img src="img/pes14_gameplan_out.png" alt="The Gameplan screen of /out/"></a><figcaption>/out/, with Quick Counter picked in the game</figcaption></figure>
+  </div>
+  <div class="options">
+    <label class="opt"><input type="radio" value="build as drafted"><b>Build it as drafted</b></label>
+    <label class="opt"><input type="radio" value="changes, see note"><b>Change something</b>
+      <div class="note">Say what below.</div></label>
+  </div>
+  <textarea class="own" placeholder="What you would change (optional)"></textarea>
+</section>
 
 <h2>Coming once the lead has checked them</h2>
 <p class="group-intro">Yours by the worklog, but not yet compared with their drafts by the lead,

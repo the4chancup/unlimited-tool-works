@@ -19013,3 +19013,18 @@ Why: the game's own screen, not the pitch editor, because PES 2014 has no free p
 and no role to pick (run `tactics1`): the screen edits only what the game can set, so every
 value it writes is one the game itself writes.
 Plan: `plans/pes14.md` "Steps", step 8.
+
+## 2026-11-20 — save_editor (pes14 branch) — The PES 2014 Gameplan draft: swaps only, no overall, the game's slider values
+Decision: on PES 2014 the Gameplan screen's pitch only swaps two players, the keeper included,
+even under a ruleset that allows illegal formations, and its badges show no overall. A strategy
+pick sets the eight sliders to the values the game set; a slider moved by hand leaves the
+strategy alone. The second free kick taker moves on as the game moves him. Combination Play's
+area list holds the areas pinned for each strategy, and every free area for the others.
+Why: the screen writes only what the game itself writes (the entry above), so the pitch keeps
+the game's one move, and the illegal-formations switch, which frees a later version's spots,
+has nothing to free here. No overall, not PES 2016's, because PES 2014's own formula is not
+known and PES 2016's reads stats PES 2014 does not store: a number that looks right and is
+wrong misleads a manager more than no number. What the game does to the Strategy when a slider
+moves is not pinned, so the editor changes nothing the game was not seen to change; run
+`tactics4` settles it, with the other open points.
+Plan: `plans/pes14.md` "PES 2014 in the code" ("The Gameplan screen in Build 2"), "Steps", step 8.
