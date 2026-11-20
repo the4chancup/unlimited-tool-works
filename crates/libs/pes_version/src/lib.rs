@@ -36,14 +36,14 @@ pub enum PesVersion {
 /// The two model/texture pipelines: `.model` + `.mtl` before PES 2018, FMDL/FPK/FTEX from it.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Engine {
-    /// PES 2015 to 2017.
+    /// PES 2014 to 2017.
     PreFox,
     /// PES 2018 to 2021.
     Fox,
 }
 
 impl PesVersion {
-    /// Every supported version, oldest first.
+    /// Every supported version but PES 2014, oldest first.
     pub const ALL: [PesVersion; 7] = [
         PesVersion::Pes15,
         PesVersion::Pes16,

@@ -1,5 +1,5 @@
 //! The per-version advanced-instruction mappings (plan:
-//! `spec/pes_savefile/model.md`, "Version quirks"). PES 15/16 have no instruction
+//! `spec/pes_savefile/model.md`, "Version quirks"). PES 14 to 16 have no instruction
 //! table (`decode` is `Ok(None)` for every value, `encode` `None`). PES 17's
 //! stored order IS the canonical order for the thirteen it has; PES 18/19
 //! keep 0x00-0x07 and permute the rest into 0x08-0x0F; PES 20/21 insert
@@ -100,7 +100,7 @@ mod tests {
 
     // `instructions` lists the version's stored table in its stored order
     // (the widget's combo offers it, ordered as the game lists it); empty
-    // on PES 15/16, which have no instruction table.
+    // on PES 14 to 16, which have no instruction table.
     #[test]
     fn instructions_lists_the_versions_table_or_nothing() {
         assert!(instructions(PesVersion::Pes15).is_empty());

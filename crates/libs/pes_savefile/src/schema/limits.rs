@@ -16,9 +16,9 @@ use IngameFaceField as F;
 
 /// The highest value `field` takes on `version`, `None` for the fields that
 /// are not face types. The measured columns are PES 15, PES 16, PES 19's
-/// cheek and forehead types, and PES 20-21; a column no game measured (PES
-/// 17 and 18's all eleven types, PES 19's other nine) is the field's bit
-/// maximum (`spec/pes_savefile/operations.md` "Cross-version player
+/// cheek and forehead types, and PES 20-21; a column no game measured (all
+/// eleven types on PES 2014, 17 and 18, PES 19's other nine) is the field's
+/// bit maximum (`spec/pes_savefile/operations.md` "Cross-version player
 /// conversion"). For `NoseType` the cap is on the nose type, which PES 15
 /// codes with the nose angle (`IngameFace::nose`), not on the raw field.
 pub fn face_type_cap(version: PesVersion, field: IngameFaceField) -> Option<u8> {

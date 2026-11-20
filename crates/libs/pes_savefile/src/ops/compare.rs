@@ -248,7 +248,8 @@ fn record_diffs(
 }
 
 /// Every difference between two players of the same version: the schema's
-/// stored fields (the player record's, plus the 15/16 appearance record's)
+/// stored fields (the player record's, plus the 14 to 16 appearance
+/// record's — PES 2014's carries the id alone)
 /// through the model, the two texts, the ingame-face fields of the run's
 /// layout, and the run's measured-unused bits as one row. `Err` only when a
 /// gated field the schema stores is `None` on either side (an entry not read

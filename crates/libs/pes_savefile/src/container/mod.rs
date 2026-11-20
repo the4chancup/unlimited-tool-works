@@ -20,7 +20,7 @@ use pes_version::PesVersion;
 /// opened it.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Scheme {
-    /// PES 15: keyless LCG stream, three MD5 digests.
+    /// PES 2014 and 2015: keyless LCG stream, three MD5 digests.
     Pes15,
     /// PES 16-21: MT19937 stream under one of the seven master keys.
     Keyed(MasterKey),
@@ -38,9 +38,9 @@ pub struct SaveContainer {
     /// The EDIT data the codec parses.
     pub payload: Vec<u8>,
     /// Header bytes 80.. on 16-21 (96 or 128 bytes), retained verbatim; empty on
-    /// PES 15.
+    /// PES 2014 and 2015.
     pub identifier: Vec<u8>,
-    /// UTF-16LE text on 16-21 (even length); empty on PES 15.
+    /// UTF-16LE text on 16-21 (even length); empty on PES 2014 and 2015.
     pub serial: Vec<u8>,
 }
 

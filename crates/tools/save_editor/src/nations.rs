@@ -15,8 +15,12 @@ use pes_version::PesVersion;
 static NATIONS: std::sync::LazyLock<[Vec<(u16, String)>; 7]> = std::sync::LazyLock::new(parse);
 
 /// `version`'s nations ordered by ID — the Nation combo's entries, each
-/// `(id, its "{id} - {name}" text built at load)`.
+/// `(id, its "{id} - {name}" text built at load)`. PES 2014's list is empty
+/// until its column is measured.
 pub(crate) fn nations(version: PesVersion) -> &'static [(u16, String)] {
+    if version == PesVersion::Pes14 {
+        return &[];
+    }
     let index = PesVersion::ALL
         .iter()
         .position(|&v| v == version)
@@ -161,5 +165,13 @@ mod tests {
                 (PesVersion::Pes16, 75114, 23),
             ]
         );
+    }
+
+    // PES 2014's list is unmeasured and empty, so every id reads
+    // `{id} - ?` — 231 being SAN MARINO on the other versions.
+    #[test]
+    fn pes14s_unmeasured_list_reads_every_id_as_unknown() {
+        assert!(nations(PesVersion::Pes14).is_empty());
+        assert_eq!(nation_text(PesVersion::Pes14, 231), "231 - ?");
     }
 }

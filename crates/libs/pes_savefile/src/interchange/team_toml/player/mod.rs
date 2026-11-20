@@ -70,7 +70,8 @@ pub(super) fn players_from(
 }
 
 /// One roster slot's `PlayerSection`: every field `Some` where the model
-/// carries it (a version-gated `Option` stays `None` and emits commented).
+/// carries it (a field the version's records do not store, or a
+/// version-gated `Option` already `None`, emits commented).
 fn player_from(
     version: PesVersion,
     number: u16,
