@@ -24,8 +24,10 @@ disabled:
   Appearance page: face, hair, physique, boots, gloves and the strip style (sleeves,
   undershorts, socks, shirt untucked), which on PES 2016 and 2017 hides the game's kit under a
   player's model;
-- teams: name, roster, shirt numbers, team colours. The team kits (the game's Strip menu) are
-  kept exactly as read: the editor has no kit design screen on any version;
+- teams: name, roster, shirt numbers. PES 2014 stores no team colours (run `colors1`, below),
+  so the team's colour cells stay greyed, as on any version without them. The team kits (the
+  game's Strip menu) are kept exactly as read: the editor has no kit design screen on any
+  version;
 - the tactics record, mapped whole so the editor reads and writes it exactly and the AATF
   knows the captain (below);
 - the AATF check against the Akko VII ruleset, embedded as `crates/libs/aatf/rulesets/akko7.rhai`
@@ -63,8 +65,8 @@ Build 1 the largest piece of reverse engineering, and makes Build 2 mostly scree
 **Not in scope:** Team TOML export and import, patches, diff, the teams-list export, Texport,
 and the player menu's Generate settings.toml and Generate in-game face, unless one works on PES
 2014 with no work beyond a test. The rest stay greyed out for PES 2014, with a tooltip saying
-so. The two Generate items cannot work yet: PES 2014's appearance record maps only the player
-id, so a generated file would carry zeros for every look and motion value.
+so. The two Generate items cannot work yet: PES 2014's face, hair and skin are not mapped, so
+a generated file would carry zeros for them.
 
 ## Re-derived, not copied
 
@@ -75,7 +77,7 @@ failures on PES 2014 (Akko managers, 2026-11):
 - the whole appearance page reads back as defaults, so physique, goal celebrations and the
   rest are not saved;
 - the player's strip style reads back as a default;
-- team colours read back as 0/0/0.
+- team colours read back as 0/0/0, where the save stores none (run `colors1`).
 
 The pattern: a field the fork does not decode is shown as a default and written back as that
 default. Two rules follow.
@@ -280,9 +282,25 @@ From the fork's codec, checked against the vanilla save and the Akko saves (2026
     slider, the boots, the player gloves, the undershorts or the tape. Which one is not
     pinned;
   - the game greys the Wristband row while Sleeves is Long.
-- Two more tables sit in the payload, unread by the fork: a second team table near 0x374C44
-  (team ID at +0, name near +0x78) and a player table keyed by player ID right after the
-  appearance table, at 0x2DABAC. The vanilla save leaves both empty.
+- **Pinned in game, run `colors1`** (2026-11-20, the shirt of `/4ccg/`'s first kit in
+  `.akko7v2`, four saves `colors1` to `colors4`, each moving one of its two colours; findings
+  in `.tmp/pes14_ingame/colors1/`): PES 2014 stores no team colours. Its team menu offers
+  none (Game Plan, Squad Number, Team Name, Emblem, Strip, Home Ground), and no team record
+  holds a colour: the bytes +0x04 to +0x2B, the only ones that vary between the 222 team
+  records, hold none. The only colours are a kit's:
+  - the kit table, from 0x3B0176, of 0xB0-byte records, each opening with a team ID (u16). A
+    record is filled only once its team's kit is edited in game; until then it is empty
+    (`ff ff`, then zeros) and the game draws a default white kit. `/4ccg/`'s was empty
+    before the run;
+  - in that record, the first kit's shirt colour: red 0x05:2, green 0x12:0, blue 0x12:6;
+    its Design 1 colour: red 0x13:4, green 0x14:2, blue 0x15:0. Each channel is 6
+    bits, the colour's 0 to 255 divided by 4;
+  - a kit edit also sets bit 0x0A:4 of the team record, and byte 0x3E of the payload goes
+    from 0 to 1.
+- Two more tables sit in the payload, unread by the fork: a second team table at 0x37B2B4,
+  right after the first (team ID at +0, name near +0x78), and a player table keyed by player
+  ID right after the appearance table, at 0x2DABAC. The vanilla save leaves both empty, and
+  so do the Akko saves and every save of the runs.
 
 ## What is mapped in game
 
@@ -299,8 +317,6 @@ the save" above.
   Build 1 needs none of them: the Save editor
   edits these looks only through the in-game face run, which stays greyed on PES 2014, and the
   game keeps an edit without 0x28:6 and 0x28:7 (run `flags3`).
-- **The team record:** team colours, in the bytes between +0x04 and +0x2B that vary between
-  teams.
 
 ## PES 2014 in the code
 
@@ -377,9 +393,9 @@ version, not the version selector.
   targets go with it. The captain is read for the AATF and kept as the game set it; it is
   shown and edited on the Gameplan screen, as on the other versions, from Build 2. A
   captain-only screen for Build 1 would be new design for one build's life. A team row still
-  opens the team's header (name, short name, colours), with the tactics editor below it
-  replaced by a greyed line saying the same. The formation pictures and the Gameplan copy
-  targets are greyed too, since they would picture or copy a record of zeros.
+  opens the team's header (name and short name, the colour cells greyed), with the tactics
+  editor below it replaced by a greyed line saying the same. The formation pictures and the
+  Gameplan copy targets are greyed too, since they would picture or copy a record of zeros.
 - **The recent-saves list** stores a PES 2014 save's version as 14, the one settings entry
   that names it: a recent save is a file the editor opened, not a version a member picks.
   Refusing 14 there would make the whole settings table unreadable after one PES 2014 save was
@@ -428,8 +444,8 @@ main's release.
   settings and `colors.txt`, whose team colours are 48 146 82 and 221 0 0. A copy, upgraded to
   Studio's export format, is in the main tree's `.tmp/0_0_2/ingame/poc/run/exports/`. So the export is a second reading of
   what the Akko save should hold for those 23 players and their team, such as names, order,
-  appearance settings and colours. Team 857's record does not hold those two colours as plain
-  bytes, so where PES 2014 keeps team colours is still to be found.
+  appearance settings. Its two colours have no place in the save, which stores no team
+  colours (run `colors1`).
 - **In game.** PES 2014 is installed at `E:\PES2014`, driven by `scripts/ingame/game.py 14`
   (a pad, OBS shots, no keyboard focus). The mapping saves are made there, and Build 1 ends
   with the edited `/4ccg/` looked at in Edit mode. Where the editable players are:

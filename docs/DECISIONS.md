@@ -18965,3 +18965,13 @@ other motions.
 Why: the cell, not a row of its own, because PES 2014 stores no corner kick, so the cell is
 free there, while a new row would stand greyed on every other version. The fork does the same.
 Plan: `plans/pes14.md` "PES 2014 in the code" ("The Appearance screen").
+
+## 2026-11-20 — pes_savefile (pes14 branch) — PES 2014 has no team colours to edit
+Decision: team colours leave Build 1's scope. On a PES 2014 save the team's two colour cells
+stay greyed with the "PES 15+" tooltip every version without them shows, and the kit table,
+where PES 2014 keeps its only colours, is kept as read.
+Why: the save stores no team colours, so there is nothing to map: the game's team menu offers
+none, and no team record holds one (run `colors1`). Its colours belong to a kit, recorded only
+once that kit is edited in game, and the editor has no kit screen on any version. Showing a
+kit's shirt colour as the team's would invent a field the game does not have.
+Plan: `plans/pes14.md` "Goal and scope", "What is known about the save" (run `colors1`).
