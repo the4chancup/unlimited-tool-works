@@ -1476,7 +1476,7 @@ fn tactics_literals() {
 
 /// PES 2014's first tactics record (team 1, IRELAND): the takers, the
 /// captain, the auto switches, the lineup, Combination Play's slots and,
-/// per preset, the Game Plan's Strategy and sliders and the one
+/// per preset, the Game Plan record's Strategy and sliders and the one
 /// formation. Support Range reads as the game shows it (stored 12 is
 /// shown 8), and formation slot 0 has a place but no position byte.
 #[test]

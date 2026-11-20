@@ -410,7 +410,7 @@ pub enum PresetField {
     NumbersInAttack,
     /// Numbers in defence, 1 few to 3 many.
     NumbersInDefence,
-    /// The Game Plan's Strategy dropdown index (PES 2014): Custom 0 to
+    /// The Game Plan record's Strategy dropdown index (PES 2014): Custom 0 to
     /// All-out Attack 5.
     Strategy,
     /// Game Plan slider `n` of the panel's order (PES 2014), 0 to 20:

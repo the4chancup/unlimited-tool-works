@@ -636,7 +636,7 @@ pub(crate) static ROSTER: RecordSchema<RosterField, TeamText> = RecordSchema {
 /// The PES 2014 tactics record (runs `tactics1`/`tactics2`, `tactics3` and `formations1`):
 /// the set-piece takers, the captain, the players to join the attack, the auto switches,
 /// the 32-entry lineup of roster slots, Combination Play's slots, and per preset the Game
-/// Plan's Strategy and eight sliders and one formation. The rest is kept as read.
+/// Plan record's Strategy and eight sliders and one formation. The rest is kept as read.
 pub(crate) static TACTICS: TacticsSchema = TacticsSchema {
     size: 502,
     fields: &[

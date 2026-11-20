@@ -7,7 +7,7 @@ use pes_savefile::EditFile;
 use pes_version::PesVersion;
 
 use super::*;
-use crate::test_support::{Headless, control_below};
+use crate::test_support::{Headless, centre, control_below};
 
 /// `entry`'s formation as a `Formation`, `keeper` its slot 0.
 fn listed(entry: usize, keeper: FormationSlot) -> Formation {
@@ -216,6 +216,56 @@ fn clear_combination_empties_its_slot_alone() {
     let mut cleared = slots([(2, 10), (6, 1), (8, 5)]);
     clear_combination(&mut cleared, 1);
     assert_eq!(cleared, slots([(2, 10), (0, 0), (8, 5)]));
+}
+
+// A wheel notch over a strategy combo steps to the next pickable entry,
+// skipping a strategy the other slots' areas leave no room for: Cut Inside
+// (areas 3 and 5, both held) is greyed in slot 1's list, which runs
+// Diagonal Run, Cut Inside, Diagonal Dribble — a notch toward the list's
+// end lands on Diagonal Dribble with a free area, the other slots
+// untouched. Without the skip the pick would reach `pick_combination`'s
+// `expect` and panic.
+#[test]
+fn the_wheel_skips_a_strategy_with_no_free_area() {
+    let mut window = Headless::new();
+    let file =
+        EditFile::from_bytes(&pes_savefile::fixture_save(PesVersion::Pes14)).expect("fixture save");
+    let mut tactics = file
+        .team(1)
+        .expect("team 1 is in the fixture")
+        .tactics
+        .clone();
+    tactics.combination = Some(slots([(4, 2), (5, 1), (3, 5)]));
+    let held = tactics.combination.expect("the fixture's slots");
+    assert!(
+        free_areas(&held, 0, 3).is_empty(),
+        "premise: Cut Inside has no free area for slot 1"
+    );
+
+    // Slot 1's strategy combo is the one showing "Diagonal Run".
+    let (nodes, _) = window.frame(vec![], |ui| {
+        combination_play(ui, &mut tactics, None);
+    });
+    let combo = nodes
+        .iter()
+        .find(|node| node.role() == Role::ComboBox && node.value() == Some("Diagonal Run"))
+        .expect("slot 1's strategy combo");
+    let notch = egui::Event::MouseWheel {
+        unit: egui::MouseWheelUnit::Line,
+        delta: egui::vec2(0.0, -1.0),
+        phase: egui::TouchPhase::Move,
+        source: egui::MouseWheelSource::Wheel,
+        modifiers: egui::Modifiers::default(),
+    };
+    let events = vec![egui::Event::PointerMoved(centre(combo)), notch];
+    let (_, _) = window.frame(events, |ui| {
+        combination_play(ui, &mut tactics, None);
+    });
+    assert_eq!(
+        tactics.combination,
+        Some(slots([(4, 4), (5, 1), (3, 5)])),
+        "slot 1 holds Diagonal Dribble in a free area, the rest untouched"
+    );
 }
 
 // The two dropdowns stand `CELL_GAP` under their labels, as the draft's
