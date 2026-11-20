@@ -3443,6 +3443,13 @@ pruned when their phase closes; they stay in git history. A question only the ma
 can answer is not an issue: it goes to `docs/maintainer/questions.html`, and an issue that waits on one
 points there.
 
+- open (2026-11-20) — tests leave their scratch folders in `%TEMP%`: about 15,000 on the
+  maintainer's machine, 680 MiB, mostly `export_upgrader_*` (`test_support.rs` `scratch`) and
+  `studio_core_repro_*` / `studio_core_files_*`. Each folder's name ends in the test process's
+  ID, and `scratch` only clears a folder of the same name before a test, so every test run
+  (a mutation run's hundreds included) leaves its own. Fix: a scratch guard whose `Drop`
+  removes the folder, in each crate's helper. The folders already there are the maintainer's
+  to delete.
 - resolved 2026-11-17 by 0.0.2-present (`0cbe7637`) (the maintainer; measured by the lead on the release build of `26ae8f7c`,
   DX12): while the window is resized, everything away from its middle jumps and comes back on
   each step (the sidebar's lower icons by two points). The cause is wgpu's DX12 swap chain,
@@ -3945,11 +3952,10 @@ points there.
   the cup wiki says a `.mtl` splits a path at spaces, and 212 of 60,027 texture names in real
   FMDLs hold one (`Kit 1_u0XXXp0.dds`), so a Fox model converted for PES 15-17 may write a
   `.mtl` path the game cuts short. Unverified in game.
-- open (2026-10-11, 4.y-fix23 (1); deferred until the cup next plays a pre-Fox version) — a
-  PES 17 referee whose only model is a `.model.common` link gets no face (`roles.rs`
-  `is_package_model` does not count `PreFoxCommonModel`), while the converted Common model is
-  still written into the refs CPK with nothing naming it; the link should count as his face
-  part, as a team player's does.
+- resolved 2026-11-20 (SWE-2, TC-REF-28): a PES 17 referee whose only model is a
+  `.model.common` link got no face, while the converted Common model was written into the refs
+  CPK with nothing naming it. Since a referee with no face model gets the blank face, his
+  `face.xml` names the link's Common model, as a team player's does.
 - open (2026-10-11, S19.1-B3) — which material files a glTF in a player or shared folder's
   subfolder reads (`model_format.md` "Name matching" is written for one flat folder; the
   `.mtl` search's two folders, the file's then the model folder's, are the likely answer):

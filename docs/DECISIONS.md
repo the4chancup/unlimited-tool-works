@@ -18906,5 +18906,5 @@ packed such a referee's `face/` holding `face_diff.bin` alone, the blank face, a
 test had recorded the difference as intended. A referee with neither a face nor a body shows a
 floating head either way, referees being full FPC, so the old rule protected no case.
 Plan: `team_compiler/pipeline.md` step 1, `team_compiler/blue_port.md` "Referee export
-processing"; `team_compiler/README.md` TC-REF-10 and TC-REF-13 withdrawn, TC-REF-21 to
-TC-REF-24.
+processing"; `team_compiler/README.md` TC-REF-10, TC-REF-11 and TC-REF-13 withdrawn, TC-REF-21
+to TC-REF-28.

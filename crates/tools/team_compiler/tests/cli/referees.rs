@@ -633,6 +633,85 @@ fn on_pes_17_a_referee_folder_holding_fpc_off_lists_the_refkit_body_after_his_fa
     );
 }
 
+// TC-REF-27
+#[test]
+fn on_pes_17_a_referee_holding_fpc_off_and_no_face_model_lists_the_refkit_body_unreported() {
+    let sandbox = Sandbox::new("ref_refkit_body_blank");
+    sandbox.write(&format!("{REFS}/players.txt"), b"01 Ref A\n");
+    sandbox.write(&format!("{REFS}/Players/Ref A/fpc_off"), b"");
+
+    let (run, entries) = compile_for(&sandbox, PesVersion::Pes17);
+
+    let lines = run.messages();
+    assert_eq!(run.exit_code(), 0, "{lines:#?}");
+    // The face is the blank one, so its dummy is the compiler's own placeholder: it reports
+    // nothing.
+    assert!(
+        !lines
+            .iter()
+            .any(|line| line.contains("xml_face_neck_added")),
+        "{lines:#?}"
+    );
+    let folder = pre_fox_referee_face("01");
+    let face = nested_entries(&entries[&format!("{folder}.cpk")]);
+    let names: Vec<&str> = face
+        .keys()
+        .map(|path| path.strip_prefix(&format!("{folder}/")).unwrap())
+        .collect();
+    assert_eq!(names, ["dummy.mtl", "face.xml", "oral_dummy_win32.model"]);
+    // The refkit body, then the `face_neck` dummy.
+    let mut expected = refkit_entries(&[]);
+    expected.push((
+        "face_neck".to_owned(),
+        "./oral_dummy_*.model".to_owned(),
+        "./dummy.mtl".to_owned(),
+    ));
+    assert_eq!(
+        ordered_entries(&face[&format!("{folder}/face.xml")]),
+        expected
+    );
+}
+
+// TC-REF-28
+#[test]
+fn on_pes_17_a_referee_s_link_to_a_common_model_is_named_in_his_face_xml() {
+    let sandbox = Sandbox::new("ref_common_model_link");
+    sandbox.write(&format!("{REFS}/players.txt"), b"01 Ref A\n");
+    sandbox.write(&format!("{REFS}/Players/Ref A/legs.model.common"), b"");
+    let common = format!("{REFS}/Common");
+    sandbox.write(&format!("{common}/legs.model"), &card_model());
+    sandbox.write(&format!("{common}/legs.mtl"), &materials_naming("cloth"));
+    sandbox.write(&format!("{common}/cloth.dds"), &small_dds());
+
+    let (run, entries) = compile_for(&sandbox, PesVersion::Pes17);
+
+    let lines = run.messages();
+    assert_eq!(run.exit_code(), 0, "{lines:#?}");
+    let folder = pre_fox_referee_face("01");
+    let face = nested_entries(&entries[&format!("{folder}.cpk")]);
+    let entry = |xml_type: &str, path: &str, material: &str| {
+        (xml_type.to_owned(), path.to_owned(), material.to_owned())
+    };
+    // The link's model is named at its Common output path, as a team player's is, then the
+    // dummy.
+    assert_eq!(
+        ordered_entries(&face[&format!("{folder}/face.xml")]),
+        [
+            entry(
+                "parts",
+                "model/character/uniform/common/999/oral_legs_*.model",
+                "model/character/uniform/common/999/legs.mtl"
+            ),
+            entry("face_neck", "./oral_dummy_*.model", "./dummy.mtl"),
+        ]
+    );
+    // The model the xml names rides in the refs CPK's Common output, byte-identical.
+    assert_eq!(
+        entries["common/character1/model/character/uniform/common/999/oral_legs_win32.model"],
+        card_model()
+    );
+}
+
 // TC-REF-17
 #[test]
 fn on_pes_17_a_referee_holding_fpc_off_and_his_own_boots_takes_the_refkit_body_but_its_boots() {

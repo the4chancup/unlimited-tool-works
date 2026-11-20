@@ -828,8 +828,8 @@ independent parallel task (Blue: `coordinator._model_folder_task`, Red: `export_
    - if the textures fail (`folder_pack_failed`), none of the folder's packages commit, since
      each would point at a texture the CPK lacks;
    - if every package failed, the textures stay out;
-   - a folder that plans no package (a referee folder or an `ingame_face` player holding
-     textures and no model) plans no textures task, and each of its textures is
+   - a folder that plans no package (one holding `ingame_face`, a player's or a referee's,
+     with textures and no model) plans no textures task, and each of its textures is
      `file_not_used`, since a texture serves a model and dead content in the CPK tells the
      member nothing.
 

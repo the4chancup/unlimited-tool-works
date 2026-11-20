@@ -2483,6 +2483,13 @@ TC-REF-26  GIVEN a refs export whose Ref A, in slot 01, holds skin.dds alone; an
            THEN no file_not_used is reported, slot 01 gets the blank face, and skin.ftex is
                 packed: the first under common/999/Ref A/, the second as the referees' Common
                 texture (restates TC-REF-11's last clause)
+TC-REF-27  GIVEN a refs export whose Ref A, in slot 01, holds fpc_off alone
+           WHEN it is compiled for PES 17
+           THEN referee001.cpk's face.xml lists the refkit body's entries, then the face_neck
+                dummy and the dif, and xml_face_neck_added is not reported
+TC-REF-28  GIVEN a refs export whose Ref A, in slot 01, holds only a link to a Common .model
+           WHEN it is compiled for PES 17
+           THEN referee001.cpk's face.xml names the link's Common model
 ```
 
 **Output modes, deployment, multi-CPK**

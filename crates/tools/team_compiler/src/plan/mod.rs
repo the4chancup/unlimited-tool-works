@@ -4725,8 +4725,9 @@ mod tests {
     #[test]
     fn a_folder_planning_no_package_plans_no_textures_task_as_plans_a_package_says() {
         for version in [PesVersion::Pes21, PesVersion::Pes17] {
-            // Ref A and the marked 05 hold textures alone; Ref B and 07 a model beside them,
-            // Ref C a link to a boots folder his own package is built from.
+            // Ref A holds a texture alone, which his blank face still plans a package for;
+            // the marked 05 holds one alone and plans none; Ref B and 07 a model beside
+            // them, Ref C a link to a boots folder his own package is built from.
             let referees = resolved(
                 "refs Cup",
                 &[

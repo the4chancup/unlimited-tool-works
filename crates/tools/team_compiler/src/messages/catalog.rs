@@ -337,7 +337,7 @@ pub(super) const CATALOG: &[(&str, CatalogSeverity, &str, &str)] = &[
     (
         "file_not_used",
         CatalogSeverity::Warning,
-        r#"A file sits where the folder allows it, but nothing reads it: a `.skl` pairing no model, a `.common` link to a kind nothing takes, a `materials.toml`, an `.xml`, `.bin` or `.fclo` under no face name, a `.txt` note, a texture of a folder that builds no package (a referee folder's, an `ingame_face.toml` player with textures and no model), a `Common/` file of a kind nothing reads, or a `refs` export's kit folder, logo, portrait or collar file."#,
+        r#"A file sits where the folder allows it, but nothing reads it: a `.skl` pairing no model, a `.common` link to a kind nothing takes, a `materials.toml`, an `.xml`, `.bin` or `.fclo` under no face name, a `.txt` note, a texture of a folder that builds no package (a folder holding `ingame_face.toml`, a player's or a referee's, with textures and no model), a `Common/` file of a kind nothing reads, or a `refs` export's kit folder, logo, portrait or collar file."#,
         r#"The file is not read and left out of the compile."#,
     ),
     (

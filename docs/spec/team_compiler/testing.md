@@ -48,7 +48,8 @@ export (`tests/parity.rs`). The compiler reads no old layout, so the Export upgr
 takes no coverage tag, so the golden compiles under its own name. Its differences from Red are
 these (the fixture's README lists each):
 
-- a referee folder with no face model getting no face (Red packs his `face_diff.bin` alone);
+- a referee folder with no face model getting the blank face, its `face_diff.bin` the bundled
+  template where Red packs the folder's own;
 - the dropped `*.fpk.xml` files;
 - the team side written for the bins on PES 18-21, the referee kit configs being entries of
   `UniformParameter.bin`.

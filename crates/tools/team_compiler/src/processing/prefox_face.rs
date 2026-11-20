@@ -1044,7 +1044,9 @@ fn face_contents(
         }
     }
     // After every model of his, before the `face_neck` dummy: with an xml, through
-    // `appended`, after the xml's children.
+    // `appended`, after the xml's children. The folder's own entries are counted first: a
+    // face listing the body alone is still the blank face, whose dummy reports nothing.
+    let own_entries = !entries.is_empty();
     if folder.refkit_body {
         let body = refkit_body(folder, &entries, xml.as_ref());
         entries.extend(body);
@@ -1056,7 +1058,7 @@ fn face_contents(
     if !entries.iter().any(|entry| entry.xml_type == FACE_NECK) {
         // The blank face's dummy is the compiler's own placeholder, which tells the member
         // nothing; a face with models lacks the type its author may have meant to give one.
-        if !entries.is_empty() {
+        if own_entries {
             findings.push((Code::XmlFaceNeckAdded, Vec::new()));
         }
         entries.push(packed_dummy(&mut contents, ctx)?);
