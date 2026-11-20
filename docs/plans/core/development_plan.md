@@ -407,7 +407,10 @@ The Compiler's view comes first among what is left, and reaches the VGL organize
 before it is polished. What it must do first is show, on each export's row, which of its
 components (a player, a kit, the files the whole team shares) has an error or a warning, and
 what it says: today the organizer finds them in the console's text, where they are easy to
-miss. The row actions and the finish follow in later builds.
+miss. The row actions and the finish follow in later builds. Its draft
+(`docs/prototypes/tools/team_compiler.js`) is approved but not final: the lead and the
+maintainer look at it once more, for what could make it more useful, before its first slice
+is briefed.
 
 - Before any view or shell element is coded, its draft (`gui.md` "Prototypes before
   implementation"): the shell in the host page, `docs/prototypes/index.html`, first, then one

@@ -19008,3 +19008,11 @@ unpolished grid that shows the findings helps now; a polished one would wait for
 8.10.
 Plan: `plans/core/development_plan.md` "Phase 8: GUI" (the paragraph on the Compiler's view
 first).
+
+## 2026-11-20 — team_compiler — the Compiler's draft is approved but not final
+Decision: the Compiler's draft (`docs/prototypes/tools/team_compiler.js`, approved 2026-11-14)
+gets one more look by the lead and the maintainer, for what could make it more useful, before
+the first slice of its view is briefed.
+Why: the view is about to be built for the VGL organizer, and a change made in the draft costs
+less than one made in the build.
+Plan: `plans/core/development_plan.md` "Phase 8: GUI" (the paragraph on the Compiler's view).

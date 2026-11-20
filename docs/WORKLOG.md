@@ -40,7 +40,8 @@ run's findings (`4cc-studio-temp/str_re/out/findings.md`).
 6. The Compiler's view in the build, unpolished, for the VGL organizer (the maintainer,
    2026-11-20; `plans/core/development_plan.md` "Phase 8: GUI"): step 8.10's grid first,
    showing which of an export's components has an error or a warning and what it says;
-   the row actions and the finish in later builds.
+   the row actions and the finish in later builds. First, one more look at its draft with
+   the maintainer (approved but not final, 2026-11-20).
 7. The drafts in two copies (the maintainer, 2026-11-17: a spec draft of what the build holds
    and a plan draft for prototyping, which the app's unbuilt sections open with `demo=1`. Git
    keeps the two: the spec draft is `docs/prototypes/` on main, which `draft_compare`, the
@@ -821,8 +822,9 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     fixes, Upgrade on an old export, the empty grid's drop, Compile only this export and the
     hidden compile column, disabled exports greyed with Enable and Disable on a clash, the save
     findings opening the Save editor; accepted 2026-10-25 as P3-P5, P7-P9, P15's Part A)
-    - [x] the Team compiler's draft, approved 2026-11-14 (the maintainer), its text already
-      naming it the Compiler; `docs/prototypes/tools/team_compiler.js`: a first
+    - [ ] the Team compiler's draft, approved 2026-11-14 (the maintainer) but not final
+      (2026-11-20): one more look with the maintainer, for what could make it more useful,
+      before the view is briefed. Its text already names it the Compiler; `docs/prototypes/tools/team_compiler.js`: a first
       version 2026-11-13 (the lead; renders `.tmp/0_0_2/tc_draft/` by `shot_tc.py`): the
       grid on sample rows in every cell state, the row actions, the ID cell's entry, the
       detail panel, the split Compile button with its modes, the run strip, a fake run and
