@@ -19,18 +19,30 @@ no-stretch slices move to after 0.0.2"). Card `poc5-in-game` stays open.
 **Now, a detour: PES 2014 saves for Akko League VII.** The Save editor learns PES 2014 on the
 long-lived branch `pes14`, which never merges into main (DECISIONS 2026-11-19 "PES 2014 support
 lives on its own branch"). The branch's `docs/plans/pes14.md` holds its plan, decisions and
-steps.
+steps. Its slice 2c reads the game's own texts for its tooltips (`string/all.str`), so the
+lib crate that reads them, `pes_strings` (`plans/libs/pes_strings.md`, the reader only), comes
+first, built on main for every version and merged into `pes14`. Two tools will edit those files, both low priority and plan-only for now: the String
+editor (replacing the PES2021 STR Editor) and the Gametips editor (replacing the gametips
+scripts in `C:/Data/4cc/0Tools/Tips/`). Their plans are stubs, to be finished from a lookup
+run's findings (`4cc-studio-temp/str_re/out/findings.md`).
 
 **After the detour**, in this order:
 1. The Nation list (the maintainer, 2026-11-17): it opens already scrolled to the held nation,
    where it mostly scrolls down to it from the top; typing a nation's name picks it as an ID
-   does (members rarely know the IDs); Escape puts the old nation back.
+   does (members rarely know the IDs); Escape puts the old nation back. With it, Astra's three
+   code fixes from the General info review (rulings "geninfo A1": the typed row takes the
+   keyboard focus, a Captain click test, one nation lookup a draw), SE-GUI-106 cited by the
+   nation tests.
 2. 0.0.2-nostretch's slices.
 3. Earlier sessions in Report a problem: the repro bundles issue's slice (5).
-4. Review rounds owed: Astra's round over 0.0.2-geninfo (`73641390..be99921c`), 0.0.2-similar,
-   and every Carbon round a 0.0.2 step still owes (Report a problem has had its whole review).
+4. Review rounds owed: 0.0.2-similar's, and every Carbon round a 0.0.2 step still owes (Report a problem has had its whole review).
 5. 0.0.2-pes19, and with it the readme's PES 2019 claim.
-6. The drafts in two copies (the maintainer, 2026-11-17: a spec draft of what the build holds
+6. The Compiler's view in the build, unpolished, for the VGL organizer (the maintainer,
+   2026-11-20; `plans/core/development_plan.md` "Phase 8: GUI"): step 8.10's grid first,
+   showing which of an export's components has an error or a warning and what it says;
+   the row actions and the finish in later builds. First, one more look at its draft with
+   the maintainer (approved but not final, 2026-11-20).
+7. The drafts in two copies (the maintainer, 2026-11-17: a spec draft of what the build holds
    and a plan draft for prototyping, which the app's unbuilt sections open with `demo=1`. Git
    keeps the two: the spec draft is `docs/prototypes/` on main, which `draft_compare`, the
    looks and the tasks cards read; the plan draft a long-lived branch in its own worktree, a
@@ -38,29 +50,33 @@ steps.
    branch, never rebased; then the plan and spec text keeps the reasons, the behaviour and what
    no draft shows, such as the light theme, and points at the draft for measurements rather
    than copying them, a copy that drifted once: rows "22 apart" against the draft's 24).
-7. The DpFileList upgrade on a PES 2019 DLC (the VGL organizer's poc.5 report, 2026-11-17:
+8. The DpFileList upgrade on a PES 2019 DLC (the VGL organizer's poc.5 report, 2026-11-17:
    after `upgrade-dpfl` the game ran vanilla and made a new save of the real teams; the
    official list has no stem for the PES 2019 list's `03_base`, `10_scoreboard`,
    `11_interface`, `12_cutscenes`, `13_competition`, so they drop out, and PES 2019's records
    carry a countdown at byte 36 ours lack; the maintainer is settling it with the organizer).
-8. The rest of Team TOML's numbers as the game shows them, as 0.0.2 did for form, injury
+9. The rest of Team TOML's numbers as the game shows them, as 0.0.2 did for form, injury
    resistance and weak foot: team colours in 8 bits as on screen (the file holds the save's 0
    to 63), `[tactics.auto] substitution` and the appearance colours by name. The Save editor
    draft's sample Team TOML texts (`docs/prototypes/tools/save_editor.js`, the `"pes17/718"`
    entry and its kind) still show the old numbering (255 for nobody, slots from 0, the stats
    one lower): regenerate them from today's export.
-9. The draft's greyed number boxes read `-`, as the build's do (the maintainer kept the build's,
+10. The draft's greyed number boxes read `-`, as the build's do (the maintainer kept the build's,
    `look-gated-labels`).
-10. The SWE-2 Flash trial's first comparison (its 0.0.2-lookfix run shelved in
-    `4cc-studio-temp/lookfix_flash`, never merged).
 11. Reset window's first click on Linux (the maintainer's check of 0.0.2-rc.3, 2026-11-17,
     "good enough for 0.0.2": the first click resets the window but the button stays, a second
     click changes nothing and the button goes, its pointer a hand; likely the window manager
     leaving the reset window off the fitted size, so the button waits for a click the window
     does not follow).
 12. Any mutation run (mutfast landed: each mutant's tests run under cargo-nextest).
+13. The suite's own images (DECISIONS 2026-11-20 "the placeholder portraits and the Team
+    Export thumbnail are the suite's own"): the three placeholder portraits drawn as SVGs and
+    the 4cc clover thumbnail, both rendered to the PNGs the binary embeds by one script; a
+    look of each beside the game's; PES 2017 imports a Team Export carrying the clover (SWE-2,
+    in game). Can run beside the detour: it touches no PES 2014 file.
 
-Most open steps below wait only for the maintainer's look (`maintainer/tasks.html`).
+Most open steps below wait only on a check in the game or the built window that the lead's
+harness makes ("Pending looks" below), not on the maintainer.
 
 **Done for 0.0.2 since 2026-11-16:** 0.0.2-geninfo (both slices; its SWE-2 loop ended),
 -frames, -paneshift, -keepsel, -posheight and -lookfix; the light theme's control colours and
@@ -414,8 +430,8 @@ the cup's current `4cc_35_referees.cpk` (the template's prop pair and clover, wh
 compiler writes, step 4.19f) draws the clover on the ground under each of the three
 officials in every scene (a walkout in the black Void stadium, the maintainer's
 screenshot). That CPK's clover is a plain 5.6 MB DDS, the form the compiler writes there
-(`blue_port.md`), so the plain-DDS half is answered too. Why the lead's runs D and G (a
-plain checker through the test slot) showed no marker is not known: the marker does not
+(`team_compiler/referees.md`), so the plain-DDS half is answered too. Why the lead's runs D
+and G (a plain checker through the test slot) showed no marker is not known: the marker does not
 scale with a small referee (the maintainer), so a missed official does not explain it.
 (b) closed, its QUESTIONS entry removed.
 manual: checked 2026-10-12, the first PES 20 `.ted` (g): team /3/ exported from
@@ -806,8 +822,9 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     fixes, Upgrade on an old export, the empty grid's drop, Compile only this export and the
     hidden compile column, disabled exports greyed with Enable and Disable on a clash, the save
     findings opening the Save editor; accepted 2026-10-25 as P3-P5, P7-P9, P15's Part A)
-    - [x] the Team compiler's draft, approved 2026-11-14 (the maintainer), its text already
-      naming it the Compiler; `docs/prototypes/tools/team_compiler.js`: a first
+    - [ ] the Team compiler's draft, approved 2026-11-14 (the maintainer) but not final
+      (2026-11-20): one more look with the maintainer, for what could make it more useful,
+      before the view is briefed. Its text already names it the Compiler; `docs/prototypes/tools/team_compiler.js`: a first
       version 2026-11-13 (the lead; renders `.tmp/0_0_2/tc_draft/` by `shot_tc.py`): the
       grid on sample rows in every cell state, the row actions, the ID cell's entry, the
       detail panel, the split Compile button with its modes, the run strip, a fake run and
@@ -1966,8 +1983,13 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       under Main stats, SE-GUI-95, `gui.md`); the rest by SWE-2 (19 min, landed first time;
       `527cfcf2`, merge `d2eadc87`; the lead's rerun 1077 + 57, wheel 19, clippy, fmt).
       Round 2 over the fixes (`.tmp/0_0_2/geninfo_rev2/`): none accepted, which ends the
-      loop; the pipeline on `d2eadc87` passed, with the Linux gates. Astra's round runs
-      after 0.0.2 (status list)
+      loop; the pipeline on `d2eadc87` passed, with the Linux gates. Astra's round
+      2026-11-20 over `73641390..be99921c` (rulings "geninfo A1"): 4 accepted, which ends
+      its loop. The plan's two (SE-GUI-106, the nationality's 16 bits) are done; the code's
+      three go to the Nation list step (status list): Enter after Down and typed digits
+      picks the focused row, not the typed one; no test clicks a non-captain's Captain
+      radio; one nation lookup a draw, not two. Their SWE-2 loop runs with that step's
+      review
     - [x] the 4cc patch's own nation table (different on PES 2015 to 2017) is not used: the
       base game's lists stand (the maintainer, 2026-11-17; plan and DECISIONS)
   - [x] 0.0.2-lightfill 2026-11-17 (the maintainer's change; the lead): the light theme's
@@ -3100,10 +3122,9 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
   cargo-nextest, which stops at its first failing test: a caught save_editor mutant's tests
   took 28-162 s against 303-771 s under `cargo test`, and the whole suite about the same
   (444 s against 418 s). The VPS has cargo-nextest 0.9.146
-  - [ ] a Carbon round on the change (`7feea20c..aa0f62ee`), since the mutation runs are vital
-    tooling (the maintainer, 2026-11-20); Astra's round ran on 2026-11-20
-    - [x] Carbon's round 1, 2026-11-20: 8 accepted (rulings `.tmp/duck_rulings_nextest.md`)
-    - [ ] the rework (SWE-2, `sk/mutrw`), then Carbon's round 2
+  - [x] Carbon's rounds on the change (`7feea20c..aa0f62ee`), 2026-11-20: three rounds, 8, 8
+    and 5 accepted, the last none changing a run's outcome; reworked in `246a988c`,
+    `9a66b2b8` and `7fc3d374` (rulings `.tmp/duck_rulings_nextest.md`)
 - [ ] after 0.0.2: a crate whose mutation-run estimate passes a budget (about an hour a
   side) runs detached from the checkpoint, which closes on the rest (save_editor's held one
   ~12.5 h before mutfast)
@@ -3439,6 +3460,23 @@ pruned when their phase closes; they stay in git history. A question only the ma
 can answer is not an issue: it goes to `docs/maintainer/questions.html`, and an issue that waits on one
 points there.
 
+- resolved 2026-11-20 (Carbon, then SWE-2) — Carbon's review of the referee blank face ran
+  on `work` after all (one run takes 1-2% of its week). Its five accepted concerns, none
+  changing a real export's output, are fixed in the commit that resolves this, which ends the
+  referee fix's review rounds.
+- open (2026-11-20) — `spec/team_compiler/red_divergences.md` holds 52 differences from Red's
+  output marked Not checked, and 3 where two records disagree (RD-17, RD-23, RD-53). Each
+  needs the check the file's head describes: which real exports reach it, what Red's output
+  did for each, that ours is right. Its Status then becomes Checked, or the behavior changes
+  where ours is wrong. Also owed: the parity rows' reasons, the spec's "unlike Red" sentences
+  and `scripts/library_parity/classes.md`'s I-classes point at the entries, not restate them.
+- open (2026-11-20) — tests leave their scratch folders in `%TEMP%`: about 15,000 on the
+  maintainer's machine, 680 MiB, mostly `export_upgrader_*` (`test_support.rs` `scratch`) and
+  `studio_core_repro_*` / `studio_core_files_*`. Each folder's name ends in the test process's
+  ID, and `scratch` only clears a folder of the same name before a test, so every test run
+  (a mutation run's hundreds included) leaves its own. Fix: a scratch guard whose `Drop`
+  removes the folder, in each crate's helper. The 17,280 folders found then (657 MiB) were
+  deleted; about 700 more, whose process ID a running program now holds, were kept.
 - resolved 2026-11-17 by 0.0.2-present (`0cbe7637`) (the maintainer; measured by the lead on the release build of `26ae8f7c`,
   DX12): while the window is resized, everything away from its middle jumps and comes back on
   each step (the sidebar's lower icons by two points). The cause is wgpu's DX12 swap chain,
@@ -3900,9 +3938,9 @@ points there.
   settings get their validation pass (Phase 8's settings view at the latest): refuse such a
   path on the command line and in the settings view, comparing the canonical paths.
 - open (2026-10-11, Phase 5 Acceptance) — a referee export's `settings.toml` reaches no table or
-  patch: a referee's look is the template's `RefereeAppearance.bin` (`blue_port.md`), whose rows
-  nothing writes, and `blue_port.md` has `fpc_off` apply its settings preset to a referee on
-  PES 18-21. Settle with a Fox refkit (the issue on a referee's body under `fpc_off`): which
+  patch: a referee's look is the template's `RefereeAppearance.bin`
+  (`team_compiler/referees.md`), whose rows nothing writes, and `team_compiler/referees.md` has
+  `fpc_off` apply its settings preset to a referee on PES 18-21. Settle with a Fox refkit (the issue on a referee's body under `fpc_off`): which
   route a referee's settings take (the aesthetics patch, as team 999, since 8.36 writes no
   player tables, or the template's table), and TC-REF-19's outcome then; with it, lift
   `settings_id_messages`' team-only gate (`validation.rs`).
@@ -3941,17 +3979,16 @@ points there.
   the cup wiki says a `.mtl` splits a path at spaces, and 212 of 60,027 texture names in real
   FMDLs hold one (`Kit 1_u0XXXp0.dds`), so a Fox model converted for PES 15-17 may write a
   `.mtl` path the game cuts short. Unverified in game.
-- open (2026-10-11, 4.y-fix23 (1); deferred until the cup next plays a pre-Fox version) — a
-  PES 17 referee whose only model is a `.model.common` link gets no face (`roles.rs`
-  `is_package_model` does not count `PreFoxCommonModel`), while the converted Common model is
-  still written into the refs CPK with nothing naming it; the link should count as his face
-  part, as a team player's does.
+- resolved 2026-11-20 (SWE-2, TC-REF-28): a PES 17 referee whose only model is a
+  `.model.common` link got no face, while the converted Common model was written into the refs
+  CPK with nothing naming it. Since a referee with no face model gets the blank face, his
+  `face.xml` names the link's Common model, as a team player's does.
 - open (2026-10-11, S19.1-B3) — which material files a glTF in a player or shared folder's
   subfolder reads (`model_format.md` "Name matching" is written for one flat folder; the
   `.mtl` search's two folders, the file's then the model folder's, are the likely answer):
   for Phase 7's plan pass, when glTF sources are planned.
 - open (2026-10-09) — a Fox referee's body under `fpc_off` waits on a Fox refkit, an FMDL
-  body the maintainer will make ("We'll make one later"; `team_compiler/blue_port.md` "The referee
+  body the maintainer will make ("We'll make one later"; `team_compiler/referees.md` "The referee
   body"): then the Fox referee template ships it and a step merges it into an `fpc_off`
   referee's face package. Until then `fpc_off` applies its settings preset alone on Fox.
 - open (2026-10-09) — per-kit face packages on Fox wait on FoxDen (`model_format.md`

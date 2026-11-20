@@ -12,6 +12,14 @@
 - **Save editor**: the command line now refuses a PES 2014 save for Team TOML export and
   import, aesthetics patches, comparing two saves and the teams-list export, as the window
   greys them there.
+- **Compiler**: a referee with no face model, whose body model brings his head, showed the
+  game's own referee head floating over it. He now gets an empty face, as a team player in the
+  same case does.
+
+### Other stuff
+
+- **Save editor**: a PES 2017 Texport now carries the 4cc clover as its thumbnail, in place of
+  the game's own picture.
 
 ## [0.0.2-pes14.1] - 2026-11-20
 

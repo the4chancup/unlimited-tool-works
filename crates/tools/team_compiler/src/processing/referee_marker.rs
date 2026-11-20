@@ -1,4 +1,4 @@
-//! The referees' marker (`spec/team_compiler/blue_port.md` "Referee export processing"): the refs
+//! The referees' marker (`spec/team_compiler/referees.md` "Referee export processing"): the refs
 //! export's `ref_marker.dds` converted as a Common texture is, shown under every referee. On
 //! Fox it goes out in the referees' Common output, with a flat square written as the referees'
 //! reserved collar, the bundled marker FMDL, its texture pointed at it. On pre-Fox it goes out

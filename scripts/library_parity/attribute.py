@@ -298,7 +298,7 @@ def cause_of(job, side, red, ours, class_, detail, version):
     referee = os.path.basename(job.source).lower().startswith("refs")
     if referee and (class_ == "ours_only" and (kind == "bins" or re.search(r"ref_marker\.|collar_077\.", lower))
                     or class_ == "red_only" and re.search(r"/common/999/[^/]+/sourceimages/#windx11/portrait\.ftex$", lower)):
-        return ("I21 a refs export's template output: the bins and the marker (blue_port.md), "
+        return ("I21 a refs export's template output: the bins and the marker (referees.md), "
                 "a referee's portrait not packed (no referee shows one)")
     if class_ in ("cpk_differs", "fpk_differs", "relocated_id_differs") and "a member differs" in detail:
         return "container (its member lines)"
@@ -334,8 +334,6 @@ def cause_of(job, side, red, ours, class_, detail, version):
     if class_ == "red_only" and kind == "common" and re.search(
             rf"leftover_dropped at Common/{re.escape(os.path.splitext(os.path.basename(lower))[0])}\.\w+$", job.upgrade, re.M | re.I):
         return "I40 a Common file the upgrade drops as a leftover (step 10): Red packs it"
-    if class_ == "red_only" and side == "refs" and kind == "face" and version == "21":
-        return "I18 referee without a face model gets no face"
     if class_ == "red_only" and kind == "face" and slot is not None and not slot.startswith("Kits/"):
         if old_folder_files(job.source, "Faces", lambda name: name[3:5] == slot) == []:
             return "D1 empty face folder migrated as ingame_face"

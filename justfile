@@ -202,3 +202,9 @@ deps-check:
 release version:
     {{script_test}} scripts/release/release_test.py
     {{python}} scripts/release/release.py {{version}}
+
+# On Windows, the committed HEAD's Linux bundle packed in WSL's Ubuntu 22.04 (glibc 2.35, the
+# release workflow's floor), into the same target/dist; first setup: scripts/release/wsl/setup.sh
+release-wsl version:
+    {{script_test}} scripts/release/wsl_release_test.py
+    {{python}} scripts/release/wsl_release.py {{version}}

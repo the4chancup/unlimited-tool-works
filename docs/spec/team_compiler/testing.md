@@ -48,7 +48,8 @@ export (`tests/parity.rs`). The compiler reads no old layout, so the Export upgr
 takes no coverage tag, so the golden compiles under its own name. Its differences from Red are
 these (the fixture's README lists each):
 
-- a referee folder with no face model getting no face (Red packs his `face_diff.bin` alone);
+- a referee folder with no face model getting the blank face, its `face_diff.bin` the bundled
+  template where Red packs the folder's own;
 - the dropped `*.fpk.xml` files;
 - the team side written for the bins on PES 18-21, the referee kit configs being entries of
   `UniformParameter.bin`.
@@ -90,7 +91,9 @@ One run takes about 17 minutes of ours over 250 exports, with three workers, and
 Red about 20 more. The scripts and the order of a rerun are under `scripts/library_parity/`
 (its `README.md`).
 
-Intentional differences must be accounted for:
+Intentional differences must be accounted for. Each one, with the evidence that ours is right,
+is an entry of [Divergences from Red](red_divergences.md); a new one gets its entry before a
+parity row or a library-parity class records it. The comparison handles these:
 
 - **Auto-assigned boots/gloves IDs** may differ from the old embedded IDs: the comparison
   normalizes ID-dependent paths and embedded references.

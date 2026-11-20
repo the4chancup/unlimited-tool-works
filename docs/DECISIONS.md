@@ -19144,3 +19144,128 @@ the games read, and a member editing a save can be expected to have the game ins
 pitch's button already asks for its folder). Bundling would also mean collecting each game's
 wording, which changes between versions.
 Plan: `plans/pes14.md` "PES 2014 in the code", the Tooltips bullet.
+
+## 2026-11-20 — team_compiler — A referee folder with no face model gets the blank face, as a team player's does
+Decision: a referee folder without `ingame_face` and without a face model gets the blank face on
+both engines, the rule a team player's folder already follows (`pipeline.md` step 1). This
+reverses the 2026-10-09 entry's first half; its pre-Fox shared-link half stands. A referee who
+should keep the game's head holds `ingame_face`.
+Why: the 2026-10-09 entry assumed a referee has no FPC body to bring a head, but a referee
+without a face model is exactly one whose full-body model, split as boots, brings it. The VGL
+organizer compiled the VGL27 refs export (PES 19) and saw the game's referee heads floating
+over those bodies. In every real refs export, the 15 referees with no face model hold a boots
+model (VGL27, `refs lan party`, `refs fox test`), and the other 147 hold a face model. Red
+packed such a referee's `face/` holding `face_diff.bin` alone, the blank face, and the parity
+test had recorded the difference as intended. A referee with neither a face nor a body shows a
+floating head either way, referees being full FPC, so the old rule protected no case.
+Plan: `team_compiler/pipeline.md` step 1, `team_compiler/blue_port.md` "Referee export
+processing"; `team_compiler/README.md` TC-REF-10, TC-REF-11 and TC-REF-13 withdrawn, TC-REF-21
+to TC-REF-28.
+
+## 2026-11-20 — docs — Blue is no evidence: blue_port.md retired, its referee section now referees.md
+Decision: the Compiler's `blue_port.md` ("Blue features to port", in the spec and the plans) is
+retired. Its referee section is `team_compiler/referees.md` "Referee export processing" in both
+trees, unchanged but for its opening. Its two tables of Red features the compiled app has no
+need for are one section of the spec README, "Red features the compiled app replaces". Its
+"Size deltas in shared modules" table is dropped. Blue leaves the list of legacy tools that
+count as evidence (`AGENTS.md`, the glossary), the spec's "(Blue: …)" pointers go, and so does
+the libs README's "Format references in Blue" table.
+Why: Blue was a prototype, never used for a cup and never properly tested; what the suite took
+from it is the in-memory parallel pipeline, nothing of its behavior. A file named for porting
+Blue's features read as if Blue were a source of behavior, while what it held was Red's
+referee behavior and a list of Red features. The size table compared Red's and Blue's module
+sizes, which says nothing about what the suite must do. Mentions that record where a fixture
+or template file came from, or what the parallel pipeline improved on, stay.
+Plan: `team_compiler/referees.md` (spec and plans, new); `spec/team_compiler/README.md`
+"Relationship to the older compilers"; `spec/team_compiler/pipeline.md` opening; `AGENTS.md`
+"Fundamental concepts"; every citation of `blue_port.md` repointed.
+
+## 2026-11-20 — team_compiler, export_upgrader — A difference from Red's output is intended only once checked against the real exports
+Decision: `spec/team_compiler/red_divergences.md` is the one list of the places where the
+compiler's output, or an upgraded export once compiled, knowingly differs from Red's. Each
+entry gives Red's output, ours, why, the evidence and a status: Checked, No census needed,
+Not checked or Records disagree. A difference is Checked only when the evidence says which
+real exports reach the case, what Red's output did for each and that ours is right; a
+maintainer's ruling alone, or a measurement of the game's own files, leaves it Not checked.
+A new difference gets its entry before a parity row or a library-parity class records it.
+Why: the referee rule of 2026-10-09 gave a referee with no face model no face, on a premise
+nobody checked against the real refs exports, and the parity test then recorded the
+difference from Red as intended. The VGL organizer's VGL27 refs export showed the floating
+heads it caused. A list that says which differences were checked keeps an unchecked one from
+reading as settled. The first pass gathered 94 entries from the parity tests, the fixture
+READMEs, the spec, the plans and this log: 30 Checked, 9 No census needed, 52 Not checked,
+3 Records disagree.
+Plan: `spec/team_compiler/red_divergences.md` (new), `spec/team_compiler/README.md` parts
+table, `spec/team_compiler/testing.md` "Testing: parity against Red"; the worklog issue holds
+the unchecked entries and the pointers still owed.
+
+## 2026-11-20 — release — 0.0.3-dev.1, a hand-given prerelease with the referee blank face, built before Carbon's round
+Decision: the VGL organizer gets the referee blank face as `0.0.3-dev.1`, `just release` run in
+a worktree on the branch `prerelease/0.0.3-dev.1`, whose one commit bumps the workspace
+version, `Cargo.lock` and the readme's first line; it is not tagged, pushed or published, and
+the maintainer hands the archive over. It is built from `26dcb5c3`, after SWE-2's and Astra's
+rounds and before Carbon's, which waits on Devin quota until 2026-11-22; a fix Carbon's round
+brings out ships as `0.0.3-dev.2`.
+Why: the dot (`dev.1`, not `dev1`) makes semver count the number, so `dev.10` sorts after
+`dev.9`, as `0.0.2-poc.1` did (2026-11-08); both sort below `0.0.3`, so the release replaces
+them. The organizer is compiling VGL27's refs now, and two reviewers have read the change.
+Plan: no plan edit needed: the 2026-11-08 entry's method, applied to a new version.
+
+## 2026-11-20 — save_editor, pes_savefile — the placeholder portraits and the Team Export thumbnail are the suite's own
+Decision: the pitch's three placeholder portraits become the suite's own drawings of the
+games' `player-dummy.png` (SVGs from simple shapes in the game's colours, not traced, rendered
+by a script to the 128 x 128 PNGs the binary embeds), and the PES 2017 Team Export file's
+thumbnail becomes the 4cc clover (320 x 176, rendered from the clover's SVGs) in place of the
+game's PES 2017 picture.
+Why: the suite ships Konami material only to make files the games read (the README's
+licence notice). The portraits are only shown and the thumbnail only labels the file, so
+neither needs the game's own picture; they were the only Konami images the binary embedded
+for another use. Drawing rather than tracing keeps the drawings ours.
+Plan: `plans/save_editor.md` "Tactics editor" (the placeholder paragraph);
+`plans/pes_savefile/operations.md` (the Texport writer's container list).
+
+## 2026-11-20 — string_editor, gametips_editor — the String editor and the Gametips editor are two tools
+Decision: the games' text file (`all.str`) gets two tools, both plan-only for now: the String
+editor, which replaces the PES2021 STR Editor, and the Gametips editor, which replaces the
+gametips scripts and starts from the tips submission form's raw file
+(`timestamp%sep%title%sep%body%sep%` entries). Their one link is a button in the Gametips
+editor that opens its written file in the String editor. The format is read and written by one
+string-file lib crate that both use, as does the Save editor.
+Why: one tool with two modes would put the cup organizer's once-a-cup tips workflow (import,
+curate, fill the game's tip slots) behind a mode of a screen built for browsing sections and
+strings; the two share only the format, which belongs in the lib crate either way.
+Plan: `plans/string_editor.md`, `plans/gametips_editor.md` (new stubs), the plan index.
+
+## 2026-11-20 — pes_strings — a lib crate reads the games' `all.str`; its writer waits for the first editor that needs it
+Decision: a new lib crate, `pes_strings`, reads the games' text file (`all.str`, every version
+from PES 2014 to 2021, wrapped or not) into sections of numbered strings, with a lookup by
+section name and string id. The reader is built now, on main, for the PES 2014 Gameplan
+tooltips; the writer is planned and built with the String editor or the Gametips editor. Two
+real files are committed as test fixtures, PES 2017's and PES 2014's, one per place the file
+keeps its section names.
+Why: the Save editor needs the game's descriptions now, and both planned editors need the same
+format, so one crate holds it rather than each tool. A writer built now would have no caller.
+Two whole game files (628 KB together) beat a synthetic file because only real files show
+both name layouts and the inline codes as the games store them.
+Plan: `plans/libs/pes_strings.md` (new); the String and Gametips editors' stubs point at it.
+
+## 2026-11-20 — team_compiler, development plan — the Compiler's view comes next after PES 2014 and 0.0.2-pes19, unpolished, for the VGL organizer
+Decision: once the PES 2014 work for Akko VII and the high-priority items up to 0.0.2-pes19 are
+done, the Compiler's view (step 8.10) is the next focus, ahead of the drafts in two copies and
+the rest of the after-the-detour list. It reaches the VGL organizer in a build before it is
+polished; its first job is showing which component of each export has an error or a warning,
+and what it says. The row actions and the finish follow in later builds.
+Why: the organizer compiles from the console today, where a warning among the run's other lines is
+easy to miss, and finding a bad component before the cup is what the Compiler is for. An
+unpolished grid that shows the findings helps now; a polished one would wait for the whole of
+8.10.
+Plan: `plans/core/development_plan.md` "Phase 8: GUI" (the paragraph on the Compiler's view
+first).
+
+## 2026-11-20 — team_compiler — the Compiler's draft is approved but not final
+Decision: the Compiler's draft (`docs/prototypes/tools/team_compiler.js`, approved 2026-11-14)
+gets one more look by the lead and the maintainer, for what could make it more useful, before
+the first slice of its view is briefed.
+Why: the view is about to be built for the VGL organizer, and a change made in the draft costs
+less than one made in the build.
+Plan: `plans/core/development_plan.md` "Phase 8: GUI" (the paragraph on the Compiler's view).

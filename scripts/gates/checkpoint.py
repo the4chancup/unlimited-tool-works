@@ -13,7 +13,8 @@ and moves the ref to the commit it started on when the gates pass. The tree must
 was until they have: the gates read the working tree, so a commit or an edit made while they
 run leaves the ref where it was. One made during the mutation run is fine, and is simply not
 gated yet. Surviving mutants do not stop the ref: they are assertions nobody wrote, listed in
-`mutants.diff/missed_all.txt` for triage.
+`mutants.diff/missed_all.txt` for triage. Mutants that went untested do: `mutants-diff`'s
+other exit codes mean some mutants never ran, and those are in no list to triage.
 
 `status` prints the gated commit, how many commits HEAD is past it (docs-only ones apart),
 how many commits are not pushed, and what CI made of the pushed head. With
@@ -112,6 +113,13 @@ def run(mutants: bool) -> int:
     print(f"the gates passed on {head[:8]}", flush=True)
     if mutants:
         diff = subprocess.run(["just", "mutants-diff", base], cwd=ROOT)
+        # 0, 2 and 3 mean every mutant ran (missed, timed out, or caught). On
+        # anything else mutants went untested, and gating these commits would
+        # lose the measurement the run was for.
+        if diff.returncode not in (0, 2, 3):
+            print(f"mutants-diff ended with exit code {diff.returncode}")
+            print(f"mutants went untested: {REF} stays at {base[:8]}")
+            return diff.returncode
         print(f"mutants-diff ended with exit code {diff.returncode}; its survivors, if any, are in mutants.diff/missed_all.txt")
     git("update-ref", REF, head)
     return status(None)

@@ -71,10 +71,10 @@ test's table carries each row):
 - the five textures are at the same paths with the same headers and pixels
   (`masterchef.ftex` byte-identical, the others differing in their zlib chunks only);
 - the `.fpkd` files and the 31 template entries are byte-identical;
-- Red writes a `referee0NN` face FPK holding `face_diff.bin` alone for each slot; the compiler
-  writes no face for a referee whose folder holds no face model, so the game's own referee
-  head stays (`spec/team_compiler/blue_port.md` "Referee export processing"), and reports
-  `face_diff.bin` as `face_file_not_used`;
+- Red writes a `referee0NN` face FPK holding `face_diff.bin` alone for each slot, the folder's
+  own; the compiler writes the same face for a referee whose folder holds no face model, its
+  `face_diff.bin` the bundled template's (`spec/team_compiler/referees.md` "Referee export
+  processing"), and reports the folder's as `face_file_not_used`;
 - Red copies the source-side `*.fpk.xml` files into the output; the Studio format drops them;
 - the compiler also writes the team side, `4cc_99_test.cpk`, for the bins alone: on PES 18-21
   each referee kit config is also its entry in `UniformParameter.bin`

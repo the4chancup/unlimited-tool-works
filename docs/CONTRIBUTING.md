@@ -461,7 +461,7 @@ Requirements:
   PES, the elevated self-relaunch).
 - **Mutation runs.** The gates prove the tests pass; they do not prove the tests would fail on a
   wrong implementation. `cargo-mutants` (installed like `just`: `cargo install cargo-mutants`,
-  with `cargo install cargo-nextest`, which runs each mutant's tests) measures that directly by rewriting one function or operator at a time and rerunning the
+  with `cargo install --locked cargo-nextest`, which runs each mutant's tests) measures that directly by rewriting one function or operator at a time and rerunning the
   tests; a mutant the suite does not catch ("missed") is an assertion nobody wrote. It runs at two
   points, never as a gate (a whole-workspace run is an hour today and grows with the code):
   `just mutants-diff [base]` over the lines a surface's review loop changed, once at the loop's

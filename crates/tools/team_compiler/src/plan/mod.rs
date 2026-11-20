@@ -244,10 +244,12 @@ pub(crate) struct ModelFolder {
     /// is not metal. Never set on PES 18-21.
     pub(crate) environment_map: bool,
     /// The face's xml takes the referee template's body entries after the folder's own. Set
-    /// for a referee folder holding `fpc_off`, on PES 15-17, with a face to put them in: a
-    /// referee is full FPC, so a head-only referee shows no body unless his face lists one.
-    /// Never set for a team player (the body is the referee template's) nor on PES 18-21 (the
-    /// Fox refkit is not made yet).
+    /// for a referee folder holding `fpc_off`, on PES 15-17: a referee is full FPC, so a
+    /// head-only referee shows no body unless his face lists one. The face he has
+    /// (generated, his own xml's or a linked shared face's) carries them; under
+    /// `ingame_face` he has none, so `fpc_off` adds nothing there. Never set for a team
+    /// player (the body is the referee template's) nor on PES 18-21 (the Fox refkit is not
+    /// made yet).
     pub(crate) refkit_body: bool,
     /// Where its textures go, which its models' texture paths are rewritten to name.
     pub(crate) textures: TextureHome,
@@ -1485,11 +1487,12 @@ pub(crate) fn plan_run(
                 hand_split_parts(&model_folder, &hand_weighted, version.engine());
             model_folder.environment_map = converts_metal(&model_folder, &metal_models);
             // Without a face folder the game shows the head made in its face editor, which
-            // `ingame_face` asks for; every other team player gets one, blank when it holds no
-            // face model (the last part of FPC: the body brings its own head, or none). A
-            // referee has no FPC body to bring a head, so a referee folder with no face model
-            // gets no face folder and the game's referee head stays.
-            let blank_face = !model_folder.ingame_face && team.is_some();
+            // `ingame_face` asks for; every other player folder gets one, blank when it holds
+            // no face model (the last part of FPC: the body brings its own head, or none).
+            // Referees are full FPC, so a referee without a face model has a full-body model,
+            // split as boots, that brings his head, and his folder gets the blank face as a
+            // team player's does.
+            let blank_face = !model_folder.ingame_face;
             folder_tasks(
                 export_id,
                 team_id,
@@ -1778,7 +1781,7 @@ pub(crate) fn plan_run(
 
 /// Pushes `folder`'s tasks onto `tasks`: one `Models` task for each of `packages` any of the
 /// folder's sources holds a model of (a face link alone makes the shared face the player's),
-/// for a team's face whatever the folder holds when `blank_face` is set, and on Fox for the
+/// for the face whatever the folder holds when `blank_face` is set, and on Fox for the
 /// gloves when the folder has a hand-split part (`ModelFolder::hand_split`), emitted under that
 /// package's keys, then, when it planned one of those and the folder has textures or takes the
 /// template environment map (`ModelFolder::environment_map`), its `Textures` task, the lot as
@@ -3300,10 +3303,13 @@ mod tests {
                 Disposition::DropFolder
             )]
         );
-        // No blank face: a referee with no face model keeps the game's referee head.
+        // Ref B holds boots alone: his face is the blank one, as a team player's would be.
         assert_eq!(
             summary(&report),
-            ["0 999 Boots Players/Ref B [referee 2] charge 16"]
+            [
+                "0 999 Face Players/Ref B [referee 2] charge 0",
+                "0 999 Boots Players/Ref B [referee 2] charge 16",
+            ]
         );
     }
 
@@ -4719,8 +4725,10 @@ mod tests {
     #[test]
     fn a_folder_planning_no_package_plans_no_textures_task_as_plans_a_package_says() {
         for version in [PesVersion::Pes21, PesVersion::Pes17] {
-            // Ref A and the marked 05 hold textures alone; Ref B and 07 a model beside them,
-            // Ref C a link to a boots folder his own package is built from.
+            // Each folder holds a texture; whether it plans a package is what
+            // `plans_a_package` says: Ref A's blank face counts, Ref B's and 07's models,
+            // Ref C's and the marked Ref E's boots links, while the marked Ref D and 05
+            // hold nothing else and plan none.
             let referees = resolved(
                 "refs Cup",
                 &[
@@ -4729,10 +4737,15 @@ mod tests {
                     ("Players/Ref B/skin.dds", 5),
                     ("Players/Ref C/Studs.boots", 0),
                     ("Players/Ref C/skin.dds", 5),
+                    ("Players/Ref D/ingame_face.toml", 0),
+                    ("Players/Ref D/skin.dds", 5),
+                    ("Players/Ref E/ingame_face.toml", 0),
+                    ("Players/Ref E/Studs.boots", 0),
+                    ("Players/Ref E/skin.dds", 5),
                     ("Boots/Studs/boots.fmdl", 20),
                 ],
                 &[],
-                Some(b"01 Ref A\n02 Ref B\n03 Ref C\n"),
+                Some(b"01 Ref A\n02 Ref B\n03 Ref C\n04 Ref D\n05 Ref E\n"),
             );
             let team = resolved(
                 "co Midcup Faces",
@@ -4765,9 +4778,11 @@ mod tests {
             assert_eq!(
                 expected,
                 [
-                    ("Players/Ref A".to_owned(), false),
+                    ("Players/Ref A".to_owned(), true),
                     ("Players/Ref B".to_owned(), true),
                     ("Players/Ref C".to_owned(), true),
+                    ("Players/Ref D".to_owned(), false),
+                    ("Players/Ref E".to_owned(), true),
                     ("Players/05 - A".to_owned(), false),
                     ("Players/07 - B".to_owned(), true),
                 ],
@@ -4801,14 +4816,20 @@ mod tests {
                 .collect();
             assert_eq!(
                 textures,
-                ["Players/Ref B", "Players/Ref C", "Players/07 - B"],
+                [
+                    "Players/Ref A",
+                    "Players/Ref B",
+                    "Players/Ref C",
+                    "Players/Ref E",
+                    "Players/07 - B"
+                ],
                 "{version:?}"
             );
         }
     }
 
     #[test]
-    fn a_referee_s_plain_link_is_a_part_of_his_slots_own_package_and_he_gets_no_face_task() {
+    fn a_referee_s_plain_link_is_a_part_of_his_slots_own_package_and_he_gets_the_blank_face() {
         for version in [PesVersion::Pes21, PesVersion::Pes17] {
             let referees = resolved(
                 "refs Cup",
@@ -4826,14 +4847,17 @@ mod tests {
                 fpc::HideIds::CONVENTION,
             );
 
-            // No blank face: a referee has no FPC body to bring a head.
+            // His face is the blank one: the linked boots bring his head.
             assert_eq!(
                 summary(&report),
-                ["0 999 Boots Players/Ref A [referee 1, referee 20] charge 20"],
+                [
+                    "0 999 Face Players/Ref A [referee 1, referee 20] charge 0",
+                    "0 999 Boots Players/Ref A [referee 1, referee 20] charge 20",
+                ],
                 "{version:?}: no task of Boots/Studs's own"
             );
             let TaskKind::Models { folder, .. } = &report.manifest.tasks[0].kind else {
-                panic!("{version:?}: the one task is the boots");
+                panic!("{version:?}: a Models task");
             };
             assert_eq!(
                 folder

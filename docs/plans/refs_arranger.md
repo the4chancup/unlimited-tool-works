@@ -190,7 +190,7 @@ role-bound (slot 7 appears as upper, main, and lower in different patterns).
 The Compiler **already compiles refs exports**: a `refs`-prefixed export routes
 through its pipeline as `ExportIdentity::Referees`, with numeric ID 999 rendered only
 at game-format boundaries (999 is not a normal 701–920 `TeamId`) and slot-mapped
-packing (see "Referee export processing" in the [Compiler plan](team_compiler/blue_port.md)).
+packing (see "Referee export processing" in the [Compiler plan](team_compiler/referees.md)).
 
 A "Refs compiler" tool owning its own compile step would add no compilation behavior: it would
 only need to *trigger* one. Since tool crates must not depend on tool crates (core spec,

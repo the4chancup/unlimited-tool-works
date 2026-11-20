@@ -113,8 +113,12 @@ The container:
 - the PES 2017 key;
 - the description `Team Export Data 01` with the team's name at `0x80` (the number differs
   between real files, and the game lists the name);
-- the game's own thumbnail, `logo.png` (31,590 bytes, equal in all ten files), bundled with
-  the crate;
+- a 320 x 176 PNG thumbnail: the 4cc clover, the suite's own (`resources/thumbnails/`,
+  rendered by a script from its SVG, whose shapes are the clover's
+  `resources/symbols/f100-4cc-clover-ring.svg` and `f101-4cc-clover-leaves.svg`). The game's own (equal in all ten files: PES 2017's logo over
+  a Team Export shield) is not shipped, since the suite ships Konami material only to make
+  files the games read. The container's digests cover whatever PNG it holds; that the game
+  imports a file carrying the clover, and shows it, is still to be checked in PES 2017;
 - the identifier's 64 per-file bytes zero, then `TEXPORT` (the game imports a file with them
   zeroed);
 - the writer's serial, which `new` takes from the caller (the open save's,

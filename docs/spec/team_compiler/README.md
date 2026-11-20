@@ -29,12 +29,30 @@ None of them is followed to the letter:
 - **The implementation is built around the object model** (typed structs representing each
   element of an export: see the [Aesthetics export spec](../aesthetics_export/README.md)), not
   around Red's disk-shuffling stages or Blue's path-string processing functions. References to
-  Red/Blue modules in this document identify *where the behavior to reproduce is specified*,
+  Red's modules in this document identify *where the behavior to reproduce is specified*,
   not code to translate.
 - **Warning/error messaging is overhauled**, not ported: the pipeline emits
   structured `PipelineEvent`s (see the core spec) carrying export/folder identity,
   and the GUI/CLI decide presentation. Red's console-text messages serve only as a
   checklist of conditions worth reporting.
+
+### Red features the compiled app replaces
+
+These Red features exist because Red is a Python script run from its folder; in the compiled
+app each is gone or done another way:
+
+| Feature | Red location | Why it disappears |
+|---------|-------------|-------------------|
+| Self-healing / dependency check | `dependency_check.py`, `file_management.py` | Single binary with embedded templates/fallback bins (see `pipeline.md` "Resolved decisions"): no missing files or packages |
+| Admin privilege elevation | `admin_tools.py` | The shared `elevation` lib (manifest execution level + elevated relaunch) |
+| Step-by-step run modes | `compiler_main.py:72-93` | CLI subcommands for automation |
+| `pes_uniparam_edit` standalone tool | `pes_uniparam_edit.py` | Covered by `uniparam` format parser |
+| Auto-update system | `updating.py` (22KB) | GUI "check for updates" dialog; Rust HTTP via `reqwest` |
+| First-run wizard | `settings_management.py:67-128` | GUI settings dialog |
+| Settings transfer between versions | `settings_management.py:130-211` | Settings versioning in the GUI |
+| Interactive settings editing | `settings_management.py:23-66` | GUI form fields |
+| Comment-preserving INI parser | `commentedconfigparser` dependency | Not needed; GUI manages settings |
+| Log username cleaner | `log_username_clean.py` | `utw.log` writes the home directory as `~` (`spec/core/architecture.md` "Diagnostic logging") |
 
 ---
 
@@ -45,7 +63,8 @@ The spec is split into parts:
 | [Pipeline](pipeline.md) | Per-export pipeline walkthrough |
 | [Message catalog](messages.md) | Message catalog |
 | [Settings](settings.md) | Settings |
-| [Blue features to port](blue_port.md) | Unimplemented Blue Features to Port |
+| [Referee exports](referees.md) | Referee export processing |
+| [Divergences from Red](red_divergences.md) | Every intended difference from Red's output, with its evidence |
 | [GUI grid](../../plans/team_compiler/gui.md) | GUI: the live-validating team grid; Live validation (no Check or Refresh buttons); Cell states; Toolbar |
 | [Testing](testing.md) | Testing: parity against Red (adapted from Blue) |
 
@@ -320,7 +339,7 @@ Phase 7).
 
 A refs export plans no colors record (its `colors.txt` is not read), no `team_colors_missing`,
 no kits and no patch entries of its own. This is because the game's referee hook loads slot
-NN's `k99NN`/`g99NN` by number, and the referees' kits are the template tree's (`blue_port.md`
+NN's `k99NN`/`g99NN` by number, and the referees' kits are the template tree's (`referees.md`
 "Referee export processing"). So a refs export's kits, logo, portraits and collars are
 `file_not_used`.
 
@@ -2411,20 +2430,8 @@ TC-REF-09  GIVEN TC-REF-01's refs export
                 parts entry, no boots folder k99NN (the template tree's k0062 alone under
                 common/character0/model/character/boots/), and one skin.dds under
                 common/character1/model/character/uniform/common/999/Ref A/
-TC-REF-10  GIVEN a refs export whose players.txt maps Ref A to slots 01 and 20, Ref A holding
-           only a link to the shared folder Boots/Studs, which holds boots.fmdl
-           WHEN the root is compiled for PES 21
-           THEN the referee CPK holds boots folders k9901 and k9920, each with the shared
-                boots model, no other boots folder, and no face/real/referee001 or
-                referee020 folder
-TC-REF-11  GIVEN a refs export holding Kits/p1 with kit.dds beside a mapped referee folder holding
-           a face model
-           WHEN the root is compiled for PES 21 (or PES 17)
-           THEN file_not_used is reported naming Kits/p1 as a Warning, the referee CPK holds no
-                kit, its kits give no kit number to complete a referee's texture set against,
-                and the referee face compiles; file_not_used likewise names a refs export's
-                logo, portraits and collars, and a referee folder's textures or texture links
-                when it holds no model
+TC-REF-10  withdrawn: restated as TC-REF-24 (a referee with no face model gets the blank face)
+TC-REF-11  withdrawn: restated as TC-REF-25 and TC-REF-26 (a referee with no face model gets the blank face)
 TC-REF-12  GIVEN a refs export with ref_marker.dds
            WHEN it is compiled for PES 21 with --no-deploy
            THEN the team CPK (with multicpk_mode on, the bins CPK) is written holding
@@ -2433,13 +2440,7 @@ TC-REF-12  GIVEN a refs export with ref_marker.dds
                 byte for byte, each with collar 77, and whose other entries equal the installed
                 or bundled bin's; the team CPK holds no 999 path and no loose referee config;
                 compiled for PES 17, no team CPK is written
-TC-REF-13  GIVEN TC-REF-10's refs export (Ref A in slots 01 and 20, holding only a link to the
-           shared folder Boots/Studs, which holds boots.fmdl)
-           WHEN the root is compiled for PES 17
-           THEN the referee CPK holds boots folders k9901 and k9920, each with the shared boots
-                model converted, and no referee001.cpk or referee020.cpk: the link is not
-                copied into a face, and a referee folder with no face model gets no face
-                folder, the game's referee head staying (a team player's gets a blank one)
+TC-REF-13  withdrawn: restated as TC-REF-21 (a referee with no face model gets the blank face)
 TC-REF-14  GIVEN a refs export whose root colors.txt holds a line that does not parse
            WHEN the export is checked
            THEN no color_entry_invalid is reported
@@ -2464,6 +2465,50 @@ TC-REF-18  GIVEN a refs export whose Ref A holds face_high.model and boots/boots
            THEN player_layout_proto is reported on Ref A naming boots (context folder) with the
                 hint naming the Export upgrader and Ref A is dropped, while slot 05 is valid
                 with boots/ a subfolder of his own
+TC-REF-21  GIVEN TC-REF-24's refs export (Ref A in slots 01 and 20, holding only a link to the
+           shared folder Boots/Studs, which holds boots.fmdl)
+           WHEN the root is compiled for PES 17
+           THEN the referee CPK holds boots folders k9901 and k9920, each with the shared boots
+                model converted, and referee001.cpk and referee020.cpk each hold the blank
+                face, whose face.xml lists the face_neck dummy and no boots: a referee folder
+                with no face model gets the blank face, as a team player's does, and the link
+                is not copied into it (restates TC-REF-13)
+TC-REF-22  GIVEN a refs export whose players.txt maps Ref A to slot 01, Ref A holding boots.fmdl,
+                 boots.skl, glove_l.fmdl, glove_r.fmdl and face_diff.bin, and no face model
+                 (a full-body model split as boots, as the VGL27 refs export's 1999_apple)
+           WHEN it is compiled for PES 19
+           THEN the referee CPK holds referee001's face.fpk holding the template face_diff.bin
+                alone, k9901's boots and g9901's gloves, and face_file_not_used is reported
+                for Ref A's face_diff.bin
+TC-REF-23  GIVEN TC-REF-22's Ref A also holding ingame_face.toml
+           WHEN it is compiled for PES 19
+           THEN the referee CPK holds no referee001 face, so the game's referee head stays
+TC-REF-24  GIVEN a refs export whose players.txt maps Ref A to slots 01 and 20, Ref A holding
+           only a link to the shared folder Boots/Studs, which holds boots.fmdl
+           WHEN the root is compiled for PES 21
+           THEN the referee CPK holds boots folders k9901 and k9920, each with the shared
+                boots model, no other boots folder, and face/real/referee001 and referee020
+                each holding the blank face (restates TC-REF-10)
+TC-REF-25  GIVEN a refs export holding Kits/p1 with kit.dds beside a mapped referee folder holding
+           a face model
+           WHEN the root is compiled for PES 21 (or PES 17)
+           THEN file_not_used is reported naming Kits/p1 as a Warning, the referee CPK holds no
+                kit, its kits give no kit number to complete a referee's texture set against,
+                and the referee face compiles; file_not_used likewise names a refs export's
+                logo, portraits and collars (restates TC-REF-11)
+TC-REF-26  GIVEN a refs export whose Ref A, in slot 01, holds skin.dds alone; and one whose Ref A
+                 holds the link skin.dds.common alone, the export's Common/ holding skin.dds
+           WHEN each is checked, and compiled for PES 21
+           THEN no file_not_used is reported, slot 01 gets the blank face, and skin.ftex is
+                packed: the first under common/999/Ref A/, the second as the referees' Common
+                texture (restates TC-REF-11's last clause)
+TC-REF-27  GIVEN a refs export whose Ref A, in slot 01, holds fpc_off alone
+           WHEN it is compiled for PES 17
+           THEN referee001.cpk's face.xml lists the refkit body's entries, then the face_neck
+                dummy and the dif, and xml_face_neck_added is not reported
+TC-REF-28  GIVEN a refs export whose Ref A, in slot 01, holds only a link to a Common .model
+           WHEN it is compiled for PES 17
+           THEN referee001.cpk's face.xml names the link's Common model
 ```
 
 **Output modes, deployment, multi-CPK**

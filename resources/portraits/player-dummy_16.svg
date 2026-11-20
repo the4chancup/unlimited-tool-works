@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <!-- PES 2016 to 2018's placeholder portrait, drawn for the suite after the game's
+       player-dummy.png (a blue-grey face, transparent around it), not traced from it.
+       Rendered to the PNG beside it by scripts/images/render_images.py. -->
+  <path fill="#bcc6ce" d="M0,126 L36,103 L92,103 L128,126 L128,128 L0,128 Z"/>
+  <path fill="#8c94a5" d="M40,76 L91,76 L91,100 C94,108 92,118 85,128 L44,128 C37,118 35,108 39,100 Z"/>
+  <path fill="#929cac" d="M36,40 C36,28 48,24 65,24 C82,24 94,28 94,40 L94,56
+    C98,54 102,58 101,63 C100,68 98,71 95,71 C93,80 89,88 84,94 C78,100 72,104 65,104
+    C58,104 52,100 46,94 C41,88 37,80 35,71 C32,71 30,68 29,63 C28,58 32,54 36,56 Z"/>
+  <path fill="#707b8e" d="M33,60 L33,42 C33,26 42,17 52,13 L55,9 L58,12 L61,6 L64,11 L69,7 L71,12
+    L75,9 L76,14 C82,16 86,19 88,22 L92,21 L91,26 C95,31 97,36 97,44 L97,60 L94,60
+    C94,50 92,43 89,39 C84,37 78,38 72,37 C64,36 56,36 50,38 C44,39 40,40 38,44 C36,48 36,54 36,60 Z"/>
+</svg>

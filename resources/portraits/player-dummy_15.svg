@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <!-- PES 2015's placeholder portrait, drawn for the suite after the game's player-dummy.png
+       (a white silhouette on a light blue square), not traced from it.
+       Rendered to the PNG beside it by scripts/images/render_images.py. -->
+  <rect width="128" height="128" fill="#9eb9cb"/>
+  <path fill="#ecf0f3" d="M45,28.5 A18.5,18.5 0 0 1 82,28.5 L82,37 C85,37 86,40 85,44
+    C84,49 82,52 80,52 C79,56 78,59 78,61 L78,69 C79,71 82,72 86,73 C98,76 109,81 115,87
+    C121,93 124,102 124,125 L3,125 C3,102 5,93 11,87 C17,81 28,76 40,73 C44,72 47,71 48,69
+    L48,61 C48,59 47,56 46,52 C44,52 42,49 41,44 C40,40 41,37 45,37 Z"/>
+</svg>

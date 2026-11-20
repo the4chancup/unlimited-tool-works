@@ -3483,6 +3483,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "pes_strings"
+version = "0.0.2"
+dependencies = [
+ "thiserror 2.0.20",
+ "wezlib",
+]
+
+[[package]]
 name = "pes_version"
 version = "0.0.2-pes14.1"
 dependencies = [

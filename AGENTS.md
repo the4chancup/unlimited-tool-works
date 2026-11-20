@@ -101,7 +101,7 @@ your question may already be listed, with the phase in which it gets resolved.
 - **User-facing TOML is edited, never regenerated.** `settings.toml`, `config.toml`,
   `materials.toml` carry app-injected per-field comments that *are* the user documentation. Write them through `toml_edit`, which preserves them; `toml` (serde) is for
   read-only parsing.
-- **Legacy tools are evidence, not source.** Red, Blue, 4ccEditor, Midcupping, Rigdio, SEN:P-AI,
+- **Legacy tools are evidence, not source.** Red, 4ccEditor, Midcupping, Rigdio, SEN:P-AI,
   the converters and the Blender addons define *what* must be produced (formats, observable
   behavior), never *how* the Rust code is organized: no line-by-line translation, no copied module
   structure. Red's CPK output is the parity golden standard; a phase's compile of the library is

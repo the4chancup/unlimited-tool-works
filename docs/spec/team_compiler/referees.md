@@ -1,15 +1,10 @@
-# Unlimited Tool Works: Compiler spec: Blue features to port
+# Unlimited Tool Works: Compiler spec: Referee exports
 
 Part of the [Compiler spec](README.md).
 
-## Unimplemented Blue Features to Port
+## Referee export processing
 
-Blue is a prototype missing features that Red has. The Rust rewrite must implement these.
-
-### Referee export processing (Red is the behavioral spec)
-
-Blue explicitly skips referee exports (`coordinator.py:218`); Red's
-`Engines/python/lib/referee_tools.py`, together with its referee-related path editing in
+Red's `Engines/python/lib/referee_tools.py`, together with its referee-related path editing in
 `fmdl_editing.py` and export routing in `export_move.py`, is the authoritative behavioral
 specification.
 
@@ -54,9 +49,12 @@ on Fox the referee's local parts are merged in, as for a player's own folder. On
 link is written there alone, never copied into his `face.xml` as well, because the game loads
 `k99XX` by slot and a second copy in the face would dress him twice.
 
-A referee folder with no face model gets no face folder, where a team player's gets a blank one
-(the FPC rule, `pipeline.md` step 1). A referee has no FPC body to bring a head, so a blank face
-would leave him headless, and the game's own referee head stays.
+A referee folder with no face model gets the blank face, as a team player's does (the FPC rule,
+`pipeline.md` step 1). Referees are full FPC, so a referee without a face model is one whose
+body brings his head: a full-body model split as boots, with the face folder only blanking the
+game's head (Red packed such a referee's `face/`, holding `face_diff.bin` alone, the same way).
+Without the blank face, the game's referee head floats over that body. A referee who should
+keep the game's head holds `ingame_face`, as a player does.
 
 **The referee body (`refkit`, PES 15-17).** Referee teams are full FPC, so a head-only
 referee shows no body unless his face lists one. The referee template tree ships one at
@@ -87,8 +85,9 @@ So that he is never dressed twice, three kinds of entry are left out:
 - the hands, when he has gloves.
 
 A partial body (his own shirt over the refkit's legs) is written by hand in his own xml,
-without `fpc_off`. A referee folder with no face model gets no face, so `fpc_off` adds nothing
-there. On PES 18-21 the body waits for a Fox refkit the maintainer will make (worklog
+without `fpc_off`. A referee folder holding `fpc_off` and no face model gets the body in his
+blank face, so he shows a body with no head; with `ingame_face` as well, he has no face to carry
+it. On PES 18-21 the body waits for a Fox refkit the maintainer will make (worklog
 "Issues").
 
 What carries over from Red as compiler-internal behavior (invisible in the format):
@@ -183,33 +182,3 @@ group, usually named `static`, that is no bone of the body skeleton.
 The marker shows on the ground under each official in every scene (checked on PES 17 by the
 maintainer with the cup's referee CPK, in the form the compiler writes, worklog 4.y-ingame2
 (b)). Why the lead's harness runs with a test texture showed none is not known.
-
-### Features that disappear in a compiled GUI app
-
-These Red features are consequences of being a distributed Python script and are eliminated by the
-Rust + GUI architecture:
-
-| Feature | Red location | Why it disappears |
-|---------|-------------|-------------------|
-| Self-healing / dependency check | `dependency_check.py`, `file_management.py` | Single binary with embedded templates/fallback bins (see `pipeline.md` "Resolved decisions"): no missing files or packages |
-| Admin privilege elevation | `admin_tools.py` | The shared `elevation` lib (manifest execution level + elevated relaunch) |
-| Step-by-step run modes | `compiler_main.py:72-93` | CLI subcommands for automation |
-| `pes_uniparam_edit` standalone tool | `pes_uniparam_edit.py` | Covered by `uniparam` format parser |
-
-### Size deltas in shared modules
-
-Red's shared modules are larger than Blue's due to referee-related edge cases and additional
-validation:
-
-| Module | Red | Blue | Delta |
-|--------|-----|------|-------|
-| `export_move.py` | 31KB | 23KB | 8KB (referee path logic) |
-| `bins_update.py` | 18KB | 12KB | 6KB (more bin-packing logic) |
-| `fmdl_editing.py` | 19KB | 12KB | 7KB (`fmdl_texture_paths_change` for referees) |
-| `xml_editing.py` | 22.2KB | 14.8KB | 7.4KB (more template manipulation) |
-| `export_check.py` | 44KB | 41KB | 3KB (minor) |
-
-These deltas represent logic that must be accounted for in the Rust port. Use Red as the reference
-for completeness.
-
----

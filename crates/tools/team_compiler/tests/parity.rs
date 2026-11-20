@@ -34,6 +34,10 @@ enum Row {
     /// `Container` at a different path: the planned ID replacing the ID the
     /// old export's folder name carried.
     RelocatedContainer(&'static str),
+    /// A blank face's FPK (tier 3): the entry names match the reference's, and
+    /// its `face_diff.bin` is the bundled template, where the reference packed
+    /// the folder's own.
+    BlankFace,
     /// Not produced yet (tier 4): the reason.
     NotProduced(&'static str),
 }
@@ -115,14 +119,13 @@ const TABLE: &[(&str, Row)] = &[
     ("common/render/symbol/player/79205.dds", Row::Exact),
 ];
 
-/// The `NotProduced` reason of a referee slot's face rows.
-const NO_REFEREE_FACE: &str = "the compiler writes no face for a referee whose folder holds no face model, so the game's own referee head stays, Red packing face_diff.bin alone";
-
 /// One row per reference entry of the referee tracer's `red/` tree. Red and
 /// the compiler both point the referee's textures at his name-keyed common
 /// folder `common/999/masterchef/`, so the models compare decoded with no
 /// directory normalized and the textures sit at Red's own paths (hence no
-/// `Relocated` rows).
+/// `Relocated` rows). The referee's folder holds no face model, so each slot's
+/// face is the blank one: Red packed the folder's own `face_diff.bin` alone,
+/// the compiler the bundled template's.
 const REFS_TABLE: &[(&str, Row)] = &[
     (
         "Asset/model/character/boots/k9905/#Win/boots.fpk",
@@ -182,11 +185,11 @@ const REFS_TABLE: &[(&str, Row)] = &[
     ),
     (
         "Asset/model/character/face/real/referee005/#Win/face.fpk",
-        Row::NotProduced(NO_REFEREE_FACE),
+        Row::BlankFace,
     ),
     (
         "Asset/model/character/face/real/referee005/#Win/face.fpkd",
-        Row::NotProduced(NO_REFEREE_FACE),
+        Row::Exact,
     ),
     (
         "Asset/model/character/face/real/referee005/sourceimages/#windx11/face.fpk.xml",
@@ -194,11 +197,11 @@ const REFS_TABLE: &[(&str, Row)] = &[
     ),
     (
         "Asset/model/character/face/real/referee023/#Win/face.fpk",
-        Row::NotProduced(NO_REFEREE_FACE),
+        Row::BlankFace,
     ),
     (
         "Asset/model/character/face/real/referee023/#Win/face.fpkd",
-        Row::NotProduced(NO_REFEREE_FACE),
+        Row::Exact,
     ),
     (
         "Asset/model/character/face/real/referee023/sourceimages/#windx11/face.fpk.xml",
@@ -206,11 +209,11 @@ const REFS_TABLE: &[(&str, Row)] = &[
     ),
     (
         "Asset/model/character/face/real/referee024/#Win/face.fpk",
-        Row::NotProduced(NO_REFEREE_FACE),
+        Row::BlankFace,
     ),
     (
         "Asset/model/character/face/real/referee024/#Win/face.fpkd",
-        Row::NotProduced(NO_REFEREE_FACE),
+        Row::Exact,
     ),
     (
         "Asset/model/character/face/real/referee024/sourceimages/#windx11/face.fpk.xml",
@@ -517,6 +520,16 @@ fn check_resolved(
     }
 }
 
+/// The bundled `resources/templates/face_diff.bin`, the diff every blank face packs.
+fn blank_face_diff() -> Vec<u8> {
+    fs::read(
+        Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../resources/templates/face_diff.bin"),
+    )
+    .unwrap()
+}
+
+/// `blank_diff` is the bytes a blank face's `face_diff.bin` is expected to hold instead of the
+/// reference's own (`Row::BlankFace`); `None` compares it against the reference as every entry.
 fn compare_fpk(
     failures: &mut Vec<String>,
     name: &str,
@@ -524,6 +537,7 @@ fn compare_fpk(
     reference: &[u8],
     compiled: &BTreeMap<String, Vec<u8>>,
     relocated: &[&str],
+    blank_diff: Option<&[u8]>,
 ) {
     let ours = FpkFile::read(ours).unwrap();
     let reference = FpkFile::read(reference).unwrap();
@@ -545,7 +559,13 @@ fn compare_fpk(
                     failures.push(format!("tier2 {member}: decoded models differ"));
                 }
             }
-            Some(our_bytes) => compare_leaf(failures, &member, Some(our_bytes), reference_bytes),
+            Some(our_bytes) => {
+                let expected = match blank_diff {
+                    Some(diff) if entry == "face_diff.bin" => diff,
+                    _ => reference_bytes,
+                };
+                compare_leaf(failures, &member, Some(our_bytes), expected)
+            }
         }
     }
 }
@@ -578,14 +598,51 @@ fn compare_table(
             ),
             Row::Container => match ours.get(*path) {
                 None => failures.push(format!("tier3 {path}: missing from our CPK")),
-                Some(our_bytes) => {
-                    compare_fpk(failures, path, our_bytes, reference_bytes, ours, relocated)
-                }
+                Some(our_bytes) => compare_fpk(
+                    failures,
+                    path,
+                    our_bytes,
+                    reference_bytes,
+                    ours,
+                    relocated,
+                    None,
+                ),
             },
             Row::RelocatedContainer(our_path) => match ours.get(*our_path) {
                 None => failures.push(format!("tier3 {path}: missing from our CPK")),
+                Some(our_bytes) => compare_fpk(
+                    failures,
+                    path,
+                    our_bytes,
+                    reference_bytes,
+                    ours,
+                    relocated,
+                    None,
+                ),
+            },
+            Row::BlankFace => match ours.get(*path) {
+                None => failures.push(format!("tier3 {path}: missing from our CPK")),
                 Some(our_bytes) => {
-                    compare_fpk(failures, path, our_bytes, reference_bytes, ours, relocated)
+                    let diff = blank_face_diff();
+                    // The row compares anything only because the reference's own diff is
+                    // another file than the bundled one.
+                    assert_ne!(
+                        FpkFile::read(reference_bytes)
+                            .unwrap()
+                            .get("face_diff.bin")
+                            .unwrap(),
+                        diff.as_slice(),
+                        "{path}: the reference's diff is the template's already"
+                    );
+                    compare_fpk(
+                        failures,
+                        path,
+                        our_bytes,
+                        reference_bytes,
+                        ours,
+                        relocated,
+                        Some(&diff),
+                    )
                 }
             },
             Row::NotProduced(reason) => {
@@ -599,7 +656,7 @@ fn compare_table(
         let produced = table.iter().any(|(reference_path, row)| match row {
             Row::Relocated(our_path) | Row::RelocatedContainer(our_path) => path == our_path,
             Row::NotProduced(_) => false,
-            Row::Exact | Row::Container => path == reference_path,
+            Row::Exact | Row::Container | Row::BlankFace => path == reference_path,
         });
         if !produced {
             failures.push(format!(

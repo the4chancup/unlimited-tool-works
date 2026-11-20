@@ -49,20 +49,6 @@ The spec is split into parts:
 | [teams_list](teams_list.md) | `libs/teams_list` |
 | [pipeline](pipeline.md) | `libs/pipeline`: memory budget, thread count, `CpkStem` |
 
-## Format references in Blue
-
-| Format | Blue file | Size | Notes |
-|--------|-----------|------|-------|
-| CPK (CRI archive) | `utils/cpk.py` | 550 lines | UTF table with XOR encryption, read + write |
-| FMDL (Fox Model) | `utils/FmdlFile.py` | 1700 lines | Largest parser; segmented binary format |
-| SKL (Fox Skeleton) | - | ~150 lines | Bone list + bind-pose transforms; reference parser at `examples/skl.py`; lives in the `fmdl` crate (same Fox format family) |
-| FPK/FPKD | `utils/fpk.py` | 137 lines | Fox package with MD5 checksums |
-| FTEX | `utils/ftex.py` | 400 lines | PES texture with mipmap/BCn block math |
-| UniformParameter | `utils/uniparam.py` | 91 lines | Kit config container |
-| CRILAYLA | `utils/crilayla.py` | 72 lines | Bitstream LZ decompression |
-| WESYS/zlib | `utils/zlib_plus.py` | 146 lines | zlib wrapper with custom header |
-| VirtualTree / `ScopePath` | `utils/vtree.py` | 187 lines | In-memory file tree plus the canonical absolute-within-export path type (case-insensitive lookup with explicit collision checks) |
-
 ## `vtree` path types
 
 `vtree::ScopePath` is the canonical export/event path. It normalizes separators and

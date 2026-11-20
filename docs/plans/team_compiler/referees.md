@@ -1,12 +1,10 @@
-# Unlimited Tool Works: Compiler plan: Blue features to port
+# Unlimited Tool Works: Compiler plan: Referee exports
 
 > **Plan:** work not built yet (the open phase's sections may be partly built). What the suite does now is described in `docs/spec/`.
 
-## Unimplemented Blue Features to Port
+## Referee export processing
 
-### Referee export processing (Red is the behavioral spec)
-
-What exists of this is in `spec/team_compiler/blue_port.md` "Referee export processing (Red is the behavioral spec)".
+What exists of this is in `spec/team_compiler/referees.md` "Referee export processing".
 
 **The referee body (`refkit`, PES 15-17).** On PES 18-21, until the Fox refkit is made, `fpc_off`
 applies its settings preset alone there, with no body merged into the referee's face package.
@@ -28,16 +26,3 @@ switches the user to this tool for the compile.
 The arranger never compiles, and this tool's referee behavior is unaffected by it: a saved
 `players.txt` arrives like any other file edit via the folder watcher, and `ref_lists.txt` is not
 this tool's concern.
-
-### Features that disappear in a compiled GUI app
-
-What exists of this is in `spec/team_compiler/blue_port.md` "Features that disappear in a compiled GUI app".
-
-| Feature | Red location | Why it disappears |
-|---------|-------------|-------------------|
-| Auto-update system | `updating.py` (22KB) | GUI "check for updates" dialog; Rust HTTP via `reqwest` |
-| First-run wizard | `settings_management.py:67-128` | GUI settings dialog |
-| Settings transfer between versions | `settings_management.py:130-211` | Settings versioning in the GUI |
-| Interactive settings editing | `settings_management.py:23-66` | GUI form fields |
-| Comment-preserving INI parser | `commentedconfigparser` dependency | Not needed; GUI manages settings |
-| Log username cleaner | `log_username_clean.py` | `utw.log` writes the home directory as `~` (`spec/core/architecture.md` "Diagnostic logging") |
