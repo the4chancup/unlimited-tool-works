@@ -3470,6 +3470,13 @@ points there.
   did for each, that ours is right. Its Status then becomes Checked, or the behavior changes
   where ours is wrong. Also owed: the parity rows' reasons, the spec's "unlike Red" sentences
   and `scripts/library_parity/classes.md`'s I-classes point at the entries, not restate them.
+- open (2026-11-20) — `team_compiler`'s test
+  `a_7z_export_s_source_keeps_its_decompressed_content_into_the_planned_run` depends on the
+  machine's free memory: the run's memory budget is a share of the available memory
+  (`validation.rs` `run_budget`), and a `.7z` stays unpacked only while it fits. It failed in
+  a full `gates-changed` run on the `pes14` branch with PES 2017 and three builds running
+  beside it, and passed alone right after (inferred cause, not proven). The fix is likely a
+  budget the test sets itself rather than the host's.
 - open (2026-11-20) — tests leave their scratch folders in `%TEMP%`: about 15,000 on the
   maintainer's machine, 680 MiB, mostly `export_upgrader_*` (`test_support.rs` `scratch`) and
   `studio_core_repro_*` / `studio_core_files_*`. Each folder's name ends in the test process's
