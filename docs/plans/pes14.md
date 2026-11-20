@@ -141,9 +141,11 @@ From the fork's codec, checked against the vanilla save and the Akko saves (2026
   `.akko7v2`, whose flags were clear; kept as `flags2`). The game set no flag per part: every
   edit stored in the player record set bit 0x29:1 alone, and Basic Settings also set 0x28:6, as
   on a created player. The organizer's `.akko7v2_flags` sets 0x28 to 0xFC and 0x29 to 0xFE on
-  every player instead. Whether 0x29:1 alone keeps the edits once the save is loaded again is
-  open: the run re-read each part before saving, never after a reload. The values it moved
-  agree with `flags1`'s offsets, and add:
+  every player instead. Run `flags3` loaded `flags2` again in a fresh game: every edit showed,
+  the player-record ones with 0x29:1 alone and the face, hair and boots ones with no player
+  flag. So the game's own flags keep its edits, against the organizer's account above; why
+  their merge showed placeholder names is open. The values `flags2` moved agree with `flags1`'s
+  offsets, and add:
   - Age is the low 6 bits of +0x10 (24 read 0x58, 25 0x59);
   - Height 180 cm is 0x30 at +0x0C, so the byte likely holds the height less 132;
   - the face, hair and boots edits wrote only the player's appearance record. A face edit
@@ -152,7 +154,8 @@ From the fork's codec, checked against the vanilla save and the Akko saves (2026
     point). A hairstyle edit set bits 0x0F:7 and 0x4E:3 and nothing else. Boots to the next
     entry wrote 0x00 0xC0 to 0xFD 0xC3 at +0x08;
   - the Motion edit on list position 10 changed no record of player 10, but bit 0x27:6 of
-    player 9's, the Dribbling bit `flags1` found: it likely landed on player 9.
+    player 9's, the Dribbling bit `flags1` found: it landed on player 9, who shows it after
+    the reload while player 10 keeps his base value (`flags3`).
 - **Pinned in game, run `tactics1`** (2026-11-20, one Game Plan change on each of teams 2 to 7
   of `.akko7v2`'s English League, kept as `tactics1`). Offsets are bytes of the 502-byte
   tactics record:
@@ -186,9 +189,9 @@ From the fork's codec, checked against the vanilla save and the Akko saves (2026
 Each item ends with its offsets, widths and value orders written into "What is known about
 the save" above.
 
-- **Edit flags:** which bits of 0x28 and 0x29 an edited player needs for every edit to show
-  after the save is loaded again: first whether the game's own 0x29:1 is enough (run `flags3`,
-  reloading `flags2`).
+- **Edit flags:** whether a player whose flags are clear shows the save's values at all (the
+  Akko saves' players, read in run `player1`), which settles whether the editor needs the
+  flags or only mirrors the game.
 - **The tactics record:** the captain, and every run the codec writes (formations, man
   marking, presets), so a record reads and writes back unchanged.
 - **The player record:** every field the fork decodes, checked against the game; Tenacity;
@@ -233,12 +236,13 @@ version, not the version selector.
 - **Tenacity** is a PES 2014 stat no other version has. It gets its own `Option` stat, its
   `PlayerField` and its AATF stat name. On another version's save its greyed box's tooltip
   reads "PES 2014 only", since the "PES NN+" wording would claim later versions store it.
-- **Edit flags.** On PES 2014 the game shows base data for every part of a player whose flag is
-  clear, so an edit the flags do not record is lost in game. Each player the editor changes on
-  PES 2014 gets the flags of the parts it changed; which bit is which part is pinned in game
-  (the game's player menu has ten parts: Player Name, Basic Settings, Position, Ability
-  settings, Player Index, Face, Hairstyle, Physique, Accessories, Motion). On the other versions
-  an ordinary edit sets no flag, as on main.
+- **Edit flags.** The editor sets the flags the game sets, which keep every edit after a reload
+  (run `flags3`): bit 0x29:1 on each player whose player record it changes, and 0x28:6 as well
+  when the change is in the game's Basic Settings part. An appearance-only change sets no
+  flag. The organizer's 0xFC/0xFE on every player is not copied, since the game never writes
+  it; a save that carries it keeps it, since the editor sets these bits and never clears one.
+  On the other versions an ordinary edit sets no flag, as on
+  main.
 - **The tactics record in Build 1.** PES 2015's formation and man-marking layouts do not fit
   PES 2014's record: one formation per preset, a lineup of roster slots and no player ids.
   So `TacticsSchema`'s `formations` and `man_marking_bit` become `Option`s, `None` on PES 2014,
