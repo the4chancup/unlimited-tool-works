@@ -21,13 +21,14 @@ the suite supports, PES 2014 included ("Tests" says how the versions not seen ye
 
 ### The format
 
-Observed in the games' own files of PES 2014, 2017, 2019 and 2021 and in the PES2021 STR
-Editor's code (a lookup of 2026-11-20). All numbers are little-endian.
+Observed in the games' own files of PES 2014 to 2021 and in the PES2021 STR Editor's code (a
+lookup of 2026-11-20). All numbers are little-endian.
 
 **The wrapper.** The file is a WESYS-wrapped zlib stream, which `wezlib` reads. Its first three
-bytes differ by version (`00 01 01` on 2014, `00 10 d1` on 2017, `04 10 d1` on 2019, `ff 10 d1`
-on 2021) and are ignored on read, as `wezlib` and the STR Editor both do. A file may also come
-unwrapped: the gametips scripts work on the inflated payload, so the reader takes either.
+bytes differ by version (`00 01 01` on 2014, `00 10 d1` on 2015 to 2017, `04 10 d1` on 2018 to
+2020, `ff 10 d1` on 2021) and are ignored on read, as `wezlib` and the STR Editor both do. A
+file may also come unwrapped, and the games read it so: the cup's gametips CPKs for PES 2015,
+2018, 2019 and 2021 carry the bare payload. The reader takes either.
 
 **The payload.**
 
@@ -105,4 +106,5 @@ Two real files are committed as fixtures, one per layout: PES 2017's `eng/string
 The expected values are read from the files by a separate script, not by the crate. Every other
 version's file (PES 2015, 2016 and 2018 to 2021) is read once from its install when the crate
 is built, and the result reported; a file in neither layout stops the work for a plan change.
-Those in PES 2017's layout are not committed.
+Those in PES 2017's layout are not committed. On 2026-11-20 every one of them read in PES
+2017's layout, as did the cup's gametips files for PES 2015, 2016, 2018, 2019 and 2021.

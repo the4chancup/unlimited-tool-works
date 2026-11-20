@@ -361,8 +361,8 @@ fn pes17_texport_opens_through_the_container_and_round_trips() {
 /// records: its payload, the records included, is the fixture's at every
 /// byte but `0x30..0x50`, the per-file bytes, and `0x50..0x10050`, the
 /// emblem, which the writer leaves zero; its container carries the game's
-/// labels and thumbnail and the caller's serial, and reads back to the same
-/// team and players.
+/// labels, the suite's thumbnail and the caller's serial, and reads back to
+/// the same team and players.
 #[test]
 fn a_pes17_texport_is_written_from_its_own_records() {
     let fixture = Texport::from_bytes(&pes17_texport(), None).expect("opens");

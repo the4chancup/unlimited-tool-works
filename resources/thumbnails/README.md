@@ -1,7 +1,8 @@
 # Thumbnails
 
-The pictures a written file carries for the game to show beside it. They are embedded in the
-Studio binary.
+The pictures a written file carries in its container. They are embedded in the Studio binary.
+PES 2017 lists every Team Export with its own stock picture, so `team_export.png` is never seen
+in game.
 
 | File | Used for |
 |---|---|

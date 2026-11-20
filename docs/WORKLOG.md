@@ -19,9 +19,9 @@ no-stretch slices move to after 0.0.2"). Card `poc5-in-game` stays open.
 **Now, a detour: PES 2014 saves for Akko League VII.** The Save editor learns PES 2014 on the
 long-lived branch `pes14`, which never merges into main (DECISIONS 2026-11-19 "PES 2014 support
 lives on its own branch"). The branch's `docs/plans/pes14.md` holds its plan, decisions and
-steps. Its slice 2c reads the game's own texts for its tooltips (`string/all.str`), so the
-lib crate that reads them, `pes_strings` (`plans/libs/pes_strings.md`, the reader only), comes
-first, built on main for every version and merged into `pes14`. Two tools will edit those files, both low priority and plan-only for now: the String
+steps. Its slice 2c reads the game's own texts for its tooltips (`string/all.str`) through
+the lib crate `pes_strings` (`plans/libs/pes_strings.md`), whose reader is built on main
+(2026-11-20) and merged into `pes14`; its writer waits for the editors below. Two tools will edit those files, both low priority and plan-only for now: the String
 editor (replacing the PES2021 STR Editor) and the Gametips editor (replacing the gametips
 scripts in `C:/Data/4cc/0Tools/Tips/`). Their plans are stubs, to be finished from a lookup
 run's findings (`4cc-studio-temp/str_re/out/findings.md`).
@@ -72,8 +72,10 @@ run's findings (`4cc-studio-temp/str_re/out/findings.md`).
 13. The suite's own images (DECISIONS 2026-11-20 "the placeholder portraits and the Team
     Export thumbnail are the suite's own"): the three placeholder portraits drawn as SVGs and
     the 4cc clover thumbnail, both rendered to the PNGs the binary embeds by one script; a
-    look of each beside the game's; PES 2017 imports a Team Export carrying the clover (SWE-2,
-    in game). Can run beside the detour: it touches no PES 2014 file.
+    look of each beside the game's. PES 2017 lists and imports a Team Export carrying the
+    clover (checked in game 2026-11-20); its list draws the game's stock picture for every
+    file, so the clover shows nowhere in game. Owed: the commit's review rounds (Tier 1).
+    Can run beside the detour: it touches no PES 2014 file.
 
 Most open steps below wait only on a check in the game or the built window that the lead's
 harness makes ("Pending looks" below), not on the maintainer.
@@ -3470,6 +3472,13 @@ points there.
   did for each, that ours is right. Its Status then becomes Checked, or the behavior changes
   where ours is wrong. Also owed: the parity rows' reasons, the spec's "unlike Red" sentences
   and `scripts/library_parity/classes.md`'s I-classes point at the entries, not restate them.
+- open (2026-11-20) — `team_compiler`'s test
+  `a_7z_export_s_source_keeps_its_decompressed_content_into_the_planned_run` depends on the
+  machine's free memory: the run's memory budget is a share of the available memory
+  (`validation.rs` `run_budget`), and a `.7z` stays unpacked only while it fits. It failed in
+  a full `gates-changed` run on the `pes14` branch with PES 2017 and three builds running
+  beside it, and passed alone right after (inferred cause, not proven). The fix is likely a
+  budget the test sets itself rather than the host's.
 - open (2026-11-20) — tests leave their scratch folders in `%TEMP%`: about 15,000 on the
   maintainer's machine, 680 MiB, mostly `export_upgrader_*` (`test_support.rs` `scratch`) and
   `studio_core_repro_*` / `studio_core_files_*`. Each folder's name ends in the test process's
