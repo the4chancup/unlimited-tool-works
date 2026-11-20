@@ -23,8 +23,8 @@ use crate::deploy::{install_pes, templates_folder};
 use crate::face_folders::assert_blank_face;
 use crate::models::{body_skl, package_names, template};
 use crate::prefox_faces::{
-    card_materials, card_model, materials_naming, nested_entries, ordered_entries, sampler_paths,
-    small_dds,
+    card_materials, card_model, expected_face_xml, materials_naming, nested_entries,
+    ordered_entries, sampler_paths, small_dds,
 };
 use crate::prefox_kits::write_kit;
 use crate::sideload::slashed;
@@ -264,6 +264,40 @@ fn a_referee_folder_is_emitted_under_each_of_his_slots_with_his_textures_once() 
     assert!(!sandbox.root.join("output/teamnotes.txt").exists());
     // The referee kits and appearance the game needs come with them.
     assert_tree_in(&entries, &referee_tree(Engine::Fox));
+}
+
+// TC-REF-26
+#[test]
+fn a_marked_referee_folder_holding_a_texture_alone_reports_it_not_used() {
+    let sandbox = Sandbox::new("ref_marked_texture_alone");
+    sandbox.write(&format!("{REFS}/players.txt"), b"01 Ref A\n");
+    sandbox.write(&format!("{REFS}/Players/Ref A/ingame_face.toml"), b"");
+    sandbox.write(
+        &format!("{REFS}/Players/Ref A/skin.dds"),
+        &tracer_player_file("shirt.dds"),
+    );
+
+    // `ingame_face.toml` plans no package, so nothing would name the texture.
+    let check = sandbox.run(&pes21_settings(&sandbox), &["check"]);
+    let lines = check.messages();
+    assert_eq!(
+        findings_of(&lines, "refs Cup"),
+        [
+            "Info export_identified [Keep] (team=referees)",
+            "Warning file_not_used [Keep] at Players/Ref A (file=skin.dds)",
+        ],
+        "{lines:#?}"
+    );
+    assert_eq!(check.exit_code(), 0, "{lines:#?}");
+
+    let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
+    let lines = run.messages();
+    assert_eq!(run.exit_code(), 0, "{lines:#?}");
+    assert!(
+        findings_of(&lines, "refs Cup")
+            .contains(&"Warning file_not_used [Keep] at Players/Ref A (file=skin.dds)"),
+        "{lines:#?}"
+    );
 }
 
 // TC-REF-14
@@ -638,14 +672,24 @@ fn on_pes_17_a_referee_folder_holding_fpc_off_lists_the_refkit_body_after_his_fa
 fn on_pes_17_a_referee_holding_fpc_off_and_no_face_model_lists_the_refkit_body_unreported() {
     let sandbox = Sandbox::new("ref_refkit_body_blank");
     sandbox.write(&format!("{REFS}/players.txt"), b"01 Ref A\n");
-    sandbox.write(&format!("{REFS}/Players/Ref A/fpc_off"), b"");
+    let folder = format!("{REFS}/Players/Ref A");
+    sandbox.write(&format!("{folder}/fpc_off"), b"");
+    // His own diff is no face diff of the blank face's, which is always the bundled one.
+    let own = tracer_player_file("face_diff.bin");
+    assert_ne!(own, template("face_diff.bin"));
+    sandbox.write(&format!("{folder}/face_diff.bin"), &own);
 
     let (run, entries) = compile_for(&sandbox, PesVersion::Pes17);
 
     let lines = run.messages();
     assert_eq!(run.exit_code(), 0, "{lines:#?}");
     // The face is the blank one, so its dummy is the compiler's own placeholder: it reports
-    // nothing.
+    // nothing. His own diff is unread, as every face file of a folder with no face model.
+    assert!(
+        findings_of(&lines, "refs Cup")
+            .contains(&"Info face_file_not_used [Keep] at Players/Ref A (file=face_diff.bin)"),
+        "{lines:#?}"
+    );
     assert!(
         !lines
             .iter()
@@ -659,16 +703,56 @@ fn on_pes_17_a_referee_holding_fpc_off_and_no_face_model_lists_the_refkit_body_u
         .map(|path| path.strip_prefix(&format!("{folder}/")).unwrap())
         .collect();
     assert_eq!(names, ["dummy.mtl", "face.xml", "oral_dummy_win32.model"]);
-    // The refkit body, then the `face_neck` dummy.
-    let mut expected = refkit_entries(&[]);
-    expected.push((
-        "face_neck".to_owned(),
-        "./oral_dummy_*.model".to_owned(),
-        "./dummy.mtl".to_owned(),
-    ));
+    // The refkit body, then the `face_neck` dummy, the `<dif>` the bundled template's.
+    let refkit = refkit_entries(&[]);
+    let mut expected: Vec<(&str, &str, &str, Option<&str>)> = refkit
+        .iter()
+        .map(|(xml_type, path, material)| {
+            (xml_type.as_str(), path.as_str(), material.as_str(), None)
+        })
+        .collect();
+    expected.push(("face_neck", "./oral_dummy_*.model", "./dummy.mtl", None));
     assert_eq!(
-        ordered_entries(&face[&format!("{folder}/face.xml")]),
-        expected
+        face[&format!("{folder}/face.xml")],
+        expected_face_xml(&expected, &template("face_diff.bin"))
+    );
+}
+
+// TC-REF-27
+#[test]
+fn on_pes_17_a_referee_holding_fpc_off_and_an_empty_face_xml_lists_the_refkit_body_unreported() {
+    let sandbox = Sandbox::new("ref_refkit_body_empty_xml");
+    sandbox.write(&format!("{REFS}/players.txt"), b"01 Ref A\n");
+    let folder = format!("{REFS}/Players/Ref A");
+    sandbox.write(&format!("{folder}/fpc_off"), b"");
+    sandbox.write(&format!("{folder}/face.xml"), b"<config />");
+
+    let (run, entries) = compile_for(&sandbox, PesVersion::Pes17);
+
+    let lines = run.messages();
+    assert_eq!(run.exit_code(), 0, "{lines:#?}");
+    // His xml lists no `<model>`, so the face is still the blank one: its dummy reports
+    // nothing.
+    assert!(
+        !lines
+            .iter()
+            .any(|line| line.contains("xml_face_neck_added")),
+        "{lines:#?}"
+    );
+    let folder = pre_fox_referee_face("01");
+    let face = nested_entries(&entries[&format!("{folder}.cpk")]);
+    // The refkit body, then the `face_neck` dummy, then the `<dif>`.
+    let refkit = refkit_entries(&[]);
+    let mut expected: Vec<(&str, &str, &str, Option<&str>)> = refkit
+        .iter()
+        .map(|(xml_type, path, material)| {
+            (xml_type.as_str(), path.as_str(), material.as_str(), None)
+        })
+        .collect();
+    expected.push(("face_neck", "./oral_dummy_*.model", "./dummy.mtl", None));
+    assert_eq!(
+        face[&format!("{folder}/face.xml")],
+        expected_face_xml(&expected, &template("face_diff.bin"))
     );
 }
 
@@ -1424,12 +1508,11 @@ fn on_pes_17_a_referee_s_link_to_shared_boots_is_each_slot_s_boots_folder_and_bl
             "{slot}"
         );
         assert_eq!(
-            ordered_entries(&face[&format!("{folder}/face.xml")]),
-            [(
-                "face_neck".to_owned(),
-                "./oral_dummy_*.model".to_owned(),
-                "./dummy.mtl".to_owned()
-            )],
+            face[&format!("{folder}/face.xml")],
+            expected_face_xml(
+                &[("face_neck", "./oral_dummy_*.model", "./dummy.mtl", None)],
+                &template("face_diff.bin")
+            ),
             "{slot}"
         );
     }

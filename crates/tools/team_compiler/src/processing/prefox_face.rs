@@ -1052,7 +1052,14 @@ fn face_contents(
         entries.extend(body);
     }
     if let Some(xml) = xml {
-        let face = XmlFace::new(folder, kit_numbers, &common_directory, &places, contents);
+        let face = XmlFace::new(
+            folder,
+            kit_numbers,
+            &common_directory,
+            &places,
+            contents,
+            own_entries,
+        );
         return user_xml_face(face, &xml, &entries, ctx, files, findings, &dif);
     }
     if !entries.iter().any(|entry| entry.xml_type == FACE_NECK) {
@@ -1232,6 +1239,10 @@ struct XmlFace<'a> {
     contents: PackageFiles,
     /// Their paths, folded: a reference naming a file already packed packs nothing more.
     packed: BTreeSet<String>,
+    /// The folder's own models produced generated entries, beside the refkit body `appended`
+    /// also carries: a face whose xml lists one of those or a `<model>` of its own reports
+    /// `xml_face_neck_added` for its dummy, one listing the body alone being the blank face.
+    own_entries: bool,
 }
 
 impl<'a> XmlFace<'a> {
@@ -1246,6 +1257,7 @@ impl<'a> XmlFace<'a> {
         common_directory: &'a str,
         places: &'a FolderPlaces<'a>,
         contents: PackageFiles,
+        own_entries: bool,
     ) -> Self {
         let packed = contents.keys().map(|name| vtree::fold_name(name)).collect();
         XmlFace {
@@ -1255,6 +1267,7 @@ impl<'a> XmlFace<'a> {
             places,
             contents,
             packed,
+            own_entries,
         }
     }
 
@@ -1562,11 +1575,14 @@ fn last_dif(xml: &UserFaceXml) -> Option<&[u8]> {
 /// xml written back (`user_face_xml`) with its children in their order, each `<model>` as
 /// `face.written_model` writes it and packing the files it names, any other element as the
 /// member wrote it; then `appended`, the generated entries of the player's own models the
-/// shared xml does not name, which `face` packed already; then, when no written `<model>` is a
-/// `face_neck`, the dummy's entry (`packed_dummy`), noted in `findings` as
-/// `xml_face_neck_added` when the face has a `<model>`; then `dif`, the face's diff. Only what
-/// the references name is packed beside what `face` holds: no other `.model` of the xml's
-/// folder (the deep pass reported each as `xml_model_unlisted`) and no other `.mtl` of it.
+/// shared xml does not name and a referee's refkit body, which `face` packed already; then,
+/// when no written `<model>` is a `face_neck`, the dummy's entry (`packed_dummy`), noted in
+/// `findings` as `xml_face_neck_added` when the face has a `<model>` of its own (the xml's
+/// children or `XmlFace::own_entries`, the appended refkit body not counting: a face listing
+/// it alone is the blank face, whose dummy reports nothing); then `dif`, the face's diff.
+/// Only what the references name is packed beside what `face` holds: no other `.model` of
+/// the xml's folder (the deep pass reported each as `xml_model_unlisted`) and no other `.mtl`
+/// of it.
 fn user_xml_face(
     mut face: XmlFace,
     xml: &UserFaceXml,
@@ -1593,9 +1609,11 @@ fn user_xml_face(
             .iter()
             .map(|entry| WrittenChild::Model(entry.attributes())),
     );
-    let has_model = children
-        .iter()
-        .any(|child| matches!(child, WrittenChild::Model(_)));
+    let has_model = face.own_entries
+        || xml
+            .children
+            .iter()
+            .any(|child| matches!(child, Child::Model(_)));
     let has_face_neck = children.iter().any(|child| match child {
         WrittenChild::Model(attributes) => attributes
             .iter()
@@ -2443,6 +2461,7 @@ mod tests {
             places: &places,
             contents: PackageFiles::new(),
             packed: BTreeSet::new(),
+            own_entries: false,
         };
         let mut files = TaskFiles::from([(path, card_set_naming("skin.dds").write())]);
 
@@ -2492,6 +2511,7 @@ mod tests {
             places: &places,
             contents: PackageFiles::new(),
             packed: BTreeSet::new(),
+            own_entries: false,
         };
         let mut files = TaskFiles::from([
             (own[0].path.clone(), b"kit1".to_vec()),
@@ -2540,6 +2560,7 @@ mod tests {
             places: &places,
             contents: PackageFiles::new(),
             packed: BTreeSet::new(),
+            own_entries: false,
         };
         let mut files = TaskFiles::from([
             (own[0].path.clone(), b"kit1".to_vec()),

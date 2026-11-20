@@ -3443,11 +3443,10 @@ pruned when their phase closes; they stay in git history. A question only the ma
 can answer is not an issue: it goes to `docs/maintainer/questions.html`, and an issue that waits on one
 points there.
 
-- open (2026-11-20) — Carbon's review of the referee blank face (`487de3c6`, `1bccacd9`,
-  `5f3dc637`) is queued: both Devin logins that can run it are out of weekly quota until
-  Sunday 2026-11-22 09:00. Its brief and worktree are ready
-  (`4cc-studio-temp/review_refface2`, `.tmp/carbon_brief.md`); SWE-2's and Astra's rounds on
-  the same change are done.
+- resolved 2026-11-20 (Carbon, then SWE-2) — Carbon's review of the referee blank face ran
+  on `work` after all (one run takes 1-2% of its week). Its five accepted concerns, none
+  changing a real export's output, are fixed in the commit that resolves this, which ends the
+  referee fix's review rounds.
 - open (2026-11-20) — `spec/team_compiler/red_divergences.md` holds 52 differences from Red's
   output marked Not checked, and 3 where two records disagree (RD-17, RD-23, RD-53). Each
   needs the check the file's head describes: which real exports reach it, what Red's output

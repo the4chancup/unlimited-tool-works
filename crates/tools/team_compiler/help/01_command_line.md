@@ -644,9 +644,12 @@ lists is built once and written for every slot it is listed under: slot NN as th
 `common/999/<folder name>/`. A referee's link to a `Boots` or `Gloves` folder makes that folder
 the boots or gloves of each of his slots. On PES 2018 to 2021 it is merged with any of his own;
 on PES 2015 to 2017 it is written as his slot's folder alone, his own boots and gloves riding in
-his face as a team player's do. A referee folder with no face model gets an empty face
-folder, as a team player's does, so the game shows no head of its own over a body that
-brings one. A referee who should keep the game's referee head holds `ingame_face.toml`.
+his face as a team player's do.
+
+A referee's face follows a player's (see "A player with no face model, and the in-game face"
+above). A referee with no face of his own gets an empty face folder, so the game shows no head
+over a body that brings one. One who should keep the game's referee head holds
+`ingame_face.toml`.
 
 A `refs` export's kits, logo, portraits and collars have no referee to go to: each is left out
 and reported as the warning `file_not_used`.

@@ -30,7 +30,7 @@ A line of one of these needs no action.
 | I14 | a model re-bound through the IR (`skeleton_retargeted`) |
 | I14? | an FMDL differs, re-bound or paired: listed with the unattributed lines, checked by hand |
 | I15 | the last two BC blocks (the smallest mips) |
-| I18 | a refs `face.fpk`'s `face_diff.bin` differs: a referee without a face model gets the blank face, ours the bundled template where Red packed the folder's own. The rule matches any refs `face_diff.bin` difference, as I12's matches any other: a referee's own diff written wrong would read as I18 |
+| I18 | retired 2026-11-20: I12 covers it since referees share the team blank face |
 | I19 | `face.xml` model names (same types and materials, each names its own file) |
 | I19b | a generated `face.xml` lists `hair_high` as parts |
 | I20 | a referee's modelless item folder: Red packs an empty package, ours none |

@@ -4725,9 +4725,10 @@ mod tests {
     #[test]
     fn a_folder_planning_no_package_plans_no_textures_task_as_plans_a_package_says() {
         for version in [PesVersion::Pes21, PesVersion::Pes17] {
-            // Ref A holds a texture alone, which his blank face still plans a package for;
-            // the marked 05 holds one alone and plans none; Ref B and 07 a model beside
-            // them, Ref C a link to a boots folder his own package is built from.
+            // Each folder holds a texture; whether it plans a package is what
+            // `plans_a_package` says: Ref A's blank face counts, Ref B's and 07's models,
+            // Ref C's and the marked Ref E's boots links, while the marked Ref D and 05
+            // hold nothing else and plan none.
             let referees = resolved(
                 "refs Cup",
                 &[
@@ -4736,10 +4737,15 @@ mod tests {
                     ("Players/Ref B/skin.dds", 5),
                     ("Players/Ref C/Studs.boots", 0),
                     ("Players/Ref C/skin.dds", 5),
+                    ("Players/Ref D/ingame_face.toml", 0),
+                    ("Players/Ref D/skin.dds", 5),
+                    ("Players/Ref E/ingame_face.toml", 0),
+                    ("Players/Ref E/Studs.boots", 0),
+                    ("Players/Ref E/skin.dds", 5),
                     ("Boots/Studs/boots.fmdl", 20),
                 ],
                 &[],
-                Some(b"01 Ref A\n02 Ref B\n03 Ref C\n"),
+                Some(b"01 Ref A\n02 Ref B\n03 Ref C\n04 Ref D\n05 Ref E\n"),
             );
             let team = resolved(
                 "co Midcup Faces",
@@ -4775,6 +4781,8 @@ mod tests {
                     ("Players/Ref A".to_owned(), true),
                     ("Players/Ref B".to_owned(), true),
                     ("Players/Ref C".to_owned(), true),
+                    ("Players/Ref D".to_owned(), false),
+                    ("Players/Ref E".to_owned(), true),
                     ("Players/05 - A".to_owned(), false),
                     ("Players/07 - B".to_owned(), true),
                 ],
@@ -4812,6 +4820,7 @@ mod tests {
                     "Players/Ref A",
                     "Players/Ref B",
                     "Players/Ref C",
+                    "Players/Ref E",
                     "Players/07 - B"
                 ],
                 "{version:?}"

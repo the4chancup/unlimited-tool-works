@@ -624,6 +624,16 @@ fn compare_table(
                 None => failures.push(format!("tier3 {path}: missing from our CPK")),
                 Some(our_bytes) => {
                     let diff = blank_face_diff();
+                    // The row compares anything only because the reference's own diff is
+                    // another file than the bundled one.
+                    assert_ne!(
+                        FpkFile::read(reference_bytes)
+                            .unwrap()
+                            .get("face_diff.bin")
+                            .unwrap(),
+                        diff.as_slice(),
+                        "{path}: the reference's diff is the template's already"
+                    );
                     compare_fpk(
                         failures,
                         path,

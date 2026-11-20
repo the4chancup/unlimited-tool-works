@@ -334,8 +334,6 @@ def cause_of(job, side, red, ours, class_, detail, version):
     if class_ == "red_only" and kind == "common" and re.search(
             rf"leftover_dropped at Common/{re.escape(os.path.splitext(os.path.basename(lower))[0])}\.\w+$", job.upgrade, re.M | re.I):
         return "I40 a Common file the upgrade drops as a leftover (step 10): Red packs it"
-    if class_ == "bytes_differ" and side == "refs" and kind == "face" and lower.endswith("face_diff.bin"):
-        return "I18 a refs face's face_diff.bin: ours the bundled template, Red the folder's own"
     if class_ == "red_only" and kind == "face" and slot is not None and not slot.startswith("Kits/"):
         if old_folder_files(job.source, "Faces", lambda name: name[3:5] == slot) == []:
             return "D1 empty face folder migrated as ingame_face"
