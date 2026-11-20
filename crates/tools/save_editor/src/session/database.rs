@@ -191,6 +191,8 @@ fn play_style_name(style: PlayStyle) -> &'static str {
         PlayStyle::ExtraFrontman => "Extra Frontman",
         PlayStyle::OffensiveGoalkeeper => "Offensive Goalkeeper",
         PlayStyle::DefensiveGoalkeeper => "Defensive Goalkeeper",
+        PlayStyle::TheInstigator => "The Instigator",
+        PlayStyle::SolidPlayer => "Solid Player",
     }
 }
 

@@ -319,6 +319,7 @@ fn write_records<'a>(
             ..player.clone()
         };
         write_player(
+            schema.version,
             &player,
             &mut plain[at..at + schema.player.size],
             schema.player,
@@ -555,7 +556,7 @@ impl Texport {
         })?;
         let players = records
             .into_iter()
-            .map(|(_, record)| read_player(record, schema.player))
+            .map(|(_, record)| read_player(version, record, schema.player))
             .collect::<Result<Vec<_>, _>>()?;
         Ok(Texport {
             version,
@@ -619,10 +620,10 @@ impl Texport {
         })?;
         let mut players = Vec::new();
         for (slot, rec) in records {
-            let mut player = read_player(rec, schema.player)?;
+            let mut player = read_player(version, rec, schema.player)?;
             if let Some((_, appearance)) = &schema.appearance {
                 let rec = record(at(slot) + schema.player.size, appearance.size)?;
-                read_player_into(&mut player, rec, appearance)?;
+                read_player_into(version, &mut player, rec, appearance)?;
             }
             players.push(player);
         }
@@ -821,9 +822,19 @@ impl Texport {
                     expected: stride,
                     got,
                 })?;
-            write_player(player, &mut record[..schema.player.size], schema.player)?;
+            write_player(
+                self.version,
+                player,
+                &mut record[..schema.player.size],
+                schema.player,
+            )?;
             if let Some((_, appearance)) = &schema.appearance {
-                write_player(player, &mut record[schema.player.size..], appearance)?;
+                write_player(
+                    self.version,
+                    player,
+                    &mut record[schema.player.size..],
+                    appearance,
+                )?;
             }
         }
         Ok(())

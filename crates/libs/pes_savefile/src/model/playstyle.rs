@@ -49,11 +49,15 @@ pub enum PlayStyle {
     OffensiveGoalkeeper,
     /// Defensive Goalkeeper.
     DefensiveGoalkeeper,
+    /// The Instigator (PES 2014 only).
+    TheInstigator,
+    /// Solid Player (PES 2014 only).
+    SolidPlayer,
 }
 
 impl PlayStyle {
     /// Every value, in the canonical order.
-    pub const ALL: [PlayStyle; 22] = [
+    pub const ALL: [PlayStyle; 24] = [
         PlayStyle::None,
         PlayStyle::GoalPoacher,
         PlayStyle::DummyRunner,
@@ -76,5 +80,7 @@ impl PlayStyle {
         PlayStyle::ExtraFrontman,
         PlayStyle::OffensiveGoalkeeper,
         PlayStyle::DefensiveGoalkeeper,
+        PlayStyle::TheInstigator,
+        PlayStyle::SolidPlayer,
     ];
 }

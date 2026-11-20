@@ -308,7 +308,7 @@ fn every_key_writes_only_its_own_run() {
             .apply(&mut modified, PesVersion::Pes21)
             .expect("apply");
         let mut written = rec.to_vec();
-        write_player(&modified, &mut written, schema.player).expect("encode");
+        write_player(schema.version, &modified, &mut written, schema.player).expect("encode");
         (modified, written)
     };
     let (_, baseline) = written_with(&settings);
@@ -388,7 +388,7 @@ fn an_apply_then_write_touches_only_the_appearance_keys_bits() {
     let index = player_record_index(&payload, schema, 70101);
     let rec = record(&payload, &schema.players, schema.player.size, index);
     let mut written = rec.to_vec();
-    write_player(&player, &mut written, schema.player).expect("encode");
+    write_player(schema.version, &player, &mut written, schema.player).expect("encode");
 
     // The bit runs of every settings key the version holds (the stock IDs
     // included: unset they are left alone, but their bits are the file's to
@@ -677,6 +677,7 @@ fn a_default_settings_applies_the_template_values() {
         let index = player_record_index(&payload, schema, 70101);
         let start = schema.players.offset + index * schema.player.size;
         write_player(
+            schema.version,
             &player,
             &mut written[start..start + schema.player.size],
             schema.player,
@@ -694,6 +695,7 @@ fn a_default_settings_applies_the_template_values() {
                 .expect("the player's appearance record");
             let start = section.offset + index * appearance.size;
             write_player(
+                schema.version,
                 &player,
                 &mut written[start..start + appearance.size],
                 appearance,

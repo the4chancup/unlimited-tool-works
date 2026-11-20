@@ -9,6 +9,30 @@ use crate::model::playstyle::PlayStyle;
 
 use PlayStyle as P;
 
+/// PES 2014: PES 15/16's list with The Instigator at 15, where 15/16 has
+/// Build Up, and Solid Player filling the hole at 16 (measured in game).
+const PES14: &[Option<PlayStyle>] = &[
+    Some(P::None),
+    Some(P::GoalPoacher),
+    Some(P::DummyRunner),
+    Some(P::FoxInTheBox),
+    Some(P::ProlificWinger),
+    Some(P::ClassicNo10),
+    Some(P::HolePlayer),
+    Some(P::BoxToBox),
+    Some(P::AnchorMan),
+    Some(P::TheDestroyer),
+    Some(P::ExtraFrontman),
+    Some(P::OffensiveFullback),
+    Some(P::DefensiveFullback),
+    Some(P::TargetMan),
+    Some(P::CreativePlaymaker),
+    Some(P::TheInstigator),
+    Some(P::SolidPlayer),
+    Some(P::OffensiveGoalkeeper),
+    Some(P::DefensiveGoalkeeper),
+];
+
 /// PES 15/16: 19 slots; index 16 is unused (no player carries it).
 const PES16: &[Option<PlayStyle>] = &[
     Some(P::None),
@@ -106,12 +130,10 @@ const PES2021: &[Option<PlayStyle>] = &[
     Some(P::DefensiveGoalkeeper),
 ];
 
-/// The list `version`'s stored values index. PES 2014's is an empty list
-/// until it is measured, so every stored index decodes as unknown rather
-/// than as another version's style.
+/// The list `version`'s stored values index.
 fn list(version: PesVersion) -> &'static [Option<PlayStyle>] {
     match version {
-        PesVersion::Pes14 => &[],
+        PesVersion::Pes14 => PES14,
         PesVersion::Pes15 | PesVersion::Pes16 => PES16,
         PesVersion::Pes17 | PesVersion::Pes18 => PES1718,
         PesVersion::Pes19 => PES19,

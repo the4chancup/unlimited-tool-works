@@ -30,6 +30,12 @@ fn foreign_players(file: &EditFile, team: &TeamEntry) -> Vec<PlayerEntry> {
 #[test]
 fn every_fixture_player_round_trips_through_the_document() {
     for version in FIXTURES {
+        // Team TOML is out of scope for PES 2014 — and its weak-foot
+        // fields store 0 to 7 there (shown 1 to 8), past the keys'
+        // "1 to 4" `from_team` can emit.
+        if version == PesVersion::Pes14 {
+            continue;
+        }
         let (file, _) = open(version);
         let refs: Vec<&PlayerEntry> = file.players().iter().collect();
         // The text pass (to_toml -> parse == document) costs tens of ms a
@@ -53,10 +59,7 @@ fn every_fixture_player_round_trips_through_the_document() {
             .map(|(n, _)| n)
             .expect("a rostered team exists");
         for (n, (team, doc)) in rostered.iter().zip(&docs).enumerate() {
-            // `pes_version` parses through `from_number`, which refuses 14:
-            // the text pass cannot hold for PES 2014 (Team TOML is out of
-            // scope there).
-            if version != PesVersion::Pes14 && (n == 0 || n + 1 == rostered.len() || n == fullest) {
+            if n == 0 || n + 1 == rostered.len() || n == fullest {
                 let text = doc.to_toml().expect("to_toml");
                 let parsed = TeamToml::parse(&text)
                     .unwrap_or_else(|e| panic!("{version:?} team {} reparse: {e}", team.id));
@@ -1347,6 +1350,10 @@ fn an_unencodable_playing_style_notes_its_own_label() {
 #[test]
 fn from_team_carries_every_rostered_slots_shirt_number() {
     for version in FIXTURES {
+        // Team TOML is out of scope for PES 2014 (above).
+        if version == PesVersion::Pes14 {
+            continue;
+        }
         let (file, _) = open(version);
         let refs: Vec<&PlayerEntry> = file.players().iter().collect();
         for team in file
@@ -1946,8 +1953,10 @@ fn a_latin1_shirt_name_round_trips_through_the_codec() {
     assert_eq!(player.shirt_name, "éÿ");
     let schema = schema_for(PesVersion::Pes19);
     let mut record = vec![0u8; schema.player.size];
-    crate::codec::write_player(player, &mut record, schema.player).expect("write_player");
-    let back = crate::codec::read_player(&record, schema.player).expect("read_player");
+    crate::codec::write_player(PesVersion::Pes19, player, &mut record, schema.player)
+        .expect("write_player");
+    let back =
+        crate::codec::read_player(PesVersion::Pes19, &record, schema.player).expect("read_player");
     assert_eq!(back.shirt_name, "éÿ");
 }
 

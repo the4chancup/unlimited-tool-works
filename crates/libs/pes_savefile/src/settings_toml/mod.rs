@@ -1299,6 +1299,7 @@ pub(crate) fn ownership(field: PlayerField) -> Ownership {
         | PlayerField::EditedHair
         | PlayerField::EditedPhysique
         | PlayerField::EditedStrip
+        | PlayerField::EditedName
         | PlayerField::AppearanceId => Ownership::CompilerOwned,
         PlayerField::BootsId
         | PlayerField::GlovesId
@@ -1379,7 +1380,9 @@ pub(crate) fn ownership(field: PlayerField) -> Ownership {
         | PlayerField::Aggression
         | PlayerField::PlayablePosition(_)
         | PlayerField::ComStyle(_)
-        | PlayerField::Skill(_) => Ownership::Gameplay,
+        | PlayerField::Skill(_)
+        | PlayerField::Tenacity
+        | PlayerField::PuntKickMotion => Ownership::Gameplay,
     }
 }
 

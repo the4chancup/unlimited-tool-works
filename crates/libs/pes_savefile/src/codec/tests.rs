@@ -24,6 +24,7 @@ fn players(payload: &[u8], schema: &VersionSchema) -> Vec<PlayerEntry> {
     (0..count(payload, &schema.players))
         .map(|i| {
             read_player(
+                schema.version,
                 record(payload, &schema.players, schema.player.size, i),
                 schema.player,
             )
@@ -39,9 +40,9 @@ fn every_player_record_round_trips_byte_for_byte() {
         let schema = schema_for(version);
         for i in 0..count(&payload, &schema.players) {
             let record = record(&payload, &schema.players, schema.player.size, i);
-            let player = read_player(record, schema.player).expect("decode");
+            let player = read_player(version, record, schema.player).expect("decode");
             let mut written = record.to_vec();
-            write_player(&player, &mut written, schema.player).expect("encode");
+            write_player(version, &player, &mut written, schema.player).expect("encode");
             assert_eq!(written, record, "{version:?} player record {i}");
         }
         if let Some((section, appearance)) = &schema.appearance {
@@ -60,7 +61,7 @@ fn every_player_record_round_trips_byte_for_byte() {
             if schema.appearance_for_every_player() {
                 for i in 0..count(&payload, &schema.players) {
                     let player_rec = record(&payload, &schema.players, schema.player.size, i);
-                    let player = read_player(player_rec, schema.player).expect("decode");
+                    let player = read_player(version, player_rec, schema.player).expect("decode");
                     assert_eq!(
                         seen.get(&player.id),
                         Some(&1),
@@ -71,9 +72,10 @@ fn every_player_record_round_trips_byte_for_byte() {
             }
             for rec in records {
                 let mut player = PlayerEntry::default();
-                read_player_into(&mut player, rec, appearance).expect("decode appearance");
+                read_player_into(version, &mut player, rec, appearance).expect("decode appearance");
                 let mut written = rec.to_vec();
-                write_player(&player, &mut written, appearance).expect("encode appearance");
+                write_player(version, &player, &mut written, appearance)
+                    .expect("encode appearance");
                 assert_eq!(written, rec, "{version:?} appearance record");
             }
         }
@@ -396,6 +398,7 @@ fn the_ingame_face_run_has_the_versions_length() {
         let payload = payload(version);
         let schema = schema_for(version);
         let mut player = read_player(
+            version,
             record(&payload, &schema.players, schema.player.size, 0),
             schema.player,
         )
@@ -428,7 +431,7 @@ fn a_wrong_length_ingame_face_run_is_refused() {
     let mut player = find_player(&payload, schema, 70101);
     player.appearance.ingame_face = IngameFace::from_bytes(vec![0; 49]);
     let mut record = record(&payload, &schema.players, schema.player.size, 0).to_vec();
-    match write_player(&player, &mut record, schema.player) {
+    match write_player(schema.version, &player, &mut record, schema.player) {
         Err(CodecError::RunSize { expected, got }) => {
             assert_eq!((expected, got), (50, 49));
         }
@@ -437,7 +440,8 @@ fn a_wrong_length_ingame_face_run_is_refused() {
     // A run written into a record whose schema has none is ignored.
     let schema15 = schema_for(PesVersion::Pes15);
     let mut record = vec![0u8; schema15.player.size];
-    write_player(&player, &mut record, schema15.player).expect("no run on the 15/16 player record");
+    write_player(schema15.version, &player, &mut record, schema15.player)
+        .expect("no run on the 15/16 player record");
 }
 
 #[test]
@@ -527,6 +531,7 @@ fn the_appearance_id_is_none_on_pes15_and_16() {
         let index = (0..count(&payload, &schema.players))
             .find(|&i| {
                 read_player(
+                    version,
                     record(&payload, &schema.players, schema.player.size, i),
                     schema.player,
                 )
@@ -536,7 +541,7 @@ fn the_appearance_id_is_none_on_pes15_and_16() {
             .expect("70101's record");
         let rec = record(&payload, &schema.players, schema.player.size, index);
         let mut written = rec.to_vec();
-        write_player(&player, &mut written, schema.player).expect("writes");
+        write_player(version, &player, &mut written, schema.player).expect("writes");
         assert_eq!(written, rec, "{version:?}: the Some has no run");
         let (section, appearance) = schema.appearance.as_ref().expect("a split record");
         let rec = (0..count(&payload, section))
@@ -544,7 +549,7 @@ fn the_appearance_id_is_none_on_pes15_and_16() {
             .find(|rec| u32::from_le_bytes(rec[..4].try_into().expect("id")) == 70101)
             .expect("70101's appearance record");
         let mut written = rec.to_vec();
-        write_player(&player, &mut written, appearance).expect("writes");
+        write_player(version, &player, &mut written, appearance).expect("writes");
         assert_eq!(written, rec, "{version:?}: the Some has no run");
     }
 }
@@ -560,6 +565,7 @@ fn a_stripped_appearance_id_writes_and_rereads() {
     let index = (0..count(&payload, &schema.players))
         .find(|&i| {
             read_player(
+                schema.version,
                 record(&payload, &schema.players, schema.player.size, i),
                 schema.player,
             )
@@ -569,7 +575,7 @@ fn a_stripped_appearance_id_writes_and_rereads() {
         .expect("70101's record");
     let rec = record(&payload, &schema.players, schema.player.size, index);
     let mut written = rec.to_vec();
-    write_player(&player, &mut written, schema.player).expect("writes");
+    write_player(schema.version, &player, &mut written, schema.player).expect("writes");
     let spec = schema
         .player
         .fields
@@ -584,7 +590,7 @@ fn a_stripped_appearance_id_writes_and_rereads() {
             "byte {i} differs outside the appearance-id run"
         );
     }
-    let back = read_player(&written, schema.player).expect("redecode");
+    let back = read_player(schema.version, &written, schema.player).expect("redecode");
     assert_eq!(back.appearance_id, Some(STRIPPED_APPEARANCE_ID));
 }
 
@@ -606,12 +612,12 @@ fn text_writes_patch_the_field_and_keep_the_old_tail() {
     let payload = payload(PesVersion::Pes17);
     let schema = schema_for(PesVersion::Pes17);
     let record = record(&payload, &schema.players, schema.player.size, 0);
-    let mut player = read_player(record, schema.player).expect("decode");
+    let mut player = read_player(schema.version, record, schema.player).expect("decode");
 
     // A shorter name leaves the old tail bytes after the new NUL.
     player.name = "AB".to_string();
     let mut written = record.to_vec();
-    write_player(&player, &mut written, schema.player).expect("encode");
+    write_player(schema.version, &player, &mut written, schema.player).expect("encode");
     let name = schema
         .player
         .texts
@@ -628,7 +634,7 @@ fn text_writes_patch_the_field_and_keep_the_old_tail() {
     // A name one byte longer than its field is refused.
     player.name = "x".repeat(name.len as usize + 1);
     assert!(matches!(
-        write_player(&player, &mut written, schema.player),
+        write_player(schema.version, &player, &mut written, schema.player),
         Err(CodecError::Text { .. })
     ));
 
@@ -641,15 +647,15 @@ fn text_writes_patch_the_field_and_keep_the_old_tail() {
         .expect("shirt spec");
     player.name = "AB".to_string();
     player.shirt_name = "MéXICO".to_string();
-    write_player(&player, &mut written, schema.player).expect("encode");
+    write_player(schema.version, &player, &mut written, schema.player).expect("encode");
     assert_eq!(written[shirt.byte_offset as usize + 1], 0xE9);
-    let reread = read_player(&written, schema.player).expect("redecode");
+    let reread = read_player(schema.version, &written, schema.player).expect("redecode");
     assert_eq!(reread.shirt_name, "MéXICO");
 
     // A char above U+00FF is refused.
     player.shirt_name = "€URO".to_string();
     assert!(matches!(
-        write_player(&player, &mut written, schema.player),
+        write_player(schema.version, &player, &mut written, schema.player),
         Err(CodecError::Text { .. })
     ));
 }
@@ -659,7 +665,7 @@ fn a_text_filling_its_field_writes_with_no_nul() {
     let payload = payload(PesVersion::Pes17);
     let schema = schema_for(PesVersion::Pes17);
     let record = record(&payload, &schema.players, schema.player.size, 0);
-    let mut player = read_player(record, schema.player).expect("decode");
+    let mut player = read_player(schema.version, record, schema.player).expect("decode");
     let mut written = record.to_vec();
 
     // A Name of exactly the field's length writes unterminated and reads back.
@@ -670,16 +676,16 @@ fn a_text_filling_its_field_writes_with_no_nul() {
         .find(|t| t.text == PlayerText::Name)
         .expect("name spec");
     player.name = "n".repeat(name.len as usize);
-    write_player(&player, &mut written, schema.player).expect("encode");
+    write_player(schema.version, &player, &mut written, schema.player).expect("encode");
     let at = name.byte_offset as usize;
     assert_eq!(&written[at..at + name.len as usize], player.name.as_bytes());
-    let reread = read_player(&written, schema.player).expect("redecode");
+    let reread = read_player(schema.version, &written, schema.player).expect("redecode");
     assert_eq!(reread.name, player.name);
 
     // One byte more is refused.
     player.name = "n".repeat(name.len as usize + 1);
     assert!(matches!(
-        write_player(&player, &mut written, schema.player),
+        write_player(schema.version, &player, &mut written, schema.player),
         Err(CodecError::Text { .. })
     ));
 
@@ -692,17 +698,17 @@ fn a_text_filling_its_field_writes_with_no_nul() {
         .expect("shirt spec");
     player.name = "AB".to_string();
     player.shirt_name = "s".repeat(shirt.len as usize);
-    write_player(&player, &mut written, schema.player).expect("encode");
+    write_player(schema.version, &player, &mut written, schema.player).expect("encode");
     let at = shirt.byte_offset as usize;
     assert_eq!(
         &written[at..at + shirt.len as usize],
         player.shirt_name.as_bytes()
     );
-    let reread = read_player(&written, schema.player).expect("redecode");
+    let reread = read_player(schema.version, &written, schema.player).expect("redecode");
     assert_eq!(reread.shirt_name, player.shirt_name);
     player.shirt_name = "s".repeat(shirt.len as usize + 1);
     assert!(matches!(
-        write_player(&player, &mut written, schema.player),
+        write_player(schema.version, &player, &mut written, schema.player),
         Err(CodecError::Text { .. })
     ));
 }
@@ -721,10 +727,10 @@ fn a_full_field_name_round_trips_byte_for_byte() {
         .expect("name spec");
     let at = name.byte_offset as usize;
     record[at..at + name.len as usize].fill(b'A');
-    let player = read_player(&record, schema.player).expect("decode");
+    let player = read_player(schema.version, &record, schema.player).expect("decode");
     assert_eq!(player.name, "A".repeat(name.len as usize));
     let mut written = record.clone();
-    write_player(&player, &mut written, schema.player).expect("encode");
+    write_player(schema.version, &player, &mut written, schema.player).expect("encode");
     assert_eq!(written, record);
 }
 
@@ -735,10 +741,80 @@ fn a_gated_field_left_none_is_an_error_not_a_zero() {
     let mut player = find_player(&payload, schema, 70101);
     player.stats.star = None;
     let mut record = vec![0u8; schema.player.size];
-    match write_player(&player, &mut record, schema.player) {
+    match write_player(schema.version, &player, &mut record, schema.player) {
         Err(CodecError::Missing { field }) => assert_eq!(field, "Star"),
         other => panic!("expected CodecError::Missing, got {other:?}"),
     }
+}
+
+/// PES 2014 stores each stat less 40, the height less 132 and the weight
+/// less 30: the codec adds the offset on read and takes it off on write,
+/// refusing a value below its offset rather than wrapping it. The
+/// version, not the schema, decides: PES 2014's table read as another
+/// version adds nothing.
+#[test]
+fn pes14_stored_offsets_apply_on_read_and_write() {
+    let schema = schema_for(PesVersion::Pes14);
+    let mut record = vec![0u8; schema.player.size];
+    for (wanted, stored) in [
+        (PlayerField::AttackingProwess, 40),
+        (PlayerField::Height, 48),
+        (PlayerField::Weight, 50),
+    ] {
+        let (_, offset, width) = runs(schema.player)
+            .find(|(field, _, _)| *field == wanted)
+            .expect("the schema maps the field");
+        bits::write_bits(&mut record, offset, width, stored);
+    }
+    let player = read_player(PesVersion::Pes14, &record, schema.player).expect("decode");
+    assert_eq!(
+        (
+            player.stats.attacking_prowess,
+            player.basic.height,
+            player.basic.weight
+        ),
+        (80, 180, 80),
+        "stored + the offset"
+    );
+    let player = read_player(PesVersion::Pes15, &record, schema.player).expect("decode");
+    assert_eq!(
+        (
+            player.stats.attacking_prowess,
+            player.basic.height,
+            player.basic.weight
+        ),
+        (40, 48, 50),
+        "another version adds no offset through the same table"
+    );
+    // Below the offset is refused rather than wrapped; the six-bit run's
+    // top stored value is 63.
+    let mut player = PlayerEntry::bare(PesVersion::Pes14);
+    player.stats.attacking_prowess = 39;
+    let mut record = vec![0u8; schema.player.size];
+    match write_player(PesVersion::Pes14, &player, &mut record, schema.player) {
+        Err(CodecError::BelowStoredOffset {
+            field,
+            value,
+            offset,
+        }) => {
+            assert_eq!(
+                (field.as_str(), value, offset),
+                ("AttackingProwess", 39, 40)
+            );
+        }
+        other => panic!("expected CodecError::BelowStoredOffset, got {other:?}"),
+    }
+    player.stats.attacking_prowess = 103;
+    write_player(PesVersion::Pes14, &player, &mut record, schema.player).expect("encode");
+    let (_, offset, width) = runs(schema.player)
+        .find(|(field, _, _)| *field == PlayerField::AttackingProwess)
+        .expect("the schema maps the field");
+    assert_eq!(bits::read_bits(&record, offset, width), 63, "shown - 40");
+    player.stats.attacking_prowess = 104;
+    assert!(matches!(
+        write_player(PesVersion::Pes14, &player, &mut record, schema.player),
+        Err(CodecError::ValueTooWide { .. })
+    ));
 }
 
 #[test]
@@ -758,7 +834,7 @@ fn a_value_too_wide_for_its_run_is_refused() {
     player.stats.form = 8;
     let mut record = [0u8; 2];
     assert!(matches!(
-        write_player(&player, &mut record, &schema),
+        write_player(PesVersion::Pes21, &player, &mut record, &schema),
         Err(CodecError::ValueTooWide {
             value: 8,
             width: 3,

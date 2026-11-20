@@ -50,7 +50,7 @@ fn players(payload: &[u8], schema: &VersionSchema) -> Vec<(usize, PlayerEntry)> 
     (0..count(payload, &schema.players))
         .map(|i| {
             let rec = record(payload, &schema.players, schema.player.size, i);
-            let mut p = read_player(rec, schema.player).expect("decode");
+            let mut p = read_player(schema.version, rec, schema.player).expect("decode");
             appearance_for(payload, schema, &mut p);
             (i, p)
         })
@@ -88,19 +88,22 @@ fn the_appearance_copy_matches_the_scripts_slice_rule_on_every_fixture_player() 
             let mut actual = target_rec.clone();
             match &schema.appearance {
                 Some((_, appearance)) => {
-                    write_player(&moved, &mut actual, appearance).expect("write");
+                    write_player(schema.version, &moved, &mut actual, appearance).expect("write");
                     // The player record is not part of the slice: untouched.
                     let mut player_rec =
                         record(&payload, &schema.players, schema.player.size, *i).to_vec();
                     let before = player_rec.clone();
-                    write_player(&moved, &mut player_rec, schema.player).expect("write");
+                    write_player(schema.version, &moved, &mut player_rec, schema.player)
+                        .expect("write");
                     assert_eq!(
                         player_rec, before,
                         "{version:?} {}: player record",
                         target.id
                     );
                 }
-                None => write_player(&moved, &mut actual, schema.player).expect("write"),
+                None => {
+                    write_player(schema.version, &moved, &mut actual, schema.player).expect("write")
+                }
             }
             assert_eq!(
                 actual, expected,

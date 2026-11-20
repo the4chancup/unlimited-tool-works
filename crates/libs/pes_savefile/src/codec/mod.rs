@@ -9,6 +9,7 @@ mod player;
 /// The team, roster and tactics record codecs.
 mod team;
 
+pub(crate) use player::mark_edit_flags;
 pub use player::{read_player, read_player_into, write_player};
 pub(crate) use team::tactics_runs;
 pub use team::{
@@ -31,6 +32,18 @@ pub enum CodecError {
         value: u32,
         /// The run's width in bits.
         width: u32,
+    },
+    /// A model value is below the offset the version stores (PES 2014's
+    /// stats less 40, height less 132, weight less 30): writing it would
+    /// wrap, so the write is refused.
+    #[error("{field}: value {value} is below the stored offset {offset}")]
+    BelowStoredOffset {
+        /// The field whose value is below its offset.
+        field: String,
+        /// The offending value.
+        value: u32,
+        /// The offset the version's record subtracts.
+        offset: u32,
     },
     /// The version's schema stores a field the player has no value for.
     #[error("{field}: the version stores this field but the player has no value for it")]

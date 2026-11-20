@@ -169,7 +169,8 @@ impl PlayerDiff {
             | F::GoalCelebration1
             | F::GoalCelebration2
             | F::Star
-            | F::PlayingAttitude => DiffScope::Aesthetics,
+            | F::PlayingAttitude
+            | F::PuntKickMotion => DiffScope::Aesthetics,
             F::Id
             | F::Nationality
             | F::Height
@@ -220,7 +221,9 @@ impl PlayerDiff {
             | F::Skill(_)
             | F::TightPossession
             | F::Aggression
-            | F::StrongerHand => DiffScope::Gameplay,
+            | F::StrongerHand
+            | F::Tenacity
+            | F::EditedName => DiffScope::Gameplay,
         }
     }
 }

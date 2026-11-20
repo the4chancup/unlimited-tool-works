@@ -125,6 +125,8 @@ pub struct PlayerStats {
     pub aggression: Option<u8>,
     /// Playing attitude (PES 20+).
     pub playing_attitude: Option<u8>,
+    /// Tenacity (PES 2014 only).
+    pub tenacity: Option<u8>,
 }
 
 impl PlayerStats {
@@ -257,6 +259,8 @@ pub struct PlayerMotion {
     pub penalty_kick: u8,
     /// Dribbling motion (PES 20+).
     pub dribbling: Option<u8>,
+    /// Punt kick motion (PES 2014 only).
+    pub punt_kick: Option<u8>,
     /// First goal celebration.
     pub goal_celebration_1: u8,
     /// Second goal celebration.
@@ -294,6 +298,9 @@ pub struct PlayerEditFlags {
     pub physique: bool,
     /// The strip style was edited.
     pub strip: bool,
+    /// The Player Name was edited (PES 2014: without it the game shows a
+    /// rostered player's name as PLACEHOLDER).
+    pub name: bool,
 }
 
 /// Boots/gloves/base-copy ids, physique measurements and kit styling.
@@ -372,11 +379,11 @@ impl PlayerEntry {
     pub fn bare(version: PesVersion) -> PlayerEntry {
         let schema = schema_for(version);
         let record = vec![0; schema.player.size];
-        let mut player = codec::read_player(&record, schema.player)
+        let mut player = codec::read_player(version, &record, schema.player)
             .expect("every field of the version's player record accepts 0");
         if let Some((_, appearance)) = schema.appearance {
             let record = vec![0; appearance.size];
-            codec::read_player_into(&mut player, &record, appearance)
+            codec::read_player_into(version, &mut player, &record, appearance)
                 .expect("every field of the version's appearance record accepts 0");
         }
         player
@@ -531,6 +538,13 @@ impl PlayerEntry {
             PlayerField::Undershorts => u32::from(self.appearance.undershorts),
             PlayerField::Untucked => u32::from(self.appearance.untucked),
             PlayerField::AnkleTaping => u32::from(self.appearance.ankle_taping),
+            PlayerField::Tenacity => {
+                u32::from(self.stats.tenacity.ok_or_else(|| codec::missing(field))?)
+            }
+            PlayerField::PuntKickMotion => {
+                u32::from(self.motion.punt_kick.ok_or_else(|| codec::missing(field))?)
+            }
+            PlayerField::EditedName => u32::from(self.edit_flags.name),
         };
         Ok(v)
     }
@@ -659,6 +673,9 @@ impl PlayerEntry {
             PlayerField::Undershorts => self.appearance.undershorts = value as u8,
             PlayerField::Untucked => self.appearance.untucked = value != 0,
             PlayerField::AnkleTaping => self.appearance.ankle_taping = value != 0,
+            PlayerField::Tenacity => self.stats.tenacity = Some(value as u8),
+            PlayerField::PuntKickMotion => self.motion.punt_kick = Some(value as u8),
+            PlayerField::EditedName => self.edit_flags.name = value != 0,
         }
         Ok(())
     }
