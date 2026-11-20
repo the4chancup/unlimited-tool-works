@@ -18970,3 +18970,15 @@ neither needs the game's own picture; they were the only Konami images the binar
 for another use. Drawing rather than tracing keeps the drawings ours.
 Plan: `plans/save_editor.md` "Tactics editor" (the placeholder paragraph);
 `plans/pes_savefile/operations.md` (the Texport writer's container list).
+
+## 2026-11-20 — string_editor, gametips_editor — the String editor and the Gametips editor are two tools
+Decision: the games' text file (`all.str`) gets two tools, both plan-only for now: the String
+editor, which replaces the PES2021 STR Editor, and the Gametips editor, which replaces the
+gametips scripts and starts from the tips submission form's raw file
+(`timestamp%sep%title%sep%body%sep%` entries). Their one link is a button in the Gametips
+editor that opens its written file in the String editor. The format is read and written by one
+string-file lib crate that both use, as does the Save editor.
+Why: one tool with two modes would put the cup organizer's once-a-cup tips workflow (import,
+curate, fill the game's tip slots) behind a mode of a screen built for browsing sections and
+strings; the two share only the format, which belongs in the lib crate either way.
+Plan: `plans/string_editor.md`, `plans/gametips_editor.md` (new stubs), the plan index.
