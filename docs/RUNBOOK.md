@@ -464,6 +464,10 @@ The Devin IDE compacts the sidekick's context by itself when it reaches 500K tok
 full sidekick context needs no action from the lead; a brief still stands alone (file under
 `.tmp/`, read in full), because a compaction may fall between two handoffs.
 
+**A file named `nul`** (left by a bash redirect to `nul`, which `AGENTS.md` forbids) cannot be
+indexed by git, so `git add -A` fails outright; only `Remove-Item -LiteralPath "\\?\<full
+path>"` deletes it.
+
 **A Devin CLI run is watched for stalls.** A Claude lead runs SWE-2 through
 `devin_sidekick.py` (implementation) and `duck.py --reviewer swe` (reviews) as background
 commands, and the harness tells the lead only when a command exits; a run whose session goes

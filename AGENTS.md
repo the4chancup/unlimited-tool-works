@@ -125,25 +125,18 @@ your question may already be listed, with the phase in which it gets resolved.
 The maintainer develops on Windows with PowerShell; Linux is a first-class target. Prefer Python
 scripts over PowerShell one-liners for anything with quotes; never inline regex in PowerShell.
 **Scripts never write a repo file in place**: `Path.write_text` truncates the file before it
-validates its own arguments (one bad `newline=` emptied a 600-line source file that git had no
-copy of). Write to a sibling temp path and `os.replace` it, and run every assertion before the
+validates its own arguments. Write to a sibling temp path and `os.replace` it, and run every assertion before the
 write. Small edits use the editor tool, not a script. Before editing a tree the sidekick left,
 `git add -A` first, so every file, untracked ones included, has a blob in the index to restore
 from. **No `git checkout -- <path>`, `git restore`, `git reset --hard` or `git stash` over
 uncommitted work**: each discards whatever the index does not hold, and nothing in the reflog
-gets it back (a checkout meant to undo a one-line perturbation also erased the unstaged golden it
-sat in). A deliberate perturbation is undone with the editor tool, by hand; a git restore is
+gets it back. A deliberate perturbation is undone with the editor tool, by hand; a git restore is
 allowed only after `git add -A` has given every file a blob to restore from. Never redirect to
-`nul` from bash: on Windows that creates a real file named `nul`, which git cannot index
-(`git add -A` fails outright) and which only `Remove-Item -LiteralPath "\\?\<full path>"` can
-delete; use `/dev/null` in bash, `$null` in PowerShell.
+`nul` from bash: it creates a real file named `nul` that git cannot index (`RUNBOOK.md` "Agents
+and harness" deletes it); use `/dev/null` in bash, `$null` in PowerShell.
 
-**Operations** are in `docs/RUNBOOK.md`, read before starting what each section covers:
-how the work runs (the release path first, `just checkpoint`, one home per event);
-mutation runs and the VPS (`just mutants`, `mutants-diff`, `gates-remote`, and the memory caps
-that keep the host's production service first); the `.tmp/` scratch layout and what an
-archived run keeps; the agents and their harness limits; phases and releases; lead and
-sidekick; and the full review-round rules.
+**Operations** are in `docs/RUNBOOK.md` (its sections are in the table at the top): read each
+section before starting what it covers.
 
 ## When the plan has gaps
 
@@ -197,6 +190,12 @@ an assistant present: code, plan text and decision entries alike. Code the revie
 and a plan section only the writing session understood are not done, whatever the gates say. When
 an outcome fails this test, say so and simplify before reporting. (The code half is
 `CONTRIBUTING.md`'s "boring Rust" intent; this is the standard it is accepted on.)
+
+**A snag is a finding.** When a tool, script or step fails, misleads or costs time (a retry, a
+workaround, a manual step done twice), ask unprompted whether its cause can be removed, then
+act: a small fix inside what you may edit (the script, its docstring, a rule line) is made at
+once; a bigger one becomes a worklog issue, or a `proposals.html` card for a new idea. A
+workaround alone does not close it, and the turn's report names the fix or the entry.
 
 No look reaches the maintainer unchecked: the built window is captured beside its draft and
 compared first (`RUNBOOK.md` "Looks owed have one home each").

@@ -19016,3 +19016,13 @@ the first slice of its view is briefed.
 Why: the view is about to be built for the VGL organizer, and a change made in the draft costs
 less than one made in the build.
 Plan: `plans/core/development_plan.md` "Phase 8: GUI" (the paragraph on the Compiler's view).
+
+## 2026-11-20 — agents — a snag met in the work is a finding, fixed or logged unprompted
+Decision: when a tool, script or step fails, misleads or costs time, the agent asks by itself
+whether the cause can be removed: a small fix within what it may edit is made at once, a bigger
+one becomes a worklog issue or a proposals card, and the turn's report names it.
+Why: a workaround alone leaves the snag for the next run to hit, and waiting for the maintainer
+to ask "can that be fixed?" each time puts on them the improvement the project expects of its
+agents.
+Plan: `AGENTS.md` "Conduct" (the rule, so every agent reads it each session); the `nul`
+deletion recipe moved to `RUNBOOK.md` "Agents and harness" to keep `AGENTS.md` under its cap.
