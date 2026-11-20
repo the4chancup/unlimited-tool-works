@@ -25,7 +25,7 @@ such as an export's file name) leave the user's keyboard alone: the game reads a
 draws the game even when other windows cover it, so the user keeps working while a check runs.
 **Keys and the screen** (`keys`, `shot`, and `burst.py`) bring the game window to the front
 before each command, since the game reads keys only from the foreground: they take the user's
-keyboard. Use the pad and OBS; keys and the screen are the fallback when OBS is not running.
+keyboard. Use the pad and OBS; keys and the screen are the fallback when OBS cannot be used.
 
 ## Requirements
 
@@ -37,11 +37,12 @@ keyboard. Use the pad and OBS; keys and the screen are the fallback when OBS is 
   `game.py launch` starts Sider first, then the game, not elevated.
 - For the pad: the ViGEmBus driver and `pip install vgamepad`, and the game's settings tool set
   to XInput controllers (with DirectInput and no pad assigned, the game ignores the pad).
-- For `obs-shot`: OBS running with a Game Capture (or Window Capture) source of the game in its
-  active scene, a profile for in-game checks with a 1280x720 canvas (`obs-shot` switches to it),
-  its WebSocket server on (Tools > WebSocket Server Settings, port 4455, authentication off),
-  and `pip install obs-websocket-py`. The profile's name and the server's settings are `OBS` in
-  `game.py`.
+- For `obs-shot`: OBS with a Game Capture (or Window Capture) source of the game in its active
+  scene, a profile for in-game checks with a 1280x720 canvas (`obs-shot` switches to it), its
+  WebSocket server on (Tools > WebSocket Server Settings, port 4455, authentication off), and
+  `pip install obs-websocket-py`. OBS need not be left open: `obs-shot` starts it if it is not
+  running, and hands the focus back to the window that had it. OBS's path, the profile's name
+  and the server's settings are `OBS` in `game.py`.
 - For keys and the screen: `pip install mss Pillow pydirectinput` (`pydirectinput` sends
   DirectInput scan codes, the only keys the games read).
 - `install.py` knows the test slots of PES 16 and PES 17 (`download/4cc_90_test.cpk`), PES 19

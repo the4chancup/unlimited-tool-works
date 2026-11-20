@@ -28,7 +28,8 @@ Each command is one process call, so whoever drives a check reads a screenshot b
   python scripts/ingame/game.py obs-shot OUT.png [WIDTH]  OBS's frame of its program scene
                                                          (WIDTH scales it, height in proportion),
                                                          in OBS's in-game profile, switched to
-                                                         if another is on
+                                                         if another is on; starts OBS if it is
+                                                         not running
   python scripts/ingame/game.py status GAME              is the game running, where is its window
   python scripts/ingame/game.py close GAME               terminate the game process (and Sider's)
 
@@ -65,7 +66,8 @@ GAMES = {
 COMMANDS = ("launch", "shot", "keys", "pad", "chars", "status", "close")
 # OBS's WebSocket server (Tools > WebSocket Server Settings), authentication off, and the
 # profile made for in-game checks (a 1280x720 canvas), which `obs-shot` switches to.
-OBS = {"host": "localhost", "port": 4455, "password": "", "profile": "ATF720p60"}
+OBS = {"host": "localhost", "port": 4455, "password": "", "profile": "ATF720p60",
+       "exe": "C:/Program Files/obs-studio/bin/64bit/obs64.exe"}
 # Pad inputs by name: buttons, and stick directions as (stick, x, y) pushed fully. The menus
 # move with the d-pad in lists and the left stick in the top menus' tabs; the right stick turns
 # a player in Edit mode. Up is y -1.0, as the maintainer's ATF bot
@@ -344,9 +346,55 @@ def cmd_chars(game: dict[str, str], text: str) -> None:
     print(f"typed: {text}")
 
 
+def start_obs() -> None:
+    """Starts OBS if it is not running, so it need not be left open between checks,
+    and waits until its WebSocket server answers with the loaded profile."""
+    from obswebsocket import obsws, requests
+    from obswebsocket.exceptions import ConnectionFailure
+    if pids_of("obs64.exe"):
+        return
+    # Each OBS run leaves a marker here until it closes cleanly; one found at startup opens a
+    # "Crash Detected" dialog that waits for a click. With no OBS running, every marker left
+    # is stale. (OBS 32 dropped the --disable-shutdown-check flag that used to skip it.)
+    sentinels = os.path.join(os.environ["APPDATA"], "obs-studio", ".sentinel")
+    if os.path.isdir(sentinels):
+        for name in os.listdir(sentinels):
+            if name.startswith("run_"):
+                os.remove(os.path.join(sentinels, name))
+    # OBS finds its locale and plugins relative to the working folder, and fails to start from
+    # any other.
+    subprocess.Popen([OBS["exe"]], cwd=os.path.dirname(OBS["exe"]),
+                     creationflags=subprocess.CREATE_NEW_PROCESS_GROUP
+                     | subprocess.CREATE_BREAKAWAY_FROM_JOB)
+    deadline = time.monotonic() + 60
+    while time.monotonic() < deadline:
+        time.sleep(2)
+        ws = obsws(OBS["host"], OBS["port"], OBS["password"])
+        try:
+            ws.connect()
+        except ConnectionFailure:
+            continue
+        # While OBS loads, the server is up but its replies are empty.
+        loaded = "currentProfileName" in ws.call(requests.GetProfileList()).datain
+        ws.disconnect()
+        if loaded:
+            # OBS takes the focus as it opens (it ignores a start-up "do not activate"). The
+            # maintainer keeps its window in view, so it stays shown: minimizing it hands the
+            # focus back to the window in front before, and showing it again without
+            # activating keeps it there.
+            window = main_window(pids_of("obs64.exe"))
+            if window:
+                user32.ShowWindow(window[0], 6)  # SW_MINIMIZE
+                user32.ShowWindow(window[0], 4)  # SW_SHOWNOACTIVATE
+            print("OBS started")
+            return
+    raise SystemExit("OBS started, but its WebSocket server did not answer within 60 s")
+
+
 def cmd_obs_shot(out: str, width: int | None) -> None:
     import base64
     from obswebsocket import obsws, requests
+    start_obs()
     ws = obsws(OBS["host"], OBS["port"], OBS["password"])
     ws.connect()
     try:
