@@ -577,16 +577,11 @@ version, not the version selector.
     to make files the games read, while a member editing a save can be expected to have the
     game installed.
 
-    The file (read 2026-11-20 on PES 2014, 2017 and 2021, the same in all three; nothing is
-    encrypted): five bytes `WESYS` at offset 3, the zlib stream's length at 8 and its
-    inflated length at 12 (u32 little-endian), the stream at 0x10. Inflated: a section
-    count and the table's offset (8), then per section its data's offset and length and the
-    offset of its 8-byte ASCII name. A section holds a string count, a u32 not needed, then
-    per string its number, two u16 lengths (with and without the NUL) and its offset within
-    the section; strings are NUL-terminated UTF-8, with the game's inline marks (`i1`…`i0`
-    emphasis, `\n`). Names and texts sit in paired sections, `…W` and `…T` (`F8W` and
-    `F8T` for the Game Plan's), whose numbers do not always match ("Long Ball" is `F8W` 84,
-    its text `F8T` 46), hence the table.
+    The file is read through the `pes_strings` lib crate, built on main and merged in
+    before this slice; its plan on main (`plans/libs/pes_strings.md`) holds the format. The
+    texts carry the game's inline marks (`i1`…`i0` emphasis, `\n`). Names and texts sit in
+    paired sections, `…W` and `…T` (`F8W` and `F8T` for the Game Plan's), whose numbers do
+    not always match ("Long Ball" is `F8W` 84, its text `F8T` 46), hence the table.
   - **Automatic settings** gain Combination Play's switch, and Substitution offers all four
     timings.
 
