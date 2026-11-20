@@ -72,8 +72,10 @@ run's findings (`4cc-studio-temp/str_re/out/findings.md`).
 13. The suite's own images (DECISIONS 2026-11-20 "the placeholder portraits and the Team
     Export thumbnail are the suite's own"): the three placeholder portraits drawn as SVGs and
     the 4cc clover thumbnail, both rendered to the PNGs the binary embeds by one script; a
-    look of each beside the game's; PES 2017 imports a Team Export carrying the clover (SWE-2,
-    in game). Can run beside the detour: it touches no PES 2014 file.
+    look of each beside the game's. PES 2017 lists and imports a Team Export carrying the
+    clover (checked in game 2026-11-20); its list draws the game's stock picture for every
+    file, so the clover shows nowhere in game. Owed: the commit's review rounds (Tier 1).
+    Can run beside the detour: it touches no PES 2014 file.
 
 Most open steps below wait only on a check in the game or the built window that the lead's
 harness makes ("Pending looks" below), not on the maintainer.
