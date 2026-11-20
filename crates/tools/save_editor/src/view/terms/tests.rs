@@ -291,6 +291,13 @@ fn the_skills_and_com_styles_rows() {
         "off",
         "on",
     );
+    // PES 2014's list calls the card Precise Touch, its older name.
+    assert_term(
+        &row_term(PesVersion::Pes14, &field(PlayerField::Skill(4), 0, 1)),
+        "Precise Touch",
+        "off",
+        "on",
+    );
 }
 
 /// The 1-based motions show one above the stored, the celebrations and
@@ -352,6 +359,13 @@ fn the_motion_fields_rows() {
         "Dribbling motion",
         "4",
         "1",
+    );
+    // PES 2014's punt kick reads under its control's label, shown from 1.
+    assert_term(
+        &row_term(PesVersion::Pes14, &field(PlayerField::PuntKickMotion, 0, 3)),
+        "Punt kick",
+        "1",
+        "4",
     );
 }
 
@@ -669,9 +683,11 @@ fn every_table_driven_field_has_a_term() {
         let term = row_term(version, &field(stat.field, 0, 0));
         assert_eq!(term.label, stat.label, "{:?}", stat.field);
     }
-    for motion in fields::MOTIONS {
-        let term = row_term(version, &field(motion.field, 0, 0));
-        assert_eq!(term.label, motion.label, "{:?}", motion.field);
+    for version in [version, PesVersion::Pes14] {
+        for motion in fields::motions(version) {
+            let term = row_term(version, &field(motion.field, 0, 0));
+            assert_eq!(term.label, motion.label, "{version:?} {:?}", motion.field);
+        }
     }
     for (label, key, ..) in fields::PHYSIQUE {
         let field = key

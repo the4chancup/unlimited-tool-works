@@ -4,7 +4,9 @@
 //! dock and its window, Multi-team AATF's report and the Team creator
 //! (planned) draw this list.
 
-use pes_savefile::interchange::team_toml::labels::{POSITIONS, card_name, stat_name, title_case};
+use pes_savefile::interchange::team_toml::labels::{
+    POSITIONS, card_name_in, stat_name, title_case,
+};
 use pes_savefile::model::{FormationBreak, FormationLine};
 use pes_version::PesVersion;
 
@@ -119,7 +121,8 @@ impl ListUse {
 
 /// What the rows name things from: the rules a check ran under, whose
 /// labels name its tiers, brackets and height systems, and the PES version
-/// of the save it checked, whose game names the stats (PES 2017's Header).
+/// of the save it checked, whose game names the stats and the cards (PES
+/// 2017's Header, PES 2014's Precise Touch).
 #[derive(Clone, Copy)]
 pub struct Wording<'a> {
     /// The rules the check ran under.
@@ -963,9 +966,9 @@ fn setting_words(setting: &str) -> &str {
 }
 
 /// What is wrong with `violation`, in the draft's `violationSentence` wording:
-/// one arm per `ViolationKind`, each stat named as the game of
-/// `wording.version` names it (PES 2017's Header), each card as the game
-/// names it (Heading) and each tier, bracket and height system by its
+/// one arm per `ViolationKind`, each stat and card named as the game of
+/// `wording.version` names it (PES 2017's Header, PES 2014's Precise
+/// Touch) and each tier, bracket and height system by its
 /// label in `wording.ruleset`, the rules the check ran under. `team_id` is the
 /// team's, for the rules whose expected value it sets (the roster order's
 /// `team id x 100 + slot + 1`). The row's text after the rule's name; a host
@@ -1065,9 +1068,10 @@ pub fn sentence(violation: &aatf::Violation, team_id: u32, wording: Wording<'_>)
             format!("{count} skill cards, over the cap of {max}")
         }
         K::ComStyleCap { count, max } => format!("{count} COM styles, over the cap of {max}"),
-        K::RequiredCard { card } => {
-            format!("the required card {} is missing", card_name(card.label()))
-        }
+        K::RequiredCard { card } => format!(
+            "the required card {} is missing",
+            card_name_in(wording.version, card.label())
+        ),
         K::APositions {
             count,
             max,
@@ -2479,6 +2483,18 @@ mod tests {
                 },
                 "Required card",
                 "the required card GK Long Throw is missing",
+            ),
+            (
+                Wording {
+                    version: PesVersion::Pes14,
+                    ..a26
+                },
+                Error,
+                K::RequiredCard {
+                    card: aatf::Card::try_from("cut_behind_and_turn".to_string()).expect("a card"),
+                },
+                "Required card",
+                "the required card Precise Touch is missing",
             ),
             (
                 a26,

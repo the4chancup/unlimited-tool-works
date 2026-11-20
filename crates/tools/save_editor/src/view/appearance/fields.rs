@@ -227,7 +227,9 @@ pub(crate) struct MotionField {
 /// The motion controls in the draft's order: the two hunching and two arm
 /// fields, the three kick motions, then the two celebrations (the dribbling
 /// motion is drawn separately, between the kicks and the celebrations, and
-/// Randomize never touches it).
+/// Randomize never touches it). The table the screen iterates is
+/// `motions(version)`'s: this one except on PES 2014, which stores a punt
+/// kick and no corner kick.
 pub(crate) const MOTIONS: [MotionField; 9] = [
     MotionField {
         label: "Hunching (dribbling)",
@@ -293,6 +295,33 @@ pub(crate) const MOTIONS: [MotionField; 9] = [
         set: |m, v| m.goal_celebration_2 = v,
     },
 ];
+
+/// The PES 2014 punt kick, drawn in the Corner kick entry's cell on a
+/// PES 2014 save (`motions`): the version stores a punt kick and no
+/// corner kick. Its stored option is always `Some` where the cell draws,
+/// the schema gating it to the version that stores it.
+pub(crate) const PUNT_KICK: MotionField = MotionField {
+    label: "Punt kick",
+    field: PlayerField::PuntKickMotion,
+    one_based: true,
+    get: |m| m.punt_kick.expect("a PES 2014 record holds the punt kick"),
+    set: |m, v| m.punt_kick = Some(v),
+};
+
+/// `version`'s motion controls: `MOTIONS`, except that on PES 2014 the
+/// Corner kick entry's cell draws Punt kick, the version storing a punt
+/// kick and no corner kick.
+pub(crate) fn motions(version: PesVersion) -> [MotionField; 9] {
+    let mut motions = MOTIONS;
+    if version == PesVersion::Pes14 {
+        let corner = motions
+            .iter_mut()
+            .find(|field| field.field == PlayerField::CornerKickMotion)
+            .expect("MOTIONS holds the corner kick");
+        *corner = PUNT_KICK;
+    }
+    motions
+}
 
 /// The strip palettes' swatch colours, approximations of the spectacles
 /// colours' names (`SettingKey::SpectaclesColor`). The gloves colour has the
