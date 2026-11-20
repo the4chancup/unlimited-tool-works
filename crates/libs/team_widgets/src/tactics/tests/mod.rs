@@ -1678,6 +1678,103 @@ fn the_preset_fields_terms() {
     );
 }
 
+/// PES 2014's Game Plan and Combination Play rows word the values as the
+/// screen shows them: the Strategy's name, Support Range's shown value
+/// (the record stores 20 less it), a combination slot's strategy name and
+/// its area's number, "None Selected" and "None" for an empty slot. A
+/// stored value the screen has no word for reads as its number.
+#[test]
+fn pes14s_game_plan_and_combination_terms() {
+    let version = PesVersion::Pes14;
+    let tactics = TeamTactics::bare(version);
+    let rows = named_roster();
+    let roster = roster_rows(&rows);
+    let term = |field, old, new| {
+        tactics_term(
+            version,
+            field,
+            old,
+            new,
+            &tactics,
+            &tactics,
+            (&roster, &roster),
+        )
+    };
+    let preset = |field| TacticsField::Preset { preset: 0, field };
+    let owned =
+        |(label, old, new): (&str, &str, &str)| (label.to_owned(), old.to_owned(), new.to_owned());
+    for (field, old, new, expected) in [
+        (
+            preset(PresetField::Strategy),
+            1,
+            2,
+            ("Preset 1 · Strategy", "Long Ball", "Quick Counter"),
+        ),
+        (
+            preset(PresetField::Strategy),
+            7,
+            0,
+            ("Preset 1 · Strategy", "7", "Custom"),
+        ),
+        (
+            preset(PresetField::GamePlanSlider(1)),
+            10,
+            8,
+            ("Preset 1 · Support range", "10", "12"),
+        ),
+        (
+            preset(PresetField::GamePlanSlider(1)),
+            15,
+            21,
+            ("Preset 1 · Support range", "5", "21"),
+        ),
+        (
+            preset(PresetField::GamePlanSlider(0)),
+            7,
+            8,
+            ("Preset 1 · Player support", "7", "8"),
+        ),
+        (
+            TacticsField::CombinationStrategy(0),
+            10,
+            3,
+            (
+                "Combination play · 1 · Strategy",
+                "Dummy Run and Cross",
+                "Cut Inside",
+            ),
+        ),
+        (
+            TacticsField::CombinationStrategy(1),
+            0,
+            8,
+            (
+                "Combination play · 2 · Strategy",
+                "None Selected",
+                "Overlap and Pull Back",
+            ),
+        ),
+        (
+            TacticsField::CombinationStrategy(2),
+            15,
+            0,
+            ("Combination play · 3 · Strategy", "15", "None Selected"),
+        ),
+        (
+            TacticsField::CombinationArea(2),
+            0,
+            7,
+            ("Combination play · 3 · Area", "None", "7"),
+        ),
+    ] {
+        assert_eq!(
+            term(field, old, new),
+            owned(expected),
+            "{field:?} {old} -> {new}"
+        );
+    }
+}
+
 /// The set-piece takers' and the captain's terms: the chips' labels and
 /// the holder's name, "Unassigned" for 255.
 #[test]

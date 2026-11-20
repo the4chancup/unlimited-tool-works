@@ -299,7 +299,7 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
     // teams nor saves.
     ui.push_id((*generation, team_id), |ui| {
         let mut edited = team.tactics.clone();
-        let mut changed = [false; 6];
+        let mut changed = [false; 7];
         // The draft's `.tacgrid`: the settings column's 422, the pitch's
         // track (its canvas and the border a side around it), the assignments'
         // the rest — a cell a child `Ui` like the old columns', each row's height
@@ -434,8 +434,9 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
         .fold(row2_top, f32::max)
             + ROW_GAP;
 
-        // Row 3: the lists over columns 2-3, Advanced instructions over
-        // Automatic settings on column 1 (the draft's `tacstack`) — the
+        // Row 3: the lists over columns 2-3, Advanced instructions
+        // (Combination play on PES 2014) over Automatic settings on
+        // column 1 (the draft's `tacstack`) — the
         // lists drawn first so the stack's cell can end at their bottom,
         // which is what `#tac-auto`'s `flex: 1` reaches.
         let mut lists_ui = cell(ui, pitch_left, row3_top, right - pitch_left, bottom);
@@ -449,9 +450,14 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
         );
         let lists_bottom = lists_ui.min_rect().max.y;
         let mut stack_ui = cell(ui, top_left.x, row3_top, SETTINGS_WIDTH, lists_bottom);
-        // PES 2014's stack holds Automatic settings alone (its Game Plan
-        // has no advanced instructions).
-        if !pes14 {
+        // PES 2014's stack holds Combination play where the other
+        // versions hold Advanced instructions, which its Game Plan lacks.
+        if pes14 {
+            if edited.combination.is_some() {
+                changed[6] = tactics::pes14::combination_play(&mut stack_ui, &mut edited);
+                stack_ui.add_space(ROW_GAP - stack_ui.spacing().item_spacing.y);
+            }
+        } else {
             changed[3] = tactics::advanced_instructions(
                 &mut stack_ui,
                 version,
@@ -482,6 +488,7 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
             "advanced instructions",
             "automatic settings",
             "lineup",
+            "combination play",
         ]
         .into_iter()
         .zip(changed)

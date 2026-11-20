@@ -7,7 +7,9 @@
 //! `tactics` in place and answers whether it changed; the host decides
 //! what the change means.
 
-use pes_savefile::model::tactics::{TacticSliders, TacticStyle, TacticsPreset, TeamTactics};
+use pes_savefile::model::tactics::{
+    TacticSliders, TacticStyle, TacticsPreset, TeamTactics, game_plan_slider_shown,
+};
 use pes_savefile::schema::fields::{
     FormationPart, InstructionPart, InstructionSide, PresetField, TacticsField,
 };
@@ -434,7 +436,8 @@ const OFFSIDE_TRAP_LABEL: &str = "Offside trap";
 const PRESET_CHANGE_LABEL: &str = "Preset change";
 /// The attack/defence-levels checkbox's label.
 const ATTACK_DEFENCE_LABEL: &str = "Attack/defence levels";
-/// The Combination Play switch's and slots' label (PES 2014).
+/// The Combination Play panel's title and its switch's and slots'
+/// label (PES 2014).
 const COMBINATION_PLAY_LABEL: &str = "Combination play";
 /// The Game Plan's Strategy dropdown's label (PES 2014).
 const STRATEGY_LABEL: &str = "Strategy";
@@ -893,7 +896,8 @@ pub fn player_assignments(
 /// The "Automatic settings" panel (the draft's `#tac-auto` group over
 /// `.tacauto`): one grid of two equal columns of 24-point rows —
 /// Substitution beside Preset change, Offside trap beside
-/// Attack/defence levels — its frame grown to the lists' bottom the
+/// Attack/defence levels, or beside Combination play on a record that
+/// stores its switch (PES 2014) — its frame grown to the lists' bottom the
 /// host bounds the cell to, the rows centred in it. Answers `true`
 /// only when `tactics` changed this frame.
 pub fn automatic_settings(ui: &mut egui::Ui, tactics: &mut TeamTactics) -> bool {
@@ -933,12 +937,23 @@ pub fn automatic_settings(ui: &mut egui::Ui, tactics: &mut TeamTactics) -> bool 
                 );
             },
             |ui| {
-                auto_flag(
-                    ui,
-                    ATTACK_DEFENCE_LABEL,
-                    &mut auto.attack_defence_levels,
-                    TacticsField::AutoAttackDefenceLevels,
-                );
+                // PES 2014 stores Combination Play's switch and no
+                // attack/defence levels: its switch takes the cell.
+                if auto.combination_play.is_some() {
+                    auto_flag(
+                        ui,
+                        COMBINATION_PLAY_LABEL,
+                        &mut auto.combination_play,
+                        TacticsField::AutoCombinationPlay,
+                    );
+                } else {
+                    auto_flag(
+                        ui,
+                        ATTACK_DEFENCE_LABEL,
+                        &mut auto.attack_defence_levels,
+                        TacticsField::AutoAttackDefenceLevels,
+                    );
+                }
             },
         );
     });
@@ -1014,9 +1029,22 @@ fn substitution_text(stored: u8) -> String {
 /// none. `held` must be one of `choices`.
 fn choice_combo<T: Copy + PartialEq>(
     ui: &mut egui::Ui,
-    id_salt: &str,
+    id_salt: impl egui::AsIdSalt,
     choices: &[(T, String)],
     held: T,
+) -> T {
+    greyed_choice_combo(ui, id_salt, choices, held, |_| true)
+}
+
+/// `choice_combo` with the entries `pickable` refuses greyed: drawn
+/// disabled in the list, where a click picks nothing, and passed over
+/// by the wheel.
+fn greyed_choice_combo<T: Copy + PartialEq>(
+    ui: &mut egui::Ui,
+    id_salt: impl egui::AsIdSalt,
+    choices: &[(T, String)],
+    held: T,
+    pickable: impl Fn(T) -> bool,
 ) -> T {
     let mut pick = held;
     let combo = egui::ComboBox::from_id_salt(id_salt)
@@ -1031,11 +1059,16 @@ fn choice_combo<T: Copy + PartialEq>(
         .truncate()
         .show_ui(ui, |ui| {
             for (value, name) in choices {
-                combo_item(ui, &mut pick, *value, name.clone());
+                add_enabled(ui, pickable(*value), |ui: &mut egui::Ui| {
+                    combo_item(ui, &mut pick, *value, name.clone())
+                });
             }
         })
         .response;
-    let values = choices.iter().map(|(value, _)| *value);
+    let values = choices
+        .iter()
+        .map(|(value, _)| *value)
+        .filter(|value| *value == held || pickable(*value));
     if let Some(next) = step_choice(values, &pick, wheel_steps(ui, &combo)) {
         pick = next;
     }
@@ -1298,15 +1331,24 @@ pub fn tactics_term(
             on_off(old).to_owned(),
             on_off(new).to_owned(),
         ),
-        TacticsField::CombinationArea(index) => (
-            format!("{COMBINATION_PLAY_LABEL} · {} · Area", index + 1),
-            old.to_string(),
-            new.to_string(),
-        ),
+        TacticsField::CombinationArea(index) => {
+            let area = |stored: u32| {
+                if stored == 0 {
+                    "None".to_owned()
+                } else {
+                    stored.to_string()
+                }
+            };
+            (
+                format!("{COMBINATION_PLAY_LABEL} · {} · Area", index + 1),
+                area(old),
+                area(new),
+            )
+        }
         TacticsField::CombinationStrategy(index) => (
             format!("{COMBINATION_PLAY_LABEL} · {} · Strategy", index + 1),
-            old.to_string(),
-            new.to_string(),
+            pes14::combination_text(byte(old)),
+            pes14::combination_text(byte(new)),
         ),
     }
 }
@@ -1352,13 +1394,25 @@ fn preset_label(version: PesVersion, field: PresetField) -> &'static str {
 /// `stored` as the preset field's control shows it: a style pair's text,
 /// "off"/"on" for the fluid switch, a numbers toggle's `TRI_CHOICES`
 /// text (a stored value outside 1-3 its number, as the toggle's
-/// Substitution rule), the number else.
+/// Substitution rule), the Strategy's name, a Game Plan slider's shown
+/// value, the number else. A Strategy or slider value the screen has no
+/// counterpart for is its stored number.
 fn preset_value(field: PresetField, stored: u32) -> String {
     if let Some(toggle) = STYLE_TOGGLES.iter().find(|toggle| toggle.field == field) {
         return if stored == 0 { toggle.off } else { toggle.on }.to_owned();
     }
     if field == PresetField::FluidFormation {
         return on_off(stored).to_owned();
+    }
+    if field == PresetField::Strategy
+        && let Some(name) = pes14::STRATEGIES.get(stored as usize)
+    {
+        return (*name).to_owned();
+    }
+    if let PresetField::GamePlanSlider(index) = field {
+        return game_plan_slider_shown(index, stored)
+            .unwrap_or(stored)
+            .to_string();
     }
     if NUMBERS.contains(&field)
         && let Some(label) = stored

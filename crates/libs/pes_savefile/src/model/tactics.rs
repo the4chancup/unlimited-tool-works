@@ -251,16 +251,27 @@ pub struct TeamAutoFlags {
 /// slider 1 of the panel's order.
 const SUPPORT_RANGE_SLIDER: u8 = 1;
 
-/// Translates Support Range between stored and shown: the record stores 20
-/// less the value shown, so one subtract serves both ways. A value over 20
-/// has no counterpart and is refused.
-fn support_range(field: TacticsField, value: u32) -> Result<u32, CodecError> {
-    20u32
-        .checked_sub(value)
-        .ok_or_else(|| CodecError::OutsideStoredOrder {
-            field: format!("{field:?}"),
-            value,
-        })
+/// The value PES 2014's Game Plan slider `index` (0 to 7, the panel's
+/// order) shows for its `stored` byte. Support Range (slider 1) stores 20
+/// less the value shown, every other slider the value itself. The
+/// subtraction is its own inverse, so the same call turns a shown value
+/// into its stored byte. `None` for a Support Range value over 20, which
+/// has no counterpart.
+pub fn game_plan_slider_shown(index: u8, stored: u32) -> Option<u32> {
+    if index == SUPPORT_RANGE_SLIDER {
+        20u32.checked_sub(stored)
+    } else {
+        Some(stored)
+    }
+}
+
+/// `game_plan_slider_shown` for the codec, which refuses a value with no
+/// counterpart rather than wrapping it.
+fn game_plan_slider(field: TacticsField, index: u8, value: u32) -> Result<u32, CodecError> {
+    game_plan_slider_shown(index, value).ok_or_else(|| CodecError::OutsideStoredOrder {
+        field: format!("{field:?}"),
+        value,
+    })
 }
 
 impl TeamEntry {
@@ -299,11 +310,7 @@ impl TeamEntry {
                             .sliders
                             .get(usize::from(i))
                             .ok_or_else(|| codec::index(field, i))?;
-                        if i == SUPPORT_RANGE_SLIDER {
-                            support_range(field, u32::from(shown))?
-                        } else {
-                            u32::from(shown)
-                        }
+                        game_plan_slider(field, i, u32::from(shown))?
                     }
                 }
             }
@@ -487,12 +494,7 @@ impl TeamEntry {
                         p.game_plan.get_or_insert_default().strategy = value as u8;
                     }
                     PresetField::GamePlanSlider(i) => {
-                        // Support Range stores 20 less the value shown.
-                        let value = if i == SUPPORT_RANGE_SLIDER {
-                            support_range(field, value)?
-                        } else {
-                            value
-                        };
+                        let value = game_plan_slider(field, i, value)?;
                         *p.game_plan
                             .get_or_insert_default()
                             .sliders

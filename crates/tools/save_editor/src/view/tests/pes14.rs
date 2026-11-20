@@ -389,32 +389,98 @@ fn a_pes14_save_draws_the_gameplan_and_greys_the_team_file_panel() {
     view.panel = None;
 }
 
-/// The AccessKit id of the `role` widget under the first Label reading
-/// `label`, in that label's column (a Preset tactics cell's control).
+/// The bounds of every Label reading `label`, top to bottom.
+fn label_bounds_all(
+    ids: &[(accesskit::NodeId, accesskit::Node)],
+    label: &str,
+) -> Vec<accesskit::Rect> {
+    let mut found: Vec<accesskit::Rect> = ids
+        .iter()
+        .filter(|(_, node)| node.role() == Role::Label && node.value() == Some(label))
+        .filter_map(|(_, node)| node.bounds())
+        .collect();
+    found.sort_by(|a, b| a.y0.partial_cmp(&b.y0).expect("ordered bounds"));
+    found
+}
+
+/// The AccessKit ids of the `role` widgets under `header`, in its column,
+/// top to bottom.
+fn ids_below(
+    ids: &[(accesskit::NodeId, accesskit::Node)],
+    header: accesskit::Rect,
+    role: Role,
+) -> Vec<accesskit::NodeId> {
+    let mut found: Vec<(f64, accesskit::NodeId)> = ids
+        .iter()
+        .filter(|(_, node)| node.role() == role)
+        .filter_map(|(id, node)| {
+            let b = node.bounds()?;
+            (b.y0 > header.y0 && (b.x0 - header.x0).abs() < 1.0).then_some((b.y0, *id))
+        })
+        .collect();
+    found.sort_by(|a, b| a.0.partial_cmp(&b.0).expect("ordered bounds"));
+    found.into_iter().map(|(_, id)| id).collect()
+}
+
+/// The AccessKit id of the `role` widget under the topmost Label reading
+/// `label`, in that label's column (a Preset tactics cell's control:
+/// Combination play's "Strategy" header stands below Preset tactics').
 fn control_id_below(
     ids: &[(accesskit::NodeId, accesskit::Node)],
     label: &str,
     role: Role,
 ) -> accesskit::NodeId {
-    let bounds = ids
-        .iter()
-        .find(|(_, node)| node.role() == Role::Label && node.value() == Some(label))
-        .and_then(|(_, node)| node.bounds())
+    let bounds = *label_bounds_all(ids, label)
+        .first()
         .unwrap_or_else(|| panic!("no label {label:?}"));
-    ids.iter()
-        .filter(|(_, node)| {
-            node.role() == role
-                && node
-                    .bounds()
-                    .is_some_and(|b| b.y0 > bounds.y0 && (b.x0 - bounds.x0).abs() < 1.0)
-        })
-        .min_by(|a, b| {
-            let y =
-                |pair: &&(accesskit::NodeId, accesskit::Node)| pair.1.bounds().expect("bounds").y0;
-            y(a).partial_cmp(&y(b)).expect("ordered bounds")
-        })
-        .map(|(id, _)| *id)
+    *ids_below(ids, bounds, role)
+        .first()
         .unwrap_or_else(|| panic!("no {role:?} below {label:?}"))
+}
+
+/// The Combination play panel's three rows, top to bottom: each slot's
+/// strategy combo, area combo and Clear button. The panel's "Strategy"
+/// header is the one level with its "Area" header, since Preset tactics
+/// has a "Strategy" label of its own.
+fn combination_rows(ids: &[(accesskit::NodeId, accesskit::Node)]) -> [[accesskit::NodeId; 3]; 3] {
+    let area = *label_bounds_all(ids, "Area")
+        .first()
+        .expect("the Area header");
+    let strategy = label_bounds_all(ids, "Strategy")
+        .into_iter()
+        .find(|bounds| (bounds.y0 - area.y0).abs() < 1.0)
+        .expect("the panel's Strategy header, level with Area");
+    let strategies = ids_below(ids, strategy, Role::ComboBox);
+    let areas = ids_below(ids, area, Role::ComboBox);
+    let mut clears: Vec<(f64, accesskit::NodeId)> = ids
+        .iter()
+        .filter(|(_, node)| node.role() == Role::Button && node.label() == Some("Clear"))
+        .map(|(id, node)| (node.bounds().expect("bounds").y0, *id))
+        .collect();
+    clears.sort_by(|a, b| a.0.partial_cmp(&b.0).expect("ordered bounds"));
+    assert_eq!(
+        (strategies.len(), areas.len(), clears.len()),
+        (3, 3, 3),
+        "three strategy combos, area combos and Clear buttons"
+    );
+    [0, 1, 2].map(|row| [strategies[row], areas[row], clears[row].1])
+}
+
+/// Team 701's Combination Play slots in the view's session, each
+/// `(area, strategy)`.
+fn combination_of(view: &SaveView) -> [(u8, u8); 3] {
+    team_entry(view, 701)
+        .tactics
+        .combination
+        .expect("a PES 2014 record stores Combination Play")
+        .map(|slot| (slot.area, slot.strategy))
+}
+
+/// Opens combo `combo` and clicks its entry `item`.
+fn pick_entry(window: &mut Headless, view: &mut SaveView, combo: accesskit::NodeId, item: &str) {
+    action_click(window, view, combo);
+    let (_, ids, _) = window.frame_ids(Vec::new(), |ui| show(ui, view, &|| Vec::new()));
+    action_click(window, view, item_id(&ids, item));
 }
 
 /// The node of AccessKit `id`, among `ids`.
@@ -601,6 +667,176 @@ fn the_preset_tactics_panel_edits_irelands_game_plan() {
         plan.sliders[1..],
         [10, 9, 15, 15, 15, 15, 10],
         "the other sliders are untouched"
+    );
+}
+
+// The Combination play panel on the PES 2014 fixture's team 1, IRELAND
+// (taking 701's id), whose slots hold Dummy Run and Cross in area 2, Hold
+// up the ball in 6 and Hold Up and Overlap in 8. The Area header's
+// tooltip gives the game's numbering. Cut Inside (areas 3 and 5) picked
+// in slot 1 lands on 3, where the game's picker opens; in slot 2 it
+// lands on 5, 3 being held. Slot 3 then finds it greyed, and a click on
+// it picks nothing. An area pick sets the area alone, Clear empties its
+// slot, and the automatic switch sits beside Offside trap. The save holds
+// each as the game's bytes.
+#[test]
+fn the_combination_play_panel_edits_irelands_slots() {
+    let path = fixture(PesVersion::Pes14, "pes14_combination_play");
+    let mut file = EditFile::from_bytes(&fixture_save(PesVersion::Pes14)).unwrap();
+    file.team_mut(1).expect("the vanilla first team").id = 701;
+    file.save(&path).unwrap();
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut window = Headless::new();
+    open_team_view(&mut window, &mut view, 701);
+    assert_eq!(
+        combination_of(&view),
+        [(2, 10), (6, 1), (8, 5)],
+        "premise: IRELAND's slots, as `pes14_tactics_literals` pins them"
+    );
+    assert_eq!(
+        team_entry(&view, 701).tactics.auto.combination_play,
+        Some(false),
+        "premise: the automatic switch is off"
+    );
+
+    let (_, ids, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let area_header = *label_bounds_all(&ids, "Area")
+        .first()
+        .expect("the Area header");
+    let at = egui::pos2(
+        ((area_header.x0 + area_header.x1) / 2.0) as f32,
+        ((area_header.y0 + area_header.y1) / 2.0) as f32,
+    );
+    assert_eq!(
+        tooltip_containing(&mut window, &mut view, at, "area screen"),
+        Some(
+            "The game's area screen numbers the pitch in rows, from its top: 1 and 2, then 3 to \
+             5, 6 to 8, and 9 to 11."
+                .to_string()
+        ),
+        "the Area header's tooltip"
+    );
+
+    let (_, ids, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let rows = combination_rows(&ids);
+    assert_eq!(
+        node_of(&ids, rows[0][0]).value(),
+        Some("Dummy Run and Cross"),
+        "slot 1's strategy by name"
+    );
+    pick_entry(&mut window, &mut view, rows[0][0], "Cut Inside");
+    assert_eq!(
+        combination_of(&view),
+        [(3, 3), (6, 1), (8, 5)],
+        "Cut Inside in slot 1 opens on 3"
+    );
+    pick_entry(&mut window, &mut view, rows[1][0], "Cut Inside");
+    assert_eq!(
+        combination_of(&view),
+        [(3, 3), (5, 3), (8, 5)],
+        "Cut Inside in slot 2 lands on 5, 3 being held"
+    );
+
+    // Slot 3's list greys Cut Inside, and a click on it picks nothing.
+    action_click(&mut window, &mut view, rows[2][0]);
+    let (_, ids, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let cut_inside = item_id(&ids, "Cut Inside");
+    assert!(
+        node_of(&ids, cut_inside).is_disabled(),
+        "Cut Inside is greyed for slot 3"
+    );
+    assert!(
+        !node_of(&ids, item_id(&ids, "Hold up the ball")).is_disabled(),
+        "a strategy with a free area stays live"
+    );
+    action_click(&mut window, &mut view, cut_inside);
+    assert_eq!(
+        combination_of(&view),
+        [(3, 3), (5, 3), (8, 5)],
+        "the greyed entry picks nothing"
+    );
+    window.frame(
+        vec![key(egui::Key::Escape, egui::Modifiers::NONE, true)],
+        |ui| show(ui, &mut view, &|| Vec::new()),
+    );
+
+    // Slot 3's areas are the midfield's less 3 and 5: an area pick sets
+    // the area alone.
+    // The popup's entries are the buttons its opening added (the preset
+    // bar's are numbers too).
+    let (_, closed, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    action_click(&mut window, &mut view, combination_rows(&closed)[2][1]);
+    let (_, ids, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let mut entries: Vec<(f64, &str, accesskit::NodeId)> = ids
+        .iter()
+        .filter(|(id, node)| {
+            node.role() == Role::Button && !closed.iter().any(|(shown, _)| shown == id)
+        })
+        .filter_map(|(id, node)| Some((node.bounds()?.y0, node.label()?, *id)))
+        .collect();
+    entries.sort_by(|a, b| a.0.partial_cmp(&b.0).expect("ordered bounds"));
+    assert_eq!(
+        entries
+            .iter()
+            .map(|(_, label, _)| *label)
+            .collect::<Vec<_>>(),
+        ["4", "6", "7", "8"],
+        "slot 3's free areas"
+    );
+    action_click(&mut window, &mut view, entries[0].2);
+    assert_eq!(
+        combination_of(&view),
+        [(3, 3), (5, 3), (4, 5)],
+        "the area pick keeps the strategy"
+    );
+
+    // Clear empties slot 2: "None Selected", its area combo and Clear
+    // disabled.
+    let (_, ids, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    action_click(&mut window, &mut view, combination_rows(&ids)[1][2]);
+    assert_eq!(
+        combination_of(&view),
+        [(3, 3), (0, 0), (4, 5)],
+        "Clear stores strategy 0 and area 0"
+    );
+    let (_, ids, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let rows = combination_rows(&ids);
+    assert_eq!(
+        node_of(&ids, rows[1][0]).value(),
+        Some("None Selected"),
+        "an empty slot reads None Selected"
+    );
+    assert!(
+        node_of(&ids, rows[1][1]).is_disabled() && node_of(&ids, rows[1][2]).is_disabled(),
+        "an empty slot's area combo and Clear are disabled"
+    );
+
+    // The automatic switch.
+    let switch = ids
+        .iter()
+        .find(|(_, node)| node.role() == Role::CheckBox && node.label() == Some("Combination play"))
+        .map(|(id, _)| *id)
+        .expect("Automatic settings' Combination play switch");
+    action_click(&mut window, &mut view, switch);
+    assert_eq!(
+        team_entry(&view, 701).tactics.auto.combination_play,
+        Some(true),
+        "the switch is on"
+    );
+
+    // The save holds the switch at +0x1D3 and the slots, area then
+    // strategy, from +0x1D6.
+    window.frame(vec![key(egui::Key::S, egui::Modifiers::CTRL, true)], |ui| {
+        show(ui, &mut view, &|| Vec::new())
+    });
+    let saved = EditFile::load(&path).unwrap();
+    let record = saved.team_records(701).expect("team 701").tactics;
+    assert_eq!(record[0x1D3], 1, "Combination Play's switch");
+    assert_eq!(
+        record[0x1D6..0x1DC],
+        [3, 3, 0, 0, 4, 5],
+        "the slots' area and strategy bytes"
     );
 }
 
