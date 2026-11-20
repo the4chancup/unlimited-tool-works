@@ -202,9 +202,9 @@ From the fork's codec, checked against the vanilla save and the Akko saves (2026
     Support Range, Position Switch, Front line pressure, Defensive Line, Defensive Compactness,
     Shifting to Attack, Attack/Defence Level. Each runs from 0 to 20. Support Range is stored as
     20 less the value shown: shown 20 is 0, and 19 is 1;
-  - the Strategy at +0x5A is the dropdown's index: Custom 0, Long Ball 1, Quick Counter,
-    Possession Game, All-out Defence, All-out Attack 5 (the middle three by their place in the
-    list; run `formations1` picks them). A pick sets some sliders as well: All-out Attack set
+  - the Strategy at +0x5A is the dropdown's index: Custom 0, Long Ball 1, Quick Counter 2,
+    Possession Game 3, All-out Defence 4, All-out Attack 5 (the middle three confirmed by run
+    `formations1`). A pick sets some sliders as well: All-out Attack set
     Front line pressure, Defensive Line and Shifting to Attack to 15 and Attack/Defence Level to
     20;
   - the takers, one byte each holding a roster slot: Long FK +0x1C6, Short FK +0x1C7, FK Taker 2
@@ -221,6 +221,34 @@ From the fork's codec, checked against the vanilla save and the Akko saves (2026
   - One-Touch Settings (Data Management) is not in the team's record: switching it off changed
     no byte of `/f/`'s record, nor any outside the competition data every save rewrites. The
     Gameplan screen leaves it out.
+- **Pinned in game, run `formations1`** (2026-11-20, one Game Plan change on each of teams 2 to
+  12 and 40 to 59 of `.akko7v2`, kept as `formations1`). Offsets as in `tactics3`; no other
+  team's record changed:
+  - the formation list holds 11 entries, in this order: 4-4-2, 4-3-1-2, 4-2-3-1, 4-2-1-3,
+    4-3-2-1, 4-1-2-3, 4-3-3, 3-2-3-2, 3-1-4-2, 3-2-2-3, 5-2-2-1. The Akko teams' 8-1-1 is none
+    of them, so the dropdown opens on the first;
+  - a formation is the ten outfield players' roles and places. The role of position k (k = 0
+    to 9) is the byte at +0x06 + 4k, in the game's role numbers: CB 1, LB 2, RB 3, DMF 4,
+    CMF 5, LMF 6, RMF 7, AMF 8, LWF 9, RWF 10, CF 12. Its place is two u16s from +0x32 + 4k:
+    the depth from the own goal, then the width, larger on the right (4-4-2's centre backs
+    stand at 10, 63 and 10, 41, its full-backs at 12, 89 and 12, 15). A pick wrote no slider
+    or Strategy byte. It also set +0x2E from 4 to 3 on every team, whatever the formation,
+    and left +0x30 (52 on every team) alone: what either holds is not known;
+  - the Strategy's three middle values: Quick Counter 2, Possession Game 3, All-out Defence 4.
+    Each pick sets sliders too, shown in the panel's order: Quick Counter 10, 10, 0, 15, 15,
+    15, 15, 10; Possession Game 15, 10, 0, 10, 10, 10, 0, 10; All-out Defence changes
+    Defensive Compactness alone, to 10;
+  - the Combination Play strategy ids, 1 to 14: Hold up the ball 1, Diagonal Run 2, Cut
+    Inside 3, Diagonal Dribble 4, Hold Up and Overlap 5, Straight Run 6, Hold Up and Switch 7,
+    Overlap and Pull Back 8, Drop Deep and Overlap 9, Dummy Run and Cross 10, Cross and Pull
+    Back 11, Cross and Dummy 12, Switch Flanks 13, Dummy and Lay Off 14. Each strategy takes
+    only some areas, and the picker dims the rest: the two crosses open on area 1 and take 2,
+    Switch Flanks takes only 9 and 11, Dummy and Lay Off only 3, 4, 5 and 7, the other hold,
+    diagonal, straight and cut strategies open on 3, and the two overlaps on 7. One strategy
+    may fill two slots;
+  - Substitutions, in the list's order: OFF 0, Very Late 1, Flexible 2, Very Early 3;
+  - Players to Join Attack takes three players; a fourth is refused with no message. The
+    bytes hold roster slots counted from 0 (#3 is 2), in the order the players were added.
 - **Pinned in game, run `player1`** (2026-11-20, five `/4ccg/` players of `.akko7v2` read
   against the fork's decoding, nothing changed; findings in the worktree's
   `.tmp/pes14_ingame/player1/`). The game reads a player's record only when bit 0x29:1 is set
@@ -541,9 +569,6 @@ on main. Main is merged into the branch, never rebased onto it.
    player's role is shown, not chosen (run `tactics1`). So the screen is the game's own
    Game Plan, not the other versions' pitch editor.
    - Run `tactics3` (in game): done, pinned in "What is known about the save".
-   - Run `formations1` (in game): each entry of the formation list set once, so the editor
-     writes a formation as the game stores it; and, each on a team of its own, the three
-     Strategies not yet picked, every Combination Play strategy's id, every Substitutions
-     timing, and how many Players to Join Attack the screen takes.
+   - Run `formations1` (in game): done, pinned in "What is known about the save".
    - The draft: the Gameplan screen on a PES 2014 save (the lead).
    - Slices: the record's fields in the schema and the model, then the screen.
