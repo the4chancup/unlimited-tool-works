@@ -351,8 +351,8 @@ def cmd_obs_shot(out: str, width: int | None) -> None:
     ws = obsws(OBS["host"], OBS["port"], OBS["password"])
     ws.connect()
     try:
-        # A streaming profile's canvas is up to 2560x1440, and an agent that reads a frame that
-        # size can die on it (a SWE-2 session did, twice).
+        # A streaming profile's canvas is up to 2560x1440, a frame too large for an agent to
+        # read whole.
         profile = ws.call(requests.GetProfileList()).datain["currentProfileName"]
         if profile != OBS["profile"]:
             ws.call(requests.SetCurrentProfile(profileName=OBS["profile"]))
