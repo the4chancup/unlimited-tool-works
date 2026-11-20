@@ -421,6 +421,100 @@ pub fn clear_combination(slots: &mut [CombinationSlot; 3], index: usize) {
 /// gives the game's numbering, with no claim about which end is whose.
 const COMBINATION_AREA_TIP: &str = "The game's area screen numbers the pitch in rows, from \
                                     its top: 1 and 2, then 3 to 5, 6 to 8, and 9 to 11.";
+
+/// The Gameplan's tooltips (the draft's `*_TIPS14`): the game's own
+/// help texts, word for word, resolved out of the install's `all.str`
+/// by the host — the `*_TIPS` tables below name each tooltip's string —
+/// and `None` where there is none, a control then carrying no tooltip.
+#[derive(Default)]
+pub struct Tips {
+    /// The eight sliders' texts, in the panel's order
+    /// (`GAME_PLAN_SLIDERS`').
+    pub sliders: [Option<String>; 8],
+    /// The strategies' texts, in `STRATEGIES`' stored order.
+    pub strategies: [Option<String>; 6],
+    /// The formation list's texts, in `LIST_FORMATIONS`' order.
+    pub formations: [Option<String>; 11],
+    /// The six set-piece takers' texts, in the chips' order (the
+    /// captain's label has none).
+    pub set_pieces: [Option<String>; 6],
+    /// Join the attack's text.
+    pub join_attack: Option<String>,
+    /// The Substitution row's text.
+    pub substitution: Option<String>,
+    /// The Preset change switch's text.
+    pub preset_change: Option<String>,
+    /// The Offside trap switch's text.
+    pub offside_trap: Option<String>,
+    /// The Combination play switch's text.
+    pub combination_play: Option<String>,
+    /// The Combination play title's text.
+    pub combination_title: Option<String>,
+}
+
+/// The eight sliders' help texts: their `all.str` section and string id
+/// (`F8T` holds the Gameplan screen's texts), in the panel's order.
+pub const SLIDER_TIPS: [(&str, u32); 8] = [
+    ("F8T", 49),
+    ("F8T", 50),
+    ("F8T", 51),
+    ("F8T", 53),
+    ("F8T", 54),
+    ("F8T", 55),
+    ("F8T", 56),
+    ("F8T", 57),
+];
+
+/// `STRATEGIES`' help texts, `F8T` in the stored order.
+pub const STRATEGY_TIPS: [(&str, u32); 6] = [
+    ("F8T", 31),
+    ("F8T", 46),
+    ("F8T", 47),
+    ("F8T", 48),
+    ("F8T", 30),
+    ("F8T", 32),
+];
+
+/// `LIST_FORMATIONS`' help texts, `F3T` in the list's order.
+pub const FORMATION_TIPS: [(&str, u32); 11] = [
+    ("F3T", 5),
+    ("F3T", 6),
+    ("F3T", 7),
+    ("F3T", 8),
+    ("F3T", 12),
+    ("F3T", 10),
+    ("F3T", 11),
+    ("F3T", 13),
+    ("F3T", 14),
+    ("F3T", 15),
+    ("F3T", 16),
+];
+
+/// The six takers' and Join the attack's help texts: `F13T` in the
+/// chips' order, Join the attack last.
+pub const SET_PIECE_TIPS: [(&str, u32); 7] = [
+    ("F13T", 3),
+    ("F13T", 4),
+    ("F13T", 5),
+    ("F13T", 6),
+    ("F13T", 7),
+    ("F13T", 8),
+    ("F13T", 13),
+];
+
+/// The Automatic settings' shared text, `F3T` 93: a block per setting,
+/// each headed by its name in angle brackets.
+pub const AUTO_TIP: (&str, u32) = ("F3T", 93);
+/// Substitution's block heading inside `AUTO_TIP`'s text.
+pub const SUBSTITUTION_BLOCK: &str = "Substitutions";
+/// Preset change's block heading inside `AUTO_TIP`'s text.
+pub const PRESET_CHANGE_BLOCK: &str = "Change Preset Tactics";
+/// Offside trap's block heading inside `AUTO_TIP`'s text.
+pub const OFFSIDE_TRAP_BLOCK: &str = "Offside Trap";
+/// Combination play's block heading inside `AUTO_TIP`'s text.
+pub const COMBINATION_PLAY_BLOCK: &str = "Combination Play";
+/// The Combination play title's help text, `F3T` 102.
+pub const COMBINATION_TITLE_TIP: (&str, u32) = ("F3T", 102);
 /// The Combination play grid's column and row gaps (the draft's
 /// `.tacinstr`).
 const COMBINATION_COLUMN_GAP: f32 = 8.0;
@@ -430,20 +524,26 @@ const AREA_WIDTH: f32 = 52.0;
 
 /// The "Combination play" panel (the draft's `#tac-combination`): the
 /// Strategy and Area headers, then the three slots, each its number, its
-/// strategy combo, its area combo and a Clear button. Draws nothing on a
+/// strategy combo, its area combo and a Clear button. The title carries
+/// `tips`' Combination play text where it holds one. Draws nothing on a
 /// record that stores no Combination Play. Answers `true` only when
 /// `tactics` changed this frame.
-pub fn combination_play(ui: &mut egui::Ui, tactics: &mut TeamTactics) -> bool {
+pub fn combination_play(ui: &mut egui::Ui, tactics: &mut TeamTactics, tips: Option<&Tips>) -> bool {
     let Some(slots) = tactics.combination.as_mut() else {
         return false;
     };
     let before = *slots;
-    panel(ui, COMBINATION_PLAY_LABEL, |ui| {
-        // `add_space` adds to the item gap: the rows start `TITLE_GAP`
-        // under the heading, as the other panels' do.
-        ui.add_space(TITLE_GAP - ui.spacing().item_spacing.y);
-        combination_grid(ui, slots);
-    });
+    panel(
+        ui,
+        COMBINATION_PLAY_LABEL,
+        tips.and_then(|tips| tips.combination_title.as_deref()),
+        |ui| {
+            // `add_space` adds to the item gap: the rows start `TITLE_GAP`
+            // under the heading, as the other panels' do.
+            ui.add_space(TITLE_GAP - ui.spacing().item_spacing.y);
+            combination_grid(ui, slots);
+        },
+    );
     *slots != before
 }
 
@@ -534,9 +634,10 @@ fn strategy_combo_cell(ui: &mut egui::Ui, slots: &mut [CombinationSlot; 3], inde
     if !choices.iter().any(|(id, _)| *id == held) {
         choices.push((held, combination_text(held)));
     }
-    let pick = greyed_choice_combo(ui, ("combination strategy", index), &choices, held, |id| {
-        id == NO_COMBINATION || !free_areas(slots, index, id).is_empty()
-    });
+    let (pick, _) =
+        greyed_choice_combo(ui, ("combination strategy", index), &choices, held, |id| {
+            id == NO_COMBINATION || !free_areas(slots, index, id).is_empty()
+        });
     if pick != held {
         pick_combination(slots, index, pick);
     }
@@ -562,7 +663,7 @@ fn area_combo_cell(ui: &mut egui::Ui, slots: &mut [CombinationSlot; 3], index: u
     if !choices.iter().any(|(area, _)| *area == slot.area) {
         choices.push((slot.area, slot.area.to_string()));
     }
-    slots[index].area = choice_combo(ui, id_salt, &choices, slot.area);
+    slots[index].area = choice_combo(ui, id_salt, &choices, slot.area).0;
 }
 
 /// The list entry `formation` is, `None` for one the list does not
@@ -608,14 +709,21 @@ pub fn pick_strategy(plan: &mut GamePlan, strategy: u8) {
 /// `#tac-settings` group on PES 2014): the Formation and Strategy
 /// dropdowns, then the eight Game Plan sliders, 0 to 20, five rows of
 /// two halves sharing the panel's free height, as `formation_settings`
-/// builds its cells. Edits the preset on screen; answers `true` only
-/// when `tactics` changed this frame.
-pub fn preset_tactics(ui: &mut egui::Ui, tactics: &mut TeamTactics, view: &TacticsView) -> bool {
+/// builds its cells. Each slider's label carries `tips`' text where it
+/// holds one, and the two dropdowns carry their chosen entry's. Edits
+/// the preset on screen; answers `true` only when `tactics` changed
+/// this frame.
+pub fn preset_tactics(
+    ui: &mut egui::Ui,
+    tactics: &mut TeamTactics,
+    view: &TacticsView,
+    tips: Option<&Tips>,
+) -> bool {
     let preset = &mut tactics.presets[view.preset.min(2)];
     // The answer is the deep compare, not the responses' `changed()`: a
     // control re-picked at its own value reports nothing.
     let before = preset.clone();
-    panel(ui, "Preset tactics", |ui| {
+    panel(ui, "Preset tactics", None, |ui| {
         // The frame's bottom is the cell's, as the pitch's is.
         ui.set_min_height(ui.available_height());
         ui.add_space(TITLE_GAP - ui.spacing().item_spacing.y);
@@ -640,30 +748,36 @@ pub fn preset_tactics(ui: &mut egui::Ui, tactics: &mut TeamTactics, view: &Tacti
             // The cell's content at its top, the control 2 under the
             // label (the draft's `.tset`).
             cell_ui.spacing_mut().item_spacing.y = CELL_GAP;
-            preset_cell(&mut cell_ui, preset, index);
+            preset_cell(&mut cell_ui, preset, index, tips);
         }
     });
     *preset != before
 }
 
 /// One cell of the Preset tactics panel: Formation, Strategy or the
-/// `index - 2`th Game Plan slider, its label over its control.
-fn preset_cell(ui: &mut egui::Ui, preset: &mut TacticsPreset, index: usize) {
+/// `index - 2`th Game Plan slider, its label over its control, each
+/// carrying `tips`' text where it holds one — the dropdowns their
+/// chosen entry's (a formation off the game's list, a strategy outside
+/// the six or a missing text is no tooltip).
+fn preset_cell(ui: &mut egui::Ui, preset: &mut TacticsPreset, index: usize, tips: Option<&Tips>) {
     match index {
         0 => {
             ui.label("Formation");
             // The dropdowns stand straight under their labels, as the
             // draft's selects do — no `control_box`, which centres a
             // control in a taller box than the draft's.
-            formation_combo(ui, &mut preset.formations[0]);
+            formation_combo(ui, &mut preset.formations[0], tips);
         }
         1 => {
             ui.label(STRATEGY_LABEL);
-            strategy_combo(ui, preset);
+            strategy_combo(ui, preset, tips);
         }
         _ => {
             let slider = index - 2;
-            ui.label(GAME_PLAN_SLIDERS[slider]);
+            let label = ui.label(GAME_PLAN_SLIDERS[slider]);
+            if let Some(tip) = tips.and_then(|tips| tips.sliders[slider].as_deref()) {
+                label.on_hover_text(tip);
+            }
             control_box(ui, |ui| game_plan_slider(ui, preset, slider));
         }
     }
@@ -672,8 +786,10 @@ fn preset_cell(ui: &mut egui::Ui, preset: &mut TacticsPreset, index: usize) {
 /// The Formation cell's combo (the draft's formation `select`): the
 /// list's entries; a formation the list does not hold offered first, by
 /// its shape marked as such, and a pick of it changes nothing. A pick
-/// of a list entry calls `pick_formation` on `formation`.
-fn formation_combo(ui: &mut egui::Ui, formation: &mut Formation) {
+/// of a list entry calls `pick_formation` on `formation`. The combo's
+/// tooltip is the shown entry's text where `tips` holds it (a formation
+/// off the list has none).
+fn formation_combo(ui: &mut egui::Ui, formation: &mut Formation, tips: Option<&Tips>) {
     let listed = listed_formation(formation);
     let mut choices: Vec<(i32, String)> = Vec::new();
     if listed.is_none() {
@@ -689,17 +805,23 @@ fn formation_combo(ui: &mut egui::Ui, formation: &mut Formation) {
             .map(|(entry, (name, _))| (entry as i32, (*name).to_owned())),
     );
     let held = listed.map(|entry| entry as i32).unwrap_or(-1);
-    let pick = choice_combo(ui, "game plan formation", &choices, held);
+    let (pick, response) = choice_combo(ui, "game plan formation", &choices, held);
+    if let Some(tip) =
+        listed.and_then(|entry| tips.and_then(|tips| tips.formations[entry].as_deref()))
+    {
+        response.on_hover_text(tip);
+    }
     if pick >= 0 && Some(pick as usize) != listed {
         pick_formation(formation, pick as usize);
     }
 }
 
 /// The Strategy cell's combo (the draft's strategy `select`):
-/// `STRATEGIES`, a pick calling `pick_strategy`. A stored value outside
-/// the six is offered as its number, so the combo never misreports the
-/// save (the Substitution cell's rule).
-fn strategy_combo(ui: &mut egui::Ui, preset: &mut TacticsPreset) {
+/// `STRATEGIES`, a pick calling `pick_strategy`, its tooltip the stored
+/// strategy's text where `tips` holds it (a stored value outside the
+/// six is offered as its number and carries none, so the combo never
+/// misreports the save — the Substitution cell's rule).
+fn strategy_combo(ui: &mut egui::Ui, preset: &mut TacticsPreset, tips: Option<&Tips>) {
     let plan = preset
         .game_plan
         .as_mut()
@@ -712,7 +834,14 @@ fn strategy_combo(ui: &mut egui::Ui, preset: &mut TacticsPreset) {
     if !choices.iter().any(|(value, _)| *value == plan.strategy) {
         choices.push((plan.strategy, plan.strategy.to_string()));
     }
-    let pick = choice_combo(ui, "game plan strategy", &choices, plan.strategy);
+    let (pick, response) = choice_combo(ui, "game plan strategy", &choices, plan.strategy);
+    if let Some(tip) = tips.and_then(|tips| {
+        tips.strategies
+            .get(usize::from(plan.strategy))
+            .and_then(|tip| tip.as_deref())
+    }) {
+        response.on_hover_text(tip);
+    }
     if pick != plan.strategy {
         pick_strategy(plan, pick);
     }

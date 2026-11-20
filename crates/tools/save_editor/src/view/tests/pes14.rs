@@ -840,6 +840,185 @@ fn the_combination_play_panel_edits_irelands_slots() {
     );
 }
 
+/// PES 2014's own `all.str` (`pes_strings`' fixture).
+const ALL_STR_FILE: &[u8] =
+    include_bytes!("../../../../../libs/pes_strings/tests/fixtures/pes14_all.str");
+
+/// A PES folder holding the fixture's `all.str` as `Data/dt21_eng.cpk`'s
+/// entry, under `path`'s scratch (the fixture save sits at `path`).
+fn pes_folder_with_all_str(path: &std::path::Path) -> std::path::PathBuf {
+    let folder = path.parent().expect("a file under scratch").join("PES");
+    crate::test_support::write_cpk(
+        &folder.join("Data/dt21_eng.cpk"),
+        &[("pes14_win_dat/eng/string/all.str", ALL_STR_FILE)],
+    );
+    folder
+}
+
+/// `view`'s Gameplan tooltips' read polled until it lands or fails (bounded:
+/// a read that never settles fails rather than hangs; a hang guard, not a
+/// speed bound, `workers_replied`' 120 s).
+fn tips_settled(view: &mut SaveView) {
+    let deadline = Instant::now() + Duration::from_secs(120);
+    while !view.game_tips.settled() {
+        assert!(
+            Instant::now() < deadline,
+            "the tooltips' read never settled in 120 s"
+        );
+        std::thread::sleep(Duration::from_millis(10));
+    }
+}
+
+/// The centre of the Label reading `label` (a settings cell's label).
+fn label_centre(nodes: &[accesskit::Node], label: &str) -> egui::Pos2 {
+    centre(
+        nodes
+            .iter()
+            .find(|node| node.role() == Role::Label && node.value() == Some(label))
+            .unwrap_or_else(|| panic!("no label {label:?}")),
+    )
+}
+
+// A PES 2014 folder holding the game's own `all.str`: hovering a slider's
+// label shows the setting's help text, word for word from the install, and
+// hovering the Combination play title shows its text, the button code
+// written "LT".
+#[test]
+fn the_gameplan_s_tooltips_are_the_install_s_help_texts() {
+    let path = fixture(PesVersion::Pes14, "pes14_tips");
+    let mut file = EditFile::from_bytes(&fixture_save(PesVersion::Pes14)).unwrap();
+    file.team_mut(1).expect("the vanilla first team").id = 701;
+    file.save(&path).unwrap();
+    let folder = pes_folder_with_all_str(&path);
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut window = Headless::new();
+    view.select_portraits(&window.ctx, &folder, PesVersion::Pes14);
+    tips_settled(&mut view);
+    assert!(
+        view.game_tips.tips().is_some(),
+        "premise: the archive's texts resolved"
+    );
+    open_team_view(&mut window, &mut view, 701);
+
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    assert_eq!(
+        tooltip_containing(
+            &mut window,
+            &mut view,
+            label_centre(&nodes, "Player support"),
+            "ball retention"
+        ),
+        Some(
+            "The higher the value, the more the players lay emphasis on ball retention when positioning themselves. On a lower level, they will look to maintaining the team's overall shape. "
+                .to_string()
+        ),
+        "the slider label's tooltip is the game's own text"
+    );
+
+    let title = nodes
+        .iter()
+        .find(|node| node.role() == Role::Label && node.value() == Some("Combination play"))
+        .expect("the Combination play title");
+    let tip = tooltip_containing(&mut window, &mut view, centre(title), "press LT")
+        .expect("the title's tooltip");
+    assert!(
+        tip.ends_with("press LT twice when the Combination Play icon is shown on screen."),
+        "the button code written LT: {tip:?}"
+    );
+    assert!(!tip.contains('\u{11}'), "no inline code shown: {tip:?}");
+}
+
+// No PES folder set: the Gameplan draws with no game tooltip (nothing was
+// read) and does not panic.
+#[test]
+fn without_a_pes_folder_the_labels_carry_no_game_tooltip() {
+    let path = fixture(PesVersion::Pes14, "pes14_no_folder");
+    let mut file = EditFile::from_bytes(&fixture_save(PesVersion::Pes14)).unwrap();
+    file.team_mut(1).expect("the vanilla first team").id = 701;
+    file.save(&path).unwrap();
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut window = Headless::new();
+    open_team_view(&mut window, &mut view, 701);
+
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    assert_eq!(
+        tooltip_containing(
+            &mut window,
+            &mut view,
+            label_centre(&nodes, "Player support"),
+            "ball retention"
+        ),
+        None,
+        "no game tooltip without a PES folder"
+    );
+}
+
+// A PES folder that holds no English archive: the read fails quietly, the
+// Gameplan draws with no game tooltip and does not panic.
+#[test]
+fn a_folder_without_the_english_archive_leaves_no_tooltip() {
+    let path = fixture(PesVersion::Pes14, "pes14_no_archive");
+    let mut file = EditFile::from_bytes(&fixture_save(PesVersion::Pes14)).unwrap();
+    file.team_mut(1).expect("the vanilla first team").id = 701;
+    file.save(&path).unwrap();
+    let folder = path.parent().expect("a file under scratch").join("PES");
+    std::fs::create_dir_all(&folder).unwrap();
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut window = Headless::new();
+    view.select_portraits(&window.ctx, &folder, PesVersion::Pes14);
+    tips_settled(&mut view);
+    assert!(
+        view.game_tips.tips().is_none(),
+        "premise: no archive, no texts"
+    );
+    open_team_view(&mut window, &mut view, 701);
+
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    assert_eq!(
+        tooltip_containing(
+            &mut window,
+            &mut view,
+            label_centre(&nodes, "Player support"),
+            "ball retention"
+        ),
+        None,
+        "no game tooltip without the archive"
+    );
+}
+
+// A PES 2016 save's Gameplan is unchanged: the folder's archive is never
+// read for it and a slider label's hover shows no game tooltip.
+#[test]
+fn a_pes16_save_s_gameplan_shows_no_game_tooltip() {
+    let path = fixture(PesVersion::Pes16, "pes16_no_tips");
+    let folder = pes_folder_with_all_str(&path);
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut window = Headless::new();
+    view.select_portraits(&window.ctx, &folder, PesVersion::Pes16);
+    tips_settled(&mut view);
+    assert!(
+        view.game_tips.tips().is_none(),
+        "a PES 2016 save reads no texts"
+    );
+    open_team_view(&mut window, &mut view, 701);
+
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    assert_eq!(
+        tooltip_containing(
+            &mut window,
+            &mut view,
+            label_centre(&nodes, "Support range"),
+            "spread"
+        ),
+        None,
+        "no game tooltip on PES 2016"
+    );
+}
+
 // PES 2014's stored offsets reach the body boxes' ranges: the Height box
 // runs from the 132 the record stores less to the u8 field's own top, the
 // Weight box's floor is the 30 less the record stores; a typed 200 and 90

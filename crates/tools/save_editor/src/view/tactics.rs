@@ -222,6 +222,7 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
         live_suggestions,
         pes_exe_check,
         pes_folder,
+        game_tips,
         picked_pes_folder,
         pick_folder_dialog,
         click_kind,
@@ -378,7 +379,7 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
         let row2_bottom = row2_top + pitch::PITCH_BOX.y;
         let mut settings_ui = cell(ui, top_left.x, row2_top, SETTINGS_WIDTH, row2_bottom);
         changed[1] = if pes14 {
-            tactics::pes14::preset_tactics(&mut settings_ui, &mut edited, tactics)
+            tactics::pes14::preset_tactics(&mut settings_ui, &mut edited, tactics, game_tips.tips())
         } else {
             tactics::formation_settings(
                 &mut settings_ui,
@@ -413,8 +414,9 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
             {
                 *picked_pes_folder = Some((version, folder));
                 // The member may have repaired the folder and picked the same
-                // one: the worker's empty answers are stale, so it starts again.
+                // one: the workers' empty answers are stale, so they start again.
                 portraits.restart(ui.ctx());
+                game_tips.restart(ui.ctx());
             }
         }
         let mut assigns_ui = cell(
@@ -424,7 +426,7 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
             right - assigns_left,
             row2_bottom,
         );
-        tactics::player_assignments(&mut assigns_ui, &edited, tactics, &roster);
+        tactics::player_assignments(&mut assigns_ui, &edited, tactics, &roster, game_tips.tips());
         let row3_top = [
             settings_ui.min_rect().max.y,
             pitch_ui.min_rect().max.y,
@@ -454,7 +456,8 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
         // versions hold Advanced instructions, which its Game Plan lacks.
         if pes14 {
             if edited.combination.is_some() {
-                changed[6] = tactics::pes14::combination_play(&mut stack_ui, &mut edited);
+                changed[6] =
+                    tactics::pes14::combination_play(&mut stack_ui, &mut edited, game_tips.tips());
                 stack_ui.add_space(ROW_GAP - stack_ui.spacing().item_spacing.y);
             }
         } else {
@@ -470,7 +473,7 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
             // `add_space` adds to the item gap the panel above already left.
             stack_ui.add_space(ROW_GAP - stack_ui.spacing().item_spacing.y);
         }
-        changed[4] = tactics::automatic_settings(&mut stack_ui, &mut edited);
+        changed[4] = tactics::automatic_settings(&mut stack_ui, &mut edited, game_tips.tips());
 
         // One advance covering the grid's block (the tallest cell).
         let grid_bottom = stack_ui.min_rect().max.y.max(lists_ui.min_rect().max.y);

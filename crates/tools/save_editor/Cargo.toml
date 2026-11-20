@@ -21,6 +21,7 @@ fpc.workspace = true
 image.workspace = true
 log.workspace = true
 pes_savefile.workspace = true
+pes_strings.workspace = true
 pes_version.workspace = true
 rayon.workspace = true
 rfd.workspace = true
