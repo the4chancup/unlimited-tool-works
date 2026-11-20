@@ -7,7 +7,7 @@ from pathlib import Path
 from unittest import mock
 
 import temp_alias
-from run_tests import ROOT, binaries, dependents, owner, packages, select, times_file
+from run_tests import ROOT, SUMMARY, binaries, dependents, owner, packages, select, times_file
 
 
 def meta(*crates: tuple[str, str, list[str]]) -> dict:
@@ -27,6 +27,18 @@ PKGS = packages(meta(
     ("ruleset_editor", "crates/tools/ruleset_editor", ["pes_version"]),
     ("studio", "crates/studio", ["save_editor", "ruleset_editor"]),
 ))
+
+
+class Summary(unittest.TestCase):
+    def test_a_summary_line_gives_its_passed_count(self) -> None:
+        ok = "test result: ok. 172 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out"
+        failed = "test result: FAILED. 3 passed; 1 failed; 0 ignored; 0 measured"
+        self.assertEqual(SUMMARY.match(ok)[1], "172")
+        self.assertEqual(SUMMARY.match(failed)[1], "3")
+
+    def test_a_summary_line_another_process_wrote_into_is_not_one(self) -> None:
+        mixed = "test result: ok. gui_log::tests::unclean_text_with_a_dump ... ok"
+        self.assertIsNone(SUMMARY.match(mixed))
 
 
 class Packages(unittest.TestCase):
