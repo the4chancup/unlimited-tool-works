@@ -117,6 +117,7 @@ model_convert = { path = "crates/libs/model_convert" }
 music_export = { path = "crates/libs/music_export" }
 pes_model = { path = "crates/libs/pes_model" }
 pes_savefile = { path = "crates/libs/pes_savefile" }
+pes_strings = { path = "crates/libs/pes_strings" }
 pes_version = { path = "crates/libs/pes_version" }
 pipeline = { path = "crates/libs/pipeline" }
 ruleset_editor = { path = "crates/tools/ruleset_editor" }
