@@ -19026,3 +19026,12 @@ to ask "can that be fixed?" each time puts on them the improvement the project e
 agents.
 Plan: `AGENTS.md` "Conduct" (the rule, so every agent reads it each session); the `nul`
 deletion recipe moved to `RUNBOOK.md` "Agents and harness" to keep `AGENTS.md` under its cap.
+
+## 2026-11-21 — studio — the crash monitor stays inside `UTW.exe`, named "Unlimited Tool Works" in Task Manager
+Decision: the crash monitor stays the same exe started with a hidden argument, so Task Manager
+lists it as a second "Unlimited Tool Works" row under the window's; it gets no name of its own.
+Why: Task Manager names a process without a visible window from its exe's description. A
+window titled "Crash handler - Unlimited Tool Works", hidden or off-screen, was tried and left
+the row unchanged, so the name needs a second exe. One file to copy matters more than that
+name to a power user, so not a second exe.
+Plan: `core/architecture.md` "The monitor" edited.
