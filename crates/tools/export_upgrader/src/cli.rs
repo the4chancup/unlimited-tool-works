@@ -58,8 +58,8 @@ pub(crate) struct UpgradeArgs {
     /// root `legacy_ids.toml` the Compiler packs the old IDs from.
     #[arg(long)]
     pub(crate) legacy_ids: bool,
-    /// The folder the output goes in, created when missing. Without it, the
-    /// input's own folder is used.
+    /// The folder each output goes in, created when missing; without it, each
+    /// output goes beside its input.
     #[arg(short, long, value_name = "DIR")]
     pub(crate) output: Option<PathBuf>,
 }

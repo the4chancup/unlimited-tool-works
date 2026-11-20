@@ -125,7 +125,7 @@ pub(crate) struct RunEvents {
 
 impl RunEvents {
     /// Events of the run `run_id` sent through `ctx`, none yet.
-    pub(crate) fn new(ctx: &ToolContext, run_id: RunId) -> RunEvents {
+    fn new(ctx: &ToolContext, run_id: RunId) -> RunEvents {
         // A clone shares the context's channels, so the events reach the same
         // receivers.
         RunEvents {
@@ -157,7 +157,7 @@ impl RunEvents {
     }
 
     /// An export entered the run: the console names its findings by this name.
-    pub(crate) fn started(&self, export_id: ExportId, display_name: &str) {
+    fn started(&self, export_id: ExportId, display_name: &str) {
         self.emit(
             Some(export_id),
             PipelineEvent::ExportStarted {
@@ -171,7 +171,7 @@ impl RunEvents {
     /// in this run (the upgrade's output, the second half of the export):
     /// the console names its findings by this name, and no counter counts
     /// it.
-    pub(crate) fn named(&self, export_id: ExportId, display_name: &str) {
+    fn named(&self, export_id: ExportId, display_name: &str) {
         self.emit(
             Some(export_id),
             PipelineEvent::ExportNamed {
@@ -197,7 +197,7 @@ impl RunEvents {
     }
 
     /// The one event for unmigrated content existing at all.
-    pub(crate) fn unmigrated(&self) {
+    fn unmigrated(&self) {
         self.emit(None, PipelineEvent::UnmigratedContentFound);
     }
 
@@ -205,7 +205,7 @@ impl RunEvents {
     /// however often it is asked: a refusal or an abort returns before the
     /// upgrade sends it, a failed rename or removal of the staging folder
     /// after, and the driver of a run of several exports asks either way.
-    pub(crate) fn processed(&mut self, export_id: ExportId) {
+    fn processed(&mut self, export_id: ExportId) {
         if self.processed_sent {
             return;
         }
@@ -223,14 +223,14 @@ impl RunEvents {
     }
 
     /// The worst severity reported so far; `None` when no finding was.
-    pub(crate) fn worst(&self) -> Option<Severity> {
+    fn worst(&self) -> Option<Severity> {
         self.worst
     }
 
     /// Whether a finding reported so far drops something (a file, a folder,
     /// the export): the verdict's "nothing dropped" half for the tool's own
     /// findings, beside the output validation's issues.
-    pub(crate) fn dropped(&self) -> bool {
+    fn dropped(&self) -> bool {
         self.dropped
     }
 
