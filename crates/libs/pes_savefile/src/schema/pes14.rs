@@ -430,11 +430,148 @@ pub(crate) static PLAYER: RecordSchema<PlayerField, PlayerText> = RecordSchema {
 /// the save, has one.
 pub(crate) static APPEARANCE: RecordSchema<PlayerField, PlayerText> = RecordSchema {
     size: 88,
-    fields: &[FieldSpec {
-        field: PlayerField::Id,
-        bit_offset: 0,
-        bit_width: 32,
-    }],
+    fields: &[
+        FieldSpec {
+            field: PlayerField::Id,
+            bit_offset: 0,
+            bit_width: 32,
+        },
+        // The boot code (run `appear1`).
+        FieldSpec {
+            field: PlayerField::BootsId,
+            bit_offset: 64,
+            bit_width: 14,
+        },
+        // The face's and hairstyle's edited flags (run `appear1`).
+        FieldSpec {
+            field: PlayerField::EditedFace,
+            bit_offset: 95,
+            bit_width: 1,
+        },
+        FieldSpec {
+            field: PlayerField::EditedHair,
+            bit_offset: 127,
+            bit_width: 1,
+        },
+        // The 14 physique sliders, each the shown -7..+7 plus 7 (run
+        // `appear1`), Arm Length before Arm Size unlike the other
+        // versions' order.
+        FieldSpec {
+            field: PlayerField::NeckLength,
+            bit_offset: 552,
+            bit_width: 4,
+        },
+        FieldSpec {
+            field: PlayerField::NeckSize,
+            bit_offset: 556,
+            bit_width: 4,
+        },
+        FieldSpec {
+            field: PlayerField::ShoulderHeight,
+            bit_offset: 560,
+            bit_width: 4,
+        },
+        FieldSpec {
+            field: PlayerField::ShoulderWidth,
+            bit_offset: 564,
+            bit_width: 4,
+        },
+        FieldSpec {
+            field: PlayerField::Chest,
+            bit_offset: 568,
+            bit_width: 4,
+        },
+        FieldSpec {
+            field: PlayerField::Waist,
+            bit_offset: 572,
+            bit_width: 4,
+        },
+        FieldSpec {
+            field: PlayerField::ArmLength,
+            bit_offset: 576,
+            bit_width: 4,
+        },
+        FieldSpec {
+            field: PlayerField::ArmSize,
+            bit_offset: 580,
+            bit_width: 4,
+        },
+        FieldSpec {
+            field: PlayerField::Thigh,
+            bit_offset: 584,
+            bit_width: 4,
+        },
+        FieldSpec {
+            field: PlayerField::Calf,
+            bit_offset: 588,
+            bit_width: 4,
+        },
+        FieldSpec {
+            field: PlayerField::LegLength,
+            bit_offset: 592,
+            bit_width: 4,
+        },
+        FieldSpec {
+            field: PlayerField::HeadLength,
+            bit_offset: 596,
+            bit_width: 4,
+        },
+        FieldSpec {
+            field: PlayerField::HeadWidth,
+            bit_offset: 600,
+            bit_width: 4,
+        },
+        FieldSpec {
+            field: PlayerField::HeadDepth,
+            bit_offset: 604,
+            bit_width: 4,
+        },
+        // The strip items (run `appear1`; the inners `appear2`'s): the
+        // wristband, undershorts, sleeves, sock length and inners, the
+        // spectacles' style, the ankle tape and the shirttail. Sleeves
+        // and the shirttail store in another order than the model's
+        // (`stored_order` translates).
+        FieldSpec {
+            field: PlayerField::WristTaping,
+            bit_offset: 661,
+            bit_width: 2,
+        },
+        FieldSpec {
+            field: PlayerField::Undershorts,
+            bit_offset: 663,
+            bit_width: 1,
+        },
+        FieldSpec {
+            field: PlayerField::Sleeves,
+            bit_offset: 665,
+            bit_width: 2,
+        },
+        FieldSpec {
+            field: PlayerField::Socks,
+            bit_offset: 667,
+            bit_width: 2,
+        },
+        FieldSpec {
+            field: PlayerField::Inners,
+            bit_offset: 669,
+            bit_width: 2,
+        },
+        FieldSpec {
+            field: PlayerField::SpectaclesStyle,
+            bit_offset: 678,
+            bit_width: 3,
+        },
+        FieldSpec {
+            field: PlayerField::AnkleTaping,
+            bit_offset: 691,
+            bit_width: 1,
+        },
+        FieldSpec {
+            field: PlayerField::Untucked,
+            bit_offset: 692,
+            bit_width: 1,
+        },
+    ],
     arrays: &[],
     texts: &[],
     ingame_face: None,

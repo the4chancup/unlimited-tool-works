@@ -51,9 +51,11 @@ fn out_of_scope(version: PesVersion) -> bool {
 /// from the selected player, on a team row from the team's first filled
 /// roster slot; the aesthetics items carry the ownership line as their
 /// disabled hover (SE-GUI-22). A save whose records carry no in-game face
-/// run never offers the FPC items or the boots and gloves dialog, and the
-/// team file and formation picture items are off where they are out of
-/// scope — each disabled item says which on hover.
+/// run never offers the FPC items; one that stores no boots id never the
+/// boots and gloves dialog, which PES 2014 offers for the boots alone,
+/// the gloves side disabled. The team file and formation picture items
+/// are off where they are out of scope — each disabled item says which on
+/// hover.
 pub(crate) fn team_menu(ui: &mut egui::Ui, view: &mut SaveView) {
     let Some(team_id) = selected_team_id(view) else {
         add_enabled_ui(ui, false, |ui| {
@@ -720,6 +722,10 @@ pub(crate) fn boglo_dialog(ui: &mut egui::Ui, view: &mut SaveView) {
     let Some(session) = view.session.as_mut() else {
         return;
     };
+    // A version without the gloves field (PES 2014) still offers the
+    // boots: the gloves choices draw disabled and leave the gloves
+    // unchanged.
+    let gloves_stored = player_max_value(session.version(), PlayerField::GlovesId).is_some();
     let boglo = view.boglo.as_mut().expect("checked above");
     let mut close = false;
     let id = egui::Id::unique("save_editor_boglo");
@@ -786,43 +792,47 @@ pub(crate) fn boglo_dialog(ui: &mut egui::Ui, view: &mut SaveView) {
                 });
             });
             boglo_group(ui, "Glove IDs", |ui| {
-                ui.horizontal(|ui| {
-                    option_cell(ui, columns.option, |ui| {
-                        radio_value(ui, &mut boglo.gloves, GlovesPick::Unchanged, "Unchanged");
-                    });
-                });
-                ui.horizontal(|ui| {
-                    option_cell(ui, columns.option, |ui| {
-                        radio_value(
-                            ui,
-                            &mut boglo.gloves,
-                            GlovesPick::LikeBoots,
-                            "Set like boot IDs",
-                        );
-                    });
-                });
-                ui.horizontal(|ui| {
-                    option_cell(ui, columns.option, |ui| {
-                        radio_value(
-                            ui,
-                            &mut boglo.gloves,
-                            GlovesPick::Same,
-                            "Set all to the same ID:",
-                        );
-                    });
-                    let gloves_id =
-                        number_arrows(ui, &mut boglo.gloves_id, 0..=u32::MAX, |ui, value| {
-                            ui.add_sized(
-                                field_size(ui, columns.field),
-                                number_box(egui::DragValue::new(value)),
-                            )
+                add_enabled_ui(ui, gloves_stored, |ui| {
+                    ui.horizontal(|ui| {
+                        option_cell(ui, columns.option, |ui| {
+                            radio_value(ui, &mut boglo.gloves, GlovesPick::Unchanged, "Unchanged");
                         });
-                    step_number(
-                        &mut boglo.gloves_id,
-                        number_wheel_steps(ui, &gloves_id),
-                        0..=u32::MAX,
-                    );
-                });
+                    });
+                    ui.horizontal(|ui| {
+                        option_cell(ui, columns.option, |ui| {
+                            radio_value(
+                                ui,
+                                &mut boglo.gloves,
+                                GlovesPick::LikeBoots,
+                                "Set like boot IDs",
+                            );
+                        });
+                    });
+                    ui.horizontal(|ui| {
+                        option_cell(ui, columns.option, |ui| {
+                            radio_value(
+                                ui,
+                                &mut boglo.gloves,
+                                GlovesPick::Same,
+                                "Set all to the same ID:",
+                            );
+                        });
+                        let gloves_id =
+                            number_arrows(ui, &mut boglo.gloves_id, 0..=u32::MAX, |ui, value| {
+                                ui.add_sized(
+                                    field_size(ui, columns.field),
+                                    number_box(egui::DragValue::new(value)),
+                                )
+                            });
+                        step_number(
+                            &mut boglo.gloves_id,
+                            number_wheel_steps(ui, &gloves_id),
+                            0..=u32::MAX,
+                        );
+                    });
+                })
+                .response
+                .on_disabled_hover_text(PES14_TIP);
             });
             if let Some(error) = &boglo.error {
                 ui.colored_label(ui.visuals().error_fg_color, error.as_str());

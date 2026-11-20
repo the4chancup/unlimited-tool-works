@@ -8,6 +8,7 @@ use std::ops::RangeInclusive;
 
 use anyhow::anyhow;
 use pes_savefile::model::PlayerEntry;
+use pes_savefile::model::names::display_name;
 use pes_savefile::schema::fields::PlayerField;
 use pes_savefile::schema::{player_max_value, schema_for};
 
@@ -107,7 +108,11 @@ impl Session {
     /// 0 to 100: the FPC hide ID and a compile-allocated ID such as 627
     /// are values the save holds) before the first write — a value outside
     /// it refuses the whole operation with an error naming the slot, the
-    /// value and the range, the save untouched.
+    /// value and the range, the save untouched. A gloves mode other than
+    /// `Unchanged` on a version without the field is refused first; on
+    /// PES 2014 a filled slot whose player has no appearance record (the
+    /// version holds one per edited or created player) refuses the whole
+    /// operation before any write.
     pub(crate) fn set_boots_and_gloves(
         &mut self,
         team_id: u32,
@@ -115,16 +120,26 @@ impl Session {
         gloves: GlovesMode,
     ) -> anyhow::Result<()> {
         let version = self.version();
-        let (Some(boots_range), Some(gloves_range)) = (
-            id_range(version, PlayerField::BootsId),
-            id_range(version, PlayerField::GlovesId),
-        ) else {
+        let gloves_range = id_range(version, PlayerField::GlovesId);
+        if !matches!(gloves, GlovesMode::Unchanged) && gloves_range.is_none() {
+            return Err(anyhow!("PES {} saves store no gloves IDs", version.year()));
+        }
+        let Some(boots_range) = id_range(version, PlayerField::BootsId) else {
             return Err(anyhow!(
                 "PES {} saves store no boots or gloves IDs",
                 version.year()
             ));
         };
         let edited = self.edited_players(team_id, |slot, player| {
+            // A PES 2014 player the appearance section holds no record for
+            // takes no look value: refuse the whole operation, the save
+            // untouched (the editor never makes a record).
+            if !self.has_appearance_record(player.id) {
+                return Err(anyhow!(
+                    "PES 2014 stores no look for {} yet: edit it in game first",
+                    display_name(&player.name)
+                ));
+            }
             player.appearance.boots_id = match boots {
                 BootsMode::Unchanged => player.appearance.boots_id,
                 // Slot `k` (1-based) gets `start + k - 1`: numbered by its
@@ -143,9 +158,18 @@ impl Session {
                     "gloves ID",
                     slot,
                     u64::from(player.appearance.boots_id),
-                    &gloves_range,
+                    gloves_range
+                        .as_ref()
+                        .expect("a gloves mode survives the check"),
                 )?,
-                GlovesMode::Same(id) => in_range("gloves ID", slot, u64::from(id), &gloves_range)?,
+                GlovesMode::Same(id) => in_range(
+                    "gloves ID",
+                    slot,
+                    u64::from(id),
+                    gloves_range
+                        .as_ref()
+                        .expect("a gloves mode survives the check"),
+                )?,
             };
             Ok(())
         })?;
@@ -208,7 +232,7 @@ impl Session {
 /// `field`'s whole stored range on `version` (`0..=max_value`, the codec's
 /// `ValueTooWide` bound): the Appearance section's Boots ID and Gloves ID
 /// controls and this check read the same bound. `None` where the version
-/// stores no such field (PES 2014 has no boots or gloves IDs).
+/// stores no such field (PES 2014 has no gloves ID).
 fn id_range(version: pes_version::PesVersion, field: PlayerField) -> Option<RangeInclusive<u32>> {
     let max = player_max_value(version, field)?;
     Some(0..=u32::try_from(max).expect("the id fields' bound fits u32"))

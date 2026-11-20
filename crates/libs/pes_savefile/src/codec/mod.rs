@@ -45,6 +45,17 @@ pub enum CodecError {
         /// The offset the version's record subtracts.
         offset: u32,
     },
+    /// A model value the version's stored order does not list (PES
+    /// 2014's Sleeves and shirttail, which the record stores in another
+    /// order than the model's): writing it would store a value the game
+    /// reads otherwise, so the write is refused.
+    #[error("{field}: value {value} is not a stored value of the version's order")]
+    OutsideStoredOrder {
+        /// The field whose value the order lacks.
+        field: String,
+        /// The offending model value.
+        value: u32,
+    },
     /// The version's schema stores a field the player has no value for.
     #[error("{field}: the version stores this field but the player has no value for it")]
     Missing {

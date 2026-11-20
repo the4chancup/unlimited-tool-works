@@ -352,6 +352,24 @@ impl EditFile {
         Some(&self.container.payload[at..at + schema.player.size])
     }
 
+    /// Whether player `id` has an appearance record: `true` for every
+    /// player on a version that holds the look for all (the block inside
+    /// the player record on PES 17 to 21, a record per player in the
+    /// section on PES 15 and 16); on PES 2014 only for a player the
+    /// appearance section holds a record for, one whose look was edited
+    /// or who was created in the save. `false` for an id the save lacks.
+    pub fn has_appearance_record(&self, id: u32) -> bool {
+        let Some(index) = self.players.iter().position(|p| p.id == id) else {
+            return false;
+        };
+        // On a version without a separate appearance section the vector
+        // is empty: the player record holds the look itself.
+        match self.appearance_records.get(index) {
+            Some(&record) => record.is_some(),
+            None => true,
+        }
+    }
+
     /// Every player and team written back into the retained payload, then
     /// re-encrypted under `salt`. The record order and count are the file's
     /// own (no player or team is added or removed through this API).
@@ -581,6 +599,25 @@ mod tests {
                 } if id == orphan
             ),
             "{err:?}"
+        );
+    }
+
+    /// `has_appearance_record` answers per player on PES 2014 — the
+    /// vanilla fixture's first player has none, the section holding a
+    /// record for edited or created players alone — and per version
+    /// elsewhere: the PES 2015 fixture's first player has one. An id the
+    /// save lacks reads false.
+    #[test]
+    fn has_appearance_record_answers_per_player_only_on_pes14() {
+        let (file14, _) = open(PesVersion::Pes14);
+        let first14 = file14.players()[0].id;
+        assert!(!file14.has_appearance_record(first14));
+        let (file15, _) = open(PesVersion::Pes15);
+        let first15 = file15.players()[0].id;
+        assert!(file15.has_appearance_record(first15));
+        assert!(
+            !file15.has_appearance_record(u32::MAX),
+            "an id the save lacks"
         );
     }
 
@@ -1124,6 +1161,78 @@ mod tests {
         let com_styles = &file.player(85723).expect("the player").skills.com_styles;
         assert_eq!(com_styles.iter().filter(|held| **held).count(), 2);
         assert!(com_styles[2] && com_styles[6]);
+    }
+
+    /// `appear1`, the PES 2014 `EDIT.bin` pair the game saved with player
+    /// 85720's every look item at its lowest (`appear1_min`) and highest
+    /// (`appear1_max`): every mapped appearance field reads the model
+    /// value the game stored, Sleeves and the shirttail through
+    /// `stored_order` and each slider as its stored 0 to 14.
+    #[test]
+    #[cfg(not(target_arch = "wasm32"))]
+    #[ignore = "reads the maintainer's PES 2014 saves"]
+    fn the_ingame_appear1_saves_read_the_measured_look_fields() {
+        let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../../.tmp/ingame_saves/saves_14");
+        // (save name, boots id, (face, hair), strip (wristband,
+        // undershorts, sleeves, socks, inners), (spectacles, ankle tape,
+        // shirttail out)); each slider 0 in min, 14 in max.
+        for (name, boots, flags, strip, extras) in [
+            (
+                "appear1_min",
+                1011u32,
+                (true, false),
+                (0u8, 0, 1, 0, 0),
+                (0u8, false, true),
+            ),
+            (
+                "appear1_max",
+                83,
+                (true, true),
+                (3, 1, 0, 2, 2),
+                (7, true, false),
+            ),
+        ] {
+            let bytes = std::fs::read(dir.join(name)).expect("the save reads");
+            let file = EditFile::from_bytes(&bytes).expect("the save opens");
+            let player = file.player(85720).expect("player 85720");
+            assert!(file.has_appearance_record(85720), "{name}: the record");
+            let a = &player.appearance;
+            assert_eq!(a.boots_id, boots, "{name}: boots");
+            assert_eq!(
+                (player.edit_flags.face, player.edit_flags.hair),
+                flags,
+                "{name}: edit flags"
+            );
+            let want = if name == "appear1_min" { 0 } else { 14 };
+            let sliders = [
+                a.neck_length,
+                a.neck_size,
+                a.shoulder_height,
+                a.shoulder_width,
+                a.chest,
+                a.waist,
+                a.arm_length,
+                a.arm_size,
+                a.thigh,
+                a.calf,
+                a.leg_length,
+                a.head_length,
+                a.head_width,
+                a.head_depth,
+            ];
+            assert_eq!(sliders, [want; 14], "{name}: the 14 sliders");
+            let (wrist, under, sleeves, socks, inners) = strip;
+            assert_eq!(a.wrist_taping, wrist, "{name}: wristband");
+            assert_eq!(a.undershorts, under, "{name}: undershorts");
+            assert_eq!(a.sleeves, sleeves, "{name}: sleeves");
+            assert_eq!(a.socks, socks, "{name}: socks");
+            assert_eq!(a.inners, inners, "{name}: inners");
+            let (spectacles, ankle, untucked) = extras;
+            assert_eq!(a.spectacles_style, spectacles, "{name}: spectacles");
+            assert_eq!(a.ankle_taping, ankle, "{name}: ankle tape");
+            assert_eq!(a.untucked, untucked, "{name}: shirttail");
+        }
     }
 
     /// A unique temp folder for the native save/load test.

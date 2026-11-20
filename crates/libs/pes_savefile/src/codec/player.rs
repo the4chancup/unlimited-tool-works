@@ -6,7 +6,7 @@ use super::{CodecError, bits, runs, single_byte, text_bytes, write_record, write
 use crate::model::ingame_face::IngameFace;
 use crate::model::player::PlayerEntry;
 use crate::schema::fields::{PlayerField, PlayerText};
-use crate::schema::{RecordSchema, stored_offset};
+use crate::schema::{RecordSchema, stored_offset, stored_order};
 
 /// Decodes one player record into a fresh `PlayerEntry`. `version` is the
 /// save's own, whatever the schema names: it picks the stored offsets the
@@ -38,7 +38,12 @@ pub fn read_player_into(
     }
     for (field, offset, width) in runs(schema) {
         let stored = bits::read_bits(record, offset, width);
-        player.set(field, stored + stored_offset(version, field))?;
+        let value = match stored_order(version, field) {
+            // The run's width bounds the stored value inside the table.
+            Some(order) => order[stored as usize],
+            None => stored + stored_offset(version, field),
+        };
+        player.set(field, value)?;
     }
     for spec in schema.texts {
         let bytes = text_bytes(record, spec.byte_offset, spec.len);
@@ -73,6 +78,16 @@ pub fn write_player(
 ) -> Result<(), CodecError> {
     write_record(schema, record, |field| {
         let value = player.get(field)?;
+        if let Some(order) = stored_order(version, field) {
+            return order
+                .iter()
+                .position(|&model| model == value)
+                .map(|stored| stored as u32)
+                .ok_or(CodecError::OutsideStoredOrder {
+                    field: format!("{field:?}"),
+                    value,
+                });
+        }
         let offset = stored_offset(version, field);
         value
             .checked_sub(offset)

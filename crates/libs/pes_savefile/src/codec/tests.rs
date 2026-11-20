@@ -817,6 +817,85 @@ fn pes14_stored_offsets_apply_on_read_and_write() {
     ));
 }
 
+/// PES 2014 stores Sleeves and the shirttail in another order than the
+/// model's (`stored_order`): Sleeves' stored 0 to 3 read as the model's
+/// 1, 2, 0, 3 (Short, Long, Auto, the kept 3) and write back as stored,
+/// and the shirttail's stored 0 reads as untucked. On PES 2015 the same
+/// fields read as stored. A model value the order does not list,
+/// Sleeves' 4, refuses the write.
+#[test]
+fn pes14_sleeves_and_shirttail_translate_through_the_stored_order() {
+    let (_, appearance) = schema_for(PesVersion::Pes14)
+        .appearance
+        .as_ref()
+        .expect("PES 2014 has an appearance record");
+    let run_of = |wanted: PlayerField| {
+        runs(appearance)
+            .find(|(field, _, _)| *field == wanted)
+            .map(|(_, offset, width)| (offset, width))
+            .expect("the schema maps the field")
+    };
+    let (sleeves_at, sleeves_w) = run_of(PlayerField::Sleeves);
+    for (stored, model) in [(0u32, 1u8), (1, 2), (2, 0), (3, 3)] {
+        let mut record = vec![0u8; appearance.size];
+        bits::write_bits(&mut record, sleeves_at, sleeves_w, stored);
+        let mut player = PlayerEntry::default();
+        read_player_into(PesVersion::Pes14, &mut player, &record, appearance).expect("decode");
+        assert_eq!(player.appearance.sleeves, model, "stored {stored}");
+        let mut written = vec![0u8; appearance.size];
+        write_player(PesVersion::Pes14, &player, &mut written, appearance).expect("encode");
+        assert_eq!(
+            bits::read_bits(&written, sleeves_at, sleeves_w),
+            stored,
+            "model {model} writes stored {stored}"
+        );
+    }
+    let (untucked_at, untucked_w) = run_of(PlayerField::Untucked);
+    for (stored, model) in [(0u32, true), (1, false)] {
+        let mut record = vec![0u8; appearance.size];
+        bits::write_bits(&mut record, untucked_at, untucked_w, stored);
+        let mut player = PlayerEntry::default();
+        read_player_into(PesVersion::Pes14, &mut player, &record, appearance).expect("decode");
+        assert_eq!(player.appearance.untucked, model, "stored {stored}");
+        let mut written = vec![0u8; appearance.size];
+        write_player(PesVersion::Pes14, &player, &mut written, appearance).expect("encode");
+        assert_eq!(
+            bits::read_bits(&written, untucked_at, untucked_w),
+            stored,
+            "model {model} writes stored {stored}"
+        );
+    }
+    // The version decides, not the field: on PES 2015 Sleeves reads as
+    // stored.
+    let (_, appearance15) = schema_for(PesVersion::Pes15)
+        .appearance
+        .as_ref()
+        .expect("PES 2015 has an appearance record");
+    let (_, sleeves15_at, sleeves15_w) = runs(appearance15)
+        .find(|(field, _, _)| *field == PlayerField::Sleeves)
+        .expect("PES 2015 maps Sleeves");
+    for stored in 0u32..=2 {
+        let mut record = vec![0u8; appearance15.size];
+        bits::write_bits(&mut record, sleeves15_at, sleeves15_w, stored);
+        let mut player = PlayerEntry::default();
+        read_player_into(PesVersion::Pes15, &mut player, &record, appearance15).expect("decode");
+        assert_eq!(
+            player.appearance.sleeves, stored as u8,
+            "PES 2015 stored {stored} reads as stored"
+        );
+    }
+    // A model value the order does not list refuses the write.
+    let mut player = PlayerEntry::default();
+    player.appearance.sleeves = 4;
+    let mut record = vec![0u8; appearance.size];
+    match write_player(PesVersion::Pes14, &player, &mut record, appearance) {
+        Err(CodecError::OutsideStoredOrder { field, value }) => {
+            assert_eq!((field.as_str(), value), ("Sleeves", 4));
+        }
+        other => panic!("expected CodecError::OutsideStoredOrder, got {other:?}"),
+    }
+}
+
 #[test]
 fn a_value_too_wide_for_its_run_is_refused() {
     let schema = crate::schema::RecordSchema {
