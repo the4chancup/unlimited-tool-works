@@ -186,7 +186,10 @@ From the fork's codec, checked against the vanilla save and the Akko saves (2026
     also set +0x60 to 5 and +0x61 to 15, the Defensive Compactness and Shifting to Attack the
     screen then showed. A formation change (8-1-1 to 4-3-1-2) rewrote one byte every 4 from
     +0x12 to +0x2E and u16 values from +0x32 to +0x58. A swap of two starters exchanged their
-    bytes in presets 2 and 3 (0x6C and 0xD8 later), not in preset 1;
+    bytes in presets 2 and 3 (0x6C and 0xD8 later), not in preset 1. Made with Preset Tactics
+    2 or 3 shown, a swap exchanged the two positions' roles and spots in that preset alone,
+    and left the lineup as it was (run `tactics5`, kept as `tactics5`: `/a/` in Preset Tactics
+    2, `/aco/` in 3);
   - the captain byte counts roster slots, not lineup positions (run `tactics2`, kept as
     `tactics2`): on `/b/`, whose #12 plays #11's centre-forward spot, the captain could be put
     on #12, and on `/a/` the C mark followed #2 when he swapped places with #3. Whether the
@@ -502,14 +505,12 @@ version, not the version selector.
     ranges differ: the shared Support Range and Defensive Line run from 1 to 10, and every
     reader of them (the Team TOML, the legacy files, the diff, the Gameplan widgets) would
     take PES 2014's 0 to 20 for that.
-- **The Gameplan screen in Build 1.** The Gameplan segment is greyed with a "PES 2014: in the
-  next build" tooltip; the import panel's Gameplan section and the Preset and Formation copy
-  targets go with it. The captain is read for the AATF and kept as the game set it; it is
-  shown and edited on the Gameplan screen, as on the other versions, from Build 2. A
-  captain-only screen for Build 1 would be new design for one build's life. A team row still
-  opens the team's header (name and short name, the colour cells greyed), with the tactics
-  editor below it replaced by a greyed line saying the same. The formation pictures and the
-  Gameplan copy targets are greyed too, since they would picture or copy a record of zeros.
+- **The Gameplan screen in Build 1** was greyed: the Gameplan segment, with a "PES 2014: in
+  the next build" tooltip, and a greyed line in place of a team row's tactics editor. Build 2
+  opens it (below), and with it the captain, which Build 1 read for the AATF alone: a
+  captain-only screen would have been new design for one build's life. The formation pictures
+  stay greyed on PES 2014, since they draw the other versions' Gameplan, whose settings a PES
+  2014 preset does not hold.
 - **The Gameplan screen in Build 2** is drafted in `docs/prototypes/tools/save_editor.js`
   (`tacticsTab14`), on the draft's PES 14 sample: five Akko teams as run `formations1` kept
   them. It keeps the other versions' frame: the preset bar, the pitch, Player assignments, the
@@ -531,12 +532,15 @@ version, not the version selector.
     else moves a player. A click opens no player box, since a role is not picked, and a held
     player lights no areas.
   - **A swap of two starters**, on the pitch or in the lineup list, moves them in the preset
-    shown alone, as the game's swap does: the two exchange lineup entries, and the other two
-    presets exchange the two positions' roles and spots, so each player stands there where he
-    stood. In run `tactics1`'s save, a swap made in Preset Tactics 1 exchanged lineup
-    entries 1 and 3 and slots 1 and 3 of presets 2 and 3, and left preset 1's alone. That the
-    rule is "the other two presets", not "presets 2 and 3" whatever the preset shown, is
-    inferred until run `tactics5` swaps in Preset Tactics 2.
+    shown alone, writing what the game's swap writes:
+    - with Preset Tactics 1 shown, the two exchange lineup entries, and presets 2 and 3
+      exchange the two positions' roles and spots, so each player stands there where he stood
+      (run `tactics1`);
+    - with Preset Tactics 2 or 3 shown, that preset alone exchanges the two positions' roles
+      and spots, and the lineup stays as it is (run `tactics5`).
+
+    Both leave the same players in the same places. The editor writes the game's bytes, so a
+    save it edits matches one the game edited.
   - **No overall** shows on the pitch's badges: PES 2014's own formula is not known, and PES
     2016's reads stats PES 2014 does not store.
   - **The second free kick taker** moves to the next roster slot when he becomes the long or
@@ -681,9 +685,11 @@ on main. Main is merged into the branch, never rebased onto it.
    - Run `help1` (in game): done, read in "What is known about the save".
    - Run `tactics6` (in game): whether a grabbed player can be moved to open grass, as the
      game's help says, and the "Position / Overall Rating" display.
-   - Run `tactics5` (in game): a swap of two starters made in Preset Tactics 2, to pin which
-     presets' slots the game exchanges.
-   - Slices: the record's fields in the schema and the model, then the screen.
+   - Run `tactics5` (in game): done, pinned in "What is known about the save".
+   - Slice 1, the record's fields in the schema and the model: done.
+   - Slice 2a: the screen opens with the Preset tactics panel.
+   - Slice 2b: the pitch's PES 2014 rules (shirts, swaps).
+   - Slice 2c: Combination play, Automatic settings and the tooltips.
    - The command line refuses the commands out of scope on a PES 2014 save ("Not in scope").
    - Later: the pitch's shirts in the team's kit colours and icon pattern, as PES 2015's
      Game Plan kit icons (patterns 0 to 23), read from the kit configs in the download

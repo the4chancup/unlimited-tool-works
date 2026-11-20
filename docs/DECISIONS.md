@@ -19108,3 +19108,16 @@ describes what the team plays. It has no text for the areas, and its screen does
 which end is whose, so a tooltip saying so would state what nothing showed. A text reworded
 by us would no longer be the game's.
 Plan: `plans/pes14.md` "PES 2014 in the code" ("The Gameplan screen in Build 2").
+
+## 2026-11-20 — save_editor (pes14 branch) — A PES 2014 swap writes the game's bytes for the preset shown
+Decision: on PES 2014, a swap of two starters made with Preset Tactics 2 or 3 shown exchanges
+the two positions' roles and spots in that preset alone, and leaves the lineup as it is. Made
+with Preset Tactics 1 shown, it stays as "A PES 2014 swap moves the two players in the preset
+shown alone" decided: the lineup entries exchange, and presets 2 and 3 exchange the two
+positions. This replaces the inferred "the other two presets" rule, which also left the
+players in the same places but wrote other bytes.
+Why: run `tactics5`'s save, with a swap made in Preset Tactics 2 on `/a/` and in Preset Tactics
+3 on `/aco/`: each changed that preset's two slots and nothing else. Writing the game's bytes
+keeps a save the editor edits equal to one the game edited.
+Plan: `plans/pes14.md` "What is known about the save" (the tactics record), "PES 2014 in the
+code" ("A swap of two starters"), "Steps", step 8.

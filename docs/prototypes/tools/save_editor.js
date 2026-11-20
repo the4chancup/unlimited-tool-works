@@ -6597,13 +6597,16 @@ function swapLineup(t, fieldIdx, benchIdx) {
 function swapStarters(t, i, j) {
   if (i === j) return;
   edit("Reorder lineup", () => {
+    const slots = k => {
+      const f = t.tactics.presets[k].formations[0].players, x = f[i]; f[i] = f[j]; f[j] = x; };
+    // PES 2014's swap moves the two players in the shown preset alone, in
+    // the game's bytes: in Preset 2 or 3 that preset's two slots exchange
+    // roles and spots (run tactics5's save); in Preset 1 the lineup entries
+    // exchange, and presets 2 and 3 their two slots, so the players stand
+    // there where they stood (run tactics1's).
+    if (version() === 14 && S.tac.preset > 0) { slots(S.tac.preset); return; }
     const s = t.tactics.starting_eleven, tmp = s[i]; s[i] = s[j]; s[j] = tmp;
-    // PES 2014's swap moves the two players in the shown preset alone: the
-    // other two exchange the two positions' roles and spots, so the players
-    // stand there where they stood (run tactics1's save).
-    if (version() === 14) t.tactics.presets.forEach((p, k) => {
-      if (k === S.tac.preset) return;
-      const f = p.formations[0].players, x = f[i]; f[i] = f[j]; f[j] = x; });
+    if (version() === 14) { slots(1); slots(2); }
   });
 }
 // A pitch marker dropped on another: the two slots exchange their position
