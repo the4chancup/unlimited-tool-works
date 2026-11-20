@@ -275,6 +275,20 @@ From the fork's codec, checked against the vanilla save and the Akko saves (2026
     - Overlap and Pull Back and Drop Deep and Overlap: 4, 5, 7 and 10;
   - a formation picked in Preset Tactics 2 is written to that preset's block, 0x6C later, with
     its keeper's depth set to 3 there too.
+- **Read in game, run `help1`** (2026-11-20, nothing changed or saved; the texts word for word
+  in the worktree's `.tmp/pes14_ingame/help1/findings.md`). The Game Plan's help button opens
+  one manual of 18 topics, the same wherever it is pressed; no panel, dropdown or picker shows
+  a description of its own. The manual gives a text for each slider, each Strategy choice,
+  each of the 11 formations, each set-piece taker and Players to Join Attack, each Tactical
+  Assistance setting, and one for Combination Play as a whole; none for a Combination Play
+  strategy (its picker plays an animation) or an area. Two of its topics bear on the screen:
+  - "Pitch Display": LB and RB switch the pitch between "Strip Icon", "Form / Stamina" and
+    "Position / Overall Rating", so the game shows overall ratings in one display;
+  - "On Pitch Controls": "move the icon to an open part of the pitch and press A again. The
+    areas shown in yellow during this step indicate the player's preferred positions. (Once
+    you choose a position, the player's role will be set automatically to the one with the
+    highest Overall Rating.)" Run `tactics1` found no such move: a grabbed player's every
+    direction targeted a teammate. Run `tactics6` tries the move again.
 - **Pinned in game, run `player1`** (2026-11-20, five `/4ccg/` players of `.akko7v2` read
   against the fork's decoding, nothing changed; findings in the worktree's
   `.tmp/pes14_ingame/player1/`). The game reads a player's record only when bit 0x29:1 is set
@@ -510,7 +524,8 @@ version, not the version selector.
     game's pick sets, and Custom sets none; moving a slider afterwards keeps the strategy,
     as the game does (run `tactics4`).
   - **The pitch** draws each player as the game's pitch does, a white shirt with his number,
-    since PES 2014 shows no portraits there. It has no free moves. Dropping a player on
+    since PES 2014 shows no portraits there (the game's "Strip Icon" display). It has no free
+    moves (open: the game's help describes one, run `tactics6`). Dropping a player on
     another swaps the two, the keeper included, even under a ruleset that allows illegal
     formations; while he is held, the teammate a drop would swap with is marked. Nothing
     else moves a player. A click opens no player box, since a role is not picked, and a held
@@ -527,11 +542,16 @@ version, not the version selector.
   - **The second free kick taker** moves to the next roster slot when he becomes the long or
     short free kick taker, as the game does.
   - **Combination play** is a panel of its own: three slots, each a strategy and an area, one
-    strategy to an area, with a Clear button. Its tooltip says what the setting does, from
-    the game's own help page, since most managers have never played PES 2014. The screen's
-    other tooltips take the game's own descriptions too, once run `help1` has read them. The
-    area list holds the strategy's areas that the other two slots leave free. An empty slot
-    reads "None Selected", as in the game.
+    strategy to an area, with a Clear button. The area list holds the strategy's areas that
+    the other two slots leave free. An empty slot reads "None Selected", as in the game.
+  - **Tooltips** are the game's own help texts, word for word (run `help1`), since most
+    managers have never played PES 2014: on each slider's label, each set-piece label and
+    Join the attack, each Automatic setting, and Combination play's title. The Formation and
+    Strategy dropdowns carry the chosen entry's text, as the manual gives one per choice; a
+    formation off the list has none. The area column's tooltip says how the game's area
+    screen numbers the areas, in rows from its top: the game has no text for them, and its
+    screen does not say which end is whose. The game's own wording is kept where it reads
+    oddly ("automatically changes Change Preset Tactics").
   - **Automatic settings** gain Combination Play's switch, and Substitution offers all four
     timings.
 
@@ -658,8 +678,9 @@ on main. Main is merged into the branch, never rebased onto it.
    - Run `formations1` (in game): done, pinned in "What is known about the save".
    - The draft (the lead): done, "The Gameplan screen in Build 2" above.
    - Run `tactics4` (in game): done, pinned in "What is known about the save".
-   - Run `help1` (in game, nothing changed or saved): each Game Plan item's description,
-     shown by the game's help button, for the screen's tooltips.
+   - Run `help1` (in game): done, read in "What is known about the save".
+   - Run `tactics6` (in game): whether a grabbed player can be moved to open grass, as the
+     game's help says, and the "Position / Overall Rating" display.
    - Run `tactics5` (in game): a swap of two starters made in Preset Tactics 2, to pin which
      presets' slots the game exchanges.
    - Slices: the record's fields in the schema and the model, then the screen.

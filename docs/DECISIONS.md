@@ -19095,3 +19095,16 @@ Why: the clipboard carries those settings as Team TOML, which the plan leaves ou
 offering them would build Team TOML for a version it does not cover. The Copy/swap menu edits
 the save's own model and needs no format.
 Plan: `plans/pes14.md` "PES 2014 in the code" ("The Gameplan screen in Build 2").
+
+## 2026-11-20 — save_editor (pes14 branch) — The Gameplan's tooltips are the game's help texts, placed per item
+Decision: each slider's label, each set-piece label, Join the attack, each Automatic setting
+and Combination play's title carry the game's help text for it, word for word. The Formation
+and Strategy dropdowns carry the chosen entry's text. The area column's tooltip gives only the
+game's numbering of the areas, in rows from the top of its screen. The game's wording is kept
+where it reads oddly.
+Why: the maintainer asked for the game's own descriptions. The game's manual gives one per
+formation and per strategy, not one for the dropdown, so the chosen entry's is the one that
+describes what the team plays. It has no text for the areas, and its screen does not say
+which end is whose, so a tooltip saying so would state what nothing showed. A text reworded
+by us would no longer be the game's.
+Plan: `plans/pes14.md` "PES 2014 in the code" ("The Gameplan screen in Build 2").

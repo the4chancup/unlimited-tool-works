@@ -1,5 +1,13 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+
+- **Save editor**: the command line now refuses a PES 2014 save for Team TOML export and
+  import, aesthetics patches, comparing two saves and the teams-list export, as the window
+  greys them there.
+
 ## [0.0.2-pes14.1] - 2026-11-20
 
 ### Important

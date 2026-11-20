@@ -7688,13 +7688,51 @@ function drawShirt14(g, x, bottom, number) {
 // Combination Play are the team's. Names are the editor's where a later
 // version has the same setting (Automatic settings, Preset change), the
 // game's where it is PES 2014's alone.
+// The tooltips are the game's own help texts, word for word (run help1), for
+// managers who never played PES 2014.
 const STRATEGIES14 = ["Custom", "Long Ball", "Quick Counter", "Possession Game",
   "All-out Defence", "All-out Attack"];
-// The eight sliders, 0 to 20, in the game's panel order.
-const SLIDERS14 = [["player_support", "Player support"], ["support_range", "Support range"],
-  ["position_switch", "Position switch"], ["front_line_pressure", "Front line pressure"],
-  ["defensive_line", "Defensive line"], ["defensive_compactness", "Defensive compactness"],
-  ["shifting_to_attack", "Shifting to attack"], ["attack_defence_level", "Attack/defence level"]];
+const STRATEGY_TIPS14 = ["Select no strategies.",
+  "Play a tight backline that can win back possession and play long balls to launch counter attacks.",
+  "Pressure the opposition deep in their half and launch quick counters on winning back possession.",
+  "Get players to move in a way which suits possession football.",
+  "Keep the Backline deep at all times when defending. Once in possession, the team will take the initiative through ball retention.",
+  "The team piles forward with almost every player joining the attack."];
+const FORMATION_TIPS14 = {
+  "4-4-2": "A balanced formation suited to teams with pace down the wings. Defensively solid in both central and wide areas.",
+  "4-3-1-2": "A versatile formation suited to attacking through the middle or from out wide.",
+  "4-2-3-1": "The ideal formation for counter-attacking.",
+  "4-2-1-3": "A formation for teams that like to pressure the opposition from upfield.",
+  "4-3-2-1": "A fluid formation best suited to possession football.",
+  "4-1-2-3": "An attack minded formation which sacrifices strength in midfield.",
+  "4-3-3": "A formation which is suited to both attacking and defending down the flanks.",
+  "3-2-3-2": "A formation with a compact midfield aimed to contain the opposition.",
+  "3-1-4-2": "A formation geared towards controlling possession in midfield.",
+  "3-2-2-3": "A formation where the focus is on keeping a tight backline.",
+  "5-2-2-1": "A defensive formation suited to teams that like to hold on to the ball." };
+// The eight sliders, 0 to 20, in the game's panel order: [key, label, tooltip].
+const SLIDERS14 = [
+  ["player_support", "Player support", "The higher the value, the more the players lay emphasis on ball retention when positioning themselves. On a lower level, they will look to maintaining the team's overall shape."],
+  ["support_range", "Support range", "The higher the level, the more players tend to spread themselves out when looking to receive passes."],
+  ["position_switch", "Position switch", "The higher the level, the more frequently the players switch positions."],
+  ["front_line_pressure", "Front line pressure", "The higher the level, the more pressure that will be applied by players in advanced positions."],
+  ["defensive_line", "Defensive line", "The higher the level, the further up the pitch the defensive line will be."],
+  ["defensive_compactness", "Defensive compactness", "The higher the level, the more compact the team's overall shape becomes when defending."],
+  ["shifting_to_attack", "Shifting to attack", "The higher the level, the more the players tend to maraud forward when defence turns into attack. Conversely on a lower level, the players will tend to lay more emphasis on retaining possession and will position themselves in such a manner."],
+  ["attack_defence_level", "Attack/defence level", "The higher the level, the more the players tend to take up advanced positions. This affects the number of players who joins the attack in set pieces."]];
+const SET_PIECE_TIPS14 = {
+  free_kick_long: "Select Long distance Free Kick Taker.",
+  free_kick_short: "Select Short distance Free Kick Taker.",
+  free_kick_second: "Select a Secondary Free Kick Taker.",
+  corner_left: "Select who takes Left-sided Corner Kicks.",
+  corner_right: "Select who takes Right-sided Corner Kicks.",
+  penalty: "Select Penalty Taker.",
+  join: "Select which defenders will go forward and join the attack in Set Pieces. Up to 3 defenders can go up front. If you choose a 4th, the defender who was first selected will elect to stay back in his place." };
+const AUTO_TIPS14 = {
+  substitution: "Choose how frequently the players are automatically substituted during matches.",
+  offside_trap: "Choose whether or not players will automatically attempt to play offside traps during matches.",
+  preset_change: "Choose whether or not your team automatically changes Change Preset Tactics in matches.",
+  combination_play: "Choose whether or not to automatically trigger Combination Play in matches." };
 // The sliders a Strategy pick sets, in SLIDERS14's order; null leaves a slider
 // as it is. A pick writes only some (run tactics4: Long Ball left Player
 // Support, Position Switch and Defensive Line as they were), so each strategy
@@ -7708,17 +7746,16 @@ const STRATEGY_SLIDERS14 = [[],
   [15, 10, null, 10, 10, 10, null, 10],
   [null, null, null, null, null, 10, null, null],
   [null, null, null, 15, 15, null, 15, 20]];
-// Combination Play explained, for managers new to PES 2014 (the game's own
-// help page, run tactics1's g_12_cp). sample wording.
-const COMBINATION_TIP14 = "Set moves the team runs in attack. Each slot pairs a move with an "
-  + "area of the pitch, one move to an area. In a match, "
-  + "when the ball is in a slot's area and the Combination Play icon shows, press LT twice: "
-  + "the players link up to make space or lose their markers.";
-// Where each area lies, as the game's area screen draws them (run tactics1's
-// g_13_cp). sample wording.
-const COMBINATION_AREA_TIP14 = "Where the move runs: 1 and 2 on the wings beside the "
-  + "opponent's box, 3 to 5 in front of it (left to right), 6 to 8 further back in their "
-  + "half, 9 to 11 just inside ours";
+const COMBINATION_TIP14 = "While you can select up to 3 different types of combined "
+  + "strategies, they can only be implemented one at a time in each area. Please select the "
+  + "combined strategies of your choice and the areas where they are to be implemented. When "
+  + "implemented, players will link up in an attempt to create space or to lose their markers "
+  + "in the selected areas. To implement combined strategies, press LT twice when the "
+  + "Combination Play icon is shown on screen.";
+// The game has no text for the areas: this is its area screen's numbering
+// (run tactics4's t5_slots), with no claim about which end is whose.
+const COMBINATION_AREA_TIP14 = "The game's area screen numbers the pitch in rows, from its "
+  + "top: 1 and 2, then 3 to 5, 6 to 8, and 9 to 11.";
 // Combination Play's strategies in the game's picker order: [stored id, name,
 // the area the game's area picker opens on, the areas it takes] (run tactics4,
 // with the other two slots empty).
@@ -7793,11 +7830,12 @@ function tacticsTab14(t) {
   const formation = h("div", { class: "tset" }, h("div", {}, "Formation"),
     combo((listed < 0 ? [["-1", formationName(f) + " (not in the game's list)"]] : []).concat(
       PES14_SAMPLE.formations.map((e, k) => [String(k), e.name])), String(listed),
-      v => { const k = parseInt(v, 10); if (k >= 0 && k !== listed) { pickFormation14(t, k); render(); } }));
+      v => { const k = parseInt(v, 10); if (k >= 0 && k !== listed) { pickFormation14(t, k); render(); } },
+      { title: listed < 0 ? undefined : FORMATION_TIPS14[PES14_SAMPLE.formations[listed].name] }));
   const strategy = h("div", { class: "tset" }, h("div", {}, "Strategy"),
     combo(STRATEGIES14.map((name, i) => [String(i), name]), String(pre.strategy),
-      v => { pickStrategy14(pre, parseInt(v, 10)); render(); }));
-  const slider = ([key, label]) => h("div", { class: "tset" }, h("div", {}, label),
+      v => { pickStrategy14(pre, parseInt(v, 10)); render(); }, { title: STRATEGY_TIPS14[pre.strategy] }));
+  const slider = ([key, label, tip]) => h("div", { class: "tset" }, h("div", { title: tip }, label),
     h("div", { class: "row" },
       rangeField(0, 20, pre.sliders[key], v => { edit(label, () => { pre.sliders[key] = v; }); render(); })));
   const setCols = colCount("tactics-settings");
@@ -7823,11 +7861,11 @@ function tacticsTab14(t) {
       onclick: () => { S.assign = joinArmed ? null : { kind: "join", label: "the attack" }; render(); } },
     k < joined.length ? playerName(rosterPlayer(t, joined[k])) : "Unassigned"));
   const auto = tac.auto;
-  const autoCb = (key, label) => h("label", { class: "cb" },
+  const autoCb = (key, label) => h("label", { class: "cb", title: AUTO_TIPS14[key] },
     h("input", { type: "checkbox", checked: !!auto[key],
       onchange: e => { edit(label, () => { auto[key] = e.target.checked; }); render(); } }),
     " " + label);
-  const substitution = h("span", { class: "row" }, "Substitution",
+  const substitution = h("span", { class: "row", title: AUTO_TIPS14.substitution }, "Substitution",
     combo(SUBSTITUTION_LABEL.map((label, i) => [String(i), label]), String(auto.substitution),
       v => { edit("Auto substitution", () => { auto.substitution = parseInt(v, 10); }); render(); }));
   const combination = h("div", { class: "tacinstr", style: "grid-template-columns: auto 1fr 52px auto" },
@@ -7849,8 +7887,10 @@ function tacticsTab14(t) {
       h("div", { "data-panel": "tactics-pitch" }, pitchWrap),
       named(h("div", { class: "group", id: "tac-side" }, strong("Player assignments"),
         h("div", { class: "tachalf" },
-          SET_PIECES.map(([k, l]) => h("div", { class: "tset" }, h("div", {}, l), roleChip(k, l))),
-          h("div", { class: "tset" }, h("div", {}, "Join the attack"), joinChips))), "tactics-side"),
+          SET_PIECES.map(([k, l]) => h("div", { class: "tset" },
+            h("div", { title: SET_PIECE_TIPS14[k] }, l), roleChip(k, l))),
+          h("div", { class: "tset" }, h("div", { title: SET_PIECE_TIPS14.join }, "Join the attack"),
+            joinChips))), "tactics-side"),
       h("div", { class: "tacstack" },
         h("div", { class: "group", id: "tac-combination" },
           h("span", { class: "strong", title: COMBINATION_TIP14 }, "Combination play"), combination),
