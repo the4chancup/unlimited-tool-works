@@ -792,8 +792,12 @@ mod tests {
     }
 
     /// A releases list whose one release is newer than any version of the program.
-    const NEWER_RELEASE: &str =
-        r#"[{"tag_name": "v999.0.0", "body": null, "html_url": "u", "assets": []}]"#;
+    fn newer_release() -> String {
+        format!(
+            r#"[{{"tag_name": "{TAG_PREFIX}999.0.0", "body": null, "html_url": "u", "assets": []}}]"#,
+            TAG_PREFIX = updater::TAG_PREFIX
+        )
+    }
 
     /// A hang bound on another thread's report, never a speed bound: a
     /// passing wait returns as soon as the report comes.
@@ -837,7 +841,7 @@ mod tests {
         let counted = Arc::clone(&calls);
         let fetch: Arc<Fetch> = Arc::new(move || {
             counted.fetch_add(1, Ordering::SeqCst);
-            Ok(NEWER_RELEASE.to_owned())
+            Ok(newer_release())
         });
         let mut common = CommonSettings {
             check_for_updates: true,
@@ -859,13 +863,13 @@ mod tests {
     // ST-CLI-05
     #[test]
     fn the_notice_is_written_when_the_reply_has_arrived_and_offers_a_release() {
-        let offer = reply_of(NEWER_RELEASE);
+        let offer = reply_of(&newer_release());
         let line = updater::command_line_notice(offer.as_ref().unwrap().as_ref(), None)
             .expect("the premise: the release is offered");
         assert!(line.contains("v999.0.0"), "{line}");
         assert_eq!(reported(Some(&arrived(offer)), None), format!("{line}\n"));
 
-        let skipped = arrived(reply_of(NEWER_RELEASE));
+        let skipped = arrived(reply_of(&newer_release()));
         assert_eq!(reported(Some(&skipped), Some("999.0.0")), "", "skipped");
         let failed = arrived(reply_of("not json"));
         assert_eq!(reported(Some(&failed), None), "", "failed");
@@ -881,7 +885,7 @@ mod tests {
         // that waited for it would then write the line and fail the test, not hang it.
         let check = std::thread::spawn(move || {
             if go_rx.recv_timeout(GUARD).is_err() {
-                tx.send(reply_of(NEWER_RELEASE)).unwrap();
+                tx.send(reply_of(&newer_release())).unwrap();
             }
         });
         let written = reported(Some(&rx), None);
@@ -924,7 +928,7 @@ mod tests {
         let LaunchMode::Cli { tool, matches } = launch.mode else {
             panic!("the premise: a tool's command")
         };
-        let offer = reply_of(NEWER_RELEASE);
+        let offer = reply_of(&newer_release());
         let notice = updater::command_line_notice(offer.as_ref().unwrap().as_ref(), None)
             .expect("the premise: the release is offered");
         let path = dir.path().join("run_log.txt");
@@ -968,7 +972,7 @@ mod tests {
             Some(skipped_log),
             &mut stderr,
             (settings, paths),
-            Some(arrived(reply_of(NEWER_RELEASE))),
+            Some(arrived(reply_of(&newer_release()))),
         );
         assert_eq!(code.unwrap(), 2);
         let written = fs::read_to_string(&skipped_path).unwrap();

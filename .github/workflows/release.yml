@@ -3,10 +3,10 @@
 # refuses a binary holding the runner's paths, a Windows exe linking the C runtime dynamically,
 # or an archive whose listing differs from the staged files.
 #
-# A tag `v<version>` naming the workspace's version ends in a draft release holding both bundles
-# and SHA256SUMS.txt, the file the updater checks a download against; the maintainer looks at the
-# Windows bundle, writes the notes and publishes. A push to `ci/release-dry-run`, or a run started
-# by hand, stops at the run's artifacts.
+# A tag naming the workspace's version after `TAG_PREFIX` (`v0.0.2`) ends in a draft release
+# holding both bundles and SHA256SUMS.txt, the file the updater checks a download against; the
+# maintainer looks at the Windows bundle, writes the notes and publishes. A push to
+# `ci/release-dry-run`, or a run started by hand, stops at the run's artifacts.
 name: Release
 
 on:
@@ -20,6 +20,9 @@ permissions:
 
 env:
   CARGO_TERM_COLOR: always
+  # The release line's tag prefix, the updater's `TAG_PREFIX`. A side line changes it here, there
+  # and in the tag pattern above, which cannot read a variable (RUNBOOK "Releasing a side line").
+  TAG_PREFIX: v
 
 jobs:
   bundle:
@@ -46,7 +49,7 @@ jobs:
         shell: bash
         run: |
           version=$(python -c "import tomllib; print(tomllib.load(open('Cargo.toml', 'rb'))['workspace']['package']['version'])")
-          if [[ "$GITHUB_REF_TYPE" == tag && "$GITHUB_REF_NAME" != "v$version" ]]; then
+          if [[ "$GITHUB_REF_TYPE" == tag && "$GITHUB_REF_NAME" != "$TAG_PREFIX$version" ]]; then
             echo "::error::the tag $GITHUB_REF_NAME does not name the workspace's version $version"
             exit 1
           fi
@@ -93,13 +96,14 @@ jobs:
           cat ./*-windows.7z.sha256 ./*-linux.tar.gz.sha256 > SHA256SUMS.txt
           cat SHA256SUMS.txt
       # A draft: the maintainer publishes it after the look. A version with a pre-release part
-      # (`0.0.1-rc.1`) is marked pre-release.
+      # (`0.0.1-rc.1`, a side line's `0.0.2-pes14.1`) is marked pre-release, which GitHub never
+      # shows as the latest release.
       - name: The draft release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           prerelease=()
-          if [[ "$GITHUB_REF_NAME" == *-* ]]; then prerelease=(--prerelease); fi
+          if [[ "${GITHUB_REF_NAME#"$TAG_PREFIX"}" == *-* ]]; then prerelease=(--prerelease); fi
           gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --verify-tag --draft \
             "${prerelease[@]}" --title "$GITHUB_REF_NAME" --notes "" \
             dist/*-windows.7z dist/*-linux.tar.gz dist/SHA256SUMS.txt
