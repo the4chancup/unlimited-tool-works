@@ -18921,3 +18921,15 @@ stays, not the whole team view greyed, because the team's name and colours are B
 pictures and copies go with the Gameplan screen, because they would show or copy zeros.
 Plan: `plans/pes14.md` "PES 2014 in the code", "The Gameplan screen in Build 1" and "The
 recent-saves list".
+
+## 2026-11-20 — aatf (pes14 branch) — the Akko VII ruleset reads the page's numbers as the values PES 2014 shows
+Decision: `akko7.rhai` takes each number on Akko VII's page as the value the game shows on
+PES 2014's bars of 8 (a weak foot capped at 2 is a 2). A medal's Injury Resistance, "any
+amount" on the page, runs to 8. A player of 175 cm or less may have a 4/4 weak foot. The trick
+cards are the official list's five that PES 2014 has. The ruleset has no age, weight,
+formation or team-settings rule.
+Why: the page's numbers kept, not rescaled to the 8-step bars, because nothing on the page
+says they scale. 4/4 for the short players, not the 8/8 their "any amount" would allow,
+because both height tables give 4/4 and the Akko fork of 4ccEditor checks 4/4. No age,
+weight, formation or team-settings rule because the page sets none.
+Plan: `plans/pes14.md` "Goal and scope", the AATF item.

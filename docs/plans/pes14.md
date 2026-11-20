@@ -36,7 +36,16 @@ disabled:
   organizer names the cards that hardly change play, which are then free or have their own
   limit. Akko VII's page sets the free tricks per medal but names no cards, so its ruleset's
   `card_groups.tricks` is the official 4cc list (`autumn26.rhai`'s), limited to the cards PES
-  2014 has;
+  2014 has: Scissors Feint, Flip Flap, Marseille Turn, Sombrero and Cut Behind & Turn. The
+  page's numbers fit later games, where Injury Resistance stops at 3 and the weak foot at 4,
+  while PES 2014 shows both on bars of 8. The ruleset reads each number the page gives as the
+  value the game shows, so a weak foot capped at 2 is a 2 on PES 2014's bar. Where the page
+  says "any amount":
+  - a medal's Injury Resistance runs to 8;
+  - a player of 175 cm or less may have a 4/4 weak foot, not 8/8, because both height tables
+    give 4/4 and the fork checks 4/4.
+
+  The page sets no age, weight, formation or team-settings rule, so the ruleset has none;
 - the edit flags the game needs to show what was edited (below).
 
 **Build 2, the Gameplan screen:** the tactics record's fields on screen and editable, each
