@@ -446,7 +446,11 @@ on main. Main is merged into the branch, never rebased onto it.
      only" (above);
    - the overlong shirt name's tooltip "(PES 2016 shows 16)" names PES 2014 too;
    - skill card 4 reads "Precise Touch" on PES 2014, the game's older name for Cut Behind &
-     Turn (`labels::card_name` takes no version today).
+     Turn (`labels::card_name` takes no version today);
+   - the Team menu's boots and gloves dialog on PES 2014, once its boots are mapped: PES 2014
+     stores no gloves id, so the dialog sets the boots alone. Today the item is greyed while
+     the boots are unmapped, and once they are, it would refuse with "store no boots or gloves
+     IDs".
 5. The Akko VII ruleset (`akko7.rhai`, its logo and page); `/4ccg/` in `.akko7v2` passes as it
    does in the fork's fixed build.
 6. Releases: the `pes14-v` tag prefix in the update check and `release.yml`. The version
