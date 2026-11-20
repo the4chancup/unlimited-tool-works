@@ -143,9 +143,9 @@ From the fork's codec, checked against the vanilla save and the Akko saves (2026
   on a created player. The organizer's `.akko7v2_flags` sets 0x28 to 0xFC and 0x29 to 0xFE on
   every player instead. Run `flags3` loaded `flags2` again in a fresh game: every edit showed,
   the player-record ones with 0x29:1 alone and the face, hair and boots ones with no player
-  flag. So the game's own flags keep its edits, against the organizer's account above; why
-  their merge showed placeholder names is open. The values `flags2` moved agree with `flags1`'s
-  offsets, and add:
+  flag. So the game's own flags keep its edits. The organizer's placeholder names are the
+  Player Name, which 0x29:1 alone does not show (run `player1`). The values `flags2` moved
+  agree with `flags1`'s offsets, and add:
   - Age is the low 6 bits of +0x10 (24 read 0x58, 25 0x59);
   - Height 180 cm is 0x30 at +0x0C, so the byte likely holds the height less 132;
   - the face, hair and boots edits wrote only the player's appearance record. A face edit
@@ -180,6 +180,38 @@ From the fork's codec, checked against the vanilla save and the Akko saves (2026
   International Cup") and the header byte 0x4A. The Edit Player cards are PES 2015's names:
   18 playing styles, 7 COM styles and 20 skills, Precise Touch among them (no Cut Behind &
   Turn: Precise Touch's description names the Cut Behind move).
+- **Pinned in game, run `player1`** (2026-11-20, five `/4ccg/` players of `.akko7v2` read
+  against the fork's decoding, nothing changed; findings in the worktree's
+  `.tmp/pes14_ingame/player1/`). The game reads a player's record only when bit 0x29:1 is set
+  (the fork's "edited player"). The 5036 placeholder records have it clear, and for them the
+  game shows its own base data: a record holding 180 cm showed 160. With 0x29:1 alone every
+  field below showed but the Player Name, which read "PLACEHOLDER" on all five while +0x2E holds
+  their names; Name Print (+0x5C) showed. That is the organizer's "placeholder names"; which bit
+  makes the name show is open. Fields, as byte:bit, width, and how the value is stored:
+  - nationality 0x0A, 16 bits (146 is BRAZIL); height 0x0C, 8 bits, cm less 132; weight 0x0D,
+    8 bits, kg less 30; goal celebrations 1 and 2 at 0x0E and 0x0F, 8 bits, 0 for OFF;
+  - age 0x10:0, 6 bits; Tenacity 0x10:6, 6 bits, less 40 (the fork reads it as Physical
+    Contact);
+  - the other stats, 6 bits each less 40, in the fork's order from 0x11:4 to 0x24:6. The five
+    players' stats are each one value (a medal squad's), so which run is which stat is not
+    told apart beyond Attacking Prowess at 0x11:4 (`flags1`);
+  - the registered position 0x1F:0, 4 bits (GK 0, RMF 7, SS 11, CF 12); the position grades,
+    2 bits each from 0x13:6, C 0 and A 2 seen, B 1 from `flags1`; GK, RMF, SS and CF pinned
+    by their place, the other nine read C on all five;
+  - weak foot accuracy 0x1F:5, form 0x21:1, injury resistance 0x21:4 and weak foot usage
+    0x21:7, 3 bits each, the shown 1 to 8 less 1; the stronger foot 0x2A:0 (set for left);
+  - the playing style 0x20:4, 5 bits: 0 for none, then the game's 18 in screen order (Goal
+    Poacher 1 to Defensive Goalkeeper 18). The fork's names for 15 to 17 are PES 2018's list
+    and wrong here (its 17 shows in game as Offensive Goalkeeper);
+  - the COM styles 0x2A:1 to 0x2A:7 and the 20 skills from 0x2B:0 to 0x2D:3, each in the
+    game's screen order (card `i` at 0x2B + i/8, bit i%8). Precise Touch is card 5, its
+    description naming the Cut Behind move: Cut Behind & Turn under its older name;
+  - motions, each the shown value less 1: dribbling 0x27:6 (2 bits), free kick 0x20:0 (4
+    bits), penalty kick 0x22:5 (3 bits), punt kick 0x28:0 (2 bits).
+
+  The save's leagues as the game lists them: English League holds the 4cc teams, Ligue 1 the
+  Backup teams, Italian League the Invitational teams and `/4ccg/`, LIGA BBVA the /vg/ League
+  teams, and Other the created players.
 - Two more tables sit in the payload, unread by the fork: a second team table near 0x374C44
   (team ID at +0, name near +0x78) and a player table keyed by player ID right after the
   appearance table, at 0x2DABAC. The vanilla save leaves both empty.
@@ -189,16 +221,13 @@ From the fork's codec, checked against the vanilla save and the Akko saves (2026
 Each item ends with its offsets, widths and value orders written into "What is known about
 the save" above.
 
-- **Edit flags:** whether a player whose flags are clear shows the save's values at all (the
-  Akko saves' players, read in run `player1`), which settles whether the editor needs the
-  flags or only mirrors the game.
+- **Edit flags:** which bit makes the game show a player's name from his record, found by
+  editing a Player Name in game (run `player2`).
 - **The tactics record:** the captain, and every run the codec writes (formations, man
   marking, presets), so a record reads and writes back unchanged.
-- **The player record:** every field the fork decodes, checked against the game; Tenacity;
-  goal celebrations; the playstyle list (18 styles) and the motion tops.
-- **The cards:** the game's card list, slot by slot, with each card's name and description as
-  the game shows them. The fork calls one card Precise Touch where later games have Cut Behind
-  & Turn: the same card under an older name is a trick, a different card is not.
+- **The player record:** which 6-bit run is which stat, the position grades' order and the
+  nine positions not yet told apart, each stepped to its own value on one player (run
+  `player2`); the motion tops.
 - **The appearance record:** face, hair, physique, boots, gloves, accessories and the strip
   style.
 - **The team record:** team colours, in the bytes between +0x04 and +0x2B that vary between
@@ -236,13 +265,14 @@ version, not the version selector.
 - **Tenacity** is a PES 2014 stat no other version has. It gets its own `Option` stat, its
   `PlayerField` and its AATF stat name. On another version's save its greyed box's tooltip
   reads "PES 2014 only", since the "PES NN+" wording would claim later versions store it.
-- **Edit flags.** The editor sets the flags the game sets, which keep every edit after a reload
-  (run `flags3`): bit 0x29:1 on each player whose player record it changes, and 0x28:6 as well
-  when the change is in the game's Basic Settings part. An appearance-only change sets no
-  flag. The organizer's 0xFC/0xFE on every player is not copied, since the game never writes
-  it; a save that carries it keeps it, since the editor sets these bits and never clears one.
-  On the other versions an ordinary edit sets no flag, as on
-  main.
+- **Edit flags.** The game reads a player's record only when bit 0x29:1 is set (run
+  `player1`), so the editor sets the flags the game sets, which keep every edit after a reload
+  (run `flags3`): 0x29:1 on each player whose player record it changes, and 0x28:6 as well
+  when the change is in the game's Basic Settings part, plus the bit that makes a changed
+  name show (run `player2`). An appearance-only change sets no flag. The organizer's
+  0xFC/0xFE on every player is not copied, since the game never writes it; a save that
+  carries it keeps it, since the editor sets these bits and never clears one. On the other
+  versions an ordinary edit sets no flag, as on main.
 - **The tactics record in Build 1.** PES 2015's formation and man-marking layouts do not fit
   PES 2014's record: one formation per preset, a lineup of roster slots and no player ids.
   So `TacticsSchema`'s `formations` and `man_marking_bit` become `Option`s, `None` on PES 2014,
@@ -312,8 +342,8 @@ on main. Main is merged into the branch, never rebased onto it.
      lists a PES 2014 save;
    - an appearance record for a player who has none, the first time the editor changes his
      look;
-   - the playstyle list, empty until measured: until then the AATF cannot read a PES 2014
-     player's playing style, and step 5 depends on it;
+   - the playstyle list, empty in step 3, now measured (run `player1`, above): until it is
+     filled the AATF cannot read a PES 2014 player's playing style, and step 5 depends on it;
    - the motion tops and face-type caps, which read PES 2015's tops and each field's bit
      maximum until measured;
    - no panic on a PES 2014 save. The screens assume what every other version stores: the
