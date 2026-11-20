@@ -247,13 +247,32 @@ From the fork's codec, checked against the vanilla save and the Akko saves (2026
     Inside 3, Diagonal Dribble 4, Hold Up and Overlap 5, Straight Run 6, Hold Up and Switch 7,
     Overlap and Pull Back 8, Drop Deep and Overlap 9, Dummy Run and Cross 10, Cross and Pull
     Back 11, Cross and Dummy 12, Switch Flanks 13, Dummy and Lay Off 14. Each strategy takes
-    only some areas, and the picker dims the rest: the two crosses open on area 1 and take 2,
-    Switch Flanks takes only 9 and 11, Dummy and Lay Off only 3, 4, 5 and 7, the other hold,
-    diagonal, straight and cut strategies open on 3, and the two overlaps on 7. One strategy
-    may fill two slots;
+    only some areas, and the picker dims the rest (run `tactics4` reads each strategy's). One
+    strategy may fill two slots;
   - Substitutions, in the list's order: OFF 0, Very Late 1, Flexible 2, Very Early 3;
   - Players to Join Attack takes three players; a fourth is refused with no message. The
     bytes hold roster slots counted from 0 (#3 is 2), in the order the players were added.
+- **Pinned in game, run `tactics4`** (2026-11-20, one Game Plan change on each of teams 702 to
+  708 of `.akko7v2`, kept as `tactics4`; no other team's record changed):
+  - moving a slider keeps the Strategy: Quick Counter stays Quick Counter. A pick sets only some
+    sliders (Long Ball set Defensive Compactness 5 and Shifting to Attack 15 and left the
+    others as they were), and Custom sets none;
+  - Combination Play's Clear stores area 0 and strategy 0. The slot stays in the list, reading
+    "None Selected";
+  - the areas each strategy takes, with the other two slots empty. The game's screen numbers
+    the areas in rows from the top of its pitch: 1 and 2, 3 to 5, 6 to 8, 9 to 11. The picker
+    lights a strategy's areas less those the other two slots hold, and opens on the first lit
+    one, except Overlap and Pull Back and Drop Deep and Overlap, which open on 7:
+    - the three crosses (Dummy Run and Cross, Cross and Pull Back, Cross and Dummy): 1, 2, 3
+      and 5;
+    - Switch Flanks: 6, 8, 9 and 11;
+    - Dummy and Lay Off, Hold up the ball, Diagonal Run, Diagonal Dribble, Hold Up and Overlap
+      and Straight Run: 3 to 8;
+    - Cut Inside: 3 and 5;
+    - Hold Up and Switch: 3, 5, 6 and 8;
+    - Overlap and Pull Back and Drop Deep and Overlap: 4, 5, 7 and 10;
+  - a formation picked in Preset Tactics 2 is written to that preset's block, 0x6C later, with
+    its keeper's depth set to 3 there too.
 - **Pinned in game, run `player1`** (2026-11-20, five `/4ccg/` players of `.akko7v2` read
   against the fork's decoding, nothing changed; findings in the worktree's
   `.tmp/pes14_ingame/player1/`). The game reads a player's record only when bit 0x29:1 is set
@@ -501,9 +520,9 @@ version, not the version selector.
   - **Combination play** is a panel of its own: three slots, each a strategy and an area, one
     strategy to an area, with a Clear button. Its tooltip says what the setting does, from
     the game's own help page, since most managers have never played PES 2014. The screen's
-    other tooltips take the game's own descriptions too, once run `help1` has read them. The area list holds the strategy's areas that
-    the other two slots leave free; for a strategy run `formations1` did not pin, every free
-    area.
+    other tooltips take the game's own descriptions too, once run `help1` has read them. The
+    area list holds the strategy's areas that the other two slots leave free. An empty slot
+    reads "None Selected", as in the game.
   - **Automatic settings** gain Combination Play's switch, and Substitution offers all four
     timings.
 
@@ -626,10 +645,7 @@ on main. Main is merged into the branch, never rebased onto it.
    - Run `tactics3` (in game): done, pinned in "What is known about the save".
    - Run `formations1` (in game): done, pinned in "What is known about the save".
    - The draft (the lead): done, "The Gameplan screen in Build 2" above.
-   - Run `tactics4` (in game), what the draft could not pin. Does moving a slider put the
-     Strategy back to Custom? Does a strategy picked over other values set all eight sliders?
-     What bytes does Combination Play's Clear write? Which areas does each strategy take,
-     with the other two slots empty?
+   - Run `tactics4` (in game): done, pinned in "What is known about the save".
    - Run `help1` (in game, nothing changed or saved): each Game Plan item's description,
      shown by the game's help button, for the screen's tooltips.
    - Slices: the record's fields in the schema and the model, then the screen.

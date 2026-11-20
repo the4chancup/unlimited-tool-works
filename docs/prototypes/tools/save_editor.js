@@ -7713,16 +7713,17 @@ const COMBINATION_AREA_TIP14 = "Where the move runs: 1 and 2 on the wings beside
   + "opponent's box, 3 to 5 in front of it (left to right), 6 to 8 further back in their "
   + "half, 9 to 11 just inside ours";
 // Combination Play's strategies in the game's picker order: [stored id, name,
-// the area the game's area picker opens on, the areas it takes]. Run
-// formations1 pinned the opening areas, and the areas of the two crosses and
-// Switch Flanks; the rest were picked with areas 6 and 8 held by the other two
-// slots, so their own areas wait for run tactics4 (null: every area).
-const COMBINATIONS14 = [[10, "Dummy Run and Cross", 1, [1, 2]], [11, "Cross and Pull Back", 1, [1, 2]],
-  [12, "Cross and Dummy", 1, [1, 2]], [13, "Switch Flanks", 9, [9, 11]],
-  [14, "Dummy and Lay Off", 3, null], [1, "Hold up the ball", 3, null], [2, "Diagonal Run", 3, null],
-  [3, "Cut Inside", 3, null], [4, "Diagonal Dribble", 3, null], [5, "Hold Up and Overlap", 3, null],
-  [6, "Straight Run", 3, null], [7, "Hold Up and Switch", 3, null],
-  [8, "Overlap and Pull Back", 7, null], [9, "Drop Deep and Overlap", 7, null]];
+// the area the game's area picker opens on, the areas it takes] (run tactics4,
+// with the other two slots empty).
+const MIDFIELD14 = [3, 4, 5, 6, 7, 8];
+const COMBINATIONS14 = [[10, "Dummy Run and Cross", 1, [1, 2, 3, 5]],
+  [11, "Cross and Pull Back", 1, [1, 2, 3, 5]], [12, "Cross and Dummy", 1, [1, 2, 3, 5]],
+  [13, "Switch Flanks", 6, [6, 8, 9, 11]], [14, "Dummy and Lay Off", 3, MIDFIELD14],
+  [1, "Hold up the ball", 3, MIDFIELD14], [2, "Diagonal Run", 3, MIDFIELD14],
+  [3, "Cut Inside", 3, [3, 5]], [4, "Diagonal Dribble", 3, MIDFIELD14],
+  [5, "Hold Up and Overlap", 3, MIDFIELD14], [6, "Straight Run", 3, MIDFIELD14],
+  [7, "Hold Up and Switch", 3, [3, 5, 6, 8]], [8, "Overlap and Pull Back", 7, [4, 5, 7, 10]],
+  [9, "Drop Deep and Overlap", 7, [4, 5, 7, 10]]];
 // The list entry a formation is, by its ten outfielders' roles and spots in
 // order (the pick writes them so), or -1 for one the list does not hold, as
 // the Akko teams' 8-1-1.
@@ -7746,20 +7747,18 @@ function pickStrategy14(pre, v) {
 // A Combination Play slot: its strategy, then its area, one strategy to an
 // area. The area list holds the strategy's areas the other two slots leave
 // free; a strategy picked where its area is not one of them moves to the area
-// the game's picker opens on, or to its first free one. An empty slot is
-// stored as strategy 0 and area 0 until run tactics4 reads what the game's
-// Clear writes.
+// the game's picker opens on, or to its first free one. The game's Clear
+// stores strategy 0 and area 0.
 function freeAreas14(t, i, id) {
-  const entry = COMBINATIONS14.find(c => c[0] === id);
   const taken = t.tactics.combination.filter((o, j) => j !== i && o.strategy !== 0).map(o => o.area);
-  return (entry && entry[3] || [...Array(11).keys()].map(a => a + 1)).filter(a => !taken.includes(a));
+  return COMBINATIONS14.find(c => c[0] === id)[3].filter(a => !taken.includes(a));
 }
 function combinationRow(t, i) {
   const e = t.tactics.combination[i], empty = e.strategy === 0;
   const areas = empty ? [] : freeAreas14(t, i, e.strategy);
   const label = "Combination play " + (i + 1);
   return [
-    combo((empty ? [["0", "(none)"]] : []).concat(COMBINATIONS14.map(([id, name]) => [String(id), name])),
+    combo((empty ? [["0", "None Selected"]] : []).concat(COMBINATIONS14.map(([id, name]) => [String(id), name])),
       String(e.strategy), v => { const id = parseInt(v, 10); edit(label, () => {
         const free = freeAreas14(t, i, id), opens = COMBINATIONS14.find(c => c[0] === id)[2];
         if (!free.includes(e.area)) e.area = free.includes(opens) ? opens : free[0];
