@@ -861,18 +861,24 @@ fn a_players_own_settings_applied_by_the_patch_change_only_his_ids() {
                 before.id
             );
             if let Some((section, appearance)) = &schema.appearance {
-                // PES 2014's section holds a record only for an edited or
-                // created player: a fixture player has none to compare.
-                if let Some(at) = (0..count(&after_payload, section))
+                let at = (0..count(&after_payload, section))
                     .map(|i| section.offset + i * appearance.size)
                     .find(|at| {
                         u32::from_le_bytes(after_payload[*at..at + 4].try_into().expect("u32"))
                             == before.id
-                    })
-                {
+                    });
+                if let Some(at) = at {
                     assert_eq!(
                         &after_payload[at..at + appearance.size],
                         &before_payload[at..at + appearance.size],
+                        "{version:?} player {}'s appearance record",
+                        before.id
+                    );
+                } else {
+                    // PES 2014's section holds a record only for an edited or
+                    // created player: a fixture player has none to compare.
+                    assert!(
+                        !schema.appearance_for_every_player(),
                         "{version:?} player {}'s appearance record",
                         before.id
                     );

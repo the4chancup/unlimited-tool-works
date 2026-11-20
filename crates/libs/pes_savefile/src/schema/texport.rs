@@ -130,7 +130,7 @@ pub(crate) static PES17: TexportPes17 = TexportPes17 {
 };
 
 /// Whether `Texport::new` writes a `version` file: PES 2017 from its
-/// template, 2018 to 2021 from their layouts. PES 2015 and 2016 have no
+/// template, 2018 to 2021 from their layouts. PES 2014 to 2016 have no
 /// template.
 pub fn texport_writes(version: PesVersion) -> bool {
     match version {
@@ -143,7 +143,7 @@ pub fn texport_writes(version: PesVersion) -> bool {
     }
 }
 
-/// The 18-21 `.ted` layout; `None` on 15-17.
+/// The 18-21 `.ted` layout; `None` on 14-17.
 pub fn texport_layout(version: PesVersion) -> Option<&'static TexportLayout> {
     match version {
         PesVersion::Pes18 => Some(&PES18),
@@ -154,10 +154,10 @@ pub fn texport_layout(version: PesVersion) -> Option<&'static TexportLayout> {
     }
 }
 
-/// The 15-17 payload offsets; `None` on 18-21. The team and roster offsets
-/// are derived: the roster ends where the tactics record begins, the team
-/// record ends where the roster begins — on 17 with the 88-byte coach
-/// block between them.
+/// The 15-17 payload offsets; `None` on PES 2014 and 18-21. The team and
+/// roster offsets are derived: the roster ends where the tactics record
+/// begins, the team record ends where the roster begins — on 17 with the
+/// 88-byte coach block between them.
 pub(crate) fn texport_old(version: PesVersion) -> Option<TexportOld> {
     let (tactics_at, players_at, coach) = match version {
         PesVersion::Pes15 => (0x10298, 0x51065C, 0),

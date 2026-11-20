@@ -414,9 +414,10 @@ impl AestheticsPatch {
 /// own range (`version_kind`, a key the version lacks `NotInThisVersion`),
 /// then written through `PlayerSettings::apply` (every key, the run's
 /// unused bits at the games' values), which also makes the record his:
-/// the appearance id set to his own id where the version has one, and the
-/// base copy cleared to "no copy" — his own id and, where the version has
-/// the flag, `base_copy` unset — unless the entry's `base_copy_id` links
+/// the appearance id set to his own id where the version has one, and,
+/// where the version stores a base-copy id, the base copy cleared to "no
+/// copy" — his own id and, where the version has the flag, `base_copy`
+/// unset — unless the entry's `base_copy_id` links
 /// him to another player, which is written as his base copy with the flag
 /// left as the save holds it. The `Some` model IDs land in the appearance
 /// block's boots and gloves fields. A `Some` name or shirt name sets the

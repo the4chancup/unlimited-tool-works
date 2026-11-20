@@ -257,7 +257,8 @@ impl EditFile {
 
     /// The container's writer serial: the UTF-16LE text a PES 2016 to 2021
     /// save carries as its writer's serial, kept as read (empty on PES
-    /// 2015). A PES 2017 Texport the editor writes carries the open save's.
+    /// 2014 and 2015). A PES 2017 Texport the editor writes carries the
+    /// open save's.
     pub fn serial(&self) -> &[u8] {
         &self.container.serial
     }
@@ -342,7 +343,7 @@ impl EditFile {
     }
 
     /// Player `id`'s own record bytes as loaded (the player record alone, on
-    /// PES 15 and 16 too); `None` when the save has no player `id`. The
+    /// PES 14 to 16 too); `None` when the save has no player `id`. The
     /// record sits where `to_bytes` writes the player.
     pub fn player_record(&self, id: u32) -> Option<&[u8]> {
         let schema = self.schema;
@@ -960,6 +961,13 @@ mod tests {
                     })
                     .collect();
                 assert_eq!(got, names, "team 857's roster by name");
+                let records = file.appearance_records.iter().flatten().count();
+                assert_eq!(
+                    records,
+                    file.players().len(),
+                    "every player has an appearance record"
+                );
+                assert_eq!(records, 5060, "the appearance-record count");
             }
         }
     }

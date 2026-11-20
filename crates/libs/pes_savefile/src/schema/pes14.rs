@@ -1,6 +1,7 @@
-//! The PES 2014 tables, written by hand: the other versions' tables are generated from the
-//! reference editor's read walks, which PES 2014 does not have. Every entry was pinned from saves
-//! changed in game or read against the Akko VII saves; a field not listed here is kept as read.
+//! The PES 2014 tables, written by hand: the other versions' are derived mechanically by
+//! `scripts/derive_savefile_schema.py` from measurements PES 2014 does not have. Every entry was
+//! pinned from saves changed in game or read against the Akko VII saves; a field not listed here
+//! is kept as read.
 
 use pes_version::PesVersion;
 

@@ -89,11 +89,16 @@ pub struct TacticsSchema {
     pub fields: &'static [FieldSpec<TacticsField>],
     pub arrays: &'static [ArraySpec<TacticsField>],
     pub preset_stride_bits: u32,
-    /// Where a preset's eleven man-marking bytes start within its block; measured, since the
+    /// Bit position of the preset's eleven man-marking bytes within a preset
+    /// block (byte `i` is own formation slot `i`'s assignment); `None` where
+    /// the record's man-marking bytes are unmapped (PES 2014). Measured, since the
     /// reference reads no man marking (the generator's `MEASURED_FIELDS`).
-    pub man_marking_bit: u32,
+    pub man_marking_bit: Option<u32>,
     pub presets: &'static [PresetSpec],
-    pub formations: FormationLayout,
+    /// The formation block layout; `None` where the record's formations do
+    /// not fit it (PES 2014's: one formation per preset and a lineup of
+    /// roster slots, no player ids).
+    pub formations: Option<FormationLayout>,
     pub instructions: Option<InstructionLayout>,
 }
 
@@ -108,7 +113,7 @@ pub struct VersionSchema {
     pub version: PesVersion,
     pub players: SectionLayout,
     pub player: &'static RecordSchema<PlayerField, PlayerText>,
-    /// PES 15/16: the separate appearance array (keyed by player id at +0); `None` when the
+    /// PES 14 to 16: the separate appearance array (keyed by player id at +0); `None` when the
     /// appearance fields are inside the player record.
     pub appearance: Option<(SectionLayout, &'static RecordSchema<PlayerField, PlayerText>)>,
     pub teams: SectionLayout,
@@ -137,7 +142,7 @@ pub fn schema_for(version: PesVersion) -> &'static VersionSchema;
 Three kinds of field the reference never reads are measured instead and enter the generator as
 its `MEASURED_FIELDS` table, so a regeneration keeps them:
 
-- the man-marking runs (every version);
+- the man-marking runs (every version but PES 2014);
 - PES 15's three auto flags;
 - the team record's ids:
   - on PES 17 and 18, its manager id (the u32 at +4) and home stadium id (the u16 at +10),
@@ -263,7 +268,7 @@ A model value the record cannot hold is refused, never cut:
 ```rust
 /// An open save: the retained container plus the decoded players and teams.
 pub struct EditFile { /* container: SaveContainer, players: Vec<PlayerEntry>, teams: Vec<TeamEntry>,
-                         plus the appearance-record index of every player (PES 15/16; the roster
+                         plus the appearance-record index of every player (PES 14 to 16; the roster
                          and tactics records are their team's by position) */ }
 
 impl EditFile {
