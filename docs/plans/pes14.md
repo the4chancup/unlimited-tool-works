@@ -50,9 +50,11 @@ always written. Skipping the record would leave the captain unknown, so the AATF
 the captain's Captaincy card and report a missing captain. Mapping the record first costs
 Build 1 the largest piece of reverse engineering, and makes Build 2 mostly screen work.
 
-**Not in scope:** Team TOML export and import, patches, diff, the teams-list export and
-Texport, unless one works on PES 2014 with no work beyond a test. The rest stay greyed out for
-PES 2014, with a tooltip saying so.
+**Not in scope:** Team TOML export and import, patches, diff, the teams-list export, Texport,
+and the player menu's Generate settings.toml and Generate in-game face, unless one works on PES
+2014 with no work beyond a test. The rest stay greyed out for PES 2014, with a tooltip saying
+so. The two Generate items cannot work yet: PES 2014's appearance record maps only the player
+id, so a generated file would carry zeros for every look and motion value.
 
 ## Re-derived, not copied
 
@@ -214,9 +216,9 @@ version, not the version selector.
   `Scheme::Pes15` payload of 4 726 440 bytes, an `EDIT.bin`'s, is PES 2014. A PES 2014
   `TEXPORTnn.bin` has a payload of its own size, 5 316 176 bytes (the Akko export's), so the
   check names it PES 2014 too, and it is refused as a Texport with no layout; read as PES 2015,
-  it would be read at PES 2015's offsets. PES 2015's Texport files on this PC are 5 606 501
-  bytes whole; the step adding the check measures their payload first, to show the size names
-  no PES 2015 file.
+  it would be read at PES 2015's offsets. Neither size names a PES 2015 file: PES 2015's
+  `EDIT.bin` payload is 5 782 808 bytes and its Texport's 5 577 964 (every Texport on this PC,
+  measured).
 - **Schema.** `schema/pes14.rs`, hand-written (the other versions' tables are generated from
   measurements PES 2014 does not have), with the five sections above. Each per-version table
   gains a PES 2014 arm: playstyles (18, measured), motion tops and face-type caps (measured),
@@ -307,7 +309,9 @@ on main. Main is merged into the branch, never rebased onto it.
    - an appearance record for a player who has none, the first time the editor changes his
      look;
    - the playstyle list, empty until measured: until then the AATF cannot read a PES 2014
-     player's playing style, and step 5 depends on it.
+     player's playing style, and step 5 depends on it;
+   - the motion tops and face-type caps, which read PES 2015's tops and each field's bit
+     maximum until measured.
 5. The Akko VII ruleset (`akko7.rhai`, its logo and page); `/4ccg/` in `.akko7v2` passes as it
    does in the fork's fixed build.
 6. Releases: the `pes14-v` tag prefix in the update check and `release.yml`. The version
