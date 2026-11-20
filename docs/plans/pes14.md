@@ -290,8 +290,15 @@ From the fork's codec, checked against the vanilla save and the Akko saves (2026
   - "On Pitch Controls": "move the icon to an open part of the pitch and press A again. The
     areas shown in yellow during this step indicate the player's preferred positions. (Once
     you choose a position, the player's role will be set automatically to the one with the
-    highest Overall Rating.)" Run `tactics1` found no such move: a grabbed player's every
-    direction targeted a teammate. Run `tactics6` tries the move again.
+    highest Overall Rating.)" Run `tactics1` found no such move, because a tap jumps the
+    grabbed player to the nearest teammate.
+- **Pinned in game, run `tactics6`** (2026-11-20, kept as `tactics6`). The help's move exists:
+  holding a direction drags the grabbed player across the pitch, and A drops him on open
+  grass. On `/a/`, #2 dropped in front of the centre-backs changed one byte, preset 1's slot 1
+  depth (+0x32, 9 to 15); his width and role bytes stayed, and his marker still read CB. No
+  yellow areas showed in the run's shots. The pitch has two displays, "Strip Icon" and
+  "Position / Overall Rating" (each starter's overall over his position); the help's
+  "Form / Stamina" is not among them.
 - **Pinned in game, run `player1`** (2026-11-20, five `/4ccg/` players of `.akko7v2` read
   against the fork's decoding, nothing changed; findings in the worktree's
   `.tmp/pes14_ingame/player1/`). The game reads a player's record only when bit 0x29:1 is set
@@ -525,12 +532,13 @@ version, not the version selector.
     game's pick sets, and Custom sets none; moving a slider afterwards keeps the strategy,
     as the game does (run `tactics4`).
   - **The pitch** draws each player as the game's pitch does, a white shirt with his number,
-    since PES 2014 shows no portraits there (the game's "Strip Icon" display). It has no free
-    moves (open: the game's help describes one, run `tactics6`). Dropping a player on
-    another swaps the two, the keeper included, even under a ruleset that allows illegal
-    formations; while he is held, the teammate a drop would swap with is marked. Nothing
-    else moves a player. A click opens no player box, since a role is not picked, and a held
-    player lights no areas.
+    since PES 2014 shows no portraits there (the game's "Strip Icon" display). Dropping a
+    player on another swaps the two, the keeper included, even under a ruleset that allows
+    illegal formations; while he is held, the teammate a drop would swap with is marked. A
+    drop on open grass does nothing until the game's code gives the rule that sets the
+    role at the new spot (step 8): the game's free move sets it by itself, and a move that
+    kept the old role could write a pair the game never writes. A click opens no player
+    box, since a role is not picked, and a held player lights no areas.
   - **A swap of two starters**, on the pitch or in the lineup list, moves them in the preset
     shown alone, writing what the game's swap writes:
     - with Preset Tactics 1 shown, the two exchange lineup entries, and presets 2 and 3
@@ -541,8 +549,10 @@ version, not the version selector.
 
     Both leave the same players in the same places. The editor writes the game's bytes, so a
     save it edits matches one the game edited.
-  - **No overall** shows on the pitch's badges: PES 2014's own formula is not known, and PES
-    2016's reads stats PES 2014 does not store.
+  - **No overall** shows on the pitch's badges until the game's code gives PES 2014's
+    formula (step 8), although the game shows one on its "Position / Overall Rating"
+    display. PES 2016's formula does not serve: it reads stats PES 2014 does not store, and
+    its tables' values are not in PES 2014's executable.
   - **The second free kick taker** moves to the next roster slot when he becomes the long or
     short free kick taker, as the game does.
   - **Combination play** is a panel of its own: three slots, each a strategy and an area, one
@@ -674,22 +684,29 @@ on main. Main is merged into the branch, never rebased onto it.
    built window is captured where the branch changed a look: Ability stats with Tenacity's
    row, on PES 2014 and on a later version, where the row is greyed, and the Ruleset editor's
    stat grid with its Tenacity column. Then the release.
-8. Build 2: the Gameplan screen. The game offers no free position move: a position changes
-   only by picking one of the formation list's entries or swapping two players, and a
-   player's role is shown, not chosen (run `tactics1`). So the screen is the game's own
-   Game Plan, not the other versions' pitch editor.
+8. Build 2: the Gameplan screen. A position changes by picking one of the formation list's
+   entries, by swapping two players, or by moving one to open grass, which sets his role by
+   itself (runs `tactics1`, `tactics6`): a role is shown, never picked. So the screen is the
+   game's own Game Plan, not the other versions' pitch editor.
    - Run `tactics3` (in game): done, pinned in "What is known about the save".
    - Run `formations1` (in game): done, pinned in "What is known about the save".
    - The draft (the lead): done, "The Gameplan screen in Build 2" above.
    - Run `tactics4` (in game): done, pinned in "What is known about the save".
    - Run `help1` (in game): done, read in "What is known about the save".
-   - Run `tactics6` (in game): whether a grabbed player can be moved to open grass, as the
-     game's help says, and the "Position / Overall Rating" display.
+   - Run `tactics6` (in game): done, pinned in "What is known about the save".
    - Run `tactics5` (in game): done, pinned in "What is known about the save".
+   - The game's code, read statically (Ghidra, as PES 2016's was): the overall rating's
+     formula, which the Game Plan shows on its "Position / Overall Rating" display; the rule
+     that sets a moved player's role and the spots each role allows; and the rules in-game
+     runs can only sample. A finding there stays inferred until a run in game or a save diff
+     confirms it.
    - Slice 1, the record's fields in the schema and the model: done.
-   - Slice 2a: the screen opens with the Preset tactics panel.
+   - Slice 2a, the screen opens with the Preset tactics panel: done.
    - Slice 2b: the pitch's PES 2014 rules (shirts, swaps).
-   - Slice 2c: Combination play, Automatic settings and the tooltips.
+   - Slice 2c: Combination play, Automatic settings and the tooltips; the changes rows name
+     a Strategy as the dropdown does, and show Support Range as the game does.
+   - Slice 2d: free moves and the overall on the pitch, once the game's code gives their
+     rules.
    - The command line refuses the commands out of scope on a PES 2014 save ("Not in scope").
    - Later: the pitch's shirts in the team's kit colours and icon pattern, as PES 2015's
      Game Plan kit icons (patterns 0 to 23), read from the kit configs in the download

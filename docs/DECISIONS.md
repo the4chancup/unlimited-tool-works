@@ -19121,3 +19121,14 @@ Why: run `tactics5`'s save, with a swap made in Preset Tactics 2 on `/a/` and in
 keeps a save the editor edits equal to one the game edited.
 Plan: `plans/pes14.md` "What is known about the save" (the tactics record), "PES 2014 in the
 code" ("A swap of two starters"), "Steps", step 8.
+
+## 2026-11-20 — save_editor (pes14 branch) — PES 2014's free move and overall wait for the game's own rules
+Decision: on PES 2014's pitch, a player dropped on open grass stays where he was, and the
+badges show no overall, until the game's code gives the rule that sets a moved player's role
+and PES 2014's overall formula (slice 2d). Swaps and formation picks ship as planned.
+Why: run `tactics6` found the free move the game's help describes, and the game then sets the
+role by itself, "to the one with the highest Overall Rating". The editor cannot copy that
+without the formula and the spots each role allows. Moving the player and keeping his old
+role could write a role and spot the game never pairs.
+Plan: `plans/pes14.md` "What is known about the save" (run `tactics6`), "PES 2014 in the
+code" ("The pitch", "No overall"), "Steps", step 8.
