@@ -253,11 +253,11 @@ From the fork's codec, checked against the vanilla save and the Akko saves (2026
     bits (Short, Long, Auto); sock length 0x53:3, 2 bits (Normal, Long, Short); spectacles
     0x54:6, 3 bits, the grid's cell less 1; player gloves 0x56:2 (Off, Auto); tape 0x56:3;
     shirttail 0x56:4 (Untucked, Tucked In);
-  - inferred, each the one changed run its item fits: long-sleeved inners 0x53:5, 2 bits (Off,
-    Normal, Turtle Neck); skin type 0x4C:5, 4 bits, less 1; neck 0x4E:0, 3 bits, less 1.
+  - inferred, each the one changed run its item fits: skin type 0x4C:5, 4 bits, less 1; neck
+    0x4E:0, 3 bits, less 1.
 
   Not told apart, since both passes changed them together: hairstyle, hair variation, hair
-  colour, forehead and wrinkles, and the wristband and spectacles colours. Forehead or
+  colour, and forehead and wrinkles. Forehead or
   wrinkles fits the 3-bit run at 0x4E:3, but run `flags2`'s hairstyle edit set bit 0x4E:3
   alone. The hair accessory colour did not store: its row is greyed under the hairstyle the
   second pass chose. The face's build points, its sliders and its upper and lower face items were
@@ -265,10 +265,21 @@ From the fork's codec, checked against the vanilla save and the Akko saves (2026
   colour, byte 0x13 (the fork's hair-accessory red), byte 0x34 (the fork's iris colour, 0x34:4,
   4 bits), the sliders and bytes 0x53 to 0x56 vary: the Akko players otherwise share one look.
 
-  The save also changed the player record. It set bits 0x28:6 and 0x28:7, which `flags2`'s
-  face, hair and boots edits did not set, so a physique, accessory or strip item did. And it
-  wrote "PLACEHOLDER", the name the game showed while 0x28:2 was clear, over the Player Name
-  at +0x2E.
+  The save also changed the player record. It set bits 0x28:6 and 0x28:7, and it wrote
+  "PLACEHOLDER", the name the game showed while 0x28:2 was clear, over the Player Name at
+  +0x2E.
+- **Pinned in game, run `appear2`** (2026-11-20, three `/4ccg/` players of `.akko7v2`, one
+  look part each, one save kept as `appear2`; findings in `.tmp/pes14_ingame/appear2/`):
+  - the wristband's colours, Right Side 0x4F:4 and Left Side 0x4F:1, and the spectacles'
+    colour 0x50:0, 3 bits each, the swatch (1 to 8) less 1;
+  - long-sleeved inners 0x53:5, 2 bits (Off, Normal, Turtle Neck);
+  - a physique slider, a strip style item, or the wristband, its colours and the spectacles
+    set no flag bit in either record, and leave 0x28 clear. So the face's flag 0x0B:7 is the
+    face's alone, and 0x28:6 and 0x28:7 come from one of the edits `appear1` made beyond
+    these: the skin colour, skin type, forehead, wrinkles or neck, the hairstyle, a head
+    slider, the boots, the player gloves, the undershorts or the tape. Which one is not
+    pinned;
+  - the game greys the Wristband row while Sleeves is Long.
 - Two more tables sit in the payload, unread by the fork: a second team table near 0x374C44
   (team ID at +0, name near +0x78) and a player table keyed by player ID right after the
   appearance table, at 0x2DABAC. The vanilla save leaves both empty.
@@ -280,10 +291,12 @@ the save" above.
 
 - **The tactics record:** the captain, and every run the codec writes (formations, man
   marking, presets), so a record reads and writes back unchanged.
-- **The appearance record**, what run `appear1` left (above): hairstyle, hair variation and
-  hair colour; forehead and wrinkles; the wristband, spectacles and hair-accessory colours;
-  the three inferred items; the iris colour; the face's build points, sliders and upper and
-  lower face items; and which item sets 0x28:6 and 0x28:7.
+- **The appearance record**, what runs `appear1` and `appear2` left (above): hairstyle, hair
+  variation and hair colour; forehead and wrinkles; the hair-accessory colour; the skin type
+  and the neck; the iris colour; the face's build points, sliders and upper and lower face
+  items; and which edit sets 0x28:6 and 0x28:7. Build 1 needs none of them: the Save editor
+  edits these looks only through the in-game face run, which stays greyed on PES 2014, and the
+  game keeps an edit without 0x28:6 and 0x28:7 (run `flags3`).
 - **The team record:** team colours, in the bytes between +0x04 and +0x2B that vary between
   teams.
 
