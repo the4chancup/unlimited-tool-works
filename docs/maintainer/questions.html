@@ -50,30 +50,6 @@ text into the chat. The answered ones then leave this page, and each answer goes
   <textarea class="own" placeholder="Your own answer or a note (optional)"></textarea>
 </section>
 
-<h2>Before PES 2014's Gameplan tooltips (Build 2, slice 2c)</h2>
-
-<section class="entry" id="game-text-tooltips">
-  <h3>The game's own descriptions as tooltips: bundled, or read from the install?</h3>
-  <p class="from">From: chat 2026-11-20, the lookup run (<code>4cc-studio-temp/lng_re/out/findings.md</code>)</p>
-  <p>PES 2014, 2017 and 2021 (the three checked) keep their on-screen text in one file of a
-  language archive, <code>eng/string/all.str</code>, in one format: zlib-compressed sections of
-  numbered strings, with no encryption. It holds the descriptions of skill cards, COM playing
-  styles, Game Plan strategies and sliders, and the suite already reads the archives. A name
-  and its description do not always share a number, so each kind of item needs a small table
-  that maps it to its description.</p>
-  <p class="ask">Should the tooltips carry text bundled in the suite, or read from the member's
-  own install?</p>
-  <div class="options">
-    <label class="opt"><input type="radio" value="bundled"><b>Bundled in the suite</b>
-      <div class="note">Shown with or without the game installed, in English; the suite ships
-      Konami's texts.</div></label>
-    <label class="opt"><input type="radio" value="read from the install"><b>Read from the install</b>
-      <div class="note">Needs the game's folder; in the install's language; the suite ships no
-      Konami text, and shows none without the game.</div></label>
-  </div>
-  <textarea class="own" placeholder="Your own answer or a note (optional)"></textarea>
-</section>
-
 <div class="picks">
   <button id="copy">Copy my answers</button>
   <button id="clear">Clear my answers</button>
