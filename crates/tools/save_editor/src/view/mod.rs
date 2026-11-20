@@ -784,11 +784,6 @@ const LIST_WIDTH: f32 = 255.0;
 /// least widget width is 40.
 pub(super) const NUMBER_BOX: f32 = 52.0;
 
-/// The disabled hover of the Gameplan features a PES 2014 save leaves out
-/// (its Gameplan screen is not built yet): the toggle's
-/// Gameplan segment, a team row's copy targets and the tactics stand-in.
-pub(super) const GAMEPLAN_TIP: &str = "PES 2014: in the next build";
-
 /// The detail pane's margin over a view's title's row (the draft's
 /// `.pheader` margin-top): with the panes' start and the half point
 /// `info_strip::view_title` adds, the row stands 9.5 under the toolbar

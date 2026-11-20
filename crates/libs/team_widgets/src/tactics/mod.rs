@@ -25,6 +25,8 @@ use crate::pitch::{FORMATIONS, position_label};
 mod assignments;
 /// The "Advanced instructions" table and its rows.
 mod instructions;
+/// PES 2014's Game Plan (the draft's `tacticsTab14`).
+pub mod pes14;
 /// The settings as lines of text, for a picture of the formations.
 mod summary;
 
@@ -1003,6 +1005,40 @@ fn substitution_text(stored: u8) -> String {
         .map_or_else(|| stored.to_string(), |(_, label)| label.to_owned())
 }
 
+/// A combo over `choices` (each a value and its label), filling the
+/// cell's width and showing `held`'s label: a click on an entry or a
+/// wheel notch over the combo picks. Answers the pick, `held` when
+/// none. `held` must be one of `choices`.
+fn choice_combo<T: Copy + PartialEq>(
+    ui: &mut egui::Ui,
+    id_salt: &str,
+    choices: &[(T, String)],
+    held: T,
+) -> T {
+    let mut pick = held;
+    let combo = egui::ComboBox::from_id_salt(id_salt)
+        .width(ui.available_width())
+        .selected_text(
+            choices
+                .iter()
+                .find(|(value, _)| *value == held)
+                .map(|(_, name)| name.as_str())
+                .expect("held is one of choices"),
+        )
+        .truncate()
+        .show_ui(ui, |ui| {
+            for (value, name) in choices {
+                combo_item(ui, &mut pick, *value, name.clone());
+            }
+        })
+        .response;
+    let values = choices.iter().map(|(value, _)| *value);
+    if let Some(next) = step_choice(values, &pick, wheel_steps(ui, &combo)) {
+        pick = next;
+    }
+    pick
+}
+
 /// The Substitution cell (the draft's `subs` row): the label, then the
 /// combo of the game's four choices filling the rest of the cell; a
 /// stored value outside them appended as its number, so the combo never
@@ -1021,21 +1057,7 @@ fn substitution_cell(ui: &mut egui::Ui, substitution: &mut Option<u8>) {
             if !choices.iter().any(|(value, _)| value == stored) {
                 choices.push((*stored, stored.to_string()));
             }
-            let mut pick = *stored;
-            let combo = egui::ComboBox::from_id_salt("automatic substitution")
-                .width(ui.available_width())
-                .selected_text(substitution_text(*stored))
-                .truncate()
-                .show_ui(ui, |ui| {
-                    for (value, label) in &choices {
-                        combo_item(ui, &mut pick, *value, label.clone());
-                    }
-                })
-                .response;
-            let values = choices.iter().map(|(value, _)| *value);
-            if let Some(next) = step_choice(values, &pick, wheel_steps(ui, &combo)) {
-                pick = next;
-            }
+            let pick = choice_combo(ui, "automatic substitution", &choices, *stored);
             if pick != *stored {
                 *stored = pick;
             }

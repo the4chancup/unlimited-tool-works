@@ -225,12 +225,15 @@ fn a_pes15_save_keeps_the_face_run_controls_enabled() {
     }
 }
 
-// The Gameplan build on PES 2014: the toggle's segment is disabled, a team
-// row keeps its header with a greyed line where the tactics editor would
-// draw, the Edit menu's Copy and Paste refuse a team row's Gameplan
-// target, and the team file panel's out-of-scope controls are disabled.
+// The Gameplan screen on PES 2014: the toggle's segment is enabled, a
+// team row draws the tactics editor's PES 2014 frame (the preset bar,
+// the Scroll-only formation bar and the Preset tactics panel, with no
+// Fluid formation, Portraits, formation selector or Advanced
+// instructions), while the Edit menu's Copy and Paste still refuse a
+// Gameplan target — they carry Team TOML, which PES 2014 saves do not
+// offer — and the team file panel's out-of-scope controls are disabled.
 #[test]
-fn a_pes14_save_greys_the_gameplan_and_the_team_file_panel() {
+fn a_pes14_save_draws_the_gameplan_and_greys_the_team_file_panel() {
     let path = fixture(PesVersion::Pes14, "pes14_gameplan");
     let mut file = EditFile::from_bytes(&fixture_save(PesVersion::Pes14)).unwrap();
     file.team_mut(1).expect("the vanilla first team").id = 701;
@@ -240,21 +243,18 @@ fn a_pes14_save_greys_the_gameplan_and_the_team_file_panel() {
     let mut window = Headless::new();
 
     // A rostered player is selected on open, so the toggle draws: its
-    // Gameplan segment is disabled with the build's tooltip.
+    // Gameplan segment is enabled.
     let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
-    let segment = node_labeled(&nodes, Role::Button, "Gameplan");
     assert!(
-        segment.is_disabled(),
-        "the Gameplan segment is disabled on PES 2014"
-    );
-    assert_eq!(
-        tooltip_containing(&mut window, &mut view, centre(segment), "PES 2014"),
-        Some("PES 2014: in the next build".to_string()),
-        "the Gameplan segment's hover"
+        !node_labeled(&nodes, Role::Button, "Gameplan").is_disabled(),
+        "the Gameplan segment is enabled on PES 2014"
     );
 
-    // A team row draws the header's fields; the greyed line stands where
-    // the tactics editor would, its own widgets absent.
+    // A team row draws the header's fields and the tactics editor's PES
+    // 2014 frame: the Preset tactics panel where Formation settings
+    // would stand, the Scroll switch alone on the formation bar — no
+    // Fluid formation, Portraits, formation selector or Advanced
+    // instructions — and the preset bar's Copy/swap menu alone.
     view.selected = Some(Selection::Team(701));
     let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     let name = display_name(
@@ -273,21 +273,52 @@ fn a_pes14_save_greys_the_gameplan_and_the_team_file_panel() {
             .any(|node| node.role() == Role::TextInput && node.value() == Some(name.as_str())),
         "the team row draws its name box"
     );
-    let line = "PES 2014: the Gameplan screen comes in the next build";
-    let stand_in = nodes
-        .iter()
-        .find(|node| node.value() == Some(line) || node.label() == Some(line))
-        .expect("the greyed line");
-    assert!(stand_in.is_disabled(), "the line reads greyed");
     assert!(
-        !nodes
+        label_value(&nodes, "Preset tactics"),
+        "the Preset tactics panel draws"
+    );
+    assert!(
+        label_value(&nodes, "Player assignments") && label_value(&nodes, "Automatic settings"),
+        "the assignments and automatic settings panels draw"
+    );
+    for absent in ["Formation settings", "Advanced instructions"] {
+        assert!(
+            !label_value(&nodes, absent),
+            "no {absent} panel on PES 2014"
+        );
+    }
+    for absent in ["Fluid formation", "Portraits"] {
+        assert!(
+            !nodes
+                .iter()
+                .any(|node| node.role() == Role::CheckBox && node.label() == Some(absent)),
+            "no {absent} switch on PES 2014"
+        );
+    }
+    assert!(
+        nodes
             .iter()
             .any(|node| node.role() == Role::CheckBox && node.label() == Some("Scroll")),
-        "the tactics editor's Scroll switch does not draw"
+        "the formation bar's Scroll switch draws"
     );
+    for absent in ["Kick-off", "In-possession", "Out-of-possession"] {
+        assert!(
+            !nodes
+                .iter()
+                .any(|node| node.role() == Role::Button && node.label() == Some(absent)),
+            "no formation selector on PES 2014"
+        );
+    }
+    let copy_swaps = nodes
+        .iter()
+        .filter(|node| {
+            node.role() == Role::Button && node.label() == Some(menu_label("Copy/swap").as_str())
+        })
+        .count();
+    assert_eq!(copy_swaps, 1, "the preset bar's Copy/swap menu alone");
 
     // The Edit menu's Copy and Paste are dead on the Gameplan target a
-    // team row is, with the same build tooltip.
+    // team row is, with the out-of-scope tooltip.
     let nodes = open_menu(&mut window, &mut view, "Edit", "Copy");
     for label in ["Copy", "Paste"] {
         let item = menu_item(&nodes, label);
@@ -297,7 +328,7 @@ fn a_pes14_save_greys_the_gameplan_and_the_team_file_panel() {
         );
         assert_eq!(
             tooltip_containing(&mut window, &mut view, centre(item), "PES 2014"),
-            Some("PES 2014: in the next build".to_string()),
+            Some("Not available on PES 2014 saves".to_string()),
             "{label}'s hover"
         );
     }
@@ -356,6 +387,221 @@ fn a_pes14_save_greys_the_gameplan_and_the_team_file_panel() {
         "Apply's hover"
     );
     view.panel = None;
+}
+
+/// The AccessKit id of the `role` widget under the first Label reading
+/// `label`, in that label's column (a Preset tactics cell's control).
+fn control_id_below(
+    ids: &[(accesskit::NodeId, accesskit::Node)],
+    label: &str,
+    role: Role,
+) -> accesskit::NodeId {
+    let bounds = ids
+        .iter()
+        .find(|(_, node)| node.role() == Role::Label && node.value() == Some(label))
+        .and_then(|(_, node)| node.bounds())
+        .unwrap_or_else(|| panic!("no label {label:?}"));
+    ids.iter()
+        .filter(|(_, node)| {
+            node.role() == role
+                && node
+                    .bounds()
+                    .is_some_and(|b| b.y0 > bounds.y0 && (b.x0 - bounds.x0).abs() < 1.0)
+        })
+        .min_by(|a, b| {
+            let y =
+                |pair: &&(accesskit::NodeId, accesskit::Node)| pair.1.bounds().expect("bounds").y0;
+            y(a).partial_cmp(&y(b)).expect("ordered bounds")
+        })
+        .map(|(id, _)| *id)
+        .unwrap_or_else(|| panic!("no {role:?} below {label:?}"))
+}
+
+/// The node of AccessKit `id`, among `ids`.
+fn node_of(
+    ids: &[(accesskit::NodeId, accesskit::Node)],
+    id: accesskit::NodeId,
+) -> &accesskit::Node {
+    ids.iter()
+        .find(|(node_id, _)| *node_id == id)
+        .map(|(_, node)| node)
+        .expect("the node of the id")
+}
+
+/// `item`'s AccessKit id among `ids`: the Button of that label.
+fn item_id(ids: &[(accesskit::NodeId, accesskit::Node)], item: &str) -> accesskit::NodeId {
+    ids.iter()
+        .find(|(_, node)| node.role() == Role::Button && node.label() == Some(item))
+        .map(|(id, _)| *id)
+        .unwrap_or_else(|| panic!("no item {item:?}"))
+}
+
+// The Preset tactics panel on the PES 2014 fixture's team 1, IRELAND
+// (the vanilla fixture holds no cup team, so the record takes 701's id):
+// the Formation combo lists the game's eleven, a formation it does not
+// hold marked "(not in the game's list)" and offered first; a "4-3-3"
+// pick writes the list's slots and keeper depth 3 into the shown preset
+// alone, one undo entry; a "Quick Counter" pick writes its index and
+// sliders, IRELAND's own Position Switch kept; a slider notch keeps the
+// strategy.
+#[test]
+fn the_preset_tactics_panel_edits_irelands_game_plan() {
+    use team_widgets::tactics::pes14;
+
+    let path = fixture(PesVersion::Pes14, "pes14_preset_tactics");
+    let mut file = EditFile::from_bytes(&fixture_save(PesVersion::Pes14)).unwrap();
+    file.team_mut(1).expect("the vanilla first team").id = 701;
+    file.save(&path).unwrap();
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut window = Headless::new();
+    open_team_view(&mut window, &mut view, 701);
+
+    // The premises `pes14_tactics_literals` pins: presets 1 to 3 hold
+    // strategies 1, 3 and 4, the shown sliders 13, 8, 9, 9, 8, 12, 10,
+    // 10, and the same formation, which the game's list does not hold.
+    let before = team_entry(&view, 701).tactics.clone();
+    for (index, strategy) in [(0, 1u8), (1, 3), (2, 4)] {
+        let preset = &before.presets[index];
+        let plan = preset.game_plan.expect("a game plan");
+        assert_eq!(plan.strategy, strategy, "preset {}'s strategy", index + 1);
+        assert_eq!(
+            plan.sliders,
+            [13, 8, 9, 9, 8, 12, 10, 10],
+            "preset {}'s sliders",
+            index + 1
+        );
+        assert_eq!(
+            preset.formations[0],
+            before.presets[0].formations[0],
+            "preset {}'s formation is preset 1's",
+            index + 1
+        );
+    }
+    assert_eq!(
+        pes14::listed_formation(&before.presets[0].formations[0]),
+        None,
+        "premise: IRELAND's formation is not in the game's list"
+    );
+
+    // The Formation combo shows the shape with the "(not in the game's
+    // list)" mark; its popup offers the mark first, then the eleven.
+    let (_, ids, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let formation_combo = control_id_below(&ids, "Formation", Role::ComboBox);
+    assert_eq!(
+        node_of(&ids, formation_combo).value(),
+        Some("4-2-2-2 (not in the game's list)"),
+        "the unlisted formation's mark"
+    );
+    action_click(&mut window, &mut view, formation_combo);
+    let (_, ids, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let mut offered: Vec<&accesskit::Node> = ids
+        .iter()
+        .map(|(_, node)| node)
+        .filter(|node| {
+            node.role() == Role::Button
+                && node.label().is_some_and(|label| {
+                    label == "4-2-2-2 (not in the game's list)"
+                        || pes14::LIST_FORMATIONS
+                            .iter()
+                            .any(|(name, _)| *name == label)
+                })
+        })
+        .collect();
+    offered.sort_by(|a, b| {
+        let y = |node: &&accesskit::Node| node.bounds().expect("bounds").y0;
+        y(a).partial_cmp(&y(b)).expect("ordered bounds")
+    });
+    assert_eq!(
+        offered.first().and_then(|node| node.label()),
+        Some("4-2-2-2 (not in the game's list)"),
+        "the unlisted formation is offered first"
+    );
+    action_click(&mut window, &mut view, item_id(&ids, "4-3-3"));
+
+    // The pick writes the list's slots and keeper depth 3 into the
+    // shown preset's formation 0 alone — one undo entry.
+    let picked = team_entry(&view, 701).tactics;
+    let formation = &picked.presets[0].formations[0];
+    assert_eq!(
+        pes14::listed_formation(formation),
+        Some(6),
+        "4-3-3 is the list's seventh entry"
+    );
+    assert_eq!(
+        formation.players[10],
+        FormationSlot {
+            position: 12,
+            x: 52,
+            y: 43
+        },
+        "4-3-3's centre-forward slot"
+    );
+    assert_eq!(
+        formation.players[0],
+        FormationSlot {
+            position: 0,
+            x: 52,
+            y: 3
+        },
+        "the keeper keeps his width and position, depth 3"
+    );
+    for index in 1..3 {
+        assert_eq!(
+            picked.presets[index],
+            before.presets[index],
+            "preset {} untouched",
+            index + 1
+        );
+    }
+
+    // The combo now shows "4-3-3"; the pick was one undo entry (the
+    // undo restores IRELAND's own formation for the picks below).
+    let (_, ids, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    assert_eq!(
+        node_of(&ids, formation_combo).value(),
+        Some("4-3-3"),
+        "the combo shows the pick"
+    );
+    assert_eq!(
+        undo_entries(&mut window, &mut view),
+        1,
+        "the formation pick was one undo entry"
+    );
+
+    // "Quick Counter" writes strategy 2 and its sliders, IRELAND's own
+    // Position Switch (9) kept.
+    let (_, ids, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let strategy_combo = control_id_below(&ids, "Strategy", Role::ComboBox);
+    action_click(&mut window, &mut view, strategy_combo);
+    let (_, ids, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    action_click(&mut window, &mut view, item_id(&ids, "Quick Counter"));
+    let plan = team_entry(&view, 701).tactics.presets[0]
+        .game_plan
+        .expect("a game plan");
+    assert_eq!(plan.strategy, 2, "Quick Counter is the third entry");
+    assert_eq!(
+        plan.sliders,
+        [10, 10, 9, 15, 15, 15, 15, 10],
+        "its sliders, Position Switch kept"
+    );
+
+    // A notch over the Player support slider moves it alone: the
+    // strategy stays.
+    let (_, ids, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let slider = control_id_below(&ids, "Player support", Role::Slider);
+    let at = centre(node_of(&ids, slider));
+    notch(&mut window, &mut view, at, false);
+    let plan = team_entry(&view, 701).tactics.presets[0]
+        .game_plan
+        .expect("a game plan");
+    assert_eq!(plan.strategy, 2, "the slider move keeps the strategy");
+    assert_eq!(plan.sliders[0], 11, "a notch down over the rail adds one");
+    assert_eq!(
+        plan.sliders[1..],
+        [10, 9, 15, 15, 15, 15, 10],
+        "the other sliders are untouched"
+    );
 }
 
 // PES 2014's stored offsets reach the body boxes' ranges: the Height box

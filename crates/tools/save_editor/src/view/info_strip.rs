@@ -17,8 +17,8 @@ use pes_savefile::schema::fields::{PlayerField, PlayerText, RosterField};
 use pes_savefile::schema::{VersionSchema, portable_text_max, schema_for, stored_offset};
 use pes_version::PesVersion;
 use studio_core::widgets::{
-    FIELD_SPACING, RADIO_ICON_WIDTH, add_enabled, add_enabled_ui, combo_item, number_arrows,
-    number_wheel_steps, radio, resting_edge, step_choice, step_number, text_box, wheel_steps,
+    FIELD_SPACING, RADIO_ICON_WIDTH, add_enabled_ui, combo_item, number_arrows, number_wheel_steps,
+    radio, resting_edge, step_choice, step_number, text_box, wheel_steps,
 };
 use team_widgets::cards;
 use team_widgets::names::append_name;
@@ -32,8 +32,8 @@ use crate::view::abilities::{
 };
 use crate::view::live_marks::{MarkedField, Marks};
 use crate::view::{
-    GAMEPLAN_TIP, PlayerScreen, Reveal, SaveView, Selection, edit_player, edit_team,
-    selected_player, selected_team_id,
+    PlayerScreen, Reveal, SaveView, Selection, edit_player, edit_team, selected_player,
+    selected_team_id,
 };
 
 /// The General info panel's Name field.
@@ -199,24 +199,8 @@ fn page_toggle(ui: &mut egui::Ui, view: &mut SaveView) {
                 studio_core::theme::edge_color(ui.visuals(), ui.visuals().selection.bg_fill);
             let unheld = studio_core::theme::unheld_edge(ui.visuals());
             let mut pressed = None;
-            // PES 2014's Gameplan screen is not built yet, so its
-            // Gameplan segment stays disabled.
-            let pes14 = view
-                .session
-                .as_ref()
-                .is_some_and(|session| session.version() == PesVersion::Pes14);
             for segment in [Segment::Stats, Segment::Appearance, Segment::Gameplan] {
-                let refused = segment == Segment::Gameplan && pes14;
-                let response = add_enabled(
-                    ui,
-                    !refused,
-                    egui::Button::selectable(on == segment, segment.label()),
-                );
-                let response = if refused {
-                    response.on_disabled_hover_text(GAMEPLAN_TIP)
-                } else {
-                    response
-                };
+                let response = ui.add(egui::Button::selectable(on == segment, segment.label()));
                 resting_edge(
                     ui,
                     &response,

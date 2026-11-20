@@ -88,6 +88,7 @@ SCREENS = {
     "help": "#save_editor?pes=2021&help=save-editor/{first_topic}",
     "player": f"#save_editor/player?{SAVE}&player=701.1",
     "team": f"#save_editor/team?{SAVE}&selteam=701",
+    "team14": "#save_editor/team?save=pes14&selteam=702&pes=2014",
     "comparator": "#save_editor/player?pes=2021&player=701.1&panel=comparator",
     "aatf": "#save_editor/player?pes=2021&player=718.1",
     "set_stats": f"#save_editor/player?{SAVE}&player=701.1&dialog=set-stats",

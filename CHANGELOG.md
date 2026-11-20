@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+### Added
+
+- **Save editor**: added the Gameplan screen for PES 2014 saves. Its Preset tactics panel
+  holds the game's Formation and Strategy dropdowns and its eight sliders.
+
 ### Fixed
 
 - **Save editor**: the command line now refuses a PES 2014 save for Team TOML export and

@@ -1,4 +1,5 @@
-//! The team view's Tactics editor (the draft's `tacticsTab`):
+//! The team view's Tactics editor (the draft's `tacticsTab`, `tacticsTab14`
+//! on a PES 2014 save):
 //! `team_widgets`' pitch, lineup lists and tactics panels in the draft's
 //! one grid — three columns (the settings, the pitch, the assignments) and
 //! three rows, so every panel lines up with its neighbours — plus the
@@ -318,7 +319,9 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
         // starting at the pitch's left (`formationSel`, `formationMenu`,
         // `scrollNames`, `pitchPortraits`) — each `BAR_HEIGHT` tall, their contents centred
         // in it (a full-height cell would centre them in the cell, not on
-        // the row).
+        // the row). PES 2014's frame (the draft's `tacticsTab14`) drops
+        // `fluid`, `formationSel`, `formationMenu` and `pitchPortraits`:
+        // the preset bar and `scrollNames` alone.
         let bar = |ui: &mut egui::Ui, left: f32, right_edge: f32| {
             ui.new_child(
                 egui::UiBuilder::new()
@@ -329,42 +332,54 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
                     .layout(egui::Layout::left_to_right(egui::Align::Center)),
             )
         };
+        let pes14 = version == PesVersion::Pes14;
         let mut preset_ui = bar(ui, top_left.x, settings_right);
         if pressed(ui, &tactics::preset_selector(&mut preset_ui, tactics)) {
             *click_kind = Some(ClickKind::Preset(team_id));
         }
-        changed[0] = tactics::fluid_formation(&mut preset_ui, &mut edited, tactics);
+        if !pes14 {
+            changed[0] = tactics::fluid_formation(&mut preset_ui, &mut edited, tactics);
+        }
         copy_swap_preset_menu(&mut preset_ui, session, team_id, tactics.preset);
         let mut formbar_ui = bar(ui, pitch_left, right);
-        if pressed(
-            ui,
-            &pitch::formation_selector(&mut formbar_ui, &edited, tactics),
-        ) {
-            *click_kind = Some(ClickKind::Formation(team_id));
+        if !pes14 {
+            if pressed(
+                ui,
+                &pitch::formation_selector(&mut formbar_ui, &edited, tactics),
+            ) {
+                *click_kind = Some(ClickKind::Formation(team_id));
+            }
+            copy_swap_formation_menu(&mut formbar_ui, session, team_id, tactics);
         }
-        copy_swap_formation_menu(&mut formbar_ui, session, team_id, tactics);
         checkbox(&mut formbar_ui, &mut tactics.scroll_names, "Scroll").on_hover_text(
             "Scroll long names on the pitch, as the game does. \
              Off, they stand still, cut short.",
         );
-        checkbox(&mut formbar_ui, &mut tactics.portraits, "Portraits").on_hover_text(
-            "Show the players' portraits on the pitch. Off, the formation's shape is easier \
-             to see.",
-        );
+        if !pes14 {
+            checkbox(&mut formbar_ui, &mut tactics.portraits, "Portraits").on_hover_text(
+                "Show the players' portraits on the pitch. Off, the formation's shape is easier \
+                 to see.",
+            );
+        }
         let row2_top = top_left.y + BAR_HEIGHT + ROW_GAP;
 
-        // Row 2: Formation settings, the pitch, Player assignments —
-        // the panels exactly as tall as the pitch (the draft's `.tacgrid`
-        // stretches them to its row), their frames level with it.
+        // Row 2: Formation settings (Preset tactics on PES 2014), the
+        // pitch, Player assignments — the panels exactly as tall as the
+        // pitch (the draft's `.tacgrid` stretches them to its row), their
+        // frames level with it.
         let row2_bottom = row2_top + pitch::PITCH_BOX.y;
         let mut settings_ui = cell(ui, top_left.x, row2_top, SETTINGS_WIDTH, row2_bottom);
-        changed[1] = tactics::formation_settings(
-            &mut settings_ui,
-            version,
-            &mut edited,
-            tactics,
-            illegal_formations,
-        );
+        changed[1] = if pes14 {
+            tactics::pes14::preset_tactics(&mut settings_ui, &mut edited, tactics)
+        } else {
+            tactics::formation_settings(
+                &mut settings_ui,
+                version,
+                &mut edited,
+                tactics,
+                illegal_formations,
+            )
+        };
         let mut pitch_ui = cell(ui, pitch_left, row2_top, pitch::PITCH_BOX.x, bottom);
         changed[2] = pitch::pitch(
             &mut pitch_ui,
@@ -426,17 +441,21 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
         );
         let lists_bottom = lists_ui.min_rect().max.y;
         let mut stack_ui = cell(ui, top_left.x, row3_top, SETTINGS_WIDTH, lists_bottom);
-        changed[3] = tactics::advanced_instructions(
-            &mut stack_ui,
-            version,
-            &mut edited,
-            session.baseline_team(team_id).map(|team| &team.tactics),
-            tactics,
-            &roster,
-            illegal_formations,
-        );
-        // `add_space` adds to the item gap the panel above already left.
-        stack_ui.add_space(ROW_GAP - stack_ui.spacing().item_spacing.y);
+        // PES 2014's stack holds Automatic settings alone (its Game Plan
+        // has no advanced instructions).
+        if !pes14 {
+            changed[3] = tactics::advanced_instructions(
+                &mut stack_ui,
+                version,
+                &mut edited,
+                session.baseline_team(team_id).map(|team| &team.tactics),
+                tactics,
+                &roster,
+                illegal_formations,
+            );
+            // `add_space` adds to the item gap the panel above already left.
+            stack_ui.add_space(ROW_GAP - stack_ui.spacing().item_spacing.y);
+        }
         changed[4] = tactics::automatic_settings(&mut stack_ui, &mut edited);
 
         // One advance covering the grid's block (the tallest cell).
