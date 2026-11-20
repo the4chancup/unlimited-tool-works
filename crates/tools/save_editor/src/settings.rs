@@ -17,6 +17,33 @@ use std::path::PathBuf;
 use pes_version::PesVersion;
 use serde::{Deserialize, Serialize};
 
+/// `RecentSave.version`'s serde: the one settings entry that names PES
+/// 2014 — a recent save is a file the editor opened, not a version a
+/// member picks — so its 14 reads where `PesVersion`'s own serde refuses
+/// it. Every other number behaves as the enum's does: the 15-to-21 spellings
+/// read, an unknown one is an error.
+mod recent_version {
+    use pes_version::PesVersion;
+    use serde::{Deserialize, Deserializer, Serialize, Serializer};
+
+    pub(super) fn serialize<S: Serializer>(
+        version: &PesVersion,
+        serializer: S,
+    ) -> Result<S::Ok, S::Error> {
+        version.serialize(serializer)
+    }
+
+    pub(super) fn deserialize<'de, D: Deserializer<'de>>(
+        deserializer: D,
+    ) -> Result<PesVersion, D::Error> {
+        let number = u16::deserialize(deserializer)?;
+        if number == 14 {
+            return Ok(PesVersion::Pes14);
+        }
+        PesVersion::try_from(number).map_err(serde::de::Error::custom)
+    }
+}
+
 /// A recent save's entry in `recent_files`: its path and the PES version the
 /// save was opened or written as, stored so the File menu's `[PES 2021]`
 /// label reads no save.
@@ -25,6 +52,7 @@ pub(crate) struct RecentSave {
     /// The save's path.
     pub(crate) path: PathBuf,
     /// Its version, the file's own, read at the open or the write.
+    #[serde(with = "recent_version")]
     pub(crate) version: PesVersion,
 }
 
@@ -177,6 +205,32 @@ mod tests {
     fn aatf_ruleset_names_a_ruleset() {
         let table: toml::Table = toml::from_str("aatf_ruleset = \"vgl27\"").unwrap();
         assert_eq!(from_table(&table).unwrap().aatf_ruleset, "vgl27");
+    }
+
+    // A recent save's version is the opened file's own: a PES 2014 save's
+    // 14 reads and writes back, the one settings entry naming it, while
+    // an unknown number is still refused.
+    #[test]
+    fn a_pes14_recent_save_reads_and_writes_its_14() {
+        let table: toml::Table = toml::from_str(
+            "recent_files = [{ path = 'a', version = 14 }, { path = 'b', version = 21 }]",
+        )
+        .unwrap();
+        let read = from_table(&table).unwrap();
+        let versions: Vec<PesVersion> = read
+            .recent_files
+            .iter()
+            .map(|recent| recent.version)
+            .collect();
+        assert_eq!(versions, [PesVersion::Pes14, PesVersion::Pes21]);
+        let written = toml::Table::try_from(read).unwrap();
+        let files = written["recent_files"].as_array().unwrap();
+        assert_eq!(files[0]["version"].as_integer(), Some(14));
+        assert_eq!(files[1]["version"].as_integer(), Some(21));
+
+        let bad: toml::Table =
+            toml::from_str("recent_files = [{ path = 'a', version = 13 }]").unwrap();
+        assert!(from_table(&bad).is_err(), "an unknown version is refused");
     }
 
     // SE-GUI-35's GIVEN (the setting off is the default).
