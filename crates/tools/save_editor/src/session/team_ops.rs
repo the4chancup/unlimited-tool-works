@@ -9,7 +9,7 @@ use std::ops::RangeInclusive;
 use anyhow::anyhow;
 use pes_savefile::model::PlayerEntry;
 use pes_savefile::schema::fields::PlayerField;
-use pes_savefile::schema::player_max_value;
+use pes_savefile::schema::{player_max_value, schema_for};
 
 use crate::session::Session;
 
@@ -115,8 +115,15 @@ impl Session {
         gloves: GlovesMode,
     ) -> anyhow::Result<()> {
         let version = self.version();
-        let boots_range = id_range(version, PlayerField::BootsId);
-        let gloves_range = id_range(version, PlayerField::GlovesId);
+        let (Some(boots_range), Some(gloves_range)) = (
+            id_range(version, PlayerField::BootsId),
+            id_range(version, PlayerField::GlovesId),
+        ) else {
+            return Err(anyhow!(
+                "PES {} saves store no boots or gloves IDs",
+                version.year()
+            ));
+        };
         let edited = self.edited_players(team_id, |slot, player| {
             player.appearance.boots_id = match boots {
                 BootsMode::Unchanged => player.appearance.boots_id,
@@ -150,9 +157,13 @@ impl Session {
     /// roster slot of `team_id` (the menu's Set / Remove FPC
     /// invisibility), each record's own boots and gloves IDs kept
     /// (`player_ops::preset_for` under `ids`, the settings' hide IDs), one
-    /// sealed undo entry.
+    /// sealed undo entry. A no-op on a version whose records carry no
+    /// in-game face run (the menu items are greyed there).
     pub(crate) fn team_fpc(&mut self, team_id: u32, kind: fpc::Preset, ids: fpc::HideIds) {
         let version = self.version();
+        if !schema_for(version).has_ingame_face() {
+            return;
+        }
         let edited = self
             .edited_players(team_id, |_, player| {
                 let appearance = crate::session::player_ops::preset_for(player, kind, ids);
@@ -196,10 +207,11 @@ impl Session {
 
 /// `field`'s whole stored range on `version` (`0..=max_value`, the codec's
 /// `ValueTooWide` bound): the Appearance section's Boots ID and Gloves ID
-/// controls and this check read the same bound.
-fn id_range(version: pes_version::PesVersion, field: PlayerField) -> RangeInclusive<u32> {
-    let max = player_max_value(version, field).expect("the id fields are stored");
-    0..=u32::try_from(max).expect("the id fields' bound fits u32")
+/// controls and this check read the same bound. `None` where the version
+/// stores no such field (PES 2014 has no boots or gloves IDs).
+fn id_range(version: pes_version::PesVersion, field: PlayerField) -> Option<RangeInclusive<u32>> {
+    let max = player_max_value(version, field)?;
+    Some(0..=u32::try_from(max).expect("the id fields' bound fits u32"))
 }
 
 /// `value` inside `range` as the `u32` the field stores, else the refusal

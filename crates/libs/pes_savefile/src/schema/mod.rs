@@ -286,6 +286,12 @@ impl VersionSchema {
         }
     }
 
+    /// Whether the version maps an `ingame_face` run at all (PES 2014 maps
+    /// none, so its players have no face-run fields to read or write).
+    pub fn has_ingame_face(&self) -> bool {
+        self.ingame_face_run().is_some()
+    }
+
     /// Whether the version's appearance section holds one record per
     /// player: every version but PES 2014, whose section holds a record
     /// only for a player whose look was edited or who was created in the
