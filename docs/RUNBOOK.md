@@ -249,7 +249,8 @@ memory-capped and CPU-idle, run synchronously). The VPS's `just` is installed in
 (the release workflow's version, `--features cli`), so `just remote just release <version>`
 packs a Linux bundle there, into the clone's `target/dist`. A bundle built on the host
 asks for a newer C library than the release workflow's (glibc 2.39 where the workflow
-builds on Ubuntu 22.04), so it serves a test, never a release. Its Python has Pillow from
+builds on Ubuntu 22.04), so it serves a test, never a release: a Linux bundle handed to a
+member comes from WSL ("A hand-given build"). Its Python has Pillow from
 Debian's `python3-pil` package (11.1.0 on Debian 13, where CI installs the pinned 12.3.0
 through pip): `just test` runs the drafts tooling's tests, which read images through it, and
 without it the recipe stopped there with the tests after it unrun. The lead uses
@@ -659,6 +660,21 @@ main's build to a member on the side line. On the branch:
 
 Main's check passes over the side line's tags because they do not start with `v`, so main
 needs no change.
+
+**A hand-given build** (`0.0.2-poc.1`, `0.0.3-dev.1`: a fix a cup's organizer needs before the
+next release) is never tagged, pushed or published. It is packed from a worktree on a branch
+whose one commit gives the workspace version a pre-release part (`0.0.3-dev.1`) in
+`Cargo.toml`, `Cargo.lock` and `resources/bundle/README.txt`'s first line, and the maintainer
+hands the archives over. On that branch:
+
+- `just release <version>` packs the Windows bundle;
+- `just release-wsl <version>` packs the Linux one in WSL's Ubuntu 22.04, whose glibc (2.35)
+  is the release workflow's floor, so the bundle starts wherever a released one does. It
+  builds the committed HEAD and checks that the binary starts and asks for no newer glibc.
+  The distro and its build user are made once, as root, with
+  `wsl -d Ubuntu-22.04 -u root -- bash scripts/release/wsl/setup.sh`.
+
+Both land in the target directory's `dist/`.
 
 ## Lead and sidekick
 
