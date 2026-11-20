@@ -18945,3 +18945,15 @@ READMEs, the spec, the plans and this log: 30 Checked, 9 No census needed, 52 No
 Plan: `spec/team_compiler/red_divergences.md` (new), `spec/team_compiler/README.md` parts
 table, `spec/team_compiler/testing.md` "Testing: parity against Red"; the worklog issue holds
 the unchecked entries and the pointers still owed.
+
+## 2026-11-20 — release — 0.0.3-dev.1, a hand-given prerelease with the referee blank face, built before Carbon's round
+Decision: the VGL organizer gets the referee blank face as `0.0.3-dev.1`, `just release` run in
+a worktree on the branch `prerelease/0.0.3-dev.1`, whose one commit bumps the workspace
+version, `Cargo.lock` and the readme's first line; it is not tagged, pushed or published, and
+the maintainer hands the archive over. It is built from `26dcb5c3`, after SWE-2's and Astra's
+rounds and before Carbon's, which waits on Devin quota until 2026-11-22; a fix Carbon's round
+brings out ships as `0.0.3-dev.2`.
+Why: the dot (`dev.1`, not `dev1`) makes semver count the number, so `dev.10` sorts after
+`dev.9`, as `0.0.2-poc.1` did (2026-11-08); both sort below `0.0.3`, so the release replaces
+them. The organizer is compiling VGL27's refs now, and two reviewers have read the change.
+Plan: no plan edit needed: the 2026-11-08 entry's method, applied to a new version.
