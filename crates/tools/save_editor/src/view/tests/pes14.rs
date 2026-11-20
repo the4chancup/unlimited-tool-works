@@ -927,6 +927,87 @@ fn the_gameplan_s_tooltips_are_the_install_s_help_texts() {
         "the button code written LT: {tip:?}"
     );
     assert!(!tip.contains('\u{11}'), "no inline code shown: {tip:?}");
+
+    // Every other placement shows its own `Tips` field, end to end: a
+    // label's hover equals the field it was bound to, so a binding
+    // swapped at its call site fails here.
+    let expected = view.game_tips.tips().expect("resolved").set_pieces[0].clone();
+    assert_eq!(
+        tooltip_containing(
+            &mut window,
+            &mut view,
+            label_centre(&nodes, "Long free kick"),
+            "Long distance"
+        ),
+        expected,
+        "the Long free kick label's tooltip"
+    );
+    let expected = view.game_tips.tips().expect("resolved").join_attack.clone();
+    assert_eq!(
+        tooltip_containing(
+            &mut window,
+            &mut view,
+            label_centre(&nodes, "Join the attack"),
+            "Set Pieces"
+        ),
+        expected,
+        "the Join the attack label's tooltip"
+    );
+
+    // The Strategy combo's hover is the stored strategy's text (preset 1
+    // holds Long Ball on this fixture).
+    let strategy = usize::from(
+        team_entry(&view, 701).tactics.presets[0]
+            .game_plan
+            .expect("a game plan")
+            .strategy,
+    );
+    let name = team_widgets::tactics::pes14::STRATEGIES[strategy];
+    let combo = nodes
+        .iter()
+        .find(|node| node.role() == Role::ComboBox && node.value() == Some(name))
+        .expect("the Strategy combo");
+    let expected = view.game_tips.tips().expect("resolved").strategies[strategy].clone();
+    assert_eq!(
+        tooltip_containing(&mut window, &mut view, centre(combo), "tight backline"),
+        expected,
+        "the Strategy combo's tooltip is the stored strategy's"
+    );
+
+    // The Automatic settings' checkbox and label, each its block of the
+    // shared text.
+    let expected = view
+        .game_tips
+        .tips()
+        .expect("resolved")
+        .offside_trap
+        .clone();
+    assert_eq!(
+        tooltip_containing(
+            &mut window,
+            &mut view,
+            centre(node_labeled(&nodes, Role::CheckBox, "Offside trap")),
+            "offside traps during"
+        ),
+        expected,
+        "the Offside trap checkbox's tooltip"
+    );
+    let expected = view
+        .game_tips
+        .tips()
+        .expect("resolved")
+        .substitution
+        .clone();
+    assert_eq!(
+        tooltip_containing(
+            &mut window,
+            &mut view,
+            label_centre(&nodes, "Substitution"),
+            "automatically substituted"
+        ),
+        expected,
+        "the Substitution label's tooltip"
+    );
 }
 
 // No PES folder set: the Gameplan draws with no game tooltip (nothing was

@@ -236,7 +236,7 @@ fn the_wheel_skips_a_strategy_with_no_free_area() {
         .tactics
         .clone();
     tactics.combination = Some(slots([(4, 2), (5, 1), (3, 5)]));
-    let held = tactics.combination.expect("the fixture's slots");
+    let held = tactics.combination.expect("the slots just set");
     assert!(
         free_areas(&held, 0, 3).is_empty(),
         "premise: Cut Inside has no free area for slot 1"
@@ -258,7 +258,7 @@ fn the_wheel_skips_a_strategy_with_no_free_area() {
         modifiers: egui::Modifiers::default(),
     };
     let events = vec![egui::Event::PointerMoved(centre(combo)), notch];
-    let (_, _) = window.frame(events, |ui| {
+    window.frame(events, |ui| {
         combination_play(ui, &mut tactics, None);
     });
     assert_eq!(

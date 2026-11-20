@@ -921,8 +921,9 @@ pub fn automatic_settings(
     tips: Option<&pes14::Tips>,
 ) -> bool {
     let auto = &mut tactics.auto;
-    let tip =
-        |pick: fn(&pes14::Tips) -> &Option<String>| tips.and_then(|tips| pick(tips).as_deref());
+    // `Tips::default()` holds only `None`s: it allocates nothing.
+    let empty = pes14::Tips::default();
+    let tips = tips.unwrap_or(&empty);
     let before = auto.clone();
     panel(ui, "Automatic settings", None, |ui| {
         // `#tac-auto { flex: 1 }`: the frame fills the cell the host
@@ -937,14 +938,14 @@ pub fn automatic_settings(
         ui.spacing_mut().item_spacing.y = 0.0;
         auto_row(
             ui,
-            |ui| substitution_cell(ui, &mut auto.substitution, tip(|tips| &tips.substitution)),
+            |ui| substitution_cell(ui, &mut auto.substitution, tips.substitution.as_deref()),
             |ui| {
                 auto_flag(
                     ui,
                     PRESET_CHANGE_LABEL,
                     &mut auto.preset_change,
                     TacticsField::AutoPresetChange,
-                    tip(|tips| &tips.preset_change),
+                    tips.preset_change.as_deref(),
                 );
             },
         );
@@ -956,7 +957,7 @@ pub fn automatic_settings(
                     OFFSIDE_TRAP_LABEL,
                     &mut auto.offside_trap,
                     TacticsField::AutoOffsideTrap,
-                    tip(|tips| &tips.offside_trap),
+                    tips.offside_trap.as_deref(),
                 );
             },
             |ui| {
@@ -968,7 +969,7 @@ pub fn automatic_settings(
                         COMBINATION_PLAY_LABEL,
                         &mut auto.combination_play,
                         TacticsField::AutoCombinationPlay,
-                        tip(|tips| &tips.combination_play),
+                        tips.combination_play.as_deref(),
                     );
                 } else {
                     auto_flag(
