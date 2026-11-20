@@ -9,19 +9,28 @@ use std::borrow::Cow;
 
 use pes_version::PesVersion;
 
+/// The TSV's nation columns in order; `PesVersion::ALL` cannot order them,
+/// it leaves PES 2014 out.
+const COLUMNS: [PesVersion; 8] = [
+    PesVersion::Pes14,
+    PesVersion::Pes15,
+    PesVersion::Pes16,
+    PesVersion::Pes17,
+    PesVersion::Pes18,
+    PesVersion::Pes19,
+    PesVersion::Pes20,
+    PesVersion::Pes21,
+];
+
 /// The versions' nation lists, parsed from the TSV on first read: one
 /// row per ID found in any version, its English name in each version's
 /// column, empty where that version lacks it.
-static NATIONS: std::sync::LazyLock<[Vec<(u16, String)>; 7]> = std::sync::LazyLock::new(parse);
+static NATIONS: std::sync::LazyLock<[Vec<(u16, String)>; 8]> = std::sync::LazyLock::new(parse);
 
 /// `version`'s nations ordered by ID — the Nation combo's entries, each
-/// `(id, its "{id} - {name}" text built at load)`. PES 2014's list is empty
-/// until its column is measured.
+/// `(id, its "{id} - {name}" text built at load)`.
 pub(crate) fn nations(version: PesVersion) -> &'static [(u16, String)] {
-    if version == PesVersion::Pes14 {
-        return &[];
-    }
-    let index = PesVersion::ALL
+    let index = COLUMNS
         .iter()
         .position(|&v| v == version)
         .expect("a supported version");
@@ -40,18 +49,18 @@ pub(crate) fn nation_text(version: PesVersion, id: u16) -> Cow<'static, str> {
     }
 }
 
-/// The TSV parsed: a header row `id` then `PesVersion::ALL`'s `Display`
-/// names in order — asserted, since a reordered file is a programming
+/// The TSV parsed: a header row `id` then `COLUMNS`' `Display` names
+/// in order — asserted, since a reordered file is a programming
 /// error — then one row per ID, an empty cell meaning the version
 /// lacks it. Each row keeps its `"{id} - {name}"` text rather than the
 /// bare name: the text is all the combo and the diff rows ever show,
 /// and building it here pays it once for every frame and row.
-fn parse() -> [Vec<(u16, String)>; 7] {
+fn parse() -> [Vec<(u16, String)>; 8] {
     let mut lines = include_str!("../data/nations.tsv").lines();
     let header = lines.next().expect("nations.tsv is empty");
     let mut columns = header.split('\t');
     assert_eq!(columns.next(), Some("id"), "nations.tsv header: {header}");
-    for version in PesVersion::ALL {
+    for version in COLUMNS {
         let name = version.to_string();
         assert_eq!(
             columns.next(),
@@ -60,7 +69,7 @@ fn parse() -> [Vec<(u16, String)>; 7] {
         );
     }
     assert_eq!(columns.next(), None, "nations.tsv header: {header}");
-    let mut lists: [Vec<(u16, String)>; 7] = std::array::from_fn(|_| Vec::new());
+    let mut lists: [Vec<(u16, String)>; 8] = std::array::from_fn(|_| Vec::new());
     for line in lines {
         let mut cells = line.split('\t');
         let id: u16 = cells
@@ -125,7 +134,7 @@ mod tests {
     // Every list is ordered by ID, none twice.
     #[test]
     fn the_ids_are_strictly_increasing_in_every_version() {
-        for version in PesVersion::ALL {
+        for version in COLUMNS {
             let ids: Vec<u16> = nations(version).iter().map(|(id, _)| *id).collect();
             assert!(
                 ids.windows(2).all(|pair| pair[0] < pair[1]),
@@ -144,7 +153,7 @@ mod tests {
     #[test]
     fn every_fixture_players_nation_is_listed_but_the_games_own_gaps() {
         let mut unlisted = Vec::new();
-        for version in PesVersion::ALL {
+        for version in COLUMNS {
             let file = EditFile::from_bytes(&pes_savefile::fixture_save(version))
                 .expect("the fixture save");
             unlisted.extend(
@@ -167,11 +176,14 @@ mod tests {
         );
     }
 
-    // PES 2014's list is unmeasured and empty, so every id reads
-    // `{id} - ?` — 231 being SAN MARINO on the other versions.
+    // PES 2014's own list holds 182 nations, seven short of PES 2015's:
+    // 8 (HONG KONG) is one it lacks, so it reads `8 - ?` there while
+    // PES 2015 names it; 231 is SAN MARINO on every version.
     #[test]
-    fn pes14s_unmeasured_list_reads_every_id_as_unknown() {
-        assert!(nations(PesVersion::Pes14).is_empty());
-        assert_eq!(nation_text(PesVersion::Pes14, 231), "231 - ?");
+    fn pes14s_own_list_names_its_nations() {
+        assert_eq!(nations(PesVersion::Pes14).len(), 182);
+        assert_eq!(nation_text(PesVersion::Pes14, 231), "231 - SAN MARINO");
+        assert_eq!(nation_text(PesVersion::Pes14, 8), "8 - ?");
+        assert_eq!(nation_text(PesVersion::Pes15, 8), "8 - HONG KONG");
     }
 }
