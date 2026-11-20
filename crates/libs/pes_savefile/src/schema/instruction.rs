@@ -57,11 +57,11 @@ const STORED_20: [Instruction; 17] = [
 ];
 
 /// The instructions `version` lists, in the order the game lists them:
-/// its stored table, the index the stored value. Empty on PES 15/16,
+/// its stored table, the index the stored value. Empty on PES 14/15/16,
 /// which have no instruction table.
 pub fn instructions(version: PesVersion) -> &'static [Instruction] {
     match version {
-        PesVersion::Pes15 | PesVersion::Pes16 => &[],
+        PesVersion::Pes14 | PesVersion::Pes15 | PesVersion::Pes16 => &[],
         PesVersion::Pes17 => &Instruction::ALL[..13],
         PesVersion::Pes18 | PesVersion::Pes19 => &STORED_18,
         PesVersion::Pes20 | PesVersion::Pes21 => &STORED_20,

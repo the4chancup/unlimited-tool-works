@@ -21,7 +21,7 @@ use crate::model::names::display_name;
 use crate::model::player::PlayerEntry;
 use crate::model::tactics::AdvancedInstruction;
 use crate::model::team::{KitSlot, TeamColor, TeamEntry};
-use crate::schema::fields::{PlayerText, TeamField, TeamText};
+use crate::schema::fields::{PlayerText, PresetField, TacticsField, TeamField, TeamText};
 use crate::schema::instruction;
 use crate::schema::schema_for;
 use crate::settings_toml::document::padded;
@@ -57,9 +57,10 @@ impl TeamToml {
         Ok(parsed)
     }
 
-    /// The document for one team of `version`'s save. Every field the model
-    /// carries is `Some`; version-gated model `Option`s stay `None` and emit
-    /// commented lines. `players` is the pool to dump from: an empty slice is
+    /// The document for one team of `version`'s save. Every field the
+    /// version's records store is `Some`; a field the version lacks, or a
+    /// version-gated model `Option` already `None`, emits a commented line.
+    /// `players` is the pool to dump from: an empty slice is
     /// a team/tactics-only document, while a non-empty pool that lacks a
     /// rostered id is `PlayerMissing`.
     pub fn from_team(
@@ -70,33 +71,52 @@ impl TeamToml {
         let player_sections = player::players_from(version, team, players)?;
         let edit = &team.edit_flags;
         let tactics = &team.tactics;
+        // A field the version's record does not store is `None` (emitted
+        // commented), not the default the model happens to hold: PES 2014's
+        // tactics record maps the team id and the captain alone.
+        let tactic = schema_for(version).tactic;
+        let has = |field| tactic.has(field);
+        let has_preset = |field| tactic.has_preset(field);
         let mut presets = [PresetSection::default(); 3];
         for (section, preset) in presets.iter_mut().zip(tactics.presets.iter()) {
             let style = &preset.style;
             let sliders = &preset.sliders;
-            section.man_marking = Some(preset.man_marking);
+            section.man_marking =
+                has(TacticsField::ManMarking { preset: 0, slot: 0 }).then_some(preset.man_marking);
             section.style = StyleSection {
-                attacking_style: Some(style.attacking_style),
-                attacking_zone: Some(style.attacking_zone),
-                buildup: Some(style.buildup),
-                positioning: Some(style.positioning),
-                defensive_style: Some(style.defensive_style),
-                containment_area: Some(style.containment_area),
-                pressure: Some(style.pressure),
+                attacking_style: has_preset(PresetField::AttackingStyle)
+                    .then_some(style.attacking_style),
+                attacking_zone: has_preset(PresetField::AttackingZone)
+                    .then_some(style.attacking_zone),
+                buildup: has_preset(PresetField::Buildup).then_some(style.buildup),
+                positioning: has_preset(PresetField::Positioning).then_some(style.positioning),
+                defensive_style: has_preset(PresetField::DefensiveStyle)
+                    .then_some(style.defensive_style),
+                containment_area: has_preset(PresetField::ContainmentArea)
+                    .then_some(style.containment_area),
+                pressure: has_preset(PresetField::Pressure).then_some(style.pressure),
                 fluid: style.fluid,
             };
             section.sliders = SlidersSection {
-                support_range: Some(sliders.support_range),
-                defensive_line: Some(sliders.defensive_line),
-                compactness: Some(sliders.compactness),
-                numbers_in_attack: Some(sliders.numbers_in_attack),
-                numbers_in_defence: Some(sliders.numbers_in_defence),
+                support_range: has_preset(PresetField::SupportRange)
+                    .then_some(sliders.support_range),
+                defensive_line: has_preset(PresetField::DefensiveLine)
+                    .then_some(sliders.defensive_line),
+                compactness: has_preset(PresetField::Compactness).then_some(sliders.compactness),
+                numbers_in_attack: has_preset(PresetField::NumbersInAttack)
+                    .then_some(sliders.numbers_in_attack),
+                numbers_in_defence: has_preset(PresetField::NumbersInDefence)
+                    .then_some(sliders.numbers_in_defence),
             };
-            section.formations = [
-                Some(preset.formations[0].players),
-                Some(preset.formations[1].players),
-                Some(preset.formations[2].players),
-            ];
+            section.formations = if tactic.formations.is_some() {
+                [
+                    Some(preset.formations[0].players),
+                    Some(preset.formations[1].players),
+                    Some(preset.formations[2].players),
+                ]
+            } else {
+                [None, None, None]
+            };
             section.instructions = match (&preset.attack_instructions, &preset.defence_instructions)
             {
                 (Some(attack), Some(defence)) => Some(InstructionsSection {
@@ -121,29 +141,38 @@ impl TeamToml {
                 color_2: team.colors.map(|c| c[1]),
                 kit_slots: team.kit_slots,
                 edit_flags: TeamEditFlagsSection {
-                    name: Some(edit.name),
+                    name: schema_for(version)
+                        .team
+                        .has(TeamField::EditedName)
+                        .then_some(edit.name),
                     short_name: edit.short_name,
                     stadium: edit.stadium,
                     strip: edit.strip,
                 },
             },
             tactics: TacticsSection {
-                starting_eleven: Some(tactics.starting_eleven),
-                bench_order: Some(
+                starting_eleven: has(TacticsField::Starting(0)).then_some(tactics.starting_eleven),
+                bench_order: has(TacticsField::Bench(0)).then(|| {
                     tactics.bench_order[..12]
                         .try_into()
-                        .expect("the first twelve of twenty-one"),
-                ),
+                        .expect("the first twelve of twenty-one")
+                }),
                 set_pieces: SetPiecesSection {
-                    free_kick_long: Some(tactics.set_pieces.free_kick_long),
-                    free_kick_short: Some(tactics.set_pieces.free_kick_short),
-                    free_kick_second: Some(tactics.set_pieces.free_kick_second),
-                    corner_left: Some(tactics.set_pieces.corner_left),
-                    corner_right: Some(tactics.set_pieces.corner_right),
-                    penalty: Some(tactics.set_pieces.penalty),
-                    captain: Some(tactics.set_pieces.captain),
+                    free_kick_long: has(TacticsField::FreeKickTakerLong)
+                        .then_some(tactics.set_pieces.free_kick_long),
+                    free_kick_short: has(TacticsField::FreeKickTakerShort)
+                        .then_some(tactics.set_pieces.free_kick_short),
+                    free_kick_second: has(TacticsField::FreeKickTakerSecond)
+                        .then_some(tactics.set_pieces.free_kick_second),
+                    corner_left: has(TacticsField::CornerTakerLeft)
+                        .then_some(tactics.set_pieces.corner_left),
+                    corner_right: has(TacticsField::CornerTakerRight)
+                        .then_some(tactics.set_pieces.corner_right),
+                    penalty: has(TacticsField::PenaltyTaker).then_some(tactics.set_pieces.penalty),
+                    captain: has(TacticsField::Captain).then_some(tactics.set_pieces.captain),
                 },
-                players_to_join_attack: Some(tactics.players_to_join_attack),
+                players_to_join_attack: has(TacticsField::PlayerToJoinAttack(0))
+                    .then_some(tactics.players_to_join_attack),
                 auto: AutoSection {
                     substitution: tactics.auto.substitution,
                     offside_trap: tactics.auto.offside_trap,
@@ -634,7 +663,10 @@ mod tests {
                 .map(|(n, _)| n)
                 .expect("a team exists");
             for (n, (team, doc)) in file.teams().iter().zip(&docs).enumerate() {
-                if n == 0 || n + 1 == docs.len() || n == fullest {
+                // `pes_version` parses through `from_number`, which refuses
+                // 14: PES 2014's text pass cannot hold (Team TOML is out of
+                // scope there); the model pass still runs.
+                if version != PesVersion::Pes14 && (n == 0 || n + 1 == docs.len() || n == fullest) {
                     let text = doc.to_toml().expect("to_toml");
                     let parsed = TeamToml::parse(&text).unwrap_or_else(|e| {
                         panic!(
@@ -648,6 +680,14 @@ mod tests {
                     // never a key, so it does not parse back (every fixture
                     // team keeps the order).
                     assert_eq!(parsed, *doc, "{version:?} team {}", team.id);
+                }
+                if version == PesVersion::Pes14 && n == 0 {
+                    // `pes_version = 14` emits but refuses to parse.
+                    let text = doc.to_toml().expect("to_toml");
+                    assert!(matches!(
+                        TeamToml::parse(&text),
+                        Err(TeamTomlError::OutOfRange { .. })
+                    ));
                 }
                 let mut target = blank_slate(team);
                 // `apply` only looks the rostered ids up; cloning the whole
@@ -667,11 +707,14 @@ mod tests {
                 // the document's, so the fill runs), so the
                 // field-for-field check expects them computed, not carried.
                 let mut expected = team.clone();
-                let bench: [u8; 12] = expected.tactics.bench_order[..12]
-                    .try_into()
-                    .expect("the first twelve of twenty-one");
-                expected.tactics.bench_order[12..]
-                    .copy_from_slice(&bench_fill(&expected.tactics.starting_eleven, &bench));
+                let schema = schema_for(version);
+                if schema.tactic.has(TacticsField::Bench(0)) {
+                    let bench: [u8; 12] = expected.tactics.bench_order[..12]
+                        .try_into()
+                        .expect("the first twelve of twenty-one");
+                    expected.tactics.bench_order[12..]
+                        .copy_from_slice(&bench_fill(&expected.tactics.starting_eleven, &bench));
+                }
                 assert_eq!(&target, &expected, "{version:?} team {}", team.id);
             }
         }

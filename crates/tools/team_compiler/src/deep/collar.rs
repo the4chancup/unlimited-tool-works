@@ -139,6 +139,8 @@ pub(crate) fn named_id(stem: &str) -> Option<u8> {
 /// The 9xx collars past it are stock too, but no kit config can name one.
 fn last_stock_collar(version: PesVersion) -> u8 {
     match version {
+        // PES 2014's stock collars are uncounted; PES 2015's until they are.
+        PesVersion::Pes14 => 101,
         PesVersion::Pes15 => 101,
         PesVersion::Pes16 => 105,
         PesVersion::Pes17 | PesVersion::Pes18 => 116,

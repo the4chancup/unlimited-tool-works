@@ -22,8 +22,10 @@ pub struct EditFile {
     container: SaveContainer,
     schema: &'static VersionSchema,
     players: Vec<PlayerEntry>,
-    /// The appearance record index of each player (PES 15/16 only).
-    appearance_records: Vec<usize>,
+    /// The appearance record index of each player on versions with a
+    /// separate appearance section (PES 14/15/16); `None` for a player the
+    /// section holds no record for (PES 2014's edited-look players only).
+    appearance_records: Vec<Option<usize>>,
     teams: Vec<TeamEntry>,
 }
 
@@ -184,12 +186,21 @@ impl EditFile {
                 .map(|(i, rec)| (record_id(rec), i))
                 .collect();
             for player in players.iter_mut() {
-                let index = *index_of.get(&player.id).ok_or(SaveError::RecordId {
-                    section: "appearance",
-                    id: player.id,
-                })?;
+                let index = index_of.get(&player.id).copied();
+                // PES 2014 holds a record only for an edited or created
+                // player; the others refuse a missing one.
+                let Some(index) = index else {
+                    if schema.appearance_for_every_player() {
+                        return Err(SaveError::RecordId {
+                            section: "appearance",
+                            id: player.id,
+                        });
+                    }
+                    appearance_records.push(None);
+                    continue;
+                };
                 read_player_into(player, records[index], appearance)?;
-                appearance_records.push(index);
+                appearance_records.push(Some(index));
             }
         }
 
@@ -356,8 +367,10 @@ impl EditFile {
         }
         if let Some((section, appearance)) = &schema.appearance {
             for (i, player) in self.players.iter().enumerate() {
-                let at = section.offset + self.appearance_records[i] * appearance.size;
-                write_player(player, &mut payload[at..at + appearance.size], appearance)?;
+                if let Some(index) = self.appearance_records[i] {
+                    let at = section.offset + index * appearance.size;
+                    write_player(player, &mut payload[at..at + appearance.size], appearance)?;
+                }
             }
         }
         for (i, team) in self.teams.iter().enumerate() {
@@ -459,8 +472,8 @@ mod tests {
 
     #[test]
     fn every_fixture_opens_and_rewrites_byte_for_byte() {
-        let player_counts = [5060usize, 5060, 5060, 4646, 4830, 5060, 5060];
-        let team_counts = [220usize, 220, 220, 202, 346, 220, 220];
+        let player_counts = [11998usize, 5060, 5060, 5060, 4646, 4830, 5060, 5060];
+        let team_counts = [478usize, 220, 220, 220, 202, 346, 220, 220];
         for (i, version) in FIXTURES.iter().enumerate() {
             let (file, bytes) = open(*version);
             assert_eq!(file.version(), *version);
@@ -470,12 +483,23 @@ mod tests {
                 "{version:?} players"
             );
             assert_eq!(file.teams().len(), team_counts[i], "{version:?} teams");
-            assert!(file.player(70101).is_some(), "{version:?} player 70101");
-            let team_id = if *version == PesVersion::Pes19 {
-                100
-            } else {
-                701
+            // The ids of the player and team each check reads: the vanilla
+            // PES 2014 save's first records (no /3/ team exists on it),
+            // team 100 on PES 19 (no 701 either), /3/ elsewhere.
+            let (player_id, team_id) = match *version {
+                PesVersion::Pes14 => (450, 1),
+                PesVersion::Pes19 => (70101, 100),
+                PesVersion::Pes15
+                | PesVersion::Pes16
+                | PesVersion::Pes17
+                | PesVersion::Pes18
+                | PesVersion::Pes20
+                | PesVersion::Pes21 => (70101, 701),
             };
+            assert!(
+                file.player(player_id).is_some(),
+                "{version:?} player {player_id}"
+            );
             let team = file.team(team_id).expect("the team exists");
             assert_eq!(team.id, team_id);
             assert_eq!(
@@ -503,9 +527,49 @@ mod tests {
         );
     }
 
+    /// PES 2014's appearance section holds a record only for a player whose
+    /// look was edited or who was created in the save: the vanilla fixture
+    /// holds none for its 11998 players and opens with every player
+    /// record-less. On PES 15 a player's missing record is still the
+    /// `RecordId` refusal.
+    #[test]
+    fn a_player_without_an_appearance_record_is_an_error_only_where_one_is_due() {
+        let (file, _) = open(PesVersion::Pes14);
+        assert_eq!(file.players().len(), 11998);
+        let empty = crate::model::player::PlayerAppearance::default();
+        assert!(
+            file.players().iter().all(|p| p.appearance == empty),
+            "no appearance record was applied to any player"
+        );
+        // Rename PES 15's first appearance record's id: its player is
+        // orphaned, and a version holding a record per player refuses.
+        let mut container = crate::fixtures::fixture_container(PesVersion::Pes15);
+        let (section, _) = schema_for(PesVersion::Pes15)
+            .appearance
+            .as_ref()
+            .expect("PES 15 has an appearance section");
+        let orphan = record_id(&container.payload[section.offset..]);
+        container.payload[section.offset..section.offset + 4]
+            .copy_from_slice(&u32::MAX.to_le_bytes());
+        let bytes = container.to_bytes(&test_salt()).expect("container encodes");
+        let err = EditFile::from_bytes(&bytes)
+            .err()
+            .expect("the orphaned player refuses");
+        assert!(
+            matches!(
+                err,
+                SaveError::RecordId {
+                    section: "appearance",
+                    id
+                } if id == orphan
+            ),
+            "{err:?}"
+        );
+    }
+
     /// Every team's records are its own (each carries the team's id), and
     /// on 17-21 its manager id names a coach record of the save, the one
-    /// handed over; every player's record carries his id. PES 15 and 16
+    /// handed over; every player's record carries his id. PES 14, 15 and 16
     /// have no coach section.
     #[test]
     fn every_teams_manager_id_names_a_coach_record() {
@@ -513,12 +577,26 @@ mod tests {
             let (file, _) = open(version);
             for team in file.teams() {
                 let records = file.team_records(team.id).expect("the team's records");
-                for record in [records.team, records.roster, records.tactics] {
+                // PES 2014's team record holds the id in its u32's low 16
+                // bits, the high 16 `0xffff`; the other versions' and the
+                // roster and tactics records hold the plain id.
+                let team_record_id = if version == PesVersion::Pes14 {
+                    0xFFFF_0000 | team.id
+                } else {
+                    team.id
+                };
+                assert_eq!(
+                    record_id(records.team),
+                    team_record_id,
+                    "{version:?} team {}",
+                    team.id
+                );
+                for record in [records.roster, records.tactics] {
                     assert_eq!(record_id(record), team.id, "{version:?} team {}", team.id);
                 }
                 let manager = record_id(&records.team[4..]);
                 match version {
-                    PesVersion::Pes15 | PesVersion::Pes16 => {
+                    PesVersion::Pes14 | PesVersion::Pes15 | PesVersion::Pes16 => {
                         assert!(records.coach.is_none(), "{version:?} team {}", team.id);
                     }
                     PesVersion::Pes17
@@ -832,6 +910,57 @@ mod tests {
                 );
             }
             assert_eq!(seen, expected, "{version:?} decorated names");
+        }
+    }
+
+    /// The maintainer's PES 2014 saves open and write back byte for byte.
+    /// In `.akko7v2`, Akko League VII's `/4ccg/` is team 857 (in a lower
+    /// league; team 784, its /vg/ League id, is a blank 4cc team on this
+    /// save) and its 23 players are the ones `.tmp/akko7/4ccg_names.txt`
+    /// names, in roster order.
+    #[test]
+    #[cfg(not(target_arch = "wasm32"))]
+    #[ignore = "reads the maintainer's PES 2014 saves"]
+    fn the_real_pes14_saves_open_and_rewrite_byte_for_byte() {
+        let folder =
+            std::path::Path::new("C:/Data/Documents/KONAMI/Pro Evolution Soccer 2014/save");
+        for name in [
+            "EDIT.bin.orig",
+            "EDIT.bin.akko",
+            "EDIT.bin.akko7v2",
+            "EDIT.bin.akko7v2_flags",
+        ] {
+            let bytes = std::fs::read(folder.join(name)).expect("the save reads");
+            let file = EditFile::from_bytes(&bytes).expect("the save opens");
+            assert_eq!(file.version(), PesVersion::Pes14, "{name}");
+            assert_eq!(
+                file.to_bytes(&crate::container::file_salt(&bytes).expect("the salt"))
+                    .expect("the save writes"),
+                bytes,
+                "{name} lossless"
+            );
+            if name == "EDIT.bin.akko7v2" {
+                let names_file = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+                    .join("../../../.tmp/akko7/4ccg_names.txt");
+                let names: Vec<String> = std::fs::read_to_string(&names_file)
+                    .expect("the names file reads")
+                    .lines()
+                    .map(str::to_owned)
+                    .collect();
+                assert_eq!(names.len(), 23);
+                let team = file.team(857).expect("team 857");
+                assert_eq!(team.name, "/4ccg/");
+                let got: Vec<&str> = team.roster[..names.len()]
+                    .iter()
+                    .map(|slot| {
+                        file.player(slot.player_id)
+                            .expect("a rostered player")
+                            .name
+                            .as_str()
+                    })
+                    .collect();
+                assert_eq!(got, names, "team 857's roster by name");
+            }
         }
     }
 

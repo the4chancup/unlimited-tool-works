@@ -53,7 +53,10 @@ fn every_fixture_player_round_trips_through_the_document() {
             .map(|(n, _)| n)
             .expect("a rostered team exists");
         for (n, (team, doc)) in rostered.iter().zip(&docs).enumerate() {
-            if n == 0 || n + 1 == rostered.len() || n == fullest {
+            // `pes_version` parses through `from_number`, which refuses 14:
+            // the text pass cannot hold for PES 2014 (Team TOML is out of
+            // scope there).
+            if version != PesVersion::Pes14 && (n == 0 || n + 1 == rostered.len() || n == fullest) {
                 let text = doc.to_toml().expect("to_toml");
                 let parsed = TeamToml::parse(&text)
                     .unwrap_or_else(|e| panic!("{version:?} team {} reparse: {e}", team.id));

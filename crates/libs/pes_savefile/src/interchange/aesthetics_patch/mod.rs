@@ -14,7 +14,7 @@ use crate::codec::{text_max, write_player};
 use crate::file::EditFile;
 use crate::interchange::players_key;
 use crate::model::player::PlayerEntry;
-use crate::schema::fields::PlayerText;
+use crate::schema::fields::{PlayerField, PlayerText};
 use crate::schema::{VersionSchema, schema_for};
 use crate::settings_toml::document::{
     AppearanceDocument, emit_appearance, leaf_path, padded, parse_appearance, range_text, toml_form,
@@ -496,7 +496,7 @@ fn build(
         if next.appearance_id.is_some() {
             next.appearance_id = Some(next.id);
         }
-        if patch.base_copy_id.is_none() {
+        if patch.base_copy_id.is_none() && schema.player_has(PlayerField::BaseCopyId) {
             next.appearance.base_copy_id = next.id;
             if next.edit_flags.base_copy.is_some() {
                 next.edit_flags.base_copy = Some(false);

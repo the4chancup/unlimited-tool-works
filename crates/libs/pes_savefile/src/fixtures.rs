@@ -11,6 +11,7 @@ use crate::container::{MasterKey, SaveContainer, Scheme};
 /// The inflated payload of one version's fixture.
 pub(crate) fn payload(version: PesVersion) -> Vec<u8> {
     let bytes: &[u8] = match version {
+        PesVersion::Pes14 => include_bytes!("../tests/fixtures/pes14_payload.bin.zz"),
         PesVersion::Pes15 => include_bytes!("../tests/fixtures/pes15_payload.bin.zz"),
         PesVersion::Pes16 => include_bytes!("../tests/fixtures/pes16_payload.bin.zz"),
         PesVersion::Pes17 => include_bytes!("../tests/fixtures/pes17_payload.bin.zz"),
@@ -28,7 +29,7 @@ pub(crate) fn payload(version: PesVersion) -> Vec<u8> {
 /// The master key matching a fixture version.
 fn key(version: PesVersion) -> MasterKey {
     match version {
-        PesVersion::Pes15 => panic!("PES 15 is not keyed"),
+        PesVersion::Pes14 | PesVersion::Pes15 => panic!("PES 14 and 15 are not keyed"),
         PesVersion::Pes16 => MasterKey::Pes16,
         PesVersion::Pes17 => MasterKey::Pes17,
         PesVersion::Pes18 => MasterKey::Pes18,
@@ -43,7 +44,7 @@ pub(crate) fn fixture_container(version: PesVersion) -> SaveContainer {
     let mut description = b"Edit Data".to_vec();
     description.resize(384, 0);
     match version {
-        PesVersion::Pes15 => SaveContainer {
+        PesVersion::Pes14 | PesVersion::Pes15 => SaveContainer {
             scheme: Scheme::Pes15,
             description,
             logo: Vec::new(),

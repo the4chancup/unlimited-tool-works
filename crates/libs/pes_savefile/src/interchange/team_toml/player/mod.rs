@@ -77,19 +77,36 @@ fn player_from(
     player: &PlayerEntry,
     fields: &HashSet<PlayerField>,
 ) -> Result<PlayerSection, TeamTomlError> {
-    let appearance = appearance_from(player)?;
+    let mut appearance = appearance_from(player)?;
+    // A key the version does not store is `None`, not the value the model
+    // happens to hold: every one PES 2014's player record lacks.
+    for key in SettingKey::ALL {
+        if !held_on(key, version) {
+            set_appearance(&mut appearance, key, None);
+        }
+    }
     let mut section = PlayerSection {
         name: Some(player.name.clone()),
         shirt_name: Some(player.shirt_name.clone()),
         shirt_number: Some(number),
         positions: PositionsSection {
-            playable: Some(player.positions.playable),
-            playing_style: Some(playstyle::decode(version, player.positions.playing_style)?),
+            playable: fields
+                .contains(&PlayerField::PlayablePosition(0))
+                .then_some(player.positions.playable),
+            playing_style: if fields.contains(&PlayerField::PlayingStyle) {
+                Some(playstyle::decode(version, player.positions.playing_style)?)
+            } else {
+                None
+            },
             ..PositionsSection::default()
         },
         skills: SkillsSection {
-            skills: Some(player.skills.skills),
-            com_styles: Some(player.skills.com_styles),
+            skills: fields
+                .contains(&PlayerField::Skill(0))
+                .then_some(player.skills.skills),
+            com_styles: fields
+                .contains(&PlayerField::ComStyle(0))
+                .then_some(player.skills.com_styles),
         },
         appearance,
         ..PlayerSection::default()

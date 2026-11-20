@@ -28,7 +28,8 @@ const DUMMY_19: &[u8] = include_bytes!("../../../../../resources/portraits/playe
 /// one file.
 fn placeholder_file(version: PesVersion) -> (&'static str, &'static [u8]) {
     match version {
-        PesVersion::Pes15 => ("player-dummy_15.png", DUMMY_15),
+        // PES 2014's placeholder is unmeasured; PES 2015's until it is.
+        PesVersion::Pes14 | PesVersion::Pes15 => ("player-dummy_15.png", DUMMY_15),
         PesVersion::Pes16 | PesVersion::Pes17 | PesVersion::Pes18 => {
             ("player-dummy_16.png", DUMMY_16)
         }

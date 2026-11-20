@@ -91,10 +91,17 @@ pub enum ContainerError {
     },
 }
 
+/// The PES 2014 EDIT payload's size: the one thing telling a PES 2014
+/// save from a PES 2015 one, both decrypting under `Scheme::Pes15`.
+const PES14_PAYLOAD_LEN: usize = 4_726_440;
+
 impl SaveContainer {
-    /// The game version the container belongs to.
+    /// The game version the container belongs to. A `Scheme::Pes15`
+    /// container is PES 2014's when its payload is `PES14_PAYLOAD_LEN`,
+    /// PES 2015's otherwise.
     pub fn version(&self) -> PesVersion {
         match self.scheme {
+            Scheme::Pes15 if self.payload.len() == PES14_PAYLOAD_LEN => PesVersion::Pes14,
             Scheme::Pes15 => PesVersion::Pes15,
             Scheme::Keyed(key) => key.version(),
         }
@@ -146,6 +153,9 @@ mod tests {
     use md5::{Digest, Md5};
     use std::io::Read;
 
+    const P14_HEAD: &[u8] = include_bytes!("../../tests/fixtures/pes14_head.bin");
+    const P14_PAYLOAD: &[u8] = include_bytes!("../../tests/fixtures/pes14_payload.bin.zz");
+    const P14_ENC: &[u8] = include_bytes!("../../tests/fixtures/pes14_payload_enc_head.bin");
     const P15_HEAD: &[u8] = include_bytes!("../../tests/fixtures/pes15_head.bin");
     const P15_PAYLOAD: &[u8] = include_bytes!("../../tests/fixtures/pes15_payload.bin.zz");
     const P15_ENC: &[u8] = include_bytes!("../../tests/fixtures/pes15_payload_enc_head.bin");
@@ -444,6 +454,45 @@ mod tests {
                 f.key
             );
         }
+    }
+
+    /// A PES 2014 save decrypts under the PES 15 scheme unchanged; the
+    /// payload's size is what names it PES 2014.
+    #[test]
+    fn pes14_fixture_decrypts() {
+        let seed = P14_HEAD[0];
+        assert_eq!(seed, 157);
+        let description = pes15::lcg(seed, &P14_HEAD[49..49 + 384]);
+        let mut expected = b"Edit Data".to_vec();
+        expected.resize(384, 0);
+        assert_eq!(description, expected);
+        assert_eq!(&Md5::digest(&description)[..], &P14_HEAD[1..17]);
+        let payload = inflate(P14_PAYLOAD);
+        assert_eq!(
+            &Md5::digest(&payload)[..],
+            [
+                0x5e, 0xb2, 0x87, 0xd4, 0x07, 0x5e, 0x10, 0x77, 0xf3, 0xae, 0x6a, 0x1f, 0x1e, 0x9a,
+                0x54, 0xae
+            ]
+        );
+        assert_eq!(&Md5::digest(&payload)[..], &P14_HEAD[33..49]);
+        let logo_len = u32::from_le_bytes(P14_HEAD[433..437].try_into().expect("u32")) as usize;
+        assert_eq!(logo_len, 72770);
+        assert_eq!(pes15::lcg(seed, P14_ENC), payload[..P14_ENC.len()]);
+    }
+
+    /// `version` names a `Scheme::Pes15` container PES 2014 only by its
+    /// payload's size; every other size stays PES 2015.
+    #[test]
+    fn a_pes15_container_reports_pes14_by_its_payload_size() {
+        assert_eq!(
+            crate::fixtures::fixture_container(PesVersion::Pes14).version(),
+            PesVersion::Pes14
+        );
+        assert_eq!(
+            crate::fixtures::fixture_container(PesVersion::Pes15).version(),
+            PesVersion::Pes15
+        );
     }
 
     #[test]

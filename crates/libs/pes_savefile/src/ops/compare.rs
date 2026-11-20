@@ -260,9 +260,12 @@ pub fn compare_players(
 ) -> Result<Vec<PlayerDiff>, CodecError> {
     let mut diffs = Vec::new();
     let (fa, fb) = (&a.appearance.ingame_face, &b.appearance.ingame_face);
-    if fa.bytes().len() != fb.bytes().len() || fa.bytes().is_empty() {
-        // A run that does not reach a field is `NoIngameFaceRun` on that side;
-        // an empty run is an entry never read from a record.
+    if fa.bytes().len() != fb.bytes().len()
+        || (fa.bytes().is_empty() && schema.ingame_face_run().is_some())
+    {
+        // A run that does not reach a field is `NoIngameFaceRun` on the
+        // shorter side; an empty run is an entry never read from a record
+        // where the schema maps one.
         return Err(CodecError::NoIngameFaceRun {
             field: String::from("ingame_face"),
         });
@@ -283,29 +286,32 @@ pub fn compare_players(
             });
         }
     }
-    // Equal lengths, so one layout for both runs.
-    let layout = fa.layout();
-    for spec in INGAME_FACE_FIELDS
-        .iter()
-        .filter(|spec| in_layout(spec.field.layout(), layout))
-    {
-        let (old, new) = (fa.get(spec.field)?, fb.get(spec.field)?);
-        if old != new {
-            diffs.push(PlayerDiff::Face {
-                field: spec.field,
-                old,
-                new,
+    // Equal lengths, so one layout for both runs. An empty run (a version
+    // whose schema maps none, PES 2014) has no face rows to give.
+    if !fa.bytes().is_empty() {
+        let layout = fa.layout();
+        for spec in INGAME_FACE_FIELDS
+            .iter()
+            .filter(|spec| in_layout(spec.field.layout(), layout))
+        {
+            let (old, new) = (fa.get(spec.field)?, fb.get(spec.field)?);
+            if old != new {
+                diffs.push(PlayerDiff::Face {
+                    field: spec.field,
+                    old,
+                    new,
+                });
+            }
+        }
+        let (old_bits, new_bits) = (fa.unused(), fb.unused());
+        if old_bits != new_bits {
+            diffs.push(PlayerDiff::FaceRun {
+                old: face_hash(fa),
+                new: face_hash(fb),
+                old_bits,
+                new_bits,
             });
         }
-    }
-    let (old_bits, new_bits) = (fa.unused(), fb.unused());
-    if old_bits != new_bits {
-        diffs.push(PlayerDiff::FaceRun {
-            old: face_hash(fa),
-            new: face_hash(fb),
-            old_bits,
-            new_bits,
-        });
     }
     Ok(diffs)
 }
@@ -533,7 +539,13 @@ mod tests {
     #[test]
     fn a_player_equals_its_own_copy_on_every_version() {
         for version in FIXTURES {
-            let p = player(version, 70101);
+            // The vanilla PES 2014 save's first player id (it has no 70101).
+            let id = if version == PesVersion::Pes14 {
+                450
+            } else {
+                70101
+            };
+            let p = player(version, id);
             assert!(
                 compare_players(&p, &p, schema_for(version))
                     .expect("compares")

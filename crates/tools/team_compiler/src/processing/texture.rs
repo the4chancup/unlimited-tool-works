@@ -633,9 +633,11 @@ pub(super) fn portrait(
             // BC5 or BC7 portrait keeps no blocks under either header, the legacy one
             // included, and is decoded and encoded below like a raster source.
             let reads_bc4_to_bc7 = match version {
-                PesVersion::Pes15 | PesVersion::Pes16 | PesVersion::Pes17 | PesVersion::Pes18 => {
-                    false
-                }
+                PesVersion::Pes14
+                | PesVersion::Pes15
+                | PesVersion::Pes16
+                | PesVersion::Pes17
+                | PesVersion::Pes18 => false,
                 PesVersion::Pes19 | PesVersion::Pes20 | PesVersion::Pes21 => true,
             };
             let encode = !reads_bc4_to_bc7

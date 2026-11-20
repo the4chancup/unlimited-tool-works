@@ -228,7 +228,8 @@ pub fn stat_name(version: PesVersion, stat: &str) -> String {
     // Each version's stats whose name is not their spelling title-cased.
     let renamed: &[(&str, &str)] = match version {
         PesVersion::Pes17 => &[("heading", "Header")],
-        PesVersion::Pes15
+        PesVersion::Pes14
+        | PesVersion::Pes15
         | PesVersion::Pes16
         | PesVersion::Pes18
         | PesVersion::Pes19

@@ -645,7 +645,7 @@ impl Texport {
     /// `salt[..32]`; on 17 a PES 2017 container around `PES17`'s payload
     /// template. `serial` is the writer's serial a 15-17 container carries
     /// (the open save's, `EditFile::serial`); it is unused on 18-21, as
-    /// `to_bytes` leaves `salt` unused there. 15 and 16 are `NoTemplate`:
+    /// `to_bytes` leaves `salt` unused there. 14, 15 and 16 are `NoTemplate`:
     /// write by reading a real file and replacing its team and players
     /// (`team_mut`/`players_mut`).
     pub fn new(
@@ -661,7 +661,7 @@ impl Texport {
                 File::Ted(ted_plaintext(version, team, records, players, salt)?)
             }
             PesVersion::Pes17 => File::Old(pes17_container(team, records, players, serial)?),
-            PesVersion::Pes15 | PesVersion::Pes16 => {
+            PesVersion::Pes14 | PesVersion::Pes15 | PesVersion::Pes16 => {
                 return Err(TexportError::NoTemplate(version));
             }
         };
@@ -738,6 +738,12 @@ impl Texport {
                     PesVersion::Pes17 => self.write_pes17(&mut container)?,
                     PesVersion::Pes15 | PesVersion::Pes16 => {
                         self.write_pes15_16(&mut container.payload)?;
+                    }
+                    // No PES 2014 texport exists to reach this (its
+                    // `TEXPORTnn.bin` layout is unmapped): the same refusal
+                    // `new` gives a version with no template.
+                    PesVersion::Pes14 => {
+                        return Err(TexportError::NoTemplate(self.version));
                     }
                     PesVersion::Pes18
                     | PesVersion::Pes19

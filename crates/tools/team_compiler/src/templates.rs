@@ -531,7 +531,7 @@ impl Templates {
             PesVersion::Pes19 | PesVersion::Pes20 | PesVersion::Pes21 => {
                 Some(self.bytes(&UNIFORM_PARAMETER_19))
             }
-            PesVersion::Pes15 | PesVersion::Pes16 | PesVersion::Pes17 => None,
+            PesVersion::Pes14 | PesVersion::Pes15 | PesVersion::Pes16 | PesVersion::Pes17 => None,
         }
     }
 

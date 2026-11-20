@@ -757,19 +757,19 @@ def tactics_rs(name, rec, doc, man_marking_bit):
         out.append(f"        ArraySpec {{ make: TacticsField::{variant}, count: {count}, base_bit: {b}, stride_bits: {stride}, bit_width: {w} }},")
     out.append("    ],")
     out.append(f"    preset_stride_bits: {pstride},")
-    out.append(f"    man_marking_bit: {man_marking_bit},")
+    out.append(f"    man_marking_bit: Some({man_marking_bit}),")
     out.append("    presets: &[")
     for variant, o in preset_rows:
         out.append(f"        PresetSpec {{ field: PresetField::{variant}, bit_offset: {o} }},")
     out.append("    ],")
-    out.append("    formations: FormationLayout {")
+    out.append("    formations: Some(FormationLayout {")
     out.append(f"        base_bit: {base},")
     out.append(f"        formation_stride_bits: {fstride},")
     out.append(f"        slot_stride_bits: {slot_stride},")
     out.append(f"        y_offset_bits: {y0},")
     out.append(f"        x_offset_bits: {x0},")
     out.append(f"        pair_stride_bits: {pair_stride},")
-    out.append("    },")
+    out.append("    }),")
     if instructions:
         ib, side, index, part = instructions
         out.append("    instructions: Some(InstructionLayout {")

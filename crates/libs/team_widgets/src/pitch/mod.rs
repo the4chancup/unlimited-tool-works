@@ -240,14 +240,16 @@ static PES_2021_PITCH: PitchLook = PitchLook {
 };
 
 /// The pitch `version`'s own formation screen draws. PES 2018's screen
-/// is PES 2017's and PES 2019's is PES 2021's; PES 2015's, PES 2016's
-/// and PES 2020's are unmeasured, the first two drawing PES 2017's, the
-/// nearer of the two built, and PES 2020's PES 2021's.
+/// is PES 2017's and PES 2019's is PES 2021's; PES 2014's, PES 2015's,
+/// PES 2016's and PES 2020's are unmeasured, the first three drawing
+/// PES 2017's, the nearer of the two built, and PES 2020's PES 2021's.
 fn pitch_look(version: PesVersion) -> &'static PitchLook {
     match version {
-        PesVersion::Pes15 | PesVersion::Pes16 | PesVersion::Pes17 | PesVersion::Pes18 => {
-            &PES_2017_PITCH
-        }
+        PesVersion::Pes14
+        | PesVersion::Pes15
+        | PesVersion::Pes16
+        | PesVersion::Pes17
+        | PesVersion::Pes18 => &PES_2017_PITCH,
         PesVersion::Pes19 | PesVersion::Pes20 | PesVersion::Pes21 => &PES_2021_PITCH,
     }
 }

@@ -22,10 +22,7 @@ const SLICE: std::ops::Range<usize> = 4..68;
 /// Where the appearance block starts inside the record that carries it: the
 /// ingame-face run is the block's byte 22 on every version.
 fn block_start(schema: &VersionSchema) -> usize {
-    let run = match &schema.appearance {
-        Some((_, appearance)) => appearance.ingame_face.as_ref(),
-        None => schema.player.ingame_face.as_ref(),
-    };
+    let run = schema.ingame_face_run();
     run.expect("the record carrying the appearance block has a run")
         .byte_offset as usize
         - 22
@@ -65,6 +62,10 @@ fn the_appearance_copy_matches_the_scripts_slice_rule_on_every_fixture_player() 
     for version in FIXTURES {
         let payload = payload(version);
         let schema = schema_for(version);
+        // PES 2014 maps no appearance block: the slice rule has nothing to copy.
+        if schema.ingame_face_run().is_none() {
+            continue;
+        }
         let start = block_start(schema);
         let all = players(&payload, schema);
         assert!(all.len() > 100, "{version:?}: fixture has players");
@@ -128,6 +129,10 @@ fn fingerprint_fields_and_hash_match_the_compare_script_on_every_fixture_player(
     for version in FIXTURES {
         let payload = payload(version);
         let schema = schema_for(version);
+        // PES 2014 maps no appearance block: the fingerprint has nothing to read.
+        if schema.ingame_face_run().is_none() {
+            continue;
+        }
         let start = block_start(schema);
         let mut hashes = BTreeSet::new();
         for (i, p) in players(&payload, schema) {

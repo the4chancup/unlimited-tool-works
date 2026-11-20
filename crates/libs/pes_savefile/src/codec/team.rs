@@ -9,7 +9,7 @@ use crate::schema::{RecordSchema, TacticsSchema};
 /// Every bit run of a tactics record: the `fields`, the expanded `arrays`,
 /// then for each of the three presets every `PresetSpec` byte, the eleven
 /// man-marking bytes, every formation slot (position, y, x), and every
-/// instruction part when the version has them.
+/// instruction part — each block only where the schema maps it.
 pub(crate) fn tactics_runs(schema: &TacticsSchema) -> Vec<(TacticsField, u32, u32)> {
     use crate::schema::fields::{FormationPart, InstructionPart, InstructionSide};
     let mut out: Vec<(TacticsField, u32, u32)> = Vec::new();
@@ -37,41 +37,45 @@ pub(crate) fn tactics_runs(schema: &TacticsSchema) -> Vec<(TacticsField, u32, u3
                 8,
             ));
         }
-        for slot in 0..11u8 {
-            out.push((
-                TacticsField::ManMarking { preset, slot },
-                preset_base + schema.man_marking_bit + u32::from(slot) * 8,
-                8,
-            ));
-        }
-        let f = &schema.formations;
-        for formation in 0..3u8 {
-            let base = preset_base + f.base_bit + u32::from(formation) * f.formation_stride_bits;
+        if let Some(man_marking_bit) = schema.man_marking_bit {
             for slot in 0..11u8 {
-                for (part, offset) in [
-                    (
-                        FormationPart::Position,
-                        base + u32::from(slot) * f.slot_stride_bits,
-                    ),
-                    (
-                        FormationPart::Y,
-                        base + f.y_offset_bits + u32::from(slot) * f.pair_stride_bits,
-                    ),
-                    (
-                        FormationPart::X,
-                        base + f.x_offset_bits + u32::from(slot) * f.pair_stride_bits,
-                    ),
-                ] {
-                    out.push((
-                        TacticsField::Formation {
-                            preset,
-                            formation,
-                            slot,
-                            part,
-                        },
-                        offset,
-                        8,
-                    ));
+                out.push((
+                    TacticsField::ManMarking { preset, slot },
+                    preset_base + man_marking_bit + u32::from(slot) * 8,
+                    8,
+                ));
+            }
+        }
+        if let Some(f) = &schema.formations {
+            for formation in 0..3u8 {
+                let base =
+                    preset_base + f.base_bit + u32::from(formation) * f.formation_stride_bits;
+                for slot in 0..11u8 {
+                    for (part, offset) in [
+                        (
+                            FormationPart::Position,
+                            base + u32::from(slot) * f.slot_stride_bits,
+                        ),
+                        (
+                            FormationPart::Y,
+                            base + f.y_offset_bits + u32::from(slot) * f.pair_stride_bits,
+                        ),
+                        (
+                            FormationPart::X,
+                            base + f.x_offset_bits + u32::from(slot) * f.pair_stride_bits,
+                        ),
+                    ] {
+                        out.push((
+                            TacticsField::Formation {
+                                preset,
+                                formation,
+                                slot,
+                                part,
+                            },
+                            offset,
+                            8,
+                        ));
+                    }
                 }
             }
         }

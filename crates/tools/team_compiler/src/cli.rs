@@ -260,12 +260,12 @@ fn output_mode(
     }
 }
 
-/// Sideload mode for `common`'s PES version and folder: refused for PES 2015 and 2016, which
+/// Sideload mode for `common`'s PES version and folder: refused for PES 2014 to 2016, which
 /// no sideloading runtime serves, and when the PES folder is not a folder, since `livecpk/`
 /// goes in it.
 fn sideload_mode(common: &CommonSettings) -> Result<OutputMode, CliError> {
     match common.pes_version {
-        PesVersion::Pes15 | PesVersion::Pes16 => {
+        PesVersion::Pes14 | PesVersion::Pes15 | PesVersion::Pes16 => {
             return Err(invalid(anyhow!(
                 "--mode sideload is not available for {}, because no sideloading runtime \
                  exists for it",

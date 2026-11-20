@@ -796,7 +796,10 @@ fn a_players_own_settings_applied_by_the_patch_change_only_his_ids() {
                     crate::settings_toml::appearance_from(before).expect("stored-ranges read")
                 }
                 Err(err) => panic!("{version:?} player {}: {err:?}", before.id),
-            };
+            }
+            // The patch's `[appearance]` keys are the version's own: every
+            // one PES 2014's save lacks is `None` (an empty look).
+            .resolved(version);
             let patch = patch_at(
                 version,
                 vec![PatchTeam {
@@ -836,7 +839,9 @@ fn a_players_own_settings_applied_by_the_patch_change_only_his_ids() {
                 if expected.appearance_id.is_some() {
                     expected.appearance_id = Some(expected.id);
                 }
-                expected.appearance.base_copy_id = expected.id;
+                if schema.player_has(PlayerField::BaseCopyId) {
+                    expected.appearance.base_copy_id = expected.id;
+                }
                 if expected.edit_flags.base_copy.is_some() {
                     expected.edit_flags.base_copy = Some(false);
                 }
@@ -856,19 +861,22 @@ fn a_players_own_settings_applied_by_the_patch_change_only_his_ids() {
                 before.id
             );
             if let Some((section, appearance)) = &schema.appearance {
-                let at = (0..count(&after_payload, section))
+                // PES 2014's section holds a record only for an edited or
+                // created player: a fixture player has none to compare.
+                if let Some(at) = (0..count(&after_payload, section))
                     .map(|i| section.offset + i * appearance.size)
                     .find(|at| {
                         u32::from_le_bytes(after_payload[*at..at + 4].try_into().expect("u32"))
                             == before.id
                     })
-                    .expect("his appearance record");
-                assert_eq!(
-                    &after_payload[at..at + appearance.size],
-                    &before_payload[at..at + appearance.size],
-                    "{version:?} player {}'s appearance record",
-                    before.id
-                );
+                {
+                    assert_eq!(
+                        &after_payload[at..at + appearance.size],
+                        &before_payload[at..at + appearance.size],
+                        "{version:?} player {}'s appearance record",
+                        before.id
+                    );
+                }
             }
         }
         assert!(

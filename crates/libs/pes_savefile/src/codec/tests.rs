@@ -11,7 +11,8 @@ use crate::model::ingame_face::IngameFace;
 use crate::model::player::{PlayerEntry, STRIPPED_APPEARANCE_ID};
 use crate::model::team::{RosterSlot, TeamEntry};
 use crate::schema::fields::{
-    InstructionSide, PlayerField, PlayerText, RosterField, TacticsField, TeamField, TeamText,
+    FormationPart, InstructionSide, PlayerField, PlayerText, PresetField, RosterField,
+    TacticsField, TeamField, TeamText,
 };
 use crate::schema::ingame_face::IngameFaceField;
 use crate::schema::{RecordSchema, TacticsSchema};
@@ -54,15 +55,19 @@ fn every_player_record_round_trips_byte_for_byte() {
                 let id = u32::from_le_bytes(rec[..4].try_into().expect("id"));
                 *seen.entry(id).or_insert(0usize) += 1;
             }
-            for i in 0..count(&payload, &schema.players) {
-                let player_rec = record(&payload, &schema.players, schema.player.size, i);
-                let player = read_player(player_rec, schema.player).expect("decode");
-                assert_eq!(
-                    seen.get(&player.id),
-                    Some(&1),
-                    "{version:?} player {} keys one appearance record",
-                    player.id
-                );
+            // Only versions holding a record per player key every id (PES
+            // 2014's section holds edited and created players alone).
+            if schema.appearance_for_every_player() {
+                for i in 0..count(&payload, &schema.players) {
+                    let player_rec = record(&payload, &schema.players, schema.player.size, i);
+                    let player = read_player(player_rec, schema.player).expect("decode");
+                    assert_eq!(
+                        seen.get(&player.id),
+                        Some(&1),
+                        "{version:?} player {} keys one appearance record",
+                        player.id
+                    );
+                }
             }
             for rec in records {
                 let mut player = PlayerEntry::default();
@@ -249,7 +254,7 @@ const ABILITIES: [PlayerField; 24] = [
 
 #[test]
 fn the_player_census_matches_the_measured_ranges() {
-    let counts = [5060usize, 5060, 5060, 4646, 4830, 5060, 5060];
+    let counts = [11998usize, 5060, 5060, 5060, 4646, 4830, 5060, 5060];
     for (i, version) in FIXTURES.iter().enumerate() {
         let payload = payload(*version);
         let schema = schema_for(*version);
@@ -277,24 +282,30 @@ fn the_player_census_matches_the_measured_ranges() {
         };
         let mut seen_exceptions = 0usize;
         for player in players(&payload, schema) {
-            match age_exceptions.iter().find(|(id, _)| *id == player.id) {
-                Some((_, age)) => {
-                    seen_exceptions += 1;
-                    assert_eq!(player.basic.age, *age, "{version:?} age exception");
+            // The model checks read only fields the version's schema maps
+            // (PES 2014's player record maps the id and texts alone).
+            if schema.player.has(PlayerField::Age) {
+                match age_exceptions.iter().find(|(id, _)| *id == player.id) {
+                    Some((_, age)) => {
+                        seen_exceptions += 1;
+                        assert_eq!(player.basic.age, *age, "{version:?} age exception");
+                    }
+                    None => assert!(
+                        (15..=50).contains(&player.basic.age),
+                        "{version:?} player {} age {}",
+                        player.id,
+                        player.basic.age
+                    ),
                 }
-                None => assert!(
-                    (15..=50).contains(&player.basic.age),
-                    "{version:?} player {} age {}",
-                    player.id,
-                    player.basic.age
-                ),
             }
-            assert!(
-                player.positions.registered <= 12,
-                "{version:?} player {} registered {}",
-                player.id,
-                player.positions.registered
-            );
+            if schema.player.has(PlayerField::RegisteredPosition) {
+                assert!(
+                    player.positions.registered <= 12,
+                    "{version:?} player {} registered {}",
+                    player.id,
+                    player.positions.registered
+                );
+            }
             for spec in schema.player.fields {
                 if spec.bit_width == 7 && ABILITIES.contains(&spec.field) {
                     let value = player.get(spec.field).expect("a stats field");
@@ -390,7 +401,18 @@ fn the_ingame_face_run_has_the_versions_length() {
         )
         .expect("decode");
         appearance_for(&payload, schema, &mut player);
-        let expected = if version == PesVersion::Pes15 { 46 } else { 50 };
+        // PES 2014's schema maps no ingame-face run: 0 bytes. PES 15's is
+        // 46, every other's 50.
+        let expected = match version {
+            PesVersion::Pes14 => 0,
+            PesVersion::Pes15 => 46,
+            PesVersion::Pes16
+            | PesVersion::Pes17
+            | PesVersion::Pes18
+            | PesVersion::Pes19
+            | PesVersion::Pes20
+            | PesVersion::Pes21 => 50,
+        };
         assert_eq!(
             player.appearance.ingame_face.bytes().len(),
             expected,
@@ -858,7 +880,10 @@ fn tactics_bytes_sit_at_the_layouts_own_offsets() {
     let (version, schema, team, rec, preset, slot) =
         found.expect("a fixture team whose formations 1 and 2 differ");
     let tactic = schema.tactic;
-    let f = &tactic.formations;
+    let f = tactic
+        .formations
+        .as_ref()
+        .expect("a version that maps formations");
     for (formation, want) in [
         (
             1u8,
@@ -1046,7 +1071,7 @@ fn every_team_roster_and_tactics_record_round_trips_byte_for_byte() {
 
 #[test]
 fn team_roster_and_tactics_sections_list_the_same_teams() {
-    let counts = [220usize, 220, 220, 202, 346, 220, 220];
+    let counts = [478usize, 220, 220, 220, 202, 346, 220, 220];
     for (i, version) in FIXTURES.iter().enumerate() {
         let payload = payload(*version);
         let schema = schema_for(*version);
@@ -1475,6 +1500,54 @@ fn man_marking_and_pes15_auto_flags_write_and_reread() {
     }
 }
 
+/// A tactics record written through a schema with no formation or
+/// man-marking layout keeps every byte outside the fields it maps: PES
+/// 2014's, which maps the team id and the captain alone, changes only the
+/// captain's byte.
+#[test]
+fn a_schema_without_formations_or_man_marking_keeps_their_bytes() {
+    let payload = payload(PesVersion::Pes14);
+    let schema = schema_for(PesVersion::Pes14);
+    for field in [
+        TacticsField::Formation {
+            preset: 0,
+            formation: 0,
+            slot: 0,
+            part: FormationPart::Position,
+        },
+        TacticsField::ManMarking { preset: 0, slot: 0 },
+    ] {
+        assert!(!schema.tactic.has(field), "{field:?} unmapped");
+    }
+    // The shared `tactics_runs` emits no run for a `None` layout, so the
+    // unmapped bytes are neither read nor written.
+    assert!(
+        tactics_runs(schema.tactic).iter().all(|(field, _, _)| {
+            !matches!(
+                field,
+                TacticsField::Formation { .. } | TacticsField::ManMarking { .. }
+            )
+        }),
+        "no formation or man-marking run is emitted"
+    );
+    let rec = record(&payload, &schema.tactics, schema.tactic.size, 0);
+    let mut team = TeamEntry {
+        id: tactics_id(rec, schema.tactic),
+        ..TeamEntry::default()
+    };
+    read_tactics_into(&mut team, rec, schema.tactic).expect("decode tactics");
+    assert_ne!(
+        team.tactics.set_pieces.captain, 7,
+        "premise: another captain"
+    );
+    team.tactics.set_pieces.captain = 7;
+    let mut written = rec.to_vec();
+    write_tactics(&team, &mut written, schema.tactic).expect("encode tactics");
+    let changed: Vec<usize> = (0..rec.len()).filter(|&i| written[i] != rec[i]).collect();
+    // The captain is byte +0x1CC of the 502-byte record.
+    assert_eq!(changed, [0x1CC], "only the captain's byte changed");
+}
+
 #[test]
 fn the_tactics_census_matches_the_measured_ranges() {
     for version in FIXTURES {
@@ -1489,24 +1562,36 @@ fn the_tactics_census_matches_the_measured_ranges() {
             // Every boolean byte decodes (0 or 1) or the read fails.
             read_tactics_into(&mut team, rec, schema.tactic).expect("decode tactics");
             for preset in &team.tactics.presets {
-                for value in [
-                    preset.sliders.support_range,
-                    preset.sliders.defensive_line,
-                    preset.sliders.compactness,
+                // The model checks read only fields the version's preset
+                // table maps (PES 2014's maps none).
+                for (field, value) in [
+                    (PresetField::SupportRange, preset.sliders.support_range),
+                    (PresetField::DefensiveLine, preset.sliders.defensive_line),
+                    (PresetField::Compactness, preset.sliders.compactness),
                 ] {
-                    assert!(
-                        (1..=10).contains(&value),
-                        "{version:?} tactics {i} slider {value}"
-                    );
+                    if schema.tactic.has_preset(field) {
+                        assert!(
+                            (1..=10).contains(&value),
+                            "{version:?} tactics {i} slider {value}"
+                        );
+                    }
                 }
-                for value in [
-                    preset.sliders.numbers_in_attack,
-                    preset.sliders.numbers_in_defence,
+                for (field, value) in [
+                    (
+                        PresetField::NumbersInAttack,
+                        preset.sliders.numbers_in_attack,
+                    ),
+                    (
+                        PresetField::NumbersInDefence,
+                        preset.sliders.numbers_in_defence,
+                    ),
                 ] {
-                    assert!(
-                        (1..=3).contains(&value),
-                        "{version:?} tactics {i} numbers {value}"
-                    );
+                    if schema.tactic.has_preset(field) {
+                        assert!(
+                            (1..=3).contains(&value),
+                            "{version:?} tactics {i} numbers {value}"
+                        );
+                    }
                 }
             }
         }
