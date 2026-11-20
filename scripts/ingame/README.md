@@ -38,8 +38,10 @@ keyboard. Use the pad and OBS; keys and the screen are the fallback when OBS is 
 - For the pad: the ViGEmBus driver and `pip install vgamepad`, and the game's settings tool set
   to XInput controllers (with DirectInput and no pad assigned, the game ignores the pad).
 - For `obs-shot`: OBS running with a Game Capture (or Window Capture) source of the game in its
-  active scene, its WebSocket server on (Tools > WebSocket Server Settings, port 4455,
-  authentication off: `OBS` in `game.py`), and `pip install obs-websocket-py`.
+  active scene, a profile for in-game checks with a 1280x720 canvas (`obs-shot` switches to it),
+  its WebSocket server on (Tools > WebSocket Server Settings, port 4455, authentication off),
+  and `pip install obs-websocket-py`. The profile's name and the server's settings are `OBS` in
+  `game.py`.
 - For keys and the screen: `pip install mss Pillow pydirectinput` (`pydirectinput` sends
   DirectInput scan codes, the only keys the games read).
 - `install.py` knows the test slots of PES 16 and PES 17 (`download/4cc_90_test.cpk`), PES 19

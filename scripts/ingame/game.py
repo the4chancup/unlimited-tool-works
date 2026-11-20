@@ -26,7 +26,9 @@ Each command is one process call, so whoever drives a check reads a screenshot b
                                                          field (a file name), focus left alone;
                                                          the pad's A confirms it
   python scripts/ingame/game.py obs-shot OUT.png [WIDTH]  OBS's frame of its program scene
-                                                         (WIDTH scales it, height in proportion)
+                                                         (WIDTH scales it, height in proportion),
+                                                         in OBS's in-game profile, switched to
+                                                         if another is on
   python scripts/ingame/game.py status GAME              is the game running, where is its window
   python scripts/ingame/game.py close GAME               terminate the game process (and Sider's)
 
@@ -62,8 +64,9 @@ GAMES = {
     "21": {"dir": "E:/PES2021", "exe": "PES2021.exe", "sider": "sider/sider.exe", "proc": "pes2021.exe"},
 }
 COMMANDS = ("launch", "shot", "keys", "pad", "chars", "status", "close")
-# OBS's WebSocket server (Tools > WebSocket Server Settings), authentication off.
-OBS = {"host": "localhost", "port": 4455, "password": ""}
+# OBS's WebSocket server (Tools > WebSocket Server Settings), authentication off, and the
+# profile made for in-game checks (a 1280x720 canvas), which `obs-shot` switches to.
+OBS = {"host": "localhost", "port": 4455, "password": "", "profile": "ATF720p60"}
 # Pad inputs by name: buttons, and stick directions as (stick, x, y) pushed fully. The menus
 # move with the d-pad in lists and the left stick in the top menus' tabs; the right stick turns
 # a player in Edit mode. Up is y -1.0, as the maintainer's ATF bot
@@ -348,6 +351,12 @@ def cmd_obs_shot(out: str, width: int | None) -> None:
     ws = obsws(OBS["host"], OBS["port"], OBS["password"])
     ws.connect()
     try:
+        # A streaming profile's canvas is up to 2560x1440, and an agent that reads a frame that
+        # size can die on it (a SWE-2 session did, twice).
+        profile = ws.call(requests.GetProfileList()).datain["currentProfileName"]
+        if profile != OBS["profile"]:
+            ws.call(requests.SetCurrentProfile(profileName=OBS["profile"]))
+            print(f"OBS profile {profile!r} -> {OBS['profile']!r}")
         scene = ws.call(requests.GetCurrentProgramScene()).datain["currentProgramSceneName"]
         fields = {"sourceName": scene, "imageFormat": "png"}
         if width:
