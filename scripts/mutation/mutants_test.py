@@ -333,16 +333,12 @@ class SizedConfig(unittest.TestCase):
             )
             text = mutants.sized_config(
                 16,
-                4,
                 extra={
                     "examine_globs": ["crates/libs/cpk/src/read.rs"],
                     "exclude_globs": ["crates/libs/cpk/src/write.rs"],
                 },
                 source=source,
             )
-            # The local half passes no jobserver count: cargo-mutants' default
-            # (the machine's CPUs) stands.
-            local = mutants.sized_config(16, source=source)
         parsed = tomllib.loads(text)
         self.assertEqual(parsed["examine_globs"], ["crates/libs/cpk/src/read.rs"])
         self.assertEqual(
@@ -351,9 +347,10 @@ class SizedConfig(unittest.TestCase):
         )
         self.assertEqual(parsed["timeout_multiplier"], 7.0)
         self.assertIsInstance(parsed["timeout_multiplier"], float)
-        self.assertEqual(parsed["additional_cargo_args"], ["--jobserver-tasks", "4"])
+        # The remote's jobserver cap goes on cargo-mutants' own command line;
+        # `additional_cargo_args` would reach `cargo nextest run`.
+        self.assertNotIn("additional_cargo_args", parsed)
         self.assertEqual(parsed["additional_cargo_test_args"], ["--test-threads=8"])
-        self.assertNotIn("additional_cargo_args", tomllib.loads(local))
 
 
 class Partition(unittest.TestCase):
@@ -545,7 +542,7 @@ class PlanFileSplit(unittest.TestCase):
             configs[str(path)] = extra
             return path
 
-        def sized_config(nproc, jobserver_tasks, extra, source):
+        def sized_config(nproc, extra, source):
             return json.dumps(extra)
 
         def list_mutants(selection, config, source):
@@ -769,7 +766,7 @@ class PendingRemote(unittest.TestCase):
             mock.patch.object(mutants, "ssh", ssh),
             mock.patch.object(mutants, "remote_memory_max", lambda host: 2**30),
         ):
-            mutants.launch_remote("bonfire", ["-p", "fpc"])
+            mutants.launch_remote("bonfire", ["-p", "fpc"], nproc=8)
         self.assertEqual(recorded_at_start, [True])
         self.assertEqual(
             json.loads(mutants.remote_pending().read_text(encoding="utf-8")),
@@ -1218,7 +1215,7 @@ class SplitShares(unittest.TestCase):
             )
         return calls
 
-    def job(self, whole: bool, **kwargs) -> str:
+    def job(self, whole: bool, nproc: int = 8, **kwargs) -> str:
         jobs = []
         remotes = []
 
@@ -1234,7 +1231,9 @@ class SplitShares(unittest.TestCase):
             mock.patch.object(mutants, "ssh", ssh),
             mock.patch.object(mutants, "remote_memory_max", lambda host: 2**30),
         ):
-            mutants.launch_remote("bonfire", ["-p", "cpk"], whole=whole, **kwargs)
+            mutants.launch_remote(
+                "bonfire", ["-p", "cpk"], whole=whole, nproc=nproc, **kwargs
+            )
             self.record = json.loads(mutants.remote_pending().read_text(encoding="utf-8"))
         self.assertFalse(mutants.remote_pending().exists(), "the launch's record left behind")
         (job,) = jobs
@@ -1247,8 +1246,14 @@ class SplitShares(unittest.TestCase):
             calls["local"], (["-p", "cpk", "--shard", "0/2", "--sharding", "round-robin"], None)
         )
         self.assertFalse(calls["whole"])
-        self.assertEqual(calls["launch"], {"local_half": True, "extra": False})
-        self.assertIn("--shard 1/2 --sharding round-robin ", self.job(whole=False))
+        self.assertEqual(
+            calls["launch"], {"nproc": 8, "local_half": True, "extra": False}
+        )
+        job = self.job(whole=False)
+        self.assertIn("--shard 1/2 --sharding round-robin ", job)
+        # The remote's build cap: cargo-mutants' own option on its command
+        # line (`additional_cargo_args` would reach `cargo nextest run`).
+        self.assertIn("--jobserver-tasks 8 ", job)
 
     def test_a_split_refuses_before_it_touches_any_result(self):
         """A refusal the caller counted as a run filed the last run's `mutants.out` as its
@@ -1355,7 +1360,11 @@ class SummaryLists(unittest.TestCase):
     reads, and when it fails the run."""
 
     def summarize(
-        self, root: Path, local_half: bool = True, extra_run: Path | None = None
+        self,
+        root: Path,
+        local_half: bool = True,
+        extra_run: Path | None = None,
+        codes: tuple[int, int] = (0, 0),
     ) -> tuple[int, str]:
         out = io.StringIO()
         with (
@@ -1364,7 +1373,7 @@ class SummaryLists(unittest.TestCase):
             contextlib.redirect_stdout(out),
         ):
             code = mutants.summarize(
-                0, 0, root / "remote_console.txt", (None, None),
+                *codes, root / "remote_console.txt", (None, None),
                 local_half=local_half, extra_run=extra_run,
             )
         return code, out.getvalue()
@@ -1451,6 +1460,54 @@ class SummaryLists(unittest.TestCase):
         self.assertEqual(code, 1)
         self.assertIn("NOT tested", out)
 
+    def test_a_halfs_own_failure_outranks_a_survivor(self):
+        """A half that died or errored (its own 1) beside another half's missed
+        mutant (2) exits 1: the survivor is listed, the untested mutants are
+        in no list."""
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            remote = root / "mutants.out" / "remote" / "mutants.out"
+            write_run(remote, 1, [{"scenario": mutant("r"), "summary": "MissedMutant"}])
+            (remote / "missed.txt").write_text(
+                "crates/libs/cpk/src/read.rs:2:2: a remote survivor\n", encoding="utf-8"
+            )
+            # A remote code outside 0/2/3 makes the summary tail this log.
+            (root / "remote_console.txt").write_text("died\n", encoding="utf-8")
+            code, _ = self.summarize(root, local_half=False, codes=(0, 1))
+        self.assertEqual(code, 1)
+
+    def test_an_extra_passs_untested_mutants_fail_the_run(self):
+        """`counts["untested"]` in the extra pass's record means mutants went
+        untested outside the halves' lists: the run exits 1."""
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            remote = root / "mutants.out" / "remote" / "mutants.out"
+            write_run(remote, 1, [{"scenario": mutant("r"), "summary": "CaughtMutant"}])
+            record = root / "extra_mutants.out" / "run.json"
+            record.parent.mkdir(parents=True)
+            record.write_text(
+                json.dumps(
+                    {"crate": "cpk", "seconds": 4.0, "counts": {"untested": 1}}
+                ),
+                encoding="utf-8",
+            )
+            code, _ = self.summarize(root, local_half=False, extra_run=record)
+        self.assertEqual(code, 1)
+
+    def test_a_half_stopped_early_outranks_a_survivor(self):
+        """`never_ran` sets `untested` with no killed build to list: beside a
+        survivor the run exits exactly 1, not the survivor's 2."""
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            remote = root / "mutants.out" / "remote" / "mutants.out"
+            write_run(remote, 3, [{"scenario": mutant("r"), "summary": "MissedMutant"}])
+            (remote / "missed.txt").write_text(
+                "crates/libs/cpk/src/read.rs:2:2: a remote survivor\n", encoding="utf-8"
+            )
+            code, out = self.summarize(root, local_half=False)
+        self.assertEqual(code, 1)
+        self.assertIn("never ran", out)
+
     def test_the_fetched_extra_record_merges_and_a_missing_one_fails(self):
         """A whole run's extra pass record comes home with the fetch: its counts
         join the table and its `missed_<crate>.txt` the merged list; a run that
@@ -1488,7 +1545,8 @@ class SummaryLists(unittest.TestCase):
             code, out = self.summarize(
                 root, local_half=False, extra_run=record
             )
-        self.assertGreaterEqual(code, 1)
+        # A missing record over a survivor is still 1: untested outranks missed.
+        self.assertEqual(code, 1)
         self.assertIn("the extra pass left no record: see the remote log", out)
 
 
@@ -1534,11 +1592,31 @@ class RecheckWindows(unittest.TestCase):
                 contextlib.redirect_stdout(out),
             ):
                 caught = mutants.recheck_windows(missed)
-                code = mutants.report_killed(0, local_half=False)
+                code = mutants.report_killed(0, local_half=False, rechecked=True)
         self.assertEqual(caught, {missed[0]})
         self.assertEqual(code, 1)
         self.assertIn("1 mutants were NOT tested", out.getvalue())
         self.assertIn(missed[1], out.getvalue())
+
+    def test_a_stale_recheck_folder_counts_nothing_when_no_recheck_ran(self):
+        """An earlier run's `mutants.out/recheck` is not this run's: a summary
+        that rechecked nothing (a collect's remote-only run, an off-Windows
+        one) leaves a clean code alone even when the stale folder holds a
+        killed build."""
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            write_run(
+                root / "mutants.out" / "recheck" / "mutants.out", 1,
+                [caught_outcome("stale", {"Failure": 104})],
+            )
+            out = io.StringIO()
+            with (
+                mock.patch.object(mutants, "ROOT", root),
+                contextlib.redirect_stdout(out),
+            ):
+                code = mutants.report_killed(0, local_half=False)
+        self.assertEqual(code, 0)
+        self.assertNotIn("NOT tested", out.getvalue())
 
 
 class DiffRun(unittest.TestCase):

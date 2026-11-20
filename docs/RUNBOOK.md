@@ -266,9 +266,12 @@ system service `studio-mutants` (`sudo -n systemd-run`) with no swap and a `Memo
 host's available memory at launch less 1 GiB (`REMOTE_MEMORY_RESERVE`; printed as `remote
 memory cap`, and `just gates-remote`'s unit gets the same), not a constant raised by hand each
 time the maintainer frees memory on the host: a measured cap takes what is free without asking
-and leaves the host its margin. Each remote cargo process also builds with few jobs
-(`REMOTE_BUILD_JOBS`, 1 since a run with more hit the cap). So a runaway mutant is OOM-killed
-inside the unit and counts as caught; `OOMPolicy=continue`, so that kill does not stop
+and leaves the host its margin. Builds are capped too:
+- cargo-mutants' builds by its jobserver, `REMOTE_JOBSERVER_TASKS` tasks (the host's CPU count
+  while unset), passed on its command line, since cargo ignores `-j` under a jobserver;
+- the extra pass's builds, which run outside cargo-mutants, by `REMOTE_BUILD_JOBS` (1).
+
+Under the memory cap, a runaway mutant is OOM-killed inside the unit and counts as caught; `OOMPolicy=continue`, so that kill does not stop
 cargo-mutants; `CPUWeight=idle`, because `nice` cannot keep a `user.slice` process off
 Fluxer's CPU under cgroup v2. An uncapped half once filled the host's RAM and swap
 (`display_name` with `i *= 1`, a loop that grows a `Vec` forever), and the global OOM killer,
@@ -277,7 +280,7 @@ memory peak`) against its cap. Every split run peaks at the cap, which is the cg
 cache being reclaimed, not a kill, so a peak near the cap changes nothing by itself. When a
 build is killed at the cap, the run fails and lists the untested mutants (`report_killed`),
 and the fix is then memory freed on the host (the maintainer's) or a lower
-`REMOTE_BUILD_JOBS`; past one job, the crate joins `LOCAL_ONLY_CRATES` in
+`REMOTE_JOBSERVER_TASKS`; past one task, the crate joins `LOCAL_ONLY_CRATES` in
 `scripts/mutation/mutants.py`, whose mutants never go to the VPS (a whole-crate run of one
 refuses, and a diff's mutants of such a crate run here). The remote half builds
 under `~/studio-mutants/tmp` on disk (`REMOTE_TMPDIR`), not in the host's `/tmp`: that is a

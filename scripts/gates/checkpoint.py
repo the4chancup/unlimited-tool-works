@@ -113,13 +113,14 @@ def run(mutants: bool) -> int:
     print(f"the gates passed on {head[:8]}", flush=True)
     if mutants:
         diff = subprocess.run(["just", "mutants-diff", base], cwd=ROOT)
-        print(f"mutants-diff ended with exit code {diff.returncode}; its survivors, if any, are in mutants.diff/missed_all.txt")
         # 0, 2 and 3 mean every mutant ran (missed, timed out, or caught). On
         # anything else mutants went untested, and gating these commits would
         # lose the measurement the run was for.
         if diff.returncode not in (0, 2, 3):
+            print(f"mutants-diff ended with exit code {diff.returncode}")
             print(f"mutants went untested: {REF} stays at {base[:8]}")
             return diff.returncode
+        print(f"mutants-diff ended with exit code {diff.returncode}; its survivors, if any, are in mutants.diff/missed_all.txt")
     git("update-ref", REF, head)
     return status(None)
 
