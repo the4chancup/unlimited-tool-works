@@ -346,6 +346,14 @@ mod tests {
     }
 
     #[test]
+    fn a_wrong_second_length_does_not_cut_a_text() {
+        // "Français": 9 UTF-8 bytes, 8 UTF-16 units. `one_section` writes the
+        // byte count, 9, as the second length, as the gametips scripts do.
+        let file = read(&one_section(b"Alpha", &[(1, "Français".as_bytes())])).unwrap();
+        assert_eq!(file.section("Alpha").unwrap().text(1), Some("Français"));
+    }
+
+    #[test]
     fn a_header_or_table_past_the_end_is_an_error() {
         assert!(matches!(read(&[0; 7]), Err(Error::ShorterThanHeader(7))));
         // The header counts one section; the table record is cut at 16.
