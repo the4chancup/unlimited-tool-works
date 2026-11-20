@@ -269,7 +269,7 @@ pub struct VersionSchema {
 impl VersionSchema {
     /// Whether `field` is stored for a player of this version: in the player
     /// record, or in the separate appearance record on PES 14 to 16.
-    pub(crate) fn player_has(&self, field: PlayerField) -> bool {
+    pub fn player_has(&self, field: PlayerField) -> bool {
         self.player.has(field)
             || self
                 .appearance

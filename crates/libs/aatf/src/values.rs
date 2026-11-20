@@ -115,7 +115,7 @@ mod tests {
         let mut entry = PlayerEntry::bare(pes_version::PesVersion::Pes15);
         assert_ne!(entry.stats.abilities()[1], Some(77));
         let values = TierValues {
-            stats: (0..25).map(|index| (Stat(index), 77)).collect(),
+            stats: (0..26).map(|index| (Stat(index), 77)).collect(),
             form: 8,
             injury_resistance: 3,
             weak_foot: WeakFoot {

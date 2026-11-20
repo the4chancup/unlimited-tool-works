@@ -294,6 +294,7 @@ fn sections_appear_only_with_content() {
 #[test]
 fn every_embedded_ruleset_round_trips() {
     for (name, text) in [
+        ("akko7", include_str!("../../rulesets/akko7.rhai")),
         ("autumn25", include_str!("../../rulesets/autumn25.rhai")),
         ("autumn26", include_str!("../../rulesets/autumn26.rhai")),
         ("dbc7", include_str!("../../rulesets/dbc7.rhai")),

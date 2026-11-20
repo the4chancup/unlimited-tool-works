@@ -85,7 +85,7 @@ fn each_unbuilt_section_links_to_its_demo_online() {
     }
     // Custom checks shows only over a document that carries checks; over one
     // without, the rail switches to General. VTL11 carries some.
-    let vtl11 = &crate::view::start::templates()[4];
+    let vtl11 = &crate::view::start::templates()[5];
     let mut document = Document::new(vtl11.ruleset.clone());
     document.custom_checks = vtl11.custom_checks.clone();
     assert!(
@@ -109,7 +109,7 @@ fn each_unbuilt_section_links_to_its_demo_online() {
 // RE-SUM-01
 #[test]
 fn the_summary_draws_the_rules_text_and_copy_puts_it_on_the_clipboard() {
-    let autumn = crate::view::start::templates()[0].ruleset.clone();
+    let autumn = crate::view::start::templates()[1].ruleset.clone();
     let expected = crate::summary::summary(&autumn);
     let (ctx, _events, mut window, mut view) = fresh();
     open_document(&mut view, autumn);

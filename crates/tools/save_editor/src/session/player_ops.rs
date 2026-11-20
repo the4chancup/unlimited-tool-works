@@ -39,7 +39,7 @@ impl Session {
     }
 
     /// Every ability stat the version has becomes `value` (the dialog's
-    /// Set all stats: `set_ability` over the 25, a `None` one stays
+    /// Set all stats: `set_ability` over the 26, a `None` one stays
     /// `None`). Weak foot, form and injury are not ability stats and stay;
     /// no edit flag is set, as the player view's own fields set none.
     pub(crate) fn set_all_stats(&mut self, player_id: u32, value: u8) {

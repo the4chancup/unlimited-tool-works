@@ -7,7 +7,8 @@ use studio_core::StudioTool;
 use super::*;
 
 /// The built-in rulesets' descriptions, in the dropdown's order.
-const BUILTINS: [&str; 7] = [
+const BUILTINS: [&str; 8] = [
+    "Akko League VII",
     "4cc Autumn 26",
     "4cc Spring 26",
     "/vg/ League 27",

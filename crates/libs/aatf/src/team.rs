@@ -54,7 +54,7 @@ pub struct PlayerView {
     pub(crate) cards: Vec<Card>,
     /// The ability stats (`labels::ABILITY_STATS`' order, indexed by
     /// `Stat`), `None` where the version lacks the stat.
-    pub(crate) abilities: [Option<u8>; 25],
+    pub(crate) abilities: [Option<u8>; 26],
     /// The playable-position ratings, `Position`-indexed (GK 0 to CF 12)
     /// on the save's scale: C 0, B 1, A 2.
     pub(crate) ratings: [u8; 13],

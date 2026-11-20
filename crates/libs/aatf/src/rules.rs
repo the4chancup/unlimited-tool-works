@@ -360,6 +360,11 @@ mod tests {
             .join("../../../docs/prototypes/assets/logos");
         for (stem, block, page) in [
             (
+                "akko7",
+                include_str!("../rulesets/akko7.rhai"),
+                "https://implyingrigged.info/wiki/Akko_League_VII:_/fluff/_Bottomed_Girls",
+            ),
+            (
                 "autumn26",
                 AUTUMN26,
                 "https://implyingrigged.info/wiki/2026_4chan_Autumn_Babby_Cup",
@@ -655,6 +660,7 @@ mod tests {
             ("vtl10", include_str!("../rulesets/vtl10.rhai")),
             ("vtl11", include_str!("../rulesets/vtl11.rhai")),
             ("dbc7", include_str!("../rulesets/dbc7.rhai")),
+            ("akko7", include_str!("../rulesets/akko7.rhai")),
         ] {
             let mut rules = Rules::from_data_block(block).unwrap_or_else(|e| panic!("{name}: {e}"));
             let peak = Arc::new(AtomicU64::new(0));

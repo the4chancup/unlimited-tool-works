@@ -1662,10 +1662,12 @@ fn the_field_labels_paint_the_normal_text_colour() {
             "the {prefix}counted label in the normal text colour"
         );
     }
-    // Ability stats' labels, the game's order.
+    // Ability stats' labels, the game's order (Tenacity skipped: PES
+    // 2014's stat, its name dimmed with its `-` on this version).
     for name in pes_savefile::interchange::team_toml::labels::ABILITY_STATS
         .iter()
         .map(|label| pes_savefile::interchange::team_toml::labels::title_case(label))
+        .filter(|name| name != "Tenacity")
     {
         assert_eq!(
             painted_label_color(&nodes, &shapes, &name),

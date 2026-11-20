@@ -21,6 +21,7 @@ use crate::values::TierValues;
 use crate::violation::ViolationKind;
 use crate::{PlayerView, Rules, TeamView, Violation};
 
+mod akko7;
 mod autumn25;
 mod dbc7;
 mod interpreter;
@@ -93,7 +94,7 @@ impl Records {
 /// which the fixtures then exercise too).
 fn set_tier_record(entry: &mut PlayerEntry, rate: u8, form: u8, injury_resistance: u8) {
     TierValues {
-        stats: (0..25u8).map(|index| (Stat(index), rate)).collect(),
+        stats: (0..26u8).map(|index| (Stat(index), rate)).collect(),
         form,
         injury_resistance,
         weak_foot: WeakFoot {
@@ -309,6 +310,7 @@ fn player_tier_is_none_exactly_where_check_team_reports_no_tier() {
         ("vtl10", include_str!("../../rulesets/vtl10.rhai")),
         ("vtl11", include_str!("../../rulesets/vtl11.rhai")),
         ("dbc7", include_str!("../../rulesets/dbc7.rhai")),
+        ("akko7", include_str!("../../rulesets/akko7.rhai")),
     ] {
         let rules = Rules::from_data_block(block).unwrap_or_else(|e| panic!("{name}: {e}"));
         for version in [PesVersion::Pes15, PesVersion::Pes17, PesVersion::Pes21] {

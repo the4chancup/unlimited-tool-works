@@ -6,10 +6,10 @@ use super::*;
 // RE-GUI-13
 #[test]
 fn the_custom_checks_section_shows_the_code_read_only() {
-    let template = &crate::view::start::templates()[4];
+    let template = &crate::view::start::templates()[5];
     assert_eq!(
         template.ruleset.name, "/vt/ League 11",
-        "premise: index 4 is VTL11"
+        "premise: index 5 is VTL11"
     );
     let checks = template
         .custom_checks
