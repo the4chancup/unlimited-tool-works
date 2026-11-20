@@ -186,18 +186,24 @@ From the fork's codec, checked against the vanilla save and the Akko saves (2026
   (the fork's "edited player"). The 5036 placeholder records have it clear, and for them the
   game shows its own base data: a record holding 180 cm showed 160. With 0x29:1 alone every
   field below showed but the Player Name, which read "PLACEHOLDER" on all five while +0x2E holds
-  their names; Name Print (+0x5C) showed. That is the organizer's "placeholder names"; which bit
-  makes the name show is open. Fields, as byte:bit, width, and how the value is stored:
+  their names; Name Print (+0x5C) showed. That is the organizer's "placeholder names". Run
+  `player2` (one of them edited in game, each field set to its own value, saved and kept as
+  `player2`) found the name's bit: a Player Name edit sets 0x28:2, and the game then shows
+  +0x2E. It also told apart every stat, grade and motion below. Fields, as byte:bit, width,
+  and how the value is stored:
   - nationality 0x0A, 16 bits (146 is BRAZIL); height 0x0C, 8 bits, cm less 132; weight 0x0D,
     8 bits, kg less 30; goal celebrations 1 and 2 at 0x0E and 0x0F, 8 bits, 0 for OFF;
   - age 0x10:0, 6 bits; Tenacity 0x10:6, 6 bits, less 40 (the fork reads it as Physical
     Contact);
-  - the other stats, 6 bits each less 40, in the fork's order from 0x11:4 to 0x24:6. The five
-    players' stats are each one value (a medal squad's), so which run is which stat is not
-    told apart beyond Attacking Prowess at 0x11:4 (`flags1`);
+  - the other stats, 6 bits each less 40, in the screen's order: Attacking Prowess 0x11:4,
+    Ball Control 0x14:6, Dribbling 0x14:0, Low Pass 0x16:2, Lofted Pass 0x17:0, Finishing
+    0x15:4, Place Kicking 0x18:6, Controlled Spin 0x19:4, Header 0x24:6, Defensive Prowess
+    0x12:2, Ball Winning 0x18:0, Kicking Power 0x1C:0, Speed 0x1B:0, Explosive Power 0x1C:6,
+    Body Balance 0x24:0, Jump 0x1D:4, Goalkeeping 0x13:0, Saving 0x1A:2, Stamina 0x1E:2;
   - the registered position 0x1F:0, 4 bits (GK 0, RMF 7, SS 11, CF 12); the position grades,
-    2 bits each from 0x13:6, C 0 and A 2 seen, B 1 from `flags1`; GK, RMF, SS and CF pinned
-    by their place, the other nine read C on all five;
+    2 bits each, C 0, B 1, A 2 (the game offers no fourth): CF 0x13:6, SS 0x17:6, LWF 0x1B:6,
+    RWF 0x23:6, AMF 0x25:4, LMF 0x26:2, RMF 0x26:4, CMF 0x26:0, DMF 0x25:6, LB 0x27:0, RB
+    0x27:2, CB 0x26:6, GK 0x27:4. The registered position's grade is edited like any other;
   - weak foot accuracy 0x1F:5, form 0x21:1, injury resistance 0x21:4 and weak foot usage
     0x21:7, 3 bits each, the shown 1 to 8 less 1; the stronger foot 0x2A:0 (set for left);
   - the playing style 0x20:4, 5 bits: 0 for none, then the game's 18 in screen order (Goal
@@ -206,8 +212,15 @@ From the fork's codec, checked against the vanilla save and the Akko saves (2026
   - the COM styles 0x2A:1 to 0x2A:7 and the 20 skills from 0x2B:0 to 0x2D:3, each in the
     game's screen order (card `i` at 0x2B + i/8, bit i%8). Precise Touch is card 5, its
     description naming the Cut Behind move: Cut Behind & Turn under its older name;
-  - motions, each the shown value less 1: dribbling 0x27:6 (2 bits), free kick 0x20:0 (4
-    bits), penalty kick 0x22:5 (3 bits), punt kick 0x28:0 (2 bits).
+  - motions, each the shown value less 1, the game offering 1 to the top given: dribbling
+    0x27:6 (2 bits, 4), free kick 0x20:0 (4 bits, 12), penalty kick 0x22:5 (3 bits, 4), punt
+    kick 0x28:0 (2 bits, 4);
+  - the flag bits a part edit sets: 0x29:1 for any player-record edit, 0x28:2 for the Player
+    Name, 0x28:6 for Basic Settings; Name Print, Position, Ability settings, Player Index,
+    Physique and Motion set no other.
+
+  An in-game save also moved payload byte 0x4A (0x19 to 0x1D here, 0x1F in `flags2`), which
+  may count the players with 0x29:1 set; not pinned.
 
   The save's leagues as the game lists them: English League holds the 4cc teams, Ligue 1 the
   Backup teams, Italian League the Invitational teams and `/4ccg/`, LIGA BBVA the /vg/ League
@@ -221,13 +234,8 @@ From the fork's codec, checked against the vanilla save and the Akko saves (2026
 Each item ends with its offsets, widths and value orders written into "What is known about
 the save" above.
 
-- **Edit flags:** which bit makes the game show a player's name from his record, found by
-  editing a Player Name in game (run `player2`).
 - **The tactics record:** the captain, and every run the codec writes (formations, man
   marking, presets), so a record reads and writes back unchanged.
-- **The player record:** which 6-bit run is which stat, the position grades' order and the
-  nine positions not yet told apart, each stepped to its own value on one player (run
-  `player2`); the motion tops.
 - **The appearance record:** face, hair, physique, boots, gloves, accessories and the strip
   style.
 - **The team record:** team colours, in the bytes between +0x04 and +0x2B that vary between
@@ -268,8 +276,9 @@ version, not the version selector.
 - **Edit flags.** The game reads a player's record only when bit 0x29:1 is set (run
   `player1`), so the editor sets the flags the game sets, which keep every edit after a reload
   (run `flags3`): 0x29:1 on each player whose player record it changes, and 0x28:6 as well
-  when the change is in the game's Basic Settings part, plus the bit that makes a changed
-  name show (run `player2`). An appearance-only change sets no flag. The organizer's
+  when the change is in the game's Basic Settings part, and 0x28:2 when it changes the Player
+  Name, without which the game shows a rostered player as "PLACEHOLDER" (run `player2`). An
+  appearance-only change sets no flag. The organizer's
   0xFC/0xFE on every player is not copied, since the game never writes it; a save that
   carries it keeps it, since the editor sets these bits and never clears one. On the other
   versions an ordinary edit sets no flag, as on main.
@@ -344,8 +353,8 @@ on main. Main is merged into the branch, never rebased onto it.
      look;
    - the playstyle list, empty in step 3, now measured (run `player1`, above): until it is
      filled the AATF cannot read a PES 2014 player's playing style, and step 5 depends on it;
-   - the motion tops and face-type caps, which read PES 2015's tops and each field's bit
-     maximum until measured;
+   - the motion tops, measured (run `player2`, above), and the face-type caps, which read each
+     field's bit maximum until measured;
    - no panic on a PES 2014 save. The screens assume what every other version stores: the
      Age, Height and Weight boxes take their field's maximum, and the Appearance segment, the
      player and team menus' FPC entries and a roster drag read the in-game face run, which
