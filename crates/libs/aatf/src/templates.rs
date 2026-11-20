@@ -1,5 +1,5 @@
-//! The embedded rulesets: every cup's current ones, the latest two of the
-//! 4cc, VGL and VTL, Autumn 26 first, then DBC7. The Ruleset editor's
+//! The embedded rulesets: every cup's current ones — Akko League VII, the
+//! latest two of the 4cc, VGL and VTL, then DBC7. The Ruleset editor's
 //! start page offers them as templates; the Save editor's ruleset
 //! dropdown lists them and loads the one picked (`builtin`).
 
@@ -23,6 +23,7 @@ pub struct Template {
 /// The embedded blocks under their file stems, in the start page's order
 /// (Autumn 26 is `rules.rs`' embedded official block).
 const BLOCKS: &[(&str, &str)] = &[
+    ("akko7", include_str!("../rulesets/akko7.rhai")),
     ("autumn26", crate::rules::AUTUMN26),
     ("spring26", include_str!("../rulesets/spring26.rhai")),
     ("vgl27", include_str!("../rulesets/vgl27.rhai")),
@@ -32,8 +33,8 @@ const BLOCKS: &[(&str, &str)] = &[
     ("dbc7", include_str!("../rulesets/dbc7.rhai")),
 ];
 
-/// The start page's templates, in its order: Autumn 26, Spring 26, VGL27,
-/// VGL26, VTL11, VTL10, DBC7.
+/// The start page's templates, in its order: Akko VII, Autumn 26, Spring
+/// 26, VGL27, VGL26, VTL11, VTL10, DBC7.
 ///
 /// Panics only if an embedded file does not load, which a test rules out.
 pub fn templates() -> Vec<Template> {
@@ -61,7 +62,7 @@ pub fn builtin(stem: &str) -> Option<Rules> {
 mod tests {
     use super::*;
 
-    /// All seven templates load, in the start page's order; only the VTL
+    /// All eight templates load, in the start page's order; only the VTL
     /// ones carry custom checks.
     #[test]
     fn the_templates_load_in_the_start_pages_order() {
@@ -73,6 +74,7 @@ mod tests {
         assert_eq!(
             names,
             [
+                "Akko League VII",
                 "4cc Autumn 26",
                 "4cc Spring 26",
                 "/vg/ League 27",
@@ -86,7 +88,10 @@ mod tests {
             .iter()
             .map(|template| template.custom_checks.is_some())
             .collect();
-        assert_eq!(checks, [false, false, false, false, true, true, false]);
+        assert_eq!(
+            checks,
+            [false, false, false, false, false, true, true, false]
+        );
     }
 
     /// Every template's stem loads as a built-in ruleset carrying the
@@ -98,7 +103,7 @@ mod tests {
         assert_eq!(
             stems,
             [
-                "autumn26", "spring26", "vgl27", "vgl26", "vtl11", "vtl10", "dbc7"
+                "akko7", "autumn26", "spring26", "vgl27", "vgl26", "vtl11", "vtl10", "dbc7"
             ]
         );
         for template in templates() {

@@ -1,4 +1,4 @@
-// ==== LOGIC (ruleset-logic 1): the Ruleset editor replaces this section ====
+// ==== LOGIC (ruleset-logic 2): the Ruleset editor replaces this section ====
 // The generic interpreter: it reads the RULESET map above over the Team and Player values the
 // host registers (the script API is listed in the aatf crate's doc) and reports each
 // violation as a map the host converts. The rules it applies are described in the spec
@@ -26,7 +26,8 @@ fn ability_stats() {
     ["attacking_prowess", "ball_control", "dribbling", "low_pass", "lofted_pass", "finishing",
      "place_kicking", "swerve", "heading", "defensive_prowess", "ball_winning", "kicking_power",
      "speed", "explosive_power", "body_control", "physical_contact", "jump", "goalkeeping",
-     "catching", "clearing", "reflexes", "coverage", "stamina", "tight_possession", "aggression"]
+     "catching", "clearing", "reflexes", "coverage", "stamina", "tight_possession", "aggression",
+     "tenacity"]
 }
 
 // How far, in centimetres, a height system may be from the total height of a team no quota
@@ -650,7 +651,7 @@ fn tier(tier_id) {
 
 // The target of every ability stat for a player read as `tier` under `p`: a special's target,
 // the tier's own, or its rate, plus the bonuses. One map per tier: computing each stat's
-// target on its own would copy the tier and the profile for each of the 25 stats.
+// target on its own would copy the tier and the profile for each of the 26 stats.
 fn targets(tier, p) {
     let out = #{};
     let overrides = table(tier, "stats");

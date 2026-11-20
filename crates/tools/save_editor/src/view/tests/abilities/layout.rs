@@ -309,18 +309,22 @@ fn under_dbc7_pitch_leaves_the_panel_shorter_than_list() {
         "Pitch: the last frames end on Ability stats' bottom ({pitch:?})"
     );
 
-    // List: the positions' own rows' height is the tallest again — the
-    // columns' shared bottom is the positions' own, a card panel lower.
+    // List: its thirteen rows make the positions grid the taller of the
+    // two layouts again — the last row's bottom says so, the shared
+    // bottom being Ability stats' in either layout.
     let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let pitch_last = label_bounds(&nodes, "GK").y1;
     click(&mut window, layout_segments(&nodes)[2], &mut view);
     let list = bottoms(&mut window, &mut view);
     assert!(
         (list[0] - list[2]).abs() <= 0.5 && (list[1] - list[2]).abs() <= 0.5,
         "List: the last frames still end on one line ({list:?})"
     );
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let list_last = label_bounds(&nodes, "GK").y1;
     assert!(
-        list[0] > pitch[0] + 10.0,
-        "List's shared bottom a card panel under Pitch's ({list:?} vs {pitch:?})"
+        list_last > pitch_last + 10.0,
+        "List's own last row a card panel under Pitch's ({list_last} vs {pitch_last})"
     );
 }
 
@@ -338,9 +342,9 @@ fn ability_stats_keeps_the_cell_padding_under_its_last_row() {
     let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
 
     let frame_bottom = f64::from(group_frame(&window, &nodes, &shapes, "Ability stats").max.y);
-    let box_bottom = right_of_label(&nodes, "Aggression", Role::SpinButton)
-        .first()
-        .expect("Aggression's number box")
+    // The last stat is Tenacity, PES 2014's: gated here, its `-` stand-in
+    // is the last box.
+    let box_bottom = disabled_dash(&nodes, "Tenacity")
         .bounds()
         .expect("bounds")
         .y1;

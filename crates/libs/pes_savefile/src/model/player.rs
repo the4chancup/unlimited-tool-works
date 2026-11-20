@@ -133,7 +133,7 @@ impl PlayerStats {
     /// The ability stats in `interchange::team_toml::labels::ABILITY_STATS`'
     /// order (this struct's field order), `None` for a stat this save's
     /// version lacks (the `Option` fields).
-    pub fn abilities(&self) -> [Option<u8>; 25] {
+    pub fn abilities(&self) -> [Option<u8>; 26] {
         [
             Some(self.attacking_prowess),
             Some(self.ball_control),
@@ -160,12 +160,13 @@ impl PlayerStats {
             Some(self.stamina),
             self.tight_possession,
             self.aggression,
+            self.tenacity,
         ]
     }
 
     /// Sets ability `index` to `value`, in `abilities`' order
     /// (`interchange::team_toml::labels::ABILITY_STATS`'); an `Option` field
-    /// the version lacks stays `None`. An index past 24 panics, a
+    /// the version lacks stays `None`. An index past 25 panics, a
     /// programming error, as indexing `abilities()` would.
     pub fn set_ability(&mut self, index: usize, value: u8) {
         let gated = |field: &mut Option<u8>| {
@@ -199,7 +200,8 @@ impl PlayerStats {
             22 => self.stamina = value,
             23 => gated(&mut self.tight_possession),
             24 => gated(&mut self.aggression),
-            other => panic!("ability stat index {other} is past the 25 ability stats"),
+            25 => gated(&mut self.tenacity),
+            other => panic!("ability stat index {other} is past the 26 ability stats"),
         }
     }
 }
@@ -700,18 +702,19 @@ mod tests {
             aggression: Some(0),
             ..Default::default()
         };
-        for i in 0..25u8 {
+        for i in 0..26u8 {
             stats.set_ability(usize::from(i), 30 + i);
         }
-        let want: Vec<Option<u8>> = (0..25u8).map(|i| Some(30 + i)).collect();
+        // Tenacity stays None: the PES 21 shape has no such stat.
+        let want: Vec<Option<u8>> = (0..25u8).map(|i| Some(30 + i)).chain([None]).collect();
         assert_eq!(stats.abilities().to_vec(), want);
         // PES 15 shape: the gated stats absent stay absent.
         let mut stats = PlayerStats::default();
-        for i in 0..25u8 {
+        for i in 0..26u8 {
             stats.set_ability(usize::from(i), 50);
         }
         let abilities = stats.abilities();
-        for index in [15usize, 18, 19, 20, 21, 23, 24] {
+        for index in [15usize, 18, 19, 20, 21, 23, 24, 25] {
             assert_eq!(abilities[index], None);
         }
         assert_eq!(abilities.iter().flatten().count(), 18);

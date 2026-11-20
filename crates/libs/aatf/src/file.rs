@@ -126,10 +126,16 @@ pub enum LogicIdentity {
 /// a changed logic is a new version in the banner and the table, never
 /// a new hash for a released one, or every file saved with that version
 /// would read as modified.
-pub(crate) const LOGIC_VERSIONS: &[(u32, &str)] = &[(
-    1,
-    "0d59fa2f05653220a412cdd8581de38d930e66d2c54c91445d66bf723365f6fc",
-)];
+pub(crate) const LOGIC_VERSIONS: &[(u32, &str)] = &[
+    (
+        1,
+        "0d59fa2f05653220a412cdd8581de38d930e66d2c54c91445d66bf723365f6fc",
+    ),
+    (
+        2,
+        "30139aa5315537b334a8d910d3b2838b50ed0c1bf6197d4c3dd58b73b5ac4cbb",
+    ),
+];
 
 /// `text`'s logic section: from the line starting `// ==== LOGIC` to
 /// the line starting `// ==== CUSTOM CHECKS`, or to the end of the text
@@ -201,7 +207,10 @@ mod tests {
     #[test]
     fn identity_is_current_and_crlf_is_the_same() {
         let older = section_hash(OLD_SECTION);
-        let table = [(1u32, older.as_str()), (2, LOGIC_VERSIONS[0].1)];
+        let table = [
+            (1u32, older.as_str()),
+            (2, LOGIC_VERSIONS.last().expect("an entry").1),
+        ];
         let official = assemble(OFFICIAL);
         assert_eq!(identity_with(&official, &table), LogicIdentity::Current);
         assert_eq!(
@@ -215,7 +224,10 @@ mod tests {
     #[test]
     fn an_older_section_is_official() {
         let older = section_hash(OLD_SECTION);
-        let table = [(1u32, older.as_str()), (2, LOGIC_VERSIONS[0].1)];
+        let table = [
+            (1u32, older.as_str()),
+            (2, LOGIC_VERSIONS.last().expect("an entry").1),
+        ];
         assert_eq!(
             identity_with(&file_with(OLD_SECTION), &table),
             LogicIdentity::Official { version: 1 }
@@ -363,7 +375,10 @@ mod tests {
     fn an_older_section_is_official_then_current_after_reassembly() {
         let older = LOGIC.replacen("// The generic interpreter", "// An older logic", 1);
         let older_hash = section_hash(&older);
-        let table = [(1u32, older_hash.as_str()), (2, LOGIC_VERSIONS[0].1)];
+        let table = [
+            (1u32, older_hash.as_str()),
+            (2, LOGIC_VERSIONS.last().expect("an entry").1),
+        ];
         let ruleset = Ruleset::from_data_block(OFFICIAL).expect("block");
         let text = assemble_file(&ruleset, Some(&older), None);
         assert_eq!(

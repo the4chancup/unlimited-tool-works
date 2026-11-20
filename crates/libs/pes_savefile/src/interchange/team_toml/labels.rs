@@ -149,10 +149,12 @@ pub const FOOT: [&str; 2] = ["right", "left"];
 
 /// Ability-stat names: the `PlayerStats` fields that are 0-99 abilities, in
 /// `PlayerStats`'s field order, the version-dependent ones (tight possession,
-/// aggression) included. Weak foot, form, injury resistance, star and playing
-/// attitude are record stats but not abilities. `team.toml` spells them as
-/// `stats.<name>`; other crates share the table for their own closed sets.
-pub const ABILITY_STATS: [&str; 25] = [
+/// aggression, tenacity) included. Weak foot, form, injury resistance, star
+/// and playing attitude are record stats but not abilities. `team.toml`
+/// spells them as `stats.<name>` (tenacity excepted: a stat PES 2014 alone
+/// stores, on a version no Team TOML covers); other crates share the table
+/// for their own closed sets.
+pub const ABILITY_STATS: [&str; 26] = [
     "attacking_prowess",
     "ball_control",
     "dribbling",
@@ -178,6 +180,7 @@ pub const ABILITY_STATS: [&str; 25] = [
     "stamina",
     "tight_possession",
     "aggression",
+    "tenacity",
 ];
 
 /// `name`'s label as the draft's `titleCase` writes it: underscores as
@@ -258,9 +261,10 @@ mod tests {
     use crate::model::instruction::Instruction;
     use crate::model::playstyle::PlayStyle;
 
-    /// `ABILITY_STATS`, sorted, is exactly the `PlayerKey` names of the
-    /// `Kind::Ability` keys, `stats.` prefix stripped: membership,
-    /// completeness and no duplicates in one assertion.
+    /// `ABILITY_STATS` but Tenacity (no `stats.` key), sorted, is exactly
+    /// the `PlayerKey` names of the `Kind::Ability` keys, `stats.` prefix
+    /// stripped: membership, completeness and no duplicates in one
+    /// assertion.
     #[test]
     fn ability_stats_are_the_ability_keys() {
         use crate::interchange::team_toml::player_keys::Kind;
@@ -271,13 +275,18 @@ mod tests {
             .map(|key| key.name())
             .collect();
         from_keys.sort_unstable();
-        let mut table = ABILITY_STATS.to_vec();
+        // Tenacity is no `stats.` key: Team TOML covers no PES 2014 save.
+        let mut table: Vec<&str> = ABILITY_STATS
+            .into_iter()
+            .filter(|name| *name != "tenacity")
+            .collect();
         table.sort_unstable();
         assert_eq!(table, from_keys);
     }
 
     /// `PlayerStats::abilities` entry `i` is the `stats.<ABILITY_STATS[i]>`
-    /// key's value on every fixture version's first named player.
+    /// key's value on every fixture version's first named player (Tenacity
+    /// skipped: it has no `stats.` key).
     #[test]
     fn abilities_agree_with_the_stats_keys() {
         use crate::test_support;
@@ -292,6 +301,10 @@ mod tests {
                 .expect("a named player");
             let abilities = player.stats.abilities();
             for (i, name) in ABILITY_STATS.iter().enumerate() {
+                // Tenacity is no `stats.` key: Team TOML covers no PES 2014 save.
+                if *name == "tenacity" {
+                    continue;
+                }
                 let key = PlayerKey::ALL
                     .iter()
                     .find(|key| key.table() == "stats" && key.name() == *name)
@@ -303,6 +316,30 @@ mod tests {
                 );
             }
         }
+    }
+
+    /// The last ability stat is Tenacity, PES 2014's own: a PES 2014
+    /// player's `abilities()[25]` is his `stats.tenacity`, another
+    /// version's `None`.
+    #[test]
+    fn tenacity_is_the_last_ability_stat() {
+        use crate::test_support;
+
+        assert_eq!(ABILITY_STATS[25], "tenacity");
+        let (file, _) = test_support::open(PesVersion::Pes14);
+        let player = file
+            .players()
+            .iter()
+            .find(|p| p.stats.tenacity.is_some())
+            .expect("a PES 2014 player stores Tenacity");
+        assert_eq!(
+            player.stats.abilities()[25],
+            player.stats.tenacity,
+            "the PES 2014 player's Tenacity"
+        );
+        let (file, _) = test_support::open(PesVersion::Pes15);
+        let player = file.players().first().expect("a player");
+        assert_eq!(player.stats.abilities()[25], None);
     }
 
     /// `PLAYABLE_POSITIONS` is a permutation of 0..13; its inverse maps a

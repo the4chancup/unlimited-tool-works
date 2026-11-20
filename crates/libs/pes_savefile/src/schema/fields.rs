@@ -220,7 +220,7 @@ pub enum PlayerText {
 
 /// The `PlayerField` of each ability stat, in `PlayerStats::abilities`' order
 /// (`interchange::team_toml::labels::ABILITY_STATS`').
-pub const ABILITY_FIELDS: [PlayerField; 25] = [
+pub const ABILITY_FIELDS: [PlayerField; 26] = [
     PlayerField::AttackingProwess,
     PlayerField::BallControl,
     PlayerField::Dribbling,
@@ -246,6 +246,7 @@ pub const ABILITY_FIELDS: [PlayerField; 25] = [
     PlayerField::Stamina,
     PlayerField::TightPossession,
     PlayerField::Aggression,
+    PlayerField::Tenacity,
 ];
 
 /// A bit-run field of the team record.

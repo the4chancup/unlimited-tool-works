@@ -597,7 +597,9 @@ fn set_stats_writes_every_ability_to_the_number() {
     {
         let stats = &player_entry(&view, 70101).stats;
         for (index, ability) in stats.abilities().iter().enumerate() {
-            assert_eq!(*ability, Some(77), "ability {index} at the starting 77");
+            // Tenacity is PES 2014's stat: absent on this save, unwritten.
+            let expected = if index == 25 { None } else { Some(77) };
+            assert_eq!(*ability, expected, "ability {index} at the starting 77");
         }
         assert_eq!(stats.weak_foot_usage, before.stats.weak_foot_usage);
         assert_eq!(stats.weak_foot_accuracy, before.stats.weak_foot_accuracy);
@@ -632,7 +634,9 @@ fn set_stats_writes_every_ability_to_the_number() {
         .iter()
         .enumerate()
     {
-        assert_eq!(*ability, Some(85), "ability {index} at the typed 85");
+        // Tenacity is PES 2014's stat: absent on this save, unwritten.
+        let expected = if index == 25 { None } else { Some(85) };
+        assert_eq!(*ability, expected, "ability {index} at the typed 85");
     }
 
     // The field's 40 to 99 range settles a typed number past its top.

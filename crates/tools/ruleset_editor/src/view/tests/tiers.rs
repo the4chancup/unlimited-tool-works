@@ -1462,6 +1462,36 @@ fn the_stat_grid_lays_out_five_columns() {
     );
 }
 
+/// The stat grid's last column entry is Tenacity, PES 2014's stat the
+/// other versions lack: the 26th stat, alone on the sixth row under the
+/// first's column.
+#[test]
+fn the_stat_grid_has_a_tenacity_column() {
+    let (ctx, _events, mut window, mut view) = tiers_view(template("/vt/ League 11"), false);
+
+    let frame = settled(&mut window, &mut view, &ctx);
+    click_labeled(
+        &mut window,
+        &frame.nodes,
+        "Stat targets, free cards and conditions",
+        &mut view,
+        &ctx,
+    );
+    let frame = settled(&mut window, &mut view, &ctx);
+    let checkbox = |nodes: &[accesskit::Node], label: &str| {
+        role_labeled(nodes, Role::CheckBox, label)
+            .bounds()
+            .expect("drawn")
+    };
+    let first = checkbox(&frame.nodes, "Attacking Prowess");
+    let last = checkbox(&frame.nodes, "Tight Possession");
+    let tenacity = checkbox(&frame.nodes, "Tenacity");
+    assert!(
+        (tenacity.x0 - first.x0).abs() < 1.0 && tenacity.y0 > last.y0,
+        "Tenacity on the first column's sixth row ({tenacity:?} vs {first:?} and {last:?})"
+    );
+}
+
 /// "+ Add tier" pushes the draft's new tier (`new_tier`): `tier<N>`,
 /// "Tier <N>", count 1, rate 80, its stat total not held within its
 /// targets.

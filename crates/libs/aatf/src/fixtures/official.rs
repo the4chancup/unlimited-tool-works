@@ -1475,7 +1475,7 @@ fn tier_values_carry_the_specials() {
             .expect("values")
     };
     let giant = values(&team, 5, "silver");
-    assert_eq!(giant.stats.len(), 25);
+    assert_eq!(giant.stats.len(), 26);
     assert!(giant.stats.values().all(|v| *v == 89), "{giant:?}");
     assert_eq!((giant.form, giant.injury_resistance), (8, 3));
     assert_eq!(

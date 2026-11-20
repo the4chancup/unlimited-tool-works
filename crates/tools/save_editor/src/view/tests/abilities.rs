@@ -394,6 +394,61 @@ fn a_stat_the_version_lacks_shows_a_dash_disabled() {
     assert!(!speed.is_disabled(), "Speed is enabled on PES 15");
 }
 
+// PES 2014's own stat: its row is enabled with the player's value on a
+// PES 2014 save, a `-` under the `PES 2014 only` tooltip on PES 2015.
+#[test]
+fn tenacity_is_editable_on_pes14_and_gated_elsewhere() {
+    let path = fixture(PesVersion::Pes14, "tenacity_14");
+    let file = EditFile::from_bytes(&fixture_save(PesVersion::Pes14)).expect("fixture save");
+    let (team_id, slot) = file
+        .teams()
+        .iter()
+        .flat_map(|team| {
+            team.roster
+                .iter()
+                .enumerate()
+                .map(move |(index, slot)| (team.id, index, slot))
+        })
+        .find(|(_, _, slot)| slot.player_id != 0)
+        .map(|(id, index, _)| (id, u8::try_from(index).expect("a slot")))
+        .expect("a rostered player");
+    let mut view = SaveView::new();
+    view.open(&path);
+    view.selected = Some(Selection::Player(team_id, slot));
+    let mut window = Headless::sized(DEFAULT_PANE.x, 700.0);
+
+    let nodes = scroll_into_view(&mut window, &mut view, |node| {
+        node.role() == Role::Label && node.value() == Some("Tenacity")
+    });
+    let control = right_of_label(&nodes, "Tenacity", Role::SpinButton)
+        .into_iter()
+        .next()
+        .expect("the Tenacity control");
+    assert!(!control.is_disabled(), "Tenacity is enabled on PES 2014");
+    let expected = file
+        .player(file.team(team_id).expect("the team").roster[usize::from(slot)].player_id)
+        .expect("the selected player")
+        .stats
+        .tenacity
+        .expect("PES 2014 stores Tenacity")
+        .to_string();
+    assert_eq!(control.value(), Some(expected.as_str()), "his Tenacity");
+
+    let path = fixture(PesVersion::Pes15, "tenacity_15");
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut window = Headless::sized(DEFAULT_PANE.x, 700.0);
+    let nodes = scroll_into_view(&mut window, &mut view, |node| {
+        node.role() == Role::Label && node.value() == Some("Tenacity")
+    });
+    let dash = disabled_dash(&nodes, "Tenacity");
+    assert_eq!(
+        tooltip_after_hover(&mut window, &mut view, centre(dash)),
+        Some("PES 2014 only".to_string()),
+        "Tenacity's tooltip"
+    );
+}
+
 // The label of a stat the version lacks paints the colour a version-gated
 // card's name does, not the normal text colour; a stored stat's label
 // paints the normal one on every version.
@@ -527,7 +582,7 @@ fn a_gated_stats_dash_keeps_the_disabled_grey_on_the_dark_theme() {
 }
 
 // The ability stats sit in one column in the game's order, each label
-// beside its number: the 25 stats run top to bottom, their labels'
+// beside its number: the 26 stats run top to bottom, their labels'
 // left edges at one x, each label's SpinButton on its row.
 #[test]
 fn the_stats_fill_one_column_in_the_games_order() {
@@ -558,10 +613,15 @@ fn the_stats_fill_one_column_in_the_games_order() {
         );
         assert!(bounds.y0 > top, "{label} sits below the stat above");
         top = bounds.y0;
-        assert!(
-            !right_of_label(&nodes, label, Role::SpinButton).is_empty(),
-            "{label}'s number beside it"
-        );
+        // Tenacity is PES 2014's stat: gated here, its `-` in the cell.
+        if label == "Tenacity" {
+            disabled_dash(&nodes, label);
+        } else {
+            assert!(
+                !right_of_label(&nodes, label, Role::SpinButton).is_empty(),
+                "{label}'s number beside it"
+            );
+        }
     }
 }
 
@@ -628,11 +688,16 @@ fn the_stats_labels_start_at_one_x_and_their_boxes_at_another() {
     let box_left = cell_left + widest + 20.0;
     for label in &labels {
         let bounds = label_bounds(&nodes, label);
-        let field = right_of_label(&nodes, label, Role::SpinButton)
-            .first()
-            .unwrap_or_else(|| panic!("{label}'s number"))
-            .bounds()
-            .expect("bounds");
+        // Tenacity is PES 2014's stat: gated here, its `-` fills the slot.
+        let field = if label == "Tenacity" {
+            disabled_dash(&nodes, label).bounds().expect("bounds")
+        } else {
+            right_of_label(&nodes, label, Role::SpinButton)
+                .first()
+                .unwrap_or_else(|| panic!("{label}'s number"))
+                .bounds()
+                .expect("bounds")
+        };
         assert!(
             (bounds.x0 - cell_left).abs() <= 0.5,
             "{label}'s left edge {} at the label cell's {cell_left}",

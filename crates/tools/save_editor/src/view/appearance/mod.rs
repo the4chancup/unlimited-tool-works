@@ -16,15 +16,13 @@
 
 pub(super) mod fields;
 
-use std::collections::HashSet;
-
 use pes_savefile::model::{
     PlayerAppearance, PlayerEditFlags, PlayerEntry, PlayerMotion, PlayerStats,
 };
 use pes_savefile::schema::fields::PlayerField;
 use pes_savefile::schema::ingame_face::IngameFaceField;
 use pes_savefile::schema::limits::motion_top;
-use pes_savefile::schema::{player_max_value, schema_for};
+use pes_savefile::schema::{VersionSchema, player_max_value, schema_for};
 use pes_savefile::settings_toml::{Kind, SettingKey};
 use pes_version::PesVersion;
 use studio_core::widgets::{
@@ -201,9 +199,9 @@ fn groups(
 ) {
     ui.spacing_mut().item_spacing.y = 0.0;
     // A control whose field the version's records do not map draws greyed:
-    // `stored` gates the record fields, `face_run` the in-game face run's.
+    // the schema's `player_has` gates the record fields, `face_run` the
+    // in-game face run's.
     let schema = schema_for(version);
-    let stored = schema.player_field_set();
     let face_run = schema.has_ingame_face();
     // `GROUP_GAP` stands the first group off the title's line as it
     // stands each group off the last.
@@ -218,14 +216,11 @@ fn groups(
             player_id,
             version,
             &player.appearance,
-            &StripGates {
-                stored: &stored,
-                face_run,
-            },
+            &StripGates { schema, face_run },
         );
     });
     ui.add_space(GROUP_GAP);
-    physique_motion_flags_row(ui, session, player_id, version, player, draw, &stored);
+    physique_motion_flags_row(ui, session, player_id, version, player, draw, schema);
     ui.add_space(GROUP_GAP);
     group(ui, PRESENTATION_LABEL, |ui| {
         ui.set_min_width(ui.available_width());
@@ -348,7 +343,7 @@ fn physique_motion_flags_row(
     version: PesVersion,
     player: &PlayerEntry,
     draw: &mut dyn FnMut(u8) -> u8,
-    stored: &HashSet<PlayerField>,
+    schema: &VersionSchema,
 ) {
     let group_frame = egui::Frame::group(ui.style());
     let margin = group_frame.total_margin().sum().y;
@@ -358,7 +353,7 @@ fn physique_motion_flags_row(
             ui.spacing_mut().item_spacing.x = SIDE_GAP;
             let mut physique = group_frame.begin(ui);
             frame_content(&mut physique.content_ui, PHYSIQUE_LABEL, |ui| {
-                physique_grid(ui, session, player_id, &player.appearance, stored)
+                physique_grid(ui, session, player_id, &player.appearance, schema)
             });
             physique.allocate_space(ui);
             let physique_outer = physique.content_ui.min_rect().height() + margin;
@@ -378,7 +373,7 @@ fn physique_motion_flags_row(
                                 version,
                                 &player.motion,
                                 draw,
-                                stored,
+                                schema,
                             );
                         });
                         let motion_outer = motion.content_ui.min_rect().height() + margin;
@@ -392,7 +387,7 @@ fn physique_motion_flags_row(
                                 player_id,
                                 &player.edit_flags,
                                 player.appearance.base_copy_id,
-                                stored,
+                                schema,
                             );
                         });
                         flags.allocate_space(ui);
@@ -581,7 +576,7 @@ fn edit_flags_grid(
     player_id: u32,
     flags: &PlayerEditFlags,
     base_copy_id: u32,
-    stored: &HashSet<PlayerField>,
+    schema: &VersionSchema,
 ) {
     egui::Grid::new("appearance edit flags")
         .num_columns(3)
@@ -591,7 +586,7 @@ fn edit_flags_grid(
             for (index, &(field, label, get, set)) in FLAG_CELLS.iter().enumerate() {
                 // A flag the version stores edits; elsewhere the box keeps
                 // its place, disabled as `base_copy`'s is.
-                if stored.contains(&field) {
+                if schema.player_has(field) {
                     checkbox(ui, session, player_id, label, get(flags), |p, v| {
                         set(&mut p.edit_flags, v)
                     });
@@ -635,7 +630,7 @@ fn edit_flags_grid(
     ui.horizontal(|ui| {
         ui.spacing_mut().item_spacing.x = SPACE_GAP;
         ui.spacing_mut().interact_size.x = NUMBER_BOX;
-        if stored.contains(&PlayerField::BaseCopyId) {
+        if schema.player_has(PlayerField::BaseCopyId) {
             number(
                 ui,
                 session,
@@ -716,7 +711,7 @@ fn physique_grid(
     session: &mut Session,
     player_id: u32,
     appearance: &PlayerAppearance,
-    stored: &HashSet<PlayerField>,
+    schema: &VersionSchema,
 ) {
     let padding = abilities::CELL_PADDING;
     egui::Frame::NONE
@@ -734,7 +729,7 @@ fn physique_grid(
                         let field = key
                             .player_field()
                             .expect("a physique key writes a player field");
-                        if !stored.contains(&field) {
+                        if !schema.player_has(field) {
                             gated_label(ui, label, gating_tooltip(field));
                             gated_number(ui, gating_tooltip(field));
                             maybe_end_row(ui, index + 1, 2);
@@ -835,8 +830,8 @@ const STRIP_ORDER: [[StripCell; 3]; 5] = [
 /// The strip cells' two gates: the fields `version`'s records store, and
 /// whether they carry the in-game face run the two gloves cells write.
 struct StripGates<'a> {
-    /// The version's stored player fields (`player_field_set`).
-    stored: &'a HashSet<PlayerField>,
+    /// The version's schema (`player_has` gates each cell's field).
+    schema: &'a VersionSchema,
     /// Whether the records carry an in-game face run (`has_ingame_face`).
     face_run: bool,
 }
@@ -957,10 +952,9 @@ fn strip_cell(
     gates: &StripGates,
 ) {
     // The gated stand-in's tooltip is computed only where it shows:
-    // `gating_tooltip` has no `PES NN+` for a field a single version alone
-    // stores, so it panics on a stored version-only field.
+    // `gating_tooltip` panics on a field no version stores.
     let (enabled, tip) = match cell_field(cell) {
-        Some(field) if gates.stored.contains(&field) => (true, String::new()),
+        Some(field) if gates.schema.player_has(field) => (true, String::new()),
         Some(field) => (false, gating_tooltip(field)),
         None => (gates.face_run, PES14_TIP.to_owned()),
     };
@@ -1206,7 +1200,7 @@ fn motion_grid(
     version: PesVersion,
     motion: &PlayerMotion,
     draw: &mut dyn FnMut(u8) -> u8,
-    stored: &HashSet<PlayerField>,
+    schema: &VersionSchema,
 ) {
     // Two pairs a row (the draft's `COL_PANELS` motion `[2, 194, 14]`).
     // The boxes at the draft's number-input width; no column floor, so
@@ -1219,7 +1213,7 @@ fn motion_grid(
             ui.spacing_mut().interact_size.x = NUMBER_BOX;
             let mut pair = 0usize;
             for field in &MOTIONS[..7] {
-                motion_number(ui, session, player_id, version, field, motion, stored);
+                motion_number(ui, session, player_id, version, field, motion, schema);
                 pair += 1;
                 maybe_end_row(ui, pair, per_row);
             }
@@ -1269,7 +1263,7 @@ fn motion_grid(
             pair += 1;
             maybe_end_row(ui, pair, per_row);
             for field in &MOTIONS[7..] {
-                motion_number(ui, session, player_id, version, field, motion, stored);
+                motion_number(ui, session, player_id, version, field, motion, schema);
                 pair += 1;
                 maybe_end_row(ui, pair, per_row);
             }
@@ -1298,9 +1292,9 @@ fn motion_number(
     version: PesVersion,
     field: &MotionField,
     motion: &PlayerMotion,
-    stored: &HashSet<PlayerField>,
+    schema: &VersionSchema,
 ) {
-    if !stored.contains(&field.field) {
+    if !schema.player_has(field.field) {
         gated_label(ui, field.label, gating_tooltip(field.field));
         gated_number(ui, gating_tooltip(field.field));
         return;

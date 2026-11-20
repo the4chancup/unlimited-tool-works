@@ -416,7 +416,7 @@ mod tests {
     fn a_bannerless_file_opens_but_cannot_be_saved() {
         let dir = scratch("bannerless");
         let text = valid_file().replacen(
-            "// ==== LOGIC (ruleset-logic 1): the Ruleset editor replaces this section ====\n",
+            "// ==== LOGIC (ruleset-logic 2): the Ruleset editor replaces this section ====\n",
             "",
             1,
         );

@@ -1004,6 +1004,11 @@ mod tests {
     fn every_embedded_ruleset_summarizes_to_its_golden() {
         for (name, block, golden) in [
             (
+                "akko7",
+                include_str!("../../../libs/aatf/rulesets/akko7.rhai"),
+                include_str!("../tests/fixtures/summary/akko7.md"),
+            ),
+            (
                 "autumn25",
                 include_str!("../../../libs/aatf/rulesets/autumn25.rhai"),
                 include_str!("../tests/fixtures/summary/autumn25.md"),

@@ -6,7 +6,7 @@
 //! first column, its width what the fixed columns leave; Skills with the
 //! Cards used badge in its header row, the ruleset's apart cards (its
 //! `tricks` group, else the skills its `free_cards` effects name) and COM
-//! playing styles in the second, its width its cards'; the 25 ability
+//! playing styles in the second, its width its cards'; the 26 ability
 //! stats in the third, its width theirs — `COLUMN_GAP` apart, the first
 //! frames' tops where the Appearance screen's first groups' stand, the
 //! columns ending on one line with each last frame running down to the
@@ -1177,7 +1177,7 @@ fn registered_outline(ui: &egui::Ui, rect: egui::Rect) {
     );
 }
 
-/// The 25 stats of `ABILITY_STATS` in one column in the game's order (the
+/// The 26 stats of `ABILITY_STATS` in one column in the game's order (the
 /// view's third column), each label beside its `DragValue` 40-99 (the
 /// draft's `td.ilabel`): the labels start at one x, the grid's first
 /// column, and the numbers stand in its second, so a short label stands
@@ -1566,12 +1566,7 @@ pub(crate) fn gated_label(ui: &mut egui::Ui, text: &str, tooltip: String) -> egu
 pub(crate) fn gating_tooltip(field: PlayerField) -> String {
     match first_version_with(field) {
         Some(version) => format!("PES {}+", version.number()),
-        None if schema_for(PesVersion::Pes14)
-            .player_field_set()
-            .contains(&field) =>
-        {
-            "PES 2014 only".to_owned()
-        }
+        None if schema_for(PesVersion::Pes14).player_has(field) => "PES 2014 only".to_owned(),
         None => panic!("a gated field is stored by some version"),
     }
 }
