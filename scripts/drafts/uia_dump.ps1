@@ -7,14 +7,19 @@
 param([int]$ProcessId)
 # UTF-8 out, as the caller decodes it: the console's code page turns `…` and `⏷` into `.` and `?`.
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+# Per-monitor DPI aware, as the caller is: a process aware only of the main monitor's scale
+# gets rectangles scaled to it for a window on a monitor of another scale.
+Add-Type -Namespace Native -Name Dpi -MemberDefinition '[DllImport("user32.dll")] public static extern bool SetProcessDpiAwarenessContext(System.IntPtr value);'
+[void][Native.Dpi]::SetProcessDpiAwarenessContext([System.IntPtr]::new(-4))
 Add-Type -AssemblyName UIAutomationClient, UIAutomationTypes
 $A = [System.Windows.Automation.AutomationElement]
 $T = [System.Windows.Automation.TreeScope]
 $cond = New-Object System.Windows.Automation.PropertyCondition($A::ProcessIdProperty, $ProcessId)
-# The main window, not a native dialog the process owns (class #32770).
+# The main window: not a native dialog the process owns (class #32770), nor winit's hidden
+# event window, which has no name and comes first once the main window is sent to the back.
 $main = $null
 foreach ($w in $A::RootElement.FindAll($T::Children, $cond)) {
-  if ($w.Current.ClassName -ne '#32770') { $main = $w; break }
+  if ($w.Current.ClassName -ne '#32770' -and $w.Current.Name) { $main = $w; break }
 }
 if (-not $main) { Write-Output "no window of process $ProcessId"; exit 1 }
 foreach ($e in $main.FindAll($T::Descendants, [System.Windows.Automation.Condition]::TrueCondition)) {
