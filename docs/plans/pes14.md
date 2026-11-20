@@ -464,9 +464,8 @@ bundled changelog, which would otherwise present main's last release as the buil
 
 ## Process
 
-Second-class work, lighter than main's: the implementation runs on SWE-2 High, with a SWE-2
-Flash High twin on the same brief for the trial's tally; reviews are SWE-2 rounds only; no
-mutation runs. The per-commit gates (`docs/CONTRIBUTING.md` "Testing and verification") run as
+Second-class work, lighter than main's: the implementation runs on SWE-2 High; reviews are
+SWE-2 rounds only; no mutation runs. The per-commit gates (`docs/CONTRIBUTING.md` "Testing and verification") run as
 on main. Main is merged into the branch, never rebased onto it.
 
 ## Steps
@@ -510,4 +509,16 @@ on main. Main is merged into the branch, never rebased onto it.
    built window is captured where the branch changed a look: Ability stats with Tenacity's
    row, on PES 2014 and on a later version, where the row is greyed, and the Ruleset editor's
    stat grid with its Tenacity column. Then the release.
-8. Build 2: the Gameplan screen.
+8. Build 2: the Gameplan screen. The game offers no free position move: a position changes
+   only by picking one of the formation list's entries or swapping two players, and a
+   player's role is shown, not chosen (run `tactics1`). So the screen is the game's own
+   Game Plan, not the other versions' pitch editor.
+   - Run `tactics3` (in game): every Game Plan setting not yet pinned, one change per team:
+     the eight sliders one step each, then all eight at their maximum on one team (their
+     widths); the Strategy's last entry; the six other set-piece settings; One-Touch
+     Settings; the four Tactical Assistance switches; a Combination Play slot's strategy and
+     area; one slider in Preset Tactics 2 (the 0x6C stride).
+   - Run `formations1` (in game): each entry of the formation list set once, so the editor
+     writes a formation as the game stores it.
+   - The draft: the Gameplan screen on a PES 2014 save (the lead).
+   - Slices: the record's fields in the schema and the model, then the screen.

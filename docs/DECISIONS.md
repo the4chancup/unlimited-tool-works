@@ -19003,3 +19003,13 @@ open on its cup's ruleset, and it costs one line plus the release test that pins
 the Save editor's tests. `common.pes_version` stays 17: the settings refuse 14, and the Save
 editor does not read it.
 Plan: `plans/pes14.md` "Goal and scope" (the AATF check).
+
+## 2026-11-20 — save_editor (pes14 branch) — PES 2014's Gameplan screen is the game's own Game Plan
+Decision: on a PES 2014 save the Gameplan screen offers what the game's Game Plan offers: a
+formation picked from the game's list, the Strategy and eight sliders per preset, swaps of two
+players, the captain, the set-piece takers, the switches and the Combination Play slots. It
+does not offer the other versions' pitch editor (free positions, roles, advanced instructions).
+Why: the game's own screen, not the pitch editor, because PES 2014 has no free position move
+and no role to pick (run `tactics1`): the screen edits only what the game can set, so every
+value it writes is one the game itself writes.
+Plan: `plans/pes14.md` "Steps", step 8.
