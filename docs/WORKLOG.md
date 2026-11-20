@@ -3103,7 +3103,12 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
   - [ ] a Carbon round on the change (`7feea20c..aa0f62ee`), since the mutation runs are vital
     tooling (the maintainer, 2026-11-20); Astra's round ran on 2026-11-20
     - [x] Carbon's round 1, 2026-11-20: 8 accepted (rulings `.tmp/duck_rulings_nextest.md`)
-    - [ ] the rework (SWE-2, `sk/mutrw`), then Carbon's round 2
+    - [x] the rework, `246a988c` (merged `7dc7da7e`)
+    - [x] Carbon's round 2 on `246a988c`, 2026-11-20: 8 accepted, among them the remote's
+      `--jobserver-tasks` reaching nextest, which would fail every remote baseline, and
+      `just comment-refs` failing on main
+    - [x] the rework of round 2, `9a66b2b8`
+    - [ ] Carbon's round 3 on `9a66b2b8`
 - [ ] after 0.0.2: a crate whose mutation-run estimate passes a budget (about an hour a
   side) runs detached from the checkpoint, which closes on the rest (save_editor's held one
   ~12.5 h before mutfast)
