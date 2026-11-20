@@ -40,7 +40,7 @@ use crate::messages::{TOOL_ID, import_note, when_and_effect};
 use crate::session::Session;
 use crate::session::import_sections::{Sections, keep_sections};
 use crate::session::journal;
-use crate::view::appearance::OWNERSHIP_TIP;
+use crate::view::appearance::{OWNERSHIP_TIP, PES14_TIP};
 use crate::view::comparator;
 use crate::view::{
     Panel, Refusal, SaveView, aatf_check, refuse_save_being_read, selected_team_id, surrender_focus,
@@ -412,7 +412,7 @@ impl Interchange {
     /// that reads is a kept input named `picked <path>`; one that cannot
     /// be read or parsed is recorded with its bytes, like a save that
     /// fails to open.
-    fn pick(&mut self, path: PathBuf, recorder: &Recorder) {
+    pub(super) fn pick(&mut self, path: PathBuf, recorder: &Recorder) {
         let format = Format::of(&path);
         let read =
             read(&path, format, recorder).map_err(|error| format!("{}: {error}", file_name(&path)));
@@ -945,12 +945,16 @@ fn contents(
             display_name(&team.name),
             team.id
         ));
-        if ui
-            .button("Team TOML\u{2026}")
-            .on_hover_text(
-                "The team, its tactics and its players with every value: the same file the command line's export-toml writes",
-            )
-            .clicked()
+        if add_enabled(
+            ui,
+            version != PesVersion::Pes14,
+            egui::Button::new("Team TOML\u{2026}"),
+        )
+        .on_hover_text(
+            "The team, its tactics and its players with every value: the same file the command line's export-toml writes",
+        )
+        .on_disabled_hover_text(PES14_TIP)
+        .clicked()
         {
             action = Some(Action::Export(Export::TeamToml));
         }
@@ -960,7 +964,11 @@ fn contents(
             egui::Button::new("Texport\u{2026}"),
         )
         .on_hover_text("A file PES itself can import")
-        .on_disabled_hover_text("The editor cannot write a PES 2015 or 2016 Texport")
+        .on_disabled_hover_text(if version == PesVersion::Pes14 {
+            PES14_TIP
+        } else {
+            "The editor cannot write a PES 2015 or 2016 Texport"
+        })
         .clicked()
         {
             action = Some(Action::Export(Export::Texport));
@@ -976,10 +984,14 @@ fn contents(
             team.id
         ));
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Min), |ui| {
-            if ui
-                .button("Pick\u{2026}")
-                .on_hover_text("Pick the team file to import; its extension decides how it is read")
-                .clicked()
+            if add_enabled(
+                ui,
+                version != PesVersion::Pes14,
+                egui::Button::new("Pick\u{2026}"),
+            )
+            .on_hover_text("Pick the team file to import; its extension decides how it is read")
+            .on_disabled_hover_text(PES14_TIP)
+            .clicked()
             {
                 action = Some(Action::Pick);
             }
@@ -1079,7 +1091,13 @@ fn contents(
             }
         }
         if staged.held.gameplan {
-            checkbox(ui, &mut sections.gameplan, "Gameplan");
+            if version == PesVersion::Pes14 {
+                add_enabled_ui(ui, false, |ui| checkbox(ui, &mut false, "Gameplan"))
+                    .inner
+                    .on_disabled_hover_text(PES14_TIP);
+            } else {
+                checkbox(ui, &mut sections.gameplan, "Gameplan");
+            }
         }
     });
     match &staged.import {
@@ -1107,14 +1125,18 @@ fn contents(
     // record an edit that changes nothing.
     let unchanged = any_chosen && matches!(&staged.import, Ok(import) if !import.changes);
     ui.horizontal_wrapped(|ui| {
-        if add_enabled(
+        let apply = add_enabled(
             ui,
-            staged.import.is_ok() && any_chosen && !unchanged,
+            staged.import.is_ok() && any_chosen && !unchanged && version != PesVersion::Pes14,
             egui::Button::new("Apply"),
         )
-        .on_hover_text("Write the chosen sections as one undoable edit")
-        .clicked()
-        {
+        .on_hover_text("Write the chosen sections as one undoable edit");
+        let apply = if version == PesVersion::Pes14 {
+            apply.on_disabled_hover_text(PES14_TIP)
+        } else {
+            apply
+        };
+        if apply.clicked() {
             action = Some(Action::Apply);
         }
         ui.label("The changes can be undone and stay unsaved until you click Save.");

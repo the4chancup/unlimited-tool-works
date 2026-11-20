@@ -14,11 +14,11 @@ use pes_savefile::interchange::team_toml::labels::POSITIONS;
 use pes_savefile::model::names::{crop_player_text, name_fits, shirt_name_edit_fits};
 use pes_savefile::model::{PlayerEntry, PlayerPositions, PlayerStats};
 use pes_savefile::schema::fields::{PlayerField, PlayerText, RosterField};
-use pes_savefile::schema::{VersionSchema, portable_text_max, schema_for};
+use pes_savefile::schema::{VersionSchema, portable_text_max, schema_for, stored_offset};
 use pes_version::PesVersion;
 use studio_core::widgets::{
-    FIELD_SPACING, RADIO_ICON_WIDTH, add_enabled_ui, combo_item, number_arrows, number_wheel_steps,
-    radio, resting_edge, step_choice, step_number, text_box, wheel_steps,
+    FIELD_SPACING, RADIO_ICON_WIDTH, add_enabled, add_enabled_ui, combo_item, number_arrows,
+    number_wheel_steps, radio, resting_edge, step_choice, step_number, text_box, wheel_steps,
 };
 use team_widgets::cards;
 use team_widgets::names::append_name;
@@ -32,8 +32,8 @@ use crate::view::abilities::{
 };
 use crate::view::live_marks::{MarkedField, Marks};
 use crate::view::{
-    PlayerScreen, Reveal, SaveView, Selection, edit_player, edit_team, selected_player,
-    selected_team_id,
+    GAMEPLAN_TIP, PlayerScreen, Reveal, SaveView, Selection, edit_player, edit_team,
+    selected_player, selected_team_id,
 };
 
 /// The General info panel's Name field.
@@ -199,8 +199,24 @@ fn page_toggle(ui: &mut egui::Ui, view: &mut SaveView) {
                 studio_core::theme::edge_color(ui.visuals(), ui.visuals().selection.bg_fill);
             let unheld = studio_core::theme::unheld_edge(ui.visuals());
             let mut pressed = None;
+            // PES 2014's tactics record maps the captain alone in this
+            // build, so its Gameplan segment stays disabled.
+            let pes14 = view
+                .session
+                .as_ref()
+                .is_some_and(|session| session.version() == PesVersion::Pes14);
             for segment in [Segment::Stats, Segment::Appearance, Segment::Gameplan] {
-                let response = ui.add(egui::Button::selectable(on == segment, segment.label()));
+                let refused = segment == Segment::Gameplan && pes14;
+                let response = add_enabled(
+                    ui,
+                    !refused,
+                    egui::Button::selectable(on == segment, segment.label()),
+                );
+                let response = if refused {
+                    response.on_disabled_hover_text(GAMEPLAN_TIP)
+                } else {
+                    response
+                };
                 resting_edge(
                     ui,
                     &response,
@@ -385,7 +401,8 @@ pub(super) fn general(
             text_box(shirt_edit),
         );
         let tip = if shirt_overlong {
-            "PES 2019 and older show 18 letters of a shirt name (PES 2016 shows 16)".to_owned()
+            "PES 2019 and older show 18 letters of a shirt name (PES 2014 and 2016 show 16)"
+                .to_owned()
         } else {
             // The limit the field enforces, not the field's whole capacity:
             // the portable 18 binds on PES 20/21, its own 16 on PES 16, and
@@ -456,7 +473,7 @@ pub(super) fn general(
                     session,
                     player_id,
                     age,
-                    max(schema, PlayerField::Age),
+                    shown_range(schema, PlayerField::Age),
                     |player, shown| player.basic.age = shown,
                 );
             },
@@ -582,18 +599,21 @@ pub(super) fn label_width(ui: &egui::Ui, label: &str) -> f32 {
         .x
 }
 
-/// One pair's 54-wide `DragValue` over `shown` capped at `max`; a change
-/// pushes the player's entry with `set` applied.
+/// One pair's 54-wide `DragValue` over `shown` inside `bounds`, the
+/// field's shown range (`shown_range`; an end the widget's own type
+/// cannot hold is capped at it). A change pushes the player's entry
+/// with `set` applied.
 fn number_box<N: egui::emath::Numeric + TryFrom<u64>>(
     ui: &mut egui::Ui,
     session: &mut Session,
     player_id: u32,
     shown: N,
-    max: u64,
+    bounds: std::ops::RangeInclusive<u64>,
     set: impl FnOnce(&mut PlayerEntry, N),
 ) {
     let mut shown = shown;
-    let range = N::from_f64(0.0)..=N::try_from(max).unwrap_or(N::MAX);
+    let range = N::try_from(*bounds.start()).unwrap_or(N::MIN)
+        ..=N::try_from(*bounds.end()).unwrap_or(N::MAX);
     let mut response = number_arrows(ui, &mut shown, range.clone(), |ui, value| {
         ui.add_sized(
             [BOX_WIDTH, ui.spacing().interact_size.y],
@@ -647,7 +667,7 @@ pub(super) fn main_stats(
                     session,
                     player_id,
                     height,
-                    max(schema, PlayerField::Height),
+                    shown_range(schema, PlayerField::Height),
                     |player, shown| player.basic.height = shown,
                 );
             },
@@ -663,7 +683,7 @@ pub(super) fn main_stats(
                     session,
                     player_id,
                     weight,
-                    max(schema, PlayerField::Weight),
+                    shown_range(schema, PlayerField::Weight),
                     |player, shown| player.basic.weight = shown,
                 );
             },
@@ -1195,6 +1215,15 @@ fn max(schema: &VersionSchema, field: PlayerField) -> u64 {
         .player
         .max_value(field)
         .expect("the strip's fields are stored on every version")
+}
+
+/// `field`'s range in the shown values the model holds: the stored bound
+/// with the version's stored offset at both ends, since the codec takes
+/// the offset off on write. PES 2014's height runs 132 to 387 and its
+/// weight 30 to 285; every other version's stays the stored bound itself.
+fn shown_range(schema: &VersionSchema, field: PlayerField) -> std::ops::RangeInclusive<u64> {
+    let offset = u64::from(stored_offset(schema.version, field));
+    offset..=max(schema, field) + offset
 }
 
 /// The length of the player record's `which` text field, from the schema

@@ -26,7 +26,7 @@ use studio_core::widgets::{
 
 use crate::session::Session;
 use crate::view::abilities::{gated_label, gated_number};
-use crate::view::{SaveView, edit_team, info_strip, selected_team, tactics};
+use crate::view::{GAMEPLAN_TIP, SaveView, edit_team, info_strip, selected_team, tactics};
 
 /// One unit of the header's row: a label with its field, or the button.
 #[derive(Debug, Clone, Copy)]
@@ -114,6 +114,9 @@ pub(super) const MANAGER_LABEL: &str = "Manager ID";
 pub(super) const STADIUM_LABEL: &str = "Stadium ID";
 /// The `Kit slots…` button.
 pub(super) const KIT_SLOTS_LABEL: &str = "Kit slots\u{2026}";
+/// The greyed line standing in for the Tactics editor on a PES 2014
+/// save, whose tactics record this build leaves unmapped.
+const PES14_TACTICS_LINE: &str = "PES 2014: the Gameplan screen comes in the next build";
 /// A kit slot's Number field.
 pub(super) const KIT_NUMBER_LABEL: &str = "Number";
 /// A kit slot's bound team field.
@@ -123,8 +126,8 @@ pub(super) const BOUND_TEAM_LABEL: &str = "Bound team ID";
 /// toggle, then `<id> <name>`), one wrapped row holding the name, short name and
 /// colour pairs, the manager and stadium IDs and the `Kit slots…` button
 /// (whole units wrap to a second row where the view is narrower, a pair
-/// never splits), then the Tactics editor. Nothing when the selection
-/// names no team of the save.
+/// never splits), then the Tactics editor (a greyed line in its place on
+/// a PES 2014 save). Nothing when the selection names no team of the save.
 pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
     let Some((team_id, version, team)) = selected_team(view) else {
         return;
@@ -204,7 +207,14 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
         // The row keeps `UNDER_FIELDS` under it before the Tactics bars:
         // the item spacing and the rest added to it.
         ui.add_space(UNDER_FIELDS - ui.spacing().item_spacing.y);
-        tactics::show(ui, view);
+        if version == PesVersion::Pes14 {
+            // PES 2014's tactics record maps the captain alone in this
+            // build, so the editor stands in as a greyed line: drawn, it
+            // would show a record of zeros whose edits the save drops.
+            gated_label(ui, PES14_TACTICS_LINE, GAMEPLAN_TIP.to_owned());
+        } else {
+            tactics::show(ui, view);
+        }
     });
 }
 
