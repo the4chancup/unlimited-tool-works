@@ -19085,3 +19085,13 @@ the lineup alone would move the two players in every preset, which the game does
 other two presets" rather than "presets 2 and 3" is inferred until run `tactics5` swaps in
 Preset Tactics 2.
 Plan: `plans/pes14.md` "PES 2014 in the code" ("The Gameplan screen in Build 2"), "Steps", step 8.
+
+## 2026-11-20 — save_editor (pes14 branch) — PES 2014's Gameplan copy and paste stay refused once the screen opens
+Decision: when the Gameplan screen opens on PES 2014, the Edit menu's Copy and Paste of a
+team's Gameplan, a preset or a formation stay refused there, their hover now "Not available on
+PES 2014 saves" (until then "PES 2014: in the next build"). The preset bar's Copy/swap menu
+works as on the other versions.
+Why: the clipboard carries those settings as Team TOML, which the plan leaves out of PES 2014;
+offering them would build Team TOML for a version it does not cover. The Copy/swap menu edits
+the save's own model and needs no format.
+Plan: `plans/pes14.md` "PES 2014 in the code" ("The Gameplan screen in Build 2").

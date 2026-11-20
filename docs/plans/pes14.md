@@ -536,7 +536,10 @@ version, not the version selector.
     timings.
 
   Names are the other versions' where the setting is shared (Automatic settings, Preset
-  change), and the game's where it is PES 2014's alone.
+  change), and the game's where it is PES 2014's alone. The preset bar's Copy/swap menu copies
+  and swaps presets as on the other versions. The Edit menu's Copy and Paste of a team's
+  Gameplan, a preset or a formation stay refused, with "Not available on PES 2014 saves":
+  they carry the settings as Team TOML, which PES 2014 saves do not offer.
 - **The recent-saves list** stores a PES 2014 save's version as 14, the one settings entry
   that names it: a recent save is a file the editor opened, not a version a member picks.
   Refusing 14 there would make the whole settings table unreadable after one PES 2014 save was
