@@ -3462,6 +3462,15 @@ pruned when their phase closes; they stay in git history. A question only the ma
 can answer is not an issue: it goes to `docs/maintainer/questions.html`, and an issue that waits on one
 points there.
 
+- open (2026-11-20) — A checkpoint's diff mutation run pays each crate's fixed costs however
+  few mutants it holds. On `969e1cb6`, `team_widgets`' one mutant took 567 s wall:
+  - a baseline of 133 s build and 199 s test, though the gates had just passed the same tree;
+  - a split with `bonfire` that sent it no mutant.
+
+  Two changes to weigh in `scripts/mutation/`:
+  - skip the baseline's test when the gates passed (`cargo mutants --baseline=skip` needs an
+    explicit `--timeout`, which the baseline now sets);
+  - run a crate of one or two mutants on this machine alone.
 - resolved 2026-11-20 (Carbon, then SWE-2) — Carbon's review of the referee blank face ran
   on `work` after all (one run takes 1-2% of its week). Its five accepted concerns, none
   changing a real export's output, are fixed in the commit that resolves this, which ends the
