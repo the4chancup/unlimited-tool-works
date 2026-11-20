@@ -739,7 +739,8 @@ on main. Main is merged into the branch, never rebased onto it.
        from the screen and a plainer closure; and three comments the comment check flags.
    - Slice 2d: free moves and the overall on the pitch, once the game's code gives their
      rules.
-   - The command line refuses the commands out of scope on a PES 2014 save ("Not in scope").
+   - The command line refuses the commands out of scope on a PES 2014 save ("Not in scope"):
+     done (`422dead7`), each of the five commands with its test.
    - Later: the pitch's shirts in the team's kit colours and icon pattern, as PES 2015's
      Game Plan kit icons (patterns 0 to 23), read from the kit configs in the download
      folder.
