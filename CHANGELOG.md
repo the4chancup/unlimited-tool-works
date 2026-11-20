@@ -1,5 +1,13 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixes
+
+- **Compiler**: a referee with no face model, whose body model brings his head, showed the
+  game's own referee head floating over it. He now gets an empty face, as a team player in the
+  same case does.
+
 ## [0.0.2] - 2026-11-18
 
 ### Important

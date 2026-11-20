@@ -2412,14 +2412,7 @@ TC-REF-09  GIVEN TC-REF-01's refs export
                 common/character0/model/character/boots/), and one skin.dds under
                 common/character1/model/character/uniform/common/999/Ref A/
 TC-REF-10  withdrawn: restated as TC-REF-24 (a referee with no face model gets the blank face)
-TC-REF-11  GIVEN a refs export holding Kits/p1 with kit.dds beside a mapped referee folder holding
-           a face model
-           WHEN the root is compiled for PES 21 (or PES 17)
-           THEN file_not_used is reported naming Kits/p1 as a Warning, the referee CPK holds no
-                kit, its kits give no kit number to complete a referee's texture set against,
-                and the referee face compiles; file_not_used likewise names a refs export's
-                logo, portraits and collars, and a referee folder's textures or texture links
-                when it holds no model
+TC-REF-11  withdrawn: restated as TC-REF-25 and TC-REF-26 (a referee with no face model gets the blank face)
 TC-REF-12  GIVEN a refs export with ref_marker.dds
            WHEN it is compiled for PES 21 with --no-deploy
            THEN the team CPK (with multicpk_mode on, the bins CPK) is written holding
@@ -2477,6 +2470,19 @@ TC-REF-24  GIVEN a refs export whose players.txt maps Ref A to slots 01 and 20, 
            THEN the referee CPK holds boots folders k9901 and k9920, each with the shared
                 boots model, no other boots folder, and face/real/referee001 and referee020
                 each holding the blank face (restates TC-REF-10)
+TC-REF-25  GIVEN a refs export holding Kits/p1 with kit.dds beside a mapped referee folder holding
+           a face model
+           WHEN the root is compiled for PES 21 (or PES 17)
+           THEN file_not_used is reported naming Kits/p1 as a Warning, the referee CPK holds no
+                kit, its kits give no kit number to complete a referee's texture set against,
+                and the referee face compiles; file_not_used likewise names a refs export's
+                logo, portraits and collars (restates TC-REF-11)
+TC-REF-26  GIVEN a refs export whose Ref A, in slot 01, holds skin.dds alone; and one whose Ref A
+                 holds the link skin.dds.common alone, the export's Common/ holding skin.dds
+           WHEN each is checked, and compiled for PES 21
+           THEN no file_not_used is reported, slot 01 gets the blank face, and skin.ftex is
+                packed: the first under common/999/Ref A/, the second as the referees' Common
+                texture (restates TC-REF-11's last clause)
 ```
 
 **Output modes, deployment, multi-CPK**

@@ -90,8 +90,9 @@ So that he is never dressed twice, three kinds of entry are left out:
 - the hands, when he has gloves.
 
 A partial body (his own shirt over the refkit's legs) is written by hand in his own xml,
-without `fpc_off`. A referee folder with no face model gets no face, so `fpc_off` adds nothing
-there. On PES 18-21 the body waits for a Fox refkit the maintainer will make (worklog
+without `fpc_off`. A referee folder holding `fpc_off` and no face model gets the body in his
+blank face, so he shows a body with no head; with `ingame_face` as well, he has no face to carry
+it. On PES 18-21 the body waits for a Fox refkit the maintainer will make (worklog
 "Issues").
 
 What carries over from Red as compiler-internal behavior (invisible in the format):

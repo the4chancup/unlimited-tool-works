@@ -244,12 +244,10 @@ tells you to upgrade the export.</p>
 <h2>Making one directly in the new format</h2>
 <p>Build each referee's folder as you would a team player's: every model and texture
 directly in it. Then write <code>players.txt</code> and put <code>ref_marker.dds</code>
-beside it. Three things differ from a team player's folder:</p>
+beside it. Two things differ from a team player's folder:</p>
 <ul>
 <li><strong>No number in the folder's name.</strong> <code>tsuoffside</code>, not
 <code>01 - tsuoffside</code>: the slots come from <code>players.txt</code> alone.</li>
-<li><strong>A referee without a face model keeps the game's own head.</strong> A team
-player in the same case gets a blank face.</li>
 <li><strong>On PES 15-17, a referee whose face model is only a head needs a body.</strong> Put
 an empty file named <code>fpc_off</code> in the folder and the compile dresses the referee
 in the refkit, the body in <code>Common/refkit/</code> (shirt, shorts, socks, arms, and

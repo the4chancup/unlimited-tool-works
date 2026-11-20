@@ -1534,20 +1534,22 @@ pub(crate) fn is_package_model(
 }
 
 /// Whether planning gives the mapped player folder `player` of `export` a package task on a
-/// target of `engine` (`folder_tasks`), `hand_weighted` as for `link_combines`. A team player
-/// without `ingame_face` always gets his face, blank when it holds no part. Any other (a
-/// referee, a marked player) gets one when a source of his, his own files or a shared folder a
-/// link of his builds into his own package (`link_feeds_own_package`), holds a model of a
-/// package (`is_package_model`), or a glTF selected for its stem, for which planning drops the
-/// folder with `model_gltf_unsupported`. A folder planning no package plans no textures task,
-/// and validation reports each of its textures and texture links `file_not_used`.
+/// target of `engine` (`folder_tasks`), `hand_weighted` as for `link_combines`. A folder
+/// without `ingame_face` always gets its face, blank when it holds no part, a referee's too:
+/// referees are full FPC, so a referee without a face model has a full-body model, split as
+/// boots, that brings his head. A marked player gets one when a source of his, his own files
+/// or a shared folder a link of his builds into his own package (`link_feeds_own_package`),
+/// holds a model of a package (`is_package_model`), or a glTF selected for its stem, for which
+/// planning drops the folder with `model_gltf_unsupported`. A folder planning no package plans
+/// no textures task, and validation reports each of its textures and texture links
+/// `file_not_used`.
 pub(crate) fn plans_a_package(
     export: &ValidatedAestheticsExport,
     player: &PlayerFolder,
     engine: Engine,
     hand_weighted: &BTreeSet<ScopePath>,
 ) -> bool {
-    if matches!(export.roster, ValidatedRoster::Team(_)) && !player.ingame_face.is_some() {
+    if player.ingame_face.is_none() {
         return true;
     }
     let combined = combined_folders(export, player, engine, hand_weighted);
@@ -1559,13 +1561,10 @@ pub(crate) fn plans_a_package(
         &combined,
         engine,
     );
-    // The package his own files feed, as `ModelFolder::own_package` gives it: a marked
-    // player has no face, his textures counting for his boots.
-    let own_package = if player.ingame_face.is_some() {
-        ModelPackage::Boots
-    } else {
-        ModelPackage::Face
-    };
+    // Reached only under `ingame_face`, the early return above having answered every other
+    // folder: a marked player has no face, so the package his own files feed is his boots, as
+    // `ModelFolder::own_package` gives it.
+    let own_package = ModelPackage::Boots;
     let combined_sources = combined
         .iter()
         .zip(combined_models)

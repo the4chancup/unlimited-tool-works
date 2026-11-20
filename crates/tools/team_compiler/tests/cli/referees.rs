@@ -20,7 +20,8 @@ use crate::compile::{
 };
 use crate::compile_exports::{TEAM_COLOR, UNI_COLOR, UNIFORM_PARAMETER, bundled_uniform_parameter};
 use crate::deploy::{install_pes, templates_folder};
-use crate::models::package_names;
+use crate::face_folders::assert_blank_face;
+use crate::models::{body_skl, package_names, template};
 use crate::prefox_faces::{
     card_materials, card_model, materials_naming, nested_entries, ordered_entries, sampler_paths,
     small_dds,
@@ -287,9 +288,9 @@ fn a_refs_export_s_root_colors_txt_is_not_read_so_not_checked() {
     assert_eq!(run.exit_code(), 0, "{lines:#?}");
 }
 
-// TC-REF-11
+// TC-REF-26
 #[test]
-fn a_referee_folder_holding_textures_alone_reports_them_not_used_and_packs_none() {
+fn a_referee_folder_holding_textures_alone_packs_them_with_his_blank_face() {
     let sandbox = Sandbox::new("ref_textures_alone");
     sandbox.write(&format!("{REFS}/players.txt"), b"01 Ref A\n");
     sandbox.write(
@@ -297,42 +298,32 @@ fn a_referee_folder_holding_textures_alone_reports_them_not_used_and_packs_none(
         &tracer_player_file("shirt.dds"),
     );
 
-    // No model, so no package: nothing would name the texture.
+    // His blank face is a package, so the texture has somewhere to go and is no mistake.
     let check = sandbox.run(&pes21_settings(&sandbox), &["check"]);
     let lines = check.messages();
     assert_eq!(
         findings_of(&lines, "refs Cup"),
-        [
-            "Info export_identified [Keep] (team=referees)",
-            "Warning file_not_used [Keep] at Players/Ref A (file=skin.dds)",
-        ],
+        ["Info export_identified [Keep] (team=referees)"],
         "{lines:#?}"
     );
 
-    let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
+    let (run, entries) = compile(&sandbox);
     let lines = run.messages();
     assert_eq!(run.exit_code(), 0, "{lines:#?}");
-    assert!(
-        findings_of(&lines, "refs Cup")
-            .contains(&"Warning file_not_used [Keep] at Players/Ref A (file=skin.dds)"),
-        "{lines:#?}"
+    assert_blank_face(
+        &entries,
+        &referee_package("face/real/referee0", "01", "face"),
     );
-    // Nothing of the refs export compiles, so no refs CPK is written, as when validation
-    // drops its only folder: no texture of his went anywhere.
-    assert!(!sandbox.root.join("output").join(REFS_CPK).exists());
-    for cpk in cpk_files(&sandbox.root.join("output")) {
-        let entries = cpk_entries(&sandbox.root.join("output").join(&cpk));
-        assert!(
-            entries.keys().all(|path| !path.contains("Ref A")),
-            "{cpk}: {:?}",
-            entries.keys()
-        );
-    }
+    let skins: Vec<&String> = entries
+        .keys()
+        .filter(|path| path.ends_with("/skin.ftex"))
+        .collect();
+    assert_eq!(skins, [&format!("{REF_A_TEXTURES}/skin.ftex")]);
 }
 
-// TC-REF-11
+// TC-REF-26
 #[test]
-fn a_referee_folder_holding_a_texture_link_alone_reports_it_not_used() {
+fn a_referee_folder_holding_a_texture_link_alone_gets_the_blank_face() {
     let sandbox = Sandbox::new("ref_texture_link_alone");
     sandbox.write(&format!("{REFS}/players.txt"), b"01 Ref A\n");
     sandbox.write(&format!("{REFS}/Players/Ref A/skin.dds.common"), b"");
@@ -341,18 +332,32 @@ fn a_referee_folder_holding_a_texture_link_alone_reports_it_not_used() {
         &tracer_player_file("shirt.dds"),
     );
 
-    // No model, so no package: nothing would name the texture the link stands for.
+    // His blank face is a package, so the linked texture has somewhere to go and is no
+    // mistake.
     let check = sandbox.run(&pes21_settings(&sandbox), &["check"]);
     let lines = check.messages();
     assert_eq!(
         findings_of(&lines, "refs Cup"),
-        [
-            "Info export_identified [Keep] (team=referees)",
-            "Warning file_not_used [Keep] at Players/Ref A (file=skin.dds.common)",
-        ],
+        ["Info export_identified [Keep] (team=referees)"],
         "{lines:#?}"
     );
     assert_eq!(check.exit_code(), 0, "{lines:#?}");
+
+    let (run, entries) = compile(&sandbox);
+    assert_eq!(run.exit_code(), 0, "{:#?}", run.messages());
+    assert_blank_face(
+        &entries,
+        &referee_package("face/real/referee0", "01", "face"),
+    );
+    // A `Common/` file is the Common task's to pack, under the referees' own Common output.
+    let skins: Vec<&String> = entries
+        .keys()
+        .filter(|path| path.ends_with("/skin.ftex"))
+        .collect();
+    assert_eq!(
+        skins,
+        ["Asset/model/character/common/999/sourceimages/#windx11/skin.ftex"]
+    );
 }
 
 /// The folder of referee slot `slot`'s pre-Fox face CPK: its CPK is `<folder>.cpk`, and every
@@ -1234,7 +1239,7 @@ fn test_mode_writes_a_referee_folder_s_processed_files_once() {
 }
 
 /// Writes `Ref A` mapped to slots 01 and 20, holding only the link `Studs.boots` to the shared
-/// folder `Boots/Studs`, which holds `boots.fmdl` and `shirt.dds` (TC-REF-10's referee).
+/// folder `Boots/Studs`, which holds `boots.fmdl` and `shirt.dds` (TC-REF-24's referee).
 fn write_ref_a_linking_studs(sandbox: &Sandbox) {
     sandbox.write(&format!("{REFS}/players.txt"), b"01 Ref A\n20 Ref A\n");
     sandbox.write(&format!("{REFS}/Players/Ref A/Studs.boots"), b"");
@@ -1248,21 +1253,23 @@ fn write_ref_a_linking_studs(sandbox: &Sandbox) {
     );
 }
 
-// TC-REF-10
+// TC-REF-24
 #[test]
-fn a_referee_s_link_to_shared_boots_is_written_as_each_of_his_slots_boots() {
+fn a_referee_s_link_to_shared_boots_is_written_as_each_of_his_slots_boots_and_blank_face() {
     let sandbox = Sandbox::new("ref_shared_boots");
     write_ref_a_linking_studs(&sandbox);
 
     let (run, entries) = compile(&sandbox);
 
     assert_eq!(run.exit_code(), 0, "{:#?}", run.messages());
-    // No face folder: with no face model his slots keep the game's referee head.
-    let faces: Vec<&String> = entries
-        .keys()
-        .filter(|path| path.starts_with("Asset/model/character/face/real/referee0"))
-        .collect();
-    assert!(faces.is_empty(), "{faces:?}");
+    // His linked boots bring his head, so each slot gets the blank face: no head of the
+    // game's own floats over the body.
+    for slot in ["01", "20"] {
+        assert_blank_face(
+            &entries,
+            &referee_package("face/real/referee0", slot, "face"),
+        );
+    }
     let boots: Vec<&str> = entries
         .keys()
         .filter_map(|path| path.strip_prefix("Asset/model/character/boots/"))
@@ -1285,9 +1292,9 @@ fn a_referee_s_link_to_shared_boots_is_written_as_each_of_his_slots_boots() {
     }
 }
 
-// TC-REF-13
+// TC-REF-21
 #[test]
-fn on_pes_17_a_referee_s_link_to_shared_boots_is_each_slot_s_boots_folder_and_no_face() {
+fn on_pes_17_a_referee_s_link_to_shared_boots_is_each_slot_s_boots_folder_and_blank_face() {
     let sandbox = Sandbox::new("ref_shared_boots_pes17");
     write_ref_a_linking_studs(&sandbox);
 
@@ -1316,18 +1323,37 @@ fn on_pes_17_a_referee_s_link_to_shared_boots_is_each_slot_s_boots_folder_and_no
     };
     assert_eq!(model("01"), model("20"));
     pes_model::format::PreFoxModel::read(model("01")).unwrap();
-    // Not copied into a face as well, and no face of his own: the game's referee head stays.
+    // Each slot's face is the blank one: the `face_neck` dummy alone, the link not copied
+    // into it, and no `xml_face_neck_added` (the dummy is the placeholder every face gets,
+    // reported for a face holding models).
     assert!(
         !lines
             .iter()
             .any(|line| line.contains("xml_face_neck_added")),
         "{lines:#?}"
     );
-    let faces: Vec<&String> = entries
-        .keys()
-        .filter(|path| path.starts_with("common/character0/model/character/face/real/referee0"))
-        .collect();
-    assert!(faces.is_empty(), "{faces:?}");
+    for slot in ["01", "20"] {
+        let folder = pre_fox_referee_face(slot);
+        let face = nested_entries(&entries[&format!("{folder}.cpk")]);
+        let names: Vec<&str> = face
+            .keys()
+            .map(|path| path.strip_prefix(&format!("{folder}/")).unwrap())
+            .collect();
+        assert_eq!(
+            names,
+            ["dummy.mtl", "face.xml", "oral_dummy_win32.model"],
+            "{slot}"
+        );
+        assert_eq!(
+            ordered_entries(&face[&format!("{folder}/face.xml")]),
+            [(
+                "face_neck".to_owned(),
+                "./oral_dummy_*.model".to_owned(),
+                "./dummy.mtl".to_owned()
+            )],
+            "{slot}"
+        );
+    }
     let shirts: Vec<&String> = entries
         .keys()
         .filter(|path| path.ends_with("/shirt.dds"))
@@ -1336,6 +1362,88 @@ fn on_pes_17_a_referee_s_link_to_shared_boots_is_each_slot_s_boots_folder_and_no
         shirts,
         ["common/character1/model/character/uniform/common/999/Ref A/shirt.dds"]
     );
+}
+
+/// Writes `Ref A` in slot 01 holding a full-body model split as the boots with its skeleton,
+/// his gloves and a face diff other than the bundled template's, and no face model
+/// (TC-REF-22's referee).
+fn write_ref_a_body_split_as_boots(sandbox: &Sandbox) {
+    sandbox.write(&format!("{REFS}/players.txt"), b"01 Ref A\n");
+    let folder = format!("{REFS}/Players/Ref A");
+    sandbox.write(
+        &format!("{folder}/boots.fmdl"),
+        &tracer_player_file("boots.fmdl"),
+    );
+    sandbox.write(&format!("{folder}/boots.skl"), &body_skl("pes19"));
+    for glove in ["glove_l.fmdl", "glove_r.fmdl"] {
+        sandbox.write(&format!("{folder}/{glove}"), &tracer_player_file(glove));
+    }
+    let diff = tracer_player_file("face_diff.bin");
+    // A diff of his own, so the blank face's template diff is the compiler's choice.
+    assert_ne!(diff, template("face_diff.bin"));
+    sandbox.write(&format!("{folder}/face_diff.bin"), &diff);
+}
+
+// TC-REF-22
+#[test]
+fn on_pes_19_a_referee_with_a_body_split_as_boots_and_no_face_model_gets_the_blank_face() {
+    let sandbox = Sandbox::new("ref_body_split_as_boots");
+    write_ref_a_body_split_as_boots(&sandbox);
+
+    let (run, entries) = compile_for(&sandbox, PesVersion::Pes19);
+
+    let lines = run.messages();
+    assert_eq!(
+        findings_of(&lines, "refs Cup"),
+        [
+            "Info fmdl_weights_not_normalized [Keep] at Players/Ref A (file=boots.fmdl, count=1662)",
+            "Info fmdl_weights_not_normalized [Keep] at Players/Ref A (file=glove_l.fmdl, count=2)",
+            "Info export_identified [Keep] (team=referees)",
+            "Info face_file_not_used [Keep] at Players/Ref A (file=face_diff.bin)",
+        ],
+        "{lines:#?}"
+    );
+    assert_eq!(run.exit_code(), 0, "{lines:#?}");
+    // The blank face for his slot: the body in his boots model brings his head.
+    assert_blank_face(
+        &entries,
+        &referee_package("face/real/referee0", "01", "face"),
+    );
+    assert_eq!(
+        package_names(&entries[&referee_package("boots/k99", "01", "boots")]),
+        ["boots.fmdl", "boots.skl"]
+    );
+    assert_eq!(
+        package_names(&entries[&referee_package("glove/g99", "01", "glove")]),
+        ["glove_l.fmdl", "glove_r.fmdl"]
+    );
+}
+
+// TC-REF-23
+#[test]
+fn on_pes_19_a_referee_holding_ingame_face_keeps_the_game_s_referee_head() {
+    let sandbox = Sandbox::new("ref_body_split_ingame_face");
+    write_ref_a_body_split_as_boots(&sandbox);
+    sandbox.write(&format!("{REFS}/Players/Ref A/ingame_face.toml"), b"");
+
+    let (run, entries) = compile_for(&sandbox, PesVersion::Pes19);
+
+    let lines = run.messages();
+    assert_eq!(run.exit_code(), 0, "{lines:#?}");
+    assert!(
+        findings_of(&lines, "refs Cup")
+            .contains(&"Info face_file_not_used [Keep] at Players/Ref A (file=face_diff.bin)"),
+        "{lines:#?}"
+    );
+    // No face of any kind for slot 01: the game's own referee head stays.
+    let faces: Vec<&String> = entries
+        .keys()
+        .filter(|path| path.starts_with("Asset/model/character/face/real/referee0"))
+        .collect();
+    assert!(faces.is_empty(), "{faces:?}");
+    // His boots and gloves still compile under the slot.
+    assert!(entries.contains_key(&referee_package("boots/k99", "01", "boots")));
+    assert!(entries.contains_key(&referee_package("glove/g99", "01", "glove")));
 }
 
 // His own per-kit boots are parts of his face, which lists their set; the shared boots are an
@@ -1452,7 +1560,7 @@ fn on_pes_17_a_referee_s_linked_boots_folder_leaves_out_its_own_set_s_higher_var
     );
 }
 
-// TC-REF-11
+// TC-REF-25
 #[test]
 fn a_refs_export_s_kit_is_file_not_used_and_the_referee_face_compiles() {
     let sandbox = Sandbox::new("ref_kit_not_used");
@@ -1493,7 +1601,7 @@ fn a_refs_export_s_kit_is_file_not_used_and_the_referee_face_compiles() {
     );
 }
 
-// TC-REF-11
+// TC-REF-25
 #[test]
 fn a_refs_export_s_kits_logo_portraits_and_collars_are_not_read() {
     let sandbox = Sandbox::new("ref_unread_files");
@@ -1531,7 +1639,7 @@ fn a_refs_export_s_kits_logo_portraits_and_collars_are_not_read() {
     );
 }
 
-// TC-REF-11
+// TC-REF-25
 #[test]
 fn a_refs_export_s_kits_define_no_kit_number_to_complete_a_referee_s_texture_set_against() {
     let sandbox = Sandbox::new("ref_kit_numbers_pes17");

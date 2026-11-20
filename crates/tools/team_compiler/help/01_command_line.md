@@ -370,9 +370,8 @@ reads it, so it is reported as the warning `file_not_used`.
 **A player with no face model, and the in-game face**
 
 A player folder with no face model, and no `Faces` link or (on PES 2015 to 2017) `face.xml` of
-its own bringing one, still gets a face folder, an empty one (a referee's folder gets none), so
-the game shows no head for that player. That is the usual case when a body model brings its own
-head.
+its own bringing one, still gets a face folder, an empty one, so the game shows no head for
+that player. That is the usual case when a body model brings its own head.
 
 A file named `ingame_face.toml` in the player's folder gives him the in-game face instead: the
 head the game builds from his face, hair and iris, which the file sets (`iris_color`, `[face]`,
@@ -645,8 +644,9 @@ lists is built once and written for every slot it is listed under: slot NN as th
 `common/999/<folder name>/`. A referee's link to a `Boots` or `Gloves` folder makes that folder
 the boots or gloves of each of his slots. On PES 2018 to 2021 it is merged with any of his own;
 on PES 2015 to 2017 it is written as his slot's folder alone, his own boots and gloves riding in
-his face as a team player's do. A referee folder with no face model writes no face file, so the
-game's own referee head stays, where a team player's folder with no face model shows no head.
+his face as a team player's do. A referee folder with no face model gets an empty face
+folder, as a team player's does, so the game shows no head of its own over a body that
+brings one. A referee who should keep the game's referee head holds `ingame_face.toml`.
 
 A `refs` export's kits, logo, portraits and collars have no referee to go to: each is left out
 and reported as the warning `file_not_used`.
