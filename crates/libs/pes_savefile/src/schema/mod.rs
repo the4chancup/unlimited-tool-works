@@ -397,8 +397,8 @@ pub fn first_version_with_team(field: TeamField) -> Option<PesVersion> {
 /// The smallest `which` player text field over the versions it counts
 /// (`spec/pes_savefile/operations.md` "Team TOML", the portable text
 /// limits): the name over every version (46 bytes), the shirt name over PES
-/// 15 and 17 to 21 (18 letters). PES 16's shirt field is the one outlier
-/// left out (16 letters): `apply` onto a PES 16 save crops a longer shirt
+/// 15 and 17 to 21 (18 letters). PES 14's and 16's shirt fields are left
+/// out (16 letters): `apply` onto a PES 16 save crops a longer shirt
 /// name to the field's 16 with a note rather than hold every shirt name to
 /// 16.
 pub fn portable_text_max(which: PlayerText) -> usize {

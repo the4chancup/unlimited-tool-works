@@ -424,7 +424,7 @@ impl AestheticsPatch {
 /// edited-player flag, as the Save editor's own name edit does (PES 2019
 /// shows a name only with it set); the other edit flags but `base_copy`
 /// are not touched. The copy is encoded into a scratch record of the
-/// version's player size — and, on PES 15/16, its separate appearance
+/// version's player size — and, on PES 14 to 16, its separate appearance
 /// record — so a stored value past the field's width is refused here
 /// (`Codec`), not when the save is written. `path` is the player's patch
 /// path (`teams[0].players.05`).

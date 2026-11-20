@@ -41,7 +41,7 @@ pub(crate) fn record<'a>(
     &payload[section.offset + i * size..section.offset + (i + 1) * size]
 }
 
-/// The PES 15/16 appearance record of a decoded player id, applied like
+/// The PES 14 to 16 appearance record of a decoded player id, applied like
 /// `EditFile`'s own read: a record a version may not hold for the player
 /// (PES 2014) is skipped rather than panicking.
 pub(crate) fn appearance_for(payload: &[u8], schema: &VersionSchema, player: &mut PlayerEntry) {

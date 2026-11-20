@@ -315,7 +315,17 @@ on main. Main is merged into the branch, never rebased onto it.
    - the playstyle list, empty until measured: until then the AATF cannot read a PES 2014
      player's playing style, and step 5 depends on it;
    - the motion tops and face-type caps, which read PES 2015's tops and each field's bit
-     maximum until measured.
+     maximum until measured;
+   - no panic on a PES 2014 save. The screens assume what every other version stores: the
+     Age, Height and Weight boxes take their field's maximum, and the Appearance segment, the
+     player and team menus' FPC entries and a roster drag read the in-game face run, which
+     PES 2014 does not map. Each such read follows the schema (a field it lacks is greyed), and
+     a test opens the Akko save and draws every segment, menu and drag with a player and a team
+     selected;
+   - a field only PES 2014 stores (Tenacity): `first_version_with` searches
+     `PesVersion::ALL`, so its greyed box's tooltip would find no version; it reads "PES 2014
+     only" (above);
+   - the overlong shirt name's tooltip "(PES 2016 shows 16)" names PES 2014 too.
 5. The Akko VII ruleset (`akko7.rhai`, its logo and page); `/4ccg/` in `.akko7v2` passes as it
    does in the fork's fixed build.
 6. Releases: the `pes14-v` tag prefix in the update check and `release.yml`. The version
