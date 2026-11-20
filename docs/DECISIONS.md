@@ -18910,3 +18910,14 @@ Why: own values, not The Instigator read as Build Up (the style at its index on 
 because nothing measured says they are one style, and a ruleset naming Build Up would pass a
 PES 2014 Instigator.
 Plan: `plans/pes14.md` "PES 2014 in the code", "Playing styles" and "Motions".
+
+## 2026-11-20 — save_editor (pes14 branch) — recent saves keep a PES 2014 save, and a team row keeps its header
+Decision: the recent-saves list stores a PES 2014 save's version as 14, the only settings
+entry that may. On a PES 2014 save a team row opens the team's header with the tactics editor
+replaced by a greyed line, and the formation pictures and the Gameplan copy targets are greyed.
+Why: refusing 14 in recents, not storing it, because the refusal made the whole settings table
+unreadable after one PES 2014 save was opened, so every tool read its defaults. The header
+stays, not the whole team view greyed, because the team's name and colours are Build 1's; the
+pictures and copies go with the Gameplan screen, because they would show or copy zeros.
+Plan: `plans/pes14.md` "PES 2014 in the code", "The Gameplan screen in Build 1" and "The
+recent-saves list".

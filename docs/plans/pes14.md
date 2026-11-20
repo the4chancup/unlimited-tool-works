@@ -306,7 +306,22 @@ version, not the version selector.
   next build" tooltip; the import panel's Gameplan section and the Preset and Formation copy
   targets go with it. The captain is read for the AATF and kept as the game set it; it is
   shown and edited on the Gameplan screen, as on the other versions, from Build 2. A
-  captain-only screen for Build 1 would be new design for one build's life.
+  captain-only screen for Build 1 would be new design for one build's life. A team row still
+  opens the team's header (name, short name, colours), with the tactics editor below it
+  replaced by a greyed line saying the same. The formation pictures and the Gameplan copy
+  targets are greyed too, since they would picture or copy a record of zeros.
+- **The recent-saves list** stores a PES 2014 save's version as 14, the one settings entry
+  that names it: a recent save is a file the editor opened, not a version a member picks.
+  Refusing 14 there would make the whole settings table unreadable after one PES 2014 save was
+  opened, and every tool would quietly read its defaults.
+- **The Appearance screen** follows the schema: a control whose field the version's records
+  do not map is greyed, so PES 2014's controls come alive as their fields are mapped. PES 2014
+  has no in-game face run, so the FPC buttons, the glove and skin cells and the colour palettes
+  are greyed there, as are the motions it does not store (corner kick, hunching, arm
+  movement); Punt Kick joins the motions.
+- **The 1-to-8 settings.** On PES 2014 Form, Injury Resistance, Weak Foot Usage and Weak Foot
+  Accuracy each run from 1 to 8 (run `player1`: each shows a bar of 8), where the other
+  versions' boxes stop injury resistance at 3 and the weak foot at 4.
 
 ## Releases
 
