@@ -340,7 +340,7 @@ struct PlannedRun {
 
 /// What the run's output mode means for `plan`: whether the `overrides/` folder applies,
 /// and the PES folder's `download/` that a deploying run's preflight resolved (`None` when
-/// the mode does not deploy).
+/// the run does not deploy or cannot).
 struct RunOutput {
     applies_overrides: bool,
     download: Option<Download>,
