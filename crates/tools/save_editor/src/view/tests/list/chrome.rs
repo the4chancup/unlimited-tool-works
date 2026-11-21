@@ -10,27 +10,6 @@ pub(super) fn radio<'a>(nodes: &'a [accesskit::Node], label: &str) -> &'a access
         .unwrap_or_else(|| panic!("no {label:?} radio button"))
 }
 
-/// The team selector's combo, clicked open; the popup's `entry` item
-/// picked through its AccessKit action.
-pub(super) fn pick_in_selector(window: &mut Headless, view: &mut SaveView, entry: &str) {
-    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, view, &|| Vec::new()));
-    // A pick may have closed the popup; click the combo open only while
-    // `entry` is not drawn (a click while it is open closes it).
-    if !nodes
-        .iter()
-        .any(|node| node.role() == Role::Button && node.label() == Some(entry))
-    {
-        click(window, selector_combo(&nodes), view);
-    }
-    let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, view, &|| Vec::new()));
-    let (item, _) = pairs
-        .iter()
-        .find(|(_, node)| node.role() == Role::Button && node.label() == Some(entry))
-        .unwrap_or_else(|| panic!("no selector entry {entry:?}"));
-    let item = *item;
-    action_click(window, view, item);
-}
-
 // Picking a team in the team selector selects its team row, so the
 // detail shows the team's view and its tactics; picking All teams keeps the
 // selection.
@@ -46,7 +25,7 @@ fn picking_a_team_in_the_selector_selects_its_team_row() {
         "premise: the first row"
     );
 
-    pick_in_selector(&mut window, &mut view, "/a/");
+    pick_team(&mut window, &mut view, "/a/");
     assert_eq!(
         view.selected,
         Some(Selection::Team(702)),
@@ -60,7 +39,7 @@ fn picking_a_team_in_the_selector_selects_its_team_row() {
         "the detail shows the team view"
     );
 
-    pick_in_selector(&mut window, &mut view, "All teams");
+    pick_team(&mut window, &mut view, "All teams");
     assert_eq!(
         view.selected,
         Some(Selection::Team(702)),
@@ -80,14 +59,14 @@ fn picking_the_selected_players_own_team_keeps_him_selected() {
     view.selected = Some(Selection::Player(702, 3));
     let mut window = Headless::new();
 
-    pick_in_selector(&mut window, &mut view, "/a/");
+    pick_team(&mut window, &mut view, "/a/");
     assert_eq!(
         view.selected,
         Some(Selection::Player(702, 3)),
         "picking /a/ keeps the player of 702 selected"
     );
 
-    pick_in_selector(&mut window, &mut view, "/3/");
+    pick_team(&mut window, &mut view, "/3/");
     assert_eq!(
         view.selected,
         Some(Selection::Team(701)),
@@ -408,7 +387,7 @@ fn the_selectors_categories_shorten_the_dropdown_and_the_list() {
     // `Invitational teams` and the selection is Invitational's first
     // player.
     click(&mut window, radio(&nodes, "VGL"), &mut view);
-    pick_in_selector(&mut window, &mut view, "/@/");
+    pick_team(&mut window, &mut view, "/@/");
     assert_eq!(view.team, TeamChoice::Team(781), "premise: 781 picked");
     let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     click(&mut window, selector_combo(&nodes), &mut view);

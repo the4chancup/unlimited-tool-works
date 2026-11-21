@@ -165,13 +165,19 @@ fn centre(node: &accesskit::Node) -> egui::Pos2 {
 /// The primary button pressed (or released) at `pos`, the pointer moved
 /// there first.
 fn pointer_at(pos: egui::Pos2, pressed: bool) -> Vec<egui::Event> {
+    pointer_at_with(pos, pressed, egui::Modifiers::default())
+}
+
+/// `pointer_at` with `modifiers` held at the press or release (a
+/// Ctrl+click's `COMMAND`).
+fn pointer_at_with(pos: egui::Pos2, pressed: bool, modifiers: egui::Modifiers) -> Vec<egui::Event> {
     vec![
         egui::Event::PointerMoved(pos),
         egui::Event::PointerButton {
             pos,
             button: egui::PointerButton::Primary,
             pressed,
-            modifiers: egui::Modifiers::default(),
+            modifiers,
         },
     ]
 }
@@ -226,6 +232,89 @@ fn press_release(
 /// A click on `node`: press on one frame, release on the next.
 fn click(window: &mut Headless, node: &accesskit::Node, view: &mut SaveView) {
     press_release(window, centre(node), |ui| show(ui, view, &|| Vec::new()));
+}
+
+/// A Ctrl+click on `node` (Cmd on a Mac): the platform's `command`
+/// modifier down for `click`'s press and release, then back up —
+/// `ModifiersChanged` is the event `input.modifiers` reads (a button
+/// event's own `modifiers` land on the `Click` event, not on
+/// `input.modifiers`).
+fn ctrl_click(window: &mut Headless, node: &accesskit::Node, view: &mut SaveView) {
+    let at = centre(node);
+    window.frame(
+        [egui::Event::ModifiersChanged(egui::Modifiers::COMMAND)]
+            .into_iter()
+            .chain(pointer_at_with(at, true, egui::Modifiers::COMMAND))
+            .collect(),
+        |ui| show(ui, view, &|| Vec::new()),
+    );
+    window.frame(pointer_at_with(at, false, egui::Modifiers::COMMAND), |ui| {
+        show(ui, view, &|| Vec::new())
+    });
+    window.frame(
+        vec![egui::Event::ModifiersChanged(egui::Modifiers::default())],
+        |ui| show(ui, view, &|| Vec::new()),
+    );
+}
+
+/// The title's toggle's segment labeled `label`.
+fn segment<'a>(nodes: &'a [accesskit::Node], label: &str) -> &'a accesskit::Node {
+    node_labeled(nodes, Role::Button, label)
+}
+
+/// Whether `label`'s segment is the toggle's held one.
+fn chosen(nodes: &[accesskit::Node], label: &str) -> bool {
+    segment(nodes, label).toggled() == Some(accesskit::Toggled::True)
+}
+
+/// The toggle's `label` segment pressed, through the AccessKit click (a
+/// press lands whatever the pane's scroll left under the pointer).
+fn press_segment(window: &mut Headless, view: &mut SaveView, label: &str) {
+    let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, view, &|| Vec::new()));
+    let (id, _) = pairs
+        .iter()
+        .find(|(_, node)| node.role() == Role::Button && node.label() == Some(label))
+        .unwrap_or_else(|| panic!("the {label} segment"));
+    action_click(window, view, *id);
+}
+
+/// Whether the Appearance screen's one control shows: the `Hide default
+/// body` button, which only it draws.
+fn appearance_shown(nodes: &[accesskit::Node]) -> bool {
+    nodes
+        .iter()
+        .any(|node| node.role() == Role::Button && node.label() == Some("Hide default body"))
+}
+
+/// `name` picked in the list's team selector: the combo clicked, its
+/// popup's `name` item picked through the AccessKit action — a popup
+/// item's bounds sit outside the window, where a pointer click lands on
+/// nothing.
+fn pick_team(window: &mut Headless, view: &mut SaveView, name: &str) {
+    // The popup can still be open on the first frame (its close lands a
+    // frame after the item's action): click the combo only until the
+    // item is drawn — clicking while it is open closes it. Bounded, so
+    // a missing item fails rather than hangs.
+    for _ in 0..10 {
+        let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, view, &|| Vec::new()));
+        if let Some((item, _)) = pairs
+            .iter()
+            .find(|(_, node)| node.role() == Role::Button && node.label() == Some(name))
+        {
+            action_click(window, view, *item);
+            return;
+        }
+        let combo = pairs
+            .iter()
+            .map(|(_, node)| node)
+            .find(|node| {
+                node.role() == Role::ComboBox
+                    && node.bounds().is_some_and(|bounds| bounds.x1 < 300.0)
+            })
+            .expect("the list's team selector");
+        click(window, combo, view);
+    }
+    panic!("the team selector never showed {name:?}");
 }
 
 /// An AccessKit `Click` action on `id`: a click delivered as the
@@ -2207,6 +2296,7 @@ mod quick_actions;
 mod ruleset_picker;
 mod savefile;
 mod shell;
+mod similar;
 mod stretch;
 mod strip;
 mod tactics;

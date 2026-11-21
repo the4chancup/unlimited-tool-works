@@ -104,6 +104,7 @@ pub(super) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
         team_category,
         filter,
         selected,
+        group,
         reveal_selected,
         rules,
         focused,
@@ -230,6 +231,7 @@ pub(super) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
             team_tactics,
             tactics,
         ));
+        group.clear();
     }
 }
 

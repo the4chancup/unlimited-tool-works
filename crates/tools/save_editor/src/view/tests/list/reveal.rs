@@ -1,4 +1,4 @@
-use super::chrome::{pick_in_selector, radio};
+use super::chrome::radio;
 use super::*;
 
 // A pick of All teams keeps the selection, the list scrolled to the
@@ -24,14 +24,14 @@ fn picking_all_teams_scrolls_the_list_to_the_kept_row() {
     );
     let mut window = Headless::new();
 
-    pick_in_selector(&mut window, &mut view, &name);
+    pick_team(&mut window, &mut view, &name);
     assert_eq!(
         view.selected,
         Some(Selection::Team(820)),
         "premise: 820's row selected"
     );
 
-    pick_in_selector(&mut window, &mut view, "All teams");
+    pick_team(&mut window, &mut view, "All teams");
     assert_eq!(view.team, TeamChoice::All, "premise: All teams picked");
     assert_eq!(
         view.selected,
@@ -109,7 +109,7 @@ fn a_category_tick_that_relists_nothing_keeps_the_scroll() {
     let mut view = SaveView::new();
     view.open(&path);
     let mut window = Headless::sized(DEFAULT_PANE.x, 400.0);
-    pick_in_selector(&mut window, &mut view, "/@/");
+    pick_team(&mut window, &mut view, "/@/");
     assert_eq!(
         view.selected,
         Some(Selection::Team(781)),
@@ -192,7 +192,7 @@ fn a_team_pick_under_a_filter_scrolls_the_list_to_its_row() {
         "premise: {label:?} is not drawn before the pick"
     );
 
-    pick_in_selector(&mut window, &mut view, &name);
+    pick_team(&mut window, &mut view, &name);
     assert_eq!(
         view.selected,
         Some(Selection::Team(pick)),
@@ -266,7 +266,7 @@ fn a_pick_of_the_selected_team_under_a_filter_scrolls_the_list_to_its_row() {
         "premise: {label:?} is not drawn before the pick"
     );
 
-    pick_in_selector(&mut window, &mut view, &name);
+    pick_team(&mut window, &mut view, &name);
     assert_eq!(
         view.selected,
         Some(Selection::Team(pick)),
@@ -423,7 +423,7 @@ fn picking_all_teams_under_a_filter_keeps_the_scroll() {
     view.filter = "82".to_owned();
     let mut window = Headless::new();
     // A team the filter lists, picked: its row can wheel out of the clip.
-    pick_in_selector(&mut window, &mut view, "/umaJP/");
+    pick_team(&mut window, &mut view, "/umaJP/");
     assert_eq!(
         view.selected,
         Some(Selection::Team(827)),
@@ -436,7 +436,7 @@ fn picking_all_teams_under_a_filter_keeps_the_scroll() {
     let nodes = draw(&mut window, &mut view);
     let top_before = top_list_row(&nodes);
 
-    pick_in_selector(&mut window, &mut view, "All teams");
+    pick_team(&mut window, &mut view, "All teams");
     assert_eq!(view.team, TeamChoice::All, "premise: All teams picked");
     assert_eq!(
         view.selected,
@@ -552,7 +552,7 @@ fn a_team_pick_scrolls_the_list_to_its_row() {
     let mut window = Headless::sized(DEFAULT_PANE.x, 400.0);
     scroll_player_list_to_bottom(&mut window, &mut view);
 
-    pick_in_selector(&mut window, &mut view, "/a/");
+    pick_team(&mut window, &mut view, "/a/");
     assert_eq!(
         view.selected,
         Some(Selection::Team(702)),

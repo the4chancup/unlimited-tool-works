@@ -269,6 +269,7 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
         team_category,
         filter,
         selected,
+        group,
         reveal_selected,
         tactics,
         patch_dialog,
@@ -338,6 +339,7 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
                 &entry.tactics,
                 tactics,
             ));
+            group.clear();
         }
         None => {}
     }

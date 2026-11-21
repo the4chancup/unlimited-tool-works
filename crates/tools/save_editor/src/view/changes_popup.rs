@@ -193,6 +193,7 @@ fn switch_to(view: &mut SaveView, index: usize) {
                 &entry.tactics,
                 &mut view.tactics,
             ));
+            view.group.clear();
         }
         Switch::Team(team_id) => {
             view.reveal_selected = Some(aatf_check::select_team(
@@ -202,6 +203,7 @@ fn switch_to(view: &mut SaveView, index: usize) {
                 &mut view.team_category,
                 &mut view.filter,
             ));
+            view.group.clear();
         }
     }
 }
