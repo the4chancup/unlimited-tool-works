@@ -9,10 +9,12 @@
 
 mod keys;
 mod mt19937;
+mod packed;
 mod pes15;
 mod pes16_21;
 
 pub use keys::MasterKey;
+pub use packed::{pack_file, rebuild};
 
 use pes_version::PesVersion;
 
@@ -89,6 +91,11 @@ pub enum ContainerError {
         /// The size that did not fit.
         size: usize,
     },
+    /// `rebuild` got bytes that are not a `pack` form: too short, a
+    /// scheme byte no scheme owns, a length past the end or bytes past
+    /// `serial`.
+    #[error("not a packed save")]
+    NotPacked,
 }
 
 impl SaveContainer {
@@ -123,21 +130,27 @@ impl SaveContainer {
     }
 }
 
-/// The salt under which `bytes` were encrypted — the one `to_bytes` needs to
-/// write them again: a keyed save carries its 320-byte salt as its first 320
-/// bytes, PES 15's seed is its byte 0 (the rest of the salt unused). The
-/// container's own errors when `bytes` is no save.
-pub fn file_salt(bytes: &[u8]) -> Result<[u8; 320], ContainerError> {
-    match SaveContainer::decrypt(bytes)?.scheme {
+/// `bytes`' salt, `scheme` already known: a keyed save carries its
+/// 320-byte salt as its first 320 bytes, PES 15's seed is its byte 0
+/// (the rest of the salt unused). Shared so `file_salt` and `pack_file`
+/// decrypt once each.
+fn salt_of(scheme: Scheme, bytes: &[u8]) -> [u8; 320] {
+    match scheme {
         Scheme::Pes15 => {
             let mut salt = [0u8; 320];
             salt[0] = bytes[0];
-            Ok(salt)
+            salt
         }
-        Scheme::Keyed(_) => Ok(bytes[..320]
+        Scheme::Keyed(_) => bytes[..320]
             .try_into()
-            .expect("a keyed save's decrypt passes only with a 320-byte salt")),
+            .expect("a keyed save's decrypt passes only with a 320-byte salt"),
     }
+}
+
+/// The salt under which `bytes` were encrypted — the one `to_bytes` needs to
+/// write them again. The container's own errors when `bytes` is no save.
+pub fn file_salt(bytes: &[u8]) -> Result<[u8; 320], ContainerError> {
+    Ok(salt_of(SaveContainer::decrypt(bytes)?.scheme, bytes))
 }
 
 #[cfg(test)]

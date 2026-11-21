@@ -372,7 +372,7 @@ mod tests {
     use std::sync::{Arc, Mutex};
     use std::time::SystemTime;
 
-    use studio_core::repro::read_frame;
+    use studio_core::repro::{SessionFile, read_frame};
 
     use super::*;
     use crate::test_dir::TestDir;
@@ -451,7 +451,7 @@ mod tests {
             SessionMessage::Input {
                 tool: "stub".to_owned(),
                 path: Path::new("C:/Data/in/EDIT00000000").to_path_buf(),
-                bytes: Arc::from(&b"INPUT_BYTES"[..]),
+                file: SessionFile::Raw(Arc::from(&b"INPUT_BYTES"[..])),
             },
         ]
     }
@@ -554,8 +554,11 @@ mod tests {
         };
         assert_eq!(what, "opened C:/Data/in/EDIT00000000 (10 bytes)");
         let frame = read_frame(&mut input).unwrap().expect("the input");
-        let SessionFrame::Message(SessionMessage::Input { bytes, .. }) = frame else {
+        let SessionFrame::Message(SessionMessage::Input { file, .. }) = frame else {
             panic!("an input frame follows the step")
+        };
+        let SessionFile::Raw(bytes) = file else {
+            panic!("the stub's input is raw")
         };
         assert_eq!(&*bytes, b"INPUT_BYTES");
         assert!(
@@ -819,7 +822,7 @@ mod tests {
             SessionMessage::Input {
                 tool: "stub".to_owned(),
                 path: Path::new("C:/Data/in/EDIT00000000").to_path_buf(),
-                bytes: Arc::from(&b"INPUT_BYTES"[..]),
+                file: SessionFile::Raw(Arc::from(&b"INPUT_BYTES"[..])),
             },
             SessionMessage::Step {
                 seconds: 1.0,
@@ -932,7 +935,7 @@ mod tests {
             SessionMessage::Input {
                 tool: "stub".to_owned(),
                 path: Path::new("C:/Data/in/").join("n".repeat(300)),
-                bytes: Arc::from(&b"TOO_LONG"[..]),
+                file: SessionFile::Raw(Arc::from(&b"TOO_LONG"[..])),
             },
             SessionMessage::Step {
                 seconds: 0.6,

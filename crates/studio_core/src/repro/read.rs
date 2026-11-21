@@ -77,35 +77,54 @@ struct StepRow {
 struct FileRow {
     /// The file's path, redacted.
     path: String,
-    /// The byte count the row declares.
+    /// The byte count the row declares (the file's own, even on a
+    /// packed entry).
     size: usize,
-    /// The SHA-256 the row declares, lowercase hex.
+    /// The SHA-256 the row declares, lowercase hex (the file's own).
     sha256: String,
     /// The file's name in the zip (`inputs/<i>-<name>`).
     entry: String,
+    /// Whether the entry holds the file's packed form, compressed:
+    /// inflated and rebuilt before the checks. Absent on a raw row.
+    #[serde(default)]
+    packed: bool,
 }
 
 /// `rows`' files read back from the zip, each checked: the entry must be
-/// there, its byte count the row's `size`, its SHA-256 the row's. An
-/// error names the bundle's path and the entry.
+/// there, its byte count the row's `size`, its SHA-256 the row's. A
+/// packed row's entry is inflated and handed to `rebuild` (the caller's
+/// packed-to-file step) first — the rebuilt bytes take the same checks.
+/// An error names the bundle's path and the entry.
 fn kept_files(
     archive: &mut zip::ZipArchive<std::fs::File>,
     path: &Path,
     rows: &[FileRow],
+    rebuild: &dyn Fn(&[u8]) -> anyhow::Result<Vec<u8>>,
 ) -> anyhow::Result<Vec<BundleFile>> {
     let mut kept = Vec::with_capacity(rows.len());
     for row in rows {
-        let mut entry = archive.by_name(&row.entry).with_context(|| {
+        let entry = archive.by_name(&row.entry).with_context(|| {
             format!(
                 "{}: the journal's {} is not in the bundle",
                 path.display(),
                 row.entry
             )
         })?;
-        let mut bytes = Vec::with_capacity(row.size);
-        entry
-            .read_to_end(&mut bytes)
-            .with_context(|| format!("{}: cannot read {}", path.display(), row.entry))?;
+        let bytes = if row.packed {
+            let mut packed = Vec::new();
+            flate2::read::ZlibDecoder::new(entry)
+                .read_to_end(&mut packed)
+                .with_context(|| format!("{}: cannot inflate {}", path.display(), row.entry))?;
+            rebuild(&packed)
+                .with_context(|| format!("{}: cannot rebuild {}", path.display(), row.entry))?
+        } else {
+            let mut bytes = Vec::with_capacity(row.size);
+            let mut entry = entry;
+            entry
+                .read_to_end(&mut bytes)
+                .with_context(|| format!("{}: cannot read {}", path.display(), row.entry))?;
+            bytes
+        };
         if bytes.len() != row.size {
             anyhow::bail!(
                 "{}: {} is {} bytes, the journal says {}",
@@ -116,6 +135,13 @@ fn kept_files(
             );
         }
         if sha256(&bytes) != row.sha256 {
+            if row.packed {
+                anyhow::bail!(
+                    "{}: {} rebuilt does not match the journal's SHA-256",
+                    path.display(),
+                    row.entry
+                );
+            }
             anyhow::bail!(
                 "{}: {}'s bytes do not match the journal's SHA-256",
                 path.display(),
@@ -130,11 +156,17 @@ fn kept_files(
     Ok(kept)
 }
 
-/// Reads the bundle at `path`. Errors name the path and what is wrong:
-/// not a zip, no `journal.toml`, an unparseable journal, a row's entry
-/// missing from the zip, an entry whose size or SHA-256 differs from
-/// its row's.
-pub fn read_bundle(path: &Path) -> anyhow::Result<Bundle> {
+/// Reads the bundle at `path`, `rebuild` turning a packed entry's
+/// inflated bytes back into the file they pack (the reading tool's own
+/// pack-to-file — `studio_core` knows no file's packed form). Errors
+/// name the path and what is wrong: not a zip, no `journal.toml`, an
+/// unparseable journal, a row's entry missing from the zip, an entry
+/// that does not inflate or rebuild, an entry whose size or SHA-256
+/// differs from its row's.
+pub fn read_bundle(
+    path: &Path,
+    rebuild: &dyn Fn(&[u8]) -> anyhow::Result<Vec<u8>>,
+) -> anyhow::Result<Bundle> {
     let file = std::fs::File::open(path)
         .with_context(|| format!("{}: cannot open the bundle", path.display()))?;
     let mut archive = zip::ZipArchive::new(file)
@@ -158,8 +190,8 @@ pub fn read_bundle(path: &Path) -> anyhow::Result<Bundle> {
                 op: row.op,
             })
             .collect(),
-        inputs: kept_files(&mut archive, path, &doc.input)?,
-        outputs: kept_files(&mut archive, path, &doc.output)?,
+        inputs: kept_files(&mut archive, path, &doc.input, rebuild)?,
+        outputs: kept_files(&mut archive, path, &doc.output, rebuild)?,
     })
 }
 
@@ -186,10 +218,16 @@ mod tests {
         writer.finish().unwrap();
     }
 
+    /// A `rebuild` for a bundle that holds no packed rows: called, it
+    /// means a raw row took the packed path.
+    fn never_rebuild(_packed: &[u8]) -> anyhow::Result<Vec<u8>> {
+        panic!("no packed row in this bundle")
+    }
+
     /// `read_bundle`'s error on `path` (a `Bundle` holds the files' bytes
     /// and prints no `Debug`, so `unwrap_err` cannot be asked).
     fn bundle_err(path: &Path) -> anyhow::Error {
-        match read_bundle(path) {
+        match read_bundle(path, &never_rebuild) {
             Ok(_) => panic!("{} read as a bundle", path.display()),
             Err(error) => error,
         }
@@ -228,7 +266,7 @@ mod tests {
         let out = dir.join("repro.zip");
         recorder.write_bundle(&out, "", &[], &[], None).unwrap();
 
-        let bundle = read_bundle(&out).unwrap();
+        let bundle = read_bundle(&out, &never_rebuild).unwrap();
 
         assert_eq!(bundle.version, crate::shell::version_label());
         assert_eq!(bundle.steps.len(), 2);
