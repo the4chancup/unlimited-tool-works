@@ -43,6 +43,10 @@ cargo +args:
 cargo +args:
     cargo "$@"
 
+# Stops a tree's cargo builds and tests and the scripts driving them; an agent's session there keeps running (`just stop`, `just stop sk_gloves14`, `--list` to preview)
+stop tree="." *flags:
+    {{python}} scripts/stop_builds.py {{tree}} {{flags}}
+
 # Gate 1: formatting
 fmt-check:
     cargo fmt --all --check

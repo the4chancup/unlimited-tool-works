@@ -560,6 +560,14 @@ processes inherit as they inherit the priority (`~/.claude/tools/leave_cores.py`
 launcher;
 `lower_tree.ps1 -Match <text> -Free 2` for a job already running).
 
+**A build or test run is stopped with `just stop <tree>`** (a worktree's name or path; none for
+the tree the command runs in), never with the harness alone. The
+harness's stop ends a background command's outer shell, not the script it ran: on 2026-11-21 a
+stopped gate script went on to its next stage beside its rerun, both writing one log, and the
+doubled load pushed a test past its deadline. `scripts/stop_builds.py` stops the tree's cargo,
+rustc and test binaries and the scripts that launched them, while an agent's own session in
+the tree keeps running; `--list` shows what it would stop.
+
 **A headless `claude -p` sidekick runs its builds and tests in the foreground.** Its session
 ends with its turn, so a run it started in the background and a notification it waits for die
 with it: an Opus sidekick once ended on "Waiting for the test run's notification",
