@@ -52,7 +52,7 @@ fn text(node: &accesskit::Node) -> Option<String> {
 
 /// `view` drawn at `pane`: the frame's AccessKit nodes with their ids and
 /// its painted shapes, once the screens' own measurement pass has settled.
-fn drawn(
+fn draw_at(
     view: &mut RulesetView,
     ctx: &ToolContext,
     pane: egui::Vec2,
@@ -192,8 +192,8 @@ fn drawn_pair(
     screen: &str,
     down: impl FnOnce(&Pairs) -> Down,
 ) -> (Pairs, Pairs, Frame, Frame, egui::Context) {
-    let (default, default_frame, _) = drawn(view, ctx, DEFAULT_PANE);
-    let (wide, wide_frame, ectx) = drawn(view, ctx, WIDE_PANE);
+    let (default, default_frame, _) = draw_at(view, ctx, DEFAULT_PANE);
+    let (wide, wide_frame, ectx) = draw_at(view, ctx, WIDE_PANE);
     let found = misfits(&default, &wide, down(&default));
     assert!(
         found.is_empty(),
@@ -277,7 +277,7 @@ fn card_rect(frame: &Frame, ectx: &egui::Context) -> egui::Rect {
 /// The preview's expected width: 100 columns of the drawn block — the
 /// `page:` line's bounds over its characters (long enough to give a fine
 /// column and short enough not to wrap) — beside the scroll bar's strip
-/// and inside the panel's margins.
+/// and inside the panel's margins and its separator line's width.
 fn preview_width(frame: &Frame, ectx: &egui::Context) -> f64 {
     let (chars, ink) = frame
         .nodes
@@ -299,6 +299,15 @@ fn preview_width(frame: &Frame, ectx: &egui::Context) -> f64 {
             .x,
     ) + 100.0 * column
         + f64::from(egui::style::ScrollStyle::solid().allocated_width())
+        + f64::from(
+            ectx.global_style()
+                .visuals
+                .widgets
+                .noninteractive
+                .bg_stroke
+                .width
+                .round() as i8,
+        )
 }
 
 #[test]
@@ -374,9 +383,9 @@ fn the_preview_stands_at_the_panes_right_edge_at_its_fixed_width() {
     let (ctx, _events) = crate::test_support::context();
     let mut view = autumn_view(Section::General);
     view.show_preview = true;
-    let (_, default_frame, default_ectx) = drawn(&mut view, &ctx, DEFAULT_PANE);
-    let (_, wide_frame, wide_ectx) = drawn(&mut view, &ctx, WIDE_PANE);
-    let (_, huge_frame, huge_ectx) = drawn(&mut view, &ctx, HUGE_PANE);
+    let (_, default_frame, default_ectx) = draw_at(&mut view, &ctx, DEFAULT_PANE);
+    let (_, wide_frame, wide_ectx) = draw_at(&mut view, &ctx, WIDE_PANE);
+    let (_, huge_frame, huge_ectx) = draw_at(&mut view, &ctx, HUGE_PANE);
 
     // At both sizes the preview's frame is its fixed width — the data
     // block's 100 columns beside its scroll bar's strip — with its right
@@ -429,5 +438,60 @@ fn the_preview_stands_at_the_panes_right_edge_at_its_fixed_width() {
         (rail.left() - gap).abs() <= SLACK as f32
             && (section.right() - (huge_preview.left() - gap)).abs() <= SLACK as f32,
         "the rail and the section stand centred in the room at {HUGE_PANE:?} ({rail:?} vs {section:?})"
+    );
+}
+
+#[test]
+fn a_hundred_column_line_stands_on_one_row() {
+    let (ctx, _events) = crate::test_support::context();
+    let mut view = RulesetView::new();
+    open_document(&mut view, crate::document::blank());
+    // A name that makes the block's `name:` line exactly 100 characters:
+    // `    name: "` is 11 and `",` is 2.
+    edit_ruleset(&mut view, |ruleset| ruleset.name = "x".repeat(87));
+    view.show_preview = true;
+    let (_, frame, _) = draw_at(&mut view, &ctx, DEFAULT_PANE);
+    let name = frame
+        .nodes
+        .iter()
+        .find(|node| node.value().is_some_and(|v| v.starts_with("    name:")))
+        .expect("the name: line")
+        .bounds()
+        .expect("the name: line's bounds");
+    // One row is ~15 high; a wrap doubles it.
+    assert!(
+        name.y1 - name.y0 < 24.0,
+        "the 100-column line is one row high ({name:?})"
+    );
+}
+
+#[test]
+fn the_preview_keeps_its_scroll_strip_when_the_block_fits() {
+    let (ctx, _events) = crate::test_support::context();
+    // `blank`'s block is 24 lines: it fits the preview's height without
+    // scrolling, and the bar keeps its strip all the same.
+    let mut small = RulesetView::new();
+    open_document(&mut small, crate::document::blank());
+    small.show_preview = true;
+    let (_, small_frame, _) = draw_at(&mut small, &ctx, DEFAULT_PANE);
+    let mut autumn = autumn_view(Section::General);
+    autumn.show_preview = true;
+    let (_, autumn_frame, _) = draw_at(&mut autumn, &ctx, DEFAULT_PANE);
+
+    // The rightmost ScrollBar node's left edge is the strip's: the same
+    // whether the block scrolls or fits.
+    let strip = |frame: &Frame| {
+        frame
+            .nodes
+            .iter()
+            .filter(|node| node.role() == Role::ScrollBar)
+            .filter_map(|node| node.bounds())
+            .map(|bounds| bounds.x0)
+            .fold(f64::NEG_INFINITY, f64::max)
+    };
+    let (long, short) = (strip(&autumn_frame), strip(&small_frame));
+    assert!(
+        (short - long).abs() <= SLACK,
+        "the strip stands in the same place ({long} vs {short})"
     );
 }

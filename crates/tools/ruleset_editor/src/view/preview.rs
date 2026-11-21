@@ -23,6 +23,13 @@ fn block_font(ui: &egui::Ui) -> egui::FontId {
     egui::TextStyle::Monospace.resolve(ui.style())
 }
 
+/// The separator line's width at the panel's resizable edge: the panel
+/// reserves it inside its `exact_size` (the frame's outer margin grows by
+/// it), so the data block's columns need it beside them too.
+fn separator(ui: &egui::Ui) -> f32 {
+    f32::from(ui.visuals().widgets.noninteractive.bg_stroke.width.round() as i8)
+}
+
 /// The preview panel's exact width (the draft's `pre` at `100ch` plus its
 /// `scrollbar-gutter`): `COLUMNS` of `block_font`, measured through
 /// egui's fonts rather than written down, beside the scroll bar's strip
@@ -34,11 +41,14 @@ pub(crate) fn width(ui: &egui::Ui) -> f32 {
     egui::Frame::side_top_panel(ui.style()).inner_margin.sum().x
         + COLUMNS as f32 * column
         + scroll_bars().allocated_width()
+        + separator(ui)
 }
 
-/// The scroll style the preview's area runs on (the draft's
-/// `scrollbar-gutter: stable`): a solid bar keeps its strip whether or
-/// not the block overflows, so a column never ends under a drawn bar.
+/// The preview's scroll bars (the draft's `scrollbar-gutter: stable`): a
+/// solid style keeps each bar's strip beside the content and
+/// `AlwaysVisible` keeps it drawn when the block fits, so the text area
+/// is the same width whether or not the block scrolls — a column's end
+/// never sits under a drawn bar.
 fn scroll_bars() -> egui::style::ScrollStyle {
     egui::style::ScrollStyle::solid()
 }
@@ -57,6 +67,7 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut RulesetView) {
     egui::ScrollArea::both()
         .id_salt("ruleset_preview")
         .auto_shrink(false)
+        .scroll_bar_visibility(egui::scroll_area::ScrollBarVisibility::AlwaysVisible)
         .show(ui, |ui| {
             for line in document.ruleset.to_data_block().lines() {
                 block_line(ui, line, short_logo.as_deref(), &view.changed);

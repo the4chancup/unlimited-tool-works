@@ -224,7 +224,9 @@ fn last_column_right(nodes: &[accesskit::Node]) -> f64 {
 /// A wheel scroll over the section to `delta`'s end — the last column's
 /// right edge stopping between frames is the arrival (the eased scroll
 /// keeps moving for a while after the target is reached), the frame it
-/// stopped on returned.
+/// stopped on returned. The scroll is asserted to have moved the column
+/// past the end's slack: a wheel landing on another area would stop at
+/// the start.
 fn scroll_to_end(
     window: &mut Headless,
     view: &mut RulesetView,
@@ -236,9 +238,10 @@ fn scroll_to_end(
         section_fill(window, &frame).left() + 60.0,
         section_fill(window, &frame).center().y,
     );
+    let before = last_column_right(&frame.nodes);
     let last = std::cell::Cell::new(f64::INFINITY);
     let still = std::cell::Cell::new(0u8);
-    scroll_until(window, view, ctx, over, delta, |frame| {
+    let end = scroll_until(window, view, ctx, over, delta, |frame| {
         let x = last_column_right(&frame.nodes);
         // Quantized to 1/32: three still frames are the scroll's end —
         // a single quiet one can sit inside the eased approach.
@@ -249,7 +252,14 @@ fn scroll_to_end(
         }
         still.get() >= 3
     })
-    .unwrap_or_else(|| settled(window, view, ctx))
+    .unwrap_or_else(|| settled(window, view, ctx));
+    let moved = last_column_right(&end.nodes) - before;
+    assert!(
+        moved.abs() > 2.5,
+        "the wheel moved the last column ({before} to {})",
+        last_column_right(&end.nodes)
+    );
+    end
 }
 
 /// A leftward wheel scroll over the section until `done` holds for a
