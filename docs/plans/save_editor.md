@@ -404,7 +404,7 @@ vertical room a tab row takes; a toggle on the title's own row takes none.
   the column's controls reach ("Player list" above), and "Make Goalkeeper", the official
   ruleset's widest, fits its half (105 of 118.5).
 
-  They act on the selected player, so a team row leaves them disabled, their tooltip "The make
+  They act on the selected player, so a team row leaves them disabled, their tooltip "These
   buttons act on a player: pick a player row". The Player menu's entries are disabled too,
   their tooltip "The Player menu acts on a player: pick a player row".
 - **Select all similar players** (0.0.2-similar), a button under the quick actions as wide as
