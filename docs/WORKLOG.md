@@ -145,8 +145,10 @@ run's findings (`4cc-studio-temp/str_re/out/findings.md`).
     `_b.md`, each tool's evidence) gave the explorer's file list, now in its plan entry. It
     found no other tool for the suite: the rest are covered, a runtime piece (sider, DXVK),
     general-purpose, or for another game. Two Blender add-ons, Joshua502's stadium camera
-    editor (`.fdc`) and MFG's kk2pes (other games' rigs onto PES bones), belong to the
-    Blender project's plan, the maintainer's to place.
+    editor (`.fdc`) and MFG's kk2pes (other games' rigs onto PES bones), are in the Blender
+    project's `pes_models_plan.md` ("Community add-ons to take in"). A survey of
+    `C:/Data/4cc/Tools_4cc/` follows (SWE-2, `findings_c.md`), with the USM videos the cup
+    ships (swipes, wipes, billboards), which no plan covers yet.
 
 Most open steps below wait only on a check in the game or the built window that the lead's
 harness makes ("Pending looks" below), not on the maintainer.
