@@ -126,10 +126,11 @@ in it, the static C runtime on Windows, the listing equal to the staged set), th
   - `SHA256SUMS.txt`, both archives' `sha256sum` lines, the file the updater checks a download
     against (`plans/core/distribution.md` "Self-update" step 3).
 
-  A draft is visible to the repository's maintainers alone. The maintainer downloads the
-  Windows asset, gives it the look before the cut, writes the notes and publishes it. The notes
-  are the release's body, the text the updater's dialog shows, taken from `CHANGELOG.md`'s
-  section, for every release after 0.0.1 (the file came the day after it).
+  A draft is visible to the repository's maintainers alone. Its notes, the release's body and
+  the text the updater's dialog shows, are the version's `CHANGELOG.md` section
+  (`scripts/release/release_notes.py`); a tag whose version has no section ends the run before
+  the draft. The maintainer downloads the Windows asset, gives it the look, writes an
+  introduction above the notes and publishes the release.
 - **A push to `ci/release-dry-run`**, or a run started by hand once the workflow is on the
   default branch (GitHub offers its **Run workflow** button only for a workflow there), builds
   and checks the same bundles and uploads them as the run's artifacts only: no tag, no release.

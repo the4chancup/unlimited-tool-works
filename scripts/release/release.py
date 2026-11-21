@@ -130,6 +130,25 @@ def readme_names_version(readme: str, version: str) -> bool:
     return bool(lines) and lines[0].rsplit(" ", 1)[-1] == version
 
 
+def changelog_section(changelog: str, version: str) -> str:
+    """The body of `CHANGELOG.md`'s `## [<version>] - <date>` section, its heading left out:
+    the notes a release's draft opens with, above which the maintainer writes the
+    introduction before publishing."""
+    lines = changelog.splitlines()
+    heading = f"## [{version}]"
+    start = next(
+        (i for i, line in enumerate(lines) if line == heading or line.startswith(heading + " ")),
+        None,
+    )
+    if start is None:
+        raise Refusal(f"CHANGELOG.md has no section for {version}")
+    end = next((i for i in range(start + 1, len(lines)) if lines[i].startswith("## ")), len(lines))
+    body = "\n".join(lines[start + 1 : end]).strip()
+    if not body:
+        raise Refusal(f"CHANGELOG.md's section for {version} is empty")
+    return body + "\n"
+
+
 def launcher_calls(bat: str, name: str) -> bool:
     return f'"%~dp0{name}.exe"' in bat
 

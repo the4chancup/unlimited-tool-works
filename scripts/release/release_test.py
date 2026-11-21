@@ -18,6 +18,7 @@ from release import (
     about_config,
     build_args,
     c_flags_env,
+    changelog_section,
     check_exe,
     elf_sections,
     existing_glob,
@@ -234,6 +235,22 @@ class Pure(unittest.TestCase):
         self.assertIsNotNone(declared)
         self.assertEqual(workspace_version(text), declared.group(1))
         self.assertEqual(workspace_version('[workspace.package]\nversion = "9.9.9"\n'), "9.9.9")
+
+    def test_changelog_section_is_one_versions_body(self) -> None:
+        changelog = (
+            "# Changelog\n\n## [Unreleased]\n\n- next\n\n\n"
+            "## [0.0.2-pes14.1] - 2026-11-20\n\n### Useful\n\n- the side line's\n\n\n"
+            "## [0.0.2] - 2026-11-18\n\n### Important\n\n- main's\n"
+        )
+        # A version that prefixes another's (0.0.2 of 0.0.2-pes14.1) finds its own section.
+        self.assertEqual(changelog_section(changelog, "0.0.2"), "### Important\n\n- main's\n")
+        self.assertEqual(
+            changelog_section(changelog, "0.0.2-pes14.1"), "### Useful\n\n- the side line's\n"
+        )
+        with self.assertRaisesRegex(Refusal, "no section for 0.0.3"):
+            changelog_section(changelog, "0.0.3")
+        with self.assertRaisesRegex(Refusal, "section for 0.0.1 is empty"):
+            changelog_section("## [0.0.1] - 2026-11-03\n\n## [0.0.0]\n", "0.0.1")
 
     def test_exe_name(self) -> None:
         self.assertEqual(exe_name(HELP), "UTW")

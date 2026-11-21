@@ -19439,3 +19439,12 @@ byte; 0x0B:4 is set on 221 of the Akko save's 222 teams, none of them renamed, s
 flag, and a bit set for no known reason is not written on a guess. If the name still does not
 show, the build sets 0x0B:5 too.
 Plan: docs/plans/pes14.md "Steps", step 10's "Left: the team name flags".
+
+## 2026-11-21 — release — a release's draft opens with its changelog section as its notes
+Decision (the maintainer): the release workflow gives each draft the version's `CHANGELOG.md`
+section as its notes, and the maintainer writes the introduction above them before publishing.
+A tag whose version has no section ends the run before the draft.
+Why: the notes are that section in every release since 0.0.1, so copying it by hand at each
+publish was work the workflow can do. Failing before the draft, and not drafting with empty
+notes, keeps a release from being published with none.
+Plan: spec/core/distribution.md "Release builds in CI", the paragraph on the draft.
