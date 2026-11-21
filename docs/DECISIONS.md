@@ -19415,3 +19415,15 @@ Why: Build 1's scope is what the fork edits. The skin colour is pinned for the s
 only, and the Akko save holds a stored 7 on seven players, so its range is pinned before it
 is mapped.
 Plan: `plans/pes14.md`, steps 10 and 11.
+
+## 2026-11-21 — save_editor (pes14 branch) — The Appearance page's Full Player Customization group works on PES 2014
+Decision: on PES 2014 the Appearance page's Full Player Customization group works as on the
+other versions: it reads whether the default body is hidden, its Hide and Show default body
+buttons write what the menus' FPC entries write, and it lists the interference findings.
+Those findings read the outfielder gloves from the record's 0x56:2 and take the skin for a
+preset one, since PES 2014 stores none.
+Why: the group's buttons and the Player menu's FPC entry are one action, and the menus offer
+it on PES 2014 since step 10. With the group greyed and the menu live, a member saw "Not
+available on PES 2014 saves" on the page for an action the menu then did. The draft already
+shows the group working there.
+Plan: `plans/pes14.md`, step 10.

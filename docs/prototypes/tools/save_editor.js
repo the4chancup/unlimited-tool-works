@@ -383,6 +383,9 @@ input[type=checkbox]:indeterminate { background-image: url("data:image/svg+xml,%
 .scell.lr { border-right-width: 1px; }
 .scell.lb { border-bottom-width: 1px; }
 .scell .slabel { width: 104px; color: var(--text); }
+.scell .slabel.off, td.ilabel.off { color: #5a5a5a; }
+.scell button.dash { width: 118px; }
+table.grid button.dash { width: 100%; }
 .scell select, .scell input[type=number] { width: 118px; box-sizing: border-box; }
 #edit-flags-grid { border-spacing: 0; }
 #edit-flags-grid td { height: 22px; padding: 0 12px 0 0; }
@@ -6229,10 +6232,14 @@ function appearanceTab(p) {
     weak("A later patch overwrites whatever is edited by hand.")));
   const ef = (key, label) => h("label", { class: "cb" },
     h("input", { type: "checkbox", checked: p.edit_flags[key],
+      disabled: version() === 14 && !["face", "hair"].includes(key),
       onchange: e => { set(p, x => x.edit_flags[key], (x, v) => x.edit_flags[key] = v, e.target.checked, label); render(); } }),
     " " + label);
   // The flags in three columns, Copy from ID under them.
-  const copyFrom = h("span", {}, "Copy from ID ",
+  const copyFrom = version() === 14
+    ? h("span", { style: "color:#5a5a5a", title: "Not available on PES 2014 saves" }, "Copy from ID ",
+      h("button", { disabled: true, class: "dash", style: "width:51px" }, "-"))
+    : h("span", {}, "Copy from ID ",
     h("input", { type: "number", value: p.base_copy_id,
       onchange: e => { const v = parseInt(e.target.value, 10);
         if (!Number.isNaN(v)) { set(p, x => x.base_copy_id, (x, v) => x.base_copy_id = v, v, "copy-from id"); render(); } } }));
@@ -6258,19 +6265,25 @@ function appearanceTab(p) {
         rangeField(-7, 7, p.appearance.physique[k], v => {
           set(p, x => x.appearance.physique[k], (x, v2) => x.appearance.physique[k] = v2, v, label); render(); })))])));
   const st = p.appearance.strip;
+  const v14 = version() === 14;
+  // A field PES 2014 does not store: its label faded and a "-" filling its column, as the
+  // build draws it (plans/pes14.md, step 10).
+  const NOT14 = "Not available on PES 2014 saves";
+  const dash = () => h("td", {}, h("button", { disabled: true, class: "dash", title: NOT14 }, "-"));
+  const unstored = label => [h("td", { class: "ilabel off", title: NOT14 }, label), dash()];
   const sp_boots = [lbl("Boots ID"), h("td", {}, h("input", { type: "number", value: p.boots_id,
       onchange: e => { const v = parseInt(e.target.value, 10);
         if (!Number.isNaN(v)) { set(p, x => x.boots_id, (x, v) => x.boots_id = v, v, "boots id"); render(); } } }))];
   const sp_glovesId = [lbl("Gloves ID"), h("td", {}, h("input", { type: "number", value: p.gloves_id, title: "Any player can wear gloves, not only goalkeepers; 0 means normal hands.",
       onchange: e => { const v = parseInt(e.target.value, 10);
         if (!Number.isNaN(v)) { set(p, x => x.gloves_id, (x, v) => x.gloves_id = v, v, "gloves id"); render(); } } }))];
-  const sp_sleeves = [lbl("Sleeves"), h("td", {}, combo(SLEEVES.map(x => [x, titleCase(x)]), st.sleeves,
+  const sp_sleeves = [lbl("Sleeves"), h("td", {}, combo(SLEEVES.map(x => [x, v14 && x === "seasonal" ? "Auto" : titleCase(x)]), st.sleeves,
       v => { set(p, x => x.appearance.strip.sleeves, (x, v2) => x.appearance.strip.sleeves = v2, v, "sleeves"); render(); }))];
   const sp_inners = [lbl("Inners"), h("td", {}, combo(INNERS.map(x => [x, titleCase(x)]), st.inners,
       v => { set(p, x => x.appearance.strip.inners, (x, v2) => x.appearance.strip.inners = v2, v, "inners"); render(); }))];
   const sp_socks = [lbl("Socks"), h("td", {}, combo(SOCKS.map(x => [x, titleCase(x)]), st.socks,
       v => { set(p, x => x.appearance.strip.socks, (x, v2) => x.appearance.strip.socks = v2, v, "socks"); render(); }))];
-  const sp_undershorts = [lbl("Undershorts"), h("td", {}, combo(UNDERSHORTS.map(x => [x, titleCase(x)]), st.undershorts,
+  const sp_undershorts = [lbl("Undershorts"), h("td", {}, combo((v14 ? [["off", "Off"], ["short", "On"]] : UNDERSHORTS.map(x => [x, titleCase(x)])), st.undershorts,
       v => { set(p, x => x.appearance.strip.undershorts, (x, v2) => x.appearance.strip.undershorts = v2, v, "undershorts"); render(); }))];
   const sp_shirttail = [lbl("Shirttail out"), h("td", {}, h("input", { type: "checkbox", checked: st.untucked,
       onchange: e => { set(p, x => x.appearance.strip.untucked, (x, v) => x.appearance.strip.untucked = v, e.target.checked, "shirttail"); render(); } }))];
@@ -6295,14 +6308,14 @@ function appearanceTab(p) {
     gloves: [lbl("Outfielder gloves"), h("td", {}, combo([["off", "Off"], ["on", version() === 14 ? "Auto" : "Worn in winter"]], st.gloves ? "on" : "off",
       v => { set(p, x => x.appearance.strip.gloves, (x, v2) => x.appearance.strip.gloves = v2, v === "on", "outfielder gloves"); render(); }))],
     shirttail: sp_shirttail, ankle: sp_ankle,
-    "gloves-color": [lbl("Gloves color"), colour("gloves", st.gloves_color, (x, v) => x.appearance.strip.gloves_color = v, "gloves color")],
-    spectacles: [lbl("Spectacles"), h("td", {}, combo(SPECTACLES.map((x, i) => [String(i), x]), String(st.spectacles),
+    "gloves-color": v14 ? unstored("Gloves color") : [lbl("Gloves color"), colour("gloves", st.gloves_color, (x, v) => x.appearance.strip.gloves_color = v, "gloves color")],
+    spectacles: [lbl("Spectacles"), h("td", {}, combo(SPECTACLES.map((x, i) => [String(i), v14 ? (i ? String(i + 1) : "Off") : x]), String(st.spectacles),
       v => { set(p, x => x.appearance.strip.spectacles, (x, v2) => x.appearance.strip.spectacles = Number(v2), Number(v), "spectacles"); render(); }))],
-    "spectacles-color": [lbl("Spectacles color"), colour("spectacles", st.spectacles_color, (x, v) => x.appearance.strip.spectacles_color = v, "spectacles color")],
+    "spectacles-color": v14 ? unstored("Spectacles color") : [lbl("Spectacles color"), colour("spectacles", st.spectacles_color, (x, v) => x.appearance.strip.spectacles_color = v, "spectacles color")],
     "wrist-taping": [lbl("Wrist taping"), h("td", {}, combo(WRIST_TAPING.map(x => [x, titleCase(x)]), st.wrist_taping,
       v => { set(p, x => x.appearance.strip.wrist_taping, (x, v2) => x.appearance.strip.wrist_taping = v2, v, "wrist taping"); render(); }))],
-    "wrist-left": [lbl("Wrist tape left"), colour("wrist", st.wrist_tape_color_left, (x, v) => x.appearance.strip.wrist_tape_color_left = v, "wrist tape left")],
-    "wrist-right": [lbl("Wrist tape right"), colour("wrist", st.wrist_tape_color_right, (x, v) => x.appearance.strip.wrist_tape_color_right = v, "wrist tape right")],
+    "wrist-left": v14 ? unstored("Wrist tape left") : [lbl("Wrist tape left"), colour("wrist", st.wrist_tape_color_left, (x, v) => x.appearance.strip.wrist_tape_color_left = v, "wrist tape left")],
+    "wrist-right": v14 ? unstored("Wrist tape right") : [lbl("Wrist tape right"), colour("wrist", st.wrist_tape_color_right, (x, v) => x.appearance.strip.wrist_tape_color_right = v, "wrist tape right")],
   };
   const STRIP_ORDER = [
     ["boots", "r"], ["sleeves", "r"], ["inners", ""],
@@ -6314,7 +6327,8 @@ function appearanceTab(p) {
     h("div", { id: "strip-grid" }, STRIP_ORDER.map(([key, lines]) => {
       const [label, field] = stripCells[key];
       return named(h("div", { class: "scell" + (lines.includes("r") ? " lr" : "") + (lines.includes("b") ? " lb" : "") },
-        h("span", { class: "slabel" }, label.textContent), ...field.childNodes), "strip-" + key);
+        h("span", { class: "slabel" + (label.classList.contains("off") ? " off" : "") }, label.textContent),
+        ...field.childNodes), "strip-" + key);
     }))), "strip-style");
   const mo = p.appearance.motion;
   const mv = (label, key, lo, hiV) => [lbl(label), h("td", {},
@@ -6323,7 +6337,7 @@ function appearanceTab(p) {
         if (!Number.isNaN(v)) { set(p, x => x.appearance.motion[key], (x, v2) => x.appearance.motion[key] = v2, v, label); render(); } } }))];
   // The version's measured tops (motion_top, shown scale); a celebration's 0 is OFF.
   const top = key => motionTop(version(), key);
-  const dribbleIn = h("input", { type: "number", min: 1, max: 4, value: mo.dribbling ?? 1,
+  const dribbleIn = h("input", { type: "number", min: 1, max: v14 ? 2 : 4, value: mo.dribbling ?? 1,
     onchange: e => { const v = parseInt(e.target.value, 10);
       if (!Number.isNaN(v)) { set(p, x => x.appearance.motion.dribbling, (x, v2) => x.appearance.motion.dribbling = v2, v, "dribbling motion"); render(); } } });
   // Two label/field pairs a row (the maintainer, 2026-10-26), one in a
@@ -6339,16 +6353,17 @@ function appearanceTab(p) {
       }, { title: "Set every motion to a random value, except the dribbling motion" });
   const motion = namedCols(h("div", { class: "group" }, strong("Motion"),
     h("table", { class: "grid" },
-      chunk([mv("Hunching (dribbling)", "hunching_dribbling", 1, top("hunching_dribbling")),
-        mv("Hunching (running)", "hunching_running", 1, top("hunching_running")),
-        mv("Arm movement (dribbling)", "arm_movement_dribbling", 1, top("arm_movement_dribbling")),
-        mv("Arm movement (running)", "arm_movement_running", 1, top("arm_movement_running")),
+      chunk([v14 ? unstored("Hunching (dribbling)") : mv("Hunching (dribbling)", "hunching_dribbling", 1, top("hunching_dribbling")),
+        v14 ? unstored("Hunching (running)") : mv("Hunching (running)", "hunching_running", 1, top("hunching_running")),
+        v14 ? unstored("Arm movement (dribbling)") : mv("Arm movement (dribbling)", "arm_movement_dribbling", 1, top("arm_movement_dribbling")),
+        v14 ? unstored("Arm movement (running)") : mv("Arm movement (running)", "arm_movement_running", 1, top("arm_movement_running")),
         // PES 2014 stores no corner kick: its punt kick (1 to 4) takes the cell.
         version() === 14 ? mv("Punt kick", "punt_kick", 1, 4)
           : mv("Corner kick", "corner_kick", 1, top("corner_kick")),
         mv("Free kick", "free_kick", 1, top("free_kick")),
         mv("Penalty kick", "penalty_kick", 1, top("penalty_kick")),
-        [gatedLbl("Dribbling motion", 20), fld(dribbleIn, 20)],
+        v14 ? [lbl("Dribbling motion"), h("td", {}, dribbleIn)]
+          : [gatedLbl("Dribbling motion", 20), fld(dribbleIn, 20)],
         mv("Goal celebration 1", "goal_celebration_1", 0, top("goal_celebration_1")),
         mv("Goal celebration 2", "goal_celebration_2", 0, top("goal_celebration_2"))],
         colCount("motion")).map(row => h("tr", {}, row.flat()))),
