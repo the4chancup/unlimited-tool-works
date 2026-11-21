@@ -35,34 +35,40 @@ run's findings (`4cc-studio-temp/str_re/out/findings.md`).
 2. 0.0.2-nostretch's slices.
 3. Earlier sessions in Report a problem: the repro bundles issue's slice (5), in slices:
    - [x] the crash monitor's start tried once more (ST-RUN-13): merged 2026-11-21, SWE-2
-     round S1rt; its Astra round owed, batched with 5b's (the same file, `crash_dump.rs`);
+     round S1rt; Astra round A-s5b r1 with 5b's (below);
    - [x] 5a the session folder's writer and reader in `studio_core::repro`, called in
      process (ST-REP-06 to 08): merged `08d65aa6`, SWE-2 round S1s5a; Astra round A-s5a r1,
      2 accepted (a marker line ending each journal block, and a test of several files),
      fixed with 5b-i;
    - [x] 5b-i the monitor's half: it writes the session from the frames on its standard
-     input and ends it (ST-REP-06, 07): merged `d496aebd`, SWE-2 round S1s5b1; its Astra
-     round owed, with the retry's;
+     input and ends it (ST-REP-06, 07): merged `d496aebd`, SWE-2 round S1s5b1;
    - [x] 5b-ii the window's half: the recorder's queue, the thread sending each message down
      the pipe, the window's own writer when no monitor started, a caught panic ending
      `crashed` (ST-REP-10's first cases, ST-REP-11): merged `e27d9f2b`, one rework, SWE-2
      round S1s5b2 (3 accepted, the loop ended); with it the tests for the checkpoint's seven
-     mutants in 5a's writer. Astra's round owed, with the retry's and 5b-i's;
+     mutants in 5a's writer;
    - [x] 5b2 a new monitor after the pipe breaks, writing on into the same folder (ST-REP-10's
      last cases): its writer adopts the folder, cut back to its last marker, the next
      indexes from its rows (DECISIONS 2026-11-21 "a new monitor's writer adopts the session
      folder"): merged `51643014`, one rework, SWE-2 round S1s5b2b (3 accepted, the loop
-     ended). Astra's round owed, with 5b-ii's;
+     ended);
+   - the retry's and 5b's Astra round A-s5b r1 (4 of 7 accepted, the loop ended: a close
+     read as a crash at the next start after an idle pipe break, a warning left by a monitor
+     that served on its second start, two test gaps): the fixes briefed to SWE-2, running in
+     `sk_5b_r1`, then one SWE-2 round over them;
    - [x] 5c the Save editor's saves kept decrypted and rebuilt on reading (SE-REP-07): packed
      and compressed by the writer, rebuilt through a function the Save editor gives the
      bundle reader (DECISIONS 2026-11-21 "a session keeps each save packed and
      compressed"): merged `53398fdc`, one rework, with the tests for the checkpoint's two
-     missed mutants in `repro.rs` and `session.rs`. Its review loop owed (SWE-2, then Carbon
-     and Astra: it reaches saves);
+     missed mutants in `repro.rs` and `session.rs`. SWE-2 round S5c r1's fixes merged
+     `9d9e1786` (that loop ended); Carbon, then Astra, owed (it reaches saves);
    - [x] 5d the dialog's "Include earlier sessions" box and the help page's line (ST-REP-09,
      12), the draft's ending line settled (DECISIONS 2026-11-21 "an earlier session with no
      `[end]` reads "ending unknown""): merged `db2900cd`. Seen in the release build beside
-     the draft, box clear and ticked (2026-11-21). Its review loop owed, with 5c's.
+     the draft, box clear and ticked (2026-11-21). SWE-2 round S5d r1 (4 accepted, the loop
+     ended): its fixes join the maintainer's ruling on the list's colours (DECISIONS
+     2026-11-21 "Report a problem's earlier sessions in the regular colour"), one brief,
+     launched when a build slot frees; then a look at the colours in the build.
 4. Review rounds owed: 0.0.2-similar's, and every Carbon round a 0.0.2 step still owes (Report a problem has had its whole review).
 5. 0.0.2-pes19, and with it the readme's PES 2019 claim.
 6. The Compiler's view in the build, unpolished, for the VGL organizer (the maintainer,
