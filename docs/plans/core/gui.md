@@ -1920,7 +1920,9 @@ ST-REP-09   GIVEN two earlier session folders and the window's own
 ST-REP-10   GIVEN a monitor that reads nothing, so the window's queue fills
             WHEN steps are recorded THEN no frame waits on the pipe and the log holds one line
                  about the dropped messages; GIVEN no monitor THEN the window's own writer
-                 thread writes the folder as ST-REP-06's; GIVEN the monitor ended mid-session
+                 thread writes the folder as ST-REP-06's; GIVEN the window's run ends on a
+                 panic it caught THEN `[end]` reads `crashed`, with a monitor or without it;
+                 GIVEN the monitor ended mid-session
                  THEN a new one is started and the next steps land in the same folder, and
                  GIVEN the new one does not start THEN the window's own writer writes them
                  there

@@ -617,9 +617,12 @@ Compiler and the Export upgrader, then the rest as they are built.
   - `outputs/`: the last file written per path, replaced at each write; of a path's
     `[[output]]` rows, the last counts.
   - An `[end]` table appended last, saying how the session ended: `closed` (the window sent
-    its closing message), `crashed` (the monitor handled the crash) or `ended` (the window
-    went away without either, as when it is ended from Task Manager). A session with no
-    `[end]` is one still open in another window, or one whose monitor died too (a power cut).
+    its closing message), `crashed` (the monitor handled the crash, or the window caught a
+    panic of its own) or `ended` (the window went away without either, as when it is ended
+    from Task Manager). A session with no `[end]` is one still open in another window, or
+    one whose monitor died too (a power cut). A caught panic is a crash to the member, who
+    saw the crash dialog: read as `closed`, its session would sit among those that went
+    well in Report a problem's list of earlier sessions.
 
   The folder is made at the session's first message, so a window that records nothing, as
   when Studio is opened only to report, leaves none.
@@ -634,7 +637,8 @@ Compiler and the Export upgrader, then the rest as they are built.
     at the socket's buffer. A pipe is read whole (`read_exact`), and needs nothing beyond
     the standard library.
   - The pipe's end tells the monitor the window went away: a closing message before it
-    means `closed`, none means `ended`.
+    means `closed`, one saying the window caught a panic means `crashed`, and none means
+    `ended`.
 
   - The window does no file work for the session, so the session can never stall it.
   - A step is on disk moments after it happens, so a crash, a hang ended from Task Manager or

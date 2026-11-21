@@ -19072,3 +19072,14 @@ receive and its client sends with a single vectored send, neither in a loop, so 
 dependency, and its end tells the monitor the window went away.
 Plan: `plans/core/architecture.md` "Repro bundles", "The crash monitor writes it; the window
 never does"; ST-REP-07 and ST-REP-10 name the pipe.
+
+## 2026-11-21 — studio — a window that caught its own panic ends its session `crashed`
+Decision: when the window's run ends on a panic it caught (the crash dialog it shows), its
+closing message says so, and the session's `[end]` reads `crashed`, as for a crash the monitor
+handled. The window's own writer, with no monitor, ends the folder the same way.
+Why: `crashed`, not `closed`, because the member saw the crash dialog, and Report a problem's
+list of earlier sessions shows how each ended: read as `closed`, the session they would send
+sits among those that went well. Not `ended` either, which says the window went away without a
+word, as from Task Manager.
+Plan: `plans/core/architecture.md` "Repro bundles", the `[end]` table and the pipe's end;
+ST-REP-10 in `plans/core/gui.md`.
