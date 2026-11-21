@@ -491,4 +491,12 @@ exclude_re = [
     # `moves_player` is false for `from == to` (pinned by
     # `moves_player_names_only_a_drop_that_writes`).
     "save_editor/src/view/player_list\\.rs:\\d+:\\d+: replace < with <= in player_row",
+    # `SaveContainer::sections_len` only sizes `pack`'s `Vec::with_capacity`, and a capacity
+    # is a hint: with 0 or 1 the vector grows as it is written, so `pack` writes the same
+    # bytes.
+    "pes_savefile/src/container/packed\\.rs:\\d+:\\d+: replace SaveContainer::sections_len -> usize with",
+    # `crash_dump::wait_until`'s deadline test `now > deadline` -> `>=` differs only on a read
+    # of the clock equal to the deadline, where `>` waits one more 20 ms poll and then returns
+    # the same `false`.
+    "studio/src/crash_dump\\.rs:\\d+:\\d+: replace > with >= in wait_until",
 ]
