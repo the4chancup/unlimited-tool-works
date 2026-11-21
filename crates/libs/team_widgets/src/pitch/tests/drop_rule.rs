@@ -5,7 +5,7 @@
 //! tie, the keep and the missing row).
 
 use super::*;
-use crate::pitch::drop_rule::{dropped_position, spot_choices};
+use crate::pitch::drop_rule::{dropped_position, free_move_14, spot_choices};
 
 /// `dropped_position` at each `(x, y)` of `drops` answered by its
 /// expected position, one assertion per drop named `case (x, y)`.
@@ -361,5 +361,237 @@ fn a_second_lmf_inside_lmfs_area_is_offered_cmf_alone_by_the_spot() {
         spot_choices(&formation, 2, 10, 20),
         bytes(&["CMF"]),
         "the other LMF holds the wide position"
+    );
+}
+
+/// `free_move_14` at each `(x, y)` of `drops` answered by its expected
+/// position (`None` a refused drop), one assertion per drop named
+/// `case (x, y)`.
+fn check_14(
+    formation: &Formation,
+    slot: usize,
+    overalls: Option<&[u8; 13]>,
+    case: &str,
+    drops: &[(u8, u8, Option<&str>)],
+) {
+    for &(x, y, expected) in drops {
+        assert_eq!(
+            free_move_14(formation, slot, x, y, overalls),
+            expected.map(position_byte),
+            "{case} ({x}, {y}): {expected:?} expected",
+        );
+    }
+}
+
+// PES 2014's free move on the game list's 4-4-2 with the all-77
+// player's overalls: his own zone keeps him; elsewhere the first of
+// CB, CMF, SS the point lies in, or the first free of the nine side
+// and central positions when his overall there is at least the
+// first's, the second on a tie. Slot 1 at (52, 45) is the "SS 72" run
+// `tactics6` saw at the top edge.
+#[test]
+fn on_pes14_the_free_move_answers_the_role_at_the_point() {
+    let formation = formation_442_14();
+    check_14(
+        &formation,
+        5,
+        Some(&ALL_77),
+        "own zone",
+        &[(50, 20, Some("CMF"))],
+    );
+    check_14(
+        &formation,
+        1,
+        Some(&ALL_77),
+        "second over",
+        &[(52, 20, Some("DMF"))],
+    );
+    check_14(
+        &formation,
+        1,
+        Some(&ALL_77),
+        "first over",
+        &[(52, 45, Some("SS"))],
+    );
+    check_14(
+        &formation,
+        9,
+        Some(&ALL_77),
+        "a tie",
+        &[(12, 40, Some("LWF"))],
+    );
+}
+
+// ...and refuses the drops the game refuses: a point outside every
+// zone (width under 5, depth over 47, depth under 4 outside the
+// keeper's widths), the keeper's zone, a dragged keeper, and a row
+// that reads no overalls.
+#[test]
+fn on_pes14_the_free_move_refuses_what_the_game_refuses() {
+    let formation = formation_442_14();
+    check_14(
+        &formation,
+        1,
+        Some(&ALL_77),
+        "outside",
+        &[(2, 20, None), (52, 48, None), (30, 2, None), (54, 1, None)],
+    );
+    check_14(&formation, 0, Some(&ALL_77), "keeper", &[(52, 20, None)]);
+    check_14(&formation, 1, None, "no overalls", &[(52, 20, None)]);
+}
+
+// The pick between the two candidates, on the 3-2-3-2: at (10, 10) the
+// first is CB (78) against the free LB (74), so CB; with LB rated 80
+// the second wins. On the 4-4-2 the same point answers CB anyway: its
+// LB is held by slot 4, so the nine give no second.
+#[test]
+fn on_pes14_the_second_candidate_wins_on_the_overall() {
+    let formation = formation_3232_14();
+    check_14(
+        &formation,
+        4,
+        Some(&ALL_77),
+        "first higher",
+        &[(10, 10, Some("CB"))],
+    );
+    let mut overalls = ALL_77;
+    overalls[usize::from(position_byte("LB"))] = 80;
+    check_14(
+        &formation,
+        4,
+        Some(&overalls),
+        "second higher",
+        &[(10, 10, Some("LB"))],
+    );
+    let formation = formation_442_14();
+    check_14(
+        &formation,
+        5,
+        Some(&overalls),
+        "the LB held",
+        &[(10, 10, Some("CB"))],
+    );
+}
+
+// The line limits, the dragged player's own line not counted against
+// its maximum: 4-2-3-1's only forward to midfield leaves no forward;
+// 5-2-2-1's midfielder to defence makes six defenders where its RB to
+// CB stays inside the defenders' line; 4-2-1-3 with its AMF made an SS
+// leaves one midfielder — refused where the other versions' minimum
+// of one would allow it.
+#[test]
+fn on_pes14_the_free_move_keeps_each_line_inside_its_limits() {
+    let formation = formation_4231_14();
+    check_14(
+        &formation,
+        10,
+        Some(&ALL_77),
+        "no forward left",
+        &[(52, 25, None)],
+    );
+    let formation = formation_5221_14();
+    check_14(
+        &formation,
+        6,
+        Some(&ALL_77),
+        "six defenders",
+        &[(52, 10, None)],
+    );
+    check_14(
+        &formation,
+        4,
+        Some(&ALL_77),
+        "within his line",
+        &[(52, 10, Some("CB"))],
+    );
+    let mut formation = formation_4213_14();
+    formation.players[7] = FormationSlot {
+        position: position_byte("SS"),
+        x: 52,
+        y: 40,
+    };
+    check_14(
+        &formation,
+        5,
+        Some(&ALL_77),
+        "one midfielder left",
+        &[(52, 10, None)],
+    );
+}
+
+// The free move as the game played it: the drops an in-game run made
+// on the 4-4-2 and the 5-2-2-1 with players at 77 in every ability.
+// Slot 6's CMF dropped past his zone's top edge is SS; slot 2's CB
+// under a DMF candidate's higher overall; slot 9's CF inside CB's zone.
+// On the 5-2-2-1: a move inside his own midfield line unchecked, a wide
+// position a teammate holds skipped for the band's default, a tie won
+// by the second candidate, and the two line-limit refusals (the lone
+// forward, a sixth defender).
+#[test]
+fn on_pes14_the_free_move_gives_the_roles_the_game_gave() {
+    let formation = formation_442_14();
+    check_14(
+        &formation,
+        6,
+        Some(&ALL_77),
+        "past his zone's edge",
+        &[(42, 35, Some("SS"))],
+    );
+    check_14(
+        &formation,
+        2,
+        Some(&ALL_77),
+        "the candidate wins",
+        &[(49, 18, Some("DMF"))],
+    );
+    check_14(
+        &formation,
+        9,
+        Some(&ALL_77),
+        "the band's default",
+        &[(37, 5, Some("CB"))],
+    );
+    let formation = formation_5221_14();
+    check_14(
+        &formation,
+        6,
+        Some(&ALL_77),
+        "a held wide position",
+        &[(14, 19, Some("CMF"))],
+    );
+    check_14(
+        &formation,
+        8,
+        Some(&ALL_77),
+        "a tie for the second",
+        &[(99, 35, Some("RWF"))],
+    );
+    check_14(
+        &formation,
+        7,
+        Some(&ALL_77),
+        "no second in the band",
+        &[(55, 38, Some("SS"))],
+    );
+    check_14(
+        &formation,
+        10,
+        Some(&ALL_77),
+        "within his line",
+        &[(41, 38, Some("SS"))],
+    );
+    check_14(
+        &formation,
+        10,
+        Some(&ALL_77),
+        "the lone forward",
+        &[(52, 25, None)],
+    );
+    check_14(
+        &formation,
+        6,
+        Some(&ALL_77),
+        "a sixth defender",
+        &[(52, 5, None)],
     );
 }

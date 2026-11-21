@@ -1905,7 +1905,8 @@ fn overlap(a: egui::Rect, b: egui::Rect) -> f32 {
 }
 
 /// Slot `index`'s marker pressed on his badge centre and held at stored
-/// `held`: the canvas and the held frame's darkening fills.
+/// `held` on `version`'s pitch: the canvas and the held frame's
+/// darkening fills.
 fn held_dims(
     window: &mut Headless,
     tactics: &mut TeamTactics,
@@ -1913,21 +1914,16 @@ fn held_dims(
     roster: &[RosterRow<'_>],
     index: usize,
     held: (u8, u8),
+    version: PesVersion,
 ) -> (egui::Rect, Vec<egui::Rect>) {
     let players = tactics.presets[0].formations[0].players;
-    let (nodes, _) = window.pitch(PesVersion::Pes21, tactics, view, roster, vec![]);
+    let (nodes, _) = window.pitch(version, tactics, view, roster, vec![]);
     let canvas = canvas_rect(&nodes);
     let press = centres_of(canvas, &players)[index];
     let held = spot_centre(canvas, held.0, held.1);
-    window.pitch(
-        PesVersion::Pes21,
-        tactics,
-        view,
-        roster,
-        pointer_at(press, true),
-    );
+    window.pitch(version, tactics, view, roster, pointer_at(press, true));
     let (shapes, _) = window.pitch_shapes(
-        PesVersion::Pes21,
+        version,
         tactics,
         view,
         roster,
@@ -1938,9 +1934,9 @@ fn held_dims(
 
 /// `dims` are a held frame's darkening fills over `lit` on `canvas`:
 /// each positive-sized and inside the canvas, none off the lit
-/// rectangle or overlapping another, together covering the canvas less
-/// the lit rectangle.
-fn check_dims(canvas: egui::Rect, lit: egui::Rect, dims: &[egui::Rect]) {
+/// rectangles or overlapping another, together covering the canvas less
+/// them.
+pub(super) fn check_dims(canvas: egui::Rect, lit: &[egui::Rect], dims: &[egui::Rect]) {
     assert!(!dims.is_empty(), "held: the rest is darkened");
     for (i, dim) in dims.iter().enumerate() {
         assert!(
@@ -1951,7 +1947,10 @@ fn check_dims(canvas: egui::Rect, lit: egui::Rect, dims: &[egui::Rect]) {
             canvas.expand(0.5).contains_rect(*dim),
             "fill {dim:?} inside the canvas"
         );
-        assert!(overlap(*dim, lit) <= 0.5, "fill {dim:?} off the lit area");
+        assert!(
+            lit.iter().all(|lit| overlap(*dim, *lit) <= 0.5),
+            "fill {dim:?} off the lit areas"
+        );
         for other in &dims[i + 1..] {
             assert!(
                 overlap(*dim, *other) <= 0.5,
@@ -1959,11 +1958,21 @@ fn check_dims(canvas: egui::Rect, lit: egui::Rect, dims: &[egui::Rect]) {
             );
         }
     }
+    // The union of the lit rectangles: the rated positions' areas are
+    // contained (a smaller one inside its band's) or disjoint.
+    let mut lit_area = 0.0;
+    for (i, rect) in lit.iter().enumerate() {
+        lit_area += rect.area()
+            - lit[..i]
+                .iter()
+                .map(|earlier| overlap(*rect, *earlier))
+                .sum::<f32>();
+    }
     let darkened: f32 = dims.iter().map(|dim| dim.area()).sum();
     assert!(
-        (darkened - (canvas.area() - lit.area())).abs() <= 1.0,
-        "the fills cover the canvas less the lit area: {darkened} against {}",
-        canvas.area() - lit.area()
+        (darkened - (canvas.area() - lit_area)).abs() <= 1.0,
+        "the fills cover the canvas less the lit areas: {darkened} against {}",
+        canvas.area() - lit_area
     );
 }
 
@@ -2335,7 +2344,15 @@ fn a_held_starter_lights_his_rated_areas_and_darkens_the_rest() {
         window.pitch_shapes(PesVersion::Pes21, &mut tactics, &mut view, &roster, vec![]);
     assert_eq!(dim_fills(&shapes), [], "nothing held: nothing darkened");
 
-    let (canvas, dims) = held_dims(&mut window, &mut tactics, &mut view, &roster, 8, (30, 26));
+    let (canvas, dims) = held_dims(
+        &mut window,
+        &mut tactics,
+        &mut view,
+        &roster,
+        8,
+        (30, 26),
+        PesVersion::Pes21,
+    );
     let lit = egui::Rect::from_min_max(
         canvas.min,
         canvas.min + egui::vec2(SPOT_X0 + SPOT_XS * 20.5, SPOT_Y0 - SPOT_YS * 15.5),
@@ -2345,7 +2362,7 @@ fn a_held_starter_lights_his_rated_areas_and_darkens_the_rest() {
         canvas.left_top(),
         "premise: the lit area reaches the canvas' left and top edges, so its edges duplicate theirs"
     );
-    check_dims(canvas, lit, &dims);
+    check_dims(canvas, &[lit], &dims);
     let held = spot_centre(canvas, 30, 26);
     window.pitch(
         PesVersion::Pes21,
@@ -2398,7 +2415,15 @@ fn a_held_starter_rated_nowhere_darkens_the_whole_pitch() {
     let mut roster = roster_rows(&rows);
     party_hard(&mut tactics, &mut roster);
     roster[usize::from(tactics.starting_eleven[8])].rated = Some([false; 13]);
-    let (canvas, dims) = held_dims(&mut window, &mut tactics, &mut view, &roster, 8, (30, 26));
+    let (canvas, dims) = held_dims(
+        &mut window,
+        &mut tactics,
+        &mut view,
+        &roster,
+        8,
+        (30, 26),
+        PesVersion::Pes21,
+    );
     let darkened: f32 = dims.iter().map(|dim| dim.area()).sum();
     assert!(
         (darkened - canvas.area()).abs() <= 1.0,
@@ -2417,7 +2442,15 @@ fn a_held_starter_rated_nowhere_darkens_the_whole_pitch() {
         pointer_at(held, false),
     );
     roster[usize::from(tactics.starting_eleven[8])].rated = None;
-    let (_, dims) = held_dims(&mut window, &mut tactics, &mut view, &roster, 8, (30, 26));
+    let (_, dims) = held_dims(
+        &mut window,
+        &mut tactics,
+        &mut view,
+        &roster,
+        8,
+        (30, 26),
+        PesVersion::Pes21,
+    );
     assert_eq!(dims, [], "no ratings at all: nothing darkened");
 }
 
@@ -2446,7 +2479,15 @@ fn an_interior_rated_area_lights_half_a_unit_out_on_every_side() {
         "premise: AMF's area row reaches none of the pitch's edges"
     );
     let players = tactics.presets[0].formations[0].players;
-    let (canvas, dims) = held_dims(&mut window, &mut tactics, &mut view, &roster, 8, (30, 26));
+    let (canvas, dims) = held_dims(
+        &mut window,
+        &mut tactics,
+        &mut view,
+        &roster,
+        8,
+        (30, 26),
+        PesVersion::Pes21,
+    );
     let held = spot_centre(canvas, 30, 26);
     assert!(
         under_no_other_marker(canvas, &players, 8, held),
@@ -2456,7 +2497,7 @@ fn an_interior_rated_area_lights_half_a_unit_out_on_every_side() {
         canvas.min + egui::vec2(SPOT_X0 + SPOT_XS * 20.5, SPOT_Y0 - SPOT_YS * 34.5),
         canvas.min + egui::vec2(SPOT_X0 + SPOT_XS * 83.5, SPOT_Y0 - SPOT_YS * 25.5),
     );
-    check_dims(canvas, lit, &dims);
+    check_dims(canvas, &[lit], &dims);
     window.pitch(
         PesVersion::Pes21,
         &mut tactics,
@@ -2464,6 +2505,55 @@ fn an_interior_rated_area_lights_half_a_unit_out_on_every_side() {
         &roster,
         pointer_at(held, false),
     );
+}
+
+// On PES 2014 a held starter lights every area he is rated at, as the
+// game's pitch does: rated LB and RB he lights the two, and the rest
+// of the pitch dims.
+#[test]
+fn on_pes14_a_held_starter_lights_every_rated_area() {
+    let mut window = Headless::sized(600.0, 450.0);
+    let (mut tactics, rows) = team_1();
+    let mut view = TacticsView::default();
+    let mut roster = roster_rows(&rows);
+    let mut rated = [false; 13];
+    rated[usize::from(position_byte("LB"))] = true;
+    rated[usize::from(position_byte("RB"))] = true;
+    roster[usize::from(tactics.starting_eleven[8])].rated = Some(rated);
+    let (canvas, dims) = held_dims(
+        &mut window,
+        &mut tactics,
+        &mut view,
+        &roster,
+        8,
+        (30, 26),
+        PesVersion::Pes14,
+    );
+    let lit = lit_area::lit_rects(canvas, &rated);
+    assert_eq!(lit.len(), 2, "premise: LB's and RB's areas both");
+    check_dims(canvas, &lit, &dims);
+}
+
+// ...but a player rated A or B nowhere changes nothing on PES 2014's
+// pitch: nothing lit, nothing darkened — where the other versions
+// darken the whole canvas for him.
+#[test]
+fn on_pes14_a_held_starter_rated_nowhere_darkens_nothing() {
+    let mut window = Headless::sized(600.0, 450.0);
+    let (mut tactics, rows) = team_1();
+    let mut view = TacticsView::default();
+    let mut roster = roster_rows(&rows);
+    roster[usize::from(tactics.starting_eleven[8])].rated = Some([false; 13]);
+    let (_, dims) = held_dims(
+        &mut window,
+        &mut tactics,
+        &mut view,
+        &roster,
+        8,
+        (30, 26),
+        PesVersion::Pes14,
+    );
+    assert_eq!(dims, [], "rated nowhere: nothing darkened");
 }
 
 // PES 2014's swap of two starters writes what the game's own Game Plan
@@ -2740,4 +2830,135 @@ fn on_pes15_a_marker_dragged_to_grass_still_moves() {
         tactics, expect,
         "the dragged slot alone moved, in preset 1's Kick-off"
     );
+}
+
+// On PES 2014 a marker released on the grass is the game's free move:
+// the game list's 4-4-2, the dragged starter reading the all-77
+// player's overalls. Slot 1's CB dropped at the stored point (52, 20)
+// takes the rule's DMF, his spot written with it — and while he is
+// held over the point his badge reads DMF. The same slot dropped at
+// (2, 20), outside every zone, writes nothing, and the keeper dropped
+// on the grass writes nothing either.
+#[test]
+fn on_pes14_a_marker_released_on_the_grass_moves_by_the_games_free_move() {
+    let mut window = Headless::sized(600.0, 450.0);
+    let (mut tactics, rows) = team_1();
+    let mut view = TacticsView::default();
+    let mut roster = roster_rows(&rows);
+    tactics.presets[0].formations[0] = formation_442_14();
+    roster[usize::from(tactics.starting_eleven[1])].overalls = Some(ALL_77);
+    let players = tactics.presets[0].formations[0].players;
+    assert_eq!(
+        (players[1].position, players[1].x, players[1].y),
+        (position_byte("CB"), 63, 10),
+        "premise: slot 1's CB at (63, 10)"
+    );
+    let (nodes, _) = window.pitch(PesVersion::Pes14, &mut tactics, &mut view, &roster, vec![]);
+    let canvas = canvas_rect(&nodes);
+    let centres = centres_of(canvas, &players);
+    let from = marker_point(&nodes, &players, 1);
+    let onto = spot_centre(canvas, 52, 20) + press_offset(canvas, players[1], from);
+    assert!(
+        canvas.contains(onto)
+            && centres.iter().enumerate().all(|(other, centre)| {
+                other == 1 || !marker_rect(*centre, canvas, true).contains(onto)
+            }),
+        "premise: the release lands on free grass"
+    );
+
+    window.pitch(
+        PesVersion::Pes14,
+        &mut tactics,
+        &mut view,
+        &roster,
+        pointer_at(from, true),
+    );
+    let (shapes, changed) = window.pitch_shapes(
+        PesVersion::Pes14,
+        &mut tactics,
+        &mut view,
+        &roster,
+        vec![egui::Event::PointerMoved(onto)],
+    );
+    assert!(!changed, "a held frame writes nothing");
+    let held_badge = egui::Rect::from_center_size(
+        held_centre(canvas, players[1], from, onto, true),
+        egui::vec2(50.0, 14.0),
+    );
+    let texts = badge_texts(&shapes, held_badge);
+    assert_eq!(
+        texts.first().map(String::as_str),
+        Some("DMF"),
+        "held over (52, 20) his badge reads the rule's role: {texts:?}"
+    );
+
+    let (_, changed) = window.pitch(
+        PesVersion::Pes14,
+        &mut tactics,
+        &mut view,
+        &roster,
+        pointer_at(onto, false),
+    );
+    assert!(changed, "the drop changed the record");
+    let moved = tactics.presets[0].formations[0].players[1];
+    assert_eq!(
+        (moved.position, moved.x, moved.y),
+        (position_byte("DMF"), 52, 20),
+        "he lands at the snapped spot with the rule's role"
+    );
+
+    // A release where the rule refuses writes nothing. The pointer
+    // rests on his new spot a frame first: egui hit-tests a press
+    // against the last frame's widgets.
+    let players = tactics.presets[0].formations[0].players;
+    let before = tactics.clone();
+    let centres = centres_of(canvas, &players);
+    let (nodes, _) = window.pitch(PesVersion::Pes14, &mut tactics, &mut view, &roster, vec![]);
+    let from = marker_point(&nodes, &players, 1);
+    window.pitch(
+        PesVersion::Pes14,
+        &mut tactics,
+        &mut view,
+        &roster,
+        vec![egui::Event::PointerMoved(from)],
+    );
+    let onto = spot_centre(canvas, 2, 20) + press_offset(canvas, players[1], from);
+    assert!(
+        canvas.contains(onto)
+            && centres.iter().enumerate().all(|(other, centre)| {
+                other == 1 || !marker_rect(*centre, canvas, true).contains(onto)
+            }),
+        "premise: the release lands on free grass"
+    );
+    let changed = window.drag_pitch(
+        from,
+        onto,
+        PesVersion::Pes14,
+        &mut tactics,
+        &mut view,
+        &roster,
+    );
+    assert!(!changed, "a refused drop writes nothing");
+    assert_eq!(tactics, before, "the record is untouched");
+
+    // The keeper dragged to the grass and released writes nothing.
+    let (nodes, _) = window.pitch(PesVersion::Pes14, &mut tactics, &mut view, &roster, vec![]);
+    let canvas = canvas_rect(&nodes);
+    let players = tactics.presets[0].formations[0].players;
+    let from = marker_point(&nodes, &players, 0);
+    let onto = grass_point(canvas, &players, egui::Rect::NOTHING);
+    assert!(
+        canvas.contains(onto),
+        "premise: the release lands on the pitch"
+    );
+    let changed = window.drag_pitch(
+        from,
+        onto,
+        PesVersion::Pes14,
+        &mut tactics,
+        &mut view,
+        &roster,
+    );
+    assert!(!changed, "the keeper's grass release writes nothing");
+    assert_eq!(tactics, before, "the record is untouched");
 }
