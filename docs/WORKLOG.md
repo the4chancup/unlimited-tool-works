@@ -3606,23 +3606,22 @@ points there.
   long names onto two lines ("Attacking / Prowess") and shows four columns. It was already so
   with the old 560-point preview; seen in the release build of the larger-window slice
   (`.tmp/lead/re_look/`). Next: brief the build to the draft's wrapping.
-- open (2026-11-21) — A trial, the first work after the maintainer's break: can SubQ Snap tell
-  a flaky test from a steady one, as it tells a test that proves its scenario from one that
-  does not (`citation_audit.py`)? The question
-  per test: does its outcome depend on anything outside its inputs (the machine's free memory,
-  timing, thread order, files outside its scratch folder, the clock)? The state is the test
-  and the helpers of its file it calls, as the citation audit builds it.
-  - Positives, each at the commit before its fix:
-    - `a_7z_export_s_source_keeps_its_decompressed_content_into_the_planned_run`
-      (`68d933e5`, the run's budget read from the machine's free memory);
-    - the PES 15 save/load test with a one-byte seed (`3ab27215`);
-    - the Multi-team dialog's held press (`24451801`);
-    - the list test that read a combo's edge a frame early (`0af77290`);
-    - the pictures dialog's width (`5dfad4e2`).
-  - Negatives: a random sample of about 100 of today's tests.
-  - Measured as where the positives rank among the scores, and the AUC. If they rank near the
-    top, the check joins the checkpoint as the citation audit did; if not, the trial and its
-    numbers are recorded here and dropped.
+- resolved 2026-11-22 (dropped) — The trial of whether SubQ Snap can tell a flaky test from a
+  steady one, as it tells a test that proves its scenario from one that does not. Asked per
+  test whether its outcome depends on anything outside its inputs; the state was the test and
+  the helpers of its file it calls, as the citation audit builds it. Five known flakes at the
+  commit before each fix, against 100 tests sampled at random from HEAD's 6631:
+  - AUC 0.790, against the citation audit's 0.995. Every score is low (the highest is 0.227),
+    and a steady test tops the ranking.
+  - The flakes ranked 2 (the PES 15 save/load test's one-byte seed), 5 (the pictures dialog's
+    width), 18 (the kept-.7z test's free-memory budget), and 44 and 51 (the Multi-team list
+    test, twice). The two frame races score as steady as the median test: their cause is when
+    the headless harness delivers a check's reply, which neither the test nor its file shows,
+    and one sat in a helper of another file.
+
+  The project's flakes are mostly races of that kind, so the check does not join the
+  checkpoint, and no variant of the question was tried. The script and its answers are in the
+  gitignored `.tmp/snap_flaky/` and `snap.out/flaky_cache.json`.
 - open (2026-11-20) — A checkpoint's diff mutation run pays each crate's fixed costs however
   few mutants it holds. On `969e1cb6`, `team_widgets`' one mutant took 567 s wall:
   - a baseline of 133 s build and 199 s test, though the gates had just passed the same tree;
