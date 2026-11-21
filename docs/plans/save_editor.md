@@ -258,6 +258,10 @@ vertical room a tab row takes; a toggle on the title's own row takes none.
   because no member edits them, a save made from the stock game holds more of them than of
   the cup's, and they alone share players between rosters, a case every list rule would
   otherwise have to carry.
+  A save holding no cup team (one made from the stock game) says so, since it would otherwise open to an empty list with no reason given: opening it
+  raises a warning notice, `This save holds no cup team (ids 701 to 920).`, and `check-aatf`
+  without `--teams` and `export-toml --all-teams` refuse it with the same words. Their
+  silence would read as a clean check and an empty export, not as a wrong file.
 - **Player list**, 255 points wide (its rows' frame and the scroll bar's strip; egui's panel
   margins and separator come on top) and not resizable. Under the design width the window
   scales instead of narrowing (`spec/core/gui.md` "Shell layout", the paragraph "Scaling with

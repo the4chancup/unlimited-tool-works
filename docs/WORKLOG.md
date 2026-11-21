@@ -3466,9 +3466,11 @@ points there.
   `Documents\KONAMI\eFootball PES 2021 SEASON UPDATE\...\save\EDIT00000000` (11,011,039 bytes,
   2026-11-18): the title named it, "All teams" listed no row, the Player and Team menus stayed
   grey, and `check-aatf` on the same file printed nothing. The test fixture (10,996,712 bytes)
-  opened in the same window listed every team. Not yet known: whether the save holds no team
-  the editor reads, or whether the read drops them silently; either way, a save that opens to
-  nothing with no message is the bug. Read it only; never press Save on it.
+  opened in the same window listed every team. Cause: the save holds no cup team. On a copy,
+  `export-toml --all-teams` wrote no file, as it does for the `EDIT00000000_vanilla` beside
+  it, while its June copy (`EDIT00000000 - Copy (4)`) gives 220. The editor lists cup teams
+  alone by design, so the bug is the silence. The fix, a notice in the window and a refusal
+  from the two commands (plan "Only the cup's teams are shown"), is being built.
 - open (2026-11-21) — A trial: can SubQ Snap tell a flaky test from a steady one, as it tells
   a test that proves its scenario from one that does not (`citation_audit.py`)? The question
   per test: does its outcome depend on anything outside its inputs (the machine's free memory,

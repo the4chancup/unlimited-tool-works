@@ -19045,3 +19045,8 @@ Plan: `plans/save_editor.md`, "The player view", General info's Nation; SE-GUI-1
 Decision: every pick made while the Nation list is open joins one undo entry, which one undo takes back, and Escape removes it however long after the last pick it is pressed. A second's pause still starts a new typed run, but that only decides which nation the keys spell.
 Why: with entries split at a second's pause, an Escape pressed after reading the pick for a second left an entry behind, and the first undo then brought back the nation just escaped from. One change per opening is also how a browser's dropdown behaves.
 Plan: `plans/save_editor.md`, "The player view", General info's Nation; SE-GUI-106.
+
+## 2026-11-21 — save_editor — a save holding no cup team says so, in the window and on the command line
+Decision: opening a save whose teams all lie outside 701 to 920 raises a warning notice, `This save holds no cup team (ids 701 to 920).`; `check-aatf` without `--teams` and `export-toml --all-teams` refuse such a save with the same words.
+Why: the maintainer's PES 2021 save had become a stock one, and the window opened it to an empty list with Player and Team greyed and no reason given, which read as a bug; a clean `check-aatf` also prints nothing, so on a stock save it read as a legal one. A refusal, not a warning, on the command line, because a script reading its exit code would otherwise take the wrong file for a clean check.
+Plan: `plans/save_editor.md`, "Editing UI", the bullet "Only the cup's teams are shown".
