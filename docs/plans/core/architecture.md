@@ -650,7 +650,13 @@ Compiler and the Export upgrader, then the rest as they are built.
     session is still kept.
   - A pipe that breaks mid-session (the monitor died) gets one new monitor, which keeps
     crash dumps for the rest of the session and writes on into the same folder. If that one
-    does not start either, the window's own writer takes the folder over.
+    does not start either, or its pipe breaks too, the window's own writer takes the folder
+    over. The message the break interrupted is sent again.
+  - A writer that finds its folder already made adopts it: it keeps `journal.toml`'s rows
+    and takes the next input's index and each output's from them, never rewriting what
+    they say. It first cuts the journal back to its last `# ok` line, because a block the
+    dead monitor left half-written would otherwise sit mid-journal, where the reader parses
+    it.
   - The writer is one function from a message to the folder, which tests call in-process;
     one test covers the link.
   - Each window has its own monitor, so two windows open at once keep two folders.

@@ -19083,3 +19083,18 @@ sits among those that went well. Not `ended` either, which says the window went 
 word, as from Task Manager.
 Plan: `plans/core/architecture.md` "Repro bundles", the `[end]` table and the pipe's end;
 ST-REP-10 in `plans/core/gui.md`.
+
+## 2026-11-21 — studio_core, studio — a new monitor's writer adopts the session folder
+Decision: when the pipe breaks, the window starts one new monitor and sends it the header
+again, then the message the break interrupted. The new monitor's writer (or the window's own,
+if that monitor does not start or its pipe breaks too) finds the folder already made and
+adopts it. It cuts `journal.toml` back to its last `# ok` line, then takes the next input's
+index and each output's from the rows, never rewriting them.
+Why: cut, not appended to as is, because the reader parses everything before the last marker,
+and a block the dead monitor left half-written would then sit mid-journal and fail the parse
+or read as another step. Indexes from the rows, not from scratch, because a new writer starting
+at 0 would overwrite `inputs/0-…` and its row. A second break goes to the window's own writer,
+not a third monitor: the plan gives one new monitor, and two deaths in one session point at
+something a third start would meet too.
+Plan: `plans/core/architecture.md` "Repro bundles", the bullet "A pipe that breaks
+mid-session" and the one after it.
