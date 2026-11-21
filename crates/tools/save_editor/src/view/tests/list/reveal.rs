@@ -304,12 +304,7 @@ fn a_double_click_on_a_team_row_scrolls_the_list_to_its_row() {
             {
                 break 'find node.label().expect("a team row's label").to_owned();
             }
-            let at = centre(
-                nodes
-                    .iter()
-                    .find(|node| player_row(node))
-                    .expect("a player row"),
-            );
+            let at = mid_row(&nodes);
             window.frame(
                 vec![
                     egui::Event::PointerMoved(at),

@@ -594,7 +594,12 @@ fn a_held_drag_marks_where_the_drop_would_land() {
         .iter()
         .rposition(|slot| slot.player_id != 0)
         .expect("team 701 rosters someone");
-    let last = bounds(row(&nodes, &format!("{:02} CB PLACEHOLDER", last_slot + 1)));
+    // The row of his team with that label: every team's roster has one.
+    let last = bounds(row_under(
+        &nodes,
+        &format!("{:02} CB PLACEHOLDER", last_slot + 1),
+        team_row(&nodes, &view, 701).bounds().expect("701's row").y0,
+    ));
     let next_team = bounds(team_row(&nodes, &view, 702));
     let (_, _, shapes) = window.frame(vec![egui::Event::PointerMoved(last.center())], |ui| {
         show(ui, &mut view, &|| Vec::new())
