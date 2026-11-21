@@ -590,17 +590,23 @@ fn run_gui_mode(tools: Vec<Box<dyn StudioTool>>, test: Option<CrashTest>) -> Exi
             .as_ref()
             .map(|installed| installed.path.as_path()),
         |text| show_dialog(MessageLevel::Error, text),
+        // The link's close runs inside the guard, before the session's closing
+        // line is written: `close` ends the recorder's sink and the link's
+        // thread sends the closing message before its pipe ends — `crashed`
+        // when the run's own panic guard caught one — and anything the close
+        // logs (a monitor restarted over a pipe that broke while the window
+        // sat idle, a stalled sender's warning) lands ahead of the closing
+        // line, which must stay the log's last.
+        |code| {
+            if let Some(link) = session_link {
+                link.close(session_end(code));
+            }
+        },
         log::logger(),
     );
     // Restart now's program starts last: the window's session is closed in the log, and
     // this copy lets go of its slot first. Started any earlier, the new program would
     // find the slot's lock held and open as a second copy, with the second copy's log.
-    // The session's close goes first: `close` ends the recorder's sink and the
-    // link's thread sends the closing message before its pipe ends — `crashed`
-    // when the run's own panic guard caught one.
-    if let Some(link) = session_link {
-        link.close(session_end(code));
-    }
     drop(instance);
     if let Some(program) = restart {
         // The child is not waited for: it outlives the process that starts
