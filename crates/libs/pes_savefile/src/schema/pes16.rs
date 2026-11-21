@@ -282,6 +282,7 @@ pub(crate) static PLAYER: RecordSchema<PlayerField, PlayerText> = RecordSchema {
             bit_width: 1,
         },
     ],
+    split: &[],
     arrays: &[
         ArraySpec {
             make: PlayerField::PlayablePosition,
@@ -490,6 +491,7 @@ pub(crate) static APPEARANCE: RecordSchema<PlayerField, PlayerText> = RecordSche
             bit_width: 1,
         },
     ],
+    split: &[],
     arrays: &[],
     texts: &[],
     ingame_face: Some(ByteRun {
@@ -518,6 +520,7 @@ pub(crate) static TEAM: RecordSchema<TeamField, TeamText> = RecordSchema {
             bit_width: 1,
         },
     ],
+    split: &[],
     arrays: &[],
     texts: &[
         TextSpec {
@@ -542,6 +545,7 @@ pub(crate) static ROSTER: RecordSchema<RosterField, TeamText> = RecordSchema {
         bit_offset: 0,
         bit_width: 32,
     }],
+    split: &[],
     arrays: &[
         ArraySpec {
             make: RosterField::Player,

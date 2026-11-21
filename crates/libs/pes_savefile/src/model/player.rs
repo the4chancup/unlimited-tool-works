@@ -364,6 +364,9 @@ pub struct PlayerAppearance {
     pub untucked: bool,
     /// Ankle taping.
     pub ankle_taping: bool,
+    /// Outfield gloves (PES 2014's appearance record; the other versions
+    /// keep the bit in the ingame-face run).
+    pub player_gloves: bool,
     /// The ingame-face run: the appearance block's byte 22 to its end, carried
     /// verbatim (50 bytes, 46 on PES 15) with `IngameFace` accessors for
     /// every field of the face and the hair.
@@ -540,6 +543,7 @@ impl PlayerEntry {
             PlayerField::Undershorts => u32::from(self.appearance.undershorts),
             PlayerField::Untucked => u32::from(self.appearance.untucked),
             PlayerField::AnkleTaping => u32::from(self.appearance.ankle_taping),
+            PlayerField::PlayerGloves => u32::from(self.appearance.player_gloves),
             PlayerField::Tenacity => {
                 u32::from(self.stats.tenacity.ok_or_else(|| codec::missing(field))?)
             }
@@ -675,6 +679,7 @@ impl PlayerEntry {
             PlayerField::Undershorts => self.appearance.undershorts = value as u8,
             PlayerField::Untucked => self.appearance.untucked = value != 0,
             PlayerField::AnkleTaping => self.appearance.ankle_taping = value != 0,
+            PlayerField::PlayerGloves => self.appearance.player_gloves = value != 0,
             PlayerField::Tenacity => self.stats.tenacity = Some(value as u8),
             PlayerField::PuntKickMotion => self.motion.punt_kick = Some(value as u8),
             PlayerField::EditedName => self.edit_flags.name = value != 0,

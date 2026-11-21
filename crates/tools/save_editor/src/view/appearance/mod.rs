@@ -80,6 +80,18 @@ pub(super) const OUTFIELDER_GLOVES_LABEL: &str = "Outfielder gloves";
 /// The outfielder-gloves dropdown's two readings — `gloves == 0` and any
 /// non-zero — in the combo's pick order.
 pub(super) const GLOVES_OPTIONS: [&str; 2] = ["Off", "Worn in winter"];
+
+/// `version`'s outfielder-gloves pair (`Off` first): "Auto" on PES 2014,
+/// where the bit sits in the appearance record; "Worn in winter" where it
+/// lives in the in-game face run.
+pub(super) fn gloves_options(version: PesVersion) -> [&'static str; 2] {
+    if version == PesVersion::Pes14 {
+        ["Off", "Auto"]
+    } else {
+        GLOVES_OPTIONS
+    }
+}
+
 /// The dribbling motion's number.
 pub(super) const DRIBBLING_MOTION_LABEL: &str = "Dribbling motion";
 /// The Presentation group's title.
@@ -504,7 +516,7 @@ fn fpc_group(
             return;
         }
     };
-    let hidden = pes_savefile::ops::fpc::is_fpc_player(player, ids)
+    let hidden = pes_savefile::ops::fpc::is_fpc_player(player, session.version(), ids)
         .expect("a loaded player's face run holds the skin field");
     ui.horizontal_wrapped(|ui| {
         ui.label(if hidden {
@@ -690,7 +702,7 @@ fn edit_flags_grid(
                 COPY_FROM_ID_LABEL,
                 gating_tooltip(PlayerField::BaseCopyId),
             );
-            gated_number(ui, gating_tooltip(PlayerField::BaseCopyId));
+            gated_number(ui, gating_tooltip(PlayerField::BaseCopyId), NUMBER_BOX);
         }
     });
 }
@@ -775,7 +787,15 @@ fn physique_grid(
                         let (enabled, tip) = field_gate(schema, has_record, field);
                         if !enabled {
                             gated_label(ui, label, tip.clone());
-                            gated_number(ui, tip);
+                            // The enabled control is a slider: its rail,
+                            // the gap and its value box.
+                            gated_number(
+                                ui,
+                                tip,
+                                PHYSIQUE_RAIL_W
+                                    + ui.spacing().item_spacing.x
+                                    + ui.spacing().interact_size.x,
+                            );
                             maybe_end_row(ui, index + 1, 2);
                             continue;
                         }
@@ -885,9 +905,11 @@ struct StripGates<'a> {
     has_record: bool,
 }
 
-/// `cell`'s gate: the `PlayerField` it writes, or `None` for the two cells
-/// of the in-game face run, whose gate is the run itself.
-fn cell_field(cell: StripCell) -> Option<PlayerField> {
+/// `cell`'s gate: the `PlayerField` it writes, or `None` for the cells of
+/// the in-game face run, whose gate is the run itself. PES 2014 keeps its
+/// outfielder gloves in the appearance record instead, under its own
+/// field.
+fn cell_field(cell: StripCell, version: PesVersion) -> Option<PlayerField> {
     match cell {
         StripCell::BootsId => Some(PlayerField::BootsId),
         StripCell::GlovesId => Some(PlayerField::GlovesId),
@@ -898,6 +920,9 @@ fn cell_field(cell: StripCell) -> Option<PlayerField> {
         StripCell::WristTaping => Some(PlayerField::WristTaping),
         StripCell::WristTapeLeft => Some(PlayerField::WristTapeColorLeft),
         StripCell::WristTapeRight => Some(PlayerField::WristTapeColorRight),
+        StripCell::OutfielderGloves if version == PesVersion::Pes14 => {
+            Some(PlayerField::PlayerGloves)
+        }
         StripCell::OutfielderGloves | StripCell::GlovesColor => None,
         StripCell::AnkleTaping => Some(PlayerField::AnkleTaping),
         StripCell::Spectacles => Some(PlayerField::SpectaclesStyle),
@@ -1002,7 +1027,7 @@ fn strip_cell(
 ) {
     // The gated stand-in's tooltip is computed only where it shows:
     // `gating_tooltip` panics on a field no version stores.
-    let (enabled, tip) = match cell_field(cell) {
+    let (enabled, tip) = match cell_field(cell, version) {
         Some(field) => field_gate(gates.schema, gates.has_record, field),
         None => (gates.face_run, PES14_TIP.to_owned()),
     };
@@ -1027,7 +1052,7 @@ fn strip_cell(
             if enabled {
                 strip_field(ui, session, player_id, version, appearance, cell);
             } else {
-                gated_number(ui, tip);
+                gated_number(ui, tip, FIELD_W);
             }
         },
     );
@@ -1120,20 +1145,31 @@ fn strip_field(
             },
         ),
         StripCell::OutfielderGloves => {
-            let gloves = face(appearance, IngameFaceField::PlayerGloves);
+            // PES 2014 stores the bit in the appearance record, the other
+            // versions in the in-game face run.
+            let pes14 = version == PesVersion::Pes14;
+            let held = if pes14 {
+                u8::from(appearance.player_gloves)
+            } else {
+                u8::from(face(appearance, IngameFaceField::PlayerGloves) != 0)
+            };
             combo_box(
                 ui,
                 session,
                 player_id,
                 OUTFIELDER_GLOVES_LABEL,
-                &GLOVES_OPTIONS.map(str::to_owned),
-                u8::from(gloves != 0),
+                &gloves_options(version).map(str::to_owned),
+                held,
                 |player, shown| {
-                    player
-                        .appearance
-                        .ingame_face
-                        .set(IngameFaceField::PlayerGloves, shown)
-                        .expect("a loaded player's face run holds player gloves");
+                    if pes14 {
+                        player.appearance.player_gloves = shown != 0;
+                    } else {
+                        player
+                            .appearance
+                            .ingame_face
+                            .set(IngameFaceField::PlayerGloves, shown)
+                            .expect("a loaded player's face run holds player gloves");
+                    }
                 },
             );
         }
@@ -1346,7 +1382,7 @@ fn motion_number(
 ) {
     if !schema.player_has(field.field) {
         gated_label(ui, field.label, gating_tooltip(field.field));
-        gated_number(ui, gating_tooltip(field.field));
+        gated_number(ui, gating_tooltip(field.field), NUMBER_BOX);
         return;
     }
     let top = motion_top(version, field.field).expect("a stored motion has a measured top");

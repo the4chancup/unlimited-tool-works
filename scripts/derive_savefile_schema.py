@@ -684,6 +684,7 @@ def record_rs(name, field_ty, text_ty, size, scalars, arrays, texts, doc, ingame
     for variant, off, w in scalars:
         out.append(f"        FieldSpec {{ field: {field_ty}::{variant}, bit_offset: {off}, bit_width: {w} }},")
     out.append("    ],")
+    out.append("    split: &[],")
     out.append("    arrays: &[")
     for variant, count, base, stride, w in arrays:
         out.append(f"        ArraySpec {{ make: {field_ty}::{variant}, count: {count}, base_bit: {base}, stride_bits: {stride}, bit_width: {w} }},")

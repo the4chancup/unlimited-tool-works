@@ -10,7 +10,7 @@ use anyhow::anyhow;
 use pes_savefile::model::PlayerEntry;
 use pes_savefile::model::names::display_name;
 use pes_savefile::schema::fields::PlayerField;
-use pes_savefile::schema::{player_max_value, schema_for};
+use pes_savefile::schema::player_max_value;
 
 use crate::session::Session;
 
@@ -181,20 +181,21 @@ impl Session {
     /// roster slot of `team_id` (the menu's Set / Remove FPC
     /// invisibility), each record's own boots and gloves IDs kept
     /// (`player_ops::preset_for` under `ids`, the settings' hide IDs), one
-    /// sealed undo entry. A no-op on a version whose records carry no
-    /// in-game face run (the menu items are greyed there).
+    /// sealed undo entry. A player the version holds no appearance record
+    /// for keeps his look — the strip write has no record to land in
+    /// (PES 2014's unedited players).
     pub(crate) fn team_fpc(&mut self, team_id: u32, kind: fpc::Preset, ids: fpc::HideIds) {
         let version = self.version();
-        if !schema_for(version).has_ingame_face() {
-            return;
-        }
         let edited = self
             .edited_players(team_id, |_, player| {
+                if !self.has_appearance_record(player.id) {
+                    return Ok(());
+                }
                 let appearance = crate::session::player_ops::preset_for(player, kind, ids);
                 // The hide and show presets write no custom skin, and a
-                // loaded player's face run holds the fields `apply` needs.
+                // loaded player's fields hold the strip `apply` needs.
                 pes_savefile::ops::fpc::apply(player, &appearance, version)
-                    .expect("a loaded player's face run holds the strip fields");
+                    .expect("a loaded player's fields hold the strip");
                 Ok(())
             })
             .expect("the fpc edit cannot fail");
@@ -232,7 +233,7 @@ impl Session {
 /// `field`'s whole stored range on `version` (`0..=max_value`, the codec's
 /// `ValueTooWide` bound): the Appearance section's Boots ID and Gloves ID
 /// controls and this check read the same bound. `None` where the version
-/// stores no such field (PES 2014 has no gloves ID).
+/// stores no such field.
 fn id_range(version: pes_version::PesVersion, field: PlayerField) -> Option<RangeInclusive<u32>> {
     let max = player_max_value(version, field)?;
     Some(0..=u32::try_from(max).expect("the id fields' bound fits u32"))

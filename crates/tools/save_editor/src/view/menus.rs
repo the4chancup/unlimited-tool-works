@@ -26,7 +26,7 @@ use studio_core::{Notice, NoticeKind};
 use crate::session::Session;
 use crate::session::database;
 use crate::session::team_ops::{BootsMode, GlovesMode};
-use crate::view::appearance::{OWNERSHIP_TIP, PES14_TIP};
+use crate::view::appearance::{NO_LOOK_TIP, OWNERSHIP_TIP, PES14_TIP};
 use crate::view::generate;
 use crate::view::{
     NUMBER_BOX, Panel, Refusal, SaveView, comparator, copy_stats, interchange, pictures,
@@ -50,10 +50,9 @@ fn out_of_scope(version: PesVersion) -> bool {
 /// disabled only with no row selected; the boots/gloves dialog prefills
 /// from the selected player, on a team row from the team's first filled
 /// roster slot; the aesthetics items carry the ownership line as their
-/// disabled hover (SE-GUI-22). A save whose records carry no in-game face
-/// run never offers the FPC items; one that stores no boots id never the
-/// boots and gloves dialog, which PES 2014 offers for the boots alone,
-/// the gloves side disabled. The team file and formation picture items
+/// disabled hover (SE-GUI-22). A save storing no boots or gloves ids
+/// never offers the FPC items; one that stores no boots id never the
+/// boots and gloves dialog. The team file and formation picture items
 /// are off where they are out of scope — each disabled item says which on
 /// hover.
 pub(crate) fn team_menu(ui: &mut egui::Ui, view: &mut SaveView) {
@@ -81,9 +80,8 @@ pub(crate) fn team_menu(ui: &mut egui::Ui, view: &mut SaveView) {
         Err(error) => (false, error.to_string()),
     };
     let version = view.session.as_ref().expect("checked above").version();
-    // A version with no in-game face run never offers the FPC items, one
-    // that stores no boots id never the boots and gloves dialog.
-    let ingame_face = schema_for(version).has_ingame_face();
+    // A version that stores no boots id never offers the boots and gloves
+    // dialog.
     let boots_stored = player_max_value(version, PlayerField::BootsId).is_some();
     menu_button(ui, "Team", |ui| {
         let Some(session) = view.session.as_mut() else {
@@ -127,14 +125,10 @@ pub(crate) fn team_menu(ui: &mut egui::Ui, view: &mut SaveView) {
         }
         if add_enabled(
             ui,
-            fpc_ok && ingame_face,
+            fpc_ok,
             egui::Button::new("Hide default body (Enable FPC)"),
         )
-        .on_disabled_hover_text(if ingame_face {
-            fpc_tip.as_str()
-        } else {
-            PES14_TIP
-        })
+        .on_disabled_hover_text(fpc_tip.as_str())
         .clicked()
             && let Ok(ids) = hide_ids
         {
@@ -143,14 +137,10 @@ pub(crate) fn team_menu(ui: &mut egui::Ui, view: &mut SaveView) {
         }
         if add_enabled(
             ui,
-            fpc_ok && ingame_face,
+            fpc_ok,
             egui::Button::new("Show default body (Disable FPC)"),
         )
-        .on_disabled_hover_text(if ingame_face {
-            fpc_tip.as_str()
-        } else {
-            PES14_TIP
-        })
+        .on_disabled_hover_text(fpc_tip.as_str())
         .clicked()
             && let Ok(ids) = hide_ids
         {
@@ -201,9 +191,9 @@ pub(crate) fn team_menu(ui: &mut egui::Ui, view: &mut SaveView) {
 /// a team row every entry but Copy/swap stats… is disabled with the
 /// pick-a-player hover, since the window picks both players itself.
 /// With no save open or no row selected the whole menu is disabled, as
-/// the Team menu is. On a save whose records carry no in-game face run
-/// the FPC entry and the two Generate items are greyed with the version's
-/// own hover.
+/// the Team menu is. On a save storing no boots or gloves ids the FPC
+/// entry is greyed, as are the two Generate items where the records
+/// carry no in-game face run — each with the version's own hover.
 pub(crate) fn player_menu(ui: &mut egui::Ui, view: &mut SaveView) {
     if view.session.is_none() || selected_team_id(view).is_none() {
         add_enabled_ui(ui, false, |ui| {
@@ -219,8 +209,9 @@ pub(crate) fn player_menu(ui: &mut egui::Ui, view: &mut SaveView) {
         Ok(_) => (unlocked, OWNERSHIP_TIP.to_owned()),
         Err(error) => (false, error.to_string()),
     };
-    // The FPC entry and the two Generate items need the in-game face run
-    // the version's records carry; without it both are greyed.
+    // The FPC entry needs, on PES 2014, the player's own appearance
+    // record; the two Generate items need the in-game face run the
+    // version's records carry.
     let ingame_face =
         schema_for(view.session.as_ref().expect("checked above").version()).has_ingame_face();
     menu_button(ui, "Player", |ui| {
@@ -253,11 +244,14 @@ pub(crate) fn player_menu(ui: &mut egui::Ui, view: &mut SaveView) {
         // The label names what the press will do, from the reading
         // `toggle_fpc` branches on; the Hide label while the hide IDs are
         // out of band, the entry then disabled. On a team row its tip is
-        // the same as the other player items'.
+        // the same as the other player items'; on a PES 2014 player the
+        // appearance section holds no record for, the look controls' own
+        // tip.
         let hidden = player_id
             .zip(hide_ids.ok())
             .and_then(|(id, ids)| session.body_hidden(id, ids))
             .unwrap_or(false);
+        let has_record = player_id.is_some_and(|id| session.has_appearance_record(id));
         let fpc_label = if hidden {
             "Show default body (Disable FPC)"
         } else {
@@ -265,14 +259,14 @@ pub(crate) fn player_menu(ui: &mut egui::Ui, view: &mut SaveView) {
         };
         let fpc_tip = if player_id.is_none() {
             player_tip
-        } else if !ingame_face {
-            PES14_TIP
+        } else if !has_record {
+            NO_LOOK_TIP
         } else {
             fpc_tip.as_str()
         };
         if add_enabled(
             ui,
-            player_id.is_some() && fpc_ok && ingame_face,
+            player_id.is_some() && fpc_ok && has_record,
             egui::Button::new(fpc_label).shortcut_text("Ctrl+I"),
         )
         .on_disabled_hover_text(fpc_tip)
@@ -722,10 +716,6 @@ pub(crate) fn boglo_dialog(ui: &mut egui::Ui, view: &mut SaveView) {
     let Some(session) = view.session.as_mut() else {
         return;
     };
-    // A version without the gloves field (PES 2014) still offers the
-    // boots: the gloves choices draw disabled and leave the gloves
-    // unchanged.
-    let gloves_stored = player_max_value(session.version(), PlayerField::GlovesId).is_some();
     let boglo = view.boglo.as_mut().expect("checked above");
     let mut close = false;
     let id = egui::Id::unique("save_editor_boglo");
@@ -792,47 +782,43 @@ pub(crate) fn boglo_dialog(ui: &mut egui::Ui, view: &mut SaveView) {
                 });
             });
             boglo_group(ui, "Glove IDs", |ui| {
-                add_enabled_ui(ui, gloves_stored, |ui| {
-                    ui.horizontal(|ui| {
-                        option_cell(ui, columns.option, |ui| {
-                            radio_value(ui, &mut boglo.gloves, GlovesPick::Unchanged, "Unchanged");
-                        });
+                ui.horizontal(|ui| {
+                    option_cell(ui, columns.option, |ui| {
+                        radio_value(ui, &mut boglo.gloves, GlovesPick::Unchanged, "Unchanged");
                     });
-                    ui.horizontal(|ui| {
-                        option_cell(ui, columns.option, |ui| {
-                            radio_value(
-                                ui,
-                                &mut boglo.gloves,
-                                GlovesPick::LikeBoots,
-                                "Set like boot IDs",
-                            );
-                        });
-                    });
-                    ui.horizontal(|ui| {
-                        option_cell(ui, columns.option, |ui| {
-                            radio_value(
-                                ui,
-                                &mut boglo.gloves,
-                                GlovesPick::Same,
-                                "Set all to the same ID:",
-                            );
-                        });
-                        let gloves_id =
-                            number_arrows(ui, &mut boglo.gloves_id, 0..=u32::MAX, |ui, value| {
-                                ui.add_sized(
-                                    field_size(ui, columns.field),
-                                    number_box(egui::DragValue::new(value)),
-                                )
-                            });
-                        step_number(
-                            &mut boglo.gloves_id,
-                            number_wheel_steps(ui, &gloves_id),
-                            0..=u32::MAX,
+                });
+                ui.horizontal(|ui| {
+                    option_cell(ui, columns.option, |ui| {
+                        radio_value(
+                            ui,
+                            &mut boglo.gloves,
+                            GlovesPick::LikeBoots,
+                            "Set like boot IDs",
                         );
                     });
-                })
-                .response
-                .on_disabled_hover_text(PES14_TIP);
+                });
+                ui.horizontal(|ui| {
+                    option_cell(ui, columns.option, |ui| {
+                        radio_value(
+                            ui,
+                            &mut boglo.gloves,
+                            GlovesPick::Same,
+                            "Set all to the same ID:",
+                        );
+                    });
+                    let gloves_id =
+                        number_arrows(ui, &mut boglo.gloves_id, 0..=u32::MAX, |ui, value| {
+                            ui.add_sized(
+                                field_size(ui, columns.field),
+                                number_box(egui::DragValue::new(value)),
+                            )
+                        });
+                    step_number(
+                        &mut boglo.gloves_id,
+                        number_wheel_steps(ui, &gloves_id),
+                        0..=u32::MAX,
+                    );
+                });
             });
             if let Some(error) = &boglo.error {
                 ui.colored_label(ui.visuals().error_fg_color, error.as_str());

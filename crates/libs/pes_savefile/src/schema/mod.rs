@@ -64,6 +64,17 @@ pub struct ArraySpec<F> {
     pub bit_width: u32,
 }
 
+/// One field stored in several bit runs of a record: the record holds the
+/// field's value spread over `runs`, each a `(bit offset, bit width)` pair,
+/// the value's lowest bits in the first run (PES 2014's gloves id, which
+/// the Akko DLC reads out of the hair accessory's colour runs).
+pub struct SplitSpec<F> {
+    /// The model field the runs decode to together.
+    pub field: F,
+    /// The runs, `(bit_offset, bit_width)` each, lowest value bits first.
+    pub runs: &'static [(u32, u32)],
+}
+
 /// A byte string field: NUL-terminated when the text is shorter than the field, unterminated
 /// when it fills the field exactly.
 pub struct TextSpec<T> {
@@ -89,6 +100,9 @@ pub struct RecordSchema<F: 'static, T: 'static> {
     pub size: usize,
     /// The scalar bit runs.
     pub fields: &'static [FieldSpec<F>],
+    /// The fields stored in several runs apiece (empty on every record
+    /// but PES 2014's appearance record).
+    pub split: &'static [SplitSpec<F>],
     /// The indexed runs.
     pub arrays: &'static [ArraySpec<F>],
     /// The text fields.
@@ -99,12 +113,15 @@ pub struct RecordSchema<F: 'static, T: 'static> {
 }
 
 impl<F: PartialEq + Copy, T> RecordSchema<F, T> {
-    /// The bit width the record stores `field` at, from its `fields` row or
-    /// the `arrays` run whose `make(i)` produces it; `None` for a field the
-    /// record does not store.
+    /// The bit width the record stores `field` at, from its `fields` row,
+    /// the `split` runs' widths summed, or the `arrays` run whose `make(i)`
+    /// produces it; `None` for a field the record does not store.
     pub(crate) fn bit_width(&self, field: F) -> Option<u32> {
         if let Some(spec) = self.fields.iter().find(|spec| spec.field == field) {
             return Some(spec.bit_width);
+        }
+        if let Some(spec) = self.split.iter().find(|spec| spec.field == field) {
+            return Some(spec.runs.iter().map(|run| run.1).sum());
         }
         self.arrays.iter().find_map(|array| {
             (0..array.count)
@@ -349,6 +366,7 @@ impl VersionSchema {
             set: &mut std::collections::HashSet<PlayerField>,
         ) {
             set.extend(schema.fields.iter().map(|spec| spec.field));
+            set.extend(schema.split.iter().map(|spec| spec.field));
             for array in schema.arrays {
                 set.extend((0..array.count).map(|i| (array.make)(i)));
             }

@@ -897,6 +897,76 @@ fn pes14_sleeves_and_shirttail_translate_through_the_stored_order() {
     }
 }
 
+/// PES 2014's gloves id, which the base game does not store: the Akko DLC
+/// reads it from the hair accessory's colour, one six-bit run per channel —
+/// red at 0x13:0, blue at 0x14:0, green at 0x50:3, its bits running into
+/// 0x51:0 — the id's lowest bits first, 18 bits in all. A write changes
+/// those runs alone and a read composes them back.
+#[test]
+fn pes14_gloves_id_splits_over_the_hair_accessory_colour_runs() {
+    let (_, appearance) = schema_for(PesVersion::Pes14)
+        .appearance
+        .as_ref()
+        .expect("PES 2014 has an appearance record");
+    // The hide pair an FPC player carries, boots 55 and gloves 11, written
+    // into a bare record first, reads back as the pair.
+    let mut player = PlayerEntry::default();
+    player.appearance.boots_id = 55;
+    player.appearance.gloves_id = 11;
+    let mut record = vec![0u8; appearance.size];
+    write_player(PesVersion::Pes14, &player, &mut record, appearance).expect("encode");
+    let mut back = PlayerEntry::default();
+    read_player_into(PesVersion::Pes14, &mut back, &record, appearance).expect("decode");
+    assert_eq!(
+        (back.appearance.boots_id, back.appearance.gloves_id),
+        (55, 11),
+        "the hide pair reads back"
+    );
+    assert_eq!(
+        (
+            bits::read_bits(&record, 0x13 * 8, 6),
+            bits::read_bits(&record, 0x14 * 8, 6),
+            bits::read_bits(&record, 0x50 * 8 + 3, 6)
+        ),
+        (11, 0, 0),
+        "id 11 sits in the red run alone"
+    );
+
+    // An id with all three runs non-zero: the spectacles' colour just
+    // under the green run (0x50:0, three bits, which the schema does not
+    // map) is set first, and a write must leave it — and every bit
+    // outside the three runs — alone.
+    bits::write_bits(&mut record, 0x50 * 8, 3, 5);
+    let before = record.clone();
+    player.appearance.gloves_id = 0x2A5A5;
+    write_player(PesVersion::Pes14, &player, &mut record, appearance).expect("encode");
+    for (byte, (&was, &now)) in before.iter().zip(&record).enumerate() {
+        let run_mask = match byte {
+            0x13 | 0x14 => 0x3F,
+            0x50 => 0xF8,
+            0x51 => 0x01,
+            _ => 0x00,
+        };
+        assert_eq!(now & !run_mask, was & !run_mask, "byte {byte:#04x}");
+    }
+    assert_eq!(
+        (
+            bits::read_bits(&record, 0x13 * 8, 6),
+            bits::read_bits(&record, 0x14 * 8, 6),
+            bits::read_bits(&record, 0x50 * 8 + 3, 6)
+        ),
+        (
+            0x2A5A5 & 0x3F,
+            (0x2A5A5 >> 6) & 0x3F,
+            (0x2A5A5 >> 12) & 0x3F
+        ),
+        "the id's bits, lowest first"
+    );
+    let mut reread = PlayerEntry::default();
+    read_player_into(PesVersion::Pes14, &mut reread, &record, appearance).expect("redecode");
+    assert_eq!(reread.appearance.gloves_id, 0x2A5A5);
+}
+
 #[test]
 fn a_value_too_wide_for_its_run_is_refused() {
     let schema = crate::schema::RecordSchema {
@@ -906,6 +976,7 @@ fn a_value_too_wide_for_its_run_is_refused() {
             bit_offset: 0,
             bit_width: 3,
         }],
+        split: &[],
         arrays: &[],
         texts: &[],
         ingame_face: None,

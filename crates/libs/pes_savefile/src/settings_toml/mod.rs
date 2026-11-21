@@ -1328,6 +1328,7 @@ pub(crate) fn ownership(field: PlayerField) -> Ownership {
         | PlayerField::Undershorts
         | PlayerField::Untucked
         | PlayerField::AnkleTaping
+        | PlayerField::PlayerGloves
         | PlayerField::HunchingDribbling
         | PlayerField::HunchingRunning
         | PlayerField::ArmMovementDribbling

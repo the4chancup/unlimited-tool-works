@@ -9,8 +9,8 @@ use super::fields::{
     PlayerField, PlayerText, PresetField, RosterField, TacticsField, TeamField, TeamText,
 };
 use super::{
-    ArraySpec, FieldSpec, FormationLayout, PresetSpec, RecordSchema, SectionLayout, TacticsSchema,
-    TextSpec, VersionSchema,
+    ArraySpec, FieldSpec, FormationLayout, PresetSpec, RecordSchema, SectionLayout, SplitSpec,
+    TacticsSchema, TextSpec, VersionSchema,
 };
 
 /// The PES 2014 player record.
@@ -403,6 +403,7 @@ pub(crate) static PLAYER: RecordSchema<PlayerField, PlayerText> = RecordSchema {
             bit_width: 1,
         },
     ],
+    split: &[],
     arrays: &[
         // The seven COM playing styles at 0x2A:1 to 0x2A:7 (run `player1`).
         ArraySpec {
@@ -531,9 +532,9 @@ pub(crate) static APPEARANCE: RecordSchema<PlayerField, PlayerText> = RecordSche
         },
         // The strip items (run `appear1`; the inners `appear2`'s): the
         // wristband, undershorts, sleeves, sock length and inners, the
-        // spectacles' style, the ankle tape and the shirttail. Sleeves
-        // and the shirttail store in another order than the model's
-        // (`stored_order` translates).
+        // spectacles' style, the outfielder gloves, the ankle tape and
+        // the shirttail. Sleeves and the shirttail store in another order
+        // than the model's (`stored_order` translates).
         FieldSpec {
             field: PlayerField::WristTaping,
             bit_offset: 661,
@@ -564,6 +565,12 @@ pub(crate) static APPEARANCE: RecordSchema<PlayerField, PlayerText> = RecordSche
             bit_offset: 678,
             bit_width: 3,
         },
+        // The outfielder gloves' Off/Auto at 0x56:2 (run `appear1`).
+        FieldSpec {
+            field: PlayerField::PlayerGloves,
+            bit_offset: 690,
+            bit_width: 1,
+        },
         FieldSpec {
             field: PlayerField::AnkleTaping,
             bit_offset: 691,
@@ -575,6 +582,14 @@ pub(crate) static APPEARANCE: RecordSchema<PlayerField, PlayerText> = RecordSche
             bit_width: 1,
         },
     ],
+    // The gloves id the Akko DLC reads from the hair accessory's colour
+    // (the base game stores none): six bits each from the lowest, red
+    // 0x13:0, blue 0x14:0, green 0x50:3 running into 0x51:0 — an 18-bit id
+    // where the other versions hold 14.
+    split: &[SplitSpec {
+        field: PlayerField::GlovesId,
+        runs: &[(0x13 * 8, 6), (0x14 * 8, 6), (0x50 * 8 + 3, 6)],
+    }],
     arrays: &[],
     texts: &[],
     ingame_face: None,
@@ -589,6 +604,7 @@ pub(crate) static TEAM: RecordSchema<TeamField, TeamText> = RecordSchema {
         bit_offset: 0,
         bit_width: 16,
     }],
+    split: &[],
     arrays: &[],
     texts: &[
         TextSpec {
@@ -613,6 +629,7 @@ pub(crate) static ROSTER: RecordSchema<RosterField, TeamText> = RecordSchema {
         bit_offset: 0,
         bit_width: 32,
     }],
+    split: &[],
     arrays: &[
         ArraySpec {
             make: RosterField::Player,

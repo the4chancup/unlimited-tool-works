@@ -156,9 +156,26 @@ pub enum CodecError {
     },
 }
 
-/// Every `FieldSpec` and every expanded `ArraySpec` element of a record schema
-/// as `(field, bit_offset, bit_width)`; the three record kinds reuse it.
+/// Every bit run of a record schema as `(field, bit_offset, bit_width)`: the
+/// `FieldSpec`s, the expanded `ArraySpec` elements and every run of a `split`
+/// field — which yields one item per run, so a reader moving whole field
+/// values goes through `scalar_runs` plus `schema.split`, as `read`/`write`
+/// do.
 pub(crate) fn runs<F: Copy, T>(
+    schema: &RecordSchema<F, T>,
+) -> impl Iterator<Item = (F, u32, u32)> + '_ {
+    scalar_runs(schema).chain(schema.split.iter().flat_map(|spec| {
+        spec.runs
+            .iter()
+            .map(move |&(offset, width)| (spec.field, offset, width))
+    }))
+}
+
+/// `runs`' contiguous runs alone: the `FieldSpec`s and the expanded
+/// `ArraySpec` elements, each a whole field's run. The record codecs move
+/// values through it and `schema.split`, where a field's value splits over
+/// several runs.
+fn scalar_runs<F: Copy, T>(
     schema: &RecordSchema<F, T>,
 ) -> impl Iterator<Item = (F, u32, u32)> + '_ {
     schema
@@ -285,7 +302,20 @@ pub(crate) fn text_max<T: Copy + PartialEq>(texts: &[TextSpec<T>], text: T) -> u
     usize::try_from(len).expect("a text field's length fits usize")
 }
 
-/// The shared write loop over `runs`: get, width check, patch.
+/// `spec`'s composed stored value in `record`: its runs' bits, the
+/// value's lowest in the first run.
+pub(crate) fn split_stored<F>(record: &[u8], spec: &crate::schema::SplitSpec<F>) -> u32 {
+    let mut stored = 0u32;
+    let mut shift = 0u32;
+    for &(offset, width) in spec.runs {
+        stored |= bits::read_bits(record, offset, width) << shift;
+        shift += width;
+    }
+    stored
+}
+
+/// The shared write loop over `scalar_runs` and `schema.split`: get, width
+/// check, patch.
 fn write_record<F: Copy + std::fmt::Debug, T>(
     schema: &RecordSchema<F, T>,
     record: &mut [u8],
@@ -297,8 +327,37 @@ fn write_record<F: Copy + std::fmt::Debug, T>(
             got: record.len(),
         });
     }
-    for (field, offset, width) in runs(schema) {
+    for (field, offset, width) in scalar_runs(schema) {
         write_run(record, offset, width, field, get(field)?)?;
+    }
+    for spec in schema.split {
+        write_split(record, spec, get(spec.field)?)?;
+    }
+    Ok(())
+}
+
+/// `value` into `spec`'s runs, its lowest bits into the first run: each
+/// run takes the slice its width holds, `ValueTooWide` when the runs
+/// together do not hold `value` (the check `write_run` gives a single
+/// run, over the runs' summed width).
+fn write_split<F: std::fmt::Debug>(
+    record: &mut [u8],
+    spec: &crate::schema::SplitSpec<F>,
+    value: u32,
+) -> Result<(), CodecError> {
+    let width: u32 = spec.runs.iter().map(|run| run.1).sum();
+    if width < 32 && value >= (1u32 << width) {
+        return Err(CodecError::ValueTooWide {
+            field: format!("{:?}", spec.field),
+            value,
+            width,
+        });
+    }
+    let mut shift = 0u32;
+    for &(offset, run_width) in spec.runs {
+        let slice = ((u64::from(value) >> shift) & ((1u64 << run_width) - 1)) as u32;
+        bits::write_bits(record, offset, run_width, slice);
+        shift += run_width;
     }
     Ok(())
 }

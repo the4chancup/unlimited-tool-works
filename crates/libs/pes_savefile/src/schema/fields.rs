@@ -200,6 +200,9 @@ pub enum PlayerField {
     Untucked,
     /// Ankle taping.
     AnkleTaping,
+    /// Outfield (player) gloves, Off or Auto (PES 2014's appearance
+    /// record; the other versions keep it in the ingame-face run).
+    PlayerGloves,
     /// Tenacity (PES 2014 only).
     Tenacity,
     /// Punt kick motion (PES 2014 only).

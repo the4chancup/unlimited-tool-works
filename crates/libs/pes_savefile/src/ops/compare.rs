@@ -158,6 +158,7 @@ impl PlayerDiff {
             | F::Undershorts
             | F::Untucked
             | F::AnkleTaping
+            | F::PlayerGloves
             | F::HunchingDribbling
             | F::HunchingRunning
             | F::ArmMovementDribbling
@@ -238,7 +239,14 @@ fn record_diffs(
     seen: Option<&RecordSchema<PlayerField, PlayerText>>,
     diffs: &mut Vec<PlayerDiff>,
 ) -> Result<(), CodecError> {
+    // A field stored in several runs (`schema.split`) yields one run each,
+    // consecutively; the diff is per field.
+    let mut done: Option<PlayerField> = None;
     for (field, _, _) in codec::runs(schema) {
+        if done == Some(field) {
+            continue;
+        }
+        done = Some(field);
         if seen.is_some_and(|seen| seen.has(field)) {
             continue;
         }
@@ -252,7 +260,7 @@ fn record_diffs(
 
 /// Every difference between two players of the same version: the schema's
 /// stored fields (the player record's, plus the 14 to 16 appearance
-/// record's — PES 2014's carries the id alone)
+/// record's)
 /// through the model, the two texts, the ingame-face fields of the run's
 /// layout, and the run's measured-unused bits as one row. `Err` only when a
 /// gated field the schema stores is `None` on either side (an entry not read

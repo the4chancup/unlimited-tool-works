@@ -404,7 +404,7 @@ fn manager_unit(
         }
         None => {
             gated_label(ui, MANAGER_LABEL, gating_tooltip(TeamField::ManagerId));
-            gated_number(ui, gating_tooltip(TeamField::ManagerId));
+            gated_number(ui, gating_tooltip(TeamField::ManagerId), ID_BOX_WIDTH);
         }
     }
 }
@@ -441,7 +441,7 @@ fn stadium_unit(
         }
         None => {
             ui.label(STADIUM_LABEL);
-            gated_number(ui, gating_tooltip(TeamField::StadiumId));
+            gated_number(ui, gating_tooltip(TeamField::StadiumId), ID_BOX_WIDTH);
         }
     }
 }
