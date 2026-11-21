@@ -276,24 +276,43 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut RulesetView, ctx: &ToolContext)
     // central panel's margin, so the layout is drawn in a child grown
     // back over that margin.
     let rect = ui.max_rect() + egui::Frame::central_panel(ui.style()).inner_margin;
-    let ui = &mut ui.new_child(egui::UiBuilder::new().max_rect(rect));
-    toolbar(ui, view, ctx, &settings);
+    let bleed = &mut ui.new_child(egui::UiBuilder::new().max_rect(rect));
+    // The draft's `.with-preview`: with the preview on, the bars span the
+    // pane; without it the view keeps the default window's width, centred
+    // across the pane (the draft's `max-width`).
+    let with_preview = view.document.is_some() && view.show_preview;
+    let view_rect = if with_preview {
+        bleed.max_rect()
+    } else {
+        capped(bleed.max_rect())
+    };
+    let view_ui = &mut bleed.new_child(egui::UiBuilder::new().max_rect(view_rect));
+    toolbar(view_ui, view, ctx, &settings);
     if view.document.is_some() {
-        egui::Panel::bottom("ruleset_bottom").show(ui, |ui| bottom_bar(ui, view, ctx, &settings));
-        if view.show_preview {
+        egui::Panel::bottom("ruleset_bottom")
+            .show(view_ui, |ui| bottom_bar(ui, view, ctx, &settings));
+        if with_preview {
             egui::Panel::right("ruleset_preview")
-                .resizable(true)
-                .default_size(560.0)
-                .show(ui, |ui| preview::show(ui, view));
+                .resizable(false)
+                .exact_size(preview::width(view_ui))
+                .show(view_ui, |ui| preview::show(ui, view));
         }
+        // The rail and the section keep the width they have without the
+        // preview, centred in the room it leaves — or from its left edge,
+        // the section narrower, where that is too little (the draft's
+        // `.with-preview` auto margins). Without the preview the room is
+        // the capped view's.
+        let room = view_ui.available_rect_before_wrap();
+        let main_rect = if with_preview { capped(room) } else { room };
+        let main = &mut view_ui.new_child(egui::UiBuilder::new().max_rect(main_rect));
         egui::Panel::left("ruleset_rail")
             .resizable(false)
             // The draft's rail: 150 from the view's left edge to its
             // line, the entries its padding in from each side.
             .exact_size(150.0)
             .frame(egui::Frame::side_top_panel(ui.style()).inner_margin(egui::Margin::same(6)))
-            .show(ui, |ui| rail::show(ui, view));
-        egui::CentralPanel::default().show(ui, |ui| {
+            .show(main, |ui| rail::show(ui, view));
+        egui::CentralPanel::default().show(main, |ui| {
             banners(ui, view);
             egui::ScrollArea::both().auto_shrink(false).show(ui, |ui| {
                 ui.push_id(view.generation, |ui| {
@@ -323,16 +342,25 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut RulesetView, ctx: &ToolContext)
             });
         });
     } else {
-        egui::CentralPanel::default().show(ui, |ui| {
+        egui::CentralPanel::default().show(view_ui, |ui| {
             start::page(ui, view, ctx, &settings);
         });
     }
     if view.start_open && view.document.is_some() {
-        start::modal(ui, view, ctx, &settings);
+        start::modal(bleed, view, ctx, &settings);
     }
-    prompt::show(ui, view, ctx, &settings);
-    dialog(ui, view);
-    seal_gesture(ui, view);
+    prompt::show(bleed, view, ctx, &settings);
+    dialog(bleed, view);
+    seal_gesture(bleed, view);
+}
+
+/// `rect` capped at the pane's default width, centred horizontally and
+/// its height kept; `rect` itself where it is narrower — under the design
+/// width the window scales rather than narrowing the pane, so only a
+/// preview's leftover ever is.
+fn capped(rect: egui::Rect) -> egui::Rect {
+    let width = studio_core::shell::DEFAULT_PANE_WIDTH.min(rect.width());
+    egui::Rect::from_center_size(rect.center(), egui::vec2(width, rect.height()))
 }
 
 /// The editor's focus mode (the Save editor's `set_surrender_on_press`):

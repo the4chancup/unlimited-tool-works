@@ -95,6 +95,12 @@ pub(crate) const APP_NAME: &str = app_name!();
 /// compiling the same exports writes the same bytes.
 pub const TOOL_VERSION: &str = concat!(app_name!(), " ", env!("CARGO_PKG_VERSION"));
 
+/// The pane's width at the default window, `window_size::DEFAULT_SIZE`'s width
+/// less `sidebar::RAIL_WIDTH`, which the tools' views are calibrated for. A
+/// larger window keeps a view at this width, centred; a smaller one scales the
+/// whole UI down rather than narrowing the pane.
+pub const DEFAULT_PANE_WIDTH: f32 = window_size::DEFAULT_SIZE.x - sidebar::RAIL_WIDTH;
+
 /// The version line the shell shows in four places: the status bar's left slot, the About
 /// block's first line, `UTW --version` and the window's log's first line. It reads
 /// `v{version}`, the release stage while there is one (`pre-alpha` for 0.0.x,

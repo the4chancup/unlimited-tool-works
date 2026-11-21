@@ -48,6 +48,7 @@ use std::sync::Arc;
 
 use pes_savefile::model::{PlayerEntry, TeamEntry};
 use pes_version::PesVersion;
+use studio_core::shell::DEFAULT_PANE_WIDTH;
 use studio_core::widgets::{
     add_enabled, consume_ctrl, menu_button, menu_separator, modal, modal_buttons, resting_edge,
     toolbar_framed, toolbar_separator,
@@ -822,12 +823,6 @@ const PANE_BAR_MARGIN: f32 = 4.0;
 /// (`BAND_MARGIN`). The detail pane keeps its width: it starts this much
 /// later and reaches as much further right (`PANE_BAR_MARGIN`).
 const PANES_LEFT_INSET: f32 = 2.0;
-
-/// The pane's width at the default window — the 1280-point window less
-/// the sidebar's 56-point rail — which the view is calibrated for. A
-/// smaller window scales the whole UI down rather than narrowing the
-/// pane, so it is also the narrowest space the view lays out in.
-const DEFAULT_PANE_WIDTH: f32 = 1224.0;
 
 /// Shows the window for one frame. `running` is the running-PES probe,
 /// called only when Save runs (a process snapshot is not a frame's cost).
