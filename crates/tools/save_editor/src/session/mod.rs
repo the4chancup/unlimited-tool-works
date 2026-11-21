@@ -217,9 +217,15 @@ impl Session {
             file.version(),
             bytes.len()
         );
-        let input = match packed(&bytes, path) {
-            Some(packed) => recorder.keep_input_packed(TOOL_ID, path, bytes, packed),
-            None => recorder.keep_input(TOOL_ID, path, bytes),
+        // The pack runs only for a listening session writer: nobody
+        // else reads it back.
+        let input = if recorder.listens() {
+            match packed(&bytes, path) {
+                Some(packed) => recorder.keep_input_packed(TOOL_ID, path, bytes, packed),
+                None => recorder.keep_input(TOOL_ID, path, bytes),
+            }
+        } else {
+            recorder.keep_input(TOOL_ID, path, bytes)
         };
         if suffix.is_empty() {
             // The session's own open names the kept input it read: replay
@@ -972,11 +978,17 @@ impl Session {
         let output = match std::fs::read(out) {
             Ok(written) => {
                 let written: Arc<[u8]> = written.into();
-                Some(match packed(&written, out) {
-                    Some(packed) => self
-                        .recorder
-                        .keep_output_packed(TOOL_ID, out, written, packed),
-                    None => self.recorder.keep_output(TOOL_ID, out, written),
+                // The pack runs only for a listening session writer:
+                // nobody else reads it back.
+                Some(if self.recorder.listens() {
+                    match packed(&written, out) {
+                        Some(packed) => self
+                            .recorder
+                            .keep_output_packed(TOOL_ID, out, written, packed),
+                        None => self.recorder.keep_output(TOOL_ID, out, written),
+                    }
+                } else {
+                    self.recorder.keep_output(TOOL_ID, out, written)
                 })
             }
             // The save was written; a journal that cannot keep it loses the

@@ -99,7 +99,7 @@ fn kept_files(
     archive: &mut zip::ZipArchive<std::fs::File>,
     path: &Path,
     rows: &[FileRow],
-    rebuild: &dyn Fn(&[u8]) -> anyhow::Result<Vec<u8>>,
+    rebuild: impl Fn(&[u8]) -> anyhow::Result<Vec<u8>>,
 ) -> anyhow::Result<Vec<BundleFile>> {
     let mut kept = Vec::with_capacity(rows.len());
     for row in rows {
@@ -126,6 +126,15 @@ fn kept_files(
             bytes
         };
         if bytes.len() != row.size {
+            if row.packed {
+                anyhow::bail!(
+                    "{}: {} rebuilt is {} bytes, the journal says {}",
+                    path.display(),
+                    row.entry,
+                    bytes.len(),
+                    row.size
+                );
+            }
             anyhow::bail!(
                 "{}: {} is {} bytes, the journal says {}",
                 path.display(),
@@ -165,7 +174,7 @@ fn kept_files(
 /// differs from its row's.
 pub fn read_bundle(
     path: &Path,
-    rebuild: &dyn Fn(&[u8]) -> anyhow::Result<Vec<u8>>,
+    rebuild: impl Fn(&[u8]) -> anyhow::Result<Vec<u8>>,
 ) -> anyhow::Result<Bundle> {
     let file = std::fs::File::open(path)
         .with_context(|| format!("{}: cannot open the bundle", path.display()))?;
@@ -190,8 +199,8 @@ pub fn read_bundle(
                 op: row.op,
             })
             .collect(),
-        inputs: kept_files(&mut archive, path, &doc.input, rebuild)?,
-        outputs: kept_files(&mut archive, path, &doc.output, rebuild)?,
+        inputs: kept_files(&mut archive, path, &doc.input, &rebuild)?,
+        outputs: kept_files(&mut archive, path, &doc.output, &rebuild)?,
     })
 }
 
@@ -227,7 +236,7 @@ mod tests {
     /// `read_bundle`'s error on `path` (a `Bundle` holds the files' bytes
     /// and prints no `Debug`, so `unwrap_err` cannot be asked).
     fn bundle_err(path: &Path) -> anyhow::Error {
-        match read_bundle(path, &never_rebuild) {
+        match read_bundle(path, never_rebuild) {
             Ok(_) => panic!("{} read as a bundle", path.display()),
             Err(error) => error,
         }
@@ -266,7 +275,7 @@ mod tests {
         let out = dir.join("repro.zip");
         recorder.write_bundle(&out, "", &[], &[], None).unwrap();
 
-        let bundle = read_bundle(&out, &never_rebuild).unwrap();
+        let bundle = read_bundle(&out, never_rebuild).unwrap();
 
         assert_eq!(bundle.version, crate::shell::version_label());
         assert_eq!(bundle.steps.len(), 2);

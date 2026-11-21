@@ -896,7 +896,7 @@ fn the_box_lists_the_kept_sessions_and_ticked_packs_each() {
         )
         .unwrap();
         let bundle =
-            crate::repro::read_bundle(&inner, &|_| panic!("no packed rows in these folders"))
+            crate::repro::read_bundle(&inner, |_| panic!("no packed rows in these folders"))
                 .unwrap();
         assert!(
             bundle.steps.iter().any(|step| step.what == step_line),
