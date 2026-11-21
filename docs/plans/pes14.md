@@ -882,4 +882,9 @@ on main. Main is merged into the branch, never rebased onto it.
 9. Build 2's check, as Build 1's: `/4ccg/`'s Gameplan edited in the build (a formation picked
    from the list, two starters swapped, one moved to open grass, a starter swapped with a
    bench player, a slider, Combination play, an automatic setting and a set-piece taker),
-   saved, and read on the game's own Game Plan in Edit mode. Then the release.
+   saved, and read on the game's own Game Plan in Edit mode: done (run `build2`, 2026-11-21,
+   kept as `build2`). On the Akko save the game showed each of the eight edits as set:
+   8-1-1 to 4-4-2, #66 and #8 swapped, #99 moved below the centre circle as CMF, bench #77
+   starting at CF, Defensive Line 7, Combination play row 1 in Area 5, Offside Trap on, and
+   #24 taking penalties. After the free move the build labels the shape "4-4-2 (not in the
+   game's list)" and the game "4-4-2", the same shape. Then the release.
