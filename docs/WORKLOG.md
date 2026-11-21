@@ -3462,7 +3462,7 @@ pruned when their phase closes; they stay in git history. A question only the ma
 can answer is not an issue: it goes to `docs/maintainer/questions.html`, and an issue that waits on one
 points there.
 
-- open (2026-11-21) — The maintainer's PES 2021 save opens with an empty team list. The
+- resolved (2026-11-21) — The maintainer's PES 2021 save opens with an empty team list. The
   release build at `1b9c5f27`, File > PES 2021, opened
   `Documents\KONAMI\eFootball PES 2021 SEASON UPDATE\...\save\EDIT00000000` (11,011,039 bytes,
   2026-11-18): the title named it, "All teams" listed no row, the Player and Team menus stayed
@@ -3470,10 +3470,11 @@ points there.
   opened in the same window listed every team. Cause: the save holds no cup team. On a copy,
   `export-toml --all-teams` wrote no file, as it does for the `EDIT00000000_vanilla` beside
   it, while its June copy (`EDIT00000000 - Copy (4)`) gives 220. The editor lists cup teams
-  alone by design, so the bug is the silence. Fixed in `e8c1561c`: a notice in the window and
-  a refusal from the two commands (plan "Only the cup's teams are shown"; SE-GUI-107,
-  SE-AATF-11, SE-TOML-11). Owed: the notice seen in the built window beside the draft's
-  stock PES 21 sample.
+  alone by design, so the bug is the silence. Fixed in `e8c1561c` and `b22b191c`: a notice in
+  the window, and a refusal from `check-aatf`, `export-toml --all-teams` and
+  `export-teams-list` (plan "Only the cup's teams are shown"; SE-GUI-107, SE-AATF-11,
+  SE-TOML-11, SE-TL-06). Seen in the release build at `b22b191c` on a copy of that save,
+  beside the draft's stock PES 21 sample: the same warning in the status bar.
 - open (2026-11-21) — A trial: can SubQ Snap tell a flaky test from a steady one, as it tells
   a test that proves its scenario from one that does not (`citation_audit.py`)? The question
   per test: does its outcome depend on anything outside its inputs (the machine's free memory,
