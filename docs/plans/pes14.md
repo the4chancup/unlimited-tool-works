@@ -642,9 +642,12 @@ button would stay on every PES 2014 save, its tooltip saying the folder holds no
   starting eleven and the bench, and Automatic settings. What differs:
   - **Preset tactics** takes the place of the other versions' Formation settings panel. It
     holds the Formation dropdown, the Strategy dropdown and the eight sliders, 0 to 20, in the
-    game's order. The dropdown lists the game's 11 formations; one the list does not hold,
-    such as the Akko teams' 8-1-1, is shown by its shape, marked "(not in the game's
-    list)", and listed first. A pick writes the
+    game's order. The dropdown lists the game's 11 formations; one the list does not hold
+    is shown by its shape and listed first. The shape is marked "(custom)" when the list has
+    an entry of that name with its players placed otherwise (a 4-4-2 with a player moved),
+    and "(not in the game's list)" when it has none (the Akko teams' 8-1-1). The game itself
+    names a moved 4-4-2 "4-4-2", so "not in the game's list" would be wrong for it. A pick
+    writes the
     entry's roles and spots and puts the keeper at depth 3, as the game's pick does; each
     player keeps his place in the lineup. Picking a strategy sets only the sliders the
     game's pick sets, and Custom sets none; moving a slider afterwards keeps the strategy,
@@ -886,5 +889,5 @@ on main. Main is merged into the branch, never rebased onto it.
    kept as `build2`). On the Akko save the game showed each of the eight edits as set:
    8-1-1 to 4-4-2, #66 and #8 swapped, #99 moved below the centre circle as CMF, bench #77
    starting at CF, Defensive Line 7, Combination play row 1 in Area 5, Offside Trap on, and
-   #24 taking penalties. After the free move the build labels the shape "4-4-2 (not in the
-   game's list)" and the game "4-4-2", the same shape. Then the release.
+   #24 taking penalties. After the free move the game names the shape "4-4-2", which the
+   build now marks "4-4-2 (custom)". Then the release.

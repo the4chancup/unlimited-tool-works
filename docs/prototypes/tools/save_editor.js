@@ -7920,10 +7920,14 @@ function tacticsTab14(t) {
     others.map(b => ["Swap with " + (b + 1), () => { swapPreset(t, pa, b); render(); }])));
   // The formation: the list's entries; one the list does not hold is shown by
   // its shape, marked as such, and offered first, a pick of it changing nothing.
-  // sample wording: the mark.
+  // A shape the list names, its players moved, is the team's own version of an
+  // entry ("custom"); a shape it has no entry for, as 8-1-1, is outside it.
+  // sample wording: the marks.
   const listed = listFormation14(f);
+  const shape = formationName(f);
+  const mark = PES14_SAMPLE.formations.some(e => e.name === shape) ? " (custom)" : " (not in the game's list)";
   const formation = h("div", { class: "tset" }, h("div", {}, "Formation"),
-    combo((listed < 0 ? [["-1", formationName(f) + " (not in the game's list)"]] : []).concat(
+    combo((listed < 0 ? [["-1", shape + mark]] : []).concat(
       PES14_SAMPLE.formations.map((e, k) => [String(k), e.name])), String(listed),
       v => { const k = parseInt(v, 10); if (k >= 0 && k !== listed) { pickFormation14(t, k); render(); } },
       { title: listed < 0 ? undefined : FORMATION_TIPS14[PES14_SAMPLE.formations[listed].name] }));

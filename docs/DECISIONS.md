@@ -19353,3 +19353,13 @@ Plan: `plans/save_editor.md`, "Editing UI", the bullet "Only the cup's teams are
 Decision: `export-teams-list` refuses a save holding no cup team with the words `check-aatf` and `export-toml --all-teams` use, before it reads or writes `teams_list.txt`.
 Why: on such a save it merged nothing and printed how many rows it kept, which reads as a list already up to date; the three commands that read every cup team guard the same mistake, a stock save opened for a cup one, so they keep one rule.
 Plan: `plans/save_editor.md`, "Editing UI", the bullet "Only the cup's teams are shown"; SE-TL-06.
+
+## 2026-11-21 — save_editor (pes14 branch) — A moved formation of the game's list reads "(custom)"
+Decision: on PES 2014 the Formation dropdown marks a formation the game's list does not hold
+by its shape. When the list has an entry of the same name, the players placed otherwise (a
+4-4-2 with one player moved), the mark is "(custom)". When the list has no entry of that name
+(the Akko teams' 8-1-1), the mark stays "(not in the game's list)". This narrows the
+2026-11-20 entry, which marked both "(not in the game's list)".
+Why: the maintainer's ruling after Build 2's check. The game names a moved 4-4-2 "4-4-2", so
+saying it is not in the game's list is wrong.
+Plan: `plans/pes14.md` "The Gameplan screen in Build 2", step 9.
