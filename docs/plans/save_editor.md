@@ -1600,6 +1600,15 @@ Win32 original hurt the most):
     (159.5, 358.5) on both (PES 2021's goal-area line, 7.5 above PES 2017's), not through the
     mapping, which would put his stored spot 15 px higher. That stored spot is (52, 3) in
     every one of the PES 2021 save's 1,890 formations, and the editor never moves it.
+
+  When the PES folder is set, the game's own pitch texture replaces the painted turf and
+  lines, read from the install's `gamePlan.bin` as the placeholder portrait is (a `download`
+  CPK's copy winning) and drawn at two thirds as the screen draws it (worklog, after the
+  detour: the file is in the apk format, which the suite does not read yet). The painted
+  pitch stays for every other case, as the placeholder's drawing does. A formation picture
+  carries the game's pixels too, as the screenshots members already post of their
+  formations do. A picture saved without the pitch's grain is painted in flat bands, since
+  the game's texture has its grain.
   - **A marker**, top to bottom: the portrait, the whole 128 x 128 texture drawn 50 x 50
     standing on the badge (the cup's portraits carry their own padding and any ribbon); the
     badge, 50 x 14 under the 50-point portrait, `#242b2d`, corners 2, the position's

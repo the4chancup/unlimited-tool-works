@@ -120,10 +120,13 @@ run's findings (`4cc-studio-temp/str_re/out/findings.md`).
     is in the apk format: `common/menu/general/gamePlan.bin` is WESYS-wrapped zlib holding
     `afp_gamePlan.apk`, whose TXP2 pack holds the atlases (`tex000`, `tex001`) as Okumura
     LZSS streams of TXDT images, BC1 or BC3 in byte-swapped 16-bit words or ARGB8 (decoded
-    once for PES 2021 in 8.9g, `de0440a6`; that script is gone). Waits on the maintainer's
-    notes on the apk format, which the suite will read in general eventually; then a plan
-    section (a lib crate, where the pitch's rectangle in each version's atlas comes from,
-    and whether a saved formation picture may carry the game's pixels) before any code.
+    once for PES 2021 in 8.9g, `de0440a6`; that script is gone). Decided (DECISIONS
+    2026-11-21 "the pitch is the game's own texture when the PES folder is set"): pictures
+    carry the game's pixels, and a picture without the grain is painted. Next: the apk
+    format worked out from the maintainer's PES Apk Bin Tool (`C:/Data/4cc/0Tools/PES Apk
+    Bin Tool V1`, .NET; its `lib/APK.dll` and `TXDT_Compression.dll` hold the format) into
+    a plan section for a lib crate the suite will read every apk with eventually, with
+    where the pitch's rectangle in each version's atlas comes from; then the code.
 
 Most open steps below wait only on a check in the game or the built window that the lead's
 harness makes ("Pending looks" below), not on the maintainer.

@@ -19142,3 +19142,16 @@ Why: the game's own picture is what the member sees in game, and reading it from
 install ships nothing of Konami's. Reading it only when a portrait is missing spares the base
 CPK's table for the usual team, which has every portrait.
 Plan: `plans/save_editor.md` "Tactics editor", the placeholder paragraph.
+
+## 2026-11-21 — save_editor — the pitch is the game's own texture when the PES folder is set, in the formation pictures too
+Decision (the maintainer): the Tactics pitch draws the game's own pitch texture, read from the
+install's `common/menu/general/gamePlan.bin`, when the PES folder is set; the painted pitch stays
+for every other case. A formation picture may carry the game's pixels. A picture saved without
+the pitch's grain falls back to the painted pitch, in flat bands.
+Why: the members already post screenshots of the game's formation screen in the cup thread, so a
+picture carrying its pixels is the same thing. Reading the member's own install answers the
+reason the pitch was painted (2026-10-23 "the Tactics pitch is painted from the game's measured
+screen"): the program still ships no Konami texture, and a member without the PES folder keeps
+the painted pitch. The game's texture has its grain, so a flat-band picture is ours.
+Plan: plans/save_editor.md "Tactics editor" (the paragraph "When the PES folder is set, the
+game's own pitch texture"); worklog, the list after the detour, item 13.
