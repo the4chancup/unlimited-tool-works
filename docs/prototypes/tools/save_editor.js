@@ -5227,6 +5227,12 @@ const NATION_NAMES = {1: "AFGHANISTAN", 2: "BAHRAIN", 3: "BANGLADESH", 4: "BHUTA
   241: "WALES", 245: "GIBRALTAR", 250: "MONACO", 260: "Others", 298: "CHINESE TAIPEI",
   303: "SERBIA", 304: "MONTENEGRO", 310: "SINT MAARTEN", 311: "KOSOVO", 312: "SOUTH SUDAN"};
 const NATION_DIFFS = {
+  14: {
+    lacks: [
+      4, 5, 6, 8, 20, 23, 24, 25, 39, 43, 57, 68, 82, 84, 89, 90, 103, 106, 108, 111,
+      114, 115, 127, 130, 131, 132, 136, 137, 138, 139, 161, 163, 171, 172, 176, 184, 245, 298],
+    spelt: {15: "NORTH KOREA", 16: "SOUTH KOREA", 37: "UAE", 40: "KYRGYZ REPUBLIC", 51: "CAPE VERDE", 54: "THE COMOROS", 63: "REPUBLIC OF THE GAMBIA", 135: "UNITED STATES", 221: "MACEDONIA"},
+  },
   15: {
     lacks: [4, 5, 6, 20, 23, 24, 25, 43, 57, 68, 82, 84, 89, 90, 103, 106, 108, 111, 114, 127,
       130, 131, 132, 136, 137, 161, 163, 171, 172, 176, 184],
@@ -6285,7 +6291,8 @@ function appearanceTab(p) {
     "gloves-id": sp_glovesId, inners: sp_inners, undershorts: sp_undershorts,
     // Not a checkbox: beside the colours it read as one of them, and it did not say when
     // the gloves show.
-    gloves: [lbl("Outfielder gloves"), h("td", {}, combo([["off", "Off"], ["on", "Worn in winter"]], st.gloves ? "on" : "off",
+    // PES 2014's bit reads "Auto" in its own menu (plans/pes14.md, step 10).
+    gloves: [lbl("Outfielder gloves"), h("td", {}, combo([["off", "Off"], ["on", version() === 14 ? "Auto" : "Worn in winter"]], st.gloves ? "on" : "off",
       v => { set(p, x => x.appearance.strip.gloves, (x, v2) => x.appearance.strip.gloves = v2, v === "on", "outfielder gloves"); render(); }))],
     shirttail: sp_shirttail, ankle: sp_ankle,
     "gloves-color": [lbl("Gloves color"), colour("gloves", st.gloves_color, (x, v) => x.appearance.strip.gloves_color = v, "gloves color")],

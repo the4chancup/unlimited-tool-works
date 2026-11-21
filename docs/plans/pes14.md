@@ -901,9 +901,10 @@ on main. Main is merged into the branch, never rebased onto it.
 10. The gloves id on PES 2014, the Akko DLC's (above). It is read and written as the other
     versions' gloves id, through the three colour fields, so these work on PES 2014
     as they do elsewhere: the Appearance page's Gloves ID box, the boots and gloves dialog,
-    the FPC entries (gloves 11 hides an FPC player's, 0 shows them), and `gloves_id` in Team
-    TOML and the aesthetics patch. A player with no appearance record is refused, as for the
-    boots. The Strip style panel's Outfielder gloves row reads and writes the pinned bit
+    and the FPC entries of the Player and Team menus (gloves 11 hides an FPC player's, 0
+    shows them; PES 2014 maps no in-game face run, so they write no skin there, and a player
+    reads as hidden by his boots id alone). A player with no appearance record is refused, as
+    for the boots. The Strip style panel's Outfielder gloves row reads and writes the pinned bit
     0x56:2 on PES 2014; the other versions keep it in the in-game face run, which PES 2014
     does not map, so the row was greyed. A field the version does not store keeps its
     enabled neighbours' width: the `-` fills the column. Its check, in Edit mode with the DLC:

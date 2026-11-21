@@ -19386,3 +19386,13 @@ Why: the maintainer's ruling on the PES 2014 Strip style panel, where `Gloves ID
 `Outfielder gloves` showed a narrow `-` beside full-width boxes. The outfielder gloves row was
 greyed only because the other versions keep the bit in a run PES 2014 does not map.
 Plan: `plans/pes14.md` step 10.
+
+## 2026-11-21 — save_editor, pes_savefile — the FPC entries work on PES 2014, by the ids alone
+Decision: on PES 2014 the Player and Team menus' FPC entries are offered as on the other
+versions. They write the presets' strip and ids (boots 55 and gloves 11 to hide, 0 and 0 to
+show) and no skin, and a player reads as hidden by his boots id alone. The other versions also
+read a skin of 7 as hidden and write the skin.
+Why: the Akko DLC hides an FPC player's gloves by gloves id 11, which PES 2014 now stores, and
+the Akko save's FPC players carry the pair. The skin lives in the in-game face run, which PES
+2014's records do not map, so there is no skin to read or write there.
+Plan: `plans/pes14.md`, step 10.
