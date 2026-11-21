@@ -255,6 +255,7 @@ pub fn motion_top(version: PesVersion, field: PlayerField) -> Option<u8> {
         | PlayerField::Undershorts
         | PlayerField::Untucked
         | PlayerField::AnkleTaping
+        | PlayerField::PlayerGloves
         | PlayerField::Tenacity
         | PlayerField::EditedName => return None,
     };

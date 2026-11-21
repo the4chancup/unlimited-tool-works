@@ -7,7 +7,6 @@
 
 use anyhow::anyhow;
 use pes_savefile::model::PlayerEntry;
-use pes_savefile::schema::schema_for;
 
 use crate::session::Session;
 
@@ -111,11 +110,11 @@ impl Session {
     /// (`preset_for`), one sealed undo entry. `ids` is the settings' hide
     /// IDs. The strip settings the preset does not set are not cleared —
     /// they are the interference findings' to report. No edit flag is set.
-    /// A no-op on a version whose records carry no in-game face run (the
-    /// menu items and buttons that reach this are greyed there).
+    /// A no-op on a player the version holds no appearance record for — the strip write has no record to land in (PES 2014's
+    /// unedited players).
     pub(crate) fn apply_fpc(&mut self, player_id: u32, kind: fpc::Preset, ids: fpc::HideIds) {
         let version = self.version();
-        if !schema_for(version).has_ingame_face() {
+        if !self.has_appearance_record(player_id) {
             return;
         }
         let Some(mut edited) = self.file.player(player_id).cloned() else {
@@ -123,22 +122,19 @@ impl Session {
         };
         let appearance = preset_for(&edited, kind, ids);
         // The presets here write no custom skin, and a loaded player's
-        // face run holds the fields `apply` writes through.
+        // fields hold the strip `apply` writes through.
         pes_savefile::ops::fpc::apply(&mut edited, &appearance, version)
-            .expect("a loaded player's face run holds the strip fields");
+            .expect("a loaded player's fields hold the strip");
         self.edit_players(vec![edited]);
     }
 
     /// Whether `is_fpc_player` reads `player_id`'s default body as hidden under
     /// `ids`: what Ctrl+I branches on and the Player menu's entry is labeled by.
-    /// `None` for an id no player record carries, `false` for a version whose
-    /// records carry no in-game face run (nothing hides a body there).
+    /// `None` for an id no player record carries.
     pub(crate) fn body_hidden(&self, player_id: u32, ids: fpc::HideIds) -> Option<bool> {
-        let ingame_face = schema_for(self.version()).has_ingame_face();
         self.file.player(player_id).map(|player| {
-            ingame_face
-                && pes_savefile::ops::fpc::is_fpc_player(player, ids)
-                    .expect("a loaded player's face run holds the skin field")
+            pes_savefile::ops::fpc::is_fpc_player(player, self.version(), ids)
+                .expect("a loaded player's fields hold the reading")
         })
     }
 

@@ -2,7 +2,10 @@
 
 use pes_version::PesVersion;
 
-use super::{CodecError, bits, runs, single_byte, text_bytes, write_record, write_text};
+use super::{
+    CodecError, bits, runs, scalar_runs, single_byte, split_stored, text_bytes, write_record,
+    write_text,
+};
 use crate::model::ingame_face::IngameFace;
 use crate::model::player::PlayerEntry;
 use crate::schema::fields::{PlayerField, PlayerText};
@@ -36,14 +39,13 @@ pub fn read_player_into(
             got: record.len(),
         });
     }
-    for (field, offset, width) in runs(schema) {
+    for (field, offset, width) in scalar_runs(schema) {
         let stored = bits::read_bits(record, offset, width);
-        let value = match stored_order(version, field) {
-            // The run's width bounds the stored value inside the table.
-            Some(order) => order[stored as usize],
-            None => stored + stored_offset(version, field),
-        };
-        player.set(field, value)?;
+        player.set(field, model_value(version, field, stored))?;
+    }
+    for spec in schema.split {
+        let stored = split_stored(record, spec);
+        player.set(spec.field, model_value(version, spec.field, stored))?;
     }
     for spec in schema.texts {
         let bytes = text_bytes(record, spec.byte_offset, spec.len);
@@ -160,6 +162,18 @@ pub(crate) fn mark_edit_flags(
             set_flag(record, schema, PlayerField::EditedBasicSettings);
             break;
         }
+    }
+}
+
+/// The model value `stored` decodes to for `field`: the stored order's
+/// table where the version stores one (PES 2014's Sleeves and shirttail),
+/// else `stored` plus the version's offset (PES 2014's stats less 40 and
+/// friends; 0 everywhere else). The run's width bounds the stored value
+/// inside the table.
+fn model_value(version: PesVersion, field: PlayerField, stored: u32) -> u32 {
+    match stored_order(version, field) {
+        Some(order) => order[stored as usize],
+        None => stored + stored_offset(version, field),
     }
 }
 

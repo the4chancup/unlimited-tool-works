@@ -1,7 +1,10 @@
 //! The team, roster and tactics record codecs: the three record kinds the
 //! `TeamEntry` merges.
 
-use super::{CodecError, bits, runs, single_byte, text_bytes, write_record, write_run, write_text};
+use super::{
+    CodecError, bits, runs, scalar_runs, single_byte, split_stored, text_bytes, write_record,
+    write_run, write_text,
+};
 use crate::model::team::TeamEntry;
 use crate::schema::fields::{RosterField, TacticsField, TeamField, TeamText};
 use crate::schema::{RecordSchema, TacticsSchema};
@@ -133,8 +136,11 @@ pub fn read_team(
             got: record.len(),
         });
     }
-    for (field, offset, width) in runs(schema) {
+    for (field, offset, width) in scalar_runs(schema) {
         team.set(field, bits::read_bits(record, offset, width))?;
+    }
+    for spec in schema.split {
+        team.set(spec.field, split_stored(record, spec))?;
     }
     for spec in schema.texts {
         let bytes = text_bytes(record, spec.byte_offset, spec.len);
@@ -189,7 +195,7 @@ pub fn read_roster_into(
             got: record.len(),
         });
     }
-    for (field, offset, width) in runs(schema) {
+    for (field, offset, width) in scalar_runs(schema) {
         let value = bits::read_bits(record, offset, width);
         if field == RosterField::TeamId && value != team.id {
             return Err(CodecError::TeamIdMismatch {
@@ -198,6 +204,9 @@ pub fn read_roster_into(
             });
         }
         team.roster_set(field, value)?;
+    }
+    for spec in schema.split {
+        team.roster_set(spec.field, split_stored(record, spec))?;
     }
     Ok(())
 }

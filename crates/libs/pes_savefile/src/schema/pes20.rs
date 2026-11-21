@@ -747,6 +747,7 @@ pub(crate) static PLAYER: RecordSchema<PlayerField, PlayerText> = RecordSchema {
             bit_width: 1,
         },
     ],
+    split: &[],
     arrays: &[ArraySpec {
         make: PlayerField::ComStyle,
         count: 7,
@@ -832,6 +833,7 @@ pub(crate) static TEAM: RecordSchema<TeamField, TeamText> = RecordSchema {
             bit_width: 6,
         },
     ],
+    split: &[],
     arrays: &[],
     texts: &[
         TextSpec {
@@ -908,6 +910,7 @@ pub(crate) static TEAM_21: RecordSchema<TeamField, TeamText> = RecordSchema {
             bit_width: 6,
         },
     ],
+    split: &[],
     arrays: &[],
     texts: &[
         TextSpec {
@@ -932,6 +935,7 @@ pub(crate) static ROSTER: RecordSchema<RosterField, TeamText> = RecordSchema {
         bit_offset: 0,
         bit_width: 32,
     }],
+    split: &[],
     arrays: &[
         ArraySpec {
             make: RosterField::Player,

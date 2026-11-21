@@ -27,19 +27,67 @@ fn assert_greyed_item(
     );
 }
 
+/// The committed PES 2014 fixture with team 1 renumbered 701 and an
+/// appearance record per player its roster fills (`missing` left out),
+/// written into the section the layout reserves between the player and
+/// team sections: the version holds a record for an edited or created
+/// player alone, so the injected records land where `from_bytes` reads
+/// them, over whatever the game's save left in the space.
+fn pes14_fixture_with_look(test: &str) -> PathBuf {
+    pes14_fixture_with_look_missing(test, &[])
+}
+
+/// `pes14_fixture_with_look` leaving `missing`'s records out: those
+/// players keep no record, as an unedited PES 2014 player's.
+fn pes14_fixture_with_look_missing(test: &str, missing: &[u32]) -> PathBuf {
+    use pes_savefile::container::SaveContainer;
+    use pes_savefile::schema::schema_for;
+
+    let ids: Vec<u32> = EditFile::from_bytes(&fixture_save(PesVersion::Pes14))
+        .unwrap()
+        .team(1)
+        .expect("the vanilla first team")
+        .roster
+        .iter()
+        .filter(|slot| slot.player_id != 0 && !missing.contains(&slot.player_id))
+        .map(|slot| slot.player_id)
+        .collect();
+    let mut container =
+        SaveContainer::decrypt(&fixture_save(PesVersion::Pes14)).expect("the fixture decrypts");
+    let (layout, appearance) = schema_for(PesVersion::Pes14)
+        .appearance
+        .as_ref()
+        .expect("PES 2014 has an appearance section");
+    for (i, id) in ids.iter().enumerate() {
+        let at = layout.offset + i * appearance.size;
+        container.payload[at..at + 4].copy_from_slice(&id.to_le_bytes());
+    }
+    container.payload[layout.count_offset..layout.count_offset + 2].copy_from_slice(
+        &u16::try_from(ids.len())
+            .expect("a roster fits u16")
+            .to_le_bytes(),
+    );
+    let mut file =
+        EditFile::from_bytes(&container.to_bytes(&crate::test_support::TEST_SALT).unwrap())
+            .unwrap();
+    file.team_mut(1).expect("the vanilla first team").id = 701;
+    let dir = crate::test_support::scratch(test);
+    let path = dir.join("EDIT00000000");
+    file.save(&path).unwrap();
+    path
+}
+
 // Every screen, the four menus and a roster drag on the committed PES 2014
-// fixture (a real save: team 1's 23-man squad, its players carrying no
-// appearance records). Nothing panics; the items the version rules out —
-// the in-game face run's and the not-in-scope list's — are disabled with
-// the PES 2014 hover, and a drag undone leaves the loaded order.
+// fixture (a real save: team 1's 23-man squad, given an appearance record
+// each by `pes14_fixture_with_look`). Nothing panics; the items the version
+// rules out — the in-game face run's and the not-in-scope list's — are
+// disabled with the PES 2014 hover, and a drag undone leaves the loaded
+// order.
 #[test]
 fn a_pes14_save_draws_screens_and_menus_and_drags_without_panics() {
-    let path = fixture(PesVersion::Pes14, "pes14_screens");
     // The list shows the cup's teams alone (ids 701 to 920), of which the
     // vanilla save holds none: team 1 takes a cup id, its roster along.
-    let mut file = EditFile::from_bytes(&fixture_save(PesVersion::Pes14)).unwrap();
-    file.team_mut(1).expect("the vanilla first team").id = 701;
-    file.save(&path).unwrap();
+    let path = pes14_fixture_with_look("pes14_screens");
     let mut view = SaveView::new();
     view.open(&path);
     let mut window = Headless::new();
@@ -63,26 +111,35 @@ fn a_pes14_save_draws_screens_and_menus_and_drags_without_panics() {
     );
 
     let nodes = open_menu(&mut window, &mut view, "Player", "Set all stats");
+    // The FPC entry is live — the version stores the ids it writes, and
+    // the selected player holds an appearance record — while the two
+    // Generate items grey on the missing in-game face run.
+    assert!(
+        !menu_item(&nodes, "Hide default body (Enable FPC)").is_disabled(),
+        "the FPC entry is enabled on PES 2014"
+    );
     for label in [
-        "Hide default body (Enable FPC)",
         "Generate settings.toml\u{2026}",
         "Generate in-game face\u{2026}",
     ] {
         assert_greyed_item(&nodes, &mut window, &mut view, label);
     }
 
-    // The Team menu: the boots and gloves item stays live (the boots
-    // are stored, the dialog's gloves side greys inside), the two
-    // default-body items and the out-of-scope team file and formation
-    // picture are greyed.
+    // The Team menu: the boots and gloves item and the two default-body
+    // items stay live (the version stores the ids they write), the
+    // out-of-scope team file and formation picture greyed.
     let nodes = open_menu(&mut window, &mut view, "Team", "Set edited flag");
-    assert!(
-        !menu_item(&nodes, "Set boots and gloves IDs for everyone\u{2026}").is_disabled(),
-        "the boots and gloves item is enabled on PES 2014"
-    );
     for label in [
+        "Set boots and gloves IDs for everyone\u{2026}",
         "Hide default body (Enable FPC)",
         "Show default body (Disable FPC)",
+    ] {
+        assert!(
+            !menu_item(&nodes, label).is_disabled(),
+            "the {label} item is enabled on PES 2014"
+        );
+    }
+    for label in [
         "Import / export team file\u{2026}",
         "Save a picture of the formations\u{2026}",
     ] {
@@ -116,9 +173,11 @@ fn a_pes14_save_draws_screens_and_menus_and_drags_without_panics() {
     );
 
     // The Appearance screen draws: the FPC buttons and the colour cells
-    // take the PES 2014 hover, the record-less player's look controls
-    // their own stand-in, the unstored motions and edit flags the `PES
-    // NN+` one, and the stored motions stay editable.
+    // take the PES 2014 hover (the records carry no in-game face run), the
+    // look controls the appearance record stores edit — the gloves id and
+    // the outfielder gloves' own bit with them — the unstored strip
+    // colours, motions and edit flags the gated stand-in, and the stored
+    // motions stay editable.
     open_appearance(&mut window, &mut view);
     let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     for label in ["Hide default body", "Show default body"] {
@@ -131,6 +190,12 @@ fn a_pes14_save_draws_screens_and_menus_and_drags_without_panics() {
         node.role() == Role::Label && node.value() == Some("Boots ID")
     });
     for label in ["Boots ID", "Gloves ID", "Sleeves", "Outfielder gloves"] {
+        assert!(
+            !control_right_of(&nodes, label).is_disabled(),
+            "the {label} control is enabled on PES 2014"
+        );
+    }
+    for label in ["Spectacles color", "Gloves color"] {
         disabled_dash(&nodes, label);
     }
     let nodes = scroll_into_view(&mut window, &mut view, |node| {
@@ -147,13 +212,16 @@ fn a_pes14_save_draws_screens_and_menus_and_drags_without_panics() {
     let nodes = scroll_into_view(&mut window, &mut view, |node| {
         node.role() == Role::Label && node.value() == Some("Neck length")
     });
-    disabled_dash(&nodes, "Neck length");
+    assert!(
+        !control_right_of(&nodes, "Neck length").is_disabled(),
+        "the physique sliders edit on PES 2014"
+    );
     let nodes = scroll_into_view(&mut window, &mut view, |node| {
         node.role() == Role::CheckBox && node.label() == Some("Face")
     });
     assert!(
-        node_labeled(&nodes, Role::CheckBox, "Face").is_disabled(),
-        "the face flag's box is disabled on PES 2014"
+        !node_labeled(&nodes, Role::CheckBox, "Face").is_disabled(),
+        "the face flag's box is enabled on PES 2014"
     );
 
     // A team row draws (the header and the Gameplan stand-in below it):
@@ -1237,7 +1305,7 @@ fn a_pes14_player_without_an_appearance_record_greys_the_look_controls() {
     let nodes = scroll_into_view(&mut window, &mut view, |node| {
         node.role() == Role::Label && node.value() == Some("Boots ID")
     });
-    for label in ["Boots ID", "Sleeves"] {
+    for label in ["Boots ID", "Gloves ID", "Sleeves", "Outfielder gloves"] {
         let dash = disabled_dash(&nodes, label);
         assert_eq!(
             tooltip_containing(&mut window, &mut view, centre(dash), "stores no look"),
@@ -1254,20 +1322,49 @@ fn a_pes14_player_without_an_appearance_record_greys_the_look_controls() {
     );
 }
 
-// Set boots and gloves IDs on the PES 2014 fixture: a gloves choice
-// refuses outright on a version without the field, and a filled slot
-// whose player has no appearance record — every slot of the vanilla
-// save — refuses the whole operation naming the player as the roster
-// shows him, nothing written either time.
+// Set boots and gloves IDs on PES 2014: a gloves choice sets the team's
+// players' gloves as on the other versions — the IDs land in the
+// appearance records' runs, read back from the saved file — and a filled
+// slot whose player has no appearance record still refuses the whole
+// operation naming him, as for the boots.
 #[test]
-fn set_boots_and_gloves_on_pes14_refuses_gloves_and_record_less_players() {
+fn set_boots_and_gloves_on_pes14_sets_gloves_and_refuses_record_less_players() {
     use crate::session::team_ops::{BootsMode, GlovesMode};
 
-    let path = fixture(PesVersion::Pes14, "pes14_boglo");
+    let path = pes14_fixture_with_look("pes14_boglo");
+    let mut view = SaveView::new();
+    view.open(&path);
+    view.session
+        .as_mut()
+        .unwrap()
+        .set_boots_and_gloves(701, BootsMode::Same(83), GlovesMode::Same(11))
+        .expect("the gloves choice sets on PES 2014");
+    view.session
+        .as_ref()
+        .unwrap()
+        .file()
+        .save(&path)
+        .expect("the save writes");
+    let back = EditFile::from_bytes(&std::fs::read(&path).unwrap()).unwrap();
+    for slot in back
+        .team(701)
+        .expect("team 701")
+        .roster
+        .iter()
+        .filter(|slot| slot.player_id != 0)
+    {
+        let player = back.player(slot.player_id).expect("the player");
+        assert_eq!(player.appearance.boots_id, 83, "{}'s boots", player.id);
+        assert_eq!(player.appearance.gloves_id, 11, "{}'s gloves", player.id);
+    }
+
+    // The vanilla save's players hold no appearance records, so the same
+    // operation refuses on the first slot's player as for the boots alone
+    // before, naming him as the roster shows him, nothing written.
+    let path = fixture(PesVersion::Pes14, "pes14_boglo_refused");
     let mut file = EditFile::from_bytes(&fixture_save(PesVersion::Pes14)).unwrap();
     file.team_mut(1).expect("the vanilla first team").id = 701;
     file.save(&path).unwrap();
-    let mut view = SaveView::new();
     view.open(&path);
     let first_name = {
         let session = view.session.as_ref().expect("an open save");
@@ -1282,40 +1379,264 @@ fn set_boots_and_gloves_on_pes14_refuses_gloves_and_record_less_players() {
             .player_id;
         display_name(&session.file().player(id).expect("the player").name)
     };
+    for gloves in [GlovesMode::Unchanged, GlovesMode::Same(1)] {
+        let error = view
+            .session
+            .as_mut()
+            .unwrap()
+            .set_boots_and_gloves(701, BootsMode::Same(83), gloves)
+            .unwrap_err();
+        assert_eq!(
+            format!("{error:#}"),
+            format!("PES 2014 stores no look for {first_name} yet: edit it in game first"),
+            "the refusal names the first slot's player"
+        );
+        let session = view.session.as_ref().unwrap();
+        assert!(
+            !session.is_dirty() && !session.can_undo(),
+            "nothing was written"
+        );
+    }
+}
 
-    let error = view
-        .session
-        .as_mut()
-        .unwrap()
-        .set_boots_and_gloves(701, BootsMode::Same(83), GlovesMode::Unchanged)
-        .unwrap_err();
-    assert_eq!(
-        format!("{error:#}"),
-        format!("PES 2014 stores no look for {first_name} yet: edit it in game first"),
-        "the refusal names the first slot's player"
-    );
-    let session = view.session.as_ref().unwrap();
-    assert!(
-        !session.is_dirty() && !session.can_undo(),
-        "nothing was written"
-    );
+// The Strip style panel's Outfielder gloves row on a PES 2014 player the
+// appearance record holds: enabled, its dropdown offers the game's Off
+// and Auto, and a pick of Auto writes the record's own bit — 0x56:2, which
+// the other versions keep in the in-game face run — and nothing else in
+// the record.
+#[test]
+fn the_outfielder_gloves_row_writes_pes14s_own_bit() {
+    use pes_savefile::container::SaveContainer;
+    use pes_savefile::schema::schema_for;
 
-    let error = view
-        .session
-        .as_mut()
+    let path = pes14_fixture_with_look("pes14_outfielder_gloves");
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut window = Headless::new();
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    click(
+        &mut window,
+        nodes
+            .iter()
+            .find(|node| player_row(node))
+            .expect("a player row"),
+        &mut view,
+    );
+    let player_id = selected_player(&view).expect("a player selected").2;
+    open_appearance(&mut window, &mut view);
+    let nodes = scroll_into_view(&mut window, &mut view, |node| {
+        node.role() == Role::Label && node.value() == Some("Outfielder gloves")
+    });
+    let combo = right_of_label(&nodes, "Outfielder gloves", Role::ComboBox)
+        .first()
+        .copied()
+        .expect("the Outfielder gloves dropdown");
+    assert!(!combo.is_disabled(), "the row is enabled on PES 2014");
+    let record_bytes = |path: &std::path::Path| {
+        let container =
+            SaveContainer::decrypt(&std::fs::read(path).unwrap()).expect("the save decrypts");
+        let (layout, appearance) = schema_for(PesVersion::Pes14)
+            .appearance
+            .as_ref()
+            .expect("the appearance section");
+        let count = usize::from(u16::from_le_bytes(
+            container.payload[layout.count_offset..layout.count_offset + 2]
+                .try_into()
+                .expect("u16"),
+        ));
+        (0..count)
+            .map(|i| &container.payload[layout.offset + i * appearance.size..][..appearance.size])
+            .find(|rec| u32::from_le_bytes(rec[..4].try_into().expect("id")) == player_id)
+            .expect("the player's appearance record")
+            .to_vec()
+    };
+    let before = record_bytes(&path);
+    assert_eq!(before[0x56] & 0b100, 0, "premise: the bit starts clear");
+
+    click(&mut window, combo, &mut view);
+    let (_, ids, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    action_click(&mut window, &mut view, item_id(&ids, "Auto"));
+
+    view.session
+        .as_ref()
         .unwrap()
-        .set_boots_and_gloves(701, BootsMode::Same(83), GlovesMode::Same(1))
-        .unwrap_err();
-    assert_eq!(
-        format!("{error:#}"),
-        "PES 2014 saves store no gloves IDs",
-        "a gloves mode on a version without the field"
+        .file()
+        .save(&path)
+        .expect("the save writes");
+    let after = record_bytes(&path);
+    for (byte, (&was, &now)) in before.iter().zip(&after).enumerate() {
+        let expected = if byte == 0x56 { was | 0b100 } else { was };
+        assert_eq!(now, expected, "byte {byte:#04x}");
+    }
+}
+
+// A gated strip cell's `-` fills the field slot as the enabled controls
+// do: on the look-carrying fixture the gated strip colours' dashes stand
+// as wide as the Boots ID box, and on the vanilla save the record-less
+// player's Outfielder gloves dash fills the same slot.
+#[test]
+fn a_gated_strip_cells_dash_fills_the_field_slot_on_pes14() {
+    let strip_nodes = |view: &mut SaveView, window: &mut Headless| {
+        let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, view, &|| Vec::new()));
+        click(
+            window,
+            nodes
+                .iter()
+                .find(|node| player_row(node))
+                .expect("a player row"),
+            view,
+        );
+        open_appearance(window, view);
+        scroll_into_view(window, view, |node| {
+            node.role() == Role::Label && node.value() == Some("Boots ID")
+        })
+    };
+    let width = |node: &accesskit::Node| {
+        let bounds = node.bounds().expect("the control's bounds");
+        bounds.x1 - bounds.x0
+    };
+
+    let path = pes14_fixture_with_look("pes14_dash_width");
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut window = Headless::new();
+    let nodes = strip_nodes(&mut view, &mut window);
+    let boots = width(
+        right_of_label(&nodes, "Boots ID", Role::SpinButton)
+            .first()
+            .expect("the enabled Boots ID box"),
     );
-    let session = view.session.as_ref().unwrap();
+    for label in ["Spectacles color", "Gloves color"] {
+        let dash = width(disabled_dash(&nodes, label));
+        assert!(
+            (dash - boots).abs() <= 1.0,
+            "the {label} stand-in {dash} is the {boots}-wide field slot's"
+        );
+    }
+
+    let path = fixture(PesVersion::Pes14, "pes14_dash_width_plain");
+    let mut file = EditFile::from_bytes(&fixture_save(PesVersion::Pes14)).unwrap();
+    file.team_mut(1).expect("the vanilla first team").id = 701;
+    file.save(&path).unwrap();
+    view.open(&path);
+    let nodes = strip_nodes(&mut view, &mut window);
+    let dash = width(disabled_dash(&nodes, "Outfielder gloves"));
     assert!(
-        !session.is_dirty() && !session.can_undo(),
-        "nothing was written"
+        (dash - 118.0).abs() <= 1.0,
+        "the Outfielder gloves stand-in {dash} fills the field slot"
     );
+}
+
+/// The `(boots_id, gloves_id)` of `id`'s player as `path`'s saved file
+/// reads them.
+fn boglo_of(path: &std::path::Path, id: u32) -> (u32, u32) {
+    let back = EditFile::from_bytes(&std::fs::read(path).unwrap()).unwrap();
+    let player = back.player(id).expect("the player");
+    (player.appearance.boots_id, player.appearance.gloves_id)
+}
+
+// The Player menu's FPC entry on PES 2014: enabled on a player the
+// appearance record holds, its press writing the hide pair — boots 55
+// and gloves 11, no skin, the version mapping no in-game face run —
+// read back from the saved file; the entry then reads Show, whose
+// press writes 0 and 0 back.
+#[test]
+fn the_player_menus_fpc_entry_hides_and_shows_on_pes14() {
+    let path = pes14_fixture_with_look("pes14_fpc_menu");
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut window = Headless::new();
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    click(
+        &mut window,
+        nodes
+            .iter()
+            .find(|node| player_row(node))
+            .expect("a player row"),
+        &mut view,
+    );
+    let player_id = selected_player(&view).expect("a player selected").2;
+    let nodes = open_menu(&mut window, &mut view, "Player", "Hide default body");
+    let item = menu_item(&nodes, "Hide default body (Enable FPC)");
+    assert!(!item.is_disabled(), "the FPC entry is enabled on PES 2014");
+    click(&mut window, item, &mut view);
+    view.session
+        .as_ref()
+        .unwrap()
+        .file()
+        .save(&path)
+        .expect("the save writes");
+    assert_eq!(boglo_of(&path, player_id), (55, 11), "the hide pair");
+
+    let nodes = open_menu(&mut window, &mut view, "Player", "Show default body");
+    let item = menu_item(&nodes, "Show default body (Disable FPC)");
+    click(&mut window, item, &mut view);
+    view.session
+        .as_ref()
+        .unwrap()
+        .file()
+        .save(&path)
+        .expect("the save writes");
+    assert_eq!(boglo_of(&path, player_id), (0, 0), "the show pair");
+}
+
+// The Team menu's Hide item on PES 2014: every team player the
+// appearance section holds a record for takes the hide pair, read back
+// from the saved file; a player without a record keeps his look.
+#[test]
+fn the_team_menus_hide_writes_the_pair_where_a_record_exists() {
+    let except = EditFile::from_bytes(&fixture_save(PesVersion::Pes14))
+        .unwrap()
+        .team(1)
+        .expect("the vanilla first team")
+        .roster
+        .iter()
+        .find(|slot| slot.player_id != 0)
+        .expect("a filled slot")
+        .player_id;
+    let path = pes14_fixture_with_look_missing("pes14_fpc_team", &[except]);
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut window = Headless::new();
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    click(
+        &mut window,
+        nodes
+            .iter()
+            .find(|node| player_row(node))
+            .expect("a player row"),
+        &mut view,
+    );
+    let nodes = open_menu(&mut window, &mut view, "Team", "Hide default body");
+    let item = menu_item(&nodes, "Hide default body (Enable FPC)");
+    assert!(!item.is_disabled(), "the Hide item is enabled on PES 2014");
+    click(&mut window, item, &mut view);
+    view.session
+        .as_ref()
+        .unwrap()
+        .file()
+        .save(&path)
+        .expect("the save writes");
+    let back = EditFile::from_bytes(&std::fs::read(&path).unwrap()).unwrap();
+    for slot in back
+        .team(701)
+        .expect("team 701")
+        .roster
+        .iter()
+        .filter(|slot| slot.player_id != 0)
+    {
+        if slot.player_id == except {
+            assert!(!back.has_appearance_record(except), "still no record");
+            assert_eq!(boglo_of(&path, except), (0, 0), "his look is unchanged");
+        } else {
+            assert_eq!(
+                boglo_of(&path, slot.player_id),
+                (55, 11),
+                "{}'s hide pair",
+                slot.player_id
+            );
+        }
+    }
 }
 
 // The strip combos' labels as the version's game words them

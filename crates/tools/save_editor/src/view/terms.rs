@@ -373,6 +373,12 @@ fn player_field_term(version: PesVersion, diff: &PlayerDiff) -> Term {
         }
         PlayerField::Untucked => flag(appearance::SHIRTTAIL_OUT_LABEL, old, new),
         PlayerField::AnkleTaping => flag(appearance::ANKLE_TAPING_LABEL, old, new),
+        // PES 2014's own outfielder-gloves bit, read as its row words it.
+        PlayerField::PlayerGloves => term(
+            appearance::OUTFIELDER_GLOVES_LABEL,
+            gloves_reading(version, stored_u8(old)),
+            gloves_reading(version, stored_u8(new)),
+        ),
         PlayerField::EditedFace => flag(appearance::FACE_LABEL, old, new),
         PlayerField::EditedHair => flag(appearance::HAIR_LABEL, old, new),
         PlayerField::EditedPhysique => flag(appearance::PHYSIQUE_LABEL, old, new),
@@ -412,8 +418,8 @@ fn face_field_term(version: PesVersion, diff: &PlayerDiff) -> Term {
     match field {
         IngameFaceField::PlayerGloves => Term {
             label: appearance::OUTFIELDER_GLOVES_LABEL.to_owned(),
-            old: gloves_reading(old).to_owned(),
-            new: gloves_reading(new).to_owned(),
+            old: gloves_reading(version, old).to_owned(),
+            new: gloves_reading(version, new).to_owned(),
             swatches: None,
         },
         IngameFaceField::SkinColor
@@ -484,10 +490,10 @@ fn on_off(stored: u32) -> &'static str {
     if stored == 0 { "off" } else { "on" }
 }
 
-/// `stored`'s reading in the gloves dropdown: any non-zero is worn (the
-/// flag's reading, as the view words it).
-fn gloves_reading(stored: u8) -> &'static str {
-    appearance::GLOVES_OPTIONS[usize::from(stored != 0)]
+/// `stored`'s reading in the gloves dropdown on `version`: any non-zero is
+/// worn ("Auto" on PES 2014, as the view words it).
+fn gloves_reading(version: PesVersion, stored: u8) -> &'static str {
+    appearance::gloves_options(version)[usize::from(stored != 0)]
 }
 
 /// A field no view draws, named in words from its report name: a word

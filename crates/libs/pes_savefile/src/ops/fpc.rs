@@ -8,6 +8,7 @@ use pes_version::PesVersion;
 use crate::codec::CodecError;
 use crate::model::player::PlayerEntry;
 use crate::schema::ingame_face::IngameFaceField;
+use crate::schema::schema_for;
 
 /// An FPC preset could not be applied or read back.
 #[derive(Debug, thiserror::Error)]
@@ -26,7 +27,9 @@ pub enum FpcError {
 
 /// Writes one preset's appearance (sleeves, tuck, socks, boots/gloves IDs,
 /// skin), all or nothing: every check (custom skin available, the face run
-/// present) runs before the first write. The caller substitutes a custom
+/// present where the version maps one — PES 2014's records carry none, so
+/// the presets' skin part has nothing to write there) runs before the
+/// first write. The caller substitutes a custom
 /// model's own boots/gloves IDs into `appearance` first (the compiler's
 /// precedence table). `SkinColor::Custom` writes skin 7 on versions that have
 /// a custom skin (`fpc::custom_skin_available`) and is
@@ -40,12 +43,17 @@ pub fn apply(
     if appearance.skin_color == fpc::SkinColor::Custom && !fpc::custom_skin_available(version) {
         return Err(FpcError::CustomSkinUnavailable { version });
     }
-    // A probe, not a read: the face run must hold the skin field before the
-    // first write, so a player without it errors with nothing changed.
-    player
-        .appearance
-        .ingame_face
-        .get(IngameFaceField::SkinColor)?;
+    // A probe, not a read: on a version whose records carry the face run it
+    // must hold the skin field before the first write, so a player without
+    // it errors with nothing changed. PES 2014's records map no run: the
+    // strip fields and ids still land on the appearance record's own.
+    let face_run = schema_for(version).has_ingame_face();
+    if face_run {
+        player
+            .appearance
+            .ingame_face
+            .get(IngameFaceField::SkinColor)?;
+    }
     player.appearance.sleeves = sleeves_value(appearance.sleeves);
     player.appearance.untucked = untucked_value(appearance.tuck);
     player.appearance.socks = socks_value(appearance.socks);
@@ -57,11 +65,12 @@ pub fn apply(
             .ingame_face
             .set(IngameFaceField::SkinColor, 7)?,
         fpc::SkinColor::Preset => {
-            if player
-                .appearance
-                .ingame_face
-                .get(IngameFaceField::SkinColor)?
-                == 7
+            if face_run
+                && player
+                    .appearance
+                    .ingame_face
+                    .get(IngameFaceField::SkinColor)?
+                    == 7
             {
                 player
                     .appearance
@@ -125,19 +134,26 @@ pub fn strip_style(player: &PlayerEntry) -> Result<fpc::StripStyle, FpcError> {
 }
 
 /// What the save shows, not what the team intends: a boots ID of `ids`'s
-/// (the hide ID the settings give), or a custom skin. A hide preset applied
-/// with a substituted (real) boots ID is indistinguishable from a dressed
+/// (the hide ID the settings give), or — where `version`'s records carry
+/// the in-game face run — a custom skin; on a version mapping none (PES
+/// 2014) the boots ID alone decides. A hide preset applied with a
+/// substituted (real) boots ID is indistinguishable from a dressed
 /// player by construction, so this is the save editor's read-only
 /// classifier; the compiler, which knows the folder's marker, passes its
-/// own `is_fpc_player` to `fpc::check`. Reads the skin through the
-/// ingame-face run, hence `Result`.
-pub fn is_fpc_player(player: &PlayerEntry, ids: fpc::HideIds) -> Result<bool, FpcError> {
+/// own `is_fpc_player` to `fpc::check`. `Result` for the skin read where
+/// the run exists.
+pub fn is_fpc_player(
+    player: &PlayerEntry,
+    version: PesVersion,
+    ids: fpc::HideIds,
+) -> Result<bool, FpcError> {
     Ok(player.appearance.boots_id == u32::from(ids.boots())
-        || player
-            .appearance
-            .ingame_face
-            .get(IngameFaceField::SkinColor)?
-            == 7)
+        || (schema_for(version).has_ingame_face()
+            && player
+                .appearance
+                .ingame_face
+                .get(IngameFaceField::SkinColor)?
+                == 7))
 }
 
 #[cfg(test)]
@@ -145,7 +161,7 @@ mod tests {
     use pes_version::PesVersion;
 
     use super::*;
-    use crate::codec::{read_player, write_player};
+    use crate::codec::{read_player, runs, write_player};
     use crate::schema::fields::PlayerField;
     use crate::schema::ingame_face::INGAME_FACE_FIELDS;
     use crate::schema::schema_for;
@@ -202,7 +218,33 @@ mod tests {
         assert_eq!(player.appearance.boots_id, 55);
         assert_eq!(player.appearance.gloves_id, 11);
         assert_eq!(skin(&player), 3, "a preset skin keeps a non-custom skin");
-        assert!(is_fpc_player(&player, fpc::HideIds::CONVENTION).expect("is_fpc_player"));
+        assert!(
+            is_fpc_player(&player, PesVersion::Pes19, fpc::HideIds::CONVENTION)
+                .expect("is_fpc_player")
+        );
+    }
+
+    // On a version whose records map no in-game face run a player is an
+    // FPC player by his boots id alone: the hide id reads hidden, another
+    // does not, and the run is never consulted (PES 2014 has no skin to
+    // read).
+    #[test]
+    fn is_fpc_player_on_pes14_reads_the_boots_id_alone() {
+        let mut player = find_player(
+            &payload(PesVersion::Pes14),
+            schema_for(PesVersion::Pes14),
+            42810,
+        );
+        player.appearance.boots_id = 55;
+        assert!(
+            is_fpc_player(&player, PesVersion::Pes14, fpc::HideIds::CONVENTION)
+                .expect("is_fpc_player")
+        );
+        player.appearance.boots_id = 54;
+        assert!(
+            !is_fpc_player(&player, PesVersion::Pes14, fpc::HideIds::CONVENTION)
+                .expect("is_fpc_player")
+        );
     }
 
     // The classifier reads the hide IDs it is given, not the convention:
@@ -212,9 +254,9 @@ mod tests {
         let ids = fpc::HideIds::new(60, 12).expect("in band");
         let mut player = player_70101(PesVersion::Pes19);
         player.appearance.boots_id = 60;
-        assert!(is_fpc_player(&player, ids).expect("is_fpc_player"));
+        assert!(is_fpc_player(&player, PesVersion::Pes19, ids).expect("is_fpc_player"));
         player.appearance.boots_id = 55;
-        assert!(!is_fpc_player(&player, ids).expect("is_fpc_player"));
+        assert!(!is_fpc_player(&player, PesVersion::Pes19, ids).expect("is_fpc_player"));
     }
 
     #[test]
@@ -238,7 +280,53 @@ mod tests {
         assert_eq!(player.appearance.boots_id, 0);
         assert_eq!(player.appearance.gloves_id, 0);
         assert_eq!(skin(&player), 3, "a preset skin keeps a non-custom skin");
-        assert!(!is_fpc_player(&player, fpc::HideIds::CONVENTION).expect("is_fpc_player"));
+        assert!(
+            !is_fpc_player(&player, PesVersion::Pes19, fpc::HideIds::CONVENTION)
+                .expect("is_fpc_player")
+        );
+    }
+
+    // On PES 2014 the presets write the ids as on the other versions (the
+    // hide preset's 55/11 pair, `the_hide_preset_writes_long_sleeves_and_the_hide_ids`
+    // and `the_unhide_preset_restores_the_stock_strip` on PES 19): the
+    // version's records carry no in-game face run, so the presets' skin
+    // part has nothing to read or write, and the strip fields and ids all
+    // land on the appearance record's own runs.
+    #[test]
+    fn the_presets_write_the_ids_on_pes14() {
+        let mut player = find_player(
+            &payload(PesVersion::Pes14),
+            schema_for(PesVersion::Pes14),
+            42810,
+        );
+        // A strip other than either preset's, so every write shows.
+        player.appearance.sleeves = 0;
+        player.appearance.untucked = true;
+        player.appearance.socks = 1;
+        player.appearance.boots_id = 0;
+        player.appearance.gloves_id = 0;
+        apply(
+            &mut player,
+            &fpc::preset(fpc::Preset::Hide, fpc::HideIds::CONVENTION),
+            PesVersion::Pes14,
+        )
+        .expect("apply");
+        assert_eq!(player.appearance.sleeves, 2);
+        assert!(!player.appearance.untucked);
+        assert_eq!(player.appearance.socks, 2);
+        assert_eq!(player.appearance.boots_id, 55);
+        assert_eq!(player.appearance.gloves_id, 11);
+        apply(
+            &mut player,
+            &fpc::preset(fpc::Preset::Unhide, fpc::HideIds::CONVENTION),
+            PesVersion::Pes14,
+        )
+        .expect("apply");
+        assert_eq!(player.appearance.sleeves, 1);
+        assert!(player.appearance.untucked);
+        assert_eq!(player.appearance.socks, 0);
+        assert_eq!(player.appearance.boots_id, 0);
+        assert_eq!(player.appearance.gloves_id, 0);
     }
 
     #[test]
@@ -272,7 +360,10 @@ mod tests {
                 .expect("read run"),
             7
         );
-        assert!(is_fpc_player(&player, fpc::HideIds::CONVENTION).expect("is_fpc_player"));
+        assert!(
+            is_fpc_player(&player, PesVersion::Pes16, fpc::HideIds::CONVENTION)
+                .expect("is_fpc_player")
+        );
     }
 
     #[test]
@@ -402,13 +493,13 @@ mod tests {
             PlayerField::BootsId,
             PlayerField::GlovesId,
         ] {
-            let spec = schema
-                .player
-                .fields
-                .iter()
-                .find(|f| f.field == field)
-                .expect("a row");
-            ranges.push((spec.bit_offset, spec.bit_offset + spec.bit_width));
+            let found = ranges.len();
+            for (f, offset, width) in runs(schema.player) {
+                if f == field {
+                    ranges.push((offset, offset + width));
+                }
+            }
+            assert!(ranges.len() > found, "a row for {field:?}");
         }
         for (byte, (was, now)) in rec.iter().zip(&written).enumerate() {
             for bit in 0..8 {
