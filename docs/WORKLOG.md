@@ -62,7 +62,17 @@ run's findings (`4cc-studio-temp/str_re/out/findings.md`).
      bundle reader (DECISIONS 2026-11-21 "a session keeps each save packed and
      compressed"): merged `53398fdc`, one rework, with the tests for the checkpoint's two
      missed mutants in `repro.rs` and `session.rs`. SWE-2 round S5c r1's fixes merged
-     `9d9e1786` (that loop ended); Carbon, then Astra, owed (it reaches saves);
+     `9d9e1786` (that loop ended). Astra round A-s5c r1 ran first, Carbon's login being spent
+     until its reset (RUNBOOK "Review rounds": the next loop runs meanwhile): 3 accepted,
+     which ends Astra's loop (rulings "A-s5c r1"). Owed, not yet briefed:
+     - a `save-editor unpack-session <session.zip> <folder>` command writing an earlier
+       session's saves back as files through `repro::read_bundle` and the Save editor's
+       rebuild, since no shipped command reads a `.packed` save (replay's command, 3b, is
+       deferred); the report readme names it; plan, DECISIONS and a scenario first;
+     - the packed round trip tested with a non-empty logo, identifier and serial;
+     - `frames_until` back to CONTRIBUTING's 120 s, and the comparator test that ran out at
+       120 s in the 2026-11-21 checkpoint made not to wait on a loaded worker;
+     - then a SWE-2 subloop over the fixes, and Carbon's loop (queued);
    - [x] 5d the dialog's "Include earlier sessions" box and the help page's line (ST-REP-09,
      12), the draft's ending line settled (DECISIONS 2026-11-21 "an earlier session with no
      `[end]` reads "ending unknown""): merged `db2900cd`. Seen in the release build beside
