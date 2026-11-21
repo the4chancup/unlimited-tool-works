@@ -433,7 +433,10 @@ every version are the same as on main, and main's merges into the branch stay sm
 Save editor reaches `Pes14`, by detecting a PES 2014 save; every other tool refuses it.
 `PesVersion::from_number` keeps refusing 14, so a settings file, a ruleset's `versions`, a
 `.4ccs` file or `PES2014.exe` never names PES 2014: the Save editor follows the opened save's
-version, not the version selector.
+version, not the version selector. Its own check of the save's version's folder looks for that
+version's exe by its exact name (`PES2014.exe`, in any letter case) before parsing names through
+`from_number`, since the parse alone never finds PES 2014's, and the pitch's Set PES path
+button would stay on every PES 2014 save, its tooltip saying the folder holds no PES 2014 exe.
 
 - **Detection.** A PES 2014 save decrypts as PES 2015 (`Scheme::Pes15`), and
   `SaveContainer::version()` is the one place that would misname it. It checks the payload: a

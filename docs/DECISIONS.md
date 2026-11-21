@@ -19308,3 +19308,13 @@ window titled "Crash handler - Unlimited Tool Works", hidden or off-screen, was 
 the row unchanged, so the name needs a second exe. One file to copy matters more than that
 name to a power user, so not a second exe.
 Plan: `core/architecture.md` "The monitor" edited.
+
+## 2026-11-21 — studio_core (pes14 branch) — the Save editor's folder check finds `PES2014.exe` by name
+Decision: the check of the open save's version's PES folder (`check_pes_folder`) matches that
+version's exe by its exact name, in any letter case, before parsing exe names through
+`PesVersion::from_number`; `from_number` keeps refusing 14.
+Why: the parse alone never names PES 2014, so on every PES 2014 save the pitch's Set PES path
+button stayed, with `E:\PES2014` set, its tooltip saying the folder held no PES 2014 exe. Not
+by letting `from_number` accept 14, because a settings file, a ruleset or the running-game
+notice would then name PES 2014, which the branch keeps out of every tool but the editor.
+Plan: `plans/pes14.md` "PES 2014 in the code", the paragraph on `PesVersion`.
