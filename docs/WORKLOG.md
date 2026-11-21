@@ -141,8 +141,12 @@ run's findings (`4cc-studio-temp/str_re/out/findings.md`).
     what it does, not by its code; it browses CPKs and edits DDS and apk textures) and CPGE
     V0.7.1 (above; besides apk it handles `.str`, FTEX, FPK, Fox files, FMDL and CPKs). Its
     plan comes after the apk crate's (item 13), which it builds on. A survey of every tool
-    in `C:/Data/4cc/0Tools/` (SWE-2, `.tmp/tools_survey/`) names what else the suite should
-    take in and what the explorer should cover.
+    in `C:/Data/4cc/0Tools/` (SWE-2, 2026-11-21, `.tmp/tools_survey/findings_a.md` and
+    `_b.md`, each tool's evidence) gave the explorer's file list, now in its plan entry. It
+    found no other tool for the suite: the rest are covered, a runtime piece (sider, DXVK),
+    general-purpose, or for another game. Two Blender add-ons, Joshua502's stadium camera
+    editor (`.fdc`) and MFG's kk2pes (other games' rigs onto PES bones), belong to the
+    Blender project's plan, the maintainer's to place.
 
 Most open steps below wait only on a check in the game or the built window that the lead's
 harness makes ("Pending looks" below), not on the maintainer.

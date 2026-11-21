@@ -805,7 +805,31 @@ Tools the suite will take in, with no phase or plan yet:
   shown and edited; any other file is at least extracted and replaced. It covers what
   members do today with two community tools: CPGE V0.7.1 and Jenkey's PES File Explorer 2014
   (`C:/Data/4cc/0Tools/`). It is built on the crates, the apk crate first (`libs/apk.md`),
-  and its plan follows that crate's.
+  and its plan follows that crate's. What members do today, file by file, with the tools
+  it replaces:
+  - CPKs: an install's `Data/` and `download/` browsed as one tree, or a single CPK; files
+    extracted, replaced and packed into a new CPK; every CPK of a folder unpacked at once
+    (CPGE, CriPakTools, STPN_17's PES CPK Tool, a batch unpacker);
+  - WESYS-wrapped files opened unwrapped and written back wrapped (Jenkey's explorer, the
+    zlib tools);
+  - DDS and FTEX textures previewed, exported and imported as PNG or DDS (CPGE, Jenkey's
+    explorer, FtexTool);
+  - apk menu packs: textures previewed and replaced, sprite regions edited (the PES Apk Bin
+    Tool, the PES Texture Editor, `pesafp_texturetool.py`);
+  - FPK archives unpacked and repacked (GzsTool, CPGE);
+  - models: an FMDL's string table edited, its texture paths above all (MTLTools, an FMDL
+    ID changer); a pre-Fox `.mtl`'s shader rewritten across a DLC's nested face CPKs (a
+    shader renamer);
+  - Fox files and `.str` texts viewed (CPGE; the [String editor](../string_editor.md) edits
+    the texts);
+  - `face_diff.bin`'s named fields edited (zlac's diff_check);
+  - `DpFileList.bin` edited: the DLC's CPKs added, removed and ordered (CPGE);
+  - the game's ball list, and the ball each competition uses (normal, winter, final)
+    (CPGE);
+  - ADX and AIX audio played (Jenkey's explorer);
+  - any file viewed and edited in hex (CPGE);
+  - sider's liveCPK folders laid over the tree, with a file exported straight to its place
+    in one, and `sider.ini`'s folders and scripts edited (CPGE).
 
 Not a tool of the suite but a way to run it, also with no phase yet:
 
