@@ -113,7 +113,17 @@ run's findings (`4cc-studio-temp/str_re/out/findings.md`).
     click changes nothing and the button goes, its pointer a hand; likely the window manager
     leaving the reset window off the fitted size, so the button waits for a click the window
     does not follow).
-11. Any mutation run (mutfast landed: each mutant's tests run under cargo-nextest).
+11. The mutation run the 0.0.2 window never had: `abbae531..aab124dc` (2026-11-14 to the
+    0.0.2 cut; 166 commits touching code, about 28,000 lines added). The pipelines of those
+    days ran `--no-mutants` while mutfast was awaited, and `checkpoint.py run` moves
+    `refs/checkpoints/gated` with or without the mutation run, so the first run after mutfast
+    (2026-11-20) diffed from `aab124dc` and nothing came back for the range. Owed:
+    - the cause: `--no-mutants` leaves the mutation run's base where it was (a second ref,
+      `refs/checkpoints/mutated`, which only a run that ran its mutants moves), so a gate
+      passed without mutants can never hide a range again;
+    - the catch-up: `mutants-diff abbae531` over the range, sized first with its own
+      estimate; per crate past about an hour a side, the crate's run goes to the VPS (RUNBOOK
+      "Mutation runs and the VPS"), the rest here; then its triage as the checkpoints' are.
 12. The suite's own images (DECISIONS 2026-11-20 "the placeholder portraits and the Team
     Export thumbnail are the suite's own"): the three placeholder portraits drawn as SVGs and
     the 4cc clover thumbnail, both rendered to the PNGs the binary embeds by one script; a
