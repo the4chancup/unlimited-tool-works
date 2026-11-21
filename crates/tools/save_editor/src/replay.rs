@@ -315,7 +315,7 @@ mod tests {
     fn bundle_of(recorder: &Recorder, dir: &Path) -> Bundle {
         let zip = dir.join("repro.zip");
         recorder.write_bundle(&zip, "", &[], &[], None).unwrap();
-        read_bundle(&zip, &|_| panic!("a bundle of the session holds raw files")).unwrap()
+        read_bundle(&zip, |_| panic!("a bundle of the session holds raw files")).unwrap()
     }
 
     /// `pes_savefile`'s packed-form rebuild as `read_bundle`'s closure.
@@ -817,12 +817,12 @@ mod tests {
     }
 
     // Each version's save kept as an earlier session is an
-    // `inputs/0-….packed` entry far smaller than the save — the packed
-    // form compressed — which `read_bundle` inflates and `rebuild`
-    // turns back into the file byte for byte, so the write still
-    // replays to `Matches`. A packed byte flipped and the rebuilt save
-    // fails the row's SHA-256: the bundle is refused and nothing
-    // replays.
+    // `inputs/0-….packed` and an `outputs/0-….packed` entry far smaller
+    // than the save — the packed form compressed — which `read_bundle`
+    // inflates and `rebuild` turns back into the file byte for byte, so
+    // the write still replays to `Matches`. A packed byte flipped and
+    // the rebuilt save fails the row's SHA-256: the bundle is refused
+    // and nothing replays.
     // SE-REP-07
     #[test]
     fn an_earlier_sessions_packed_saves_rebuild_and_replay() {
@@ -839,16 +839,20 @@ mod tests {
             let save = pes_savefile::fixture_save(version);
             let rx = recorded_session(&dir, version);
             let folder = written_session(&dir.join("sessions"), rx, |_| {});
-            let entry = folder.join("inputs/0-EDIT00000000.packed");
-            let kept = std::fs::metadata(&entry)
-                .unwrap_or_else(|_| panic!("{version:?}: the input's entry is packed"));
-            assert!(
-                kept.len() < save.len() as u64,
-                "{version:?}: the packed entry is smaller than the save"
-            );
+            for entry in [
+                "inputs/0-EDIT00000000.packed",
+                "outputs/0-EDIT00000000.packed",
+            ] {
+                let kept = std::fs::metadata(folder.join(entry))
+                    .unwrap_or_else(|_| panic!("{version:?}: the {entry} entry is packed"));
+                assert!(
+                    kept.len() < save.len() as u64,
+                    "{version:?}: {entry} is smaller than the save"
+                );
+            }
             let out = dir.join("session.zip");
             std::fs::write(&out, session_bundle(&folder, None).unwrap()).unwrap();
-            let bundle = read_bundle(&out, &rebuild_save).unwrap();
+            let bundle = read_bundle(&out, rebuild_save).unwrap();
             let outcomes = replay(&bundle).unwrap();
             assert!(
                 matches!(&outcomes[..], [Outcome::Matches { .. }]),
@@ -861,7 +865,7 @@ mod tests {
             let folder = written_session(&dir.join("flipped_sessions"), rx, flip_last_payload_byte);
             let out = dir.join("flipped.zip");
             std::fs::write(&out, session_bundle(&folder, None).unwrap()).unwrap();
-            let error = read_bundle(&out, &rebuild_save)
+            let error = read_bundle(&out, rebuild_save)
                 .err()
                 .expect("the flipped bundle is refused");
             assert!(

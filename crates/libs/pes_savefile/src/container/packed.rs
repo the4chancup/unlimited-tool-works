@@ -28,7 +28,7 @@ impl SaveContainer {
     /// The packed form this module's header describes: the scheme byte, the
     /// salt `to_bytes` writes the container back under, then each section
     /// length-prefixed.
-    pub fn pack(&self, salt: &[u8; 320]) -> Vec<u8> {
+    pub(crate) fn pack(&self, salt: &[u8; 320]) -> Vec<u8> {
         let scheme = match self.scheme {
             Scheme::Pes15 => 0,
             Scheme::Keyed(key) => MasterKey::ALL

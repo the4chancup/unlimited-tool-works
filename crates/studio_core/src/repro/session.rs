@@ -6,6 +6,7 @@
 //! `[[input]]` or `[[output]]` row per kept file, and an `[end]` table
 //! last saying how the session ended. `inputs/` holds every file read;
 //! `outputs/` the last file written per path, replaced at each write.
+//! A file kept packed is `<index>-<name>.packed`, compressed.
 //!
 //! The crash monitor writes the folder from the window's session
 //! messages (`SessionWriter`), which reach it as `SessionFrame`s
@@ -96,7 +97,8 @@ pub enum SessionMessage {
         /// The step's typed change (`[step.op]`); `None` on a note.
         op: Option<toml::Table>,
     },
-    /// A file kept as it was read, as `Recorder::keep_input` records it.
+    /// A file kept as it was read, as `Recorder::keep_input` or
+    /// `keep_input_packed` records it.
     Input {
         /// The recording tool's id.
         tool: String,
@@ -105,8 +107,9 @@ pub enum SessionMessage {
         /// The file, or its packed form for the folder.
         file: SessionFile,
     },
-    /// A file kept as it was written, as `Recorder::keep_output`
-    /// records it: a later write to one tool and path replaces it.
+    /// A file kept as it was written, as `Recorder::keep_output` or
+    /// `keep_output_packed` records it: a later write to one tool and
+    /// path replaces it.
     Output {
         /// The recording tool's id.
         tool: String,
@@ -1138,7 +1141,7 @@ mod tests {
     fn folder_bundle(dir: &Path, folder: &Path, home: Option<&str>) -> Bundle {
         let out = dir.join("session.zip");
         fs::write(&out, session_bundle(folder, home).unwrap()).unwrap();
-        read_bundle(&out, &|_| panic!("the folder holds no packed rows")).unwrap()
+        read_bundle(&out, |_| panic!("the folder holds no packed rows")).unwrap()
     }
 
     /// A session's frames in order: the header, a step with its op and
@@ -2065,14 +2068,17 @@ mod tests {
     // A packed input is kept as `inputs/0-<name>.packed`, compressed to
     // the packed form, its row holding `packed = true` and the file's
     // own size and SHA-256. The bundle the folder makes reads it
-    // through `rebuild` (here the toy pack, the bytes reversed) and
+    // through `rebuild` (here the toy pack, the file's first half) and
     // hands back the file.
     // ST-REP-06
     #[test]
     fn a_packed_input_is_kept_compressed_and_rebuilt() {
         let dir = TestDir::new("studio_core_session_packed");
-        let raw = b"THE_FILE_BYTES".to_vec();
-        let form: Vec<u8> = raw.iter().rev().copied().collect();
+        // The toy pack keeps the file's first half; `rebuild` doubles
+        // it back, the halves being equal. Shorter than the file, so a
+        // row's `size` holding the packed form's length stands out.
+        let raw = b"THE_SAMETHE_SAME".to_vec();
+        let form: Vec<u8> = raw[..raw.len() / 2].to_vec();
         let folder = packed_folder(
             &dir,
             SessionFile::Packed {
@@ -2092,7 +2098,11 @@ mod tests {
         let (text, doc) = journal(&folder);
         let inputs = doc["input"].as_array().unwrap();
         assert_eq!(inputs[0]["packed"].as_bool(), Some(true), "{text}");
-        assert_eq!(inputs[0]["size"].as_integer(), Some(14), "{text}");
+        assert_eq!(
+            inputs[0]["size"].as_integer(),
+            Some(16),
+            "the file's size, not the packed form's 8: {text}"
+        );
         assert_eq!(
             inputs[0]["sha256"].as_str(),
             Some(sha256(&raw).as_str()),
@@ -2111,8 +2121,8 @@ mod tests {
         let journal_text = zip_text(&out, "journal.toml");
         assert!(journal_text.contains("packed = true"), "{journal_text}");
 
-        let bundle = read_bundle(&out, &|form: &[u8]| -> anyhow::Result<Vec<u8>> {
-            Ok(form.iter().rev().copied().collect())
+        let bundle = read_bundle(&out, |form: &[u8]| -> anyhow::Result<Vec<u8>> {
+            Ok(form.repeat(2))
         })
         .unwrap();
         assert_eq!(bundle.inputs[0].bytes, raw, "the rebuilt file");
@@ -2139,7 +2149,7 @@ mod tests {
 
         // The same size as the row's, so the SHA-256 is what differs.
         let wrong = |_: &[u8]| -> anyhow::Result<Vec<u8>> { Ok(vec![0; 14]) };
-        let error = match read_bundle(&out, &wrong) {
+        let error = match read_bundle(&out, wrong) {
             Ok(_) => panic!("the rebuilt bundle read"),
             Err(error) => error,
         };

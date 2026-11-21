@@ -101,11 +101,11 @@ impl Journal {
         tool: &'static str,
         path: &Path,
         bytes: Arc<[u8]>,
-        packed: Option<(Vec<u8>, String)>,
+        packed: Option<(Arc<[u8]>, String)>,
     ) {
         let file = match packed {
             Some((packed, sha256)) => SessionFile::Packed {
-                packed: packed.into(),
+                packed,
                 size: bytes.len(),
                 sha256,
             },
@@ -134,7 +134,7 @@ impl Journal {
         _tool: &'static str,
         _path: &Path,
         _bytes: Arc<[u8]>,
-        _packed: Option<(Vec<u8>, String)>,
+        _packed: Option<(Arc<[u8]>, String)>,
     ) {
     }
 }
@@ -255,8 +255,10 @@ impl Recorder {
     /// of a file that does not compress on its own, which the folder's
     /// writer stores compressed and `read_bundle` rebuilds. The journal
     /// keeps `bytes` as `keep_input` does: a bundle of the running
-    /// session still holds the file itself. Native only, as the session
-    /// folder is.
+    /// session still holds the file itself. With nobody listening
+    /// (`listens` false) the keep is `keep_input`'s: the hash only the
+    /// writer's packed row reads is skipped. Native only, as the
+    /// session folder is.
     #[cfg(not(target_arch = "wasm32"))]
     pub fn keep_input_packed(
         &self,
@@ -265,10 +267,13 @@ impl Recorder {
         bytes: Arc<[u8]>,
         packed: Vec<u8>,
     ) -> usize {
+        if !self.listens() {
+            return self.keep_input_impl(tool, path, bytes, None);
+        }
         // The hash is computed before the lock: an 11 MB file's SHA-256
         // under it would stall every other recorder.
         let sha256 = bundle::sha256(&bytes);
-        self.keep_input_impl(tool, path, bytes, Some((packed, sha256)))
+        self.keep_input_impl(tool, path, bytes, Some((packed.into(), sha256)))
     }
 
     /// `keep_input` and `keep_input_packed`'s body: `packed` (the pack's
@@ -278,7 +283,7 @@ impl Recorder {
         tool: &'static str,
         path: &Path,
         bytes: Arc<[u8]>,
-        packed: Option<(Vec<u8>, String)>,
+        packed: Option<(Arc<[u8]>, String)>,
     ) -> usize {
         let mut journal = self.journal.lock().unwrap();
         journal.inputs.push(KeptFile {
@@ -310,10 +315,13 @@ impl Recorder {
         bytes: Arc<[u8]>,
         packed: Vec<u8>,
     ) -> usize {
+        if !self.listens() {
+            return self.keep_output_impl(tool, path, bytes, None);
+        }
         // The hash is computed before the lock: an 11 MB file's SHA-256
         // under it would stall every other recorder.
         let sha256 = bundle::sha256(&bytes);
-        self.keep_output_impl(tool, path, bytes, Some((packed, sha256)))
+        self.keep_output_impl(tool, path, bytes, Some((packed.into(), sha256)))
     }
 
     /// `keep_output` and `keep_output_packed`'s body.
@@ -322,7 +330,7 @@ impl Recorder {
         tool: &'static str,
         path: &Path,
         bytes: Arc<[u8]>,
-        packed: Option<(Vec<u8>, String)>,
+        packed: Option<(Arc<[u8]>, String)>,
     ) -> usize {
         let mut journal = self.journal.lock().unwrap();
         let index = match journal
@@ -349,13 +357,23 @@ impl Recorder {
         index
     }
 
+    /// Whether `send_to` gave the recorder a session writer to feed.
+    /// Only it reads a packed keep's session message, so a caller
+    /// skips the pack and hash when this is false — every command-line
+    /// run.
+    #[cfg(not(target_arch = "wasm32"))]
+    pub fn listens(&self) -> bool {
+        self.journal.lock().unwrap().sink.is_some()
+    }
+
     /// Hands the session's messages to `sink`: every later `step`,
-    /// `step_op`, `keep_input` and `keep_output` also queues its step or
-    /// kept file — the file's `Arc` shared, never copied — for whoever
-    /// writes the session folder at the queue's other end (the crash
-    /// monitor, reached through its pipe; or the window's own writer
-    /// thread). Set once, before the window opens. The queue is `try_`
-    /// sent, never waited on: a full one drops the message and the first
+    /// `step_op`, `keep_input`, `keep_output`, `keep_input_packed` and
+    /// `keep_output_packed` also queues its step or kept file — the
+    /// file's `Arc` shared, never copied — for whoever writes the
+    /// session folder at the queue's other end (the crash monitor,
+    /// reached through its pipe; or the window's own writer thread).
+    /// Set once, before the window opens. The queue is `try_` sent,
+    /// never waited on: a full one drops the message and the first
     /// drop of the session logs one warning.
     #[cfg(not(target_arch = "wasm32"))]
     pub fn send_to(&self, sink: Sender<SessionMessage>) {
@@ -1225,6 +1243,30 @@ pub(crate) mod tests {
             output_row.get("packed").is_none(),
             "no packed key on a bundle row: {journal}"
         );
+    }
+
+    // `listens` reports the sink `send_to` gave, and a packed keep with
+    // nobody listening keeps the file as `keep_input` would — the pack
+    // and hash ran for nothing, so they are skipped.
+    #[test]
+    fn a_packed_keep_without_a_listener_keeps_the_file() {
+        let dir = scratch("packed_quiet");
+        let recorder = Recorder::default();
+        assert!(!recorder.listens(), "no sink was given");
+        recorder.keep_input_packed(
+            "save-editor",
+            Path::new("a/EDIT00000000"),
+            Arc::from(&b"SAVE_BYTES"[..]),
+            b"PACKED_FORM".to_vec(),
+        );
+        let out = dir.join("repro.zip");
+        recorder.write_bundle(&out, "", &[], &[], None).unwrap();
+
+        assert_eq!(zip_bytes(&out, "inputs/0-EDIT00000000"), b"SAVE_BYTES");
+
+        let (tx, _rx) = crossbeam_channel::unbounded();
+        recorder.send_to(tx);
+        assert!(recorder.listens(), "a sink was given");
     }
 
     // A tool's summary reads back its steps, its first input with its size
