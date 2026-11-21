@@ -130,7 +130,7 @@ impl Session {
 
     /// Whether `is_fpc_player` reads `player_id`'s default body as hidden under
     /// `ids`: what Ctrl+I branches on and the Player menu's entry is labeled by.
-    /// `None` for an id no player record carries.
+    /// `None` for a `player_id` the save lacks.
     pub(crate) fn body_hidden(&self, player_id: u32, ids: fpc::HideIds) -> Option<bool> {
         self.file.player(player_id).map(|player| {
             pes_savefile::ops::fpc::is_fpc_player(player, self.version(), ids)

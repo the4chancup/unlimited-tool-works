@@ -1541,10 +1541,9 @@ fn number_field<T: egui::emath::Numeric>(
 }
 
 /// The disabled stand-in for a number the save's version does not store:
-/// `-` inside `width` — the width the enabled control beside it is drawn
-/// at (a Button at the DragValue's minimum size, so an enabled version's
-/// control takes the same rect, SE-GUI-06) — drawn as a disabled number
-/// box, under `tooltip` (the `PES NN+` tooltip, as `gated_label`'s).
+/// a disabled number box `width` wide (the width the enabled control
+/// beside it is drawn at, so the `-` takes the same rect, SE-GUI-06),
+/// under `tooltip` (the `PES NN+` tooltip, as `gated_label`'s).
 pub(super) fn gated_number(ui: &mut egui::Ui, tooltip: String, width: f32) {
     number_box_look(ui, |ui| {
         add_enabled(

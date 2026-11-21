@@ -13,8 +13,7 @@ use std::ops::RangeInclusive;
 
 use pes_savefile::EditFile;
 use pes_savefile::model::names::display_name;
-use pes_savefile::schema::fields::PlayerField;
-use pes_savefile::schema::{player_max_value, schema_for};
+use pes_savefile::schema::schema_for;
 use pes_version::PesVersion;
 use studio_core::widgets::{
     add_enabled, add_enabled_ui, menu_button, menu_separator, modal, modal_buttons,
@@ -50,11 +49,10 @@ fn out_of_scope(version: PesVersion) -> bool {
 /// disabled only with no row selected; the boots/gloves dialog prefills
 /// from the selected player, on a team row from the team's first filled
 /// roster slot; the aesthetics items carry the ownership line as their
-/// disabled hover (SE-GUI-22). A save storing no boots or gloves ids
-/// never offers the FPC items; one that stores no boots id never the
-/// boots and gloves dialog. The team file and formation picture items
-/// are off where they are out of scope — each disabled item says which on
-/// hover.
+/// disabled hover (SE-GUI-22), the FPC items carrying the hide-id error's
+/// text instead when the settings put one out of band. The team file and
+/// formation picture items are off where they are out of scope — each
+/// disabled item says which on hover.
 pub(crate) fn team_menu(ui: &mut egui::Ui, view: &mut SaveView) {
     let Some(team_id) = selected_team_id(view) else {
         add_enabled_ui(ui, false, |ui| {
@@ -80,9 +78,6 @@ pub(crate) fn team_menu(ui: &mut egui::Ui, view: &mut SaveView) {
         Err(error) => (false, error.to_string()),
     };
     let version = view.session.as_ref().expect("checked above").version();
-    // A version that stores no boots id never offers the boots and gloves
-    // dialog.
-    let boots_stored = player_max_value(version, PlayerField::BootsId).is_some();
     menu_button(ui, "Team", |ui| {
         let Some(session) = view.session.as_mut() else {
             return;
@@ -93,14 +88,10 @@ pub(crate) fn team_menu(ui: &mut egui::Ui, view: &mut SaveView) {
         }
         if add_enabled(
             ui,
-            unlocked && boots_stored,
+            unlocked,
             egui::Button::new("Set boots and gloves IDs for everyone\u{2026}"),
         )
-        .on_disabled_hover_text(if boots_stored {
-            OWNERSHIP_TIP
-        } else {
-            PES14_TIP
-        })
+        .on_disabled_hover_text(OWNERSHIP_TIP)
         .clicked()
             && let Some(player_id) = prefill
         {
@@ -191,9 +182,10 @@ pub(crate) fn team_menu(ui: &mut egui::Ui, view: &mut SaveView) {
 /// a team row every entry but Copy/swap stats… is disabled with the
 /// pick-a-player hover, since the window picks both players itself.
 /// With no save open or no row selected the whole menu is disabled, as
-/// the Team menu is. On a save storing no boots or gloves ids the FPC
-/// entry is greyed, as are the two Generate items where the records
-/// carry no in-game face run — each with the version's own hover.
+/// the Team menu is. On a PES 2014 player with no appearance record the
+/// FPC entry greys with the look controls' own hover; the two Generate
+/// items grey where the records carry no in-game face run, under the
+/// version's own hover.
 pub(crate) fn player_menu(ui: &mut egui::Ui, view: &mut SaveView) {
     if view.session.is_none() || selected_team_id(view).is_none() {
         add_enabled_ui(ui, false, |ui| {
