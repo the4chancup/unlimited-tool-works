@@ -132,7 +132,8 @@ pub fn assert_premises(file: &EditFile, unrostered: u32) {
 /// `version`'s fixture save with every team's id moved 600 down, out of the
 /// cup's range (701 becomes 101, 920 becomes 320): it stands for a save made
 /// from the stock game, which holds none of the cup's teams. PES 19's fixture
-/// is not for it: the game's own teams it also holds sit under the moved ids.
+/// is not for it: the game's own teams it also holds carry ids below 600 and
+/// inside the moved range.
 pub fn stock_file(version: PesVersion) -> EditFile {
     let mut file = EditFile::from_bytes(&fixture_save(version)).expect("the fixture save reads");
     for team in file.teams_mut() {

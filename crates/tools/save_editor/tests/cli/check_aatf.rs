@@ -361,7 +361,8 @@ fn a_save_with_no_cup_team_is_refused_but_a_named_team_is_checked() {
     let file = stock_file(PesVersion::Pes21);
     fs::write(sandbox.path("EDIT"), file.to_bytes(&TEST_SALT).unwrap()).unwrap();
 
-    check(&sandbox, "EDIT", &[]).assert_refused(2, &["no cup team"]);
+    check(&sandbox, "EDIT", &[])
+        .assert_refused(2, &["the save holds no cup team (ids 701 to 920)"]);
 
     // The premise: team 101 (the fixture's 701 moved down) is read when named.
     assert!(

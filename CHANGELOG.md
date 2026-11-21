@@ -14,7 +14,7 @@
   same case does.
 - **Save editor**: a save holding no cup team (ids 701 to 920), such as one made from the stock
   game, opened to an empty list with no reason given. It now shows a warning saying so, and the
-  command line's `check-aatf` and `export-toml --all-teams` refuse it.
+  command line's `check-aatf`, `export-toml --all-teams` and `export-teams-list` refuse it.
 
 ### Other stuff
 

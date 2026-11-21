@@ -19050,3 +19050,8 @@ Plan: `plans/save_editor.md`, "The player view", General info's Nation; SE-GUI-1
 Decision: opening a save whose teams all lie outside 701 to 920 raises a warning notice, `This save holds no cup team (ids 701 to 920).`; `check-aatf` without `--teams` and `export-toml --all-teams` refuse such a save with the same words.
 Why: the maintainer's PES 2021 save had become a stock one, and the window opened it to an empty list with Player and Team greyed and no reason given, which read as a bug; a clean `check-aatf` also prints nothing, so on a stock save it read as a legal one. A refusal, not a warning, on the command line, because a script reading its exit code would otherwise take the wrong file for a clean check.
 Plan: `plans/save_editor.md`, "Editing UI", the bullet "Only the cup's teams are shown".
+
+## 2026-11-21 — save_editor — `export-teams-list` refuses a save holding no cup team too
+Decision: `export-teams-list` refuses a save holding no cup team with the words `check-aatf` and `export-toml --all-teams` use, before it reads or writes `teams_list.txt`.
+Why: on such a save it merged nothing and printed how many rows it kept, which reads as a list already up to date; the three commands that read every cup team guard the same mistake, a stock save opened for a cup one, so they keep one rule.
+Plan: `plans/save_editor.md`, "Editing UI", the bullet "Only the cup's teams are shown"; SE-TL-06.

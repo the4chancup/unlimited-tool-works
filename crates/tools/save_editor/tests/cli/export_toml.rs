@@ -98,7 +98,7 @@ fn all_teams_on_a_save_with_no_cup_team_is_refused_and_writes_nothing() {
         "--out-dir",
         &sandbox.arg("teams"),
     ]);
-    run.assert_refused(2, &["no cup team"]);
+    run.assert_refused(2, &["the save holds no cup team (ids 701 to 920)"]);
     assert!(!sandbox.path("teams").exists(), "no folder created");
 }
 

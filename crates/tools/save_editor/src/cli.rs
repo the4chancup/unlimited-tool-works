@@ -560,6 +560,11 @@ fn export_teams_list(
     report: &mut Report,
 ) -> Result<(), CliError> {
     let session = open(&args.save)?;
+    if session.cup_team_ids().next().is_none() {
+        return Err(invalid(anyhow!(
+            "the save holds no cup team (ids 701 to 920)"
+        )));
+    }
     // The working list is read before the first finding: a refusal emits nothing, and a
     // list that cannot be read is one (the upstream list is never merged over it).
     let path = data_dir.map(|dir| dir.join(teams_list::FILE_NAME));
