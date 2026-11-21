@@ -17,6 +17,13 @@ mod read;
 #[cfg(not(target_arch = "wasm32"))]
 pub use read::{Bundle, BundleFile, BundleStep, read_bundle};
 
+/// The session folder: every window's record written to disk as it
+/// happens, and a kept folder turned into a bundle.
+#[cfg(not(target_arch = "wasm32"))]
+mod session;
+#[cfg(not(target_arch = "wasm32"))]
+pub use session::{SessionEnd, SessionHeader, SessionMessage, SessionWriter, session_bundle};
+
 /// One tool's recorded steps, kept inputs and kept outputs so far.
 /// `Recorder` shares it: every clone records into the same journal.
 #[derive(Clone)]
@@ -296,7 +303,7 @@ mod bundle {
     use std::path::Path;
 
     use anyhow::Context;
-    use serde::Serialize;
+    use serde::{Deserialize, Serialize};
     use sha2::{Digest, Sha256};
 
     use super::{Journal, KeptFile};
@@ -332,46 +339,46 @@ mod bundle {
         outputs: Vec<FileDoc>,
     }
 
-    /// One `[[step]]` row: seconds since the recorder's start, the tool
+    /// One `[[step]]` row: seconds since the record's start, the tool
     /// and its line, and the typed change a replay applies when the step
-    /// carried one.
-    #[derive(Serialize)]
-    struct StepDoc {
+    /// carried one. `Deserialize` for the session folder's journal,
+    /// which holds the same rows.
+    #[derive(Serialize, Deserialize)]
+    pub(super) struct StepDoc {
         /// Seconds since the recorder was made.
-        seconds: f64,
+        pub(super) seconds: f64,
         /// The recording tool's id.
-        tool: &'static str,
-        /// The step's line, the home folder written as `~`.
-        what: String,
+        pub(super) tool: String,
+        /// The step's line; in a bundle, the home folder written as `~`.
+        pub(super) what: String,
         /// The step's typed change; absent on a note (an op holds no
         /// path, so it is never redacted).
         #[serde(skip_serializing_if = "Option::is_none")]
-        op: Option<toml::Table>,
+        pub(super) op: Option<toml::Table>,
     }
 
     /// One `[[input]]`/`[[output]]` row: what the kept file is and where
-    /// it sits in the zip.
-    #[derive(Serialize)]
-    struct FileDoc {
+    /// it sits in the bundle or session folder.
+    #[derive(Serialize, Deserialize)]
+    pub(super) struct FileDoc {
         /// The tool that kept it.
-        tool: &'static str,
-        /// Its path, the home folder written as `~`.
-        path: String,
+        pub(super) tool: String,
+        /// Its path; in a bundle, the home folder written as `~`.
+        pub(super) path: String,
         /// Its byte length.
-        size: usize,
+        pub(super) size: usize,
         /// Its SHA-256, lowercase hex.
-        sha256: String,
-        /// Its name in the zip (`<dir>/<index>-<file name>`).
-        entry: String,
+        pub(super) sha256: String,
+        /// Its name in the zip or folder (`<dir>/<index>-<file name>`).
+        pub(super) entry: String,
     }
 
-    /// `kept`'s zip entry under `dir` (`inputs`/`outputs`): the index and
+    /// `path`'s entry under `dir` (`inputs`/`outputs`): the index and
     /// the file name, so two files of one name never collide.
-    fn entry(dir: &str, index: usize, kept: &KeptFile) -> String {
-        let name = kept
-            .path
+    pub(super) fn entry(dir: &str, index: usize, path: &Path) -> String {
+        let name = path
             .file_name()
-            .unwrap_or_else(|| kept.path.as_os_str())
+            .unwrap_or(path.as_os_str())
             .to_string_lossy();
         format!("{dir}/{index}-{name}")
     }
@@ -400,11 +407,11 @@ mod bundle {
             .iter()
             .enumerate()
             .map(|(index, kept)| FileDoc {
-                tool: kept.tool,
+                tool: kept.tool.to_owned(),
                 path: redact_home(&kept.path.display().to_string(), home),
                 size: kept.bytes.len(),
                 sha256: sha256(&kept.bytes),
-                entry: entry(dir, index, kept),
+                entry: entry(dir, index, &kept.path),
             })
             .collect()
     }
@@ -432,7 +439,7 @@ mod bundle {
                 .iter()
                 .map(|step| StepDoc {
                     seconds: step.seconds,
-                    tool: step.tool,
+                    tool: step.tool.to_owned(),
                     what: redact_home(&step.what, home),
                     op: step.op.clone(),
                 })
@@ -490,10 +497,10 @@ mod bundle {
         };
         put("journal.toml", doc.as_bytes())?;
         for (index, kept) in journal.inputs.iter().enumerate() {
-            put(&entry("inputs", index, kept), &kept.bytes)?;
+            put(&entry("inputs", index, &kept.path), &kept.bytes)?;
         }
         for (index, kept) in journal.outputs.iter().enumerate() {
-            put(&entry("outputs", index, kept), &kept.bytes)?;
+            put(&entry("outputs", index, &kept.path), &kept.bytes)?;
         }
         put("words.txt", redact_home(words, home).as_bytes())?;
         for (name, bytes) in files {
