@@ -125,8 +125,12 @@ run's findings (`4cc-studio-temp/str_re/out/findings.md`).
     carry the game's pixels, and a picture without the grain is painted. Next: the apk
     format worked out from the maintainer's PES Apk Bin Tool (`C:/Data/4cc/0Tools/PES Apk
     Bin Tool V1`, .NET; its `lib/APK.dll` and `TXDT_Compression.dll` hold the format) into
-    a plan section for a lib crate the suite will read every apk with eventually, with
-    where the pitch's rectangle in each version's atlas comes from; then the code.
+    a plan section for a lib crate that reads and writes apk files (the maintainer,
+    2026-11-21: members replace a DLC's textures with it), with where the pitch's rectangle
+    in each version's atlas comes from; then the code. The research runs in two: reading
+    (SWE-2, `.tmp/apk_re/brief_apk.md`), then what writing needs once its findings land
+    (the LZSS encoder, every size and offset a changed texture moves, alignment, any
+    checksum; a file rebuilt unchanged byte for byte, and a replaced texture seen in game).
 
 Most open steps below wait only on a check in the game or the built window that the lead's
 harness makes ("Pending looks" below), not on the maintainer.

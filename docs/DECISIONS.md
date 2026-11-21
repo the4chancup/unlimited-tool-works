@@ -19155,3 +19155,13 @@ screen"): the program still ships no Konami texture, and a member without the PE
 the painted pitch. The game's texture has its grain, so a flat-band picture is ours.
 Plan: plans/save_editor.md "Tactics editor" (the paragraph "When the PES folder is set, the
 game's own pitch texture"); worklog, the list after the detour, item 13.
+
+## 2026-11-21 — libs — the apk library writes apk files as well as reading them
+Decision (the maintainer): the lib crate planned for PES's apk format (the texture packs inside
+files such as `common/menu/general/gamePlan.bin`) writes apk files too, not only reads them, so
+the community can replace a DLC's textures with it.
+Why: the format's first use is the Save editor reading the game's pitch texture, while the
+members who build a cup's DLC replace the game's textures in these files with other tools today
+(the PES Apk Bin Tool among them), outside the suite.
+Plan: the crate's plan section is written from the format research (worklog, the list after the
+detour, item 13); until then that item holds the requirement.
