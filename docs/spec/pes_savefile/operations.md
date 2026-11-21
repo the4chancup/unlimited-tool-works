@@ -408,7 +408,7 @@ kit_slots = [{ number = 0, binding = 0 }, ...]   # PES 17 only; as the game stor
 
 [team.edit_flags]
 name = true
-short_name = false              # PES 15 only
+short_name = false              # PES 14 and 15
 stadium = false                 # PES 20 and later
 strip = false                   # PES 17 only
 

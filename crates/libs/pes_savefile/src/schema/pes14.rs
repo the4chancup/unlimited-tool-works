@@ -599,11 +599,23 @@ pub(crate) static APPEARANCE: RecordSchema<PlayerField, PlayerText> = RecordSche
 pub(crate) static TEAM: RecordSchema<TeamField, TeamText> = RecordSchema {
     size: 316,
     // The id is the low 16 bits of the u32 at +0; the high 16 are 0xffff.
-    fields: &[FieldSpec {
-        field: TeamField::Id,
-        bit_offset: 0,
-        bit_width: 16,
-    }],
+    fields: &[
+        FieldSpec {
+            field: TeamField::Id,
+            bit_offset: 0,
+            bit_width: 16,
+        },
+        FieldSpec {
+            field: TeamField::EditedName,
+            bit_offset: 0x0A * 8,
+            bit_width: 1,
+        },
+        FieldSpec {
+            field: TeamField::EditedShortName,
+            bit_offset: 0x0A * 8 + 1,
+            bit_width: 1,
+        },
+    ],
     split: &[],
     arrays: &[],
     texts: &[

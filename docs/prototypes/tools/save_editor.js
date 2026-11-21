@@ -3044,6 +3044,28 @@ const RULESETS = {
       cards: 48, a_positions: 13, free: {} },
   ],
     card_groups: {}, free_specials: [] },
+  akko7: { label: "Akko League VII", logo: "assets/logos/akko7.png",
+    page: "https://implyingrigged.info/wiki/Akko_League_VII:_/fluff/_Bottomed_Girls", tiers: [
+    { id: "gold", label: "Gold", rate: 99, form: 8, injury_resistance: 8, weak_foot: { usage: 2, accuracy: 4 },
+      cards: 6, a_positions: 1, free: { tricks: 3, com: 2 } },
+    { id: "silver", label: "Silver", rate: 92, form: 8, injury_resistance: 8, weak_foot: { usage: 2, accuracy: 4 },
+      cards: 5, a_positions: 1, free: { tricks: 3, com: 1 } },
+    { id: "bronze", label: "Bronze", rate: 85, form: 8, injury_resistance: 8, weak_foot: { usage: 2, accuracy: 4 },
+      cards: 4, a_positions: 1, free: { tricks: 2, com: 1 } },
+    { id: "goalkeeper", label: "Goalkeeper", rate: 77, form: 4, injury_resistance: 1, weak_foot: { usage: 2, accuracy: 2 },
+      when: { positions: ["GK"] },
+      cards: 2, a_positions: 1, free: {} },
+    { id: "regular", label: "Regular", rate: 77, form: 4, injury_resistance: 1, weak_foot: { usage: 2, accuracy: 2 },
+      cards: 3, a_positions: 1, free: { tricks: 2 } },
+  ],
+    card_groups: { tricks: ["scissors_feint", "flip_flap", "marseille_turn", "sombrero",
+      "cut_behind_and_turn"] },
+    free_specials: [ { card: "captaincy", captain: true } ],
+    heights: { brackets: [{ id: "manlet", up_to: 175 }, { id: "mid", exactly: 180 },
+        { id: "tall", exactly: 185 }, { id: "giant", exactly: 194 }],
+      systems: [{ id: "green", any_min: 194, quotas: { giant: 6, tall: 6, mid: 5, manlet: 6 } },
+        { id: "red", quotas: { giant: 0, tall: 10, mid: 7, manlet: 6 } }],
+      allowance: p => p.height === 189 && p.positions.registered === "GK" ? 4 : 0 } },
   spring26: { label: "4cc Spring 26", logo: "assets/logos/spring26.png",
     page: "https://implyingrigged.info/wiki/2026_4chan_Spring_Babby_Cup", tiers: [
     { id: "gold", label: "Gold", rate: 99, form: 8, injury_resistance: 3, weak_foot: { usage: 2, accuracy: 4 },
@@ -3156,7 +3178,7 @@ const RULESETS = {
     free_specials: [ { card: "captaincy", captain: true } ] },
 };
 // The rulesets built into the binary, in the dropdown's order.
-const EMBEDDED = ["official", "spring26", "vgl27", "vgl26", "vtl11", "vtl10", "dbc7"];
+const EMBEDDED = ["akko7", "official", "spring26", "vgl27", "vgl26", "vtl11", "vtl10", "dbc7"];
 // What the draft's stand-in for the file picker offers to Import rules file:
 // a clean file, one named like a built-in ruleset, and two the loader refuses
 // (8.5's broken samples, their findings as Rules::load reports them).

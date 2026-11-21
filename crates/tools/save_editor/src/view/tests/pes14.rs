@@ -2000,3 +2000,64 @@ fn a_pes14_badge_shows_the_starters_overall_by_pes14s_formula() {
         .expect("a number at starter 8's badge's right end");
     assert_eq!(number.galley.job.text, "75", "starter 8's overall at LMF");
 }
+
+// A rename on PES 2014 reaches the record's name flag, the bit the game
+// reads a stored name by: byte 0x0A's bit 0, clear on the untouched
+// fixture.
+#[test]
+fn a_pes14_team_rename_writes_the_name_flag() {
+    use pes_savefile::container::SaveContainer;
+    use pes_savefile::schema::schema_for;
+
+    /// Team 701's record bytes in `save`'s decrypted payload.
+    fn team_record(save: &[u8]) -> Vec<u8> {
+        let container = SaveContainer::decrypt(save).expect("the save decrypts");
+        let schema = schema_for(PesVersion::Pes14);
+        let count = u16::from_le_bytes(
+            container.payload[schema.teams.count_offset..schema.teams.count_offset + 2]
+                .try_into()
+                .expect("u16"),
+        ) as usize;
+        (0..count)
+            .map(|i| {
+                container.payload[schema.teams.offset + i * schema.team.size
+                    ..schema.teams.offset + (i + 1) * schema.team.size]
+                    .to_vec()
+            })
+            .find(|rec| u16::from_le_bytes(rec[..2].try_into().expect("id")) == 701)
+            .expect("team 701's record")
+    }
+
+    let path = pes14_fixture_plain("pes14_rename_flag");
+    assert_eq!(
+        team_record(&std::fs::read(&path).unwrap())[0x0A] & 1,
+        0,
+        "premise: the fixture's name flag is clear"
+    );
+
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut window = Headless::new();
+    open_team_view(&mut window, &mut view, 701);
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let name = display_name(&team_entry(&view, 701).name);
+    let field = nodes
+        .iter()
+        .find(|node| node.role() == Role::TextInput && node.value() == Some(name.as_str()))
+        .expect("the team's Name field");
+    click(&mut window, field, &mut view);
+    type_text(&mut window, &mut view, "RENAMED");
+    assert!(
+        team_entry(&view, 701).edit_flags.name,
+        "the rename sets the name flag"
+    );
+    window.frame(vec![key(egui::Key::S, egui::Modifiers::CTRL, true)], |ui| {
+        show(ui, &mut view, &|| Vec::new())
+    });
+
+    assert_eq!(
+        team_record(&std::fs::read(&path).unwrap())[0x0A] & 1,
+        1,
+        "the written save's team record holds 0x0A:0"
+    );
+}
