@@ -27,12 +27,11 @@ scripts in `C:/Data/4cc/0Tools/Tips/`). Their plans are stubs, to be finished fr
 run's findings (`4cc-studio-temp/str_re/out/findings.md`).
 
 **After the detour**, in this order:
-1. The Nation list (the maintainer, 2026-11-17): it opens already scrolled to the held nation,
-   where it mostly scrolls down to it from the top; typing a nation's name picks it as an ID
-   does (members rarely know the IDs); Escape puts the old nation back. With it, Astra's three
-   code fixes from the General info review (rulings "geninfo A1": the typed row takes the
-   keyboard focus, a Captain click test, one nation lookup a draw), SE-GUI-106 cited by the
-   nation tests.
+1. The Nation list: done (merges `467790ab`, `1b9c5f27`; SWE-2 round S1n). It opens on the
+   held nation, a typed name picks as an ID does, Escape puts the old nation back, and one
+   opening is one undo entry; the General info review's fixes (rulings "geninfo A1") with it.
+   Seen in the release build on the PES 2021 fixture (2026-11-21:
+   opened on 231, `ital` picked 215, Escape put 231 back with nothing left to undo).
 2. 0.0.2-nostretch's slices.
 3. Earlier sessions in Report a problem: the repro bundles issue's slice (5).
 4. Review rounds owed: 0.0.2-similar's, and every Carbon round a 0.0.2 step still owes (Report a problem has had its whole review).
@@ -3462,6 +3461,14 @@ pruned when their phase closes; they stay in git history. A question only the ma
 can answer is not an issue: it goes to `docs/maintainer/questions.html`, and an issue that waits on one
 points there.
 
+- open (2026-11-21) — The maintainer's PES 2021 save opens with an empty team list. The
+  release build at `1b9c5f27`, File > PES 2021, opened
+  `Documents\KONAMI\eFootball PES 2021 SEASON UPDATE\...\save\EDIT00000000` (11,011,039 bytes,
+  2026-11-18): the title named it, "All teams" listed no row, the Player and Team menus stayed
+  grey, and `check-aatf` on the same file printed nothing. The test fixture (10,996,712 bytes)
+  opened in the same window listed every team. Not yet known: whether the save holds no team
+  the editor reads, or whether the read drops them silently; either way, a save that opens to
+  nothing with no message is the bug. Read it only; never press Save on it.
 - open (2026-11-21) — A trial: can SubQ Snap tell a flaky test from a steady one, as it tells
   a test that proves its scenario from one that does not (`citation_audit.py`)? The question
   per test: does its outcome depend on anything outside its inputs (the machine's free memory,
