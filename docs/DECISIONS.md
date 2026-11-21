@@ -19165,3 +19165,16 @@ members who build a cup's DLC replace the game's textures in these files with ot
 (the PES Apk Bin Tool among them), outside the suite.
 Plan: the crate's plan section is written from the format research (worklog, the list after the
 detour, item 13); until then that item holds the requirement.
+
+## 2026-11-21 — tools — the PES file explorer reads, edits or replaces any PES file, as far as is practical
+Decision (the maintainer): the explorer tool built from CPGE V0.7.1 and Jenkey's PES File
+Explorer 2014 is a full PES file explorer: it browses a version's CPKs and reads, edits or
+replaces any file inside them, as far as is practical. Medium priority: its plan follows the
+apk crate's. From it the lead took one more step: members replace a DLC's textures through
+the explorer, so the apk crate's writer has its front end there, not a command of its own.
+Why: members use those two tools today to look inside the game's and the DLC's archives and
+swap files, outside the suite, which is meant to take in every tool the community uses. A
+texture replaced in an apk pack is one of the files such an explorer edits, so a separate
+command for it would be a second front end to keep.
+Plan: plans/core/development_plan.md "Unscheduled tools" (the PES file explorer); plans/libs/apk.md
+(its users); worklog, the list after the detour, item 14.

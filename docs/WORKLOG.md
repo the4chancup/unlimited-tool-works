@@ -135,12 +135,14 @@ run's findings (`4cc-studio-temp/str_re/out/findings.md`).
     apk files; its `PesTools.dll` is .NET under ConfuserEx, method bodies encrypted but class
     and field layouts readable (the apk ones in `.tmp/apk_re/cpge/`): a decoder's output is
     checked against what CPGE exports from the same file.
-14. A PES file explorer tool (the maintainer, 2026-11-21: "the base for yet another tool"),
-    from two tools: Jenkey's PES File Explorer for PES 2014
+14. The PES file explorer (`plans/core/development_plan.md` "Unscheduled tools"), medium
+    priority, from two tools: Jenkey's PES File Explorer for PES 2014
     (`C:/Data/4cc/0Tools/S_File_Explorer_2014`; native and BoxedApp-packed, so evidence by
     what it does, not by its code; it browses CPKs and edits DDS and apk textures) and CPGE
     V0.7.1 (above; besides apk it handles `.str`, FTEX, FPK, Fox files, FMDL and CPKs). Its
-    scope and plan come after the apk crate's plan (item 13), which it builds on.
+    plan comes after the apk crate's (item 13), which it builds on. A survey of every tool
+    in `C:/Data/4cc/0Tools/` (SWE-2, `.tmp/tools_survey/`) names what else the suite should
+    take in and what the explorer should cover.
 
 Most open steps below wait only on a check in the game or the built window that the lead's
 harness makes ("Pending looks" below), not on the maintainer.

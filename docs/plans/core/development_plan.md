@@ -799,6 +799,13 @@ Tools the suite will take in, with no phase or plan yet:
   Rigdio itself. Not published: its author wants to work on it further before publishing the
   source (2026-10-18), so it waits. Nothing scheduled depends on it, and until then what it does
   is known only from the forks' READMEs.
+- **PES file explorer**: browses a PES version's CPKs, an install's and a DLC's, and reads,
+  edits or replaces any file inside them, as far as is practical. A file in a format the
+  suite's crates read (textures, models, the apk menu packs, the `.str` texts, Fox files) is
+  shown and edited; any other file is at least extracted and replaced. It covers what
+  members do today with two community tools: CPGE V0.7.1 and Jenkey's PES File Explorer 2014
+  (`C:/Data/4cc/0Tools/`). It is built on the crates, the apk crate first (`libs/apk.md`),
+  and its plan follows that crate's.
 
 Not a tool of the suite but a way to run it, also with no phase yet:
 
