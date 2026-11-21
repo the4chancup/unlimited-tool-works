@@ -1455,11 +1455,11 @@ fn a_pes14_player_with_an_appearance_record_edits_the_look_controls() {
 // A PES 2014 badge holds the starter's overall at his slot's position by
 // PES 2014's own formula, as the game's "Position / Overall Rating" does:
 // J. WALTERS (42810), IRELAND's starter 8, fields at LMF, which he is
-// rated A at — each ability less 25, times its weight: dribbling 52 x
-// .26 + speed 56 x .26 + explosive power
-// 51 x .23 + ball control 49 x .16 + stamina 60 x .14 + lofted pass
-// 40 x .13 + attacking prowess 55 x .07 + low pass 45 x .07 + swerve
-// 40 x .04 = 13.52 + 14.56 + 11.73 + 7.84 + 8.4 + 5.2 + 3.85 + 3.15 +
+// rated A at — each ability less 25, times its weight: dribbling 77
+// less 25 = 52, x .26, + speed 56 x .26 + explosive power 51 x .23 +
+// ball control 49 x .16 + stamina 60 x .14 + lofted pass 40 x .13 +
+// attacking prowess 55 x .07 + low pass 45 x .07 + swerve 40 x .04
+// = 13.52 + 14.56 + 11.73 + 7.84 + 8.4 + 5.2 + 3.85 + 3.15 +
 // 1.6 = 69.85, floor(69.85 + .5) = 70, plus 5 for the A: 75.
 #[test]
 fn a_pes14_badge_shows_the_starters_overall_by_pes14s_formula() {

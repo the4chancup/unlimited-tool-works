@@ -175,8 +175,9 @@ pub(super) fn roster_rows<'a>(
 /// The `RosterSlot` of the roster slot holding `player`: his display name
 /// as the player list shows it, his raw name for the colour-coded rows,
 /// his registered position, the slot's shirt `number` (the pitch's PES
-/// 2014 shirt), the thirteen per-position overalls by `version`'s own
-/// formula the badge's number and the drag's position pick read, and the
+/// 2014 shirt), the thirteen per-position overalls `version`'s own
+/// formula gives, which the badge's number and the drag's position pick
+/// read, and the
 /// positions he is rated A or B at, which a held marker lights. `None`,
 /// an empty slot, gives the empty row: "" names, `None` position,
 /// number, overalls and ratings.
