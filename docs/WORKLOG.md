@@ -26,7 +26,10 @@ editor (replacing the PES2021 STR Editor) and the Gametips editor (replacing the
 scripts in `C:/Data/4cc/0Tools/Tips/`). Their plans are stubs, to be finished from a lookup
 run's findings (`4cc-studio-temp/str_re/out/findings.md`).
 
-**After the detour**, in this order:
+**The detour is over**: Build 2, `0.0.2-pes14.2`, was published 2026-11-21. **The main goal
+now is item 6, the Compiler's view for the VGL organizer** (the maintainer, 2026-11-21), its
+draft looked at again first; the Export upgrader's view may follow in a later build. The
+other items run beside it. **After the detour**, in this order:
 1. The Nation list: done (merges `467790ab`, `1b9c5f27`; SWE-2 round S1n). It opens on the
    held nation, a typed name picks as an ID does, Escape puts the old nation back, and one
    opening is one undo entry; the General info review's fixes (rulings "geninfo A1") with it.
