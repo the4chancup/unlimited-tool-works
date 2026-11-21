@@ -7103,10 +7103,11 @@ function paintPitch(g, t, f0, live) {
     g.fillStyle = POS_COLOUR(shown); g.font = MARKER.badgeFont + "px " + FONT_BODY;
     g.fillText(shown, bl + MARKER.textInset, y + 1);
     // His overall at the slot's position at the badge's right end, where the
-    // game draws it, white as the game's.
-    if (p && version() !== 14) {
+    // game draws it, white as the game's; PES 2014's by its own formula.
+    if (p) {
       g.fillStyle = "#ffffff"; g.textAlign = "right";
-      g.fillText(String(overallAt(p, shown)), bl + MARKER.badgeW - MARKER.textInset, y + 1);
+      g.fillText(String(version() === 14 ? overallAt14(p, shown) : overallAt(p, shown)),
+        bl + MARKER.badgeW - MARKER.textInset, y + 1);
       g.textAlign = "left";
     }
     // Live AATF's cross for a FieldedNotA about him at this spot, over his
@@ -7663,6 +7664,49 @@ function tacticsTab(t) {
 }
 
 // ---- PES 2014's Gameplan (plans/pes14.md step 8) ----
+// PES 2014's overall at a position (plans/pes14.md "What the game's code says"):
+// each weighted ability's (value - 25) times its weight, the sum rounded a half
+// up, plus the registered position's bonus or the playable grade's, held to 40..109.
+const W14_SIDE_BACK = { dribbling: .15, lofted_pass: .15, defensive_prowess: .15, speed: .15,
+  explosive_power: .15, ball_winning: .14, stamina: .13, body_control: .12, jump: .12,
+  ball_control: .10, attacking_prowess: .06 };
+const W14_SIDE_MID = { dribbling: .26, speed: .26, explosive_power: .23, ball_control: .16,
+  stamina: .14, lofted_pass: .13, attacking_prowess: .07, low_pass: .07, swerve: .04 };
+const W14_WING = { ball_control: .22, dribbling: .22, attacking_prowess: .18, speed: .16,
+  explosive_power: .16, finishing: .12, lofted_pass: .10, body_control: .06, stamina: .06,
+  low_pass: .05, kicking_power: .05 };
+const OVERALL14 = {
+  GK: [7, 5, 3, { goalkeeping: .52, catching: .52, body_control: .12, jump: .12 }],
+  CB: [7, 5, 2, { defensive_prowess: .27, ball_winning: .27, body_control: .21, jump: .21,
+    heading: .20, speed: .11, stamina: .10 }],
+  LB: [8, 4, 2, W14_SIDE_BACK], RB: [8, 4, 2, W14_SIDE_BACK],
+  DMF: [8, 4, 2, { lofted_pass: .20, ball_control: .19, low_pass: .19, dribbling: .16,
+    stamina: .15, body_control: .14, swerve: .13, attacking_prowess: .07,
+    defensive_prowess: .07, jump: .05, ball_winning: .03, speed: .03, explosive_power: .03 }],
+  CMF: [7, 5, 3, { ball_control: .25, dribbling: .25, low_pass: .25, lofted_pass: .22,
+    stamina: .18, explosive_power: .06, attacking_prowess: .05, body_control: .05, speed: .04,
+    defensive_prowess: .03 }],
+  LMF: [7, 5, 3, W14_SIDE_MID], RMF: [7, 5, 3, W14_SIDE_MID],
+  AMF: [7, 5, 3, { ball_control: .23, dribbling: .23, low_pass: .23, finishing: .18,
+    attacking_prowess: .15, lofted_pass: .15, explosive_power: .07, speed: .05,
+    body_control: .05, stamina: .03 }],
+  LWF: [9, 4, 2, W14_WING], RWF: [9, 4, 2, W14_WING],
+  SS: [7, 5, 3, { ball_control: .20, dribbling: .20, explosive_power: .20,
+    attacking_prowess: .16, finishing: .15, low_pass: .10, lofted_pass: .10, speed: .10,
+    body_control: .07, kicking_power: .06, stamina: .04 }],
+  CF: [7, 5, 3, { finishing: .38, attacking_prowess: .33, ball_control: .25, dribbling: .15,
+    body_control: .10, speed: .05, explosive_power: .05, heading: .03, jump: .03 }],
+};
+function overallAt14(p, pos) {
+  const [registered, a, b, weights] = OVERALL14[pos];
+  const sum = Object.entries(weights).reduce((acc, [k, w]) => acc + (p.stats[k] - 25) * w, 0);
+  // The PES 14 sample carries no playable grades: each reads as C.
+  const grade = (p.positions.playable || {})[pos];
+  const bonus = p.positions.registered === pos ? registered
+    : grade === "A" ? a : grade === "B" ? b : 0;
+  return Math.max(40, Math.min(109, Math.floor(sum + 0.5) + bonus));
+}
+
 // A player on PES 2014's pitch, as the game draws him: a white shirt, his
 // number on it in black, its foot at `bottom` above his badge. The shirt's
 // size is the game's at the pitch's scale (the game's pitch is 322 wide at
