@@ -60,6 +60,27 @@ impl SessionHeader {
     }
 }
 
+/// A kept file's bytes as the session's writer gets them: the file
+/// itself, or its packed form — what a tool's own pack produced, which
+/// compresses where the file does not — beside the file's own size and
+/// SHA-256. The writer stores a packed form compressed; `read_bundle`
+/// rebuilds the file and checks it against `size` and `sha256`, which
+/// are the file's, never the packed form's.
+#[derive(Debug, PartialEq)]
+pub enum SessionFile {
+    /// The file's bytes, as the recorder keeps them.
+    Raw(Arc<[u8]>),
+    /// The file's packed form beside its own size and SHA-256.
+    Packed {
+        /// The packed form's bytes.
+        packed: Arc<[u8]>,
+        /// The file's byte length.
+        size: usize,
+        /// The file's SHA-256, lowercase hex.
+        sha256: String,
+    },
+}
+
 /// One thing a window's session did, sent to whoever writes the folder:
 /// the recorder's step, kept input or kept output as data.
 pub enum SessionMessage {
@@ -80,8 +101,8 @@ pub enum SessionMessage {
         tool: String,
         /// The path the file was read from.
         path: PathBuf,
-        /// The file's bytes, kept the way the recorder keeps them.
-        bytes: Arc<[u8]>,
+        /// The file, or its packed form for the folder.
+        file: SessionFile,
     },
     /// A file kept as it was written, as `Recorder::keep_output`
     /// records it: a later write to one tool and path replaces it.
@@ -90,8 +111,8 @@ pub enum SessionMessage {
         tool: String,
         /// The path the file was written to.
         path: PathBuf,
-        /// The file's bytes, kept the way the recorder keeps them.
-        bytes: Arc<[u8]>,
+        /// The file, or its packed form for the folder.
+        file: SessionFile,
     },
 }
 
@@ -173,6 +194,21 @@ struct FileMeta {
     tool: String,
     /// The file's path, spelled as the journal spells it.
     path: String,
+    /// Present when the raw part is the file's packed form: the file's
+    /// own size and SHA-256 ride beside it. A frame with no `packed`
+    /// table decodes as `SessionFile::Raw`.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    packed: Option<PackedMeta>,
+}
+
+/// The `[packed]` table of a `FileMeta`: the file's own facts, since the
+/// raw part is then the packed form's bytes.
+#[derive(Serialize, Deserialize)]
+struct PackedMeta {
+    /// The file's byte length.
+    size: usize,
+    /// The file's SHA-256, lowercase hex.
+    sha256: String,
 }
 
 /// `frame` written to `out`: a kind byte, then the body's length
@@ -248,29 +284,43 @@ fn frame_body(frame: &SessionFrame) -> io::Result<(u8, Vec<u8>)> {
                 &[],
             )?,
         )),
-        SessionFrame::Message(SessionMessage::Input { tool, path, bytes }) => Ok((
-            KIND_INPUT,
-            encode(
-                &FileMeta {
-                    tool: tool.clone(),
-                    path: path.display().to_string(),
-                },
-                bytes,
-            )?,
-        )),
-        SessionFrame::Message(SessionMessage::Output { tool, path, bytes }) => Ok((
-            KIND_OUTPUT,
-            encode(
-                &FileMeta {
-                    tool: tool.clone(),
-                    path: path.display().to_string(),
-                },
-                bytes,
-            )?,
-        )),
+        SessionFrame::Message(SessionMessage::Input { tool, path, file }) => {
+            Ok((KIND_INPUT, file_body(tool, path, file)?))
+        }
+        SessionFrame::Message(SessionMessage::Output { tool, path, file }) => {
+            Ok((KIND_OUTPUT, file_body(tool, path, file)?))
+        }
         SessionFrame::Closed => Ok((KIND_CLOSED, Vec::new())),
         SessionFrame::Crashed => Ok((KIND_CRASHED, Vec::new())),
     }
+}
+
+/// `file`'s frame body: the `FileMeta` (its `packed` table set on a
+/// `Packed` file) as TOML, then the file's bytes raw — the packed form's
+/// on a `Packed`.
+fn file_body(tool: &str, path: &Path, file: &SessionFile) -> io::Result<Vec<u8>> {
+    let (packed, raw) = match file {
+        SessionFile::Raw(bytes) => (None, &bytes[..]),
+        SessionFile::Packed {
+            packed,
+            size,
+            sha256,
+        } => (
+            Some(PackedMeta {
+                size: *size,
+                sha256: sha256.clone(),
+            }),
+            &packed[..],
+        ),
+    };
+    encode(
+        &FileMeta {
+            tool: tool.to_owned(),
+            path: path.display().to_string(),
+            packed,
+        },
+        raw,
+    )
 }
 
 /// A frame body: `meta` as TOML behind its own little-endian length,
@@ -312,11 +362,19 @@ fn decode_frame(kind: u8, body: &[u8]) -> io::Result<SessionFrame> {
         KIND_INPUT | KIND_OUTPUT => {
             let (meta, raw) = split_body(body)?;
             let meta: FileMeta = toml::from_str(meta).map_err(invalid)?;
-            let (tool, path, bytes) = (meta.tool, PathBuf::from(meta.path), Arc::from(raw));
+            let file = match meta.packed {
+                Some(packed) => SessionFile::Packed {
+                    packed: Arc::from(raw),
+                    size: packed.size,
+                    sha256: packed.sha256,
+                },
+                None => SessionFile::Raw(Arc::from(raw)),
+            };
+            let (tool, path) = (meta.tool, PathBuf::from(meta.path));
             Ok(SessionFrame::Message(if kind == KIND_INPUT {
-                SessionMessage::Input { tool, path, bytes }
+                SessionMessage::Input { tool, path, file }
             } else {
-                SessionMessage::Output { tool, path, bytes }
+                SessionMessage::Output { tool, path, file }
             }))
         }
         KIND_CLOSED => Ok(SessionFrame::Closed),
@@ -496,13 +554,13 @@ impl SessionWriter {
                 };
                 append_block(&journal, &block)?;
             }
-            SessionMessage::Input { tool, path, bytes } => {
+            SessionMessage::Input { tool, path, file } => {
                 let index = self.inputs;
                 self.inputs += 1;
-                let row = keep_file(&folder, "inputs", index, tool, path, bytes)?;
+                let row = keep_file(&folder, "inputs", index, tool, path, file)?;
                 append_block(&journal, &InputBlock { input: vec![row] })?;
             }
-            SessionMessage::Output { tool, path, bytes } => {
+            SessionMessage::Output { tool, path, file } => {
                 let index = match self
                     .outputs
                     .iter()
@@ -514,7 +572,7 @@ impl SessionWriter {
                         self.outputs.len() - 1
                     }
                 };
-                let row = keep_file(&folder, "outputs", index, tool, path, bytes)?;
+                let row = keep_file(&folder, "outputs", index, tool, path, file)?;
                 append_block(&journal, &OutputBlock { output: vec![row] })?;
             }
         }
@@ -635,28 +693,56 @@ impl SessionWriter {
     }
 }
 
-/// `bytes` written under `folder` as `<dir>/<index>-<file name>`
-/// through `replace_file` — the row then appended is for a file
-/// already whole in place.
+/// `file` written under `folder` through `replace_file` — the row then
+/// appended is for a file already whole in place. A raw file lands as
+/// `<dir>/<index>-<file name>`; a packed form as
+/// `<dir>/<index>-<file name>.packed`, zlib-compressed (the pack exists
+/// because the file itself does not compress, and the compression runs
+/// here, off the window's thread). The row's `size`/`sha256` are the
+/// kept file's own — a packed row's come from the `SessionFile`, never
+/// recomputed from the packed form.
 fn keep_file(
     folder: &Path,
     dir: &str,
     index: usize,
     tool: &str,
     path: &Path,
-    bytes: &[u8],
+    file: &SessionFile,
 ) -> anyhow::Result<FileDoc> {
-    let entry = entry(dir, index, path);
-    let file = folder.join(&entry);
-    replace_file(&file, |tmp| fs::write(tmp, bytes))
-        .with_context(|| format!("{}: cannot keep the file", file.display()))?;
+    let (entry, size, hash, packed, written) = match file {
+        SessionFile::Raw(bytes) => {
+            let entry = entry(dir, index, path);
+            let written = replace_file(&folder.join(&entry), |tmp| fs::write(tmp, bytes));
+            (entry, bytes.len(), sha256(bytes), false, written)
+        }
+        SessionFile::Packed {
+            packed,
+            size,
+            sha256,
+        } => {
+            let entry = format!("{}.packed", entry(dir, index, path));
+            let written = replace_file(&folder.join(&entry), |tmp| compressed(tmp, packed));
+            (entry, *size, sha256.clone(), true, written)
+        }
+    };
+    written.with_context(|| format!("{}: cannot keep the file", folder.join(&entry).display()))?;
     Ok(FileDoc {
         tool: tool.to_owned(),
         path: path.display().to_string(),
-        size: bytes.len(),
-        sha256: sha256(bytes),
+        size,
+        sha256: hash,
         entry,
+        packed,
     })
+}
+
+/// `packed` zlib-compressed into `tmp` (`keep_file`'s packed write).
+fn compressed(tmp: &Path, packed: &[u8]) -> io::Result<()> {
+    let mut encoder =
+        flate2::write::ZlibEncoder::new(fs::File::create(tmp)?, flate2::Compression::default());
+    encoder.write_all(packed)?;
+    encoder.finish()?;
+    Ok(())
 }
 
 /// `header`'s session folder name, `<yyyy>-<mm>-<dd>-<hhmmss>-<pid>`
@@ -885,17 +971,17 @@ mod tests {
             SessionMessage::Input {
                 tool: "stub".to_owned(),
                 path: Path::new("C:/Data/in/EDIT00000000").to_path_buf(),
-                bytes: Arc::from(&b"INPUT_BYTES"[..]),
+                file: SessionFile::Raw(Arc::from(&b"INPUT_BYTES"[..])),
             },
             SessionMessage::Output {
                 tool: "stub".to_owned(),
                 path: Path::new("C:/Data/out/EDIT00000000").to_path_buf(),
-                bytes: Arc::from(&b"WRITE_A"[..]),
+                file: SessionFile::Raw(Arc::from(&b"WRITE_A"[..])),
             },
             SessionMessage::Output {
                 tool: "stub".to_owned(),
                 path: Path::new("C:/Data/out/EDIT00000000").to_path_buf(),
-                bytes: Arc::from(&b"WRITE_B_BYTES"[..]),
+                file: SessionFile::Raw(Arc::from(&b"WRITE_B_BYTES"[..])),
             },
         ]
     }
@@ -908,11 +994,11 @@ mod tests {
     }
 
     /// `folder` read as a bundle: `session_bundle`'s bytes written to a
-    /// zip `read_bundle` then reads.
+    /// zip `read_bundle` then reads. These folders hold no packed rows.
     fn folder_bundle(dir: &Path, folder: &Path, home: Option<&str>) -> Bundle {
         let out = dir.join("session.zip");
         fs::write(&out, session_bundle(folder, home).unwrap()).unwrap();
-        read_bundle(&out).unwrap()
+        read_bundle(&out, &|_| panic!("the folder holds no packed rows")).unwrap()
     }
 
     /// A session's frames in order: the header, a step with its op and
@@ -936,12 +1022,12 @@ mod tests {
             SessionFrame::Message(SessionMessage::Input {
                 tool: "stub".to_owned(),
                 path: Path::new("C:/Data/in/EDIT00000000").to_path_buf(),
-                bytes: Arc::from(vec![7_u8; 300 * 1024].as_slice()),
+                file: SessionFile::Raw(Arc::from(vec![7_u8; 300 * 1024].as_slice())),
             }),
             SessionFrame::Message(SessionMessage::Output {
                 tool: "stub".to_owned(),
                 path: Path::new("C:/Data/out/EDIT00000000").to_path_buf(),
-                bytes: Arc::from(&b"WRITE_A"[..]),
+                file: SessionFile::Raw(Arc::from(&b"WRITE_A"[..])),
             }),
             SessionFrame::Closed,
             SessionFrame::Crashed,
@@ -993,27 +1079,27 @@ mod tests {
                 SessionMessage::Input {
                     tool: r_tool,
                     path: r_path,
-                    bytes: r_bytes,
+                    file: r_file,
                 },
                 SessionMessage::Input {
                     tool: w_tool,
                     path: w_path,
-                    bytes: w_bytes,
+                    file: w_file,
                 },
             )
             | (
                 SessionMessage::Output {
                     tool: r_tool,
                     path: r_path,
-                    bytes: r_bytes,
+                    file: r_file,
                 },
                 SessionMessage::Output {
                     tool: w_tool,
                     path: w_path,
-                    bytes: w_bytes,
+                    file: w_file,
                 },
             ) => {
-                assert_eq!((r_tool, r_path, r_bytes), (w_tool, w_path, w_bytes));
+                assert_eq!((r_tool, r_path, r_file), (w_tool, w_path, w_file));
             }
             _ => panic!("the messages' kinds differ"),
         }
@@ -1204,7 +1290,7 @@ mod tests {
                 .write(&SessionMessage::Output {
                     tool: tool.to_owned(),
                     path: Path::new("C:/Data/out/EDIT00000000").to_path_buf(),
-                    bytes: Arc::from(tool.as_bytes()),
+                    file: SessionFile::Raw(Arc::from(tool.as_bytes())),
                 })
                 .unwrap();
         }
@@ -1232,7 +1318,7 @@ mod tests {
                 .write(&SessionMessage::Input {
                     tool: "stub".to_owned(),
                     path: Path::new(path).to_path_buf(),
-                    bytes: Arc::from(bytes),
+                    file: SessionFile::Raw(Arc::from(bytes)),
                 })
                 .unwrap();
         }
@@ -1245,7 +1331,7 @@ mod tests {
                 .write(&SessionMessage::Output {
                     tool: "stub".to_owned(),
                     path: Path::new(path).to_path_buf(),
-                    bytes: Arc::from(bytes),
+                    file: SessionFile::Raw(Arc::from(bytes)),
                 })
                 .unwrap();
         }
@@ -1355,7 +1441,7 @@ mod tests {
             .write(&SessionMessage::Input {
                 tool: "stub".to_owned(),
                 path: Path::new("C:/Users/Alice/in/EDIT00000000").to_path_buf(),
-                bytes: Arc::from(&b"SAVE"[..]),
+                file: SessionFile::Raw(Arc::from(&b"SAVE"[..])),
             })
             .unwrap();
 
@@ -1436,6 +1522,27 @@ mod tests {
         );
     }
 
+    /// A `Read` whose every `read` fails with `kind`.
+    struct FailingRead(io::ErrorKind);
+
+    impl Read for FailingRead {
+        fn read(&mut self, _buf: &mut [u8]) -> io::Result<usize> {
+            Err(io::Error::from(self.0))
+        }
+    }
+
+    // An error of another kind surfaces: only `UnexpectedEof` — a window
+    // dying mid-send — reads as the pipe's end.
+    #[test]
+    fn a_read_error_that_is_not_eof_is_an_error() {
+        let mut input = FailingRead(io::ErrorKind::BrokenPipe);
+        let error = match read_frame(&mut input) {
+            Ok(_) => panic!("the read did not fail"),
+            Err(error) => error,
+        };
+        assert_eq!(error.kind(), io::ErrorKind::BrokenPipe);
+    }
+
     // A second writer with the same header adopts the folder the first
     // made: the journal's bytes up to the first writer's end stand, the
     // next input lands at the row count's index, and a write to the
@@ -1454,7 +1561,7 @@ mod tests {
                 .write(&SessionMessage::Input {
                     tool: "stub".to_owned(),
                     path: Path::new(path).to_path_buf(),
-                    bytes: Arc::from(bytes),
+                    file: SessionFile::Raw(Arc::from(bytes)),
                 })
                 .unwrap();
         }
@@ -1466,7 +1573,7 @@ mod tests {
                 .write(&SessionMessage::Output {
                     tool: "stub".to_owned(),
                     path: Path::new(path).to_path_buf(),
-                    bytes: Arc::from(bytes),
+                    file: SessionFile::Raw(Arc::from(bytes)),
                 })
                 .unwrap();
         }
@@ -1478,14 +1585,14 @@ mod tests {
             .write(&SessionMessage::Input {
                 tool: "stub".to_owned(),
                 path: Path::new("E:/Data/c/EDIT00000000").to_path_buf(),
-                bytes: Arc::from(&b"INPUT_C"[..]),
+                file: SessionFile::Raw(Arc::from(&b"INPUT_C"[..])),
             })
             .unwrap();
         second
             .write(&SessionMessage::Output {
                 tool: "stub".to_owned(),
                 path: Path::new("C:/Data/out/other.bin").to_path_buf(),
-                bytes: Arc::from(&b"WRITE_B"[..]),
+                file: SessionFile::Raw(Arc::from(&b"WRITE_B"[..])),
             })
             .unwrap();
 
@@ -1631,6 +1738,152 @@ mod tests {
         assert_eq!(
             read.started.to_string(),
             "2026-11-21T09:30:15+01:00[+01:00]"
+        );
+    }
+
+    // A packed input and output survive the pipe: the `packed` table in
+    // the frame's TOML, the packed form as the body's raw part, both
+    // kinds reading back with the file's own size and SHA-256.
+    #[test]
+    fn a_packed_input_and_output_survive_the_pipe() {
+        let file = |packed: &'static [u8]| SessionFile::Packed {
+            packed: Arc::from(packed),
+            size: 14,
+            sha256: sha256(b"THE_FILE_BYTES"),
+        };
+        let frames = [
+            SessionFrame::Message(SessionMessage::Input {
+                tool: "stub".to_owned(),
+                path: Path::new("C:/Data/in/EDIT00000000").to_path_buf(),
+                file: file(b"PACKED_IN"),
+            }),
+            SessionFrame::Message(SessionMessage::Output {
+                tool: "stub".to_owned(),
+                path: Path::new("C:/Data/out/EDIT00000000").to_path_buf(),
+                file: file(b"PACKED_OUT"),
+            }),
+        ];
+        let mut bytes = Vec::new();
+        for frame in &frames {
+            write_frame(&mut bytes, frame).unwrap();
+        }
+
+        let mut input = &bytes[..];
+        for written in &frames {
+            let read = read_frame(&mut input)
+                .unwrap()
+                .expect("a frame was written");
+            assert_frame_eq(&read, written);
+        }
+        assert!(
+            read_frame(&mut input).unwrap().is_none(),
+            "the frames' end is `None`"
+        );
+    }
+
+    /// A session folder under `dir` holding one packed input of `file`,
+    /// ended `Closed`.
+    fn packed_folder(dir: &TestDir, file: SessionFile) -> PathBuf {
+        let root = dir.path().join("sessions");
+        let mut writer = SessionWriter::new(&root, header(4242));
+        writer
+            .write(&SessionMessage::Input {
+                tool: "stub".to_owned(),
+                path: Path::new("C:/Data/in/EDIT00000000").to_path_buf(),
+                file,
+            })
+            .unwrap();
+        writer.end(SessionEnd::Closed).unwrap();
+        root.join("2026-11-21-093015-4242")
+    }
+
+    // A packed input is kept as `inputs/0-<name>.packed`, compressed to
+    // the packed form, its row holding `packed = true` and the file's
+    // own size and SHA-256. The bundle the folder makes reads it
+    // through `rebuild` (here the toy pack, the bytes reversed) and
+    // hands back the file.
+    // ST-REP-06
+    #[test]
+    fn a_packed_input_is_kept_compressed_and_rebuilt() {
+        let dir = TestDir::new("studio_core_session_packed");
+        let raw = b"THE_FILE_BYTES".to_vec();
+        let form: Vec<u8> = raw.iter().rev().copied().collect();
+        let folder = packed_folder(
+            &dir,
+            SessionFile::Packed {
+                packed: form.clone().into(),
+                size: raw.len(),
+                sha256: sha256(&raw),
+            },
+        );
+
+        let entry = folder.join("inputs/0-EDIT00000000.packed");
+        let mut inflated = Vec::new();
+        flate2::read::ZlibDecoder::new(fs::File::open(&entry).unwrap())
+            .read_to_end(&mut inflated)
+            .unwrap();
+        assert_eq!(inflated, form, "the entry inflates to the packed form");
+
+        let (text, doc) = journal(&folder);
+        let inputs = doc["input"].as_array().unwrap();
+        assert_eq!(inputs[0]["packed"].as_bool(), Some(true), "{text}");
+        assert_eq!(inputs[0]["size"].as_integer(), Some(14), "{text}");
+        assert_eq!(
+            inputs[0]["sha256"].as_str(),
+            Some(sha256(&raw).as_str()),
+            "{text}"
+        );
+        assert_eq!(
+            inputs[0]["entry"].as_str(),
+            Some("inputs/0-EDIT00000000.packed"),
+            "{text}"
+        );
+
+        // `session_bundle` copies the entry as it is; the row's
+        // `packed` comes with it.
+        let out = dir.path().join("session.zip");
+        fs::write(&out, session_bundle(&folder, None).unwrap()).unwrap();
+        let journal_text = zip_text(&out, "journal.toml");
+        assert!(journal_text.contains("packed = true"), "{journal_text}");
+
+        let bundle = read_bundle(&out, &|form: &[u8]| -> anyhow::Result<Vec<u8>> {
+            Ok(form.iter().rev().copied().collect())
+        })
+        .unwrap();
+        assert_eq!(bundle.inputs[0].bytes, raw, "the rebuilt file");
+    }
+
+    // A `rebuild` whose output is not the kept file is refused naming
+    // the entry — the rebuilt bytes take the row's size and SHA-256
+    // checks like a raw entry's do.
+    #[test]
+    fn a_rebuilt_entry_mismatching_its_row_is_refused() {
+        let dir = TestDir::new("studio_core_session_bad_rebuild");
+        let raw = b"THE_FILE_BYTES".to_vec();
+        let form: Vec<u8> = raw.iter().rev().copied().collect();
+        let folder = packed_folder(
+            &dir,
+            SessionFile::Packed {
+                packed: form.into(),
+                size: raw.len(),
+                sha256: sha256(&raw),
+            },
+        );
+        let out = dir.path().join("session.zip");
+        fs::write(&out, session_bundle(&folder, None).unwrap()).unwrap();
+
+        // The same size as the row's, so the SHA-256 is what differs.
+        let wrong = |_: &[u8]| -> anyhow::Result<Vec<u8>> { Ok(vec![0; 14]) };
+        let error = match read_bundle(&out, &wrong) {
+            Ok(_) => panic!("the rebuilt bundle read"),
+            Err(error) => error,
+        };
+        let text = format!("{error:#}");
+        assert!(text.contains("rebuilt"), "{text}");
+        assert!(text.contains("SHA-256"), "{text}");
+        assert!(
+            text.contains("inputs/0-EDIT00000000.packed"),
+            "the refusal names the entry: {text}"
         );
     }
 }

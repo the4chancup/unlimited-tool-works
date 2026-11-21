@@ -217,7 +217,10 @@ impl Session {
             file.version(),
             bytes.len()
         );
-        let input = recorder.keep_input(TOOL_ID, path, bytes);
+        let input = match packed(&bytes, path) {
+            Some(packed) => recorder.keep_input_packed(TOOL_ID, path, bytes, packed),
+            None => recorder.keep_input(TOOL_ID, path, bytes),
+        };
         if suffix.is_empty() {
             // The session's own open names the kept input it read: replay
             // starts from it. The comparator's second open is a note.
@@ -967,7 +970,15 @@ impl Session {
                 .context(format!("{}: cannot write the save", out.display())));
         }
         let output = match std::fs::read(out) {
-            Ok(written) => Some(self.recorder.keep_output(TOOL_ID, out, written.into())),
+            Ok(written) => {
+                let written: Arc<[u8]> = written.into();
+                Some(match packed(&written, out) {
+                    Some(packed) => self
+                        .recorder
+                        .keep_output_packed(TOOL_ID, out, written, packed),
+                    None => self.recorder.keep_output(TOOL_ID, out, written),
+                })
+            }
             // The save was written; a journal that cannot keep it loses the
             // bundle's output, never the member's write.
             Err(error) => {
@@ -1041,6 +1052,22 @@ fn moved_record(source: &PlayerEntry, dest: &PlayerEntry) -> PlayerEntry {
             .expect("two players of one save share a face layout");
     }
     record
+}
+
+/// `bytes`'s packed form for the session folder (`container::pack_file`);
+/// `None`, a debug line, when it does not pack — unreachable after a clean
+/// open or write, and the raw keep then stands.
+fn packed(bytes: &[u8], path: &Path) -> Option<Vec<u8>> {
+    match pes_savefile::container::pack_file(bytes) {
+        Ok(packed) => Some(packed),
+        Err(error) => {
+            log::debug!(
+                "{}: the save cannot be packed for the session ({error})",
+                path.display()
+            );
+            None
+        }
+    }
 }
 
 /// The save's players and teams by id: the baseline `is_dirty` and

@@ -756,7 +756,9 @@ mod tests {
     use log::Metadata;
     use minidumper::ServerHandler;
 
-    use studio_core::repro::{SessionFrame, SessionHeader, SessionMessage, write_frame};
+    use studio_core::repro::{
+        SessionFile, SessionFrame, SessionHeader, SessionMessage, write_frame,
+    };
 
     use super::*;
     use crate::gui_log::{InstalledLog, LOG_FILE_NAME, LastSession, open_log, unclean_text};
@@ -1132,17 +1134,17 @@ mod tests {
             SessionFrame::Message(SessionMessage::Input {
                 tool: "stub".to_owned(),
                 path: Path::new("C:/Data/in/EDIT00000000").to_path_buf(),
-                bytes: b"INPUT_BYTES".as_slice().into(),
+                file: SessionFile::Raw(b"INPUT_BYTES".as_slice().into()),
             }),
             SessionFrame::Message(SessionMessage::Output {
                 tool: "stub".to_owned(),
                 path: Path::new("C:/Data/out/EDIT00000000").to_path_buf(),
-                bytes: b"WRITE_A".as_slice().into(),
+                file: SessionFile::Raw(b"WRITE_A".as_slice().into()),
             }),
             SessionFrame::Message(SessionMessage::Output {
                 tool: "stub".to_owned(),
                 path: Path::new("C:/Data/out/EDIT00000000").to_path_buf(),
-                bytes: b"WRITE_B_BYTES".as_slice().into(),
+                file: SessionFile::Raw(b"WRITE_B_BYTES".as_slice().into()),
             }),
         ]
     }
