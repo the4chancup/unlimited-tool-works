@@ -39,10 +39,13 @@ run's findings (`4cc-studio-temp/str_re/out/findings.md`).
    - [x] 5a the session folder's writer and reader in `studio_core::repro`, called in
      process (ST-REP-06 to 08): merged `08d65aa6`, SWE-2 round S1s5a; Astra round A-s5a r1,
      2 accepted (a marker line ending each journal block, and a test of several files),
-     fixed once 5b-i merges, since 5b-i edits the same file;
-   - 5b the pipe (DECISIONS 2026-11-21): the recorder's queue and sending thread, the monitor
-     writing each message it reads from its standard input, the window's own writer when no
-     monitor started (ST-REP-10's first two cases, ST-REP-11);
+     fixed with 5b-i;
+   - [x] 5b-i the monitor's half: it writes the session from the frames on its standard
+     input and ends it (ST-REP-06, 07): merged `d496aebd`, SWE-2 round S1s5b1; its Astra
+     round owed, with the retry's;
+   - 5b-ii the window's half: the recorder's queue, the thread sending each message down the
+     pipe, the window's own writer when no monitor started (ST-REP-10's first two cases,
+     ST-REP-11): SWE-2 in `sk_sess5b2w`;
    - 5b2 a new monitor after the pipe breaks, writing on into the same folder (ST-REP-10's
      last case): its writer adopts the folder, never rewriting `journal.toml` and taking
      the next input and output indexes from its rows (review S1s5a-1);
