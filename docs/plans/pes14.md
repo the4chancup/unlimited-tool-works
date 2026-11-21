@@ -909,4 +909,6 @@ on main. Main is merged into the branch, never rebased onto it.
     does not map, so the row was greyed. A field the version does not store keeps its
     enabled neighbours' width: the `-` fills the column. Its check, in Edit mode with the DLC:
     a `/4ccg/` goalkeeper given a gloves id the DLC installs shows those gloves, and the fork
-    reads the same id back.
+    reads the same id back. Before its look, the draft's PES 2014 player view is mended: it
+    stops on a page error (`cardLimits` is handed a player with no `skills`), so the Strip
+    style panel cannot be captured beside the build.
