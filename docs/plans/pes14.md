@@ -616,7 +616,10 @@ button would stay on every PES 2014 save, its tooltip saying the folder holds no
     formations a preset holds (one on PES 2014, read into the model's first; the other two
     stay at their defaults), and the first slot whose role is stored (1 on PES 2014, whose
     keeper has a place but no role byte). Each place is two u16s, read as their low bytes,
-    since no place passes 104.
+    since no place passes 104. A text that names a formation (an unsaved-changes row, an AATF
+    line) names none on PES 2014, "Preset 1 · J. WALTERS · Position" and not "Preset 1 ·
+    Kick-off · …": the game's screen has one formation a preset and gives it no name, so
+    "Kick-off" would name a set PES 2014 does not have.
   - The lineup at +0x146 fills `starting_eleven` and `bench_order` (11 and 21 entries, the
     record's 32), each the low byte of its u32. The takers, the captain, the players to join
     the attack and the four switches are plain fields.
@@ -860,8 +863,11 @@ on main. Main is merged into the branch, never rebased onto it.
        from the screen and a plainer closure; and three comments the comment check flags.
    - Slice 2d: free moves and the overall on the pitch, from "What the game's code says",
      each sub-slice reworked if run `gameplan2` contradicts it:
-     - 2d-1, the overall on the pitch's badges;
-     - 2d-2, free moves and the held player's areas.
+     - 2d-1, the overall on the pitch's badges: done; seen in the release build (2026-11-21),
+       `/3/` picked to 4-4-2 on a copy of `tactics6`, every badge the draft's;
+     - 2d-2, free moves and the held player's areas;
+     - 2d-3, the formation's name left out of the unsaved-changes rows and the AATF lines on
+       PES 2014 (seen in 2d-1's look: "Preset 1 · Kick-off · …").
    - The command line refuses the commands out of scope on a PES 2014 save ("Not in scope"):
      done (`422dead7`), each of the five commands with its test.
    - Later: the pitch's shirts in the team's kit colours and icon pattern, as PES 2015's

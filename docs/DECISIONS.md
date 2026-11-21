@@ -19328,3 +19328,8 @@ Plan: `plans/pes14.md`, "What the game's code says", "The Gameplan screen in Bui
 Decision: while a player is held on PES 2014's pitch, the zone of every position he plays at A or B lights, and nothing darkens for a player rated A or B nowhere. The held badge reads the role a release there gives him, or his own role where the game refuses the drop, even where the game's own chip names a role. The keeper on grass and a drop into the keeper's zone stay refused.
 Why: run `gameplan2b` lit LB and RB together for one held player, where the code reading suggested one zone a band, and showed no change at all for players rated nowhere. The game's chip ignores the line limits, so it named SS at a spot where the drop was then refused; a badge copying it would promise a move that does not happen. The run never set the keeper down anywhere on grass.
 Plan: `plans/pes14.md`, "What the game's code says" (the free move, the held player's areas), "The Gameplan screen in Build 2" (the pitch), step 8.
+
+## 2026-11-21 — pes14 — a text that names a formation names none on PES 2014
+Decision: an unsaved-changes row or an AATF line that names a preset's formation leaves the formation's name out on PES 2014 ("Preset 1 · J. WALTERS · Position").
+Why: PES 2014 holds one formation a preset and its screen gives it no name; "Kick-off", the first of the later versions' three, names a set the game does not have. The rows showed it in slice 2d-1's look.
+Plan: `plans/pes14.md`, "The tactics record in Build 2", step 8 (2d-3).
