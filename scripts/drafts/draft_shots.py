@@ -9,7 +9,9 @@ window's picture as `.tmp/draft_shots/<run>/<link made filesystem-safe>@<size>.p
 the time it started. It then compares each picture with the one of the same name in
 `.tmp/draft_shots/baseline/` and prints one line per shot that changed (with the share of its
 pixels that differ), is new or is missing, then a summary line. With `--update` the run then
-becomes the baseline.
+becomes the baseline. Update it once a draft edit is committed: otherwise every later run
+lists that edit's shots as changed, and the edit being checked is lost among them (on
+2026-11-21 a baseline six days old read all 104 shots as changed).
 
 Every page's clock is frozen before the load (Playwright's `page.clock`, paused at one fixed
 time and stepped by hand), so whatever moves with time, such as a long name scrolling on the
