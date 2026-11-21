@@ -33,7 +33,15 @@ run's findings (`4cc-studio-temp/str_re/out/findings.md`).
    Seen in the release build on the PES 2021 fixture (2026-11-21:
    opened on 231, `ital` picked 215, Escape put 231 back with nothing left to undo).
 2. 0.0.2-nostretch's slices.
-3. Earlier sessions in Report a problem: the repro bundles issue's slice (5).
+3. Earlier sessions in Report a problem: the repro bundles issue's slice (5), in slices:
+   - the crash monitor's start tried once more (ST-RUN-13): SWE-2 in `sk_retry`;
+   - 5a the session folder's writer and reader in `studio_core::repro`, called in process
+     (ST-REP-06 to 08);
+   - 5b the link: the recorder's queue and sending thread, the monitor writing each message,
+     the window's own writer, a new monitor after a break (ST-REP-10, 11);
+   - 5c the Save editor's saves kept decrypted and rebuilt on reading (SE-REP-07);
+   - 5d the dialog's "Include earlier sessions" box, drafted first, and the help page's line
+     (ST-REP-09, 12).
 4. Review rounds owed: 0.0.2-similar's, and every Carbon round a 0.0.2 step still owes (Report a problem has had its whole review).
 5. 0.0.2-pes19, and with it the readme's PES 2019 claim.
 6. The Compiler's view in the build, unpolished, for the VGL organizer (the maintainer,
