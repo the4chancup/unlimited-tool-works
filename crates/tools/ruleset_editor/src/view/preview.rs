@@ -12,6 +12,37 @@ use crate::view::RulesetView;
 /// indent.
 const LOGO_KEY: &str = "    logo: ";
 
+/// The data block's columns (the draft's `100ch`): the writer's wrap
+/// width.
+const COLUMNS: usize = 100;
+
+/// The font the block is drawn in: `TextStyle::Monospace` resolved from
+/// the style (the theme's 12-point Hack). `block_line` draws with it and
+/// `width` measures the columns with it, so the two cannot drift.
+fn block_font(ui: &egui::Ui) -> egui::FontId {
+    egui::TextStyle::Monospace.resolve(ui.style())
+}
+
+/// The preview panel's exact width (the draft's `pre` at `100ch` plus its
+/// `scrollbar-gutter`): `COLUMNS` of `block_font`, measured through
+/// egui's fonts rather than written down, beside the scroll bar's strip
+/// and inside the panel frame's margins.
+pub(crate) fn width(ui: &egui::Ui) -> f32 {
+    let column = ui
+        .ctx()
+        .fonts_mut(|fonts| fonts.glyph_width(&block_font(ui), '0'));
+    egui::Frame::side_top_panel(ui.style()).inner_margin.sum().x
+        + COLUMNS as f32 * column
+        + scroll_bars().allocated_width()
+}
+
+/// The scroll style the preview's area runs on (the draft's
+/// `scrollbar-gutter: stable`): a solid bar keeps its strip whether or
+/// not the block overflows, so a column never ends under a drawn bar.
+fn scroll_bars() -> egui::style::ScrollStyle {
+    egui::style::ScrollStyle::solid()
+}
+
 /// The right `egui::Panel`, drawn only while **Show preview** is on.
 pub(crate) fn show(ui: &mut egui::Ui, view: &mut RulesetView) {
     let Some(document) = view.document.as_ref() else {
@@ -22,6 +53,7 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut RulesetView) {
         ui.weak("(read-only)");
     });
     let short_logo = short_logo_line(&document.ruleset);
+    ui.spacing_mut().scroll = scroll_bars();
     egui::ScrollArea::both()
         .id_salt("ruleset_preview")
         .auto_shrink(false)
@@ -44,7 +76,7 @@ fn block_line(ui: &mut egui::Ui, line: &str, short_logo: Option<&str>, changed: 
         Some(short) if line.starts_with(LOGO_KEY) => short,
         _ => line,
     };
-    let text = egui::RichText::new(shown).monospace();
+    let text = egui::RichText::new(shown).font(block_font(ui));
     let text = if changed.contains(line) {
         text.background_color(ui.visuals().selection.bg_fill)
     } else {

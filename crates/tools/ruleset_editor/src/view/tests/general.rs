@@ -758,13 +758,14 @@ fn the_form_scrolls_sideways_to_its_rightmost_checkbox() {
         "premise: the rightmost checkbox starts past the panel's right edge ({bounds:?} vs x={right})"
     );
 
-    // A horizontal wheel scroll over the form.
+    // A horizontal wheel scroll over the form (the pointer lands inside
+    // the section, which the preview leaves narrower).
     let frame = scroll_until(
         &mut window,
         &mut view,
         &ctx,
-        egui::pos2(300.0, 300.0),
-        egui::vec2(-80.0, 0.0),
+        egui::pos2(200.0, 300.0),
+        egui::vec2(-200.0, 0.0),
         |frame| {
             nodes_labeled(&frame.nodes, &label)[0]
                 .bounds()

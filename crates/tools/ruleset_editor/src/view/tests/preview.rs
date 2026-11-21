@@ -41,7 +41,12 @@ fn the_show_preview_toggle_draws_its_blue_with_no_edge() {
 
 #[test]
 fn the_preview_draws_the_block_and_the_edit_marks_its_changed_lines() {
-    let (ctx, _events, mut window, mut view) = fresh_blank();
+    // The default window: a smaller one leaves the section no room for a
+    // checklist column next to the preview's fixed width.
+    let (ctx, _events) = crate::test_support::context();
+    let mut window = Headless::sized(1224.0, 756.0);
+    let mut view = RulesetView::new();
+    open_document(&mut view, crate::document::blank());
 
     // Off at every start: no preview lines.
     let frame = window.draw(&mut view, &ctx);

@@ -201,6 +201,95 @@ fn handle_x(nodes: &[accesskit::Node]) -> f64 {
         .x0
 }
 
+/// The section's painted frame in `frame`: the tall fill that is neither
+/// the rail's (150 wide) nor the whole pane's.
+fn section_fill(window: &Headless, frame: &Frame) -> egui::Rect {
+    panel_fill_at(frame, &window.ctx, |rect| {
+        rect.height() > 100.0 && rect.width() > 200.0 && rect.right() < window.screen.x - 1.0
+    })
+    .first()
+    .copied()
+    .expect("the section's fill")
+}
+
+/// The last column's right edge (the ✕ buttons share it).
+fn last_column_right(nodes: &[accesskit::Node]) -> f64 {
+    nodes_labeled(nodes, "✕")
+        .first()
+        .and_then(|node| node.bounds())
+        .expect("a ✕")
+        .x1
+}
+
+/// A wheel scroll over the section to `delta`'s end — the last column's
+/// right edge stopping between frames is the arrival (the eased scroll
+/// keeps moving for a while after the target is reached), the frame it
+/// stopped on returned.
+fn scroll_to_end(
+    window: &mut Headless,
+    view: &mut RulesetView,
+    ctx: &ToolContext,
+    delta: egui::Vec2,
+) -> Frame {
+    let frame = window.draw(view, ctx);
+    let over = egui::pos2(
+        section_fill(window, &frame).left() + 60.0,
+        section_fill(window, &frame).center().y,
+    );
+    let last = std::cell::Cell::new(f64::INFINITY);
+    let still = std::cell::Cell::new(0u8);
+    scroll_until(window, view, ctx, over, delta, |frame| {
+        let x = last_column_right(&frame.nodes);
+        // Quantized to 1/32: three still frames are the scroll's end —
+        // a single quiet one can sit inside the eased approach.
+        if (x - last.replace(x)).abs() <= 0.02 {
+            still.set(still.get() + 1);
+        } else {
+            still.set(0);
+        }
+        still.get() >= 3
+    })
+    .unwrap_or_else(|| settled(window, view, ctx))
+}
+
+/// A leftward wheel scroll over the section until `done` holds for a
+/// frame: back to the left end for a header the right scroll scrolled
+/// out (scrolling to the left end rubber-bands past it, so `done` is the
+/// arrival, not the stop).
+fn scroll_table_left(
+    window: &mut Headless,
+    view: &mut RulesetView,
+    ctx: &ToolContext,
+    done: impl Fn(&Frame) -> bool,
+) -> Frame {
+    let frame = window.draw(view, ctx);
+    let over = egui::pos2(
+        section_fill(window, &frame).left() + 60.0,
+        section_fill(window, &frame).center().y,
+    );
+    scroll_until(window, view, ctx, over, egui::vec2(80.0, 0.0), done)
+        .expect("a leftward scroll over the table got there")
+}
+
+/// A rightward wheel scroll over the section to its end (the capped
+/// section is narrower than the tiers table at every window size, so a
+/// test acting on the last column scrolls it in); `done` is asserted on
+/// the end frame, with the section's right edge.
+fn scroll_table_right(
+    window: &mut Headless,
+    view: &mut RulesetView,
+    ctx: &ToolContext,
+    done: impl Fn(&Frame, f64) -> bool,
+) -> Frame {
+    let frame = scroll_to_end(window, view, ctx, egui::vec2(-200.0, 0.0));
+    let right = f64::from(section_fill(window, &frame).right());
+    assert!(
+        done(&frame, right),
+        "a rightward scroll over the table got there"
+    );
+    frame
+}
+
 /// `frame`'s labels include every `fragment` (the refusal dialog's
 /// listing).
 fn assert_shown(frame: &Frame, fragments: &[&str]) {
@@ -883,7 +972,13 @@ fn deleting_a_tier_the_custom_checks_read_blocks_save() {
 
     // The fifth tier's ✕ clicked, then Save: nothing is written, the
     // refusal lists the sample team's script error.
-    let frame = settled(&mut window, &mut view, &ctx);
+    settled(&mut window, &mut view, &ctx);
+    let frame = scroll_table_right(&mut window, &mut view, &ctx, |frame, right| {
+        nodes_labeled(&frame.nodes, "✕")
+            .get(4)
+            .and_then(|node| node.bounds())
+            .is_some_and(|bounds| bounds.x1 <= right - 4.0)
+    });
     click_nth(&mut window, &frame.nodes, "✕", 4, &mut view, &ctx);
     assert_eq!(ruleset(&view).tiers.len(), 4, "the fifth tier is gone");
 
@@ -1155,7 +1250,13 @@ fn removing_a_tier_under_a_shared_id_keeps_the_counts() {
     );
 
     // The added row's ✕: every system's counts equal the opened ones.
-    let frame = settled(&mut window, &mut view, &ctx);
+    settled(&mut window, &mut view, &ctx);
+    let frame = scroll_table_right(&mut window, &mut view, &ctx, |frame, right| {
+        nodes_labeled(&frame.nodes, "✕")
+            .get(3)
+            .and_then(|node| node.bounds())
+            .is_some_and(|bounds| bounds.x1 <= right - 4.0)
+    });
     click_nth(&mut window, &frame.nodes, "✕", 3, &mut view, &ctx);
     assert_eq!(tier_ids(&view), ["gold", "silver", "regular"]);
     assert_eq!(
@@ -1172,7 +1273,13 @@ fn removing_a_tier_drops_its_medal_keys() {
         tiers_view(template("Divegrass Before Christmas 7"), true);
 
     // The first row's ✕ (the tiers' ✕s sit above the systems' own).
-    let frame = settled(&mut window, &mut view, &ctx);
+    settled(&mut window, &mut view, &ctx);
+    let frame = scroll_table_right(&mut window, &mut view, &ctx, |frame, right| {
+        nodes_labeled(&frame.nodes, "✕")
+            .first()
+            .and_then(|node| node.bounds())
+            .is_some_and(|bounds| bounds.x1 <= right - 4.0)
+    });
     click_nth(&mut window, &frame.nodes, "✕", 0, &mut view, &ctx);
     assert_eq!(tier_ids(&view), ["silver", "regular"]);
     assert_eq!(
@@ -1288,13 +1395,23 @@ fn a_name_colour_pick_keeps_the_alpha() {
 }
 
 /// An open expander does not widen the table: its cell is the last
-/// column's, recorded at the column's own width, so a rightward wheel
-/// scroll over a table that fits the window moves nothing.
+/// column's, recorded at the column's own width, so the scroll's right
+/// end is where it is with the expander closed.
 #[test]
 fn an_open_expander_adds_no_scroll_space() {
     let (ctx, _events, mut window, mut view) = tiers_view(template("/vt/ League 11"), true);
 
-    // The first tier's expander opened and settled.
+    // The scroll's right end with the expander closed.
+    let start = settled(&mut window, &mut view, &ctx);
+    let start_handle_x = handle_x(&start.nodes);
+    let closed_end = scroll_to_end(&mut window, &mut view, &ctx, egui::vec2(-200.0, 0.0));
+    let closed_right = last_column_right(&closed_end.nodes);
+
+    // Back to the left end for the expander's header, opened, then right
+    // to its end again: the same stop, the cell adding no scroll space.
+    scroll_table_left(&mut window, &mut view, &ctx, |frame| {
+        handle_x(&frame.nodes) >= start_handle_x - 0.5
+    });
     let frame = settled(&mut window, &mut view, &ctx);
     click_labeled(
         &mut window,
@@ -1303,31 +1420,22 @@ fn an_open_expander_adds_no_scroll_space() {
         &mut view,
         &ctx,
     );
-    let frame = settled(&mut window, &mut view, &ctx);
-    let before = handle_x(&frame.nodes);
-
-    // A rightward wheel scroll over the table: the handle column's x
-    // stays where it was (the scroll is a no-op while the table fits).
-    let frame = scroll_until(
-        &mut window,
-        &mut view,
-        &ctx,
-        centre(node(&frame.nodes, "Rate")),
-        egui::vec2(-80.0, 0.0),
-        |frame| handle_x(&frame.nodes) < before - 0.5,
-    )
-    .unwrap_or_else(|| window.draw(&mut view, &ctx));
-    assert_eq!(
-        handle_x(&frame.nodes),
-        before,
-        "the handle column's x is where it was"
+    let open_end = scroll_to_end(&mut window, &mut view, &ctx, egui::vec2(-200.0, 0.0));
+    let open_right = last_column_right(&open_end.nodes);
+    // The ends compare with two and a half points of slack: the scroll's
+    // stop is measured through `round_to_pixels`'d rects, so it carries a
+    // couple of points of quantization noise between two layouts — a
+    // leaked cell would move it by the expander's width, hundreds.
+    assert!(
+        (open_right - closed_right).abs() <= 2.5,
+        "the expander's cell adds no scroll space ({open_right} vs {closed_right})"
     );
 }
 
 /// The open expander's stat grid spans the table (the child's rect
 /// starts back at the table's left edge): the fifth stat's checkbox
 /// sits right of the "Rate" header. And its cell is the last column's
-/// own: a window the table just fits gets no scroll space from it.
+/// own: it gives the table no scroll space.
 #[test]
 fn the_open_expanders_stat_grid_spans_the_table() {
     let (ctx, _events, mut window, mut view) = tiers_view(template("/vt/ League 11"), true);
@@ -1350,28 +1458,32 @@ fn the_open_expanders_stat_grid_spans_the_table() {
         "the fifth stat checkbox right of the Rate header ({lofted:?} vs {rate:?})"
     );
 
-    // And its cell is the last column's own: a cell recorded a column
-    // past it adds only scroll space — dead room right of the table —
-    // so on a window the section just fits (its right edge measures a
-    // few points inside the 1408-wide viewport), a rightward wheel
-    // scroll over the table moves nothing.
-    window.screen = egui::vec2(1416.0, 900.0);
+    // And its cell is the last column's own: it gives the table no
+    // scroll space — back at the left end for its header and closed
+    // again, the scroll's right end is where it was.
+    let start_handle_x = handle_x(&frame.nodes);
+    let open_right = last_column_right(
+        &scroll_to_end(&mut window, &mut view, &ctx, egui::vec2(-200.0, 0.0)).nodes,
+    );
+    scroll_table_left(&mut window, &mut view, &ctx, |frame| {
+        handle_x(&frame.nodes) >= start_handle_x - 0.5
+    });
     let frame = settled(&mut window, &mut view, &ctx);
-    let before = handle_x(&frame.nodes);
-    let over = centre(node(&frame.nodes, "Rate"));
-    let frame = scroll_until(
+    click_labeled(
         &mut window,
+        &frame.nodes,
+        "Stat targets, free cards and conditions",
         &mut view,
         &ctx,
-        over,
-        egui::vec2(-80.0, 0.0),
-        |frame| handle_x(&frame.nodes) < before - 0.5,
-    )
-    .unwrap_or_else(|| window.draw(&mut view, &ctx));
-    assert_eq!(
-        handle_x(&frame.nodes),
-        before,
-        "the handle column's x is where it was"
+    );
+    let closed_right = last_column_right(
+        &scroll_to_end(&mut window, &mut view, &ctx, egui::vec2(-200.0, 0.0)).nodes,
+    );
+    // The slack covers the scroll stop's quantization noise (a couple of
+    // points); a leaked cell would move it by hundreds.
+    assert!(
+        (closed_right - open_right).abs() <= 2.5,
+        "the cell adds no scroll space ({closed_right} vs {open_right})"
     );
 }
 

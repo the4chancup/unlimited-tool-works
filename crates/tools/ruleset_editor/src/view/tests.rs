@@ -11,6 +11,7 @@ mod preview;
 mod problems;
 mod prompt;
 mod start;
+mod stretch;
 mod summary;
 mod tiers;
 mod universal;
