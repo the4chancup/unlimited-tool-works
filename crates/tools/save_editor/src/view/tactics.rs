@@ -75,7 +75,11 @@ pub(super) fn roster_slots(file: &EditFile, team: &TeamEntry) -> Vec<RosterSlot>
         .iter()
         .map(|slot| {
             // The shirt number is the slot's own field, not the player's.
-            roster_slot(file.player(slot.player_id), Some(slot.number))
+            roster_slot(
+                file.version(),
+                file.player(slot.player_id),
+                Some(slot.number),
+            )
         })
         .collect()
 }
@@ -171,19 +175,23 @@ pub(super) fn roster_rows<'a>(
 /// The `RosterSlot` of the roster slot holding `player`: his display name
 /// as the player list shows it, his raw name for the colour-coded rows,
 /// his registered position, the slot's shirt `number` (the pitch's PES
-/// 2014 shirt), the thirteen per-position overalls the
-/// badge's number and the drag's position pick read, and the positions he
-/// is rated A or B at, which a held marker lights. `None`, an empty slot,
-/// gives the empty row: "" names, `None` position, number, overalls and
-/// ratings.
-pub(super) fn roster_slot(player: Option<&PlayerEntry>, number: Option<u16>) -> RosterSlot {
+/// 2014 shirt), the thirteen per-position overalls by `version`'s own
+/// formula the badge's number and the drag's position pick read, and the
+/// positions he is rated A or B at, which a held marker lights. `None`,
+/// an empty slot, gives the empty row: "" names, `None` position,
+/// number, overalls and ratings.
+pub(super) fn roster_slot(
+    version: PesVersion,
+    player: Option<&PlayerEntry>,
+    number: Option<u16>,
+) -> RosterSlot {
     let Some(player) = player else {
         return (String::new(), String::new(), None, None, None, None);
     };
     let mut overalls = [0; 13];
     for (position, overall) in (0u8..).zip(&mut overalls) {
         *overall = player
-            .overall_at(position)
+            .overall_at(version, position)
             .expect("overall_at is None only past CF");
     }
     // `playable` runs CF first, GK last, not in the position byte's

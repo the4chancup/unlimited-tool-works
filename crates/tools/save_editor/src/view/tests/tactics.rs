@@ -4234,7 +4234,7 @@ fn the_pitch_badges_show_each_starters_overall_from_his_record() {
             let roster_slot = usize::from(team.tactics.starting_eleven[index]);
             let player = player_entry(&view, team.roster[roster_slot].player_id);
             player
-                .overall_at(players[index].position)
+                .overall_at(PesVersion::Pes17, players[index].position)
                 .expect("a position byte is never past CF")
         })
         .collect();
@@ -4298,7 +4298,7 @@ fn the_tactics_rows_mark_the_positions_a_player_is_rated_a_or_b_at() {
     expected[2] = true;
     expected[6] = true;
     assert_eq!(
-        crate::view::tactics::roster_slot(Some(housefires), None).5,
+        crate::view::tactics::roster_slot(file.version(), Some(housefires), None).5,
         Some(expected),
         "LB and LMF alone"
     );
@@ -4308,7 +4308,7 @@ fn the_tactics_rows_mark_the_positions_a_player_is_rated_a_or_b_at() {
         .find(|slot| file.player(slot.player_id).is_none())
         .expect("team 721 has an empty roster slot");
     assert_eq!(
-        crate::view::tactics::roster_slot(file.player(empty.player_id), None).5,
+        crate::view::tactics::roster_slot(file.version(), file.player(empty.player_id), None).5,
         None,
         "an empty slot: no ratings"
     );

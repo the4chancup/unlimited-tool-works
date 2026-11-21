@@ -722,7 +722,10 @@ fn team_702() -> (TeamTactics, [u8; 13]) {
     let player = file.player(70223).expect("COWBOY BEBOP is in the fixture");
     let overalls = std::array::from_fn(|position| {
         player
-            .overall_at(u8::try_from(position).expect("thirteen positions"))
+            .overall_at(
+                file.version(),
+                u8::try_from(position).expect("thirteen positions"),
+            )
             .expect("a position below 13 has an overall")
     });
     (tactics, overalls)

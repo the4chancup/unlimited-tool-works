@@ -4038,16 +4038,15 @@ fn on_pes14_a_held_marker_marks_the_teammate_a_release_would_swap_with() {
 // PES 2014's Game Plan opens no player box: a click on a marker with no
 // assignment armed opens no popover. Its pitch draws each starter with
 // a number a white shirt (the game's "Strip Icon" display), and its
-// badges hold no overall.
+// badges hold his overall as the other versions' do.
 #[test]
 fn on_pes14_a_marker_click_opens_no_popover_and_the_pitch_draws_shirts() {
     let mut window = Headless::sized(600.0, 450.0);
     let (mut tactics, rows) = team_1();
     let mut view = TacticsView::default();
     let mut roster = roster_rows(&rows);
-    // Every starter numbered, each given an overall the badge must not
-    // show: the number makes his shirt, the overall proves it is not
-    // painted.
+    // Every starter numbered, each given an overall for the badge: the
+    // number makes his shirt, the overall his badge's right end.
     for index in 0..11 {
         let slot = usize::from(tactics.starting_eleven[index]);
         roster[slot].number = Some(u16::try_from(index + 1).expect("eleven starters"));
@@ -4080,11 +4079,34 @@ fn on_pes14_a_marker_click_opens_no_popover_and_the_pitch_draws_shirts() {
             false,
         );
     });
-    assert!(
-        !shapes.iter().any(|clipped| matches!(&clipped.shape,
-            egui::Shape::Text(shape) if shape.galley.job.text == "88")),
-        "no badge holds the overall"
-    );
+    // Every starter's badge holds his overall at its right end, as the
+    // other versions' badges do.
+    let canvas = canvas_rect(&nodes);
+    let centres = centres_of(canvas, &players);
+    for (index, centre) in centres.iter().enumerate() {
+        let badge = badge_rect(*centre);
+        let overalls: Vec<&egui::epaint::TextShape> = shapes
+            .iter()
+            .filter_map(|clipped| match &clipped.shape {
+                egui::Shape::Text(shape)
+                    if shape.galley.job.text == "88"
+                        && (shape.pos.x + shape.galley.size().x - (badge.right() - 2.0)).abs()
+                            <= 0.5
+                        && (shape.pos.y + shape.galley.size().y / 2.0 - badge.center().y).abs()
+                            <= 0.5 =>
+                {
+                    Some(shape)
+                }
+                _ => None,
+            })
+            .collect();
+        assert_eq!(
+            overalls.len(),
+            1,
+            "starter {}'s badge holds his overall",
+            index + 1
+        );
+    }
     let fill = egui::Color32::from_rgb(SHIRT_FILL[0], SHIRT_FILL[1], SHIRT_FILL[2]);
     // The shirts paint as meshes, one per starter — no `Shape::Path`
     // carries the fill.
@@ -4106,8 +4128,6 @@ fn on_pes14_a_marker_click_opens_no_popover_and_the_pitch_draws_shirts() {
     // Every starter's number painted once, his shirt's fills and number
     // inside his portrait box — the shirt stands where the portrait
     // would, the marker's reach.
-    let canvas = canvas_rect(&nodes);
-    let centres = centres_of(canvas, &players);
     for (index, centre) in centres.iter().enumerate() {
         let portrait = portrait_rect(badge_rect(*centre));
         let number = (index + 1).to_string();

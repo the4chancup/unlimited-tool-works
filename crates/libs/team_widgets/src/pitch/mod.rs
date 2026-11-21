@@ -7,7 +7,7 @@
 //! the screen's slot-to-spot mapping and markers of portrait, badge and
 //! coloured name. On a PES 2014 save the pitch plays by that version's
 //! own Game Plan: a starter is a white shirt with his number, never a
-//! portrait and no overall on the badge; a marker released over another
+//! portrait; a marker released over another
 //! swaps the two starters through `swap_starters_14` — the keeper's
 //! marker dragged like the others — and a release anywhere else writes
 //! nothing; a click opens no popover and a held marker lights no areas.
@@ -498,8 +498,8 @@ pub(crate) fn swap_starters_14(tactics: &mut TeamTactics, shown_preset: usize, a
 ///
 /// On a PES 2014 save the pitch follows that version's own Game Plan
 /// (the draft's `version() === 14` branches): a starter is a white
-/// shirt with his roster slot's number in the portrait's place and the
-/// badge carries no overall; every marker, the keeper's included, is a
+/// shirt with his roster slot's number in the portrait's place; every
+/// marker, the keeper's included, is a
 /// drag source and a swap target under every ruleset — a release over
 /// another swaps the two starters through `swap_starters_14`, the
 /// shown preset alone — a release anywhere else writes nothing (the
@@ -1596,7 +1596,6 @@ fn marker(
 /// number in its place, whatever `view.portraits` holds), the
 /// badge with the position's abbreviation in its group's colour, the
 /// starter's overall at the slot's position at its right end in white
-/// (none on PES 2014, whose overall formula is not known yet)
 /// and his medal's outline when he has a tier, the name in its colour
 /// codes' colours (white where it has none), the captain's mark when he
 /// is the starter, and the selection corners the screen's marks lend
@@ -1673,13 +1672,11 @@ fn paint_marker(
         position_colour(palette, spot.slot.position),
     );
     // His overall at the slot's position at the badge's right end,
-    // where the game draws it, white as the game's — none on PES 2014,
-    // whose overall the badges do not carry.
-    if !pes14
-        && let Some(overall) = roster
-            .get(usize::from(roster_slot))
-            .and_then(|row| row.overalls)
-            .and_then(|overalls| overalls.get(usize::from(spot.slot.position)).copied())
+    // where the game draws it, white as the game's.
+    if let Some(overall) = roster
+        .get(usize::from(roster_slot))
+        .and_then(|row| row.overalls)
+        .and_then(|overalls| overalls.get(usize::from(spot.slot.position)).copied())
     {
         painter.text(
             egui::pos2(badge.right() - BADGE_TEXT_INSET, badge.center().y),
