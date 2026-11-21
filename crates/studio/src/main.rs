@@ -39,8 +39,8 @@ use studio_core::{
 
 use crate::console::{RunLog, log_panics, spawn_notice_printer, spawn_printer};
 use crate::crash_dump::{
-    CrashTest, HiddenLaunch, hidden_launch, overflow_the_stack, run_monitor, session_test,
-    watch_crashes,
+    CrashTest, HiddenLaunch, hidden_launch, monitor_restart, monitor_test, no_restart,
+    overflow_the_stack, run_monitor, session_test, watch_crashes,
 };
 use crate::gui_log::{
     PANIC_EXIT, guard_gui, install_gui_logger, install_panic_hook, show_dialog, unclean_notice,
@@ -454,7 +454,8 @@ fn run_help_mode(
 /// started by a double-click has no console to print it to. `test` is the hidden
 /// `--crash-test` launch, when this is one: `stack` overflows the stack past the
 /// monitor's start (ST-RUN-10), `session` records two steps through the session
-/// link and ends with no closing message (ST-REP-11).
+/// link and ends with no closing message (ST-REP-11), `monitor` ends its monitor
+/// mid-session and lets the link replace it (ST-REP-10).
 fn run_gui_mode(tools: Vec<Box<dyn StudioTool>>, test: Option<CrashTest>) -> ExitCode {
     let (settings, paths) = match startup(&tools) {
         Ok(loaded) => loaded,
@@ -476,18 +477,27 @@ fn run_gui_mode(tools: Vec<Box<dyn StudioTool>>, test: Option<CrashTest>) -> Exi
     };
     install_panic_hook();
     // The monitor starts with the log, once the data location exists: a first run has neither.
-    // Its standard input is the session's pipe: the session link's thread will
-    // write the window's session frames into it.
-    let (crash_handler, session_pipe) = match (&installed_log, &paths.data_dir) {
-        (Some(installed), Some(data_dir)) => watch_crashes(
-            std::env::current_exe(),
-            data_dir,
-            installed.slot,
-            log::logger(),
-        )
-        .map(|(handler, pipe)| (Some(handler), Some(pipe)))
-        .unwrap_or_default(),
-        _ => (None, None),
+    // Its standard input is the session's pipe, the session link's `target`; `restart`
+    // is the one new monitor the link gets when that pipe breaks, its handler owned
+    // by the link's thread until the session is out — `main` holds `monitor` only so
+    // the crash test can end it.
+    let (session_target, session_restart, monitor) = match (&installed_log, &paths.data_dir) {
+        (Some(installed), Some(data_dir)) => {
+            match watch_crashes(
+                std::env::current_exe(),
+                data_dir,
+                installed.slot,
+                log::logger(),
+            ) {
+                Some(watch) => (
+                    Some(Box::new(watch.pipe) as Box<dyn Write + Send>),
+                    monitor_restart(data_dir, installed.slot, watch.handler),
+                    Some(watch.child),
+                ),
+                None => (None, no_restart(), None),
+            }
+        }
+        _ => (None, no_restart(), None),
     };
     // ST-RUN-10's trigger, past the monitor's start and before any window, so the test
     // needs no display.
@@ -518,15 +528,22 @@ fn run_gui_mode(tools: Vec<Box<dyn StudioTool>>, test: Option<CrashTest>) -> Exi
     // link's thread writes them to the monitor's pipe — or, with no monitor,
     // to the window's own session folder under the data location. A first
     // run has no data location and no link.
-    let session_link = ctx
-        .paths()
-        .data_dir
-        .as_deref()
-        .map(|data_dir| session_link::start(ctx.recorder(), session_pipe, data_dir));
+    let mut session_link = ctx.paths().data_dir.as_deref().map(|data_dir| {
+        session_link::start(ctx.recorder(), session_target, session_restart, data_dir)
+    });
     // ST-REP-11's trigger, past the link's start and before any window: it
     // ends the process and never returns.
     if let Some(CrashTest::Session) = test {
         session_test(ctx.recorder(), ctx.paths().data_dir.as_deref());
+    }
+    // ST-REP-10's trigger the same: it takes the link and the monitor to end.
+    if let Some(CrashTest::Monitor) = test {
+        monitor_test(
+            ctx.recorder(),
+            ctx.paths().data_dir.as_deref(),
+            session_link.take(),
+            monitor,
+        );
     }
     let mut restart = None;
     let code = guard_gui(
@@ -574,7 +591,6 @@ fn run_gui_mode(tools: Vec<Box<dyn StudioTool>>, test: Option<CrashTest>) -> Exi
         };
         link.close(how);
     }
-    drop(crash_handler);
     drop(instance);
     if let Some(program) = restart {
         // The child is not waited for: it outlives the process that starts
