@@ -438,6 +438,15 @@ fn on_pes14_the_free_move_refuses_what_the_game_refuses() {
     );
     check_14(&formation, 0, Some(&ALL_77), "keeper", &[(52, 20, None)]);
     check_14(&formation, 1, None, "no overalls", &[(52, 20, None)]);
+    // A point only the dragged role's second table row holds is refused
+    // too: PES 2014 has the one zone table.
+    check_14(
+        &formation,
+        5,
+        Some(&ALL_77),
+        "B-only points of his zone",
+        &[(2, 20, None), (102, 20, None)],
+    );
 }
 
 // The pick between the two candidates, on the 3-2-3-2: at (10, 10) the
@@ -473,14 +482,64 @@ fn on_pes14_the_second_candidate_wins_on_the_overall() {
     );
 }
 
+// The second candidate wins at the tail of its order too: on the 4-4-2,
+// slot 1's CB dropped at (52, 30) takes AMF when AMF outrates the CMF
+// band default, and at (52, 45) CF when CF outrates SS — each from a
+// copy of the all-77 overalls with that one position raised.
+#[test]
+fn on_pes14_the_second_candidate_wins_at_amf_and_cf() {
+    let formation = formation_442_14();
+    let (amf, cf) = (position_byte("AMF"), position_byte("CF"));
+    assert!(
+        pes_savefile::model::formation_rule::AREAS_A[usize::from(amf)].contains(52, 30)
+            && pes_savefile::model::formation_rule::AREAS_A[usize::from(cf)].contains(52, 45),
+        "premise: the points lie in AMF's and CF's zones"
+    );
+    let mut overalls = ALL_77;
+    overalls[usize::from(amf)] = 80;
+    check_14(
+        &formation,
+        1,
+        Some(&overalls),
+        "AMF second",
+        &[(52, 30, Some("AMF"))],
+    );
+    let mut overalls = ALL_77;
+    overalls[usize::from(cf)] = 80;
+    check_14(
+        &formation,
+        1,
+        Some(&overalls),
+        "CF second",
+        &[(52, 45, Some("CF"))],
+    );
+}
+
 // The line limits, the dragged player's own line not counted against
 // its maximum: 4-2-3-1's only forward to midfield leaves no forward;
 // 5-2-2-1's midfielder to defence makes six defenders where its RB to
 // CB stays inside the defenders' line; 4-2-1-3 with its AMF made an SS
 // leaves one midfielder — refused where the other versions' minimum
-// of one would allow it.
+// of one would allow it. And a move landing on both bounds is allowed:
+// the 3-2-3-2's CB to midfield leaves two defenders and takes the
+// midfield to six.
 #[test]
 fn on_pes14_the_free_move_keeps_each_line_inside_its_limits() {
+    let formation = formation_3232_14();
+    assert_eq!(
+        formation.players.map(|slot| position_label(slot.position)),
+        [
+            "GK", "CB", "CB", "CB", "DMF", "DMF", "RMF", "LMF", "AMF", "CF", "CF"
+        ],
+        "premise: three defenders, five midfielders, two forwards"
+    );
+    check_14(
+        &formation,
+        1,
+        Some(&ALL_77),
+        "on both bounds",
+        &[(52, 20, Some("DMF"))],
+    );
     let formation = formation_4231_14();
     check_14(
         &formation,
