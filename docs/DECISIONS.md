@@ -19040,3 +19040,8 @@ Plan: `core/architecture.md` "The monitor" edited.
 Decision (the maintainer, asked 2026-11-17): in the open Nation list, letters pick the first nation, by ID, whose name starts with them, as digits pick by ID; a space continues a name begun; a key of the other kind starts a new run, as a second's pause does. The list opens with the held nation already in view, not scrolled to from the top, and Escape puts back the nation held when it opened, leaving nothing new to undo.
 Why: members rarely know the IDs, so digits alone left them scrolling a list of over 200; the scroll from the top on every open read as the list jumping; and a browser's dropdown, which the list follows, takes Escape as "never mind".
 Plan: `plans/save_editor.md`, "The player view", General info's Nation; SE-GUI-106.
+
+## 2026-11-21 — save_editor — one opening of the Nation list is one undo entry, whatever the pauses between its picks
+Decision: every pick made while the Nation list is open joins one undo entry, which one undo takes back, and Escape removes it however long after the last pick it is pressed. A second's pause still starts a new typed run, but that only decides which nation the keys spell.
+Why: with entries split at a second's pause, an Escape pressed after reading the pick for a second left an entry behind, and the first undo then brought back the nation just escaped from. One change per opening is also how a browser's dropdown behaves.
+Plan: `plans/save_editor.md`, "The player view", General info's Nation; SE-GUI-106.

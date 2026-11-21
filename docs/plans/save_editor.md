@@ -721,11 +721,14 @@ vertical room a tab row takes; a toggle on the title's own row takes none.
          a name already begun, so `SOUTH S` passes `87 - SOUTH AFRICA` for `312 - SOUTH SUDAN`;
        - a second's pause, or a key of the other kind, starts a new run, and any other key
          does nothing;
-       - one undo takes a run's picks back;
+       - one undo takes back every pick made while the list was open, however long the
+         pauses between them;
        - Escape puts back the nation held when the list opened and closes it, leaving
-         nothing new to undo.
+         nothing new to undo, however long after the last pick it is pressed.
 
-       Picking at once, not highlighting for Enter to confirm, keeps it one gesture. An ID
+       Picking at once, not highlighting for Enter to confirm, keeps it one gesture: one
+       opening of the list is one change, as in a browser's dropdown, so neither an undo nor
+       Escape stops at a pick made along the way. An ID
        the version lacks shows as `ID - ?` and stays until another is picked.
 
        The nations are the game's, from each version's `common/etc/pesdb/Country.bin` (in
@@ -3920,10 +3923,11 @@ SE-GUI-106 GIVEN the PES 2021 save open, a player holding nation 135 selected
                 list THEN `231 - SAN MARINO` is picked and scrolled into view, and one Undo puts
                 135 back; WHEN `san` is typed instead THEN 231 is picked the same; WHEN `South
                 S` is typed THEN 312 is picked; WHEN a pause of over a second parts two digits
-                THEN the second starts a new ID; WHEN Down is pressed in the open list, then 231
-                typed and Enter pressed THEN 231 stays picked; WHEN 231 is typed and Escape
-                pressed THEN the list closes, the player holds 135 and Undo has nothing new to
-                take back
+                THEN the second starts a new ID, and one Undo after the list closes still puts
+                135 back; WHEN Down is pressed in the open list, then 231 typed and Enter
+                pressed THEN 231 stays picked; WHEN 231 is typed and Escape pressed, at once or
+                over a second later THEN the list closes, the player holds 135 and Undo has
+                nothing new to take back
 SE-GUI-27  GIVEN the save open
            WHEN Output rosters to TSV runs
            THEN the file written holds, for every cup team, its name on a line of its own, then one
