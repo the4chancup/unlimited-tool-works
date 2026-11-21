@@ -48,10 +48,11 @@ run's findings (`4cc-studio-temp/str_re/out/findings.md`).
      `crashed` (ST-REP-10's first cases, ST-REP-11): merged `e27d9f2b`, one rework, SWE-2
      round S1s5b2 (3 accepted, the loop ended); with it the tests for the checkpoint's seven
      mutants in 5a's writer. Astra's round owed, with the retry's and 5b-i's;
-   - 5b2 a new monitor after the pipe breaks, writing on into the same folder (ST-REP-10's
-     last case): its writer adopts the folder, never rewriting `journal.toml` and taking
-     the next input and output indexes from its rows (review S1s5a-1; DECISIONS 2026-11-21
-     "a new monitor's writer adopts the session folder"): SWE-2 in `sk_sess5b2`;
+   - [x] 5b2 a new monitor after the pipe breaks, writing on into the same folder (ST-REP-10's
+     last cases): its writer adopts the folder, cut back to its last marker, the next
+     indexes from its rows (DECISIONS 2026-11-21 "a new monitor's writer adopts the session
+     folder"): merged `51643014`, one rework, SWE-2 round S1s5b2b (3 accepted, the loop
+     ended). Astra's round owed, with 5b-ii's;
    - 5c the Save editor's saves kept decrypted and rebuilt on reading (SE-REP-07);
    - 5d the dialog's "Include earlier sessions" box, drafted first, and the help page's line
      (ST-REP-09, 12).
