@@ -1896,6 +1896,72 @@ fn the_formation_slots_terms() {
     );
 }
 
+/// PES 2014's preset holds one formation, which the game's screen gives
+/// no name, so a formation slot's terms name the preset, the starter
+/// and the part alone.
+#[test]
+fn pes14s_formation_slot_terms_name_no_formation() {
+    let version = PesVersion::Pes14;
+    // Team 1's tactics: the PES 2014 fixture holds no team 701, so
+    // `fixture_tactics` does not serve it.
+    let mut tactics = pes_savefile::EditFile::from_bytes(&pes_savefile::fixture_save(version))
+        .expect("fixture save")
+        .team(1)
+        .expect("team 1 is in the fixture")
+        .tactics
+        .clone();
+    // A non-identity eleven: wording slot 4's player as roster slot 4
+    // would pass here too if `starting_eleven` were not read.
+    tactics.starting_eleven[4] = 7;
+    let rows = named_roster();
+    let roster = roster_rows(&rows);
+    let term = |field, old, new| {
+        tactics_term(
+            version,
+            field,
+            old,
+            new,
+            &tactics,
+            &tactics,
+            (&roster, &roster),
+        )
+    };
+    assert_eq!(
+        term(
+            TacticsField::Formation {
+                preset: 0,
+                formation: 0,
+                slot: 4,
+                part: FormationPart::Position,
+            },
+            9,
+            10
+        ),
+        (
+            "Preset 1 · Player 08 · Position".to_owned(),
+            "LWF".to_owned(),
+            "RWF".to_owned()
+        )
+    );
+    assert_eq!(
+        term(
+            TacticsField::Formation {
+                preset: 1,
+                formation: 0,
+                slot: 4,
+                part: FormationPart::Y,
+            },
+            20,
+            44
+        ),
+        (
+            "Preset 2 · Player 08 · Y".to_owned(),
+            "20".to_owned(),
+            "44".to_owned()
+        )
+    );
+}
+
 /// A man-marking row names its own slot's starter and shows the marked
 /// opponent's starter numbered from 1, "None" for 255.
 #[test]

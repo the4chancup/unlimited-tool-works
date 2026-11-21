@@ -1253,17 +1253,24 @@ pub fn tactics_term(
             part,
         } => {
             let starter = new_tactics.starting_eleven[usize::from(slot)];
-            let label = format!(
-                "Preset {} · {} · {} · {}",
-                preset + 1,
-                FORMATIONS[usize::from(formation)],
-                name_at(new_roster, starter),
-                match part {
-                    FormationPart::Position => "Position",
-                    FormationPart::X => "X",
-                    FormationPart::Y => "Y",
-                }
-            );
+            let player = name_at(new_roster, starter);
+            let part_word = match part {
+                FormationPart::Position => "Position",
+                FormationPart::X => "X",
+                FormationPart::Y => "Y",
+            };
+            // PES 2014's preset holds one formation, which its Game Plan
+            // gives no name; naming it "Kick-off" would name a set the
+            // game does not have.
+            let label = if version == PesVersion::Pes14 {
+                format!("Preset {} · {player} · {part_word}", preset + 1)
+            } else {
+                format!(
+                    "Preset {} · {} · {player} · {part_word}",
+                    preset + 1,
+                    FORMATIONS[usize::from(formation)]
+                )
+            };
             let value = |stored: u32| match part {
                 FormationPart::Position => position_label(byte(stored)).to_owned(),
                 FormationPart::X | FormationPart::Y => stored.to_string(),
