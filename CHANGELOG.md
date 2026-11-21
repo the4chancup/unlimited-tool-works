@@ -28,6 +28,8 @@
 
 ### Other stuff
 
+- **All tools**: the sidebar now marks the active tool with a thin outline around its
+  highlight, in place of the bar at its left.
 - **Save editor**: a PES 2017 Texport now carries the 4cc clover as its thumbnail, in place of
   the game's own picture.
 

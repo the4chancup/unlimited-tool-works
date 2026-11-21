@@ -6,21 +6,21 @@ use egui::accesskit::{self, Role, Toggled};
 use pes_version::PesVersion;
 
 use super::{
-    ACTIVE_BAR_WIDTH, CLOVER_LEAVES, CLOVER_RING, ExeCheck, HELP_LABEL, ICON_SIZE,
-    LABEL_END_PADDING, LABEL_GAP, RAIL_WIDTH, REPORT_LABEL, SETTINGS_LABEL, overlay_frame,
-    overlay_id, selector_color, version_label,
+    CLOVER_LEAVES, CLOVER_RING, ExeCheck, HELP_LABEL, ICON_SIZE, LABEL_END_PADDING, LABEL_GAP,
+    RAIL_WIDTH, REPORT_LABEL, SETTINGS_LABEL, overlay_frame, overlay_id, selector_color,
+    version_label,
 };
 use crate::help::{HelpSection, HelpTarget, HelpTopic};
 use crate::pes_process::RunningPes;
-use crate::settings::Settings;
+use crate::settings::{Settings, Theme};
 use crate::shell::test_harness::*;
 use crate::shell::{StudioApp, about, run_cli};
 use crate::tool::{AppPaths, PlannedTool};
 
 mod short_window;
 
-/// The overlay's inner width as the draft's row lays it out: the accent bar, the icon's
-/// `ICON_SIZE` box centred in the rest of the icon cell `cell` wide, `LABEL_GAP`, the
+/// The overlay's inner width as the draft's row lays it out: the icon's
+/// `ICON_SIZE` box centred in the icon cell `cell` wide, `LABEL_GAP`, the
 /// widest body-text galley over `labels` (measured with the context's fonts) and
 /// `LABEL_END_PADDING`.
 fn overlay_inner_width(egui_ctx: &egui::Context, cell: f64, labels: &[&str]) -> f64 {
@@ -36,8 +36,7 @@ fn overlay_inner_width(egui_ctx: &egui::Context, cell: f64, labels: &[&str]) -> 
                 .x
         })
         .fold(0.0, f32::max);
-    let bar = f64::from(ACTIVE_BAR_WIDTH);
-    let icon_box_right = bar + (cell - bar) / 2.0 + f64::from(ICON_SIZE) / 2.0;
+    let icon_box_right = cell / 2.0 + f64::from(ICON_SIZE) / 2.0;
     icon_box_right + f64::from(LABEL_GAP) + f64::from(widest) + f64::from(LABEL_END_PADDING)
 }
 
@@ -81,9 +80,9 @@ fn frame_shape_at(out: &FrameOutput, bounds: accesskit::Rect) -> Option<&egui::e
     })
 }
 
-/// The frame's `color` fill `ACTIVE_BAR_WIDTH` wide over the full height at
-/// `bounds`' left edge: the active entry's accent bar.
-fn accent_bar_at(
+/// The `Rect` stroked in `color` painted over `bounds` (within 2 points, for the
+/// visuals' expansion): an entry's resting edge.
+fn edge_at(
     out: &FrameOutput,
     bounds: accesskit::Rect,
     color: egui::Color32,
@@ -95,12 +94,32 @@ fn accent_bar_at(
             _ => None,
         })
         .find(|shape| {
-            shape.fill == color
+            shape.stroke.width > 0.0
+                && shape.stroke.color == color
+                && (f64::from(shape.rect.min.x) - bounds.x0).abs() <= 2.0
+                && (f64::from(shape.rect.min.y) - bounds.y0).abs() <= 2.0
+                && (f64::from(shape.rect.max.x) - bounds.x1).abs() <= 2.0
+                && (f64::from(shape.rect.max.y) - bounds.y1).abs() <= 2.0
+        })
+}
+
+/// A non-transparent `Shape::Rect` at `bounds`' left edge the row's height but
+/// narrower than the row: `None` while every fill there spans the row.
+fn narrow_fill_at_left(out: &FrameOutput, bounds: accesskit::Rect) -> Option<egui::Rect> {
+    out.shapes
+        .iter()
+        .filter_map(|clipped| match &clipped.shape {
+            egui::Shape::Rect(shape) => Some(shape),
+            _ => None,
+        })
+        .find(|shape| {
+            shape.fill != egui::Color32::TRANSPARENT
                 && (f64::from(shape.rect.min.x) - bounds.x0).abs() <= 0.5
                 && (f64::from(shape.rect.min.y) - bounds.y0).abs() <= 0.5
-                && (f64::from(shape.rect.width()) - f64::from(ACTIVE_BAR_WIDTH)).abs() <= 0.5
-                && (f64::from(shape.rect.height()) - (bounds.y1 - bounds.y0)).abs() <= 0.5
+                && (f64::from(shape.rect.max.y) - bounds.y1).abs() <= 0.5
+                && f64::from(shape.rect.max.x) < bounds.x1 - 2.0
         })
+        .map(|shape| shape.rect)
 }
 
 /// How many of the frame's `Shape::Text` carry exactly `text`.
@@ -880,9 +899,8 @@ fn the_labels_are_painted_in_the_overlay_and_never_on_the_rail() {
 }
 
 // An entry row: the icon centred in the icon cell (the row's first cell-width
-// points less the accent bar's width at its left), the label starting the
-// draft's gap past the right edge of the icon's 24-point box centred there,
-// vertically centred on the row.
+// points), the label starting the draft's gap past the right edge of the
+// icon's 24-point box centred there, vertically centred on the row.
 #[test]
 fn a_row_paints_its_icon_centred_in_the_cell_and_its_label_after_it() {
     let Shell { mut app, _dir, .. } = shell();
@@ -896,10 +914,7 @@ fn a_row_paints_its_icon_centred_in_the_cell_and_its_label_after_it() {
         egui::pos2(bounds.x0 as f32, bounds.y0 as f32),
         egui::pos2(bounds.x1 as f32, bounds.y1 as f32),
     );
-    let icon_cell = egui::Rect::from_min_max(
-        egui::pos2(row.min.x + ACTIVE_BAR_WIDTH, row.min.y),
-        egui::pos2(row.min.x + cell, row.max.y),
-    );
+    let icon_cell = egui::Rect::from_min_max(row.min, egui::pos2(row.min.x + cell, row.max.y));
 
     // The stub tools' icon is "i"; the same glyph sits on B's row, so the
     // cell's bounds pick A's.
@@ -928,49 +943,108 @@ fn a_row_paints_its_icon_centred_in_the_cell_and_its_label_after_it() {
     );
 }
 
-// The active entry alone gets the accent-colored bar at its left edge, the
-// draft's 3 px accent bar.
+// The active entry alone carries the selection's edge at rest, as a held
+// toggle side's: the 1-point stroke of the selection fill's `edge_color`
+// inside its rect. On the light theme the edge is the light fill's 30
+// darker, `#72b3e1` on the `#90d1ff` selection.
 #[test]
-fn the_accent_bar_marks_only_the_active_row() {
+fn the_active_row_alone_draws_the_selections_edge() {
+    let Shell {
+        mut app,
+        settings,
+        _dir,
+        ..
+    } = shell();
+    let egui_ctx = test_context();
+
+    let dark = egui_ctx.style_of(egui::Theme::Dark);
+    let edge = crate::theme::edge_color(&dark.visuals, dark.visuals.selection.bg_fill);
+    assert_eq!(
+        edge,
+        egui::Color32::from_rgb(0x1e, 0x7a, 0x9e),
+        "premise: the dark selection edge"
+    );
+    let out = frame_at(&egui_ctx, &mut app, Vec::new(), true, Some(0.9));
+    let painted = edge_at(&out, entry(&out.nodes, "A").bounds().unwrap(), edge)
+        .expect("the active row carries the edge");
+    assert_eq!(
+        (painted.stroke.width, painted.fill, painted.stroke_kind),
+        (1.0, egui::Color32::TRANSPARENT, egui::StrokeKind::Inside),
+        "the edge is a 1-point stroke inside the row's rect"
+    );
+    for label in ["B", REPORT_LABEL, HELP_LABEL, SETTINGS_LABEL] {
+        assert!(
+            edge_at(&out, entry(&out.nodes, label).bounds().unwrap(), edge).is_none(),
+            "the {label} row carries no edge"
+        );
+    }
+
+    settings.lock().unwrap().common.theme = Theme::Light;
+    // `logic` applies the setting, but the frame's `ui` resolved its style
+    // first: the draw goes light on the frame after.
+    frame_at(&egui_ctx, &mut app, Vec::new(), true, Some(1.0));
+    let out = frame_at(&egui_ctx, &mut app, Vec::new(), true, Some(1.1));
+    let light = egui_ctx.style_of(egui::Theme::Light);
+    let edge = crate::theme::edge_color(&light.visuals, light.visuals.selection.bg_fill);
+    assert_eq!(
+        edge,
+        egui::Color32::from_rgb(0x72, 0xb3, 0xe1),
+        "premise: the light selection edge"
+    );
+    assert!(
+        edge_at(&out, entry(&out.nodes, "A").bounds().unwrap(), edge).is_some(),
+        "the active row carries the light edge"
+    );
+}
+
+// No entry keeps room for a bar at its left: the only fill a row paints
+// there is its frame's, spanning the row.
+#[test]
+fn no_entry_paints_a_fill_narrower_than_its_row_at_its_left_edge() {
     let Shell { mut app, _dir, .. } = shell();
     let egui_ctx = test_context();
 
     let out = frame_at(&egui_ctx, &mut app, Vec::new(), true, Some(0.9));
-    let color = egui_ctx.global_style().visuals.selection.stroke.color;
-    assert!(
-        accent_bar_at(&out, entry(&out.nodes, "A").bounds().unwrap(), color).is_some(),
-        "the active row carries the accent bar"
-    );
-    for label in ["B", REPORT_LABEL, HELP_LABEL, SETTINGS_LABEL] {
+    for label in ["A", "B", REPORT_LABEL, HELP_LABEL, SETTINGS_LABEL] {
+        let bounds = entry(&out.nodes, label).bounds().unwrap();
         assert!(
-            accent_bar_at(&out, entry(&out.nodes, label).bounds().unwrap(), color).is_none(),
-            "the {label} row carries no accent bar"
+            narrow_fill_at_left(&out, bounds).is_none(),
+            "the {label} row paints a narrower fill at its left edge"
         );
     }
 }
 
-// The accent bar's two left corners are rounded as the entry's, the draft's
-// `.tool.on` border, and its right ones square against the fill.
+// Hovered, the active entry keeps egui's own frame: its edge is the
+// resting look, painted at rest only.
 #[test]
-fn the_accent_bar_rounds_its_left_corners_only() {
+fn the_active_rows_edge_is_not_drawn_while_hovered() {
     let Shell { mut app, _dir, .. } = shell();
     let egui_ctx = test_context();
+    let visuals = egui_ctx.style_of(egui::Theme::Dark).visuals.clone();
+    let edge = crate::theme::edge_color(&visuals, visuals.selection.bg_fill);
 
     let out = frame_at(&egui_ctx, &mut app, Vec::new(), true, Some(0.9));
-    let visuals = egui_ctx.global_style().visuals.clone();
-    let bar = accent_bar_at(
-        &out,
-        entry(&out.nodes, "A").bounds().unwrap(),
-        visuals.selection.stroke.color,
-    )
-    .expect("the active row carries the accent bar");
+    let bounds = entry(&out.nodes, "A").bounds().unwrap();
+    frame_at(
+        &egui_ctx,
+        &mut app,
+        hover(entry(&out.nodes, "A")),
+        true,
+        Some(1.0),
+    );
+    let out = frame_at(&egui_ctx, &mut app, Vec::new(), true, Some(1.05));
+    let frame = frame_shape_at(&out, bounds).expect("the hovered row's frame");
     assert_eq!(
-        bar.corner_radius,
-        egui::CornerRadius {
-            ne: 0,
-            se: 0,
-            ..visuals.widgets.noninteractive.corner_radius
-        }
+        frame.stroke, visuals.widgets.hovered.bg_stroke,
+        "hovered keeps egui's own frame"
+    );
+    assert!(
+        edge_at(&out, bounds, edge).is_none(),
+        "the resting edge is not painted over it"
+    );
+    assert!(
+        narrow_fill_at_left(&out, bounds).is_none(),
+        "nothing narrower than the row stands at its left edge either"
     );
 }
 
@@ -3052,11 +3126,11 @@ fn the_tail_rows_sit_at_the_drafts_rows() {
     );
 }
 
-// The draft's entries carry a 3-point left border, transparent but on the active
-// one, so a glyph centres in the rest of the row: at x 29 on the rail, and at the
-// same x in the opened sidebar, where it starts 3 + 8 past the row's left.
+// With no bar at the row's left, a glyph centres in the whole icon cell: on
+// the rail and in the opened sidebar alike, at the same x in both (the cell
+// is the rail's inner width in either place).
 #[test]
-fn every_rail_icon_centres_right_of_the_accent_bar_on_the_rail_and_open() {
+fn every_rail_icon_sits_at_the_icon_cells_centre_on_the_rail_and_open() {
     let mut glyphs: Vec<&str> = REGISTRY
         .iter()
         .filter(|entry| entry.id != "save-editor")
@@ -3065,24 +3139,41 @@ fn every_rail_icon_centres_right_of_the_accent_bar_on_the_rail_and_open() {
     // The registered stub's icon, the help's and the gear's.
     glyphs.extend(["i", crate::icons::QUESTION, crate::icons::GEAR]);
     let (rail, open) = rail_and_open_at_draft_window("Save editor");
+    let row = rail_bounds(&rail.nodes, "Save editor");
+    let cell = row.x1 - row.x0;
+    let expected = row.x0 + cell / 2.0;
     let left_strip = egui::Rect::from_min_max(egui::Pos2::ZERO, egui::pos2(RAIL_WIDTH, 780.0));
-    for (state, out) in [("rail", &rail), ("open", &open)] {
+    let mut rail_centres = Vec::new();
+    let mut open_centres = Vec::new();
+    for (state, out, centres) in [
+        ("rail", &rail, &mut rail_centres),
+        ("open", &open, &mut open_centres),
+    ] {
         for glyph in &glyphs {
             let shape = text_shape_in(out, glyph, left_strip)
                 .unwrap_or_else(|| panic!("{glyph:?} is painted ({state})"));
-            let centre = shape.pos.x + shape.galley.size().x / 2.0;
-            assert_at_draft(
-                f64::from(centre),
-                29.0,
-                &format!("the {glyph:?} glyph's centre ({state})"),
+            let centre = f64::from(shape.pos.x + shape.galley.size().x / 2.0);
+            assert!(
+                (centre - expected).abs() <= 0.5,
+                "the {glyph:?} glyph's centre is the icon cell's ({centre} vs {expected}, {state})"
             );
+            centres.push(centre);
         }
+    }
+    for (glyph, (rail, open)) in glyphs
+        .iter()
+        .zip(rail_centres.iter().zip(open_centres.iter()))
+    {
+        assert!(
+            (rail - open).abs() <= 0.5,
+            "the {glyph:?} glyph moved on open ({rail} vs {open})"
+        );
     }
 }
 
 // The opened sidebar's rows as the draft's `#sb-open .tool` lays them out: every
-// label starts at x 47 (the row's left at 6, its 3-point border, its padding 8,
-// the 24-point icon and the gap 6), and the layer is the draft's 190.6 wide: its
+// label starts at x 45.5 (the row's left at 6, its padding 9.5, the 24-point
+// icon and the gap 6), and the layer is the draft's 189.1 wide: its
 // widest label, "Player aesthetics editor", with 6 of the row after it, the
 // frame's padding 6 on both sides and the 1-point line.
 #[test]
@@ -3110,7 +3201,7 @@ fn the_opened_sidebars_labels_and_width_match_the_draft() {
             .unwrap_or_else(|| panic!("the opened sidebar paints {label:?}"));
         assert_at_draft(
             f64::from(shape.pos.x),
-            47.0,
+            45.5,
             &format!("the {label:?} label's left"),
         );
     }
@@ -3118,7 +3209,7 @@ fn the_opened_sidebars_labels_and_width_match_the_draft() {
     let layer = egui_ctx
         .memory(|m| m.area_rect(overlay_id()))
         .expect("the open overlay has a rect");
-    assert_at_draft(f64::from(layer.width()), 190.63, "the opened layer's width");
+    assert_at_draft(f64::from(layer.width()), 189.13, "the opened layer's width");
 }
 
 // The logo is the draft's `.logo` 32-point square: it alone senses and fills on
