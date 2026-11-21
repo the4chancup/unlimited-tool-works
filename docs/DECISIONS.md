@@ -19055,3 +19055,8 @@ Plan: `plans/save_editor.md`, "Editing UI", the bullet "Only the cup's teams are
 Decision: `export-teams-list` refuses a save holding no cup team with the words `check-aatf` and `export-toml --all-teams` use, before it reads or writes `teams_list.txt`.
 Why: on such a save it merged nothing and printed how many rows it kept, which reads as a list already up to date; the three commands that read every cup team guard the same mistake, a stock save opened for a cup one, so they keep one rule.
 Plan: `plans/save_editor.md`, "Editing UI", the bullet "Only the cup's teams are shown"; SE-TL-06.
+
+## 2026-11-21 — studio_core — the default pane's width is one shared constant
+Decision: the tool pane's width at the default window (1224 points: the 1280-point window less the sidebar's 56-point rail) is a public `studio_core` constant, derived from the shell's own two, and each tool's larger-window cap reads it; the Save editor's private copy goes.
+Why: every tool's nostretch slice caps its view at that width, the Save editor's first with a constant of its own; four copies of one number would drift the day the rail or the default window changes, and only the shell knows both.
+Plan: `plans/core/gui.md`, "Shell layout", the paragraph "A window larger than the default".
