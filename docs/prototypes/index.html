@@ -2731,9 +2731,9 @@ function drawReport() {
             onchange: e => { r.earlierSessions = e.target.checked; render(); } }),
           " Include earlier sessions"),
         h("ul", { style: "margin:4px 0 0 18px; padding:0" },
-          sample.sessions.map(s => item(weak(s.started + ": opened " + s.opened
-            + "; " + (s.wrote ? "wrote at " + s.wrote : "wrote nothing") + "; " + s.ended))))) : null,
-      h("div", { style: "margin-top:8px" }, "Your user folder is written as ~ in the file's paths."),
+          sample.sessions.map(s => item(s.started + ": opened " + s.opened
+            + "; " + (s.wrote ? "wrote at " + s.wrote : "wrote nothing") + "; " + s.ended)))) : null,
+      h("div", { style: "margin-top:8px" }, weak("Your user folder is written as ~ in the file's paths.")),
       r.saved ? h("div", { style: "margin-top:8px" }, "Saved to " + sample.savedTo) : null),
     r.saved ? [button("Close", closeWindow)]
       : [button("Save…", () => { r.saved = true; render(); }), button("Cancel", closeWindow)],

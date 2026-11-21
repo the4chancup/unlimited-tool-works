@@ -19122,3 +19122,11 @@ another window's, still open, which has not stopped. It stays in the list, becau
 be a window that crashed with no monitor, whose own writer died with it: the session the member
 most needs to include.
 Plan: `plans/core/architecture.md` "Repro bundles", the dialog's "Under the list" bullet.
+
+## 2026-11-21 — studio_core — Report a problem's earlier sessions in the regular colour, its line about `~` in the weak one
+Decision (maintainer): the "Include earlier sessions" list's lines are drawn in the regular
+colour, ticked or not, and the dialog's closing line, "Your user folder is written as ~ in the
+file's paths.", in the weak one. The draft had them the other way round.
+Why: the member reads the sessions to choose whether to tick the box, so they are content;
+the line about `~` is a side note on what the file holds.
+Plan: `plans/core/architecture.md` "Repro bundles", the dialog's "Under the list" bullet.
