@@ -110,8 +110,8 @@ run's findings (`4cc-studio-temp/str_re/out/findings.md`).
     file, so the clover shows nowhere in game. A starter with no portrait now shows the
     install's own `player-dummy.png` on the pitch and in the team picture, the drawing only
     without one (merged `cc113dc2`); its SWE-2 round S1dm (2 accepted, the loop ended): a
-    range of pictures reads the game's copy once, and two test gaps, with SWE-2 in
-    `sk_dummy`. Owed: the paid review rounds of both commits (Tier 1).
+    range of pictures reads the game's copy once, and two test gaps, merged `c20681a1`.
+    Owed: the paid review rounds of both commits (Tier 1).
     Can run beside the detour: it touches no PES 2014 file.
 
 Most open steps below wait only on a check in the game or the built window that the lead's
