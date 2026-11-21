@@ -19098,3 +19098,17 @@ not a third monitor: the plan gives one new monitor, and two deaths in one sessi
 something a third start would meet too.
 Plan: `plans/core/architecture.md` "Repro bundles", the bullet "A pipe that breaks
 mid-session" and the one after it.
+
+## 2026-11-21 — studio_core, save_editor — a session keeps each save packed and compressed, rebuilt by the Save editor on reading
+Decision: the Save editor gives the recorder each save it opens or writes in a packed form,
+its decrypted sections and salt, beside the save's own bytes. The session's writer keeps the
+packed form zlib-compressed in the folder, with the save's own size and SHA-256 in its journal
+row. The bundle reader (`read_bundle`) rebuilds each packed file through a function the Save
+editor gives it, then checks the result like any kept file.
+Why: compressed by the writer, not by the Save editor, because deflating an 11 MB save on the
+window's thread would cost the window time at every open and write. Rebuilt through a function
+the reader is given, not by `studio_core`, because `studio_core` stays blind to saves. Checked
+like any kept file, not by a check of the Save editor's own, so one size and SHA-256 check
+covers every kept file.
+Plan: `plans/core/architecture.md` "Repro bundles", the bullet "The folder keeps each save
+packed".

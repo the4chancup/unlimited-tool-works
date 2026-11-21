@@ -668,8 +668,10 @@ Compiler and the Export upgrader, then the rest as they are built.
   byte for byte. So the Save editor gives the recorder each save's decrypted sections and
   salt beside its bytes, the session keeps those, and a session takes about half a MB.
 
-  - Reading a session back rebuilds each save and checks it against the journal's SHA-256,
-    so a fault in the decrypter shows as a failed rebuild, never as a wrong file read.
+  - The folder keeps each save packed, as its decrypted sections and salt, compressed by the
+    session's writer, off the window's thread. The save's own size and SHA-256 go in its
+    journal row. Reading the session back rebuilds each save and checks it against them, so
+    a fault in the decrypter shows as a failed rebuild, never as a wrong file read.
   - `studio_core` stays blind to saves: the decrypting and the rebuild are the Save
     editor's.
   - A bundle of the current session keeps each save as it was, which loads in the game
