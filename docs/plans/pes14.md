@@ -363,7 +363,14 @@ From the fork's codec, checked against the vanilla save and the Akko saves (2026
     0x54:6, 3 bits, the grid's cell less 1; player gloves 0x56:2 (Off, Auto); tape 0x56:3;
     shirttail 0x56:4 (Untucked, Tucked In);
   - inferred, each the one changed run its item fits: skin type 0x4C:5, 4 bits, less 1; neck
-    0x4E:0, 3 bits, less 1.
+    0x4E:0, 3 bits, less 1;
+  - the gloves id (the gloves model; 0 is bare hands), which the base game does not store:
+    the Akko DLC reads it from the hair accessory's colour fields, 6 bits each from the lowest,
+    red 0x13:0, blue 0x14:0,
+    then green 0x50:3 (running into 0x51:0), an id of up to 18 bits. Source: the Akko7 fork's
+    `pes14.cpp`, whose author also keeps the DLC. In `.akko7v2` 14 records hold one, all 11:
+    Invitational 7's players beside boots 55, the fork's pair that hides an FPC player's boots
+    and gloves.
 
   Not told apart, since both passes changed them together: hairstyle, hair variation, hair
   colour, and forehead and wrinkles. Forehead or
@@ -371,7 +378,7 @@ From the fork's codec, checked against the vanilla save and the Akko saves (2026
   alone. The hair accessory colour did not store: its row is greyed under the hairstyle the
   second pass chose. The face's build points, its sliders and its upper and lower face items were
   left alone. Across `.akko7v2`'s 5060 appearance records only the ids, the boots, the skin
-  colour, byte 0x13 (the fork's hair-accessory red), byte 0x34 (the fork's iris colour, 0x34:4,
+  colour, byte 0x13 (the gloves id's low bits, above), byte 0x34 (the fork's iris colour, 0x34:4,
   4 bits), the sliders and bytes 0x53 to 0x56 vary: the Akko players otherwise share one look.
 
   The save also changed the player record. It set bits 0x28:6 and 0x28:7, and it wrote
@@ -820,9 +827,9 @@ on main. Main is merged into the branch, never rebased onto it.
    - the overlong shirt name's tooltip "(PES 2016 shows 16)" names PES 2014 too;
    - skill card 4 reads "Precise Touch" on PES 2014, the game's older name for Cut Behind &
      Turn (`labels::card_name` takes no version today);
-   - the Team menu's boots and gloves dialog on PES 2014: PES 2014 stores no gloves id, so the
-     dialog sets the boots alone, and refuses when one of the team's players has no appearance
-     record.
+   - the Team menu's boots and gloves dialog on PES 2014: the base game stores no gloves id,
+     so the dialog sets the boots alone until step 10, and refuses when one of the team's
+     players has no appearance record.
 5. The Akko VII ruleset (`akko7.rhai`, its logo and page); `/4ccg/` in `.akko7v2` passes as it
    does in the fork's fixed build.
 6. Releases: the `pes14-v` tag prefix in the update check and `release.yml`. The version
@@ -890,4 +897,11 @@ on main. Main is merged into the branch, never rebased onto it.
    8-1-1 to 4-4-2, #66 and #8 swapped, #99 moved below the centre circle as CMF, bench #77
    starting at CF, Defensive Line 7, Combination play row 1 in Area 5, Offside Trap on, and
    #24 taking penalties. After the free move the game names the shape "4-4-2", which the
-   build now marks "4-4-2 (custom)". Then the release.
+   build now marks "4-4-2 (custom)". Then step 10, then the release.
+10. The gloves id on PES 2014, the Akko DLC's (above). It is read and written as the other
+    versions' gloves id, through the three colour fields, so these work on PES 2014
+    as they do elsewhere: the Appearance page's Gloves ID box, the boots and gloves dialog,
+    the FPC entries (gloves 11 hides an FPC player's, 0 shows them), and `gloves_id` in Team
+    TOML and the aesthetics patch. A player with no appearance record is refused, as for the
+    boots. Its check, in Edit mode with the DLC: a `/4ccg/` goalkeeper given a gloves id the
+    DLC installs shows those gloves, and the fork reads the same id back.

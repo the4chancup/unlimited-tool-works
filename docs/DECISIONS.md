@@ -19363,3 +19363,16 @@ by its shape. When the list has an entry of the same name, the players placed ot
 Why: the maintainer's ruling after Build 2's check. The game names a moved 4-4-2 "4-4-2", so
 saying it is not in the game's list is wrong.
 Plan: `plans/pes14.md` "The Gameplan screen in Build 2", step 9.
+
+## 2026-11-21 — pes_savefile, save_editor (pes14 branch) — PES 2014 stores the Akko DLC's gloves id
+Decision: on PES 2014 the gloves id is read and written as on the other versions, in the
+fields the Akko DLC reads it from: the hair accessory's colour, 6 bits each, red 0x13:0, blue
+0x14:0 and green 0x50:3, lowest first. Every gloves feature then works on PES 2014, and the
+release `0.0.2-pes14.2` waits for it.
+Why: the base game stores no gloves id, but the cup plays with the DLC, whose author also
+keeps the Akko7 fork of 4ccEditor and wrote this layout there. The Akko save holds it: 14
+Invitational 7 players carry gloves 11 beside boots 55, the fork's pair that hides an FPC
+player's. Leaving it out would let the Save editor's FPC and gloves edits miss what the game
+shows.
+Plan: `plans/pes14.md` "What is known about the save" (the appearance record), step 4's boots
+and gloves dialog, step 10.
