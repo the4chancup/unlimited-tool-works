@@ -3462,10 +3462,13 @@ pruned when their phase closes; they stay in git history. A question only the ma
 can answer is not an issue: it goes to `docs/maintainer/questions.html`, and an issue that waits on one
 points there.
 
-- resolved 2026-11-21 (`17ecd044`, merged from main) — PES 2014 showed no portraits at
-  all: `E:\PES2014\download\4cc_04_fpc.cpk` lists its 8 files by number only (an `ITOC`
-  table, `TocOffset` stored as null), and the CPK reader refused it. It now opens such an
-  archive with no named entries.
+- resolved 2026-11-21 (`17ecd044`, merged from main) — the CPK reader refused
+  `E:\PES2014\download\4cc_04_fpc.cpk`, which lists its 8 files by number only (an `ITOC`
+  table, `TocOffset` stored as null), so the portrait source and a compile's read of that
+  install failed on it. It now opens such an archive with no named entries. Nothing changes
+  on screen: PES 2014's pitch draws shirts, not portraits, and no 2015-2021 install on hand
+  holds such an archive. Why the pitch still offers Set PES path with `E:\PES2014` set is
+  not known yet.
 - open (2026-11-20) — A checkpoint's diff mutation run pays each crate's fixed costs however
   few mutants it holds. On `969e1cb6`, `team_widgets`' one mutant took 567 s wall:
   - a baseline of 133 s build and 199 s test, though the gates had just passed the same tree;
