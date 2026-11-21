@@ -37,7 +37,9 @@ run's findings (`4cc-studio-temp/str_re/out/findings.md`).
    - [x] the crash monitor's start tried once more (ST-RUN-13): merged 2026-11-21, SWE-2
      round S1rt; its Astra round owed, batched with 5b's (the same file, `crash_dump.rs`);
    - [x] 5a the session folder's writer and reader in `studio_core::repro`, called in
-     process (ST-REP-06 to 08): merged `08d65aa6`, SWE-2 round S1s5a; its Astra round owed;
+     process (ST-REP-06 to 08): merged `08d65aa6`, SWE-2 round S1s5a; Astra round A-s5a r1,
+     2 accepted (a marker line ending each journal block, and a test of several files),
+     fixed once 5b-i merges, since 5b-i edits the same file;
    - 5b the pipe (DECISIONS 2026-11-21): the recorder's queue and sending thread, the monitor
      writing each message it reads from its standard input, the window's own writer when no
      monitor started (ST-REP-10's first two cases, ST-REP-11);
