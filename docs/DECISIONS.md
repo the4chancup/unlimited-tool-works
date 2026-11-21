@@ -19188,3 +19188,20 @@ Why: the plan asks that every selected row be in the list, and a category can hi
 way the selector and the filter can; widening it is what every other selection made outside
 the list already does, so a second rule for this one would differ for no reason.
 Plan: plans/save_editor.md "Editing UI", the bullet "Several players selected".
+
+## 2026-11-21 — save_editor — Select all similar players stands right under the player list, above the Make buttons
+Decision (the maintainer): the button heads the quick actions' grid, between the player list and
+the Make buttons, as wide as the grid, where it stood under the grid before.
+Why: the maintainer's placement; the button acts on the list's selection, and there it stands
+by the list, ahead of the edits it prepares.
+Plan: plans/save_editor.md "Editing UI", the bullet "Select all similar players"; the draft's
+`quickActions`.
+
+## 2026-11-21 — studio_core — the active sidebar tool takes the selection's edge, not a bar at its left
+Decision (the maintainer): the active tool's entry loses its 3-point accent bar at the left and
+draws the 1-point edge every live control now draws, the selection blue's `#1e7a9e`, around its
+selection fill, as a held toggle side does. Every entry's icon centres in the full 44-point
+cell, since no row keeps the bar's room.
+Why: the maintainer's call, after the controls gained their edges: the active entry now marks its
+choice as a held toggle side marks its own, with the same fill and edge.
+Plan: plans/core/gui.md "Sidebar" item 3 (the active tool); the draft's `.sidebar .tool.on`.

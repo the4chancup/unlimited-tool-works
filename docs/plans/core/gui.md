@@ -393,9 +393,10 @@ Top to bottom:
    nothing is drawn over the status bar (0.0.2-side; the draft's `.tools-box` and
    `.tail-box`).
 
-   The active tool is highlighted with an accent-colored left border bar plus a filled
-   background, the bar 3 points wide with its two left corners rounded as the entry's (2
-   points; the draft's `.tool.on` border), the right ones square against the fill.
+   The active tool is highlighted as a held toggle side is: the selection's fill and its
+   1-point edge, `#1e7a9e` (the Control edges row; the draft's `.tool.on`), with no bar at
+   its left. Every entry's icon is centred in the rail's 44-point cell, and the opened
+   sidebar keeps it there.
 
    The suite's planned tools not in this build (the registry's, `architecture.md` "Tool plugin
    interface") are listed after the registered ones, grayed and not clickable, each tooltip

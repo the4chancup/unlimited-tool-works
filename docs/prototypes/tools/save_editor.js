@@ -5442,10 +5442,11 @@ function quickActions() {
       if (!Number.isNaN(n)) { eachSelected(p, x => setAllStats(x, n), "Set stats " + n); render(); }
     }, { disabled: off, title: tip || "Set every ability stat to the value next to this button" }),
     input);
+  // Select all similar players heads the grid, right under the list, above the Make buttons.
   return h("div", { class: "qagrid", id: "quick-actions", "data-panel": "quick-actions" },
+    h("div", { class: "wide" }, similarButton()),
     h("div", { class: "qacol" }, tiers.filter(t => MEDAL_MARK[t.id]).map(make)),
-    h("div", { class: "qacol" }, tiers.filter(t => !MEDAL_MARK[t.id]).map(make), setStats),
-    h("div", { class: "wide" }, similarButton()));
+    h("div", { class: "qacol" }, tiers.filter(t => !MEDAL_MARK[t.id]).map(make), setStats));
 }
 // The detail view: a player row shows the player view (the fixed columns,
 // then the Appearance section), a team row the team view. No tabs.

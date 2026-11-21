@@ -407,10 +407,11 @@ vertical room a tab row takes; a toggle on the title's own row takes none.
   They act on the selected player, so a team row leaves them disabled, their tooltip "These
   buttons act on a player: pick a player row". The Player menu's entries are disabled too,
   their tooltip "The Player menu acts on a player: pick a player row".
-- **Select all similar players** (0.0.2-similar), a button under the quick actions as wide as
-  their grid, selects with the selected player every player who shares what its window
-  asks, so a member edits a tier's players as one; its tooltip "Select the players
-  like this one, to edit their stats together". A team row, or several players already
+- **Select all similar players** (0.0.2-similar), a button right under the player list,
+  above the quick actions' Make buttons and as wide as their grid, selects with the
+  selected player every player who shares what its window asks, so a member edits a tier's
+  players as one; its tooltip "Select the players like this one, to edit their stats
+  together". A team row, or several players already
   selected, leaves it disabled, its tooltip "Select one player first". The window, titled
   `Select all similar players`, holds:
   - `Match <name> on:` above three checkboxes, all ticked when it opens, each with what it
