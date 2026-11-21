@@ -34,8 +34,9 @@ const RULESET_CSS = `
 .with-preview #rail { flex: none; margin-left: auto; }
 .with-preview #rs-content { flex: 0 1 calc(var(--calib-w) + 16px - 150px); min-width: 0; margin-right: auto; }
 .with-preview #data { flex: none; width: auto; }
-/* 100 columns of the block's own font, its scroll bar beside them. */
-.with-preview #data pre { width: calc(100ch + var(--sbw, 0px)); scrollbar-gutter: stable; }
+/* 100 columns of the block's own font, its scroll bar beside them; the box's 12px of
+   padding counted too, since the width is the border box's. */
+.with-preview #data pre { width: calc(100ch + 12px + var(--sbw, 0px)); scrollbar-gutter: stable; }
 #rail { width: 150px; }
 .data.hidden { display: none; }
 #rs-bottom { height: auto; min-height: 26px; padding: 3px 8px; overflow: visible; }
