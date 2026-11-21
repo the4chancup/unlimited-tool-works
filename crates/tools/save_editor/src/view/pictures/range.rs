@@ -51,6 +51,12 @@ pub(crate) struct RangeDialog {
     /// The Portraits box: this run's alone, never written back to the
     /// formation bar's setting.
     portraits: bool,
+    /// The run's read of the install's `player-dummy.png`: `None` until a
+    /// picture's starters lack a portrait and it is read, the answer
+    /// since (`Some(None)` the install serving none), so a run reads it
+    /// once however many of its pictures need it (`read_images`). Taken
+    /// out for a picture's write and put back after (`write_next`).
+    placeholder: Option<Option<egui::ColorImage>>,
     /// Where the dialog is: picking, writing or showing the result.
     stage: Stage,
 }
@@ -124,6 +130,7 @@ impl RangeDialog {
             // An absolute setting replaces `exe_dir` in the join.
             folder: exe_dir.join(folder_setting).display().to_string(),
             portraits,
+            placeholder: None,
             stage: Stage::Picking,
         })
     }
@@ -132,6 +139,7 @@ impl RangeDialog {
     /// they are now (`flat` the grain box, `settings` the settings box),
     /// at `width`.
     fn start(&mut self, file: &EditFile, flat: bool, settings: bool, width: f32) {
+        self.placeholder = None;
         self.stage = Stage::Writing {
             ids: range_ids(file, self.first, self.last),
             written: 0,
@@ -521,12 +529,15 @@ fn result(
 /// dialog's path (`save_picture`), under the name `picture_file_name`
 /// gives it, then moves the run on and asks for the next frame.
 fn write_next(ui: &egui::Ui, view: &mut SaveView, team_id: u32, options: PictureOptions) {
-    let folder = view
-        .pictures_range
-        .as_ref()
-        .expect("the open dialog")
-        .folder
-        .clone();
+    // The run's shared dummy read is taken out for the write: it cannot be
+    // lent to `save_picture` through the view it is a field of.
+    let (folder, mut placeholder) = {
+        let dialog = view.pictures_range.as_mut().expect("the open dialog");
+        (
+            dialog.folder.clone(),
+            std::mem::take(&mut dialog.placeholder),
+        )
+    };
     let session = view.session.as_ref().expect("the dialog's save");
     let name = &session
         .file()
@@ -534,17 +545,26 @@ fn write_next(ui: &egui::Ui, view: &mut SaveView, team_id: u32, options: Picture
         .expect("a team of the range")
         .name;
     let file_name = picture_file_name(team_id, name);
-    let written = save_picture(ui.visuals(), view, team_id, options, &folder, &file_name)
-        .map_err(|error| format!("Could not write {file_name}: {error}"));
-    view.pictures_range
-        .as_mut()
-        .expect("the open dialog")
-        .wrote(written);
+    let written = save_picture(
+        ui.visuals(),
+        view,
+        team_id,
+        options,
+        &folder,
+        &file_name,
+        &mut placeholder,
+    )
+    .map_err(|error| format!("Could not write {file_name}: {error}"));
+    let dialog = view.pictures_range.as_mut().expect("the open dialog");
+    dialog.placeholder = placeholder;
+    dialog.wrote(written);
     ui.ctx().request_repaint();
 }
 
 #[cfg(test)]
 mod tests {
+    use pes_version::PesVersion;
+
     use super::*;
 
     /// `pinned_label`'s labels never report wider than `width`: the sweep
@@ -587,5 +607,73 @@ mod tests {
                 );
             }
         }
+    }
+
+    // A run over two teams whose starters no listed CPK holds a portrait
+    // of reads the game's `player-dummy.png` once: the first picture's
+    // read is kept in the run's `placeholder` for the second, here the
+    // dummy a listed `download` CPK holds. The run is driven frame by
+    // frame through `range_dialog`, as the window does.
+    #[test]
+    fn a_range_run_reads_the_games_dummy_once() {
+        let ctx = egui::Context::default();
+        studio_core::theme::install(&ctx);
+        let dir = crate::test_support::scratch("range_dummy_once");
+        let save = dir.join("EDIT00000000");
+        std::fs::write(&save, pes_savefile::fixture_save(PesVersion::Pes21)).unwrap();
+        let dummy = crate::test_support::dummy_png([255, 0, 255, 255]);
+        let entries: &[(&str, &[u8])] = &[(
+            "common/render/symbol/blank/player-dummy.png",
+            dummy.as_slice(),
+        )];
+        let pes = crate::test_support::pes_folder(
+            "range_dummy_once_pes",
+            &[("4cc_40_faces.cpk", entries)],
+        );
+
+        // The run over cup teams 716 and 717 of the PES 2021 fixture.
+        let mut view = SaveView::new();
+        view.open(&save);
+        view.pes_folder = Some(pes);
+        let file = view.session.as_ref().expect("the open save").file();
+        let mut dialog = RangeDialog::open(file, "", &dir, true).expect("cup teams");
+        dialog.first = 716;
+        dialog.last = 717;
+        dialog.start(file, false, false, 400.0);
+        view.pictures_range = Some(dialog);
+        crate::view::portraits::reset_placeholder_reads();
+        for _ in 0..10 {
+            let input = egui::RawInput {
+                screen_rect: Some(egui::Rect::from_min_size(
+                    egui::Pos2::ZERO,
+                    egui::vec2(1024.0, 768.0),
+                )),
+                ..Default::default()
+            };
+            ctx.run_ui(input, |ui| range_dialog(ui, &mut view))
+                .drop_without_applying_deltas();
+            if matches!(
+                view.pictures_range.as_ref().expect("the dialog").stage,
+                Stage::Done { .. }
+            ) {
+                break;
+            }
+        }
+        assert!(
+            matches!(
+                view.pictures_range.as_ref().expect("the dialog").stage,
+                Stage::Done {
+                    written: 2,
+                    error: None,
+                    ..
+                }
+            ),
+            "both pictures written"
+        );
+        assert_eq!(
+            crate::view::portraits::placeholder_reads(),
+            1,
+            "the run's two pictures share one read"
+        );
     }
 }

@@ -182,9 +182,8 @@ impl Portraits {
         self.pending.clear();
         self.game_placeholder = GamePlaceholder::NotAsked;
         #[cfg(test)]
-        self.images.clear();
-        #[cfg(test)]
         {
+            self.images.clear();
             self.game_placeholder_image = None;
         }
         if let (Some(folder), Some(version)) = (&self.folder, self.version) {
@@ -362,8 +361,8 @@ pub(crate) struct GameImages {
     /// CPKs hold no readable portrait of.
     pub(crate) portraits: Vec<Option<egui::ColorImage>>,
     /// The game's own `player-dummy.png`, read only because a filled slot's portrait came
-    /// back `None` (`None` then too when the install serves none readable, or nothing
-    /// needed it).
+    /// back `None`, this call's read or the one `placeholder` already held (`None` then too
+    /// when the install serves none readable, or nothing needed it).
     pub(crate) placeholder: Option<egui::ColorImage>,
 }
 
@@ -372,12 +371,15 @@ pub(crate) struct GameImages {
 /// empty slot and for a player the CPKs hold no readable portrait of. No folder (or an empty
 /// setting) reads none, and so does a folder whose CPKs cannot be read, the reason logged;
 /// the game's own `player-dummy.png` is read only when a filled slot came back `None` (`Game`
-/// reads it once, as the worker does). For a one-off read such as a picture's; the view
-/// reads through `Portraits`' worker.
+/// reads it once, as the worker does), and `placeholder` carries that read between calls:
+/// `None` until a call first needs it and the read lands there, the answer since
+/// (`Some(None)` the install serving none), so a run of pictures sharing it reads it once.
+/// For a one-off read such as a picture's; the view reads through `Portraits`' worker.
 pub(crate) fn read_images(
     pes_folder: Option<&Path>,
     version: PesVersion,
     player_ids: &[Option<u32>],
+    placeholder: &mut Option<Option<egui::ColorImage>>,
 ) -> GameImages {
     let Some(folder) = pes_folder.filter(|folder| !folder.as_os_str().is_empty()) else {
         return GameImages {
@@ -395,10 +397,16 @@ pub(crate) fn read_images(
         .iter()
         .zip(&portraits)
         .any(|(id, image)| id.is_some() && image.is_none());
-    let placeholder = needed.then(|| game.placeholder(version)).flatten();
+    let placeholder_image = needed
+        .then(|| {
+            placeholder
+                .get_or_insert_with(|| game.placeholder(version))
+                .clone()
+        })
+        .flatten();
     GameImages {
         portraits,
-        placeholder,
+        placeholder: placeholder_image,
     }
 }
 
@@ -521,6 +529,8 @@ impl Game {
     /// under the install's `Data` folder. `None` when nothing readable holds it or it does
     /// not decode, the reason logged.
     fn placeholder(&mut self, version: PesVersion) -> Option<egui::ColorImage> {
+        #[cfg(test)]
+        PLACEHOLDER_READS.with(|reads| reads.set(reads.get() + 1));
         let bytes = match self.entries.get(PLACEHOLDER) {
             Some((archive, entry)) => self.archives[*archive]
                 .read(entry)
@@ -539,16 +549,10 @@ impl Game {
         color_image(&decoded)
     }
 
-    /// `version`'s base CPK's `player-dummy.png` bytes (`base_cpk` under the folder's `Data`
-    /// directory, found by name ignoring letter case: the installs spell it `Data`, a
-    /// case-sensitive filesystem may spell it otherwise).
-    fn base_placeholder(&mut self, version: PesVersion) -> anyhow::Result<Vec<u8>> {
-        let data = fs::read_dir(&self.folder)
-            .with_context(|| format!("{}: cannot list it", self.folder.display()))?
-            .filter_map(Result::ok)
-            .find(|entry| entry.file_name().eq_ignore_ascii_case("data"))
-            .with_context(|| format!("{}: no Data folder", self.folder.display()))?;
-        let path = data.path().join(base_cpk(version));
+    /// `version`'s base CPK's `player-dummy.png` bytes (`base_cpk` under the install's
+    /// `Data` folder, the name every install gives it).
+    fn base_placeholder(&self, version: PesVersion) -> anyhow::Result<Vec<u8>> {
+        let path = self.folder.join("Data").join(base_cpk(version));
         let file =
             File::open(&path).with_context(|| format!("{}: cannot open it", path.display()))?;
         let mut archive = CpkArchive::open(BufReader::new(file))
@@ -573,12 +577,34 @@ fn color_image(decoded: &dds_convert::Decoded) -> Option<egui::ColorImage> {
         .then(|| egui::ColorImage::from_rgba_unmultiplied(size, mip))
 }
 
+// `Game::placeholder` reads on the calling thread, for the tests that
+// count them: thread-local so the tests' threads never count each
+// other's.
+#[cfg(test)]
+thread_local! {
+    static PLACEHOLDER_READS: std::cell::Cell<usize> = const { std::cell::Cell::new(0) };
+}
+
+/// The `Game::placeholder` reads counted so far on this thread.
+#[cfg(test)]
+pub(crate) fn placeholder_reads() -> usize {
+    PLACEHOLDER_READS.with(|reads| reads.get())
+}
+
+/// `placeholder_reads`' zero point for a test's measured section.
+#[cfg(test)]
+pub(crate) fn reset_placeholder_reads() {
+    PLACEHOLDER_READS.with(|reads| reads.set(0));
+}
+
 #[cfg(test)]
 mod tests {
     use std::time::{Duration, Instant};
 
     use super::*;
-    use crate::test_support::{base_cpk, dp_file_list, dummy_png, pes_folder, scratch};
+    use crate::test_support::{
+        base_cpk as write_base_cpk, dp_file_list, dummy_png, pes_folder, scratch,
+    };
 
     /// PES 2021's `75823.dds` in `4cc_40_faces.cpk`, pixel (64, 64) `(148, 219, 247, 255)`.
     const FACES: &[u8] = include_bytes!("../../tests/fixtures/portraits/75823_faces.dds");
@@ -688,13 +714,13 @@ mod tests {
             &[("4cc_40_faces.cpk", &[(path.as_str(), FACES)])],
         );
         let ids = [Some(75823), Some(75824), None];
-        let images = read_images(Some(&folder), PesVersion::Pes21, &ids);
+        let images = read_images(Some(&folder), PesVersion::Pes21, &ids, &mut None);
         let held = images.portraits[0].as_ref().expect("75823's portrait");
         close(held.pixels[64 * 128 + 64], [148, 219, 247, 255]);
         assert!(images.portraits[1].is_none(), "75824 has no portrait");
         assert!(images.portraits[2].is_none(), "an empty slot");
         assert!(
-            read_images(None, PesVersion::Pes21, &ids)
+            read_images(None, PesVersion::Pes21, &ids, &mut None)
                 .portraits
                 .iter()
                 .all(Option::is_none),
@@ -906,6 +932,60 @@ mod tests {
         );
     }
 
+    // The install's `player-dummy.png` is asked for once: a batch of
+    // answers holding an absent portrait sends one `GamePlaceholder`
+    // request, and a later absent portrait sends none, the ask standing
+    // in `Asked`. The worker is a pair of test-owned channels, as in
+    // `an_asked_id_is_pending_until_answered`, so a request or an answer
+    // lands exactly when the test says.
+    #[test]
+    fn the_games_dummy_is_asked_once() {
+        let ctx = egui::Context::default();
+        let (requests, requests_rx) = crossbeam_channel::unbounded();
+        let (replies, replies_rx) = crossbeam_channel::unbounded();
+        let mut portraits = Portraits {
+            version: Some(PesVersion::Pes21),
+            worker: Some(Worker {
+                requests,
+                replies: replies_rx,
+            }),
+            ..Portraits::new()
+        };
+
+        // A batch holding one absent portrait (id 1): one ask, not one per
+        // answer.
+        replies.send(Reply::Image(1, None)).unwrap();
+        replies
+            .send(Reply::Image(
+                2,
+                Some(egui::ColorImage::filled([1, 1], egui::Color32::RED)),
+            ))
+            .unwrap();
+        portraits.textures(&ctx, &[]);
+        assert!(
+            matches!(requests_rx.try_recv(), Ok(Request::GamePlaceholder)),
+            "the first absent portrait asks for the game's dummy"
+        );
+        assert!(
+            matches!(
+                requests_rx.try_recv(),
+                Err(crossbeam_channel::TryRecvError::Empty)
+            ),
+            "exactly once for the batch"
+        );
+
+        // `Asked` now: a later absent portrait asks nothing again.
+        replies.send(Reply::Image(3, None)).unwrap();
+        portraits.textures(&ctx, &[]);
+        assert!(
+            matches!(
+                requests_rx.try_recv(),
+                Err(crossbeam_channel::TryRecvError::Empty)
+            ),
+            "no second ask while the first is out"
+        );
+    }
+
     // Each version's bundled placeholder decodes at the game's size: 2015's file for PES
     // 2015, the 2016 one for 2016 through 2018, the 2019 one for 2019 through 2021
     // (`resources/portraits/`; the centre pixels measured with Pillow).
@@ -1031,7 +1111,7 @@ mod tests {
         let colour = [255, 0, 255, 255];
         let dummy = dummy_png(colour);
         let folder = pes_folder("portraits_games_dummy", &[]);
-        base_cpk(&folder, "dt15_x64.cpk", &[(PLACEHOLDER, dummy.as_slice())]);
+        write_base_cpk(&folder, "dt15_x64.cpk", &[(PLACEHOLDER, dummy.as_slice())]);
         let mut portraits = Portraits::new();
         portraits.select(&ctx, &folder, PesVersion::Pes21);
         assert_ne!(
@@ -1052,8 +1132,7 @@ mod tests {
         close(image.pixels[64 * 128 + 64], colour);
     }
 
-    // A listed `download` CPK's `player-dummy.png` wins over the base CPK's, a later listed
-    // CPK's over an earlier one's, as for portraits.
+    // A listed `download` CPK's `player-dummy.png` wins over the base CPK's, as for portraits.
     #[test]
     fn a_listed_cpks_dummy_wins_over_the_base_cpks() {
         let ctx = egui::Context::default();
@@ -1063,7 +1142,7 @@ mod tests {
             "portraits_dummy_wins",
             &[("4cc_40_faces.cpk", &[(PLACEHOLDER, listed.as_slice())])],
         );
-        base_cpk(&folder, "dt15_x64.cpk", &[(PLACEHOLDER, base.as_slice())]);
+        write_base_cpk(&folder, "dt15_x64.cpk", &[(PLACEHOLDER, base.as_slice())]);
         let mut portraits = Portraits::new();
         portraits.select(&ctx, &folder, PesVersion::Pes21);
 
@@ -1073,9 +1152,10 @@ mod tests {
         close(image.pixels[64 * 128 + 64], [255, 0, 255, 255]);
     }
 
-    // A team whose every starter has a portrait never asks for the game's dummy: the base
-    // CPK (here bytes no CPK is made of) stays unopened, which `game_placeholder` staying
-    // `NotAsked` shows (a request would move it to `Asked`, then `Answered`).
+    // A team whose every starter has a portrait never asks for the game's dummy:
+    // `game_placeholder` stays `NotAsked` (a request would move it to `Asked`, then
+    // `Answered`). The request is the only path to the base CPK, whose bytes here are no
+    // CPK at all.
     #[test]
     fn a_team_of_portraits_never_reads_the_base_cpk() {
         let ctx = egui::Context::default();

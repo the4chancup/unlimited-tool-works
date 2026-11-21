@@ -159,7 +159,15 @@ pub(crate) fn dialog(ui: &mut egui::Ui, view: &mut SaveView) {
             dialog.folder.clone(),
             dialog.file_name.clone(),
         );
-        let written = save_picture(ui.visuals(), view, team_id, options, &folder, &file_name);
+        let written = save_picture(
+            ui.visuals(),
+            view,
+            team_id,
+            options,
+            &folder,
+            &file_name,
+            &mut None,
+        );
         view.notice = Some(match &written {
             Ok(()) => Notice {
                 text: format!("{file_name} written to {folder}"),
@@ -222,7 +230,9 @@ pub(super) fn picture_boxes(
 }
 
 /// Writes team `team_id`'s picture as `file_name` in `folder`
-/// (`write_picture`), for either picture dialog: on success the folder is
+/// (`write_picture`), for either picture dialog, `placeholder` their
+/// shared read of the install's `player-dummy.png` (`&mut None` for the
+/// single-picture dialog's one write): on success the folder is
 /// kept as the `formation_pictures_folder` setting, the journal gets a
 /// `wrote` step and the PNG is kept as an output, as every file the member
 /// saves is; a failure is a `could not write` step.
@@ -233,6 +243,7 @@ pub(super) fn save_picture(
     options: PictureOptions,
     folder: &str,
     file_name: &str,
+    placeholder: &mut Option<Option<egui::ColorImage>>,
 ) -> io::Result<()> {
     let session = view.session.as_ref().expect("the dialog's save");
     let file = session.file();
@@ -243,7 +254,14 @@ pub(super) fn save_picture(
         pes_folder: view.pes_folder.as_deref(),
     };
     let path = Path::new(folder).join(file_name);
-    match write_picture(&team, visuals, options, Path::new(folder), file_name) {
+    match write_picture(
+        &team,
+        visuals,
+        options,
+        Path::new(folder),
+        file_name,
+        placeholder,
+    ) {
         Ok(png) => {
             let recorder = session.recorder();
             recorder.step(TOOL_ID, format!("wrote {}", path.display()));
@@ -260,18 +278,20 @@ pub(super) fn save_picture(
 
 /// `team`'s picture painted in `visuals` and written as a PNG named
 /// `file_name` in `folder`, the folder created when missing; returns the
-/// PNG's bytes. The PNG is written to a temporary file beside it, then
-/// renamed onto its name, so a failed write leaves the picture that was
-/// there before whole.
+/// PNG's bytes. `placeholder` is the picture dialogs' shared read of the
+/// install's `player-dummy.png` (`save_picture`). The PNG is written to a
+/// temporary file beside it, then renamed onto its name, so a failed
+/// write leaves the picture that was there before whole.
 fn write_picture(
     team: &PictureTeam<'_>,
     visuals: &egui::Visuals,
     options: PictureOptions,
     folder: &Path,
     file_name: &str,
+    placeholder: &mut Option<Option<egui::ColorImage>>,
 ) -> io::Result<Vec<u8>> {
     std::fs::create_dir_all(folder)?;
-    let image = formations_picture(team, visuals, options);
+    let image = formations_picture(team, visuals, options, placeholder);
     let mut png = io::Cursor::new(Vec::new());
     image
         .write_to(&mut png, image::ImageFormat::Png)

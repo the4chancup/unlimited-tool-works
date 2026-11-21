@@ -100,13 +100,16 @@ pub(crate) struct PictureTeam<'a> {
 }
 
 /// The picture of `team`'s formations, drawn in `visuals` (the theme in
-/// use, whose panel colour is its background).
+/// use, whose panel colour is its background). `placeholder` shares the
+/// install's `player-dummy.png` read between a run's pictures, as
+/// `starter_portraits` takes it.
 pub(crate) fn formations_picture(
     team: &PictureTeam<'_>,
     visuals: &egui::Visuals,
     options: PictureOptions,
+    placeholder: &mut Option<Option<egui::ColorImage>>,
 ) -> RgbaImage {
-    paint(team, visuals, options).0
+    paint(team, visuals, options, placeholder).0
 }
 
 /// The picture's file name: the team's display name less the characters a
@@ -182,11 +185,13 @@ fn same_shape(formation: &Formation, kick_off: &Formation) -> bool {
 
 /// `team`'s picture painted off screen at one pixel per point and filled
 /// into pixels, with the shapes its frame painted (the tests read its
-/// texts off them).
+/// texts off them). `placeholder` is `starter_portraits`' shared read of
+/// the install's `player-dummy.png`.
 fn paint(
     team: &PictureTeam<'_>,
     visuals: &egui::Visuals,
     options: PictureOptions,
+    placeholder: &mut Option<Option<egui::ColorImage>>,
 ) -> (RgbaImage, Vec<egui::epaint::ClippedShape>) {
     let file = team.file;
     let version = file.version();
@@ -217,7 +222,7 @@ fn paint(
     ctx.set_visuals(visuals.clone());
     // The handles keep the textures alive until the frame is rasterized.
     let portraits = if options.portraits {
-        starter_portraits(&ctx, team)
+        starter_portraits(&ctx, team, placeholder)
     } else {
         vec![None; team.team.roster.len()]
     };
@@ -465,9 +470,12 @@ fn paint_automatic(painter: &egui::Painter, centre_y: f32, pairs: &[(&str, Strin
 /// would draw where the game holds none (the install's own
 /// `player-dummy.png` when it serves one, the bundled drawing else);
 /// `None` off the eleven, whose markers the picture does not draw.
+/// `placeholder` shares the install's `player-dummy.png` read between a
+/// run's pictures (`read_images`).
 fn starter_portraits(
     ctx: &egui::Context,
     team: &PictureTeam<'_>,
+    placeholder: &mut Option<Option<egui::ColorImage>>,
 ) -> Vec<Option<egui::TextureHandle>> {
     let version = team.file.version();
     let starters = &team.team.tactics.starting_eleven;
@@ -478,10 +486,10 @@ fn starter_portraits(
             id.filter(|_| starters.iter().any(|&starter| usize::from(starter) == slot))
         })
         .collect();
-    let images = portraits::read_images(team.pes_folder, version, &ids);
+    let images = portraits::read_images(team.pes_folder, version, &ids, placeholder);
     // The install's own player-dummy.png where it holds one, the version's
     // bundled drawing where it does not.
-    let placeholder = ctx.load_texture(
+    let dummy = ctx.load_texture(
         "placeholder portrait",
         images
             .placeholder
@@ -498,7 +506,7 @@ fn starter_portraits(
                     image,
                     egui::TextureOptions::LINEAR,
                 ),
-                None => placeholder.clone(),
+                None => dummy.clone(),
             })
         })
         .collect()
@@ -566,7 +574,12 @@ mod tests {
     /// `team`'s picture from `file` in the dark theme, with no ruleset
     /// and no portraits.
     fn picture(file: &EditFile, team: &TeamEntry, flat: bool) -> (RgbaImage, Vec<ClippedShape>) {
-        paint(&bare(file, team), &dark(), without_portraits(flat))
+        paint(
+            &bare(file, team),
+            &dark(),
+            without_portraits(flat),
+            &mut None,
+        )
     }
 
     /// `picture` with each preset's settings beside its row, the turf
@@ -576,7 +589,7 @@ mod tests {
             settings: true,
             ..without_portraits(false)
         };
-        paint(&bare(file, team), &dark(), options)
+        paint(&bare(file, team), &dark(), options, &mut None)
     }
 
     /// A text the frame painted, as a member sees it.
@@ -939,7 +952,12 @@ mod tests {
             colours
         };
         let png = |flat: bool| {
-            let image = formations_picture(&bare(&file, team), &dark(), without_portraits(flat));
+            let image = formations_picture(
+                &bare(&file, team),
+                &dark(),
+                without_portraits(flat),
+                &mut None,
+            );
             let mut bytes = std::io::Cursor::new(Vec::new());
             image
                 .write_to(&mut bytes, image::ImageFormat::Png)
@@ -1299,7 +1317,7 @@ mod tests {
         );
 
         let ctx = egui::Context::default();
-        let handles = starter_portraits(&ctx, &team);
+        let handles = starter_portraits(&ctx, &team, &mut None);
         let slot = usize::from(entry.tactics.starting_eleven[0]);
         let handle = handles[slot].as_ref().expect("a texture for the starter");
         let mut delta = ctx.tex_manager().write().take_delta();
