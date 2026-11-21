@@ -26,8 +26,8 @@ pub use read::{Bundle, BundleFile, BundleStep, read_bundle};
 mod session;
 #[cfg(not(target_arch = "wasm32"))]
 pub use session::{
-    SessionEnd, SessionFile, SessionFrame, SessionHeader, SessionMessage, SessionWriter,
-    read_frame, session_bundle, write_frame,
+    EarlierSession, SessionEnd, SessionFile, SessionFrame, SessionHeader, SessionMessage,
+    SessionWriter, earlier_sessions, read_frame, session_bundle, session_folder_name, write_frame,
 };
 
 /// One tool's recorded steps, kept inputs and kept outputs so far.
@@ -735,7 +735,7 @@ pub(crate) mod tests {
     }
 
     /// The zip's entry names at `path`, in write order.
-    fn zip_names(path: &Path) -> Vec<String> {
+    pub(crate) fn zip_names(path: &Path) -> Vec<String> {
         let file = fs::File::open(path).unwrap();
         let archive = zip::ZipArchive::new(file).unwrap();
         archive
@@ -745,7 +745,7 @@ pub(crate) mod tests {
     }
 
     /// `name`'s bytes inside the zip at `path`.
-    fn zip_bytes(path: &Path, name: &str) -> Vec<u8> {
+    pub(crate) fn zip_bytes(path: &Path, name: &str) -> Vec<u8> {
         let file = fs::File::open(path).unwrap();
         let mut archive = zip::ZipArchive::new(file).unwrap();
         let mut bytes = Vec::new();

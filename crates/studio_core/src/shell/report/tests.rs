@@ -9,6 +9,9 @@ use std::sync::Arc;
 use egui::accesskit::{self, Role};
 
 use super::*;
+use crate::repro::{
+    SessionFile, SessionHeader, SessionMessage, SessionWriter, session_folder_name,
+};
 use crate::settings::SETTINGS_FILE_NAME;
 use crate::shell::sidebar::REPORT_LABEL;
 use crate::shell::test_harness::*;
@@ -690,6 +693,321 @@ fn the_rows_and_the_box_stand_as_the_draft_spaces_them() {
     assert!(
         (body.y0 - what.y1).abs() < 0.5,
         "the box stands right under its label: {what:?} against {body:?}"
+    );
+}
+
+/// The "Include earlier sessions" box's node.
+fn earlier_box(nodes: &[accesskit::Node]) -> &accesskit::Node {
+    nodes
+        .iter()
+        .find(|node| {
+            node.role() == Role::CheckBox && node.label() == Some("Include earlier sessions")
+        })
+        .expect("the box is drawn")
+}
+
+/// A step line for `session_folder`.
+fn step(what: &str) -> SessionMessage {
+    SessionMessage::Step {
+        seconds: 0.0,
+        tool: "stub".to_owned(),
+        what: what.to_owned(),
+        op: None,
+    }
+}
+
+/// A kept input for `session_folder`: `path` as read, `bytes` its content.
+fn kept_input(path: &str, bytes: &'static [u8]) -> SessionMessage {
+    SessionMessage::Input {
+        tool: "stub".to_owned(),
+        path: Path::new(path).to_path_buf(),
+        file: SessionFile::Raw(Arc::from(bytes)),
+    }
+}
+
+/// A kept output for `session_folder`.
+fn kept_output(path: &str, bytes: &'static [u8]) -> SessionMessage {
+    SessionMessage::Output {
+        tool: "stub".to_owned(),
+        path: Path::new(path).to_path_buf(),
+        file: SessionFile::Raw(Arc::from(bytes)),
+    }
+}
+
+/// A session folder under `root`, written by `SessionWriter`: `pid`'s
+/// header at 09:`minute`:`second` UTC on 2026-11-21, `messages` in order,
+/// then `end`'s `[end]` when `Some`. Returns the folder's name.
+fn session_folder(
+    root: &Path,
+    pid: u32,
+    minute: i8,
+    second: i8,
+    messages: Vec<SessionMessage>,
+    end: Option<SessionEnd>,
+) -> String {
+    let header = SessionHeader {
+        version: "v-test".to_owned(),
+        os: "test-os".to_owned(),
+        started: jiff::civil::date(2026, 11, 21)
+            .at(9, minute, second, 0)
+            .to_zoned(jiff::tz::TimeZone::UTC)
+            .unwrap(),
+        pid,
+    };
+    let name = session_folder_name(&header);
+    let mut writer = SessionWriter::new(root, header);
+    for message in &messages {
+        writer.write(message).unwrap();
+    }
+    if let Some(end) = end {
+        writer.end(end).unwrap();
+    }
+    name
+}
+
+// The box lists each kept session but the window's own, unticked, its line
+// the draft's. Unticked, the saved zip holds no `sessions/` entry; ticked,
+// each listed session lands in it as a bundle of its own, which
+// `read_bundle` reads. A journal gone between the opening and the save is
+// named under `missing`, and no earlier folder means no box.
+// ST-REP-09
+#[test]
+fn the_box_lists_the_kept_sessions_and_ticked_packs_each() {
+    let dir = TestDir::new("studio_core_report_sessions");
+    let Shell {
+        mut app, ctx, _dir, ..
+    } = shell();
+    let egui_ctx = test_context();
+    let sessions_root = ctx.paths().data_dir.clone().unwrap().join("sessions");
+    // Two earlier sessions, and the window's own.
+    let name_a = session_folder(
+        &sessions_root,
+        4242,
+        30,
+        15,
+        vec![
+            step("the closed session's step"),
+            kept_input("C:/Data/in/EDIT00000000", b"INPUT_A"),
+            kept_output("C:/Data/out/EDIT00000000", b"OUT_A"),
+        ],
+        Some(SessionEnd::Closed),
+    );
+    let name_b = session_folder(
+        &sessions_root,
+        4243,
+        31,
+        15,
+        vec![
+            step("the crashed session's step"),
+            kept_input("C:/Data/in/EDIT00000001", b"INPUT_B"),
+        ],
+        Some(SessionEnd::Crashed),
+    );
+    let own = session_folder(
+        &sessions_root,
+        4244,
+        32,
+        15,
+        vec![step("the window's own step")],
+        Some(SessionEnd::Closed),
+    );
+    app = app.with_session_folder(Some(own.clone()));
+
+    let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
+    click(&egui_ctx, &mut app, entry(&nodes, REPORT_LABEL));
+    let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
+
+    // The unticked box and a line per earlier session, not the window's own.
+    assert_eq!(
+        earlier_box(&nodes).toggled(),
+        Some(accesskit::Toggled::False),
+        "the box stands unticked"
+    );
+    let wrote = fs::metadata(sessions_root.join(&name_a).join("outputs/0-EDIT00000000"))
+        .unwrap()
+        .modified()
+        .unwrap();
+    assert_eq!(
+        text_line(&nodes, "21 Nov 09:30"),
+        format!(
+            "21 Nov 09:30: opened EDIT00000000; wrote at {}; closed",
+            clock_text(local_clock(wrote))
+        )
+    );
+    assert_eq!(
+        text_line(&nodes, "21 Nov 09:31"),
+        "21 Nov 09:31: opened EDIT00000001; wrote nothing; crashed"
+    );
+    assert!(
+        !has_text(&nodes, "21 Nov 09:32"),
+        "the window's own is not listed"
+    );
+
+    // Saved unticked: the zip holds no `sessions/` entry.
+    let out = dir.path().join("unticked.zip");
+    let out_path = out.clone();
+    app.report.save_dialog = Box::new(move |_| Some(out_path.clone()));
+    click(&egui_ctx, &mut app, entry(&nodes, "Save…"));
+    assert!(out.exists(), "the zip was written");
+    let names = crate::repro::tests::zip_names(&out);
+    assert!(
+        !names.iter().any(|name| name.starts_with("sessions/")),
+        "unticked holds no sessions/ entry: {names:?}"
+    );
+
+    // Closed and opened again: the box is unticked at every opening.
+    // Ticked this time: `sessions/<name>.zip` per listed session — each a
+    // bundle `read_bundle` reads — and not the window's own.
+    let out_nodes = frame(&egui_ctx, &mut app, Vec::new(), true);
+    click(&egui_ctx, &mut app, entry(&out_nodes.nodes, "Close"));
+    let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
+    click(&egui_ctx, &mut app, entry(&nodes, REPORT_LABEL));
+    let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
+    assert_eq!(
+        earlier_box(&nodes).toggled(),
+        Some(accesskit::Toggled::False),
+        "unticked at every opening"
+    );
+    click(&egui_ctx, &mut app, earlier_box(&nodes));
+    let out = dir.path().join("ticked.zip");
+    let out_path = out.clone();
+    app.report.save_dialog = Box::new(move |_| Some(out_path.clone()));
+    let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
+    click(&egui_ctx, &mut app, entry(&nodes, "Save…"));
+    assert!(out.exists(), "the zip was written");
+    let names = crate::repro::tests::zip_names(&out);
+    for name in [&name_a, &name_b] {
+        let entry = format!("sessions/{name}.zip");
+        assert!(names.contains(&entry), "{entry} is missing: {names:?}");
+    }
+    let own_entry = format!("sessions/{own}.zip");
+    assert!(
+        !names.contains(&own_entry),
+        "the window's own is not packed: {names:?}"
+    );
+    for (name, step_line) in [
+        (&name_a, "the closed session's step"),
+        (&name_b, "the crashed session's step"),
+    ] {
+        let inner = dir.path().join(format!("inner-{name}.zip"));
+        fs::write(
+            &inner,
+            crate::repro::tests::zip_bytes(&out, &format!("sessions/{name}.zip")),
+        )
+        .unwrap();
+        let bundle =
+            crate::repro::read_bundle(&inner, &|_| panic!("no packed rows in these folders"))
+                .unwrap();
+        assert!(
+            bundle.steps.iter().any(|step| step.what == step_line),
+            "the inner bundle holds the session's steps"
+        );
+    }
+
+    // A journal gone between the opening and the save: the session is
+    // named under `missing`, and the other still packs.
+    let out_nodes = frame(&egui_ctx, &mut app, Vec::new(), true);
+    click(&egui_ctx, &mut app, entry(&out_nodes.nodes, "Close"));
+    let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
+    click(&egui_ctx, &mut app, entry(&nodes, REPORT_LABEL));
+    let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
+    fs::remove_file(sessions_root.join(&name_b).join("journal.toml")).unwrap();
+    click(&egui_ctx, &mut app, earlier_box(&nodes));
+    let out = dir.path().join("missing.zip");
+    let out_path = out.clone();
+    app.report.save_dialog = Box::new(move |_| Some(out_path.clone()));
+    let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
+    click(&egui_ctx, &mut app, entry(&nodes, "Save…"));
+    assert!(out.exists(), "the zip was written");
+    let names = crate::repro::tests::zip_names(&out);
+    let entry_a = format!("sessions/{name_a}.zip");
+    assert!(
+        names.contains(&entry_a),
+        "the other session still packs: {names:?}"
+    );
+    let journal =
+        crate::repro::tests::journal_doc(&crate::repro::tests::zip_text(&out, "journal.toml"));
+    let missing = journal
+        .get("missing")
+        .and_then(toml::Value::as_array)
+        .map(|list| {
+            list.iter()
+                .map(|name| name.as_str().unwrap())
+                .collect::<Vec<_>>()
+        });
+    let expected = format!("sessions/{name_b}.zip");
+    assert!(
+        missing
+            .as_ref()
+            .is_some_and(|list| list.contains(&expected.as_str())),
+        "the lost session is named under missing: {missing:?}"
+    );
+
+    // No earlier folder: no box, no session lines.
+    let Shell { mut app, _dir, .. } = shell();
+    let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
+    click(&egui_ctx, &mut app, entry(&nodes, REPORT_LABEL));
+    let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
+    assert!(
+        !nodes.iter().any(|node| node.role() == Role::CheckBox
+            && node.label() == Some("Include earlier sessions")),
+        "no box without an earlier session"
+    );
+}
+
+// The draft's sessions block: the box 8 under the "The file holds:" list,
+// its first line 4 under the box, its lines 15 apart in the weak colour
+// and the privacy line 8 under the last one.
+#[test]
+fn the_box_and_its_lines_stand_as_the_draft_spaces_them() {
+    let Shell {
+        mut app, ctx, _dir, ..
+    } = shell();
+    let egui_ctx = test_context();
+    let sessions_root = ctx.paths().data_dir.clone().unwrap().join("sessions");
+    session_folder(&sessions_root, 4242, 30, 15, vec![step("a step")], None);
+    session_folder(
+        &sessions_root,
+        4243,
+        31,
+        15,
+        vec![step("a step")],
+        Some(SessionEnd::Ended),
+    );
+
+    let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
+    click(&egui_ctx, &mut app, entry(&nodes, REPORT_LABEL));
+    let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
+
+    let last = line_bounds(&nodes, "utw.log, the version");
+    let box_row = earlier_box(&nodes).bounds().expect("the box is drawn");
+    assert!(
+        (box_row.y0 - last.y1 - 8.0).abs() < 0.5,
+        "the box stands 8 under the list: {last:?} against {box_row:?}"
+    );
+    let first = line_bounds(&nodes, "21 Nov 09:31");
+    let second = line_bounds(&nodes, "21 Nov 09:30");
+    assert!(
+        (first.y0 - box_row.y1 - 4.0).abs() < 0.5,
+        "the first line stands 4 under the box: {box_row:?} against {first:?}"
+    );
+    assert!(
+        (second.y0 - first.y0 - 15.0).abs() < 0.5,
+        "a session line stands 15 under the previous one: {first:?} against {second:?}"
+    );
+    // The draft's two endings these sessions write, each line's text whole.
+    assert_eq!(
+        text_line(&nodes, "21 Nov 09:31"),
+        "21 Nov 09:31: opened nothing; wrote nothing; stopped without closing"
+    );
+    assert_eq!(
+        text_line(&nodes, "21 Nov 09:30"),
+        "21 Nov 09:30: opened nothing; wrote nothing; ending unknown"
+    );
+    let privacy = line_bounds(&nodes, "Your user folder");
+    assert!(
+        (privacy.y0 - second.y1 - 8.0).abs() < 0.5,
+        "the privacy line stands 8 under the last session line: {second:?} against {privacy:?}"
     );
 }
 

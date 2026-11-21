@@ -52,17 +52,18 @@ pub(crate) struct SessionLink {
 /// not — `restart`, which gives the one new monitor's pipe a break earns
 /// (asked once, and with `target` `None` never), and `data_dir` for the
 /// window's own writer, the no-pipe case's target and the fallback the
-/// second break gets. The session's header (`SessionHeader::for_this_window`)
-/// is what the pipe carries first and what the writer's folder is named from.
+/// second break gets. `header` is what the pipe carries first and what the
+/// writer's folder is named from; the caller makes it, so the folder's name
+/// is the caller's to hand the shell too.
 pub(crate) fn start(
     recorder: &Recorder,
     target: Option<Box<dyn Write + Send>>,
     restart: Box<dyn FnMut() -> Option<Box<dyn Write + Send>> + Send>,
     data_dir: &Path,
+    header: SessionHeader,
 ) -> SessionLink {
     let (tx, rx) = crossbeam_channel::bounded(QUEUE_CAPACITY);
     recorder.send_to(tx);
-    let header = SessionHeader::for_this_window();
     let (how_tx, how_rx) = crossbeam_channel::bounded(1);
     let (done_tx, done) = crossbeam_channel::unbounded();
     let data_dir = data_dir.to_path_buf();
@@ -633,7 +634,7 @@ mod tests {
     fn the_links_close_writes_the_folder_through_the_real_wiring() {
         let dir = TestDir::new("session_link_end_to_end");
         let recorder = Recorder::default();
-        let link = start(&recorder, None, Box::new(|| None), dir.path());
+        let link = start(&recorder, None, Box::new(|| None), dir.path(), header(4242));
         recorder.step("stub", "a step through the real queue");
         recorder.keep_input(
             "stub",

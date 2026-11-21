@@ -19,6 +19,14 @@ anything done outside UTW, in the game or in another tool. The words stay
 there until the window closes, so you can close the dialog and finish them
 later.
 
+UTW also keeps a record of each session, from the moment it opens until
+it closes, with the saves opened and written in it. The five sessions
+before the current one stay in UTW's data location; no setting turns
+this off. When the problem began before UTW was last opened (it
+crashed, or you tried a save in the game after closing UTW), tick
+**Include earlier sessions** under the list in the dialog: the file
+then holds those sessions too.
+
 **Save…** asks where to put the file, which is named by the date and time
 (`utw-report-2026-11-15-1030.zip`). The file holds your whole save, and your
 user folder is written as `~` in its paths.
