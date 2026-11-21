@@ -437,6 +437,64 @@ fn typed_letters_pick_a_nation_by_name() {
     );
 }
 
+// A typed character that is no digit, letter or space is not even a
+// run: the `-` is neither picked nor kept, so the letters after it
+// build the name run they would alone — `ital` lands on 215 - ITALY,
+// where a `-` held in the run would prefix no name.
+// SE-GUI-106
+#[test]
+fn a_character_neither_letter_digit_nor_space_joins_no_run() {
+    let (mut view, player_id) = open_with_nation(PesVersion::Pes21, "nation_no_run", 135);
+    let mut window = Headless::sized(DEFAULT_PANE.x, 700.0);
+    assert_eq!(nation_of(&view, player_id), 135, "premise: 135 held");
+
+    open_nation_list(&mut window, &mut view);
+    for text in ["-", "i", "t", "a", "l"] {
+        window.frame(vec![egui::Event::Text(text.to_owned())], |ui| {
+            show(ui, &mut view, &|| Vec::new())
+        });
+    }
+    assert_eq!(
+        nation_of(&view, player_id),
+        215,
+        "the `-` joined no run: `ital` picked ITALY on its own"
+    );
+}
+
+// A space joins a name run under way, never an ID run: `2`, `3`, ` `,
+// `1` typed in the open list is the ID 231 with the space ignored, so
+// SAN MARINO is picked — a space kept in the run would make `23 1`,
+// which prefixes no ID.
+// SE-GUI-106
+#[test]
+fn a_space_joins_a_name_run_never_an_id_run() {
+    let (mut view, player_id) = open_with_nation(PesVersion::Pes21, "nation_space_id", 135);
+    let mut window = Headless::sized(DEFAULT_PANE.x, 700.0);
+    assert_eq!(nation_of(&view, player_id), 135, "premise: 135 held");
+
+    open_nation_list(&mut window, &mut view);
+    window.frame(vec![egui::Event::Text("231".to_owned())], |ui| {
+        show(ui, &mut view, &|| Vec::new())
+    });
+    assert_eq!(
+        nation_of(&view, player_id),
+        231,
+        "premise: the typed 231 picks SAN MARINO"
+    );
+    // 61 frames with no input move egui's clock past the run's second.
+    idle_frames(&mut window, &mut view, 61);
+    for text in ["2", "3", " ", "1"] {
+        window.frame(vec![egui::Event::Text(text.to_owned())], |ui| {
+            show(ui, &mut view, &|| Vec::new())
+        });
+    }
+    assert_eq!(
+        nation_of(&view, player_id),
+        231,
+        "the space ignored in the ID run: `2`, `3`, ` `, `1` picked 231"
+    );
+}
+
 // A typed pick then Escape: the player is back on the nation the list
 // opened on, the list is closed, and the pick left nothing to undo —
 // the restore merged into the picks' own entry, cancelling it out.
@@ -524,6 +582,50 @@ fn the_held_row_is_inside_the_clip_on_the_first_frame() {
     assert!(
         row_inside_clip(&mut window, &mut view, "135 - USA").is_some(),
         "the held row inside the clip on the first frame after the click"
+    );
+}
+
+// The unlisted held's `?` row is scrolled into view on the list's
+// opening frame alone: inside the clip on the first frame, and once
+// the wheel has scrolled it out it stays out — the member's scroll is
+// not pulled back to it.
+// SE-GUI-106
+#[test]
+fn the_unlisted_held_row_scrolls_into_view_on_the_first_frame_only() {
+    let (mut view, player_id) = open_with_nation(PesVersion::Pes21, "nation_unlisted_scroll", 100);
+    let mut window = Headless::sized(DEFAULT_PANE.x, 700.0);
+    assert_eq!(nation_of(&view, player_id), 100, "premise: 100 held");
+
+    // PES 2021's list lacks 100: its `100 - ?` row draws first, inside
+    // the clip on the first frame after the click.
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    click(&mut window, nation_combo(&nodes), &mut view);
+    let held = row_inside_clip(&mut window, &mut view, "100 - ?")
+        .expect("the `?` row inside the clip on the first frame");
+
+    // The wheel over the list scrolls it down until the `?` row is off
+    // the clip; a scroll re-pinned every frame would keep it in view.
+    let at = egui::pos2(
+        ((held.x0 + held.x1) / 2.0) as f32,
+        ((held.y0 + held.y1) / 2.0) as f32,
+    );
+    let mut outside = false;
+    for _ in 0..20 {
+        notch(&mut window, &mut view, at, false);
+        if row_inside_clip(&mut window, &mut view, "100 - ?").is_none() {
+            outside = true;
+            break;
+        }
+    }
+    assert!(outside, "the `100 - ?` row scrolled out of the clip");
+    // A wheel notch's smoothed delta keeps landing for a couple of
+    // dozen frames after the last one; an open-frame-only scroll
+    // leaves the `?` row out for good, where a pull re-asked every
+    // frame takes it back once the delta runs out.
+    idle_frames(&mut window, &mut view, 40);
+    assert!(
+        row_inside_clip(&mut window, &mut view, "100 - ?").is_none(),
+        "the `?` row stays outside the clip: the scroll is the open frame's alone"
     );
 }
 
