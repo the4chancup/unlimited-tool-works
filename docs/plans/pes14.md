@@ -879,3 +879,7 @@ on main. Main is merged into the branch, never rebased onto it.
    - Later: the pitch's shirts in the team's kit colours and icon pattern, as PES 2015's
      Game Plan kit icons (patterns 0 to 23), read from the kit configs in the download
      folder.
+9. Build 2's check, as Build 1's: `/4ccg/`'s Gameplan edited in the build (a formation picked
+   from the list, two starters swapped, one moved to open grass, a starter swapped with a
+   bench player, a slider, Combination play, an automatic setting and a set-piece taker),
+   saved, and read on the game's own Game Plan in Edit mode. Then the release.
