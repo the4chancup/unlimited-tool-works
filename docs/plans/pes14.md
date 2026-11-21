@@ -865,9 +865,12 @@ on main. Main is merged into the branch, never rebased onto it.
      each sub-slice reworked if run `gameplan2` contradicts it:
      - 2d-1, the overall on the pitch's badges: done; seen in the release build (2026-11-21),
        `/3/` picked to 4-4-2 on a copy of `tactics6`, every badge the draft's;
-     - 2d-2, free moves and the held player's areas;
-     - 2d-3, the formation's name left out of the unsaved-changes rows and the AATF lines on
-       PES 2014 (seen in 2d-1's look: "Preset 1 · Kick-off · …").
+     - 2d-2, free moves and the held player's areas: merged (`2ebe4fd4`); its SWE-2 round
+       and its look beside the draft to come;
+     - 2d-3, the formation's name left out of the unsaved-changes rows on PES 2014 (seen in
+       2d-1's look: "Preset 1 · Kick-off · …"): merged (`9dbdd296`), its SWE-2 round to come.
+       The AATF's illegal-formation line and the paste notice name a formation too, but never
+       run on a PES 2014 save (the check skips PES 2014; the copy targets are greyed there).
    - The command line refuses the commands out of scope on a PES 2014 save ("Not in scope"):
      done (`422dead7`), each of the five commands with its test.
    - Later: the pitch's shirts in the team's kit colours and icon pattern, as PES 2015's
