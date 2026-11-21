@@ -762,6 +762,25 @@ mod tests {
         );
     }
 
+    // `version_of_exe` cannot parse PES 2014's exe (`from_number` refuses 14), so the
+    // folder check finds it by its name.
+    #[test]
+    fn pes_exe_check_for_finds_pes_2014_s_exe() {
+        let dir = TestDir::new("tool_exe_check_pes14");
+        let games = dir.path().join("games");
+        std::fs::create_dir_all(games.join("PES 2014")).unwrap();
+        std::fs::write(games.join("PES 2014/PES2014.exe"), b"").unwrap();
+        let (ctx, _events_rx, _requests_rx) = context();
+        ctx.settings().lock().unwrap().common.pes_folder_path =
+            games.join("PES 20**").display().to_string();
+
+        assert_eq!(
+            ctx.pes_exe_check_for(PesVersion::Pes14),
+            ExeCheck::Found,
+            "PES 2014's folder holds PES2014.exe"
+        );
+    }
+
     #[test]
     fn a_context_with_a_wake_debug_formats_the_wake_slot() {
         let (ctx, _events_rx, _requests_rx) = context();

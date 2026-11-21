@@ -42,20 +42,29 @@ pub(crate) fn version_of_exe(name: &str) -> Option<PesVersion> {
 }
 
 /// One directory listing of `folder` for `PES20NN.exe` names, in any letter case:
-/// `version`'s own exe wins when several are present (ST-SIDE-03). Only files count:
-/// the condition mirrors the compiler's preflight (`is_file` on the exe's path). The
-/// shell's one exe check: the sidebar colors its selector by it, and a tool reads the
-/// verdict through `ToolContext`.
+/// `version`'s own exe wins when several are present (ST-SIDE-03). It is matched by
+/// its name, not parsed, so a version `from_number` refuses (PES 2014) is still found.
+/// Only files count: the condition mirrors the compiler's preflight (`is_file` on
+/// the exe's path). The shell's one exe check: the sidebar colors its selector by
+/// it, and a tool reads the verdict through `ToolContext`.
 pub(crate) fn check_pes_folder(version: PesVersion, folder: &Path) -> ExeCheck {
     let entries = match std::fs::read_dir(folder) {
         Ok(entries) => entries,
         Err(_) => return ExeCheck::NoFolder,
     };
+    let own_exe = format!("PES{}.exe", version.year());
     let mut other = None;
     for entry in entries.flatten() {
         // `Path::is_file` follows a link the same way the compiler's preflight does.
         if !entry.path().is_file() {
             continue;
+        }
+        if entry
+            .file_name()
+            .to_str()
+            .is_some_and(|name| name.eq_ignore_ascii_case(&own_exe))
+        {
+            return ExeCheck::Found;
         }
         let Some(found) = entry.file_name().to_str().and_then(version_of_exe) else {
             continue;

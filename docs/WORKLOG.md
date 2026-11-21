@@ -3467,8 +3467,10 @@ points there.
   table, `TocOffset` stored as null), so the portrait source and a compile's read of that
   install failed on it. It now opens such an archive with no named entries. Nothing changes
   on screen: PES 2014's pitch draws shirts, not portraits, and no 2015-2021 install on hand
-  holds such an archive. Why the pitch still offers Set PES path with `E:\PES2014` set is
-  not known yet.
+  holds such an archive. The pitch offered Set PES path with `E:\PES2014` set for another
+  reason, fixed since: the Save editor's folder check parsed exe names through
+  `from_number`, which refuses 14, so it never found `PES2014.exe`. It now matches the save's
+  own exe by name (DECISIONS 2026-11-21).
 - open (2026-11-21) — A trial: can SubQ Snap tell a flaky test from a steady one, as it tells
   a test that proves its scenario from one that does not (`citation_audit.py`)? The question
   per test: does its outcome depend on anything outside its inputs (the machine's free memory,
