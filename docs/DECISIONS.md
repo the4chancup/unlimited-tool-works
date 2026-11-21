@@ -19243,3 +19243,12 @@ included, waits for that approval.
 Why: only the maintainer knows which changes members will find important, so a section the
 lead writes alone can lead with the wrong change or leave out one members will look for.
 Plan: RUNBOOK.md "Phases and releases", the paragraph "The changelog has the maintainer's last word".
+
+## 2026-11-21 — release — a release's draft opens with its changelog section as its notes
+Decision (the maintainer): the release workflow gives each draft the version's `CHANGELOG.md`
+section as its notes, and the maintainer writes the introduction above them before publishing.
+A tag whose version has no section ends the run before the draft.
+Why: the notes are that section in every release since 0.0.1, so copying it by hand at each
+publish was work the workflow can do. Failing before the draft, and not drafting with empty
+notes, keeps a release from being published with none.
+Plan: spec/core/distribution.md "Release builds in CI", the paragraph on the draft.

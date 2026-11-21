@@ -4,8 +4,9 @@
 # or an archive whose listing differs from the staged files.
 #
 # A tag naming the workspace's version after `TAG_PREFIX` (`v0.0.2`) ends in a draft release
-# holding both bundles and SHA256SUMS.txt, the file the updater checks a download against; the
-# maintainer looks at the Windows bundle, writes the notes and publishes. A push to
+# holding both bundles and SHA256SUMS.txt, the file the updater checks a download against, with
+# the version's changelog section as its notes; the maintainer looks at the Windows bundle,
+# writes the introduction above the notes and publishes. A push to
 # `ci/release-dry-run`, or a run started by hand, stops at the run's artifacts.
 name: Release
 
@@ -84,6 +85,14 @@ jobs:
     permissions:
       contents: write
     steps:
+      # The changelog and the script that reads its section; first, since a checkout empties
+      # the folder it fills.
+      - uses: actions/checkout@v7
+        with:
+          sparse-checkout: |
+            CHANGELOG.md
+            scripts/release
+          sparse-checkout-cone-mode: false
       - uses: actions/download-artifact@v8
         with:
           pattern: bundle-*
@@ -95,15 +104,18 @@ jobs:
           sha256sum -c ./*.sha256
           cat ./*-windows.7z.sha256 ./*-linux.tar.gz.sha256 > SHA256SUMS.txt
           cat SHA256SUMS.txt
-      # A draft: the maintainer publishes it after the look. A version with a pre-release part
+      # A draft: the maintainer publishes it after the look, writing the introduction above
+      # the notes, which are the version's changelog section. A version with a pre-release part
       # (`0.0.1-rc.1`, a side line's `0.0.2-pes14.1`) is marked pre-release, which GitHub never
       # shows as the latest release.
       - name: The draft release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          version="${GITHUB_REF_NAME#"$TAG_PREFIX"}"
+          python3 scripts/release/release_notes.py "$version" > notes.md
           prerelease=()
-          if [[ "${GITHUB_REF_NAME#"$TAG_PREFIX"}" == *-* ]]; then prerelease=(--prerelease); fi
+          if [[ "$version" == *-* ]]; then prerelease=(--prerelease); fi
           gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --verify-tag --draft \
-            "${prerelease[@]}" --title "$GITHUB_REF_NAME" --notes "" \
+            "${prerelease[@]}" --title "$GITHUB_REF_NAME" --notes-file notes.md \
             dist/*-windows.7z dist/*-linux.tar.gz dist/SHA256SUMS.txt
