@@ -2687,7 +2687,9 @@ const REPORT_SAMPLE = {
     { started: "20 Nov 23:05", opened: "EDIT00000000", wrote: "23:41", ended: "crashed" },
     { started: "20 Nov 21:10", opened: "EDIT00000000", wrote: "21:30", ended: "closed" },
     { started: "19 Nov 18:02", opened: "EDIT00000001", wrote: null,
-      ended: "stopped without closing" }],
+      ended: "stopped without closing" },
+    // No `[end]`: another window still open, or a session whose writer died too.
+    { started: "18 Nov 20:40", opened: "EDIT00000000", wrote: "20:55", ended: "ending unknown" }],
   savedTo: "~\\Desktop\\utw-report-2026-11-07-0245.zip" };
 const REPORT = { words: "", wholeExports: false, earlierSessions: false, saved: false };
 function openReport() {

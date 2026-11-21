@@ -19112,3 +19112,13 @@ like any kept file, not by a check of the Save editor's own, so one size and SHA
 covers every kept file.
 Plan: `plans/core/architecture.md` "Repro bundles", the bullet "The folder keeps each save
 packed".
+
+## 2026-11-21 — studio_core — an earlier session with no `[end]` reads "ending unknown" in Report a problem
+Decision: in the "Include earlier sessions" list, a session whose journal has no `[end]` shows
+"ending unknown". The three recorded endings show as closed, crashed and stopped without
+closing (`ended`).
+Why: "ending unknown", not "stopped without closing", because a session with no `[end]` may be
+another window's, still open, which has not stopped. It stays in the list, because it may also
+be a window that crashed with no monitor, whose own writer died with it: the session the member
+most needs to include.
+Plan: `plans/core/architecture.md` "Repro bundles", the dialog's "Under the list" bullet.

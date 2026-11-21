@@ -53,7 +53,10 @@ run's findings (`4cc-studio-temp/str_re/out/findings.md`).
      indexes from its rows (DECISIONS 2026-11-21 "a new monitor's writer adopts the session
      folder"): merged `51643014`, one rework, SWE-2 round S1s5b2b (3 accepted, the loop
      ended). Astra's round owed, with 5b-ii's;
-   - 5c the Save editor's saves kept decrypted and rebuilt on reading (SE-REP-07);
+   - 5c the Save editor's saves kept decrypted and rebuilt on reading (SE-REP-07): packed
+     and compressed by the writer, rebuilt through a function the Save editor gives the
+     bundle reader (DECISIONS 2026-11-21 "a session keeps each save packed and
+     compressed"); briefed to SWE-2 from `4af0c413`, running;
    - 5d the dialog's "Include earlier sessions" box, drafted first, and the help page's line
      (ST-REP-09, 12).
 4. Review rounds owed: 0.0.2-similar's, and every Carbon round a 0.0.2 step still owes (Report a problem has had its whole review).
