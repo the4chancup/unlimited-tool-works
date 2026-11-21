@@ -681,6 +681,15 @@ impl SaveView {
                 self.comparator.reset(session.version(), &self.recorder);
                 file_menu::push_recent(&mut self.recents, path, session.version());
                 self.last_folder = path.parent().map(Path::to_path_buf);
+                // A save holding no cup team (one made from the stock game)
+                // opens to an empty list; the notice says why.
+                if session.cup_team_ids().next().is_none() {
+                    self.notice = Some(Notice {
+                        text: "This save holds no cup team (ids 701 to 920).".to_owned(),
+                        kind: NoticeKind::Warning,
+                        action: None,
+                    });
+                }
                 self.session = Some(session);
                 self.generation += 1;
             }
