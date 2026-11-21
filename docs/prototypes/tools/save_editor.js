@@ -6905,8 +6905,9 @@ function areaRect(pos) {
 function dimOutsideLit(g, p) {
   if (!p) return;
   const rated = POSITIONS.filter(pos => ["A", "B"].includes(p.positions.playable[pos]));
-  const lit = version() === 14 ? BANDS14.map(band => band.find(pos => rated.includes(pos))).filter(Boolean)
-    : rated.filter(pos => !rated.includes(AREA_BAND[pos]));
+  // PES 2014's pitch changes nothing for a player rated A or B nowhere.
+  if (version() === 14 && !rated.length) return;
+  const lit = rated.filter(pos => !rated.includes(AREA_BAND[pos]));
   g.save();
   g.beginPath();
   g.rect(0, 0, PITCH.w, PITCH.h);
@@ -7737,10 +7738,6 @@ function freeMove14(t, i, x, y) {
   const p = rosterPlayer(t, t.tactics.starting_eleven[i]);
   return second && overallAt14(p, second) >= overallAt14(p, first) ? second : first;
 }
-// The areas PES 2014 lights while a player is held: in each band, the first position he plays
-// at A or B, in the code's order.
-const BANDS14 = [["GK"], ["CB", "LB", "RB"], ["CMF", "DMF", "LMF", "RMF", "AMF"],
-  ["SS", "LWF", "RWF", "CF"]];
 
 // A player on PES 2014's pitch, as the game draws him: a white shirt, his
 // number on it in black, its foot at `bottom` above his badge. The shirt's

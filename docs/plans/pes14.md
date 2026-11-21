@@ -470,8 +470,8 @@ address). The code is observed; where a step had to be inferred, the item says s
   the names: two `/3/` players, registered CB with every grade C, were given 20 abilities that
   all differ, and the game showed 15 overalls, each the formula's: #2 read CB 53, RB 64, CMF
   67, LMF 72, AMF 71, LWF and RWF 75, CF 78; #11 read CB 88, RB 64, DMF 57, CMF 51, CF 42.
-  Still inferred: that the save's playable value (0 C, 1 B, 2 A) is the
-  grade the formula reads.
+  Run `gameplan2b` checked the grades: #2, given SS A in the save (playable value 2), read SS
+  77, the sum's 72 plus the A bonus. That a value of 1 reads as B is still inferred.
 - **A free move** (`FUN_027d0550`, `FUN_027c3d30`, `FUN_027c77e0`, `FUN_027c3ed0`): a player
   dropped on open grass at a pitch point (width 0 to 104, depth 0 to 48, the units of the
   stored spots) gets his role by these rules:
@@ -485,9 +485,18 @@ address). The code is observed; where a step had to be inferred, the item says s
   - the drop is refused when no zone holds the point (a width under 5 or over 99, a depth over
     47, or a depth under 4 outside the keeper's widths), and when the move would leave fewer than 2 defenders, 2 midfielders
     or 1 forward, or more than 5, 6 or 5 (a line the player already stood in is not counted
-    against its maximum). Which roles count as which line is inferred (defenders CB, LB, RB;
-    midfielders DMF to AMF; forwards LWF to CF), as is which of the two candidates the line
-    check tests (the code tests the first).
+    against its maximum). The lines are defenders CB, LB, RB; midfielders DMF to AMF; forwards
+    LWF to CF. Which of the two candidates the line check tests is inferred (the code tests
+    the first).
+
+  Run `gameplan2b` made 13 drops on `/3/` and `/a/`, and every role the save then held, every
+  drop refused and every role kept is the rule's. Among them:
+  - a CF at width 7 took SS over LWF, his overall there 49 against 47;
+  - a DMF at width 14 took CMF, LMF being another starter's;
+  - a RMF took RWF on a tie, 72 each;
+  - a CB on the right stayed CB inside RB's zone;
+  - the last two defenders, the lone forward and a sixth defender were refused;
+  - so was a drop at depth 3 outside the keeper's widths.
 
   The zones, as depth and width ranges, both ends inside:
 
@@ -509,20 +518,24 @@ address). The code is observed; where a step had to be inferred, the item says s
 
   While a player is held over open grass, the game's bottom panel shows his role and overall,
   then the role a drop there would give him and his overall at it (run `gameplan2a`). It adds
-  nothing where his role stays, and it added nothing at the pitch's top-left corner, past the
-  zones, which suggests a refused spot also shows none. The roles it previewed match the rule
-  above at every spot shot, among them a CB who stayed CB near his own goal on the right,
-  where RB was another starter's.
+  nothing where his role stays. The role it previews is not always what the drop does: it
+  ignores the line limits, naming SS where the drop was then refused (run `gameplan2b`), and
+  it named CB at the keeper's depth outside his widths, where the drop was refused too. The
+  editor's held badge reads what a release there does, his own role where it is refused, not
+  the game's chip: a badge that named a role the drop then refused would promise a move that
+  does not happen.
 
   The zones bound where a drop finds a role, not where a player may stand: the game's own
-  formations put wingers at widths 23 and 81 and 4-3-1-2's AMF at depth 35. What a drop of the
-  keeper, or into the keeper's zone, does to a save that stores no keeper role is not read; run
-  `gameplan2` looks.
+  formations put wingers at widths 23 and 81 and 4-3-1-2's AMF at depth 35. The keeper is never
+  set down on grass: a held keeper previews no role, and a drop sends him back to his spot (run
+  `gameplan2b`). A drop inside the keeper's own zone was not made; the editor refuses it, as
+  the game refuses the keeper's rows outside it.
 - **The held player's areas** (`FUN_027c3060`): while a player is held, the game lights the
-  zone of each position he plays at A or B, one to a band: in the order GK; CB, LB, RB; CMF,
-  DMF, LMF, RMF, AMF; SS, LWF, RWF, CF, the first of a band he plays is lit and the rest of that
-  band is not. Inferred: that A and B light and C does not (the code lights a non-zero grade
-  in a block it builds, whose values are not read against the save's).
+  zone of each position he plays at A or B; his registered position alone lights nothing, and
+  a player rated A or B nowhere lights nothing and darkens nothing (run `gameplan2b`). A CB rated
+  A at LB and SS and B at RB and CMF lit those four zones and left his own CB zone dark. The
+  code reading suggested one zone to a band, the first in the code's order; the run lit LB and
+  RB together, so the editor lights every zone he is rated at.
 
 ## PES 2014 in the code
 
@@ -640,10 +653,10 @@ button would stay on every PES 2014 save, its tooltip saying the folder holds no
     drop on open grass is the game's free move ("What the game's code says"): the player
     moves there and takes the role the game's rule gives him, or goes back to his spot where
     the game refuses the drop. A move that kept the old role could write a pair the game
-    never writes. Until run `gameplan2` sees what the game does with the keeper, a drop of
-    the keeper on grass, and any drop into the keeper's zone, are refused. A click opens no
-    player box, since a role is not picked. While a player is held, his areas light as the
-    game's do.
+    never writes. A drop of the keeper on grass, and any drop into the keeper's zone, are
+    refused. A click opens no player box, since a role is not picked. While a player is held,
+    the zones of the positions he plays at A or B light, and nothing darkens for a player rated
+    A or B nowhere.
   - **A swap of two starters**, on the pitch or in the lineup list, moves them in the preset
     shown alone, writing what the game's swap writes:
     - with Preset Tactics 1 shown, the two exchange lineup entries, and presets 2 and 3
@@ -828,9 +841,9 @@ on main. Main is merged into the branch, never rebased onto it.
    - Run `gameplan2` (in game): the inferred parts of "What the game's code says".
      - `gameplan2a`: the "Position / Overall Rating" display for players whose abilities
        differ, against the formula's numbers. Done (2026-11-21), each number the formula's.
-     - `gameplan2b`: free moves to chosen points, each saved and read back: a role kept, each
-       candidate taken, a tie, each refusal, the keeper's drop and a drop into the keeper's
-       zone; and which grades light the held player's areas.
+     - `gameplan2b`: free moves saved and read back, and the held player's areas. Done
+       (2026-11-21): the free move is the rule's at all 13 drops; the areas light every A or B
+       zone, not one to a band.
    - Slice 1, the record's fields in the schema and the model: done.
    - Slice 2a, the screen opens with the Preset tactics panel: done.
    - Slice 2b, the pitch's PES 2014 rules (shirts, swaps): done.
