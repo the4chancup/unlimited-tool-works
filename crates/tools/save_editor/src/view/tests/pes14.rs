@@ -1451,3 +1451,51 @@ fn a_pes14_player_with_an_appearance_record_edits_the_look_controls() {
     assert!(!combo.is_disabled(), "the Socks combo is enabled");
     assert_eq!(combo.value(), Some("Short"), "85720's socks read Short");
 }
+
+// A PES 2014 badge holds the starter's overall at his slot's position by
+// PES 2014's own formula, as the game's "Position / Overall Rating" does:
+// J. WALTERS (42810), IRELAND's starter 8, fields at LMF, which he is
+// rated A at — each ability less 25, times its weight: dribbling 52 x
+// .26 + speed 56 x .26 + explosive power
+// 51 x .23 + ball control 49 x .16 + stamina 60 x .14 + lofted pass
+// 40 x .13 + attacking prowess 55 x .07 + low pass 45 x .07 + swerve
+// 40 x .04 = 13.52 + 14.56 + 11.73 + 7.84 + 8.4 + 5.2 + 3.85 + 3.15 +
+// 1.6 = 69.85, floor(69.85 + .5) = 70, plus 5 for the A: 75.
+#[test]
+fn a_pes14_badge_shows_the_starters_overall_by_pes14s_formula() {
+    let path = fixture(PesVersion::Pes14, "pes14_badge_overall");
+    let mut file = EditFile::from_bytes(&fixture_save(PesVersion::Pes14)).unwrap();
+    file.team_mut(1).expect("the vanilla first team").id = 701;
+    file.save(&path).unwrap();
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut window = Headless::sized(1600.0, 1400.0);
+
+    assert_eq!(
+        player_entry(&view, 42810).overall_at(PesVersion::Pes14, 6),
+        Some(75),
+        "premise: the formula's 75 at LMF"
+    );
+    view.selected = Some(Selection::Team(701));
+    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let canvas = canvas_of(&nodes);
+    let players = team_entry(&view, 701).tactics.presets[0].formations[0].players;
+    assert_eq!(players[8].position, 6, "premise: starter 8 fields at LMF");
+    let badge =
+        egui::Rect::from_center_size(clamped_centre(canvas, players[8]), egui::vec2(50.0, 14.0));
+    let number = shapes
+        .iter()
+        .filter_map(|clipped| match &clipped.shape {
+            egui::Shape::Text(shape)
+                if (shape.pos.x + shape.galley.size().x - (badge.right() - 2.0)).abs() <= 0.5
+                    && (shape.pos.y + shape.galley.size().y / 2.0 - badge.center().y).abs()
+                        <= 0.5 =>
+            {
+                Some(shape)
+            }
+            _ => None,
+        })
+        .next()
+        .expect("a number at starter 8's badge's right end");
+    assert_eq!(number.galley.job.text, "75", "starter 8's overall at LMF");
+}
