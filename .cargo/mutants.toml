@@ -309,6 +309,12 @@ exclude_re = [
     # returns, and stays measured (caught).
     "studio/src/crash_dump\\.rs:\\d+:30: replace \\+ with \\* in overflow_the_stack",
     "studio/src/crash_dump\\.rs:\\d+:35: replace \\+ with - in overflow_the_stack",
+    # studio: `session_test`'s deadline (`Instant::now() > deadline`) is reached only when
+    # ST-REP-11's real-process test fails, which then exits 3. `>=` differs from `>` only at
+    # the one nanosecond the clock equals the deadline; `==` never matches, so the failing
+    # trigger waits for the test's own timeout instead of exiting 3, and the test fails either
+    # way. Its success path, the steps reaching the folder, is measured.
+    "studio/src/crash_dump\\.rs:\\d+:\\d+: replace > with (==|>=) in session_test",
     # studio: `main` attaches to the parent's console when it has arguments (`args.len() > 1`),
     # which only a real console shows: the CLI tests read the exe's output through pipes, which
     # need no console, so `>=` and `<` pass them. Their check is ST-RUN-04's manual run: a
