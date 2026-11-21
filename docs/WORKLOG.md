@@ -115,6 +115,15 @@ run's findings (`4cc-studio-temp/str_re/out/findings.md`).
     range of pictures reads the game's copy once, and two test gaps, merged `c20681a1`.
     Owed: the paid review rounds of both commits (Tier 1).
     Can run beside the detour: it touches no PES 2014 file.
+13. The pitch from the game's own texture, as the placeholder portrait is (the maintainer,
+    2026-11-21), the painted pitch staying for a member without the PES folder. The texture
+    is in the apk format: `common/menu/general/gamePlan.bin` is WESYS-wrapped zlib holding
+    `afp_gamePlan.apk`, whose TXP2 pack holds the atlases (`tex000`, `tex001`) as Okumura
+    LZSS streams of TXDT images, BC1 or BC3 in byte-swapped 16-bit words or ARGB8 (decoded
+    once for PES 2021 in 8.9g, `de0440a6`; that script is gone). Waits on the maintainer's
+    notes on the apk format, which the suite will read in general eventually; then a plan
+    section (a lib crate, where the pitch's rectangle in each version's atlas comes from,
+    and whether a saved formation picture may carry the game's pixels) before any code.
 
 Most open steps below wait only on a check in the game or the built window that the lead's
 harness makes ("Pending looks" below), not on the maintainer.
