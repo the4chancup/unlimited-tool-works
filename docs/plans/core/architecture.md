@@ -625,9 +625,16 @@ Compiler and the Export upgrader, then the rest as they are built.
   when Studio is opened only to report, leaves none.
 
   **The crash monitor writes it; the window never does.** The window sends each step and
-  each kept file to its monitor ("Diagnostic logging", the monitor) over the link the monitor
-  already serves (`minidumper`'s `send_message`), and the monitor writes each message as it
-  arrives:
+  each kept file to its monitor ("Diagnostic logging", the monitor) through the monitor's
+  standard input, a pipe the window opens when it starts it, and the monitor writes each
+  message as it arrives:
+
+  - Not over the socket the monitor serves for crash dumps (`minidumper`'s `send_message`):
+    its server reads a message in one receive, so a kept save, 5 to 11 MB, can arrive cut
+    at the socket's buffer. A pipe is read whole (`read_exact`), and needs nothing beyond
+    the standard library.
+  - The pipe's end tells the monitor the window went away: a closing message before it
+    means `closed`, none means `ended`.
 
   - The window does no file work for the session, so the session can never stall it.
   - A step is on disk moments after it happens, so a crash, a hang ended from Task Manager or
@@ -637,7 +644,7 @@ Compiler and the Export upgrader, then the rest as they are built.
     sends it. A full queue drops messages and logs one line, rather than blocking the window.
   - A window whose monitor did not start runs the same writer on a thread of its own, so its
     session is still kept.
-  - A link that breaks mid-session (the monitor died) gets one new monitor, which keeps
+  - A pipe that breaks mid-session (the monitor died) gets one new monitor, which keeps
     crash dumps for the rest of the session and writes on into the same folder. If that one
     does not start either, the window's own writer takes the folder over.
   - The writer is one function from a message to the folder, which tests call in-process;

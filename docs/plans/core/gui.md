@@ -1903,7 +1903,7 @@ ST-REP-06   GIVEN the session writer given a stub tool's messages in order: a st
             THEN `journal.toml` holds the version, the OS, the start time, the step, the input
                  and output rows and `[end]` `closed`; `inputs/` holds the input and
                  `outputs/` the second write only
-ST-REP-07   GIVEN ST-REP-06's messages without the closing one, then the link dropped
+ST-REP-07   GIVEN ST-REP-06's messages without the closing one, then the pipe closed
             THEN `[end]` says `ended`; GIVEN a crash request instead THEN `crashed`; GIVEN a
                  `journal.toml` whose last `[[step]]` block is cut in half WHEN it is read
                  THEN the earlier steps read and the cut block is dropped
@@ -1918,7 +1918,7 @@ ST-REP-09   GIVEN two earlier session folders and the window's own
                  `sessions/<folder name>.zip` for each, each read back by `read_bundle`;
                  unticked, THEN it holds none
 ST-REP-10   GIVEN a monitor that reads nothing, so the window's queue fills
-            WHEN steps are recorded THEN no frame waits on the link and the log holds one line
+            WHEN steps are recorded THEN no frame waits on the pipe and the log holds one line
                  about the dropped messages; GIVEN no monitor THEN the window's own writer
                  thread writes the folder as ST-REP-06's; GIVEN the monitor ended mid-session
                  THEN a new one is started and the next steps land in the same folder, and

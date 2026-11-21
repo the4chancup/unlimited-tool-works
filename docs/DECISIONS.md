@@ -19060,3 +19060,15 @@ Plan: `plans/save_editor.md`, "Editing UI", the bullet "Only the cup's teams are
 Decision: the tool pane's width at the default window (1224 points: the 1280-point window less the sidebar's 56-point rail) is a public `studio_core` constant, derived from the shell's own two, and each tool's larger-window cap reads it; the Save editor's private copy goes.
 Why: every tool's nostretch slice caps its view at that width, the Save editor's first with a constant of its own; four copies of one number would drift the day the rail or the default window changes, and only the shell knows both.
 Plan: `plans/core/gui.md`, "Shell layout", the paragraph "A window larger than the default".
+
+## 2026-11-21 — studio — a session's messages reach the crash monitor through its stdin pipe
+Decision: the window sends each session message (a step, a kept file, the closing message) to
+its crash monitor through the monitor's standard input, a pipe opened when the window starts
+it, with each message framed by its length. The monitor reads it on a thread of its own.
+Why: not over the socket the monitor serves for crash dumps (`minidumper`'s `send_message`, the
+plan's first design), because minidumper 0.11's server reads each message with a single
+receive and its client sends with a single vectored send, neither in a loop, so a kept save of
+5 to 11 MB can arrive cut at the socket's buffer. A pipe is read with `read_exact`, needs no
+dependency, and its end tells the monitor the window went away.
+Plan: `plans/core/architecture.md` "Repro bundles", "The crash monitor writes it; the window
+never does"; ST-REP-07 and ST-REP-10 name the pipe.
