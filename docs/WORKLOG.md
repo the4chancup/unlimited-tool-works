@@ -59,9 +59,10 @@ run's findings (`4cc-studio-temp/str_re/out/findings.md`).
      compressed"): merged `53398fdc`, one rework, with the tests for the checkpoint's two
      missed mutants in `repro.rs` and `session.rs`. Its review loop owed (SWE-2, then Carbon
      and Astra: it reaches saves);
-   - 5d the dialog's "Include earlier sessions" box and the help page's line (ST-REP-09, 12),
-     the draft's ending line settled (DECISIONS 2026-11-21 "an earlier session with no
-     `[end]` reads "ending unknown""): briefed to SWE-2 from `53398fdc`, running.
+   - [x] 5d the dialog's "Include earlier sessions" box and the help page's line (ST-REP-09,
+     12), the draft's ending line settled (DECISIONS 2026-11-21 "an earlier session with no
+     `[end]` reads "ending unknown""): merged `db2900cd`. Seen in the release build beside
+     the draft, box clear and ticked (2026-11-21). Its review loop owed, with 5c's.
 4. Review rounds owed: 0.0.2-similar's, and every Carbon round a 0.0.2 step still owes (Report a problem has had its whole review).
 5. 0.0.2-pes19, and with it the readme's PES 2019 claim.
 6. The Compiler's view in the build, unpolished, for the VGL organizer (the maintainer,
