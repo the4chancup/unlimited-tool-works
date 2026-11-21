@@ -71,7 +71,9 @@ run's findings (`4cc-studio-temp/str_re/out/findings.md`).
      2026-11-21 "Report a problem's earlier sessions in the regular colour") merged
      `5583611a`, and seen in the release build beside the draft, box clear and ticked
      (2026-11-21): the earlier sessions in the regular colour, the `~` line weak.
-4. Review rounds owed: 0.0.2-similar's, and every Carbon round a 0.0.2 step still owes (Report a problem has had its whole review).
+4. 0.0.2-similar, Select all similar players: its two slices to build, after a code map
+   (`.tmp/similar/code_map.md`). Review rounds owed: every Carbon round a 0.0.2 step still
+   owes (Report a problem has had its whole review).
 5. 0.0.2-pes19, and with it the readme's PES 2019 claim.
 6. The Compiler's view in the build, unpolished, for the VGL organizer (the maintainer,
    2026-11-20; `plans/core/development_plan.md` "Phase 8: GUI"): step 8.10's grid first,
