@@ -2248,8 +2248,11 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         `view/tests/stretch.rs`; seen in the release build at 1280 and maximized beside the
         drafts (Stats, Gameplan, Live AATF's dock spanning the pane); SWE-2 round S1w's
         fixes `cbb13f6a`. The Squad screen takes its rule when it is built
-      - [ ] the Ruleset editor: SWE-2 in `sk_stretch_re` (brief `.tmp/brief_stretch_re.md` there),
-        with the default pane's width moved into `studio_core` (DECISIONS 2026-11-21)
+      - [x] the Ruleset editor: merged `172e302a` (2026-11-21, SWE-2, two reworks), tests
+        `view/tests/stretch.rs`, the default pane's width one `studio_core` constant
+        (DECISIONS 2026-11-21); seen in the release build at 1280 and maximized beside the
+        draft, preview hidden and shown (the draft's preview fixed to fit its 100 columns);
+        SWE-2 round S1re's fixes in the merge
   - [x] 0.0.2-lib the library rerun against checkpoint `p11`, 2026-11-13: checkpoint `002`
     (422 clean inputs; `.tmp/library_parity/checkpoints/diff_p11_002.txt`), every change
     traced to a commit since `3c512628`: VGL27's team IDs (`6268280c`), the short Common

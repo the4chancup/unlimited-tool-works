@@ -18,6 +18,10 @@
 - **Save editor**: in a window larger than the default, the screens spread their columns and
   stretched their panels across it. They now keep their default layout, centred, while the
   player list shows more rows and the Live AATF panel takes the whole width.
+- **Ruleset editor**: in a window larger than the default, the toolbar, the bottom bar and the
+  form stretched across it. They now keep their default width, centred. The preview now
+  stands at the window's right edge, wide enough for the data block's 100 columns, and can no
+  longer be resized.
 
 ### Other stuff
 
