@@ -435,8 +435,11 @@ address). The code is observed; where a step had to be inferred, the item says s
 - **The overall at a position** (`FUN_01c11f40`), the number the Game Plan shows for a player
   at his spot:
   1. Each ability the position weighs contributes `(value - 25) × weight` (the code subtracts 25
-     only from a value over 24, which every stat is); the sum, plus 0.5, is rounded to the
-     nearest integer.
+     only from a value over 24, which every stat is); the sum is rounded, a half up (the code
+     cuts the sum plus 0.5 to an integer). Run `tactics6`'s `/3/`, whose players hold 77 in
+     every ability, shows this: CB 78 (71.24 rounded, plus 7), CF 71, RB and LB 74 (73.84),
+     CMF 72 (71.76), GK 67 (66.56), where rounding the sum plus 0.5 to the nearest would give
+     one more at CB and CF.
   2. A bonus is added, by the position, in the order GK, CB, LB, RB, DMF, CMF, LMF, RMF, AMF,
      LWF, RWF, SS, CF:
      - at his registered position: 7, 7, 8, 8, 8, 7, 7, 7, 7, 9, 9, 7, 7;
