@@ -30,6 +30,10 @@ Usage:
   gui.py open PATH | folder PATH      fill the app's own Open / folder dialog and confirm it
   gui.py cancel                       cancel the app's open dialog
   gui.py size W H | maximize          resize (outer size) or maximize the window
+  gui.py place                        move the window onto a monitor at 100% scaling (96 dpi),
+                                      at the bottom of the z-order; run it right after launch
+                                      when the primary monitor is scaled, since this script's
+                                      points are pixels only at 96 dpi
 
 With two windows of the copy open, UTW_PID=<pid> picks the one each command acts on.
 """
@@ -381,6 +385,33 @@ elif cmd == "size":
     assert user32.SetWindowPos(HWND, None, 0, 0, int(args[0]), int(args[1]), 0x0002 | 0x0004)
     time.sleep(0.8)
     print(f"outer size {args[0]}x{args[1]}")
+elif cmd == "place":
+    # Monitors and positions in physical pixels for this call: unaware, Windows scales them.
+    user32.SetThreadDpiAwarenessContext(ctypes.c_void_p(-4))  # PER_MONITOR_AWARE_V2
+    shcore = ctypes.windll.shcore
+    user32.GetMonitorInfoW.argtypes = [wt.HMONITOR, ctypes.c_void_p]
+    shcore.GetDpiForMonitor.argtypes = [wt.HMONITOR, ctypes.c_int, ctypes.c_void_p, ctypes.c_void_p]
+    unscaled = []
+
+    def on_monitor(hmon, hdc, rect, data):
+        info = (ctypes.c_long * 10)()  # MONITORINFO: cbSize, rcMonitor, rcWork, dwFlags
+        info[0] = ctypes.sizeof(info)
+        user32.GetMonitorInfoW(hmon, info)
+        x, y = ctypes.c_uint(), ctypes.c_uint()
+        shcore.GetDpiForMonitor(hmon, 0, ctypes.byref(x), ctypes.byref(y))
+        if x.value == 96:
+            unscaled.append((info[5], info[6]))  # rcWork's left and top
+        return True
+
+    proto = ctypes.WINFUNCTYPE(ctypes.c_int, ctypes.c_void_p, ctypes.c_void_p,
+                               ctypes.POINTER(wt.RECT), ctypes.c_double)
+    user32.EnumDisplayMonitors(None, None, proto(on_monitor), 0)
+    assert unscaled, "no monitor at 100% scaling: the points would not be pixels"
+    left, top = unscaled[0]
+    # HWND_BOTTOM, SWP_NOSIZE | SWP_NOACTIVATE: the maintainer's windows stay in front.
+    assert user32.SetWindowPos(HWND, 1, left + 20, top + 10, 0, 0, 0x0001 | 0x0010)
+    time.sleep(1.5)
+    print(f"placed at ({left + 20},{top + 10}), dpi {user32.GetDpiForWindow(HWND)}")
 elif cmd == "maximize":
     user32.ShowWindow(HWND, 3)  # SW_MAXIMIZE
     time.sleep(1.0)
