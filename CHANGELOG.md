@@ -6,6 +6,9 @@
 
 - **Save editor**: typing the start of a nation's name in the open Nation list now picks it,
   as typing its ID does, and Escape in the open list now puts back the nation it opened on.
+- **All tools**: UTW now keeps a record of the last five times it was opened, with the saves
+  opened and written each time. Report a problem's new box `Include earlier sessions` adds
+  them to the file, for a problem that began before UTW was last opened, such as a crash.
 
 ### Fixes
 

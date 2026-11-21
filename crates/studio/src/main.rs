@@ -29,7 +29,7 @@ use crossbeam_channel::{Receiver, unbounded};
 use log::LevelFilter;
 use rfd::MessageLevel;
 use studio_core::icons;
-use studio_core::repro::SessionEnd;
+use studio_core::repro::{SessionEnd, SessionHeader, session_folder_name};
 use studio_core::updater::{self, CheckReply, Fetch};
 use studio_core::{
     AppPaths, CommonSettings, EXE_NAME, LaunchMode, PlannedTool, SETTINGS_FILE_NAME, Settings,
@@ -527,10 +527,24 @@ fn run_gui_mode(tools: Vec<Box<dyn StudioTool>>, test: Option<CrashTest>) -> Exi
     // opens: the recorder queues each step and kept file it takes, and the
     // link's thread writes them to the monitor's pipe — or, with no monitor,
     // to the window's own session folder under the data location. A first
-    // run has no data location and no link.
-    let mut session_link = ctx.paths().data_dir.as_deref().map(|data_dir| {
-        session_link::start(ctx.recorder(), session_target, session_restart, data_dir)
-    });
+    // run has no data location and no link. The window's own folder name is
+    // made here so Report a problem's list of earlier sessions can leave it
+    // out.
+    let (mut session_link, session_folder) = match ctx.paths().data_dir.as_deref() {
+        Some(data_dir) => {
+            let header = SessionHeader::for_this_window();
+            let folder = session_folder_name(&header);
+            let link = session_link::start(
+                ctx.recorder(),
+                session_target,
+                session_restart,
+                data_dir,
+                header,
+            );
+            (Some(link), Some(folder))
+        }
+        None => (None, None),
+    };
     // ST-REP-11's trigger, past the link's start and before any window: it
     // ends the process and never returns.
     if let Some(CrashTest::Session) = test {
@@ -560,7 +574,8 @@ fn run_gui_mode(tools: Vec<Box<dyn StudioTool>>, test: Option<CrashTest>) -> Exi
                 installed_log
                     .as_ref()
                     .map(|installed| installed.path.clone()),
-            ),
+            )
+            .with_session_folder(session_folder),
         ) {
             Ok(program) => {
                 restart = program;

@@ -17,6 +17,7 @@ use std::fs;
 use std::io::{self, Read, Write};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
+use std::time::SystemTime;
 
 use anyhow::Context;
 use serde::{Deserialize, Serialize};
@@ -122,6 +123,7 @@ pub enum SessionMessage {
 /// `ended` (the window went away without either, as when it is ended
 /// from Task Manager). A journal with no `[end]` is a session still
 /// open, or one whose monitor died too.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum SessionEnd {
     /// The window sent its closing message.
     Closed,
@@ -140,6 +142,16 @@ impl SessionEnd {
             SessionEnd::Closed => "closed",
             SessionEnd::Crashed => "crashed",
             SessionEnd::Ended => "ended",
+        }
+    }
+
+    /// `how`'s `SessionEnd`; `None` on a string `how()` never writes.
+    fn from_how(how: &str) -> Option<SessionEnd> {
+        match how {
+            "closed" => Some(SessionEnd::Closed),
+            "crashed" => Some(SessionEnd::Crashed),
+            "ended" => Some(SessionEnd::Ended),
+            _ => None,
         }
     }
 }
@@ -626,7 +638,7 @@ impl SessionWriter {
     /// then died inside the header's own block and the folder is made
     /// fresh.
     fn adopt_folder(&mut self) -> anyhow::Result<bool> {
-        let name = folder_name(&self.header);
+        let name = session_folder_name(&self.header);
         let folder = self.root.join(&name);
         let journal = folder.join("journal.toml");
         let bytes = match fs::read(&journal) {
@@ -677,7 +689,7 @@ impl SessionWriter {
     /// empty `inputs/` and `outputs/`, then `root` pruned to the kept
     /// newest folders.
     fn make_folder(&mut self) -> anyhow::Result<()> {
-        let name = folder_name(&self.header);
+        let name = session_folder_name(&self.header);
         let folder = self.root.join(&name);
         for dir in ["inputs", "outputs"] {
             fs::create_dir_all(folder.join(dir))
@@ -747,7 +759,7 @@ fn compressed(tmp: &Path, packed: &[u8]) -> io::Result<()> {
 
 /// `header`'s session folder name, `<yyyy>-<mm>-<dd>-<hhmmss>-<pid>`
 /// from its start's local time, so folders sort by when they were made.
-fn folder_name(header: &SessionHeader) -> String {
+pub fn session_folder_name(header: &SessionHeader) -> String {
     let when = header.started.datetime();
     format!(
         "{:04}-{:02}-{:02}-{:02}{:02}{:02}-{}",
@@ -863,16 +875,12 @@ fn last_marker_end(text: &str) -> Option<usize> {
     last
 }
 
-/// `folder`, a session folder, as a bundle's zip bytes: `journal.toml`
-/// rewritten as `write_bundle` writes it — every path and step line
-/// with `home` as `~`, and of a path's `[[output]]` rows the last kept
-/// at the index of its first — plus each row's file from `inputs/` or
-/// `outputs/`, so `read_bundle` reads it like any other. Only the text
-/// up to the last `# ok` marker line is parsed, so a block cut off
-/// mid-write is dropped whole — on a line boundary too, where its
-/// fragment would still parse as a note or a different op; a journal
-/// that does not parse is an error naming the folder.
-pub fn session_bundle(folder: &Path, home: Option<&str>) -> anyhow::Result<Vec<u8>> {
+/// `folder`'s `journal.toml` as a `SessionDoc`. Only the text up to the
+/// last `# ok` marker line is parsed, so a block cut off mid-write is
+/// dropped whole — on a line boundary too, where its fragment would
+/// still parse as a note or a different op; a journal that does not
+/// parse is an error naming the folder.
+fn read_session_doc(folder: &Path) -> anyhow::Result<SessionDoc> {
     let journal = folder.join("journal.toml");
     let bytes = fs::read(&journal)
         .with_context(|| format!("{}: cannot read the journal", journal.display()))?;
@@ -880,8 +888,18 @@ pub fn session_bundle(folder: &Path, home: Option<&str>) -> anyhow::Result<Vec<u
     // every field line) must reach the marker drop, not fail here.
     let text = String::from_utf8_lossy(&bytes);
     let end = last_marker_end(&text).unwrap_or(0);
-    let mut doc: SessionDoc = toml::from_str(&text[..end])
-        .with_context(|| format!("{}: cannot parse the journal", folder.display()))?;
+    toml::from_str(&text[..end])
+        .with_context(|| format!("{}: cannot parse the journal", folder.display()))
+}
+
+/// `folder`, a session folder, as a bundle's zip bytes: `journal.toml`
+/// rewritten as `write_bundle` writes it — every path and step line
+/// with `home` as `~`, and of a path's `[[output]]` rows the last kept
+/// at the index of its first — plus each row's file from `inputs/` or
+/// `outputs/`, so `read_bundle` reads it like any other. The journal is
+/// read as `read_session_doc` reads it.
+pub fn session_bundle(folder: &Path, home: Option<&str>) -> anyhow::Result<Vec<u8>> {
+    let mut doc = read_session_doc(folder)?;
     for step in &mut doc.steps {
         step.what = redact_home(&step.what, home);
     }
@@ -929,6 +947,128 @@ pub fn session_bundle(folder: &Path, home: Option<&str>) -> anyhow::Result<Vec<u
         .finish()
         .with_context(|| format!("{}: cannot finish the bundle", folder.display()))?;
     Ok(cursor.into_inner())
+}
+
+/// One earlier session kept on disk, as Report a problem's "Include
+/// earlier sessions" box lists it: the folder, when it started, the first
+/// file it opened, when it last wrote one and how it ended.
+#[derive(Debug)]
+pub struct EarlierSession {
+    /// The session's folder under the data location's `sessions`.
+    pub folder: PathBuf,
+    /// When the session started, the local time its folder's name holds.
+    pub started: jiff::civil::DateTime,
+    /// The file name the first `[[input]]` row's path ends in; `None`
+    /// when the session opened nothing.
+    pub opened: Option<String>,
+    /// When the session last wrote a file: the newest `outputs/` file's
+    /// modification time — the rows carry no time, and a kept output is
+    /// written at the moment of its write. `None` when it wrote nothing.
+    pub wrote: Option<SystemTime>,
+    /// How the session ended, the `[end]` table's `how`; `None` on a
+    /// journal without one — a session still open in another window, or
+    /// one whose writer died too.
+    pub ended: Option<SessionEnd>,
+}
+
+/// Every session folder under `root` (the data location's `sessions`)
+/// but the one named `own` — the window's own — newest first: the names
+/// start with the start, so the sort order is the age order. A folder
+/// not named like a session is left out, and one whose journal cannot
+/// be read or parsed is left out with a debug line.
+pub fn earlier_sessions(root: &Path, own: Option<&str>) -> Vec<EarlierSession> {
+    let entries = match fs::read_dir(root) {
+        Ok(entries) => entries,
+        Err(error) => {
+            log::debug!(
+                "{}: cannot list the sessions folder: {error}",
+                root.display()
+            );
+            return Vec::new();
+        }
+    };
+    let mut folders: Vec<PathBuf> = entries
+        .filter_map(|entry| match entry {
+            Ok(entry) => Some(entry.path()),
+            Err(error) => {
+                log::debug!("{}: cannot list a session: {error}", root.display());
+                None
+            }
+        })
+        .filter(|path| {
+            path.is_dir()
+                && path.file_name().is_some_and(|name| {
+                    Some(name) != own.map(std::ffi::OsStr::new)
+                        && is_session_name(&name.to_string_lossy())
+                })
+        })
+        .collect();
+    // Names start with the date, so the sort order is the age order.
+    folders.sort();
+    folders
+        .iter()
+        .rev()
+        .filter_map(|folder| earlier_session(folder))
+        .collect()
+}
+
+/// The session kept in `folder`, a folder whose name `is_session_name`
+/// passed; `None` when its journal cannot be read or parsed — such a
+/// folder is left out, not a failure the report should die on.
+fn earlier_session(folder: &Path) -> Option<EarlierSession> {
+    let name = folder
+        .file_name()
+        .expect("a session folder has a name")
+        .to_string_lossy();
+    let doc = match read_session_doc(folder) {
+        Ok(doc) => doc,
+        Err(error) => {
+            log::debug!("{error:#}");
+            return None;
+        }
+    };
+    Some(EarlierSession {
+        folder: folder.to_path_buf(),
+        started: session_started(&name)?,
+        opened: doc.inputs.first().map(|row| file_name(&row.path)),
+        wrote: last_output_time(folder),
+        ended: doc.end.and_then(|end| SessionEnd::from_how(&end.how)),
+    })
+}
+
+/// `name`'s start: the `yyyy-mm-dd-hhmmss` the folder name opens with,
+/// as a civil DateTime. `None` on digits that make no date or time —
+/// `is_session_name` checks only the shape.
+fn session_started(name: &str) -> Option<jiff::civil::DateTime> {
+    let [year, month, day, time, _pid] = name.split('-').collect::<Vec<_>>()[..] else {
+        return None;
+    };
+    format!(
+        "{year}-{month}-{day}T{}:{}:{}",
+        &time[..2],
+        &time[2..4],
+        &time[4..]
+    )
+    .parse()
+    .ok()
+}
+
+/// `path`'s last part, the path whole when it has none (a drive root).
+fn file_name(path: &str) -> String {
+    Path::new(path).file_name().map_or_else(
+        || path.to_owned(),
+        |name| name.to_string_lossy().into_owned(),
+    )
+}
+
+/// The newest file's modification time under `folder`'s `outputs/`; the
+/// rows carry no time, and a kept output lands at the moment of its
+/// write. `None` when `outputs/` holds none or cannot be listed.
+fn last_output_time(folder: &Path) -> Option<SystemTime> {
+    fs::read_dir(folder.join("outputs"))
+        .ok()?
+        .filter_map(|entry| entry.ok()?.metadata().ok()?.modified().ok())
+        .max()
 }
 
 #[cfg(test)]
@@ -1779,6 +1919,131 @@ mod tests {
             read_frame(&mut input).unwrap().is_none(),
             "the frames' end is `None`"
         );
+    }
+
+    /// `header`'s `started` moved to `hh:mm:ss` of the same day, so two
+    /// tests' folders sort by it.
+    fn header_at(pid: u32, hour: i8, minute: i8, second: i8) -> SessionHeader {
+        SessionHeader {
+            started: jiff::civil::date(2026, 11, 21)
+                .at(hour, minute, second, 0)
+                .to_zoned(jiff::tz::TimeZone::UTC)
+                .unwrap(),
+            ..header(pid)
+        }
+    }
+
+    /// `session`'s folder's name.
+    fn session_name(session: &EarlierSession) -> String {
+        session
+            .folder
+            .file_name()
+            .unwrap()
+            .to_string_lossy()
+            .into_owned()
+    }
+
+    // Every session-named folder is listed newest first, each field from
+    // the folder: the start from the name, the first `[[input]]` row's
+    // file name, the newest `outputs/` file's modification time and
+    // `[end]`. A folder not named like a session, a session-named file
+    // and a journal that does not parse are left out, and `own` names
+    // the window's own, which the list never holds.
+    #[test]
+    fn earlier_sessions_lists_each_kept_session_newest_first() {
+        let dir = TestDir::new("studio_core_earlier_sessions");
+        let root = dir.path().join("sessions");
+        let input = |tool: &str, path: &str, bytes: &'static [u8]| SessionMessage::Input {
+            tool: tool.to_owned(),
+            path: Path::new(path).to_path_buf(),
+            file: SessionFile::Raw(Arc::from(bytes)),
+        };
+
+        // 09:30:15 — `closed`, an input and an output.
+        let mut writer = SessionWriter::new(&root, header_at(4242, 9, 30, 15));
+        for message in [
+            input("stub", "C:/Data/in/EDIT00000000", b"INPUT"),
+            SessionMessage::Output {
+                tool: "stub".to_owned(),
+                path: Path::new("C:/Data/out/EDIT00000000").to_path_buf(),
+                file: SessionFile::Raw(Arc::from(&b"OUTPUT"[..])),
+            },
+        ] {
+            writer.write(&message).unwrap();
+        }
+        writer.end(SessionEnd::Closed).unwrap();
+
+        // 09:31:15 — `crashed`, an input and no output.
+        let mut writer = SessionWriter::new(&root, header_at(4243, 9, 31, 15));
+        writer
+            .write(&input("stub", "C:/Data/in/EDIT00000001", b"INPUT_B"))
+            .unwrap();
+        writer.end(SessionEnd::Crashed).unwrap();
+
+        // 09:32:15 — no `[end]`, as a session still open or a writer that
+        // died with the window; a step alone, so no input or output.
+        let mut writer = SessionWriter::new(&root, header_at(4244, 9, 32, 15));
+        writer
+            .write(&SessionMessage::Step {
+                seconds: 0.0,
+                tool: "stub".to_owned(),
+                what: "a step".to_owned(),
+                op: None,
+            })
+            .unwrap();
+
+        // Left out: a folder not named like a session, a session-named
+        // plain file, and a session name whose journal does not parse.
+        fs::create_dir_all(root.join("notes")).unwrap();
+        fs::write(root.join("2026-11-21-095015-4246"), "a file").unwrap();
+        fs::create_dir_all(root.join("2026-11-21-094015-4245")).unwrap();
+        fs::write(
+            root.join("2026-11-21-094015-4245/journal.toml"),
+            "not a journal [[[",
+        )
+        .unwrap();
+
+        let sessions = earlier_sessions(&root, None);
+        assert_eq!(sessions.len(), 3, "the three whole folders only");
+        let names: Vec<String> = sessions.iter().map(session_name).collect();
+        assert_eq!(
+            names,
+            [
+                "2026-11-21-093215-4244",
+                "2026-11-21-093115-4243",
+                "2026-11-21-093015-4242"
+            ],
+            "newest first"
+        );
+        let [unknown, crashed, closed] = &sessions[..] else {
+            panic!("three sessions")
+        };
+        assert_eq!(
+            unknown.started,
+            jiff::civil::date(2026, 11, 21).at(9, 32, 15, 0)
+        );
+        assert_eq!(unknown.opened, None, "no input row");
+        assert_eq!(unknown.wrote, None, "no file under outputs/");
+        assert_eq!(unknown.ended, None, "no [end]");
+        assert_eq!(crashed.opened.as_deref(), Some("EDIT00000001"));
+        assert_eq!(crashed.wrote, None);
+        assert_eq!(crashed.ended, Some(SessionEnd::Crashed));
+        assert_eq!(closed.opened.as_deref(), Some("EDIT00000000"));
+        let wrote = fs::metadata(root.join("2026-11-21-093015-4242/outputs/0-EDIT00000000"))
+            .unwrap()
+            .modified()
+            .unwrap();
+        assert_eq!(
+            closed.wrote,
+            Some(wrote),
+            "the newest output's modification time"
+        );
+        assert_eq!(closed.ended, Some(SessionEnd::Closed));
+
+        // `own` names the window's own: the list holds the other two.
+        let sessions = earlier_sessions(&root, Some("2026-11-21-093115-4243"));
+        let names: Vec<String> = sessions.iter().map(session_name).collect();
+        assert_eq!(names, ["2026-11-21-093215-4244", "2026-11-21-093015-4242"]);
     }
 
     /// A session folder under `dir` holding one packed input of `file`,
