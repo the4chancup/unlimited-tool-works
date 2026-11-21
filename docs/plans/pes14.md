@@ -919,10 +919,6 @@ on main. Main is merged into the branch, never rebased onto it.
       sets 0x0A:0 and 0x0B:4 on a name edit, 0x0A:1 and 0x0B:5 on a short-name edit, and
       `/4ccg/`, the one team renamed in game, holds all four; the other 221 Akko teams hold
       0x0B:4 and 0x0B:6 alone. If the name does not show, the build sets the fork's bits.
-
-    Before its look, the draft's PES 2014 player view is mended: it stops on a page error
-    (`cardLimits` is handed a player with no `skills`), so the Strip style panel cannot be
-    captured beside the build.
 11. After the release, the skin colour and the iris colour on PES 2014, which the fork
     edits and the build greys: mapped at 0x0C:0 (3 bits, stored less 1) and 0x34:4 (4 bits) in the appearance
     record, with the values step 10's run pins, so the Appearance page's two rows work as
