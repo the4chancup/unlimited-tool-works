@@ -22,12 +22,12 @@ const TOP: f32 = 8.0;
 const FRAME_ROOM: f32 = 2.0;
 
 /// Where the logo stands while a save is open and the active ruleset
-/// carries one: 28 points high, its right edge `RIGHT` from `view_rect`'s
-/// right edge back over the central panel's margin — the window's edge
-/// at the default window, the capped view's in a larger one — its top
-/// `TOP` below the view's. It depends on the view's rect and the
-/// picture alone, so the toolbar's band can end short of it before
-/// either is drawn.
+/// carries one: 28 points high, its right edge `RIGHT` inside the view's
+/// outer edge (`view_rect`'s right edge plus the central panel's margin —
+/// the window's edge at the default window, the cap's edge in a larger
+/// one), its top `TOP` below the view's. It depends on the view's rect
+/// and the picture alone, so the toolbar's band can end short of it
+/// before either is drawn.
 pub(super) fn rect(ui: &egui::Ui, view: &SaveView, view_rect: egui::Rect) -> Option<egui::Rect> {
     view.session.as_ref()?;
     let size = view.rules.as_ref()?.logo.as_ref()?.size();
