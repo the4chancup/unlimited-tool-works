@@ -614,6 +614,49 @@ mod tests {
     }
 
     #[test]
+    fn an_archive_listing_files_by_number_only_opens_with_no_entries() {
+        // A numbered archive's header has a TocOffset column holding no
+        // value (null storage on disk) and an ItocOffset that has one.
+        let header = table(
+            b"CPK ",
+            "CpkHeader",
+            &[
+                ("ContentOffset", UtfKind::U64),
+                ("TocOffset", UtfKind::U64),
+                ("ItocOffset", UtfKind::U64),
+            ],
+            vec![vec![
+                UtfValue::U64(0x1000),
+                UtfValue::Null,
+                UtfValue::U64(0x800),
+            ]],
+        );
+        let bytes = place(&[(0, &header)]);
+
+        let archive = open(&bytes);
+        assert!(archive.entries().is_empty());
+    }
+
+    #[test]
+    fn a_header_with_neither_table_offset_is_still_refused() {
+        let header = table(
+            b"CPK ",
+            "CpkHeader",
+            &[
+                ("ContentOffset", UtfKind::U64),
+                ("TocOffset", UtfKind::U64),
+                ("ItocOffset", UtfKind::U64),
+            ],
+            vec![vec![UtfValue::U64(0x1000), UtfValue::Null, UtfValue::Null]],
+        );
+        let bytes = place(&[(0, &header)]);
+        assert!(matches!(
+            CpkArchive::open(Cursor::new(&bytes[..])),
+            Err(CpkError::MissingColumn("TocOffset"))
+        ));
+    }
+
+    #[test]
     fn a_large_archive_round_trips() {
         let stamp = CpkTimestamp {
             year: 2026,

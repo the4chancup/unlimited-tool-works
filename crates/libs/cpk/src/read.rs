@@ -77,13 +77,29 @@ pub struct CpkArchive<R: Read + Seek> {
 
 impl<R: Read + Seek> CpkArchive<R> {
     /// Reads the `CPK ` header, `TOC `, and `ETOC` (when present) tables and
-    /// builds the entry list. Does not load any file content.
+    /// builds the entry list. Does not load any file content. An archive
+    /// that lists its files by number only (an `ITOC` table, no `TOC `)
+    /// opens with no entries: it carries no file names, so there is nothing
+    /// to look up by path.
     pub fn open(mut reader: R) -> Result<Self, CpkError> {
         let file_len = reader.seek(SeekFrom::End(0))?;
         let header = read_table(&mut reader, file_len, 0, b"CPK ")?;
 
         let content_offset = cell_u64(&header, 0, "ContentOffset")?;
-        let toc_offset = cell_u64(&header, 0, "TocOffset")?;
+        let toc_offset = match as_u64(header.get(0, "TocOffset")) {
+            Some(offset) => offset,
+            // The `ITOC` table is not read: nothing in the suite looks files up by
+            // number, and nothing says which number is which file. A tool that extracts
+            // or repacks such archives would read it.
+            None if as_u64(header.get(0, "ItocOffset")).is_some() => {
+                return Ok(CpkArchive {
+                    reader,
+                    file_len,
+                    entries: Vec::new(),
+                });
+            }
+            None => return Err(CpkError::MissingColumn("TocOffset")),
+        };
         // The real content base libcpk uses is the earlier of the two header
         // offsets; every PES archive on hand gives 0x800.
         let base = content_offset.min(toc_offset);
