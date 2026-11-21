@@ -116,25 +116,15 @@ run's findings (`4cc-studio-temp/str_re/out/findings.md`).
     Owed: the paid review rounds of both commits (Tier 1).
     Can run beside the detour: it touches no PES 2014 file.
 13. The pitch from the game's own texture, as the placeholder portrait is (the maintainer,
-    2026-11-21), the painted pitch staying for a member without the PES folder. The texture
-    is in the apk format: `common/menu/general/gamePlan.bin` is WESYS-wrapped zlib holding
-    `afp_gamePlan.apk`, whose TXP2 pack holds the atlases (`tex000`, `tex001`) as Okumura
-    LZSS streams of TXDT images, BC1 or BC3 in byte-swapped 16-bit words or ARGB8 (decoded
-    once for PES 2021 in 8.9g, `de0440a6`; that script is gone). Decided (DECISIONS
-    2026-11-21 "the pitch is the game's own texture when the PES folder is set"): pictures
-    carry the game's pixels, and a picture without the grain is painted. Next: the apk
-    format worked out from the maintainer's PES Apk Bin Tool (`C:/Data/4cc/0Tools/PES Apk
-    Bin Tool V1`, .NET; its `lib/APK.dll` and `TXDT_Compression.dll` hold the format) into
-    a plan section for a lib crate that reads and writes apk files (the maintainer,
-    2026-11-21: members replace a DLC's textures with it), with where the pitch's rectangle
-    in each version's atlas comes from; then the code. The research runs in two: reading
-    (SWE-2, `.tmp/apk_re/brief_apk.md`), then what writing needs once its findings land
-    (the LZSS encoder, every size and offset a changed texture moves, alignment, any
-    checksum; a file rebuilt unchanged byte for byte, and a replaced texture seen in game).
-    Counter-proof: CPGE V0.7.1 (`C:/Data/4cc/0Tools/_Old/CPGE V0.7.1`) reads and exports
-    apk files; its `PesTools.dll` is .NET under ConfuserEx, method bodies encrypted but class
-    and field layouts readable (the apk ones in `.tmp/apk_re/cpge/`): a decoder's output is
-    checked against what CPGE exports from the same file.
+    2026-11-21), the painted pitch staying for a member without the PES folder (DECISIONS
+    2026-11-21 "the pitch is the game's own texture when the PES folder is set"). The texture
+    is in Konami's apk menu packs; the `apk` crate's plan (`plans/libs/apk.md`, `c8daca62`)
+    holds the format, from two research passes over every PES 2014-2021 copy (SWE-2,
+    `.tmp/apk_re/findings.md`, `findings_write.md`; the Python prototype `apk_write.py`
+    beside them), checked against CPGE V0.7.1's reader and the maintainer's
+    `pesafp_texturetool.py`. Next: the code, in two slices: the crate's reader with the
+    Tactics screen's pitch (`save_editor.md` "Tactics editor"), then the writer, ending in
+    the in-game check its plan's "Tests" names.
 14. The PES file explorer (`plans/core/development_plan.md` "Unscheduled tools"), medium
     priority, from two tools: Jenkey's PES File Explorer for PES 2014
     (`C:/Data/4cc/0Tools/S_File_Explorer_2014`; native and BoxedApp-packed, so evidence by

@@ -111,6 +111,7 @@ terms next to each other rather than in alphabetical order; adjacency is what ma
 
 | Term | Meaning | Owner |
 |---|---|---|
+| **apk** | Konami's menu file format (`common/menu/`): a pack of a screen's textures, their named regions (sprites, the Tactics screen's pitch among them) and its layouts, usually WESYS-wrapped. Not Android's. | `plans/libs/apk.md` |
 | **CPK** | CRI archive format PES loads; the compiler's output container. May hold CRILAYLA-compressed entries. | `plans/libs/README.md` |
 | **CRILAYLA** | CRI's bitstream LZ compression used inside CPKs. | `spec/libs/README.md` "Format references" |
 | **DDS / FTEX** | DDS: the texture container for pre-Fox; FTEX: Fox Engine's texture container. `dds_convert` handles BCn encoding in-process (no texconv). | `plans/libs/README.md` |

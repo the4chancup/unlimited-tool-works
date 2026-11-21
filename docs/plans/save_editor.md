@@ -1606,9 +1606,11 @@ Win32 original hurt the most):
 
   When the PES folder is set, the game's own pitch texture replaces the painted turf and
   lines, read from the install's `gamePlan.bin` as the placeholder portrait is (a `download`
-  CPK's copy winning) and drawn at two thirds as the screen draws it (worklog, after the
-  detour: the file is in the apk format, which the suite does not read yet). The painted
-  pitch stays for every other case, as the placeholder's drawing does. A formation picture
+  CPK's copy winning) through the `apk` crate (`libs/apk.md`, which says where each version
+  keeps it), and drawn at two thirds as the screen draws it. That is PES 2017 to 2021: PES
+  2015's and PES 2016's textures come with their own screens, since under PES 2017's
+  markers their other shapes would put the markers off their lines. The painted pitch stays
+  for every other case, as the placeholder's drawing does. A formation picture
   carries the game's pixels too, as the screenshots members already post of their
   formations do. A picture saved without the pitch's grain is painted in flat bands, since
   the game's texture has its grain.
