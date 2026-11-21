@@ -657,6 +657,49 @@ mod tests {
     }
 
     #[test]
+    fn an_archive_with_both_tables_is_read_by_its_names() {
+        // CRI's tools can write an `ITOC` beside the `TOC `: the names still win.
+        let toc = table(
+            b"TOC ",
+            "CpkTocInfo",
+            &[
+                ("DirName", UtfKind::String),
+                ("FileName", UtfKind::String),
+                ("FileSize", UtfKind::U32),
+                ("ExtractSize", UtfKind::U32),
+                ("FileOffset", UtfKind::U64),
+            ],
+            vec![vec![
+                UtfValue::String("dir".into()),
+                UtfValue::String("a.bin".into()),
+                UtfValue::U32(4),
+                UtfValue::U32(4),
+                UtfValue::U64(0),
+            ]],
+        );
+        let toc_offset = 0x400u64;
+        let header = table(
+            b"CPK ",
+            "CpkHeader",
+            &[
+                ("ContentOffset", UtfKind::U64),
+                ("TocOffset", UtfKind::U64),
+                ("ItocOffset", UtfKind::U64),
+            ],
+            vec![vec![
+                UtfValue::U64(0x800),
+                UtfValue::U64(toc_offset),
+                UtfValue::U64(0x600),
+            ]],
+        );
+        let bytes = place(&[(0, &header), (toc_offset, &toc)]);
+
+        let archive = open(&bytes);
+        let paths: Vec<&str> = archive.entries().iter().map(|e| e.path.as_str()).collect();
+        assert_eq!(paths, ["dir/a.bin"]);
+    }
+
+    #[test]
     fn a_large_archive_round_trips() {
         let stamp = CpkTimestamp {
             year: 2026,

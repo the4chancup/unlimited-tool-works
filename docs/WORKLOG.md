@@ -3469,6 +3469,22 @@ points there.
   on screen: PES 2014's pitch draws shirts, not portraits, and no 2015-2021 install on hand
   holds such an archive. Why the pitch still offers Set PES path with `E:\PES2014` set is
   not known yet.
+- open (2026-11-21) — A trial: can SubQ Snap tell a flaky test from a steady one, as it tells
+  a test that proves its scenario from one that does not (`citation_audit.py`)? The question
+  per test: does its outcome depend on anything outside its inputs (the machine's free memory,
+  timing, thread order, files outside its scratch folder, the clock)? The state is the test
+  and the helpers of its file it calls, as the citation audit builds it.
+  - Positives, each at the commit before its fix:
+    - `a_7z_export_s_source_keeps_its_decompressed_content_into_the_planned_run`
+      (`team_compiler`, the run's budget read from the machine's free memory);
+    - the PES 15 save/load test with a one-byte seed (`3ab27215`);
+    - the Multi-team dialog's held press (`24451801`);
+    - the list test that read a combo's edge a frame early (`0af77290`);
+    - the pictures dialog's width (`5dfad4e2`).
+  - Negatives: a random sample of about 100 of today's tests.
+  - Measured as where the positives rank among the scores, and the AUC. If they rank near the
+    top, the check joins the checkpoint as the citation audit did; if not, the trial and its
+    numbers are recorded here and dropped.
 - open (2026-11-20) — A checkpoint's diff mutation run pays each crate's fixed costs however
   few mutants it holds. On `969e1cb6`, `team_widgets`' one mutant took 567 s wall:
   - a baseline of 133 s build and 199 s test, though the gates had just passed the same tree;

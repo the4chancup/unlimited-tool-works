@@ -17,9 +17,6 @@
 - **Compiler**: a referee with no face model, whose body model brings his head, showed the
   game's own referee head floating over it. He now gets an empty face, as a team player in the
   same case does.
-- **Compiler and Save editor**: a CPK in the game's `download` folder that lists its files by
-  number, without names, stopped a compile as unreadable and left the save editor's pitch
-  with no portraits at all. Both now go on without it.
 
 ### Other stuff
 
