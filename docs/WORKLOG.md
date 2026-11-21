@@ -43,9 +43,11 @@ run's findings (`4cc-studio-temp/str_re/out/findings.md`).
    - [x] 5b-i the monitor's half: it writes the session from the frames on its standard
      input and ends it (ST-REP-06, 07): merged `d496aebd`, SWE-2 round S1s5b1; its Astra
      round owed, with the retry's;
-   - 5b-ii the window's half: the recorder's queue, the thread sending each message down the
-     pipe, the window's own writer when no monitor started (ST-REP-10's first two cases,
-     ST-REP-11): SWE-2 in `sk_sess5b2w`;
+   - [x] 5b-ii the window's half: the recorder's queue, the thread sending each message down
+     the pipe, the window's own writer when no monitor started, a caught panic ending
+     `crashed` (ST-REP-10's first cases, ST-REP-11): merged `e27d9f2b`, one rework, SWE-2
+     round S1s5b2 (3 accepted, the loop ended); with it the tests for the checkpoint's seven
+     mutants in 5a's writer. Astra's round owed, with the retry's and 5b-i's;
    - 5b2 a new monitor after the pipe breaks, writing on into the same folder (ST-REP-10's
      last case): its writer adopts the folder, never rewriting `journal.toml` and taking
      the next input and output indexes from its rows (review S1s5a-1);
