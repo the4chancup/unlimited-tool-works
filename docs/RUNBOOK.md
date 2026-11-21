@@ -683,6 +683,11 @@ main's build to a member on the side line. On the branch:
 Main's check passes over the side line's tags because they do not start with `v`, so main
 needs no change.
 
+A commit of main's cherry-picked onto a side line gets its `git show --stat` compared with
+main's before anything else: a new entry in `DECISIONS.md` can bring along main's entries
+since the two branches parted, with no conflict to show it. One did on 2026-11-21, carrying
+11 of main's decisions onto `pes14`.
+
 **A hand-given build** (`0.0.2-poc.1`, `0.0.3-dev.1`: a fix a cup's organizer needs before the
 next release) is never tagged, pushed or published. It is packed from a worktree on a branch
 whose one commit gives the workspace version a pre-release part (`0.0.3-dev.1`) in
