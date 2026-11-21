@@ -7,16 +7,18 @@ link in a fresh Chromium page at two window sizes, the app's default and the sma
 a member meets (set as the draft's Window control sets them, then drawn again), and saves the
 window's picture as `.tmp/draft_shots/<run>/<link made filesystem-safe>@<size>.png`, `<run>`
 the time it started. With texts given it captures only the links holding one of them
-(`save_editor/team`), and a filtered run's folder is named `<run>-<texts>`; a text no link
-holds is an error before anything is captured. Each shot is then compared with its newest
-earlier copy, the same file name in the newest earlier run folder that has it (a `baseline/`
-folder reads as older than every run), and one line prints per shot that changed (with the
-share of its pixels that differ) or is new, and, on a full run only, per shot missing: one
-the newest earlier full run had and this one has not.
+(`save_editor/team`), and a filtered run's folder is named `<run>-<texts>` with the texts
+made filesystem-safe as the links are. A text no link holds is an error before anything is
+captured. An interrupted or failed run leaves no folder. Each shot is then compared with
+its newest earlier copy, the same file name in the newest earlier run folder that has it (a
+`baseline/` folder reads as older than every run), and one line prints per shot that changed
+(with the share of its pixels that differ) or is new, and, on a full run only, per shot
+missing: one the newest earlier full run had and this one has not.
 Earlier folders whose shots all have a copy in a later run are then deleted, so each shot's
-newest copy is always kept and the folder count stays small. Run it with a filter after each
-draft edit and once without about once a day: a filtered run whose newest earlier full run is
-more than a day old, or that has none, says so.
+newest copy is always kept and the folder count stays small. The newest full run is never
+deleted: the missing rows and the full-run reminder measure from it. Run it with a filter
+after each draft edit and once without about once a day: a filtered run whose newest earlier
+full run is more than a day old, or that has none, says so.
 
 Every page's clock is frozen before the load (Playwright's `page.clock`, paused at one fixed
 time and stepped by hand), so whatever moves with time, such as a long name scrolling on the
@@ -121,12 +123,12 @@ def match_shots(shots: list, texts: list[str]) -> tuple[list, list[str]]:
     return [row for row in kept if row[1]], unmatched
 
 
-def shot_rows(root: Path, run: Path, full: bool) -> list[tuple[str, str, str]]:
-    """One `(kind, shot, detail)` row per shot name `run` holds, plus, on a full run only, a
-    "missing" row per shot the newest earlier full run of `root` had and `run` has not. Kinds:
-    "changed" (`detail` the share of pixels that differ) or "unchanged" against the shot's
-    newest earlier copy, the same file name in the newest earlier folder that has it; "new"
-    when no earlier folder has it."""
+def shot_rows(root: Path, run: Path) -> list[tuple[str, str, str]]:
+    """One `(kind, shot, detail)` row per shot name `run` holds, plus, when `run` is a full
+    run, a "missing" row per shot the newest earlier full run of `root` had and `run` has
+    not. Kinds: "changed" (`detail` the share of pixels that differ) or "unchanged" against
+    the shot's newest earlier copy, the same file name in the newest earlier folder that has
+    it; "new" when no earlier folder has it."""
     new_names = {path.name for path in run.glob("*.png")}
     copies, last_full = {}, None
     for folder in shot_folders(root):
@@ -137,7 +139,7 @@ def shot_rows(root: Path, run: Path, full: bool) -> list[tuple[str, str, str]]:
         if is_full_run(folder):
             last_full = folder
     missing = ({path.name for path in last_full.glob("*.png")} - new_names
-               if full and last_full is not None else set())
+               if is_full_run(run) and last_full is not None else set())
     rows = []
     for name in sorted(new_names | missing):
         shot = fragment_of(name.removesuffix(".png"))
@@ -174,13 +176,17 @@ def full_run_reminder(root: Path, run: Path) -> str | None:
 
 def prune_runs(root: Path) -> None:
     """Deletes every shot folder of `root` but the newest whose shots all have a copy in a
-    later folder, so each shot's newest copy is kept and the folder count stays small."""
+    later folder, so each shot's newest copy is kept and the folder count stays small. The
+    newest full run is never deleted: "missing" rows and the full-run reminder measure from
+    it, and filtered runs can cover its shot names between them."""
     folders = shot_folders(root)
     newer = {path.name for path in folders[-1].glob("*.png")} if folders else set()
+    last_full_seen = bool(folders) and is_full_run(folders[-1])
     for folder in reversed(folders[:-1]):
         names = {path.name for path in folder.glob("*.png")}
-        if names <= newer:
+        if names <= newer and (last_full_seen or not is_full_run(folder)):
             remove_shot_folder(folder, root)
+        last_full_seen = last_full_seen or is_full_run(folder)
         newer |= names
 
 
@@ -207,8 +213,9 @@ def capture(browser: Browser, fragment: str, size: str, path: Path) -> str:
 
 def capture_all(run: Path, texts: list[str]) -> tuple[list[str], list[str]]:
     """Captures the registered views' shots whose link holds one of `texts` (every shot when
-    it is empty) into `run`, which it creates only when every text matched a link. Returns
-    `(unread, unmatched)`: the links the draft did not write back, the texts no link holds."""
+    it is empty) into `run`, which it creates only when every text matched a link and removes
+    again when the capture is interrupted or fails. Returns `(unread, unmatched)`: the links
+    the draft did not write back, the texts no link holds."""
     unread = []
     with sync_playwright() as pw:
         browser = pw.chromium.launch()
@@ -221,22 +228,31 @@ def capture_all(run: Path, texts: list[str]) -> tuple[list[str], list[str]]:
             browser.close()
             return unread, unmatched
         run.mkdir(parents=True)
-        for tool, fragments in kept:
-            print(f"{tool}: {len(fragments)} shots at {len(SIZES)} sizes")
-            for fragment in fragments:
-                for size in SIZES:
-                    written = capture(browser, fragment, size, run / f"{safe_name(fragment)}@{size}.png")
-                    if written != fragment:
-                        unread.append(f"{fragment}@{size}: the draft writes {written}")
+        try:
+            for tool, fragments in kept:
+                print(f"{tool}: {len(fragments)} shots at {len(SIZES)} sizes")
+                for fragment in fragments:
+                    for size in SIZES:
+                        written = capture(browser, fragment, size, run / f"{safe_name(fragment)}@{size}.png")
+                        if written != fragment:
+                            unread.append(f"{fragment}@{size}: the draft writes {written}")
+        except BaseException:
+            # An interrupted or failed capture leaves no run folder: a partial one would
+            # later read as a full run.
+            remove_shot_folder(run, run.parent)
+            raise
         browser.close()
     return unread, unmatched
 
 
-def report(root: Path, run: Path, full: bool) -> None:
+def report(root: Path, run: Path) -> None:
     """Prints one line per `shot_rows` row of `run` that is not unchanged, then the counts."""
     counts = {"changed": 0, "new": 0, "missing": 0, "unchanged": 0}
+    # A filtered run never checks for missing shots; its line leaves the count out.
+    if not is_full_run(run):
+        del counts["missing"]
     shots = 0
-    for kind, shot, detail in shot_rows(root, run, full):
+    for kind, shot, detail in shot_rows(root, run):
         counts[kind] += 1
         shots += kind != "missing"
         if kind != "unchanged":
@@ -257,7 +273,7 @@ def main(argv: list[str]) -> int:
         for text in unmatched:
             print(f'error: "{text}" matches no link', file=sys.stderr)
         return 2
-    report(SHOTS, run, full=not texts)
+    report(SHOTS, run)
     for line in unread:
         print(f"error: {line}")
     prune_runs(SHOTS)
