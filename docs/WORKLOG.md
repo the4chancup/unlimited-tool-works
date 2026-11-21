@@ -3597,8 +3597,9 @@ points there.
   long names onto two lines ("Attacking / Prowess") and shows four columns. It was already so
   with the old 560-point preview; seen in the release build of the larger-window slice
   (`.tmp/lead/re_look/`). Next: brief the build to the draft's wrapping.
-- open (2026-11-21) — A trial: can SubQ Snap tell a flaky test from a steady one, as it tells
-  a test that proves its scenario from one that does not (`citation_audit.py`)? The question
+- open (2026-11-21) — A trial, the first work after the maintainer's break: can SubQ Snap tell
+  a flaky test from a steady one, as it tells a test that proves its scenario from one that
+  does not (`citation_audit.py`)? The question
   per test: does its outcome depend on anything outside its inputs (the machine's free memory,
   timing, thread order, files outside its scratch folder, the clock)? The state is the test
   and the helpers of its file it calls, as the citation audit builds it.
