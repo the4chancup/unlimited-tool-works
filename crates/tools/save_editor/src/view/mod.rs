@@ -823,6 +823,12 @@ const PANE_BAR_MARGIN: f32 = 4.0;
 /// later and reaches as much further right (`PANE_BAR_MARGIN`).
 const PANES_LEFT_INSET: f32 = 2.0;
 
+/// The pane's width at the default window — the 1280-point window less
+/// the sidebar's 56-point rail — which the view is calibrated for. A
+/// smaller window scales the whole UI down rather than narrowing the
+/// pane, so it is also the narrowest space the view lays out in.
+const DEFAULT_PANE_WIDTH: f32 = 1224.0;
+
 /// Shows the window for one frame. `running` is the running-PES probe,
 /// called only when Save runs (a process snapshot is not a frame's cost).
 /// The ruleset is resolved from `view.aatf_ruleset` on the first frame and
@@ -859,13 +865,26 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() ->
             logo,
         });
     }
+    // The view keeps the width it has inside the central panel's margins
+    // at the default window, centred across the pane (the draft's
+    // `.view-body` `max-width`): its toolbar and panes lay out in
+    // `view_rect`, Live AATF's dock and the floating panels alone taking
+    // the pane's whole width.
+    let central_margin = egui::Frame::central_panel(ui.style()).inner_margin;
+    let space = ui.max_rect();
+    let width = (DEFAULT_PANE_WIDTH - f32::from(central_margin.left + central_margin.right))
+        .min(space.width());
+    let view_rect = egui::Rect::from_min_max(
+        egui::pos2(space.center().x - width / 2.0, space.min.y),
+        egui::pos2(space.center().x + width / 2.0, space.max.y),
+    );
     // The logo's rect once, before the toolbar: a save the toolbar itself
     // opens this frame (a File menu entry or a shortcut) then draws no
     // logo over a band still running to the view's right edge, and gets
     // it on the next frame, the band already ending short.
-    let logo_rect = event_logo::rect(ui, view);
+    let logo_rect = event_logo::rect(ui, view, view_rect);
     let band_end = logo_rect.map(|logo| logo.left() - event_logo::RIGHT);
-    toolbar(ui, view, running, band_end);
+    toolbar(ui, view, running, band_end, view_rect);
     // The panes under the toolbar end `PANE_BOTTOM_MARGIN` over the
     // status bar, the draft's padding under the view, where the
     // shell's central panel keeps its own margin: they reach into
@@ -873,21 +892,24 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() ->
     // whole rect, margins included, so nothing of theirs is cut.
     let mut panes = ui.available_rect_before_wrap();
     panes.min.x += PANES_LEFT_INSET;
-    panes.max.y +=
-        f32::from(egui::Frame::central_panel(ui.style()).inner_margin.bottom) - PANE_BOTTOM_MARGIN;
+    panes.max.y += f32::from(central_margin.bottom) - PANE_BOTTOM_MARGIN;
+    let panes_ui = &mut ui.new_child(egui::UiBuilder::new().max_rect(panes));
+    // The Live AATF dock spans the panes' width under the capped view
+    // (the draft's `.live-panel`, outside `.view-body`), the capped
+    // panes sitting above it.
+    if view.session.is_some() && view.live_aatf {
+        live_aatf::show(panes_ui, view);
+    }
+    // The view's capped part, `view_rect`'s span of what the dock leaves.
+    let mut capped_rect = panes_ui.available_rect_before_wrap();
+    capped_rect.min.x = view_rect.min.x + PANES_LEFT_INSET;
+    capped_rect.max.x = view_rect.max.x;
+    let capped = &mut panes_ui.new_child(egui::UiBuilder::new().max_rect(capped_rect));
     if view.session.is_none() {
         // The welcome panel centres in the panes' area, not the whole
         // central panel (the band sits above it).
-        let ui = &mut ui.new_child(egui::UiBuilder::new().max_rect(panes));
-        file_menu::welcome_panel(ui, view);
+        file_menu::welcome_panel(capped, view);
     } else {
-        let ui = &mut ui.new_child(egui::UiBuilder::new().max_rect(panes));
-        // Before the left panel, so the dock spans the view's width under
-        // the player list and the detail view (egui lays a panel out
-        // against the space the earlier panels left).
-        if view.live_aatf {
-            live_aatf::show(ui, view);
-        }
         // No margin before the list, so its frame stands at the view's
         // left edge, and 4 points after it: with no margin of the
         // detail's own, the screens' frames stand the draft's 14 after
@@ -912,15 +934,14 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() ->
             .show_separator_line(false)
             .default_size(LIST_WIDTH + margin.sum().x)
             .frame(egui::Frame::side_top_panel(ui.style()).inner_margin(margin))
-            .show(ui, |ui| player_list::show(ui, view));
+            .show(capped, |ui| player_list::show(ui, view));
         // The detail pane reaches `PANE_BAR_MARGIN` less than the shell's
         // margin into the right edge, for its scroll bar's strip (the
         // draft's `.pane-bar` standing past the pane), as the panes reach
         // into the bottom margin for `PANE_BOTTOM_MARGIN`.
-        let mut detail_rect = ui.available_rect_before_wrap();
-        detail_rect.max.x +=
-            f32::from(egui::Frame::central_panel(ui.style()).inner_margin.right) - PANE_BAR_MARGIN;
-        let ui = &mut ui.new_child(egui::UiBuilder::new().max_rect(detail_rect));
+        let mut detail_rect = capped.available_rect_before_wrap();
+        detail_rect.max.x += f32::from(central_margin.right) - PANE_BAR_MARGIN;
+        let ui = &mut capped.new_child(egui::UiBuilder::new().max_rect(detail_rect));
         // `TITLE_MARGIN` over the view's title. None at the sides: the
         // frames take the draft's 14 after the list's frame from the list
         // pane's own 4 and its scroll bar's strip, and end the draft's 14
@@ -1104,12 +1125,13 @@ fn set_surrender_on_press(ctx: &egui::Context) {
 /// open save's path rides the idle window title
 /// (`Tool::title_detail`), not this row, which never takes a second row.
 /// The row stands on its band (`toolbar_band`), which ends at `band_end`,
-/// short of the event logo, or with `None` at the view's right edge.
+/// short of the event logo, or with `None` at `view_rect`'s right edge.
 fn toolbar(
     ui: &mut egui::Ui,
     view: &mut SaveView,
     running: &dyn Fn() -> Vec<RunningPes>,
     band_end: Option<f32>,
+    view_rect: egui::Rect,
 ) {
     // Every dialog holds every shortcut dead while up (its own buttons
     // are the way out): egui's top modal layer covers whatever opened one,
@@ -1262,7 +1284,7 @@ fn toolbar(
         view.changes_list = None;
         view.tactics.close_popover();
     }
-    toolbar_band(ui, band_end, |ui| {
+    toolbar_band(ui, band_end, view_rect, |ui| {
         let write = file_menu::show(ui, view);
         match write
             .or(save_key.then_some(file_menu::Write::Save))
@@ -1402,12 +1424,17 @@ const BAND_MARGIN: egui::Margin = egui::Margin {
 
 /// The toolbar's band (the draft's `.top`) holding the toolbar, `row`
 /// drawn in `studio_core`'s menu bar: the panel's fill with a 1-point line
-/// under it in the panel's stroke, from the view's left and top edges,
-/// over the shell's margin, to `end` (the view's right edge with `None`),
-/// the row `BAND_MARGIN` inside it. The band is a child placed by rect, so
-/// its width moves nothing under it; `ui` goes on under its line.
-fn toolbar_band(ui: &mut egui::Ui, end: Option<f32>, row: impl FnOnce(&mut egui::Ui)) {
-    let inside = ui.max_rect();
+/// under it in the panel's stroke, from `inside`'s edges back over the
+/// shell's margin, to `end` (`inside`'s own right edge plus the margin
+/// with `None`), the row `BAND_MARGIN` inside it. The band is a child
+/// placed by rect, so its width moves nothing under it; `ui` goes on
+/// under its line.
+fn toolbar_band(
+    ui: &mut egui::Ui,
+    end: Option<f32>,
+    inside: egui::Rect,
+    row: impl FnOnce(&mut egui::Ui),
+) {
     let view = inside + egui::Frame::central_panel(ui.style()).inner_margin;
     let right = end.unwrap_or(view.right());
     let band = egui::Rect::from_min_max(view.min, egui::pos2(right, view.bottom()));
