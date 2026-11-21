@@ -1660,12 +1660,14 @@ Win32 original hurt the most):
     from the install: a `download` CPK's copy if one holds it (a later CPK winning, as for
     portraits), else the base CPK that holds it in every version (`dt15.cpk` in PES 2015,
     `dt15_win.cpk` in 2016 and 2017, `dt15_x64.cpk` from 2018, in the install's `Data`
-    folder; a census of the seven installs, 2026-11-21). It is read only when a starter's
-    portrait turns out absent or undecodable, and at most once per folder and version. A
-    team usually has a portrait for every player, so reading a base CPK's table up front
-    would be work for nothing. The drawing stays for every other case: no
-    folder, one that cannot be read, a file not found or not decoded, and the moments before
-    the game's copy is read.
+    folder; a census of the seven installs, 2026-11-21). It is read only when a portrait the
+    pitch or a picture asks for turns out absent or undecodable, and at most once per folder
+    and version, a range of pictures included. A team usually has a portrait for every
+    player, so reading a base CPK's table up front would be work for nothing. The drawing
+    stays for every other case: no PES folder, a PES folder that cannot be read, a file not
+    found or not decoded, and the moments before the game's copy is read. A `download` list
+    or CPK that cannot be read still leaves the base CPK's copy, which is what the game
+    shows then.
 
     Markers are drawn from the top of the canvas down, a lower marker covering the one above
     as the game's do (the keeper's portrait over a centre-back's badge), the dragged one last;
