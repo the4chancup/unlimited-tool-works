@@ -2215,7 +2215,7 @@ fn a_root_notes_txt_that_cannot_be_read_is_dropped_and_the_rest_compiled() {
 fn a_7z_over_the_memory_cap_compiles() {
     let sandbox = Sandbox::new("seven_z_over_cap");
     sandbox.copy_fixture("egg Midcup Tracer.7z", "exports");
-    // A cap of a few hundred bytes against the archive's 151 KB decompressed: its permit is
+    // A cap of a few hundred bytes against the archive's 150 KiB decompressed: its permit is
     // oversized, so a task asking the budget for its own while it is held would wait forever.
     let settings = format!(
         "{}memory_cap_percent = 0.000001\n",
@@ -2243,7 +2243,9 @@ fn a_7z_over_the_memory_cap_compiles() {
 #[test]
 fn a_7z_kept_from_its_check_and_one_decompressed_again_compile_the_same_cpk() {
     // The default cap keeps the archive's 150 KiB decompressed for its tasks (any cap of at
-    // least 1 GiB plus those 150 KiB keeps it). A cap of 0.01% of the available memory is
+    // least 1 GiB plus those 150 KiB keeps it), so with under about 1.25 GiB available both
+    // runs decompress again and the comparison proves nothing; no setting can force the keep,
+    // which `compile.rs`'s fixed-budget test covers. A cap of 0.01% of the available memory is
     // under 1 GiB on any machine with less than 10 TiB available, so no archive is kept and
     // the tasks decompress it again; it is above the archive's size wherever more than 1.5 GB
     // is available, so the archive's permit is no oversized one there.

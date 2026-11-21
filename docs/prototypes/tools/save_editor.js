@@ -3248,7 +3248,11 @@ const SAMPLE_PATH = {
   pes14: DISCOVERED.find(d => d.version === "2014").path,
   pes17: DISCOVERED.find(d => d.version === "2017").path,
   pes21: DISCOVERED.find(d => d.version === "2021").path,
+  stock21: DISCOVERED.find(d => d.version === "2021").path,
 };
+// A save made from the stock game, holding the game's own clubs alone (the
+// draft's samples carry cup teams only, so it carries none).
+SAVES.stock21 = { version: 21, teams: [] };
 
 // ---- State ----
 // D: the draft controls' GIVENs. S: the session.
@@ -3307,6 +3311,8 @@ function curPlayer() {
 function selTeam() {
   return (S.sel && curSave().teams.find(t => String(t.id) === String(S.sel.team))) || curTeam();
 }
+// Whether the open save lists anything: a stock save holds no cup team.
+const hasRows = () => !!(S.save && curSave().teams.length);
 // A team row is the selection: S.sel holds the team and no slot.
 const isTeamSel = () => !!(S.sel && S.sel.slot === undefined);
 const version = () => curSave().version;
@@ -3375,6 +3381,9 @@ function openSave(key, path) {
   pushRecent(S.path);
   // The picker next starts where this save was opened from (settings: last_folder).
   S.lastFolder = folderOf(S.path);
+  // A stock save lists nothing (only cup teams are shown): the notice says why.
+  if (!data.teams.some(t => t.id >= 701 && t.id <= 920))
+    publishNotice("This save holds no cup team (ids 701 to 920).", null, "warning");
 }
 function pushRecent(path) {
   const i = S.recents.indexOf(path);
@@ -3773,7 +3782,8 @@ function draftControls() {
     h("label", { class: "cb" }, "Open save",
       combo([["pes14", "PES 14 sample (Akko League VII)"],
         ["pes17", "PES 17 sample (the maintainer's save)"],
-        ["pes21", "PES 21 sample"]], S.saveKey || D.sample,
+        ["pes21", "PES 21 sample"], ["stock21", "PES 21 stock save (no cup team)"]],
+        S.saveKey || D.sample,
         v => { D.sample = v; requestOpen(v); })),
     h("span", { title: "SE-GUI-21" }, cb("The save's game is running", D.gameRunning,
       v => D.gameRunning = v)),
@@ -3927,10 +3937,10 @@ function editMenu() {
     ["Redo\tCtrl+Y", () => { doRedo(); render(); }, !S.redo.length,
       S.redo.length ? "Redo: " + S.redo[S.redo.length - 1].label : "Nothing to redo"],
     "-",
-    ["Copy\tCtrl+C", () => { clipCopy(); render(); }, !S.save || (clipKind() === "player" && groupOn()),
-      S.save ? "Copies " + clipHeld() : undefined],
-    ["Paste\tCtrl+V", () => { clipPaste(); render(); }, !S.save,
-      S.save ? "Pastes the copied " + { player: "stats", team: "Gameplan", preset: "preset",
+    ["Copy\tCtrl+C", () => { clipCopy(); render(); }, !hasRows() || (clipKind() === "player" && groupOn()),
+      hasRows() ? "Copies " + clipHeld() : undefined],
+    ["Paste\tCtrl+V", () => { clipPaste(); render(); }, !hasRows(),
+      hasRows() ? "Pastes the copied " + { player: "stats", team: "Gameplan", preset: "preset",
         formation: "formation" }[clipKind()] + " onto " + clipOnto() : undefined],
   ], { frame0: true });
 }
@@ -3941,14 +3951,16 @@ function editMenu() {
 // window's edges over the view's padding, the panel fill and the border
 // under it the ruleset editor's. sample wording: the marker and the menus'
 // tooltips.
+const greyMenu = name => menu(name, [], { frame0: true, disabled: true });
 function renderToolbar() {
   const tsep = () => h("span", { class: "tsep" });
   return h("div", { class: "toolbar top", "data-panel": "toolbar",
     style: "margin: -8px calc(-8px - var(--sbw, 0px)) 4px -10px; padding-left: 10px" },
     // With no save open the save's three menus are greyed and never open, as
-    // the editor draws them: nothing in them acts without a save.
-    fileMenu(), editMenu(), ...(S.save ? [playerMenu(), teamMenu(), databaseMenu()]
-      : ["Player", "Team", "Savefile"].map(name => menu(name, [], { frame0: true, disabled: true }))), tsep(),
+    // the editor draws them: nothing in them acts without a save. A save that
+    // lists no row (a stock save) greys Player and Team, which act on a row.
+    fileMenu(), editMenu(), ...(hasRows() ? [playerMenu(), teamMenu()] : ["Player", "Team"].map(greyMenu)),
+    S.save ? databaseMenu() : greyMenu("Savefile"), tsep(),
     rulesetPicker(), liveButton(), LIVE.on ? suggestionsToggle() : null,
     // The save's path is in the window title (`titleDetail`): beside the
     // unsaved mark it could wrap the toolbar onto a second row.
@@ -4998,7 +5010,7 @@ function toggleInGroup(team, slot) {
   S.sel = next[0];
 }
 function similarButton() {
-  const off = isTeamSel() || groupOn();
+  const off = isTeamSel() || groupOn() || !hasRows();
   return button("Select all similar players", dlgSimilar, { disabled: off,
     title: off ? "Select one player first"
       : "Select the players like this one, to edit their stats together" });
@@ -5323,7 +5335,8 @@ function generalPanel(p, team) {
     v => { set(p, x => x.positions.stronger_hand, (x, v2) => x.positions.stronger_hand = v2, v, "stronger hand"); render(); });
   hand.id = "f-hand";
   // The nation as "ID - Name", ordered by ID, so typing an ID's digits in the closed
-  // dropdown finds it; an ID outside the table keeps its number.
+  // dropdown finds it; an ID outside the table keeps its number. The browser's own list
+  // stands in for the build's, whose typed names and Escape the plan describes.
   const own = nations(version());
   const listed = own.some(([id]) => id === p.nationality) ? own
     : [[p.nationality, "?"], ...own];
@@ -5435,8 +5448,9 @@ function pageToggle() {
 // (SE-GUI-09), in two columns under the player list. They act on the selected
 // player, so a team row leaves them disabled with the reason on hover.
 function quickActions() {
-  const p = groupOn() ? groupPlayer() : curPlayer(), off = isTeamSel();
-  const tip = off ? "These buttons act on a player: pick a player row" : null;
+  // A save listing no row (a stock save) leaves them disabled with no reason to hover.
+  const off = isTeamSel() || !hasRows(), p = off ? null : groupOn() ? groupPlayer() : curPlayer();
+  const tip = isTeamSel() ? "These buttons act on a player: pick a player row" : null;
   const input = h("input", { type: "number", id: "set-stats", value: 77, min: 0, max: 99,
     disabled: off, title: tip });
   const make = t => button("Make " + t.label, () => { eachSelected(p, x => applyTier(x, t), "Make " + t.label); render(); },
@@ -5465,6 +5479,7 @@ function quickActions() {
 let detailScroll = 0;
 function renderDetail() {
   const d = h("div", { class: "detail", onscroll: e => { detailScroll = e.target.scrollTop; } });
+  if (!hasRows()) return d; // nothing selected: the pane stays empty
   if (isTeamSel()) d.append(teamView(selTeam()));
   else if (groupOn()) d.append(playerView(groupPlayer(), teamOf(curPlayer())));
   else { const p = curPlayer(); d.append(playerView(p, teamOf(p))); }

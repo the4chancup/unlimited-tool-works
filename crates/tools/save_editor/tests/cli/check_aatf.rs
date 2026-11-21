@@ -10,7 +10,9 @@ use pes_version::PesVersion;
 
 use crate::TEST_SALT;
 use crate::common::Sandbox;
-use crate::common::cup_save::{MOVED_TEAM, assert_premises, outside_cup_file, outside_players};
+use crate::common::cup_save::{
+    MOVED_TEAM, assert_premises, outside_cup_file, outside_players, stock_file,
+};
 
 /// The `rulesets/<ruleset>.rhai` rules file, assembled the way `aatf`'s `file::assemble`
 /// builds a data block that has no CUSTOM CHECKS section: the block trimmed, the current
@@ -348,6 +350,25 @@ fn without_teams_every_cup_team_is_checked_in_id_order() {
     // Every cup team left breaks a rule (the fixture's placeholder players do), so each
     // prints, once, in id order: exactly these five, the record order notwithstanding.
     assert_eq!(teams, [701, 702, 704, 718, 920], "team id order: {teams:?}");
+}
+
+// A save holding no cup team (one made from the stock game) is refused by the
+// check that would read every cup team; a team named by id is still read.
+// SE-AATF-11
+#[test]
+fn a_save_with_no_cup_team_is_refused_but_a_named_team_is_checked() {
+    let sandbox = Sandbox::new("aatf_no_cup_team");
+    let file = stock_file(PesVersion::Pes21);
+    fs::write(sandbox.path("EDIT"), file.to_bytes(&TEST_SALT).unwrap()).unwrap();
+
+    check(&sandbox, "EDIT", &[])
+        .assert_refused(2, &["the save holds no cup team (ids 701 to 920)"]);
+
+    // The premise: team 101 (the fixture's 701 moved down) is read when named.
+    assert!(
+        check(&sandbox, "EDIT", &["--teams", "101"]).exit_code() < 2,
+        "team 101 is checked when named"
+    );
 }
 
 /// SE-GUI-77's save on PES 21 is checked under Autumn 26 with the file's own checks

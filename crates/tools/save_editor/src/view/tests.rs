@@ -372,6 +372,21 @@ fn type_text(window: &mut Headless, view: &mut SaveView, text: &str) {
     );
 }
 
+/// The row labeled `label` of the team whose row stands at `y` — the
+/// first same-labeled Button under it (`update.nodes` is unordered and
+/// rows of different teams can share the label).
+fn row_under<'a>(nodes: &'a [accesskit::Node], label: &str, y: f64) -> &'a accesskit::Node {
+    nodes
+        .iter()
+        .filter(|node| node.role() == Role::Button && node.label() == Some(label))
+        .filter(|node| node.bounds().is_some_and(|bounds| bounds.y0 > y))
+        .min_by(|a, b| {
+            let y = |node: &&accesskit::Node| node.bounds().expect("bounds").y0;
+            y(a).partial_cmp(&y(b)).expect("ordered bounds")
+        })
+        .unwrap_or_else(|| panic!("no row {label:?} under y {y}"))
+}
+
 /// The AccessKit node of the row labeled `label`.
 fn row<'a>(nodes: &'a [accesskit::Node], label: &str) -> &'a accesskit::Node {
     nodes
@@ -1044,11 +1059,7 @@ fn scroll_player_list_to_bottom(window: &mut Headless, view: &mut SaveView) {
             continue;
         }
         top = Some(top_row);
-        let at = nodes
-            .iter()
-            .find(|node| list_row(node))
-            .map(centre)
-            .expect("a list row to wheel over");
+        let at = mid_row(&nodes);
         window.frame(
             vec![
                 egui::Event::PointerMoved(at),
@@ -1066,6 +1077,19 @@ fn scroll_player_list_to_bottom(window: &mut Headless, view: &mut SaveView) {
     panic!("the list never reached its end")
 }
 
+/// The centre of the median drawn `list_row` node: a point inside the
+/// list's clip wherever it is scrolled (`update.nodes` is unordered, and
+/// an edge row's bounds can stand past the clip, where the wheel never
+/// reaches the list).
+fn mid_row(nodes: &[accesskit::Node]) -> egui::Pos2 {
+    let mut rows: Vec<&accesskit::Node> = nodes.iter().filter(|node| list_row(node)).collect();
+    rows.sort_by(|a, b| {
+        let y = |node: &&accesskit::Node| node.bounds().expect("bounds").y0;
+        y(a).partial_cmp(&y(b)).expect("ordered bounds")
+    });
+    centre(rows[rows.len() / 2])
+}
+
 /// Wheels the player list down until no drawn row matches `shown`, then
 /// waits for the wheel's remaining scroll to finish (both waits bounded).
 fn wheel_row_out_of_clip(
@@ -1078,12 +1102,7 @@ fn wheel_row_out_of_clip(
         nodes.iter().filter(|node| list_row(node)).any(&shown),
         "premise: a drawn row matches `shown`"
     );
-    let at = centre(
-        nodes
-            .iter()
-            .find(|node| player_row(node))
-            .expect("a player row"),
-    );
+    let at = mid_row(&nodes);
     let mut out = false;
     for _ in 0..64 {
         notch(window, view, at, false);
@@ -2187,6 +2206,7 @@ mod quick_actions;
 mod ruleset_picker;
 mod savefile;
 mod shell;
+mod stretch;
 mod strip;
 mod tactics;
 mod tactics_undo;

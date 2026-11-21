@@ -214,6 +214,7 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
         live_aatf,
         live_suggestions,
         positions_layout,
+        focused,
         ..
     } = view;
     // Live AATF's held check while it is the selected player's team's:
@@ -279,7 +280,7 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
         let mut first = column(ui, first_rect, |ui| {
             let general = panel(ui, spacing, "General info", None, 0.0, |ui| {
                 ui.spacing_mut().item_spacing.y = FIELD_SPACING;
-                info_strip::general(ui, session, team_id, slot, player_id, marks);
+                info_strip::general(ui, session, team_id, slot, player_id, marks, focused);
             });
             let (captained, main) = panel_with(
                 ui,

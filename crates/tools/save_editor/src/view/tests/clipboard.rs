@@ -49,11 +49,17 @@ fn player_row_label(view: &SaveView, team_id: u32, slot: u8) -> String {
     format!("{:02} {position} {}", slot + 1, player.name)
 }
 
-/// A click on `team_id`'s roster `slot`'s row.
+/// A click on `team_id`'s roster `slot`'s row: the first `label` row
+/// under the team's own row (`update.nodes` is unordered and rows of
+/// different teams can share the label).
 fn click_player_row(window: &mut Headless, view: &mut SaveView, team_id: u32, slot: u8) {
     let label = player_row_label(view, team_id, slot);
     let nodes = draw(window, view);
-    click(window, row(&nodes, &label), view);
+    let under = team_row(&nodes, view, team_id)
+        .bounds()
+        .expect("the team row's bounds")
+        .y0;
+    click(window, row_under(&nodes, &label, under), view);
 }
 
 /// A click on `team_id`'s team row.
@@ -1614,6 +1620,7 @@ fn a_copy_pasted_with_crlf_line_ends_writes_the_same() {
 fn a_paste_from_another_version_ends_its_notice_with_the_dropped_count() {
     let (mut window21, mut view21) = open_window(&pes21_stats_fixture("clip_tail_21"));
     let (mut window17, mut view17) = open_window(&fixture(PesVersion::Pes17, "clip_tail_17"));
+    view21.team = TeamChoice::Team(714);
     click_player_row(&mut window21, &mut view21, 714, 0);
     let copied = copy(&mut window21, &mut view21);
     let (a, b) = (

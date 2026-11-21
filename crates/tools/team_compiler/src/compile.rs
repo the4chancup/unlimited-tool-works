@@ -238,7 +238,18 @@ pub(crate) fn run(
     ) else {
         return Ok(events.worst());
     };
-    let planned = plan(inputs, sources, installed, mode, download, events, ctx)?;
+    let planned = plan(
+        inputs,
+        sources,
+        installed,
+        RunOutput {
+            applies_overrides: mode.applies_overrides(),
+            download,
+        },
+        run_budget(inputs),
+        events,
+        ctx,
+    )?;
     build(planned, bins, templates, layout, refs, paths, mode)
 }
 
@@ -327,27 +338,34 @@ struct PlannedRun {
     compress_dds: bool,
 }
 
-/// `compile`'s first half: the `overrides/` folder listed when `mode` applies it, the
-/// validation pass over the discovered `sources`, in which a texture link may name a texture
-/// one of the `installed` CPKs holds, each export's findings reported through `events`, and
-/// the run planned, to be installed into `download` when there is one.
+/// What the run's output mode means for `plan`: whether the `overrides/` folder applies,
+/// and the PES folder's `download/` that a deploying run's preflight resolved (`None` when
+/// the run does not deploy or cannot).
+struct RunOutput {
+    applies_overrides: bool,
+    download: Option<Download>,
+}
+
+/// `compile`'s first half: the `overrides/` folder listed when `output` applies it, the
+/// validation pass over the discovered `sources` under `budget`, in which a texture link may
+/// name a texture one of the `installed` CPKs holds, each export's findings reported through
+/// `events`, and the run planned, to be installed into `output`'s `download` when there is one.
 fn plan(
     inputs: &RunInputs,
     sources: Vec<ExportSource>,
     installed: InstalledPaths,
-    mode: &OutputMode,
-    download: Option<Download>,
+    output: RunOutput,
+    budget: Arc<MemoryBudget>,
     mut events: RunEvents,
     ctx: &ToolContext,
 ) -> anyhow::Result<PlannedRun> {
     let version = inputs.common.pes_version;
     // Listed before any export is read, so a tree that cannot be listed stops the run first.
-    let (overrides, overrides_active) = if mode.applies_overrides() {
+    let (overrides, overrides_active) = if output.applies_overrides {
         overrides::list(ctx.paths().data_dir.as_deref())?
     } else {
         (BTreeMap::new(), None)
     };
-    let budget = run_budget(inputs);
     let pool = run_pool(inputs)?;
     let pass = validation_pass(inputs, sources, &installed, &budget, &pool, true)?;
     for message in pass.run_messages {
@@ -404,7 +422,7 @@ fn plan(
     Ok(PlannedRun {
         version,
         events,
-        download,
+        download: output.download,
         budget,
         pool,
         overrides,
@@ -2106,13 +2124,20 @@ mod tests {
         let ctx = tool_context(root, "");
         let inputs = sandbox_inputs(root, &ctx);
         let sources = reader::discover(&inputs.exports_root, &[]).unwrap().sources;
+        // A fixed cap, so the keep does not depend on the machine's free memory: the
+        // fixture's archive is 150 KiB decompressed, under an eighth of the 2 GiB cap and
+        // under the 1 GiB the cap leaves beside MIN_FREE_BUDGET.
+        let budget = MemoryBudget::new(2 << 30);
 
         let planned = plan(
             &inputs,
             sources,
             InstalledPaths::Unknown,
-            &OutputMode::Test,
-            None,
+            RunOutput {
+                applies_overrides: OutputMode::Test.applies_overrides(),
+                download: None,
+            },
+            budget,
             RunEvents::new(&ctx, false),
             &ctx,
         )
@@ -2167,8 +2192,11 @@ mod tests {
                 &inputs,
                 sources,
                 InstalledPaths::Unknown,
-                &normal,
-                None,
+                RunOutput {
+                    applies_overrides: normal.applies_overrides(),
+                    download: None,
+                },
+                run_budget(&inputs),
                 RunEvents::new(&ctx, false),
                 &ctx,
             )

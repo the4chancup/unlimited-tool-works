@@ -345,97 +345,53 @@ fn assert_three_columns_at_1280(version: PesVersion) {
 // Every field of General info's and Main stats' panels ends 12 inside
 // its frame on the right (the content's own 6-point padding, the frame's
 // 6 and its point of stroke): the counted fields, the foot toggle, the
-// combos and both halves' boxes on one flush x, in both panels alike. At
-// a window 300 wider the column takes the room, the pairs' halves stand
-// 300 further apart and the first half's boxes have not moved.
+// combos and both halves' boxes on one flush x, in both panels alike.
 #[test]
-fn the_panels_fields_end_twelve_inside_their_frames_at_any_width() {
-    let mut halves_gap: Option<f64> = None;
-    let mut first_boxes = Vec::new();
-    for wider in [0.0_f32, 300.0] {
-        let (mut view, mut window) =
-            positions_view(&format!("fields_flush_{wider:.0}"), DEFAULT_PANE.x + wider);
-        let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
-        let frame =
-            |title: &str| f64::from(group_frame(&window, &nodes, &shapes, title).max.x) - 13.0;
-        let (general, main) = (frame("General info"), frame("Main stats"));
-        let right = |node: &accesskit::Node| node.bounds().expect("bounds").x1;
-        let box_right = |label: &str, role: Role| {
-            right_of_label(&nodes, label, role)
-                .first()
-                .copied()
-                .unwrap_or_else(|| panic!("the {label} field"))
-                .bounds()
-                .expect("bounds")
-                .x1
-        };
-        let foot = right_of_label(&nodes, "Stronger foot", Role::Button)
-            .last()
+fn the_panels_fields_end_twelve_inside_their_frames() {
+    let (mut view, mut window) = positions_view("fields_flush", DEFAULT_PANE.x);
+    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let frame = |title: &str| f64::from(group_frame(&window, &nodes, &shapes, title).max.x) - 13.0;
+    let (general, main) = (frame("General info"), frame("Main stats"));
+    let right = |node: &accesskit::Node| node.bounds().expect("bounds").x1;
+    let box_right = |label: &str, role: Role| {
+        right_of_label(&nodes, label, role)
+            .first()
             .copied()
-            .expect("the foot toggle's right side");
-        for (what, field_x1, edge) in [
-            ("the Name field", right(name_field(&nodes)), general),
-            ("the Shirt name field", right(shirt_field(&nodes)), general),
-            ("the Stronger foot toggle", right(foot), main),
-            (
-                "the Registered position combo",
-                box_right("Registered position", Role::ComboBox),
-                main,
-            ),
-            (
-                "the Nation combo",
-                box_right("Nation", Role::ComboBox),
-                general,
-            ),
-            ("the Age box", box_right("Age", Role::SpinButton), general),
-            ("the Form box", box_right("Form", Role::SpinButton), main),
-            (
-                "the Accuracy box",
-                box_right("Accuracy", Role::SpinButton),
-                main,
-            ),
-        ] {
-            assert!(
-                (field_x1 - edge).abs() <= 0.5,
-                "{what} ends 12 inside its frame ({field_x1} vs {edge} at {wider})"
-            );
-        }
-        // The halves' gap and the first half's boxes' left edges.
-        let age_label = label_bounds(&nodes, "Age");
-        let number_box = right_of_label(&nodes, "Shirt number", Role::SpinButton)[0]
+            .unwrap_or_else(|| panic!("the {label} field"))
             .bounds()
-            .expect("bounds");
-        let gap = age_label.x0 - number_box.x1;
-        if let Some(before) = halves_gap {
-            assert!(
-                (gap - before - 300.0).abs() <= 0.5,
-                "the halves 300 further apart ({gap} vs {before})"
-            );
-        }
-        halves_gap = Some(gap);
-        let boxes: Vec<f64> = [
-            ("Shirt number", Role::SpinButton),
-            ("Height", Role::SpinButton),
-            ("Injury Resistance", Role::SpinButton),
-            ("Weak Foot: Usage", Role::SpinButton),
-        ]
-        .iter()
-        .map(|(label, role)| {
-            right_of_label(&nodes, label, *role)[0]
-                .bounds()
-                .expect("bounds")
-                .x0
-        })
-        .collect();
-        if !first_boxes.is_empty() {
-            for (label, (before, now)) in first_boxes.iter().zip(&boxes).enumerate() {
-                assert!(
-                    (now - before).abs() <= 0.5,
-                    "the first half's box {label} has not moved ({now} vs {before} at {wider})"
-                );
-            }
-        }
-        first_boxes = boxes;
+            .expect("bounds")
+            .x1
+    };
+    let foot = right_of_label(&nodes, "Stronger foot", Role::Button)
+        .last()
+        .copied()
+        .expect("the foot toggle's right side");
+    for (what, field_x1, edge) in [
+        ("the Name field", right(name_field(&nodes)), general),
+        ("the Shirt name field", right(shirt_field(&nodes)), general),
+        ("the Stronger foot toggle", right(foot), main),
+        (
+            "the Registered position combo",
+            box_right("Registered position", Role::ComboBox),
+            main,
+        ),
+        (
+            "the Nation combo",
+            box_right("Nation", Role::ComboBox),
+            general,
+        ),
+        ("the Age box", box_right("Age", Role::SpinButton), general),
+        ("the Form box", box_right("Form", Role::SpinButton), main),
+        (
+            "the Accuracy box",
+            box_right("Accuracy", Role::SpinButton),
+            main,
+        ),
+    ] {
+        assert!(
+            (field_x1 - edge).abs() <= 0.5,
+            "{what} ends 12 inside its frame ({field_x1} vs {edge})"
+        );
     }
 }
 
@@ -476,64 +432,46 @@ fn stats_frames(
 // The Stats screen's frames span the pane as the Appearance screen's
 // groups' do: the leftmost frame's left edge and the rightmost's right
 // edge on the groups' own, the columns and the panels of a column 8
-// apart — and General info's column alone takes a wider window's extra
-// room (the draft's `1fr`), the two fixed columns keeping their widths,
-// on every engine the columns are settled on. The title's row still
-// starts at the pane's left edge, the toggle first.
+// apart, on every engine the columns are settled on. The title's row
+// still starts at the pane's left edge, the toggle first.
 #[test]
 fn the_stats_screens_frames_span_the_pane_as_appearances_do() {
     for version in [PesVersion::Pes21, PesVersion::Pes15, PesVersion::Pes17] {
-        let mut span = Vec::new();
-        for wider in [0.0_f32, 300.0] {
-            let (frames, strip) = stats_frames(
-                &format!("stats_span_{version:?}_{wider:.0}"),
-                version,
-                DEFAULT_PANE.x + wider,
-            );
-            let general = frames["General info"];
-            let ability = frames["Ability stats"];
+        let (frames, strip) =
+            stats_frames(&format!("stats_span_{version:?}"), version, DEFAULT_PANE.x);
+        let general = frames["General info"];
+        let ability = frames["Ability stats"];
+        assert!(
+            (general.min.x - strip.min.x).abs() <= 0.5
+                && (ability.max.x - strip.max.x).abs() <= 0.5,
+            "the columns' span on the groups' edges ({general:?}..{ability:?} vs {strip:?} \
+                 at {version:?})"
+        );
+        for pair in ["General info", "Skills", "Ability stats"].windows(2) {
+            let (left, right) = (frames[pair[0]], frames[pair[1]]);
             assert!(
-                (general.min.x - strip.min.x).abs() <= 0.5
-                    && (ability.max.x - strip.max.x).abs() <= 0.5,
-                "the columns' span on the groups' edges ({general:?}..{ability:?} vs {strip:?} \
-                 at {version:?} {wider})"
+                (right.min.x - left.max.x - 8.0).abs() <= 0.5,
+                "the columns 8 apart ({left:?} then {right:?} at {version:?})"
             );
-            for pair in ["General info", "Skills", "Ability stats"].windows(2) {
-                let (left, right) = (frames[pair[0]], frames[pair[1]]);
-                assert!(
-                    (right.min.x - left.max.x - 8.0).abs() <= 0.5,
-                    "the columns 8 apart ({left:?} then {right:?} at {version:?} {wider})"
-                );
-            }
-            for pair in [
-                ["General info", "Main stats"],
-                ["Main stats", "Playable positions"],
-                ["Skills", "Tricks"],
-                ["Tricks", "COM playing styles"],
-            ] {
-                let (above, below) = (frames[pair[0]], frames[pair[1]]);
-                assert!(
-                    (below.min.y - above.max.y - 8.0).abs() <= 0.5,
-                    "the panels of a column 8 apart ({above:?} then {below:?} at {version:?} \
-                     {wider})"
-                );
-                assert!(
-                    (above.min.x - below.min.x).abs() <= 0.5
-                        && (above.max.x - below.max.x).abs() <= 0.5,
-                    "the stacked panels share the column's span ({above:?} then {below:?} at \
-                     {version:?} {wider})"
-                );
-            }
-            span.push((general.width(), frames["Skills"].width(), ability.width()));
         }
-        assert!(
-            (span[1].0 - span[0].0 - 300.0).abs() <= 0.5,
-            "General info's frame 300 wider ({span:?} at {version:?})"
-        );
-        assert!(
-            (span[1].1 - span[0].1).abs() <= 0.5 && (span[1].2 - span[0].2).abs() <= 0.5,
-            "the fixed columns keep their widths ({span:?} at {version:?})"
-        );
+        for pair in [
+            ["General info", "Main stats"],
+            ["Main stats", "Playable positions"],
+            ["Skills", "Tricks"],
+            ["Tricks", "COM playing styles"],
+        ] {
+            let (above, below) = (frames[pair[0]], frames[pair[1]]);
+            assert!(
+                (below.min.y - above.max.y - 8.0).abs() <= 0.5,
+                "the panels of a column 8 apart ({above:?} then {below:?} at {version:?})"
+            );
+            assert!(
+                (above.min.x - below.min.x).abs() <= 0.5
+                    && (above.max.x - below.max.x).abs() <= 0.5,
+                "the stacked panels share the column's span ({above:?} then {below:?} at \
+                     {version:?})"
+            );
+        }
     }
 
     // The title's row starts at the pane's left edge with the toggle.

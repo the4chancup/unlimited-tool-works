@@ -19333,3 +19333,23 @@ Plan: `plans/pes14.md`, "What the game's code says" (the free move, the held pla
 Decision: an unsaved-changes row or an AATF line that names a preset's formation leaves the formation's name out on PES 2014 ("Preset 1 · J. WALTERS · Position").
 Why: PES 2014 holds one formation a preset and its screen gives it no name; "Kick-off", the first of the later versions' three, names a set the game does not have. The rows showed it in slice 2d-1's look.
 Plan: `plans/pes14.md`, "The tactics record in Build 2", step 8 (2d-3).
+
+## 2026-11-21 — save_editor — the open Nation list picks by name too, opens on the held nation, and Escape puts it back
+Decision (the maintainer, asked 2026-11-17): in the open Nation list, letters pick the first nation, by ID, whose name starts with them, as digits pick by ID; a space continues a name begun; a key of the other kind starts a new run, as a second's pause does. The list opens with the held nation already in view, not scrolled to from the top, and Escape puts back the nation held when it opened, leaving nothing new to undo.
+Why: members rarely know the IDs, so digits alone left them scrolling a list of over 200; the scroll from the top on every open read as the list jumping; and a browser's dropdown, which the list follows, takes Escape as "never mind".
+Plan: `plans/save_editor.md`, "The player view", General info's Nation; SE-GUI-106.
+
+## 2026-11-21 — save_editor — one opening of the Nation list is one undo entry, whatever the pauses between its picks
+Decision: every pick made while the Nation list is open joins one undo entry, which one undo takes back, and Escape removes it however long after the last pick it is pressed. A second's pause still starts a new typed run, but that only decides which nation the keys spell.
+Why: with entries split at a second's pause, an Escape pressed after reading the pick for a second left an entry behind, and the first undo then brought back the nation just escaped from. One change per opening is also how a browser's dropdown behaves.
+Plan: `plans/save_editor.md`, "The player view", General info's Nation; SE-GUI-106.
+
+## 2026-11-21 — save_editor — a save holding no cup team says so, in the window and on the command line
+Decision: opening a save whose teams all lie outside 701 to 920 raises a warning notice, `This save holds no cup team (ids 701 to 920).`; `check-aatf` without `--teams` and `export-toml --all-teams` refuse such a save with the same words.
+Why: the maintainer's PES 2021 save had become a stock one, and the window opened it to an empty list with Player and Team greyed and no reason given, which read as a bug; a clean `check-aatf` also prints nothing, so on a stock save it read as a legal one. A refusal, not a warning, on the command line, because a script reading its exit code would otherwise take the wrong file for a clean check.
+Plan: `plans/save_editor.md`, "Editing UI", the bullet "Only the cup's teams are shown".
+
+## 2026-11-21 — save_editor — `export-teams-list` refuses a save holding no cup team too
+Decision: `export-teams-list` refuses a save holding no cup team with the words `check-aatf` and `export-toml --all-teams` use, before it reads or writes `teams_list.txt`.
+Why: on such a save it merged nothing and printed how many rows it kept, which reads as a list already up to date; the three commands that read every cup team guard the same mistake, a stock save opened for a cup one, so they keep one rule.
+Plan: `plans/save_editor.md`, "Editing UI", the bullet "Only the cup's teams are shown"; SE-TL-06.

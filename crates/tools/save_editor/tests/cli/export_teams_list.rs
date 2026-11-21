@@ -7,6 +7,7 @@ use pes_savefile::EditFile;
 use pes_version::PesVersion;
 use teams_list::{TeamId, TeamName, TeamsList};
 
+use crate::common::cup_save::stock_file;
 use crate::{Sandbox, TEST_SALT};
 
 /// A working list of three rows of the bundled upstream list (`/a/` 702, `/b/` 707, `/jp/`
@@ -274,4 +275,23 @@ fn a_pes_2014_save_is_refused() {
     let run = sandbox.export_teams_list("EDIT14", &["--yes"]);
     run.assert_refused(2, &["PES 2014"]);
     assert!(!sandbox.path("data/teams_list.txt").exists());
+}
+
+// A save holding no cup team (one made from the stock game) is refused, the
+// working list neither read nor written.
+// SE-TL-06
+#[test]
+fn a_save_with_no_cup_team_is_refused_and_the_list_untouched() {
+    let sandbox = Sandbox::new("teams_list_no_cup_team");
+    let file = stock_file(PesVersion::Pes21);
+    fs::write(sandbox.path("EDIT"), file.to_bytes(&TEST_SALT).unwrap()).unwrap();
+    fs::write(sandbox.path("data/teams_list.txt"), WORKING).unwrap();
+
+    let run = sandbox.export_teams_list("EDIT", &["--yes"]);
+    run.assert_refused(2, &["the save holds no cup team (ids 701 to 920)"]);
+    assert_eq!(
+        fs::read_to_string(sandbox.path("data/teams_list.txt")).unwrap(),
+        WORKING,
+        "teams_list.txt is unchanged"
+    );
 }

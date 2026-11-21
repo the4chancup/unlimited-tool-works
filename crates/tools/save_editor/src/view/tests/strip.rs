@@ -1119,6 +1119,52 @@ fn the_captains_radio_cannot_be_unticked() {
     assert!(!session.can_undo(), "the second click pushed nothing");
 }
 
+// A click on a non-captain's Captain radio moves the team's captaincy
+// to his slot, and one Ctrl+Z puts the old captain back.
+#[test]
+fn a_non_captains_radio_click_names_him_captain_and_undo_restores() {
+    let path = fixture(PesVersion::Pes21, "captain_radio_pick");
+    let file = EditFile::load(&path).unwrap();
+    let captain = file.team(701).unwrap().tactics.set_pieces.captain;
+    let other = if captain == 0 { 1 } else { 0 };
+    let mut view = SaveView::new();
+    view.open(&path);
+    view.team = TeamChoice::Team(701);
+    view.selected = Some(Selection::Player(701, other));
+    let mut window = Headless::new();
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let radio = nodes
+        .iter()
+        .find(|node| node.role() == Role::RadioButton && node.label().is_none())
+        .expect("the Captain radio");
+    let captain_now = |view: &SaveView| {
+        view.session
+            .as_ref()
+            .unwrap()
+            .file()
+            .team(701)
+            .unwrap()
+            .tactics
+            .set_pieces
+            .captain
+    };
+
+    click(&mut window, radio, &mut view);
+    assert_eq!(
+        captain_now(&view),
+        other,
+        "the click named his slot captain"
+    );
+    window.frame(vec![key(egui::Key::Z, egui::Modifiers::CTRL, true)], |ui| {
+        show(ui, &mut view, &|| Vec::new())
+    });
+    assert_eq!(
+        captain_now(&view),
+        captain,
+        "Ctrl+Z put the old captain back"
+    );
+}
+
 // A typed value past a field's stored width is clamped to it, the codec's own
 // bound; a value in range lands as typed.
 #[test]

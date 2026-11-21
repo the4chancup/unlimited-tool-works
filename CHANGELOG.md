@@ -2,8 +2,10 @@
 
 ## [Unreleased]
 
-### Added
+### Useful
 
+- **Save editor**: typing the start of a nation's name in the open Nation list now picks it,
+  as typing its ID does, and Escape in the open list now puts back the nation it opened on.
 - **Save editor**: added the Gameplan screen for PES 2014 saves. Its pitch shows each
   starter's overall at his role, as the game works it out. A player dropped on open grass
   moves there with the role the game would give him, or stays put where the game refuses the
@@ -12,7 +14,7 @@
   play panel holds the game's three slots, each a strategy and the area it runs in. Once a
   PES 2014 folder is set, hovering a setting or a dropdown shows the game's own help text.
 
-### Fixed
+### Fixes
 
 - **Save editor**: the command line now refuses a PES 2014 save for Team TOML export and
   import, aesthetics patches, comparing two saves and the teams-list export, as the window
@@ -20,6 +22,12 @@
 - **Compiler**: a referee with no face model, whose body model brings his head, showed the
   game's own referee head floating over it. He now gets an empty face, as a team player in the
   same case does.
+- **Save editor**: a save holding no cup team (ids 701 to 920), such as one made from the stock
+  game, opened to an empty list with no reason given. It now shows a warning saying so, and the
+  command line's `check-aatf`, `export-toml --all-teams` and `export-teams-list` refuse it.
+- **Save editor**: in a window larger than the default, the screens spread their columns and
+  stretched their panels across it. They now keep their default layout, centred, while the
+  player list shows more rows and the Live AATF panel takes the whole width.
 
 ### Other stuff
 

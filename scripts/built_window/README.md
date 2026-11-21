@@ -11,7 +11,7 @@ the GPU draws (a texture's sampling, a font's hinting, the window's own scaling)
 | `monitors.py` | prints each monitor's rectangle, work area and DPI: run first, since the primary monitor and its scaling decide where the window opens and what a capture's pixels mean |
 | `setup.py` | `dark` or `light`: copies `target/release/utw.exe` into the portable copy, its settings to the default window (1280 x 780) and the theme asked; refuses while the copy runs |
 | `launch.py` | starts the portable copy detached, in its own folder |
-| `gui.py` | `info`, `click`, `move`, `drag`, `wheel`, `keys`, `shot`/`wshot`, `burst`, `open`/`folder`/`cancel` for the app's own dialogs, `size`/`maximize`, `close` |
+| `gui.py` | `info`, `click`, `move`, `drag`, `wheel`, `keys`, `type`, `shot`/`wshot`, `burst`, `open`/`folder`/`cancel` for the app's own dialogs, `size`/`maximize`, `close` |
 
 Each script's docstring has its exact usage. The portable copy is the folder `UTW_APP` names,
 `.tmp/0_0_1s4t_v2/app` by default (its `data/settings.toml` is the copy's own, so a check never

@@ -27,12 +27,11 @@ scripts in `C:/Data/4cc/0Tools/Tips/`). Their plans are stubs, to be finished fr
 run's findings (`4cc-studio-temp/str_re/out/findings.md`).
 
 **After the detour**, in this order:
-1. The Nation list (the maintainer, 2026-11-17): it opens already scrolled to the held nation,
-   where it mostly scrolls down to it from the top; typing a nation's name picks it as an ID
-   does (members rarely know the IDs); Escape puts the old nation back. With it, Astra's three
-   code fixes from the General info review (rulings "geninfo A1": the typed row takes the
-   keyboard focus, a Captain click test, one nation lookup a draw), SE-GUI-106 cited by the
-   nation tests.
+1. The Nation list: done (merges `467790ab`, `1b9c5f27`; SWE-2 round S1n). It opens on the
+   held nation, a typed name picks as an ID does, Escape puts the old nation back, and one
+   opening is one undo entry; the General info review's fixes (rulings "geninfo A1") with it.
+   Seen in the release build on the PES 2021 fixture (2026-11-21:
+   opened on 231, `ital` picked 215, Escape put 231 back with nothing left to undo).
 2. 0.0.2-nostretch's slices.
 3. Earlier sessions in Report a problem: the repro bundles issue's slice (5).
 4. Review rounds owed: 0.0.2-similar's, and every Carbon round a 0.0.2 step still owes (Report a problem has had its whole review).
@@ -2227,6 +2226,10 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       measured at default (unchanged) and at 1920 x 1080 with
       `.tmp/stretch/drafts/measure.py`, captures `.tmp/stretch/drafts/*_monitor.png`
     - [ ] a slice per tool (after 0.0.2: DECISIONS 2026-11-16)
+      - [x] the Save editor: merged `b0703afa` (2026-11-21, SWE-2, one rework), tests
+        `view/tests/stretch.rs`; seen in the release build at 1280 and maximized beside the
+        drafts (Stats, Gameplan, Live AATF's dock spanning the pane); SWE-2 round S1w's
+        fixes `cbb13f6a`. The Squad screen takes its rule when it is built
   - [x] 0.0.2-lib the library rerun against checkpoint `p11`, 2026-11-13: checkpoint `002`
     (422 clean inputs; `.tmp/library_parity/checkpoints/diff_p11_002.txt`), every change
     traced to a commit since `3c512628`: VGL27's team IDs (`6268280c`), the short Common
@@ -3471,6 +3474,19 @@ points there.
   reason, fixed since: the Save editor's folder check parsed exe names through
   `from_number`, which refuses 14, so it never found `PES2014.exe`. It now matches the save's
   own exe by name (DECISIONS 2026-11-21).
+- resolved (2026-11-21) — The maintainer's PES 2021 save opens with an empty team list. The
+  release build at `1b9c5f27`, File > PES 2021, opened
+  `Documents\KONAMI\eFootball PES 2021 SEASON UPDATE\...\save\EDIT00000000` (11,011,039 bytes,
+  2026-11-18): the title named it, "All teams" listed no row, the Player and Team menus stayed
+  grey, and `check-aatf` on the same file printed nothing. The test fixture (10,996,712 bytes)
+  opened in the same window listed every team. Cause: the save holds no cup team. On a copy,
+  `export-toml --all-teams` wrote no file, as it does for the `EDIT00000000_vanilla` beside
+  it, while its June copy (`EDIT00000000 - Copy (4)`) gives 220. The editor lists cup teams
+  alone by design, so the bug is the silence. Fixed in `e8c1561c` and `b22b191c`: a notice in
+  the window, and a refusal from `check-aatf`, `export-toml --all-teams` and
+  `export-teams-list` (plan "Only the cup's teams are shown"; SE-GUI-107, SE-AATF-11,
+  SE-TOML-11, SE-TL-06). Seen in the release build at `b22b191c` on a copy of that save,
+  beside the draft's stock PES 21 sample: the same warning in the status bar.
 - open (2026-11-21) — A trial: can SubQ Snap tell a flaky test from a steady one, as it tells
   a test that proves its scenario from one that does not (`citation_audit.py`)? The question
   per test: does its outcome depend on anything outside its inputs (the machine's free memory,
@@ -3478,7 +3494,7 @@ points there.
   and the helpers of its file it calls, as the citation audit builds it.
   - Positives, each at the commit before its fix:
     - `a_7z_export_s_source_keeps_its_decompressed_content_into_the_planned_run`
-      (`team_compiler`, the run's budget read from the machine's free memory);
+      (`68d933e5`, the run's budget read from the machine's free memory);
     - the PES 15 save/load test with a one-byte seed (`3ab27215`);
     - the Multi-team dialog's held press (`24451801`);
     - the list test that read a combo's edge a frame early (`0af77290`);
@@ -3506,13 +3522,12 @@ points there.
   did for each, that ours is right. Its Status then becomes Checked, or the behavior changes
   where ours is wrong. Also owed: the parity rows' reasons, the spec's "unlike Red" sentences
   and `scripts/library_parity/classes.md`'s I-classes point at the entries, not restate them.
-- open (2026-11-20) — `team_compiler`'s test
-  `a_7z_export_s_source_keeps_its_decompressed_content_into_the_planned_run` depends on the
-  machine's free memory: the run's memory budget is a share of the available memory
-  (`validation.rs` `run_budget`), and a `.7z` stays unpacked only while it fits. It failed in
-  a full `gates-changed` run on the `pes14` branch with PES 2017 and three builds running
-  beside it, and passed alone right after (inferred cause, not proven). The fix is likely a
-  budget the test sets itself rather than the host's.
+- resolved 2026-11-21 (SWE-2, `68d933e5`): `team_compiler`'s test
+  `a_7z_export_s_source_keeps_its_decompressed_content_into_the_planned_run` failed whenever
+  memory was short (232 MB free on 2026-11-09, 1.5 GB in a checkpoint on 2026-11-21), because
+  `plan` read the run's budget from the memory the OS reported available. `plan` now takes the
+  budget from its caller, and the test passes a fixed 2 GiB. The crate's other tests that reach
+  the budget were searched: none asserts on an archive kept or on a wait.
 - open (2026-11-20) — tests leave their scratch folders in `%TEMP%`: about 15,000 on the
   maintainer's machine, 680 MiB, mostly `export_upgrader_*` (`test_support.rs` `scratch`) and
   `studio_core_repro_*` / `studio_core_files_*`. Each folder's name ends in the test process's
@@ -3715,12 +3730,6 @@ points there.
   measured how many real collars name the Fox common directory. The fix reads a collar like a
   package part (the short forms, then the ID replacement), or refuses the Common directories
   there.
-- open (2026-11-09) — `compile::tests::a_7z_export_s_source_keeps_its_decompressed_content_into_the_planned_run`
-  depends on the machine's free memory: the run's budget cap comes from the physical memory
-  available, and with 232 MB free (a poc12 sidekick's run, 2026-11-09)
-  `keeps_archive` declines the archive and `source.content.is_some()` fails; it passed on a
-  rerun with 2.2 GB free. The test should pin the cap (the budget it plans with) rather than
-  read the host's; a flaky gate trains everyone to rerun until green.
 - open (2026-11-07) — The Compiler's recovery manifest (`plans/team_compiler/pipeline.md`
   "Recovery manifest", the maintainer's request): early, since only DLCs compiled after it
   ships carry it. One slice in the writer (each team and referee export's manifest and the

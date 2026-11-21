@@ -399,6 +399,9 @@ and `target/`: without it each copy carried all of `.tmp/`, and two runs died of
 The logs alone are large: a `pes_savefile` whole-crate run leaves about 20 GiB in
 `mutants.out/` (5.6b: 8.9 GiB local, 11 GiB fetched from the remote half), which the next run
 moves to `mutants.out.old`.
+A sidekick tree's `target/` goes once its slice is merged and no rework is coming
+(`python scripts/clear_targets.py sk_<step>`, which refuses an unmerged or unclean tree):
+left for the next disk alarm, six finished trees held 108 GB on 2026-11-21.
 When C: fills, a finished tree's `target/` can go whole, and the main tree's `target/debug`
 once nothing builds there (254 GiB on 2026-10-26, mostly stale `deps`): cargo rebuilds them,
 each run rewrites its generated config, and the cost table lives outside every `target/`.

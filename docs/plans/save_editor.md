@@ -258,6 +258,12 @@ vertical room a tab row takes; a toggle on the title's own row takes none.
   because no member edits them, a save made from the stock game holds more of them than of
   the cup's, and they alone share players between rosters, a case every list rule would
   otherwise have to carry.
+  A save holding no cup team (one made from the stock game) says so, since it would
+  otherwise open to an empty list with no reason given: opening it raises a warning notice,
+  `This save holds no cup team (ids 701 to 920).`, and `check-aatf` without `--teams`,
+  `export-toml --all-teams` and `export-teams-list` refuse it with the same words. Their
+  silence, or a merge that kept every row, would read as a clean check, an empty export or
+  a list already up to date, not as a wrong file.
 - **Player list**, 255 points wide (its rows' frame and the scroll bar's strip; egui's panel
   margins and separator come on top) and not resizable. Under the design width the window
   scales instead of narrowing (`spec/core/gui.md` "Shell layout", the paragraph "Scaling with
@@ -711,13 +717,25 @@ vertical room a tab row takes; a toggle on the title's own row takes none.
      - Then Nation, a combo of the open save's version's nations, each entry `ID - NAME`
        (`231 - SAN MARINO`, the game's own spelling, in its capitals), ordered by ID, so
        typing an ID's digits in it finds that nation, where the number box it replaces
-       needed the ID looked up elsewhere. The open list shows the held nation, not the list's
-       top: there are over 200. While it is open, typed digits pick the first nation whose
-       ID starts with them and scroll to it, so 2, 3 and 1 land on `231 - SAN MARINO` and
-       one undo takes them back; a second's pause starts a new ID, as in a browser's
-       dropdown, and anything but a digit does nothing. Picking at once, not highlighting
-       for Enter to confirm, keeps it one gesture. An ID the version lacks shows as
-       `ID - ?` and stays until another is picked.
+       needed the ID looked up elsewhere. The list opens on the held nation, already in
+       view rather than scrolled to from the top: there are over 200. While it is open, typed
+       keys pick a nation and scroll to it, as in a browser's dropdown:
+       - digits pick the first nation whose ID starts with them, so 2, 3 and 1 land on
+         `231 - SAN MARINO`;
+       - letters pick the first nation, by ID, whose name starts with them in any letter
+         case, so S, A and N land there too (members rarely know the IDs); a space continues
+         a name already begun, so `SOUTH S` passes `87 - SOUTH AFRICA` for `312 - SOUTH SUDAN`;
+       - a second's pause, or a key of the other kind, starts a new run, and any other key
+         does nothing;
+       - one undo takes back every pick made while the list was open, however long the
+         pauses between them;
+       - Escape puts back the nation held when the list opened and closes it, leaving
+         nothing new to undo, however long after the last pick it is pressed.
+
+       Picking at once, not highlighting for Enter to confirm, keeps it one gesture: one
+       opening of the list is one change, as in a browser's dropdown, so neither an undo nor
+       Escape stops at a pick made along the way. An ID
+       the version lacks shows as `ID - ?` and stays until another is picked.
 
        The nations are the game's, from each version's `common/etc/pesdb/Country.bin` (in
        `dt10`): a WESYS-wrapped zlib stream of records of 1,348 bytes up to PES 2018 and
@@ -3602,6 +3620,10 @@ SE-TOML-10 GIVEN SE-GUI-77's save
            WHEN export-toml --all-teams --out-dir is run
            THEN the folder holds one <id>.toml per cup team and no 300.toml; WHEN
                 export-toml --team 300 is run THEN team 300's file is written
+SE-TOML-11 GIVEN a PES 21 save holding no cup team, every team's id under 701
+           WHEN export-toml --all-teams --out-dir is run
+           THEN it is refused with `the save holds no cup team (ids 701 to 920)`, exits 2
+                and creates no folder
 SE-GUI-70  GIVEN a PES 17 save open on a player
            WHEN Abilities shows
            THEN the labels `Tight Possession` and `Aggression` paint the colour the label of
@@ -3906,12 +3928,20 @@ SE-GUI-106 GIVEN the PES 2021 save open, a player holding nation 135 selected
            WHEN the view is drawn
            THEN the Nation combo reads `135 - USA` on the Name field's span (`135 - UNITED
                 STATES` on the PES 2017 save; a held 100, which PES 2021 lacks, reads `100 -
-                ?`); WHEN the list is opened THEN it lists the version's nations by ID,
-                scrolled to the held row; WHEN 231 is typed in the open list THEN `231 - SAN
-                MARINO` is picked and scrolled into view, and one Undo puts 135 back; WHEN a
-                pause of over a second parts two digits THEN the second starts a new ID; WHEN
-                Down is pressed in the open list, then 231 typed and Enter pressed THEN 231
-                stays picked
+                ?`); WHEN the list is opened THEN it lists the version's nations by ID, the
+                held row in view on the first frame it draws; WHEN 231 is typed in the open
+                list THEN `231 - SAN MARINO` is picked and scrolled into view, and one Undo puts
+                135 back; WHEN `san` is typed instead THEN 231 is picked the same; WHEN `South
+                S` is typed THEN 312 is picked; WHEN a pause of over a second parts two digits
+                THEN the second starts a new ID, and one Undo after the list closes still puts
+                135 back; WHEN Down is pressed in the open list, then 231 typed and Enter
+                pressed THEN 231 stays picked; WHEN 231 is typed and Escape pressed, at once or
+                over a second later THEN the list closes, the player holds 135 and Undo has
+                nothing new to take back
+SE-GUI-107 GIVEN SE-TOML-11's save
+           WHEN it is opened
+           THEN the status bar's warning reads `This save holds no cup team (ids 701 to
+                920).`; WHEN the PES 21 fixture save is opened instead THEN no notice shows
 SE-GUI-27  GIVEN the save open
            WHEN Output rosters to TSV runs
            THEN the file written holds, for every cup team, its name on a line of its own, then one
@@ -4101,6 +4131,14 @@ SE-AATF-10 GIVEN SE-GUI-77's save, team 300 holding an error-severity violation 
            WHEN check-aatf is run with no --teams, then with --teams 300
            THEN the first prints nothing of team 300 and exits 0; the second prints
                 team 300's violation and exits 1
+SE-TL-06   GIVEN SE-TOML-11's save
+           WHEN export-teams-list --yes is run
+           THEN it is refused with `the save holds no cup team (ids 701 to 920)`, exits 2,
+                and teams_list.txt is neither read nor written
+SE-AATF-11 GIVEN SE-TOML-11's save
+           WHEN check-aatf is run with no --teams, then with --teams 101
+           THEN the first is refused with `the save holds no cup team (ids 701 to 920)` and
+                exits 2; the second checks team 101 and is not refused
 SE-REP-01  GIVEN a repro bundle (`plans/core/architecture.md` "Repro bundles") whose journal
                 opens the save, sets player 70101's Height from the value the save holds to
                 another and writes the save, the save so written its kept output

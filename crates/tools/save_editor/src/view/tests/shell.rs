@@ -757,6 +757,34 @@ fn an_unreadable_file_is_refused_and_keeps_the_open_save() {
     );
 }
 
+// A save made from the stock game holds none of the cup's teams, so the
+// open says why the list is empty; a save holding cup teams sets no
+// notice of its own.
+// SE-GUI-107
+#[test]
+fn a_save_holding_no_cup_team_says_so_on_open() {
+    let dir = crate::test_support::scratch("no_cup_team_notice");
+    let stock = dir.join("EDIT00000000");
+    let file = crate::test_support::cup_save::stock_file(PesVersion::Pes21);
+    std::fs::write(
+        &stock,
+        file.to_bytes(&crate::test_support::TEST_SALT).unwrap(),
+    )
+    .unwrap();
+    let mut view = SaveView::new();
+    view.open(&stock);
+    let notice = view.notice.as_ref().expect("the open raised a notice");
+    assert_eq!(notice.kind, NoticeKind::Warning);
+    assert_eq!(notice.text, "This save holds no cup team (ids 701 to 920).");
+
+    let mut view = SaveView::new();
+    view.open(&fixture(PesVersion::Pes21, "cup_teams_open"));
+    assert!(
+        view.notice.is_none(),
+        "a save holding cup teams sets no notice"
+    );
+}
+
 // The panes reach two points into the shell's bottom margin and end 6
 // over the status bar, the draft's padding under the view: the detail
 // pane's frame fills the pane to that edge.

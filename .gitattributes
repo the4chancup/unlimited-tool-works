@@ -23,3 +23,8 @@ resources/templates/referees_prefox/** -text
 
 # The icon, images made by scripts/fonts/make_icon.py: binary, never normalized
 resources/icon/** -text
+
+# The decision log is append-only, so two branches that each appended entries merge with both
+# kept (git's built-in union driver) in place of a conflict. Not the worklog: its entries are
+# edited in place, and union would keep two versions of one entry side by side unseen.
+docs/DECISIONS.md merge=union

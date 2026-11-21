@@ -1,8 +1,11 @@
-//! A save holding, beside the cup's teams, one team outside the cup's id range and a
-//! player on no roster, as a save made from the stock game holds the game's own clubs:
-//! the PES 17 and PES 21 fixture saves hold the cup's teams alone (PES 19's holds the
-//! game's own too, so the builder is not for it). Shared by the crate's unit tests and its
-//! command-line tests (`tests/common`).
+//! Fixture saves whose team ids leave the cup's range: `outside_cup_file` moves one
+//! team's id out and empties its last filled roster slot, so the save holds, beside the
+//! cup's teams, one team outside the range and a player on no roster, as a save made
+//! from the stock game holds the game's own clubs; `stock_file` moves every team's id
+//! out, standing for a save made from the stock game. The PES 17 and PES 21 fixture
+//! saves hold the cup's teams alone (PES 19's holds the game's own too, so the builders
+//! are not for it). Shared by the crate's unit tests and its command-line tests
+//! (`tests/common`).
 
 use std::collections::HashSet;
 
@@ -124,4 +127,33 @@ pub fn assert_premises(file: &EditFile, unrostered: u32) {
             .all(|team| team.id == OUTSIDE_TEAM || (701..=920).contains(&team.id)),
         "premise: every other team is a cup team"
     );
+}
+
+/// `version`'s fixture save with every team's id moved 600 down, out of the
+/// cup's range (701 becomes 101, 920 becomes 320): it stands for a save made
+/// from the stock game, which holds none of the cup's teams. PES 19's fixture
+/// is not for it: the game's own teams it also holds carry ids below 600 and
+/// inside the moved range.
+pub fn stock_file(version: PesVersion) -> EditFile {
+    let mut file = EditFile::from_bytes(&fixture_save(version)).expect("the fixture save reads");
+    for team in file.teams_mut() {
+        team.id = team
+            .id
+            .checked_sub(600)
+            .expect("every fixture team's id clears its 600 move");
+    }
+    let mut ids = HashSet::new();
+    for team in file.teams() {
+        assert!(
+            !(701..=920).contains(&team.id),
+            "premise: team {} still holds a cup id",
+            team.id
+        );
+        assert!(
+            ids.insert(team.id),
+            "premise: the moved ids collide on {}",
+            team.id
+        );
+    }
+    file
 }

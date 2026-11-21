@@ -7,7 +7,7 @@ use team_widgets::event_logo::HEIGHT;
 
 use super::SaveView;
 
-/// The logo's right edge from the window's, in points: as far as the
+/// The logo's right edge from the view's, in points: as far as the
 /// clover's ink stands from the left. The toolbar's band ends as far left
 /// of the logo, so the logo has the same room on both sides.
 pub(super) const RIGHT: f32 = 14.0;
@@ -22,19 +22,18 @@ const TOP: f32 = 8.0;
 const FRAME_ROOM: f32 = 2.0;
 
 /// Where the logo stands while a save is open and the active ruleset
-/// carries one: 28 points high, its right edge `RIGHT` from the window's,
-/// its top `TOP` below the view's. It depends on the window and the
-/// picture alone, so the toolbar's band can end short of it before either
-/// is drawn.
-pub(super) fn rect(ui: &egui::Ui, view: &SaveView) -> Option<egui::Rect> {
+/// carries one: 28 points high, its right edge `RIGHT` inside the view's
+/// outer edge (`view_rect`'s right edge plus the central panel's margin —
+/// the window's edge at the default window, the cap's edge in a larger
+/// one), its top `TOP` below the view's. It depends on the view's rect
+/// and the picture alone, so the toolbar's band can end short of it
+/// before either is drawn.
+pub(super) fn rect(ui: &egui::Ui, view: &SaveView, view_rect: egui::Rect) -> Option<egui::Rect> {
     view.session.as_ref()?;
     let size = view.rules.as_ref()?.logo.as_ref()?.size();
-    let right = ui.ctx().content_rect().max.x - RIGHT;
-    // `ui` is the shell's central panel inside its margin: the view's top
-    // is the panel's.
-    let top = ui.max_rect().top()
-        - f32::from(egui::Frame::central_panel(ui.style()).inner_margin.top)
-        + TOP;
+    let margin = egui::Frame::central_panel(ui.style()).inner_margin;
+    let right = view_rect.right() + f32::from(margin.right) - RIGHT;
+    let top = view_rect.top() - f32::from(margin.top) + TOP;
     Some(egui::Rect::from_min_max(
         egui::pos2(right - size.x, top),
         egui::pos2(right, top + HEIGHT),
