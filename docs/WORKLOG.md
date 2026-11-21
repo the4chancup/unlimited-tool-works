@@ -32,7 +32,8 @@ run's findings (`4cc-studio-temp/str_re/out/findings.md`).
    opening is one undo entry; the General info review's fixes (rulings "geninfo A1") with it.
    Seen in the release build on the PES 2021 fixture (2026-11-21:
    opened on 231, `ital` picked 215, Escape put 231 back with nothing left to undo).
-2. 0.0.2-nostretch's slices.
+2. 0.0.2-nostretch's slices: done for every built view (the Save editor, the Ruleset
+   editor); the Compiler's and the Export upgrader's views take the rule in step 8.10.
 3. Earlier sessions in Report a problem: the repro bundles issue's slice (5), in slices:
    - [x] the crash monitor's start tried once more (ST-RUN-13): merged 2026-11-21, SWE-2
      round S1rt; Astra round A-s5b r1 with 5b's (below);
@@ -851,7 +852,8 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
   - [ ] 8.10 after 0.0.2: the progress grid (with the log panel's cross-link: a warning or
     error line's click highlights its grid cell, `plans/core/gui.md` "Log panel", which 8.6d3 leaves for
     the grid), the run strip, the exports folder watcher and check cache, cancellation, the launcher (`quick_compile.bat` to its `--gui` form, `quick_upgrade.bat` dropped once the upgrader's view lands), the
-    Compiler's and the Export upgrader's views (their drafts first); the notice action
+    Compiler's and the Export upgrader's views (their drafts first), each with the larger
+    window's rule and its `view/tests/stretch.rs` as 0.0.2-nostretch's slices; the notice action
     `OpenFolder` opens the system file browser for the compile's "Open output" (8.6b leaves it
     a dismiss; eframe's `open_url` opens a browser even for a local path, so not through it),
     and the Compiler's view stops requesting repaints itself (`ToolContext::emit` wakes
@@ -2251,7 +2253,7 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     draft's `#202020`: the palette's `team_row_fill`, mid grey at 48 of 255, one value for both
     themes (grey 231 on the light list); the built list beside the draft, both themes, sampled
     at `#202020` and grey 231 (`.tmp/0_0_2/teamfill/pair.png`)
-  - [ ] 0.0.2-nostretch a larger window grows or moves no panel but the named lists
+  - [x] 0.0.2-nostretch a larger window grows or moves no panel but the named lists
     (`plans/core/gui.md` "Shell layout", the paragraph "A window larger than the default";
     DECISIONS 2026-11-14 "no panel stretches unless it is allowed to") -> verify: per view, a
     test drawing it at 1280 and at 1920 wide, every panel that cannot scroll at the default size the same size,
@@ -2263,7 +2265,7 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       (height), the Ruleset editor's rail and shown preview and the player list take the room;
       measured at default (unchanged) and at 1920 x 1080 with
       `.tmp/stretch/drafts/measure.py`, captures `.tmp/stretch/drafts/*_monitor.png`
-    - [ ] a slice per tool (after 0.0.2: DECISIONS 2026-11-16)
+    - [x] a slice per tool (after 0.0.2: DECISIONS 2026-11-16)
       - [x] the Save editor: merged `b0703afa` (2026-11-21, SWE-2, one rework), tests
         `view/tests/stretch.rs`; seen in the release build at 1280 and maximized beside the
         drafts (Stats, Gameplan, Live AATF's dock spanning the pane); SWE-2 round S1w's
@@ -2273,6 +2275,9 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         (DECISIONS 2026-11-21); seen in the release build at 1280 and maximized beside the
         draft, preview hidden and shown (the draft's preview fixed to fit its 100 columns);
         SWE-2 round S1re's fixes in the merge
+      - [x] the Compiler and the Export upgrader: nothing to slice (2026-11-21): both windows
+        are placeholders (a settings list and a Compile button; one line of text), so step 8.10 gives each
+        the rule as it builds them
   - [x] 0.0.2-lib the library rerun against checkpoint `p11`, 2026-11-13: checkpoint `002`
     (422 clean inputs; `.tmp/library_parity/checkpoints/diff_p11_002.txt`), every change
     traced to a commit since `3c512628`: VGL27's team IDs (`6268280c`), the short Common
