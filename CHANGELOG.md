@@ -13,6 +13,9 @@
   holds the game's Formation and Strategy dropdowns and its eight sliders. Its Combination
   play panel holds the game's three slots, each a strategy and the area it runs in. Once a
   PES 2014 folder is set, hovering a setting or a dropdown shows the game's own help text.
+- **Save editor**: on a PES 2014 save, the Gloves ID box, the Team menu's Set boots and gloves
+  IDs for everyone, and the Full Player Customization menu entries and buttons now work, as on
+  the other games.
 
 ### Fixes
 
