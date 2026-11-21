@@ -187,11 +187,35 @@ pub(crate) fn run_monitor(data_dir: &Path, socket: &Path, slot: u32) -> ExitCode
     }
 }
 
+/// How a monitor start can fail, for the one distinction `watch_crashes` needs:
+/// whether a second try is worth it (ST-RUN-13).
+enum StartFailure {
+    /// The spawn refused, or the monitor exited before its socket connected: a
+    /// cause that passes (an antivirus scanning the exe as it starts) still leaves
+    /// the window watched, so the start is tried once more.
+    AtOnce(anyhow::Error),
+    /// The monitor stayed up but did not accept within `MONITOR_CONNECT_TIMEOUT`:
+    /// not tried again, since the window waits that long before opening and a
+    /// second wait would double it.
+    NoAnswer(anyhow::Error),
+    /// Anything else: the monitor could not be polled, or the hook did not attach.
+    Other(anyhow::Error),
+}
+
+impl StartFailure {
+    /// The error under the kind, for the warning that names it.
+    fn error(&self) -> &anyhow::Error {
+        match self {
+            Self::AtOnce(error) | Self::NoAnswer(error) | Self::Other(error) => error,
+        }
+    }
+}
+
 /// Waits for the monitor to bind and accept on `socket`, retrying every 20 ms for at
 /// most `MONITOR_CONNECT_TIMEOUT`: the listener comes up a moment after the spawn. A
 /// monitor `try_wait` reports already exited will never accept, so the wait fails at
-/// once, naming its status.
-fn connect(monitor: &mut Child, socket: &Path) -> anyhow::Result<minidumper::Client> {
+/// once (`StartFailure::AtOnce`), naming its status; the deadline's is `NoAnswer`.
+fn connect(monitor: &mut Child, socket: &Path) -> Result<minidumper::Client, StartFailure> {
     let deadline = Instant::now() + MONITOR_CONNECT_TIMEOUT;
     loop {
         let error = match minidumper::Client::with_name(socket.into()) {
@@ -200,14 +224,19 @@ fn connect(monitor: &mut Child, socket: &Path) -> anyhow::Result<minidumper::Cli
         };
         if let Some(status) = monitor
             .try_wait()
-            .context("cannot poll the crash monitor")?
+            .context("cannot poll the crash monitor")
+            .map_err(StartFailure::Other)?
         {
-            anyhow::bail!("the crash monitor exited with {status} before the socket connected");
+            return Err(StartFailure::AtOnce(anyhow::anyhow!(
+                "the crash monitor exited with {status} before the socket connected"
+            )));
         }
         if Instant::now() >= deadline {
-            return Err(anyhow::Error::from(error).context(format!(
-                "the crash monitor did not accept {} within {MONITOR_CONNECT_TIMEOUT:?}",
-                socket.display()
+            return Err(StartFailure::NoAnswer(anyhow::Error::from(error).context(
+                format!(
+                    "the crash monitor did not accept {} within {MONITOR_CONNECT_TIMEOUT:?}",
+                    socket.display()
+                ),
             )));
         }
         std::thread::sleep(Duration::from_millis(20));
@@ -215,10 +244,11 @@ fn connect(monitor: &mut Child, socket: &Path) -> anyhow::Result<minidumper::Cli
 }
 
 /// Spawns `program` as the monitor and attaches the `crash-handler` hook that asks it
-/// for a dump. The socket is named after this process's id in the temp folder: a fixed
+/// for a dump, or fails with the `StartFailure` kind `watch_crashes` reads for its
+/// second try. The socket is named after this process's id in the temp folder: a fixed
 /// name would leave one of two windows unwatched, and a data-location path can pass
 /// the 107 bytes a Windows socket path holds.
-fn start_monitor(program: &Path, data_dir: &Path, slot: u32) -> anyhow::Result<CrashHandler> {
+fn start_monitor(program: &Path, data_dir: &Path, slot: u32) -> Result<CrashHandler, StartFailure> {
     let socket = std::env::temp_dir().join(format!("{EXE_NAME}-crash-{}.sock", std::process::id()));
     let mut monitor = Command::new(program)
         .arg(MONITOR_ARG)
@@ -230,7 +260,8 @@ fn start_monitor(program: &Path, data_dir: &Path, slot: u32) -> anyhow::Result<C
         .stdout(Stdio::null())
         .stderr(Stdio::null())
         .spawn()
-        .with_context(|| format!("cannot start the crash monitor {}", program.display()))?;
+        .with_context(|| format!("cannot start the crash monitor {}", program.display()))
+        .map_err(StartFailure::AtOnce)?;
     let client = match connect(&mut monitor, &socket) {
         Ok(client) => client,
         Err(error) => {
@@ -254,7 +285,8 @@ fn start_monitor(program: &Path, data_dir: &Path, slot: u32) -> anyhow::Result<C
         crash_handler::make_crash_event(move |context: &crash_handler::CrashContext| {
             CrashEventResult::Handled(client.request_dump(context).is_ok())
         })
-    })?;
+    })
+    .map_err(|error| StartFailure::Other(error.into()))?;
     // Yama's restricted ptrace lets only the named process dump us; the default lets any.
     #[cfg(target_os = "linux")]
     handler.set_ptracer(Some(monitor.id()));
@@ -263,9 +295,38 @@ fn start_monitor(program: &Path, data_dir: &Path, slot: u32) -> anyhow::Result<C
     Ok(handler)
 }
 
+/// Runs `start` and, only when it fails at once, runs it once more and returns the
+/// second result (ST-RUN-13): a cause that passes, an antivirus scanning the exe as
+/// it starts, still leaves the session watched. The first failure is logged through
+/// `logger` at `Info` so the log shows it happened; any other failure returns at
+/// once, since `NoAnswer` already waited out `MONITOR_CONNECT_TIMEOUT` and the rest
+/// cannot pass on a retry.
+fn start_monitor_once_more<T>(
+    start: impl Fn() -> Result<T, StartFailure>,
+    logger: &dyn log::Log,
+) -> Result<T, StartFailure> {
+    match start() {
+        Err(StartFailure::AtOnce(error)) => {
+            logger.log(
+                &Record::builder()
+                    .level(Level::Info)
+                    .target("crash_dump")
+                    .args(format_args!(
+                        "the crash monitor did not start, so it is tried once more: {error:#}"
+                    ))
+                    .build(),
+            );
+            start()
+        }
+        done => done,
+    }
+}
+
 /// Starts the monitor and attaches the hook, returning the handler that keeps both.
-/// On any failure (the exe's own path unknown, a monitor that does not start, a hook
-/// that does not attach) one `Warn` line is logged through `logger` and the window
+/// A start that fails at once is tried once more (`start_monitor_once_more`,
+/// ST-RUN-13). On failure (the exe's own path unknown, a monitor that does not start
+/// twice or does not answer, a hook that does not attach) one `Warn` line is logged
+/// through `logger` and the window
 /// runs on with the log alone: the dump is a diagnostic, never a reason the window
 /// does not open (ST-RUN-10). `program` is `std::env::current_exe()`'s result, passed
 /// in so a test can name a file that is not an exe; `slot` is the copy's number, which
@@ -277,17 +338,20 @@ pub(crate) fn watch_crashes(
     logger: &dyn log::Log,
 ) -> Option<CrashHandler> {
     let started = program
-        .map_err(anyhow::Error::from)
-        .and_then(|program| start_monitor(&program, data_dir, slot));
+        .map_err(|error| StartFailure::Other(error.into()))
+        .and_then(|program| {
+            start_monitor_once_more(|| start_monitor(&program, data_dir, slot), logger)
+        });
     match started {
         Ok(handler) => Some(handler),
-        Err(error) => {
+        Err(failure) => {
             logger.log(
                 &Record::builder()
                     .level(Level::Warn)
                     .target("crash_dump")
                     .args(format_args!(
-                        "the crash monitor did not start, so this session writes no crash dump: {error:#}"
+                        "the crash monitor did not start, so this session writes no crash dump: {:#}",
+                        failure.error()
                     ))
                     .build(),
             );
@@ -313,6 +377,7 @@ pub(crate) fn overflow_the_stack(depth: u64) -> u64 {
 
 #[cfg(test)]
 mod tests {
+    use std::cell::Cell;
     use std::fs;
     use std::sync::Mutex;
 
@@ -401,7 +466,7 @@ mod tests {
         fn flush(&self) {}
     }
 
-    // ST-RUN-10
+    // ST-RUN-10, ST-RUN-13
     #[test]
     fn a_monitor_that_cannot_start_logs_a_warning_and_watches_nothing() {
         let dir = TestDir::new("monitor_start");
@@ -413,13 +478,92 @@ mod tests {
             "a program that is not an exe still watches crashes"
         );
         let records = logger.records.lock().unwrap();
-        assert_eq!(records.len(), 1, "{records:?}");
-        assert!(records[0].starts_with("Warn|crash_dump|"), "{}", records[0]);
+        assert_eq!(records.len(), 2, "{records:?}");
+        assert!(records[0].starts_with("Info|crash_dump|"), "{}", records[0]);
         assert!(
             records[0].contains(&not_an_exe.display().to_string()),
-            "the warning does not name the program: {}",
+            "the first try's note does not name the program: {}",
             records[0]
         );
+        assert!(records[1].starts_with("Warn|crash_dump|"), "{}", records[1]);
+        assert!(
+            records[1].contains(&not_an_exe.display().to_string()),
+            "the warning does not name the program: {}",
+            records[1]
+        );
+    }
+
+    // ST-RUN-13
+    #[test]
+    fn a_start_failed_at_once_is_tried_once_more() {
+        let calls = Cell::new(0);
+        let result: Result<(), StartFailure> = start_monitor_once_more(
+            || {
+                calls.set(calls.get() + 1);
+                match calls.get() {
+                    1 => Err(StartFailure::AtOnce(anyhow::anyhow!("gone"))),
+                    _ => Ok(()),
+                }
+            },
+            &CollectLog::default(),
+        );
+        assert!(result.is_ok(), "the second start's success is not returned");
+        assert_eq!(calls.get(), 2, "the start did not run twice");
+    }
+
+    // ST-RUN-13
+    #[test]
+    fn a_start_failed_at_once_twice_returns_the_second_error() {
+        let calls = Cell::new(0);
+        let result: Result<(), StartFailure> = start_monitor_once_more(
+            || {
+                calls.set(calls.get() + 1);
+                Err(StartFailure::AtOnce(anyhow::anyhow!(
+                    "gone {}",
+                    calls.get()
+                )))
+            },
+            &CollectLog::default(),
+        );
+        assert_eq!(calls.get(), 2, "the start did not run twice");
+        let Err(StartFailure::AtOnce(error)) = result else {
+            panic!("a twice-failed start is not returned as AtOnce")
+        };
+        assert_eq!(format!("{error:#}"), "gone 2");
+    }
+
+    // ST-RUN-13: anything but a failure at once (no answer within the timeout, or
+    // the rest) comes back after the one start, error and kind unchanged.
+    #[test]
+    fn a_start_without_an_answer_is_not_tried_again() {
+        type Failure = fn() -> StartFailure;
+        let cases: [(Failure, &str); 2] = [
+            (
+                || StartFailure::NoAnswer(anyhow::anyhow!("silent")),
+                "silent",
+            ),
+            (|| StartFailure::Other(anyhow::anyhow!("odd")), "odd"),
+        ];
+        for (make, text) in cases {
+            let calls = Cell::new(0);
+            let logger = CollectLog::default();
+            let result: Result<(), StartFailure> = start_monitor_once_more(
+                || {
+                    calls.set(calls.get() + 1);
+                    Err(make())
+                },
+                &logger,
+            );
+            assert_eq!(calls.get(), 1, "a non-at-once failure was retried");
+            let Err(failure) = result else {
+                panic!("a non-at-once failure came back as a success")
+            };
+            assert_eq!(format!("{:#}", failure.error()), text);
+            assert!(
+                logger.records.lock().unwrap().is_empty(),
+                "an unretried failure left an Info record"
+            );
+        }
     }
 
     // ST-RUN-10: the next start's dialog text is built from what the monitor leaves:
