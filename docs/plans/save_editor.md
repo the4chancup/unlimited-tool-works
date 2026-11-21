@@ -3618,6 +3618,10 @@ SE-TOML-10 GIVEN SE-GUI-77's save
            WHEN export-toml --all-teams --out-dir is run
            THEN the folder holds one <id>.toml per cup team and no 300.toml; WHEN
                 export-toml --team 300 is run THEN team 300's file is written
+SE-TOML-11 GIVEN a PES 21 save holding no cup team, every team's id under 701
+           WHEN export-toml --all-teams --out-dir is run
+           THEN it is refused with `the save holds no cup team (ids 701 to 920)`, exits 2
+                and creates no folder
 SE-GUI-70  GIVEN a PES 17 save open on a player
            WHEN Abilities shows
            THEN the labels `Tight Possession` and `Aggression` paint the colour the label of
@@ -3932,6 +3936,10 @@ SE-GUI-106 GIVEN the PES 2021 save open, a player holding nation 135 selected
                 pressed THEN 231 stays picked; WHEN 231 is typed and Escape pressed, at once or
                 over a second later THEN the list closes, the player holds 135 and Undo has
                 nothing new to take back
+SE-GUI-107 GIVEN SE-TOML-11's save
+           WHEN it is opened
+           THEN the status bar's warning reads `This save holds no cup team (ids 701 to
+                920).`; WHEN the PES 21 fixture save is opened instead THEN no notice shows
 SE-GUI-27  GIVEN the save open
            WHEN Output rosters to TSV runs
            THEN the file written holds, for every cup team, its name on a line of its own, then one
@@ -4121,6 +4129,10 @@ SE-AATF-10 GIVEN SE-GUI-77's save, team 300 holding an error-severity violation 
            WHEN check-aatf is run with no --teams, then with --teams 300
            THEN the first prints nothing of team 300 and exits 0; the second prints
                 team 300's violation and exits 1
+SE-AATF-11 GIVEN SE-TOML-11's save
+           WHEN check-aatf is run with no --teams, then with --teams 101
+           THEN the first is refused with `the save holds no cup team (ids 701 to 920)` and
+                exits 2; the second checks team 101 and is not refused
 SE-REP-01  GIVEN a repro bundle (`plans/core/architecture.md` "Repro bundles") whose journal
                 opens the save, sets player 70101's Height from the value the save holds to
                 another and writes the save, the save so written its kept output

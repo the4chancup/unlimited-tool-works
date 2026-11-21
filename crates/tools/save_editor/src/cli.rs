@@ -326,6 +326,11 @@ fn export_toml(args: &ExportTomlArgs, report: &mut Report) -> Result<(), CliErro
                 let path = out_dir.join(format!("{id}.toml"));
                 files.push((id, path, session.export_team(id).map_err(invalid)?));
             }
+            if files.is_empty() {
+                return Err(invalid(anyhow!(
+                    "the save holds no cup team (ids 701 to 920)"
+                )));
+            }
             fs::create_dir_all(out_dir).map_err(|error| {
                 CliError::new(
                     WRITE_FAILED,
@@ -411,6 +416,11 @@ fn check_aatf(
         Some(text) => parse_teams(text).map_err(|error| invalid(anyhow!("--teams: {error}")))?,
         None => {
             let mut ids: Vec<u32> = session.cup_team_ids().collect();
+            if ids.is_empty() {
+                return Err(invalid(anyhow!(
+                    "the save holds no cup team (ids 701 to 920)"
+                )));
+            }
             ids.sort_unstable();
             ids
         }

@@ -7,6 +7,8 @@ use pes_savefile::interchange::team_toml::TeamToml;
 use pes_version::PesVersion;
 
 use crate::Sandbox;
+use crate::TEST_SALT;
+use crate::common::cup_save::stock_file;
 
 /// The ids of every team of the PES 21 fixture save, in record order.
 fn team_ids(sandbox: &Sandbox) -> Vec<u32> {
@@ -78,6 +80,26 @@ fn all_teams_writes_one_file_per_team_replacing_an_older_one() {
             sandbox.path(&format!("teams/{}.toml", ids[0])).display()
         )
     );
+}
+
+// A save holding no cup team (one made from the stock game) is refused before
+// the folder is created, so nothing is written.
+// SE-TOML-11
+#[test]
+fn all_teams_on_a_save_with_no_cup_team_is_refused_and_writes_nothing() {
+    let sandbox = Sandbox::new("export_no_cup_team");
+    let file = stock_file(PesVersion::Pes21);
+    fs::write(sandbox.path("EDIT"), file.to_bytes(&TEST_SALT).unwrap()).unwrap();
+
+    let run = sandbox.run(&[
+        "export-toml",
+        &sandbox.arg("EDIT"),
+        "--all-teams",
+        "--out-dir",
+        &sandbox.arg("teams"),
+    ]);
+    run.assert_refused(2, &["no cup team"]);
+    assert!(!sandbox.path("teams").exists(), "no folder created");
 }
 
 // SE-TOML-03
