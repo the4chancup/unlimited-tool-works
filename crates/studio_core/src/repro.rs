@@ -11,6 +11,9 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 use std::time::{Instant, SystemTime};
 
+#[cfg(not(target_arch = "wasm32"))]
+use crossbeam_channel::{Sender, TrySendError};
+
 /// Reading a bundle back, for `utw <tool-id> replay`.
 #[cfg(not(target_arch = "wasm32"))]
 mod read;
@@ -39,6 +42,16 @@ struct Journal {
     inputs: Vec<KeptFile>,
     /// The last file each tool wrote per path: a later write replaces it.
     outputs: Vec<KeptFile>,
+    /// Who the session's messages go to, set once by `Recorder::send_to`
+    /// before the window opens; the queue's other end writes the session
+    /// folder. Under the journal's own lock so a step's message is queued
+    /// in the order the step landed, never later.
+    #[cfg(not(target_arch = "wasm32"))]
+    sink: Option<Sender<SessionMessage>>,
+    /// The full-queue drop already logged its line: a queue that fills
+    /// stays full for a while, and one line per drop would flood the log.
+    #[cfg(not(target_arch = "wasm32"))]
+    drop_logged: bool,
 }
 
 /// `started` needs a `now`, which no derive can give.
@@ -49,6 +62,31 @@ impl Journal {
             steps: Vec::new(),
             inputs: Vec::new(),
             outputs: Vec::new(),
+            #[cfg(not(target_arch = "wasm32"))]
+            sink: None,
+            #[cfg(not(target_arch = "wasm32"))]
+            drop_logged: false,
+        }
+    }
+
+    /// `message` queued for the session folder's writer, never waited
+    /// on. A full queue drops it: the session's first drop logs one
+    /// warning and the rest stay quiet, one line per drop flooding the
+    /// log. A disconnected sink is silent — its thread already logged
+    /// why it stopped.
+    #[cfg(not(target_arch = "wasm32"))]
+    fn emit(&mut self, message: SessionMessage) {
+        let Some(sink) = &self.sink else {
+            return;
+        };
+        match sink.try_send(message) {
+            Ok(()) | Err(TrySendError::Disconnected(_)) => {}
+            Err(TrySendError::Full(_)) => {
+                if !self.drop_logged {
+                    self.drop_logged = true;
+                    log::warn!("the session's queue is full; session messages are being dropped");
+                }
+            }
         }
     }
 }
@@ -140,10 +178,18 @@ impl Recorder {
     fn push_step(&self, tool: &'static str, what: impl Into<String>, op: Option<toml::Table>) {
         let mut journal = self.journal.lock().unwrap();
         let seconds = journal.started.elapsed().as_secs_f64();
+        let what = what.into();
         journal.steps.push(Step {
             seconds,
             tool,
-            what: what.into(),
+            what: what.clone(),
+            op: op.clone(),
+        });
+        #[cfg(not(target_arch = "wasm32"))]
+        journal.emit(SessionMessage::Step {
+            seconds,
+            tool: tool.to_owned(),
+            what,
             op,
         });
     }
@@ -157,8 +203,14 @@ impl Recorder {
         journal.inputs.push(KeptFile {
             tool,
             path: path.to_path_buf(),
-            bytes,
+            bytes: bytes.clone(),
             written: SystemTime::now(),
+        });
+        #[cfg(not(target_arch = "wasm32"))]
+        journal.emit(SessionMessage::Input {
+            tool: tool.to_owned(),
+            path: path.to_path_buf(),
+            bytes,
         });
         journal.inputs.len() - 1
     }
@@ -170,13 +222,13 @@ impl Recorder {
     /// (the replaced slot's on a replacement).
     pub fn keep_output(&self, tool: &'static str, path: &Path, bytes: Arc<[u8]>) -> usize {
         let mut journal = self.journal.lock().unwrap();
-        match journal
+        let index = match journal
             .outputs
             .iter()
             .position(|kept| kept.tool == tool && kept.path == path)
         {
             Some(index) => {
-                journal.outputs[index].bytes = bytes;
+                journal.outputs[index].bytes = bytes.clone();
                 journal.outputs[index].written = SystemTime::now();
                 index
             }
@@ -184,12 +236,41 @@ impl Recorder {
                 journal.outputs.push(KeptFile {
                     tool,
                     path: path.to_path_buf(),
-                    bytes,
+                    bytes: bytes.clone(),
                     written: SystemTime::now(),
                 });
                 journal.outputs.len() - 1
             }
-        }
+        };
+        #[cfg(not(target_arch = "wasm32"))]
+        journal.emit(SessionMessage::Output {
+            tool: tool.to_owned(),
+            path: path.to_path_buf(),
+            bytes,
+        });
+        index
+    }
+
+    /// Hands the session's messages to `sink`: every later `step`,
+    /// `step_op`, `keep_input` and `keep_output` also queues its step or
+    /// kept file — the file's `Arc` shared, never copied — for whoever
+    /// writes the session folder at the queue's other end (the crash
+    /// monitor, reached through its pipe; or the window's own writer
+    /// thread). Set once, before the window opens. The queue is `try_`
+    /// sent, never waited on: a full one drops the message and the first
+    /// drop of the session logs one warning.
+    #[cfg(not(target_arch = "wasm32"))]
+    pub fn send_to(&self, sink: Sender<SessionMessage>) {
+        self.journal.lock().unwrap().sink = Some(sink);
+    }
+
+    /// Detaches the sink `send_to` set, ending the queue from the
+    /// sender's side: the receiver sees the session's end and whoever
+    /// writes the folder closes it out. Called once the window's run
+    /// has returned.
+    #[cfg(not(target_arch = "wasm32"))]
+    pub fn close_sink(&self) {
+        self.journal.lock().unwrap().sink = None;
     }
 
     /// Writes the bundle to `out`: one zip holding `journal.toml` (the
@@ -218,7 +299,10 @@ impl Recorder {
         state: &[(&str, &[u8])],
         home: Option<&str>,
     ) -> anyhow::Result<()> {
-        let journal = self.journal.lock().unwrap().clone();
+        let mut journal = self.journal.lock().unwrap().clone();
+        // The clone is written, never listened on: a copied `Sender`
+        // would keep the session's queue open past `close_sink`.
+        journal.sink = None;
         bundle::write(&journal, out, words, files, state, home)
     }
 
@@ -1023,5 +1107,87 @@ pub(crate) mod tests {
             b"\xFF\x00\xFE",
             "verbatim"
         );
+    }
+
+    /// A `log::Log` capturing this module's records (`level|text`), for
+    /// the drop warning's count; installed once, a process holding one
+    /// logger.
+    struct CaptureLog;
+
+    /// `CaptureLog`'s records so far.
+    static CAPTURED: Mutex<Vec<String>> = Mutex::new(Vec::new());
+
+    static CAPTURE_LOG: CaptureLog = CaptureLog;
+
+    impl log::Log for CaptureLog {
+        fn enabled(&self, _metadata: &log::Metadata<'_>) -> bool {
+            true
+        }
+
+        fn log(&self, record: &log::Record<'_>) {
+            if record.target() == "studio_core::repro" {
+                CAPTURED
+                    .lock()
+                    .unwrap()
+                    .push(format!("{}|{}", record.level(), record.args()));
+            }
+        }
+
+        fn flush(&self) {}
+    }
+
+    /// `CAPTURED`'s lines naming `what`.
+    fn captured(what: &str) -> Vec<String> {
+        CAPTURED
+            .lock()
+            .unwrap()
+            .iter()
+            .filter(|line| line.contains(what))
+            .cloned()
+            .collect()
+    }
+
+    // A disconnected sink is quiet — ten steps on a sink whose receiver
+    // is already gone log no drop line, its thread having logged why it
+    // stopped — and a full session queue drops the message rather than
+    // block the caller: ten steps on a two-deep queue nobody drains all
+    // return, and the drops log one warning, not one each.
+    // ST-REP-10
+    #[test]
+    fn a_full_session_queue_drops_messages_and_logs_once() {
+        static ONCE: std::sync::Once = std::sync::Once::new();
+        ONCE.call_once(|| {
+            log::set_logger(&CAPTURE_LOG).unwrap();
+            log::set_max_level(log::LevelFilter::Trace);
+        });
+        let dropped = "session messages are being dropped";
+
+        let recorder = Recorder::default();
+        let (tx, rx) = crossbeam_channel::bounded(2);
+        drop(rx);
+        recorder.send_to(tx);
+        for index in 0..10 {
+            recorder.step("stub", format!("step {index}"));
+        }
+        assert!(
+            captured(dropped).is_empty(),
+            "a disconnected sink stays quiet"
+        );
+
+        let recorder = Recorder::default();
+        let (tx, _rx) = crossbeam_channel::bounded(2);
+        recorder.send_to(tx);
+        for index in 0..10 {
+            recorder.step("stub", format!("step {index}"));
+        }
+        recorder.keep_input("stub", Path::new("a/EDIT00000000"), Arc::from(&b"IN"[..]));
+
+        let warned = captured(dropped);
+        assert_eq!(
+            warned.len(),
+            1,
+            "one line for the session's drops: {warned:?}"
+        );
+        assert!(warned[0].starts_with("WARN|"), "{warned:?}");
     }
 }
