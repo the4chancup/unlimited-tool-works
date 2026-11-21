@@ -658,6 +658,12 @@ previews can afford the concession, and its members get fixes sooner than a rele
 for days would give them. The runs come after the cut, and their survivors' tests go into
 the next release, or a patch when a survivor hides a real bug.
 
+**The changelog has the maintainer's last word.** Before every cut, on main or a side line,
+the maintainer reads the release's `CHANGELOG.md` section and approves it or rewrites it,
+because only the maintainer knows what members will find important. The lead drafts that
+section from the `[Unreleased]` lines, and the cut, its version bump included, starts only
+after the approval.
+
 **Releasing a side line.** A side line is a branch released on its own from the same
 repository, such as the PES 2014 builds on `pes14`. Its releases need a tag prefix of their
 own, so that the update check never offers a side line's build to a member on main, nor

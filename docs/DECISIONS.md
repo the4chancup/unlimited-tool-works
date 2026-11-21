@@ -19235,3 +19235,11 @@ desktop executable stands.
 Why: the maintainer's scope. A PNG sequence needs no video editing skills, and the encoder and
 a player of the suite's own are estimated small enough for both editions.
 Plan: plans/video_encoder.md; plans/core/development_plan.md "Unscheduled tools".
+
+## 2026-11-21 — releases — the maintainer approves every release's changelog section before its cut
+Decision (the maintainer): before every cut, on main or a side line, the maintainer reads the
+release's `CHANGELOG.md` section, and approves it or rewrites it. The cut, its version bump
+included, waits for that approval.
+Why: only the maintainer knows which changes members will find important, so a section the
+lead writes alone can lead with the wrong change or leave out one members will look for.
+Plan: RUNBOOK.md "Phases and releases", the paragraph "The changelog has the maintainer's last word".
