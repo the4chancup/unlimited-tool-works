@@ -865,8 +865,11 @@ on main. Main is merged into the branch, never rebased onto it.
      each sub-slice reworked if run `gameplan2` contradicts it:
      - 2d-1, the overall on the pitch's badges: done; seen in the release build (2026-11-21),
        `/3/` picked to 4-4-2 on a copy of `tactics6`, every badge the draft's;
-     - 2d-2, free moves and the held player's areas: merged (`2ebe4fd4`); its SWE-2 round's
-       test fixes and its look beside the draft to come;
+     - 2d-2, free moves and the held player's areas: done (`2ebe4fd4`, SWE-2 round S1f's test
+       fixes `ed08437b`); seen in the release build (2026-11-21) on run `gameplan2b`'s test
+       save: `/3/`'s #2 held over midfield read CMF 70 and lit what the game's own capture
+       lights (CMF and SS above, the LB and RB strips, not his registered CB), and his release
+       left him there as CMF;
      - 2d-3, the formation's name left out of the unsaved-changes rows on PES 2014 (seen in
        2d-1's look: "Preset 1 · Kick-off · …"): done (`9dbdd296`), its SWE-2 round clean.
        The AATF's illegal-formation line and the paste notice name a formation too, but never
