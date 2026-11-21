@@ -195,44 +195,102 @@ fn a_keeper_mean_counts_the_stored_abilities() {
     );
 }
 
-/// A PES 2014 player with `ability` in every stat, registered CB, rated C
-/// at every playable position.
-fn pes14_player(ability: u8) -> PlayerEntry {
-    let mut player = PlayerEntry::default();
-    let s = &mut player.stats;
-    s.attacking_prowess = ability;
-    s.ball_control = ability;
-    s.dribbling = ability;
-    s.low_pass = ability;
-    s.lofted_pass = ability;
-    s.finishing = ability;
-    s.place_kicking = ability;
-    s.swerve = ability;
-    s.heading = ability;
-    s.defensive_prowess = ability;
-    s.ball_winning = ability;
-    s.kicking_power = ability;
-    s.speed = ability;
-    s.explosive_power = ability;
-    s.body_control = ability;
-    s.jump = ability;
-    s.goalkeeping = ability;
-    s.catching = Some(ability);
-    s.stamina = ability;
-    s.tenacity = Some(ability);
+/// A PES 2014 player registered CB, rated C at every playable position,
+/// holding `abilities` in the order of the Save editor's ability column:
+/// attacking prowess, ball control, dribbling, low pass, lofted pass,
+/// finishing, place kicking, swerve, heading, defensive prowess, ball
+/// winning, kicking power, speed, explosive power, body control, jump,
+/// goalkeeping, catching, stamina, tenacity.
+fn pes14_player_with(abilities: [u8; 20]) -> PlayerEntry {
+    let [
+        attacking_prowess,
+        ball_control,
+        dribbling,
+        low_pass,
+        lofted_pass,
+        finishing,
+        place_kicking,
+        swerve,
+        heading,
+        defensive_prowess,
+        ball_winning,
+        kicking_power,
+        speed,
+        explosive_power,
+        body_control,
+        jump,
+        goalkeeping,
+        catching,
+        stamina,
+        tenacity,
+    ] = abilities;
+    let mut player = PlayerEntry {
+        stats: PlayerStats {
+            attacking_prowess,
+            ball_control,
+            dribbling,
+            low_pass,
+            lofted_pass,
+            finishing,
+            place_kicking,
+            swerve,
+            heading,
+            defensive_prowess,
+            ball_winning,
+            kicking_power,
+            speed,
+            explosive_power,
+            body_control,
+            jump,
+            goalkeeping,
+            catching: Some(catching),
+            stamina,
+            tenacity: Some(tenacity),
+            ..PlayerStats::default()
+        },
+        ..PlayerEntry::default()
+    };
     player.positions.registered = 1;
     player
 }
 
-// PES 2014's own formula, on the numbers the game's Game Plan shows for
-// this player (run tactics6's `/3/`): each term `(value - 25) * weight`
-// summed, rounded a half up, the registered CB's 7 added. CB's 71.24 and
+/// `pes14_player_with` `ability` in every stat.
+fn pes14_player(ability: u8) -> PlayerEntry {
+    pes14_player_with([ability; 20])
+}
+
+/// `player`'s playable slot for `position` (a position byte).
+fn playable_slot(position: u8) -> usize {
+    PLAYABLE_ORDER
+        .iter()
+        .position(|&p| p == position)
+        .expect("every position rated")
+}
+
+// PES 2014's own formula for a player holding 77 in every ability: each
+// term `(value - 25) * weight` summed, rounded a half up, the registered
+// CB's 7 added. The game's Game Plan showed GK 67, CB 78, LB and RB 74,
+// CMF 72 and CF 71 for such players (run tactics6's `/3/`); CB's 71.24 and
 // CF's 71.24 floor to 71 where rounding the sum plus 0.5 to the nearest
-// would give 72.
+// would give 72. The other seven are the formula's.
 #[test]
 fn pes14s_overall_is_its_own_formula() {
     let player = pes14_player(77);
-    for (position, expected) in [(0, 67), (1, 78), (2, 74), (3, 74), (5, 72), (12, 71)] {
+    for (position, expected) in [
+        (0, 67),
+        (1, 78),
+        (2, 74),
+        (3, 74),
+        (4, 75),
+        (5, 72),
+        (6, 71),
+        (7, 71),
+        (8, 71),
+        (9, 72),
+        (10, 72),
+        (11, 72),
+        (12, 71),
+    ] {
         assert_eq!(
             player.overall_at(PesVersion::Pes14, position),
             Some(expected),
@@ -246,10 +304,7 @@ fn pes14s_overall_is_its_own_formula() {
 #[test]
 fn pes14s_playable_grade_adds_its_bonus() {
     let mut player = pes14_player(77);
-    let cmf = PLAYABLE_ORDER
-        .iter()
-        .position(|&p| p == 5)
-        .expect("every position rated");
+    let cmf = playable_slot(5);
     player.positions.playable[cmf] = 2;
     assert_eq!(
         player.overall_at(PesVersion::Pes14, 5),
@@ -270,4 +325,69 @@ fn pes14s_playable_grade_adds_its_bonus() {
 fn pes14s_overall_is_held_to_40() {
     let player = pes14_player(40);
     assert_eq!(player.overall_at(PesVersion::Pes14, 0), Some(40));
+}
+
+// The other end: 99 in every ability, registered LWF: LWF's weights sum
+// to 1.38, so 74 x 1.38 = 102.12 floors to 102, plus 9 is 111, held to
+// 109. And no overall past CF.
+#[test]
+fn pes14s_overall_is_held_to_109_and_none_past_cf() {
+    let mut player = pes14_player(99);
+    player.positions.registered = 9;
+    assert_eq!(player.overall_at(PesVersion::Pes14, 9), Some(109));
+    assert_eq!(player.overall_at(PesVersion::Pes14, 13), None);
+}
+
+// The all-77 player registered CF instead: CB rated B adds PES 2014's 2,
+// not PES 2016's 3 (71.24 floors to 71, so 73); CF rated A still takes
+// the registered 7, not A's 5 (71 + 7 = 78).
+#[test]
+fn pes14s_registered_bonus_wins_and_cbs_b_adds_2() {
+    let mut player = pes14_player(77);
+    player.positions.registered = 12;
+    player.positions.playable[playable_slot(1)] = 1;
+    player.positions.playable[playable_slot(12)] = 2;
+    assert_eq!(player.overall_at(PesVersion::Pes14, 1), Some(73), "CB at B");
+    assert_eq!(
+        player.overall_at(PesVersion::Pes14, 12),
+        Some(78),
+        "CF registered"
+    );
+}
+
+// Run gameplan2a's two `/3/` players, registered CB and rated C, with
+// abilities that all differ: each overall the game showed, which pins the
+// ability each weight row reads.
+#[test]
+fn pes14s_overall_matches_the_games_for_players_whose_abilities_differ() {
+    let set_a = pes14_player_with([
+        90, 70, 85, 55, 80, 95, 99, 75, 50, 45, 65, 72, 88, 66, 58, 48, 60, 42, 82, 41,
+    ]);
+    let set_b = pes14_player_with([
+        44, 61, 52, 78, 57, 47, 40, 49, 89, 92, 83, 68, 63, 74, 81, 97, 86, 94, 54, 99,
+    ]);
+    for (player, shown) in [
+        (
+            &set_a,
+            &[
+                (1, 53),
+                (3, 64),
+                (5, 67),
+                (6, 72),
+                (8, 71),
+                (9, 75),
+                (10, 75),
+                (12, 78),
+            ][..],
+        ),
+        (&set_b, &[(1, 88), (3, 64), (4, 57), (5, 51), (12, 42)][..]),
+    ] {
+        for &(position, expected) in shown {
+            assert_eq!(
+                player.overall_at(PesVersion::Pes14, position),
+                Some(expected),
+                "position {position}"
+            );
+        }
+    }
 }

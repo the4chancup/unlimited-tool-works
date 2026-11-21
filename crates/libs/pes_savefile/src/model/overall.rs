@@ -163,7 +163,8 @@ impl PlayerEntry {
     /// PES 2016's on every later version; `None` for a byte past CF. PES
     /// 2016's equals every overall PES 2017's screens were seen to show,
     /// and is within 2 of every one PES 2021's showed, whose own formula
-    /// differs. The twenty weighted terms, each `max(1, value - 25)`,
+    /// differs. PES 2016's, step by step: the twenty weighted terms, each
+    /// `max(1, value - 25)`,
     /// summed and rounded to hundredths' units; the position's bonus
     /// (registered, A, B); at his registered position, unless it is GK,
     /// 60% of that and 40% of the blend table at the first nineteen terms'
