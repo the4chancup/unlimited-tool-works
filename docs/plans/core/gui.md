@@ -2032,7 +2032,7 @@ ST-RUN-13   GIVEN a monitor program that exits at once the first time it is star
             THEN it is watched (ST-RUN-10's dump is written on a crash) and the log holds no
                  warning; GIVEN one that exits at once both times THEN the start gives up
                  after the second, logs one warning and the window opens; GIVEN one that
-                 never answers THEN it is started once, and the window opens after the two
+                 never answers THEN it is started once, and the window opens after the ten
                  seconds' wait with the warning
 ST-CLI-01   GIVEN a data directory that cannot be written
             WHEN a CLI command runs

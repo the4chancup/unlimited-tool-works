@@ -486,12 +486,13 @@ What exists of this is in `spec/core/architecture.md` "Diagnostic logging".
   - It is not one fixed name, because a second window's monitor removes the socket file and
     binds the name again, so one of the two windows would go unwatched.
 
-  The window waits at most two seconds for the monitor to answer.
+  The window waits at most ten seconds for the monitor to answer, not two: on a machine
+  busy with builds or a game, the monitor, a second start of the whole exe, took longer.
 
   **A failed start is tried once more** when it fails at once: the monitor did not start, or
   exited before its socket connected. Those cost nothing to retry, and a cause that passes
   (an antivirus scanning the exe as it starts, say) leaves the window watched. A monitor that does
-  not answer within the two seconds is not tried again, since the window waits for it before
+  not answer within the ten seconds is not tried again, since the window waits for it before
   opening and a second wait would double that. A start that fails twice logs its warning
   and the window runs without a monitor.
 
