@@ -23,6 +23,7 @@ The doc-tests run whenever any binary does.
 
 import json
 import os
+import re
 import subprocess
 import sys
 import time
@@ -33,6 +34,8 @@ from pathlib import Path
 import temp_alias
 
 ROOT =Path(__file__).resolve().parents[2]
+# libtest's summary line: "test result: ok. 12 passed; 0 failed; ..."
+SUMMARY = re.compile(r"test result: \w+\. (\d+) passed;")
 JOBS = min(4, os.cpu_count() or 1)
 # Files outside every package that no test reads: the mutation runs' exclusions, which change
 # with most review rounds (`scripts/mutation/mutants_test.py`, run in both modes, checks them).
@@ -207,8 +210,11 @@ def main(argv: list[str]) -> int:
             binary = futures[future]
             code, secs, output = future.result()
             times[binary.key] = round(secs, 1)
-            summary = [line for line in output.splitlines() if line.startswith("test result:")]
-            passed += sum(int(line.split()[3]) for line in summary)
+            # A child process a test starts can write into the same pipe between the pieces
+            # libtest writes its summary line in, which then holds a test name where the count
+            # stands. Such a line is not counted; pass or fail comes from the exit code.
+            summary = [line for line in output.splitlines() if SUMMARY.match(line)]
+            passed += sum(int(SUMMARY.match(line)[1]) for line in summary)
             print(f"{binary.key} ({secs:.1f} s): {summary[-1] if summary else f'exit {code}'}",
                   flush=True)
             if code != 0:

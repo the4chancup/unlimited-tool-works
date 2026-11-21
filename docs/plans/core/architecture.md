@@ -450,7 +450,11 @@ What exists of this is in `spec/core/architecture.md` "Diagnostic logging".
 
   **The monitor.** The window's process is watched by a monitor, the same exe started again
   with a hidden argument (no second exe in the bundle), because a crashed process cannot
-  reliably write its own dump. On a crash the monitor:
+  reliably write its own dump. Task Manager names a process without a visible window from its
+  exe's description (a hidden or off-screen window of its own does not change that), so the
+  monitor shows there as a second "Unlimited Tool Works" row under the window's. Giving it its
+  own name would take an exe of its own, and a single file to copy matters more than that
+  name. On a crash the monitor:
 
   1. writes `utw.dmp` beside the log (every thread's stack, a few MB), replacing the previous
      one;
