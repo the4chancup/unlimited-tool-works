@@ -388,7 +388,10 @@ elif cmd == "maximize":
 elif cmd == "close":
     # A normal close: a killed process makes the next start report an abnormal end.
     user32.PostMessageW(HWND, 0x0010, 0, 0)  # WM_CLOSE
-    time.sleep(3.0)
+    # A large save can take several seconds to close; 3 s once reported a closing window open.
+    deadline = time.time() + 10.0
+    while user32.IsWindow(HWND) and time.time() < deadline:
+        time.sleep(0.25)
     # Unsaved changes keep the window open behind their prompt: answer it (Save or Discard).
     if user32.IsWindow(HWND):
         sys.exit("the window is still open: answer its unsaved-changes prompt, then close again")
