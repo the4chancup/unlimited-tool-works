@@ -50,7 +50,8 @@ run's findings (`4cc-studio-temp/str_re/out/findings.md`).
      mutants in 5a's writer. Astra's round owed, with the retry's and 5b-i's;
    - 5b2 a new monitor after the pipe breaks, writing on into the same folder (ST-REP-10's
      last case): its writer adopts the folder, never rewriting `journal.toml` and taking
-     the next input and output indexes from its rows (review S1s5a-1);
+     the next input and output indexes from its rows (review S1s5a-1; DECISIONS 2026-11-21
+     "a new monitor's writer adopts the session folder"): SWE-2 in `sk_sess5b2`;
    - 5c the Save editor's saves kept decrypted and rebuilt on reading (SE-REP-07);
    - 5d the dialog's "Include earlier sessions" box, drafted first, and the help page's line
      (ST-REP-09, 12).
