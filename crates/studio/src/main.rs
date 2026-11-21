@@ -472,14 +472,18 @@ fn run_gui_mode(tools: Vec<Box<dyn StudioTool>>, crash_test: bool) -> ExitCode {
     };
     install_panic_hook();
     // The monitor starts with the log, once the data location exists: a first run has neither.
-    let crash_handler = match (&installed_log, &paths.data_dir) {
+    // Its standard input is the session's pipe: the window's session frames will travel
+    // it, so it is held until the window closes.
+    let (crash_handler, session_pipe) = match (&installed_log, &paths.data_dir) {
         (Some(installed), Some(data_dir)) => watch_crashes(
             std::env::current_exe(),
             data_dir,
             installed.slot,
             log::logger(),
-        ),
-        _ => None,
+        )
+        .map(|(handler, pipe)| (Some(handler), Some(pipe)))
+        .unwrap_or_default(),
+        _ => (None, None),
     };
     // ST-RUN-10's trigger, past the monitor's start and before any window, so the test
     // needs no display.
@@ -540,6 +544,8 @@ fn run_gui_mode(tools: Vec<Box<dyn StudioTool>>, crash_test: bool) -> ExitCode {
     // Restart now's program starts last: the window's session is closed in the log, and
     // this copy lets go of its slot first. Started any earlier, the new program would
     // find the slot's lock held and open as a second copy, with the second copy's log.
+    // The session pipe closes first: its end tells the monitor the window went away.
+    drop(session_pipe);
     drop(crash_handler);
     drop(instance);
     if let Some(program) = restart {
@@ -592,7 +598,7 @@ fn main() -> ExitCode {
             socket,
             slot,
         }) => {
-            return run_monitor(&data_dir, &socket, slot);
+            return run_monitor(&data_dir, &socket, slot, &mut std::io::stdin());
         }
         Some(HiddenLaunch::CrashTest) => return run_gui_mode(tools(), true),
         None => {}

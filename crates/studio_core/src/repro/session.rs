@@ -8,13 +8,15 @@
 //! `outputs/` the last file written per path, replaced at each write.
 //!
 //! The crash monitor writes the folder from the window's session
-//! messages (`SessionWriter`); a window whose monitor did not start runs
-//! the same writer on a thread of its own. `session_bundle` turns a kept
-//! folder into the bytes of a repro bundle `read_bundle` reads.
+//! messages (`SessionWriter`), which reach it as `SessionFrame`s
+//! through its standard input; a window whose monitor did not start
+//! runs the same writer on a thread of its own. `session_bundle` turns
+//! a kept folder into the bytes of a repro bundle `read_bundle` reads.
 
 use std::fs;
-use std::io::Write;
+use std::io::{self, Read, Write};
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 
 use anyhow::Context;
 use serde::{Deserialize, Serialize};
@@ -63,8 +65,8 @@ pub enum SessionMessage {
         tool: String,
         /// The path the file was read from.
         path: PathBuf,
-        /// The file's bytes.
-        bytes: Vec<u8>,
+        /// The file's bytes, kept the way the recorder keeps them.
+        bytes: Arc<[u8]>,
     },
     /// A file kept as it was written, as `Recorder::keep_output`
     /// records it: a later write to one tool and path replaces it.
@@ -73,8 +75,8 @@ pub enum SessionMessage {
         tool: String,
         /// The path the file was written to.
         path: PathBuf,
-        /// The file's bytes.
-        bytes: Vec<u8>,
+        /// The file's bytes, kept the way the recorder keeps them.
+        bytes: Arc<[u8]>,
     },
 }
 
@@ -102,6 +104,224 @@ impl SessionEnd {
             SessionEnd::Ended => "ended",
         }
     }
+}
+
+/// One thing the window sends through its crash monitor's standard
+/// input: the session's header first, each `SessionMessage` as it
+/// happens, and `Closed` when the window goes. The pipe's own end is
+/// the other way the monitor learns the window is gone.
+pub enum SessionFrame {
+    /// The session's `SessionHeader`; the first frame and the only one
+    /// of its kind.
+    Header(SessionHeader),
+    /// One recorded step, kept input or kept output.
+    Message(SessionMessage),
+    /// The window's closing message: the session's `[end]` is `closed`,
+    /// not `ended`.
+    Closed,
+}
+
+/// The frame kinds on the pipe: one byte naming the body that follows.
+const KIND_HEADER: u8 = 1;
+const KIND_STEP: u8 = 2;
+const KIND_INPUT: u8 = 3;
+const KIND_OUTPUT: u8 = 4;
+const KIND_CLOSED: u8 = 5;
+
+/// A header's fields as a frame body's TOML; `started` is `Zoned`'s own
+/// text, which keeps the time zone.
+#[derive(Serialize, Deserialize)]
+struct HeaderMeta {
+    /// The `version` line.
+    version: String,
+    /// The `os` line.
+    os: String,
+    /// `started` printed by `Zoned`'s `Display` and parsed back by its
+    /// `FromStr`, so the offset and the zone come along.
+    started: String,
+    /// The `pid` line.
+    pid: u32,
+}
+
+/// A kept file's fields as a frame body's TOML; the file's bytes follow
+/// the TOML raw — a save is far too large to travel inside it.
+#[derive(Serialize, Deserialize)]
+struct FileMeta {
+    /// The recording tool's id.
+    tool: String,
+    /// The file's path, spelled as the journal spells it.
+    path: String,
+}
+
+/// `frame` written to `out`: a kind byte, then the body's length
+/// (little-endian) and the body — the frame's fields as TOML, then a
+/// kept file's bytes raw.
+pub fn write_frame(out: &mut impl Write, frame: &SessionFrame) -> io::Result<()> {
+    let (kind, body) = frame_body(frame)?;
+    let length = u32::try_from(body.len()).expect("a frame body is under 4 GB");
+    out.write_all(&[kind])?;
+    out.write_all(&length.to_le_bytes())?;
+    out.write_all(&body)
+}
+
+/// One frame read from `input`; `None` at its end, reached between
+/// frames or inside one — a window that died mid-send drops its partial
+/// frame with it. A body that does not decode is `InvalidData`.
+pub fn read_frame(input: &mut impl Read) -> io::Result<Option<SessionFrame>> {
+    let mut kind = [0_u8; 1];
+    if !read_full(input, &mut kind)? {
+        return Ok(None);
+    }
+    let mut length = [0_u8; 4];
+    if !read_full(input, &mut length)? {
+        return Ok(None);
+    }
+    let mut body = vec![0; u32::from_le_bytes(length) as usize];
+    if !read_full(input, &mut body)? {
+        return Ok(None);
+    }
+    decode_frame(kind[0], &body).map(Some)
+}
+
+/// `buf` read whole; `false` is the input's end, whether it comes before
+/// any of `buf` or inside it — a frame cut mid-send is dropped, not an
+/// error.
+fn read_full(input: &mut impl Read, buf: &mut [u8]) -> io::Result<bool> {
+    match input.read_exact(buf) {
+        Ok(()) => Ok(true),
+        Err(error) if error.kind() == io::ErrorKind::UnexpectedEof => Ok(false),
+        Err(error) => Err(error),
+    }
+}
+
+/// `frame`'s kind byte and body.
+fn frame_body(frame: &SessionFrame) -> io::Result<(u8, Vec<u8>)> {
+    match frame {
+        SessionFrame::Header(header) => Ok((
+            KIND_HEADER,
+            encode(
+                &HeaderMeta {
+                    version: header.version.clone(),
+                    os: header.os.clone(),
+                    started: header.started.to_string(),
+                    pid: header.pid,
+                },
+                &[],
+            )?,
+        )),
+        SessionFrame::Message(SessionMessage::Step {
+            seconds,
+            tool,
+            what,
+            op,
+        }) => Ok((
+            KIND_STEP,
+            encode(
+                &StepDoc {
+                    seconds: *seconds,
+                    tool: tool.clone(),
+                    what: what.clone(),
+                    op: op.clone(),
+                },
+                &[],
+            )?,
+        )),
+        SessionFrame::Message(SessionMessage::Input { tool, path, bytes }) => Ok((
+            KIND_INPUT,
+            encode(
+                &FileMeta {
+                    tool: tool.clone(),
+                    path: path.display().to_string(),
+                },
+                bytes,
+            )?,
+        )),
+        SessionFrame::Message(SessionMessage::Output { tool, path, bytes }) => Ok((
+            KIND_OUTPUT,
+            encode(
+                &FileMeta {
+                    tool: tool.clone(),
+                    path: path.display().to_string(),
+                },
+                bytes,
+            )?,
+        )),
+        SessionFrame::Closed => Ok((KIND_CLOSED, Vec::new())),
+    }
+}
+
+/// A frame body: `meta` as TOML behind its own little-endian length,
+/// then `raw` (a kept file's bytes).
+fn encode(meta: &impl Serialize, raw: &[u8]) -> io::Result<Vec<u8>> {
+    let meta = toml::to_string(meta).map_err(io::Error::other)?;
+    let meta_len = u32::try_from(meta.len()).expect("a frame's TOML is under 4 GB");
+    let mut body = Vec::with_capacity(4 + meta.len() + raw.len());
+    body.extend_from_slice(&meta_len.to_le_bytes());
+    body.extend_from_slice(meta.as_bytes());
+    body.extend_from_slice(raw);
+    Ok(body)
+}
+
+/// `body` decoded by its `kind`; a body that does not decode is
+/// `InvalidData`.
+fn decode_frame(kind: u8, body: &[u8]) -> io::Result<SessionFrame> {
+    match kind {
+        KIND_HEADER => {
+            let (meta, _) = split_body(body)?;
+            let meta: HeaderMeta = toml::from_str(meta).map_err(invalid)?;
+            Ok(SessionFrame::Header(SessionHeader {
+                version: meta.version,
+                os: meta.os,
+                started: meta.started.parse().map_err(invalid)?,
+                pid: meta.pid,
+            }))
+        }
+        KIND_STEP => {
+            let (meta, _) = split_body(body)?;
+            let meta: StepDoc = toml::from_str(meta).map_err(invalid)?;
+            Ok(SessionFrame::Message(SessionMessage::Step {
+                seconds: meta.seconds,
+                tool: meta.tool,
+                what: meta.what,
+                op: meta.op,
+            }))
+        }
+        KIND_INPUT | KIND_OUTPUT => {
+            let (meta, raw) = split_body(body)?;
+            let meta: FileMeta = toml::from_str(meta).map_err(invalid)?;
+            let (tool, path, bytes) = (meta.tool, PathBuf::from(meta.path), Arc::from(raw));
+            Ok(SessionFrame::Message(if kind == KIND_INPUT {
+                SessionMessage::Input { tool, path, bytes }
+            } else {
+                SessionMessage::Output { tool, path, bytes }
+            }))
+        }
+        KIND_CLOSED => Ok(SessionFrame::Closed),
+        _ => Err(invalid(format!("an unknown frame kind {kind}"))),
+    }
+}
+
+/// `body` split into its TOML's text and the raw bytes after it: the
+/// TOML's own length opens the body.
+fn split_body(body: &[u8]) -> io::Result<(&str, &[u8])> {
+    let Some((length, rest)) = body.split_at_checked(4) else {
+        return Err(invalid("a frame body without its length"));
+    };
+    let meta_len = u32::from_le_bytes(
+        length
+            .try_into()
+            .expect("split_at_checked(4) gives four bytes"),
+    ) as usize;
+    let Some((meta, raw)) = rest.split_at_checked(meta_len) else {
+        return Err(invalid("a frame body cut inside its TOML"));
+    };
+    let meta = std::str::from_utf8(meta).map_err(|_| invalid("a frame's TOML is not UTF-8"))?;
+    Ok((meta, raw))
+}
+
+/// An undecodable frame is an `InvalidData` read error.
+fn invalid(error: impl Into<Box<dyn std::error::Error + Send + Sync + 'static>>) -> io::Error {
+    io::Error::new(io::ErrorKind::InvalidData, error)
 }
 
 /// A session folder's `journal.toml`, as written and as read back: the
@@ -192,9 +412,9 @@ struct EndBlock {
 /// Writes a window's session to its folder as it happens: `write` each
 /// `SessionMessage` as it arrives, `end` the one closing state. The
 /// folder is made at the first `write`, so a session that records
-/// nothing leaves none. Blocks are appended whole, one write each, so a
-/// crash can cut at most the block in flight — which `session_bundle`
-/// drops on reading.
+/// nothing leaves none. Blocks are appended whole, one write each
+/// ending with the `# ok` marker, so a crash can cut at most the block
+/// in flight — which `session_bundle` drops on reading.
 pub struct SessionWriter {
     /// The data location's `sessions` folder.
     root: PathBuf,
@@ -437,30 +657,29 @@ fn append_block(journal: &Path, block: &impl Serialize) -> anyhow::Result<()> {
         .with_context(|| format!("{}: cannot append to the journal", journal.display()))
 }
 
-/// `value`'s TOML, ending with a newline so the next appended block
-/// starts on its own line.
+/// `value`'s TOML ending with the `# ok` marker line: `session_bundle`
+/// reads a journal up to its last marker, so a block cut anywhere is
+/// dropped whole.
 fn toml_block(value: &impl Serialize) -> anyhow::Result<String> {
     let mut text = toml::to_string_pretty(value).context("cannot serialize the journal block")?;
     if !text.ends_with('\n') {
         text.push('\n');
     }
+    text.push_str("# ok\n");
     Ok(text)
 }
 
-/// `text`'s byte offset where its last block begins — the last line
-/// opening a `[[step]]`, `[[input]]`, `[[output]]` or `[end]` — for the
-/// cut-write retry. `None` when no line opens one.
-fn last_block_offset(text: &str) -> Option<usize> {
+/// `text`'s byte offset just after the last `# ok` marker line — the
+/// end of the last whole block, every appended block ending with one.
+/// `None` when no marker line is present.
+fn last_marker_end(text: &str) -> Option<usize> {
     let mut last = None;
     let mut offset = 0;
     for line in text.split_inclusive('\n') {
-        if matches!(
-            line.trim(),
-            "[[step]]" | "[[input]]" | "[[output]]" | "[end]"
-        ) {
+        offset += line.len();
+        if line.trim() == "# ok" {
             last = Some(offset);
         }
-        offset += line.len();
     }
     last
 }
@@ -469,28 +688,21 @@ fn last_block_offset(text: &str) -> Option<usize> {
 /// rewritten as `write_bundle` writes it — every path and step line
 /// with `home` as `~`, and of a path's `[[output]]` rows the last kept
 /// at the index of its first — plus each row's file from `inputs/` or
-/// `outputs/`, so `read_bundle` reads it like any other. A journal that
-/// does not parse is tried once more without its last block, so a block
-/// cut off mid-write is lost and nothing else; a second failure, or a
-/// first with no block to drop, is an error naming the folder.
+/// `outputs/`, so `read_bundle` reads it like any other. Only the text
+/// up to the last `# ok` marker line is parsed, so a block cut off
+/// mid-write is dropped whole — on a line boundary too, where its
+/// fragment would still parse as a note or a different op; a journal
+/// that does not parse is an error naming the folder.
 pub fn session_bundle(folder: &Path, home: Option<&str>) -> anyhow::Result<Vec<u8>> {
     let journal = folder.join("journal.toml");
     let bytes = fs::read(&journal)
         .with_context(|| format!("{}: cannot read the journal", journal.display()))?;
     // Lossy, not strict: a cut inside a multi-byte character ("→" in
-    // every field line) must reach the cut-block retry, not fail here.
+    // every field line) must reach the marker drop, not fail here.
     let text = String::from_utf8_lossy(&bytes);
-    let mut doc: SessionDoc = match toml::from_str(&text) {
-        Ok(doc) => doc,
-        Err(first) => match last_block_offset(&text) {
-            Some(cut) => toml::from_str(&text[..cut])
-                .with_context(|| format!("{}: cannot parse the journal", folder.display()))?,
-            None => {
-                return Err(first)
-                    .with_context(|| format!("{}: cannot parse the journal", folder.display()));
-            }
-        },
-    };
+    let end = last_marker_end(&text).unwrap_or(0);
+    let mut doc: SessionDoc = toml::from_str(&text[..end])
+        .with_context(|| format!("{}: cannot parse the journal", folder.display()))?;
     for step in &mut doc.steps {
         step.what = redact_home(&step.what, home);
     }
@@ -512,7 +724,9 @@ pub fn session_bundle(folder: &Path, home: Option<&str>) -> anyhow::Result<Vec<u
         row.path = redact_home(&row.path, home);
     }
 
-    let text = toml_block(&doc)?;
+    // No marker lines in the bundle: they only mark the session folder's
+    // appends, which a bundle is never appended to.
+    let text = toml::to_string_pretty(&doc).context("cannot serialize the journal")?;
     let mut writer = zip::ZipWriter::new(std::io::Cursor::new(Vec::new()));
     let options = zip::write::SimpleFileOptions::default()
         .compression_method(zip::CompressionMethod::Deflated);
@@ -578,17 +792,17 @@ mod tests {
             SessionMessage::Input {
                 tool: "stub".to_owned(),
                 path: Path::new("C:/Data/in/EDIT00000000").to_path_buf(),
-                bytes: b"INPUT_BYTES".to_vec(),
+                bytes: Arc::from(&b"INPUT_BYTES"[..]),
             },
             SessionMessage::Output {
                 tool: "stub".to_owned(),
                 path: Path::new("C:/Data/out/EDIT00000000").to_path_buf(),
-                bytes: b"WRITE_A".to_vec(),
+                bytes: Arc::from(&b"WRITE_A"[..]),
             },
             SessionMessage::Output {
                 tool: "stub".to_owned(),
                 path: Path::new("C:/Data/out/EDIT00000000").to_path_buf(),
-                bytes: b"WRITE_B_BYTES".to_vec(),
+                bytes: Arc::from(&b"WRITE_B_BYTES"[..]),
             },
         ]
     }
@@ -606,6 +820,107 @@ mod tests {
         let out = dir.join("session.zip");
         fs::write(&out, session_bundle(folder, home).unwrap()).unwrap();
         read_bundle(&out).unwrap()
+    }
+
+    /// A session's frames in order: the header, a step with its op and
+    /// one without, a 300 KB kept input, a kept output and the close.
+    fn frames() -> Vec<SessionFrame> {
+        vec![
+            SessionFrame::Header(header(4242)),
+            SessionFrame::Message(SessionMessage::Step {
+                seconds: 0.5,
+                tool: "stub".to_owned(),
+                what: "opened C:/Data/in/EDIT00000000 (10 bytes)".to_owned(),
+                op: Some(op()),
+            }),
+            SessionFrame::Message(SessionMessage::Step {
+                seconds: 1.25,
+                tool: "stub".to_owned(),
+                what: "picked the next row".to_owned(),
+                op: None,
+            }),
+            SessionFrame::Message(SessionMessage::Input {
+                tool: "stub".to_owned(),
+                path: Path::new("C:/Data/in/EDIT00000000").to_path_buf(),
+                bytes: Arc::from(vec![7_u8; 300 * 1024].as_slice()),
+            }),
+            SessionFrame::Message(SessionMessage::Output {
+                tool: "stub".to_owned(),
+                path: Path::new("C:/Data/out/EDIT00000000").to_path_buf(),
+                bytes: Arc::from(&b"WRITE_A"[..]),
+            }),
+            SessionFrame::Closed,
+        ]
+    }
+
+    /// `read` is `written`, field by field; a header's `started`
+    /// compares as text so a dropped time zone fails too.
+    fn assert_frame_eq(read: &SessionFrame, written: &SessionFrame) {
+        match (read, written) {
+            (SessionFrame::Header(read), SessionFrame::Header(written)) => {
+                assert_eq!(read.version, written.version);
+                assert_eq!(read.os, written.os);
+                assert_eq!(read.started.to_string(), written.started.to_string());
+                assert_eq!(read.pid, written.pid);
+            }
+            (SessionFrame::Message(read), SessionFrame::Message(written)) => {
+                assert_message_eq(read, written)
+            }
+            (SessionFrame::Closed, SessionFrame::Closed) => {}
+            _ => panic!("the frames' kinds differ"),
+        }
+    }
+
+    /// `read` is `written`, field by field.
+    fn assert_message_eq(read: &SessionMessage, written: &SessionMessage) {
+        match (read, written) {
+            (
+                SessionMessage::Step {
+                    seconds: r_seconds,
+                    tool: r_tool,
+                    what: r_what,
+                    op: r_op,
+                },
+                SessionMessage::Step {
+                    seconds: w_seconds,
+                    tool: w_tool,
+                    what: w_what,
+                    op: w_op,
+                },
+            ) => {
+                assert_eq!(
+                    (r_seconds, r_tool, r_what, r_op),
+                    (w_seconds, w_tool, w_what, w_op)
+                );
+            }
+            (
+                SessionMessage::Input {
+                    tool: r_tool,
+                    path: r_path,
+                    bytes: r_bytes,
+                },
+                SessionMessage::Input {
+                    tool: w_tool,
+                    path: w_path,
+                    bytes: w_bytes,
+                },
+            )
+            | (
+                SessionMessage::Output {
+                    tool: r_tool,
+                    path: r_path,
+                    bytes: r_bytes,
+                },
+                SessionMessage::Output {
+                    tool: w_tool,
+                    path: w_path,
+                    bytes: w_bytes,
+                },
+            ) => {
+                assert_eq!((r_tool, r_path, r_bytes), (w_tool, w_path, w_bytes));
+            }
+            _ => panic!("the messages' kinds differ"),
+        }
     }
 
     // A session folder holds the header, the step and its op, the input
@@ -724,29 +1039,49 @@ mod tests {
         assert_eq!(doc["end"]["how"].as_str(), Some("crashed"), "{text}");
     }
 
-    // A `journal.toml` whose last `[[step]]` block is cut in the middle
-    // of its `what` value still gives the earlier steps: the bundle's
-    // journal drops the cut block and nothing else.
+    // A `journal.toml` whose last `[[step]]` block is cut anywhere — inside a
+    // string, on a line boundary or inside an op's number — still gives the
+    // earlier steps: the bundle reads up to the last `# ok` marker and the
+    // cut block is dropped whole. (The file is written as the writer leaves
+    // it: every block ends with its marker line.)
     // ST-REP-07
     #[test]
     fn a_journal_block_cut_mid_write_is_dropped() {
         let dir = TestDir::new("studio_core_session_cut");
         let folder = dir.path().join("2026-11-21-093015-4242");
         fs::create_dir(&folder).unwrap();
-        let text = "version = \"v-test\"\nos = \"test-os\"\n\
-            started = 2026-11-21T09:30:15+00:00\npid = 4242\n\
-            [[step]]\nseconds = 0.5\ntool = \"stub\"\nwhat = \"opened x\"\n\
-            [[step]]\nseconds = 1.0\ntool = \"stub\"\nwhat = \"cut in the mid";
-        fs::write(folder.join("journal.toml"), text).unwrap();
-
-        let bundle = folder_bundle(dir.path(), &folder, None);
-        assert_eq!(bundle.steps.len(), 1, "the cut block is dropped");
-        assert_eq!(bundle.steps[0].what, "opened x");
-
+        let head = "version = \"v-test\"\nos = \"test-os\"\n\
+            started = 2026-11-21T09:30:15+00:00\npid = 4242\n# ok\n\
+            [[step]]\nseconds = 0.5\ntool = \"stub\"\nwhat = \"opened x\"\n# ok\n";
+        let last_block = "[[step]]\nseconds = 1.0\ntool = \"stub\"\n\
+            what = \"edited x\"\n[step.op]\nkind = \"player\"\nid = 70101\n# ok\n";
+        for cut in [
+            // On the line boundary after `what`, before `[step.op]`.
+            last_block.find("[step.op]").unwrap(),
+            // Inside the op's number (`id = 7010` parses as a different op).
+            last_block.find("70101").unwrap() + 4,
+            // Inside the `what` string.
+            last_block.find("edited").unwrap() + 4,
+        ] {
+            fs::write(
+                folder.join("journal.toml"),
+                format!("{head}{}", &last_block[..cut]),
+            )
+            .unwrap();
+            let bundle = folder_bundle(dir.path(), &folder, None);
+            assert_eq!(
+                bundle.steps.len(),
+                1,
+                "the cut at {cut} leaves only the first step"
+            );
+            assert_eq!(bundle.steps[0].what, "opened x");
+        }
         // Cut inside "→", two of its three bytes written: still the cut
         // block alone is dropped.
-        let mut cut = text.replace("cut in the mid", "Height 183 ").into_bytes();
-        cut.extend_from_slice(&"→".as_bytes()[..2]);
+        let arrow_block = last_block.replace("edited x", "Height 183 →");
+        let mut cut = head.as_bytes().to_vec();
+        let arrow = arrow_block.find('→').unwrap();
+        cut.extend_from_slice(&arrow_block.as_bytes()[..arrow + 2]);
         fs::write(folder.join("journal.toml"), cut).unwrap();
         let bundle = folder_bundle(dir.path(), &folder, None);
         assert_eq!(
@@ -769,7 +1104,7 @@ mod tests {
                 .write(&SessionMessage::Output {
                     tool: tool.to_owned(),
                     path: Path::new("C:/Data/out/EDIT00000000").to_path_buf(),
-                    bytes: tool.as_bytes().to_vec(),
+                    bytes: Arc::from(tool.as_bytes()),
                 })
                 .unwrap();
         }
@@ -777,6 +1112,63 @@ mod tests {
         let bundle = folder_bundle(dir.path(), &folder, None);
         let bytes: Vec<&[u8]> = bundle.outputs.iter().map(|out| &out.bytes[..]).collect();
         assert_eq!(bytes, [&b"stub"[..], &b"other"[..]]);
+    }
+
+    // One session's files in order: two inputs (one file name), two
+    // output paths of one tool, then the first path written again. The
+    // bundle's outputs keep first-write order, the first holding its
+    // second write.
+    // ST-REP-06
+    #[test]
+    fn the_session_keeps_every_input_and_the_outputs_in_write_order() {
+        let dir = TestDir::new("studio_core_session_files");
+        let root = dir.path().join("sessions");
+        let mut writer = SessionWriter::new(&root, header(4242));
+        for (path, bytes) in [
+            ("C:/Data/a/EDIT00000000", &b"INPUT_A"[..]),
+            ("D:/Data/b/EDIT00000000", &b"INPUT_B"[..]),
+        ] {
+            writer
+                .write(&SessionMessage::Input {
+                    tool: "stub".to_owned(),
+                    path: Path::new(path).to_path_buf(),
+                    bytes: Arc::from(bytes),
+                })
+                .unwrap();
+        }
+        for (path, bytes) in [
+            ("C:/Data/out/one.bin", &b"OUT1_A"[..]),
+            ("C:/Data/out/two.bin", &b"OUT2"[..]),
+            ("C:/Data/out/one.bin", &b"OUT1_B"[..]),
+        ] {
+            writer
+                .write(&SessionMessage::Output {
+                    tool: "stub".to_owned(),
+                    path: Path::new(path).to_path_buf(),
+                    bytes: Arc::from(bytes),
+                })
+                .unwrap();
+        }
+
+        let folder = root.join("2026-11-21-093015-4242");
+        assert_eq!(
+            fs::read(folder.join("inputs/0-EDIT00000000")).unwrap(),
+            b"INPUT_A"
+        );
+        assert_eq!(
+            fs::read(folder.join("inputs/1-EDIT00000000")).unwrap(),
+            b"INPUT_B"
+        );
+
+        let bundle = folder_bundle(dir.path(), &folder, None);
+        assert_eq!(bundle.inputs.len(), 2);
+        let paths: Vec<&str> = bundle.outputs.iter().map(|out| out.path.as_str()).collect();
+        assert_eq!(paths, ["C:/Data/out/one.bin", "C:/Data/out/two.bin"]);
+        assert_eq!(
+            bundle.outputs[0].bytes, b"OUT1_B",
+            "the path's second write counts"
+        );
+        assert_eq!(bundle.outputs[1].bytes, b"OUT2");
     }
 
     // A new session's first write makes its folder and leaves the five
@@ -855,7 +1247,7 @@ mod tests {
             .write(&SessionMessage::Input {
                 tool: "stub".to_owned(),
                 path: Path::new("C:/Users/Alice/in/EDIT00000000").to_path_buf(),
-                bytes: b"SAVE".to_vec(),
+                bytes: Arc::from(&b"SAVE"[..]),
             })
             .unwrap();
 
@@ -881,6 +1273,79 @@ mod tests {
         assert!(
             journal.contains("path = \"~/in/EDIT00000000\""),
             "the input's path is redacted: {journal}"
+        );
+    }
+
+    // Every frame kind written to the pipe's bytes reads back equal —
+    // a kept file's bytes included — and the input's end reads `None`.
+    #[test]
+    fn frames_written_to_the_pipe_read_back() {
+        let mut bytes = Vec::new();
+        for frame in frames() {
+            write_frame(&mut bytes, &frame).unwrap();
+        }
+
+        let mut input = &bytes[..];
+        for written in frames() {
+            let read = read_frame(&mut input)
+                .unwrap()
+                .expect("a frame was written");
+            assert_frame_eq(&read, &written);
+        }
+        assert!(
+            read_frame(&mut input).unwrap().is_none(),
+            "the frames' end is `None`"
+        );
+    }
+
+    // The pipe cut inside the input's 300 KB body reads the frames
+    // before it, then `None`: the window died mid-send and the partial
+    // frame is dropped.
+    #[test]
+    fn a_frame_cut_mid_send_is_dropped() {
+        let frames = frames();
+        let mut bytes = Vec::new();
+        for frame in &frames {
+            write_frame(&mut bytes, frame).unwrap();
+        }
+        // The input is the fourth frame; cut it inside its body.
+        let mut head = Vec::new();
+        for frame in &frames[..4] {
+            write_frame(&mut head, frame).unwrap();
+        }
+        let cut = head.len() - 150 * 1024;
+
+        let mut input = &bytes[..cut];
+        for written in &frames[..3] {
+            let read = read_frame(&mut input)
+                .unwrap()
+                .expect("a frame was written");
+            assert_frame_eq(&read, written);
+        }
+        assert!(
+            read_frame(&mut input).unwrap().is_none(),
+            "the cut frame is dropped, `None` like the pipe's end"
+        );
+    }
+
+    // `started` keeps its own time zone through the pipe: a +01:00
+    // header reads back at +01:00, not at the reader's zone.
+    #[test]
+    fn the_headers_started_keeps_its_time_zone() {
+        let mut written = header(4242);
+        written.started = jiff::civil::date(2026, 11, 21)
+            .at(9, 30, 15, 0)
+            .to_zoned(jiff::tz::TimeZone::fixed(jiff::tz::offset(1)))
+            .unwrap();
+        let mut bytes = Vec::new();
+        write_frame(&mut bytes, &SessionFrame::Header(written)).unwrap();
+
+        let Some(SessionFrame::Header(read)) = read_frame(&mut &bytes[..]).unwrap() else {
+            panic!("the header frame did not read back")
+        };
+        assert_eq!(
+            read.started.to_string(),
+            "2026-11-21T09:30:15+01:00[+01:00]"
         );
     }
 }
