@@ -372,7 +372,8 @@ From the fork's codec, checked against the vanilla save and the Akko saves (2026
     then green 0x50:3 (running into 0x51:0), an id of up to 18 bits. Source: the Akko7 fork's
     `pes14.cpp`, whose author also keeps the DLC. In `.akko7v2` 14 records hold one, all 11:
     Invitational 7's players (team 857, named `/4ccg/`) beside boots 55, the fork's pair that hides an FPC player's boots
-    and gloves.
+    and gloves. Gloves 11 written by the editor shows no hands in Edit mode, as the DLC's own
+    gloves-11 players do, where gloves 0 shows plain hands (run `step10`, 2026-11-21).
 
   Not told apart, since both passes changed them together: hairstyle, hair variation, hair
   colour, and forehead and wrinkles. Forehead or
@@ -413,6 +414,12 @@ From the fork's codec, checked against the vanilla save and the Akko saves (2026
     bits, the colour's 0 to 255 divided by 4;
   - a kit edit also sets bit 0x0A:4 of the team record, and byte 0x3E of the payload goes
     from 0 to 1.
+- The team record's edited-name flags: 0x0A:0 for the name and 0x0A:1 for the short name,
+  as PES 2015's pair at 0x12:0 and 0x12:1. The game shows a team's own name only with its
+  flag set: a rename without it still showed the old name in Edit mode (run `step10`), with
+  it the new one (run `flags`, 2026-11-21). The fork also sets 0x0B:4 with 0x0A:0 and 0x0B:5
+  with 0x0A:1, but 0x0B:4 is set on 221 of the Akko save's 222 teams, none of them renamed,
+  so it is not an edit flag, and the editor keeps both as read.
 - Two more tables sit in the payload, unread by the fork: a second team table at 0x37B2B4,
   right after the first (team ID at +0, name near +0x78), and a player table keyed by player
   ID right after the appearance table, at 0x2DABAC. The vanilla save leaves both empty, and
@@ -900,31 +907,10 @@ on main. Main is merged into the branch, never rebased onto it.
    starting at CF, Defensive Line 7, Combination play row 1 in Area 5, Offside Trap on, and
    #24 taking penalties. After the free move the game names the shape "4-4-2", which the
    build now marks "4-4-2 (custom)". Then step 10, then the release.
-10. The gloves id on PES 2014, the Akko DLC's (above). It is read and written as the other
-    versions' gloves id, through the three colour fields, so these work on PES 2014
-    as they do elsewhere: the Appearance page's Gloves ID box, the boots and gloves dialog,
-    the FPC entries of the Player and Team menus, and the Appearance page's Full Player
-    Customization group (gloves 11 hides an FPC player's, 0 shows them; PES 2014 maps no
-    in-game face run, so they write no skin there, and a player reads as hidden by his boots
-    id alone). There the group's interference findings read the outfielder gloves from 0x56:2
-    and take the skin for a preset one, since none is stored. A player with no appearance
-    record is refused, as for the boots. The Strip style panel's Outfielder gloves row reads and writes the pinned bit
-    0x56:2 on PES 2014; the other versions keep it in the in-game face run, which PES 2014
-    does not map, so the row was greyed. A field the version does not store keeps its
-    enabled neighbours' width: the `-` fills the column. Checked in Edit mode with the DLC
-    (run `step10`, 2026-11-21, kept as `step10`): `/4ccg/`'s goalkeeper #8 given gloves 11 in
-    the build shows no hands on the part menu's model, as the DLC's own gloves-11 players do,
-    where gloves 0 showed plain hands. Left: the team name flags. A team renamed in the build
-    (`/out/` to OUTTEST, OTT) still shows `/out/` in the team list and the team menu, since
-    PES 2014's team record maps no edit flag, so the flag the editor sets on a rename
-    goes nowhere. The name flag
-    is 0x0A:0 and the short-name flag 0x0A:1, mapped as PES 2015's pair at 0x12:0 and
-    0x12:1 is, and a rename sets them as on PES 2015. The fork also sets 0x0B:4 (with 0x0A:0)
-    and 0x0B:5 (with 0x0A:1), but 0x0B:4 is set on 221 of the Akko save's 222 teams, none of
-    them renamed, so it is not an edit flag; both stay as read. The same check then shows the
-    new name in the team list; if it does not, the build sets 0x0B:5 too. The short name
-    shows nowhere in Edit mode (the Team Name entry is greyed for these teams), so only the
-    name is checked.
+10. The gloves id on PES 2014 (the Akko DLC's, through the three colour fields) and the team
+    name flags: done 2026-11-21 (merges `1637d105`, `0a53d5e9`). Checked in Edit mode with the
+    DLC: a goalkeeper given gloves 11 in the build shows no hands (run `step10`), and a team
+    renamed in the build shows its new name (run `flags`). Then the release.
 11. After the release, the skin colour and the iris colour on PES 2014, which the fork
     edits and the build greys: mapped at 0x0C:0 (3 bits, stored less 1) and 0x34:4 (4 bits) in the appearance
     record, so the Appearance page's two rows work as on the other versions. The game's
