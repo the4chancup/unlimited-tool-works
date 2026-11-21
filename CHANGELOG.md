@@ -5,7 +5,7 @@
 ### Useful
 
 - **Save editor**: typing the start of a nation's name in the open Nation list now picks it,
-  as typing its ID does. Escape now closes the list and puts back the nation it opened on.
+  as typing its ID does, and Escape in the open list now puts back the nation it opened on.
 
 ### Fixes
 
