@@ -3469,7 +3469,7 @@ points there.
   and the helpers of its file it calls, as the citation audit builds it.
   - Positives, each at the commit before its fix:
     - `a_7z_export_s_source_keeps_its_decompressed_content_into_the_planned_run`
-      (`team_compiler`, the run's budget read from the machine's free memory);
+      (`68d933e5`, the run's budget read from the machine's free memory);
     - the PES 15 save/load test with a one-byte seed (`3ab27215`);
     - the Multi-team dialog's held press (`24451801`);
     - the list test that read a combo's edge a frame early (`0af77290`);
@@ -3497,13 +3497,12 @@ points there.
   did for each, that ours is right. Its Status then becomes Checked, or the behavior changes
   where ours is wrong. Also owed: the parity rows' reasons, the spec's "unlike Red" sentences
   and `scripts/library_parity/classes.md`'s I-classes point at the entries, not restate them.
-- open (2026-11-20) — `team_compiler`'s test
-  `a_7z_export_s_source_keeps_its_decompressed_content_into_the_planned_run` depends on the
-  machine's free memory: the run's memory budget is a share of the available memory
-  (`validation.rs` `run_budget`), and a `.7z` stays unpacked only while it fits. It failed in
-  a full `gates-changed` run on the `pes14` branch with PES 2017 and three builds running
-  beside it, and passed alone right after (inferred cause, not proven). The fix is likely a
-  budget the test sets itself rather than the host's.
+- resolved 2026-11-21 (SWE-2, `68d933e5`): `team_compiler`'s test
+  `a_7z_export_s_source_keeps_its_decompressed_content_into_the_planned_run` failed whenever
+  memory was short (232 MB free on 2026-11-09, 1.5 GB in a checkpoint on 2026-11-21), because
+  `plan` read the run's budget from the memory the OS reported available. `plan` now takes the
+  budget from its caller, and the test passes a fixed 2 GiB. The crate's other tests that reach
+  the budget were searched: none asserts on an archive kept or on a wait.
 - open (2026-11-20) — tests leave their scratch folders in `%TEMP%`: about 15,000 on the
   maintainer's machine, 680 MiB, mostly `export_upgrader_*` (`test_support.rs` `scratch`) and
   `studio_core_repro_*` / `studio_core_files_*`. Each folder's name ends in the test process's
@@ -3706,12 +3705,6 @@ points there.
   measured how many real collars name the Fox common directory. The fix reads a collar like a
   package part (the short forms, then the ID replacement), or refuses the Common directories
   there.
-- open (2026-11-09) — `compile::tests::a_7z_export_s_source_keeps_its_decompressed_content_into_the_planned_run`
-  depends on the machine's free memory: the run's budget cap comes from the physical memory
-  available, and with 232 MB free (a poc12 sidekick's run, 2026-11-09)
-  `keeps_archive` declines the archive and `source.content.is_some()` fails; it passed on a
-  rerun with 2.2 GB free. The test should pin the cap (the budget it plans with) rather than
-  read the host's; a flaky gate trains everyone to rerun until green.
 - open (2026-11-07) — The Compiler's recovery manifest (`plans/team_compiler/pipeline.md`
   "Recovery manifest", the maintainer's request): early, since only DLCs compiled after it
   ships carry it. One slice in the writer (each team and referee export's manifest and the
