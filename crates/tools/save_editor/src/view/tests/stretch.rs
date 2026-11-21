@@ -34,19 +34,22 @@ fn text(node: &accesskit::Node) -> Option<String> {
     }
 }
 
-/// `view` drawn at `pane`: the frame's AccessKit nodes with their ids,
-/// once the screens' own measurement passes and the workers' replies
-/// have settled.
-fn drawn(view: &mut SaveView, pane: egui::Vec2) -> Pairs {
+/// `view` drawn at `pane`: the frame's AccessKit nodes with their ids
+/// and its painted shapes, once the screens' own measurement passes and
+/// the workers' replies have settled.
+fn drawn(view: &mut SaveView, pane: egui::Vec2) -> (Pairs, Shapes) {
     let mut window = Headless::sized(pane.x, pane.y);
     window.frame_ids(Vec::new(), |ui| show(ui, view, &|| Vec::new()));
     workers_replied(&mut window, view);
-    let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, view, &|| Vec::new()));
-    pairs
+    let (_, pairs, shapes) = window.frame_ids(Vec::new(), |ui| show(ui, view, &|| Vec::new()));
+    (pairs, shapes)
 }
 
 /// A frame's AccessKit nodes with their ids.
 type Pairs = Vec<(accesskit::NodeId, accesskit::Node)>;
+
+/// A frame's painted shapes.
+type Shapes = Vec<egui::epaint::ClippedShape>;
 
 /// `pairs` keyed by node id.
 fn by_id(pairs: &Pairs) -> HashMap<accesskit::NodeId, &accesskit::Node> {
@@ -148,27 +151,32 @@ fn misfits(
 /// names the split for a pane-centred card: under it the welcome page
 /// is the only content, checked `(SHIFT, DOWN)` instead. Returns both
 /// frames' nodes for a screen's own extras.
-fn drawn_pair(view: &mut SaveView, screen: &str, centred_below: Option<f64>) -> (Pairs, Pairs) {
-    let default = drawn(view, DEFAULT_PANE);
-    let wide = drawn(view, WIDE_PANE);
+fn drawn_pair(
+    view: &mut SaveView,
+    screen: &str,
+    centred_below: Option<f64>,
+) -> (Pairs, Pairs, Shapes, Shapes) {
+    let (default, default_shapes) = drawn(view, DEFAULT_PANE);
+    let (wide, wide_shapes) = drawn(view, WIDE_PANE);
     let mut exempt = subtree(&default, pane_over(&default, player_row));
     exempt.extend(subtree(
         &default,
         pane_over(&default, |node| node.value() == Some("Live AATF")),
     ));
-    let found = misfits(
-        &default,
-        &wide,
-        |id| !exempt.contains(id) && by_id(&default)[id].role() != Role::Splitter,
-        centred_below,
+    exempt.extend(
+        default
+            .iter()
+            .filter(|(_, node)| node.role() == Role::Splitter)
+            .map(|(id, _)| *id),
     );
+    let found = misfits(&default, &wide, |id| !exempt.contains(id), centred_below);
     assert!(
         found.is_empty(),
         "{screen}: {} of the default frame's nodes do not keep their place and size:\n{}",
         found.len(),
         found.join("\n")
     );
-    (default, wide)
+    (default, wide, default_shapes, wide_shapes)
 }
 
 /// The PES 21 fixture save open with `setup` applied to the view.
@@ -195,7 +203,52 @@ fn the_stats_screen_keeps_its_columns_centred_in_a_wider_pane() {
         // place is part of the check.
         view.aatf_ruleset = "dbc7".to_owned();
     });
-    let (default, wide) = drawn_pair(&mut view, "the Stats screen", None);
+    let (default, wide, default_shapes, wide_shapes) =
+        drawn_pair(&mut view, "the Stats screen", None);
+    // The list's own controls keep their place too: the team selector
+    // and the filter box stand SHIFT right at the same size and y0.
+    let list_pane = subtree(&default, pane_over(&default, player_row));
+    let under = |pairs: &Pairs, role: Role| {
+        pairs
+            .iter()
+            .find(|(id, node)| list_pane.contains(id) && node.role() == role)
+            .and_then(|(_, node)| node.bounds())
+            .unwrap_or_else(|| panic!("a {role:?} in the list pane"))
+    };
+    for (what, role) in [
+        ("the team selector", Role::ComboBox),
+        ("the filter box", Role::TextInput),
+    ] {
+        let (from, at) = (under(&default, role), under(&wide, role));
+        assert!(
+            shifted(from, at, 0.0),
+            "{what} keeps its place at {WIDE_PANE:?} ({from:?} vs {at:?})"
+        );
+    }
+    // The band's underline (a painted shape, not a node) ends where the
+    // band ends: 320 further right in the wide frame, before the logo.
+    let band_line = |shapes: &Shapes| {
+        shapes
+            .iter()
+            .filter_map(|clipped| match &clipped.shape {
+                egui::Shape::LineSegment { points, stroke: _ } => Some(*points),
+                _ => None,
+            })
+            .filter(|points| points[0].y == points[1].y)
+            .max_by(|a, b| {
+                let w = |points: &[egui::Pos2; 2]| points[1].x - points[0].x;
+                w(a).partial_cmp(&w(b)).expect("ordered bounds")
+            })
+            .expect("the toolbar band's underline")
+    };
+    let (default_end, wide_end) = (
+        band_line(&default_shapes)[1].x,
+        band_line(&wide_shapes)[1].x,
+    );
+    assert!(
+        (wide_end - default_end - SHIFT as f32).abs() <= SLACK as f32,
+        "the band's underline ends 320 further right at {WIDE_PANE:?} ({default_end} vs {wide_end})"
+    );
     // The player list takes the extra height: more rows show, their
     // frame keeping the default width (the rows fill it).
     let rows = |pairs: &Pairs| pairs.iter().filter(|(_, node)| player_row(node)).count();
@@ -249,7 +302,7 @@ fn live_aatfs_dock_takes_the_extra_width_in_a_wider_pane() {
         view.aatf_ruleset = "dbc7".to_owned();
         view.live_aatf = true;
     });
-    let (default, wide) = drawn_pair(&mut view, "Stats with Live AATF on", None);
+    let (default, wide, _, _) = drawn_pair(&mut view, "Stats with Live AATF on", None);
     // The dock's width is its resize grip's, spanning the pane; its
     // height stays while its top moves the pane's whole extra down (its
     // bottom is the pane's edge).

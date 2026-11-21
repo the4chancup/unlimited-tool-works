@@ -867,8 +867,8 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() ->
     // The view keeps the width it has inside the central panel's margins
     // at the default window, centred across the pane (the draft's
     // `.view-body` `max-width`): its toolbar and panes lay out in
-    // `view_rect`, Live AATF's dock and the floating panels alone taking
-    // the pane's whole width.
+    // `view_rect`, Live AATF's dock alone spanning the pane's width and
+    // the floating panels placing off its edges as at the default size.
     let central_margin = egui::Frame::central_panel(ui.style()).inner_margin;
     let space = ui.max_rect();
     let width = (DEFAULT_PANE_WIDTH - f32::from(central_margin.left + central_margin.right))
