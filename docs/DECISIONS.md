@@ -19223,3 +19223,15 @@ of the 20 MB limit for one tool. PNG sequences carry transparency, which every s
 wipe needs, and the executable already decodes them. The sizes are estimates, to be measured
 when the phase opens.
 Plan: plans/core/development_plan.md "Unscheduled tools", the Video encoder.
+
+## 2026-11-21 — plans — the Video encoder gets its own plan: PNG sequences for good, a player and the browser edition if small
+Decision (the maintainer): the Video encoder is defined in a plan of its own before its scope
+is settled. It reads a PNG image sequence in every version, beside whatever the cup's swipe
+makers export, so someone with no video editor can make a simple swipe for their own event.
+It plays USM videos in its window if that adds little; otherwise members watch their exported
+video in their own player. Limited Tool Works offers it if it adds little there too, which
+replaces the earlier entry's "the browser edition leaves it out"; the 20 MB limit on the
+desktop executable stands.
+Why: the maintainer's scope. A PNG sequence needs no video editing skills, and the encoder and
+a player of the suite's own are estimated small enough for both editions.
+Plan: plans/video_encoder.md; plans/core/development_plan.md "Unscheduled tools".

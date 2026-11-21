@@ -5,9 +5,9 @@
 ## `libs/usm`
 
 CRI's video files, the USMs (Sofdec2), which PES plays for the menus' wipes and movies and for
-the stadium billboards. The crate writes one from encoded MPEG-1 frames, for the Video encoder
-(`core/development_plan.md`, "Unscheduled tools"), and reads one's streams and properties, for
-the PES file explorer. No phase holds it yet.
+the stadium billboards. The crate writes one from encoded MPEG-1 frames, for the [Video
+encoder](../video_encoder.md), and reads one's streams and properties, for the PES file
+explorer and for the Video encoder's player. No phase holds it yet.
 
 ### The format, as observed
 

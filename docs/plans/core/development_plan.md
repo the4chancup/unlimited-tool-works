@@ -833,24 +833,10 @@ Tools the suite will take in, with no phase or plan yet:
   - any file viewed and edited in hex (CPGE);
   - sider's liveCPK folders laid over the tree, with a file exported straight to its place
     in one, and `sider.ini`'s folders and scripts edited (CPGE).
-- **Video encoder**: makes the USM videos a cup ships (the season's swipe, the competition
-  wipes, the menu movies, the stadium billboards) from a member's video file. Today the only
-  tool that writes them is a CRI encoder from about 2012, `medianoche.exe`, run through the
-  batch files of bent's 2015 tool compilation (`C:/Data/4cc/Tools_4cc/
-  4CC_PES15_tool_compilation_v0.1_alpha/`), a closed program nobody can fix or rebuild. Every
-  USM the cup ships is MPEG-1 video in CRI's container, most with a second MPEG-1 stream for
-  the transparency; only the two movies carry sound, in CRI's own HCA codec, which has no open
-  encoder. So a first version writes silent videos, which covers every swipe, wipe and
-  billboard. The container, as observed, is in `libs/usm.md`.
-
-  It adds less than 20 MB to the desktop executable, and the browser edition leaves it out
-  (`gui.md` "Tool eligibility"). Its MPEG-1 encoder is the suite's own, in Rust: MPEG-1 is a
-  small, old standard, estimated at well under 1 MB of code. Linking ffmpeg in instead would
-  bring a C build into every platform's build and, estimated, 5 to 15 MB even cut down to a
-  few decoders, much of the limit for one tool. It reads a member's frames first as a PNG
-  sequence, which the executable already decodes, transparency included; a decoder for a
-  video file (H.264 in MP4, about 1 to 2 MB, estimated) comes only if members need one. These
-  sizes are estimates, measured when the phase opens.
+- **Video encoder** ([its plan](../video_encoder.md)): makes the USM videos a cup ships (the
+  season's swipe, the competition wipes, the menu movies, the stadium billboards) from a PNG
+  image sequence or a member's video file, in place of CRI's `medianoche.exe` from about 2012,
+  a closed program and today the only one that writes a USM.
 - **Export viewer**: opens a member's aesthetics export, or a single model, and shows the
   team close to how the game does: players with their kits, faces, bodies and motions, a
   list of the export's problems, and still or animated captures. MFG's FMDL-Viewer does this
