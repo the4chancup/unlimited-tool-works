@@ -1381,6 +1381,10 @@ function registerTool(view) {
   if (!tool) throw new Error("registerTool: no tool " + view.id);
   VIEWS[view.id] = view;
   tool.registered = true;
+  // A backtick inside a view's CSS template ends the string early, and the
+  // pieces subtract to NaN: refuse it loudly, never draw the view unstyled.
+  if (view.css !== undefined && typeof view.css !== "string")
+    throw new Error("registerTool: " + view.id + "'s css is a " + typeof view.css + ", not a string");
   if (view.css) document.head.append(h("style", {}, view.css));
 }
 const PES_VERSIONS = ["2015", "2016", "2017", "2018", "2019", "2020", "2021"];

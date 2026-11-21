@@ -82,7 +82,7 @@
 const SAVE_EDITOR_CSS = `
 .gate { display: inline-block; opacity: .6; }
 .gated-num { text-align: center; }
-/* A gated number's `-`: #c8c8c8 under the gate's .6 draws the thin dash at about the
+/* A gated number's "-": #c8c8c8 under the gate's .6 draws the thin dash at about the
    build's 80 on the dark theme (measured), its label's grey there. */
 .gated-num::placeholder { color: #c8c8c8; opacity: 1; }
 /* egui's Slider as the app's theme draws it (an 18-point row): an 8-point
