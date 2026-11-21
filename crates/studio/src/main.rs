@@ -584,12 +584,7 @@ fn run_gui_mode(tools: Vec<Box<dyn StudioTool>>, test: Option<CrashTest>) -> Exi
     // link's thread sends the closing message before its pipe ends — `crashed`
     // when the run's own panic guard caught one.
     if let Some(link) = session_link {
-        let how = if code == ExitCode::from(PANIC_EXIT) {
-            SessionEnd::Crashed
-        } else {
-            SessionEnd::Closed
-        };
-        link.close(how);
+        link.close(session_end(code));
     }
     drop(instance);
     if let Some(program) = restart {
@@ -608,6 +603,18 @@ fn run_gui_mode(tools: Vec<Box<dyn StudioTool>>, test: Option<CrashTest>) -> Exi
         }
     }
     code
+}
+
+/// The session's end for the link's closing message: `Crashed` on the panic
+/// guard's own exit code (`PANIC_EXIT`), `Closed` on every other end, a clean
+/// close and a window that never opened alike. `Ended` is the monitor's
+/// verdict on a session that sent nothing, never the window's own message.
+fn session_end(code: ExitCode) -> SessionEnd {
+    if code == ExitCode::from(PANIC_EXIT) {
+        SessionEnd::Crashed
+    } else {
+        SessionEnd::Closed
+    }
 }
 
 /// Binds this process to the console of the terminal that started it, so a command's
@@ -749,6 +756,19 @@ mod tests {
         assert_eq!(log_level(1), LevelFilter::Info);
         assert_eq!(log_level(2), LevelFilter::Debug);
         assert_eq!(log_level(3), LevelFilter::Trace);
+    }
+
+    // The session's closing message is `crashed` on the panic guard's own exit
+    // code alone: a clean close and a window that could not open (3) are
+    // `closed`, and `ended` is the monitor's verdict, never the window's own.
+    #[test]
+    fn the_session_end_is_crashed_only_on_the_panic_exit_code() {
+        assert!(matches!(
+            session_end(ExitCode::from(PANIC_EXIT)),
+            SessionEnd::Crashed
+        ));
+        assert!(matches!(session_end(ExitCode::SUCCESS), SessionEnd::Closed));
+        assert!(matches!(session_end(ExitCode::from(3)), SessionEnd::Closed));
     }
 
     // A process can install one logger only, so this is the one test that installs it.
