@@ -36,10 +36,14 @@ run's findings (`4cc-studio-temp/str_re/out/findings.md`).
 3. Earlier sessions in Report a problem: the repro bundles issue's slice (5), in slices:
    - [x] the crash monitor's start tried once more (ST-RUN-13): merged 2026-11-21, SWE-2
      round S1rt; its Astra round owed, batched with 5b's (the same file, `crash_dump.rs`);
-   - 5a the session folder's writer and reader in `studio_core::repro`, called in process
-     (ST-REP-06 to 08);
-   - 5b the link: the recorder's queue and sending thread, the monitor writing each message,
-     the window's own writer, a new monitor after a break (ST-REP-10, 11);
+   - [x] 5a the session folder's writer and reader in `studio_core::repro`, called in
+     process (ST-REP-06 to 08): merged `08d65aa6`, SWE-2 round S1s5a; its Astra round owed;
+   - 5b the pipe (DECISIONS 2026-11-21): the recorder's queue and sending thread, the monitor
+     writing each message it reads from its standard input, the window's own writer when no
+     monitor started (ST-REP-10's first two cases, ST-REP-11);
+   - 5b2 a new monitor after the pipe breaks, writing on into the same folder (ST-REP-10's
+     last case): its writer adopts the folder, never rewriting `journal.toml` and taking
+     the next input and output indexes from its rows (review S1s5a-1);
    - 5c the Save editor's saves kept decrypted and rebuilt on reading (SE-REP-07);
    - 5d the dialog's "Include earlier sessions" box, drafted first, and the help page's line
      (ST-REP-09, 12).
