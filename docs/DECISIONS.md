@@ -19427,3 +19427,15 @@ it on PES 2014 since step 10. With the group greyed and the menu live, a member 
 available on PES 2014 saves" on the page for an action the menu then did. The draft already
 shows the group working there.
 Plan: `plans/pes14.md`, step 10.
+
+## 2026-11-21 — pes_savefile (pes14 branch) — PES 2014's team name flags are 0x0A:0 and 0x0A:1, PES 2015's pair; 0x0B:4 and 0x0B:5 stay as read
+Decision (lead): a team renamed in the build sets 0x0A:0 (the name) and 0x0A:1 (the short name),
+mapped as PES 2015's `EditedName` and `EditedShortName` are; the fork's two other bits, 0x0B:4 and
+0x0B:5, are not written. This narrows "the build sets the fork's bits" (this day, "the fork's
+other PES 2014 edits").
+Why: the in-game run `step10` showed a team renamed with no flag keeps its old name in Edit mode,
+so a flag gates it. 0x0A:0 and 0x0A:1 have PES 2015's shape, two adjacent bits at the start of a
+byte; 0x0B:4 is set on 221 of the Akko save's 222 teams, none of them renamed, so it is not an edit
+flag, and a bit set for no known reason is not written on a guess. If the name still does not
+show, the build sets 0x0B:5 too.
+Plan: docs/plans/pes14.md "Steps", step 10's "Left: the team name flags".

@@ -911,19 +911,28 @@ on main. Main is merged into the branch, never rebased onto it.
     record is refused, as for the boots. The Strip style panel's Outfielder gloves row reads and writes the pinned bit
     0x56:2 on PES 2014; the other versions keep it in the in-game face run, which PES 2014
     does not map, so the row was greyed. A field the version does not store keeps its
-    enabled neighbours' width: the `-` fills the column. Its check, in Edit mode with the DLC:
-    a `/4ccg/` goalkeeper given a gloves id the DLC installs shows those gloves, and the fork
-    reads the same id back. The same run pins two things the fork's diff raised:
-    - what the Skin colour row shows for a stored 6 and a stored 7 at 0x0C:0 (the game's
-      swatches store 0 to 5; `.akko7v2` holds 7 on seven players, six of them `/4ccg/`'s
-      FPC players, and the fork's "Custom" writes 6), and the iris colour at 0x34:4;
-    - whether a team renamed in the build, with no flag set, shows its new name. The fork
-      sets 0x0A:0 and 0x0B:4 on a name edit, 0x0A:1 and 0x0B:5 on a short-name edit, and
-      `/4ccg/`, the one team renamed in game, holds all four; the other 221 Akko teams hold
-      0x0B:4 and 0x0B:6 alone. If the name does not show, the build sets the fork's bits.
+    enabled neighbours' width: the `-` fills the column. Checked in Edit mode with the DLC
+    (run `step10`, 2026-11-21, kept as `step10`): `/4ccg/`'s goalkeeper #8 given gloves 11 in
+    the build shows no hands on the part menu's model, as the DLC's own gloves-11 players do,
+    where gloves 0 showed plain hands. Left: the team name flags. A team renamed in the build
+    (`/out/` to OUTTEST, OTT) still shows `/out/` in the team list and the team menu, since
+    PES 2014's team record maps no edit flag, so the flag the editor sets on a rename
+    goes nowhere. The name flag
+    is 0x0A:0 and the short-name flag 0x0A:1, mapped as PES 2015's pair at 0x12:0 and
+    0x12:1 is, and a rename sets them as on PES 2015. The fork also sets 0x0B:4 (with 0x0A:0)
+    and 0x0B:5 (with 0x0A:1), but 0x0B:4 is set on 221 of the Akko save's 222 teams, none of
+    them renamed, so it is not an edit flag; both stay as read. The same check then shows the
+    new name in the team list; if it does not, the build sets 0x0B:5 too. The short name
+    shows nowhere in Edit mode (the Team Name entry is greyed for these teams), so only the
+    name is checked.
 11. After the release, the skin colour and the iris colour on PES 2014, which the fork
     edits and the build greys: mapped at 0x0C:0 (3 bits, stored less 1) and 0x34:4 (4 bits) in the appearance
-    record, with the values step 10's run pins, so the Appearance page's two rows work as
-    on the other versions. The FPC entries then write skin 7 on PES 2014 only if that run
-    shows a stored 6 or 7 to be the custom skin. A player with no appearance record is
-    refused, as for the boots.
+    record, so the Appearance page's two rows work as on the other versions. The game's
+    own pickers cannot pin a stored value: step 10's run found the Skin Colour and Eyes
+    palettes open on their first entry whatever is stored (skin 7, 3 and 0; iris 0, 2, 5
+    and 1 all opened on entry 1). The part menu's model shows the player as stored, so the
+    check is there: a standard-body player given each stored skin 0 to 7 in the build, his
+    arms' colour on the model set beside the six swatches' players, and likewise the eyes
+    for the iris. The FPC entries then write skin 7 on PES 2014 only if stored 6 or 7 turns
+    out to be a custom skin. A player with no appearance record is refused, as for the
+    boots.
