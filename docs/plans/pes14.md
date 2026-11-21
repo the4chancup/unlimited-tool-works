@@ -425,6 +425,92 @@ the save" above.
   edits these looks only through the in-game face run, which stays greyed on PES 2014, and the
   game keeps an edit without 0x28:6 and 0x28:7 (run `flags3`).
 
+## What the game's code says
+
+Read statically from `PES2014.exe` in Ghidra (2026-11-21; the run's findings and tables are in
+`4cc-studio-temp/pes14_re/out/findings.md` and `overall_tables14.txt`, with each function's
+address). The code is observed; where a step had to be inferred, the item says so. Run
+`gameplan2` (step 8) checks the inferred parts in game before they count as known.
+
+- **The overall at a position** (`FUN_01c11f40`), the number the Game Plan shows for a player
+  at his spot:
+  1. Each ability the position weighs contributes `(value - 25) × weight` (the code subtracts 25
+     only from a value over 24, which every stat is); the sum, plus 0.5, is rounded to the
+     nearest integer.
+  2. A bonus is added, by the position, in the order GK, CB, LB, RB, DMF, CMF, LMF, RMF, AMF,
+     LWF, RWF, SS, CF:
+     - at his registered position: 7, 7, 8, 8, 8, 7, 7, 7, 7, 9, 9, 7, 7;
+     - else at a position he plays at A: 5, 5, 4, 4, 4, 5, 5, 5, 5, 4, 4, 5, 5;
+     - else at B: 3, 2, 2, 2, 2, 3, 3, 3, 3, 2, 2, 3, 3; at C, none.
+  3. The player's condition arrow for a match would add −14%, −7%, 0, +7% or +14% of that,
+     rounded; the Game Plan passes the middle arrow, so nothing.
+  4. The result is held to 40 to 109.
+
+  The weights, per position (LB and RB share a row, as do LMF and RMF, and LWF and RWF):
+
+  | Position | Weights |
+  |---|---|
+  | GK | Goalkeeping .52, Catching .52, Body control .12, Jump .12 |
+  | CB | Defensive prowess .27, Ball winning .27, Body control .21, Jump .21, Heading .20, Speed .11, Stamina .10 |
+  | LB, RB | Dribbling .15, Lofted pass .15, Defensive prowess .15, Speed .15, Explosive power .15, Ball winning .14, Stamina .13, Body control .12, Jump .12, Ball control .10, Attacking prowess .06 |
+  | DMF | Lofted pass .20, Ball control .19, Low pass .19, Dribbling .16, Stamina .15, Body control .14, Swerve .13, Attacking prowess .07, Defensive prowess .07, Jump .05, Ball winning .03, Speed .03, Explosive power .03 |
+  | CMF | Ball control .25, Dribbling .25, Low pass .25, Lofted pass .22, Stamina .18, Explosive power .06, Attacking prowess .05, Body control .05, Speed .04, Defensive prowess .03 |
+  | LMF, RMF | Dribbling .26, Speed .26, Explosive power .23, Ball control .16, Stamina .14, Lofted pass .13, Attacking prowess .07, Low pass .07, Swerve .04 |
+  | AMF | Ball control .23, Dribbling .23, Low pass .23, Finishing .18, Attacking prowess .15, Lofted pass .15, Explosive power .07, Speed .05, Body control .05, Stamina .03 |
+  | LWF, RWF | Ball control .22, Dribbling .22, Attacking prowess .18, Speed .16, Explosive power .16, Finishing .12, Lofted pass .10, Body control .06, Stamina .06, Low pass .05, Kicking power .05 |
+  | SS | Ball control .20, Dribbling .20, Explosive power .20, Attacking prowess .16, Finishing .15, Low pass .10, Lofted pass .10, Speed .10, Body control .07, Kicking power .06, Stamina .04 |
+  | CF | Finishing .38, Attacking prowess .33, Ball control .25, Dribbling .15, Body control .10, Speed .05, Explosive power .05, Heading .03, Jump .03 |
+
+  Inferred: which ability each weight belongs to. The game reads its abilities by field numbers
+  that name nothing, so each field was named by its weights across the 13 positions, which
+  match PES 2016's settled rows almost exactly. Tenacity and Place kicking are the two fields no
+  position weighs. Also inferred: that the save's playable value (0 C, 1 B, 2 A) is the grade
+  the formula reads.
+- **A free move** (`FUN_027d0550`, `FUN_027c3d30`, `FUN_027c77e0`, `FUN_027c3ed0`): a player
+  dropped on open grass at a pitch point (width 0 to 104, depth 0 to 48, the units of the
+  stored spots) gets his role by these rules:
+  - each role has a zone (below); a point inside the dragged player's own role's zone keeps his
+    role and moves his spot;
+  - otherwise there are up to two candidates: GK when the point is in the keeper's zone, else the
+    first of CB, CMF, SS whose zone holds it; and the first of LB, RB, DMF, LMF, RMF, AMF, LWF,
+    RWF, CF whose zone holds it, a side role (LB, RB, LMF, RMF, LWF, RWF) only when no other
+    starter holds it;
+  - the player takes the candidate at which his overall is higher, the second on a tie;
+  - the drop is refused when no zone holds the point (a width under 5 or over 99, a depth over
+    47, or a depth under 4 outside the keeper's widths), and when the move would leave fewer than 2 defenders, 2 midfielders
+    or 1 forward, or more than 5, 6 or 5 (a line the player already stood in is not counted
+    against its maximum). Which roles count as which line is inferred (defenders CB, LB, RB;
+    midfielders DMF to AMF; forwards LWF to CF), as is which of the two candidates the line
+    check tests (the code tests the first).
+
+  The zones, as depth and width ranges, both ends inside:
+
+  | Role | Depth | Width |
+  |---|---|---|
+  | GK | 0–3 | 52–56 |
+  | CB | 4–15 | 5–99 |
+  | LB | 4–15 | 5–20 |
+  | RB | 4–15 | 84–99 |
+  | DMF | 16–25 | 21–83 |
+  | CMF | 16–34 | 5–99 |
+  | LMF | 16–34 | 5–20 |
+  | RMF | 16–34 | 84–99 |
+  | AMF | 26–34 | 21–83 |
+  | LWF | 35–47 | 5–20 |
+  | RWF | 35–47 | 84–99 |
+  | SS | 35–47 | 5–99 |
+  | CF | 40–47 | 21–83 |
+
+  The zones bound where a drop finds a role, not where a player may stand: the game's own
+  formations put wingers at widths 23 and 81 and 4-3-1-2's AMF at depth 35. What a drop of the
+  keeper, or into the keeper's zone, does to a save that stores no keeper role is not read; run
+  `gameplan2` looks.
+- **The held player's areas** (`FUN_027c3060`): while a player is held, the game lights the
+  zone of each position he plays at A or B, one to a band: in the order GK; CB, LB, RB; CMF,
+  DMF, LMF, RMF, AMF; SS, LWF, RWF, CF, the first of a band he plays is lit and the rest of that
+  band is not. Inferred: that A and B light and C does not (the code lights a non-zero grade
+  in a block it builds, whose values are not read against the save's).
+
 ## PES 2014 in the code
 
 `PesVersion` gains `Pes14`, whose engine is the pre-Fox one (PES 2014 is the first pre-Fox
@@ -538,10 +624,13 @@ button would stay on every PES 2014 save, its tooltip saying the folder holds no
     since PES 2014 shows no portraits there (the game's "Strip Icon" display). Dropping a
     player on another swaps the two, the keeper included, even under a ruleset that allows
     illegal formations; while he is held, the teammate a drop would swap with is marked. A
-    drop on open grass does nothing until the game's code gives the rule that sets the
-    role at the new spot (step 8): the game's free move sets it by itself, and a move that
-    kept the old role could write a pair the game never writes. A click opens no player
-    box, since a role is not picked, and a held player lights no areas.
+    drop on open grass is the game's free move ("What the game's code says"): the player
+    moves there and takes the role the game's rule gives him, or goes back to his spot where
+    the game refuses the drop. A move that kept the old role could write a pair the game
+    never writes. Until run `gameplan2` sees what the game does with the keeper, a drop of
+    the keeper on grass, and any drop into the keeper's zone, are refused. A click opens no
+    player box, since a role is not picked. While a player is held, his areas light as the
+    game's do.
   - **A swap of two starters**, on the pitch or in the lineup list, moves them in the preset
     shown alone, writing what the game's swap writes:
     - with Preset Tactics 1 shown, the two exchange lineup entries, and presets 2 and 3
@@ -552,10 +641,10 @@ button would stay on every PES 2014 save, its tooltip saying the folder holds no
 
     Both leave the same players in the same places. The editor writes the game's bytes, so a
     save it edits matches one the game edited.
-  - **No overall** shows on the pitch's badges until the game's code gives PES 2014's
-    formula (step 8), although the game shows one on its "Position / Overall Rating"
-    display. PES 2016's formula does not serve: it reads stats PES 2014 does not store, and
-    its tables' values are not in PES 2014's executable.
+  - **The pitch's badges** show each starter's overall at his role, by PES 2014's own formula
+    ("What the game's code says"), as the game's "Position / Overall Rating" display does and
+    as the other versions' badges show theirs. PES 2016's formula does not serve: it reads
+    stats PES 2014 does not store, and its tables' values differ.
   - **The second free kick taker** moves to the next roster slot when he becomes the long or
     short free kick taker, as the game does.
   - **Combination play** is a panel of its own: three slots, each a strategy and an area, one
@@ -721,11 +810,13 @@ on main. Main is merged into the branch, never rebased onto it.
    - Run `help1` (in game): done, read in "What is known about the save".
    - Run `tactics6` (in game): done, pinned in "What is known about the save".
    - Run `tactics5` (in game): done, pinned in "What is known about the save".
-   - The game's code, read statically (Ghidra, as PES 2016's was): the overall rating's
-     formula, which the Game Plan shows on its "Position / Overall Rating" display; the rule
-     that sets a moved player's role and the spots each role allows; and the rules in-game
-     runs can only sample. A finding there stays inferred until a run in game or a save diff
-     confirms it.
+   - The game's code, read statically (Ghidra, as PES 2016's was): done (2026-11-21), in
+     "What the game's code says".
+   - Run `gameplan2` (in game): the inferred parts of "What the game's code says". The
+     "Position / Overall Rating" display for players whose abilities differ, against the
+     formula's numbers; free moves to chosen points, each saved and read back: a role kept,
+     each candidate taken, a tie, each refusal, the keeper's drop and a drop into the keeper's
+     zone; and which grades light the held player's areas.
    - Slice 1, the record's fields in the schema and the model: done.
    - Slice 2a, the screen opens with the Preset tactics panel: done.
    - Slice 2b, the pitch's PES 2014 rules (shirts, swaps): done.
@@ -740,8 +831,10 @@ on main. Main is merged into the branch, never rebased onto it.
        From 2c-1's review, a test that a wheel notch skips a greyed strategy, three rules
        made crate-private and the module's doc; from 2c-2's, more tooltip placements tested
        from the screen and a plainer closure; and three comments the comment check flags.
-   - Slice 2d: free moves and the overall on the pitch, once the game's code gives their
-     rules.
+   - Slice 2d: free moves and the overall on the pitch, from "What the game's code says",
+     each sub-slice reworked if run `gameplan2` contradicts it:
+     - 2d-1, the overall on the pitch's badges;
+     - 2d-2, free moves and the held player's areas.
    - The command line refuses the commands out of scope on a PES 2014 save ("Not in scope"):
      done (`422dead7`), each of the five commands with its test.
    - Later: the pitch's shirts in the team's kit colours and icon pattern, as PES 2015's

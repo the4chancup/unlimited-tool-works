@@ -19318,3 +19318,8 @@ button stayed, with `E:\PES2014` set, its tooltip saying the folder held no PES 
 by letting `from_number` accept 14, because a settings file, a ruleset or the running-game
 notice would then name PES 2014, which the branch keeps out of every tool but the editor.
 Plan: `plans/pes14.md` "PES 2014 in the code", the paragraph on `PesVersion`.
+
+## 2026-11-21 — pes14 — slice 2d builds on the game's code before run `gameplan2` confirms it; the keeper's free drops wait for the run
+Decision: the overall on the pitch and the free move are built from the rules read in PES 2014's code, while run `gameplan2` checks their inferred parts in game; a sub-slice is reworked if the run contradicts it. A drop of the keeper on open grass, and any drop into the keeper's zone, are refused until the run shows what the game writes for them.
+Why: the code gives every rule but the names of the abilities it weighs, which match PES 2016's settled rows closely; waiting for the run would idle the slices for no likely change. The keeper is the one case the code reading left open, and PES 2014 stores no keeper role, so a guess could write a save the game never writes.
+Plan: `plans/pes14.md`, "What the game's code says", "The Gameplan screen in Build 2", step 8.
