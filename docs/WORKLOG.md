@@ -96,9 +96,8 @@ run's findings (`4cc-studio-temp/str_re/out/findings.md`).
 9. The rest of Team TOML's numbers as the game shows them, as 0.0.2 did for form, injury
    resistance and weak foot: team colours in 8 bits as on screen (the file holds the save's 0
    to 63), `[tactics.auto] substitution` and the appearance colours by name. The Save editor
-   draft's sample Team TOML texts (`docs/prototypes/tools/save_editor.js`, the `"pes17/718"`
-   entry and its kind) still show the old numbering (255 for nobody, slots from 0, the stats
-   one lower): regenerate them from today's export.
+   draft's sample Team TOML (`save_editor.js`, `"pes17/718"`) is the CLI's export of
+   2026-11-21, so it is exported again once these land.
 10. Reset window's first click on Linux (the maintainer's check of 0.0.2-rc.3, 2026-11-17,
     "good enough for 0.0.2": the first click resets the window but the button stays, a second
     click changes nothing and the button goes, its pointer a hand; likely the window manager
