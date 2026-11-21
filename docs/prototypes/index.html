@@ -3473,8 +3473,12 @@ function logLine(l, opts) {
           openHelp({ tool: opts.tool, topic: "messages", anchor: l.code }); } }, l.code),
       rest.slice(i + l.code.length));
   }
+  // A tool whose lines stand for cells (the Compiler's) also gets the pointer's
+  // entering and leaving a line, and the line itself with a click.
   return h("div", { class: "line" + cls,
-    onclick: l.severity === "Info" ? null : opts.onLine ? () => opts.onLine(l.scope) : null },
+    onclick: l.severity === "Info" ? null : opts.onLine ? () => opts.onLine(l.scope, l) : null,
+    onmouseenter: opts.onLineEnter ? () => opts.onLineEnter(l) : null,
+    onmouseleave: opts.onLineLeave ? () => opts.onLineLeave(l) : null },
     h("span", { class: "head" }, l.text.slice(0, cut)), h("span", { class: "rest" }, kids));
 }
 // The 4px handle above the header: a drag rewrites S.logHeight (min 60), the

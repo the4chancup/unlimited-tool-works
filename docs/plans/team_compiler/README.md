@@ -233,8 +233,12 @@ TC-GUI-24  GIVEN the pointer on a cell with findings
                 and hovering another cell leaves the window as it is; WHEN another cell is
                 clicked THEN that one is pinned instead; WHEN the pinned cell, the window's
                 pin or the grid's empty space is clicked THEN nothing is pinned and the
-                window closes; GIVEN a double-click on a cell THEN its folder opens in the
-                file manager and the pin is as it was before the double-click
+                window closes, and resting the pointer on that cell opens nothing until it
+                has left the cell; GIVEN a double-click on a cell THEN its folder opens in the
+                file manager and the pin is as it was before the double-click; GIVEN an export
+                with no Portraits folder whose portraits cell has one finding THEN a
+                double-click on that cell opens the player folder of the finding's file, and
+                with two findings or none it opens nothing
 TC-GUI-10  GIVEN a kit folder whose colors.txt parses and whose icon_<N> marker names pattern N
            WHEN its cell is drawn
            THEN the cell shows pattern N's two-color swatch in the kit's two menu colors under
@@ -265,10 +269,12 @@ TC-GUI-14  GIVEN an export holding a finding whose effective disposition is Drop
            THEN every player and kit cell of its row shows the blocked state, each one's
                 detail window naming the export-level cause, and no task of that export runs; GIVEN a folder
                 with a DropFile finding THEN its cell ends done-with-errors (red)
-TC-GUI-15  GIVEN a warning line in the log panel
-           WHEN it is clicked
-           THEN the cell of its scope is highlighted in the grid; a line whose scope is the
-                export highlights the row label
+TC-GUI-15  GIVEN a warning line in the log panel and no cell pinned
+           WHEN the pointer rests on it
+           THEN the detail window opens on the cell of its scope (the row label for a line
+                whose scope is the export); WHEN it is clicked THEN that cell is outlined in
+                the grid and its window pinned; WHEN it is clicked again THEN the window
+                closes and the outline stays
 TC-GUI-16  GIVEN the destination not writable (the game running, or elevation needed)
            WHEN the toolbar is drawn
            THEN the Compile button carries the writability badge, its tooltip naming the reason

@@ -9,6 +9,27 @@ What exists of this is in `spec/aesthetics_export/player_folders.md` "Player fol
 The Export upgrader generates all the root files from the old Team Note txt and `Logo/` folder when
 migrating.
 
+### Player numbering without the hyphen
+
+What exists of this is in `spec/aesthetics_export/object_model.md` "Validation semantics", its
+"Folder names" item, and `spec/aesthetics_export/player_folders.md` "Player folders (the Studio
+export format)", its "Player numbering" paragraph.
+
+A player folder's name (without `players.txt`) is read from its start: the number, then either
+a hyphen with spaces around it optional and the player's name, or a space and the name, or
+nothing. `15 - Snuffy`, `15-Snuffy`, `15 Snuffy` and `15` all claim slot 15. The name the
+`name = true` setting writes is what follows the hyphen when one comes right after the number,
+else what follows the number: `03 - Jean-Pierre` and `03 Jean-Pierre` both give `Jean-Pierre`,
+and `15` alone still gives `15`. Anything else right after the number (`15_Snuffy`) claims no
+slot, so the folder is dropped with `player_folder_number_invalid`, whose text says what a name
+needs. A `Portraits/` file's name follows the same rule (`05 Bob.dds`). The hyphen form stays
+the one the documents show and the Export upgrader writes.
+
+We read the number first, not split at the first hyphen, because members name folders
+`15 Snuffy`, which the split refused for a hyphen that carries no meaning, and a split would
+cut a hyphenated name (`03 Jean-Pierre` gave the head `03 Jean`). Kit folders keep the split
+(`p1 - Lakers`).
+
 **A base copy: the `<id>.copy` link file.** A player folder holding an empty file named after a
 player id with the `.copy` extension (`5223.copy`; a stray `.txt` suffix is accepted, as for every
 link file) wears that player's face and hair the game's own way: the aesthetics patch writes the

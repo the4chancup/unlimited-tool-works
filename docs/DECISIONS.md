@@ -19278,3 +19278,32 @@ Plan: plans/team_compiler/gui.md "GUI: the live-validating team grid" (the detai
 message's log line); plans/core/gui.md "Log panel" (wrapping) and ST-LOG-05;
 plans/team_compiler/README.md TC-GUI-09, TC-GUI-24, and the tooltip wording of TC-GUI-14, 20
 and 21.
+
+## 2026-11-22 — compiler view — a log line acts for its cell; the window opens at the sidebar's delay
+Decision (the maintainer): hovering a log line opens its cell's detail window as hovering the
+cell does; a click outlines the cell and pins its window, and a second click unpins it,
+keeping the outline. The window opens after the sidebar's hover delay (0.1 s), not egui's
+tooltip delay. A double-click on the portraits cell of an export with no `Portraits/` folder
+opens the player folder of its one finding, and does nothing with two findings or none.
+Decision (the lead): after a click that unpins, the cell opens no window on hover until the
+pointer leaves it; the window shows no Open folder when the cell has no folder to open.
+Why: the log is where the organizer reads the findings, so its lines lead to the same window
+as the cells. egui's half-second delay felt slow beside the sidebar. Most exports keep each
+portrait in its player's folder, so a fixed `Portraits/` path would open nothing useful. The
+pointer still rests on what was just clicked, and egui reports it hovered on the next frame,
+so without the mute the window the click closed would open again at once.
+Plan: plans/team_compiler/gui.md "GUI: the live-validating team grid" (the detail window, a
+message's log line); plans/team_compiler/README.md TC-GUI-15, TC-GUI-24.
+
+## 2026-11-22 — export format — a player folder's number may be followed by a plain space
+Decision (the maintainer): `15 Snuffy` numbers a player folder as `15 - Snuffy` does; the
+hyphen stays optional and recommended, and the Export upgrader still writes it. The player's
+name is what follows the hyphen, or what follows the number when there is none.
+Decision (the lead): the name is read from its start (the number, then an optional hyphen),
+not split at the first hyphen, so `03 Jean-Pierre` is player 03, Jean-Pierre; `Portraits/`
+file names follow the same rule; kit folders keep the split. Built in a small slice after the
+Compiler's view or beside it.
+Why: members name folders `15 Snuffy`, and the strict rule dropped the player over a hyphen
+that carries no meaning. A split at the first hyphen would cut a hyphenated name. Portrait
+names are numbered "as a player folder is", so one rule serves both.
+Plan: plans/aesthetics_export/player_folders.md "Player numbering without the hyphen".

@@ -20,7 +20,7 @@ it, one cell per player at a fixed position by number, plus one cell per kit:
   window shows the complete `export_display_name` and resolved identity. The label doubles as the **cell
   for export-scoped and non-slot task messages**: shared model folders, Logo, Common, Collars,
   RefMarker, and root-artifact scopes have no cells of their own, and neither has a player folder
-  whose name claims no slot (`15 Snuffy`, `player_folder_number_invalid`), so their status and
+  whose name claims no slot (`15_Snuffy`, `player_folder_number_invalid`), so their status and
   messages roll up here. For example, an orphaned shared folder (`shared_folder_orphaned`) turns
   the label amber, with the details in its window.
 - **Team ID cell**: between the team name and the first player column, showing the ID resolved from
@@ -77,25 +77,36 @@ it, one cell per player at a fixed position by number, plus one cell per kit:
   run-abort state propagated to pending cells as described below.
 - **The detail window** shows one cell (a player, the portraits, a kit, or a team label for its
   export's own messages): its folder, its state, and each message with the file it is about
-  and the catalog's When and Effect texts, then Open folder and, for a finding with one
-  obvious fix, the rename that fixes it. Later it holds the 3D preview (Future Features). The
+  and the catalog's When and Effect texts, then Open folder (when the cell has a folder to
+  open, below) and, for a finding with one obvious fix, the rename that fixes it. Later it holds the 3D preview (Future Features). The
   cells carry no tooltip of their own; the ID cell and the buttons keep theirs.
   - **Hover** opens it on the cell under the pointer, and leaving the cell closes it. It opens
-    after the pointer rests for egui's tooltip delay and then follows the pointer from cell to
-    cell at once, as tooltips do, so a pointer crossing the grid does not flash it.
+    after the sidebar's hover delay (0.1 s, `HOVER_DELAY`), almost at once, and then follows
+    the pointer from cell to cell with none.
   - **A click pins it**: a pin shows on the cell and in the window's title bar, and the window
     stays open on that cell, with its buttons usable, and dragging its title bar moves it.
     While a cell is pinned, hovering another opens nothing, so the pointer can cross the grid
     to the window. A click on the pinned cell, on the window's pin or on the grid's empty
-    space unpins it; a click on another cell pins that one.
+    space unpins it; a click on another cell pins that one. After a click that unpins, the
+    cell opens no window on hover until the pointer leaves it: egui reports it hovered on the
+    next frame, which would open the window the click just closed.
   - **A double-click** opens the cell's folder in the file manager (for an archive export, the
     folder holding it, with the archive selected), and leaves the pin as it was before it.
+    The portraits cell's folder is the export's `Portraits/` when it has one. Most exports have
+    none and keep each portrait in its player's folder: then the cell's folder is the player
+    folder of its one finding, and with two findings or none it has no folder, so a
+    double-click does nothing and the window shows no Open folder.
   - **Where it opens**: where the member last left it (at first, at the grid's right), not
     beside the cell, because a window sized for the 3D preview is too big to follow the pointer.
     While unpinned it lets the pointer through, so a cell under it can still be hovered.
 - **A message's log line** is `Severity - /team/ - code`, then ` at ` and the file or folder it
   is about, then its context fields, as the console prints them; the catalog's text, a
   paragraph, is the window's and the help's, which the code links to.
+
+  A line acts for its cell (the team label for an export's own message). Hovering it opens
+  the cell's window as hovering the cell does, under the same rules. A click outlines the cell,
+  scrolls it into view and pins its window; a second click on the line unpins the window and
+  keeps the outline.
 - One row per team bounds the row count (~50), so no virtualization is needed; direct egui rendering
   suffices.
 
@@ -118,7 +129,8 @@ other columns, so on the rows with none the column reads as theirs, not as unuse
   - a known file with a hidden `.txt` (`settings.toml.txt` → `settings.toml`; kept disallowed,
     so the mistake is named);
   - an old `Portraits/player_05.dds` (→ the player folder's portrait name);
-  - a player folder `15 Snuffy` or `15_Snuffy` (→ `15 - Snuffy`).
+  - a player folder `15_Snuffy` (→ `15 - Snuffy`; `15 Snuffy` is a valid name,
+    `plans/aesthetics_export/player_folders.md` "Player numbering without the hyphen").
 
   Each is a rename refused when the target name exists (the refusal says so), and the row
   revalidates as after any rename. The buttons are for a folder export only: inside an archive
