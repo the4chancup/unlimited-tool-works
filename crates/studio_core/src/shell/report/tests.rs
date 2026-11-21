@@ -1,7 +1,8 @@
 //! The "Report a problem" dialog's tests: the tail entry opening it (rail and
-//! overlay), the "The file holds:" list, the Save… write and its answers, the
-//! tool's line, `installs.txt`, and the two formatters (the `hh:mm` of an
-//! output's write and the suggested file name).
+//! overlay), the "The file holds:" list, the "Include earlier sessions" box,
+//! the Save… write and its answers, the tool's line, `installs.txt`, and the
+//! two formatters (the `hh:mm` of an output's write and the suggested file
+//! name).
 
 use std::path::Path;
 use std::sync::Arc;
@@ -778,8 +779,10 @@ fn the_box_lists_the_kept_sessions_and_ticked_packs_each() {
         mut app, ctx, _dir, ..
     } = shell();
     let egui_ctx = test_context();
-    let sessions_root = ctx.paths().data_dir.clone().unwrap().join("sessions");
-    // Two earlier sessions, and the window's own.
+    let sessions_root = ctx.paths().data_dir.as_ref().unwrap().join("sessions");
+    // Two earlier sessions, and the window's own. The first opens and
+    // writes two files, so first is told from last and newest from
+    // oldest.
     let name_a = session_folder(
         &sessions_root,
         4242,
@@ -788,7 +791,9 @@ fn the_box_lists_the_kept_sessions_and_ticked_packs_each() {
         vec![
             step("the closed session's step"),
             kept_input("C:/Data/in/EDIT00000000", b"INPUT_A"),
+            kept_input("C:/Data/in/SECOND", b"INPUT_A2"),
             kept_output("C:/Data/out/EDIT00000000", b"OUT_A"),
+            kept_output("C:/Data/out2/SECOND", b"OUT_A2"),
         ],
         Some(SessionEnd::Closed),
     );
@@ -812,6 +817,20 @@ fn the_box_lists_the_kept_sessions_and_ticked_packs_each() {
         Some(SessionEnd::Closed),
     );
     app = app.with_session_folder(Some(own.clone()));
+    // The second write stamped a minute after the first, so the line's
+    // "wrote at" tells the two apart even on a filesystem that stamps
+    // both the same tick. Done before the dialog opens, the listing
+    // being read then.
+    let first_out = sessions_root.join(&name_a).join("outputs/0-EDIT00000000");
+    let second_out = sessions_root.join(&name_a).join("outputs/1-SECOND");
+    let first_wrote = fs::metadata(&first_out).unwrap().modified().unwrap();
+    let second_wrote = first_wrote + std::time::Duration::from_secs(60);
+    fs::OpenOptions::new()
+        .write(true)
+        .open(&second_out)
+        .unwrap()
+        .set_modified(second_wrote)
+        .unwrap();
 
     let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
     click(&egui_ctx, &mut app, entry(&nodes, REPORT_LABEL));
@@ -823,15 +842,13 @@ fn the_box_lists_the_kept_sessions_and_ticked_packs_each() {
         Some(accesskit::Toggled::False),
         "the box stands unticked"
     );
-    let wrote = fs::metadata(sessions_root.join(&name_a).join("outputs/0-EDIT00000000"))
-        .unwrap()
-        .modified()
-        .unwrap();
+    // The line still names the first input, and its write time is the
+    // second output's, the newer file.
     assert_eq!(
         text_line(&nodes, "21 Nov 09:30"),
         format!(
             "21 Nov 09:30: opened EDIT00000000; wrote at {}; closed",
-            clock_text(local_clock(wrote))
+            clock_text(local_clock(second_wrote))
         )
     );
     assert_eq!(
@@ -956,15 +973,16 @@ fn the_box_lists_the_kept_sessions_and_ticked_packs_each() {
 }
 
 // The draft's sessions block: the box 8 under the "The file holds:" list,
-// its first line 4 under the box, its lines 15 apart in the weak colour
-// and the privacy line 8 under the last one.
+// its first line 4 under the box, its lines 15 apart and the privacy line
+// 8 under the last one.
+// ST-REP-09
 #[test]
 fn the_box_and_its_lines_stand_as_the_draft_spaces_them() {
     let Shell {
         mut app, ctx, _dir, ..
     } = shell();
     let egui_ctx = test_context();
-    let sessions_root = ctx.paths().data_dir.clone().unwrap().join("sessions");
+    let sessions_root = ctx.paths().data_dir.as_ref().unwrap().join("sessions");
     session_folder(&sessions_root, 4242, 30, 15, vec![step("a step")], None);
     session_folder(
         &sessions_root,
@@ -1008,6 +1026,100 @@ fn the_box_and_its_lines_stand_as_the_draft_spaces_them() {
     assert!(
         (privacy.y0 - second.y1 - 8.0).abs() < 0.5,
         "the privacy line stands 8 under the last session line: {second:?} against {privacy:?}"
+    );
+}
+
+// The session lines are content the member reads to choose, so they paint
+// in the regular colour ticked or not; the privacy line, a side note,
+// paints in the weak one.
+// ST-REP-09
+#[test]
+fn the_session_lines_paint_in_the_text_colour_and_the_note_in_the_weak() {
+    let Shell {
+        mut app, ctx, _dir, ..
+    } = shell();
+    let egui_ctx = test_context();
+    let sessions_root = ctx.paths().data_dir.as_ref().unwrap().join("sessions");
+    session_folder(&sessions_root, 4242, 30, 15, vec![step("a step")], None);
+    session_folder(
+        &sessions_root,
+        4243,
+        31,
+        15,
+        vec![step("a step")],
+        Some(SessionEnd::Ended),
+    );
+
+    let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
+    click(&egui_ctx, &mut app, entry(&nodes, REPORT_LABEL));
+    // The modal fades in over its first frames, every plain label's
+    // painted colour dimmed with it; a settled one paints the text at
+    // full alpha.
+    let out = idle(&egui_ctx, &mut app, 20);
+
+    let visuals = egui_ctx.global_style().visuals.clone();
+    assert_ne!(
+        visuals.text_color(),
+        visuals.weak_text_color(),
+        "premise: the two colours differ"
+    );
+    let lines = [
+        "21 Nov 09:31: opened nothing; wrote nothing; stopped without closing",
+        "21 Nov 09:30: opened nothing; wrote nothing; ending unknown",
+    ];
+    let check = |out: &FrameOutput, when: &str| {
+        for line in lines {
+            assert_eq!(
+                painted_color(text_shape(out, line)),
+                visuals.text_color(),
+                "a session line paints in the text colour {when}"
+            );
+        }
+        assert_eq!(
+            painted_color(text_shape(
+                out,
+                "Your user folder is written as ~ in the file's paths."
+            )),
+            visuals.weak_text_color(),
+            "the privacy line paints in the weak colour {when}"
+        );
+    };
+    check(&out, "with the box clear");
+
+    click(&egui_ctx, &mut app, earlier_box(&out.nodes));
+    let out = frame(&egui_ctx, &mut app, Vec::new(), true);
+    assert_eq!(
+        earlier_box(&out.nodes).toggled(),
+        Some(accesskit::Toggled::True),
+        "premise: the box is ticked"
+    );
+    check(&out, "with the box ticked");
+}
+
+// The box's hover names the case it is for: a problem that began before
+// UTW was last opened.
+#[test]
+fn hovering_the_box_shows_when_to_tick_it() {
+    let Shell {
+        mut app, ctx, _dir, ..
+    } = shell();
+    let egui_ctx = test_context();
+    egui_ctx.all_styles_mut(|style| style.interaction.tooltip_delay = 0.0);
+    let sessions_root = ctx.paths().data_dir.as_ref().unwrap().join("sessions");
+    session_folder(&sessions_root, 4242, 30, 15, vec![step("a step")], None);
+
+    let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
+    click(&egui_ctx, &mut app, entry(&nodes, REPORT_LABEL));
+    let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
+    frame(&egui_ctx, &mut app, hover(earlier_box(&nodes)), true);
+    let nodes = idle(&egui_ctx, &mut app, 8).nodes;
+    assert!(
+        has_text(
+            &nodes,
+            "Tick it when the problem began before UTW was last opened: a session \
+             that crashed, or a save you tried in the game after closing UTW."
+        ),
+        "the box's hover is shown"
     );
 }
 

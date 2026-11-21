@@ -277,34 +277,6 @@ fn open_details(egui_ctx: &egui::Context, app: &mut StudioApp) -> Vec<accesskit:
     nodes
 }
 
-/// The painted `Shape::Text` carrying exactly `text`.
-fn text_shape<'a>(out: &'a FrameOutput, text: &str) -> &'a egui::epaint::TextShape {
-    out.shapes
-        .iter()
-        .filter_map(|clipped| match &clipped.shape {
-            egui::Shape::Text(shape) => Some(shape),
-            _ => None,
-        })
-        .find(|shape| shape.galley.text() == text)
-        .unwrap_or_else(|| panic!("no painted text {text:?}"))
-}
-
-/// The color `shape`'s text paints in: a section's own color when one was
-/// set, else the shape's fallback.
-fn painted_color(shape: &egui::epaint::TextShape) -> egui::Color32 {
-    if let Some(overridden) = shape.override_text_color {
-        return overridden;
-    }
-    shape
-        .galley
-        .job
-        .sections
-        .iter()
-        .map(|section| section.format.color)
-        .find(|&color| color != egui::Color32::PLACEHOLDER)
-        .unwrap_or(shape.fallback_color)
-}
-
 /// A key event.
 fn key(key: egui::Key, pressed: bool) -> egui::Event {
     egui::Event::Key {

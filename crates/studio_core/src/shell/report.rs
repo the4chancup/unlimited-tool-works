@@ -39,11 +39,11 @@ const README_CORE: &str = include_str!("report_readme.txt");
 /// The dialog's state: open or not, the member's words (kept for the window's
 /// life, so a reopened dialog holds them), the lines under "The file holds:"
 /// as built at the opening, the earlier sessions the "Include earlier
-/// sessions" box lists — built with them — and its tick, the bundle last
-/// written or the write's error — both cleared by a reopening — the member's
-/// home folder for the `~` rewrite, and the Save… file picker, which the
-/// tests replace (a native dialog cannot be clicked headless; the tools'
-/// pickers are stubbed the same way).
+/// sessions" box lists and their line texts — built with them — and its tick,
+/// the bundle last written or the write's error — both cleared by a
+/// reopening — the member's home folder for the `~` rewrite, and the Save…
+/// file picker, which the tests replace (a native dialog cannot be clicked
+/// headless; the tools' pickers are stubbed the same way).
 pub(super) struct Report {
     /// The modal is drawn while set.
     open: bool,
@@ -60,6 +60,9 @@ pub(super) struct Report {
     /// should repeat either. Newest first, as the box lists them and the
     /// bundle packs them.
     sessions: Vec<EarlierSession>,
+    /// `sessions`' line texts, built with them: a line's local times read
+    /// the system's time zone, which no frame should read again.
+    session_lines: Vec<String>,
     /// The "Include earlier sessions" box's tick: unticked at every
     /// opening.
     include_earlier: bool,
@@ -108,6 +111,7 @@ impl Report {
             words: String::new(),
             lines: Vec::new(),
             sessions: Vec::new(),
+            session_lines: Vec::new(),
             include_earlier: false,
             saved_to: None,
             error: None,
@@ -136,6 +140,7 @@ impl Report {
             .as_deref()
             .map(|dir| earlier_sessions(&dir.join("sessions"), own_session))
             .unwrap_or_default();
+        self.session_lines = self.sessions.iter().map(session_line).collect();
         self.include_earlier = false;
         self.saved_to = None;
         self.error = None;
@@ -211,22 +216,17 @@ impl Report {
                                  the game after closing UTW.",
                             );
                         // The draft's sessions `ul` keeps its first line 4
-                        // under the box, its rows in the weak colour.
+                        // under the box, its lines the list's `<li>` shape.
                         ui.add_space(4.0);
-                        for session in &self.sessions {
+                        for line in &self.session_lines {
                             ui.horizontal_top(|ui| {
-                                ui.weak("•");
-                                ui.add(
-                                    egui::Label::new(
-                                        egui::RichText::new(session_line(session)).weak(),
-                                    )
-                                    .wrap(),
-                                );
+                                ui.label("•");
+                                ui.add(egui::Label::new(line.as_str()).wrap());
                             });
                         }
                         modal_sentence_gap(ui);
                     }
-                    ui.label("Your user folder is written as ~ in the file's paths.");
+                    ui.weak("Your user folder is written as ~ in the file's paths.");
                     if let Some(saved_to) = &self.saved_to {
                         modal_sentence_gap(ui);
                         ui.label(saved_to.as_str());
@@ -446,7 +446,7 @@ fn file_name(path: &Path) -> String {
 /// `when`'s clock time, `hh:mm` in the local zone (`02:41`).
 fn local_clock(when: SystemTime) -> jiff::civil::Time {
     jiff::Timestamp::try_from(when)
-        .expect("a SystemTime the program made is inside jiff's timestamp range")
+        .expect("a file write's time is inside jiff's timestamp range")
         .to_zoned(jiff::tz::TimeZone::system())
         .time()
 }
