@@ -1437,7 +1437,7 @@ via the browser's File System Access API (`showDirectoryPicker`).
 |---|---|---|
 | Web-eligible, cheap | Save editor, Kit config editor, Music export editor, Export upgrader checks: tools that read a few user-picked files and write results back | Only the async file-access adapter; the lib crates and the egui shell compile unchanged |
 | Web-eligible, pipeline-bound | Compiler (single team), Balls compiler, Stadium compiler | The pipeline adapters below; single-export scale only |
-| Desktop-only by construction | Match tracker (Win32 memory), Player aesthetics editor's Blender launch, self-update, elevation, live folder watching | Not offered; the WASM build hides them (saved-match viewing stays available; see the Match tracker plan) |
+| Desktop-only by construction | Match tracker (Win32 memory), Player aesthetics editor's Blender launch, the Video encoder (left out by choice), self-update, elevation, live folder watching | Not offered; the WASM build hides them (saved-match viewing stays available; see the Match tracker plan) |
 
 Differences from the desktop build:
 - **A window on the page, not the page.** The browser is usually maximized, and the views are

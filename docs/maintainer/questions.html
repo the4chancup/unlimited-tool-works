@@ -68,6 +68,27 @@ text into the chat. The answered ones then leave this page, and each answer goes
   <textarea class="own" placeholder="Your own answer or a note (optional)"></textarea>
 </section>
 
+<h2>Unscheduled tools</h2>
+
+<section class="entry" id="swipe-source-files">
+  <h3>What the cup's video makers export their swipes as</h3>
+  <p class="from">From: <code>docs/plans/core/development_plan.md</code>, the Video encoder</p>
+  <p>The Video encoder will turn a member's video into the USM the game plays. Its first
+  version reads a PNG image sequence, which keeps the transparency swipes and wipes need. The
+  2015 batch files took an AVI and read its transparency from the same file, but what video
+  makers export today is not known.</p>
+  <p class="ask">What do the cup's video makers export their swipes and wipes as?</p>
+  <div class="options">
+    <label class="opt"><input type="radio" value="PNG sequence"><b>A PNG image sequence</b></label>
+    <label class="opt"><input type="radio" value="video with transparency"><b>A video file with transparency</b>
+      <div class="note">Say below which format, if you know (for example MOV, AVI or WebM).</div></label>
+    <label class="opt"><input type="radio" value="video without transparency"><b>A video file without transparency</b>
+      <div class="note">Say below how the transparency is made, if you know.</div></label>
+    <label class="opt"><input type="radio" value="not known"><b>I don't know, I'd have to ask them</b></label>
+  </div>
+  <textarea class="own" placeholder="Your own answer or a note (optional)"></textarea>
+</section>
+
 <div class="picks">
   <button id="copy">Copy my answers</button>
   <button id="clear">Clear my answers</button>

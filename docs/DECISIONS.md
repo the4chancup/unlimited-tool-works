@@ -19205,3 +19205,21 @@ cell, since no row keeps the bar's room.
 Why: the maintainer's call, after the controls gained their edges: the active entry now marks its
 choice as a held toggle side marks its own, with the same fill and edge.
 Plan: plans/core/gui.md "Sidebar" item 3 (the active tool); the draft's `.sidebar .tool.on`.
+
+## 2026-11-21 — plans — the Video encoder adds less than 20 MB to the executable, and the browser edition leaves it out
+Decision (the maintainer): the Video encoder, unscheduled, must add less than 20 MB to the
+desktop executable, and Limited Tool Works, the browser edition, does not offer it.
+Why: the maintainer's limits.
+Plan: plans/core/development_plan.md "Unscheduled tools", the Video encoder; plans/core/gui.md
+"Tool eligibility".
+
+## 2026-11-21 — plans — the Video encoder's MPEG-1 encoder is the suite's own, its frames a PNG sequence first
+Decision (the lead, applying its recommendation): the encoder writes MPEG-1 with Rust code of
+its own, not ffmpeg linked in, and reads a member's frames first as a PNG sequence; a video
+file's decoder (H.264 in MP4) comes only if members need one.
+Why: MPEG-1 is a small, old standard, estimated at well under 1 MB of code, while ffmpeg
+brings a C build into every platform's build and, estimated, 5 to 15 MB even cut down, much
+of the 20 MB limit for one tool. PNG sequences carry transparency, which every swipe and
+wipe needs, and the executable already decodes them. The sizes are estimates, to be measured
+when the phase opens.
+Plan: plans/core/development_plan.md "Unscheduled tools", the Video encoder.

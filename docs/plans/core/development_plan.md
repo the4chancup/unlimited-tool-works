@@ -842,6 +842,15 @@ Tools the suite will take in, with no phase or plan yet:
   the transparency; only the two movies carry sound, in CRI's own HCA codec, which has no open
   encoder. So a first version writes silent videos, which covers every swipe, wipe and
   billboard. The container, as observed, is in `libs/usm.md`.
+
+  It adds less than 20 MB to the desktop executable, and the browser edition leaves it out
+  (`gui.md` "Tool eligibility"). Its MPEG-1 encoder is the suite's own, in Rust: MPEG-1 is a
+  small, old standard, estimated at well under 1 MB of code. Linking ffmpeg in instead would
+  bring a C build into every platform's build and, estimated, 5 to 15 MB even cut down to a
+  few decoders, much of the limit for one tool. It reads a member's frames first as a PNG
+  sequence, which the executable already decodes, transparency included; a decoder for a
+  video file (H.264 in MP4, about 1 to 2 MB, estimated) comes only if members need one. These
+  sizes are estimates, measured when the phase opens.
 - **Export viewer**: opens a member's aesthetics export, or a single model, and shows the
   team close to how the game does: players with their kits, faces, bodies and motions, a
   list of the export's problems, and still or animated captures. MFG's FMDL-Viewer does this
