@@ -32,6 +32,7 @@ const KEPT_SESSIONS: usize = 5;
 /// What a session's `journal.toml` opens with, and what names its
 /// folder: the build that recorded it, the OS it ran on, when the
 /// session started and its process id.
+#[derive(Clone)]
 pub struct SessionHeader {
     /// The suite's version as the window shows it
     /// (`crate::shell::version_label`).
@@ -177,7 +178,7 @@ struct FileMeta {
 /// `frame` written to `out`: a kind byte, then the body's length
 /// (little-endian) and the body — the frame's fields as TOML, then a
 /// kept file's bytes raw.
-pub fn write_frame(out: &mut impl Write, frame: &SessionFrame) -> io::Result<()> {
+pub fn write_frame(out: &mut (impl Write + ?Sized), frame: &SessionFrame) -> io::Result<()> {
     let (kind, body) = frame_body(frame)?;
     let length = u32::try_from(body.len()).expect("a frame body is under 4 GB");
     out.write_all(&[kind])?;
@@ -522,14 +523,19 @@ impl SessionWriter {
 
     /// Appends `[end]` with `how` the session ended. Only the first
     /// `end` counts — a later one writes nothing — and an `end` before
-    /// the first `write` writes nothing: no folder was made.
+    /// the first `write` writes nothing unless a folder is there to
+    /// adopt: a writer that took the session over still owes the folder
+    /// its `[end]`.
     pub fn end(&mut self, end: SessionEnd) -> anyhow::Result<()> {
+        if self.folder.is_none() && !self.adopt_folder()? {
+            return Ok(());
+        }
+        // Only the first `end` counts — `ended` set by an earlier call or
+        // by the journal just adopted, whose `[end]` stands.
         if self.ended {
             return Ok(());
         }
-        let Some(folder) = &self.folder else {
-            return Ok(());
-        };
+        let folder = self.folder.as_ref().expect("the folder is set");
         let block = EndBlock {
             end: EndRow {
                 how: end.how().to_owned(),
@@ -540,28 +546,92 @@ impl SessionWriter {
         Ok(())
     }
 
-    /// The session's folder, made when this is the first `write`:
-    /// `<root>/<yyyy>-<mm>-<dd>-<hhmmss>-<pid>/` from the header's local
-    /// time and pid, holding `journal.toml`'s header lines and the empty
-    /// `inputs/` and `outputs/`. Making it prunes `root` to the kept
-    /// newest folders.
+    /// The session's folder: `<root>/<yyyy>-<mm>-<dd>-<hhmmss>-<pid>/`
+    /// from the header's local time and pid. A `journal.toml` already
+    /// there is adopted, anything else is made fresh.
     fn ensure_folder(&mut self) -> anyhow::Result<PathBuf> {
-        if self.folder.is_none() {
-            let name = folder_name(&self.header);
-            let folder = self.root.join(&name);
-            for dir in ["inputs", "outputs"] {
-                fs::create_dir_all(folder.join(dir)).with_context(|| {
-                    format!("{}: cannot make the session folder", folder.display())
-                })?;
-            }
-            let text = toml_block(&SessionDoc::header(&self.header)?)?;
-            let journal = folder.join("journal.toml");
-            replace_file(&journal, |tmp| fs::write(tmp, &text))
-                .with_context(|| format!("{}: cannot write the journal", journal.display()))?;
-            prune(&self.root, &name);
-            self.folder = Some(folder);
+        if self.folder.is_none() && !self.adopt_folder()? {
+            self.make_folder()?;
         }
-        Ok(self.folder.clone().expect("the folder was just made"))
+        Ok(self.folder.clone().expect("the folder is set"))
+    }
+
+    /// `self.folder` adopted from the folder the header names, `true`
+    /// when its `journal.toml` was already there: the file is cut back
+    /// to just after its last `# ok` line — a block the earlier writer
+    /// left half-written sits past it, where it would read as a row —
+    /// and the rows up to the cut give the next input's index and each
+    /// output's tool and path, so the writer writes on where they left
+    /// off. Nothing before the cut is rewritten, and `root` is not
+    /// pruned: the folder is no new session. `false` when the journal
+    /// is not there, or holds no marker at all — the earlier writer
+    /// then died inside the header's own block and the folder is made
+    /// fresh.
+    fn adopt_folder(&mut self) -> anyhow::Result<bool> {
+        let name = folder_name(&self.header);
+        let folder = self.root.join(&name);
+        let journal = folder.join("journal.toml");
+        let bytes = match fs::read(&journal) {
+            Ok(bytes) => bytes,
+            Err(error) if error.kind() == io::ErrorKind::NotFound => return Ok(false),
+            Err(error) => {
+                return Err(error)
+                    .with_context(|| format!("{}: cannot read the journal", journal.display()));
+            }
+        };
+        // Lossy, as `session_bundle` reads it: a block cut inside a
+        // multi-byte character sits past the last marker anyway, and the
+        // marker search must reach it still.
+        let text = String::from_utf8_lossy(&bytes);
+        let Some(end) = last_marker_end(&text) else {
+            return Ok(false);
+        };
+        for dir in ["inputs", "outputs"] {
+            fs::create_dir_all(folder.join(dir))
+                .with_context(|| format!("{}: cannot make the session folder", folder.display()))?;
+        }
+        fs::OpenOptions::new()
+            .write(true)
+            .open(&journal)
+            .and_then(|file| file.set_len(end as u64))
+            .with_context(|| format!("{}: cannot cut the journal", journal.display()))?;
+        // The same parse `session_bundle` runs on the kept rows.
+        let doc: SessionDoc = toml::from_str(&text[..end])
+            .with_context(|| format!("{}: cannot parse the journal", folder.display()))?;
+        self.inputs = doc.inputs.len();
+        for row in doc.outputs {
+            let path = PathBuf::from(&row.path);
+            if !self
+                .outputs
+                .iter()
+                .any(|(tool, kept)| tool == &row.tool && kept == &path)
+            {
+                self.outputs.push((row.tool, path));
+            }
+        }
+        // An `[end]` already written stands: only the first one counts.
+        self.ended = doc.end.is_some();
+        self.folder = Some(folder);
+        Ok(true)
+    }
+
+    /// `self.folder` made fresh: `journal.toml`'s header lines and the
+    /// empty `inputs/` and `outputs/`, then `root` pruned to the kept
+    /// newest folders.
+    fn make_folder(&mut self) -> anyhow::Result<()> {
+        let name = folder_name(&self.header);
+        let folder = self.root.join(&name);
+        for dir in ["inputs", "outputs"] {
+            fs::create_dir_all(folder.join(dir))
+                .with_context(|| format!("{}: cannot make the session folder", folder.display()))?;
+        }
+        let text = toml_block(&SessionDoc::header(&self.header)?)?;
+        let journal = folder.join("journal.toml");
+        replace_file(&journal, |tmp| fs::write(tmp, &text))
+            .with_context(|| format!("{}: cannot write the journal", journal.display()))?;
+        prune(&self.root, &name);
+        self.folder = Some(folder);
+        Ok(())
     }
 }
 
@@ -1364,6 +1434,183 @@ mod tests {
             read_frame(&mut input).unwrap().is_none(),
             "the cut frame is dropped, `None` like the pipe's end"
         );
+    }
+
+    // A second writer with the same header adopts the folder the first
+    // made: the journal's bytes up to the first writer's end stand, the
+    // next input lands at the row count's index, and a write to the
+    // output's tool and path replaces `outputs/0-…`.
+    // ST-REP-10
+    #[test]
+    fn a_second_writer_adopts_the_folder_and_writes_on() {
+        let dir = TestDir::new("studio_core_session_adopt");
+        let root = dir.path().join("sessions");
+        let mut first = SessionWriter::new(&root, header(4242));
+        for (path, bytes) in [
+            ("C:/Data/a/EDIT00000000", &b"INPUT_A"[..]),
+            ("D:/Data/b/EDIT00000000", &b"INPUT_B"[..]),
+        ] {
+            first
+                .write(&SessionMessage::Input {
+                    tool: "stub".to_owned(),
+                    path: Path::new(path).to_path_buf(),
+                    bytes: Arc::from(bytes),
+                })
+                .unwrap();
+        }
+        for (path, bytes) in [
+            ("C:/Data/out/EDIT00000000", &b"WRITE_A"[..]),
+            ("C:/Data/out/other.bin", &b"WRITE_OTHER"[..]),
+        ] {
+            first
+                .write(&SessionMessage::Output {
+                    tool: "stub".to_owned(),
+                    path: Path::new(path).to_path_buf(),
+                    bytes: Arc::from(bytes),
+                })
+                .unwrap();
+        }
+        let folder = root.join("2026-11-21-093015-4242");
+        let written = fs::read(folder.join("journal.toml")).unwrap();
+
+        let mut second = SessionWriter::new(&root, header(4242));
+        second
+            .write(&SessionMessage::Input {
+                tool: "stub".to_owned(),
+                path: Path::new("E:/Data/c/EDIT00000000").to_path_buf(),
+                bytes: Arc::from(&b"INPUT_C"[..]),
+            })
+            .unwrap();
+        second
+            .write(&SessionMessage::Output {
+                tool: "stub".to_owned(),
+                path: Path::new("C:/Data/out/other.bin").to_path_buf(),
+                bytes: Arc::from(&b"WRITE_B"[..]),
+            })
+            .unwrap();
+
+        assert_eq!(
+            fs::read(folder.join("inputs/2-EDIT00000000")).unwrap(),
+            b"INPUT_C",
+            "the third input, not a second inputs/0"
+        );
+        assert_eq!(
+            fs::read(folder.join("outputs/1-other.bin")).unwrap(),
+            b"WRITE_B",
+            "the adopted output path keeps its first index"
+        );
+        let journal = fs::read(folder.join("journal.toml")).unwrap();
+        assert_eq!(
+            &journal[..written.len()],
+            &written[..],
+            "the first writer's bytes are unchanged"
+        );
+    }
+
+    // A journal left with half a block past its last marker is cut back
+    // there on adoption: the second writer's step lands where the
+    // fragment sat and the bundle reads every whole block and it.
+    // ST-REP-10
+    #[test]
+    fn adoption_cuts_the_journal_back_to_its_last_marker() {
+        let dir = TestDir::new("studio_core_session_adopt_cut");
+        let root = dir.path().join("sessions");
+        let mut first = SessionWriter::new(&root, header(4242));
+        first
+            .write(&SessionMessage::Step {
+                seconds: 0.5,
+                tool: "stub".to_owned(),
+                what: "the first writer's step".to_owned(),
+                op: None,
+            })
+            .unwrap();
+        let folder = root.join("2026-11-21-093015-4242");
+        // The fragment a monitor dying mid-block would leave: a `[[step]]`
+        // and a cut `what` line with no marker after them.
+        fs::OpenOptions::new()
+            .append(true)
+            .open(folder.join("journal.toml"))
+            .unwrap()
+            .write_all(b"[[step]]\nwhat = \"cut")
+            .unwrap();
+
+        let mut second = SessionWriter::new(&root, header(4242));
+        second
+            .write(&SessionMessage::Step {
+                seconds: 1.0,
+                tool: "stub".to_owned(),
+                what: "the second writer's step".to_owned(),
+                op: None,
+            })
+            .unwrap();
+
+        let bundle = folder_bundle(dir.path(), &folder, None);
+        let whats: Vec<&str> = bundle.steps.iter().map(|step| step.what.as_str()).collect();
+        assert_eq!(
+            whats,
+            ["the first writer's step", "the second writer's step"],
+            "the whole blocks and the new step, the fragment gone"
+        );
+    }
+
+    // A writer whose first call is `end` adopts the folder another
+    // writer left: its `[end]` lands in it.
+    // ST-REP-10
+    #[test]
+    fn an_end_before_any_write_adopts_the_folder_and_ends_it() {
+        let dir = TestDir::new("studio_core_session_end_adopt");
+        let root = dir.path().join("sessions");
+        let mut first = SessionWriter::new(&root, header(4242));
+        first
+            .write(&SessionMessage::Step {
+                seconds: 0.5,
+                tool: "stub".to_owned(),
+                what: "the first writer's step".to_owned(),
+                op: None,
+            })
+            .unwrap();
+
+        let mut second = SessionWriter::new(&root, header(4242));
+        second.end(SessionEnd::Closed).unwrap();
+
+        let folder = root.join("2026-11-21-093015-4242");
+        let (text, doc) = journal(&folder);
+        assert_eq!(doc["end"]["how"].as_str(), Some("closed"), "{text}");
+        assert_eq!(doc["step"].as_array().unwrap().len(), 1, "{text}");
+    }
+
+    // A journal already holding `[end]` keeps it on adoption: `end`
+    // writes no second one — two `[end]` tables would not parse — and
+    // the first `how` stands.
+    // ST-REP-10
+    #[test]
+    fn an_adopted_end_counts_as_the_first() {
+        let dir = TestDir::new("studio_core_session_end_twice");
+        let root = dir.path().join("sessions");
+        let mut first = SessionWriter::new(&root, header(4242));
+        first
+            .write(&SessionMessage::Step {
+                seconds: 0.5,
+                tool: "stub".to_owned(),
+                what: "the first writer's step".to_owned(),
+                op: None,
+            })
+            .unwrap();
+        first.end(SessionEnd::Closed).unwrap();
+
+        let mut second = SessionWriter::new(&root, header(4242));
+        second.end(SessionEnd::Ended).unwrap();
+
+        let folder = root.join("2026-11-21-093015-4242");
+        let (text, doc) = journal(&folder);
+        assert_eq!(
+            text.matches("\n[end]\n").count(),
+            1,
+            "the adopted [end] stands alone: {text}"
+        );
+        assert_eq!(doc["end"]["how"].as_str(), Some("closed"), "{text}");
+        let bundle = folder_bundle(dir.path(), &folder, None);
+        assert_eq!(bundle.steps.len(), 1, "the journal still parses");
     }
 
     // `started` keeps its own time zone through the pipe: a +01:00

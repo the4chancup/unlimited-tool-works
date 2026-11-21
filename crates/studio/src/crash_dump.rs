@@ -5,15 +5,18 @@
 //! monitor for a dump when a crash comes: the monitor writes the slot's dump (`utw.dmp`,
 //! `utw.n.dmp` for the nth copy) beside the slot's log, appends a line naming it, and
 //! exits with the window's process (ST-RUN-12). The
-//! crash test's triggers (`--crash-test stack`, `session`) are `overflow_the_stack` and
-//! `session_test`, run once the monitor is up and before any window, so the tests need no
-//! display (ST-RUN-10, ST-REP-11).
+//! crash test's triggers (`--crash-test stack`, `session`, `monitor`) are
+//! `overflow_the_stack`, `session_test` and `monitor_test`, run once the monitor is up
+//! and before any window, so the tests need no
+//! display (ST-RUN-10, ST-REP-11, ST-REP-10).
 //!
 //! The monitor's other job is the window's session folder (`<data location>/sessions/`):
 //! the window's session messages reach it as frames through its standard input, a pipe
 //! the window opens when it starts the monitor, and the monitor writes each into the
 //! folder as it arrives and appends `[end]` — `closed`, `crashed` or `ended` — once the
-//! pipe's end says the window is gone.
+//! pipe's end says the window is gone. A monitor that dies mid-session is replaced
+//! once: the window's link starts another (`monitor_restart`), which writes on into
+//! the same folder.
 
 use std::ffi::OsString;
 use std::fs::{self, File, OpenOptions};
@@ -32,6 +35,7 @@ use studio_core::EXE_NAME;
 use studio_core::repro::{Recorder, SessionEnd, SessionFrame, SessionWriter, read_frame};
 
 use crate::gui_log;
+use crate::session_link::SessionLink;
 
 /// `utw.dmp`'s name in the data location, beside `utw.log`: slot 1's dump. Slot n's is
 /// `utw.n.dmp` (`instance::slot_file_name`).
@@ -77,7 +81,8 @@ pub(crate) enum HiddenLaunch {
     },
     /// `--crash-test <which>`: run the window's start, then the test's
     /// trigger (`stack` overflows the stack, `session` records two steps
-    /// and exits without the closing message).
+    /// and exits without the closing message, `monitor` ends its monitor
+    /// mid-session and lets the link replace it).
     CrashTest(CrashTest),
 }
 
@@ -89,6 +94,10 @@ pub(crate) enum CrashTest {
     /// `--crash-test session`: record two steps through the session link,
     /// then end the process with no closing message (ST-REP-11).
     Session,
+    /// `--crash-test monitor`: record a step, end the monitor, record a
+    /// second step into the same folder through the new monitor, then
+    /// close the session (ST-REP-10).
+    Monitor,
 }
 
 /// Reads the hidden launches before the command line is parsed: neither is a command a
@@ -111,6 +120,9 @@ pub(crate) fn hidden_launch(args: &[OsString]) -> Option<HiddenLaunch> {
         }
         [_, arg, which] if arg == CRASH_TEST_ARG && which == "session" => {
             Some(HiddenLaunch::CrashTest(CrashTest::Session))
+        }
+        [_, arg, which] if arg == CRASH_TEST_ARG && which == "monitor" => {
+            Some(HiddenLaunch::CrashTest(CrashTest::Monitor))
         }
         _ => None,
     }
@@ -445,18 +457,27 @@ fn connect(monitor: &mut Child, socket: &Path) -> Result<minidumper::Client, Sta
     }
 }
 
+/// The monitor a window is watched by, as `start_monitor` hands it up: the
+/// `CrashHandler` that asks it for a dump, its standard input the session's
+/// frames travel, and the `Child` itself, kept so a test can end it.
+pub(crate) struct Watch {
+    /// The attached crash hook; dropped, it detaches.
+    pub(crate) handler: CrashHandler,
+    /// The monitor's standard input: the session's pipe, whose end tells
+    /// the monitor the window went away.
+    pub(crate) pipe: ChildStdin,
+    /// The monitor process. Dropping it leaves it running — it exits when
+    /// the socket the handler held closes; a test kills it.
+    pub(crate) child: Child,
+}
+
 /// Spawns `program` as the monitor and attaches the `crash-handler` hook that asks it
 /// for a dump, or fails with the `StartFailure` kind `watch_crashes` reads for its
 /// second try. The socket is named after this process's id in the temp folder: a fixed
 /// name would leave one of two windows unwatched, and a data-location path can pass
-/// the 107 bytes a Windows socket path holds. Beside the handler the monitor's
-/// standard input is returned: the window's session frames will travel it, and its
-/// end tells the monitor the window went away.
-fn start_monitor(
-    program: &Path,
-    data_dir: &Path,
-    slot: u32,
-) -> Result<(CrashHandler, ChildStdin), StartFailure> {
+/// the 107 bytes a Windows socket path holds. A stale file under that name needs no
+/// removal here: `minidumper`'s `Server::with_name` deletes its path before binding.
+fn start_monitor(program: &Path, data_dir: &Path, slot: u32) -> Result<Watch, StartFailure> {
     let socket = std::env::temp_dir().join(format!("{EXE_NAME}-crash-{}.sock", std::process::id()));
     let mut monitor = Command::new(program)
         .arg(MONITOR_ARG)
@@ -498,13 +519,17 @@ fn start_monitor(
     // Yama's restricted ptrace lets only the named process dump us; the default lets any.
     #[cfg(target_os = "linux")]
     handler.set_ptracer(Some(monitor.id()));
-    // `monitor` is dropped neither killed nor waited: the monitor exits on its own when
-    // the client's socket closes.
+    // `monitor` is neither killed nor waited: it exits on its own when the
+    // client's socket closes.
     let pipe = monitor
         .stdin
         .take()
         .expect("the monitor's standard input was piped");
-    Ok((handler, pipe))
+    Ok(Watch {
+        handler,
+        pipe,
+        child: monitor,
+    })
 }
 
 /// Runs `start` and, only when it fails at once, runs it once more and returns the
@@ -534,9 +559,10 @@ fn start_monitor_once_more<T>(
     }
 }
 
-/// Starts the monitor and attaches the hook, returning the handler that keeps both
-/// and the monitor's standard input — the pipe the window's session frames will
-/// travel, held until the window goes. A start that fails at once is tried once more
+/// Starts the monitor and attaches the hook, returning the `Watch` that
+/// keeps both: the handler until it is dropped, the monitor's standard
+/// input — the pipe the window's session frames will travel — and the
+/// `Child`. A start that fails at once is tried once more
 /// (`start_monitor_once_more`, ST-RUN-13). On failure (the exe's own path unknown, a
 /// monitor that does not start twice or does not answer, a hook that does not attach)
 /// one `Warn` line is logged through `logger` and the window
@@ -549,7 +575,7 @@ pub(crate) fn watch_crashes(
     data_dir: &Path,
     slot: u32,
     logger: &dyn log::Log,
-) -> Option<(CrashHandler, ChildStdin)> {
+) -> Option<Watch> {
     let started = program
         .map_err(|error| StartFailure::Other(error.into()))
         .and_then(|program| {
@@ -573,6 +599,41 @@ pub(crate) fn watch_crashes(
     }
 }
 
+/// The session link's `restart` after its pipe broke: `handler`, the dead
+/// monitor's hook, is dropped first — `crash-handler` holds only one attach
+/// at a time — then `watch_crashes` runs a new monitor. Its pipe is the
+/// link's new target; its handler is kept for the thread's end, which
+/// detaches it as `main` did after `close`. A monitor that starts logs one
+/// Info line, so a restart that made it and the fallback are told apart in
+/// the log. `None` is a monitor that did not start, which hands the folder
+/// to the window's own writer.
+pub(crate) fn monitor_restart(
+    data_dir: &Path,
+    slot: u32,
+    handler: CrashHandler,
+) -> Box<dyn FnMut() -> Option<Box<dyn Write + Send>> + Send> {
+    let data_dir = data_dir.to_path_buf();
+    let mut handler = Some(handler);
+    Box::new(move || {
+        drop(handler.take());
+        watch_crashes(std::env::current_exe(), &data_dir, slot, log::logger()).map(|watch| {
+            handler = Some(watch.handler);
+            // `watch.child` drops here, left running like the first monitor:
+            // it exits when the socket the handler held closes.
+            log::info!("a new crash monitor was started after the session's pipe broke");
+            Box::new(watch.pipe) as Box<dyn Write + Send>
+        })
+    })
+}
+
+/// The session link's `restart` for a window whose monitor never started:
+/// none is asked for — the first try already had its second
+/// (`start_monitor_once_more`) — so the call gives no pipe back and the
+/// window's own writer runs.
+pub(crate) fn no_restart() -> Box<dyn FnMut() -> Option<Box<dyn Write + Send>> + Send> {
+    Box::new(|| None)
+}
+
 /// `--crash-test stack`'s crash (ST-RUN-10): a stack overflow, the kind no panic hook
 /// sees. ST-RUN-11 looks for this function's name in the dump's stack.
 #[inline(never)]
@@ -586,6 +647,44 @@ pub(crate) fn overflow_the_stack(depth: u64) -> u64 {
     }
     // Work after the call, so no build turns the recursion into a loop.
     overflow_the_stack(depth + 1) + u64::from(array[0])
+}
+
+/// `done` retried every 20 ms until it holds or 120 seconds pass — the
+/// bound of every wait on another process — `false` past it.
+fn wait_until(mut done: impl FnMut() -> bool) -> bool {
+    let deadline = Instant::now() + Duration::from_secs(120);
+    loop {
+        if done() {
+            return true;
+        }
+        if Instant::now() > deadline {
+            return false;
+        }
+        std::thread::sleep(Duration::from_millis(20));
+    }
+}
+
+/// `folder`'s journal holds `steps` `[[step]]` blocks.
+fn journal_holds_steps(folder: &Path, steps: usize) -> bool {
+    fs::read_to_string(folder.join("journal.toml"))
+        .map(|journal| journal.matches("[[step]]").count() >= steps)
+        .unwrap_or(false)
+}
+
+/// The session folder under `sessions` whose journal holds `steps`
+/// `[[step]]` blocks, `None` when none does inside the wait.
+fn await_steps(sessions: &Path, steps: usize) -> Option<PathBuf> {
+    let mut found = None;
+    wait_until(|| {
+        found = fs::read_dir(sessions).ok().and_then(|entries| {
+            entries
+                .filter_map(|entry| entry.ok())
+                .map(|entry| entry.path())
+                .find(|folder| journal_holds_steps(folder, steps))
+        });
+        found.is_some()
+    });
+    found
 }
 
 /// `--crash-test session`'s trigger (ST-REP-11): two steps through the
@@ -603,26 +702,49 @@ pub(crate) fn session_test(recorder: &Recorder, data_dir: Option<&Path>) -> ! {
         log::error!("the session test ran without a data location");
         std::process::exit(3);
     };
-    let deadline = Instant::now() + Duration::from_secs(120);
-    loop {
-        let reached = fs::read_dir(&sessions)
-            .map(|entries| {
-                entries.filter_map(|entry| entry.ok()).any(|entry| {
-                    fs::read_to_string(entry.path().join("journal.toml"))
-                        .map(|journal| journal.matches("[[step]]").count() >= 2)
-                        .unwrap_or(false)
-                })
-            })
-            .unwrap_or(false);
-        if reached {
-            std::process::exit(0);
-        }
-        if Instant::now() > deadline {
-            log::error!("the session test's steps never reached the session folder");
-            std::process::exit(3);
-        }
-        std::thread::sleep(Duration::from_millis(20));
+    if await_steps(&sessions, 2).is_none() {
+        log::error!("the session test's steps never reached the session folder");
+        std::process::exit(3);
     }
+    std::process::exit(0);
+}
+
+/// `--crash-test monitor`'s trigger (ST-REP-10): a first step through the
+/// recorder, waited on in the session folder; then `monitor` ended —
+/// `wait` reaps the kill, so the pipe's break, not the kill's timing, is
+/// what the link's next send meets — a second step waited on in the same
+/// folder, which the new monitor's writer adopts, and the session closed
+/// `closed` as `main` closes it. `link` or `monitor` `None` — a run with
+/// no data location or one whose monitor never started — is a test that
+/// cannot run, exit 3 as `session_test` does.
+pub(crate) fn monitor_test(
+    recorder: &Recorder,
+    data_dir: Option<&Path>,
+    link: Option<SessionLink>,
+    monitor: Option<Child>,
+) -> ! {
+    let (Some(sessions), Some(link), Some(mut monitor)) =
+        (data_dir.map(|dir| dir.join("sessions")), link, monitor)
+    else {
+        log::error!("the monitor test ran without a data location, a session link or a monitor");
+        std::process::exit(3);
+    };
+    recorder.step("stub", "the monitor test's first step");
+    let Some(folder) = await_steps(&sessions, 1) else {
+        log::error!("the monitor test's first step never reached the session folder");
+        std::process::exit(3);
+    };
+    if let Err(error) = monitor.kill().and_then(|()| monitor.wait()) {
+        log::error!("the monitor test could not end its monitor: {error}");
+        std::process::exit(3);
+    }
+    recorder.step("stub", "the monitor test's second step");
+    if !wait_until(|| journal_holds_steps(&folder, 2)) {
+        log::error!("the monitor test's second step never reached the session folder");
+        std::process::exit(3);
+    }
+    link.close(SessionEnd::Closed);
+    std::process::exit(0);
 }
 
 #[cfg(test)]
@@ -671,6 +793,10 @@ mod tests {
         assert!(matches!(
             hidden_launch(&args(&["studio", "--crash-test", "session"])),
             Some(HiddenLaunch::CrashTest(CrashTest::Session))
+        ));
+        assert!(matches!(
+            hidden_launch(&args(&["studio", "--crash-test", "monitor"])),
+            Some(HiddenLaunch::CrashTest(CrashTest::Monitor))
         ));
         for bad in [
             args(&["studio", "--crash-test", "other"]),

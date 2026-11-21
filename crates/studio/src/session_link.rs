@@ -2,13 +2,14 @@
 //! queues every step and kept file the recorder takes, and the thread `start`
 //! spawns writes each into the session folder — to the crash monitor's standard
 //! input as `SessionFrame`s when the monitor started, through the window's own
-//! `SessionWriter` under `<data location>/sessions` when it did not. `close`
-//! ends the queue; the thread then writes the session's closing state and the
-//! folder reads `closed`.
+//! `SessionWriter` under `<data location>/sessions` when it did not. A pipe
+//! that breaks mid-session gets one new monitor from `restart`, which writes
+//! on into the same folder; no new monitor, or a second break, gives the
+//! folder to the window's own writer. `close` ends the queue; the thread then
+//! writes the session's closing state and the folder reads `closed`.
 
 use std::io::Write;
 use std::path::Path;
-use std::process::ChildStdin;
 use std::thread::JoinHandle;
 use std::time::Duration;
 
@@ -46,12 +47,19 @@ pub(crate) struct SessionLink {
 }
 
 /// Starts the session's sender thread: `recorder` gets the queue's sender
-/// (`Recorder::send_to`) and the thread gets its receiver, `pipe` — the
+/// (`Recorder::send_to`) and the thread gets its receiver, `target` — the
 /// monitor's standard input when `watch_crashes` gave one, `None` when it did
-/// not — and `data_dir` for the window's own writer, the no-pipe case's
-/// target. The session's header (`SessionHeader::for_this_window`) is what the
-/// pipe carries first and what the writer's folder is named from.
-pub(crate) fn start(recorder: &Recorder, pipe: Option<ChildStdin>, data_dir: &Path) -> SessionLink {
+/// not — `restart`, which gives the one new monitor's pipe a break earns
+/// (asked once, and with `target` `None` never), and `data_dir` for the
+/// window's own writer, the no-pipe case's target and the fallback the
+/// second break gets. The session's header (`SessionHeader::for_this_window`)
+/// is what the pipe carries first and what the writer's folder is named from.
+pub(crate) fn start(
+    recorder: &Recorder,
+    target: Option<Box<dyn Write + Send>>,
+    restart: Box<dyn FnMut() -> Option<Box<dyn Write + Send>> + Send>,
+    data_dir: &Path,
+) -> SessionLink {
     let (tx, rx) = crossbeam_channel::bounded(QUEUE_CAPACITY);
     recorder.send_to(tx);
     let header = SessionHeader::for_this_window();
@@ -60,7 +68,7 @@ pub(crate) fn start(recorder: &Recorder, pipe: Option<ChildStdin>, data_dir: &Pa
     let data_dir = data_dir.to_path_buf();
     let logger = log::logger();
     let thread = std::thread::spawn(move || {
-        run(&rx, &how_rx, pipe, header, &data_dir, logger);
+        run(&rx, &how_rx, target, restart, header, &data_dir, logger);
         // An unlistened report is no error: `close` may have timed out first.
         if let Err(error) = done_tx.send(()) {
             log::debug!("the session link's end was not waited for: {error}");
@@ -131,60 +139,190 @@ fn closing(how: &Receiver<SessionEnd>) -> SessionEnd {
     how.try_recv().unwrap_or(SessionEnd::Closed)
 }
 
-/// The thread's work: `pipe` gets the session's frames for the monitor;
-/// `None` is the window's own writer under `data_dir`'s `sessions`.
+/// The thread's work: `target` gets the session's frames for the monitor,
+/// with `restart` the one new monitor a break earns; `None` is the window's
+/// own writer under `data_dir`'s `sessions`, the run with no monitor.
 fn run(
     rx: &Receiver<SessionMessage>,
     how: &Receiver<SessionEnd>,
-    pipe: Option<ChildStdin>,
+    target: Option<Box<dyn Write + Send>>,
+    restart: Box<dyn FnMut() -> Option<Box<dyn Write + Send>> + Send>,
     header: SessionHeader,
     data_dir: &Path,
     logger: &dyn log::Log,
 ) {
-    match pipe {
-        Some(mut pipe) => send_session(rx, &mut pipe, header, how, logger),
+    match target {
+        Some(pipe) => send_session(rx, pipe, restart, header, data_dir, how, logger),
         None => write_session(rx, header, data_dir, how, logger),
+    }
+}
+
+/// Where a session frame goes: the monitor's pipe while it holds, the
+/// window's own `SessionWriter` under `sessions` after the second break or
+/// no new monitor.
+enum Target {
+    /// The monitor's standard input; a frame goes as `write_frame`'s bytes.
+    Pipe(Box<dyn Write + Send>),
+    /// The window's own writer, which adopts the folder the monitor left.
+    Own(SessionWriter),
+}
+
+impl Target {
+    /// `frame` delivered: on the pipe as a frame (`false` is a broken pipe,
+    /// already warned), on the writer as its row or `[end]` — a failed write
+    /// warns and loses the one message while the session reads on, as
+    /// `write_session` does (`true`). A header reaches the writer through its
+    /// `new`, so resending one writes nothing.
+    fn send(&mut self, frame: &SessionFrame, logger: &dyn log::Log) -> bool {
+        match self {
+            Target::Pipe(pipe) => send_frame(&mut **pipe, frame, logger),
+            Target::Own(writer) => {
+                match frame {
+                    SessionFrame::Message(message) => {
+                        if let Err(error) = writer.write(message) {
+                            warn(
+                                logger,
+                                format!("a session message could not be written: {error:#}"),
+                            );
+                        }
+                    }
+                    SessionFrame::Closed | SessionFrame::Crashed => {
+                        let how = if matches!(frame, SessionFrame::Crashed) {
+                            SessionEnd::Crashed
+                        } else {
+                            SessionEnd::Closed
+                        };
+                        if let Err(error) = writer.end(how) {
+                            warn(
+                                logger,
+                                format!("the session's end could not be written: {error:#}"),
+                            );
+                        }
+                    }
+                    SessionFrame::Header(_) => {}
+                }
+                true
+            }
+        }
+    }
+}
+
+/// `frame` sent on `target`, a broken pipe moving it once: to `restart`'s
+/// new monitor — `header` sent again on its pipe first, since it learns the
+/// session afresh — or, with none coming back or its pipe breaking too, to
+/// the window's own writer under `data_dir`'s `sessions`, which adopts the
+/// folder the dead monitor left. The frame is then sent on the new target.
+/// `restarted` keeps `restart` to the one new monitor.
+fn give(
+    target: &mut Target,
+    frame: &SessionFrame,
+    header: &SessionHeader,
+    restarted: &mut bool,
+    restart: &mut impl FnMut() -> Option<Box<dyn Write + Send>>,
+    data_dir: &Path,
+    logger: &dyn log::Log,
+) {
+    while !target.send(frame, logger) {
+        if !*restarted {
+            *restarted = true;
+            if let Some(pipe) = restart() {
+                *target = Target::Pipe(pipe);
+                if matches!(frame, SessionFrame::Header(_))
+                    || target.send(&SessionFrame::Header(header.clone()), logger)
+                {
+                    continue;
+                }
+            }
+        }
+        *target = Target::Own(SessionWriter::new(
+            &data_dir.join("sessions"),
+            header.clone(),
+        ));
     }
 }
 
 /// The session written to the monitor's pipe as frames: the header first,
 /// each queued message as it arrives, the closing frame last once `rx`'s
 /// senders are gone — `Closed` or `Crashed`, `Ended` written as nothing,
-/// the pipe's own end saying it. A failed write is one Warn line and the
-/// queue is read no more: a pipe that broke says the monitor is gone, and
-/// with the receiver dropped the queued leftovers and the recorder's later
-/// sends meet the silent `Disconnected`, not its drop line.
+/// the pipe's own end saying it. A failed write is one Warn line, then
+/// `restart` once: a new monitor's pipe gets the header again and the frame
+/// the break interrupted, and the session goes on; `None` back, or the new
+/// pipe breaking too, moves the session to the window's own writer under
+/// `data_dir`'s `sessions`, interrupted frame first — it adopts the folder
+/// the dead monitor left, so the folder ends as one session.
 fn send_session(
     rx: &Receiver<SessionMessage>,
-    out: &mut impl Write,
+    pipe: Box<dyn Write + Send>,
+    mut restart: impl FnMut() -> Option<Box<dyn Write + Send>>,
     header: SessionHeader,
+    data_dir: &Path,
     how: &Receiver<SessionEnd>,
     logger: &dyn log::Log,
 ) {
-    if !send_frame(out, &SessionFrame::Header(header), logger) {
-        return;
-    }
+    let mut target = Target::Pipe(pipe);
+    let mut restarted = false;
+    give(
+        &mut target,
+        &SessionFrame::Header(header.clone()),
+        &header,
+        &mut restarted,
+        &mut restart,
+        data_dir,
+        logger,
+    );
     while let Ok(message) = rx.recv() {
-        if !send_frame(out, &SessionFrame::Message(message), logger) {
-            return;
-        }
+        give(
+            &mut target,
+            &SessionFrame::Message(message),
+            &header,
+            &mut restarted,
+            &mut restart,
+            data_dir,
+            logger,
+        );
     }
     match closing(how) {
-        SessionEnd::Closed => {
-            send_frame(out, &SessionFrame::Closed, logger);
+        SessionEnd::Closed => give(
+            &mut target,
+            &SessionFrame::Closed,
+            &header,
+            &mut restarted,
+            &mut restart,
+            data_dir,
+            logger,
+        ),
+        SessionEnd::Crashed => give(
+            &mut target,
+            &SessionFrame::Crashed,
+            &header,
+            &mut restarted,
+            &mut restart,
+            data_dir,
+            logger,
+        ),
+        // `ended` is no frame on the pipe — its end says it — but the own
+        // writer's `[end]` says it too.
+        SessionEnd::Ended => {
+            if let Target::Own(writer) = &mut target
+                && let Err(error) = writer.end(SessionEnd::Ended)
+            {
+                warn(
+                    logger,
+                    format!("the session's end could not be written: {error:#}"),
+                );
+            }
         }
-        SessionEnd::Crashed => {
-            send_frame(out, &SessionFrame::Crashed, logger);
-        }
-        // `ended` is no frame: the pipe's own end says it.
-        SessionEnd::Ended => {}
     }
 }
 
 /// `frame` sent to the monitor; `false` on a broken pipe, with the one Warn
 /// line the break earns — a second write would meet the same end, so the
-/// caller stops there.
-fn send_frame(out: &mut impl Write, frame: &SessionFrame, logger: &dyn log::Log) -> bool {
+/// caller moves the session on.
+fn send_frame(
+    out: &mut (impl Write + ?Sized),
+    frame: &SessionFrame,
+    logger: &dyn log::Log,
+) -> bool {
     match write_frame(out, frame) {
         Ok(()) => true,
         Err(error) => {
@@ -227,6 +365,7 @@ fn write_session(
 
 #[cfg(test)]
 mod tests {
+    use std::cell::Cell;
     use std::fs;
     use std::io;
     use std::path::PathBuf;
@@ -260,6 +399,33 @@ mod tests {
         }
 
         fn flush(&self) {}
+    }
+
+    /// A `Write` over a shared byte buffer, so a test reads what the
+    /// sender's thread wrote after `send_session` took the writer.
+    #[derive(Clone, Default)]
+    struct SharedBuffer(Arc<Mutex<Vec<u8>>>);
+
+    impl Write for SharedBuffer {
+        fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+            self.0.lock().unwrap().extend_from_slice(buf);
+            Ok(buf.len())
+        }
+
+        fn flush(&mut self) -> io::Result<()> {
+            Ok(())
+        }
+    }
+
+    /// The buffer's frames read back in order.
+    fn read_frames(buffer: &SharedBuffer) -> Vec<SessionFrame> {
+        let bytes = buffer.0.lock().unwrap().clone();
+        let mut input = &bytes[..];
+        let mut frames = Vec::new();
+        while let Some(frame) = read_frame(&mut input).unwrap() {
+            frames.push(frame);
+        }
+        frames
     }
 
     /// A session header: `started` at the epoch, built through `SystemTime`
@@ -360,19 +526,22 @@ mod tests {
     // queued messages in order, then `Closed`.
     #[test]
     fn the_pipe_carries_the_header_the_messages_and_the_close() {
+        let dir = TestDir::new("session_pipe_frames");
         let rx = fed(messages());
         let logger = CaptureLog::default();
-        let mut bytes = Vec::new();
+        let buffer = SharedBuffer::default();
 
         send_session(
             &rx,
-            &mut bytes,
+            Box::new(buffer.clone()),
+            Box::new(|| None),
             header(4242),
+            dir.path(),
             &how(SessionEnd::Closed),
             &logger,
         );
 
-        let mut input = &bytes[..];
+        let mut input = &buffer.0.lock().unwrap()[..];
         let frame = read_frame(&mut input).unwrap().expect("the header");
         let SessionFrame::Header(read) = frame else {
             panic!("the header comes first")
@@ -404,19 +573,22 @@ mod tests {
     // ST-REP-10
     #[test]
     fn the_pipe_carries_the_crashed_close() {
+        let dir = TestDir::new("session_pipe_crashed");
         let rx = fed(messages());
         let logger = CaptureLog::default();
-        let mut bytes = Vec::new();
+        let buffer = SharedBuffer::default();
 
         send_session(
             &rx,
-            &mut bytes,
+            Box::new(buffer.clone()),
+            Box::new(|| None),
             header(4242),
+            dir.path(),
             &how(SessionEnd::Crashed),
             &logger,
         );
 
-        let mut input = &bytes[..];
+        let mut input = &buffer.0.lock().unwrap()[..];
         for expected in 0..3 {
             assert!(
                 read_frame(&mut input).unwrap().is_some(),
@@ -458,7 +630,7 @@ mod tests {
     fn the_links_close_writes_the_folder_through_the_real_wiring() {
         let dir = TestDir::new("session_link_end_to_end");
         let recorder = Recorder::default();
-        let link = start(&recorder, None, dir.path());
+        let link = start(&recorder, None, Box::new(|| None), dir.path());
         recorder.step("stub", "a step through the real queue");
         recorder.keep_input(
             "stub",
@@ -483,17 +655,35 @@ mod tests {
         assert!(journal.contains("how = \"closed\""), "{journal}");
     }
 
-    /// A writer whose every write fails: the broken pipe's far end.
-    #[derive(Default)]
+    /// A writer that lets `ok` `write` calls through, then fails every
+    /// one: the pipe at a break. `write_frame` is three calls a frame —
+    /// the kind byte, the length and the body — so `ok` counts frames
+    /// as `3 * frames`.
     struct FailingWrite {
-        /// How many `write` calls it took; one is a write attempt, not a byte.
+        /// `write` calls that succeed before the break.
+        ok: usize,
+        /// How many `write` calls it took; one is an attempt, not a byte.
         writes: usize,
     }
 
+    impl FailingWrite {
+        /// One that fails from its `frames`'s first write on (three
+        /// calls a frame make it through).
+        fn after(frames: usize) -> FailingWrite {
+            FailingWrite {
+                ok: frames * 3,
+                writes: 0,
+            }
+        }
+    }
+
     impl Write for FailingWrite {
-        fn write(&mut self, _buf: &[u8]) -> io::Result<usize> {
+        fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
             self.writes += 1;
-            Err(io::Error::other("broken pipe"))
+            if self.writes > self.ok {
+                return Err(io::Error::other("broken pipe"));
+            }
+            Ok(buf.len())
         }
 
         fn flush(&mut self) -> io::Result<()> {
@@ -501,25 +691,228 @@ mod tests {
         }
     }
 
-    // A broken pipe is one failed write and one Warn line, then the queue
-    // is read no more: what it still holds stays in `rx`, its drop the
-    // recorder's silent `Disconnected`.
+    // A broken pipe is one Warn line, then `restart` once: the new pipe
+    // reads back as the header again, the message the break interrupted,
+    // the rest and `Closed`.
+    // ST-REP-10
     #[test]
-    fn a_broken_pipe_warns_once_and_stops_reading_the_queue() {
+    fn a_broken_pipe_gets_one_new_monitor_writing_on() {
+        let dir = TestDir::new("session_link_restart");
         let rx = fed(messages());
         let logger = CaptureLog::default();
-        let mut out = FailingWrite::default();
-        let (_how_tx, how_rx) = crossbeam_channel::bounded(1);
+        let buffer = SharedBuffer::default();
+        let new_pipe = buffer.clone();
+        let restarts = Cell::new(0);
 
-        send_session(&rx, &mut out, header(4242), &how_rx, &logger);
+        send_session(
+            &rx,
+            Box::new(FailingWrite::after(1)),
+            || {
+                restarts.set(restarts.get() + 1);
+                Some(Box::new(new_pipe.clone()) as Box<dyn Write + Send>)
+            },
+            header(4242),
+            dir.path(),
+            &how(SessionEnd::Closed),
+            &logger,
+        );
 
-        assert_eq!(out.writes, 1, "one write attempt, then the queue unread");
+        assert_eq!(restarts.get(), 1, "the one restart the break earns");
+        let frames = read_frames(&buffer);
+        let [
+            SessionFrame::Header(_),
+            SessionFrame::Message(SessionMessage::Step { .. }),
+            SessionFrame::Message(SessionMessage::Input { .. }),
+            SessionFrame::Closed,
+        ] = frames[..]
+        else {
+            panic!(
+                "the new pipe's frames are not the header, the interrupted message, the rest and the close"
+            )
+        };
         let records = logger.records.lock().unwrap();
         assert_eq!(records.len(), 1, "{records:?}");
         assert!(records[0].starts_with("Warn|session_link|"), "{records:?}");
         assert!(
-            matches!(rx.try_recv(), Ok(SessionMessage::Step { .. })),
-            "the queue's first message is still held"
+            records[0].contains("link to the crash monitor broke"),
+            "{records:?}"
+        );
+        assert!(
+            !dir.path().join("sessions").exists(),
+            "the session stayed on the pipe: no folder was made"
+        );
+    }
+
+    /// `header`'s folder under `dir`'s `sessions` holding `written`'s
+    /// rows, as a dead monitor's writer left it.
+    fn dead_folder(dir: &TestDir, header: SessionHeader, written: Vec<SessionMessage>) {
+        let mut writer = SessionWriter::new(&dir.path().join("sessions"), header);
+        for message in &written {
+            writer.write(message).unwrap();
+        }
+    }
+
+    /// The stub step, spelled a second time for a dead writer's folder.
+    fn the_step() -> SessionMessage {
+        SessionMessage::Step {
+            seconds: 0.5,
+            tool: "stub".to_owned(),
+            what: "opened C:/Data/in/EDIT00000000 (10 bytes)".to_owned(),
+            op: None,
+        }
+    }
+
+    // `restart` gives no new monitor: the window's own writer adopts the
+    // folder the dead monitor wrote — the interrupted message and every
+    // later one land in it once, in order, ended `closed`.
+    // ST-REP-10
+    #[test]
+    fn with_no_new_monitor_the_own_writer_writes_on_in_the_same_folder() {
+        let dir = TestDir::new("session_link_no_restart");
+        dead_folder(&dir, header(4242), vec![the_step()]);
+        let rx = fed(messages());
+        let logger = CaptureLog::default();
+        let restarts = Cell::new(0);
+
+        send_session(
+            &rx,
+            Box::new(FailingWrite::after(2)),
+            || {
+                restarts.set(restarts.get() + 1);
+                None
+            },
+            header(4242),
+            dir.path(),
+            &how(SessionEnd::Closed),
+            &logger,
+        );
+
+        assert_eq!(restarts.get(), 1, "`restart` was asked once");
+        let folder = session_folder(&dir);
+        let journal = fs::read_to_string(folder.join("journal.toml")).unwrap();
+        assert_eq!(journal.matches("[[step]]").count(), 1, "{journal}");
+        assert_eq!(journal.matches("[[input]]").count(), 1, "{journal}");
+        assert_eq!(
+            fs::read(folder.join("inputs/0-EDIT00000000")).unwrap(),
+            b"INPUT_BYTES",
+            "the interrupted message, written by the own writer"
+        );
+        assert!(journal.contains("how = \"closed\""), "{journal}");
+        assert_eq!(
+            logger.records.lock().unwrap().len(),
+            1,
+            "the break's one Warn"
+        );
+    }
+
+    // The new monitor's pipe breaking too hands the session to the
+    // window's own writer: `restart` is not asked again, and the frame
+    // the second break interrupted and the rest land in the folder,
+    // ended `closed`.
+    // ST-REP-10
+    #[test]
+    fn a_second_break_gives_the_folder_to_the_own_writer() {
+        let dir = TestDir::new("session_link_second_break");
+        dead_folder(&dir, header(4242), vec![the_step()]);
+        let messages = vec![
+            the_step(),
+            SessionMessage::Input {
+                tool: "stub".to_owned(),
+                path: Path::new("C:/Data/in/EDIT00000000").to_path_buf(),
+                bytes: Arc::from(&b"INPUT_BYTES"[..]),
+            },
+            SessionMessage::Step {
+                seconds: 1.0,
+                tool: "stub".to_owned(),
+                what: "the step after the break".to_owned(),
+                op: None,
+            },
+        ];
+        let rx = fed(messages);
+        let logger = CaptureLog::default();
+        let restarts = Cell::new(0);
+        let spare = SharedBuffer::default();
+        let spare_pipe = spare.clone();
+
+        send_session(
+            &rx,
+            Box::new(FailingWrite::after(2)),
+            || {
+                restarts.set(restarts.get() + 1);
+                // First call: the new monitor, broken on its own first
+                // message. A second call — a `restart` on every failed
+                // write — would hand the session's rest to `spare`,
+                // and the folder's assertions would see it.
+                Some(match restarts.get() {
+                    1 => Box::new(FailingWrite::after(1)) as Box<dyn Write + Send>,
+                    _ => Box::new(spare_pipe.clone()) as Box<dyn Write + Send>,
+                })
+            },
+            header(4242),
+            dir.path(),
+            &how(SessionEnd::Closed),
+            &logger,
+        );
+
+        assert_eq!(restarts.get(), 1, "`restart` was asked the once");
+        let folder = session_folder(&dir);
+        let journal = fs::read_to_string(folder.join("journal.toml")).unwrap();
+        assert_eq!(
+            journal.matches("[[step]]").count(),
+            2,
+            "the dead writer's step and the one after the break: {journal}"
+        );
+        assert_eq!(journal.matches("[[input]]").count(), 1, "{journal}");
+        assert_eq!(
+            fs::read(folder.join("inputs/0-EDIT00000000")).unwrap(),
+            b"INPUT_BYTES",
+            "the second break's interrupted message"
+        );
+        assert!(journal.contains("how = \"closed\""), "{journal}");
+        assert!(
+            spare.0.lock().unwrap().is_empty(),
+            "no second restart wrote anything"
+        );
+        assert_eq!(
+            logger.records.lock().unwrap().len(),
+            2,
+            "one Warn per break"
+        );
+    }
+
+    // A break on the closing frame itself, with no new monitor: the own
+    // writer adopts the folder the dead monitor left and ends it — its
+    // first act on the folder is the `[end]`.
+    // ST-REP-10
+    #[test]
+    fn a_break_on_the_close_ends_the_adopted_folder_closed() {
+        let dir = TestDir::new("session_link_close_break");
+        dead_folder(&dir, header(4242), messages());
+        let rx = fed(Vec::new());
+        let logger = CaptureLog::default();
+
+        send_session(
+            &rx,
+            Box::new(FailingWrite::after(1)),
+            || None,
+            header(4242),
+            dir.path(),
+            &how(SessionEnd::Closed),
+            &logger,
+        );
+
+        let folder = session_folder(&dir);
+        let journal = fs::read_to_string(folder.join("journal.toml")).unwrap();
+        assert_eq!(
+            journal.matches("\n[end]\n").count(),
+            1,
+            "the one [end]: {journal}"
+        );
+        assert!(journal.contains("how = \"closed\""), "{journal}");
+        assert_eq!(
+            journal.matches("[[step]]").count(),
+            1,
+            "the dead monitor's rows stand: {journal}"
         );
     }
 
