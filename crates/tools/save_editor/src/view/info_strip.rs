@@ -10,6 +10,8 @@
 //! control edits a copy of the entry and, when it changes, pushes it
 //! under its own `egui::Id` (the undo stack's merge key).
 
+use std::borrow::Cow;
+
 use pes_savefile::interchange::team_toml::labels::POSITIONS;
 use pes_savefile::model::names::{crop_player_text, name_fits, shirt_name_edit_fits};
 use pes_savefile::model::{PlayerEntry, PlayerPositions, PlayerStats};
@@ -23,7 +25,7 @@ use studio_core::widgets::{
 use team_widgets::cards;
 use team_widgets::names::append_name;
 
-use crate::nations::{nation_text, nations};
+use crate::nations::nations;
 use crate::session::Session;
 use crate::session::undo::RUN_PAUSE;
 use crate::view::abilities::{
@@ -260,7 +262,10 @@ fn last_shown_slot(view: &SaveView, team_id: u32) -> Option<u8> {
 /// Name and Shirt name counted fields, the Shirt number | Age pair row,
 /// then the Nation combo. `marks` is Live AATF's held check's, while it
 /// is the selected player's team's: each marked field's mark then
-/// stands before its label (`Marks::paint`).
+/// stands before its label (`Marks::paint`). `focused` is the view's
+/// last-frame keyboard holder: a typed Nation pick's row is recorded
+/// on it so the frame's gesture-end check reads the pick's focus move
+/// as the gesture's own, not the keyboard leaving a widget.
 pub(super) fn general(
     ui: &mut egui::Ui,
     session: &mut Session,
@@ -268,6 +273,7 @@ pub(super) fn general(
     slot: u8,
     player_id: u32,
     marks: Option<Marks<'_>>,
+    focused: &mut Option<egui::Id>,
 ) {
     let (mut name, stored_name, mut shirt, stored_shirt, nation, mut shirt_number, age, schema) = {
         let file = session.file();
@@ -463,7 +469,11 @@ pub(super) fn general(
         );
     });
 
-    nation_row(
+    // A typed pick's row takes the keyboard (`nation_row` returns its
+    // id): the move is the pick's own gesture, recorded here as already
+    // held so the frame's gesture-end check does not seal the picks'
+    // undo run as a keyboard move off a widget.
+    if let Some(row) = nation_row(
         ui,
         session,
         player_id,
@@ -471,7 +481,9 @@ pub(super) fn general(
         schema.version,
         label_col,
         field_width,
-    );
+    ) {
+        *focused = Some(row);
+    }
 }
 
 /// One row of the pairs' two halves, the room between them at least
@@ -778,13 +790,43 @@ pub(super) fn captain_title(ui: &mut egui::Ui, title: egui::Rect, captain: bool)
     clicked
 }
 
+/// What the open Nation list's typed `run` picks: a run starting with
+/// a digit prefixes an ID, a letter run a name — the first nation in
+/// `own`'s ID order it prefixes (a `231` run lands on SAN MARINO, `san`
+/// too), `None` for a run that prefixes nothing. The candidates are
+/// `own`, the version's own list, alone: an unlisted held's `?` row
+/// stays clickable, but a pick that landed on it would store nothing,
+/// and the real nations its digits or letters start could never be
+/// typed. The names are the game's capitals, some accented, so the run
+/// goes up in capitals.
+fn run_pick(own: &[(u16, String)], run: &str) -> Option<u16> {
+    if run.is_empty() {
+        return None;
+    }
+    if run.starts_with(|c: char| c.is_ascii_digit()) {
+        own.iter()
+            .map(|(id, _)| *id)
+            .find(|id| id.to_string().starts_with(run))
+    } else {
+        let run = run.to_uppercase();
+        own.iter()
+            .find(|(_, text)| {
+                text.split_once(" - ")
+                    .is_some_and(|(_, name)| name.starts_with(run.as_str()))
+            })
+            .map(|(id, _)| *id)
+    }
+}
+
 /// The Nation row (`generalPanel`'s `nation`): a label-left row on the
 /// same column as Name's (`label_col` wide, the field `field_width` to
 /// the flush edge) — the open save's version's own nations `ID - NAME`
 /// ordered by ID (`nations::nations`). An ID the version lacks keeps
 /// its number, shown `ID - ?` first in the list until another is
 /// picked. The wheel over the closed combo steps through the entries,
-/// as Registered position's does.
+/// as Registered position's does. Returns a typed pick's row id: it
+/// took the keyboard (`response.request_focus`), so the caller records
+/// it as the held widget.
 fn nation_row(
     ui: &mut egui::Ui,
     session: &mut Session,
@@ -793,10 +835,18 @@ fn nation_row(
     version: PesVersion,
     label_col: f32,
     field_width: f32,
-) {
+) -> Option<egui::Id> {
     let own = nations(version);
-    let listed = own.iter().any(|(id, _)| *id == held);
-    let text = nation_text(version, held);
+    // The held ID's one lookup for the draw: `listed` is whether the
+    // version lists it, `text` its `ID - NAME` — or `ID - ?`, also the
+    // list's first row, where it does not.
+    let held_at = own.binary_search_by_key(&held, |(id, _)| *id).ok();
+    let listed = held_at.is_some();
+    let text = held_at.map_or_else(
+        || Cow::Owned(format!("{held} - ?")),
+        |at| Cow::Borrowed(own[at].1.as_str()),
+    );
+    let mut focus = None;
     ui.horizontal(|ui| {
         ui.spacing_mut().item_spacing.x = 0.0;
         let label = ui.label(NATION_LABEL);
@@ -810,75 +860,112 @@ fn nation_row(
         let open = egui::Id::unique(("general nation list open", player_id));
         let was_open = ui.data(|data| data.get_temp(open)).unwrap_or(false);
         let combo = egui::ComboBox::from_id_salt("general nation")
-            .selected_text(text)
+            .selected_text(text.clone())
             .width(field_width)
             .show_ui(ui, |ui| {
-                // A digit typed while the list is open (an all-digit
-                // Text event; egui-winit drops them while Ctrl or Cmd is
-                // held, so no modifier check here) joins the ID run in
-                // progress: the digits that landed within the undo run's
-                // pause of each other, a new ID after it, as a browser's
-                // dropdown does. The run and its last digit's time are
-                // the combo's temp data, dropped as the list opens; a
-                // run that prefixes no ID picks nothing. The digits'
-                // events are taken out of the input so nothing drawn
-                // after reads them again.
+                // A key typed while the list is open (a Text event;
+                // egui-winit drops them while Ctrl or Cmd is held, so no
+                // modifier check here) joins the run in progress: digits
+                // an ID, letters a name — a space joins a name run under
+                // way and is otherwise ignored, a key of the other kind
+                // starts a new run, and any other text does nothing.
+                // The run and its last key's time are the combo's temp
+                // data, dropped as the list opens. The events the run
+                // takes leave the input so nothing drawn after reads
+                // them again.
                 let typed = egui::Id::unique(("general nation list typed", player_id));
+                let opened_with = egui::Id::unique(("general nation list opened with", player_id));
+                if !was_open {
+                    // The nation the list opened on is kept for the
+                    // Escape below. A scroll asked for during a pass
+                    // moves the rows only from the second pass after —
+                    // the held row's open scroll would paint a frame
+                    // late, the list at its top first; a discard pass
+                    // folds the scroll's application into the open's own
+                    // frame, and the first frame after the click shows
+                    // it.
+                    ui.data_mut(|data| data.insert_temp(opened_with, held));
+                    ui.ctx().request_discard("the nation list's opening scroll");
+                }
                 let now = ui.input(|input| input.time);
                 let (mut run, mut at) = ui
                     .data(|data| data.get_temp::<(String, f64)>(typed))
                     .filter(|(_, at)| was_open && now - at <= RUN_PAUSE)
                     .unwrap_or_default();
-                let digits: String = ui.input(|input| {
-                    input
-                        .events
-                        .iter()
-                        .filter_map(|event| match event {
+                let mut used = false;
+                ui.input_mut(|input| {
+                    input.events.retain(|event| {
+                        let name_run = run.starts_with(|c: char| !c.is_ascii_digit());
+                        let digit_run = run.starts_with(|c: char| c.is_ascii_digit());
+                        let take = match event {
                             egui::Event::Text(text) if text.chars().all(|c| c.is_ascii_digit()) => {
-                                Some(text.as_str())
+                                if name_run {
+                                    run.clear();
+                                }
+                                run.push_str(text);
+                                true
                             }
-                            _ => None,
-                        })
-                        .collect()
-                });
-                if !digits.is_empty() {
-                    ui.input_mut(|input| {
-                        input.events.retain(|event| {
-                            !matches!(event, egui::Event::Text(text)
-                                if text.chars().all(|c| c.is_ascii_digit()))
-                        });
+                            egui::Event::Text(text) if text.chars().all(|c| c.is_alphabetic()) => {
+                                if digit_run {
+                                    run.clear();
+                                }
+                                run.push_str(text);
+                                true
+                            }
+                            egui::Event::Text(text)
+                                if name_run && text.chars().all(|c| c == ' ') =>
+                            {
+                                run.push_str(text);
+                                true
+                            }
+                            _ => false,
+                        };
+                        used |= take;
+                        !take
                     });
-                    run.push_str(&digits);
+                });
+                if used {
                     at = now;
                 }
-                // The run's candidates are the version's own list alone:
-                // an unlisted held's `?` row stays clickable, but a pick
-                // that landed on it would store nothing, and the real
-                // nations its ID's digits start could never be typed.
-                let typed_pick = if digits.is_empty() {
-                    None
-                } else {
-                    own.iter()
-                        .map(|(id, _)| *id)
-                        .find(|id| id.to_string().starts_with(&run))
-                };
-                ui.data_mut(|data| data.insert_temp(typed, (run, at)));
                 // The pick applies before any row draws, so one row
                 // reads selected on the frame it lands.
+                let typed_pick = if used { run_pick(own, &run) } else { None };
+                ui.data_mut(|data| data.insert_temp(typed, (run, at)));
                 if let Some(next) = typed_pick {
                     picked = next;
                 }
                 if !listed {
-                    let response = combo_item(ui, &mut picked, held, nation_text(version, held));
+                    let response = combo_item(ui, &mut picked, held, text.clone());
                     if !was_open {
-                        response.scroll_to_me(Some(egui::Align::Center));
+                        response.scroll_to_me_animation(
+                            Some(egui::Align::Center),
+                            egui::style::ScrollAnimation::none(),
+                        );
                     }
                 }
                 for (id, row_text) in own {
                     let response = combo_item(ui, &mut picked, *id, row_text);
-                    if (!was_open && *id == held) || typed_pick == Some(*id) {
+                    if !was_open && *id == held {
+                        response.scroll_to_me_animation(
+                            Some(egui::Align::Center),
+                            egui::style::ScrollAnimation::none(),
+                        );
+                    }
+                    if typed_pick == Some(*id) {
+                        // Enter after a typed run activates the picked
+                        // row, not wherever arrows left the keyboard
+                        // focus.
+                        response.request_focus();
+                        focus = Some(response.id);
                         response.scroll_to_me(Some(egui::Align::Center));
                     }
+                }
+                // Escape puts back the nation the list opened on — the
+                // popup closes on it by itself — so the picks' undo
+                // entry ends where it started, with nothing left to
+                // take back.
+                if was_open && ui.input(|input| input.key_pressed(egui::Key::Escape)) {
+                    picked = ui.data(|data| data.get_temp(opened_with)).unwrap_or(held);
                 }
             });
         ui.data_mut(|data| data.insert_temp(open, combo.inner.is_some()));
@@ -895,6 +982,7 @@ fn nation_row(
             });
         }
     });
+    focus
 }
 
 /// `small`'s box for a pair half: the shifted `DragValue` (a stored value

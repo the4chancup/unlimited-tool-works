@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+### Useful
+
+- **Save editor**: typing the start of a nation's name in the open Nation list now picks it,
+  as typing its ID does. Escape now closes the list and puts back the nation it opened on.
+
 ### Fixes
 
 - **Compiler**: a referee with no face model, whose body model brings his head, showed the

@@ -43,7 +43,7 @@ pub(crate) enum Change {
 /// How long, in seconds, a run of steps to one value stays joinable after
 /// its last push: a wheel spun in one go stays one undo entry, while a
 /// value nudged again a while later is a new one. The Nation combo's
-/// typed digits run by the same pause.
+/// typed keys run by the same pause.
 pub(crate) const RUN_PAUSE: f64 = 1.0;
 
 /// One undo step: the widget whose gesture made it (the merge key) and the
@@ -193,8 +193,11 @@ impl UndoStack {
     /// team keeps its `before` and takes the new `after`); a change under
     /// the settled run's key within `RUN_PAUSE` of its last push merges
     /// into the newest entry when it holds a change to the same player or
-    /// team, and reopens it; any other push starts an entry. Every push
-    /// records its key and `now` as the run; a push clears the redo stack.
+    /// team, and reopens it; any other push starts an entry. After a
+    /// merge, an entry whose changes are all no-ops is removed (a gesture
+    /// that ended where it started leaves nothing to take back), and the
+    /// run ends. Every other push records its key and `now` as the run; a
+    /// push clears the redo stack.
     pub(crate) fn push(&mut self, key: u64, change: Change, now: f64) {
         if change.is_noop() {
             return;
@@ -219,6 +222,18 @@ impl UndoStack {
                 });
                 self.open = true;
             }
+        }
+        if self
+            .undo
+            .last()
+            .is_some_and(|entry| entry.changes.iter().all(Change::is_noop))
+        {
+            // The run ends with it: the entry now newest is another
+            // gesture's, which a later push must not merge into.
+            self.undo.pop();
+            self.open = false;
+            self.run = None;
+            return;
         }
         self.run = Some((key, now));
     }
@@ -381,6 +396,37 @@ mod tests {
         let mut stack = UndoStack::new();
         stack.push(1, change(70101, 10, 10), 0.0);
         assert!(!stack.can_undo());
+    }
+
+    // A merged push that takes an entry's change back to its `before`
+    // removes the entry: the two pushes were one gesture cancelling
+    // itself out, and undo has nothing to take back.
+    #[test]
+    fn a_merge_back_to_the_before_removes_the_entry() {
+        let mut stack = UndoStack::new();
+        stack.push(1, change(70101, 10, 11), 0.0);
+        stack.push(1, change(70101, 11, 10), 0.0);
+        assert!(!stack.can_undo());
+    }
+
+    // The removal ends the run: a push under the same key within the
+    // pause starts an entry of its own, never merging into the one now
+    // newest, another gesture's (an Escape out of the Nation list, then
+    // a pick soon after, would else join the player's earlier edit).
+    #[test]
+    fn a_push_after_a_removed_entry_starts_its_own() {
+        let mut stack = UndoStack::new();
+        stack.push(1, change(70101, 10, 11), 0.0);
+        stack.push(2, change(70101, 11, 12), 0.0);
+        stack.push(2, change(70101, 12, 11), 0.0);
+        stack.push(2, change(70101, 11, 13), 0.0);
+        let Some([Change::Player { before, .. }]) = stack.undo_changes() else {
+            panic!("the newest entry holds one player change");
+        };
+        assert_eq!(
+            before.basic.height, 11,
+            "the pick's entry starts where key 1's ended"
+        );
     }
 
     #[test]
