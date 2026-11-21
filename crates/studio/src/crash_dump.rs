@@ -7,13 +7,20 @@
 //! exits with the window's process (ST-RUN-12). The
 //! crash test's trigger (`--crash-test stack`) is `overflow_the_stack`, run once the
 //! monitor is up and before any window, so the test needs no display (ST-RUN-10).
+//!
+//! The monitor's other job is the window's session folder (`<data location>/sessions/`):
+//! the window's session messages reach it as frames through its standard input, a pipe
+//! the window opens when it starts the monitor, and the monitor writes each into the
+//! folder as it arrives and appends `[end]` — `closed`, `crashed` or `ended` — once the
+//! pipe's end says the window is gone.
 
 use std::ffi::OsString;
 use std::fs::{File, OpenOptions};
-use std::io::{self, Write};
+use std::io::{self, Read, Write};
 use std::path::{Path, PathBuf};
-use std::process::{Child, Command, ExitCode, Stdio};
-use std::sync::atomic::AtomicBool;
+use std::process::{Child, ChildStdin, Command, ExitCode, Stdio};
+use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant};
 
 use anyhow::Context;
@@ -21,6 +28,7 @@ use crash_handler::{CrashEventResult, CrashHandler};
 use directories::BaseDirs;
 use log::{Level, Record};
 use studio_core::EXE_NAME;
+use studio_core::repro::{SessionEnd, SessionFrame, SessionWriter, read_frame};
 
 use crate::gui_log;
 
@@ -94,15 +102,18 @@ pub(crate) fn hidden_launch(args: &[OsString]) -> Option<HiddenLaunch> {
 
 /// The monitor's `ServerHandler`: the slot's dump beside the slot's log, replacing the
 /// previous one, and the log line a later start reads to tell a dumped crash from an
-/// unclean one.
+/// unclean one. `dump_requested` marks the session's `[end]` `crashed`, whatever the
+/// write's outcome: the window's hook asks only from a crash.
 struct DumpWriter {
     data_dir: PathBuf,
     slot: u32,
     home: Option<String>,
+    dump_requested: Arc<AtomicBool>,
 }
 
 impl minidumper::ServerHandler for DumpWriter {
     fn create_minidump_file(&self) -> Result<(File, PathBuf), io::Error> {
+        self.dump_requested.store(true, Ordering::Relaxed);
         let path = self
             .data_dir
             .join(crate::instance::slot_file_name(DUMP_FILE_NAME, self.slot));
@@ -130,6 +141,11 @@ impl minidumper::ServerHandler for DumpWriter {
         minidumper::LoopAction::Exit
     }
 
+    /// The socket's spare channel is not the session's link: the server reads a message
+    /// in one receive, so a kept save (5 to 11 MB) could arrive cut at the socket's
+    /// buffer. The session's frames travel the monitor's standard input instead, read
+    /// whole with `read_exact`, and the pipe's end tells the monitor the window went
+    /// away, which no socket message can.
     fn on_message(&self, _kind: u32, _buffer: Vec<u8>) {}
 
     /// The window closed or was killed; the monitor's job is done.
@@ -155,23 +171,63 @@ fn append_line(data_dir: &Path, log_name: &str, home: Option<&str>, level: Level
 }
 
 /// The monitor process's whole job: bind `socket`, then serve dump requests until a
-/// dump is written (or fails) or the window's end closes the connection. A failure to
-/// bind or serve is appended to the slot's log, since the monitor's stdio is null and
-/// the window sees only its exit code, and exits with 3, the code of a run that could
-/// not do its job. `slot` is the window's copy number: it names the dump and log.
-pub(crate) fn run_monitor(data_dir: &Path, socket: &Path, slot: u32) -> ExitCode {
+/// dump is written (or fails) or the window's end closes the connection; and write the
+/// window's session folder — a thread of its own reads the session's frames from
+/// `input` (the monitor's standard input) until the window's end of the pipe closes,
+/// and the journal's `[end]` is set then. A failure to bind or serve is appended to
+/// the slot's log, since the monitor's stdio is null and the window sees only its
+/// exit code, and exits with 3, the code of a run that could not do its job. `slot`
+/// is the window's copy number: it names the dump and log.
+pub(crate) fn run_monitor(
+    data_dir: &Path,
+    socket: &Path,
+    slot: u32,
+    input: &mut (impl Read + Send),
+) -> ExitCode {
     let home = BaseDirs::new().map(|dirs| dirs.home_dir().display().to_string());
-    let run = minidumper::Server::with_name(socket.into()).and_then(|mut server| {
-        server.run(
+    // The bind comes first: a monitor that cannot bind returns at once and the
+    // window's start is tried again, rather than waiting the reader's pipe out.
+    let mut server = match minidumper::Server::with_name(socket.into()) {
+        Ok(server) => server,
+        Err(error) => {
+            append_line(
+                data_dir,
+                &crate::instance::slot_file_name(gui_log::LOG_FILE_NAME, slot),
+                home.as_deref(),
+                Level::Warn,
+                &format!("the crash monitor stopped: {error}"),
+            );
+            return ExitCode::from(3);
+        }
+    };
+    let dump_requested = Arc::new(AtomicBool::new(false));
+    let (run, session) = std::thread::scope(|scope| {
+        let reader = scope.spawn(|| read_session(input, data_dir, slot, home.as_deref()));
+        let run = server.run(
             Box::new(DumpWriter {
                 data_dir: data_dir.to_path_buf(),
                 slot,
                 home: home.clone(),
+                dump_requested: dump_requested.clone(),
             }),
             &AtomicBool::new(false),
             None,
-        )
+        );
+        // The pipe's end, not the socket's, is the window gone away: the reader is
+        // joined until it ends, so a monitor whose socket closed first writes the
+        // session on to the last message.
+        let session = reader
+            .join()
+            .unwrap_or_else(|panic| std::panic::resume_unwind(panic));
+        (run, session)
     });
+    end_session(
+        session,
+        dump_requested.load(Ordering::Relaxed),
+        data_dir,
+        slot,
+        home.as_deref(),
+    );
     match run {
         Ok(()) => ExitCode::SUCCESS,
         Err(error) => {
@@ -184,6 +240,131 @@ pub(crate) fn run_monitor(data_dir: &Path, socket: &Path, slot: u32) -> ExitCode
             );
             ExitCode::from(3)
         }
+    }
+}
+
+/// What the session reader kept from the pipe: the writer the window's header made
+/// (`None` when none arrived) and whether the window sent its closing message.
+struct SessionRead {
+    writer: Option<SessionWriter>,
+    closed: bool,
+}
+
+/// The window's session, read frame by frame until the pipe ends: the header makes the
+/// writer under `<data location>/sessions`, each message is written and `Closed` is
+/// remembered. A frame before the header, a second header or a failed write is one
+/// Warn line in the slot's log and the reader goes on with the next frame; a frame
+/// that does not decode is one Warn line and ends the reading as the pipe's end does.
+fn read_session(
+    input: &mut impl Read,
+    data_dir: &Path,
+    slot: u32,
+    home: Option<&str>,
+) -> SessionRead {
+    let log = crate::instance::slot_file_name(gui_log::LOG_FILE_NAME, slot);
+    let mut session = SessionRead {
+        writer: None,
+        closed: false,
+    };
+    loop {
+        let frame = match read_frame(input) {
+            Ok(Some(frame)) => frame,
+            Ok(None) => break,
+            Err(error) => {
+                append_line(
+                    data_dir,
+                    &log,
+                    home,
+                    Level::Warn,
+                    &format!("a session frame could not be read: {error}"),
+                );
+                break;
+            }
+        };
+        match frame {
+            SessionFrame::Header(header) => {
+                if session.writer.is_some() {
+                    append_line(
+                        data_dir,
+                        &log,
+                        home,
+                        Level::Warn,
+                        "a second session header arrived; the session keeps the first",
+                    );
+                } else {
+                    session.writer = Some(SessionWriter::new(&data_dir.join("sessions"), header));
+                }
+            }
+            SessionFrame::Message(message) => match &mut session.writer {
+                Some(writer) => {
+                    if let Err(error) = writer.write(&message) {
+                        append_line(
+                            data_dir,
+                            &log,
+                            home,
+                            Level::Warn,
+                            &format!("a session message could not be written: {error:#}"),
+                        );
+                    }
+                }
+                None => append_line(
+                    data_dir,
+                    &log,
+                    home,
+                    Level::Warn,
+                    "a session message arrived before the session's header and was not written",
+                ),
+            },
+            SessionFrame::Closed => {
+                if session.writer.is_none() {
+                    append_line(
+                        data_dir,
+                        &log,
+                        home,
+                        Level::Warn,
+                        "the session's closing message arrived before its header",
+                    );
+                }
+                session.closed = true;
+            }
+        }
+    }
+    session
+}
+
+/// The session's `[end]` from the monitor's two facts: `crashed` when a dump was
+/// requested (the window's hook asks only from a crash), `closed` when the window sent
+/// its closing message, `ended` when it went away with neither.
+fn session_end(dump_requested: bool, closed: bool) -> SessionEnd {
+    if dump_requested {
+        SessionEnd::Crashed
+    } else if closed {
+        SessionEnd::Closed
+    } else {
+        SessionEnd::Ended
+    }
+}
+
+/// The session's `[end]` written once the window is gone. No header means no writer
+/// was made, so a session that recorded nothing leaves no folder at all.
+fn end_session(
+    session: SessionRead,
+    dump_requested: bool,
+    data_dir: &Path,
+    slot: u32,
+    home: Option<&str>,
+) {
+    let Some(mut writer) = session.writer else {
+        return;
+    };
+    if let Err(error) = writer.end(session_end(dump_requested, session.closed)) {
+        append_line(
+            data_dir,
+            &crate::instance::slot_file_name(gui_log::LOG_FILE_NAME, slot),
+            home,
+            Level::Warn,
+            &format!("the session's end could not be written: {error:#}"),
+        );
     }
 }
 
@@ -248,8 +429,14 @@ fn connect(monitor: &mut Child, socket: &Path) -> Result<minidumper::Client, Sta
 /// for a dump, or fails with the `StartFailure` kind `watch_crashes` reads for its
 /// second try. The socket is named after this process's id in the temp folder: a fixed
 /// name would leave one of two windows unwatched, and a data-location path can pass
-/// the 107 bytes a Windows socket path holds.
-fn start_monitor(program: &Path, data_dir: &Path, slot: u32) -> Result<CrashHandler, StartFailure> {
+/// the 107 bytes a Windows socket path holds. Beside the handler the monitor's
+/// standard input is returned: the window's session frames will travel it, and its
+/// end tells the monitor the window went away.
+fn start_monitor(
+    program: &Path,
+    data_dir: &Path,
+    slot: u32,
+) -> Result<(CrashHandler, ChildStdin), StartFailure> {
     let socket = std::env::temp_dir().join(format!("{EXE_NAME}-crash-{}.sock", std::process::id()));
     let mut monitor = Command::new(program)
         .arg(MONITOR_ARG)
@@ -257,7 +444,7 @@ fn start_monitor(program: &Path, data_dir: &Path, slot: u32) -> Result<CrashHand
         .arg(&socket)
         .arg(slot.to_string())
         // A monitor holding a test's pipe would keep `Output` waiting.
-        .stdin(Stdio::null())
+        .stdin(Stdio::piped())
         .stdout(Stdio::null())
         .stderr(Stdio::null())
         .spawn()
@@ -293,7 +480,11 @@ fn start_monitor(program: &Path, data_dir: &Path, slot: u32) -> Result<CrashHand
     handler.set_ptracer(Some(monitor.id()));
     // `monitor` is dropped neither killed nor waited: the monitor exits on its own when
     // the client's socket closes.
-    Ok(handler)
+    let pipe = monitor
+        .stdin
+        .take()
+        .expect("the monitor's standard input was piped");
+    Ok((handler, pipe))
 }
 
 /// Runs `start` and, only when it fails at once, runs it once more and returns the
@@ -323,11 +514,12 @@ fn start_monitor_once_more<T>(
     }
 }
 
-/// Starts the monitor and attaches the hook, returning the handler that keeps both.
-/// A start that fails at once is tried once more (`start_monitor_once_more`,
-/// ST-RUN-13). On failure (the exe's own path unknown, a monitor that does not start
-/// twice or does not answer, a hook that does not attach) one `Warn` line is logged
-/// through `logger` and the window
+/// Starts the monitor and attaches the hook, returning the handler that keeps both
+/// and the monitor's standard input — the pipe the window's session frames will
+/// travel, held until the window goes. A start that fails at once is tried once more
+/// (`start_monitor_once_more`, ST-RUN-13). On failure (the exe's own path unknown, a
+/// monitor that does not start twice or does not answer, a hook that does not attach)
+/// one `Warn` line is logged through `logger` and the window
 /// runs on with the log alone: the dump is a diagnostic, never a reason the window
 /// does not open (ST-RUN-10). `program` is `std::env::current_exe()`'s result, passed
 /// in so a test can name a file that is not an exe; `slot` is the copy's number, which
@@ -337,7 +529,7 @@ pub(crate) fn watch_crashes(
     data_dir: &Path,
     slot: u32,
     logger: &dyn log::Log,
-) -> Option<CrashHandler> {
+) -> Option<(CrashHandler, ChildStdin)> {
     let started = program
         .map_err(|error| StartFailure::Other(error.into()))
         .and_then(|program| {
@@ -384,6 +576,8 @@ mod tests {
 
     use log::Metadata;
     use minidumper::ServerHandler;
+
+    use studio_core::repro::{SessionFrame, SessionHeader, SessionMessage, write_frame};
 
     use super::*;
     use crate::gui_log::{InstalledLog, LOG_FILE_NAME, LastSession, open_log, unclean_text};
@@ -583,6 +777,7 @@ mod tests {
             data_dir: dir.path().to_path_buf(),
             slot: 1,
             home: None,
+            dump_requested: Arc::new(AtomicBool::new(false)),
         };
         let (file, path) = writer.create_minidump_file().unwrap();
         assert_eq!(path, dir.path().join(DUMP_FILE_NAME));
@@ -620,14 +815,24 @@ mod tests {
         assert!(text.contains(DUMP_FILE_NAME), "{text}");
     }
 
+    /// An input whose read panics: the session reader must never start on it.
+    struct PanicRead;
+
+    impl Read for PanicRead {
+        fn read(&mut self, _buf: &mut [u8]) -> io::Result<usize> {
+            panic!("the session reader started before the bind")
+        }
+    }
+
     // A monitor that cannot bind its socket says why in the log, since the window sees
-    // only its exit code.
+    // only its exit code. It returns before the session reader starts: `PanicRead`
+    // would panic otherwise.
     #[test]
     fn a_monitor_that_cannot_bind_appends_its_error_and_exits_with_3() {
         let dir = TestDir::new("monitor_bind");
         fs::write(dir.path().join(LOG_FILE_NAME), "v\n").unwrap();
         let socket = dir.path().join("no-such-folder").join("s.sock");
-        let code = run_monitor(dir.path(), &socket, 1);
+        let code = run_monitor(dir.path(), &socket, 1, &mut PanicRead);
         assert_eq!(format!("{code:?}"), format!("{:?}", ExitCode::from(3)));
         let written = fs::read_to_string(dir.path().join(LOG_FILE_NAME)).unwrap();
         let last = written.lines().next_back().unwrap();
@@ -647,6 +852,7 @@ mod tests {
             data_dir: dir.path().to_path_buf(),
             slot: 1,
             home: None,
+            dump_requested: Arc::new(AtomicBool::new(false)),
         };
         let action =
             writer.on_minidump_created(Err(minidumper::Error::Io(io::Error::other("disk full"))));
@@ -664,6 +870,7 @@ mod tests {
             data_dir: dir.path().to_path_buf(),
             slot: 1,
             home: None,
+            dump_requested: Arc::new(AtomicBool::new(false)),
         };
         let dump = dir.path().join(DUMP_FILE_NAME);
         let file = File::create(&dump).unwrap();
@@ -711,5 +918,234 @@ mod tests {
             fs::read_to_string(dir.path().join(LOG_FILE_NAME)).unwrap(),
             "first copy\n"
         );
+    }
+
+    /// A session header: `started` fixed at the epoch, built through `SystemTime`
+    /// (jiff is not a `studio` dependency).
+    fn header(pid: u32) -> SessionHeader {
+        SessionHeader {
+            version: "v-test".to_owned(),
+            os: "test-os".to_owned(),
+            started: std::time::SystemTime::UNIX_EPOCH.try_into().unwrap(),
+            pid,
+        }
+    }
+
+    /// A stub session's frames: the header, a step, a kept input and a kept output
+    /// written twice to one path.
+    fn frames(pid: u32) -> Vec<SessionFrame> {
+        vec![
+            SessionFrame::Header(header(pid)),
+            SessionFrame::Message(SessionMessage::Step {
+                seconds: 0.5,
+                tool: "stub".to_owned(),
+                what: "opened C:/Data/in/EDIT00000000 (10 bytes)".to_owned(),
+                op: None,
+            }),
+            SessionFrame::Message(SessionMessage::Input {
+                tool: "stub".to_owned(),
+                path: Path::new("C:/Data/in/EDIT00000000").to_path_buf(),
+                bytes: b"INPUT_BYTES".as_slice().into(),
+            }),
+            SessionFrame::Message(SessionMessage::Output {
+                tool: "stub".to_owned(),
+                path: Path::new("C:/Data/out/EDIT00000000").to_path_buf(),
+                bytes: b"WRITE_A".as_slice().into(),
+            }),
+            SessionFrame::Message(SessionMessage::Output {
+                tool: "stub".to_owned(),
+                path: Path::new("C:/Data/out/EDIT00000000").to_path_buf(),
+                bytes: b"WRITE_B_BYTES".as_slice().into(),
+            }),
+        ]
+    }
+
+    /// `frames` as the pipe's bytes, `closed` adding the closing message.
+    fn session_bytes(frames: &[SessionFrame], closed: bool) -> Vec<u8> {
+        let mut bytes = Vec::new();
+        for frame in frames {
+            write_frame(&mut bytes, frame).unwrap();
+        }
+        if closed {
+            write_frame(&mut bytes, &SessionFrame::Closed).unwrap();
+        }
+        bytes
+    }
+
+    /// The one session folder under `dir`'s `sessions`.
+    fn session_folder(dir: &TestDir) -> PathBuf {
+        let sessions = dir.path().join("sessions");
+        let mut folders = fs::read_dir(&sessions).unwrap();
+        let folder = folders.next().unwrap().unwrap().path();
+        assert!(
+            folders.next().is_none(),
+            "{sessions:?} holds more than one session folder"
+        );
+        folder
+    }
+
+    // The pipe's frames land in the session folder — the step, the kept input, the
+    // output's second write — and `[end]` says how it ended: `closed` on the closing
+    // message, `ended` without it, `crashed` on a dump request.
+    // ST-REP-06, ST-REP-07
+    #[test]
+    fn the_session_is_written_from_the_pipe_and_ended() {
+        for (closed, dumped, how) in [
+            (true, false, "closed"),
+            (false, false, "ended"),
+            (true, true, "crashed"),
+        ] {
+            let dir = TestDir::new("session_pipe");
+            let bytes = session_bytes(&frames(4242), closed);
+            let session = read_session(&mut &bytes[..], dir.path(), 1, None);
+            let dump_requested = Arc::new(AtomicBool::new(false));
+            if dumped {
+                let writer = DumpWriter {
+                    data_dir: dir.path().to_path_buf(),
+                    slot: 1,
+                    home: None,
+                    dump_requested: dump_requested.clone(),
+                };
+                writer.create_minidump_file().unwrap();
+            }
+            end_session(
+                session,
+                dump_requested.load(Ordering::Relaxed),
+                dir.path(),
+                1,
+                None,
+            );
+
+            let folder = session_folder(&dir);
+            let journal = fs::read_to_string(folder.join("journal.toml")).unwrap();
+            assert_eq!(journal.matches("[[step]]").count(), 1, "{journal}");
+            assert_eq!(journal.matches("[[input]]").count(), 1, "{journal}");
+            assert_eq!(journal.matches("[[output]]").count(), 2, "{journal}");
+            assert!(
+                journal.contains(&format!("how = \"{how}\"")),
+                "[end] not written as {how}: {journal}"
+            );
+            assert_eq!(
+                fs::read(folder.join("inputs/0-EDIT00000000")).unwrap(),
+                b"INPUT_BYTES"
+            );
+            assert_eq!(
+                fs::read(folder.join("outputs/0-EDIT00000000")).unwrap(),
+                b"WRITE_B_BYTES",
+                "the output's second write is the one kept"
+            );
+        }
+    }
+
+    // A step before the header is one Warn line in the slot's log and reaches no
+    // folder; the session after the header is written whole, ended `closed`.
+    #[test]
+    fn a_message_before_the_header_warns_and_is_dropped() {
+        let dir = TestDir::new("session_early_step");
+        fs::write(dir.path().join(LOG_FILE_NAME), "v\n").unwrap();
+        let mut bytes = Vec::new();
+        write_frame(
+            &mut bytes,
+            &SessionFrame::Message(SessionMessage::Step {
+                seconds: 0.0,
+                tool: "stub".to_owned(),
+                what: "a step before the header".to_owned(),
+                op: None,
+            }),
+        )
+        .unwrap();
+        bytes.extend(session_bytes(&frames(4242), true));
+
+        let session = read_session(&mut &bytes[..], dir.path(), 1, None);
+        end_session(session, false, dir.path(), 1, None);
+
+        let log = fs::read_to_string(dir.path().join(LOG_FILE_NAME)).unwrap();
+        assert!(
+            log.lines()
+                .any(|line| line.contains("a session message arrived before the session's header")),
+            "{log}"
+        );
+        let folder = session_folder(&dir);
+        let journal = fs::read_to_string(folder.join("journal.toml")).unwrap();
+        assert!(
+            !journal.contains("a step before the header"),
+            "the step before the header reached the folder: {journal}"
+        );
+        assert_eq!(journal.matches("[[step]]").count(), 1, "{journal}");
+        assert!(journal.contains("how = \"closed\""), "{journal}");
+    }
+
+    // A second header is one Warn line in the slot's log; the session keeps the
+    // first — the folder is the first header's.
+    #[test]
+    fn a_second_header_warns_and_the_first_stands() {
+        let dir = TestDir::new("session_second_header");
+        fs::write(dir.path().join(LOG_FILE_NAME), "v\n").unwrap();
+        let mut bytes = Vec::new();
+        for frame in [
+            SessionFrame::Header(header(4242)),
+            SessionFrame::Header(header(9999)),
+            SessionFrame::Message(SessionMessage::Step {
+                seconds: 0.5,
+                tool: "stub".to_owned(),
+                what: "a step".to_owned(),
+                op: None,
+            }),
+        ] {
+            write_frame(&mut bytes, &frame).unwrap();
+        }
+
+        let session = read_session(&mut &bytes[..], dir.path(), 1, None);
+        end_session(session, false, dir.path(), 1, None);
+
+        let log = fs::read_to_string(dir.path().join(LOG_FILE_NAME)).unwrap();
+        assert!(
+            log.lines()
+                .any(|line| line.contains("a second session header")),
+            "{log}"
+        );
+        let folder = session_folder(&dir);
+        let journal = fs::read_to_string(folder.join("journal.toml")).unwrap();
+        assert!(
+            journal.contains("pid = 4242"),
+            "the first header stands: {journal}"
+        );
+        assert_eq!(journal.matches("[[step]]").count(), 1, "{journal}");
+    }
+
+    // A frame that does not decode is one Warn line in the slot's log and ends the
+    // reading: the header's writer still ends the session, `ended` without a
+    // closing message.
+    #[test]
+    fn an_undecodable_frame_warns_and_ends_the_reading() {
+        let dir = TestDir::new("session_bad_frame");
+        fs::write(dir.path().join(LOG_FILE_NAME), "v\n").unwrap();
+        let mut bytes = Vec::new();
+        for frame in [
+            SessionFrame::Header(header(4242)),
+            SessionFrame::Message(SessionMessage::Step {
+                seconds: 0.5,
+                tool: "stub".to_owned(),
+                what: "a step".to_owned(),
+                op: None,
+            }),
+        ] {
+            write_frame(&mut bytes, &frame).unwrap();
+        }
+        // A frame of an unknown kind byte, its body empty.
+        bytes.extend_from_slice(&[99, 0, 0, 0, 0]);
+
+        let session = read_session(&mut &bytes[..], dir.path(), 1, None);
+        end_session(session, false, dir.path(), 1, None);
+
+        let log = fs::read_to_string(dir.path().join(LOG_FILE_NAME)).unwrap();
+        assert!(
+            log.lines()
+                .any(|line| line.contains("a session frame could not be read")),
+            "{log}"
+        );
+        let folder = session_folder(&dir);
+        let journal = fs::read_to_string(folder.join("journal.toml")).unwrap();
+        assert!(journal.contains("how = \"ended\""), "{journal}");
     }
 }

@@ -22,7 +22,10 @@ pub use read::{Bundle, BundleFile, BundleStep, read_bundle};
 #[cfg(not(target_arch = "wasm32"))]
 mod session;
 #[cfg(not(target_arch = "wasm32"))]
-pub use session::{SessionEnd, SessionHeader, SessionMessage, SessionWriter, session_bundle};
+pub use session::{
+    SessionEnd, SessionFrame, SessionHeader, SessionMessage, SessionWriter, read_frame,
+    session_bundle, write_frame,
+};
 
 /// One tool's recorded steps, kept inputs and kept outputs so far.
 /// `Recorder` shares it: every clone records into the same journal.
