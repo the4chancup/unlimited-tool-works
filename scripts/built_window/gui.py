@@ -389,6 +389,9 @@ elif cmd == "close":
     # A normal close: a killed process makes the next start report an abnormal end.
     user32.PostMessageW(HWND, 0x0010, 0, 0)  # WM_CLOSE
     time.sleep(3.0)
+    # Unsaved changes keep the window open behind their prompt: answer it (Save or Discard).
+    if user32.IsWindow(HWND):
+        sys.exit("the window is still open: answer its unsaved-changes prompt, then close again")
     print("closed")
 elif cmd == "info":
     rect = client()
