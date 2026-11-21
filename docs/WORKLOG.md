@@ -1583,7 +1583,17 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     differ in Interception in the draft's PES 2021 sample) -> verify: headless tests, the
     built window
     - [ ] slice 1: several rows selected (the window, Ctrl+click, the filled rows, the view
-      titled `N players` with its locks)
+      titled `N players` with its locks), split in three, since nothing of it exists (code map
+      `.tmp/similar/code_map.md`: no group, no Ctrl+click, no blank locked field, no mixed
+      checkbox). Until 1c lands, a group's view edits its first player alone
+      - [ ] 1a the group: Ctrl+click, the filled rows, every other selecting ending it, the
+        `N players` heading, Appearance disabled (SE-GUI-93 but its tooltip clause; SWE-2,
+        `sk/similar1a`)
+      - [ ] 1b the button under the quick actions and its window (SE-GUI-91, SE-GUI-93's
+        tooltip)
+      - [ ] 1c the locks: what the players do not share empty and locked, the cards' mixed
+        mark, no Live AATF marks or Cards used badge, the Player menu's one-player entries
+        disabled (SE-GUI-92 but its edits)
     - [ ] slice 2: the edits written to every selected player as one undo step (the fields,
       the quick actions, Set and Bump all stats, Ctrl+V)
   - [x] 0.0.2-flatpitch the two formation picture dialogs (8.33, 8.34; `plans/save_editor.md`
