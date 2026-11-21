@@ -683,7 +683,8 @@ Compiler and the Export upgrader, then the rest as they are built.
   - Under the list, an unticked box, "Include earlier sessions", lists each kept session
     but the window's own, one line each: when it started, the first file it opened, when it
     last wrote one, and how it ended. Ticked, each goes into the bundle as
-    `sessions/<folder name>.zip`, a bundle of its own, which `replay` reads as it is.
+    `sessions/<folder name>.zip`, a bundle of its own, which `replay` reads as it is. With
+    no earlier session kept, the box is not shown.
 - **Replay is the payoff.** `utw <tool-id> replay <bundle>` applies the journal to the kept
   inputs and compares the result with the bundle's written files, byte for byte.
 

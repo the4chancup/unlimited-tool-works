@@ -2681,8 +2681,15 @@ const REPORT_SAMPLE = {
     { label: "The Compiler", steps: 2, opened: "2 exports (/dbg/, /4ccg/)",
       wrote: "4cc_69_midcup.cpk at 02:44" }],
   exportsOpened: true, exportsSize: "312 MB",
+  // The kept sessions but this window's, newest first ("Earlier sessions are kept on
+  // disk"): start, first file opened, last write, how it ended. None kept hides the box.
+  sessions: [
+    { started: "20 Nov 23:05", opened: "EDIT00000000", wrote: "23:41", ended: "crashed" },
+    { started: "20 Nov 21:10", opened: "EDIT00000000", wrote: "21:30", ended: "closed" },
+    { started: "19 Nov 18:02", opened: "EDIT00000001", wrote: null,
+      ended: "stopped without closing" }],
   savedTo: "~\\Desktop\\utw-report-2026-11-07-0245.zip" };
-const REPORT = { words: "", wholeExports: false, saved: false };
+const REPORT = { words: "", wholeExports: false, earlierSessions: false, saved: false };
 function openReport() {
   REPORT.saved = false;
   drawReport();
@@ -2715,6 +2722,15 @@ function drawReport() {
         h("input", { type: "checkbox", checked: r.wholeExports,
           onchange: e => { r.wholeExports = e.target.checked; render(); } }),
         " Also include the exports' textures and models (" + sample.exportsSize + ")") : null,
+      sample.sessions.length ? h("div", {},
+        h("label", { title: "Tick it when the problem began before UTW was last opened: "
+            + "a session that crashed, or a save you tried in the game after closing UTW." },
+          h("input", { type: "checkbox", checked: r.earlierSessions,
+            onchange: e => { r.earlierSessions = e.target.checked; render(); } }),
+          " Include earlier sessions"),
+        h("ul", { style: "margin:4px 0 0 18px; padding:0" },
+          sample.sessions.map(s => item(weak(s.started + ": opened " + s.opened
+            + "; " + (s.wrote ? "wrote at " + s.wrote : "wrote nothing") + "; " + s.ended))))) : null,
       h("div", { style: "margin-top:8px" }, "Your user folder is written as ~ in the file's paths."),
       r.saved ? h("div", { style: "margin-top:8px" }, "Saved to " + sample.savedTo) : null),
     r.saved ? [button("Close", closeWindow)]
