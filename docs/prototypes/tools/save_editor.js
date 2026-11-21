@@ -81,6 +81,10 @@
 // shell's stylesheet does not already cover, in the page's order.
 const SAVE_EDITOR_CSS = `
 .gate { display: inline-block; opacity: .6; }
+.gated-num { text-align: center; }
+/* A gated number's `-`: #c8c8c8 under the gate's .6 draws the thin dash at about the
+   build's 80 on the dark theme (measured), its label's grey there. */
+.gated-num::placeholder { color: #c8c8c8; opacity: 1; }
 /* egui's Slider as the app's theme draws it (an 18-point row): an 8-point
    rail in the inactive widget grey, rounded 2, and an 11 x 14 handle, rounded
    2, with the inactive, hovered and active strokes. The handle and the rail
@@ -5997,6 +6001,9 @@ function gated(widget, minV) {
   if (!off) return widget;
   widget.querySelectorAll("input, select, button, .sel").forEach(w => {
     w.disabled = true; w.classList && w.classList.add("off");
+    // The build draws a gated number as a disabled `-`, never the value the save holds
+    // for a field this version lacks.
+    if (w.type === "number") { w.value = ""; w.placeholder = "-"; w.classList.add("gated-num"); }
   });
   return h("span", { class: "gate", title: "PES " + minV + "+" }, widget);
 }

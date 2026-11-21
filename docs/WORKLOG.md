@@ -78,15 +78,13 @@ run's findings (`4cc-studio-temp/str_re/out/findings.md`).
    draft's sample Team TOML texts (`docs/prototypes/tools/save_editor.js`, the `"pes17/718"`
    entry and its kind) still show the old numbering (255 for nobody, slots from 0, the stats
    one lower): regenerate them from today's export.
-10. The draft's greyed number boxes read `-`, as the build's do (the maintainer kept the build's,
-   `look-gated-labels`).
-11. Reset window's first click on Linux (the maintainer's check of 0.0.2-rc.3, 2026-11-17,
+10. Reset window's first click on Linux (the maintainer's check of 0.0.2-rc.3, 2026-11-17,
     "good enough for 0.0.2": the first click resets the window but the button stays, a second
     click changes nothing and the button goes, its pointer a hand; likely the window manager
     leaving the reset window off the fitted size, so the button waits for a click the window
     does not follow).
-12. Any mutation run (mutfast landed: each mutant's tests run under cargo-nextest).
-13. The suite's own images (DECISIONS 2026-11-20 "the placeholder portraits and the Team
+11. Any mutation run (mutfast landed: each mutant's tests run under cargo-nextest).
+12. The suite's own images (DECISIONS 2026-11-20 "the placeholder portraits and the Team
     Export thumbnail are the suite's own"): the three placeholder portraits drawn as SVGs and
     the 4cc clover thumbnail, both rendered to the PNGs the binary embeds by one script; a
     look of each beside the game's. PES 2017 lists and imports a Team Export carrying the
