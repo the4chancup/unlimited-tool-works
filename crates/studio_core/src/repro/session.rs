@@ -724,7 +724,9 @@ pub fn session_bundle(folder: &Path, home: Option<&str>) -> anyhow::Result<Vec<u
         row.path = redact_home(&row.path, home);
     }
 
-    let text = toml_block(&doc)?;
+    // No marker lines in the bundle: they only mark the session folder's
+    // appends, which a bundle is never appended to.
+    let text = toml::to_string_pretty(&doc).context("cannot serialize the journal")?;
     let mut writer = zip::ZipWriter::new(std::io::Cursor::new(Vec::new()));
     let options = zip::write::SimpleFileOptions::default()
         .compression_method(zip::CompressionMethod::Deflated);

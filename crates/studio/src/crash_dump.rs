@@ -1075,6 +1075,28 @@ mod tests {
         assert!(journal.contains("how = \"closed\""), "{journal}");
     }
 
+    // A closing message before any header is one Warn line in the slot's log, and
+    // with no header there is no writer, so no folder.
+    #[test]
+    fn a_closing_message_before_the_header_warns_and_writes_nothing() {
+        let dir = TestDir::new("session_early_close");
+        fs::write(dir.path().join(LOG_FILE_NAME), "v\n").unwrap();
+        let mut bytes = Vec::new();
+        write_frame(&mut bytes, &SessionFrame::Closed).unwrap();
+
+        let session = read_session(&mut &bytes[..], dir.path(), 1, None);
+        end_session(session, false, dir.path(), 1, None);
+
+        let log = fs::read_to_string(dir.path().join(LOG_FILE_NAME)).unwrap();
+        assert!(
+            log.lines().any(
+                |line| line.contains("the session's closing message arrived before its header")
+            ),
+            "{log}"
+        );
+        assert!(!dir.path().join("sessions").exists(), "a folder was made");
+    }
+
     // A second header is one Warn line in the slot's log; the session keeps the
     // first — the folder is the first header's.
     #[test]
