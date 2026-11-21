@@ -1017,7 +1017,7 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() ->
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum GestureEnd {
     /// Mid-gesture: the pointer is held, or a text edit keeps the
-    /// keyboard (a field, a number being typed).
+    /// keyboard (a field, a number being typed), or a popup is open.
     Held,
     /// The pointer is up and no text edit holds the keyboard — nothing
     /// focused, or a widget with no text cursor (a button, a rating
@@ -1042,12 +1042,16 @@ impl GestureEnd {
 /// take focus as its gesture starts), `Settled` when the pointer is up
 /// and no text edit holds it (`text_edit_focused`, which a focused
 /// `DragValue` being typed reports as its `TextEdit` keeps its state
-/// under the DragValue's own id), else `Held`. `show`'s seal rule,
-/// which the AATF checks' start shares.
+/// under the DragValue's own id), else `Held`. An open popup holds the
+/// gesture too — a combo's open list is the gesture's own — so its
+/// picks merge into the one entry, however long between them.
+/// `show`'s seal rule, which the AATF checks' start shares.
 fn edit_settled(ui: &egui::Ui, last_focused: Option<egui::Id>) -> (Option<egui::Id>, GestureEnd) {
     let focused = ui.ctx().memory(|memory| memory.focused());
     let end = if last_focused.is_some() && last_focused != focused {
         GestureEnd::FocusMoved
+    } else if egui::Popup::is_any_open(ui.ctx()) {
+        GestureEnd::Held
     } else if !ui.input(|input| input.pointer.any_down()) && !ui.ctx().text_edit_focused() {
         GestureEnd::Settled
     } else {

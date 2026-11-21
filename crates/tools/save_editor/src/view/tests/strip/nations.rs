@@ -223,11 +223,11 @@ fn typed_digits_pick_a_nation_as_one_undo_entry() {
     }
     inside.expect("the picked row never settled inside the list's clip");
 
-    // Escape closes the list; one Ctrl+Z restores 135, nothing left.
-    window.frame(
-        vec![key(egui::Key::Escape, egui::Modifiers::NONE, true)],
-        |ui| show(ui, &mut view, &|| Vec::new()),
-    );
+    // A pointer click on the pane's empty bottom-right corner closes
+    // the list; one Ctrl+Z restores 135, nothing left.
+    press_release(&mut window, egui::pos2(1100.0, 690.0), |ui| {
+        show(ui, &mut view, &|| Vec::new())
+    });
     window.frame(vec![key(egui::Key::Z, egui::Modifiers::CTRL, true)], |ui| {
         show(ui, &mut view, &|| Vec::new())
     });
@@ -524,5 +524,121 @@ fn the_held_row_is_inside_the_clip_on_the_first_frame() {
     assert!(
         row_inside_clip(&mut window, &mut view, "135 - USA").is_some(),
         "the held row inside the clip on the first frame after the click"
+    );
+}
+
+// One opening of the list is one undo entry however the picks were
+// paced: `2`, a pause past the run's second, then `1` are two ID runs
+// but one entry — the list closed by a pointer click on the pane's
+// empty bottom-right corner, one Ctrl+Z puts 135 back and nothing is
+// left.
+// SE-GUI-106
+#[test]
+fn a_pause_between_picks_keeps_the_openings_one_undo_entry() {
+    let (mut view, player_id) = open_with_nation(PesVersion::Pes21, "nation_pause_undo", 135);
+    let mut window = Headless::sized(DEFAULT_PANE.x, 700.0);
+    assert_eq!(nation_of(&view, player_id), 135, "premise: 135 held");
+
+    open_nation_list(&mut window, &mut view);
+    window.frame(vec![egui::Event::Text("2".to_owned())], |ui| {
+        show(ui, &mut view, &|| Vec::new())
+    });
+    assert_eq!(nation_of(&view, player_id), 2, "the typed 2 picked BAHRAIN");
+    // 61 frames with no input move egui's clock past the run's second.
+    idle_frames(&mut window, &mut view, 61);
+    window.frame(vec![egui::Event::Text("1".to_owned())], |ui| {
+        show(ui, &mut view, &|| Vec::new())
+    });
+    assert_eq!(
+        nation_of(&view, player_id),
+        1,
+        "the 1 after the pause picked AFGHANISTAN"
+    );
+    press_release(&mut window, egui::pos2(1100.0, 690.0), |ui| {
+        show(ui, &mut view, &|| Vec::new())
+    });
+    window.frame(vec![key(egui::Key::Z, egui::Modifiers::CTRL, true)], |ui| {
+        show(ui, &mut view, &|| Vec::new())
+    });
+    assert_eq!(nation_of(&view, player_id), 135, "one undo restores 135");
+    assert!(
+        !view.session.as_ref().unwrap().can_undo(),
+        "the two picks were one undo entry"
+    );
+}
+
+// Escape puts back the nation the list opened on however long after
+// the last pick it is pressed: `231` typed, over a second waited,
+// Escape — the player holds 135 again and the pick left nothing to
+// undo.
+// SE-GUI-106
+#[test]
+fn a_late_escape_still_leaves_nothing_to_undo() {
+    let (mut view, player_id) = open_with_nation(PesVersion::Pes21, "nation_late_escape", 135);
+    let mut window = Headless::sized(DEFAULT_PANE.x, 700.0);
+    assert_eq!(nation_of(&view, player_id), 135, "premise: 135 held");
+    assert!(
+        !view.session.as_ref().unwrap().can_undo(),
+        "premise: nothing undoable before opening"
+    );
+
+    open_nation_list(&mut window, &mut view);
+    window.frame(vec![egui::Event::Text("231".to_owned())], |ui| {
+        show(ui, &mut view, &|| Vec::new())
+    });
+    assert_eq!(nation_of(&view, player_id), 231, "the typed 231 picked");
+    // 61 frames with no input move egui's clock past the run's second.
+    idle_frames(&mut window, &mut view, 61);
+    window.frame(
+        vec![key(egui::Key::Escape, egui::Modifiers::NONE, true)],
+        |ui| show(ui, &mut view, &|| Vec::new()),
+    );
+    assert_eq!(
+        nation_of(&view, player_id),
+        135,
+        "Escape put back the nation the list opened on"
+    );
+    assert!(
+        !view.session.as_ref().unwrap().can_undo(),
+        "the pick left nothing to undo"
+    );
+}
+
+// Two picks a pause apart, then Escape after another: the opening's
+// undo entry never parted — the pauses part only the typed runs.
+// SE-GUI-106
+#[test]
+fn pauses_between_picks_do_not_part_the_openings_undo() {
+    let (mut view, player_id) = open_with_nation(PesVersion::Pes21, "nation_pauses_escape", 135);
+    let mut window = Headless::sized(DEFAULT_PANE.x, 700.0);
+    assert_eq!(nation_of(&view, player_id), 135, "premise: 135 held");
+
+    open_nation_list(&mut window, &mut view);
+    window.frame(vec![egui::Event::Text("2".to_owned())], |ui| {
+        show(ui, &mut view, &|| Vec::new())
+    });
+    assert_eq!(nation_of(&view, player_id), 2, "the typed 2 picked BAHRAIN");
+    idle_frames(&mut window, &mut view, 61);
+    window.frame(vec![egui::Event::Text("1".to_owned())], |ui| {
+        show(ui, &mut view, &|| Vec::new())
+    });
+    assert_eq!(
+        nation_of(&view, player_id),
+        1,
+        "the 1 after the pause picked AFGHANISTAN"
+    );
+    idle_frames(&mut window, &mut view, 61);
+    window.frame(
+        vec![key(egui::Key::Escape, egui::Modifiers::NONE, true)],
+        |ui| show(ui, &mut view, &|| Vec::new()),
+    );
+    assert_eq!(
+        nation_of(&view, player_id),
+        135,
+        "Escape put back the nation the list opened on"
+    );
+    assert!(
+        !view.session.as_ref().unwrap().can_undo(),
+        "the picks left nothing to undo"
     );
 }
