@@ -91,8 +91,14 @@ other items run beside it. **After the detour**, in this order:
 6. The Compiler's view in the build, unpolished, for the VGL organizer (the maintainer,
    2026-11-20; `plans/core/development_plan.md` "Phase 8: GUI"): step 8.10's grid first,
    showing which of an export's components has an error or a warning and what it says;
-   the row actions and the finish in later builds. First, one more look at its draft with
-   the maintainer (approved but not final, 2026-11-20).
+   the row actions and the finish in later builds. The draft was looked at again on 2026-11-22:
+   a cell's detail window now opens on hover and pins on a click, and long log lines wrap
+   (`plans/team_compiler/gui.md`). Next: the maintainer's look at the draft, then the first
+   slice's brief.
+   - With the first slice: `player_folder_number_invalid`'s text in `messages/catalog.rs` says
+     the folder's number is not in 01-23, which a folder named `15 Snuffy` contradicts (15 is
+     in range; the name lacks the `-` after it, so it claims no number at all). Reword it to
+     say what a folder name needs.
 7. The drafts in two copies (the maintainer, 2026-11-17: a spec draft of what the build holds
    and a plan draft for prototyping, which the app's unbuilt sections open with `demo=1`. Git
    keeps the two: the spec draft is `docs/prototypes/` on main, which `draft_compare`, the

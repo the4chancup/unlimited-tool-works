@@ -221,10 +221,20 @@ TC-GUI-08  GIVEN a team export whose name carries neither Full nor Midcup
            THEN the row holds a Full and a Midcup button where its cells would be; clicking one
                 renames the folder or archive with the tag after the team name and the row
                 revalidates under the new name
-TC-GUI-09  GIVEN a cell with findings
-           WHEN the pointer hovers it
-           THEN the tooltip shows the folder name and the findings' text, worst severity first;
-                WHEN it is clicked THEN the detail panel opens on that scope
+TC-GUI-09  GIVEN a cell with findings and no cell pinned
+           WHEN the pointer rests on it
+           THEN the detail window opens on it, showing the folder name and each finding's
+                code, file and catalog text, worst severity first; WHEN the pointer leaves
+                the cell for empty grid THEN the window closes; WHEN it moves onto another cell
+                instead THEN the window shows that cell at once
+TC-GUI-24  GIVEN the pointer on a cell with findings
+           WHEN the cell is clicked
+           THEN the window stays open on it, a pin on the cell and in the window's title bar,
+                and hovering another cell leaves the window as it is; WHEN another cell is
+                clicked THEN that one is pinned instead; WHEN the pinned cell, the window's
+                pin or the grid's empty space is clicked THEN nothing is pinned and the
+                window closes; GIVEN a double-click on a cell THEN its folder opens in the
+                file manager and the pin is as it was before the double-click
 TC-GUI-10  GIVEN a kit folder whose colors.txt parses and whose icon_<N> marker names pattern N
            WHEN its cell is drawn
            THEN the cell shows pattern N's two-color swatch in the kit's two menu colors under
@@ -252,8 +262,8 @@ TC-GUI-13  GIVEN a run in flight over two exports
                 return to their check colors, and the log's last line says the run was cancelled
 TC-GUI-14  GIVEN an export holding a finding whose effective disposition is DropExport
            WHEN Compile is pressed
-           THEN every player and kit cell of its row shows the blocked state, each tooltip
-                naming the export-level cause, and no task of that export runs; GIVEN a folder
+           THEN every player and kit cell of its row shows the blocked state, each one's
+                detail window naming the export-level cause, and no task of that export runs; GIVEN a folder
                 with a DropFile finding THEN its cell ends done-with-errors (red)
 TC-GUI-15  GIVEN a warning line in the log panel
            WHEN it is clicked
@@ -285,12 +295,12 @@ TC-GUI-20  GIVEN a referee export whose players.txt lists slots 1, 2 and 35, slo
                  backed by the same model folder
            WHEN the view draws its row
            THEN the row's cells sit at the fixed positions 01 to 35 (only 01, 02 and 35 drawn),
-                cells 01 and 35 share one status and their tooltips name the same folder, and a
+                cells 01 and 35 share one status and their detail windows name the same folder, and a
                 finding of that folder colors both
 TC-GUI-21  GIVEN an export holding a shared model folder no player links (shared_folder_orphaned,
                  W) and a root logo_small.png with no main logo (logo_small_without_main, E)
            WHEN the view draws its row
-           THEN the row label is red, the worse of the two findings' colors, its tooltip lists
+           THEN the row label is red, the worse of the two findings' colors, its detail window lists
                 both with their scopes, and no player or kit cell changes for them
 TC-GUI-22  GIVEN exports_folder_path an absolute path to a folder that does not exist (the
                 preflight refuses before any event), and no input after the click

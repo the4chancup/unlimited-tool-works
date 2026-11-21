@@ -1,7 +1,7 @@
 // The Compiler's draft (plans/team_compiler/gui.md), a view of the drafts'
 // host page, index.html: the live-validating team grid (one row per export, a
 // cell per player at fixed positions 01-23, 01-35 on the referee row, and a
-// cell for its portraits and a cell per kit), the detail panel a cell opens, the toolbar (the run strip and
+// cell for its portraits and a cell per kit), the detail window a hovered or pinned cell opens, the toolbar (the run strip and
 // the split Compile button with its output modes) and the log panel.
 // An initial draft: the rows are samples built to show every cell state and
 // every row action the plan names, not a recorded run. Team names and IDs are
@@ -22,7 +22,7 @@
 // button, combo, cb, collapsing, window_, closeWindow, publishNotice,
 // shellPesVersion, switchToTool, toolActivity, mmss, EXE_FOLDER, appendLog,
 // logPanel, openHelp, openOutputStub, named, registerTool, CATALOG,
-// COMPILE_TEAMS, closeMenus, inWin) are the host's, index.html.
+// COMPILE_TEAMS, closeMenus, inWin, mdInline) are the host's, index.html.
 (() => {
 "use strict";
 
@@ -128,9 +128,30 @@ const TEAM_COMPILER_CSS = `
   .tc-sw { position: absolute; left: 2px; right: 2px; bottom: 2px; height: 9px; }
   .tc-acts .row { flex-wrap: nowrap; }
   /* The detail window (egui: a Window inside the tool's panel, movable by its
-     title bar, where the member leaves it). */
+     title bar while pinned, where the member leaves it). */
   .tc-detail { position: absolute; z-index: 5; width: 300px; background: var(--panel);
     border: 1px solid var(--stroke); border-radius: 2px; box-shadow: 0 4px 16px #000a; }
+  /* Opened by a hover, it lets the pointer through (egui: an Area that senses
+     nothing), so a cell under it can still be hovered; only a pinned one is
+     dragged or clicked. */
+  .tc-detail.hover { pointer-events: none; }
+  .tc-detail.hover .bar { cursor: default; }
+  /* A pinned cell's pin: a round badge over the cell's top right corner, half
+     outside it, on the panel's fill so it reads over any cell colour and ring
+     (egui: a circle and the glyph in the strong text colour, set here because
+     the glyph would otherwise take whatever colour holds it, painted after the
+     row's cells, unclipped).
+     A team label holds it inside its own top right corner. */
+  .tc-slot { position: relative; }
+  .tc-pin { position: absolute; top: -5px; right: -5px; width: 14px; height: 14px;
+    border-radius: 50%; background: var(--panel); display: flex; align-items: center;
+    justify-content: center; font-size: 11px; line-height: 1; pointer-events: none; z-index: 3;
+    color: var(--strong); }
+  .tc-name .tc-pin { top: 1px; right: 1px; }
+  .tc-detail .bar .pin { font-size: 15px; }
+  /* A finding in the window: its code line, the file, then the catalog's text. */
+  .tc-detail .at { word-break: break-all; }
+  .tc-detail .what { margin-top: 2px; color: var(--text); }
   .tc-detail .bar { display: flex; align-items: center; padding: 2px 4px 2px 8px;
     border-bottom: 1px solid var(--stroke); cursor: move; user-select: none; }
   .tc-detail .body { padding: 8px; }
@@ -200,15 +221,18 @@ const with_ = (cells, n, patch) => { Object.assign(cells[n], patch); return cell
 const PORTRAITS = {
   "3": [23, "fullOk"],
   // An old Portraits/player_05.dds, with the one-click rename the plan gives it.
-  a: [22, "error", ["portrait_name_invalid"],
-    { label: "Rename player_05.dds to 05.dds", folder: "Portraits", count: 23 }],
+  a: [21, "error", ["portrait_name_invalid"],
+    { label: "Rename player_05.dds to 05.dds", folder: "Portraits", count: 22 }, false,
+    { portrait_name_invalid: "Portraits/player_05.dds" }],
   // /adv/ 11's portrait is in the player's own folder: its finding colours
   // this cell and the player's.
-  civ4xg: [23, "fullOk"], inv1: [23, "fullOk"], aco: [23, "partialOk"], adv: [11, "error", ["texture_not_pow2"], null, true], an: [null, "unchecked"],
+  civ4xg: [23, "fullOk"], inv1: [23, "fullOk"], aco: [23, "partialOk"],
+  adv: [11, "error", ["texture_not_pow2"], null, true, { texture_not_pow2: "Players/11 - Player 11/portrait.png" }],
+  an: [null, "unchecked"],
   egg: [23, "fullOk"], bant: [23, "fullOk"], biz1: [20, "fullOk"], biz2: [20, "partialOk"] };
 function portraitsOf(key) {
-  const [count, status, codes = [], fix, dropFile] = PORTRAITS[key] || [];
-  return status ? { count, status, codes, fix, dropFile, folder: "Portraits" } : null;
+  const [count, status, codes = [], fix, dropFile, at] = PORTRAITS[key] || [];
+  return status ? { count, status, codes, fix, dropFile, at, folder: "Portraits" } : null;
 }
 // Every cell of a row but its label: the players, the portraits, the kits.
 const cellsOf = r => [...Object.values(r.players), ...(r.portraits ? [r.portraits] : []),
@@ -224,25 +248,33 @@ function sampleRows() {
         K4: kit("p4 - Retro", "#f0e0a0", "#803020"), K5: kit("p5 - Green", "#208040", "#f0f0f0"),
         K6: kit("p6 - Sky", "#60b0e0", "#f0f0f0"), K7: kit("p7 - Orange", "#f08020", "#202020"),
         K8: kit("p8 - Violet", "#7040b0", "#f0c020"), K9: kit("p9 - Grey", "#808080", "#202020") } },
+    // A player folder named `15 Snuffy` claims no slot, so it has no cell: its
+    // error is the label's, with the one-click rename that gives it slot 15.
     { key: "a", name: "/a/", id: 702, display: "a Full Aesthetics Export Autumn26",
-      label: { status: "warning", codes: ["shared_folder_orphaned"] },
-      players: with_(with_(players(1, 23), 7, { status: "warning", codes: ["fmdl_texture_not_found"] }),
-        // sample: the one-click rename of a misnamed player folder; which code
-        // names that folder is not in the catalog yet, so the nearest stands in.
-        15, { status: "warning", codes: ["root_file_unexpected"], folder: "15 Snuffy",
-          fix: { label: "Rename to 15 - Snuffy", folder: "15 - Snuffy" } }),
+      label: { status: "error", codes: ["shared_folder_orphaned", "player_folder_number_invalid"],
+        at: { shared_folder_orphaned: "Boots/Predator", player_folder_number_invalid: "Players/15 Snuffy" },
+        fix: { label: "Rename 15 Snuffy to 15 - Snuffy", apply: r => {
+          r.players[15] = { status: "fullOk", folder: "15 - Snuffy", codes: [] };
+          r.label = { status: "warning", codes: ["shared_folder_orphaned"],
+            at: { shared_folder_orphaned: "Boots/Predator" } }; } } },
+      players: (({ 15: _, ...rest }) => rest)(with_(players(1, 23), 7, { status: "warning",
+        codes: ["fmdl_texture_not_found"], at: { fmdl_texture_not_found: "Players/07 - Player 07/face_high.fmdl" } })),
       kits: { GK: kit("g1", "#30a050", "#101010"), K1: kit("p1 - Pink", "#f080b0", "#f0f0f0"),
-        K2: kit("p2 - Black", "#101010", "#101010", "fullOk", ["kit_colors_derived"]),
+        K2: { ...kit("p2 - Black", "#101010", "#101010", "fullOk", ["kit_colors_derived"]),
+          at: { kit_colors_derived: "Kits/p2 - Black" } },
         K3: kit("p3 - Third", "#6040a0", "#f0c020") } },
     { key: "aco", name: "/aco/", id: 703, display: "aco Full Aesthetics Export Autumn26.zip", archive: true,
       label: { status: "partialOk", codes: [] },
-      players: with_(players(1, 23, "partialOk"), 4, { status: "partialError", codes: ["texture_not_div4"] }),
+      players: with_(players(1, 23, "partialOk"), 4, { status: "partialError", codes: ["texture_not_div4"],
+        at: { texture_not_div4: "Players/04 - Player 04/face.dds" } }),
       kits: { GK: kit("g1", "#202020", "#f0f0f0", "partialOk"), K1: kit("p1", "#2060c0", "#f0f0f0", "partialOk") } },
     { key: "adv", name: "/adv/", id: 704, display: "adv Midcup Aesthetics Export Autumn26",
       label: { status: "fullOk", codes: [] },
-      players: with_(with_(players(1, 11), 5, { status: "error", codes: ["texture_not_div4"], dropFile: true }),
+      players: with_(with_(players(1, 11), 5, { status: "error", codes: ["texture_not_div4"], dropFile: true,
+        at: { texture_not_div4: "Players/05 - Player 05/hair.dds" } }),
         // A portrait kept in the player's folder: its finding is the player's too.
         11, { status: "error", codes: ["texture_not_pow2"], dropFile: true,
+          at: { texture_not_pow2: "Players/11 - Player 11/portrait.png" },
           note: "The finding is on this player's portrait, which is in his folder" }),
       kits: { K1: kit("p1 - Lakers", "#602080", "#f0c020") } },
     { key: "an", name: "/an/", id: 705, display: "an Full Aesthetics Export Autumn26",
@@ -253,17 +285,21 @@ function sampleRows() {
       label: { status: "error", codes: ["team_name_unknown"] }, blocked: "team_name_unknown",
       players: players(1, 23), kits: { GK: kit("g1", "#f0f0f0", "#c08020"), K1: kit("p1", "#f0e080", "#f0f0f0") } },
     { key: "asp", name: "/asp/", id: 706, display: "asp Aesthetics Export Autumn26", special: "untagged",
-      label: { status: "error", codes: ["export_tag_missing"] }, players: {}, kits: {} },
+      label: { status: "error", codes: ["export_tag_missing"],
+        ctx: { export_tag_missing: "name=asp Aesthetics Export Autumn26" } }, players: {}, kits: {} },
     { key: "b", name: "/b/", id: 707, display: "b Full Aesthetics Export Summer26", special: "old",
-      label: { status: "error", codes: ["export_layout_old"] }, players: {}, kits: {} },
+      label: { status: "error", codes: ["export_layout_old"], ctx: { export_layout_old: "folder=Kit Configs" } },
+      players: {}, kits: {} },
     { key: "bant", name: "/bant/", id: 708, display: "bant Full Aesthetics Export Autumn26", special: "disabled",
       label: { status: "fullOk", codes: ["export_disabled"] }, players: players(1, 23),
       kits: { GK: kit("g1", "#101010", "#f0f0f0"), K1: kit("p1", "#208040", "#f0f0f0") } },
     { key: "biz1", name: "/biz/", id: 709, display: "biz Full Aesthetics Export Autumn26", special: "clash",
-      label: { status: "error", codes: ["duplicate_aesthetics_export"] }, blocked: "duplicate_aesthetics_export",
+      label: { status: "error", codes: ["duplicate_aesthetics_export"],
+        ctx: { duplicate_aesthetics_export: "id=709, exports=biz Full Aesthetics Export Autumn26, biz Full Aesthetics Export Autumn26 v2.7z" } }, blocked: "duplicate_aesthetics_export",
       players: players(1, 23), kits: { K1: kit("p1", "#c0a020", "#101010") } },
     { key: "biz2", name: "/biz/", id: 709, display: "biz Full Aesthetics Export Autumn26 v2.7z", special: "clash",
-      archive: true, label: { status: "error", codes: ["duplicate_aesthetics_export"] },
+      archive: true, label: { status: "error", codes: ["duplicate_aesthetics_export"],
+        ctx: { duplicate_aesthetics_export: "id=709, exports=biz Full Aesthetics Export Autumn26, biz Full Aesthetics Export Autumn26 v2.7z" } },
       blocked: "duplicate_aesthetics_export",
       players: players(1, 23, "partialOk"), kits: { K1: kit("p1", "#c0a020", "#101010", "partialOk") } },
     // A name too long for the label at the usual size.
@@ -292,7 +328,7 @@ const sweepEl = cell => h("span", { class: "tc-sweep",
 // The phase of a compiling cell's motion, 0 to 1, counted from when the cell
 // started, so a short task still shows the motion's start.
 const busyPhase = (cell, periodMs) => ((performance.now() - cell.busyAt) % periodMs) / periodMs;
-const S = { rows: sampleRows(), mode: "normal", column: false, unticked: {}, detail: null,
+const S = { rows: sampleRows(), mode: "normal", column: false, unticked: {}, pin: null, hover: null,
   highlight: null, run: null, last: null, finished: false, ids: {}, logScroll: 0,
   // Where the member left the detail window (null until it first opens), and
   // the legend folded away: both kept across launches (localStorage here).
@@ -308,7 +344,10 @@ const severity = code => {
   const s = (catalog(code) || {}).severity || "Error";
   return s === "W" ? "Warning" : s.startsWith("E") ? "Error" : s;
 };
-const messageOf = code => (catalog(code) ? catalog(code).condition.replaceAll("`", "") : code);
+// A finding as the log and the console print it: the code, ` at ` the file or
+// folder it is about, then its context fields.
+const findingText = (cell, code) => code + ((cell.at || {})[code] ? " at " + cell.at[code] : "")
+  + ((cell.ctx || {})[code] ? ` (${cell.ctx[code]})` : "");
 // Worst severity first, then by code.
 const RANK = { Fatal: 0, Error: 1, Warning: 2, Info: 3 };
 const sorted = codes => [...codes].sort((a, b) =>
@@ -343,36 +382,22 @@ function look(r, cell) {
 }
 const lookStyle = l => `background:${l.fill}; color:${l.text}` + (l.outline ? `; --ol:${l.outline}` : "");
 
-function cellTip(r, cell, what) {
-  const state = shown(r, cell);
-  const lines = [cell.folder || r.display, rowOff(r) ? "Off: not compiled" : STATE_NAMES[state]];
-  if (what === "portraits")
-    lines.push(cell.count == null ? "Portraits not counted yet"
-      : `${cell.count} of the export's ${Object.keys(r.players).length} players have a portrait`);
-  if (state === "blocked") lines.push("Blocked: this export is skipped (" + r.blocked + ")");
-  if (cell.note) lines.push(cell.note);
-  for (const code of sorted(cell.codes)) lines.push(`${severity(code)} - ${code}: ${messageOf(code)}`);
-  if (what === "kit" && cell.codes.includes("kit_colors_derived"))
-    lines.push("The menu colors shown are the ones derived from the texture");
-  return lines.join("\n");
-}
-
 // ---- The grid ----
 function cellEl(r, cell, text, scope, what) {
   const state = shown(r, cell), l = look(r, cell);
   // The kit's menu colours, once known and while the row is on (sample look:
   // two flat halves stand in for the icon's pattern, which color_tools draws).
   const swatch = cell.swatch && !rowOff(r) && !["unchecked", "checking", "blocked"].includes(state);
-  return h("div", { class: "tc-cell" + (what === "portraits" ? " wide" : "") + (cell.busy ? " busy" : "")
+  return [h("div", { class: "tc-cell" + (what === "portraits" ? " wide" : "") + (cell.busy ? " busy" : "")
       + (state === "blocked" && !rowOff(r) ? " blocked" : "") + (l.outline ? " ol" : "") + (swatch ? " kit" : "")
       + (S.highlight === scope ? " hl" : ""),
     style: lookStyle(l),
-    title: cellTip(r, cell, what), "data-scope": scope,
-    onclick: e => openDetail(e, { row: r.key, what, slot: text }) },
+    "data-scope": scope, ...detailEvents(r, { row: r.key, what, slot: text }) },
     text,
     cell.busy ? sweepEl(cell) : null,
     swatch ? h("span", { class: "tc-sw", style: `background:linear-gradient(90deg, ${cell.swatch[0]} 50%, ${cell.swatch[1]} 50%)` })
-      : null);
+      : null),
+    sameCell(S.pin, { row: r.key, what, slot: text }) ? h("span", { class: "tc-pin" }, "📌") : null];
 }
 
 // A vertical line's cell.
@@ -501,10 +526,10 @@ function gridRow(r) {
   cells.push(h("td", { class: "tc-name mono" + (l.outline ? " ol" : "") + (S.highlight === r.name ? " hl" : ""),
     style: lookStyle(l) + `; font-size:${named.size}px; line-height:${named.lines.length > 1 ? named.size + 1 + "px" : "normal"}`,
     "data-scope": r.name,
-    title: cellTip(r, { ...r.label, folder: r.display + (r.archive ? " (archive: shallow check)" : "") }),
     oncontextmenu: e => { e.preventDefault(); rowMenu(e, r); },
-    onclick: e => openDetail(e, { row: r.key, what: "label" }) },
-    named.lines.map(line => h("div", {}, line))));
+    ...detailEvents(r, { row: r.key, what: "label" }) },
+    named.lines.map(line => h("div", {}, line)),
+    sameCell(S.pin, { row: r.key, what: "label" }) ? h("span", { class: "tc-pin" }, "📌") : null));
   cells.push(idCell(r), vline());
   const message = rowMessage(r), acts = rowActions(r);
   if (message) {
@@ -602,70 +627,151 @@ function legend() {
     LEGEND.flatMap(col => col.map(k => entry(k, col.length === 1))));
 }
 
-// ---- The detail window: what a clicked cell holds, and what to do about it ----
-// It opens beside the first cell clicked and from then on where the member
-// left it; a click on another cell changes what it shows, not where it is.
-function openDetail(e, detail) {
-  if (!S.detailPos) {
-    const pipe = e.currentTarget.closest(".pipe").getBoundingClientRect();
-    const cell = e.currentTarget.getBoundingClientRect(), scale = winScale();
-    S.detailPos = { x: Math.min((cell.right - pipe.left) / scale + 8, pipe.width / scale - 310),
-      y: Math.min((cell.top - pipe.top) / scale, pipe.height / scale - 320) };
-  }
-  S.detail = detail;
+// ---- The detail window: hover shows a cell, a click pins it ----
+// S.pin is the pinned cell, S.hover the cell under the pointer while nothing
+// is pinned; the window shows the pinned one, else the hovered one. A cell is
+// { row, what, slot }. While a cell is pinned, hovering another opens
+// nothing: the pointer crosses other cells on its way to the window.
+// egui's tooltip_delay and tooltip_grace_time: the window opens once the
+// pointer rests, then follows it from cell to cell at once.
+const TOOLTIP_DELAY = 500, TOOLTIP_GRACE = 200;
+let hoverTimer = null, hoverEndedAt = -Infinity;
+const sameCell = (a, b) => !!a && !!b && a.row === b.row && a.what === b.what && a.slot === b.slot;
+function hoverEnter(cell) {
+  if (S.pin) return;
+  clearTimeout(hoverTimer);
+  const show = () => { S.hover = cell; redrawDetail(); };
+  if (S.hover || performance.now() - hoverEndedAt < TOOLTIP_GRACE) show();
+  else hoverTimer = setTimeout(show, TOOLTIP_DELAY);
+}
+function hoverLeave() {
+  clearTimeout(hoverTimer);
+  if (!S.hover) return;
+  S.hover = null;
+  hoverEndedAt = performance.now();
+  redrawDetail();
+}
+// A click pins the cell, or unpins it when it is the pinned one. The second
+// press of a double-click is the double-click's (egui: double_clicked() comes
+// with that press's clicked()), which puts the pin back as it was.
+function cellClick(e, cell) {
+  if (e.detail > 1) return;
+  S.pinBefore = S.pin;
+  S.pin = sameCell(S.pin, cell) ? null : cell;
+  S.hover = null;
   render();
+}
+function cellDoubleClick(r, cell) {
+  S.pin = S.pinBefore;
+  S.hover = null;
+  render();
+  openFolder(folderPath(r, cell.what, cellOf(r, cell)));
+}
+// What a cell's events do: the grid's cells and the team labels share them.
+const detailEvents = (r, cell) => ({
+  onmouseenter: () => hoverEnter(cell), onmouseleave: hoverLeave,
+  onclick: e => cellClick(e, cell), ondblclick: () => cellDoubleClick(r, cell) });
+// A click on the grid's empty space unpins (a faint empty position counts as
+// empty; a cell, a label, the ID cell and the row buttons do not).
+function gridClick(e) {
+  if (!S.pin || e.target.closest(".tc-cell, .tc-name, .tc-id, button, input")) return;
+  S.pin = null;
+  render();
+}
+// The window alone, drawn again on a hover: a whole render would rebuild the
+// grid under the pointer.
+function redrawDetail() {
+  const pipe = document.querySelector("#center .pipe");
+  if (!pipe) return;
+  const old = pipe.querySelector(".tc-detail");
+  if (old) old.remove();
+  const win = detailPanel();
+  if (win) pipe.append(win);
 }
 function dragDetail(e, win) {
   if (e.button !== 0 || e.target.closest("button")) return;
-  const from = { ...S.detailPos }, x0 = e.clientX, y0 = e.clientY, scale = winScale();
+  const scale = winScale(), x0 = e.clientX, y0 = e.clientY;
+  const from = { x: win.offsetLeft, y: win.offsetTop };
   const move = ev => {
     S.detailPos = { x: Math.max(0, from.x + (ev.clientX - x0) / scale), y: Math.max(0, from.y + (ev.clientY - y0) / scale) };
-    win.style.left = S.detailPos.x + "px"; win.style.top = S.detailPos.y + "px";
+    win.style.left = S.detailPos.x + "px"; win.style.top = S.detailPos.y + "px"; win.style.right = "";
   };
   const up = () => {
     document.removeEventListener("mousemove", move);
     document.removeEventListener("mouseup", up);
-    localStorage.setItem("drafts.tc.detail_pos", JSON.stringify(S.detailPos));
+    if (S.detailPos) localStorage.setItem("drafts.tc.detail_pos", JSON.stringify(S.detailPos));
   };
   document.addEventListener("mousemove", move);
   document.addEventListener("mouseup", up);
   e.preventDefault();
 }
+const cellOf = (r, cell) => cell.what === "label" ? r.label
+  : cell.what === "kit" ? r.kits[cell.slot]
+  : cell.what === "portraits" ? r.portraits : r.players[Number(cell.slot)];
+// A cell's folder inside its export, as messages print paths; none for a label.
+const folderRel = (what, c) => what === "label" ? ""
+  : what === "player" ? "Players/" + c.folder : what === "kit" ? "Kits/" + c.folder : c.folder;
+// The folder Open folder and a double-click open: the export's root for its
+// label, an archive export's folder (the archive selected) for any of its cells.
+const folderPath = (r, what, c) => r.display
+  + (r.archive || what === "label" ? "" : "\\" + folderRel(what, c).replaceAll("/", "\\"));
+// What the window says of a cell beyond its findings.
+function cellNotes(r, c, what) {
+  const notes = [];
+  if (what === "portraits")
+    notes.push(c.count == null ? "Portraits not counted yet"
+      : `${c.count} of the export's ${Object.keys(r.players).length} players have a portrait`);
+  if (shown(r, c) === "blocked") notes.push("Blocked: this export is skipped (" + r.blocked + ")");
+  if (c.note) notes.push(c.note);
+  if (what === "kit" && c.codes.includes("kit_colors_derived"))
+    notes.push("The menu colors shown are the ones derived from the texture");
+  return notes;
+}
 function detailPanel() {
-  if (!S.detail) return null;
-  const r = rowOf(S.detail.row);
+  const at = S.pin || S.hover;
+  if (!at) return null;
+  const r = rowOf(at.row);
   if (!r) return null;
-  const cell = S.detail.what === "label" ? r.label
-    : S.detail.what === "kit" ? r.kits[S.detail.slot]
-    : S.detail.what === "portraits" ? r.portraits : r.players[Number(S.detail.slot)];
+  const cell = cellOf(r, at);
   if (!cell) return null;
-  const folder = S.detail.what === "label" ? r.display : cell.folder;
-  const title = S.detail.what === "label" ? r.name
-    : S.detail.what === "portraits" ? `${r.name} portraits` : `${r.name} ${S.detail.slot}`;
-  // A link opens it with no cell clicked: at the grid's right.
-  const pos = S.detailPos || { x: 760, y: 70 };
-  const win = h("div", { class: "tc-detail", "data-panel": "detail", style: `left:${pos.x}px; top:${pos.y}px` });
+  const pinned = !!S.pin;
+  const title = at.what === "label" ? r.name
+    : at.what === "portraits" ? `${r.name} portraits` : `${r.name} ${at.slot}`;
+  // Where the member last left it; at first at the grid's right.
+  const pos = S.detailPos ? `left:${S.detailPos.x}px; top:${S.detailPos.y}px` : "right:8px; top:70px";
+  const win = h("div", { class: "tc-detail" + (pinned ? "" : " hover"), "data-panel": "detail", style: pos });
+  const where = at.what === "label" ? r.display + (r.archive ? " (archive: shallow check)" : "")
+    : folderRel(at.what, cell);
   win.append(
-    h("div", { class: "bar", onmousedown: e => { S.detailPos = pos; dragDetail(e, win); } },
+    h("div", { class: "bar", onmousedown: e => { if (pinned) dragDetail(e, win); } },
       strong(title), h("span", { style: "flex:1" }),
-      button("✕", () => { S.detail = null; render(); }, { frame0: true, title: "Close" })),
+      pinned ? button(h("span", { class: "pin" }, "📌"), () => { S.pin = null; render(); },
+        { frame0: true, title: "Unpin" }) : null),
     h("div", { class: "body" },
-      S.detail.what === "player" ? h("div", { class: "preview weak" }, "3D preview (a later feature)") : null,
-      h("div", { class: "mono" }, folder),
+      at.what === "player" ? h("div", { class: "preview weak" }, "3D preview (a later feature)") : null,
+      h("div", { class: "mono" }, where),
       h("div", { class: "weak" }, rowOff(r) ? "Off: not compiled" : STATE_NAMES[shown(r, cell)]),
-      cell.codes.length ? sorted(cell.codes).map(code =>
-        h("div", { class: "find " + (severity(code) === "Warning" ? "warn" : severity(code) === "Info" ? "" : "err") },
-          severity(code), " ",
+      cellNotes(r, cell, at.what).map(n => h("div", { class: "weak" }, n)),
+      cell.codes.length ? sorted(cell.codes).map(code => {
+        const row_ = catalog(code) || {};
+        const sev = severity(code);
+        return h("div", { class: "find " + (sev === "Warning" ? "warn" : sev === "Info" ? "" : "err") },
+          sev, " ",
           h("span", { class: "msg-link", title: "Open the help at this message",
             onclick: () => openHelp({ tool: "compiler", topic: "messages", anchor: code }) }, code),
-          h("div", {}, messageOf(code))))
-        : h("div", { class: "find weak" }, "No findings."),
-      row(button("Open folder", () => openFolder(r.display + (S.detail.what === "label" || r.archive ? "" : "\\" + folder)),
+          (cell.at || {})[code] ? h("div", { class: "mono at" }, cell.at[code]) : null,
+          (cell.ctx || {})[code] ? h("div", { class: "mono at" }, cell.ctx[code]) : null,
+          h("div", { class: "what" }, mdInline(row_.condition || "")),
+          h("div", { class: "what weak" }, mdInline(row_.consequence || "")));
+      }) : h("div", { class: "find weak" }, "No findings."),
+      row(button("Open folder", () => openFolder(folderPath(r, at.what, cell)),
           { title: r.archive ? "An archive export: its folder opens with the archive selected" : null }),
         // A finding with one obvious fix: a rename the member asks for by a click.
         cell.fix && !r.archive ? button(cell.fix.label, () => {
-          cell.folder = cell.fix.folder; if (cell.fix.count) cell.count = cell.fix.count;
-          cell.status = "fullOk"; cell.codes = []; delete cell.fix; render(); },
+          if (cell.fix.apply) cell.fix.apply(r);
+          else { cell.folder = cell.fix.folder; if (cell.fix.count) cell.count = cell.fix.count;
+            cell.status = "fullOk"; cell.codes = []; delete cell.fix; }
+          render(); },
           { title: "A rename; refused when that name exists" }) : null)));
   return win;
 }
@@ -903,9 +1009,11 @@ function cancelRun() {
 // The check's findings as log lines, once: a click on one highlights its cell.
 function seedLog() {
   for (const r of S.rows) {
-    const each = (cell, scope) => { for (const code of cell.codes)
-      L.log.push({ severity: severity(code), code, scope,
-        text: `${severity(code)} - ${scope} - ${code}: ${messageOf(code)}` }); };
+    // The line is the console's: the code, the file and the context; its
+    // head, `Severity - /team/ - `, is what a wrapped line's rows indent past.
+    const each = (cell, scope) => { for (const code of cell.codes) {
+      const head = `${severity(code)} - ${r.name} - `;
+      L.log.push({ severity: severity(code), code, scope, head, text: head + findingText(cell, code) }); } };
     each(r.label, r.name);
     for (const [n, cell] of Object.entries(r.players)) each(cell, `${r.name} ${pad(n)}`);
     if (r.portraits) each(r.portraits, `${r.name} portraits`);
@@ -928,7 +1036,7 @@ function drawView(center) {
   center.classList.add("tc-view");
   center.append(h("div", { class: "pipe" },
     D.empty ? null : legend(),
-    dropZone(h("div", { class: "tc-top" }, h("div", { class: "pipe-grid" }, grid()))),
+    dropZone(h("div", { class: "tc-top", onclick: gridClick }, h("div", { class: "pipe-grid" }, grid()))),
     toolbar(),
     named(logPanel(L, { tool: "compiler", onLine: gotoCell }), "log"),
     detailPanel()));
@@ -946,7 +1054,7 @@ function draftControls() {
       cb("The data folder is read-only", D.dataReadOnly, v => D.dataReadOnly = v)),
     h("span", { title: "gui.md \"Row actions\", the empty grid" },
       cb("The exports folder is empty", D.empty, v => D.empty = v)),
-    button("Reset the sample rows", () => { S.rows = sampleRows(); S.detail = null; S.unticked = {};
+    button("Reset the sample rows", () => { S.rows = sampleRows(); S.pin = null; S.hover = null; S.unticked = {};
       S.ids = {}; S.last = null; S.finished = false; L.log = []; seedLog(); render(); }),
     h("span", { title: "gui.md \"Live validation\"" },
       button("Check every export again", () => liveCheck(S.rows.filter(r => !r.special)))),
@@ -964,12 +1072,13 @@ const WALK = [
   ["TC-GUI-04", "the rows: /3/ fully checked, /aco/ an archive (blue cells, one faint red), /adv/ with players 01 to 11 only (12 to 23 empty, no cell) and no keeper kit, /an/ part checked, part checking, part unchecked"],
   ["TC-GUI-07", "/egg/ is not on the teams list: its ID cell is red; type 950 and Enter (out of range), 714 and Enter (in use by /co/: the question takes the place of the row's cells until Yes or No), 850 and Enter (written); with the data folder read-only the entry is dropped"],
   ["TC-GUI-08", "/asp/ has no tag: Full or Midcup renames it and its cells appear"],
-  ["TC-GUI-09", "hover a cell for its folder and findings; click it for the detail panel (/a/ 07 a warning, /a/ 15 a folder name with its one-click rename, /a/'s portraits an old file name in Portraits with its rename, which colours the portraits cell alone; /adv/ 11's portrait, kept in the player's folder, colours his cell and the portraits cell)"],
+  ["TC-GUI-09", "rest the pointer on a cell or a team label: the detail window shows its folder and findings, and follows the pointer to the next cell; leaving for empty grid closes it (/a/ 07 a warning, /a/'s label a player folder named 15 Snuffy, which claims no slot, with its one-click rename, /a/'s portraits an old file name in Portraits with its rename, which colours the portraits cell alone; /adv/ 11's portrait, kept in the player's folder, colours his cell and the portraits cell)"],
   ["TC-GUI-10", "a kit cell shows its two menu colours under its label; /a/ K2's black pair is the derived one"],
   ["TC-GUI-11", "the Compile button's arrow: the three modes (sideloading disabled with the sidebar at PES 2015 or 2016), the compile column and Open output folder; picking a mode relabels the main part, and sideloading adds Launch PES"],
   ["TC-GUI-12", "Compile: the cells change scattered over the grid, a few at once, as parallel tasks end; each turns bold, then green, amber or red (/adv/ 05, one file dropped); the strip counts; the button reads Cancel"],
   ["TC-GUI-13", "Cancel during a run: every cell returns to its check colour, the log's last line says so"],
-  ["TC-GUI-14", "Compile with /egg/ or the two /biz/ exports unresolved: their cells are blocked, each tooltip naming the cause"],
+  ["TC-GUI-14", "Compile with /egg/ or the two /biz/ exports unresolved: their cells are blocked, each one's detail window naming the cause"],
+  ["TC-GUI-24", "click a cell: a pin on it and in the window's title bar, the window stays and hovering other cells leaves it; drag it by its title bar; click another cell to pin that one, the pinned cell, the window's pin or empty grid to unpin; double-click a cell to open its folder"],
   ["TC-GUI-15", "click a warning or error line of the log: its cell, or the row's label, is outlined"],
   ["TC-GUI-16", "the destination control: the badge beside the button, its tooltip the reason and the remedy"],
   ["live check", "Check every export again: every cell reads Checking, then flips to its result as its check ends, scattered over the rows"],
@@ -986,7 +1095,8 @@ function linkKeys() {
   if (S.column) k.column = "1";
   if (D.empty) k.empty = "1";
   if (D.writable !== "yes") k.dest = D.writable;
-  if (S.detail) k.detail = S.detail.row + "." + S.detail.what + (S.detail.slot ? "." + S.detail.slot : "");
+  // A link opens the window pinned: a hover is no state a link can hold.
+  if (S.pin) k.detail = S.pin.row + "." + S.pin.what + (S.pin.slot ? "." + S.pin.slot : "");
   if (S.finished && !S.run) k.run = "done";
   return k;
 }
@@ -999,7 +1109,7 @@ function linkOpen(scr, keys) {
   if (keys.dest !== undefined) { if (BADGES[keys.dest]) D.writable = keys.dest; else linkWarn("dest=" + keys.dest); }
   if (keys.detail !== undefined) {
     const [key, what, slot] = keys.detail.split(".");
-    if (rowOf(key) && ["label", "player", "kit", "portraits"].includes(what)) S.detail = { row: key, what, slot };
+    if (rowOf(key) && ["label", "player", "kit", "portraits"].includes(what)) S.pin = { row: key, what, slot };
     else linkWarn("detail=" + keys.detail);
   }
   // run=done: the finished run's colours, without the timer.
@@ -1016,7 +1126,7 @@ function linkOpen(scr, keys) {
 registerTool({ id: "compiler", css: TEAM_COMPILER_CSS, draw: drawView,
   controls: draftControls, screen, linkKeys, linkOpen,
   // The screens scripts/drafts/draft_shots.py captures, as the links this view writes.
-  shots: ["compiler/main", "compiler/main?detail=a.player.15",
+  shots: ["compiler/main", "compiler/main?detail=a.label", "compiler/main?detail=adv.player.11",
     "compiler/main?run=done", "compiler/main?mode=sideload&column=1",
     "compiler/main?empty=1", "compiler/main?dest=running"] });
 })();

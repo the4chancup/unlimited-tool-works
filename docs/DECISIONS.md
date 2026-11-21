@@ -19252,3 +19252,29 @@ Why: the notes are that section in every release since 0.0.1, so copying it by h
 publish was work the workflow can do. Failing before the draft, and not drafting with empty
 notes, keeps a release from being published with none.
 Plan: spec/core/distribution.md "Release builds in CI", the paragraph on the draft.
+
+## 2026-11-22 — compiler view — the detail window opens on hover and pins on a click; log lines wrap
+Decision (the maintainer): resting the pointer on a grid cell opens its detail window and
+leaving the cell closes it; a click pins the window on that cell, with a pin on the cell and
+in the window's title bar; a click on the pinned cell or on empty grid unpins it, a click on
+another cell pins that one, and a double-click opens the cell's folder. The window replaces
+the cells' tooltips. A log line longer than the panel wraps, its continuation indented past
+its `Severity - /team/ - ` head.
+Decision (the lead, filling what the ruling left open): while a cell is pinned, hovering
+another opens nothing; the window opens after egui's tooltip delay; a double-click leaves the
+pin as it was; the window keeps opening where the member last left it, and lets the pointer
+through while unpinned; a log line is the code, the file and the context, with the catalog's
+paragraph in the window.
+Why: the organizer's first need is whether anything is wrong and what, player by player:
+hovering answers it without a click, and the window, not the log, is where the details live.
+A pinned window that previews other cells under the pointer could not be reached, because
+the path to its buttons crosses other cells. A window that followed the pointer would be the
+size of the 3D preview it is meant to hold, so it keeps the place the member gave it
+(2026-11-13); while unpinned it would otherwise cover cells that could no longer be hovered.
+The catalog's text is a paragraph per code, which would make every log line several rows
+long. The old no-wrap rule cut off the end of a line, the part naming the file; the hanging
+indent keeps each finding's start at the left edge, which was what the rule protected.
+Plan: plans/team_compiler/gui.md "GUI: the live-validating team grid" (the detail window, a
+message's log line); plans/core/gui.md "Log panel" (wrapping) and ST-LOG-05;
+plans/team_compiler/README.md TC-GUI-09, TC-GUI-24, and the tooltip wording of TC-GUI-14, 20
+and 21.

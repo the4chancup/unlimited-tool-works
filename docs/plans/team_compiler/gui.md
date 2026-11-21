@@ -16,12 +16,13 @@ it, one cell per player at a fixed position by number, plus one cell per kit:
 /cc/   [809]   [01][  ][03][  ][05][  ][  ][  ]   [GK]
 ```
 
-- **Team name label**: fixed-width left column with the canonical `/xx/` `team_name`; the tooltip
-  shows the complete `export_display_name` and resolved identity. The label doubles as the **cell
+- **Team name label**: fixed-width left column with the canonical `/xx/` `team_name`; its detail
+  window shows the complete `export_display_name` and resolved identity. The label doubles as the **cell
   for export-scoped and non-slot task messages**: shared model folders, Logo, Common, Collars,
-  RefMarker, and root-artifact scopes have no cells of their own, so their status and messages roll
-  up here. For example, an orphaned shared folder (`shared_folder_orphaned`) turns the label amber,
-  with the details in its tooltip.
+  RefMarker, and root-artifact scopes have no cells of their own, and neither has a player folder
+  whose name claims no slot (`15 Snuffy`, `player_folder_number_invalid`), so their status and
+  messages roll up here. For example, an orphaned shared folder (`shared_folder_orphaned`) turns
+  the label amber, with the details in its window.
 - **Team ID cell**: between the team name and the first player column, showing the ID resolved from
   `teams_list.txt`. When the team is not on the teams list (`team_name_unknown`), the cell turns
   **red and editable**: the user types an ID and confirms with Enter, and the ID is **written to the
@@ -49,11 +50,11 @@ it, one cell per player at a fixed position by number, plus one cell per kit:
   across rows by number: missing players are visible at a glance.
 - **Referee rows**: the fixed positions extend to `01`–`35` (one per referee slot). Each slot listed
   in `players.txt` gets a cell, and slots backed by the same model folder share its status (the
-  tooltip names the folder, making the repetition visible).
+  detail window names the folder, making the repetition visible).
 - **Kit cells**: one per kit. The `Kits/` folder has one subfolder per kit (containing
   `config.toml`, `colors.txt`, and that kit's textures), which gives the per-kit cell
   granularity naturally. `all/` is not a kit and gets no cell: its effect shows in the kit
-  cells' tooltips, which name the folder (`p1 - Lakers`) and the stems inherited from `all/`.
+  cells' detail windows, which name the folder (`p1 - Lakers`) and the stems inherited from `all/`.
 
   Kit cells use a separate fixed-slot loop (`GK`, then `K1`–`K9`) following the same
   reserve-every-position rule as player cells. They use the same square shape and are
@@ -74,8 +75,27 @@ it, one cell per player at a fixed position by number, plus one cell per kit:
   slot cell. Kit tasks update their kit cell. Logo/Common/Collar/RefMarker/root-artifact work
   updates the team/ref row label. Run/output failures appear in the run strip and log, with
   run-abort state propagated to pending cells as described below.
-- **Hover**: tooltip with folder name + warning/error text. **Click**: opens a detail panel (and
-  later, the 3D preview from Future Features).
+- **The detail window** shows one cell (a player, the portraits, a kit, or a team label for its
+  export's own messages): its folder, its state, and each message with the file it is about
+  and the catalog's When and Effect texts, then Open folder and, for a finding with one
+  obvious fix, the rename that fixes it. Later it holds the 3D preview (Future Features). The
+  cells carry no tooltip of their own; the ID cell and the buttons keep theirs.
+  - **Hover** opens it on the cell under the pointer, and leaving the cell closes it. It opens
+    after the pointer rests for egui's tooltip delay and then follows the pointer from cell to
+    cell at once, as tooltips do, so a pointer crossing the grid does not flash it.
+  - **A click pins it**: a pin shows on the cell and in the window's title bar, and the window
+    stays open on that cell, with its buttons usable, and dragging its title bar moves it.
+    While a cell is pinned, hovering another opens nothing, so the pointer can cross the grid
+    to the window. A click on the pinned cell, on the window's pin or on the grid's empty
+    space unpins it; a click on another cell pins that one.
+  - **A double-click** opens the cell's folder in the file manager (for an archive export, the
+    folder holding it, with the archive selected), and leaves the pin as it was before it.
+  - **Where it opens**: where the member last left it (at first, at the grid's right), not
+    beside the cell, because a window sized for the 3D preview is too big to follow the pointer.
+    While unpinned it lets the pointer through, so a cell under it can still be hovered.
+- **A message's log line** is `Severity - /team/ - code`, then ` at ` and the file or folder it
+  is about, then its context fields, as the console prints them; the catalog's text, a
+  paragraph, is the window's and the help's, which the code links to.
 - One row per team bounds the row count (~50), so no virtualization is needed; direct egui rendering
   suffices.
 
@@ -244,7 +264,7 @@ Processing eligibility follows the effective disposition, not severity alone:
 - `AbortRun` terminates the run.
 
 An effective `DropExport` gives every player and kit cell in that row a derived blocked state
-(not pending or processing), and each tooltip references the export-level cause. A skipped
+(not pending or processing), and each one's detail window names the export-level cause. A skipped
 scope otherwise keeps its error status when Compile is pressed.
 
 Planning messages are applied before manifest tasks become pending: rows dropped by planning become
@@ -319,17 +339,10 @@ for slot in 1..=slot_count {
         label_color(actual_color), // contrast derives from the painted color
     );
 
-    if response.clicked() {
-        row.open_detail_for_slot(slot);
-    }
-    response.on_hover_ui(|ui| {
-        ui.label(&cell.folder_name);
-        // Messages are pre-sorted by severity (Fatal > Error > Warning > Info),
-        // then by code for stable ordering.
-        for msg in &cell.messages {
-            ui.colored_label(actual_color, msg);
-        }
-    });
+    // The detail window (above): hover shows it, a click pins it, a
+    // double-click opens the folder. Its messages are sorted by severity
+    // (Fatal > Error > Warning > Info), then by code for stable ordering.
+    detail.track(row.scope_for_slot(slot), &response);
 }
 ```
 
