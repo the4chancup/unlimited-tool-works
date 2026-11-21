@@ -431,7 +431,9 @@ vertical room a tab row takes; a toggle on the title's own row takes none.
   team.
 - **Several players selected.** Each selected row is filled as the selected row is. After
   `Every team`, the team selector moves to `All teams` and the filter is cleared, so every
-  selected row is in the list. Ctrl+click on a player row adds it to the selection or takes
+  selected row is in the list; a category that leaves one of their teams out widens to
+  `All`, as for a selection made elsewhere (`Every team` is every cup team, whatever the
+  category). Ctrl+click on a player row adds it to the selection or takes
   it out, a lone selected player included, so a selection can also be built without the
   window. Taking out all but one leaves that one selected as usual, and Ctrl+click on the
   last one does nothing. Any other way of selecting (a plain click on any row, Up or Down,

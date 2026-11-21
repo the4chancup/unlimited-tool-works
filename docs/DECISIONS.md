@@ -19178,3 +19178,13 @@ texture replaced in an apk pack is one of the files such an explorer edits, so a
 command for it would be a second front end to keep.
 Plan: plans/core/development_plan.md "Unscheduled tools" (the PES file explorer); plans/libs/apk.md
 (its users); worklog, the list after the detour, item 14.
+
+## 2026-11-21 — save_editor — Select all similar's `Every team` is every cup team, and its Select widens the category
+Decision: in the Select all similar players window, `Every team` searches every cup team's
+roster whatever the list's category, and a Select under it widens a category that leaves out
+one of the selected players' teams to `All`, besides moving the selector to All teams and
+clearing the filter.
+Why: the plan asks that every selected row be in the list, and a category can hide a team the
+way the selector and the filter can; widening it is what every other selection made outside
+the list already does, so a second rule for this one would differ for no reason.
+Plan: plans/save_editor.md "Editing UI", the bullet "Several players selected".
