@@ -1296,6 +1296,40 @@ fn every_team_roster_and_tactics_record_round_trips_byte_for_byte() {
     }
 }
 
+/// PES 2014's team record maps the two name flags at 0x0A:0 and 0x0A:1, as
+/// PES 2015's pair does at 0x12: a flag set on the decoded entry writes
+/// exactly its bit of byte 0x0A, no other byte of the record touched.
+#[test]
+fn a_pes14_teams_name_flags_write_byte_0x0a() {
+    let payload = payload(PesVersion::Pes14);
+    let schema = schema_for(PesVersion::Pes14);
+    let rec = (0..count(&payload, &schema.teams))
+        .map(|i| record(&payload, &schema.teams, schema.team.size, i))
+        .find(|rec| team_id(rec, schema.team) == 1)
+        .expect("team 1's record");
+    assert_eq!(
+        rec[0x0A] & 0b11,
+        0,
+        "premise: the fixture's flag bits are clear"
+    );
+    for bit in [0x01u8, 0x02] {
+        let mut team = read_team(rec, schema.team).expect("decode team");
+        if bit == 0x01 {
+            team.edit_flags.name = true;
+        } else {
+            team.edit_flags.short_name = Some(true);
+        }
+        let mut written = rec.to_vec();
+        write_team(&team, &mut written, schema.team).expect("encode team");
+        let mut expected = rec.to_vec();
+        expected[0x0A] |= bit;
+        assert_eq!(
+            written, expected,
+            "the flag sets bit {bit} of byte 0x0A alone"
+        );
+    }
+}
+
 #[test]
 fn team_roster_and_tactics_sections_list_the_same_teams() {
     let counts = [478usize, 220, 220, 220, 202, 346, 220, 220];

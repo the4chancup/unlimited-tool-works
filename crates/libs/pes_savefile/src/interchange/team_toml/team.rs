@@ -399,7 +399,7 @@ fn emit_team(out: &mut String, team: &TeamSection) {
         "short_name",
         flags.short_name.map(|v| v.to_string()),
         "false",
-        "PES 15 only",
+        "PES 14 and 15",
     );
     emit(
         out,
@@ -1636,6 +1636,30 @@ mod tests {
                     if key == "tactics.bench_order" && expected.contains("twelve")
             ),
             "{err:?}"
+        );
+    }
+
+    /// PES 2014's team record stores the two name flags, as PES 2015's does:
+    /// its export shows `[team.edit_flags]`'s `name` and `short_name` live,
+    /// `short_name`'s comment naming the two versions. (Team TOML itself is
+    /// out of scope for a PES 2014 save; the emit test runs `from_team`
+    /// directly.)
+    #[test]
+    fn a_pes14_export_emits_the_team_edit_flags() {
+        let (file, _) = open(PesVersion::Pes14);
+        let team = file.team(1).expect("team 1");
+        let text = TeamToml::from_team(PesVersion::Pes14, team, &[])
+            .expect("from_team")
+            .to_toml()
+            .expect("to_toml");
+        let flags = text
+            .split("[team.edit_flags]\n")
+            .nth(1)
+            .expect("the flags table emits");
+        assert!(flags.starts_with("name = false\n"), "{flags}");
+        assert!(
+            flags.contains("short_name = false              # PES 14 and 15\n"),
+            "{flags}"
         );
     }
 }

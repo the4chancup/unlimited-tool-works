@@ -273,7 +273,7 @@ fn name_pair(
 /// The short-name field's unit: upper-cased as typed and holding at most
 /// three letters (the cap the draft's short-name field enforced; the
 /// codec's four-byte field is unterminated and would take a fourth). A
-/// change sets the name flag and, on PES 15, the short-name flag too.
+/// change sets the name flag and, on PES 14 and 15, the short-name flag too.
 fn short_pair(
     ui: &mut egui::Ui,
     session: &mut Session,

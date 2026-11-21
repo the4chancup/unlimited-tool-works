@@ -49,7 +49,7 @@ pub struct TeamColor {
 pub struct TeamEditFlags {
     /// The team name was edited.
     pub name: bool,
-    /// The short name was edited (PES 15 only).
+    /// The short name was edited (PES 14 and 15).
     pub short_name: Option<bool>,
     /// The home stadium was edited (PES 20/21 only).
     pub stadium: Option<bool>,

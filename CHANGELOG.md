@@ -19,6 +19,8 @@
 - **Save editor**: the command line now refuses a PES 2014 save for Team TOML export and
   import, aesthetics patches, comparing two saves and the teams-list export, as the window
   greys them there.
+- **Save editor**: a team renamed on a PES 2014 save kept its old name in the game. The
+  rename now also marks the name as edited, which the game needs before it shows the new one.
 - **Compiler**: a referee with no face model, whose body model brings his head, showed the
   game's own referee head floating over it. He now gets an empty face, as a team player in the
   same case does.
