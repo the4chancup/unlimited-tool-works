@@ -1,43 +1,52 @@
 # Changelog
 
-## [Unreleased]
+## [0.0.2-pes14.2] - 2026-11-21
+
+### Important
+
+- **Save editor**: added the Gameplan screen for PES 2014 saves.
+  Its pitch shows each starter's overall rating at his role, with the same values the game
+  gives them. A player dropped on open grass moves there with the role the game would give
+  him, or stays put if the game would refuse the drop.
+  Its Preset tactics panel holds the game's Formation and Strategy dropdowns and its eight
+  sliders.
+  Its Combination play panel holds the game's three slots, each with a strategy and the area it
+  runs in.
 
 ### Useful
 
-- **Save editor**: typing the start of a nation's name in the open Nation list now picks it,
-  as typing its ID does, and Escape in the open list now puts back the nation it opened on.
-- **Save editor**: added the Gameplan screen for PES 2014 saves. Its pitch shows each
-  starter's overall at his role, as the game works it out. A player dropped on open grass
-  moves there with the role the game would give him, or stays put where the game refuses the
-  drop. Its Preset tactics panel
-  holds the game's Formation and Strategy dropdowns and its eight sliders. Its Combination
-  play panel holds the game's three slots, each a strategy and the area it runs in. Once a
-  PES 2014 folder is set, hovering a setting or a dropdown shows the game's own help text.
+- **Save editor**: once a PES 2014 folder is set in the Settings, hovering a setting or a
+  dropdown shows the game's own help text.
 - **Save editor**: on a PES 2014 save, the Gloves ID box, the Team menu's Set boots and gloves
   IDs for everyone, and the Full Player Customization menu entries and buttons now work, as on
   the other games.
 
 ### Fixes
 
-- **Save editor**: the command line now refuses a PES 2014 save for Team TOML export and
-  import, aesthetics patches, comparing two saves and the teams-list export, as the window
-  greys them there.
 - **Save editor**: a team renamed on a PES 2014 save kept its old name in the game. The
   rename now also marks the name as edited, which the game needs before it shows the new one.
-- **Compiler**: a referee with no face model, whose body model brings his head, showed the
-  game's own referee head floating over it. He now gets an empty face, as a team player in the
-  same case does.
-- **Save editor**: a save holding no cup team (ids 701 to 920), such as one made from the stock
-  game, opened to an empty list with no reason given. It now shows a warning saying so, and the
-  command line's `check-aatf`, `export-toml --all-teams` and `export-teams-list` refuse it.
 - **Save editor**: in a window larger than the default, the screens spread their columns and
   stretched their panels across it. They now keep their default layout, centred, while the
   player list shows more rows and the Live AATF panel takes the whole width.
+- **Compiler**: a referee with no face model, whose body model brings his head, showed the
+  game's own referee head floating over it. He now gets an empty face, like regular players do.
+
+### Minor fixes
+
+- **Save editor**: a save holding no cup team (ids 701 to 920), such as one made from the stock
+  game, opened to an empty list with no reason given. It now shows a warning saying so, and the
+  command line's `check-aatf`, `export-toml --all-teams` and `export-teams-list` refuse it.
 
 ### Other stuff
 
+- **Save editor**: typing the start of a nation's name in the open Nation list now picks it,
+  as typing its ID does, and Escape in the open list now puts back the nation it opened on.
 - **Save editor**: a PES 2017 Texport now carries the 4cc clover as its thumbnail, in place of
   the game's own picture.
+- **Save editor**: the command line now refuses a PES 2014 save for Team TOML export and
+  import, aesthetics patches, comparing two saves and the teams-list export, as the window
+  greys those.
+
 
 ## [0.0.2-pes14.1] - 2026-11-20
 
@@ -49,7 +58,7 @@
 - **AATF**: added the Akko League VII ruleset, which the build checks against from its first
   start.
 
-### Added
+### Useful
 
 - **Save editor**, on a PES 2014 save:
   - a player's name, positions, stats (Tenacity among them), skill and COM cards, playing
@@ -59,16 +68,6 @@
   - a team's name, roster and shirt numbers;
   - the game's own words: Precise Touch for Cut Behind & Turn, Auto for the sleeves' Seasonal.
 
-### Not yet on PES 2014
-
-Greyed, each with a tooltip saying why:
-
-- the Gameplan screen, which comes in the next build. Until then, set the captain in the
-  game's own Game Plan: the AATF check reads it;
-- the face, hair and skin, the gloves and the FPC buttons;
-- the team's colours, which PES 2014 does not store;
-- Team TOML export and import, aesthetics patches, comparing two saves, the teams-list export
-  and the two Generate items.
 
 ## [0.0.2] - 2026-11-18
 

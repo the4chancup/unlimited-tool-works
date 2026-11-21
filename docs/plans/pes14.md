@@ -770,9 +770,9 @@ main. The branch's update check reads only `pes14-v<semver>` tags, so a PES 2014
 offered main's next release, which cannot open PES 2014 saves. The branch's `release.yml` runs
 on `pes14-v*` tags (GitHub reads the workflow file at the tagged commit, so main's file is
 unchanged). A prerelease is never marked Latest, so the repository's front page keeps showing
-main's release. Each cut opens `CHANGELOG.md` with the build's own section, what it does on PES
-2014 and what is still greyed there, above main's: the app's What's new chapter shows the
-bundled changelog, which would otherwise present main's last release as the build's news.
+main's release. Each cut opens `CHANGELOG.md` with the build's own section, above main's: the
+app's What's new chapter shows the bundled changelog, which would otherwise present main's
+last release as the build's news.
 
 ## Verification
 
@@ -910,7 +910,8 @@ on main. Main is merged into the branch, never rebased onto it.
 10. The gloves id on PES 2014 (the Akko DLC's, through the three colour fields) and the team
     name flags: done 2026-11-21 (merges `1637d105`, `0a53d5e9`). Checked in Edit mode with the
     DLC: a goalkeeper given gloves 11 in the build shows no hands (run `step10`), and a team
-    renamed in the build shows its new name (run `flags`). Then the release.
+    renamed in the build shows its new name (run `flags`). Released as `0.0.2-pes14.2`
+    (2026-11-21).
 11. After the release, the skin colour and the iris colour on PES 2014, which the fork
     edits and the build greys: mapped at 0x0C:0 (3 bits, stored less 1) and 0x34:4 (4 bits) in the appearance
     record, so the Appearance page's two rows work as on the other versions. The game's
