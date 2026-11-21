@@ -52,10 +52,10 @@ run's findings (`4cc-studio-temp/str_re/out/findings.md`).
      indexes from its rows (DECISIONS 2026-11-21 "a new monitor's writer adopts the session
      folder"): merged `51643014`, one rework, SWE-2 round S1s5b2b (3 accepted, the loop
      ended);
-   - the retry's and 5b's Astra round A-s5b r1 (4 of 7 accepted, the loop ended: a close
+   - [x] the retry's and 5b's Astra round A-s5b r1 (4 of 7 accepted, the loop ended: a close
      read as a crash at the next start after an idle pipe break, a warning left by a monitor
-     that served on its second start, two test gaps): the fixes briefed to SWE-2, running in
-     `sk_5b_r1`, then one SWE-2 round over them;
+     that served on its second start, two test gaps): the fixes merged `ba254801`, SWE-2
+     round S5b r1 over them (the loop ended);
    - [x] 5c the Save editor's saves kept decrypted and rebuilt on reading (SE-REP-07): packed
      and compressed by the writer, rebuilt through a function the Save editor gives the
      bundle reader (DECISIONS 2026-11-21 "a session keeps each save packed and
@@ -66,9 +66,10 @@ run's findings (`4cc-studio-temp/str_re/out/findings.md`).
      12), the draft's ending line settled (DECISIONS 2026-11-21 "an earlier session with no
      `[end]` reads "ending unknown""): merged `db2900cd`. Seen in the release build beside
      the draft, box clear and ticked (2026-11-21). SWE-2 round S5d r1 (4 accepted, the loop
-     ended): its fixes join the maintainer's ruling on the list's colours (DECISIONS
-     2026-11-21 "Report a problem's earlier sessions in the regular colour"), one brief,
-     launched when a build slot frees; then a look at the colours in the build.
+     ended): its fixes and the maintainer's ruling on the list's colours (DECISIONS
+     2026-11-21 "Report a problem's earlier sessions in the regular colour") merged
+     `5583611a`, and seen in the release build beside the draft, box clear and ticked
+     (2026-11-21): the earlier sessions in the regular colour, the `~` line weak.
 4. Review rounds owed: 0.0.2-similar's, and every Carbon round a 0.0.2 step still owes (Report a problem has had its whole review).
 5. 0.0.2-pes19, and with it the readme's PES 2019 claim.
 6. The Compiler's view in the build, unpolished, for the VGL organizer (the maintainer,
@@ -106,7 +107,9 @@ run's findings (`4cc-studio-temp/str_re/out/findings.md`).
     the 4cc clover thumbnail, both rendered to the PNGs the binary embeds by one script; a
     look of each beside the game's. PES 2017 lists and imports a Team Export carrying the
     clover (checked in game 2026-11-20); its list draws the game's stock picture for every
-    file, so the clover shows nowhere in game. Owed: the commit's review rounds (Tier 1).
+    file, so the clover shows nowhere in game. A starter with no portrait now shows the
+    install's own `player-dummy.png` on the pitch and in the team picture, the drawing only
+    without one (merged `cc113dc2`). Owed: the commit's review rounds (Tier 1).
     Can run beside the detour: it touches no PES 2014 file.
 
 Most open steps below wait only on a check in the game or the built window that the lead's
@@ -3516,6 +3519,13 @@ points there.
   `export-teams-list` (plan "Only the cup's teams are shown"; SE-GUI-107, SE-AATF-11,
   SE-TOML-11, SE-TL-06). Seen in the release build at `b22b191c` on a copy of that save,
   beside the draft's stock PES 21 sample: the same warning in the status bar.
+- open (2026-11-21) — The draft's Playing style pickers (the Stats page and the list's
+  column, `save_editor.js`) list one order for every version, where the build lists each
+  version's styles in its stored order, which is the game's own list
+  (`team_widgets::cards::playing_style_picker`). The two differ on PES 2015 to 2019; the
+  draft holds those versions' lists only for the changes rows (`PLAYSTYLE_STORED`, 17 to 19).
+  Found while giving the `pes14` draft PES 2014's own list. Next: the pickers read the
+  version's list, with PES 2015 and 2016's added.
 - open (2026-11-21) — The Ruleset editor's stat grids clip where the draft wraps. With the
   preview shown at the default window, the General section is about 300 points wide: the
   build keeps its five checkbox columns on one line each and cuts them at the section's edge

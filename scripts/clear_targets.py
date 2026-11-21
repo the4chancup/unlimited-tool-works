@@ -42,6 +42,9 @@ for name in names:
     assert name not in NEVER and "/" not in name and "\\" not in name and name.startswith("sk_"), name
     tree = TEMP / name
     target = tree / "target"
+    if not target.exists():
+        print("already clear", target)
+        continue
     assert target.is_dir(), f"{target} is no folder"
     assert target.resolve().parent == tree.resolve() and tree.resolve().parent == TEMP.resolve()
     head = git("rev-parse", "HEAD", cwd=tree).stdout.strip()
