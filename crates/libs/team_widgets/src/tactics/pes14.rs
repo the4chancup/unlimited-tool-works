@@ -763,8 +763,8 @@ pub fn preset_tactics(
 /// One cell of the Preset tactics panel: Formation, Strategy or the
 /// `index - 2`th Game Plan slider, its label over its control, each
 /// carrying `tips`' text where it holds one — the dropdowns their
-/// chosen entry's (a formation off the game's list, a strategy outside
-/// the six or a missing text is no tooltip).
+/// chosen entry's (a formation the list does not hold, a strategy
+/// outside the six or a missing text is no tooltip).
 fn preset_cell(ui: &mut egui::Ui, preset: &mut TacticsPreset, index: usize, tips: Option<&Tips>) {
     match index {
         0 => {
@@ -791,18 +791,25 @@ fn preset_cell(ui: &mut egui::Ui, preset: &mut TacticsPreset, index: usize, tips
 
 /// The Formation cell's combo (the draft's formation `select`): the
 /// list's entries; a formation the list does not hold offered first, by
-/// its shape marked as such, and a pick of it changes nothing. A pick
-/// of a list entry calls `pick_formation` on `formation`. The combo's
-/// tooltip is the shown entry's text where `tips` holds it (a formation
-/// off the list has none).
+/// its shape, and a pick of it changes nothing. The shape is marked
+/// "(custom)" when it is a list entry's name, the team's own placement
+/// of that entry, and "(not in the game's list)" when no entry carries
+/// it. A pick of a list entry calls `pick_formation` on `formation`.
+/// The combo's tooltip is the shown entry's text where `tips` holds it
+/// (a formation the list does not hold has none).
 fn formation_combo(ui: &mut egui::Ui, formation: &mut Formation, tips: Option<&Tips>) {
     let listed = listed_formation(formation);
     let mut choices: Vec<(i32, String)> = Vec::new();
     if listed.is_none() {
-        choices.push((
-            -1,
-            format!("{} (not in the game's list)", formation_name(formation)),
-        ));
+        let shape = formation_name(formation);
+        // The game names a moved 4-4-2 "4-4-2", so a shape an entry
+        // names is "(custom)", not "not in the game's list".
+        let mark = if LIST_FORMATIONS.iter().any(|(name, _)| *name == shape) {
+            " (custom)"
+        } else {
+            " (not in the game's list)"
+        };
+        choices.push((-1, format!("{shape}{mark}")));
     }
     choices.extend(
         LIST_FORMATIONS

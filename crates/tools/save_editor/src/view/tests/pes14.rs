@@ -670,6 +670,44 @@ fn the_preset_tactics_panel_edits_irelands_game_plan() {
     );
 }
 
+// The Formation combo's "(custom)" mark on the PES 2014 fixture's team
+// 1 (taking 701's id): preset 1 holds the list's 4-4-2 with one
+// outfielder moved sideways, so no list entry matches it while the
+// shape still names one. The game itself names a moved 4-4-2 "4-4-2",
+// so "(not in the game's list)" would be wrong.
+#[test]
+fn the_formation_combo_marks_a_moved_list_shape_custom() {
+    use team_widgets::tactics::pes14;
+
+    let path = fixture(PesVersion::Pes14, "pes14_custom_formation");
+    let mut file = EditFile::from_bytes(&fixture_save(PesVersion::Pes14)).unwrap();
+    let team = file.team_mut(1).expect("the vanilla first team");
+    team.id = 701;
+    let formation = &mut team.tactics.presets[0].formations[0];
+    pes14::pick_formation(formation, 0);
+    formation.players[1].x += 2;
+    file.save(&path).unwrap();
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut window = Headless::new();
+    open_team_view(&mut window, &mut view, 701);
+
+    let moved = &team_entry(&view, 701).tactics.presets[0].formations[0];
+    assert_eq!(
+        pes14::listed_formation(moved),
+        None,
+        "premise: the moved 4-4-2 is no list entry"
+    );
+
+    let (_, ids, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let formation_combo = control_id_below(&ids, "Formation", Role::ComboBox);
+    assert_eq!(
+        node_of(&ids, formation_combo).value(),
+        Some("4-4-2 (custom)"),
+        "a moved listed shape is the team's own version of the entry"
+    );
+}
+
 // The Combination play panel on the PES 2014 fixture's team 1, IRELAND
 // (taking 701's id), whose slots hold Dummy Run and Cross in area 2, Hold
 // up the ball in 6 and Hold Up and Overlap in 8. The Area header's
