@@ -74,37 +74,6 @@ fn click_button(window: &mut Headless, view: &mut SaveView, label: &str) {
     click(window, node_labeled(&nodes, Role::Button, label), view);
 }
 
-/// `name` picked in the list's team selector: the combo clicked, its
-/// popup's `name` item picked through the AccessKit action — a popup
-/// item's bounds sit outside the window, where a pointer click lands on
-/// nothing.
-fn pick_team(window: &mut Headless, view: &mut SaveView, name: &str) {
-    // The popup can still be open on the first frame (its close lands a
-    // frame after the item's action): click the combo only until the
-    // item is drawn — clicking while it is open closes it. Bounded, so
-    // a missing item fails rather than hangs.
-    for _ in 0..10 {
-        let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, view, &|| Vec::new()));
-        if let Some((item, _)) = pairs
-            .iter()
-            .find(|(_, node)| node.role() == Role::Button && node.label() == Some(name))
-        {
-            action_click(window, view, *item);
-            return;
-        }
-        let combo = pairs
-            .iter()
-            .map(|(_, node)| node)
-            .find(|node| {
-                node.role() == Role::ComboBox
-                    && node.bounds().is_some_and(|bounds| bounds.x1 < 300.0)
-            })
-            .expect("the list's team selector");
-        click(window, combo, view);
-    }
-    panic!("the team selector never showed {name:?}");
-}
-
 /// One frame carrying `events` (a key or a clipboard event).
 fn send(window: &mut Headless, view: &mut SaveView, events: Vec<egui::Event>) {
     window.frame(events, |ui| show(ui, view, &|| Vec::new()));

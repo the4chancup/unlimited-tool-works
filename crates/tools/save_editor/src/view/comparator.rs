@@ -224,6 +224,7 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
         team_category,
         filter,
         selected,
+        group,
         reveal_selected,
         refusal,
         notice,
@@ -425,6 +426,7 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
                                 team_tactics,
                                 tactics,
                             ));
+                            group.clear();
                         }
                     }
                 }

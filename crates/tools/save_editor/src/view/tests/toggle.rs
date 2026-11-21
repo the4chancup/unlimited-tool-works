@@ -1,10 +1,5 @@
 use super::*;
 
-/// The title's toggle's segment labeled `label`.
-fn segment<'a>(nodes: &'a [accesskit::Node], label: &str) -> &'a accesskit::Node {
-    node_labeled(nodes, Role::Button, label)
-}
-
 /// The toggle's rect: the three segments' bounds' union.
 fn toggle_rect(nodes: &[accesskit::Node]) -> accesskit::Rect {
     ["Stats", "Appearance", "Gameplan"]
@@ -12,30 +7,6 @@ fn toggle_rect(nodes: &[accesskit::Node]) -> accesskit::Rect {
         .map(|label| segment(nodes, label).bounds().expect("bounds"))
         .reduce(|left, right| left.union(right))
         .expect("the three segments")
-}
-
-/// Whether `label`'s segment is the toggle's held one.
-fn chosen(nodes: &[accesskit::Node], label: &str) -> bool {
-    segment(nodes, label).toggled() == Some(accesskit::Toggled::True)
-}
-
-/// The toggle's `label` segment pressed, through the AccessKit click (a
-/// press lands whatever the pane's scroll left under the pointer).
-fn press_segment(window: &mut Headless, view: &mut SaveView, label: &str) {
-    let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, view, &|| Vec::new()));
-    let (id, _) = pairs
-        .iter()
-        .find(|(_, node)| node.role() == Role::Button && node.label() == Some(label))
-        .unwrap_or_else(|| panic!("the {label} segment"));
-    action_click(window, view, *id);
-}
-
-/// Whether the Appearance screen's one control shows: the `Hide default
-/// body` button, which only it draws.
-fn appearance_shown(nodes: &[accesskit::Node]) -> bool {
-    nodes
-        .iter()
-        .any(|node| node.role() == Role::Button && node.label() == Some("Hide default body"))
 }
 
 /// The y of the first stroke-coloured line under `top` that spans the

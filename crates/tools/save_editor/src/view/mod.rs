@@ -141,6 +141,12 @@ pub(crate) struct SaveView {
     filter: String,
     /// The selected row.
     selected: Option<Selection>,
+    /// The player rows selected together, as `(team id, roster slot)`
+    /// with `selected`'s own player first: a Ctrl+click on a row adds
+    /// it or takes it out. On while it holds two or more and its first
+    /// entry is the selected row (`group_on`); every other way of
+    /// selecting empties it.
+    group: Vec<(u32, u8)>,
     /// The player screen the title's toggle shows on a player row
     /// (`Stats` on a save's open). The toggle's third segment,
     /// `Gameplan`, is the team view a team row selects — the selection
@@ -547,6 +553,7 @@ impl SaveView {
             positions_layout: abilities::PositionsLayout::Pitch,
             filter: String::new(),
             selected: None,
+            group: Vec::new(),
             page: PlayerScreen::Stats,
             last_shown: HashMap::new(),
             click_kind: None,
@@ -719,6 +726,7 @@ impl SaveView {
         self.last_shown.clear();
         self.click_kind = None;
         self.selected = None;
+        self.group.clear();
         // View settings, not the save's: `scroll_names` and `portraits`
         // are the member's, so they survive (the rest is the save's:
         // back to preset 1 and kick-off).
@@ -905,6 +913,17 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() ->
         // central panel (the band sits above it).
         file_menu::welcome_panel(capped, view);
     } else {
+        // A group is on only while its first entry is the selected row
+        // (`group_on`): one whose selection moved another way is emptied
+        // here once a frame, before the list draws, so a pick of that
+        // row later does not revive it.
+        if view
+            .group
+            .first()
+            .is_some_and(|&(team_id, slot)| view.selected != Some(Selection::Player(team_id, slot)))
+        {
+            view.group.clear();
+        }
         // No margin before the list, so its frame stands at the view's
         // left edge, and 4 points after it: with no margin of the
         // detail's own, the screens' frames stand the draft's 14 after
@@ -982,8 +1001,16 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() ->
                             // pointer.
                             info_strip::show(ui, view);
                             match view.page {
-                                PlayerScreen::Appearance => appearance::show(ui, view),
-                                PlayerScreen::Stats => abilities::show(ui, view),
+                                // A group shows the first player's Stats
+                                // screen whichever screen stood before
+                                // (`view.page` is not changed, so it
+                                // comes back when the group ends).
+                                PlayerScreen::Appearance
+                                    if !group_on(view.selected, &view.group) =>
+                                {
+                                    appearance::show(ui, view)
+                                }
+                                _ => abilities::show(ui, view),
                             }
                         }
                     }
@@ -1703,6 +1730,19 @@ pub(crate) fn selected_team_id(view: &SaveView) -> Option<u32> {
     match view.selected? {
         Selection::Team(id) | Selection::Player(id, _) => Some(id),
     }
+}
+
+/// Whether the group is on: `group` holds two or more player rows and
+/// `selected` names the first of them — the draft's `S.sel ===
+/// S.group[0]`, a value compare here since `Selection` names a row,
+/// not an object. The one test every reader goes through; it takes the
+/// pair rather than a `SaveView` because the row functions that need
+/// it hold the fields, not the view.
+pub(crate) fn group_on(selected: Option<Selection>, group: &[(u32, u8)]) -> bool {
+    group.len() >= 2
+        && group
+            .first()
+            .is_some_and(|&(team_id, slot)| selected == Some(Selection::Player(team_id, slot)))
 }
 
 /// The selected player's `(team_id, roster slot, player_id)`; `None` when
