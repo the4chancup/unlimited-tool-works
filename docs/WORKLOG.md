@@ -2226,6 +2226,7 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       measured at default (unchanged) and at 1920 x 1080 with
       `.tmp/stretch/drafts/measure.py`, captures `.tmp/stretch/drafts/*_monitor.png`
     - [ ] a slice per tool (after 0.0.2: DECISIONS 2026-11-16)
+      - [ ] the Save editor: brief `.tmp/lead/stretch_se/brief_stretch_se.md`, SWE-2 in `sk_stretch_se`
   - [x] 0.0.2-lib the library rerun against checkpoint `p11`, 2026-11-13: checkpoint `002`
     (422 clean inputs; `.tmp/library_parity/checkpoints/diff_p11_002.txt`), every change
     traced to a commit since `3c512628`: VGL27's team IDs (`6268280c`), the short Common
@@ -3469,8 +3470,10 @@ points there.
   opened in the same window listed every team. Cause: the save holds no cup team. On a copy,
   `export-toml --all-teams` wrote no file, as it does for the `EDIT00000000_vanilla` beside
   it, while its June copy (`EDIT00000000 - Copy (4)`) gives 220. The editor lists cup teams
-  alone by design, so the bug is the silence. The fix, a notice in the window and a refusal
-  from the two commands (plan "Only the cup's teams are shown"), is being built.
+  alone by design, so the bug is the silence. Fixed in `e8c1561c`: a notice in the window and
+  a refusal from the two commands (plan "Only the cup's teams are shown"; SE-GUI-107,
+  SE-AATF-11, SE-TOML-11). Owed: the notice seen in the built window beside the draft's
+  stock PES 21 sample.
 - open (2026-11-21) — A trial: can SubQ Snap tell a flaky test from a steady one, as it tells
   a test that proves its scenario from one that does not (`citation_audit.py`)? The question
   per test: does its outcome depend on anything outside its inputs (the machine's free memory,
