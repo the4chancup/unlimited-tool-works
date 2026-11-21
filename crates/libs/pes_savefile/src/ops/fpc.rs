@@ -110,22 +110,32 @@ pub(crate) fn socks_value(socks: fpc::Socks) -> u8 {
     }
 }
 
-/// The player's strip settings as the interference inputs. Reads the gloves
-/// checkbox through the ingame-face run, hence `Result`.
-pub fn strip_style(player: &PlayerEntry) -> Result<fpc::StripStyle, FpcError> {
+/// The player's strip settings as the interference inputs. On a version
+/// whose records carry the in-game face run the gloves checkbox and the
+/// skin are read through it; on one mapping none (PES 2014) the checkbox
+/// comes off the appearance record's own bit and the skin counts as
+/// preset, `Result` standing for the run reads alone.
+pub fn strip_style(player: &PlayerEntry, version: PesVersion) -> Result<fpc::StripStyle, FpcError> {
     let a = &player.appearance;
+    let gloves = if schema_for(version).has_ingame_face() {
+        a.ingame_face.get(IngameFaceField::PlayerGloves)?
+    } else {
+        u8::from(a.player_gloves)
+    };
     Ok(fpc::StripStyle {
         inners_worn: a.inners != 0,
         undershorts_worn: a.undershorts != 0,
         wrist_taping: a.wrist_taping != 0,
         ankle_taping: a.ankle_taping,
-        gloves_checkbox: a.ingame_face.get(IngameFaceField::PlayerGloves)? != 0,
+        gloves_checkbox: gloves != 0,
         gloves_id: u16::try_from(a.gloves_id).map_err(|_| CodecError::ValueTooWide {
             field: "GlovesId".to_string(),
             value: a.gloves_id,
             width: 16,
         })?,
-        skin_color: if a.ingame_face.get(IngameFaceField::SkinColor)? == 7 {
+        skin_color: if schema_for(version).has_ingame_face()
+            && a.ingame_face.get(IngameFaceField::SkinColor)? == 7
+        {
             fpc::SkinColor::Custom
         } else {
             fpc::SkinColor::Preset
@@ -241,6 +251,14 @@ mod tests {
                 .expect("is_fpc_player")
         );
         player.appearance.boots_id = 54;
+        assert!(
+            !is_fpc_player(&player, PesVersion::Pes14, fpc::HideIds::CONVENTION)
+                .expect("is_fpc_player")
+        );
+        // And a gloves id alone is no hide either: the pair's boots half
+        // names him, not the gloves half.
+        player.appearance.boots_id = 0;
+        player.appearance.gloves_id = 11;
         assert!(
             !is_fpc_player(&player, PesVersion::Pes14, fpc::HideIds::CONVENTION)
                 .expect("is_fpc_player")
@@ -390,11 +408,36 @@ mod tests {
         );
     }
 
+    // On PES 2014 `strip_style` reads the gloves checkbox off the
+    // appearance record's own bit — the version maps no face run to take
+    // it from — and takes the skin for a preset one, none being stored.
+    #[test]
+    fn strip_style_on_pes14_reads_the_record_bit_and_a_preset_skin() {
+        let mut player = find_player(
+            &payload(PesVersion::Pes14),
+            schema_for(PesVersion::Pes14),
+            42810,
+        );
+        player.appearance.player_gloves = true;
+        let style = strip_style(&player, PesVersion::Pes14).expect("strip_style");
+        assert!(style.gloves_checkbox);
+        assert_eq!(style.skin_color, fpc::SkinColor::Preset);
+        player.appearance.player_gloves = false;
+        assert!(
+            !strip_style(&player, PesVersion::Pes14)
+                .expect("strip_style")
+                .gloves_checkbox
+        );
+    }
+
     #[test]
     fn strip_style_feeds_the_interference_check() {
         let mut player = player_70101(PesVersion::Pes19);
         player.appearance.inners = 1;
-        let findings = fpc::check(&strip_style(&player).expect("strip_style"), true);
+        let findings = fpc::check(
+            &strip_style(&player, PesVersion::Pes19).expect("strip_style"),
+            true,
+        );
         assert_eq!(findings[0].code, "fpc_inners_break_hiding");
 
         let mut player = player_70101(PesVersion::Pes19);
@@ -404,7 +447,10 @@ mod tests {
             .set(IngameFaceField::PlayerGloves, 1)
             .expect("set");
         player.appearance.gloves_id = 0;
-        let findings = fpc::check(&strip_style(&player).expect("strip_style"), false);
+        let findings = fpc::check(
+            &strip_style(&player, PesVersion::Pes19).expect("strip_style"),
+            false,
+        );
         assert_eq!(findings[0].code, "fpc_gloves_checkbox_winter_gloves");
     }
 
@@ -418,7 +464,7 @@ mod tests {
             .ingame_face
             .set(IngameFaceField::SkinColor, 1)
             .expect("set");
-        let style = strip_style(&player).expect("strip_style");
+        let style = strip_style(&player, PesVersion::Pes19).expect("strip_style");
         assert!(!style.undershorts_worn);
         assert!(!style.wrist_taping);
         assert_eq!(style.skin_color, fpc::SkinColor::Preset);
@@ -430,7 +476,7 @@ mod tests {
             .ingame_face
             .set(IngameFaceField::SkinColor, 7)
             .expect("set");
-        let style = strip_style(&player).expect("strip_style");
+        let style = strip_style(&player, PesVersion::Pes19).expect("strip_style");
         assert!(style.undershorts_worn);
         assert!(style.wrist_taping);
         assert_eq!(style.skin_color, fpc::SkinColor::Custom);

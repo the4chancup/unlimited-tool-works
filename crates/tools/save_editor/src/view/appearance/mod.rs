@@ -483,10 +483,12 @@ pub(crate) const NO_LOOK_TIP: &str =
 /// since they read and do not write. `hide_ids` an `Err` (a setting outside
 /// its band): the line reads the error's text instead of the default-body
 /// reading and both buttons are disabled with it as their hover; the
-/// classifier has no IDs to read, so no findings either. On a version
-/// whose records carry no in-game face run the reading, the buttons and
-/// the findings all go through a run that is not there: the group is the
-/// two buttons, disabled with `PES14_TIP`.
+/// classifier has no IDs to read, so no findings either. On PES 2014 the
+/// group works by the record's own fields — the buttons and the boots ID's
+/// reading as usual, the findings taking the outfielder gloves from the
+/// record's bit and the skin for a preset one — and on a player the
+/// version holds no appearance record for, the buttons stay disabled under
+/// the Player entry's own tip, with no reading or findings to draw.
 fn fpc_group(
     ui: &mut egui::Ui,
     session: &mut Session,
@@ -495,10 +497,11 @@ fn fpc_group(
     hide_ids: Result<fpc::HideIds, fpc::HideIdsError>,
     face_run: bool,
 ) {
-    if !face_run {
+    if !face_run && !session.has_appearance_record(player_id) {
         ui.horizontal_wrapped(|ui| {
             for label in ["Hide default body", "Show default body"] {
-                add_enabled(ui, false, egui::Button::new(label)).on_disabled_hover_text(PES14_TIP);
+                add_enabled(ui, false, egui::Button::new(label))
+                    .on_disabled_hover_text(NO_LOOK_TIP);
             }
         });
         return;
@@ -549,8 +552,8 @@ fn fpc_group(
             session.apply_fpc(player_id, fpc::Preset::Unhide, ids);
         }
     });
-    let style = pes_savefile::ops::fpc::strip_style(player)
-        .expect("a loaded player's face run holds the strip fields");
+    let style = pes_savefile::ops::fpc::strip_style(player, session.version())
+        .expect("a loaded player's fields hold the strip fields");
     let findings = fpc::check(&style, hidden);
     if findings.is_empty() {
         ui.weak("No interference found.");
@@ -845,9 +848,10 @@ enum StripCell {
     WristTapeLeft,
     /// The right wrist tape's colour dropdown.
     WristTapeRight,
-    /// `Off`/`Worn in winter` over the face run's PlayerGloves (not a
-    /// checkbox: beside the colours it read as one of them, and it did not
-    /// say when the gloves show).
+    /// `Off`/`Auto` over PES 2014's appearance-record `PlayerField::
+    /// PlayerGloves`, `Off`/`Worn in winter` over the face run's on the
+    /// other versions (not a checkbox: beside the colours it read as one
+    /// of them, and it did not say when the gloves show).
     OutfielderGloves,
     /// The gloves colour dropdown over the face run's PlayerGlovesColor.
     GlovesColor,
@@ -892,10 +896,11 @@ const STRIP_ORDER: [[StripCell; 3]; 5] = [
 ];
 
 /// The strip cells' three gates: the fields `version`'s records store,
-/// whether they carry the in-game face run the two gloves cells write,
-/// and whether the player has the appearance record the record's own
-/// fields sit in (every player's on the other versions; PES 2014's
-/// edited or created players' alone).
+/// whether they carry the in-game face run the gloves-colour cell writes
+/// — the outfielder gloves' too, on every version but PES 2014, whose
+/// record stores it under its own field — and whether the player has the
+/// appearance record the record's own fields sit in (every player's on
+/// the other versions; PES 2014's edited or created players' alone).
 struct StripGates<'a> {
     /// The version's schema (`player_has` gates each cell's field).
     schema: &'a VersionSchema,

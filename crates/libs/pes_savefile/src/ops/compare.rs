@@ -1156,6 +1156,44 @@ mod tests {
         );
     }
 
+    /// A PES 2014 player the appearance section holds a record for: one
+    /// injected where the layout reserves it (the vanilla fixture holds
+    /// none, the version keeping a record per edited or created player
+    /// alone).
+    fn pes14_player_with_look(id: u32) -> (PlayerEntry, &'static VersionSchema) {
+        let schema = schema_for(PesVersion::Pes14);
+        let (layout, _) = schema.appearance.as_ref().expect("the appearance section");
+        let mut container = crate::fixtures::fixture_container(PesVersion::Pes14);
+        container.payload[layout.count_offset..layout.count_offset + 2]
+            .copy_from_slice(&1u16.to_le_bytes());
+        container.payload[layout.offset..layout.offset + 4].copy_from_slice(&id.to_le_bytes());
+        let file = EditFile::from_bytes(
+            &container
+                .to_bytes(&crate::test_support::test_salt())
+                .expect("container encodes"),
+        )
+        .expect("the save opens");
+        (file.player(id).expect("the player").clone(), schema)
+    }
+
+    /// A field stored in several runs (the PES 2014 gloves id's three)
+    /// diffs as one row, not one per run.
+    #[test]
+    fn a_pes14_gloves_id_edit_is_one_field_row() {
+        let (a, schema) = pes14_player_with_look(450);
+        assert_eq!(a.appearance.gloves_id, 0, "premise: the record holds 0");
+        let mut b = a.clone();
+        b.appearance.gloves_id = 11;
+        assert_eq!(
+            compare_players(&a, &b, schema).expect("compares"),
+            [PlayerDiff::Field {
+                field: PlayerField::GlovesId,
+                old: 0,
+                new: 11,
+            }]
+        );
+    }
+
     /// A gated field `None` on one side (an entry not read from a save of
     /// this version) is `Err`, as `compare_players` documents.
     #[test]
