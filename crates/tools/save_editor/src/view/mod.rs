@@ -661,7 +661,8 @@ impl SaveView {
 
     /// Opens the save at `path`: on success the selector reads `All
     /// teams`, the filter is empty and the first player row is selected
-    /// (a team's own row is not a player); a file the
+    /// (a team's own row is not a player); a save holding no cup team
+    /// selects nothing and raises a warning notice saying so. A file the
     /// save refuses is shown as a refusal and the open session is untouched.
     /// The aesthetics lock is deliberately not reset (`edit_aesthetics`).
     /// `Session::open` records the open — a refused one names the file

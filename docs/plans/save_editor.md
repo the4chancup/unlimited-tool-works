@@ -258,10 +258,12 @@ vertical room a tab row takes; a toggle on the title's own row takes none.
   because no member edits them, a save made from the stock game holds more of them than of
   the cup's, and they alone share players between rosters, a case every list rule would
   otherwise have to carry.
-  A save holding no cup team (one made from the stock game) says so, since it would otherwise open to an empty list with no reason given: opening it
-  raises a warning notice, `This save holds no cup team (ids 701 to 920).`, and `check-aatf`
-  without `--teams` and `export-toml --all-teams` refuse it with the same words. Their
-  silence would read as a clean check and an empty export, not as a wrong file.
+  A save holding no cup team (one made from the stock game) says so, since it would
+  otherwise open to an empty list with no reason given: opening it raises a warning notice,
+  `This save holds no cup team (ids 701 to 920).`, and `check-aatf` without `--teams`,
+  `export-toml --all-teams` and `export-teams-list` refuse it with the same words. Their
+  silence, or a merge that kept every row, would read as a clean check, an empty export or
+  a list already up to date, not as a wrong file.
 - **Player list**, 255 points wide (its rows' frame and the scroll bar's strip; egui's panel
   margins and separator come on top) and not resizable. Under the design width the window
   scales instead of narrowing (`spec/core/gui.md` "Shell layout", the paragraph "Scaling with
@@ -4129,6 +4131,10 @@ SE-AATF-10 GIVEN SE-GUI-77's save, team 300 holding an error-severity violation 
            WHEN check-aatf is run with no --teams, then with --teams 300
            THEN the first prints nothing of team 300 and exits 0; the second prints
                 team 300's violation and exits 1
+SE-TL-06   GIVEN SE-TOML-11's save
+           WHEN export-teams-list --yes is run
+           THEN it is refused with `the save holds no cup team (ids 701 to 920)`, exits 2,
+                and teams_list.txt is neither read nor written
 SE-AATF-11 GIVEN SE-TOML-11's save
            WHEN check-aatf is run with no --teams, then with --teams 101
            THEN the first is refused with `the save holds no cup team (ids 701 to 920)` and
