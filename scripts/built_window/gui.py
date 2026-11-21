@@ -24,7 +24,7 @@ Usage:
   gui.py wheel X,Y NOTCHES            wheel at a point, negative scrolls down (posted)
   gui.py keys ctrl+z | esc | ...      one chord (posted); it types no character
   gui.py type TEXT                    each character typed into the focused field (posted);
-                                      to replace a box's value, `keys ctrl+a` first
+                                      to replace a box's value, keys ctrl+a first
   gui.py burst X,Y OUT_PREFIX N MS    the real pointer to X,Y, then N captures MS apart (takes
                                       the foreground)
   gui.py open PATH | folder PATH      fill the app's own Open / folder dialog and confirm it
@@ -258,16 +258,18 @@ def keys(chord):
 
 
 def type_text(text):
-    """Post each character as a typed key: its key down, the character, its key up. `keys`
+    """Post each character as a typed key: a key down, the character, a key up. `keys`
     posts no character, so a text field or a number box receives nothing from it."""
+    # The key down and up carry no key (0xFF), not the character's own: winit's pump runs
+    # TranslateMessage, which would turn a real key into a second WM_CHAR (an 8 typed
+    # twice), and a real Space would press a focused button. They cannot be dropped
+    # either: winit discards a WM_CHAR that no key down opened.
     for char in text:
-        code = user32.VkKeyScanW(char) & 0xFF
-        lparam = (user32.MapVirtualKeyW(code, 0) << 16) | 1
-        user32.PostMessageW(HWND, WM_KEYDOWN, code, lparam)
-        user32.PostMessageW(HWND, WM_CHAR, ord(char), lparam)
-        user32.PostMessageW(HWND, WM_KEYUP, code, lparam | (3 << 30))
+        user32.PostMessageW(HWND, WM_KEYDOWN, 0xFF, 1)
+        user32.PostMessageW(HWND, WM_CHAR, ord(char), 1)
+        user32.PostMessageW(HWND, WM_KEYUP, 0xFF, 1 | (3 << 30))
     time.sleep(0.5)
-    print(f"typed {text}")
+    print(f"sent {text}")
 
 
 def open_dialog(path):
@@ -433,7 +435,7 @@ elif cmd == "wheel":
 elif cmd == "keys":
     keys(args[0])
 elif cmd == "type":
-    type_text(args[0])
+    type_text(" ".join(args))
 elif cmd == "burst":
     prefix, count, gap = args[1], int(args[2]), float(args[3]) / 1000
     foreground()
