@@ -461,9 +461,10 @@ fn paint_automatic(painter: &egui::Painter, centre_y: f32, pairs: &[(&str, Strin
 }
 
 /// The portraits of `team`'s starters loaded into `ctx`, one handle per
-/// roster slot: a starter's own portrait, or the version's placeholder
-/// where the game holds none (as the view shows it); `None` off the
-/// eleven, whose markers the picture does not draw.
+/// roster slot: a starter's own portrait, or the placeholder the view
+/// would draw where the game holds none (the install's own
+/// `player-dummy.png` when it serves one, the bundled drawing else);
+/// `None` off the eleven, whose markers the picture does not draw.
 fn starter_portraits(
     ctx: &egui::Context,
     team: &PictureTeam<'_>,
@@ -478,13 +479,17 @@ fn starter_portraits(
         })
         .collect();
     let images = portraits::read_images(team.pes_folder, version, &ids);
+    // The install's own player-dummy.png where it holds one, the version's
+    // bundled drawing where it does not.
     let placeholder = ctx.load_texture(
         "placeholder portrait",
-        portraits::placeholder_image(version),
+        images
+            .placeholder
+            .unwrap_or_else(|| portraits::placeholder_image(version)),
         egui::TextureOptions::LINEAR,
     );
     ids.iter()
-        .zip(images)
+        .zip(images.portraits)
         .map(|(id, image)| {
             let id = (*id)?;
             Some(match image {
@@ -1261,6 +1266,57 @@ mod tests {
                 "Offside trap",
                 "Off"
             ]
+        );
+    }
+
+    // A starter the CPKs hold no portrait of draws the game's own
+    // `player-dummy.png` where the install has one: here the base CPK's
+    // (`Data/dt15_x64.cpk` for PES 2021), read back out of the texture the
+    // starter's handle carries.
+    #[test]
+    fn a_portraitless_starter_s_picture_draws_the_games_dummy() {
+        let file = save(PesVersion::Pes21);
+        let entry = file.team(KICK_OFF_ALONE).expect("the fixture holds /f/");
+        let colour = [255, 0, 255, 255];
+        let dummy = crate::test_support::dummy_png(colour);
+        let folder = crate::test_support::pes_folder("pictures_games_dummy", &[]);
+        crate::test_support::base_cpk(
+            &folder,
+            "dt15_x64.cpk",
+            &[(
+                "common/render/symbol/blank/player-dummy.png",
+                dummy.as_slice(),
+            )],
+        );
+        let team = PictureTeam {
+            pes_folder: Some(&folder),
+            ..bare(&file, entry)
+        };
+        assert_ne!(
+            portraits::placeholder_image(PesVersion::Pes21).pixels[64 * 128 + 64].to_array(),
+            colour,
+            "premise: the bundled drawing's centre differs"
+        );
+
+        let ctx = egui::Context::default();
+        let handles = starter_portraits(&ctx, &team);
+        let slot = usize::from(entry.tactics.starting_eleven[0]);
+        let handle = handles[slot].as_ref().expect("a texture for the starter");
+        let mut delta = ctx.tex_manager().write().take_delta();
+        let image = {
+            let egui::epaint::ImageData::Color(image) = &delta
+                .set
+                .get(&handle.id())
+                .expect("the starter's texture delta")[0]
+                .image;
+            std::sync::Arc::clone(image)
+        };
+        delta.clear();
+        assert_eq!(image.size, [128, 128]);
+        assert_eq!(
+            image.pixels[64 * 128 + 64].to_array(),
+            colour,
+            "the install's dummy, not the bundled drawing"
         );
     }
 
