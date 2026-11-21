@@ -475,8 +475,11 @@ fn last_block_offset(text: &str) -> Option<usize> {
 /// first with no block to drop, is an error naming the folder.
 pub fn session_bundle(folder: &Path, home: Option<&str>) -> anyhow::Result<Vec<u8>> {
     let journal = folder.join("journal.toml");
-    let text = fs::read_to_string(&journal)
+    let bytes = fs::read(&journal)
         .with_context(|| format!("{}: cannot read the journal", journal.display()))?;
+    // Lossy, not strict: a cut inside a multi-byte character ("→" in
+    // every field line) must reach the cut-block retry, not fail here.
+    let text = String::from_utf8_lossy(&bytes);
     let mut doc: SessionDoc = match toml::from_str(&text) {
         Ok(doc) => doc,
         Err(first) => match last_block_offset(&text) {
@@ -739,6 +742,41 @@ mod tests {
         let bundle = folder_bundle(dir.path(), &folder, None);
         assert_eq!(bundle.steps.len(), 1, "the cut block is dropped");
         assert_eq!(bundle.steps[0].what, "opened x");
+
+        // Cut inside "→", two of its three bytes written: still the cut
+        // block alone is dropped.
+        let mut cut = text.replace("cut in the mid", "Height 183 ").into_bytes();
+        cut.extend_from_slice(&"→".as_bytes()[..2]);
+        fs::write(folder.join("journal.toml"), cut).unwrap();
+        let bundle = folder_bundle(dir.path(), &folder, None);
+        assert_eq!(
+            bundle.steps.len(),
+            1,
+            "the block cut mid-character is dropped"
+        );
+    }
+
+    // Two tools writing one path keep two outputs, as `keep_output` does:
+    // the session keys an output by its tool and path.
+    // ST-REP-06
+    #[test]
+    fn two_tools_writing_one_path_keep_two_outputs() {
+        let dir = TestDir::new("studio_core_session_two_tools");
+        let root = dir.path().join("sessions");
+        let mut writer = SessionWriter::new(&root, header(4242));
+        for tool in ["stub", "other"] {
+            writer
+                .write(&SessionMessage::Output {
+                    tool: tool.to_owned(),
+                    path: Path::new("C:/Data/out/EDIT00000000").to_path_buf(),
+                    bytes: tool.as_bytes().to_vec(),
+                })
+                .unwrap();
+        }
+        let folder = root.join("2026-11-21-093015-4242");
+        let bundle = folder_bundle(dir.path(), &folder, None);
+        let bytes: Vec<&[u8]> = bundle.outputs.iter().map(|out| &out.bytes[..]).collect();
+        assert_eq!(bytes, [&b"stub"[..], &b"other"[..]]);
     }
 
     // A new session's first write makes its folder and leaves the five
