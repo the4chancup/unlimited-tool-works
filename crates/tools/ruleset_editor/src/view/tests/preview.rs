@@ -190,3 +190,23 @@ fn a_replaced_logo_of_the_same_size_marks_its_line() {
         view.changed
     );
 }
+
+// The panel reserves the separator line's own width at its resizable edge:
+// `width` adds the theme's non-interactive stroke width rounded, so a whole
+// stroke counts and a sub-point one rounds down to nothing.
+#[test]
+fn the_panels_width_reserves_the_separator_lines_own_width() {
+    let mut window = Headless::new();
+    let mut panel_width = |stroke: f32| {
+        window
+            .ctx
+            .all_styles_mut(|style| style.visuals.widgets.noninteractive.bg_stroke.width = stroke);
+        let mut panel = 0.0;
+        window.frame(Vec::new(), |ui| {
+            panel = crate::view::preview::width(ui);
+        });
+        panel
+    };
+    // A 2-point stroke stands over a 0.3 one, which rounds down to nothing.
+    assert_eq!(panel_width(2.0) - panel_width(0.3), 2.0);
+}

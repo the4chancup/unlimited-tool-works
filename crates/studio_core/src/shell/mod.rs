@@ -1065,6 +1065,16 @@ mod tests {
         assert_eq!(version_label_of("0.0.1", true), "v0.0.1 pre-alpha (debug)");
     }
 
+    // The pane's width at the default window: 1280 less the rail's 56. The
+    // draft (`docs/prototypes/index.html`, the comment starting "A tool view's
+    // width at the default window") takes the centre's two 8-point margins
+    // off too for the view's 1208; the pane is the width before them, which a
+    // tool's view (`save_editor`) subtracts its own margins from.
+    #[test]
+    fn the_default_pane_width_is_the_default_window_less_the_rail() {
+        assert_eq!(DEFAULT_PANE_WIDTH, 1224.0);
+    }
+
     #[test]
     fn a_switch_request_makes_the_named_tool_active() {
         let Shell {
