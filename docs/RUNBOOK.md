@@ -367,7 +367,8 @@ root or an environment variable rather than a scratch path, and a line here or i
 `README.md`. The agents' own tooling is not the project's and stays out of the repository, in
 `~/.claude/tools/` on the maintainer's machine: the below-normal build wrapper, the safe amend,
 the sidekick launcher and its waiter, the detached runner, the context and disk watchers, the
-handover's stamp and the review-cost readers; each takes the repository from the directory it
+handover's stamp, the review-cost readers and the waiter on a GitHub run (`gh_run_wait.py`,
+which keeps waiting through a network error where `gh run watch` stops); each takes the repository from the directory it
 runs in. A release candidate takes two: `scripts/release/build_remapped.py` builds the release exe
 with `just release`'s flags and checks it leaks no local path, and `scripts/release/make_candidate.py
 <commit>` stages the unpacked bundle from it in `../4cc-studio-temp/candidate-<version>`;
