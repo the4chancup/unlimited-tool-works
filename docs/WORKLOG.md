@@ -34,7 +34,8 @@ run's findings (`4cc-studio-temp/str_re/out/findings.md`).
    opened on 231, `ital` picked 215, Escape put 231 back with nothing left to undo).
 2. 0.0.2-nostretch's slices.
 3. Earlier sessions in Report a problem: the repro bundles issue's slice (5), in slices:
-   - the crash monitor's start tried once more (ST-RUN-13): SWE-2 in `sk_retry`;
+   - [x] the crash monitor's start tried once more (ST-RUN-13): merged 2026-11-21, SWE-2
+     round S1rt; its Astra round owed, batched with 5b's (the same file, `crash_dump.rs`);
    - 5a the session folder's writer and reader in `studio_core::repro`, called in process
      (ST-REP-06 to 08);
    - 5b the link: the recorder's queue and sending thread, the monitor writing each message,
