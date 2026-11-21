@@ -204,7 +204,9 @@ fn append_line(data_dir: &Path, log_name: &str, home: Option<&str>, level: Level
 /// `input` (the monitor's standard input) until the window's end of the pipe closes,
 /// and the journal's `[end]` is set then. A failure to bind or serve is appended to
 /// the slot's log, since the monitor's stdio is null and the window sees only its
-/// exit code, and exits with 3, the code of a run that could not do its job. `slot`
+/// exit code, and exits with 3, the code of a run that could not do its job. The bind
+/// failure's line goes at `Info`: the window retries the start, and the one warning a
+/// failed monitor earns belongs to `watch_crashes`, whose retry also failed. `slot`
 /// is the window's copy number: it names the dump and log.
 pub(crate) fn run_monitor(
     data_dir: &Path,
@@ -222,7 +224,7 @@ pub(crate) fn run_monitor(
                 data_dir,
                 &crate::instance::slot_file_name(gui_log::LOG_FILE_NAME, slot),
                 home.as_deref(),
-                Level::Warn,
+                Level::Info,
                 &format!("the crash monitor stopped: {error}"),
             );
             return ExitCode::from(3);
@@ -877,6 +879,31 @@ mod tests {
         );
     }
 
+    // ST-RUN-13's "exits at once both times", with a real child: the test
+    // binary itself refuses the monitor's arguments (libtest reports an
+    // unrecognized option) and exits at once, so `connect` reads the exit as
+    // `AtOnce`, the start is tried once more, and the log holds the retry's
+    // Info then the one Warn. Nothing watches.
+    #[test]
+    fn a_real_child_that_exits_at_once_is_retried_and_gives_up() {
+        let dir = TestDir::new("monitor_real_exit");
+        let logger = CollectLog::default();
+        assert!(
+            watch_crashes(std::env::current_exe(), dir.path(), 1, &logger).is_none(),
+            "a monitor that exits at once still watches crashes"
+        );
+        let records = logger.records.lock().unwrap();
+        assert_eq!(records.len(), 2, "{records:?}");
+        assert!(records[0].starts_with("Info|crash_dump|"), "{records:?}");
+        assert!(
+            records[0].contains("exited with"),
+            "the first try's note is the child's own exit: {}",
+            records[0]
+        );
+        assert!(records[1].starts_with("Warn|crash_dump|"), "{records:?}");
+        assert!(records[1].contains("exited with"), "{records:?}");
+    }
+
     // ST-RUN-13
     #[test]
     fn a_start_failed_at_once_is_tried_once_more() {
@@ -1014,8 +1041,9 @@ mod tests {
     }
 
     // A monitor that cannot bind its socket says why in the log, since the window sees
-    // only its exit code. It returns before the session reader starts: `PanicRead`
-    // would panic otherwise.
+    // only its exit code, at Info: the window retries the start, and the one warning
+    // belongs to a start that failed twice. It returns before the session reader
+    // starts: `PanicRead` would panic otherwise.
     #[test]
     fn a_monitor_that_cannot_bind_appends_its_error_and_exits_with_3() {
         let dir = TestDir::new("monitor_bind");
@@ -1026,7 +1054,7 @@ mod tests {
         let written = fs::read_to_string(dir.path().join(LOG_FILE_NAME)).unwrap();
         let last = written.lines().next_back().unwrap();
         assert!(
-            last.starts_with("WARN  crash_dump: the crash monitor stopped: "),
+            last.starts_with("INFO  crash_dump: the crash monitor stopped: "),
             "{last}"
         );
     }

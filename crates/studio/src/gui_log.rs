@@ -382,22 +382,30 @@ fn session_line(logger: &dyn log::Log, line: &'static str) {
 /// a panic that will be recovered from one that ends the process. `logger` gets the
 /// session's closing line (ST-RUN-09): a clean return writes `CLOSING_LINE` (the
 /// window's own error exit included, that failure already told) and a reported panic
-/// writes `CRASH_REPORTED_LINE` once `show` has run.
+/// writes `CRASH_REPORTED_LINE` once `show` has run. `close` is the session's teardown
+/// — the session link's — run with the code the run ended with just before the closing
+/// line: a line it logs (a monitor restarted over a broken pipe, a stalled sender's
+/// warning) must land before the closing line, which the next start reads as the
+/// session's last.
 pub(crate) fn guard_gui(
     run: impl FnOnce() -> ExitCode,
     log: Option<&Path>,
     show: impl FnOnce(&str),
+    close: impl FnOnce(ExitCode),
     logger: &dyn log::Log,
 ) -> ExitCode {
     let code = match panic::catch_unwind(AssertUnwindSafe(run)) {
         Ok(code) => {
+            close(code);
             session_line(logger, CLOSING_LINE);
             code
         }
         Err(payload) => {
             show(&crash_text(&panic_message(payload.as_ref()), log));
+            let code = ExitCode::from(PANIC_EXIT);
+            close(code);
             session_line(logger, CRASH_REPORTED_LINE);
-            ExitCode::from(PANIC_EXIT)
+            code
         }
     };
     logger.flush();
@@ -605,45 +613,60 @@ mod tests {
         assert_eq!(frame_line(3, 0x7ff6_a123_59c4, None), "  3: 0x7ff6a12359c4");
     }
 
-    // ST-RUN-09: a clean run (the window's own error exit included) leaves the closing
-    // line as the log's last, so the next start shows no unclean-shutdown dialog.
+    // ST-RUN-09: a clean run (the window's own error exit included) closes the session
+    // first, then leaves the closing line as the log's last, so the next start shows
+    // no unclean-shutdown dialog.
     #[test]
     fn a_clean_run_returns_its_own_code_and_shows_no_dialog() {
         let events = Arc::new(Mutex::new(Vec::<String>::new()));
         let dialog = events.clone();
+        let closed = events.clone();
         let code = guard_gui(
             || ExitCode::from(2),
             None,
             move |text| dialog.lock().unwrap().push(format!("dialog|{text}")),
+            move |code| closed.lock().unwrap().push(format!("close|{code:?}")),
             &OrderedLog(events.clone()),
         );
         assert_eq!(format!("{code:?}"), format!("{:?}", ExitCode::from(2)));
         assert_eq!(
             *events.lock().unwrap(),
-            vec![format!("session|{CLOSING_LINE}"), "flush".to_string()]
+            vec![
+                format!("close|{:?}", ExitCode::from(2)),
+                format!("session|{CLOSING_LINE}"),
+                "flush".to_string()
+            ]
         );
     }
 
-    // ST-RUN-09: the reported-crash line lands after the dialog, so a crash the member
-    // was told about does not raise the next start's dialog.
+    // ST-RUN-09: the reported-crash line lands after the dialog and the session's
+    // close — the close sees the panic's exit code — so a crash the member was told
+    // about does not raise the next start's dialog.
     #[test]
     fn a_panic_shows_the_dialog_text_and_exits_with_101() {
         let events = Arc::new(Mutex::new(Vec::<String>::new()));
         let dialog = events.clone();
+        let closed = events.clone();
         let code = guard_gui(
             || panic!("probe 8"),
             Some(Path::new("C:\\data\\utw.log")),
             move |text| dialog.lock().unwrap().push(format!("dialog|{text}")),
+            move |code| closed.lock().unwrap().push(format!("close|{code:?}")),
             &OrderedLog(events.clone()),
         );
         assert_eq!(format!("{code:?}"), format!("{:?}", ExitCode::from(101)));
         let events = events.lock().unwrap();
-        assert_eq!(events.len(), 3, "{events:?}");
+        assert_eq!(events.len(), 4, "{events:?}");
         assert!(events[0].starts_with("dialog|"), "{events:?}");
         assert!(events[0].contains("probe 8"), "{}", events[0]);
         assert!(events[0].contains("utw.log"), "{}", events[0]);
-        assert_eq!(events[1], format!("session|{CRASH_REPORTED_LINE}"));
-        assert_eq!(events[2], "flush");
+        assert_eq!(
+            events[1],
+            format!("close|{:?}", ExitCode::from(101)),
+            "{events:?}"
+        );
+        assert_eq!(events[2], format!("session|{CRASH_REPORTED_LINE}"));
+        assert_eq!(events[3], "flush");
     }
 
     #[test]

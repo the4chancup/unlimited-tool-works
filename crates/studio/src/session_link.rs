@@ -370,8 +370,10 @@ mod tests {
     use std::fs;
     use std::io;
     use std::path::PathBuf;
+    use std::process::ExitCode;
+    use std::sync::atomic::{AtomicBool, Ordering};
     use std::sync::{Arc, Mutex};
-    use std::time::SystemTime;
+    use std::time::{Duration, Instant, SystemTime};
 
     use studio_core::repro::{SessionFile, read_frame};
 
@@ -380,9 +382,11 @@ mod tests {
 
     /// A `log::Log` collecting each record as `level|target|text` (the same
     /// capture `crash_dump`'s tests build), for the broken pipe's one Warn.
+    /// The list is an `Arc` so a test's `restart` closure can log into the
+    /// same list the logger handed to the guard writes.
     #[derive(Default)]
     struct CaptureLog {
-        records: Mutex<Vec<String>>,
+        records: Arc<Mutex<Vec<String>>>,
     }
 
     impl log::Log for CaptureLog {
@@ -693,6 +697,145 @@ mod tests {
         fn flush(&mut self) -> io::Result<()> {
             Ok(())
         }
+    }
+
+    // The link's close runs inside the panic guard, before the session's
+    // closing line: a pipe that broke while the window sat idle is found by
+    // that close — the header's writes passed, and the closing frame's are
+    // the break — and the new monitor's line must land ahead of the closing
+    // line, the log's last, which the next start reads as the session's end.
+    #[test]
+    fn the_links_close_runs_before_the_closing_line() {
+        let dir = TestDir::new("session_link_close_order");
+        let events = Arc::new(Mutex::new(Vec::<String>::new()));
+        let logger = CaptureLog {
+            records: events.clone(),
+        };
+        let restarts = CaptureLog {
+            records: events.clone(),
+        };
+        let recorder = Recorder::default();
+        let link = start(
+            &recorder,
+            Some(Box::new(FailingWrite::after(1))),
+            Box::new(move || {
+                log::Log::log(
+                    &restarts,
+                    &log::Record::builder()
+                        .level(log::Level::Info)
+                        .target("crash_dump")
+                        .args(format_args!(
+                            "a new crash monitor was started after the session's pipe broke"
+                        ))
+                        .build(),
+                );
+                None
+            }),
+            dir.path(),
+            header(4242),
+        );
+
+        let code = crate::gui_log::guard_gui(
+            || ExitCode::SUCCESS,
+            None,
+            |_| {},
+            move |code| link.close(crate::session_end(code)),
+            &logger,
+        );
+
+        assert_eq!(format!("{code:?}"), format!("{:?}", ExitCode::SUCCESS));
+        let events = events.lock().unwrap();
+        assert_eq!(events.len(), 2, "{events:?}");
+        assert!(
+            events[0].contains("a new crash monitor was started"),
+            "{events:?}"
+        );
+        assert_eq!(
+            events[1], "Info|session|the window closed normally",
+            "{events:?}"
+        );
+    }
+
+    /// The stalled-close watchdog's bound: three times `close`'s own wait,
+    /// so a machine hiccup never trips it and a hung `close` always does.
+    const WATCHDOG: Duration = Duration::from_secs(15);
+
+    /// A `Write` whose `write` waits on the test's release: the monitor
+    /// that stopped reading, holding the sender thread inside a pipe write.
+    /// The release, or the last sender's drop, ends the wait as the broken
+    /// pipe the stall would have read as.
+    struct BlockingWrite {
+        released: Receiver<()>,
+    }
+
+    impl Write for BlockingWrite {
+        fn write(&mut self, _buf: &[u8]) -> io::Result<usize> {
+            match self.released.recv() {
+                Ok(()) => Err(io::Error::other("broken pipe")),
+                Err(error) => Err(io::Error::other(error)),
+            }
+        }
+
+        fn flush(&mut self) -> io::Result<()> {
+            Ok(())
+        }
+    }
+
+    // A writer stalled mid-session does not hold the close: the thread sits
+    // inside the header's write, a recorded message queues behind it, and
+    // `close` waits the thread out no longer than `CLOSE_WAIT`. The watchdog
+    // bounds the test rather than letting a hung `close` hang it: past
+    // `WATCHDOG` it releases the writer so the wait can end, and the
+    // `expired` flag fails the run.
+    #[test]
+    fn a_stalled_writer_does_not_hold_the_close() {
+        let dir = TestDir::new("session_link_stalled");
+        let recorder = Recorder::default();
+        let (release_tx, release_rx) = crossbeam_channel::bounded::<()>(1);
+        let (finished_tx, finished_rx) = crossbeam_channel::bounded::<()>(1);
+        let expired = Arc::new(AtomicBool::new(false));
+        let watchdog = std::thread::spawn({
+            let expired = expired.clone();
+            let release_tx = release_tx.clone();
+            move || {
+                if finished_rx.recv_timeout(WATCHDOG).is_err() {
+                    expired.store(true, Ordering::Relaxed);
+                    release_tx.send(()).unwrap_or(());
+                }
+            }
+        });
+        let link = start(
+            &recorder,
+            Some(Box::new(BlockingWrite {
+                released: release_rx,
+            })),
+            Box::new(|| None),
+            dir.path(),
+            header(4242),
+        );
+        recorder.step("stub", "a step while the writer is stalled");
+
+        let started = Instant::now();
+        link.close(SessionEnd::Closed);
+        let elapsed = started.elapsed();
+        // `close` is back inside the bound: the watchdog goes home, then the
+        // writer's release unwinds the thread it stalled.
+        finished_tx.send(()).unwrap_or(());
+        watchdog.join().unwrap();
+        release_tx.send(()).unwrap_or(());
+
+        assert!(
+            !expired.load(Ordering::Relaxed),
+            "close did not return within {WATCHDOG:?}"
+        );
+        assert!(
+            elapsed >= CLOSE_WAIT,
+            "the stalled writer did not hold the close: {elapsed:?}"
+        );
+        assert!(
+            elapsed < CLOSE_WAIT + Duration::from_secs(5),
+            "the close outran its bound: {elapsed:?}"
+        );
     }
 
     // A broken pipe is one Warn line, then `restart` once: the new pipe
