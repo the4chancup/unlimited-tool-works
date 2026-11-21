@@ -311,7 +311,9 @@ From the fork's codec, checked against the vanilla save and the Akko saves (2026
   +0x2E. It also told apart every stat, grade and motion below. Fields, as byte:bit, width,
   and how the value is stored:
   - nationality 0x0A, 16 bits (146 is BRAZIL); height 0x0C, 8 bits, cm less 132; weight 0x0D,
-    8 bits, kg less 30; goal celebrations 1 and 2 at 0x0E and 0x0F, 8 bits, 0 for OFF;
+    8 bits, kg less 30; goal celebrations 1 and 2 at 0x0E and 0x0F, 8 bits, 0 for OFF, up
+    to 101 (the highest of the vanilla save's 11998 players, whose 97 values run up to it,
+    and the fork's cap);
   - age 0x10:0, 6 bits; Tenacity 0x10:6, 6 bits, less 40 (the fork reads it as Physical
     Contact);
   - the other stats, 6 bits each less 40, in the screen's order: Attacking Prowess 0x11:4,
@@ -369,7 +371,7 @@ From the fork's codec, checked against the vanilla save and the Akko saves (2026
     red 0x13:0, blue 0x14:0,
     then green 0x50:3 (running into 0x51:0), an id of up to 18 bits. Source: the Akko7 fork's
     `pes14.cpp`, whose author also keeps the DLC. In `.akko7v2` 14 records hold one, all 11:
-    Invitational 7's players beside boots 55, the fork's pair that hides an FPC player's boots
+    Invitational 7's players (team 857, named `/4ccg/`) beside boots 55, the fork's pair that hides an FPC player's boots
     and gloves.
 
   Not told apart, since both passes changed them together: hairstyle, hair variation, hair
@@ -909,6 +911,21 @@ on main. Main is merged into the branch, never rebased onto it.
     does not map, so the row was greyed. A field the version does not store keeps its
     enabled neighbours' width: the `-` fills the column. Its check, in Edit mode with the DLC:
     a `/4ccg/` goalkeeper given a gloves id the DLC installs shows those gloves, and the fork
-    reads the same id back. Before its look, the draft's PES 2014 player view is mended: it
-    stops on a page error (`cardLimits` is handed a player with no `skills`), so the Strip
-    style panel cannot be captured beside the build.
+    reads the same id back. The same run pins two things the fork's diff raised:
+    - what the Skin colour row shows for a stored 6 and a stored 7 at 0x0C:0 (the game's
+      swatches store 0 to 5; `.akko7v2` holds 7 on seven players, six of them `/4ccg/`'s
+      FPC players, and the fork's "Custom" writes 6), and the iris colour at 0x34:4;
+    - whether a team renamed in the build, with no flag set, shows its new name. The fork
+      sets 0x0A:0 and 0x0B:4 on a name edit, 0x0A:1 and 0x0B:5 on a short-name edit, and
+      `/4ccg/`, the one team renamed in game, holds all four; the other 221 Akko teams hold
+      0x0B:4 and 0x0B:6 alone. If the name does not show, the build sets the fork's bits.
+
+    Before its look, the draft's PES 2014 player view is mended: it stops on a page error
+    (`cardLimits` is handed a player with no `skills`), so the Strip style panel cannot be
+    captured beside the build.
+11. After the release, the skin colour and the iris colour on PES 2014, which the fork
+    edits and the build greys: mapped at 0x0C:0 (3 bits, stored less 1) and 0x34:4 (4 bits) in the appearance
+    record, with the values step 10's run pins, so the Appearance page's two rows work as
+    on the other versions. The FPC entries then write skin 7 on PES 2014 only if that run
+    shows a stored 6 or 7 to be the custom skin. A player with no appearance record is
+    refused, as for the boots.

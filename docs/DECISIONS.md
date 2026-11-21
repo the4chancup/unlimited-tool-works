@@ -19396,3 +19396,22 @@ Why: the Akko DLC hides an FPC player's gloves by gloves id 11, which PES 2014 n
 the Akko save's FPC players carry the pair. The skin lives in the in-game face run, which PES
 2014's records do not map, so there is no skin to read or write there.
 Plan: `plans/pes14.md`, step 10.
+
+## 2026-11-21 — pes_savefile (pes14 branch) — PES 2014's goal celebrations top at 101
+Decision: on PES 2014 the two goal celebration boxes run from 0 to 101, not PES 2015's 112.
+Why: the vanilla save's 11998 players hold 97 distinct values, the highest 101, and the Akko
+fork caps the boxes at 101. A higher value would be one the game's list does not have.
+Plan: `plans/pes14.md`, "What is known about the save", run `player1`'s fields.
+
+## 2026-11-21 — save_editor, pes_savefile (pes14 branch) — the fork's other PES 2014 edits: skin and iris colour mapped after the release, team-name flags checked in game
+Decision: an audit of the Akko fork's diff against upstream 4ccEditor found three things the
+build does not do on PES 2014 beyond the gloves id: the fork edits the skin colour (its
+"Custom" included) and the iris colour, and sets the team record's name flags on a rename.
+Step 10's in-game run pins what a stored skin of 6 or 7 shows and whether a rename shows with
+no flag set; step 11 maps the skin and iris colours after the release. Everything else the
+fork does on PES 2014 is in the plan already, or ruled out there (creating appearance records,
+setting every player's edit flags).
+Why: Build 1's scope is what the fork edits. The skin colour is pinned for the six swatches
+only, and the Akko save holds a stored 7 on seven players, so its range is pinned before it
+is mapped.
+Plan: `plans/pes14.md`, steps 10 and 11.

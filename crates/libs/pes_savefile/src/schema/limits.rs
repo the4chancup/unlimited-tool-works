@@ -164,10 +164,11 @@ pub fn motion_top(version: PesVersion, field: PlayerField) -> Option<u8> {
         PlayerField::DribblingMotion | PlayerField::PuntKickMotion => {
             return (version == PesVersion::Pes14).then_some(3);
         }
-        // PES 2014's goal celebrations' tops are not measured; PES 2015's
-        // kept.
+        // PES 2014's goal celebrations top at 101: the highest of the
+        // vanilla save's 11998 players, whose 97 distinct values run up to
+        // it, and the Akko fork's cap.
         PlayerField::GoalCelebration1 | PlayerField::GoalCelebration2 => {
-            (Some(112), 112, 122, 122, 127, 140, 152, 162)
+            (Some(101), 112, 122, 122, 127, 140, 152, 162)
         }
         PlayerField::Id
         | PlayerField::Nationality
@@ -421,9 +422,8 @@ mod tests {
         }
     }
 
-    /// PES 2014's measured tops (stored values): the four motions it
-    /// stores, `None` for the ones it does not, and the celebrations on
-    /// PES 2015's tops, unmeasured there.
+    /// PES 2014's tops (stored values): the four motions it stores,
+    /// `None` for the ones it does not, and the celebrations' 101.
     #[test]
     fn pes14_motion_tops() {
         for (field, top) in [
@@ -431,8 +431,8 @@ mod tests {
             (PlayerField::FreeKickMotion, 11),
             (PlayerField::PenaltyKickMotion, 3),
             (PlayerField::PuntKickMotion, 3),
-            (PlayerField::GoalCelebration1, 112),
-            (PlayerField::GoalCelebration2, 112),
+            (PlayerField::GoalCelebration1, 101),
+            (PlayerField::GoalCelebration2, 101),
         ] {
             assert_eq!(motion_top(V::Pes14, field), Some(top), "{field:?}");
         }
