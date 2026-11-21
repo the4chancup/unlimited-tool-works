@@ -9,8 +9,11 @@
 //! own Game Plan: a starter is a white shirt with his number, never a
 //! portrait; a marker released over another
 //! swaps the two starters through `swap_starters_14` — the keeper's
-//! marker dragged like the others — and a release anywhere else writes
-//! nothing; a click opens no popover and a held marker lights no areas.
+//! marker dragged like the others — and a release on the grass is the
+//! game's free move, the starter landing at the snapped spot with the
+//! role its rule gives him or going back where the game refuses the
+//! drop; a held marker lights his areas as the game's do, and a click
+//! opens no popover.
 
 use std::ops::RangeInclusive;
 
@@ -73,7 +76,7 @@ pub(crate) enum LineupDrag {
     /// Under a ruleset that allows illegal formations another marker is
     /// no target: a release on him is a grass move. On PES 2014 another
     /// marker, the keeper included, swaps through `swap_starters_14`
-    /// under every ruleset, and there is no grass move.
+    /// under every ruleset, and the grass move is the game's free move.
     Marker(usize),
 }
 
@@ -107,7 +110,10 @@ struct OutfieldRange {
 /// x 5 to 99 and y 4 to 47, rows 0 to 3 being the keeper's area alone),
 /// or the whole stored grid (`GRID_X` by `GRID_Y`) under a ruleset that
 /// allows illegal formations, whose patched game keeps an outfielder on
-/// any spot of it, the keeper's rows included.
+/// any spot of it, the keeper's rows included. PES 2014's drag reaches
+/// the whole grid too: its free move rules the point itself and refuses
+/// what no zone holds, so a drop past the zones is refused, not held at
+/// the edge.
 fn outfield_range(illegal_formations: bool) -> OutfieldRange {
     if illegal_formations {
         OutfieldRange {
@@ -502,12 +508,14 @@ pub(crate) fn swap_starters_14(tactics: &mut TeamTactics, shown_preset: usize, a
 /// marker, the keeper's included, is a
 /// drag source and a swap target under every ruleset — a release over
 /// another swaps the two starters through `swap_starters_14`, the
-/// shown preset alone — a release anywhere else writes nothing (the
-/// game's free move sets the role by a rule of its own); while a marker
-/// is held the teammate a release would swap with carries the swap mark
-/// and the held badge reads his position, a click serves only the armed
-/// assignment and opens no popover, and no areas light. The marker's
-/// box covers the shirt as it covers a portrait.
+/// shown preset alone, and a release on the grass is the game's free
+/// move (`free_move_14`): the snapped spot written with the role the
+/// rule gives it, nothing where the game refuses the drop. While a
+/// marker is held the teammate a release would swap with carries the
+/// swap mark, the held badge reads the role a drop there gives him —
+/// his own where the game refuses — his areas light as the game's do,
+/// and a click serves only the armed assignment and opens no popover.
+/// The marker's box covers the shirt as it covers a portrait.
 ///
 /// Answers `true` only when `tactics` changed this frame.
 pub fn pitch(
@@ -592,7 +600,7 @@ pub fn pitch(
         let players = tactics.presets[view.preset.min(2)].formations[view.formation.min(2)].players;
         let centres = players.map(|slot| clamp_centre(badge_centre(canvas.min, slot), canvas));
         let order = draw_order(&centres);
-        let range = outfield_range(illegal_formations);
+        let range = outfield_range(illegal_formations || pes14);
         // Interact in draw order first: egui gives an overlap to the
         // widget registered last, so the lowest marker (painted on top)
         // wins a press.
@@ -645,10 +653,14 @@ pub fn pitch(
                     snap(pos - held.offset, canvas.min, &range)
                 });
             let formation = &tactics.presets[view.preset.min(2)].formations[view.formation.min(2)];
-            // PES 2014 has no free-move rule to apply: a held marker
-            // keeps his stored position until a swap target lends him
-            // his.
-            let position = if illegal_formations || pes14 {
+            // On PES 2014 the free move previews the role a drop there
+            // gives him, his own where the game refuses it; on the
+            // other versions a held marker keeps his stored position
+            // under illegal formations or takes the drop rule's answer.
+            let position = if pes14 {
+                drop_rule::free_move_14(formation, index, x, y, overalls_of(roster, tactics, index))
+                    .unwrap_or(players[index].position)
+            } else if illegal_formations {
                 players[index].position
             } else {
                 drop_rule::dropped_position(
@@ -706,10 +718,13 @@ pub fn pitch(
             // as his click (the pointer moved within the click distance,
             // though past his edge) is that click, which `marker` served:
             // no drop.
-            // On PES 2014 a release only swaps the two players, the
-            // keeper among them and under every ruleset, through
-            // `swap_starters_14`; a release anywhere else writes
-            // nothing, the free move's role rule being the game's own.
+            // On PES 2014 a release over a teammate only swaps the two
+            // players, the keeper among them and under every ruleset,
+            // through `swap_starters_14`; a release on the grass is the
+            // game's free move — the snapped spot written with the role
+            // the rule gives it, or nothing where the game refuses the
+            // drop (the keeper's own and any drop into his zone
+            // included, until what the game writes for them is read).
             Some((_, LineupDrag::Marker(from)))
                 if !responses[from]
                     .as_ref()
@@ -721,6 +736,19 @@ pub fn pitch(
                             marker_at(pos, canvas, &centres, &order, faces, Some(from))
                         {
                             swap_starters_14(tactics, view.preset.min(2), from, onto);
+                        } else {
+                            let offset = previous
+                                .filter(|held| held.slot == from)
+                                .map_or(egui::Vec2::ZERO, |held| held.offset);
+                            let (x, y) = snap(pos - offset, canvas.min, &range);
+                            let overalls = overalls_of(roster, tactics, from);
+                            let formation = &mut tactics.presets[view.preset.min(2)].formations
+                                [view.formation.min(2)];
+                            if let Some(position) =
+                                drop_rule::free_move_14(formation, from, x, y, overalls)
+                            {
+                                formation.players[from] = FormationSlot { position, x, y };
+                            }
                         }
                     } else {
                         let overalls = overalls_of(roster, tactics, from);
@@ -767,15 +795,17 @@ pub fn pitch(
         let players = tactics.presets[view.preset.min(2)].formations[view.formation.min(2)].players;
         let centres = players.map(|slot| clamp_centre(badge_centre(canvas.min, slot), canvas));
         let order = draw_order(&centres);
-        // While an outfield starter is held, the pitch outside the areas
-        // he is rated at is darkened, under every marker. A row with no
+        // While a starter is held, the pitch outside the areas he is
+        // rated at is darkened, under every marker. A row with no
         // ratings at all (an empty slot, or a host that reads none)
-        // darkens nothing. On PES 2014 a held marker lights no areas: a
-        // drop there only swaps two players.
-        if let Some(index) = dragged.filter(|_| !pes14)
+        // darkens nothing, and on PES 2014 neither does a row rated A or
+        // B nowhere: its pitch changes nothing for him, where the other
+        // versions darken the whole canvas.
+        if let Some(index) = dragged
             && let Some(rated) = roster
                 .get(usize::from(tactics.starting_eleven[index]))
                 .and_then(|row| row.rated)
+            && !(pes14 && rated == [false; 13])
         {
             lit_area::paint_dim(&painter, canvas, &rated, palette);
         }

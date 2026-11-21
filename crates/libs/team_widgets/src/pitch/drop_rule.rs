@@ -5,9 +5,13 @@
 //! editors. It is no fixed map of pitch areas to positions: a point
 //! offers up to two positions and the dragged player's own per-position
 //! overalls pick between them, so the same spot gives different players
-//! different positions.
+//! different positions. PES 2014's Game Plan plays by a rule of its
+//! own, `free_move_14`, read from its executable: a drop it refuses
+//! answers `None`, where the editor's rule would keep the position.
 
-use pes_savefile::model::formation_rule::{AREAS_A, AREAS_B, WIDE};
+use std::ops::RangeInclusive;
+
+use pes_savefile::model::formation_rule::{AREAS_A, AREAS_B, FormationLine, WIDE};
 use pes_savefile::model::tactics::Formation;
 
 /// The full-width bands' defaults, in the order the game tries them:
@@ -16,6 +20,9 @@ const BAND_DEFAULTS: [u8; 3] = [1, 5, 11];
 /// The positions tried for a candidate, in the game's order: LB, RB,
 /// DMF, LMF, RMF, AMF, LWF, RWF, CF, then CB and SS.
 const CANDIDATES: [u8; 11] = [2, 3, 4, 6, 7, 8, 9, 10, 12, 1, 11];
+/// The positions PES 2014 tries for its second candidate, in the game's
+/// order: the nine that are no band default.
+const CANDIDATES_14: [u8; 9] = [2, 3, 4, 6, 7, 8, 9, 10, 12];
 /// The positions the snapped point `(x, y)` in stored units offers
 /// `slot` of `formation`, as the game's drag and its Select Position
 /// menu offer them: the band's default (the first of `BAND_DEFAULTS`
@@ -92,4 +99,83 @@ fn free(formation: &Formation, slot: usize, position: u8) -> bool {
             .iter()
             .enumerate()
             .all(|(index, other)| index == slot || other.position != position)
+}
+
+/// PES 2014's free move (the draft's `freeMove14`): the position `slot`
+/// of `formation` takes when dropped on open grass at the snapped point
+/// `(x, y)` in stored units, `None` where the game refuses the drop and
+/// he goes back to his spot. Read from PES 2014's executable, it differs
+/// from `dropped_position` in three ways: a point outside every zone is
+/// refused rather than keeping his position, its one zone table is
+/// `AREAS_A` (the game holds no second), and of the two candidates the
+/// higher overall wins, the second on a tie.
+///
+/// `None` too for a dragged keeper, for a point in the keeper's zone
+/// (what the game writes for the two is not read, so they are refused
+/// rather than guessed), for a point that would take a line outside its
+/// limits, and for `overalls` `None` (an empty slot or a host that reads
+/// none): no overall, no pick.
+pub(super) fn free_move_14(
+    formation: &Formation,
+    slot: usize,
+    x: u8,
+    y: u8,
+    overalls: Option<&[u8; 13]>,
+) -> Option<u8> {
+    let current = formation.players[slot].position;
+    if current == 0 || AREAS_A[0].contains(x, y) {
+        return None;
+    }
+    let overalls = overalls?;
+    if AREAS_A
+        .get(usize::from(current))
+        .is_some_and(|area| area.contains(x, y))
+    {
+        return Some(current);
+    }
+    // Every outfield zone lies inside one of the three band defaults'
+    // rows, so a point none of them holds is outside every zone.
+    let first = BAND_DEFAULTS
+        .into_iter()
+        .find(|&position| AREAS_A[usize::from(position)].contains(x, y))?;
+    // The line check reads the first candidate, as the game does: the
+    // move may not take his line below its minimum nor the candidate's
+    // above its maximum. A line he already stands in is not counted
+    // against its maximum, so the check only runs across lines.
+    let to = FormationLine::of(first).expect("a band default is on a line");
+    let from = FormationLine::of(current);
+    if from != Some(to) {
+        let count = |line: FormationLine| {
+            formation
+                .players
+                .iter()
+                .filter(|player| FormationLine::of(player.position) == Some(line))
+                .count()
+        };
+        if from.is_some_and(|line| count(line) - 1 < *line_limits_14(line).start())
+            || count(to) + 1 > *line_limits_14(to).end()
+        {
+            return None;
+        }
+    }
+    let second = CANDIDATES_14.into_iter().find(|&position| {
+        AREAS_A[usize::from(position)].contains(x, y) && free(formation, slot, position)
+    });
+    match second {
+        Some(second) if overalls[usize::from(second)] >= overalls[usize::from(first)] => {
+            Some(second)
+        }
+        _ => Some(first),
+    }
+}
+
+/// The starters a line may hold on PES 2014, bounds included: its
+/// midfield minimum is one above the other versions', which
+/// `FormationLine::limits` holds.
+fn line_limits_14(line: FormationLine) -> RangeInclusive<usize> {
+    match line {
+        FormationLine::Defenders => 2..=5,
+        FormationLine::Midfielders => 2..=6,
+        FormationLine::Forwards => 1..=5,
+    }
 }

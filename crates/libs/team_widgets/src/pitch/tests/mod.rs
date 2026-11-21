@@ -465,18 +465,19 @@ fn press_offset(canvas: egui::Rect, slot: FormationSlot, press: egui::Pos2) -> e
 /// Where an outfield `slot`'s marker pressed at `press` is painted while
 /// held with the pointer at `pointer`: his badge centre at the spot under
 /// the pointer less the press's offset, clamped like every marker's.
-/// `illegal_formations` is the flag the pitch was handed.
+/// `whole_grid` gives the drag the whole stored grid, as under illegal
+/// formations or on PES 2014; `false` holds it to the movable range.
 fn held_centre(
     canvas: egui::Rect,
     slot: FormationSlot,
     press: egui::Pos2,
     pointer: egui::Pos2,
-    illegal_formations: bool,
+    whole_grid: bool,
 ) -> egui::Pos2 {
     let (x, y) = snap(
         pointer - press_offset(canvas, slot, press),
         canvas.min,
-        &outfield_range(illegal_formations),
+        &outfield_range(whole_grid),
     );
     clamp_centre(
         badge_centre(canvas.min, FormationSlot { x, y, ..slot }),
@@ -760,5 +761,95 @@ fn formation_718_3() -> Formation {
         ("LMF", 20, 26),
         ("DMF", 42, 16),
         ("CF", 43, 40),
+    ])
+}
+
+/// The thirteen overalls (GK to CF) of run `tactics6`'s `/3/` all-77
+/// player, registered CB with every grade C, by PES 2014's formula (the
+/// game showed GK 67, CB 78, LB and RB 74, CMF 72, CF 71).
+const ALL_77: [u8; 13] = [67, 78, 74, 74, 75, 72, 71, 71, 71, 72, 72, 72, 71];
+
+/// The PES 2014 game list's 4-4-2, as run `formations1` stored it.
+fn formation_442_14() -> Formation {
+    formation_of([
+        ("GK", 52, 3),
+        ("CB", 63, 10),
+        ("CB", 41, 10),
+        ("RB", 89, 12),
+        ("LB", 15, 12),
+        ("CMF", 64, 27),
+        ("CMF", 40, 27),
+        ("CMF", 87, 30),
+        ("CMF", 17, 30),
+        ("CF", 66, 43),
+        ("CF", 38, 43),
+    ])
+}
+
+/// The PES 2014 game list's 4-2-3-1, as run `formations1` stored it.
+fn formation_4231_14() -> Formation {
+    formation_of([
+        ("GK", 52, 3),
+        ("CB", 63, 10),
+        ("CB", 41, 10),
+        ("RB", 89, 12),
+        ("LB", 15, 12),
+        ("DMF", 64, 18),
+        ("DMF", 40, 18),
+        ("RMF", 86, 30),
+        ("LMF", 18, 30),
+        ("AMF", 52, 32),
+        ("CF", 52, 43),
+    ])
+}
+
+/// The PES 2014 game list's 4-2-1-3, as run `formations1` stored it.
+fn formation_4213_14() -> Formation {
+    formation_of([
+        ("GK", 52, 3),
+        ("CB", 63, 10),
+        ("CB", 41, 10),
+        ("RB", 89, 12),
+        ("LB", 15, 12),
+        ("DMF", 64, 18),
+        ("DMF", 40, 18),
+        ("AMF", 52, 32),
+        ("RWF", 81, 42),
+        ("LWF", 23, 42),
+        ("CF", 52, 43),
+    ])
+}
+
+/// The PES 2014 game list's 3-2-3-2, as run `formations1` stored it.
+fn formation_3232_14() -> Formation {
+    formation_of([
+        ("GK", 52, 3),
+        ("CB", 52, 10),
+        ("CB", 73, 10),
+        ("CB", 31, 10),
+        ("DMF", 64, 18),
+        ("DMF", 40, 18),
+        ("RMF", 86, 30),
+        ("LMF", 18, 30),
+        ("AMF", 52, 32),
+        ("CF", 66, 43),
+        ("CF", 38, 43),
+    ])
+}
+
+/// The PES 2014 game list's 5-2-2-1, as run `formations1` stored it.
+fn formation_5221_14() -> Formation {
+    formation_of([
+        ("GK", 52, 3),
+        ("CB", 52, 10),
+        ("CB", 73, 10),
+        ("CB", 31, 10),
+        ("RB", 89, 12),
+        ("LB", 15, 12),
+        ("DMF", 64, 18),
+        ("DMF", 40, 18),
+        ("RMF", 86, 31),
+        ("LMF", 18, 31),
+        ("CF", 52, 43),
     ])
 }

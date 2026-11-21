@@ -141,6 +141,14 @@ impl FormationLine {
         }
     }
 
+    /// The line `position` belongs to: `positions()` in reverse, `None`
+    /// for the keeper's position and for a byte past CF.
+    pub fn of(position: u8) -> Option<Self> {
+        Self::ALL
+            .into_iter()
+            .find(|line| line.positions().contains(&position))
+    }
+
     /// The number of starters the line may hold, bounds included.
     pub fn limits(self) -> RangeInclusive<usize> {
         match self {

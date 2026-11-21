@@ -4,7 +4,7 @@
 
 use pes_version::PesVersion;
 
-use super::drops::{badge_texts, dim_fills};
+use super::drops::{badge_texts, check_dims, dim_fills};
 use super::*;
 use crate::tactics::{FieldedMark, Medal};
 use crate::test_support::{
@@ -3918,21 +3918,29 @@ fn the_wheel_steps_the_formation_selector_wrapping_round() {
 // would swap with, the keeper included, and his badge reads that
 // teammate's position: held over starter 10 the mark is on 10 and his
 // badge reads 10's position; held over the keeper the mark is on him.
+// His areas light as the game's do wherever he is held: rated at DMF
+// and AMF, he lights both and the rest of the pitch dims.
 #[test]
 fn on_pes14_a_held_marker_marks_the_teammate_a_release_would_swap_with() {
     let mut window = Headless::sized(600.0, 450.0);
     let (mut tactics, rows) = team_1();
     let mut view = TacticsView::default();
-    let roster = roster_rows(&rows);
+    let mut roster = roster_rows(&rows);
     let players = tactics.presets[0].formations[0].players;
     let (dragged, target) = (9, 10);
     assert_ne!(
         players[dragged].position, players[target].position,
         "premise: the two hold different positions, so the badge tells them apart"
     );
+    let mut rated = [false; 13];
+    rated[usize::from(position_byte("DMF"))] = true;
+    rated[usize::from(position_byte("AMF"))] = true;
+    roster[usize::from(tactics.starting_eleven[dragged])].rated = Some(rated);
 
     let (nodes, _) = window.pitch(PesVersion::Pes14, &mut tactics, &mut view, &roster, vec![]);
     let canvas = canvas_rect(&nodes);
+    // The lit areas his rated positions give: DMF's and AMF's both.
+    let lit = lit_area::lit_rects(canvas, &rated);
     let centres = centres_of(canvas, &players);
     let order = draw_order(&centres);
     let from = marker_point(&nodes, &players, dragged);
@@ -3966,12 +3974,9 @@ fn on_pes14_a_held_marker_marks_the_teammate_a_release_would_swap_with() {
         );
     });
     assert_swap_mark_on(&shapes, centres[target]);
-    assert!(
-        dim_fills(&shapes).is_empty(),
-        "a held marker lights no areas on PES 2014"
-    );
+    check_dims(canvas, &lit, &dim_fills(&shapes));
     let dragged_badge = egui::Rect::from_center_size(
-        held_centre(canvas, players[dragged], from, over, false),
+        held_centre(canvas, players[dragged], from, over, true),
         egui::vec2(50.0, 14.0),
     );
     let texts = badge_texts(&shapes, dragged_badge);
@@ -4000,13 +4005,11 @@ fn on_pes14_a_held_marker_marks_the_teammate_a_release_would_swap_with() {
         );
     });
     assert_swap_mark_on(&shapes, centres[0]);
-    assert!(
-        dim_fills(&shapes).is_empty(),
-        "held over the keeper, still no areas lit"
-    );
+    check_dims(canvas, &lit, &dim_fills(&shapes));
 
-    // Over open grass the held badge reads his own position, no mark
-    // and no lit area.
+    // Over open grass the held badge reads his own position — the
+    // rule's answer on a row that reads no overalls — no mark, the
+    // same lit area.
     let grass = grass_point(canvas, &players, egui::Rect::NOTHING);
     let (_, shapes) = window.frame(vec![egui::Event::PointerMoved(grass)], |ui| {
         pitch(
@@ -4019,12 +4022,9 @@ fn on_pes14_a_held_marker_marks_the_teammate_a_release_would_swap_with() {
             false,
         );
     });
-    assert!(
-        dim_fills(&shapes).is_empty(),
-        "held over the grass, no areas lit"
-    );
+    check_dims(canvas, &lit, &dim_fills(&shapes));
     let dragged_badge = egui::Rect::from_center_size(
-        held_centre(canvas, players[dragged], from, grass, false),
+        held_centre(canvas, players[dragged], from, grass, true),
         egui::vec2(50.0, 14.0),
     );
     let texts = badge_texts(&shapes, dragged_badge);
