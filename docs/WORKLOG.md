@@ -3519,13 +3519,13 @@ points there.
   `export-teams-list` (plan "Only the cup's teams are shown"; SE-GUI-107, SE-AATF-11,
   SE-TOML-11, SE-TL-06). Seen in the release build at `b22b191c` on a copy of that save,
   beside the draft's stock PES 21 sample: the same warning in the status bar.
-- open (2026-11-21) — The draft's Playing style pickers (the Stats page and the list's
-  column, `save_editor.js`) list one order for every version, where the build lists each
-  version's styles in its stored order, which is the game's own list
-  (`team_widgets::cards::playing_style_picker`). The two differ on PES 2015 to 2019; the
-  draft holds those versions' lists only for the changes rows (`PLAYSTYLE_STORED`, 17 to 19).
-  Found while giving the `pes14` draft PES 2014's own list. Next: the pickers read the
-  version's list, with PES 2015 and 2016's added.
+- resolved (2026-11-21) — The draft's Playing style pickers (the Stats page and the list's
+  column, `save_editor.js`) listed one order for every version, where the build lists each
+  version's styles in its stored order, the game's own list (DECISIONS 2026-10-21 "The
+  playing-style combo lists the version's stored order"); the draft had not followed that
+  decision. Found while giving the `pes14` draft PES 2014's own list. The pickers now read the
+  version's list, PES 2015 and 2016's added (with them, those versions' changes rows name the
+  right style).
 - open (2026-11-21) — The Ruleset editor's stat grids clip where the draft wraps. With the
   preview shown at the default window, the General section is about 300 points wide: the
   build keeps its five checkbox columns on one line each and cuts them at the section's edge

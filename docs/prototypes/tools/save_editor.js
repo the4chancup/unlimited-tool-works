@@ -5297,7 +5297,7 @@ function generalPanel(p, team) {
   const reg = combo(POSITIONS.map(x => [x, x + " - " + POS_FULL[x]]), p.positions.registered,
     v => { set(p, x => x.positions.registered, (x, v2) => x.positions.registered = v2, v, "registered position"); });
   reg.id = "f-regpos";
-  const style = combo(PLAY_STYLES.map(x => [x, cardName(x)]), p.positions.playing_style,
+  const style = combo(pickStyles().map(x => [x, cardName(x)]), p.positions.playing_style,
     v => { set(p, x => x.positions.playing_style, (x, v2) => x.positions.playing_style = v2, v, "playing style"); });
   style.id = "f-style";
   // Stronger foot and hand: two-choice toggles, Left | Right, the choices
@@ -5553,7 +5553,7 @@ function squadColumns(team) {
   if (v >= 20) cols.push({ key: "hand", group: "main", label: "Stronger hand", kind: "side",
     get: p => p.positions.stronger_hand ?? "right", put: (p, x) => { p.positions.stronger_hand = x; } });
   cols.push({ key: "style", group: "main", label: "Playing style", kind: "pick",
-    field: "playing_style", choices: PLAY_STYLES.map(x => [x, cardName(x)]), get: p => p.positions.playing_style,
+    field: "playing_style", choices: pickStyles().map(x => [x, cardName(x)]), get: p => p.positions.playing_style,
     put: (p, x) => { p.positions.playing_style = x; } });
   for (const pos of POSITIONS)
     cols.push({ key: "pos:" + pos, group: "positions", label: POS_FULL[pos], short: pos, kind: "rating",
@@ -8028,6 +8028,12 @@ function dlgLastPicture() {
 const PLAYABLE_ORDER = [12, 11, 9, 10, 8, 4, 5, 6, 7, 1, 2, 3, 0];
 const RATING_OF = ["C", "B", "A", "3"];
 const PLAYSTYLE_STORED = {
+  // PES 2015 and 2016: 2017's list with an empty slot 16, which no player holds.
+  15: ["none", "goal_poacher", "dummy_runner", "fox_in_the_box",
+    "prolific_winger", "classic_no_10", "hole_player", "box_to_box",
+    "anchor_man", "the_destroyer", "extra_frontman", "offensive_fullback",
+    "defensive_fullback", "target_man", "creative_playmaker", "build_up", null,
+    "offensive_goalkeeper", "defensive_goalkeeper"],
   17: ["none", "goal_poacher", "dummy_runner", "fox_in_the_box",
     "prolific_winger", "classic_no_10", "hole_player", "box_to_box",
     "anchor_man", "the_destroyer", "extra_frontman", "offensive_fullback",
@@ -8045,7 +8051,11 @@ const PLAYSTYLE_STORED = {
     "offensive_fullback", "fullback_finisher", "defensive_fullback",
     "extra_frontman", "offensive_goalkeeper", "defensive_goalkeeper"],
 };
+PLAYSTYLE_STORED[16] = PLAYSTYLE_STORED[15];
 const playstyleStored = v => v >= 20 ? PLAY_STYLES : PLAYSTYLE_STORED[v] || PLAY_STYLES;
+// The style pickers' list: the version's styles in the order the save stores them, which is
+// the game's own Edit-mode list (DECISIONS 2026-10-21), its empty slot left out.
+const pickStyles = () => playstyleStored(version()).filter(Boolean);
 const T_num = (label, off) => ({ label, show: s => String(Number(s) + off) });
 const T_enum = (label, table) => ({ label, show: s => titleCase(table[Number(s)]) });
 const T_flag = label => ({ label, show: s => s === "1" ? "on" : "off" });
