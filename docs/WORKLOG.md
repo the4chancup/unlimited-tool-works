@@ -3495,6 +3495,13 @@ points there.
   `export-teams-list` (plan "Only the cup's teams are shown"; SE-GUI-107, SE-AATF-11,
   SE-TOML-11, SE-TL-06). Seen in the release build at `b22b191c` on a copy of that save,
   beside the draft's stock PES 21 sample: the same warning in the status bar.
+- open (2026-11-21) — The Ruleset editor's stat grids clip where the draft wraps. With the
+  preview shown at the default window, the General section is about 300 points wide: the
+  build keeps its five checkbox columns on one line each and cuts them at the section's edge
+  (a sideways scroll reaches them), where the draft (`ruleset_editor/general?preview=1`) wraps
+  long names onto two lines ("Attacking / Prowess") and shows four columns. It was already so
+  with the old 560-point preview; seen in the release build of the larger-window slice
+  (`.tmp/lead/re_look/`). Next: brief the build to the draft's wrapping.
 - open (2026-11-21) — A trial: can SubQ Snap tell a flaky test from a steady one, as it tells
   a test that proves its scenario from one that does not (`citation_audit.py`)? The question
   per test: does its outcome depend on anything outside its inputs (the machine's free memory,
