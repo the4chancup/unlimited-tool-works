@@ -22,7 +22,9 @@ Usage:
                                       a capture while still held (what shows before a drop),
                                       by the real pointer (takes the foreground)
   gui.py wheel X,Y NOTCHES            wheel at a point, negative scrolls down (posted)
-  gui.py keys ctrl+z | esc | ...      one chord (posted)
+  gui.py keys ctrl+z | esc | ...      one chord (posted); it types no character
+  gui.py type TEXT                    each character typed into the focused field (posted);
+                                      to replace a box's value, `keys ctrl+a` first
   gui.py burst X,Y OUT_PREFIX N MS    the real pointer to X,Y, then N captures MS apart (takes
                                       the foreground)
   gui.py open PATH | folder PATH      fill the app's own Open / folder dialog and confirm it
@@ -44,7 +46,7 @@ user32 = ctypes.windll.user32
 gdi32 = ctypes.windll.gdi32
 kernel32 = ctypes.windll.kernel32
 user32.PostMessageW.argtypes = [wt.HWND, wt.UINT, wt.WPARAM, wt.LPARAM]
-WM_KEYDOWN, WM_KEYUP = 0x0100, 0x0101
+WM_KEYDOWN, WM_KEYUP, WM_CHAR = 0x0100, 0x0101, 0x0102
 WM_MOUSEMOVE, WM_LBUTTONDOWN, WM_LBUTTONUP, WM_MOUSEWHEEL = 0x0200, 0x0201, 0x0202, 0x020A
 MK_LBUTTON = 0x0001
 user32.WindowFromPoint.argtypes = [wt.POINT]
@@ -255,6 +257,19 @@ def keys(chord):
     print(f"sent {chord}")
 
 
+def type_text(text):
+    """Post each character as a typed key: its key down, the character, its key up. `keys`
+    posts no character, so a text field or a number box receives nothing from it."""
+    for char in text:
+        code = user32.VkKeyScanW(char) & 0xFF
+        lparam = (user32.MapVirtualKeyW(code, 0) << 16) | 1
+        user32.PostMessageW(HWND, WM_KEYDOWN, code, lparam)
+        user32.PostMessageW(HWND, WM_CHAR, ord(char), lparam)
+        user32.PostMessageW(HWND, WM_KEYUP, code, lparam | (3 << 30))
+    time.sleep(0.5)
+    print(f"typed {text}")
+
+
 def open_dialog(path):
     """The app's own Open dialog: its file-name edit set by WM_SETTEXT, then its OK (IDOK);
     `path` None cancels it (IDCANCEL)."""
@@ -417,6 +432,8 @@ elif cmd == "wheel":
     print(f"wheel {args[1]} at {args[0]}")
 elif cmd == "keys":
     keys(args[0])
+elif cmd == "type":
+    type_text(args[0])
 elif cmd == "burst":
     prefix, count, gap = args[1], int(args[2]), float(args[3]) / 1000
     foreground()
