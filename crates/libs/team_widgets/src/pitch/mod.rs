@@ -108,14 +108,14 @@ struct OutfieldRange {
 /// to: the game's movable range (`pes_savefile`'s `MOVABLE_X` and
 /// `MOVABLE_Y`: its own Formation screen moves a starter only inside
 /// x 5 to 99 and y 4 to 47, rows 0 to 3 being the keeper's area alone),
-/// or the whole stored grid (`GRID_X` by `GRID_Y`) under a ruleset that
-/// allows illegal formations, whose patched game keeps an outfielder on
-/// any spot of it, the keeper's rows included. PES 2014's drag reaches
-/// the whole grid too: its free move rules the point itself and refuses
-/// what no zone holds, so a drop past the zones is refused, not held at
-/// the edge.
-fn outfield_range(illegal_formations: bool) -> OutfieldRange {
-    if illegal_formations {
+/// or, when `whole_grid` asks, the whole stored grid (`GRID_X` by
+/// `GRID_Y`) — under a ruleset that allows illegal formations, whose
+/// patched game keeps an outfielder on any spot of it, the keeper's
+/// rows included, and on PES 2014, whose drag reaches the whole grid:
+/// its free move rules the point itself and refuses what no zone
+/// holds, so a drop past the zones is refused, not held at the edge.
+fn outfield_range(whole_grid: bool) -> OutfieldRange {
+    if whole_grid {
         OutfieldRange {
             x: 0..=GRID_X,
             y: 0..=GRID_Y,

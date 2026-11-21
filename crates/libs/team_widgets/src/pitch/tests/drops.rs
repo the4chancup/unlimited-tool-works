@@ -1934,8 +1934,8 @@ fn held_dims(
 
 /// `dims` are a held frame's darkening fills over `lit` on `canvas`:
 /// each positive-sized and inside the canvas, none off the lit
-/// rectangles or overlapping another, together covering the canvas less
-/// them.
+/// rectangles or overlapping another, together covering the canvas
+/// outside the lit rectangles.
 pub(super) fn check_dims(canvas: egui::Rect, lit: &[egui::Rect], dims: &[egui::Rect]) {
     assert!(!dims.is_empty(), "held: the rest is darkened");
     for (i, dim) in dims.iter().enumerate() {
@@ -1948,7 +1948,7 @@ pub(super) fn check_dims(canvas: egui::Rect, lit: &[egui::Rect], dims: &[egui::R
             "fill {dim:?} inside the canvas"
         );
         assert!(
-            lit.iter().all(|lit| overlap(*dim, *lit) <= 0.5),
+            lit.iter().all(|lit_rect| overlap(*dim, *lit_rect) <= 0.5),
             "fill {dim:?} off the lit areas"
         );
         for other in &dims[i + 1..] {
@@ -2542,8 +2542,12 @@ fn on_pes14_a_held_starter_rated_nowhere_darkens_nothing() {
     let mut window = Headless::sized(600.0, 450.0);
     let (mut tactics, rows) = team_1();
     let mut view = TacticsView::default();
-    let mut roster = roster_rows(&rows);
-    roster[usize::from(tactics.starting_eleven[8])].rated = Some([false; 13]);
+    let roster = roster_rows(&rows);
+    assert_eq!(
+        roster[usize::from(tactics.starting_eleven[8])].rated,
+        Some([false; 13]),
+        "premise: the row is rated nowhere"
+    );
     let (_, dims) = held_dims(
         &mut window,
         &mut tactics,
@@ -2855,14 +2859,47 @@ fn on_pes14_a_marker_released_on_the_grass_moves_by_the_games_free_move() {
     );
     let (nodes, _) = window.pitch(PesVersion::Pes14, &mut tactics, &mut view, &roster, vec![]);
     let canvas = canvas_rect(&nodes);
-    let centres = centres_of(canvas, &players);
     let from = marker_point(&nodes, &players, 1);
+    let onto = spot_centre(canvas, 60, 10) + press_offset(canvas, players[1], from);
+    assert!(
+        canvas.contains(onto) && under_no_other_marker(canvas, &players, 1, onto),
+        "premise: the release lands on free grass"
+    );
+
+    // Inside his own zone first: a drop at (60, 10) keeps his role and
+    // moves his spot, the commonest move the pitch makes.
+    let changed = window.drag_pitch(
+        from,
+        onto,
+        PesVersion::Pes14,
+        &mut tactics,
+        &mut view,
+        &roster,
+    );
+    assert!(changed, "the drop changed the record");
+    let moved = tactics.presets[0].formations[0].players[1];
+    assert_eq!(
+        (moved.position, moved.x, moved.y),
+        (position_byte("CB"), 60, 10),
+        "his own zone keeps his CB and moves his spot"
+    );
+
+    // A drop into the DMF candidate's zone instead: the pointer rests
+    // on his new spot a frame first, egui hit-tests a press against
+    // the last frame's widgets.
+    let players = tactics.presets[0].formations[0].players;
+    let (nodes, _) = window.pitch(PesVersion::Pes14, &mut tactics, &mut view, &roster, vec![]);
+    let from = marker_point(&nodes, &players, 1);
+    window.pitch(
+        PesVersion::Pes14,
+        &mut tactics,
+        &mut view,
+        &roster,
+        vec![egui::Event::PointerMoved(from)],
+    );
     let onto = spot_centre(canvas, 52, 20) + press_offset(canvas, players[1], from);
     assert!(
-        canvas.contains(onto)
-            && centres.iter().enumerate().all(|(other, centre)| {
-                other == 1 || !marker_rect(*centre, canvas, true).contains(onto)
-            }),
+        canvas.contains(onto) && under_no_other_marker(canvas, &players, 1, onto),
         "premise: the release lands on free grass"
     );
 
@@ -2887,9 +2924,9 @@ fn on_pes14_a_marker_released_on_the_grass_moves_by_the_games_free_move() {
     );
     let texts = badge_texts(&shapes, held_badge);
     assert_eq!(
-        texts.first().map(String::as_str),
-        Some("DMF"),
-        "held over (52, 20) his badge reads the rule's role: {texts:?}"
+        texts,
+        ["DMF", "75"],
+        "held over (52, 20) his badge reads the rule's role and his overall at it: {texts:?}"
     );
 
     let (_, changed) = window.pitch(
@@ -2912,7 +2949,6 @@ fn on_pes14_a_marker_released_on_the_grass_moves_by_the_games_free_move() {
     // against the last frame's widgets.
     let players = tactics.presets[0].formations[0].players;
     let before = tactics.clone();
-    let centres = centres_of(canvas, &players);
     let (nodes, _) = window.pitch(PesVersion::Pes14, &mut tactics, &mut view, &roster, vec![]);
     let from = marker_point(&nodes, &players, 1);
     window.pitch(
@@ -2924,10 +2960,7 @@ fn on_pes14_a_marker_released_on_the_grass_moves_by_the_games_free_move() {
     );
     let onto = spot_centre(canvas, 2, 20) + press_offset(canvas, players[1], from);
     assert!(
-        canvas.contains(onto)
-            && centres.iter().enumerate().all(|(other, centre)| {
-                other == 1 || !marker_rect(*centre, canvas, true).contains(onto)
-            }),
+        canvas.contains(onto) && under_no_other_marker(canvas, &players, 1, onto),
         "premise: the release lands on free grass"
     );
     let changed = window.drag_pitch(
@@ -2941,15 +2974,18 @@ fn on_pes14_a_marker_released_on_the_grass_moves_by_the_games_free_move() {
     assert!(!changed, "a refused drop writes nothing");
     assert_eq!(tactics, before, "the record is untouched");
 
-    // The keeper dragged to the grass and released writes nothing.
+    // The keeper dragged to the grass and released writes nothing,
+    // overalls on his row and a point inside a zone so the refusal is
+    // the keeper rule's alone.
+    roster[usize::from(tactics.starting_eleven[0])].overalls = Some(ALL_77);
     let (nodes, _) = window.pitch(PesVersion::Pes14, &mut tactics, &mut view, &roster, vec![]);
     let canvas = canvas_rect(&nodes);
     let players = tactics.presets[0].formations[0].players;
     let from = marker_point(&nodes, &players, 0);
-    let onto = grass_point(canvas, &players, egui::Rect::NOTHING);
+    let onto = spot_centre(canvas, 30, 20) + press_offset(canvas, players[0], from);
     assert!(
-        canvas.contains(onto),
-        "premise: the release lands on the pitch"
+        canvas.contains(onto) && under_no_other_marker(canvas, &players, 0, onto),
+        "premise: the release lands on free grass inside a zone"
     );
     let changed = window.drag_pitch(
         from,
