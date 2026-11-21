@@ -19130,3 +19130,15 @@ file's paths.", in the weak one. The draft had them the other way round.
 Why: the member reads the sessions to choose whether to tick the box, so they are content;
 the line about `~` is a side note on what the file holds.
 Plan: `plans/core/architecture.md` "Repro bundles", the dialog's "Under the list" bullet.
+
+## 2026-11-21 — save_editor — the pitch's placeholder portrait is the game's own when the PES folder is set
+Decision (maintainer's idea): when the PES folder is set and a starter's portrait is absent or
+undecodable, the Tactics pitch reads the game's own `player-dummy.png` from the install, a
+`download` CPK's copy winning over the base CPK's (`dt15.cpk`, `dt15_win.cpk` or
+`dt15_x64.cpk` in `Data`, by version), and draws it in place of the suite's drawing. It is
+read once per folder and version, and only when a placeholder is needed. The bundled drawing
+stays for every case the install cannot serve.
+Why: the game's own picture is what the member sees in game, and reading it from the member's
+install ships nothing of Konami's. Reading it only when a portrait is missing spares the base
+CPK's table for the usual team, which has every portrait.
+Plan: `plans/save_editor.md` "Tactics editor", the placeholder paragraph.

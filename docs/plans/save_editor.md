@@ -1653,9 +1653,19 @@ Win32 original hurt the most):
     one of three versions (PES 2015; PES 2016-2018; PES 2019-2021), but it is the suite's own
     drawing of each: an SVG in `resources/portraits/`, drawn from simple shapes in the game's
     colours and proportions (not traced), rendered by a script to the 128 x 128 PNG the binary
-    embeds. They are bundled, not read from the install, so the pitch draws them with no PES
-    folder set or reachable. They are drawn, not copied, because the suite ships Konami
-    material only to make files the games read.
+    embeds. They are drawn, not copied, because the suite ships Konami material only to make
+    files the games read.
+
+    When the PES folder is set, the game's own `player-dummy.png` replaces the drawing, read
+    from the install: a `download` CPK's copy if one holds it (a later CPK winning, as for
+    portraits), else the base CPK that holds it in every version (`dt15.cpk` in PES 2015,
+    `dt15_win.cpk` in 2016 and 2017, `dt15_x64.cpk` from 2018, in the install's `Data`
+    folder; a census of the seven installs, 2026-11-21). It is read only when a starter's
+    portrait turns out absent or undecodable, and at most once per folder and version. A
+    team usually has a portrait for every player, so reading a base CPK's table up front
+    would be work for nothing. The drawing stays for every other case: no
+    folder, one that cannot be read, a file not found or not decoded, and the moments before
+    the game's copy is read.
 
     Markers are drawn from the top of the canvas down, a lower marker covering the one above
     as the game's do (the keeper's portrait over a centre-back's badge), the dragged one last;
