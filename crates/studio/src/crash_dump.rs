@@ -198,7 +198,8 @@ enum StartFailure {
     /// not tried again, since the window waits that long before opening and a
     /// second wait would double it.
     NoAnswer(anyhow::Error),
-    /// Anything else: the monitor could not be polled, or the hook did not attach.
+    /// Anything else: the exe's own path was unknown, the monitor could not be
+    /// polled, or the hook did not attach.
     Other(anyhow::Error),
 }
 
@@ -497,6 +498,7 @@ mod tests {
     #[test]
     fn a_start_failed_at_once_is_tried_once_more() {
         let calls = Cell::new(0);
+        let logger = CollectLog::default();
         let result: Result<(), StartFailure> = start_monitor_once_more(
             || {
                 calls.set(calls.get() + 1);
@@ -505,10 +507,14 @@ mod tests {
                     _ => Ok(()),
                 }
             },
-            &CollectLog::default(),
+            &logger,
         );
         assert!(result.is_ok(), "the second start's success is not returned");
         assert_eq!(calls.get(), 2, "the start did not run twice");
+        // ST-RUN-13's "the log holds no warning": the first try's note only.
+        let records = logger.records.lock().unwrap();
+        assert_eq!(records.len(), 1, "{records:?}");
+        assert!(records[0].starts_with("Info|crash_dump|"), "{}", records[0]);
     }
 
     // ST-RUN-13
