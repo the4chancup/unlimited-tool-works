@@ -2226,7 +2226,10 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       measured at default (unchanged) and at 1920 x 1080 with
       `.tmp/stretch/drafts/measure.py`, captures `.tmp/stretch/drafts/*_monitor.png`
     - [ ] a slice per tool (after 0.0.2: DECISIONS 2026-11-16)
-      - [ ] the Save editor: brief `.tmp/lead/stretch_se/brief_stretch_se.md`, SWE-2 in `sk_stretch_se`
+      - [ ] the Save editor: merged `b0703afa` (2026-11-21, SWE-2, one rework), tests
+        `view/tests/stretch.rs`; seen in the release build at 1280 and maximized beside the
+        drafts (Stats, Gameplan, Live AATF's dock spanning the pane). Owed: its SWE-2 round.
+        The Squad screen takes its rule when it is built
   - [x] 0.0.2-lib the library rerun against checkpoint `p11`, 2026-11-13: checkpoint `002`
     (422 clean inputs; `.tmp/library_parity/checkpoints/diff_p11_002.txt`), every change
     traced to a commit since `3c512628`: VGL27's team IDs (`6268280c`), the short Common

@@ -15,6 +15,9 @@
 - **Save editor**: a save holding no cup team (ids 701 to 920), such as one made from the stock
   game, opened to an empty list with no reason given. It now shows a warning saying so, and the
   command line's `check-aatf`, `export-toml --all-teams` and `export-teams-list` refuse it.
+- **Save editor**: in a window larger than the default, the screens spread their columns and
+  stretched their panels across it. They now keep their default layout, centred, while the
+  player list shows more rows and the Live AATF panel takes the whole width.
 
 ### Other stuff
 
