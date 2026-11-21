@@ -464,11 +464,14 @@ address). The code is observed; where a step had to be inferred, the item says s
   | SS | Ball control .20, Dribbling .20, Explosive power .20, Attacking prowess .16, Finishing .15, Low pass .10, Lofted pass .10, Speed .10, Body control .07, Kicking power .06, Stamina .04 |
   | CF | Finishing .38, Attacking prowess .33, Ball control .25, Dribbling .15, Body control .10, Speed .05, Explosive power .05, Heading .03, Jump .03 |
 
-  Inferred: which ability each weight belongs to. The game reads its abilities by field numbers
-  that name nothing, so each field was named by its weights across the 13 positions, which
-  match PES 2016's settled rows almost exactly. Tenacity and Place kicking are the two fields no
-  position weighs. Also inferred: that the save's playable value (0 C, 1 B, 2 A) is the grade
-  the formula reads.
+  The game reads its abilities by field numbers that name nothing, so each field was named by
+  its weights across the 13 positions, which match PES 2016's settled rows almost exactly.
+  Tenacity and Place kicking are the two fields no position weighs. Run `gameplan2a` checked
+  the names: two `/3/` players, registered CB with every grade C, were given 20 abilities that
+  all differ, and the game showed 15 overalls, each the formula's: #2 read CB 53, RB 64, CMF
+  67, LMF 72, AMF 71, LWF and RWF 75, CF 78; #11 read CB 88, RB 64, DMF 57, CMF 51, CF 42.
+  Still inferred: that the save's playable value (0 C, 1 B, 2 A) is the
+  grade the formula reads.
 - **A free move** (`FUN_027d0550`, `FUN_027c3d30`, `FUN_027c77e0`, `FUN_027c3ed0`): a player
   dropped on open grass at a pitch point (width 0 to 104, depth 0 to 48, the units of the
   stored spots) gets his role by these rules:
@@ -503,6 +506,13 @@ address). The code is observed; where a step had to be inferred, the item says s
   | RWF | 35–47 | 84–99 |
   | SS | 35–47 | 5–99 |
   | CF | 40–47 | 21–83 |
+
+  While a player is held over open grass, the game's bottom panel shows his role and overall,
+  then the role a drop there would give him and his overall at it (run `gameplan2a`). It adds
+  nothing where his role stays, and it added nothing at the pitch's top-left corner, past the
+  zones, which suggests a refused spot also shows none. The roles it previewed match the rule
+  above at every spot shot, among them a CB who stayed CB near his own goal on the right,
+  where RB was another starter's.
 
   The zones bound where a drop finds a role, not where a player may stand: the game's own
   formations put wingers at widths 23 and 81 and 4-3-1-2's AMF at depth 35. What a drop of the
@@ -815,11 +825,12 @@ on main. Main is merged into the branch, never rebased onto it.
    - Run `tactics5` (in game): done, pinned in "What is known about the save".
    - The game's code, read statically (Ghidra, as PES 2016's was): done (2026-11-21), in
      "What the game's code says".
-   - Run `gameplan2` (in game): the inferred parts of "What the game's code says". The
-     "Position / Overall Rating" display for players whose abilities differ, against the
-     formula's numbers; free moves to chosen points, each saved and read back: a role kept,
-     each candidate taken, a tie, each refusal, the keeper's drop and a drop into the keeper's
-     zone; and which grades light the held player's areas.
+   - Run `gameplan2` (in game): the inferred parts of "What the game's code says".
+     - `gameplan2a`: the "Position / Overall Rating" display for players whose abilities
+       differ, against the formula's numbers. Done (2026-11-21), each number the formula's.
+     - `gameplan2b`: free moves to chosen points, each saved and read back: a role kept, each
+       candidate taken, a tie, each refusal, the keeper's drop and a drop into the keeper's
+       zone; and which grades light the held player's areas.
    - Slice 1, the record's fields in the schema and the model: done.
    - Slice 2a, the screen opens with the Preset tactics panel: done.
    - Slice 2b, the pitch's PES 2014 rules (shirts, swaps): done.
