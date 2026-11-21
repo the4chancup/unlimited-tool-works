@@ -146,9 +146,11 @@ run's findings (`4cc-studio-temp/str_re/out/findings.md`).
     found no other tool for the suite: the rest are covered, a runtime piece (sider, DXVK),
     general-purpose, or for another game. Two Blender add-ons, Joshua502's stadium camera
     editor (`.fdc`) and MFG's kk2pes (other games' rigs onto PES bones), are in the Blender
-    project's `pes_models_plan.md` ("Community add-ons to take in"). A survey of
-    `C:/Data/4cc/Tools_4cc/` follows (SWE-2, `findings_c.md`), with the USM videos the cup
-    ships (swipes, wipes, billboards), which no plan covers yet.
+    project's `pes_models_plan.md` ("Community add-ons to take in"). The survey of
+    `C:/Data/4cc/Tools_4cc/` (SWE-2, `findings_c.md`) added two tools to "Unscheduled tools",
+    a Video encoder for the cup's USM videos (the format in `plans/libs/usm.md`) and an Export
+    viewer (MFG's FMDL-Viewer), two file kinds to the explorer (`.mtar`, `.fsop`), and a
+    third add-on, EssexDotDev's 4cc-FMDL-Toolkit, to the Blender plan.
 
 Most open steps below wait only on a check in the game or the built window that the lead's
 harness makes ("Pending looks" below), not on the maintainer.

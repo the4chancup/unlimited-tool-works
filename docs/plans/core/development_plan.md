@@ -824,12 +824,31 @@ Tools the suite will take in, with no phase or plan yet:
     the texts);
   - `face_diff.bin`'s named fields edited (zlac's diff_check);
   - `DpFileList.bin` edited: the DLC's CPKs added, removed and ordered (CPGE);
+  - `.mtar` motion archives unpacked and repacked, their `.gani` motions named from a PES
+    dictionary (MtarTool-PES);
+  - `.fsop` shader packs unpacked and repacked (pes-file-tools);
   - the game's ball list, and the ball each competition uses (normal, winter, final)
     (CPGE);
   - ADX and AIX audio played (Jenkey's explorer);
   - any file viewed and edited in hex (CPGE);
   - sider's liveCPK folders laid over the tree, with a file exported straight to its place
     in one, and `sider.ini`'s folders and scripts edited (CPGE).
+- **Video encoder**: makes the USM videos a cup ships (the season's swipe, the competition
+  wipes, the menu movies, the stadium billboards) from a member's video file. Today the only
+  tool that writes them is a CRI encoder from about 2012, `medianoche.exe`, run through the
+  batch files of bent's 2015 tool compilation (`C:/Data/4cc/Tools_4cc/
+  4CC_PES15_tool_compilation_v0.1_alpha/`), a closed program nobody can fix or rebuild. Every
+  USM the cup ships is MPEG-1 video in CRI's container, most with a second MPEG-1 stream for
+  the transparency; only the two movies carry sound, in CRI's own HCA codec, which has no open
+  encoder. So a first version writes silent videos, which covers every swipe, wipe and
+  billboard. The container, as observed, is in `libs/usm.md`.
+- **Export viewer**: opens a member's aesthetics export, or a single model, and shows the
+  team close to how the game does: players with their kits, faces, bodies and motions, a
+  list of the export's problems, and still or animated captures. MFG's FMDL-Viewer does this
+  today (`C:/Data/4cc/Tools_4cc/FMDL-Viewer/`, a web page), for members to look at their exports
+  before they submit them. Its problem list is evidence for the Compiler's checks, and its
+  material, body and motion code for the 3D preview the Compiler and the [Player aesthetics
+  editor](../player_aesthetics_editor.md) are to share (`libs/model_viewport`).
 
 Not a tool of the suite but a way to run it, also with no phase yet:
 

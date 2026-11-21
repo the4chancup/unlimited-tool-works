@@ -124,6 +124,7 @@ terms next to each other rather than in alphabetical order; adjacency is what ma
 | **Kit config** | The per-kit binary parameter block (collar, shorts, numbers…), reverse-engineered and editable as TOML `config.toml`. | `spec/kit_config_editor.md` "The format" |
 | **`.model` / `.mtl`** | Pre-Fox mesh and material files. | `plans/libs/README.md`; `plans/model_conversion/README.md` |
 | **uniparam** | The `UniformParameter` container in the team bins (kit configs, colors) the compiler accumulates into. | `plans/libs/README.md`; `spec/aesthetics_export/fpc_toggle.md` "FPC toggle" |
+| **USM** | CRI's video file format (Sofdec2), which PES plays for the menus' wipes and movies and for stadium billboards: MPEG-1 video, an optional transparency stream, optional audio. | `plans/libs/usm.md` |
 | **WESYS** | zlib wrapper with a custom header used by PES for some game files. | `spec/libs/README.md` "Format references" |
 
 ## Savefile
