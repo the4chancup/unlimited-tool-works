@@ -37,6 +37,11 @@ const CLOSING_LINE: &str = "the window closed normally";
 /// already, so the next start does not ask for the log again.
 const CRASH_REPORTED_LINE: &str = "the crash above was shown to the member";
 
+/// The exit code `guard_gui` gives a run the panic guard caught: the code an
+/// unguarded panic exits with, so launchers see the same code as before
+/// (ST-RUN-08). `main` reads the session's ending from it too.
+pub(crate) const PANIC_EXIT: u8 = 101;
+
 /// One log line as `FileLog::log` writes it (`"INFO  session: …\n"`), factored out so
 /// the crash monitor in its own process appends a line in the same shape (ST-RUN-10).
 pub(crate) fn log_line(level: Level, target: &str, text: &dyn std::fmt::Display) -> String {
@@ -392,7 +397,7 @@ pub(crate) fn guard_gui(
         Err(payload) => {
             show(&crash_text(&panic_message(payload.as_ref()), log));
             session_line(logger, CRASH_REPORTED_LINE);
-            ExitCode::from(101)
+            ExitCode::from(PANIC_EXIT)
         }
     };
     logger.flush();

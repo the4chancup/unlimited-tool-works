@@ -5,8 +5,9 @@
 //! monitor for a dump when a crash comes: the monitor writes the slot's dump (`utw.dmp`,
 //! `utw.n.dmp` for the nth copy) beside the slot's log, appends a line naming it, and
 //! exits with the window's process (ST-RUN-12). The
-//! crash test's trigger (`--crash-test stack`) is `overflow_the_stack`, run once the
-//! monitor is up and before any window, so the test needs no display (ST-RUN-10).
+//! crash test's triggers (`--crash-test stack`, `session`) are `overflow_the_stack` and
+//! `session_test`, run once the monitor is up and before any window, so the tests need no
+//! display (ST-RUN-10, ST-REP-11).
 //!
 //! The monitor's other job is the window's session folder (`<data location>/sessions/`):
 //! the window's session messages reach it as frames through its standard input, a pipe
@@ -15,7 +16,7 @@
 //! pipe's end says the window is gone.
 
 use std::ffi::OsString;
-use std::fs::{File, OpenOptions};
+use std::fs::{self, File, OpenOptions};
 use std::io::{self, Read, Write};
 use std::path::{Path, PathBuf};
 use std::process::{Child, ChildStdin, Command, ExitCode, Stdio};
@@ -28,7 +29,7 @@ use crash_handler::{CrashEventResult, CrashHandler};
 use directories::BaseDirs;
 use log::{Level, Record};
 use studio_core::EXE_NAME;
-use studio_core::repro::{SessionEnd, SessionFrame, SessionWriter, read_frame};
+use studio_core::repro::{Recorder, SessionEnd, SessionFrame, SessionWriter, read_frame};
 
 use crate::gui_log;
 
@@ -74,13 +75,25 @@ pub(crate) enum HiddenLaunch {
         socket: PathBuf,
         slot: u32,
     },
-    /// `--crash-test stack`: run the window's start, then overflow the stack.
-    CrashTest,
+    /// `--crash-test <which>`: run the window's start, then the test's
+    /// trigger (`stack` overflows the stack, `session` records two steps
+    /// and exits without the closing message).
+    CrashTest(CrashTest),
+}
+
+/// Which trigger `--crash-test` runs once the window's start is done.
+pub(crate) enum CrashTest {
+    /// `--crash-test stack`: overflow the stack past the monitor's start
+    /// (ST-RUN-10).
+    Stack,
+    /// `--crash-test session`: record two steps through the session link,
+    /// then end the process with no closing message (ST-REP-11).
+    Session,
 }
 
 /// Reads the hidden launches before the command line is parsed: neither is a command a
 /// member types, so neither is in `--help`. `args` includes `args[0]`; anything but the
-/// two exact forms is `None`, and clap then reports it as today.
+/// exact forms is `None`, and clap then reports it as today.
 pub(crate) fn hidden_launch(args: &[OsString]) -> Option<HiddenLaunch> {
     match args {
         [_, arg, data_dir, socket, slot] if arg == MONITOR_ARG => {
@@ -94,7 +107,10 @@ pub(crate) fn hidden_launch(args: &[OsString]) -> Option<HiddenLaunch> {
             }
         }
         [_, arg, which] if arg == CRASH_TEST_ARG && which == "stack" => {
-            Some(HiddenLaunch::CrashTest)
+            Some(HiddenLaunch::CrashTest(CrashTest::Stack))
+        }
+        [_, arg, which] if arg == CRASH_TEST_ARG && which == "session" => {
+            Some(HiddenLaunch::CrashTest(CrashTest::Session))
         }
         _ => None,
     }
@@ -244,15 +260,16 @@ pub(crate) fn run_monitor(
 }
 
 /// What the session reader kept from the pipe: the writer the window's header made
-/// (`None` when none arrived) and whether the window sent its closing message.
+/// (`None` when none arrived) and the ending the window's closing message told
+/// (`Closed` or `Crashed`), `None` when no closing message arrived.
 struct SessionRead {
     writer: Option<SessionWriter>,
-    closed: bool,
+    told: Option<SessionEnd>,
 }
 
 /// The window's session, read frame by frame until the pipe ends: the header makes the
-/// writer under `<data location>/sessions`, each message is written and `Closed` is
-/// remembered. A frame before the header, a second header or a failed write is one
+/// writer under `<data location>/sessions`, each message is written and the closing
+/// message's ending is remembered. A frame before the header, a second header or a failed write is one
 /// Warn line in the slot's log and the reader goes on with the next frame; a frame
 /// that does not decode is one Warn line and ends the reading as the pipe's end does.
 fn read_session(
@@ -264,7 +281,7 @@ fn read_session(
     let log = crate::instance::slot_file_name(gui_log::LOG_FILE_NAME, slot);
     let mut session = SessionRead {
         writer: None,
-        closed: false,
+        told: None,
     };
     loop {
         let frame = match read_frame(input) {
@@ -315,7 +332,7 @@ fn read_session(
                     "a session message arrived before the session's header and was not written",
                 ),
             },
-            SessionFrame::Closed => {
+            SessionFrame::Closed | SessionFrame::Crashed => {
                 if session.writer.is_none() {
                     append_line(
                         data_dir,
@@ -325,7 +342,11 @@ fn read_session(
                         "the session's closing message arrived before its header",
                     );
                 }
-                session.closed = true;
+                session.told = Some(if matches!(frame, SessionFrame::Crashed) {
+                    SessionEnd::Crashed
+                } else {
+                    SessionEnd::Closed
+                });
             }
         }
     }
@@ -333,15 +354,14 @@ fn read_session(
 }
 
 /// The session's `[end]` from the monitor's two facts: `crashed` when a dump was
-/// requested (the window's hook asks only from a crash), `closed` when the window sent
-/// its closing message, `ended` when it went away with neither.
-fn session_end(dump_requested: bool, closed: bool) -> SessionEnd {
+/// requested (the window's hook asks only from a crash), else the `told` the
+/// window's closing message gave (`closed` or `crashed` — a caught panic is a
+/// crash to the member), else `ended`, the window gone with neither.
+fn session_end(dump_requested: bool, told: Option<SessionEnd>) -> SessionEnd {
     if dump_requested {
         SessionEnd::Crashed
-    } else if closed {
-        SessionEnd::Closed
     } else {
-        SessionEnd::Ended
+        told.unwrap_or(SessionEnd::Ended)
     }
 }
 
@@ -357,7 +377,7 @@ fn end_session(
     let Some(mut writer) = session.writer else {
         return;
     };
-    if let Err(error) = writer.end(session_end(dump_requested, session.closed)) {
+    if let Err(error) = writer.end(session_end(dump_requested, session.told)) {
         append_line(
             data_dir,
             &crate::instance::slot_file_name(gui_log::LOG_FILE_NAME, slot),
@@ -568,6 +588,43 @@ pub(crate) fn overflow_the_stack(depth: u64) -> u64 {
     overflow_the_stack(depth + 1) + u64::from(array[0])
 }
 
+/// `--crash-test session`'s trigger (ST-REP-11): two steps through the
+/// recorder — the link's thread sends them to the monitor, which writes them
+/// into the session folder — then the process ends with no closing message.
+/// `std::process::exit` runs no destructors, so the queue's sender never
+/// drops, the sender thread dies mid-wait and the pipe's own end is the
+/// monitor's only sign the window is gone: `[end]` reads `ended`. The exit
+/// waits on the steps' arrival, counted in the folder, so it cannot cut a
+/// message's send short; it is bounded like every wait on another process.
+pub(crate) fn session_test(recorder: &Recorder, data_dir: Option<&Path>) -> ! {
+    recorder.step("stub", "the session test's first step");
+    recorder.step("stub", "the session test's second step");
+    let Some(sessions) = data_dir.map(|dir| dir.join("sessions")) else {
+        log::error!("the session test ran without a data location");
+        std::process::exit(3);
+    };
+    let deadline = Instant::now() + Duration::from_secs(120);
+    loop {
+        let reached = fs::read_dir(&sessions)
+            .map(|entries| {
+                entries.filter_map(|entry| entry.ok()).any(|entry| {
+                    fs::read_to_string(entry.path().join("journal.toml"))
+                        .map(|journal| journal.matches("[[step]]").count() >= 2)
+                        .unwrap_or(false)
+                })
+            })
+            .unwrap_or(false);
+        if reached {
+            std::process::exit(0);
+        }
+        if Instant::now() > deadline {
+            log::error!("the session test's steps never reached the session folder");
+            std::process::exit(3);
+        }
+        std::thread::sleep(Duration::from_millis(20));
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use std::cell::Cell;
@@ -609,7 +666,11 @@ mod tests {
         assert_eq!(slot, 1);
         assert!(matches!(
             hidden_launch(&args(&["studio", "--crash-test", "stack"])),
-            Some(HiddenLaunch::CrashTest)
+            Some(HiddenLaunch::CrashTest(CrashTest::Stack))
+        ));
+        assert!(matches!(
+            hidden_launch(&args(&["studio", "--crash-test", "session"])),
+            Some(HiddenLaunch::CrashTest(CrashTest::Session))
         ));
         for bad in [
             args(&["studio", "--crash-test", "other"]),
@@ -960,14 +1021,17 @@ mod tests {
         ]
     }
 
-    /// `frames` as the pipe's bytes, `closed` adding the closing message.
-    fn session_bytes(frames: &[SessionFrame], closed: bool) -> Vec<u8> {
+    /// `frames` as the pipe's bytes, `end` adding the closing message it
+    /// names (`Some(Ended)` writes none, as the pipe's end does).
+    fn session_bytes(frames: &[SessionFrame], end: Option<SessionEnd>) -> Vec<u8> {
         let mut bytes = Vec::new();
         for frame in frames {
             write_frame(&mut bytes, frame).unwrap();
         }
-        if closed {
-            write_frame(&mut bytes, &SessionFrame::Closed).unwrap();
+        match end {
+            Some(SessionEnd::Closed) => write_frame(&mut bytes, &SessionFrame::Closed).unwrap(),
+            Some(SessionEnd::Crashed) => write_frame(&mut bytes, &SessionFrame::Crashed).unwrap(),
+            Some(SessionEnd::Ended) | None => {}
         }
         bytes
     }
@@ -985,18 +1049,21 @@ mod tests {
     }
 
     // The pipe's frames land in the session folder — the step, the kept input, the
-    // output's second write — and `[end]` says how it ended: `closed` on the closing
-    // message, `ended` without it, `crashed` on a dump request.
-    // ST-REP-06, ST-REP-07
+    // output's second write — and `[end]` says how it ended: the `told` the window's
+    // closing message gave (`closed`, or `crashed` after a panic it caught), `ended`
+    // without one, `crashed` on a dump request whatever it told.
+    // ST-REP-06, ST-REP-07, ST-REP-10
     #[test]
     fn the_session_is_written_from_the_pipe_and_ended() {
-        for (closed, dumped, how) in [
-            (true, false, "closed"),
-            (false, false, "ended"),
-            (true, true, "crashed"),
+        for (told, dumped, how) in [
+            (Some(SessionEnd::Closed), false, "closed"),
+            (Some(SessionEnd::Crashed), false, "crashed"),
+            (None, false, "ended"),
+            (Some(SessionEnd::Closed), true, "crashed"),
+            (Some(SessionEnd::Crashed), true, "crashed"),
         ] {
             let dir = TestDir::new("session_pipe");
-            let bytes = session_bytes(&frames(4242), closed);
+            let bytes = session_bytes(&frames(4242), told);
             let session = read_session(&mut &bytes[..], dir.path(), 1, None);
             let dump_requested = Arc::new(AtomicBool::new(false));
             if dumped {
@@ -1054,7 +1121,7 @@ mod tests {
             }),
         )
         .unwrap();
-        bytes.extend(session_bytes(&frames(4242), true));
+        bytes.extend(session_bytes(&frames(4242), Some(SessionEnd::Closed)));
 
         let session = read_session(&mut &bytes[..], dir.path(), 1, None);
         end_session(session, false, dir.path(), 1, None);
@@ -1075,26 +1142,29 @@ mod tests {
         assert!(journal.contains("how = \"closed\""), "{journal}");
     }
 
-    // A closing message before any header is one Warn line in the slot's log, and
-    // with no header there is no writer, so no folder.
+    // A closing message before any header — `Closed` or `Crashed`, the
+    // warning covers both — is one Warn line in the slot's log, and with
+    // no header there is no writer, so no folder.
     #[test]
     fn a_closing_message_before_the_header_warns_and_writes_nothing() {
-        let dir = TestDir::new("session_early_close");
-        fs::write(dir.path().join(LOG_FILE_NAME), "v\n").unwrap();
-        let mut bytes = Vec::new();
-        write_frame(&mut bytes, &SessionFrame::Closed).unwrap();
+        for closing in [SessionFrame::Closed, SessionFrame::Crashed] {
+            let dir = TestDir::new("session_early_close");
+            fs::write(dir.path().join(LOG_FILE_NAME), "v\n").unwrap();
+            let mut bytes = Vec::new();
+            write_frame(&mut bytes, &closing).unwrap();
 
-        let session = read_session(&mut &bytes[..], dir.path(), 1, None);
-        end_session(session, false, dir.path(), 1, None);
+            let session = read_session(&mut &bytes[..], dir.path(), 1, None);
+            end_session(session, false, dir.path(), 1, None);
 
-        let log = fs::read_to_string(dir.path().join(LOG_FILE_NAME)).unwrap();
-        assert!(
-            log.lines().any(
-                |line| line.contains("the session's closing message arrived before its header")
-            ),
-            "{log}"
-        );
-        assert!(!dir.path().join("sessions").exists(), "a folder was made");
+            let log = fs::read_to_string(dir.path().join(LOG_FILE_NAME)).unwrap();
+            assert!(
+                log.lines()
+                    .any(|line| line
+                        .contains("the session's closing message arrived before its header")),
+                "{log}"
+            );
+            assert!(!dir.path().join("sessions").exists(), "a folder was made");
+        }
     }
 
     // A second header is one Warn line in the slot's log; the session keeps the

@@ -45,6 +45,20 @@ pub struct SessionHeader {
     pub pid: u32,
 }
 
+impl SessionHeader {
+    /// The header of this window's session: the suite's version as the
+    /// window shows it, this OS, now in this process's time zone and
+    /// its process id.
+    pub fn for_this_window() -> SessionHeader {
+        SessionHeader {
+            version: crate::shell::version_label(),
+            os: std::env::consts::OS.to_owned(),
+            started: jiff::Zoned::now(),
+            pid: std::process::id(),
+        }
+    }
+}
+
 /// One thing a window's session did, sent to whoever writes the folder:
 /// the recorder's step, kept input or kept output as data.
 pub enum SessionMessage {
@@ -82,13 +96,15 @@ pub enum SessionMessage {
 
 /// How the session ended, written as `[end]`'s `how`: `closed` (the
 /// window sent its closing message), `crashed` (the monitor handled the
-/// crash) or `ended` (the window went away without either, as when it
-/// is ended from Task Manager). A journal with no `[end]` is a session
-/// still open, or one whose monitor died too.
+/// crash, or the window caught a panic of its own and said so) or
+/// `ended` (the window went away without either, as when it is ended
+/// from Task Manager). A journal with no `[end]` is a session still
+/// open, or one whose monitor died too.
 pub enum SessionEnd {
     /// The window sent its closing message.
     Closed,
-    /// The monitor handled the window's crash.
+    /// The window crashed: the monitor handled it, or the window caught
+    /// a panic and told the monitor so.
     Crashed,
     /// The window went away without a closing message or a handled
     /// crash.
@@ -108,8 +124,9 @@ impl SessionEnd {
 
 /// One thing the window sends through its crash monitor's standard
 /// input: the session's header first, each `SessionMessage` as it
-/// happens, and `Closed` when the window goes. The pipe's own end is
-/// the other way the monitor learns the window is gone.
+/// happens, and `Closed` — or `Crashed`, when the window caught a panic
+/// of its own — when the window goes. The pipe's own end is the other
+/// way the monitor learns the window is gone.
 pub enum SessionFrame {
     /// The session's `SessionHeader`; the first frame and the only one
     /// of its kind.
@@ -119,6 +136,9 @@ pub enum SessionFrame {
     /// The window's closing message: the session's `[end]` is `closed`,
     /// not `ended`.
     Closed,
+    /// The window's closing message after a panic it caught: the
+    /// session's `[end]` is `crashed`.
+    Crashed,
 }
 
 /// The frame kinds on the pipe: one byte naming the body that follows.
@@ -127,6 +147,7 @@ const KIND_STEP: u8 = 2;
 const KIND_INPUT: u8 = 3;
 const KIND_OUTPUT: u8 = 4;
 const KIND_CLOSED: u8 = 5;
+const KIND_CRASHED: u8 = 6;
 
 /// A header's fields as a frame body's TOML; `started` is `Zoned`'s own
 /// text, which keeps the time zone.
@@ -247,6 +268,7 @@ fn frame_body(frame: &SessionFrame) -> io::Result<(u8, Vec<u8>)> {
             )?,
         )),
         SessionFrame::Closed => Ok((KIND_CLOSED, Vec::new())),
+        SessionFrame::Crashed => Ok((KIND_CRASHED, Vec::new())),
     }
 }
 
@@ -297,6 +319,7 @@ fn decode_frame(kind: u8, body: &[u8]) -> io::Result<SessionFrame> {
             }))
         }
         KIND_CLOSED => Ok(SessionFrame::Closed),
+        KIND_CRASHED => Ok(SessionFrame::Crashed),
         _ => Err(invalid(format!("an unknown frame kind {kind}"))),
     }
 }
@@ -823,7 +846,8 @@ mod tests {
     }
 
     /// A session's frames in order: the header, a step with its op and
-    /// one without, a 300 KB kept input, a kept output and the close.
+    /// one without, a 300 KB kept input, a kept output and both closing
+    /// frames (a codec round trip, not a real sequence).
     fn frames() -> Vec<SessionFrame> {
         vec![
             SessionFrame::Header(header(4242)),
@@ -850,6 +874,7 @@ mod tests {
                 bytes: Arc::from(&b"WRITE_A"[..]),
             }),
             SessionFrame::Closed,
+            SessionFrame::Crashed,
         ]
     }
 
@@ -867,6 +892,7 @@ mod tests {
                 assert_message_eq(read, written)
             }
             (SessionFrame::Closed, SessionFrame::Closed) => {}
+            (SessionFrame::Crashed, SessionFrame::Crashed) => {}
             _ => panic!("the frames' kinds differ"),
         }
     }
@@ -971,6 +997,10 @@ mod tests {
         assert_eq!(outputs[1]["size"].as_integer(), Some(13));
         assert_eq!(outputs[1]["entry"].as_str(), Some("outputs/0-EDIT00000000"));
         assert_eq!(doc["end"]["how"].as_str(), Some("closed"), "{text}");
+        assert!(
+            !text.contains("\n\n# ok"),
+            "no blank line before a block's marker: {text}"
+        );
 
         assert_eq!(
             fs::read(folder.join("inputs/0-EDIT00000000")).unwrap(),
@@ -1184,6 +1214,12 @@ mod tests {
         }
         fs::create_dir_all(root.join("notes")).unwrap();
         fs::write(root.join("stray.txt"), "not a session").unwrap();
+        // Session-shaped but not session names: a letter inside an
+        // otherwise well-shaped name, and a three-digit year. Both sort
+        // before the dated folders, so a lax name check would prune them.
+        for name in ["0000-0a-00-000000-0", "202-11-10-120000-1"] {
+            fs::create_dir_all(root.join(name)).unwrap();
+        }
 
         let mut writer = SessionWriter::new(&root, header(4242));
         writer
@@ -1203,6 +1239,8 @@ mod tests {
         assert_eq!(
             names,
             [
+                "0000-0a-00-000000-0",
+                "202-11-10-120000-1",
                 "2026-11-12-120000-1",
                 "2026-11-13-120000-1",
                 "2026-11-14-120000-1",
