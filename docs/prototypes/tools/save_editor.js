@@ -5296,7 +5296,8 @@ function generalPanel(p, team) {
     v => { set(p, x => x.positions.stronger_hand, (x, v2) => x.positions.stronger_hand = v2, v, "stronger hand"); render(); });
   hand.id = "f-hand";
   // The nation as "ID - Name", ordered by ID, so typing an ID's digits in the closed
-  // dropdown finds it; an ID outside the table keeps its number.
+  // dropdown finds it; an ID outside the table keeps its number. The browser's own list
+  // stands in for the build's, whose typed names and Escape the plan describes.
   const own = nations(version());
   const listed = own.some(([id]) => id === p.nationality) ? own
     : [[p.nationality, "?"], ...own];

@@ -19035,3 +19035,8 @@ window titled "Crash handler - Unlimited Tool Works", hidden or off-screen, was 
 the row unchanged, so the name needs a second exe. One file to copy matters more than that
 name to a power user, so not a second exe.
 Plan: `core/architecture.md` "The monitor" edited.
+
+## 2026-11-21 — save_editor — the open Nation list picks by name too, opens on the held nation, and Escape puts it back
+Decision (the maintainer, asked 2026-11-17): in the open Nation list, letters pick the first nation, by ID, whose name starts with them, as digits pick by ID; a space continues a name begun; a key of the other kind starts a new run, as a second's pause does. The list opens with the held nation already in view, not scrolled to from the top, and Escape puts back the nation held when it opened, leaving nothing new to undo.
+Why: members rarely know the IDs, so digits alone left them scrolling a list of over 200; the scroll from the top on every open read as the list jumping; and a browser's dropdown, which the list follows, takes Escape as "never mind".
+Plan: `plans/save_editor.md`, "The player view", General info's Nation; SE-GUI-106.

@@ -711,13 +711,22 @@ vertical room a tab row takes; a toggle on the title's own row takes none.
      - Then Nation, a combo of the open save's version's nations, each entry `ID - NAME`
        (`231 - SAN MARINO`, the game's own spelling, in its capitals), ordered by ID, so
        typing an ID's digits in it finds that nation, where the number box it replaces
-       needed the ID looked up elsewhere. The open list shows the held nation, not the list's
-       top: there are over 200. While it is open, typed digits pick the first nation whose
-       ID starts with them and scroll to it, so 2, 3 and 1 land on `231 - SAN MARINO` and
-       one undo takes them back; a second's pause starts a new ID, as in a browser's
-       dropdown, and anything but a digit does nothing. Picking at once, not highlighting
-       for Enter to confirm, keeps it one gesture. An ID the version lacks shows as
-       `ID - ?` and stays until another is picked.
+       needed the ID looked up elsewhere. The list opens on the held nation, already in
+       view rather than scrolled to from the top: there are over 200. While it is open, typed
+       keys pick a nation and scroll to it, as in a browser's dropdown:
+       - digits pick the first nation whose ID starts with them, so 2, 3 and 1 land on
+         `231 - SAN MARINO`;
+       - letters pick the first nation, by ID, whose name starts with them in any letter
+         case, so S, A and N land there too (members rarely know the IDs); a space continues
+         a name already begun, so `SOUTH S` passes `87 - SOUTH AFRICA` for `312 - SOUTH SUDAN`;
+       - a second's pause, or a key of the other kind, starts a new run, and any other key
+         does nothing;
+       - one undo takes a run's picks back;
+       - Escape puts back the nation held when the list opened and closes it, leaving
+         nothing new to undo.
+
+       Picking at once, not highlighting for Enter to confirm, keeps it one gesture. An ID
+       the version lacks shows as `ID - ?` and stays until another is picked.
 
        The nations are the game's, from each version's `common/etc/pesdb/Country.bin` (in
        `dt10`): a WESYS-wrapped zlib stream of records of 1,348 bytes up to PES 2018 and
@@ -3906,12 +3915,15 @@ SE-GUI-106 GIVEN the PES 2021 save open, a player holding nation 135 selected
            WHEN the view is drawn
            THEN the Nation combo reads `135 - USA` on the Name field's span (`135 - UNITED
                 STATES` on the PES 2017 save; a held 100, which PES 2021 lacks, reads `100 -
-                ?`); WHEN the list is opened THEN it lists the version's nations by ID,
-                scrolled to the held row; WHEN 231 is typed in the open list THEN `231 - SAN
-                MARINO` is picked and scrolled into view, and one Undo puts 135 back; WHEN a
-                pause of over a second parts two digits THEN the second starts a new ID; WHEN
-                Down is pressed in the open list, then 231 typed and Enter pressed THEN 231
-                stays picked
+                ?`); WHEN the list is opened THEN it lists the version's nations by ID, the
+                held row in view on the first frame it draws; WHEN 231 is typed in the open
+                list THEN `231 - SAN MARINO` is picked and scrolled into view, and one Undo puts
+                135 back; WHEN `san` is typed instead THEN 231 is picked the same; WHEN `South
+                S` is typed THEN 312 is picked; WHEN a pause of over a second parts two digits
+                THEN the second starts a new ID; WHEN Down is pressed in the open list, then 231
+                typed and Enter pressed THEN 231 stays picked; WHEN 231 is typed and Escape
+                pressed THEN the list closes, the player holds 135 and Undo has nothing new to
+                take back
 SE-GUI-27  GIVEN the save open
            WHEN Output rosters to TSV runs
            THEN the file written holds, for every cup team, its name on a line of its own, then one
