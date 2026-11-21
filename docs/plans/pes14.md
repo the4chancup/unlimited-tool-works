@@ -903,5 +903,9 @@ on main. Main is merged into the branch, never rebased onto it.
     as they do elsewhere: the Appearance page's Gloves ID box, the boots and gloves dialog,
     the FPC entries (gloves 11 hides an FPC player's, 0 shows them), and `gloves_id` in Team
     TOML and the aesthetics patch. A player with no appearance record is refused, as for the
-    boots. Its check, in Edit mode with the DLC: a `/4ccg/` goalkeeper given a gloves id the
-    DLC installs shows those gloves, and the fork reads the same id back.
+    boots. The Strip style panel's Outfielder gloves row reads and writes the pinned bit
+    0x56:2 on PES 2014; the other versions keep it in the in-game face run, which PES 2014
+    does not map, so the row was greyed. A field the version does not store keeps its
+    enabled neighbours' width: the `-` fills the column. Its check, in Edit mode with the DLC:
+    a `/4ccg/` goalkeeper given a gloves id the DLC installs shows those gloves, and the fork
+    reads the same id back.

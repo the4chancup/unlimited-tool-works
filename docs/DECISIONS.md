@@ -19376,3 +19376,13 @@ player's. Leaving it out would let the Save editor's FPC and gloves edits miss w
 shows.
 Plan: `plans/pes14.md` "What is known about the save" (the appearance record), step 4's boots
 and gloves dialog, step 10.
+
+## 2026-11-21 — save_editor (pes14 branch) — A disabled field keeps its column's width; PES 2014's outfielder gloves are edited
+Decision: a field the save's version does not store draws its `-` at the width its enabled
+neighbours have, so the Strip style panel's column stays even. On PES 2014 the Outfielder
+gloves row reads and writes the appearance record's bit 0x56:2, pinned in game, so it is no
+longer greyed.
+Why: the maintainer's ruling on the PES 2014 Strip style panel, where `Gloves ID` and
+`Outfielder gloves` showed a narrow `-` beside full-width boxes. The outfielder gloves row was
+greyed only because the other versions keep the bit in a run PES 2014 does not map.
+Plan: `plans/pes14.md` step 10.
