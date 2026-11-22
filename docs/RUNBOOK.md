@@ -100,12 +100,11 @@ never makes this check. The question never holds the queue: the next build or si
 starts before it is asked, since a capture needs little CPU and the answer may take hours
 (one waited two, with nothing building).
 
-**Sidekicks in parallel.** Two sidekicks at once is the normal state, on steps that own
-disjoint files, the release path's first; a third only when it builds nothing (a document or
-script slice, an in-game look). The limits are the disk (a worktree that
+**Sidekicks in parallel.** Two sidekicks at once is the normal state, and a third runs whenever
+work is ready for it, on steps that own disjoint files, the release path's first. The limits
+are the disk (a worktree that
 builds grows a `target/` of about 40 GB; one that only edits documents or scripts builds
-nothing and costs nothing), the machine's build limit (below: two at once on the main lead's side,
-counting its sidekicks, its pipeline and its own cargo runs), and for SWE-2 the
+nothing and costs nothing), the machine's three cargo jobs (below), and for SWE-2 the
 login's limit on runs at once (`accounts.md`, next paragraph); a reviewer builds nothing. When the Claude
 weekly window nears its limit, the sidekick work goes back to SWE-2.
 
@@ -541,16 +540,16 @@ crates as up to date (main's `gates-changed` once failed to compile against the 
 (`.tmp/lead/touch_diverged.py <candidate>`); the staging worktree also needs an empty
 `target/` of its own (`WORKLOG.md` Issues).
 
-**At most three cargo builds at once, on the whole machine**: a sidekick's, a mutation run's
-local half, a lead's gates or package tests and a release build each count as one. A sidekick
-or a pipeline counts for its whole run, not only while it compiles: it builds whenever its work
-needs to, so the count is taken before each launch, against what is already running. The main
-lead's side (its sidekicks, its mutation run, its own gates) holds two; a side-lead in its own
-worktree holds the third, its sidekick's builds and its own together, so the two never need
-to sync. With the Optane's 64 GiB swap on `F:` a third build does not risk exhausting memory,
-though two already fill the CPU, so a third shares it rather than adding speed. Before
-starting a build, count your side's; with no side-lead running, the main lead's side may use
-the third for a program needed as soon as possible (a quick tool, a build for a manual check).
+**At most three cargo builds at once, on the whole machine, and two is the aim**: a sidekick,
+a pipeline or a mutation run's local half, a lead's gates or package tests and a release build
+each count as one. A sidekick or a pipeline counts for its whole run, since it builds whenever
+its work needs to, so the count is taken before each launch, against what is already running.
+A sidekick compiles for under a third of its run and reads and writes the rest, so with two
+jobs the CPU, the project's bottleneck, often has nothing to do: a third job is launched
+whenever work is ready for one, and only a fourth waits for a job to end. A running job is
+never stopped to get back to two. With the Optane's 64 GiB swap on `F:`, three builds at once
+do not risk exhausting memory. A side-lead, when one runs, holds one of the three for its
+sidekick's builds and its own.
 
 **Every build and test job runs at below-normal priority**: at normal priority two jobs left
 the maintainer's machine barely usable, while a below-normal one yields every processor to
