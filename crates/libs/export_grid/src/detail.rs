@@ -500,7 +500,7 @@ fn body(
         }
         if let Some(row) = catalog.iter().find(|row| row.code == message.code.code) {
             ui.label(code_spans(ui, row.when, visuals.text_color()));
-            ui.label(code_spans(ui, row.effect, visuals.weak_text_color()));
+            ui.label(code_spans(ui, row.effect, visuals.text_color()));
         }
     }
     ui.add_space(FINDING_GAP);
