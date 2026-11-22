@@ -641,10 +641,10 @@ function legend() {
 // is pinned; the window shows the pinned one, else the hovered one. A cell is
 // { row, what, slot }. While a cell is pinned, hovering another opens
 // nothing: the pointer crosses other cells on its way to the window.
-// The sidebar's hover delay (sidebar/mod.rs HOVER_DELAY, 0.1 s): short enough
-// not to feel slow. Once open, the window follows the pointer from cell to
+// On trial at 150 ms, against the sidebar's 0.1 s (sidebar/mod.rs HOVER_DELAY)
+// that the plan names. Once open, the window follows the pointer from cell to
 // cell at once, within TOOLTIP_GRACE of the last one closing.
-const HOVER_DELAY = 100, TOOLTIP_GRACE = 200;
+const HOVER_DELAY = 150, TOOLTIP_GRACE = 200;
 let hoverTimer = null, hoverEndedAt = -Infinity;
 const sameCell = (a, b) => !!a && !!b && a.row === b.row && a.what === b.what && a.slot === b.slot;
 // S.muted: the cell a click just unpinned, under the pointer still; it opens
