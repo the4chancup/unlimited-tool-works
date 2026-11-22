@@ -3796,10 +3796,10 @@ points there.
   widened (SE-GUI-69, 74, 82, 83, 85, 106; ST-REP-06, 09, 10; ST-UPD-01; ST-BAR-02;
   TC-REF-26), 4 rejected, and SE-GUI-82's new flag after its widening rejected too;
   `scripts/gates/citation_rulings.md`.
-- open (2026-11-22) — The code still says "paid cards" where the docs and drafts say
-  "non-free cards" (`49da6211`): the Save editor's findings and badge, the Ruleset editor's
-  Tiers column and summary, and the rules file's `paid` key. Brief `.tmp/lead/brief_nonfree.md`
-  (Opus, worktree `sk_nonfree`); its CHANGELOG line, under Other stuff, lands with the merge.
+- fixed (2026-11-23, merge `eeca7652`, Opus) — The code said "paid cards" where the docs and
+  drafts say "non-free cards": the findings, the Tiers column, the summary, the logic's `paid`
+  key and the code's names now say non-free, the logic's hash following (version 1 until
+  1.0.0), with its CHANGELOG line under Other stuff.
 - open (2026-11-22) — The Compiler's test teams lists pair ids with names the bundled list
   does not: `team_compiler/tests/common/mod.rs:18-19` and `src/testing.rs:277` hold `790 /dbg/`,
   `792 /egg/` and `793 /esg/`, where `crates/libs/teams_list/data/teams_list.txt` holds
