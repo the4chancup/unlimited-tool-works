@@ -133,11 +133,15 @@ other items run beside it. **Ahead of item 6:** the `pes14` branch's step 12, a 
        and offers Copy messages only on an export with a Warning or an Error (DECISIONS); the
        built window beside the draft found the Effect line weak, fixed (`4fb5d8ec`)
      - [ ] 1b-ii: the top box's pictures (the logo or referee marker, the portraits, the kit
-       texture) → verify: TC-GUI-31, 32. Brief `.tmp/lead/brief_grid_1b2.md`. An archive
-       export's pictures wait for the watcher-and-cache slice: reading one out of a 7z means
-       decompressing it whole
+       texture) → verify: TC-GUI-31, 32. Committed on `sk/grid1b2` (`c1806f24`, Opus),
+       reviewed; rework 1 (`.tmp/brief_grid_1b2r1.md` in its worktree, SWE-2): a box picture
+       never enlarged, as the draft draws it, one rule for the marker's name, citations. An
+       archive export's pictures wait for the watcher-and-cache slice: reading one out of a
+       7z means decompressing it whole
    - [ ] 1c: the toolbar's strip and its counts, the log's lines linked to cells, the log
-     collapsed when it would hide rows → verify: TC-GUI-15, 26, 27
+     collapsed when it would hide rows → verify: TC-GUI-15, 26, 27. It starts with a pure
+     move of `team_compiler`'s `view/mod.rs` tests (1,230 lines since 1b-ii) into
+     `view/tests.rs` and `view/tests/`, committed apart (`CONTRIBUTING.md` "Placement")
    - Then the kit cells' swatch (TC-GUI-10), the row actions, the ID cell's editing, the
      watcher and cache, Sizes and sorting.
      The watcher and cache's slice also owes TC-GUI-04's shallow archive check: 1a's check

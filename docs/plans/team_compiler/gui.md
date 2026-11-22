@@ -120,8 +120,9 @@ would drift apart.
   because a referee export's logo reaches no output while the marker is the emblem the
   referees wear in game. The pictures are the files the compile packs, taken from the export's
   listing when the check dropped the whole export, so a member still sees what it holds. An
-  archive export's boxes stay empty: reading a picture out of an archive means decompressing
-  it, which its shallow check ("Live validation") exists to avoid.
+  archive export's boxes stay empty until the check cache (below) keeps its pictures: reading
+  one out of a solid `.7z` means decompressing it whole, which the shallow check exists to
+  avoid.
   - **Hover** opens it on the cell under the pointer, and leaving the cell closes it. It opens
     after 0.15 s, and then follows the pointer from cell to cell with no delay. That is
     longer than the sidebar's 0.1 s, so a pointer crossing the grid does not flash a window
