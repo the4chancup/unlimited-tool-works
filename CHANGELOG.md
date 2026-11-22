@@ -6,9 +6,9 @@
 
 - **Export upgrader and Compiler**: the legacy mode that kept an old export's boots and gloves
   IDs is gone, with the upgrader's `--legacy-ids` option, which 0.0.2's `quick_upgrade.bat`
-  passed. The Compiler now warns about the `legacy_ids.toml` that mode wrote into upgraded
-  exports, ignores it, and gives their boots and gloves its own IDs: delete the file from your
-  exports.
+  passed. The Compiler no longer reads the `legacy_ids.toml` that mode wrote into upgraded
+  exports: it warns about the file as about any unknown one, and gives their boots and gloves
+  its own IDs. Delete the file from your exports.
 
 ### Useful
 
