@@ -470,6 +470,7 @@ fn apply_team(
     next: &mut TeamEntry,
     notes: &mut Vec<ImportNote>,
 ) -> Result<(), TeamTomlError> {
+    let mut renamed = false;
     if let Some(name) = &section.name {
         check_text(
             "team.name",
@@ -477,6 +478,7 @@ fn apply_team(
             text_max(schema.texts, TeamText::Name),
             false,
         )?;
+        renamed = next.name != *name;
         next.name = name.clone();
     }
     if let Some(short_name) = &section.short_name {
@@ -548,7 +550,11 @@ fn apply_team(
         next.kit_slots = Some(kit_slots);
     }
     let flags = &section.edit_flags;
-    if let Some(name) = flags.name
+    // A `name` key is the name to show, so the file's own `name` flag,
+    // which describes the save it came from, applies only when `name`
+    // is left out.
+    if section.name.is_none()
+        && let Some(name) = flags.name
         && gated(
             notes,
             foreign,
@@ -557,6 +563,11 @@ fn apply_team(
         )?
     {
         next.edit_flags.name = name;
+    }
+    // The game shows a team's stored name only with the name flag set,
+    // so a `name` that renames the team sets it.
+    if renamed && schema.has(TeamField::EditedName) {
+        next.edit_flags.name = true;
     }
     if let Some(short_name) = flags.short_name
         && gated(
@@ -672,6 +683,10 @@ mod tests {
                     .expect("the first twelve of twenty-one");
                 expected.tactics.bench_order[12..]
                     .copy_from_slice(&bench_fill(&expected.tactics.starting_eleven, &bench));
+                // The blank slate's empty name differs from every
+                // team's, so the document's `name` renames it and the
+                // name flag comes out set where the version stores one.
+                expected.edit_flags.name = schema_for(version).team.has(TeamField::EditedName);
                 assert_eq!(&target, &expected, "{version:?} team {}", team.id);
             }
         }
@@ -1600,5 +1615,88 @@ mod tests {
             ),
             "{err:?}"
         );
+    }
+
+    /// The game shows a team's stored name only with the flag set, so an
+    /// imported `name` that renames the team sets it whatever the file's
+    /// `name` flag carried:
+    /// the flag described the save the file came from, where the name was
+    /// the slot's own label.
+    #[test]
+    fn an_imported_name_sets_the_name_flag() {
+        let (file, _) = open(PesVersion::Pes21);
+        let team = file.team(701).expect("team 701");
+        assert!(!team.edit_flags.name, "premise: team 701's flag is clear");
+        let doc = TeamToml::parse("[team]\nname = \"/gd/\"\n\n[team.edit_flags]\nname = false\n")
+            .expect("parses");
+        let mut target = team.clone();
+        let notes = doc
+            .apply(PesVersion::Pes21, &mut target, &mut [])
+            .expect("applies");
+        assert!(notes.is_empty(), "{notes:?}");
+        assert_eq!(target.name, "/gd/");
+        assert!(target.edit_flags.name);
+    }
+
+    /// The same holds without an `[team.edit_flags]` table: a `name` key
+    /// alone sets the flag.
+    #[test]
+    fn a_name_key_alone_sets_the_name_flag() {
+        let (file, _) = open(PesVersion::Pes21);
+        let team = file.team(701).expect("team 701");
+        assert!(!team.edit_flags.name, "premise: team 701's flag is clear");
+        let doc = TeamToml::parse("[team]\nname = \"/gd/\"\n").expect("parses");
+        let mut target = team.clone();
+        let notes = doc
+            .apply(PesVersion::Pes21, &mut target, &mut [])
+            .expect("applies");
+        assert!(notes.is_empty(), "{notes:?}");
+        assert_eq!(target.name, "/gd/");
+        assert!(target.edit_flags.name);
+    }
+
+    /// Without a `name` key the flag still writes what the file's
+    /// `[team.edit_flags] name` says: `false` onto a team whose flag is
+    /// set clears it.
+    #[test]
+    fn a_name_flag_without_a_name_key_writes_its_value() {
+        let (file, _) = open(PesVersion::Pes21);
+        let mut target = file.team(701).expect("team 701").clone();
+        target.edit_flags.name = true;
+        let doc = TeamToml::parse("[team.edit_flags]\nname = false\n").expect("parses");
+        let notes = doc
+            .apply(PesVersion::Pes21, &mut target, &mut [])
+            .expect("applies");
+        assert!(notes.is_empty(), "{notes:?}");
+        assert!(!target.edit_flags.name);
+    }
+
+    /// A `name` equal to the team's renames nothing, so the flag is left
+    /// alone: a `false` the file carries does not clear a set one, nor a
+    /// `true` set a clear one.
+    #[test]
+    fn a_name_equal_to_the_teams_leaves_the_flag_alone() {
+        let (file, _) = open(PesVersion::Pes21);
+        let team = file.team(701).expect("team 701");
+        assert_eq!(
+            team.name, "/3/",
+            "premise: the document's name is the team's"
+        );
+        for (held, file_flag, expected) in [(true, false, true), (false, true, false)] {
+            let mut target = team.clone();
+            target.edit_flags.name = held;
+            let doc = TeamToml::parse(&format!(
+                "[team]\nname = \"/3/\"\n\n[team.edit_flags]\nname = {file_flag}\n"
+            ))
+            .expect("parses");
+            let notes = doc
+                .apply(PesVersion::Pes21, &mut target, &mut [])
+                .expect("applies");
+            assert!(notes.is_empty(), "{notes:?}");
+            assert_eq!(
+                target.edit_flags.name, expected,
+                "held {held}, file {file_flag}"
+            );
+        }
     }
 }

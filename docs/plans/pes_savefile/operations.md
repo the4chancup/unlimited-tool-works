@@ -60,6 +60,10 @@ clear the flag the first one set. It is the team's twin of "a written name sets 
 edited-player flag" (`spec/pes_savefile/operations.md`, the aesthetics patch). On PES 2015 to
 2021 it follows from that rule and from PES 2014, not from a check in game yet.
 
+A team imported with 0.0.2, which wrote the file's flag, may keep it clear: importing the same
+file again renames nothing, so the flag stays as it is. Renaming the team once, in the game or
+by importing a file whose name differs, sets it.
+
 **Roster order.** Export from a team that breaks 4cc's roster order (slot `NN` holding a player
 other than `team id × 100 + NN`: `roster_order_breaks`, `plans/aatf_rules.md` "The host")
 writes the slot as the save holds it, with a note on that slot's header line naming the player
