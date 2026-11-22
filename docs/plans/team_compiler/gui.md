@@ -124,6 +124,56 @@ it, one cell per player at a fixed position by number, plus one cell per kit:
 - One row per team bounds the row count (~50), so no virtualization is needed; direct egui rendering
   suffices.
 
+### Sizes and sorting
+
+The legend's row ends, at its right, with what the cells show, the unit and the rows' order,
+whether the legend is folded or not:
+
+- **Status | Sizes.** Status is the cell states above. Sizes colours each cell by its size,
+  green to red, so an organizer sees which export or player is heavy before the DLC grows.
+  A cell not read yet keeps the unchecked colour, and in Sizes the warning and error rings and
+  the dashed blocked look are not drawn: red means large and nothing else, and Status is a
+  click away.
+- **What a cell measures.** A player cell measures his folder plus the shared `Faces/`,
+  `Boots/` and `Gloves/` folders he links to, since the compile copies those into his files:
+  a player split over several folders shows his whole weight. A kit cell measures its folder
+  plus what it takes from `all/`, the portraits cell its portraits, and a team label its whole
+  export.
+- **The scale.** Each kind has three fixed thresholds: green up to the first, amber at the
+  second, red from the third, blended on a log scale between. They are players 12, 20 and
+  32 MB, kits 6, 10 and 16 MB, portraits 1, 2 and 4 MB, and exports 250, 350 and 500 MB.
+  In Sizes the legend shows them in place of the states.
+
+  The thresholds come from a census of the exports on the maintainer's PC (2026-11-22): 828
+  player totals in 36 upgraded VGL exports had a median of 7.8 MB, p75 12.4 and p90 18.9; their
+  164 kits clustered at 5.3 MB; 117 exports had p75 235 MB and p90 346 MB. The red ends
+  are the 4cc rules page's own (a model folder over 32 MB, an export over 500 MB, "unless it
+  is absolutely required"). Fixed thresholds, not a scale relative to the folder's largest,
+  because a relative scale paints someone red in a cup where every export is fine.
+- **Disk | VRAM**, shown in Sizes. Disk is the files' size. VRAM is what the textures and
+  models take in the game's video memory, read from headers at check time with no compile:
+  - a DDS takes its payload;
+  - a WESYS-wrapped file takes its unpacked length (the wrapper's header holds it);
+  - a PNG takes the DDS the compile makes of it, with its mips: DXT1 when its header has no
+    alpha (no alpha channel, no `tRNS`) and it is not a normal map, else DXT5 until a compile;
+  - any other file takes its size on disk.
+
+  The compile, without BC7, picks DXT1 for a PNG whose pixels are all opaque (`dds_convert`'s
+  codec choice), which only a full decode tells, too slow for a check. So before a compile
+  such a PNG counts as DXT5, the most it can take, and after one its real size is shown. An
+  archive export, read shallowly, has no VRAM size until a compile. One set of thresholds
+  serves both units, because today's exports ship DDS textures, whose VRAM size equals their
+  payload on disk (the census: VRAM over disk 1.00 to 1.01 on 75 exports).
+- **Sort**, in either colouring: Folder order, Errors first (an Error, then a Warning, then
+  the rest), Largest export and Largest player (the export with the heaviest player first),
+  in the unit chosen. Rows equal under the sort keep the folder's order.
+- **The window in Sizes** adds the cell's size on disk and in VRAM (noting the PNGs counted
+  as DXT5 until a compile), the shared folders a player's total takes in, and the five
+  largest files. A label's window lists the five largest players instead, since that is what
+  to shrink first.
+- **The strip in Sizes** adds the exports' total in the chosen unit (`2.5 GB on disk`),
+  `at least` while any export is not measured.
+
 ### Row actions
 
 What a member does about a row, from the row itself. Every action that writes into the

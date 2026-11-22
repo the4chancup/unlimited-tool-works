@@ -279,6 +279,24 @@ TC-GUI-27  GIVEN more export rows than fit above the open log at the window's si
            WHEN the app starts on the Compiler's view
            THEN the log starts collapsed; GIVEN rows that all fit above it THEN the log starts
                 open
+TC-GUI-28  GIVEN a player folder of 9 MB, one of 40 MB, and a player of 25 MB whose own folder
+                is 10 MB and who links a 15 MB shared Boots folder
+           WHEN Sizes is picked
+           THEN their cells are green, red and between amber and red, a cell not read yet keeps
+                the unchecked colour, no cell shows a warning or error ring, and the legend
+                shows each kind's three thresholds; GIVEN the 25 MB player's window THEN it gives
+                25 MB on disk and names the Boots folder it takes in
+TC-GUI-29  GIVEN an export holding a 1024 × 1024 PNG with an alpha channel and a DDS of 2 MB
+           WHEN VRAM is picked before a compile
+           THEN the PNG counts as DXT5 with its mips (about 1.3 MB) and the DDS as its payload,
+                and the window says the PNG is counted as DXT5 until a compile; GIVEN the PNG's
+                pixels all opaque and a compile run THEN it counts as DXT1 (about 0.7 MB);
+                GIVEN an archive export before a compile THEN its cells are not measured
+TC-GUI-30  GIVEN three exports of 120, 480 and 300 MB, the 120 MB one holding the heaviest
+                player and the 300 MB one an Error
+           WHEN Largest export, Largest player and Errors first are picked in turn
+           THEN the rows read 480, 300, 120; then 120 first; then 300 first, the others in the
+                folder's order; and the same sorts work in Status
 TC-GUI-13  GIVEN a run in flight over two exports
            WHEN Cancel is clicked
            THEN the run ends after the task or texture in progress, no CPK is written or

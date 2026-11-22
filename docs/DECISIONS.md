@@ -19376,3 +19376,19 @@ Why: the two views share one widget, so an upgrade's result reads in the next to
 it was shown in this one.
 Plan: plans/export_upgrader.md (the view: the detail window, a log line, the toolbar);
 EU-GUI-11, EU-GUI-12.
+
+## 2026-11-22 — compiler view — a Sizes colouring, VRAM sizes and sorting
+Decision (the maintainer): a Status | Sizes choice colours the cells green to red by size, a
+player's size including the shared folders he links to; a VRAM unit counts textures as the
+game holds them, a PNG as DXT5 until a compile shows its real codec (DXT1 when opaque, without
+BC7); the rows sort by largest export or largest player, and the sort works in Status too.
+Decision (the lead): fixed thresholds per kind (players 12/20/32 MB, kits 6/10/16, portraits
+1/2/4, exports 250/350/500), set from a census of the exports on the maintainer's PC and the 4cc
+rules page's 32 MB and 500 MB; one set for both units; a PNG whose header has no alpha counts
+as DXT1 before a compile; Errors first as a fourth sort; in Sizes no status rings are drawn.
+Why: the rules page's limits are not binding and members exceed them unseen; fixed thresholds
+say whether a cup is heavy, where a relative scale always paints someone red. Today's exports
+are DDS, whose VRAM equals their payload on disk (VRAM over disk 1.00 to 1.01 on 75 exports),
+so one scale fits both.
+Plan: plans/team_compiler/gui.md "Sizes and sorting"; plans/team_compiler/README.md TC-GUI-28,
+TC-GUI-29, TC-GUI-30.

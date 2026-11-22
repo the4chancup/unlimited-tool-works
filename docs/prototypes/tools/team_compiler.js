@@ -40,7 +40,7 @@ const TEAM_COMPILER_CSS = `
      centred; the grid takes
      the extra height, the log panel the width (plans/core/gui.md "A window larger than the
      default"). */
-  .tc-view .tc-legend, .tc-view .tc-top, .tc-view .tc-bar { width: 100%; box-sizing: border-box;
+  .tc-view .tc-legend-bar, .tc-view .tc-top, .tc-view .tc-bar { width: 100%; box-sizing: border-box;
     max-width: calc(var(--calib-w) + 16px + var(--sbw, 0px)); margin-left: auto; margin-right: auto; }
   /* Every margin of the grid is 8: the panel's left and top, each side of a
      vertical line, between the players, the portraits and the kits. The
@@ -185,6 +185,15 @@ const TEAM_COMPILER_CSS = `
   .tc-legend span.k { display: inline-flex; align-items: center; gap: 4px; }
   .tc-legend .tc-cell { width: 14px; height: 14px; cursor: default; }
   .tc-legend .two { line-height: 1.25; }
+  /* The legend's row: the legend, then the colouring, the unit and the sort at
+     the right end. */
+  .tc-legend-bar { display: flex; align-items: center; gap: 16px; }
+  .tc-modes { display: inline-flex; align-items: center; gap: 2px; margin-left: auto; white-space: nowrap; }
+  .tc-modes .sep-v { width: 1px; height: 14px; background: var(--stroke); margin: 0 6px; }
+  .tc-modes select { margin-left: 4px; }
+  /* The window's sizes, in the Sizes colouring. */
+  .tc-detail .sizes { margin: 6px 0; }
+  .tc-detail .sizes .file { display: flex; justify-content: space-between; gap: 8px; }
 `;
 
 // ---- Cell states (gui.md "Cell states"): the check-phase and compile-outcome colours ----
@@ -336,7 +345,11 @@ const sweepEl = cell => h("span", { class: "tc-sweep",
 // The phase of a compiling cell's motion, 0 to 1, counted from when the cell
 // started, so a short task still shows the motion's start.
 const busyPhase = (cell, periodMs) => ((performance.now() - cell.busyAt) % periodMs) / periodMs;
+// colour: what the cells show, "status" or "sizes"; measure: on "disk" or in
+// "vram"; sort: the rows' order (SORTS); compiled: a compile has run, so VRAM
+// sizes are exact.
 const S = { rows: sampleRows(), mode: "normal", column: false, unticked: {}, pin: null, hover: null,
+  colour: "status", measure: "disk", sort: "name", compiled: false,
   highlight: null, run: null, last: null, finished: false, ids: {}, logScroll: 0,
   // Where the member left the detail window (null until it first opens), and
   // the legend folded away: both kept across launches (localStorage here).
@@ -381,9 +394,118 @@ function labelOut(r) {
   if (states.some(s => ["doneErr", "error", "partialError"].includes(s))) return "doneErr";
   return states.some(s => ["doneWarn", "warning"].includes(s)) ? "doneWarn" : "done";
 }
+// ---- Sizes (the Sizes colouring) ----
+// The thresholds, MB, per kind: green up to the first, amber at the second,
+// red from the third, blended on a log scale between. sample: provisional,
+// from the 2026-11-22 census of the exports on the maintainer's PC (players:
+// median 7.8, p75 12.4, p90 18.9; kits: 5.3 typical; exports: p75 235, p90
+// 346) and the 4cc rules page's 32 MB per model folder and 500 MB per export.
+const SIZE_GUIDE = { player: [12, 20, 32], kit: [6, 10, 16], portraits: [1, 2, 4], export: [250, 350, 500] };
+const SIZE_KINDS = [["player", "Player"], ["kit", "Kit"], ["export", "Export"]];
+const SIZE_GREEN = "#3fb950", SIZE_AMBER = "#d29922", SIZE_RED = "#f85149";
+const mix = (a, b, t) => "#" + [1, 3, 5].map(i => Math.round(parseInt(a.slice(i, i + 2), 16) * (1 - t)
+  + parseInt(b.slice(i, i + 2), 16) * t).toString(16).padStart(2, "0")).join("");
+function sizeFill(kind, mb) {
+  const [g, a, r] = SIZE_GUIDE[kind];
+  if (mb <= g) return SIZE_GREEN;
+  if (mb >= r) return SIZE_RED;
+  return mb < a ? mix(SIZE_GREEN, SIZE_AMBER, Math.log(mb / g) / Math.log(a / g))
+    : mix(SIZE_AMBER, SIZE_RED, Math.log(mb / a) / Math.log(r / a));
+}
+const fmtMB = mb => mb >= 1024 ? (mb / 1024).toFixed(1) + " GB" : (mb < 10 ? mb.toFixed(1) : Math.round(mb)) + " MB";
+// The sample sizes, MB: a cell's on disk, in VRAM after a compile, and in VRAM
+// before one (its PNGs counted as DXT5), the folders a player links to, and
+// its files. Seeded per row, with a few set by hand to show the scale. One
+// set of thresholds serves both units: a DDS takes the same in each.
+const SIZE_SET = { "dbg player 14": 38.6, "a player 07": 26.4, "adv player 05": 54.1,
+  "egg player 10": 21.5, "civ4xg kit K1": 19.8, "dbg kit K4": 11.2 };
+const SIZE_LINKED = { "adv player 05": [["Boots/Kaiju", 22.3]], "a player 07": [["Faces/Shared Hair", 6.1]] };
+const ROOT_ONLY = { asp: 96, b: 182 };
+const FILES = { player: [["face.dds", .34], ["hair.dds", .26], ["face_high.fmdl", .18], ["hair.fmdl", .12], ["portrait.dds", .04]],
+  kit: [["kit.dds", .7], ["kit_nrm.dds", .27], ["config.toml", .002]], portraits: [["05.dds", .06], ["11.dds", .05]] };
+function seeded(text) {
+  let s = [...text].reduce((t, c) => (t * 31 + c.charCodeAt(0)) >>> 0, 7);
+  return () => (s = (s * 1103515245 + 12345) >>> 0) / 2 ** 32;
+}
+function addSizes(rows) {
+  for (const r of rows) {
+    const rnd = seeded(r.key);
+    const fill = (cell, kind, slot, base, spread) => {
+      const id = `${r.key} ${kind} ${slot}`;
+      const disk = SIZE_SET[id] ?? +(base * Math.exp((rnd() - 0.5) * spread)).toFixed(1);
+      // A DDS takes in VRAM what it holds on disk (the 2026-11-22 census: VRAM
+      // over disk 1.00 to 1.01 on 75 real exports, all DDS); a PNG, a few
+      // samples here, takes more as the DDS the compile makes of it.
+      const pngs = rnd() < 0.08 ? 1 : 0, vram = +(disk * (pngs ? 1.6 : 1)).toFixed(1);
+      cell.kind = kind;
+      cell.size = { disk, vram, vramEst: pngs ? +(vram * 1.25).toFixed(1) : vram, pngs, linked: SIZE_LINKED[id] || [],
+        files: (FILES[kind] || []).map(([name, share], i) =>
+          [i === 0 && pngs ? name.replace(".dds", ".png") : name, +(disk * share).toFixed(2)]) };
+    };
+    for (const [n, c] of Object.entries(r.players)) fill(c, "player", pad(n), 7.8, 1.6);
+    for (const [k, c] of Object.entries(r.kits)) fill(c, "kit", k, k === "GK" ? 2.7 : 5.3, 0.2);
+    if (r.portraits) fill(r.portraits, "portraits", "", 0.4, 0.5);
+  }
+  return rows;
+}
+// What a cell measures in the chosen unit: null while it is not measured (not
+// read yet, or VRAM inside an archive before a compile). VRAM is exact after a
+// compile, and before one counts every PNG as DXT5.
+function sizeOf(r, cell, measure = S.measure) {
+  if (cell === r.label) {
+    if (ROOT_ONLY[r.key]) return measure === "disk" ? ROOT_ONLY[r.key] : null;
+    const parts = cellsOf(r).map(c => sizeOf(r, c, measure));
+    return parts.some(p => p === null) ? null : parts.reduce((t, p) => t + p, 1.2);
+  }
+  if (!cell.size || ["unchecked", "checking"].includes(cell.status)) return null;
+  if (measure === "disk") return cell.size.disk;
+  if (r.archive && !S.compiled) return null;
+  return S.compiled ? cell.size.vram : cell.size.vramEst;
+}
+const kindOf = (r, cell) => cell === r.label ? "export" : cell.kind;
+function sizeLook(r, cell) {
+  const mb = sizeOf(r, cell);
+  if (mb === null) return { fill: COLOURS.unchecked, text: labelColour(COLOURS.unchecked), outline: null };
+  const fill = sizeFill(kindOf(r, cell), mb);
+  return { fill, text: labelColour(fill), outline: null };
+}
+// The rows in the chosen order; the grid draws them so, the folder's order
+// kept among equals.
+const worst = r => { const s = [r.label, ...cellsOf(r)].map(c => shown(r, c));
+  return s.some(x => ["error", "partialError", "doneErr"].includes(x)) ? 0 : s.some(x => ["warning", "doneWarn"].includes(x)) ? 1 : 2; };
+const largestPlayer = r => Math.max(0, ...Object.values(r.players).map(c => sizeOf(r, c) ?? 0));
+const SORTS = { name: null, errors: r => worst(r), export: r => -(sizeOf(r, r.label) ?? -1), player: r => -largestPlayer(r) };
+const SORT_NAMES = [["name", "Folder order"], ["errors", "Errors first"], ["export", "Largest export"], ["player", "Largest player"]];
+const orderedRows = () => SORTS[S.sort] ? S.rows.map((r, i) => [SORTS[S.sort](r), i, r])
+  .sort((a, b) => a[0] - b[0] || a[1] - b[1]).map(x => x[2]) : S.rows;
+addSizes(S.rows);
+
+// The window's sizes, in the Sizes colouring: on disk and in VRAM, what a
+// player's total takes from the shared folders he links to, and the largest
+// files (for a label, the largest players), so the member sees what to shrink.
+function sizesBlock(r, cell) {
+  const disk = sizeOf(r, cell, "disk"), vram = sizeOf(r, cell, "vram");
+  if (disk === null) return h("div", { class: "sizes weak" }, "Not measured yet");
+  const pngs = cell === r.label ? cellsOf(r).reduce((t, c) => t + (c.size ? c.size.pngs : 0), 0) : cell.size.pngs;
+  const vramText = vram === null ? "after a compile (an archive is read shallowly until then)"
+    : fmtMB(vram) + (!S.compiled && pngs ? ` (${pngs === 1 ? "a PNG" : pngs + " PNGs"} counted as DXT5 until a compile)` : "");
+  const file = (name, mb) => h("div", { class: "file" }, h("span", { class: "mono" }, name), h("span", {}, fmtMB(mb)));
+  const largest = cell === r.label
+    ? Object.entries(r.players).map(([n, c]) => [`${pad(n)} - ${c.folder.replace(/^\d+ - /, "")}`, sizeOf(r, c, "disk")])
+      .filter(([, mb]) => mb !== null).sort((a, b) => b[1] - a[1]).slice(0, 5)
+    : cell.size.files;
+  return h("div", { class: "sizes" },
+    h("div", {}, "On disk: " + fmtMB(disk)), h("div", {}, "In VRAM: " + vramText),
+    cell.size && cell.size.linked.length ? cell.size.linked.map(([folder, mb]) =>
+      h("div", { class: "weak" }, `Includes ${folder}, ${fmtMB(mb)}, a shared folder he links to`)) : null,
+    largest.length ? [h("div", { class: "weak", style: "margin-top:4px" }, cell === r.label ? "Largest players, on disk" : "Largest files, on disk"),
+      ...largest.map(([name, mb]) => file(name, mb))] : null);
+}
+
 // A cell's or a label's fill and outline. An off row is flat grey.
 function look(r, cell) {
   if (rowOff(r)) return { fill: OFF, text: "#6e6e6e", outline: null };
+  if (S.colour === "sizes") return sizeLook(r, cell);
   const state = shown(r, cell);
   const fill = OUTLINES[state] ? COLOURS[r.archive ? "partialOk" : "fullOk"] : COLOURS[state] || COLOURS.unchecked;
   return { fill, text: labelColour(fill), outline: OUTLINES[state] || null };
@@ -400,7 +522,7 @@ function cellEl(r, cell, text, scope, what) {
   // two flat halves stand in for the icon's pattern, which color_tools draws).
   const swatch = cell.swatch && !rowOff(r) && !["unchecked", "checking", "blocked"].includes(state);
   return [h("div", { class: "tc-cell" + (what === "portraits" ? " wide" : "") + (cell.busy ? " busy" : "")
-      + (state === "blocked" && !rowOff(r) ? " blocked" : "") + (l.outline ? " ol" : "") + (swatch ? " kit" : "")
+      + (state === "blocked" && !rowOff(r) && S.colour !== "sizes" ? " blocked" : "") + (l.outline ? " ol" : "") + (swatch ? " kit" : "")
       + (S.highlight === scope ? " hl" : ""),
     style: lookStyle(l),
     "data-scope": scope, ...detailEvents(r, at) },
@@ -593,7 +715,7 @@ function grid() {
       h("p", { class: "mono" }, EXE_FOLDER + "\\exports"),
       h("p", {}, "Drop an export here: a folder, a .zip or a .7z."),
       button("Open exports folder", () => openFolder("")));
-  return h("table", { class: "tc-grid", "data-panel": "grid" }, titleRow(), S.rows.flatMap(gridRow),
+  return h("table", { class: "tc-grid", "data-panel": "grid" }, titleRow(), orderedRows().flatMap(gridRow),
     h("tr", { class: "fill" }, h("td", { colspan: String(S.column ? 3 : 2) }), vline(),
       h("td", { colspan: String(SLOTS + 3 + KIT_SLOTS.length) }), vline()));
 }
@@ -623,7 +745,21 @@ function legend() {
   // down to bring it back. The title does what the chevron does.
   const title = h("span", { class: "both name", title: tip, style: "cursor:pointer", onclick: toggle },
     button(S.legendShut ? "▸" : "▾", null, { frame0: true }), "Legend");
-  if (S.legendShut) return h("div", { class: "tc-legend shut top weak", "data-panel": "legend" }, title);
+  // At the row's right end, folded or not: what the cells show, in what unit,
+  // and the rows' order (the Export upgrader's Grid | Files stands there too).
+  const sizes = S.colour === "sizes";
+  const modes = h("span", { class: "tc-modes", "data-panel": "colouring" },
+    selectable("Status", !sizes, () => { S.colour = "status"; }, "Each cell's check and compile state"),
+    selectable("Sizes", sizes, () => { S.colour = "sizes"; }, "Each cell's size against the size guide, green to red"),
+    sizes ? h("span", { class: "sep-v" }) : null,
+    sizes ? selectable("Disk", S.measure === "disk", () => { S.measure = "disk"; }, "The files' size on disk") : null,
+    sizes ? selectable("VRAM", S.measure === "vram", () => { S.measure = "vram"; },
+      "The textures' and models' size in the game's video memory: exact after a compile; before one, a PNG counts as DXT5") : null,
+    h("span", { class: "sep-v" }), h("span", {}, "Sort"),
+    combo(SORT_NAMES, S.sort, v => { S.sort = v; }, { title: "The order of the rows" }));
+  const bar = (...kids) => h("div", { class: "tc-legend-bar top weak", "data-panel": "legend" }, ...kids, modes);
+  if (S.legendShut) return bar(h("div", { class: "tc-legend shut" }, title));
+  if (sizes) return bar(h("div", { class: "tc-legend" }, title, sizeLegend()));
   const sample = { key: "", label: {} };
   const entry = (k, alone) => {
     const l = k === "blocked" ? { fill: "transparent", text: "", outline: null } : look(sample, { status: k });
@@ -634,8 +770,17 @@ function legend() {
       k === "partialOk" ? h("span", { class: "two" }, h("div", {}, "Shallow check done"), h("div", {}, "(archive)"))
         : STATE_NAMES[k]);
   };
-  return h("div", { class: "tc-legend top weak", "data-panel": "legend" }, title,
-    LEGEND.flatMap(col => col.map(k => entry(k, col.length === 1))));
+  return bar(h("div", { class: "tc-legend" }, title, LEGEND.flatMap(col => col.map(k => entry(k, col.length === 1)))));
+}
+// The Sizes legend: per kind, its name over its three thresholds, then the
+// colour of a cell not measured yet.
+function sizeLegend() {
+  const sw = fill => h("span", { class: "tc-cell", style: `background:${fill}` });
+  return [...SIZE_KINDS.flatMap(([kind, name]) => {
+    const [g, a, r] = SIZE_GUIDE[kind];
+    return [h("span", { class: "k" }, name),
+      h("span", { class: "k" }, sw(SIZE_GREEN), `${g}`, sw(SIZE_AMBER), `${a}`, sw(SIZE_RED), `${r} MB`)];
+  }), h("span", { class: "k both" }, sw(COLOURS.unchecked), "Not measured yet")];
 }
 
 // ---- The detail window: hover shows a cell, a click pins it ----
@@ -807,6 +952,7 @@ function detailPanel() {
       h("div", { class: "mono" }, where),
       h("div", { class: "weak" }, rowOff(r) ? "Off: not compiled" : STATE_NAMES[shown(r, cell)]),
       cellNotes(r, cell, at.what).map(n => h("div", { class: "weak" }, n)),
+      S.colour === "sizes" ? sizesBlock(r, cell) : null,
       cell.codes.length ? sorted(cell.codes).map(code => {
         const row_ = catalog(code) || {};
         const sev = severity(code);
@@ -855,6 +1001,12 @@ function summary() {
     filterLink(count(having(["error", "partialError"]), "with errors"), "errors", "Show only the errors in the log"),
     filterLink(count(having(["warning"]), "with warnings"), "warnings", "Show only the warnings and errors in the log")]
     .filter(Boolean);
+  // In the Sizes colouring, the exports' total in the chosen unit.
+  if (S.colour === "sizes") {
+    const mbs = S.rows.filter(r => !rowOff(r)).map(r => sizeOf(r, r.label));
+    parts.push((mbs.some(mb => mb === null) ? "at least " : "") + fmtMB(mbs.reduce((t, mb) => t + (mb ?? 0), 0))
+      + (S.measure === "disk" ? " on disk" : " in VRAM"));
+  }
   return parts.flatMap((p, i) => i ? [" · ", p] : [p]);
 }
 function toolbar() {
@@ -985,6 +1137,7 @@ function endRun() {
   S.run = null;
   S.last = `${MODES[S.mode]} finished in ${mmss(run.elapsed)} · ${run.files} files written (${Math.round(run.mb)} MB)`;
   S.finished = true;
+  S.compiled = true;
   appendLog([{ severity: "Info", code: null, scope: null, text: `Info - Compiled ${run.rows} exports` }], L);
   publishNotice(`Compiled ${run.rows} exports`, { label: "Open output", run: openOutputStub }, "success");
   // Success is a run with no export done with errors: with one, the window
@@ -1148,8 +1301,8 @@ function draftControls() {
       cb("The data folder is read-only", D.dataReadOnly, v => D.dataReadOnly = v)),
     h("span", { title: "gui.md \"Row actions\", the empty grid" },
       cb("The exports folder is empty", D.empty, v => D.empty = v)),
-    button("Reset the sample rows", () => { S.rows = sampleRows(); S.pin = null; S.hover = null; S.unticked = {};
-      S.ids = {}; S.last = null; S.finished = false; L.log = []; seedLog(); render(); }),
+    button("Reset the sample rows", () => { S.rows = addSizes(sampleRows()); S.pin = null; S.hover = null; S.unticked = {};
+      S.ids = {}; S.last = null; S.finished = false; S.compiled = false; L.log = []; seedLog(); render(); }),
     h("span", { title: "gui.md \"Live validation\"" },
       button("Check every export again", () => liveCheck(S.rows.filter(r => !r.special)))),
     h("span", { title: "gui.md \"Row actions\", the empty grid: a drop works on a filled grid too" },
@@ -1192,6 +1345,9 @@ function linkKeys() {
   // A link opens the window pinned: a hover is no state a link can hold.
   if (S.pin) k.detail = S.pin.row + "." + S.pin.what + (S.pin.slot ? "." + S.pin.slot : "");
   if (S.finished && !S.run) k.run = "done";
+  if (S.colour !== "status") k.colour = S.colour;
+  if (S.measure !== "disk") k.measure = S.measure;
+  if (S.sort !== "name") k.sort = S.sort;
   return k;
 }
 const linkWarn = what => console.warn("compiler link: " + what);
@@ -1214,7 +1370,15 @@ function linkOpen(scr, keys) {
     }
     S.last = "Compile finished in 00:42 · 1184 files written (612 MB)";
     S.finished = true;
+    S.compiled = true;
   } else if (keys.run !== undefined) linkWarn("run=" + keys.run);
+  const pick = (key, field, allowed) => {
+    if (keys[key] === undefined) return;
+    if (allowed.includes(keys[key])) S[field] = keys[key]; else linkWarn(`${key}=${keys[key]}`);
+  };
+  pick("colour", "colour", ["status", "sizes"]);
+  pick("measure", "measure", ["disk", "vram"]);
+  pick("sort", "sort", Object.keys(SORTS));
 }
 
 registerTool({ id: "compiler", css: TEAM_COMPILER_CSS, draw: drawView,
@@ -1222,5 +1386,7 @@ registerTool({ id: "compiler", css: TEAM_COMPILER_CSS, draw: drawView,
   // The screens scripts/drafts/draft_shots.py captures, as the links this view writes.
   shots: ["compiler/main", "compiler/main?detail=a.label", "compiler/main?detail=adv.player.11",
     "compiler/main?run=done", "compiler/main?mode=sideload&column=1",
-    "compiler/main?empty=1", "compiler/main?dest=running"] });
+    "compiler/main?empty=1", "compiler/main?dest=running",
+    "compiler/main?colour=sizes", "compiler/main?detail=adv.player.05&colour=sizes&sort=player",
+    "compiler/main?detail=a.label&colour=sizes&measure=vram"] });
 })();

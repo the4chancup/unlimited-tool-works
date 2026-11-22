@@ -93,8 +93,11 @@ other items run beside it. **After the detour**, in this order:
    showing which of an export's components has an error or a warning and what it says;
    the row actions and the finish in later builds. The draft was looked at again on 2026-11-22:
    a cell's detail window now opens on hover and pins on a click, and long log lines wrap; a
-   log line acts for its cell (`plans/team_compiler/gui.md`). Next: the draft finalized with
-   the maintainer, then the first slice's brief.
+   log line acts for its cell (`plans/team_compiler/gui.md`). The maintainer stamped that
+   draft on 2026-11-22, and the Export upgrader's draft took the same window, log and counts.
+   Next: the Sizes colouring and sorting drafted and looked at with the maintainer (gui.md
+   "Sizes and sorting"), then the first slice's brief (grid, window, log); Sizes and sorting
+   come in a later slice.
    - Not urgent, a small slice of its own (SWE-2), after the view's or beside it: player
      numbering without the hyphen (`plans/aesthetics_export/player_folders.md`, the section of
      that name): `aesthetics_export`'s `conventions` (`folder_slot`, `folder_player_name`), the
