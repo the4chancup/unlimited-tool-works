@@ -26,6 +26,8 @@
   on PES 2017 to 2021 a player with no portrait is now the warning `portrait_missing`. In a
   `Midcup` export he is reported only when the game's installed files hold no portrait for
   him either.
+- **Export upgrader**: an export upgraded as `Full` with no logo in its `Logo/` folder is now
+  the error `logo_missing`, and nothing is written.
 
 ### Fixes
 
@@ -49,8 +51,6 @@
   highlight, in place of the bar at its left.
 - **Save editor**: a PES 2017 Texport now carries the 4cc clover as its thumbnail, in place of
   the game's own picture.
-- **Export upgrader**: an export upgraded as `Full` with no logo in its `Logo/` folder is now
-  the error `logo_missing`, and nothing is written.
 
 ## [0.0.2] - 2026-11-18
 
