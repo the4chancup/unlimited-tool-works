@@ -17,7 +17,7 @@ pub struct StripStyle {
     /// The "Gloves?" checkbox (line 54).
     pub gloves_checkbox: bool,
     /// The gloves ID (line 54).
-    pub gloves_id: u16,
+    pub gloves_id: u32,
     /// Skin color preset/custom (line 57).
     pub skin_color: SkinColor,
 }
