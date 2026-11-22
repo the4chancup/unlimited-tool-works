@@ -36,7 +36,7 @@ from a terminal in this folder instead. For quick_compile.bat:
 
 For quick_upgrade.bat, with the path of your PES savefile:
 
-    ./utw --log-file upgrade_log.txt export-upgrader upgrade --all old_exports --savefile <savefile> --legacy-ids -o exports
+    ./utw --log-file upgrade_log.txt export-upgrader upgrade --all old_exports --savefile <savefile> -o exports
 
 On Linux each run adds to the log file, so delete it first when you want a
 log of one run.

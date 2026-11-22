@@ -109,9 +109,9 @@ official save into each player's <code>settings.toml</code>, so the export carri
 too. The compile's patch writes them into the save, so the two always agree.</td></tr>
 <tr><td>Team colours and notes</td><td>In the Team Note text file.</td><td>In
 <code>colors.txt</code> and <code>notes.txt</code>.</td></tr>
-<tr><td>Boots and gloves IDs</td><td>The numbers in the folder names.</td><td>The same
-numbers, kept in <code>legacy_ids.toml</code>. The official DLC keeps the IDs each manager
-chose, so the test CPKs they build with Red still match the official save.</td></tr>
+<tr><td>Boots and gloves IDs</td><td>The numbers in the folder names.</td><td>The folder
+names carry no number: the compile gives each team's boots and gloves IDs from a block the
+team owns.</td></tr>
 <tr><td>The export's name</td><td><code>co Spring</code></td><td><code>co Full Spring</code>
 (<code>Midcup</code> instead of <code>Full</code> when the old name said "midcup" or
 "additions"). A Full export is the team's whole set; a Midcup one only adds to it.</td></tr>
@@ -121,7 +121,7 @@ chose, so the test CPKs they build with Red still match the official save.</td><
 <p>Each box on the left is part of an old export; the lines show where it ends up in the
 upgraded one. Point at a box to follow only its lines.</p>
 <figure>
-<svg class="map" id="map" viewBox="0 0 1000 690" role="img"
+<svg class="map" id="map" viewBox="0 0 1000 658" role="img"
   aria-label="Map from the parts of an old export to the parts of an upgraded one">
   <text class="head" x="20" y="30">Old export (AET format)</text>
   <text class="head" x="660" y="30">Upgraded export (UTW format)</text>
@@ -134,8 +134,6 @@ upgraded one. Point at a box to follow only its lines.</p>
     <path class="edge boots" data-a="L3" data-b="R1" d="M320 246 C470 246 510 176 660 176"/>
     <path class="edge boots" data-a="L2" data-b="R2" d="M320 194 C470 194 510 246 660 246"/>
     <path class="edge boots" data-a="L3" data-b="R2" d="M320 246 C470 246 510 256 660 256"/>
-    <path class="edge boots" data-a="L2" data-b="R8" d="M320 194 C470 194 510 574 660 574"/>
-    <path class="edge boots" data-a="L3" data-b="R8" d="M320 246 C470 246 510 586 660 586"/>
     <path class="edge kits" data-a="L4" data-b="R3" d="M320 298 C470 298 510 302 660 302"/>
     <path class="edge kits" data-a="L5" data-b="R3" d="M320 350 C470 350 510 312 660 312"/>
     <path class="edge plain info" data-a="L6" data-b="R3" d="M320 402 C470 402 510 322 660 322"/>
@@ -143,7 +141,7 @@ upgraded one. Point at a box to follow only its lines.</p>
     <path class="edge plain" data-a="L7" data-b="R5" d="M320 454 C470 454 510 424 660 424"/>
     <path class="edge plain" data-a="L8" data-b="R6" d="M320 506 C470 506 510 476 660 476"/>
     <path class="edge plain" data-a="L9" data-b="R7" d="M320 558 C470 558 510 528 660 528"/>
-    <path class="edge plain" data-a="L10" data-b="R9" d="M320 610 C470 610 510 642 660 642"/>
+    <path class="edge plain" data-a="L10" data-b="R9" d="M320 610 C470 610 510 580 660 580"/>
     <path class="edge plain info" data-a="S" data-b="R1" d="M570 60 C625 60 615 200 660 200"/>
     <path class="edge plain info" data-a="S" data-b="R2" d="M570 80 C625 80 615 266 660 266"/>
   </g>
@@ -213,13 +211,9 @@ upgraded one. Point at a box to follow only its lines.</p>
   <g class="node" id="R7"><rect class="box" x="660" y="506" width="320" height="44" rx="5"/>
     <text class="title" x="676" y="525">Common/, Collars/</text>
     <text class="sub" x="676" y="543">as they were</text></g>
-  <g class="node" id="R8"><rect class="box" x="660" y="558" width="320" height="44" rx="5"/>
-    <rect class="stripe boots" x="660" y="558" width="6" height="44" rx="2"/>
-    <text class="title" x="676" y="577">legacy_ids.toml</text>
-    <text class="sub" x="676" y="595">the boots and gloves IDs the manager used</text></g>
-  <g class="node" id="R9"><rect class="box dashed" x="660" y="620" width="320" height="44" rx="5"/>
-    <text class="title" x="676" y="639">Not carried</text>
-    <text class="sub" x="676" y="657">left out and listed in the window</text></g>
+  <g class="node" id="R9"><rect class="box dashed" x="660" y="558" width="320" height="44" rx="5"/>
+    <text class="title" x="676" y="577">Not carried</text>
+    <text class="sub" x="676" y="595">left out and listed in the window</text></g>
 </svg>
 <div class="legend">
   <span><i class="sw players"></i>players</span>
@@ -242,7 +236,7 @@ two text files.</figcaption>
 it: the save does. The upgrade looks every number up in the official save and sorts the
 boots and gloves accordingly.</p>
 <figure>
-<svg viewBox="0 0 1000 300" role="img"
+<svg viewBox="0 0 1000 280" role="img"
   aria-label="Example: two boots folders sorted by the players the save names">
   <text class="head" x="20" y="24">Old export</text>
   <text class="head" x="360" y="24">The official save says</text>
@@ -287,7 +281,6 @@ boots and gloves accordingly.</p>
   <rect class="stripe players" x="680" y="218" width="6" height="44" rx="2"/>
   <text class="title" x="696" y="237">Players/11 - Jessie/</text>
   <text class="sub" x="696" y="254">the Blades files themselves</text>
-  <text class="note" x="20" y="290">Both numbers, 915 and 920, are also written into legacy_ids.toml, so the compiled boots keep them.</text>
 </svg>
 <figcaption>Crocs is worn by two players, so it stays one shared folder and each wearer gets
 a link to it. Blades is worn by one player, so its files move into his folder. This is why

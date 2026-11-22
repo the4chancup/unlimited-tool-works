@@ -98,10 +98,6 @@ pub enum MetadataFile {
     IngameFaceToml,
     /// `readme.txt`: free text for humans.
     Readme,
-    /// `legacy_ids.toml`: the old export's boots and gloves IDs, which the
-    /// Export upgrader's legacy mode writes and the Compiler then packs
-    /// instead of its own; a team export's root file only.
-    LegacyIdsToml,
 }
 
 /// The shared folder a link file references: `Crocs.boots` → `Boots/Crocs/`.
@@ -136,7 +132,7 @@ const MARKERS: [(&str, Marker); 7] = [
 ];
 
 /// Known metadata names, whole-name case-insensitive.
-const METADATA: [(&str, MetadataFile); 10] = [
+const METADATA: [(&str, MetadataFile); 9] = [
     ("players.txt", MetadataFile::PlayersTxt),
     ("refs.txt", MetadataFile::RefsTxt),
     ("ref_lists.txt", MetadataFile::RefLists),
@@ -146,7 +142,6 @@ const METADATA: [(&str, MetadataFile); 10] = [
     ("settings.toml", MetadataFile::SettingsToml),
     ("ingame_face.toml", MetadataFile::IngameFaceToml),
     ("readme.txt", MetadataFile::Readme),
-    ("legacy_ids.toml", MetadataFile::LegacyIdsToml),
 ];
 
 /// Extensions, last `.`-separated segment: each with its `FileKind`.
@@ -358,7 +353,7 @@ mod tests {
 
     #[test]
     fn classify_covers_the_convention_table() {
-        let cases: [(&str, FileKind); 63] = [
+        let cases: [(&str, FileKind); 62] = [
             ("Crocs.boots", FileKind::SharedLink(SharedKind::Boots)),
             ("Crocs.BOOTS.txt", FileKind::SharedLink(SharedKind::Boots)),
             ("Longhair.face", FileKind::SharedLink(SharedKind::Face)),
@@ -394,10 +389,6 @@ mod tests {
             (
                 "ingame_face.toml",
                 FileKind::Metadata(MetadataFile::IngameFaceToml),
-            ),
-            (
-                "legacy_ids.toml",
-                FileKind::Metadata(MetadataFile::LegacyIdsToml),
             ),
             ("ingame_face.toml.txt", FileKind::Other),
             ("materials.toml", FileKind::MaterialsToml),

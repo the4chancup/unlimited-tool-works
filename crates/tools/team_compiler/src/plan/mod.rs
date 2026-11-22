@@ -5,21 +5,18 @@
 pub(crate) mod collars;
 pub(crate) mod ids;
 pub(crate) mod item_rows;
-pub(crate) mod legacy_blocks;
-pub(crate) mod legacy_ids;
 pub(crate) mod overrides;
 pub(crate) mod patch;
 pub(crate) mod roles;
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::iter;
-use std::ops::{Range, RangeInclusive};
+use std::ops::Range;
 
 use aesthetics_export::{
     ExportCoverage, ExportIdentity, FileDescriptor, FileKind, FpcDirective, KitFolder, KitsFolder,
-    LogoFiles, ModelFormat, PlayerFolder, PlayerIndex, PlayerSlot, ResolvedAestheticsExport,
-    SharedKind, SharedModelFolder, ValidatedAestheticsExport, ValidatedRoster, common_link_target,
-    kit_folder,
+    LogoFiles, ModelFormat, PlayerFolder, PlayerIndex, ResolvedAestheticsExport, SharedKind,
+    SharedModelFolder, ValidatedAestheticsExport, ValidatedRoster, common_link_target, kit_folder,
 };
 use kit_config::{KitSlot, TexturePresence};
 use pes_savefile::settings_toml::PlayerSettings;
@@ -35,18 +32,16 @@ use crate::messages::{Code, tool_message};
 use crate::mtl_search::mtl_for;
 use crate::paths::{PackageKey, REFEREE_TEAM_ID, TextureHome};
 use collars::export_collar;
-use ids::{PlannedModelIds, assigned_shared_ids, folder_ids, legacy_folder_id};
-use item_rows::{ItemTable, RowPlayer, export_rows};
-use legacy_blocks::{block_text, in_block};
-use legacy_ids::LegacyIds;
+use ids::{PlannedModelIds, assigned_shared_ids, folder_ids};
+use item_rows::{RowPlayer, export_rows};
 use roles::{
     FolderModels, ModelPackage, PlayerFile, below_common, combined_folders, common_file,
-    common_folder, common_skeleton, directory_stem, emits_kit_texture, file_stem,
-    has_effective_part, is_common_file, is_direct_root_folder_file, is_hand_split,
-    is_package_model, is_read_common_file, is_selected_common_model, leaves_out_kit_variants,
-    link_combines, link_feeds_own_package, link_name, linked_common_files, linked_folder,
-    native_format, other_format, package_of, part_source_models, player_file, role_files,
-    selected_common_model, shared_folders, shared_kind_of, skeleton_slot, texture_format,
+    common_folder, common_skeleton, directory_stem, emits_kit_texture, file_stem, is_common_file,
+    is_direct_root_folder_file, is_hand_split, is_package_model, is_read_common_file,
+    is_selected_common_model, leaves_out_kit_variants, link_combines, link_feeds_own_package,
+    link_name, linked_common_files, linked_folder, native_format, other_format, package_of,
+    part_source_models, player_file, role_files, selected_common_model, shared_folders,
+    shared_kind_of, skeleton_slot, texture_format,
 };
 
 /// What planning produced: the manifest and the findings planning itself made.
@@ -1027,15 +1022,6 @@ pub(crate) struct ExportToPlan {
     /// the patch holds no `[appearance]` for their players, an invalid file holding back
     /// the player's whole look.
     pub(crate) settings_refused: BTreeSet<ScopePath>,
-    /// The export's `legacy_ids.toml` parsed, as the deep pass found it
-    /// (`deep::ContentPass::legacy_ids`): the old boots and gloves IDs of a VGL27 export,
-    /// which `mapped_folders` and `export_rows` pack and patch under instead of the
-    /// team's block; `None` when the export has none.
-    pub(crate) legacy_ids: Option<LegacyIds>,
-    /// The export's team's VGL27 old-ID block (`legacy_blocks::LegacyBlocks`), read only
-    /// under `legacy_ids`: `None` then means the table does not list the team and every
-    /// recorded old ID is out of block (`legacy_id_out_of_block`).
-    pub(crate) legacy_block: Option<RangeInclusive<u32>>,
 }
 
 /// Plans the run over the identity-resolved exports, given in `ExportId` order, for the target
@@ -1079,8 +1065,6 @@ pub(crate) fn plan_run(
         metal_models,
         settings: mut player_settings,
         settings_refused,
-        legacy_ids,
-        legacy_block,
     } in exports
     {
         drop_gltf_folders(export_id, &mut resolved, version, &mut messages);
@@ -1252,46 +1236,6 @@ pub(crate) fn plan_run(
                     .collect(),
                 None => Vec::new(),
             };
-            // A legacy export's `legacy_ids.toml`: a folder packs under the old ID its
-            // first plain linker in roster order records for the kind, when one does
-            // and it lies in the team's VGL27 block; outside the block the folder is
-            // not packed at all (`legacy_id_out_of_block`), its wearers' patch entries
-            // pointing at the old ID. Otherwise it keeps the ID the team's block gave it.
-            if let Some(legacy) = &legacy_ids {
-                let mut refused = Vec::new();
-                for (folder, id) in &mut packing {
-                    if let Some(old) = legacy_folder_id(
-                        &export,
-                        version.engine(),
-                        kind,
-                        folder,
-                        &hand_weighted,
-                        legacy,
-                    ) {
-                        if in_block(legacy_block.as_ref(), old) {
-                            *id = old;
-                        } else {
-                            refused.push((folder.path.clone(), old));
-                        }
-                    }
-                }
-                packing.retain(|(folder, _)| !refused.iter().any(|(path, _)| path == &folder.path));
-                for (path, old) in refused {
-                    messages.push(tool_message(
-                        Code::LegacyIdOutOfBlock,
-                        Scope::Folder {
-                            export_id,
-                            path: path.clone(),
-                        },
-                        Disposition::Keep,
-                        vec![
-                            ("id", old.to_string()),
-                            ("folder", path.as_str().to_owned()),
-                            ("block", block_text(legacy_block.as_ref())),
-                        ],
-                    ));
-                }
-            }
             packing.sort_by_key(|(_, id)| *id);
             for (folder, shared_id) in packing {
                 let mut folder = ModelFolder {
@@ -1339,68 +1283,13 @@ pub(crate) fn plan_run(
         // building their boots and gloves.
         let first_task = tasks.len();
         let mut row_players = Vec::new();
-        let mapped = mapped_folders(
-            players,
-            &export.roster,
-            team,
-            legacy_ids.as_ref(),
-            legacy_block.as_ref(),
-        );
+        let mapped = mapped_folders(players, &export.roster, team);
         for MappedFolder {
             folder,
             packages,
             player_ids,
-            refused,
         } in mapped
         {
-            // The packages the folder's effective boots and gloves have a part of
-            // (`has_effective_part`), computed only under `legacy_ids`: its rows and
-            // a refused old ID's report read them.
-            let own_parts: Vec<ModelPackage> = match legacy_ids {
-                Some(_) => [ModelPackage::Boots, ModelPackage::Gloves]
-                    .into_iter()
-                    .filter(|package| {
-                        has_effective_part(
-                            &export,
-                            &folder,
-                            *package,
-                            version.engine(),
-                            &hand_weighted,
-                        )
-                    })
-                    .collect(),
-                None => Vec::new(),
-            };
-            // A refused old ID is named once on the folder that would have packed
-            // it: this one when it has a part of a kind recording it. A folder only
-            // linking a kept-shared folder packs nothing of the kind, so the shared
-            // folder alone is named.
-            let mut reported = BTreeSet::new();
-            for (package, of_kind) in [
-                (ModelPackage::Boots, &refused.0),
-                (ModelPackage::Gloves, &refused.1),
-            ] {
-                if !own_parts.contains(&package) {
-                    continue;
-                }
-                for old in of_kind {
-                    if reported.insert(*old) {
-                        messages.push(tool_message(
-                            Code::LegacyIdOutOfBlock,
-                            Scope::Folder {
-                                export_id,
-                                path: folder.path.clone(),
-                            },
-                            Disposition::Keep,
-                            vec![
-                                ("id", old.to_string()),
-                                ("folder", folder.path.as_str().to_owned()),
-                                ("block", block_text(legacy_block.as_ref())),
-                            ],
-                        ));
-                    }
-                }
-            }
             row_players.push(RowPlayer {
                 path: folder.path.clone(),
                 player_ids: player_ids.clone(),
@@ -1412,7 +1301,6 @@ pub(crate) fn plan_run(
                     .map(|shared| shared.path.clone())
                     .collect(),
                 fpc: folder.fpc,
-                own_parts,
                 settings: player_settings.remove(&folder.path),
                 settings_refused: settings_refused.contains(&folder.path),
             });
@@ -1517,15 +1405,7 @@ pub(crate) fn plan_run(
         // After the shared folders' tasks, which a player linking one takes his ID from. A
         // referee has none: the game's referee hook loads slot NN's `k99NN`/`g99NN` by number.
         if team.is_some() {
-            let rows = export_rows(
-                &tasks,
-                first_task,
-                &row_players,
-                export.coverage,
-                hide_ids,
-                legacy_ids.as_ref(),
-                legacy_block.as_ref(),
-            );
+            let rows = export_rows(&tasks, first_task, &row_players, export.coverage, hide_ids);
             // The same compiled players get the patch's `[[teams]]` block: the run's one
             // patch across exports, whose header `build` fills in and whose provisional
             // IDs `settle` resolves against the committed batches.
@@ -1813,10 +1693,7 @@ fn folder_tasks(
             // The face task packs a split model's hands as entries of its own `face.xml`.
             Engine::PreFox => false,
         };
-        // A package no slot of the folder gives a key to is not planned at all: under
-        // `legacy_ids.toml` a slot records no old ID of the kind, or an earlier slot took
-        // his, and nothing is emitted for it.
-        if ids.is_empty() || (models.is_empty() && !blank && !hands) {
+        if models.is_empty() && !blank && !hands {
             continue;
         }
         tasks.push(task(
@@ -2209,9 +2086,8 @@ fn kit_variant_model_messages(
 }
 
 /// A roster-mapped player folder as planning builds it: the keys each of its packages is
-/// emitted under, one per slot mapping it in slot order, those slots' player ids, which
-/// its portrait and its rows go by (none for a referee, who has no player id), and the
-/// recorded old IDs the block check refuses (`legacy_id_out_of_block`).
+/// emitted under, one per slot mapping it in slot order, and those slots' player ids, which
+/// its portrait and its rows go by (none for a referee, who has no player id).
 struct MappedFolder {
     /// The player folder.
     folder: PlayerFolder,
@@ -2219,73 +2095,37 @@ struct MappedFolder {
     packages: [(ModelPackage, Vec<PackageKey>); 3],
     /// The player id of each slot mapping the folder, in slot order.
     player_ids: Vec<u32>,
-    /// The recorded old IDs the block check refuses, the boots' then the gloves'
-    /// (`boots_gloves_key`): each is reported once on the folder packing its kind
-    /// (`legacy_id_out_of_block`). Always empty for a referee, who records none.
-    refused: (BTreeSet<u32>, BTreeSet<u32>),
 }
 
 /// The roster-mapped folders of `players`, by `player_folders`, as `MappedFolder`s: of a team
 /// export, `team` given, a slot's face keyed by its player id and its boots and gloves by
-/// its exclusive id of the team's block, or under a `legacy_ids.toml` by the old ID the
-/// file records for him, each old ID packed once by the first slot in roster order
-/// recording it, a slot the file gives no ID of a kind getting no key of it, and one
-/// recording an ID outside `legacy_block` getting none either, each such ID collected by
-/// kind for the caller to report once on the folder that would have packed it
-/// (`legacy_id_out_of_block`); of a refs export, every package of referee slot NN keyed
-/// by the slot (`referee0NN`, `k99NN`, `g99NN`).
+/// its exclusive id of the team's block; of a refs export, every package of referee slot NN
+/// keyed by the slot (`referee0NN`, `k99NN`, `g99NN`).
 fn mapped_folders(
     players: Vec<PlayerFolder>,
     roster: &ValidatedRoster,
     team: Option<TeamId>,
-    legacy_ids: Option<&LegacyIds>,
-    legacy_block: Option<&RangeInclusive<u32>>,
 ) -> Vec<MappedFolder> {
     match (roster, team) {
         (ValidatedRoster::Team(slots), Some(id)) => {
             let model_ids = PlannedModelIds::for_team(id);
-            // The old IDs the export's earlier slots already packed, boots and gloves
-            // separately: an old ID another slot recorded first gets no key.
-            let mut taken = (BTreeSet::new(), BTreeSet::new());
             player_folders(players, slots)
                 .into_iter()
-                .map(|(folder, slots)| {
-                    // The folder's recorded old IDs the block check refuses, boots
-                    // and gloves separately: an ID of either is reported once,
-                    // however many slots record it.
-                    let mut refused = (BTreeSet::new(), BTreeSet::new());
-                    MappedFolder {
-                        packages: ModelPackage::ALL.map(|package| {
-                            let keys = slots
-                                .iter()
-                                .filter_map(|slot| match package {
-                                    ModelPackage::Face => Some(PackageKey::Id(slot.player_id(id))),
-                                    ModelPackage::Boots => boots_gloves_key(
-                                        legacy_ids,
-                                        legacy_block,
-                                        &mut taken.0,
-                                        &mut refused.0,
-                                        *slot,
-                                        ItemTable::Boots,
-                                        model_ids.exclusive(*slot),
-                                    ),
-                                    ModelPackage::Gloves => boots_gloves_key(
-                                        legacy_ids,
-                                        legacy_block,
-                                        &mut taken.1,
-                                        &mut refused.1,
-                                        *slot,
-                                        ItemTable::Gloves,
-                                        model_ids.exclusive(*slot),
-                                    ),
-                                })
-                                .collect();
-                            (package, keys)
-                        }),
-                        player_ids: slots.iter().map(|slot| slot.player_id(id)).collect(),
-                        folder,
-                        refused,
-                    }
+                .map(|(folder, slots)| MappedFolder {
+                    packages: ModelPackage::ALL.map(|package| {
+                        let keys = slots
+                            .iter()
+                            .map(|slot| match package {
+                                ModelPackage::Face => PackageKey::Id(slot.player_id(id)),
+                                ModelPackage::Boots | ModelPackage::Gloves => {
+                                    PackageKey::Id(u32::from(model_ids.exclusive(*slot)))
+                                }
+                            })
+                            .collect();
+                        (package, keys)
+                    }),
+                    player_ids: slots.iter().map(|slot| slot.player_id(id)).collect(),
+                    folder,
                 })
                 .collect()
         }
@@ -2300,43 +2140,11 @@ fn mapped_folders(
                 }),
                 player_ids: Vec::new(),
                 folder,
-                refused: (BTreeSet::new(), BTreeSet::new()),
             })
             .collect(),
         (ValidatedRoster::Team(_), None) | (ValidatedRoster::Referees(_), Some(_)) => {
             unreachable!("validation and identity both read a refs export from its `/refs/` name")
         }
-    }
-}
-
-/// The key a team player's boots or gloves `package` is emitted under for `slot`: without
-/// `legacy_ids` his exclusive ID of the team's block, with it the old ID the file records
-/// for him when `block` holds it and `taken` does not already (each old ID packed once
-/// per team, by the first slot in roster order recording it); `None` for a slot the file
-/// gives no ID of the kind, whose old ID an earlier slot took, or whose old ID the block
-/// check refuses, the refused one collected into `refused` for the caller to report once
-/// on the folder packing the kind (`legacy_id_out_of_block`).
-fn boots_gloves_key(
-    legacy_ids: Option<&LegacyIds>,
-    block: Option<&RangeInclusive<u32>>,
-    taken: &mut BTreeSet<u32>,
-    refused: &mut BTreeSet<u32>,
-    slot: PlayerSlot,
-    table: ItemTable,
-    exclusive: u16,
-) -> Option<PackageKey> {
-    match legacy_ids {
-        None => Some(PackageKey::Id(u32::from(exclusive))),
-        Some(ids) => match ids.old_id(slot, table) {
-            // A recorded old ID outside the team's VGL27 block is not packed: under it
-            // the model would land on another team's own ID.
-            Some(id) if !in_block(block, id) => {
-                refused.insert(id);
-                None
-            }
-            Some(id) => taken.insert(id).then_some(PackageKey::Id(id)),
-            None => None,
-        },
     }
 }
 

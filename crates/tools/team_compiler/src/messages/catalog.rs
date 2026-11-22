@@ -191,18 +191,6 @@ pub(super) const CATALOG: &[(&str, CatalogSeverity, &str, &str)] = &[
         r#"Its folders are numbered alphabetically, as a `Full` export's are, and may take IDs an installed CPK gives other folders."#,
     ),
     (
-        "legacy_ids_invalid",
-        CatalogSeverity::Error,
-        r#"A `legacy_ids.toml` at the export's root is not UTF-8 text, or it cannot be read as the old boots and gloves IDs the Export upgrader writes (the line names the error)."#,
-        r#"The file is ignored, so the export's boots and gloves are packed under the compiler's own IDs instead of the recorded old ones."#,
-    ),
-    (
-        "legacy_id_out_of_block",
-        CatalogSeverity::Error,
-        r#"A `legacy_ids.toml` records an old boots or gloves ID outside the team's block in `legacy_boots_blocks.txt`, or the table does not list the team at all (the line names the ID, the folder and the block). Packing it would put the model over another team's own."#,
-        r#"The folder is not packed under that ID (a shared `Boots/` or `Gloves/` folder holding it is not packed at all), but the players wearing it keep the ID in the patch. The export's other old IDs are packed as before."#,
-    ),
-    (
         "portrait_conflict",
         CatalogSeverity::Error,
         r#"A player has a portrait in his folder and a different one for his slot in `Portraits/` (two identical files count as one)."#,

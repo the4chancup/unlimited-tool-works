@@ -3046,8 +3046,9 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     an official DLC whose boots/gloves IDs differ from what they sent (Studio's slot-based
     40-per-team block, 3745 for team 792's slot 05, against the old exports' own `k`/`g`
     IDs in a 25-per-team block) breaks their test CPKs against the official save.
-    - [x] poc13a spec (2026-11-10): `plans/team_compiler/pipeline.md` "Legacy boots and
-      gloves IDs (VGL27)", the block table `crates/tools/team_compiler/data/legacy_boots_blocks.txt`
+    - [x] poc13a spec (2026-11-10): the legacy IDs' plan section and the block table
+      `legacy_boots_blocks.txt`, on the branch `vgl27` alone since 2026-11-22 (DECISIONS
+      2026-11-22 "VGL27's legacy mode leaves main")
     - [x] poc13b the upgrader's `legacy_ids.toml` (2026-11-10, SWE-2, landed first time)
     - [x] poc13a2 re-spec (2026-11-10 evening; DECISIONS 2026-11-10): legacy mode is the
       upgrader's `--legacy-ids`, the compiler reads the file's presence

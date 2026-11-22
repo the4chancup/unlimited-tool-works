@@ -172,11 +172,10 @@ function oldExport(key, name, o = {}) {
   x.files.Logo = cell("Logo\\emblem_XXX_r_ll.png", "logo.png");
   x.files.Common = cell("Common", "Common");
   if (o.collars !== false) x.files.Collar = cell("Collars", "Collars");
-  x.ids = cell("the boots and gloves folders' IDs", "legacy_ids.toml");
   return x;
 }
 const everyCell = x => [...Object.values(x.faces), ...Object.values(x.boots), ...Object.values(x.gloves),
-  ...x.shared.map(s => s.cell), ...Object.values(x.kits), x.portraits, ...Object.values(x.files), x.ids];
+  ...x.shared.map(s => s.cell), ...Object.values(x.kits), x.portraits, ...Object.values(x.files)];
 
 const EGG_BOOTS = [["0915", "Crocs", [5]], ["0916", "Sandals", [7, 9]], ["0917", "Clogs", [11]],
   ["0918", "Skates", [14]], ["0920", "Wellies", [2, 3, 4]]];
@@ -324,10 +323,10 @@ function onKey(e) {
 }
 // What a double-click opens: the old path the cell is read from first (a
 // file's folder, the file selected), the export's own folder for its label;
-// an archive's folder with the archive selected. The IDs and the left-out
-// count stand for no one path.
+// an archive's folder with the archive selected. The left-out count stands
+// for no one path.
 function oldPath(x, at) {
-  if (at.what === "ids" || at.what === "left") return null;
+  if (at.what === "left") return null;
   if (x.archive || at.what === "label") return x.old;
   if (at.what === "portraits") return `${x.old}\\Portraits`;
   const c = cellOfAt(x, at);
@@ -341,7 +340,7 @@ function cellOfAt(x, at) {
   return w === "label" ? x.label : w === "face" ? x.faces[+at.slot]
     : w === "boots" || w === "gloves" ? x[w][+at.slot]
     : w === "kit" ? x.kits[at.slot] : w === "file" ? x.files[at.slot]
-    : w === "portraits" ? x.portraits : w === "ids" ? x.ids : w === "left" ? leftCell(x) : null;
+    : w === "portraits" ? x.portraits : w === "left" ? leftCell(x) : null;
 }
 function redrawDetail() {
   const pipe = document.querySelector("#center .pipe");
@@ -445,10 +444,9 @@ function gridRows(x) {
       slot(cellEl(x, x.files.Note, "Note", "file", "Note", "wide word"), true), gap(),
       file("Logo"), file("Common"), file("Collar"), ...blank(KIT_SLOTS.length - 6)])),
     h("tr", {}, ...line("Gloves", [...each(item("gloves")), gap(),
-      slot(cellEl(x, x.ids, "IDs", "ids", "", "wide word"), true), gap(),
       // What the upgrade leaves out: one cell with the count, its list a click away.
-      wideOver(x.left.length ? cellEl(x, leftCell(x), `${x.left.length} out`, "left", "", "wide word") : null),
-      ...blank(KIT_SLOTS.length - 2)])),
+      slot(x.left.length ? cellEl(x, leftCell(x), `${x.left.length} out`, "left", "", "wide word") : null, true),
+      gap(), ...blank(KIT_SLOTS.length)])),
     h("tr", { class: "space" })];
 }
 // The left-out entries as one cell: a Warning that drops nothing a player wore.
@@ -513,7 +511,7 @@ function flowOf(x) {
   }
   gapAfter(L); gapAfter(R);
   // The boots and gloves folders: to each wearer, to the shared folder when
-  // two or more wear them, and their IDs to legacy_ids.toml.
+  // two or more wear them.
   const items = {};
   for (const kind of ["boots", "gloves"])
     for (const [n, c] of Object.entries(x[kind])) {
@@ -544,10 +542,6 @@ function flowOf(x) {
   for (const name of ["Logo", "Common", "Collar"]) if (x.files[name])
     edge(node(L, name, x.files[name].src[0], "plain", [x.files[name]], { what: "file", slot: name }),
       node(R, name, x.files[name].dst, "plain", [x.files[name]], { what: "file", slot: name }), "plain");
-  if (Object.keys(items).length) {
-    const ids = node(R, "ids", x.ids.dst, "boots", [x.ids], { what: "ids", slot: "" }, { sub: "the boots and gloves IDs" });
-    for (const item of Object.values(items)) edge(item, ids, "boots", true);
-  }
   // What is left out: dashed boxes, to one dashed box.
   if (x.left.length) {
     gapAfter(L); gapAfter(R);
@@ -924,11 +918,11 @@ function draftControls() {
 }
 const WALK = [
   ["the grid", "three lines an export: a player's face folder, and under it the boots and gloves folders the save has him wear, by their four-digit ID (/egg/: 0916 under 07 and 09, shared; 0915 under 05, his alone)"],
-  ["the team's files", "right of the portraits and the kits: the Note, the logo, Common, Collars, the IDs kept in legacy_ids.toml, and a count of what is left out"],
+  ["the team's files", "right of the portraits and the kits: the Note, the logo, Common, Collars, and a count of what is left out"],
   ["an Error", "/a/'s Note has a line that does not read: outlined red; Upgrade writes nothing of /a/ and its cells turn to the dashed Not written"],
   ["cannot be read", "/@/ is not in the save (tick Upgrade without the save and it is read), /b/ is already upgraded, /biz/'s output already exists: one line each, with what to do"],
   ["Full or Midcup", "the combo at each row's right, prefilled from the name (/a/: Midcup, from \"additions\")"],
-  ["the files look", "set old_exports to 3 exports: a box per old folder left, a box per new one right, a line where each goes; point at a box to follow its lines (/egg/'s Boots\\k0920 goes to players 02, 03 and 04, the shared folder and the IDs); Upgrade lights each destination as it is written"],
+  ["the files look", "set old_exports to 3 exports: a box per old folder left, a box per new one right, a line where each goes; point at a box to follow its lines (/egg/'s Boots\\k0920 goes to players 02, 03 and 04 and the shared folder); Upgrade lights each destination as it is written"],
   ["the toggle", "Grid and Files at the arguments' right end: either look for any number of exports; until one is picked the count chooses"],
   ["the detail window", "rest the pointer on a cell, a box, a label or a log line: the window opens on it, with the old and new paths and the findings; a click pins it (Esc, the pin or a click on empty space unpins); a double-click opens the old folder"],
   ["Copy messages", "in a label's window, when the export has findings: its log lines on the clipboard"],
