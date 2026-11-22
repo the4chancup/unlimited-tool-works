@@ -635,28 +635,24 @@ mod tests {
         assert!((1..40).contains(&labels), "{labels} labels drawn");
     }
 
-    #[test]
-    fn the_title_row_stays_in_view_while_the_rows_scroll_under_it() {
-        let rows = vec![team_row(); 40];
-        let mut window = Headless::new();
+    /// A window whose scroll moves at once, for a test that scrolls the grid.
+    fn scrolling() -> Headless {
+        let window = Headless::new();
         window.ctx.global_style_mut(|style| {
             style.scroll_animation = egui::style::ScrollAnimation::none();
         });
+        window
+    }
+
+    #[test]
+    fn the_title_row_stays_in_view_while_the_rows_scroll_under_it() {
+        let rows = vec![team_row(); 40];
+        let mut window = scrolling();
         let mut grid = |events| window.frame(events, |ui| show(ui, "grid", &COLUMNS, &rows, false));
         let drawn = grid(Vec::new());
         let title = drawn.one("Team");
         let first = drawn.all("/a/")[0];
-        let at = first.center();
-        grid(vec![
-            egui::Event::PointerMoved(at),
-            egui::Event::MouseWheel {
-                unit: egui::MouseWheelUnit::Point,
-                delta: vec2(0.0, -300.0),
-                phase: egui::TouchPhase::Move,
-                source: egui::MouseWheelSource::Unknown,
-                modifiers: egui::Modifiers::default(),
-            },
-        ]);
+        grid(wheel(first.center(), vec2(0.0, -300.0)));
         let drawn = grid(Vec::new());
         assert!(drawn.all("/a/")[0].top() < first.top(), "the rows scrolled");
         assert_eq!(drawn.one("Team"), title, "the title row stayed");
@@ -789,10 +785,7 @@ mod tests {
         // A 300 scroll leaves the topmost line in view cut by its top: its span still
         // intersects the view, so exactly one drawn label's top is above it.
         let rows = vec![team_row(); 40];
-        let mut window = Headless::new();
-        window.ctx.global_style_mut(|style| {
-            style.scroll_animation = egui::style::ScrollAnimation::none();
-        });
+        let mut window = scrolling();
         let mut grid = |events| window.frame(events, |ui| show(ui, "grid", &COLUMNS, &rows, false));
         grid(Vec::new());
         grid(wheel(pos2(600.0, 300.0), vec2(0.0, -300.0)));
@@ -814,10 +807,7 @@ mod tests {
         // Sideways the content fits (1118 + the Actions title + 8 < 1280), so a sideways
         // wheel moves nothing: the horizontal pin for the content's width.
         let rows = vec![team_row(); 40];
-        let mut window = Headless::new();
-        window.ctx.global_style_mut(|style| {
-            style.scroll_animation = egui::style::ScrollAnimation::none();
-        });
+        let mut window = scrolling();
         let mut grid = |events| window.frame(events, |ui| show(ui, "grid", &COLUMNS, &rows, false));
         grid(Vec::new());
         grid(wheel(pos2(600.0, 300.0), vec2(-100000.0, -100000.0)));
