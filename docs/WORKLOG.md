@@ -97,9 +97,10 @@ other items run beside it. **After the detour**, in this order:
    the maintainer, then the first slice's brief.
    - Not urgent, a small slice of its own (SWE-2), after the view's or beside it: player
      numbering without the hyphen (`plans/aesthetics_export/player_folders.md`, the section of
-     that name): `aesthetics_export`'s `conventions` (`folder_slot`, `folder_player_name`) and
-     the `Portraits/` names, their tests, and the catalog texts of
-     `player_folder_number_invalid` and `portrait_name_invalid` in `messages/catalog.rs`.
+     that name): `aesthetics_export`'s `conventions` (`folder_slot`, `folder_player_name`), the
+     `Portraits/` names and the kit folders (`validate/kits.rs`), their tests, and the catalog
+     texts of `player_folder_number_invalid`, `portrait_name_invalid` and `kit_folder_invalid`
+     in `messages/catalog.rs`.
 7. The drafts in two copies (the maintainer, 2026-11-17: a spec draft of what the build holds
    and a plan draft for prototyping, which the app's unbuilt sections open with `demo=1`. Git
    keeps the two: the spec draft is `docs/prototypes/` on main, which `draft_compare`, the
@@ -3624,6 +3625,12 @@ points there.
   The project's flakes are mostly races of that kind, so the check does not join the
   checkpoint, and no variant of the question was tried. The script and its answers are in the
   gitignored `.tmp/snap_flaky/` and `snap.out/flaky_cache.json`.
+- open (2026-11-22) — The Compiler's tests that write their own teams list
+  (`team_compiler/src/testing.rs`, `output/savefile.rs`, `tests/cli/deep.rs` and `logo.rs`) use
+  the bundled list's rows from before its VGL27 allocation (`6268280c`, 2026-11-09): `790 /dbg/`
+  and `792 /egg/`, where the list now reads `789 /dbg/` and `790 /domg/` and holds no `/egg/`.
+  Nothing fails, the lists being the tests' own, but test data copies today's real rows: update
+  them when those files are next touched.
 - open (2026-11-20) — A checkpoint's diff mutation run pays each crate's fixed costs however
   few mutants it holds. On `969e1cb6`, `team_widgets`' one mutant took 567 s wall:
   - a baseline of 133 s build and 199 s test, though the gates had just passed the same tree;

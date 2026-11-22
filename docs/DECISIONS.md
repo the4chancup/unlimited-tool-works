@@ -19307,3 +19307,22 @@ Why: members name folders `15 Snuffy`, and the strict rule dropped the player ov
 that carries no meaning. A split at the first hyphen would cut a hyphenated name. Portrait
 names are numbered "as a player folder is", so one rule serves both.
 Plan: plans/aesthetics_export/player_folders.md "Player numbering without the hyphen".
+
+## 2026-11-22 — compiler view — the detail window opens on the export's logo where no 3D preview stands
+Decision (the maintainer): every cell's window opens on a box the 3D preview's size: a
+player's preview, and the export's logo for the label, the portraits and the kits, so the text
+under it stays in place as the window moves between cells.
+Decision (the lead): an export with no logo shows the box with "No logo"; until the 3D
+preview is built, a player's box shows the logo too.
+Why: the text jumped up and down by the preview's height when the pointer moved from a player
+to a kit or a label. The logo is what the export already has to show there, and an empty box
+would read as something failing to load.
+Plan: plans/team_compiler/gui.md "GUI: the live-validating team grid" (the detail window).
+
+## 2026-11-22 — export format — kit folders also take the number without the hyphen
+Decision (the maintainer): a kit folder named `p1 Lakers` is slot `p1`, label `Lakers`, as
+`p1 - Lakers` is, by the rule just decided for player folders and portraits. Model folders
+carry no number, so the rule does not reach them.
+Why: kit folders share the player folders' `<slot> - <label>` shape and its reading, and a
+member who writes `15 Snuffy` writes `p1 Lakers`.
+Plan: plans/aesthetics_export/player_folders.md "Player numbering without the hyphen".

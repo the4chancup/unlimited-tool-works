@@ -156,9 +156,12 @@ const TEAM_COMPILER_CSS = `
     border-bottom: 1px solid var(--stroke); cursor: move; user-select: none; }
   .tc-detail .body { padding: 8px; }
   .tc-detail .find { margin: 6px 0; }
-  /* sample: where a player's 3D preview will stand (a later feature). */
+  /* The window's top box: a player's 3D preview (a later feature; sample look), the
+     export's logo on the other cells. */
   .tc-detail .preview { height: 180px; margin-bottom: 8px; background: var(--extreme);
     border-radius: 2px; display: flex; align-items: center; justify-content: center; }
+  /* The export's logo, fitted inside the box (egui: an Image fitted to it). */
+  .tc-detail .preview img { max-width: 160px; max-height: 160px; }
   .tc-bar { display: flex; align-items: center; gap: 8px; padding: 4px 8px; min-height: 24px;
     border-top: 1px solid var(--stroke); }
   .tc-bar .strip { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis;
@@ -219,7 +222,7 @@ const with_ = (cells, n, patch) => { Object.assign(cells[n], patch); return cell
 // A row's portraits cell, by the row's key: how many of its players have a
 // portrait, the cell's status and its findings. A referee export has none.
 const PORTRAITS = {
-  "3": [23, "fullOk"],
+  dbg: [23, "fullOk"],
   // An old Portraits/player_05.dds, with the one-click rename the plan gives it.
   a: [21, "error", ["portrait_name_invalid"],
     { label: "Rename player_05.dds to 05.dds", folder: "Portraits", count: 22 }, false,
@@ -240,7 +243,10 @@ const cellsOf = r => [...Object.values(r.players), ...(r.portraits ? [r.portrait
 
 function sampleRows() {
   return [
-    { key: "3", name: "/3/", id: 701, display: "3 Full Aesthetics Export Autumn26",
+    // The one row with its logo (the real /dbg/ export's logo.png, scaled to 160);
+    // the others stand for exports with none.
+    { key: "dbg", name: "/dbg/", id: 789, display: "dbg Full Aesthetics Export Autumn26",
+      logo: "assets/team_logos/dbg.png",
       label: { status: "fullOk", codes: [] }, players: players(1, 23),
       // Every kit slot, the widest a row gets.
       kits: { GK: kit("g1 - Keeper", "#f0c020", "#202020"), K1: kit("p1 - Home", "#c02020", "#f0f0f0"),
@@ -771,7 +777,11 @@ function detailPanel() {
       pinned ? button(h("span", { class: "pin" }, "📌"), () => { S.pin = null; render(); },
         { frame0: true, title: "Unpin" }) : null),
     h("div", { class: "body" },
-      at.what === "player" ? h("div", { class: "preview weak" }, "3D preview (a later feature)") : null,
+      // One box the 3D preview's size on every cell, so the text under it stays
+      // put as the window moves between cells: a player's preview, else the
+      // export's logo (a later feature's box, the logo, or "No logo").
+      at.what === "player" ? h("div", { class: "preview weak" }, "3D preview (a later feature)")
+        : h("div", { class: "preview weak" }, r.logo ? h("img", { src: r.logo, alt: "" }) : "No logo"),
       h("div", { class: "mono" }, where),
       h("div", { class: "weak" }, rowOff(r) ? "Off: not compiled" : STATE_NAMES[shown(r, cell)]),
       cellNotes(r, cell, at.what).map(n => h("div", { class: "weak" }, n)),
@@ -1104,7 +1114,7 @@ function draftControls() {
       WALK.map(([id, how]) => h("div", {}, strong(id), " ", how)))];
 }
 const WALK = [
-  ["TC-GUI-04", "the rows: /3/ fully checked, /aco/ an archive (blue cells, one faint red), /adv/ with players 01 to 11 only (12 to 23 empty, no cell) and no keeper kit, /an/ part checked, part checking, part unchecked"],
+  ["TC-GUI-04", "the rows: /dbg/ fully checked, /aco/ an archive (blue cells, one faint red), /adv/ with players 01 to 11 only (12 to 23 empty, no cell) and no keeper kit, /an/ part checked, part checking, part unchecked"],
   ["TC-GUI-07", "/egg/ is not on the teams list: its ID cell is red; type 950 and Enter (out of range), 714 and Enter (in use by /co/: the question takes the place of the row's cells until Yes or No), 850 and Enter (written); with the data folder read-only the entry is dropped"],
   ["TC-GUI-08", "/asp/ has no tag: Full or Midcup renames it and its cells appear"],
   ["TC-GUI-09", "rest the pointer on a cell or a team label: the detail window shows its folder and findings, and follows the pointer to the next cell; leaving for empty grid closes it (/a/ 07 a warning, /a/'s label a player folder named 15_Snuffy, which claims no slot, with its one-click rename, /a/'s portraits an old file name in Portraits with its rename, which colours the portraits cell alone; /adv/ 11's portrait, kept in the player's folder, colours his cell and the portraits cell)"],

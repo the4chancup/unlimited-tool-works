@@ -78,8 +78,14 @@ it, one cell per player at a fixed position by number, plus one cell per kit:
 - **The detail window** shows one cell (a player, the portraits, a kit, or a team label for its
   export's own messages): its folder, its state, and each message with the file it is about
   and the catalog's When and Effect texts, then Open folder (when the cell has a folder to
-  open, below) and, for a finding with one obvious fix, the rename that fixes it. Later it holds the 3D preview (Future Features). The
-  cells carry no tooltip of their own; the ID cell and the buttons keep theirs.
+  open, below) and, for a finding with one obvious fix, the rename that fixes it. The cells
+  carry no tooltip of their own; the ID cell and the buttons keep theirs.
+
+  The window opens on a box the 3D preview's size: a player's preview (Future Features), and
+  for every other cell the export's logo (its root `logo*` texture), fitted inside it, or
+  "No logo". The box is there on every cell, so the text under it stays in place as the
+  window moves between cells. Until the 3D preview is built, a player's box shows the logo
+  too.
   - **Hover** opens it on the cell under the pointer, and leaving the cell closes it. It opens
     after the sidebar's hover delay (0.1 s, `HOVER_DELAY`), almost at once, and then follows
     the pointer from cell to cell with none.

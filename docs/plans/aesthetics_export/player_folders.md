@@ -22,13 +22,15 @@ nothing. `15 - Snuffy`, `15-Snuffy`, `15 Snuffy` and `15` all claim slot 15. The
 else what follows the number: `03 - Jean-Pierre` and `03 Jean-Pierre` both give `Jean-Pierre`,
 and `15` alone still gives `15`. Anything else right after the number (`15_Snuffy`) claims no
 slot, so the folder is dropped with `player_folder_number_invalid`, whose text says what a name
-needs. A `Portraits/` file's name follows the same rule (`05 Bob.dds`). The hyphen form stays
-the one the documents show and the Export upgrader writes.
+needs. A `Portraits/` file's name follows the same rule (`05 Bob.dds`), and so does a kit
+folder's: `p1 Lakers` is slot `p1`, label `Lakers`, as `p1 - Lakers` is. The hyphen form stays
+the one the documents show and the Export upgrader writes. Model folders carry no number (a
+shared folder's name is what its link files name; a player's subfolders are free), so the rule
+does not reach them.
 
 We read the number first, not split at the first hyphen, because members name folders
 `15 Snuffy`, which the split refused for a hyphen that carries no meaning, and a split would
-cut a hyphenated name (`03 Jean-Pierre` gave the head `03 Jean`). Kit folders keep the split
-(`p1 - Lakers`).
+cut a hyphenated name (`03 Jean-Pierre` gave the head `03 Jean`).
 
 **A base copy: the `<id>.copy` link file.** A player folder holding an empty file named after a
 player id with the `.copy` extension (`5223.copy`; a stray `.txt` suffix is accepted, as for every
