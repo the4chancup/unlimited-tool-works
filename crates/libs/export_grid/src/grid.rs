@@ -585,6 +585,9 @@ mod tests {
         assert_eq!(names[1] - names[0], SQUARE + SPACING);
         assert_eq!(names[2] - names[1], SQUARE + SPACING);
         let (logo, common) = (drawn.one("Logo"), drawn.one("Common"));
+        // The first kit cell: the 52 name column at 62 + 2, the line's 13 column + 2,
+        // the 23 players of (26 + 2), the 6 gap, the 50 portraits and the 6 gap: 839.
+        assert_eq!(logo.left(), 839.0);
         assert_eq!(logo.width(), WIDE);
         assert_eq!(common.left() - logo.left(), 2.0 * (SQUARE + SPACING));
         assert_eq!(logo.center().y, names[1], "on the Boots line");
@@ -802,18 +805,18 @@ mod tests {
     #[test]
     fn the_scroll_area_holds_exactly_the_content_the_rows_make() {
         // 40 rows of 28 under rows_top: the content is 26.65625 + 1120 = 1146.65625
-        // high; the viewport is the 600-high screen, so the farthest the scroll goes
-        // is 546.65625.
-        // Sideways the content fits (1118 + the Actions title + 8 < 1280), so a sideways
-        // wheel moves nothing: the horizontal pin for the content's width.
+        // high and 1118 + the 42.25 Actions title + the 8 right margin = 1168.25
+        // wide. A window 1000 by 600 is too small both ways, so the farthest the
+        // scroll goes is the content less the window.
         let rows = vec![team_row(); 40];
         let mut window = scrolling();
+        window.screen = vec2(1000.0, 600.0);
         let mut grid = |events| window.frame(events, |ui| show(ui, "grid", &COLUMNS, &rows, false));
         grid(Vec::new());
         grid(wheel(pos2(600.0, 300.0), vec2(-100000.0, -100000.0)));
         grid(Vec::new());
         let state = scroll_state(&window.ctx, "grid");
-        assert_eq!(state.unclamped_offset(), vec2(0.0, 546.65625));
+        assert_eq!(state.unclamped_offset(), vec2(168.25, 546.65625));
     }
 
     #[test]

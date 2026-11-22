@@ -8,6 +8,8 @@ use egui::epaint::Shape;
 /// animations off.
 pub(crate) struct Headless {
     pub(crate) ctx: egui::Context,
+    /// The screen each frame runs on: 1280 by 600 unless a test narrows it.
+    pub(crate) screen: egui::Vec2,
 }
 
 /// What one frame drew: its AccessKit nodes and its shapes.
@@ -22,20 +24,20 @@ impl Headless {
         ctx.enable_accesskit();
         studio_core::theme::install(&ctx);
         ctx.global_style_mut(|style| style.animation_time = 0.0);
-        Headless { ctx }
+        Headless {
+            ctx,
+            screen: egui::vec2(1280.0, 600.0),
+        }
     }
 
-    /// One frame of `contents` on a 1280 by 600 screen with `events` as its input.
+    /// One frame of `contents` on the window's `screen` with `events` as its input.
     pub(crate) fn frame(
         &mut self,
         events: Vec<egui::Event>,
         mut contents: impl FnMut(&mut egui::Ui),
     ) -> Drawn {
         let input = egui::RawInput {
-            screen_rect: Some(egui::Rect::from_min_size(
-                egui::Pos2::ZERO,
-                egui::vec2(1280.0, 600.0),
-            )),
+            screen_rect: Some(egui::Rect::from_min_size(egui::Pos2::ZERO, self.screen)),
             events,
             ..Default::default()
         };

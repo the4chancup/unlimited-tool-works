@@ -193,6 +193,13 @@ mod tests {
             look(CellState::FullOk, Some(Outline::Warning), &visuals).fill,
         );
         assert_eq!(unchecked.size(), vec2(14.0, 14.0));
+        // The frame's 3 margin, then the swatch centred on its 14.65625-high row:
+        // 3 + 7.328125 - the swatch's 7 half. The second a row and the 4 gap down.
+        assert_eq!(unchecked.top(), 3.328125);
+        assert_eq!(checking.top(), 21.984375);
+        // The frame's 8 margin, the ▾ button and the title (10.78125 + 2 + 46.9375),
+        // and the 16 column gap.
+        assert_eq!(unchecked.left(), 83.71875);
         // The first column right after the title's 16 gap.
         let title = drawn.all("Legend")[0];
         assert_eq!(unchecked.left(), title.right() + 16.0);
