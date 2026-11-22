@@ -1,5 +1,6 @@
-"""Remove the build folder `target/` of merged, clean sidekick worktrees (regenerable), and of
-a hand-given build's worktree (`vgl27`).
+"""Remove the build folder `target/` of merged, clean sidekick worktrees (`sk_*`) and the lead's
+look worktrees (`look_*`, a release build for a look), all regenerable, and of a hand-given
+build's worktree (`vgl27`).
 
     python scripts/clear_targets.py NAME...     NAME = a folder under 4cc-studio-temp, e.g. sk_nocup
 
@@ -48,7 +49,7 @@ targets = []
 refused = []
 for name in names:
     assert name not in NEVER and "/" not in name and "\\" not in name, name
-    assert name.startswith("sk_") or name in HAND_BUILDS, name
+    assert name.startswith(("sk_", "look_")) or name in HAND_BUILDS, name
     tree = TEMP / name
     target = tree / "target"
     if not target.exists():
