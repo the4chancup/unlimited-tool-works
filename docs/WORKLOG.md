@@ -137,8 +137,10 @@ other items run beside it. **After the detour**, in this order:
        - [x] 1 (2026-11-22, merge `4382ae18`, Opus) the builder, and `team_compiler`'s unit
          tests through `resolved*` and the deep helpers, no call site edited. The dummy
          requirement's `notes.txt` holds a single newline, since any text in it reports
-         `notes_found`. Tier 3: one SWE-2 round owed
-       - [ ] 2: `aesthetics_export`'s validator tests through `report*` (about 160)
+         `notes_found`. SWE-2 round S1: 6 accepted, one a real test's input (rulings
+         `.tmp/duck_rulings_builder.md`); their rework follows slice 3, then a second round
+       - [x] 2 (2026-11-22, merge `5a46d101`, SWE-2) `aesthetics_export`'s validator tests
+         through `report*`, nine tests of a requirement's own check on `without`
        - [ ] 3: the Compiler's CLI tests the logo slice touched, through `complete` (about
          155), `view::a_player_folder_s_finding_colours_its_player` (its export written by the
          view tests' own helpers), and the CONTRIBUTING rule
