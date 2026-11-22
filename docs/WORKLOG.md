@@ -199,14 +199,16 @@ other items run beside it. **After the detour**, in this order:
     third add-on, EssexDotDev's 4cc-FMDL-Toolkit, to the Blender plan.
 15. The checkpoint on `f51c570a` (2026-11-22): fmt, clippy and every test suite passed, but
     the mutation run left 10 mutants alive, so `refs/checkpoints/gated` stays at `fc6e8cf0`
-    (list: `.tmp/lead/mutants_f51c570a/missed_all.txt`). Owed: their triage, as the
-    checkpoints' are (a Windows-only function tested on the VPS's Linux half is no gap), then
-    their tests in one SWE-2 slice, then a pipeline at the new HEAD:
-    - `save_editor` `view/portraits.rs` `read_images` (`&&` to `||`);
-    - `studio` `session_link.rs` (two timeouts) and `crash_dump.rs` `wait_until`,
-      `journal_holds_steps`;
-    - `studio_core` `shell/report.rs` `local_clock`, and four in `repro/session.rs`
-      `SessionWriter::adopt_folder` (5b2's folder adoption).
+    (list: `.tmp/lead/mutants_f51c570a/missed_all.txt`). Triaged 2026-11-22:
+    - the two `session_link.rs` timeouts are caught: each mutant makes `give`'s send loop
+      endless, and a timeout an infinite loop explains counts as caught (RUNBOOK "Mutation
+      runs");
+    - [ ] the other eight get tests in one SWE-2 slice (`sk/mut15`, brief
+      `.tmp/mut15/brief_mut15.md`): `read_images`' placeholder read, `crash_dump.rs`'s
+      `wait_until` (its limit made a parameter, so a test reaches it without waiting 120 s)
+      and `journal_holds_steps`, `local_clock`, and `adopt_folder`'s unreadable journal and
+      output dedupe (four mutants);
+    - [ ] then `just pipeline` at the new HEAD.
 
 Most open steps below wait only on a check in the game or the built window that the lead's
 harness makes ("Pending looks" below), not on the maintainer.
