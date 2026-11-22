@@ -5,6 +5,10 @@ use crate::cells::{Cell, Position, Width};
 /// One export's row: its label, its ID, and its lines or a message in their place.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Row {
+    /// What names the export, unique in the grid and the same from one check to the next (the
+    /// Compiler's: the export's folder or archive name), so a pinned cell stays pinned when the
+    /// rows are made again.
+    pub key: String,
     /// The label at the row's left. Its text is the team's name; its state and findings are
     /// the export's own: about the export as a whole, and about what has no cell of its own.
     pub label: Cell,
@@ -12,6 +16,10 @@ pub struct Row {
     pub id: Option<IdCell>,
     /// What stands right of the first vertical line.
     pub body: RowBody,
+    /// The export's findings as the log prints them, one line each: what the label's Copy
+    /// messages puts on the clipboard. When it is empty, the label's window has no Copy
+    /// messages.
+    pub log_lines: Vec<String>,
 }
 
 /// An ID cell.

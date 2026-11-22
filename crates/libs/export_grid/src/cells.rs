@@ -1,6 +1,8 @@
 //! A grid cell: what it shows, and the colours its state paints it in (the draft's
 //! `COLOURS`, `OUTLINES` and `labelColour`).
 
+use std::path::PathBuf;
+
 use egui::Color32;
 use studio_core::Message;
 use studio_core::theme::palette;
@@ -45,7 +47,8 @@ pub enum Width {
     Wide,
 }
 
-/// One cell: its text, its state, its ring, and the findings it stands for.
+/// One cell: its text, its state, its ring, the findings it stands for, and the folder its
+/// detail window names and opens.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Cell {
     /// What the cell shows: a slot number, a kit's name, a count or a word.
@@ -58,10 +61,16 @@ pub struct Cell {
     pub messages: Vec<Message>,
     /// How much room it takes.
     pub width: Width,
+    /// Where the cell's files are, as its detail window prints it under the top box: a
+    /// folder inside the export (`Players/05 - Bob`), or the export's own name for its label.
+    pub place: String,
+    /// What a double-click on the cell, or its window's Open folder, opens; `None` for a cell
+    /// with no one folder to open, whose window then has no Open folder.
+    pub open: Option<Open>,
 }
 
 impl Cell {
-    /// A square cell showing `text` in `state`, with no ring and no finding.
+    /// A square cell showing `text` in `state`, with no ring, no finding and no folder.
     pub fn new(text: impl Into<String>, state: CellState) -> Cell {
         Cell {
             text: text.into(),
@@ -69,7 +78,36 @@ impl Cell {
             outline: None,
             messages: Vec::new(),
             width: Width::Square,
+            place: String::new(),
+            open: None,
         }
+    }
+}
+
+/// What the file manager opens for a cell.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Open {
+    /// This folder.
+    Folder(PathBuf),
+    /// The folder holding this file, the file selected: a cell of an export packed in an
+    /// archive, which has no folder of its own on disk.
+    Select(PathBuf),
+}
+
+/// The name the detail window gives a cell drawn in `state` with `outline`: a check's ring
+/// names its severity, else the state is named as the legend names it.
+pub(crate) fn state_name(state: CellState, outline: Option<Outline>) -> &'static str {
+    match (state, outline) {
+        (CellState::PartialOk | CellState::FullOk, Some(Outline::Error)) => "Error",
+        (CellState::PartialOk | CellState::FullOk, Some(Outline::Warning)) => "Warning",
+        (CellState::Unchecked, _) => "Unchecked",
+        (CellState::Checking, _) => "Checking",
+        (CellState::PartialOk, None) => "Shallow check done (archive)",
+        (CellState::FullOk, None) => "Checked",
+        (CellState::Done, _) => "Done",
+        (CellState::DoneWithWarnings, _) => "Done with warnings",
+        (CellState::DoneWithErrors, _) => "Done with errors",
+        (CellState::Blocked, _) => "Blocked",
     }
 }
 

@@ -5,12 +5,15 @@
 
 use std::time::Duration;
 
-use export_grid::{CellState, ColumnGroup, Columns, LegendEntry, Outline, Row, Width};
+use export_grid::{
+    CellState, ColumnGroup, Columns, Detail, LegendEntry, Open, Outline, Row, Width,
+};
+use studio_core::files::{open_folder, show_in_folder};
 use studio_core::widgets::add_enabled;
-use studio_core::{HelpTarget, LogPanel, ToolContext};
+use studio_core::{CatalogRow, HelpTarget, LogPanel, ToolContext};
 
 use crate::gui_run::RunLog;
-use crate::messages::TOOL_ID;
+use crate::messages::{self, TOOL_ID};
 
 /// The grid's column groups: a player's 23 positions, the portraits, the 10 kits.
 const GROUPS: [ColumnGroup; 3] = [
@@ -75,8 +78,26 @@ const LEGEND: [&[LegendEntry]; 6] = [
     &[entry(CellState::Blocked, None, "Blocked")],
 ];
 
-/// Shows the window over `rows`, the grid's check's, drawn as being checked while `checking`;
-/// `true` when Compile was clicked this frame.
+/// The grid's detail window: what it keeps from frame to frame, and the catalog it explains
+/// findings from, built once rather than on every frame.
+pub(crate) struct GridDetail {
+    state: Detail,
+    catalog: Vec<CatalogRow>,
+}
+
+impl GridDetail {
+    /// No window open, the Compiler's catalog.
+    pub(crate) fn new() -> GridDetail {
+        GridDetail {
+            state: Detail::default(),
+            catalog: messages::catalog(),
+        }
+    }
+}
+
+/// Shows the window over `rows`, the grid's check's, drawn as being checked while `checking`,
+/// with `detail`'s window over the grid; `true` when Compile was clicked this frame. A folder
+/// the grid asks for opens in the file manager.
 pub(crate) fn show(
     ui: &mut egui::Ui,
     ctx: &ToolContext,
@@ -84,6 +105,7 @@ pub(crate) fn show(
     panel: &mut LogPanel,
     rows: &[Row],
     checking: bool,
+    detail: &mut GridDetail,
 ) -> bool {
     // The dock claims the bottom first (`spec/core/gui.md` "Shell layout"); the
     // button and the grid take what is left. A
@@ -94,7 +116,23 @@ pub(crate) fn show(
     }
     let clicked = add_enabled(ui, !log.is_running(), egui::Button::new("Compile")).clicked();
     export_grid::legend(ui, (TOOL_ID, "legend"), &LEGEND);
-    export_grid::show(ui, (TOOL_ID, "grid"), &COLUMNS, rows, checking);
+    let grid = export_grid::show(
+        ui,
+        (TOOL_ID, "grid"),
+        &COLUMNS,
+        rows,
+        checking,
+        &mut detail.state,
+        &detail.catalog,
+    );
+    if let Some(code) = grid.help {
+        ctx.open_help(HelpTarget::message(&code));
+    }
+    match grid.open {
+        Some(Open::Folder(folder)) => open_folder(&folder),
+        Some(Open::Select(file)) => show_in_folder(&file),
+        None => {}
+    }
     if log.is_running() || checking {
         // egui repaints only on input, and the run's events and the check's rows arrive on
         // their own: without this the window would advance only when the mouse moves.
@@ -357,8 +395,9 @@ mod tests {
         let ctx = settings_only_context();
         let log = RunLog::default();
         let mut panel = LogPanel::new(TOOL_ID);
+        let mut detail = GridDetail::new();
         let (clicked, nodes) = Headless::new().frame(Vec::new(), |ui| {
-            show(ui, &ctx, &log, &mut panel, &[], false)
+            show(ui, &ctx, &log, &mut panel, &[], false, &mut detail)
         });
         assert!(!clicked);
         assert!(!button(&nodes, "Compile").is_disabled());
@@ -369,19 +408,20 @@ mod tests {
         let ctx = settings_only_context();
         let log = RunLog::default();
         let mut panel = LogPanel::new(TOOL_ID);
+        let mut detail = GridDetail::new();
         let mut window = Headless::new();
         // The first frame lays the button out; egui hit-tests a click against the previous
         // frame's widgets, so the press comes on the second frame and the release on the third.
         let (_, nodes) = window.frame(Vec::new(), |ui| {
-            show(ui, &ctx, &log, &mut panel, &[], false)
+            show(ui, &ctx, &log, &mut panel, &[], false, &mut detail)
         });
         let target = centre(button(&nodes, "Compile"));
         let (clicked, _) = window.frame(press(target), |ui| {
-            show(ui, &ctx, &log, &mut panel, &[], false)
+            show(ui, &ctx, &log, &mut panel, &[], false, &mut detail)
         });
         assert!(!clicked, "not before the release");
         let (clicked, _) = window.frame(release(target), |ui| {
-            show(ui, &ctx, &log, &mut panel, &[], false)
+            show(ui, &ctx, &log, &mut panel, &[], false, &mut detail)
         });
         assert!(clicked);
     }
@@ -393,8 +433,9 @@ mod tests {
         let (release_run, until) = unbounded();
         let mut log = RunLog::in_flight(until);
         let mut panel = LogPanel::new(TOOL_ID);
+        let mut detail = GridDetail::new();
         let (_, nodes) = Headless::new().frame(Vec::new(), |ui| {
-            show(ui, &ctx, &log, &mut panel, &[], false)
+            show(ui, &ctx, &log, &mut panel, &[], false, &mut detail)
         });
         assert!(button(&nodes, "Compile").is_disabled());
         release_run.send(()).unwrap();
@@ -738,6 +779,147 @@ mod tests {
         assert_eq!(portraits(team).unwrap().text, "0/2");
     }
 
+    /// The canonical path of what `open` opens, so a test compares it with a path it built
+    /// whatever link the temp folder is reached through.
+    fn opened(open: Option<&Open>) -> Option<(&'static str, PathBuf)> {
+        open.map(|open| match open {
+            Open::Folder(path) => ("folder", fs::canonicalize(path).unwrap()),
+            Open::Select(path) => ("select", fs::canonicalize(path).unwrap()),
+        })
+    }
+
+    /// `opened`'s answer for a folder at `path`.
+    fn folder_at(path: &Path) -> Option<(&'static str, PathBuf)> {
+        Some(("folder", fs::canonicalize(path).unwrap()))
+    }
+
+    // Each cell names its folder inside the export and opens it: the label the export's own,
+    // the portraits cell the export's `Portraits/` when it has one.
+    #[test]
+    fn each_cell_names_and_opens_its_folder() {
+        let temp = sandbox("view_grid_folders");
+        let root = temp.path();
+        list_teams(root);
+        add_player(root, "co Midcup Map", "03 - B");
+        add_kit(root, "co Midcup Map", "g1");
+        let portrait =
+            fs::read(tracer().join("Players/05 - The Chad Stormworks Player/portrait.dds"))
+                .unwrap();
+        add_file(root, "co Midcup Map/Portraits/03.dds", &portrait);
+        let rows = checked_rows(root);
+        let team = row(&rows, "/co/");
+        assert_eq!(team.key, "co Midcup Map");
+        let export = root.join("exports/co Midcup Map");
+        for (cell, place, folder) in [
+            (&team.label, "co Midcup Map", export.clone()),
+            (
+                player(team, 3).unwrap(),
+                "Players/03 - B",
+                export.join("Players/03 - B"),
+            ),
+            (kit(team, 0).unwrap(), "Kits/g1", export.join("Kits/g1")),
+            (
+                portraits(team).unwrap(),
+                "Portraits",
+                export.join("Portraits"),
+            ),
+        ] {
+            assert_eq!(cell.place, place);
+            assert_eq!(opened(cell.open.as_ref()), folder_at(&folder), "{place}");
+        }
+    }
+
+    // With no `Portraits/` folder, the portraits are in the player folders: the cell has no one
+    // folder to open.
+    #[test]
+    fn a_portraits_cell_without_its_folder_opens_nothing() {
+        let temp = sandbox("view_grid_no_portraits_folder");
+        let root = temp.path();
+        list_teams(root);
+        add_player(root, "co Midcup Map", "03 - B");
+        let rows = checked_rows(root);
+        let cell = portraits(row(&rows, "/co/")).unwrap();
+        assert_eq!(cell.messages, Vec::new(), "premise: no finding");
+        assert_eq!(cell.place, "Portraits in the player folders");
+        assert_eq!(cell.open, None);
+    }
+
+    // Every cell of an archive export opens the folder holding it, the archive selected.
+    #[test]
+    fn every_cell_of_an_archive_selects_the_archive() {
+        let temp = sandbox("view_grid_archive_open");
+        let root = temp.path();
+        list_teams(root);
+        let archive = root.join("exports/co Midcup Tracer.zip");
+        fs::copy(
+            Path::new(env!("CARGO_MANIFEST_DIR"))
+                .join("tests/fixtures/sources/egg Midcup Tracer.zip"),
+            &archive,
+        )
+        .unwrap();
+        let rows = checked_rows(root);
+        let team = row(&rows, "/co/");
+        assert_eq!(team.key, "co Midcup Tracer.zip");
+        let selected = Some(("select", fs::canonicalize(&archive).unwrap()));
+        for cell in [
+            &team.label,
+            player(team, 5).unwrap(),
+            kit(team, 0).unwrap(),
+            portraits(team).unwrap(),
+        ] {
+            assert_eq!(opened(cell.open.as_ref()), selected, "{}", cell.text);
+        }
+        assert_eq!(
+            player(team, 5).unwrap().place,
+            "Players/05 - The Chad Stormworks Player"
+        );
+    }
+
+    // The label's Copy messages copies the export's findings as the log prints them, in the
+    // order the check reported them: three findings on two players and the label, then the
+    // Info every identified export carries.
+    #[test]
+    fn a_row_s_log_lines_are_its_export_s_findings_as_the_log_prints_them() {
+        let temp = sandbox("view_grid_log_lines");
+        let root = temp.path();
+        list_teams(root);
+        for folder in ["03 - B", "07 - C"] {
+            add_player(root, "co Midcup Map", folder);
+        }
+        add_file(root, "co Midcup Map/Players/03 - B/notes.exe", b"");
+        add_file(root, "co Midcup Map/Players/07 - C/fpc_on", b"");
+        add_file(root, "co Midcup Map/Players/07 - C/fpc_off", b"");
+        add_file(root, "co Midcup Map/Boots/Solo/boots.fmdl", b"");
+        let rows = checked_rows(root);
+        let team = row(&rows, "/co/");
+        assert_eq!(
+            team.log_lines,
+            [
+                "- co Midcup Map: Error file_type_disallowed at Players/03 - B (file=notes.exe)",
+                "- co Midcup Map: Error fpc_conflict at Players/07 - C",
+                "- co Midcup Map: Warning shared_folder_orphaned at Boots/Solo",
+                "- co Midcup Map: Info export_identified (team=/co/, id=714)",
+            ]
+        );
+    }
+
+    // TC-GUI-25: an export with no Warning and no Error has nothing to send its member, so its
+    // label offers no Copy messages, though the check's Info `export_identified` is in the log.
+    #[test]
+    fn a_clean_export_s_row_has_no_log_lines() {
+        let temp = sandbox("view_grid_clean_log_lines");
+        let root = temp.path();
+        list_teams(root);
+        add_player(root, "co Midcup Map", "03 - B");
+        let rows = checked_rows(root);
+        let team = row(&rows, "/co/");
+        assert_eq!(
+            team.label.outline, None,
+            "premise: no Warning or Error on the label"
+        );
+        assert_eq!(team.log_lines, Vec::<String>::new());
+    }
+
     // An export whose name says neither `Full` nor `Midcup` shows a warning in place of its
     // cells.
     #[test]
@@ -811,9 +993,11 @@ mod tests {
     /// A row a test check hands back: /egg/'s label alone.
     fn label_only_row() -> Row {
         Row {
+            key: "egg Midcup Tracer".to_owned(),
             label: Cell::new("/egg/", CellState::FullOk),
             id: Some(IdCell::Known("792".to_owned())),
             body: RowBody::Lines(Vec::new()),
+            log_lines: Vec::new(),
         }
     }
 
@@ -901,10 +1085,11 @@ mod tests {
         let ctx = settings_only_context();
         let log = RunLog::default();
         let mut panel = LogPanel::new(TOOL_ID);
+        let mut detail = GridDetail::new();
         let mut window = Headless::new();
         let mut frame = |checking| {
             window.frame(Vec::new(), |ui| {
-                show(ui, &ctx, &log, &mut panel, &[], checking)
+                show(ui, &ctx, &log, &mut panel, &[], checking, &mut detail)
             });
             window.repaint_delay
         };
@@ -961,17 +1146,18 @@ mod tests {
         let lines: Vec<String> = (1..=40).map(|line| format!("log line {line}")).collect();
         log.append_test_lines(&lines.iter().map(String::as_str).collect::<Vec<_>>());
         let mut panel = LogPanel::new(TOOL_ID);
+        let mut detail = GridDetail::new();
         let mut window = Headless::new();
         // The log overflows the panel's body: stuck to the end, the offset is off the top.
         window.frame(Vec::new(), |ui| {
-            show(ui, &ctx, &log, &mut panel, &[], false)
+            show(ui, &ctx, &log, &mut panel, &[], false, &mut detail)
         });
         let before = scroll_offset(&window.ctx);
         assert!(before > 0.0, "stuck to the bottom of a log that overflows");
         // A line arrives: the offset grows with the content, the last line still shown.
         log.append_test_lines(&["log line 41"]);
         window.frame(Vec::new(), |ui| {
-            show(ui, &ctx, &log, &mut panel, &[], false)
+            show(ui, &ctx, &log, &mut panel, &[], false, &mut detail)
         });
         let after = scroll_offset(&window.ctx);
         assert!(

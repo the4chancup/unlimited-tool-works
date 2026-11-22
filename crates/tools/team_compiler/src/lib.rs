@@ -43,13 +43,16 @@ use studio_core::{
 use crate::check::live::LiveCheck;
 use crate::gui_run::RunLog;
 use crate::messages::TOOL_ID;
+use crate::view::GridDetail;
 
 /// The Compiler, as registered with the `studio` binary. Its window state is
 /// the run log — the `compile` the Compile button started, and its lines — the
-/// grid's check and its rows, and the log panel's own view state.
+/// grid's check and its rows, the grid's detail window, and the log panel's own
+/// view state.
 pub struct Tool {
     run_log: RunLog,
     live_check: LiveCheck,
+    detail: GridDetail,
     log_panel: LogPanel,
     /// The running-PES probe the savefile step asks: the real process list in
     /// production, a stub reporting no game under `cargo test` (`running_probe`),
@@ -70,6 +73,7 @@ impl Tool {
         Tool {
             run_log: RunLog::default(),
             live_check: LiveCheck::default(),
+            detail: GridDetail::new(),
             log_panel: LogPanel::new(TOOL_ID),
             running,
         }
@@ -116,7 +120,16 @@ impl StudioTool for Tool {
         }
         let rows = self.live_check.rows();
         let checking = self.live_check.is_running();
-        if view::show(ui, ctx, &self.run_log, &mut self.log_panel, rows, checking) {
+        let panel = &mut self.log_panel;
+        if view::show(
+            ui,
+            ctx,
+            &self.run_log,
+            panel,
+            rows,
+            checking,
+            &mut self.detail,
+        ) {
             self.run_log.start_compile(ctx, self.running);
         }
     }
