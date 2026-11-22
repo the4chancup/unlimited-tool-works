@@ -117,7 +117,9 @@ other items run beside it. **Ahead of item 6:** the `pes14` branch's step 12, a 
      releases from being offered to it (`RUNBOOK.md` "The VGL organizer's build"); packed in
      the `vgl27` worktree's `target/dist/` and checked in its built window (both tools
      clickable, the Compiler's grid opening, the upgrader on its placeholder line), handed over
-     by the maintainer
+     by the maintainer as it is
+   - [ ] The next VGL build, `0.0.3-vgl27.2`, once the Compiler's slices 1b and 1c have landed
+     (the maintainer, 2026-11-22): `vgl27` merges main, raises the version, is packed
    - [ ] VGL27's legacy mode off main, onto `vgl27` alone (DECISIONS 2026-11-22): the removal
      running (Opus, `sk/legacy-out`); then its merge, `vgl27` merging main and reverting it,
      and the CHANGELOG's `### Important` line on the `legacy_ids.toml` 0.0.2 wrote
