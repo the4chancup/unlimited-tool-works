@@ -413,6 +413,9 @@ each run rewrites its generated config, and the cost table lives outside every `
 A tree whose next build should stay quick (the gate's, main's) loses only its old copies: `python
 scripts/stale_deps.py <target>/debug/deps` lists every artifact a newer build of the same
 crate replaced, and `--apply` removes them (6.6 GB of the gate's 120 GB on 2026-11-22).
+Such a tree's caches go too: `python scripts/clear_caches.py [--dry-run] <name>...` removes
+its incremental caches, cargo's `tmp/` and the Save editor tests' scratch, refusing a tree a
+build or test runs from (86 GB from the gate, pes14 and `sk_mut` on 2026-11-23).
 
 **On the VPS the project leaves the host 2 GiB of free disk** and may hold the rest: the
 host's production service runs but is used by nobody, so the 40 GB the project's folder was
