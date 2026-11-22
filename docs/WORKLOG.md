@@ -3712,9 +3712,11 @@ points there.
   127 in the newer save, /gd/ at 136 in `EDIT.bin.autumn14`. It is left unpushed. Build 3
   now also carries the `pes14` plan's step 12 (Team TOML on PES 2014). That step landed on
   `pes14` 2026-11-22 (slices a to f, then `91d84e69`), its data check passed on the rebuilt
-  release, and its in-game look waits for a time when OBS may be used or focus taken. The
-  `tasks.html` card, taken down meanwhile, comes back after that look, for the maintainer's
-  yes.
+  release. Build 3 was rebuilt at `be6f9ed5` (`pes14`): full gates passed, the /gd/ check
+  and HAGSEO's Appearance page and Hide default body checked again on its release build. Its
+  `tasks.html` card is back: the maintainer approves the `[Unreleased]` section and chooses
+  whether the release waits for step 12's in-game look, which waits with every in-game check
+  until the maintainer resumes them (2026-11-22).
   The Compiler's view (item 6) goes on without waiting for it (the maintainer, 2026-11-22).
 - open (2026-11-22) — The Save editor's tests leave their scratch behind:
   `test_support::scratch` empties `target/<profile>/save_editor_tests/<test>` when a test

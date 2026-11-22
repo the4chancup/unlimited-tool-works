@@ -39,6 +39,45 @@ card.</p>
 <ul id="toc"></ul>
 
 <h2>Tests on another machine or in the game</h2>
+<section class="entry" id="pes14-build3-cut">
+  <h3>PES 2014 Build 3: the release notes and your yes</h3>
+  <p class="from">From: the pes14 branch's step 12 (Team TOML on PES 2014) and the worklog issue
+  "PES 2014 Build 2 crashed on the Appearance page"</p>
+  <p>Build 3 (<code>0.0.2-pes14.3</code>) fixes the crash the Akko organizer met, and copies a
+  whole PES 2014 team from one save to another as a Team TOML file. It has passed its gates.
+  Its build is <code>C:\Data\4cc\Tools_Mine\4cc-studio-temp\tasks_build\UTW-pes14-be6f9ed5.exe</code>,
+  not the one named above. Nothing is pushed or released until you say yes.</p>
+  <p>The lead checked this build on copies of two saves:</p>
+  <ul>
+    <li>the organizer's newer save: /hi3/'s HAGSEO, a player edited in the game, opens on his
+      Appearance page, and Hide default body works on him;</li>
+    <li>your <code>EDIT.bin.autumn14</code>: /gd/ (team 136) exported, imported onto /hi3/ in the
+      organizer's save, and exported again. The two files match except for the team ID, the
+      looks of the 22 players with no appearance record of their own (the game takes those
+      from its database, so they cannot travel), and two values the write sets as the game
+      does: the one record's player ID bytes and the basic settings flag.</li>
+  </ul>
+  <p>Not checked yet: the imported team in the game's Edit mode (names, looks, Game Plan),
+  since in-game checks wait for your word.</p>
+  <ol>
+    <li>Read the release notes: the <code>[Unreleased]</code> section at the top of
+      <code>C:\Data\4cc\Tools_Mine\4cc-studio-temp\pes14\CHANGELOG.md</code>. It becomes
+      Build 3's section.</li>
+    <li>Optionally, try the build on a PES 2014 save of your own.</li>
+  </ol>
+  <div class="options">
+    <label class="opt"><input type="radio" value="release now"><b>Release it now</b>
+      <div class="note">The in-game look follows when in-game checks resume.</div></label>
+    <label class="opt"><input type="radio" value="release after the look"><b>Release it after the
+      in-game look</b></label>
+    <label class="opt"><input type="radio" value="release after changes"><b>Release it after
+      changes</b><div class="note">Say what below: in the notes or in the build.</div></label>
+    <label class="opt"><input type="radio" value="not yet"><b>Not yet</b>
+      <div class="note">Say why below.</div></label>
+  </div>
+  <textarea class="own" placeholder="Changes, or what you saw (optional)"></textarea>
+</section>
+
 <section class="entry" id="poc5-in-game">
   <h3>The 0.0.2-poc.5 bundle in the game</h3>
   <p class="from">From: worklog 0.0.2-poc; yours since 2026-11-11</p>
