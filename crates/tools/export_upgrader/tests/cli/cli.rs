@@ -71,8 +71,10 @@ fn the_output_name_carries_the_key_the_tag_and_the_rest() {
         "co Full Spring",
     ] {
         old_export(&sandbox, name, Some("/co/"));
-        // A face folder, so each run is clean and its output is written.
+        // A face folder and a logo, so each run is clean and its output is
+        // written.
         face(&sandbox, &format!("{name}/Faces/XXX05 - A"));
+        sandbox.logo(name);
     }
     let save = sandbox.arg("EDIT");
     sandbox.save("EDIT");
@@ -113,6 +115,7 @@ fn coverage_flag_sets_the_tag_and_a_conflict_with_the_names_own_is_refused() {
     for name in ["co - Spring", "co Day 8 Additions", "co Full Spring"] {
         old_export(&sandbox, name, Some("/co/"));
         face(&sandbox, &format!("{name}/Faces/XXX05 - A"));
+        sandbox.logo(name);
     }
     let save = sandbox.arg("EDIT");
     sandbox.save("EDIT");
@@ -486,12 +489,13 @@ fn a_corrupt_archive_is_export_extract_failed() {
     assert_eq!(sandbox.listing(""), before, "nothing is written");
 }
 
-/// Old exports at each of `names`, each with a face folder so that its run is
-/// clean, the Note naming `team`.
+/// Old exports at each of `names`, each with a face folder and a logo so that
+/// its run is clean, the Note naming `team`.
 fn clean_old_exports(sandbox: &Sandbox, names: &[&str], team: &str) {
     for name in names {
         old_export(sandbox, name, Some(team));
         face(sandbox, &format!("{name}/Faces/XXX05 - A"));
+        sandbox.logo(name);
     }
 }
 

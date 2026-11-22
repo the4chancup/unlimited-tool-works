@@ -415,7 +415,9 @@ impl UnmigratedReason {
 /// (`aesthetics_export::ISSUE_CODES`) in `ISSUE_CODES` order. A structure-pass
 /// row's `when` is the Compiler's cell word for word (the same condition on
 /// the upgraded export), unless this tool's own table describes the row
-/// (`team_name_unknown`, `source_read_failed`), and its `effect` the upgrade's.
+/// (`team_name_unknown`, `source_read_failed`, `logo_missing`) or the
+/// Compiler's names what only a compile sees (`portrait_missing`'s installed
+/// portraits), and its `effect` the upgrade's.
 /// The issue severities are the Compiler's catalog's, each run-dependent
 /// row taken as for a compile that deploys with pass-through and the strict
 /// file-type check on (the output's check runs with it), and an E/F row as an
@@ -886,6 +888,18 @@ const CATALOG: &[(&str, Severity, &str, &str)] = &[
         r#"The run is not clean, so nothing is written."#,
     ),
     (
+        "portrait_missing",
+        Severity::Warning,
+        r#"In PES 2017 to 2021, a player of an export upgraded as `Full` has no portrait."#,
+        r#"Found in the upgraded export, which is still written."#,
+    ),
+    (
+        "logo_missing",
+        Severity::Error,
+        r#"An export upgraded as `Full` has no logo: the old export has no `Logo/` folder, or no image in it can be read."#,
+        r#"The run is not clean, so nothing is written. Put the logo in the old export's `Logo/` folder as `emblem_0XXX_r_ll.png`, or upgrade it with `--coverage midcup` if it only adds to what is installed."#,
+    ),
+    (
         "logo_file_invalid",
         Severity::Error,
         r#"A root `logo*` file has an unknown tag in its name, is in a format the compiler does not read, or does not decode."#,
@@ -1127,6 +1141,8 @@ mod tests {
             ("save_team_name_repeated", Severity::Warning),
             ("nested_folders_fixed", Severity::Warning),
             ("kit_textures_inherited", Severity::Info),
+            ("logo_missing", Severity::Error),
+            ("portrait_missing", Severity::Warning),
         ] {
             assert_eq!(severity(code), expected, "{code}");
         }

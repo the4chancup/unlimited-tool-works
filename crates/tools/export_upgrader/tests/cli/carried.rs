@@ -6,6 +6,7 @@
 use std::fs;
 
 use crate::common::Sandbox;
+use crate::kits::kit_config;
 
 /// `upgrade <input> --savefile <save>`.
 fn upgrade(sandbox: &Sandbox, input: &str, save: &str) -> crate::common::Run {
@@ -28,6 +29,7 @@ fn logo_fixture(relative: &str) -> Vec<u8> {
 #[test]
 fn portraits_renamed_and_collars_carried() {
     let sandbox = Sandbox::new("mdl_portraits_collars");
+    sandbox.logo("co Kits");
     for (name, bytes) in [
         ("player_XXX05.dds", b"p05" as &[u8]),
         ("player_71407.dds", b"p07"),
@@ -66,6 +68,7 @@ fn portraits_renamed_and_collars_carried() {
 #[test]
 fn only_a_portrait_the_old_check_passed_migrates_the_refused_are_leftovers() {
     let sandbox = Sandbox::new("mdl_portraits_leftovers");
+    sandbox.logo("co Kits");
     // BAG VGL18.5's `player_XXX08.jpg` migrated; the six other names the
     // old check refused (a subfolder's included) never reached the game.
     let refused = [
@@ -324,6 +327,7 @@ fn antiblur_fmdl() -> Vec<u8> {
 #[test]
 fn common_references_become_the_bare_name_and_the_link() {
     let sandbox = Sandbox::new("mdl_common_mtl");
+    sandbox.logo("co Spring");
     sandbox.write("co Spring/Faces/XXX07 - A/face_high_win32.model", b"face");
     sandbox.write("co Spring/Faces/XXX07 - A/face_srm.dds", b"srm");
     sandbox.write(
@@ -378,6 +382,7 @@ fn common_references_become_the_bare_name_and_the_link() {
 #[test]
 fn a_reference_whose_common_file_is_missing_is_kept_and_warned() {
     let sandbox = Sandbox::new("mdl_common_missing");
+    sandbox.logo("co Spring");
     sandbox.write("co Spring/Faces/XXX07 - A/face_high_win32.model", b"face");
     sandbox.write(
         "co Spring/Faces/XXX07 - A/face.mtl",
@@ -406,6 +411,7 @@ fn a_reference_whose_common_file_is_missing_is_kept_and_warned() {
 #[test]
 fn a_prefox_common_segment_of_any_name_is_the_team_s_common() {
     let sandbox = Sandbox::new("mdl_common_segment");
+    sandbox.logo("vg Spring");
     // `vg` and `VG` are the team's Common as `XXX` is: the batch compiler
     // wrote a pre-Fox export's Common under its name there.
     sandbox.write("vg Spring/Faces/XXX07 - A/face_high_win32.model", b"face");
@@ -446,6 +452,7 @@ fn a_prefox_common_segment_of_any_name_is_the_team_s_common() {
 #[test]
 fn a_fox_face_folder_s_fmdl_names_its_own_and_common_textures() {
     let sandbox = Sandbox::new("mdl_fox_fmdl");
+    sandbox.logo("co Spring");
     sandbox.write(
         "co Spring/Faces/XXX07 - A/face_high.fmdl",
         &fmdl(&[
@@ -487,6 +494,7 @@ fn a_fox_face_folder_s_fmdl_names_its_own_and_common_textures() {
 #[test]
 fn a_fox_face_folder_s_common_kit_reference_links_the_set() {
     let sandbox = Sandbox::new("mdl_fox_kit_set");
+    sandbox.logo("co Spring");
     sandbox.write(
         "co Spring/Faces/XXX07 - A/face_high.fmdl",
         &fmdl(&[(
@@ -522,6 +530,7 @@ fn a_fox_face_folder_s_common_kit_reference_links_the_set() {
 #[test]
 fn a_prefox_face_folder_s_kit_magic_files_references_and_face_xml_migrate() {
     let sandbox = Sandbox::new("mdl_kit_magic");
+    sandbox.logo("co Spring");
     sandbox.write("co Spring/Faces/XXX07 - A/face_high_win32.model", b"face");
     sandbox.write("co Spring/Faces/XXX07 - A/u0XXXp1.dds", b"p1");
     sandbox.write("co Spring/Faces/XXX07 - A/u0714p2.dds", b"p2");
@@ -617,6 +626,7 @@ fn a_prefox_face_folder_s_kit_magic_files_references_and_face_xml_migrate() {
 #[test]
 fn a_fox_common_keeper_file_and_reference_respell_to_gk_kit() {
     let sandbox = Sandbox::new("mdl_fox_keeper");
+    sandbox.logo("co Spring");
     sandbox.write(
         "co Spring/Faces/XXX07 - A/face_high.fmdl",
         &fmdl(&[(
@@ -657,6 +667,7 @@ fn a_fox_common_keeper_file_and_reference_respell_to_gk_kit() {
 #[test]
 fn two_files_the_old_id_rename_made_one_keep_the_last_renamed() {
     let sandbox = Sandbox::new("mdl_id_rename");
+    sandbox.logo("co Spring");
     // The rename replaced the file under its target name in listing order:
     // `u0XXX` sorts after `u0714`/`u0715` folded, so the game loaded the
     // `u0XXX` file of each pair, different bytes each.
@@ -694,6 +705,7 @@ fn two_files_the_old_id_rename_made_one_keep_the_last_renamed() {
 #[test]
 fn without_a_save_the_lettered_copy_still_wins_the_old_rename_s_collision() {
     let sandbox = Sandbox::new("mdl_id_rename_loose");
+    sandbox.logo("co Spring");
     // EU-MDL-21's export, no save: the lettered `u0XXX` copy is what the old
     // compile shipped whatever ID the team had, so the loose run keeps it as
     // the saved one does.
@@ -765,6 +777,7 @@ fn numbered_copies_alone_are_unmigrated_content_save_or_none() {
 #[test]
 fn an_fmdl_s_folders_below_common_are_respelled_team_folder() {
     let sandbox = Sandbox::new("mdl_fox_common_folders");
+    sandbox.logo("co Spring");
     sandbox.write(
         "co Spring/Faces/XXX07 - A/face_high.fmdl",
         &fmdl(&[
@@ -816,6 +829,7 @@ fn an_fmdl_s_folders_below_common_are_respelled_team_folder() {
 #[test]
 fn the_kit_stand_in_s_old_spelling_is_written_team_kit_in_both_modes() {
     let sandbox = Sandbox::new("mdl_kit_stand_in");
+    sandbox.logo("co Spring");
     sandbox.write("co Spring/Faces/XXX07 - A/face_high_win32.model", b"face");
     sandbox.write(
         "co Spring/Faces/XXX07 - A/face.mtl",
@@ -876,10 +890,63 @@ fn the_kit_stand_in_s_old_spelling_is_written_team_kit_in_both_modes() {
     }
 }
 
+// EU-MDL-43
+#[test]
+fn an_export_with_no_logo_upgraded_as_full_writes_nothing_and_as_midcup_is_written() {
+    let sandbox = Sandbox::new("mdl_logo_missing");
+    sandbox.write(
+        "co - Spring/Faces/XXX07 - A/face_high.fmdl",
+        &fmdl(&[("./", "skin")]),
+    );
+    sandbox.write("co - Spring/Faces/XXX07 - A/skin.dds", b"skin");
+    sandbox.copy_fixture(
+        &kit_config("1st"),
+        "co - Spring/Kit Configs/XXX_DEF_1st_realUni.bin",
+    );
+    sandbox.write("co - Spring/Kit Textures/u0XXXp1.dds", b"p1 main");
+    sandbox.save("EDIT");
+
+    let run = upgrade(&sandbox, "co - Spring", "EDIT");
+    let stdout = run.stdout();
+    assert_eq!(run.exit_code(), 1, "{stdout}");
+    assert!(
+        stdout.contains("- co Full - Spring: Error logo_missing\n"),
+        "{stdout}"
+    );
+    assert!(stdout.contains("migration_not_clean"), "{stdout}");
+    sandbox.assert_nothing_written("co Full - Spring", &stdout);
+
+    let input = sandbox.arg("co - Spring");
+    let save = sandbox.arg("EDIT");
+    let run = sandbox.run(&[
+        "upgrade",
+        &input,
+        "--savefile",
+        &save,
+        "--coverage",
+        "midcup",
+    ]);
+    let stdout = run.stdout();
+    assert_eq!(run.exit_code(), 0, "{stdout}");
+    assert!(stdout.contains("migration_clean"), "{stdout}");
+    assert!(!stdout.contains("logo_missing"), "{stdout}");
+    let output = sandbox.listing("co Midcup - Spring");
+    for written in ["Players/07 - A/face_high.fmdl", "Kits/p1/kit.dds"] {
+        assert!(output.iter().any(|entry| entry == written), "{output:?}");
+    }
+    assert!(
+        output
+            .iter()
+            .all(|entry| !entry.to_ascii_lowercase().starts_with("logo")),
+        "{output:?}"
+    );
+}
+
 // EU-MDL-40
 #[test]
 fn a_fox_fmdl_s_other_directories_and_common_sourceimages_behave() {
     let sandbox = Sandbox::new("mdl_fox_dirs");
+    sandbox.logo("co Spring");
     sandbox.write(
         "co Spring/Faces/XXX07 - A/face_high.fmdl",
         &fmdl(&[
@@ -916,6 +983,7 @@ fn a_fox_fmdl_s_other_directories_and_common_sourceimages_behave() {
 #[test]
 fn a_prefox_common_kit_reference_links_the_common_set() {
     let sandbox = Sandbox::new("mdl_common_kit_set");
+    sandbox.logo("co Spring");
     sandbox.write("co Spring/Faces/XXX07 - A/face_high_win32.model", b"face");
     sandbox.write(
         "co Spring/Faces/XXX07 - A/face.mtl",
@@ -961,6 +1029,7 @@ fn a_prefox_common_kit_reference_links_the_common_set() {
 #[test]
 fn an_mtl_s_stray_text_is_dropped_and_the_file_written_back() {
     let sandbox = Sandbox::new("mdl_stray_text");
+    sandbox.logo("co Spring");
     // G Autumn 25's "72117 - Lisa" apc.mtl: a `\` typed after a <sampler/>.
     let apc = "<materialset>\r\n    <material name=\"apc\" shader=\"Apc\">\r\n        <sampler name=\"SpecularMap\" path=\"model/character/uniform/common/specular.dds\" srgb=\"1\" minfilter=\"linear\" magfilter=\"linear\" mipfilter=\"linear\" uaddr=\"wrap\" vaddr=\"wrap\" waddr=\"wrap\" maxaniso=\"2\" />\\\r\n    </material>\r\n</materialset>\r\n";
     sandbox.write("co Spring/Faces/72117 - Lisa/apc.mtl", apc.as_bytes());
@@ -1046,6 +1115,7 @@ fn a_face_xml_in_a_subfolder_fails_the_strict_output_check() {
 #[test]
 fn prefox_model_names_move_the_leading_type_last_unless_a_face_xml_ships() {
     let sandbox = Sandbox::new("mdl_type_renames");
+    sandbox.logo("co Spring");
     sandbox.write("co Spring/Faces/XXX07 - A/gloveL_foo.model", b"gloves");
     sandbox.write("co Spring/Faces/XXX07 - A/bar_gloveR.model", b"bar");
     sandbox.write("co Spring/Faces/XXX07 - A/plain.model", b"plain");
@@ -1080,6 +1150,7 @@ fn prefox_model_names_move_the_leading_type_last_unless_a_face_xml_ships() {
 #[test]
 fn prefox_wrapped_models_and_their_mtls_and_links_rename() {
     let sandbox = Sandbox::new("mdl_wrapper_renames");
+    sandbox.logo("co Spring");
     sandbox.write(
         "co Spring/Faces/XXX07 - A/oral_parts_body_win32.model",
         b"body",
@@ -1122,6 +1193,7 @@ fn prefox_wrapped_models_and_their_mtls_and_links_rename() {
 #[test]
 fn a_common_file_the_face_xml_names_keeps_its_name() {
     let sandbox = Sandbox::new("mdl_common_kept");
+    sandbox.logo("co Spring");
     sandbox.write(
         "co Spring/Faces/XXX07 - A/face.xml",
         b"<config><model level=\"0\" type=\"handL\" path=\"model/character/uniform/common/XXX/oral_hand_l_*.model\" material=\"./x.mtl\"/></config>",
@@ -1150,6 +1222,7 @@ fn a_common_file_the_face_xml_names_keeps_its_name() {
 #[test]
 fn a_dds_beside_an_ftex_of_one_stem_is_resolved_by_use() {
     let sandbox = Sandbox::new("mdl_dds_ftex_pair");
+    sandbox.logo("co Spring");
     // VGL26 /akg/'s shape: `Common/` holds one stem twice, as `.dds` and
     // `.ftex`; a used stem keeps the `.dds`, an unused one drops both.
     sandbox.write(
@@ -1205,6 +1278,7 @@ fn a_dds_beside_an_ftex_of_one_stem_is_resolved_by_use() {
 #[test]
 fn a_model_far_in_every_vertex_is_dropped() {
     let sandbox = Sandbox::new("mdl_far_models");
+    sandbox.logo("co Spring");
     // Slot 02's face and hair are the template-hiding far models, 204
     // vertices each; his gloves folder's right glove is another.
     sandbox.write(
@@ -1262,6 +1336,7 @@ fn a_model_far_in_every_vertex_is_dropped() {
 #[test]
 fn a_folder_left_modelless_by_the_drop_hides_the_hands() {
     let sandbox = Sandbox::new("mdl_far_modelless");
+    sandbox.logo("co Spring");
     // Both gloves far: the folder is modelless, and its wearer gets the
     // hidden hands any modelless gloves folder gives.
     crate::players::face(&sandbox, "co Spring/Faces/XXX05 - Ann");
@@ -1324,6 +1399,7 @@ fn antiblur_written_off(path: &std::path::Path) {
 #[test]
 fn the_antiblur_copies_are_written_off() {
     let sandbox = Sandbox::new("mdl_antiblur");
+    sandbox.logo("co Spring");
     crate::players::face(&sandbox, "co Spring/Faces/XXX05 - Ann");
     sandbox.write(
         "co Spring/Faces/XXX05 - Ann/face_high.fmdl",
@@ -1349,6 +1425,7 @@ fn a_carried_fmdl_outside_a_model_folder_is_written_off_too() {
     // does not reach it, but the write-off does — every `.fmdl` of the
     // export carrying the copies is written without them.
     let sandbox = Sandbox::new("mdl_antiblur_carried");
+    sandbox.logo("co Spring");
     crate::players::face(&sandbox, "co Spring/Faces/XXX05 - Ann");
     sandbox.write("co Spring/Collars/collar_120.fmdl", &antiblur_fmdl());
     sandbox.save("EDIT");

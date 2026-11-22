@@ -2,8 +2,9 @@
 //! `parity.rs` and `parity_prefox.rs` compile the export under each
 //! `tests/fixtures/<tracer>/upgraded/` (`parity.rs`'s referee case compiles
 //! `tracer_refs`' golden), which is what `upgrade <old>` wrote of the
-//! fixture's `old/` (`--loose` for the team tracers, neither flag for a
-//! referee export; the fixture's README). Upgrading `old/` must still give
+//! fixture's `old/` (`--loose --coverage midcup` for the team tracers, which
+//! are cut-down exports with no logo; no flag for a referee export; the
+//! fixture's README). Upgrading `old/` must still give
 //! exactly that tree, or the parity case compiles output the upgrader no
 //! longer writes.
 
@@ -94,8 +95,8 @@ fn the_fox_tracer_upgrades_to_its_golden() {
         "golden_fox",
         "tracer",
         "egg Tracer",
-        &["--loose"],
-        "- egg Tracer: Info coverage_tag_chosen (tag=Full, source=default)\n\
+        &["--loose", "--coverage", "midcup"],
+        "- egg Tracer: Info coverage_tag_chosen (tag=Midcup, source=flag)\n\
          - egg Tracer: Info wearer_assumed at Boots/k2180 - The Chad Stormworks Player (id=2180, slot=05)\n\
          - egg Tracer: Info wearer_assumed at Gloves/g2180 - The Chad Stormworks Player (id=2180, slot=05)\n\
          - egg Tracer: Info antiblur_dropped at Boots/k2180 - The Chad Stormworks Player/boots.fmdl (meshes=1)\n\
@@ -110,8 +111,8 @@ fn the_pre_fox_tracer_upgrades_to_its_golden() {
         "golden_prefox",
         "tracer_prefox",
         "jp Tracer",
-        &["--loose"],
-        "- jp Tracer: Info coverage_tag_chosen (tag=Full, source=default)\n\
+        &["--loose", "--coverage", "midcup"],
+        "- jp Tracer: Info coverage_tag_chosen (tag=Midcup, source=flag)\n\
          - Info migration_clean\n",
     );
 }

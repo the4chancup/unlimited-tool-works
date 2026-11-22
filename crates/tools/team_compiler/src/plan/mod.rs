@@ -4287,7 +4287,11 @@ mod tests {
     fn a_kit_without_config_toml_reports_its_generated_config() {
         let export = resolved(
             "co Full Kits",
-            &[("Kits/p1/config.toml", 3), ("Kits/p2 - Away/kit.dds", 8)],
+            &[
+                ("Kits/p1/config.toml", 3),
+                ("Kits/p2 - Away/kit.dds", 8),
+                ("logo.png", 9),
+            ],
             &[],
             None,
         );
@@ -4379,6 +4383,7 @@ mod tests {
                 ("Kits/p1/kit.dds", 8),
                 ("Kits/p3/kit_back.dds", 8),
                 ("Kits/p4/config.toml", 3),
+                ("logo.png", 9),
             ],
             &["Kits/p2"],
             None,
@@ -4545,7 +4550,14 @@ mod tests {
 
     #[test]
     fn a_team_s_colors_go_into_the_manifest_and_a_team_without_them_reports_it() {
-        let kit = || resolved("co Full Kit", &[("Kits/p1/kit.dds", 1)], &[], None);
+        let kit = || {
+            resolved(
+                "co Full Kit",
+                &[("Kits/p1/kit.dds", 1), ("logo.png", 9)],
+                &[],
+                None,
+            )
+        };
         let colors = vec![[0xc1, 0x12, 0x00], [0x41, 0x41, 0x41]];
 
         let with = plan_run(

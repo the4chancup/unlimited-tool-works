@@ -1,5 +1,5 @@
 use super::*;
-use crate::test_support::{file_count, progress_events, scratch, test_ctx};
+use crate::test_support::{file_count, logo, progress_events, scratch, test_ctx};
 
 #[test]
 fn an_input_ending_in_a_dot_or_dot_dot_resolves_to_its_folder() {
@@ -137,6 +137,7 @@ fn a_model_file_in_any_letter_case_makes_a_loose_run_pre_fox() {
     let root = scratch("loose_model_case");
     fs::create_dir_all(root.join("co Spring/Boots/k0430 - Crocs")).unwrap();
     fs::write(root.join("co Spring/co Note.txt"), b"Team: /co/\r\n").unwrap();
+    logo(&root.join("co Spring"));
     // A boots-named model: a valid name under pre-Fox, so the run is
     // clean and writes its output (an invalid one would leave none).
     fs::write(
@@ -345,6 +346,13 @@ fn the_input_is_processed_once_its_named_output_is_validated() {
     let root = scratch("upgrade_processed");
     fs::create_dir_all(root.join("co Spring/Faces/XXX05 - Bob/alt")).unwrap();
     fs::write(root.join("co Spring/co Note.txt"), b"Team: /co/\r\n").unwrap();
+    // A logo and Bob's portrait, so the output's check reports nothing else.
+    logo(&root.join("co Spring"));
+    fs::write(
+        root.join("co Spring/Faces/XXX05 - Bob/portrait.dds"),
+        b"portrait",
+    )
+    .unwrap();
     // `alt/face.xml` is copied as it is, and the output's check refuses it:
     // the finding is the output's, and `processed` must follow it.
     fs::write(
@@ -412,6 +420,7 @@ fn the_progress_starts_past_the_root_files_and_rises_by_one_to_the_output_s_file
         b"portrait",
     )
     .unwrap();
+    logo(&root.join("co Spring"));
     fs::create_dir_all(root.join("refs Spring/Players/arbiter")).unwrap();
     fs::write(root.join("refs Spring/refs.txt"), b"01 arbiter\r\n").unwrap();
     fs::write(

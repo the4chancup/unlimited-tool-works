@@ -5,6 +5,8 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use pes_version::PesVersion;
 
+use crate::slots::PlayerSlot;
+
 /// One export source's canonical listing; `parse_listing` canonicalizes it.
 /// `display_name` is the source's stem: the folder name, or the archive name
 /// without extension.
@@ -82,4 +84,9 @@ pub struct ValidationContext {
     /// in `Common/` names one of them instead of being `common_link_missing`. Empty when the
     /// lookup cannot be made or finds none.
     pub installed_common_textures: BTreeSet<String>,
+    /// The team's slots whose portrait the installed CPKs loaded before the one being compiled
+    /// already hold (`common/render/symbol/player/<player id>.dds`). `None` when that lookup
+    /// cannot be made: nothing is then known about what is installed, so a `Midcup` export
+    /// reports no `portrait_missing`. A `Full` export ignores it.
+    pub installed_portrait_slots: Option<BTreeSet<PlayerSlot>>,
 }

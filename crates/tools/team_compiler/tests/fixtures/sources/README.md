@@ -5,19 +5,24 @@ kept in the session scratch (`.tmp/3_8/make_source_fixtures.py`, not part of the
 
 | File | Contents | For |
 |---|---|---|
-| `co Midcup Spring.zip` | `players.txt` (`01 Keeper`), `notes.txt`, directory entries `Kits/` and `Kits/p2/`, deflate, no wrapper folder | TC-SRC-01: the same export as a folder (built by the test: git keeps no empty folder) and as a `.7z` |
+| `co Midcup Spring.zip` | `players.txt` (`01 Keeper`), `notes.txt`, directory entries `Kits/` and `Kits/p2/`, and `logo.png`, deflate, no wrapper folder | TC-SRC-01: the same export as a folder (built by the test: git keeps no empty folder) and as a `.7z` |
 | `co Midcup Spring.7z` | the same files and folders, solid LZMA2 (`7z a -t7z -ms=on -m0=lzma2`; 7-Zip reports `Solid = +`) | TC-SRC-01, and the solid-7z memory charge (`libs/pipeline.md`) |
 | `co Midcup Case.zip` | `players.txt` and `Players.txt` | TC-SRC-07: two names that fold to one |
 | `co Midcup Escape.zip` | `players.txt` and `../x` | TC-SRC-07: a path escaping the root |
 
+`logo.png`, in the two `co Midcup Spring` archives and in the tracer ones below, is
+`crates/tools/export_upgrader/tests/fixtures/co Spring/Logo/emblem_0XXX_r_ll.png` (the real 512²
+`/4ccg/` logo) byte for byte, added at slice 0.0.2-logo a with every other entry kept: tests
+compile these archives renamed `Full`, and a `Full` export needs a logo.
+
 Added at step 3.9c, by the lead, from `.tmp/4_0/make_tracer_archives.py` (same tools; the eight files
-`../tracer/studio/egg Midcup Tracer/` held then, at the archive root; the `portrait.dds` it gained at
-step 4.2 is not in them, and the tests over these archives assert faces and kits only;
-rewritten at step 4.30 by `.tmp/4_30/make_tracer_archives_4_30.py`, the kit's icon file becoming the
-empty marker `Kits/g1/icon_11`, every other entry's bytes kept; rebuilt at step 0.0.2-poc12 by
+`../tracer/studio/egg Midcup Tracer/` held then, at the archive root, without the `portrait.dds` it
+gained at step 4.2; rewritten at step 4.30 by `.tmp/4_30/make_tracer_archives_4_30.py`, the kit's
+icon file becoming the empty marker `Kits/g1/icon_11`, every other entry's bytes kept; rebuilt at step 0.0.2-poc12 by
 `scripts/provenance/fixtures/tracer_archives_team_folder.py` with the tracer's respelled
 `fcl_hair.fmdl`, every other entry kept, the bad CRC included, and again by it when the
-tracer's stand-in became `team_kit`):
+tracer's stand-in became `team_kit`, and at slice 0.0.2-logo a, gaining the tracer player's
+`portrait.dds` and the root `logo.png`):
 
 | File | Contents | For |
 |---|---|---|

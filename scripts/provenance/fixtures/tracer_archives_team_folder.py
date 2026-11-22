@@ -1,13 +1,22 @@
-"""Rebuild the Compiler's tracer archives (`tests/fixtures/sources/egg Midcup Tracer*`) with
-the respelled `fcl_hair.fmdl` (worklog 0.0.2-poc12: first its `dummy_kit` directory named
-`common/team_folder/`, no `000`; then the stand-in itself `team_kit`, `fmdl_team_kit.rs`).
-Run once after each respelling of the studio tracer's file, before it is committed.
+"""Rebuild the Compiler's tracer archives (`tests/fixtures/sources/egg Midcup Tracer*`) from
+their own entries, with two kinds of change:
 
-Each archive's `fcl_hair.fmdl` must be byte-identical to the studio tracer's file at HEAD (the
-pre-respell bytes) before it is replaced by the working copy's; every other entry keeps its
-name, order, timestamp, attributes, compression and bytes. The bad-notes zip's `notes.txt`
-keeps its deliberately wrong CRC-32, patched back into its local header and central directory
-after the write. Each archive is written to a sibling temp path, read back, then `os.replace`d.
+- each entry in `REPLACED` takes the studio tracer's working copy: the respelled
+  `fcl_hair.fmdl` (worklog 0.0.2-poc12: first its `dummy_kit` directory named
+  `common/team_folder/`, no `000`; then the stand-in itself `team_kit`, `fmdl_team_kit.rs`).
+  The archive's bytes must be the file's at HEAD (the pre-respell bytes) or already the
+  working copy's;
+- each entry in `ADDED` is appended when the archive lacks it (slice 0.0.2-logo a): the root
+  `logo.png`, the `/4ccg/` logo of the Export upgrader's `co Spring` fixture, and the tracer
+  player's own `portrait.dds`, so a test renaming an archive `Full` finds both. An entry
+  already there must hold the same bytes.
+
+Run it after a respelling of the studio tracer's file, or a change to `ADDED`, before it is
+committed; it rebuilds the repository it sits in. Every other entry keeps its name, order,
+timestamp, attributes, compression and bytes, and an added zip entry takes the archive's
+first entry's timestamp, attributes and Deflate. The bad-notes zip's `notes.txt` keeps its
+deliberately wrong CRC-32, patched back into its local header and central directory after the
+write. Each archive is written to a sibling temp path, read back, then `os.replace`d.
 """
 import os
 import shutil
@@ -16,18 +25,42 @@ import subprocess
 import zipfile
 from pathlib import Path
 
-ROOT = Path("C:/Data/4cc/Tools_Mine/4cc-studio")
-SOURCES = ROOT / "crates/tools/team_compiler/tests/fixtures/sources"
-REL = "tracer/studio/egg Midcup Tracer/Players/05 - The Chad Stormworks Player/fcl_hair.fmdl"
-FIXTURE = ROOT / "crates/tools/team_compiler/tests/fixtures" / REL
-ENTRY = "Players/05 - The Chad Stormworks Player/fcl_hair.fmdl"
+ROOT = Path(__file__).resolve().parents[3]
+FIXTURES = ROOT / "crates/tools/team_compiler/tests/fixtures"
+SOURCES = FIXTURES / "sources"
+STUDIO = "tracer/studio/egg Midcup Tracer"
+PLAYER = "Players/05 - The Chad Stormworks Player"
+REPLACED = [f"{PLAYER}/fcl_hair.fmdl"]
+ADDED = {
+    "logo.png": ROOT
+    / "crates/tools/export_upgrader/tests/fixtures/co Spring/Logo/emblem_0XXX_r_ll.png",
+    f"{PLAYER}/portrait.dds": FIXTURES / STUDIO / PLAYER / "portrait.dds",
+}
 SEVEN_ZIP = Path("C:/Program Files/7-Zip/7z.exe")
-STAGE = ROOT / ".tmp/0_0_2/poc12/archive_stage"
+STAGE = ROOT / ".tmp/tracer_archive_stage"
 
-old = subprocess.run(["git", "show", "HEAD:crates/tools/team_compiler/tests/fixtures/" + REL],
-                     cwd=ROOT, check=True, capture_output=True).stdout
-new = FIXTURE.read_bytes()
-assert old != new, "the working copy's fcl_hair.fmdl is not respelled"
+
+def at_head(entry):
+    """The studio tracer's `entry` as HEAD holds it."""
+    return subprocess.run(
+        ["git", "show", f"HEAD:crates/tools/team_compiler/tests/fixtures/{STUDIO}/{entry}"],
+        cwd=ROOT, check=True, capture_output=True).stdout
+
+
+replaced = {entry: (at_head(entry), (FIXTURES / STUDIO / entry).read_bytes())
+            for entry in REPLACED}
+added = {entry: path.read_bytes() for entry, path in ADDED.items()}
+
+
+def rewritten(name, body):
+    """The bytes the archive's entry `name`, holding `body`, is written back with."""
+    if name in replaced:
+        old, new = replaced[name]
+        assert body in (old, new), f"{name} is neither HEAD's nor the working copy's"
+        return new
+    if name in added:
+        assert body == added[name], f"{name} is already in the archive with other bytes"
+    return body
 
 
 def raw_stored(path, info):
@@ -52,9 +85,14 @@ def rebuild_zip(path):
                 assert info.compress_type == zipfile.ZIP_STORED
                 body = raw_stored(path, info)
                 bad.append(info.filename)
-            if info.filename == ENTRY:
-                assert body == old, path.name
-                body = new
+            entries.append((info, rewritten(info.filename, body)))
+    first = infos[0]
+    for name, body in added.items():
+        if name not in [info.filename for info in infos]:
+            info = zipfile.ZipInfo(name, first.date_time)
+            info.compress_type = zipfile.ZIP_DEFLATED
+            info.external_attr = first.external_attr
+            info.create_system = first.create_system
             entries.append((info, body))
     original = path.read_bytes()
     temp = path.with_name(path.name + ".tmp")
@@ -110,26 +148,39 @@ def rebuild_7z(path):
     STAGE.mkdir(parents=True)
     subprocess.run([str(SEVEN_ZIP), "x", "-y", str(path)], cwd=STAGE, check=True,
                    capture_output=True)
-    staged = STAGE / ENTRY
-    assert staged.read_bytes() == old
-    stat = staged.stat()
-    staged.write_bytes(new)
-    os.utime(staged, (stat.st_atime, stat.st_mtime))
+    first = (STAGE / REPLACED[0]).stat()
+    for name in replaced:
+        staged = STAGE / name
+        stat = staged.stat()
+        staged.write_bytes(rewritten(name, staged.read_bytes()))
+        os.utime(staged, (stat.st_atime, stat.st_mtime))
+    for name, body in added.items():
+        staged = STAGE / name
+        if staged.exists():
+            rewritten(name, staged.read_bytes())
+            continue
+        staged.write_bytes(body)
+        # An added file takes a neighbour's time, as the zips' added entries do.
+        os.utime(staged, (first.st_atime, first.st_mtime))
     temp = path.with_name(path.name + ".tmp")
     assert not temp.exists()
-    subprocess.run([str(SEVEN_ZIP), "a", "-t7z", "-ms=on", "-m0=lzma2", str(temp), "Kits",
-                    "Players"], cwd=STAGE, check=True, capture_output=True)
+    tops = sorted(entry.name for entry in STAGE.iterdir())
+    subprocess.run([str(SEVEN_ZIP), "a", "-t7z", "-ms=on", "-m0=lzma2", str(temp), *tops],
+                   cwd=STAGE, check=True, capture_output=True)
     listing = subprocess.run([str(SEVEN_ZIP), "l", "-slt", str(temp)], check=True,
                              capture_output=True, text=True).stdout
     assert "Solid = +" in listing
     before = subprocess.run([str(SEVEN_ZIP), "l", "-slt", str(path)], check=True,
                             capture_output=True, text=True).stdout
-    paths = lambda text: sorted(line for line in text.splitlines() if line.startswith("Path = ")
-                                and not line.endswith(".7z") and ".7z.tmp" not in line)
-    assert paths(listing) == paths(before), (paths(listing), paths(before))
-    read_back = subprocess.run([str(SEVEN_ZIP), "e", "-so", str(temp), ENTRY.replace("/", os.sep)],
-                               check=True, capture_output=True).stdout
-    assert read_back == new
+    paths = lambda text: {line for line in text.splitlines() if line.startswith("Path = ")
+                          and not line.endswith(".7z") and ".7z.tmp" not in line}
+    expected = paths(before) | {"Path = " + name.replace("/", os.sep) for name in added}
+    assert paths(listing) == expected, (sorted(paths(listing)), sorted(expected))
+    for name, body in [*((n, new) for n, (_, new) in replaced.items()), *added.items()]:
+        read_back = subprocess.run([str(SEVEN_ZIP), "e", "-so", str(temp),
+                                    name.replace("/", os.sep)],
+                                   check=True, capture_output=True).stdout
+        assert read_back == body, name
     os.replace(temp, path)
     shutil.rmtree(STAGE)
     print(path.name, path.stat().st_size, "bytes")

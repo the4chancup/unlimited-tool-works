@@ -12,9 +12,13 @@ use crate::compile_exports::{UNI_COLOR, bundled_uni_color, with_uni_record};
 use crate::{CLEAN_PLAYER, clean_model, findings_of, snapshot, source_fixture};
 
 /// The folder `exports/co Full Spring/`, the same export as the `co Midcup Spring` fixtures
-/// written under the `Full` coverage name: git keeps no empty folder, so it is built here.
+/// written under the `Full` coverage name: git keeps no empty folder, so it is built here. Its
+/// `logo.png` is the archives' own file, so the three forms compile to one CPK.
 fn spring_folder(sandbox: &Sandbox) {
     sandbox.write("exports/co Full Spring/players.txt", b"01 Keeper\n");
+    let logo = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../export_upgrader/tests/fixtures/co Spring/Logo/emblem_0XXX_r_ll.png");
+    sandbox.write("exports/co Full Spring/logo.png", &fs::read(logo).unwrap());
     sandbox.write(
         "exports/co Full Spring/notes.txt",
         b"Spring kit placeholder.\n",
@@ -133,6 +137,9 @@ fn one_export_as_a_folder_a_zip_and_a_7z_reports_and_compiles_the_same() {
             "common/character0/model/character/uniform/team/UniColor.bin".to_owned(),
             "common/character0/model/character/uniform/team/UniformParameter.bin".to_owned(),
             "common/etc/TeamColor.bin".to_owned(),
+            "common/render/symbol/flag/e_000714_r.png".to_owned(),
+            "common/render/symbol/flag/e_000714_r_l.png".to_owned(),
+            "common/render/symbol/flag/e_000714_r_ll.png".to_owned(),
             "unlimited-tool-works/shared_ids/714.toml".to_owned(),
         ]
     );

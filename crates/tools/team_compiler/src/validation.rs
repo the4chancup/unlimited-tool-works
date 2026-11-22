@@ -374,6 +374,7 @@ fn check_source(
         strict_file_type_check: strict,
         pass_through: inputs.settings.pass_through,
         installed_common_textures: installed_common_textures(inputs, installed, team_id),
+        installed_portrait_slots: None,
     };
     let mut report = parsed.validate(&context);
     // The deep pass reads only what the structure pass kept; its findings derive the report
@@ -2142,13 +2143,13 @@ mod tests {
 
     #[test]
     fn compile_keeps_both_small_7z_exports_for_their_tasks_and_check_keeps_none() {
-        // The archives decompress to 34 and 153,582 bytes, 153,616 kept in all: far under an
-        // eighth of the cap, and the cap less the floor leaves room for both.
+        // The archives decompress to 201,339 and 365,975 bytes, 567,314 kept in all: far under
+        // an eighth of the cap, and the cap less the floor leaves room for both.
         assert_eq!(
             seven_z_pass("keep_7z_compile", 2 << 30, true),
             [
-                ("co Midcup Spring.7z".to_owned(), Some(34)),
-                ("egg Midcup Tracer.7z".to_owned(), Some(153_582)),
+                ("co Midcup Spring.7z".to_owned(), Some(201_339)),
+                ("egg Midcup Tracer.7z".to_owned(), Some(365_975)),
             ]
         );
         assert_eq!(
@@ -2162,13 +2163,13 @@ mod tests {
 
     #[test]
     fn an_archive_the_kept_ones_leave_no_room_for_is_not_kept() {
-        // The cap leaves 153,615 bytes past the floor: room for the first archive checked,
-        // `co Midcup Spring.7z` (34 bytes), or for the tracer (153,582) alone, but 1 byte
-        // short of both (153,616), so the tracer, checked second, is let go.
+        // The cap leaves 567,313 bytes past the floor: room for the first archive checked,
+        // `co Midcup Spring.7z` (201,339 bytes), or for the tracer (365,975) alone, but 1 byte
+        // short of both (567,314), so the tracer, checked second, is let go.
         assert_eq!(
-            seven_z_pass("keep_7z_running_total", (1 << 30) + 153_615, true),
+            seven_z_pass("keep_7z_running_total", (1 << 30) + 567_313, true),
             [
-                ("co Midcup Spring.7z".to_owned(), Some(34)),
+                ("co Midcup Spring.7z".to_owned(), Some(201_339)),
                 ("egg Midcup Tracer.7z".to_owned(), None),
             ]
         );

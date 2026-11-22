@@ -347,6 +347,62 @@ fn a_logo_candidate_that_is_no_texture_is_invalid() {
 }
 
 #[test]
+fn a_full_team_export_with_no_logo_file_is_logo_missing_and_kept() {
+    let full = report(
+        "co Full Spring",
+        &[("Players/03 - A/portrait.dds", 9)],
+        &[],
+        &[],
+    );
+    assert_eq!(
+        issue_codes(&full),
+        vec![("logo_missing", Disposition::Keep)]
+    );
+    assert_eq!(full.issues[0].scope, IssueScope::Export);
+    assert_eq!(full.issues[0].context, vec![]);
+    assert_eq!(full.validated.unwrap().players.len(), 1);
+}
+
+#[test]
+fn logo_missing_is_only_for_a_full_team_export_with_no_logo_file() {
+    let player = ("Players/03 - A/portrait.dds", 9);
+    for (name, files) in [
+        // A `Midcup` export keeps the installed logo.
+        ("co Midcup Day 5", vec![player]),
+        ("co Full Spring", vec![("logo.png", 9), player]),
+        // A logo file that is there but refused reports its own finding.
+        ("co Full Spring", vec![("logo.txt", 9), player]),
+        ("co Full Spring", vec![("logo_small.png", 9), player]),
+    ] {
+        let report = report(name, &files, &[], &[]);
+        assert!(
+            report
+                .issues
+                .iter()
+                .all(|issue| issue.code != "logo_missing"),
+            "{name} {files:?}"
+        );
+    }
+
+    // A referee export, `Full` by its kind, has no logo to miss.
+    let refs = report(
+        "refs Cup",
+        &[("players.txt", 10)],
+        &["Players/Keeper"],
+        &[("players.txt", Ok(b"01 Keeper"))],
+    );
+    assert_eq!(refs.parsed.draft.coverage, Some(ExportCoverage::Full));
+    assert_eq!(issue_codes(&refs), vec![]);
+
+    // An empty `Full` export is `export_empty` alone.
+    let empty = report("co Full Spring", &[("readme.txt", 10)], &[], &[]);
+    assert_eq!(
+        issue_codes(&empty),
+        vec![("export_empty", Disposition::DropExport)]
+    );
+}
+
+#[test]
 fn a_root_colors_file_is_the_team_colors() {
     let report = report(
         "egg Midcup",

@@ -60,8 +60,8 @@ fn a_note_team_line_overrides_the_exports_name() {
 #[test]
 fn a_note_only_export_reports_no_unmigrated_content() {
     let sandbox = Sandbox::new("root_note_only");
-    // A `Team:` Note alone makes an old export; there is nothing else to
-    // migrate or leave behind.
+    // A `Team:` Note and the logo a `Full` export needs make an old export;
+    // there is nothing else to migrate or leave behind.
     fs::create_dir_all(sandbox.path("Numbers")).unwrap();
     fs::copy(
         std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
@@ -69,6 +69,7 @@ fn a_note_only_export_reports_no_unmigrated_content() {
         sandbox.path("Numbers/co Note.txt"),
     )
     .unwrap();
+    sandbox.logo("Numbers");
     sandbox.save("EDIT");
 
     let run = upgrade(&sandbox, "Numbers", "EDIT");
@@ -99,6 +100,7 @@ fn without_a_note_the_first_word_resolves() {
     .unwrap();
     // A face folder, so the run is clean and the output is written at all.
     face(&sandbox, "co Spring 26/Faces/XXX05 - A");
+    sandbox.logo("co Spring 26");
     sandbox.save("EDIT");
 
     let run = upgrade(&sandbox, "co Spring 26", "EDIT");
@@ -224,6 +226,7 @@ fn a_team_entry_holding_two_colors_keeps_the_first() {
     .unwrap();
     // A face folder, so the output holds content at all.
     face(&sandbox, "co Spring/Faces/XXX05 - A");
+    sandbox.logo("co Spring");
     sandbox.save("EDIT");
 
     let run = upgrade(&sandbox, "co Spring", "EDIT");
@@ -246,6 +249,7 @@ fn a_team_entry_holding_two_colors_keeps_the_first() {
 fn a_shift_jis_notes_ascii_colors_read() {
     let sandbox = Sandbox::new("root_jp_note");
     sandbox.copy_fixture_dir("jp Summer 18", "jp Summer 18");
+    sandbox.logo("jp Summer 18");
     sandbox.save("EDIT");
 
     let run = upgrade(&sandbox, "jp Summer 18", "EDIT");
@@ -293,6 +297,8 @@ fn a_team_no_list_holds_upgrades_and_the_save_s_own_id_decides() {
     )
     .unwrap();
     fs::create_dir_all(sandbox.path("co Spring 26/Faces/XXX05")).unwrap();
+    sandbox.logo("hist Spring 26");
+    sandbox.logo("co Spring 26");
     sandbox.save_edited("EDIT", PesVersion::Pes21, |file| {
         // The fixture's /co/ sits at 714: renumber it away so the save
         // holds /co/ at 750 alone, /hist/ at 760 alone.
@@ -375,6 +381,7 @@ fn a_value_or_name_that_is_no_team_name_is_reported_nothing_written() {
 fn the_first_save_team_of_the_name_is_read_the_later_reported() {
     let sandbox = Sandbox::new("root_repeated_team");
     fs::create_dir_all(sandbox.path("co Spring 26/Faces/XXX05")).unwrap();
+    sandbox.logo("co Spring 26");
     sandbox.save_edited("EDIT", PesVersion::Pes21, |file| {
         // /co/ twice: 750 first in record order (its entry swapped before
         // 714's, which the fixture keeps at index 13 against 49), 714

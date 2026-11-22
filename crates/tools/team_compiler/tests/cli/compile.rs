@@ -6,7 +6,9 @@ use std::path::{Path, PathBuf};
 
 use crate::common::{Run, Sandbox};
 use crate::models::package_names;
-use crate::{CLEAN_PLAYER, bundled_bins_then, clean_model, findings_of, patch_written, snapshot};
+use crate::{
+    CLEAN_PLAYER, bundled_bins_then, clean_model, findings_of, patch_written, snapshot, write_logo,
+};
 
 impl Sandbox {
     /// Copies every file under `source` into `<folder>`, leaving `source` untouched.
@@ -468,7 +470,7 @@ fn an_export_of_an_unknown_team_is_skipped_and_the_one_beside_it_compiled() {
 #[test]
 fn an_export_without_its_coverage_tag_is_skipped_and_the_one_beside_it_compiled() {
     let sandbox = Sandbox::new("tag_missing");
-    for name in ["co Spring 2026", "a Full Spring 2026"] {
+    for name in ["co Spring 2026", "a Midcup Spring 2026"] {
         sandbox.write(&format!("exports/{name}/{CLEAN_PLAYER}"), &clean_model());
     }
     let tag_missing = ["Error export_tag_missing [DropExport] (name=co Spring 2026)"];
@@ -478,7 +480,7 @@ fn an_export_without_its_coverage_tag_is_skipped_and_the_one_beside_it_compiled(
     assert_eq!(
         check.messages(),
         [
-            "a Full Spring 2026: Info export_identified [Keep] (team=/a/, id=702)",
+            "a Midcup Spring 2026: Info export_identified [Keep] (team=/a/, id=702)",
             "co Spring 2026: Error export_tag_missing [DropExport] (name=co Spring 2026)",
         ]
     );
@@ -506,7 +508,7 @@ fn an_old_layout_export_is_export_layout_old_alone_and_skipped() {
         sandbox.write(&format!("exports/co Spring 2026/{path}"), b"old");
     }
     sandbox.write(
-        &format!("exports/a Full Spring 2026/{CLEAN_PLAYER}"),
+        &format!("exports/a Midcup Spring 2026/{CLEAN_PLAYER}"),
         &clean_model(),
     );
     let layout_old = ["Error export_layout_old [DropExport] (folder=Kit Configs)"];
@@ -518,7 +520,7 @@ fn an_old_layout_export_is_export_layout_old_alone_and_skipped() {
     assert_eq!(
         lines,
         [
-            "a Full Spring 2026: Info export_identified [Keep] (team=/a/, id=702)",
+            "a Midcup Spring 2026: Info export_identified [Keep] (team=/a/, id=702)",
             "co Spring 2026: Error export_layout_old [DropExport] (folder=Kit Configs)",
         ]
     );
@@ -543,6 +545,12 @@ fn only_the_second_word_is_the_coverage_tag_in_any_letter_case() {
     for name in ["co midcup day 5", "a FULL v2", "b Spring Full"] {
         sandbox.write(&format!("exports/{name}/{CLEAN_PLAYER}"), &clean_model());
     }
+    // `a FULL v2` is a `Full` export: its logo and its player's portrait.
+    write_logo(&sandbox, "exports/a FULL v2");
+    sandbox.write(
+        "exports/a FULL v2/Players/03 - A/portrait.dds",
+        &tracer_portrait(),
+    );
 
     let run = sandbox.run("", &["check"]);
 

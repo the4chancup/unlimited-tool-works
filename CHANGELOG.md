@@ -12,6 +12,12 @@
 - **All tools**: when UTW stops on an error of its own, its dialog now asks for the log file
   first, with the file's path on a line of its own, and gives the error's details last.
 
+### New checks
+
+- **Compiler**: a `Full` export with no logo at its root is now the error `logo_missing`, and
+  on PES 2017 to 2021 a player of a `Full` export with no portrait is now the warning
+  `portrait_missing`.
+
 ### Fixes
 
 - **Compiler**: a referee with no face model, whose body model brings his head, showed the
@@ -34,6 +40,8 @@
   highlight, in place of the bar at its left.
 - **Save editor**: a PES 2017 Texport now carries the 4cc clover as its thumbnail, in place of
   the game's own picture.
+- **Export upgrader**: an export upgraded as `Full` with no logo in its `Logo/` folder is now
+  the error `logo_missing`, and nothing is written.
 
 ## [0.0.2] - 2026-11-18
 

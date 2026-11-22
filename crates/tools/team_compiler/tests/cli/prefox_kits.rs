@@ -13,7 +13,6 @@ use crate::compile::{cpk_entries, kit_texture, pes21_settings, tracer_export, tr
 use crate::compile_exports::{
     TEAM_COLOR, UNI_COLOR, bundled_team_color, bundled_uni_color, config_path,
 };
-use crate::findings_of;
 use crate::kit_layout::{
     PRE_FOX_BANDS, PRE_FOX_ISLANDS, STRIPES_FINDINGS, STRIPES_PRE_FOX_FINDINGS,
     assert_moved_inside_bands_only, bc1_dds, compiled_entries, compiled_pre_fox_top_level,
@@ -22,6 +21,7 @@ use crate::kit_layout::{
 use crate::prefox_faces::{
     CLEAN, card_materials, card_model, compile_pes17, materials_naming, pes17, small_dds,
 };
+use crate::{findings_of, write_logo};
 
 /// The CPK path of the pre-Fox kit texture `name` (`u0714p1`, `u0714p1_mask`).
 fn pre_fox_kit_texture(name: &str) -> String {
@@ -53,6 +53,7 @@ pub(crate) fn write_kit(sandbox: &Sandbox, export: &str, slot: &str) {
 fn a_pes_17_kit_without_a_mask_gets_the_bundled_template_as_it_is() {
     let sandbox = Sandbox::new("prefox_kit_mask_template");
     write_kit(&sandbox, "co Full Mask", "p1");
+    write_logo(&sandbox, "exports/co Full Mask");
 
     // The export's identity and its missing root colors, the generated and placeholder g1
     // a `Full` export plans, and p1's colors taken from its texture (no `colors.txt`):
@@ -254,6 +255,7 @@ fn a_pes_17_placeholder_kit_marked_fox_has_only_its_own_mask_re_laid() {
         if let Some(marker) = marker {
             sandbox.write(&format!("{folder}/{marker}"), b"");
         }
+        write_logo(sandbox, "exports/co Full Layout");
     };
     let unmarked = Sandbox::new("prefox_placeholder_mask_unmarked");
     write(&unmarked, None);
