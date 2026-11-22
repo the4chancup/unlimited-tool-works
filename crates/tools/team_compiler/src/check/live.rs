@@ -268,8 +268,11 @@ fn resolved_layout(resolved: &ResolvedAestheticsExport) -> Layout {
 /// `kept`, a validated export's layout, with the folders a finding dropped from it added
 /// from `listed`, its listing's layout: each at the slots its listing gives it that no kept
 /// folder holds. A dropped folder keeps its cell, so its finding colours its own player or
-/// kit rather than the label.
+/// kit rather than the label. The portraits count is `listed`'s: a dropped folder's
+/// portrait is still in the export, and the portraits cell counts the players that have
+/// one, as it does for an export dropped whole (`draft_layout`).
 fn with_dropped(mut kept: Layout, listed: Layout) -> Layout {
+    kept.portraits = listed.portraits;
     let taken: BTreeSet<u8> = kept
         .players
         .iter()

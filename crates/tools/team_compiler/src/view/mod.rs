@@ -693,6 +693,23 @@ mod tests {
         assert_eq!(portraits(team).unwrap().text, "1/1");
     }
 
+    // A dropped player's portrait is still in the export, so the portraits cell counts him.
+    #[test]
+    fn a_dropped_player_s_portrait_still_counts() {
+        let temp = sandbox("view_grid_dropped_portrait");
+        let root = temp.path();
+        list_teams(root);
+        add_player(root, "co Midcup Map", "01 - A");
+        add_player(root, "co Midcup Map", "03 - B");
+        add_file(root, "co Midcup Map/Players/03 - B/fpc_on", b"");
+        add_file(root, "co Midcup Map/Players/03 - B/fpc_off", b"");
+        let rows = checked_rows(root);
+        let team = row(&rows, "/co/");
+        assert_eq!(codes(player(team, 3).unwrap()), ["fpc_conflict"]);
+        assert_ne!(player(team, 1).unwrap().state, CellState::Blocked);
+        assert_eq!(portraits(team).unwrap().text, "2/2");
+    }
+
     // Anything else is the label's: here a player folder whose name claims no slot.
     #[test]
     fn a_player_folder_at_no_slot_colours_the_label() {
