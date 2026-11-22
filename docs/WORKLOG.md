@@ -177,7 +177,10 @@ other items run beside it. **Ahead of item 6:** the `pes14` branch's step 12, a 
          `notes.txt` always reports `notes_found`; its 13 failures are the builder's own
          tests, the tracer goldens, 5 tests reading the `co Spring` fixture as it is, and 4
          archive tests for slice 7
-       - [ ] 6: `studio` (6)
+       - [x] 6 (2026-11-22, merge `86928756`, SWE-2) `studio`: the six Compiler CLI tests
+         through `complete`, `console.rs`'s old export through `complete_old`; `launchers.rs`
+         reads the upgrader's fixtures as they are. Its dummy runs come in two pairs, since
+         both checks sit in the validator the upgrader also runs on its output
        - [ ] 7: the `.zip` fixtures packed when the tests run, with the three `gui_run` and
          `view` tests that compile the tracer export as it is; the `.7z` ones stay stored,
          since writing one needs `sevenz-rust2`'s `compress` feature, which the workspace
