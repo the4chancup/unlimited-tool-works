@@ -103,7 +103,9 @@ other items run beside it. **After the detour**, in this order:
    - [x] 1a (2026-11-22, merge `304822e4`, Opus, two reworks) the grid, read-only, in the
      new lib `export_grid`, filled by `check`'s validation when the view opens and after each
      Compile: rows, label, ID, player, portraits and kit cells, check states, the legend
-     (TC-GUI-04 without its watcher part, 20, 21). Owed: its look beside the draft. The
+     (TC-GUI-04 without its watcher part, 20, 21). Owed: its look beside the draft, compared
+     once: the portraits count left out a dropped player's portrait (fixed, `bbe765a6`); the
+     next capture, on a build with the fix, goes to the tasks page with the draft's. The
      shipped build still greys the Compiler (`CLI_ONLY`, `crates/studio/src/main.rs:130`), so
      the look runs on a build made for it, with `compiler` off that list and nothing
      committed; the slice that presents the view takes it off for good (1c, unless the plan
@@ -139,20 +141,23 @@ other items run beside it. **After the detour**, in this order:
          tests through `resolved*` and the deep helpers, no call site edited. The dummy
          requirement's `notes.txt` holds a single newline, since any text in it reports
          `notes_found`. SWE-2 round S1: 6 accepted, one a real test's input (rulings
-         `.tmp/duck_rulings_builder.md`); their rework follows slice 3, then a second round
+         `.tmp/duck_rulings_builder.md`); their rework runs on SWE-2 (`sk/s1r`), then a second
+         round
        - [x] 2 (2026-11-22, merge `5a46d101`, SWE-2) `aesthetics_export`'s validator tests
          through `report*`, nine tests of a requirement's own check on `without`
-       - [ ] 3: the Compiler's CLI tests the logo slice touched, through `complete` (about
-         155), `view::a_player_folder_s_finding_colours_its_player` (its export written by the
-         view tests' own helpers), and the CONTRIBUTING rule
-       - [ ] 4: the Compiler's other CLI tests (about 270)
+       - [x] 3 (2026-11-22, merge `beeb2094`, Opus) the Compiler's CLI tests the logo slice
+         touched (147 tests), through `complete`, whose folder walk is
+         `team_compiler::test_files::complete`, shared with the unit tests; the CONTRIBUTING
+         rule
+       - [ ] 4: the Compiler's other CLI tests (about 270), `deploy` and
+         `prefox_kit_variants` included
        - [ ] 5: `export_upgrader` (about 130)
        - [ ] 6: `studio` (6)
        - [ ] 7: the `.zip` fixtures packed when the tests run, with the three `gui_run` and
          `view` tests that compile the tracer export as it is; the `.7z` ones stay stored,
          since writing one needs `sevenz-rust2`'s `compress` feature, which the workspace
          leaves off
-     - b waits for builder slice 3, so its tests are written on `complete`
+     - b's tests are written on `complete` (builder slice 3 landed)
      - [ ] b: `installed_portrait_slots` filled from the Compiler's walk over the installed
        CPKs → verify: TC-ROOT-17
    - Not urgent, a small slice of its own (SWE-2), after the view's or beside it: player
