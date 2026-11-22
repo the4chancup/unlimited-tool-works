@@ -1739,7 +1739,8 @@ ST-BAR-05   GIVEN a main tool active, the window maximized on a 1920 × 1080 mon
                  resized THEN it is asked for 480 × 640, centered
 ST-BAR-02   GIVEN the first tool active and the second reporting a ToolActivity
             WHEN the status bar is drawn
-            THEN its right slot shows the second tool's activity; GIVEN the second tool made
+            THEN its right slot shows the second tool's activity, centred in the bar's height;
+                 GIVEN the second tool made
                  active THEN the slot is empty (its own run strip shows it)
 ST-BAR-03   GIVEN a tool publishing a Notice with an action
             WHEN the status bar is drawn
@@ -1770,7 +1771,8 @@ ST-UPD-01   GIVEN `check_for_updates` on and a fake releases list holding `v0.0.
                  `v0.0.1` beside them `v0.0.1` (a pre-release ranks under its release); GIVEN
                  the fetch failing THEN no offer, one log line, and no other request for 5
                  minutes; GIVEN the window left open 5 minutes after its last check THEN a
-                 second check runs
+                 second check runs, and a newer release it finds (`v0.0.3`) replaces the
+                 offer; GIVEN a tag of another line (`side-v9.9.9`) THEN it is passed over
 ST-UPD-02   GIVEN the offer shown
             WHEN its text is clicked, or Details
             THEN a dialog says "Unlimited Tool Works v0.0.2 pre-alpha is out. You have v0.0.1
@@ -1919,7 +1921,13 @@ ST-REP-06   GIVEN the session writer given a stub tool's messages in order: a st
             WHEN its folder is read
             THEN `journal.toml` holds the version, the OS, the start time, the step, the input
                  and output rows and `[end]` `closed`; `inputs/` holds the input and
-                 `outputs/` the second write only
+                 `outputs/` the second write only; GIVEN two inputs of one file name THEN
+                 both are kept, as `inputs/0-<name>` and `inputs/1-<name>`; GIVEN two output
+                 paths written in turn, then the first again THEN the bundle lists them in
+                 first-write order; GIVEN two tools writing one path THEN both outputs are
+                 kept; GIVEN a packed input THEN it is kept compressed as
+                 `inputs/0-<name>.packed`, its row holding `packed = true` and the file's own
+                 size and SHA-256, and the bundle hands back the file
 ST-REP-07   GIVEN ST-REP-06's messages without the closing one, then the pipe closed
             THEN `[end]` says `ended`; GIVEN a crash request instead THEN `crashed`; GIVEN a
                  `journal.toml` whose last `[[step]]` block is cut in half WHEN it is read
@@ -1931,7 +1939,10 @@ ST-REP-09   GIVEN two earlier session folders and the window's own
             WHEN "Report a problem" is opened
             THEN an unticked "Include earlier sessions" box lists the two, not the window's
                  own, each with its start time, first file opened, last write's time and
-                 ending; WHEN it is ticked and the bundle saved THEN the zip holds
+                 ending on one line (`21 Nov 09:31: opened nothing; wrote nothing; stopped
+                 without closing`) in the text colour, ticked or not, and the privacy line
+                 under them in the weak one, spaced as the draft spaces them; WHEN it is
+                 ticked and the bundle saved THEN the zip holds
                  `sessions/<folder name>.zip` for each, each read back by `read_bundle`;
                  unticked, THEN it holds none
 ST-REP-10   GIVEN a monitor that reads nothing, so the window's queue fills
@@ -1942,7 +1953,12 @@ ST-REP-10   GIVEN a monitor that reads nothing, so the window's queue fills
                  GIVEN the monitor ended mid-session
                  THEN a new one is started and the next steps land in the same folder, and
                  GIVEN the new one does not start THEN the window's own writer writes them
-                 there
+                 there; GIVEN the new one's first message is the closing one THEN `[end]`
+                 lands in that folder, and GIVEN the folder already holds `[end]` THEN it
+                 stays the only one; the new one keeps the folder's outputs one per tool and
+                 path, a rewritten path once; GIVEN the folder's `journal.toml` cannot be
+                 read THEN the first write is an error naming it, and no fresh folder is made
+                 over it
 ST-REP-11   GIVEN the real monitor process and a window that sends two steps and exits without
                  its closing message
             THEN the folder holds the two steps and `[end]` `ended`

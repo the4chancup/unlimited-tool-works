@@ -3042,7 +3042,9 @@ SE-GUI-74  GIVEN the unsaved changes list open with a player's Height row, a tea
                 row wider than the list, the list scrolled sideways to its end THEN every
                 X stands where it stood, at the list's right edge; every X is drawn in the
                 error red, centred under the header row's `Undo`, in the list and the close
-                prompt alike; GIVEN the close prompt open over the same three rows WHEN the
+                prompt alike, with a frameless button's hover fill behind it under the
+                pointer and none otherwise; GIVEN the close prompt open over the same three
+                rows WHEN the
                 Height row's X is clicked THEN the prompt stays open over the other two,
                 its items take no click, and Cancel then Undo sets the Height back to the
                 edited value; GIVEN the prompt's last row's X clicked THEN the prompt goes
@@ -3435,8 +3437,9 @@ SE-GUI-65  GIVEN the Tactics view, a Starting eleven row pressed 20 points right
 SE-GUI-69  GIVEN a team's player list, row 03 pressed 20 points right of its name's start
            WHEN it is dragged 30 points right and 40 down
            THEN the row's name is drawn 30 points right and 40 below where it stood, on top
-                of the list; GIVEN a filter typed THEN a press and the same move draw nothing
-                there
+                of the list; GIVEN the wheel turned while it is held, until its row leaves the
+                view THEN the name stays under the pointer; GIVEN a filter typed THEN a press
+                and the same move draw nothing there
 SE-GUI-75  GIVEN a team's player list and row 02 held dragged
            WHEN the pointer is over row 06
            THEN a line 2 points thick in the selection colour is drawn across row 06's lower
@@ -3527,12 +3530,14 @@ SE-GUI-82  GIVEN the save open on team 718's player 05
                 with no separator between them; WHEN Stats is pressed THEN player 07 is selected and the Stats
                 screen shows; GIVEN team 701's row selected with none of its players shown
                 since the save opened WHEN Appearance is pressed THEN 701's first player is
-                selected on the Appearance screen; and no team row reads `[click for
-                gameplan]`
+                selected on the Appearance screen; WHEN the save is opened again THEN Stats
+                is on, and Appearance pressed on team 718's row selects its first filled
+                slot, not player 07; and no team row reads `[click for gameplan]`
 SE-GUI-83  GIVEN a cup save open on All teams
            WHEN the team selector is opened
-           THEN its first entry reads `All teams`, and under the teams and a separator stand
-                four radio buttons, All ticked, 4cc, VGL, Invitational; WHEN VGL is ticked
+           THEN its first entry reads `All teams`, the teams scroll in any dropdown list's
+                height, and under them and a separator stand four radio buttons inside the
+                popup, All ticked, 4cc, VGL, Invitational; WHEN VGL is ticked
                 THEN the dropdown stays open and lists `VGL teams` and teams 781 to 850
                 alone, the player list holds those teams' rows and players alone, and the
                 selection is the list's first player; WHEN 4cc is ticked THEN teams 701 to
@@ -3574,7 +3579,8 @@ SE-GUI-85  GIVEN a PES 2021 save open at the default window, a player's Stats sc
                 a rating not chosen draws its letter in the normal text colour, darker than
                 a button's; WHEN the editor restarts THEN List is still held; GIVEN the
                 DBC7 ruleset WHEN Pitch is pressed THEN the three columns' frames end
-                higher than under List, on Ability stats' frame's bottom
+                higher than under List, on Ability stats' frame's bottom, 10 points under
+                its last number box
 SE-GUI-86  GIVEN the save open on team 718 /f/, `formation_pictures_folder` absent, the
                 formation bar's Portraits ticked
            WHEN Team, `Save a picture of the formations…` is pressed
@@ -3960,7 +3966,10 @@ SE-GUI-106 GIVEN the PES 2021 save open, a player holding nation 135 selected
                 135 back; WHEN `san` is typed instead THEN 231 is picked the same; WHEN `South
                 S` is typed THEN 312 is picked; WHEN a pause of over a second parts two digits
                 THEN the second starts a new ID, and one Undo after the list closes still puts
-                135 back; WHEN Down is pressed in the open list, then 231 typed and Enter
+                135 back; WHEN `23 1` is typed THEN 231 is picked, a space ignored in an ID;
+                WHEN `-ital` is typed THEN 215 is picked, a character that is no letter,
+                digit or space ignored; WHEN Down is pressed in the open list, then 231 typed
+                and Enter
                 pressed THEN 231 stays picked; WHEN 231 is typed and Escape pressed, at once or
                 over a second later THEN the list closes, the player holds 135 and Undo has
                 nothing new to take back
