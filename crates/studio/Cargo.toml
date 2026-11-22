@@ -30,9 +30,13 @@ studio_core.workspace = true
 team_compiler.workspace = true
 
 [dev-dependencies]
+# `test-support` completes `console.rs`'s old exports with `test_exports`.
+export_upgrader = { workspace = true, features = ["test-support"] }
 minidump.workspace = true
 pes_savefile = { workspace = true, features = ["test-support"] }
 pes_version.workspace = true
+# `test-support` completes `team_compiler_cli.rs`'s exports with `test_files`.
+team_compiler = { workspace = true, features = ["test-support"] }
 
 [target.'cfg(windows)'.dependencies]
 windows.workspace = true
