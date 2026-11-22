@@ -3642,7 +3642,10 @@ points there.
   on `pes14`): the gloves ID at its full width through `fpc::StripStyle` and
   `fpc::Appearance`, and no `expect` on it; what 262143 means for the hide presets waits on
   an in-game look (run `hi3gloves`: are a 262143 player's hands plain, as gloves 0, or gone,
-  as the DLC's hidden gloves 11?). Then Build 3, with the maintainer's yes.
+  as the DLC's hidden gloves 11?). Then Build 3 is prepared whole (merged, gates, release
+  build, its CHANGELOG section, a `tasks.html` card) and left unpushed for the maintainer's
+  yes, and the Compiler's view (item 6) goes on without waiting for it (the maintainer,
+  2026-11-22).
 - open (2026-11-22) — The Save editor's tests leave their scratch behind:
   `test_support::scratch` empties `target/<profile>/save_editor_tests/<test>` when a test
   starts and never removes it after, so every checkout keeps 1,064 folders, many holding a
@@ -3655,8 +3658,15 @@ points there.
   census of the 885 `expect`, `unwrap`, `panic!`, `unreachable!` and `assert!` calls in
   production code at `ffa45247` (lists `.tmp/nopanic/part_{a..d}.txt`, made by
   `.tmp/nopanic/surface.py`), each classed as resting on a file, on our own code, on the
-  environment, in a developer tool, or unsure (SWE-2, `.tmp/nopanic/census_*.findings.md`);
-  then the file-resting ones fixed in slices by crate, the `pes14` branch's own code after.
+  environment, in a developer tool, or unsure (SWE-2, `.tmp/nopanic/census_*.findings.md`).
+  Result: one call rests on a file (`team_widgets` `tactics_term`'s byte, PES 2015 and 2016
+  storing a lineup slot in 32 bits), 13 on the environment (poisoned locks, impossible input
+  counts), the rest on our own code, three of those on a schema's field width
+  (DECISIONS 2026-11-22 "A decoded value keeps the type it was decoded into"). Slice
+  nopanic-1 (SWE-2, `sk/nopanic1`) fixes the four: boots and gloves IDs carried at `u32`
+  through `fpc`, the Appearance page's check showing an error line, `settings_toml`'s byte
+  read returning an error, the tactics wording showing the stored number. The `pes14`
+  branch's own code gets the same census after it merges.
 
 - resolved (2026-11-21) — The maintainer's PES 2021 save opens with an empty team list. The
   release build at `1b9c5f27`, File > PES 2021, opened
