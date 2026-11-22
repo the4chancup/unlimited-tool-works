@@ -191,8 +191,8 @@ and a plan section only the writing session understood are not done, whatever th
 an outcome fails this test, say so and simplify before reporting. (The code half is
 `CONTRIBUTING.md`'s "boring Rust" intent; this is the standard it is accepted on.)
 
-**A snag is a finding.** When a tool, script or step fails, misleads or costs time (a retry, a
-workaround, a manual step done twice), ask unprompted whether its cause can be removed, then
+**A snag is a finding.** When a tool, script, step or your own output (a wrong count) fails,
+misleads or costs time (a retry, a workaround, a manual step done twice), ask unprompted whether its cause can be removed, then
 act: a small fix inside what you may edit (the script, its docstring, a rule line) is made at
 once; a bigger one becomes a worklog issue, or a `proposals.html` card for a new idea. A
 workaround alone does not close it, and the turn's report names the fix or the entry.

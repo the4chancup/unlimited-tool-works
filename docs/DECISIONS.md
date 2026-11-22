@@ -19674,3 +19674,11 @@ Plan: `spec/aatf_rules.md` "The card economy" and its "Logic identity" paragraph
 version only from 1.0.0, where it said from the first release); `plans/aatf_rules.md` "Loading
 and validation" (version 1 frozen at 1.0.0, where it said at 0.0.1); the plans that use the
 term; `GLOSSARY.md` "Non-free card".
+
+## 2026-11-22 — conduct — a mistake in the lead's own output is a snag too
+Decision: "A snag is a finding" names your own output (a wrong count) beside tools, scripts
+and steps, so a mistake you correct also gets the question of what let it through.
+Why: the 2026-11-22 citation rulings were miscounted, and only the texts were corrected at
+first, because the rule read as one about tools. The cause, counting by hand, is now removed:
+the citation audit prints the day's rulings counted.
+Plan: `AGENTS.md` "Conduct", the paragraph "A snag is a finding".
