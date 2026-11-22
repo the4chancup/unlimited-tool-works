@@ -507,4 +507,8 @@ exclude_re = [
     # of the clock equal to the deadline, where `>` waits one more 20 ms poll and then returns
     # the same `false`.
     "studio/src/crash_dump\\.rs:\\d+:\\d+: replace > with >= in wait_until",
+    # export_grid: `text_colour`'s `weight > 125.0` -> `>=` differs only on a fill weighing
+    # exactly 125.0, and a cell's fill is one of the theme's fixed colours (`look`), none of
+    # which does. Re-check if a fill colour changes.
+    "export_grid/src/cells\\.rs:\\d+:\\d+: replace > with >= in text_colour",
 ]
