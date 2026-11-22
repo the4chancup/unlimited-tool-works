@@ -438,7 +438,10 @@ What exists of this is in `spec/core/architecture.md` "Diagnostic logging".
   report a run that went fine.
 
   The dialog repeats the panic's message, so a first run's crash, which has no file, still
-  leaves something to post.
+  leaves something to post. The message comes last, under "Details for the developers:",
+  after the request to post the log, whose path stands on a line of its own. We do not put
+  it first: a member who meets code words at the top stops reading there, and posts a
+  screenshot of the dialog without the log it asks for.
 - **A crash dump for what the hook never sees**: a stack overflow (the runtime prints one line
   to a stderr the GUI exe does not have) and an access violation in native code (a GPU driver
   under the encoder or the renderer, a shell extension under a file dialog) each leave a log

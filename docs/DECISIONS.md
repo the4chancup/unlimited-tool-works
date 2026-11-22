@@ -19529,3 +19529,27 @@ built over the save file's model, which the grid never sees. The upgrader's rows
 lines an export, wide file cells), so the lib's row is lines of positions, not the Compiler's
 one line.
 Plan: `plans/team_compiler/gui.md` "GUI: the live-validating team grid"; `plans/export_upgrader.md` "GUI"; `plans/core/architecture.md`'s crate tree; `GLOSSARY.md`.
+
+## 2026-11-22 — studio — The crash dialog asks for the log first and gives the error last
+
+Decision: the crash dialog opens with what happened in plain words, then asks for the log with
+its path on a line of its own, and gives the panic's message last, under "Details for the
+developers:".
+Why: the maintainer's ruling, after the Akko7 organizer posted a screenshot of the dialog and
+never read its request for the log: a member who meets code words at the top stops reading
+there. The message stays in the dialog, since a first run's crash has no log to post.
+Plan: `plans/core/architecture.md` "Diagnostic logging", the bullet "The hook logs every panic".
+
+## 2026-11-22 — code style — What a file holds is never an invariant an `expect` rests on
+
+Decision: a value read from a save, an export, a settings file or a game file reaches the
+member as an error, a finding or a line in the view, never as a panic. An `expect` rests only
+on what our own code made. The `expect`s and `unwrap`s that rest on file content today are
+found by a census and fixed in slices.
+Why: the maintainer's ruling ("panicking because of a simple malformed field is unacceptable
+from now on"), after the Save editor's Appearance page crashed on a PES 2014 player whose
+gloves ID, 18 bits on that version, did not fit the 16 bits an `expect` assumed. The
+`expect`'s message called the width a property of every loaded player, which the data never
+promised; AGENTS.md's "malformed input still errors instead of panicking" already said so,
+without naming the `expect`s that break it.
+Plan: `CONTRIBUTING.md` "Code style", the Errors bullet.

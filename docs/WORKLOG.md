@@ -84,8 +84,8 @@ other items run beside it. **After the detour**, in this order:
      2026-11-21 "Report a problem's earlier sessions in the regular colour") merged
      `5583611a`, and seen in the release build beside the draft, box clear and ticked
      (2026-11-21): the earlier sessions in the regular colour, the `~` line weak.
-4. 0.0.2-similar, Select all similar players: its two slices to build, after a code map
-   (`.tmp/similar/code_map.md`). Review rounds owed: every Carbon round a 0.0.2 step still
+4. 0.0.2-similar, Select all similar players: slices 1a and 1b merged (the group, the button
+   and its window), 1c and slice 2 to build (code map `.tmp/similar/code_map.md`). Review rounds owed: every Carbon round a 0.0.2 step still
    owes (Report a problem has had its whole review).
 5. 0.0.2-pes19, and with it the readme's PES 2019 claim.
 6. The Compiler's view in the build, unpolished, for the VGL organizer (the maintainer,
@@ -1685,11 +1685,13 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       titled `N players` with its locks), split in three, since nothing of it exists (code map
       `.tmp/similar/code_map.md`: no group, no Ctrl+click, no blank locked field, no mixed
       checkbox). Until 1c lands, a group's view edits its first player alone
-      - [ ] 1a the group: Ctrl+click, the filled rows, every other selecting ending it, the
-        `N players` heading, Appearance disabled (SE-GUI-93 but its tooltip clause; SWE-2,
-        `sk/similar1a`)
-      - [ ] 1b the button under the quick actions and its window (SE-GUI-91, SE-GUI-93's
-        tooltip)
+      - [x] 1a (2026-11-21, merge `ac0d6dbb`, SWE-2) the group: Ctrl+click, the filled rows,
+        every other selecting ending it, the `N players` heading, Appearance disabled
+        (SE-GUI-93 but its tooltip clause)
+      - [x] 1b (2026-11-22, merge `ffa45247`, SWE-2, one rework) the button over the quick
+        actions and its window (SE-GUI-91, SE-GUI-93's tooltip); Select leaves the list's
+        scroll alone, as the draft does (proposals P59 asks otherwise). Owed: its look beside
+        the draft, then one paid round over 1a and 1b
       - [ ] 1c the locks: what the players do not share empty and locked, the cards' mixed
         mark, no Live AATF marks or Cards used badge, the Player menu's one-player entries
         disabled (SE-GUI-92 but its edits)
@@ -3622,6 +3624,27 @@ Bugs, unexpected behavior, things to revisit. `open` / `resolved (date)`. Resolv
 pruned when their phase closes; they stay in git history. A question only the maintainer
 can answer is not an issue: it goes to `docs/maintainer/questions.html`, and an issue that waits on one
 points there.
+
+- open (2026-11-22) — PES 2014 Build 2 (`0.0.2-pes14.2`) crashes on the Appearance page of a
+  player whose gloves ID is past 16 bits. The Akko7 organizer edited /hi3/'s players in game
+  and opened one: `utw.log` reads `appearance/mod.rs:556`, "a loaded player's fields hold the
+  strip fields: ValueTooWide { GlovesId, 262143, 16 }". On PES 2014 the Akko DLC reads the
+  gloves ID from the hair accessory's three colour fields, up to 18 bits
+  (`plans/pes14.md`, on `pes14`); `ops::fpc::strip_style` narrows it to `fpc::StripStyle`'s
+  `u16`, and the view `expect`s the result. 262143 is every bit set. In the save he posted
+  first (`C:\Data\4cc\Lab\Temp\pes14_crash\EDIT.bin`, a few hours older), no /hi3/ player has
+  an appearance record yet, which is why the page was greyed there, and all 4,922 records
+  hold gloves 0. His newer save will tell whether the game fills a new record's colour with
+  every bit set or he chose a white accessory. The fix (SWE-2, on `pes14`): the gloves ID at
+  its full width through `StripStyle`, since the check only asks whether it is 0, and the
+  view showing an error line instead of panicking; then Build 3, with the maintainer's yes.
+- open (2026-11-22) — Panics on file content (DECISIONS 2026-11-22 "What a file holds is never
+  an invariant an `expect` rests on"; `CONTRIBUTING.md` "Code style", the Errors bullet). A
+  census of the 885 `expect`, `unwrap`, `panic!`, `unreachable!` and `assert!` calls in
+  production code at `ffa45247` (lists `.tmp/nopanic/part_{a..d}.txt`, made by
+  `.tmp/nopanic/surface.py`), each classed as resting on a file, on our own code, on the
+  environment, in a developer tool, or unsure (SWE-2, `.tmp/nopanic/census_*.findings.md`);
+  then the file-resting ones fixed in slices by crate, the `pes14` branch's own code after.
 
 - resolved (2026-11-21) — The maintainer's PES 2021 save opens with an empty team list. The
   release build at `1b9c5f27`, File > PES 2021, opened
