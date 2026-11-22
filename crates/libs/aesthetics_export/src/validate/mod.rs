@@ -275,7 +275,7 @@ impl ParsedAestheticsExport {
         let mut kits = kits::check(draft, context, &mut issues);
         let mut portraits = root::check_portraits(draft, context, &mut issues);
         if let roster::SlotMap::Team(assignments) = &slot_map {
-            root::check_portraits_missing(draft, assignments, &portraits, context, &mut issues);
+            root::check_portraits_missing(draft, assignments, context, &mut issues);
         }
         let logo = root::check_logo(draft, context, &mut issues);
         let mut root = root::check_root(
