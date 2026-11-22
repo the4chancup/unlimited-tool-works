@@ -98,7 +98,10 @@ it, one cell per player at a fixed position by number, plus one cell per kit:
     in the last tile, at the bottom right, so 23 portraits and the logo fill the 24 tiles; a
     player with no portrait leaves his tile empty;
   - a team label: the export's logo (its root `logo*` texture), fitted inside the box.
-  An export with no logo shows "No logo" where the logo would be. In a referee export, the
+  Portraits and logos keep their transparency: each is drawn straight on the box's
+  background, with no tile or frame behind it, so a crest or a cut-out portrait shows its
+  own shape rather than a square. An export with no logo shows "No logo" where the logo
+  would be. In a referee export, the
   marker texture (`ref_marker.dds`), when there is one, takes the logo's place in the window,
   because a referee export's logo reaches no output while the marker is the emblem the
   referees wear in game.

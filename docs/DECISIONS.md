@@ -19456,3 +19456,26 @@ Why: a referee export's logo reaches no output, while the marker is the emblem t
 wear in game.
 Plan: plans/team_compiler/gui.md "GUI: the live-validating team grid" (the detail window);
 plans/team_compiler/README.md TC-GUI-32.
+
+## 2026-11-22 — aesthetics_export, team_compiler — A `Midcup` player with no portrait is checked against the installed CPKs
+Decision: the maintainer ruled that a `Midcup` export's players are checked too, against the
+portraits already installed. In a `Midcup` export, `portrait_missing` is reported for a
+player with no portrait file only when the installed CPKs loaded before the run's hold none
+for him either. The Compiler finds those with the walk its bins accumulation already makes,
+and gives the validation the team's slots that have one. When the walk cannot be made (no
+PES folder, no `DpFileList.bin`), a `Midcup` export reports none; the Export upgrader, which
+makes no walk, reports none for its `Midcup` outputs. This replaces the earlier entry's
+"`Full` only".
+Why: reporting every player of a `Midcup` export when nothing is known of what is installed
+would warn about players whose portraits are in the game. The walk already opens every
+installed CPK's table of contents, so the lookup reads nothing new.
+Plan: plans/aesthetics_export/object_model.md "Validation semantics"; plans/team_compiler/
+messages.md; TC-ROOT-17; worklog 0.0.2-logo b.
+
+## 2026-11-22 — team_compiler — The window draws portraits and logos with their transparency
+Decision: the maintainer ruled that portraits and logos in the Compiler's window keep their
+transparency, drawn on the box's background with no tile or frame behind them, in the
+player's box and the portraits grid alike.
+Why: a frame squares off a crest or a cut-out portrait, so the window would not show the
+picture as its author drew it.
+Plan: plans/team_compiler/gui.md "GUI: the live-validating team grid" (the detail window).

@@ -492,13 +492,17 @@ TC-ROOT-15 GIVEN "co Full Spring" with players and kits and no root logo file; "
                 players and kits and no e_000714_* file; the second and the refs export report
                 no logo_missing; the fourth reports logo_file_invalid and no logo_missing
 TC-ROOT-16 GIVEN "co Full Spring" whose player folder 01 holds portrait.dds, 02 has
-                 Portraits/02.dds, 03 has neither and 04 has only Portraits/player_04.dds; and
-                 "co Midcup Day 5" whose player folder 03 has no portrait
-           WHEN each is compiled for PES 21, then the first for PES 16
-           THEN on PES 21 the first reports portrait_missing on Players/03 (slot 03) and on
+                 Portraits/02.dds, 03 has neither and 04 has only Portraits/player_04.dds
+           WHEN it is compiled for PES 21, then for PES 16
+           THEN on PES 21 it reports portrait_missing on Players/03 (slot 03) and on
                 Players/04 (slot 04) beside portrait_name_invalid, compiles both players, and
-                reports nothing for 01 and 02; the Midcup reports no portrait_missing; on
-                PES 16 the first reports no portrait_missing
+                reports nothing for 01 and 02; on PES 16 it reports no portrait_missing
+TC-ROOT-17 GIVEN "co Midcup Day 5" whose player folders 03 and 04 hold no portrait, and a PES
+                 21 install whose DpFileList.bin lists a CPK before the run's holding
+                 common/render/symbol/player/71403.dds
+           WHEN it is compiled for PES 21
+           THEN portrait_missing is reported on Players/04 (slot 04) and not on Players/03;
+                GIVEN no PES folder instead THEN no portrait_missing is reported
 ```
 
 **0.0.2-poc2 scope.** What exists of this is in `spec/team_compiler/pipeline.md` "Resolved

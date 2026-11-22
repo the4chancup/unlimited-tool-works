@@ -199,18 +199,18 @@ const TEAM_COMPILER_CSS = `
   .tc-unit.off .sel.on { background: #2b2b2b; color: #5a5a5a; }
   /* A kit's texture or the logo, fitted in the top box. */
   .tc-detail .preview img { max-width: 180px; }
-  /* The portraits: 6 x 4 tiles filling the box, the logo at the bottom left. */
+  /* The portraits: 6 x 4 tiles filling the box, the logo at the bottom right.
+     Portraits and logos keep their transparency: no tile background behind them. */
   .tc-detail .preview.portraits { display: grid; grid-template-columns: repeat(6, 1fr);
     grid-template-rows: repeat(4, 1fr); gap: 2px; padding: 2px; box-sizing: border-box; }
   .tc-detail .preview.portraits .tile { display: flex; align-items: center; justify-content: center;
-    min-width: 0; min-height: 0; background: var(--panel); border-radius: 2px; color: var(--weak); overflow: hidden; }
+    min-width: 0; min-height: 0; color: var(--weak); overflow: hidden; }
   .tc-detail .preview.portraits img { width: 100%; height: 100%; object-fit: contain; max-width: none; max-height: none; }
   /* A player's box: his portrait and the logo in its bottom corners, each a
      portraits tile's size (the box's width less its padding, over six). */
   .tc-detail .preview { position: relative; }
   .tc-detail .preview .tile.corner { position: absolute; bottom: 2px; width: 44px; height: 43px;
-    display: flex; align-items: center; justify-content: center; background: var(--panel);
-    border-radius: 2px; overflow: hidden; }
+    display: flex; align-items: center; justify-content: center; overflow: hidden; }
   .tc-detail .preview .tile.corner.left { left: 2px; }
   .tc-detail .preview .tile.corner.right { right: 2px; }
   .tc-detail .preview .tile.corner img { width: 100%; height: 100%; object-fit: contain; max-width: none; max-height: none; }
@@ -406,7 +406,7 @@ const PLANNED = {
     condition: "A `Full` export has no logo: no file at its root whose name starts with `logo`.",
     consequence: "The export is compiled without a logo. Add one at its root, or rename the export `<team> Midcup ...` if it only adds to what is installed." },
   portrait_missing: { code: "portrait_missing", severity: "Warning",
-    condition: "In PES 2017 to 2021, a player of a `Full` export has no portrait: none in his folder and none in `Portraits/`.",
+    condition: "In PES 2017 to 2021, a player has no portrait in his folder or in `Portraits/` (in a `Midcup` export, none installed either).",
     consequence: "The player is compiled without a portrait. Add a `portrait` image to his folder, or one named by his number (`05`) to `Portraits/`." },
 };
 const catalog = code => CATALOG["compiler"].find(r => r.code === code) || PLANNED[code];
