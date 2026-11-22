@@ -19646,3 +19646,15 @@ Why: the plan named his folder alone, while the portraits cell's grid shows a `P
 file as his. Showing it in the grid and not in his own window would tell the member two
 different things about one portrait.
 Plan: `plans/team_compiler/gui.md` "The detail window", the list of what the box holds.
+
+## 2026-11-22 — pes_savefile — a Team TOML import that writes the team's name sets its name flag
+Decision: importing a Team TOML whose `[team]` holds `name` sets the team's name flag, even
+when the file's `[team.edit_flags] name` is `false`. On every version, the PES 2014 side line
+included.
+Why: the game shows a team's stored name only with that flag set. PES 2014 Build 3's in-game
+check imported /gd/ onto team 853, and the team showed as "Invitational 3", because /gd/'s file
+carried the flag its own save had (its name was that slot's own). Writing the file's flag as
+it is would copy a team without its name. The same rule already sets the edited-player flag
+on a written player name.
+Plan: `plans/pes_savefile/operations.md` "Team TOML", the paragraph "A written team name
+shows".
