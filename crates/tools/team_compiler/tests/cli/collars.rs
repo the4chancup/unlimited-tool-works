@@ -95,6 +95,7 @@ fn a_team_s_collar_is_compiled_and_every_kit_config_of_the_team_wears_it_after_f
         &format!("{EXPORT}/Kits/p1/config.toml"),
         b"[shirt]\nmodel = 144\n",
     );
+    sandbox.complete(EXPORT);
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -154,6 +155,8 @@ fn of_two_exports_replacing_one_collar_the_later_one_loses_it_and_keeps_its_conf
         &format!("{EXPORT}/Kits/p1/config.toml"),
         b"[shirt]\ncollar = 30\nwinter_collar = 31\n",
     );
+    sandbox.complete(first);
+    sandbox.complete(EXPORT);
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -219,6 +222,7 @@ fn a_midcup_export_s_collar_goes_into_its_team_s_kits_it_does_not_resend() {
     let sandbox = Sandbox::new("collar_midcup");
     sandbox.write(&format!("{EXPORT}/{CLEAN_PLAYER}"), &clean_model());
     sandbox.write(&format!("{EXPORT}/Collars/collar_12.fmdl"), &clean_model());
+    sandbox.complete(EXPORT);
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -287,6 +291,7 @@ fn a_collar_named_for_a_reserved_or_no_stock_collar_is_refused_and_dropped() {
     for name in ["collar_105.fmdl", "neck.fmdl", "collar_9999.fmdl"] {
         sandbox.write(&format!("{EXPORT}/Collars/{name}"), &clean_model());
     }
+    sandbox.complete(EXPORT);
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["check"]);
 
@@ -308,6 +313,7 @@ fn a_texture_in_collars_is_dropped_and_the_collar_model_kept() {
     let sandbox = Sandbox::new("collar_texture");
     sandbox.write(&format!("{EXPORT}/Collars/collar_12.fmdl"), &clean_model());
     sandbox.write(&format!("{EXPORT}/Collars/collar_12.dds"), b"");
+    sandbox.complete(EXPORT);
     let disallowed =
         "Error file_type_disallowed [DropFile] at Collars/collar_12.dds (file=collar_12.dds)";
 
@@ -345,6 +351,7 @@ fn a_pes_17_model_collar_is_compiled_unchanged_and_the_team_s_loose_configs_wear
         &pre_fox_model(),
     );
     sandbox.write(&format!("{EXPORT}/Kits/p1/kit.dds"), &tracer_kit());
+    sandbox.complete_for(EXPORT, PesVersion::Pes17, &[]);
 
     let run = sandbox.run(&pes_settings(&sandbox, 17), &["compile", "--no-deploy"]);
 
@@ -402,6 +409,7 @@ fn a_pes_17_fmdl_collar_is_converted_with_the_stock_collars_material_names() {
     );
     sandbox.write(&format!("{EXPORT}/Collars/collar_12.fmdl"), &source);
     sandbox.write(&format!("{EXPORT}/Kits/p1/kit.dds"), &tracer_kit());
+    sandbox.complete_for(EXPORT, PesVersion::Pes17, &[]);
 
     let run = sandbox.run(&pes_settings(&sandbox, 17), &["compile", "--no-deploy"]);
 
@@ -461,6 +469,7 @@ fn a_pes_16_fmdl_collar_is_converted_with_every_material_named_uni_shirts() {
         &tracer_player_file("boots.fmdl"),
     );
     sandbox.write(&format!("{EXPORT}/Kits/p1/kit.dds"), &tracer_kit());
+    sandbox.complete_for(EXPORT, PesVersion::Pes16, &[]);
 
     let run = sandbox.run(&pes_settings(&sandbox, 16), &["compile", "--no-deploy"]);
 
@@ -489,6 +498,7 @@ fn a_gltf_collar_is_dropped_and_its_export_compiled_without_it() {
             &format!("{EXPORT}/Kits/p1/config.toml"),
             b"[shirt]\ncollar = 30\nwinter_collar = 31\n",
         );
+        sandbox.complete_for(EXPORT, version, &[]);
 
         let run = sandbox.run(&pes_settings(&sandbox, number), &["compile", "--no-deploy"]);
 
@@ -524,6 +534,7 @@ fn a_pes_17_fmdl_collar_whose_conversion_fails_is_dropped_and_its_export_compile
         &format!("{EXPORT}/Kits/p1/config.toml"),
         b"[shirt]\ncollar = 30\nwinter_collar = 31\n",
     );
+    sandbox.complete_for(EXPORT, PesVersion::Pes17, &[]);
 
     let run = sandbox.run(&pes_settings(&sandbox, 17), &["compile", "--no-deploy"]);
 
@@ -588,6 +599,7 @@ fn a_pes_21_model_collar_is_converted_with_the_templates_uniform_mtl() {
         &format!("{EXPORT}/Kits/p1/config.toml"),
         b"[shirt]\ncollar = 30\nwinter_collar = 31\n",
     );
+    sandbox.complete(EXPORT);
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -688,6 +700,7 @@ fn a_model_collar_posed_off_the_version_s_skeleton_is_moved_onto_it_and_kept_wra
     let sandbox = Sandbox::new("collar_pre_fox_moved");
     sandbox.write(&format!("{EXPORT}/Collars/collar_12.model"), &source);
     sandbox.write(&format!("{EXPORT}/Kits/p1/kit.dds"), &tracer_kit());
+    sandbox.complete_for(EXPORT, PesVersion::Pes15, &[]);
 
     let run = sandbox.run(&pes_settings(&sandbox, 15), &["compile", "--no-deploy"]);
 
@@ -721,6 +734,7 @@ fn a_model_collar_posed_off_the_version_s_skeleton_is_moved_onto_it_and_kept_wra
     // Not flagged on PES 17: packed byte for byte, still wrapped.
     let sandbox = Sandbox::new("collar_pre_fox_kept");
     sandbox.write(&format!("{EXPORT}/Collars/collar_12.model"), &source);
+    sandbox.complete_for(EXPORT, PesVersion::Pes17, &[]);
 
     let run = sandbox.run(&pes_settings(&sandbox, 17), &["compile", "--no-deploy"]);
 
@@ -739,6 +753,8 @@ fn of_two_pes_17_exports_replacing_one_collar_the_later_one_loses_it() {
     assert_ne!(firsts, seconds);
     sandbox.write(&format!("{first}/Collars/collar_12.model"), &firsts);
     sandbox.write(&format!("{EXPORT}/Collars/collar_12.model"), &seconds);
+    sandbox.complete_for(first, PesVersion::Pes17, &[]);
+    sandbox.complete_for(EXPORT, PesVersion::Pes17, &[]);
 
     let run = sandbox.run(&pes_settings(&sandbox, 17), &["compile", "--no-deploy"]);
 
@@ -771,6 +787,7 @@ fn a_pre_fox_collar_past_the_version_s_stock_set_is_refused() {
         &pre_fox_model(),
     );
     sandbox.write(&format!("{EXPORT}/Kits/p1/kit.dds"), &tracer_kit());
+    sandbox.complete_for(EXPORT, PesVersion::Pes17, &[]);
 
     let past = sandbox.run(&pes_settings(&sandbox, 17), &["compile", "--no-deploy"]);
 
@@ -800,6 +817,7 @@ fn a_pre_fox_collar_past_the_version_s_stock_set_is_refused() {
         &format!("{EXPORT}/Collars/collar_116.model"),
         &pre_fox_model(),
     );
+    sandbox.complete_for(EXPORT, PesVersion::Pes17, &[]);
 
     let last = sandbox.run(&pes_settings(&sandbox, 17), &["check"]);
 
@@ -823,6 +841,7 @@ fn a_collar_below_a_collars_subfolder_is_kept_by_the_lenient_check_and_not_a_col
         &format!("{EXPORT}/Kits/p1/config.toml"),
         b"[shirt]\ncollar = 30\nwinter_collar = 31\n",
     );
+    sandbox.complete_for(EXPORT, PesVersion::Pes17, &[]);
     let settings = format!(
         "{}[compiler]\nstrict_file_type_check = false\n",
         pes_settings(&sandbox, 17)
@@ -854,6 +873,7 @@ fn a_file_of_no_model_kind_in_collars_kept_by_the_lenient_check_gets_no_collar_f
         &format!("{EXPORT}/Kits/p1/config.toml"),
         b"[shirt]\ncollar = 30\nwinter_collar = 31\n",
     );
+    sandbox.complete_for(EXPORT, PesVersion::Pes17, &[]);
     let settings = format!(
         "{}[compiler]\nstrict_file_type_check = false\n",
         pes_settings(&sandbox, 17)
@@ -884,6 +904,7 @@ fn an_export_whose_only_collar_is_dropped_compiles_without_it() {
         &format!("{EXPORT}/Collars/collar_9999.fmdl"),
         &clean_model(),
     );
+    sandbox.complete(EXPORT);
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 

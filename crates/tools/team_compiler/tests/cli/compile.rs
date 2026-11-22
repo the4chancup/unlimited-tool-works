@@ -577,11 +577,7 @@ fn only_the_second_word_is_the_coverage_tag_in_any_letter_case() {
 #[test]
 fn a_refs_export_needs_no_coverage_tag() {
     let sandbox = Sandbox::new("tag_refs");
-    sandbox.write("exports/refs Spring 2026/players.txt", b"01 Keeper\n");
-    sandbox.write(
-        "exports/refs Spring 2026/Players/Keeper/face_high.fmdl",
-        &clean_model(),
-    );
+    sandbox.complete("exports/refs Spring 2026");
 
     let run = sandbox.run("", &["check"]);
 

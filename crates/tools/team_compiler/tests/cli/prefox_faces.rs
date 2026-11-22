@@ -12,6 +12,7 @@ use std::path::Path;
 
 use base64::Engine;
 use base64::engine::general_purpose::STANDARD;
+use pes_version::PesVersion;
 
 use crate::common::Sandbox;
 use crate::compile::{cpk_entries, pes_settings, pes21_settings, tracer_player_file};
@@ -120,8 +121,14 @@ pub(crate) fn pes15(sandbox: &Sandbox) -> String {
     pes_settings(sandbox, 15)
 }
 
-/// Runs `compile --no-deploy` for PES 17, asserts the export `name`'s findings are `findings`
-/// and the run succeeded, and returns the output CPK's entries.
+/// Completes `exports/<export>` for PES 17.
+pub(crate) fn complete_pes17(sandbox: &Sandbox, export: &str) {
+    sandbox.complete_for(&format!("exports/{export}"), PesVersion::Pes17, &[]);
+}
+
+/// Completes `exports/<name>` and runs `compile --no-deploy`, both for PES 17; asserts the
+/// export `name`'s findings are `findings` and the run succeeded, and returns the output CPK's
+/// entries.
 pub(crate) fn compile_pes17(
     sandbox: &Sandbox,
     name: &str,
@@ -137,6 +144,8 @@ fn compile_for(
     name: &str,
     findings: &[&str],
 ) -> BTreeMap<String, Vec<u8>> {
+    let pes = PesVersion::from_number(version.into()).unwrap();
+    sandbox.complete_for(&format!("exports/{name}"), pes, &[]);
     let run = sandbox.run(&pes_settings(sandbox, version), &["compile", "--no-deploy"]);
     let lines = run.messages();
     assert_eq!(findings_of(&lines, name), findings, "{lines:#?}");
@@ -441,6 +450,7 @@ fn a_fox_model_whose_every_mesh_is_hidden_leaves_nothing_of_it_in_the_face() {
         &format!("exports/{export}/Players/05 - A/oral.fmdl"),
         &hidden_oral(),
     );
+    complete_pes17(&sandbox, export);
     let hidden =
         "Info model_hidden_dropped [DropFile] at Players/05 - A/oral.fmdl (file=oral.fmdl)";
 
@@ -540,6 +550,7 @@ fn a_dropped_link_s_finding_comes_at_the_link_s_place_in_file_order() {
     sandbox.write(&format!("{player}/aa.fmdl.common"), b"");
     sandbox.write(&format!("exports/{export}/Common/aa.fmdl"), &hidden_oral());
     sandbox.write(&format!("{player}/zz.fmdl"), &hidden_oral());
+    complete_pes17(&sandbox, export);
 
     let run = sandbox.run(&pes17(&sandbox), &["check"]);
 
@@ -605,6 +616,7 @@ fn a_converted_fmdl_s_material_set_and_a_member_s_mtl_differing_in_case_are_two_
     sandbox.write(&format!("{player}/face_high.mtl"), &card_materials());
     sandbox.write(&format!("{player}/skin.dds"), &small_dds());
     write_sound_player(&sandbox, export);
+    complete_pes17(&sandbox, export);
 
     let run = sandbox.run(&pes17(&sandbox), &["compile", "--no-deploy"]);
 
@@ -664,6 +676,7 @@ fn a_kits_fallback_fmdl_and_a_member_s_mtl_of_its_stem_are_two_files_of_one_name
         sandbox.write(&format!("{player}/skin.dds"), &small_dds());
     }
     write_sound_player(&sandbox, export);
+    complete_pes17(&sandbox, export);
 
     let run = sandbox.run(&pes17(&sandbox), &["compile", "--no-deploy"]);
 
@@ -711,6 +724,7 @@ fn a_model_with_no_mtl_drops_its_folder_and_a_face_without_face_neck_gets_the_du
         &format!("{export}/Players/06 - B/texture.dds"),
         &small_dds(),
     );
+    sandbox.complete_for(export, PesVersion::Pes17, &[]);
     let undefined =
         "Error model_material_undefined [DropFolder] at Players/05 - A (file=hat.model)";
 
@@ -1306,6 +1320,7 @@ fn a_linked_face_folder_s_fmdl_is_converted_into_the_player_s_face_cpk() {
         &format!("{round}/shirt.dds"),
         &tracer_player_file("shirt.dds"),
     );
+    complete_pes17(&sandbox, export);
 
     let run = sandbox.run(&pes17(&sandbox), &["compile", "--no-deploy"]);
 
@@ -1411,6 +1426,7 @@ fn a_linked_face_folder_s_model_takes_its_own_mtl_and_not_a_common_one_its_link_
         &materials_naming("cloth"),
     );
     sandbox.write(&format!("{common}/cloth.dds"), &small_dds());
+    complete_pes17(&sandbox, export);
     let settings = format!(
         "{}[compiler]\nstrict_file_type_check = false\n",
         pes17(&sandbox)
@@ -1452,6 +1468,7 @@ fn a_linked_boots_folder_s_fmdl_is_converted_into_boots_model_and_boots_mtl_on_p
         &format!("{mud}/shirt.dds"),
         &tracer_player_file("shirt.dds"),
     );
+    complete_pes17(&sandbox, export);
 
     let run = sandbox.run(&pes17(&sandbox), &["compile", "--no-deploy"]);
 
@@ -1532,6 +1549,7 @@ fn a_linked_gloves_folder_s_fmdls_are_converted_and_listed_in_its_glove_xml_on_p
         &format!("{keeper}/shirt.dds"),
         &tracer_player_file("shirt.dds"),
     );
+    complete_pes17(&sandbox, export);
 
     let run = sandbox.run(&pes17(&sandbox), &["compile", "--no-deploy"]);
 
@@ -1590,6 +1608,7 @@ fn a_model_with_no_mtl_beside_an_fmdl_of_its_name_is_not_undefined_on_fox() {
     let player = "exports/co Midcup Boots/Players/05 - A";
     sandbox.write(&format!("{player}/boots.fmdl"), &clean_model());
     sandbox.write(&format!("{player}/boots.model"), &card_model());
+    sandbox.complete("exports/co Midcup Boots");
 
     let check = sandbox.run(&pes21_settings(&sandbox), &["check"]);
 
@@ -1786,6 +1805,7 @@ fn a_common_fmdl_a_model_the_deep_pass_drops_beats_is_dropped_with_it() {
         &format!("{common}/boots.fmdl"),
         &tracer_player_file("boots.fmdl"),
     );
+    complete_pes17(&sandbox, export);
 
     let run = sandbox.run(&pes17(&sandbox), &["compile", "--no-deploy"]);
 
@@ -1922,6 +1942,7 @@ fn a_model_link_whose_only_mtl_is_a_broken_common_one_drops_its_folder() {
         format!("Error mtl_broken [DropFile] at Common/legs.mtl (file=legs.mtl, error={error})");
     let undefined =
         "Error model_material_undefined [DropFolder] at Players/05 - A (file=legs.model.common)";
+    complete_pes17(&sandbox, export);
 
     let check = sandbox.run(&pes17(&sandbox), &["check"]);
     let lines = check.messages();
@@ -1974,6 +1995,7 @@ fn a_common_mtl_naming_an_invalid_common_path_drops_the_linking_player_s_folder(
                    (file=legs.mtl, attribute=path, value=model/character/uniform/common/o/env.dds)";
     let undefined =
         "Error model_material_undefined [DropFolder] at Players/05 - A (file=legs.model.common)";
+    complete_pes17(&sandbox, export);
 
     let compile = sandbox.run(&pes17(&sandbox), &["compile", "--no-deploy"]);
     let lines = compile.messages();
@@ -1999,6 +2021,7 @@ fn a_common_gltf_is_dropped_and_the_export_compiles() {
     let export = "co Midcup Card";
     write_slot_05_face(&sandbox, export);
     sandbox.write(&format!("exports/{export}/Common/x.glb"), b"glTF");
+    complete_pes17(&sandbox, export);
 
     let run = sandbox.run(&pes17(&sandbox), &["compile", "--no-deploy"]);
 
@@ -2031,6 +2054,7 @@ fn a_broken_model_below_a_common_subfolder_is_checked_and_dropped() {
     write_slot_05_face(&sandbox, export);
     // Four bytes no `.model` reader accepts.
     sandbox.write(&format!("exports/{export}/Common/sub/legs.model"), b"junk");
+    complete_pes17(&sandbox, export);
 
     let run = sandbox.run(&pes17(&sandbox), &["compile", "--no-deploy"]);
 
@@ -2074,6 +2098,7 @@ fn a_texture_below_a_common_subfolder_is_no_common_texture_a_mtl_finds() {
     sandbox.write(&format!("{common}/legs.model"), &card_model());
     sandbox.write(&format!("{common}/legs.mtl"), &materials_naming("cloth"));
     sandbox.write(&format!("{common}/sub/cloth.dds"), &small_dds());
+    complete_pes17(&sandbox, export);
 
     let run = sandbox.run(&pes17(&sandbox), &["compile", "--no-deploy"]);
 
@@ -2123,6 +2148,7 @@ fn a_common_path_is_supplied_by_a_texture_directly_in_common_alone() {
             materials.replace("./texture.dds", path).as_bytes(),
         );
         sandbox.write(&format!("exports/{export}/Common/{common_file}"), &bytes);
+        complete_pes17(&sandbox, export);
 
         let run = sandbox.run(&pes17(&sandbox), &["check"]);
 
@@ -2165,6 +2191,7 @@ fn a_common_fmdl_is_converted_once_into_the_common_output_which_a_link_names() {
     let sandbox = Sandbox::new("prefox_common_fmdl");
     let export = "co Midcup Legs";
     write_common_fmdl_legs(&sandbox, export);
+    complete_pes17(&sandbox, export);
 
     let run = sandbox.run(&pes17(&sandbox), &["compile", "--no-deploy"]);
 
@@ -2256,6 +2283,7 @@ fn a_common_mtl_of_a_converted_fmdl_s_set_name_fails_the_common_models_task() {
     write_common_fmdl_legs(&sandbox, export);
     let common = format!("exports/{export}/Common");
     sandbox.write(&format!("{common}/Legs.mtl"), &materials_naming("shirt"));
+    complete_pes17(&sandbox, export);
 
     let run = sandbox.run(&pes17(&sandbox), &["compile", "--no-deploy"]);
 
@@ -2323,9 +2351,10 @@ fn a_uniform_model_is_typed_uniform_sub_on_pes_15_and_uniform_on_16_and_17() {
     }
 }
 
-/// Runs `check` for PES 17 and asserts the export `name`'s findings are `findings` and the
-/// exit code is 1.
+/// Completes `exports/<name>` and runs `check`, both for PES 17; asserts the export `name`'s
+/// findings are `findings` and the exit code is 1.
 fn check_pes17_fails(sandbox: &Sandbox, name: &str, findings: &[&str]) {
+    complete_pes17(sandbox, name);
     let check = sandbox.run(&pes17(sandbox), &["check"]);
     let lines = check.messages();
     assert_eq!(findings_of(&lines, name), findings, "{lines:#?}");
@@ -2529,6 +2558,7 @@ fn a_subfolder_s_fmdl_is_converted_with_its_material_set_beside_it() {
     write_slot_05_face(&sandbox, export);
     let player = format!("exports/{export}/Players/05 - A");
     sandbox.write(&format!("{player}/jessie/hat.fmdl"), &clean_model());
+    complete_pes17(&sandbox, export);
 
     // The conversion's own notes (its renamed hand bones' matrices) are not what this test
     // is about.
@@ -2652,6 +2682,7 @@ fn a_mtl_is_supplied_by_a_texture_of_its_folder_or_a_parent_never_a_subfolder() 
     sandbox.write(&format!("{player}/jessie/body/x.mtl"), &card_materials());
     sandbox.write(&format!("{player}/jessie/skin.dds"), &small_dds());
     sandbox.write(&format!("{player}/jessie/shorts.dds"), &small_dds());
+    complete_pes17(&sandbox, export);
 
     let run = sandbox.run(&pes17(&sandbox), &["check"]);
 

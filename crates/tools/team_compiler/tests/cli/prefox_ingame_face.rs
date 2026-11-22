@@ -12,8 +12,8 @@ use pes_model::model::Model;
 use crate::common::Sandbox;
 use crate::compile::{cpk_entries, tracer_player_file};
 use crate::prefox_faces::{
-    BOOTS_K0625, CLEAN, card_materials, card_model, compile_pes17, entries_under, face_cpk, pes17,
-    pre_fox_fixture, sampler_paths, small_dds, write_slot_05_face,
+    BOOTS_K0625, CLEAN, card_materials, card_model, compile_pes17, complete_pes17, entries_under,
+    face_cpk, pes17, pre_fox_fixture, sampler_paths, small_dds, write_slot_05_face,
 };
 use crate::textures::tracer_model_renaming;
 use crate::{clean_model, findings_of};
@@ -254,6 +254,7 @@ fn write_slot_07_face(sandbox: &Sandbox, export: &str) {
 /// are `CLEAN` then `failure`, that the run failed, and that the CPK holds slot 07's face and
 /// no `boots/k0625/` entry.
 fn assert_boots_left_out(sandbox: &Sandbox, name: &str, failure: &str) {
+    complete_pes17(sandbox, name);
     let run = sandbox.run(&pes17(sandbox), &["compile", "--no-deploy"]);
     let lines = run.messages();
     assert_eq!(
@@ -837,6 +838,7 @@ fn under_ingame_face_fmdl_parts_are_converted_into_the_player_s_own_boots_and_gl
         &format!("{player}/shirt.dds"),
         &tracer_player_file("shirt.dds"),
     );
+    complete_pes17(&sandbox, export);
 
     let run = sandbox.run(&pes17(&sandbox), &["compile", "--no-deploy"]);
 
@@ -928,6 +930,7 @@ fn under_ingame_face_a_common_fmdl_link_is_converted_into_the_player_s_own_boots
         &format!("{common}/shirt.dds"),
         &tracer_player_file("shirt.dds"),
     );
+    complete_pes17(&sandbox, export);
 
     let run = sandbox.run(&pes17(&sandbox), &["compile", "--no-deploy"]);
 
@@ -1043,6 +1046,7 @@ fn under_ingame_face_a_link_to_a_per_kit_common_model_no_mtl_is_found_for_is_not
     let export = "co Midcup Studs";
     // No `.mtl` anywhere: as a part, the link would have none to be written with.
     write_per_kit_common_link(&sandbox, export, false);
+    complete_pes17(&sandbox, export);
 
     let run = sandbox.run(&pes17(&sandbox), &["compile", "--no-deploy"]);
 

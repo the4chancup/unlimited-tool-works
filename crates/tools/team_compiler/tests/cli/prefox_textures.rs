@@ -9,8 +9,8 @@ use crate::common::Sandbox;
 use crate::compile::cpk_entries;
 use crate::findings_of;
 use crate::prefox_faces::{
-    card_materials, card_model, face_cpk, face_folder, materials_naming, nested_entries, pes17,
-    pre_fox_fixture, sampler_paths, small_dds,
+    card_materials, card_model, complete_pes17, face_cpk, face_folder, materials_naming,
+    nested_entries, pes17, pre_fox_fixture, sampler_paths, small_dds,
 };
 
 /// The line both commands report for each team 714 export of these tests: its identity.
@@ -56,6 +56,7 @@ fn a_texture_a_used_material_names_that_the_folder_lacks_is_a_warning_and_the_fa
     // Slot 05 has no `hair.*`; slot 03 is clean.
     write_face(&sandbox, export, "05 - A", &materials_naming("hair"));
     write_face(&sandbox, export, "03 - B", &card_materials());
+    complete_pes17(&sandbox, export);
     let not_found = "Warning mtl_texture_not_found [Keep] at Players/05 - A (file=face_high.mtl, texture=./hair.dds, materials=card)";
 
     let check = sandbox.run(&pes17(&sandbox), &["check"]);
@@ -89,6 +90,7 @@ fn a_texture_only_an_unused_material_names_is_an_info_and_its_path_is_kept() {
     let sandbox = Sandbox::new("prefox_mtl_texture_unused");
     let export = "co Midcup Spare";
     write_face(&sandbox, export, "05 - A", &materials_with_an_unused_one());
+    complete_pes17(&sandbox, export);
     let unused = "Info mtl_texture_unused_missing [Keep] at Players/05 - A (file=face_high.mtl, texture=./missing.dds, materials=unused)";
 
     let check = sandbox.run(&pes17(&sandbox), &["check"]);
@@ -160,6 +162,7 @@ fn install_pre_fox_hair_in(sandbox: &Sandbox, holder: &str) {
 
 /// The `check` lines of the export of `write_common_hair_mtl` run with `settings`.
 fn hair_check_lines(sandbox: &Sandbox, settings: &str) -> Vec<String> {
+    complete_pes17(sandbox, "co Midcup Hair");
     let run = sandbox.run(settings, &["check"]);
     findings_of(&run.messages(), "co Midcup Hair")
         .into_iter()
@@ -215,6 +218,7 @@ fn a_game_path_and_a_kit_stand_in_are_not_looked_for_and_the_stand_in_is_written
         }),
     );
     write_face(&sandbox, export, "05 - A", &set.write());
+    complete_pes17(&sandbox, export);
 
     let check = sandbox.run(&pes17(&sandbox), &["check"]);
     let lines = check.messages();

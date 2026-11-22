@@ -6,8 +6,9 @@ use std::path::Path;
 
 use crate::bins::install_names;
 use crate::common::Sandbox;
-use crate::compile::{cpk_entries, pes_settings, pes21_settings, tracer_export};
+use crate::compile::{cpk_entries, pes_settings, pes21_settings};
 use crate::compile_exports::TEAM_COLOR;
+use crate::deploy::tracer_copy;
 use crate::referees::{REFS, REFS_CPK, write_ref_a};
 use crate::{deploy_skipped, patch_written, savefile_missing, snapshot};
 
@@ -17,10 +18,14 @@ const TEAM_COLOR_OVERRIDE: &[u8] = b"the operator's TeamColor.bin";
 /// What an earlier sideload run left in `livecpk/`.
 const OLD: &[u8] = b"an earlier sideload";
 
-/// A sandbox whose PES folder holds a `livecpk/old.txt`, with an override of `TEAM_COLOR` in
-/// the data folder.
+/// Where `tracer_copy` puts the tracer in a sandbox.
+const TRACER: &str = "exports/egg Midcup Tracer";
+
+/// A sandbox holding the tracer's completed copy, whose PES folder holds a
+/// `livecpk/old.txt`, with an override of `TEAM_COLOR` in the data folder.
 fn with_livecpk(name: &str) -> Sandbox {
     let sandbox = Sandbox::new(name);
+    tracer_copy(&sandbox);
     sandbox.write("PES/livecpk/old.txt", OLD);
     sandbox.write(&format!("data/overrides/{TEAM_COLOR}"), TEAM_COLOR_OVERRIDE);
     sandbox
@@ -44,7 +49,8 @@ pub(crate) fn slashed(path: &Path) -> String {
     parts.join("/")
 }
 
-/// `compile --mode sideload --export <the tracer>` in `sandbox` with `settings`.
+/// `compile --mode sideload --export <the tracer>` in `sandbox` with `settings`, naming the
+/// copy `tracer_copy` made.
 fn sideload(sandbox: &Sandbox, settings: &str) -> crate::common::Run {
     sandbox.run(
         settings,
@@ -53,7 +59,7 @@ fn sideload(sandbox: &Sandbox, settings: &str) -> crate::common::Run {
             "--mode",
             "sideload",
             "--export",
-            &tracer_export(),
+            &sandbox.arg(TRACER),
         ],
     )
 }
@@ -64,13 +70,14 @@ fn sideload_writes_what_the_cpk_holds_as_loose_files_replacing_livecpk() {
     let normal = with_livecpk("sideload_normal_twin");
     install_names(&normal, &["4cc_99_test.cpk"]);
     write_ref_a(&normal, &["01"]);
+    normal.complete(REFS);
     let normal_run = normal.run(
         &pes21_settings(&normal),
         &[
             "compile",
             "--no-deploy",
             "--export",
-            &tracer_export(),
+            &normal.arg(TRACER),
             "--export",
             &normal.arg(REFS),
         ],
@@ -89,6 +96,7 @@ fn sideload_writes_what_the_cpk_holds_as_loose_files_replacing_livecpk() {
     let sandbox = with_livecpk("sideload_tracer");
     install_names(&sandbox, &["4cc_99_test.cpk"]);
     write_ref_a(&sandbox, &["01"]);
+    sandbox.complete(REFS);
     let download = snapshot(&sandbox.root.join("PES/download"));
 
     let run = sandbox.run(
@@ -98,7 +106,7 @@ fn sideload_writes_what_the_cpk_holds_as_loose_files_replacing_livecpk() {
             "--mode",
             "sideload",
             "--export",
-            &tracer_export(),
+            &sandbox.arg(TRACER),
             "--export",
             &sandbox.arg(REFS),
         ],
@@ -190,6 +198,7 @@ fn sideload_is_refused_for_pes_2015_and_2016_and_writes_livecpk_for_pes_2017() {
 #[test]
 fn sideload_without_a_pes_folder_is_refused_naming_it() {
     let sandbox = Sandbox::new("sideload_no_pes_folder");
+    tracer_copy(&sandbox);
     // `**` is the version's two digits: the refusal names the folder looked for.
     let settings = format!(
         "[common]\npes_version = 21\npes_folder_path = '{}'\n",
@@ -229,6 +238,7 @@ fn a_sideload_run_that_fails_while_writing_leaves_livecpk_as_it_was() {
 #[test]
 fn a_sideload_run_without_a_dpfilelist_only_warns_that_it_is_missing() {
     let sandbox = Sandbox::new("sideload_no_dpfilelist");
+    tracer_copy(&sandbox);
     sandbox.write("PES/PES2021.exe", b"the game");
 
     let run = sideload(&sandbox, &pes21_settings(&sandbox));

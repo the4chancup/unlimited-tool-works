@@ -76,21 +76,28 @@ pub(crate) fn install_pes(sandbox: &Sandbox) {
     install_official_list(sandbox);
 }
 
+/// Copies the tracer into `sandbox` as `egg Midcup Tracer` and completes it, returning the
+/// path argument that names the copy.
+pub(crate) fn tracer_copy(sandbox: &Sandbox) -> String {
+    sandbox.copy_tracer("egg Midcup Tracer");
+    sandbox.complete("exports/egg Midcup Tracer");
+    sandbox.arg("exports/egg Midcup Tracer")
+}
+
 /// A deploying `compile` of the tracer in `sandbox`.
 fn compile_tracer(sandbox: &Sandbox) -> Run {
-    sandbox.run(
-        &pes21_settings(sandbox),
-        &["compile", "--export", &tracer_export()],
-    )
+    let tracer = tracer_copy(sandbox);
+    sandbox.run(&pes21_settings(sandbox), &["compile", "--export", &tracer])
 }
 
 /// The CPK a `--no-deploy` compile of the tracer leaves in the output folder of a sandbox of
 /// its own, `name`.
 fn twin_cpk(name: &str) -> PathBuf {
     let twin = Sandbox::new(name);
+    let tracer = tracer_copy(&twin);
     let run = twin.run(
         &pes21_settings(&twin),
-        &["compile", "--no-deploy", "--export", &tracer_export()],
+        &["compile", "--no-deploy", "--export", &tracer],
     );
     assert_eq!(run.exit_code(), 0, "{:#?}", run.messages());
     twin.root.join("output/4cc_99_test.cpk")

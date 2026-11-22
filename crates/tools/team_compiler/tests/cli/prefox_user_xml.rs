@@ -9,13 +9,14 @@ use std::path::Path;
 
 use base64::Engine;
 use base64::engine::general_purpose::STANDARD;
+use pes_version::PesVersion;
 
 use crate::common::Sandbox;
 use crate::compile::{cpk_entries, pes21_settings, tracer_kit};
 use crate::models::{face_diff_fixture, template};
 use crate::prefox_faces::{
-    CLEAN, card_materials, card_model, common_output, compile_pes17, entries_under, face_cpk,
-    face_folder, materials_naming, nested_entries, ordered_entries, pes15, pes16, pes17,
+    CLEAN, card_materials, card_model, common_output, compile_pes17, complete_pes17, entries_under,
+    face_cpk, face_folder, materials_naming, nested_entries, ordered_entries, pes15, pes16, pes17,
     pre_fox_fixture, sampler_paths, small_dds,
 };
 use crate::{clean_model, findings_of};
@@ -64,6 +65,7 @@ fn an_entry_without_path_and_one_naming_an_absent_model_each_drop_their_folder()
         "face_high",
         &face_xml(&[FACE_HIGH, r#"type="parts" path="./hat.model""#]),
     );
+    complete_pes17(&sandbox, export);
 
     let run = sandbox.run(&pes17(&sandbox), &["check"]);
 
@@ -99,6 +101,7 @@ fn a_dif_in_the_xml_beside_a_face_diff_xml_drops_the_folder() {
         &format!("exports/{export}/Players/05 - A/face_diff.xml"),
         &dif,
     );
+    complete_pes17(&sandbox, export);
 
     let run = sandbox.run(&pes17(&sandbox), &["check"]);
 
@@ -217,6 +220,7 @@ fn a_member_s_xml_pairing_a_common_model_with_a_mtl_lacking_its_materials_drops_
         &format!("exports/{export}/Common/legs.model"),
         &card_model(),
     );
+    complete_pes17(&sandbox, export);
 
     let run = sandbox.run(&pes17(&sandbox), &["compile", "--no-deploy"]);
 
@@ -248,6 +252,7 @@ fn on_pes_21_the_xml_is_ignored_and_the_folder_compiles_as_without_it() {
                 face_xml(&[r#"type="face_neck" path="./face_high.model""#]).as_bytes(),
             );
         }
+        sandbox.complete("exports/co Midcup Xml");
         let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
         let lines = run.messages();
         assert_eq!(run.exit_code(), 0, "{lines:#?}");
@@ -303,6 +308,7 @@ fn on_pes_16_a_model_name_without_its_prefix_drops_the_folder_and_on_pes_17_it_d
         face_xml(&[r#"type="uniform" path="./body_uniform.model" material="./body_uniform.mtl""#])
             .as_bytes(),
     );
+    complete_pes17(&sandbox, export);
 
     let pes_16 = sandbox.run(&pes16(&sandbox), &["check"]);
     let lines = pes_16.messages();
@@ -531,6 +537,7 @@ fn a_local_reference_into_a_subfolder_is_checked_and_a_bare_name_names_the_folde
     let body = format!("exports/{export}/Players/07 - B/jessie/body");
     sandbox.write(&format!("{body}/x_win32.model"), &card_model());
     sandbox.write(&format!("{body}/x.mtl"), &card_materials());
+    complete_pes17(&sandbox, export);
 
     let run = sandbox.run(&pes17(&sandbox), &["check"]);
 
@@ -792,6 +799,7 @@ fn a_player_s_own_xml_beside_a_face_link_drops_his_folder_even_under_pass_throug
     sandbox.write(&format!("{other}/face_high.model"), &card_model());
     sandbox.write(&format!("{other}/face_high.mtl"), &card_materials());
     sandbox.write(&format!("{other}/skin.dds"), &small_dds());
+    complete_pes17(&sandbox, export);
     let conflict = "Error xml_shared_face_conflict [DropFolder] at Players/05 - A (file=face.xml, link=Faces/Round)";
     // With its one linking player dropped, nothing compiles the shared folder.
     let orphaned = "Warning shared_folder_orphaned [DropFolder] at Faces/Round ()";
@@ -836,6 +844,7 @@ fn a_shared_face_s_xml_naming_an_absent_model_drops_the_folder_and_its_linking_p
     let export = "co Midcup Xml";
     let xml = face_xml(&[FACE_HIGH, r#"type="parts" path="./missing.model""#]);
     write_round(&sandbox, export, Some(&xml), &["05 - A"]);
+    complete_pes17(&sandbox, export);
 
     let run = sandbox.run(&pes17(&sandbox), &["check"]);
 
@@ -1564,6 +1573,7 @@ fn a_folder_other_than_team_folder_after_common_is_refused_on_every_target() {
     sandbox.write(&format!("{common}/legs.model"), &card_model());
     sandbox.write(&format!("{common}/hair.dds"), &small_dds());
     sandbox.write(&format!("{common}/env.dds"), &small_dds());
+    complete_pes17(&sandbox, export);
 
     let mtls = [
         "Error mtl_common_path_invalid [DropFolder] at Players/06 - B (file=face_high.mtl, attribute=path, value=common_folder/797/hair.dds)",
@@ -1692,6 +1702,7 @@ fn a_reference_starting_common_is_refused_as_the_archive_s_root_folder() {
     let common = format!("exports/{export}/Common");
     sandbox.write(&format!("{common}/legs.model"), &card_model());
     sandbox.write(&format!("{common}/hair.dds"), &small_dds());
+    complete_pes17(&sandbox, export);
 
     let run = sandbox.run(&pes17(&sandbox), &["check"]);
     let lines = run.messages();
@@ -1808,6 +1819,7 @@ fn on_pes_15_a_member_s_uniform_entry_is_written_uniform_sub_and_named_by_its_pa
         "body",
         &face_xml(&[r#"type="uniform" path="./body.model" material="./body.mtl""#]),
     );
+    sandbox.complete_for(&format!("exports/{export}"), PesVersion::Pes15, &[]);
 
     let run = sandbox.run(&pes15(&sandbox), &["compile", "--no-deploy"]);
 

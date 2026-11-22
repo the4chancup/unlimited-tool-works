@@ -13,6 +13,7 @@ use std::path::Path;
 
 use fmdl::ops::paths::texture_paths;
 use fmdl::{FmdlFile, Model};
+use pes_version::PesVersion;
 
 use crate::bins::{SHARED_IDS_714, install_bins, record};
 use crate::common::Sandbox;
@@ -80,13 +81,15 @@ fn write_player(sandbox: &Sandbox, folder: &str, boots_name: &str) {
     );
 }
 
-/// Compiles the sandbox for PES 21, asserting the export `name` reports exactly `findings`
-/// and the run exits with 0, and returns the CPK's entries by path.
+/// Completes `exports/<name>` and compiles the sandbox for PES 21, asserting the export
+/// `name` reports exactly `findings` and the run exits with 0, and returns the CPK's entries
+/// by path.
 pub(crate) fn compile_clean(
     sandbox: &Sandbox,
     name: &str,
     findings: &[&str],
 ) -> BTreeMap<String, Vec<u8>> {
+    sandbox.complete(&format!("exports/{name}"));
     let run = sandbox.run(&pes21_settings(sandbox), &["compile", "--no-deploy"]);
     assert_eq!(findings_of(&run.messages(), name), findings);
     assert_eq!(run.exit_code(), 0);
@@ -386,6 +389,7 @@ fn a_texture_that_cannot_convert_drops_the_whole_folder_and_the_folder_beside_it
         "exports/co Midcup Broken/Players/07 - B",
         "boots.fmdl",
     );
+    sandbox.complete("exports/co Midcup Broken");
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -507,6 +511,7 @@ fn a_boots_link_beside_a_local_boots_model_combines_the_shared_folder_into_the_p
     let k0625 = "Asset/model/character/boots/k0625/#Win/boots.fpk";
     let k0627 = "Asset/model/character/boots/k0627/#Win/boots.fpk";
     let sole = "Asset/model/character/common/714/05 - A/sourceimages/#windx11/sole.ftex";
+    sandbox.complete(export);
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -552,6 +557,7 @@ fn a_boots_link_beside_a_local_boots_model_combines_the_shared_folder_into_the_p
     // Slot 07 links Crocs plainly: Crocs compiles on its own too, as it is, textures beside
     // it, while slot 05's merge is unchanged. Slot 07 holds no face model: its face is blank.
     sandbox.write(&format!("{export}/Players/07 - B/Crocs.boots"), b"");
+    sandbox.complete(export);
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
     assert_eq!(
         findings_of(&run.messages(), "co Midcup Combined"),
@@ -698,6 +704,7 @@ fn a_skeleton_paired_with_a_face_model_without_a_slot_is_reported_and_not_packed
         "exports/co Midcup Slot/Players/05 - A/face_high.skl",
         &tracer_player_file("fcl_hair.skl"),
     );
+    sandbox.complete("exports/co Midcup Slot");
     let findings = [
         "Info fmdl_weights_not_normalized [Keep] at Players/05 - A (file=face_high.fmdl, count=1662)",
         "Info export_identified [Keep] (team=/co/, id=714)",
@@ -729,6 +736,7 @@ fn an_unsuffixed_model_is_reported_and_merged_into_the_hair_with_its_own_skeleto
         "exports/co Midcup Torso/Players/05 - A/torso.fmdl",
         &tracer_player_file("fcl_hair.fmdl"),
     );
+    alone.complete("exports/co Midcup Torso");
     let check = alone.run(&pes21_settings(&alone), &["check"]);
     assert_eq!(
         findings_of(&check.messages(), "co Midcup Torso"),
@@ -762,6 +770,7 @@ fn an_unsuffixed_model_is_reported_and_merged_into_the_hair_with_its_own_skeleto
             &tracer_player_file("fcl_hair.fmdl"),
         );
     }
+    merged.complete("exports/co Midcup Merged");
     let run = merged.run(&pes21_settings(&merged), &["compile", "--no-deploy"]);
     assert_eq!(
         findings_of(&run.messages(), "co Midcup Merged"),
@@ -792,6 +801,7 @@ fn an_unsuffixed_model_is_reported_and_merged_into_the_hair_with_its_own_skeleto
     );
     let custom = body_skl("pes19");
     paired.write("exports/co Midcup Paired/Players/05 - A/torso.skl", &custom);
+    paired.complete("exports/co Midcup Paired");
     let run = paired.run(&pes21_settings(&paired), &["compile", "--no-deploy"]);
     assert_eq!(run.exit_code(), 0);
     let entries = cpk_entries(&paired.root.join("output/4cc_99_test.cpk"));
@@ -854,6 +864,7 @@ fn a_subfolder_s_marker_and_settings_are_file_type_disallowed_and_count_for_noth
     for name in ["ingame_face.toml", "settings.toml"] {
         sandbox.write(&format!("{player}/jessie/{name}"), b"");
     }
+    sandbox.complete(&format!("exports/{export}"));
     let disallowed = |severity: &str, disposition: &str| -> Vec<String> {
         ["ingame_face.toml", "settings.toml"]
             .iter()
@@ -904,6 +915,7 @@ fn a_shared_folder_s_subfolder_models_are_parts_of_its_package() {
             &tracer_player_file("boots.fmdl"),
         );
     }
+    sandbox.complete(&root);
 
     let check = sandbox.run(&pes21_settings(&sandbox), &["check"]);
 
@@ -955,6 +967,7 @@ fn a_subfolder_s_shared_link_is_the_root_s_and_names_one_folder_once() {
     sandbox.write(&format!("{player}/face_high.fmdl"), &clean_model());
     sandbox.write(&format!("{player}/Crocs.boots"), b"");
     sandbox.write(&format!("{player}/jessie/Crocs.boots"), b"");
+    sandbox.complete(&root);
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -1011,6 +1024,7 @@ fn a_folder_linked_from_the_root_and_a_subfolder_beside_a_local_boots_model_comb
         &format!("{export}/Boots/Crocs/boots.fmdl"),
         &tracer_player_file("boots.fmdl"),
     );
+    sandbox.complete(export);
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -1057,11 +1071,12 @@ fn write_slot_07(sandbox: &Sandbox, export: &str) {
     sandbox.copy_tracer_face(&format!("{export}/Players/07 - B"));
 }
 
-/// Checks, then compiles, the sandbox for PES 21 (slot 05 under test, slot 07 written by
-/// `write_slot_07`), asserting both commands report `finding` on slot 05 before the export
-/// `name`'s identity (and `compile` its missing team colors after it), and that slot 05's
-/// folder is not in the CPK while slot 07's is.
+/// Completes `exports/<name>`, then checks and compiles the sandbox for PES 21 (slot 05
+/// under test, slot 07 written by `write_slot_07`). Asserts that both commands report
+/// `finding` on slot 05 before the export `name`'s identity (and `compile` its missing team
+/// colors after it), and that slot 05's folder is not in the CPK while slot 07's is.
 fn assert_face_dropped(sandbox: &Sandbox, name: &str, finding: &str) {
+    sandbox.complete(&format!("exports/{name}"));
     for command in ["check", "compile"] {
         let run = sandbox.run(&pes21_settings(sandbox), &command_args(command));
         let validated = [
@@ -1110,6 +1125,7 @@ fn a_face_diff_xml_is_decoded_into_the_face_and_a_corrupt_one_drops_the_folder()
         "exports/co Midcup Xml",
         &face_diff_fixture("dif.xml"),
     );
+    sandbox.complete("exports/co Midcup Xml");
     let clean = [
         "Info fmdl_weights_not_normalized [Keep] at Players/05 - A (file=boots.fmdl, count=1662)",
         "Info fmdl_weights_not_normalized [Keep] at Players/05 - A (file=fcl_hair.fmdl, count=1662)",
@@ -1201,6 +1217,7 @@ fn a_subfolder_s_parts_combine_with_loose_root_files_of_their_category() {
             &tracer_player_file(tracer_name),
         );
     }
+    sandbox.complete("exports/co Midcup Parts");
     let glove_fpk = "Asset/model/character/glove/g0625/#Win/glove.fpk";
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
@@ -1265,6 +1282,7 @@ fn a_pre_fox_target_reports_neither_the_fallback_nor_a_slotless_skeleton() {
         );
     }
     sandbox.write("exports/co Midcup Names/Players/05 - A/face_high.skl", b"");
+    sandbox.complete_for("exports/co Midcup Names", PesVersion::Pes17, &[]);
 
     let run = sandbox.run("[common]\npes_version = 17\n", &["check"]);
 
@@ -1304,6 +1322,7 @@ fn a_face_link_combines_the_shared_face_folder_into_the_player_s_face() {
         &format!("{export}/Faces/Longhair/hair_high.fmdl"),
         &tracer_player_file("boots.fmdl"),
     );
+    sandbox.complete(export);
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -1349,6 +1368,7 @@ fn a_shared_face_s_boots_model_is_a_part_of_the_linking_player_s_own_boots() {
             &tracer_player_file(name),
         );
     }
+    sandbox.complete(export);
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -1394,6 +1414,7 @@ fn a_shared_face_s_boots_model_converts_with_the_face_folder_s_mtl() {
     );
     // The texture the card's `.mtl` names, as beside the pair in a player folder.
     sandbox.write(&format!("{export}/Faces/Round/skin.dds"), &small_dds());
+    sandbox.complete(export);
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -1454,6 +1475,7 @@ fn a_boots_link_combines_with_the_boots_of_the_player_s_shared_face() {
         &format!("{export}/Boots/Crocs/boots.fmdl"),
         &tracer_player_file("boots.fmdl"),
     );
+    sandbox.complete(export);
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -1515,6 +1537,7 @@ fn a_gloves_link_combines_with_the_hands_split_from_the_player_s_face_model() {
     for name in ["glove_l.fmdl", "glove_r.fmdl"] {
         sandbox.write(&format!("{export}/Gloves/Crocs/{name}"), &body);
     }
+    sandbox.complete(export);
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -1585,6 +1608,7 @@ fn a_texture_the_player_and_a_combined_boots_folder_hold_is_packed_once_or_overr
             &format!("{export}/Boots/Crocs/sole.dds"),
             &tracer_player_file("shirt.dds"),
         );
+        sandbox.complete(export);
     };
 
     // The same bytes under one stem in both sources: packed once, no finding.
@@ -1693,6 +1717,7 @@ fn under_ingame_face_a_texture_the_player_and_a_combined_boots_folder_hold_diffe
         &format!("{export}/Players/07 - B/boots.fmdl"),
         &tracer_player_file("boots.fmdl"),
     );
+    sandbox.complete(export);
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -1747,6 +1772,7 @@ fn a_texture_the_player_s_folder_and_a_combined_face_folder_hold_differently_is_
         &format!("{export}/Players/07 - B/boots.fmdl"),
         &tracer_player_file("boots.fmdl"),
     );
+    sandbox.complete(export);
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -1832,6 +1858,7 @@ fn parts_with_a_skeleton_mismatch_or_a_material_defined_twice_leave_their_boots_
         &format!("{export}/Players/09 - C/boots.fmdl"),
         &tracer_player_file("boots.fmdl"),
     );
+    sandbox.complete(export);
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -1970,6 +1997,7 @@ fn a_midcup_s_new_shared_folder_past_the_installed_record_exhausts_the_pool() {
     // Birk, which the record does not name, is worn by two slots, so it takes a shared id,
     // the 18th needed; a one-wearer folder would take its wearer's exclusive id instead.
     write_shared_boots(&sandbox, "co Midcup Pool", "Birk", None, &[5, 6]);
+    sandbox.complete("exports/co Midcup Pool");
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["check"]);
 
@@ -2117,6 +2145,7 @@ fn per_kit_models_on_pes_21_compile_the_lowest_variant_alone_and_say_so() {
         "Info export_identified [Keep] (team=/co/, id=714)",
         "Info fmdl_fcl_hair_fallback [Keep] at Players/05 - A (file=pants_kit1.fmdl)",
     ];
+    sandbox.complete("exports/co Midcup Variants");
 
     let check = sandbox.run(&pes21_settings(&sandbox), &["check"]);
     assert_eq!(
@@ -2176,6 +2205,7 @@ fn a_kits_fallback_model_is_used_and_the_variant_left_out_on_pes_21() {
         "Info export_identified [Keep] (team=/co/, id=714)",
         "Info fmdl_fcl_hair_fallback [Keep] at Players/05 - A (file=pants_kitF.fmdl)",
     ];
+    sandbox.complete("exports/co Midcup Fallback");
 
     let check = sandbox.run(&pes21_settings(&sandbox), &["check"]);
     assert_eq!(
@@ -2313,6 +2343,7 @@ fn check_reads_a_kit_set_split_between_a_player_and_his_face_as_compile_does_on_
         "Info export_identified [Keep] (team=/co/, id=714)",
         "Info fmdl_fcl_hair_fallback [Keep] at Faces/X (file=pants_kit1.fmdl)",
     ];
+    sandbox.complete(export);
 
     let check = sandbox.run(&pes21_settings(&sandbox), &["check"]);
     assert_eq!(
@@ -2476,6 +2507,7 @@ fn per_kit_boots_in_a_shared_boots_folder_are_named_as_boots() {
         &format!("{export}/Boots/Crocs/boots_kit2.fmdl"),
         &clean_model(),
     );
+    sandbox.complete(export);
 
     let check = sandbox.run(&pes21_settings(&sandbox), &["check"]);
     assert_eq!(
@@ -2516,6 +2548,7 @@ fn an_unsuffixed_model_below_a_shared_boots_folder_s_subfolder_is_named_invalid(
         &format!("{export}/Boots/Crocs/boots/extra.fmdl"),
         &clean_model(),
     );
+    sandbox.complete(export);
 
     // The name rule applies at any depth and drops as it does a model directly in the
     // folder: `extra.fmdl` is no boots part, and no package reads it.
@@ -3012,6 +3045,7 @@ fn a_texture_nobody_supplies_is_a_warning_and_the_package_is_kept_on_pes_21() {
         &format!("{player}/boots.fmdl"),
         &tracer_model_pointing("boots.fmdl", &[("shirt.dds", "medic_bsm")], "./"),
     );
+    sandbox.complete(&format!("exports/{export}"));
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -3050,6 +3084,7 @@ fn a_converted_model_s_mtl_path_below_its_folder_names_the_texture_there_on_pes_
     );
     sandbox.write(&format!("{player}/jessie/shorts/y.dds"), &small_dds());
     sandbox.write(&format!("{player}/y.dds"), &tracer_player_file("shirt.dds"));
+    sandbox.complete(&format!("exports/{export}"));
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
     let lines = run.messages();
@@ -3094,6 +3129,7 @@ fn a_converted_model_s_texture_names_resolve_in_its_mtl_s_folder_on_pes_21() {
         &format!("{player}/jessie/skin.dds"),
         &tracer_player_file("shirt.dds"),
     );
+    sandbox.complete(&format!("exports/{export}"));
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
     let lines = run.messages();
@@ -3125,6 +3161,7 @@ fn a_txt_note_beside_a_face_model_is_a_file_no_role_takes() {
     let player = format!("exports/{export}/Players/05 - A");
     sandbox.write(&format!("{player}/face_high.fmdl"), &clean_model());
     sandbox.write(&format!("{player}/notes.txt"), b"a note");
+    sandbox.complete(&format!("exports/{export}"));
     let settings = format!(
         "{}[compiler]\nstrict_file_type_check = true\n",
         pes21_settings(&sandbox)

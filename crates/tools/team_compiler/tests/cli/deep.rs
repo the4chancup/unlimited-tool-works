@@ -5,6 +5,7 @@ use std::fs;
 use std::path::Path;
 
 use fmdl::{FmdlFile, Model};
+use pes_version::PesVersion;
 
 use crate::common::Sandbox;
 use crate::compile::{
@@ -43,6 +44,7 @@ fn a_far_vertex_drops_its_folder_at_check_and_at_compile_even_with_pass_through(
         "exports/co Midcup Far/Players/07 - Winger/boots.fmdl",
         &tracer_player_file("boots.fmdl"),
     );
+    sandbox.complete("exports/co Midcup Far");
 
     let check = sandbox.run("", &["check"]);
     assert_eq!(
@@ -133,6 +135,7 @@ fn one_worker_thread_finds_what_the_default_finds_in_a_folder_and_in_a_solid_7z(
         &format!("{export}/Players/07 - Winger/glove_l.fmdl.common"),
         b"",
     );
+    sandbox.complete(export);
     let one_worker = format!("{}thread_count = 1\n", pes21_settings(&sandbox));
 
     let default = sandbox.run(&pes21_settings(&sandbox), &["check"]);
@@ -184,6 +187,7 @@ fn exports_are_reported_in_discovery_order_with_a_7z_among_folders() {
             &format!("exports/{export}/Players/07 - Winger/boots.fmdl"),
             &tracer_player_file("boots.fmdl"),
         );
+        sandbox.complete(&format!("exports/{export}"));
     }
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["check"]);
@@ -226,6 +230,7 @@ fn a_far_vertex_in_a_shared_folder_drops_the_player_linking_it() {
         "exports/co Midcup Far/Players/05 - Striker/glove_l.fmdl",
         &tracer_player_file("glove_l.fmdl"),
     );
+    sandbox.complete("exports/co Midcup Far");
 
     let run = sandbox.run("", &["check"]);
 
@@ -268,6 +273,7 @@ fn a_format_error_drops_its_folder_unless_pass_through_keeps_it() {
         "exports/co Midcup Faces/Players/07 - Winger/boots.fmdl",
         &tracer_player_file("boots.fmdl"),
     );
+    sandbox.complete("exports/co Midcup Faces");
     let striker_weights = "Info fmdl_weights_not_normalized [Keep] at Players/05 - Striker (file=boots.fmdl, count=1662)";
     let boots = |slot: u32| {
         [
@@ -398,6 +404,7 @@ fn a_model_mesh_over_the_vertex_limit_drops_its_folder_at_check_and_compile() {
         sandbox.write(&format!("{player}/face_high.mtl"), &card_materials());
         sandbox.write(&format!("{player}/skin.dds"), &small_dds());
     }
+    sandbox.complete_for("exports/co Midcup Dense", PesVersion::Pes17, &[]);
     let over = "Error model_mesh_over_vertex_limit [DropFolder] at Players/05 - A (file=face_high.model, count=65536)";
     let settings = pes_settings(&sandbox, 17);
 
@@ -436,6 +443,7 @@ fn pass_through_keeps_a_common_mtl_s_eligible_error_and_the_player_whose_link_pa
     let ztest_zero = materials.replace(ztest, r#"<state name="ztest" value="0" />"#);
     sandbox.write(&format!("{export}/Common/legs.mtl"), ztest_zero.as_bytes());
     sandbox.write(&format!("{export}/Common/skin.dds"), &small_dds());
+    sandbox.complete_for(export, PesVersion::Pes17, &[]);
     let settings = format!(
         "{}[compiler]\npass_through = true\n",
         pes_settings(&sandbox, 17)
@@ -471,6 +479,7 @@ fn a_model_that_does_not_parse_is_model_broken_and_drops_its_folder_even_with_pa
         "exports/co Midcup Broken/Players/07 - Winger/boots.fmdl",
         &tracer_player_file("boots.fmdl"),
     );
+    sandbox.complete("exports/co Midcup Broken");
     let findings = [
         "Error model_broken [DropFolder] at Players/05 - Striker (file=boots.fmdl, error=fmdl is truncated)",
         WINGER_WEIGHTS,
@@ -516,6 +525,7 @@ fn a_logo_that_does_not_decode_is_logo_file_invalid_and_the_export_is_otherwise_
         "exports/co Midcup Logo/Players/07 - Winger/boots.fmdl",
         &tracer_player_file("boots.fmdl"),
     );
+    sandbox.complete("exports/co Midcup Logo");
     let findings = [
         WINGER_WEIGHTS,
         "Error logo_file_invalid [DropFile] at logo.png (file=logo.png, error=image decode failed: Format error decoding Png: Invalid PNG signature.)",
@@ -589,6 +599,7 @@ fn a_settings_toml_that_does_not_parse_is_ignored_and_the_folder_s_models_compil
         "exports/co Midcup Settings/Players/05 - A/settings.toml",
         b"name = 5\n",
     );
+    sandbox.complete("exports/co Midcup Settings");
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -630,6 +641,7 @@ fn write_kits(sandbox: &Sandbox, export: &str) {
 fn a_kit_config_that_does_not_parse_leaves_its_kit_out_and_the_kit_beside_it_compiles() {
     let sandbox = Sandbox::new("deep_kit_config_invalid");
     write_kits(&sandbox, "exports/co Midcup Kits");
+    sandbox.complete("exports/co Midcup Kits");
 
     let check = sandbox.run(&pes21_settings(&sandbox), &["check"]);
     assert_eq!(
@@ -695,6 +707,7 @@ fn a_kit_colors_txt_line_that_gives_no_color_is_a_warning_and_the_export_is_stil
         &format!("{export}/Kits/p1/colors.txt"),
         b"211 74 79\n211 74 79 - 162 62 77\n",
     );
+    sandbox.complete(export);
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["check"]);
 
@@ -733,6 +746,7 @@ fn pass_through_keeps_no_face_diff_kit_config_or_settings_toml_that_cannot_be_re
         b"name = 5\n",
     );
     write_kits(&sandbox, export);
+    sandbox.complete(export);
 
     let run = sandbox.run(
         &pass_through_settings(&sandbox),

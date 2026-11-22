@@ -18,9 +18,9 @@ use crate::conversion::HOME_714_05;
 use crate::models::{body_skl, face_package, package_names};
 use crate::patch::read_patch;
 use crate::prefox_faces::{
-    CLEAN, card_materials, card_model, compile_pes17, entries_under, face_cpk, face_folder,
-    materials_naming, nested_entries, pes17, pre_fox_fixture, sampler_paths, small_dds,
-    write_slot_05_face,
+    CLEAN, card_materials, card_model, compile_pes17, complete_pes17, entries_under, face_cpk,
+    face_folder, materials_naming, nested_entries, pes17, pre_fox_fixture, sampler_paths,
+    small_dds, write_slot_05_face,
 };
 use crate::textures::texture_fixture;
 use crate::{assert_row_says, clean_model, findings_of};
@@ -104,6 +104,7 @@ fn a_common_model_link_bakes_the_model_into_the_face_and_its_texture_stays_in_th
     );
     let cloth = format!("{COMMON_TEXTURES}/cloth.ftex");
     let shirt = "Asset/model/character/common/714/05 - A/sourceimages/#windx11/shirt.ftex";
+    sandbox.complete("exports/co Midcup Link");
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -199,6 +200,7 @@ fn a_boots_link_packs_the_common_skeleton_and_two_players_linking_one_model_shar
         &tracer_player_file("shirt.dds"),
     );
     let shirt = format!("{COMMON_TEXTURES}/shirt.ftex");
+    sandbox.complete(export);
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -263,6 +265,7 @@ fn two_link_spellings_of_one_common_model_compile_it_once() {
         &format!("{export}/Common/boots.fmdl"),
         &tracer_player_file("boots.fmdl"),
     );
+    sandbox.complete(export);
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -289,6 +292,7 @@ fn a_common_skeleton_pairs_with_its_model_case_folded() {
     let custom = body_skl("pes19");
     assert_ne!(custom, body_skl("pes21"));
     sandbox.write(&format!("{export}/Common/Boots.skl"), &custom);
+    sandbox.complete(export);
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -316,6 +320,7 @@ fn a_boots_link_beside_a_shared_boots_link_combines_the_shared_folder() {
         &format!("{export}/Boots/Crocs/boots.fmdl"),
         &tracer_player_file("boots.fmdl"),
     );
+    sandbox.complete(export);
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -369,6 +374,7 @@ fn a_common_skeleton_of_a_slotless_face_model_is_reported_on_the_link_and_not_pa
         &format!("{export}/Common/face_high.skl"),
         &tracer_player_file("fcl_hair.skl"),
     );
+    sandbox.complete(export);
     let findings = [
         "Info fmdl_weights_not_normalized [Keep] at Common/face_high.fmdl (file=face_high.fmdl, count=1662)",
         "Info export_identified [Keep] (team=/co/, id=714)",
@@ -429,6 +435,7 @@ fn a_common_model_link_converts_the_model_with_its_common_mtl_into_the_player_s_
     sandbox.write(&format!("{player}/legs.model.common"), b"");
     write_common_card(&sandbox, export);
     let skin = format!("{COMMON_TEXTURES}/skin.ftex");
+    sandbox.complete(export);
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -499,6 +506,7 @@ fn a_common_mtl_naming_a_team_id_drops_the_linking_player_s_folder_on_fox() {
         .replace("./skin.dds", path)
         .into_bytes();
     sandbox.write(&format!("{export}/Common/legs.mtl"), &mtl);
+    sandbox.complete(export);
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["check"]);
 
@@ -536,6 +544,7 @@ fn a_common_model_converted_with_the_player_s_own_mtl_names_his_texture_of_its_s
     write_common_card(&sandbox, export);
     let home = "Asset/model/character/common/714/05 - A/sourceimages/#windx11";
     let common_skin = format!("{COMMON_TEXTURES}/skin.ftex");
+    sandbox.complete(export);
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -592,6 +601,7 @@ fn a_player_s_model_converted_with_a_common_mtl_names_common_s_texture_of_its_st
     write_common_card(&sandbox, export);
     let home_skin = "Asset/model/character/common/714/05 - A/sourceimages/#windx11/skin.ftex";
     let common_skin = format!("{COMMON_TEXTURES}/skin.ftex");
+    sandbox.complete(export);
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -633,6 +643,7 @@ fn two_players_linking_one_common_model_each_convert_it_and_share_its_texture() 
     write_common_card(&sandbox, export);
     let skin = format!("{COMMON_TEXTURES}/skin.ftex");
     let face_07 = "Asset/model/character/face/real/71407/#Win/face.fpk";
+    sandbox.complete(export);
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -705,6 +716,7 @@ fn a_material_a_local_and_a_common_part_define_over_textures_in_two_places_drops
         &format!("{export}/Players/07 - B/boots.fmdl"),
         &tracer_player_file("boots.fmdl"),
     );
+    sandbox.complete(export);
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -756,6 +768,7 @@ fn a_common_texture_that_cannot_convert_fails_the_common_task_and_the_linking_pl
         &format!("{export}/Common/cloth.dds"),
         &tracer_player_file("shirt.dds"),
     );
+    sandbox.complete(export);
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -835,6 +848,7 @@ fn a_texture_link_points_the_player_s_model_at_the_one_copy_in_the_team_s_common
     );
     let hair = format!("{COMMON_TEXTURES}/hair.ftex");
     let skin = "Asset/model/character/common/714/05 - A/sourceimages/#windx11/skin.ftex";
+    sandbox.complete(export);
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -903,6 +917,7 @@ fn a_link_to_an_ftex_points_the_player_s_model_at_the_one_copy_in_the_team_s_com
     sandbox.write(&format!("{export}/Common/hair.ftex"), &hair_ftex);
     let hair = format!("{COMMON_TEXTURES}/hair.ftex");
     let skin = "Asset/model/character/common/714/05 - A/sourceimages/#windx11/skin.ftex";
+    sandbox.complete(export);
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -1002,6 +1017,7 @@ fn a_common_model_s_texture_a_link_of_the_player_s_stands_for_is_in_the_team_s_c
         "{}[compiler]\ncpk_name = \"4cc_62_midcup\"\n",
         pes21_settings(&sandbox)
     );
+    sandbox.complete(export);
 
     let run = sandbox.run(&settings, &["compile", "--no-deploy"]);
 
@@ -1043,6 +1059,7 @@ fn a_common_kit_fallback_serves_the_reference_and_its_own_name_finds_nothing() {
         &tracer_player_file("shirt.dds"),
     );
     sandbox.write(&format!("{export}/Common/pants_kitF.dds"), &tracer_kit());
+    sandbox.complete(export);
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -1084,6 +1101,7 @@ fn a_model_naming_a_common_kit_fallback_file_itself_finds_nothing() {
         &model_naming_in("pants_kitF.dds", TEAM_COMMON_DIRECTORY),
     );
     sandbox.write(&format!("{export}/Common/pants_kitF.dds"), &tracer_kit());
+    sandbox.complete(export);
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -1128,6 +1146,7 @@ fn a_shared_folder_s_kit_folder_of_links_finds_their_sets_in_common() {
     sandbox.write(&format!("{crocs}/boots.fmdl"), &boots_naming_kit_folder());
     sandbox.write(&format!("{crocs}/kitN/armor_bsm.dds.common"), b"");
     sandbox.write(&format!("{export}/Players/05 - A/Crocs.boots"), b"");
+    sandbox.complete(export);
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -1183,6 +1202,7 @@ fn a_common_kit_folder_set_completes_and_the_model_names_the_kitn_reference() {
         &format!("{export}/Common/kit2/armor_bsm.dds"),
         &tracer_kit(),
     );
+    sandbox.complete(export);
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -1240,6 +1260,7 @@ fn a_texture_link_naming_a_kit_stem_finds_its_members_in_common() {
         &tracer_player_file("shirt.dds"),
     );
     sandbox.write(&format!("{export}/Common/pants_kitF.dds"), &tracer_kit());
+    sandbox.complete(export);
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -1275,6 +1296,7 @@ fn a_texture_link_whose_target_is_not_in_common_drops_its_folder() {
         &format!("{export}/Common/skin.dds"),
         &tracer_player_file("shirt.dds"),
     );
+    sandbox.complete(export);
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -1308,6 +1330,7 @@ fn a_shared_folder_s_texture_link_whose_target_is_missing_drops_it_and_its_linke
         &tracer_player_file("fcl_hair.fmdl"),
     );
     sandbox.write(&format!("{player}/Round.face"), b"");
+    sandbox.complete(export);
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["check"]);
 
@@ -1334,6 +1357,7 @@ fn a_fox_model_whose_mtl_is_a_common_file_converts_with_it() {
     sandbox.write(&format!("{player}/body.mtl.common"), b"");
     sandbox.write(&format!("{export}/Common/body.mtl"), &card_materials());
     sandbox.write(&format!("{export}/Common/skin.dds"), &small_dds());
+    sandbox.complete(export);
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -1386,6 +1410,7 @@ fn a_fox_model_whose_mtl_is_a_common_file_converts_with_it() {
     local.write(&format!("{player}/body.model"), &card_model());
     local.write(&format!("{player}/body.mtl"), &card_materials());
     local.write(&format!("{player}/skin.dds"), &small_dds());
+    local.complete(export);
     let run = local.run(&pes21_settings(&local), &["compile", "--no-deploy"]);
     assert_eq!(run.exit_code(), 0, "{:#?}", run.messages());
     let (local_materials, local_directories) = materials(&local);
@@ -1398,6 +1423,7 @@ fn a_fox_model_whose_mtl_is_a_common_file_converts_with_it() {
     both.write(&format!("{player}/skin.dds"), &small_dds());
     both.write(&format!("{export}/Common/body.mtl"), &card_materials());
     both.write(&format!("{export}/Common/skin.dds"), &small_dds());
+    both.complete(export);
     let run = both.run(&pes21_settings(&both), &["compile", "--no-deploy"]);
     assert_eq!(run.exit_code(), 0, "{:#?}", run.messages());
     let (_, own_directories) = materials(&both);
@@ -1423,6 +1449,7 @@ fn a_texture_below_a_common_subfolder_is_not_used_on_fox() {
         &format!("{export}/Common/sub/x.dds"),
         &tracer_player_file("shirt.dds"),
     );
+    sandbox.complete(export);
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -1468,6 +1495,7 @@ fn a_common_subfolder_s_unlinked_texture_is_not_used_beside_a_linked_one() {
         &format!("exports/{export}/Common/jessie/other.dds"),
         &tracer_player_file("shirt.dds"),
     );
+    sandbox.complete(&format!("exports/{export}"));
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -1506,6 +1534,7 @@ fn a_common_link_below_a_subfolder_stands_for_the_common_file_at_its_path() {
         &format!("exports/{export}/Common/jessie/body.fmdl"),
         &clean_model(),
     );
+    sandbox.complete(&format!("exports/{export}"));
 
     let fox = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -1586,6 +1615,7 @@ fn a_linked_common_model_s_textures_travel_with_it_and_resolve_beside_it() {
         &format!("exports/{export}/Common/hair.dds"),
         &tracer_player_file("shirt.dds"),
     );
+    sandbox.complete(&format!("exports/{export}"));
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -1636,6 +1666,7 @@ fn a_common_path_into_a_subfolder_resolves_at_that_path_on_pes_21() {
         &format!("exports/{export}/Common/jessie/skin.dds"),
         &small_dds(),
     );
+    sandbox.complete(&format!("exports/{export}"));
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -1674,6 +1705,7 @@ fn a_linked_common_model_brings_the_textures_above_it_and_resolves_nearest_first
         &format!("exports/{export}/Common/skin.dds"),
         &tracer_player_file("shirt.dds"),
     );
+    sandbox.complete(&format!("exports/{export}"));
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -1733,6 +1765,7 @@ fn a_common_model_converted_with_the_player_s_own_mtl_resolves_beside_the_model(
         &format!("exports/{export}/Common/skin.dds"),
         &tracer_player_file("shirt.dds"),
     );
+    sandbox.complete(&format!("exports/{export}"));
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -1779,6 +1812,7 @@ fn a_player_s_mtl_paired_with_his_own_model_does_not_resolve_in_common() {
         &format!("exports/{export}/Common/skin.dds"),
         &tracer_player_file("shirt.dds"),
     );
+    sandbox.complete(&format!("exports/{export}"));
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -1832,6 +1866,7 @@ fn a_common_model_s_team_folder_directory_names_the_team_s_common_output() {
         "{}[compiler]\ncpk_name = \"4cc_62_midcup\"\n",
         pes21_settings(&sandbox)
     );
+    sandbox.complete(export);
 
     let run = sandbox.run(&settings, &["compile", "--no-deploy"]);
 
@@ -1941,6 +1976,7 @@ fn an_fmdl_common_directory_naming_anything_but_team_folder_or_sourceimages_is_r
         &clean_model_naming_in("dummy_nrm.dds", "skin.dds", &dir("XXX")),
     );
     sandbox.write(&format!("{export}/Players/08 - D/legs.fmdl.common"), b"");
+    sandbox.complete(export);
 
     let dir_000 = dir("000");
     let dir_biz = dir("biz");
@@ -2011,6 +2047,7 @@ fn a_model_naming_the_kit_stand_in_s_old_spelling_is_refused() {
             ("dummy_nrm.dds", "dummy_nrm.dds", "./"),
         ]),
     );
+    sandbox.complete(export);
 
     for (settings, version) in [(pes21_settings(&sandbox), 21), (pes17(&sandbox), 17)] {
         let run = sandbox.run(&settings, &["check"]);
@@ -2155,6 +2192,7 @@ fn a_path_holding_the_legacy_kit_token_is_refused() {
         &format!("{export}/Collars/collar_12.fmdl"),
         &clean_model_naming_in("team_kit.dds", "u0XXXp1.dds", "./"),
     );
+    sandbox.complete(export);
 
     let refused = [
         "Error kit_token_old [DropFolder] at Players/05 - A \
@@ -2253,6 +2291,7 @@ fn an_fmdl_s_short_common_directories_compile_as_their_long_forms() {
             ("dummy_srm.dds", "zero.dds", GAME_COMMON_DIRECTORY),
         ],
     ];
+    sandbox.complete(export);
     for (settings, version) in [(pes21_settings(&sandbox), 21), (pes17(&sandbox), 17)] {
         let mut twins = Vec::new();
         for entries in &spellings {
@@ -2342,6 +2381,7 @@ fn an_fmdl_directory_with_anything_after_common_folder_or_starting_common_is_ref
             "common/team_folder/sourceimages/",
         ),
     );
+    sandbox.complete(export);
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["check"]);
 
@@ -2447,6 +2487,7 @@ fn a_texture_link_below_a_subfolder_stands_for_the_common_texture_at_its_path() 
         &format!("exports/{export}/Common/jessie/hair.dds"),
         &tracer_player_file("shirt.dds"),
     );
+    sandbox.complete(&format!("exports/{export}"));
 
     let fox = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -2514,6 +2555,7 @@ fn a_texture_link_s_path_below_common_is_spelled_as_common_spells_it() {
         &format!("exports/{export}/Common/Jessie/Hair.dds"),
         &tracer_player_file("shirt.dds"),
     );
+    sandbox.complete(&format!("exports/{export}"));
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -2550,6 +2592,7 @@ fn a_subfolder_s_texture_link_comes_before_the_root_s_texture_of_its_stem_on_pes
         &format!("exports/{export}/Common/jessie/hair.dds"),
         &tracer_player_file("shirt.dds"),
     );
+    complete_pes17(&sandbox, export);
 
     let run = sandbox.run(&pes17(&sandbox), &["compile", "--no-deploy"]);
 
@@ -2578,6 +2621,7 @@ fn a_common_link_below_a_subfolder_with_only_a_direct_common_file_is_common_link
         &format!("exports/{export}/Common/body.fmdl"),
         &clean_model(),
     );
+    sandbox.complete(&format!("exports/{export}"));
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -2606,6 +2650,7 @@ fn a_common_model_an_fmdl_of_its_stem_beats_is_not_checked_and_the_link_loads_th
     sandbox.write(&format!("{export}/Common/boots.fmdl"), &boots);
     // Four bytes no `.model` reader accepts.
     sandbox.write(&format!("{export}/Common/boots.model"), b"junk");
+    sandbox.complete(export);
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -2649,6 +2694,7 @@ fn a_common_model_an_fmdl_the_deep_pass_drops_beats_is_dropped_with_it() {
     sandbox.write(&format!("{export}/Common/boots.model"), &card_model());
     sandbox.write(&format!("{export}/Common/boots.mtl"), &card_materials());
     sandbox.write(&format!("{export}/Common/skin.dds"), &small_dds());
+    sandbox.complete(export);
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -2693,6 +2739,7 @@ fn a_beaten_common_model_is_not_dropped_for_a_dropped_file_of_its_stem_that_is_n
         &format!("{export}/Common/boots.dds"),
         &texture_fixture("kit.png"),
     );
+    sandbox.complete(export);
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -2726,6 +2773,7 @@ fn a_common_texture_the_decoder_refuses_is_dropped_alone_and_the_others_are_pack
     );
     // Four bytes that open with no accepted format's signature: no header to read.
     sandbox.write(&format!("{export}/Common/boots.dds"), b"junk");
+    sandbox.complete(export);
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -2765,6 +2813,7 @@ fn a_common_mtl_no_search_reads_is_not_checked_on_pes_21() {
     let export = "exports/co Midcup Boots";
     // An FMDL carries its materials: no search reads the Common `.mtl` his link names.
     write_broken_common_mtl(&sandbox, export, "boots.fmdl", &clean_model());
+    sandbox.complete(export);
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -2788,6 +2837,7 @@ fn a_common_mtl_no_search_reads_is_not_checked_on_pes_21() {
     // that one is read, and its Error drops the file, after which his search finds none.
     let model = Sandbox::new("cmn_fox_mtl_searched");
     write_broken_common_mtl(&model, export, "boots.model", &card_model());
+    model.complete(export);
     let run = model.run(&pes21_settings(&model), &["compile", "--no-deploy"]);
     let lines = run.messages();
     let error = pes_model::format::mtl::MaterialSet::read(b"not a material set")
@@ -2820,6 +2870,7 @@ fn a_common_mtl_no_link_names_is_not_checked_when_a_model_pairs_locally_on_pes_2
     sandbox.write(&format!("{player}/boots.mtl"), &card_materials());
     sandbox.write(&format!("{player}/skin.dds"), &small_dds());
     sandbox.write(&format!("{export}/Common/stray.mtl"), b"not a material set");
+    sandbox.complete(export);
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -2858,6 +2909,7 @@ fn a_common_mtl_a_link_s_search_falls_back_to_is_checked_on_pes_21() {
         text.replace("name=\"card\"", "name=\"sleeve\"").as_bytes(),
     );
     sandbox.write(&format!("{export}/Common/skin.dds"), &small_dds());
+    sandbox.complete(export);
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["check"]);
 
@@ -2899,6 +2951,7 @@ fn a_shared_folder_s_model_link_of_a_non_boots_name_drops_the_folder() {
         &format!("{export}/Common/legs.fmdl"),
         &tracer_player_file("fcl_hair.fmdl"),
     );
+    sandbox.complete(export);
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -2949,6 +3002,7 @@ fn a_shared_folder_holding_only_a_model_link_takes_its_wearer_s_id() {
     sandbox.write(&format!("{export}/Players/05 - A/Crocs.boots"), b"");
     sandbox.write(&format!("{export}/Boots/Crocs/boots.fmdl.common"), b"");
     sandbox.write(&format!("{export}/Common/boots.fmdl"), &clean_model());
+    sandbox.complete(export);
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -2993,6 +3047,7 @@ fn a_shared_folder_s_model_link_of_another_package_s_name_is_named_invalid() {
         &format!("{export}/Players/07 - B/face_high.fmdl"),
         &clean_model(),
     );
+    sandbox.complete(export);
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -3031,6 +3086,7 @@ fn a_combined_shared_face_s_model_link_brings_the_common_model_into_the_face() {
         &clean_model_naming("hair.dds"),
     );
     sandbox.write(&format!("{export}/Common/jessie/hair.dds"), &small_dds());
+    sandbox.complete(export);
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -3090,6 +3146,7 @@ fn a_shared_folder_s_mtl_link_gives_its_model_the_common_material_set() {
     sandbox.write(&format!("{export}/Boots/Crocs/boots.mtl.common"), b"");
     sandbox.write(&format!("{export}/Common/boots.mtl"), &card_materials());
     sandbox.write(&format!("{export}/Common/skin.dds"), &small_dds());
+    sandbox.complete(export);
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -3135,6 +3192,7 @@ fn a_combined_shared_folder_s_mtl_link_gives_its_model_the_common_material_set()
     sandbox.write(&format!("{round}/boots.mtl.common"), b"");
     sandbox.write(&format!("{export}/Common/boots.mtl"), &card_materials());
     sandbox.write(&format!("{export}/Common/skin.dds"), &small_dds());
+    sandbox.complete(export);
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -3183,6 +3241,7 @@ fn an_unlinked_common_model_builds_nothing() {
         &format!("{export}/Common/spare.skl"),
         &tracer_player_file("fcl_hair.skl"),
     );
+    unlinked.complete(export);
     let run = unlinked.run(&pes21_settings(&unlinked), &["compile", "--no-deploy"]);
     assert_eq!(
         findings_of(&run.messages(), "co Midcup Spare"),
