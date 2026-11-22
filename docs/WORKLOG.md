@@ -153,10 +153,9 @@ other items run beside it. **After the detour**, in this order:
     0.0.2 cut; 166 commits touching code, about 28,000 lines added). The pipelines of those
     days ran `--no-mutants` while mutfast was awaited, and `checkpoint.py run` moves
     `refs/checkpoints/gated` with or without the mutation run, so the first run after mutfast
-    (2026-11-20) diffed from `aab124dc` and nothing came back for the range. Owed:
-    - the cause: `--no-mutants` leaves the mutation run's base where it was (a second ref,
-      `refs/checkpoints/mutated`, which only a run that ran its mutants moves), so a gate
-      passed without mutants can never hide a range again;
+    (2026-11-20) diffed from `aab124dc` and nothing came back for the range. The cause is
+    fixed (2026-11-22): the mutation run starts from `refs/checkpoints/mutated`, which only a
+    run whose mutants all ran moves (RUNBOOK "How the work runs"). Owed:
     - the catch-up: `mutants-diff abbae531` over the range, sized first with its own
       estimate; per crate past about an hour a side, the crate's run goes to the VPS (RUNBOOK
       "Mutation runs and the VPS"), the rest here; then its triage as the checkpoints' are.
