@@ -3628,27 +3628,16 @@ pruned when their phase closes; they stay in git history. A question only the ma
 can answer is not an issue: it goes to `docs/maintainer/questions.html`, and an issue that waits on one
 points there.
 
-- open (2026-11-22) — PES 2014 Build 2 (`0.0.2-pes14.2`) crashes on the Appearance page of a
-  player whose gloves ID is past 16 bits. The Akko7 organizer edited /hi3/'s players in game
-  and opened one: `utw.log` reads `appearance/mod.rs:556`, "a loaded player's fields hold the
-  strip fields: ValueTooWide { GlovesId, 262143, 16 }". On PES 2014 the Akko DLC reads the
-  gloves ID from the hair accessory's three colour fields, up to 18 bits
-  (`plans/pes14.md`, on `pes14`); `ops::fpc::strip_style` narrows it to `fpc::StripStyle`'s
-  `u16`, and the view `expect`s the result. 262143 is every bit set. In the save he posted
-  first (`C:\Data\4cc\Lab\Temp\pes14_crash\EDIT.bin`, a few hours older), no /hi3/ player has
-  an appearance record yet, which is why the page was greyed there, and all 4,922 records
-  hold gloves 0. His newer save (`.tmp/pes14_crash/EDIT.bin.newer`) holds 91 more records,
-  90 of them gloves 262143 (every /hi3/ player among them) and one 4161: a record the game
-  creates on an in-game edit carries the accessory colour at its maximum, so every player
-  edited in game reads gloves 262143. Hide default body and Ctrl+I crash on such a player
-  too (`session/player_ops.rs` `preset_id`'s `u16::try_from(own).expect`). The fix (SWE-2,
-  on `pes14`): the gloves ID at its full width through `fpc::StripStyle` and
-  `fpc::Appearance`, and no `expect` on it; what 262143 means for the hide presets waits on
-  an in-game look (run `hi3gloves`: are a 262143 player's hands plain, as gloves 0, or gone,
-  as the DLC's hidden gloves 11?). Then Build 3 is prepared whole (merged, gates, release
-  build, its CHANGELOG section, a `tasks.html` card) and left unpushed for the maintainer's
-  yes, and the Compiler's view (item 6) goes on without waiting for it (the maintainer,
-  2026-11-22).
+- fixed on `pes14` (2026-11-22, `17463113`), Build 3 being prepared — PES 2014 Build 2
+  (`0.0.2-pes14.2`) crashed on the Appearance page, and on Hide default body, of a player the
+  game created on an in-game edit (the Akko7 organizer's /hi3/ players,
+  `.tmp/pes14_crash/EDIT.bin.newer`): such a record stores the gloves ID with all 18 bits set
+  (262143), which the code narrowed to `u16` behind an `expect`. Nopanic-1 keeps the IDs at
+  `u32` and shows an error line in place of a panic (merged into `pes14` at `33995510`); the
+  gloves slice reads 262143 as no gloves model, as the game draws it (`plans/pes14.md`, "Gloves
+  262143 is no gloves model"). Build 3 is prepared whole (gates, release build, its CHANGELOG
+  section, a `tasks.html` card) and left unpushed for the maintainer's yes, and the Compiler's
+  view (item 6) goes on without waiting for it (the maintainer, 2026-11-22).
 - open (2026-11-22) — The Save editor's tests leave their scratch behind:
   `test_support::scratch` empties `target/<profile>/save_editor_tests/<test>` when a test
   starts and never removes it after, so every checkout keeps 1,064 folders, many holding a
