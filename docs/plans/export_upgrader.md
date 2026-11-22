@@ -244,8 +244,8 @@ members use (`quick_upgrade.bat`) reads the same two.
     `Common` and `Collar` on the Boots line; on the Gloves line `IDs` (the boots and gloves
     IDs kept in `legacy_ids.toml`) and one cell counting what the upgrade leaves out
     (`3 out`), in place of a list.
-  - The team's label cell, at the row's left, carries the export's own state, its tooltip
-    the old name and the upgraded one (`exports\<name>`, EU-ROOT's naming).
+  - The team's label cell, at the row's left, carries the export's own state; its detail
+    window gives the old name and the upgraded one (`exports\<name>`, EU-ROOT's naming).
   - **Files**, the default under five: the explanatory page's map (`docs/web/
     upgrade_explained.html`) drawn for each export. A box stands per folder or file of the
     old export on the left and per folder or file of the upgraded one on the right, with a
@@ -290,15 +290,33 @@ members use (`quick_upgrade.bat`) reads the same two.
   whenever the member left it alone. A referee export has no combo. The grid's column for it
   is titled **Export type** in the title row like the others, so it does not read as unused
   space on a row without the combo.
-- **A click** on a cell, a box, a label or a log line opens the Compiler's detail window:
-  the old paths a cell is read from and the path it is written to, its state, its findings,
-  who wears a boots or gloves folder (and so whether it moves or stays shared), the list of
-  what is left out for the count's cell, and **Open the old folder**. A log line's click
-  also outlines its cell or row.
+- **The detail window** is the Compiler's (`plans/team_compiler/gui.md` "GUI: the
+  live-validating team grid", the detail window), opened and pinned by its rules. It opens
+  when the pointer rests on a cell, a box, a label or a log line, a click pins it, and Esc
+  closes it. A log line's click also outlines its cell or row. The cells, boxes and labels
+  carry no tooltip of their own.
+  - It shows the old paths a cell is read from and the path it is written to, its state, its
+    findings, who wears a boots or gloves folder (and so whether it moves or stays shared),
+    the list of what is left out for the count's cell, and **Open the old folder**.
+  - It has no top box, since the upgrader has no 3D preview to keep the text below.
+  - A label's window also offers **Copy messages**, the export's log lines.
+  - A double-click opens the old path the cell is read from first: a folder, or a file's
+    folder with the file selected. A label opens the old export's folder, and an archive
+    export opens the archive's folder with the archive selected. The IDs and the left-out
+    count's cells stand for no one path, so a double-click on them does nothing.
+  - A box of the Files look stands for its cells as a cell does. Where a left box and a
+    right box stand for the same cell, both show its pin.
+- **A log line** is the Compiler's, `Severity - /team/ - code at <the old path>`, and acts
+  for its cell as there; the finding's own text is the window's.
 - **The toolbar** is the Compiler's:
   - **The strip.** Idle, it gives the last run's line and the counts
     (`13 old exports · 8 ready · 1 with errors · 3 cannot be read · 2 with warnings`).
-    During a run it reads `Upgrading · mm:ss · n of N folders written`.
+    During a run it reads `Upgrading · mm:ss · n of N folders written`. As in the Compiler,
+    a click on `with errors` or `cannot be read` sets the log to Errors and one on
+    `with warnings` sets it to Warnings. They are in the link blue only while the log is
+    collapsed.
+  - **The log** starts collapsed when, open, it would push some cells or boxes out of view,
+    as the Compiler's does.
   - **Open the Compiler** stands left of Upgrade, always enabled but during a run. Once an
     upgrade has finished it takes the accent colour, the view's one blue button, until the
     next run starts, because the upgraded exports are already in the Compiler's folder and
@@ -453,6 +471,18 @@ EU-GUI-10  manual  GIVEN the view open
                    WHEN the Save field's Browse button is clicked
                    THEN the native picker opens in the selected version's save folder and the
                         picked file fills the field
+EU-GUI-11  GIVEN EU-GUI-03's exports, one with an Error on its Note
+           WHEN the pointer rests on a face cell, on a Files box and on the Error's log line
+           THEN the detail window opens on each as the Compiler's does (TC-GUI-09, TC-GUI-15),
+                and a click pins it as there (TC-GUI-24); WHEN a face cell is double-clicked
+                THEN the face folder of the old export opens in the file manager; WHEN Esc
+                is pressed THEN the window closes; GIVEN the label's window of the export with
+                the Error THEN it offers Copy messages, which puts its log lines on the
+                clipboard
+EU-GUI-12  GIVEN the strip's counts with the log collapsed
+           WHEN `cannot be read` is clicked
+           THEN the log opens on Errors; the counts are in the link blue while the log is
+                collapsed and in the strip's grey while it is open
 ```
 
 **0.0.2-poc13 scope.** The legacy mode, `--legacy-ids` (above, "What it does").

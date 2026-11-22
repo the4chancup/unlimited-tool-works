@@ -19362,3 +19362,17 @@ twice, loudly. A collapsed log has nothing to filter, and the counts then are th
 The grid is what the view is opened for.
 Plan: plans/team_compiler/gui.md "Toolbar" (the run strip); plans/core/gui.md "Log panel";
 plans/team_compiler/README.md TC-GUI-26, TC-GUI-27; plans/core/gui.md ST-LOG-04.
+
+## 2026-11-22 — export upgrader — the Compiler's detail window, log lines, counts and log start
+Decision (the maintainer): the Export upgrader takes the improvements made to the Compiler's
+grid: the detail window opening on hover and pinned by a click, Esc, log lines that act for
+their cells, Copy messages, the strip's counts that filter the log, and the log starting
+collapsed when it would push cells out of view.
+Decision (the lead): a Files box acts for its cell as a grid cell does; a double-click opens
+the old path the cell is read from first (the IDs and the left-out count have none); the
+window has no top box, the upgrader having no 3D preview; log lines take the Compiler's
+`code at <path>` form, the finding's text moving to the window.
+Why: the two views share one widget, so an upgrade's result reads in the next tool exactly as
+it was shown in this one.
+Plan: plans/export_upgrader.md (the view: the detail window, a log line, the toolbar);
+EU-GUI-11, EU-GUI-12.

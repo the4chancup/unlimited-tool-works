@@ -1110,6 +1110,9 @@ function gotoCell(scope, l) {
 function drawView(center) {
   const oldLog = center.querySelector(".log-body");
   if (oldLog) S.logScroll = oldLog.scrollTop;
+  // A redraw keeps the grid where the member scrolled it (egui keeps a
+  // ScrollArea's offset), or a click's redraw moves the next click's target.
+  const oldGrid = center.querySelector(".pipe-grid"), gridAt = oldGrid ? [oldGrid.scrollLeft, oldGrid.scrollTop] : [0, 0];
   center.innerHTML = "";
   center.classList.add("tc-view");
   center.append(h("div", { class: "pipe" },
@@ -1121,6 +1124,8 @@ function drawView(center) {
     detailPanel()));
   const lb = center.querySelector(".log-body");
   if (lb) lb.scrollTop = L.logStick ? lb.scrollHeight : S.logScroll;
+  const gridArea = center.querySelector(".pipe-grid");
+  if (gridArea) [gridArea.scrollLeft, gridArea.scrollTop] = gridAt;
   // The log starts collapsed when, open, it would hide some of the grid's
   // cells: decided once, at the first draw with rows; the chevron rules after.
   // Measured on the next frame, once the host has laid the window out.
