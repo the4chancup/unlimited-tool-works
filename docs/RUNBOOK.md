@@ -100,10 +100,12 @@ never makes this check. The question never holds the queue: the next build or si
 starts before it is asked, since a capture needs little CPU and the answer may take hours
 (one waited two, with nothing building).
 
-**Sidekicks in parallel.** Two or three sidekicks at once is the normal state, on steps
-that own disjoint files, the release path's first. The limits are the disk (a worktree that
+**Sidekicks in parallel.** Two sidekicks at once is the normal state, on steps that own
+disjoint files, the release path's first; a third only when it builds nothing (a document or
+script slice, an in-game look). The limits are the disk (a worktree that
 builds grows a `target/` of about 40 GB; one that only edits documents or scripts builds
-nothing and costs nothing), the machine's three cargo builds (below), and for SWE-2 the
+nothing and costs nothing), the machine's build limit (below: two at once on the main lead's side,
+counting its sidekicks, its pipeline and its own cargo runs), and for SWE-2 the
 login's limit on runs at once (`accounts.md`, next paragraph); a reviewer builds nothing. When the Claude
 weekly window nears its limit, the sidekick work goes back to SWE-2.
 
