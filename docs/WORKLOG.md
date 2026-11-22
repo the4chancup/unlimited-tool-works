@@ -240,21 +240,27 @@ other items run beside it. **Ahead of item 6:** the `pes14` branch's step 12, a 
     a Video encoder for the cup's USM videos (the format in `plans/libs/usm.md`) and an Export
     viewer (MFG's FMDL-Viewer), two file kinds to the explorer (`.mtar`, `.fsop`), and a
     third add-on, EssexDotDev's 4cc-FMDL-Toolkit, to the Blender plan.
-15. The checkpoint on `f51c570a` (2026-11-22): fmt, clippy and every test suite passed, but
-    the mutation run left 10 mutants alive, so `refs/checkpoints/gated` stays at `fc6e8cf0`
-    (list: `.tmp/lead/mutants_f51c570a/missed_all.txt`). The gate stayed for another reason
-    too: the VPS's disk filled during the `save_editor` half, so two mutants never ran
-    (`Portraits::shown_placeholder` and `player_list.rs` `toggle_in_group`); the next run
-    tests them again, the floor now 48 GiB and 72 GiB free (DECISIONS 2026-11-22). Triaged
-    2026-11-22:
+15. The checkpoints of 2026-11-22. The one on `f51c570a` left eight mutants alive, whose
+    tests landed (merge `36458a20`). The one on `625e7147` passed its gates and ran every
+    mutant, yet left the gate at `fc6e8cf0`, as `f51c570a`'s had. Neither was
+    stopped by its survivors: PowerShell, the shell `just` runs recipes under on Windows,
+    turned `mutants-diff`'s exit 2 (missed) and 3 (timed out) into 1, which the checkpoint
+    reads as untested mutants. Fixed in `e3cff7c6`, the checkpoint now running
+    `mutants_diff.py` directly; `refs/checkpoints/gated` and `mutated` were then moved to
+    `625e7147` by hand, as the fixed script would have. Its 107 survivors (`.tmp/lead/mutants_625e7147/missed_all.txt`),
+    triaged:
     - the two `session_link.rs` timeouts are caught: each mutant makes `give`'s send loop
       endless, and a timeout an infinite loop explains counts as caught (RUNBOOK "Mutation
       runs");
-    - [ ] the other eight get tests in one SWE-2 slice (`sk/mut15`, brief
-      `.tmp/mut15/brief_mut15.md`): `read_images`' placeholder read, `crash_dump.rs`'s
-      `wait_until` (its limit made a parameter, so a test reaches it without waiting 120 s)
-      and `journal_holds_steps`, `local_clock`, and `adopt_folder`'s unreadable journal and
-      output dedupe (four mutants);
+    - `save_editor`: four are equivalent, now in `.cargo/mutants.toml` (`toggle_in_group`'s
+      `>=`, the Similar dialog's three `|` to `^`); two need tests: `alike`'s
+      `skills && com_styles` (a player matching on skills alone must not match on Cards)
+      and the dialog's `!team_category.contains` (Every team keeps a category that holds
+      every match);
+    - [ ] `export_grid` (88) and `team_compiler` (11): the grid's position tests landed after
+      `625e7147`, so both crates' mutants rerun at HEAD first
+      (`.tmp/process/mutdiff_head_grid_tc.log`); what survives there gets tests, in one
+      brief with `save_editor`'s two;
     - [ ] then `just pipeline` at the new HEAD.
 
 Most open steps below wait only on a check in the game or the built window that the lead's
