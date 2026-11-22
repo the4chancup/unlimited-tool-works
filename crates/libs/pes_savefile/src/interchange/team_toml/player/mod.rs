@@ -347,8 +347,8 @@ fn emit_player(
 /// rule puts there. A Team TOML lands players by slot, so the record would
 /// no longer match the aesthetics export that names it by id; the note is
 /// how a member learns that before applying the file. Empty when the slot
-/// keeps the order or the document carries no ids to check (a parsed or
-/// hand-built one).
+/// keeps the order, the team's id is not a cup id, or the document carries
+/// no ids to check (a parsed or hand-built one).
 fn roster_note(slot: u8, team_id: Option<u32>, roster_breaks: &[(u8, u32)]) -> String {
     let Some(team_id) = team_id else {
         return String::new();

@@ -20,7 +20,7 @@ use crate::model::instruction::Instruction;
 use crate::model::names::display_name;
 use crate::model::player::PlayerEntry;
 use crate::model::tactics::AdvancedInstruction;
-use crate::model::team::{KitSlot, TeamColor, TeamEntry};
+use crate::model::team::{CUP_TEAM_IDS, KitSlot, TeamColor, TeamEntry};
 use crate::schema::fields::{
     FormationPart, PlayerText, PresetField, TacticsField, TeamField, TeamText,
 };
@@ -145,7 +145,14 @@ impl TeamToml {
         }
         Ok(TeamToml {
             pes_version: Some(version),
-            roster_breaks: team.roster_order_breaks(),
+            // The rule the note names is the cup's: a real club's roster
+            // never follows it, so checking one only warns about exports
+            // that do not exist.
+            roster_breaks: if CUP_TEAM_IDS.contains(&team.id) {
+                team.roster_order_breaks()
+            } else {
+                Vec::new()
+            },
             team: TeamSection {
                 id: Some(team.id),
                 name: Some(team.name.clone()),
@@ -719,8 +726,8 @@ mod tests {
                     });
                     // Identity up to `roster_breaks`, written as a header
                     // comment rather than a key, so it does not parse back.
-                    // The PES 2014 save's teams sit outside the roster-order
-                    // rule and break it everywhere.
+                    // Only the cup's teams carry any, so the PES 2014
+                    // save's real club ids leave it empty.
                     let mut expected = doc.clone();
                     expected.roster_breaks.clear();
                     assert_eq!(parsed, expected, "{version:?} team {}", team.id);
@@ -754,6 +761,41 @@ mod tests {
                 assert_eq!(&target, &expected, "{version:?} team {}", team.id);
             }
         }
+    }
+
+    /// The roster-order note is the cup teams': a PES 2014 team sits at a
+    /// real club id outside the rule's range, so its document emits no note
+    /// even though its roster breaks it everywhere.
+    #[test]
+    fn a_non_cup_teams_document_emits_no_roster_note() {
+        let (file, _) = open(PesVersion::Pes14);
+        let team = file.team(136).expect("team 136");
+        assert!(
+            !team.roster_order_breaks().is_empty(),
+            "premise: the real club's roster breaks the rule"
+        );
+        let refs: Vec<&PlayerEntry> = file.players().iter().collect();
+        let doc = TeamToml::from_team(PesVersion::Pes14, team, &refs).expect("from_team");
+        assert!(doc.roster_breaks.is_empty());
+        let text = doc.to_toml().expect("to_toml");
+        assert!(!text.contains("holds player"));
+    }
+
+    /// A cup team keeps the note: team 701 of the PES 21 fixture with two
+    /// slots' players swapped carries it on both slots' headers.
+    #[test]
+    fn a_cup_teams_document_keeps_the_roster_note() {
+        let (mut file, _) = open(PesVersion::Pes21);
+        let team = file.team_mut(701).expect("team 701");
+        assert_eq!(team.roster[0].player_id, 70101, "premise: slot 0's player");
+        assert_eq!(team.roster[1].player_id, 70102, "premise: slot 1's player");
+        (team.roster[0].player_id, team.roster[1].player_id) = (70102, 70101);
+        let team = file.team(701).expect("team 701");
+        let refs: Vec<&PlayerEntry> = file.players().iter().collect();
+        let doc = TeamToml::from_team(PesVersion::Pes21, team, &refs).expect("from_team");
+        assert_eq!(doc.roster_breaks, vec![(0, 70102), (1, 70101)]);
+        let text = doc.to_toml().expect("to_toml");
+        assert_eq!(text.matches("holds player").count(), 2);
     }
 
     /// (b) A one-key document changes exactly that key.

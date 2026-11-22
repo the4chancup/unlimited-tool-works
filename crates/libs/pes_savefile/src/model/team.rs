@@ -3,6 +3,8 @@
 //! merges all three. Fields a version lacks are `Option`/`None`; the schema
 //! decides what is read and written.
 
+use std::ops::RangeInclusive;
+
 use crate::codec::{self, CodecError};
 use crate::model::tactics::TeamTactics;
 use crate::schema::fields::{RosterField, TeamField};
@@ -74,6 +76,10 @@ pub struct RosterSlot {
     /// Shirt number; a 16-bit field on PES 19+ (values above 99 exist).
     pub number: u16,
 }
+
+/// The cup's team ids (`teams_list::TeamId` holds the same range; this crate
+/// does not depend on it).
+pub const CUP_TEAM_IDS: RangeInclusive<u32> = 701..=920;
 
 /// The player id 4cc's roster-order rule puts in `slot` of team `team_id`
 /// (`slot` 0-based as stored, so slot 0 holds `team_id * 100 + 1`):
