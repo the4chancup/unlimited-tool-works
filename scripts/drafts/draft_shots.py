@@ -68,8 +68,11 @@ KEPT = frozenset(string.ascii_letters + string.digits + "_.-")
 
 
 def safe_name(fragment: str) -> str:
-    return "".join(chr(byte) if chr(byte) in KEPT else f"~{byte:02X}"
+    name = "".join(chr(byte) if chr(byte) in KEPT else f"~{byte:02X}"
                    for byte in fragment.encode("utf-8"))
+    # Windows drops a folder name's trailing dot (a filter text `dbg.` made the run
+    # folder `...-dbg`, which then read as its own earlier copy: every shot "unchanged").
+    return name[:-1] + "~2E" if name.endswith(".") else name
 
 
 def fragment_of(name: str) -> str:

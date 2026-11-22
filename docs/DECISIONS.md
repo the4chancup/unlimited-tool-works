@@ -19252,3 +19252,280 @@ Why: the notes are that section in every release since 0.0.1, so copying it by h
 publish was work the workflow can do. Failing before the draft, and not drafting with empty
 notes, keeps a release from being published with none.
 Plan: spec/core/distribution.md "Release builds in CI", the paragraph on the draft.
+
+## 2026-11-22 — compiler view — the detail window opens on hover and pins on a click; log lines wrap
+Decision (the maintainer): resting the pointer on a grid cell opens its detail window and
+leaving the cell closes it; a click pins the window on that cell, with a pin on the cell and
+in the window's title bar; a click on the pinned cell or on empty grid unpins it, a click on
+another cell pins that one, and a double-click opens the cell's folder. The window replaces
+the cells' tooltips. A log line longer than the panel wraps, its continuation indented past
+its `Severity - /team/ - ` head.
+Decision (the lead, filling what the ruling left open): while a cell is pinned, hovering
+another opens nothing; the window opens after egui's tooltip delay; a double-click leaves the
+pin as it was; the window keeps opening where the member last left it, and lets the pointer
+through while unpinned; a log line is the code, the file and the context, with the catalog's
+paragraph in the window.
+Why: the organizer's first need is whether anything is wrong and what, player by player:
+hovering answers it without a click, and the window, not the log, is where the details live.
+A pinned window that previews other cells under the pointer could not be reached, because
+the path to its buttons crosses other cells. A window that followed the pointer would be the
+size of the 3D preview it is meant to hold, so it keeps the place the member gave it
+(2026-11-13); while unpinned it would otherwise cover cells that could no longer be hovered.
+The catalog's text is a paragraph per code, which would make every log line several rows
+long. The old no-wrap rule cut off the end of a line, the part naming the file; the hanging
+indent keeps each finding's start at the left edge, which was what the rule protected.
+Plan: plans/team_compiler/gui.md "GUI: the live-validating team grid" (the detail window, a
+message's log line); plans/core/gui.md "Log panel" (wrapping) and ST-LOG-05;
+plans/team_compiler/README.md TC-GUI-09, TC-GUI-24, and the tooltip wording of TC-GUI-14, 20
+and 21.
+
+## 2026-11-22 — compiler view — a log line acts for its cell; the window opens at the sidebar's delay
+Decision (the maintainer): hovering a log line opens its cell's detail window as hovering the
+cell does; a click outlines the cell and pins its window, and a second click unpins it,
+keeping the outline. The window opens after the sidebar's hover delay (0.1 s), not egui's
+tooltip delay. A double-click on the portraits cell of an export with no `Portraits/` folder
+opens the player folder of its one finding, and does nothing with two findings or none.
+Decision (the lead): after a click that unpins, the cell opens no window on hover until the
+pointer leaves it; the window shows no Open folder when the cell has no folder to open.
+Why: the log is where the organizer reads the findings, so its lines lead to the same window
+as the cells. egui's half-second delay felt slow beside the sidebar. Most exports keep each
+portrait in its player's folder, so a fixed `Portraits/` path would open nothing useful. The
+pointer still rests on what was just clicked, and egui reports it hovered on the next frame,
+so without the mute the window the click closed would open again at once.
+Plan: plans/team_compiler/gui.md "GUI: the live-validating team grid" (the detail window, a
+message's log line); plans/team_compiler/README.md TC-GUI-15, TC-GUI-24.
+
+## 2026-11-22 — export format — a player folder's number may be followed by a plain space
+Decision (the maintainer): `15 Snuffy` numbers a player folder as `15 - Snuffy` does; the
+hyphen stays optional and recommended, and the Export upgrader still writes it. The player's
+name is what follows the hyphen, or what follows the number when there is none.
+Decision (the lead): the name is read from its start (the number, then an optional hyphen),
+not split at the first hyphen, so `03 Jean-Pierre` is player 03, Jean-Pierre; `Portraits/`
+file names follow the same rule; kit folders keep the split. Built in a small slice after the
+Compiler's view or beside it.
+Why: members name folders `15 Snuffy`, and the strict rule dropped the player over a hyphen
+that carries no meaning. A split at the first hyphen would cut a hyphenated name. Portrait
+names are numbered "as a player folder is", so one rule serves both.
+Plan: plans/aesthetics_export/player_folders.md "Player numbering without the hyphen".
+
+## 2026-11-22 — compiler view — the detail window opens on the export's logo where no 3D preview stands
+Decision (the maintainer): every cell's window opens on a box the 3D preview's size: a
+player's preview, and the export's logo for the label, the portraits and the kits, so the text
+under it stays in place as the window moves between cells.
+Decision (the lead): an export with no logo shows the box with "No logo"; until the 3D
+preview is built, a player's box shows the logo too.
+Why: the text jumped up and down by the preview's height when the pointer moved from a player
+to a kit or a label. The logo is what the export already has to show there, and an empty box
+would read as something failing to load.
+Plan: plans/team_compiler/gui.md "GUI: the live-validating team grid" (the detail window).
+
+## 2026-11-22 — export format — kit folders also take the number without the hyphen
+Decision (the maintainer): a kit folder named `p1 Lakers` is slot `p1`, label `Lakers`, as
+`p1 - Lakers` is, by the rule just decided for player folders and portraits. Model folders
+carry no number, so the rule does not reach them.
+Why: kit folders share the player folders' `<slot> - <label>` shape and its reading, and a
+member who writes `15 Snuffy` writes `p1 Lakers`.
+Plan: plans/aesthetics_export/player_folders.md "Player numbering without the hyphen".
+
+## 2026-11-22 — compiler view — the detail window opens after 0.15 s
+Decision (the maintainer): the window opens 0.15 s after the pointer rests on a cell or a log
+line, tried in the draft against the sidebar's 0.1 s; it still follows the pointer from cell
+to cell with no delay once open. The sidebar keeps 0.1 s.
+Why: 0.15 s felt better in the draft. The window is the 3D preview's size, and a shorter delay
+flashes it over the cells a pointer only crosses.
+Plan: plans/team_compiler/gui.md "GUI: the live-validating team grid" (the detail window, Hover).
+
+## 2026-11-22 — compiler view — Copy messages, Esc closes the window, the strip's counts filter the log
+Decision (the maintainer, on the lead's proposal): a team label's window offers Copy messages
+(the export's log lines on the clipboard) when the export has findings; Esc closes the detail
+window, pinned or not, as a click that unpins does; the idle strip's error and warning counts
+are links that set the log's filter.
+Decision (the lead): only the label's window copies, since its lines are the whole export's;
+the warnings link sets the Warnings filter, which shows errors too, as the chip does; a click
+on a count expands a collapsed log.
+Why: some organizers pass an export's problems on to its member, and Copy report holds the
+whole run. Esc is the key people try first to close a window. The counts answer "is anything
+wrong?", and the link takes the organizer straight to the lines.
+Plan: plans/team_compiler/gui.md "GUI: the live-validating team grid" (the detail window),
+"Toolbar" (the run strip); plans/team_compiler/README.md TC-GUI-24, TC-GUI-25, TC-GUI-26.
+
+## 2026-11-22 — compiler view — the strip's counts are blue only with the log collapsed; the log may start collapsed
+Decision (the maintainer): while the log is open, the strip's error and warning counts are in
+the strip's grey, still clickable; while it is collapsed they are in the link blue, never
+underlined, and the log's header shows no All, Warnings and Errors buttons. The log starts
+collapsed when, open, it would push some of the grid's cells out of view.
+Decision (the lead): the filter buttons hide on every tool's collapsed log, since the panel is
+shared; whether the log starts collapsed is decided once per launch, at the view's first frame
+with rows, and the chevron rules after.
+Why: blue underlined counts right above the log's own filter buttons offered the same choice
+twice, loudly. A collapsed log has nothing to filter, and the counts then are the way into it.
+The grid is what the view is opened for.
+Plan: plans/team_compiler/gui.md "Toolbar" (the run strip); plans/core/gui.md "Log panel";
+plans/team_compiler/README.md TC-GUI-26, TC-GUI-27; plans/core/gui.md ST-LOG-04.
+
+## 2026-11-22 — export upgrader — the Compiler's detail window, log lines, counts and log start
+Decision (the maintainer): the Export upgrader takes the improvements made to the Compiler's
+grid: the detail window opening on hover and pinned by a click, Esc, log lines that act for
+their cells, Copy messages, the strip's counts that filter the log, and the log starting
+collapsed when it would push cells out of view.
+Decision (the lead): a Files box acts for its cell as a grid cell does; a double-click opens
+the old path the cell is read from first (the IDs and the left-out count have none); the
+window has no top box, the upgrader having no 3D preview; log lines take the Compiler's
+`code at <path>` form, the finding's text moving to the window.
+Why: the two views share one widget, so an upgrade's result reads in the next tool exactly as
+it was shown in this one.
+Plan: plans/export_upgrader.md (the view: the detail window, a log line, the toolbar);
+EU-GUI-11, EU-GUI-12.
+
+## 2026-11-22 — compiler view — a Sizes colouring, VRAM sizes and sorting
+Decision (the maintainer): a Status | Sizes choice colours the cells green to red by size, a
+player's size including the shared folders he links to; a VRAM unit counts textures as the
+game holds them, a PNG as DXT5 until a compile shows its real codec (DXT1 when opaque, without
+BC7); the rows sort by largest export or largest player, and the sort works in Status too.
+Decision (the lead): fixed thresholds per kind (players 12/20/32 MB, kits 6/10/16, portraits
+1/2/4, exports 250/350/500), set from a census of the exports on the maintainer's PC and the 4cc
+rules page's 32 MB and 500 MB; one set for both units; a PNG whose header has no alpha counts
+as DXT1 before a compile; Errors first as a fourth sort; in Sizes no status rings are drawn.
+Why: the rules page's limits are not binding and members exceed them unseen; fixed thresholds
+say whether a cup is heavy, where a relative scale always paints someone red. Today's exports
+are DDS, whose VRAM equals their payload on disk (VRAM over disk 1.00 to 1.01 on 75 exports),
+so one scale fits both.
+Plan: plans/team_compiler/gui.md "Sizes and sorting"; plans/team_compiler/README.md TC-GUI-28,
+TC-GUI-29, TC-GUI-30.
+
+## 2026-11-22 — compiler view — export thresholds 150/300/500 MB; a kit's and the portraits' window boxes
+Decision (the maintainer): an export is green up to 150 MB, amber at 300, red from 500, since
+250 MB is already large and the census's median export is 123 MB. A kit's window shows its main
+texture in the top box, and the portraits' window a 6 × 4 grid of every portrait with the
+export's logo in the bottom-left tile. A click on Sizes must not move the toggle.
+Decision (the lead): Disk | VRAM is always drawn and enabled only in Sizes, which keeps the
+right-aligned controls in place; a player with no portrait leaves his tile empty.
+Why: the box shows what each cell is about rather than the logo everywhere, and the 24 tiles
+take 23 portraits and the logo exactly.
+Plan: plans/team_compiler/gui.md "GUI: the live-validating team grid" (the detail window),
+"Sizes and sorting"; plans/team_compiler/README.md TC-GUI-28, TC-GUI-31.
+
+## 2026-11-22 — compiler view — players' thresholds 10/20/32 MB; the player's box shows his portrait and the logo
+Decision (the maintainer): a player is green up to 10 MB, so his thresholds keep an export's
+proportions (150/300/500); a player's window box shows his portrait (when his folder holds it)
+in the bottom-left corner and the export's logo in the bottom-right one, each a portraits
+tile's size; the portraits grid's logo moves to the bottom-right tile; Disk | VRAM, disabled in
+Status, takes the Save editor's disabled look (the chosen entry as a disabled button).
+Why: the corners name the player and the team at a glance in a box that is otherwise empty
+until the 3D preview is built, and the same size in both boxes reads as one set of pictures.
+Plan: plans/team_compiler/gui.md "GUI: the live-validating team grid" (the detail window),
+"Sizes and sorting"; plans/team_compiler/README.md TC-GUI-31.
+
+## 2026-11-22 — aesthetics_export, team_compiler, export_upgrader — A `Full` team export with no logo is an Error
+Decision: the maintainer ruled that a `Full` team export with no logo is an Error, because the
+cup's rules require a logo and the coverage tag now tells a full export from a midcup one. The
+lead placed it in the shared validation as `logo_missing`, on the export, dropping nothing
+(`Keep`): the rest compiles without a logo. It is reported only when the export has no root
+`logo*` file at all, never beside a refused one, and never for a `Midcup` or referee export.
+Because the validation is shared, the Export upgrader writes nothing for a `Full` output with no
+logo. The text names the two ways out: add a logo, or tag the export `Midcup`.
+Why: shared and not Compiler-only, because an upgrade must end in an export the compiler
+accepts, or write nothing. `Keep` and not `DropExport`, because the absence is the only fault,
+and leaving a team out of the cup's compile over its logo costs more than it saves: a person
+looks at every export with an Error anyway. On the maintainer's machine, 19 of about 100 old exports that would be upgraded
+as `Full` have no `Logo/` folder: each now needs a logo, or `--coverage midcup`, before it
+upgrades.
+Plan: plans/aesthetics_export/object_model.md "Validation semantics"; plans/team_compiler/
+messages.md "Export level"; plans/export_upgrader.md "What it does"; TC-ROOT-15, EU-MDL-43.
+
+## 2026-11-22 — aesthetics_export, team_compiler — A player with no portrait is a Warning on PES 2017 to 2021
+Decision: the maintainer ruled that on the versions that show portraits, PES 2017 to 2021, a
+player with no portrait, in his folder or in `Portraits/`, is a Warning. The lead placed it
+beside `logo_missing` in the shared validation as `portrait_missing`, on the player folder
+with the slot in its context, dropping nothing, and reported only for a `Full` team export. A
+portrait file that maps to the slot counts whatever later checks find in it; a misnamed
+`Portraits/` file maps to none, so its player is reported too.
+Why: `Full` only, because a `Midcup` player keeps his installed portrait, so a warning on each
+of its players with no portrait file would mostly be wrong; referee portraits reach no output.
+A refused-but-present file is not counted as missing, because its own finding already names
+it, while a misnamed one is: the warning then tells the member whose portrait it was meant to
+be.
+Plan: plans/aesthetics_export/object_model.md "Validation semantics"; plans/team_compiler/
+messages.md "Player folders and shared model folders"; plans/export_upgrader.md "What it
+does"; TC-ROOT-16.
+
+## 2026-11-22 — team_compiler — A referee export's window shows its marker texture as its logo
+Decision: the maintainer ruled that the Compiler's window on a referee export shows its
+`ref_marker.dds`, when there is one, where a team's shows the logo.
+Why: a referee export's logo reaches no output, while the marker is the emblem the referees
+wear in game.
+Plan: plans/team_compiler/gui.md "GUI: the live-validating team grid" (the detail window);
+plans/team_compiler/README.md TC-GUI-32.
+
+## 2026-11-22 — aesthetics_export, team_compiler — A `Midcup` player with no portrait is checked against the installed CPKs
+Decision: the maintainer ruled that a `Midcup` export's players are checked too, against the
+portraits already installed. In a `Midcup` export, `portrait_missing` is reported for a
+player with no portrait file only when the installed CPKs loaded before the run's hold none
+for him either. The Compiler finds those with the walk its bins accumulation already makes,
+and gives the validation the team's slots that have one. When the walk cannot be made (no
+PES folder, no `DpFileList.bin`), a `Midcup` export reports none; the Export upgrader, which
+makes no walk, reports none for its `Midcup` outputs. This replaces the earlier entry's
+"`Full` only".
+Why: reporting every player of a `Midcup` export when nothing is known of what is installed
+would warn about players whose portraits are in the game. The walk already opens every
+installed CPK's table of contents, so the lookup reads nothing new.
+Plan: plans/aesthetics_export/object_model.md "Validation semantics"; plans/team_compiler/
+messages.md; TC-ROOT-17; worklog 0.0.2-logo b.
+
+## 2026-11-22 — team_compiler — The window draws portraits and logos with their transparency
+Decision: the maintainer ruled that portraits and logos in the Compiler's window keep their
+transparency, drawn on the box's background with no tile or frame behind them, in the
+player's box and the portraits grid alike.
+Why: a frame squares off a crest or a cut-out portrait, so the window would not show the
+picture as its author drew it.
+Plan: plans/team_compiler/gui.md "GUI: the live-validating team grid" (the detail window).
+
+## 2026-11-22 — export_upgrader — The Files look's export names stand under their columns; the toggle reads Files | Grid
+Decision: the maintainer approved the upgrader's draft once each export's block in the Files
+look puts its old name (`old_exports\<name>`) beside its label under `Old export` and its
+upgraded name (`exports\<name>`) under `Upgraded export`, in place of one `old → new` line,
+and the look toggle reads `Files | Grid`. The lead's, in the same pass: an export that cannot
+be read shows its reason and action on the right side in place of the upgraded name, since it
+writes nothing and the three would not fit side by side.
+Why: each name then sits over the boxes it names.
+Plan: plans/export_upgrader.md "GUI" (the look toggle, the Files look).
+
+## 2026-11-22 — export_upgrader — "Open the Compiler" becomes "Switch to the Compiler"
+Decision: the maintainer renamed the Export upgrader's button that leads to the Compiler
+"Switch to the Compiler".
+Why: the Compiler is already open in the same window, so the button switches to it.
+Plan: plans/export_upgrader.md "GUI" (the toolbar); plans/core/README.md (the name's example).
+
+## 2026-11-22 — export_upgrader — After a run, the strip names each count once
+Decision: after a run, the Export upgrader's strip gives the run's line and only the counts
+it leaves out: `Upgrade finished in 00:18 · 7 written to exports · 2 with errors · 3 cannot be
+read · 2 with warnings`. The total of old exports, `ready` and `not written` go. Before any
+run the strip keeps its counts as they were.
+Why: the maintainer found the line repeating itself. The exports written are the ones that
+were ready, and those with errors are the ones not written; a line naming both said each
+twice and did not fit beside the buttons at the default window.
+Plan: plans/export_upgrader.md "GUI" (the toolbar's strip).
+
+## 2026-11-22 — tooling — The VPS free-space floor for a mutation half is 48 GiB
+
+Decision: a split mutation run starts on the VPS only with at least 48 GiB free on its disk
+(`REMOTE_FREE_FLOOR`), where it took 26.
+Why: the checkpoint on `f51c570a` passed the 26 GiB guard with 35.4 GiB free, and its
+`save_editor` half still filled the disk and left a mutant untested, so the checkpoint could
+not gate. The half's tests leave a folder behind on each caught mutant, so its use grows with
+the run, past the 23.6 GiB measured on 2026-11-12. The new floor is that failure's start plus
+a third. The clone's build cache (37 GB) was removed the same day, leaving 72 GiB free.
+Plan: `RUNBOOK.md` "The scratch folder"; `scripts/mutation/mutants.py`'s `REMOTE_FREE_FLOOR`.
+
+## 2026-11-22 — export_grid — The export grid is a lib both pipeline tools draw
+
+Decision: the Compiler's grid (rows, cells at fixed positions, their states, the legend, the
+detail window) is a new lib crate, `export_grid`, which the Export upgrader's Grid look draws
+too. Each tool hands it rows built from its own results; the lib reads no export and runs no
+check.
+Why: the maintainer asked for the grid to be reusable by the upgrader. A tool crate never
+depends on another, so the shared part cannot stay in `team_compiler`, and `team_widgets` is
+built over the save file's model, which the grid never sees. The upgrader's rows differ (three
+lines an export, wide file cells), so the lib's row is lines of positions, not the Compiler's
+one line.
+Plan: `plans/team_compiler/gui.md` "GUI: the live-validating team grid"; `plans/export_upgrader.md` "GUI"; `plans/core/architecture.md`'s crate tree; `GLOSSARY.md`.

@@ -36,7 +36,7 @@ rationale. Structural points worth noting here:
   Compiler for every export kind"). It takes the name from 0.0.2, before the other kinds
   join: the sidebar, the window's title, the help chapter's title and a changelog entry's
   label say **The Compiler**, the article for the suite's one compiler, while a sentence says
-  "the Compiler" (`Open the Compiler`), since a capital article inside a sentence reads
+  "the Compiler" (`Switch to the Compiler`), since a capital article inside a sentence reads
   as a typo. The command-line id is `compiler` and its settings table `[compiler]`. No
   `team-compiler` alias stays: none is
   kept before 1.0.0 (`spec/core/distribution.md`, the `0.x` paragraph), and the bundle's

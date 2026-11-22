@@ -33,6 +33,20 @@ A copying player the upgrade gives no folder (a stock-booted player with no face
 no link, because no patch entry names him, so his record, copy included, stays as the save
 holds it. Loose mode, which has no save, writes none.
 
+The shared validation's `logo_missing` (`plans/aesthetics_export/object_model.md`
+"Validation semantics") reaches the upgrader too. An export upgraded as `Full` (from its name,
+from `--coverage full`, or by default) whose `Logo/` folder gives no logo writes nothing. On
+the maintainer's machine, 19 of about 100 old exports that would be `Full` have no `Logo/`
+folder. Most are from 2016 to 2020, and at least one holds only faces, likely a mid-cup
+export named neither way, which the Error now stops before a compile resets its team. The
+text names the two
+ways out: put the logo in the old export's `Logo/` folder, or upgrade it with
+`--coverage midcup` when it only adds to what is installed.
+
+The shared validation's `portrait_missing`, a Warning for a player with no portrait on PES
+2017 to 2021, reaches the upgrader the same way. Being a Warning that drops nothing, it
+leaves the run clean.
+
 What worklog 0.0.2-poc1, poc4 and poc6 built is in `spec/export_upgrader.md` "What it
 does": step 3 ("When the save and the folders disagree"), step 8 (the hide ID of a
 custom ID no folder claims) and step 10 (a `.dds` beside a `.ftex` of one stem).
@@ -230,9 +244,10 @@ members use (`quick_upgrade.bat`) reads the same two.
     its value for when it is unticked, because a member trying both ways would pick the save
     again, and an export refused for its team is read again with no save.
   - `into` and the `exports` folder's path, as text: where every upgraded export goes.
-  - At the row's right end, the **look toggle**, `Grid | Files` (below).
+  - At the row's right end, the **look toggle**, `Files | Grid` (below).
 - **Two looks, one set of cells.**
-  - **Grid**, the default from five exports on: the Compiler's grid, three lines an export.
+  - **Grid**, the default from five exports on: the Compiler's grid (`libs/export_grid`,
+    `plans/team_compiler/gui.md` "GUI: the live-validating team grid"), three lines an export.
     The **Face** line holds a cell per player slot (his face folder, to `Players\NN -
     Name`), then the portraits (`n/N`) and a cell per kit (its two colours as the
     Compiler's swatch).
@@ -244,8 +259,8 @@ members use (`quick_upgrade.bat`) reads the same two.
     `Common` and `Collar` on the Boots line; on the Gloves line `IDs` (the boots and gloves
     IDs kept in `legacy_ids.toml`) and one cell counting what the upgrade leaves out
     (`3 out`), in place of a list.
-  - The team's label cell, at the row's left, carries the export's own state, its tooltip
-    the old name and the upgraded one (`exports\<name>`, EU-ROOT's naming).
+  - The team's label cell, at the row's left, carries the export's own state; its detail
+    window gives the old name and the upgraded one (`exports\<name>`, EU-ROOT's naming).
   - **Files**, the default under five: the explanatory page's map (`docs/web/
     upgrade_explained.html`) drawn for each export. A box stands per folder or file of the
     old export on the left and per folder or file of the upgraded one on the right, with a
@@ -255,9 +270,12 @@ members use (`quick_upgrade.bat`) reads the same two.
   - A box under the pointer keeps its own lines and the boxes at their other ends, and dims
     the rest. The dimming ends 120 ms after the pointer leaves, as on that page, so going
     from box to box does not flicker.
-  - Each export's block opens with its label, its old name, `→` and its upgraded name.
-    The labels `Old export` and `Upgraded export` are one row that stays above the exports
-    as they scroll, and a legend of the lines' colours stands above the map.
+  - Each export's block opens with its two names, each under its column: on the left
+    its label and its old name (`old_exports\<name>`), on the right its upgraded name
+    (`exports\<name>`) and its `Full`/`Midcup` combo. An export that cannot be read
+    writes nothing, so its right side holds the reason and its action instead. The labels
+    `Old export` and `Upgraded export` are one row that stays above the exports as they
+    scroll, and a legend of the lines' colours stands above the map.
   - **The toggle** picks either look whatever the count; until the member picks one, the
     count chooses. The pick lasts the session, because the right look depends on the day's
     folder.
@@ -290,16 +308,38 @@ members use (`quick_upgrade.bat`) reads the same two.
   whenever the member left it alone. A referee export has no combo. The grid's column for it
   is titled **Export type** in the title row like the others, so it does not read as unused
   space on a row without the combo.
-- **A click** on a cell, a box, a label or a log line opens the Compiler's detail window:
-  the old paths a cell is read from and the path it is written to, its state, its findings,
-  who wears a boots or gloves folder (and so whether it moves or stays shared), the list of
-  what is left out for the count's cell, and **Open the old folder**. A log line's click
-  also outlines its cell or row.
+- **The detail window** is the Compiler's (`plans/team_compiler/gui.md` "GUI: the
+  live-validating team grid", the detail window), opened and pinned by its rules. It opens
+  when the pointer rests on a cell, a box, a label or a log line, a click pins it, and Esc
+  closes it. A log line's click also outlines its cell or row. The cells, boxes and labels
+  carry no tooltip of their own.
+  - It shows the old paths a cell is read from and the path it is written to, its state, its
+    findings, who wears a boots or gloves folder (and so whether it moves or stays shared),
+    the list of what is left out for the count's cell, and **Open the old folder**.
+  - It has no top box, since the upgrader has no 3D preview to keep the text below.
+  - A label's window also offers **Copy messages**, the export's log lines.
+  - A double-click opens the old path the cell is read from first: a folder, or a file's
+    folder with the file selected. A label opens the old export's folder, and an archive
+    export opens the archive's folder with the archive selected. The IDs and the left-out
+    count's cells stand for no one path, so a double-click on them does nothing.
+  - A box of the Files look stands for its cells as a cell does. Where a left box and a
+    right box stand for the same cell, both show its pin.
+- **A log line** is the Compiler's, `Severity - /team/ - code at <the old path>`, and acts
+  for its cell as there; the finding's own text is the window's.
 - **The toolbar** is the Compiler's:
-  - **The strip.** Idle, it gives the last run's line and the counts
+  - **The strip.** Before any run it gives the counts
     (`13 old exports · 8 ready · 1 with errors · 3 cannot be read · 2 with warnings`).
-    During a run it reads `Upgrading · mm:ss · n of N folders written`.
-  - **Open the Compiler** stands left of Upgrade, always enabled but during a run. Once an
+    After a run it gives the run's line and only the counts that line leaves out
+    (`Upgrade finished in 00:18 · 7 written to exports · 2 with errors · 3 cannot be read ·
+    2 with warnings`): the exports written are the ones that were ready, and those with
+    errors are the ones not written, so naming both would say each twice. During a run it
+    reads `Upgrading · mm:ss · n of N folders written`. As in the Compiler,
+    a click on `with errors` or `cannot be read` sets the log to Errors and one on
+    `with warnings` sets it to Warnings. They are in the link blue only while the log is
+    collapsed.
+  - **The log** starts collapsed when, open, it would push some cells or boxes out of view,
+    as the Compiler's does.
+  - **Switch to the Compiler** stands left of Upgrade, always enabled but during a run. Once an
     upgrade has finished it takes the accent colour, the view's one blue button, until the
     next run starts, because the upgraded exports are already in the Compiler's folder and
     it is the next step.
@@ -453,6 +493,18 @@ EU-GUI-10  manual  GIVEN the view open
                    WHEN the Save field's Browse button is clicked
                    THEN the native picker opens in the selected version's save folder and the
                         picked file fills the field
+EU-GUI-11  GIVEN EU-GUI-03's exports, one with an Error on its Note
+           WHEN the pointer rests on a face cell, on a Files box and on the Error's log line
+           THEN the detail window opens on each as the Compiler's does (TC-GUI-09, TC-GUI-15),
+                and a click pins it as there (TC-GUI-24); WHEN a face cell is double-clicked
+                THEN the face folder of the old export opens in the file manager; WHEN Esc
+                is pressed THEN the window closes; GIVEN the label's window of the export with
+                the Error THEN it offers Copy messages, which puts its log lines on the
+                clipboard
+EU-GUI-12  GIVEN the strip's counts with the log collapsed
+           WHEN `cannot be read` is clicked
+           THEN the log opens on Errors; the counts are in the link blue while the log is
+                collapsed and in the strip's grey while it is open
 ```
 
 **0.0.2-poc13 scope.** The legacy mode, `--legacy-ids` (above, "What it does").
@@ -517,3 +569,12 @@ EU-SET-13  GIVEN EU-SET-12's export
                 no player folder holds a .copy, and no base_copy_beside_face is reported
 ```
 
+**0.0.2-logo scope.** `logo_missing` from the shared validation (above, "What it does").
+
+```
+EU-MDL-43  GIVEN an old export "co - Spring" with faces, kits and no Logo folder
+           WHEN it is upgraded, then upgraded again with --coverage midcup
+           THEN the first run reports logo_missing (Error) on "co Full - Spring", writes
+                nothing and ends migration_not_clean with exit code 1; the second writes
+                "co Midcup - Spring" with no logo file and ends migration_clean
+```

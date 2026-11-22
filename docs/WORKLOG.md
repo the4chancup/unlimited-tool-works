@@ -26,7 +26,10 @@ editor (replacing the PES2021 STR Editor) and the Gametips editor (replacing the
 scripts in `C:/Data/4cc/0Tools/Tips/`). Their plans are stubs, to be finished from a lookup
 run's findings (`4cc-studio-temp/str_re/out/findings.md`).
 
-**After the detour**, in this order:
+**The detour is over**: Build 2, `0.0.2-pes14.2`, was published 2026-11-21. **The main goal
+now is item 6, the Compiler's view for the VGL organizer** (the maintainer, 2026-11-21), its
+draft looked at again first; the Export upgrader's view may follow in a later build. The
+other items run beside it. **After the detour**, in this order:
 1. The Nation list: done (merges `467790ab`, `1b9c5f27`; SWE-2 round S1n). It opens on the
    held nation, a typed name picks as an ID does, Escape puts the old nation back, and one
    opening is one undo entry; the General info review's fixes (rulings "geninfo A1") with it.
@@ -88,8 +91,42 @@ run's findings (`4cc-studio-temp/str_re/out/findings.md`).
 6. The Compiler's view in the build, unpolished, for the VGL organizer (the maintainer,
    2026-11-20; `plans/core/development_plan.md` "Phase 8: GUI"): step 8.10's grid first,
    showing which of an export's components has an error or a warning and what it says;
-   the row actions and the finish in later builds. First, one more look at its draft with
-   the maintainer (approved but not final, 2026-11-20).
+   the row actions and the finish in later builds. The draft was looked at again on 2026-11-22:
+   a cell's detail window now opens on hover and pins on a click, and long log lines wrap; a
+   log line acts for its cell (`plans/team_compiler/gui.md`). The maintainer stamped that
+   draft on 2026-11-22, and the Export upgrader's draft took the same window, log and counts.
+   The maintainer approved both drafts on 2026-11-22, the Compiler's with the logo and
+   portrait findings, the upgrader's once each export's two names stood under their columns.
+   The Sizes colouring and sorting were drafted and stamped the same day
+   (`plans/team_compiler/gui.md` "Sizes and sorting"). The view is built in ordered slices (Opus), each landing and reviewed before
+   the next is briefed:
+   - [ ] 1a: the grid, read-only, in the new lib `export_grid` (the upgrader's Grid look
+     draws it too), filled by a check the view runs when it opens and after
+     each Compile (the watcher comes later): rows, label, ID, player, portraits and kit
+     cells, check states, the legend → verify: TC-GUI-04 without its watcher part, 20, 21
+   - [ ] 1b: the detail window: hover, pin, Esc, double-click, its top box, Copy messages
+     → verify: TC-GUI-09, 24, 25, 31, 32
+   - [ ] 1c: the toolbar's strip and its counts, the log's lines linked to cells, the log
+     collapsed when it would hide rows → verify: TC-GUI-15, 26, 27
+   - Then the row actions, the ID cell's editing, the watcher and cache, Sizes and sorting.
+   - Slices of their own beside the view: 0.0.2-logo, `logo_missing`, a
+     `Full` team export with no logo is an Error, and `portrait_missing`, on PES 2017 to 2021
+     a player with no portrait is a Warning (`plans/aesthetics_export/object_model.md`
+     "Validation semantics"; `plans/team_compiler/messages.md`; `plans/export_upgrader.md`
+     "What it does"):
+     - [ ] a (Opus: about 500 test mentions of `Full` exports may meet the new findings):
+       `aesthetics_export`'s validation, `Midcup` included through `installed_portrait_slots`
+       (`None` at every caller), both catalogs, the team tracers' goldens upgraded as
+       `Midcup`, then a census of the tests the findings break before they are fixed →
+       verify: TC-ROOT-15, TC-ROOT-16, EU-MDL-43, TC-ROOT-17's validation half
+     - [ ] b: `installed_portrait_slots` filled from the Compiler's walk over the installed
+       CPKs → verify: TC-ROOT-17
+   - Not urgent, a small slice of its own (SWE-2), after the view's or beside it: player
+     numbering without the hyphen (`plans/aesthetics_export/player_folders.md`, the section of
+     that name): `aesthetics_export`'s `conventions` (`folder_slot`, `folder_player_name`), the
+     `Portraits/` names and the kit folders (`validate/kits.rs`), their tests, and the catalog
+     texts of `player_folder_number_invalid`, `portrait_name_invalid` and `kit_folder_invalid`
+     in `messages/catalog.rs`.
 7. The drafts in two copies (the maintainer, 2026-11-17: a spec draft of what the build holds
    and a plan draft for prototyping, which the app's unbuilt sections open with `demo=1`. Git
    keeps the two: the spec draft is `docs/prototypes/` on main, which `draft_compare`, the
@@ -117,10 +154,9 @@ run's findings (`4cc-studio-temp/str_re/out/findings.md`).
     0.0.2 cut; 166 commits touching code, about 28,000 lines added). The pipelines of those
     days ran `--no-mutants` while mutfast was awaited, and `checkpoint.py run` moves
     `refs/checkpoints/gated` with or without the mutation run, so the first run after mutfast
-    (2026-11-20) diffed from `aab124dc` and nothing came back for the range. Owed:
-    - the cause: `--no-mutants` leaves the mutation run's base where it was (a second ref,
-      `refs/checkpoints/mutated`, which only a run that ran its mutants moves), so a gate
-      passed without mutants can never hide a range again;
+    (2026-11-20) diffed from `aab124dc` and nothing came back for the range. The cause is
+    fixed (2026-11-22): the mutation run starts from `refs/checkpoints/mutated`, which only a
+    run whose mutants all ran moves (RUNBOOK "How the work runs"). Owed:
     - the catch-up: `mutants-diff abbae531` over the range, sized first with its own
       estimate; per crate past about an hour a side, the crate's run goes to the VPS (RUNBOOK
       "Mutation runs and the VPS"), the rest here; then its triage as the checkpoints' are.
@@ -161,6 +197,22 @@ run's findings (`4cc-studio-temp/str_re/out/findings.md`).
     a Video encoder for the cup's USM videos (the format in `plans/libs/usm.md`) and an Export
     viewer (MFG's FMDL-Viewer), two file kinds to the explorer (`.mtar`, `.fsop`), and a
     third add-on, EssexDotDev's 4cc-FMDL-Toolkit, to the Blender plan.
+15. The checkpoint on `f51c570a` (2026-11-22): fmt, clippy and every test suite passed, but
+    the mutation run left 10 mutants alive, so `refs/checkpoints/gated` stays at `fc6e8cf0`
+    (list: `.tmp/lead/mutants_f51c570a/missed_all.txt`). The gate stayed for another reason
+    too: the VPS's disk filled during the `save_editor` half, so two mutants never ran
+    (`Portraits::shown_placeholder` and `player_list.rs` `toggle_in_group`); the next run
+    tests them again, the floor now 48 GiB and 72 GiB free (DECISIONS 2026-11-22). Triaged
+    2026-11-22:
+    - the two `session_link.rs` timeouts are caught: each mutant makes `give`'s send loop
+      endless, and a timeout an infinite loop explains counts as caught (RUNBOOK "Mutation
+      runs");
+    - [ ] the other eight get tests in one SWE-2 slice (`sk/mut15`, brief
+      `.tmp/mut15/brief_mut15.md`): `read_images`' placeholder read, `crash_dump.rs`'s
+      `wait_until` (its limit made a parameter, so a test reaches it without waiting 120 s)
+      and `journal_holds_steps`, `local_clock`, and `adopt_folder`'s unreadable journal and
+      output dedupe (four mutants);
+    - [ ] then `just pipeline` at the new HEAD.
 
 Most open steps below wait only on a check in the game or the built window that the lead's
 harness makes ("Pending looks" below), not on the maintainer.
@@ -1568,6 +1620,7 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     beside its label and "Recent files" under Open file…, as the editor and the plan do. The
     maintainer's look 2026-11-17: fine
   - [x] 0.0.2-rebar (2026-11-14, SWE-2) with a document open the Ruleset editor runs to the window's edges as its draft does, toolbar, rail, bottom bar and preview; the rail is the draft's 150 wide, each entry highlighted across its row with a problem's mark at the right end; its headless tests draw inside the shell's panel. Left: the built window, with the start dialog's look
+  - [x] 0.0.2-sidebaredge (2026-11-22, SWE-2, merge `5e326745`) the active sidebar tool takes the selection's 1-point edge at rest, `#1e7a9e` on the dark theme, in place of the bar at its left, and every icon centres in its whole cell; the built window checked beside the draft the same day: the same edge and fill, the icon at the cell's centre on the rail and opened
   - [x] 0.0.2-sideopen (2026-11-14, `5f82ef3f`) a sidebar opened in a tall window stays inside the window when it shrinks, its entries scrolling between the logo and the Help and Settings rows; it used to keep the height it measured in the tall window
   - [x] 0.0.2-poslayout (2026-11-14, `2ef1bfe4`) a `Pitch | Left | List` toggle under Playable positions, kept as the `positions_layout` setting; the grid where the draft puts it under the toggle (63.7 under the title, List 45.9); the unchosen rating letters in the normal text colour; SE-GUI-85 headless, the maintainer's look at the built window 2026-11-17: fine
   - [x] 0.0.2-teamdrop (2026-11-13, `923607d9`) `ALL` reads `All teams` in every team dropdown; the list's dropdown ends with All, 4cc, VGL and Invitational radio buttons, which narrow it and the list, remembered as the `team_category` setting; help page 02
@@ -3597,23 +3650,28 @@ points there.
   long names onto two lines ("Attacking / Prowess") and shows four columns. It was already so
   with the old 560-point preview; seen in the release build of the larger-window slice
   (`.tmp/lead/re_look/`). Next: brief the build to the draft's wrapping.
-- open (2026-11-21) — A trial, the first work after the maintainer's break: can SubQ Snap tell
-  a flaky test from a steady one, as it tells a test that proves its scenario from one that
-  does not (`citation_audit.py`)? The question
-  per test: does its outcome depend on anything outside its inputs (the machine's free memory,
-  timing, thread order, files outside its scratch folder, the clock)? The state is the test
-  and the helpers of its file it calls, as the citation audit builds it.
-  - Positives, each at the commit before its fix:
-    - `a_7z_export_s_source_keeps_its_decompressed_content_into_the_planned_run`
-      (`68d933e5`, the run's budget read from the machine's free memory);
-    - the PES 15 save/load test with a one-byte seed (`3ab27215`);
-    - the Multi-team dialog's held press (`24451801`);
-    - the list test that read a combo's edge a frame early (`0af77290`);
-    - the pictures dialog's width (`5dfad4e2`).
-  - Negatives: a random sample of about 100 of today's tests.
-  - Measured as where the positives rank among the scores, and the AUC. If they rank near the
-    top, the check joins the checkpoint as the citation audit did; if not, the trial and its
-    numbers are recorded here and dropped.
+- resolved 2026-11-22 (dropped) — The trial of whether SubQ Snap can tell a flaky test from a
+  steady one, as it tells a test that proves its scenario from one that does not. Asked per
+  test whether its outcome depends on anything outside its inputs; the state was the test and
+  the helpers of its file it calls, as the citation audit builds it. Five known flakes at the
+  commit before each fix, against 100 tests sampled at random from HEAD's 6631:
+  - AUC 0.790, against the citation audit's 0.995. Every score is low (the highest is 0.227),
+    and a steady test tops the ranking.
+  - The flakes ranked 2 (the PES 15 save/load test's one-byte seed), 5 (the pictures dialog's
+    width), 18 (the kept-.7z test's free-memory budget), and 44 and 51 (the Multi-team list
+    test, twice). The two frame races score as steady as the median test: their cause is when
+    the headless harness delivers a check's reply, which neither the test nor its file shows,
+    and one sat in a helper of another file.
+
+  The project's flakes are mostly races of that kind, so the check does not join the
+  checkpoint, and no variant of the question was tried. The script and its answers are in the
+  gitignored `.tmp/snap_flaky/` and `snap.out/flaky_cache.json`.
+- open (2026-11-22) — The Compiler's tests that write their own teams list
+  (`team_compiler/src/testing.rs`, `output/savefile.rs`, `tests/cli/deep.rs` and `logo.rs`) use
+  the bundled list's rows from before its VGL27 allocation (`6268280c`, 2026-11-09): `790 /dbg/`
+  and `792 /egg/`, where the list now reads `789 /dbg/` and `790 /domg/` and holds no `/egg/`.
+  Nothing fails, the lists being the tests' own, but test data copies today's real rows: update
+  them when those files are next touched.
 - open (2026-11-20) — A checkpoint's diff mutation run pays each crate's fixed costs however
   few mutants it holds. On `969e1cb6`, `team_widgets`' one mutant took 567 s wall:
   - a baseline of 133 s build and 199 s test, though the gates had just passed the same tree;

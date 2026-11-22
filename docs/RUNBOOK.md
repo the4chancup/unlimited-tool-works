@@ -28,7 +28,10 @@ ran most of the test suite.
 **A checkpoint is one command.** `just checkpoint` runs `gates-changed` and `mutants-diff`
 since the last gated commit and then moves that commit, the git ref
 `refs/checkpoints/gated`, to the commit it started on (`scripts/gates/checkpoint.py`; a
-clone seeds the ref once, as the script says). The gates read the working tree, so a commit
+clone seeds the ref once, as the script says). The mutation run starts from a ref of its own,
+`refs/checkpoints/mutated`, which only a run whose mutants all ran moves: a checkpoint with
+`--no-mutants` leaves it behind, so the next run's mutants cover what it skipped (one ref
+serving both once left 166 commits out of every mutation run). The gates read the working tree, so a commit
 or an edit made while they run leaves the ref where it was, and the checkpoint is run again.
 It runs at the end of a review loop, at a worklog step's close, after a merge, and before a
 push is asked for. `just checkpoint-status` says how far HEAD is past the gate, what is not
@@ -414,9 +417,9 @@ host passes a guard first (`remote_refusal`):
 it empties `~/studio-mutants/tmp` (`REMOTE_TMPDIR`, the remote tests' temp dir), where a test
 that removes its folder at its end leaves it on every caught mutant and a killed half leaves its
 tree copies, then refuses when the disk has under
-26 GiB free (`REMOTE_FREE_FLOOR`: a half's two build copies take 24, measured on a
-`save_editor` half, whose temp folder peaked at 23.6 GiB, and 2 stay for
-the host's system). The refusal prints what `~/studio-mutants` holds: the cleanup below frees
+48 GiB free (`REMOTE_FREE_FLOOR`: a `save_editor` half that started with 35.4 GiB free
+filled the disk on 2026-11-22, its tests' leftovers growing with each caught mutant, so the
+floor is that start plus a third, 2 of it for the host's system). The refusal prints what `~/studio-mutants` holds: the cleanup below frees
 the clone's build cache, usually most of it (a finished run's results stay until the next
 launch), and when that cannot lift the floor the maintainer is asked.
 Before the guard, the folder once held 50 GB (28.6 of them test leftovers, 27 the Save

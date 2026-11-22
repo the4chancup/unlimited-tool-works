@@ -221,10 +221,32 @@ TC-GUI-08  GIVEN a team export whose name carries neither Full nor Midcup
            THEN the row holds a Full and a Midcup button where its cells would be; clicking one
                 renames the folder or archive with the tag after the team name and the row
                 revalidates under the new name
-TC-GUI-09  GIVEN a cell with findings
-           WHEN the pointer hovers it
-           THEN the tooltip shows the folder name and the findings' text, worst severity first;
-                WHEN it is clicked THEN the detail panel opens on that scope
+TC-GUI-09  GIVEN a cell with findings and no cell pinned
+           WHEN the pointer rests on it
+           THEN the detail window opens on it, showing the folder name and each finding's
+                code, file and catalog text, worst severity first; WHEN the pointer leaves
+                the cell for empty grid THEN the window closes; WHEN it moves onto another cell
+                instead THEN the window shows that cell at once
+TC-GUI-24  GIVEN the pointer on a cell with findings
+           WHEN the cell is clicked
+           THEN the window stays open on it, a pin on the cell and in the window's title bar,
+                and hovering another cell leaves the window as it is; WHEN another cell is
+                clicked THEN that one is pinned instead; WHEN the pinned cell, the window's
+                pin or the grid's empty space is clicked THEN nothing is pinned and the
+                window closes, and resting the pointer on that cell opens nothing until it
+                has left the cell; WHEN Esc is pressed with the window open, pinned or not,
+                THEN it closes the same way; GIVEN a double-click on a cell THEN its folder opens in the
+                file manager and the pin is as it was before the double-click; GIVEN an export
+                with no Portraits folder whose portraits cell has one finding THEN a
+                double-click on that cell opens the player folder of the finding's file, and
+                with two findings or none it opens nothing
+TC-GUI-25  GIVEN an export with three findings in the log, one on its label and two on its
+                players
+           WHEN its label's window shows Copy messages and that button is clicked
+           THEN the clipboard holds the export's three log lines, as the log prints them, one
+                per line, and the button reads Copied for a moment; GIVEN an export with no
+                findings, or the window of a player, kit or portraits cell THEN the window
+                has no Copy messages
 TC-GUI-10  GIVEN a kit folder whose colors.txt parses and whose icon_<N> marker names pattern N
            WHEN its cell is drawn
            THEN the cell shows pattern N's two-color swatch in the kit's two menu colors under
@@ -245,6 +267,51 @@ TC-GUI-12  GIVEN a run in flight
                 so far and the memory in use; the Compile button reads Cancel; once the run
                 ends the strip reads `Compile finished in mm:ss · N files written (S MB)`, S
                 the written files' total size
+TC-GUI-26  GIVEN no run in flight, the log showing All, and the grid with errors on two exports
+                and warnings on one
+           WHEN the strip is drawn
+           THEN after the last run's line, if any, it reads the export count, the skipped
+                count, `2 with errors` and `1 with warnings`, the two counts in the strip's
+                grey while the log is open and in the link blue while it is collapsed; WHEN
+                `2 with errors` is clicked THEN the log is open and shows Errors; WHEN
+                `1 with warnings` is clicked THEN it shows Warnings
+TC-GUI-27  GIVEN more export rows than fit above the open log at the window's size
+           WHEN the app starts on the Compiler's view
+           THEN the log starts collapsed; GIVEN rows that all fit above it THEN the log starts
+                open
+TC-GUI-28  GIVEN a player folder of 9 MB, one of 40 MB, and a player of 25 MB whose own folder
+                is 10 MB and who links a 15 MB shared Boots folder
+           WHEN Sizes is picked
+           THEN the Status | Sizes toggle stays under the pointer, their cells are green, red
+                and between amber and red, a cell not read yet keeps
+                the unchecked colour, no cell shows a warning or error ring, and the legend
+                shows each kind's three thresholds; GIVEN the 25 MB player's window THEN it gives
+                25 MB on disk and names the Boots folder it takes in
+TC-GUI-29  GIVEN an export holding a 1024 × 1024 PNG with an alpha channel and a DDS of 2 MB
+           WHEN VRAM is picked before a compile
+           THEN the PNG counts as DXT5 with its mips (about 1.3 MB) and the DDS as its payload,
+                and the window says the PNG is counted as DXT5 until a compile; GIVEN the PNG's
+                pixels all opaque and a compile run THEN it counts as DXT1 (about 0.7 MB);
+                GIVEN an archive export before a compile THEN its cells are not measured
+TC-GUI-30  GIVEN three exports of 120, 480 and 300 MB, the 120 MB one holding the heaviest
+                player and the 300 MB one an Error
+           WHEN Largest export, Largest player and Errors first are picked in turn
+           THEN the rows read 480, 300, 120; then 120 first; then 300 first, the others in the
+                folder's order; and the same sorts work in Status
+TC-GUI-31  GIVEN an export with a logo, a kit whose main texture is kit.dds, and 22 of its 23
+                players with a portrait (player 20 without)
+           WHEN the window opens on the kit, on the portraits cell, on the label and on
+                player 05, whose folder holds his portrait
+           THEN its top box shows kit.dds; then a 6 × 4 grid holding the 22 portraits in the
+                players' order, player 20's tile empty and the logo in the bottom-right tile;
+                then the logo; then player 05's portrait in its bottom-left corner and the
+                logo in its bottom-right one; and the text under the box starts at the same
+                height each time
+TC-GUI-32  GIVEN a referee export holding ref_marker.dds and a logo.png, and one holding
+                 neither
+           WHEN the window opens on each one's label
+           THEN the first's top box shows ref_marker.dds, not the logo; the second's reads
+                "No logo"
 TC-GUI-13  GIVEN a run in flight over two exports
            WHEN Cancel is clicked
            THEN the run ends after the task or texture in progress, no CPK is written or
@@ -252,13 +319,15 @@ TC-GUI-13  GIVEN a run in flight over two exports
                 return to their check colors, and the log's last line says the run was cancelled
 TC-GUI-14  GIVEN an export holding a finding whose effective disposition is DropExport
            WHEN Compile is pressed
-           THEN every player and kit cell of its row shows the blocked state, each tooltip
-                naming the export-level cause, and no task of that export runs; GIVEN a folder
+           THEN every player and kit cell of its row shows the blocked state, each one's
+                detail window naming the export-level cause, and no task of that export runs; GIVEN a folder
                 with a DropFile finding THEN its cell ends done-with-errors (red)
-TC-GUI-15  GIVEN a warning line in the log panel
-           WHEN it is clicked
-           THEN the cell of its scope is highlighted in the grid; a line whose scope is the
-                export highlights the row label
+TC-GUI-15  GIVEN a warning line in the log panel and no cell pinned
+           WHEN the pointer rests on it
+           THEN the detail window opens on the cell of its scope (the row label for a line
+                whose scope is the export); WHEN it is clicked THEN that cell is outlined in
+                the grid and its window pinned; WHEN it is clicked again THEN the window
+                closes and the outline stays
 TC-GUI-16  GIVEN the destination not writable (the game running, or elevation needed)
            WHEN the toolbar is drawn
            THEN the Compile button carries the writability badge, its tooltip naming the reason
@@ -285,12 +354,12 @@ TC-GUI-20  GIVEN a referee export whose players.txt lists slots 1, 2 and 35, slo
                  backed by the same model folder
            WHEN the view draws its row
            THEN the row's cells sit at the fixed positions 01 to 35 (only 01, 02 and 35 drawn),
-                cells 01 and 35 share one status and their tooltips name the same folder, and a
+                cells 01 and 35 share one status and their detail windows name the same folder, and a
                 finding of that folder colors both
 TC-GUI-21  GIVEN an export holding a shared model folder no player links (shared_folder_orphaned,
                  W) and a root logo_small.png with no main logo (logo_small_without_main, E)
            WHEN the view draws its row
-           THEN the row label is red, the worse of the two findings' colors, its tooltip lists
+           THEN the row label is red, the worse of the two findings' colors, its detail window lists
                 both with their scopes, and no player or kit cell changes for them
 TC-GUI-22  GIVEN exports_folder_path an absolute path to a folder that does not exist (the
                 preflight refuses before any event), and no input after the click
@@ -410,6 +479,30 @@ TC-CLI-13  GIVEN TC-CLI-11's root (a kit whose task fails, a disabled export)
                 order, prefixed by `+<seconds>.<three digits> `, each time no greater than
                 the run's wall time; the second run's lines carry no prefix; `check
                 --timestamps` prefixes its lines the same way
+```
+
+**0.0.2-logo scope.** `logo_missing` and `portrait_missing` (`messages.md`).
+
+```
+TC-ROOT-15 GIVEN "co Full Spring" with players and kits and no root logo file; "co Midcup Day
+                 5" with none; a refs export with none; and "co Full Autumn" whose only logo
+                 file is an undecodable logo.png
+           WHEN each is compiled for PES 21
+           THEN the first reports logo_missing (Error) on its export, and its CPK holds its
+                players and kits and no e_000714_* file; the second and the refs export report
+                no logo_missing; the fourth reports logo_file_invalid and no logo_missing
+TC-ROOT-16 GIVEN "co Full Spring" whose player folder 01 holds portrait.dds, 02 has
+                 Portraits/02.dds, 03 has neither and 04 has only Portraits/player_04.dds
+           WHEN it is compiled for PES 21, then for PES 16
+           THEN on PES 21 it reports portrait_missing on Players/03 (slot 03) and on
+                Players/04 (slot 04) beside portrait_name_invalid, compiles both players, and
+                reports nothing for 01 and 02; on PES 16 it reports no portrait_missing
+TC-ROOT-17 GIVEN "co Midcup Day 5" whose player folders 03 and 04 hold no portrait, and a PES
+                 21 install whose DpFileList.bin lists a CPK before the run's holding
+                 common/render/symbol/player/71403.dds
+           WHEN it is compiled for PES 21
+           THEN portrait_missing is reported on Players/04 (slot 04) and not on Players/03;
+                GIVEN no PES folder instead THEN no portrait_missing is reported
 ```
 
 **0.0.2-poc2 scope.** What exists of this is in `spec/team_compiler/pipeline.md` "Resolved

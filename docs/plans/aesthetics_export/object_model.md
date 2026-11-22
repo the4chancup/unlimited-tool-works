@@ -18,6 +18,45 @@ its tactical patch (`team_compiler/pipeline.md` "6. Post-processing"). Its other
 team, its players) reach no output: the roster is the Save editor's to import. A `team.toml`
 that is not a Team TOML is an Error naming the file, and the export compiles without it.
 
+The cup's rules require every team's logo, so a `Full` team export with no logo is an Error,
+`logo_missing`: one of `validate`'s export findings, beside `export_empty`. Only a `Full`
+export is reported:
+- a `Midcup` export replaces only what it holds, so the installed logo stays;
+- a referee export's logo reaches no output.
+
+"No logo" means no root file whose stem starts with `logo`. A logo file that is there but
+refused reports its own Error (`logo_file_invalid`, `logo_role_duplicate`,
+`logo_small_without_main`), and a second finding beside it would only repeat it. The finding is
+on the export and drops nothing (`Keep`): the rest of the export compiles, without a logo.
+
+It is a validation finding, not a Compiler-only one, so the Export upgrader, which runs the
+same validation on what it writes, refuses a `Full` output that would have no logo (its
+"Verification": a run with an Error writes nothing). A Compiler-only finding would let the
+upgrader call clean an export whose first compile then reports an Error.
+
+On PES 2017 to 2021, which show players' portraits, a player with no portrait is a Warning,
+`portrait_missing`: a slot a player folder maps to that has neither a `portrait` texture in
+the folder nor a `Portraits/NN` file. It is reported on the player folder, with the slot in
+its context, and drops nothing (`Keep`). PES 2015 and 2016 show no portraits, so it is not
+reported there, nor for a referee export, whose portraits reach no output.
+
+A `Midcup` player keeps his installed portrait, so in a `Midcup` export he is reported only
+when the installed CPKs loaded before the run's hold no portrait for him either
+(`common/render/symbol/player/<player id>.dds`). The consumer finds them with the walk its
+bins accumulation already makes over those CPKs' tables of contents
+(`spec/team_compiler/pipeline.md` "Bins accumulation"), and hands the validation the
+team's slots that have one, as `installed_portrait_slots` in `ValidationContext`. When that
+walk cannot be made (no
+PES folder, no `DpFileList.bin`, a list that does not name the run's CPK), nothing is known
+about what is installed, and a `Midcup` export reports no `portrait_missing`, rather than
+one for each of its players. The Export upgrader makes no walk, so its `Midcup` outputs
+report none.
+
+A file that maps to the slot counts as his portrait whatever a later check finds in it, since
+that check's own finding names the file. A `Portraits/` file whose name maps to no slot
+(`portrait_name_invalid`) is no one's portrait, so its player is reported too, which tells the
+member whose portrait the misnamed file was meant to be.
+
 ### `aesthetics_export` crate layout
 
 What exists of this is in `spec/aesthetics_export/object_model.md` "`aesthetics_export` crate layout".

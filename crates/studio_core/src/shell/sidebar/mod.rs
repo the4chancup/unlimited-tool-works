@@ -58,8 +58,6 @@ const CLOVER_SIZE: f32 = 28.0;
 /// to feel slow, long enough that a pointer crossing the rail on its way elsewhere
 /// opens nothing.
 const HOVER_DELAY: f64 = 0.10;
-/// The accent bar on the active entry's left edge (draft: 3 px).
-const ACTIVE_BAR_WIDTH: f32 = 3.0;
 /// The space between the right edge of an entry's `ICON_SIZE` icon box and its label in
 /// the opened sidebar, the draft's `.sidebar .tool` gap.
 const LABEL_GAP: f32 = 6.0;
@@ -931,21 +929,20 @@ fn logo(ui: &mut egui::Ui, width: f32, cell: f32) -> egui::Response {
 
 /// Where an entry's label starts, from its row's left edge: `LABEL_GAP` past the right
 /// edge of the icon's `ICON_SIZE` box, centred as the icon is in the icon cell `cell`
-/// wide less the accent bar, and not after the whole cell, so the label sits where the
+/// wide, and not after the whole cell, so the label sits where the
 /// draft's `.sidebar .tool` puts it.
 fn label_offset(cell: f32) -> f32 {
-    (ACTIVE_BAR_WIDTH + cell + ICON_SIZE) / 2.0 + LABEL_GAP
+    (cell + ICON_SIZE) / 2.0 + LABEL_GAP
 }
 
 /// One sidebar entry row `width` wide, the same in the rail and in the overlay, so
 /// nothing moves when it opens: `icon` centred in the icon cell, the
-/// row's first `cell` points less the accent bar's width at its left (the draft's
-/// entries carry that border on every row, transparent but on the active one), then
-/// `label` in body text at `label_offset`, vertically centred and never wrapped
-/// (`None` in the rail, which shows the icons alone and needs no tooltip: the
-/// overlay shows the label). `active` gets the filled
-/// selection background plus the accent bar at its left; `clickable` selects
-/// `Sense::click` over `Sense::hover`.
+/// row's first `cell` points, then `label` in body text at `label_offset`,
+/// vertically centred and never wrapped (`None` in the rail, which shows the
+/// icons alone and needs no tooltip: the overlay shows the label). `active`
+/// gets the filled selection background edged by its `edge_color` at rest,
+/// as a held toggle side is; `clickable` selects `Sense::click` over
+/// `Sense::hover`.
 fn entry_row(
     ui: &mut egui::Ui,
     width: f32,
@@ -962,18 +959,11 @@ fn entry_row(
     };
     let (rect, response) = ui.allocate_exact_size(egui::vec2(width, ENTRY_HEIGHT), sense);
     let text_color = paint_in_use_frame(ui, rect, &response, active);
-    if active && ui.is_enabled() {
-        // The bar's left corners follow the entry's border radius; the right
-        // ones stay square against the row's fill.
-        ui.painter().rect_filled(
-            egui::Rect::from_min_size(rect.min, egui::vec2(ACTIVE_BAR_WIDTH, rect.height())),
-            egui::CornerRadius {
-                ne: 0,
-                se: 0,
-                ..ui.visuals().widgets.noninteractive.corner_radius
-            },
-            ui.visuals().selection.stroke.color,
-        );
+    if active {
+        // A held toggle side's look: the selection fill's edge over it, at rest
+        // only. Hovered, pressed or focused, the row keeps egui's own frame.
+        let fill = ui.style().interact_selectable(&response, true).weak_bg_fill;
+        crate::widgets::resting_edge(ui, &response, crate::theme::edge_color(ui.visuals(), fill));
     }
     let galley = icon.into().into_galley(
         ui,
@@ -981,10 +971,7 @@ fn entry_row(
         f32::INFINITY,
         egui::TextStyle::Body,
     );
-    let cell_rect = egui::Rect::from_min_max(
-        egui::pos2(rect.min.x + ACTIVE_BAR_WIDTH, rect.min.y),
-        egui::pos2(rect.min.x + cell, rect.max.y),
-    );
+    let cell_rect = egui::Rect::from_min_max(rect.min, egui::pos2(rect.min.x + cell, rect.max.y));
     ui.painter()
         .galley(cell_rect.center() - galley.size() / 2.0, galley, text_color);
     if let Some(label) = label {
