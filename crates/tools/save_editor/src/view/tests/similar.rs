@@ -734,6 +734,50 @@ fn select_under_every_team_moves_the_selector_and_lists_every_row() {
     }
 }
 
+// The Select under `Every team` keeps a category that already lists
+// every matching row.
+#[test]
+fn select_under_every_team_keeps_a_category_holding_every_match() {
+    let (mut view, mut window) = gd_view("similar_every_keeps_category", 9);
+    // 10 and 19 made LBs with 82 speed: on the three boxes they match
+    // each other and no player outside /gd/.
+    let session = view.session.as_mut().expect("the open save");
+    let lb = u8::try_from(POSITIONS.iter().position(|&p| p == "LB").unwrap()).unwrap();
+    for (key, id) in [(0, 72210), (1, 72219)] {
+        edit_player(session, id, key, |player| {
+            player.positions.registered = lb;
+            player.stats.speed = 82;
+        });
+    }
+    let p10 = player_entry(&view, 72210);
+    let expected = own_matches(
+        view.session.as_ref().unwrap().file(),
+        &p10,
+        true,
+        true,
+        true,
+    );
+    assert_eq!(expected, [(GD, 9), (GD, 18)], "premise: 10 and 19 alone");
+    assert!(
+        expected
+            .iter()
+            .all(|&(team_id, _)| TeamCategory::FourCc.contains(team_id)),
+        "premise: the 4cc category holds every match"
+    );
+    view.team_category = TeamCategory::FourCc;
+    let pairs = open_similar(&mut window, &mut view);
+    click(&mut window, similar_radio(&pairs, "Every team"), &mut view);
+    let pairs = draw_pairs(&mut window, &mut view);
+    assert_eq!(select_button(&pairs).label(), Some("Select 2 players"));
+    click(&mut window, select_button(&pairs), &mut view);
+    assert_eq!(view.group, [(GD, 9), (GD, 18)], "the Select made the group");
+    assert_eq!(
+        view.team_category,
+        TeamCategory::FourCc,
+        "the category stays 4cc"
+    );
+}
+
 // `No other player matches`, disabled, when the player alone matches on
 // the three boxes (the fixture's 78119 has no all-three match in the
 // cup).
@@ -927,4 +971,53 @@ fn matching_the_anchor_first_and_every_team_adds_other_teams() {
         every.iter().any(|&(team_id, _)| team_id != GD),
         "other teams' rows added"
     );
+}
+
+// `matching` under Cards: a player matches only when his skills and his
+// COM styles are both the anchor's.
+#[test]
+fn cards_match_on_the_skills_and_the_com_styles_both() {
+    let mut file = EditFile::from_bytes(&fixture_save(PesVersion::Pes21)).unwrap();
+    let roster = &file.team(GD).unwrap().roster;
+    for (slot, id) in [(9, 72210), (11, 72212), (12, 72213), (18, 72219)] {
+        assert_eq!(
+            roster[slot].player_id, id,
+            "premise: slot {slot} holds {id}"
+        );
+    }
+    // The fixture's /gd/ are clones with no cards: 12 gets a COM style
+    // 10 lacks, 13 a skill, and 19 is left equal on both.
+    file.player_mut(72212).unwrap().skills.com_styles[0] = true;
+    file.player_mut(72213).unwrap().skills.skills[0] = true;
+    let cards = |id| {
+        let skills = &file.player(id).unwrap().skills;
+        (skills.skills, skills.com_styles)
+    };
+    let (skills, com_styles) = cards(72210);
+    assert_eq!(cards(72212).0, skills, "premise: 12's skills are 10's");
+    assert_ne!(
+        cards(72212).1,
+        com_styles,
+        "premise: 12's COM styles differ"
+    );
+    assert_eq!(
+        cards(72213).1,
+        com_styles,
+        "premise: 13's COM styles are 10's"
+    );
+    assert_ne!(cards(72213).0, skills, "premise: 13's skills differ");
+    assert_eq!(
+        cards(72219),
+        (skills, com_styles),
+        "premise: 19 equal on both"
+    );
+    let boxes = similar::Boxes {
+        position: false,
+        cards: true,
+        stats: false,
+    };
+    let matched = similar::matching(&file, (GD, 9), boxes, similar::Scope::Team);
+    assert!(matched.contains(&(GD, 18)), "19 matches");
+    assert!(!matched.contains(&(GD, 11)), "12's COM styles differ");
+    assert!(!matched.contains(&(GD, 12)), "13's skills differ");
 }
