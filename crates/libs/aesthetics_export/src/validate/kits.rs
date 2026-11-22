@@ -303,8 +303,9 @@ fn valid_icon(marker: &FileDescriptor) -> Option<u8> {
     icon_number(marker.path.name()).filter(|number| *number <= 23)
 }
 
-/// `folder`'s direct textures that passed the name check.
-fn kit_textures(folder: &FolderDraft) -> impl Iterator<Item = &FileDescriptor> {
+/// A kit folder's own textures: the textures directly in it named `kit` or `kit_*`. The one
+/// named `kit` is the kit's main texture.
+pub fn kit_textures(folder: &FolderDraft) -> impl Iterator<Item = &FileDescriptor> {
     folder.files.iter().filter(|file| {
         file.kind == FileKind::Texture
             && directly_in(&file.path, &folder.path)

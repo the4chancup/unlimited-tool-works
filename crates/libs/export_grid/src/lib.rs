@@ -14,8 +14,8 @@ mod rows;
 #[cfg(test)]
 mod testing;
 
-pub use cells::{Cell, CellState, Open, Outline, Position, Width};
-pub use detail::{Detail, GridResponse};
+pub use cells::{Cell, CellState, Open, Outline, PictureFile, Position, TopBox, Width};
+pub use detail::{Detail, GridResponse, Sources};
 pub use grid::show;
 pub use legend::{LegendEntry, legend};
 pub use rows::{ColumnGroup, Columns, IdCell, Line, Row, RowBody, Tone};

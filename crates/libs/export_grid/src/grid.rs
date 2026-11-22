@@ -4,11 +4,10 @@
 //! tests, which senses the pointer for the detail window.
 
 use egui::{Align2, Color32, FontId, Rect, Sense, TextStyle, pos2, vec2};
-use studio_core::CatalogRow;
 use studio_core::theme::palette;
 
 use crate::cells::{Cell, CellState, Outline, Position, Width, look, paint};
-use crate::detail::{Contents, Detail, Found, GridResponse, Place, open_of};
+use crate::detail::{Contents, Detail, Found, GridResponse, Place, Sources, open_of};
 use crate::rows::{Columns, IdCell, Line, Row, RowBody, Tone};
 
 /// A square position's side, and a line's height.
@@ -49,7 +48,7 @@ const NAME_ONE_LINE: f32 = 9.0;
 const NAME_SMALLEST: f32 = 5.0;
 
 /// Draws `rows` under a title row from `columns`, in the room `ui` has left, and the detail
-/// window of the cell `detail` has open, its findings explained from `catalog`. With
+/// window of the cell `detail` has open, drawn from `sources`. With
 /// `checking`, every cell and label is drawn in the Checking colours, whatever state it
 /// holds. `id_salt` keeps the scroll position and the window apart from another grid's.
 /// Returns what the member asked for: a folder opened, the help at a finding's code.
@@ -60,7 +59,7 @@ pub fn show(
     rows: &[Row],
     checking: bool,
     detail: &mut Detail,
-    catalog: &[CatalogRow],
+    sources: &mut Sources<'_>,
 ) -> GridResponse {
     let id = ui.make_persistent_id(id_salt);
     let layout = Layout::new(columns);
@@ -125,16 +124,16 @@ pub fn show(
                 let x = left + rule + RULE_AT + 0.5;
                 ui.painter().vline(x, title_top..=bottom, stroke);
             }
-            detail.paint_pin(ui, &found);
+            detail.paint_pin(ui, &found, cover.bottom());
             double_clicked
         });
     let contents = Contents {
         columns,
         rows,
         checking,
-        catalog,
+        catalog: sources.catalog,
     };
-    let window = detail.window(ui, id, scroll.inner_rect, &contents);
+    let window = detail.window(ui, id, scroll.inner_rect, &contents, sources.pictures);
     let double_clicked = scroll.inner.and_then(|cell| open_of(rows, &cell));
     GridResponse {
         open: double_clicked.or(window.open),
@@ -477,7 +476,7 @@ mod tests {
 
     /// A checked cell showing `text`.
     fn checked(text: &str) -> Position {
-        Position::Cell(Cell::new(text, CellState::FullOk))
+        Position::Cell(Box::new(Cell::new(text, CellState::FullOk)))
     }
 
     /// `count` empty positions.
@@ -501,7 +500,7 @@ mod tests {
             id: Some(IdCell::Known("702".to_owned())),
             body: RowBody::Lines(vec![Line {
                 name: None,
-                groups: vec![players, vec![Position::Cell(portraits)], kits],
+                groups: vec![players, vec![Position::Cell(Box::new(portraits))], kits],
             }]),
             log_lines: Vec::new(),
         }
@@ -509,6 +508,10 @@ mod tests {
 
     /// The grid of `rows` in `columns`, with a detail window that has nothing open.
     fn plain(ui: &mut egui::Ui, columns: &Columns, rows: &[Row], checking: bool) {
+        let mut sources = Sources {
+            catalog: &[],
+            pictures: &mut |_| None,
+        };
         show(
             ui,
             "grid",
@@ -516,7 +519,7 @@ mod tests {
             rows,
             checking,
             &mut Detail::default(),
-            &[],
+            &mut sources,
         );
     }
 
@@ -601,10 +604,10 @@ mod tests {
     #[test]
     fn a_row_of_three_named_lines_draws_its_names_and_its_wide_word_cells() {
         let word = |text: &str| {
-            Position::Cell(Cell {
+            Position::Cell(Box::new(Cell {
                 width: Width::Wide,
                 ..Cell::new(text, CellState::FullOk)
-            })
+            }))
         };
         let line = |name, kits: Vec<Position>| Line {
             name: Some(name),

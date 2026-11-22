@@ -67,10 +67,13 @@ pub struct Cell {
     /// What a double-click on the cell, or its window's Open folder, opens; `None` for a cell
     /// with no one folder to open, whose window then has no Open folder.
     pub open: Option<Open>,
+    /// The pictures its detail window shows in the box at its top.
+    pub top: TopBox,
 }
 
 impl Cell {
-    /// A square cell showing `text` in `state`, with no ring, no finding and no folder.
+    /// A square cell showing `text` in `state`, with no ring, no finding, no folder and
+    /// nothing in its window's top box.
     pub fn new(text: impl Into<String>, state: CellState) -> Cell {
         Cell {
             text: text.into(),
@@ -80,8 +83,45 @@ impl Cell {
             width: Width::Square,
             place: String::new(),
             open: None,
+            top: TopBox::Empty,
         }
     }
+}
+
+/// A picture a cell's top box shows: a file of an export, which the tool reads.
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct PictureFile {
+    /// The export's folder.
+    pub export: PathBuf,
+    /// The file inside it, `/`-separated as the export's listing spells it.
+    pub path: String,
+}
+
+/// What the box at the top of a cell's detail window holds. A logo `None` reads "No logo"
+/// where the logo would be.
+#[derive(Debug, Clone, Default, PartialEq)]
+pub enum TopBox {
+    /// Nothing: the box stays empty.
+    #[default]
+    Empty,
+    /// A kit's main texture, fitted inside the box.
+    Picture(PictureFile),
+    /// A team's logo, or a referee export's marker, fitted inside the box.
+    Logo(Option<PictureFile>),
+    /// A player: his portrait in the bottom-left corner, the logo in the bottom-right one.
+    Player {
+        /// His portrait; `None` leaves the corner empty.
+        portrait: Option<PictureFile>,
+        /// The export's logo.
+        logo: Option<PictureFile>,
+    },
+    /// The portraits cell: a 6 × 4 grid, the logo in the last tile.
+    Portraits {
+        /// The players' portraits in slot order; `None` leaves the tile empty.
+        portraits: Vec<Option<PictureFile>>,
+        /// The export's logo.
+        logo: Option<PictureFile>,
+    },
 }
 
 /// What the file manager opens for a cell.
@@ -116,8 +156,8 @@ pub(crate) fn state_name(state: CellState, outline: Option<Outline>) -> &'static
 pub enum Position {
     /// Nothing there: a faint square.
     Empty,
-    /// A cell.
-    Cell(Cell),
+    /// A cell, boxed: a cell's pictures make it several times larger than an empty position.
+    Cell(Box<Cell>),
 }
 
 /// How a cell is painted: its fill, its text's colour, its ring's colour, and whether its

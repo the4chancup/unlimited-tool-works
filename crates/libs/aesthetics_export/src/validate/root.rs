@@ -107,9 +107,10 @@ pub(crate) fn check_portraits_missing(
     }
 }
 
-/// A `logo*` stem's grammar: `logo[_small][_<fit>]`, tags in that order,
-/// ASCII-case-insensitive. `(small, fit)` or `None` on a bad tag.
-fn logo_parts(stem: &str) -> Option<(bool, Option<LogoFit>)> {
+/// A root logo file's stem read by its grammar, `logo[_small][_<fit>]`: tags in that
+/// order, ASCII-case-insensitive. `(small, fit)`, `small` telling the small logo from the
+/// main one, or `None` for a stem that is no logo's or has a bad tag.
+pub fn logo_parts(stem: &str) -> Option<(bool, Option<LogoFit>)> {
     let rest = strip_prefix_ci(stem, "logo")?;
     let (small, rest) = match strip_prefix_ci(rest, "_small") {
         Some(rest) => (true, rest),

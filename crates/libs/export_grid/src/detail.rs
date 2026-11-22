@@ -5,10 +5,11 @@
 
 use egui::text::{LayoutJob, TextFormat};
 use egui::{Align, Align2, Color32, FontId, Key, Layout, Modifiers, Pos2, Rect, RichText, Sense};
-use egui::{TextStyle, pos2, vec2};
+use egui::{TextStyle, TextureHandle, Vec2, pos2, vec2};
+use studio_core::theme::NO_TINT;
 use studio_core::{CatalogRow, Message, MessageCode, Scope, Severity};
 
-use crate::cells::{Cell, CellState, Open, Outline, Position, state_name};
+use crate::cells::{Cell, CellState, Open, Outline, PictureFile, Position, TopBox, state_name};
 use crate::rows::{Columns, Row, RowBody};
 
 /// How long the pointer rests on a cell before its window opens. It is longer than the
@@ -37,8 +38,21 @@ const INSET: f32 = 8.0;
 const PIN: &str = "📌";
 /// The pin badge's radius, and its glyph's size on the badge and in the title bar.
 const BADGE_RADIUS: f32 = 7.0;
+/// How far in from a cell's top right corner the badge's centre stands, across and down.
+const BADGE_INSET: f32 = 2.0;
 const BADGE_GLYPH: f32 = 11.0;
 const BAR_GLYPH: f32 = 15.0;
+/// The largest a picture fitted in the top box is drawn (the draft's `.preview img`).
+const PICTURE_MAX: Vec2 = vec2(180.0, 160.0);
+/// The portraits cell's grid: its tiles across and down, and the room around and between
+/// them.
+const TILES_ACROSS: usize = 6;
+const TILES_DOWN: usize = 4;
+const TILE_GAP: f32 = 2.0;
+/// A player's corner tiles: a portraits tile's size, `TILE_GAP` in from the box's edges.
+const CORNER: Vec2 = vec2(44.0, 43.0);
+/// The font size of "No logo".
+const NO_LOGO_SIZE: f32 = 9.0;
 
 /// A cell of the grid: its row's key and its place in the row.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -96,6 +110,16 @@ pub struct GridResponse {
     pub open: Option<Open>,
     /// A finding's code clicked in the window: the help opens at its catalog row.
     pub help: Option<MessageCode>,
+}
+
+/// What the detail window draws from beside the rows: the catalog that explains a finding,
+/// and the tool's pictures, `None` while one loads or when it cannot be read.
+pub struct Sources<'a> {
+    /// The tool's message catalog.
+    pub catalog: &'a [CatalogRow],
+    /// The texture of a picture the window shows. It is asked only for the pictures of the
+    /// cell whose window is drawn, each frame the window is open.
+    pub pictures: &'a mut dyn FnMut(&PictureFile) -> Option<TextureHandle>,
 }
 
 /// What the window shows a cell from: the grid's columns and rows as `show` was handed them,
@@ -241,8 +265,10 @@ impl Detail {
         });
     }
 
-    /// Paints the pin badge on the pinned cell, when `found` saw it drawn pinned.
-    pub(crate) fn paint_pin(&self, ui: &egui::Ui, found: &Found) {
+    /// Paints the pin badge on the pinned cell, when `found` saw it drawn pinned. The rows
+    /// start at `rows_top` on screen, under the title row, which covers the badge of a cell
+    /// scrolled under it as it covers the cell.
+    pub(crate) fn paint_pin(&self, ui: &egui::Ui, found: &Found, rows_top: f32) {
         let Some((pinned, rect)) = &found.pinned else {
             return;
         };
@@ -253,10 +279,21 @@ impl Detail {
         // touches the ID cell.
         let centre = match pinned.place {
             Place::Label => pos2(rect.right() - 8.0, rect.top() + 8.0),
-            Place::Position { .. } => pos2(rect.right() - 2.0, rect.top() + 2.0),
+            Place::Position { .. } => pos2(rect.right() - BADGE_INSET, rect.top() + BADGE_INSET),
         };
+        // The rows' area starts as high as a badge on the first row reaches, so that badge
+        // is drawn whole while nothing is scrolled.
+        let view = ui.clip_rect();
+        let rows = Rect::from_min_max(
+            pos2(view.left(), rows_top - (BADGE_RADIUS - BADGE_INSET)),
+            view.max,
+        );
+        let disc = Rect::from_center_size(centre, Vec2::splat(2.0 * BADGE_RADIUS));
+        if !rows.intersects(disc) {
+            return;
+        }
         let visuals = ui.visuals();
-        let painter = ui.painter();
+        let painter = ui.painter_at(rows);
         painter.circle_filled(centre, BADGE_RADIUS, visuals.panel_fill);
         painter.text(
             centre,
@@ -268,13 +305,14 @@ impl Detail {
     }
 
     /// The window over the grid drawn in `grid`, on the pinned cell or the one a hover
-    /// opened, if any, from the grid's `contents`.
+    /// opened, if any, from the grid's `contents`, its top box from `pictures`.
     pub(crate) fn window(
         &mut self,
         ui: &egui::Ui,
         id: egui::Id,
         grid: Rect,
         contents: &Contents,
+        pictures: &mut dyn FnMut(&PictureFile) -> Option<TextureHandle>,
     ) -> GridResponse {
         let Contents {
             columns,
@@ -331,7 +369,7 @@ impl Detail {
                             } else {
                                 (cell.state, cell.outline)
                             };
-                            body(ui, cell, shown_state, catalog, &mut response);
+                            body(ui, cell, shown_state, catalog, pictures, &mut response);
                             let copies = key.place == Place::Label && !row.log_lines.is_empty();
                             let copy_button = copies.then_some(copied);
                             copy = buttons(ui, cell, copy_button, &mut response);
@@ -445,13 +483,15 @@ fn title_bar(ui: &mut egui::Ui, title: &str, pinned: bool) -> Bar {
     Bar { drag, unpin }
 }
 
-/// The window's body above its buttons: the top box, the place, the state's name, then the
-/// findings worst first, or "No findings.". A finding's code clicked lands in `response`.
+/// The window's body above its buttons: the top box with the cell's pictures, the place,
+/// the state's name, then the findings worst first, or "No findings.". A finding's code
+/// clicked lands in `response`.
 fn body(
     ui: &mut egui::Ui,
     cell: &Cell,
     (state, outline): (CellState, Option<Outline>),
     catalog: &[CatalogRow],
+    pictures: &mut dyn FnMut(&PictureFile) -> Option<TextureHandle>,
     response: &mut GridResponse,
 ) {
     let visuals = ui.visuals().clone();
@@ -459,6 +499,8 @@ fn body(
         ui.allocate_exact_size(vec2(ui.available_width(), BOX_HEIGHT), Sense::hover());
     ui.painter()
         .rect_filled(top_box, 2.0, visuals.extreme_bg_color);
+    let painter = ui.painter_at(top_box);
+    paint_top_box(&painter, &cell.top, pictures, visuals.weak_text_color());
     ui.label(RichText::new(&cell.place).monospace());
     ui.label(RichText::new(state_name(state, outline)).color(visuals.weak_text_color()));
     let mut messages: Vec<&Message> = cell.messages.iter().collect();
@@ -504,6 +546,93 @@ fn body(
         }
     }
     ui.add_space(FINDING_GAP);
+}
+
+/// Draws what `top` holds in the top box `painter` is clipped to: each picture, asked of
+/// `pictures`, straight on the box's background (a cut-out portrait or a crest shows its own
+/// shape), and "No logo" in `weak` where a missing logo would be.
+fn paint_top_box(
+    painter: &egui::Painter,
+    top: &TopBox,
+    pictures: &mut dyn FnMut(&PictureFile) -> Option<TextureHandle>,
+    weak: Color32,
+) {
+    let area = painter.clip_rect();
+    let middle = Rect::from_center_size(area.center(), PICTURE_MAX.min(area.size()));
+    match top {
+        TopBox::Empty => {}
+        TopBox::Picture(file) => paint_picture(painter, pictures, file, middle),
+        TopBox::Logo(logo) => paint_logo(painter, pictures, logo.as_ref(), middle, weak),
+        TopBox::Player { portrait, logo } => {
+            let top = area.bottom() - TILE_GAP - CORNER.y;
+            let left = Rect::from_min_size(pos2(area.left() + TILE_GAP, top), CORNER);
+            let right_x = area.right() - TILE_GAP - CORNER.x;
+            let right = Rect::from_min_size(pos2(right_x, top), CORNER);
+            if let Some(portrait) = portrait {
+                paint_picture(painter, pictures, portrait, left);
+            }
+            paint_logo(painter, pictures, logo.as_ref(), right, weak);
+        }
+        TopBox::Portraits { portraits, logo } => {
+            let last = TILES_ACROSS * TILES_DOWN - 1;
+            for (index, portrait) in portraits.iter().enumerate().take(last) {
+                if let Some(portrait) = portrait {
+                    paint_picture(painter, pictures, portrait, tile(area, index));
+                }
+            }
+            paint_logo(painter, pictures, logo.as_ref(), tile(area, last), weak);
+        }
+    }
+}
+
+/// The portraits grid's tile `index` in `area`, counted across then down.
+fn tile(area: Rect, index: usize) -> Rect {
+    let gaps = vec2((TILES_ACROSS - 1) as f32, (TILES_DOWN - 1) as f32) * TILE_GAP;
+    let tiles = vec2(TILES_ACROSS as f32, TILES_DOWN as f32);
+    let size = (area.size() - Vec2::splat(2.0 * TILE_GAP) - gaps) / tiles;
+    let at = vec2((index % TILES_ACROSS) as f32, (index / TILES_ACROSS) as f32);
+    let min = area.min + Vec2::splat(TILE_GAP) + at * (size + Vec2::splat(TILE_GAP));
+    Rect::from_min_size(min, size)
+}
+
+/// The logo fitted in `area`, or "No logo" in `weak` at its centre when there is none.
+fn paint_logo(
+    painter: &egui::Painter,
+    pictures: &mut dyn FnMut(&PictureFile) -> Option<TextureHandle>,
+    logo: Option<&PictureFile>,
+    area: Rect,
+    weak: Color32,
+) {
+    match logo {
+        Some(logo) => paint_picture(painter, pictures, logo, area),
+        None => {
+            painter.text(
+                area.center(),
+                Align2::CENTER_CENTER,
+                "No logo",
+                FontId::proportional(NO_LOGO_SIZE),
+                weak,
+            );
+        }
+    }
+}
+
+/// `file`'s picture as large as fits in `area`, its shape kept, centred; nothing while it
+/// loads or when it cannot be read.
+fn paint_picture(
+    painter: &egui::Painter,
+    pictures: &mut dyn FnMut(&PictureFile) -> Option<TextureHandle>,
+    file: &PictureFile,
+    area: Rect,
+) {
+    let Some(texture) = pictures(file) else {
+        return;
+    };
+    let size = texture.size_vec2();
+    let scale = (area.width() / size.x).min(area.height() / size.y);
+    let rect = Rect::from_center_size(area.center(), size * scale);
+    let whole = Rect::from_min_max(pos2(0.0, 0.0), pos2(1.0, 1.0));
+    painter.image(texture.id(), rect, whole, NO_TINT);
 }
 
 /// The window's buttons: Open folder when `cell` has a folder to open, its click landing in

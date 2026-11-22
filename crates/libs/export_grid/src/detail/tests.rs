@@ -1,4 +1,5 @@
 use std::borrow::Cow;
+use std::collections::HashMap;
 use std::path::PathBuf;
 use std::time::Duration;
 
@@ -10,7 +11,7 @@ use super::*;
 use crate::cells::Width;
 use crate::grid::show;
 use crate::rows::{IdCell, Line};
-use crate::testing::{COLUMNS, Drawn, Headless, press, release};
+use crate::testing::{COLUMNS, Drawn, Headless, dark, press, release};
 
 /// More than egui's 0.3 s between the clicks of a double-click: two clicks this far apart
 /// are two clicks.
@@ -95,10 +96,46 @@ fn cell(text: &str, place: &str, messages: Vec<Message>) -> Cell {
     }
 }
 
+/// The scene's pictures and their sizes in texels: /co/'s logo (square), its goalkeeper
+/// kit's texture (2:1), player 01's portrait in his folder and the `Portraits/` files of
+/// every slot but 20 (2:3, a portrait's shape).
+fn pictures() -> Vec<(String, [usize; 2])> {
+    let mut pictures = vec![
+        (LOGO.to_owned(), [1, 1]),
+        (KIT.to_owned(), [4, 2]),
+        (PORTRAIT_01.to_owned(), [2, 3]),
+    ];
+    pictures.extend(
+        (1..=23)
+            .filter(|slot| *slot != 20)
+            .map(|slot| (portraits_file(slot), [2, 3])),
+    );
+    pictures
+}
+
+const LOGO: &str = "logo.png";
+const KIT: &str = "Kits/g1/kit.dds";
+const PORTRAIT_01: &str = "Players/01 - A/portrait.dds";
+
+/// The `Portraits/` file of player `slot`.
+fn portraits_file(slot: u8) -> String {
+    format!("Portraits/{slot:02}.dds")
+}
+
+/// The picture `path` of /co/'s export.
+fn picture(path: &str) -> PictureFile {
+    PictureFile {
+        export: PathBuf::from("exports/co Midcup Map"),
+        path: path.to_owned(),
+    }
+}
+
 /// /co/'s row: its label holds an orphaned shared folder's Warning; players 01 (clean)
 /// and 03 (an Info, then an Error, as the check reported them); the portraits, which have
 /// no folder to open; the goalkeeper kit and K6, which the window covers at its first
-/// place. Its log lines are its three findings'.
+/// place. Its log lines are its three findings'. Its boxes show its logo, 01's portrait
+/// (03 has none), the kit's texture, and every portrait but 20's; the portraits cell is
+/// drawn without the logo, so its last tile reads "No logo".
 fn co_row() -> Row {
     let orphaned = finding(
         "shared_folder_orphaned",
@@ -121,37 +158,60 @@ fn co_row() -> Row {
     let log_lines = [&orphaned, &weights, &fpc]
         .map(|message| message_line(Some("co Midcup Map"), message))
         .to_vec();
+    let player = |portrait: Option<&str>| TopBox::Player {
+        portrait: portrait.map(picture),
+        logo: Some(picture(LOGO)),
+    };
     let mut players = vec![Position::Empty; 23];
-    players[0] = Position::Cell(cell("01", "Players/01 - A", Vec::new()));
-    players[2] = Position::Cell(cell("03", "Players/03 - B", vec![weights, fpc]));
+    players[0] = Position::Cell(Box::new(Cell {
+        top: player(Some(PORTRAIT_01)),
+        ..cell("01", "Players/01 - A", Vec::new())
+    }));
+    players[2] = Position::Cell(Box::new(Cell {
+        top: player(None),
+        ..cell("03", "Players/03 - B", vec![weights, fpc])
+    }));
     let portraits = Cell {
         width: Width::Wide,
         open: None,
+        top: TopBox::Portraits {
+            portraits: (1..=23)
+                .map(|slot| (slot != 20).then(|| picture(&portraits_file(slot))))
+                .collect(),
+            logo: None,
+        },
         ..cell("2/2", "Portraits in the player folders", Vec::new())
     };
     let mut kits = vec![Position::Empty; 10];
-    kits[0] = Position::Cell(cell("GK", "Kits/g1", Vec::new()));
-    kits[6] = Position::Cell(cell("K6", "Kits/p6", Vec::new()));
+    kits[0] = Position::Cell(Box::new(Cell {
+        top: TopBox::Picture(picture(KIT)),
+        ..cell("GK", "Kits/g1", Vec::new())
+    }));
+    kits[6] = Position::Cell(Box::new(cell("K6", "Kits/p6", Vec::new())));
     Row {
         key: "co Midcup Map".to_owned(),
         label: Cell {
             open: Some(Open::Folder(PathBuf::from("exports/co Midcup Map"))),
+            top: TopBox::Logo(Some(picture(LOGO))),
             ..cell("/co/", "co Midcup Map", vec![orphaned])
         },
         id: Some(IdCell::Known("714".to_owned())),
         body: RowBody::Lines(vec![Line {
             name: None,
-            groups: vec![players, vec![Position::Cell(portraits)], kits],
+            groups: vec![players, vec![Position::Cell(Box::new(portraits))], kits],
         }]),
         log_lines,
     }
 }
 
-/// /a/'s row: a clean label alone, no log lines.
+/// /a/'s row: a clean label alone, no log lines, no logo.
 fn a_row() -> Row {
     Row {
         key: "a Midcup Grid".to_owned(),
-        label: cell("/a/", "a Midcup Grid", Vec::new()),
+        label: Cell {
+            top: TopBox::Logo(None),
+            ..cell("/a/", "a Midcup Grid", Vec::new())
+        },
         id: Some(IdCell::Known("702".to_owned())),
         body: RowBody::Lines(Vec::new()),
         log_lines: Vec::new(),
@@ -165,15 +225,32 @@ struct Scene {
     detail: Detail,
     rows: Vec<Row>,
     catalog: Vec<CatalogRow>,
+    /// The textures the window's pictures get, uploaded to the window's context.
+    textures: HashMap<PictureFile, egui::TextureHandle>,
+    /// Every picture the window asked for, in the order it asked.
+    asked: Vec<PictureFile>,
 }
 
 impl Scene {
     fn new() -> Scene {
+        let window = Headless::new();
+        let textures = pictures()
+            .into_iter()
+            .map(|(path, size)| {
+                let image = egui::ColorImage::filled(size, egui::Color32::WHITE);
+                let texture = window
+                    .ctx
+                    .load_texture(&path, image, egui::TextureOptions::LINEAR);
+                (picture(&path), texture)
+            })
+            .collect();
         Scene {
-            window: Headless::new(),
+            window,
             detail: Detail::default(),
             rows: vec![co_row(), a_row()],
             catalog: catalog(),
+            textures,
+            asked: Vec::new(),
         }
     }
 
@@ -184,9 +261,19 @@ impl Scene {
             detail,
             rows,
             catalog,
+            textures,
+            asked,
         } = self;
+        let mut pictures = |file: &PictureFile| {
+            asked.push(file.clone());
+            textures.get(file).cloned()
+        };
+        let mut sources = Sources {
+            catalog,
+            pictures: &mut pictures,
+        };
         window.frame_with(events, |ui| {
-            show(ui, "grid", &COLUMNS, rows, false, detail, catalog)
+            show(ui, "grid", &COLUMNS, rows, false, detail, &mut sources)
         })
     }
 
@@ -629,4 +716,231 @@ fn copy_messages_is_on_a_label_with_log_lines_alone() {
     let (_, drawn) = scene.click(a);
     drawn.one("a Midcup Grid");
     assert!(drawn.all("Copy messages").is_empty(), "/a/");
+}
+
+/// The window's top box: the one rectangle 180 high painted in the darkest fill.
+fn top_box(drawn: &Drawn) -> Rect {
+    let fill = dark().extreme_bg_color;
+    let boxes: Vec<Rect> = drawn
+        .shapes
+        .iter()
+        .filter_map(|shape| match shape {
+            Shape::Rect(rect) if rect.fill == fill && rect.rect.height() == 180.0 => {
+                Some(rect.rect)
+            }
+            _ => None,
+        })
+        .collect();
+    assert_eq!(boxes.len(), 1, "one top box: {boxes:?}");
+    boxes[0]
+}
+
+impl Scene {
+    /// Where the picture `path` was drawn this frame, each time it was.
+    fn drawn_at(&self, drawn: &Drawn, path: &str) -> Vec<Rect> {
+        let texture = self.textures[&picture(path)].id();
+        drawn
+            .shapes
+            .iter()
+            .filter_map(|shape| match shape {
+                Shape::Mesh(mesh) if mesh.texture_id == texture => Some(mesh.calc_bounds()),
+                _ => None,
+            })
+            .collect()
+    }
+}
+
+/// How many pictures the frame drew.
+fn pictures_drawn(drawn: &Drawn) -> usize {
+    drawn
+        .shapes
+        .iter()
+        .filter(|shape| matches!(shape, Shape::Mesh(_)))
+        .count()
+}
+
+/// Where "No logo" was painted, its font size and its colour, each time it was.
+fn no_logos(drawn: &Drawn) -> Vec<(Rect, f32, Color32)> {
+    drawn
+        .shapes
+        .iter()
+        .filter_map(|shape| match shape {
+            Shape::Text(text) if text.galley.text() == "No logo" => {
+                let format = &text.galley.job.sections[0].format;
+                let rect = text.galley.rect.translate(text.pos.to_vec2());
+                Some((rect, format.font_id.size, format.color))
+            }
+            _ => None,
+        })
+        .collect()
+}
+
+/// Whether `a` and `b` stand within a hundredth of a point of each other.
+fn close(a: Rect, b: Rect) -> bool {
+    (a.min - b.min).length() < 0.01 && (a.max - b.max).length() < 0.01
+}
+
+/// A picture `size` texels big fitted in `area`: as large as it fits, its shape kept, centred.
+fn fitted(size: egui::Vec2, area: Rect) -> Rect {
+    let scale = (area.width() / size.x).min(area.height() / size.y);
+    Rect::from_center_size(area.center(), size * scale)
+}
+
+// TC-GUI-31
+#[test]
+fn a_kit_s_texture_is_fitted_and_centred_in_the_box() {
+    let mut scene = Scene::new();
+    let gk = scene.idle().one("GK").center();
+    let (_, drawn) = scene.click(gk);
+    let top = top_box(&drawn);
+    // The 2:1 texture at the draft's largest, 180 wide and 160 high: 180 × 90.
+    let expected = Rect::from_center_size(top.center(), vec2(180.0, 90.0));
+    let at_kit = scene.drawn_at(&drawn, KIT);
+    assert_eq!(at_kit.len(), 1, "{at_kit:?}");
+    assert!(close(at_kit[0], expected), "{at_kit:?} {expected:?}");
+}
+
+// TC-GUI-31
+#[test]
+fn the_portraits_fill_a_6_by_4_grid_in_slot_order_the_logo_last() {
+    let mut scene = Scene::new();
+    let at = spots(&scene.idle());
+    let (_, drawn) = scene.click(at.portraits);
+    let top = top_box(&drawn);
+    // The draft's 2-point padding and gaps: six tiles across the box, four down.
+    let tile_size = vec2(
+        (top.width() - 4.0 - 5.0 * 2.0) / 6.0,
+        (top.height() - 4.0 - 3.0 * 2.0) / 4.0,
+    );
+    let tile = |index: usize| {
+        let (column, row) = ((index % 6) as f32, (index / 6) as f32);
+        let min = top.min + vec2(2.0, 2.0) + vec2(column, row) * (tile_size + vec2(2.0, 2.0));
+        Rect::from_min_size(min, tile_size)
+    };
+    for slot in (1..=23).filter(|slot| *slot != 20) {
+        let expected = fitted(vec2(2.0, 3.0), tile(usize::from(slot) - 1));
+        let at_slot = scene.drawn_at(&drawn, &portraits_file(slot));
+        assert_eq!(at_slot.len(), 1, "slot {slot}");
+        assert!(close(at_slot[0], expected), "slot {slot}: {at_slot:?}");
+    }
+    assert_eq!(pictures_drawn(&drawn), 22, "nothing in slot 20's tile");
+    let logos = no_logos(&drawn);
+    assert_eq!(logos.len(), 1, "{logos:?}");
+    assert!(
+        (logos[0].0.center() - tile(23).center()).length() < 0.01,
+        "No logo centred in the last tile: {logos:?}"
+    );
+}
+
+// TC-GUI-31
+#[test]
+fn a_player_s_portrait_and_the_logo_stand_in_the_box_s_bottom_corners() {
+    let mut scene = Scene::new();
+    let at = spots(&scene.idle());
+    let (_, drawn) = scene.click(at.one);
+    let top = top_box(&drawn);
+    // Each corner a portraits tile's size, 44 × 43, 2 points in from the edges.
+    let left = Rect::from_min_size(
+        pos2(top.left() + 2.0, top.bottom() - 45.0),
+        vec2(44.0, 43.0),
+    );
+    let right = Rect::from_min_size(
+        pos2(top.right() - 46.0, top.bottom() - 45.0),
+        vec2(44.0, 43.0),
+    );
+    let portrait = scene.drawn_at(&drawn, PORTRAIT_01);
+    let logo = scene.drawn_at(&drawn, LOGO);
+    assert_eq!((portrait.len(), logo.len()), (1, 1));
+    let expected = fitted(vec2(2.0, 3.0), left);
+    assert!(close(portrait[0], expected), "{portrait:?} {expected:?}");
+    let expected = fitted(vec2(1.0, 1.0), right);
+    assert!(close(logo[0], expected), "{logo:?} {expected:?}");
+    assert_eq!(pictures_drawn(&drawn), 2);
+}
+
+// TC-GUI-32
+#[test]
+fn a_box_with_no_logo_reads_no_logo_where_the_logo_would_be() {
+    let mut scene = Scene::new();
+    let a = scene.idle().one("/a/").center();
+    let (_, drawn) = scene.click(a);
+    let top = top_box(&drawn);
+    let logos = no_logos(&drawn);
+    assert_eq!(logos.len(), 1, "{logos:?}");
+    let (rect, size, colour) = logos[0];
+    assert!((rect.center() - top.center()).length() < 0.01, "{rect:?}");
+    assert_eq!((size, colour), (9.0, dark().weak_text_color()));
+    assert_eq!(pictures_drawn(&drawn), 0);
+}
+
+// TC-GUI-31
+#[test]
+fn the_text_under_the_box_starts_at_one_height_whatever_the_box_holds() {
+    let mut scene = Scene::new();
+    let at = spots(&scene.idle());
+    let gk = scene.idle().one("GK").center();
+    let mut tops = Vec::new();
+    for (spot, place) in [
+        (at.label, "co Midcup Map"),
+        (gk, "Kits/g1"),
+        (at.portraits, "Portraits in the player folders"),
+        (at.one, "Players/01 - A"),
+    ] {
+        let (_, drawn) = scene.click(spot);
+        assert!(
+            pictures_drawn(&drawn) > 0,
+            "premise: {place}'s box holds pictures"
+        );
+        tops.push(drawn.one(place).top());
+    }
+    assert!(tops.iter().all(|top| *top == tops[0]), "{tops:?}");
+}
+
+#[test]
+fn only_the_shown_cell_s_pictures_are_asked_for() {
+    let mut scene = Scene::new();
+    let at = spots(&scene.idle());
+    scene.click(at.one);
+    scene.asked.clear();
+    scene.idle();
+    let mut asked: Vec<&str> = scene.asked.iter().map(|file| file.path.as_str()).collect();
+    asked.sort_unstable();
+    assert_eq!(asked, [PORTRAIT_01, LOGO]);
+}
+
+// The title row covers the badge of a pinned cell scrolled under it, as it covers the cell.
+#[test]
+fn a_pinned_cell_scrolled_under_the_title_row_shows_no_badge() {
+    let mut scene = Scene::new();
+    scene.window.ctx.global_style_mut(|style| {
+        style.scroll_animation = egui::style::ScrollAnimation::none();
+    });
+    scene.rows.extend(vec![a_row(); 30]);
+    let at = spots(&scene.idle());
+    scene.click(at.three);
+    let first_row = scene.idle().one("03").top();
+    // The rows scrolled up by 10 more than the title row's height: 03 stands whole under
+    // it, its row still in view and drawn.
+    let wheel = vec![
+        egui::Event::PointerMoved(at.empty),
+        egui::Event::MouseWheel {
+            unit: egui::MouseWheelUnit::Point,
+            delta: vec2(0.0, -first_row - 10.0),
+            phase: egui::TouchPhase::Move,
+            source: egui::MouseWheelSource::Unknown,
+            modifiers: Modifiers::NONE,
+        },
+    ];
+    scene.frame(wheel);
+    // egui spreads a wheel's delta over the frames that follow: a second has passed it all.
+    scene.wait(1.0);
+    scene.idle();
+    let drawn = scene.idle();
+    let three = drawn.one("03");
+    assert!(
+        three.bottom() > 0.0 && three.bottom() <= first_row,
+        "premise: 03 under the title row, at {three:?}"
+    );
+    assert!(shows(&drawn, "/co/ 03"), "premise: still pinned");
+    assert_eq!(badge(&drawn), None);
 }
