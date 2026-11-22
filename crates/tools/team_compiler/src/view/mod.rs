@@ -110,7 +110,7 @@ mod tests {
 
     use crossbeam_channel::unbounded;
     use egui::accesskit;
-    use export_grid::{Cell, IdCell, Position, RowBody};
+    use export_grid::{Cell, IdCell, Position, RowBody, Tone};
     use pes_version::PesVersion;
     use studio_core::StudioTool;
 
@@ -124,6 +124,8 @@ mod tests {
     /// collapsing header is fully open on the frame after its click), run a frame at a time.
     struct Headless {
         ctx: egui::Context,
+        /// The last frame's ask for the next repaint: `Duration::MAX` when nothing asked.
+        repaint_delay: Duration,
     }
 
     impl Headless {
@@ -134,7 +136,10 @@ mod tests {
             // what a member sees, whichever crates the build unifies.
             studio_core::theme::install(&ctx);
             ctx.global_style_mut(|style| style.animation_time = 0.0);
-            Headless { ctx }
+            Headless {
+                ctx,
+                repaint_delay: Duration::MAX,
+            }
         }
 
         /// Runs one frame of `contents` on a 1280 by 780 screen, the window's own size, with
@@ -160,6 +165,11 @@ mod tests {
                 .accesskit_update
                 .take()
                 .expect("AccessKit is enabled on the context");
+            self.repaint_delay = output
+                .viewport_output
+                .get(&egui::ViewportId::ROOT)
+                .expect("every frame produces the root viewport")
+                .repaint_delay;
             // Nothing renders here, so the frame's texture deltas are dropped on purpose.
             output.drop_without_applying_deltas();
             let nodes = update.nodes.into_iter().map(|(_, node)| node).collect();
@@ -494,6 +504,7 @@ mod tests {
             );
         }
         assert_eq!(player(folder, 2), None, "02 is an empty position");
+        assert_eq!(portraits(folder).unwrap().width, Width::Wide);
         let archive = row(rows, "/co/");
         for cell in [player(archive, 5), kit(archive, 0)]
             .into_iter()
@@ -696,6 +707,73 @@ mod tests {
         assert_eq!(portraits(team).unwrap().text, "1/1");
     }
 
+    // A dropped export's portraits count takes a `portrait.*` only directly in a player's
+    // folder: neither a folder holding other files and no portrait, nor one whose portrait
+    // sits a folder deeper, counts.
+    #[test]
+    fn a_dropped_export_counts_no_portrait_missing_from_a_player_s_own_folder() {
+        let temp = sandbox("view_grid_dropped_no_portrait");
+        let root = temp.path();
+        list_teams(root);
+        add_player(root, "v Midcup Map", "03 - B");
+        add_player(root, "v Midcup Map", "05 - C");
+        let players = root.join("exports/v Midcup Map/Players");
+        fs::remove_file(players.join("03 - B/portrait.dds")).unwrap();
+        assert!(
+            fs::read_dir(players.join("03 - B"))
+                .unwrap()
+                .next()
+                .is_some(),
+            "premise: 03's folder holds other files"
+        );
+        fs::create_dir(players.join("05 - C/Old")).unwrap();
+        fs::rename(
+            players.join("05 - C/portrait.dds"),
+            players.join("05 - C/Old/portrait.dds"),
+        )
+        .unwrap();
+        let rows = checked_rows(root);
+        let team = row(&rows, "/v/");
+        assert_eq!(player(team, 3).unwrap().state, CellState::Blocked);
+        assert_eq!(portraits(team).unwrap().text, "0/2");
+    }
+
+    // An export whose name says neither `Full` nor `Midcup` shows a warning in place of its
+    // cells.
+    #[test]
+    fn an_export_without_its_coverage_tag_shows_its_message() {
+        let temp = sandbox("view_grid_tag_missing");
+        let root = temp.path();
+        list_teams(root);
+        add_player(root, "co Spring 2026", "03 - B");
+        let rows = checked_rows(root);
+        let message = RowBody::Message {
+            text: "Full or Midcup?".to_owned(),
+            tone: Tone::Warning,
+        };
+        assert_eq!(row(&rows, "/co/").body, message);
+    }
+
+    // An export in the old layout shows an error in place of its cells.
+    #[test]
+    fn an_old_layout_export_shows_its_message() {
+        let temp = sandbox("view_grid_layout_old");
+        let root = temp.path();
+        list_teams(root);
+        for path in [
+            "Faces/01 - A/face.model",
+            "Kit Configs/co_DEF_1st_realUni.bin",
+        ] {
+            add_file(root, &format!("co Midcup Spring/{path}"), b"old");
+        }
+        let rows = checked_rows(root);
+        let message = RowBody::Message {
+            text: "Old export format".to_owned(),
+            tone: Tone::Error,
+        };
+        assert_eq!(row(&rows, "/co/").body, message);
+    }
+
     // A dropped player's portrait is still in the export, so the portraits cell counts him.
     #[test]
     fn a_dropped_player_s_portrait_still_counts() {
@@ -787,6 +865,54 @@ mod tests {
             row(tool.live_check.rows(), "/egg/").id,
             Some(IdCell::Known("792".to_owned()))
         );
+    }
+
+    // The window starts no check of its own while a Compile run is in flight, nor once a
+    // check has started.
+    #[test]
+    fn the_window_starts_no_check_under_a_run_or_once_one_has_started() {
+        let temp = sandbox("view_grid_check_once");
+        let ctx = tool_context(temp.path(), "");
+        let mut tool = Tool::new();
+        let (release_run, run_until) = unbounded();
+        tool.run_log = RunLog::in_flight(run_until);
+        let mut window = Headless::new();
+        window.frame(Vec::new(), |ui| tool.view(ui, &ctx));
+        assert!(!tool.live_check.is_running(), "none under the run");
+
+        release_run.send(()).unwrap();
+        poll_until_done(|| {
+            tool.tick(&ctx);
+            tool.run_log.is_running()
+        });
+        assert!(
+            tool.live_check.is_running(),
+            "premise: the run's end checks"
+        );
+        finish_check(&mut tool, &ctx);
+        window.frame(Vec::new(), |ui| tool.view(ui, &ctx));
+        assert!(!tool.live_check.is_running(), "no other once one started");
+    }
+
+    // While a check is in flight the window asks for a repaint, so its rows show without
+    // an input.
+    #[test]
+    fn the_window_repaints_while_a_check_is_in_flight() {
+        let ctx = settings_only_context();
+        let log = RunLog::default();
+        let mut panel = LogPanel::new(TOOL_ID);
+        let mut window = Headless::new();
+        let mut frame = |checking| {
+            window.frame(Vec::new(), |ui| {
+                show(ui, &ctx, &log, &mut panel, &[], checking)
+            });
+            window.repaint_delay
+        };
+        // A new window's first two frames ask for an immediate repaint of their own.
+        frame(false);
+        frame(false);
+        assert_eq!(frame(false), Duration::MAX, "premise: none asked when idle");
+        assert!(frame(true) <= Duration::from_millis(100));
     }
 
     #[test]

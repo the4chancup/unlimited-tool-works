@@ -712,6 +712,24 @@ hands the archives over. On that branch:
 
 Both land in the target directory's `dist/`.
 
+**The VGL organizer's build** is a hand-given build that is never released: the branch
+`vgl27`, its version `<next>-vgl27.<n>` (`0.0.3-vgl27.1`), which opens the Compiler and the
+Export upgrader on its sidebar (`plans/core/gui.md` "Sidebar", ST-SIDE-11). Its commit also
+sets `TAG_PREFIX` to `vgl27-v`, as a side line's does, and no such tag is ever published, so
+the update check
+never offers it main's release: a pre-release ranks under its release (`0.0.3-vgl27.1` under
+`0.0.3`), and taking that release would lock the two tools again. A new VGL build merges main
+into `vgl27` (`commit.py --in <worktree> --merge main`), raises `<n>`, and is packed and handed
+over as above.
+
+VGL27's legacy mode (the upgrader's `--legacy-ids`, the Compiler's `legacy_ids.toml`, the
+launcher passing the flag) lives on `vgl27` alone. Main removed it in one merge, and `vgl27`
+merged main and then reverted that merge (`git revert --no-commit -m 1 <merge>`, then
+`commit.py --in` with a `chore(vgl27):` message, as `revert` is no commit type), so git
+counts the removal as merged: later merges of
+main leave legacy mode in place. A change on main to code legacy mode touches can still
+conflict there, and is resolved keeping both.
+
 ## Lead and sidekick
 
 **Lead and sidekick.** Sessions run as a lead model that plans, briefs, reviews and talks to the

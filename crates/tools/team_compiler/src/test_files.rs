@@ -64,27 +64,30 @@ pub fn clean_model() -> Vec<u8> {
 /// nothing. A test writes the files it is about first, then calls this once per export.
 pub fn complete(folder: &Path, version: PesVersion, without: &[Requirement]) {
     fs::create_dir_all(folder).unwrap();
-    let mut held = Vec::new();
-    list_under(folder, "", &mut held);
-    let paths: Vec<&str> = held.iter().map(String::as_str).collect();
+    let (mut files, mut folders) = (Vec::new(), Vec::new());
+    list_under(folder, "", &mut files, &mut folders);
+    let files: Vec<&str> = files.iter().map(String::as_str).collect();
+    let folders: Vec<&str> = folders.iter().map(String::as_str).collect();
     let name = folder.file_name().unwrap().to_str().unwrap();
-    for (path, bytes) in missing(name, version, &paths, without, clean_files()) {
+    for (path, bytes) in missing(name, version, &files, &folders, without, clean_files()) {
         let path = folder.join(path);
         fs::create_dir_all(path.parent().unwrap()).unwrap();
         fs::write(path, bytes).unwrap();
     }
 }
 
-/// Adds to `held` every file and empty folder under `folder`, as `/`-separated paths that
-/// start with `prefix`.
-fn list_under(folder: &Path, prefix: &str, held: &mut Vec<String>) {
+/// Adds every file under `folder` to `files` and every empty folder to `folders`, as
+/// `/`-separated paths that start with `prefix`.
+fn list_under(folder: &Path, prefix: &str, files: &mut Vec<String>, folders: &mut Vec<String>) {
     for entry in fs::read_dir(folder).unwrap() {
         let entry = entry.unwrap();
         let path = format!("{prefix}{}", entry.file_name().to_str().unwrap());
-        if entry.path().is_dir() && fs::read_dir(entry.path()).unwrap().next().is_some() {
-            list_under(&entry.path(), &format!("{path}/"), held);
+        if !entry.path().is_dir() {
+            files.push(path);
+        } else if fs::read_dir(entry.path()).unwrap().next().is_some() {
+            list_under(&entry.path(), &format!("{path}/"), files, folders);
         } else {
-            held.push(path);
+            folders.push(path);
         }
     }
 }
@@ -131,7 +134,6 @@ mod tests {
             common,
             hide_ids: fpc::HideIds::CONVENTION,
             teams_list: TeamsList::parse("ID\tName\n714\t/co/\n").unwrap(),
-            legacy_blocks: crate::plan::legacy_blocks::LegacyBlocks::embedded(),
             exports_root: root.join("exports"),
             exports: Vec::new(),
             timestamps: false,

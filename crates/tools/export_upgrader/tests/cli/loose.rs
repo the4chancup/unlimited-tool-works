@@ -10,17 +10,10 @@ use pes_savefile::settings_toml::{NameSetting, PlayerSettings};
 use crate::common::Sandbox;
 use crate::players::{boots, face};
 
-/// `upgrade <input> --loose`, `flags` appended.
-fn upgrade_loose_with(sandbox: &Sandbox, input: &str, flags: &[&str]) -> crate::common::Run {
-    let input = sandbox.arg(input);
-    let mut args = vec!["upgrade", &input, "--loose"];
-    args.extend_from_slice(flags);
-    sandbox.run(&args)
-}
-
 /// `upgrade <input> --loose`.
 fn upgrade_loose(sandbox: &Sandbox, input: &str) -> crate::common::Run {
-    upgrade_loose_with(sandbox, input, &[])
+    let input = sandbox.arg(input);
+    sandbox.run(&["upgrade", &input, "--loose"])
 }
 
 // EU-LOOSE-01
@@ -79,30 +72,6 @@ fn the_ids_position_in_the_block_pairs_the_wearer() {
     entries.sort();
     assert_eq!(entries, ["03 - Ann", "05"]);
     assert!(!sandbox.path(&format!("{out}/Boots")).exists());
-}
-
-// EU-SET-16
-#[test]
-fn loose_mode_records_the_inferred_ids() {
-    let sandbox = Sandbox::new("loose_legacy_ids");
-    // EU-LOOSE-01's export: /a/'s old block is 126 to 150, so 0128 is slot
-    // 03 and 0130 slot 05.
-    sandbox.write("a Spring/a Note.txt", b"Team: /a/\r\n");
-    face(&sandbox, "a Spring/Faces/XXX03 - Ann");
-    boots(&sandbox, "a Spring/Boots/k0128 - Rex");
-    boots(&sandbox, "a Spring/Boots/k0130");
-    sandbox.complete_old("a Spring");
-
-    let run = upgrade_loose_with(&sandbox, "a Spring", &["--legacy-ids"]);
-    assert_eq!(run.exit_code(), 0, "{}", run.stdout());
-    assert_eq!(
-        fs::read_to_string(sandbox.path("a Full Spring/legacy_ids.toml")).unwrap(),
-        concat!(
-            "# The old export's boots and gloves IDs, which the Compiler packs instead of its own (VGL27).\n",
-            "[03]\nboots = 128\n",
-            "[05]\nboots = 130\n",
-        )
-    );
 }
 
 // EU-LOOSE-02

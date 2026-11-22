@@ -412,6 +412,12 @@ Top to bottom:
 
    The mark is the registry's, in `studio`, not a `StudioTool` method: which tools a build
    shows is the build's choice, and the preview's list goes when the views land.
+
+   One build opens them early: the one handed to the VGL cup's organizer, whose version
+   carries `vgl27` (`0.0.3-vgl27.1`, `RUNBOOK.md` "Releasing a side line" and "A hand-given
+   build"), marks no tool CLI-only, so its sidebar shows the Compiler and the Export upgrader
+   as window tools. The test is on the version, not a setting or a flag at start: a member's
+   build cannot be talked into it, and the organizer's build needs nothing done to open them.
 4. **A rail that opens on hover**: the sidebar is always an icon-only rail (~56 px) beside the
    tool's view, which takes the rest of the window.
 
@@ -1645,6 +1651,11 @@ ST-SIDE-08  GIVEN a build registering two window tools and one marked CLI-only, 
                  tool is active; the CLI-only tool's help chapter is in the help window, the
                  settings menu has no section for it, even with a settings table; and its CLI
                  commands still run
+ST-SIDE-11  GIVEN a build whose version carries vgl27 (0.0.3-vgl27.1), and one whose version
+                  does not (0.0.2, 0.0.3-dev.1)
+            WHEN their sidebars are drawn
+            THEN the vgl27 build marks no tool CLI-only, the Compiler and the Export upgrader
+                 clickable window tools; the other build marks both CLI-only (ST-SIDE-08)
 ```
 
 **Settings menu**

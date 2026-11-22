@@ -129,6 +129,19 @@ const PLANNED: [PlannedTool; 14] = [
 /// menu draws no section for them. The list goes when their views land.
 const CLI_ONLY: [&str; 2] = ["compiler", "export-upgrader"];
 
+/// The registered tools this build marks CLI-only, drawn on the sidebar as planned
+/// entries: `CLI_ONLY` on every build but the one handed to the VGL cup's organizer,
+/// whose version carries `vgl27` and opens the Compiler and the Export upgrader as
+/// window tools. The check is on the version, not a setting or a flag at start: a
+/// member's build cannot be switched into it, and the organizer's needs nothing done.
+fn cli_only(version: &str) -> &'static [&'static str] {
+    if version.contains("vgl27") {
+        &[]
+    } else {
+        &CLI_ONLY
+    }
+}
+
 /// The settings file's template: the bundle ships this same `data/settings.toml`, comments
 /// included, and a file written fresh starts from it.
 const SETTINGS_TEMPLATE: &str = include_str!("../../../resources/bundle/data/settings.toml");
@@ -565,7 +578,7 @@ fn run_gui_mode(tools: Vec<Box<dyn StudioTool>>, test: Option<CrashTest>) -> Exi
             StudioApp::new(
                 tools,
                 &PLANNED,
-                &CLI_ONLY,
+                cli_only(env!("CARGO_PKG_VERSION")),
                 ctx,
                 requests_rx,
                 user_config_dir(),
@@ -755,6 +768,14 @@ mod tests {
             .filter(|id| !CLI_ONLY.contains(id))
             .collect();
         assert_eq!(window_tools, ["save-editor", "ruleset-editor"]);
+    }
+
+    // ST-SIDE-11
+    #[test]
+    fn the_vgl27_build_marks_no_tool_cli_only() {
+        assert!(cli_only("0.0.3-vgl27.1").is_empty());
+        assert_eq!(cli_only("0.0.2"), &CLI_ONLY[..]);
+        assert_eq!(cli_only("0.0.3-dev.1"), &CLI_ONLY[..]);
     }
 
     // The settings menu draws a section for the tools with a settings form alone: the

@@ -552,7 +552,11 @@ mod tests {
         let first = drawn.all("01")[0];
         let text = drawn.one("Old export format");
         assert_eq!(text.left(), first.left());
-        assert!(text.top() > first.bottom(), "on the second row");
+        assert_eq!(
+            text.center().y,
+            first.center().y + SQUARE + SPACING,
+            "centred on the second row"
+        );
     }
 
     // The Export upgrader's shape: three named lines a row, with word cells over two kit
@@ -585,6 +589,9 @@ mod tests {
         assert_eq!(names[1] - names[0], SQUARE + SPACING);
         assert_eq!(names[2] - names[1], SQUARE + SPACING);
         let (logo, common) = (drawn.one("Logo"), drawn.one("Common"));
+        // The first kit cell: the 52 name column at 62 + 2, the line's 13 column + 2,
+        // the 23 players of (26 + 2), the 6 gap, the 50 portraits and the 6 gap: 839.
+        assert_eq!(logo.left(), 839.0);
         assert_eq!(logo.width(), WIDE);
         assert_eq!(common.left() - logo.left(), 2.0 * (SQUARE + SPACING));
         assert_eq!(logo.center().y, names[1], "on the Boots line");
@@ -594,11 +601,20 @@ mod tests {
     #[test]
     fn a_long_name_steps_its_font_down_then_takes_two_lines() {
         // The fonts load with the first frame, so the names are measured in one.
+        // The last name's halves are too wide for the label even at the smallest size.
+        let long = "Spring 2026 Invitational Cup Midcup Exports";
         let mut measured = Vec::new();
+        let mut half_width = 0.0;
         Headless::new().frame(Vec::new(), |ui| {
-            measured = ["/a/", "/civ4xg/", "Invitational 1"]
+            measured = ["/a/", "/civ4xg/", "Invitational 1", long]
                 .map(|name| name_lines(ui.painter(), name))
                 .to_vec();
+            let galley = ui.painter().layout_no_wrap(
+                measured[3].0[0].clone(),
+                FontId::monospace(NAME_SMALLEST),
+                Color32::PLACEHOLDER,
+            );
+            half_width = galley.size().x;
         });
         assert_eq!(measured[0], (vec!["/a/".to_owned()], 12.0));
         let (lines, size) = &measured[1];
@@ -607,6 +623,10 @@ mod tests {
         let (lines, size) = &measured[2];
         assert_eq!(lines, &["Invitat", "ional 1"]);
         assert!(*size <= 9.0, "{size}");
+        assert!(half_width > LABEL_TEXT_WIDTH, "premise: {half_width} wide");
+        let (lines, size) = &measured[3];
+        assert_eq!(lines.len(), 2);
+        assert_eq!(*size, NAME_SMALLEST, "no smaller than the smallest size");
     }
 
     #[test]
@@ -802,18 +822,18 @@ mod tests {
     #[test]
     fn the_scroll_area_holds_exactly_the_content_the_rows_make() {
         // 40 rows of 28 under rows_top: the content is 26.65625 + 1120 = 1146.65625
-        // high; the viewport is the 600-high screen, so the farthest the scroll goes
-        // is 546.65625.
-        // Sideways the content fits (1118 + the Actions title + 8 < 1280), so a sideways
-        // wheel moves nothing: the horizontal pin for the content's width.
+        // high and 1118 + the 42.25 Actions title + the 8 right margin = 1168.25
+        // wide. A window 1000 by 600 is too small both ways, so the farthest the
+        // scroll goes is the content less the window.
         let rows = vec![team_row(); 40];
         let mut window = scrolling();
+        window.screen = vec2(1000.0, 600.0);
         let mut grid = |events| window.frame(events, |ui| show(ui, "grid", &COLUMNS, &rows, false));
         grid(Vec::new());
         grid(wheel(pos2(600.0, 300.0), vec2(-100000.0, -100000.0)));
         grid(Vec::new());
         let state = scroll_state(&window.ctx, "grid");
-        assert_eq!(state.unclamped_offset(), vec2(0.0, 546.65625));
+        assert_eq!(state.unclamped_offset(), vec2(168.25, 546.65625));
     }
 
     #[test]

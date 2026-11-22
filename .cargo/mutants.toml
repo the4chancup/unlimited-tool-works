@@ -359,6 +359,14 @@ exclude_re = [
     # the elided name's end lands on the room to the bit, where the hint has no width to draw
     # in either way. Pinned by column, the row's other comparisons staying measured.
     "save_editor/src/view/player_list\\.rs:\\d+:45: replace > with >= in team_row",
+    # save_editor: `toggle_in_group` keeps a group of two or more and clears a group of one;
+    # `>=` keeps the one, which nothing reads: every reader asks `group_on`, which wants two
+    # or more, and the next Ctrl+click, the group not being on, starts again from the
+    # selected player.
+    "save_editor/src/view/player_list\\.rs:\\d+:\\d+: replace > with >= in toggle_in_group",
+    # save_editor: the Similar dialog joins its boxes' and its radios' `changed()` with `|`;
+    # `^` differs only when two of them change in one frame, and a frame takes one click.
+    "save_editor/src/view/similar\\.rs:\\d+:\\d+: replace \\| with \\^ in dialog",
     # save_editor: `player_field_term`'s arms for Height, Weight, Age, Dribbling motion, Boots
     # ID and Gloves ID each build the term the `_` arm builds (`report_term` over the
     # field's `field_words`, the label being those words and the value stored as shown). The
@@ -499,4 +507,12 @@ exclude_re = [
     # of the clock equal to the deadline, where `>` waits one more 20 ms poll and then returns
     # the same `false`.
     "studio/src/crash_dump\\.rs:\\d+:\\d+: replace > with >= in wait_until",
+    # export_grid: `text_colour`'s `weight > 125.0` -> `>=` differs only on a fill weighing
+    # exactly 125.0, and a cell's fill is one of the theme's fixed colours (`look`), none of
+    # which does. Re-check if a fill colour changes.
+    "export_grid/src/cells\\.rs:\\d+:\\d+: replace > with >= in text_colour",
+    # team_compiler: `export_row`'s guard `_ if message.is_some() => None` only skips building
+    # a layout that the body's `(Some(message), _)` arm then drops, so `false` shows the same
+    # row: the message in place of the cells.
+    "team_compiler/src/check/live\\.rs:\\d+:\\d+: replace match guard message\\.is_some\\(\\) with false in export_row",
 ]

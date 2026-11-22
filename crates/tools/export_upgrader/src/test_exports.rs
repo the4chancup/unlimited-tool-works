@@ -139,7 +139,6 @@ mod tests {
             all: None,
             savefile: None,
             loose: !referee,
-            legacy_ids: false,
             coverage: None,
             output: None,
         };

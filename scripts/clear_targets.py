@@ -1,11 +1,14 @@
-"""Remove the `target/` build folder of merged, clean sidekick worktrees (regenerable).
+"""Remove the build folder `target/` of merged, clean sidekick worktrees (regenerable), and of
+a hand-given build's worktree (`vgl27`).
 
     python scripts/clear_targets.py NAME...     NAME = a folder under 4cc-studio-temp, e.g. sk_nocup
 
-Each NAME is checked first: its worktree's HEAD is in main or pes14, its tree is clean, and
-no running process has an exe under its target. Only `<temp>/<NAME>/target` is removed. A
-NAME that fails a check is skipped with one line saying why (the exit code is then 1), and
-the others are still cleared.
+Each NAME is checked first: its worktree's HEAD is in main, pes14 or a hand-given build's
+branch, its tree is clean, and no running process has an exe under its target. Everything in
+`<temp>/<NAME>/target` is removed but `dist/`, which holds packed archives: a hand-given
+build's go to its user with their SHA-256, which a new pack need not match. A NAME that
+fails a check is skipped with one line saying why (the exit code is then 1), and the others
+are still cleared.
 """
 import os
 import shutil
@@ -19,6 +22,8 @@ import psutil
 REPO = Path(__file__).resolve().parents[1]
 TEMP = REPO.parent / (REPO.name + "-temp")
 NEVER = {"gate", "pes14", "release_003dev1"}
+# Hand-given builds' worktrees, each on the branch of its name.
+HAND_BUILDS = {"vgl27"}
 
 
 def git(*args, cwd):
@@ -28,7 +33,7 @@ def git(*args, cwd):
 def merged(head):
     return any(
         git("merge-base", "--is-ancestor", head, branch, cwd=REPO).returncode == 0
-        for branch in ("main", "pes14")
+        for branch in ("main", "pes14", *HAND_BUILDS)
     )
 
 
@@ -42,7 +47,8 @@ assert names, "name at least one worktree"
 targets = []
 refused = []
 for name in names:
-    assert name not in NEVER and "/" not in name and "\\" not in name and name.startswith("sk_"), name
+    assert name not in NEVER and "/" not in name and "\\" not in name, name
+    assert name.startswith("sk_") or name in HAND_BUILDS, name
     tree = TEMP / name
     target = tree / "target"
     if not target.exists():
@@ -72,8 +78,14 @@ for target in list(targets):
         targets.remove(target)
 
 for target in targets:
-    shutil.rmtree(target, onerror=writable)
-    print("removed", target)
+    for entry in target.iterdir():
+        if entry.name == "dist":
+            continue
+        if entry.is_dir():
+            shutil.rmtree(entry, onerror=writable)
+        else:
+            entry.unlink()
+    print("removed", target, "(dist/ kept)" if (target / "dist").exists() else "")
 for reason in refused:
     print("skipped", reason)
 sys.exit(1 if refused else 0)

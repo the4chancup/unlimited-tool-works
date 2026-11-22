@@ -29,7 +29,9 @@ run's findings (`4cc-studio-temp/str_re/out/findings.md`).
 **The detour is over**: Build 2, `0.0.2-pes14.2`, was published 2026-11-21. **The main goal
 now is item 6, the Compiler's view for the VGL organizer** (the maintainer, 2026-11-21), its
 draft looked at again first; the Export upgrader's view may follow in a later build. The
-other items run beside it. **After the detour**, in this order:
+other items run beside it. **Ahead of item 6:** the `pes14` branch's step 12, a whole PES
+2014 team exported and imported as Team TOML, which Build 3 now carries (the maintainer,
+2026-11-22); running sidekicks and jobs are not stopped for it. **After the detour**, in this order:
 1. The Nation list: done (merges `467790ab`, `1b9c5f27`; SWE-2 round S1n). It opens on the
    held nation, a typed name picks as an ID does, Escape puts the old nation back, and one
    opening is one undo entry; the General info review's fixes (rulings "geninfo A1") with it.
@@ -103,13 +105,26 @@ other items run beside it. **After the detour**, in this order:
    - [x] 1a (2026-11-22, merge `304822e4`, Opus, two reworks) the grid, read-only, in the
      new lib `export_grid`, filled by `check`'s validation when the view opens and after each
      Compile: rows, label, ID, player, portraits and kit cells, check states, the legend
-     (TC-GUI-04 without its watcher part, 20, 21). Owed: its look beside the draft, compared
-     once: the portraits count left out a dropped player's portrait (fixed, `bbe765a6`); the
-     next capture, on a build with the fix, goes to the tasks page with the draft's. The
-     shipped build still greys the Compiler (`CLI_ONLY`, `crates/studio/src/main.rs:130`), so
-     the look runs on a build made for it, with `compiler` off that list and nothing
-     committed; the slice that presents the view takes it off for good (1c, unless the plan
-     names another)
+     (TC-GUI-04 without its watcher part, 20, 21). Its look: checked by the lead beside the
+     draft (the portraits count left out a dropped player's portrait, fixed in `bbe765a6`),
+     now the maintainer's on the tasks page (card "The Compiler's grid, its first slice"). The
+     shipped build still greys the Compiler and the Export upgrader (`CLI_ONLY`,
+     `crates/studio/src/main.rs`); only the VGL organizer's hand-given build opens them
+     (merge `e92af4a0`, `plans/core/gui.md` ST-SIDE-11). When they open for every member is
+     the maintainer's call
+   - [x] The VGL organizer's build `0.0.3-vgl27.1` (2026-11-22, branch `vgl27`, `c2db362c`):
+     the version opens the two tools, and the update check's tag prefix `vgl27-v` keeps main's
+     releases from being offered to it (`RUNBOOK.md` "The VGL organizer's build"); packed in
+     the `vgl27` worktree's `target/dist/` and checked in its built window (both tools
+     clickable, the Compiler's grid opening, the upgrader on its placeholder line), handed over
+     by the maintainer as it is
+   - [ ] The next VGL build, `0.0.3-vgl27.2`, once the Compiler's slices 1b and 1c have landed
+     (the maintainer, 2026-11-22): `vgl27` merges main, raises the version, is packed
+   - [x] VGL27's legacy mode off main, onto `vgl27` alone (2026-11-22, DECISIONS 2026-11-22):
+     main's merge `8cc425a3` (Opus; the lead dropped three tests of the old names and the
+     draft's `IDs` cell), TC-LEG-01 to 05 and EU-SET-15 to 17 withdrawn, and a CHANGELOG
+     `### Important` line telling members to delete the `legacy_ids.toml` 0.0.2 wrote. `vgl27`
+     merged main and reverted the removal (`a0c24750`), its gates green with the mode back
    - [ ] 1b: the detail window: hover, pin, Esc, double-click, its top box, Copy messages
      → verify: TC-GUI-09, 24, 25, 31, 32
    - [ ] 1c: the toolbar's strip and its counts, the log's lines linked to cells, the log
@@ -141,8 +156,11 @@ other items run beside it. **After the detour**, in this order:
          tests through `resolved*` and the deep helpers, no call site edited. The dummy
          requirement's `notes.txt` holds a single newline, since any text in it reports
          `notes_found`. SWE-2 round S1: 6 accepted, one a real test's input (rulings
-         `.tmp/duck_rulings_builder.md`); their rework runs on SWE-2 (`sk/s1r`), then a second
-         round
+         `.tmp/duck_rulings_builder.md`), reworked (SWE-2, merge `cdd64037`); the second
+         SWE-2 round, S2, on the rework: 3 accepted, none of reach (a), which ends the loop,
+         fixed by the lead (a team's `refs.txt` is no roster; the empty-folder loop's test).
+         The round's part over the grid's position tests and `commit.py`: 4 accepted, which
+         ends its loop, all fixed (merge `50bed6bc`, `7b00659c`)
        - [x] 2 (2026-11-22, merge `5a46d101`, SWE-2) `aesthetics_export`'s validator tests
          through `report*`, nine tests of a requirement's own check on `without`
        - [x] 3 (2026-11-22, merge `beeb2094`, Opus) the Compiler's CLI tests the logo slice
@@ -150,8 +168,9 @@ other items run beside it. **After the detour**, in this order:
          `team_compiler::test_files::complete`, shared with the unit tests; the CONTRIBUTING
          rule
        - [ ] 4: the Compiler's other CLI tests (about 270), `deploy` and
-         `prefox_kit_variants` included
-       - [ ] 5: `export_upgrader` (about 130)
+         `prefox_kit_variants` included: running (Opus, `sk/builder4`)
+       - [ ] 5: `export_upgrader` (about 130): running (Opus, `sk/builder5`), `old_missing`
+         taking files and empty folders apart from the start
        - [ ] 6: `studio` (6)
        - [ ] 7: the `.zip` fixtures packed when the tests run, with the three `gui_run` and
          `view` tests that compile the tracer export as it is; the `.7z` ones stay stored,
@@ -236,21 +255,28 @@ other items run beside it. **After the detour**, in this order:
     a Video encoder for the cup's USM videos (the format in `plans/libs/usm.md`) and an Export
     viewer (MFG's FMDL-Viewer), two file kinds to the explorer (`.mtar`, `.fsop`), and a
     third add-on, EssexDotDev's 4cc-FMDL-Toolkit, to the Blender plan.
-15. The checkpoint on `f51c570a` (2026-11-22): fmt, clippy and every test suite passed, but
-    the mutation run left 10 mutants alive, so `refs/checkpoints/gated` stays at `fc6e8cf0`
-    (list: `.tmp/lead/mutants_f51c570a/missed_all.txt`). The gate stayed for another reason
-    too: the VPS's disk filled during the `save_editor` half, so two mutants never ran
-    (`Portraits::shown_placeholder` and `player_list.rs` `toggle_in_group`); the next run
-    tests them again, the floor now 48 GiB and 72 GiB free (DECISIONS 2026-11-22). Triaged
-    2026-11-22:
+15. The checkpoints of 2026-11-22. The one on `f51c570a` left eight mutants alive, whose
+    tests landed (merge `36458a20`). The one on `625e7147` passed its gates and ran every
+    mutant, yet left the gate at `fc6e8cf0`, as `f51c570a`'s had. Neither was
+    stopped by its survivors: PowerShell, the shell `just` runs recipes under on Windows,
+    turned `mutants-diff`'s exit 2 (missed) and 3 (timed out) into 1, which the checkpoint
+    reads as untested mutants. Fixed in `e3cff7c6`, the checkpoint now running
+    `mutants_diff.py` directly; `refs/checkpoints/gated` and `mutated` were then moved to
+    `625e7147` by hand, as the fixed script would have. Its 107 survivors (`.tmp/lead/mutants_625e7147/missed_all.txt`),
+    triaged:
     - the two `session_link.rs` timeouts are caught: each mutant makes `give`'s send loop
       endless, and a timeout an infinite loop explains counts as caught (RUNBOOK "Mutation
       runs");
-    - [ ] the other eight get tests in one SWE-2 slice (`sk/mut15`, brief
-      `.tmp/mut15/brief_mut15.md`): `read_images`' placeholder read, `crash_dump.rs`'s
-      `wait_until` (its limit made a parameter, so a test reaches it without waiting 120 s)
-      and `journal_holds_steps`, `local_clock`, and `adopt_folder`'s unreadable journal and
-      output dedupe (four mutants);
+    - `save_editor`: four are equivalent, now in `.cargo/mutants.toml` (`toggle_in_group`'s
+      `>=`, the Similar dialog's three `|` to `^`); two need tests: `alike`'s
+      `skills && com_styles` (a player matching on skills alone must not match on Cards)
+      and the dialog's `!team_category.contains` (Every team keeps a category that holds
+      every match);
+    - `export_grid` and `team_compiler`, rerun at HEAD since the grid's position tests landed
+      after `625e7147`: 6 and 11 left. Two timeouts are caught (endless loops); `text_colour`'s
+      `>=` and `export_row`'s message guard are equivalent (`.cargo/mutants.toml`); the rest,
+      with `save_editor`'s two, got tests (Opus, one rework, merge `881c9a32`), and the
+      survivor that was unreachable code, a validated export's own portrait count, is gone;
     - [ ] then `just pipeline` at the new HEAD.
 
 Most open steps below wait only on a check in the game or the built window that the lead's
@@ -3036,8 +3062,9 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     an official DLC whose boots/gloves IDs differ from what they sent (Studio's slot-based
     40-per-team block, 3745 for team 792's slot 05, against the old exports' own `k`/`g`
     IDs in a 25-per-team block) breaks their test CPKs against the official save.
-    - [x] poc13a spec (2026-11-10): `plans/team_compiler/pipeline.md` "Legacy boots and
-      gloves IDs (VGL27)", the block table `crates/tools/team_compiler/data/legacy_boots_blocks.txt`
+    - [x] poc13a spec (2026-11-10): the legacy IDs' plan section and the block table
+      `legacy_boots_blocks.txt`, on the branch `vgl27` alone since 2026-11-22 (DECISIONS
+      2026-11-22 "VGL27's legacy mode leaves main")
     - [x] poc13b the upgrader's `legacy_ids.toml` (2026-11-10, SWE-2, landed first time)
     - [x] poc13a2 re-spec (2026-11-10 evening; DECISIONS 2026-11-10): legacy mode is the
       upgrader's `--legacy-ids`, the compiler reads the file's presence
@@ -3673,8 +3700,12 @@ points there.
   gloves slice reads 262143 as no gloves model, as the game draws it (the `pes14` branch's
   plan, "Gloves 262143 is no gloves model"). Build 3 passed its gates, and its release build
   was checked on copies of both saves: HAGSEO's Appearance page and Hide default body, team
-  127 in the newer save, /gd/ at 136 in `EDIT.bin.autumn14`. It is left unpushed, and the cut
-  waits on the maintainer's yes (`docs/maintainer/tasks.html` "PES 2014 Build 3: your yes to release it").
+  127 in the newer save, /gd/ at 136 in `EDIT.bin.autumn14`. It is left unpushed. Build 3
+  now also carries the `pes14` plan's step 12 (Team TOML on PES 2014). That step landed on
+  `pes14` 2026-11-22 (slices a to f, then `91d84e69`), its data check passed on the rebuilt
+  release, and its in-game look waits for a time when OBS may be used or focus taken. The
+  `tasks.html` card, taken down meanwhile, comes back after that look, for the maintainer's
+  yes.
   The Compiler's view (item 6) goes on without waiting for it (the maintainer, 2026-11-22).
 - open (2026-11-22) — The Save editor's tests leave their scratch behind:
   `test_support::scratch` empties `target/<profile>/save_editor_tests/<test>` when a test
@@ -3809,7 +3840,8 @@ points there.
   backend"; harness `.tmp/lead/flicker/variants2.py`).
 - open 2026-11-17 (the lead): the checkpoint's `wasm_check.py` warns that
   `ShellCondition`'s `SettingsSaveFailed`, `UpdateAvailable` and `UpdateReady` are never
-  constructed (`studio_core/src/status.rs`): the code that builds them is native only. The
+  constructed (`studio_core/src/status.rs`): the code that builds them is native only. It
+  also warns that `theme.rs`'s `CORNER_RADIUS` is never used (still both at `6eb5f71f`). The
   gate passes, and the warning was already in earlier runs (`pipeline_1117_rw5.log`), but it
   is noise every run prints, and a new warning could hide behind it.
 - open 2026-11-17 (the lead): with `WGPU_BACKEND=gl` the release build of `26ae8f7c` never

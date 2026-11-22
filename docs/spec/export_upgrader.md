@@ -2110,6 +2110,7 @@ EU-SET-14  GIVEN slot 05's face folder "XXX05 - A", his record wearing custom bo
                 folder he wears) THEN custom_model_missing, an Error,
                 names slot 05, boots_id and 433, nothing is written, and the exit code
                 is 1 (restates EU-SET-03)
+EU-SET-15 to 17  withdrawn: each one's text and reason in `spec/withdrawn_ids.md`
 ```
 
 **Referee exports**

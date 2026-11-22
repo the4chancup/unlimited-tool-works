@@ -224,7 +224,6 @@ pub(crate) fn check_root(
         notes: None,
         referee_marker: None,
         write_names: false,
-        legacy_ids: None,
     };
     for file in &draft.root_files {
         if is_logo_candidate(file) {
@@ -233,16 +232,12 @@ pub(crate) fn check_root(
         let name = file.path.name();
         match file.kind {
             // The roster file and metadata are admitted (`refs.*` and the
-            // referee marker only on a referee export, `legacy_ids.toml`
-            // only on a team's).
+            // referee marker only on a referee export).
             FileKind::Metadata(MetadataFile::PlayersTxt) => {}
             FileKind::Metadata(MetadataFile::NotesTxt) => {
                 check_notes(file, metadata, context, &mut artifacts, issues);
             }
             FileKind::Metadata(MetadataFile::RefsTxt | MetadataFile::RefLists) if referees => {}
-            FileKind::Metadata(MetadataFile::LegacyIdsToml) if !referees => {
-                artifacts.legacy_ids = Some(file.clone());
-            }
             FileKind::Metadata(MetadataFile::ColorsTxt) => {
                 artifacts.team_colors = Some(file.clone());
             }

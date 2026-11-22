@@ -39,38 +39,6 @@ card.</p>
 <ul id="toc"></ul>
 
 <h2>Tests on another machine or in the game</h2>
-<section class="entry" id="pes14-build3-cut">
-  <h3>PES 2014 Build 3: your yes to release it</h3>
-  <p class="from">From: worklog issue "PES 2014 Build 2 crashed on the Appearance page", fixed on
-  the pes14 branch</p>
-  <p>Build 3 (<code>0.0.2-pes14.3</code>) fixes the crash the Akko organizer met. It is built
-  and has passed its gates; nothing is pushed or released until you say yes. Its own build is
-  <code>C:\Data\4cc\Tools_Mine\4cc-studio-temp\tasks_build\UTW-pes14-18918349.exe</code>, not
-  the one named above.</p>
-  <p>The lead checked the build on copies of two saves:</p>
-  <ul>
-    <li>the organizer's newer save: /hi3/'s HAGSEO, a player edited in the game, opens on his Appearance page, and Hide
-      default body works on him;</li>
-    <li>your <code>EDIT.bin.autumn14</code>: the team list holds every team, /gd/ at 136
-      among them.</li>
-  </ul>
-  <ol>
-    <li>Optionally, open a PES 2014 save of your own in the build and try the same.</li>
-    <li>Read the release notes: the <code>[Unreleased]</code> section at the top of
-      <code>C:\Data\4cc\Tools_Mine\4cc-studio-temp\pes14\CHANGELOG.md</code>. It becomes
-      Build 3's section.</li>
-  </ol>
-  <div class="options">
-    <label class="opt"><input type="radio" value="release as is"><b>Release it as it is</b></label>
-    <label class="opt"><input type="radio" value="release after changes"><b>Release it after
-      changes</b><div class="note">Say what below: in the notes or in the build.</div></label>
-    <label class="opt"><input type="radio" value="not yet"><b>Not yet</b>
-      <div class="note">Say why below.</div></label>
-  </div>
-  <textarea class="own" placeholder="Changes, or what you saw (optional)"></textarea>
-</section>
-
-
 <section class="entry" id="poc5-in-game">
   <h3>The 0.0.2-poc.5 bundle in the game</h3>
   <p class="from">From: worklog 0.0.2-poc; yours since 2026-11-11</p>
@@ -90,7 +58,38 @@ card.</p>
 <p class="group-intro">Each matched its draft when the lead compared them; anything you see
 otherwise goes back as a fix.</p>
 
-<p>Nothing waiting.</p>
+<section class="entry" id="grid-1a-look">
+  <h3>The Compiler's grid, its first slice</h3>
+  <p class="from">From: worklog 0.0.2, the Compiler's view, slice 1a</p>
+  <p>The Compiler's window now shows the grid: a row per export with its team label and ID, a
+  cell per player, the portraits count and a cell per kit, each coloured by the export's
+  check, and the legend above. The released build still greys the Compiler out, so this look
+  has its own copy, built from main at <code>de78b106</code> with the Compiler turned on:
+  <code>C:\Data\4cc\Tools_Mine\4cc-studio\.tmp\grid_look\app\UTW.exe</code>. It has its own
+  settings (PES 2017) and three exports: /4ccg/, /dbg/ and the tracer, whose /egg/ is not on
+  the teams list.</p>
+  <ol>
+    <li>Start that <code>UTW.exe</code> and click the Compiler, the first icon on the left.</li>
+    <li>Compare the grid with the draft (right, below), which draws sample exports of its
+      own.</li>
+  </ol>
+  <p>Not built yet, so missing beside the draft: the toolbar's controls and the counts under
+  the grid, the log's lines, the colour swatch under each kit, and the box for typing a missing
+  ID (/egg/'s ID is a bare <code>???</code> on red until then). Every player cell has a red
+  outline because each player's <code>settings.toml</code> holds <code>dribbling = 0</code>,
+  which the check refuses; /dbg/'s label has a yellow one because a file in one of its gloves
+  folders is never read on PES 2017.</p>
+  <div class="shots">
+    <figure><img src="img/grid1a_build.png" alt="The built grid"><figcaption>The build</figcaption></figure>
+    <figure><img src="img/grid1a_draft.png" alt="The draft's grid"><figcaption>The draft</figcaption></figure>
+  </div>
+  <div class="options">
+    <label class="opt"><input type="radio" value="looks right"><b>It looks right</b></label>
+    <label class="opt"><input type="radio" value="differences"><b>Something differs</b>
+      <div class="note">Say what below.</div></label>
+  </div>
+  <textarea class="own" placeholder="What differs (optional)"></textarea>
+</section>
 
 <h2>Coming once the lead has checked them</h2>
 <p class="group-intro">Yours by the worklog, but not yet compared with their drafts by the lead,

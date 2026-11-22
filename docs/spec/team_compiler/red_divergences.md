@@ -36,13 +36,12 @@ check on record), or **Records disagree** (the repository states two different t
 - **Ours:** the Studio format has no ID-named folders; the compiler packs the models under
   the IDs its 40-ID per-team block assigns (the parity tracer fixture's `k3745`/`g3745`).
 - **Why:** the Studio format assigns boots/gloves IDs itself; the old folder-name ID is the
-  migration's hint, not a contract. The VGL27 `--legacy-ids` mode exists because a manager's
-  Red test CPK and the official save would disagree on every custom ID.
+  migration's hint, not a contract.
 - **Evidence:** none cited.
 - **Status:** Not checked.
 - **Stated in:** `parity.rs` `RelocatedContainer`/`Relocated` rows;
   `tests/fixtures/tracer/README.md`; `spec/team_compiler/testing.md` "Intentional
-  differences"; `plans/team_compiler/pipeline.md` "Legacy boots and gloves IDs (VGL27)".
+  differences".
 
 ### RD-3: Player textures relocated to a per-player common subfolder
 
