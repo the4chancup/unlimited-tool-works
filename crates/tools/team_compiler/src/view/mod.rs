@@ -479,7 +479,7 @@ mod tests {
             line_texts(&nodes, "/a/"),
             ["702", "01", "03", "2/2", "GK", "K1"]
         );
-        assert_eq!(line_texts(&nodes, "/co/"), ["714", "05", "0/1", "GK"]);
+        assert_eq!(line_texts(&nodes, "/co/"), ["714", "05", "1/1", "GK"]);
         let rows = tool.live_check.rows();
         let folder = row(rows, "/a/");
         let mut cells = vec![player(folder, 1), player(folder, 3), portraits(folder)];
