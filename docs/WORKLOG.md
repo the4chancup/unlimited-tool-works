@@ -3758,7 +3758,7 @@ points there.
   rebuilt there (`tasks_build/UTW-pes14-042e60b8.exe`), its scoped gates passed (4,820
   tests), and a second in-game look (`.tmp/pes14_ingame/teamname/findings.md` in its
   worktree) shows "/gd/" in the Italian League's list. The card waits for the maintainer's
-  yes. Main gets the same rule next (`.tmp/lead/brief_teamname_main.md`, SWE-2).
+  yes. Main has the same rule (2026-11-23, merge `ac123e50`, SWE-2), with its CHANGELOG line.
   The Compiler's view (item 6) goes on without waiting for it (the maintainer, 2026-11-22).
 - open (2026-11-22) — The Save editor's tests leave their scratch behind:
   `test_support::scratch` empties `target/<profile>/save_editor_tests/<test>` when a test
