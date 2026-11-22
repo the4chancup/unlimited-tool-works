@@ -1593,6 +1593,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "export_grid"
+version = "0.0.2"
+dependencies = [
+ "egui",
+ "studio_core",
+]
+
+[[package]]
 name = "export_upgrader"
 version = "0.0.2"
 dependencies = [
@@ -4887,6 +4895,7 @@ dependencies = [
  "dds_convert",
  "egui",
  "elevation",
+ "export_grid",
  "fmdl",
  "fpc",
  "fpk",

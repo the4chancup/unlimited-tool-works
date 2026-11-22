@@ -19,6 +19,7 @@ crossbeam-channel.workspace = true
 dds_convert.workspace = true
 egui.workspace = true
 elevation.workspace = true
+export_grid.workspace = true
 fmdl.workspace = true
 fpc.workspace = true
 fpk.workspace = true

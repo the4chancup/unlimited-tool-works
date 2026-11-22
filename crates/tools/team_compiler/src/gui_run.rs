@@ -68,8 +68,7 @@ impl RunLog {
             ),
             Ok(Err(error)) => {
                 // As the binary prints a refusal, then the code it exits with.
-                self.lines
-                    .push(LogLine::plain(Severity::Error, format!("error: {error}")));
+                self.append_refusal(&error.to_string());
                 (
                     Severity::Info,
                     format!("Run ended with exit code {}", error.exit_code),
@@ -81,6 +80,13 @@ impl RunLog {
             ),
         };
         self.lines.push(LogLine::plain(severity, last));
+    }
+
+    /// Adds a refusal's line, `error: ` and then `error`, as the binary prints one: the
+    /// Compile run's, or the grid's check's.
+    pub(crate) fn append_refusal(&mut self, error: &str) {
+        self.lines
+            .push(LogLine::plain(Severity::Error, format!("error: {error}")));
     }
 
     /// Whether a compile is in flight.

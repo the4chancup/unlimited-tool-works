@@ -22,9 +22,9 @@ pub use colors_txt::{ColorLineRefusal, ColorsTxt, RefusedColorLine, read_colors_
 pub use conventions::{
     FileKind, KitToken, LegacyKitToken, Marker, MetadataFile, ModelFormat, ModelSuffix, SharedKind,
     classify, common_link_name, common_link_target, ends_with_name, folder_player_name,
-    is_os_artifact, is_player_singleton, is_small_metadata, is_txt_note, kit_folder,
+    folder_slot, is_os_artifact, is_player_singleton, is_small_metadata, is_txt_note, kit_folder,
     kit_path_token, kit_set_member, kit_token, kit_token_starts, legacy_kit_tokens, model_suffix,
-    variant_path, variant_stem, without_kit_token,
+    split_folder_name, variant_path, variant_stem, without_kit_token,
 };
 pub use listing::{CanonicalListing, ListedEntry, ListedKind, SmallMetadata, ValidationContext};
 pub use parse::{

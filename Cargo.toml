@@ -106,6 +106,7 @@ color_tools = { path = "crates/libs/color_tools" }
 cpk = { path = "crates/libs/cpk" }
 dds_convert = { path = "crates/libs/dds_convert" }
 elevation = { path = "crates/libs/elevation" }
+export_grid = { path = "crates/libs/export_grid" }
 export_upgrader = { path = "crates/tools/export_upgrader" }
 fmdl = { path = "crates/libs/fmdl" }
 fox2 = { path = "crates/libs/fox2" }

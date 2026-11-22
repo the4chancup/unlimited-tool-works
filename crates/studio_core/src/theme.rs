@@ -153,6 +153,30 @@ pub struct Palette {
     /// The 4cc clover's four leaves inside its ring (`#8cc642`). Like the
     /// ring, they are the cup's mark, so the light value is the dark one.
     pub clover_leaf: egui::Color32,
+    /// An export grid cell checked through its files (the draft's
+    /// `fullOk`, `#800080`). A fill under its own text colour, so the same
+    /// in both themes, as every grid fill is.
+    pub grid_full_ok: egui::Color32,
+    /// An export grid cell checked from an archive's listing alone (the
+    /// draft's `partialOk`, `#3278dc`).
+    pub grid_partial_ok: egui::Color32,
+    /// An export grid cell compiled (the draft's `done`, `#008000`).
+    pub grid_done: egui::Color32,
+    /// The text on a light export grid cell (the draft's `labelColour`,
+    /// `#1b1b1b`): a soft dark grey, chosen by the cell's own fill, not the
+    /// theme.
+    pub grid_text_dark: egui::Color32,
+    /// The text on a dark export grid cell (`#dcdcdc`), as `grid_text_dark`.
+    pub grid_text_light: egui::Color32,
+    /// An export grid position the export leaves empty (the draft's
+    /// `--faint`, `#202020`), a square barely off the panel. Its light value
+    /// keeps the dark one's contrast with its panel, 1.06.
+    pub grid_empty: egui::Color32,
+    /// A blocked export grid cell's dashed edge and text (`#8c2a2a`): its
+    /// export will not compile. The draft is dark only and no lighter red
+    /// of this hue reaches the dark one's contrast on the light panel, so
+    /// the light value is the dark one.
+    pub grid_blocked: egui::Color32,
 }
 
 impl Palette {
@@ -197,6 +221,13 @@ impl Palette {
         picker_marker_edge: egui::Color32::BLACK,
         clover_ring: egui::Color32::from_rgb(0x12, 0x96, 0x48),
         clover_leaf: egui::Color32::from_rgb(0x8c, 0xc6, 0x42),
+        grid_full_ok: egui::Color32::from_rgb(0x80, 0x00, 0x80),
+        grid_partial_ok: egui::Color32::from_rgb(0x32, 0x78, 0xdc),
+        grid_done: egui::Color32::from_rgb(0x00, 0x80, 0x00),
+        grid_text_dark: egui::Color32::from_gray(0x1b),
+        grid_text_light: egui::Color32::from_gray(0xdc),
+        grid_empty: egui::Color32::from_gray(0x20),
+        grid_blocked: egui::Color32::from_rgb(0x8c, 0x2a, 0x2a),
     };
 
     /// The light theme's colours. Only the ones drawn on the theme's own panel
@@ -242,6 +273,13 @@ impl Palette {
         picker_marker_edge: egui::Color32::BLACK,
         clover_ring: egui::Color32::from_rgb(0x12, 0x96, 0x48),
         clover_leaf: egui::Color32::from_rgb(0x8c, 0xc6, 0x42),
+        grid_full_ok: egui::Color32::from_rgb(0x80, 0x00, 0x80),
+        grid_partial_ok: egui::Color32::from_rgb(0x32, 0x78, 0xdc),
+        grid_done: egui::Color32::from_rgb(0x00, 0x80, 0x00),
+        grid_text_dark: egui::Color32::from_gray(0x1b),
+        grid_text_light: egui::Color32::from_gray(0xdc),
+        grid_empty: egui::Color32::from_gray(234),
+        grid_blocked: egui::Color32::from_rgb(0x8c, 0x2a, 0x2a),
     };
 }
 
@@ -805,6 +843,13 @@ mod tests {
             picker_marker_edge,
             clover_ring,
             clover_leaf,
+            grid_full_ok,
+            grid_partial_ok,
+            grid_done,
+            grid_text_dark,
+            grid_text_light,
+            grid_empty,
+            grid_blocked,
         } = palette;
         vec![
             ("success", *success),
@@ -843,6 +888,13 @@ mod tests {
             ("picker_marker_edge", *picker_marker_edge),
             ("clover_ring", *clover_ring),
             ("clover_leaf", *clover_leaf),
+            ("grid_full_ok", *grid_full_ok),
+            ("grid_partial_ok", *grid_partial_ok),
+            ("grid_done", *grid_done),
+            ("grid_text_dark", *grid_text_dark),
+            ("grid_text_light", *grid_text_light),
+            ("grid_empty", *grid_empty),
+            ("grid_blocked", *grid_blocked),
         ]
     }
 
@@ -850,7 +902,8 @@ mod tests {
     // their own; every other is on a surface both themes share.
     #[test]
     fn only_the_panel_colours_differ_between_the_themes() {
-        const THEMED: [&str; 9] = [
+        const THEMED: [&str; 10] = [
+            "grid_empty",
             "success",
             "readout",
             "count_grey",
