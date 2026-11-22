@@ -19968,3 +19968,13 @@ not safe across versions: an `expect` on `u16::try_from` of a boots or gloves ID
 every version stores 14 bits, and crashed the PES 2014 build, whose gloves ID is 18. A width
 is a fact of one schema, not of the value's type.
 Plan: `CONTRIBUTING.md` "Code style", the Errors bullet.
+
+## 2026-11-22 — pes14 branch — Main is merged in only when the branch needs it
+
+Decision: main is merged into `pes14` only for a fix that reaches a PES 2014 player or code a
+step builds on, the merge's message naming it; a single small fix may be cherry-picked.
+Why: merging on need, not routinely, because routine merges cost a resolution each time
+on the code both branches change: seven merges in three days, the last with five conflicts and
+two breaks only a build showed, while most of what they brought (the Compiler, the Ruleset
+editor) reaches no PES 2014 player.
+Plan: `plans/pes14.md` "Process".

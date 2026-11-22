@@ -820,7 +820,12 @@ last release as the build's news.
 
 Second-class work, lighter than main's: the implementation runs on SWE-2 High; reviews are
 SWE-2 rounds only; no mutation runs. The per-commit gates (`docs/CONTRIBUTING.md` "Testing and verification") run as
-on main. Main is merged into the branch, never rebased onto it.
+on main. Main is merged into the branch, never rebased onto it, and only when the branch
+needs something from it: a fix that reaches a PES 2014 player, or code a step builds on. The
+merge's message names what it brings, and a single small fix may be cherry-picked instead. We
+do not merge main routinely, because each merge resolves again the code both branches change
+(`ops/fpc.rs`, the Appearance page), while most of main's work never reaches a PES 2014
+player, who uses only the Save editor.
 
 ## Steps
 
