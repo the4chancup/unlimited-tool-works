@@ -3638,6 +3638,13 @@ points there.
   every bit set or he chose a white accessory. The fix (SWE-2, on `pes14`): the gloves ID at
   its full width through `StripStyle`, since the check only asks whether it is 0, and the
   view showing an error line instead of panicking; then Build 3, with the maintainer's yes.
+- open (2026-11-22) — The Save editor's tests leave their scratch behind:
+  `test_support::scratch` empties `target/<profile>/save_editor_tests/<test>` when a test
+  starts and never removes it after, so every checkout keeps 1,064 folders, many holding a
+  save copy: 12.8 GB in main's `target/`, 13.2 GB in the gate's, and the same in each
+  sidekick's tree until its `target/` goes. Fix (SWE-2): `scratch` returns a guard that
+  removes the folder when it drops and the test did not panic (a failed test's folder stays
+  to be read); check the other crates' scratch helpers for the same.
 - open (2026-11-22) — Panics on file content (DECISIONS 2026-11-22 "What a file holds is never
   an invariant an `expect` rests on"; `CONTRIBUTING.md` "Code style", the Errors bullet). A
   census of the 885 `expect`, `unwrap`, `panic!`, `unreachable!` and `assert!` calls in

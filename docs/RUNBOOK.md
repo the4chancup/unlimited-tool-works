@@ -409,6 +409,9 @@ left for the next disk alarm, six finished trees held 108 GB on 2026-11-21.
 When C: fills, a finished tree's `target/` can go whole, and the main tree's `target/debug`
 once nothing builds there (254 GiB on 2026-10-26, mostly stale `deps`): cargo rebuilds them,
 each run rewrites its generated config, and the cost table lives outside every `target/`.
+A tree whose next build should stay quick (the gate's, main's) loses only its old copies: `python
+scripts/stale_deps.py <target>/debug/deps` lists every artifact a newer build of the same
+crate replaced, and `--apply` removes them (6.6 GB of the gate's 120 GB on 2026-11-22).
 
 **On the VPS the project leaves the host 2 GiB of free disk** and may hold the rest: the
 host's production service runs but is used by nobody, so the 40 GB the project's folder was
