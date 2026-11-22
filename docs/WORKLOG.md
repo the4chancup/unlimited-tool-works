@@ -181,10 +181,14 @@ other items run beside it. **Ahead of item 6:** the `pes14` branch's step 12, a 
          through `complete`, `console.rs`'s old export through `complete_old`; `launchers.rs`
          reads the upgrader's fixtures as they are. Its dummy runs come in two pairs, since
          both checks sit in the validator the upgrader also runs on its output
-       - [ ] 7: the `.zip` fixtures packed when the tests run, with the three `gui_run` and
-         `view` tests that compile the tracer export as it is; the `.7z` ones stay stored,
-         since writing one needs `sevenz-rust2`'s `compress` feature, which the workspace
-         leaves off
+       - [ ] 7: the unit tests' tracer copy (`testing.rs`'s `sandbox`) completed, as the CLI
+         tests' copy is since slice 4, so the `gui_run` tests that compile it pass a dummy run.
+         The archive fixtures all stay stored. Packing a `.zip` when the tests run would save
+         no step, because its `.7z` twin is stored (writing one needs `sevenz-rust2`'s
+         `compress` feature, which the workspace leaves off) and is rebuilt by script whenever
+         a requirement adds a file. When the next requirement comes,
+         `tracer_archives_team_folder.py`'s `ADDED` grows to the `co Midcup Spring` archives
+         and the upgrader's `co Spring` ones, which have no script in the repository yet
      - b's tests are written on `complete` (builder slice 3 landed)
      - [ ] b: `installed_portrait_slots` filled from the Compiler's walk over the installed
        CPKs → verify: TC-ROOT-17: running (Opus, `sk/logob`)
@@ -3748,7 +3752,7 @@ points there.
   b's tests are written on it: one builder of the smallest clean export of each kind (`Full`,
   `Midcup`, an old Red export) in `aesthetics_export`, behind a `test-support` feature as
   `pes_savefile`'s fixtures are. Every test starts from it and removes or breaks only what it
-  tests, and the archive fixtures are packed from it when the tests run. A new check then
+  tests; the archive fixtures stay stored and gain the new file by script. A new check then
   changes the builder and the tests of what it catches, not every test. Slices: step 6's
   "The shared export builder".
 - open (2026-11-22) — The Compiler's test teams lists pair ids with names the bundled list

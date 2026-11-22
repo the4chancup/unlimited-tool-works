@@ -68,7 +68,9 @@ pub(crate) fn copy_tree(source: &Path, target: &Path) {
 
 /// A fresh `scratch` folder standing in for the executable's: a teams list holding `792 /egg/`
 /// under `data/` and the tracer bullet's export under `exports/egg Midcup Tracer`, so a `compile` with
-/// no arguments compiles it to `output/4cc_99_test.cpk`.
+/// no arguments compiles it to `output/4cc_99_test.cpk`. The copy is completed for PES 2021,
+/// `tool_context`'s version, so a new requirement's file reaches it as it reaches every
+/// other export a test compiles.
 pub(crate) fn sandbox(name: &str) -> ScratchFolder {
     let temp = scratch(name);
     let root = temp.path();
@@ -76,7 +78,9 @@ pub(crate) fn sandbox(name: &str) -> ScratchFolder {
     fs::write(root.join("data/teams_list.txt"), "ID\tName\n792\t/egg/\n").unwrap();
     let tracer = Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("tests/fixtures/tracer/studio/egg Midcup Tracer");
-    copy_tree(&tracer, &root.join("exports/egg Midcup Tracer"));
+    let copy = root.join("exports/egg Midcup Tracer");
+    copy_tree(&tracer, &copy);
+    crate::test_files::complete(&copy, PesVersion::Pes21, &[]);
     temp
 }
 
