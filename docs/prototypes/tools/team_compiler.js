@@ -401,14 +401,7 @@ const L = { log: [], logHeight: 180, logCollapsed: false, logFilter: "all",
 const MODES = { normal: "Compile", sideload: "Compile for sideloading", test: "Test output" };
 const rowOf = key => S.rows.find(r => r.key === key);
 // Codes the plan adds that the build's catalog (the host's CATALOG) lacks yet.
-const PLANNED = {
-  logo_missing: { code: "logo_missing", severity: "Error",
-    condition: "A `Full` export has no logo: no file at its root whose name starts with `logo`.",
-    consequence: "The export is compiled without a logo. Add one at its root, or rename the export `<team> Midcup ...` if it only adds to what is installed." },
-  portrait_missing: { code: "portrait_missing", severity: "Warning",
-    condition: "In PES 2017 to 2021, a player has no portrait in his folder or in `Portraits/` (in a `Midcup` export, none installed either).",
-    consequence: "The player is compiled without a portrait. Add a `portrait` image to his folder, or one named by his number (`05`) to `Portraits/`." },
-};
+const PLANNED = {};
 const catalog = code => CATALOG["compiler"].find(r => r.code === code) || PLANNED[code];
 const severity = code => {
   const s = (catalog(code) || {}).severity || "Error";

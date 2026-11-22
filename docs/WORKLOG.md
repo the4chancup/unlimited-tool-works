@@ -117,11 +117,11 @@ other items run beside it. **After the detour**, in this order:
      a player with no portrait is a Warning (`plans/aesthetics_export/object_model.md`
      "Validation semantics"; `plans/team_compiler/messages.md`; `plans/export_upgrader.md`
      "What it does"):
-     - [ ] a (Opus: about 500 test mentions of `Full` exports may meet the new findings):
-       `aesthetics_export`'s validation, `Midcup` included through `installed_portrait_slots`
-       (`None` at every caller), both catalogs, the team tracers' goldens upgraded as
-       `Midcup`, then a census of the tests the findings break before they are fixed →
-       verify: TC-ROOT-15, TC-ROOT-16, EU-MDL-43, TC-ROOT-17's validation half
+     - [x] a — 2026-11-22, `ee108bbf`: both findings in `aesthetics_export`'s validation and
+       both catalogs, `installed_portrait_slots` `None` at every caller; 172 tests and five
+       fixture archives given the logo and portraits they now need
+     - [ ] The shared export builder (the open issue "Every new check on what an export must
+       hold breaks every test"), so b's tests are written on it
      - [ ] b: `installed_portrait_slots` filled from the Compiler's walk over the installed
        CPKs → verify: TC-ROOT-17
    - Not urgent, a small slice of its own (SWE-2), after the view's or beside it: player
