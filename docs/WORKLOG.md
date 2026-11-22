@@ -125,24 +125,19 @@ other items run beside it. **Ahead of item 6:** the `pes14` branch's step 12, a 
      draft's `IDs` cell), TC-LEG-01 to 05 and EU-SET-15 to 17 withdrawn, and a CHANGELOG
      `### Important` line telling members to delete the `legacy_ids.toml` 0.0.2 wrote. `vgl27`
      merged main and reverted the removal (`a0c24750`), its gates green with the mode back
-   - [ ] 1b: the detail window, in two slices, since its pictures need decoding and a cache
+   - [x] 1b: the detail window, in two slices, since its pictures need decoding and a cache
      of their own:
      - [x] 1b-i (2026-11-22, merge `63ecaae8`, Opus): hover, pin, Esc, double-click, Open
        folder and Copy messages in `export_grid`, the top box drawn empty (TC-GUI-09, 24, 25).
        The lead dropped the portraits cell's one-finding fallback, which no export reaches,
        and offers Copy messages only on an export with a Warning or an Error (DECISIONS); the
        built window beside the draft found the Effect line weak, fixed (`4fb5d8ec`)
-     - [ ] 1b-ii: the top box's pictures (the logo or referee marker, the portraits, the kit
-       texture) → verify: TC-GUI-31, 32. Committed on `sk/grid1b2` (`c1806f24`, Opus),
-       reviewed; rework 1 landed (`43b91e4f`, SWE-2): a box picture never enlarged (kept by
-       the maintainer, 2026-11-23: every real logo is 512 or 256), one rule for the marker's
-       name, citations. Gates running. An archive export's pictures wait for the
-       watcher-and-cache slice: reading one out of a 7z means decompressing it whole.
-       The look (release build in `look_grid`, scene `.tmp/look_1b2/app`) also puts three
-       decisions of DECISIONS 2026-11-22 "what the top box shows, and how" on
-       `maintainer/ui_decisions.html` as captures beside the draft (RUNBOOK "Lead and
-       sidekick"; not blocking): the title row covering a scrolled-under pin, an
-       archive's empty boxes, and an export dropped whole showing its listing's pictures
+     - [x] 1b-ii (2026-11-23, merge `e3ca6a56`, Opus, rework SWE-2): the top box's pictures
+       (TC-GUI-31, 32), read off the UI thread, at most 256 texels; a box picture never
+       enlarged (kept by the maintainer: every real logo is 512 or 256). Release build beside
+       the draft (scene `.tmp/look_1b2/app`): kit, player and portraits boxes match; three
+       decisions went to `maintainer/ui_decisions.html`. An archive's pictures wait for the
+       watcher-and-cache slice
    - [ ] 1c: the toolbar's strip and its counts, the log's lines linked to cells, the log
      collapsed when it would hide rows → verify: TC-GUI-15, 26, 27. It starts with a pure
      move of `team_compiler`'s `view/mod.rs` tests (1,230 lines since 1b-ii) into
