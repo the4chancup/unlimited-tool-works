@@ -254,6 +254,34 @@ fn the_team_toml_written_is_the_command_lines_export() {
     assert_wrote_and_kept(&view.recorder, &folder, &written, "outputs/0-panel.toml");
 }
 
+// A PES 2014 team's Team TOML is named `<name>.pes14.toml` so a file
+// only another PES 2014 save takes is told from the other versions'
+// `.toml` by its name: the PES 2014 fixture's team 1, IRELAND, suggests
+// `IRELAND.pes14.toml`, where PES 2021's /co/ suggests `co.toml`.
+#[test]
+fn the_team_tomls_suggested_name_marks_a_pes_2014_teams_file() {
+    for (version, test, id, name) in [
+        (
+            PesVersion::Pes14,
+            "export_toml_name14",
+            1u32,
+            "IRELAND.pes14.toml",
+        ),
+        (PesVersion::Pes21, "export_toml_name21", 714u32, "co.toml"),
+    ] {
+        let (mut view, mut window) = open_on(version, test, id);
+        let folder = save_folder(&view);
+        let (format, suggested) = export(
+            &mut window,
+            &mut view,
+            "Team TOML\u{2026}",
+            &folder.join(name),
+        );
+        assert_eq!(format, Export::TeamToml);
+        assert_eq!(suggested, folder.join(name), "{version:?}'s name");
+    }
+}
+
 /// Team `/co/` of `version`'s fixture exported as a Texport under the name
 /// the Save dialog suggests, `suggested_name` (`<short name>.ted` on 18-21,
 /// the first free `TEXPORT0000000N` on 17), the dialog filtering on

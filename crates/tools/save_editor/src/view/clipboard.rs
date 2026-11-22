@@ -29,7 +29,6 @@ use team_widgets::pitch::FORMATIONS;
 use crate::messages::Code;
 use crate::session::Session;
 use crate::session::import_sections::{Sections, keep_sections};
-use crate::view::appearance::PES14_TIP;
 use crate::view::interchange::{NoteGroup, stage};
 use crate::view::multi_aatf;
 use crate::view::{SaveView, Selection, selected_player, selected_team_id};
@@ -161,7 +160,7 @@ impl Target {
 /// then the selected row, `show` having cleared it the frame the
 /// selection left. `None` with nothing selected.
 fn target(view: &SaveView) -> Option<Target> {
-    let target = match view.click_kind {
+    match view.click_kind {
         Some(ClickKind::Preset(_)) => selected_team_id(view).map(Target::Preset),
         Some(ClickKind::Formation(_)) => selected_team_id(view).map(Target::Formation),
         None => match view.selected? {
@@ -170,31 +169,7 @@ fn target(view: &SaveView) -> Option<Target> {
             }
             Selection::Team(team_id) => Some(Target::Team(team_id)),
         },
-    }?;
-    match target {
-        // A Gameplan target is refused on a PES 2014 save: the copy
-        // carries Team TOML, which PES 2014 saves do not offer. A
-        // player's stats copy is unaffected.
-        Target::Team(_) | Target::Preset(_) | Target::Formation(_) if gameplan_off(view) => None,
-        _ => Some(target),
     }
-}
-
-/// Whether the open save's Gameplan copy targets are refused: their copy
-/// carries Team TOML, which PES 2014 saves do not offer.
-fn gameplan_off(view: &SaveView) -> bool {
-    view.session
-        .as_ref()
-        .is_some_and(|session| session.version() == PesVersion::Pes14)
-}
-
-/// The hover the Edit menu's disabled Copy and Paste carry while the
-/// target the keys would act on is refused: `PES14_TIP` on a PES 2014
-/// save, where a Gameplan copy would carry Team TOML, which the save does
-/// not offer. `None` for a target the save takes, or with nothing selected.
-pub(super) fn out_of_scope_tip(view: &SaveView) -> Option<&'static str> {
-    let refused = view.click_kind.is_some() || matches!(view.selected, Some(Selection::Team(_)));
-    (refused && gameplan_off(view)).then_some(PES14_TIP)
 }
 
 /// The Tactics view's shown preset and formation, each clamped to the

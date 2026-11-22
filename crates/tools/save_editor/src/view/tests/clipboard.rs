@@ -394,6 +394,38 @@ fn ctrl_v_on_the_preset_selector_writes_the_copied_preset_over_the_shown_one() {
     );
 }
 
+// A Gameplan copy carries Team TOML, which a PES 2014 save takes: a
+// copy of preset 1 pasted onto the shown preset 2 writes its Game Plan.
+// SE-GUI-56
+#[test]
+fn ctrl_v_on_a_pes_2014_preset_writes_the_copied_presets_game_plan() {
+    let (mut window, mut view) = open_window(&fixture(PesVersion::Pes14, "clip_pes14_preset"));
+    // The fixture's team 1, IRELAND: its presets hold strategies 1, 3
+    // and 4.
+    open_team_view(&mut window, &mut view, 1);
+    let plan = |view: &SaveView, preset: usize| {
+        team_entry(view, 1).tactics.presets[preset]
+            .game_plan
+            .expect("a PES 2014 preset holds its Game Plan")
+    };
+    let source = plan(&view, 0);
+    assert_eq!(source.strategy, 1, "premise: preset 1's Strategy");
+    assert_ne!(plan(&view, 1).strategy, 1, "premise: preset 2's differs");
+
+    click_button(&mut window, &mut view, "1");
+    let copied = copy(&mut window, &mut view);
+    click_button(&mut window, &mut view, "2");
+    assert_eq!(view.tactics.preset, 1, "preset 2 is on screen");
+    ctrl_v(&mut window, &mut view, &copied);
+
+    assert_eq!(plan(&view, 1).strategy, 1, "the copied preset's Strategy");
+    assert_eq!(
+        plan(&view, 1).sliders,
+        source.sliders,
+        "the copied preset's sliders"
+    );
+}
+
 // SE-GUI-56
 #[test]
 fn ctrl_v_on_the_formation_selector_writes_the_copied_formation_over_the_shown_one() {

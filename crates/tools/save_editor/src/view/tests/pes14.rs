@@ -2,7 +2,6 @@
 //! each control whose field the version does not store greyed.
 
 use pes_savefile::interchange::team_toml::TeamToml;
-use pes_savefile::model::PlayerEntry;
 
 use super::*;
 
@@ -179,26 +178,28 @@ fn a_pes14_save_draws_screens_and_menus_and_drags_without_panics() {
         assert_greyed_item(&nodes, &mut window, &mut view, label);
     }
 
-    // The Team menu: the boots and gloves item and the two default-body
-    // items stay live (the version stores the ids they write), the
-    // out-of-scope team file and formation picture greyed.
+    // The Team menu: the boots and gloves item, the two default-body
+    // items and the team file panel's entry stay live (the version
+    // stores the ids they write, and Team TOML takes a PES 2014 team
+    // whole), the out-of-scope formation picture greyed.
     let nodes = open_menu(&mut window, &mut view, "Team", "Set edited flag");
     for label in [
         "Set boots and gloves IDs for everyone\u{2026}",
         "Hide default body (Enable FPC)",
         "Show default body (Disable FPC)",
+        "Import / export team file\u{2026}",
     ] {
         assert!(
             !menu_item(&nodes, label).is_disabled(),
             "the {label} item is enabled on PES 2014"
         );
     }
-    for label in [
-        "Import / export team file\u{2026}",
+    assert_greyed_item(
+        &nodes,
+        &mut window,
+        &mut view,
         "Save a picture of the formations\u{2026}",
-    ] {
-        assert_greyed_item(&nodes, &mut window, &mut view, label);
-    }
+    );
 
     // The Savefile menu's out-of-scope items; the read-only ones stay.
     let nodes = open_menu(&mut window, &mut view, "Savefile", "Output rosters");
@@ -350,11 +351,12 @@ fn a_pes15_save_keeps_the_face_run_controls_enabled() {
 // team row draws the tactics editor's PES 2014 frame (the preset bar,
 // the Scroll-only formation bar and the Preset tactics panel, with no
 // Fluid formation, Portraits, formation selector or Advanced
-// instructions), while the Edit menu's Copy and Paste still refuse a
-// Gameplan target — they carry Team TOML, which PES 2014 saves do not
-// offer — and the team file panel's out-of-scope controls are disabled.
+// instructions), the Edit menu's Copy and Paste take a Gameplan target
+// — they carry Team TOML, which a PES 2014 save takes — and the team
+// file panel's controls work: a file staged for it enables the Gameplan
+// section and Apply, which writes the file's Game Plan.
 #[test]
-fn a_pes14_save_draws_the_gameplan_and_greys_the_team_file_panel() {
+fn a_pes14_save_draws_the_gameplan_and_applies_a_team_file() {
     let path = pes14_fixture_plain("pes14_gameplan");
     let mut view = SaveView::new();
     view.open(&path);
@@ -435,26 +437,19 @@ fn a_pes14_save_draws_the_gameplan_and_greys_the_team_file_panel() {
         .count();
     assert_eq!(copy_swaps, 1, "the preset bar's Copy/swap menu alone");
 
-    // The Edit menu's Copy and Paste are dead on the Gameplan target a
-    // team row is, with the out-of-scope tooltip.
+    // The Edit menu's Copy and Paste are live on the Gameplan target a
+    // team row is.
     let nodes = open_menu(&mut window, &mut view, "Edit", "Copy");
     for label in ["Copy", "Paste"] {
-        let item = menu_item(&nodes, label);
         assert!(
-            item.is_disabled(),
-            "{label} is disabled on a PES 2014 Gameplan"
-        );
-        assert_eq!(
-            tooltip_containing(&mut window, &mut view, centre(item), "PES 2014"),
-            Some("Not available on PES 2014 saves".to_string()),
-            "{label}'s hover"
+            !menu_item(&nodes, label).is_disabled(),
+            "{label} is enabled on a PES 2014 Gameplan"
         );
     }
 
-    // The team file panel, opened as the menu's disabled item cannot (the
-    // menu check leaves the Edit menu open, closed here): the export and
-    // pick buttons are disabled on PES 2014, and the Gameplan section is
-    // too, drawn once a file is staged for it.
+    // The team file panel, opened as the menu's item opens it (the menu
+    // check leaves the Edit menu open, closed here): the export and pick
+    // buttons are enabled on PES 2014.
     window.frame(
         vec![key(egui::Key::Escape, egui::Modifiers::NONE, true)],
         |ui| show(ui, &mut view, &|| Vec::new()),
@@ -468,21 +463,26 @@ fn a_pes14_save_draws_the_gameplan_and_greys_the_team_file_panel() {
         .collect();
     for label in ["Team TOML\u{2026}", "Pick\u{2026}"] {
         assert!(
-            node_labeled(&panel, Role::Button, label).is_disabled(),
-            "the {label} button is disabled on PES 2014"
+            !node_labeled(&panel, Role::Button, label).is_disabled(),
+            "the {label} button is enabled on PES 2014"
         );
     }
-    let document = {
-        let file19 = EditFile::from_bytes(&fixture_save(PesVersion::Pes19)).unwrap();
-        let players: Vec<&PlayerEntry> = file19.players().iter().collect();
-        TeamToml::from_team(
-            PesVersion::Pes19,
-            file19.team(714).expect("team 714"),
-            &players,
-        )
-        .expect("the export")
+
+    // A PES 2014 file of the team with preset 1's Strategy changed,
+    // staged for it: the Gameplan section and Apply are enabled, and
+    // Apply writes the file's Game Plan.
+    let mut document = {
+        let file = view.session.as_ref().expect("an open save").file();
+        TeamToml::from_team(PesVersion::Pes14, file.team(701).expect("team 701"), &[])
+            .expect("the export")
     };
-    let toml = path.with_file_name("picked_714.toml");
+    let plan = document.tactics.presets[0]
+        .game_plan
+        .as_mut()
+        .expect("a PES 2014 preset holds its Game Plan");
+    assert_eq!(plan.strategy, Some(1), "premise: preset 1's Strategy");
+    plan.strategy = Some(5);
+    let toml = path.with_file_name("picked.pes14.toml");
     std::fs::write(&toml, document.to_toml().expect("the document")).unwrap();
     let recorder = view.session.as_ref().expect("an open save").recorder();
     view.interchange.pick(toml, recorder);
@@ -492,17 +492,20 @@ fn a_pes14_save_draws_the_gameplan_and_greys_the_team_file_panel() {
         .map(|(_, node)| node.clone())
         .collect();
     assert!(
-        node_labeled(&panel, Role::CheckBox, "Gameplan").is_disabled(),
-        "the Gameplan section is disabled on PES 2014"
+        !node_labeled(&panel, Role::CheckBox, "Gameplan").is_disabled(),
+        "the Gameplan section is enabled on PES 2014"
     );
-
-    // Apply cannot write the staged file into the save either.
     let apply = node_labeled(&panel, Role::Button, "Apply");
-    assert!(apply.is_disabled(), "Apply is disabled on PES 2014");
+    assert!(!apply.is_disabled(), "Apply is enabled on PES 2014");
+    click(&mut window, apply, &mut view);
+
     assert_eq!(
-        tooltip_containing(&mut window, &mut view, centre(apply), "PES 2014"),
-        Some("Not available on PES 2014 saves".to_string()),
-        "Apply's hover"
+        team_entry(&view, 701).tactics.presets[0]
+            .game_plan
+            .expect("a game plan")
+            .strategy,
+        5,
+        "Apply wrote the file's Strategy"
     );
     view.panel = None;
 }

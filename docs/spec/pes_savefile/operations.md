@@ -501,6 +501,7 @@ swerve = 77
 defensive_prowess = 77
 ball_winning = 77
 aggression = 77                 # PES 20 and later
+tenacity = 77                   # PES 2014 only
 kicking_power = 77
 speed = 77
 explosive_power = 77
@@ -681,6 +682,10 @@ pub fn shirt_name_from(name: &str, version: PesVersion) -> String;
 Rules of `apply`:
 
 - `pes_version` absent means "the target's version" (no conversion).
+- A PES 2014 document (`pes_version = 14`) goes only into a PES 2014 save, and a PES 2014 save
+  takes only a PES 2014 document. A pair with PES 2014 on one side only is refused before
+  anything is written (`VersionPair`, naming both versions): the conversion has no map for the
+  fields only PES 2014 stores.
 - A `bench_order` writes its twelve and refills the record's other nine as the game writes them
   (the roster slots from 0 that neither the eleven nor the twelve name, ascending, the eleven
   being the file's `starting_eleven` when it has one, the record's else). It refills them only

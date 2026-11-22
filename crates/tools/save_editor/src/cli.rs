@@ -129,11 +129,12 @@ struct ExportTomlArgs {
     /// The file the one team goes to. It is replaced when it exists.
     #[arg(short, long, value_name = "FILE", requires = "team")]
     out: Option<PathBuf>,
-    /// Every cup team of the save (ids 701 to 920), one <id>.toml each.
+    /// Every cup team of the save (ids 701 to 920, every team on a PES 2014 save), one
+    /// <id>.toml each (<id>.pes14.toml on PES 2014).
     #[arg(long, requires = "out_dir")]
     all_teams: bool,
-    /// The folder the <id>.toml files go in. It is created when missing, and files already
-    /// there are replaced.
+    /// The folder the files go in. It is created when missing, and files already there
+    /// are replaced.
     #[arg(long, value_name = "FOLDER", requires = "all_teams")]
     out_dir: Option<PathBuf>,
 }
@@ -196,9 +197,9 @@ fn open(path: &Path) -> Result<Session, CliError> {
     Session::open(path, Recorder::default()).map_err(invalid)
 }
 
-/// `open` for a command whose feature the PES 2014 build leaves out (`export-toml`,
-/// `import-toml`, `apply-patch`, `diff` and `export-teams-list`): the window greys each of
-/// them on a PES 2014 save, and the command line refuses in the same words.
+/// `open` for a command whose feature the PES 2014 build leaves out (`apply-patch`, `diff`
+/// and `export-teams-list`): the window greys each of them on a PES 2014 save, and the
+/// command line refuses in the same words.
 fn open_in_scope(path: &Path) -> Result<Session, CliError> {
     let session = open(path)?;
     if session.version() == PesVersion::Pes14 {
@@ -246,7 +247,7 @@ fn import_toml(
     running: fn() -> Vec<RunningPes>,
     report: &mut Report,
 ) -> Result<(), CliError> {
-    let mut session = open_in_scope(&args.base)?;
+    let mut session = open(&args.base)?;
     refuse_while_running(&running(), session.version(), args.edit_mode_closed)?;
     let text = read_text(&args.file)?;
     let document = TeamToml::parse(&text)
@@ -317,7 +318,7 @@ fn apply_patch(
 /// `export-toml`: every team's text is built before the first file is written, so a team
 /// that cannot be exported refuses the command with nothing written.
 fn export_toml(args: &ExportTomlArgs, report: &mut Report) -> Result<(), CliError> {
-    let session = open_in_scope(&args.save)?;
+    let session = open(&args.save)?;
     let files: Vec<(u32, PathBuf, String)> = match (args.team, &args.out, &args.out_dir) {
         (Some(id), Some(out), _) => {
             // An --out naming the save itself is refused before anything is written: the
@@ -336,9 +337,20 @@ fn export_toml(args: &ExportTomlArgs, report: &mut Report) -> Result<(), CliErro
         }
         (None, _, Some(out_dir)) => {
             let mut files = Vec::new();
+            // A file only another PES 2014 save takes is told apart from the
+            // other versions' files by its name.
+            let pes14 = session.version() == PesVersion::Pes14;
             for id in session.cup_team_ids() {
-                let path = out_dir.join(format!("{id}.toml"));
-                files.push((id, path, session.export_team(id).map_err(invalid)?));
+                let name = if pes14 {
+                    format!("{id}.pes14.toml")
+                } else {
+                    format!("{id}.toml")
+                };
+                files.push((
+                    id,
+                    out_dir.join(name),
+                    session.export_team(id).map_err(invalid)?,
+                ));
             }
             if files.is_empty() {
                 return Err(invalid(anyhow!(

@@ -7,7 +7,8 @@ one that fills every logical processor slows the desktop even at below-normal pr
 settings are made on this process, before it starts the shell, because every process started
 from it inherits them: PowerShell, then cargo, rustc, the linker and the test binaries. So a
 recipe needs no wrapper of its own, and a run that should take the whole machine asks for it:
-`$env:UTW_PRIORITY = 'normal'; just checkpoint`. Exits with the shell's exit code."""
+`$env:UTW_PRIORITY = 'normal'; just checkpoint`. A recipe line started from a process already
+lower (Idle, or fewer processors) keeps the lower setting. Exits with the shell's exit code."""
 
 import ctypes
 import os
@@ -15,6 +16,7 @@ import subprocess
 import sys
 
 BELOW_NORMAL_PRIORITY_CLASS = 0x4000
+IDLE_PRIORITY_CLASS = 0x40
 
 
 def free_processors(count: int) -> int:
@@ -24,16 +26,31 @@ def free_processors(count: int) -> int:
 
 
 def lower_this_process() -> None:
+    """Lowers, never raises: a process started already lower (a job confined to Idle and to
+    fewer processors while someone works at the machine) keeps that, since every recipe line
+    of a running job passes through here and would otherwise undo the confinement."""
     kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
     kernel32.GetCurrentProcess.restype = ctypes.c_void_p
+    kernel32.GetPriorityClass.argtypes = [ctypes.c_void_p]
+    kernel32.GetPriorityClass.restype = ctypes.c_uint32
     kernel32.SetPriorityClass.argtypes = [ctypes.c_void_p, ctypes.c_uint32]
+    kernel32.GetProcessAffinityMask.argtypes = [
+        ctypes.c_void_p,
+        ctypes.POINTER(ctypes.c_size_t),
+        ctypes.POINTER(ctypes.c_size_t),
+    ]
     kernel32.SetProcessAffinityMask.argtypes = [ctypes.c_void_p, ctypes.c_size_t]
     this = kernel32.GetCurrentProcess()
-    if not kernel32.SetPriorityClass(this, BELOW_NORMAL_PRIORITY_CLASS):
+    if kernel32.GetPriorityClass(this) != IDLE_PRIORITY_CLASS:
+        if not kernel32.SetPriorityClass(this, BELOW_NORMAL_PRIORITY_CLASS):
+            raise ctypes.WinError(ctypes.get_last_error())
+    inherited = ctypes.c_size_t()
+    system = ctypes.c_size_t()
+    if not kernel32.GetProcessAffinityMask(this, ctypes.byref(inherited), ctypes.byref(system)):
         raise ctypes.WinError(ctypes.get_last_error())
     count = os.cpu_count() or 1
-    mask = (1 << count) - (1 << free_processors(count))
-    if not kernel32.SetProcessAffinityMask(this, mask):
+    mask = ((1 << count) - (1 << free_processors(count))) & inherited.value
+    if mask and not kernel32.SetProcessAffinityMask(this, mask):
         raise ctypes.WinError(ctypes.get_last_error())
 
 

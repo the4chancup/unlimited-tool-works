@@ -6,6 +6,10 @@
 
 - **Save editor**: a PES 2014 save now shows every team it holds, not only those at ids 701 to
   920, since the 4cc's 2014 teams sit at real clubs' ids (/gd/ at 136, /hm/ at 1236).
+- **Save editor**: a whole team, with its players' looks and its Gameplan, can now be copied
+  from one PES 2014 save to another as a Team TOML file. This works through Team > Import /
+  export team file…, Copy and Paste on the Gameplan, and the `export-toml` and `import-toml`
+  commands. The file is named `<team name>.pes14.toml`, and only a PES 2014 save takes it.
 - **All tools**: UTW now keeps a record of the five times it was opened before the current
   one, with the saves opened and written each time. Report a problem's new box `Include earlier sessions` adds
   them to the file, for a problem that began before UTW was last opened, such as a crash.

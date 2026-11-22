@@ -669,6 +669,10 @@ mod tests {
             "Warning import_slot_empty (slot=07)"
         );
         assert_eq!(
+            line(&import_note(&ImportNote::NoAppearanceRecord { slot: 9 })),
+            "Warning import_no_appearance_record (slot=09)"
+        );
+        assert_eq!(
             line(&import_note(&ImportNote::TextCropped {
                 path: "players.02.shirt_name".to_owned(),
                 cropped: "ABCDEFGHIJKLMNOP".to_owned()

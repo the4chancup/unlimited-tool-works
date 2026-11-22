@@ -169,7 +169,8 @@ arm_movement_running = 1        # 1 to 8 (PES 15: 1 to 5; PES 20 and 21: 1 to 10
 corner_kick = 1                 # 1 to 6 (PES 20 and 21: 1 to 10)
 free_kick = 1                   # 1 to 16 (PES 20 and 21: 1 to 20)
 penalty_kick = 1                # 1 to 4 (PES 20 and 21: 1 to 7)
-dribbling = 1                   # 1 to 4 (PES 20 and 21 only)
+dribbling = 1                   # 1 to 4 (PES 2014, 20 and 21 only)
+punt_kick = 1                   # 1 to 4 (PES 2014 only)
 goal_celebration_1 = 0          # 0 none, then PES 15: 1 to 112, 16 and 17: 1 to 122, 18: 1 to 127, 19: 1 to 140, 20: 1 to 152, 21: 1 to 162
 goal_celebration_2 = 0          # 0 none, then PES 15: 1 to 112, 16 and 17: 1 to 122, 18: 1 to 127, 19: 1 to 140, 20: 1 to 152, 21: 1 to 162
 

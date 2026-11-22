@@ -173,20 +173,57 @@ fn an_out_naming_the_save_itself_is_refused_and_the_save_unchanged() {
     );
 }
 
+// Team 1 is the vanilla PES 2014 fixture's first record (the cup ids start on PES 15).
 #[test]
-fn a_pes_2014_save_is_refused() {
+fn a_pes_2014_team_exports_with_pes_version_14() {
     let sandbox = Sandbox::new("export_toml_pes14");
     sandbox.fixture(PesVersion::Pes14, "EDIT14");
 
-    // Team 1 is the vanilla PES 2014 fixture's first record (the cup ids start on PES 15).
     let run = sandbox.run(&[
         "export-toml",
         &sandbox.arg("EDIT14"),
         "--team",
         "1",
         "--out",
-        &sandbox.arg("1.toml"),
+        &sandbox.arg("1.pes14.toml"),
     ]);
-    run.assert_refused(2, &["PES 2014"]);
-    assert!(!sandbox.path("1.toml").exists());
+    assert_eq!(run.exit_code(), 0, "{:?}", run.messages());
+    let text = fs::read_to_string(sandbox.path("1.pes14.toml")).unwrap();
+    let document =
+        TeamToml::parse(&text).unwrap_or_else(|error| panic!("the export parses: {error}"));
+    assert_eq!(document.pes_version, Some(PesVersion::Pes14));
+    assert_eq!(document.team.id, Some(1));
+}
+
+// On PES 2014 every team is a cup team, so `--all-teams` writes one file per
+// team of the save, each named `<id>.pes14.toml`.
+#[test]
+fn all_teams_on_a_pes_2014_save_writes_id_pes14_toml_files() {
+    let sandbox = Sandbox::new("export_all_teams_pes14");
+    sandbox.fixture(PesVersion::Pes14, "EDIT");
+    let ids = team_ids(&sandbox);
+
+    let run = sandbox.run(&[
+        "export-toml",
+        &sandbox.arg("EDIT"),
+        "--all-teams",
+        "--out-dir",
+        &sandbox.arg("teams"),
+    ]);
+    assert_eq!(run.exit_code(), 0, "{:?}", run.messages());
+
+    let mut written: Vec<String> = fs::read_dir(sandbox.path("teams"))
+        .unwrap()
+        .map(|entry| entry.unwrap().file_name().to_string_lossy().into_owned())
+        .collect();
+    written.sort();
+    let mut expected: Vec<String> = ids.iter().map(|id| format!("{id}.pes14.toml")).collect();
+    expected.sort();
+    assert_eq!(
+        written, expected,
+        "one <id>.pes14.toml per team, no <id>.toml"
+    );
+    let first = fs::read_to_string(sandbox.path(&format!("teams/{}.pes14.toml", ids[0]))).unwrap();
+    let document = TeamToml::parse(&first).expect("the first file parses");
+    assert_eq!(document.pes_version, Some(PesVersion::Pes14));
 }

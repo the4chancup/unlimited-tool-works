@@ -33,9 +33,9 @@ use crate::view::{
 };
 
 /// Whether `version` is a save whose build leaves these features out
-/// entirely: PES 2014's, where the team file, the comparator, the patch
-/// and the formation pictures are not in scope, so the version itself
-/// gates them rather than a field the record lacks.
+/// entirely: PES 2014's, where the comparator, the patch and the
+/// formation pictures are not in scope, so the version itself gates
+/// them rather than a field the record lacks.
 fn out_of_scope(version: PesVersion) -> bool {
     version == PesVersion::Pes14
 }
@@ -50,9 +50,9 @@ fn out_of_scope(version: PesVersion) -> bool {
 /// from the selected player, on a team row from the team's first filled
 /// roster slot; the aesthetics items carry the ownership line as their
 /// disabled hover (SE-GUI-22), the FPC items carrying the hide-id error's
-/// text instead when the settings put one out of band. The team file and
-/// formation picture items are off where they are out of scope — each
-/// disabled item says which on hover.
+/// text instead when the settings put one out of band. The formation
+/// picture item is off where it is out of scope — each disabled item
+/// says which on hover.
 pub(crate) fn team_menu(ui: &mut egui::Ui, view: &mut SaveView) {
     let Some(team_id) = selected_team_id(view) else {
         add_enabled_ui(ui, false, |ui| {
@@ -139,14 +139,7 @@ pub(crate) fn team_menu(ui: &mut egui::Ui, view: &mut SaveView) {
             ui.close();
         }
         menu_separator(ui);
-        if add_enabled(
-            ui,
-            !out_of_scope(version),
-            egui::Button::new("Import / export team file\u{2026}"),
-        )
-        .on_disabled_hover_text(PES14_TIP)
-        .clicked()
-        {
+        if ui.button("Import / export team file\u{2026}").clicked() {
             view.panel = Some(Panel::Interchange);
             ui.close();
         }

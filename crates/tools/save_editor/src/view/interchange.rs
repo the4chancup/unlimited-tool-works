@@ -164,7 +164,8 @@ impl Export {
     }
 
     /// The suggested file name for `team` of a `version` save at `save`:
-    /// a Team TOML's `<name>.toml`, the team's display name less its
+    /// a Team TOML's `<name>.toml` (`<name>.pes14.toml` on PES 2014,
+    /// whose file only another PES 2014 save takes), the team's display name less its
     /// slashes (`/f/` gives `f.toml`; a name in another script stays),
     /// a name left empty or holding a character a file name cannot hold
     /// (`\ / : * ? " < > |`) giving way to the short name and that one,
@@ -191,7 +192,12 @@ impl Export {
                 } else {
                     team.id.to_string()
                 };
-                format!("{file}.toml")
+                let extension = if version == PesVersion::Pes14 {
+                    "pes14.toml"
+                } else {
+                    "toml"
+                };
+                format!("{file}.{extension}")
             }
             Export::Texport => match version {
                 PesVersion::Pes14 | PesVersion::Pes15 | PesVersion::Pes16 | PesVersion::Pes17 => (0
@@ -952,16 +958,12 @@ fn contents(
             display_name(&team.name),
             team.id
         ));
-        if add_enabled(
-            ui,
-            version != PesVersion::Pes14,
-            egui::Button::new("Team TOML\u{2026}"),
-        )
-        .on_hover_text(
-            "The team, its tactics and its players with every value: the same file the command line's export-toml writes",
-        )
-        .on_disabled_hover_text(PES14_TIP)
-        .clicked()
+        if ui
+            .button("Team TOML\u{2026}")
+            .on_hover_text(
+                "The team, its tactics and its players with every value: the same file the command line's export-toml writes",
+            )
+            .clicked()
         {
             action = Some(Action::Export(Export::TeamToml));
         }
@@ -991,14 +993,10 @@ fn contents(
             team.id
         ));
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Min), |ui| {
-            if add_enabled(
-                ui,
-                version != PesVersion::Pes14,
-                egui::Button::new("Pick\u{2026}"),
-            )
-            .on_hover_text("Pick the team file to import; its extension decides how it is read")
-            .on_disabled_hover_text(PES14_TIP)
-            .clicked()
+            if ui
+                .button("Pick\u{2026}")
+                .on_hover_text("Pick the team file to import; its extension decides how it is read")
+                .clicked()
             {
                 action = Some(Action::Pick);
             }
@@ -1098,13 +1096,7 @@ fn contents(
             }
         }
         if staged.held.gameplan {
-            if version == PesVersion::Pes14 {
-                add_enabled_ui(ui, false, |ui| checkbox(ui, &mut false, "Gameplan"))
-                    .inner
-                    .on_disabled_hover_text(PES14_TIP);
-            } else {
-                checkbox(ui, &mut sections.gameplan, "Gameplan");
-            }
+            checkbox(ui, &mut sections.gameplan, "Gameplan");
         }
     });
     match &staged.import {
@@ -1132,18 +1124,14 @@ fn contents(
     // record an edit that changes nothing.
     let unchanged = any_chosen && matches!(&staged.import, Ok(import) if !import.changes);
     ui.horizontal_wrapped(|ui| {
-        let apply = add_enabled(
+        if add_enabled(
             ui,
-            staged.import.is_ok() && any_chosen && !unchanged && version != PesVersion::Pes14,
+            staged.import.is_ok() && any_chosen && !unchanged,
             egui::Button::new("Apply"),
         )
-        .on_hover_text("Write the chosen sections as one undoable edit");
-        let apply = if version == PesVersion::Pes14 {
-            apply.on_disabled_hover_text(PES14_TIP)
-        } else {
-            apply
-        };
-        if apply.clicked() {
+        .on_hover_text("Write the chosen sections as one undoable edit")
+        .clicked()
+        {
             action = Some(Action::Apply);
         }
         ui.label("The changes can be undone and stay unsaved until you click Save.");
@@ -1397,6 +1385,13 @@ mod tests {
                 None,
                 "",
                 "Empty roster slot",
+            ),
+            (
+                ImportNote::NoAppearanceRecord { slot: 24 },
+                Some(24),
+                None,
+                "",
+                "No appearance record",
             ),
             (
                 ImportNote::NotInThisVersion {
