@@ -43,9 +43,11 @@ use std::collections::BTreeMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 
+use aesthetics_export::test_exports::Requirement;
 use common::{Run, Sandbox};
+use pes_version::PesVersion;
 use studio_core::{ExportId, PipelineEvent, Scope};
-use team_compiler::test_files::clean_model;
+use team_compiler::test_files::{self, clean_model};
 
 impl Sandbox {
     fn write(&self, relative: &str, contents: &[u8]) {
@@ -72,6 +74,16 @@ impl Sandbox {
     /// An absolute path inside the sandbox, as a command-line argument.
     fn arg(&self, relative: &str) -> String {
         self.root.join(relative).to_str().unwrap().to_owned()
+    }
+
+    /// `complete_for` on PES 21, every requirement on.
+    fn complete(&self, export: &str) {
+        self.complete_for(export, PesVersion::Pes21, &[]);
+    }
+
+    /// `test_files::complete` on the export folder `export`, relative to the sandbox.
+    fn complete_for(&self, export: &str, version: PesVersion, without: &[Requirement]) {
+        test_files::complete(&self.root.join(export), version, without);
     }
 }
 
@@ -342,13 +354,3 @@ const TEAM_COLORS_MISSING: &str = "Info team_colors_missing [Keep] ()";
 /// One player folder with a face model: written with `clean_model()`, an export that validates
 /// with no finding.
 const CLEAN_PLAYER: &str = "Players/03 - A/face_high.fmdl";
-
-/// Writes `<export>/logo.png`, a plain 512 x 512 PNG: a `Full` export with no logo is
-/// `logo_missing`, and at 512 the logo needs no upscale, so it adds no finding. It does add the
-/// team's three flag PNGs to the CPK.
-fn write_logo(sandbox: &Sandbox, export: &str) {
-    sandbox.write(
-        &format!("{export}/logo.png"),
-        &logo::png(512, 512, |_, _| [0, 128, 0, 255]),
-    );
-}

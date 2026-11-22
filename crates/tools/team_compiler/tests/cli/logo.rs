@@ -7,11 +7,13 @@ use std::collections::BTreeMap;
 use dds_convert::{SourceFormat, decode, encode_png};
 
 use crate::common::Sandbox;
+use aesthetics_export::test_exports::Requirement;
+use pes_version::PesVersion;
+
 use crate::compile::{
     compiled_kits, compiled_players, cpk_entries, pes_settings, pes21_settings, tracer_kit,
-    tracer_portrait,
 };
-use crate::referees::write_ref_a;
+use crate::referees::{REFS, write_ref_a};
 use crate::{CLEAN_PLAYER, TEAM_COLORS_MISSING, clean_model, findings_of};
 
 const RED: [u8; 4] = [255, 0, 0, 255];
@@ -86,6 +88,7 @@ fn a_wide_logo_compiled_for_pes_21_gives_three_letterboxed_squares() {
         "exports/co Midcup Logo/logo.png",
         &png(1000, 600, |_, _| RED),
     );
+    sandbox.complete("exports/co Midcup Logo");
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -140,6 +143,9 @@ fn logos_tagged_crop_and_stretch_fill_the_square_and_a_small_one_is_upscaled() {
         "exports/egg Midcup Small/logo.png",
         &png(300, 300, |_, _| GREEN),
     );
+    for export in ["co Midcup Crop", "dbg Midcup Stretch", "egg Midcup Small"] {
+        sandbox.complete(&format!("exports/{export}"));
+    }
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -209,6 +215,8 @@ fn a_small_logo_gives_the_128_pixel_one_and_an_undecodable_one_drops_the_whole_l
         &png(600, 600, |_, _| RED),
     );
     sandbox.write("exports/dbg Midcup Broken/logo_small.png", b"not an image");
+    sandbox.complete("exports/co Midcup Pair");
+    sandbox.complete("exports/dbg Midcup Broken");
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -253,13 +261,10 @@ pub(crate) const CO_KITS_FINDINGS: [&str; 6] = [
     "Info kit_colors_derived [Keep] at Kits/g1 ()",
 ];
 
-/// Writes `exports/<name>`: player 03 with his portrait, kits p1 and g1, and no root file.
+/// Writes `exports/<name>`: player 03 and kits p1 and g1, and no root file; the test
+/// completes it.
 fn write_full_export(sandbox: &Sandbox, name: &str) {
     sandbox.write(&format!("exports/{name}/{CLEAN_PLAYER}"), &clean_model());
-    sandbox.write(
-        &format!("exports/{name}/Players/03 - A/portrait.dds"),
-        &tracer_portrait(),
-    );
     for slot in ["p1", "g1"] {
         sandbox.write(
             &format!("exports/{name}/Kits/{slot}/kit.dds"),
@@ -273,6 +278,11 @@ fn write_full_export(sandbox: &Sandbox, name: &str) {
 fn a_full_export_with_no_logo_file_is_logo_missing_and_compiles_without_a_logo() {
     let sandbox = Sandbox::new("logo_missing_full");
     write_full_export(&sandbox, "co Full Spring");
+    sandbox.complete_for(
+        "exports/co Full Spring",
+        PesVersion::Pes21,
+        &[Requirement::Logo],
+    );
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -301,6 +311,8 @@ fn a_midcup_or_referee_export_with_no_logo_and_a_full_one_with_a_refused_logo_ha
         &clean_model(),
     );
     write_ref_a(&sandbox, &["01"]);
+    sandbox.complete("exports/co Midcup Day 5");
+    sandbox.complete(REFS);
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -322,6 +334,7 @@ fn a_midcup_or_referee_export_with_no_logo_and_a_full_one_with_a_refused_logo_ha
     let refused = Sandbox::new("logo_missing_refused");
     write_full_export(&refused, "co Full Autumn");
     refused.write("exports/co Full Autumn/logo.png", b"not an image");
+    refused.complete("exports/co Full Autumn");
 
     let run = refused.run(&pes21_settings(&refused), &["compile", "--no-deploy"]);
 
@@ -344,6 +357,7 @@ fn a_logo_compiled_for_pes_19_gets_the_emblem_names() {
         "exports/co Midcup Logo/logo.png",
         &png(600, 600, |_, _| RED),
     );
+    sandbox.complete_for("exports/co Midcup Logo", PesVersion::Pes19, &[]);
 
     let run = sandbox.run(&pes_settings(&sandbox, 19), &["compile", "--no-deploy"]);
 

@@ -18,7 +18,7 @@ use crate::common::Sandbox;
 use crate::compile::{cpk_entries, pes_settings, pes21_settings, tracer_player_file};
 use crate::deploy::install_pes;
 use crate::patch::{pes17_crocs_export, read_patch, write_names_export};
-use crate::{clean_model, patch_written, write_logo};
+use crate::{clean_model, patch_written};
 
 /// The salt the tests' own writes use; a save's bytes depend on it, its payload does not.
 const TEST_SALT: [u8; 320] = [7; 320];
@@ -33,21 +33,20 @@ pub(crate) fn install_save(sandbox: &Sandbox, version: PesVersion) -> PathBuf {
     path
 }
 
-/// A `settings.toml` holding one motion key, for `/xx/ Full Name`'s slot 05, and the
-/// export's logo.
+/// A `settings.toml` holding one motion key, for `/xx/ Full Name`'s slot 05, the export
+/// completed.
 fn motion_export(sandbox: &Sandbox, export: &str) {
     sandbox.write(
         &format!("exports/{export}/Players/05 - A/settings.toml"),
         b"[appearance.motion]\nhunching_dribbling = 2\n",
     );
-    write_logo(sandbox, &format!("exports/{export}"));
+    sandbox.complete(&format!("exports/{export}"));
 }
 
 // TC-SAV-18
 #[test]
 fn a_deployed_run_applies_its_patch_to_the_savefile_and_keeps_a_bak() {
     let sandbox = Sandbox::new("savefile_applied");
-    write_logo(&sandbox, "exports/co Full Looks");
     install_pes(&sandbox);
     let save = install_save(&sandbox, PesVersion::Pes21);
     sandbox.write("PES/download/4cc_99_test.cpk", b"the old CPK");
@@ -110,6 +109,7 @@ fn a_deployed_run_applies_its_patch_to_the_savefile_and_keeps_a_bak() {
         &format!("{export}/Players/Sharer/face_high.fmdl"),
         &clean_model(),
     );
+    sandbox.complete(export);
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile"]);
 
@@ -259,7 +259,6 @@ fn a_deployed_run_applies_its_patch_to_the_savefile_and_keeps_a_bak() {
 #[test]
 fn a_write_names_export_s_names_reach_the_savefile() {
     let sandbox = Sandbox::new("savefile_write_names");
-    write_logo(&sandbox, "exports/co Full Auto");
     install_pes(&sandbox);
     install_save(&sandbox, PesVersion::Pes21);
     write_names_export(
@@ -268,6 +267,7 @@ fn a_write_names_export_s_names_reach_the_savefile() {
         "name = true\nshirt_name = \"SNUFFY\"\n",
         "name = \"Shared\"\n",
     );
+    sandbox.complete("exports/co Full Auto");
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile"]);
 
@@ -287,7 +287,6 @@ fn a_write_names_export_s_names_reach_the_savefile() {
 #[test]
 fn a_name_the_field_refuses_keeps_the_save_s_name() {
     let sandbox = Sandbox::new("savefile_name_invalid");
-    write_logo(&sandbox, "exports/co Full Auto");
     install_pes(&sandbox);
     let save = install_save(&sandbox, PesVersion::Pes21);
     let before = EditFile::load(&save).unwrap();
@@ -298,6 +297,7 @@ fn a_name_the_field_refuses_keeps_the_save_s_name() {
         &format!("{export}/Players/05 - A/settings.toml"),
         format!("name = \"{}\"\n", "a".repeat(70)).as_bytes(),
     );
+    sandbox.complete(export);
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile"]);
 

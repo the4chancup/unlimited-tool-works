@@ -6,11 +6,12 @@
 use std::collections::BTreeMap;
 use std::fs;
 
+use pes_version::PesVersion;
+
 use crate::common::Sandbox;
 use crate::compile::{cpk_entries, pes_settings, tracer_portrait};
 use crate::prefox_faces::{card_materials, card_model, small_dds};
 use crate::prefox_kits::write_kit;
-use crate::write_logo;
 
 /// The export every run compiles: team 714's.
 const EXPORT: &str = "co Full Compression";
@@ -41,11 +42,11 @@ fn wrapped_hair() -> Vec<u8> {
     wezlib::compress(&small_dds())
 }
 
-/// A sandbox `name` holding the export: slot 05 with `skin.dds`, `hair.dds` already wrapped,
-/// which the folder's textures carry whether or not a material names it, and a portrait; with
-/// `face_model`, also `face_high.model` and its `.mtl` naming `skin.dds`; a kit `p1` with its
-/// main texture; and the export's logo.
-fn sandbox_with_export(name: &str, face_model: bool) -> Sandbox {
+/// A sandbox `name` holding the export, completed for `version`: slot 05 with `skin.dds`,
+/// `hair.dds` already wrapped, which the folder's textures carry whether or not a material
+/// names it, and a portrait; with `face_model`, also `face_high.model` and its `.mtl` naming
+/// `skin.dds`; and a kit `p1` with its main texture.
+fn sandbox_with_export(name: &str, version: PesVersion, face_model: bool) -> Sandbox {
     let sandbox = Sandbox::new(name);
     let player = format!("exports/{EXPORT}/Players/05 - A");
     if face_model {
@@ -56,7 +57,7 @@ fn sandbox_with_export(name: &str, face_model: bool) -> Sandbox {
     sandbox.write(&format!("{player}/hair.dds"), &wrapped_hair());
     sandbox.write(&format!("{player}/portrait.dds"), &tracer_portrait());
     write_kit(&sandbox, EXPORT, "p1");
-    write_logo(&sandbox, &format!("exports/{EXPORT}"));
+    sandbox.complete_for(&format!("exports/{EXPORT}"), version, &[]);
     sandbox
 }
 
@@ -65,7 +66,8 @@ fn sandbox_with_export(name: &str, face_model: bool) -> Sandbox {
 /// PES 21 export holds no face model: the textures are what the tests here compare, and the
 /// `.model` face would only add a conversion to the run.
 fn compile(name: &str, version: u8, team_compiler: &str) -> Sandbox {
-    let sandbox = sandbox_with_export(name, version == 17);
+    let target = PesVersion::try_from(u16::from(version)).unwrap();
+    let sandbox = sandbox_with_export(name, target, version == 17);
     let settings = format!(
         "{}[compiler]\n{team_compiler}",
         pes_settings(&sandbox, version)

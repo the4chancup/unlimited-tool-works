@@ -24,6 +24,7 @@ fn spring_folder(sandbox: &Sandbox) {
         b"Spring kit placeholder.\n",
     );
     fs::create_dir_all(sandbox.root.join("exports/co Full Spring/Kits/p2")).unwrap();
+    sandbox.complete("exports/co Full Spring");
 }
 
 /// What `check` reports about the `co Full Spring` export, in any of its three forms. The roster
@@ -213,6 +214,7 @@ fn a_corrupt_archive_is_skipped_and_the_export_beside_it_is_still_checked() {
         &format!("exports/co Midcup Spring/{CLEAN_PLAYER}"),
         &clean_model(),
     );
+    sandbox.complete("exports/co Midcup Spring");
 
     let run = sandbox.run("", &["check"]);
 
@@ -270,6 +272,8 @@ fn export_paths_may_name_an_archive_outside_the_root() {
         &format!("exports/co Midcup C/{CLEAN_PLAYER}"),
         &clean_model(),
     );
+    sandbox.complete("exports/co Midcup A");
+    sandbox.complete("exports/co Midcup C");
     sandbox.copy_fixture("co Midcup Spring.zip", "elsewhere");
 
     let run = sandbox.run(
@@ -312,6 +316,8 @@ fn check_and_compile_leave_every_source_as_it_was() {
         &source_fixture("egg Midcup Tracer.7z"),
     );
     sandbox.copy_tracer_face("exports/esg Midcup Nested/wrapper/Players/03 - A");
+    sandbox.complete("exports/egg Midcup Tracer");
+    sandbox.complete("exports/esg Midcup Nested");
     let exports = sandbox.root.join("exports");
     let before = snapshot(&exports);
 
@@ -339,6 +345,7 @@ fn an_unfinished_upgrade_s_staging_folder_is_skipped_with_a_warning() {
         &format!("exports/dbg Midcup A/{CLEAN_PLAYER}"),
         &clean_model(),
     );
+    sandbox.complete("exports/dbg Midcup A");
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -367,6 +374,7 @@ fn an_unfinished_upgrade_s_staging_folder_is_skipped_in_any_letter_case() {
         &format!("exports/dbg Midcup A/{CLEAN_PLAYER}"),
         &clean_model(),
     );
+    sandbox.complete("exports/dbg Midcup A");
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -387,6 +395,7 @@ fn an_unfinished_upgrade_s_staging_folder_is_skipped_in_any_letter_case() {
 fn a_named_export_path_ending_in_upgrading_is_compiled_the_member_named_it() {
     let sandbox = Sandbox::new("upgrading_named");
     sandbox.copy_tracer("co Midcup Spring.upgrading");
+    sandbox.complete("exports/co Midcup Spring.upgrading");
 
     let run = sandbox.run(
         &pes21_settings(&sandbox),
