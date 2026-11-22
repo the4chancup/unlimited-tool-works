@@ -968,8 +968,8 @@ player, who uses only the Save editor.
     for the iris. The FPC entries then write skin 7 on PES 2014 only if stored 6 or 7 turns
     out to be a custom skin. A player with no appearance record is refused, as for the
     boots.
-12. Team TOML on PES 2014 (the bullet "Team TOML on PES 2014", above). Checked with the
-    autumn 2014 save's /gd/ (team 136): exported, imported onto an Akko team, and exported
-    again from the Akko save. The two documents are equal but for `[team] id`, and any other
+12. Team TOML on PES 2014 (the bullet "Team TOML on PES 2014", above), in Build 3, whose
+    release waits for it. Checked with the autumn 2014 save's /gd/ (team 136): exported,
+    imported onto an Akko team, and exported again from the Akko save. The two documents are equal but for `[team] id`, and any other
     difference is listed and explained. Then the imported team is looked at in game in Edit
     mode: names, looks and the Game Plan.
