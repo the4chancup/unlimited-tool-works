@@ -23,8 +23,9 @@
 ### New checks
 
 - **Compiler**: a `Full` export with no logo at its root is now the error `logo_missing`, and
-  on PES 2017 to 2021 a player of a `Full` export with no portrait is now the warning
-  `portrait_missing`.
+  on PES 2017 to 2021 a player with no portrait is now the warning `portrait_missing`. In a
+  `Midcup` export he is reported only when the game's installed files hold no portrait for
+  him either.
 
 ### Fixes
 

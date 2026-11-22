@@ -48,7 +48,8 @@ fn an_empty_doubled_layer_is_dropped_with_its_layer() {
         let export = TestExport::new("egg Midcup", PesVersion::Pes21)
             .folder(root)
             .folder(&doubled)
-            .without(Requirement::Content);
+            .without(Requirement::Content)
+            .without(Requirement::Portraits);
         let report = report_of(&export);
         assert_eq!(
             issue_codes(&report),

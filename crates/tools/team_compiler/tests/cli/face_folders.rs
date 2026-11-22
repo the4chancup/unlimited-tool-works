@@ -205,6 +205,7 @@ fn under_ingame_face_no_face_is_built_and_a_model_the_face_would_take_is_the_boo
             "Asset/model/character/glove/g0625/#Win/glove.fpkd",
             "common/character0/model/character/uniform/team/UniColor.bin",
             "common/etc/TeamColor.bin",
+            "common/render/symbol/player/71405.dds",
         ],
         "no face/real/71405/ path"
     );
@@ -263,6 +264,8 @@ fn under_ingame_face_a_boots_link_beside_a_boots_model_combines_and_a_plain_one_
             "Asset/model/character/face/real/71407/#Win/face.fpkd",
             "common/character0/model/character/uniform/team/UniColor.bin",
             "common/etc/TeamColor.bin",
+            "common/render/symbol/player/71405.dds",
+            "common/render/symbol/player/71407.dds",
         ],
         "no face/real/71405/ path"
     );
@@ -318,6 +321,7 @@ fn under_ingame_face_an_empty_face_subfolder_is_ignored() {
             "Asset/model/character/boots/k0625/#Win/boots.fpkd",
             "common/character0/model/character/uniform/team/UniColor.bin",
             "common/etc/TeamColor.bin",
+            "common/render/symbol/player/71405.dds",
         ],
         "no face/real/71405/ path"
     );
@@ -361,6 +365,8 @@ fn a_player_folder_with_no_face_model_gets_the_blank_face() {
             "Asset/model/character/face/real/71407/#Win/face.fpkd",
             "common/character0/model/character/uniform/team/UniColor.bin",
             "common/etc/TeamColor.bin",
+            "common/render/symbol/player/71405.dds",
+            "common/render/symbol/player/71407.dds",
         ]
     );
     assert_blank_face(&entries, FACE_05);
@@ -419,6 +425,8 @@ fn a_face_file_in_a_folder_with_no_face_model_is_not_used_and_reported() {
             "Asset/model/character/face/real/71405/#Win/face.fpkd",
             "common/character0/model/character/uniform/team/UniColor.bin",
             "common/etc/TeamColor.bin",
+            "common/render/symbol/player/71405.dds",
+            "common/render/symbol/player/71407.dds",
         ],
         "no face/real/71407/ path"
     );

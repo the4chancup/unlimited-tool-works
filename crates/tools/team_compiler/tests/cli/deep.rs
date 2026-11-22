@@ -85,6 +85,7 @@ fn a_far_vertex_drops_its_folder_at_check_and_at_compile_even_with_pass_through(
             "Asset/model/character/face/real/71407/#Win/face.fpkd",
             "common/character0/model/character/uniform/team/UniColor.bin",
             "common/etc/TeamColor.bin",
+            "common/render/symbol/player/71407.dds",
         ]
     );
 }
@@ -317,7 +318,16 @@ fn a_format_error_drops_its_folder_unless_pass_through_keeps_it() {
         "common/character0/model/character/uniform/team/UniColor.bin".to_owned(),
         "common/etc/TeamColor.bin".to_owned(),
     ];
-    assert_eq!(paths, [&boots(627)[..], &face(71407), &color_bins].concat());
+    assert_eq!(
+        paths,
+        [
+            &boots(627)[..],
+            &face(71407),
+            &color_bins,
+            &["common/render/symbol/player/71407.dds".to_owned()]
+        ]
+        .concat()
+    );
 
     for command in ["check", "compile"] {
         let run = sandbox.run(&pass_through_settings(&sandbox), &command_args(command));
@@ -348,7 +358,11 @@ fn a_format_error_drops_its_folder_unless_pass_through_keeps_it() {
             &boots(627),
             &face(71405),
             &face(71407),
-            &color_bins
+            &color_bins,
+            &[
+                "common/render/symbol/player/71405.dds".to_owned(),
+                "common/render/symbol/player/71407.dds".to_owned()
+            ]
         ]
         .concat()
     );
@@ -510,6 +524,7 @@ fn a_model_that_does_not_parse_is_model_broken_and_drops_its_folder_even_with_pa
             "Asset/model/character/face/real/71407/#Win/face.fpkd",
             "common/character0/model/character/uniform/team/UniColor.bin",
             "common/etc/TeamColor.bin",
+            "common/render/symbol/player/71407.dds",
         ]
     );
 }
@@ -563,6 +578,7 @@ fn a_logo_that_does_not_decode_is_logo_file_invalid_and_the_export_is_otherwise_
             "Asset/model/character/face/real/71407/#Win/face.fpkd",
             "common/character0/model/character/uniform/team/UniColor.bin",
             "common/etc/TeamColor.bin",
+            "common/render/symbol/player/71407.dds",
         ]
     );
 }
