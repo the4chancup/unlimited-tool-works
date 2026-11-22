@@ -84,8 +84,8 @@ other items run beside it. **After the detour**, in this order:
      2026-11-21 "Report a problem's earlier sessions in the regular colour") merged
      `5583611a`, and seen in the release build beside the draft, box clear and ticked
      (2026-11-21): the earlier sessions in the regular colour, the `~` line weak.
-4. 0.0.2-similar, Select all similar players: its two slices to build, after a code map
-   (`.tmp/similar/code_map.md`). Review rounds owed: every Carbon round a 0.0.2 step still
+4. 0.0.2-similar, Select all similar players: slices 1a and 1b merged (the group, the button
+   and its window), 1c and slice 2 to build (code map `.tmp/similar/code_map.md`). Review rounds owed: every Carbon round a 0.0.2 step still
    owes (Report a problem has had its whole review).
 5. 0.0.2-pes19, and with it the readme's PES 2019 claim.
 6. The Compiler's view in the build, unpolished, for the VGL organizer (the maintainer,
@@ -97,19 +97,33 @@ other items run beside it. **After the detour**, in this order:
    draft on 2026-11-22, and the Export upgrader's draft took the same window, log and counts.
    The maintainer approved both drafts on 2026-11-22, the Compiler's with the logo and
    portrait findings, the upgrader's once each export's two names stood under their columns.
-   The Sizes colouring and sorting were drafted and stamped the same day (gui.md "Sizes and
-   sorting"). Next: the first slice's brief (grid, window, log); Sizes and sorting come in a
-   later slice.
-   - Small slices of their own (SWE-2), beside the view: 0.0.2-logo, `logo_missing`, a
+   The Sizes colouring and sorting were drafted and stamped the same day
+   (`plans/team_compiler/gui.md` "Sizes and sorting"). The view is built in ordered slices (Opus), each landing and reviewed before
+   the next is briefed:
+   - [x] 1a (2026-11-22, merge `304822e4`, Opus, two reworks) the grid, read-only, in the
+     new lib `export_grid`, filled by `check`'s validation when the view opens and after each
+     Compile: rows, label, ID, player, portraits and kit cells, check states, the legend
+     (TC-GUI-04 without its watcher part, 20, 21). Owed: its look beside the draft
+   - [ ] 1b: the detail window: hover, pin, Esc, double-click, its top box, Copy messages
+     → verify: TC-GUI-09, 24, 25, 31, 32
+   - [ ] 1c: the toolbar's strip and its counts, the log's lines linked to cells, the log
+     collapsed when it would hide rows → verify: TC-GUI-15, 26, 27
+   - Then the row actions, the ID cell's editing, the watcher and cache, Sizes and sorting.
+     The watcher and cache's slice also owes TC-GUI-04's shallow archive check: 1a's check
+     reads a zip or 7z export whole, where the scenario wants nothing decompressed past its
+     root metadata.
+   - Slices of their own beside the view: 0.0.2-logo, `logo_missing`, a
      `Full` team export with no logo is an Error, and `portrait_missing`, on PES 2017 to 2021
      a player with no portrait is a Warning (`plans/aesthetics_export/object_model.md`
      "Validation semantics"; `plans/team_compiler/messages.md`; `plans/export_upgrader.md`
      "What it does"):
-     - [ ] a: `aesthetics_export`'s validation for `Full` exports, the Compiler's and the
-       upgrader's catalog rows, and the tests' `Full` fixtures given a logo and portraits or
-       the `Midcup` tag → verify: TC-ROOT-15, TC-ROOT-16, EU-MDL-43
-     - [ ] b: a `Midcup` export's players, through `installed_portrait_slots` filled from the
-       Compiler's walk over the installed CPKs → verify: TC-ROOT-17
+     - [ ] a (Opus: about 500 test mentions of `Full` exports may meet the new findings):
+       `aesthetics_export`'s validation, `Midcup` included through `installed_portrait_slots`
+       (`None` at every caller), both catalogs, the team tracers' goldens upgraded as
+       `Midcup`, then a census of the tests the findings break before they are fixed →
+       verify: TC-ROOT-15, TC-ROOT-16, EU-MDL-43, TC-ROOT-17's validation half
+     - [ ] b: `installed_portrait_slots` filled from the Compiler's walk over the installed
+       CPKs → verify: TC-ROOT-17
    - Not urgent, a small slice of its own (SWE-2), after the view's or beside it: player
      numbering without the hyphen (`plans/aesthetics_export/player_folders.md`, the section of
      that name): `aesthetics_export`'s `conventions` (`folder_slot`, `folder_player_name`), the
@@ -143,10 +157,9 @@ other items run beside it. **After the detour**, in this order:
     0.0.2 cut; 166 commits touching code, about 28,000 lines added). The pipelines of those
     days ran `--no-mutants` while mutfast was awaited, and `checkpoint.py run` moves
     `refs/checkpoints/gated` with or without the mutation run, so the first run after mutfast
-    (2026-11-20) diffed from `aab124dc` and nothing came back for the range. Owed:
-    - the cause: `--no-mutants` leaves the mutation run's base where it was (a second ref,
-      `refs/checkpoints/mutated`, which only a run that ran its mutants moves), so a gate
-      passed without mutants can never hide a range again;
+    (2026-11-20) diffed from `aab124dc` and nothing came back for the range. The cause is
+    fixed (2026-11-22): the mutation run starts from `refs/checkpoints/mutated`, which only a
+    run whose mutants all ran moves (RUNBOOK "How the work runs"). Owed:
     - the catch-up: `mutants-diff abbae531` over the range, sized first with its own
       estimate; per crate past about an hour a side, the crate's run goes to the VPS (RUNBOOK
       "Mutation runs and the VPS"), the rest here; then its triage as the checkpoints' are.
@@ -189,14 +202,20 @@ other items run beside it. **After the detour**, in this order:
     third add-on, EssexDotDev's 4cc-FMDL-Toolkit, to the Blender plan.
 15. The checkpoint on `f51c570a` (2026-11-22): fmt, clippy and every test suite passed, but
     the mutation run left 10 mutants alive, so `refs/checkpoints/gated` stays at `fc6e8cf0`
-    (list: `.tmp/lead/mutants_f51c570a/missed_all.txt`). Owed: their triage, as the
-    checkpoints' are (a Windows-only function tested on the VPS's Linux half is no gap), then
-    their tests in one SWE-2 slice, then a pipeline at the new HEAD:
-    - `save_editor` `view/portraits.rs` `read_images` (`&&` to `||`);
-    - `studio` `session_link.rs` (two timeouts) and `crash_dump.rs` `wait_until`,
-      `journal_holds_steps`;
-    - `studio_core` `shell/report.rs` `local_clock`, and four in `repro/session.rs`
-      `SessionWriter::adopt_folder` (5b2's folder adoption).
+    (list: `.tmp/lead/mutants_f51c570a/missed_all.txt`). The gate stayed for another reason
+    too: the VPS's disk filled during the `save_editor` half, so two mutants never ran
+    (`Portraits::shown_placeholder` and `player_list.rs` `toggle_in_group`); the next run
+    tests them again, the floor now 48 GiB and 72 GiB free (DECISIONS 2026-11-22). Triaged
+    2026-11-22:
+    - the two `session_link.rs` timeouts are caught: each mutant makes `give`'s send loop
+      endless, and a timeout an infinite loop explains counts as caught (RUNBOOK "Mutation
+      runs");
+    - [ ] the other eight get tests in one SWE-2 slice (`sk/mut15`, brief
+      `.tmp/mut15/brief_mut15.md`): `read_images`' placeholder read, `crash_dump.rs`'s
+      `wait_until` (its limit made a parameter, so a test reaches it without waiting 120 s)
+      and `journal_holds_steps`, `local_clock`, and `adopt_folder`'s unreadable journal and
+      output dedupe (four mutants);
+    - [ ] then `just pipeline` at the new HEAD.
 
 Most open steps below wait only on a check in the game or the built window that the lead's
 harness makes ("Pending looks" below), not on the maintainer.
@@ -1669,11 +1688,13 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       titled `N players` with its locks), split in three, since nothing of it exists (code map
       `.tmp/similar/code_map.md`: no group, no Ctrl+click, no blank locked field, no mixed
       checkbox). Until 1c lands, a group's view edits its first player alone
-      - [ ] 1a the group: Ctrl+click, the filled rows, every other selecting ending it, the
-        `N players` heading, Appearance disabled (SE-GUI-93 but its tooltip clause; SWE-2,
-        `sk/similar1a`)
-      - [ ] 1b the button under the quick actions and its window (SE-GUI-91, SE-GUI-93's
-        tooltip)
+      - [x] 1a (2026-11-21, merge `ac0d6dbb`, SWE-2) the group: Ctrl+click, the filled rows,
+        every other selecting ending it, the `N players` heading, Appearance disabled
+        (SE-GUI-93 but its tooltip clause)
+      - [x] 1b (2026-11-22, merge `ffa45247`, SWE-2, one rework) the button over the quick
+        actions and its window (SE-GUI-91, SE-GUI-93's tooltip); Select leaves the list's
+        scroll alone, as the draft does (proposals P59 asks otherwise). Owed: its look beside
+        the draft, then one paid round over 1a and 1b
       - [ ] 1c the locks: what the players do not share empty and locked, the cards' mixed
         mark, no Live AATF marks or Cards used badge, the Player menu's one-player entries
         disabled (SE-GUI-92 but its edits)
@@ -3606,6 +3627,59 @@ Bugs, unexpected behavior, things to revisit. `open` / `resolved (date)`. Resolv
 pruned when their phase closes; they stay in git history. A question only the maintainer
 can answer is not an issue: it goes to `docs/maintainer/questions.html`, and an issue that waits on one
 points there.
+
+- open (2026-11-22) — PES 2014 Build 2 (`0.0.2-pes14.2`) crashes on the Appearance page of a
+  player whose gloves ID is past 16 bits. The Akko7 organizer edited /hi3/'s players in game
+  and opened one: `utw.log` reads `appearance/mod.rs:556`, "a loaded player's fields hold the
+  strip fields: ValueTooWide { GlovesId, 262143, 16 }". On PES 2014 the Akko DLC reads the
+  gloves ID from the hair accessory's three colour fields, up to 18 bits
+  (`plans/pes14.md`, on `pes14`); `ops::fpc::strip_style` narrows it to `fpc::StripStyle`'s
+  `u16`, and the view `expect`s the result. 262143 is every bit set. In the save he posted
+  first (`C:\Data\4cc\Lab\Temp\pes14_crash\EDIT.bin`, a few hours older), no /hi3/ player has
+  an appearance record yet, which is why the page was greyed there, and all 4,922 records
+  hold gloves 0. His newer save (`.tmp/pes14_crash/EDIT.bin.newer`) holds 91 more records,
+  90 of them gloves 262143 (every /hi3/ player among them) and one 4161: a record the game
+  creates on an in-game edit carries the accessory colour at its maximum, so every player
+  edited in game reads gloves 262143. Hide default body and Ctrl+I crash on such a player
+  too (`session/player_ops.rs` `preset_id`'s `u16::try_from(own).expect`). The fix (SWE-2,
+  on `pes14`): the gloves ID at its full width through `fpc::StripStyle` and
+  `fpc::Appearance`, and no `expect` on it; what 262143 means for the hide presets waits on
+  an in-game look (run `hi3gloves`: are a 262143 player's hands plain, as gloves 0, or gone,
+  as the DLC's hidden gloves 11?). Then Build 3 is prepared whole (merged, gates, release
+  build, its CHANGELOG section, a `tasks.html` card) and left unpushed for the maintainer's
+  yes, and the Compiler's view (item 6) goes on without waiting for it (the maintainer,
+  2026-11-22).
+- open (2026-11-22) — The Save editor's tests leave their scratch behind:
+  `test_support::scratch` empties `target/<profile>/save_editor_tests/<test>` when a test
+  starts and never removes it after, so every checkout keeps 1,064 folders, many holding a
+  save copy: 12.8 GB in main's `target/`, 13.2 GB in the gate's, and the same in each
+  sidekick's tree until its `target/` goes. Fix (SWE-2): `scratch` returns a guard that
+  removes the folder when it drops and the test did not panic (a failed test's folder stays
+  to be read); check the other crates' scratch helpers for the same.
+- open (2026-11-22) — Panics on file content (DECISIONS 2026-11-22 "What a file holds is never
+  an invariant an `expect` rests on"; `CONTRIBUTING.md` "Code style", the Errors bullet). A
+  census of the 885 `expect`, `unwrap`, `panic!`, `unreachable!` and `assert!` calls in
+  production code at `ffa45247` (lists `.tmp/nopanic/part_{a..d}.txt`, made by
+  `.tmp/nopanic/surface.py`), each classed as resting on a file, on our own code, on the
+  environment, in a developer tool, or unsure (SWE-2, `.tmp/nopanic/census_*.findings.md`).
+  Result: one call rests on a file (`team_widgets` `tactics_term`'s byte, PES 2015 and 2016
+  storing a lineup slot in 32 bits), 13 on the environment (poisoned locks, impossible input
+  counts), the rest on our own code, three of those on a schema's field width
+  (DECISIONS 2026-11-22 "A decoded value keeps the type it was decoded into"). Slice
+  nopanic-1 (SWE-2, `sk/nopanic1`) fixes the four: boots and gloves IDs carried at `u32`
+  through `fpc`, the Appearance page's check showing an error line, `settings_toml`'s byte
+  read returning an error, the tactics wording showing the stored number. The `pes14`
+  branch's own code gets the same census after it merges.
+- open (2026-11-22) — A new rule on what an export must hold breaks every test that builds
+  one. Slice 0.0.2-logo a made a `Full` export with no logo an error (`logo_missing`), and 172
+  tests failed: each test writes its own export file by file, directly or through one of about
+  a dozen helpers spread over the tests of `team_compiler`, `export_upgrader` and `studio`, and
+  the fixture archives are stored binaries. Each had to learn the rule by hand: about 130 added
+  logo calls and five rebuilt archives. Fix, after logo slice b: one builder of the smallest
+  clean export of each kind (`Full`, `Midcup`, an old Red export) in `aesthetics_export`,
+  behind a `test-support` feature as `pes_savefile`'s fixtures are. Every test starts from it
+  and removes or breaks only what it tests, and the archive fixtures are packed from it when
+  the tests run. A new requirement then changes the builder and the tests of its absence.
 
 - resolved (2026-11-21) — The maintainer's PES 2021 save opens with an empty team list. The
   release build at `1b9c5f27`, File > PES 2021, opened

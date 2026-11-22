@@ -651,10 +651,12 @@ pub(crate) fn overflow_the_stack(depth: u64) -> u64 {
     overflow_the_stack(depth + 1) + u64::from(array[0])
 }
 
-/// `done` retried every 20 ms until it holds or 120 seconds pass — the
-/// bound of every wait on another process — `false` past it.
-fn wait_until(mut done: impl FnMut() -> bool) -> bool {
-    let deadline = Instant::now() + Duration::from_secs(120);
+/// The bound of every wait on another process, the limit `wait_until` is given.
+const WAIT_LIMIT: Duration = Duration::from_secs(120);
+
+/// `done` retried every 20 ms until it holds or `limit` passes, `false` past it.
+fn wait_until(limit: Duration, mut done: impl FnMut() -> bool) -> bool {
+    let deadline = Instant::now() + limit;
     loop {
         if done() {
             return true;
@@ -677,7 +679,7 @@ fn journal_holds_steps(folder: &Path, steps: usize) -> bool {
 /// `[[step]]` blocks, `None` when none does inside the wait.
 fn await_steps(sessions: &Path, steps: usize) -> Option<PathBuf> {
     let mut found = None;
-    wait_until(|| {
+    wait_until(WAIT_LIMIT, || {
         found = fs::read_dir(sessions).ok().and_then(|entries| {
             entries
                 .filter_map(|entry| entry.ok())
@@ -741,7 +743,7 @@ pub(crate) fn monitor_test(
         std::process::exit(3);
     }
     recorder.step("stub", "the monitor test's second step");
-    if !wait_until(|| journal_holds_steps(&folder, 2)) {
+    if !wait_until(WAIT_LIMIT, || journal_holds_steps(&folder, 2)) {
         log::error!("the monitor test's second step never reached the session folder");
         std::process::exit(3);
     }
@@ -826,6 +828,35 @@ mod tests {
         ] {
             assert!(hidden_launch(&bad).is_none(), "{bad:?}");
         }
+    }
+
+    // The wait is over once its limit is past: `false` then, `done` not asked again.
+    #[test]
+    fn wait_until_ends_false_once_the_limit_passes() {
+        let calls = Cell::new(0);
+        assert!(
+            !wait_until(Duration::ZERO, || {
+                calls.set(calls.get() + 1);
+                calls.get() > 1
+            }),
+            "the limit was past after the first answer"
+        );
+    }
+
+    // `journal_holds_steps` counts the journal's `[[step]]` blocks, a folder with no
+    // journal holding none.
+    #[test]
+    fn journal_holds_steps_counts_the_step_blocks() {
+        let dir = TestDir::new("journal_steps");
+        let folder = dir.path().join("session");
+        fs::create_dir_all(&folder).unwrap();
+        assert!(
+            !journal_holds_steps(&folder, 1),
+            "no journal.toml: no steps held"
+        );
+        fs::write(folder.join("journal.toml"), "[[step]]\nwhat = \"a step\"\n").unwrap();
+        assert!(journal_holds_steps(&folder, 1));
+        assert!(!journal_holds_steps(&folder, 2), "one block, not two");
     }
 
     /// A `log::Log` collecting each record as `level|target|text`, for the warning a

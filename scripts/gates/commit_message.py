@@ -24,6 +24,12 @@ TYPES = ("feat", "fix", "docs", "test", "refactor", "perf", "chore", "merge")
 MAX_SUBJECT = 120
 SUBJECT = re.compile(r"^(?P<type>[a-z]+)\((?P<scope>[^()]+)\): (?P<summary>\S.*)$")
 CREDIT = re.compile(r"^\W*(co-authored-by:|generated with )", re.IGNORECASE)
+# Pushed commits whose message the range check passes over: a pushed commit cannot be
+# reworded, and every range that holds it would fail. Each with its reason; none is added
+# for a commit not yet pushed, which is reworded instead.
+PUSHED = {
+    "34b7cae4": "a sidekick branch synced with main by a bare `git merge`, then merged",
+}
 
 
 def problems(message: str) -> list[str]:
@@ -62,6 +68,8 @@ def range_problems(base: str) -> list[str]:
         if not record.strip():
             continue
         commit, message = record.strip("\n").split("\x1f")
+        if any(commit.startswith(known) for known in PUSHED):
+            continue
         first = message.splitlines()[0] if message.strip() else ""
         found += [f"{commit} ({first[:60]}): {problem}" for problem in problems(message)]
     return found

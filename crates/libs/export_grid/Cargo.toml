@@ -1,0 +1,17 @@
+[package]
+name = "export_grid"
+description = "The export grid the Compiler and the Export upgrader draw: a row per export, a cell per folder"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+egui.workspace = true
+# The palette the cells are painted in, the message type a cell holds, and, in the
+# tests, the window's fonts and style (`theme::install`).
+studio_core.workspace = true
+
+[lints]
+workspace = true

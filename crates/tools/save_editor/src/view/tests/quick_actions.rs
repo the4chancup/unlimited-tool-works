@@ -778,23 +778,30 @@ fn pane_and_band(
     (pane, band)
 }
 
-// The quick actions' band starts 3 over its first row's buttons, the
-// draft's `.plist` gap over the grid: the bottom panel's top margin.
+// The quick actions' band starts 3 over its first row, the draft's
+// `.plist` gap over the grid: the bottom panel's top margin. The
+// Select all similar players button is that row (the draft's `.wide`
+// row heading the grid); the Make rows follow at the buttons' own pitch
+// — a 20-tall row and the 3-point gap under it.
 #[test]
 fn the_quick_actions_band_starts_3_over_its_first_row() {
     let (_path, mut view, _window) = open_701("quick_band_top");
     let mut window = Headless::sized(DEFAULT_PANE.x, DEFAULT_PANE.y);
     let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     let (_, band) = pane_and_band(&window, &shapes);
-    for label in ["Make Gold", "Make Goalkeeper"] {
+    for (label, expected) in [
+        ("Select all similar players", 3.0),
+        ("Make Gold", 26.0),
+        ("Make Goalkeeper", 26.0),
+    ] {
         let top = node_labeled(&nodes, Role::Button, label)
             .bounds()
             .expect("bounds")
             .y0;
         let gap = top - f64::from(band.min.y);
         assert!(
-            (gap - 3.0).abs() <= 0.01,
-            "{label} stands 3 under the band's top ({band:?}), got {gap}"
+            (gap - expected).abs() <= 0.01,
+            "{label} stands {expected} under the band's top ({band:?}), got {gap}"
         );
     }
 }

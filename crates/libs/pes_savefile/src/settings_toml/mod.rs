@@ -842,7 +842,12 @@ fn read(player: &PlayerEntry, key: SettingKey) -> Result<Option<u8>, SettingsErr
         Source::Player(PlayerField::Star) => player.stats.star,
         Source::Player(PlayerField::PlayingAttitude) => player.stats.playing_attitude,
         Source::Player(field) => {
-            Some(u8::try_from(player.get(field)?).expect("an appearance or motion field is a byte"))
+            let value = player.get(field)?;
+            Some(u8::try_from(value).map_err(|_| CodecError::ValueTooWide {
+                field: format!("{field:?}"),
+                value,
+                width: 8,
+            })?)
         }
         // The run, not a version, says which layout's keys the player has:
         // `get` refuses a field of the other layout.
@@ -1145,7 +1150,7 @@ impl PlayerSettings {
             wrist_taping: value(SettingKey::WristTaping) != 0,
             ankle_taping: value(SettingKey::AnkleTaping) != 0,
             gloves_checkbox: value(SettingKey::Gloves) != 0,
-            gloves_id,
+            gloves_id: u32::from(gloves_id),
             skin_color: if value(SettingKey::SkinColor) == 7 {
                 fpc::SkinColor::Custom
             } else {

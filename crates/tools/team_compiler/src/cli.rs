@@ -133,18 +133,7 @@ pub(crate) fn run(
         .map_err(|error| CliError::new(INVALID, error))?;
     match command {
         TeamCompilerCommand::Check(source) => {
-            check_export_paths(&source.exports)?;
-            let common = ctx.common();
-            let settings = read_settings(&ctx.tool_settings(TOOL_ID), &common)?;
-            let exports_root = prepare_exports_root(&source, &common, ctx.paths())?;
-            let inputs = resolve_inputs(
-                exports_root,
-                source.exports,
-                source.timestamps,
-                settings,
-                common,
-                ctx.paths(),
-            )?;
+            let inputs = check_preflight(source, ctx)?;
             verdict(check::run(&inputs, ctx))
         }
         TeamCompilerCommand::Compile(args) => {
@@ -195,6 +184,34 @@ pub(crate) fn run(
             verdict(upgrade::run(&download, yes, ctx))
         }
     }
+}
+
+/// `check`'s preflight: its export paths, the settings and the exports folder checked, then
+/// the inputs resolved.
+fn check_preflight(source: SourceArgs, ctx: &ToolContext) -> Result<RunInputs, CliError> {
+    check_export_paths(&source.exports)?;
+    let common = ctx.common();
+    let settings = read_settings(&ctx.tool_settings(TOOL_ID), &common)?;
+    let exports_root = prepare_exports_root(&source, &common, ctx.paths())?;
+    resolve_inputs(
+        exports_root,
+        source.exports,
+        source.timestamps,
+        settings,
+        common,
+        ctx.paths(),
+    )
+}
+
+/// The inputs of a `check` with no arguments, through the command's own preflight: what the
+/// window's grid is checked from, so it never checks what the command line would refuse.
+pub(crate) fn check_inputs(ctx: &ToolContext) -> Result<RunInputs, CliError> {
+    let source = SourceArgs {
+        exports_root: None,
+        exports: Vec::new(),
+        timestamps: false,
+    };
+    check_preflight(source, ctx)
 }
 
 /// The PES folder's `download/`, which `upgrade-dpfl` works in. Refused, naming the path and

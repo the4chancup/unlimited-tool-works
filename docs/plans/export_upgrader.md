@@ -246,7 +246,8 @@ members use (`quick_upgrade.bat`) reads the same two.
   - `into` and the `exports` folder's path, as text: where every upgraded export goes.
   - At the row's right end, the **look toggle**, `Files | Grid` (below).
 - **Two looks, one set of cells.**
-  - **Grid**, the default from five exports on: the Compiler's grid, three lines an export.
+  - **Grid**, the default from five exports on: the Compiler's grid (`libs/export_grid`,
+    `plans/team_compiler/gui.md` "GUI: the live-validating team grid"), three lines an export.
     The **Face** line holds a cell per player slot (his face folder, to `Players\NN -
     Name`), then the portraits (`n/N`) and a cell per kit (its two colours as the
     Compiler's swatch).

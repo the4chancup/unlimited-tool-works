@@ -38,14 +38,16 @@ use studio_core::{
     CliError, HelpSection, HelpTopic, LogPanel, RunningPes, StudioTool, ToolContext,
 };
 
+use crate::check::live::LiveCheck;
 use crate::gui_run::RunLog;
 use crate::messages::TOOL_ID;
 
 /// The Compiler, as registered with the `studio` binary. Its window state is
-/// the run log — the `compile` the Compile button started, and its lines — and the
-/// log panel's own view state.
+/// the run log — the `compile` the Compile button started, and its lines — the
+/// grid's check and its rows, and the log panel's own view state.
 pub struct Tool {
     run_log: RunLog,
+    live_check: LiveCheck,
     log_panel: LogPanel,
     /// The running-PES probe the savefile step asks: the real process list in
     /// production, a stub reporting no game under `cargo test` (`running_probe`),
@@ -65,6 +67,7 @@ impl Tool {
     pub fn with_running_probe(running: fn() -> Vec<RunningPes>) -> Tool {
         Tool {
             run_log: RunLog::default(),
+            live_check: LiveCheck::default(),
             log_panel: LogPanel::new(TOOL_ID),
             running,
         }
@@ -104,14 +107,33 @@ impl StudioTool for Tool {
         studio_core::icons::TEAM_COMPILER
     }
 
+    /// The window; the first time it is shown, it starts the grid's check.
     fn view(&mut self, ui: &mut egui::Ui, ctx: &ToolContext) {
-        if view::show(ui, ctx, &self.run_log, &mut self.log_panel) {
+        if !self.live_check.has_started() && !self.run_log.is_running() {
+            self.live_check.start(ctx);
+        }
+        let rows = self.live_check.rows();
+        let checking = self.live_check.is_running();
+        if view::show(ui, ctx, &self.run_log, &mut self.log_panel, rows, checking) {
             self.run_log.start_compile(ctx, self.running);
         }
     }
 
-    fn tick(&mut self, _ctx: &ToolContext) {
+    /// The Compile run's events into the log; the grid checked again once a run ends. A
+    /// check's rows reach the grid only while no Compile runs, since the run may change
+    /// what they describe; a refused check is a line of the log.
+    fn tick(&mut self, ctx: &ToolContext) {
+        let compiling = self.run_log.is_running();
         self.run_log.poll();
+        if self.run_log.is_running() {
+            return;
+        }
+        if compiling {
+            self.live_check.start(ctx);
+        }
+        if let Some(refusal) = self.live_check.poll(ctx) {
+            self.run_log.append_refusal(&refusal);
+        }
     }
 
     fn settings_view(&mut self, ui: &mut egui::Ui, _ctx: &ToolContext) {

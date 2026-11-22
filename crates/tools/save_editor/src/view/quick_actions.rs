@@ -12,7 +12,9 @@ use studio_core::widgets::{
 };
 
 use crate::session::Session;
-use crate::view::{NUMBER_BOX, Refusal, SaveView, selected_player, surrender_focus};
+use crate::view::{
+    NUMBER_BOX, Refusal, SaveView, group_on, selected_player, similar, surrender_focus,
+};
 
 /// The disabled controls' tooltip on a team selection.
 const TEAM_TIP: &str = "These buttons act on a player: pick a player row";
@@ -30,6 +32,9 @@ fn is_medal(id: &str) -> bool {
 /// The columns under the list; its controls disabled while the selection
 /// names no rostered player (a team row).
 pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
+    // The Select all similar players button heads the grid, the draft's
+    // `.wide` row (its `similarButton`), as wide as the two columns.
+    similar_button(ui, view);
     let player = selected_player(view);
     // The columns' contents: the medal tiers left in the ruleset's order,
     // the others right then the Set stats cell (the draft's `.qacol`s).
@@ -76,6 +81,37 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
             });
         }
     });
+}
+
+/// The Select all similar players button heading the grid (the draft's
+/// `similarButton`): as wide as the two columns, a cell tall. Enabled on
+/// a player row with no group on; a team row, a group or an empty list
+/// leaves it disabled with the reason on hover. A click opens the
+/// window on him.
+fn similar_button(ui: &mut egui::Ui, view: &mut SaveView) {
+    let player = selected_player(view);
+    let enabled = player.is_some() && !group_on(view.selected, &view.group);
+    let button = add_enabled_ui(ui, enabled, |ui| {
+        ui.add_sized(
+            [ui.available_width(), QUICK_ACTION_HEIGHT],
+            egui::Button::new("Select all similar players"),
+        )
+    })
+    .inner;
+    let response = if enabled {
+        button.on_hover_text("Select the players like this one, to edit their stats together")
+    } else {
+        button.on_disabled_hover_text("Select one player first")
+    };
+    if !response.clicked() {
+        return;
+    }
+    surrender_focus(ui);
+    if let Some((team_id, slot, _)) = player
+        && let Some(session) = view.session.as_ref()
+    {
+        view.similar = Some(similar::Similar::open(session.file(), (team_id, slot)));
+    }
 }
 
 /// One "Make <tier>" cell of a column: a

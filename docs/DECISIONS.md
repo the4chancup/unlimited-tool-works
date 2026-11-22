@@ -19505,3 +19505,63 @@ Why: the maintainer found the line repeating itself. The exports written are the
 were ready, and those with errors are the ones not written; a line naming both said each
 twice and did not fit beside the buttons at the default window.
 Plan: plans/export_upgrader.md "GUI" (the toolbar's strip).
+
+## 2026-11-22 — tooling — The VPS free-space floor for a mutation half is 48 GiB
+
+Decision: a split mutation run starts on the VPS only with at least 48 GiB free on its disk
+(`REMOTE_FREE_FLOOR`), where it took 26.
+Why: the checkpoint on `f51c570a` passed the 26 GiB guard with 35.4 GiB free, and its
+`save_editor` half still filled the disk and left a mutant untested, so the checkpoint could
+not gate. The half's tests leave a folder behind on each caught mutant, so its use grows with
+the run, past the 23.6 GiB measured on 2026-11-12. The new floor is that failure's start plus
+a third. The clone's build cache (37 GB) was removed the same day, leaving 72 GiB free.
+Plan: `RUNBOOK.md` "The scratch folder"; `scripts/mutation/mutants.py`'s `REMOTE_FREE_FLOOR`.
+
+## 2026-11-22 — export_grid — The export grid is a lib both pipeline tools draw
+
+Decision: the Compiler's grid (rows, cells at fixed positions, their states, the legend, the
+detail window) is a new lib crate, `export_grid`, which the Export upgrader's Grid look draws
+too. Each tool hands it rows built from its own results; the lib reads no export and runs no
+check.
+Why: the maintainer asked for the grid to be reusable by the upgrader. A tool crate never
+depends on another, so the shared part cannot stay in `team_compiler`, and `team_widgets` is
+built over the save file's model, which the grid never sees. The upgrader's rows differ (three
+lines an export, wide file cells), so the lib's row is lines of positions, not the Compiler's
+one line.
+Plan: `plans/team_compiler/gui.md` "GUI: the live-validating team grid"; `plans/export_upgrader.md` "GUI"; `plans/core/architecture.md`'s crate tree; `GLOSSARY.md`.
+
+## 2026-11-22 — studio — The crash dialog asks for the log first and gives the error last
+
+Decision: the crash dialog opens with what happened in plain words, then asks for the log with
+its path on a line of its own, and gives the panic's message last, under "Details for the
+developers:".
+Why: the maintainer's ruling, after the Akko7 organizer posted a screenshot of the dialog and
+never read its request for the log: a member who meets code words at the top stops reading
+there. The message stays in the dialog, since a first run's crash has no log to post.
+Plan: `plans/core/architecture.md` "Diagnostic logging", the bullet "The hook logs every panic".
+
+## 2026-11-22 — code style — What a file holds is never an invariant an `expect` rests on
+
+Decision: a value read from a save, an export, a settings file or a game file reaches the
+member as an error, a finding or a line in the view, never as a panic. An `expect` rests only
+on what our own code made. The `expect`s and `unwrap`s that rest on file content today are
+found by a census and fixed in slices.
+Why: the maintainer's ruling ("panicking because of a simple malformed field is unacceptable
+from now on"), after the Save editor's Appearance page crashed on a PES 2014 player whose
+gloves ID, 18 bits on that version, did not fit the 16 bits an `expect` assumed. The
+`expect`'s message called the width a property of every loaded player, which the data never
+promised; AGENTS.md's "malformed input still errors instead of panicking" already said so,
+without naming the `expect`s that break it.
+Plan: `CONTRIBUTING.md` "Code style", the Errors bullet.
+
+## 2026-11-22 — code style — A decoded value keeps the type it was decoded into
+
+Decision: a value read from a file is not narrowed with an `expect` on the grounds that its
+field's schema width fits the narrower type; it keeps the type it was decoded into (`u32` for
+a boots or gloves ID), and a narrowing that can fail returns an error.
+Why: the census of the program's panics (worklog issue "Panics on file content") found one
+call on main that panics on file content, and a class it rightly called safe on main that is
+not safe across versions: an `expect` on `u16::try_from` of a boots or gloves ID holds while
+every version stores 14 bits, and crashed the PES 2014 build, whose gloves ID is 18. A width
+is a fact of one schema, not of the value's type.
+Plan: `CONTRIBUTING.md` "Code style", the Errors bullet.

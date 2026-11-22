@@ -49,8 +49,8 @@ pub fn apply(
     player.appearance.sleeves = sleeves_value(appearance.sleeves);
     player.appearance.untucked = untucked_value(appearance.tuck);
     player.appearance.socks = socks_value(appearance.socks);
-    player.appearance.boots_id = u32::from(appearance.boots_id);
-    player.appearance.gloves_id = u32::from(appearance.gloves_id);
+    player.appearance.boots_id = appearance.boots_id;
+    player.appearance.gloves_id = appearance.gloves_id;
     match appearance.skin_color {
         fpc::SkinColor::Custom => player
             .appearance
@@ -111,11 +111,7 @@ pub fn strip_style(player: &PlayerEntry) -> Result<fpc::StripStyle, FpcError> {
         wrist_taping: a.wrist_taping != 0,
         ankle_taping: a.ankle_taping,
         gloves_checkbox: a.ingame_face.get(IngameFaceField::PlayerGloves)? != 0,
-        gloves_id: u16::try_from(a.gloves_id).map_err(|_| CodecError::ValueTooWide {
-            field: "GlovesId".to_string(),
-            value: a.gloves_id,
-            width: 16,
-        })?,
+        gloves_id: a.gloves_id,
         skin_color: if a.ingame_face.get(IngameFaceField::SkinColor)? == 7 {
             fpc::SkinColor::Custom
         } else {
@@ -163,8 +159,8 @@ mod tests {
         player.appearance.sleeves = sleeves_value(other.sleeves);
         player.appearance.untucked = untucked_value(other.tuck);
         player.appearance.socks = socks_value(other.socks);
-        player.appearance.boots_id = u32::from(other.boots_id);
-        player.appearance.gloves_id = u32::from(other.gloves_id);
+        player.appearance.boots_id = other.boots_id;
+        player.appearance.gloves_id = other.gloves_id;
         player
             .appearance
             .ingame_face
@@ -343,6 +339,16 @@ mod tests {
         assert!(style.undershorts_worn);
         assert!(style.wrist_taping);
         assert_eq!(style.skin_color, fpc::SkinColor::Custom);
+    }
+
+    // A stored gloves ID wider than the save's other versions' 14 bits is
+    // carried as decoded, not refused: PES 14 stores it in 18.
+    #[test]
+    fn strip_style_carries_a_gloves_id_past_u16() {
+        let mut player = player_70101(PesVersion::Pes21);
+        player.appearance.gloves_id = 70_000;
+        let style = strip_style(&player).expect("strip_style");
+        assert_eq!(style.gloves_id, 70_000);
     }
 
     #[test]

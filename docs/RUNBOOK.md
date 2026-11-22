@@ -28,7 +28,10 @@ ran most of the test suite.
 **A checkpoint is one command.** `just checkpoint` runs `gates-changed` and `mutants-diff`
 since the last gated commit and then moves that commit, the git ref
 `refs/checkpoints/gated`, to the commit it started on (`scripts/gates/checkpoint.py`; a
-clone seeds the ref once, as the script says). The gates read the working tree, so a commit
+clone seeds the ref once, as the script says). The mutation run starts from a ref of its own,
+`refs/checkpoints/mutated`, which only a run whose mutants all ran moves: a checkpoint with
+`--no-mutants` leaves it behind, so the next run's mutants cover what it skipped (one ref
+serving both once left 166 commits out of every mutation run). The gates read the working tree, so a commit
 or an edit made while they run leaves the ref where it was, and the checkpoint is run again.
 It runs at the end of a review loop, at a worklog step's close, after a merge, and before a
 push is asked for. `just checkpoint-status` says how far HEAD is past the gate, what is not
@@ -97,10 +100,11 @@ never makes this check. The question never holds the queue: the next build or si
 starts before it is asked, since a capture needs little CPU and the answer may take hours
 (one waited two, with nothing building).
 
-**Sidekicks in parallel.** Two or three sidekicks at once is the normal state, on steps
-that own disjoint files, the release path's first. The limits are the disk (a worktree that
+**Sidekicks in parallel.** Two sidekicks at once is the normal state, and a third runs whenever
+work is ready for it, on steps that own disjoint files, the release path's first. The limits
+are the disk (a worktree that
 builds grows a `target/` of about 40 GB; one that only edits documents or scripts builds
-nothing and costs nothing), the machine's three cargo builds (below), and for SWE-2 the
+nothing and costs nothing), the machine's three cargo jobs (below), and for SWE-2 the
 login's limit on runs at once (`accounts.md`, next paragraph); a reviewer builds nothing. When the Claude
 weekly window nears its limit, the sidekick work goes back to SWE-2.
 
@@ -406,6 +410,9 @@ left for the next disk alarm, six finished trees held 108 GB on 2026-11-21.
 When C: fills, a finished tree's `target/` can go whole, and the main tree's `target/debug`
 once nothing builds there (254 GiB on 2026-10-26, mostly stale `deps`): cargo rebuilds them,
 each run rewrites its generated config, and the cost table lives outside every `target/`.
+A tree whose next build should stay quick (the gate's, main's) loses only its old copies: `python
+scripts/stale_deps.py <target>/debug/deps` lists every artifact a newer build of the same
+crate replaced, and `--apply` removes them (6.6 GB of the gate's 120 GB on 2026-11-22).
 
 **On the VPS the project leaves the host 2 GiB of free disk** and may hold the rest: the
 host's production service runs but is used by nobody, so the 40 GB the project's folder was
@@ -414,9 +421,9 @@ host passes a guard first (`remote_refusal`):
 it empties `~/studio-mutants/tmp` (`REMOTE_TMPDIR`, the remote tests' temp dir), where a test
 that removes its folder at its end leaves it on every caught mutant and a killed half leaves its
 tree copies, then refuses when the disk has under
-26 GiB free (`REMOTE_FREE_FLOOR`: a half's two build copies take 24, measured on a
-`save_editor` half, whose temp folder peaked at 23.6 GiB, and 2 stay for
-the host's system). The refusal prints what `~/studio-mutants` holds: the cleanup below frees
+48 GiB free (`REMOTE_FREE_FLOOR`: a `save_editor` half that started with 35.4 GiB free
+filled the disk on 2026-11-22, its tests' leftovers growing with each caught mutant, so the
+floor is that start plus a third, 2 of it for the host's system). The refusal prints what `~/studio-mutants` holds: the cleanup below frees
 the clone's build cache, usually most of it (a finished run's results stay until the next
 launch), and when that cannot lift the floor the maintainer is asked.
 Before the guard, the folder once held 50 GB (28.6 of them test leftovers, 27 the Save
@@ -533,14 +540,16 @@ crates as up to date (main's `gates-changed` once failed to compile against the 
 (`.tmp/lead/touch_diverged.py <candidate>`); the staging worktree also needs an empty
 `target/` of its own (`WORKLOG.md` Issues).
 
-**At most three cargo builds at once, on the whole machine**: a sidekick's, a mutation run's
-local half, a lead's gates or package tests and a release build each count as one. The main
-lead's side (its sidekicks, its mutation run, its own gates) holds two; a side-lead in its own
-worktree holds the third, its sidekick's builds and its own together, so the two never need
-to sync. With the Optane's 64 GiB swap on `F:` a third build does not risk exhausting memory,
-though two already fill the CPU, so a third shares it rather than adding speed. Before
-starting a build, count your side's; with no side-lead running, the main lead's side may use
-the third for a program needed as soon as possible (a quick tool, a build for a manual check).
+**At most three cargo builds at once, on the whole machine, and two is the aim**: a sidekick,
+a pipeline or a mutation run's local half, a lead's gates or package tests and a release build
+each count as one. A sidekick or a pipeline counts for its whole run, since it builds whenever
+its work needs to, so the count is taken before each launch, against what is already running.
+A sidekick compiles for under a third of its run and reads and writes the rest, so with two
+jobs the CPU, the project's bottleneck, often has nothing to do: a third job is launched
+whenever work is ready for one, and only a fourth waits for a job to end. A running job is
+never stopped to get back to two. With the Optane's 64 GiB swap on `F:`, three builds at once
+do not risk exhausting memory. A side-lead, when one runs, holds one of the three for its
+sidekick's builds and its own.
 
 **Every build and test job runs at below-normal priority**: at normal priority two jobs left
 the maintainer's machine barely usable, while a below-normal one yields every processor to

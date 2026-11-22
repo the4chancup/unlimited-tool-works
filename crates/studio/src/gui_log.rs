@@ -292,22 +292,24 @@ pub(crate) fn backtrace_lines() -> String {
 }
 
 /// The crash dialog's text, written for a member: what happened, and the file — or the
-/// message, when no log exists — to post where problems are reported. No code
-/// vocabulary reaches it (CONTRIBUTING.md "Code style").
+/// message, when no log exists — to post where problems are reported. The panic's
+/// message comes last, under its own heading: a member who meets its code words first
+/// stops reading there and never sees the request for the log.
 fn crash_text(message: &str, log: Option<&Path>) -> String {
     let what = format!(
-        "{} stopped because of an error in its own code: {message}",
+        "{} stopped because of an error in its own code.",
         studio_core::app_name!()
     );
-    match log {
+    let ask = match log {
         Some(path) => format!(
-            "{what}\n\nPlease post this file on the /aesco/ server or the divegrass thread: {}. It holds what the program was doing, and it shows your home folder as ~, which keeps your user name out of it.",
+            "Please post this file on the /aesco/ server or the divegrass thread:\n{}\nIt holds what the program was doing, and it shows your home folder as ~, which keeps your user name out of it.",
             path.display()
         ),
-        None => format!(
-            "{what}\n\nPlease post this message on the /aesco/ server or the divegrass thread."
-        ),
-    }
+        None => {
+            "Please post this message on the /aesco/ server or the divegrass thread.".to_string()
+        }
+    };
+    format!("{what}\n\n{ask}\n\nDetails for the developers: {message}")
 }
 
 /// What a panic's payload says: the `&str` or `String` `panic!` carried, or a fallback
@@ -670,12 +672,29 @@ mod tests {
     }
 
     #[test]
+    fn crash_text_asks_for_the_log_before_it_gives_the_error() {
+        let text = crash_text("a field too wide", Some(Path::new(r"D:\UTW\data\utw.log")));
+        assert_eq!(
+            text,
+            format!(
+                "{} stopped because of an error in its own code.\n\n\
+                 Please post this file on the /aesco/ server or the divegrass thread:\n\
+                 D:\\UTW\\data\\utw.log\n\
+                 It holds what the program was doing, and it shows your home folder as ~, \
+                 which keeps your user name out of it.\n\n\
+                 Details for the developers: a field too wide",
+                studio_core::app_name!()
+            )
+        );
+    }
+
+    #[test]
     fn crash_text_without_a_log_path_asks_for_the_message() {
         let text = crash_text("the window froze", None);
-        assert!(text.contains("the window froze"), "{text}");
         assert!(
-            text.contains(
-                "Please post this message on the /aesco/ server or the divegrass thread."
+            text.ends_with(
+                "Please post this message on the /aesco/ server or the divegrass thread.\n\n\
+                 Details for the developers: the window froze"
             ),
             "{text}"
         );
