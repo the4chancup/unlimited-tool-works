@@ -799,6 +799,51 @@ Tools the suite will take in, with no phase or plan yet:
   Rigdio itself. Not published: its author wants to work on it further before publishing the
   source (2026-10-18), so it waits. Nothing scheduled depends on it, and until then what it does
   is known only from the forks' READMEs.
+- **PES file explorer**: browses a PES version's CPKs, an install's and a DLC's, and reads,
+  edits or replaces any file inside them, as far as is practical. A file in a format the
+  suite's crates read (textures, models, the apk menu packs, the `.str` texts, Fox files) is
+  shown and edited; any other file is at least extracted and replaced. It covers what
+  members do today with two community tools: CPGE V0.7.1 and Jenkey's PES File Explorer 2014
+  (`C:/Data/4cc/0Tools/`). It is built on the crates, the apk crate first (`libs/apk.md`),
+  and its plan follows that crate's. What members do today, file by file, with the tools
+  it replaces:
+  - CPKs: an install's `Data/` and `download/` browsed as one tree, or a single CPK; files
+    extracted, replaced and packed into a new CPK; every CPK of a folder unpacked at once
+    (CPGE, CriPakTools, STPN_17's PES CPK Tool, a batch unpacker);
+  - WESYS-wrapped files opened unwrapped and written back wrapped (Jenkey's explorer, the
+    zlib tools);
+  - DDS and FTEX textures previewed, exported and imported as PNG or DDS (CPGE, Jenkey's
+    explorer, FtexTool);
+  - apk menu packs: textures previewed and replaced, sprite regions edited (the PES Apk Bin
+    Tool, the PES Texture Editor, `pesafp_texturetool.py`);
+  - FPK archives unpacked and repacked (GzsTool, CPGE);
+  - models: an FMDL's string table edited, its texture paths above all (MTLTools, an FMDL
+    ID changer); a pre-Fox `.mtl`'s shader rewritten across a DLC's nested face CPKs (a
+    shader renamer);
+  - Fox files and `.str` texts viewed (CPGE; the [String editor](../string_editor.md) edits
+    the texts);
+  - `face_diff.bin`'s named fields edited (zlac's diff_check);
+  - `DpFileList.bin` edited: the DLC's CPKs added, removed and ordered (CPGE);
+  - `.mtar` motion archives unpacked and repacked, their `.gani` motions named from a PES
+    dictionary (MtarTool-PES);
+  - `.fsop` shader packs unpacked and repacked (pes-file-tools);
+  - the game's ball list, and the ball each competition uses (normal, winter, final)
+    (CPGE);
+  - ADX and AIX audio played (Jenkey's explorer);
+  - any file viewed and edited in hex (CPGE);
+  - sider's liveCPK folders laid over the tree, with a file exported straight to its place
+    in one, and `sider.ini`'s folders and scripts edited (CPGE).
+- **Video encoder** ([its plan](../video_encoder.md)): makes the USM videos a cup ships (the
+  season's swipe, the competition wipes, the menu movies, the stadium billboards) from a PNG
+  image sequence or a member's video file, in place of CRI's `medianoche.exe` from about 2012,
+  a closed program and today the only one that writes a USM.
+- **Export viewer**: opens a member's aesthetics export, or a single model, and shows the
+  team close to how the game does: players with their kits, faces, bodies and motions, a
+  list of the export's problems, and still or animated captures. MFG's FMDL-Viewer does this
+  today (`C:/Data/4cc/Tools_4cc/FMDL-Viewer/`, a web page), for members to look at their exports
+  before they submit them. Its problem list is evidence for the Compiler's checks, and its
+  material, body and motion code for the 3D preview the Compiler and the [Player aesthetics
+  editor](../player_aesthetics_editor.md) are to share (`libs/model_viewport`).
 
 Not a tool of the suite but a way to run it, also with no phase yet:
 

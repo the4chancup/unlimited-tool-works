@@ -10,6 +10,9 @@ What each part holds:
 - outputs/: the last version of each file a tool wrote.
 - state/<tool>/: what each tool held when the report was saved, unsaved edits included,
   each in its usual file format.
+- sessions/: when the member ticked Include earlier sessions, one zip for each earlier
+  time UTW was opened, laid out as this report's journal.toml, inputs/ and outputs/. A
+  save in them is packed (its name ends in .packed), and only UTW's replay rebuilds it.
 - utw.log: the window's log.
 - settings.toml: UTW's settings.
 - installs.txt: each PES version's folder in the settings, and what UTW found in it.

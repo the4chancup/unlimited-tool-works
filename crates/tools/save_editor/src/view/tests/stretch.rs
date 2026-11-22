@@ -322,6 +322,21 @@ fn live_aatfs_dock_takes_the_extra_width_in_a_wider_pane() {
             .y0
     };
     let (default_grip, wide_grip) = (grip(&default), grip(&wide));
+    // The dock starts at the panes' left edge, which at the default size
+    // is the player list's, and stays there in the wider pane.
+    let by_id = by_id(&default);
+    let list_left = subtree(&default, pane_over(&default, player_row))
+        .iter()
+        .filter_map(|id| by_id[id].bounds())
+        .map(|bounds| bounds.x0)
+        .fold(f64::INFINITY, f64::min);
+    for at in [default_grip, wide_grip] {
+        assert!(
+            (at.x0 - list_left).abs() <= SLACK,
+            "the dock starts at {} where the list starts at {list_left}",
+            at.x0
+        );
+    }
     assert!(
         ((wide_grip.x1 - wide_grip.x0) - (default_grip.x1 - default_grip.x0) - 640.0).abs()
             <= SLACK

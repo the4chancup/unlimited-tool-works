@@ -1,5 +1,27 @@
 # Changelog
 
+## [Unreleased]
+
+### Useful
+
+- **All tools**: UTW now keeps a record of the five times it was opened before the current
+  one, with the saves opened and written each time. Report a problem's new box `Include earlier sessions` adds
+  them to the file, for a problem that began before UTW was last opened, such as a crash.
+- **All tools**: when UTW stops on an error of its own, its dialog now asks for the log file
+  first, with the file's path on a line of its own, and gives the error's details last.
+
+### Fixes
+
+- **Ruleset editor**: in a window larger than the default, the toolbar, the bottom bar and the
+  form stretched across it. They now keep their default width, centred. The preview now
+  stands at the window's right edge, wide enough for the data block's 100 columns, and can no
+  longer be resized.
+
+### Other stuff
+
+- **All tools**: the sidebar now marks the active tool with a thin outline around its
+  highlight, in place of the bar at its left.
+
 ## [0.0.2-pes14.2] - 2026-11-21
 
 ### Important

@@ -2178,6 +2178,32 @@ fn the_rest_of_the_terms() {
     );
 }
 
+/// A role holder's stored value past a byte reads as its number, not a
+/// panic: the other side words as always.
+#[test]
+fn a_term_words_a_stored_value_past_a_byte_as_its_number() {
+    let version = PesVersion::Pes15;
+    let tactics = fixture_tactics(version);
+    let rows = named_roster();
+    let roster = roster_rows(&rows);
+    assert_eq!(
+        tactics_term(
+            version,
+            TacticsField::Captain,
+            300,
+            5,
+            &tactics,
+            &tactics,
+            (&roster, &roster),
+        ),
+        (
+            "Captain".to_owned(),
+            "300".to_owned(),
+            "Player 06".to_owned()
+        )
+    );
+}
+
 /// Every `field:` key names the row its own entry's label, written out
 /// as literals: a `SliderSpec`, `StyleToggle` or `RoleSpec` whose key
 /// drifted — two keys swapped included — draws its row under another

@@ -34,24 +34,6 @@ in this browser. When you're done, press <b>Copy my answers</b> at the bottom an
 text into the chat. The answered ones then leave this page, and each answer goes into the plan.</p>
 <ul id="toc"></ul>
 
-<h2>Releases</h2>
-
-<section class="entry" id="pes14-build2-release">
-  <h3>Publish Build 2 for PES 2014?</h3>
-  <p class="from">From: <code>docs/plans/pes14.md</code> on the <code>pes14</code> branch, step 9</p>
-  <p>Build 2 adds the Gameplan screen for PES 2014 saves. Its in-game check passed on
-  2026-11-21: every edit made in the build showed in PES 2014 as set. Publishing it as the
-  prerelease <code>0.0.2-pes14.2</code> means pushing the <code>pes14</code> branch and its tag,
-  and I push nothing without your word.</p>
-  <p class="ask">Shall I cut and push <code>0.0.2-pes14.2</code>?</p>
-  <div class="options">
-    <label class="opt"><input type="radio" value="cut and push"><b>Yes, cut it and push</b></label>
-    <label class="opt"><input type="radio" value="wait"><b>Not yet</b>
-      <div class="note">Say below what it waits for.</div></label>
-  </div>
-  <textarea class="own" placeholder="Your own answer or a note (optional)"></textarea>
-</section>
-
 <h2>After the release</h2>
 
 <section class="entry" id="wrist-tape-colours">
@@ -64,6 +46,53 @@ text into the chat. The answered ones then leave this page, and each answer goes
     <label class="opt"><input type="radio" value="the same four everywhere"><b>The same four, in the same order</b></label>
     <label class="opt"><input type="radio" value="different, see note"><b>Different in at least one game</b>
       <div class="note">Write each game's list below.</div></label>
+  </div>
+  <textarea class="own" placeholder="Your own answer or a note (optional)"></textarea>
+</section>
+
+<h2>Unscheduled tools</h2>
+
+<section class="entry" id="swipe-source-files">
+  <h3>What the cup's video makers export their swipes as</h3>
+  <p class="from">From: <code>docs/plans/core/development_plan.md</code>, the Video encoder</p>
+  <p>The Video encoder will turn a member's video into the USM the game plays. It reads a
+  PNG image sequence in any case, so someone with no video editor can make a simple swipe; it
+  should also read what the swipe makers export. The 2015 batch files took an AVI and read its
+  transparency from the same file, but what they export today is not known.</p>
+  <p class="ask">What do the cup's video makers export their swipes and wipes as?</p>
+  <div class="options">
+    <label class="opt"><input type="radio" value="PNG sequence"><b>A PNG image sequence</b></label>
+    <label class="opt"><input type="radio" value="video with transparency"><b>A video file with transparency</b>
+      <div class="note">Say below which format, if you know (for example MOV, AVI or WebM).</div></label>
+    <label class="opt"><input type="radio" value="video without transparency"><b>A video file without transparency</b>
+      <div class="note">Say below how the transparency is made, if you know.</div></label>
+    <label class="opt"><input type="radio" value="not known"><b>I don't know, I'd have to ask them</b></label>
+  </div>
+  <textarea class="own" placeholder="Your own answer or a note (optional)"></textarea>
+</section>
+
+<h2>The PES 2014 build</h2>
+
+<section class="entry" id="pes14-copy-old-teams">
+  <h3>How the Akko organizer brings teams over from the 2014 save</h3>
+  <p class="from">From: the <code>pes14</code> branch, every team shown on a PES 2014 save</p>
+  <p>The PES 2014 build will list every team of a PES 2014 save, so the 2014 cup's teams, which
+  sit at real clubs' IDs (/gd/ at 136, /hm/ at 1236), can be opened and read. Copy and paste
+  already works between two editor windows, one player at a time: Ctrl+C on a player of the
+  2014 save, then Ctrl+V on a player of the Akko save. It pastes his stats alone: body,
+  abilities, positions and skills. His name, shirt number, nationality, age and look are not
+  copied, and on PES 2014 the team's Gameplan cannot be copied at all.</p>
+  <p class="ask">Is that enough for what the organizer wants to bring over?</p>
+  <div class="options">
+    <label class="opt"><input type="radio" value="stats copy is enough"><b>Yes: stats by copy and paste, the rest by hand</b>
+      <div class="note">Nothing to build.</div></label>
+    <label class="opt"><input type="radio" value="whole player copy"><b>No: his name, number, nationality, age and look too</b>
+      <div class="note">One player at a time still; a slice of its own.</div></label>
+    <label class="opt"><input type="radio" value="whole team copy"><b>No: a whole team in one go, its players and its Gameplan</b>
+      <div class="note">For example the Team TOML export and import on PES 2014, which that
+      build leaves out: a larger slice of its own.</div></label>
+    <label class="opt"><input type="radio" value="another tool"><b>With another tool</b>
+      <div class="note">Say below which.</div></label>
   </div>
   <textarea class="own" placeholder="Your own answer or a note (optional)"></textarea>
 </section>

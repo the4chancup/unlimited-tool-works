@@ -21,7 +21,7 @@ use crate::session::selection::{self, ListRow, Row, TeamCategory, TeamChoice};
 use crate::view::clipboard::{ClickKind, pressed};
 use crate::view::team::channel_to_show;
 use crate::view::{
-    Reveal, SaveView, Selection, live_marks, quick_actions, reveal_for, selected_team_id,
+    Reveal, SaveView, Selection, group_on, live_marks, quick_actions, reveal_for, selected_team_id,
 };
 
 /// A swatch square's side (the draft's 10px).
@@ -126,6 +126,7 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
         && selected_team_id(view) != Some(id)
     {
         view.selected = Some(Selection::Team(id));
+        view.group.clear();
     }
     // A category pick: a team the new category leaves out gives way to
     // All teams, and a selection it leaves out moves to the list's first
@@ -151,6 +152,7 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
                         ListRow::Team(_) => None,
                     })
                     .or(view.selected);
+            view.group.clear();
         }
     }
     // A pick scrolls to the row still selected when it named a team, moved
@@ -309,8 +311,11 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
                         ListRow::Team(team_id) => {
                             let double_clicked = team_row(
                                 ui,
-                                &mut view.selected,
-                                &mut view.click_kind,
+                                &mut RowSelection {
+                                    selected: &mut view.selected,
+                                    group: &mut view.group,
+                                    click_kind: &mut view.click_kind,
+                                },
                                 session,
                                 *team_id,
                                 layout,
@@ -325,8 +330,11 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
                         ListRow::Player(row) => {
                             drop_mark = drop_mark.or(player_row(
                                 ui,
-                                &mut view.selected,
-                                &mut view.click_kind,
+                                &mut RowSelection {
+                                    selected: &mut view.selected,
+                                    group: &mut view.group,
+                                    click_kind: &mut view.click_kind,
+                                },
                                 session,
                                 row,
                                 layout,
@@ -420,6 +428,7 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
         view.team = TeamChoice::Team(id);
         view.filter.clear();
         view.selected = Some(Selection::Team(id));
+        view.group.clear();
         view.reveal_selected = Some(Reveal::Nearest);
     }
     // The viewport spans the bar's strip while nothing scrolls: the frame
@@ -468,6 +477,7 @@ pub(super) fn step_selection(view: &mut SaveView, forward: bool, steps: usize) -
         return false;
     }
     view.selected = Some(drawn[next]);
+    view.group.clear();
     true
 }
 
@@ -505,6 +515,7 @@ pub(super) fn page_selection(view: &mut SaveView, forward: bool) -> bool {
         return false;
     }
     view.selected = Some(drawn[next]);
+    view.group.clear();
     true
 }
 
@@ -710,6 +721,19 @@ fn paint_row_frame(
     visuals
 }
 
+/// The view state a list row reads and writes, bundled as the fields
+/// `show` hands every row together: `selected`, the row the view
+/// names; `group`, the player rows selected together (`group_on`); and
+/// `click_kind`, the copy target a press on a row clears.
+struct RowSelection<'a> {
+    /// The selected row.
+    selected: &'a mut Option<Selection>,
+    /// The player rows selected together, the selected one first.
+    group: &'a mut Vec<(u32, u8)>,
+    /// The Tactics selector the last press named for Ctrl+C and Ctrl+V.
+    click_kind: &'a mut Option<ClickKind>,
+}
+
 /// A team's own row (the draft's `trow`): one click target the row's width
 /// — the team's id in the weak colour, its colours 1 and 2 as small filled
 /// squares (the shown colour, `channel_to_show`), the name with its colour
@@ -724,8 +748,7 @@ fn paint_row_frame(
 /// into the team picked in the selector with the filter cleared.
 fn team_row(
     ui: &mut egui::Ui,
-    selected: &mut Option<Selection>,
-    click_kind: &mut Option<ClickKind>,
+    selection: &mut RowSelection,
     session: &Session,
     team_id: u32,
     layout: RowLayout,
@@ -734,7 +757,7 @@ fn team_row(
     let Some(team) = session.file().team(team_id) else {
         return false;
     };
-    let is_selected = *selected == Some(Selection::Team(team_id));
+    let is_selected = *selection.selected == Some(Selection::Team(team_id));
     let dirty = session.team_dirty(team_id);
     let (rect, response) = ui.allocate_exact_size(
         egui::vec2(layout.width, layout.row_height),
@@ -845,10 +868,11 @@ fn team_row(
         response.on_hover_text(hover)
     };
     if response.clicked() {
-        *selected = Some(Selection::Team(team_id));
+        *selection.selected = Some(Selection::Team(team_id));
+        selection.group.clear();
     }
     if pressed(ui, &response) {
-        *click_kind = None;
+        *selection.click_kind = None;
     }
     response.double_clicked()
 }
@@ -873,7 +897,9 @@ struct DraggedRow {
 }
 
 /// One list row: place, position, and the name with its colour codes drawn.
-/// The whole row is one click target; a click selects it. `draggable` (no
+/// The whole row is one click target; a click selects it, a Ctrl+click
+/// (Cmd on a Mac) adds it to or takes it from the group of players
+/// selected together (`toggle_in_group`). `draggable` (no
 /// filter typed) also makes it a drag source and a drop target: a drop on
 /// a row of the dragged player's own team moves him to it
 /// (`Session::move_player`, SE-GUI-08), a drop on another team's row does
@@ -898,8 +924,7 @@ struct DraggedRow {
 /// that also takes clicks on the arrow, so the row asks for it).
 fn player_row(
     ui: &mut egui::Ui,
-    selected: &mut Option<Selection>,
-    click_kind: &mut Option<ClickKind>,
+    selection: &mut RowSelection,
     session: &mut Session,
     row: &Row,
     layout: RowLayout,
@@ -908,7 +933,14 @@ fn player_row(
     let file = session.file();
     let player = file.player(row.player_id);
     let dirty = session.player_dirty(row.team_id, row.slot);
-    let is_selected = *selected == Some(Selection::Player(row.team_id, row.slot));
+    // A group's rows are filled and report selected as the selected row
+    // does (the draft's `.on`): every entry of the on group, else the
+    // one selected row.
+    let is_selected = if group_on(*selection.selected, selection.group) {
+        selection.group.contains(&(row.team_id, row.slot))
+    } else {
+        *selection.selected == Some(Selection::Player(row.team_id, row.slot))
+    };
     let row_height = layout.row_height;
     let font = egui::TextStyle::Body.resolve(ui.style());
     let texts = row_text(player, row, &font);
@@ -1006,10 +1038,17 @@ fn player_row(
         response.on_hover_text(hover)
     };
     if response.clicked() {
-        *selected = Some(Selection::Player(row.team_id, row.slot));
+        // `command` is Ctrl on Windows and Linux, Cmd on a Mac (the
+        // draft's `ctrlKey || metaKey`).
+        if ui.input(|input| input.modifiers.command) {
+            toggle_in_group(selection.selected, selection.group, row.team_id, row.slot);
+        } else {
+            *selection.selected = Some(Selection::Player(row.team_id, row.slot));
+            selection.group.clear();
+        }
     }
     if pressed(ui, &response) {
-        *click_kind = None;
+        *selection.click_kind = None;
     }
     let mut drop_mark = None;
     if layout.draggable {
@@ -1039,10 +1078,49 @@ fn player_row(
         {
             session.move_player(row.team_id, dropped.row.slot, row.slot);
             // The selection follows the dragged record to its new slot.
-            *selected = Some(Selection::Player(row.team_id, row.slot));
+            *selection.selected = Some(Selection::Player(row.team_id, row.slot));
+            selection.group.clear();
         }
     }
     drop_mark
+}
+
+/// A Ctrl+click on a player row (the draft's `toggleInGroup`): the row
+/// joins the players selected together — `selected`'s own first — or
+/// leaves them. Leaving a group of two selects the remaining one alone,
+/// a plain selection again; the row that is the only selected one does
+/// nothing (one stays selected). With a team row selected the click
+/// selects the player alone, as a plain click does.
+fn toggle_in_group(
+    selected: &mut Option<Selection>,
+    group: &mut Vec<(u32, u8)>,
+    team_id: u32,
+    slot: u8,
+) {
+    // What the click toggles the row in or out of: the on group, else
+    // the one selected player (a team row counts as none).
+    let mut next = if group_on(*selected, group) {
+        group.clone()
+    } else {
+        match *selected {
+            Some(Selection::Player(team_id, slot)) => vec![(team_id, slot)],
+            _ => Vec::new(),
+        }
+    };
+    match next
+        .iter()
+        .position(|&(team, at)| team == team_id && at == slot)
+    {
+        Some(at) => {
+            next.remove(at);
+        }
+        None => next.push((team_id, slot)),
+    }
+    let Some(&(team, slot)) = next.first() else {
+        return;
+    };
+    *group = if next.len() > 1 { next } else { Vec::new() };
+    *selected = Some(Selection::Player(team, slot));
 }
 
 /// `texts` painted inside `rect` on `painter`, as a player row and the

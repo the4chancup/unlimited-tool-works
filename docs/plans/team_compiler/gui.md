@@ -16,12 +16,20 @@ it, one cell per player at a fixed position by number, plus one cell per kit:
 /cc/   [809]   [01][  ][03][  ][05][  ][  ][  ]   [GK]
 ```
 
-- **Team name label**: fixed-width left column with the canonical `/xx/` `team_name`; the tooltip
-  shows the complete `export_display_name` and resolved identity. The label doubles as the **cell
+The grid is drawn by `libs/export_grid`, which the Export upgrader's Grid look draws too
+(`plans/export_upgrader.md` "GUI"). The lib draws the rows a tool hands it: labels, lines of
+cells at fixed positions, their states and messages, the legend and the detail window. It reads no export and runs no check: each tool maps its own results to
+rows, the Compiler its check's findings and the upgrader its run's folders. It is a lib, not
+part of this crate, because a tool crate never depends on another, and two copies of one grid
+would drift apart.
+
+- **Team name label**: fixed-width left column with the canonical `/xx/` `team_name`; its detail
+  window shows the complete `export_display_name` and resolved identity. The label doubles as the **cell
   for export-scoped and non-slot task messages**: shared model folders, Logo, Common, Collars,
-  RefMarker, and root-artifact scopes have no cells of their own, so their status and messages roll
-  up here. For example, an orphaned shared folder (`shared_folder_orphaned`) turns the label amber,
-  with the details in its tooltip.
+  RefMarker, and root-artifact scopes have no cells of their own, and neither has a player folder
+  whose name claims no slot (`15_Snuffy`, `player_folder_number_invalid`), so their status and
+  messages roll up here. For example, an orphaned shared folder (`shared_folder_orphaned`) turns
+  the label amber, with the details in its window.
 - **Team ID cell**: between the team name and the first player column, showing the ID resolved from
   `teams_list.txt`. When the team is not on the teams list (`team_name_unknown`), the cell turns
   **red and editable**: the user types an ID and confirms with Enter, and the ID is **written to the
@@ -49,11 +57,11 @@ it, one cell per player at a fixed position by number, plus one cell per kit:
   across rows by number: missing players are visible at a glance.
 - **Referee rows**: the fixed positions extend to `01`–`35` (one per referee slot). Each slot listed
   in `players.txt` gets a cell, and slots backed by the same model folder share its status (the
-  tooltip names the folder, making the repetition visible).
+  detail window names the folder, making the repetition visible).
 - **Kit cells**: one per kit. The `Kits/` folder has one subfolder per kit (containing
   `config.toml`, `colors.txt`, and that kit's textures), which gives the per-kit cell
   granularity naturally. `all/` is not a kit and gets no cell: its effect shows in the kit
-  cells' tooltips, which name the folder (`p1 - Lakers`) and the stems inherited from `all/`.
+  cells' detail windows, which name the folder (`p1 - Lakers`) and the stems inherited from `all/`.
 
   Kit cells use a separate fixed-slot loop (`GK`, then `K1`–`K9`) following the same
   reserve-every-position rule as player cells. They use the same square shape and are
@@ -74,10 +82,124 @@ it, one cell per player at a fixed position by number, plus one cell per kit:
   slot cell. Kit tasks update their kit cell. Logo/Common/Collar/RefMarker/root-artifact work
   updates the team/ref row label. Run/output failures appear in the run strip and log, with
   run-abort state propagated to pending cells as described below.
-- **Hover**: tooltip with folder name + warning/error text. **Click**: opens a detail panel (and
-  later, the 3D preview from Future Features).
+- **The detail window** shows one cell (a player, the portraits, a kit, or a team label for its
+  export's own messages): its folder, its state, and each message with the file it is about
+  and the catalog's When and Effect texts, then Open folder (when the cell has a folder to
+  open, below) and, for a finding with one obvious fix, the rename that fixes it. The cells
+  carry no tooltip of their own; the ID cell and the buttons keep theirs.
+
+  A team label's window also offers **Copy messages** when the export has findings. It puts
+  the export's log lines on the clipboard, as the log prints them, and reads "Copied" for a
+  moment. Some organizers tell a member what is wrong with their export rather than fixing it
+  themselves, and this gives them the text to send. **Copy report** would put the whole run's
+  lines on the clipboard, which they would have to cut down to the one export.
+
+  The window opens on a box the 3D preview's size. The box is there on every cell, so the
+  text under it stays in place as the window moves between cells. What it holds depends on
+  the cell:
+  - a player: his 3D preview (Future Features), with his portrait in the bottom-left corner
+    when his folder holds it and the export's logo in the bottom-right one, each the size of
+    a portraits tile; until the preview is built, the box holds those two alone;
+  - a kit: its main texture (`kit.dds`), fitted inside the box;
+  - the portraits: every portrait as a 6 × 4 grid in the players' order, the export's logo
+    in the last tile, at the bottom right, so 23 portraits and the logo fill the 24 tiles; a
+    player with no portrait leaves his tile empty;
+  - a team label: the export's logo (its root `logo*` texture), fitted inside the box.
+  Portraits and logos keep their transparency: each is drawn straight on the box's
+  background, with no tile or frame behind it, so a crest or a cut-out portrait shows its
+  own shape rather than a square. An export with no logo shows "No logo" where the logo
+  would be. In a referee export, the
+  marker texture (`ref_marker.dds`), when there is one, takes the logo's place in the window,
+  because a referee export's logo reaches no output while the marker is the emblem the
+  referees wear in game.
+  - **Hover** opens it on the cell under the pointer, and leaving the cell closes it. It opens
+    after 0.15 s, and then follows the pointer from cell to cell with no delay. That is
+    longer than the sidebar's 0.1 s, so a pointer crossing the grid does not flash a window
+    the size of the 3D preview over every cell it passes.
+  - **A click pins it**: a pin shows on the cell and in the window's title bar, and the window
+    stays open on that cell, with its buttons usable, and dragging its title bar moves it.
+    While a cell is pinned, hovering another opens nothing, so the pointer can cross the grid
+    to the window. A click on the pinned cell, on the window's pin or on the grid's empty
+    space unpins it; a click on another cell pins that one. After a click that unpins, the
+    cell opens no window on hover until the pointer leaves it: egui reports it hovered on the
+    next frame, which would open the window the click just closed.
+  - **Esc** closes the window, pinned or not, as a click that unpins does.
+  - **A double-click** opens the cell's folder in the file manager (for an archive export, the
+    folder holding it, with the archive selected), and leaves the pin as it was before it.
+    The portraits cell's folder is the export's `Portraits/` when it has one. Most exports have
+    none and keep each portrait in its player's folder: then the cell's folder is the player
+    folder of its one finding, and with two findings or none it has no folder, so a
+    double-click does nothing and the window shows no Open folder.
+  - **Where it opens**: where the member last left it (at first, at the grid's right), not
+    beside the cell, because a window sized for the 3D preview is too big to follow the pointer.
+    While unpinned it lets the pointer through, so a cell under it can still be hovered.
+- **A message's log line** is `Severity - /team/ - code`, then ` at ` and the file or folder it
+  is about, then its context fields, as the console prints them; the catalog's text, a
+  paragraph, is the window's and the help's, which the code links to.
+
+  A line acts for its cell (the team label for an export's own message). Hovering it opens
+  the cell's window as hovering the cell does, under the same rules. A click outlines the cell,
+  scrolls it into view and pins its window; a second click on the line unpins the window and
+  keeps the outline.
 - One row per team bounds the row count (~50), so no virtualization is needed; direct egui rendering
   suffices.
+
+### Sizes and sorting
+
+The legend's row ends, at its right, with what the cells show, the unit and the rows' order,
+whether the legend is folded or not:
+
+- **Status | Sizes.** Status is the cell states above. Sizes colours each cell by its size,
+  green to red, so an organizer sees which export or player is heavy before the DLC grows.
+  A cell not read yet keeps the unchecked colour, and in Sizes the warning and error rings and
+  the dashed blocked look are not drawn: red means large and nothing else, and Status is a
+  click away.
+- **What a cell measures.** A player cell measures his folder plus the shared `Faces/`,
+  `Boots/` and `Gloves/` folders he links to, since the compile copies those into his files:
+  a player split over several folders shows his whole weight. A kit cell measures its folder
+  plus what it takes from `all/`, the portraits cell its portraits, and a team label its whole
+  export.
+- **The scale.** Each kind has three fixed thresholds: green up to the first, amber at the
+  second, red from the third, blended on a log scale between. They are players 10, 20 and
+  32 MB, kits 6, 10 and 16 MB, portraits 1, 2 and 4 MB, and exports 150, 300 and 500 MB.
+  In Sizes the legend shows them in place of the states.
+
+  The thresholds come from a census of the exports on the maintainer's PC (2026-11-22): 828
+  player totals in 36 upgraded VGL exports had a median of 7.8 MB, p75 12.4 and p90 18.9; their
+  164 kits clustered at 5.3 MB; 117 exports had a median of 123 MB and p75 235 MB. An
+  export's green ends at 150 MB, near the median, because 250 MB is already large for an
+  export. A player's thresholds keep the same proportions to his red end, 32 MB, as an
+  export's keep to its 500 MB. The red ends are
+  the 4cc rules page's own (a model folder over 32 MB, an export over 500 MB, "unless it
+  is absolutely required"). Fixed thresholds, not a scale relative to the folder's largest,
+  because a relative scale paints someone red in a cup where every export is fine.
+- **Disk | VRAM**, always shown and enabled only in Sizes: the controls are right-aligned,
+  so a pair appearing on a click on Sizes would push the toggle out from under the pointer.
+  Disabled, it is drawn as the Save editor's disabled formation picker: the chosen unit as a
+  disabled button, not on the selection's blue, the other in the disabled grey.
+  Disk is the files' size. VRAM is what the textures and
+  models take in the game's video memory, read from headers at check time with no compile:
+  - a DDS takes its payload;
+  - a WESYS-wrapped file takes its unpacked length (the wrapper's header holds it);
+  - a PNG takes the DDS the compile makes of it, with its mips: DXT1 when its header has no
+    alpha (no alpha channel, no `tRNS`) and it is not a normal map, else DXT5 until a compile;
+  - any other file takes its size on disk.
+
+  The compile, without BC7, picks DXT1 for a PNG whose pixels are all opaque (`dds_convert`'s
+  codec choice), which only a full decode tells, too slow for a check. So before a compile
+  such a PNG counts as DXT5, the most it can take, and after one its real size is shown. An
+  archive export, read shallowly, has no VRAM size until a compile. One set of thresholds
+  serves both units, because today's exports ship DDS textures, whose VRAM size equals their
+  payload on disk (the census: VRAM over disk 1.00 to 1.01 on 75 exports).
+- **Sort**, in either colouring: Folder order, Errors first (an Error, then a Warning, then
+  the rest), Largest export and Largest player (the export with the heaviest player first),
+  in the unit chosen. Rows equal under the sort keep the folder's order.
+- **The window in Sizes** adds the cell's size on disk and in VRAM (noting the PNGs counted
+  as DXT5 until a compile), the shared folders a player's total takes in, and the five
+  largest files. A label's window lists the five largest players instead, since that is what
+  to shrink first.
+- **The strip in Sizes** adds the exports' total in the chosen unit (`2.5 GB on disk`),
+  `at least` while any export is not measured.
 
 ### Row actions
 
@@ -98,7 +220,8 @@ other columns, so on the rows with none the column reads as theirs, not as unuse
   - a known file with a hidden `.txt` (`settings.toml.txt` → `settings.toml`; kept disallowed,
     so the mistake is named);
   - an old `Portraits/player_05.dds` (→ the player folder's portrait name);
-  - a player folder `15 Snuffy` or `15_Snuffy` (→ `15 - Snuffy`).
+  - a player folder `15_Snuffy` (→ `15 - Snuffy`; `15 Snuffy` is a valid name,
+    `plans/aesthetics_export/player_folders.md` "Player numbering without the hyphen").
 
   Each is a rename refused when the target name exists (the refusal says so), and the row
   revalidates as after any rename. The buttons are for a folder export only: inside an archive
@@ -244,7 +367,7 @@ Processing eligibility follows the effective disposition, not severity alone:
 - `AbortRun` terminates the run.
 
 An effective `DropExport` gives every player and kit cell in that row a derived blocked state
-(not pending or processing), and each tooltip references the export-level cause. A skipped
+(not pending or processing), and each one's detail window names the export-level cause. A skipped
 scope otherwise keeps its error status when Compile is pressed.
 
 Planning messages are applied before manifest tasks become pending: rows dropped by planning become
@@ -319,17 +442,10 @@ for slot in 1..=slot_count {
         label_color(actual_color), // contrast derives from the painted color
     );
 
-    if response.clicked() {
-        row.open_detail_for_slot(slot);
-    }
-    response.on_hover_ui(|ui| {
-        ui.label(&cell.folder_name);
-        // Messages are pre-sorted by severity (Fatal > Error > Warning > Info),
-        // then by code for stable ordering.
-        for msg in &cell.messages {
-            ui.colored_label(actual_color, msg);
-        }
-    });
+    // The detail window (above): hover shows it, a click pins it, a
+    // double-click opens the folder. Its messages are sorted by severity
+    // (Fatal > Error > Warning > Info), then by code for stable ordering.
+    detail.track(row.scope_for_slot(slot), &response);
 }
 ```
 
@@ -405,5 +521,20 @@ A single primary action:
   `Progress { processed, total }` payload is insufficient; extend it with these metrics or add
   separate `StageChanged`/`MetricsUpdated` events before implementing this view
   (`core/architecture.md` "Event system").
+
+  While nothing runs, the strip also sums up the grid after the last run's line: `14 exports ·
+  6 skipped · 3 with errors · 1 with warnings`. Each count is of exports, not of messages, and
+  a count of zero is left out. This answers an organizer's first question, whether anything is wrong at all. A click
+  on the error or warning count sets the log's filter to Errors or Warnings, and expands the
+  log if it is collapsed. The two counts are in the link blue, never underlined, only while
+  the log is collapsed. While it is open they are in the strip's own grey, still clickable,
+  because the log's own filter buttons sit right below them and two blue rows of the same
+  choice are one too many.
+
+  The log starts collapsed when, open, it would push some of the grid's cells out of view
+  (the grid scrolling to reach them): the grid is
+  what the view is opened for, and the strip's counts still say whether anything is wrong.
+  This is decided once per launch, at the view's first frame with rows. After that, the
+  chevron and the counts open and close the log.
 
 ---

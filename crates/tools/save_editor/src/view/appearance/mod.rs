@@ -552,8 +552,16 @@ fn fpc_group(
             session.apply_fpc(player_id, fpc::Preset::Unhide, ids);
         }
     });
-    let style = pes_savefile::ops::fpc::strip_style(player, session.version())
-        .expect("a loaded player's fields hold the strip fields");
+    let style = match pes_savefile::ops::fpc::strip_style(player, session.version()) {
+        Ok(style) => style,
+        Err(error) => {
+            ui.colored_label(
+                ui.visuals().error_fg_color,
+                format!("Cannot check this player's strip: {error}"),
+            );
+            return;
+        }
+    };
     let findings = fpc::check(&style, hidden);
     if findings.is_empty() {
         ui.weak("No interference found.");

@@ -131,9 +131,9 @@ pub struct Appearance {
     /// Sock length.
     pub socks: Socks,
     /// Boots ID.
-    pub boots_id: u16,
+    pub boots_id: u32,
     /// Gloves ID.
-    pub gloves_id: u16,
+    pub gloves_id: u32,
     /// Skin color preset/custom.
     pub skin_color: SkinColor,
 }
@@ -158,8 +158,8 @@ pub fn preset(kind: Preset, ids: HideIds) -> Appearance {
             sleeves: Sleeves::Long,
             tuck: Tuck::Tucked,
             socks: Socks::Short,
-            boots_id: ids.boots,
-            gloves_id: ids.gloves,
+            boots_id: u32::from(ids.boots),
+            gloves_id: u32::from(ids.gloves),
             skin_color: SkinColor::Preset,
         },
         Preset::Unhide => Appearance {

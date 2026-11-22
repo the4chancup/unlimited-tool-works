@@ -28,7 +28,10 @@ ran most of the test suite.
 **A checkpoint is one command.** `just checkpoint` runs `gates-changed` and `mutants-diff`
 since the last gated commit and then moves that commit, the git ref
 `refs/checkpoints/gated`, to the commit it started on (`scripts/gates/checkpoint.py`; a
-clone seeds the ref once, as the script says). The gates read the working tree, so a commit
+clone seeds the ref once, as the script says). The mutation run starts from a ref of its own,
+`refs/checkpoints/mutated`, which only a run whose mutants all ran moves: a checkpoint with
+`--no-mutants` leaves it behind, so the next run's mutants cover what it skipped (one ref
+serving both once left 166 commits out of every mutation run). The gates read the working tree, so a commit
 or an edit made while they run leaves the ref where it was, and the checkpoint is run again.
 It runs at the end of a review loop, at a worklog step's close, after a merge, and before a
 push is asked for. `just checkpoint-status` says how far HEAD is past the gate, what is not
@@ -97,10 +100,11 @@ never makes this check. The question never holds the queue: the next build or si
 starts before it is asked, since a capture needs little CPU and the answer may take hours
 (one waited two, with nothing building).
 
-**Sidekicks in parallel.** Two or three sidekicks at once is the normal state, on steps
-that own disjoint files, the release path's first. The limits are the disk (a worktree that
+**Sidekicks in parallel.** Two sidekicks at once is the normal state, and a third runs whenever
+work is ready for it, on steps that own disjoint files, the release path's first. The limits
+are the disk (a worktree that
 builds grows a `target/` of about 40 GB; one that only edits documents or scripts builds
-nothing and costs nothing), the machine's three cargo builds (below), and for SWE-2 the
+nothing and costs nothing), the machine's three cargo jobs (below), and for SWE-2 the
 login's limit on runs at once (`accounts.md`, next paragraph); a reviewer builds nothing. When the Claude
 weekly window nears its limit, the sidekick work goes back to SWE-2.
 
@@ -367,7 +371,8 @@ root or an environment variable rather than a scratch path, and a line here or i
 `README.md`. The agents' own tooling is not the project's and stays out of the repository, in
 `~/.claude/tools/` on the maintainer's machine: the below-normal build wrapper, the safe amend,
 the sidekick launcher and its waiter, the detached runner, the context and disk watchers, the
-handover's stamp and the review-cost readers; each takes the repository from the directory it
+handover's stamp, the review-cost readers and the waiter on a GitHub run (`gh_run_wait.py`,
+which keeps waiting through a network error where `gh run watch` stops); each takes the repository from the directory it
 runs in. A release candidate takes two: `scripts/release/build_remapped.py` builds the release exe
 with `just release`'s flags and checks it leaks no local path, and `scripts/release/make_candidate.py
 <commit>` stages the unpacked bundle from it in `../4cc-studio-temp/candidate-<version>`;
@@ -405,6 +410,9 @@ left for the next disk alarm, six finished trees held 108 GB on 2026-11-21.
 When C: fills, a finished tree's `target/` can go whole, and the main tree's `target/debug`
 once nothing builds there (254 GiB on 2026-10-26, mostly stale `deps`): cargo rebuilds them,
 each run rewrites its generated config, and the cost table lives outside every `target/`.
+A tree whose next build should stay quick (the gate's, main's) loses only its old copies: `python
+scripts/stale_deps.py <target>/debug/deps` lists every artifact a newer build of the same
+crate replaced, and `--apply` removes them (6.6 GB of the gate's 120 GB on 2026-11-22).
 
 **On the VPS the project leaves the host 2 GiB of free disk** and may hold the rest: the
 host's production service runs but is used by nobody, so the 40 GB the project's folder was
@@ -413,9 +421,9 @@ host passes a guard first (`remote_refusal`):
 it empties `~/studio-mutants/tmp` (`REMOTE_TMPDIR`, the remote tests' temp dir), where a test
 that removes its folder at its end leaves it on every caught mutant and a killed half leaves its
 tree copies, then refuses when the disk has under
-26 GiB free (`REMOTE_FREE_FLOOR`: a half's two build copies take 24, measured on a
-`save_editor` half, whose temp folder peaked at 23.6 GiB, and 2 stay for
-the host's system). The refusal prints what `~/studio-mutants` holds: the cleanup below frees
+48 GiB free (`REMOTE_FREE_FLOOR`: a `save_editor` half that started with 35.4 GiB free
+filled the disk on 2026-11-22, its tests' leftovers growing with each caught mutant, so the
+floor is that start plus a third, 2 of it for the host's system). The refusal prints what `~/studio-mutants` holds: the cleanup below frees
 the clone's build cache, usually most of it (a finished run's results stay until the next
 launch), and when that cannot lift the floor the maintainer is asked.
 Before the guard, the folder once held 50 GB (28.6 of them test leftovers, 27 the Save
@@ -532,14 +540,16 @@ crates as up to date (main's `gates-changed` once failed to compile against the 
 (`.tmp/lead/touch_diverged.py <candidate>`); the staging worktree also needs an empty
 `target/` of its own (`WORKLOG.md` Issues).
 
-**At most three cargo builds at once, on the whole machine**: a sidekick's, a mutation run's
-local half, a lead's gates or package tests and a release build each count as one. The main
-lead's side (its sidekicks, its mutation run, its own gates) holds two; a side-lead in its own
-worktree holds the third, its sidekick's builds and its own together, so the two never need
-to sync. With the Optane's 64 GiB swap on `F:` a third build does not risk exhausting memory,
-though two already fill the CPU, so a third shares it rather than adding speed. Before
-starting a build, count your side's; with no side-lead running, the main lead's side may use
-the third for a program needed as soon as possible (a quick tool, a build for a manual check).
+**At most three cargo builds at once, on the whole machine, and two is the aim**: a sidekick,
+a pipeline or a mutation run's local half, a lead's gates or package tests and a release build
+each count as one. A sidekick or a pipeline counts for its whole run, since it builds whenever
+its work needs to, so the count is taken before each launch, against what is already running.
+A sidekick compiles for under a third of its run and reads and writes the rest, so with two
+jobs the CPU, the project's bottleneck, often has nothing to do: a third job is launched
+whenever work is ready for one, and only a fourth waits for a job to end. A running job is
+never stopped to get back to two. With the Optane's 64 GiB swap on `F:`, three builds at once
+do not risk exhausting memory. A side-lead, when one runs, holds one of the three for its
+sidekick's builds and its own.
 
 **Every build and test job runs at below-normal priority**: at normal priority two jobs left
 the maintainer's machine barely usable, while a below-normal one yields every processor to
@@ -559,6 +569,14 @@ detached launcher also keep their job off two logical processors, one core, whic
 processes inherit as they inherit the priority (`~/.claude/tools/leave_cores.py` for the
 launcher;
 `lower_tree.ps1 -Match <text> -Free 2` for a job already running).
+
+**A build or test run is stopped with `just stop <tree>`** (a worktree's name or path; none for
+the tree the command runs in), never with the harness alone. The
+harness's stop ends a background command's outer shell, not the script it ran: on 2026-11-21 a
+stopped gate script went on to its next stage beside its rerun, both writing one log, and the
+doubled load pushed a test past its deadline. `scripts/stop_builds.py` stops the tree's cargo,
+rustc and test binaries and the scripts that launched them, while an agent's own session in
+the tree keeps running; `--list` shows what it would stop.
 
 **A headless `claude -p` sidekick runs its builds and tests in the foreground.** Its session
 ends with its turn, so a run it started in the background and a notification it waits for die
@@ -650,6 +668,12 @@ previews can afford the concession, and its members get fixes sooner than a rele
 for days would give them. The runs come after the cut, and their survivors' tests go into
 the next release, or a patch when a survivor hides a real bug.
 
+**The changelog has the maintainer's last word.** Before every cut, on main or a side line,
+the maintainer reads the release's `CHANGELOG.md` section and approves it or rewrites it,
+because only the maintainer knows what members will find important. The lead drafts that
+section from the `[Unreleased]` lines, and the cut, its version bump included, starts only
+after the approval.
+
 **Releasing a side line.** A side line is a branch released on its own from the same
 repository, such as the PES 2014 builds on `pes14`. Its releases need a tag prefix of their
 own, so that the update check never offers a side line's build to a member on main, nor
@@ -667,6 +691,11 @@ main's build to a member on the side line. On the branch:
 
 Main's check passes over the side line's tags because they do not start with `v`, so main
 needs no change.
+
+A commit of main's cherry-picked onto a side line gets its `git show --stat` compared with
+main's before anything else: a new entry in `DECISIONS.md` can bring along main's entries
+since the two branches parted, with no conflict to show it. One did on 2026-11-21, carrying
+11 of main's decisions onto `pes14`.
 
 **A hand-given build** (`0.0.2-poc.1`, `0.0.3-dev.1`: a fix a cup's organizer needs before the
 next release) is never tagged, pushed or published. It is packed from a worktree on a branch

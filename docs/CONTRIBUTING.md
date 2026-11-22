@@ -121,7 +121,13 @@ exist yet (every Phase 2 crate), the plan's data-shape rules stand in for one.
   used as a semaphore is an ask.
 - Errors: `thiserror` enums in lib crates, `anyhow` in tools and the binary, `?` everywhere.
   `unwrap`/`expect` only in tests, or on a true invariant with a message that says why it holds.
-  `.lock().unwrap()` on a `std::sync::Mutex` is the one bare `unwrap` allowed: it asserts "no
+  What a file holds is never one. A save, an export, a settings file or a game file can carry
+  any value a game, another tool or a hand wrote: a field wider than ours, a record missing, a
+  number out of range. Such a value reaches the member as an error, a finding or a line in the
+  view, never as a panic; an `expect` rests only on what our own code made (a value it built,
+  or checked a few lines up). A field's width in the schema is not such a check: a decoded
+  value keeps the type it was decoded into, because another version may store the field
+  wider (PES 2014's gloves ID is 18 bits where the others hold 14). `.lock().unwrap()` on a `std::sync::Mutex` is the one bare `unwrap` allowed: it asserts "no
   thread panicked while holding this lock", which needs no message.
 - A discarded `Result` is a decision, and `clippy::let_underscore_must_use` (denied workspace-wide)
   makes `let _ = fallible()` a compile error. The ways out, in order of preference: handle it
@@ -242,7 +248,9 @@ scripts' own `*_test.py` the gates list run whatever changed) runs every package
 the toolchain, `Cargo.lock`, `.cargo/` and `resources/` reach them all.
 
 How often each runs. A commit that touches only `docs/` or the root's `*.md` runs `just
-doc-pointers` and `just acceptance`. A code commit reruns, in the real workspace, the changed
+doc-pointers` and `just acceptance`; one that touches a draft (`docs/prototypes/`) also gets
+the drafts bundler's test, which `scripts/commit.py` runs itself, since a draft is often
+pushed for the maintainer before a checkpoint. A code commit reruns, in the real workspace, the changed
 packages' own tests (`cargo test -p <each>`), `cargo clippy -p <each> --all-targets -- -D
 warnings` and `cargo fmt --all --check`: the sidekick's pasted runs are a claim, and these are
 the checks a slice's own change fails first. A commit that adds or changes a test of printed

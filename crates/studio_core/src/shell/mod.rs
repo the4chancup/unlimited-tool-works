@@ -95,6 +95,12 @@ pub(crate) const APP_NAME: &str = app_name!();
 /// compiling the same exports writes the same bytes.
 pub const TOOL_VERSION: &str = concat!(app_name!(), " ", env!("CARGO_PKG_VERSION"));
 
+/// The pane's width at the default window, `window_size::DEFAULT_SIZE`'s width
+/// less `sidebar::RAIL_WIDTH`, which the tools' views are calibrated for. A
+/// larger window keeps a view at this width, centred; a smaller one scales the
+/// whole UI down rather than narrowing the pane.
+pub const DEFAULT_PANE_WIDTH: f32 = window_size::DEFAULT_SIZE.x - sidebar::RAIL_WIDTH;
+
 /// The version line the shell shows in four places: the status bar's left slot, the About
 /// block's first line, `UTW --version` and the window's log's first line. It reads
 /// `v{version}`, the release stage while there is one (`pre-alpha` for 0.0.x,
@@ -246,6 +252,12 @@ pub struct StudioApp {
     /// `utw.log` entry reads it.
     #[cfg(not(target_arch = "wasm32"))]
     log_file: Option<PathBuf>,
+    /// The window's own session folder's name under `<data
+    /// location>/sessions`: `run_gui_mode` makes the session's header and
+    /// hands the name in, so Report a problem's list of earlier sessions
+    /// can leave it out; `None` when the run has no data location.
+    #[cfg(not(target_arch = "wasm32"))]
+    session_folder: Option<String>,
 }
 
 /// Where the update check stands (native only; the browser build checks
@@ -341,6 +353,8 @@ impl StudioApp {
             report: report::Report::default(),
             #[cfg(not(target_arch = "wasm32"))]
             log_file: None,
+            #[cfg(not(target_arch = "wasm32"))]
+            session_folder: None,
         }
     }
 
@@ -350,6 +364,16 @@ impl StudioApp {
     #[cfg(not(target_arch = "wasm32"))]
     pub fn with_log_file(mut self, log_file: Option<PathBuf>) -> StudioApp {
         self.log_file = log_file;
+        self
+    }
+
+    /// The window's own session folder's name, which Report a problem's
+    /// earlier-sessions list leaves out: `run_gui_mode` calls this once
+    /// with `session_folder_name` of the header it made. `None` when the
+    /// run has no data location — then no session is the window's own.
+    #[cfg(not(target_arch = "wasm32"))]
+    pub fn with_session_folder(mut self, session_folder: Option<String>) -> StudioApp {
+        self.session_folder = session_folder;
         self
     }
 
@@ -922,7 +946,10 @@ impl eframe::App for StudioApp {
             }
             Some(SidebarClick::OpenHelp(target)) => self.open_help(&target),
             #[cfg(not(target_arch = "wasm32"))]
-            Some(SidebarClick::OpenReport) => self.report.open(&self.tools, self.ctx.recorder()),
+            Some(SidebarClick::OpenReport) => {
+                self.report
+                    .open(&self.tools, &self.ctx, self.session_folder.as_deref())
+            }
             None => {}
         }
         egui::CentralPanel::default().show(ui, |ui| {
@@ -1057,6 +1084,16 @@ mod tests {
         assert_eq!(version_label_of("1.0.0", false), "v1.0.0");
         assert_eq!(version_label_of("2.3.4", false), "v2.3.4");
         assert_eq!(version_label_of("0.0.1", true), "v0.0.1 pre-alpha (debug)");
+    }
+
+    // The pane's width at the default window: 1280 less the rail's 56. The
+    // draft (`docs/prototypes/index.html`, the comment starting "A tool view's
+    // width at the default window") takes the centre's two 8-point margins
+    // off too for the view's 1208; the pane is the width before them, which a
+    // tool's view (`save_editor`) subtracts its own margins from.
+    #[test]
+    fn the_default_pane_width_is_the_default_window_less_the_rail() {
+        assert_eq!(DEFAULT_PANE_WIDTH, 1224.0);
     }
 
     #[test]

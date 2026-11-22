@@ -34,6 +34,8 @@ These planned crates extend the spec's workspace tree:
 │   │   ├── db_generator/             # The game's database tables from the teams list (libs/pesdb's formats)
 │   │   └── ...                       # Future tools (CPK tools, ...)
 │   └── libs/
+│       ├── export_grid/              # (Phase 8) The export grid: rows of cells at fixed positions, their
+│       │                             #   states, the legend, the detail window (Compiler + Export upgrader)
 │       ├── team_widgets/             # (Phase 8) Shared egui widgets over the pes_savefile team model: tactics
 │       │                             #   pitch/instructions, card pickers, AATF violations list
 │       │                             #   (Save editor + Team creator)
@@ -436,7 +438,10 @@ What exists of this is in `spec/core/architecture.md` "Diagnostic logging".
   report a run that went fine.
 
   The dialog repeats the panic's message, so a first run's crash, which has no file, still
-  leaves something to post.
+  leaves something to post. The message comes last, under "Details for the developers:",
+  after the request to post the log, whose path stands on a line of its own. We do not put
+  it first: a member who meets code words at the top stops reading there, and posts a
+  screenshot of the dialog without the log it asks for.
 - **A crash dump for what the hook never sees**: a stack overflow (the runtime prints one line
   to a stderr the GUI exe does not have) and an access violation in native code (a GPU driver
   under the encoder or the renderer, a shell extension under a file dialog) each leave a log
@@ -486,12 +491,13 @@ What exists of this is in `spec/core/architecture.md` "Diagnostic logging".
   - It is not one fixed name, because a second window's monitor removes the socket file and
     binds the name again, so one of the two windows would go unwatched.
 
-  The window waits at most two seconds for the monitor to answer.
+  The window waits at most ten seconds for the monitor to answer, not two: on a machine
+  busy with builds or a game, the monitor, a second start of the whole exe, took longer.
 
   **A failed start is tried once more** when it fails at once: the monitor did not start, or
   exited before its socket connected. Those cost nothing to retry, and a cause that passes
   (an antivirus scanning the exe as it starts, say) leaves the window watched. A monitor that does
-  not answer within the two seconds is not tried again, since the window waits for it before
+  not answer within the ten seconds is not tried again, since the window waits for it before
   opening and a second wait would double that. A start that fails twice logs its warning
   and the window runs without a monitor.
 
@@ -616,17 +622,28 @@ Compiler and the Export upgrader, then the rest as they are built.
   - `outputs/`: the last file written per path, replaced at each write; of a path's
     `[[output]]` rows, the last counts.
   - An `[end]` table appended last, saying how the session ended: `closed` (the window sent
-    its closing message), `crashed` (the monitor handled the crash) or `ended` (the window
-    went away without either, as when it is ended from Task Manager). A session with no
-    `[end]` is one still open in another window, or one whose monitor died too (a power cut).
+    its closing message), `crashed` (the monitor handled the crash, or the window caught a
+    panic of its own) or `ended` (the window went away without either, as when it is ended
+    from Task Manager). A session with no `[end]` is one still open in another window, or
+    one whose monitor died too (a power cut). A caught panic is a crash to the member, who
+    saw the crash dialog: read as `closed`, its session would sit among those that went
+    well in Report a problem's list of earlier sessions.
 
   The folder is made at the session's first message, so a window that records nothing, as
   when Studio is opened only to report, leaves none.
 
   **The crash monitor writes it; the window never does.** The window sends each step and
-  each kept file to its monitor ("Diagnostic logging", the monitor) over the link the monitor
-  already serves (`minidumper`'s `send_message`), and the monitor writes each message as it
-  arrives:
+  each kept file to its monitor ("Diagnostic logging", the monitor) through the monitor's
+  standard input, a pipe the window opens when it starts it, and the monitor writes each
+  message as it arrives:
+
+  - Not over the socket the monitor serves for crash dumps (`minidumper`'s `send_message`):
+    its server reads a message in one receive, so a kept save, 5 to 11 MB, can arrive cut
+    at the socket's buffer. A pipe is read whole (`read_exact`), and needs nothing beyond
+    the standard library.
+  - The pipe's end tells the monitor the window went away: a closing message before it
+    means `closed`, one saying the window caught a panic means `crashed`, and none means
+    `ended`.
 
   - The window does no file work for the session, so the session can never stall it.
   - A step is on disk moments after it happens, so a crash, a hang ended from Task Manager or
@@ -636,9 +653,15 @@ Compiler and the Export upgrader, then the rest as they are built.
     sends it. A full queue drops messages and logs one line, rather than blocking the window.
   - A window whose monitor did not start runs the same writer on a thread of its own, so its
     session is still kept.
-  - A link that breaks mid-session (the monitor died) gets one new monitor, which keeps
+  - A pipe that breaks mid-session (the monitor died) gets one new monitor, which keeps
     crash dumps for the rest of the session and writes on into the same folder. If that one
-    does not start either, the window's own writer takes the folder over.
+    does not start either, or its pipe breaks too, the window's own writer takes the folder
+    over. The message the break interrupted is sent again.
+  - A writer that finds its folder already made adopts it: it keeps `journal.toml`'s rows
+    and takes the next input's index and each output's from them, never rewriting what
+    they say. It first cuts the journal back to its last `# ok` line, because a block the
+    dead monitor left half-written would otherwise sit mid-journal, where the reader parses
+    it.
   - The writer is one function from a message to the folder, which tests call in-process;
     one test covers the link.
   - Each window has its own monitor, so two windows open at once keep two folders.
@@ -650,8 +673,10 @@ Compiler and the Export upgrader, then the rest as they are built.
   byte for byte. So the Save editor gives the recorder each save's decrypted sections and
   salt beside its bytes, the session keeps those, and a session takes about half a MB.
 
-  - Reading a session back rebuilds each save and checks it against the journal's SHA-256,
-    so a fault in the decrypter shows as a failed rebuild, never as a wrong file read.
+  - The folder keeps each save packed, as its decrypted sections and salt, compressed by the
+    session's writer, off the window's thread. The save's own size and SHA-256 go in its
+    journal row. Reading the session back rebuilds each save and checks it against them, so
+    a fault in the decrypter shows as a failed rebuild, never as a wrong file read.
   - `studio_core` stays blind to saves: the decrypting and the rebuild are the Save
     editor's.
   - A bundle of the current session keeps each save as it was, which loads in the game
@@ -681,8 +706,13 @@ Compiler and the Export upgrader, then the rest as they are built.
     Compiler.
   - Under the list, an unticked box, "Include earlier sessions", lists each kept session
     but the window's own, one line each: when it started, the first file it opened, when it
-    last wrote one, and how it ended. Ticked, each goes into the bundle as
-    `sessions/<folder name>.zip`, a bundle of its own, which `replay` reads as it is.
+    last wrote one, and how it ended: closed, crashed, stopped without closing (`ended`), or
+    "ending unknown" when the journal has no `[end]`. That last one is not called stopped,
+    because it may be another window's session, still open. The lines are in the regular
+    colour, since the member reads them to choose whether to tick, and the closing line about
+    `~` in the weak one, a side note. Ticked, each goes into the bundle as
+    `sessions/<folder name>.zip`, a bundle of its own, which `replay` reads as it is. With
+    no earlier session kept, the box is not shown.
 - **Replay is the payoff.** `utw <tool-id> replay <bundle>` applies the journal to the kept
   inputs and compares the result with the bundle's written files, byte for byte.
 

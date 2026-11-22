@@ -26,10 +26,12 @@ class DocsOnly(unittest.TestCase):
 
 class Repo:
     """A stand-in for the repository and the two `just` runs: `during` maps a recipe name to
-    what happens to the repository while it runs, `codes` to its exit code (0 unless named)."""
+    what happens to the repository while it runs, `codes` to its exit code (0 unless named).
+    `mutated` is where `refs/checkpoints/mutated` stands, the gated commit unless named."""
 
-    def __init__(self, during=None, codes=None):
+    def __init__(self, during=None, codes=None, mutated="gated-before"):
         self.head = "started"
+        self.mutated = mutated
         self.dirty = ""
         self.moved = []
         self.ran = []
@@ -49,9 +51,10 @@ class Repo:
 
     def just(self, command, cwd):
         recipe = command[1]
-        # Both recipes run since the commit gated before: over another range the gates would
-        # pass on commits they never read.
-        if command != ["just", recipe, "gated-before"] or cwd != checkpoint.ROOT:
+        # The gates run since the commit gated before, the mutants since the last commit
+        # whose mutants ran: over another range either would pass on commits it never read.
+        base = self.mutated if recipe == "mutants-diff" else "gated-before"
+        if command != ["just", recipe, base] or cwd != checkpoint.ROOT:
             raise AssertionError(f"unexpected run {command} in {cwd}")
         self.ran.append(recipe)
         self.during.get(recipe, lambda repo: None)(self)
@@ -61,6 +64,7 @@ class Repo:
         out = io.StringIO()
         with mock.patch.object(checkpoint, "git", self.git), \
                 mock.patch.object(checkpoint, "gated", lambda: "gated-before"), \
+                mock.patch.object(checkpoint, "mutated", lambda: self.mutated), \
                 mock.patch.object(checkpoint, "status", lambda limit: 0), \
                 mock.patch.object(checkpoint.subprocess, "run", self.just), \
                 contextlib.redirect_stdout(out):
@@ -82,7 +86,7 @@ class Run(unittest.TestCase):
         repo = Repo()
         self.assertEqual(repo.run(), 0)
         self.assertEqual(repo.ran, ["gates-changed", "mutants-diff"])
-        self.assertEqual(repo.moved, [(checkpoint.REF, "started")])
+        self.assertEqual(repo.moved, [(checkpoint.REF, "started"), (checkpoint.MUTATED, "started")])
 
     def test_gates_that_fail_leave_the_ref_and_skip_the_mutation_run(self):
         repo = Repo(codes={"gates-changed": 3})
@@ -100,13 +104,13 @@ class Run(unittest.TestCase):
     def test_a_commit_during_the_mutation_run_is_not_the_one_gated(self):
         repo = Repo(during={"mutants-diff": commit})
         self.assertEqual(repo.run(), 0)
-        self.assertEqual(repo.moved, [(checkpoint.REF, "started")])
+        self.assertEqual(repo.moved, [(checkpoint.REF, "started"), (checkpoint.MUTATED, "started")])
 
     def test_surviving_mutants_do_not_stop_the_ref(self):
         for code in (2, 3):  # missed mutants, timeouts: every mutant ran; survivors are listed
             repo = Repo(codes={"mutants-diff": code})
             self.assertEqual(repo.run(), 0, code)
-            self.assertEqual(repo.moved, [(checkpoint.REF, "started")], code)
+            self.assertEqual(repo.moved, [(checkpoint.REF, "started"), (checkpoint.MUTATED, "started")], code)
             self.assertIn("missed_all.txt", repo.output, code)
 
     def test_an_untested_run_keeps_the_ref_and_fails(self):
@@ -117,11 +121,32 @@ class Run(unittest.TestCase):
             # A run that landed nothing wrote no missed_all.txt to point at.
             self.assertNotIn("missed_all.txt", repo.output, code)
 
-    def test_without_mutants_only_the_gates_run(self):
+    def test_without_mutants_only_the_gates_run_and_only_the_gated_ref_moves(self):
         repo = Repo()
         self.assertEqual(repo.run(mutants=False), 0)
         self.assertEqual(repo.ran, ["gates-changed"])
         self.assertEqual(repo.moved, [(checkpoint.REF, "started")])
+
+    def test_the_mutants_run_from_the_last_commit_whose_mutants_ran(self):
+        # A checkpoint without mutants left the mutated ref behind the gated one.
+        repo = Repo(mutated="mutated-before")
+        self.assertEqual(repo.run(), 0)
+        self.assertEqual(repo.ran, ["gates-changed", "mutants-diff"])
+        self.assertEqual(repo.moved, [(checkpoint.REF, "started"), (checkpoint.MUTATED, "started")])
+
+    def test_a_head_gated_but_not_mutated_runs_the_mutants_alone(self):
+        repo = Repo(mutated="mutated-before")
+        repo.head = "gated-before"
+        self.assertEqual(repo.run(), 0)
+        self.assertEqual(repo.ran, ["mutants-diff"])
+        self.assertEqual(repo.moved, [(checkpoint.MUTATED, "gated-before")])
+
+    def test_a_head_gated_but_not_mutated_runs_nothing_without_mutants(self):
+        repo = Repo(mutated="mutated-before")
+        repo.head = "gated-before"
+        self.assertEqual(repo.run(mutants=False), 0)
+        self.assertEqual(repo.ran, [])
+        self.assertEqual(repo.moved, [])
 
     def test_a_dirty_tree_is_refused_before_anything_runs(self):
         repo = Repo()

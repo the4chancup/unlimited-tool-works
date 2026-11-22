@@ -8,8 +8,13 @@ gated commit is a git ref the command moves itself, `refs/checkpoints/gated`, so
 it and anything can ask how far HEAD has run past it.
 
 `run` needs a clean tree (the ref names a commit, so what is gated must be one): it runs
-`just gates-changed <gated>`, then `just mutants-diff <gated>` (skipped by `--no-mutants`),
-and moves the ref to the commit it started on when the gates pass. The tree must stay as it
+`just gates-changed <gated>`, then `just mutants-diff <mutated>` (skipped by `--no-mutants`),
+and moves the ref to the commit it started on when the gates pass. The mutation run has a ref
+of its own, `refs/checkpoints/mutated`, moved only by a run whose mutants all ran: a run with
+`--no-mutants` moves `gated` alone, so the next run's mutants still start from the last commit
+whose mutants ran, and no commit is left out of every mutation run (166 commits were, at the
+0.0.2 cut, when one ref served both). A head already gated but not mutated runs the mutants
+alone. The tree must stay as it
 was until they have: the gates read the working tree, so a commit or an edit made while they
 run leaves the ref where it was. One made during the mutation run is fine, and is simply not
 gated yet. Surviving mutants do not stop the ref: they are assertions nobody wrote, listed in
@@ -28,6 +33,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 REF = "refs/checkpoints/gated"
+MUTATED = "refs/checkpoints/mutated"
 
 
 def git(*args: str) -> str:
@@ -41,11 +47,21 @@ def docs_only(paths: list[str]) -> bool:
     return bool(paths) and all(p.startswith("docs/") or ("/" not in p and p.endswith(".md")) for p in paths)
 
 
-def gated() -> str:
-    found = subprocess.run(["git", "rev-parse", "--verify", "--quiet", REF], cwd=ROOT, capture_output=True, text=True)
+def ref(name: str, seed: str) -> str:
+    """The commit `name` points at; exits naming how to seed it (`seed`, the commit it
+    should hold) when the repository has none."""
+    found = subprocess.run(["git", "rev-parse", "--verify", "--quiet", name], cwd=ROOT, capture_output=True, text=True)
     if found.returncode != 0:
-        sys.exit(f"no {REF}: seed it with the last commit the gates passed at, `git update-ref {REF} <sha>`")
+        sys.exit(f"no {name}: seed it with {seed}, `git update-ref {name} <sha>`")
     return found.stdout.strip()
+
+
+def gated() -> str:
+    return ref(REF, "the last commit the gates passed at")
+
+
+def mutated() -> str:
+    return ref(MUTATED, "the last commit whose mutation run tested every mutant")
 
 
 def commits_past(base: str) -> tuple[int, int]:
@@ -81,6 +97,9 @@ def status(max_ungated: int | None) -> int:
     base = gated()
     code, docs = commits_past(base)
     print(f"gated: {git('log', '-1', '--format=%h %s', '--abbrev=8', base)}")
+    mutation_base = mutated()
+    if mutation_base != base:
+        print(f"mutated: {git('log', '-1', '--format=%h %s', '--abbrev=8', mutation_base)} (the next mutation run starts there)")
     print(f"past the gate: {code} commits touching code, {docs} docs-only")
     pushed = subprocess.run(["git", "rev-parse", "--verify", "--quiet", "origin/main"], cwd=ROOT, capture_output=True, text=True)
     if pushed.returncode == 0:
@@ -96,32 +115,39 @@ def run(mutants: bool) -> int:
     if git("status", "--porcelain"):
         sys.exit("the tree is not clean: commit first, a checkpoint gates a commit")
     base = gated()
+    mutation_base = mutated()
     # The commit the gates read, taken now: a commit made while they run is not gated by them.
     head = git("rev-parse", "HEAD")
-    if base == head:
+    gates_due = base != head
+    mutants_due = mutants and mutation_base != head
+    if not gates_due and not mutants_due:
         print("HEAD is the gated commit already")
         return status(None)
-    gates = subprocess.run(["just", "gates-changed", base], cwd=ROOT)
-    if gates.returncode != 0:
-        print(f"the gates failed: {REF} stays at {base[:8]}")
-        return gates.returncode
-    # The gates read the working tree, not the commit: a tree that moved under them (a commit,
-    # a merge, an edit) was not `head`'s, so their pass says nothing of it.
-    if git("rev-parse", "HEAD") != head or git("status", "--porcelain"):
-        print(f"the tree changed while the gates ran: {REF} stays at {base[:8]}; run the checkpoint again")
-        return 1
-    print(f"the gates passed on {head[:8]}", flush=True)
-    if mutants:
-        diff = subprocess.run(["just", "mutants-diff", base], cwd=ROOT)
+    if gates_due:
+        gates = subprocess.run(["just", "gates-changed", base], cwd=ROOT)
+        if gates.returncode != 0:
+            print(f"the gates failed: {REF} stays at {base[:8]}")
+            return gates.returncode
+        # The gates read the working tree, not the commit: a tree that moved under them (a
+        # commit, a merge, an edit) was not `head`'s, so their pass says nothing of it.
+        if git("rev-parse", "HEAD") != head or git("status", "--porcelain"):
+            print(f"the tree changed while the gates ran: {REF} stays at {base[:8]}; run the checkpoint again")
+            return 1
+        print(f"the gates passed on {head[:8]}", flush=True)
+    if mutants_due:
+        diff = subprocess.run(["just", "mutants-diff", mutation_base], cwd=ROOT)
         # 0, 2 and 3 mean every mutant ran (missed, timed out, or caught). On
         # anything else mutants went untested, and gating these commits would
         # lose the measurement the run was for.
         if diff.returncode not in (0, 2, 3):
             print(f"mutants-diff ended with exit code {diff.returncode}")
-            print(f"mutants went untested: {REF} stays at {base[:8]}")
+            print(f"mutants went untested: {REF} stays at {base[:8]}, {MUTATED} at {mutation_base[:8]}")
             return diff.returncode
         print(f"mutants-diff ended with exit code {diff.returncode}; its survivors, if any, are in mutants.diff/missed_all.txt")
-    git("update-ref", REF, head)
+    if gates_due:
+        git("update-ref", REF, head)
+    if mutants_due:
+        git("update-ref", MUTATED, head)
     return status(None)
 
 

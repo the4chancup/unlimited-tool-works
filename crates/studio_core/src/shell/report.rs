@@ -17,9 +17,11 @@ use directories::BaseDirs;
 use pes_version::PesVersion;
 
 use crate::redact::redact_home;
-use crate::repro::{Recorder, ToolSummary};
+use crate::repro::{
+    EarlierSession, Recorder, SessionEnd, ToolSummary, earlier_sessions, session_bundle,
+};
 use crate::tool::{ExeCheck, StudioTool, ToolContext};
-use crate::widgets::{modal, modal_buttons, modal_sentence_gap, text_box};
+use crate::widgets::{checkbox, modal, modal_buttons, modal_sentence_gap, text_box};
 
 /// The body's width, the draft's `.window div` 540 points.
 const WIDTH: f32 = 540.0;
@@ -36,11 +38,12 @@ const README_CORE: &str = include_str!("report_readme.txt");
 
 /// The dialog's state: open or not, the member's words (kept for the window's
 /// life, so a reopened dialog holds them), the lines under "The file holds:"
-/// as built at the opening, the bundle last written or the write's error —
-/// both cleared by a reopening — the member's home folder for the `~`
-/// rewrite, and the Save… file picker, which the tests replace (a native
-/// dialog cannot be clicked headless; the tools' pickers are stubbed the same
-/// way).
+/// as built at the opening, the earlier sessions the "Include earlier
+/// sessions" box lists and their line texts — built with them — and its tick,
+/// the bundle last written or the write's error — both cleared by a
+/// reopening — the member's home folder for the `~` rewrite, and the Save…
+/// file picker, which the tests replace (a native dialog cannot be clicked
+/// headless; the tools' pickers are stubbed the same way).
 pub(super) struct Report {
     /// The modal is drawn while set.
     open: bool,
@@ -51,6 +54,18 @@ pub(super) struct Report {
     /// should repeat. The dialog is modal, so no tool records while it is
     /// up.
     lines: Vec<String>,
+    /// The kept sessions but the window's own, the "Include earlier
+    /// sessions" box's list, built when the dialog opens: the listing
+    /// reads each session's journal and `outputs/` folder — work no frame
+    /// should repeat either. Newest first, as the box lists them and the
+    /// bundle packs them.
+    sessions: Vec<EarlierSession>,
+    /// `sessions`' line texts, built with them: a line's local times read
+    /// the system's time zone, which no frame should read again.
+    session_lines: Vec<String>,
+    /// The "Include earlier sessions" box's tick: unticked at every
+    /// opening.
+    include_earlier: bool,
     /// The "Saved to …" line of the last write, shown under the list; `None`
     /// until the first one.
     saved_to: Option<String>,
@@ -95,6 +110,9 @@ impl Report {
             open: false,
             words: String::new(),
             lines: Vec::new(),
+            sessions: Vec::new(),
+            session_lines: Vec::new(),
+            include_earlier: false,
             saved_to: None,
             error: None,
             home: BaseDirs::new().map(|dirs| dirs.home_dir().display().to_string()),
@@ -103,11 +121,27 @@ impl Report {
     }
 
     /// Opens the dialog, fresh for a new report: the lines are built from
-    /// `tools` and what `recorder` holds now, the words stay (a member may
-    /// reopen mid-writing), the last write's mark and error do not.
-    pub(super) fn open(&mut self, tools: &[Box<dyn StudioTool>], recorder: &Recorder) {
+    /// `tools` and what `ctx`'s recorder holds now, and the earlier
+    /// sessions listed from `<data location>/sessions` — the window's
+    /// own, named `own_session`, left out. The words stay (a member may
+    /// reopen mid-writing), the last write's mark and error do not, and
+    /// the box starts unticked.
+    pub(super) fn open(
+        &mut self,
+        tools: &[Box<dyn StudioTool>],
+        ctx: &ToolContext,
+        own_session: Option<&str>,
+    ) {
         self.open = true;
-        self.lines = lines(tools, recorder);
+        self.lines = lines(tools, ctx.recorder());
+        self.sessions = ctx
+            .paths()
+            .data_dir
+            .as_deref()
+            .map(|dir| earlier_sessions(&dir.join("sessions"), own_session))
+            .unwrap_or_default();
+        self.session_lines = self.sessions.iter().map(session_line).collect();
+        self.include_earlier = false;
         self.saved_to = None;
         self.error = None;
     }
@@ -174,7 +208,25 @@ impl Report {
                         });
                     }
                     modal_sentence_gap(ui);
-                    ui.label("Your user folder is written as ~ in the file's paths.");
+                    if !self.sessions.is_empty() {
+                        checkbox(ui, &mut self.include_earlier, "Include earlier sessions")
+                            .on_hover_text(
+                                "Tick it when the problem began before UTW was last \
+                                 opened: a session that crashed, or a save you tried in \
+                                 the game after closing UTW.",
+                            );
+                        // The draft's sessions `ul` keeps its first line 4
+                        // under the box, its lines the list's `<li>` shape.
+                        ui.add_space(4.0);
+                        for line in &self.session_lines {
+                            ui.horizontal_top(|ui| {
+                                ui.label("•");
+                                ui.add(egui::Label::new(line.as_str()).wrap());
+                            });
+                        }
+                        modal_sentence_gap(ui);
+                    }
+                    ui.weak("Your user folder is written as ~ in the file's paths.");
                     if let Some(saved_to) = &self.saved_to {
                         modal_sentence_gap(ui);
                         ui.label(saved_to.as_str());
@@ -213,7 +265,12 @@ impl Report {
             return;
         };
         let home = self.home.as_deref();
-        match write_report(&out, tools, ctx, log_file, &self.words, home) {
+        let sessions = if self.include_earlier {
+            self.sessions.as_slice()
+        } else {
+            &[]
+        };
+        match write_report(&out, tools, ctx, log_file, &self.words, home, sessions) {
             Ok(()) => {
                 self.saved_to = Some(format!(
                     "Saved to {}",
@@ -228,9 +285,11 @@ impl Report {
 
 /// The bundle at `out`: `write_bundle` with the window's log, the session's
 /// settings, `installs.txt` and `README.txt` at the zip's root, and every
-/// tool's `repro_state` under its id in `state`. The settings are the ones
-/// the session runs under, not the file on disk, which a failed settings
-/// save leaves out of date.
+/// tool's `repro_state` under its id in `state`; each of `sessions` — the
+/// ones the member ticked — goes in as `sessions/<folder name>.zip`, a
+/// bundle of its own, named under `missing` when it fails. The settings are
+/// the ones the session runs under, not the file on disk, which a failed
+/// settings save leaves out of date.
 fn write_report(
     out: &Path,
     tools: &[Box<dyn StudioTool>],
@@ -238,9 +297,12 @@ fn write_report(
     log_file: Option<&Path>,
     words: &str,
     home: Option<&str>,
+    sessions: &[EarlierSession],
 ) -> anyhow::Result<()> {
     // `utw.log` is named even when the run has no log or it cannot be
-    // read, so the journal's `missing` says why the bundle lacks it.
+    // read, so the journal's `missing` says why the bundle lacks it. A
+    // session whose bundle fails is named the same way: the rest of the
+    // report is still written.
     let log = log_file.and_then(|path| fs::read(path).ok());
     let settings = ctx.settings().lock().unwrap().to_table();
     let settings = settings
@@ -248,12 +310,32 @@ fn write_report(
         .context("cannot write the settings for the bundle")?;
     let installs = installs(ctx);
     let readme = readme(tools);
-    let files = [
+    let session_files: Vec<(String, Option<Vec<u8>>)> = sessions
+        .iter()
+        .map(|session| {
+            let name = format!("sessions/{}.zip", file_name(&session.folder));
+            let bytes = match session_bundle(&session.folder, home) {
+                Ok(bytes) => Some(bytes),
+                Err(error) => {
+                    log::warn!(
+                        "{}: the earlier session's bundle could not be written: {error:#}",
+                        session.folder.display()
+                    );
+                    None
+                }
+            };
+            (name, bytes)
+        })
+        .collect();
+    let mut files: Vec<(&str, Option<&[u8]>)> = vec![
         ("utw.log", log.as_deref()),
         ("settings.toml", Some(settings.as_bytes())),
         ("installs.txt", Some(installs.as_bytes())),
         ("README.txt", Some(readme.as_bytes())),
     ];
+    for (name, bytes) in &session_files {
+        files.push((name.as_str(), bytes.as_deref()));
+    }
     let mut state: Vec<(String, Vec<u8>)> = Vec::new();
     for tool in tools {
         for (name, bytes) in tool.repro_state() {
@@ -317,6 +399,31 @@ fn summary_text(summary: &ToolSummary) -> String {
     text
 }
 
+/// One session's line under the "Include earlier sessions" box, as the
+/// draft's: `<d Mon hh:mm>: opened <name>; wrote at <hh:mm>; <ending>` —
+/// "opened nothing" and "wrote nothing" for the missing parts. The ending
+/// is `closed`, `crashed` or `stopped without closing` (`ended`), or
+/// `ending unknown` on a journal with no `[end]`, which may be a session
+/// still open in another window.
+fn session_line(session: &EarlierSession) -> String {
+    let started = session.started.strftime("%-d %b %H:%M");
+    let opened = match &session.opened {
+        Some(name) => format!("opened {name}"),
+        None => "opened nothing".to_owned(),
+    };
+    let wrote = match session.wrote {
+        Some(when) => format!("wrote at {}", clock_text(local_clock(when))),
+        None => "wrote nothing".to_owned(),
+    };
+    let ended = match session.ended {
+        Some(SessionEnd::Closed) => "closed",
+        Some(SessionEnd::Crashed) => "crashed",
+        Some(SessionEnd::Ended) => "stopped without closing",
+        None => "ending unknown",
+    };
+    format!("{started}: {opened}; {wrote}; {ended}")
+}
+
 /// `size` bytes as the "opened" clause writes them: `7.4 MB`, or rounded KB
 /// (`25 KB`) under 0.1 MB, where MB would read `0.0` for a rules file.
 fn size_text(size: usize) -> String {
@@ -339,7 +446,7 @@ fn file_name(path: &Path) -> String {
 /// `when`'s clock time, `hh:mm` in the local zone (`02:41`).
 fn local_clock(when: SystemTime) -> jiff::civil::Time {
     jiff::Timestamp::try_from(when)
-        .expect("a SystemTime the program made is inside jiff's timestamp range")
+        .expect("a file write's time is inside jiff's timestamp range")
         .to_zoned(jiff::tz::TimeZone::system())
         .time()
 }

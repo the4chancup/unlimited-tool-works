@@ -11,11 +11,24 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 use std::time::{Instant, SystemTime};
 
+#[cfg(not(target_arch = "wasm32"))]
+use crossbeam_channel::{Sender, TrySendError};
+
 /// Reading a bundle back, for `utw <tool-id> replay`.
 #[cfg(not(target_arch = "wasm32"))]
 mod read;
 #[cfg(not(target_arch = "wasm32"))]
 pub use read::{Bundle, BundleFile, BundleStep, read_bundle};
+
+/// The session folder: every window's record written to disk as it
+/// happens, and a kept folder turned into a bundle.
+#[cfg(not(target_arch = "wasm32"))]
+mod session;
+#[cfg(not(target_arch = "wasm32"))]
+pub use session::{
+    EarlierSession, SessionEnd, SessionFile, SessionFrame, SessionHeader, SessionMessage,
+    SessionWriter, earlier_sessions, read_frame, session_bundle, session_folder_name, write_frame,
+};
 
 /// One tool's recorded steps, kept inputs and kept outputs so far.
 /// `Recorder` shares it: every clone records into the same journal.
@@ -29,6 +42,16 @@ struct Journal {
     inputs: Vec<KeptFile>,
     /// The last file each tool wrote per path: a later write replaces it.
     outputs: Vec<KeptFile>,
+    /// Who the session's messages go to, set once by `Recorder::send_to`
+    /// before the window opens; the queue's other end writes the session
+    /// folder. Under the journal's own lock so a step's message is queued
+    /// in the order the step landed, never later.
+    #[cfg(not(target_arch = "wasm32"))]
+    sink: Option<Sender<SessionMessage>>,
+    /// The full-queue drop already logged its line: a queue that fills
+    /// stays full for a while, and one line per drop would flood the log.
+    #[cfg(not(target_arch = "wasm32"))]
+    drop_logged: bool,
 }
 
 /// `started` needs a `now`, which no derive can give.
@@ -39,7 +62,80 @@ impl Journal {
             steps: Vec::new(),
             inputs: Vec::new(),
             outputs: Vec::new(),
+            #[cfg(not(target_arch = "wasm32"))]
+            sink: None,
+            #[cfg(not(target_arch = "wasm32"))]
+            drop_logged: false,
         }
+    }
+
+    /// `message` queued for the session folder's writer, never waited
+    /// on. A full queue drops it: the session's first drop logs one
+    /// warning and the rest stay quiet, one line per drop flooding the
+    /// log. A disconnected sink is silent — its thread already logged
+    /// why it stopped.
+    #[cfg(not(target_arch = "wasm32"))]
+    fn emit(&mut self, message: SessionMessage) {
+        let Some(sink) = &self.sink else {
+            return;
+        };
+        match sink.try_send(message) {
+            Ok(()) | Err(TrySendError::Disconnected(_)) => {}
+            Err(TrySendError::Full(_)) => {
+                if !self.drop_logged {
+                    self.drop_logged = true;
+                    log::warn!("the session's queue is full; session messages are being dropped");
+                }
+            }
+        }
+    }
+
+    /// A keep's file message emitted: an `Input` when `input`, an
+    /// `Output` else; `packed` (the tool's pack and the file's own
+    /// SHA-256) riding as `SessionFile::Packed`, `bytes` as `Raw` when
+    /// there is none.
+    #[cfg(not(target_arch = "wasm32"))]
+    fn emit_file(
+        &mut self,
+        input: bool,
+        tool: &'static str,
+        path: &Path,
+        bytes: Arc<[u8]>,
+        packed: Option<(Arc<[u8]>, String)>,
+    ) {
+        let file = match packed {
+            Some((packed, sha256)) => SessionFile::Packed {
+                packed,
+                size: bytes.len(),
+                sha256,
+            },
+            None => SessionFile::Raw(bytes),
+        };
+        self.emit(if input {
+            SessionMessage::Input {
+                tool: tool.to_owned(),
+                path: path.to_path_buf(),
+                file,
+            }
+        } else {
+            SessionMessage::Output {
+                tool: tool.to_owned(),
+                path: path.to_path_buf(),
+                file,
+            }
+        });
+    }
+
+    /// The browser build has no session folder: nothing to emit to.
+    #[cfg(target_arch = "wasm32")]
+    fn emit_file(
+        &mut self,
+        _input: bool,
+        _tool: &'static str,
+        _path: &Path,
+        _bytes: Arc<[u8]>,
+        _packed: Option<(Arc<[u8]>, String)>,
+    ) {
     }
 }
 
@@ -130,10 +226,18 @@ impl Recorder {
     fn push_step(&self, tool: &'static str, what: impl Into<String>, op: Option<toml::Table>) {
         let mut journal = self.journal.lock().unwrap();
         let seconds = journal.started.elapsed().as_secs_f64();
+        let what = what.into();
         journal.steps.push(Step {
             seconds,
             tool,
-            what: what.into(),
+            what: what.clone(),
+            op: op.clone(),
+        });
+        #[cfg(not(target_arch = "wasm32"))]
+        journal.emit(SessionMessage::Step {
+            seconds,
+            tool: tool.to_owned(),
+            what,
             op,
         });
     }
@@ -143,13 +247,52 @@ impl Recorder {
     /// from is the part a saved-over file would destroy. Returns the
     /// kept file's index in the bundle's `[[input]]` list.
     pub fn keep_input(&self, tool: &'static str, path: &Path, bytes: Arc<[u8]>) -> usize {
+        self.keep_input_impl(tool, path, bytes, None)
+    }
+
+    /// `keep_input` whose session message carries the file's `packed`
+    /// form beside `bytes`' own size and SHA-256 — the tool's own pack
+    /// of a file that does not compress on its own, which the folder's
+    /// writer stores compressed and `read_bundle` rebuilds. The journal
+    /// keeps `bytes` as `keep_input` does: a bundle of the running
+    /// session still holds the file itself. With nobody listening
+    /// (`listens` false) the keep is `keep_input`'s: the hash only the
+    /// writer's packed row reads is skipped. Native only, as the
+    /// session folder is.
+    #[cfg(not(target_arch = "wasm32"))]
+    pub fn keep_input_packed(
+        &self,
+        tool: &'static str,
+        path: &Path,
+        bytes: Arc<[u8]>,
+        packed: Vec<u8>,
+    ) -> usize {
+        if !self.listens() {
+            return self.keep_input_impl(tool, path, bytes, None);
+        }
+        // The hash is computed before the lock: an 11 MB file's SHA-256
+        // under it would stall every other recorder.
+        let sha256 = bundle::sha256(&bytes);
+        self.keep_input_impl(tool, path, bytes, Some((packed.into(), sha256)))
+    }
+
+    /// `keep_input` and `keep_input_packed`'s body: `packed` (the pack's
+    /// bytes and the file's own SHA-256) when one was handed in.
+    fn keep_input_impl(
+        &self,
+        tool: &'static str,
+        path: &Path,
+        bytes: Arc<[u8]>,
+        packed: Option<(Arc<[u8]>, String)>,
+    ) -> usize {
         let mut journal = self.journal.lock().unwrap();
         journal.inputs.push(KeptFile {
             tool,
             path: path.to_path_buf(),
-            bytes,
+            bytes: bytes.clone(),
             written: SystemTime::now(),
         });
+        journal.emit_file(true, tool, path, bytes, packed);
         journal.inputs.len() - 1
     }
 
@@ -159,14 +302,44 @@ impl Recorder {
     /// Returns the kept file's index in the bundle's `[[output]]` list
     /// (the replaced slot's on a replacement).
     pub fn keep_output(&self, tool: &'static str, path: &Path, bytes: Arc<[u8]>) -> usize {
+        self.keep_output_impl(tool, path, bytes, None)
+    }
+
+    /// `keep_output` whose session message carries the file's `packed`
+    /// form, as `keep_input_packed` does for inputs.
+    #[cfg(not(target_arch = "wasm32"))]
+    pub fn keep_output_packed(
+        &self,
+        tool: &'static str,
+        path: &Path,
+        bytes: Arc<[u8]>,
+        packed: Vec<u8>,
+    ) -> usize {
+        if !self.listens() {
+            return self.keep_output_impl(tool, path, bytes, None);
+        }
+        // The hash is computed before the lock: an 11 MB file's SHA-256
+        // under it would stall every other recorder.
+        let sha256 = bundle::sha256(&bytes);
+        self.keep_output_impl(tool, path, bytes, Some((packed.into(), sha256)))
+    }
+
+    /// `keep_output` and `keep_output_packed`'s body.
+    fn keep_output_impl(
+        &self,
+        tool: &'static str,
+        path: &Path,
+        bytes: Arc<[u8]>,
+        packed: Option<(Arc<[u8]>, String)>,
+    ) -> usize {
         let mut journal = self.journal.lock().unwrap();
-        match journal
+        let index = match journal
             .outputs
             .iter()
             .position(|kept| kept.tool == tool && kept.path == path)
         {
             Some(index) => {
-                journal.outputs[index].bytes = bytes;
+                journal.outputs[index].bytes = bytes.clone();
                 journal.outputs[index].written = SystemTime::now();
                 index
             }
@@ -174,12 +347,46 @@ impl Recorder {
                 journal.outputs.push(KeptFile {
                     tool,
                     path: path.to_path_buf(),
-                    bytes,
+                    bytes: bytes.clone(),
                     written: SystemTime::now(),
                 });
                 journal.outputs.len() - 1
             }
-        }
+        };
+        journal.emit_file(false, tool, path, bytes, packed);
+        index
+    }
+
+    /// Whether `send_to` gave the recorder a session writer to feed.
+    /// Only it reads a packed keep's session message, so a caller
+    /// skips the pack and hash when this is false — every command-line
+    /// run.
+    #[cfg(not(target_arch = "wasm32"))]
+    pub fn listens(&self) -> bool {
+        self.journal.lock().unwrap().sink.is_some()
+    }
+
+    /// Hands the session's messages to `sink`: every later `step`,
+    /// `step_op`, `keep_input`, `keep_output`, `keep_input_packed` and
+    /// `keep_output_packed` also queues its step or kept file — the
+    /// file's `Arc` shared, never copied — for whoever writes the
+    /// session folder at the queue's other end (the crash monitor,
+    /// reached through its pipe; or the window's own writer thread).
+    /// Set once, before the window opens. The queue is `try_` sent,
+    /// never waited on: a full one drops the message and the first
+    /// drop of the session logs one warning.
+    #[cfg(not(target_arch = "wasm32"))]
+    pub fn send_to(&self, sink: Sender<SessionMessage>) {
+        self.journal.lock().unwrap().sink = Some(sink);
+    }
+
+    /// Detaches the sink `send_to` set, ending the queue from the
+    /// sender's side: the receiver sees the session's end and whoever
+    /// writes the folder closes it out. Called once the window's run
+    /// has returned.
+    #[cfg(not(target_arch = "wasm32"))]
+    pub fn close_sink(&self) {
+        self.journal.lock().unwrap().sink = None;
     }
 
     /// Writes the bundle to `out`: one zip holding `journal.toml` (the
@@ -208,7 +415,10 @@ impl Recorder {
         state: &[(&str, &[u8])],
         home: Option<&str>,
     ) -> anyhow::Result<()> {
-        let journal = self.journal.lock().unwrap().clone();
+        let mut journal = self.journal.lock().unwrap().clone();
+        // The clone is written, never listened on: a copied `Sender`
+        // would keep the session's queue open past `close_sink`.
+        journal.sink = None;
         bundle::write(&journal, out, words, files, state, home)
     }
 
@@ -296,7 +506,7 @@ mod bundle {
     use std::path::Path;
 
     use anyhow::Context;
-    use serde::Serialize;
+    use serde::{Deserialize, Serialize};
     use sha2::{Digest, Sha256};
 
     use super::{Journal, KeptFile};
@@ -332,46 +542,57 @@ mod bundle {
         outputs: Vec<FileDoc>,
     }
 
-    /// One `[[step]]` row: seconds since the recorder's start, the tool
+    /// One `[[step]]` row: seconds since the record's start, the tool
     /// and its line, and the typed change a replay applies when the step
-    /// carried one.
-    #[derive(Serialize)]
-    struct StepDoc {
+    /// carried one. `Deserialize` for the session folder's journal,
+    /// which holds the same rows.
+    #[derive(Serialize, Deserialize)]
+    pub(super) struct StepDoc {
         /// Seconds since the recorder was made.
-        seconds: f64,
+        pub(super) seconds: f64,
         /// The recording tool's id.
-        tool: &'static str,
-        /// The step's line, the home folder written as `~`.
-        what: String,
+        pub(super) tool: String,
+        /// The step's line; in a bundle, the home folder written as `~`.
+        pub(super) what: String,
         /// The step's typed change; absent on a note (an op holds no
         /// path, so it is never redacted).
         #[serde(skip_serializing_if = "Option::is_none")]
-        op: Option<toml::Table>,
+        pub(super) op: Option<toml::Table>,
     }
 
     /// One `[[input]]`/`[[output]]` row: what the kept file is and where
-    /// it sits in the zip.
-    #[derive(Serialize)]
-    struct FileDoc {
+    /// it sits in the bundle or session folder.
+    #[derive(Serialize, Deserialize)]
+    pub(super) struct FileDoc {
         /// The tool that kept it.
-        tool: &'static str,
-        /// Its path, the home folder written as `~`.
-        path: String,
-        /// Its byte length.
-        size: usize,
-        /// Its SHA-256, lowercase hex.
-        sha256: String,
-        /// Its name in the zip (`<dir>/<index>-<file name>`).
-        entry: String,
+        pub(super) tool: String,
+        /// Its path; in a bundle, the home folder written as `~`.
+        pub(super) path: String,
+        /// Its byte length (the file's own, even on a packed entry).
+        pub(super) size: usize,
+        /// Its SHA-256, lowercase hex (the file's own).
+        pub(super) sha256: String,
+        /// Its name in the zip or folder (`<dir>/<index>-<file name>`).
+        pub(super) entry: String,
+        /// Whether the entry holds the file's packed form, compressed:
+        /// `read_bundle` then inflates and rebuilds it before the same
+        /// checks. Written only when true, so a raw row and an older
+        /// journal read as before.
+        #[serde(default, skip_serializing_if = "is_false")]
+        pub(super) packed: bool,
     }
 
-    /// `kept`'s zip entry under `dir` (`inputs`/`outputs`): the index and
+    /// `value` is `false` (`skip_serializing_if` wants a `&T` predicate).
+    fn is_false(value: &bool) -> bool {
+        !*value
+    }
+
+    /// `path`'s entry under `dir` (`inputs`/`outputs`): the index and
     /// the file name, so two files of one name never collide.
-    fn entry(dir: &str, index: usize, kept: &KeptFile) -> String {
-        let name = kept
-            .path
+    pub(super) fn entry(dir: &str, index: usize, path: &Path) -> String {
+        let name = path
             .file_name()
-            .unwrap_or_else(|| kept.path.as_os_str())
+            .unwrap_or(path.as_os_str())
             .to_string_lossy();
         format!("{dir}/{index}-{name}")
     }
@@ -400,11 +621,13 @@ mod bundle {
             .iter()
             .enumerate()
             .map(|(index, kept)| FileDoc {
-                tool: kept.tool,
+                tool: kept.tool.to_owned(),
                 path: redact_home(&kept.path.display().to_string(), home),
                 size: kept.bytes.len(),
                 sha256: sha256(&kept.bytes),
-                entry: entry(dir, index, kept),
+                entry: entry(dir, index, &kept.path),
+                // A bundle of the running session keeps each file as it was.
+                packed: false,
             })
             .collect()
     }
@@ -432,7 +655,7 @@ mod bundle {
                 .iter()
                 .map(|step| StepDoc {
                     seconds: step.seconds,
-                    tool: step.tool,
+                    tool: step.tool.to_owned(),
                     what: redact_home(&step.what, home),
                     op: step.op.clone(),
                 })
@@ -490,10 +713,10 @@ mod bundle {
         };
         put("journal.toml", doc.as_bytes())?;
         for (index, kept) in journal.inputs.iter().enumerate() {
-            put(&entry("inputs", index, kept), &kept.bytes)?;
+            put(&entry("inputs", index, &kept.path), &kept.bytes)?;
         }
         for (index, kept) in journal.outputs.iter().enumerate() {
-            put(&entry("outputs", index, kept), &kept.bytes)?;
+            put(&entry("outputs", index, &kept.path), &kept.bytes)?;
         }
         put("words.txt", redact_home(words, home).as_bytes())?;
         for (name, bytes) in files {
@@ -530,7 +753,7 @@ pub(crate) mod tests {
     }
 
     /// The zip's entry names at `path`, in write order.
-    fn zip_names(path: &Path) -> Vec<String> {
+    pub(crate) fn zip_names(path: &Path) -> Vec<String> {
         let file = fs::File::open(path).unwrap();
         let archive = zip::ZipArchive::new(file).unwrap();
         archive
@@ -540,7 +763,7 @@ pub(crate) mod tests {
     }
 
     /// `name`'s bytes inside the zip at `path`.
-    fn zip_bytes(path: &Path, name: &str) -> Vec<u8> {
+    pub(crate) fn zip_bytes(path: &Path, name: &str) -> Vec<u8> {
         let file = fs::File::open(path).unwrap();
         let mut archive = zip::ZipArchive::new(file).unwrap();
         let mut bytes = Vec::new();
@@ -927,6 +1150,125 @@ pub(crate) mod tests {
         assert!(!tmp.exists(), "the temp sibling is removed");
     }
 
+    // `close_sink` ends the queue from the sender's side: the receiver
+    // takes the recorded step, then reads the queue's end.
+    #[test]
+    fn close_sink_disconnects_the_queue() {
+        let recorder = Recorder::default();
+        let (tx, rx) = crossbeam_channel::unbounded();
+        recorder.send_to(tx);
+        recorder.step("stub", "a step");
+        recorder.close_sink();
+
+        assert!(
+            matches!(rx.try_recv(), Ok(SessionMessage::Step { .. })),
+            "the step was queued"
+        );
+        assert!(
+            matches!(
+                rx.try_recv(),
+                Err(crossbeam_channel::TryRecvError::Disconnected)
+            ),
+            "the queue ended"
+        );
+    }
+
+    // A packed keep queues the file's packed form — the raw bytes' own
+    // size and SHA-256 beside it — while the bundle keeps the raw file
+    // and writes no `packed` key: `write_bundle` is as it was.
+    #[test]
+    fn a_packed_keep_queues_the_form_and_bundles_the_file() {
+        let dir = scratch("keep_packed");
+        let recorder = Recorder::default();
+        let (tx, rx) = crossbeam_channel::unbounded();
+        recorder.send_to(tx);
+        recorder.keep_input_packed(
+            "save-editor",
+            Path::new("a/EDIT00000000"),
+            Arc::from(&b"SAVE_BYTES"[..]),
+            b"PACKED_FORM".to_vec(),
+        );
+        recorder.keep_output_packed(
+            "save-editor",
+            Path::new("out/EDIT00000000"),
+            Arc::from(&b"WRITTEN"[..]),
+            b"PACKED_WRITTEN".to_vec(),
+        );
+        let out = dir.join("repro.zip");
+        recorder.write_bundle(&out, "", &[], &[], None).unwrap();
+
+        let input = rx.try_recv().expect("the input message");
+        let SessionMessage::Input { file, .. } = input else {
+            panic!("an input message was sent")
+        };
+        let SessionFile::Packed {
+            packed,
+            size,
+            sha256,
+        } = file
+        else {
+            panic!("the input's file is packed")
+        };
+        assert_eq!(&*packed, b"PACKED_FORM");
+        assert_eq!(size, 10, "the raw bytes' size");
+        assert_eq!(
+            sha256, "d3fb2163b52a43f0ef3f73b889c4f6bc925950da789e4be415ac49311d86bb66",
+            "the raw bytes' SHA-256 (b\"SAVE_BYTES\")"
+        );
+        let output = rx.try_recv().expect("the output message");
+        let SessionMessage::Output { file, .. } = output else {
+            panic!("an output message was sent")
+        };
+        assert!(
+            matches!(
+                file,
+                SessionFile::Packed { size: 7, sha256, .. }
+                    if sha256 == "8f1c7519c3731203605ac4043e1231c0418561f1f3b00d48b320d2ddeea1b6d8"
+            ),
+            "the output's file is packed with the raw bytes' size and SHA-256"
+        );
+
+        let journal = zip_text(&out, "journal.toml");
+        assert_eq!(zip_bytes(&out, "inputs/0-EDIT00000000"), b"SAVE_BYTES");
+        assert_eq!(zip_bytes(&out, "outputs/0-EDIT00000000"), b"WRITTEN");
+        let doc = journal_doc(&journal);
+        let input_row = &doc["input"].as_array().unwrap()[0];
+        assert_eq!(input_row["size"].as_integer(), Some(10), "{journal}");
+        assert!(
+            input_row.get("packed").is_none(),
+            "no packed key on a bundle row: {journal}"
+        );
+        let output_row = &doc["output"].as_array().unwrap()[0];
+        assert!(
+            output_row.get("packed").is_none(),
+            "no packed key on a bundle row: {journal}"
+        );
+    }
+
+    // `listens` reports the sink `send_to` gave, and a packed keep with
+    // nobody listening keeps the file as `keep_input` would — the pack
+    // and hash ran for nothing, so they are skipped.
+    #[test]
+    fn a_packed_keep_without_a_listener_keeps_the_file() {
+        let dir = scratch("packed_quiet");
+        let recorder = Recorder::default();
+        assert!(!recorder.listens(), "no sink was given");
+        recorder.keep_input_packed(
+            "save-editor",
+            Path::new("a/EDIT00000000"),
+            Arc::from(&b"SAVE_BYTES"[..]),
+            b"PACKED_FORM".to_vec(),
+        );
+        let out = dir.join("repro.zip");
+        recorder.write_bundle(&out, "", &[], &[], None).unwrap();
+
+        assert_eq!(zip_bytes(&out, "inputs/0-EDIT00000000"), b"SAVE_BYTES");
+
+        let (tx, _rx) = crossbeam_channel::unbounded();
+        recorder.send_to(tx);
+        assert!(recorder.listens(), "a sink was given");
+    }
+
     // A tool's summary reads back its steps, its first input with its size
     // and the count of them, and the output it wrote last (the newest
     // `written`, not the last path first kept); a tool that recorded
@@ -1013,5 +1355,87 @@ pub(crate) mod tests {
             b"\xFF\x00\xFE",
             "verbatim"
         );
+    }
+
+    /// A `log::Log` capturing this module's records (`level|text`), for
+    /// the drop warning's count; installed once, a process holding one
+    /// logger.
+    struct CaptureLog;
+
+    /// `CaptureLog`'s records so far.
+    static CAPTURED: Mutex<Vec<String>> = Mutex::new(Vec::new());
+
+    static CAPTURE_LOG: CaptureLog = CaptureLog;
+
+    impl log::Log for CaptureLog {
+        fn enabled(&self, _metadata: &log::Metadata<'_>) -> bool {
+            true
+        }
+
+        fn log(&self, record: &log::Record<'_>) {
+            if record.target() == "studio_core::repro" {
+                CAPTURED
+                    .lock()
+                    .unwrap()
+                    .push(format!("{}|{}", record.level(), record.args()));
+            }
+        }
+
+        fn flush(&self) {}
+    }
+
+    /// `CAPTURED`'s lines naming `what`.
+    fn captured(what: &str) -> Vec<String> {
+        CAPTURED
+            .lock()
+            .unwrap()
+            .iter()
+            .filter(|line| line.contains(what))
+            .cloned()
+            .collect()
+    }
+
+    // A disconnected sink is quiet — ten steps on a sink whose receiver
+    // is already gone log no drop line, its thread having logged why it
+    // stopped — and a full session queue drops the message rather than
+    // block the caller: ten steps on a two-deep queue nobody drains all
+    // return, and the drops log one warning, not one each.
+    // ST-REP-10
+    #[test]
+    fn a_full_session_queue_drops_messages_and_logs_once() {
+        static ONCE: std::sync::Once = std::sync::Once::new();
+        ONCE.call_once(|| {
+            log::set_logger(&CAPTURE_LOG).unwrap();
+            log::set_max_level(log::LevelFilter::Trace);
+        });
+        let dropped = "session messages are being dropped";
+
+        let recorder = Recorder::default();
+        let (tx, rx) = crossbeam_channel::bounded(2);
+        drop(rx);
+        recorder.send_to(tx);
+        for index in 0..10 {
+            recorder.step("stub", format!("step {index}"));
+        }
+        assert!(
+            captured(dropped).is_empty(),
+            "a disconnected sink stays quiet"
+        );
+
+        let recorder = Recorder::default();
+        let (tx, _rx) = crossbeam_channel::bounded(2);
+        recorder.send_to(tx);
+        for index in 0..10 {
+            recorder.step("stub", format!("step {index}"));
+        }
+        recorder.keep_input("stub", Path::new("a/EDIT00000000"), Arc::from(&b"IN"[..]));
+
+        let warned = captured(dropped);
+        assert_eq!(
+            warned.len(),
+            1,
+            "one line for the session's drops: {warned:?}"
+        );
+        assert!(warned[0].starts_with("WARN|"), "{warned:?}");
     }
 }

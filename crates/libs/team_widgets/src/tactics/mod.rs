@@ -1238,7 +1238,6 @@ pub fn tactics_term(
     rosters: (&[RosterRow<'_>], &[RosterRow<'_>]),
 ) -> (String, String, String) {
     let (old_roster, new_roster) = rosters;
-    let byte = |stored: u32| u8::try_from(stored).expect("a tactics field is a byte");
     match field {
         TacticsField::TeamId => ("Team ID".to_owned(), old.to_string(), new.to_string()),
         TacticsField::Preset { preset, field: pf } => (
@@ -1272,7 +1271,7 @@ pub fn tactics_term(
                 )
             };
             let value = |stored: u32| match part {
-                FormationPart::Position => position_label(byte(stored)).to_owned(),
+                FormationPart::Position => worded(stored, |byte| position_label(byte).to_owned()),
                 FormationPart::X | FormationPart::Y => stored.to_string(),
             };
             (label, value(old), value(new))
@@ -1295,21 +1294,25 @@ pub fn tactics_term(
             match part {
                 InstructionPart::Instruction => (
                     row,
-                    instruction_text(version, byte(old)),
-                    instruction_text(version, byte(new)),
+                    worded(old, |byte| instruction_text(version, byte)),
+                    worded(new, |byte| instruction_text(version, byte)),
                 ),
                 InstructionPart::PlayerId => (
                     format!("{row} · Target"),
-                    instructions::target_text(
-                        instructions::instruction_at(version, old_tactics, preset, side, index),
-                        byte(old),
-                        old_roster,
-                    ),
-                    instructions::target_text(
-                        instructions::instruction_at(version, new_tactics, preset, side, index),
-                        byte(new),
-                        new_roster,
-                    ),
+                    worded(old, |byte| {
+                        instructions::target_text(
+                            instructions::instruction_at(version, old_tactics, preset, side, index),
+                            byte,
+                            old_roster,
+                        )
+                    }),
+                    worded(new, |byte| {
+                        instructions::target_text(
+                            instructions::instruction_at(version, new_tactics, preset, side, index),
+                            byte,
+                            new_roster,
+                        )
+                    }),
                 ),
             }
         }
@@ -1344,13 +1347,13 @@ pub fn tactics_term(
             assignments::role_label(field)
                 .expect("the roles are the chips' own table")
                 .to_owned(),
-            role_holder(old_roster, byte(old)),
-            role_holder(new_roster, byte(new)),
+            worded(old, |byte| role_holder(old_roster, byte)),
+            worded(new, |byte| role_holder(new_roster, byte)),
         ),
         TacticsField::AutoSubstitution => (
             SUBSTITUTION_LABEL.to_owned(),
-            substitution_text(byte(old)),
-            substitution_text(byte(new)),
+            worded(old, substitution_text),
+            worded(new, substitution_text),
         ),
         TacticsField::AutoOffsideTrap => (
             OFFSIDE_TRAP_LABEL.to_owned(),
@@ -1369,18 +1372,18 @@ pub fn tactics_term(
         ),
         TacticsField::Starting(index) => (
             format!("Starting eleven · {}", index + 1),
-            name_at(old_roster, byte(old)).to_owned(),
-            name_at(new_roster, byte(new)).to_owned(),
+            worded(old, |byte| name_at(old_roster, byte).to_owned()),
+            worded(new, |byte| name_at(new_roster, byte).to_owned()),
         ),
         TacticsField::Bench(index) => (
             format!("Bench · {}", index + 1),
-            name_at(old_roster, byte(old)).to_owned(),
-            name_at(new_roster, byte(new)).to_owned(),
+            worded(old, |byte| name_at(old_roster, byte).to_owned()),
+            worded(new, |byte| name_at(new_roster, byte).to_owned()),
         ),
         TacticsField::PlayerToJoinAttack(index) => (
             format!("Join attack · {}", index + 1),
-            role_holder(old_roster, byte(old)),
-            role_holder(new_roster, byte(new)),
+            worded(old, |byte| role_holder(old_roster, byte)),
+            worded(new, |byte| role_holder(new_roster, byte)),
         ),
         TacticsField::AutoCombinationPlay => (
             COMBINATION_PLAY_LABEL.to_owned(),
@@ -1403,9 +1406,18 @@ pub fn tactics_term(
         }
         TacticsField::CombinationStrategy(index) => (
             format!("{COMBINATION_PLAY_LABEL} · {} · Strategy", index + 1),
-            pes14::combination_text(byte(old)),
-            pes14::combination_text(byte(new)),
+            worded(old, pes14::combination_text),
+            worded(new, pes14::combination_text),
         ),
+    }
+}
+
+/// A `tactics_term` side's text: `word` on the stored byte, or the stored
+/// number when the save holds a value past a byte.
+fn worded(stored: u32, word: impl FnOnce(u8) -> String) -> String {
+    match u8::try_from(stored) {
+        Ok(byte) => word(byte),
+        Err(_) => stored.to_string(),
     }
 }
 

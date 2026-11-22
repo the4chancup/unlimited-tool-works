@@ -223,6 +223,19 @@ pub(crate) fn write_cpk(path: &Path, entries: CpkEntries<'_>) {
     cpk.finish().unwrap();
 }
 
+/// `name` written as a base CPK under `<pes>/Data/` holding `entries`, as the
+/// install ships its `Data` CPKs.
+pub(crate) fn base_cpk(pes: &Path, name: &str, entries: CpkEntries<'_>) {
+    write_cpk(&pes.join("Data").join(name), entries);
+}
+
+/// A `player-dummy.png` as a CPK holds it: a 128 x 128 PNG encoded by
+/// `dds_convert`, every pixel `colour`.
+pub(crate) fn dummy_png(colour: [u8; 4]) -> Vec<u8> {
+    let pixels = colour.repeat(128 * 128);
+    dds_convert::encode_png(&pixels, 128, 128).expect("a PNG encodes")
+}
+
 /// A PES folder under `test`'s scratch holding `download/DpFileList.bin`, listing `cpks`' names
 /// in load order, each written with its `entries` (`(entry path, bytes)`).
 pub(crate) fn pes_folder(test: &str, cpks: &[(&str, CpkEntries<'_>)]) -> PathBuf {

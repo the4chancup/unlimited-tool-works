@@ -207,11 +207,11 @@ pub(crate) fn preset_for(
 /// The value a preset ID slot takes on a record holding `own`: the
 /// preset's where `own` is 0 or the hide preset's `hide_id`, `own`
 /// otherwise (a model's own ID is kept).
-fn preset_id(own: u32, hide_id: u16, preset: u16) -> u16 {
+fn preset_id(own: u32, hide_id: u16, preset: u32) -> u32 {
     if own == 0 || own == u32::from(hide_id) {
         preset
     } else {
-        u16::try_from(own).expect("a stored boots or gloves ID fits u16")
+        own
     }
 }
 
@@ -260,6 +260,25 @@ mod tests {
         let hide = preset_for(&player, fpc::Preset::Hide, ids);
         assert_eq!(hide.boots_id, 55);
         assert_eq!(hide.gloves_id, 11);
+    }
+
+    // A stored ID past the other versions' 14 bits is still a model's own:
+    // kept whole, as 627 is.
+    #[test]
+    fn a_preset_keeps_a_stored_id_past_u16() {
+        let mut player = PlayerEntry::default();
+        player.appearance.boots_id = 627;
+        player.appearance.gloves_id = 70_000;
+        let hide = preset_for(&player, fpc::Preset::Hide, fpc::HideIds::CONVENTION);
+        let expected = fpc::Appearance {
+            boots_id: 627,
+            gloves_id: 70_000,
+            ..fpc::preset(fpc::Preset::Hide, fpc::HideIds::CONVENTION)
+        };
+        assert_eq!(
+            hide, expected,
+            "the model's own IDs, the rest the hide preset's"
+        );
     }
 
     // The bump's whole-number read and the 40 to 99 clamp, the parts a

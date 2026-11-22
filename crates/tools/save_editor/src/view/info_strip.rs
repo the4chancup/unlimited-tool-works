@@ -19,8 +19,8 @@ use pes_savefile::schema::fields::{PlayerField, PlayerText, RosterField};
 use pes_savefile::schema::{VersionSchema, portable_text_max, schema_for, stored_offset};
 use pes_version::PesVersion;
 use studio_core::widgets::{
-    FIELD_SPACING, RADIO_ICON_WIDTH, add_enabled_ui, combo_item, number_arrows, number_wheel_steps,
-    radio, resting_edge, step_choice, step_number, text_box, wheel_steps,
+    FIELD_SPACING, RADIO_ICON_WIDTH, add_enabled, add_enabled_ui, combo_item, number_arrows,
+    number_wheel_steps, radio, resting_edge, step_choice, step_number, text_box, wheel_steps,
 };
 use team_widgets::cards;
 use team_widgets::names::append_name;
@@ -34,7 +34,7 @@ use crate::view::abilities::{
 };
 use crate::view::live_marks::{MarkedField, Marks};
 use crate::view::{
-    PlayerScreen, Reveal, SaveView, Selection, edit_player, edit_team, selected_player,
+    PlayerScreen, Reveal, SaveView, Selection, edit_player, edit_team, group_on, selected_player,
     selected_team_id,
 };
 
@@ -102,7 +102,8 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
 /// its plain runs in the strong colour, all in the body text's size (the
 /// app installs no bold face) — and the separator under the row (the
 /// `.sep` the fields' row carried), which parts the title from the screen
-/// the toggle switches.
+/// the toggle switches. While a group is selected (`group_on`) the title
+/// is `N players` alone: no one player's id or name.
 pub(super) fn view_title(ui: &mut egui::Ui, view: &mut SaveView, id: u32, name: &str) {
     // The row's room over it is the pane's `TITLE_MARGIN`, the panes' own
     // start and this half point — 9.5, the same as its room under it to
@@ -117,16 +118,26 @@ pub(super) fn view_title(ui: &mut egui::Ui, view: &mut SaveView, id: u32, name: 
             page_toggle(ui, view);
             let body = egui::TextStyle::Body.resolve(ui.style());
             let mut title = egui::text::LayoutJob::default();
-            title.append(
-                &format!("{id} "),
-                0.0,
-                egui::TextFormat::simple(body.clone(), ui.visuals().weak_text_color()),
-            );
-            append_name(&mut title, name, &body);
-            let strong = ui.visuals().strong_text_color();
-            for section in &mut title.sections {
-                if section.format.color == egui::Color32::PLACEHOLDER {
-                    section.format.color = strong;
+            if group_on(view.selected, &view.group) {
+                // The group names its size alone: no one player's id or
+                // name (the draft's `N players`).
+                title.append(
+                    &format!("{} players", view.group.len()),
+                    0.0,
+                    egui::TextFormat::simple(body, ui.visuals().strong_text_color()),
+                );
+            } else {
+                title.append(
+                    &format!("{id} "),
+                    0.0,
+                    egui::TextFormat::simple(body.clone(), ui.visuals().weak_text_color()),
+                );
+                append_name(&mut title, name, &body);
+                let strong = ui.visuals().strong_text_color();
+                for section in &mut title.sections {
+                    if section.format.color == egui::Color32::PLACEHOLDER {
+                        section.format.color = strong;
+                    }
                 }
             }
             ui.label(title);
@@ -170,18 +181,24 @@ impl Segment {
 /// tactics' numbers toggles draw their three choices (a point apart, the
 /// `.sel` 5-point padding, the held one filled in the selection colour).
 /// `Gameplan` is held while a team row is selected, else the player
-/// screen shown (`view.page`). A press on another segment moves the
-/// screen and, as a row's click does, the selection: `Gameplan` selects
-/// the selected row's team's row; a player screen from a team row
-/// selects the team's remembered or first filled slot — the list
-/// scrolling to show the row (`reveal_selected`). Not drawn with nothing
-/// selected.
+/// screen shown (`view.page`) — `Stats` while a group is selected
+/// (`group_on`), whichever screen stood before: `view.page` is not
+/// changed, so it comes back when the group ends. Appearance is one
+/// player's, so its segment is disabled under a group, the reason on
+/// hover as the quick actions' disabled buttons carry theirs. A press
+/// on another segment moves the screen and, as a row's click does, the
+/// selection: `Gameplan` selects the selected row's team's row; a
+/// player screen from a team row selects the team's remembered or
+/// first filled slot — the list scrolling to show the row
+/// (`reveal_selected`). Not drawn with nothing selected.
 fn page_toggle(ui: &mut egui::Ui, view: &mut SaveView) {
     let Some(team_id) = selected_team_id(view) else {
         return;
     };
+    let grouped = group_on(view.selected, &view.group);
     let on = match view.selected {
         Some(Selection::Team(_)) => Segment::Gameplan,
+        _ if grouped => Segment::Stats,
         Some(Selection::Player(..)) | None => match view.page {
             PlayerScreen::Stats => Segment::Stats,
             PlayerScreen::Appearance => Segment::Appearance,
@@ -202,12 +219,22 @@ fn page_toggle(ui: &mut egui::Ui, view: &mut SaveView) {
             let unheld = studio_core::theme::unheld_edge(ui.visuals());
             let mut pressed = None;
             for segment in [Segment::Stats, Segment::Appearance, Segment::Gameplan] {
-                let response = ui.add(egui::Button::selectable(on == segment, segment.label()));
-                resting_edge(
-                    ui,
-                    &response,
-                    if on == segment { held_edge } else { unheld },
-                );
+                let response = if grouped && segment == Segment::Appearance {
+                    add_enabled(ui, false, egui::Button::selectable(false, segment.label()))
+                        .on_disabled_hover_text("Appearance is one player's: select one row")
+                } else {
+                    ui.add(egui::Button::selectable(on == segment, segment.label()))
+                };
+                // A disabled segment draws no edge: `add_enabled` takes
+                // the resting one off, and painting one back would keep
+                // it reading as a live control.
+                if response.enabled() {
+                    resting_edge(
+                        ui,
+                        &response,
+                        if on == segment { held_edge } else { unheld },
+                    );
+                }
                 if response.clicked() {
                     pressed = Some(segment);
                 }
@@ -224,6 +251,7 @@ fn page_toggle(ui: &mut egui::Ui, view: &mut SaveView) {
     match segment {
         Segment::Gameplan => {
             view.selected = Some(Selection::Team(team_id));
+            view.group.clear();
             view.reveal_selected = Some(Reveal::Nearest);
         }
         Segment::Stats | Segment::Appearance => {
@@ -235,6 +263,7 @@ fn page_toggle(ui: &mut egui::Ui, view: &mut SaveView) {
                 && let Some(slot) = last_shown_slot(view, team_id)
             {
                 view.selected = Some(Selection::Player(team_id, slot));
+                view.group.clear();
                 view.reveal_selected = Some(Reveal::Nearest);
             }
         }

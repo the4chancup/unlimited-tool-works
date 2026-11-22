@@ -41,7 +41,12 @@ fn the_show_preview_toggle_draws_its_blue_with_no_edge() {
 
 #[test]
 fn the_preview_draws_the_block_and_the_edit_marks_its_changed_lines() {
-    let (ctx, _events, mut window, mut view) = fresh_blank();
+    // The default window: a smaller one leaves the section no room for a
+    // checklist column next to the preview's fixed width.
+    let (ctx, _events) = crate::test_support::context();
+    let mut window = Headless::sized(1224.0, 756.0);
+    let mut view = RulesetView::new();
+    open_document(&mut view, crate::document::blank());
 
     // Off at every start: no preview lines.
     let frame = window.draw(&mut view, &ctx);
@@ -184,4 +189,24 @@ fn a_replaced_logo_of_the_same_size_marks_its_line() {
         "the replacement marks the whole new line: {:.120?}",
         view.changed
     );
+}
+
+// The panel reserves the separator line's own width at its resizable edge:
+// `width` adds the theme's non-interactive stroke width rounded, so a whole
+// stroke counts and a sub-point one rounds down to nothing.
+#[test]
+fn the_panels_width_reserves_the_separator_lines_own_width() {
+    let mut window = Headless::new();
+    let mut panel_width = |stroke: f32| {
+        window
+            .ctx
+            .all_styles_mut(|style| style.visuals.widgets.noninteractive.bg_stroke.width = stroke);
+        let mut panel = 0.0;
+        window.frame(Vec::new(), |ui| {
+            panel = crate::view::preview::width(ui);
+        });
+        panel
+    };
+    // A 2-point stroke stands over a 0.3 one, which rounds down to nothing.
+    assert_eq!(panel_width(2.0) - panel_width(0.3), 2.0);
 }

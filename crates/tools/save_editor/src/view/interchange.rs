@@ -862,6 +862,7 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
                 &mut view.team_category,
                 &mut view.filter,
             ));
+            view.group.clear();
         }
         None => {}
     }

@@ -404,13 +404,14 @@ vertical room a tab row takes; a toggle on the title's own row takes none.
   the column's controls reach ("Player list" above), and "Make Goalkeeper", the official
   ruleset's widest, fits its half (105 of 118.5).
 
-  They act on the selected player, so a team row leaves them disabled, their tooltip "The make
+  They act on the selected player, so a team row leaves them disabled, their tooltip "These
   buttons act on a player: pick a player row". The Player menu's entries are disabled too,
   their tooltip "The Player menu acts on a player: pick a player row".
-- **Select all similar players** (0.0.2-similar), a button under the quick actions as wide as
-  their grid, selects with the selected player every player who shares what its window
-  asks, so a member edits a tier's players as one; its tooltip "Select the players
-  like this one, to edit their stats together". A team row, or several players already
+- **Select all similar players** (0.0.2-similar), a button right under the player list,
+  above the quick actions' Make buttons and as wide as their grid, selects with the
+  selected player every player who shares what its window asks, so a member edits a tier's
+  players as one; its tooltip "Select the players like this one, to edit their stats
+  together". A team row, or several players already
   selected, leaves it disabled, its tooltip "Select one player first". The window, titled
   `Select all similar players`, holds:
   - `Match <name> on:` above three checkboxes, all ticked when it opens, each with what it
@@ -431,7 +432,9 @@ vertical room a tab row takes; a toggle on the title's own row takes none.
   team.
 - **Several players selected.** Each selected row is filled as the selected row is. After
   `Every team`, the team selector moves to `All teams` and the filter is cleared, so every
-  selected row is in the list. Ctrl+click on a player row adds it to the selection or takes
+  selected row is in the list; a category that leaves one of their teams out widens to
+  `All`, as for a selection made elsewhere (`Every team` is every cup team, whatever the
+  category). Ctrl+click on a player row adds it to the selection or takes
   it out, a lone selected player included, so a selection can also be built without the
   window. Taking out all but one leaves that one selected as usual, and Ctrl+click on the
   last one does nothing. Any other way of selecting (a plain click on any row, Up or Down,
@@ -1600,6 +1603,17 @@ Win32 original hurt the most):
     (159.5, 358.5) on both (PES 2021's goal-area line, 7.5 above PES 2017's), not through the
     mapping, which would put his stored spot 15 px higher. That stored spot is (52, 3) in
     every one of the PES 2021 save's 1,890 formations, and the editor never moves it.
+
+  When the PES folder is set, the game's own pitch texture replaces the painted turf and
+  lines, read from the install's `gamePlan.bin` as the placeholder portrait is (a `download`
+  CPK's copy winning) through the `apk` crate (`libs/apk.md`, which says where each version
+  keeps it), and drawn at two thirds as the screen draws it. That is PES 2017 to 2021: PES
+  2015's and PES 2016's textures come with their own screens, since under PES 2017's
+  markers their other shapes would put the markers off their lines. The painted pitch stays
+  for every other case, as the placeholder's drawing does. A formation picture
+  carries the game's pixels too, as the screenshots members already post of their
+  formations do. A picture saved without the pitch's grain is painted in flat bands, since
+  the game's texture has its grain.
   - **A marker**, top to bottom: the portrait, the whole 128 x 128 texture drawn 50 x 50
     standing on the badge (the cup's portraits carry their own padding and any ribbon); the
     badge, 50 x 14 under the 50-point portrait, `#242b2d`, corners 2, the position's
@@ -1653,9 +1667,21 @@ Win32 original hurt the most):
     one of three versions (PES 2015; PES 2016-2018; PES 2019-2021), but it is the suite's own
     drawing of each: an SVG in `resources/portraits/`, drawn from simple shapes in the game's
     colours and proportions (not traced), rendered by a script to the 128 x 128 PNG the binary
-    embeds. They are bundled, not read from the install, so the pitch draws them with no PES
-    folder set or reachable. They are drawn, not copied, because the suite ships Konami
-    material only to make files the games read.
+    embeds. They are drawn, not copied, because the suite ships Konami material only to make
+    files the games read.
+
+    When the PES folder is set, the game's own `player-dummy.png` replaces the drawing, read
+    from the install: a `download` CPK's copy if one holds it (a later CPK winning, as for
+    portraits), else the base CPK that holds it in every version (`dt15.cpk` in PES 2015,
+    `dt15_win.cpk` in 2016 and 2017, `dt15_x64.cpk` from 2018, in the install's `Data`
+    folder; a census of the seven installs, 2026-11-21). It is read only when a portrait the
+    pitch or a picture asks for turns out absent or undecodable, and at most once per folder
+    and version, a range of pictures included. A team usually has a portrait for every
+    player, so reading a base CPK's table up front would be work for nothing. The drawing
+    stays for every other case: no PES folder, a PES folder that cannot be read, a file not
+    found or not decoded, and the moments before the game's copy is read. A `download` list
+    or CPK that cannot be read still leaves the base CPK's copy, which is what the game
+    shows then.
 
     Markers are drawn from the top of the canvas down, a lower marker covering the one above
     as the game's do (the keeper's portrait over a centre-back's badge), the dragged one last;

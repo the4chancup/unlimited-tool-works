@@ -393,9 +393,10 @@ Top to bottom:
    nothing is drawn over the status bar (0.0.2-side; the draft's `.tools-box` and
    `.tail-box`).
 
-   The active tool is highlighted with an accent-colored left border bar plus a filled
-   background, the bar 3 points wide with its two left corners rounded as the entry's (2
-   points; the draft's `.tool.on` border), the right ones square against the fill.
+   The active tool is highlighted as a held toggle side is: the selection's fill and its
+   1-point edge, `#1e7a9e` (the Control edges row; the draft's `.tool.on`), with no bar at
+   its left. Every entry's icon is centred in the rail's 44-point cell, and the opened
+   sidebar keeps it there.
 
    The suite's planned tools not in this build (the registry's, `architecture.md` "Tool plugin
    interface") are listed after the registered ones, grayed and not clickable, each tooltip
@@ -650,7 +651,8 @@ Like the settings menu it is **assembled from the tools**, not written centrally
 
 - Fixed-height region below the toolbar, monospace, colored lines (info/warning/error mapped from
   `PipelineEvent`); its chevron collapses it to its header row and back, and dragging its
-  divider resizes it, the height kept across frames.
+  divider resizes it, the height kept across frames. A collapsed log's header shows no
+  filter buttons (All, Warnings, Errors), since it shows no lines to filter.
 
   The divider carries a grip at its middle, a line 24 points long and 2 high, rounded, in the
   plain text grey (the noninteractive widgets' text colour, the drafts' `--text`, in
@@ -673,8 +675,12 @@ Like the settings menu it is **assembled from the tools**, not written centrally
   counted, not drawn, until the jump back or a scroll to the bottom: past the cap, a window
   sliding with each arrival would move the text under the reader at an unchanged scroll
   offset.
-- **No wrapping**: a line longer than the panel scrolls sideways, as the draft's `white-space:
-  pre` does; a wrapped line breaks the one-line-per-finding reading.
+- **Wrapping with a hanging indent**: a line longer than the panel wraps, and its continuation
+  starts under the text that follows its `Severity - source - ` head (`Error - /aco/ - `; a
+  line with no source, under the text after `Severity - `), so the left edge shows only each
+  line's severity and source and one finding still reads as one line. egui draws it as the head
+  in one label and the rest in a wrapping label beside it, in a `horizontal_top`. A line is
+  never cut at the panel's edge, where the part naming the file would be lost.
 - **Filter toggles**: All; Warnings (the warning, error and fatal lines); Errors (the error and
   fatal lines). A filter hides lines, never drops them: All shows every line again.
 - **Cross-linking**: clicking a warning/error line highlights the corresponding grid cell (they
@@ -1903,7 +1909,7 @@ ST-REP-06   GIVEN the session writer given a stub tool's messages in order: a st
             THEN `journal.toml` holds the version, the OS, the start time, the step, the input
                  and output rows and `[end]` `closed`; `inputs/` holds the input and
                  `outputs/` the second write only
-ST-REP-07   GIVEN ST-REP-06's messages without the closing one, then the link dropped
+ST-REP-07   GIVEN ST-REP-06's messages without the closing one, then the pipe closed
             THEN `[end]` says `ended`; GIVEN a crash request instead THEN `crashed`; GIVEN a
                  `journal.toml` whose last `[[step]]` block is cut in half WHEN it is read
                  THEN the earlier steps read and the cut block is dropped
@@ -1918,9 +1924,11 @@ ST-REP-09   GIVEN two earlier session folders and the window's own
                  `sessions/<folder name>.zip` for each, each read back by `read_bundle`;
                  unticked, THEN it holds none
 ST-REP-10   GIVEN a monitor that reads nothing, so the window's queue fills
-            WHEN steps are recorded THEN no frame waits on the link and the log holds one line
+            WHEN steps are recorded THEN no frame waits on the pipe and the log holds one line
                  about the dropped messages; GIVEN no monitor THEN the window's own writer
-                 thread writes the folder as ST-REP-06's; GIVEN the monitor ended mid-session
+                 thread writes the folder as ST-REP-06's; GIVEN the window's run ends on a
+                 panic it caught THEN `[end]` reads `crashed`, with a monitor or without it;
+                 GIVEN the monitor ended mid-session
                  THEN a new one is started and the next steps land in the same folder, and
                  GIVEN the new one does not start THEN the window's own writer writes them
                  there
@@ -1950,9 +1958,13 @@ ST-LOG-03   GIVEN a log holding info, warning, error and fatal lines
                  the error and fatal lines alone; All, every line again
 ST-LOG-04   GIVEN the log panel open at its default height
             WHEN its chevron is clicked
-            THEN the panel collapses to its header row and the view above it takes the space,
-                 and a second click restores it at its height; WHEN its divider is dragged THEN the panel takes the dragged height, kept across
+            THEN the panel collapses to its header row, without its filter buttons, and the
+                 view above it takes the space, and a second click restores it at its height; WHEN its divider is dragged THEN the panel takes the dragged height, kept across
                  frames; while open, its divider draws the grip at its middle, collapsed none
+ST-LOG-05   GIVEN a log line `Error - /aco/ - <code> at <a path>` longer than the panel is wide
+            WHEN the panel is drawn
+            THEN the line wraps, its second row starting under `<code>`, and nothing of it
+                 lies past the panel's right edge
 ```
 
 **Launch and close**
@@ -2032,7 +2044,7 @@ ST-RUN-13   GIVEN a monitor program that exits at once the first time it is star
             THEN it is watched (ST-RUN-10's dump is written on a crash) and the log holds no
                  warning; GIVEN one that exits at once both times THEN the start gives up
                  after the second, logs one warning and the window opens; GIVEN one that
-                 never answers THEN it is started once, and the window opens after the two
+                 never answers THEN it is started once, and the window opens after the ten
                  seconds' wait with the warning
 ST-CLI-01   GIVEN a data directory that cannot be written
             WHEN a CLI command runs

@@ -1,9 +1,9 @@
 //! The Unlimited Tool Works binary: registers the tools, then launches the GUI or dispatches the
 //! CLI. With no arguments it opens the shell on the registered tools; `--gui` is refused until
 //! a tool's view can run a command. Two hidden arguments are not commands a member types:
-//! `--crash-monitor` runs the crash-dump monitor a window spawns, and `--crash-test` its crash
-//! trigger. On Windows the exe is a GUI-subsystem application on every build, so a
-//! double-click opens no console window beside it.
+//! `--crash-monitor` runs the crash-dump monitor a window spawns, and `--crash-test` one
+//! of its test triggers (`stack`, `session`). On Windows the exe is a GUI-subsystem
+//! application on every build, so a double-click opens no console window beside it.
 // Not on the unit tests' harness, built from this file too: a GUI-subsystem test binary's
 // output never reaches the test runner, so a failing assertion would print nothing. The
 // exe the integration tests run keeps the attribute.
@@ -13,6 +13,7 @@ mod console;
 mod crash_dump;
 mod gui_log;
 mod instance;
+mod session_link;
 #[cfg(test)]
 mod test_dir;
 
@@ -28,6 +29,7 @@ use crossbeam_channel::{Receiver, unbounded};
 use log::LevelFilter;
 use rfd::MessageLevel;
 use studio_core::icons;
+use studio_core::repro::{SessionEnd, SessionHeader, session_folder_name};
 use studio_core::updater::{self, CheckReply, Fetch};
 use studio_core::{
     AppPaths, CommonSettings, EXE_NAME, LaunchMode, PlannedTool, SETTINGS_FILE_NAME, Settings,
@@ -37,10 +39,11 @@ use studio_core::{
 
 use crate::console::{RunLog, log_panics, spawn_notice_printer, spawn_printer};
 use crate::crash_dump::{
-    HiddenLaunch, hidden_launch, overflow_the_stack, run_monitor, watch_crashes,
+    CrashTest, HiddenLaunch, hidden_launch, monitor_restart, monitor_test, no_restart,
+    overflow_the_stack, run_monitor, session_test, watch_crashes,
 };
 use crate::gui_log::{
-    guard_gui, install_gui_logger, install_panic_hook, show_dialog, unclean_notice,
+    PANIC_EXIT, guard_gui, install_gui_logger, install_panic_hook, show_dialog, unclean_notice,
 };
 
 /// The suite's whole registry as data, in sidebar order. The shell lists after the
@@ -448,10 +451,12 @@ fn run_help_mode(
 /// failure's code, 3 when the window could not be opened or the crash test's trigger
 /// returned, or 101 when a panic ended it. After the update dialog's Restart now, the new
 /// program is started as this one ends. A failure shows its text in a dialog: a window
-/// started by a double-click has no console to print it to. `crash_test` is the hidden
-/// `--crash-test stack` launch (ST-RUN-10): the window's start runs as usual, then the
-/// stack is overflowed before any window.
-fn run_gui_mode(tools: Vec<Box<dyn StudioTool>>, crash_test: bool) -> ExitCode {
+/// started by a double-click has no console to print it to. `test` is the hidden
+/// `--crash-test` launch, when this is one: `stack` overflows the stack past the
+/// monitor's start (ST-RUN-10), `session` records two steps through the session
+/// link and ends with no closing message (ST-REP-11), `monitor` ends its monitor
+/// mid-session and lets the link replace it (ST-REP-10).
+fn run_gui_mode(tools: Vec<Box<dyn StudioTool>>, test: Option<CrashTest>) -> ExitCode {
     let (settings, paths) = match startup(&tools) {
         Ok(loaded) => loaded,
         Err((code, text)) => {
@@ -472,18 +477,31 @@ fn run_gui_mode(tools: Vec<Box<dyn StudioTool>>, crash_test: bool) -> ExitCode {
     };
     install_panic_hook();
     // The monitor starts with the log, once the data location exists: a first run has neither.
-    let crash_handler = match (&installed_log, &paths.data_dir) {
-        (Some(installed), Some(data_dir)) => watch_crashes(
-            std::env::current_exe(),
-            data_dir,
-            installed.slot,
-            log::logger(),
-        ),
-        _ => None,
+    // Its standard input is the session's pipe, the session link's `target`; `restart`
+    // is the one new monitor the link gets when that pipe breaks, its handler owned
+    // by the link's thread until the session is out — `main` holds `monitor` only so
+    // the crash test can end it.
+    let (session_target, session_restart, monitor) = match (&installed_log, &paths.data_dir) {
+        (Some(installed), Some(data_dir)) => {
+            match watch_crashes(
+                std::env::current_exe(),
+                data_dir,
+                installed.slot,
+                log::logger(),
+            ) {
+                Some(watch) => (
+                    Some(Box::new(watch.pipe) as Box<dyn Write + Send>),
+                    monitor_restart(data_dir, installed.slot, watch.handler),
+                    Some(watch.child),
+                ),
+                None => (None, no_restart(), None),
+            }
+        }
+        _ => (None, no_restart(), None),
     };
     // ST-RUN-10's trigger, past the monitor's start and before any window, so the test
     // needs no display.
-    if crash_test {
+    if let Some(CrashTest::Stack) = test {
         let depth = overflow_the_stack(0);
         log::error!("the crash test's stack overflow returned {depth} instead of crashing");
         return ExitCode::from(3);
@@ -505,6 +523,42 @@ fn run_gui_mode(tools: Vec<Box<dyn StudioTool>>, crash_test: bool) -> ExitCode {
         events_tx,
         requests_tx,
     );
+    // The session link starts once the recorder exists and before the window
+    // opens: the recorder queues each step and kept file it takes, and the
+    // link's thread writes them to the monitor's pipe — or, with no monitor,
+    // to the window's own session folder under the data location. A first
+    // run has no data location and no link. The window's own folder name is
+    // made here so Report a problem's list of earlier sessions can leave it
+    // out.
+    let (mut session_link, session_folder) = match ctx.paths().data_dir.as_deref() {
+        Some(data_dir) => {
+            let header = SessionHeader::for_this_window();
+            let folder = session_folder_name(&header);
+            let link = session_link::start(
+                ctx.recorder(),
+                session_target,
+                session_restart,
+                data_dir,
+                header,
+            );
+            (Some(link), Some(folder))
+        }
+        None => (None, None),
+    };
+    // ST-REP-11's trigger, past the link's start and before any window: it
+    // ends the process and never returns.
+    if let Some(CrashTest::Session) = test {
+        session_test(ctx.recorder(), ctx.paths().data_dir.as_deref());
+    }
+    // ST-REP-10's trigger the same: it takes the link and the monitor to end.
+    if let Some(CrashTest::Monitor) = test {
+        monitor_test(
+            ctx.recorder(),
+            ctx.paths().data_dir.as_deref(),
+            session_link.take(),
+            monitor,
+        );
+    }
     let mut restart = None;
     let code = guard_gui(
         || match run_gui(
@@ -520,7 +574,8 @@ fn run_gui_mode(tools: Vec<Box<dyn StudioTool>>, crash_test: bool) -> ExitCode {
                 installed_log
                     .as_ref()
                     .map(|installed| installed.path.clone()),
-            ),
+            )
+            .with_session_folder(session_folder),
         ) {
             Ok(program) => {
                 restart = program;
@@ -535,12 +590,23 @@ fn run_gui_mode(tools: Vec<Box<dyn StudioTool>>, crash_test: bool) -> ExitCode {
             .as_ref()
             .map(|installed| installed.path.as_path()),
         |text| show_dialog(MessageLevel::Error, text),
+        // The link's close runs inside the guard, before the session's closing
+        // line is written: `close` ends the recorder's sink and the link's
+        // thread sends the closing message before its pipe ends — `crashed`
+        // when the run's own panic guard caught one — and anything the close
+        // logs (a monitor restarted over a pipe that broke while the window
+        // sat idle, a stalled sender's warning) lands ahead of the closing
+        // line, which must stay the log's last.
+        |code| {
+            if let Some(link) = session_link {
+                link.close(session_end(code));
+            }
+        },
         log::logger(),
     );
     // Restart now's program starts last: the window's session is closed in the log, and
     // this copy lets go of its slot first. Started any earlier, the new program would
     // find the slot's lock held and open as a second copy, with the second copy's log.
-    drop(crash_handler);
     drop(instance);
     if let Some(program) = restart {
         // The child is not waited for: it outlives the process that starts
@@ -558,6 +624,18 @@ fn run_gui_mode(tools: Vec<Box<dyn StudioTool>>, crash_test: bool) -> ExitCode {
         }
     }
     code
+}
+
+/// The session's end for the link's closing message: `Crashed` on the panic
+/// guard's own exit code (`PANIC_EXIT`), `Closed` on every other end, a clean
+/// close and a window that never opened alike. `Ended` is the monitor's
+/// verdict on a session that sent nothing, never the window's own message.
+fn session_end(code: ExitCode) -> SessionEnd {
+    if code == ExitCode::from(PANIC_EXIT) {
+        SessionEnd::Crashed
+    } else {
+        SessionEnd::Closed
+    }
 }
 
 /// Binds this process to the console of the terminal that started it, so a command's
@@ -592,9 +670,9 @@ fn main() -> ExitCode {
             socket,
             slot,
         }) => {
-            return run_monitor(&data_dir, &socket, slot);
+            return run_monitor(&data_dir, &socket, slot, &mut std::io::stdin());
         }
-        Some(HiddenLaunch::CrashTest) => return run_gui_mode(tools(), true),
+        Some(HiddenLaunch::CrashTest(test)) => return run_gui_mode(tools(), Some(test)),
         None => {}
     }
     // More than the program name in the arguments means a CLI run, a `--help` or a clap
@@ -614,7 +692,7 @@ fn main() -> ExitCode {
         install_cli_logger(launch.verbosity);
     }
     match launch.mode {
-        LaunchMode::Gui => run_gui_mode(tools, false),
+        LaunchMode::Gui => run_gui_mode(tools, None),
         LaunchMode::GuiAutorun { .. } => {
             eprintln!(
                 "`--gui` comes in a later version. Run the command without it, or run `{EXE_NAME}` alone to open the window."
@@ -699,6 +777,19 @@ mod tests {
         assert_eq!(log_level(1), LevelFilter::Info);
         assert_eq!(log_level(2), LevelFilter::Debug);
         assert_eq!(log_level(3), LevelFilter::Trace);
+    }
+
+    // The session's closing message is `crashed` on the panic guard's own exit
+    // code alone: a clean close and a window that could not open (3) are
+    // `closed`, and `ended` is the monitor's verdict, never the window's own.
+    #[test]
+    fn the_session_end_is_crashed_only_on_the_panic_exit_code() {
+        assert!(matches!(
+            session_end(ExitCode::from(PANIC_EXIT)),
+            SessionEnd::Crashed
+        ));
+        assert!(matches!(session_end(ExitCode::SUCCESS), SessionEnd::Closed));
+        assert!(matches!(session_end(ExitCode::from(3)), SessionEnd::Closed));
     }
 
     // A process can install one logger only, so this is the one test that installs it.

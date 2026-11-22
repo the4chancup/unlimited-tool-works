@@ -85,6 +85,7 @@ terms next to each other rather than in alphabetical order; adjacency is what ma
 | **Starter head** | A ready player folder embedded in the Team creator (in-game head, cardhead, boxhead) that needs at most one image; the tool's word for the wiki's replace-a-texture model templates. Not a "preset": in the community that word means a tactics preset. | `plans/team_creator.md` "Starter heads" |
 | **Team creator** | The new-team wizard: name + roster file → legal Team TOML (AATF-checked defaults) and a compilable aesthetics export built from starter heads. Owns no format, keeps no state, hands off to the compiler and editors. | `plans/team_creator.md` |
 | **Ruleset editor** | The tool that builds AATF rulesets through forms (tiers, heights, cards, specials) and writes rules files; for invitational organizers. | `plans/ruleset_editor.md` |
+| **`export_grid`** | The egui lib that draws the export grid the Compiler and the Export upgrader share: rows of cells at fixed positions, their states, the legend and the detail window; each tool hands it rows built from its own results. | `plans/team_compiler/gui.md` "GUI: the live-validating team grid" |
 | **`team_widgets`** | The egui widget lib over `pes_savefile`'s team model (tactics pitch and instructions, card pickers, AATF violations list) shared by the Save editor and the Team creator; takes `&mut` model, returns what changed, never sees a session or a file. | `plans/save_editor.md` "`libs/team_widgets`" |
 | **Team name** | A 4cc team's `/xx/` board name (`TeamName`), the canonical identity of an export: derived from the first word of the export's folder or archive name, lowercased and wrapped in slashes; `/refs/` and `/balls/` are reserved. In a 4cc savefile the in-game team name field holds the same `/xx/` name; the save editor edits that field, and "Export teams list" writes it into `teams_list.txt`. | `spec/libs/teams_list.md` "`libs/teams_list`" (type, fold); `spec/team_compiler/pipeline.md` "Export display name and team name" (derivation) |
 | **Team ID** | The numeric PES team identifier (`TeamId`), valid 701–920 for normal teams; resolved from the team name via `teams_list.txt`. | `spec/libs/teams_list.md` "`libs/teams_list`"; `spec/team_compiler/pipeline.md` "Export identity resolution" |
@@ -111,6 +112,7 @@ terms next to each other rather than in alphabetical order; adjacency is what ma
 
 | Term | Meaning | Owner |
 |---|---|---|
+| **apk** | Konami's menu file format (`common/menu/`): a pack of a screen's textures, their named regions (sprites, the Tactics screen's pitch among them) and its layouts, usually WESYS-wrapped. Not Android's. | `plans/libs/apk.md` |
 | **CPK** | CRI archive format PES loads; the compiler's output container. May hold CRILAYLA-compressed entries. | `plans/libs/README.md` |
 | **CRILAYLA** | CRI's bitstream LZ compression used inside CPKs. | `spec/libs/README.md` "Format references" |
 | **DDS / FTEX** | DDS: the texture container for pre-Fox; FTEX: Fox Engine's texture container. `dds_convert` handles BCn encoding in-process (no texconv). | `plans/libs/README.md` |
@@ -124,6 +126,7 @@ terms next to each other rather than in alphabetical order; adjacency is what ma
 | **Kit config** | The per-kit binary parameter block (collar, shorts, numbers…), reverse-engineered and editable as TOML `config.toml`. | `spec/kit_config_editor.md` "The format" |
 | **`.model` / `.mtl`** | Pre-Fox mesh and material files. | `plans/libs/README.md`; `plans/model_conversion/README.md` |
 | **uniparam** | The `UniformParameter` container in the team bins (kit configs, colors) the compiler accumulates into. | `plans/libs/README.md`; `spec/aesthetics_export/fpc_toggle.md` "FPC toggle" |
+| **USM** | CRI's video file format (Sofdec2), which PES plays for the menus' wipes and movies and for stadium billboards: MPEG-1 video, an optional transparency stream, optional audio. | `plans/libs/usm.md` |
 | **WESYS** | zlib wrapper with a custom header used by PES for some game files. | `spec/libs/README.md` "Format references" |
 
 ## Savefile

@@ -291,7 +291,10 @@ mod tests {
     use pes_savefile::schema::ingame_face::IngameFaceField;
     use pes_version::PesVersion;
     use studio_core::Recorder;
-    use studio_core::repro::read_bundle;
+    use studio_core::repro::{
+        SessionEnd, SessionFile, SessionHeader, SessionMessage, SessionWriter, read_bundle,
+        session_bundle,
+    };
 
     use super::*;
     use crate::session::Session;
@@ -306,11 +309,18 @@ mod tests {
         (session, recorder)
     }
 
-    /// `recorder`'s bundle written to `dir` and read back.
+    /// `recorder`'s bundle written to `dir` and read back. A bundle of
+    /// the running session holds the files themselves, so a `rebuild`
+    /// call would mean a raw row took the packed path.
     fn bundle_of(recorder: &Recorder, dir: &Path) -> Bundle {
         let zip = dir.join("repro.zip");
         recorder.write_bundle(&zip, "", &[], &[], None).unwrap();
-        read_bundle(&zip).unwrap()
+        read_bundle(&zip, |_| panic!("a bundle of the session holds raw files")).unwrap()
+    }
+
+    /// `pes_savefile`'s packed-form rebuild as `read_bundle`'s closure.
+    fn rebuild_save(packed: &[u8]) -> anyhow::Result<Vec<u8>> {
+        pes_savefile::container::rebuild(packed).map_err(anyhow::Error::from)
     }
 
     /// `player`'s Height nudged up, pushed as one edit under `key`.
@@ -739,6 +749,130 @@ mod tests {
             matches!(outcomes[2], Outcome::Matches { step: 4, .. }),
             "{outcomes:?}"
         );
+    }
+
+    /// A session recorded to messages over `version`'s fixture save:
+    /// the save opened, its first player's Height nudged and the save
+    /// written under `dir`. The recorder's messages queue on the
+    /// channel returned.
+    fn recorded_session(
+        dir: &Path,
+        version: PesVersion,
+    ) -> crossbeam_channel::Receiver<SessionMessage> {
+        let path = dir.join("EDIT00000000");
+        std::fs::write(&path, pes_savefile::fixture_save(version)).unwrap();
+        let recorder = Recorder::default();
+        let (tx, rx) = crossbeam_channel::unbounded();
+        recorder.send_to(tx);
+        let mut session = Session::open(&path, recorder).unwrap();
+        let id = session.file().players()[0].id;
+        edit_height(&mut session, id, 1);
+        save_written(&mut session, &dir.join("written").join("EDIT00000000"));
+        rx
+    }
+
+    /// `rx`'s messages, `tweak` applied to each, written as a session
+    /// under the `root` sessions folder and `Closed`: the folder's path.
+    fn written_session(
+        root: &Path,
+        rx: crossbeam_channel::Receiver<SessionMessage>,
+        tweak: impl Fn(&mut SessionMessage),
+    ) -> std::path::PathBuf {
+        let mut writer = SessionWriter::new(root, SessionHeader::for_this_window());
+        while let Ok(mut message) = rx.try_recv() {
+            tweak(&mut message);
+            writer.write(&message).unwrap();
+        }
+        writer.end(SessionEnd::Closed).unwrap();
+        let mut folders = std::fs::read_dir(root)
+            .unwrap()
+            .map(|entry| entry.unwrap().path());
+        let folder = folders.next().expect("the session's folder");
+        assert!(folders.next().is_none(), "one session folder");
+        folder
+    }
+
+    /// The last byte of `message`'s packed input's payload flipped,
+    /// when it holds one: a section's byte changed, the lengths and
+    /// salt intact.
+    fn flip_last_payload_byte(message: &mut SessionMessage) {
+        let SessionMessage::Input { file, .. } = message else {
+            return;
+        };
+        let SessionFile::Packed { packed, .. } = file else {
+            return;
+        };
+        let mut form = packed.to_vec();
+        // The scheme byte and salt, then the description's and logo's
+        // length-prefixed spans; the payload's own length heads its bytes.
+        let mut at = 1 + 320;
+        for _ in 0..2 {
+            let len = u32::from_le_bytes(form[at..at + 4].try_into().unwrap()) as usize;
+            at += 4 + len;
+        }
+        let payload_len = u32::from_le_bytes(form[at..at + 4].try_into().unwrap()) as usize;
+        let last = at + 4 + payload_len - 1;
+        form[last] ^= 0xff;
+        *packed = form.into();
+    }
+
+    // Each version's save kept as an earlier session is an
+    // `inputs/0-….packed` and an `outputs/0-….packed` entry far smaller
+    // than the save — the packed form compressed — which `read_bundle`
+    // inflates and `rebuild` turns back into the file byte for byte, so
+    // the write still replays to `Matches`. A packed byte flipped and
+    // the rebuilt save fails the row's SHA-256: the bundle is refused
+    // and nothing replays.
+    // SE-REP-07
+    #[test]
+    fn an_earlier_sessions_packed_saves_rebuild_and_replay() {
+        for version in [
+            PesVersion::Pes15,
+            PesVersion::Pes16,
+            PesVersion::Pes17,
+            PesVersion::Pes18,
+            PesVersion::Pes19,
+            PesVersion::Pes20,
+            PesVersion::Pes21,
+        ] {
+            let dir = scratch(&format!("replay_session_{version:?}"));
+            let save = pes_savefile::fixture_save(version);
+            let rx = recorded_session(&dir, version);
+            let folder = written_session(&dir.join("sessions"), rx, |_| {});
+            for entry in [
+                "inputs/0-EDIT00000000.packed",
+                "outputs/0-EDIT00000000.packed",
+            ] {
+                let kept = std::fs::metadata(folder.join(entry))
+                    .unwrap_or_else(|_| panic!("{version:?}: the {entry} entry is packed"));
+                assert!(
+                    kept.len() < save.len() as u64,
+                    "{version:?}: {entry} is smaller than the save"
+                );
+            }
+            let out = dir.join("session.zip");
+            std::fs::write(&out, session_bundle(&folder, None).unwrap()).unwrap();
+            let bundle = read_bundle(&out, rebuild_save).unwrap();
+            let outcomes = replay(&bundle).unwrap();
+            assert!(
+                matches!(&outcomes[..], [Outcome::Matches { .. }]),
+                "{version:?}: the write matches: {outcomes:?}"
+            );
+
+            // A byte of a decrypted section flipped: the rebuilt save
+            // fails the row's SHA-256 and nothing is replayed.
+            let rx = recorded_session(&dir, version);
+            let folder = written_session(&dir.join("flipped_sessions"), rx, flip_last_payload_byte);
+            let out = dir.join("flipped.zip");
+            std::fs::write(&out, session_bundle(&folder, None).unwrap()).unwrap();
+            let error = read_bundle(&out, rebuild_save)
+                .err()
+                .expect("the flipped bundle is refused");
+            assert!(
+                format!("{error:#}").contains("SHA-256"),
+                "{version:?}: the refusal names the SHA-256: {error:#}"
+            );
+        }
     }
 
     // An op this build cannot read is a `ReplayError` naming its step.

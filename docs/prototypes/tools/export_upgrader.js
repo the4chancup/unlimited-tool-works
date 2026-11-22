@@ -60,7 +60,9 @@ const EXPORT_UPGRADER_CSS = `
      exports scroll under it (egui: a row drawn above the scroll area). */
   .eu-pairs { flex: 1; min-height: 0; overflow: auto; padding: 0 8px 8px; }
   .eu-export { margin-bottom: 20px; }
-  .eu-head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .eu-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+  .eu-head .side { width: 38%; min-width: 0; display: flex; align-items: center; gap: 8px; }
+  .eu-head .path { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .eu-cols { display: flex; justify-content: space-between; position: sticky; top: 0; z-index: 2;
     background: var(--panel); padding: 8px 0 4px; }
   .eu-cols span { width: 38%; }
@@ -213,7 +215,11 @@ const D = { size: "many" };
 const SETS = sampleExports();
 // `view`: the look the member picked with the toggle, or null while the count
 // of exports chooses (the grid from five on).
-const S = { view: null, loose: false, savefile: "", savefileEdited: false, detail: null, highlight: null,
+// The detail window's cells (`pin`, `hover`, `muted`, `under`), each
+// { key, what, slot }: the Compiler's rules, gui.md there.
+const S = { view: null, loose: false, savefile: "", savefileEdited: false, highlight: null,
+  pin: null, hover: null, muted: null, under: null, pinBefore: null, copied: null, logStartSet: false,
+  detailPos: JSON.parse(localStorage.getItem("drafts.eu.detail_pos") || "null"),
   run: null, last: null, finished: false, logScroll: 0,
   legendShut: localStorage.getItem("drafts.eu.legend_shut") === "1" };
 const L = { log: [], logHeight: 160, logCollapsed: false, logFilter: "all", logStick: true, logNew: 0 };
@@ -258,26 +264,129 @@ function look(x, c) {
   return { state, fill, text: labelColour(fill), outline: OUTLINES[state] || null };
 }
 const lookStyle = l => `background:${l.fill}; color:${l.text}` + (l.outline ? `; --ol:${l.outline}` : "");
-function cellTip(x, c) {
-  const lines = [...c.src, "→ " + c.dst, STATE_NAMES[shown(x, c)]];
-  if (blocked(x)) lines.push(blocked(x));
-  else if (x.failed || hasError(x)) lines.push("An export with an Error is not written: fix the red cell first");
-  if (c.note) lines.push(c.note);
-  for (const code of c.codes) lines.push(`${severity(code)} - ${code}: ${messageOf(code)}`);
-  return lines.join("\n");
-}
 const scopeOf = (x, what, slot) => `${x.name} ${what}${slot ? " " + slot : ""}`;
+
+// ---- The detail window's cell: hover opens it, a click pins it ----
+// The Compiler's machinery (team_compiler.js, the same names), one shared
+// widget in egui: a cell is { key, what, slot }, slot absent for the label,
+// the portraits, the IDs and the left-out count.
+const HOVER_DELAY = 150, TOOLTIP_GRACE = 200;
+const cellAt = (key, what, slot) => ({ key, what, slot: slot || undefined });
+const sameCell = (a, b) => !!a && !!b && a.key === b.key && a.what === b.what && a.slot === b.slot;
+const pinEl = at => sameCell(S.pin, at) ? h("span", { class: "tc-pin" }, "📌") : null;
+let hoverTimer = null, hoverEndedAt = -Infinity;
+function hoverEnter(at) {
+  S.under = at;
+  if (S.pin || sameCell(S.muted, at)) return;
+  clearTimeout(hoverTimer);
+  const show = () => { S.hover = at; redrawDetail(); };
+  if (S.hover || performance.now() - hoverEndedAt < TOOLTIP_GRACE) show();
+  else hoverTimer = setTimeout(show, HOVER_DELAY);
+}
+function hoverLeave() {
+  clearTimeout(hoverTimer);
+  S.muted = S.under = null;
+  if (!S.hover) return;
+  S.hover = null;
+  hoverEndedAt = performance.now();
+  redrawDetail();
+}
+function cellClick(e, at) {
+  if (e.detail > 1) return;
+  S.pinBefore = S.pin;
+  S.muted = sameCell(S.pin, at) ? at : null;
+  S.pin = S.muted ? null : at;
+  S.hover = null;
+  render();
+}
+function cellDoubleClick(x, at) {
+  S.pin = S.pinBefore;
+  S.hover = null;
+  render();
+  const path = oldPath(x, at);
+  if (path) openOld(path);
+}
+const detailEvents = (x, at) => ({
+  onmouseenter: () => hoverEnter(at), onmouseleave: hoverLeave,
+  onclick: e => cellClick(e, at), ondblclick: () => cellDoubleClick(x, at) });
+// A click on the grid's or the files' empty space unpins.
+function emptyClick(e) {
+  if (!S.pin || e.target.closest(".tc-cell, .tc-name, .eu-box, button, input, select")) return;
+  S.pin = null;
+  render();
+}
+function onKey(e) {
+  if (e.key !== "Escape" || !(S.pin || S.hover)) return;
+  clearTimeout(hoverTimer);
+  S.pin = S.hover = null;
+  S.muted = S.under;
+  render();
+}
+// What a double-click opens: the old path the cell is read from first (a
+// file's folder, the file selected), the export's own folder for its label;
+// an archive's folder with the archive selected. The IDs and the left-out
+// count stand for no one path.
+function oldPath(x, at) {
+  if (at.what === "ids" || at.what === "left") return null;
+  if (x.archive || at.what === "label") return x.old;
+  if (at.what === "portraits") return `${x.old}\\Portraits`;
+  const c = cellOfAt(x, at);
+  return c ? `${x.old}\\${c.src[0]}` : null;
+}
+const openOld = path => window_("Open folder",
+  h("p", {}, "The file manager opens here, on ", h("span", { class: "mono" }, `${EXE_FOLDER}\\old_exports\\${path}`), "."),
+  button("Close", closeWindow), "open-folder");
+function cellOfAt(x, at) {
+  const w = at.what;
+  return w === "label" ? x.label : w === "face" ? x.faces[+at.slot]
+    : w === "boots" || w === "gloves" ? x[w][+at.slot]
+    : w === "kit" ? x.kits[at.slot] : w === "file" ? x.files[at.slot]
+    : w === "portraits" ? x.portraits : w === "ids" ? x.ids : w === "left" ? leftCell(x) : null;
+}
+function redrawDetail() {
+  const pipe = document.querySelector("#center .pipe");
+  if (!pipe) return;
+  const old = pipe.querySelector(".tc-detail");
+  if (old) old.remove();
+  const win = detailPanel();
+  if (win) pipe.append(win);
+}
+function dragDetail(e, win) {
+  if (e.button !== 0 || e.target.closest("button")) return;
+  const scale = winScale(), x0 = e.clientX, y0 = e.clientY;
+  const from = { x: win.offsetLeft, y: win.offsetTop };
+  const move = ev => {
+    S.detailPos = { x: Math.max(0, from.x + (ev.clientX - x0) / scale), y: Math.max(0, from.y + (ev.clientY - y0) / scale) };
+    win.style.left = S.detailPos.x + "px"; win.style.top = S.detailPos.y + "px"; win.style.right = "";
+  };
+  const up = () => {
+    document.removeEventListener("mousemove", move);
+    document.removeEventListener("mouseup", up);
+    if (S.detailPos) localStorage.setItem("drafts.eu.detail_pos", JSON.stringify(S.detailPos));
+  };
+  document.addEventListener("mousemove", move);
+  document.addEventListener("mouseup", up);
+  e.preventDefault();
+}
+// An export's log lines as the console prints them; "Copied" for a moment.
+function copyMessages(x) {
+  lastCopied = L.log.filter(l => l.at && l.at.key === x.key).map(l => l.text).join("\n");
+  navigator.clipboard?.writeText(lastCopied)?.catch(() => {});
+  S.copied = x.key;
+  redrawDetail();
+  setTimeout(() => { S.copied = null; redrawDetail(); }, 1500);
+}
 
 // ---- The grid (five exports or more) ----
 function cellEl(x, c, text, what, slot, cls = "") {
-  const l = look(x, c), scope = scopeOf(x, what, slot);
+  const l = look(x, c), scope = scopeOf(x, what, slot), at = cellAt(x.key, what, slot);
   const swatch = c.swatch && !["unchecked", "checking", "blocked"].includes(l.state);
-  return h("div", { class: `tc-cell ${cls}` + (c.busy ? " busy" : "") + (l.state === "blocked" ? " blocked" : "")
+  return [h("div", { class: `tc-cell ${cls}` + (c.busy ? " busy" : "") + (l.state === "blocked" ? " blocked" : "")
       + (l.outline ? " ol" : "") + (swatch ? " kit" : "") + (S.highlight === scope ? " hl" : ""),
-    style: lookStyle(l), title: cellTip(x, c), "data-scope": scope,
-    onclick: () => { S.detail = { key: x.key, what, slot }; render(); } },
+    style: lookStyle(l), "data-scope": scope, ...detailEvents(x, at) },
     text,
-    swatch ? h("span", { class: "tc-sw", style: `background:linear-gradient(90deg, ${c.swatch[0]} 50%, ${c.swatch[1]} 50%)` }) : null);
+    swatch ? h("span", { class: "tc-sw", style: `background:linear-gradient(90deg, ${c.swatch[0]} 50%, ${c.swatch[1]} 50%)` }) : null),
+    pinEl(at)];
 }
 const vline = () => h("td", { class: "tc-line" }, h("div", {}));
 const gap = () => h("td", { class: "tc-gap" }, h("div", {}));
@@ -288,11 +397,10 @@ const RIGHT = 3 + KIT_SLOTS.length;
 
 function labelCell(x, span) {
   const l = look(x, x.label);
+  const at = cellAt(x.key, "label");
   return h("td", { class: "tc-name mono" + (l.outline ? " ol" : "") + (S.highlight === x.name ? " hl" : ""),
-    rowspan: String(span), style: lookStyle(l), "data-scope": x.name,
-    title: [x.old + (x.archive ? " (an archive: extracted to read it)" : ""), "→ exports\\" + outName(x),
-      STATE_NAMES[l.state], blocked(x) || ""].filter(Boolean).join("\n"),
-    onclick: () => { S.detail = { key: x.key, what: "label" }; render(); } }, x.name);
+    rowspan: String(span), style: lookStyle(l) + "; position:relative", "data-scope": x.name,
+    ...detailEvents(x, at) }, x.name, pinEl(at));
 }
 // The row's own choice, right of the last line: Full or Midcup, prefilled with
 // the name's guess. sample: a combo; the first draft had a pair of buttons.
@@ -462,14 +570,22 @@ function nodeState(x, n) {
 const SVG = "http://www.w3.org/2000/svg";
 function flowBlock(x) {
   const why = blocked(x), l = look(x, x.label);
+  const labelAt = cellAt(x.key, "label");
+  // Each name under its column: the old one beside the label, the upgraded
+  // one where the upgraded boxes start, with the tag at the right end. A
+  // blocked export writes nothing, so its right side says why instead.
   const head = h("div", { class: "eu-head" },
-    h("span", { class: "tc-name mono" + (l.outline ? " ol" : ""), style: lookStyle(l) + "; display:inline-flex; align-items:center; justify-content:center",
-      title: STATE_NAMES[l.state] }, x.name),
-    h("span", { class: "mono" }, x.old), weak("→"), h("span", { class: "mono" }, "exports\\" + outName(x)),
-    why ? h("span", { style: `color:${ERR}` }, why) : null, why ? rowAct(x) : null,
-    h("span", { style: "flex:1" }),
-    why ? null : combo([["Full", "Full export"], ["Midcup", "Midcup export"]], x.tag, v => { x.tag = v; },
-      { title: "Prefilled: " + x.guess, disabled: !!S.run }));
+    h("div", { class: "side" },
+      h("span", { class: "tc-name mono" + (l.outline ? " ol" : "") + (S.highlight === x.name ? " hl" : ""),
+        style: lookStyle(l) + "; display:inline-flex; align-items:center; justify-content:center; position:relative",
+        "data-scope": x.name, ...detailEvents(x, labelAt) }, x.name, pinEl(labelAt)),
+      h("span", { class: "mono path" }, "old_exports\\" + x.old)),
+    h("div", { class: "side right" },
+      why ? h("span", { style: `color:${ERR}` }, why) : h("span", { class: "mono path" }, "exports\\" + outName(x)),
+      why ? rowAct(x) : null,
+      h("span", { style: "flex:1" }),
+      why ? null : combo([["Full", "Full export"], ["Midcup", "Midcup export"]], x.tag, v => { x.tag = v; },
+        { title: "Prefilled: " + x.guess, disabled: !!S.run })));
   if (why) return h("div", { class: "eu-export", "data-panel": "export-" + x.key }, head);
   const flow = flowOf(x);
   const map = h("div", { class: "eu-flow", style: `height:${flow.height}px` });
@@ -505,14 +621,14 @@ function flowBlock(x) {
   };
   const box = (n, right) => {
     const state = nodeState(x, n), scope = scopeOf(x, n.open.what, n.open.slot);
+    const at = cellAt(x.key, n.open.what, n.open.slot), ev = detailEvents(x, at);
     return h("div", { class: `eu-box ${n.kind} ${right ? "right" : "left"}` + (right && written(n) ? " lit" : "")
         + (state === "busy" ? " busy" : "") + (S.highlight === scope ? " hl" : ""),
-      style: `top:${n.y}px`, "data-node": n.id, "data-scope": scope,
-      title: [...new Set(n.cells.map(c => cellTip(x, c)))].slice(0, 3).join("\n\n"),
-      onmouseenter: () => focus(n.id), onmouseleave: () => { leave = setTimeout(() => map.classList.remove("focus"), 120); },
-      onclick: () => { S.detail = { key: x.key, ...n.open }; render(); } },
+      style: `top:${n.y}px`, "data-node": n.id, "data-scope": scope, ...ev,
+      onmouseenter: () => { focus(n.id); ev.onmouseenter(); },
+      onmouseleave: () => { leave = setTimeout(() => map.classList.remove("focus"), 120); ev.onmouseleave(); } },
       sq(state === "busy" ? "checking" : state, "eu-sq"), h("span", { class: "mono text" }, n.text),
-      n.sub ? h("span", { class: "sub" }, n.sub) : null);
+      n.sub ? h("span", { class: "sub" }, n.sub) : null, pinEl(at));
   };
   map.append(...flow.L.map(n => box(n, false)), ...flow.R.map(n => box(n, true)));
   return h("div", { class: "eu-export", "data-panel": "export-" + x.key }, head, map);
@@ -526,18 +642,17 @@ function flowLegend() {
     line("plain", "team files"), line("out", "not carried"), line("plain", "information read", true));
 }
 
-// ---- The detail window: what a clicked cell is read from and written to ----
+// ---- The detail window: what a cell is read from and written to ----
 function detailPanel() {
-  const d = S.detail, x = d && rows().find(o => o.key === d.key);
+  const d = S.pin || S.hover, x = d && rows().find(o => o.key === d.key);
   if (!x) return null;
-  const c = d.what === "label" ? null : d.what === "face" ? x.faces[+d.slot]
-    : d.what === "boots" || d.what === "gloves" ? x[d.what][+d.slot]
-    : d.what === "kit" ? x.kits[d.slot] : d.what === "file" ? x.files[d.slot]
-    : d.what === "portraits" ? x.portraits : d.what === "ids" ? x.ids : leftCell(x);
+  const pinned = !!S.pin;
+  const c = d.what === "label" ? null : cellOfAt(x, d);
   const title = d.what === "label" ? x.name : `${x.name} ${d.what}${d.slot ? " " + d.slot : ""}`;
   const paths = c ? [weak("From"), ...c.src.map(p => h("div", { class: "mono path" }, p)),
       weak("To"), h("div", { class: "mono path" }, c.dst)]
-    : [weak("From"), h("div", { class: "mono path" }, "old_exports\\" + x.old),
+    : [weak("From"), h("div", { class: "mono path" }, "old_exports\\" + x.old
+        + (x.archive ? " (an archive: extracted to read it)" : "")),
       weak("To"), h("div", { class: "mono path" }, "exports\\" + outName(x))];
   const extra = [];
   if (c && c.wearers) extra.push(h("p", {}, c.wearers.length > 1
@@ -548,15 +663,23 @@ function detailPanel() {
   for (const code of c ? c.codes : x.label.codes)
     extra.push(h("div", { class: "find" }, strong(`${severity(code)} · ${code}`), h("div", {}, messageOf(code))));
   const state = c ? shown(x, c) : look(x, x.label).state;
-  // sample: fixed at the panel's right; the compiler's is dragged by its bar.
-  return h("div", { class: "tc-detail eu-detail", "data-panel": "detail" },
-    h("div", { class: "bar" }, strong(title), h("span", { style: "flex:1" }),
-      button("✕", () => { S.detail = null; render(); }, { frame0: true, title: "Close" })),
+  if (c && !blocked(x) && (x.failed || hasError(x)))
+    extra.push(h("p", {}, "An export with an Error is not written: fix the red cell first"));
+  // Where the member last left it; at first at the panel's right.
+  const pos = S.detailPos ? `left:${S.detailPos.x}px; top:${S.detailPos.y}px` : "";
+  const win = h("div", { class: "tc-detail eu-detail" + (pinned ? "" : " hover"), "data-panel": "detail", style: pos });
+  win.append(
+    h("div", { class: "bar", onmousedown: e => { if (pinned) dragDetail(e, win); } },
+      strong(title), h("span", { style: "flex:1" }),
+      pinned ? button(h("span", { class: "pin" }, "📌"), () => { S.pin = null; render(); },
+        { frame0: true, title: "Unpin" }) : null),
     h("div", { class: "body" }, h("p", {}, sq(state, "eu-sq"), " ", STATE_NAMES[state],
       blocked(x) ? h("div", { style: `color:${ERR}` }, blocked(x)) : null), ...paths, ...extra,
-      row(button("Open the old folder", () => window_("Open folder",
-        h("p", {}, "The file manager opens here, on ", h("span", { class: "mono" }, `${EXE_FOLDER}\\old_exports\\${x.old}`), "."),
-        button("Close", closeWindow), "open-folder")))));
+      row(button("Open the old folder", () => openOld(x.old)),
+        d.what === "label" && L.log.some(l => l.at && l.at.key === x.key)
+          ? button(S.copied === x.key ? "Copied" : "Copy messages", () => copyMessages(x),
+            { title: "Puts this export's log lines on the clipboard, to send to its member" }) : null)));
+  return win;
 }
 
 // ---- The arguments: the save the players' looks are read from, or none ----
@@ -582,25 +705,36 @@ function argsRow() {
     // picks one, which then holds whatever the count (two selectable labels).
     // sample: the two names, and that the pick lasts for the session.
     h("span", { class: "eu-look", "data-panel": "look" },
-      selectable("Grid", gridLook(), () => { S.view = "grid"; render(); },
-        "One row of cells per export: the look for many exports"),
       selectable("Files", !gridLook(), () => { S.view = "files"; render(); },
-        "Each export's old files beside where they go: the look for a few exports")));
+        "Each export's old files beside where they go: the look for a few exports"),
+      selectable("Grid", gridLook(), () => { S.view = "grid"; render(); },
+        "One row of cells per export: the look for many exports")));
 }
 
 // ---- The toolbar: the strip and the Upgrade button ----
+// The counts that name a kind of log line set the log's filter on a click, in
+// the link blue only while the log is collapsed (the Compiler's strip).
 function summary() {
   const all = rows(), count = (n, one, many = one) => n ? `${n} ${n === 1 ? one : many}` : null;
-  return [count(all.length, "old export", "old exports"), count(all.filter(eligible).length, "ready"),
-    count(all.filter(x => !blocked(x) && hasError(x)).length, "with errors"),
-    count(all.filter(x => blocked(x)).length, "cannot be read", "cannot be read"),
-    count(all.filter(x => eligible(x) && (x.left.length || everyCell(x).some(c => c.status === "warning"))).length, "with warnings")]
-    .filter(Boolean).join(" · ");
+  const filterLink = (text, filter, title) => text && h("span", {
+    class: "tc-count" + (L.logCollapsed ? " on" : ""), title,
+    onclick: () => { L.logFilter = filter; L.logCollapsed = false; render(); } }, text);
+  const errors = "Show only the errors in the log";
+  // After a run its line already says how many were written (the ready ones)
+  // and the exports with errors are the ones not written: no count twice.
+  const parts = [S.last ? null : count(all.length, "old export", "old exports"),
+    S.last ? null : count(all.filter(eligible).length, "ready"),
+    filterLink(count(all.filter(x => !blocked(x) && hasError(x)).length, "with errors"), "errors", errors),
+    filterLink(count(all.filter(x => blocked(x)).length, "cannot be read", "cannot be read"), "errors", errors),
+    filterLink(count(all.filter(x => eligible(x) && (x.left.length || everyCell(x).some(c => c.status === "warning"))).length, "with warnings"),
+      "warnings", "Show only the warnings and errors in the log")]
+    .filter(Boolean);
+  return parts.flatMap((p, i) => i ? [" · ", p] : [p]);
 }
 function toolbar() {
-  const run = S.run, can = rows().some(eligible);
+  const run = S.run, can = rows().some(eligible), sum = summary();
   const strip = run ? `Upgrading · ${mmss(run.elapsed)} · ${run.done} of ${run.tasks.length} folders written`
-    : [S.last, summary()].filter(Boolean).join("  —  ");
+    : S.last && sum.length ? [S.last, " · ", ...sum] : S.last || sum;
   const main = button(run ? "Cancel" : "Upgrade", run ? cancelRun : askRun,
     { disabled: !run && !can, title: !run && !can ? "No old export is ready to upgrade" : null });
   main.id = "upgrade-btn";
@@ -610,7 +744,7 @@ function toolbar() {
     // The step after an upgrade. Always there; once a run has finished it
     // turns the accent blue (egui: the button's fill set to the selection
     // colour), the view's one blue button, until the next run starts.
-    named(Object.assign(button("Open the Compiler", () => switchToTool("compiler"),
+    named(Object.assign(button("Switch to the Compiler", () => switchToTool("compiler"),
       { disabled: !!run, title: "The upgraded exports are in its exports folder: it checks them like any other" }),
       { className: S.finished && !run ? "eu-next" : "" }), "next"),
     h("div", { class: "tc-split" }, main, arrow));
@@ -649,14 +783,13 @@ function startRun() {
   for (const x of rows()) { delete x.failed; for (const c of everyCell(x)) { delete c.out; delete c.busy; } }
   const lines = [];
   for (const x of rows()) if (!blocked(x) && hasError(x)) { x.failed = true;
-    lines.push({ severity: "Error", code: "migration_not_clean", scope: x.name,
-      text: `Error - ${x.name} - migration_not_clean: nothing written; fix the Error and upgrade again` }); }
+    lines.push(line("Error", x, cellAt(x.key, "label"), "migration_not_clean", x.name)); }
   const ready = rows().filter(eligible);
   const tasks = ready.flatMap(x => everyCell(x).map(c => ({ x, c })))
     .map((t, i) => ({ ...t, order: (i * 7919) % 211 })).sort((a, b) => a.order - b.order);
   const start = Date.now();
   S.finished = false; S.last = null;
-  S.run = { tasks, at: 0, done: 0, elapsed: 0, exports: ready.length, failed: lines.length };
+  S.run = { tasks, at: 0, done: 0, elapsed: 0, exports: ready.length };
   appendLog([{ severity: "Info", code: null, scope: null, text: `Info - Upgrade: ${ready.length} exports` }, ...lines], L);
   S.run.timer = setInterval(() => {
     const run = S.run;
@@ -676,12 +809,11 @@ function stopRun() { clearInterval(S.run.timer); toolActivity("export-upgrader",
 function endRun() {
   const run = S.run;
   stopRun(); S.run = null; S.finished = true;
-  S.last = `Upgrade finished in ${mmss(run.elapsed)} · ${run.exports} written to exports`
-    + (run.failed ? ` · ${run.failed} not written` : "");
+  S.last = `Upgrade finished in ${mmss(run.elapsed)} · ${run.exports} written to exports`;
   appendLog(rows().filter(x => labelOut(x) === "done" || labelOut(x) === "doneWarn").flatMap(x => [
-    ...x.left.map(([path, why]) => ({ severity: "Warning", code: "leftover_dropped", scope: scopeOf(x, "left"),
-      text: `Warning - ${x.name} - leftover_dropped at ${path} (${why})` })),
-    { severity: "Info", code: "migration_clean", scope: x.name, text: `Info - ${x.name} - migration_clean: exports\\${outName(x)}` }]), L);
+    ...x.left.map(([path, why]) => line("Warning", x, cellAt(x.key, "left"), "leftover_dropped", scopeOf(x, "left"),
+      ` at ${path} (${why})`)),
+    line("Info", x, cellAt(x.key, "label"), "migration_clean", x.name, ` at exports\\${outName(x)}`)]), L);
   publishNotice(`Upgraded ${run.exports} exports`, { label: "Open exports folder", run: () => {} }, "success");
   render();
 }
@@ -693,22 +825,40 @@ function cancelRun() {
   render();
 }
 
-// The reading's findings as log lines, once: a click on one outlines its cell or row.
+// A log line, as the console prints it: `Severity - /team/ - code`, then
+// `rest`. `head` is what a wrapped line's rows indent past; `at`, the cell the
+// line stands for, which its hover and click act on; `scope`, what it outlines.
+function line(sev, x, at, code, scope, rest = "") {
+  const head = `${sev} - ${x.name} - `;
+  return { severity: sev, code, scope, head, at, text: head + code + rest };
+}
+// The reading's findings as log lines, once.
 function seedLog() {
   L.log = [];
   for (const x of rows()) {
-    if (blocked(x)) L.log.push({ severity: "Error", code: null, scope: x.name, text: `Error - ${x.name} - ${blocked(x)}` });
-    const each = (c, scope) => { for (const code of c.codes) L.log.push({ severity: severity(code), code, scope,
-      text: `${severity(code)} - ${scope} - ${code}: ${c.note || messageOf(code)}` }); };
-    for (const [n, c] of Object.entries(x.faces)) each(c, scopeOf(x, "face", pad(n)));
-    for (const [k, c] of Object.entries(x.kits)) each(c, scopeOf(x, "kit", k));
-    for (const [k, c] of Object.entries(x.files)) each(c, scopeOf(x, "file", k));
-    each(x.portraits, scopeOf(x, "portraits"));
+    if (blocked(x)) {
+      const head = `Error - ${x.name} - `;
+      L.log.push({ severity: "Error", code: null, scope: x.name, head, at: cellAt(x.key, "label"), text: head + blocked(x) });
+    }
+    const each = (c, what, slot) => { for (const code of c.codes)
+      L.log.push(line(severity(code), x, cellAt(x.key, what, slot), code, scopeOf(x, what, slot), ` at ${c.src[0]}`)); };
+    for (const [n, c] of Object.entries(x.faces)) each(c, "face", pad(n));
+    for (const [k, c] of Object.entries(x.kits)) each(c, "kit", k);
+    for (const [k, c] of Object.entries(x.files)) each(c, "file", k);
+    each(x.portraits, "portraits");
   }
 }
 seedLog();
-function gotoCell(scope) {
+// A line acts for its cell: hovering it opens the cell's window; a click
+// outlines the cell and pins its window, a second click unpins, the outline
+// staying.
+function gotoCell(scope, l) {
   S.highlight = scope;
+  if (l && l.at) {
+    S.muted = sameCell(S.pin, l.at) ? l.at : null;
+    S.pin = S.muted ? null : l.at;
+    S.hover = null;
+  }
   render();
   const el = document.querySelector(`#center [data-scope="${scope}"]`);
   if (el) el.scrollIntoView({ block: "nearest", inline: "nearest" });
@@ -723,6 +873,9 @@ function drawView(center) {
   const oldLog = center.querySelector(".log-body");
   if (oldLog) S.logScroll = oldLog.scrollTop;
   const oldPairs = center.querySelector(".eu-pairs"), pairsTop = oldPairs ? oldPairs.scrollTop : 0;
+  // A redraw keeps the grid where the member scrolled it (egui keeps a
+  // ScrollArea's offset), or a click's redraw moves the next click's target.
+  const oldGrid = center.querySelector(".pipe-grid"), gridAt = oldGrid ? [oldGrid.scrollLeft, oldGrid.scrollTop] : [0, 0];
   center.innerHTML = "";
   center.classList.add("tc-view");
   const all = rows(), many = gridLook();
@@ -730,29 +883,42 @@ function drawView(center) {
     ? h("div", { class: "tc-top" }, h("div", { class: "pipe-grid" }, h("div", { class: "tc-empty", "data-panel": "empty" },
         h("p", {}, strong("No old exports found")), h("p", { class: "mono" }, EXE_FOLDER + "\\old_exports"),
         h("p", {}, "Drop an old export here: a folder, a .zip or a .7z."))))
-    : many ? h("div", { class: "tc-top" }, h("div", { class: "pipe-grid" }, grid()))
-    : h("div", { class: "eu-pairs", "data-panel": "pairs" },
+    : many ? h("div", { class: "tc-top", onclick: emptyClick }, h("div", { class: "pipe-grid" }, grid()))
+    : h("div", { class: "eu-pairs", "data-panel": "pairs", onclick: emptyClick },
         h("div", { class: "eu-cols weak" }, h("span", {}, "Old export"), h("span", {}, "Upgraded export")),
         all.map(flowBlock));
   center.append(h("div", { class: "pipe" }, argsRow(), !all.length ? null : many ? legend() : flowLegend(), body, toolbar(),
-    named(logPanel(L, { tool: "export-upgrader", onLine: gotoCell }), "log"), detailPanel()));
+    named(logPanel(L, { tool: "export-upgrader", onLine: gotoCell,
+      onLineEnter: l => { if (l.at) hoverEnter(l.at); }, onLineLeave: hoverLeave }), "log"), detailPanel()));
   const lb = center.querySelector(".log-body");
   if (lb) lb.scrollTop = L.logStick ? lb.scrollHeight : S.logScroll;
   const pairs = center.querySelector(".eu-pairs");
   if (pairs) pairs.scrollTop = pairsTop;
+  const gridArea = center.querySelector(".pipe-grid");
+  if (gridArea) [gridArea.scrollLeft, gridArea.scrollTop] = gridAt;
+  // The log starts collapsed when, open, it would push some cells or boxes
+  // out of view (the Compiler's rule): decided once, at the first draw with
+  // exports, measured once the host has laid the window out.
+  if (!S.logStartSet && all.length) {
+    S.logStartSet = true;
+    requestAnimationFrame(() => {
+      const area = document.querySelector("#center .pipe-grid, #center .eu-pairs");
+      if (area && !L.logCollapsed && area.scrollHeight > area.clientHeight) { L.logCollapsed = true; render(); }
+    });
+  }
 }
 
 // ---- Draft controls ----
 function reset() {
   Object.assign(SETS, sampleExports());
-  S.detail = null; S.highlight = null; S.last = null; S.finished = false; S.run = null;
+  S.pin = S.hover = null; S.highlight = null; S.last = null; S.finished = false; S.run = null;
   seedLog();
 }
 function draftControls() {
   return [
     h("label", { class: "cb" }, "old_exports holds",
       combo([["many", "13 exports (the grid)"], ["few", "3 exports (two columns)"], ["none", "nothing"]],
-        D.size, v => { D.size = v; S.detail = null; seedLog(); })),
+        D.size, v => { D.size = v; S.pin = S.hover = null; seedLog(); })),
     button("Reset the samples", () => { reset(); render(); }),
     collapsing("export-upgrader/walk", "What to look at", () => WALK.map(([what, how]) => h("div", {}, strong(what), " ", how)))];
 }
@@ -764,7 +930,8 @@ const WALK = [
   ["Full or Midcup", "the combo at each row's right, prefilled from the name (/a/: Midcup, from \"additions\")"],
   ["the files look", "set old_exports to 3 exports: a box per old folder left, a box per new one right, a line where each goes; point at a box to follow its lines (/egg/'s Boots\\k0920 goes to players 02, 03 and 04, the shared folder and the IDs); Upgrade lights each destination as it is written"],
   ["the toggle", "Grid and Files at the arguments' right end: either look for any number of exports; until one is picked the count chooses"],
-  ["a click", "on a cell, a row or a log line: the detail window, with the old and new paths and the findings"],
+  ["the detail window", "rest the pointer on a cell, a box, a label or a log line: the window opens on it, with the old and new paths and the findings; a click pins it (Esc, the pin or a click on empty space unpins); a double-click opens the old folder"],
+  ["Copy messages", "in a label's window, when the export has findings: its log lines on the clipboard"],
 ];
 
 const screen = () => "main";
@@ -773,7 +940,7 @@ function linkKeys() {
   if (D.size !== "many") k.exports = D.size;
   if (S.view) k.look = S.view;
   if (S.loose) k.loose = "1";
-  if (S.detail) k.detail = [S.detail.key, S.detail.what, S.detail.slot || ""].join(".");
+  if (S.pin) k.detail = [S.pin.key, S.pin.what, S.pin.slot || ""].join(".");
   if (S.finished && !S.run) k.run = "done";
   return k;
 }
@@ -785,7 +952,7 @@ function linkOpen(scr, keys) {
   if (keys.loose !== undefined) S.loose = keys.loose === "1";
   if (keys.detail !== undefined) {
     const [key, what, slotName] = keys.detail.split(".");
-    if (rows().some(x => x.key === key)) S.detail = { key, what, slot: slotName }; else linkWarn("detail=" + keys.detail);
+    if (rows().some(x => x.key === key)) S.pin = cellAt(key, what, slotName); else linkWarn("detail=" + keys.detail);
   }
   // run=done: the finished run's colours, without the timer.
   if (keys.run === "done") {
@@ -799,7 +966,7 @@ function linkOpen(scr, keys) {
 }
 
 registerTool({ id: "export-upgrader", css: EXPORT_UPGRADER_CSS, draw: drawView,
-  controls: draftControls, screen, linkKeys, linkOpen,
+  controls: draftControls, screen, linkKeys, linkOpen, onKey,
   // The screens scripts/drafts/draft_shots.py captures, as the links this view writes.
   shots: ["export_upgrader/main", "export_upgrader/main?run=done", "export_upgrader/main?detail=EGG.boots.07",
     "export_upgrader/main?exports=few", "export_upgrader/main?exports=few&run=done",

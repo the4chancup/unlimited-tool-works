@@ -55,7 +55,7 @@ pub(crate) fn scratch(name: &str) -> ScratchFolder {
 }
 
 /// Copies every file under `source` into `target`, folders created as needed.
-fn copy_tree(source: &Path, target: &Path) {
+pub(crate) fn copy_tree(source: &Path, target: &Path) {
     fs::create_dir_all(target).unwrap();
     for entry in fs::read_dir(source).unwrap() {
         let entry = entry.unwrap();

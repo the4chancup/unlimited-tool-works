@@ -1,7 +1,7 @@
 // The Compiler's draft (plans/team_compiler/gui.md), a view of the drafts'
 // host page, index.html: the live-validating team grid (one row per export, a
 // cell per player at fixed positions 01-23, 01-35 on the referee row, and a
-// cell for its portraits and a cell per kit), the detail panel a cell opens, the toolbar (the run strip and
+// cell for its portraits and a cell per kit), the detail window a hovered or pinned cell opens, the toolbar (the run strip and
 // the split Compile button with its output modes) and the log panel.
 // An initial draft: the rows are samples built to show every cell state and
 // every row action the plan names, not a recorded run. Team names and IDs are
@@ -22,7 +22,7 @@
 // button, combo, cb, collapsing, window_, closeWindow, publishNotice,
 // shellPesVersion, switchToTool, toolActivity, mmss, EXE_FOLDER, appendLog,
 // logPanel, openHelp, openOutputStub, named, registerTool, CATALOG,
-// COMPILE_TEAMS, closeMenus, inWin) are the host's, index.html.
+// COMPILE_TEAMS, closeMenus, inWin, mdInline) are the host's, index.html.
 (() => {
 "use strict";
 
@@ -40,7 +40,7 @@ const TEAM_COMPILER_CSS = `
      centred; the grid takes
      the extra height, the log panel the width (plans/core/gui.md "A window larger than the
      default"). */
-  .tc-view .tc-legend, .tc-view .tc-top, .tc-view .tc-bar { width: 100%; box-sizing: border-box;
+  .tc-view .tc-legend-bar, .tc-view .tc-top, .tc-view .tc-bar { width: 100%; box-sizing: border-box;
     max-width: calc(var(--calib-w) + 16px + var(--sbw, 0px)); margin-left: auto; margin-right: auto; }
   /* Every margin of the grid is 8: the panel's left and top, each side of a
      vertical line, between the players, the portraits and the kits. The
@@ -128,20 +128,46 @@ const TEAM_COMPILER_CSS = `
   .tc-sw { position: absolute; left: 2px; right: 2px; bottom: 2px; height: 9px; }
   .tc-acts .row { flex-wrap: nowrap; }
   /* The detail window (egui: a Window inside the tool's panel, movable by its
-     title bar, where the member leaves it). */
+     title bar while pinned, where the member leaves it). */
   .tc-detail { position: absolute; z-index: 5; width: 300px; background: var(--panel);
     border: 1px solid var(--stroke); border-radius: 2px; box-shadow: 0 4px 16px #000a; }
+  /* Opened by a hover, it lets the pointer through (egui: an Area that senses
+     nothing), so a cell under it can still be hovered; only a pinned one is
+     dragged or clicked. */
+  .tc-detail.hover { pointer-events: none; }
+  .tc-detail.hover .bar { cursor: default; }
+  /* A pinned cell's pin: a round badge over the cell's top right corner, half
+     outside it, on the panel's fill so it reads over any cell colour and ring
+     (egui: a circle and the glyph in the strong text colour, set here because
+     the glyph would otherwise take whatever colour holds it, painted after the
+     row's cells, unclipped).
+     A team label holds it inside its own top right corner. */
+  .tc-slot { position: relative; }
+  .tc-pin { position: absolute; top: -5px; right: -5px; width: 14px; height: 14px;
+    border-radius: 50%; background: var(--panel); display: flex; align-items: center;
+    justify-content: center; font-size: 11px; line-height: 1; pointer-events: none; z-index: 3;
+    color: var(--strong); }
+  .tc-name .tc-pin { top: 1px; right: 1px; }
+  .tc-detail .bar .pin { font-size: 15px; }
+  /* A finding in the window: its code line, the file, then the catalog's text. */
+  .tc-detail .at { word-break: break-all; }
+  .tc-detail .what { margin-top: 2px; color: var(--text); }
   .tc-detail .bar { display: flex; align-items: center; padding: 2px 4px 2px 8px;
     border-bottom: 1px solid var(--stroke); cursor: move; user-select: none; }
   .tc-detail .body { padding: 8px; }
   .tc-detail .find { margin: 6px 0; }
-  /* sample: where a player's 3D preview will stand (a later feature). */
+  /* The window's top box: a player's 3D preview (a later feature; sample look), the
+     export's logo on the other cells. */
   .tc-detail .preview { height: 180px; margin-bottom: 8px; background: var(--extreme);
     border-radius: 2px; display: flex; align-items: center; justify-content: center; }
+  /* The export's logo, fitted inside the box (egui: an Image fitted to it). */
+  .tc-detail .preview img { max-width: 160px; max-height: 160px; }
   .tc-bar { display: flex; align-items: center; gap: 8px; padding: 4px 8px; min-height: 24px;
     border-top: 1px solid var(--stroke); }
   .tc-bar .strip { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis;
     white-space: nowrap; }
+  .tc-count { cursor: pointer; }
+  .tc-count.on { color: var(--link); }
   .tc-split { display: flex; gap: 1px; }
   .tc-split button:first-child { border-radius: 2px 0 0 2px; min-width: 150px; }
   .tc-split button:last-child { border-radius: 0 2px 2px 0; padding: 0 4px; }
@@ -159,6 +185,40 @@ const TEAM_COMPILER_CSS = `
   .tc-legend span.k { display: inline-flex; align-items: center; gap: 4px; }
   .tc-legend .tc-cell { width: 14px; height: 14px; cursor: default; }
   .tc-legend .two { line-height: 1.25; }
+  /* The legend's row: the legend, then the colouring, the unit and the sort at
+     the right end. */
+  .tc-legend-bar { display: flex; align-items: center; gap: 16px; }
+  .tc-modes { display: inline-flex; align-items: center; gap: 2px; margin-left: auto; white-space: nowrap; }
+  .tc-modes .sep-v { width: 1px; height: 14px; background: var(--stroke); margin: 0 6px; }
+  .tc-modes select { margin-left: 4px; }
+  .tc-unit { display: inline-flex; gap: 2px; }
+  /* Disabled as the Save editor's formation picker is (.fsel.off): the chosen
+     unit as a disabled button, not on the selection's blue, the other in the
+     disabled grey. */
+  .tc-unit.off .sel { pointer-events: none; color: #5a5a5a; }
+  .tc-unit.off .sel.on { background: #2b2b2b; color: #5a5a5a; }
+  /* A kit's texture or the logo, fitted in the top box. */
+  .tc-detail .preview img { max-width: 180px; }
+  /* The portraits: 6 x 4 tiles filling the box, the logo at the bottom right.
+     Portraits and logos keep their transparency: no tile background behind them. */
+  .tc-detail .preview.portraits { display: grid; grid-template-columns: repeat(6, 1fr);
+    grid-template-rows: repeat(4, 1fr); gap: 2px; padding: 2px; box-sizing: border-box; }
+  .tc-detail .preview.portraits .tile { display: flex; align-items: center; justify-content: center;
+    min-width: 0; min-height: 0; color: var(--weak); overflow: hidden; }
+  .tc-detail .preview.portraits img { width: 100%; height: 100%; object-fit: contain; max-width: none; max-height: none; }
+  /* A player's box: his portrait and the logo in its bottom corners, each a
+     portraits tile's size (the box's width less its padding, over six). */
+  .tc-detail .preview { position: relative; }
+  .tc-detail .preview .tile.corner { position: absolute; bottom: 2px; width: 44px; height: 43px;
+    display: flex; align-items: center; justify-content: center; overflow: hidden; }
+  .tc-detail .preview .tile.corner.left { left: 2px; }
+  .tc-detail .preview .tile.corner.right { right: 2px; }
+  .tc-detail .preview .tile.corner img { width: 100%; height: 100%; object-fit: contain; max-width: none; max-height: none; }
+  .tc-detail .preview .logo { font-size: 9px; text-align: center; width: 100%; height: 100%;
+    display: flex; align-items: center; justify-content: center; }
+  /* The window's sizes, in the Sizes colouring. */
+  .tc-detail .sizes { margin: 6px 0; }
+  .tc-detail .sizes .file { display: flex; justify-content: space-between; gap: 8px; }
 `;
 
 // ---- Cell states (gui.md "Cell states"): the check-phase and compile-outcome colours ----
@@ -198,17 +258,24 @@ const with_ = (cells, n, patch) => { Object.assign(cells[n], patch); return cell
 // A row's portraits cell, by the row's key: how many of its players have a
 // portrait, the cell's status and its findings. A referee export has none.
 const PORTRAITS = {
-  "3": [23, "fullOk"],
+  dbg: [23, "fullOk"],
   // An old Portraits/player_05.dds, with the one-click rename the plan gives it.
-  a: [22, "error", ["portrait_name_invalid"],
-    { label: "Rename player_05.dds to 05.dds", folder: "Portraits", count: 23 }],
+  // The rename gives player 05 his portrait, so his portrait_missing goes too.
+  a: [21, "error", ["portrait_name_invalid"],
+    { label: "Rename player_05.dds to 05.dds", apply: r => {
+      Object.assign(r.portraits, { folder: "Portraits", count: 22, status: "fullOk", codes: [] });
+      delete r.portraits.fix;
+      Object.assign(r.players[5], { status: "fullOk", codes: [] }); } }, false,
+    { portrait_name_invalid: "Portraits/player_05.dds" }],
   // /adv/ 11's portrait is in the player's own folder: its finding colours
   // this cell and the player's.
-  civ4xg: [23, "fullOk"], inv1: [23, "fullOk"], aco: [23, "partialOk"], adv: [11, "error", ["texture_not_pow2"], null, true], an: [null, "unchecked"],
+  civ4xg: [23, "fullOk"], inv1: [23, "fullOk"], aco: [23, "partialOk"],
+  adv: [11, "error", ["texture_not_pow2"], null, true, { texture_not_pow2: "Players/11 - Player 11/portrait.png" }],
+  an: [null, "unchecked"],
   egg: [23, "fullOk"], bant: [23, "fullOk"], biz1: [20, "fullOk"], biz2: [20, "partialOk"] };
 function portraitsOf(key) {
-  const [count, status, codes = [], fix, dropFile] = PORTRAITS[key] || [];
-  return status ? { count, status, codes, fix, dropFile, folder: "Portraits" } : null;
+  const [count, status, codes = [], fix, dropFile, at] = PORTRAITS[key] || [];
+  return status ? { count, status, codes, fix, dropFile, at, folder: key === "a" ? "Portraits" : null } : null;
 }
 // Every cell of a row but its label: the players, the portraits, the kits.
 const cellsOf = r => [...Object.values(r.players), ...(r.portraits ? [r.portraits] : []),
@@ -216,7 +283,11 @@ const cellsOf = r => [...Object.values(r.players), ...(r.portraits ? [r.portrait
 
 function sampleRows() {
   return [
-    { key: "3", name: "/3/", id: 701, display: "3 Full Aesthetics Export Autumn26",
+    // Logos: the real /dbg/ export's logo.png, and the 4cc DLC's emblems of the
+    // other teams that have one, scaled to 160. /adv/ (a Midcup export) and
+    // Invitational 1 (a Full one, so an Error) stand for exports with none.
+    { key: "dbg", name: "/dbg/", id: 789, display: "dbg Full Aesthetics Export Autumn26",
+      logo: "assets/team_logos/dbg.png",
       label: { status: "fullOk", codes: [] }, players: players(1, 23),
       // Every kit slot, the widest a row gets.
       kits: { GK: kit("g1 - Keeper", "#f0c020", "#202020"), K1: kit("p1 - Home", "#c02020", "#f0f0f0"),
@@ -224,28 +295,41 @@ function sampleRows() {
         K4: kit("p4 - Retro", "#f0e0a0", "#803020"), K5: kit("p5 - Green", "#208040", "#f0f0f0"),
         K6: kit("p6 - Sky", "#60b0e0", "#f0f0f0"), K7: kit("p7 - Orange", "#f08020", "#202020"),
         K8: kit("p8 - Violet", "#7040b0", "#f0c020"), K9: kit("p9 - Grey", "#808080", "#202020") } },
-    { key: "a", name: "/a/", id: 702, display: "a Full Aesthetics Export Autumn26",
-      label: { status: "warning", codes: ["shared_folder_orphaned"] },
-      players: with_(with_(players(1, 23), 7, { status: "warning", codes: ["fmdl_texture_not_found"] }),
-        // sample: the one-click rename of a misnamed player folder; which code
-        // names that folder is not in the catalog yet, so the nearest stands in.
-        15, { status: "warning", codes: ["root_file_unexpected"], folder: "15 Snuffy",
-          fix: { label: "Rename to 15 - Snuffy", folder: "15 - Snuffy" } }),
+    // A player folder named `15_Snuffy` claims no slot, so it has no cell: its
+    // error is the label's, with the one-click rename that gives it slot 15.
+    { key: "a", name: "/a/", id: 702, display: "a Full Aesthetics Export Autumn26", logo: "assets/team_logos/a.png",
+      label: { status: "error", codes: ["shared_folder_orphaned", "player_folder_number_invalid"],
+        at: { shared_folder_orphaned: "Boots/Predator", player_folder_number_invalid: "Players/15_Snuffy" },
+        fix: { label: "Rename 15_Snuffy to 15 - Snuffy", apply: r => {
+          r.players[15] = { status: "fullOk", folder: "15 - Snuffy", codes: [] };
+          r.label = { status: "warning", codes: ["shared_folder_orphaned"],
+            at: { shared_folder_orphaned: "Boots/Predator" } }; } } },
+      // Player 05's one portrait is the misnamed Portraits/player_05.dds (on PES
+      // 2017 to 2021, the draft's default, a player with none is a Warning).
+      players: (({ 15: _, ...rest }) => rest)(with_(with_(players(1, 23), 7, { status: "warning",
+        codes: ["fmdl_texture_not_found"], at: { fmdl_texture_not_found: "Players/07 - Player 07/face_high.fmdl" } }),
+        5, { status: "warning", codes: ["portrait_missing"], at: { portrait_missing: "Players/05 - Player 05" },
+          ctx: { portrait_missing: "slot=05" } })),
       kits: { GK: kit("g1", "#30a050", "#101010"), K1: kit("p1 - Pink", "#f080b0", "#f0f0f0"),
-        K2: kit("p2 - Black", "#101010", "#101010", "fullOk", ["kit_colors_derived"]),
+        K2: { ...kit("p2 - Black", "#101010", "#101010", "fullOk", ["kit_colors_derived"]),
+          at: { kit_colors_derived: "Kits/p2 - Black" } },
         K3: kit("p3 - Third", "#6040a0", "#f0c020") } },
     { key: "aco", name: "/aco/", id: 703, display: "aco Full Aesthetics Export Autumn26.zip", archive: true,
+      logo: "assets/team_logos/aco.png",
       label: { status: "partialOk", codes: [] },
-      players: with_(players(1, 23, "partialOk"), 4, { status: "partialError", codes: ["texture_not_div4"] }),
+      players: with_(players(1, 23, "partialOk"), 4, { status: "partialError", codes: ["texture_not_div4"],
+        at: { texture_not_div4: "Players/04 - Player 04/face.dds" } }),
       kits: { GK: kit("g1", "#202020", "#f0f0f0", "partialOk"), K1: kit("p1", "#2060c0", "#f0f0f0", "partialOk") } },
     { key: "adv", name: "/adv/", id: 704, display: "adv Midcup Aesthetics Export Autumn26",
       label: { status: "fullOk", codes: [] },
-      players: with_(with_(players(1, 11), 5, { status: "error", codes: ["texture_not_div4"], dropFile: true }),
+      players: with_(with_(players(1, 11), 5, { status: "error", codes: ["texture_not_div4"], dropFile: true,
+        at: { texture_not_div4: "Players/05 - Player 05/hair.dds" } }),
         // A portrait kept in the player's folder: its finding is the player's too.
         11, { status: "error", codes: ["texture_not_pow2"], dropFile: true,
+          at: { texture_not_pow2: "Players/11 - Player 11/portrait.png" },
           note: "The finding is on this player's portrait, which is in his folder" }),
       kits: { K1: kit("p1 - Lakers", "#602080", "#f0c020") } },
-    { key: "an", name: "/an/", id: 705, display: "an Full Aesthetics Export Autumn26",
+    { key: "an", name: "/an/", id: 705, display: "an Full Aesthetics Export Autumn26", logo: "assets/team_logos/an.png",
       label: { status: "checking", codes: [] },
       players: { ...players(1, 9), ...players(10, 16, "checking"), ...players(17, 23, "unchecked") },
       kits: { GK: kit("g1", "#0a0a0a", "#0a0a0a", "unchecked"), K1: kit("p1", "#0a0a0a", "#0a0a0a", "unchecked") } },
@@ -253,28 +337,37 @@ function sampleRows() {
       label: { status: "error", codes: ["team_name_unknown"] }, blocked: "team_name_unknown",
       players: players(1, 23), kits: { GK: kit("g1", "#f0f0f0", "#c08020"), K1: kit("p1", "#f0e080", "#f0f0f0") } },
     { key: "asp", name: "/asp/", id: 706, display: "asp Aesthetics Export Autumn26", special: "untagged",
-      label: { status: "error", codes: ["export_tag_missing"] }, players: {}, kits: {} },
+      label: { status: "error", codes: ["export_tag_missing"],
+        ctx: { export_tag_missing: "name=asp Aesthetics Export Autumn26" } }, players: {}, kits: {} },
     { key: "b", name: "/b/", id: 707, display: "b Full Aesthetics Export Summer26", special: "old",
-      label: { status: "error", codes: ["export_layout_old"] }, players: {}, kits: {} },
+      label: { status: "error", codes: ["export_layout_old"], ctx: { export_layout_old: "folder=Kit Configs" } },
+      players: {}, kits: {} },
     { key: "bant", name: "/bant/", id: 708, display: "bant Full Aesthetics Export Autumn26", special: "disabled",
+      logo: "assets/team_logos/bant.png",
       label: { status: "fullOk", codes: ["export_disabled"] }, players: players(1, 23),
       kits: { GK: kit("g1", "#101010", "#f0f0f0"), K1: kit("p1", "#208040", "#f0f0f0") } },
     { key: "biz1", name: "/biz/", id: 709, display: "biz Full Aesthetics Export Autumn26", special: "clash",
-      label: { status: "error", codes: ["duplicate_aesthetics_export"] }, blocked: "duplicate_aesthetics_export",
+      logo: "assets/team_logos/biz.png",
+      label: { status: "error", codes: ["duplicate_aesthetics_export"],
+        ctx: { duplicate_aesthetics_export: "id=709, exports=biz Full Aesthetics Export Autumn26, biz Full Aesthetics Export Autumn26 v2.7z" } }, blocked: "duplicate_aesthetics_export",
       players: players(1, 23), kits: { K1: kit("p1", "#c0a020", "#101010") } },
     { key: "biz2", name: "/biz/", id: 709, display: "biz Full Aesthetics Export Autumn26 v2.7z", special: "clash",
-      archive: true, label: { status: "error", codes: ["duplicate_aesthetics_export"] },
+      archive: true, logo: "assets/team_logos/biz.png", label: { status: "error", codes: ["duplicate_aesthetics_export"],
+        ctx: { duplicate_aesthetics_export: "id=709, exports=biz Full Aesthetics Export Autumn26, biz Full Aesthetics Export Autumn26 v2.7z" } },
       blocked: "duplicate_aesthetics_export",
       players: players(1, 23, "partialOk"), kits: { K1: kit("p1", "#c0a020", "#101010", "partialOk") } },
     // A name too long for the label at the usual size.
-    { key: "civ4xg", name: "/civ4xg/", id: 788, display: "civ4xg Full Aesthetics Export Autumn26",
+    { key: "civ4xg", name: "/civ4xg/", id: 788, display: "civ4xg Full Aesthetics Export Autumn26", logo: "assets/team_logos/civ4xg.png",
       label: { status: "fullOk", codes: [] }, players: players(1, 23),
       kits: { GK: kit("g1", "#c0a020", "#202020"), K1: kit("p1", "#2050a0", "#c0a020") } },
     // A name that takes two lines of the label.
     { key: "inv1", name: "Invitational 1", id: 851, display: "Invitational 1 Full Aesthetics Export Autumn26",
-      label: { status: "fullOk", codes: [] }, players: players(1, 23),
+      label: { status: "error", codes: ["logo_missing"] }, players: players(1, 23),
       kits: { GK: kit("g1", "#202020", "#f0f0f0"), K1: kit("p1", "#f0f0f0", "#c02020") } },
+    // A referee export's window shows its marker texture (the real VGL27
+    // ref_marker.dds) where a team's shows the logo.
     { key: "refs", name: "/refs/", id: null, refs: true, display: "refs Full Aesthetics Export Autumn26",
+      logo: "assets/team_logos/refs.png",
       label: { status: "fullOk", codes: [] },
       players: players(1, 35, "fullOk", n => `${pad(1 + (n - 1) % 5)} - Referee ${1 + (n - 1) % 5}`),
       kits: { K1: kit("p1 - Referee", "#101010", "#f0e020") } },
@@ -292,7 +385,11 @@ const sweepEl = cell => h("span", { class: "tc-sweep",
 // The phase of a compiling cell's motion, 0 to 1, counted from when the cell
 // started, so a short task still shows the motion's start.
 const busyPhase = (cell, periodMs) => ((performance.now() - cell.busyAt) % periodMs) / periodMs;
-const S = { rows: sampleRows(), mode: "normal", column: false, unticked: {}, detail: null,
+// colour: what the cells show, "status" or "sizes"; measure: on "disk" or in
+// "vram"; sort: the rows' order (SORTS); compiled: a compile has run, so VRAM
+// sizes are exact.
+const S = { rows: sampleRows(), mode: "normal", column: false, unticked: {}, pin: null, hover: null,
+  colour: "status", measure: "disk", sort: "name", compiled: false,
   highlight: null, run: null, last: null, finished: false, ids: {}, logScroll: 0,
   // Where the member left the detail window (null until it first opens), and
   // the legend folded away: both kept across launches (localStorage here).
@@ -303,12 +400,24 @@ const L = { log: [], logHeight: 180, logCollapsed: false, logFilter: "all",
 
 const MODES = { normal: "Compile", sideload: "Compile for sideloading", test: "Test output" };
 const rowOf = key => S.rows.find(r => r.key === key);
-const catalog = code => CATALOG["compiler"].find(r => r.code === code);
+// Codes the plan adds that the build's catalog (the host's CATALOG) lacks yet.
+const PLANNED = {
+  logo_missing: { code: "logo_missing", severity: "Error",
+    condition: "A `Full` export has no logo: no file at its root whose name starts with `logo`.",
+    consequence: "The export is compiled without a logo. Add one at its root, or rename the export `<team> Midcup ...` if it only adds to what is installed." },
+  portrait_missing: { code: "portrait_missing", severity: "Warning",
+    condition: "In PES 2017 to 2021, a player has no portrait in his folder or in `Portraits/` (in a `Midcup` export, none installed either).",
+    consequence: "The player is compiled without a portrait. Add a `portrait` image to his folder, or one named by his number (`05`) to `Portraits/`." },
+};
+const catalog = code => CATALOG["compiler"].find(r => r.code === code) || PLANNED[code];
 const severity = code => {
   const s = (catalog(code) || {}).severity || "Error";
   return s === "W" ? "Warning" : s.startsWith("E") ? "Error" : s;
 };
-const messageOf = code => (catalog(code) ? catalog(code).condition.replaceAll("`", "") : code);
+// A finding as the log and the console print it: the code, ` at ` the file or
+// folder it is about, then its context fields.
+const findingText = (cell, code) => code + ((cell.at || {})[code] ? " at " + cell.at[code] : "")
+  + ((cell.ctx || {})[code] ? ` (${cell.ctx[code]})` : "");
 // Worst severity first, then by code.
 const RANK = { Fatal: 0, Error: 1, Warning: 2, Info: 3 };
 const sorted = codes => [...codes].sort((a, b) =>
@@ -334,45 +443,145 @@ function labelOut(r) {
   if (states.some(s => ["doneErr", "error", "partialError"].includes(s))) return "doneErr";
   return states.some(s => ["doneWarn", "warning"].includes(s)) ? "doneWarn" : "done";
 }
+// ---- Sizes (the Sizes colouring) ----
+// The thresholds, MB, per kind: green up to the first, amber at the second,
+// red from the third, blended on a log scale between. sample: provisional,
+// from the 2026-11-22 census of the exports on the maintainer's PC (players:
+// median 7.8, p75 12.4, p90 18.9; kits: 5.3 typical; exports: median 123, p75
+// 235) and the 4cc rules page's 32 MB per model folder and 500 MB per export;
+// an export's green ends near the median, since 250 MB is already large, and
+// a player's thresholds stand to 32 MB as an export's to 500 MB.
+const SIZE_GUIDE = { player: [10, 20, 32], kit: [6, 10, 16], portraits: [1, 2, 4], export: [150, 300, 500] };
+const SIZE_KINDS = [["player", "Player"], ["kit", "Kit"], ["export", "Export"]];
+const SIZE_GREEN = "#3fb950", SIZE_AMBER = "#d29922", SIZE_RED = "#f85149";
+const mix = (a, b, t) => "#" + [1, 3, 5].map(i => Math.round(parseInt(a.slice(i, i + 2), 16) * (1 - t)
+  + parseInt(b.slice(i, i + 2), 16) * t).toString(16).padStart(2, "0")).join("");
+function sizeFill(kind, mb) {
+  const [g, a, r] = SIZE_GUIDE[kind];
+  if (mb <= g) return SIZE_GREEN;
+  if (mb >= r) return SIZE_RED;
+  return mb < a ? mix(SIZE_GREEN, SIZE_AMBER, Math.log(mb / g) / Math.log(a / g))
+    : mix(SIZE_AMBER, SIZE_RED, Math.log(mb / a) / Math.log(r / a));
+}
+const fmtMB = mb => mb >= 1024 ? (mb / 1024).toFixed(1) + " GB" : (mb < 10 ? mb.toFixed(1) : Math.round(mb)) + " MB";
+// The sample sizes, MB: a cell's on disk, in VRAM after a compile, and in VRAM
+// before one (its PNGs counted as DXT5), the folders a player links to, and
+// its files. Seeded per row, with a few set by hand to show the scale. One
+// set of thresholds serves both units: a DDS takes the same in each.
+const SIZE_SET = { "dbg player 14": 38.6, "a player 07": 26.4, "adv player 05": 54.1,
+  "egg player 10": 21.5, "civ4xg kit K1": 19.8, "dbg kit K4": 11.2 };
+const SIZE_LINKED = { "adv player 05": [["Boots/Kaiju", 22.3]], "a player 07": [["Faces/Shared Hair", 6.1]] };
+const ROOT_ONLY = { asp: 96, b: 182 };
+const FILES = { player: [["face.dds", .34], ["hair.dds", .26], ["face_high.fmdl", .18], ["hair.fmdl", .12], ["portrait.dds", .04]],
+  kit: [["kit.dds", .7], ["kit_nrm.dds", .27], ["config.toml", .002]], portraits: [["05.dds", .06], ["11.dds", .05]] };
+function seeded(text) {
+  let s = [...text].reduce((t, c) => (t * 31 + c.charCodeAt(0)) >>> 0, 7);
+  return () => (s = (s * 1103515245 + 12345) >>> 0) / 2 ** 32;
+}
+function addSizes(rows) {
+  for (const r of rows) {
+    const rnd = seeded(r.key);
+    const fill = (cell, kind, slot, base, spread) => {
+      const id = `${r.key} ${kind} ${slot}`;
+      const disk = SIZE_SET[id] ?? +(base * Math.exp((rnd() - 0.5) * spread)).toFixed(1);
+      // A DDS takes in VRAM what it holds on disk (the 2026-11-22 census: VRAM
+      // over disk 1.00 to 1.01 on 75 real exports, all DDS); a PNG, a few
+      // samples here, takes more as the DDS the compile makes of it.
+      const pngs = rnd() < 0.08 ? 1 : 0, vram = +(disk * (pngs ? 1.6 : 1)).toFixed(1);
+      cell.kind = kind;
+      cell.size = { disk, vram, vramEst: pngs ? +(vram * 1.25).toFixed(1) : vram, pngs, linked: SIZE_LINKED[id] || [],
+        files: (FILES[kind] || []).map(([name, share], i) =>
+          [i === 0 && pngs ? name.replace(".dds", ".png") : name, +(disk * share).toFixed(2)]) };
+    };
+    for (const [n, c] of Object.entries(r.players)) fill(c, "player", pad(n), 7.8, 1.6);
+    for (const [k, c] of Object.entries(r.kits)) fill(c, "kit", k, k === "GK" ? 2.7 : 5.3, 0.2);
+    if (r.portraits) fill(r.portraits, "portraits", "", 0.4, 0.5);
+  }
+  return rows;
+}
+// What a cell measures in the chosen unit: null while it is not measured (not
+// read yet, or VRAM inside an archive before a compile). VRAM is exact after a
+// compile, and before one counts every PNG as DXT5.
+function sizeOf(r, cell, measure = S.measure) {
+  if (cell === r.label) {
+    if (ROOT_ONLY[r.key]) return measure === "disk" ? ROOT_ONLY[r.key] : null;
+    const parts = cellsOf(r).map(c => sizeOf(r, c, measure));
+    return parts.some(p => p === null) ? null : parts.reduce((t, p) => t + p, 1.2);
+  }
+  if (!cell.size || ["unchecked", "checking"].includes(cell.status)) return null;
+  if (measure === "disk") return cell.size.disk;
+  if (r.archive && !S.compiled) return null;
+  return S.compiled ? cell.size.vram : cell.size.vramEst;
+}
+const kindOf = (r, cell) => cell === r.label ? "export" : cell.kind;
+function sizeLook(r, cell) {
+  const mb = sizeOf(r, cell);
+  if (mb === null) return { fill: COLOURS.unchecked, text: labelColour(COLOURS.unchecked), outline: null };
+  const fill = sizeFill(kindOf(r, cell), mb);
+  return { fill, text: labelColour(fill), outline: null };
+}
+// The rows in the chosen order; the grid draws them so, the folder's order
+// kept among equals.
+const worst = r => { const s = [r.label, ...cellsOf(r)].map(c => shown(r, c));
+  return s.some(x => ["error", "partialError", "doneErr"].includes(x)) ? 0 : s.some(x => ["warning", "doneWarn"].includes(x)) ? 1 : 2; };
+const largestPlayer = r => Math.max(0, ...Object.values(r.players).map(c => sizeOf(r, c) ?? 0));
+const SORTS = { name: null, errors: r => worst(r), export: r => -(sizeOf(r, r.label) ?? -1), player: r => -largestPlayer(r) };
+const SORT_NAMES = [["name", "Folder order"], ["errors", "Errors first"], ["export", "Largest export"], ["player", "Largest player"]];
+const orderedRows = () => SORTS[S.sort] ? S.rows.map((r, i) => [SORTS[S.sort](r), i, r])
+  .sort((a, b) => a[0] - b[0] || a[1] - b[1]).map(x => x[2]) : S.rows;
+addSizes(S.rows);
+
+// The window's sizes, in the Sizes colouring: on disk and in VRAM, what a
+// player's total takes from the shared folders he links to, and the largest
+// files (for a label, the largest players), so the member sees what to shrink.
+function sizesBlock(r, cell) {
+  const disk = sizeOf(r, cell, "disk"), vram = sizeOf(r, cell, "vram");
+  if (disk === null) return h("div", { class: "sizes weak" }, "Not measured yet");
+  const pngs = cell === r.label ? cellsOf(r).reduce((t, c) => t + (c.size ? c.size.pngs : 0), 0) : cell.size.pngs;
+  const vramText = vram === null ? "after a compile (an archive is read shallowly until then)"
+    : fmtMB(vram) + (!S.compiled && pngs ? ` (${pngs === 1 ? "a PNG" : pngs + " PNGs"} counted as DXT5 until a compile)` : "");
+  const file = (name, mb) => h("div", { class: "file" }, h("span", { class: "mono" }, name), h("span", {}, fmtMB(mb)));
+  const largest = cell === r.label
+    ? Object.entries(r.players).map(([n, c]) => [`${pad(n)} - ${c.folder.replace(/^\d+ - /, "")}`, sizeOf(r, c, "disk")])
+      .filter(([, mb]) => mb !== null).sort((a, b) => b[1] - a[1]).slice(0, 5)
+    : cell.size.files;
+  return h("div", { class: "sizes" },
+    h("div", {}, "On disk: " + fmtMB(disk)), h("div", {}, "In VRAM: " + vramText),
+    cell.size && cell.size.linked.length ? cell.size.linked.map(([folder, mb]) =>
+      h("div", { class: "weak" }, `Includes ${folder}, ${fmtMB(mb)}, a shared folder he links to`)) : null,
+    largest.length ? [h("div", { class: "weak", style: "margin-top:4px" }, cell === r.label ? "Largest players, on disk" : "Largest files, on disk"),
+      ...largest.map(([name, mb]) => file(name, mb))] : null);
+}
+
 // A cell's or a label's fill and outline. An off row is flat grey.
 function look(r, cell) {
   if (rowOff(r)) return { fill: OFF, text: "#6e6e6e", outline: null };
+  if (S.colour === "sizes") return sizeLook(r, cell);
   const state = shown(r, cell);
   const fill = OUTLINES[state] ? COLOURS[r.archive ? "partialOk" : "fullOk"] : COLOURS[state] || COLOURS.unchecked;
   return { fill, text: labelColour(fill), outline: OUTLINES[state] || null };
 }
 const lookStyle = l => `background:${l.fill}; color:${l.text}` + (l.outline ? `; --ol:${l.outline}` : "");
 
-function cellTip(r, cell, what) {
-  const state = shown(r, cell);
-  const lines = [cell.folder || r.display, rowOff(r) ? "Off: not compiled" : STATE_NAMES[state]];
-  if (what === "portraits")
-    lines.push(cell.count == null ? "Portraits not counted yet"
-      : `${cell.count} of the export's ${Object.keys(r.players).length} players have a portrait`);
-  if (state === "blocked") lines.push("Blocked: this export is skipped (" + r.blocked + ")");
-  if (cell.note) lines.push(cell.note);
-  for (const code of sorted(cell.codes)) lines.push(`${severity(code)} - ${code}: ${messageOf(code)}`);
-  if (what === "kit" && cell.codes.includes("kit_colors_derived"))
-    lines.push("The menu colors shown are the ones derived from the texture");
-  return lines.join("\n");
-}
-
 // ---- The grid ----
 function cellEl(r, cell, text, scope, what) {
+  // The cell the window and the pin name: the portraits cell's label is its
+  // count, no slot.
+  const at = { row: r.key, what, slot: what === "portraits" ? undefined : text };
   const state = shown(r, cell), l = look(r, cell);
   // The kit's menu colours, once known and while the row is on (sample look:
   // two flat halves stand in for the icon's pattern, which color_tools draws).
   const swatch = cell.swatch && !rowOff(r) && !["unchecked", "checking", "blocked"].includes(state);
-  return h("div", { class: "tc-cell" + (what === "portraits" ? " wide" : "") + (cell.busy ? " busy" : "")
-      + (state === "blocked" && !rowOff(r) ? " blocked" : "") + (l.outline ? " ol" : "") + (swatch ? " kit" : "")
+  return [h("div", { class: "tc-cell" + (what === "portraits" ? " wide" : "") + (cell.busy ? " busy" : "")
+      + (state === "blocked" && !rowOff(r) && S.colour !== "sizes" ? " blocked" : "") + (l.outline ? " ol" : "") + (swatch ? " kit" : "")
       + (S.highlight === scope ? " hl" : ""),
     style: lookStyle(l),
-    title: cellTip(r, cell, what), "data-scope": scope,
-    onclick: e => openDetail(e, { row: r.key, what, slot: text }) },
+    "data-scope": scope, ...detailEvents(r, at) },
     text,
     cell.busy ? sweepEl(cell) : null,
     swatch ? h("span", { class: "tc-sw", style: `background:linear-gradient(90deg, ${cell.swatch[0]} 50%, ${cell.swatch[1]} 50%)` })
-      : null);
+      : null),
+    sameCell(S.pin, at) ? h("span", { class: "tc-pin" }, "📌") : null];
 }
 
 // A vertical line's cell.
@@ -501,10 +710,10 @@ function gridRow(r) {
   cells.push(h("td", { class: "tc-name mono" + (l.outline ? " ol" : "") + (S.highlight === r.name ? " hl" : ""),
     style: lookStyle(l) + `; font-size:${named.size}px; line-height:${named.lines.length > 1 ? named.size + 1 + "px" : "normal"}`,
     "data-scope": r.name,
-    title: cellTip(r, { ...r.label, folder: r.display + (r.archive ? " (archive: shallow check)" : "") }),
     oncontextmenu: e => { e.preventDefault(); rowMenu(e, r); },
-    onclick: e => openDetail(e, { row: r.key, what: "label" }) },
-    named.lines.map(line => h("div", {}, line))));
+    ...detailEvents(r, { row: r.key, what: "label" }) },
+    named.lines.map(line => h("div", {}, line)),
+    sameCell(S.pin, { row: r.key, what: "label" }) ? h("span", { class: "tc-pin" }, "📌") : null));
   cells.push(idCell(r), vline());
   const message = rowMessage(r), acts = rowActions(r);
   if (message) {
@@ -557,7 +766,7 @@ function grid() {
       h("p", { class: "mono" }, EXE_FOLDER + "\\exports"),
       h("p", {}, "Drop an export here: a folder, a .zip or a .7z."),
       button("Open exports folder", () => openFolder("")));
-  return h("table", { class: "tc-grid", "data-panel": "grid" }, titleRow(), S.rows.flatMap(gridRow),
+  return h("table", { class: "tc-grid", "data-panel": "grid" }, titleRow(), orderedRows().flatMap(gridRow),
     h("tr", { class: "fill" }, h("td", { colspan: String(S.column ? 3 : 2) }), vline(),
       h("td", { colspan: String(SLOTS + 3 + KIT_SLOTS.length) }), vline()));
 }
@@ -587,7 +796,25 @@ function legend() {
   // down to bring it back. The title does what the chevron does.
   const title = h("span", { class: "both name", title: tip, style: "cursor:pointer", onclick: toggle },
     button(S.legendShut ? "▸" : "▾", null, { frame0: true }), "Legend");
-  if (S.legendShut) return h("div", { class: "tc-legend shut top weak", "data-panel": "legend" }, title);
+  // At the row's right end, folded or not: what the cells show, in what unit,
+  // and the rows' order (the Export upgrader's Grid | Files stands there too).
+  const sizes = S.colour === "sizes";
+  const modes = h("span", { class: "tc-modes", "data-panel": "colouring" },
+    selectable("Status", !sizes, () => { S.colour = "status"; }, "Each cell's check and compile state"),
+    selectable("Sizes", sizes, () => { S.colour = "sizes"; }, "Each cell's size against the size guide, green to red"),
+    // Always there, disabled in Status, so a click on Sizes moves nothing:
+    // the group is right-aligned, and a pair appearing would push the toggle
+    // out from under the pointer (egui: add_enabled_ui).
+    h("span", { class: "sep-v" }),
+    h("span", { class: "tc-unit" + (sizes ? "" : " off"), title: sizes ? null : "The unit of the Sizes colouring" },
+      selectable("Disk", S.measure === "disk", () => { S.measure = "disk"; }, "The files' size on disk"),
+      selectable("VRAM", S.measure === "vram", () => { S.measure = "vram"; },
+        "The textures' and models' size in the game's video memory: exact after a compile; before one, a PNG with alpha counts as DXT5")),
+    h("span", { class: "sep-v" }), h("span", {}, "Sort"),
+    combo(SORT_NAMES, S.sort, v => { S.sort = v; }, { title: "The order of the rows" }));
+  const bar = (...kids) => h("div", { class: "tc-legend-bar top weak", "data-panel": "legend" }, ...kids, modes);
+  if (S.legendShut) return bar(h("div", { class: "tc-legend shut" }, title));
+  if (sizes) return bar(h("div", { class: "tc-legend" }, title, sizeLegend()));
   const sample = { key: "", label: {} };
   const entry = (k, alone) => {
     const l = k === "blocked" ? { fill: "transparent", text: "", outline: null } : look(sample, { status: k });
@@ -598,74 +825,242 @@ function legend() {
       k === "partialOk" ? h("span", { class: "two" }, h("div", {}, "Shallow check done"), h("div", {}, "(archive)"))
         : STATE_NAMES[k]);
   };
-  return h("div", { class: "tc-legend top weak", "data-panel": "legend" }, title,
-    LEGEND.flatMap(col => col.map(k => entry(k, col.length === 1))));
+  return bar(h("div", { class: "tc-legend" }, title, LEGEND.flatMap(col => col.map(k => entry(k, col.length === 1)))));
+}
+// The Sizes legend: per kind, its name over its three thresholds, then the
+// colour of a cell not measured yet.
+function sizeLegend() {
+  const sw = fill => h("span", { class: "tc-cell", style: `background:${fill}` });
+  return [...SIZE_KINDS.flatMap(([kind, name]) => {
+    const [g, a, r] = SIZE_GUIDE[kind];
+    return [h("span", { class: "k" }, name),
+      h("span", { class: "k" }, sw(SIZE_GREEN), `${g}`, sw(SIZE_AMBER), `${a}`, sw(SIZE_RED), `${r} MB`)];
+  }), h("span", { class: "k both" }, sw(COLOURS.unchecked), "Not measured yet")];
 }
 
-// ---- The detail window: what a clicked cell holds, and what to do about it ----
-// It opens beside the first cell clicked and from then on where the member
-// left it; a click on another cell changes what it shows, not where it is.
-function openDetail(e, detail) {
-  if (!S.detailPos) {
-    const pipe = e.currentTarget.closest(".pipe").getBoundingClientRect();
-    const cell = e.currentTarget.getBoundingClientRect(), scale = winScale();
-    S.detailPos = { x: Math.min((cell.right - pipe.left) / scale + 8, pipe.width / scale - 310),
-      y: Math.min((cell.top - pipe.top) / scale, pipe.height / scale - 320) };
-  }
-  S.detail = detail;
+// ---- The detail window: hover shows a cell, a click pins it ----
+// S.pin is the pinned cell, S.hover the cell under the pointer while nothing
+// is pinned; the window shows the pinned one, else the hovered one. A cell is
+// { row, what, slot }. While a cell is pinned, hovering another opens
+// nothing: the pointer crosses other cells on its way to the window.
+// Longer than the sidebar's 0.1 s (sidebar/mod.rs HOVER_DELAY): a window this
+// big flashing over every cell the pointer crosses is worse. Once open, the window follows the pointer from cell to
+// cell at once, within TOOLTIP_GRACE of the last one closing.
+const HOVER_DELAY = 150, TOOLTIP_GRACE = 200;
+let hoverTimer = null, hoverEndedAt = -Infinity;
+const sameCell = (a, b) => !!a && !!b && a.row === b.row && a.what === b.what && a.slot === b.slot;
+// S.muted: the cell a click just unpinned, under the pointer still; it opens
+// no window on hover until the pointer leaves it, or the unpin would show the
+// window again at once.
+// S.under: the cell under the pointer (or the cell of the log line under it),
+// which Esc mutes as a click that unpins does.
+function hoverEnter(cell) {
+  S.under = cell;
+  if (S.pin || sameCell(S.muted, cell)) return;
+  clearTimeout(hoverTimer);
+  const show = () => { S.hover = cell; redrawDetail(); };
+  if (S.hover || performance.now() - hoverEndedAt < TOOLTIP_GRACE) show();
+  else hoverTimer = setTimeout(show, HOVER_DELAY);
+}
+function hoverLeave() {
+  clearTimeout(hoverTimer);
+  S.muted = S.under = null;
+  if (!S.hover) return;
+  S.hover = null;
+  hoverEndedAt = performance.now();
+  redrawDetail();
+}
+// A click pins the cell, or unpins it when it is the pinned one. The second
+// press of a double-click is the double-click's (egui: double_clicked() comes
+// with that press's clicked()), which puts the pin back as it was.
+function cellClick(e, cell) {
+  if (e.detail > 1) return;
+  S.pinBefore = S.pin;
+  S.muted = sameCell(S.pin, cell) ? cell : null;
+  S.pin = S.muted ? null : cell;
+  S.hover = null;
   render();
+}
+function cellDoubleClick(r, cell) {
+  S.pin = S.pinBefore;
+  S.hover = null;
+  render();
+  const path = folderPath(r, cell.what, cellOf(r, cell));
+  if (path) openFolder(path);
+}
+// What a cell's events do: the grid's cells and the team labels share them.
+const detailEvents = (r, cell) => ({
+  onmouseenter: () => hoverEnter(cell), onmouseleave: hoverLeave,
+  onclick: e => cellClick(e, cell), ondblclick: () => cellDoubleClick(r, cell) });
+// Esc closes the window, pinned or not.
+function onKey(e) {
+  if (e.key !== "Escape" || !(S.pin || S.hover)) return;
+  clearTimeout(hoverTimer);
+  S.pin = S.hover = null;
+  S.muted = S.under;
+  render();
+}
+// An export's log lines as the console prints them, for the organizer to send
+// to its member; "Copied" stands on the button for a moment.
+function copyMessages(r) {
+  lastCopied = L.log.filter(l => l.at && l.at.row === r.key).map(l => l.text).join("\n");
+  navigator.clipboard?.writeText(lastCopied)?.catch(() => {});
+  S.copied = r.key;
+  redrawDetail();
+  setTimeout(() => { S.copied = null; redrawDetail(); }, 1500);
+}
+// A click on the grid's empty space unpins (a faint empty position counts as
+// empty; a cell, a label, the ID cell and the row buttons do not).
+function gridClick(e) {
+  if (!S.pin || e.target.closest(".tc-cell, .tc-name, .tc-id, button, input")) return;
+  S.pin = null;
+  render();
+}
+// The window alone, drawn again on a hover: a whole render would rebuild the
+// grid under the pointer.
+function redrawDetail() {
+  const pipe = document.querySelector("#center .pipe");
+  if (!pipe) return;
+  const old = pipe.querySelector(".tc-detail");
+  if (old) old.remove();
+  const win = detailPanel();
+  if (win) pipe.append(win);
 }
 function dragDetail(e, win) {
   if (e.button !== 0 || e.target.closest("button")) return;
-  const from = { ...S.detailPos }, x0 = e.clientX, y0 = e.clientY, scale = winScale();
+  const scale = winScale(), x0 = e.clientX, y0 = e.clientY;
+  const from = { x: win.offsetLeft, y: win.offsetTop };
   const move = ev => {
     S.detailPos = { x: Math.max(0, from.x + (ev.clientX - x0) / scale), y: Math.max(0, from.y + (ev.clientY - y0) / scale) };
-    win.style.left = S.detailPos.x + "px"; win.style.top = S.detailPos.y + "px";
+    win.style.left = S.detailPos.x + "px"; win.style.top = S.detailPos.y + "px"; win.style.right = "";
   };
   const up = () => {
     document.removeEventListener("mousemove", move);
     document.removeEventListener("mouseup", up);
-    localStorage.setItem("drafts.tc.detail_pos", JSON.stringify(S.detailPos));
+    if (S.detailPos) localStorage.setItem("drafts.tc.detail_pos", JSON.stringify(S.detailPos));
   };
   document.addEventListener("mousemove", move);
   document.addEventListener("mouseup", up);
   e.preventDefault();
 }
+const cellOf = (r, cell) => cell.what === "label" ? r.label
+  : cell.what === "kit" ? r.kits[cell.slot]
+  : cell.what === "portraits" ? r.portraits : r.players[Number(cell.slot)];
+// A cell's folder inside its export, as messages print paths: "" for a label.
+// The portraits cell's is `Portraits/` when the export has one; most exports
+// keep each portrait in its player's folder, and then it is the folder of the
+// cell's one finding, or none (null) with two findings or none.
+function folderRel(what, c) {
+  if (what === "label") return "";
+  if (what === "player") return "Players/" + c.folder;
+  if (what === "kit") return "Kits/" + c.folder;
+  if (c.folder) return c.folder;
+  const at = Object.values(c.at || {});
+  return c.codes.length === 1 && at.length === 1 ? at[0].slice(0, at[0].lastIndexOf("/")) : null;
+}
+// The folder Open folder and a double-click open (null: none): the export's
+// root for its label, an archive export's folder (the archive selected) for
+// any of its cells.
+function folderPath(r, what, c) {
+  if (r.archive || what === "label") return r.display;
+  const rel = folderRel(what, c);
+  return rel === null ? null : r.display + "\\" + rel.replaceAll("/", "\\");
+}
+// What the window says of a cell beyond its findings.
+function cellNotes(r, c, what) {
+  const notes = [];
+  if (what === "portraits")
+    notes.push(c.count == null ? "Portraits not counted yet"
+      : `${c.count} of the export's ${Object.keys(r.players).length} players have a portrait`);
+  if (shown(r, c) === "blocked") notes.push("Blocked: this export is skipped (" + r.blocked + ")");
+  if (c.note) notes.push(c.note);
+  if (what === "kit" && c.codes.includes("kit_colors_derived"))
+    notes.push("The menu colors shown are the ones derived from the texture");
+  return notes;
+}
+// The window's top box, the 3D preview's size on every cell, so the text
+// under it stays put as the window moves between cells: a player's 3D preview
+// (a later feature) with his portrait (when his folder holds it) at its bottom
+// left and the export's logo at its bottom right, a kit's main texture, the
+// portraits as a 6 x 4 grid with the logo last (23 portraits and it make 24),
+// and the export's logo for a label. sample: /dbg/'s kits and portraits are the
+// real export's, scaled; the other rows have none to show.
+// Each path spelled whole: the bundler inlines a quoted assets/ literal, never a built one.
+const KIT_TEX = { dbg: { GK: "assets/kits/dbg_g1.png", K1: "assets/kits/dbg_p1.png",
+  K2: "assets/kits/dbg_p2.png", K3: "assets/kits/dbg_p3.png" } };
+const DBG_PORTRAITS = { "01": "assets/portraits/dbg/01.png", "02": "assets/portraits/dbg/02.png", "03": "assets/portraits/dbg/03.png", "04": "assets/portraits/dbg/04.png", "05": "assets/portraits/dbg/05.png", "06": "assets/portraits/dbg/06.png", "07": "assets/portraits/dbg/07.png", "08": "assets/portraits/dbg/08.png", "09": "assets/portraits/dbg/09.png", "10": "assets/portraits/dbg/10.png", "11": "assets/portraits/dbg/11.png", "12": "assets/portraits/dbg/12.png", "13": "assets/portraits/dbg/13.png", "14": "assets/portraits/dbg/14.png", "15": "assets/portraits/dbg/15.png", "16": "assets/portraits/dbg/16.png", "17": "assets/portraits/dbg/17.png", "18": "assets/portraits/dbg/18.png", "19": "assets/portraits/dbg/19.png", "20": "assets/portraits/dbg/20.png", "21": "assets/portraits/dbg/21.png", "22": "assets/portraits/dbg/22.png", "23": "assets/portraits/dbg/23.png" };
+function previewBox(r, at) {
+  const logo = r.logo ? h("img", { src: r.logo, alt: "" }) : "No logo";
+  if (at.what === "player") {
+    const own = r.key === "dbg" ? h("img", { src: DBG_PORTRAITS[at.slot], alt: "" }) : null;
+    return h("div", { class: "preview weak" }, "3D preview (a later feature)",
+      own ? h("div", { class: "tile corner left" }, own) : null,
+      h("div", { class: "tile corner right" }, h("span", { class: "logo" }, logo)));
+  }
+  if (at.what === "kit") {
+    const tex = (KIT_TEX[r.key] || {})[at.slot];
+    return h("div", { class: "preview weak" },
+      tex ? h("img", { src: tex, alt: "" }) : "Kit texture (sample: none to show)");
+  }
+  if (at.what === "portraits") {
+    const tile = n => r.players[n]
+      ? (r.key === "dbg" ? h("img", { src: DBG_PORTRAITS[pad(n)], alt: "" }) : h("span", { class: "mono" }, pad(n)))
+      : null;
+    const tiles = [...Array.from({ length: 23 }, (_, i) => tile(i + 1)), h("span", { class: "logo" }, logo)];
+    return h("div", { class: "preview portraits" }, tiles.map(t => h("div", { class: "tile" }, t)));
+  }
+  return h("div", { class: "preview weak" }, logo);
+}
 function detailPanel() {
-  if (!S.detail) return null;
-  const r = rowOf(S.detail.row);
+  const at = S.pin || S.hover;
+  if (!at) return null;
+  const r = rowOf(at.row);
   if (!r) return null;
-  const cell = S.detail.what === "label" ? r.label
-    : S.detail.what === "kit" ? r.kits[S.detail.slot]
-    : S.detail.what === "portraits" ? r.portraits : r.players[Number(S.detail.slot)];
+  const cell = cellOf(r, at);
   if (!cell) return null;
-  const folder = S.detail.what === "label" ? r.display : cell.folder;
-  const title = S.detail.what === "label" ? r.name
-    : S.detail.what === "portraits" ? `${r.name} portraits` : `${r.name} ${S.detail.slot}`;
-  // A link opens it with no cell clicked: at the grid's right.
-  const pos = S.detailPos || { x: 760, y: 70 };
-  const win = h("div", { class: "tc-detail", "data-panel": "detail", style: `left:${pos.x}px; top:${pos.y}px` });
+  const pinned = !!S.pin;
+  const title = at.what === "label" ? r.name
+    : at.what === "portraits" ? `${r.name} portraits` : `${r.name} ${at.slot}`;
+  // Where the member last left it; at first at the grid's right.
+  const pos = S.detailPos ? `left:${S.detailPos.x}px; top:${S.detailPos.y}px` : "right:8px; top:70px";
+  const win = h("div", { class: "tc-detail" + (pinned ? "" : " hover"), "data-panel": "detail", style: pos });
+  const where = at.what === "label" ? r.display + (r.archive ? " (archive: shallow check)" : "")
+    : folderRel(at.what, cell) ?? "Portraits in the player folders";
   win.append(
-    h("div", { class: "bar", onmousedown: e => { S.detailPos = pos; dragDetail(e, win); } },
+    h("div", { class: "bar", onmousedown: e => { if (pinned) dragDetail(e, win); } },
       strong(title), h("span", { style: "flex:1" }),
-      button("✕", () => { S.detail = null; render(); }, { frame0: true, title: "Close" })),
+      pinned ? button(h("span", { class: "pin" }, "📌"), () => { S.pin = null; render(); },
+        { frame0: true, title: "Unpin" }) : null),
     h("div", { class: "body" },
-      S.detail.what === "player" ? h("div", { class: "preview weak" }, "3D preview (a later feature)") : null,
-      h("div", { class: "mono" }, folder),
+      previewBox(r, at),
+      h("div", { class: "mono" }, where),
       h("div", { class: "weak" }, rowOff(r) ? "Off: not compiled" : STATE_NAMES[shown(r, cell)]),
-      cell.codes.length ? sorted(cell.codes).map(code =>
-        h("div", { class: "find " + (severity(code) === "Warning" ? "warn" : severity(code) === "Info" ? "" : "err") },
-          severity(code), " ",
+      cellNotes(r, cell, at.what).map(n => h("div", { class: "weak" }, n)),
+      S.colour === "sizes" ? sizesBlock(r, cell) : null,
+      cell.codes.length ? sorted(cell.codes).map(code => {
+        const row_ = catalog(code) || {};
+        const sev = severity(code);
+        return h("div", { class: "find " + (sev === "Warning" ? "warn" : sev === "Info" ? "" : "err") },
+          sev, " ",
           h("span", { class: "msg-link", title: "Open the help at this message",
             onclick: () => openHelp({ tool: "compiler", topic: "messages", anchor: code }) }, code),
-          h("div", {}, messageOf(code))))
-        : h("div", { class: "find weak" }, "No findings."),
-      row(button("Open folder", () => openFolder(r.display + (S.detail.what === "label" || r.archive ? "" : "\\" + folder)),
-          { title: r.archive ? "An archive export: its folder opens with the archive selected" : null }),
+          (cell.at || {})[code] ? h("div", { class: "mono at" }, cell.at[code]) : null,
+          (cell.ctx || {})[code] ? h("div", { class: "mono at" }, cell.ctx[code]) : null,
+          h("div", { class: "what" }, mdInline(row_.condition || "")),
+          h("div", { class: "what weak" }, mdInline(row_.consequence || "")));
+      }) : h("div", { class: "find weak" }, "No findings."),
+      row(folderPath(r, at.what, cell) === null ? null
+          : button("Open folder", () => openFolder(folderPath(r, at.what, cell)),
+            { title: r.archive ? "An archive export: its folder opens with the archive selected" : null }),
+        at.what === "label" && L.log.some(l => l.at && l.at.row === r.key)
+          ? button(S.copied === r.key ? "Copied" : "Copy messages", () => copyMessages(r),
+            { title: "Puts this export's log lines on the clipboard, to send to its member" }) : null,
         // A finding with one obvious fix: a rename the member asks for by a click.
         cell.fix && !r.archive ? button(cell.fix.label, () => {
-          cell.folder = cell.fix.folder; if (cell.fix.count) cell.count = cell.fix.count;
-          cell.status = "fullOk"; cell.codes = []; delete cell.fix; render(); },
+          if (cell.fix.apply) cell.fix.apply(r);
+          else { cell.folder = cell.fix.folder; if (cell.fix.count) cell.count = cell.fix.count;
+            cell.status = "fullOk"; cell.codes = []; delete cell.fix; }
+          render(); },
           { title: "A rename; refused when that name exists" }) : null)));
   return win;
 }
@@ -675,20 +1070,35 @@ const BADGES = {
   running: "PES is running: the compile cannot replace the installed CPKs. Close the game, or the run writes to the output folder only",
   elevation: "The game folder needs administrator rights to write to. Restart the app as administrator, or the run writes to the output folder only" };
 // The grid summed up, what the strip says while nothing runs: can I compile?
+// The error and warning counts set the log's filter on a click. They are in
+// the link blue only while the log is collapsed: open, its own filter buttons
+// sit right below them, and a blue pair over those is one too many.
 function summary() {
-  if (D.empty) return "";
+  if (D.empty) return [];
   const on = S.rows.filter(eligible);
   const having = states => on.filter(r => [r.label, ...cellsOf(r)].some(c => states.includes(c.status))).length;
   const count = (n, one, many = one) => n ? `${n} ${n === 1 ? one : many}` : null;
-  return [count(S.rows.length, "export", "exports"), count(S.rows.length - on.length, "skipped"),
-    count(having(["error", "partialError"]), "with errors"), count(having(["warning"]), "with warnings")]
-    .filter(Boolean).join(" · ");
+  const filterLink = (text, filter, title) => text && h("span", {
+    class: "tc-count" + (L.logCollapsed ? " on" : ""), title,
+    onclick: () => { L.logFilter = filter; L.logCollapsed = false; render(); } }, text);
+  const parts = [count(S.rows.length, "export", "exports"), count(S.rows.length - on.length, "skipped"),
+    filterLink(count(having(["error", "partialError"]), "with errors"), "errors", "Show only the errors in the log"),
+    filterLink(count(having(["warning"]), "with warnings"), "warnings", "Show only the warnings and errors in the log")]
+    .filter(Boolean);
+  // In the Sizes colouring, the exports' total in the chosen unit.
+  if (S.colour === "sizes") {
+    const mbs = S.rows.filter(r => !rowOff(r)).map(r => sizeOf(r, r.label));
+    parts.push((mbs.some(mb => mb === null) ? "at least " : "") + fmtMB(mbs.reduce((t, mb) => t + (mb ?? 0), 0))
+      + (S.measure === "disk" ? " on disk" : " in VRAM"));
+  }
+  return parts.flatMap((p, i) => i ? [" · ", p] : [p]);
 }
 function toolbar() {
   const run = S.run;
+  const sum = summary();
   const strip = run
     ? `${run.stage} · ${mmss(run.elapsed)} · ${run.files} files written (${Math.round(run.mb)} MB) · ${run.memory} MB of system memory in use`
-    : [S.last, summary()].filter(Boolean).join("  —  ");
+    : S.last && sum.length ? [S.last, "  —  ", ...sum] : S.last || sum;
   const sideloadOff = ["2015", "2016"].includes(shellPesVersion());
   const main = button(run ? "Cancel" : MODES[S.mode], run ? cancelRun : () => startRun(), {});
   main.id = "compile-btn";
@@ -811,6 +1221,7 @@ function endRun() {
   S.run = null;
   S.last = `${MODES[S.mode]} finished in ${mmss(run.elapsed)} · ${run.files} files written (${Math.round(run.mb)} MB)`;
   S.finished = true;
+  S.compiled = true;
   appendLog([{ severity: "Info", code: null, scope: null, text: `Info - Compiled ${run.rows} exports` }], L);
   publishNotice(`Compiled ${run.rows} exports`, { label: "Open output", run: openOutputStub }, "success");
   // Success is a run with no export done with errors: with one, the window
@@ -903,18 +1314,30 @@ function cancelRun() {
 // The check's findings as log lines, once: a click on one highlights its cell.
 function seedLog() {
   for (const r of S.rows) {
-    const each = (cell, scope) => { for (const code of cell.codes)
-      L.log.push({ severity: severity(code), code, scope,
-        text: `${severity(code)} - ${scope} - ${code}: ${messageOf(code)}` }); };
-    each(r.label, r.name);
-    for (const [n, cell] of Object.entries(r.players)) each(cell, `${r.name} ${pad(n)}`);
-    if (r.portraits) each(r.portraits, `${r.name} portraits`);
-    for (const [k, cell] of Object.entries(r.kits)) each(cell, `${r.name} ${k}`);
+    // The line is the console's: the code, the file and the context; its
+    // head, `Severity - /team/ - `, is what a wrapped line's rows indent past.
+    // `at`: the cell the line stands for, which its hover and click act on.
+    const each = (cell, scope, at) => { for (const code of cell.codes) {
+      const head = `${severity(code)} - ${r.name} - `;
+      L.log.push({ severity: severity(code), code, scope, head, at, text: head + findingText(cell, code) }); } };
+    each(r.label, r.name, { row: r.key, what: "label" });
+    for (const [n, cell] of Object.entries(r.players))
+      each(cell, `${r.name} ${pad(n)}`, { row: r.key, what: "player", slot: pad(n) });
+    if (r.portraits) each(r.portraits, `${r.name} portraits`, { row: r.key, what: "portraits", slot: undefined });
+    for (const [k, cell] of Object.entries(r.kits)) each(cell, `${r.name} ${k}`, { row: r.key, what: "kit", slot: k });
   }
 }
 seedLog();
-function gotoCell(scope) {
+// A line acts for its cell: hovering it opens the cell's window as hovering
+// the cell does; a click outlines the cell and pins its window, and a second
+// click unpins it, the outline staying.
+function gotoCell(scope, l) {
   S.highlight = scope;
+  if (l && l.at) {
+    S.muted = sameCell(S.pin, l.at) ? l.at : null;
+    S.pin = S.muted ? null : l.at;
+    S.hover = null;
+  }
   render();
   const el = document.querySelector(`#center [data-scope="${scope}"]`);
   if (el) el.scrollIntoView({ block: "nearest", inline: "nearest" });
@@ -924,16 +1347,32 @@ function gotoCell(scope) {
 function drawView(center) {
   const oldLog = center.querySelector(".log-body");
   if (oldLog) S.logScroll = oldLog.scrollTop;
+  // A redraw keeps the grid where the member scrolled it (egui keeps a
+  // ScrollArea's offset), or a click's redraw moves the next click's target.
+  const oldGrid = center.querySelector(".pipe-grid"), gridAt = oldGrid ? [oldGrid.scrollLeft, oldGrid.scrollTop] : [0, 0];
   center.innerHTML = "";
   center.classList.add("tc-view");
   center.append(h("div", { class: "pipe" },
     D.empty ? null : legend(),
-    dropZone(h("div", { class: "tc-top" }, h("div", { class: "pipe-grid" }, grid()))),
+    dropZone(h("div", { class: "tc-top", onclick: gridClick }, h("div", { class: "pipe-grid" }, grid()))),
     toolbar(),
-    named(logPanel(L, { tool: "compiler", onLine: gotoCell }), "log"),
+    named(logPanel(L, { tool: "compiler", onLine: gotoCell,
+      onLineEnter: l => { if (l.at) hoverEnter(l.at); }, onLineLeave: hoverLeave }), "log"),
     detailPanel()));
   const lb = center.querySelector(".log-body");
   if (lb) lb.scrollTop = L.logStick ? lb.scrollHeight : S.logScroll;
+  const gridArea = center.querySelector(".pipe-grid");
+  if (gridArea) [gridArea.scrollLeft, gridArea.scrollTop] = gridAt;
+  // The log starts collapsed when, open, it would hide some of the grid's
+  // cells: decided once, at the first draw with rows; the chevron rules after.
+  // Measured on the next frame, once the host has laid the window out.
+  if (!S.logStartSet && !D.empty) {
+    S.logStartSet = true;
+    requestAnimationFrame(() => {
+      const g = document.querySelector("#center .pipe-grid");
+      if (g && !L.logCollapsed && g.scrollHeight > g.clientHeight) { L.logCollapsed = true; render(); }
+    });
+  }
 }
 
 // ---- Draft controls: the scenarios' GIVENs, visibly outside Studio ----
@@ -946,8 +1385,8 @@ function draftControls() {
       cb("The data folder is read-only", D.dataReadOnly, v => D.dataReadOnly = v)),
     h("span", { title: "gui.md \"Row actions\", the empty grid" },
       cb("The exports folder is empty", D.empty, v => D.empty = v)),
-    button("Reset the sample rows", () => { S.rows = sampleRows(); S.detail = null; S.unticked = {};
-      S.ids = {}; S.last = null; S.finished = false; L.log = []; seedLog(); render(); }),
+    button("Reset the sample rows", () => { S.rows = addSizes(sampleRows()); S.pin = null; S.hover = null; S.unticked = {};
+      S.ids = {}; S.last = null; S.finished = false; S.compiled = false; L.log = []; seedLog(); render(); }),
     h("span", { title: "gui.md \"Live validation\"" },
       button("Check every export again", () => liveCheck(S.rows.filter(r => !r.special)))),
     h("span", { title: "gui.md \"Row actions\", the empty grid: a drop works on a filled grid too" },
@@ -961,15 +1400,16 @@ function draftControls() {
       WALK.map(([id, how]) => h("div", {}, strong(id), " ", how)))];
 }
 const WALK = [
-  ["TC-GUI-04", "the rows: /3/ fully checked, /aco/ an archive (blue cells, one faint red), /adv/ with players 01 to 11 only (12 to 23 empty, no cell) and no keeper kit, /an/ part checked, part checking, part unchecked"],
+  ["TC-GUI-04", "the rows: /dbg/ fully checked, /aco/ an archive (blue cells, one faint red), /adv/ with players 01 to 11 only (12 to 23 empty, no cell) and no keeper kit, /an/ part checked, part checking, part unchecked"],
   ["TC-GUI-07", "/egg/ is not on the teams list: its ID cell is red; type 950 and Enter (out of range), 714 and Enter (in use by /co/: the question takes the place of the row's cells until Yes or No), 850 and Enter (written); with the data folder read-only the entry is dropped"],
   ["TC-GUI-08", "/asp/ has no tag: Full or Midcup renames it and its cells appear"],
-  ["TC-GUI-09", "hover a cell for its folder and findings; click it for the detail panel (/a/ 07 a warning, /a/ 15 a folder name with its one-click rename, /a/'s portraits an old file name in Portraits with its rename, which colours the portraits cell alone; /adv/ 11's portrait, kept in the player's folder, colours his cell and the portraits cell)"],
+  ["TC-GUI-09", "rest the pointer on a cell or a team label: the detail window shows its folder and findings, and follows the pointer to the next cell; leaving for empty grid closes it (/a/ 07 a warning, /a/'s label a player folder named 15_Snuffy, which claims no slot, with its one-click rename, /a/'s portraits an old file name in Portraits with its rename, which colours the portraits cell alone; /adv/ 11's portrait, kept in the player's folder, colours his cell and the portraits cell)"],
   ["TC-GUI-10", "a kit cell shows its two menu colours under its label; /a/ K2's black pair is the derived one"],
   ["TC-GUI-11", "the Compile button's arrow: the three modes (sideloading disabled with the sidebar at PES 2015 or 2016), the compile column and Open output folder; picking a mode relabels the main part, and sideloading adds Launch PES"],
   ["TC-GUI-12", "Compile: the cells change scattered over the grid, a few at once, as parallel tasks end; each turns bold, then green, amber or red (/adv/ 05, one file dropped); the strip counts; the button reads Cancel"],
   ["TC-GUI-13", "Cancel during a run: every cell returns to its check colour, the log's last line says so"],
-  ["TC-GUI-14", "Compile with /egg/ or the two /biz/ exports unresolved: their cells are blocked, each tooltip naming the cause"],
+  ["TC-GUI-14", "Compile with /egg/ or the two /biz/ exports unresolved: their cells are blocked, each one's detail window naming the cause"],
+  ["TC-GUI-24", "click a cell: a pin on it and in the window's title bar, the window stays and hovering other cells leaves it; drag it by its title bar; click another cell to pin that one, the pinned cell, the window's pin or empty grid to unpin; double-click a cell to open its folder"],
   ["TC-GUI-15", "click a warning or error line of the log: its cell, or the row's label, is outlined"],
   ["TC-GUI-16", "the destination control: the badge beside the button, its tooltip the reason and the remedy"],
   ["live check", "Check every export again: every cell reads Checking, then flips to its result as its check ends, scattered over the rows"],
@@ -986,8 +1426,12 @@ function linkKeys() {
   if (S.column) k.column = "1";
   if (D.empty) k.empty = "1";
   if (D.writable !== "yes") k.dest = D.writable;
-  if (S.detail) k.detail = S.detail.row + "." + S.detail.what + (S.detail.slot ? "." + S.detail.slot : "");
+  // A link opens the window pinned: a hover is no state a link can hold.
+  if (S.pin) k.detail = S.pin.row + "." + S.pin.what + (S.pin.slot ? "." + S.pin.slot : "");
   if (S.finished && !S.run) k.run = "done";
+  if (S.colour !== "status") k.colour = S.colour;
+  if (S.measure !== "disk") k.measure = S.measure;
+  if (S.sort !== "name") k.sort = S.sort;
   return k;
 }
 const linkWarn = what => console.warn("compiler link: " + what);
@@ -999,7 +1443,7 @@ function linkOpen(scr, keys) {
   if (keys.dest !== undefined) { if (BADGES[keys.dest]) D.writable = keys.dest; else linkWarn("dest=" + keys.dest); }
   if (keys.detail !== undefined) {
     const [key, what, slot] = keys.detail.split(".");
-    if (rowOf(key) && ["label", "player", "kit", "portraits"].includes(what)) S.detail = { row: key, what, slot };
+    if (rowOf(key) && ["label", "player", "kit", "portraits"].includes(what)) S.pin = { row: key, what, slot };
     else linkWarn("detail=" + keys.detail);
   }
   // run=done: the finished run's colours, without the timer.
@@ -1010,13 +1454,26 @@ function linkOpen(scr, keys) {
     }
     S.last = "Compile finished in 00:42 · 1184 files written (612 MB)";
     S.finished = true;
+    S.compiled = true;
   } else if (keys.run !== undefined) linkWarn("run=" + keys.run);
+  const pick = (key, field, allowed) => {
+    if (keys[key] === undefined) return;
+    if (allowed.includes(keys[key])) S[field] = keys[key]; else linkWarn(`${key}=${keys[key]}`);
+  };
+  pick("colour", "colour", ["status", "sizes"]);
+  pick("measure", "measure", ["disk", "vram"]);
+  pick("sort", "sort", Object.keys(SORTS));
 }
 
 registerTool({ id: "compiler", css: TEAM_COMPILER_CSS, draw: drawView,
-  controls: draftControls, screen, linkKeys, linkOpen,
+  controls: draftControls, screen, linkKeys, linkOpen, onKey,
   // The screens scripts/drafts/draft_shots.py captures, as the links this view writes.
-  shots: ["compiler/main", "compiler/main?detail=a.player.15",
+  shots: ["compiler/main", "compiler/main?detail=a.label", "compiler/main?detail=adv.player.11",
     "compiler/main?run=done", "compiler/main?mode=sideload&column=1",
-    "compiler/main?empty=1", "compiler/main?dest=running"] });
+    "compiler/main?empty=1", "compiler/main?dest=running",
+    "compiler/main?colour=sizes", "compiler/main?detail=adv.player.05&colour=sizes&sort=player",
+    "compiler/main?detail=a.label&colour=sizes&measure=vram",
+    "compiler/main?detail=dbg.kit.K1", "compiler/main?detail=dbg.portraits",
+    "compiler/main?detail=dbg.player.14", "compiler/main?detail=inv1.label",
+    "compiler/main?detail=a.player.05", "compiler/main?detail=refs.label"] });
 })();
