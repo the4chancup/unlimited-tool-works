@@ -100,10 +100,10 @@ other items run beside it. **After the detour**, in this order:
    The Sizes colouring and sorting were drafted and stamped the same day
    (`plans/team_compiler/gui.md` "Sizes and sorting"). The view is built in ordered slices (Opus), each landing and reviewed before
    the next is briefed:
-   - [ ] 1a: the grid, read-only, in the new lib `export_grid` (the upgrader's Grid look
-     draws it too), filled by a check the view runs when it opens and after
-     each Compile (the watcher comes later): rows, label, ID, player, portraits and kit
-     cells, check states, the legend → verify: TC-GUI-04 without its watcher part, 20, 21
+   - [x] 1a (2026-11-22, merge `304822e4`, Opus, two reworks) the grid, read-only, in the
+     new lib `export_grid`, filled by `check`'s validation when the view opens and after each
+     Compile: rows, label, ID, player, portraits and kit cells, check states, the legend
+     (TC-GUI-04 without its watcher part, 20, 21). Owed: its look beside the draft
    - [ ] 1b: the detail window: hover, pin, Esc, double-click, its top box, Copy messages
      → verify: TC-GUI-09, 24, 25, 31, 32
    - [ ] 1c: the toolbar's strip and its counts, the log's lines linked to cells, the log
