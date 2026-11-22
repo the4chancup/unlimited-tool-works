@@ -19,6 +19,10 @@ and a new scenario reusing it both fail, and every ID a range line compacts must
 EU-SET-05  withdrawn: restated as EU-SET-11 (`spec/export_upgrader.md`), his
            cheek_type in ingame_face.toml since step 0.0.1h
 EU-SET-06  withdrawn: no save is stripped (step 8.36b), so settings_from_stripped_record is gone
+EU-SET-15  withdrawn: VGL27's legacy mode (`--legacy-ids`, `legacy_ids.toml`) left main for
+           the branch vgl27
+EU-SET-16  withdrawn: VGL27's legacy mode left main for the branch vgl27
+EU-SET-17  withdrawn: VGL27's legacy mode left main for the branch vgl27
 ```
 
 ## `spec/export_upgrader.md`, Model-folder mode (the area withdrawn whole)
@@ -113,4 +117,15 @@ TC-BIN-49  withdrawn: restated as TC-BIN-62 (step 8.36c)
 TC-BIN-34  withdrawn: restated as TC-BIN-56 (step 8.36c)
 TC-BIN-35  withdrawn: restated as TC-BIN-57 (step 8.36c)
 TC-BIN-36  withdrawn: restated as TC-BIN-58 (step 8.36c)
+```
+
+## `plans/team_compiler/README.md`, VGL27's legacy IDs (the area withdrawn whole)
+
+```
+TC-LEG-01  withdrawn: VGL27's legacy mode (`legacy_ids.toml`, `legacy_boots_blocks.txt`) left
+           main for the branch vgl27
+TC-LEG-02  withdrawn: VGL27's legacy mode left main for the branch vgl27
+TC-LEG-03  withdrawn: VGL27's legacy mode left main for the branch vgl27
+TC-LEG-04  withdrawn: VGL27's legacy mode left main for the branch vgl27
+TC-LEG-05  withdrawn: VGL27's legacy mode left main for the branch vgl27
 ```

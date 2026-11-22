@@ -552,7 +552,11 @@ mod tests {
         let first = drawn.all("01")[0];
         let text = drawn.one("Old export format");
         assert_eq!(text.left(), first.left());
-        assert!(text.top() > first.bottom(), "on the second row");
+        assert_eq!(
+            text.center().y,
+            first.center().y + SQUARE + SPACING,
+            "centred on the second row"
+        );
     }
 
     // The Export upgrader's shape: three named lines a row, with word cells over two kit
@@ -597,11 +601,20 @@ mod tests {
     #[test]
     fn a_long_name_steps_its_font_down_then_takes_two_lines() {
         // The fonts load with the first frame, so the names are measured in one.
+        // The last name's halves are too wide for the label even at the smallest size.
+        let long = "Spring 2026 Invitational Cup Midcup Exports";
         let mut measured = Vec::new();
+        let mut half_width = 0.0;
         Headless::new().frame(Vec::new(), |ui| {
-            measured = ["/a/", "/civ4xg/", "Invitational 1"]
+            measured = ["/a/", "/civ4xg/", "Invitational 1", long]
                 .map(|name| name_lines(ui.painter(), name))
                 .to_vec();
+            let galley = ui.painter().layout_no_wrap(
+                measured[3].0[0].clone(),
+                FontId::monospace(NAME_SMALLEST),
+                Color32::PLACEHOLDER,
+            );
+            half_width = galley.size().x;
         });
         assert_eq!(measured[0], (vec!["/a/".to_owned()], 12.0));
         let (lines, size) = &measured[1];
@@ -610,6 +623,10 @@ mod tests {
         let (lines, size) = &measured[2];
         assert_eq!(lines, &["Invitat", "ional 1"]);
         assert!(*size <= 9.0, "{size}");
+        assert!(half_width > LABEL_TEXT_WIDTH, "premise: {half_width} wide");
+        let (lines, size) = &measured[3];
+        assert_eq!(lines.len(), 2);
+        assert_eq!(*size, NAME_SMALLEST, "no smaller than the smallest size");
     }
 
     #[test]

@@ -10,7 +10,8 @@ what is wrong and nothing is committed. The first form then runs `git commit -F 
 with the arguments given (paths, `-a`, `--amend`); the second `git merge --no-ff <ref> -F
 <message file>`, so a merge commit's message is checked like any other. `--in` runs either
 in another worktree (a sidekick's under `4cc-studio-temp/`): a `cd` chained before the
-command makes the agent harness ask the maintainer for permission.
+command makes the agent harness ask the maintainer for permission. The message file is read
+from where the script was run, while paths name the worktree's files.
 
 With no paths and no `-a`, git commits the index alone; the script then names any tracked
 file left changed and unstaged.
@@ -36,6 +37,7 @@ from commit_message import problems
 
 
 def main(argv: list[str]) -> int:
+    start = Path.cwd()
     if argv[:1] == ["--in"] and len(argv) > 2:
         os.chdir(argv[1])
         argv = argv[2:]
@@ -45,7 +47,7 @@ def main(argv: list[str]) -> int:
     if not argv or argv[0].startswith("-"):
         print(__doc__)
         return 2
-    message, rest = Path(argv[0]), argv[1:]
+    message, rest = start / argv[0], argv[1:]
     found = problems(message.read_text(encoding="utf-8"))
     for problem in found:
         print(f"commit: {problem}")

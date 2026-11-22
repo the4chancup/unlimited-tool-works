@@ -41,7 +41,7 @@ use crate::note;
 use crate::players::{path_scope, player_folders};
 use crate::referees::{find_refs_txt, players_txt, referee_folders};
 use crate::roster::Roster;
-use crate::settings::{SettingsFiles, legacy_ids, loose_settings_files, settings_files};
+use crate::settings::{SettingsFiles, loose_settings_files, settings_files};
 use crate::source::{self, OldExport, SourceFailure};
 use crate::staging::{
     PlannedWrite, claim_staging, finish_staging, write_output_file, write_planned,
@@ -756,7 +756,6 @@ fn upgrade_export(
                 &folders,
                 roster.as_ref(),
                 version.engine(),
-                args.legacy_ids,
                 |a, b| match (export.read(a), export.read(b)) {
                     (Ok(a), Ok(b)) => a == b,
                     _ => false,
@@ -764,22 +763,13 @@ fn upgrade_export(
             );
             // Step 8: a `settings.toml` per player folder, from the save's
             // records; loose mode's holds `name = true` alone (step 11).
-            let mut settings = match (save, &roster) {
+            let settings = match (save, &roster) {
                 (Some(save), Some(roster)) => {
                     settings_files(save, roster, &plan.folders, full, &plan.not_worn)
                 }
                 // Loose mode: no record to read, only the folder's name.
                 _ => loose_settings_files(&plan.folders),
             };
-            // The root `legacy_ids.toml`, the worn folders' old IDs: only
-            // `--legacy-ids` writes it — its presence is what turns the Team
-            // compiler's legacy packing on — and only a team export reaches
-            // this branch.
-            if args.legacy_ids
-                && let Some(file) = legacy_ids(&plan.folders)
-            {
-                settings.written.push(("legacy_ids.toml".to_owned(), file));
-            }
             let kits = kit_folders(
                 &files,
                 version,

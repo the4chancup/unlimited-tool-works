@@ -149,8 +149,7 @@ pub(crate) fn player_folder(draft: &FolderDraft, roster_file: bool) -> PlayerFol
                 | MetadataFile::NotesTxt
                 | MetadataFile::ColorsTxt
                 | MetadataFile::ConfigToml
-                | MetadataFile::Readme
-                | MetadataFile::LegacyIdsToml,
+                | MetadataFile::Readme,
             )
             | FileKind::Other => files.push(file.clone()),
         }

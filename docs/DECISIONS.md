@@ -19565,3 +19565,36 @@ not safe across versions: an `expect` on `u16::try_from` of a boots or gloves ID
 every version stores 14 bits, and crashed the PES 2014 build, whose gloves ID is 18. A width
 is a fact of one schema, not of the value's type.
 Plan: `CONTRIBUTING.md` "Code style", the Errors bullet.
+
+## 2026-11-22 — studio, distribution — The Compiler and the Export upgrader open only in the VGL organizer's build
+
+Decision: every build keeps the Compiler and the Export upgrader CLI-only on its sidebar
+(grayed, "Coming soon™"), except a build whose version carries `vgl27`, which marks no tool
+CLI-only. That build is the hand-given branch `vgl27` (`0.0.3-vgl27.1`), whose commit also sets
+the update check's `TAG_PREFIX` to `vgl27-v`, a prefix no published tag carries.
+Why: the maintainer wants the two views in the VGL cup organizer's hands first, delivered by
+hand, before members see them. The test is on the version, not a setting, because a setting
+can be edited into any member's build. The tag prefix, not a check in the updater, keeps the
+build from being offered main's release: a pre-release ranks under its release, so the
+organizer would be offered `0.0.3` and taking it would lock the two tools again; the side-line
+prefix already exists for that (`RUNBOOK.md` "Releasing a side line") and needs no code on
+main.
+Plan: `plans/core/gui.md` "Sidebar" item 3, "Tool list", and ST-SIDE-11; `RUNBOOK.md` "The VGL organizer's
+build".
+
+## 2026-11-22 — export_upgrader, team_compiler, distribution — VGL27's legacy mode leaves main for the branch vgl27
+
+Decision: the upgrader's `--legacy-ids`, the Compiler's reading of `legacy_ids.toml`, the
+`legacy_ids.toml` file kind in `aesthetics_export` and the launcher's flag are removed from main
+in one commit, and kept on the branch `vgl27` by reverting that commit there after merging it.
+Main's Compiler then reports a `legacy_ids.toml` left in an export as `root_file_unexpected`
+(a Warning, the file ignored), and the CHANGELOG's `### Important` says so with what to do.
+Why: the maintainer ruled that legacy mode serves VGL27 alone and goes when the cup is over;
+the VGL organizer has a build of their own (`0.0.3-vgl27.1`). Kept on main, every later change
+to the upgrader's shared folders or the Compiler's IDs would carry a mode no other cup uses.
+Removing it plainly rather than keeping the file kind as a silent shim follows "no
+compatibility before 1.0": the exports 0.0.2's launcher wrote still compile, on the
+Compiler's own IDs, with one Warning a member clears by deleting the file.
+Plan: `plans/core/development_plan.md` the `quick_upgrade.bat` bullet; `RUNBOOK.md` "The VGL
+organizer's build"; the plan and spec sections describing legacy mode are removed with the
+code.
