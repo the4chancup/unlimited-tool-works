@@ -34,9 +34,11 @@ pub(crate) use issues::{
     common_file_dropped, content_issue, dropped_scopes, is_below, issue, issue_in,
     strict_disposition,
 };
+pub use kits::kit_textures;
 pub use links::common_link_files;
 #[cfg(any(test, feature = "test-support"))]
 pub(crate) use root::is_logo_name;
+pub use root::{is_referee_marker, logo_parts};
 pub use roster::{PlayerIndex, ValidatedRoster};
 
 /// The folded names of the root folders only the old export layout has

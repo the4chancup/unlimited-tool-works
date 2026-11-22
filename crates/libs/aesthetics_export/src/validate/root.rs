@@ -107,9 +107,10 @@ pub(crate) fn check_portraits_missing(
     }
 }
 
-/// A `logo*` stem's grammar: `logo[_small][_<fit>]`, tags in that order,
-/// ASCII-case-insensitive. `(small, fit)` or `None` on a bad tag.
-fn logo_parts(stem: &str) -> Option<(bool, Option<LogoFit>)> {
+/// A root logo file's stem read by its grammar, `logo[_small][_<fit>]`: tags in that
+/// order, ASCII-case-insensitive. `(small, fit)`, `small` telling the small logo from the
+/// main one, or `None` for a stem that is no logo's or has a bad tag.
+pub fn logo_parts(stem: &str) -> Option<(bool, Option<LogoFit>)> {
     let rest = strip_prefix_ci(stem, "logo")?;
     let (small, rest) = match strip_prefix_ci(rest, "_small") {
         Some(rest) => (true, rest),
@@ -216,6 +217,12 @@ pub(crate) fn is_logo_name(name: &str) -> bool {
     strip_prefix_ci(stem(name), "logo").is_some()
 }
 
+/// Whether a root file named `name` is a referee export's marker texture, `ref_marker.dds`,
+/// ASCII-case-insensitively.
+pub fn is_referee_marker(name: &str) -> bool {
+    name.eq_ignore_ascii_case("ref_marker.dds")
+}
+
 /// The root-file allowlist plus the small root artifacts: `notes.txt`,
 /// `colors.txt`, `ref_marker.dds` (referee only), the unexpected files,
 /// folders and strays.
@@ -249,7 +256,7 @@ pub(crate) fn check_root(
                 artifacts.team_colors = Some(file.clone());
             }
             FileKind::Metadata(MetadataFile::Readme) => {}
-            FileKind::Texture if referees && name.eq_ignore_ascii_case("ref_marker.dds") => {
+            FileKind::Texture if referees && is_referee_marker(name) => {
                 artifacts.referee_marker = Some(file.clone());
             }
             FileKind::Marker(Marker::WriteNames) if !referees => {

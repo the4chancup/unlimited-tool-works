@@ -40,7 +40,7 @@ use studio_core::{
     CliError, HelpSection, HelpTopic, LogPanel, RunningPes, StudioTool, ToolContext,
 };
 
-use crate::check::live::LiveCheck;
+use crate::check::live::{LiveCheck, Polled};
 use crate::gui_run::RunLog;
 use crate::messages::TOOL_ID;
 use crate::view::GridDetail;
@@ -136,7 +136,8 @@ impl StudioTool for Tool {
 
     /// The Compile run's events into the log; the grid checked again once a run ends. A
     /// check's rows reach the grid only while no Compile runs, since the run may change
-    /// what they describe; a refused check is a line of the log.
+    /// what they describe, and its detail window then reads its pictures again; a refused
+    /// check is a line of the log.
     fn tick(&mut self, ctx: &ToolContext) {
         let compiling = self.run_log.is_running();
         self.run_log.poll();
@@ -146,8 +147,10 @@ impl StudioTool for Tool {
         if compiling {
             self.live_check.start(ctx);
         }
-        if let Some(refusal) = self.live_check.poll(ctx) {
-            self.run_log.append_refusal(&refusal);
+        match self.live_check.poll(ctx) {
+            Polled::Nothing => {}
+            Polled::Rows => self.detail.rows_replaced(),
+            Polled::Refused(refusal) => self.run_log.append_refusal(&refusal),
         }
     }
 

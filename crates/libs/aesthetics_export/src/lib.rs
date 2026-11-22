@@ -40,5 +40,6 @@ pub use validate::{
     ContentFinding, Disposition, FpcDirective, ISSUE_CODES, IssueScope, KitFolder, KitLayout,
     KitTexture, KitTextureSource, KitsFolder, LogoFile, LogoFiles, LogoFit, PlayerFolder,
     PlayerIndex, RootArtifacts, SharedLink, SharedModelFolder, ValidatedAestheticsExport,
-    ValidatedRoster, ValidationIssue, ValidationReport, common_link_files,
+    ValidatedRoster, ValidationIssue, ValidationReport, common_link_files, is_referee_marker,
+    kit_textures, logo_parts,
 };

@@ -3,15 +3,17 @@
 //! of what it is about: a player's, the portraits', a kit's, or the team label's.
 
 use std::collections::{BTreeMap, BTreeSet};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::thread::JoinHandle;
 
 use aesthetics_export::{
-    ExportKind, FolderDraft, ParsedAestheticsExport, PlayerSlot, RefSlot, ResolvedAestheticsExport,
-    ValidatedRoster, folder_slot, split_folder_name,
+    ExportKind, FileDescriptor, FileKind, FolderDraft, ParsedAestheticsExport, PlayerSlot, RefSlot,
+    ResolvedAestheticsExport, ValidatedRoster, folder_slot, is_referee_marker, kit_textures,
+    logo_parts, split_folder_name,
 };
 use export_grid::{
-    Cell, CellState, IdCell, Line, Open, Outline, Position, Row, RowBody, Tone, Width,
+    Cell, CellState, IdCell, Line, Open, Outline, PictureFile, Position, Row, RowBody, Tone,
+    TopBox, Width,
 };
 use kit_config::KitSlot;
 use studio_core::{Message, Scope, Severity, ToolContext, message_line};
@@ -26,6 +28,17 @@ use crate::validation::CheckedSource;
 /// What a check's thread hands back: the rows, or the text of the `error:` line that
 /// refused it.
 type Outcome = Result<Vec<Row>, String>;
+
+/// What `LiveCheck::poll` found.
+#[derive(Debug, PartialEq)]
+pub(crate) enum Polled {
+    /// No check ended since the last poll.
+    Nothing,
+    /// A check ended, and its rows replaced the grid's.
+    Rows,
+    /// A check ended refused: the text of its `error:` line, for the log.
+    Refused(String),
+}
 
 /// The grid's check: the rows of the last check that ended, and the check in flight.
 #[derive(Default)]
@@ -52,22 +65,24 @@ impl LiveCheck {
     }
 
     /// Takes the check's outcome once its thread has ended: its rows replace the grid's, or
-    /// its refusal's text is returned for the log while the grid keeps its rows. Then starts
-    /// the check asked for meanwhile. Returns at once while the check runs.
-    pub(crate) fn poll(&mut self, ctx: &ToolContext) -> Option<String> {
-        let running = self.running.take_if(|running| running.is_finished())?;
-        let refusal = match running.join() {
+    /// the grid keeps its rows and the refusal is returned for the log. Then starts the check
+    /// asked for meanwhile. Returns at once while the check runs.
+    pub(crate) fn poll(&mut self, ctx: &ToolContext) -> Polled {
+        let Some(running) = self.running.take_if(|running| running.is_finished()) else {
+            return Polled::Nothing;
+        };
+        let polled = match running.join() {
             Ok(Ok(rows)) => {
                 self.rows = rows;
-                None
+                Polled::Rows
             }
-            Ok(Err(error)) => Some(error),
-            Err(_) => Some("the grid's check stopped because it crashed".to_owned()),
+            Ok(Err(error)) => Polled::Refused(error),
+            Err(_) => Polled::Refused("the grid's check stopped because it crashed".to_owned()),
         };
         if std::mem::take(&mut self.again) {
             self.start(ctx);
         }
-        refusal
+        polled
     }
 
     /// Whether a check is in flight.
@@ -146,6 +161,11 @@ fn export_row(checked: CheckedSource, teams_list: &TeamsList) -> Row {
         },
     };
     let shallow = disk.archive;
+    // An export set aside before its files were listed shows no box: nothing is known of it.
+    let boxes = (!disk.archive && checked.parsed.is_some()).then(|| Boxes {
+        export: source.path.clone(),
+        logo: logo_file(&checked, referee).map(|file| picture(&source.path, &file)),
+    });
     let to_send = checked
         .messages
         .iter()
@@ -195,7 +215,14 @@ fn export_row(checked: CheckedSource, teams_list: &TeamsList) -> Row {
             }
         }
         (None, Some(layout)) => {
-            let lines = lines(&layout, checked.messages, &disk, blocked, &mut label);
+            let lines = lines(
+                &layout,
+                checked.messages,
+                &disk,
+                boxes.as_ref(),
+                blocked,
+                &mut label,
+            );
             RowBody::Lines(lines)
         }
         (None, None) => {
@@ -208,6 +235,7 @@ fn export_row(checked: CheckedSource, teams_list: &TeamsList) -> Row {
         label: Cell {
             place: source.file_name.clone(),
             open: Some(disk.root()),
+            top: boxes.as_ref().map_or(TopBox::Empty, Boxes::label),
             ..cell(name, label, shallow, false)
         },
         id: Some(id),
@@ -303,10 +331,15 @@ struct Layout {
     portraits_folder: Option<ScopePath>,
     /// Whether the export is the referees': its slots run to 35, on two lines.
     referee: bool,
+    /// Each player slot's portrait, the one the compile packs: his folder's own, else his
+    /// `Portraits/` file.
+    portrait_files: BTreeMap<u8, FileDescriptor>,
+    /// Each kit's main texture.
+    kit_textures: BTreeMap<KitSlot, FileDescriptor>,
 }
 
-/// A validated export's layout: its roster's folders and its kits. It counts no portraits:
-/// the count is its listing's (`draft_layout`), which `with_dropped` takes.
+/// A validated export's layout: its roster's folders, its kits and their pictures. It counts
+/// no portraits: the count is its listing's (`draft_layout`), which `with_dropped` takes.
 fn resolved_layout(resolved: &ResolvedAestheticsExport) -> Layout {
     let export = &resolved.export;
     let mut slots: BTreeMap<usize, Vec<u8>> = BTreeMap::new();
@@ -323,6 +356,31 @@ fn resolved_layout(resolved: &ResolvedAestheticsExport) -> Layout {
             }
         }
     }
+    let mut portrait_files = BTreeMap::new();
+    for (index, slots) in &slots {
+        for slot in slots {
+            let in_portraits = || {
+                let slot = PlayerSlot::new(*slot)?;
+                export.portraits.get(&slot)
+            };
+            if let Some(file) = export.players[*index]
+                .portrait
+                .as_ref()
+                .or_else(in_portraits)
+            {
+                portrait_files.insert(*slot, file.clone());
+            }
+        }
+    }
+    let kit_textures = export
+        .kits
+        .kits
+        .iter()
+        .filter_map(|(slot, kit)| {
+            let main = kit.textures.iter().find(|texture| texture.stem == "kit")?;
+            Some((*slot, main.file.clone()))
+        })
+        .collect();
     Layout {
         players: slots
             .into_iter()
@@ -337,6 +395,8 @@ fn resolved_layout(resolved: &ResolvedAestheticsExport) -> Layout {
         portraits: None,
         portraits_folder: None,
         referee,
+        portrait_files,
+        kit_textures,
     }
 }
 
@@ -345,7 +405,8 @@ fn resolved_layout(resolved: &ResolvedAestheticsExport) -> Layout {
 /// folder holds. A dropped folder keeps its cell, so its finding colours its own player or
 /// kit rather than the label. The portraits count is `listed`'s: a dropped folder's
 /// portrait is still in the export, and the portraits cell counts the players that have
-/// one, as it does for an export dropped whole (`draft_layout`).
+/// one, as it does for an export dropped whole (`draft_layout`). The pictures stay `kept`'s,
+/// the files the compile packs.
 fn with_dropped(mut kept: Layout, listed: Layout) -> Layout {
     kept.portraits = listed.portraits;
     kept.portraits_folder = listed.portraits_folder;
@@ -376,8 +437,8 @@ fn with_dropped(mut kept: Layout, listed: Layout) -> Layout {
 
 /// An export's layout as its listing gives it, before any finding dropped a part of it: each
 /// player folder at the slots its roster file gives it, or, with no roster file, at the slot
-/// its name claims; each kit folder at the slot its name claims. Names are read as validation
-/// reads them.
+/// its name claims; each kit folder at the slot its name claims; their pictures. Names are
+/// read as validation reads them.
 fn draft_layout(parsed: &ParsedAestheticsExport) -> Layout {
     let draft = &parsed.draft;
     let referee = draft.kind() == ExportKind::Referees;
@@ -412,17 +473,34 @@ fn draft_layout(parsed: &ParsedAestheticsExport) -> Layout {
             }
         }
     }
+    let at_slots: Vec<(&FolderDraft, u8)> = slots
+        .iter()
+        .flat_map(|(index, slots)| {
+            slots
+                .iter()
+                .map(move |slot| (&draft.players[*index], *slot))
+        })
+        .collect();
     let portraits = (!referee).then(|| {
-        slots
+        at_slots
             .iter()
-            .flat_map(|(index, slots)| {
-                slots
-                    .iter()
-                    .map(move |slot| (&draft.players[*index], *slot))
-            })
-            .filter(|(folder, slot)| has_draft_portrait(parsed, folder, *slot))
+            .filter(|(folder, slot)| draft_portrait(parsed, folder, *slot).is_some())
             .count()
     });
+    let portrait_files = at_slots
+        .iter()
+        .filter_map(|(folder, slot)| Some((*slot, draft_portrait(parsed, folder, *slot)?.clone())))
+        .collect();
+    let kit_textures = draft
+        .kits
+        .iter()
+        .filter_map(|kit| {
+            let (head, _) = split_folder_name(kit.path.name());
+            let main = kit_textures(kit)
+                .find(|file| stem(file.path.name()).eq_ignore_ascii_case("kit"))?;
+            Some((KitSlot::parse(head)?, main.clone()))
+        })
+        .collect();
     Layout {
         players: slots
             .into_iter()
@@ -443,22 +521,103 @@ fn draft_layout(parsed: &ParsedAestheticsExport) -> Layout {
             .and_then(|file| file.path.segments().next())
             .and_then(|folder| ScopePath::new(folder).ok()),
         referee,
+        portrait_files,
+        kit_textures,
     }
 }
 
-/// Whether the player at `slot`, in `folder`, has a portrait in the listing: a `portrait.*`
-/// file directly in his folder, or a `Portraits/` file named for his slot.
-fn has_draft_portrait(parsed: &ParsedAestheticsExport, folder: &FolderDraft, slot: u8) -> bool {
-    let in_folder = folder.files.iter().any(|file| {
+/// The file standing for `checked`'s export in its boxes: a referee export's marker when it
+/// has one, since its logo reaches no output while the referees wear the marker in game;
+/// else the export's main logo. Taken from the validated export when there is one, else
+/// from the export's listing; `None` without either.
+fn logo_file(checked: &CheckedSource, referee: bool) -> Option<FileDescriptor> {
+    if let Some(resolved) = &checked.resolved {
+        let export = &resolved.export;
+        let main = export.logo.as_ref().map(|logo| &logo.main.file);
+        return export.root.referee_marker.as_ref().or(main).cloned();
+    }
+    let draft = &checked.parsed.as_ref()?.draft;
+    let marker = draft.root_files.iter().find(|file| {
+        referee && file.kind == FileKind::Texture && is_referee_marker(file.path.name())
+    });
+    let main = draft.root_files.iter().find(|file| {
+        file.kind == FileKind::Texture
+            && logo_parts(stem(file.path.name())).is_some_and(|(small, _)| !small)
+    });
+    marker.or(main).cloned()
+}
+
+/// What a folder export's top boxes show: its files as pictures, and the file standing for
+/// the export (`logo_file`). An archive's cells show no picture: reading one out of an
+/// archive means decompressing it whole.
+struct Boxes {
+    /// The export's folder.
+    export: PathBuf,
+    /// The logo, or a referee export's marker.
+    logo: Option<PictureFile>,
+}
+
+/// `file`, a file of the export in the folder `export`, as the picture a window reads. Its
+/// path is the one on disk (`source`), which differs from the export's own under a folder
+/// layer the listing flattened.
+fn picture(export: &Path, file: &FileDescriptor) -> PictureFile {
+    PictureFile {
+        export: export.to_owned(),
+        path: file.source.as_str().to_owned(),
+    }
+}
+
+impl Boxes {
+    /// A label's box: the logo.
+    fn label(&self) -> TopBox {
+        TopBox::Logo(self.logo.clone())
+    }
+
+    /// A player's box: his `portrait` and the logo.
+    fn player(&self, portrait: Option<&FileDescriptor>) -> TopBox {
+        TopBox::Player {
+            portrait: portrait.map(|file| picture(&self.export, file)),
+            logo: self.logo.clone(),
+        }
+    }
+
+    /// A kit's box: its main `texture`, or nothing without one.
+    fn kit(&self, texture: Option<&FileDescriptor>) -> TopBox {
+        texture.map_or(TopBox::Empty, |file| {
+            TopBox::Picture(picture(&self.export, file))
+        })
+    }
+
+    /// The portraits cell's box: `portraits` in slot order, and the logo.
+    fn portraits<'a>(&self, portraits: impl Iterator<Item = Option<&'a FileDescriptor>>) -> TopBox {
+        TopBox::Portraits {
+            portraits: portraits
+                .map(|portrait| portrait.map(|file| picture(&self.export, file)))
+                .collect(),
+            logo: self.logo.clone(),
+        }
+    }
+}
+
+/// The portrait in the listing of the player at `slot`, in `folder`: a `portrait.*` file
+/// directly in his folder, else a `Portraits/` file named for his slot.
+fn draft_portrait<'a>(
+    parsed: &'a ParsedAestheticsExport,
+    folder: &'a FolderDraft,
+    slot: u8,
+) -> Option<&'a FileDescriptor> {
+    let in_folder = folder.files.iter().find(|file| {
         file.path.parent().as_ref() == Some(&folder.path)
             && stem(file.path.name()).eq_ignore_ascii_case("portrait")
     });
-    let in_portraits = parsed
-        .draft
-        .portraits
-        .iter()
-        .any(|file| folder_slot(stem(file.path.name())).map(PlayerSlot::get) == Some(slot));
-    in_folder || in_portraits
+    let in_portraits = || {
+        parsed
+            .draft
+            .portraits
+            .iter()
+            .find(|file| folder_slot(stem(file.path.name())).map(PlayerSlot::get) == Some(slot))
+    };
+    in_folder.or_else(in_portraits)
 }
 
 /// A file name without its extension.
@@ -516,12 +675,14 @@ fn within(path: &ScopePath, folder: &ScopePath) -> bool {
 }
 
 /// The lines of an export laid out as `layout`, on `disk`, each cell holding the `messages`
-/// that land in it, the rest going to `label`: one line of 23 player positions, the portraits
-/// and the kits, and on a referee row a second line under it for the slots past 23.
+/// that land in it, the rest going to `label`, and its pictures from `boxes` (`None`: no
+/// pictures): one line of 23 player positions, the portraits and the kits, and on a referee
+/// row a second line under it for the slots past 23.
 fn lines(
     layout: &Layout,
     messages: Vec<Message>,
     disk: &Disk,
+    boxes: Option<&Boxes>,
     blocked: bool,
     label: &mut Vec<Message>,
 ) -> Vec<Line> {
@@ -561,7 +722,11 @@ fn lines(
             .map(|slot| match players.remove(&slot) {
                 Some(messages) => {
                     let folder = folders.get(&slot).copied();
-                    Position::Cell(disk.cell(format!("{slot:02}"), messages, blocked, folder))
+                    let portrait = layout.portrait_files.get(&slot);
+                    Position::Cell(Box::new(Cell {
+                        top: boxes.map_or(TopBox::Empty, |boxes| boxes.player(portrait)),
+                        ..disk.cell(format!("{slot:02}"), messages, blocked, folder)
+                    }))
                 }
                 None => Position::Empty,
             })
@@ -573,20 +738,24 @@ fn lines(
             // With no `Portraits/`, each portrait is in its player's folder, and a finding
             // about one is on that player's cell: this cell has no folder.
             let folder = layout.portraits_folder.as_ref();
-            Position::Cell(Cell {
+            Position::Cell(Box::new(Cell {
                 width: Width::Wide,
                 place: folder.map_or_else(
                     || "Portraits in the player folders".to_owned(),
                     |folder| folder.as_str().to_owned(),
                 ),
                 open: disk.open(folder),
+                top: boxes.map_or(TopBox::Empty, |boxes| {
+                    let slots = 1..=PLAYER_COLUMNS;
+                    boxes.portraits(slots.map(|slot| layout.portrait_files.get(&slot)))
+                }),
                 ..cell(
                     format!("{with_portrait}/{player_count}"),
                     portraits,
                     shallow,
                     blocked,
                 )
-            })
+            }))
         }
         None => Position::Empty,
     };
@@ -600,7 +769,11 @@ fn lines(
         .map(|(slot, text)| match kits.remove(slot) {
             Some(messages) => {
                 let folder = kit_folders.get(slot).copied();
-                Position::Cell(disk.cell((*text).to_owned(), messages, blocked, folder))
+                let texture = layout.kit_textures.get(slot);
+                Position::Cell(Box::new(Cell {
+                    top: boxes.map_or(TopBox::Empty, |boxes| boxes.kit(texture)),
+                    ..disk.cell((*text).to_owned(), messages, blocked, folder)
+                }))
             }
             None => Position::Empty,
         })
