@@ -8,11 +8,12 @@ The message is checked by `scripts/gates/commit_message.py` (the first line's sh
 length, the blank line before the body, no agent credit); a message that fails is printed with
 what is wrong and nothing is committed. The first form then runs `git commit -F <message file>`
 with the arguments given (paths, `-a`, `--amend`); the second `git merge --no-ff <ref> -F
-<message file>`, so a merge commit's message is checked like any other. With no paths and
-no `-a`, git commits the index alone; the script then names any tracked file left changed
-and unstaged. `--in` runs either
+<message file>`, so a merge commit's message is checked like any other. `--in` runs either
 in another worktree (a sidekick's under `4cc-studio-temp/`): a `cd` chained before the
 command makes the agent harness ask the maintainer for permission.
+
+With no paths and no `-a`, git commits the index alone; the script then names any tracked
+file left changed and unstaged.
 
 A commit that changes a file under `docs/prototypes/` first runs the drafts bundler's test
 (`scripts/drafts/bundle_drafts_test.py`, under a second) and commits nothing when it fails:
@@ -70,7 +71,7 @@ def report_left_out(rest: list[str]) -> None:
         return
     left = subprocess.run(
         ["git", "diff", "--name-only"], capture_output=True, text=True, check=True
-    ).stdout.split()
+    ).stdout.splitlines()
     if left:
         print(f"commit: left out, changed but not staged: {', '.join(left)}")
 
