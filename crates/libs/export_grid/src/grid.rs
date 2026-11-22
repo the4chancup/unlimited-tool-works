@@ -559,12 +559,6 @@ mod tests {
     // columns each.
     #[test]
     fn a_row_of_three_named_lines_draws_its_names_and_its_wide_word_cells() {
-        const COLUMNS: Columns = Columns {
-            id_title: None,
-            line_names: true,
-            groups: &GROUPS,
-            last_title: "Export type",
-        };
         let word = |text: &str| {
             Position::Cell(Cell {
                 width: Width::Wide,
@@ -586,7 +580,7 @@ mod tests {
                 line("Gloves", empty(10)),
             ]),
         };
-        let drawn = draw(&COLUMNS, &[row], false);
+        let drawn = draw(&NAMED_COLUMNS, &[row], false);
         let names = ["Face", "Boots", "Gloves"].map(|name| drawn.one(name).center().y);
         assert_eq!(names[1] - names[0], SQUARE + SPACING);
         assert_eq!(names[2] - names[1], SQUARE + SPACING);
@@ -666,5 +660,211 @@ mod tests {
         let drawn = grid(Vec::new());
         assert!(drawn.all("/a/")[0].top() < first.top(), "the rows scrolled");
         assert_eq!(drawn.one("Team"), title, "the title row stayed");
+    }
+
+    /// The Export upgrader's columns: no ID, a name for each line.
+    const NAMED_COLUMNS: Columns = Columns {
+        id_title: None,
+        line_names: true,
+        groups: &GROUPS,
+        last_title: "Export type",
+    };
+
+    /// Where the text run of `text` is painted: the label's and cells' painted text is no
+    /// node, it is a `Shape::Text` whose `pos` is the galley's top-left corner.
+    fn text_pos(drawn: &Drawn, text: &str) -> egui::Pos2 {
+        drawn
+            .shapes
+            .iter()
+            .find_map(|shape| match shape {
+                egui::Shape::Text(text_shape) if text_shape.galley.text() == text => {
+                    Some(text_shape.pos)
+                }
+                _ => None,
+            })
+            .unwrap_or_else(|| panic!("no text run of {text:?}"))
+    }
+
+    /// The scroll area's persisted state, for the grid `show` draws under `salt`: the salt
+    /// it hands the area is the grid's own id, so the state lands under it salted again.
+    fn scroll_state(ctx: &egui::Context, salt: &str) -> egui::containers::scroll_area::State {
+        let mut id = egui::Id::NULL;
+        ctx.run_ui(egui::RawInput::default(), |ui| {
+            id = ui.make_persistent_id(egui::IdSalt::new(ui.make_persistent_id(salt)));
+        })
+        .drop_without_applying_deltas();
+        egui::containers::scroll_area::State::load(ctx, id)
+            .expect("the scroll area stored its state")
+    }
+
+    /// A wheel at `pos` scrolled by `delta`, the pointer over the grid first.
+    fn wheel(pos: egui::Pos2, delta: egui::Vec2) -> Vec<egui::Event> {
+        vec![
+            egui::Event::PointerMoved(pos),
+            egui::Event::MouseWheel {
+                unit: egui::MouseWheelUnit::Point,
+                delta,
+                phase: egui::TouchPhase::Move,
+                source: egui::MouseWheelSource::Unknown,
+                modifiers: egui::Modifiers::default(),
+            },
+        ]
+    }
+
+    /// A row of three named lines under `label`.
+    fn named_row(label: &str) -> Row {
+        let line = |name| Line {
+            name: Some(name),
+            groups: vec![empty(23), vec![Position::Empty], empty(10)],
+        };
+        Row {
+            label: Cell::new(label, CellState::FullOk),
+            id: None,
+            body: RowBody::Lines(vec![line("Face"), line("Boots"), line("Gloves")]),
+        }
+    }
+
+    // The grid's area starts at the frame's (0, 0): the headless window hands the contents
+    // the whole 1280 by 600 screen and the scroll area's content starts at its viewport's
+    // own corner.
+    #[test]
+    fn the_columns_stand_at_the_drafts_positions() {
+        let drawn = draw(&COLUMNS, &[team_row()], false);
+        // The left margin is the scroll area's 6, then the table's 2 border-spacing.
+        assert_eq!(drawn.one("/a/").left(), 8.0);
+        // The ID at 8 + the 52 label + 2.
+        assert_eq!(drawn.one("702").left(), 62.0);
+        // The first player at 62 + the 36 ID + 2 + the line's 13 column + 2.
+        assert_eq!(drawn.one("01").left(), 115.0);
+        // Portraits at 115 + 23 columns of (26 + 2) + the group's 4 gap + 2.
+        assert_eq!(drawn.one("1/2").left(), 765.0);
+        // The first kit at 765 + the 50 portraits + 2 + the group's 4 gap + 2.
+        assert_eq!(drawn.one("GK").left(), 823.0);
+        // Actions at 823 + 10 columns of (26 + 2) + the second line's 13 column + 2.
+        assert_eq!(drawn.one("Actions").left(), 1118.0);
+        // The title text's top: the spacing 2, then the head's 6 padding above its text.
+        assert_eq!(drawn.one("Team").top(), 8.0);
+        // The first row's top: 2 + the head (6 + the 14.65625 body row + 2) + 2.
+        assert_eq!(drawn.one("/a/").top(), 26.65625);
+    }
+
+    #[test]
+    fn the_portraits_title_is_centred_over_its_50_wide_column() {
+        let drawn = draw(&COLUMNS, &[team_row()], false);
+        // 765 + 25, the column's middle (the draft's .mid titles, 50 wide and centred).
+        assert_eq!(drawn.one("Portraits").center().x, 790.0);
+    }
+
+    #[test]
+    fn the_vertical_lines_stand_6_into_their_13_wide_columns() {
+        let drawn = draw(&COLUMNS, &[team_row()], false);
+        // The columns at 100 and 1103, the line 6 in from each left and the half point
+        // that keeps a 1-wide line on a whole pixel.
+        let xs: Vec<_> = drawn
+            .shapes
+            .iter()
+            .filter_map(|shape| match shape {
+                egui::Shape::LineSegment { points, stroke }
+                    if *stroke == dark().widgets.noninteractive.bg_stroke
+                        && points[0].x == points[1].x =>
+                {
+                    Some(points[0].x)
+                }
+                _ => None,
+            })
+            .collect();
+        assert_eq!(xs, [106.5, 1109.5]);
+    }
+
+    #[test]
+    fn a_row_of_three_lines_is_three_lines_high() {
+        // Three lines of 26 with the 2 between them and after: 3 × 28 from the row's top,
+        // the next row's label top proves it (26.65625 + 84).
+        let drawn = draw(&NAMED_COLUMNS, &[named_row("/a/"), named_row("/b/")], false);
+        assert_eq!(drawn.one("/b/").top(), 110.65625);
+    }
+
+    #[test]
+    fn a_row_scrolled_half_above_the_view_is_still_drawn() {
+        // A 300 scroll leaves the topmost line in view cut by its top: its span still
+        // intersects the view, so exactly one drawn label's top is above it.
+        let rows = vec![team_row(); 40];
+        let mut window = Headless::new();
+        window.ctx.global_style_mut(|style| {
+            style.scroll_animation = egui::style::ScrollAnimation::none();
+        });
+        let mut grid = |events| window.frame(events, |ui| show(ui, "grid", &COLUMNS, &rows, false));
+        grid(Vec::new());
+        grid(wheel(pos2(600.0, 300.0), vec2(0.0, -300.0)));
+        let drawn = grid(Vec::new());
+        let labels = drawn.all("/a/");
+        let above = labels.iter().filter(|rect| rect.top() < 0.0).count();
+        assert_eq!(above, 1, "the partly visible top row");
+        assert!(
+            labels.iter().all(|rect| rect.top() < 600.0),
+            "no row drawn below the view"
+        );
+    }
+
+    #[test]
+    fn the_scroll_area_holds_exactly_the_content_the_rows_make() {
+        // 40 rows of 28 under rows_top: the content is 26.65625 + 1120 = 1146.65625
+        // high; the viewport is the 600-high screen, so the farthest the scroll goes
+        // is 546.65625.
+        // Sideways the content fits (1118 + the Actions title + 8 < 1280), so a sideways
+        // wheel moves nothing: the horizontal pin for the content's width.
+        let rows = vec![team_row(); 40];
+        let mut window = Headless::new();
+        window.ctx.global_style_mut(|style| {
+            style.scroll_animation = egui::style::ScrollAnimation::none();
+        });
+        let mut grid = |events| window.frame(events, |ui| show(ui, "grid", &COLUMNS, &rows, false));
+        grid(Vec::new());
+        grid(wheel(pos2(600.0, 300.0), vec2(-100000.0, -100000.0)));
+        grid(Vec::new());
+        let state = scroll_state(&window.ctx, "grid");
+        assert_eq!(state.unclamped_offset(), vec2(0.0, 546.65625));
+    }
+
+    #[test]
+    fn the_title_rows_cover_reaches_the_first_row() {
+        // The cover over the scrolled rows: the view's width, from its top to rows_top
+        // (26.65625), in the panel's fill.
+        let drawn = draw(&COLUMNS, &[team_row()], false);
+        let cover = Rect::from_min_size(pos2(0.0, 0.0), vec2(1280.0, 26.65625));
+        let panel = dark().panel_fill;
+        assert!(
+            drawn.shapes.iter().any(|shape| matches!(
+                shape,
+                egui::Shape::Rect(rect) if rect.fill == panel && rect.rect == cover
+            )),
+            "no panel-fill cover over {cover:?}"
+        );
+    }
+
+    #[test]
+    fn the_labels_text_stands_4_in_centred_on_one_line_or_two() {
+        let long = Row {
+            label: Cell::new("Invitational 1", CellState::FullOk),
+            ..team_row()
+        };
+        let drawn = draw(&COLUMNS, &[team_row(), long], false);
+        // One line at the usual 12: 4 in from the label's left (8 + 4), its 14-high galley
+        // centred on the label's middle (26.65625 + 13 - 7).
+        assert_eq!(text_pos(&drawn, "/a/"), pos2(12.0, 32.65625));
+        // Two lines at 9, one `size + 1` apart (10): anchored 5 over and under the second
+        // label's middle (54.65625 + 13), each galley 10 high.
+        assert_eq!(text_pos(&drawn, "Invitat"), pos2(12.0, 57.65625));
+        assert_eq!(text_pos(&drawn, "ional 1"), pos2(12.0, 67.65625));
+    }
+
+    #[test]
+    fn a_lines_name_stands_4_into_its_column_centred_on_the_line() {
+        let drawn = draw(&NAMED_COLUMNS, &[named_row("/a/")], false);
+        // The name column at 62 (the label's 8 + 52 + 2, no ID): the text 4 in.
+        assert_eq!(drawn.one("Face").left(), 66.0);
+        // Centred on its 26-high line at 26.65625: 39.65625, the third line's 56 down.
+        assert_eq!(drawn.one("Face").center().y, 39.65625);
+        assert_eq!(drawn.one("Gloves").center().y, 95.65625);
     }
 }
