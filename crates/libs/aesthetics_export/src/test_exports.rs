@@ -21,16 +21,17 @@ use crate::validate::{is_logo_name, is_portrait_name, stem};
 pub enum Requirement {
     /// Some content (`export_empty`): an export whose files and empty folders all sit at its
     /// root gets the default player, `Players/03 - A/` (`Players/Ref A/` and a `players.txt`
-    /// of `01 Ref A` for a referee export) — but nothing beside a root `players.txt` or
-    /// `refs.txt`, whose lines decide the folders instead, nor a root `logo*` texture, which
-    /// alone satisfies the check. That texture is `Logo`'s fill, so `without(Content)` alone
-    /// stays clean on a `Full` export; a test of `export_empty` there turns `Logo` off too.
+    /// of `01 Ref A` for a referee export) — but nothing beside a root roster (`players.txt`,
+    /// or a referee export's `refs.txt`), whose lines decide the folders instead, nor a root
+    /// `logo*` texture, which alone satisfies the check. That texture is `Logo`'s fill, so
+    /// `without(Content)` alone stays clean on a `Full` export; a test of `export_empty`
+    /// there turns `Logo` off too.
     Content,
     /// A `Full` team export's root logo (`logo_missing`): `logo.png` when no root file's stem
     /// starts with `logo`.
     Logo,
     /// On PES 2017 to 2021, a `portrait.dds` in each player folder of a `Full` team export
-    /// that has no portrait of its own and no `Portraits/NN` file for its folder's number
+    /// that has no portrait of its own and no `Portraits/NN` texture for its folder's number
     /// (`portrait_missing`).
     Portraits,
 }
@@ -96,7 +97,9 @@ pub fn missing(
         |predicate: fn(&str) -> bool| files.iter().any(|path| at_root(path) && predicate(path));
     if !without.contains(&Requirement::Content)
         && files.iter().chain(folders.iter()).all(|path| at_root(path))
-        && !at_root_file(is_roster_name)
+        && !files
+            .iter()
+            .any(|path| at_root(path) && is_roster_name(path, referee))
         && !at_root_file(is_logo_texture)
     {
         let folder = if referee {
@@ -139,13 +142,15 @@ fn at_root(path: &str) -> bool {
     !path.contains('/')
 }
 
-/// Whether `name`, a root file's, is a roster file name: `players.txt` or `refs.txt`,
-/// matched whole, ASCII-case-insensitively.
-fn is_roster_name(name: &str) -> bool {
-    matches!(
-        classify(name),
-        FileKind::Metadata(MetadataFile::PlayersTxt | MetadataFile::RefsTxt)
-    )
+/// Whether `name`, a root file's, is a roster file name: `players.txt`, or `refs.txt` on a
+/// `referee` export (a team's `refs.txt` is no roster), matched whole,
+/// ASCII-case-insensitively.
+fn is_roster_name(name: &str, referee: bool) -> bool {
+    match classify(name) {
+        FileKind::Metadata(MetadataFile::PlayersTxt) => true,
+        FileKind::Metadata(MetadataFile::RefsTxt) => referee,
+        _ => false,
+    }
 }
 
 /// The player folders with no `portrait.*` texture directly in them and no `Portraits/NN`
@@ -475,6 +480,22 @@ mod tests {
         // `Players/notes.txt` is a stray file, not a folder: no `portrait.dds` beneath it.
         assert_eq!(added(&export), ["Players/05 - A/portrait.dds", "logo.png"]);
         // The stray itself is the one finding the pass reports.
+        assert_eq!(issue_codes(&export), ["root_file_unexpected"]);
+    }
+
+    #[test]
+    fn an_empty_player_folder_is_a_player_folder() {
+        let export = TestExport::new("co Full Spring", Pes21).folder("Players/05 - A");
+        assert_eq!(added(&export), ["Players/05 - A/portrait.dds", "logo.png"]);
+        assert_eq!(issue_codes(&export), Vec::<&str>::new());
+    }
+
+    #[test]
+    fn a_team_s_refs_txt_is_no_roster() {
+        let export = TestExport::new("co Midcup Spring", Pes21).file("refs.txt", "01 arbiter\n");
+        assert_eq!(added(&export), ["Players/03 - A/face_high.fmdl"]);
+        // A team ignores a `refs.txt`: it is a stray, and the default player keeps the
+        // export from being empty.
         assert_eq!(issue_codes(&export), ["root_file_unexpected"]);
     }
 

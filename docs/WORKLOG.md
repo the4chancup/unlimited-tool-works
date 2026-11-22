@@ -157,8 +157,10 @@ other items run beside it. **Ahead of item 6:** the `pes14` branch's step 12, a 
          requirement's `notes.txt` holds a single newline, since any text in it reports
          `notes_found`. SWE-2 round S1: 6 accepted, one a real test's input (rulings
          `.tmp/duck_rulings_builder.md`), reworked (SWE-2, merge `cdd64037`); the second
-         SWE-2 round, S2, runs on the rework. The round's part over the grid's position tests and `commit.py`: 4 accepted,
-         which ends its loop, all fixed (merge `50bed6bc`, `7b00659c`)
+         SWE-2 round, S2, on the rework: 3 accepted, none of reach (a), which ends the loop,
+         fixed by the lead (a team's `refs.txt` is no roster; the empty-folder loop's test).
+         The round's part over the grid's position tests and `commit.py`: 4 accepted, which
+         ends its loop, all fixed (merge `50bed6bc`, `7b00659c`)
        - [x] 2 (2026-11-22, merge `5a46d101`, SWE-2) `aesthetics_export`'s validator tests
          through `report*`, nine tests of a requirement's own check on `without`
        - [x] 3 (2026-11-22, merge `beeb2094`, Opus) the Compiler's CLI tests the logo slice
