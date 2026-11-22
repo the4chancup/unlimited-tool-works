@@ -1,22 +1,27 @@
 //! The cup's teams and the players on their rosters: all the editor lists, checks and
 //! edits. A save made from the stock game also holds the game's own clubs and national
 //! teams, and players on no cup roster. Nobody edits those, so they stay in the save as
-//! they were read and are written back untouched.
+//! they were read and are written back untouched. On a PES 2014 save every team counts
+//! as the cup's: the 2014 cup ran at real clubs' ids.
 
 use std::collections::HashSet;
 
 use pes_savefile::EditFile;
 use pes_savefile::model::TeamEntry;
+use pes_version::PesVersion;
 use teams_list::TeamId;
 
 /// Whether `team_id` is a cup team's: inside the teams list's id range (701 to 920).
-pub(crate) fn is_cup_team(team_id: u32) -> bool {
-    u16::try_from(team_id).is_ok_and(|id| TeamId::new(id).is_ok())
+/// On PES 2014 every id is one, the 2014 cup having run at real clubs' ids.
+pub(crate) fn is_cup_team(version: PesVersion, team_id: u32) -> bool {
+    version == PesVersion::Pes14 || u16::try_from(team_id).is_ok_and(|id| TeamId::new(id).is_ok())
 }
 
 /// `file`'s cup teams, in record order.
 pub(crate) fn cup_teams(file: &EditFile) -> impl Iterator<Item = &TeamEntry> {
-    file.teams().iter().filter(|team| is_cup_team(team.id))
+    file.teams()
+        .iter()
+        .filter(|team| is_cup_team(file.version(), team.id))
 }
 
 /// The ids of the players on a cup team's roster. Empty slots (id 0) are no player.
@@ -30,6 +35,7 @@ pub(crate) fn cup_player_ids(file: &EditFile) -> HashSet<u32> {
 
 #[cfg(test)]
 mod tests {
+    use pes_savefile::fixture_save;
     use pes_version::PesVersion;
 
     use super::*;
@@ -60,8 +66,37 @@ mod tests {
             (70_100, false),
             (u32::MAX, false),
         ] {
-            assert_eq!(is_cup_team(id), cup, "team {id}");
+            assert_eq!(is_cup_team(PesVersion::Pes21, id), cup, "team {id}");
         }
+    }
+
+    #[test]
+    fn team_136_is_a_cup_team_on_pes14_alone() {
+        // 136 is /gd/'s id in the 2014 cup, a real club's, outside 701 to 920.
+        assert!(!is_cup_team(PesVersion::Pes21, 136), "team 136 on PES 21");
+        assert!(is_cup_team(PesVersion::Pes14, 136), "team 136 on PES 2014");
+    }
+
+    #[test]
+    fn on_a_pes14_save_every_team_is_a_cup_team() {
+        let file = EditFile::from_bytes(&fixture_save(PesVersion::Pes14)).unwrap();
+        assert_eq!(
+            file.version(),
+            PesVersion::Pes14,
+            "premise: the fixture reads PES 2014"
+        );
+        assert_eq!(file.teams().len(), 478, "premise: the fixture's teams");
+        // Team 136, VASCO DA GAMA: a real club's id outside the cup's
+        // range, where /gd/ stood in the 2014 cup.
+        let vasco = file.team(136).expect("premise: team 136 is in the save");
+        assert_eq!(vasco.name, "VASCO DA GAMA", "premise: team 136's name");
+        assert!(
+            vasco.roster.iter().any(|slot| slot.player_id != 0),
+            "premise: team 136 holds players"
+        );
+        let expected: Vec<u32> = file.teams().iter().map(|team| team.id).collect();
+        let teams: Vec<u32> = cup_teams(&file).map(|team| team.id).collect();
+        assert_eq!(teams, expected, "every team of the file, in record order");
     }
 
     #[test]
