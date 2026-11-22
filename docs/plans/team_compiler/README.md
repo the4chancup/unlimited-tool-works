@@ -234,11 +234,19 @@ TC-GUI-24  GIVEN the pointer on a cell with findings
                 clicked THEN that one is pinned instead; WHEN the pinned cell, the window's
                 pin or the grid's empty space is clicked THEN nothing is pinned and the
                 window closes, and resting the pointer on that cell opens nothing until it
-                has left the cell; GIVEN a double-click on a cell THEN its folder opens in the
+                has left the cell; WHEN Esc is pressed with the window open, pinned or not,
+                THEN it closes the same way; GIVEN a double-click on a cell THEN its folder opens in the
                 file manager and the pin is as it was before the double-click; GIVEN an export
                 with no Portraits folder whose portraits cell has one finding THEN a
                 double-click on that cell opens the player folder of the finding's file, and
                 with two findings or none it opens nothing
+TC-GUI-25  GIVEN an export with three findings in the log, one on its label and two on its
+                players
+           WHEN its label's window shows Copy messages and that button is clicked
+           THEN the clipboard holds the export's three log lines, as the log prints them, one
+                per line, and the button reads Copied for a moment; GIVEN an export with no
+                findings, or the window of a player, kit or portraits cell THEN the window
+                has no Copy messages
 TC-GUI-10  GIVEN a kit folder whose colors.txt parses and whose icon_<N> marker names pattern N
            WHEN its cell is drawn
            THEN the cell shows pattern N's two-color swatch in the kit's two menu colors under
@@ -259,6 +267,13 @@ TC-GUI-12  GIVEN a run in flight
                 so far and the memory in use; the Compile button reads Cancel; once the run
                 ends the strip reads `Compile finished in mm:ss · N files written (S MB)`, S
                 the written files' total size
+TC-GUI-26  GIVEN no run in flight, the log showing All, and the grid with errors on two exports
+                and warnings on one
+           WHEN the strip is drawn
+           THEN after the last run's line, if any, it reads the export count, the skipped
+                count, `2 with errors` and `1 with warnings`; WHEN `2 with errors` is clicked
+                THEN the log shows Errors; WHEN `1 with warnings` is clicked THEN the log
+                shows Warnings
 TC-GUI-13  GIVEN a run in flight over two exports
            WHEN Cancel is clicked
            THEN the run ends after the task or texture in progress, no CPK is written or

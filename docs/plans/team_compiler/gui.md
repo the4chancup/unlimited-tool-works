@@ -81,6 +81,12 @@ it, one cell per player at a fixed position by number, plus one cell per kit:
   open, below) and, for a finding with one obvious fix, the rename that fixes it. The cells
   carry no tooltip of their own; the ID cell and the buttons keep theirs.
 
+  A team label's window also offers **Copy messages** when the export has findings. It puts
+  the export's log lines on the clipboard, as the log prints them, and reads "Copied" for a
+  moment. Some organizers tell a member what is wrong with their export rather than fixing it
+  themselves, and this gives them the text to send. **Copy report** would put the whole run's
+  lines on the clipboard, which they would have to cut down to the one export.
+
   The window opens on a box the 3D preview's size: a player's preview (Future Features), and
   for every other cell the export's logo (its root `logo*` texture), fitted inside it, or
   "No logo". The box is there on every cell, so the text under it stays in place as the
@@ -97,6 +103,7 @@ it, one cell per player at a fixed position by number, plus one cell per kit:
     space unpins it; a click on another cell pins that one. After a click that unpins, the
     cell opens no window on hover until the pointer leaves it: egui reports it hovered on the
     next frame, which would open the window the click just closed.
+  - **Esc** closes the window, pinned or not, as a click that unpins does.
   - **A double-click** opens the cell's folder in the file manager (for an archive export, the
     folder holding it, with the archive selected), and leaves the pin as it was before it.
     The portraits cell's folder is the export's `Portraits/` when it has one. Most exports have
@@ -437,5 +444,11 @@ A single primary action:
   `Progress { processed, total }` payload is insufficient; extend it with these metrics or add
   separate `StageChanged`/`MetricsUpdated` events before implementing this view
   (`core/architecture.md` "Event system").
+
+  While nothing runs, the strip also sums up the grid after the last run's line: `14 exports ·
+  6 skipped · 3 with errors · 1 with warnings`. Each count is of exports, not of messages, and
+  a count of zero is left out. This answers an organizer's first question, whether anything is wrong at all. The
+  error and warning counts are links that set the log's filter to Errors or Warnings, and
+  expand the log if it is collapsed.
 
 ---

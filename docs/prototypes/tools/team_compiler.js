@@ -650,7 +650,10 @@ const sameCell = (a, b) => !!a && !!b && a.row === b.row && a.what === b.what &&
 // S.muted: the cell a click just unpinned, under the pointer still; it opens
 // no window on hover until the pointer leaves it, or the unpin would show the
 // window again at once.
+// S.under: the cell under the pointer (or the cell of the log line under it),
+// which Esc mutes as a click that unpins does.
 function hoverEnter(cell) {
+  S.under = cell;
   if (S.pin || sameCell(S.muted, cell)) return;
   clearTimeout(hoverTimer);
   const show = () => { S.hover = cell; redrawDetail(); };
@@ -659,7 +662,7 @@ function hoverEnter(cell) {
 }
 function hoverLeave() {
   clearTimeout(hoverTimer);
-  S.muted = null;
+  S.muted = S.under = null;
   if (!S.hover) return;
   S.hover = null;
   hoverEndedAt = performance.now();
@@ -687,6 +690,23 @@ function cellDoubleClick(r, cell) {
 const detailEvents = (r, cell) => ({
   onmouseenter: () => hoverEnter(cell), onmouseleave: hoverLeave,
   onclick: e => cellClick(e, cell), ondblclick: () => cellDoubleClick(r, cell) });
+// Esc closes the window, pinned or not.
+function onKey(e) {
+  if (e.key !== "Escape" || !(S.pin || S.hover)) return;
+  clearTimeout(hoverTimer);
+  S.pin = S.hover = null;
+  S.muted = S.under;
+  render();
+}
+// An export's log lines as the console prints them, for the organizer to send
+// to its member; "Copied" stands on the button for a moment.
+function copyMessages(r) {
+  lastCopied = L.log.filter(l => l.at && l.at.row === r.key).map(l => l.text).join("\n");
+  navigator.clipboard?.writeText(lastCopied)?.catch(() => {});
+  S.copied = r.key;
+  redrawDetail();
+  setTimeout(() => { S.copied = null; redrawDetail(); }, 1500);
+}
 // A click on the grid's empty space unpins (a faint empty position counts as
 // empty; a cell, a label, the ID cell and the row buttons do not).
 function gridClick(e) {
@@ -800,6 +820,9 @@ function detailPanel() {
       row(folderPath(r, at.what, cell) === null ? null
           : button("Open folder", () => openFolder(folderPath(r, at.what, cell)),
             { title: r.archive ? "An archive export: its folder opens with the archive selected" : null }),
+        at.what === "label" && L.log.some(l => l.at && l.at.row === r.key)
+          ? button(S.copied === r.key ? "Copied" : "Copy messages", () => copyMessages(r),
+            { title: "Puts this export's log lines on the clipboard, to send to its member" }) : null,
         // A finding with one obvious fix: a rename the member asks for by a click.
         cell.fix && !r.archive ? button(cell.fix.label, () => {
           if (cell.fix.apply) cell.fix.apply(r);
@@ -815,20 +838,26 @@ const BADGES = {
   running: "PES is running: the compile cannot replace the installed CPKs. Close the game, or the run writes to the output folder only",
   elevation: "The game folder needs administrator rights to write to. Restart the app as administrator, or the run writes to the output folder only" };
 // The grid summed up, what the strip says while nothing runs: can I compile?
+// The error and warning counts are links that set the log's filter.
 function summary() {
-  if (D.empty) return "";
+  if (D.empty) return [];
   const on = S.rows.filter(eligible);
   const having = states => on.filter(r => [r.label, ...cellsOf(r)].some(c => states.includes(c.status))).length;
   const count = (n, one, many = one) => n ? `${n} ${n === 1 ? one : many}` : null;
-  return [count(S.rows.length, "export", "exports"), count(S.rows.length - on.length, "skipped"),
-    count(having(["error", "partialError"]), "with errors"), count(having(["warning"]), "with warnings")]
-    .filter(Boolean).join(" · ");
+  const filterLink = (text, filter, title) => text && h("a", { href: "#", title, onclick: e => {
+    e.preventDefault(); L.logFilter = filter; L.logCollapsed = false; render(); } }, text);
+  const parts = [count(S.rows.length, "export", "exports"), count(S.rows.length - on.length, "skipped"),
+    filterLink(count(having(["error", "partialError"]), "with errors"), "errors", "Show only the errors in the log"),
+    filterLink(count(having(["warning"]), "with warnings"), "warnings", "Show only the warnings and errors in the log")]
+    .filter(Boolean);
+  return parts.flatMap((p, i) => i ? [" · ", p] : [p]);
 }
 function toolbar() {
   const run = S.run;
+  const sum = summary();
   const strip = run
     ? `${run.stage} · ${mmss(run.elapsed)} · ${run.files} files written (${Math.round(run.mb)} MB) · ${run.memory} MB of system memory in use`
-    : [S.last, summary()].filter(Boolean).join("  —  ");
+    : S.last && sum.length ? [S.last, "  —  ", ...sum] : S.last || sum;
   const sideloadOff = ["2015", "2016"].includes(shellPesVersion());
   const main = button(run ? "Cancel" : MODES[S.mode], run ? cancelRun : () => startRun(), {});
   main.id = "compile-btn";
@@ -1169,7 +1198,7 @@ function linkOpen(scr, keys) {
 }
 
 registerTool({ id: "compiler", css: TEAM_COMPILER_CSS, draw: drawView,
-  controls: draftControls, screen, linkKeys, linkOpen,
+  controls: draftControls, screen, linkKeys, linkOpen, onKey,
   // The screens scripts/drafts/draft_shots.py captures, as the links this view writes.
   shots: ["compiler/main", "compiler/main?detail=a.label", "compiler/main?detail=adv.player.11",
     "compiler/main?run=done", "compiler/main?mode=sideload&column=1",

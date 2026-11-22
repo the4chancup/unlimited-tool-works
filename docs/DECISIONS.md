@@ -19334,3 +19334,17 @@ to cell with no delay once open. The sidebar keeps 0.1 s.
 Why: 0.15 s felt better in the draft. The window is the 3D preview's size, and a shorter delay
 flashes it over the cells a pointer only crosses.
 Plan: plans/team_compiler/gui.md "GUI: the live-validating team grid" (the detail window, Hover).
+
+## 2026-11-22 — compiler view — Copy messages, Esc closes the window, the strip's counts filter the log
+Decision (the maintainer, on the lead's proposal): a team label's window offers Copy messages
+(the export's log lines on the clipboard) when the export has findings; Esc closes the detail
+window, pinned or not, as a click that unpins does; the idle strip's error and warning counts
+are links that set the log's filter.
+Decision (the lead): only the label's window copies, since its lines are the whole export's;
+the warnings link sets the Warnings filter, which shows errors too, as the chip does; a click
+on a count expands a collapsed log.
+Why: some organizers pass an export's problems on to its member, and Copy report holds the
+whole run. Esc is the key people try first to close a window. The counts answer "is anything
+wrong?", and the link takes the organizer straight to the lines.
+Plan: plans/team_compiler/gui.md "GUI: the live-validating team grid" (the detail window),
+"Toolbar" (the run strip); plans/team_compiler/README.md TC-GUI-24, TC-GUI-25, TC-GUI-26.
