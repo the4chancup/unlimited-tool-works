@@ -3,15 +3,18 @@
 //! of what it is about: a player's, the portraits', a kit's, or the team label's.
 
 use std::collections::{BTreeMap, BTreeSet};
+use std::path::Path;
 use std::thread::JoinHandle;
 
 use aesthetics_export::{
     ExportKind, FolderDraft, ParsedAestheticsExport, PlayerSlot, RefSlot, ResolvedAestheticsExport,
     ValidatedRoster, folder_slot, split_folder_name,
 };
-use export_grid::{Cell, CellState, IdCell, Line, Outline, Position, Row, RowBody, Tone, Width};
+use export_grid::{
+    Cell, CellState, IdCell, Line, Open, Outline, Position, Row, RowBody, Tone, Width,
+};
 use kit_config::KitSlot;
-use studio_core::{Message, Scope, Severity, ToolContext};
+use studio_core::{Message, Scope, Severity, ToolContext, message_line};
 use teams_list::TeamsList;
 use vtree::{ScopePath, fold_name};
 
@@ -128,13 +131,33 @@ const KIT_COLUMNS: [(KitSlot, &str); 10] = [
 /// `checked`'s row, its team's ID read from `teams_list`. Its label is the export's `/xx/`
 /// team name, or its folder or archive name when that starts with no team name. An export
 /// set aside before its files were listed (disabled, an archive that cannot be read) shows
-/// its label alone.
+/// its label alone. The row is keyed by the export's folder or archive name. Its log lines,
+/// which the label's Copy messages copies, are its findings as the console prints them when
+/// one is a Warning or worse, and none otherwise: every export the check identifies carries
+/// an Info, and a clean export has nothing to send its member.
 fn export_row(checked: CheckedSource, teams_list: &TeamsList) -> Row {
     let source = &checked.source;
     let referee = source.is_referees();
-    let shallow = match source.kind {
-        SourceKind::Folder => false,
-        SourceKind::Zip | SourceKind::SevenZ => true,
+    let disk = Disk {
+        path: &source.path,
+        archive: match source.kind {
+            SourceKind::Folder => false,
+            SourceKind::Zip | SourceKind::SevenZ => true,
+        },
+    };
+    let shallow = disk.archive;
+    let to_send = checked
+        .messages
+        .iter()
+        .any(|message| message.severity >= Severity::Warning);
+    let log_lines = if to_send {
+        checked
+            .messages
+            .iter()
+            .map(|message| message_line(Some(&source.file_name), message))
+            .collect()
+    } else {
+        Vec::new()
     };
     let name = source
         .team_name
@@ -172,7 +195,7 @@ fn export_row(checked: CheckedSource, teams_list: &TeamsList) -> Row {
             }
         }
         (None, Some(layout)) => {
-            let lines = lines(&layout, checked.messages, shallow, blocked, &mut label);
+            let lines = lines(&layout, checked.messages, &disk, blocked, &mut label);
             RowBody::Lines(lines)
         }
         (None, None) => {
@@ -181,15 +204,70 @@ fn export_row(checked: CheckedSource, teams_list: &TeamsList) -> Row {
         }
     };
     Row {
-        label: cell(name, label, shallow, false),
+        key: source.file_name.clone(),
+        label: Cell {
+            place: source.file_name.clone(),
+            open: Some(disk.root()),
+            ..cell(name, label, shallow, false)
+        },
         id: Some(id),
         body,
+        log_lines,
+    }
+}
+
+/// Where an export is on disk, which its cells' folders open from.
+struct Disk<'a> {
+    /// The export's folder or archive.
+    path: &'a Path,
+    /// Whether it is an archive, whose folders have no place of their own on disk.
+    archive: bool,
+}
+
+impl Disk<'_> {
+    /// What opens the export itself: its folder, or the archive selected in the folder
+    /// holding it.
+    fn root(&self) -> Open {
+        if self.archive {
+            Open::Select(self.path.to_owned())
+        } else {
+            Open::Folder(self.path.to_owned())
+        }
+    }
+
+    /// What opens `folder`, a folder inside the export, or `None` for a cell with none. Any
+    /// cell of an archive opens the archive's own folder, the archive selected.
+    fn open(&self, folder: Option<&ScopePath>) -> Option<Open> {
+        if self.archive {
+            return Some(self.root());
+        }
+        let mut path = self.path.to_owned();
+        for segment in folder?.segments() {
+            path.push(segment);
+        }
+        Some(Open::Folder(path))
+    }
+
+    /// A cell for `folder`, a folder inside the export (`cell` for the rest): it prints the
+    /// folder and opens it.
+    fn cell(
+        &self,
+        text: String,
+        messages: Vec<Message>,
+        blocked: bool,
+        folder: Option<&ScopePath>,
+    ) -> Cell {
+        Cell {
+            place: folder.map(ScopePath::as_str).unwrap_or_default().to_owned(),
+            open: self.open(folder),
+            ..cell(text, messages, self.archive, blocked)
+        }
     }
 }
 
 /// A cell showing `text` for `messages`: checked (partial-ok when `shallow`, from an archive),
 /// ringed by the worst Warning or Error, an Info changing nothing; blocked, with no ring, when
-/// its export will not compile.
+/// its export will not compile. It has no folder: `Disk::cell` gives one.
 fn cell(text: String, messages: Vec<Message>, shallow: bool, blocked: bool) -> Cell {
     let worst = messages.iter().map(|message| message.severity).max();
     let (state, outline) = match (blocked, shallow, worst) {
@@ -198,11 +276,9 @@ fn cell(text: String, messages: Vec<Message>, shallow: bool, blocked: bool) -> C
         (false, false, worst) => (CellState::FullOk, outline(worst)),
     };
     Cell {
-        text,
-        state,
         outline,
         messages,
-        width: Width::Square,
+        ..Cell::new(text, state)
     }
 }
 
@@ -223,6 +299,8 @@ struct Layout {
     kits: Vec<(KitSlot, ScopePath)>,
     /// How many players have a portrait; `None` when the row has no portraits cell.
     portraits: Option<usize>,
+    /// The export's `Portraits/` folder, as its listing spells it; `None` without one.
+    portraits_folder: Option<ScopePath>,
     /// Whether the export is the referees': its slots run to 35, on two lines.
     referee: bool,
 }
@@ -257,6 +335,7 @@ fn resolved_layout(resolved: &ResolvedAestheticsExport) -> Layout {
             .map(|(slot, kit)| (*slot, kit.path.clone()))
             .collect(),
         portraits: None,
+        portraits_folder: None,
         referee,
     }
 }
@@ -269,6 +348,7 @@ fn resolved_layout(resolved: &ResolvedAestheticsExport) -> Layout {
 /// one, as it does for an export dropped whole (`draft_layout`).
 fn with_dropped(mut kept: Layout, listed: Layout) -> Layout {
     kept.portraits = listed.portraits;
+    kept.portraits_folder = listed.portraits_folder;
     let taken: BTreeSet<u8> = kept
         .players
         .iter()
@@ -357,6 +437,11 @@ fn draft_layout(parsed: &ParsedAestheticsExport) -> Layout {
             })
             .collect(),
         portraits,
+        portraits_folder: draft
+            .portraits
+            .first()
+            .and_then(|file| file.path.segments().next())
+            .and_then(|folder| ScopePath::new(folder).ok()),
         referee,
     }
 }
@@ -430,16 +515,22 @@ fn within(path: &ScopePath, folder: &ScopePath) -> bool {
         .is_some_and(|rest| rest.is_empty() || rest.starts_with('/'))
 }
 
-/// The lines of an export laid out as `layout`, each cell holding the `messages` that land in
-/// it, the rest going to `label`: one line of 23 player positions, the portraits and the
-/// kits, and on a referee row a second line under it for the slots past 23.
+/// The lines of an export laid out as `layout`, on `disk`, each cell holding the `messages`
+/// that land in it, the rest going to `label`: one line of 23 player positions, the portraits
+/// and the kits, and on a referee row a second line under it for the slots past 23.
 fn lines(
     layout: &Layout,
     messages: Vec<Message>,
-    shallow: bool,
+    disk: &Disk,
     blocked: bool,
     label: &mut Vec<Message>,
 ) -> Vec<Line> {
+    let shallow = disk.archive;
+    let folders: BTreeMap<u8, &ScopePath> = layout
+        .players
+        .iter()
+        .flat_map(|(folder, slots)| slots.iter().map(move |slot| (*slot, folder)))
+        .collect();
     let mut players: BTreeMap<u8, Vec<Message>> = layout
         .players
         .iter()
@@ -469,7 +560,8 @@ fn lines(
         (first..first + PLAYER_COLUMNS)
             .map(|slot| match players.remove(&slot) {
                 Some(messages) => {
-                    Position::Cell(cell(format!("{slot:02}"), messages, shallow, blocked))
+                    let folder = folders.get(&slot).copied();
+                    Position::Cell(disk.cell(format!("{slot:02}"), messages, blocked, folder))
                 }
                 None => Position::Empty,
             })
@@ -477,21 +569,39 @@ fn lines(
     };
     let first_players = player_line(1);
     let portraits = match layout.portraits {
-        Some(with_portrait) => Position::Cell(Cell {
-            width: Width::Wide,
-            ..cell(
-                format!("{with_portrait}/{player_count}"),
-                portraits,
-                shallow,
-                blocked,
-            )
-        }),
+        Some(with_portrait) => {
+            // With no `Portraits/`, each portrait is in its player's folder, and a finding
+            // about one is on that player's cell: this cell has no folder.
+            let folder = layout.portraits_folder.as_ref();
+            Position::Cell(Cell {
+                width: Width::Wide,
+                place: folder.map_or_else(
+                    || "Portraits in the player folders".to_owned(),
+                    |folder| folder.as_str().to_owned(),
+                ),
+                open: disk.open(folder),
+                ..cell(
+                    format!("{with_portrait}/{player_count}"),
+                    portraits,
+                    shallow,
+                    blocked,
+                )
+            })
+        }
         None => Position::Empty,
     };
+    let kit_folders: BTreeMap<KitSlot, &ScopePath> = layout
+        .kits
+        .iter()
+        .map(|(slot, folder)| (*slot, folder))
+        .collect();
     let kits = KIT_COLUMNS
         .iter()
         .map(|(slot, text)| match kits.remove(slot) {
-            Some(messages) => Position::Cell(cell((*text).to_owned(), messages, shallow, blocked)),
+            Some(messages) => {
+                let folder = kit_folders.get(slot).copied();
+                Position::Cell(disk.cell((*text).to_owned(), messages, blocked, folder))
+            }
             None => Position::Empty,
         })
         .collect();

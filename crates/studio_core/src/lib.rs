@@ -22,7 +22,7 @@ pub mod updater;
 pub mod widgets;
 pub use events::{
     Disposition, EventLines, ExportId, ExportRevision, FolderStatus, Message, MessageCode,
-    PipelineEvent, PipelineEventEnvelope, RunId, Scope, Severity,
+    PipelineEvent, PipelineEventEnvelope, RunId, Scope, Severity, message_line,
 };
 pub use help::{CatalogRow, HelpSection, HelpTarget, HelpTopic, run_help};
 pub use pes_process::{RunningPes, running_pes};

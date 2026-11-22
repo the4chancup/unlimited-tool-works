@@ -318,7 +318,13 @@ impl EventLines {
                 self.names.insert(*export_id, display_name.clone());
                 None
             }
-            PipelineEvent::Message(message) => Some(self.message_line(message)),
+            PipelineEvent::Message(message) => {
+                let export = message
+                    .scope
+                    .export_id()
+                    .and_then(|export_id| self.names.get(&export_id));
+                Some(message_line(export.map(String::as_str), message))
+            }
             PipelineEvent::Output(text) => Some(text.clone()),
             PipelineEvent::ExportsExpected { .. }
             | PipelineEvent::ExportProcessed { .. }
@@ -328,39 +334,41 @@ impl EventLines {
             | PipelineEvent::UnmigratedContentFound => None,
         }
     }
+}
 
-    fn message_line(&self, message: &Message) -> String {
-        let source = match message.scope.export_id() {
-            None => String::new(),
-            Some(export_id) => match self.names.get(&export_id) {
-                Some(name) => format!("{name}: "),
-                // A tool that reports before `ExportStarted` still gets a readable line.
-                None => format!("export {}: ", export_id.0),
-            },
-        };
-        let location = match &message.scope {
-            Scope::Run | Scope::Export { .. } => String::new(),
-            Scope::Folder { path, .. } | Scope::File { path, .. } => {
-                format!(" at {}", path.as_str())
-            }
-            Scope::RosterEntry { file, line, .. } => format!(" at {} line {line}", file.as_str()),
-        };
-        let context = if message.context.is_empty() {
-            String::new()
-        } else {
-            let fields: Vec<String> = message
-                .context
-                .iter()
-                .map(|(key, value)| format!("{key}={}", one_line(value)))
-                .collect();
-            format!(" ({})", fields.join(", "))
-        };
-        format!(
-            "- {source}{} {}{location}{context}",
-            message.severity.name(),
-            message.code.code
-        )
-    }
+/// The console's line for `message`: the name of its export (`export`, as the export's
+/// `ExportStarted` event gave it), its severity, its code, the file or folder it is about and
+/// its context fields. A message about no export has no name; one whose export's name is not
+/// known (`None`) is named by the export's id.
+pub fn message_line(export: Option<&str>, message: &Message) -> String {
+    let source = match (message.scope.export_id(), export) {
+        (None, _) => String::new(),
+        (Some(_), Some(name)) => format!("{name}: "),
+        // A tool that reports before `ExportStarted` still gets a readable line.
+        (Some(export_id), None) => format!("export {}: ", export_id.0),
+    };
+    let location = match &message.scope {
+        Scope::Run | Scope::Export { .. } => String::new(),
+        Scope::Folder { path, .. } | Scope::File { path, .. } => {
+            format!(" at {}", path.as_str())
+        }
+        Scope::RosterEntry { file, line, .. } => format!(" at {} line {line}", file.as_str()),
+    };
+    let context = if message.context.is_empty() {
+        String::new()
+    } else {
+        let fields: Vec<String> = message
+            .context
+            .iter()
+            .map(|(key, value)| format!("{key}={}", one_line(value)))
+            .collect();
+        format!(" ({})", fields.join(", "))
+    };
+    format!(
+        "- {source}{} {}{location}{context}",
+        message.severity.name(),
+        message.code.code
+    )
 }
 
 /// `value` as one console line: its lines trimmed, the empty ones dropped, the rest joined

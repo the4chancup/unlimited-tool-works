@@ -1598,6 +1598,7 @@ version = "0.0.2"
 dependencies = [
  "egui",
  "studio_core",
+ "vtree",
 ]
 
 [[package]]

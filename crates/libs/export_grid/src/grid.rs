@@ -1,12 +1,14 @@
 //! The grid's painting (the draft's `.tc-grid`): the title row, the rows, and two vertical
 //! lines down the whole area, in a scroll area both ways whose title row stays in view. Every
 //! cell is a rectangle the painter fills, with a node of its own for screen readers and
-//! tests; nothing in it reacts to the pointer.
+//! tests, which senses the pointer for the detail window.
 
 use egui::{Align2, Color32, FontId, Rect, Sense, TextStyle, pos2, vec2};
+use studio_core::CatalogRow;
 use studio_core::theme::palette;
 
 use crate::cells::{Cell, CellState, Outline, Position, Width, look, paint};
+use crate::detail::{Contents, Detail, Found, GridResponse, Place, open_of};
 use crate::rows::{Columns, IdCell, Line, Row, RowBody, Tone};
 
 /// A square position's side, and a line's height.
@@ -46,16 +48,20 @@ const NAME_LARGEST: f32 = 12.0;
 const NAME_ONE_LINE: f32 = 9.0;
 const NAME_SMALLEST: f32 = 5.0;
 
-/// Draws `rows` under a title row from `columns`, in the room `ui` has left. With `checking`,
-/// every cell and label is drawn in the Checking colours, whatever state it holds. `id_salt`
-/// keeps the scroll position apart from another grid's.
+/// Draws `rows` under a title row from `columns`, in the room `ui` has left, and the detail
+/// window of the cell `detail` has open, its findings explained from `catalog`. With
+/// `checking`, every cell and label is drawn in the Checking colours, whatever state it
+/// holds. `id_salt` keeps the scroll position and the window apart from another grid's.
+/// Returns what the member asked for: a folder opened, the help at a finding's code.
 pub fn show(
     ui: &mut egui::Ui,
     id_salt: impl egui::AsIdSalt,
     columns: &Columns,
     rows: &[Row],
     checking: bool,
-) {
+    detail: &mut Detail,
+    catalog: &[CatalogRow],
+) -> GridResponse {
     let id = ui.make_persistent_id(id_salt);
     let layout = Layout::new(columns);
     let body_font = TextStyle::Body.resolve(ui.style());
@@ -67,13 +73,17 @@ pub fn show(
             .layout_no_wrap(columns.last_title.to_owned(), body_font.clone(), weak);
     let width = layout.last + last_title.size().x + RIGHT_MARGIN;
     let height = rows_top + rows.iter().map(row_height).sum::<f32>();
-    egui::ScrollArea::both()
+    let scroll = egui::ScrollArea::both()
         .id_salt(id)
         .auto_shrink([false, false])
         .show(ui, |ui| {
             let (area, _) = ui.allocate_exact_size(vec2(width, height), Sense::hover());
             let left = area.left();
             let view = ui.clip_rect();
+            // Sensed before the cells, so a click lands here only where no cell is: on the
+            // grid's empty space, which unpins.
+            let empty = ui.interact(view, id.with("empty"), Sense::click());
+            let mut found = Found::default();
             let mut top = area.top() + rows_top;
             for (index, row) in rows.iter().enumerate() {
                 let height = row_height(row);
@@ -88,10 +98,13 @@ pub fn show(
                         id: id.with(index),
                         checking,
                     };
-                    grid.row(row, top);
+                    grid.row(row, top, &mut |place, response| {
+                        found.record(detail, &row.key, place, response);
+                    });
                 }
                 top += height;
             }
+            let double_clicked = detail.update(ui, &found, empty.clicked());
             // The title row is painted last, over the rows scrolled under it: it stays at
             // the top of the view.
             let title_top = view.top().max(area.top());
@@ -112,7 +125,21 @@ pub fn show(
                 let x = left + rule + RULE_AT + 0.5;
                 ui.painter().vline(x, title_top..=bottom, stroke);
             }
+            detail.paint_pin(ui, &found);
+            double_clicked
         });
+    let contents = Contents {
+        columns,
+        rows,
+        checking,
+        catalog,
+    };
+    let window = detail.window(ui, id, scroll.inner_rect, &contents);
+    let double_clicked = scroll.inner.and_then(|cell| open_of(rows, &cell));
+    GridResponse {
+        open: double_clicked.or(window.open),
+        help: window.help,
+    }
 }
 
 /// A row's height: a line's for each of its lines, one at least.
@@ -220,21 +247,31 @@ impl Grid<'_> {
             .ui
             .painter()
             .text(at, align, text, font.clone(), colour);
-        self.node(rect, self.id.with(text), text);
+        self.node(rect, self.id.with(text), text, Sense::hover());
     }
 
-    /// One row, its first line's top at `top`.
-    fn row(&self, row: &Row, top: f32) {
+    /// One row, its first line's top at `top`; `on_cell` takes each cell's place and its
+    /// response to the pointer, the label's included.
+    fn row(&self, row: &Row, top: f32, on_cell: &mut impl FnMut(Place, &egui::Response)) {
         let layout = self.layout;
-        self.label(&row.label, self.rect(layout.label, top, LABEL_WIDTH));
+        let label = self.label(&row.label, self.rect(layout.label, top, LABEL_WIDTH));
+        on_cell(Place::Label, &label);
         if let (Some(id), Some(x)) = (&row.id, layout.id) {
             self.id_cell(id, self.rect(x, top, ID_WIDTH));
         }
         match &row.body {
             RowBody::Lines(lines) => {
-                for (index, line) in lines.iter().enumerate() {
-                    let line_top = top + (SQUARE + SPACING) * index as f32;
-                    self.line(line, line_top, self.id.with(index));
+                for (line_index, line) in lines.iter().enumerate() {
+                    let line_top = top + (SQUARE + SPACING) * line_index as f32;
+                    let id = self.id.with(line_index);
+                    self.line(line, line_top, id, &mut |group, index, response| {
+                        let place = Place::Position {
+                            line: line_index,
+                            group,
+                            index,
+                        };
+                        on_cell(place, response);
+                    });
                 }
             }
             RowBody::Message { text, tone } => {
@@ -250,13 +287,20 @@ impl Grid<'_> {
                     .ui
                     .painter()
                     .text(at, Align2::LEFT_CENTER, text, font, colour);
-                self.node(rect, self.id.with("message"), text);
+                self.node(rect, self.id.with("message"), text, Sense::hover());
             }
         }
     }
 
-    /// One line of cells, its top at `top`.
-    fn line(&self, line: &Line, top: f32, id: egui::Id) {
+    /// One line of cells, its top at `top`; `on_cell` takes each cell's column group, its
+    /// index in the group and its response to the pointer.
+    fn line(
+        &self,
+        line: &Line,
+        top: f32,
+        id: egui::Id,
+        on_cell: &mut impl FnMut(usize, usize, &egui::Response),
+    ) {
         if let (Some(name), Some(x)) = (line.name, self.layout.line_name) {
             let at = pos2(self.left + x + LABEL_PADDING, top + SQUARE / 2.0);
             let font = TextStyle::Body.resolve(self.ui.style());
@@ -265,7 +309,7 @@ impl Grid<'_> {
                 .ui
                 .painter()
                 .text(at, Align2::LEFT_CENTER, name, font, colour);
-            self.node(rect, id.with("name"), name);
+            self.node(rect, id.with("name"), name, Sense::hover());
         }
         for (group_index, (positions, (start, column))) in
             line.groups.iter().zip(&self.layout.groups).enumerate()
@@ -284,7 +328,8 @@ impl Grid<'_> {
                     }
                     Position::Cell(cell) => {
                         let rect = self.rect(x, top, column_width(cell.width));
-                        self.cell(cell, rect, id.with((group_index, index)));
+                        let response = self.cell(cell, rect, id.with((group_index, index)));
+                        on_cell(group_index, index, &response);
                     }
                 }
                 x += span * (column + SPACING);
@@ -314,8 +359,8 @@ impl Grid<'_> {
         look.text
     }
 
-    /// A cell: its background, then its text centred.
-    fn cell(&self, cell: &Cell, rect: Rect, id: egui::Id) {
+    /// A cell: its background, then its text centred; returns its response to the pointer.
+    fn cell(&self, cell: &Cell, rect: Rect, id: egui::Id) -> egui::Response {
         let colour = self.background(cell, rect);
         self.ui.painter().text(
             rect.center(),
@@ -324,12 +369,12 @@ impl Grid<'_> {
             FontId::monospace(CELL_FONT),
             colour,
         );
-        self.node(rect, id, &cell.text);
+        self.node(rect, id, &cell.text, Sense::click())
     }
 
     /// The team label: its background, then its name at the left, smaller or in two lines
-    /// when it does not fit at the usual size.
-    fn label(&self, label: &Cell, rect: Rect) {
+    /// when it does not fit at the usual size; returns its response to the pointer.
+    fn label(&self, label: &Cell, rect: Rect) -> egui::Response {
         let colour = self.background(label, rect);
         let painter = self.ui.painter();
         let (lines, size) = name_lines(painter, &label.text);
@@ -348,7 +393,7 @@ impl Grid<'_> {
                 colour,
             );
         }
-        self.node(rect, self.id.with("label"), &label.text);
+        self.node(rect, self.id.with("label"), &label.text, Sense::click())
     }
 
     /// The ID cell: the ID in the strong text on the widgets' grey, nothing, or `???` on the
@@ -377,14 +422,17 @@ impl Grid<'_> {
             FontId::monospace(ID_FONT),
             colour,
         );
-        self.node(rect, self.id.with("id"), text);
+        // It senses clicks, though nothing reacts to them yet, so a click on it is not one
+        // on the grid's empty space, which unpins.
+        self.node(rect, self.id.with("id"), text, Sense::click());
     }
 
     /// A node for `rect`, read as `text`: what a screen reader, and a test, finds of a
-    /// painted cell or title.
-    fn node(&self, rect: Rect, id: egui::Id, text: &str) {
-        let response = self.ui.interact(rect, id, Sense::hover());
+    /// painted cell or title. It senses the pointer as `sense` says.
+    fn node(&self, rect: Rect, id: egui::Id, text: &str, sense: Sense) -> egui::Response {
+        let response = self.ui.interact(rect, id, sense);
         response.widget_info(|| egui::WidgetInfo::labeled(egui::Role::Label, true, text));
+        response
     }
 }
 
@@ -425,33 +473,7 @@ fn name_lines(painter: &egui::Painter, name: &str) -> (Vec<String>, f32) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::rows::ColumnGroup;
-    use crate::testing::{Drawn, Headless, dark};
-
-    /// The Compiler's columns: 23 players, the portraits, 10 kits.
-    const GROUPS: [ColumnGroup; 3] = [
-        ColumnGroup {
-            title: "Players",
-            columns: 23,
-            width: Width::Square,
-        },
-        ColumnGroup {
-            title: "Portraits",
-            columns: 1,
-            width: Width::Wide,
-        },
-        ColumnGroup {
-            title: "Kits",
-            columns: 10,
-            width: Width::Square,
-        },
-    ];
-    const COLUMNS: Columns = Columns {
-        id_title: Some("ID"),
-        line_names: false,
-        groups: &GROUPS,
-        last_title: "Actions",
-    };
+    use crate::testing::{COLUMNS, Drawn, GROUPS, Headless, dark};
 
     /// A checked cell showing `text`.
     fn checked(text: &str) -> Position {
@@ -474,18 +496,33 @@ mod tests {
         let mut kits = vec![checked("GK")];
         kits.extend(empty(9));
         Row {
+            key: "a Midcup Grid".to_owned(),
             label: Cell::new("/a/", CellState::FullOk),
             id: Some(IdCell::Known("702".to_owned())),
             body: RowBody::Lines(vec![Line {
                 name: None,
                 groups: vec![players, vec![Position::Cell(portraits)], kits],
             }]),
+            log_lines: Vec::new(),
         }
+    }
+
+    /// The grid of `rows` in `columns`, with a detail window that has nothing open.
+    fn plain(ui: &mut egui::Ui, columns: &Columns, rows: &[Row], checking: bool) {
+        show(
+            ui,
+            "grid",
+            columns,
+            rows,
+            checking,
+            &mut Detail::default(),
+            &[],
+        );
     }
 
     /// One frame of the grid of `rows` in `columns`.
     fn draw(columns: &Columns, rows: &[Row], checking: bool) -> Drawn {
-        Headless::new().frame(Vec::new(), |ui| show(ui, "grid", columns, rows, checking))
+        Headless::new().frame(Vec::new(), |ui| plain(ui, columns, rows, checking))
     }
 
     #[test]
@@ -576,6 +613,7 @@ mod tests {
         let mut files = vec![word("Logo"), word("Common")];
         files.extend(empty(6));
         let row = Row {
+            key: "a Midcup Grid".to_owned(),
             label: Cell::new("/a/", CellState::FullOk),
             id: None,
             body: RowBody::Lines(vec![
@@ -583,6 +621,7 @@ mod tests {
                 line("Boots", files),
                 line("Gloves", empty(10)),
             ]),
+            log_lines: Vec::new(),
         };
         let drawn = draw(&NAMED_COLUMNS, &[row], false);
         let names = ["Face", "Boots", "Gloves"].map(|name| drawn.one(name).center().y);
@@ -668,7 +707,7 @@ mod tests {
     fn the_title_row_stays_in_view_while_the_rows_scroll_under_it() {
         let rows = vec![team_row(); 40];
         let mut window = scrolling();
-        let mut grid = |events| window.frame(events, |ui| show(ui, "grid", &COLUMNS, &rows, false));
+        let mut grid = |events| window.frame(events, |ui| plain(ui, &COLUMNS, &rows, false));
         let drawn = grid(Vec::new());
         let title = drawn.one("Team");
         let first = drawn.all("/a/")[0];
@@ -734,9 +773,11 @@ mod tests {
             groups: vec![empty(23), vec![Position::Empty], empty(10)],
         };
         Row {
+            key: label.to_owned(),
             label: Cell::new(label, CellState::FullOk),
             id: None,
             body: RowBody::Lines(vec![line("Face"), line("Boots"), line("Gloves")]),
+            log_lines: Vec::new(),
         }
     }
 
@@ -806,7 +847,7 @@ mod tests {
         // intersects the view, so exactly one drawn label's top is above it.
         let rows = vec![team_row(); 40];
         let mut window = scrolling();
-        let mut grid = |events| window.frame(events, |ui| show(ui, "grid", &COLUMNS, &rows, false));
+        let mut grid = |events| window.frame(events, |ui| plain(ui, &COLUMNS, &rows, false));
         grid(Vec::new());
         grid(wheel(pos2(600.0, 300.0), vec2(0.0, -300.0)));
         let drawn = grid(Vec::new());
@@ -828,7 +869,7 @@ mod tests {
         let rows = vec![team_row(); 40];
         let mut window = scrolling();
         window.screen = vec2(1000.0, 600.0);
-        let mut grid = |events| window.frame(events, |ui| show(ui, "grid", &COLUMNS, &rows, false));
+        let mut grid = |events| window.frame(events, |ui| plain(ui, &COLUMNS, &rows, false));
         grid(Vec::new());
         grid(wheel(pos2(600.0, 300.0), vec2(-100000.0, -100000.0)));
         grid(Vec::new());

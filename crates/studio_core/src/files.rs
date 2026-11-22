@@ -1,5 +1,5 @@
-//! File writes that must not leave a half-written file behind, and the folder a tool wrote to
-//! opened in the system's file manager.
+//! File writes that must not leave a half-written file behind, and a folder opened, or a file
+//! shown in its folder, in the system's file manager.
 
 use std::fs;
 use std::io;
@@ -40,6 +40,54 @@ fn folder_command(folder: &Path) -> std::process::Command {
     let mut command = std::process::Command::new(program);
     command.arg(folder);
     command
+}
+
+/// Opens the folder holding `file` in the system's file manager, with `file` selected where
+/// the file manager can select one (`select_command`), without waiting on it. A file manager
+/// that cannot start is a warning in the log, as for `open_folder`.
+pub fn show_in_folder(file: &Path) {
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        // Not waited on, as in `open_folder`.
+        if let Err(error) = select_command(file).spawn() {
+            log::warn!(
+                "cannot show the file {} in the file manager: {error}",
+                file.display()
+            );
+        }
+    }
+    #[cfg(target_arch = "wasm32")]
+    log::debug!(
+        "the browser build has no file manager for {}",
+        file.display()
+    );
+}
+
+/// The command that shows `file` in its folder: `explorer /select,` on Windows and
+/// `open -R` on macOS, which select it; elsewhere `xdg-open` on its folder, since no option
+/// selects a file in every Linux file manager.
+#[cfg(not(target_arch = "wasm32"))]
+fn select_command(file: &Path) -> std::process::Command {
+    #[cfg(windows)]
+    {
+        use std::os::windows::process::CommandExt;
+        // explorer reads the path only when the quotes come after `/select,`; the standard
+        // quoting would wrap the whole argument once the path has a space.
+        let mut argument = std::ffi::OsString::from("/select,\"");
+        argument.push(file);
+        argument.push("\"");
+        let mut command = std::process::Command::new("explorer");
+        command.raw_arg(argument);
+        command
+    }
+    #[cfg(target_os = "macos")]
+    {
+        let mut command = std::process::Command::new("open");
+        command.arg("-R").arg(file);
+        command
+    }
+    #[cfg(not(any(windows, target_os = "macos")))]
+    folder_command(file.parent().unwrap_or(file))
 }
 
 /// Writes `path` through a sibling `<file name>.tmp`: `write` fills the temporary file, which
@@ -134,6 +182,29 @@ mod tests {
         let program = "xdg-open";
         assert_eq!(command.get_program(), program);
         assert_eq!(command.get_args().collect::<Vec<_>>(), [folder.as_os_str()]);
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
+    #[test]
+    fn show_in_folder_runs_the_file_manager_on_the_file_s_folder_selecting_the_file() {
+        let file = Path::new("C:/Data/UTW/exports/co Midcup Map.zip");
+        let command = select_command(file);
+        let args: Vec<_> = command.get_args().collect();
+        #[cfg(windows)]
+        {
+            assert_eq!(command.get_program(), "explorer");
+            assert_eq!(args, ["/select,\"C:/Data/UTW/exports/co Midcup Map.zip\""]);
+        }
+        #[cfg(target_os = "macos")]
+        {
+            assert_eq!(command.get_program(), "open");
+            assert_eq!(args, ["-R", "C:/Data/UTW/exports/co Midcup Map.zip"]);
+        }
+        #[cfg(not(any(windows, target_os = "macos")))]
+        {
+            assert_eq!(command.get_program(), "xdg-open");
+            assert_eq!(args, ["C:/Data/UTW/exports"]);
+        }
     }
 
     /// The rename's failure (`path` a directory, which a file never
