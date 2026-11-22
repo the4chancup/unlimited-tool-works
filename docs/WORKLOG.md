@@ -35,8 +35,9 @@ run's findings (`4cc-studio-temp/str_re/out/findings.md`).
 now is item 6, the Compiler's view for the VGL organizer** (the maintainer, 2026-11-21), its
 draft looked at again first; the Export upgrader's view may follow in a later build. The
 other items run beside it. **Ahead of item 6:** the `pes14` branch's step 12, a whole PES
-2014 team exported and imported as Team TOML, which Build 3 now carries (the maintainer,
-2026-11-22); running sidekicks and jobs are not stopped for it. **After the detour**, in this order:
+2014 team exported and imported as Team TOML, which Build 3 carries (the maintainer,
+2026-11-22): `0.0.2-pes14.3`, tagged 2026-11-23 on `48ab28bc`, its Release run passed and its
+draft checked, for the maintainer to publish; running sidekicks and jobs are not stopped for it. **After the detour**, in this order:
 1. The Nation list: done (merges `467790ab`, `1b9c5f27`; SWE-2 round S1n). It opens on the
    held nation, a typed name picks as an ID does, Escape puts the old nation back, and one
    opening is one undo entry; the General info review's fixes (rulings "geninfo A1") with it.
@@ -3734,7 +3735,7 @@ pruned when their phase closes; they stay in git history. A question only the ma
 can answer is not an issue: it goes to `docs/maintainer/questions.html`, and an issue that waits on one
 points there.
 
-- fixed on `pes14` (2026-11-22, `17463113`), Build 3 ready at `18918349` — PES 2014 Build 2
+- fixed on `pes14` (2026-11-22, `17463113`), in Build 3 (`0.0.2-pes14.3`) — PES 2014 Build 2
   (`0.0.2-pes14.2`) crashed on the Appearance page, and on Hide default body, of a player the
   game created on an in-game edit (the Akko7 organizer's /hi3/ players,
   `.tmp/pes14_crash/EDIT.bin.newer`): such a record stores the gloves ID with all 18 bits set
@@ -3757,8 +3758,9 @@ points there.
   flag (`plans/pes_savefile/operations.md` "A written team name shows", DECISIONS). Build 3
   rebuilt there (`tasks_build/UTW-pes14-042e60b8.exe`), its scoped gates passed (4,820
   tests), and a second in-game look (`.tmp/pes14_ingame/teamname/findings.md` in its
-  worktree) shows "/gd/" in the Italian League's list. The card waits for the maintainer's
-  yes. Main has the same rule (2026-11-23, merge `ac123e50`, SWE-2), with its CHANGELOG line.
+  worktree) shows "/gd/" in the Italian League's list. The maintainer
+  said yes 2026-11-23: Build 3 cut as `0.0.2-pes14.3` (`48ab28bc`). Main has the same rule
+  (2026-11-23, merge `ac123e50`, SWE-2), with its CHANGELOG line.
   The Compiler's view (item 6) goes on without waiting for it (the maintainer, 2026-11-22).
 - open (2026-11-22) — The Save editor's tests leave their scratch behind:
   `test_support::scratch` empties `target/<profile>/save_editor_tests/<test>` when a test
