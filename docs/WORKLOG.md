@@ -125,8 +125,13 @@ other items run beside it. **Ahead of item 6:** the `pes14` branch's step 12, a 
      draft's `IDs` cell), TC-LEG-01 to 05 and EU-SET-15 to 17 withdrawn, and a CHANGELOG
      `### Important` line telling members to delete the `legacy_ids.toml` 0.0.2 wrote. `vgl27`
      merged main and reverted the removal (`a0c24750`), its gates green with the mode back
-   - [ ] 1b: the detail window: hover, pin, Esc, double-click, its top box, Copy messages
-     → verify: TC-GUI-09, 24, 25, 31, 32
+   - [ ] 1b: the detail window, in two slices, since its pictures need decoding and a cache
+     of their own:
+     - [ ] 1b-i: hover, pin, Esc, double-click, Open folder and Copy messages, in
+       `export_grid`, the top box drawn empty → verify: TC-GUI-09, 24, 25: running (Opus,
+       `sk/grid1b`)
+     - [ ] 1b-ii: the top box's pictures (the logo or referee marker, the portraits, the kit
+       texture) → verify: TC-GUI-31, 32
    - [ ] 1c: the toolbar's strip and its counts, the log's lines linked to cells, the log
      collapsed when it would hide rows → verify: TC-GUI-15, 26, 27
    - Then the kit cells' swatch (TC-GUI-10), the row actions, the ID cell's editing, the
