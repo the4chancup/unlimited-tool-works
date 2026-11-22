@@ -8,7 +8,8 @@ settings are made on this process, before it starts the shell, because every pro
 from it inherits them: PowerShell, then cargo, rustc, the linker and the test binaries. So a
 recipe needs no wrapper of its own, and a run that should take the whole machine asks for it:
 `$env:UTW_PRIORITY = 'normal'; just checkpoint`. A recipe line started from a process already
-lower (Idle, or fewer processors) keeps the lower setting. Exits with the shell's exit code."""
+at Idle stays at Idle, and one started on fewer processors stays within them, the first two
+taken away there too. Exits with the shell's exit code."""
 
 import ctypes
 import os
@@ -26,9 +27,10 @@ def free_processors(count: int) -> int:
 
 
 def lower_this_process() -> None:
-    """Lowers, never raises: a process started already lower (a job confined to Idle and to
-    fewer processors while someone works at the machine) keeps that, since every recipe line
-    of a running job passes through here and would otherwise undo the confinement."""
+    """Lowers, never raises: a process started at Idle stays there, and its processors only
+    narrow, never widen (a job confined to fewer processors while someone works at the
+    machine), since every recipe line of a running job passes through here and would
+    otherwise undo the confinement."""
     kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
     kernel32.GetCurrentProcess.restype = ctypes.c_void_p
     kernel32.GetPriorityClass.argtypes = [ctypes.c_void_p]

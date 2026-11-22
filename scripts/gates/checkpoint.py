@@ -8,7 +8,7 @@ gated commit is a git ref the command moves itself, `refs/checkpoints/gated`, so
 it and anything can ask how far HEAD has run past it.
 
 `run` needs a clean tree (the ref names a commit, so what is gated must be one): it runs
-`just gates-changed <gated>`, then `mutants-diff <mutated>` (skipped by `--no-mutants`),
+`just gates-changed <gated>`, then `mutants_diff.py <mutated>` (skipped by `--no-mutants`),
 and moves the ref to the commit it started on when the gates pass. The mutation run has a ref
 of its own, `refs/checkpoints/mutated`, moved only by a run whose mutants all ran: a run with
 `--no-mutants` moves `gated` alone, so the next run's mutants still start from the last commit
@@ -36,8 +36,8 @@ REF = "refs/checkpoints/gated"
 MUTATED = "refs/checkpoints/mutated"
 # The `just mutants-diff` recipe's line, run directly: on Windows a recipe runs under PowerShell's
 # `-Command`, which turns every nonzero exit into 1, so a run with survivors (2, 3) read as one
-# with untested mutants and the refs never moved (pipeline 2026-11-22d, on 625e7147). It inherits
-# the lowered priority of the `just checkpoint` it runs under.
+# with untested mutants and the refs never moved. It inherits the lowered priority of the
+# `just checkpoint` it runs under.
 MUTANTS_DIFF = [sys.executable, "scripts/mutation/mutants_diff.py"]
 
 

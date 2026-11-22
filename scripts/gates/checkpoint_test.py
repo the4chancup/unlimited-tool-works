@@ -25,8 +25,9 @@ class DocsOnly(unittest.TestCase):
 
 
 class Repo:
-    """A stand-in for the repository and the two `just` runs: `during` maps a recipe name to
-    what happens to the repository while it runs, `codes` to its exit code (0 unless named).
+    """A stand-in for the repository and its two runs, the gates and the mutants: `during`
+    maps a recipe name to what happens to the repository while it runs, `codes` to its exit
+    code (0 unless named).
     `mutated` is where `refs/checkpoints/mutated` stands, the gated commit unless named."""
 
     def __init__(self, during=None, codes=None, mutated="gated-before"):
@@ -49,7 +50,7 @@ class Repo:
             return ""
         raise AssertionError(f"unexpected git call {args}")
 
-    def just(self, command, cwd):
+    def run_command(self, command, cwd):
         # The mutation run goes around `just`, whose Windows shell flattens its exit code
         # to 1 (`checkpoint.MUTANTS_DIFF`); the gates still go through it.
         if command[:-1] == checkpoint.MUTANTS_DIFF:
@@ -70,7 +71,7 @@ class Repo:
                 mock.patch.object(checkpoint, "gated", lambda: "gated-before"), \
                 mock.patch.object(checkpoint, "mutated", lambda: self.mutated), \
                 mock.patch.object(checkpoint, "status", lambda limit: 0), \
-                mock.patch.object(checkpoint.subprocess, "run", self.just), \
+                mock.patch.object(checkpoint.subprocess, "run", self.run_command), \
                 contextlib.redirect_stdout(out):
             code = checkpoint.run(mutants)
         self.output = out.getvalue()
