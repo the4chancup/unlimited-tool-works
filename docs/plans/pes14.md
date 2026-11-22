@@ -64,11 +64,11 @@ always written. Skipping the record would leave the captain unknown, so the AATF
 the captain's Captaincy card and report a missing captain. Mapping the record first costs
 Build 1 the largest piece of reverse engineering, and makes Build 2 mostly screen work.
 
-**Not in scope:** Team TOML export and import, patches, diff, the teams-list export, Texport,
+**Not in scope:** patches, diff, the teams-list export, Texport,
 and the player menu's Generate settings.toml and Generate in-game face, unless one works on PES
 2014 with no work beyond a test. The rest stay greyed out for PES 2014, with a tooltip saying
 so. The command line refuses their commands on a PES 2014 save in the same words
-(`export-toml`, `import-toml`, `apply-patch`, `diff`, `export-teams-list`), so both routes keep
+(`apply-patch`, `diff`, `export-teams-list`), so both routes keep
 one rule. The two Generate items cannot work yet: PES 2014's face, hair and skin are not mapped, so
 a generated file would carry zeros for them.
 
@@ -593,8 +593,8 @@ button would stay on every PES 2014 save, its tooltip saying the folder holds no
   `PlayerField` and its AATF stat name. On another version's save its greyed box's tooltip
   reads "PES 2014 only", since the "PES NN+" wording would claim later versions store it. It is
   the last ability stat, after Aggression, so that every table indexed by ability stat (a
-  ruleset's stats, the Ruleset editor's columns) keeps its indices. It is no Team TOML key,
-  since Team TOML is not available on PES 2014. The AATF logic lists it among the ability
+  ruleset's stats, the Ruleset editor's columns) keeps its indices. It is a Team TOML key on
+  PES 2014 alone (step 12). The AATF logic lists it among the ability
   stats, so the branch's logic is `ruleset-logic 2`: a released logic's hash is frozen, and a
   ruleset file saved with version 1 still reads as official. Main's next logic change will
   meet this one when main is merged into the branch.
@@ -736,7 +736,8 @@ button would stay on every PES 2014 save, its tooltip saying the folder holds no
   change), and the game's where it is PES 2014's alone. The preset bar's Copy/swap menu copies
   and swaps presets as on the other versions. The Edit menu's Copy and Paste of a team's
   Gameplan, a preset or a formation stay refused, with "Not available on PES 2014 saves":
-  they carry the settings as Team TOML, which PES 2014 saves do not offer.
+  they carry the settings as Team TOML, which PES 2014 saves do not offer before step 12;
+  that step opens them.
 - **The recent-saves list** stores a PES 2014 save's version as 14, the one settings entry
   that names it: a recent save is a file the editor opened, not a version a member picks.
   Refusing 14 there would make the whole settings table unreadable after one PES 2014 save was
@@ -768,6 +769,29 @@ button would stay on every PES 2014 save, its tooltip saying the folder holds no
   All teams, the filter, Live and Multi-team AATF, Copy/swap stats, the comparator, the
   pictures and the roster sheet. The 4cc, VGL and Invitational categories keep their id
   ranges, so a team outside them is listed under All alone; its name is the save's own.
+- **Team TOML on PES 2014** (step 12). The Akko organizer brings whole teams over from
+  the autumn 2014 save into the Akko save: the players, their looks and the Gameplan, where
+  copy and paste carries a player's stats alone. The route is Team TOML, extended, not a
+  format of its own: the Save editor's export and import, the Edit menu's Gameplan copy and the
+  command line's `export-toml` and `import-toml` already go through it, and its rules already
+  cover a field that only some versions store (an optional key; when it is absent, the save's
+  value stands).
+  - What only PES 2014 stores becomes optional keys, read and written on PES 2014 alone:
+    Tenacity, the Punt Kick motion, each preset's Strategy and eight sliders, and Combination
+    Play. The Instigator and Solid Player are two more labels of the playing style's key.
+  - A preset holds one formation on PES 2014, so the document carries each preset's first
+    and leaves the other two out.
+  - The look parts the editor does not map yet, the face and the hair, travel in the player's
+    appearance record, whole: a PES 2014-only key holding its 88 bytes in hex, as
+    `ingame_face` holds its own. An import writes the record first and the mapped appearance
+    keys after it, so a key edited in the document wins. A target player with no appearance
+    record takes none of it, and the import names him, since the editor never creates a
+    record.
+  - A PES 2014 document imports only into a PES 2014 save, and a PES 2014 save takes only a
+    PES 2014 document; the refusal names both versions. The conversion between versions has
+    no map for these fields, and both saves the organizer uses are PES 2014.
+  - The greyed menu items and the command line's refusals for Team TOML go. Patches, diff, the
+    teams-list export and Texport stay refused.
 - **Gloves 262143 is no gloves model.** A record the game creates on an in-game edit holds
   the hair accessory's colour at white, every bit set, which the Akko DLC reads as gloves
   262143 (the organizer's save: 90 of 91 new records). The game draws bare hands for it, as for
@@ -944,3 +968,8 @@ player, who uses only the Save editor.
     for the iris. The FPC entries then write skin 7 on PES 2014 only if stored 6 or 7 turns
     out to be a custom skin. A player with no appearance record is refused, as for the
     boots.
+12. Team TOML on PES 2014 (the bullet "Team TOML on PES 2014", above). Checked with the
+    autumn 2014 save's /gd/ (team 136): exported, imported onto an Akko team, and exported
+    again from the Akko save. The two documents are equal but for `[team] id`, and any other
+    difference is listed and explained. Then the imported team is looked at in game in Edit
+    mode: names, looks and the Game Plan.

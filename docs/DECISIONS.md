@@ -19978,3 +19978,22 @@ on the code both branches change: seven merges in three days, the last with five
 two breaks only a build showed, while most of what they brought (the Compiler, the Ruleset
 editor) reaches no PES 2014 player.
 Plan: `plans/pes14.md` "Process".
+
+## 2026-11-22 — save_editor, pes_savefile (pes14 branch) — A whole PES 2014 team travels as Team TOML
+
+Decision: the maintainer ruled that the Akko organizer can bring a whole team over from another
+PES 2014 save, its players, their looks and its Gameplan, not only a player's stats by copy and
+paste, and left the format to the lead. It is Team TOML, extended:
+- keys that only PES 2014 reads and writes: Tenacity, the Punt Kick motion, each preset's
+  Strategy and eight sliders, and Combination Play;
+- the player's appearance record whole, in hex, for the face and hair the editor does not map
+  yet.
+
+A PES 2014 document imports only into a PES 2014 save, and a PES 2014 save takes only a PES
+2014 document.
+Why: Team TOML's export, import, Gameplan copy and command line already exist, and its rules
+already cover a field that only some versions store; a format of its own would rebuild all of
+them. The maintainer described the new keys as optional, required only when importing into a
+PES 2014 save. They are optional on every import instead: every Team TOML key already leaves
+the save's value when absent, and a document exported from a PES 2014 save always carries them.
+Plan: `plans/pes14.md` "PES 2014 in the code", the bullet "Team TOML on PES 2014"; step 12.
