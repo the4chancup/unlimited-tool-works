@@ -9,6 +9,8 @@
 - **All tools**: UTW now keeps a record of the five times it was opened before the current
   one, with the saves opened and written each time. Report a problem's new box `Include earlier sessions` adds
   them to the file, for a problem that began before UTW was last opened, such as a crash.
+- **All tools**: when UTW stops on an error of its own, its dialog now asks for the log file
+  first, with the file's path on a line of its own, and gives the error's details last.
 
 ### Fixes
 
