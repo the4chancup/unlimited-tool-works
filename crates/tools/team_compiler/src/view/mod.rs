@@ -1245,6 +1245,7 @@ mod tests {
     // An export dropped whole (a team the teams list lacks) shows its pictures from its
     // listing: its logo, its kit's texture, 03's portrait in his folder and 05's in
     // `Portraits/`.
+    // TC-GUI-31
     #[test]
     fn a_dropped_export_s_boxes_name_the_pictures_of_its_listing() {
         let temp = sandbox("view_grid_dropped_pictures");
@@ -1285,6 +1286,7 @@ mod tests {
 
     // Reading a picture out of an archive means decompressing it whole, so an archive
     // export's boxes stay empty.
+    // TC-GUI-31
     #[test]
     fn an_archive_s_boxes_stay_empty() {
         let temp = sandbox("view_grid_archive_pictures");

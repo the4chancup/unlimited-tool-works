@@ -96,13 +96,14 @@ fn cell(text: &str, place: &str, messages: Vec<Message>) -> Cell {
     }
 }
 
-/// The scene's pictures and their sizes in texels: /co/'s logo (square), its goalkeeper
-/// kit's texture (2:1), player 01's portrait in his folder and the `Portraits/` files of
-/// every slot but 20 (2:3, a portrait's shape).
+/// The scene's pictures and their sizes in texels: /co/'s logo (40 × 40, smaller than the
+/// box), its goalkeeper kit's texture (400 × 200, 2:1, larger than the box), player 01's
+/// portrait in his folder and the `Portraits/` files of every slot but 20 (2:3, a
+/// portrait's shape).
 fn pictures() -> Vec<(String, [usize; 2])> {
     let mut pictures = vec![
-        (LOGO.to_owned(), [1, 1]),
-        (KIT.to_owned(), [4, 2]),
+        (LOGO.to_owned(), [40, 40]),
+        (KIT.to_owned(), [400, 200]),
         (PORTRAIT_01.to_owned(), [2, 3]),
     ];
     pictures.extend(
@@ -853,7 +854,7 @@ fn a_player_s_portrait_and_the_logo_stand_in_the_box_s_bottom_corners() {
     assert_eq!((portrait.len(), logo.len()), (1, 1));
     let expected = fitted(vec2(2.0, 3.0), left);
     assert!(close(portrait[0], expected), "{portrait:?} {expected:?}");
-    let expected = fitted(vec2(1.0, 1.0), right);
+    let expected = fitted(vec2(40.0, 40.0), right);
     assert!(close(logo[0], expected), "{logo:?} {expected:?}");
     assert_eq!(pictures_drawn(&drawn), 2);
 }
@@ -871,6 +872,19 @@ fn a_box_with_no_logo_reads_no_logo_where_the_logo_would_be() {
     assert!((rect.center() - top.center()).length() < 0.01, "{rect:?}");
     assert_eq!((size, colour), (9.0, dark().weak_text_color()));
     assert_eq!(pictures_drawn(&drawn), 0);
+}
+
+// TC-GUI-31
+#[test]
+fn a_logo_smaller_than_the_box_stands_at_its_own_size() {
+    let mut scene = Scene::new();
+    let at = spots(&scene.idle());
+    let (_, drawn) = scene.click(at.label);
+    let top = top_box(&drawn);
+    let logo = scene.drawn_at(&drawn, LOGO);
+    assert_eq!(logo.len(), 1, "{logo:?}");
+    let expected = Rect::from_center_size(top.center(), vec2(40.0, 40.0));
+    assert!(close(logo[0], expected), "{logo:?} {expected:?}");
 }
 
 // TC-GUI-31
@@ -909,6 +923,7 @@ fn only_the_shown_cell_s_pictures_are_asked_for() {
 }
 
 // The title row covers the badge of a pinned cell scrolled under it, as it covers the cell.
+// TC-GUI-24
 #[test]
 fn a_pinned_cell_scrolled_under_the_title_row_shows_no_badge() {
     let mut scene = Scene::new();

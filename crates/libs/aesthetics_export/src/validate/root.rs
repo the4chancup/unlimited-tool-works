@@ -217,6 +217,12 @@ pub(crate) fn is_logo_name(name: &str) -> bool {
     strip_prefix_ci(stem(name), "logo").is_some()
 }
 
+/// Whether a root file named `name` is a referee export's marker texture, `ref_marker.dds`,
+/// ASCII-case-insensitively.
+pub fn is_referee_marker(name: &str) -> bool {
+    name.eq_ignore_ascii_case("ref_marker.dds")
+}
+
 /// The root-file allowlist plus the small root artifacts: `notes.txt`,
 /// `colors.txt`, `ref_marker.dds` (referee only), the unexpected files,
 /// folders and strays.
@@ -250,7 +256,7 @@ pub(crate) fn check_root(
                 artifacts.team_colors = Some(file.clone());
             }
             FileKind::Metadata(MetadataFile::Readme) => {}
-            FileKind::Texture if referees && name.eq_ignore_ascii_case("ref_marker.dds") => {
+            FileKind::Texture if referees && is_referee_marker(name) => {
                 artifacts.referee_marker = Some(file.clone());
             }
             FileKind::Marker(Marker::WriteNames) if !referees => {

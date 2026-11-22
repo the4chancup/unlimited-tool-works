@@ -548,6 +548,15 @@ fn body(
     ui.add_space(FINDING_GAP);
 }
 
+/// How a picture in the top box is fitted in its area: `Shrink` draws it at most at its
+/// own size, shrunk to fit; `Fill` as large as fits.
+enum Fit {
+    /// At most at its own size: a small picture is not enlarged, which would blur it.
+    Shrink,
+    /// As large as the area fits, its shape kept.
+    Fill,
+}
+
 /// Draws what `top` holds in the top box `painter` is clipped to: each picture, asked of
 /// `pictures`, straight on the box's background (a cut-out portrait or a crest shows its own
 /// shape), and "No logo" in `weak` where a missing logo would be.
@@ -561,26 +570,35 @@ fn paint_top_box(
     let middle = Rect::from_center_size(area.center(), PICTURE_MAX.min(area.size()));
     match top {
         TopBox::Empty => {}
-        TopBox::Picture(file) => paint_picture(painter, pictures, file, middle),
-        TopBox::Logo(logo) => paint_logo(painter, pictures, logo.as_ref(), middle, weak),
+        TopBox::Picture(file) => paint_picture(painter, pictures, file, middle, Fit::Shrink),
+        TopBox::Logo(logo) => {
+            paint_logo(painter, pictures, logo.as_ref(), middle, weak, Fit::Shrink)
+        }
         TopBox::Player { portrait, logo } => {
             let top = area.bottom() - TILE_GAP - CORNER.y;
             let left = Rect::from_min_size(pos2(area.left() + TILE_GAP, top), CORNER);
             let right_x = area.right() - TILE_GAP - CORNER.x;
             let right = Rect::from_min_size(pos2(right_x, top), CORNER);
             if let Some(portrait) = portrait {
-                paint_picture(painter, pictures, portrait, left);
+                paint_picture(painter, pictures, portrait, left, Fit::Fill);
             }
-            paint_logo(painter, pictures, logo.as_ref(), right, weak);
+            paint_logo(painter, pictures, logo.as_ref(), right, weak, Fit::Fill);
         }
         TopBox::Portraits { portraits, logo } => {
             let last = TILES_ACROSS * TILES_DOWN - 1;
             for (index, portrait) in portraits.iter().enumerate().take(last) {
                 if let Some(portrait) = portrait {
-                    paint_picture(painter, pictures, portrait, tile(area, index));
+                    paint_picture(painter, pictures, portrait, tile(area, index), Fit::Fill);
                 }
             }
-            paint_logo(painter, pictures, logo.as_ref(), tile(area, last), weak);
+            paint_logo(
+                painter,
+                pictures,
+                logo.as_ref(),
+                tile(area, last),
+                weak,
+                Fit::Fill,
+            );
         }
     }
 }
@@ -595,16 +613,18 @@ fn tile(area: Rect, index: usize) -> Rect {
     Rect::from_min_size(min, size)
 }
 
-/// The logo fitted in `area`, or "No logo" in `weak` at its centre when there is none.
+/// The logo fitted in `area` as `fit` asks, or "No logo" in `weak` at its centre when
+/// there is none.
 fn paint_logo(
     painter: &egui::Painter,
     pictures: &mut dyn FnMut(&PictureFile) -> Option<TextureHandle>,
     logo: Option<&PictureFile>,
     area: Rect,
     weak: Color32,
+    fit: Fit,
 ) {
     match logo {
-        Some(logo) => paint_picture(painter, pictures, logo, area),
+        Some(logo) => paint_picture(painter, pictures, logo, area, fit),
         None => {
             painter.text(
                 area.center(),
@@ -617,19 +637,24 @@ fn paint_logo(
     }
 }
 
-/// `file`'s picture as large as fits in `area`, its shape kept, centred; nothing while it
-/// loads or when it cannot be read.
+/// `file`'s picture fitted in `area` as `fit` asks, its shape kept, centred; nothing
+/// while it loads or when it cannot be read.
 fn paint_picture(
     painter: &egui::Painter,
     pictures: &mut dyn FnMut(&PictureFile) -> Option<TextureHandle>,
     file: &PictureFile,
     area: Rect,
+    fit: Fit,
 ) {
     let Some(texture) = pictures(file) else {
         return;
     };
     let size = texture.size_vec2();
     let scale = (area.width() / size.x).min(area.height() / size.y);
+    let scale = match fit {
+        Fit::Shrink => scale.min(1.0),
+        Fit::Fill => scale,
+    };
     let rect = Rect::from_center_size(area.center(), size * scale);
     let whole = Rect::from_min_max(pos2(0.0, 0.0), pos2(1.0, 1.0));
     painter.image(texture.id(), rect, whole, NO_TINT);

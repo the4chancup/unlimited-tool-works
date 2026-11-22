@@ -8,8 +8,8 @@ use std::thread::JoinHandle;
 
 use aesthetics_export::{
     ExportKind, FileDescriptor, FileKind, FolderDraft, ParsedAestheticsExport, PlayerSlot, RefSlot,
-    ResolvedAestheticsExport, ValidatedRoster, folder_slot, kit_textures, logo_parts,
-    split_folder_name,
+    ResolvedAestheticsExport, ValidatedRoster, folder_slot, is_referee_marker, kit_textures,
+    logo_parts, split_folder_name,
 };
 use export_grid::{
     Cell, CellState, IdCell, Line, Open, Outline, PictureFile, Position, Row, RowBody, Tone,
@@ -538,9 +538,7 @@ fn logo_file(checked: &CheckedSource, referee: bool) -> Option<FileDescriptor> {
     }
     let draft = &checked.parsed.as_ref()?.draft;
     let marker = draft.root_files.iter().find(|file| {
-        referee
-            && file.kind == FileKind::Texture
-            && file.path.name().eq_ignore_ascii_case("ref_marker.dds")
+        referee && file.kind == FileKind::Texture && is_referee_marker(file.path.name())
     });
     let main = draft.root_files.iter().find(|file| {
         file.kind == FileKind::Texture
