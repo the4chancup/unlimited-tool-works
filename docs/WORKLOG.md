@@ -171,8 +171,12 @@ other items run beside it. **Ahead of item 6:** the `pes14` branch's step 12, a 
          `prefox_kit_variants` included: 455 tests in 17 files through `complete`. A Run B over
          every export kind found 10 referee tests still on their own files, since the dummy
          check fired on team exports only
-       - [ ] 5: `export_upgrader` (about 130): running (Opus, `sk/builder5`), `old_missing`
-         taking files and empty folders apart from the start
+       - [x] 5 (2026-11-22, merge `807e376b`, Opus) `export_upgrader`: 109 tests (105 CLI, 4
+         unit) through `complete_old`, whose `old_missing` counts a `Full` export's added logo
+         as its content. The dummy run uses a `Collars/` file (Run B'), since an upgraded
+         `notes.txt` always reports `notes_found`; its 13 failures are the builder's own
+         tests, the tracer goldens, 5 tests reading the `co Spring` fixture as it is, and 4
+         archive tests for slice 7
        - [ ] 6: `studio` (6)
        - [ ] 7: the `.zip` fixtures packed when the tests run, with the three `gui_run` and
          `view` tests that compile the tracer export as it is; the `.7z` ones stay stored,
@@ -180,7 +184,7 @@ other items run beside it. **Ahead of item 6:** the `pes14` branch's step 12, a 
          leaves off
      - b's tests are written on `complete` (builder slice 3 landed)
      - [ ] b: `installed_portrait_slots` filled from the Compiler's walk over the installed
-       CPKs → verify: TC-ROOT-17
+       CPKs → verify: TC-ROOT-17: running (Opus, `sk/logob`)
    - Not urgent, a small slice of its own (SWE-2), after the view's or beside it: player
      numbering without the hyphen (`plans/aesthetics_export/player_folders.md`, the section of
      that name): `aesthetics_export`'s `conventions` (`folder_slot`, `folder_player_name`), the
