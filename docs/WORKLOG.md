@@ -120,9 +120,11 @@ other items run beside it. **Ahead of item 6:** the `pes14` branch's step 12, a 
      by the maintainer as it is
    - [ ] The next VGL build, `0.0.3-vgl27.2`, once the Compiler's slices 1b and 1c have landed
      (the maintainer, 2026-11-22): `vgl27` merges main, raises the version, is packed
-   - [ ] VGL27's legacy mode off main, onto `vgl27` alone (DECISIONS 2026-11-22): the removal
-     running (Opus, `sk/legacy-out`); then its merge, `vgl27` merging main and reverting it,
-     and the CHANGELOG's `### Important` line on the `legacy_ids.toml` 0.0.2 wrote
+   - [x] VGL27's legacy mode off main, onto `vgl27` alone (2026-11-22, DECISIONS 2026-11-22):
+     main's merge `8cc425a3` (Opus; the lead dropped three tests of the old names and the
+     draft's `IDs` cell), TC-LEG-01 to 05 and EU-SET-15 to 17 withdrawn, and a CHANGELOG
+     `### Important` line telling members to delete the `legacy_ids.toml` 0.0.2 wrote. `vgl27`
+     merged main and reverted the removal (`a0c24750`), its gates green with the mode back
    - [ ] 1b: the detail window: hover, pin, Esc, double-click, its top box, Copy messages
      → verify: TC-GUI-09, 24, 25, 31, 32
    - [ ] 1c: the toolbar's strip and its counts, the log's lines linked to cells, the log
