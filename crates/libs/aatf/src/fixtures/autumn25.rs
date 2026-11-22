@@ -103,7 +103,7 @@ fn the_sample_team_breaks_the_two_values_that_differ() {
 
 /// Both goalkeepers at 77 and one silver (slot 20, a CB with two A
 /// positions, three skills and a COM style) made a regular, down to a
-/// regular's weak foot 2/2, one A position and three paid cards: legal.
+/// regular's weak foot 2/2, one A position and three non-free cards: legal.
 #[test]
 fn the_sample_team_made_legal_reports_nothing() {
     let rules = Rules::from_data_block(AUTUMN25).expect("Autumn 25 loads");
@@ -158,7 +158,7 @@ fn apply_tier_then_check_reports_nothing_for_every_tier() {
 }
 
 /// `card_limits` reports each tier's economy on a member nothing but
-/// the captaincy free card touches — the paid limit, the A positions,
+/// the captaincy free card touches — the card limit, the A positions,
 /// the free counts (the exact map, so a group named nowhere in it
 /// shows) and `max_a_positions` unset — and `tier_values` the weak
 /// foot. Slots: 10 for the gold (the captain — his free Captaincy
@@ -166,7 +166,7 @@ fn apply_tier_then_check_reports_nothing_for_every_tier() {
 /// the silver (the file's only single-A medal), 0 for the goalkeeper
 /// (his one A fitting the one allowance, the limit undeducted), 12 for
 /// the regular, a mid — a manlet reads the "Manlets" special's raises
-/// instead: two A positions and four paid, asserted last.
+/// instead: two A positions and four non-free, asserted last.
 #[test]
 fn card_limits_and_tier_values_report_the_tiers_values() {
     let rules = rules();
@@ -182,7 +182,7 @@ fn card_limits_and_tier_values_report_the_tiers_values() {
         ],
     );
     // Slot 3 is a manlet (175 cm, the manlet bracket) and a regular
-    // (the 77 rate): the "Manlets" special's +1 A position and +1 paid
+    // (the 77 rate): the "Manlets" special's +1 A position and +1 non-free
     // card show in his limits — two and four, his one A inside them.
     let manlet = player(&team, 3);
     assert_eq!(manlet.height, 175);
@@ -395,8 +395,8 @@ fn goalkeepers_and_golds_below_giant_are_warnings() {
     );
 }
 
-/// Malicia is free on top of the paid limit: a regular at his three
-/// (slot 12) holding it reports nothing, and a paid card on top of both
+/// Malicia is free on top of the card limit: a regular at his three
+/// (slot 12) holding it reports nothing, and a non-free card on top of both
 /// is over.
 #[test]
 fn malicia_is_a_free_card() {
@@ -412,13 +412,19 @@ fn malicia_is_a_free_card() {
     });
     assert_eq!(
         problems(&rules, &team),
-        vec![error(Some(12), ViolationKind::Cards { paid: 4, limit: 3 })]
+        vec![error(
+            Some(12),
+            ViolationKind::Cards {
+                non_free: 4,
+                limit: 3
+            }
+        )]
     );
 }
 
-/// Captaincy is paid for everyone but the captain: on slot 12 it is
+/// Captaincy is non-free for everyone but the captain: on slot 12 it is
 /// over the limit, and free once the armband moves to him — the former
-/// captain's (slot 10) own turning paid, his gold limit still covering
+/// captain's (slot 10) own turning non-free, his gold limit still covering
 /// it.
 #[test]
 fn the_captains_captaincy_card_is_free() {
@@ -426,7 +432,13 @@ fn the_captains_captaincy_card_is_free() {
     let mut team = edited(12, |p| p.cards.push(card("captaincy")));
     assert_eq!(
         problems(&rules, &team),
-        vec![error(Some(12), ViolationKind::Cards { paid: 4, limit: 3 })]
+        vec![error(
+            Some(12),
+            ViolationKind::Cards {
+                non_free: 4,
+                limit: 3
+            }
+        )]
     );
     assert!(player(&team, 10).cards.contains(&card("captaincy")));
     team.captain = Some(12);
@@ -552,7 +564,7 @@ fn age_weight_and_the_skill_cap_fire() {
         );
     }
     // Eleven skills on slot 12, none of them a trick: over the game's
-    // cap of ten, and over the paid limit too.
+    // cap of ten, and over the card limit too.
     let team = edited(12, |p| {
         p.cards = [7, 8, 9, 10, 11, 12, 13, 14, 15, 17, 18]
             .into_iter()
@@ -562,7 +574,13 @@ fn age_weight_and_the_skill_cap_fire() {
     assert_eq!(
         problems(&rules, &team),
         vec![
-            error(Some(12), ViolationKind::Cards { paid: 11, limit: 3 }),
+            error(
+                Some(12),
+                ViolationKind::Cards {
+                    non_free: 11,
+                    limit: 3
+                }
+            ),
             error(Some(12), ViolationKind::SkillCardCap { count: 11, max: 10 }),
         ]
     );

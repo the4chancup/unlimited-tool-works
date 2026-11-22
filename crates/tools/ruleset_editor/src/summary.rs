@@ -392,7 +392,7 @@ fn suggestion_lines(ruleset: &Ruleset) -> Vec<String> {
 /// other entry (a card group's id) as its group's free cards.
 fn suggestion_text(entry: &str) -> String {
     match entry {
-        "cards" => "paid cards".to_string(),
+        "cards" => "non-free cards".to_string(),
         "a_positions" => "A positions".to_string(),
         "weak_foot" => "weak foot".to_string(),
         "injury_resistance" => "injury resistance".to_string(),
@@ -453,7 +453,7 @@ fn tier_line(ruleset: &Ruleset, medal_tiers: &BTreeSet<&str>, tier: &Tier) -> St
         String::new()
     } else {
         format!(
-            " (at least {} paid skill{}, an extra A position counting as one)",
+            " (at least {} non-free skill{}, an extra A position counting as one)",
             tier.min_cards,
             if tier.min_cards == 1 { "" } else { "s" }
         )
@@ -482,7 +482,7 @@ fn tier_line(ruleset: &Ruleset, medal_tiers: &BTreeSet<&str>, tier: &Tier) -> St
         None => String::new(),
     };
     format!(
-        "- **{}**: {}{when}; every stat {}{stats}{band}{total}; form {}, injury resistance {}, weak foot {}/{}; {} paid cards{}{}; {} A position{}{name_color}.",
+        "- **{}**: {}{when}; every stat {}{stats}{band}{total}; form {}, injury resistance {}, weak foot {}/{}; {} non-free cards{}{}; {} A position{}{name_color}.",
         tier.label,
         count,
         tier.rate,
@@ -674,7 +674,7 @@ fn effects_text(ruleset: &Ruleset, effects: &Effects) -> String {
             "s"
         };
         parts.push(format!(
-            "{} paid card{plural}",
+            "{} non-free card{plural}",
             per_tier_text(ruleset, cards, "")
         ));
     }
@@ -993,7 +993,7 @@ mod tests {
             "{line}"
         );
         assert!(
-            line.contains("(at least 1 paid skill, an extra A position"),
+            line.contains("(at least 1 non-free skill, an extra A position"),
             "{line}"
         );
     }

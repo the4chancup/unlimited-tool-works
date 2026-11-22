@@ -4,10 +4,10 @@ A player's rating is his best of: dribbling, goalkeeping, finishing, low pass, l
 May sit below their target: attacking prowess, defensive prowess, injury resistance, weak foot usage, weak foot accuracy.
 
 ## Tiers
-- **Gold**: 2 per team; every stat 99; form 8, injury resistance 3, weak foot 2/4; 5 paid cards, 2 free COM styles, 3 free tricks; 1 A position.
-- **Silver**: 2 per team; every stat 88; form 8, injury resistance 3, weak foot 2/4; 4 paid cards, 1 free COM style, 3 free tricks; 1 A position.
-- **Goalkeeper**: counts as Regular, registered GK; every stat 77; form 4, injury resistance 1, weak foot 2/2; 2 paid cards; 1 A position.
-- **Regular**: the rest of the squad; every stat 77; form 4, injury resistance 1, weak foot 2/2; 3 paid cards, 2 free tricks; 1 A position.
+- **Gold**: 2 per team; every stat 99; form 8, injury resistance 3, weak foot 2/4; 5 non-free cards, 2 free COM styles, 3 free tricks; 1 A position.
+- **Silver**: 2 per team; every stat 88; form 8, injury resistance 3, weak foot 2/4; 4 non-free cards, 1 free COM style, 3 free tricks; 1 A position.
+- **Goalkeeper**: counts as Regular, registered GK; every stat 77; form 4, injury resistance 1, weak foot 2/2; 2 non-free cards; 1 A position.
+- **Regular**: the rest of the squad; every stat 77; form 4, injury resistance 1, weak foot 2/2; 3 non-free cards, 2 free tricks; 1 A position.
 
 ## Heights
 Brackets: Manlet up to 175, Mid 176-180, Tall 185, Giant 194, Giga 199 cm.
@@ -28,8 +28,8 @@ Every player is rated A at his registered position; no B ratings; GK is never a 
 - **Tall goalkeepers are 189**: Registered GK, 181 to 188 cm: not allowed ("GKs in this bracket must be 189cm").
 - **Goalkeepers below giant** (warning): Registered GK, 194 cm or more: not allowed ("GK heights cannot be 194cm or more").
 - **Gold below giant** (warning): Gold, 194 cm or more: not allowed ("Gold heights cannot be 194cm or more").
-- **Manlets**: Manlets: +1 paid card, +1 A position, weak foot 4/4.
+- **Manlets**: Manlets: +1 non-free card, +1 A position, weak foot 4/4.
 - **Red manlet bonus**: Under Red, 175 cm or less: +5 for Goalkeeper, +5 for Regular to every stat.
 
 ## Suggestions
-Allowances not used up, listed as suggestions: paid cards, free tricks, free COM styles, weak foot and injury resistance.
+Allowances not used up, listed as suggestions: non-free cards, free tricks, free COM styles, weak foot and injury resistance.

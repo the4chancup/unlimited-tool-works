@@ -32,10 +32,10 @@ pub(crate) struct TierValues {
 #[derive(Debug, Clone, PartialEq, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct CardLimits {
-    /// Paid cards the player holds now: his cards that no free group or
+    /// Non-free cards the player holds now: his cards that no free group or
     /// free card covers.
-    pub paid: u8,
-    /// Paid cards allowed, the player's extra A positions deducted;
+    pub non_free: u8,
+    /// Non-free cards allowed, the player's extra A positions deducted;
     /// below zero when they outnumber the cards.
     pub limit: i8,
     /// Free cards per group (`com` included), the specials' added.

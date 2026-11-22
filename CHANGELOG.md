@@ -53,6 +53,8 @@
   highlight, in place of the bar at its left.
 - **Save editor**: a PES 2017 Texport now carries the 4cc clover as its thumbnail, in place of
   the game's own picture.
+- **Save editor and Ruleset editor**: the cards no free allowance covers are now called
+  non-free cards, the word 4cc uses, in place of paid cards.
 
 ## [0.0.2] - 2026-11-18
 

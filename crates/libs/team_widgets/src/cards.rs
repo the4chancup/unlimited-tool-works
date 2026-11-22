@@ -2,7 +2,7 @@
 //! `docs/prototypes/tools/save_editor.js` (`skillsPanel`, `comStylesPanel`,
 //! `cardBadges` and the playing-style combo).
 //! A player's skills and COM playing styles are his *cards*; the ruleset's
-//! tiers each say how many paid ones he may hold, so the pickers show what
+//! tiers each say how many non-free ones he may hold, so the pickers show what
 //! the tier he is read as leaves him.
 
 use pes_savefile::interchange::team_toml::labels::{self, card_name};
@@ -96,19 +96,20 @@ pub fn card_columns(
 
 /// The Cards used label and `badge`'s text, drawn inline in the caller's
 /// row (the draft's `cardBadges`): `Cards used for` then the tier's
-/// `label: paid of limit` in a chip (the draft's `.badge`; no `cards`
+/// `label: non-free of limit` in a chip (the draft's `.badge`; no `cards`
 /// after the count, which the label before it says), its text in the
-/// error color when paid exceeds the limit; `Cards used:` then `No tier
-/// matches` when no tier's condition holds for him, all in the fields'
-/// normal text colour.
+/// error color when the non-free count exceeds the limit; `Cards used:`
+/// then `No tier matches` when no tier's condition holds for him, all in
+/// the fields' normal text colour.
 pub fn cards_used(ui: &mut egui::Ui, badge: &CardsBadge<'_>) {
     match badge {
         CardsBadge::Tier(tier) => {
             ui.label("Cards used for");
-            let paid = i32::from(tier.limits.paid);
+            let non_free = i32::from(tier.limits.non_free);
             let limit = i32::from(tier.limits.limit);
-            let mut text = egui::RichText::new(format!("{}: {} of {}", tier.label, paid, limit));
-            if paid > limit {
+            let mut text =
+                egui::RichText::new(format!("{}: {} of {}", tier.label, non_free, limit));
+            if non_free > limit {
                 text = text.color(ui.visuals().error_fg_color);
             }
             let galley = egui::WidgetText::from(text).into_galley(
@@ -133,8 +134,8 @@ pub fn cards_used(ui: &mut egui::Ui, badge: &CardsBadge<'_>) {
             )
             .inner
             .on_hover_text(format!(
-                "{}: {} paid of {}",
-                tier.label, tier.limits.paid, tier.limits.limit
+                "{}: {} non-free of {}",
+                tier.label, tier.limits.non_free, tier.limits.limit
             ));
         }
         CardsBadge::NoTier => {
@@ -419,10 +420,10 @@ mod tests {
         (drawn_skills, drawn_coms)
     }
 
-    /// An empty `CardLimits` but for `paid` and `limit`.
-    fn limits(paid: u8, limit: i8) -> aatf::CardLimits {
+    /// An empty `CardLimits` but for `non_free` and `limit`.
+    fn limits(non_free: u8, limit: i8) -> aatf::CardLimits {
         aatf::CardLimits {
-            paid,
+            non_free,
             limit,
             free: BTreeMap::new(),
             free_cards: vec![],
@@ -875,13 +876,13 @@ mod tests {
     }
 
     // The Cards used badge, the draft's `cardBadges`: "Cards used for" then
-    // the one badge, the player's own tier's `label: paid of limit` (no
+    // the one badge, the player's own tier's `label: non-free of limit` (no
     // `cards` after the count: the label before it says so), all in the
-    // normal text colour except for the error colour when paid is over the
-    // limit. `NoTier` draws "Cards used:" then the stand-in. A colour is no
-    // AccessKit property, so it is read back from the frame's painted
-    // shapes: the badge's `TextShape` carries the `RichText` colour in its
-    // galley's sections.
+    // normal text colour except for the error colour when the non-free count
+    // is over the limit. `NoTier` draws "Cards used:" then the stand-in. A
+    // colour is no AccessKit property, so it is read back from the frame's
+    // painted shapes: the badge's `TextShape` carries the `RichText` colour
+    // in its galley's sections.
     #[test]
     fn the_badge_reads_the_own_tiers_economy_coloured_when_overdrawn() {
         let mut window = Headless::new();
@@ -919,7 +920,7 @@ mod tests {
         text_entry(&nodes, "No tier matches");
     }
 
-    // The tier's `label: paid of limit` sits in a chip, the draft's
+    // The tier's `label: non-free of limit` sits in a chip, the draft's
     // `.badge`: a rect in the inactive widget fill with corners rounded 2
     // painted under the text, the text 4 points in from its left edge and
     // the chip no taller than the text. `No tier matches` stays plain.

@@ -17,7 +17,7 @@ use super::widgets;
 use crate::summary::human;
 
 /// The table's columns (the draft's `th` row): the handle, label, id,
-/// count, counts as, rate, form, injury resistance, weak foot, paid
+/// count, counts as, rate, form, injury resistance, weak foot, non-free
 /// cards, minimum cards, A positions, name colour, warning band, stats
 /// within targets and the ✕.
 const COLUMNS: usize = 16;
@@ -85,7 +85,7 @@ fn tiers_table(
                 "Form",
                 "Injury res.",
                 "Weak foot",
-                "Paid cards",
+                "Non-free cards",
                 "Min. cards",
                 "A positions",
                 "Name color",

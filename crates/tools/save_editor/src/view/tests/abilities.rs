@@ -78,12 +78,12 @@ fn cards_used_badges(nodes: &[accesskit::Node]) -> Vec<String> {
                     .bounds()
                     .is_some_and(|bounds| bounds.y0 >= heading_y - 1.0)
                 && node.value().is_some_and(|value| {
-                    // The badge's text is "tier: paid of limit" or the
+                    // The badge's text is "tier: non-free of limit" or the
                     // stand-in; the "Free cards" panel's own title is not.
                     value == "No tier matches"
                         || value.rsplit_once(": ").is_some_and(|(_, count)| {
-                            count.split_once(" of ").is_some_and(|(paid, limit)| {
-                                paid.parse::<i32>().is_ok() && limit.parse::<u8>().is_ok()
+                            count.split_once(" of ").is_some_and(|(non_free, limit)| {
+                                non_free.parse::<i32>().is_ok() && limit.parse::<u8>().is_ok()
                             })
                         })
                 })

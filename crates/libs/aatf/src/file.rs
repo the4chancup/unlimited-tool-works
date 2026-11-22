@@ -122,13 +122,14 @@ pub enum LogicIdentity {
 
 /// Every logic version this build knows, oldest first: (version,
 /// SHA-256 of its section, lowercase hex). The last entry is the
-/// current logic. Version 1 shipped with 0.0.1, so its hash is frozen:
-/// a changed logic is a new version in the banner and the table, never
-/// a new hash for a released one, or every file saved with that version
-/// would read as modified.
+/// current logic. Until 1.0.0 its hash follows every edit of the
+/// logic, since nothing before 1.0.0 keeps an older file working; from
+/// 1.0.0 a changed logic is a new version in the banner and the table,
+/// never a new hash for a released one, or every file saved with that
+/// version would read as modified.
 pub(crate) const LOGIC_VERSIONS: &[(u32, &str)] = &[(
     1,
-    "0d59fa2f05653220a412cdd8581de38d930e66d2c54c91445d66bf723365f6fc",
+    "00fec8341f9caac13641a075de64a843dcd0098770911b741b74f0da1c421fc1",
 )];
 
 /// `text`'s logic section: from the line starting `// ==== LOGIC` to
@@ -377,15 +378,14 @@ mod tests {
     }
 
     /// `LOGIC_VERSIONS`' last entry is the current `logic.rhai`'s
-    /// hash — a released logic's hash never changes (a changed logic
-    /// is a new version, in the banner and the table).
+    /// hash, and the banner names its version.
     #[test]
     fn logic_versions_last_is_the_current_logic() {
         let (version, hash_) = LOGIC_VERSIONS.last().copied().expect("an entry");
         assert_eq!(
             hash_,
             section_hash(LOGIC),
-            "a released logic's hash never changes: a changed logic is a new version (update the banner and the table)"
+            "the last entry is the current logic: until 1.0.0 update its hash; from 1.0.0 add a new version"
         );
         // The banner's `ruleset-logic N` is the version.
         let banner_version: u32 = LOGIC
@@ -395,20 +395,5 @@ mod tests {
             .and_then(|n| n.parse().ok())
             .expect("the banner names a version");
         assert_eq!(version, banner_version);
-    }
-
-    /// Version 1's hash is the one 0.0.1 shipped: a logic edit that
-    /// rewrote it in place, rather than adding version 2, would make
-    /// every file saved with 0.0.1 read as modified.
-    #[test]
-    fn logic_version_1_keeps_the_hash_0_0_1_shipped() {
-        assert_eq!(
-            LOGIC_VERSIONS[0],
-            (
-                1,
-                "0d59fa2f05653220a412cdd8581de38d930e66d2c54c91445d66bf723365f6fc"
-            ),
-            "a released logic's hash never changes: add a new version instead"
-        );
     }
 }

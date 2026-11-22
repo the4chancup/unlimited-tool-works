@@ -9,7 +9,7 @@ use studio_core::widgets::{number_arrows, number_box, number_wheel_steps, step_n
 /// number goes through it. `clamp_existing_to_range` stays off: an egui number control clamps
 /// the value it draws unless told not to, and a stored value past the
 /// range would come back changed on the frame that drew it (drawing
-/// DBC7's 48 paid cards past a 0-20 range rewrote them to 20).
+/// DBC7's 48 non-free cards past a 0-20 range rewrote them to 20).
 pub(crate) fn number(
     ui: &mut egui::Ui,
     value: &mut u8,

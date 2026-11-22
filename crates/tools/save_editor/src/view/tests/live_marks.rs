@@ -192,8 +192,20 @@ fn marked_field_maps_every_kind() {
             },
             Some(F::Name),
         ),
-        (K::Cards { paid: 4, limit: 3 }, Some(F::Skills)),
-        (K::MinCards { paid: 1, min: 3 }, Some(F::Skills)),
+        (
+            K::Cards {
+                non_free: 4,
+                limit: 3,
+            },
+            Some(F::Skills),
+        ),
+        (
+            K::MinCards {
+                non_free: 1,
+                min: 3,
+            },
+            Some(F::Skills),
+        ),
         (K::SkillCardCap { count: 11, max: 10 }, Some(F::Skills)),
         (K::ComStyleCap { count: 3, max: 2 }, Some(F::ComStyles)),
         (

@@ -155,18 +155,18 @@ pub enum ViolationKind {
         /// The tier's code (`None` on a tier that sets none).
         expected: Option<String>,
     },
-    /// Paid cards over the limit.
+    /// Non-free cards over the limit.
     Cards {
-        /// The paid count.
-        paid: u8,
+        /// The non-free count.
+        non_free: u8,
         /// The limit; below zero, the extra A positions outnumber the
         /// cards.
         limit: i8,
     },
-    /// Paid skill cards plus extra A positions under `min_cards`.
+    /// Non-free skill cards plus extra A positions under `min_cards`.
     MinCards {
-        /// The paid count.
-        paid: u8,
+        /// The non-free count.
+        non_free: u8,
         /// The minimum.
         min: u8,
     },
@@ -452,13 +452,16 @@ impl ViolationKind {
                 .flatten()
                 .collect(),
             ),
-            ViolationKind::Cards { paid, limit } => (
+            ViolationKind::Cards { non_free, limit } => (
                 "Cards",
-                vec![("paid", paid.to_string()), ("limit", limit.to_string())],
+                vec![
+                    ("non_free", non_free.to_string()),
+                    ("limit", limit.to_string()),
+                ],
             ),
-            ViolationKind::MinCards { paid, min } => (
+            ViolationKind::MinCards { non_free, min } => (
                 "MinCards",
-                vec![("paid", paid.to_string()), ("min", min.to_string())],
+                vec![("non_free", non_free.to_string()), ("min", min.to_string())],
             ),
             ViolationKind::SkillCardCap { count, max } => (
                 "SkillCardCap",
@@ -990,16 +993,22 @@ mod tests {
                 },
             ),
             (
-                "#{ kind: \"Cards\", paid: 10, limit: 8 }",
+                "#{ kind: \"Cards\", non_free: 10, limit: 8 }",
                 None,
                 Severity::Error,
-                ViolationKind::Cards { paid: 10, limit: 8 },
+                ViolationKind::Cards {
+                    non_free: 10,
+                    limit: 8,
+                },
             ),
             (
-                "#{ kind: \"MinCards\", paid: 3, min: 5 }",
+                "#{ kind: \"MinCards\", non_free: 3, min: 5 }",
                 None,
                 Severity::Error,
-                ViolationKind::MinCards { paid: 3, min: 5 },
+                ViolationKind::MinCards {
+                    non_free: 3,
+                    min: 5,
+                },
             ),
             (
                 "#{ kind: \"SkillCardCap\", count: 11, max: 10 }",

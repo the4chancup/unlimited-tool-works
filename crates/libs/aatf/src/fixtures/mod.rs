@@ -259,7 +259,7 @@ fn playable_at(name: &str) -> usize {
 }
 
 /// One tier's economy on one member, as `card_limits` and `tier_values`
-/// report it: (roster slot, tier id, paid limit, A positions, the exact
+/// report it: (roster slot, tier id, card limit, A positions, the exact
 /// free counts, weak foot usage and accuracy). `max_a_positions` is
 /// expected unset.
 type Economy<'a> = (u8, &'a str, i8, u8, &'a [(&'a str, u8)], (u8, u8));

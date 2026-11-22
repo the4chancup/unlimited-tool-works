@@ -4,11 +4,11 @@ A player's rating is his best of: dribbling, goalkeeping, low pass, lofted pass,
 May sit below their target: attacking prowess, defensive prowess, weak foot usage, weak foot accuracy.
 
 ## Tiers
-- **Gold**: 1 per team, except registered GK; every stat 99; form 8, injury resistance 2, weak foot 4/4; 6 paid cards, 1 free COM style, 12 free tricks; 2 A positions.
-- **Silver**: 2 per team, except registered GK; every stat 94; form 8, injury resistance 2, weak foot 4/4; 5 paid cards, 1 free COM style, 12 free tricks; 2 A positions.
-- **Bronze**: 2 per team, except registered GK; every stat 89; form 8, injury resistance 2, weak foot 4/4; 5 paid cards, 1 free COM style, 12 free tricks; 2 A positions.
-- **Goalkeeper**: counts as Regular, registered GK; every stat 77; form 4, injury resistance 1, weak foot 2/2; 4 paid cards, 12 free tricks; 1 A position.
-- **Regular**: the rest of the squad, except registered GK; every stat 77; form 4, injury resistance 1, weak foot 2/2; 4 paid cards, 12 free tricks; 2 A positions.
+- **Gold**: 1 per team, except registered GK; every stat 99; form 8, injury resistance 2, weak foot 4/4; 6 non-free cards, 1 free COM style, 12 free tricks; 2 A positions.
+- **Silver**: 2 per team, except registered GK; every stat 94; form 8, injury resistance 2, weak foot 4/4; 5 non-free cards, 1 free COM style, 12 free tricks; 2 A positions.
+- **Bronze**: 2 per team, except registered GK; every stat 89; form 8, injury resistance 2, weak foot 4/4; 5 non-free cards, 1 free COM style, 12 free tricks; 2 A positions.
+- **Goalkeeper**: counts as Regular, registered GK; every stat 77; form 4, injury resistance 1, weak foot 2/2; 4 non-free cards, 12 free tricks; 1 A position.
+- **Regular**: the rest of the squad, except registered GK; every stat 77; form 4, injury resistance 1, weak foot 2/2; 4 non-free cards, 12 free tricks; 2 A positions.
 
 ## Heights
 Brackets: Manlet 175, Mid 180, Tall 185, Giant 190, Colossal 210 cm.
@@ -25,10 +25,10 @@ Every player is rated A at his registered position; starters play only where rat
 - **Support settings**: automatic substitution off, automatic offside trap off, automatic preset change off.
 
 ## Special rules
-- **The captain's Captaincy card is free, plus one card, COM style or A position**: The captain: Captaincy free, gets the first needed of: +1 paid card; or +1 free COM style; or +1 A position.
+- **The captain's Captaincy card is free, plus one card, COM style or A position**: The captain: Captaincy free, gets the first needed of: +1 non-free card; or +1 free COM style; or +1 A position.
 - **Goalkeepers at 189 count as tall**: Registered GK, 189 cm: count 4 cm shorter.
 - **Tall goalkeepers are 189**: Registered GK, 185 cm: not allowed ("GKs in this bracket must be 189cm").
-- **Manlets**: Manlets: +1 paid card, +1 A position, weak foot 4/4.
+- **Manlets**: Manlets: +1 non-free card, +1 A position, weak foot 4/4.
 
 ## Suggestions
-Allowances not used up, listed as suggestions: paid cards, free COM styles, A positions, weak foot and free cards.
+Allowances not used up, listed as suggestions: non-free cards, free COM styles, A positions, weak foot and free cards.

@@ -1,7 +1,7 @@
 use super::*;
 
 // The Cards used badge is one badge, the player's own tier under the
-// active ruleset (`label: paid of limit`); a ticked skill that no free
+// active ruleset (`label: non-free of limit`); a ticked skill that no free
 // group covers raises it by one; the active ruleset's reading is the
 // badge's.
 #[test]
@@ -25,11 +25,11 @@ fn the_cards_used_badge_reads_the_players_own_tier() {
             "premise: slot {slot}'s own tier is not the ruleset's first"
         );
         let limits = rules.card_limits(&team, player, &tier.id).unwrap();
-        format!("{}: {} of {}", tier.label, limits.paid, limits.limit)
+        format!("{}: {} of {}", tier.label, limits.non_free, limits.limit)
     }
-    /// The `paid` an `expected` badge text carries (`"Regular: 3 of 7"`
+    /// The `non_free` an `expected` badge text carries (`"Regular: 3 of 7"`
     /// reads 3).
-    fn paid_of(view: &SaveView, rules: &aatf::Rules, slot: u8) -> i32 {
+    fn non_free_of(view: &SaveView, rules: &aatf::Rules, slot: u8) -> i32 {
         expected(view, rules, slot)
             .split(": ")
             .nth(1)
@@ -38,11 +38,11 @@ fn the_cards_used_badge_reads_the_players_own_tier() {
             .next()
             .unwrap()
             .parse()
-            .expect("the paid count")
+            .expect("the non-free count")
     }
 
     let path = fixture(PesVersion::Pes21, "cards_used");
-    // Slot 1's player holds Heading (skill 6), a paid card on every tier:
+    // Slot 1's player holds Heading (skill 6), a non-free card on every tier:
     // his badge is one lower than slot 0's unticked player's.
     let mut file = EditFile::from_bytes(&fixture_save(PesVersion::Pes21)).unwrap();
     let second = file.team(701).unwrap().roster[1].player_id;
@@ -60,9 +60,9 @@ fn the_cards_used_badge_reads_the_players_own_tier() {
         "the one badge, his own tier's"
     );
 
-    // "Heading" (skill 6) is unticked and counts paid on every tier: the
+    // "Heading" (skill 6) is unticked and counts as non-free on every tier: the
     // tick raises the badge by one.
-    let before = paid_of(&view, &rules, 0);
+    let before = non_free_of(&view, &rules, 0);
     // The checkbox sits below the fold under the player header: the tick
     // goes through its AccessKit action (a pointer click lands only
     // inside the scroll's clip).
@@ -78,7 +78,11 @@ fn the_cards_used_badge_reads_the_players_own_tier() {
         [expected(&view, &rules, 0)],
         "after the tick"
     );
-    assert_eq!(paid_of(&view, &rules, 0), before + 1, "one more card used");
+    assert_eq!(
+        non_free_of(&view, &rules, 0),
+        before + 1,
+        "one more card used"
+    );
 
     // Ctrl+Z unticks it: the badge is recomputed, back to the old count.
     window.frame(vec![key(egui::Key::Z, egui::Modifiers::CTRL, true)], |ui| {
@@ -90,7 +94,7 @@ fn the_cards_used_badge_reads_the_players_own_tier() {
         [expected(&view, &rules, 0)],
         "after the undo"
     );
-    assert_eq!(paid_of(&view, &rules, 0), before, "the badge restored");
+    assert_eq!(non_free_of(&view, &rules, 0), before, "the badge restored");
 
     // The selection recomputes it: slot 1's player, his Heading held,
     // shows his own one-more count — not slot 0's.
@@ -114,8 +118,8 @@ fn the_cards_used_badge_reads_the_players_own_tier() {
     );
 }
 
-// The Cards used badge, painted: paid past the tier's limit reads the
-// error colour (slot 0's player made to hold paid cards past his own
+// The Cards used badge, painted: non-free cards past the tier's limit read the
+// error colour (slot 0's player made to hold non-free cards past his own
 // tier's limit by ticking skills in the fixture copy, as the Heading tick
 // above does). A colour is no AccessKit property, so it is read back from
 // the frame's painted shapes.
@@ -136,7 +140,7 @@ fn an_overdrawn_badge_paints_in_the_error_colour() {
     }
 
     let path = fixture(PesVersion::Pes21, "cards_used_overdrawn");
-    // The first dozen skills ticked: enough paid cards that his own
+    // The first dozen skills ticked: enough non-free cards that his own
     // tier's limit is passed.
     let mut file = EditFile::from_bytes(&fixture_save(PesVersion::Pes21)).unwrap();
     let id = file.team(701).unwrap().roster[0].player_id;
@@ -159,12 +163,12 @@ fn an_overdrawn_badge_paints_in_the_error_colour() {
             .expect("the player matches a tier");
         let limits = rules.card_limits(&team, player, &tier.id).unwrap();
         assert!(
-            i32::from(limits.paid) > i32::from(limits.limit),
-            "premise: overdrawn (paid {} of {})",
-            limits.paid,
+            i32::from(limits.non_free) > i32::from(limits.limit),
+            "premise: overdrawn (non-free {} of {})",
+            limits.non_free,
             limits.limit
         );
-        format!("{}: {} of {}", tier.label, limits.paid, limits.limit)
+        format!("{}: {} of {}", tier.label, limits.non_free, limits.limit)
     };
     badge_landed(&mut window, &mut view);
     let (_, _, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
@@ -344,7 +348,7 @@ fn a_failing_tier_check_shows_its_error_in_the_badges_place() {
 
 // The Cards used badge's limit counts the captain's untaken choice:
 // team 781's captain (roster slot 0, a regular under VGL 27) holds no
-// paid cards, no second COM style and no A position past the tier's,
+// non-free cards, no second COM style and no A position past the tier's,
 // so no option is needed and the choice stays untaken — the badge
 // reads `of` the regular limit plus the choice's card. A COM style
 // held takes the `free: com` option instead, and the limit drops back.
@@ -357,7 +361,7 @@ fn the_captains_untaken_choice_counts_its_card_in_the_badges_limit() {
     view.open(&path);
     view.aatf_ruleset = "vgl27".to_owned();
     view.selected = Some(Selection::Player(781, 0));
-    let (label, paid, tier_limit) = {
+    let (label, non_free, tier_limit) = {
         let session = view.session.as_ref().unwrap();
         assert_eq!(
             session.file().team(781).unwrap().tactics.set_pieces.captain,
@@ -373,12 +377,12 @@ fn the_captains_untaken_choice_counts_its_card_in_the_badges_limit() {
         assert_eq!(tier.id.as_str(), "regular", "premise: a regular");
         let limits = rules.card_limits(&team, player, &tier.id).unwrap();
         assert!(
-            limits.paid <= tier.cards,
-            "premise: his paid cards under the tier's limit"
+            limits.non_free <= tier.cards,
+            "premise: his non-free cards under the tier's limit"
         );
         (
             tier.label.clone(),
-            i32::from(limits.paid),
+            i32::from(limits.non_free),
             i32::from(tier.cards),
         )
     };
@@ -386,7 +390,7 @@ fn the_captains_untaken_choice_counts_its_card_in_the_badges_limit() {
     let nodes = badge_landed(&mut window, &mut view);
     assert_eq!(
         cards_used_badges(&nodes),
-        [format!("{label}: {paid} of {}", tier_limit + 1)],
+        [format!("{label}: {non_free} of {}", tier_limit + 1)],
         "the choice's card counted in the limit while it is untaken"
     );
 
@@ -416,7 +420,7 @@ fn the_captains_untaken_choice_counts_its_card_in_the_badges_limit() {
     let nodes = badge_landed(&mut window, &mut view);
     assert_eq!(
         cards_used_badges(&nodes),
-        [format!("{label}: {paid} of {tier_limit}")],
+        [format!("{label}: {non_free} of {tier_limit}")],
         "the limit drops back to the tier's"
     );
 }

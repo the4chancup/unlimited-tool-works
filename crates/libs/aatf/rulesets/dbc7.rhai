@@ -19,7 +19,7 @@ const RULESET = #{
 
     // No card or position rule on the page ("No tactical export rules for anything
     // else"): no card cap, the game not holding a player to ten skill cards in
-    // play. 48 paid cards cover every card the game has (41 is the most skills
+    // play. 48 non-free cards cover every card the game has (41 is the most skills
     // any version has, with the seven COM styles), 13 A positions its 13
     // positions.
     tiers: [
@@ -60,7 +60,7 @@ const RULESET = #{
         ],
     },
 
-    // 41 is the most skills any version has: no cap, like the paid cards.
+    // 41 is the most skills any version has: no cap, like the non-free cards.
     universal: #{ max_skill_cards: 41, illegal_formations: true },
 
     specials: [

@@ -4,7 +4,7 @@
 //! slots 9 and 10 gold, 2, 5 and 20 silver, 3, 4, 6, 7, 12, 15, 16 and
 //! 22 buffed with 15 and 22 re-registered LB to RB so the 188 cm
 //! players' registered positions are RB and CMF alone, which no 180 cm
-//! player shares. Every player holds Malicia (required) and three paid
+//! player shares. Every player holds Malicia (required) and three non-free
 //! skill cards (`min_cards`); the medals' names carry their colour
 //! codes, which `apply_tier` writes.
 
@@ -41,12 +41,12 @@ fn play_style(name: &str) -> PlayStyle {
 /// - slot 10, the captain, made a prolific winger: the sample's goal
 ///   poacher rated A at CF draws VTL11's warning, and the legal team
 ///   reports nothing (no gold special keys on prolific_winger);
-/// - Malicia (required) and two paid skill cards — fighting_spirit,
+/// - Malicia (required) and two non-free skill cards — fighting_spirit,
 ///   interception — to every player: the held cards already fit (the
 ///   pass skills free on non-medals, the COM styles inside the free
 ///   counts, Long Ranger and the captain's Captaincy free by name), and
 ///   the additions put everyone at or over `min_cards` (the captain at
-///   the paid limit).
+///   the card limit).
 fn legalize(mut records: Records) -> Records {
     // Premises on the sample as written.
     assert_eq!(records.team.tactics.set_pieces.captain, 10);
@@ -506,7 +506,7 @@ fn the_playing_style_warnings_at_cf() {
 }
 
 /// Malicia is required on everyone: a regular (slot 14) without it gets
-/// the `RequiredCard` violation (the card is free, so his paid count is
+/// the `RequiredCard` violation (the card is free, so his non-free count is
 /// unchanged).
 #[test]
 fn malicia_is_required() {
@@ -527,8 +527,8 @@ fn malicia_is_required() {
 }
 
 /// The GK Penalty Specialist card is banned on everyone: a regular
-/// (slot 14) holding it gets the special's violation — it is a paid
-/// card, so his paid count rises to four, still inside the limit.
+/// (slot 14) holding it gets the special's violation — it is a non-free
+/// card, so his non-free count rises to four, still inside the limit.
 #[test]
 fn the_gk_penalty_specialist_is_banned() {
     let rules = rules();
@@ -547,12 +547,12 @@ fn the_gk_penalty_specialist_is_banned() {
     );
 }
 
-/// `min_cards` asks three paid skill cards, each extra A position
+/// `min_cards` asks three non-free skill cards, each extra A position
 /// counting as one: a regular (slot 1, two A positions of two allowed)
-/// down to two paid skills gets the violation, and is legal again with a
+/// down to two non-free skills gets the violation, and is legal again with a
 /// third A position (which also costs him a card slot).
 #[test]
-fn three_paid_skill_cards_or_the_extra_a_positions() {
+fn three_non_free_skill_cards_or_the_extra_a_positions() {
     let rules = rules();
     assert_eq!(
         player(&legal_team(), 1)
@@ -565,7 +565,13 @@ fn three_paid_skill_cards_or_the_extra_a_positions() {
     let team = edited(1, |p| p.cards.retain(|c| *c != card("interception")));
     assert_eq!(
         problems(&rules, &team),
-        vec![error(Some(1), ViolationKind::MinCards { paid: 2, min: 3 })]
+        vec![error(
+            Some(1),
+            ViolationKind::MinCards {
+                non_free: 2,
+                min: 3
+            }
+        )]
     );
     let team = edited(1, |p| {
         p.cards.retain(|c| *c != card("interception"));
@@ -606,7 +612,7 @@ fn the_name_colours_are_checked() {
 }
 
 /// The 188 cm players may hold a B at CB alone — it still counts toward
-/// their single A-position allowance (paid three, one extra position,
+/// their single A-position allowance (non-free three, one extra position,
 /// inside the limit): legal; a B anywhere else, or an A at CB, is the
 /// special's violation each.
 #[test]
@@ -638,8 +644,8 @@ fn a_188s_b_rating_only_at_cb_and_never_an_a_there() {
 }
 
 /// The permitted B at CB still spends the one-A allowance
-/// (`b_uses_a_allowance`): a buffed player at his paid limit (slot 3,
-/// three paid in the legal team, seven after the added skills) gains it
+/// (`b_uses_a_allowance`): a buffed player at his card limit (slot 3,
+/// three non-free in the legal team, seven after the added skills) gains it
 /// and is over — the B counts toward the allowance, an extra position
 /// costing a card; `card_limits` reports the limit one lower.
 #[test]
@@ -665,7 +671,13 @@ fn the_permitted_b_at_cb_spends_the_a_allowance() {
     });
     assert_eq!(
         problems(&rules, &team),
-        vec![error(Some(3), ViolationKind::Cards { paid: 7, limit: 6 })]
+        vec![error(
+            Some(3),
+            ViolationKind::Cards {
+                non_free: 7,
+                limit: 6
+            }
+        )]
     );
     let limits = rules
         .card_limits(&team, team.player(3).expect("slot 3"), "buffed")
@@ -722,7 +734,7 @@ fn the_custom_checks() {
 
 /// Regulars — the buffed included — cannot be captain: the armband on a
 /// regular (slot 14) is the special's violation (the former captain's
-/// Captaincy card is paid once it is no longer his, so it goes too).
+/// Captaincy card is non-free once it is no longer his, so it goes too).
 #[test]
 fn a_regular_cannot_be_captain() {
     let rules = rules();
@@ -896,7 +908,7 @@ fn card_limits_name_the_economy() {
     );
     assert_eq!(limits(3, "buffed").a_positions, 1);
 
-    // The whole economy per tier — the paid limit, the A positions,
+    // The whole economy per tier — the card limit, the A positions,
     // the free counts (the exact map, so a group named nowhere in it
     // shows) and `max_a_positions` unset — plus `tier_values`' weak
     // foot. Slots: 9 for the gold (the playing-style bonus is a stat
@@ -917,14 +929,14 @@ fn card_limits_name_the_economy() {
 }
 
 /// Long Ranger is free by name beyond the tier's COM allowance: a
-/// regular at the paid limit (slot 14, seven paid skills) holding it and
+/// regular at the card limit (slot 14, seven non-free skills) holding it and
 /// one more COM style — the allowance spent — is still legal; a sixth
-/// COM style is the `max_com_styles` violation alone (his paid count is
+/// COM style is the `max_com_styles` violation alone (his non-free count is
 /// seven either way).
 #[test]
 fn long_ranger_is_free_and_coms_cap_at_five() {
     let rules = rules();
-    let paid = |p: &mut PlayerView| {
+    let non_free = |p: &mut PlayerView| {
         for name in [
             "long_throw",
             "acrobatic_clear",
@@ -935,7 +947,7 @@ fn long_ranger_is_free_and_coms_cap_at_five() {
         }
     };
     let team = edited(14, |p| {
-        paid(p);
+        non_free(p);
         p.cards.push(card("long_ranger"));
         p.cards.push(card("trickster"));
     });
@@ -990,7 +1002,7 @@ fn weak_foot_below_the_exact_target() {
 
 /// The skill-card cap is eleven, over the game's ten (the cup's saves
 /// load them): eleven skills on a regular (slot 14 — eight free, three
-/// paid, inside the budget) report nothing; a twelfth, free as well, is
+/// non-free, inside the budget) report nothing; a twelfth, free as well, is
 /// the cap alone.
 #[test]
 fn eleven_skills_are_the_cap() {

@@ -502,7 +502,7 @@ fn no_tier_names_the_heights_the_tiers_take() {
 
 /// The captain's Captaincy card and one more are free only through the
 /// special: the captain (slot 10, the sample's Captaincy holder) pushed
-/// to his paid limit is legal — `card_limits` shows the +1 (9 over the
+/// to his card limit is legal — `card_limits` shows the +1 (9 over the
 /// silver 8) and Captaincy among the free cards.
 #[test]
 fn the_captains_special_covers_the_limit_and_the_card() {
@@ -531,8 +531,8 @@ fn the_captains_special_covers_the_limit_and_the_card() {
 }
 
 /// Heading is a free card for everyone, outside the tricks group: a
-/// regular at his card limit (slot 4, three paid plus three more)
-/// holds it on top, where a seventh paid card is over.
+/// regular at his card limit (slot 4, three non-free plus three more)
+/// holds it on top, where a seventh non-free card is over.
 #[test]
 fn heading_is_free_at_the_card_limit() {
     let rules = rules();
@@ -556,12 +556,18 @@ fn heading_is_free_at_the_card_limit() {
     });
     assert_eq!(
         problems(&rules, &team),
-        vec![error(Some(4), ViolationKind::Cards { paid: 7, limit: 6 })]
+        vec![error(
+            Some(4),
+            ViolationKind::Cards {
+                non_free: 7,
+                limit: 6
+            }
+        )]
     );
 }
 
 /// `card_limits` reports each tier's economy on a member no special
-/// touches — the paid limit, the A positions, the free counts (the
+/// touches — the card limit, the A positions, the free counts (the
 /// exact map, so a group named nowhere in it shows) and
 /// `max_a_positions` unset — and `tier_values` the weak foot, the
 /// file's 4/4 on every tier. Slots: 2 for the gold, 5 the silver, 9 the
@@ -602,7 +608,7 @@ fn a_medals_injury_resistance_is_exactly_two() {
 
 /// VGL's skill-card cap is past the game's ten (`max_skill_cards` 41):
 /// a regular holding eleven skills — the tricks group covering the
-/// nine added over his paid cards — reports nothing.
+/// nine added over his non-free cards — reports nothing.
 #[test]
 fn eleven_skills_are_legal() {
     let rules = rules();

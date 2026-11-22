@@ -123,7 +123,7 @@ fn type_chars(window: &mut Headless, view: &mut RulesetView, ctx: &ToolContext, 
 }
 
 /// The numeric field at `index` on the gold row (column order: count,
-/// rate, form, injury resistance, weak foot usage and accuracy, paid
+/// rate, form, injury resistance, weak foot usage and accuracy, non-free
 /// cards, minimum cards, A positions, warning band) changed to `text`
 /// through its SpinButton: the ruleset equals the official ruleset
 /// with `edit` alone applied.
@@ -1858,7 +1858,7 @@ fn a_drop_on_the_label_field_reorders_the_tiers() {
 
 /// Every section draws the ruleset as stored: a number's draw never
 /// clamps a stored value to its control's range (a clamped draw
-/// rewrote DBC7's 48 paid cards to 20 and marked the file unsaved).
+/// rewrote DBC7's 48 non-free cards to 20 and marked the file unsaved).
 #[test]
 fn drawing_every_section_leaves_the_ruleset_untouched() {
     for template in aatf::templates() {
@@ -1890,7 +1890,7 @@ fn drawing_every_section_leaves_the_ruleset_untouched() {
 }
 
 /// A value past its control's range, typed into the file by hand, is
-/// drawn as stored: the gold tier's 60 paid cards (the cell's range
+/// drawn as stored: the gold tier's 60 non-free cards (the cell's range
 /// ends at 48) and its 25 free tricks (the expander's count ends at 20)
 /// survive the Tiers section's draw, expander open, and the document
 /// stays saved.
@@ -1956,16 +1956,17 @@ fn each_tier_field_writes_to_its_own_binding() {
         |tier| tier.weak_foot.accuracy = 2,
         "weak foot accuracy",
     );
-    edit_spin(6, "9", |tier| tier.cards = 9, "paid cards");
+    edit_spin(6, "9", |tier| tier.cards = 9, "non-free cards");
     edit_spin(7, "2", |tier| tier.min_cards = 2, "minimum cards");
     edit_spin(8, "5", |tier| tier.a_positions = 5, "A positions");
     edit_spin(9, "7", |tier| tier.stat_warning = 7, "warning band");
 
-    // The stat-total checkbox on gold's row (the topmost of the five).
+    // The stat-total checkbox on gold's row (the topmost of the five), in
+    // the last column, scrolled in.
     {
         let (ctx, _events, mut window, mut view) =
             tiers_view(aatf::Rules::official().ruleset().clone(), true);
-        let frame = settled(&mut window, &mut view, &ctx);
+        let frame = scroll_table_right(&mut window, &mut view, &ctx, |_, _| true);
         click(
             &mut window,
             role_labeled(
