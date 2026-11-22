@@ -141,8 +141,8 @@ other items run beside it. **After the detour**, in this order:
          tests through `resolved*` and the deep helpers, no call site edited. The dummy
          requirement's `notes.txt` holds a single newline, since any text in it reports
          `notes_found`. SWE-2 round S1: 6 accepted, one a real test's input (rulings
-         `.tmp/duck_rulings_builder.md`); their rework runs on SWE-2 (`sk/s1r`), then a second
-         round. The round's part over the grid's position tests and `commit.py`: 4 accepted,
+         `.tmp/duck_rulings_builder.md`), reworked (SWE-2, merge `cdd64037`); the second
+         SWE-2 round, S2, runs on the rework. The round's part over the grid's position tests and `commit.py`: 4 accepted,
          which ends its loop, all fixed (merge `50bed6bc`, `7b00659c`)
        - [x] 2 (2026-11-22, merge `5a46d101`, SWE-2) `aesthetics_export`'s validator tests
          through `report*`, nine tests of a requirement's own check on `without`
@@ -151,8 +151,9 @@ other items run beside it. **After the detour**, in this order:
          `team_compiler::test_files::complete`, shared with the unit tests; the CONTRIBUTING
          rule
        - [ ] 4: the Compiler's other CLI tests (about 270), `deploy` and
-         `prefox_kit_variants` included
-       - [ ] 5: `export_upgrader` (about 130)
+         `prefox_kit_variants` included: running (Opus, `sk/builder4`)
+       - [ ] 5: `export_upgrader` (about 130): running (Opus, `sk/builder5`), `old_missing`
+         taking files and empty folders apart from the start
        - [ ] 6: `studio` (6)
        - [ ] 7: the `.zip` fixtures packed when the tests run, with the three `gui_run` and
          `view` tests that compile the tracer export as it is; the `.7z` ones stay stored,
