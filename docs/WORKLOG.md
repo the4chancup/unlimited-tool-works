@@ -103,7 +103,11 @@ other items run beside it. **After the detour**, in this order:
    - [x] 1a (2026-11-22, merge `304822e4`, Opus, two reworks) the grid, read-only, in the
      new lib `export_grid`, filled by `check`'s validation when the view opens and after each
      Compile: rows, label, ID, player, portraits and kit cells, check states, the legend
-     (TC-GUI-04 without its watcher part, 20, 21). Owed: its look beside the draft
+     (TC-GUI-04 without its watcher part, 20, 21). Owed: its look beside the draft. The
+     shipped build still greys the Compiler (`CLI_ONLY`, `crates/studio/src/main.rs:130`), so
+     the look runs on a build made for it, with `compiler` off that list and nothing
+     committed; the slice that presents the view takes it off for good (1c, unless the plan
+     names another)
    - [ ] 1b: the detail window: hover, pin, Esc, double-click, its top box, Copy messages
      → verify: TC-GUI-09, 24, 25, 31, 32
    - [ ] 1c: the toolbar's strip and its counts, the log's lines linked to cells, the log
