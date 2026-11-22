@@ -3744,10 +3744,12 @@ points there.
   /hi3/ shows /gd/'s names, positions, numbers and Game Plan, its one appearance record
   travels, and gloves 262143 draws plain hands. The team's name showed as "Invitational 3":
   the import wrote /gd/'s `edit_flags.name = false`, and the game shows a stored team name
-  only with it set. Fix: a written name sets the flag (`plans/pes_savefile/operations.md` "A
-  written team name shows", DECISIONS), SWE-2 on `pes14` (`.tmp/brief_teamname_flag.md` in
-  its worktree): running. Then a rebuilt Build 3, its gates, and a second in-game look at the
-  name; main gets the same rule after.
+  only with it set. Fixed on `pes14` (`042e60b8`): an import that renames a team sets the
+  flag (`plans/pes_savefile/operations.md` "A written team name shows", DECISIONS). Build 3
+  rebuilt there (`tasks_build/UTW-pes14-042e60b8.exe`), its scoped gates passed (4,820
+  tests), and a second in-game look (`.tmp/pes14_ingame/teamname/findings.md` in its
+  worktree) shows "/gd/" in the Italian League's list. The card waits for the maintainer's
+  yes. Main gets the same rule next (`.tmp/lead/brief_teamname_main.md`, SWE-2).
   The Compiler's view (item 6) goes on without waiting for it (the maintainer, 2026-11-22).
 - open (2026-11-22) — The Save editor's tests leave their scratch behind:
   `test_support::scratch` empties `target/<profile>/save_editor_tests/<test>` when a test
@@ -3755,7 +3757,11 @@ points there.
   save copy: 12.8 GB in main's `target/`, 13.2 GB in the gate's, and the same in each
   sidekick's tree until its `target/` goes. Fix (SWE-2): `scratch` returns a guard that
   removes the folder when it drops and the test did not panic (a failed test's folder stays
-  to be read); check the other crates' scratch helpers for the same.
+  to be read); check the other crates' scratch helpers for the same: main's `target/tmp/`
+  held 5.6 GB of other suites' leftovers on 2026-11-22 (`export_upgrader_in_process`,
+  `team_compiler_cli`, `save_editor_in_process`, `team_compiler_in_process`, ...). Until the
+  fix, these folders are what to delete when the disk runs low, in a tree no job runs in
+  (28.5 GB from main and `pes14` on 2026-11-22).
 - open (2026-11-22) — Panics on file content (DECISIONS 2026-11-22 "What a file holds is never
   an invariant an `expect` rests on"; `CONTRIBUTING.md` "Code style", the Errors bullet). A
   census of the 885 `expect`, `unwrap`, `panic!`, `unreachable!` and `assert!` calls in

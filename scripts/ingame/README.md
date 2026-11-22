@@ -27,6 +27,11 @@ draws the game even when other windows cover it, so the user keeps working while
 before each command, since the game reads keys only from the foreground: they take the user's
 keyboard. Use the pad and OBS; keys and the screen are the fallback when OBS cannot be used.
 
+Menus that look like lists can be grids. In PES 2014's team menu (Edit, Teams, a league, a
+team: Game Plan, Squad Number, Team Name, Emblem, Strip, Home Ground), up and down move the
+cursor three rows at a time, so two runs (2026-11-22) never reached Team Name. The menu is
+probably three across, with left and right moving one row; that is not yet tried.
+
 ## Requirements
 
 - Windows (the window and process calls are Win32), Python 3.10 or later.

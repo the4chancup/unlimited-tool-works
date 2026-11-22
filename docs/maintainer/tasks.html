@@ -45,7 +45,7 @@ card.</p>
   "PES 2014 Build 2 crashed on the Appearance page"</p>
   <p>Build 3 (<code>0.0.2-pes14.3</code>) fixes the crash the Akko organizer met, and copies a
   whole PES 2014 team from one save to another as a Team TOML file. It has passed its gates.
-  Its build is <code>C:\Data\4cc\Tools_Mine\4cc-studio-temp\tasks_build\UTW-pes14-be6f9ed5.exe</code>,
+  Its build is <code>C:\Data\4cc\Tools_Mine\4cc-studio-temp\tasks_build\UTW-pes14-042e60b8.exe</code>,
   not the one named above. Nothing is pushed or released until you say yes.</p>
   <p>The lead checked this build on copies of two saves:</p>
   <ul>
@@ -63,11 +63,11 @@ card.</p>
     <li>the one player with an appearance record of his own wears /gd/'s look;</li>
     <li>a player whose gloves value is 262143 has plain hands, as one with 0 has.</li>
   </ul>
-  <p>One thing failed: the team's name shows as "Invitational 3", the league slot's own label,
-  not "/gd/". The game shows a team's stored name only when a flag beside it is set, and the
-  import copied that flag from /gd/'s save, where it was off. The import now sets the flag
-  whenever it writes a name. A new build replaces <code>UTW-pes14-be6f9ed5.exe</code> once
-  that fix passes its gates and a second look in the game shows the name.</p>
+  <p>One thing failed in the first look: the team's name showed as "Invitational 3", the league
+  slot's own label, not "/gd/". The game shows a team's stored name only when a flag beside it
+  is set, and the import had copied that flag from /gd/'s save, where it was off. An import that
+  renames a team now sets the flag. In a second look, with this build's import, the Italian
+  League's team list shows "/gd/", with /gd/'s players.</p>
   <p>Not compared side by side: /gd/ in your <code>EDIT.bin.autumn14</code>, which the game
   refuses to load ("data from a different version"), so /gd/'s looks were checked against the
   exported file instead.</p>
@@ -78,9 +78,8 @@ card.</p>
     <li>Optionally, try the build on a PES 2014 save of your own.</li>
   </ol>
   <div class="options">
-    <label class="opt"><input type="radio" value="release once the name shows"><b>Release it
-      once the name shows in the game</b><div class="note">The new build, after its second
-      look.</div></label>
+    <label class="opt"><input type="radio" value="release"><b>Release it</b>
+      <div class="note">This build, <code>UTW-pes14-042e60b8.exe</code>.</div></label>
     <label class="opt"><input type="radio" value="release after changes"><b>Release it after
       changes</b><div class="note">Say what below: in the notes or in the build.</div></label>
     <label class="opt"><input type="radio" value="not yet"><b>Not yet</b>
