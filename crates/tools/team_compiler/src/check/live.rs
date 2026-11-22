@@ -151,15 +151,15 @@ fn export_row(checked: CheckedSource, teams_list: &TeamsList) -> Row {
     };
     let message = checked.messages.iter().find_map(row_message);
     // A dropped export has no validated roster: its cells are its listing's folders.
+    // Validation gives every export it resolves its listing too, so none is without one.
     let layout = match (&checked.resolved, &checked.parsed) {
         _ if message.is_some() => None,
         (Some(resolved), Some(parsed)) => Some(with_dropped(
             resolved_layout(resolved),
             draft_layout(parsed),
         )),
-        (Some(resolved), None) => Some(resolved_layout(resolved)),
         (None, Some(parsed)) => Some(draft_layout(parsed)),
-        (None, None) => None,
+        (_, None) => None,
     };
     let blocked = checked.resolved.is_none();
     let mut label = Vec::new();
@@ -227,28 +227,24 @@ struct Layout {
     referee: bool,
 }
 
-/// A validated export's layout: its roster's folders, its kits, its players' portraits.
+/// A validated export's layout: its roster's folders and its kits. It counts no portraits:
+/// the count is its listing's (`draft_layout`), which `with_dropped` takes.
 fn resolved_layout(resolved: &ResolvedAestheticsExport) -> Layout {
     let export = &resolved.export;
     let mut slots: BTreeMap<usize, Vec<u8>> = BTreeMap::new();
     let referee = matches!(export.roster, ValidatedRoster::Referees(_));
-    let portraits = match &export.roster {
+    match &export.roster {
         ValidatedRoster::Team(roster) => {
             for (slot, index) in roster {
                 slots.entry(index.0).or_default().push(slot.get());
             }
-            let has_portrait = |(slot, index): &(&PlayerSlot, &aesthetics_export::PlayerIndex)| {
-                export.portraits.contains_key(*slot) || export.players[index.0].portrait.is_some()
-            };
-            Some(roster.iter().filter(has_portrait).count())
         }
         ValidatedRoster::Referees(roster) => {
             for (slot, index) in roster {
                 slots.entry(index.0).or_default().push(slot.get());
             }
-            None
         }
-    };
+    }
     Layout {
         players: slots
             .into_iter()
@@ -260,7 +256,7 @@ fn resolved_layout(resolved: &ResolvedAestheticsExport) -> Layout {
             .iter()
             .map(|(slot, kit)| (*slot, kit.path.clone()))
             .collect(),
-        portraits,
+        portraits: None,
         referee,
     }
 }
