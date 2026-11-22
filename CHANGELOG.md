@@ -4,6 +4,8 @@
 
 ### Useful
 
+- **Save editor**: a PES 2014 save now shows every team it holds, not only those at ids 701 to
+  920, since the 4cc's 2014 teams sit at real clubs' ids (/gd/ at 136, /hm/ at 1236).
 - **All tools**: UTW now keeps a record of the five times it was opened before the current
   one, with the saves opened and written each time. Report a problem's new box `Include earlier sessions` adds
   them to the file, for a problem that began before UTW was last opened, such as a crash.
@@ -12,6 +14,9 @@
 
 ### Fixes
 
+- **Save editor**: on a PES 2014 save, a player edited in the game closed UTW when his
+  Appearance page opened or Hide default body was used on him. Both now work, and count his
+  gloves as none, as the game draws them.
 - **Ruleset editor**: in a window larger than the default, the toolbar, the bottom bar and the
   form stretched across it. They now keep their default width, centred. The preview now
   stands at the window's right edge, wide enough for the data block's 100 columns, and can no
