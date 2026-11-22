@@ -19781,3 +19781,15 @@ divergences in the build aren't even worth looking at." The RUNBOOK's rule that 
 compared with its draft gave no exception, so the lead kept comparing.
 Plan: `RUNBOOK.md` "How the work runs", the rule "The Ruleset editor's built UI is not worked
 on".
+
+## 2026-11-23 — conduct, built UI — no work on the built UI of any tool whose draft is not final
+Decision: the rule of the entry above ("no work on the Ruleset editor's built UI until its draft
+is final") covers every tool whose draft is not final, not the Ruleset editor alone. The
+worklog's "Current status" holds the one list of final drafts: the Save editor's, the
+Compiler's and the Export upgrader's. Every other tool's draft is not final until the
+maintainer says so.
+Why: the maintainer: rules must be as future-proof as possible, so this one names no tool;
+and the Compiler's and the Export upgrader's drafts are final. The Save editor's is listed as
+final because its view was built and released against it.
+Plan: `RUNBOOK.md` "How the work runs", the rule "A tool whose draft is not final gets no work
+on its built UI"; `WORKLOG.md` "Current status".

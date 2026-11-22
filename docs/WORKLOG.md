@@ -16,6 +16,10 @@ the PES 2019 check (DECISIONS 2026-11-16 "0.0.2 is cut without Select all simila
 rounds and the PES 2019 check"), and the no-stretch slices moved to after it (2026-11-16 "The
 no-stretch slices move to after 0.0.2"). Card `poc5-in-game` stays open.
 
+**Final drafts**: the Save editor's, the Compiler's and the Export upgrader's, so their built
+UI follows them. Every other tool's draft is not final (the Ruleset editor's), and its built UI
+is not worked on (`RUNBOOK.md` "How the work runs"). Only the maintainer moves a tool here.
+
 **Now, a detour: PES 2014 saves for Akko League VII.** The Save editor learns PES 2014 on the
 long-lived branch `pes14`, which never merges into main (DECISIONS 2026-11-19 "PES 2014 support
 lives on its own branch"). The branch's `docs/plans/pes14.md` holds its plan, decisions and
