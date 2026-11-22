@@ -4,9 +4,9 @@ A player's rating is his best of: dribbling, goalkeeping, finishing, low pass, l
 May sit below their target: attacking prowess, ball control, dribbling, low pass, lofted pass, finishing, place kicking, swerve, heading, defensive prowess, ball winning, kicking power, speed, explosive power, body control, physical contact, jump, goalkeeping, catching, clearing, reflexes, coverage, stamina, tight possession, aggression, form, injury resistance, weak foot usage, weak foot accuracy.
 
 ## Tiers
-- **Gold**: by medal system; every stat 99; form 8, injury resistance 3, weak foot 4/4; 48 paid cards; 13 A positions.
-- **Silver**: by medal system; every stat 88; an ability stat that may sit below its target warns up to 5 over it, past that it is not allowed; those stats added up may not exceed their targets' sum; form 8, injury resistance 3, weak foot 4/4; 48 paid cards; 13 A positions.
-- **Regular**: the rest of the squad; every stat 77; an ability stat that may sit below its target warns up to 7 over it, past that it is not allowed; those stats added up may not exceed their targets' sum; form 8, injury resistance 3, weak foot 4/4; 48 paid cards; 13 A positions.
+- **Gold**: by medal system; every stat 99; form 8, injury resistance 3, weak foot 4/4; 48 non-free cards; 13 A positions.
+- **Silver**: by medal system; every stat 88; an ability stat that may sit below its target warns up to 5 over it, past that it is not allowed; those stats added up may not exceed their targets' sum; form 8, injury resistance 3, weak foot 4/4; 48 non-free cards; 13 A positions.
+- **Regular**: the rest of the squad; every stat 77; an ability stat that may sit below its target warns up to 7 over it, past that it is not allowed; those stats added up may not exceed their targets' sum; form 8, injury resistance 3, weak foot 4/4; 48 non-free cards; 13 A positions.
 Medal systems: GGG (3 Gold, 0 Silver), GGSS (2 Gold, 2 Silver), GSSSS (1 Gold, 4 Silver) or SSSSSS (0 Gold, 6 Silver).
 
 ## Heights

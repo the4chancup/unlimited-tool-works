@@ -91,7 +91,7 @@ fn b_rating() {
 }
 
 /// Slot 12 (a regular CMF holding two skills and one COM style, so his
-/// three paid cards sit at the limit) with one card dropped, which costs
+/// three non-free cards sit at the limit) with one card dropped, which costs
 /// nothing, then given an A at GK: the GK rating is his second A. Without
 /// the dropped card the extra A would also cost a card.
 #[test]
@@ -351,7 +351,7 @@ fn weak_foot_over_the_limits() {
 /// it, a trick (two free for a regular) is not, and an extra A position
 /// costs a card.
 #[test]
-fn paid_cards_over_the_limit() {
+fn non_free_cards_over_the_limit() {
     let rules = Rules::official();
     assert_eq!(player(&legal_team(), 12).cards.len(), 3);
     assert_eq!(
@@ -359,7 +359,13 @@ fn paid_cards_over_the_limit() {
             &rules,
             &edited(12, |p| p.cards.push(card("long_range_drive")))
         ),
-        vec![error(Some(12), ViolationKind::Cards { paid: 4, limit: 3 })]
+        vec![error(
+            Some(12),
+            ViolationKind::Cards {
+                non_free: 4,
+                limit: 3
+            }
+        )]
     );
     assert_eq!(
         problems(
@@ -371,13 +377,19 @@ fn paid_cards_over_the_limit() {
     let cf = position("CF");
     assert_eq!(
         problems(&rules, &edited(12, |p| p.ratings[usize::from(cf.0)] = 2)),
-        vec![error(Some(12), ViolationKind::Cards { paid: 3, limit: 2 })]
+        vec![error(
+            Some(12),
+            ViolationKind::Cards {
+                non_free: 3,
+                limit: 2
+            }
+        )]
     );
 }
 
 /// Slot 12 with every card removed and rated A at four more outfield
 /// positions: five A positions where a regular is allowed one, so the
-/// extra four deduct the paid limit to 3 - 4 = -1 and paid 0 is still
+/// extra four deduct the card limit to 3 - 4 = -1 and non-free 0 is still
 /// over it.
 #[test]
 fn an_overspend_in_a_positions_is_over_the_limit() {
@@ -392,7 +404,13 @@ fn an_overspend_in_a_positions_is_over_the_limit() {
     });
     assert_eq!(
         problems(&rules, &team),
-        vec![error(Some(12), ViolationKind::Cards { paid: 0, limit: -1 })]
+        vec![error(
+            Some(12),
+            ViolationKind::Cards {
+                non_free: 0,
+                limit: -1
+            }
+        )]
     );
     let limits = rules
         .card_limits(&team, team.player(12).expect("slot 12"), "regular")
@@ -401,7 +419,7 @@ fn an_overspend_in_a_positions_is_over_the_limit() {
 }
 
 /// Eleven skills on slot 12 (a regular who is no manlet, so no bonus
-/// card), none of them a trick: the game's cap of ten, over the paid limit
+/// card), none of them a trick: the game's cap of ten, over the card limit
 /// as well (the cap is never reached under it in this file).
 #[test]
 fn skill_cards_over_the_games_cap() {
@@ -414,7 +432,13 @@ fn skill_cards_over_the_games_cap() {
     assert_eq!(
         problems(&Rules::official(), &team),
         vec![
-            error(Some(12), ViolationKind::Cards { paid: 11, limit: 3 }),
+            error(
+                Some(12),
+                ViolationKind::Cards {
+                    non_free: 11,
+                    limit: 3
+                }
+            ),
             error(Some(12), ViolationKind::SkillCardCap { count: 11, max: 10 }),
         ]
     );
@@ -607,7 +631,7 @@ fn registered_position_not_a_names_the_a_positions() {
 
 /// The gold made a silver: no gold, three silvers. Read as silver he
 /// also overpays a card: nine cards, three tricks and one COM style free
-/// (the silver's one trade going to the style), so paid 5, and his
+/// (the silver's one trade going to the style), so non-free 5, and his
 /// second A position takes the limit to 5 - 1.
 #[test]
 fn tier_counts_off() {
@@ -615,7 +639,13 @@ fn tier_counts_off() {
     assert_eq!(
         problems(&Rules::official(), &team),
         vec![
-            error(Some(2), ViolationKind::Cards { paid: 5, limit: 4 }),
+            error(
+                Some(2),
+                ViolationKind::Cards {
+                    non_free: 5,
+                    limit: 4
+                }
+            ),
             error(
                 None,
                 ViolationKind::TierCount {
@@ -637,7 +667,7 @@ fn tier_counts_off() {
 }
 
 /// Slot 12, a mid player, shrunk to a manlet: one manlet over, one mid
-/// short, in the brackets' order. (His weak foot 2/2 and three paid cards
+/// short, in the brackets' order. (His weak foot 2/2 and three non-free cards
 /// stay within a manlet's larger allowances.)
 #[test]
 fn bracket_quotas_off() {
@@ -676,9 +706,10 @@ fn bracket_quotas_off() {
     );
 }
 
-/// No captain set. Slot 10's Captaincy card is then paid, and paid over
-/// his limit: nine cards less the two free tricks and the one COM style
-/// the trade covers is six against a silver's 5.
+/// No captain set. Slot 10's Captaincy card is then non-free, and his
+/// non-free cards are over his limit: nine cards less the two free
+/// tricks and the one COM style the trade covers is six against a
+/// silver's 5.
 #[test]
 fn no_captain() {
     let mut team = legal_team();
@@ -687,7 +718,13 @@ fn no_captain() {
     assert_eq!(
         problems(&Rules::official(), &team),
         vec![
-            error(Some(10), ViolationKind::Cards { paid: 6, limit: 5 }),
+            error(
+                Some(10),
+                ViolationKind::Cards {
+                    non_free: 6,
+                    limit: 5
+                }
+            ),
             error(None, ViolationKind::Captain)
         ]
     );
@@ -754,7 +791,7 @@ fn a_player_below_every_tier_reads_as_the_last_fitting_tier() {
 // ---- The specials, one fixture each
 
 /// Slot 12 pays three cards, his limit: Malicia on top costs nothing, and
-/// with a paid card on top of both he pays four, not five.
+/// with a non-free card on top of both he pays four, not five.
 #[test]
 fn malicia_is_a_free_card() {
     let rules = Rules::official();
@@ -768,27 +805,45 @@ fn malicia_is_a_free_card() {
     });
     assert_eq!(
         problems(&rules, &team),
-        vec![error(Some(12), ViolationKind::Cards { paid: 4, limit: 3 })]
+        vec![error(
+            Some(12),
+            ViolationKind::Cards {
+                non_free: 4,
+                limit: 3
+            }
+        )]
     );
 }
 
-/// Captaincy on slot 12 is a paid card, and free once he is the
+/// Captaincy on slot 12 is a non-free card, and free once he is the
 /// captain. Slot 10, the captain before, then pays his own: with the
-/// silver's one trade covering one of his two COM styles that is paid 6
+/// silver's one trade covering one of his two COM styles that is non-free 6
 /// over limit 5.
 #[test]
 fn the_captains_captaincy_card_is_free() {
     let rules = Rules::official();
     assert_eq!(
         problems(&rules, &edited(12, |p| p.cards.push(card("captaincy")))),
-        vec![error(Some(12), ViolationKind::Cards { paid: 4, limit: 3 })]
+        vec![error(
+            Some(12),
+            ViolationKind::Cards {
+                non_free: 4,
+                limit: 3
+            }
+        )]
     );
     let mut team = edited(12, |p| p.cards.push(card("captaincy")));
     assert!(player(&team, 10).cards.contains(&card("captaincy")));
     team.captain = Some(12);
     assert_eq!(
         problems(&rules, &team),
-        vec![error(Some(10), ViolationKind::Cards { paid: 6, limit: 5 })]
+        vec![error(
+            Some(10),
+            ViolationKind::Cards {
+                non_free: 6,
+                limit: 5
+            }
+        )]
     );
 }
 
@@ -1032,7 +1087,7 @@ fn red_manlet_bonus() {
         set_tier(regular, 77, 4, 1);
         regular.weak_foot_usage = 2;
         regular.weak_foot_accuracy = 2;
-        // A regular's three paid cards: the COM style was the medals'
+        // A regular's three non-free cards: the COM style was the medals'
         // trade's, one more skill is over his limit.
         assert_eq!(regular.cards.pop(), Some(card("speeding_bullet")));
         assert_eq!(regular.cards.pop(), Some(card("outside_curler")));
@@ -1220,7 +1275,7 @@ fn red_cbs_at_189_count_as_tall() {
     );
 }
 
-/// A manlet (slot 3, paid 3) gets one more card and one more A position,
+/// A manlet (slot 3, non-free 3) gets one more card and one more A position,
 /// and weak foot 4/4, which the legal team's manlets carry.
 #[test]
 fn manlets_get_a_card_an_a_position_and_four_four_weak_foot() {
@@ -1241,7 +1296,13 @@ fn manlets_get_a_card_an_a_position_and_four_four_weak_foot() {
     });
     assert_eq!(
         problems(&rules, &team),
-        vec![error(Some(3), ViolationKind::Cards { paid: 5, limit: 4 })]
+        vec![error(
+            Some(3),
+            ViolationKind::Cards {
+                non_free: 5,
+                limit: 4
+            }
+        )]
     );
     let cb = position("CB");
     assert_eq!(
@@ -1300,18 +1361,18 @@ fn the_player_tier_is_read_under_the_teams_height_system() {
 
 /// The medals' trades: each free COM style a medal may hold is instead a
 /// free extra A position. Slot 9 (a bronze: marseille_turn and
-/// cut_behind_and_turn the two free tricks, four paid skills, the COM
+/// cut_behind_and_turn the two free tricks, four non-free skills, the COM
 /// style speeding_bullet the one trade keeps free; rated A at SS alone)
 /// pays his 4. An extra A beside the kept style spends the trade on the
-/// style, so the A costs a card (paid 4 over limit 4 - 1); the style
-/// dropped for the A is the same paid 4 inside the limit.
+/// style, so the A costs a card (non-free 4 over limit 4 - 1); the style
+/// dropped for the A is the same non-free 4 inside the limit.
 ///
-/// Slot 2 (a gold: four tricks of which three free, three paid skills,
+/// Slot 2 (a gold: four tricks of which three free, three non-free skills,
 /// the COM styles trickster and mazing_run; rated A at CF and AMF) has
 /// two trades: both styles dropped, the third A position is free too
-/// (paid 4 of 6); one kept, the second trade covers the extra A (paid 4
+/// (non-free 4 of 6); one kept, the second trade covers the extra A (non-free 4
 /// of 6); both kept, the extra A costs a card, the limit 6 - 1 = 5 his
-/// paid 4 still meets until two more skills make it 6.
+/// non-free 4 still meets until two more skills make it 6.
 #[test]
 fn medals_trade_a_free_com_style_for_a_free_a_position() {
     let rules = Rules::official();
@@ -1322,7 +1383,13 @@ fn medals_trade_a_free_com_style_for_a_free_a_position() {
     assert_eq!(problems(&rules, &legal_team()), vec![]);
     assert_eq!(
         problems(&rules, &edited(9, |p| p.ratings[usize::from(cf.0)] = 2)),
-        vec![error(Some(9), ViolationKind::Cards { paid: 4, limit: 3 })]
+        vec![error(
+            Some(9),
+            ViolationKind::Cards {
+                non_free: 4,
+                limit: 3
+            }
+        )]
     );
     let team = edited(9, |p| {
         assert_eq!(p.cards.pop(), Some(card("speeding_bullet")));
@@ -1337,45 +1404,57 @@ fn medals_trade_a_free_com_style_for_a_free_a_position() {
         (card("trickster"), card("mazing_run"))
     );
     // Both styles dropped, a second extra A: both trades spent on A
-    // positions, paid 4 of 6.
+    // positions, non-free 4 of 6.
     let team = edited(2, |p| {
         assert_eq!(p.cards.pop(), Some(card("mazing_run")));
         assert_eq!(p.cards.pop(), Some(card("trickster")));
         p.ratings[usize::from(ss.0)] = 2;
     });
     assert_eq!(problems(&rules, &team), vec![]);
-    // Paid 4 is legal at a limit of 5 too: the limit itself shows both
+    // Non-free 4 is legal at a limit of 5 too: the limit itself shows both
     // trades taken, three A positions free and no card spent on them.
     let limits = rules
         .card_limits(&team, team.player(2).expect("filled"), "gold")
         .expect("limits");
     assert_eq!((limits.a_positions, limits.limit), (3, 6));
-    // One style kept, one trade on the extra A: paid 4 of 6.
+    // One style kept, one trade on the extra A: non-free 4 of 6.
     let team = edited(2, |p| {
         assert_eq!(p.cards.pop(), Some(card("mazing_run")));
     });
     assert_eq!(problems(&rules, &team), vec![]);
-    // Both kept, the extra A costs a card: paid 4 of 5 is legal, two
-    // more paid skills are over.
+    // Both kept, the extra A costs a card: non-free 4 of 5 is legal, two
+    // more non-free skills are over.
     let team = edited(2, |p| {
         p.cards.push(card("long_range_drive"));
         p.cards.push(card("knuckle_shot"));
     });
     assert_eq!(
         problems(&rules, &team),
-        vec![error(Some(2), ViolationKind::Cards { paid: 6, limit: 5 })]
+        vec![error(
+            Some(2),
+            ViolationKind::Cards {
+                non_free: 6,
+                limit: 5
+            }
+        )]
     );
 }
 
-/// A bronze's free tricks are two: slot 9 at his limit of four paid
-/// cards pays for a third trick, paid 5 over 4 (the COM style still the
+/// A bronze's free tricks are two: slot 9 at his limit of four non-free
+/// cards pays for a third trick, non-free 5 over 4 (the COM style still the
 /// trade's free one).
 #[test]
 fn a_bronze_pays_for_a_third_trick() {
     let team = edited(9, |p| p.cards.push(card("sombrero")));
     assert_eq!(
         problems(&Rules::official(), &team),
-        vec![error(Some(9), ViolationKind::Cards { paid: 5, limit: 4 })]
+        vec![error(
+            Some(9),
+            ViolationKind::Cards {
+                non_free: 5,
+                limit: 4
+            }
+        )]
     );
 }
 
@@ -1537,7 +1616,7 @@ fn card_limits_name_the_economy() {
     assert_eq!(
         limits(12, "regular"),
         CardLimits {
-            paid: 3,
+            non_free: 3,
             limit: 3,
             free: BTreeMap::from([("tricks".to_string(), 2)]),
             free_cards: vec![card("malicia")],
@@ -1559,14 +1638,14 @@ fn card_limits_name_the_economy() {
     assert_eq!((as_gold.limit, as_gold.a_positions), (6, 1));
     assert_eq!(as_gold.free.get("com"), Some(&2));
 
-    // The whole economy per tier: the paid limit, the A positions, the
+    // The whole economy per tier: the card limit, the A positions, the
     // free counts (the exact map, so a group named nowhere in it shows)
     // and `max_a_positions` unset, plus `tier_values`' weak foot.
     // Slot 0 for the goalkeeper; the medals' `com` frees come from the
     // trades their held COM styles take — slot 2's two trades cover both
     // of his (his second A position costs a card off the limit: 6 - 1),
     // slot 5's one trade covers his one (his second A costs the limit
-    // 5 - 1), slot 10's second COM style is paid (the silver's one trade
+    // 5 - 1), slot 10's second COM style is non-free (the silver's one trade
     // spent), slot 9's one trade covers his one. Where a member's trade
     // masks the file's value, the probe names it.
     assert_economy(
@@ -1587,13 +1666,13 @@ fn card_limits_name_the_economy() {
     assert_eq!(limits(5, "gold").a_positions, 2);
 }
 
-/// `paid` counts the held cards no free group or free card covers:
+/// `non_free` counts the held cards no free group or free card covers:
 /// slot 2, a gold holding nine cards — four tricks, three other skills
 /// and two COM styles — under the gold's free three tricks and the two
-/// COM styles his trades cover, so the four the frees leave are his paid
-/// ones. The badge a card picker shows under a tier is `limit - paid`.
+/// COM styles his trades cover, so the four the frees leave are his non-free
+/// ones. The badge a card picker shows under a tier is `limit - non_free`.
 #[test]
-fn card_limits_reports_the_paid_count() {
+fn card_limits_reports_the_non_free_count() {
     let rules = Rules::official();
     let team = legal_team();
     let gold = player(&team, 2);
@@ -1617,7 +1696,7 @@ fn card_limits_reports_the_paid_count() {
     let limits = rules.card_limits(&team, gold, "gold").expect("limits");
     assert_eq!(limits.free.get("com"), Some(&2));
     assert_eq!(limits.free.get("tricks"), Some(&3));
-    assert_eq!(limits.paid, 4);
+    assert_eq!(limits.non_free, 4);
 }
 
 /// An allowance the file does not list is never suggested: a manlet

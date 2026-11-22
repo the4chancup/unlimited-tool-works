@@ -442,7 +442,7 @@ fn a_bracket_over_its_quota() {
 }
 
 /// The Manlets special: a manlet regular (slot 3) may hold one card and
-/// one A position over the tier's — five paid and three A positions are
+/// one A position over the tier's — five non-free and three A positions are
 /// legal, where a mid regular's four and two would not be.
 #[test]
 fn a_manlet_gets_one_more_card_and_one_more_a_position() {
@@ -555,11 +555,11 @@ fn a_non_medals_injury_resistance_is_exactly_one() {
     );
 }
 
-/// Heading is a paid card in VGL27: a regular at his card limit (slot
-/// 12, three paid plus one more) holding it on top is over by one —
-/// were it free, the paid count would stay at the limit.
+/// Heading is a non-free card in VGL27: a regular at his card limit (slot
+/// 12, three non-free plus one more) holding it on top is over by one —
+/// were it free, the non-free count would stay at the limit.
 #[test]
-fn heading_is_a_paid_card() {
+fn heading_is_a_non_free_card() {
     let rules = rules();
     assert_eq!(player(&legal_team(), 12).cards.len(), 3);
     let team = edited(12, |p| p.cards.push(card("fighting_spirit")));
@@ -570,12 +570,18 @@ fn heading_is_a_paid_card() {
     });
     assert_eq!(
         problems(&rules, &team),
-        vec![error(Some(12), ViolationKind::Cards { paid: 5, limit: 4 })]
+        vec![error(
+            Some(12),
+            ViolationKind::Cards {
+                non_free: 5,
+                limit: 4
+            }
+        )]
     );
 }
 
 /// `card_limits` reports each tier's economy on a member no special
-/// touches — the paid limit, the A positions, the free counts (the
+/// touches — the card limit, the A positions, the free counts (the
 /// exact map, so a group named nowhere in it shows) and
 /// `max_a_positions` unset — and `tier_values` the weak foot (4/4 for
 /// the medals, 2/2 for the rest). Slots: 2 for the gold, 5 the silver,
@@ -614,14 +620,20 @@ fn the_captain_gets_one_extra_of_card_com_or_a_position() {
     });
     assert_eq!(
         problems(&rules, &team),
-        vec![error(Some(10), ViolationKind::Cards { paid: 7, limit: 6 })]
+        vec![error(
+            Some(10),
+            ViolationKind::Cards {
+                non_free: 7,
+                limit: 6
+            }
+        )]
     );
 }
 
 /// The `free: #{ com: 1 }` option is the one the captain uses where a
 /// second COM style is held: his second style is past the one the tier
 /// frees, and the option's freeing shows in `card_limits` while the
-/// paid limit stays the tier's (the `cards` option untouched).
+/// card limit stays the tier's (the `cards` option untouched).
 #[test]
 fn the_captains_com_option_frees_his_second_com() {
     let rules = rules();
@@ -641,7 +653,7 @@ fn the_captains_com_option_frees_his_second_com() {
 /// The `a_positions` option decides only once the earlier options do
 /// not: a captain with one COM style (the `free: com` option inert) and
 /// a third A position — over the silver allowance — has the option
-/// raise it to three, the paid limit again the tier's.
+/// raise it to three, the card limit again the tier's.
 #[test]
 fn the_captains_a_positions_option_raises_his_allowance() {
     let rules = rules();
@@ -705,7 +717,7 @@ fn the_captains_untaken_choice_counts_its_card_in_the_limit() {
     );
 
     // One COM style (the tier frees one), one A position (two allowed)
-    // and paid cards under the limit: no option is needed, the choice
+    // and non-free cards under the limit: no option is needed, the choice
     // is untaken and the limit counts the `cards` option's +1.
     let team = edited(10, |p| {
         assert_eq!(
@@ -725,8 +737,8 @@ fn the_captains_untaken_choice_counts_its_card_in_the_limit() {
     });
     let limits = limits_of(&team, 10);
     assert!(
-        i32::from(limits.paid) <= tier_limit,
-        "premise: his paid cards under the tier's limit"
+        i32::from(limits.non_free) <= tier_limit,
+        "premise: his non-free cards under the tier's limit"
     );
     assert_eq!(i32::from(limits.limit), tier_limit + 1);
 }
@@ -808,7 +820,7 @@ fn a_3_4_3_formation_is_legal() {
 
 /// VGL's skill-card cap is past the game's ten (`max_skill_cards` 41):
 /// a regular holding eleven skills — the tricks group covering the
-/// nine added over his paid cards — reports nothing.
+/// nine added over his non-free cards — reports nothing.
 #[test]
 fn eleven_skills_are_legal() {
     let rules = rules();

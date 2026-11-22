@@ -1057,9 +1057,13 @@ pub fn sentence(violation: &aatf::Violation, team_id: u32, wording: Wording<'_>)
                 color.as_deref().unwrap_or("none")
             ),
         },
-        K::Cards { paid, limit } => format!("{paid} paid cards, over the limit of {limit}"),
-        K::MinCards { paid, min } => {
-            format!("{paid} paid skill cards and extra positions, under the minimum of {min}")
+        K::Cards { non_free, limit } => {
+            format!("{non_free} non-free cards, over the limit of {limit}")
+        }
+        K::MinCards { non_free, min } => {
+            format!(
+                "{non_free} non-free skill cards and extra positions, under the minimum of {min}"
+            )
         }
         K::SkillCardCap { count, max } => {
             format!("{count} skill cards, over the cap of {max}")
@@ -1253,7 +1257,7 @@ fn break_words(found: &FormationBreak, eleven: &[aatf::FormationStarter; 11]) ->
 /// gives it.
 fn unused_sentence(allowance: &str, used: u8, allowed: u8, version: PesVersion) -> String {
     match allowance {
-        "cards" => format!("{used} of {allowed} paid cards used"),
+        "cards" => format!("{used} of {allowed} non-free cards used"),
         "a_positions" => format!("{used} of {allowed} A positions used"),
         "free_cards" => format!("{used} of {allowed} free cards held"),
         "weak_foot_usage" | "weak_foot_accuracy" | "injury_resistance" => format!(
@@ -1790,16 +1794,16 @@ mod tests {
             [
                 "Suggestions",
                 "Player 73410 - 46 - DFW",
-                "Unused: 4 of 5 paid cards used",
+                "Unused: 4 of 5 non-free cards used",
                 "Unused: Weak Foot Usage 2, where the rules allow 4",
                 "Player 73411 - 1 - Start With the Greeks",
-                "Unused: 5 of 6 paid cards used",
+                "Unused: 5 of 6 non-free cards used",
                 "Unused: Weak Foot Usage 2, where the rules allow 4",
                 "Player 73415 - 87 - A.M. Pinecone",
-                "Unused: 4 of 5 paid cards used",
+                "Unused: 4 of 5 non-free cards used",
                 "Unused: Weak Foot Usage 2, where the rules allow 4",
                 "Player 73423 - 2 - my diary desu",
-                "Unused: 4 of 5 paid cards used",
+                "Unused: 4 of 5 non-free cards used",
                 "Unused: Weak Foot Usage 2, where the rules allow 4",
             ]
         );
@@ -1889,8 +1893,14 @@ mod tests {
             "name color none, where his tier wants cc9900ff"
         );
         assert_eq!(
-            sent(&player(Error, K::Cards { paid: 10, limit: 8 })),
-            "10 paid cards, over the limit of 8"
+            sent(&player(
+                Error,
+                K::Cards {
+                    non_free: 10,
+                    limit: 8
+                }
+            )),
+            "10 non-free cards, over the limit of 8"
         );
         assert_eq!(
             sent(&player(
@@ -1931,8 +1941,11 @@ mod tests {
                 "Weak Foot Usage 3, over the 2 the rules allow",
             ),
             (
-                K::MinCards { paid: 2, min: 5 },
-                "2 paid skill cards and extra positions, under the minimum of 5",
+                K::MinCards {
+                    non_free: 2,
+                    min: 5,
+                },
+                "2 non-free skill cards and extra positions, under the minimum of 5",
             ),
             (
                 K::NameColor {
@@ -2446,16 +2459,22 @@ mod tests {
             (
                 a26,
                 Error,
-                K::Cards { paid: 4, limit: 3 },
+                K::Cards {
+                    non_free: 4,
+                    limit: 3,
+                },
                 "Cards",
-                "4 paid cards, over the limit of 3",
+                "4 non-free cards, over the limit of 3",
             ),
             (
                 a26,
                 Error,
-                K::MinCards { paid: 2, min: 5 },
+                K::MinCards {
+                    non_free: 2,
+                    min: 5,
+                },
                 "Cards",
-                "2 paid skill cards and extra positions, under the minimum of 5",
+                "2 non-free skill cards and extra positions, under the minimum of 5",
             ),
             (
                 a26,
@@ -2626,7 +2645,7 @@ mod tests {
                 Suggestion,
                 unused("cards", 4, 5),
                 "Unused",
-                "4 of 5 paid cards used",
+                "4 of 5 non-free cards used",
             ),
             (
                 a26,

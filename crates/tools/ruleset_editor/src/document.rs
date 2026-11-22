@@ -262,7 +262,7 @@ impl Document {
 }
 
 /// A tier with the suite's stock defaults (form 4, injury resistance
-/// 1, weak foot 2 and 2, 3 paid cards, 1 A position, no conditions or
+/// 1, weak foot 2 and 2, 3 non-free cards, 1 A position, no conditions or
 /// extras): Blank's `regular` and the Tiers form's added tier both
 /// start from it (the draft's `tier()`).
 pub(crate) fn tier(id: &str, label: &str, count: Option<u8>, rate: u8) -> Tier {
@@ -292,7 +292,7 @@ pub(crate) fn tier(id: &str, label: &str, count: Option<u8>, rate: u8) -> Tier {
 
 /// The start page's Blank ruleset: "New ruleset", squad 23, Autumn 26's rating
 /// and at-most stats, one `regular` tier (the rest of the squad, rate 75,
-/// form 4, injury resistance 1, weak foot 2 and 2, 3 paid cards, 1 A
+/// form 4, injury resistance 1, weak foot 2 and 2, 3 non-free cards, 1 A
 /// position), no brackets, no specials, and the universal rules on.
 pub(crate) fn blank() -> Ruleset {
     let official = aatf::Rules::official();

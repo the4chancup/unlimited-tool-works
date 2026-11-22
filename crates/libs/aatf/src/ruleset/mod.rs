@@ -144,7 +144,7 @@ pub struct Tier {
     /// Cards a player pays for: skills and COM styles that no free allowance covers.
     #[serde(default)]
     pub cards: u8,
-    /// At least this many paid skill cards, each extra A position counting as one.
+    /// At least this many non-free skill cards, each extra A position counting as one.
     #[serde(default)]
     pub min_cards: u8,
     /// Free cards per group.
@@ -595,8 +595,8 @@ pub struct Effects {
     /// raises the stat targets, so it is used when, without it, a stat it raises is over its own
     /// target (a stat whose tier override sits below the rate counts, as VGL26's silver place
     /// kicking does; the overall rating alone would miss it); a `free_cards` option, when,
-    /// without it, the paid cards are over the limit and, with it, fewer are paid (a card a
-    /// group covers can still help, its group's allowance passing to a paid groupmate). A
+    /// without it, the non-free cards are over the limit and, with it, fewer are non-free (a card a
+    /// group covers can still help, its group's allowance passing to a non-free groupmate). A
     /// one-option choice is an optional effect (VGL25's manlet bonus). An option holds only
     /// effects that raise a limit (`stat_bonus`, `cards`, `free`, `free_cards`, `a_positions`,
     /// `max_a_positions`, `weak_foot`): any other could never be found used. Choices are

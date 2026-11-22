@@ -226,12 +226,15 @@ fn a_panel_titles_mark_stands_after_its_header() {
         ),
         (
             Error,
-            K::Cards { paid: 4, limit: 3 },
+            K::Cards {
+                non_free: 4,
+                limit: 3,
+            },
             "Skills",
             Some(OwnBadge::Tier {
                 label: "Regular".to_owned(),
                 limits: aatf::CardLimits {
-                    paid: 3,
+                    non_free: 3,
                     limit: 7,
                     free: Default::default(),
                     free_cards: Vec::new(),
@@ -256,7 +259,10 @@ fn a_panel_titles_mark_stands_after_its_header() {
         ),
         (
             Error,
-            K::MinCards { paid: 1, min: 3 },
+            K::MinCards {
+                non_free: 1,
+                min: 3,
+            },
             "Skills",
             Some(OwnBadge::Failed("the tier check fails".to_owned())),
         ),

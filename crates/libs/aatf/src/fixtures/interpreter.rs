@@ -432,7 +432,7 @@ fn a_card_free_by_name_does_not_spend_the_group_allowance() {
 
 /// A `free` choice option is not "used" by a card already free by name:
 /// holding Long Ranger, a second `com` card the tier's one free `com`
-/// covers and a paid card over the zero base limit, the choice resolves
+/// covers and a non-free card over the zero base limit, the choice resolves
 /// to its `cards` option and the check reports nothing on the slot.
 #[test]
 fn a_free_option_is_not_used_by_a_card_free_by_name() {
@@ -570,12 +570,12 @@ fn max_a_positions_caps_the_a_positions() {
     assert_eq!(limits.max_a_positions, Some(2));
 }
 
-/// A `free_cards` option is used when, without it, the paid cards are
-/// over the limit and with it fewer are paid. The choice takes the first
+/// A `free_cards` option is used when, without it, the non-free cards are
+/// over the limit and with it fewer are non-free. The choice takes the first
 /// option the player uses, so where freeing lowers nothing the `cards`
 /// option raises the limit instead.
 #[test]
-fn a_free_cards_option_is_used_when_it_lowers_an_over_limit_paid_count() {
+fn a_free_cards_option_is_used_when_it_lowers_an_over_limit_non_free_count() {
     let with_free = |free: &str| {
         rules(&format!(
             "const RULESET = #{{
@@ -601,7 +601,7 @@ fn a_free_cards_option_is_used_when_it_lowers_an_over_limit_paid_count() {
     };
     // `tricks` covers Scissors Feint: freeing it by name pays for no
     // extra card, so the `free_cards` option is not used and the
-    // `cards` one is, paid 4 against a raised limit of 4.
+    // `cards` one is, non-free 4 against a raised limit of 4.
     let rules = with_free(", free: #{ tricks: 1 }");
     let team = holding(&[
         "scissors_feint",
@@ -611,13 +611,13 @@ fn a_free_cards_option_is_used_when_it_lowers_an_over_limit_paid_count() {
         "fighting_spirit",
     ]);
     assert_eq!(findings_at(&rules, &team, 3), vec![]);
-    // No free allowance: Scissors Feint is paid and freeing it lowers
-    // the paid count, so the option is used, paid 3 against 3.
+    // No free allowance: Scissors Feint is non-free and freeing it lowers
+    // the non-free count, so the option is used, non-free 3 against 3.
     let rules = with_free("");
     let team = holding(&["scissors_feint", "malicia", "captaincy", "super_sub"]);
     assert_eq!(findings_at(&rules, &team, 3), vec![]);
     // A fourth outside skill: the first option is still the one taken
-    // (the choice takes the first used option, not the best), paid 4
+    // (the choice takes the first used option, not the best), non-free 4
     // against 3.
     let team = holding(&[
         "scissors_feint",
@@ -628,11 +628,17 @@ fn a_free_cards_option_is_used_when_it_lowers_an_over_limit_paid_count() {
     ]);
     assert_eq!(
         findings_at(&rules, &team, 3),
-        vec![error(Some(3), ViolationKind::Cards { paid: 4, limit: 3 })]
+        vec![error(
+            Some(3),
+            ViolationKind::Cards {
+                non_free: 4,
+                limit: 3
+            }
+        )]
     );
 }
 
-/// A `free_cards` option is not used at the limit: paid exactly at it
+/// A `free_cards` option is not used at the limit: non-free exactly at it
 /// is not over it, so the choice passes to the `weak_foot` option the
 /// player needs.
 #[test]
@@ -649,7 +655,7 @@ fn a_free_cards_option_is_not_used_at_the_limit() {
                                   #{ weak_foot: #{ usage: 4, accuracy: 4 } }] } }],
         };",
     );
-    // Paid 3 against 3: the `free_cards` option would take the choice
+    // Non-free 3 against 3: the `free_cards` option would take the choice
     // only if being over the limit were not required.
     let team = view_edited(3, |p| {
         set_tier(p, 77, 4, 1);
@@ -662,8 +668,8 @@ fn a_free_cards_option_is_not_used_at_the_limit() {
 
 /// A `free_cards` option is also used when its card is covered by a
 /// group's allowance: freeing it by name releases the allowance onto a
-/// paid groupmate, so with the option fewer cards are paid. Without it
-/// the paid count is over the limit here; with it, Scissors Feint is
+/// non-free groupmate, so with the option fewer cards are non-free. Without it
+/// the non-free count is over the limit here; with it, Scissors Feint is
 /// free by name and `tricks`' one free card covers Flip Flap.
 #[test]
 fn a_covered_card_freed_by_name_frees_the_groups_allowance() {
@@ -680,7 +686,7 @@ fn a_covered_card_freed_by_name_frees_the_groups_allowance() {
         };",
     );
     // `held` order matters: Scissors Feint is listed first and takes the
-    // allowance, so Flip Flap is the paid card: paid 4 against 3.
+    // allowance, so Flip Flap is the non-free card: non-free 4 against 3.
     let team = view_edited(3, |p| {
         set_tier(p, 77, 4, 1);
         p.weak_foot_usage = 2;
@@ -698,7 +704,7 @@ fn a_covered_card_freed_by_name_frees_the_groups_allowance() {
 
 /// An option naming another tier is not used: `cards: #{ gold: 1 }`
 /// raises nothing for a regular, so the choice passes to the
-/// `free_cards` option that lowers his paid count.
+/// `free_cards` option that lowers his non-free count.
 #[test]
 fn an_option_for_another_tier_is_not_used() {
     let rules = rules(
@@ -720,8 +726,8 @@ fn an_option_for_another_tier_is_not_used() {
                                   #{ free_cards: [\"scissors_feint\"] }] } }],
         };",
     );
-    // Paid 4 against 3: the per-tier `cards` option changes nothing for
-    // a regular, so Scissors Feint's freeing applies, paid 3 against 3.
+    // Non-free 4 against 3: the per-tier `cards` option changes nothing for
+    // a regular, so Scissors Feint's freeing applies, non-free 3 against 3.
     let team = view_edited(3, |p| {
         set_tier(p, 77, 4, 1);
         p.weak_foot_usage = 2;
@@ -840,9 +846,9 @@ fn a_free_option_for_another_tier_is_not_used() {
             suggestions: [\"choices\"],
         };",
     );
-    // Two COM styles over the one the tier frees: the second is paid,
-    // three paid against two. The golds' option raises nothing for a
-    // regular; the second frees his second COM style, paid 2 against 2.
+    // Two COM styles over the one the tier frees: the second is non-free,
+    // three non-free against two. The golds' option raises nothing for a
+    // regular; the second frees his second COM style, non-free 2 against 2.
     let team = view_edited(3, |p| {
         set_tier(p, 77, 4, 1);
         p.weak_foot_usage = 2;
@@ -886,9 +892,9 @@ fn an_a_positions_option_for_another_tier_is_not_used() {
         };",
     );
     // A second A position over the one allowed spends a card slot:
-    // three paid against a limit of two. The golds' option raises
+    // three non-free against a limit of two. The golds' option raises
     // nothing for a regular; the second raises his allowance to two,
-    // nothing extra spent, three paid against three.
+    // nothing extra spent, three non-free against three.
     let team = view_edited(3, |p| {
         set_tier(p, 77, 4, 1);
         p.weak_foot_usage = 2;
@@ -1009,7 +1015,7 @@ fn an_overridden_replacement_is_not_used() {
             ],
         };",
     );
-    // Paid 4 against 3: the `weak_foot` option's 4/4 cannot stand over
+    // Non-free 4 against 3: the `weak_foot` option's 4/4 cannot stand over
     // the later special's 3/3, so the `cards` option takes the choice.
     let team = view_edited(3, |p| {
         set_tier(p, 77, 4, 1);

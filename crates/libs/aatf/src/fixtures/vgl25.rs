@@ -126,7 +126,7 @@ fn apply_tier_then_check_reports_nothing_for_every_tier() {
 }
 
 /// `card_limits` reports each tier's economy on a member no special
-/// touches — the paid limit, the A positions, the free counts (the
+/// touches — the card limit, the A positions, the free counts (the
 /// exact map, so a group named nowhere in it shows) and
 /// `max_a_positions` unset — and `tier_values` the weak foot. Slots:
 /// 2 for the gold (two A positions inside the two allowed), 5 for the
@@ -335,8 +335,8 @@ fn a_golds_injury_resistance_is_exactly_two() {
 }
 
 /// The captain may hold one card over his tier's limit: slot 12, a
-/// regular at his three paid, is over it with a fourth; as the captain
-/// he is legal (slot 10's Captaincy turned paid with the armband gone,
+/// regular at his three non-free, is over it with a fourth; as the captain
+/// he is legal (slot 10's Captaincy turned non-free with the armband gone,
 /// and dropped).
 #[test]
 fn the_captain_gets_one_extra_card() {
@@ -344,7 +344,13 @@ fn the_captain_gets_one_extra_card() {
     let over = edited(12, |p| p.cards.push(card("long_range_drive")));
     assert_eq!(
         problems(&rules, &over),
-        vec![error(Some(12), ViolationKind::Cards { paid: 4, limit: 3 })]
+        vec![error(
+            Some(12),
+            ViolationKind::Cards {
+                non_free: 4,
+                limit: 3
+            }
+        )]
     );
     let mut team = over;
     team.captain = Some(12);
@@ -355,7 +361,7 @@ fn the_captain_gets_one_extra_card() {
 }
 
 /// Acrobatic Finishing and Malicia are free: a regular at his limit
-/// (slot 12, three paid) holds both on top of it.
+/// (slot 12, three non-free) holds both on top of it.
 #[test]
 fn acrobatic_finishing_and_malicia_are_free() {
     let rules = rules();
@@ -368,7 +374,7 @@ fn acrobatic_finishing_and_malicia_are_free() {
 }
 
 /// VGL's skill-card cap is past the game's ten (`max_skill_cards` 41):
-/// a regular at his card limit (slot 12, three paid) holding eleven
+/// a regular at his card limit (slot 12, three non-free) holding eleven
 /// skills — the tricks group covering the nine added — reports nothing.
 #[test]
 fn eleven_skills_are_legal() {

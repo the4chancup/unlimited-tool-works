@@ -102,7 +102,7 @@ fn the_tricks_panel_holds_the_rulesets_tricks() {
     }
     assert!(
         skills.iter().any(|label| label == "Heading"),
-        "a paid card the group does not name stays under Skills"
+        "a non-free card the group does not name stays under Skills"
     );
 }
 

@@ -146,7 +146,7 @@ fn tier_values(player, tier, team) {
     }
 }
 
-// The card economy of `player` as tier `tier`: the paid limit (his extra A positions
+// The card economy of `player` as tier `tier`: the card limit (his extra A positions
 // deducted, an untaken choice's `cards` counted), the free count per group, the free and
 // required cards, the A positions allowed.
 fn card_limits(player, tier, team) {
@@ -177,7 +177,7 @@ fn card_limits(player, tier, team) {
     let required_cards = [];
     for required in p.require_cards { required_cards.push(required.card); }
     #{
-        paid: cards.paid,
+        non_free: cards.non_free,
         limit: limit, free: cards.free, free_cards: free_cards,
         required_cards: required_cards, a_positions: cards.a_allowance,
         max_a_positions: p.max_a_positions,
@@ -603,8 +603,8 @@ fn option_used(tier, p, player, option, choice, cards, before, limits) {
             }
         }
     }
-    if "cards" in option && cards.paid > cards.limit
-        && (applied_cards.limit > cards.limit || applied_cards.paid < cards.paid) {
+    if "cards" in option && cards.non_free > cards.limit
+        && (applied_cards.limit > cards.limit || applied_cards.non_free < cards.non_free) {
         return true;
     }
     for group in table(option, "free").keys() {
@@ -613,8 +613,8 @@ fn option_used(tier, p, player, option, choice, cards, before, limits) {
             return true;
         }
     }
-    if "free_cards" in option && cards.paid > cards.limit
-        && (applied_cards.limit > cards.limit || applied_cards.paid < cards.paid) {
+    if "free_cards" in option && cards.non_free > cards.limit
+        && (applied_cards.limit > cards.limit || applied_cards.non_free < cards.non_free) {
         return true;
     }
     if "a_positions" in option && cards.counted_a > cards.a_allowance
@@ -746,9 +746,9 @@ fn groups_of(groups, card) {
 
 // A player's cards against `tier` under `p`: the held cards, how many are skills and COM
 // styles, the free count and the held count per group (a card free by name is not counted
-// there), the paid count and how many of them are skills, the positions rated A and B (in
+// there), the non-free count and how many of them are skills, the positions rated A and B (in
 // `positions()`'s order) and their counts, the A allowance, the extra A positions and the
-// paid limit; `this` is the ruleset.
+// card limit; `this` is the ruleset.
 fn card_summary(tier, p, player) {
     let held = player.cards;
     let com = com_styles();
@@ -763,8 +763,8 @@ fn card_summary(tier, p, player) {
     let held_by_group = #{};
     let remaining = #{};
     for group in free.keys() { remaining[group] = free[group]; }
-    let paid = 0;
-    let paid_skills = 0;
+    let non_free = 0;
+    let non_free_skills = 0;
     for card in held {
         if card in p.free_cards { continue; }
         let mine = groups_of(groups, card);
@@ -778,8 +778,8 @@ fn card_summary(tier, p, player) {
             }
         }
         if covered { continue; }
-        paid += 1;
-        if !(card in com) { paid_skills += 1; }
+        non_free += 1;
+        if !(card in com) { non_free_skills += 1; }
     }
     let rated_a = [];
     let rated_b = [];
@@ -794,7 +794,7 @@ fn card_summary(tier, p, player) {
     let extra = max(0, counted_a - a_allowance);
     #{
         held: held, skills: skills, coms: coms, free: free, held_by_group: held_by_group,
-        paid: paid, paid_skills: paid_skills,
+        non_free: non_free, non_free_skills: non_free_skills,
         rated_a: rated_a, rated_b: rated_b, a_count: a_count, b_count: b_count,
         counted_a: counted_a, a_allowance: a_allowance, extra: extra,
         limit: num(tier, "cards") + p.cards - extra,
@@ -923,13 +923,14 @@ fn player_checks(team, system, player, tier, p, room) {
     } else if player.name_color != () && player.name_color in this.name_colors() {
         found.push(#{ kind: "NameColor", slot: slot, color: player.name_color });
     }
-    if cards.paid > cards.limit {
-        found.push(#{ kind: "Cards", slot: slot, paid: cards.paid, limit: cards.limit });
+    if cards.non_free > cards.limit {
+        found.push(#{ kind: "Cards", slot: slot, non_free: cards.non_free, limit: cards.limit });
     }
     let min_cards = num(tier, "min_cards");
-    if cards.paid_skills + cards.extra < min_cards {
+    if cards.non_free_skills + cards.extra < min_cards {
         found.push(#{
-            kind: "MinCards", slot: slot, paid: cards.paid_skills + cards.extra, min: min_cards,
+            kind: "MinCards", slot: slot, non_free: cards.non_free_skills + cards.extra,
+            min: min_cards,
         });
     }
     for required in p.require_cards {
@@ -996,8 +997,8 @@ fn suggestions(tier, p, player, cards) {
     let slot = player.slot;
     for allowance in this.suggestions {
         if allowance == "cards" {
-            if cards.paid < cards.limit {
-                found.push(unused(slot, allowance, cards.paid, cards.limit));
+            if cards.non_free < cards.limit {
+                found.push(unused(slot, allowance, cards.non_free, cards.limit));
             }
         } else if allowance == "a_positions" {
             if cards.counted_a < cards.a_allowance {
