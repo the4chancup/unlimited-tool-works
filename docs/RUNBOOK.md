@@ -540,7 +540,9 @@ crates as up to date (main's `gates-changed` once failed to compile against the 
 `target/` of its own (`WORKLOG.md` Issues).
 
 **At most three cargo builds at once, on the whole machine**: a sidekick's, a mutation run's
-local half, a lead's gates or package tests and a release build each count as one. The main
+local half, a lead's gates or package tests and a release build each count as one. A sidekick
+or a pipeline counts for its whole run, not only while it compiles: it builds whenever its work
+needs to, so the count is taken before each launch, against what is already running. The main
 lead's side (its sidekicks, its mutation run, its own gates) holds two; a side-lead in its own
 worktree holds the third, its sidekick's builds and its own together, so the two never need
 to sync. With the Optane's 64 GiB swap on `F:` a third build does not risk exhausting memory,
