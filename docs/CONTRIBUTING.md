@@ -476,6 +476,10 @@ Requirements:
   runs it and rules each flag like a reviewer concern, its row (the report prints it) going
   into `scripts/gates/citation_rulings.md`: accepted, the scenario is widened, a scenario is added,
   or the test's citation moves to the scenario it proves; rejected, with a one-line reason.
+  Run again after the ruling, the audit prints the day's rulings counted (rows, accepted with
+  the scenarios they widen, rejected), and a worklog line or commit message reporting them
+  copies those numbers rather than counting by hand. A pair flagged again after its widening
+  is a row of its own.
   Answers are cached by state (`snap.out/cache.json`), so a second pass pays for changed pairs
   only; a full pass sends about 1.5M tokens ($0.06).
 - Code must build on Windows and Linux. No external converters or runtimes (texconv, 7z, ffmpeg,
