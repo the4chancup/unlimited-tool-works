@@ -23,7 +23,7 @@ use pes_version::PesVersion;
 use crate::codec::CodecError;
 use crate::model::instruction::Instruction;
 use crate::model::playstyle::PlayStyle;
-use crate::model::tactics::FormationSlot;
+use crate::model::tactics::{CombinationSlot, FormationSlot};
 use crate::model::team::{KitSlot, TeamColor};
 use crate::settings_toml::AppearanceSettings;
 use crate::settings_toml::SettingsError;
@@ -87,7 +87,8 @@ pub struct TeamEditFlagsSection {
     pub strip: Option<bool>,
 }
 
-/// `[tactics]`: the squad order, set pieces, auto flags and three presets.
+/// `[tactics]`: the squad order, set pieces, auto flags, three presets and
+/// (PES 2014) Combination Play.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct TacticsSection {
     /// The eleven starters as roster slots.
@@ -102,8 +103,24 @@ pub struct TacticsSection {
     pub players_to_join_attack: Option<[u8; 3]>,
     /// `[tactics.auto]`.
     pub auto: AutoSection,
+    /// `[tactics.combination]` (PES 14 only).
+    pub combination: Option<CombinationSection>,
     /// `[tactics.preset_1]` to `[tactics.preset_3]`.
     pub presets: [PresetSection; 3],
+}
+
+/// `[tactics.combination]` (PES 2014): the three Combination Play slots.
+/// Each is a key of its own, so a document can set one and leave the
+/// other two alone.
+#[derive(Debug, Clone, Copy, PartialEq, Default)]
+pub struct CombinationSection {
+    /// Slot 1's `{ area, strategy }`, the game's numbers: area 1 to 11,
+    /// strategy 1 to 14, both 0 an empty slot.
+    pub slot_1: Option<CombinationSlot>,
+    /// Slot 2, same shape.
+    pub slot_2: Option<CombinationSlot>,
+    /// Slot 3, same shape.
+    pub slot_3: Option<CombinationSlot>,
 }
 
 /// `[tactics.set_pieces]`: takers as roster slots (255 = unset).
@@ -136,10 +153,12 @@ pub struct AutoSection {
     pub preset_change: Option<bool>,
     /// Attack/defence levels (PES 17+).
     pub attack_defence_levels: Option<bool>,
+    /// Combination Play (PES 14 only).
+    pub combination_play: Option<bool>,
 }
 
 /// `[tactics.preset_N]`: one preset's man-marking assignments, style,
-/// sliders, formations and instructions.
+/// sliders, formations, instructions and (PES 2014) Game Plan.
 #[derive(Debug, Clone, Copy, PartialEq, Default)]
 pub struct PresetSection {
     /// Man marking: own formation slot `i`'s assignment, the marked
@@ -154,6 +173,21 @@ pub struct PresetSection {
     pub formations: [Option<[FormationSlot; 11]>; 3],
     /// `[tactics.preset_N.instructions]` (PES 17+).
     pub instructions: Option<InstructionsSection>,
+    /// `[tactics.preset_N.game_plan]` (PES 14 only).
+    pub game_plan: Option<GamePlanSection>,
+}
+
+/// `[tactics.preset_N.game_plan]` (PES 2014): the preset's Game Plan, the
+/// Strategy dropdown and the panel's eight sliders, each the value the
+/// game shows.
+#[derive(Debug, Clone, Copy, PartialEq, Default)]
+pub struct GamePlanSection {
+    /// The Strategy dropdown's index: 0 Custom, 1 Long Ball, 2 Quick
+    /// Counter, 3 Possession Game, 4 All-out Defence, 5 All-out Attack.
+    pub strategy: Option<u8>,
+    /// The eight sliders, 0 to 20, in the panel's order
+    /// (`labels::GAME_PLAN_SLIDERS`).
+    pub sliders: [Option<u8>; 8],
 }
 
 /// `[tactics.preset_N.style]`: the seven style switches plus fluid formation.

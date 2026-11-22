@@ -12,9 +12,9 @@ use toml_edit::{DocumentMut, Item, Value};
 
 use crate::codec::text_max;
 use crate::interchange::team_toml::{
-    AutoSection, ImportNote, InstructionEntry, InstructionsSection, PresetSection,
-    SetPiecesSection, SlidersSection, StyleSection, TacticsSection, TeamEditFlagsSection,
-    TeamSection, TeamToml, TeamTomlError,
+    AutoSection, CombinationSection, GamePlanSection, ImportNote, InstructionEntry,
+    InstructionsSection, PresetSection, SetPiecesSection, SlidersSection, StyleSection,
+    TacticsSection, TeamEditFlagsSection, TeamSection, TeamToml, TeamTomlError,
 };
 use crate::model::instruction::Instruction;
 use crate::model::names::display_name;
@@ -136,6 +136,12 @@ impl TeamToml {
                 // unreachable from a decoded save.
                 (None, None) | (Some(_), None) | (None, Some(_)) => None,
             };
+            // The model's `Option` is already the version's own: a decoded
+            // save fills `game_plan` only where the record stores it.
+            section.game_plan = preset.game_plan.map(|plan| GamePlanSection {
+                strategy: Some(plan.strategy),
+                sliders: plan.sliders.map(Some),
+            });
         }
         Ok(TeamToml {
             pes_version: Some(version),
@@ -187,7 +193,13 @@ impl TeamToml {
                     offside_trap: tactics.auto.offside_trap,
                     preset_change: tactics.auto.preset_change,
                     attack_defence_levels: tactics.auto.attack_defence_levels,
+                    combination_play: tactics.auto.combination_play,
                 },
+                combination: tactics.combination.map(|slots| CombinationSection {
+                    slot_1: Some(slots[0]),
+                    slot_2: Some(slots[1]),
+                    slot_3: Some(slots[2]),
+                }),
                 presets,
             },
             players: player_sections,
@@ -199,7 +211,8 @@ impl TeamToml {
     /// `auto` and preset `style`/`sliders` tables, and every `[players.NN]`
     /// block are emitted whole, every key shown or commented; the tables
     /// emitted only when they hold a `Some` member are `[team.edit_flags]`,
-    /// a preset's `formation_M` and `instructions`, and `[players.NN]` itself
+    /// `[tactics.combination]`, a preset's `formation_M`, `game_plan` and
+    /// `instructions`, and `[players.NN]` itself
     /// exists per entry in `players`.
     pub fn to_toml(&self) -> Result<String, TeamTomlError> {
         let mut out = String::new();
@@ -658,7 +671,7 @@ mod tests {
 
     use super::*;
     use crate::interchange::team_toml::{ImportNote, TeamToml, TeamTomlError};
-    use crate::model::tactics::bench_fill;
+    use crate::model::tactics::{CombinationSlot, bench_fill};
     use crate::test_support::{FIXTURES, open, test_salt};
 
     /// `team` with every field defaulted except `id` and `roster`, which Team
@@ -730,19 +743,6 @@ mod tests {
                 // the document's, so the fill runs), so the
                 // field-for-field check expects them computed, not carried.
                 let mut expected = team.clone();
-                // PES 2014's own tactics — each preset's game plan,
-                // Combination Play and its switch — are no document keys
-                // yet, so the target's own stand there.
-                for (preset, applied) in expected
-                    .tactics
-                    .presets
-                    .iter_mut()
-                    .zip(&target.tactics.presets)
-                {
-                    preset.game_plan = applied.game_plan;
-                }
-                expected.tactics.combination = target.tactics.combination;
-                expected.tactics.auto.combination_play = target.tactics.auto.combination_play;
                 let schema = schema_for(version);
                 if schema.tactic.has(TacticsField::Bench(0)) {
                     let bench: [u8; 12] = expected.tactics.bench_order[..12]
@@ -1734,6 +1734,191 @@ mod tests {
         let mut expected = doc;
         expected.roster_breaks.clear();
         assert_eq!(parsed, expected);
+    }
+
+    /// What only PES 2014 stores is in the document too: each preset's
+    /// `[tactics.preset_N.game_plan]` (its Strategy and the panel's eight
+    /// sliders), the team's `[tactics.combination]` and the
+    /// `combination_play` switch beside the other auto settings. A PES 2021
+    /// document holds none of them: the two tables are absent and the
+    /// switch's line stays commented, as every version-gated key's does.
+    #[test]
+    fn a_pes14_document_carries_the_game_plan_and_combination_play() {
+        let (file14, _) = open(PesVersion::Pes14);
+        let team14 = file14.team(1).expect("team 1");
+        let text14 = TeamToml::from_team(PesVersion::Pes14, team14, &[])
+            .expect("from_team")
+            .to_toml()
+            .expect("to_toml");
+        for n in 1..=3 {
+            assert!(
+                text14.contains(&format!("[tactics.preset_{n}.game_plan]")),
+                "{text14}"
+            );
+        }
+        assert!(text14.contains("[tactics.combination]"), "{text14}");
+        let combination_play = text14
+            .lines()
+            .find(|line| line.trim_start().starts_with("combination_play"))
+            .expect("the switch's line");
+        assert!(combination_play.starts_with("combination_play = "));
+
+        let (file21, _) = open(PesVersion::Pes21);
+        let team21 = file21.teams().first().expect("a team");
+        let text21 = TeamToml::from_team(PesVersion::Pes21, team21, &[])
+            .expect("from_team")
+            .to_toml()
+            .expect("to_toml");
+        assert!(!text21.contains("game_plan"), "{text21}");
+        assert!(!text21.contains("[tactics.combination]"), "{text21}");
+        assert!(
+            text21.contains("# combination_play = false"),
+            "the switch is a commented line: {text21}"
+        );
+    }
+
+    /// Combination Play's slots are three keys of their own: a document
+    /// sets one and leaves the other two alone, the absent-key rule holding
+    /// inside the table too.
+    #[test]
+    fn a_combination_slot_applies_on_its_own() {
+        let (file, _) = open(PesVersion::Pes14);
+        let team = file.team(1).expect("team 1");
+        let doc = TeamToml::parse("[tactics.combination]\nslot_2 = { area = 5, strategy = 3 }\n")
+            .expect("parses");
+        let mut target = team.clone();
+        // Slots 1 and 3 hold values no default could produce, so a slot
+        // written from an absent key shows.
+        let before = [
+            CombinationSlot {
+                area: 7,
+                strategy: 9,
+            },
+            CombinationSlot::default(),
+            CombinationSlot {
+                area: 11,
+                strategy: 14,
+            },
+        ];
+        target.tactics.combination = Some(before);
+        let notes = doc
+            .apply(PesVersion::Pes14, &mut target, &mut [])
+            .expect("applies");
+        assert!(notes.is_empty(), "{notes:?}");
+        let slots = target.tactics.combination.expect("the applied slots");
+        assert_eq!(
+            slots[1],
+            CombinationSlot {
+                area: 5,
+                strategy: 3
+            }
+        );
+        assert_eq!(slots[0], before[0], "slot 1 untouched");
+        assert_eq!(slots[2], before[2], "slot 3 untouched");
+    }
+
+    /// The game plan's Support Range is stored as 20 less the value the
+    /// game shows, the one slider of the eight whose document number is not
+    /// its record byte: a stored 7 reads 13 in the document, and a
+    /// document's 13 applies back as the same stored 7.
+    #[test]
+    fn support_range_round_trips_through_the_games_own_offset() {
+        let slider = TacticsField::Preset {
+            preset: 0,
+            field: PresetField::GamePlanSlider(1),
+        };
+        let mut team = TeamEntry::default();
+        team.tactics_set(slider, 7).expect("a stored byte");
+        let doc = TeamToml::from_team(PesVersion::Pes14, &team, &[]).expect("from_team");
+        let plan = doc.tactics.presets[0].game_plan.expect("the game plan");
+        assert_eq!(plan.sliders[1], Some(13), "stored 7 shows 13");
+        let text = doc.to_toml().expect("to_toml");
+        assert!(text.contains("support_range = 13"), "{text}");
+
+        let doc =
+            TeamToml::parse("[tactics.preset_1.game_plan]\nsupport_range = 13\n").expect("parses");
+        let mut target = TeamEntry::default();
+        doc.apply(PesVersion::Pes14, &mut target, &mut [])
+            .expect("applies");
+        assert_eq!(
+            target.tactics_get(slider).expect("the stored byte"),
+            7,
+            "the shown 13 stores back as 7"
+        );
+    }
+
+    /// The game plan and Combination Play are PES 2014's alone: a PES 2021
+    /// document given a `game_plan`, `combination` or `combination_play`
+    /// key is refused on a PES 2021 save as `NotInThisVersion`, as every
+    /// version-gated key is within one version, and nothing applied.
+    #[test]
+    fn the_game_plan_and_combination_keys_are_refused_off_pes14() {
+        let (file, _) = open(PesVersion::Pes21);
+        let team = file.teams().first().expect("a team");
+        for text in [
+            "[tactics.preset_1.game_plan]\nstrategy = 1\n",
+            "[tactics.preset_1.game_plan]\nsupport_range = 10\n",
+            "[tactics.combination]\nslot_1 = { area = 3, strategy = 1 }\n",
+            "[tactics.auto]\ncombination_play = true\n",
+        ] {
+            let doc = TeamToml::parse(text).expect("parses");
+            let mut target = team.clone();
+            let err = doc
+                .apply(PesVersion::Pes21, &mut target, &mut [])
+                .expect_err("PES 2021 stores no game plan or Combination Play");
+            assert!(
+                matches!(err, TeamTomlError::NotInThisVersion { .. }),
+                "{text:?}: {err:?}"
+            );
+            assert_eq!(&target, team, "{text:?}");
+        }
+    }
+
+    /// The games' own bounds guard the document's numbers: a Strategy past
+    /// 5, a game plan slider past 20 and a combination slot's area or
+    /// strategy past theirs are refused at the key, the range given in the
+    /// game's numbers.
+    #[test]
+    fn a_game_plan_or_combination_value_past_its_range_is_refused() {
+        for (key, doc, value, range) in [
+            (
+                "tactics.preset_1.game_plan.strategy",
+                "[tactics.preset_1.game_plan]\nstrategy = 6\n",
+                6i64,
+                "0 to 5",
+            ),
+            (
+                "tactics.preset_1.game_plan.support_range",
+                "[tactics.preset_1.game_plan]\nsupport_range = 21\n",
+                21,
+                "0 to 20",
+            ),
+            (
+                "tactics.combination.slot_1.area",
+                "[tactics.combination]\nslot_1 = { area = 12, strategy = 1 }\n",
+                12,
+                "0 to 11",
+            ),
+            (
+                "tactics.combination.slot_1.strategy",
+                "[tactics.combination]\nslot_1 = { area = 3, strategy = 15 }\n",
+                15,
+                "0 to 14",
+            ),
+        ] {
+            let err = TeamToml::parse(doc).expect_err("past the range");
+            assert!(
+                matches!(
+                    &err,
+                    TeamTomlError::OutOfRange {
+                        key: k,
+                        value: v,
+                        range: r
+                    } if k == key && *v == value && r == range
+                ),
+                "{key}: {err:?}"
+            );
+        }
     }
 
     /// A PES 2014 document goes only into a PES 2014 save, and a PES 2014

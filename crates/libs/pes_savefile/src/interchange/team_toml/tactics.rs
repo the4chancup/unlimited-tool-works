@@ -6,11 +6,12 @@ use pes_version::PesVersion;
 use toml_edit::Item;
 
 use crate::interchange::team_toml::{
-    AutoSection, ImportNote, InstructionEntry, InstructionsSection, PresetSection,
-    SetPiecesSection, SlidersSection, StyleSection, TacticsSection, TeamTomlError,
+    AutoSection, CombinationSection, GamePlanSection, ImportNote, InstructionEntry,
+    InstructionsSection, PresetSection, SetPiecesSection, SlidersSection, StyleSection,
+    TacticsSection, TeamTomlError,
 };
 use crate::model::instruction::Instruction;
-use crate::model::tactics::{AdvancedInstruction, FormationSlot, bench_fill};
+use crate::model::tactics::{AdvancedInstruction, CombinationSlot, FormationSlot, bench_fill};
 use crate::model::team::TeamEntry;
 use crate::schema::TacticsSchema;
 use crate::schema::fields::{FormationPart, PresetField, TacticsField};
@@ -135,6 +136,35 @@ pub(super) fn emit_tactics(
         "false",
         "PES 17 and later",
     );
+    emit(
+        out,
+        "combination_play",
+        auto.combination_play.map(|v| v.to_string()),
+        "false",
+        "PES 14 only",
+    );
+    if let Some(combination) = &tactics.combination {
+        out.push('\n');
+        out.push_str(&padded(
+            "[tactics.combination]",
+            "PES 14 only; area 1 to 11, strategy 1 to 14, both 0 an empty slot",
+        ));
+        out.push('\n');
+        for (n, slot) in [combination.slot_1, combination.slot_2, combination.slot_3]
+            .iter()
+            .enumerate()
+        {
+            emit(
+                out,
+                &format!("slot_{}", n + 1),
+                slot.map(|slot| {
+                    format!("{{ area = {}, strategy = {} }}", slot.area, slot.strategy)
+                }),
+                "{ area = 0, strategy = 0 }",
+                "",
+            );
+        }
+    }
     for (i, preset) in tactics.presets.iter().enumerate() {
         let n = i + 1;
         out.push_str(&format!("\n[tactics.preset_{n}]\n"));
@@ -210,6 +240,27 @@ pub(super) fn emit_tactics(
             "1",
             "1 few, 2 medium, 3 many",
         );
+        if let Some(game_plan) = &preset.game_plan {
+            out.push('\n');
+            out.push_str(&padded(
+                &format!("[tactics.preset_{n}.game_plan]"),
+                "PES 14 only",
+            ));
+            out.push('\n');
+            emit(
+                out,
+                "strategy",
+                game_plan.strategy.map(|v| v.to_string()),
+                "0",
+                "0 Custom, 1 Long Ball, 2 Quick Counter, 3 Possession Game, 4 All-out Defence, 5 All-out Attack",
+            );
+            for (key, value) in labels::GAME_PLAN_SLIDERS
+                .iter()
+                .zip(game_plan.sliders.iter())
+            {
+                emit(out, key, value.map(|v| v.to_string()), "0", "0 to 20");
+            }
+        }
         for (f, formation) in preset.formations.iter().enumerate() {
             let Some(players) = formation else { continue };
             if n == 1 && f == 0 {
@@ -353,6 +404,7 @@ pub(super) fn parse_tactics(item: &Item) -> Result<TacticsSection, TeamTomlError
             offside_trap: opt(t, "tactics.auto", "offside_trap", boolean)?,
             preset_change: opt(t, "tactics.auto", "preset_change", boolean)?,
             attack_defence_levels: opt(t, "tactics.auto", "attack_defence_levels", boolean)?,
+            combination_play: opt(t, "tactics.auto", "combination_play", boolean)?,
         };
         reject(
             t,
@@ -362,8 +414,18 @@ pub(super) fn parse_tactics(item: &Item) -> Result<TacticsSection, TeamTomlError
                 "offside_trap",
                 "preset_change",
                 "attack_defence_levels",
+                "combination_play",
             ],
         )?;
+    }
+    if let Some(item) = table.get("combination") {
+        let t = as_table(item, "tactics.combination")?;
+        tactics.combination = Some(CombinationSection {
+            slot_1: opt(t, "tactics.combination", "slot_1", combination_slot)?,
+            slot_2: opt(t, "tactics.combination", "slot_2", combination_slot)?,
+            slot_3: opt(t, "tactics.combination", "slot_3", combination_slot)?,
+        });
+        reject(t, "tactics.combination", &["slot_1", "slot_2", "slot_3"])?;
     }
     for (i, preset) in tactics.presets.iter_mut().enumerate() {
         let key = format!("preset_{}", i + 1);
@@ -381,6 +443,7 @@ pub(super) fn parse_tactics(item: &Item) -> Result<TacticsSection, TeamTomlError
             "players_to_join_attack",
             "set_pieces",
             "auto",
+            "combination",
             "preset_1",
             "preset_2",
             "preset_3",
@@ -457,6 +520,26 @@ fn parse_preset(item: &Item, path: &str) -> Result<PresetSection, TeamTomlError>
             ],
         )?;
     }
+    if let Some(item) = table.get("game_plan") {
+        let t = as_table(item, &format!("{path}.game_plan"))?;
+        let plan_path = format!("{path}.game_plan");
+        let mut game_plan = GamePlanSection {
+            strategy: opt(t, &plan_path, "strategy", |i, k| ranged(i, k, 0, 5))?,
+            ..GamePlanSection::default()
+        };
+        for (key, slider) in labels::GAME_PLAN_SLIDERS
+            .iter()
+            .zip(game_plan.sliders.iter_mut())
+        {
+            *slider = opt(t, &plan_path, key, |i, k| ranged(i, k, 0, 20))?;
+        }
+        let known: Vec<&str> = ["strategy"]
+            .into_iter()
+            .chain(labels::GAME_PLAN_SLIDERS)
+            .collect();
+        reject(t, &plan_path, &known)?;
+        preset.game_plan = Some(game_plan);
+    }
     for (f, formation) in preset.formations.iter_mut().enumerate() {
         let key = format!("formation_{}", f + 1);
         let Some(item) = table.get(&key) else {
@@ -491,9 +574,27 @@ fn parse_preset(item: &Item, path: &str) -> Result<PresetSection, TeamTomlError>
             "formation_2",
             "formation_3",
             "instructions",
+            "game_plan",
         ],
     )?;
     Ok(preset)
+}
+
+/// A combination slot's `{ area, strategy }`, the game's own numbers: the
+/// area 1 to 11 and the strategy 1 to 14, both 0 an empty slot.
+fn combination_slot(item: &Item, key: &str) -> Result<CombinationSlot, TeamTomlError> {
+    let entry = item
+        .as_inline_table()
+        .ok_or_else(|| TeamTomlError::WrongType {
+            key: key.to_string(),
+            expected: "an { area, strategy } table",
+        })?;
+    let slot = CombinationSlot {
+        area: required(entry, key, "area", |i, k| ranged(i, k, 0, 11))?,
+        strategy: required(entry, key, "strategy", |i, k| ranged(i, k, 0, 14))?,
+    };
+    reject(entry, key, &["area", "strategy"])?;
+    Ok(slot)
 }
 
 /// `man_marking`'s eleven integers: an own formation slot's assignment is the
@@ -770,6 +871,36 @@ pub(super) fn apply_tactics(
     {
         tactics.auto.attack_defence_levels = Some(levels);
     }
+    if let Some(combination_play) = auto.combination_play
+        && gated(
+            notes,
+            foreign,
+            schema.has(TacticsField::AutoCombinationPlay),
+            "tactics.auto.combination_play",
+        )?
+    {
+        tactics.auto.combination_play = Some(combination_play);
+    }
+    if let Some(combination) = &section.combination {
+        for (i, slot) in [combination.slot_1, combination.slot_2, combination.slot_3]
+            .iter()
+            .enumerate()
+        {
+            let Some(slot) = slot else { continue };
+            let i = u8::try_from(i).expect("three slots fit u8");
+            // A slot's two fields are declared together on the versions
+            // that store them, so the one gate covers both.
+            if gated(
+                notes,
+                foreign,
+                schema.has(TacticsField::CombinationArea(i))
+                    && schema.has(TacticsField::CombinationStrategy(i)),
+                &format!("tactics.combination.slot_{}", i + 1),
+            )? {
+                tactics.combination.get_or_insert_default()[usize::from(i)] = *slot;
+            }
+        }
+    }
     for (i, preset) in section.presets.iter().enumerate() {
         let n = i + 1;
         let target = &mut tactics.presets[i];
@@ -888,6 +1019,37 @@ pub(super) fn apply_tactics(
                 && gated(notes, foreign, schema.has_preset(field), &path)?
             {
                 *target = value;
+            }
+        }
+        if let Some(game_plan) = &preset.game_plan {
+            let plan_path = format!("tactics.preset_{n}.game_plan");
+            if let Some(strategy) = game_plan.strategy
+                && gated(
+                    notes,
+                    foreign,
+                    schema.has_preset(PresetField::Strategy),
+                    &format!("{plan_path}.strategy"),
+                )?
+            {
+                target.game_plan.get_or_insert_default().strategy = strategy;
+            }
+            for (i, (name, value)) in labels::GAME_PLAN_SLIDERS
+                .iter()
+                .zip(game_plan.sliders.iter())
+                .enumerate()
+            {
+                if let Some(value) = value
+                    && gated(
+                        notes,
+                        foreign,
+                        schema.has_preset(PresetField::GamePlanSlider(
+                            u8::try_from(i).expect("eight sliders fit u8"),
+                        )),
+                        &format!("{plan_path}.{name}"),
+                    )?
+                {
+                    target.game_plan.get_or_insert_default().sliders[i] = *value;
+                }
             }
         }
         for (f, formation) in preset.formations.iter().enumerate() {

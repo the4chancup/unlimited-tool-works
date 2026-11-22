@@ -19,6 +19,20 @@ pub(crate) const STYLE_SWITCHES: [(&str, [&str; 2]); 7] = [
     ("pressuring", ["aggressive", "conservative"]),
 ];
 
+/// `[tactics.preset_N.game_plan]`'s slider keys (PES 2014) in the game
+/// panel's order; index = the game's slider number 0 to 7, index 1 the
+/// Support Range the record stores as 20 less the value shown.
+pub(crate) const GAME_PLAN_SLIDERS: [&str; 8] = [
+    "player_support",
+    "support_range",
+    "position_switch",
+    "front_line_pressure",
+    "defensive_line",
+    "defensive_compactness",
+    "shifting_to_attack",
+    "attack_defence_level",
+];
+
 /// Formation/registered-position names; index = the stored position byte.
 pub const POSITIONS: [&str; 13] = [
     "GK", "CB", "LB", "RB", "DMF", "CMF", "LMF", "RMF", "AMF", "LWF", "RWF", "SS", "CF",

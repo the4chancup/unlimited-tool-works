@@ -431,6 +431,12 @@ substitution = 0                # as the game stores it
 offside_trap = false
 preset_change = false
 attack_defence_levels = false   # PES 17 and later
+combination_play = false        # PES 14 only
+
+[tactics.combination]           # PES 14 only
+slot_1 = { area = 3, strategy = 1 }
+slot_2 = { area = 6, strategy = 5 }
+slot_3 = { area = 0, strategy = 0 }
 
 [tactics.preset_1]
 man_marking = [0, 0, 0, 0, 11, 0, 0, 3, 5, 0, 6]                 # for each starter, in starting_eleven's order, the opponent's starter he marks (1 to 11); 0 = nobody
@@ -449,6 +455,18 @@ defensive_line = 3              # 1 to 10
 compactness = 7                 # 1 to 10
 numbers_in_attack = 3           # 1 few, 2 medium, 3 many
 numbers_in_defence = 3          # 1 few, 2 medium, 3 many
+
+[tactics.preset_1.game_plan]    # PES 14 only
+strategy = 2
+player_support = 10
+support_range = 10
+position_switch = 10
+front_line_pressure = 10
+defensive_line = 10
+defensive_compactness = 10
+shifting_to_attack = 10
+attack_defence_level = 10
+
 # players: where each starting_eleven player stands, in its order
 [tactics.preset_1.formation_1]  # formation_1 kick-off, formation_2 in possession, formation_3 out of possession
 players = [{ position = "GK", x = 52, y = 2 }, ...]

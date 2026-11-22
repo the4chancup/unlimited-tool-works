@@ -578,6 +578,7 @@ fn tactics_block(block: &[u8], version: PesVersion) -> Result<TacticsSection, Le
         attack_defence_levels: tactic
             .has(TacticsField::AutoAttackDefenceLevels)
             .then(|| block[pos + 3] != 0),
+        combination_play: None,
     };
     pos += 4;
     debug_assert_eq!(pos, TACTICS);
