@@ -3678,9 +3678,11 @@ points there.
   plan, "Gloves 262143 is no gloves model"). Build 3 passed its gates, and its release build
   was checked on copies of both saves: HAGSEO's Appearance page and Hide default body, team
   127 in the newer save, /gd/ at 136 in `EDIT.bin.autumn14`. It is left unpushed. Build 3
-  now also carries the `pes14` plan's step 12 (Team TOML on PES 2014), so it is built again
-  once that step lands, and its `tasks.html` card, taken down meanwhile, comes back then for
-  the maintainer's yes.
+  now also carries the `pes14` plan's step 12 (Team TOML on PES 2014). That step landed on
+  `pes14` 2026-11-22 (slices a to f, then `91d84e69`), its data check passed on the rebuilt
+  release, and its in-game look waits for a time when OBS may be used or focus taken. The
+  `tasks.html` card, taken down meanwhile, comes back after that look, for the maintainer's
+  yes.
   The Compiler's view (item 6) goes on without waiting for it (the maintainer, 2026-11-22).
 - open (2026-11-22) — The Save editor's tests leave their scratch behind:
   `test_support::scratch` empties `target/<profile>/save_editor_tests/<test>` when a test
