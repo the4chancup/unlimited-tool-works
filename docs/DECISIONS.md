@@ -19448,3 +19448,24 @@ Why: the notes are that section in every release since 0.0.1, so copying it by h
 publish was work the workflow can do. Failing before the draft, and not drafting with empty
 notes, keeps a release from being published with none.
 Plan: spec/core/distribution.md "Release builds in CI", the paragraph on the draft.
+
+## 2026-11-22 — save_editor (pes14 branch) — A PES 2014 save shows every team it holds
+
+Decision: on a PES 2014 save the Save editor lists, checks and edits every team, not only
+ids 701 to 920; the 4cc, VGL and Invitational categories keep their ranges, so a team outside
+them is listed under All alone.
+Why: the maintainer's ruling. The 4cc ran on PES 2014 in 2014 at real clubs' ids (the autumn
+2014 save: /gd/ at 136, /hm/ at 1236), and the Akko organizer reads those teams. The rule is
+the branch's alone: main's cup range stays, since every later cup sits at 701 to 920.
+Plan: `plans/pes14.md` "PES 2014 in the code", the bullet "Every team is shown".
+
+## 2026-11-22 — save_editor (pes14 branch) — Gloves 262143 counts as no gloves model on PES 2014
+
+Decision: the editor reads a PES 2014 gloves ID of 262143 as 0 wherever the ID means a model
+(the interference check, the hide presets), and keeps the stored value until an edit writes
+the field.
+Why: a record the game creates on an in-game edit stores the hair accessory's colour at white,
+every bit set, which the Akko DLC reads as gloves 262143; the game draws bare hands for it, as
+for 0 (run `hi3gloves`). Read as a model of the player's own, Hide default body would keep it
+and leave his hands showing.
+Plan: `plans/pes14.md` "PES 2014 in the code", the bullet "Gloves 262143 is no gloves model".

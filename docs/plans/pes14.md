@@ -760,6 +760,22 @@ button would stay on every PES 2014 save, its tooltip saying the folder holds no
 - **The 1-to-8 settings.** On PES 2014 Form, Injury Resistance, Weak Foot Usage and Weak Foot
   Accuracy each run from 1 to 8 (run `player1`: each shows a bar of 8), where the other
   versions' boxes stop injury resistance at 3 and the weak foot at 4.
+- **Every team is shown.** On a PES 2014 save the editor lists every team the save holds, not
+  only those with ids 701 to 920 (main's "Only the cup's teams are shown", `save_editor.md`):
+  the 4cc ran on PES 2014 in 2014 at real clubs' ids (the autumn 2014 save,
+  `EDIT.bin.autumn14`: /gd/ at 136, /hm/ at 1236, 478 teams), and the Akko organizer reads
+  those teams. So on PES 2014 every place that reads the cup's teams reads them all: the list,
+  All teams, the filter, Live and Multi-team AATF, Copy/swap stats, the comparator, the
+  pictures and the roster sheet. The 4cc, VGL and Invitational categories keep their id
+  ranges, so a team outside them is listed under All alone; its name is the save's own.
+- **Gloves 262143 is no gloves model.** A record the game creates on an in-game edit holds
+  the hair accessory's colour at white, every bit set, which the Akko DLC reads as gloves
+  262143 (the organizer's save: 90 of 91 new records). The game draws bare hands for it, as for
+  0, not the DLC's hidden gloves 11 (run `hi3gloves`, 2026-11-22). So the editor reads 262143
+  as 0 wherever a gloves ID means a model: the interference check, and the hide presets, where
+  Hide default body replaces it with the hide ID as it replaces 0. The stored value is kept as
+  it is until an edit writes the field. The ID travels at its full 18 bits, never through a
+  `u16`.
 
 ## Releases
 
