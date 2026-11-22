@@ -108,10 +108,19 @@ other items run beside it. **Ahead of item 6:** the `pes14` branch's step 12, a 
      (TC-GUI-04 without its watcher part, 20, 21). Its look: checked by the lead beside the
      draft (the portraits count left out a dropped player's portrait, fixed in `bbe765a6`),
      now the maintainer's on the tasks page (card "The Compiler's grid, its first slice"). The
-     shipped build still greys the Compiler (`CLI_ONLY`, `crates/studio/src/main.rs:130`), so
-     the look runs on a build made for it, with `compiler` off that list and nothing
-     committed; the slice that presents the view takes it off for good (1c, unless the plan
-     names another)
+     shipped build still greys the Compiler and the Export upgrader (`CLI_ONLY`,
+     `crates/studio/src/main.rs`); only the VGL organizer's hand-given build opens them
+     (merge `e92af4a0`, `plans/core/gui.md` ST-SIDE-11). When they open for every member is
+     the maintainer's call
+   - [x] The VGL organizer's build `0.0.3-vgl27.1` (2026-11-22, branch `vgl27`, `c2db362c`):
+     the version opens the two tools, and the update check's tag prefix `vgl27-v` keeps main's
+     releases from being offered to it (`RUNBOOK.md` "The VGL organizer's build"); packed in
+     the `vgl27` worktree's `target/dist/` and checked in its built window (both tools
+     clickable, the Compiler's grid opening, the upgrader on its placeholder line), handed over
+     by the maintainer
+   - [ ] VGL27's legacy mode off main, onto `vgl27` alone (DECISIONS 2026-11-22): the removal
+     running (Opus, `sk/legacy-out`); then its merge, `vgl27` merging main and reverting it,
+     and the CHANGELOG's `### Important` line on the `legacy_ids.toml` 0.0.2 wrote
    - [ ] 1b: the detail window: hover, pin, Esc, double-click, its top box, Copy messages
      → verify: TC-GUI-09, 24, 25, 31, 32
    - [ ] 1c: the toolbar's strip and its counts, the log's lines linked to cells, the log
