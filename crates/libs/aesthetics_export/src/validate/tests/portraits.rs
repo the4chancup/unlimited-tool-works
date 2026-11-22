@@ -166,6 +166,22 @@ fn a_portraits_file_named_for_the_slot_counts_whatever_its_kind_or_depth() {
 }
 
 #[test]
+fn a_player_folder_file_named_portrait_counts_whatever_its_kind() {
+    // `portrait.psd` is no texture and the allowlist refuses it; the name
+    // still says whose portrait it is.
+    let export = TestExport::new("co Full Spring", PesVersion::Pes21)
+        .sized("Players/05 - E/hair.dds", 9)
+        .sized("Players/05 - E/portrait.psd", 9)
+        .without(Requirement::Portraits);
+    let report = report_of(&export);
+    assert_eq!(
+        issue_codes(&report),
+        vec![("file_type_disallowed", Disposition::DropFolder)]
+    );
+    assert_eq!(portraits_missing(&report), vec![]);
+}
+
+#[test]
 fn a_portrait_below_a_subfolder_is_not_the_players() {
     let export = TestExport::new("co Full Spring", PesVersion::Pes21)
         .sized("Players/03 - C/old/portrait.dds", 9)

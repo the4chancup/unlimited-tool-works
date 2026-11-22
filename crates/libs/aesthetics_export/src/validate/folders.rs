@@ -180,14 +180,16 @@ pub(crate) fn is_portrait_name(name: &str) -> bool {
         .is_some_and(|(stem, _)| stem.eq_ignore_ascii_case("portrait"))
 }
 
-/// Whether the player folder holds a portrait: a `portrait.*` texture directly in it, the file
+/// Whether the player folder holds a file `portrait_missing` counts as the
+/// player's portrait: a file directly in it whose stem is `portrait`,
+/// whatever its kind (`portrait.psd` counts; the finding that refuses it
+/// names it). The compile still packs a `portrait.*` texture alone, which
 /// `player_folder` keeps as `PlayerFolder::portrait`.
 pub(crate) fn has_portrait(folder: &FolderDraft) -> bool {
     let depth = folder.path.segments().count() + 1;
     folder.files.iter().any(|file| {
-        file.kind == FileKind::Texture
-            && file.path.segments().count() == depth
-            && is_portrait_name(file.path.name())
+        file.path.segments().count() == depth
+            && stem(file.path.name()).eq_ignore_ascii_case("portrait")
     })
 }
 

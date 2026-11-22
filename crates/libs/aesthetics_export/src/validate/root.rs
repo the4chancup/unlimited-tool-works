@@ -61,7 +61,8 @@ pub(crate) fn check_portraits(
 }
 
 /// `portrait_missing` on each player folder a team slot maps to (`assignments`, slot →
-/// draft player index) that has no `portrait.*` of its own and no `Portraits/` file whose
+/// draft player index) that has neither a file directly in it whose stem is `portrait`
+/// (whatever its kind: a refused `portrait.psd` counts) nor a `Portraits/` file whose
 /// name maps to the slot, whatever that file's kind or depth (`portrait_name_invalid` names
 /// a refused one). Only PES 2017 to 2021 show portraits. A `Midcup` player keeps an installed
 /// portrait, so he is reported only when the installed CPKs are known to hold none for his

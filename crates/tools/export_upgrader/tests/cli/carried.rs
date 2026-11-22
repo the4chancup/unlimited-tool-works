@@ -936,6 +936,9 @@ fn an_export_with_no_logo_upgraded_as_full_writes_nothing_and_as_midcup_is_writt
     assert_eq!(run.exit_code(), 0, "{stdout}");
     assert!(stdout.contains("migration_clean"), "{stdout}");
     assert!(!stdout.contains("logo_missing"), "{stdout}");
+    // The upgrader walks no installed CPKs, so what is installed is not
+    // known and a Midcup player is never reported.
+    assert!(!stdout.contains("portrait_missing"), "{stdout}");
     let output = sandbox.listing("co Midcup - Spring");
     for written in ["Players/07 - A/face_high.fmdl", "Kits/p1/kit.dds"] {
         assert!(output.iter().any(|entry| entry == written), "{output:?}");
@@ -945,6 +948,27 @@ fn an_export_with_no_logo_upgraded_as_full_writes_nothing_and_as_midcup_is_writt
             .iter()
             .all(|entry| !entry.to_ascii_lowercase().starts_with("logo")),
         "{output:?}"
+    );
+
+    // A logo added, the Full run is clean: player 07's missing portrait is a
+    // Warning on the written output.
+    let logo = "Logo/emblem_0XXX_r_ll.png";
+    sandbox.copy_fixture(&format!("co Spring/{logo}"), &format!("co - Spring/{logo}"));
+    let run = upgrade(&sandbox, "co - Spring", "EDIT");
+    let stdout = run.stdout();
+    assert_eq!(run.exit_code(), 0, "{stdout}");
+    assert!(stdout.contains("migration_clean"), "{stdout}");
+    assert!(
+        stdout
+            .contains("- co Full - Spring: Warning portrait_missing at Players/07 - A (slot=07)\n"),
+        "{stdout}"
+    );
+    assert_eq!(stdout.matches("portrait_missing").count(), 1, "{stdout}");
+    assert!(
+        sandbox
+            .path("co Full - Spring/Players/07 - A/face_high.fmdl")
+            .is_file(),
+        "{stdout}"
     );
 }
 

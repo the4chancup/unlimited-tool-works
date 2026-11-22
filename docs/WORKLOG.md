@@ -200,8 +200,11 @@ other items run beside it. **Ahead of item 6:** the `pes14` branch's step 12, a 
        Compiler's walk over the installed CPKs (TC-ROOT-17). The builder's `Portraits` fills
        every team export, so 64 tests gained portrait entries; a portrait is a task of its own,
        so a folder a failing task drops still ships it, as the spec's group commit says
-     - Tier 2 review of slices a and b (a check and its messages): SWE-2's loop, then one paid
-       round: running
+     - [x] Tier 2 review of slices a and b (2026-11-22): SWE-2's round S1 (its fixes
+       `dc5e32ea` to `33c9a675`), then Carbon's round C1, 7 accepted, none of reach (a), which
+       ends the loop. Its fixes: the texts `d70e56ea`, and a player folder's `portrait.*`
+       counted whatever its kind, EU-MDL-43 widened to `portrait_missing` (SWE-2, the next
+       commit)
    - Not urgent, a small slice of its own (SWE-2), after the view's or beside it: player
      numbering without the hyphen (`plans/aesthetics_export/player_folders.md`, the section of
      that name): `aesthetics_export`'s `conventions` (`folder_slot`, `folder_player_name`), the
