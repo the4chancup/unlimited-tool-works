@@ -511,4 +511,8 @@ exclude_re = [
     # exactly 125.0, and a cell's fill is one of the theme's fixed colours (`look`), none of
     # which does. Re-check if a fill colour changes.
     "export_grid/src/cells\\.rs:\\d+:\\d+: replace > with >= in text_colour",
+    # team_compiler: `export_row`'s guard `_ if message.is_some() => None` only skips building
+    # a layout that the body's `(Some(message), _)` arm then drops, so `false` shows the same
+    # row: the message in place of the cells.
+    "team_compiler/src/check/live\\.rs:\\d+:\\d+: replace match guard message\\.is_some\\(\\) with false in export_row",
 ]
