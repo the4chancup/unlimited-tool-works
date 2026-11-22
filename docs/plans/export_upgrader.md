@@ -334,7 +334,7 @@ members use (`quick_upgrade.bat`) reads the same two.
     collapsed.
   - **The log** starts collapsed when, open, it would push some cells or boxes out of view,
     as the Compiler's does.
-  - **Open the Compiler** stands left of Upgrade, always enabled but during a run. Once an
+  - **Switch to the Compiler** stands left of Upgrade, always enabled but during a run. Once an
     upgrade has finished it takes the accent colour, the view's one blue button, until the
     next run starts, because the upgraded exports are already in the Compiler's folder and
     it is the next step.

@@ -19489,3 +19489,9 @@ be read shows its reason and action on the right side in place of the upgraded n
 writes nothing and the three would not fit side by side.
 Why: each name then sits over the boxes it names.
 Plan: plans/export_upgrader.md "GUI" (the look toggle, the Files look).
+
+## 2026-11-22 — export_upgrader — "Open the Compiler" becomes "Switch to the Compiler"
+Decision: the maintainer renamed the Export upgrader's button that leads to the Compiler
+"Switch to the Compiler".
+Why: the Compiler is already open in the same window, so the button switches to it.
+Plan: plans/export_upgrader.md "GUI" (the toolbar); plans/core/README.md (the name's example).
