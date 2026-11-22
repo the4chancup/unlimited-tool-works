@@ -19581,3 +19581,20 @@ prefix already exists for that (`RUNBOOK.md` "Releasing a side line") and needs 
 main.
 Plan: `plans/core/gui.md` "Sidebar" item 3, "Tool list", and ST-SIDE-11; `RUNBOOK.md` "The VGL organizer's
 build".
+
+## 2026-11-22 — export_upgrader, team_compiler, distribution — VGL27's legacy mode leaves main for the branch vgl27
+
+Decision: the upgrader's `--legacy-ids`, the Compiler's reading of `legacy_ids.toml`, the
+`legacy_ids.toml` file kind in `aesthetics_export` and the launcher's flag are removed from main
+in one commit, and kept on the branch `vgl27` by reverting that commit there after merging it.
+Main's Compiler then reports a `legacy_ids.toml` left in an export as `root_file_unexpected`
+(a Warning, the file ignored), and the CHANGELOG's `### Important` says so with what to do.
+Why: the maintainer ruled that legacy mode serves VGL27 alone and goes when the cup is over;
+the VGL organizer has a build of their own (`0.0.3-vgl27.1`). Kept on main, every later change
+to the upgrader's shared folders or the Compiler's IDs would carry a mode no other cup uses.
+Removing it plainly rather than keeping the file kind as a silent shim follows "no
+compatibility before 1.0": the exports 0.0.2's launcher wrote still compile, on the
+Compiler's own IDs, with one Warning a member clears by deleting the file.
+Plan: `plans/core/development_plan.md` the `quick_upgrade.bat` bullet; `RUNBOOK.md` "The VGL
+organizer's build"; the plan and spec sections describing legacy mode are removed with the
+code.

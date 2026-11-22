@@ -722,6 +722,13 @@ never offers it main's release: a pre-release ranks under its release (`0.0.3-vg
 into `vgl27` (`commit.py --in <worktree> --merge main`), raises `<n>`, and is packed and handed
 over as above.
 
+VGL27's legacy mode (the upgrader's `--legacy-ids`, the Compiler's `legacy_ids.toml`, the
+launcher passing the flag) lives on `vgl27` alone. Main removed it in one merge, and `vgl27`
+merged main and then reverted that merge (`git revert --no-commit -m 1 <merge>`, then
+`commit.py --in`), so git counts the removal as merged: later merges of
+main leave legacy mode in place. A change on main to code legacy mode touches can still
+conflict there, and is resolved keeping both.
+
 ## Lead and sidekick
 
 **Lead and sidekick.** Sessions run as a lead model that plans, briefs, reviews and talks to the

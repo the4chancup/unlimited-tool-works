@@ -178,9 +178,12 @@ wait for a key at the end so the report can be read:
   (`upgrade --all`, `plans/export_upgrader.md` "CLI"), which prints how many were upgraded
   and how many were not.
 
-  It passes `--legacy-ids` (`plans/export_upgrader.md` "What it does"): the bundle exists for
-  VGL27, whose exports keep the managers' old boots and gloves IDs, and a bat without it would
-  compile the cup on the compiler's own IDs.
+  VGL27's legacy mode, which kept the managers' old boots and gloves IDs (the upgrader's
+  `--legacy-ids`, which this bat passed, and the Compiler's `legacy_ids.toml`), is not main's:
+  it lives on the VGL organizer's branch `vgl27` alone (`RUNBOOK.md` "The VGL organizer's
+  build"), since it serves that one cup and goes when the cup is over. Main's bat passes no
+  such flag, and its Compiler reads a `legacy_ids.toml` left in an export as any unknown root
+  file (`root_file_unexpected`, ignored).
 
   A team export needs `--savefile` or `--loose` (`spec/export_upgrader.md` "CLI"), and loose
   mode is an assumption the user opts into, so the bat asks for the save rather than falling
