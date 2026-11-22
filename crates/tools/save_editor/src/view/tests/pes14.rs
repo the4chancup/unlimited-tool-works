@@ -37,8 +37,8 @@ fn pes14_fixture_with_look(test: &str) -> PathBuf {
     pes14_fixture_with_look_missing(test, &[])
 }
 
-/// The committed PES 2014 fixture as it is, team 1 renumbered 701: the
-/// list shows the cup's teams alone and the vanilla save holds none.
+/// The committed PES 2014 fixture as it is, team 1 renumbered 701, the
+/// cup id the tests' selections name.
 fn pes14_fixture_plain(test: &str) -> PathBuf {
     let path = fixture(PesVersion::Pes14, test);
     let mut file = EditFile::from_bytes(&fixture_save(PesVersion::Pes14)).unwrap();
@@ -87,6 +87,49 @@ fn pes14_fixture_with_look_missing(test: &str, missing: &[u32]) -> PathBuf {
     path
 }
 
+// A PES 2014 save lists every team it holds, not the cup's ids alone —
+// the 2014 cup ran at real clubs' ids, and the vanilla fixture holds no
+// cup id: All teams' list reaches team 136, VASCO DA GAMA, and the
+// filter's search by its name finds it.
+#[test]
+fn a_pes14_save_lists_every_team_and_the_filter_finds_it() {
+    let path = fixture(PesVersion::Pes14, "pes14_all_teams");
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut window = Headless::new();
+
+    // All teams, no filter (the open's own state): team 136's row draws
+    // with player rows under it once scrolled to — the list lays out only
+    // the rows in view, the reveal a selection's own.
+    view.selected = Some(Selection::Team(136));
+    view.reveal_selected = Some(Reveal::Top);
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let top = team_row(&nodes, &view, 136).bounds().unwrap().y0;
+    assert!(
+        nodes.iter().filter(|node| player_row(node)).any(|node| node
+            .bounds()
+            .expect("a row has bounds")
+            .y0
+            > top),
+        "a player row under team 136's row"
+    );
+
+    // The filter's search by the team's name finds it: "vasco" typed in
+    // the box leaves its row.
+    let filter_box = nodes
+        .iter()
+        .find(|node| {
+            node.role() == Role::TextInput
+                && node.placeholder() == Some("Team or player: name, shirt name or ID")
+        })
+        .expect("the filter box");
+    click(&mut window, filter_box, &mut view);
+    let (_, nodes, _) = window.frame(vec![egui::Event::Text("vasco".to_owned())], |ui| {
+        show(ui, &mut view, &|| Vec::new())
+    });
+    let _ = team_row(&nodes, &view, 136);
+}
+
 // Every screen, the four menus and a roster drag on the committed PES 2014
 // fixture (a real save: team 1's 23-man squad, given an appearance record
 // each by `pes14_fixture_with_look`). Nothing panics; the items the version
@@ -95,8 +138,8 @@ fn pes14_fixture_with_look_missing(test: &str, missing: &[u32]) -> PathBuf {
 // order.
 #[test]
 fn a_pes14_save_draws_screens_and_menus_and_drags_without_panics() {
-    // The list shows the cup's teams alone (ids 701 to 920), of which the
-    // vanilla save holds none: team 1 takes a cup id, its roster along.
+    // The tests' selections name a cup id: team 1 takes 701, its roster
+    // along.
     let path = pes14_fixture_with_look("pes14_screens");
     let mut view = SaveView::new();
     view.open(&path);
@@ -578,7 +621,7 @@ fn item_id(ids: &[(accesskit::NodeId, accesskit::Node)], item: &str) -> accesski
 }
 
 // The Preset tactics panel on the PES 2014 fixture's team 1, IRELAND
-// (the vanilla fixture holds no cup team, so the record takes 701's id):
+// (the record takes 701's id, the cup id the tests' selections name):
 // the Formation combo lists the game's eleven, a formation it does not
 // hold marked "(not in the game's list)" and offered first; a "4-3-3"
 // pick writes the list's slots and keeper depth 3 into the shown preset

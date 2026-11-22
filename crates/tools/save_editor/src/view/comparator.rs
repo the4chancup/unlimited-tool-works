@@ -596,7 +596,7 @@ pub(super) fn roster_of(file: &EditFile) -> HashMap<u32, Place> {
         .teams()
         .iter()
         .enumerate()
-        .filter(|(_, team)| is_cup_team(team.id));
+        .filter(|(_, team)| is_cup_team(file.version(), team.id));
     for (index, team) in cup {
         for (slot, entry) in team.roster.iter().enumerate() {
             if entry.player_id != 0 {
