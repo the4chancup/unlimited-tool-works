@@ -4,7 +4,6 @@
 
 use std::fs;
 
-use export_upgrader::test_exports::OldRequirement;
 use pes_version::PesVersion;
 use studio_core::PipelineEvent;
 
@@ -62,7 +61,7 @@ fn a_note_team_line_overrides_the_exports_name() {
 fn a_note_only_export_reports_no_unmigrated_content() {
     let sandbox = Sandbox::new("root_note_only");
     // A `Team:` Note and the logo a `Full` export needs make an old export;
-    // there is nothing else to migrate or leave behind, so no default face.
+    // there is nothing else to migrate or leave behind.
     fs::create_dir_all(sandbox.path("Numbers")).unwrap();
     fs::copy(
         std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
@@ -71,7 +70,7 @@ fn a_note_only_export_reports_no_unmigrated_content() {
     )
     .unwrap();
     sandbox.save("EDIT");
-    sandbox.complete_old_without("Numbers", &[OldRequirement::Content]);
+    sandbox.complete_old("Numbers");
 
     let run = upgrade(&sandbox, "Numbers", "EDIT");
     assert_eq!(run.exit_code(), 0, "{}", run.stdout());

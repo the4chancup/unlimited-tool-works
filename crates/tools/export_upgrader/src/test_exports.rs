@@ -14,7 +14,9 @@ use crate::naming::coverage_choice;
 pub enum OldRequirement {
     /// Some content. When no file or empty folder sits below a root folder other than `Other/`
     /// and `Logo/`, the face folder `Faces/XXX05 - A/` holding `FACE_FILES`; for a referee
-    /// export, `Players/arbiter/boots.fmdl` and a `refs.txt` of `01 arbiter`.
+    /// export, `Players/arbiter/boots.fmdl` and a `refs.txt` of `01 arbiter`. Nothing when
+    /// `Logo` adds the logo, which alone is content: `without(Content)` alone then stays clean,
+    /// and a test of an empty `Full` export turns `Logo` off too.
     Content,
     /// A team export's logo (`logo_missing`). When an upgrade with no `--coverage` tags the
     /// export `Full`, as its name decides (`coverage_choice`), and no file sits in `Logo/`,
@@ -46,7 +48,17 @@ pub fn old_missing(
 ) -> Vec<(String, Vec<u8>)> {
     let referee = aesthetics_export::team_name(name).is_some_and(|team| team.is_referees());
     let mut added: Vec<(String, Vec<u8>)> = Vec::new();
-    let has_content = files.iter().chain(folders).any(|path| is_content(path));
+    let full = coverage_choice(name, None).is_ok_and(|choice| choice.tag == "Full");
+    let has_logo = files.iter().any(|path| under(path, "logo").is_some());
+    let adds_logo = !referee && full && !without.contains(&OldRequirement::Logo) && !has_logo;
+    if adds_logo {
+        let logo = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("tests/fixtures/co Spring")
+            .join(LOGO);
+        added.push((LOGO.to_owned(), fs::read(logo).unwrap()));
+    }
+    // A test's own `Logo/` file may be one the upgrade drops, so only the added logo counts.
+    let has_content = adds_logo || files.iter().chain(folders).any(|path| is_content(path));
     if !without.contains(&OldRequirement::Content) && !has_content {
         if referee {
             added.push(("refs.txt".to_owned(), b"01 arbiter\n".to_vec()));
@@ -56,14 +68,6 @@ pub fn old_missing(
                 added.push((format!("Faces/XXX05 - A/{file}"), bytes.to_vec()));
             }
         }
-    }
-    let full = coverage_choice(name, None).is_ok_and(|choice| choice.tag == "Full");
-    let has_logo = files.iter().any(|path| under(path, "logo").is_some());
-    if !referee && full && !without.contains(&OldRequirement::Logo) && !has_logo {
-        let logo = Path::new(env!("CARGO_MANIFEST_DIR"))
-            .join("tests/fixtures/co Spring")
-            .join(LOGO);
-        added.push((LOGO.to_owned(), fs::read(logo).unwrap()));
     }
     // A default file never replaces one the test gave (a referee export's own `refs.txt`).
     added.retain(|(path, _)| !files.iter().any(|given| given.eq_ignore_ascii_case(path)));
@@ -196,14 +200,12 @@ mod tests {
             .map(|(file, _)| format!("Faces/XXX05 - A/{file}"))
             .collect();
         face.sort();
-        let mut team = face.clone();
-        team.push(LOGO.to_owned());
         let referee = vec![
             "Players/arbiter/boots.fmdl".to_owned(),
             "refs.txt".to_owned(),
         ];
         for (name, expected) in [
-            ("co Spring", team),
+            ("co Spring", vec![LOGO.to_owned()]),
             ("co midcup Day 5", face),
             ("refs Spring", referee),
         ] {
@@ -229,11 +231,21 @@ mod tests {
         assert_eq!(
             upgrades(&[
                 ("co Spring", &[OldRequirement::Logo]),
+                ("co Spring", &[OldRequirement::Content]),
                 ("co midcup Day 5", &[OldRequirement::Content]),
                 ("refs Spring", &[OldRequirement::Content]),
             ]),
             [
                 ("co Spring", 1, refused("logo_missing")),
+                // The added logo alone is content.
+                (
+                    "co Spring",
+                    0,
+                    vec![
+                        "Info coverage_tag_chosen".to_owned(),
+                        "Info migration_clean".to_owned(),
+                    ]
+                ),
                 ("co midcup Day 5", 1, empty.clone()),
                 ("refs Spring", 1, empty),
             ]
