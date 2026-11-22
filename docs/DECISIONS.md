@@ -19638,3 +19638,11 @@ Why: "when the export has findings" would offer it on every export the check ide
 since each carries the Info `export_identified`. A clean export would then copy that one line,
 with nothing in it for a member to fix.
 Plan: `plans/team_compiler/gui.md`, the paragraph on Copy messages; TC-GUI-25.
+
+## 2026-11-22 — team_compiler — a player's window shows his portrait wherever the compile takes it from
+Decision: the bottom-left corner of a player's detail window shows his portrait when he has
+one, from his folder or from `Portraits/`, whichever the compile packs.
+Why: the plan named his folder alone, while the portraits cell's grid shows a `Portraits/NN`
+file as his. Showing it in the grid and not in his own window would tell the member two
+different things about one portrait.
+Plan: `plans/team_compiler/gui.md` "The detail window", the list of what the box holds.

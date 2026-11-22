@@ -127,11 +127,15 @@ other items run beside it. **Ahead of item 6:** the `pes14` branch's step 12, a 
      merged main and reverted the removal (`a0c24750`), its gates green with the mode back
    - [ ] 1b: the detail window, in two slices, since its pictures need decoding and a cache
      of their own:
-     - [ ] 1b-i: hover, pin, Esc, double-click, Open folder and Copy messages, in
-       `export_grid`, the top box drawn empty → verify: TC-GUI-09, 24, 25: running (Opus,
-       `sk/grid1b`)
+     - [x] 1b-i (2026-11-22, merge `63ecaae8`, Opus): hover, pin, Esc, double-click, Open
+       folder and Copy messages in `export_grid`, the top box drawn empty (TC-GUI-09, 24, 25).
+       The lead dropped the portraits cell's one-finding fallback, which no export reaches,
+       and offers Copy messages only on an export with a Warning or an Error (DECISIONS); the
+       built window beside the draft found the Effect line weak, fixed (`4fb5d8ec`)
      - [ ] 1b-ii: the top box's pictures (the logo or referee marker, the portraits, the kit
-       texture) → verify: TC-GUI-31, 32
+       texture) → verify: TC-GUI-31, 32. Brief `.tmp/lead/brief_grid_1b2.md`. An archive
+       export's pictures wait for the watcher-and-cache slice: reading one out of a 7z means
+       decompressing it whole
    - [ ] 1c: the toolbar's strip and its counts, the log's lines linked to cells, the log
      collapsed when it would hide rows → verify: TC-GUI-15, 26, 27
    - Then the kit cells' swatch (TC-GUI-10), the row actions, the ID cell's editing, the
@@ -203,8 +207,8 @@ other items run beside it. **Ahead of item 6:** the `pes14` branch's step 12, a 
      - [x] Tier 2 review of slices a and b (2026-11-22): SWE-2's round S1 (its fixes
        `dc5e32ea` to `33c9a675`), then Carbon's round C1, 7 accepted, none of reach (a), which
        ends the loop. Its fixes: the texts `d70e56ea`, and a player folder's `portrait.*`
-       counted whatever its kind, EU-MDL-43 widened to `portrait_missing` (SWE-2, the next
-       commit)
+       counted whatever its kind, EU-MDL-43 widened to `portrait_missing` (SWE-2,
+       `f4a8ac22`)
    - Not urgent, a small slice of its own (SWE-2), after the view's or beside it: player
      numbering without the hyphen (`plans/aesthetics_export/player_folders.md`, the section of
      that name): `aesthetics_export`'s `conventions` (`folder_slot`, `folder_player_name`), the

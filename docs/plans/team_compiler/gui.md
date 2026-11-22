@@ -90,18 +90,20 @@ would drift apart.
 
   A team label's window also offers **Copy messages** when the export has a Warning or an
   Error. It puts the export's log lines on the clipboard, as the log prints them (its Infos
-  too), and reads "Copied" for a moment. Not on every export with a message: every export
-  the check identifies carries the Info `export_identified`, so a clean export would offer
-  that line alone, with nothing in it for a member to fix. Some organizers tell a member what is wrong with their export rather than fixing it
-  themselves, and this gives them the text to send. **Copy report** would put the whole run's
-  lines on the clipboard, which they would have to cut down to the one export.
+  too), and reads "Copied" for a moment. Some organizers tell a member what is wrong with
+  their export rather than fixing it themselves, and this gives them the text to send.
+  **Copy report** would put the whole run's lines on the clipboard, which they would have to
+  cut down to the one export. An export with Infos alone does not offer it: every export the
+  check identifies carries the Info `export_identified`, so a clean export would copy that
+  line alone, with nothing in it for a member to fix.
 
   The window opens on a box the 3D preview's size. The box is there on every cell, so the
   text under it stays in place as the window moves between cells. What it holds depends on
   the cell:
   - a player: his 3D preview (Future Features), with his portrait in the bottom-left corner
-    when his folder holds it and the export's logo in the bottom-right one, each the size of
-    a portraits tile; until the preview is built, the box holds those two alone;
+    when he has one (in his folder or in `Portraits/`, the one the compile packs) and the
+    export's logo in the bottom-right one, each the size of a portraits tile; until the
+    preview is built, the box holds those two alone;
   - a kit: its main texture (`kit.dds`), fitted inside the box;
   - the portraits: every portrait as a 6 × 4 grid in the players' order, the export's logo
     in the last tile, at the bottom right, so 23 portraits and the logo fill the 24 tiles; a
