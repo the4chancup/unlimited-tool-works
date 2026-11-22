@@ -142,7 +142,7 @@ other items run beside it. **Ahead of item 6:** the `pes14` branch's step 12, a 
      - [x] a — 2026-11-22, `ee108bbf`: both findings in `aesthetics_export`'s validation and
        both catalogs, `installed_portrait_slots` `None` at every caller; 172 tests and five
        fixture archives given the logo and portraits they now need
-     - [ ] The shared export builder (the open issue "Every new check on what an export must
+     - [x] The shared export builder (the open issue "Every new check on what an export must
        hold breaks every test"). `aesthetics_export::test_exports::missing` lists the files an
        export lacks to be clean, one rule per requirement: some content, a `Full` export's
        logo, a portrait per player from PES 2017. A test of one check turns its rule off with
@@ -181,7 +181,8 @@ other items run beside it. **Ahead of item 6:** the `pes14` branch's step 12, a 
          through `complete`, `console.rs`'s old export through `complete_old`; `launchers.rs`
          reads the upgrader's fixtures as they are. Its dummy runs come in two pairs, since
          both checks sit in the validator the upgrader also runs on its output
-       - [ ] 7: the unit tests' tracer copy (`testing.rs`'s `sandbox`) completed, as the CLI
+       - [x] 7 (2026-11-22, `65341792`, lead) the unit tests' tracer copy (`testing.rs`'s
+         `sandbox`) completed, as the CLI
          tests' copy is since slice 4, so the `gui_run` tests that compile it pass a dummy run.
          The archive fixtures all stay stored. Packing a `.zip` when the tests run would save
          no step, because its `.7z` twin is stored (writing one needs `sevenz-rust2`'s
@@ -190,8 +191,12 @@ other items run beside it. **Ahead of item 6:** the `pes14` branch's step 12, a 
          `tracer_archives_team_folder.py`'s `ADDED` grows to the `co Midcup Spring` archives
          and the upgrader's `co Spring` ones, which have no script in the repository yet
      - b's tests are written on `complete` (builder slice 3 landed)
-     - [ ] b: `installed_portrait_slots` filled from the Compiler's walk over the installed
-       CPKs → verify: TC-ROOT-17: running (Opus, `sk/logob`)
+     - [x] b (2026-11-22, merge `e0c24349`, Opus) `installed_portrait_slots` filled from the
+       Compiler's walk over the installed CPKs (TC-ROOT-17). The builder's `Portraits` fills
+       every team export, so 64 tests gained portrait entries; a portrait is a task of its own,
+       so a folder a failing task drops still ships it, as the spec's group commit says
+     - Tier 2 review of slices a and b (a check and its messages): SWE-2's loop, then one paid
+       round: running
    - Not urgent, a small slice of its own (SWE-2), after the view's or beside it: player
      numbering without the hyphen (`plans/aesthetics_export/player_folders.md`, the section of
      that name): `aesthetics_export`'s `conventions` (`folder_slot`, `folder_player_name`), the
@@ -3743,8 +3748,8 @@ points there.
   through `fpc`, the Appearance page's check showing an error line, `settings_toml`'s byte
   read returning an error, the tactics wording showing the stored number. The `pes14`
   branch's own code gets the same census after it merges.
-- open (2026-11-22) — Every new check on what an export must hold breaks every test that
-  builds one, and more checks are coming. Slice 0.0.2-logo a's `logo_missing` broke 172 tests:
+- fixed (2026-11-22, builder slices 1 to 7, the last `65341792`) — Every new check on what an
+  export must hold broke every test that builds one, and more checks are coming. Slice 0.0.2-logo a's `logo_missing` broke 172 tests:
   each test writes its own export file by file, directly or through one of about a dozen
   helpers spread over the tests of `team_compiler`, `export_upgrader` and `studio`, and the
   fixture archives are stored binaries. Each had to learn the check by hand: about 130 added
