@@ -348,12 +348,8 @@ fn a_logo_candidate_that_is_no_texture_is_invalid() {
 
 #[test]
 fn a_full_team_export_with_no_logo_file_is_logo_missing_and_kept() {
-    let full = report(
-        "co Full Spring",
-        &[("Players/03 - A/portrait.dds", 9)],
-        &[],
-        &[],
-    );
+    let export = TestExport::new("co Full Spring", PesVersion::Pes21).without(Requirement::Logo);
+    let full = report_of(&export);
     assert_eq!(
         issue_codes(&full),
         vec![("logo_missing", Disposition::Keep)]
@@ -374,7 +370,11 @@ fn logo_missing_is_only_for_a_full_team_export_with_no_logo_file() {
         ("co Full Spring", vec![("logo.txt", 9), player]),
         ("co Full Spring", vec![("logo_small.png", 9), player]),
     ] {
-        let report = report(name, &files, &[], &[]);
+        let mut export = TestExport::new(name, PesVersion::Pes21).without(Requirement::Logo);
+        for &(path, size) in &files {
+            export = export.sized(path, size);
+        }
+        let report = report_of(&export);
         assert!(
             report
                 .issues
@@ -395,7 +395,11 @@ fn logo_missing_is_only_for_a_full_team_export_with_no_logo_file() {
     assert_eq!(issue_codes(&refs), vec![]);
 
     // An empty `Full` export is `export_empty` alone.
-    let empty = report("co Full Spring", &[("readme.txt", 10)], &[], &[]);
+    let export = TestExport::new("co Full Spring", PesVersion::Pes21)
+        .sized("readme.txt", 10)
+        .without(Requirement::Content)
+        .without(Requirement::Logo);
+    let empty = report_of(&export);
     assert_eq!(
         issue_codes(&empty),
         vec![("export_empty", Disposition::DropExport)]

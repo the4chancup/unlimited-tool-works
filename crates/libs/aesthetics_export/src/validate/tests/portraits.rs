@@ -63,13 +63,11 @@ fn a_full_export_reports_each_player_with_no_portrait_from_pes_17() {
             vec![("Players/03 - C", "03"), ("Players/04 - D", "04")],
         ),
     ] {
-        let report = report_with(
-            &context_for(version),
-            "co Full Spring",
-            &[&FOUR_PLAYERS[..], &[("logo.png", 9)]].concat(),
-            &[],
-            &[],
-        );
+        let mut export = TestExport::new("co Full Spring", version).without(Requirement::Portraits);
+        for (path, size) in FOUR_PLAYERS {
+            export = export.sized(path, size);
+        }
+        let report = report_of(&export);
         assert_eq!(portraits_missing(&report), expected, "{version:?}");
         // The misnamed file is no one's portrait: it has its own finding, and its player is
         // compiled all the same.
@@ -100,7 +98,12 @@ fn a_midcup_export_reports_only_the_slots_the_installed_cpks_hold_no_portrait_fo
         (None, vec![]),
     ] {
         let context = installed_portraits(PesVersion::Pes21, installed);
-        let report = report_with(&context, "co Midcup Day 5", &files, &[], &[]);
+        let mut export =
+            TestExport::new("co Midcup Day 5", PesVersion::Pes21).without(Requirement::Portraits);
+        for &(path, size) in &files {
+            export = export.sized(path, size);
+        }
+        let report = report_of_with(&context, &export);
         assert_eq!(portraits_missing(&report), expected, "{installed:?}");
     }
 }
@@ -108,13 +111,10 @@ fn a_midcup_export_reports_only_the_slots_the_installed_cpks_hold_no_portrait_fo
 #[test]
 fn a_full_export_ignores_the_installed_portraits() {
     let context = installed_portraits(PesVersion::Pes21, Some(&[3]));
-    let report = report_with(
-        &context,
-        "co Full Spring",
-        &[("logo.png", 9), ("Players/03 - C/hair.dds", 9)],
-        &[],
-        &[],
-    );
+    let export = TestExport::new("co Full Spring", PesVersion::Pes21)
+        .sized("Players/03 - C/hair.dds", 9)
+        .without(Requirement::Portraits);
+    let report = report_of_with(&context, &export);
     assert_eq!(portraits_missing(&report), vec![("Players/03 - C", "03")]);
 }
 
@@ -124,7 +124,6 @@ fn a_portrait_file_that_maps_to_the_slot_counts_whatever_a_later_check_finds() {
     let report = report(
         "co Full Spring",
         &[
-            ("logo.png", 9),
             ("Players/03 - C/hair.dds", 9),
             ("Portraits/03.dds", 9),
             ("Portraits/03 - C.png", 9),
@@ -143,12 +142,10 @@ fn a_portrait_file_that_maps_to_the_slot_counts_whatever_a_later_check_finds() {
 
 #[test]
 fn a_portrait_below_a_subfolder_is_not_the_players() {
-    let report = report(
-        "co Full Spring",
-        &[("logo.png", 9), ("Players/03 - C/old/portrait.dds", 9)],
-        &[],
-        &[],
-    );
+    let export = TestExport::new("co Full Spring", PesVersion::Pes21)
+        .sized("Players/03 - C/old/portrait.dds", 9)
+        .without(Requirement::Portraits);
+    let report = report_of(&export);
     assert_eq!(portraits_missing(&report), vec![("Players/03 - C", "03")]);
 }
 
