@@ -14,6 +14,8 @@ mod listing;
 mod parse;
 mod resolve;
 mod slots;
+#[cfg(any(test, feature = "test-support"))]
+pub mod test_exports;
 #[cfg(test)]
 mod testing;
 mod validate;

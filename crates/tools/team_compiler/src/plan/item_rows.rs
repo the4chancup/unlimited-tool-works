@@ -493,10 +493,6 @@ mod tests {
                 ("Players/07 - C/Crocs.boots", 0),
                 ("Gloves/Keeper/glove_l.fmdl", 1),
                 ("Boots/Crocs/boots.fmdl", 1),
-                ("Players/05 - A/portrait.dds", 9),
-                ("Players/06 - B/portrait.dds", 9),
-                ("Players/07 - C/portrait.dds", 9),
-                ("logo.png", 9),
             ],
             &[],
             None,
@@ -695,9 +691,6 @@ mod tests {
             &[
                 ("Players/Shared/boots.fmdl", 1),
                 ("Players/09 - D/boots.fmdl", 1),
-                ("Players/Shared/portrait.dds", 9),
-                ("Players/09 - D/portrait.dds", 9),
-                ("logo.png", 9),
             ],
             Some(b"05 Shared\n07 Shared\n09 09 - D\n"),
             "[07]\nboots = 2305\n",
@@ -730,11 +723,7 @@ mod tests {
     fn a_recorded_old_id_no_task_packs_gives_no_row() {
         let (rows, models) = planned_with_ids(
             "co Full Rows",
-            &[
-                ("Players/05 - A/face_high.fmdl", 1),
-                ("Players/05 - A/portrait.dds", 9),
-                ("logo.png", 9),
-            ],
+            &[("Players/05 - A/face_high.fmdl", 1)],
             None,
             "[05]\nboots = 2305\n",
         );

@@ -14,5 +14,9 @@ teams_list.workspace = true
 thiserror.workspace = true
 vtree.workspace = true
 
+[features]
+# `test_exports`, the builder of clean exports other crates' tests use.
+test-support = []
+
 [lints]
 workspace = true

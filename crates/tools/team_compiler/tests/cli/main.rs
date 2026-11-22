@@ -45,6 +45,7 @@ use std::path::{Path, PathBuf};
 
 use common::{Run, Sandbox};
 use studio_core::{ExportId, PipelineEvent, Scope};
+use team_compiler::test_files::clean_model;
 
 impl Sandbox {
     fn write(&self, relative: &str, contents: &[u8]) {
@@ -350,24 +351,4 @@ fn write_logo(sandbox: &Sandbox, export: &str) {
         &format!("{export}/logo.png"),
         &logo::png(512, 512, |_, _| [0, 128, 0, 255]),
     );
-}
-
-/// A Fox model in which `fmdl`'s check finds nothing (the tracer's right glove), for a test
-/// whose model only has to be one: both commands read every model, so an empty file would be
-/// `model_broken`. Its hand bones are renamed from `skh_` to `skx_`, so a face model written
-/// with it is not hand auto-split: the glove's vertices weigh on its finger bones, which would
-/// give the player gloves and a `model_hand_split` the test is not about.
-fn clean_model() -> Vec<u8> {
-    let bytes = fs::read(
-        Path::new(env!("CARGO_MANIFEST_DIR"))
-            .join("tests/fixtures/tracer/studio/egg Midcup Tracer/Players/05 - The Chad Stormworks Player/glove_r.fmdl"),
-    )
-    .unwrap();
-    let mut model = fmdl::Model::from_file(&fmdl::FmdlFile::read(&bytes).unwrap()).unwrap();
-    for bone in &mut model.bones {
-        if let Some(finger) = bone.name.strip_prefix("skh_") {
-            bone.name = format!("skx_{finger}");
-        }
-    }
-    model.to_file().unwrap().write()
 }

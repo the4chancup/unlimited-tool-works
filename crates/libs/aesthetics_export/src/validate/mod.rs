@@ -27,12 +27,16 @@ pub use folders::{
     FpcDirective, KitFolder, KitLayout, KitTexture, KitTextureSource, KitsFolder, PlayerFolder,
     SharedLink, SharedModelFolder,
 };
+#[cfg(any(test, feature = "test-support"))]
+pub(crate) use folders::{is_portrait_name, stem};
 pub use issues::{ContentFinding, Disposition, ISSUE_CODES, IssueScope, ValidationIssue};
 pub(crate) use issues::{
     common_file_dropped, content_issue, dropped_scopes, is_below, issue, issue_in,
     strict_disposition,
 };
 pub use links::common_link_files;
+#[cfg(any(test, feature = "test-support"))]
+pub(crate) use root::is_logo_name;
 pub use roster::{PlayerIndex, ValidatedRoster};
 
 /// The folded names of the root folders only the old export layout has

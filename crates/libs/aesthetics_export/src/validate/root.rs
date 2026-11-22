@@ -200,7 +200,13 @@ pub(crate) fn check_logo(
 /// `logo` (ASCII-case-insensitively). `check_logo` reports these, so
 /// `check_root` skips them and never reports one as `root_file_unexpected`.
 pub(crate) fn is_logo_candidate(file: &FileDescriptor) -> bool {
-    strip_prefix_ci(stem(file.path.name()), "logo").is_some()
+    is_logo_name(file.path.name())
+}
+
+/// Whether a root file named `name` is a logo candidate: its stem starts with `logo`,
+/// ASCII-case-insensitively.
+pub(crate) fn is_logo_name(name: &str) -> bool {
+    strip_prefix_ci(stem(name), "logo").is_some()
 }
 
 /// The root-file allowlist plus the small root artifacts: `notes.txt`,
