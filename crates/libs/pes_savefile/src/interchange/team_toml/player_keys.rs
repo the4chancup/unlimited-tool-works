@@ -607,8 +607,9 @@ impl PlayerKey {
             .unwrap_or(0)
     }
 
-    /// The range/allowed text the kind reports in errors.
-    fn range_text(self, version: Option<PesVersion>) -> String {
+    /// The range/allowed text the kind reports in errors, and that a PES 2014
+    /// document's comment gives for a small stat.
+    pub(crate) fn range_text(self, version: Option<PesVersion>) -> String {
         match self.spec().kind {
             Kind::Ability | Kind::Stored => format!("0 to {}", self.stored_max(version)),
             Kind::Shown => format!("1 to {}", self.stored_max(version) + 1),

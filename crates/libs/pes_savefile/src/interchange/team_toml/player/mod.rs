@@ -12,7 +12,7 @@ use toml_edit::{Item, TableLike, Value};
 use crate::codec::{TextMisfit, read_player_into, text_max, text_misfit};
 use crate::interchange::players_key;
 use crate::interchange::team_toml::labels;
-use crate::interchange::team_toml::player_keys::PlayerKey;
+use crate::interchange::team_toml::player_keys::{Kind as KeyKind, PlayerKey};
 use crate::interchange::team_toml::{
     ImportNote, PlayerSection, PositionsSection, SkillsSection, TeamTomlError,
 };
@@ -181,21 +181,15 @@ fn emit_key(
 ) -> Result<(), TeamTomlError> {
     let spec = key.spec();
     let value = key.get_section(section).map(|v| key.text(v)).transpose()?;
-    // PES 2014's four small stats run 1 to 8, and its document's comments
-    // say so where the other versions' carry narrower ranges.
-    let comment = if version == Some(PesVersion::Pes14)
-        && matches!(
-            key,
-            PlayerKey::WeakFootUsage
-                | PlayerKey::WeakFootAccuracy
-                | PlayerKey::Form
-                | PlayerKey::InjuryResistance
-        ) {
-        "1 to 8"
+    // PES 2014's small stats run wider than the other versions', and its
+    // document's comments give the range the parser checks there; the
+    // spec's comment holds the narrower one the other versions share.
+    let comment = if version == Some(PesVersion::Pes14) && matches!(spec.kind, KeyKind::Shown) {
+        key.range_text(version)
     } else {
-        spec.comment
+        spec.comment.to_owned()
     };
-    emit(out, key.name(), value, &key.neutral(), comment);
+    emit(out, key.name(), value, &key.neutral(), &comment);
     Ok(())
 }
 
