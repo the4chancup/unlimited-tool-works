@@ -1244,6 +1244,30 @@ fn installs_names_each_versions_folder_and_check() {
     );
 }
 
+// A write's clock is its wall-clock time in the machine's zone: two writes three
+// hours apart on a day away from any daylight-saving change read three hours apart.
+#[test]
+fn local_clock_keeps_the_gap_between_two_writes() {
+    let utc = |hour| {
+        SystemTime::from(
+            jiff::civil::date(2026, 6, 15)
+                .at(hour, 0, 0, 0)
+                .to_zoned(jiff::tz::TimeZone::UTC)
+                .unwrap()
+                .timestamp(),
+        )
+    };
+    let nine = local_clock(utc(9));
+    let noon = local_clock(utc(12));
+    assert_ne!(nine, noon, "two different writes give two clocks");
+    let minutes = |time: jiff::civil::Time| i64::from(time.hour()) * 60 + i64::from(time.minute());
+    assert_eq!(
+        (minutes(noon) - minutes(nine)).rem_euclid(24 * 60),
+        180,
+        "three hours apart, midnight's wrap counted in"
+    );
+}
+
 #[test]
 fn the_clock_text_is_hh_mm() {
     assert_eq!(
