@@ -202,8 +202,6 @@ pub(crate) fn to_plan(
         metal_models: BTreeSet::new(),
         settings: BTreeMap::new(),
         settings_refused: BTreeSet::new(),
-        legacy_ids: None,
-        legacy_block: None,
     }
 }
 

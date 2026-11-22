@@ -90,7 +90,7 @@ box to follow only its lines. The CPK names are those of the league's first DLC,
 with <code>multicpk_mode = true</code>, a setting explained in "The first DLC and the
 matchdays after it" below.</p>
 <figure>
-<svg class="map" id="map" viewBox="0 0 1000 600" role="img"
+<svg class="map" id="map" viewBox="0 0 1000 565" role="img"
   aria-label="Map from the parts of an export to the files the compile writes">
   <text class="head" x="20" y="30">One export (UTW format)</text>
   <text class="head" x="660" y="30">What the compile writes</text>
@@ -99,19 +99,17 @@ matchdays after it" below.</p>
   <g id="edges">
     <path class="edge players" data-a="L1" data-b="R1" d="M320 142 C470 142 510 140 660 140"/>
     <path class="edge boots" data-a="L2" data-b="R1" d="M320 194 C470 194 510 158 660 158"/>
-    <path class="edge boots info" data-a="L3" data-b="R1" d="M320 246 C470 246 510 176 660 176"/>
-    <path class="edge kits" data-a="L4" data-b="R1" d="M320 298 C470 298 510 194 660 194"/>
-    <path class="edge plain" data-a="L6" data-b="R1" d="M320 402 C470 402 510 212 660 212"/>
-    <path class="edge plain" data-a="L7" data-b="R1" d="M320 454 C470 454 510 230 660 230"/>
-    <path class="edge plain" data-a="L8" data-b="R1" d="M320 506 C470 506 510 248 660 248"/>
-    <path class="edge kits" data-a="L4" data-b="R2" d="M320 298 C470 298 510 306 660 306"/>
-    <path class="edge plain" data-a="L5" data-b="R2" d="M320 350 C470 350 510 324 660 324"/>
-    <path class="edge players info" data-a="L1" data-b="R3" d="M320 142 C470 142 510 384 660 384"/>
-    <path class="edge boots info" data-a="L3" data-b="R3" d="M320 246 C470 246 510 402 660 402"/>
-    <path class="edge plain" data-a="L9" data-b="R5" d="M320 558 C470 558 510 540 660 540"/>
-    <path class="edge plain" data-a="R3" data-b="R4" d="M820 426 L820 452"/>
+    <path class="edge kits" data-a="L4" data-b="R1" d="M320 246 C470 246 510 176 660 176"/>
+    <path class="edge plain" data-a="L6" data-b="R1" d="M320 350 C470 350 510 194 660 194"/>
+    <path class="edge plain" data-a="L7" data-b="R1" d="M320 402 C470 402 510 212 660 212"/>
+    <path class="edge plain" data-a="L8" data-b="R1" d="M320 454 C470 454 510 230 660 230"/>
+    <path class="edge kits" data-a="L4" data-b="R2" d="M320 246 C470 246 510 289 660 289"/>
+    <path class="edge plain" data-a="L5" data-b="R2" d="M320 298 C470 298 510 307 660 307"/>
+    <path class="edge players info" data-a="L1" data-b="R3" d="M320 142 C470 142 510 367 660 367"/>
+    <path class="edge plain" data-a="L9" data-b="R5" d="M320 506 C470 506 510 523 660 523"/>
+    <path class="edge plain" data-a="R3" data-b="R4" d="M820 409 L820 435"/>
     <path class="edge plain info" data-a="T" data-b="R1" d="M570 60 C625 60 615 128 660 128"/>
-    <path class="edge plain info" data-a="T" data-b="R2" d="M570 80 C625 80 615 296 660 296"/>
+    <path class="edge plain info" data-a="T" data-b="R2" d="M570 80 C625 80 615 279 660 279"/>
   </g>
 
   <g class="node" id="L1"><rect class="box" x="20" y="120" width="300" height="44" rx="5"/>
@@ -122,57 +120,52 @@ matchdays after it" below.</p>
     <rect class="stripe boots" x="20" y="172" width="6" height="44" rx="2"/>
     <text class="title" x="36" y="191">Boots/Crocs/, Gloves/Mitts/</text>
     <text class="sub" x="36" y="209">boots and gloves several players share</text></g>
-  <g class="node" id="L3"><rect class="box" x="20" y="224" width="300" height="44" rx="5"/>
-    <rect class="stripe boots" x="20" y="224" width="6" height="44" rx="2"/>
-    <text class="title" x="36" y="243">legacy_ids.toml</text>
-    <text class="sub" x="36" y="261">the boots and gloves IDs the manager used</text></g>
-  <g class="node" id="L4"><rect class="box" x="20" y="276" width="300" height="44" rx="5"/>
-    <rect class="stripe kits" x="20" y="276" width="6" height="44" rx="2"/>
-    <text class="title" x="36" y="295">Kits/p1/ … Kits/g1/</text>
-    <text class="sub" x="36" y="313">texture, settings and colours, per kit</text></g>
-  <g class="node" id="L5"><rect class="box" x="20" y="328" width="300" height="44" rx="5"/>
-    <text class="title" x="36" y="347">colors.txt</text>
-    <text class="sub" x="36" y="365">the team's colours</text></g>
-  <g class="node" id="L6"><rect class="box" x="20" y="380" width="300" height="44" rx="5"/>
-    <text class="title" x="36" y="399">logo.png</text>
-    <text class="sub" x="36" y="417">the team's emblem, any size</text></g>
-  <g class="node" id="L7"><rect class="box" x="20" y="432" width="300" height="44" rx="5"/>
-    <text class="title" x="36" y="451">Portraits/05.dds</text>
-    <text class="sub" x="36" y="469">the players' portraits</text></g>
-  <g class="node" id="L8"><rect class="box" x="20" y="484" width="300" height="44" rx="5"/>
-    <text class="title" x="36" y="503">Common/, Collars/</text>
-    <text class="sub" x="36" y="521">files the players share</text></g>
-  <g class="node" id="L9"><rect class="box" x="20" y="536" width="300" height="44" rx="5"/>
-    <text class="title" x="36" y="555">notes.txt</text>
-    <text class="sub" x="36" y="573">the manager's note to you</text></g>
+  <g class="node" id="L4"><rect class="box" x="20" y="224" width="300" height="44" rx="5"/>
+    <rect class="stripe kits" x="20" y="224" width="6" height="44" rx="2"/>
+    <text class="title" x="36" y="243">Kits/p1/ … Kits/g1/</text>
+    <text class="sub" x="36" y="261">texture, settings and colours, per kit</text></g>
+  <g class="node" id="L5"><rect class="box" x="20" y="276" width="300" height="44" rx="5"/>
+    <text class="title" x="36" y="295">colors.txt</text>
+    <text class="sub" x="36" y="313">the team's colours</text></g>
+  <g class="node" id="L6"><rect class="box" x="20" y="328" width="300" height="44" rx="5"/>
+    <text class="title" x="36" y="347">logo.png</text>
+    <text class="sub" x="36" y="365">the team's emblem, any size</text></g>
+  <g class="node" id="L7"><rect class="box" x="20" y="380" width="300" height="44" rx="5"/>
+    <text class="title" x="36" y="399">Portraits/05.dds</text>
+    <text class="sub" x="36" y="417">the players' portraits</text></g>
+  <g class="node" id="L8"><rect class="box" x="20" y="432" width="300" height="44" rx="5"/>
+    <text class="title" x="36" y="451">Common/, Collars/</text>
+    <text class="sub" x="36" y="469">files the players share</text></g>
+  <g class="node" id="L9"><rect class="box" x="20" y="484" width="300" height="44" rx="5"/>
+    <text class="title" x="36" y="503">notes.txt</text>
+    <text class="sub" x="36" y="521">the manager's note to you</text></g>
   <g class="node" id="T"><rect class="box" x="350" y="46" width="220" height="48" rx="5"/>
     <text class="title" x="366" y="65">data\teams_list.txt</text>
     <text class="sub" x="366" y="83">gives each team its ID</text></g>
 
-  <g class="node" id="R1"><rect class="box" x="660" y="120" width="320" height="152" rx="5"/>
+  <g class="node" id="R1"><rect class="box" x="660" y="120" width="320" height="135" rx="5"/>
     <text class="title" x="676" y="139">4cc_41_teams.cpk and after</text>
     <text class="sub" x="676" y="157">each player's face, hair, boots and gloves</text>
-    <text class="sub" x="676" y="174">boots and gloves at the manager's IDs</text>
-    <text class="sub" x="676" y="191">kit textures and kit settings</text>
-    <text class="sub" x="676" y="208">the emblem, in the game's three sizes</text>
-    <text class="sub" x="676" y="225">portraits</text>
-    <text class="sub" x="676" y="242">shared files and collars</text>
-    <text class="note" x="676" y="261">installed in the game's download folder</text></g>
-  <g class="node" id="R2"><rect class="box" x="660" y="286" width="320" height="62" rx="5"/>
-    <text class="title" x="676" y="305">4cc_08_bins.cpk</text>
-    <text class="sub" x="676" y="323">one kit list and one colour table for the</text>
-    <text class="sub" x="676" y="339">whole league, every team's rows in them</text></g>
-  <g class="node" id="R3"><rect class="box" x="660" y="364" width="320" height="62" rx="5"/>
-    <rect class="stripe players" x="660" y="364" width="6" height="62" rx="2"/>
-    <text class="title" x="676" y="383">output\aesthetics_patch.toml</text>
-    <text class="sub" x="676" y="401">each player's looks, and the IDs of the</text>
-    <text class="sub" x="676" y="417">boots and gloves he was compiled with</text></g>
-  <g class="node" id="R4"><rect class="box save" x="660" y="452" width="320" height="48" rx="5"/>
-    <text class="title" x="676" y="471">The save</text>
-    <text class="sub" x="676" y="489">the patch is written into it; a .bak is kept</text></g>
-  <g class="node" id="R5"><rect class="box" x="660" y="518" width="320" height="44" rx="5"/>
-    <text class="title" x="676" y="537">output\teamnotes.txt</text>
-    <text class="sub" x="676" y="555">every team's note, in one file</text></g>
+    <text class="sub" x="676" y="174">kit textures and kit settings</text>
+    <text class="sub" x="676" y="191">the emblem, in the game's three sizes</text>
+    <text class="sub" x="676" y="208">portraits</text>
+    <text class="sub" x="676" y="225">shared files and collars</text>
+    <text class="note" x="676" y="244">installed in the game's download folder</text></g>
+  <g class="node" id="R2"><rect class="box" x="660" y="269" width="320" height="62" rx="5"/>
+    <text class="title" x="676" y="288">4cc_08_bins.cpk</text>
+    <text class="sub" x="676" y="306">one kit list and one colour table for the</text>
+    <text class="sub" x="676" y="322">whole league, every team's rows in them</text></g>
+  <g class="node" id="R3"><rect class="box" x="660" y="347" width="320" height="62" rx="5"/>
+    <rect class="stripe players" x="660" y="347" width="6" height="62" rx="2"/>
+    <text class="title" x="676" y="366">output\aesthetics_patch.toml</text>
+    <text class="sub" x="676" y="384">each player's looks, and the IDs of the</text>
+    <text class="sub" x="676" y="400">boots and gloves he was compiled with</text></g>
+  <g class="node" id="R4"><rect class="box save" x="660" y="435" width="320" height="48" rx="5"/>
+    <text class="title" x="676" y="454">The save</text>
+    <text class="sub" x="676" y="472">the patch is written into it; a .bak is kept</text></g>
+  <g class="node" id="R5"><rect class="box" x="660" y="501" width="320" height="44" rx="5"/>
+    <text class="title" x="676" y="520">output\teamnotes.txt</text>
+    <text class="sub" x="676" y="538">every team's note, in one file</text></g>
 </svg>
 <div class="legend">
   <span><i class="sw players"></i>players</span>

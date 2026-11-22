@@ -134,7 +134,6 @@ mod tests {
             common,
             hide_ids: fpc::HideIds::CONVENTION,
             teams_list: TeamsList::parse("ID\tName\n714\t/co/\n").unwrap(),
-            legacy_blocks: crate::plan::legacy_blocks::LegacyBlocks::embedded(),
             exports_root: root.join("exports"),
             exports: Vec::new(),
             timestamps: false,

@@ -11,11 +11,13 @@ use pes_version::PesVersion;
 
 use crate::carried::mtl;
 use crate::common::Sandbox;
-use crate::players::{boots, face, gloves, upgrade_with, wears};
+use crate::players::{boots, face, gloves, wears};
 
 /// `upgrade <input> --savefile <save>`.
 fn upgrade(sandbox: &Sandbox, input: &str, save: &str) -> crate::common::Run {
-    upgrade_with(sandbox, input, save, &[])
+    let input = sandbox.arg(input);
+    let save = sandbox.arg(save);
+    sandbox.run(&["upgrade", &input, "--savefile", &save])
 }
 
 /// The `settings.toml` at `path` (an output-relative path ending in
@@ -176,59 +178,6 @@ fn an_unclaimed_custom_model_becomes_the_hide_id_with_a_folder() {
         assert!(run.stdout().contains(line), "{line}\n{}", run.stdout());
     }
     sandbox.assert_nothing_written("co Full Summer", &run.stdout());
-}
-
-// EU-SET-15
-#[test]
-fn the_worn_item_folder_ids_are_recorded_in_legacy_ids_toml() {
-    let sandbox = Sandbox::new("set_legacy_ids");
-    sandbox.logo("co Spring");
-    face(&sandbox, "co Spring/Faces/XXX03 - A");
-    // Slot 05 has no face folder, as in EU-PLY-02: the boots folder's name
-    // part names him.
-    boots(&sandbox, "co Spring/Boots/k0430 - Crocs");
-    gloves(&sandbox, "co Spring/Gloves/g0431");
-    // Slot 09's worn boots folder holds no model: it claims the category
-    // (fpc_on) but records no ID.
-    sandbox.write("co Spring/Boots/k0440 - Empty/boots.skl", b"skl");
-    sandbox.save_edited("EDIT", PesVersion::Pes21, |file| {
-        wears(file, 71405, 430, 0);
-        wears(file, 71406, 0, 431);
-        wears(file, 71407, 0, 431);
-        wears(file, 71408, 55, 0);
-        wears(file, 71409, 440, 0);
-    });
-
-    let run = upgrade_with(&sandbox, "co Spring", "EDIT", &["--legacy-ids"]);
-    assert_eq!(run.exit_code(), 0, "{}", run.stdout());
-    assert!(run.stdout().contains("migration_clean"), "{}", run.stdout());
-    assert_eq!(
-        fs::read_to_string(sandbox.path("co Full Spring/legacy_ids.toml")).unwrap(),
-        concat!(
-            "# The old export's boots and gloves IDs, which the Compiler packs instead of its own (VGL27).\n",
-            "[05]\nboots = 430\n",
-            "[06]\ngloves = 431\n",
-            "[07]\ngloves = 431\n",
-        )
-    );
-
-    // The same export without the flag writes no file.
-    let out = sandbox.arg("again");
-    let run = upgrade_with(&sandbox, "co Spring", "EDIT", &["-o", out.as_str()]);
-    assert_eq!(run.exit_code(), 0, "{}", run.stdout());
-    assert!(
-        !sandbox
-            .path("again/co Full Spring/legacy_ids.toml")
-            .exists()
-    );
-
-    // An export whose players wear only stock IDs writes no file either.
-    face(&sandbox, "co Summer/Faces/XXX03 - A");
-    sandbox.logo("co Summer");
-    sandbox.save_edited("EDIT2", PesVersion::Pes21, |file| wears(file, 71403, 12, 3));
-    let run = upgrade_with(&sandbox, "co Summer", "EDIT2", &["--legacy-ids"]);
-    assert_eq!(run.exit_code(), 0, "{}", run.stdout());
-    assert!(!sandbox.path("co Full Summer/legacy_ids.toml").exists());
 }
 
 // EU-SET-04

@@ -196,10 +196,6 @@ fn upgrade_upgrades_every_old_export_and_tallies() {
         "the exe is started once for both exports: {log}"
     );
     assert!(
-        commands[0].contains("--legacy-ids"),
-        "the run passes --legacy-ids: {log}"
-    );
-    assert!(
         sandbox
             .root
             .join("exports/co Full - Spring (VGL26)")

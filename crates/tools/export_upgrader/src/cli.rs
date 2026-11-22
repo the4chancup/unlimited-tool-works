@@ -32,7 +32,7 @@ enum ExportUpgraderCommand {
     Upgrade(UpgradeArgs),
 }
 
-/// `upgrade [<export>...] [--all <DIR>] [--savefile <EDIT> | --loose] [--coverage full|midcup] [--legacy-ids] [-o <dir>]`.
+/// `upgrade [<export>...] [--all <DIR>] [--savefile <EDIT> | --loose] [--coverage full|midcup] [-o <dir>]`.
 #[derive(Debug, Args)]
 pub(crate) struct UpgradeArgs {
     /// The old exports: each a folder, a .zip or a .7z file.
@@ -54,10 +54,6 @@ pub(crate) struct UpgradeArgs {
     /// from the old name.
     #[arg(long, value_enum)]
     pub(crate) coverage: Option<Coverage>,
-    /// VGL27's legacy mode: no shared boots or gloves folders, and the
-    /// root `legacy_ids.toml` the Compiler packs the old IDs from.
-    #[arg(long)]
-    pub(crate) legacy_ids: bool,
     /// The folder each output goes in, created when missing; without it, each
     /// output goes beside its input.
     #[arg(short, long, value_name = "DIR")]

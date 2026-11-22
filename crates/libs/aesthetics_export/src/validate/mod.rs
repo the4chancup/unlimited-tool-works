@@ -102,9 +102,6 @@ pub struct RootArtifacts {
     /// A team export's `write_names` marker: the export's players' names are
     /// the aesthetics patch's to write.
     pub write_names: bool,
-    /// A team export's `legacy_ids.toml`: VGL27's old boots and gloves IDs,
-    /// read by the Compiler.
-    pub legacy_ids: Option<FileDescriptor>,
 }
 
 /// The sanitized export: exactly the content no issue dropped.
@@ -355,7 +352,6 @@ impl ParsedAestheticsExport {
             kit.colors = kit.colors.take().filter(file_kept);
         }
         root.team_colors = root.team_colors.filter(file_kept);
-        root.legacy_ids = root.legacy_ids.filter(file_kept);
         portraits.retain(|_, file| file_kept(file));
         let logo = logo.filter(|logo| {
             file_kept(&logo.main.file)

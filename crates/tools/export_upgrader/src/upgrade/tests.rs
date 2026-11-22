@@ -151,7 +151,6 @@ fn a_model_file_in_any_letter_case_makes_a_loose_run_pre_fox() {
         all: None,
         savefile: None,
         loose: true,
-        legacy_ids: false,
         coverage: None,
         output: None,
     };
@@ -185,7 +184,6 @@ fn a_refs_txt_that_is_not_utf8_is_unmigrated_and_no_players_txt_is_written() {
         all: None,
         savefile: None,
         loose: false,
-        legacy_ids: false,
         coverage: None,
         output: None,
     };
@@ -240,7 +238,6 @@ fn a_second_note_and_an_unclaimed_file_get_their_reasons() {
         all: None,
         savefile: None,
         loose: true,
-        legacy_ids: false,
         coverage: None,
         output: None,
     };
@@ -368,7 +365,6 @@ fn the_input_is_processed_once_its_named_output_is_validated() {
         all: None,
         savefile: Some(save),
         loose: false,
-        legacy_ids: false,
         coverage: None,
         output: None,
     };
@@ -439,7 +435,6 @@ fn the_progress_starts_past_the_root_files_and_rises_by_one_to_the_output_s_file
             all: None,
             savefile: None,
             loose,
-            legacy_ids: false,
             coverage: None,
             output: Some(root.join(format!("{export} out"))),
         };
@@ -505,7 +500,6 @@ fn an_unused_pairs_dds_is_dropped_and_the_other_copies_written() {
         all: None,
         savefile: None,
         loose: true,
-        legacy_ids: false,
         coverage: None,
         output: None,
     };

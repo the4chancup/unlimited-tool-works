@@ -183,79 +183,6 @@ What exists of this is in `spec/team_compiler/pipeline.md` "6. Post-processing".
   launcher: both start the same exe the same way, and the GUI phase is where its only manual
   check lives.
 
-### Legacy boots and gloves IDs (VGL27)
-
-VGL27's managers keep the old export format and Red for their own test compiles, against the
-official DLC's save. Red packs a boots or gloves folder under the ID its name carries
-(`k0430 - Crocs` is boots 430), each team's IDs inside the 25-ID block the cup gave it once
-for good. Studio's ID allocation ("2. Per-export serial steps", the 40-ID per-team blocks in
-`spec/aesthetics_export/player_folders.md`) gives the same model another ID, so a manager's
-test CPK and the official save would disagree on every custom boots and gloves ID.
-
-The organizer upgrades every VGL27 export in the upgrader's legacy mode (`--legacy-ids`,
-`plans/export_upgrader.md` "What it does"), midcups included, and the compiler packs and
-patches the old IDs of an export so upgraded. Managers change nothing: they keep sending Red
-exports, so the experiment is invisible to them.
-
-VGL28 runs on Studio's IDs, and the mode, the file and this section are then removed. The mode
-is temporary, so it changes as little as it can: faces and kits need nothing (both tools name
-them by team ID and slot), stock-band IDs (1 to 100) are untouched, and nothing else in the
-compile reads the file.
-
-- **The old IDs** come from the export's root file `legacy_ids.toml`, which only a legacy
-  upgrade writes: per player slot, the custom boots and gloves IDs (above 100) his folders
-  were packed under in Red.
-  - The file's presence is the switch, with no compiler setting: only the organizer's legacy
-    upgrades carry it, and a second switch would be one more step per compile to forget.
-  - It is a known root file, so validation does not warn about it.
-  - A file that does not parse is an Error (`legacy_ids_invalid`), the file ignored and the
-    export compiled on Studio's IDs.
-  - It is one table per team rather than keys in each `settings.toml`, so the file members
-    edit carries nothing that leaves with VGL27.
-- **Packing.** A legacy upgrade merges each worn boots or gloves folder into its wearers'
-  folders, so mostly a player folder's own packages change: a slot whose table records an ID
-  of a kind has that package emitted under the old ID instead of his exclusive one, and his
-  patch row carries it.
-
-  Slots that shared a Red folder recorded its one ID and hold byte-identical copies. So each
-  old ID is packed once per team, by the first slot in roster order recording it, and every
-  other slot recording it takes its row from that package (gated on its task, as a linked
-  shared folder's row is).
-
-  A slot whose own package of a kind has no recorded ID (a model under a stock ID, a
-  hand-made folder) is not packed for that kind, and the patch leaves his ID of that kind as
-  the save holds it. There is no finding, because every VGL27 export goes through the
-  upgrader, so a missing ID is no manager's mistake. It is not packed under his slot ID
-  either, because a slot ID could land in another team's old block.
-
-  A shared folder the upgrade kept (its merge clashed with a wearer's file) packs under the
-  old ID its first plain linker in roster order records for its kind, whether it would take a
-  shared ID or that slot's exclusive one. Its wearers' rows find that package as above. A
-  shared folder no linker records an ID for packs on Studio's IDs as usual.
-
-  FoxDen's per-kit boots and gloves packages are not written for these IDs: old exports have
-  none.
-- **Out of block** (poc13e, in the PoC: the VGL27 Friendlies' /hanny/ export packs /gfg/'s
-  IDs, and the two `k2351` paths stopped the compile on a Fatal). An old ID outside its
-  team's block in `legacy_boots_blocks.txt`, or any old ID of a team the table does not
-  list, is an Error (`legacy_id_out_of_block`, naming the ID, the folder and the block, or
-  "none"): a folder packed under another team's ID puts its model over that team's.
-
-  The check is on what the export packs, not on what players wear: that folder is not packed
-  under that ID, but its wearers' patch entries still carry it (a player may wear another
-  team's boots, as a manager's save sets it), and the folder's other IDs are packed. The
-  Error names the folder that would have packed the ID, once: a player folder that only
-  links a kept-shared folder packs nothing of that kind, so the shared folder alone is
-  named, not each wearer.
-
-  The table lives in the data directory (beside `teams_list.txt`, created from the embedded
-  copy the first time a legacy export is compiled). It has two tab-separated columns, `Name`
-  and `FirstBootsID`, one row per VGL team. A block is `FirstBootsID` to
-  `FirstBootsID + 24`, for boots and gloves alike. The embedded copy is the wiki's PES 2019
-  boots table from /2hug/ on, with /feg/'s and /uma/'s rows from the organizer. A team is
-  found by its teams-list name, letter case aside. The real GBFG VGL26 export's `g2522` and
-  `g2523` are such IDs (its block is 2301 to 2325, /ksg/'s 2501 to 2525).
-
 ### Recovery manifest
 
 An export is sometimes lost, and the cup's DLC is then the only copy of what it held. For a
@@ -293,7 +220,7 @@ install, not a DLC anyone recovers an export from.
     `pre-fox`, `fox`, `write_names`).
 - **The export's files that the CPK holds under no path of their own, as files**: its
   settings (`settings.toml`, each kit's `config.toml`, each model folder's `materials.toml`),
-  its lists (`players.txt`, a refs export's `ref_lists.txt`, `legacy_ids.toml`) and its
+  its lists (`players.txt`, a refs export's `ref_lists.txt`) and its
   `colors.txt`, `notes.txt` and `README.txt` files, at their paths relative to the export
   folder, beside the manifest. The rule is the general one, not the list: every file with
   content that the export model knows travels here unless the manifest already maps it to a
