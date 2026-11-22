@@ -84,10 +84,11 @@ cards run on one build, a release build copied to `4cc-studio-temp/tasks_build/`
 the tasks page's intro with its commit; a card that needs a later commit refreshes the copy
 and the intro in the same edit (never while the maintainer has it open: copy beside it then).
 
-**A tool whose draft is not final gets no work on its built UI.** No slice changes its look,
-and no difference between its built window and its draft is captured, logged or fixed, until
-the maintainer calls its draft final. Which drafts are final is listed in the worklog's
-"Current status", and a tool not listed there as final has no final draft. A change to such
+**A tool whose draft is not buildable gets no work on its built UI.** No slice changes its
+look, and no difference between its built window and its draft is captured, logged or fixed,
+until the maintainer calls its draft buildable. A buildable draft can still change later; it
+is the one the build follows meanwhile. Which drafts are buildable is listed in the worklog's
+"Current status", and a tool not listed there has none. A change to such
 a tool's code that a member does not see (a rename, a test) still lands, and a test that
 clicks its UI is fixed in the test.
 

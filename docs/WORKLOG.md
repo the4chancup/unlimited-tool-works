@@ -16,9 +16,10 @@ the PES 2019 check (DECISIONS 2026-11-16 "0.0.2 is cut without Select all simila
 rounds and the PES 2019 check"), and the no-stretch slices moved to after it (2026-11-16 "The
 no-stretch slices move to after 0.0.2"). Card `poc5-in-game` stays open.
 
-**Final drafts**: the Save editor's, the Compiler's and the Export upgrader's, so their built
-UI follows them. Every other tool's draft is not final (the Ruleset editor's), and its built UI
-is not worked on (`RUNBOOK.md` "How the work runs"). Only the maintainer moves a tool here.
+**Buildable drafts**: the Save editor's, the Compiler's and the Export upgrader's, so their
+built UI follows them. Every other tool's draft is not buildable (the Ruleset editor's), and its
+built UI is not worked on (`RUNBOOK.md` "How the work runs"). Only the maintainer moves a tool
+here.
 
 **Now, a detour: PES 2014 saves for Akko League VII.** The Save editor learns PES 2014 on the
 long-lived branch `pes14`, which never merges into main (DECISIONS 2026-11-19 "PES 2014 support
@@ -3838,7 +3839,7 @@ points there.
   (a sideways scroll reaches them), where the draft (`ruleset_editor/general?preview=1`) wraps
   long names onto two lines ("Attacking / Prowess") and shows four columns. It was already so
   with the old 560-point preview; seen in the release build of the larger-window slice
-  (`.tmp/lead/re_look/`). Dropped 2026-11-23: the Ruleset editor's draft is not final, so
+  (`.tmp/lead/re_look/`). Dropped 2026-11-23: the Ruleset editor's draft is not buildable, so
   its built UI is not compared with it (DECISIONS).
 - resolved 2026-11-22 (dropped) — The trial of whether SubQ Snap can tell a flaky test from a
   steady one, as it tells a test that proves its scenario from one that does not. Asked per

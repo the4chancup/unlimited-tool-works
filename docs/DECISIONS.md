@@ -19793,3 +19793,11 @@ and the Compiler's and the Export upgrader's drafts are final. The Save editor's
 final because its view was built and released against it.
 Plan: `RUNBOOK.md` "How the work runs", the rule "A tool whose draft is not final gets no work
 on its built UI"; `WORKLOG.md` "Current status".
+
+## 2026-11-23 — conduct, built UI — a draft the build follows is "buildable", not "final"
+Decision: the two entries above say "final" for the drafts whose built UI is worked on; the
+term is "buildable": a buildable draft can still change later, and it is the one the build
+follows meanwhile. The rule and the worklog's list use it.
+Why: the maintainer: a UI that is final can still receive improvements later on.
+Plan: `RUNBOOK.md` "How the work runs", the rule "A tool whose draft is not buildable gets no
+work on its built UI"; `WORKLOG.md` "Current status".
