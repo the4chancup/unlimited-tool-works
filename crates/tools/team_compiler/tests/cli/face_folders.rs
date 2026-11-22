@@ -119,6 +119,7 @@ fn a_name_holding_the_legacy_kit_token_is_refused_once_on_its_outermost_name() {
             &clean_model(),
         );
     }
+    sandbox.complete(export);
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["check"]);
 
@@ -286,6 +287,7 @@ fn under_ingame_face_an_empty_face_subfolder_is_ignored() {
     );
     // Slot 07 of TC-MOD-19's export, an empty `face/` alone, shows such a folder is seen.
     fs::create_dir_all(sandbox.root.join(format!("{player}/face"))).unwrap();
+    sandbox.complete("exports/co Midcup Empty");
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -385,6 +387,7 @@ fn a_face_file_in_a_folder_with_no_face_model_is_not_used_and_reported() {
         sandbox.write(&format!("{export}/{player}/face_diff.bin"), &own);
     }
     sandbox.write(&format!("{export}/Players/07 - B/ingame_face.toml"), b"");
+    sandbox.complete(export);
     let validated = [
         "Info fmdl_weights_not_normalized [Keep] at Players/05 - A (file=boots.fmdl, count=1662)",
         "Info fmdl_weights_not_normalized [Keep] at Players/07 - B (file=boots.fmdl, count=1662)",
@@ -438,6 +441,7 @@ fn a_link_to_a_face_folder_holding_textures_alone_gives_no_face() {
     sandbox.write(&format!("{player}/Round.face"), b"");
     // A texture source, not a face: the player's own diff has no face model to go with.
     sandbox.write(&format!("{export}/Faces/Round/skin.dds"), &small_dds());
+    sandbox.complete(export);
     let validated = [
         "Info fmdl_weights_not_normalized [Keep] at Players/05 - A (file=boots.fmdl, count=1662)",
         "Info export_identified [Keep] (team=/co/, id=714)",

@@ -12,11 +12,11 @@ use uniparam::UniformParameter;
 
 use crate::bins::dpfl_bytes;
 use crate::common::{Run, Sandbox};
-use crate::compile::{cpk_entries, kit_texture, pes21_settings, tracer_export, tracer_player_file};
+use crate::compile::{cpk_entries, kit_texture, pes21_settings, tracer_player_file};
 use crate::compile_exports::{TEAM_COLOR, UNI_COLOR, UNIFORM_PARAMETER};
-use crate::deploy::{install_pes, templates_folder};
+use crate::deploy::{install_pes, templates_folder, tracer_copy};
 use crate::patch_written;
-use crate::referees::{REFEREE_CONFIGS, write_refs_with_marker};
+use crate::referees::{REFEREE_CONFIGS, REFS, write_refs_with_marker};
 use crate::snapshot;
 use crate::upgrade::pes17_list;
 
@@ -35,11 +35,12 @@ const TEAMS_SLOTS: [&str; 5] = [
     "4cc_45_teams.cpk",
 ];
 
-/// A sandbox holding the tracer as each export of `exports`.
+/// A sandbox holding the tracer as each export of `exports`, completed.
 fn sandbox_with(name: &str, exports: &[&str]) -> Sandbox {
     let sandbox = Sandbox::new(name);
     for export in exports {
         sandbox.copy_tracer(export);
+        sandbox.complete(&format!("exports/{export}"));
     }
     sandbox
 }
@@ -171,6 +172,7 @@ fn teams_fill_the_slots_first_fit_and_the_bins_go_into_the_bins_cpk() {
 fn a_refs_export_alone_on_fox_writes_the_bins_cpk_for_its_configs_and_every_part_a_placeholder() {
     let sandbox = Sandbox::new("multicpk_refs_alone");
     write_refs_with_marker(&sandbox, Some(&tracer_player_file("shirt.dds")));
+    sandbox.complete(REFS);
 
     let run = compile(&sandbox, &multicpk_settings(&sandbox, ""));
 
@@ -274,15 +276,13 @@ fn content_past_the_last_slot_aborts_the_run_naming_the_shortfall() {
 #[test]
 fn a_single_cpk_past_the_cap_is_a_warning_and_is_written_whole() {
     let sandbox = Sandbox::new("single_cpk_over_cap");
+    let tracer = tracer_copy(&sandbox);
     let settings = format!(
         "{}[compiler]\ncpk_part_max_size = 4096\n",
         pes21_settings(&sandbox)
     );
 
-    let run = sandbox.run(
-        &settings,
-        &["compile", "--no-deploy", "--export", &tracer_export()],
-    );
+    let run = sandbox.run(&settings, &["compile", "--no-deploy", "--export", &tracer]);
 
     assert_eq!(run.exit_code(), 0);
     let lines = run.messages();
@@ -558,13 +558,14 @@ fn test_mode_writes_its_loose_files_as_without_multi_cpk_mode() {
         ("multicpk_test_mode_off", false),
     ] {
         let sandbox = Sandbox::new(name);
+        let tracer = tracer_copy(&sandbox);
         let settings = format!(
             "{}[compiler]\nmulticpk_mode = {multicpk}\n",
             pes21_settings(&sandbox)
         );
         let run = sandbox.run(
             &settings,
-            &["compile", "--mode", "test", "--export", &tracer_export()],
+            &["compile", "--mode", "test", "--export", &tracer],
         );
         assert_eq!(run.exit_code(), 0, "{name}");
         assert_eq!(

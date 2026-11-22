@@ -20,10 +20,12 @@ use pes_model::format::mtl::{
     Address, Filter, Material, MaterialEntry, MaterialSet, Sampler, Vector,
 };
 
+use pes_version::PesVersion;
+
 use crate::prefox_faces::{
-    BOOTS_K0625, CLEAN, card_materials, card_model, common_output, entries_under, face_cpk,
-    face_folder, nested_entries, ordered_entries, pes17, pre_fox_fixture, sampler_paths, small_dds,
-    write_round_hat, write_slot_05_face,
+    BOOTS_K0625, CLEAN, card_materials, card_model, common_output, complete_pes17, entries_under,
+    face_cpk, face_folder, nested_entries, ordered_entries, pes17, pre_fox_fixture, sampler_paths,
+    small_dds, write_round_hat, write_slot_05_face,
 };
 use crate::textures::texture_fixture;
 use crate::{Face, clean_model, findings_of, patch_written, sorted_faces};
@@ -67,6 +69,7 @@ fn face_names<'a>(face: &'a BTreeMap<String, Vec<u8>>, folder: &str) -> Vec<&'a 
 fn the_tracer_s_fox_models_compile_for_pes_17_as_model_files_with_their_materials() {
     let sandbox = Sandbox::new("conversion_tracer_pes17");
     sandbox.copy_tracer("egg Midcup Tracer");
+    complete_pes17(&sandbox, "egg Midcup Tracer");
 
     let run = sandbox.run(&pes_settings(&sandbox, 17), &["compile", "--no-deploy"]);
 
@@ -245,6 +248,7 @@ fn the_tracer_s_fox_models_compile_for_pes_17_as_model_files_with_their_material
 fn a_fox_model_re_bound_to_pes_15_s_skeleton_is_reported_naming_it() {
     let sandbox = Sandbox::new("conversion_tracer_pes15");
     sandbox.copy_tracer("egg Midcup Tracer");
+    sandbox.complete_for("exports/egg Midcup Tracer", PesVersion::Pes15, &[]);
 
     let run = sandbox.run(&pes_settings(&sandbox, 15), &["compile", "--no-deploy"]);
 
@@ -299,9 +303,10 @@ fn a_fox_model_re_bound_to_pes_15_s_skeleton_is_reported_naming_it() {
     assert_eq!(run.exit_code(), 0);
 }
 
-/// `compile --no-deploy` for PES 17 of the sandbox's exports: the lines of the export `name`
-/// and slot 05's face CPK entries.
+/// `compile --no-deploy` for PES 17 of the sandbox's exports, `exports/<name>` completed for
+/// it first: the lines of the export `name` and slot 05's face CPK entries.
 fn compiled_slot_05(sandbox: &Sandbox, name: &str) -> (Vec<String>, BTreeMap<String, Vec<u8>>) {
+    complete_pes17(sandbox, name);
     let run = sandbox.run(&pes17(sandbox), &["compile", "--no-deploy"]);
     let lines = run.messages();
     assert_eq!(run.exit_code(), 0, "{lines:#?}");
@@ -414,6 +419,9 @@ fn a_hidden_fox_mesh_is_left_out_of_the_converted_model_with_no_finding() {
         &format!("{player}/face_high.fmdl"),
         &model.to_file().unwrap().write(),
     );
+    for sandbox in [&plain, &hidden] {
+        complete_pes17(sandbox, "egg Midcup Tracer");
+    }
 
     let compiled = |sandbox: &Sandbox| {
         let run = sandbox.run(&pes_settings(sandbox, 17), &["compile", "--no-deploy"]);
@@ -459,14 +467,17 @@ fn slot_05(export: &str) -> String {
 }
 
 /// `compile --no-deploy` of the sandbox's exports for PES `version` (`pes_settings`, with
-/// `extra` settings appended): the run's exit code, the lines of the export `name`, and the
-/// output CPK's entries, none when the run wrote no CPK.
+/// `extra` settings appended), `exports/<name>` completed for it first: the run's exit code,
+/// the lines of the export `name`, and the output CPK's entries, none when the run wrote no
+/// CPK.
 fn compiled_for(
     sandbox: &Sandbox,
     version: u8,
     extra: &str,
     name: &str,
 ) -> (u8, Vec<String>, BTreeMap<String, Vec<u8>>) {
+    let pes = PesVersion::from_number(version.into()).unwrap();
+    sandbox.complete_for(&format!("exports/{name}"), pes, &[]);
     let settings = format!("{}{extra}", pes_settings(sandbox, version));
     let run = sandbox.run(&settings, &["compile", "--no-deploy"]);
     let lines = findings_of(&run.messages(), name)
@@ -1809,10 +1820,11 @@ const PRE_FOX_HOME_714_05: &str = "model/character/uniform/common/714/05 - A/";
 const ENVIRONMENT_714_05: &str =
     "common/character1/model/character/uniform/common/714/05 - A/env.dds";
 
-/// Writes slot 05 of the export `export` holding `boots.fmdl` made of `metal_model()`, and
-/// gives `compiled_metal` of its face's `boots.mtl`.
+/// Writes slot 05 of the export `export` holding `boots.fmdl` made of `metal_model()`,
+/// completes the export, and gives `compiled_metal` of its face's `boots.mtl`.
 fn compiled_metal_boots(sandbox: &Sandbox, export: &str) -> (Vec<String>, MaterialSet, Vec<u8>) {
     sandbox.write(&format!("{}/boots.fmdl", slot_05(export)), &metal_model());
+    complete_pes17(sandbox, export);
     compiled_metal(sandbox, "boots.mtl")
 }
 
@@ -1937,6 +1949,7 @@ fn a_fox_metal_material_compiled_for_pes_17_reflects_the_template_environment_ma
 fn a_linked_face_folder_s_metal_material_reflects_the_environment_map_in_the_player_s_home() {
     let sandbox = Sandbox::new("conversion_metal_shared_face");
     write_round_hat(&sandbox, "co Midcup Metal", &metal_model());
+    complete_pes17(&sandbox, "co Midcup Metal");
 
     let (_, materials, environment) = compiled_metal(&sandbox, "hat.mtl");
 
@@ -1977,6 +1990,7 @@ fn an_env_texture_link_is_the_environment_map_a_metal_material_names() {
         &format!("exports/{export}/Common/env.dds"),
         &wezlib::compress(&small_dds()),
     );
+    complete_pes17(&sandbox, export);
     let settings = format!("{}[compiler]\ndds_compression = true\n", pes17(&sandbox));
 
     let run = sandbox.run(&settings, &["compile", "--no-deploy"]);
@@ -2030,6 +2044,7 @@ fn a_shared_boots_folder_s_metal_material_reflects_the_environment_map_beside_it
         &format!("exports/{export}/Boots/Mud/boots.fmdl"),
         &metal_model(),
     );
+    complete_pes17(&sandbox, export);
     let settings = format!("{}[compiler]\ndds_compression = true\n", pes17(&sandbox));
 
     let run = sandbox.run(&settings, &["compile", "--no-deploy"]);
@@ -2057,8 +2072,8 @@ fn a_shared_boots_folder_s_metal_material_reflects_the_environment_map_beside_it
 
 /// Compiles for PES 17 with `dds_compression` on an export holding slot 05's own face and
 /// `Common/legs.fmdl` made of `metal_model()`, with `env`, when given, as `Common/env.dds`,
-/// and gives the Common output's `legs.mtl` as `pes_model` reads it and its `env.dds`,
-/// unwrapped.
+/// the export completed first. Gives the Common output's `legs.mtl` as `pes_model` reads it,
+/// and its `env.dds`, unwrapped.
 fn compiled_common_metal(sandbox: &Sandbox, env: Option<&[u8]>) -> (MaterialSet, Vec<u8>) {
     let export = "co Midcup Metal";
     write_slot_05_face(sandbox, export);
@@ -2067,6 +2082,7 @@ fn compiled_common_metal(sandbox: &Sandbox, env: Option<&[u8]>) -> (MaterialSet,
     if let Some(env) = env {
         sandbox.write(&format!("{common}/env.dds"), env);
     }
+    complete_pes17(sandbox, export);
     let settings = format!("{}[compiler]\ndds_compression = true\n", pes17(sandbox));
 
     let run = sandbox.run(&settings, &["compile", "--no-deploy"]);

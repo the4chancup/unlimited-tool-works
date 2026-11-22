@@ -71,8 +71,9 @@ fn compile(sandbox: &Sandbox) -> (Run, BTreeMap<String, Vec<u8>>) {
     compile_for(sandbox, PesVersion::Pes21)
 }
 
-/// `compile` for `version`.
+/// `compile` for `version`, after completing the refs export for it.
 fn compile_for(sandbox: &Sandbox, version: PesVersion) -> (Run, BTreeMap<String, Vec<u8>>) {
+    sandbox.complete_for(REFS, version, &[]);
     let settings = pes_settings(sandbox, version.number().try_into().unwrap());
     let run = sandbox.run(&settings, &["compile", "--no-deploy"]);
     let entries = cpk_entries(&sandbox.root.join("output").join(REFS_CPK));
@@ -276,6 +277,7 @@ fn a_marked_referee_folder_holding_a_texture_alone_reports_it_not_used() {
         &format!("{REFS}/Players/Ref A/skin.dds"),
         &tracer_player_file("shirt.dds"),
     );
+    sandbox.complete(REFS);
 
     // `ingame_face.toml` plans no package, so nothing would name the texture.
     let check = sandbox.run(&pes21_settings(&sandbox), &["check"]);
@@ -306,6 +308,7 @@ fn a_refs_export_s_root_colors_txt_is_not_read_so_not_checked() {
     let sandbox = Sandbox::new("ref_root_colors");
     write_ref_a(&sandbox, &["01"]);
     sandbox.write(&format!("{REFS}/colors.txt"), b"not a color\n");
+    sandbox.complete(REFS);
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["check"]);
 
@@ -331,6 +334,7 @@ fn a_referee_folder_holding_textures_alone_packs_them_with_his_blank_face() {
         &format!("{REFS}/Players/Ref A/skin.dds"),
         &tracer_player_file("shirt.dds"),
     );
+    sandbox.complete(REFS);
 
     // His blank face is a package, so the texture has somewhere to go and is no mistake.
     let check = sandbox.run(&pes21_settings(&sandbox), &["check"]);
@@ -365,6 +369,7 @@ fn a_referee_folder_holding_a_texture_link_alone_gets_the_blank_face() {
         &format!("{REFS}/Common/skin.dds"),
         &tracer_player_file("shirt.dds"),
     );
+    sandbox.complete(REFS);
 
     // His blank face is a package, so the linked texture has somewhere to go and is no
     // mistake.
@@ -833,6 +838,9 @@ fn a_referee_folder_with_a_category_subfolder_is_player_layout_proto_and_a_team_
         }
         sandbox.write(&format!("{folder}/skin.dds"), &small_dds());
     }
+    for export in [REFS.to_owned(), format!("exports/{team}")] {
+        sandbox.complete_for(&export, PesVersion::Pes17, &[]);
+    }
 
     let check = sandbox.run(&pes_settings(&sandbox, 17), &["check"]);
 
@@ -1121,6 +1129,7 @@ fn a_ref_marker_goes_into_the_refs_cpk_as_collar_77_which_every_referee_kit_wear
     let data_cpk = fs::read(templates_folder().join("placeholder.cpk")).unwrap();
     sandbox.write("PES/Data/dt00_x64.cpk", &data_cpk);
     write_refs_with_marker(&sandbox, Some(&tracer_player_file("shirt.dds")));
+    sandbox.complete(REFS);
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile"]);
 
@@ -1368,6 +1377,7 @@ fn a_shared_face_two_referees_link_is_merged_into_each_one_s_face() {
 fn test_mode_writes_a_referee_folder_s_processed_files_once() {
     let sandbox = Sandbox::new("ref_test_mode");
     write_ref_a(&sandbox, &["01", "20"]);
+    sandbox.complete(REFS);
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--mode", "test"]);
 
@@ -1662,6 +1672,7 @@ fn on_pes_17_a_referee_s_linked_boots_model_takes_its_own_mtl_and_not_a_common_o
         &materials_naming("cloth"),
     );
     sandbox.write(&format!("{REFS}/Common/cloth.dds"), &small_dds());
+    sandbox.complete_for(REFS, PesVersion::Pes17, &[]);
     let settings = format!(
         "{}[compiler]\nstrict_file_type_check = false\n",
         pes_settings(&sandbox, 17)
@@ -1844,10 +1855,12 @@ fn a_refs_export_s_kits_define_no_kit_number_to_complete_a_referee_s_texture_set
     );
 }
 
-/// Writes TC-REF-01's referee in slot 01 beside the tracer as /co/ (714).
+/// Writes TC-REF-01's referee in slot 01 beside the tracer as /co/ (714), both completed.
 fn refs_beside_co(sandbox: &Sandbox) {
     write_ref_a(sandbox, &["01"]);
     sandbox.copy_tracer("co Midcup Tracer");
+    sandbox.complete(REFS);
+    sandbox.complete("exports/co Midcup Tracer");
 }
 
 /// Asserts the team CPK at `team` holds /co/'s kit and no referee path, and the refs CPK at
@@ -1930,6 +1943,7 @@ fn a_referee_with_the_gloves_checkbox_and_no_gloves_is_reported() {
         &format!("{folder}/settings.toml"),
         b"[appearance.strip]\ngloves = true\n",
     );
+    sandbox.complete(REFS);
 
     for args in [&["check"][..], &["compile", "--no-deploy"][..]] {
         let run = sandbox.run(&pes21_settings(&sandbox), args);
@@ -1965,6 +1979,7 @@ fn a_referee_s_linked_gloves_his_own_package_are_no_winter_gloves() {
         &format!("{folder}/settings.toml"),
         b"[appearance.strip]\ngloves = true\n",
     );
+    sandbox.complete(REFS);
 
     for args in [&["check"][..], &["compile", "--no-deploy"][..]] {
         let run = sandbox.run(&pes21_settings(&sandbox), args);

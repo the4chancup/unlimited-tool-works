@@ -11,10 +11,11 @@ use fpk::FpkFile;
 use crate::bins::install_names;
 use crate::common::{Run, Sandbox};
 use crate::common_links::model_naming_in;
-use crate::compile::{cpk_entries, pes21_settings, tracer_export, tracer_kit, tracer_player_file};
+use crate::compile::{cpk_entries, pes21_settings, tracer_kit, tracer_player_file};
 use crate::compile_exports::{
     TEAM_COLOR, UNI_COLOR, UNIFORM_PARAMETER, bundled_uni_color, uni_record,
 };
+use crate::deploy::tracer_copy;
 use crate::sideload::slashed;
 use crate::snapshot;
 use crate::textures::hair_model_naming;
@@ -82,13 +83,13 @@ fn hair_textures(bytes: &[u8]) -> Vec<TexturePath> {
 #[test]
 fn test_mode_writes_each_export_s_files_unpacked_and_the_bins_under_bins() {
     let normal = Sandbox::new("test_mode_normal_twin");
-    let (normal_run, cpk) = compile_normal(&normal, &tracer_export());
+    let (normal_run, cpk) = compile_normal(&normal, &tracer_copy(&normal));
 
     let sandbox = Sandbox::new("test_mode_tracer");
     install_names(&sandbox, &["4cc_99_test.cpk"]);
     let pes = snapshot(&sandbox.root.join("PES"));
 
-    let run = compile_test_mode(&sandbox, &tracer_export());
+    let run = compile_test_mode(&sandbox, &tracer_copy(&sandbox));
 
     assert_eq!(run.exit_code(), normal_run.exit_code());
     let written = test_output(&sandbox);
@@ -141,6 +142,7 @@ fn test_mode_writes_teamnotes_and_the_kit_s_uni_color_entry_under_bins() {
     let tracer_with_notes = |sandbox: &Sandbox| {
         sandbox.copy_tracer("egg Midcup Tracer");
         sandbox.write("exports/egg Midcup Tracer/notes.txt", b"Notes.\n");
+        sandbox.complete("exports/egg Midcup Tracer");
         sandbox.arg("exports/egg Midcup Tracer")
     };
     let normal = Sandbox::new("test_mode_notes_normal_twin");
@@ -172,14 +174,14 @@ fn test_mode_writes_teamnotes_and_the_kit_s_uni_color_entry_under_bins() {
 #[test]
 fn test_mode_does_not_apply_the_overrides() {
     let normal = Sandbox::new("test_mode_overrides_normal_twin");
-    let (_, cpk) = compile_normal(&normal, &tracer_export());
+    let (_, cpk) = compile_normal(&normal, &tracer_copy(&normal));
     let sandbox = Sandbox::new("test_mode_overrides");
     sandbox.write(
         &format!("data/overrides/{TEAM_COLOR}"),
         b"the operator's TeamColor.bin",
     );
 
-    let run = compile_test_mode(&sandbox, &tracer_export());
+    let run = compile_test_mode(&sandbox, &tracer_copy(&sandbox));
 
     assert_eq!(run.exit_code(), 0);
     let written = test_output(&sandbox);
@@ -209,7 +211,7 @@ fn test_mode_replaces_test_output_whole_and_a_failed_run_leaves_it_as_it_was() {
     let sandbox = Sandbox::new("test_mode_stale");
     sandbox.write("output/test_output/old/x.txt", b"an earlier test run");
 
-    let run = compile_test_mode(&sandbox, &tracer_export());
+    let run = compile_test_mode(&sandbox, &tracer_copy(&sandbox));
 
     assert_eq!(run.exit_code(), 0);
     let written = test_output(&sandbox);
@@ -222,7 +224,7 @@ fn test_mode_replaces_test_output_whole_and_a_failed_run_leaves_it_as_it_was() {
     sandbox.write("output/.staging", b"in the way");
     let before = snapshot(&sandbox.root.join("output"));
 
-    let run = compile_test_mode(&sandbox, &tracer_export());
+    let run = compile_test_mode(&sandbox, &tracer_copy(&sandbox));
 
     let lines = run.messages();
     let last = lines.last().unwrap();
@@ -257,6 +259,7 @@ fn a_common_kit_folder_set_lands_at_its_subfolders_in_test_mode() {
         &format!("{export}/Common/kit2/armor_bsm.dds"),
         &tracer_kit(),
     );
+    sandbox.complete(export);
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--mode", "test"]);
 
@@ -296,6 +299,7 @@ fn a_texture_in_a_subfolder_lands_below_its_folder_in_test_mode() {
         &tracer_player_file("shirt.dds"),
     );
     sandbox.write(&format!("{player}/jessie/hair.dds"), &tracer_kit());
+    sandbox.complete(export);
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--mode", "test"]);
 

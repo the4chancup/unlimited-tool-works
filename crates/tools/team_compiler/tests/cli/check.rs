@@ -10,10 +10,7 @@ use crate::{CLEAN_PLAYER, clean_model, snapshot};
 #[test]
 fn check_brackets_each_export_with_its_start_and_end() {
     let sandbox = Sandbox::new("envelopes");
-    sandbox.write(
-        &format!("exports/co Midcup Spring/{CLEAN_PLAYER}"),
-        &clean_model(),
-    );
+    sandbox.complete("exports/co Midcup Spring");
     let run = sandbox.run("", &["check"]);
     assert_eq!(run.exit_code(), 0);
     let export = Some(ExportId(0));
@@ -99,6 +96,7 @@ fn a_disallowed_file_is_an_error_when_strict_and_an_info_when_lenient() {
         &tracer_kit(),
     );
     sandbox.write("exports/co Midcup Spring/Players/03 - A/readme.doc", b"");
+    sandbox.complete("exports/co Midcup Spring");
 
     let strict = sandbox.run("[compiler]\nstrict_file_type_check = true\n", &["check"]);
     assert_eq!(
@@ -126,6 +124,7 @@ fn a_disallowed_file_is_an_error_when_strict_and_an_info_when_lenient() {
 fn pass_through_keeps_a_disallowed_file_at_its_error_severity() {
     let sandbox = Sandbox::new("pass_through");
     sandbox.write("exports/co Midcup Spring/Players/03 - A/readme.doc", b"");
+    sandbox.complete("exports/co Midcup Spring");
     let run = sandbox.run("[compiler]\npass_through = true\n", &["check"]);
     assert_eq!(
         run.messages(),
@@ -166,17 +165,12 @@ fn check_writes_nothing() {
 #[test]
 fn check_exits_one_only_for_an_error_finding() {
     let sandbox = Sandbox::new("exit_codes");
-    sandbox.write(
-        &format!("exports/co Midcup Notes/{CLEAN_PLAYER}"),
-        &clean_model(),
-    );
     sandbox.write("exports/co Midcup Notes/notes.txt", b"a note");
     sandbox.write("exports/co Midcup Notes/extra.bin", b"");
     sandbox.write("exports/co Midcup Error/Players/03 - A/readme.doc", b"");
-    sandbox.write(
-        &format!("exports/co Midcup Clean/{CLEAN_PLAYER}"),
-        &clean_model(),
-    );
+    for export in ["co Midcup Notes", "co Midcup Error", "co Midcup Clean"] {
+        sandbox.complete(&format!("exports/{export}"));
+    }
 
     let run = sandbox.run(
         "",
@@ -230,6 +224,8 @@ fn a_disabled_export_reports_only_that_whatever_the_marker_case() {
         &format!("exports/co Midcup Three/wrapper/{CLEAN_PLAYER}"),
         &clean_model(),
     );
+    // A disabled export is read no further than its marker: only `Three` needs completing.
+    sandbox.complete("exports/co Midcup Three");
 
     let run = sandbox.run("", &["check"]);
 
@@ -250,16 +246,10 @@ fn a_disabled_export_reports_only_that_whatever_the_marker_case() {
 #[test]
 fn an_export_is_identified_by_its_first_word() {
     let sandbox = Sandbox::new("identified");
-    sandbox.write(
-        &format!("exports/co Midcup Spring 2026/{CLEAN_PLAYER}"),
-        &clean_model(),
-    );
     // A refs export needs no teams-list row.
-    sandbox.write("exports/refs Cup/players.txt", b"01 Keeper\n");
-    sandbox.write(
-        "exports/refs Cup/Players/Keeper/face_high.fmdl",
-        &clean_model(),
-    );
+    for export in ["co Midcup Spring 2026", "refs Cup"] {
+        sandbox.complete(&format!("exports/{export}"));
+    }
     let run = sandbox.run("", &["check"]);
     assert_eq!(
         run.messages(),
@@ -275,15 +265,9 @@ fn an_export_is_identified_by_its_first_word() {
 #[test]
 fn an_unknown_team_is_an_error_and_the_export_beside_it_is_still_checked() {
     let sandbox = Sandbox::new("unknown_team");
-    sandbox.write(
-        &format!("exports/zz Midcup Spring/{CLEAN_PLAYER}"),
-        &clean_model(),
-    );
-    sandbox.write(&format!("exports/---/{CLEAN_PLAYER}"), &clean_model());
-    sandbox.write(
-        &format!("exports/co Midcup Spring/{CLEAN_PLAYER}"),
-        &clean_model(),
-    );
+    for export in ["zz Midcup Spring", "---", "co Midcup Spring"] {
+        sandbox.complete(&format!("exports/{export}"));
+    }
     let run = sandbox.run("", &["check"]);
     assert_eq!(
         run.messages(),
@@ -318,12 +302,9 @@ fn check_creates_the_missing_default_exports_folder_and_reports_it_empty() {
 fn export_paths_restrict_the_run_to_the_named_sources() {
     let sandbox = Sandbox::new("named_sources");
     for name in ["co Midcup A", "co Midcup B", "co Midcup C"] {
-        sandbox.write(&format!("exports/{name}/{CLEAN_PLAYER}"), &clean_model());
+        sandbox.complete(&format!("exports/{name}"));
     }
-    sandbox.write(
-        &format!("elsewhere/co Midcup D/{CLEAN_PLAYER}"),
-        &clean_model(),
-    );
+    sandbox.complete("elsewhere/co Midcup D");
     let run = sandbox.run(
         "",
         &[

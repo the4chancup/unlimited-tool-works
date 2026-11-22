@@ -78,10 +78,12 @@ fn write_skin_player(
     sandbox.write(&format!("{player}/{texture_name}"), bytes);
 }
 
-/// Compiles the sandbox for PES `version`, asserting the export `name`, slot 05 written by
-/// `write_skin_player`, reports only the hair model's unnormalized weights and its identity,
-/// and returns the entry at `path`.
+/// Completes `exports/<name>` and compiles the sandbox for PES `version`, asserting the export
+/// `name`, slot 05 written by `write_skin_player`, reports only the hair model's unnormalized
+/// weights and its identity, and returns the entry at `path`.
 fn compile_entry(sandbox: &Sandbox, name: &str, version: u8, path: &str) -> Vec<u8> {
+    let pes = PesVersion::from_number(version.into()).unwrap();
+    sandbox.complete_for(&format!("exports/{name}"), pes, &[]);
     let run = sandbox.run(&pes_settings(sandbox, version), &["compile", "--no-deploy"]);
     assert_eq!(
         findings_of(&run.messages(), name),
@@ -247,6 +249,7 @@ fn an_opaque_skin_is_bc1_and_its_normal_map_bc3_with_x_in_alpha_y_in_green_on_pe
     let nrm_png = encode_png(&[10, 200, 90, 255].repeat(16 * 16), 16, 16).unwrap();
     sandbox.write(&format!("{player}/skin.png"), &skin_png);
     sandbox.write(&format!("{player}/skin_nrm.png"), &nrm_png);
+    sandbox.complete_for(export, PesVersion::Pes18, &[]);
 
     let run = sandbox.run(&pes_settings(&sandbox, 18), &["compile", "--no-deploy"]);
 
@@ -292,9 +295,9 @@ fn an_opaque_skin_is_bc1_and_its_normal_map_bc3_with_x_in_alpha_y_in_green_on_pe
 }
 
 /// Compiles for PES 21, without deploying, the `/co/` export `co Midcup Kit` holding, for
-/// each (path, fixture) of `textures`, the texture fixture at that path in the export, in a
-/// sandbox named `sandbox`: the findings on the export, the exit code, and the written CPK's
-/// entries by path.
+/// each (path, fixture) of `textures`, the texture fixture at that path in the export, then
+/// completed, in a sandbox named `sandbox`. Returns the findings on the export, the exit
+/// code, and the written CPK's entries by path.
 fn compile_co_textures(
     sandbox: &str,
     textures: &[(&str, &str)],
@@ -306,6 +309,7 @@ fn compile_co_textures(
             &texture_fixture(fixture),
         );
     }
+    sandbox.complete("exports/co Midcup Kit");
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
     let findings = findings_of(&run.messages(), "co Midcup Kit")
         .into_iter()
@@ -464,7 +468,7 @@ fn uncompressed_dds_at(width: u32, height: u32) -> Vec<u8> {
 /// Writes `exports/co Midcup Sizes`: slot 03 a 3x3 skin, slot 04 a 300x300 one, slot 05 PNG bytes
 /// under `skin.dds` (renamed, not resaved), slot 07 a 512x461 one with a full mip chain,
 /// each beside the hair model naming it, and a kit, so the CPK is written whatever the
-/// folders become.
+/// folders become; then completes the export.
 fn write_texture_findings_export(sandbox: &Sandbox) {
     let export = "co Midcup Sizes";
     write_skin_player(
@@ -498,6 +502,7 @@ fn write_texture_findings_export(sandbox: &Sandbox) {
         &bc1_dds_levels(512, 461, 10),
     );
     sandbox.write(&format!("exports/{export}/Kits/p1/kit.dds"), &tracer_kit());
+    sandbox.complete(&format!("exports/{export}"));
 }
 
 /// The hair model's line on slot `slot`'s folder, which both commands report.
@@ -616,6 +621,7 @@ fn a_texture_finding_drops_the_player_folder_naming_the_file() {
     );
     // A kit beside the folder, so the CPK is written and the folder's absence observable.
     sandbox.write("exports/co Midcup Drop/Kits/p1/kit.dds", &tracer_kit());
+    sandbox.complete("exports/co Midcup Drop");
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -658,6 +664,7 @@ fn a_pre_fox_texture_whose_side_is_no_multiple_of_4_drops_the_player_folder() {
         sandbox.write(&format!("{player}/face_high.mtl"), &card_materials());
         sandbox.write(&format!("{player}/{texture}"), &bytes);
     }
+    sandbox.complete_for(export, PesVersion::Pes17, &[]);
 
     let run = sandbox.run(&pes_settings(&sandbox, 17), &["compile", "--no-deploy"]);
 
@@ -687,6 +694,7 @@ fn a_kit_texture_finding_drops_the_kit() {
         &texture_fixture("tiny.png"),
     );
     sandbox.write("exports/co Midcup Kit/Kits/g1/kit.dds", &tracer_kit());
+    sandbox.complete("exports/co Midcup Kit");
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -711,6 +719,7 @@ fn a_4096_kit_drops_on_pes_17_and_an_uncompressed_main_texture_is_argb8_on_pes_2
         &bc1_dds(4096, 4096),
     );
     sandbox.write("exports/co Midcup Kit/Kits/p2/kit.dds", &uncompressed_dds());
+    sandbox.complete_for("exports/co Midcup Kit", PesVersion::Pes17, &[]);
     let too_big = "Error kit_texture_too_big [DropFolder] at Kits/p1 (file=kit.dds)";
     let identified = "Info export_identified [Keep] (team=/co/, id=714)";
 
@@ -850,6 +859,7 @@ fn a_common_texture_the_deep_pass_drops_takes_the_player_linking_it() {
         &format!("{export}/Common/skin.png"),
         &texture_fixture("tiny.png"),
     );
+    sandbox.complete(export);
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["check"]);
 
@@ -887,6 +897,7 @@ fn a_dropped_member_of_a_common_kit_set_leaves_the_player_linking_it() {
         &format!("{export}/Common/kit2/armor_bsm.dds"),
         &tracer_kit(),
     );
+    sandbox.complete(export);
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -932,6 +943,8 @@ fn a_common_texture_whose_task_fails_lets_the_players_linking_it_commit() {
     );
     sandbox.write(&format!("{failed}/Players/05 - A/hair.dds.common"), b"");
     sandbox.write(&format!("{failed}/Common/hair.dds"), &pixels_cut_dds());
+    sandbox.complete(dropped);
+    sandbox.complete(failed);
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -994,6 +1007,7 @@ fn a_common_texture_only_conversion_refuses_fails_the_task_and_the_linking_playe
         &texture_fixture("bc6h.dds"),
     );
     sandbox.write(&format!("{export}/Common/skin.dds"), &small_dds());
+    sandbox.complete(export);
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -1033,6 +1047,7 @@ fn a_common_texture_finding_leaves_that_file_out_and_the_rest_is_emitted() {
         "exports/co Midcup Common/Common/hair.png",
         &texture_fixture("kit.png"),
     );
+    sandbox.complete("exports/co Midcup Common");
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -1079,6 +1094,7 @@ fn a_common_texture_and_a_shared_folder_s_texture_in_png_are_emitted_as_ftex() {
         &format!("{export}/Boots/Crocs/sole.png"),
         &texture_fixture("kit.png"),
     );
+    sandbox.complete(export);
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -1130,6 +1146,7 @@ fn a_kit_number_without_its_texture_variant_gets_the_fallback_written_as_kit_n()
     for slot in ["p1", "p2", "p3"] {
         sandbox.write(&format!("{export}/Kits/{slot}/kit.dds"), &tracer_kit());
     }
+    sandbox.complete(export);
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -1190,6 +1207,7 @@ fn a_kits_fallback_texture_is_written_as_kit_n_and_never_its_own_name() {
     for slot in ["p1", "p2", "p3"] {
         sandbox.write(&format!("{export}/Kits/{slot}/kit.dds"), &tracer_kit());
     }
+    sandbox.complete(export);
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -1242,6 +1260,7 @@ fn a_kit_folder_s_set_is_found_by_the_model_naming_its_reference_and_its_fallbac
     for slot in ["p1", "p2"] {
         sandbox.write(&format!("{export}/Kits/{slot}/kit.dds"), &tracer_kit());
     }
+    sandbox.complete(export);
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -1298,6 +1317,7 @@ fn a_model_naming_a_kit_f_folder_finds_nothing() {
         &model_naming_in("armor_bsm.dds", "./kitF/"),
     );
     sandbox.write(&format!("{player}/kitF/armor_bsm.dds"), &tracer_kit());
+    sandbox.complete(export);
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -1331,6 +1351,7 @@ fn a_texture_path_into_the_game_s_kit_folder_is_kept_with_a_warning() {
             KIT_TEXTURE_DIRECTORY,
         ),
     );
+    sandbox.complete(export);
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -1393,7 +1414,7 @@ pub(crate) fn tracer_model_pointing(
 
 /// Writes TC-TEX-05's export: slot 05's `face_high.fmdl` naming `hair.dds` in the team's Common
 /// output, and no `Common/`; and slot 03's clean face, so a CPK is written whatever becomes of
-/// slot 05's face.
+/// slot 05's face; then completes the export.
 fn write_common_hair_player(sandbox: &Sandbox) {
     sandbox.write(
         "exports/co Midcup Hair/Players/05 - A/face_high.fmdl",
@@ -1403,6 +1424,7 @@ fn write_common_hair_player(sandbox: &Sandbox) {
         &format!("exports/co Midcup Hair/{CLEAN_PLAYER}"),
         &clean_model(),
     );
+    sandbox.complete("exports/co Midcup Hair");
 }
 
 /// Settings compiling `4cc_62_midcup` for PES 21 with the sandbox's PES folder.
@@ -1519,7 +1541,7 @@ fn a_common_texture_with_no_pes_folder_to_look_in_is_a_warning_and_the_face_is_k
 /// Writes TC-TEX-11's export: slot 06's `face_high.fmdl` naming `hair.dds` where the tracer
 /// names its `shirt.dds`, not in the team's Common output (only the link points it there),
 /// beside `hair.dds.common`, and no `Common/`; and slot 03's clean face, so a CPK is written
-/// when slot 06 is dropped.
+/// when slot 06 is dropped; then completes the export.
 fn write_hair_link_player(sandbox: &Sandbox) {
     let player = "exports/co Midcup Hair/Players/06 - A";
     sandbox.write(
@@ -1531,6 +1553,7 @@ fn write_hair_link_player(sandbox: &Sandbox) {
         &format!("exports/co Midcup Hair/{CLEAN_PLAYER}"),
         &clean_model(),
     );
+    sandbox.complete("exports/co Midcup Hair");
 }
 
 /// The findings `check` reports on TC-TEX-11's export ending with `first`, the slot-06
@@ -1622,7 +1645,7 @@ fn a_texture_link_only_a_later_installed_cpk_satisfies_is_common_link_missing() 
 /// Writes slot 06 of TC-TEX-11's export: `jessie/hair_high.fmdl` naming `hair.dds` where the
 /// tracer names its `shirt.dds`, and `jessie/hair.dds.common` for `Common/jessie/hair.dds`,
 /// which is not in the export; and slot 03's clean face, so a CPK is written when slot 06 is
-/// dropped.
+/// dropped; then completes the export.
 fn write_nested_hair_link_player(sandbox: &Sandbox) {
     let player = "exports/co Midcup Hair/Players/06 - A";
     sandbox.write(
@@ -1634,6 +1657,7 @@ fn write_nested_hair_link_player(sandbox: &Sandbox) {
         &format!("exports/co Midcup Hair/{CLEAN_PLAYER}"),
         &clean_model(),
     );
+    sandbox.complete("exports/co Midcup Hair");
 }
 
 // TC-TEX-11
@@ -1711,7 +1735,7 @@ const JESSIE_TEAM_FOLDER: &str =
 
 /// Writes slot 05 of `exports/co Midcup Hair`: `face_high.fmdl` naming `hair.dds` in the
 /// `jessie/` subdirectory of the team's Common output; and slot 03's clean face, so a CPK is
-/// written when slot 05 is dropped.
+/// written when slot 05 is dropped; then completes the export.
 fn write_subfolder_hair_player(sandbox: &Sandbox) {
     sandbox.write(
         "exports/co Midcup Hair/Players/05 - A/face_high.fmdl",
@@ -1725,6 +1749,7 @@ fn write_subfolder_hair_player(sandbox: &Sandbox) {
         &format!("exports/co Midcup Hair/{CLEAN_PLAYER}"),
         &clean_model(),
     );
+    sandbox.complete("exports/co Midcup Hair");
 }
 
 /// The slot-05 finding of the `jessie/` Common path nobody supplies.
@@ -1773,6 +1798,7 @@ fn a_common_subfolder_texture_the_export_holds_supplies_the_path() {
         "exports/co Midcup Hair/Common/jessie/hair.dds",
         &tracer_kit(),
     );
+    sandbox.complete("exports/co Midcup Hair");
     install_names(&sandbox, &["4cc_61_midcup.cpk", "4cc_62_midcup.cpk"]);
 
     let run = sandbox.run(&midcup_62_settings(&sandbox), &["compile", "--no-deploy"]);
@@ -1881,6 +1907,7 @@ fn a_common_mtl_s_stem_a_player_s_link_supplies_from_an_installed_cpk_reports_no
         &format!("{export}/Common/jessie/body.mtl"),
         &mtl_naming("hair.dds"),
     );
+    sandbox.complete(export);
     install_names(
         &sandbox,
         &[
@@ -1940,6 +1967,7 @@ fn a_texture_link_of_the_player_s_wins_over_a_combined_folder_s_texture_of_the_s
         &hair_model_naming("hair.dds"),
     );
     sandbox.write(&format!("{export}/Faces/Round/hair.dds"), &tracer_kit());
+    sandbox.complete(export);
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -1999,6 +2027,7 @@ fn a_combined_folder_s_texture_link_names_its_common_texture_on_pes_21() {
         &format!("{export}/Common/hair.dds"),
         &tracer_player_file("shirt.dds"),
     );
+    sandbox.complete(export);
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -2055,6 +2084,7 @@ fn a_combined_folder_s_texture_link_loses_to_the_player_s_own() {
         &format!("{export}/Common/hair.dds"),
         &tracer_player_file("shirt.dds"),
     );
+    sandbox.complete(export);
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -2121,6 +2151,7 @@ fn a_combined_link_and_a_link_of_his_report_nothing() {
         &format!("{export}/Common/hair.dds"),
         &tracer_player_file("shirt.dds"),
     );
+    sandbox.complete(export);
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -2188,6 +2219,7 @@ fn a_combined_texture_and_another_package_s_link_at_one_path_conflict() {
         &format!("{export}/Common/skin.dds"),
         &tracer_player_file("shirt.dds"),
     );
+    sandbox.complete(export);
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -2258,6 +2290,7 @@ fn two_combined_links_at_one_path_deduplicate() {
         &format!("{export}/Common/skin.dds"),
         &tracer_player_file("shirt.dds"),
     );
+    sandbox.complete(export);
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -2419,6 +2452,7 @@ fn a_combined_link_and_another_package_s_texture_at_one_path_conflict() {
         &format!("{export}/Common/skin.dds"),
         &tracer_player_file("shirt.dds"),
     );
+    sandbox.complete(export);
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -2480,6 +2514,7 @@ fn a_texture_entry_no_mesh_uses_is_not_looked_for() {
         "exports/co Midcup Unused/Players/05 - A/face_high.fmdl",
         &file.write(),
     );
+    sandbox.complete("exports/co Midcup Unused");
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -2514,6 +2549,7 @@ fn a_shared_folder_s_model_naming_a_texture_in_common_finds_it_there() {
         &format!("{export}/Common/hair.dds"),
         &tracer_player_file("shirt.dds"),
     );
+    sandbox.complete(export);
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -2583,6 +2619,7 @@ fn kit_stand_in_textures_are_never_looked_for_and_written_in_the_game_spelling()
         }),
     );
     sandbox.write(&format!("{}/face_high.mtl", player("06 - B")), &set.write());
+    sandbox.complete(&format!("exports/{export}"));
 
     for (settings, version) in [
         (pes21_settings(&sandbox), 21),
@@ -2680,6 +2717,7 @@ fn a_cube_map_dds_goes_out_as_it_is_on_pes_17_and_as_an_ftex_cube_map_on_pes_21(
     // conversion's findings (dropped bone matrices) to lines that are about the texture.
     let player = format!("exports/{export}/Players/05 - A");
     sandbox.write(&format!("{player}/env.dds"), &source);
+    sandbox.complete(&format!("exports/{export}"));
     let findings = [
         "Info export_identified [Keep] (team=/co/, id=714)",
         "Info team_colors_missing [Keep] ()",
@@ -2737,6 +2775,7 @@ fn a_dds_of_a_kind_the_decoder_refuses_in_common_drops_that_file_alone() {
     sandbox.copy_tracer_face(&format!("{export}/Players/05 - A"));
     sandbox.write(&format!("{export}/Common/hair.dds"), &tracer_kit());
     sandbox.write(&format!("{export}/Common/bumps.dds"), &bc5_snorm_dds());
+    sandbox.complete(export);
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -2778,6 +2817,7 @@ fn a_single_level_ftex_portrait_is_a_bc3_dds_with_the_full_mip_chain() {
         &format!("exports/{export}/Players/05 - A/portrait.ftex"),
         &source,
     );
+    sandbox.complete(&format!("exports/{export}"));
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -2826,6 +2866,7 @@ fn a_dx10_header_dds_portrait_goes_out_under_the_legacy_header_with_its_blocks()
         &format!("exports/{export}/Players/05 - A/portrait.dds"),
         &source,
     );
+    sandbox.complete(&format!("exports/{export}"));
     let mut expected = ftex::dds::header_bytes(PixelFormat::Bc3, 128, 128, 1);
     expected.extend_from_slice(&blocks);
     assert_eq!(expected.len(), 16512);
@@ -2879,6 +2920,7 @@ fn a_bc7_portrait_is_encoded_to_bc3_on_pes_18_and_re_headered_on_pes_21() {
         &format!("exports/{export}/Players/05 - A/portrait.dds"),
         &source,
     );
+    sandbox.complete(&format!("exports/{export}"));
 
     // PES 18, which reads BC1-BC3 only: the source is decoded and encoded like a raster
     // one: a 128x128 DXT5 DDS under the legacy header with the full mip chain.
