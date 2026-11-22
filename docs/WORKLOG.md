@@ -97,8 +97,8 @@ other items run beside it. **After the detour**, in this order:
    draft on 2026-11-22, and the Export upgrader's draft took the same window, log and counts.
    The maintainer approved both drafts on 2026-11-22, the Compiler's with the logo and
    portrait findings, the upgrader's once each export's two names stood under their columns.
-   The Sizes colouring and sorting were drafted and stamped the same day (gui.md "Sizes and
-   sorting"). The view is built in ordered slices (Opus), each landing and reviewed before
+   The Sizes colouring and sorting were drafted and stamped the same day
+   (`plans/team_compiler/gui.md` "Sizes and sorting"). The view is built in ordered slices (Opus), each landing and reviewed before
    the next is briefed:
    - [ ] 1a: the grid, read-only, filled by a check the view runs when it opens and after
      each Compile (the watcher comes later): rows, label, ID, player, portraits and kit
