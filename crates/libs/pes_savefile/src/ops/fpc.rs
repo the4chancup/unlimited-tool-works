@@ -110,6 +110,19 @@ pub(crate) fn socks_value(socks: fpc::Socks) -> u8 {
     }
 }
 
+/// The gloves value a record the game creates on an in-game PES 2014
+/// edit stores, all 18 bits of the field set, which the game draws as
+/// bare hands like a stored 0.
+const NO_GLOVES_MODEL: u32 = 262_143;
+
+/// The gloves model a stored gloves ID means: `NO_GLOVES_MODEL` reads
+/// as 0, the bare hands the game draws for it, `stored` itself
+/// otherwise. One rule on every version: PES 15 to 21 store the field
+/// in 14 bits, too narrow ever to hold the all-bits value.
+pub fn gloves_model(stored: u32) -> u32 {
+    if stored == NO_GLOVES_MODEL { 0 } else { stored }
+}
+
 /// The player's strip settings as the interference inputs. On a version
 /// whose records carry the in-game face run the gloves checkbox and the
 /// skin are read through it; on one mapping none (PES 2014) the checkbox
@@ -128,7 +141,7 @@ pub fn strip_style(player: &PlayerEntry, version: PesVersion) -> Result<fpc::Str
         wrist_taping: a.wrist_taping != 0,
         ankle_taping: a.ankle_taping,
         gloves_checkbox: gloves != 0,
-        gloves_id: a.gloves_id,
+        gloves_id: gloves_model(a.gloves_id),
         skin_color: if schema_for(version).has_ingame_face()
             && a.ingame_face.get(IngameFaceField::SkinColor)? == 7
         {
@@ -486,6 +499,39 @@ mod tests {
         player.appearance.gloves_id = 70_000;
         let style = strip_style(&player, PesVersion::Pes21).expect("strip_style");
         assert_eq!(style.gloves_id, 70_000);
+    }
+
+    // A record the game creates on an in-game edit stores the gloves
+    // id's 18 bits all set (262143), which the game draws as bare hands
+    // like a stored 0: `strip_style` reads it as gloves 0, so the
+    // interference check reports what it reports for gloves 0.
+    #[test]
+    fn strip_style_reads_a_stored_all_bits_gloves_id_as_none() {
+        let mut player = find_player(
+            &payload(PesVersion::Pes14),
+            schema_for(PesVersion::Pes14),
+            42810,
+        );
+        player.appearance.gloves_id = 262_143;
+        player.appearance.player_gloves = true;
+        let style = strip_style(&player, PesVersion::Pes14).expect("strip_style");
+        assert_eq!(style.gloves_id, 0);
+
+        player.appearance.gloves_id = 0;
+        let at_zero = fpc::check(
+            &strip_style(&player, PesVersion::Pes14).expect("strip_style"),
+            false,
+        );
+        player.appearance.gloves_id = 262_143;
+        let at_all_bits = fpc::check(
+            &strip_style(&player, PesVersion::Pes14).expect("strip_style"),
+            false,
+        );
+        assert!(
+            !at_zero.is_empty(),
+            "premise: gloves 0 with the checkbox on reports"
+        );
+        assert_eq!(at_all_bits, at_zero);
     }
 
     #[test]
