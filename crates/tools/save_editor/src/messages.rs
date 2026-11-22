@@ -35,6 +35,10 @@ pub(crate) enum Code {
     ImportValueCapped,
     /// `import-toml`: a `[players.NN]` whose roster slot is empty; skipped (`slot`).
     ImportSlotEmpty,
+    /// `import-toml`: a `[players.NN]` holding a look for a PES 2014 player the
+    /// save keeps no appearance record for; the record and the look keys skipped
+    /// (`slot`).
+    ImportNoAppearanceRecord,
     /// `import-toml`: a name or shirt name longer than the save's field; cropped to it
     /// (`path`, `cropped`).
     ImportTextCropped,
@@ -124,6 +128,7 @@ impl Code {
             Code::ImportValueNotEncodable => "import_value_not_encodable",
             Code::ImportValueCapped => "import_value_capped",
             Code::ImportSlotEmpty => "import_slot_empty",
+            Code::ImportNoAppearanceRecord => "import_no_appearance_record",
             Code::ImportTextCropped => "import_text_cropped",
             Code::PatchTeamApplied => "patch_team_applied",
             Code::PatchTeamNotInSave => "patch_team_not_in_save",
@@ -169,6 +174,7 @@ impl Code {
             | Code::ImportValueNotEncodable
             | Code::ImportValueCapped
             | Code::ImportSlotEmpty
+            | Code::ImportNoAppearanceRecord
             | Code::ImportTextCropped
             | Code::AatfRulesetGone
             | Code::FpcGlovesCheckboxWinterGloves => Severity::Warning,
@@ -196,6 +202,7 @@ impl Code {
         Code::ImportValueNotEncodable,
         Code::ImportValueCapped,
         Code::ImportSlotEmpty,
+        Code::ImportNoAppearanceRecord,
         Code::ImportTextCropped,
         Code::PatchTeamApplied,
         Code::PatchTeamNotInSave,
@@ -247,6 +254,11 @@ const CATALOG: &[(Code, &str, &str)] = &[
         Code::ImportSlotEmpty,
         r#"The team file holds a player for a roster slot the team leaves empty."#,
         r#"The player is skipped, and the rest of the import is written."#,
+    ),
+    (
+        Code::ImportNoAppearanceRecord,
+        r#"The team file holds a look for a PES 2014 player whose look was never edited in game, so the save has nowhere to store it."#,
+        r#"His look is skipped, and the rest of the import is written. To bring it over, edit his look in game, save, then import the file again."#,
     ),
     (
         Code::ImportTextCropped,
@@ -399,6 +411,10 @@ pub(crate) fn import_note(note: &ImportNote) -> Message {
         ImportNote::EmptySlot { slot } => {
             message(Code::ImportSlotEmpty, vec![("slot", format!("{slot:02}"))])
         }
+        ImportNote::NoAppearanceRecord { slot } => message(
+            Code::ImportNoAppearanceRecord,
+            vec![("slot", format!("{slot:02}"))],
+        ),
         ImportNote::TextCropped { path, cropped } => message(
             Code::ImportTextCropped,
             // As the game draws it: a colour code's bytes are no text a member reads.

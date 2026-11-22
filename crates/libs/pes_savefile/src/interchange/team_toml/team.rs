@@ -1817,9 +1817,9 @@ mod tests {
         assert_eq!(slots[2], before[2], "slot 3 untouched");
     }
 
-    /// The game plan's Support Range is stored as 20 less the value the
-    /// game shows, the one slider of the eight whose document number is not
-    /// its record byte: a stored 7 reads 13 in the document, and a
+    /// Support Range is the one Game Plan slider of the eight whose
+    /// document number is not its record byte, stored 20 less the value
+    /// the game shows: a stored 7 reads 13 in the document, and a
     /// document's 13 applies back as the same stored 7.
     #[test]
     fn support_range_round_trips_through_the_games_own_offset() {

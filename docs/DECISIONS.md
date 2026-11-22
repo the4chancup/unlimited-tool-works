@@ -20007,3 +20007,16 @@ Why: only another PES 2014 save takes such a file, so its name tells it from the
 versions' `.toml` before anyone tries to import it elsewhere.
 Plan: `plans/pes14.md` "PES 2014 in the code", the bullet "Team TOML on PES 2014"; step 12,
 slice e.
+
+## 2026-11-22 — pes_savefile (pes14 branch) — A PES 2014 player with no appearance record exports no look keys
+
+Decision: in a PES 2014 team file, a player the save keeps no appearance record for (his look
+never edited in game) gets none of the look keys the record would store: they are written
+commented, as for a key the version lacks. On import, a target player with no record takes
+neither the record nor those keys, and one `import_no_appearance_record` warning names his
+slot.
+Why: the editor holds zeros for such a player's look, and a file carrying them would write
+boots 0, gloves 0 and a zeroed physique over a real look on import. Leaving the keys out means
+the import leaves the target's look as it was.
+Plan: `plans/pes14.md` "PES 2014 in the code", the bullet "Team TOML on PES 2014"; step 12,
+slice d.

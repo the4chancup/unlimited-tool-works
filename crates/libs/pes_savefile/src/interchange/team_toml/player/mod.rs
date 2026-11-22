@@ -9,7 +9,7 @@ use std::collections::{BTreeMap, HashSet};
 use pes_version::PesVersion;
 use toml_edit::{Item, TableLike, Value};
 
-use crate::codec::{TextMisfit, text_max, text_misfit};
+use crate::codec::{TextMisfit, read_player_into, text_max, text_misfit};
 use crate::interchange::players_key;
 use crate::interchange::team_toml::labels;
 use crate::interchange::team_toml::player_keys::PlayerKey;
@@ -24,7 +24,7 @@ use crate::schema::fields::{PlayerField, PlayerText, RosterField};
 use crate::schema::ingame_face::INGAME_FACE_FIELDS;
 use crate::schema::limits::{face_type_cap, motion_top};
 use crate::schema::{
-    bit_width, model_max, playstyle, portable_text_max, schema_for, stored_offset,
+    VersionSchema, bit_width, model_max, playstyle, portable_text_max, schema_for, stored_offset,
 };
 use crate::settings_toml::document::{
     AppearanceDocument, emit_appearance, leaf_path, padded, parse_appearance,
@@ -80,11 +80,17 @@ fn player_from(
     player: &PlayerEntry,
     fields: &HashSet<PlayerField>,
 ) -> Result<PlayerSection, TeamTomlError> {
+    let schema = schema_for(version);
     let mut appearance = appearance_from(player)?;
+    // On a version whose appearance record is per-player (PES 2014's
+    // edited or created ones), a player without one holds no look: the
+    // keys the record stores emit `None` like a key the version lacks,
+    // not the model's zeros.
+    let no_record = !schema.appearance_for_every_player() && player.appearance_record.is_none();
     // A key the version does not store is `None`, not the value the model
     // happens to hold: every one PES 2014's player record lacks.
     for key in SettingKey::ALL {
-        if !held_on(key, version) {
+        if !held_on(key, version) || (no_record && in_appearance_record(key, schema)) {
             set_appearance(&mut appearance, key, None);
         }
     }
@@ -111,11 +117,19 @@ fn player_from(
                 .contains(&PlayerField::ComStyle(0))
                 .then_some(player.skills.com_styles),
         },
+        // `None` where the version keeps a record for every player or
+        // none: the model carries the record only on PES 2014 anyway.
+        appearance_record: player
+            .appearance_record
+            .clone()
+            .filter(|_| !schema.appearance_for_every_player()),
         appearance,
         ..PlayerSection::default()
     };
     for key in PlayerKey::ALL {
-        if !fields.contains(&key.spec().field) {
+        if !fields.contains(&key.spec().field)
+            || (no_record && schema.appearance_only(key.spec().field))
+        {
             continue;
         }
         if let Some(value) = key.get(player) {
@@ -123,6 +137,20 @@ fn player_from(
         }
     }
     Ok(section)
+}
+
+/// Whether `key`'s value lives in the appearance record on `schema`'s
+/// version: what a player the section holds no record for (a PES 2014
+/// player whose look was never edited in game) has no value for. The
+/// face and hair keys count where the record is per-player: PES 2014's
+/// holds them unmapped, and the versions that map the face run inside
+/// the record give every player one, so the question is never asked of
+/// them.
+fn in_appearance_record(key: SettingKey, schema: &VersionSchema) -> bool {
+    match key.source() {
+        Source::Player(field) => schema.appearance_only(field),
+        Source::Face(_) | Source::NoseAngle => !schema.appearance_for_every_player(),
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -220,6 +248,22 @@ fn emit_player(
         section.shirt_number.map(|v| v.to_string()),
         "1",
         "",
+    );
+    emit(
+        out,
+        "appearance_record",
+        section
+            .appearance_record
+            .as_ref()
+            .map(|record| Value::from(hex_text(record)).to_string()),
+        "\"\"",
+        // On PES 2014 itself the key can sit commented too: a player whose
+        // look was never edited in game has no record to carry.
+        if version == Some(PesVersion::Pes14) {
+            "the player's whole appearance record in hex, where he has one; the look keys below apply over it"
+        } else {
+            "PES 14 only; the player's whole appearance record in hex; the look keys below apply over it"
+        },
     );
     for key in PlayerKey::ALL {
         if key.table().is_empty() {
@@ -376,6 +420,11 @@ fn play_style_text(style: PlayStyle) -> Result<String, TeamTomlError> {
     Ok(format!("\"{}\"", labels::PLAY_STYLES[index]))
 }
 
+/// The record's bytes as lowercase hex, two digits a byte.
+fn hex_text(record: &[u8]) -> String {
+    record.iter().map(|b| format!("{b:02x}")).collect()
+}
+
 /// `["a", "b"]` of the set flags' names, canonical order.
 fn flag_list<const N: usize>(flags: [bool; N], labels: &[&'static str]) -> String {
     let names: Vec<String> = labels
@@ -426,6 +475,7 @@ fn parse_player(
         name: opt(table, path, "name", text)?,
         shirt_name: opt(table, path, "shirt_name", text)?,
         shirt_number: opt(table, path, "shirt_number", u16_val)?,
+        appearance_record: opt(table, path, "appearance_record", hex_record)?,
         ..PlayerSection::default()
     };
     for key in PlayerKey::ALL {
@@ -487,6 +537,7 @@ fn parse_player(
             "name",
             "shirt_name",
             "shirt_number",
+            "appearance_record",
             "nationality",
             "age",
             "height",
@@ -502,6 +553,30 @@ fn parse_player(
         ],
     )?;
     Ok(section)
+}
+
+/// `appearance_record`'s value: the record's 88 bytes, written as 176
+/// lowercase hex digits. Anything else is `WrongType`.
+fn hex_record(item: &Item, key: &str) -> Result<Vec<u8>, TeamTomlError> {
+    const EXPECTED: &str = "the appearance record's 88 bytes as 176 lowercase hex digits";
+    let wrong = || TeamTomlError::WrongType {
+        key: key.to_string(),
+        expected: EXPECTED,
+    };
+    let text = item.as_value().and_then(|v| v.as_str()).ok_or_else(wrong)?;
+    let digits = text.as_bytes();
+    if digits.len() != 176
+        || !digits
+            .iter()
+            .all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(b))
+    {
+        return Err(wrong());
+    }
+    Ok((0..88)
+        .map(|i| {
+            u8::from_str_radix(&text[2 * i..2 * i + 2], 16).expect("two hex digits, checked above")
+        })
+        .collect())
 }
 
 /// `table.name` as a table-like, `None` when absent, `WrongType` when not a
@@ -698,6 +773,17 @@ fn apply_player(
         target.notes.push(ImportNote::EmptySlot { slot });
         return Ok(());
     }
+    let schema = schema_for(target.context.to);
+    // A version whose appearance section holds a record for some players
+    // only (PES 2014's edited or created ones) gives a target without one
+    // nothing the record stores: the record itself and every look key
+    // inside it are skipped, with one note naming him.
+    let no_record = !schema.appearance_for_every_player()
+        && target
+            .players
+            .iter()
+            .find(|p| p.id == player_id)
+            .is_some_and(|p| p.appearance_record.is_none());
     // Checks first: a stored value the target's field cannot hold would fail
     // `write_player` after `apply` returned Ok, so it is refused up front.
     // The bound is the model's: PES 2014's offset fields (its stats, shown
@@ -706,6 +792,9 @@ fn apply_player(
         let Some(value) = key.get_section(section) else {
             continue;
         };
+        if no_record && schema.appearance_only(key.spec().field) {
+            continue;
+        }
         let Some(max) = model_max(target.context.to, key.spec().field) else {
             continue;
         };
@@ -721,6 +810,41 @@ fn apply_player(
     let Some(player) = target.players.iter_mut().find(|p| p.id == player_id) else {
         return Err(TeamTomlError::PlayerMissing { id: player_id });
     };
+    // The appearance record lands whole, then every look key the document
+    // carries applies over it, so a key edited in the document wins. Its
+    // first u32 is its own player's id, rewritten to the target's; on a
+    // target without one it is skipped like the look keys it stores.
+    if let Some(record) = &section.appearance_record
+        && gated(
+            target.notes,
+            target.context.foreign,
+            !schema.appearance_for_every_player(),
+            &format!("{path}.appearance_record"),
+        )?
+        && !no_record
+    {
+        let mut bytes = record.clone();
+        bytes[..4].copy_from_slice(&player.id.to_le_bytes());
+        let appearance = schema
+            .appearance
+            .as_ref()
+            .map(|(_, appearance)| *appearance)
+            .expect("a version holding a record per some players has an appearance schema");
+        read_player_into(target.context.to, player, &bytes, appearance)?;
+        player.appearance_record = Some(bytes);
+    }
+    if no_record
+        && (section.appearance_record.is_some()
+            || PlayerKey::ALL.iter().any(|key| {
+                key.get_section(section).is_some() && schema.appearance_only(key.spec().field)
+            })
+            || SettingKey::ALL.iter().any(|key| {
+                get_appearance(&section.appearance, *key).is_some()
+                    && in_appearance_record(*key, schema)
+            }))
+    {
+        target.notes.push(ImportNote::NoAppearanceRecord { slot });
+    }
     if let Some(number) = section.shirt_number {
         // The roster's number field is 8 bits on the ≤ 18 schemas; a wider
         // value would fail `write_roster` after `apply` said Ok, so it is
@@ -763,6 +887,9 @@ fn apply_player(
             continue;
         };
         let spec = key.spec();
+        if no_record && schema.appearance_only(spec.field) {
+            continue;
+        }
         if !gated(
             target.notes,
             target.context.foreign,
@@ -849,8 +976,18 @@ fn apply_player(
             }
         }
     }
+    // A player without an appearance record takes none of its look keys
+    // either: they are read as absent, the one note above naming him.
+    let mut appearance = section.appearance.clone();
+    if no_record {
+        for key in SettingKey::ALL {
+            if in_appearance_record(key, schema) {
+                set_appearance(&mut appearance, key, None);
+            }
+        }
+    }
     let context = &target.context;
-    apply_appearance_table(&section.appearance, player, context, target.notes, &path)?;
+    apply_appearance_table(&appearance, player, context, target.notes, &path)?;
     Ok(())
 }
 
@@ -1008,6 +1145,7 @@ pub(super) fn some_keys(section: &PlayerSection) -> usize {
         section.positions.playing_style.is_some(),
         section.skills.skills.is_some(),
         section.skills.com_styles.is_some(),
+        section.appearance_record.is_some(),
     ];
     let appearance = SettingKey::ALL
         .iter()

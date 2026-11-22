@@ -200,6 +200,12 @@ impl EditFile {
                     continue;
                 };
                 read_player_into(schema.version, player, records[index], appearance)?;
+                // Where a record is not due for every player (PES 2014's
+                // edited or created ones), the model keeps its bytes
+                // whole: the unmapped face and hair travel in them.
+                if !schema.appearance_for_every_player() {
+                    player.appearance_record = Some(records[index].to_vec());
+                }
                 appearance_records.push(Some(index));
             }
         }
@@ -399,6 +405,18 @@ impl EditFile {
             for (i, player) in self.players.iter().enumerate() {
                 if let Some(index) = self.appearance_records[i] {
                     let at = section.offset + index * appearance.size;
+                    // A record the model carries whole lands first, so the
+                    // mapped runs `write_player` patches still win over it.
+                    if let Some(record) = &player.appearance_record {
+                        if record.len() != appearance.size {
+                            return Err(CodecError::RecordSize {
+                                expected: appearance.size,
+                                got: record.len(),
+                            }
+                            .into());
+                        }
+                        payload[at..at + appearance.size].copy_from_slice(record);
+                    }
                     write_player(
                         schema.version,
                         player,

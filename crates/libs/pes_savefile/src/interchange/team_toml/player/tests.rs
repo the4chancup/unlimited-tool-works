@@ -3,7 +3,7 @@ use crate::file::EditFile;
 use crate::interchange::team_toml::{TeamToml, TeamTomlError};
 use crate::model::ingame_face::IngameFace;
 use crate::schema::ingame_face::IngameFaceField;
-use crate::test_support::{FIXTURES, open};
+use crate::test_support::{FIXTURES, open, test_salt};
 
 /// A foreign stand-in for each of `team`'s rostered slots: a real player
 /// of the same save that is not on this roster, re-id'd to the slot.
@@ -2490,4 +2490,344 @@ fn a_same_version_document_refuses_pes14s_own_keys() {
         "{err:?}"
     );
     assert_eq!(&target, team);
+}
+
+// ---------------------------------------------------------------------------
+// The appearance record (PES 2014)
+
+/// The `appear1_min`/`appear1_max` saves the game wrote with player
+/// 85720's every look item at its lowest and highest, under
+/// `.tmp/ingame_saves/`; both hold his appearance record, with different
+/// looks.
+#[cfg(not(target_arch = "wasm32"))]
+fn ingame_save(name: &str) -> (EditFile, Vec<u8>) {
+    let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../../.tmp/ingame_saves/saves_14");
+    let bytes = std::fs::read(dir.join(name)).expect("the save reads");
+    let file = EditFile::from_bytes(&bytes).expect("the save opens");
+    (file, bytes)
+}
+
+/// The team rostering `id` and the player's 1-based slot in it, as
+/// `[players.NN]` keys him.
+#[cfg(not(target_arch = "wasm32"))]
+fn team_of(file: &EditFile, id: u32) -> (&TeamEntry, u8) {
+    file.teams()
+        .iter()
+        .find_map(|team| {
+            team.roster
+                .iter()
+                .position(|slot| slot.player_id == id)
+                .map(|index| {
+                    (
+                        team,
+                        u8::try_from(index + 1).expect("a roster slot fits u8"),
+                    )
+                })
+        })
+        .expect("a team rostering the player")
+}
+
+/// A player's appearance record travels through the document whole: the
+/// export of `appear1_max`'s 85720 applied onto `appear1_min`'s, written
+/// and reopened, holds `appear1_max`'s record byte for byte, its
+/// unmapped face and hair included. The min save itself, unedited,
+/// writes back byte for byte.
+#[test]
+#[cfg(not(target_arch = "wasm32"))]
+#[ignore = "reads the maintainer's PES 2014 saves"]
+fn an_appearance_record_round_trips_through_the_document() {
+    let (min, min_bytes) = ingame_save("appear1_min");
+    let (max, _) = ingame_save("appear1_max");
+    let record_of = |file: &EditFile| {
+        file.player(85720)
+            .expect("85720")
+            .appearance_record
+            .clone()
+            .expect("the record")
+    };
+    let max_record = record_of(&max);
+    assert_ne!(
+        record_of(&min),
+        max_record,
+        "premise: different looks for 85720"
+    );
+
+    let players: Vec<&PlayerEntry> = max.players().iter().collect();
+    let (team, _) = team_of(&max, 85720);
+    let document = TeamToml::from_team(PesVersion::Pes14, team, &players).expect("from_team");
+    let document = TeamToml::parse(&document.to_toml().expect("to_toml")).expect("reparses");
+
+    let mut file = min;
+    assert_eq!(
+        file.to_bytes(&crate::container::file_salt(&min_bytes).expect("the salt"))
+            .expect("writes"),
+        min_bytes,
+        "unedited, the save writes back byte for byte"
+    );
+    let mut team = file
+        .team(team_of(&file, 85720).0.id)
+        .expect("the team")
+        .clone();
+    let notes = document
+        .apply(PesVersion::Pes14, &mut team, file.players_mut())
+        .expect("applies");
+    assert!(notes.is_empty(), "{notes:?}");
+    let team_id = team.id;
+    *file.team_mut(team_id).expect("the team") = team;
+    let out = file.to_bytes(&test_salt()).expect("writes");
+    let back = EditFile::from_bytes(&out).expect("reopens");
+    assert_eq!(
+        back.player(85720)
+            .expect("85720")
+            .appearance_record
+            .as_deref(),
+        Some(max_record.as_slice()),
+        "his appearance record is appear1_max's byte for byte"
+    );
+}
+
+/// A look key edited in the document applies over the record it lands
+/// with: the document's `boots_id` writes, the rest of the record stays
+/// the source's.
+#[test]
+#[cfg(not(target_arch = "wasm32"))]
+#[ignore = "reads the maintainer's PES 2014 saves"]
+fn an_edited_look_key_wins_over_the_record() {
+    let (min, _) = ingame_save("appear1_min");
+    let (max, _) = ingame_save("appear1_max");
+    let players: Vec<&PlayerEntry> = max.players().iter().collect();
+    let (team, slot) = team_of(&max, 85720);
+    let mut document = TeamToml::from_team(PesVersion::Pes14, team, &players).expect("from_team");
+    let section = document.players.get_mut(&slot).expect("his section");
+    assert_eq!(section.boots_id, Some(83), "premise: appear1_max's boots");
+    section.boots_id = Some(77);
+
+    let mut file = min;
+    let mut team = file
+        .team(team_of(&file, 85720).0.id)
+        .expect("the team")
+        .clone();
+    document
+        .apply(PesVersion::Pes14, &mut team, file.players_mut())
+        .expect("applies");
+    let team_id = team.id;
+    *file.team_mut(team_id).expect("the team") = team;
+    let out = file.to_bytes(&test_salt()).expect("writes");
+    let back = EditFile::from_bytes(&out).expect("reopens");
+    let player = back.player(85720).expect("85720");
+    assert_eq!(player.appearance.boots_id, 77, "the document's boots");
+    // The rest of the record is appear1_max's: the expected bytes are its
+    // record with the boots run (bits 64 to 77) carrying 77.
+    let mut expected = max
+        .player(85720)
+        .expect("85720")
+        .appearance_record
+        .clone()
+        .expect("the record");
+    crate::codec::bits::write_bits(&mut expected, 64, 14, 77);
+    assert_eq!(
+        player.appearance_record.as_deref(),
+        Some(expected.as_slice())
+    );
+}
+
+/// The record's first four bytes are its own player's id: applied onto a
+/// player of another id, they are rewritten to his and his `id` stands.
+#[test]
+fn the_record_lands_under_the_target_players_own_id() {
+    // A record naming player 424242.
+    let mut record = vec![0xABu8; 88];
+    record[..4].copy_from_slice(&424242u32.to_le_bytes());
+    let document = TeamToml::parse(&format!(
+        "pes_version = 14\n\n[players.01]\nappearance_record = \"{}\"\n",
+        hex_text(&record)
+    ))
+    .expect("parses");
+    let mut team = TeamEntry {
+        roster: vec![crate::model::team::RosterSlot {
+            player_id: 777,
+            number: 9,
+        }],
+        ..TeamEntry::default()
+    };
+    let mut players = vec![PlayerEntry {
+        id: 777,
+        appearance_record: Some(vec![0xEE; 88]),
+        ..PlayerEntry::bare(PesVersion::Pes14)
+    }];
+    let notes = document
+        .apply(PesVersion::Pes14, &mut team, &mut players)
+        .expect("applies");
+    assert!(notes.is_empty(), "{notes:?}");
+    let player = &players[0];
+    assert_eq!(player.id, 777, "his id is unchanged");
+    let record = player.appearance_record.as_deref().expect("the record");
+    assert_eq!(&record[..4], &777u32.to_le_bytes(), "his id in the record");
+    assert!(
+        record[4..].iter().all(|byte| *byte == 0xAB),
+        "the rest is the document's bytes"
+    );
+}
+
+/// A PES 2014 player the appearance section holds no record for takes
+/// none of what it stores — the record itself and every look key inside
+/// it are skipped, one `NoAppearanceRecord` note naming his slot — and
+/// nothing of his is written back. A document with no look keys for him
+/// notes nothing.
+#[test]
+fn a_player_without_an_appearance_record_takes_none_of_its_look() {
+    let (mut file, bytes) = open(PesVersion::Pes14);
+    let id = file.team(1).expect("team 1").roster[0].player_id;
+    assert_ne!(id, 0, "premise: slot 1 holds a player");
+    assert!(!file.has_appearance_record(id), "premise: no record");
+    // The document carries the record and a look key of each shape the
+    // record stores: `boots_id`, the face edit flag and a physique key.
+    let document = TeamToml::parse(&format!(
+        "pes_version = 14\n\n[players.01]\nappearance_record = \"{}\"\nboots_id = 5\n\
+         \n[players.01.edit_flags]\nface = true\n\
+         \n[players.01.appearance.physique]\nneck_length = 7\n",
+        hex_text(&[0xCC; 88])
+    ))
+    .expect("parses");
+    let mut team = file.team(1).expect("team 1").clone();
+    let notes = document
+        .apply(PesVersion::Pes14, &mut team, file.players_mut())
+        .expect("applies");
+    assert_eq!(notes, [ImportNote::NoAppearanceRecord { slot: 1 }]);
+    assert_eq!(
+        file.to_bytes(&test_salt()).expect("writes"),
+        bytes,
+        "nothing of his is written"
+    );
+
+    // Keys outside the record still write, note-free.
+    let document =
+        TeamToml::parse("pes_version = 14\n\n[players.01]\nname = \"RENAMED\"\n").expect("parses");
+    let notes = document
+        .apply(PesVersion::Pes14, &mut team, file.players_mut())
+        .expect("applies");
+    assert!(notes.is_empty(), "{notes:?}");
+    assert_eq!(
+        file.player(id).expect("the player").name,
+        "RENAMED",
+        "a name still lands"
+    );
+
+    // A team-only document notes nothing.
+    let notes = TeamToml::parse("pes_version = 14\n\n[team]\nid = 1\n")
+        .expect("parses")
+        .apply(PesVersion::Pes14, &mut team, file.players_mut())
+        .expect("applies");
+    assert!(notes.is_empty(), "{notes:?}");
+}
+
+/// A PES 2014 player the section holds no record for exports no look:
+/// `appearance_record` and every key the record stores show commented,
+/// the model's zeros never reaching the document. On PES 2021 no
+/// `appearance_record` line is live either.
+#[test]
+fn a_pes14_player_without_a_record_emits_no_look_keys() {
+    let (file, _) = open(PesVersion::Pes14);
+    let team = file.team(1).expect("team 1");
+    let refs: Vec<&PlayerEntry> = file.players().iter().collect();
+    let text = TeamToml::from_team(PesVersion::Pes14, team, &refs)
+        .expect("from_team")
+        .to_toml()
+        .expect("to_toml");
+    let live = |name: &str| {
+        text.lines()
+            .filter(|line| line.starts_with(&format!("{name} =")))
+            .count()
+    };
+    // The vanilla save holds no appearance records.
+    for name in [
+        "appearance_record",
+        "boots_id",
+        "gloves_id",
+        "face",
+        "hair",
+        "neck_length",
+        "sleeves",
+    ] {
+        assert_eq!(live(name), 0, "a live {name} line: {text}");
+    }
+    assert!(text.contains("# appearance_record = \"\""), "{text}");
+
+    let (file21, _) = open(PesVersion::Pes21);
+    let team21 = file21
+        .teams()
+        .iter()
+        .find(|team| team.roster.iter().any(|slot| slot.player_id != 0))
+        .expect("a team with players");
+    let refs: Vec<&PlayerEntry> = file21.players().iter().collect();
+    let text21 = TeamToml::from_team(PesVersion::Pes21, team21, &refs)
+        .expect("from_team")
+        .to_toml()
+        .expect("to_toml");
+    assert_eq!(
+        text21
+            .lines()
+            .filter(|line| line.starts_with("appearance_record"))
+            .count(),
+        0,
+        "no live appearance_record on PES 2021: {text21}"
+    );
+}
+
+/// `appearance_record` is PES 2014's alone: a same-version PES 2021
+/// document carrying it is refused as `NotInThisVersion`, and a value
+/// that is not the record's 88 bytes of lowercase hex does not parse.
+#[test]
+fn appearance_record_is_refused_off_pes14_and_misspelt() {
+    for (label, text) in [
+        (
+            "87 bytes of hex",
+            format!(
+                "[players.01]\nappearance_record = \"{}\"\n",
+                hex_text(&[0x5A; 87])
+            ),
+        ),
+        (
+            "a non-hex digit",
+            format!(
+                "[players.01]\nappearance_record = \"{}zz\"\n",
+                hex_text(&[0x5A; 87])
+            ),
+        ),
+    ] {
+        let err = TeamToml::parse(&text).expect_err(label);
+        assert!(
+            matches!(
+                err,
+                TeamTomlError::WrongType {
+                    expected: "the appearance record's 88 bytes as 176 lowercase hex digits",
+                    ..
+                }
+            ),
+            "{label}: {err:?}"
+        );
+    }
+
+    let (file, _) = open(PesVersion::Pes21);
+    let (team, index) = first_slot(&file);
+    let slot = u8::try_from(index + 1).expect("a slot index");
+    let mut target = team.clone();
+    let mut players = file.players().to_vec();
+    let doc = TeamToml::parse(&format!(
+        "pes_version = 21\n\n[players.{slot:02}]\nappearance_record = \"{}\"\n",
+        hex_text(&[0x5A; 88])
+    ))
+    .expect("parses");
+    let err = doc
+        .apply(PesVersion::Pes21, &mut target, &mut players)
+        .expect_err("PES 2021 keeps no appearance record");
+    assert!(
+        matches!(
+            err,
+            TeamTomlError::NotInThisVersion { ref path }
+                if path == &format!("players.{slot:02}.appearance_record")
+        ),
+        "{err:?}"
+    );
 }

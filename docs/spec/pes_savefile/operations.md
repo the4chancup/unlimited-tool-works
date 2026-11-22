@@ -478,6 +478,7 @@ defence = [{ instruction = "off", player = 1 }, { instruction = "off", player = 
 name = "YOUR SKILL: A FAILURE"
 shirt_name = "SCORE"
 shirt_number = 1
+appearance_record = "a9050000…" # PES 14 only; the player's whole appearance record in hex; the look keys below apply over it
 nationality = 231
 age = 25
 height = 180                    # cm

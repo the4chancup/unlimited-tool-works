@@ -787,7 +787,9 @@ button would stay on every PES 2014 save, its tooltip saying the folder holds no
     writes the record first and the mapped appearance keys after it, so a key edited in the
     document wins. A target player with no appearance
     record takes none of it, and the import names him, since the editor never creates a
-    record.
+    record. A player with no record exports none of the look keys the record would store,
+    not the zeros the editor holds for him, so an import leaves the target player's look as
+    it was.
   - A PES 2014 document imports only into a PES 2014 save, and a PES 2014 save takes only a
     PES 2014 document; the refusal names both versions. The conversion between versions has
     no map for these fields, and both saves the organizer uses are PES 2014.

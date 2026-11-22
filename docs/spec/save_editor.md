@@ -417,6 +417,7 @@ something says so with its own code.
 | `import_value_not_encodable` | Warning | `import-toml`: a value the save's version cannot store (an instruction it lacks); written as off (`path`, `label`) | warns and goes on |
 | `import_value_capped` | Warning | `import-toml`: a face type above the save's version's cap, or a skin the version has no custom slot for; written as `to` (`path`, `from`, `to`) | warns and goes on |
 | `import_slot_empty` | Warning | `import-toml`: a `[players.NN]` whose roster slot is empty; skipped (`slot`) | warns and goes on |
+| `import_no_appearance_record` | Warning | `import-toml`: a `[players.NN]` holding a look for a PES 2014 player the save keeps no appearance record for; his look skipped (`slot`) | warns and goes on |
 | `import_text_cropped` | Warning | `import-toml`: a name or shirt name longer than the save's field; cut to it at whole characters and colour codes (`path`; `cropped`, the cut text as the game shows it, colour codes left out) | warns and goes on |
 | `patch_team_applied` | Info | `apply-patch`: the save holds the team and at least one of its patch players was written (`team`); a team whose players the save all lacks is not listed | informational; goes on |
 | `patch_team_not_in_save` | Error | `apply-patch`: the save has no team with this id; its players were not looked at (`team`) | the rest is written (a save holding none of the patch's players is not rewritten in place); exit 1 |

@@ -276,6 +276,11 @@ pub struct PlayerSection {
     pub skills: SkillsSection,
     /// `[players.NN.edit_flags]`.
     pub edit_flags: EditFlagsSection,
+    /// The player's appearance record's 88 bytes, on the version that
+    /// keeps one per edited or created player alone (PES 2014); emitted
+    /// as lowercase hex. `None` on every other version and for a player
+    /// the section holds no record for.
+    pub appearance_record: Option<Vec<u8>>,
     /// The appearance keys, in `settings.toml`'s nested shape.
     pub appearance: AppearanceSettings,
 }
@@ -428,6 +433,14 @@ pub enum ImportNote {
         from: u8,
         /// The value written in its place.
         to: u8,
+    },
+    /// A `[players.NN]` whose target player has no appearance record on a
+    /// version that keeps one per edited or created player alone (PES
+    /// 2014): the record and the look keys it stores were skipped, since
+    /// the editor never creates a record.
+    NoAppearanceRecord {
+        /// The roster slot (1-based, as the key spells it).
+        slot: u8,
     },
     /// A `[players.NN]` whose target roster slot is empty; skipped.
     EmptySlot {

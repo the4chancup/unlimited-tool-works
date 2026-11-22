@@ -656,15 +656,15 @@ fn group_key(code: &str, note: &ImportNote) -> String {
     format!("{code} {path}")
 }
 
-/// The key path `note` is about; `None` for an empty slot's note, which
-/// names a roster slot and no key.
+/// The key path `note` is about; `None` for a slot note, which names a
+/// roster slot and no key.
 fn note_path(note: &ImportNote) -> Option<&str> {
     match note {
         ImportNote::NotInThisVersion { path }
         | ImportNote::NotEncodable { path, .. }
         | ImportNote::Capped { path, .. }
         | ImportNote::TextCropped { path, .. } => Some(path),
-        ImportNote::EmptySlot { .. } => None,
+        ImportNote::EmptySlot { .. } | ImportNote::NoAppearanceRecord { .. } => None,
     }
 }
 
@@ -677,7 +677,9 @@ fn note_row(file: &EditFile, team: &TeamEntry, note: &ImportNote) -> NoteRow {
         ImportNote::Capped { path, from, to } => {
             (path_place(path), format!("{from} \u{2192} {to}"))
         }
-        ImportNote::EmptySlot { slot } => (Some(*slot), String::new()),
+        ImportNote::EmptySlot { slot } | ImportNote::NoAppearanceRecord { slot } => {
+            (Some(*slot), String::new())
+        }
         ImportNote::TextCropped { path, cropped } => (path_place(path), display_name(cropped)),
     };
     let name = place
@@ -701,12 +703,16 @@ fn path_place(path: &str) -> Option<u8> {
 /// ability stat by its name in that game, a skill or COM style by its card
 /// name, a motion, an edit flag and a preset's instructions with what they
 /// belong to, any other key (another stat included: `Playing attitude`, as
-/// the Presentation group labels it) by its last part (`Manager ID`); an
-/// empty slot's note is `Empty roster slot`.
+/// the Presentation group labels it) by its last part (`Manager ID`); a
+/// slot note is `Empty roster slot` or `No appearance record`.
 fn note_subject(version: PesVersion, note: &ImportNote) -> String {
-    let Some(path) = note_path(note) else {
+    if let ImportNote::EmptySlot { .. } = note {
         return "Empty roster slot".to_owned();
-    };
+    }
+    if let ImportNote::NoAppearanceRecord { .. } = note {
+        return "No appearance record".to_owned();
+    }
+    let path = note_path(note).expect("the remaining notes carry a key path");
     let parts: Vec<&str> = path.rsplit('.').collect();
     let last = parts[0];
     match parts.get(1).copied().unwrap_or("") {

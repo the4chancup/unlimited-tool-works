@@ -44,6 +44,13 @@ pub struct PlayerEntry {
     pub edit_flags: PlayerEditFlags,
     /// Boots/gloves/base-copy ids, physique measurements and kit styling.
     pub appearance: PlayerAppearance,
+    /// The appearance record's bytes as loaded, whole: on a version whose
+    /// appearance section holds a record for some players only (PES 2014,
+    /// where the record exists once a look is edited in game or the player
+    /// is created in the save), `Some` for a player the section holds one
+    /// for and `None` for the rest. `None` on every other version, whose
+    /// records are mapped field by field alone.
+    pub appearance_record: Option<Vec<u8>>,
 }
 
 /// Nationality and physique basics.

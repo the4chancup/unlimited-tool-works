@@ -116,6 +116,7 @@ fn kept_player(player: PlayerSection, sections: Sections) -> PlayerSection {
         positions,
         skills,
         edit_flags,
+        appearance_record,
         appearance,
     } = player;
     let EditFlagsSection {
@@ -187,6 +188,7 @@ fn kept_player(player: PlayerSection, sections: Sections) -> PlayerSection {
             physique: kept(aesthetics, physique_edited),
             strip: kept(aesthetics, strip_edited),
         },
+        appearance_record: kept(aesthetics, appearance_record),
         appearance: AppearanceSettings {
             skin_color: kept(aesthetics, skin_color),
             iris_color: kept(aesthetics, iris_color),
@@ -345,6 +347,7 @@ mod tests {
             key("edit_flags.hair", &flags.hair),
             key("edit_flags.physique", &flags.physique),
             key("edit_flags.strip", &flags.strip),
+            key("appearance_record", &player.appearance_record),
             key("appearance.skin_color", &look.skin_color),
             key("appearance.iris_color", &look.iris_color),
             key("appearance.physique", &look.physique),
@@ -386,12 +389,13 @@ mod tests {
 
     /// The keys absent from /co/'s PES 19 document, which PES 19 does not store. The premise
     /// checks skip them, since an absent key proves nothing about the filter.
-    const NOT_IN_PES_19: [&str; 7] = [
+    const NOT_IN_PES_19: [&str; 8] = [
         "team.kit_slots",
         "team.edit_flags.short_name",
         "team.edit_flags.stadium",
         "team.edit_flags.strip",
         "edit_flags.base_copy",
+        "appearance_record",
         "appearance.motion.dribbling",
         "appearance.motion.punt_kick",
     ];
