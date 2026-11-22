@@ -3840,7 +3840,8 @@ points there.
   backend"; harness `.tmp/lead/flicker/variants2.py`).
 - open 2026-11-17 (the lead): the checkpoint's `wasm_check.py` warns that
   `ShellCondition`'s `SettingsSaveFailed`, `UpdateAvailable` and `UpdateReady` are never
-  constructed (`studio_core/src/status.rs`): the code that builds them is native only. The
+  constructed (`studio_core/src/status.rs`): the code that builds them is native only. It
+  also warns that `theme.rs`'s `CORNER_RADIUS` is never used (still both at `6eb5f71f`). The
   gate passes, and the warning was already in earlier runs (`pipeline_1117_rw5.log`), but it
   is noise every run prints, and a new warning could hide behind it.
 - open 2026-11-17 (the lead): with `WGPU_BACKEND=gl` the release build of `26ae8f7c` never
