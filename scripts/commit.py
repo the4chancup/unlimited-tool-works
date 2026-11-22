@@ -9,6 +9,11 @@ what is wrong and nothing is committed. The first form then runs `git commit -F 
 with the arguments given (paths, `-a`, `--amend`); the second `git merge --no-ff <ref> -F
 <message file>`, so a merge commit's message is checked like any other.
 
+A commit that changes a file under `docs/prototypes/` first runs the drafts bundler's test
+(`scripts/drafts/bundle_drafts_test.py`, under a second) and commits nothing when it fails:
+a draft is pushed for the maintainer to open on the project's pages, often before a
+checkpoint, and a template-literal image path once reached CI that way.
+
 Lead, sidekick, reviewer or script, nobody runs `git commit` or `git merge` with a message of
 their own any other way: a script that worded its own once made 49 commits no reader of the
 log can use. `just gates-changed` checks every commit since its base, which catches one made
@@ -39,7 +44,28 @@ def main(argv: list[str]) -> int:
         return 1
     if merge is not None:
         return subprocess.run(["git", "merge", "--no-ff", merge, "-F", str(message)]).returncode
+    if touches_drafts(rest) and not drafts_bundle():
+        print("commit: nothing committed; the drafts bundler's test failed (above)")
+        return 1
     return subprocess.run(["git", "commit", "-F", str(message), *rest]).returncode
+
+
+def touches_drafts(rest: list[str]) -> bool:
+    """Whether the commit `rest` describes changes a draft: the paths it names (or, with
+    none, what is staged) against HEAD, `-a` taking every tracked change."""
+    paths = [arg for arg in rest if not arg.startswith("-")]
+    if paths or "-a" in rest:
+        command = ["git", "diff", "--name-only", "HEAD", "--", *paths]
+    else:
+        command = ["git", "diff", "--cached", "--name-only"]
+    changed = subprocess.run(command, capture_output=True, text=True, check=True).stdout
+    return any(line.startswith("docs/prototypes/") for line in changed.splitlines())
+
+
+def drafts_bundle() -> bool:
+    """Runs the drafts bundler's test; whether it passed."""
+    test = Path(__file__).resolve().parent / "drafts" / "bundle_drafts_test.py"
+    return subprocess.run([sys.executable, str(test)]).returncode == 0
 
 
 if __name__ == "__main__":

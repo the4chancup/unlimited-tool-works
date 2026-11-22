@@ -248,7 +248,9 @@ scripts' own `*_test.py` the gates list run whatever changed) runs every package
 the toolchain, `Cargo.lock`, `.cargo/` and `resources/` reach them all.
 
 How often each runs. A commit that touches only `docs/` or the root's `*.md` runs `just
-doc-pointers` and `just acceptance`. A code commit reruns, in the real workspace, the changed
+doc-pointers` and `just acceptance`; one that touches a draft (`docs/prototypes/`) also gets
+the drafts bundler's test, which `scripts/commit.py` runs itself, since a draft is often
+pushed for the maintainer before a checkpoint. A code commit reruns, in the real workspace, the changed
 packages' own tests (`cargo test -p <each>`), `cargo clippy -p <each> --all-targets -- -D
 warnings` and `cargo fmt --all --check`: the sidekick's pasted runs are a claim, and these are
 the checks a slice's own change fails first. A commit that adds or changes a test of printed
