@@ -29,7 +29,9 @@ run's findings (`4cc-studio-temp/str_re/out/findings.md`).
 **The detour is over**: Build 2, `0.0.2-pes14.2`, was published 2026-11-21. **The main goal
 now is item 6, the Compiler's view for the VGL organizer** (the maintainer, 2026-11-21), its
 draft looked at again first; the Export upgrader's view may follow in a later build. The
-other items run beside it. **After the detour**, in this order:
+other items run beside it. **Ahead of item 6:** the `pes14` branch's step 12, a whole PES
+2014 team exported and imported as Team TOML, which Build 3 now carries (the maintainer,
+2026-11-22); running sidekicks and jobs are not stopped for it. **After the detour**, in this order:
 1. The Nation list: done (merges `467790ab`, `1b9c5f27`; SWE-2 round S1n). It opens on the
    held nation, a typed name picks as an ID does, Escape puts the old nation back, and one
    opening is one undo entry; the General info review's fixes (rulings "geninfo A1") with it.
@@ -3675,8 +3677,10 @@ points there.
   gloves slice reads 262143 as no gloves model, as the game draws it (the `pes14` branch's
   plan, "Gloves 262143 is no gloves model"). Build 3 passed its gates, and its release build
   was checked on copies of both saves: HAGSEO's Appearance page and Hide default body, team
-  127 in the newer save, /gd/ at 136 in `EDIT.bin.autumn14`. It is left unpushed, and the cut
-  waits on the maintainer's yes (`docs/maintainer/tasks.html` "PES 2014 Build 3: your yes to release it").
+  127 in the newer save, /gd/ at 136 in `EDIT.bin.autumn14`. It is left unpushed. Build 3
+  now also carries the `pes14` plan's step 12 (Team TOML on PES 2014), so it is built again
+  once that step lands, and its `tasks.html` card, taken down meanwhile, comes back then for
+  the maintainer's yes.
   The Compiler's view (item 6) goes on without waiting for it (the maintainer, 2026-11-22).
 - open (2026-11-22) — The Save editor's tests leave their scratch behind:
   `test_support::scratch` empties `target/<profile>/save_editor_tests/<test>` when a test
