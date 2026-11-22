@@ -109,6 +109,9 @@ other items run beside it. **After the detour**, in this order:
    - [ ] 1c: the toolbar's strip and its counts, the log's lines linked to cells, the log
      collapsed when it would hide rows → verify: TC-GUI-15, 26, 27
    - Then the row actions, the ID cell's editing, the watcher and cache, Sizes and sorting.
+     The watcher and cache's slice also owes TC-GUI-04's shallow archive check: 1a's check
+     reads a zip or 7z export whole, where the scenario wants nothing decompressed past its
+     root metadata.
    - Slices of their own beside the view: 0.0.2-logo, `logo_missing`, a
      `Full` team export with no logo is an Error, and `portrait_missing`, on PES 2017 to 2021
      a player with no portrait is a Warning (`plans/aesthetics_export/object_model.md`
