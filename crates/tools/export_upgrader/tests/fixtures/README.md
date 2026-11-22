@@ -12,6 +12,10 @@ the folder with 7-Zip's `7z a`, so the three hold the same files.
   (CRLF, no final newline) except its `Team:` line, which names `/co/` (714), the acceptance
   section's test team. It has four team colors, three player kits and one goalkeeper kit, and
   a two-line "Other Notes:" section.
+- `Logo/emblem_0XXX_r_ll.png`: the real 512² logo of `4CCG Aesthetics Export VGL26`, the
+  export the Note comes from, byte for byte. A `Full` export needs a logo, and a lone large
+  logo upgrades with no report line, so tests that are not about the logo stay clean.
+  `Sandbox::logo` copies it into a test's hand-written export.
 - `Other/readme.txt`: one line, content no step migrates (step 10's unmigrated content).
 - `Thumbs.db`: eight bytes of an OLE header, an OS artifact step 1 leaves out unreported. The
   repository's `.gitignore` ignores the name except below a `tests/fixtures/` folder, so tree

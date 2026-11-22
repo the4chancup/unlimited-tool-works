@@ -100,7 +100,12 @@ fn a_tagged_team_export_carries_its_coverage() {
         ("co Full Spring 2026", ExportCoverage::Full),
         ("co midcup day 5", ExportCoverage::Midcup),
     ] {
-        let report = report(name, &[("Players/03 - A/face_high.fmdl", 10)], &[], &[]);
+        let files = [
+            ("Players/03 - A/face_high.fmdl", 10),
+            ("Players/03 - A/portrait.dds", 9),
+            ("logo.png", 9),
+        ];
+        let report = report(name, &files, &[], &[]);
         assert_eq!(issue_codes(&report), vec![], "{name}");
         assert_eq!(report.validated.unwrap().coverage, coverage, "{name}");
     }

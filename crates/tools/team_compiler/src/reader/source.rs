@@ -488,6 +488,7 @@ mod tests {
                 [
                     ("Kits", ListedKind::Folder),
                     ("Kits/p2", ListedKind::Folder),
+                    ("logo.png", ListedKind::File { size: 201_305 }),
                     ("notes.txt", ListedKind::File { size: 24 }),
                     ("players.txt", ListedKind::File { size: 10 }),
                 ],

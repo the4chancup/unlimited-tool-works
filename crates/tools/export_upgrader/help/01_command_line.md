@@ -50,6 +50,11 @@ input's own, letter case aside, ` upgraded` is appended so the original is
 never written over. An output folder that already exists stops the run and is
 left untouched.
 
+Every team needs its logo, so an export upgraded as `Full` with no logo in its
+`Logo/` folder is the error `logo_missing`, and nothing is written. On PES
+2017 to 2021, a player of a `Full` output with no portrait is the warning
+`portrait_missing`, and the export is still written.
+
 A referee export is upgraded from its `refs.txt`, or from the older
 `Refs list.txt` when there is no `refs.txt`. The output gets a `players.txt`
 holding the same slots in the new spelling (two-digit slot numbers, one entry

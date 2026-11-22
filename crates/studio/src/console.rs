@@ -498,8 +498,8 @@ mod tests {
         Some((count(done)?, count(total)?))
     }
 
-    /// EU-CLI-01's export at `dir/<name>`, its Note naming `team`: one face folder and a
-    /// team colour, so that its upgrade is clean.
+    /// EU-CLI-01's export at `dir/<name>`, its Note naming `team`: one face folder, a
+    /// team colour and the Export upgrader's fixture logo, so that its upgrade is clean.
     fn old_export(dir: &TestDir, name: &str, team: &str) -> PathBuf {
         let export = dir.path().join(name);
         fs::create_dir_all(export.join("Other")).unwrap();
@@ -519,6 +519,14 @@ mod tests {
         ] {
             fs::write(face.join(name), bytes).unwrap();
         }
+        fs::create_dir_all(export.join("Logo")).unwrap();
+        fs::copy(
+            Path::new(env!("CARGO_MANIFEST_DIR")).join(
+                "../tools/export_upgrader/tests/fixtures/co Spring/Logo/emblem_0XXX_r_ll.png",
+            ),
+            export.join("Logo/emblem_0XXX_r_ll.png"),
+        )
+        .unwrap();
         export
     }
 

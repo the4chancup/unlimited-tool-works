@@ -59,6 +59,7 @@ pub(crate) fn context() -> ValidationContext {
         strict_file_type_check: true,
         pass_through: false,
         installed_common_textures: BTreeSet::new(),
+        installed_portrait_slots: None,
     }
 }
 

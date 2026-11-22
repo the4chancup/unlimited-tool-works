@@ -271,6 +271,7 @@ pub(crate) fn resolved_with_check(
             strict_file_type_check,
             pass_through: false,
             installed_common_textures: BTreeSet::new(),
+            installed_portrait_slots: None,
         });
     let issues = report.issues.iter().map(|issue| issue.code).collect();
     let teams = TeamsList::parse("ID\tName\n702\t/a/\n714\t/co/\n790\t/dbg/\n").unwrap();

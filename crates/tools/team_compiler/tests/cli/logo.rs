@@ -7,8 +7,12 @@ use std::collections::BTreeMap;
 use dds_convert::{SourceFormat, decode, encode_png};
 
 use crate::common::Sandbox;
-use crate::compile::{cpk_entries, pes_settings, pes21_settings};
-use crate::{TEAM_COLORS_MISSING, findings_of};
+use crate::compile::{
+    compiled_kits, compiled_players, cpk_entries, pes_settings, pes21_settings, tracer_kit,
+    tracer_portrait,
+};
+use crate::referees::write_ref_a;
+use crate::{CLEAN_PLAYER, TEAM_COLORS_MISSING, clean_model, findings_of};
 
 const RED: [u8; 4] = [255, 0, 0, 255];
 const GREEN: [u8; 4] = [0, 255, 0, 255];
@@ -16,7 +20,7 @@ const BLUE: [u8; 4] = [0, 0, 255, 255];
 const CLEAR: [u8; 4] = [0, 0, 0, 0];
 
 /// A `width` x `height` PNG whose texel at (x, y) is `color(x, y)`.
-fn png(width: u32, height: u32, color: impl Fn(u32, u32) -> [u8; 4]) -> Vec<u8> {
+pub(crate) fn png(width: u32, height: u32, color: impl Fn(u32, u32) -> [u8; 4]) -> Vec<u8> {
     let mut pixels = Vec::with_capacity((width * height * 4) as usize);
     for y in 0..height {
         for x in 0..width {
@@ -236,6 +240,100 @@ fn a_small_logo_gives_the_128_pixel_one_and_an_undecodable_one_drops_the_whole_l
         })
         .collect();
     assert_eq!(colors, [(512, RED), (256, RED), (128, BLUE)]);
+}
+
+/// The findings of a `/co/` export holding kits p1 and g1 with no `config.toml` or
+/// `colors.txt`, after its logo's and its players' own.
+pub(crate) const CO_KITS_FINDINGS: [&str; 6] = [
+    "Info export_identified [Keep] (team=/co/, id=714)",
+    TEAM_COLORS_MISSING,
+    "Info kit_config_generated [Keep] at Kits/p1 ()",
+    "Info kit_config_generated [Keep] at Kits/g1 ()",
+    "Info kit_colors_derived [Keep] at Kits/p1 ()",
+    "Info kit_colors_derived [Keep] at Kits/g1 ()",
+];
+
+/// Writes `exports/<name>`: player 03 with his portrait, kits p1 and g1, and no root file.
+fn write_full_export(sandbox: &Sandbox, name: &str) {
+    sandbox.write(&format!("exports/{name}/{CLEAN_PLAYER}"), &clean_model());
+    sandbox.write(
+        &format!("exports/{name}/Players/03 - A/portrait.dds"),
+        &tracer_portrait(),
+    );
+    for slot in ["p1", "g1"] {
+        sandbox.write(
+            &format!("exports/{name}/Kits/{slot}/kit.dds"),
+            &tracer_kit(),
+        );
+    }
+}
+
+// TC-ROOT-15
+#[test]
+fn a_full_export_with_no_logo_file_is_logo_missing_and_compiles_without_a_logo() {
+    let sandbox = Sandbox::new("logo_missing_full");
+    write_full_export(&sandbox, "co Full Spring");
+
+    let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
+
+    assert_eq!(
+        findings_of(&run.messages(), "co Full Spring"),
+        [&["Error logo_missing [Keep] ()"][..], &CO_KITS_FINDINGS].concat()
+    );
+    assert_eq!(run.exit_code(), 1);
+    assert_eq!(compiled_players(&sandbox), [71403]);
+    assert_eq!(compiled_kits(&sandbox), ["u0714g1", "u0714p1"]);
+    let entries = cpk_entries(&sandbox.root.join("output/4cc_99_test.cpk"));
+    assert!(
+        entries.keys().all(|path| !path.contains("e_000714_")),
+        "{:?}",
+        entries.keys().collect::<Vec<_>>()
+    );
+}
+
+// TC-ROOT-15
+#[test]
+fn a_midcup_or_referee_export_with_no_logo_and_a_full_one_with_a_refused_logo_have_no_logo_missing()
+{
+    let sandbox = Sandbox::new("logo_missing_not_full");
+    sandbox.write(
+        &format!("exports/co Midcup Day 5/{CLEAN_PLAYER}"),
+        &clean_model(),
+    );
+    write_ref_a(&sandbox, &["01"]);
+
+    let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
+
+    let lines = run.messages();
+    assert_eq!(
+        findings_of(&lines, "co Midcup Day 5"),
+        [identified("co", 714).as_str(), TEAM_COLORS_MISSING]
+    );
+    assert_eq!(
+        findings_of(&lines, "refs Cup"),
+        [
+            "Info fmdl_weights_not_normalized [Keep] at Players/Ref A (file=boots.fmdl, count=1662)",
+            "Info fmdl_weights_not_normalized [Keep] at Players/Ref A (file=face_high.fmdl, count=1662)",
+            "Info export_identified [Keep] (team=referees)",
+        ]
+    );
+    assert_eq!(run.exit_code(), 0);
+
+    let refused = Sandbox::new("logo_missing_refused");
+    write_full_export(&refused, "co Full Autumn");
+    refused.write("exports/co Full Autumn/logo.png", b"not an image");
+
+    let run = refused.run(&pes21_settings(&refused), &["compile", "--no-deploy"]);
+
+    assert_eq!(
+        findings_of(&run.messages(), "co Full Autumn"),
+        [
+            &["Error logo_file_invalid [DropFile] at logo.png (file=logo.png, error=image decode failed: Format error decoding Png: Invalid PNG signature.)"][..],
+            &CO_KITS_FINDINGS,
+        ]
+        .concat()
+    );
+    assert_eq!(run.exit_code(), 1);
 }
 
 // TC-ROOT-13

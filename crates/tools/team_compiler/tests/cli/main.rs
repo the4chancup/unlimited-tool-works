@@ -342,6 +342,16 @@ const TEAM_COLORS_MISSING: &str = "Info team_colors_missing [Keep] ()";
 /// with no finding.
 const CLEAN_PLAYER: &str = "Players/03 - A/face_high.fmdl";
 
+/// Writes `<export>/logo.png`, a plain 512 x 512 PNG: a `Full` export with no logo is
+/// `logo_missing`, and at 512 the logo needs no upscale, so it adds no finding. It does add the
+/// team's three flag PNGs to the CPK.
+fn write_logo(sandbox: &Sandbox, export: &str) {
+    sandbox.write(
+        &format!("{export}/logo.png"),
+        &logo::png(512, 512, |_, _| [0, 128, 0, 255]),
+    );
+}
+
 /// A Fox model in which `fmdl`'s check finds nothing (the tracer's right glove), for a test
 /// whose model only has to be one: both commands read every model, so an empty file would be
 /// `model_broken`. Its hand bones are renamed from `skh_` to `skx_`, so a face model written

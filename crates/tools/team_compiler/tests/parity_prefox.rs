@@ -1,7 +1,7 @@
 //! Parity against the compiled output for the same export, pre-Fox: compile
 //! `fixtures/tracer_prefox/studio/jp Midcup Tracer`, and the upgrader's output for
-//! `fixtures/tracer_prefox/old/jp Tracer` (`fixtures/tracer_prefox/upgraded/`, copied under
-//! the `Midcup` tag) for PES 17 through the `compile` command
+//! `fixtures/tracer_prefox/old/jp Tracer` (`fixtures/tracer_prefox/upgraded/`, a `Midcup`
+//! export as the twin is) for PES 17 through the `compile` command
 //! and compare the CPK with the reference tree in `fixtures/tracer_prefox/red/`, one explicit
 //! row per reference entry, and per entry of the reference's nested face CPK, under the tiers
 //! of `docs/spec/team_compiler/testing.md` "Testing: parity against Red (adapted from Blue)".
@@ -17,7 +17,7 @@ use base64::Engine as _;
 use common::Sandbox;
 use pes_model::format::mtl::{MaterialEntry, MaterialSet};
 use studio_core::{PipelineEvent, Severity};
-use upgraded::upgraded_as_midcup;
+use upgraded::upgraded_golden;
 
 /// The player's face CPK, at the same path in both trees.
 const FACE_CPK: &str = "common/character0/model/character/face/real/73120.cpk";
@@ -630,7 +630,7 @@ fn the_pre_fox_tracer_matches_the_reference_tree() {
 #[test]
 fn the_upgraded_pre_fox_tracer_matches_the_reference_tree() {
     let sandbox = Sandbox::new("parity_prefox_upgraded");
-    let exports_root = upgraded_as_midcup(&sandbox, "tracer_prefox");
+    let exports_root = upgraded_golden("tracer_prefox");
     // The member typed the boots `boots` (the fixture's README: "The member's `face.xml`
     // types the boots `boots`"), and Red kept the file as it is too.
     let boots_typed = (

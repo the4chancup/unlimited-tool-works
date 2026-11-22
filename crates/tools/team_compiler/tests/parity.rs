@@ -1,7 +1,7 @@
 //! Parity against the compiled output for the same export: compile
 //! `fixtures/tracer/studio/egg Midcup Tracer`, the upgrader's output for
-//! `fixtures/tracer/old/egg Tracer` (`fixtures/tracer/upgraded/`, copied under
-//! the `Midcup` tag), and the referee golden `fixtures/tracer_refs/upgraded/`
+//! `fixtures/tracer/old/egg Tracer` (`fixtures/tracer/upgraded/`, a `Midcup`
+//! export as the twin is), and the referee golden `fixtures/tracer_refs/upgraded/`
 //! through the `compile` command and compare the CPKs with the reference
 //! trees `fixtures/tracer/red/` and `fixtures/tracer_refs/red/`, one explicit
 //! row per reference entry under the tiers of
@@ -19,7 +19,7 @@ use common::Sandbox;
 use fpk::FpkFile;
 use studio_core::{PipelineEvent, Severity};
 use uniparam::UniformParameter;
-use upgraded::upgraded_as_midcup;
+use upgraded::upgraded_golden;
 
 /// How one entry of the reference tree is compared.
 enum Row {
@@ -725,8 +725,7 @@ fn the_tracer_bullet_matches_the_reference_tree() {
 #[test]
 fn the_upgraded_tracer_matches_the_reference_tree() {
     let sandbox = Sandbox::new("parity_upgraded");
-    let exports_root = upgraded_as_midcup(&sandbox, "tracer");
-    assert_matches_reference(&sandbox, &exports_root);
+    assert_matches_reference(&sandbox, &upgraded_golden("tracer"));
 }
 
 #[test]

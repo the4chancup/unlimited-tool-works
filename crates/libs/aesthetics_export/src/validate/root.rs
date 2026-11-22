@@ -4,8 +4,9 @@
 
 use std::collections::BTreeMap;
 
-use super::folders::{stem, texture_conflicts};
-use crate::FileKind;
+use pes_version::PesVersion;
+
+use super::folders::{has_portrait, stem, texture_conflicts};
 use crate::conventions::{Marker, MetadataFile, folder_slot, strip_prefix_ci};
 use crate::listing::{SmallMetadata, ValidationContext, metadata_text};
 use crate::parse::{AestheticsExportDraft, FileDescriptor};
@@ -13,6 +14,7 @@ use crate::slots::PlayerSlot;
 use crate::validate::{
     Disposition, IssueScope, LogoFile, LogoFiles, LogoFit, RootArtifacts, ValidationIssue, issue_in,
 };
+use crate::{ExportCoverage, FileKind};
 
 /// `Portraits/NN.*`: a direct texture named by its slot as a player folder is
 /// (`folder_slot`: `NN`, alone or before ` - ` and any text; `05`, `05 - Bob`
@@ -56,6 +58,46 @@ pub(crate) fn check_portraits(
         portraits.insert(slot, file.clone());
     }
     portraits
+}
+
+/// `portrait_missing` on each player folder a team slot maps to (`assignments`, slot →
+/// draft player index) that has no `portrait.*` of its own and no `Portraits/NN` file in
+/// `portraits`, as `check_portraits` returned it. Only PES 2017 to 2021 show portraits. A
+/// `Midcup` player keeps an installed portrait, so he is reported only when the installed
+/// CPKs are known to hold none for his slot; a `Midcup` export reports none when they are not
+/// known.
+pub(crate) fn check_portraits_missing(
+    draft: &AestheticsExportDraft,
+    assignments: &BTreeMap<PlayerSlot, usize>,
+    portraits: &BTreeMap<PlayerSlot, FileDescriptor>,
+    context: &ValidationContext,
+    issues: &mut Vec<ValidationIssue>,
+) {
+    if context.version < PesVersion::Pes17 {
+        return;
+    }
+    for (slot, index) in assignments {
+        // An export with no coverage tag is already dropped by `export_tag_missing`.
+        let none_installed = match draft.coverage {
+            Some(ExportCoverage::Full) => true,
+            Some(ExportCoverage::Midcup) => context
+                .installed_portrait_slots
+                .as_ref()
+                .is_some_and(|installed| !installed.contains(slot)),
+            None => false,
+        };
+        let folder = &draft.players[*index];
+        if !none_installed || portraits.contains_key(slot) || has_portrait(folder) {
+            continue;
+        }
+        issues.push(issue_in(
+            context,
+            "portrait_missing",
+            IssueScope::Folder(folder.path.clone()),
+            vec![("slot", format!("{:02}", slot.get()))],
+            Disposition::Keep,
+        ));
+    }
 }
 
 /// A `logo*` stem's grammar: `logo[_small][_<fit>]`, tags in that order,
@@ -157,7 +199,7 @@ pub(crate) fn check_logo(
 /// Whether `file` is a logo candidate: a root file whose stem starts with
 /// `logo` (ASCII-case-insensitively). `check_logo` reports these, so
 /// `check_root` skips them and never reports one as `root_file_unexpected`.
-fn is_logo_candidate(file: &FileDescriptor) -> bool {
+pub(crate) fn is_logo_candidate(file: &FileDescriptor) -> bool {
     strip_prefix_ci(stem(file.path.name()), "logo").is_some()
 }
 

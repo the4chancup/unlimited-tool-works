@@ -232,6 +232,18 @@ impl ParsedAestheticsExport {
                 vec![],
                 Disposition::DropExport,
             ));
+        } else if draft.kind() == ExportKind::Team
+            && draft.coverage == Some(crate::ExportCoverage::Full)
+            && !draft.root_files.iter().any(root::is_logo_candidate)
+        {
+            // A `Midcup` export keeps the installed logo, and a referee export's logo
+            // reaches no output. A logo file that is there but refused has its own finding.
+            issues.push(issue(
+                "logo_missing",
+                IssueScope::Export,
+                vec![],
+                Disposition::Keep,
+            ));
         }
 
         // The roster: authoritative lines, or the folder names' numbers.
@@ -261,6 +273,9 @@ impl ParsedAestheticsExport {
         // content folders end (`Kits/`, then the loose root groups).
         let mut kits = kits::check(draft, context, &mut issues);
         let mut portraits = root::check_portraits(draft, context, &mut issues);
+        if let roster::SlotMap::Team(assignments) = &slot_map {
+            root::check_portraits_missing(draft, assignments, &portraits, context, &mut issues);
+        }
         let logo = root::check_logo(draft, context, &mut issues);
         let mut root = root::check_root(
             draft,

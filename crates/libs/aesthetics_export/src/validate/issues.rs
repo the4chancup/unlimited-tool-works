@@ -271,6 +271,8 @@ pub const ISSUE_CODES: &[&str] = &[
     "kit_all_unused",
     "kit_textures_inherited",
     "portrait_name_invalid",
+    "portrait_missing",
+    "logo_missing",
     "logo_file_invalid",
     "logo_role_duplicate",
     "logo_small_without_main",

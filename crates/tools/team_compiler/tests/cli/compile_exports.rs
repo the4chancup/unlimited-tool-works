@@ -20,10 +20,11 @@ use crate::compile::{
     pass_through_settings, pes_settings, pes21_settings, pixels_cut_dds, tracer_export, tracer_kit,
     tracer_player_file, tracer_portrait,
 };
+use crate::logo::{CO_KITS_FINDINGS, png};
 use crate::textures::{bc1_dds, texture_fixture};
 use crate::{
     BUNDLED_BINS, CLEAN_PLAYER, TEAM_COLORS_MISSING, bundled_bins_then, clean_model, command_args,
-    deploy_skipped, findings_of, no_deploy_lines, patch_written, source_fixture,
+    deploy_skipped, findings_of, no_deploy_lines, patch_written, source_fixture, write_logo,
 };
 
 // TC-ROS-01
@@ -182,6 +183,7 @@ fn kit_folders_are_compiled_as_the_slot_their_name_starts_with() {
 #[test]
 fn a_kit_holding_only_a_back_texture_gets_the_placeholder_main_texture() {
     let sandbox = Sandbox::new("kit_back_only");
+    write_logo(&sandbox, "exports/co Full Back");
     sandbox.write("exports/co Full Back/Kits/p4/kit_back.dds", &tracer_kit());
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
@@ -286,6 +288,67 @@ fn a_folder_listed_under_two_slots_emits_its_portrait_for_both() {
     for name in ["71403.dds", "71407.dds"] {
         assert_eq!(entries[&portrait_path(name)], tracer_portrait(), "{name}");
     }
+}
+
+// TC-ROOT-16
+#[test]
+fn a_player_with_no_portrait_is_portrait_missing_on_pes_17_to_21_only() {
+    let sandbox = Sandbox::new("portraits_missing");
+    let export = "exports/co Full Spring";
+    for folder in ["01 - A", "02 - B", "03 - C", "04 - D"] {
+        sandbox.write(
+            &format!("{export}/Players/{folder}/face_high.fmdl"),
+            &clean_model(),
+        );
+    }
+    sandbox.write(
+        &format!("{export}/Players/01 - A/portrait.dds"),
+        &tracer_portrait(),
+    );
+    sandbox.write(&format!("{export}/Portraits/02.dds"), &tracer_portrait());
+    sandbox.write(
+        &format!("{export}/Portraits/player_04.dds"),
+        &tracer_portrait(),
+    );
+    sandbox.write(
+        &format!("{export}/logo.png"),
+        &png(512, 512, |_, _| [255; 4]),
+    );
+    for slot in ["p1", "g1"] {
+        sandbox.write(&format!("{export}/Kits/{slot}/kit.dds"), &tracer_kit());
+    }
+
+    let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
+
+    assert_eq!(
+        findings_of(&run.messages(), "co Full Spring"),
+        [
+            &[
+                "Error portrait_name_invalid [DropFile] at Portraits/player_04.dds ()",
+                "Warning portrait_missing [Keep] at Players/03 - C (slot=03)",
+                "Warning portrait_missing [Keep] at Players/04 - D (slot=04)",
+            ][..],
+            &CO_KITS_FINDINGS,
+        ]
+        .concat()
+    );
+    assert_eq!(run.exit_code(), 1);
+    assert_eq!(compiled_players(&sandbox), [71401, 71402, 71403, 71404]);
+    assert_eq!(compiled_portraits(&sandbox), ["71401.dds", "71402.dds"]);
+
+    let run = sandbox.run(&pes_settings(&sandbox, 16), &["compile", "--no-deploy"]);
+
+    let lines = run.messages();
+    assert!(
+        lines.iter().all(|line| !line.contains("portrait_missing")),
+        "{lines:#?}"
+    );
+    assert!(
+        lines
+            .iter()
+            .any(|line| line.contains("portrait_name_invalid")),
+        "{lines:#?}"
+    );
 }
 
 // TC-PRT-02
@@ -875,6 +938,7 @@ fn uniform_parameter_changes(ours: &[u8], base: &[u8]) -> Vec<String> {
 #[test]
 fn each_kit_s_menu_colors_come_from_its_colors_txt_its_texture_or_the_missing_pair() {
     let sandbox = Sandbox::new("kit_colors");
+    write_logo(&sandbox, "exports/co Full Colors");
     let export = "exports/co Full Colors";
     sandbox.write(&format!("{export}/colors.txt"), b"#c11200\n#414141\n");
     sandbox.write(&format!("{export}/Kits/p1/kit.dds"), &tracer_kit());
@@ -955,6 +1019,7 @@ fn each_kit_s_menu_colors_come_from_its_colors_txt_its_texture_or_the_missing_pa
 #[test]
 fn a_kit_without_a_texture_derives_its_colors_from_the_inherited_all_kit_dds() {
     let sandbox = Sandbox::new("kit_colors_inherited");
+    write_logo(&sandbox, "exports/co Full Shared");
     let export = "exports/co Full Shared";
     sandbox.write(&format!("{export}/Kits/all/kit.dds"), &tracer_kit());
     fs::create_dir_all(sandbox.root.join(format!("{export}/Kits/p2"))).unwrap();
@@ -1018,6 +1083,7 @@ fn an_all_kit_texture_that_does_not_decode_drops_each_kit_inheriting_it_and_not_
 #[test]
 fn a_kit_colors_txt_with_one_valid_color_reports_its_bad_line_and_derives_both_colors() {
     let sandbox = Sandbox::new("kit_colors_one_valid");
+    write_logo(&sandbox, "exports/co Full Colors");
     let export = "exports/co Full Colors";
     sandbox.write(&format!("{export}/Kits/p1/kit.dds"), &tracer_kit());
     sandbox.write(
@@ -1053,6 +1119,7 @@ fn a_kit_s_icon_marker_gives_its_menu_icon_and_a_kit_without_one_gets_icon_3() {
     // Team 790's base record is a placeholder whose entries carry icon 0, so icon 3 is
     // written, not kept.
     let sandbox = Sandbox::new("kit_icons");
+    write_logo(&sandbox, "exports/dbg Full Icons");
     let export = "exports/dbg Full Icons";
     sandbox.write(&format!("{export}/Kits/p1/kit.dds"), &tracer_kit());
     sandbox.write(&format!("{export}/Kits/p1/icon_7"), b"");
@@ -1622,9 +1689,14 @@ fn a_midcup_export_merges_its_kits_into_its_team_s_record() {
 #[test]
 fn a_full_export_without_kits_compiles_an_empty_p1_and_g1() {
     let sandbox = Sandbox::new("bin_full_no_kits");
+    write_logo(&sandbox, "exports/co Full Players");
     sandbox.write(
         &format!("exports/co Full Players/{CLEAN_PLAYER}"),
         &clean_model(),
+    );
+    sandbox.write(
+        "exports/co Full Players/Players/03 - A/portrait.dds",
+        &tracer_portrait(),
     );
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
@@ -1670,6 +1742,7 @@ fn a_full_export_without_kits_compiles_an_empty_p1_and_g1() {
 #[test]
 fn a_full_export_lacking_g1_gets_an_empty_one_and_a_midcup_export_none() {
     let sandbox = Sandbox::new("bin_full_and_midcup");
+    write_logo(&sandbox, "exports/co Full Two");
     for slot in ["p1", "p2"] {
         sandbox.write(
             &format!("exports/co Full Two/Kits/{slot}/kit.dds"),
@@ -1760,9 +1833,14 @@ const SHIRT_144: &[u8] = b"[shirt]\nmodel = 144\n";
 fn an_fpc_on_player_writes_the_fpc_values_into_every_kit_config() {
     let sandbox = Sandbox::new("kit_fpc_on");
     let export = "exports/co Full Fpc";
+    write_logo(&sandbox, export);
     sandbox.write(
         &format!("{export}/Players/05 - A/face_high.fmdl"),
         &clean_model(),
+    );
+    sandbox.write(
+        &format!("{export}/Players/05 - A/portrait.dds"),
+        &tracer_portrait(),
     );
     sandbox.write(&format!("{export}/Players/05 - A/fpc_on"), b"");
     sandbox.write(&format!("{export}/Kits/p1/kit.dds"), &tracer_kit());
@@ -2473,11 +2551,12 @@ fn write_a_home(sandbox: &Sandbox) {
 }
 
 /// Writes `a Midcup Home` beside two exports of `/co/`: the folder `co Full A`, holding a goalkeeper
-/// kit, and `co Full B.zip`, the tracer's player and goalkeeper kit. Both compiled, the two kits
+/// kit and a logo, and `co Full B.zip`, the tracer's player and goalkeeper kit. Both compiled, the two kits
 /// would write one CPK path twice.
 fn write_two_exports_of_one_team(sandbox: &Sandbox) {
     write_a_home(sandbox);
     sandbox.write("exports/co Full A/Kits/g1/kit.dds", &tracer_kit());
+    write_logo(sandbox, "exports/co Full A");
     sandbox.write(
         "exports/co Full B.zip",
         &source_fixture("egg Midcup Tracer.zip"),

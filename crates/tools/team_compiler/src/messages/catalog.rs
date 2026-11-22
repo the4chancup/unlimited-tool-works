@@ -1445,6 +1445,18 @@ pub(super) const CATALOG: &[(&str, CatalogSeverity, &str, &str)] = &[
         r#"The file is left out."#,
     ),
     (
+        "portrait_missing",
+        CatalogSeverity::Warning,
+        r#"In PES 2017 to 2021, a player has no portrait in his folder or in `Portraits/` (in a `Midcup` export, none installed either)."#,
+        r#"The player is compiled without a portrait. Add a `portrait` image to his folder, or one named by his number (`05`) to `Portraits/`."#,
+    ),
+    (
+        "logo_missing",
+        CatalogSeverity::Error,
+        r#"A `Full` export has no logo: no file at its root whose name starts with `logo`."#,
+        r#"The export is compiled without a logo. Add one at its root, or rename the export `<team> Midcup ...` if it only adds to what is installed."#,
+    ),
+    (
         "logo_file_invalid",
         CatalogSeverity::Error,
         r#"A root `logo*` file has an unknown tag in its name, is in a format the compiler does not read, or does not decode."#,

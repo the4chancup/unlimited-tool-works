@@ -16,7 +16,7 @@ fn upgrade(sandbox: &Sandbox, input: &str, save: &str) -> crate::common::Run {
 }
 
 /// The `4CCG VGL26` fixture's path below `tests/fixtures/`.
-fn kit_config(ordinal: &str) -> String {
+pub(crate) fn kit_config(ordinal: &str) -> String {
     format!("kit_configs/4CCG VGL26/XXX_DEF_{ordinal}_realUni.bin")
 }
 
@@ -52,6 +52,7 @@ fn note_with_kit_entries(sandbox: &Sandbox, export: &str, entries: &[&str]) {
 #[test]
 fn kits_become_slot_folders_with_config_toml_and_generic_textures() {
     let sandbox = Sandbox::new("kit_basic");
+    sandbox.logo("co Kits");
     for (ordinal, name) in [
         ("1st", "XXX_DEF_1st_realUni.bin"),
         ("2nd", "714_def_2nd_realuni.bin"),
@@ -113,6 +114,7 @@ fn kits_become_slot_folders_with_config_toml_and_generic_textures() {
 #[test]
 fn a_config_toml_carries_the_undecoded_bits_and_no_texture_names() {
     let sandbox = Sandbox::new("kit_unknown_bits");
+    sandbox.logo("co Kits");
     sandbox.copy_fixture(
         &kit_config("1st"),
         "co Kits/Kit Configs/XXX_DEF_1st_realUni.bin",
@@ -139,6 +141,7 @@ fn a_config_toml_carries_the_undecoded_bits_and_no_texture_names() {
 #[test]
 fn textures_no_kit_row_names_are_leftovers_in_a_full_export() {
     let sandbox = Sandbox::new("kit_texture_orphan");
+    sandbox.logo("co Kits");
     for ordinal in ["1st", "2nd", "3rd"] {
         sandbox.copy_fixture(
             &kit_config(ordinal),
@@ -191,6 +194,7 @@ fn textures_no_kit_row_names_are_leftovers_in_a_full_export() {
 #[test]
 fn configs_in_a_kit_configs_subfolder_migrate() {
     let sandbox = Sandbox::new("kit_config_subfolder");
+    sandbox.logo("co Kits");
     for ordinal in ["1st", "2nd"] {
         sandbox.copy_fixture(
             &kit_config(ordinal),
@@ -217,6 +221,7 @@ fn configs_in_a_kit_configs_subfolder_migrate() {
 #[test]
 fn a_texture_in_a_kit_textures_subfolder_is_a_leftover() {
     let sandbox = Sandbox::new("kit_texture_subfolder");
+    sandbox.logo("co Kits");
     // EU-KIT-10's config, which migrates, beside the texture a subfolder
     // hides: the run stays clean.
     sandbox.copy_fixture(
@@ -240,6 +245,7 @@ fn a_texture_in_a_kit_textures_subfolder_is_a_leftover() {
 #[test]
 fn a_second_goalkeeper_kits_config_and_texture_are_leftovers() {
     let sandbox = Sandbox::new("kit_second_gk");
+    sandbox.logo("co Kits");
     for (ordinal, name) in [
         ("1st", "XXX_DEF_1st_realUni.bin"),
         ("GK1st", "XXX_DEF_GK1st_realUni.bin"),
@@ -286,6 +292,7 @@ fn a_second_goalkeeper_kits_config_and_texture_are_leftovers() {
 #[test]
 fn the_notes_kit_entries_give_each_kits_colors_and_icon() {
     let sandbox = Sandbox::new("kit_note_colors");
+    sandbox.logo("co Kits");
     for (ordinal, name) in [
         ("1st", "XXX_DEF_1st_realUni.bin"),
         ("2nd", "714_def_2nd_realuni.bin"),
@@ -381,6 +388,7 @@ fn a_second_gk_entry_is_a_leftover_and_a_tenth_player_entry_unmigrated() {
 #[test]
 fn a_kit_entry_without_a_config_still_forms_its_kit() {
     let sandbox = Sandbox::new("kit_without_config");
+    sandbox.logo("co Kits");
     for ordinal in ["1st", "2nd"] {
         sandbox.copy_fixture(
             &kit_config(ordinal),
@@ -411,6 +419,7 @@ fn a_kit_entry_without_a_config_still_forms_its_kit() {
 #[test]
 fn an_entry_after_other_notes_gives_no_kit() {
     let sandbox = Sandbox::new("kit_after_notes");
+    sandbox.logo("co Kits");
     for ordinal in ["1st", "2nd", "3rd"] {
         sandbox.copy_fixture(
             &kit_config(ordinal),
@@ -490,6 +499,7 @@ fn an_entry_whose_colors_do_not_read_is_unmigrated_content() {
 #[test]
 fn a_config_without_a_kit_entry_still_forms_its_kit() {
     let sandbox = Sandbox::new("kit_config_without_entry");
+    sandbox.logo("co Kits");
     for ordinal in ["1st", "2nd", "3rd"] {
         sandbox.copy_fixture(
             &kit_config(ordinal),
@@ -519,6 +529,7 @@ fn a_config_without_a_kit_entry_still_forms_its_kit() {
 #[test]
 fn fields_naming_another_kits_textures_get_the_copies() {
     let sandbox = Sandbox::new("kit_texture_copied");
+    sandbox.logo("co Kits");
     for (fixture, name) in [
         (
             "kit_configs/MGGG VGL26/XXX_DEF_1st_realUni.bin",
@@ -591,6 +602,7 @@ fn fields_naming_another_kits_textures_get_the_copies() {
 #[test]
 fn a_texture_every_kit_shares_byte_identically_moves_to_all() {
     let sandbox = Sandbox::new("kit_hoist");
+    sandbox.logo("co Kits");
     for ordinal in ["1st", "2nd", "GK1st"] {
         sandbox.copy_fixture(
             &kit_config(ordinal),
@@ -645,6 +657,7 @@ fn a_texture_every_kit_shares_byte_identically_moves_to_all() {
 #[test]
 fn a_copied_texture_moves_to_all_when_every_kit_now_holds_it() {
     let sandbox = Sandbox::new("kit_copied_hoist");
+    sandbox.logo("co Kits");
     for ordinal in ["1st", "2nd", "GK1st"] {
         sandbox.copy_fixture(
             &format!("kit_configs/MGGG VGL26/XXX_DEF_{ordinal}_realUni.bin"),
@@ -690,6 +703,7 @@ fn a_copied_texture_moves_to_all_when_every_kit_now_holds_it() {
 #[test]
 fn the_empty_g1_of_a_full_export_stops_the_hoist() {
     let sandbox = Sandbox::new("kit_no_gk");
+    sandbox.logo("co Kits");
     for ordinal in ["1st", "2nd"] {
         sandbox.copy_fixture(
             &kit_config(ordinal),
@@ -738,6 +752,7 @@ fn flat_dds(color: [u8; 4]) -> Vec<u8> {
 #[test]
 fn ftex_kit_textures_are_converted_to_the_dds_they_hold() {
     let sandbox = Sandbox::new("kit_ftex");
+    sandbox.logo("co Kits");
     sandbox.copy_fixture(
         &kit_config("1st"),
         "co Kits/Kit Configs/XXX_DEF_1st_realUni.bin",
@@ -876,6 +891,7 @@ fn a_midcup_texture_of_a_slot_no_row_names_is_that_kits_update() {
 #[test]
 fn a_legacy_kit_folder_s_file_name_tokens_become_kit_tex() {
     let sandbox = Sandbox::new("kit_folder_name_tokens");
+    sandbox.logo("co Spring");
     for (dir, name, bytes) in [
         ("u0XXXp1", "kit1.dds", b"p1 kit1" as &[u8]),
         ("u0XXXp1", "kit2.dds", b"p1 kit2"),

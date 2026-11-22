@@ -14,7 +14,7 @@ use dds_convert::{BlockCodec, SourceFormat, decode, encode_dds};
 
 use crate::common::Sandbox;
 use crate::compile::{cpk_entries, kit_texture, pes_settings, pes21_settings, tracer_kit};
-use crate::findings_of;
+use crate::{findings_of, write_logo};
 
 /// The bytes of `tests/fixtures/kit_layout/<name>`.
 fn kit_layout_fixture(name: &str) -> Vec<u8> {
@@ -295,6 +295,7 @@ fn a_placeholder_kit_marked_pre_fox_compiles_as_without_the_marker() {
             sandbox.write("exports/co Full Layout/Kits/p3/pre-fox", b"");
         }
         sandbox.write("exports/co Full Layout/Kits/all/fox", b"");
+        write_logo(sandbox, "exports/co Full Layout");
     };
     let marked = Sandbox::new("kit_layout_placeholder");
     write(&marked, true);

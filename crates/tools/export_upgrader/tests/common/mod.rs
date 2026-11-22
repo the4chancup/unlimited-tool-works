@@ -91,6 +91,14 @@ impl Sandbox {
         fs::copy(self.fixture(name), &target).unwrap();
     }
 
+    /// Gives the old export at `export` the `co Spring` fixture's logo
+    /// (`Logo/emblem_0XXX_r_ll.png`, 512²). A `Full` export with no logo is
+    /// refused, and a lone large logo upgrades with no report line.
+    pub fn logo(&self, export: &str) {
+        let logo = "Logo/emblem_0XXX_r_ll.png";
+        self.copy_fixture(&format!("co Spring/{logo}"), &format!("{export}/{logo}"));
+    }
+
     /// Copies the fixture folder `name` (`tests/fixtures/<name>`) to
     /// `relative` in the sandbox.
     pub fn copy_fixture_dir(&self, name: &str, relative: &str) {

@@ -219,7 +219,11 @@ fn empty_kit(path: &str) -> KitFolder {
 fn a_full_export_without_kits_gets_an_empty_p1_and_g1() {
     let report = report(
         "co Full Spring",
-        &[("Players/03 - A/face_high.fmdl", 10)],
+        &[
+            ("Players/03 - A/face_high.fmdl", 10),
+            ("Players/03 - A/portrait.dds", 9),
+            ("logo.png", 9),
+        ],
         &[],
         &[],
     );
@@ -240,7 +244,9 @@ fn a_full_export_s_empty_kits_inherit_all_s_textures() {
         "co Full Spring",
         &[
             ("Players/03 - A/face_high.fmdl", 10),
+            ("Players/03 - A/portrait.dds", 9),
             ("Kits/all/kit.dds", 9),
+            ("logo.png", 9),
         ],
         &[],
         &[],
@@ -269,7 +275,11 @@ fn a_full_export_s_empty_kits_inherit_all_s_textures() {
 fn a_full_export_with_a_player_kit_and_g1_gets_no_empty_kit() {
     let report = report(
         "co Full Spring",
-        &[("Kits/p2/kit.dds", 9), ("Kits/g1/kit.dds", 9)],
+        &[
+            ("Kits/p2/kit.dds", 9),
+            ("Kits/g1/kit.dds", 9),
+            ("logo.png", 9),
+        ],
         &[],
         &[],
     );
@@ -291,6 +301,7 @@ fn a_full_export_whose_only_player_kit_is_dropped_gets_an_empty_p1() {
             ("Kits/p1/pre-fox", 0),
             ("Kits/p1/fox", 0),
             ("Kits/g1/kit.dds", 9),
+            ("logo.png", 9),
         ],
         &[],
         &[],

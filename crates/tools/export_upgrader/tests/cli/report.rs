@@ -15,6 +15,7 @@ use crate::players::{boots, face, unmigrated_found, upgrade, wears};
 #[test]
 fn each_other_file_is_named_and_dropped() {
     let sandbox = Sandbox::new("rep_other");
+    sandbox.logo("co Spring");
     face(&sandbox, "co Spring/Faces/XXX05 - Bob");
     sandbox.write("co Spring/Other/readme.txt", b"x");
     sandbox.write("co Spring/Other/docs/scan.pdf", b"pdf");
@@ -44,6 +45,7 @@ fn each_other_file_is_named_and_dropped() {
 #[test]
 fn a_leftover_model_decides_no_engine() {
     let sandbox = Sandbox::new("rep_leftover_model");
+    sandbox.logo("co Spring");
     // As the real KFG VGL26 export: a Fox boots folder beside a side folder
     // of `.model` copies and a root file. The leftover `.model` counted
     // would read the export as pre-Fox, which never merges item folders.
@@ -74,6 +76,7 @@ fn a_leftover_model_decides_no_engine() {
 #[test]
 fn a_migration_needing_no_attention_is_clean() {
     let sandbox = Sandbox::new("rep_clean");
+    sandbox.logo("co Spring");
     face(&sandbox, "co Spring/Faces/XXX05 - Bob");
     boots(&sandbox, "co Spring/Boots/k0430 - Crocs");
     sandbox.save_edited("EDIT", PesVersion::Pes21, |file| {

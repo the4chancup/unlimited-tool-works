@@ -9,11 +9,11 @@ use pes_savefile::interchange::aesthetics_patch::AestheticsPatch;
 use pes_savefile::settings_toml::PlayerSettings;
 use pes_version::PesVersion;
 
-use crate::clean_model;
 use crate::common::Sandbox;
 use crate::compile::{pes_settings, pes21_settings, tracer_kit};
 use crate::models::conflicting_boots;
 use crate::prefox_faces::{card_model, materials_naming, small_dds};
+use crate::{clean_model, write_logo};
 
 /// The patch in `sandbox`'s output folder, parsed back.
 pub(crate) fn read_patch(sandbox: &Sandbox) -> AestheticsPatch {
@@ -25,6 +25,7 @@ pub(crate) fn read_patch(sandbox: &Sandbox) -> AestheticsPatch {
 #[test]
 fn a_run_holding_no_patch_moves_an_earlier_one_aside_to_bak() {
     let sandbox = Sandbox::new("patch_bak");
+    write_logo(&sandbox, "exports/co Full KitsOnly");
     let earlier = b"# an earlier run's patch\npes_version = 21\n";
     sandbox.write("output/aesthetics_patch.toml", earlier);
     // An older backup, which the move aside replaces.
@@ -119,11 +120,12 @@ fn a_patch_that_settles_to_nothing_leaves_the_previous_cpk_and_patch_alone() {
 }
 
 /// TC-SAV-19's PES 17 export, `co Full Old` (both halves', the patch's and the savefile's):
-/// slot 05's `settings.toml` (`boots_id = 12`, skin colour 4, a motion key), and his link to
-/// `Boots/Crocs/`, a `.model` with its `.mtl` and texture. Returns the export's folder and
-/// the `settings.toml` text.
+/// its logo, slot 05's `settings.toml` (`boots_id = 12`, skin colour 4, a motion key), and his
+/// link to `Boots/Crocs/`, a `.model` with its `.mtl` and texture. Returns the export's folder
+/// and the `settings.toml` text.
 pub(crate) fn pes17_crocs_export(sandbox: &Sandbox) -> (&'static str, &'static str) {
     let export = "exports/co Full Old";
+    write_logo(sandbox, export);
     let toml = "boots_id = 12\n[appearance]\nskin_color = 4\n[appearance.motion]\nhunching_dribbling = 2\n";
     sandbox.write(
         &format!("{export}/Players/05 - A/settings.toml"),
@@ -160,6 +162,7 @@ pub(crate) fn write_names_export(sandbox: &Sandbox, export: &str, snuffy: &str, 
 #[test]
 fn a_write_names_export_s_names_reach_the_patch_shared_ones_warned() {
     let sandbox = Sandbox::new("patch_write_names");
+    write_logo(&sandbox, "exports/co Full Auto");
     write_names_export(
         &sandbox,
         "exports/co Full Auto",
@@ -198,6 +201,7 @@ fn a_write_names_export_s_names_reach_the_patch_shared_ones_warned() {
 #[test]
 fn a_name_the_field_refuses_is_dropped_and_warned() {
     let sandbox = Sandbox::new("patch_name_invalid");
+    write_logo(&sandbox, "exports/co Full Auto");
     let export = "exports/co Full Auto";
     sandbox.write(&format!("{export}/write_names"), b"");
     // Longer than the PES 21 name field (61 bytes).
@@ -319,6 +323,7 @@ fn a_pre_fox_compile_writes_the_patch_his_look_and_the_linked_boots_id() {
 #[test]
 fn a_plain_export_s_patch_holds_his_look_and_no_name() {
     let sandbox = Sandbox::new("patch_plain");
+    write_logo(&sandbox, "exports/co Full Plain");
     let export = "exports/co Full Plain";
     // A name longer than PES 21's field: unused without the marker, so not checked either. No
     // finding reports the names of an export without it.
@@ -374,6 +379,7 @@ fn a_plain_export_s_patch_holds_his_look_and_no_name() {
 #[test]
 fn a_referee_export_gets_no_patch_entry() {
     let sandbox = Sandbox::new("patch_refs");
+    write_logo(&sandbox, "exports/co Full Team");
     sandbox.write(
         "exports/co Full Team/Players/05 - A/face_high.fmdl",
         &clean_model(),

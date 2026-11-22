@@ -129,11 +129,7 @@ pub(crate) fn player_folder(draft: &FolderDraft, roster_file: bool) -> PlayerFol
             FileKind::Metadata(MetadataFile::IngameFaceToml) => {
                 ingame_face = Some(file.clone());
             }
-            FileKind::Texture
-                if name
-                    .rsplit_once('.')
-                    .is_some_and(|(stem, _)| stem.eq_ignore_ascii_case("portrait")) =>
-            {
+            FileKind::Texture if is_portrait_name(name) => {
                 portrait = Some(file.clone());
             }
             FileKind::Model(_)
@@ -176,6 +172,24 @@ pub(crate) fn player_folder(draft: &FolderDraft, roster_file: bool) -> PlayerFol
         portrait,
         settings,
     }
+}
+
+/// Whether a file named `name` is a player's portrait, when it is a texture directly in his
+/// folder: its stem is `portrait`, ASCII-case-insensitively, whatever its extension.
+fn is_portrait_name(name: &str) -> bool {
+    name.rsplit_once('.')
+        .is_some_and(|(stem, _)| stem.eq_ignore_ascii_case("portrait"))
+}
+
+/// Whether the player folder holds a portrait: a `portrait.*` texture directly in it, the file
+/// `player_folder` keeps as `PlayerFolder::portrait`.
+pub(crate) fn has_portrait(folder: &FolderDraft) -> bool {
+    let depth = folder.path.segments().count() + 1;
+    folder.files.iter().any(|file| {
+        file.kind == FileKind::Texture
+            && file.path.segments().count() == depth
+            && is_portrait_name(file.path.name())
+    })
 }
 
 /// The `Kits/` folder, sanitized: one `KitFolder` per surviving kit, plus

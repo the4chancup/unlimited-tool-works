@@ -62,6 +62,7 @@ fn context_for(version: pes_version::PesVersion) -> ValidationContext {
         strict_file_type_check: true,
         pass_through: false,
         installed_common_textures: std::collections::BTreeSet::new(),
+        installed_portrait_slots: None,
     }
 }
 
@@ -76,6 +77,7 @@ mod export_kind;
 mod kits;
 mod name_conflicts;
 mod player_folder;
+mod portraits;
 mod pre_fox;
 mod root_files;
 mod shared_folders;
