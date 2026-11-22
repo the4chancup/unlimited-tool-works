@@ -23,7 +23,9 @@ use crate::model::team::{TeamEntry, roster_order_player_id};
 use crate::schema::fields::{PlayerField, PlayerText, RosterField};
 use crate::schema::ingame_face::INGAME_FACE_FIELDS;
 use crate::schema::limits::{face_type_cap, motion_top};
-use crate::schema::{bit_width, playstyle, portable_text_max, schema_for};
+use crate::schema::{
+    bit_width, model_max, playstyle, portable_text_max, schema_for, stored_offset,
+};
 use crate::settings_toml::document::{
     AppearanceDocument, emit_appearance, leaf_path, padded, parse_appearance,
 };
@@ -117,7 +119,7 @@ fn player_from(
             continue;
         }
         if let Some(value) = key.get(player) {
-            key.set_section(&mut section, value)?;
+            key.set_section(&mut section, value, Some(version))?;
         }
     }
     Ok(section)
@@ -127,15 +129,17 @@ fn player_from(
 // Emit
 
 /// Every `PlayerSection`, in slot order. `team_id` and `roster_breaks`
-/// feed the breaking slots' header note (`roster_note`).
+/// feed the breaking slots' header note (`roster_note`); `version` is the
+/// document's `pes_version`, which the small stats' range comments follow.
 pub(super) fn emit_players(
     out: &mut String,
     players: &BTreeMap<u8, PlayerSection>,
     team_id: Option<u32>,
     roster_breaks: &[(u8, u32)],
+    version: Option<PesVersion>,
 ) -> Result<(), TeamTomlError> {
     for (slot, section) in players {
-        emit_player(out, *slot, section, team_id, roster_breaks)?;
+        emit_player(out, *slot, section, team_id, roster_breaks, version)?;
     }
     Ok(())
 }
@@ -145,10 +149,25 @@ fn emit_key(
     out: &mut String,
     section: &PlayerSection,
     key: PlayerKey,
+    version: Option<PesVersion>,
 ) -> Result<(), TeamTomlError> {
     let spec = key.spec();
     let value = key.get_section(section).map(|v| key.text(v)).transpose()?;
-    emit(out, key.name(), value, &key.neutral(), spec.comment);
+    // PES 2014's four small stats run 1 to 8, and its document's comments
+    // say so where the other versions' carry narrower ranges.
+    let comment = if version == Some(PesVersion::Pes14)
+        && matches!(
+            key,
+            PlayerKey::WeakFootUsage
+                | PlayerKey::WeakFootAccuracy
+                | PlayerKey::Form
+                | PlayerKey::InjuryResistance
+        ) {
+        "1 to 8"
+    } else {
+        spec.comment
+    };
+    emit(out, key.name(), value, &key.neutral(), comment);
     Ok(())
 }
 
@@ -163,6 +182,7 @@ fn emit_player(
     section: &PlayerSection,
     team_id: Option<u32>,
     roster_breaks: &[(u8, u32)],
+    version: Option<PesVersion>,
 ) -> Result<(), TeamTomlError> {
     let path = player_path(slot);
     out.push('\n');
@@ -203,7 +223,7 @@ fn emit_player(
     );
     for key in PlayerKey::ALL {
         if key.table().is_empty() {
-            emit_key(out, section, key)?;
+            emit_key(out, section, key, version)?;
         }
     }
 
@@ -211,12 +231,12 @@ fn emit_player(
     out.push_str(&format!("[{path}.stats]\n"));
     for key in PlayerKey::ALL {
         if key.table() == "stats" {
-            emit_key(out, section, key)?;
+            emit_key(out, section, key, version)?;
         }
     }
 
     out.push_str(&format!("\n[{path}.positions]\n"));
-    emit_key(out, section, PlayerKey::Registered)?;
+    emit_key(out, section, PlayerKey::Registered, version)?;
     emit(
         out,
         "playable",
@@ -235,8 +255,8 @@ fn emit_player(
         "\"none\"",
         "the playing style's name, or \"none\"",
     );
-    emit_key(out, section, PlayerKey::StrongerFoot)?;
-    emit_key(out, section, PlayerKey::StrongerHand)?;
+    emit_key(out, section, PlayerKey::StrongerFoot, version)?;
+    emit_key(out, section, PlayerKey::StrongerHand, version)?;
 
     out.push_str(&format!("\n[{path}.skills]\n"));
     emit(
@@ -265,7 +285,7 @@ fn emit_player(
     ));
     for key in PlayerKey::ALL {
         if key.table() == "edit_flags" {
-            emit_key(out, section, key)?;
+            emit_key(out, section, key, version)?;
         }
     }
 
@@ -371,8 +391,13 @@ fn flag_list<const N: usize>(flags: [bool; N], labels: &[&'static str]) -> Strin
 // Parse
 
 /// The `[players]` table: keys are exactly two digits `01` to `40`, anything
-/// else is `UnknownKey` ("players.7", "players.41", "players.bob").
-pub(super) fn parse_players(item: &Item) -> Result<BTreeMap<u8, PlayerSection>, TeamTomlError> {
+/// else is `UnknownKey` ("players.7", "players.41", "players.bob"). `version`
+/// is the document's `pes_version` — the small stats' ranges are its own —
+/// `None` when it names none.
+pub(super) fn parse_players(
+    item: &Item,
+    version: Option<PesVersion>,
+) -> Result<BTreeMap<u8, PlayerSection>, TeamTomlError> {
     let table = as_table(item, "players")?;
     let mut out = BTreeMap::new();
     for (name, item) in table.iter() {
@@ -382,12 +407,16 @@ pub(super) fn parse_players(item: &Item) -> Result<BTreeMap<u8, PlayerSection>, 
             });
         }
         let slot = name.parse::<u8>().expect("checked above");
-        out.insert(slot, parse_player(item, &player_path(slot))?);
+        out.insert(slot, parse_player(item, &player_path(slot), version)?);
     }
     Ok(out)
 }
 
-fn parse_player(item: &Item, path: &str) -> Result<PlayerSection, TeamTomlError> {
+fn parse_player(
+    item: &Item,
+    path: &str,
+    version: Option<PesVersion>,
+) -> Result<PlayerSection, TeamTomlError> {
     let table = as_table(item, path)?;
     let stats = sub_table(table, path, "stats")?;
     let positions = sub_table(table, path, "positions")?;
@@ -408,8 +437,8 @@ fn parse_player(item: &Item, path: &str) -> Result<PlayerSection, TeamTomlError>
             other => unreachable!("the key table only names known tables: {other}"),
         };
         let Some(sub) = sub else { continue };
-        if let Some(value) = opt(sub, &subpath, key.name(), |i, k| key.parse(i, k))? {
-            key.set_section(&mut section, value)?;
+        if let Some(value) = opt(sub, &subpath, key.name(), |i, k| key.parse(i, k, version))? {
+            key.set_section(&mut section, value, version)?;
         }
     }
     if let Some(t) = positions {
@@ -671,14 +700,23 @@ fn apply_player(
     }
     // Checks first: a stored value the target's field cannot hold would fail
     // `write_player` after `apply` returned Ok, so it is refused up front.
+    // The bound is the model's: PES 2014's offset fields (its stats, shown
+    // 40 above the stored bits) would fail the raw width alone.
     for key in PlayerKey::ALL {
         let Some(value) = key.get_section(section) else {
             continue;
         };
-        let Some(width) = bit_width(target.context.to, key.spec().field) else {
+        let Some(max) = model_max(target.context.to, key.spec().field) else {
             continue;
         };
-        check_width(&format!("{path}.{}", key.spec().path), value, width)?;
+        let min = i64::from(stored_offset(target.context.to, key.spec().field));
+        if i64::from(value) < min || i64::from(value) > max {
+            return Err(TeamTomlError::OutOfRange {
+                key: format!("{path}.{}", key.spec().path),
+                value: i64::from(value),
+                range: format!("{min} to {max}"),
+            });
+        }
     }
     let Some(player) = target.players.iter_mut().find(|p| p.id == player_id) else {
         return Err(TeamTomlError::PlayerMissing { id: player_id });

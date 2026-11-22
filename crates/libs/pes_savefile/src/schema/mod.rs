@@ -402,9 +402,19 @@ pub fn schema_for(version: PesVersion) -> &'static VersionSchema {
 pub(crate) fn widest_bit_width(field: PlayerField) -> u32 {
     PesVersion::ALL
         .into_iter()
+        .chain([PesVersion::Pes14])
         .filter_map(|version| bit_width(version, field))
         .max()
         .unwrap_or(0)
+}
+
+/// The biggest *model* value `version`'s player or appearance record stores
+/// in `field` — `2^width - 1` plus the field's `stored_offset` (PES 2014's
+/// stats hold the shown value, stored less 40). `None` where the version
+/// does not store the field.
+pub(crate) fn model_max(version: PesVersion, field: PlayerField) -> Option<i64> {
+    bit_width(version, field)
+        .map(|width| (1i64 << width) - 1 + i64::from(stored_offset(version, field)))
 }
 
 /// The biggest value `version`'s player or appearance record stores in

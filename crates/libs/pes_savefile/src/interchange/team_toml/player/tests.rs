@@ -30,12 +30,6 @@ fn foreign_players(file: &EditFile, team: &TeamEntry) -> Vec<PlayerEntry> {
 #[test]
 fn every_fixture_player_round_trips_through_the_document() {
     for version in FIXTURES {
-        // Team TOML is out of scope for PES 2014 — and its weak-foot
-        // fields store 0 to 7 there (shown 1 to 8), past the keys'
-        // "1 to 4" `from_team` can emit.
-        if version == PesVersion::Pes14 {
-            continue;
-        }
         let (file, _) = open(version);
         let refs: Vec<&PlayerEntry> = file.players().iter().collect();
         // The text pass (to_toml -> parse == document) costs tens of ms a
@@ -63,7 +57,12 @@ fn every_fixture_player_round_trips_through_the_document() {
                 let text = doc.to_toml().expect("to_toml");
                 let parsed = TeamToml::parse(&text)
                     .unwrap_or_else(|e| panic!("{version:?} team {} reparse: {e}", team.id));
-                assert_eq!(parsed, *doc, "{version:?} team {}", team.id);
+                // `roster_breaks` is emitted as comments rather than keys,
+                // so it does not parse back; the PES 2014 save's teams
+                // break the roster-order rule everywhere.
+                let mut expected = (*doc).clone();
+                expected.roster_breaks.clear();
+                assert_eq!(parsed, expected, "{version:?} team {}", team.id);
             }
 
             // Every rostered slot's number moved off the source's, so the
@@ -116,6 +115,10 @@ fn every_fixture_player_round_trips_through_the_document() {
                     appearance_id: stand_in_id,
                     ..source.clone()
                 };
+                // Tenacity and the Punt Kick motion are PES 2014's alone
+                // and no document keys yet: the target's own stand on them.
+                expected.stats.tenacity = target.stats.tenacity;
+                expected.motion.punt_kick = target.motion.punt_kick;
                 // The run's unused bits are no key: the stand-in keeps its
                 // own (absent = untouched), so both sides compare at the
                 // games' values.
@@ -1350,10 +1353,6 @@ fn an_unencodable_playing_style_notes_its_own_label() {
 #[test]
 fn from_team_carries_every_rostered_slots_shirt_number() {
     for version in FIXTURES {
-        // Team TOML is out of scope for PES 2014 (above).
-        if version == PesVersion::Pes14 {
-            continue;
-        }
         let (file, _) = open(version);
         let refs: Vec<&PlayerEntry> = file.players().iter().collect();
         for team in file
@@ -2319,4 +2318,83 @@ fn only_the_appearance_header_notes_the_stored_ranges() {
             .is_some_and(|(header, _)| header.ends_with(".appearance"))),
         "only appearance headers carry it: {noted:?}"
     );
+}
+
+/// Form, injury resistance and the weak foot run 1 to 8 on PES 2014,
+/// whose records store three bits where the other versions' store two: a
+/// PES 2014 document writes and takes that range, another version's
+/// document keeps its own.
+#[test]
+fn the_one_to_eight_settings_run_wider_in_a_pes14_document() {
+    // PES 2014's emitted lines say 1 to 8 for all four.
+    let (file, _) = open(PesVersion::Pes14);
+    let team = file.team(1).expect("team 1");
+    let refs: Vec<&PlayerEntry> = file.players().iter().collect();
+    let text = TeamToml::from_team(PesVersion::Pes14, team, &refs)
+        .expect("from_team")
+        .to_toml()
+        .expect("to_toml");
+    for key in [
+        "weak_foot_usage",
+        "weak_foot_accuracy",
+        "form",
+        "injury_resistance",
+    ] {
+        let line = text
+            .lines()
+            .find(|line| line.starts_with(key))
+            .unwrap_or_else(|| panic!("a live {key} line: {text}"));
+        assert!(line.ends_with("# 1 to 8"), "{line}");
+    }
+
+    // A PES 2014 document's weak foot of 8 applies as stored 7.
+    let mut players: Vec<PlayerEntry> = file
+        .players()
+        .iter()
+        .filter(|player| team.roster.iter().any(|slot| slot.player_id == player.id))
+        .cloned()
+        .collect();
+    let id = team.roster[0].player_id;
+    let before = players
+        .iter()
+        .find(|player| player.id == id)
+        .expect("roster slot 1's player")
+        .stats
+        .weak_foot_usage;
+    assert_ne!(before, 7, "a write to the held value would be invisible");
+    let mut target = team.clone();
+    let doc = TeamToml::parse("pes_version = 14\n\n[players.01.stats]\nweak_foot_usage = 8\n")
+        .expect("8 is inside PES 2014's range");
+    doc.apply(PesVersion::Pes14, &mut target, &mut players)
+        .expect("applies");
+    let player = players
+        .iter()
+        .find(|player| player.id == id)
+        .expect("the player");
+    assert_eq!(player.stats.weak_foot_usage, 7);
+
+    // Past the document version's own top is refused at parse with that
+    // range: 9 on PES 2014, 8 on PES 2015.
+    for (text, value, range) in [
+        (
+            "pes_version = 14\n\n[players.01.stats]\nweak_foot_usage = 9\n",
+            9,
+            "1 to 8",
+        ),
+        (
+            "pes_version = 15\n\n[players.01.stats]\nweak_foot_usage = 8\n",
+            8,
+            "1 to 4",
+        ),
+    ] {
+        let err = TeamToml::parse(text).expect_err("past the document version's top");
+        assert!(
+            matches!(
+                &err,
+                TeamTomlError::OutOfRange { key, value: v, range: r }
+                    if key == "players.01.stats.weak_foot_usage" && *v == value && r == range
+            ),
+            "{err:?}"
+        );
+    }
 }

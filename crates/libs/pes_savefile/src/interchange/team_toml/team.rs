@@ -21,7 +21,9 @@ use crate::model::names::display_name;
 use crate::model::player::PlayerEntry;
 use crate::model::tactics::AdvancedInstruction;
 use crate::model::team::{KitSlot, TeamColor, TeamEntry};
-use crate::schema::fields::{PlayerText, PresetField, TacticsField, TeamField, TeamText};
+use crate::schema::fields::{
+    FormationPart, PlayerText, PresetField, TacticsField, TeamField, TeamText,
+};
 use crate::schema::instruction;
 use crate::schema::schema_for;
 use crate::settings_toml::document::padded;
@@ -40,13 +42,16 @@ impl TeamToml {
         let document: DocumentMut = text
             .parse()
             .map_err(|e: toml_edit::TomlError| TeamTomlError::Toml(e.to_string()))?;
+        // The player keys' stored bounds are the document version's own,
+        // so `pes_version` is read before the sections are.
+        let declared = document.get("pes_version").map(version).transpose()?;
         let mut parsed = TeamToml::default();
         for (name, item) in document.iter() {
             match name {
-                "pes_version" => parsed.pes_version = Some(version(item)?),
+                "pes_version" => parsed.pes_version = declared,
                 "team" => parsed.team = parse_team(item)?,
                 "tactics" => parsed.tactics = parse_tactics(item)?,
-                "players" => parsed.players = player::parse_players(item)?,
+                "players" => parsed.players = player::parse_players(item, declared)?,
                 _ => {
                     return Err(TeamTomlError::UnknownKey {
                         key: name.to_string(),
@@ -107,15 +112,20 @@ impl TeamToml {
                 numbers_in_defence: has_preset(PresetField::NumbersInDefence)
                     .then_some(sliders.numbers_in_defence),
             };
-            section.formations = if tactic.formations.is_some() {
-                [
-                    Some(preset.formations[0].players),
-                    Some(preset.formations[1].players),
-                    Some(preset.formations[2].players),
-                ]
-            } else {
-                [None, None, None]
-            };
+            // A preset carries the formations the record stores: PES 2014
+            // stores one, the other versions three. The gate probes
+            // formation `f`'s first place byte rather than a position
+            // byte, which `has` also refuses where `first_role_slot`
+            // skips it (PES 2014's keeper stores none).
+            section.formations = [0u8, 1, 2].map(|f| {
+                has(TacticsField::Formation {
+                    preset: 0,
+                    formation: f,
+                    slot: 0,
+                    part: FormationPart::X,
+                })
+                .then_some(preset.formations[usize::from(f)].players)
+            });
             section.instructions = match (&preset.attack_instructions, &preset.defence_instructions)
             {
                 (Some(attack), Some(defence)) => Some(InstructionsSection {
@@ -213,7 +223,13 @@ impl TeamToml {
         out.push('\n');
         emit_team(&mut out, &self.team);
         emit_tactics(&mut out, &self.tactics)?;
-        player::emit_players(&mut out, &self.players, self.team.id, &self.roster_breaks)?;
+        player::emit_players(
+            &mut out,
+            &self.players,
+            self.team.id,
+            &self.roster_breaks,
+            self.pes_version,
+        )?;
         Ok(out)
     }
 
@@ -221,6 +237,10 @@ impl TeamToml {
     /// cloned team is patched and swapped in only when every key applied (or
     /// was noted and skipped). `team.id` and the roster are never written —
     /// `id` is informational and Team TOML does not carry roster data.
+    ///
+    /// A document whose `pes_version` and `to` sit on opposite sides of
+    /// PES 2014 is refused as `VersionPair` before anything is applied;
+    /// a document with no `pes_version` is read as `to`'s version.
     ///
     /// A key the target's schema lacks is a `NotInThisVersion` note when the
     /// document's `pes_version` differs from `to`, and a
@@ -251,6 +271,12 @@ impl TeamToml {
             .map(|&index| players[index].clone())
             .collect();
         let from = self.pes_version.unwrap_or(to);
+        // A document and a save on opposite sides of PES 2014 are refused
+        // outright: the conversion's maps do not cover the fields only
+        // one side stores.
+        if (from == PesVersion::Pes14) != (to == PesVersion::Pes14) {
+            return Err(TeamTomlError::VersionPair { from, to });
+        }
         let foreign = from != to;
         let schema = schema_for(to);
         let mut notes = Vec::new();
@@ -434,16 +460,18 @@ fn kit_slots_text(slots: [KitSlot; 10]) -> String {
 
 fn version(item: &Item) -> Result<PesVersion, TeamTomlError> {
     let value = integer(item, "pes_version")?;
-    let number = u16::try_from(value).map_err(|_| TeamTomlError::OutOfRange {
+    let out_of_range = |range: &str| TeamTomlError::OutOfRange {
         key: "pes_version".to_string(),
         value,
-        range: "15 to 21".to_string(),
-    })?;
-    PesVersion::from_number(number).ok_or_else(|| TeamTomlError::OutOfRange {
-        key: "pes_version".to_string(),
-        value,
-        range: "15 to 21".to_string(),
-    })
+        range: range.to_string(),
+    };
+    let number = u16::try_from(value).map_err(|_| out_of_range("14 to 21"))?;
+    match number {
+        // The document names the save it came from, so 14 is a valid
+        // answer here even though `from_number` offers no PES 2014.
+        14 | 2014 => Ok(PesVersion::Pes14),
+        _ => PesVersion::from_number(number).ok_or_else(|| out_of_range("14 to 21")),
+    }
 }
 
 fn parse_team(item: &Item) -> Result<TeamSection, TeamTomlError> {
@@ -643,12 +671,6 @@ mod tests {
     #[test]
     fn every_fixture_team_round_trips_through_the_document() {
         for version in FIXTURES {
-            // Team TOML is out of scope for PES 2014 — and its weak-foot
-            // fields store 0 to 7 there (shown 1 to 8), past the keys'
-            // "1 to 4" `from_team` can emit.
-            if version == PesVersion::Pes14 {
-                continue;
-            }
             let (file, _) = open(version);
             let refs: Vec<&PlayerEntry> = file.players().iter().collect();
             // Same split as the player test: the model pass (from_team ->
@@ -677,11 +699,13 @@ mod tests {
                             team.id
                         )
                     });
-                    // Identity holds for a team keeping the roster order
-                    // only: `roster_breaks` is written as a header comment,
-                    // never a key, so it does not parse back (every fixture
-                    // team keeps the order).
-                    assert_eq!(parsed, *doc, "{version:?} team {}", team.id);
+                    // Identity up to `roster_breaks`, written as a header
+                    // comment rather than a key, so it does not parse back.
+                    // The PES 2014 save's teams sit outside the roster-order
+                    // rule and break it everywhere.
+                    let mut expected = doc.clone();
+                    expected.roster_breaks.clear();
+                    assert_eq!(parsed, expected, "{version:?} team {}", team.id);
                 }
                 let mut target = blank_slate(team);
                 // `apply` only looks the rostered ids up; cloning the whole
@@ -701,6 +725,19 @@ mod tests {
                 // the document's, so the fill runs), so the
                 // field-for-field check expects them computed, not carried.
                 let mut expected = team.clone();
+                // PES 2014's own tactics — each preset's game plan,
+                // Combination Play and its switch — are no document keys
+                // yet, so the target's own stand there.
+                for (preset, applied) in expected
+                    .tactics
+                    .presets
+                    .iter_mut()
+                    .zip(&target.tactics.presets)
+                {
+                    preset.game_plan = applied.game_plan;
+                }
+                expected.tactics.combination = target.tactics.combination;
+                expected.tactics.auto.combination_play = target.tactics.auto.combination_play;
                 let schema = schema_for(version);
                 if schema.tactic.has(TacticsField::Bench(0)) {
                     let bench: [u8; 12] = expected.tactics.bench_order[..12]
@@ -1661,5 +1698,100 @@ mod tests {
             flags.contains("short_name = false              # PES 14 and 15\n"),
             "{flags}"
         );
+    }
+
+    /// A PES 2014 document names `pes_version = 14` and carries each
+    /// preset's one stored formation: the version's record holds no second
+    /// or third, so the document emits none.
+    #[test]
+    fn a_pes14_document_names_14_and_one_formation_a_preset() {
+        let (file, _) = open(PesVersion::Pes14);
+        let team = file.team(1).expect("team 1");
+        let doc = TeamToml::from_team(PesVersion::Pes14, team, &[]).expect("from_team");
+        assert_eq!(doc.pes_version, Some(PesVersion::Pes14));
+        for section in &doc.tactics.presets {
+            assert!(section.formations[0].is_some());
+            assert!(section.formations[1..].iter().all(Option::is_none));
+        }
+        let text = doc.to_toml().expect("to_toml");
+        assert!(text.contains("pes_version = 14"));
+        for n in 1..=3 {
+            assert!(
+                text.contains(&format!("[tactics.preset_{n}.formation_1]")),
+                "{text}"
+            );
+            for f in 2..=3 {
+                assert!(
+                    !text.contains(&format!("[tactics.preset_{n}.formation_{f}]")),
+                    "{text}"
+                );
+            }
+        }
+        let parsed = TeamToml::parse(&text).expect("reparses");
+        let mut expected = doc;
+        expected.roster_breaks.clear();
+        assert_eq!(parsed, expected);
+    }
+
+    /// A PES 2014 document goes only into a PES 2014 save, and a PES 2014
+    /// save takes only a PES 2014 document: the refusal names both
+    /// versions and nothing is applied. A document that names no version
+    /// is read as the target's, as on the other versions.
+    #[test]
+    fn a_pes14_document_and_save_refuse_each_others_versions() {
+        let (file14, _) = open(PesVersion::Pes14);
+        let (file19, _) = open(PesVersion::Pes19);
+        let team14 = file14.team(1).expect("team 1");
+        let team19 = file19.teams().first().expect("a team");
+
+        let doc = TeamToml::from_team(PesVersion::Pes14, team14, &[]).expect("from_team");
+        let mut target = team19.clone();
+        let err = doc
+            .apply(PesVersion::Pes19, &mut target, &mut [])
+            .expect_err("a PES 2014 file goes only into a PES 2014 save");
+        assert!(
+            matches!(
+                err,
+                TeamTomlError::VersionPair {
+                    from: PesVersion::Pes14,
+                    to: PesVersion::Pes19
+                }
+            ),
+            "{err:?}"
+        );
+        assert_eq!(
+            err.to_string(),
+            "this team file is from PES 2014 and the save is PES 2019: a PES 2014 \
+             team file goes only into a PES 2014 save"
+        );
+        assert_eq!(&target, team19);
+
+        let doc = TeamToml::from_team(PesVersion::Pes19, team19, &[]).expect("from_team");
+        let mut target = team14.clone();
+        let err = doc
+            .apply(PesVersion::Pes14, &mut target, &mut [])
+            .expect_err("a PES 2014 save takes only a PES 2014 file");
+        assert!(
+            matches!(
+                err,
+                TeamTomlError::VersionPair {
+                    from: PesVersion::Pes19,
+                    to: PesVersion::Pes14
+                }
+            ),
+            "{err:?}"
+        );
+        assert_eq!(
+            err.to_string(),
+            "this team file is from PES 2019 and the save is PES 2014: a PES 2014 \
+             save takes only a PES 2014 team file"
+        );
+        assert_eq!(&target, team14);
+
+        let doc = TeamToml::parse("[team]\nname = \"/new/\"\n").expect("parses");
+        let mut target = team14.clone();
+        doc.apply(PesVersion::Pes14, &mut target, &mut [])
+            .expect("a version-less document is the target's");
+        assert_eq!(target.name, "/new/");
     }
 }

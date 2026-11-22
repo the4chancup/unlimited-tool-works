@@ -13,7 +13,7 @@ use crate::model::instruction::Instruction;
 use crate::model::tactics::{AdvancedInstruction, FormationSlot, bench_fill};
 use crate::model::team::TeamEntry;
 use crate::schema::TacticsSchema;
-use crate::schema::fields::{PresetField, TacticsField};
+use crate::schema::fields::{FormationPart, PresetField, TacticsField};
 use crate::schema::instruction;
 use crate::settings_toml::document::padded;
 
@@ -891,7 +891,22 @@ pub(super) fn apply_tactics(
             }
         }
         for (f, formation) in preset.formations.iter().enumerate() {
-            if let Some(players) = formation {
+            // The gate probes the formation's first place byte: `has` also
+            // refuses a position byte `first_role_slot` skips (PES 2014's
+            // keeper stores none), which is not the question asked here.
+            if let Some(players) = formation
+                && gated(
+                    notes,
+                    foreign,
+                    schema.has(TacticsField::Formation {
+                        preset: 0,
+                        formation: u8::try_from(f).expect("three formations fit u8"),
+                        slot: 0,
+                        part: FormationPart::X,
+                    }),
+                    &format!("tactics.preset_{n}.formation_{}", f + 1),
+                )?
+            {
                 target.formations[f].players = *players;
             }
         }

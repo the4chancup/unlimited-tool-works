@@ -460,6 +460,17 @@ pub enum TeamTomlError {
         /// The dotted key path.
         path: String,
     },
+    /// The document's version and the save's sit on opposite sides of the
+    /// PES 2014 boundary: PES 2014's own fields have no conversion map to
+    /// or from the other versions, so the pair is refused rather than
+    /// converted.
+    #[error("{}", version_pair_text(*from, *to))]
+    VersionPair {
+        /// The document's `pes_version`.
+        from: PesVersion,
+        /// The save's version.
+        to: PesVersion,
+    },
     /// A codec failure (a stored instruction value the version does not list).
     #[error(transparent)]
     Codec(#[from] CodecError),
@@ -486,4 +497,15 @@ pub enum TeamTomlError {
         /// The field's capacity: its byte length.
         max: usize,
     },
+}
+
+/// `VersionPair`'s message: which side of the pair PES 2014 sits on
+/// decides the sentence.
+fn version_pair_text(from: PesVersion, to: PesVersion) -> String {
+    let prefix = format!("this team file is from {from} and the save is {to}: ");
+    if from == PesVersion::Pes14 {
+        format!("{prefix}a PES 2014 team file goes only into a PES 2014 save")
+    } else {
+        format!("{prefix}a PES 2014 save takes only a PES 2014 team file")
+    }
 }

@@ -5,7 +5,6 @@
 //! `positions.playing_style`, `skills.skills`, `skills.com_styles`,
 //! `appearance`) are handled individually in `player`.
 
-#[cfg(test)]
 use pes_version::PesVersion;
 use toml_edit::Item;
 
@@ -13,6 +12,7 @@ use crate::interchange::team_toml::labels;
 use crate::interchange::team_toml::{PlayerSection, TeamTomlError};
 use crate::model::player::PlayerEntry;
 use crate::schema::fields::PlayerField;
+use crate::schema::model_max;
 #[cfg(test)]
 use crate::schema::schema_for;
 
@@ -23,12 +23,14 @@ use super::items::label_position;
 pub(crate) enum Kind {
     /// An ability stat, stored 0 to 127 (the game shows 40 to 99).
     Ability,
-    /// A stored integer: 0 to the widest `FieldSpec` bit width's maximum,
-    /// measured over every version's player and appearance record schemas.
+    /// A stored integer: 0 to the field's model maximum — on the document's
+    /// own version where it names one, else the widest over every version's
+    /// player and appearance record schemas.
     Stored,
     /// A small stat the save stores one below the game's number (form,
     /// injury resistance, weak foot): the file holds the game's, 1 to the
-    /// stored maximum + 1, so a manager reads and types what the game shows.
+    /// stored maximum + 1 — 1 to 8 on PES 2014, whose fields run a bit
+    /// wider — so a manager reads and types what the game shows.
     Shown,
     /// true | false.
     Bool,
@@ -460,20 +462,22 @@ impl PlayerKey {
     }
 
     /// Patches a stored value into the section (0/1 → `bool` for the flags);
-    /// `OutOfRange` when `value` is not one the key's kind can represent, and
-    /// the section is left untouched.
+    /// `OutOfRange` when `value` is not one the key's kind can represent on
+    /// `version`'s records (the widest bound over all versions for `None`),
+    /// and the section is left untouched.
     pub(crate) fn set_section(
         self,
         section: &mut PlayerSection,
         value: u32,
+        version: Option<PesVersion>,
     ) -> Result<(), TeamTomlError> {
-        if !self.accepts(value) {
+        if !self.accepts(value, version) {
             // The value in the file's terms, as `range_text` gives the range.
             let shown = i64::from(value) + i64::from(matches!(self.spec().kind, Kind::Shown));
             return Err(TeamTomlError::OutOfRange {
                 key: format!("players.NN.{}", self.spec().path),
                 value: shown,
-                range: self.range_text(),
+                range: self.range_text(version),
             });
         }
         fn byte(value: u32) -> u8 {
@@ -546,9 +550,11 @@ impl PlayerKey {
 
     /// Whether `value` is one the key's kind can represent (the same range
     /// `parse` accepts).
-    fn accepts(self, value: u32) -> bool {
+    fn accepts(self, value: u32, version: Option<PesVersion>) -> bool {
         match self.spec().kind {
-            Kind::Ability | Kind::Stored | Kind::Shown => i64::from(value) <= self.stored_max(),
+            Kind::Ability | Kind::Stored | Kind::Shown => {
+                i64::from(value) <= self.stored_max(version)
+            }
             Kind::Bool => value <= 1,
             Kind::U16 => value <= u32::from(u16::MAX),
             Kind::U32 => true,
@@ -556,15 +562,26 @@ impl PlayerKey {
         }
     }
 
-    /// The widest stored range of the key's field over every version's player
-    /// and appearance record schemas: `0` to `(1 << bits) - 1`. Memoized — the
-    /// scan runs once per `PlayerKey` over the whole process lifetime, not
-    /// once per key per player per parse.
-    fn stored_max(self) -> i64 {
+    /// The bound a stored value is held to, in the model's units: `version`'s
+    /// own maximum where the version stores the field — PES 2014's 1-to-8
+    /// settings run a bit wider, and its stats carry the shown value past
+    /// the raw bits — else the widest over every version, the bound a
+    /// document naming no version is read with.
+    fn stored_max(self, version: Option<PesVersion>) -> i64 {
+        version
+            .and_then(|v| model_max(v, self.spec().field))
+            .unwrap_or_else(|| self.widest_max())
+    }
+
+    /// `stored_max` for a document naming no version: the widest model
+    /// maximum over every version's schemas, PES 2014's included. Memoized —
+    /// the scan runs once per `PlayerKey` over the whole process lifetime,
+    /// not once per key per player per parse.
+    fn widest_max(self) -> i64 {
         static MAXIMA: std::sync::LazyLock<Vec<i64>> = std::sync::LazyLock::new(|| {
             PlayerKey::ALL
                 .iter()
-                .map(|key| key.compute_stored_max())
+                .map(|key| key.compute_widest_max())
                 .collect()
         });
         let index = PlayerKey::ALL
@@ -574,16 +591,21 @@ impl PlayerKey {
         MAXIMA[index]
     }
 
-    /// The `stored_max` computation, run once per key into `MAXIMA`.
-    fn compute_stored_max(self) -> i64 {
-        (1i64 << crate::schema::widest_bit_width(self.spec().field)) - 1
+    /// The `widest_max` computation, run once per key into `MAXIMA`.
+    fn compute_widest_max(self) -> i64 {
+        PesVersion::ALL
+            .into_iter()
+            .chain([PesVersion::Pes14])
+            .filter_map(|v| model_max(v, self.spec().field))
+            .max()
+            .unwrap_or(0)
     }
 
     /// The range/allowed text the kind reports in errors.
-    fn range_text(self) -> String {
+    fn range_text(self, version: Option<PesVersion>) -> String {
         match self.spec().kind {
-            Kind::Ability | Kind::Stored => format!("0 to {}", self.stored_max()),
-            Kind::Shown => format!("1 to {}", self.stored_max() + 1),
+            Kind::Ability | Kind::Stored => format!("0 to {}", self.stored_max(version)),
+            Kind::Shown => format!("1 to {}", self.stored_max(version) + 1),
             Kind::Bool => "true, false".to_string(),
             Kind::U16 => "0 to 65535".to_string(),
             Kind::U32 => "0 to 4294967295".to_string(),
@@ -595,8 +617,14 @@ impl PlayerKey {
         }
     }
 
-    /// The stored `u32` behind one present item, checked per the key's kind.
-    pub(crate) fn parse(self, item: &Item, path: &str) -> Result<u32, TeamTomlError> {
+    /// The stored `u32` behind one present item, checked per the key's kind
+    /// at the document's `version` (the widest bound when it names none).
+    pub(crate) fn parse(
+        self,
+        item: &Item,
+        path: &str,
+        version: Option<PesVersion>,
+    ) -> Result<u32, TeamTomlError> {
         let integer = |expected: &'static str| -> Result<i64, TeamTomlError> {
             item.as_value()
                 .and_then(|v| v.as_integer())
@@ -612,8 +640,8 @@ impl PlayerKey {
                 // that); a real save can hold anything the bits do (edited
                 // saves carry 100), so interchange accepts the stored range.
                 let (min, max) = match self.spec().kind {
-                    Kind::Ability | Kind::Stored => (0, self.stored_max()),
-                    Kind::Shown => (1, self.stored_max() + 1),
+                    Kind::Ability | Kind::Stored => (0, self.stored_max(version)),
+                    Kind::Shown => (1, self.stored_max(version) + 1),
                     Kind::U16 => (0, 65535),
                     Kind::U32 => (0, i64::from(u32::MAX)),
                     Kind::Bool | Kind::Label(_) => unreachable!("matched above"),
@@ -622,14 +650,14 @@ impl PlayerKey {
                     return Err(TeamTomlError::OutOfRange {
                         key: path.to_string(),
                         value,
-                        range: self.range_text(),
+                        range: self.range_text(version),
                     });
                 }
                 // A `Shown` key's range starts at 1, the stored 0.
                 u32::try_from(value - min).map_err(|_| TeamTomlError::OutOfRange {
                     key: path.to_string(),
                     value,
-                    range: self.range_text(),
+                    range: self.range_text(version),
                 })
             }
             Kind::Bool => item
@@ -662,7 +690,7 @@ impl PlayerKey {
                 .ok_or_else(|| TeamTomlError::OutOfRange {
                     key: self.spec().path.to_string(),
                     value: i64::from(value),
-                    range: self.range_text(),
+                    range: self.range_text(None),
                 }),
             Kind::Bool => Ok(if value == 0 { "false" } else { "true" }.to_string()),
             Kind::Shown => Ok((value + 1).to_string()),
@@ -693,7 +721,7 @@ mod tests {
     fn set_section_refuses_a_value_the_kind_cannot_represent() {
         let mut section = PlayerSection::default();
         let err = PlayerKey::Age
-            .set_section(&mut section, 300)
+            .set_section(&mut section, 300, None)
             .expect_err("age is a u8");
         assert!(matches!(
             err,
@@ -722,20 +750,20 @@ mod tests {
     fn accepts_bounds_follow_the_kind() {
         let mut section = PlayerSection::default();
         assert!(matches!(
-            PlayerKey::Registered.set_section(&mut section, 13),
+            PlayerKey::Registered.set_section(&mut section, 13, None),
             Err(TeamTomlError::OutOfRange { .. })
         ));
         PlayerKey::Registered
-            .set_section(&mut section, 12)
+            .set_section(&mut section, 12, None)
             .expect("the last position");
         assert_eq!(section.positions.registered, Some(12));
 
         PlayerKey::Form
-            .set_section(&mut section, 7)
+            .set_section(&mut section, 7, None)
             .expect("a 3-bit field's maximum");
         assert_eq!(section.stats.form, Some(7));
         let err = PlayerKey::Form
-            .set_section(&mut section, 8)
+            .set_section(&mut section, 8, None)
             .expect_err("past the width");
         // Reported in the file's terms, the game's numbers: stored 8 is 9.
         assert!(
@@ -755,7 +783,7 @@ mod tests {
     fn the_small_stats_read_as_the_game_shows_them() {
         let path = "players.01.stats.form";
         let read = |text: &str| {
-            PlayerKey::Form.parse(&toml_edit::value(text.parse::<i64>().unwrap()), path)
+            PlayerKey::Form.parse(&toml_edit::value(text.parse::<i64>().unwrap()), path, None)
         };
         assert_eq!(PlayerKey::Form.text(0).unwrap(), "1");
         assert_eq!(PlayerKey::Form.text(7).unwrap(), "8");
@@ -784,12 +812,12 @@ mod tests {
         let path = "players.01.stats.finishing";
         assert_eq!(
             PlayerKey::Finishing
-                .parse(&toml_edit::value(20), path)
+                .parse(&toml_edit::value(20), path, None)
                 .expect("below the game's range, inside the stored one"),
             20
         );
         let err = PlayerKey::Finishing
-            .parse(&toml_edit::value(130), path)
+            .parse(&toml_edit::value(130), path, None)
             .expect_err("past seven bits");
         assert!(
             matches!(

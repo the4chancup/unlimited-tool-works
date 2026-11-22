@@ -404,12 +404,12 @@ fn read_player(
     };
     for &(offset, key) in U8_SCALARS.iter().chain(EDIT_FLAGS) {
         if fields.contains(&key.spec().field) {
-            key.set_section(&mut section, u32::from(record[offset]))?;
+            key.set_section(&mut section, u32::from(record[offset]), Some(version))?;
         }
     }
     for &(offset, key) in U32_SCALARS {
         if fields.contains(&key.spec().field) {
-            key.set_section(&mut section, u32_at(record, offset))?;
+            key.set_section(&mut section, u32_at(record, offset), Some(version))?;
         }
     }
     // The editor's `play_pos` is the save's playable array verbatim, in the
