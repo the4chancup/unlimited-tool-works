@@ -24,7 +24,9 @@ Usage:
   gui.py wheel X,Y NOTCHES            wheel at a point, negative scrolls down (posted)
   gui.py keys ctrl+z | esc | ...      one chord (posted); it types no character
   gui.py type TEXT                    each character typed into the focused field (posted);
-                                      to replace a box's value, keys ctrl+a first
+                                      to replace a box's value, keys ctrl+a first; from Git
+                                      Bash, a TEXT starting with / (a team, /gd/) needs
+                                      MSYS_NO_PATHCONV=1, or Bash turns it into a path
   gui.py burst X,Y OUT_PREFIX N MS    the real pointer to X,Y, then N captures MS apart (takes
                                       the foreground)
   gui.py open PATH | folder PATH      fill the app's own Open / folder dialog and confirm it
