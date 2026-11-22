@@ -1397,7 +1397,9 @@ The validation is for the savefile's version (in loose mode, PES 16 when the exp
 compiler's settings: no pass-through, the strict file-type check on, as the compiler's default
 has it, no installed Common textures.
 
-Old exports are single-engine, and the version decides only which model names are allowed. A
+Old exports are single-engine, and the version decides which model names are allowed and,
+from PES 2017, whether `portrait_missing` is reported: loose mode reports none for a `.model`
+export, which it checks as PES 16. A
 leftover does not decide the version, because the real KFG VGL26 export, a Fox one, keeps
 `.model` copies of its boots in a side folder `FMDL Boots/`. Counted, they made it migrate as
 pre-Fox, where item folders never merge, so its 23 single-wearer boots folders were kept shared

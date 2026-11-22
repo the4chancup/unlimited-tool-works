@@ -88,9 +88,11 @@ would drift apart.
   open, below) and, for a finding with one obvious fix, the rename that fixes it. The cells
   carry no tooltip of their own; the ID cell and the buttons keep theirs.
 
-  A team label's window also offers **Copy messages** when the export has findings. It puts
-  the export's log lines on the clipboard, as the log prints them, and reads "Copied" for a
-  moment. Some organizers tell a member what is wrong with their export rather than fixing it
+  A team label's window also offers **Copy messages** when the export has a Warning or an
+  Error. It puts the export's log lines on the clipboard, as the log prints them (its Infos
+  too), and reads "Copied" for a moment. Not on every export with a message: every export
+  the check identifies carries the Info `export_identified`, so a clean export would offer
+  that line alone, with nothing in it for a member to fix. Some organizers tell a member what is wrong with their export rather than fixing it
   themselves, and this gives them the text to send. **Copy report** would put the whole run's
   lines on the clipboard, which they would have to cut down to the one export.
 
@@ -127,9 +129,9 @@ would drift apart.
   - **A double-click** opens the cell's folder in the file manager (for an archive export, the
     folder holding it, with the archive selected), and leaves the pin as it was before it.
     The portraits cell's folder is the export's `Portraits/` when it has one. Most exports have
-    none and keep each portrait in its player's folder: then the cell's folder is the player
-    folder of its one finding, and with two findings or none it has no folder, so a
-    double-click does nothing and the window shows no Open folder.
+    none and keep each portrait in its player's folder, so the cell has no folder: a
+    double-click does nothing, and the window shows no Open folder. A finding about such a
+    portrait is on its player's cell, which opens his folder.
   - **Where it opens**: where the member last left it (at first, at the grid's right), not
     beside the cell, because a window sized for the 3D preview is too big to follow the pointer.
     While unpinned it lets the pointer through, so a cell under it can still be hovered.

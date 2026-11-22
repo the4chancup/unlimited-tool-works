@@ -44,8 +44,8 @@ portrait when the two files are identical. Two that differ are the line `portrai
 and the whole export is skipped, since the compiler cannot tell which one is meant.
 
 On PES 2017 to 2021, a player with no portrait in either place is the warning
-`portrait_missing` (in a `Midcup` export, only when none is installed for him either), and he
-is compiled without one.
+`portrait_missing`, and he is compiled without one. In a `Midcup` export he is reported only
+when the CPKs installed before the one being compiled hold no portrait for him either.
 
 **Textures**
 
@@ -165,7 +165,7 @@ image formats above and of any size: `compile` makes the game's three logo sizes
 128 pixels square) from it. An image named `logo_small` beside it is used for the smallest size
 instead, when you want a different picture there.
 
-Every team needs its logo, so a `Full` export with no `logo` image at its root is the error
+Every team needs its logo, so a `Full` export with no `logo*` file at its root is the error
 `logo_missing`, and the export is compiled without one.
 
 An image that is not square is fitted inside a transparent square, unless its name ends in

@@ -2,7 +2,7 @@
 //! unexpected-file allowlist, and the small root artifacts (`notes.txt`,
 //! `colors.txt`, `ref_marker.dds`).
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 
 use pes_version::PesVersion;
 
@@ -61,21 +61,27 @@ pub(crate) fn check_portraits(
 }
 
 /// `portrait_missing` on each player folder a team slot maps to (`assignments`, slot →
-/// draft player index) that has no `portrait.*` of its own and no `Portraits/NN` file in
-/// `portraits`, as `check_portraits` returned it. Only PES 2017 to 2021 show portraits. A
-/// `Midcup` player keeps an installed portrait, so he is reported only when the installed
-/// CPKs are known to hold none for his slot; a `Midcup` export reports none when they are not
-/// known.
+/// draft player index) that has no `portrait.*` of its own and no `Portraits/` file whose
+/// name maps to the slot, whatever that file's kind or depth (`portrait_name_invalid` names
+/// a refused one). Only PES 2017 to 2021 show portraits. A `Midcup` player keeps an installed
+/// portrait, so he is reported only when the installed CPKs are known to hold none for his
+/// slot; a `Midcup` export reports none when they are not known.
 pub(crate) fn check_portraits_missing(
     draft: &AestheticsExportDraft,
     assignments: &BTreeMap<PlayerSlot, usize>,
-    portraits: &BTreeMap<PlayerSlot, FileDescriptor>,
     context: &ValidationContext,
     issues: &mut Vec<ValidationIssue>,
 ) {
     if context.version < PesVersion::Pes17 {
         return;
     }
+    // Not `check_portraits`' valid members alone: a file it refused (`portrait_name_invalid`)
+    // still counts when its name maps to the slot.
+    let portrait_slots: BTreeSet<PlayerSlot> = draft
+        .portraits
+        .iter()
+        .filter_map(|file| folder_slot(stem(file.path.name())))
+        .collect();
     for (slot, index) in assignments {
         // An export with no coverage tag is already dropped by `export_tag_missing`.
         let none_installed = match draft.coverage {
@@ -87,7 +93,7 @@ pub(crate) fn check_portraits_missing(
             None => false,
         };
         let folder = &draft.players[*index];
-        if !none_installed || portraits.contains_key(slot) || has_portrait(folder) {
+        if !none_installed || portrait_slots.contains(slot) || has_portrait(folder) {
             continue;
         }
         issues.push(issue_in(

@@ -19598,3 +19598,43 @@ Compiler's own IDs, with one Warning a member clears by deleting the file.
 Plan: `plans/core/development_plan.md` the `quick_upgrade.bat` bullet; `RUNBOOK.md` "The VGL
 organizer's build"; the plan and spec sections describing legacy mode are removed with the
 code.
+
+## 2026-11-22 — aesthetics_export — a `Portraits/` file whose name maps to a slot counts as his portrait, even when it is no valid member
+Decision: `portrait_missing` is not reported for a slot that a `Portraits/` file's name maps
+to, even when that file is no texture directly in `Portraits/` (`Portraits/05.psd`,
+`Portraits/Portraits/05.dds`) and is `portrait_name_invalid`.
+Why: the plan already counted a file mapping to the slot as his portrait "whatever a later
+check finds in it", and the Compiler's grid counts such a file as his portrait. Reporting
+`portrait_missing` beside it would put two findings on one misplaced file, and a cell count
+saying he has a portrait beside a finding saying he has none. The file's own
+`portrait_name_invalid` already tells the member what to fix. A name that maps to no slot
+(`player_04.dds`) is still no one's portrait, and its player is still reported.
+Plan: `plans/aesthetics_export/object_model.md` "Validation semantics", the paragraph "A file
+that maps to the slot".
+
+## 2026-11-22 — aesthetics_export — a player folder's file named `portrait` counts as his portrait, whatever its kind
+Decision: `portrait_missing` is not reported for a player whose folder holds, directly in it, a
+file whose stem is `portrait` (`portrait.psd`, `portrait.txt`), even when it is no texture.
+Why: the same reasoning as the `Portraits/` entry above: the finding that refuses the file
+names it, and the Compiler's grid already counts such a file as his portrait, so a
+`portrait_missing` beside it would be a second finding on one file and a count that
+contradicts it.
+Plan: `plans/aesthetics_export/object_model.md` "Validation semantics", the paragraph "A file
+that maps to the slot".
+
+## 2026-11-22 — team_compiler — the portraits cell with no `Portraits/` folder opens nothing
+Decision: the grid's portraits cell opens the export's `Portraits/` when it has one, and
+nothing otherwise. The rule that it opens the folder of its one finding is gone.
+Why: the rule could never apply. With no `Portraits/` folder, every finding about a portrait
+lands on its player's cell (`portrait_missing` is on the player folder, and a `portrait.dds`
+in a player folder is that player's), so the portraits cell never holds one. Keeping the rule
+would keep code that no export reaches.
+Plan: `plans/team_compiler/gui.md` "A double-click"; TC-GUI-24 in `plans/team_compiler/README.md`.
+
+## 2026-11-22 — team_compiler — Copy messages only on an export with a Warning or an Error
+Decision: a team label's window offers Copy messages when its export has a Warning or an
+Error. It copies all the export's log lines, its Infos included.
+Why: "when the export has findings" would offer it on every export the check identifies,
+since each carries the Info `export_identified`. A clean export would then copy that one line,
+with nothing in it for a member to fix.
+Plan: `plans/team_compiler/gui.md`, the paragraph on Copy messages; TC-GUI-25.

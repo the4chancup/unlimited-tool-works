@@ -85,8 +85,9 @@ pub struct ValidationContext {
     /// lookup cannot be made or finds none.
     pub installed_common_textures: BTreeSet<String>,
     /// The team's slots whose portrait the installed CPKs loaded before the one being compiled
-    /// already hold (`common/render/symbol/player/<player id>.dds`). `None` when that lookup
-    /// cannot be made: nothing is then known about what is installed, so a `Midcup` export
-    /// reports no `portrait_missing`. A `Full` export ignores it.
+    /// already hold, at the path `pes_savefile::portrait::portrait_path` gives for the run's
+    /// version. `None` when that lookup cannot be made: nothing is then known about what is
+    /// installed, so a `Midcup` export reports no `portrait_missing`. A `Full` export ignores
+    /// it.
     pub installed_portrait_slots: Option<BTreeSet<PlayerSlot>>,
 }

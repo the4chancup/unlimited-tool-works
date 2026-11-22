@@ -489,6 +489,14 @@ mod tests {
     }
 
     #[test]
+    fn an_export_with_no_coverage_tag_gets_no_portrait() {
+        // Dropped by `export_tag_missing` before any player is looked at, so nothing makes
+        // it clean, and a portrait would only add files the test never asked for.
+        let export = TestExport::new("co Day 5", Pes21).sized("Players/05 - A/face_high.fmdl", 4);
+        assert_eq!(added(&export), Vec::<String>::new());
+    }
+
+    #[test]
     fn a_file_directly_in_players_is_no_player_folder() {
         let export = TestExport::new("co Full Spring", Pes21)
             .sized("Players/notes.txt", 5)

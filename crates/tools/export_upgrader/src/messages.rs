@@ -896,7 +896,7 @@ const CATALOG: &[(&str, Severity, &str, &str)] = &[
     (
         "logo_missing",
         Severity::Error,
-        r#"An export upgraded as `Full` has no logo: the old export has no `Logo/` folder, or no image in it can be read."#,
+        r#"An export upgraded as `Full` has no logo: the old export has no `Logo/` folder, or nothing in it can be taken as the logo."#,
         r#"The run is not clean, so nothing is written. Put the logo in the old export's `Logo/` folder as `emblem_0XXX_r_ll.png`, or upgrade it with `--coverage midcup` if it only adds to what is installed."#,
     ),
     (

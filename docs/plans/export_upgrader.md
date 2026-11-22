@@ -501,9 +501,13 @@ EU-SET-13  GIVEN EU-SET-12's export
 **0.0.2-logo scope.** `logo_missing` from the shared validation (above, "What it does").
 
 ```
-EU-MDL-43  GIVEN an old export "co - Spring" with faces, kits and no Logo folder
+EU-MDL-43  GIVEN an old export "co - Spring" with faces, kits and no Logo folder, on a PES 21
+                save, one of its players with no portrait
            WHEN it is upgraded, then upgraded again with --coverage midcup
            THEN the first run reports logo_missing (Error) on "co Full - Spring", writes
                 nothing and ends migration_not_clean with exit code 1; the second writes
-                "co Midcup - Spring" with no logo file and ends migration_clean
+                "co Midcup - Spring" with no logo file, reports no portrait_missing and ends
+                migration_clean; GIVEN a Logo folder added THEN a run as Full reports
+                portrait_missing (Warning) on that player, writes "co Full - Spring" and ends
+                migration_clean
 ```

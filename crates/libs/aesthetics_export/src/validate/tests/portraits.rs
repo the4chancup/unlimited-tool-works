@@ -141,6 +141,31 @@ fn a_portrait_file_that_maps_to_the_slot_counts_whatever_a_later_check_finds() {
 }
 
 #[test]
+fn a_portraits_file_named_for_the_slot_counts_whatever_its_kind_or_depth() {
+    // `05.txt` is no texture and `Portraits/Portraits/06.dds` sits too deep, so each is
+    // `portrait_name_invalid`; each name still says whose portrait it is.
+    let export = TestExport::new("co Full Spring", PesVersion::Pes21)
+        .sized("Players/05 - E/hair.dds", 9)
+        .sized("Players/06 - F/hair.dds", 9)
+        .sized("Portraits/05.txt", 9)
+        .sized("Portraits/Portraits/06.dds", 9)
+        .without(Requirement::Portraits);
+    let report = report_of(&export);
+    let mut invalid: Vec<&str> = report
+        .issues
+        .iter()
+        .filter(|issue| issue.code == "portrait_name_invalid")
+        .map(|issue| match &issue.scope {
+            IssueScope::File(path) => path.as_str(),
+            scope => panic!("portrait_name_invalid on {scope:?}"),
+        })
+        .collect();
+    invalid.sort_unstable();
+    assert_eq!(invalid, ["Portraits/05.txt", "Portraits/Portraits/06.dds"]);
+    assert_eq!(portraits_missing(&report), vec![]);
+}
+
+#[test]
 fn a_portrait_below_a_subfolder_is_not_the_players() {
     let export = TestExport::new("co Full Spring", PesVersion::Pes21)
         .sized("Players/03 - C/old/portrait.dds", 9)
