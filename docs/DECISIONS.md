@@ -19326,3 +19326,11 @@ carry no number, so the rule does not reach them.
 Why: kit folders share the player folders' `<slot> - <label>` shape and its reading, and a
 member who writes `15 Snuffy` writes `p1 Lakers`.
 Plan: plans/aesthetics_export/player_folders.md "Player numbering without the hyphen".
+
+## 2026-11-22 — compiler view — the detail window opens after 0.15 s
+Decision (the maintainer): the window opens 0.15 s after the pointer rests on a cell or a log
+line, tried in the draft against the sidebar's 0.1 s; it still follows the pointer from cell
+to cell with no delay once open. The sidebar keeps 0.1 s.
+Why: 0.15 s felt better in the draft. The window is the 3D preview's size, and a shorter delay
+flashes it over the cells a pointer only crosses.
+Plan: plans/team_compiler/gui.md "GUI: the live-validating team grid" (the detail window, Hover).

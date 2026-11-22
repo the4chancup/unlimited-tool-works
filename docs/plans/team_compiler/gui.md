@@ -87,8 +87,9 @@ it, one cell per player at a fixed position by number, plus one cell per kit:
   window moves between cells. Until the 3D preview is built, a player's box shows the logo
   too.
   - **Hover** opens it on the cell under the pointer, and leaving the cell closes it. It opens
-    after the sidebar's hover delay (0.1 s, `HOVER_DELAY`), almost at once, and then follows
-    the pointer from cell to cell with none.
+    after 0.15 s, and then follows the pointer from cell to cell with no delay. That is
+    longer than the sidebar's 0.1 s, so a pointer crossing the grid does not flash a window
+    the size of the 3D preview over every cell it passes.
   - **A click pins it**: a pin shows on the cell and in the window's title bar, and the window
     stays open on that cell, with its buttons usable, and dragging its title bar moves it.
     While a cell is pinned, hovering another opens nothing, so the pointer can cross the grid
