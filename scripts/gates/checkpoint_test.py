@@ -50,11 +50,15 @@ class Repo:
         raise AssertionError(f"unexpected git call {args}")
 
     def just(self, command, cwd):
-        recipe = command[1]
+        # The mutation run goes around `just`, whose Windows shell flattens its exit code
+        # to 1 (`checkpoint.MUTANTS_DIFF`); the gates still go through it.
+        if command[:-1] == checkpoint.MUTANTS_DIFF:
+            recipe, expected = "mutants-diff", [*checkpoint.MUTANTS_DIFF, self.mutated]
+        else:
+            recipe, expected = "gates-changed", ["just", "gates-changed", "gated-before"]
         # The gates run since the commit gated before, the mutants since the last commit
         # whose mutants ran: over another range either would pass on commits it never read.
-        base = self.mutated if recipe == "mutants-diff" else "gated-before"
-        if command != ["just", recipe, base] or cwd != checkpoint.ROOT:
+        if command != expected or cwd != checkpoint.ROOT:
             raise AssertionError(f"unexpected run {command} in {cwd}")
         self.ran.append(recipe)
         self.during.get(recipe, lambda repo: None)(self)
