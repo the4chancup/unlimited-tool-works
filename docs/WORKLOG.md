@@ -268,10 +268,11 @@ other items run beside it. **Ahead of item 6:** the `pes14` branch's step 12, a 
       `skills && com_styles` (a player matching on skills alone must not match on Cards)
       and the dialog's `!team_category.contains` (Every team keeps a category that holds
       every match);
-    - [ ] `export_grid` (88) and `team_compiler` (11): the grid's position tests landed after
-      `625e7147`, so both crates' mutants rerun at HEAD first
-      (`.tmp/process/mutdiff_head_grid_tc.log`); what survives there gets tests, in one
-      brief with `save_editor`'s two;
+    - `export_grid` and `team_compiler`, rerun at HEAD since the grid's position tests landed
+      after `625e7147`: 6 and 11 left. Two timeouts are caught (endless loops); `text_colour`'s
+      `>=` and `export_row`'s message guard are equivalent (`.cargo/mutants.toml`); the rest,
+      with `save_editor`'s two, got tests (Opus, one rework, merge `881c9a32`), and the
+      survivor that was unreachable code, a validated export's own portrait count, is gone;
     - [ ] then `just pipeline` at the new HEAD.
 
 Most open steps below wait only on a check in the game or the built window that the lead's
