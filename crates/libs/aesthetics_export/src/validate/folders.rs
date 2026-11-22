@@ -176,7 +176,7 @@ pub(crate) fn player_folder(draft: &FolderDraft, roster_file: bool) -> PlayerFol
 
 /// Whether a file named `name` is a player's portrait, when it is a texture directly in his
 /// folder: its stem is `portrait`, ASCII-case-insensitively, whatever its extension.
-fn is_portrait_name(name: &str) -> bool {
+pub(crate) fn is_portrait_name(name: &str) -> bool {
     name.rsplit_once('.')
         .is_some_and(|(stem, _)| stem.eq_ignore_ascii_case("portrait"))
 }

@@ -26,6 +26,8 @@ mod processing;
 mod reader;
 mod settings;
 mod templates;
+#[cfg(any(test, feature = "test-support"))]
+pub mod test_files;
 #[cfg(test)]
 mod testing;
 mod texture_lookup;

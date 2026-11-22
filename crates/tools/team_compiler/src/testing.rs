@@ -6,10 +6,8 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
-use aesthetics_export::{
-    CanonicalListing, ListedEntry, ListedKind, ResolvedAestheticsExport, SmallMetadata,
-    ValidationContext, parse_listing,
-};
+use aesthetics_export::test_exports::TestExport;
+use aesthetics_export::{ResolvedAestheticsExport, ValidationContext, parse_listing};
 use crossbeam_channel::{Receiver, unbounded};
 use pes_version::PesVersion;
 use studio_core::{AppPaths, ExportId, PipelineEventEnvelope, Settings, ToolContext};
@@ -209,9 +207,10 @@ pub(crate) fn to_plan(
     }
 }
 
-/// The export `name` with these files (path, size), folders and `players.txt`, validated
-/// for PES 21 and resolved against a teams list holding `702 /a/`, `714 /co/` and `790 /dbg/`;
-/// the export must validate with no issue.
+/// The export `name` with these files (path, size), folders and `players.txt`, completed by
+/// `TestExport` with what a clean export lacks, validated for PES 21 and resolved against a
+/// teams list holding `702 /a/`, `714 /co/` and `790 /dbg/`; the export must validate with no
+/// issue.
 pub(crate) fn resolved(
     name: &str,
     files: &[(&str, u64)],
@@ -242,32 +241,31 @@ pub(crate) fn resolved_with_check(
     players_txt: Option<&[u8]>,
     strict_file_type_check: bool,
 ) -> (ResolvedAestheticsExport, Vec<&'static str>) {
-    let roster = players_txt.map(|bytes| ("players.txt", bytes.len() as u64));
-    let files = files
-        .iter()
-        .copied()
-        .chain(roster)
-        .map(|(path, size)| (path.to_owned(), ListedKind::File { size }));
-    let folders = folders
-        .iter()
-        .map(|path| ((*path).to_owned(), ListedKind::Folder));
-    let listing = CanonicalListing {
-        display_name: name.to_owned(),
-        entries: files
-            .chain(folders)
-            .map(|(path, kind)| ListedEntry { path, kind })
-            .collect(),
-    };
-    let metadata = SmallMetadata {
-        files: players_txt
-            .map(|bytes| ("players.txt".to_owned(), Ok(bytes.to_vec())))
-            .into_iter()
-            .collect::<BTreeMap<_, _>>(),
-    };
+    let mut export = TestExport::new(name, PesVersion::Pes21);
+    for (path, size) in files {
+        export = export.sized(path, *size);
+    }
+    for path in folders {
+        export = export.folder(path);
+    }
+    if let Some(bytes) = players_txt {
+        export = export.file("players.txt", bytes);
+    }
+    resolved_export(&export, strict_file_type_check)
+}
+
+/// `export`, completed with what a clean export lacks, validated for its version (the
+/// file-type check strict or lenient as `strict_file_type_check` says) and resolved against
+/// `resolved`'s teams list, with the codes of the issues validation reported on it.
+pub(crate) fn resolved_export(
+    export: &TestExport,
+    strict_file_type_check: bool,
+) -> (ResolvedAestheticsExport, Vec<&'static str>) {
+    let (listing, metadata) = export.listing();
     let report = parse_listing(listing, metadata)
         .unwrap()
         .validate(&ValidationContext {
-            version: PesVersion::Pes21,
+            version: export.version(),
             strict_file_type_check,
             pass_through: false,
             installed_common_textures: BTreeSet::new(),

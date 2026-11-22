@@ -41,8 +41,16 @@ uniparam.workspace = true
 vtree.workspace = true
 wezlib.workspace = true
 
+[features]
+# `test_files`, the bytes of the files a clean export lacks, for tests that write exports.
+test-support = ["aesthetics_export/test-support"]
+
 [dev-dependencies]
+aesthetics_export = { workspace = true, features = ["test-support"] }
 pes_savefile = { workspace = true, features = ["test-support"] }
+# The integration tests are their own crate, which `cfg(test)` does not reach: they turn on
+# `test-support` to complete their exports with `test_files`' bytes.
+team_compiler = { workspace = true, features = ["test-support"] }
 
 [lints]
 workspace = true

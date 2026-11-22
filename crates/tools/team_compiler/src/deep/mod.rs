@@ -1858,6 +1858,7 @@ mod tests {
     use std::path::{Path, PathBuf};
     use std::slice;
 
+    use aesthetics_export::test_exports::TestExport;
     use aesthetics_export::{Disposition, IssueScope};
     use dds_convert::{BlockCodec, Blocks, Decoded, encode_dds};
     use fmdl::{FmdlFile, Model};
@@ -1867,7 +1868,8 @@ mod tests {
 
     use super::*;
     use crate::reader::{ExportSource, SourceKind};
-    use crate::testing::{resolved_with_issues, scratch};
+    use crate::test_files::clean_files;
+    use crate::testing::{resolved_export, scratch};
 
     /// The bytes of `tests/fixtures/<relative>`.
     pub(super) fn fixture(relative: &str) -> Vec<u8> {
@@ -2004,28 +2006,46 @@ mod tests {
         unwritten: &[&str],
         structure_codes: &[&str],
     ) -> ContentPass {
-        let listed = written(root, files, unwritten);
-        let (resolved, codes) = resolved_with_issues(name, &listed, &[], players_txt);
+        let export = written(name, players_txt, root, files, unwritten);
+        let (resolved, codes) = resolved_export(&export, true);
         assert_eq!(codes, structure_codes, "the structure pass's findings");
         pass_over(name, root, &resolved.export, version)
     }
 
-    /// Writes `files` below `root` and lists them with `unwritten`, each of those one byte.
-    fn written<'a>(
+    /// The folder export `name` for PES 21, the version `resolved_export` validates for:
+    /// `files`, `players_txt` as its `players.txt` and the files it still lacks to be clean are
+    /// written below `root`, and `unwritten` is listed at one byte each. Each written file is
+    /// held with its bytes, so its listed size is the one on disk, a `notes.txt` or roster
+    /// among them is in the small metadata, and the export lacks nothing more.
+    fn written(
+        name: &str,
+        players_txt: Option<&[u8]>,
         root: &Path,
-        files: &[(&'a str, Vec<u8>)],
-        unwritten: &[&'a str],
-    ) -> Vec<(&'a str, u64)> {
+        files: &[(&str, Vec<u8>)],
+        unwritten: &[&str],
+    ) -> TestExport {
+        let mut given = TestExport::new(name, PesVersion::Pes21);
         for (path, bytes) in files {
-            let path = root.join(path);
-            fs::create_dir_all(path.parent().unwrap()).unwrap();
-            fs::write(path, bytes).unwrap();
+            given = given.file(path, bytes.clone());
         }
-        files
-            .iter()
-            .map(|(path, bytes)| (*path, bytes.len() as u64))
-            .chain(unwritten.iter().map(|path| (*path, 1)))
-            .collect()
+        if let Some(bytes) = players_txt {
+            given = given.file("players.txt", bytes);
+        }
+        for path in unwritten {
+            given = given.sized(path, 1);
+        }
+        let mut written = TestExport::new(name, PesVersion::Pes21);
+        for (path, bytes) in given.files(clean_files()) {
+            if unwritten.contains(&path.as_str()) {
+                written = written.sized(&path, 1);
+                continue;
+            }
+            let on_disk = root.join(&path);
+            fs::create_dir_all(on_disk.parent().unwrap()).unwrap();
+            fs::write(on_disk, &bytes).unwrap();
+            written = written.file(&path, bytes);
+        }
+        written
     }
 
     /// The deep pass over `export`, the folder export `name` at `root`, for `version`.
@@ -3531,7 +3551,9 @@ mod tests {
         // (`common_model_beaten_dropped`). Kept, it is the link's model in the pairing, so the
         // `.mtl`'s lookup reaches `Common/`'s own textures, and `hair.dds` reports no finding.
         let temp = scratch("deep_beaten_pass_through");
-        let listed = written(
+        let export = written(
+            "co Midcup Deep",
+            None,
             temp.path(),
             &[
                 ("Common/legs.fmdl", b"not an fmdl".to_vec()),
@@ -3545,7 +3567,7 @@ mod tests {
             ],
             &[],
         );
-        let (resolved, codes) = resolved_with_issues("co Midcup Deep", &listed, &[], None);
+        let (resolved, codes) = resolved_export(&export, true);
         assert_eq!(codes, Vec::<&str>::new(), "the structure pass's findings");
         let source = ExportSource {
             export_id: ExportId(0),
