@@ -3828,13 +3828,14 @@ points there.
   decision. Found while giving the `pes14` draft PES 2014's own list. The pickers now read the
   version's list, PES 2015 and 2016's added (with them, those versions' changes rows name the
   right style).
-- open (2026-11-21) — The Ruleset editor's stat grids clip where the draft wraps. With the
+- resolved 2026-11-23 (dropped) — The Ruleset editor's stat grids clip where the draft wraps. With the
   preview shown at the default window, the General section is about 300 points wide: the
   build keeps its five checkbox columns on one line each and cuts them at the section's edge
   (a sideways scroll reaches them), where the draft (`ruleset_editor/general?preview=1`) wraps
   long names onto two lines ("Attacking / Prowess") and shows four columns. It was already so
   with the old 560-point preview; seen in the release build of the larger-window slice
-  (`.tmp/lead/re_look/`). Next: brief the build to the draft's wrapping.
+  (`.tmp/lead/re_look/`). Dropped 2026-11-23: the Ruleset editor's draft is not final, so
+  its built UI is not compared with it (DECISIONS).
 - resolved 2026-11-22 (dropped) — The trial of whether SubQ Snap can tell a flaky test from a
   steady one, as it tells a test that proves its scenario from one that does not. Asked per
   test whether its outcome depends on anything outside its inputs; the state was the test and

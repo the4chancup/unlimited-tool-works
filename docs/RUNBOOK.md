@@ -84,6 +84,12 @@ cards run on one build, a release build copied to `4cc-studio-temp/tasks_build/`
 the tasks page's intro with its commit; a card that needs a later commit refreshes the copy
 and the intro in the same edit (never while the maintainer has it open: copy beside it then).
 
+**The Ruleset editor's built UI is not worked on.** Its draft is not final, so no slice
+changes its look and no difference between its built window and its draft is captured,
+logged or fixed, until the maintainer says its draft is final. A change to its code that a
+member does not see (a rename, a test) still lands, and a test that clicks its UI is fixed
+in the test.
+
 **No look reaches the maintainer unchecked.** A built-window look goes on the tasks page, into a
 checklist or into a report only after the lead or an Opus sidekick has made it first: the
 release build captured at each state the look names (`scripts/built_window/`), the draft

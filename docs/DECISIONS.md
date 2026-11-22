@@ -19769,3 +19769,15 @@ second at that size, against holding every archive's contents while the view is 
 Plan: `plans/team_compiler/gui.md` "Deep check (plain-folder and `.zip` exports)" and "Shallow
 check, then a deep one in its turn (`.7z` exports)"; `plans/team_compiler/pipeline.md`;
 `plans/core/README.md`'s table; TC-GUI-04.
+
+## 2026-11-23 — ruleset_editor, built UI — no work on the Ruleset editor's built UI until its draft is final
+Decision: no slice changes the Ruleset editor's built look, and no difference between its built
+window and its draft is captured, logged or fixed, until the maintainer calls its draft final.
+Its other code changes still land (the non-free rename's texts, a test that clicks its UI,
+fixed in the test). The two open worklog issues of that kind are dropped: the stat grids that
+clip where the draft wraps, and the Tiers headers drawn on one line where the draft wraps them.
+Why: the maintainer, said a second time and made final: "The draft is not final, so any
+divergences in the build aren't even worth looking at." The RUNBOOK's rule that every look is
+compared with its draft gave no exception, so the lead kept comparing.
+Plan: `RUNBOOK.md` "How the work runs", the rule "The Ruleset editor's built UI is not worked
+on".
