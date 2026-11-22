@@ -778,13 +778,14 @@ button would stay on every PES 2014 save, its tooltip saying the folder holds no
   value stands).
   - What only PES 2014 stores becomes optional keys, read and written on PES 2014 alone:
     Tenacity, the Punt Kick motion, each preset's Strategy and eight sliders, and Combination
-    Play. The Instigator and Solid Player are two more labels of the playing style's key.
+    Play. The playing style's key already takes The Instigator and Solid Player. The 1-to-8
+    settings (Form, Injury Resistance, the weak foot) run 1 to 8 in a PES 2014 document.
   - A preset holds one formation on PES 2014, so the document carries each preset's first
     and leaves the other two out.
   - The look parts the editor does not map yet, the face and the hair, travel in the player's
-    appearance record, whole: a PES 2014-only key holding its 88 bytes in hex, as
-    `ingame_face` holds its own. An import writes the record first and the mapped appearance
-    keys after it, so a key edited in the document wins. A target player with no appearance
+    appearance record, whole: a PES 2014-only key holding its 88 bytes in hex. An import
+    writes the record first and the mapped appearance keys after it, so a key edited in the
+    document wins. A target player with no appearance
     record takes none of it, and the import names him, since the editor never creates a
     record.
   - A PES 2014 document imports only into a PES 2014 save, and a PES 2014 save takes only a
@@ -973,3 +974,10 @@ player, who uses only the Save editor.
     imported onto an Akko team, and exported again from the Akko save. The two documents are equal but for `[team] id`, and any other
     difference is listed and explained. Then the imported team is looked at in game in Edit
     mode: names, looks and the Game Plan.
+    Slices, SWE-2, in this order:
+    - a: PES 2014 documents: `pes_version = 14`, the 1-to-8 ranges, one formation a preset,
+      and the refusal between PES 2014 and the other versions;
+    - b: Tenacity and the Punt Kick motion;
+    - c: each preset's Strategy and sliders, and Combination Play;
+    - d: the appearance record;
+    - e: the Save editor's and the command line's refusals lifted.
