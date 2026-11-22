@@ -60,7 +60,9 @@ const EXPORT_UPGRADER_CSS = `
      exports scroll under it (egui: a row drawn above the scroll area). */
   .eu-pairs { flex: 1; min-height: 0; overflow: auto; padding: 0 8px 8px; }
   .eu-export { margin-bottom: 20px; }
-  .eu-head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .eu-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+  .eu-head .side { width: 38%; min-width: 0; display: flex; align-items: center; gap: 8px; }
+  .eu-head .path { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .eu-cols { display: flex; justify-content: space-between; position: sticky; top: 0; z-index: 2;
     background: var(--panel); padding: 8px 0 4px; }
   .eu-cols span { width: 38%; }
@@ -569,15 +571,21 @@ const SVG = "http://www.w3.org/2000/svg";
 function flowBlock(x) {
   const why = blocked(x), l = look(x, x.label);
   const labelAt = cellAt(x.key, "label");
+  // Each name under its column: the old one beside the label, the upgraded
+  // one where the upgraded boxes start, with the tag at the right end. A
+  // blocked export writes nothing, so its right side says why instead.
   const head = h("div", { class: "eu-head" },
-    h("span", { class: "tc-name mono" + (l.outline ? " ol" : "") + (S.highlight === x.name ? " hl" : ""),
-      style: lookStyle(l) + "; display:inline-flex; align-items:center; justify-content:center; position:relative",
-      "data-scope": x.name, ...detailEvents(x, labelAt) }, x.name, pinEl(labelAt)),
-    h("span", { class: "mono" }, x.old), weak("→"), h("span", { class: "mono" }, "exports\\" + outName(x)),
-    why ? h("span", { style: `color:${ERR}` }, why) : null, why ? rowAct(x) : null,
-    h("span", { style: "flex:1" }),
-    why ? null : combo([["Full", "Full export"], ["Midcup", "Midcup export"]], x.tag, v => { x.tag = v; },
-      { title: "Prefilled: " + x.guess, disabled: !!S.run }));
+    h("div", { class: "side" },
+      h("span", { class: "tc-name mono" + (l.outline ? " ol" : "") + (S.highlight === x.name ? " hl" : ""),
+        style: lookStyle(l) + "; display:inline-flex; align-items:center; justify-content:center; position:relative",
+        "data-scope": x.name, ...detailEvents(x, labelAt) }, x.name, pinEl(labelAt)),
+      h("span", { class: "mono path" }, "old_exports\\" + x.old)),
+    h("div", { class: "side right" },
+      why ? h("span", { style: `color:${ERR}` }, why) : h("span", { class: "mono path" }, "exports\\" + outName(x)),
+      why ? rowAct(x) : null,
+      h("span", { style: "flex:1" }),
+      why ? null : combo([["Full", "Full export"], ["Midcup", "Midcup export"]], x.tag, v => { x.tag = v; },
+        { title: "Prefilled: " + x.guess, disabled: !!S.run })));
   if (why) return h("div", { class: "eu-export", "data-panel": "export-" + x.key }, head);
   const flow = flowOf(x);
   const map = h("div", { class: "eu-flow", style: `height:${flow.height}px` });
@@ -697,10 +705,10 @@ function argsRow() {
     // picks one, which then holds whatever the count (two selectable labels).
     // sample: the two names, and that the pick lasts for the session.
     h("span", { class: "eu-look", "data-panel": "look" },
-      selectable("Grid", gridLook(), () => { S.view = "grid"; render(); },
-        "One row of cells per export: the look for many exports"),
       selectable("Files", !gridLook(), () => { S.view = "files"; render(); },
-        "Each export's old files beside where they go: the look for a few exports")));
+        "Each export's old files beside where they go: the look for a few exports"),
+      selectable("Grid", gridLook(), () => { S.view = "grid"; render(); },
+        "One row of cells per export: the look for many exports")));
 }
 
 // ---- The toolbar: the strip and the Upgrade button ----

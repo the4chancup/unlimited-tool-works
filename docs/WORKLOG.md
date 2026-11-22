@@ -95,6 +95,8 @@ other items run beside it. **After the detour**, in this order:
    a cell's detail window now opens on hover and pins on a click, and long log lines wrap; a
    log line acts for its cell (`plans/team_compiler/gui.md`). The maintainer stamped that
    draft on 2026-11-22, and the Export upgrader's draft took the same window, log and counts.
+   The maintainer approved both drafts on 2026-11-22, the Compiler's with the logo and
+   portrait findings, the upgrader's once each export's two names stood under their columns.
    The Sizes colouring and sorting were drafted and stamped the same day (gui.md "Sizes and
    sorting"). Next: the first slice's brief (grid, window, log); Sizes and sorting come in a
    later slice.

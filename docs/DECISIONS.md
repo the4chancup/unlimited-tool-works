@@ -19479,3 +19479,13 @@ player's box and the portraits grid alike.
 Why: a frame squares off a crest or a cut-out portrait, so the window would not show the
 picture as its author drew it.
 Plan: plans/team_compiler/gui.md "GUI: the live-validating team grid" (the detail window).
+
+## 2026-11-22 — export_upgrader — The Files look's export names stand under their columns; the toggle reads Files | Grid
+Decision: the maintainer approved the upgrader's draft once each export's block in the Files
+look puts its old name (`old_exports\<name>`) beside its label under `Old export` and its
+upgraded name (`exports\<name>`) under `Upgraded export`, in place of one `old → new` line,
+and the look toggle reads `Files | Grid`. The lead's, in the same pass: an export that cannot
+be read shows its reason and action on the right side in place of the upgraded name, since it
+writes nothing and the three would not fit side by side.
+Why: each name then sits over the boxes it names.
+Plan: plans/export_upgrader.md "GUI" (the look toggle, the Files look).

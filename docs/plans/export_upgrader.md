@@ -244,7 +244,7 @@ members use (`quick_upgrade.bat`) reads the same two.
     its value for when it is unticked, because a member trying both ways would pick the save
     again, and an export refused for its team is read again with no save.
   - `into` and the `exports` folder's path, as text: where every upgraded export goes.
-  - At the row's right end, the **look toggle**, `Grid | Files` (below).
+  - At the row's right end, the **look toggle**, `Files | Grid` (below).
 - **Two looks, one set of cells.**
   - **Grid**, the default from five exports on: the Compiler's grid, three lines an export.
     The **Face** line holds a cell per player slot (his face folder, to `Players\NN -
@@ -269,9 +269,12 @@ members use (`quick_upgrade.bat`) reads the same two.
   - A box under the pointer keeps its own lines and the boxes at their other ends, and dims
     the rest. The dimming ends 120 ms after the pointer leaves, as on that page, so going
     from box to box does not flicker.
-  - Each export's block opens with its label, its old name, `→` and its upgraded name.
-    The labels `Old export` and `Upgraded export` are one row that stays above the exports
-    as they scroll, and a legend of the lines' colours stands above the map.
+  - Each export's block opens with its two names, each under its column: on the left
+    its label and its old name (`old_exports\<name>`), on the right its upgraded name
+    (`exports\<name>`) and its `Full`/`Midcup` combo. An export that cannot be read
+    writes nothing, so its right side holds the reason and its action instead. The labels
+    `Old export` and `Upgraded export` are one row that stays above the exports as they
+    scroll, and a legend of the lines' colours stands above the map.
   - **The toggle** picks either look whatever the count; until the member picks one, the
     count chooses. The pick lasts the session, because the right look depends on the day's
     folder.
