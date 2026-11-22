@@ -226,27 +226,28 @@ TC-GUI-09  GIVEN a cell with findings and no cell pinned
            THEN the detail window opens on it, showing the folder name and each finding's
                 code, file and catalog text, worst severity first; WHEN the pointer leaves
                 the cell for empty grid THEN the window closes; WHEN it moves onto another cell
-                instead THEN the window shows that cell at once
+                instead, one under the window included, THEN the window shows that cell at once
 TC-GUI-24  GIVEN the pointer on a cell with findings
            WHEN the cell is clicked
            THEN the window stays open on it, a pin on the cell and in the window's title bar,
-                and hovering another cell leaves the window as it is; WHEN another cell is
+                and hovering another cell leaves the window as it is; WHEN its title bar is
+                dragged THEN the window moves, and the next window opens where it was left;
+                WHEN another cell is
                 clicked THEN that one is pinned instead; WHEN the pinned cell, the window's
                 pin or the grid's empty space is clicked THEN nothing is pinned and the
                 window closes, and resting the pointer on that cell opens nothing until it
                 has left the cell; WHEN Esc is pressed with the window open, pinned or not,
                 THEN it closes the same way; GIVEN a double-click on a cell THEN its folder opens in the
                 file manager and the pin is as it was before the double-click; GIVEN an export
-                with no Portraits folder whose portraits cell has one finding THEN a
-                double-click on that cell opens the player folder of the finding's file, and
-                with two findings or none it opens nothing
+                with no Portraits folder THEN a double-click on its portraits cell opens
+                nothing
 TC-GUI-25  GIVEN an export with three findings in the log, one on its label and two on its
                 players
            WHEN its label's window shows Copy messages and that button is clicked
-           THEN the clipboard holds the export's three log lines, as the log prints them, one
-                per line, and the button reads Copied for a moment; GIVEN an export with no
-                findings, or the window of a player, kit or portraits cell THEN the window
-                has no Copy messages
+           THEN the clipboard holds the export's log lines, its Info export_identified
+                included, as the log prints them, one per line, and the button reads Copied
+                for a moment; GIVEN an export with no Warning and no Error, or the window of
+                a player, kit or portraits cell THEN the window has no Copy messages
 TC-GUI-10  GIVEN a kit folder whose colors.txt parses and whose icon_<N> marker names pattern N
            WHEN its cell is drawn
            THEN the cell shows pattern N's two-color swatch in the kit's two menu colors under

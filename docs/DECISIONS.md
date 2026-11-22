@@ -19621,3 +19621,20 @@ names it, and the Compiler's grid already counts such a file as his portrait, so
 contradicts it.
 Plan: `plans/aesthetics_export/object_model.md` "Validation semantics", the paragraph "A file
 that maps to the slot".
+
+## 2026-11-22 — team_compiler — the portraits cell with no `Portraits/` folder opens nothing
+Decision: the grid's portraits cell opens the export's `Portraits/` when it has one, and
+nothing otherwise. The rule that it opens the folder of its one finding is gone.
+Why: the rule could never apply. With no `Portraits/` folder, every finding about a portrait
+lands on its player's cell (`portrait_missing` is on the player folder, and a `portrait.dds`
+in a player folder is that player's), so the portraits cell never holds one. Keeping the rule
+would keep code that no export reaches.
+Plan: `plans/team_compiler/gui.md` "A double-click"; TC-GUI-24 in `plans/team_compiler/README.md`.
+
+## 2026-11-22 — team_compiler — Copy messages only on an export with a Warning or an Error
+Decision: a team label's window offers Copy messages when its export has a Warning or an
+Error. It copies all the export's log lines, its Infos included.
+Why: "when the export has findings" would offer it on every export the check identifies,
+since each carries the Info `export_identified`. A clean export would then copy that one line,
+with nothing in it for a member to fix.
+Plan: `plans/team_compiler/gui.md`, the paragraph on Copy messages; TC-GUI-25.
