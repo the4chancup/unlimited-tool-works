@@ -153,6 +153,7 @@ fn kept_player(player: PlayerSection, sections: Sections) -> PlayerSection {
         free_kick,
         penalty_kick,
         dribbling,
+        punt_kick,
         goal_celebration_1,
         goal_celebration_2,
     } = motion;
@@ -200,6 +201,7 @@ fn kept_player(player: PlayerSection, sections: Sections) -> PlayerSection {
                 free_kick: kept(aesthetics, free_kick),
                 penalty_kick: kept(aesthetics, penalty_kick),
                 dribbling: kept(aesthetics, dribbling),
+                punt_kick: kept(aesthetics, punt_kick),
                 goal_celebration_1: kept(aesthetics, goal_celebration_1),
                 goal_celebration_2: kept(aesthetics, goal_celebration_2),
             },
@@ -369,6 +371,7 @@ mod tests {
             key("appearance.motion.free_kick", &motion.free_kick),
             key("appearance.motion.penalty_kick", &motion.penalty_kick),
             key("appearance.motion.dribbling", &motion.dribbling),
+            key("appearance.motion.punt_kick", &motion.punt_kick),
             key(
                 "appearance.motion.goal_celebration_1",
                 &motion.goal_celebration_1,
@@ -383,13 +386,14 @@ mod tests {
 
     /// The keys absent from /co/'s PES 19 document, which PES 19 does not store. The premise
     /// checks skip them, since an absent key proves nothing about the filter.
-    const NOT_IN_PES_19: [&str; 6] = [
+    const NOT_IN_PES_19: [&str; 7] = [
         "team.kit_slots",
         "team.edit_flags.short_name",
         "team.edit_flags.stadium",
         "team.edit_flags.strip",
         "edit_flags.base_copy",
         "appearance.motion.dribbling",
+        "appearance.motion.punt_kick",
     ];
 
     /// Premise: every key the rows list holds a value in at least one row, so that finding

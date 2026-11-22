@@ -211,11 +211,16 @@ impl TeamToml {
             .map(|v| u16::from(v).to_string())
             .unwrap_or_else(|| "19".to_string());
         let body = format!("pes_version = {version}");
-        let line = padded(
-            &body,
+        // A PES 2014 document converts nowhere: its own fields have no
+        // map to the other versions, so it goes only into a PES 2014 save.
+        let comment = if self.pes_version == Some(PesVersion::Pes14) {
+            "the PES version of the save this was exported from; a PES 2014 \
+             team file goes only into a PES 2014 save"
+        } else {
             "the PES version of the save this was exported from; importing into another \
-             version converts the values",
-        );
+             version converts the values"
+        };
+        let line = padded(&body, comment);
         match self.pes_version {
             Some(_) => out.push_str(&line),
             None => out.push_str(&format!("# {line}")),
@@ -1678,9 +1683,7 @@ mod tests {
 
     /// PES 2014's team record stores the two name flags, as PES 2015's does:
     /// its export shows `[team.edit_flags]`'s `name` and `short_name` live,
-    /// `short_name`'s comment naming the two versions. (Team TOML itself is
-    /// out of scope for a PES 2014 save; the emit test runs `from_team`
-    /// directly.)
+    /// `short_name`'s comment naming the two versions.
     #[test]
     fn a_pes14_export_emits_the_team_edit_flags() {
         let (file, _) = open(PesVersion::Pes14);
@@ -1793,5 +1796,39 @@ mod tests {
         doc.apply(PesVersion::Pes14, &mut target, &mut [])
             .expect("a version-less document is the target's");
         assert_eq!(target.name, "/new/");
+    }
+
+    /// The `pes_version` line's comment says what importing the document
+    /// does: another version converts the values, while a PES 2014
+    /// document, whose own fields have no conversion, goes only into a
+    /// PES 2014 save.
+    #[test]
+    fn the_pes_version_comment_names_where_the_document_goes() {
+        let (file14, _) = open(PesVersion::Pes14);
+        let text = TeamToml::from_team(PesVersion::Pes14, file14.team(1).expect("team 1"), &[])
+            .expect("from_team")
+            .to_toml()
+            .expect("to_toml");
+        assert!(
+            text.lines().nth(1).is_some_and(|line| line.ends_with(
+                "# the PES version of the save this was exported from; a PES 2014 \
+                 team file goes only into a PES 2014 save"
+            )),
+            "{text}"
+        );
+
+        let (file21, _) = open(PesVersion::Pes21);
+        let team = file21.teams().first().expect("a team");
+        let text = TeamToml::from_team(PesVersion::Pes21, team, &[])
+            .expect("from_team")
+            .to_toml()
+            .expect("to_toml");
+        assert!(
+            text.lines().nth(1).is_some_and(|line| line.ends_with(
+                "# the PES version of the save this was exported from; importing \
+                 into another version converts the values"
+            )),
+            "{text}"
+        );
     }
 }

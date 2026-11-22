@@ -179,8 +179,10 @@ pub struct MotionSettings {
     pub free_kick: Option<u8>,
     /// Penalty kick motion, stored.
     pub penalty_kick: Option<u8>,
-    /// Dribbling motion (PES 20+).
+    /// Dribbling motion (PES 2014, 20 and 21).
     pub dribbling: Option<u8>,
+    /// Punt kick motion, stored (PES 2014 only).
+    pub punt_kick: Option<u8>,
     /// First goal celebration.
     pub goal_celebration_1: Option<u8>,
     /// Second goal celebration.
@@ -587,6 +589,7 @@ pub(crate) fn get_appearance(appearance: &AppearanceSettings, key: SettingKey) -
         SettingKey::FreeKick => a.motion.free_kick,
         SettingKey::PenaltyKick => a.motion.penalty_kick,
         SettingKey::Dribbling => a.motion.dribbling,
+        SettingKey::PuntKick => a.motion.punt_kick,
         SettingKey::GoalCelebration1 => a.motion.goal_celebration_1,
         SettingKey::GoalCelebration2 => a.motion.goal_celebration_2,
         SettingKey::Star => a.presentation.star,
@@ -730,6 +733,7 @@ pub(crate) fn set_appearance(
         SettingKey::FreeKick => a.motion.free_kick = value,
         SettingKey::PenaltyKick => a.motion.penalty_kick = value,
         SettingKey::Dribbling => a.motion.dribbling = value,
+        SettingKey::PuntKick => a.motion.punt_kick = value,
         SettingKey::GoalCelebration1 => a.motion.goal_celebration_1 = value,
         SettingKey::GoalCelebration2 => a.motion.goal_celebration_2 = value,
         SettingKey::Star => a.presentation.star = value,
@@ -837,6 +841,7 @@ fn read(player: &PlayerEntry, key: SettingKey) -> Result<Option<u8>, SettingsErr
         Source::Player(PlayerField::BootsId) => stock_id(player.appearance.boots_id),
         Source::Player(PlayerField::GlovesId) => stock_id(player.appearance.gloves_id),
         Source::Player(PlayerField::DribblingMotion) => player.motion.dribbling,
+        Source::Player(PlayerField::PuntKickMotion) => player.motion.punt_kick,
         // Version-gated like the dribbling motion: `get` errors where the
         // version has no field, the `Option` reads `None` instead.
         Source::Player(PlayerField::Star) => player.stats.star,
@@ -1240,6 +1245,9 @@ fn write_appearance(
             Source::Player(PlayerField::DribblingMotion) if next.motion.dribbling.is_none() => {
                 return Err(not_held(key));
             }
+            Source::Player(PlayerField::PuntKickMotion) if next.motion.punt_kick.is_none() => {
+                return Err(not_held(key));
+            }
             // `set` writes a `Some` without checking the schema, so the
             // version-gated fields refuse here as the dribbling motion does.
             Source::Player(PlayerField::Star) if next.stats.star.is_none() => {
@@ -1342,6 +1350,7 @@ pub(crate) fn ownership(field: PlayerField) -> Ownership {
         | PlayerField::FreeKickMotion
         | PlayerField::PenaltyKickMotion
         | PlayerField::DribblingMotion
+        | PlayerField::PuntKickMotion
         | PlayerField::GoalCelebration1
         | PlayerField::GoalCelebration2
         | PlayerField::Star
@@ -1387,8 +1396,7 @@ pub(crate) fn ownership(field: PlayerField) -> Ownership {
         | PlayerField::PlayablePosition(_)
         | PlayerField::ComStyle(_)
         | PlayerField::Skill(_)
-        | PlayerField::Tenacity
-        | PlayerField::PuntKickMotion => Ownership::Gameplay,
+        | PlayerField::Tenacity => Ownership::Gameplay,
     }
 }
 

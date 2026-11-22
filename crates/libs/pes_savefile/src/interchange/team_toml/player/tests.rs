@@ -115,10 +115,6 @@ fn every_fixture_player_round_trips_through_the_document() {
                     appearance_id: stand_in_id,
                     ..source.clone()
                 };
-                // Tenacity and the Punt Kick motion are PES 2014's alone
-                // and no document keys yet: the target's own stand on them.
-                expected.stats.tenacity = target.stats.tenacity;
-                expected.motion.punt_kick = target.motion.punt_kick;
                 // The run's unused bits are no key: the stand-in keeps its
                 // own (absent = untouched), so both sides compare at the
                 // games' values.
@@ -2397,4 +2393,101 @@ fn the_one_to_eight_settings_run_wider_in_a_pes14_document() {
             "{err:?}"
         );
     }
+}
+
+/// Tenacity and the Punt Kick motion are the two player fields only PES
+/// 2014 stores: its document carries `tenacity` in `[players.NN.stats]` and
+/// `punt_kick` in `[players.NN.appearance.motion]` live, where another
+/// version's shows them commented. PES 2014's `dribbling` line, live as
+/// well, names it among the versions storing the motion.
+#[test]
+fn a_pes14_document_carries_tenacity_and_the_punt_kick() {
+    let live_lines = |text: &str, name: &str| {
+        text.lines()
+            .filter(|line| line.starts_with(&format!("{name} =")))
+            .count()
+    };
+    let (file, _) = open(PesVersion::Pes14);
+    let team = file.team(1).expect("team 1");
+    let refs: Vec<&PlayerEntry> = file.players().iter().collect();
+    let doc = TeamToml::from_team(PesVersion::Pes14, team, &refs).expect("from_team");
+    let text = doc.to_toml().expect("to_toml");
+    assert_eq!(live_lines(&text, "tenacity"), doc.players.len(), "{text}");
+    assert_eq!(live_lines(&text, "punt_kick"), doc.players.len(), "{text}");
+    assert!(
+        text.lines().any(|line| {
+            line.starts_with("dribbling =") && line.ends_with("# 1 to 4 (PES 2014, 20 and 21 only)")
+        }),
+        "a live dribbling line naming PES 2014: {text}"
+    );
+
+    let (file, _) = open(PesVersion::Pes21);
+    let team = file
+        .teams()
+        .iter()
+        .find(|team| team.roster.iter().any(|slot| slot.player_id != 0))
+        .expect("a team with players");
+    let refs: Vec<&PlayerEntry> = file.players().iter().collect();
+    let text = TeamToml::from_team(PesVersion::Pes21, team, &refs)
+        .expect("from_team")
+        .to_toml()
+        .expect("to_toml");
+    assert_eq!(live_lines(&text, "tenacity"), 0, "{text}");
+    assert_eq!(live_lines(&text, "punt_kick"), 0, "{text}");
+    // The keys show commented, as every key the version lacks does.
+    assert!(text.contains("# tenacity = 40"), "{text}");
+    assert!(text.contains("# punt_kick = 1"), "{text}");
+}
+
+/// A document of the target's own version naming a field only PES 2014
+/// stores (`stats.tenacity`, or `punt_kick` in the motion table) is
+/// refused, the error naming the key, and nothing is written.
+#[test]
+fn a_same_version_document_refuses_pes14s_own_keys() {
+    let (file, _) = open(PesVersion::Pes21);
+    let team = file
+        .teams()
+        .iter()
+        .find(|team| team.roster.iter().any(|slot| slot.player_id != 0))
+        .expect("a team with players");
+    let slot = team
+        .roster
+        .iter()
+        .position(|slot| slot.player_id != 0)
+        .expect("a rostered slot")
+        + 1;
+    let mut target = team.clone();
+    let mut players = file.players().to_vec();
+    let doc = TeamToml::parse(&format!(
+        "pes_version = 21\n\n[players.{slot:02}.stats]\ntenacity = 77\n"
+    ))
+    .expect("parses");
+    let err = doc
+        .apply(PesVersion::Pes21, &mut target, &mut players)
+        .expect_err("PES 2021 stores no Tenacity");
+    assert!(
+        matches!(
+            err,
+            TeamTomlError::NotInThisVersion { ref path }
+                if path == &format!("players.{slot:02}.stats.tenacity")
+        ),
+        "{err:?}"
+    );
+    let doc = TeamToml::parse(&format!(
+        "pes_version = 21\n\n[players.{slot:02}.appearance.motion]\npunt_kick = 2\n"
+    ))
+    .expect("parses");
+    let err = doc
+        .apply(PesVersion::Pes21, &mut target, &mut players)
+        .expect_err("PES 2021 stores no punt kick");
+    assert!(
+        matches!(
+            err,
+            TeamTomlError::Settings(
+                crate::settings_toml::SettingsError::NotInThisVersion { ref key }
+            ) if key == "punt_kick"
+        ),
+        "{err:?}"
+    );
+    assert_eq!(&target, team);
 }

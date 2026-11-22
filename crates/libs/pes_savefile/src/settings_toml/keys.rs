@@ -93,8 +93,10 @@ pub enum SettingKey {
     FreeKick,
     /// `[appearance.motion] penalty_kick`
     PenaltyKick,
-    /// `[appearance.motion] dribbling` (PES 20+)
+    /// `[appearance.motion] dribbling` (PES 2014, 20 and 21)
     Dribbling,
+    /// `[appearance.motion] punt_kick` (PES 2014 only)
+    PuntKick,
     /// `[appearance.motion] goal_celebration_1`
     GoalCelebration1,
     /// `[appearance.motion] goal_celebration_2`
@@ -427,7 +429,7 @@ const SEVEN: &str = "-7 to 7";
 
 impl SettingKey {
     /// Every key, in the spec table's order.
-    pub const ALL: [SettingKey; 132] = [
+    pub const ALL: [SettingKey; 133] = [
         SettingKey::BootsId,
         SettingKey::GlovesId,
         SettingKey::SkinColor,
@@ -467,6 +469,7 @@ impl SettingKey {
         SettingKey::FreeKick,
         SettingKey::PenaltyKick,
         SettingKey::Dribbling,
+        SettingKey::PuntKick,
         SettingKey::GoalCelebration1,
         SettingKey::GoalCelebration2,
         SettingKey::Star,
@@ -722,10 +725,15 @@ impl SettingKey {
                 // A 2-bit field the game's Motion screen never shows: it
                 // counts from 1 as the motions beside it do.
                 kind: Kind::OneBased { max: 4 },
-                comment: "1 to 4 (PES 20 and 21 only)",
+                comment: "1 to 4 (PES 2014, 20 and 21 only)",
                 // The block's `1`, stored -1.
                 default: Some(0),
             },
+            SettingKey::PuntKick => motion_1based(
+                "punt_kick",
+                PlayerField::PuntKickMotion,
+                "1 to 4 (PES 2014 only)",
+            ),
             SettingKey::GoalCelebration1 => {
                 celebration("goal_celebration_1", PlayerField::GoalCelebration1)
             }
@@ -1392,6 +1400,7 @@ impl SettingKey {
             SettingKey::FreeKick => Source::Player(PlayerField::FreeKickMotion),
             SettingKey::PenaltyKick => Source::Player(PlayerField::PenaltyKickMotion),
             SettingKey::Dribbling => Source::Player(PlayerField::DribblingMotion),
+            SettingKey::PuntKick => Source::Player(PlayerField::PuntKickMotion),
             SettingKey::GoalCelebration1 => Source::Player(PlayerField::GoalCelebration1),
             SettingKey::GoalCelebration2 => Source::Player(PlayerField::GoalCelebration2),
             SettingKey::Star => Source::Player(PlayerField::Star),
@@ -1601,8 +1610,9 @@ fn bool_key(name: &'static str, comment: &'static str, default: bool) -> KeySpec
 /// measured tops table, so the numbers have one home.
 fn widest_motion(field: PlayerField) -> u8 {
     PesVersion::ALL
-        .iter()
-        .filter_map(|version| motion_top(*version, field))
+        .into_iter()
+        .chain([PesVersion::Pes14])
+        .filter_map(|version| motion_top(version, field))
         .max()
         .expect("a motion field has a top")
 }

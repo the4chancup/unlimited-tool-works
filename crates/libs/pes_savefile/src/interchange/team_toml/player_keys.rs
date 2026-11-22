@@ -99,6 +99,8 @@ pub(crate) enum PlayerKey {
     BallWinning,
     /// `stats.aggression`
     Aggression,
+    /// `stats.tenacity`
+    Tenacity,
     /// `stats.kicking_power`
     KickingPower,
     /// `stats.speed`
@@ -196,7 +198,7 @@ const fn flag(path: &'static str, field: PlayerField) -> KeySpec {
 impl PlayerKey {
     /// Every scalar key, in the TOML block's order (top level, stats,
     /// positions scalars, edit flags).
-    pub(crate) const ALL: [PlayerKey; 53] = [
+    pub(crate) const ALL: [PlayerKey; 54] = [
         PlayerKey::Nationality,
         PlayerKey::Age,
         PlayerKey::Height,
@@ -217,6 +219,7 @@ impl PlayerKey {
         PlayerKey::DefensiveProwess,
         PlayerKey::BallWinning,
         PlayerKey::Aggression,
+        PlayerKey::Tenacity,
         PlayerKey::KickingPower,
         PlayerKey::Speed,
         PlayerKey::ExplosivePower,
@@ -289,6 +292,7 @@ impl PlayerKey {
             }
             PlayerKey::BallWinning => ability("stats.ball_winning", F::BallWinning, ""),
             PlayerKey::Aggression => ability("stats.aggression", F::Aggression, "PES 20 and later"),
+            PlayerKey::Tenacity => ability("stats.tenacity", F::Tenacity, "PES 2014 only"),
             PlayerKey::KickingPower => ability("stats.kicking_power", F::KickingPower, ""),
             PlayerKey::Speed => ability("stats.speed", F::Speed, ""),
             PlayerKey::ExplosivePower => ability("stats.explosive_power", F::ExplosivePower, ""),
@@ -425,6 +429,7 @@ impl PlayerKey {
             PlayerKey::DefensiveProwess => s.stats.defensive_prowess.map(u32::from),
             PlayerKey::BallWinning => s.stats.ball_winning.map(u32::from),
             PlayerKey::Aggression => s.stats.aggression.map(u32::from),
+            PlayerKey::Tenacity => s.stats.tenacity.map(u32::from),
             PlayerKey::KickingPower => s.stats.kicking_power.map(u32::from),
             PlayerKey::Speed => s.stats.speed.map(u32::from),
             PlayerKey::ExplosivePower => s.stats.explosive_power.map(u32::from),
@@ -507,6 +512,7 @@ impl PlayerKey {
             PlayerKey::DefensiveProwess => s.stats.defensive_prowess = Some(byte(value)),
             PlayerKey::BallWinning => s.stats.ball_winning = Some(byte(value)),
             PlayerKey::Aggression => s.stats.aggression = Some(byte(value)),
+            PlayerKey::Tenacity => s.stats.tenacity = Some(byte(value)),
             PlayerKey::KickingPower => s.stats.kicking_power = Some(byte(value)),
             PlayerKey::Speed => s.stats.speed = Some(byte(value)),
             PlayerKey::ExplosivePower => s.stats.explosive_power = Some(byte(value)),

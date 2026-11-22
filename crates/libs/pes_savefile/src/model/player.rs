@@ -259,7 +259,7 @@ pub struct PlayerMotion {
     pub free_kick: u8,
     /// Penalty kick motion.
     pub penalty_kick: u8,
-    /// Dribbling motion (PES 20+).
+    /// Dribbling motion (PES 2014, 20 and 21).
     pub dribbling: Option<u8>,
     /// Punt kick motion (PES 2014 only).
     pub punt_kick: Option<u8>,

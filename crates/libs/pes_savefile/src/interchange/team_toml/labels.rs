@@ -151,9 +151,9 @@ pub const FOOT: [&str; 2] = ["right", "left"];
 /// `PlayerStats`'s field order, the version-dependent ones (tight possession,
 /// aggression, tenacity) included. Weak foot, form, injury resistance, star
 /// and playing attitude are record stats but not abilities. `team.toml`
-/// spells them as `stats.<name>` (tenacity excepted: a stat PES 2014 alone
-/// stores, on a version no Team TOML covers); other crates share the table
-/// for their own closed sets.
+/// spells them as `stats.<name>` (tenacity's line on a PES 2014 document
+/// alone: it is a stat that version alone stores); other crates share the
+/// table for their own closed sets.
 pub const ABILITY_STATS: [&str; 26] = [
     "attacking_prowess",
     "ball_control",
@@ -274,10 +274,9 @@ mod tests {
     use crate::model::instruction::Instruction;
     use crate::model::playstyle::PlayStyle;
 
-    /// `ABILITY_STATS` but Tenacity (no `stats.` key), sorted, is exactly
-    /// the `PlayerKey` names of the `Kind::Ability` keys, `stats.` prefix
-    /// stripped: membership, completeness and no duplicates in one
-    /// assertion.
+    /// `ABILITY_STATS`, sorted, is exactly the `PlayerKey` names of the
+    /// `Kind::Ability` keys, `stats.` prefix stripped: membership,
+    /// completeness and no duplicates in one assertion.
     #[test]
     fn ability_stats_are_the_ability_keys() {
         use crate::interchange::team_toml::player_keys::Kind;
@@ -288,18 +287,13 @@ mod tests {
             .map(|key| key.name())
             .collect();
         from_keys.sort_unstable();
-        // Tenacity is no `stats.` key: Team TOML covers no PES 2014 save.
-        let mut table: Vec<&str> = ABILITY_STATS
-            .into_iter()
-            .filter(|name| *name != "tenacity")
-            .collect();
+        let mut table: Vec<&str> = ABILITY_STATS.into_iter().collect();
         table.sort_unstable();
         assert_eq!(table, from_keys);
     }
 
     /// `PlayerStats::abilities` entry `i` is the `stats.<ABILITY_STATS[i]>`
-    /// key's value on every fixture version's first named player (Tenacity
-    /// skipped: it has no `stats.` key).
+    /// key's value on every fixture version's first named player.
     #[test]
     fn abilities_agree_with_the_stats_keys() {
         use crate::test_support;
@@ -314,10 +308,6 @@ mod tests {
                 .expect("a named player");
             let abilities = player.stats.abilities();
             for (i, name) in ABILITY_STATS.iter().enumerate() {
-                // Tenacity is no `stats.` key: Team TOML covers no PES 2014 save.
-                if *name == "tenacity" {
-                    continue;
-                }
                 let key = PlayerKey::ALL
                     .iter()
                     .find(|key| key.table() == "stats" && key.name() == *name)

@@ -275,6 +275,8 @@ pub struct StatsSection {
     pub ball_winning: Option<u8>,
     /// Aggression (PES 20+).
     pub aggression: Option<u8>,
+    /// Tenacity (PES 2014 only).
+    pub tenacity: Option<u8>,
     /// Kicking Power.
     pub kicking_power: Option<u8>,
     /// Speed.

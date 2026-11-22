@@ -29,6 +29,8 @@ fn shifted(motion: &PlayerMotion) -> MotionSettings {
         free_kick: Some(next(motion.free_kick, 20)),
         penalty_kick: Some(next(motion.penalty_kick, 7)),
         dribbling: Some(next(motion.dribbling.expect("PES 21 has the field"), 4)),
+        // None on PES 21, the one version `shifted` runs on.
+        punt_kick: motion.punt_kick.map(|value| next(value, 4)),
         goal_celebration_1: Some(next(motion.goal_celebration_1, 163)),
         goal_celebration_2: Some(next(motion.goal_celebration_2, 163)),
     }
