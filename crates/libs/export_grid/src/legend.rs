@@ -163,4 +163,54 @@ mod tests {
         bar(release(chevron));
         bar(Vec::new()).one("Unchecked");
     }
+
+    /// The one swatch painted in `fill` (the swatches are no nodes, they are painted rects).
+    fn swatch(drawn: &crate::testing::Drawn, fill: egui::Color32) -> Rect {
+        drawn
+            .shapes
+            .iter()
+            .find_map(|shape| match shape {
+                egui::Shape::Rect(p) if p.fill == fill && p.rect.size() == vec2(14.0, 14.0) => {
+                    Some(p.rect)
+                }
+                _ => None,
+            })
+            .expect("a swatch in the fill")
+    }
+
+    // A swatch is 14 by 14 and vertically centred on its name, the name 4 right of it
+    // (the draft's .tc-legend .tc-cell and span.k gap); a column stands 16 right of the
+    // previous one (the draft's column gap, a 14 space plus the layout's 2 spacing).
+    #[test]
+    fn the_legend_lays_swatches_names_and_columns_out_as_the_draft() {
+        let mut window = Headless::new();
+        let drawn = window.frame(Vec::new(), |ui| legend(ui, "legend", &COLUMNS));
+        let visuals = crate::testing::dark();
+        let unchecked = swatch(&drawn, look(CellState::Unchecked, None, &visuals).fill);
+        let checking = swatch(&drawn, look(CellState::Checking, None, &visuals).fill);
+        let warning = swatch(
+            &drawn,
+            look(CellState::FullOk, Some(Outline::Warning), &visuals).fill,
+        );
+        assert_eq!(unchecked.size(), vec2(14.0, 14.0));
+        // The first column right after the title's 16 gap.
+        let title = drawn.all("Legend")[0];
+        assert_eq!(unchecked.left(), title.right() + 16.0);
+        // A name 4 right of its swatch, centred on it.
+        let name = drawn.one("Unchecked");
+        assert_eq!(name.left(), unchecked.right() + 4.0);
+        assert_eq!(name.center().y, unchecked.center().y);
+        assert_eq!(
+            drawn.one("Checking").center().y,
+            checking.center().y,
+            "the second row's pair"
+        );
+        // The next column 16 right of the first's widest name ("Unchecked" here).
+        assert_eq!(warning.left(), name.right() + 16.0);
+        assert_eq!(
+            drawn.one("Warning").center().y,
+            warning.center().y,
+            "a lone entry centred over both rows"
+        );
+    }
 }
