@@ -45,7 +45,11 @@ fn an_empty_doubled_layer_is_dropped_with_its_layer() {
     // gone with the layer, not a folder named `Players` claiming a slot.
     for root in ["Players", "Kits"] {
         let doubled = format!("{root}/{root}");
-        let report = report("egg Midcup", &[], &[root, doubled.as_str()], &[]);
+        let export = TestExport::new("egg Midcup", PesVersion::Pes21)
+            .folder(root)
+            .folder(&doubled)
+            .without(Requirement::Content);
+        let report = report_of(&export);
         assert_eq!(
             issue_codes(&report),
             vec![

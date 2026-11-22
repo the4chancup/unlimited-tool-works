@@ -3,7 +3,10 @@ use super::*;
 // TC-STR-04
 #[test]
 fn an_export_with_no_usable_content_is_dropped_empty() {
-    let report = report("egg Midcup", &[("readme.txt", 10)], &[], &[]);
+    let export = TestExport::new("egg Midcup", PesVersion::Pes21)
+        .sized("readme.txt", 10)
+        .without(Requirement::Content);
+    let report = report_of(&export);
     assert_eq!(
         issue_codes(&report),
         vec![("export_empty", Disposition::DropExport)]
@@ -22,7 +25,12 @@ fn an_ambiguous_or_conflicting_root_reports_no_export_empty() {
             ("wrapper/Players/03 - A/face_high.fmdl", 10),
         ][..],
     ] {
-        let report = report("egg Midcup", files, &[], &[]);
+        let mut export =
+            TestExport::new("egg Midcup", PesVersion::Pes21).without(Requirement::Content);
+        for &(path, size) in files {
+            export = export.sized(path, size);
+        }
+        let report = report_of(&export);
         assert!(
             report
                 .issues

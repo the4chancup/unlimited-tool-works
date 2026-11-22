@@ -6,6 +6,7 @@ use pes_version::PesVersion;
 
 use crate::listing::{CanonicalListing, ListedEntry, ListedKind, SmallMetadata, ValidationContext};
 use crate::parse::ParsedAestheticsExport;
+use crate::test_exports::TestExport;
 use crate::validate::ValidationReport;
 
 /// A listing of `name`'s source: `files` as (path, size), `folders` as paths.
@@ -72,7 +73,9 @@ pub(crate) fn context_with(strict_file_type_check: bool, pass_through: bool) -> 
     }
 }
 
-/// `parse_listing` + `validate` on the listing, with the default context.
+/// `parse_listing` + `validate` on `name`'s files and folders completed by
+/// `missing` (each `(path, size)` a `sized` file), `metadata_items` laid over
+/// the listing's small metadata, the default context.
 pub(crate) fn report(
     name: &str,
     files: &[(&str, u64)],
@@ -82,7 +85,7 @@ pub(crate) fn report(
     report_with(&context(), name, files, folders, metadata_items)
 }
 
-/// `parse_listing` + `validate` on the listing, with a supplied context.
+/// `report` with a supplied context.
 pub(crate) fn report_with(
     context: &ValidationContext,
     name: &str,
@@ -90,5 +93,42 @@ pub(crate) fn report_with(
     folders: &[&str],
     metadata_items: &[(&str, Result<&[u8], &str>)],
 ) -> ValidationReport {
-    parsed(name, files, folders, metadata_items).validate(context)
+    let mut export = TestExport::new(name, context.version);
+    for &(path, size) in files {
+        export = export.sized(path, size);
+    }
+    for &path in folders {
+        export = export.folder(path);
+    }
+    let (listing, mut metadata) = export.listing();
+    for &(path, result) in metadata_items {
+        metadata.files.insert(
+            path.to_owned(),
+            result.map(|bytes| bytes.to_vec()).map_err(String::from),
+        );
+    }
+    crate::parse_listing(listing, metadata)
+        .unwrap()
+        .validate(context)
+}
+
+/// `parse_listing` + `validate` on `export`'s listing, the default context at
+/// the export's version.
+pub(crate) fn report_of(export: &TestExport) -> ValidationReport {
+    report_of_with(
+        &ValidationContext {
+            version: export.version(),
+            ..context()
+        },
+        export,
+    )
+}
+
+/// `report_of` with a supplied context. `missing` completes the export for
+/// `export.version()`, which the context's version should match.
+pub(crate) fn report_of_with(context: &ValidationContext, export: &TestExport) -> ValidationReport {
+    let (listing, metadata) = export.listing();
+    crate::parse_listing(listing, metadata)
+        .unwrap()
+        .validate(context)
 }

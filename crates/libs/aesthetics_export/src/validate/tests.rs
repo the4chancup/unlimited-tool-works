@@ -1,7 +1,9 @@
 use super::*;
-use crate::testing::{context_with, report, report_with};
+use crate::test_exports::{Requirement, TestExport};
+use crate::testing::{context_with, report, report_of, report_of_with, report_with};
 use crate::validate::IssueScope;
 use crate::{ExportCoverage, FileKind, ModelFormat, SharedKind};
+use pes_version::PesVersion;
 use vtree::ScopePath;
 
 fn issue_codes(report: &ValidationReport) -> Vec<(&'static str, Disposition)> {
