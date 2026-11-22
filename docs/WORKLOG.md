@@ -3648,16 +3648,18 @@ pruned when their phase closes; they stay in git history. A question only the ma
 can answer is not an issue: it goes to `docs/maintainer/questions.html`, and an issue that waits on one
 points there.
 
-- fixed on `pes14` (2026-11-22, `17463113`), Build 3 being prepared — PES 2014 Build 2
+- fixed on `pes14` (2026-11-22, `17463113`), Build 3 ready at `18918349` — PES 2014 Build 2
   (`0.0.2-pes14.2`) crashed on the Appearance page, and on Hide default body, of a player the
   game created on an in-game edit (the Akko7 organizer's /hi3/ players,
   `.tmp/pes14_crash/EDIT.bin.newer`): such a record stores the gloves ID with all 18 bits set
   (262143), which the code narrowed to `u16` behind an `expect`. Nopanic-1 keeps the IDs at
   `u32` and shows an error line in place of a panic (merged into `pes14` at `33995510`); the
-  gloves slice reads 262143 as no gloves model, as the game draws it (`plans/pes14.md`, "Gloves
-  262143 is no gloves model"). Build 3 is prepared whole (gates, release build, its CHANGELOG
-  section, a `tasks.html` card) and left unpushed for the maintainer's yes, and the Compiler's
-  view (item 6) goes on without waiting for it (the maintainer, 2026-11-22).
+  gloves slice reads 262143 as no gloves model, as the game draws it (the `pes14` branch's
+  plan, "Gloves 262143 is no gloves model"). Build 3 passed its gates, and its release build
+  was checked on copies of both saves: HAGSEO's Appearance page and Hide default body, team
+  127 in the newer save, /gd/ at 136 in `EDIT.bin.autumn14`. It is left unpushed, and the cut
+  waits on the maintainer's yes (`docs/maintainer/tasks.html` "PES 2014 Build 3: your yes to release it").
+  The Compiler's view (item 6) goes on without waiting for it (the maintainer, 2026-11-22).
 - open (2026-11-22) — The Save editor's tests leave their scratch behind:
   `test_support::scratch` empties `target/<profile>/save_editor_tests/<test>` when a test
   starts and never removes it after, so every checkout keeps 1,064 folders, many holding a
