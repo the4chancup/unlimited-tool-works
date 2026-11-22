@@ -498,8 +498,9 @@ mod tests {
         Some((count(done)?, count(total)?))
     }
 
-    /// EU-CLI-01's export at `dir/<name>`, its Note naming `team`: one face folder, a
-    /// team colour and the Export upgrader's fixture logo, so that its upgrade is clean.
+    /// EU-CLI-01's export at `dir/<name>`, its Note naming `team`: `Other/readme.txt`, a
+    /// team colour and one face folder, completed by `complete_old` (the fixture logo), so
+    /// that its upgrade is clean.
     fn old_export(dir: &TestDir, name: &str, team: &str) -> PathBuf {
         let export = dir.path().join(name);
         fs::create_dir_all(export.join("Other")).unwrap();
@@ -511,22 +512,10 @@ mod tests {
         .unwrap();
         let face = export.join("Faces/XXX05 - A");
         fs::create_dir_all(&face).unwrap();
-        for (name, bytes) in [
-            ("fcl_hair.fmdl", b"hair" as &[u8]),
-            ("face_diff.bin", b"diff"),
-            ("shirt.dds", b"shirt"),
-            ("portrait.dds", b"portrait"),
-        ] {
+        for (name, bytes) in export_upgrader::test_exports::FACE_FILES {
             fs::write(face.join(name), bytes).unwrap();
         }
-        fs::create_dir_all(export.join("Logo")).unwrap();
-        fs::copy(
-            Path::new(env!("CARGO_MANIFEST_DIR")).join(
-                "../tools/export_upgrader/tests/fixtures/co Spring/Logo/emblem_0XXX_r_ll.png",
-            ),
-            export.join("Logo/emblem_0XXX_r_ll.png"),
-        )
-        .unwrap();
+        export_upgrader::test_exports::complete_old(&export, &[]);
         export
     }
 

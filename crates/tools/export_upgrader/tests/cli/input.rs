@@ -131,7 +131,6 @@ fn an_archives_name_is_its_files_stem() {
 #[test]
 fn fpk_xml_files_are_left_out_of_the_output_and_the_report() {
     let sandbox = Sandbox::new("in_fpk_xml");
-    sandbox.logo("co Spring");
     sandbox.write("co Spring/Faces/XXX05 - Bob/face.fmdl", b"face");
     sandbox.write("co Spring/Faces/XXX05 - Bob/face.fpk.xml", b"<fpk/>");
     sandbox.write("co Spring/Boots/k2180 - Bob/boots.fmdl", b"boots");
@@ -140,6 +139,7 @@ fn fpk_xml_files_are_left_out_of_the_output_and_the_report() {
     // `k2180` alone infers the 2176 block: slot 05, Bob's own (`--loose`,
     // `tests/cli/loose.rs`).
     let input = sandbox.arg("co Spring");
+    sandbox.complete_old("co Spring");
     let run = sandbox.run(&["upgrade", &input, "--loose"]);
     let stdout = run.stdout();
     assert!(

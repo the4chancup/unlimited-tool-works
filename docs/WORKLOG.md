@@ -171,16 +171,27 @@ other items run beside it. **Ahead of item 6:** the `pes14` branch's step 12, a 
          `prefox_kit_variants` included: 455 tests in 17 files through `complete`. A Run B over
          every export kind found 10 referee tests still on their own files, since the dummy
          check fired on team exports only
-       - [ ] 5: `export_upgrader` (about 130): running (Opus, `sk/builder5`), `old_missing`
-         taking files and empty folders apart from the start
-       - [ ] 6: `studio` (6)
-       - [ ] 7: the `.zip` fixtures packed when the tests run, with the three `gui_run` and
-         `view` tests that compile the tracer export as it is; the `.7z` ones stay stored,
-         since writing one needs `sevenz-rust2`'s `compress` feature, which the workspace
-         leaves off
+       - [x] 5 (2026-11-22, merge `807e376b`, Opus) `export_upgrader`: 109 tests (105 CLI, 4
+         unit) through `complete_old`, whose `old_missing` counts a `Full` export's added logo
+         as its content. The dummy run uses a `Collars/` file (Run B'), since an upgraded
+         `notes.txt` always reports `notes_found`; its 13 failures are the builder's own
+         tests, the tracer goldens, 5 tests reading the `co Spring` fixture as it is, and 4
+         archive tests for slice 7
+       - [x] 6 (2026-11-22, merge `86928756`, SWE-2) `studio`: the six Compiler CLI tests
+         through `complete`, `console.rs`'s old export through `complete_old`; `launchers.rs`
+         reads the upgrader's fixtures as they are. Its dummy runs come in two pairs, since
+         both checks sit in the validator the upgrader also runs on its output
+       - [ ] 7: the unit tests' tracer copy (`testing.rs`'s `sandbox`) completed, as the CLI
+         tests' copy is since slice 4, so the `gui_run` tests that compile it pass a dummy run.
+         The archive fixtures all stay stored. Packing a `.zip` when the tests run would save
+         no step, because its `.7z` twin is stored (writing one needs `sevenz-rust2`'s
+         `compress` feature, which the workspace leaves off) and is rebuilt by script whenever
+         a requirement adds a file. When the next requirement comes,
+         `tracer_archives_team_folder.py`'s `ADDED` grows to the `co Midcup Spring` archives
+         and the upgrader's `co Spring` ones, which have no script in the repository yet
      - b's tests are written on `complete` (builder slice 3 landed)
      - [ ] b: `installed_portrait_slots` filled from the Compiler's walk over the installed
-       CPKs → verify: TC-ROOT-17
+       CPKs → verify: TC-ROOT-17: running (Opus, `sk/logob`)
    - Not urgent, a small slice of its own (SWE-2), after the view's or beside it: player
      numbering without the hyphen (`plans/aesthetics_export/player_folders.md`, the section of
      that name): `aesthetics_export`'s `conventions` (`folder_slot`, `folder_player_name`), the
@@ -3705,9 +3716,11 @@ points there.
   127 in the newer save, /gd/ at 136 in `EDIT.bin.autumn14`. It is left unpushed. Build 3
   now also carries the `pes14` plan's step 12 (Team TOML on PES 2014). That step landed on
   `pes14` 2026-11-22 (slices a to f, then `91d84e69`), its data check passed on the rebuilt
-  release, and its in-game look waits for a time when OBS may be used or focus taken. The
-  `tasks.html` card, taken down meanwhile, comes back after that look, for the maintainer's
-  yes.
+  release. Build 3 was rebuilt at `be6f9ed5` (`pes14`): full gates passed, the /gd/ check
+  and HAGSEO's Appearance page and Hide default body checked again on its release build. Its
+  `tasks.html` card is back: the maintainer approves the `[Unreleased]` section and chooses
+  whether the release waits for step 12's in-game look, which waits with every in-game check
+  until the maintainer resumes them (2026-11-22).
   The Compiler's view (item 6) goes on without waiting for it (the maintainer, 2026-11-22).
 - open (2026-11-22) — The Save editor's tests leave their scratch behind:
   `test_support::scratch` empties `target/<profile>/save_editor_tests/<test>` when a test
@@ -3739,7 +3752,7 @@ points there.
   b's tests are written on it: one builder of the smallest clean export of each kind (`Full`,
   `Midcup`, an old Red export) in `aesthetics_export`, behind a `test-support` feature as
   `pes_savefile`'s fixtures are. Every test starts from it and removes or breaks only what it
-  tests, and the archive fixtures are packed from it when the tests run. A new check then
+  tests; the archive fixtures stay stored and gain the new file by script. A new check then
   changes the builder and the tests of what it catches, not every test. Slices: step 6's
   "The shared export builder".
 - open (2026-11-22) — The Compiler's test teams lists pair ids with names the bundled list

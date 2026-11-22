@@ -7,6 +7,8 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
 
+use pes_version::PesVersion;
+
 /// The releases list's address every run reads: no connection can be made to port 0, so
 /// the update check a tool command starts fails at once and never reaches GitHub.
 const NO_RELEASES_URL: &str = "http://127.0.0.1:0/";
@@ -115,6 +117,11 @@ fn the_compiler_id_runs_check_and_team_compiler_is_refused() {
     let clean = sandbox.root.join("exports/co Midcup Clean/Players/03 - A");
     fs::create_dir_all(&clean).unwrap();
     fs::copy(&glove, clean.join("face_high.fmdl")).unwrap();
+    team_compiler::test_files::complete(
+        &sandbox.root.join("exports/co Midcup Clean"),
+        PesVersion::Pes19,
+        &[],
+    );
 
     let output = sandbox.run(&["compiler", "check", "--export", "exports/co Midcup Clean"]);
     assert_eq!(output.status.code(), Some(0), "stderr: {}", stderr(&output));
@@ -149,6 +156,9 @@ fn check_prints_one_line_per_finding_and_exits_with_the_worst() {
     fs::create_dir_all(&clean).unwrap();
     fs::copy(&glove, clean.join("face_high.fmdl")).unwrap();
     sandbox.write("exports/co Midcup Error/Players/03 - A/readme.doc", "");
+    for export in ["exports/co Midcup Clean", "exports/co Midcup Error"] {
+        team_compiler::test_files::complete(&sandbox.root.join(export), PesVersion::Pes19, &[]);
+    }
 
     let output = sandbox.run(&["compiler", "check", "--export", "exports/co Midcup Clean"]);
     assert_eq!(output.status.code(), Some(0), "stderr: {}", stderr(&output));
@@ -200,6 +210,11 @@ fn check_with_timestamps_prefixes_each_line_with_the_seconds_since_the_run_start
     );
     sandbox.write("data/teams_list.txt", "ID\tName\n714\t/co/\n");
     sandbox.write("exports/co Midcup Error/Players/03 - A/readme.doc", "");
+    team_compiler::test_files::complete(
+        &sandbox.root.join("exports/co Midcup Error"),
+        PesVersion::Pes19,
+        &[],
+    );
 
     let untimed = sandbox.run(&["compiler", "check", "--export", "exports/co Midcup Error"]);
     let timed = sandbox.run(&[
@@ -245,6 +260,9 @@ fn compile_with_a_positional_root_compiles_it_and_leaves_the_settings_file_alone
         fs::create_dir_all(&folder).unwrap();
         fs::copy(&kit, folder.join("kit.dds")).unwrap();
     }
+    for export in ["elsewhere/co Midcup Kit", "exports/dbg Midcup Other"] {
+        team_compiler::test_files::complete(&sandbox.root.join(export), PesVersion::Pes21, &[]);
+    }
 
     let output = sandbox.run(&["compiler", "compile", "elsewhere", "--no-deploy"]);
 
@@ -285,6 +303,11 @@ fn a_compile_with_stderr_piped_draws_no_line_and_leaves_stderr_empty() {
     let folder = sandbox.root.join("exports/co Midcup Kit/Kits/p1");
     fs::create_dir_all(&folder).unwrap();
     fs::copy(&kit, folder.join("kit.dds")).unwrap();
+    team_compiler::test_files::complete(
+        &sandbox.root.join("exports/co Midcup Kit"),
+        PesVersion::Pes21,
+        &[],
+    );
 
     let output = sandbox.run(&["compiler", "compile", "--no-deploy"]);
 
@@ -326,6 +349,11 @@ fn a_log_file_takes_every_line_of_the_run_and_stdout_leaves_the_info_findings_ou
     fs::create_dir_all(&folder).unwrap();
     fs::copy(&kit, folder.join("kit.dds")).unwrap();
     sandbox.write("exports/co Midcup Kit/stray.txt", "stray");
+    team_compiler::test_files::complete(
+        &sandbox.root.join("exports/co Midcup Kit"),
+        PesVersion::Pes21,
+        &[],
+    );
     let log = sandbox.root.join("run_log.txt");
 
     // A command line that does not parse starts no run: its `error:` line is on stderr

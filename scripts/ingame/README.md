@@ -30,10 +30,10 @@ keyboard. Use the pad and OBS; keys and the screen are the fallback when OBS can
 ## Requirements
 
 - Windows (the window and process calls are Win32), Python 3.10 or later.
-- The games installed where `GAMES` in `game.py` says (`G:/Games/PES2015`, `G:/Games/PES2016`,
-  `E:/PES2017`, `G:/Games/PES2018`, `G:/Games/PES2019`, `G:/Games/PES2020`, `E:/PES2021`), each
-  with Sider at the path given there but PES 15, 16 and 18 (used for save measurements) and
-  PES 20 (used for team exports), which have none.
+- The games installed where `GAMES` in `game.py` says (`E:/PES2014`, `G:/Games/PES2015`,
+  `G:/Games/PES2016`, `E:/PES2017`, `G:/Games/PES2018`, `G:/Games/PES2019`, `G:/Games/PES2020`,
+  `E:/PES2021`), each with Sider at the path given there but PES 14, 15, 16 and 18 (used for
+  save measurements) and PES 20 (used for team exports), which have none.
   `game.py launch` starts Sider first, then the game, not elevated.
 - For the pad: the ViGEmBus driver and `pip install vgamepad`, and the game's settings tool set
   to XInput controllers (with DirectInput and no pad assigned, the game ignores the pad).

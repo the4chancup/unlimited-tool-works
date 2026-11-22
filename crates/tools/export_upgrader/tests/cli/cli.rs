@@ -3,11 +3,11 @@
 
 use std::fs;
 
+use export_upgrader::test_exports::note;
 use pes_version::PesVersion;
 use studio_core::PipelineEvent;
 
 use crate::common::{Run, Sandbox, snapshot};
-use crate::players::face;
 
 /// `upgrade <input> <flags>`.
 fn upgrade(sandbox: &Sandbox, input: &str, flags: &[&str]) -> Run {
@@ -52,11 +52,7 @@ fn old_export(sandbox: &Sandbox, relative: &str, team: Option<&str>) {
     fs::create_dir_all(sandbox.path(&format!("{relative}/Other"))).unwrap();
     fs::write(sandbox.path(&format!("{relative}/Other/readme.txt")), b"x").unwrap();
     if let Some(team) = team {
-        fs::write(
-            sandbox.path(&format!("{relative}/co Note.txt")),
-            format!("Team: {team}\r\n"),
-        )
-        .unwrap();
+        fs::write(sandbox.path(&format!("{relative}/co Note.txt")), note(team)).unwrap();
     }
 }
 
@@ -71,10 +67,7 @@ fn the_output_name_carries_the_key_the_tag_and_the_rest() {
         "co Full Spring",
     ] {
         old_export(&sandbox, name, Some("/co/"));
-        // A face folder and a logo, so each run is clean and its output is
-        // written.
-        face(&sandbox, &format!("{name}/Faces/XXX05 - A"));
-        sandbox.logo(name);
+        sandbox.complete_old(name);
     }
     let save = sandbox.arg("EDIT");
     sandbox.save("EDIT");
@@ -114,9 +107,15 @@ fn coverage_flag_sets_the_tag_and_a_conflict_with_the_names_own_is_refused() {
     let sandbox = Sandbox::new("cli_coverage_flag");
     for name in ["co - Spring", "co Day 8 Additions", "co Full Spring"] {
         old_export(&sandbox, name, Some("/co/"));
-        face(&sandbox, &format!("{name}/Faces/XXX05 - A"));
-        sandbox.logo(name);
+        sandbox.complete_old(name);
     }
+    // `--coverage full` makes the Additions export `Full`, which its name does not say, so
+    // `complete_old` gives it no logo.
+    let logo = "Logo/emblem_0XXX_r_ll.png";
+    sandbox.copy_fixture(
+        &format!("co Spring/{logo}"),
+        &format!("co Day 8 Additions/{logo}"),
+    );
     let save = sandbox.arg("EDIT");
     sandbox.save("EDIT");
 
@@ -200,8 +199,7 @@ fn coverage_flag_sets_the_tag_and_a_conflict_with_the_names_own_is_refused() {
 #[test]
 fn a_referee_export_takes_no_coverage_flag_and_reports_no_tag() {
     let sandbox = Sandbox::new("cli_refs_coverage");
-    sandbox.write("refs Spring/refs.txt", b"01 arbiter\n");
-    sandbox.write("refs Spring/Players/arbiter/boots.fmdl", b"boots");
+    sandbox.complete_old("refs Spring");
     let before = sandbox.listing("");
 
     upgrade(&sandbox, "refs Spring", &["--coverage", "full"])
@@ -489,13 +487,11 @@ fn a_corrupt_archive_is_export_extract_failed() {
     assert_eq!(sandbox.listing(""), before, "nothing is written");
 }
 
-/// Old exports at each of `names`, each with a face folder and a logo so that
-/// its run is clean, the Note naming `team`.
+/// Old exports at each of `names` whose runs are clean, the Note naming `team`.
 fn clean_old_exports(sandbox: &Sandbox, names: &[&str], team: &str) {
     for name in names {
         old_export(sandbox, name, Some(team));
-        face(sandbox, &format!("{name}/Faces/XXX05 - A"));
-        sandbox.logo(name);
+        sandbox.complete_old(name);
     }
 }
 
@@ -865,8 +861,7 @@ fn an_export_that_aborts_does_not_stop_the_run() {
 fn a_referee_export_among_team_exports_is_refused_its_flag() {
     let sandbox = Sandbox::new("cli_several_refs_save");
     clean_old_exports(&sandbox, &["co - Spring"], "/co/");
-    sandbox.write("refs Spring/refs.txt", b"01 arbiter\n");
-    sandbox.write("refs Spring/Players/arbiter/boots.fmdl", b"boots");
+    sandbox.complete_old("refs Spring");
     let save = sandbox.arg("EDIT");
     sandbox.save("EDIT");
 
@@ -898,8 +893,7 @@ fn a_referee_export_among_team_exports_is_refused_its_flag() {
 fn a_team_export_among_referee_exports_needs_its_flag() {
     let sandbox = Sandbox::new("cli_several_refs_none");
     clean_old_exports(&sandbox, &["co - Spring"], "/co/");
-    sandbox.write("refs Spring/refs.txt", b"01 arbiter\n");
-    sandbox.write("refs Spring/Players/arbiter/boots.fmdl", b"boots");
+    sandbox.complete_old("refs Spring");
 
     let run = upgrade_several(&sandbox, &["co - Spring", "refs Spring"], &[]);
     let stdout = run.stdout();

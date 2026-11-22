@@ -4,6 +4,7 @@
 
 use std::fs;
 
+use export_upgrader::test_exports::FACE_FILES;
 use pes_savefile::EditFile;
 use pes_savefile::settings_toml::{IngameFaceSettings, PlayerSettings};
 use studio_core::PipelineEvent;
@@ -25,16 +26,6 @@ pub(crate) fn upgrade(sandbox: &Sandbox, input: &str, save: &str) -> crate::comm
     let save = sandbox.arg(save);
     sandbox.run(&["upgrade", &input, "--savefile", &save])
 }
-
-/// The four files of the real tracer Fox face folder
-/// (`team_compiler/tests/fixtures/tracer/old/egg Tracer/Faces/XXX05 - …/`),
-/// a few bytes each (a test of names, not formats).
-const FACE_FILES: [(&str, &[u8]); 4] = [
-    ("fcl_hair.fmdl", b"hair"),
-    ("face_diff.bin", b"diff"),
-    ("shirt.dds", b"shirt"),
-    ("portrait.dds", b"portrait"),
-];
 
 /// An old export's face folder at `relative` with the four face files.
 pub(crate) fn face(sandbox: &Sandbox, relative: &str) {
@@ -76,11 +67,11 @@ pub(crate) fn wears(file: &mut pes_savefile::EditFile, id: u32, boots_id: u32, g
 #[test]
 fn a_wearer_without_a_face_folder_gets_one_with_ingame_face() {
     let sandbox = Sandbox::new("ply_stray_boots");
-    sandbox.logo("co Spring");
     boots(&sandbox, "co Spring/Boots/k0430 - Crocs");
     sandbox.save_edited("EDIT", pes_version::PesVersion::Pes21, |file| {
         wears(file, 71405, 430, 0);
     });
+    sandbox.complete_old("co Spring");
 
     let run = upgrade(&sandbox, "co Spring", "EDIT");
     assert_eq!(run.exit_code(), 0, "{}", run.stdout());
@@ -111,7 +102,6 @@ fn a_wearer_without_a_face_folder_gets_one_with_ingame_face() {
 #[test]
 fn folders_worn_by_two_share_the_folder_with_links() {
     let sandbox = Sandbox::new("ply_shared");
-    sandbox.logo("co Spring");
     for slot in ["XXX03 - A", "XXX04 - B", "XXX05 - C", "XXX06 - D"] {
         face(&sandbox, &format!("co Spring/Faces/{slot}"));
     }
@@ -124,6 +114,7 @@ fn folders_worn_by_two_share_the_folder_with_links() {
         wears(file, 71405, 430, 0);
         wears(file, 71406, 431, 0);
     });
+    sandbox.complete_old("co Spring");
 
     let run = upgrade(&sandbox, "co Spring", "EDIT");
     assert_eq!(run.exit_code(), 0, "{}", run.stdout());
@@ -172,10 +163,10 @@ fn folders_worn_by_two_share_the_folder_with_links() {
 #[test]
 fn a_folder_no_save_record_wears_is_leftovers() {
     let sandbox = Sandbox::new("ply_unworn");
-    sandbox.logo("co Spring");
     face(&sandbox, "co Spring/Faces/XXX03 - A");
     gloves(&sandbox, "co Spring/Gloves/g0432 - Mitts");
     sandbox.save("EDIT");
+    sandbox.complete_old("co Spring");
 
     let run = upgrade(&sandbox, "co Spring", "EDIT");
     assert_eq!(run.exit_code(), 0, "{}", run.stdout());
@@ -202,7 +193,6 @@ fn a_folder_no_save_record_wears_is_leftovers() {
 #[test]
 fn pre_fox_never_merges_the_alone_worn_folder() {
     let sandbox = Sandbox::new("ply_prefox");
-    sandbox.logo("co Spring");
     face(&sandbox, "co Spring/Faces/XXX05 - Bob");
     sandbox.write("co Spring/Faces/XXX05 - Bob/face.xml", b"<config/>");
     sandbox.write(
@@ -219,6 +209,7 @@ fn pre_fox_never_merges_the_alone_worn_folder() {
     sandbox.save_edited("EDIT16", pes_version::PesVersion::Pes16, |file| {
         wears(file, 71405, 430, 0);
     });
+    sandbox.complete_old("co Spring");
 
     let run = upgrade(&sandbox, "co Spring", "EDIT16");
     let report = run.stdout();
@@ -253,7 +244,6 @@ fn pre_fox_never_merges_the_alone_worn_folder() {
 #[test]
 fn a_byte_clash_keeps_the_folder_shared_and_their_own_file() {
     let sandbox = Sandbox::new("ply_clash");
-    sandbox.logo("co Spring");
     face(&sandbox, "co Spring/Faces/XXX05 - A");
     sandbox.write("co Spring/Faces/XXX05 - A/skin.dds", b"mine");
     face(&sandbox, "co Spring/Faces/XXX06 - B");
@@ -266,6 +256,7 @@ fn a_byte_clash_keeps_the_folder_shared_and_their_own_file() {
         wears(file, 71405, 430, 0);
         wears(file, 71406, 431, 0);
     });
+    sandbox.complete_old("co Spring");
 
     let run = upgrade(&sandbox, "co Spring", "EDIT");
     assert_eq!(run.exit_code(), 0, "{}", run.stdout());
@@ -348,7 +339,6 @@ fn second_folders_of_a_slot_and_of_an_id_are_unmigrated() {
 #[test]
 fn identical_shared_folders_merge_as_one() {
     let sandbox = Sandbox::new("ply_identical_shared");
-    sandbox.logo("co Spring");
     for slot in [
         "XXX03 - A",
         "XXX04 - B",
@@ -372,6 +362,7 @@ fn identical_shared_folders_merge_as_one() {
         wears(file, 71407, 432, 0);
         wears(file, 71408, 432, 0);
     });
+    sandbox.complete_old("co Spring");
 
     let run = upgrade(&sandbox, "co Spring", "EDIT");
     assert_eq!(run.exit_code(), 0, "{}", run.stdout());
@@ -414,11 +405,11 @@ fn identical_shared_folders_merge_as_one() {
 #[test]
 fn the_face_folders_become_the_players_folders() {
     let sandbox = Sandbox::new("ply_folders");
-    sandbox.logo("co Spring");
     face(&sandbox, "co Spring/Faces/XXX15 - Snuffy");
     face(&sandbox, "co Spring/Faces/71416 Rex");
     face(&sandbox, "co Spring/Faces/XXX17- Ann");
     sandbox.save("EDIT");
+    sandbox.complete_old("co Spring");
 
     let run = upgrade(&sandbox, "co Spring", "EDIT");
     assert_eq!(run.exit_code(), 0, "{}", run.stdout());
@@ -446,9 +437,9 @@ fn the_face_folders_become_the_players_folders() {
 #[test]
 fn a_doubled_faces_layer_is_flattened() {
     let sandbox = Sandbox::new("ply_nested_faces");
-    sandbox.logo("co Spring");
     face(&sandbox, "co Spring/Faces/Faces/XXX15 - Snuffy");
     sandbox.save("EDIT");
+    sandbox.complete_old("co Spring");
 
     let run = upgrade(&sandbox, "co Spring", "EDIT");
     assert_eq!(run.exit_code(), 0, "{}", run.stdout());
@@ -509,12 +500,12 @@ fn a_doubled_layer_in_another_letter_case_is_flattened_in_a_zip() {
 #[test]
 fn a_named_portrait_is_renamed_to_portrait_dds() {
     let sandbox = Sandbox::new("ply_named_portrait");
-    sandbox.logo("co Spring");
     sandbox.write(
         "co Spring/Faces/XXX15 - Snuffy/Snuffy_Portrait.dds",
         b"portrait1",
     );
     sandbox.save("EDIT");
+    sandbox.complete_old("co Spring");
 
     let run = upgrade(&sandbox, "co Spring", "EDIT");
     assert_eq!(run.exit_code(), 0, "{}", run.stdout());
@@ -555,13 +546,13 @@ fn two_portrait_files_are_unmigrated_content() {
 #[test]
 fn a_nameless_folder_takes_the_saves_display_name_cleaned() {
     let sandbox = Sandbox::new("ply_save_name");
-    sandbox.logo("co Spring");
     face(&sandbox, "co Spring/Faces/XXX09");
     sandbox.save_edited("EDIT", pes_version::PesVersion::Pes21, |file| {
         // The colour-coded name of fixture player 78205: the `\x11c` code
         // strips, the `>` is not a folder-name character.
         file.player_mut(71409).unwrap().name = "\u{11}c789922ff>skin".to_owned();
     });
+    sandbox.complete_old("co Spring");
 
     let run = upgrade(&sandbox, "co Spring", "EDIT");
     assert_eq!(run.exit_code(), 0, "{}", run.stdout());
@@ -576,12 +567,12 @@ fn a_nameless_folder_takes_the_saves_display_name_cleaned() {
 #[test]
 fn either_ingame_face_spelling_becomes_ingame_face_toml_filled() {
     let sandbox = Sandbox::new("ply_ingame");
-    sandbox.logo("co Spring");
     face(&sandbox, "co Spring/Faces/XXX03 - A");
     sandbox.write("co Spring/Faces/XXX03 - A/ingame_face", b"");
     face(&sandbox, "co Spring/Faces/XXX04 - B");
     sandbox.write("co Spring/Faces/XXX04 - B/ingame_face.txt", b"ignored");
     sandbox.save("EDIT");
+    sandbox.complete_old("co Spring");
 
     let run = upgrade(&sandbox, "co Spring", "EDIT");
     assert_eq!(run.exit_code(), 0, "{}", run.stdout());
@@ -628,7 +619,6 @@ fn either_ingame_face_spelling_becomes_ingame_face_toml_filled() {
 #[test]
 fn an_empty_roster_slot_is_a_warning_and_the_folder_still_forms() {
     let sandbox = Sandbox::new("ply_empty_slot");
-    sandbox.logo("co Spring");
     face(&sandbox, "co Spring/Faces/XXX23 - Pinto");
     sandbox.save_edited("EDIT", pes_version::PesVersion::Pes21, |file| {
         let team = file.team_mut(714).unwrap();
@@ -639,6 +629,7 @@ fn an_empty_roster_slot_is_a_warning_and_the_folder_still_forms() {
             .unwrap();
         team.roster[position].player_id = 0;
     });
+    sandbox.complete_old("co Spring");
 
     let run = upgrade(&sandbox, "co Spring", "EDIT");
     assert_eq!(run.exit_code(), 0, "{}", run.stdout());
@@ -669,7 +660,6 @@ fn an_empty_roster_slot_is_a_warning_and_the_folder_still_forms() {
 #[test]
 fn a_fox_hair_skeleton_is_renamed_to_pair_with_its_model() {
     let sandbox = Sandbox::new("ply_hair_skl");
-    sandbox.logo("co Spring");
     sandbox.write("co Spring/Faces/XXX05 - Bob/fcl_hair.fmdl", b"hair model");
     sandbox.write(
         "co Spring/Faces/XXX05 - Bob/fcl_hair_sim.skl",
@@ -681,6 +671,7 @@ fn a_fox_hair_skeleton_is_renamed_to_pair_with_its_model() {
     );
 
     let input = sandbox.arg("co Spring");
+    sandbox.complete_old("co Spring");
     let run = sandbox.run(&["upgrade", &input, "--loose"]);
     assert_eq!(
         fs::read(sandbox.path("co Full Spring/Players/05 - Bob/fcl_hair.skl")).unwrap(),
@@ -703,12 +694,12 @@ fn a_fox_hair_skeleton_is_renamed_to_pair_with_its_model() {
 #[test]
 fn files_directly_in_the_faces_and_item_tops_are_leftovers() {
     let sandbox = Sandbox::new("ply_top_files");
-    sandbox.logo("co Spring");
     face(&sandbox, "co Spring/Faces/XXX05 - A");
     sandbox.write("co Spring/Faces/71406 - Civic cool.7z", b"archive");
     sandbox.write("co Spring/Boots/boots.fmdl", b"loose boots");
     sandbox.write("co Spring/Gloves/glove_l.fmdl", b"loose glove");
     sandbox.save("EDIT");
+    sandbox.complete_old("co Spring");
 
     let run = upgrade(&sandbox, "co Spring", "EDIT");
     assert_eq!(run.exit_code(), 0, "{}", run.stdout());
@@ -738,13 +729,13 @@ fn files_directly_in_the_faces_and_item_tops_are_leftovers() {
 #[test]
 fn empty_face_folders_make_player_folders_with_no_ingame_face() {
     let sandbox = Sandbox::new("ply_empty_faces");
-    sandbox.logo("co Spring");
     fs::create_dir_all(sandbox.path("co Spring/Faces/XXX05 - Bob")).unwrap();
     fs::create_dir_all(sandbox.path("co Spring/Faces/XXX06 - Ann")).unwrap();
     boots(&sandbox, "co Spring/Boots/k0430 - FBM");
     sandbox.save_edited("EDIT", pes_version::PesVersion::Pes21, |file| {
         wears(file, 71405, 430, 0);
     });
+    sandbox.complete_old("co Spring");
 
     let run = upgrade(&sandbox, "co Spring", "EDIT");
     assert_eq!(run.exit_code(), 0, "{}", run.stdout());
@@ -779,7 +770,6 @@ fn empty_face_folders_make_player_folders_with_no_ingame_face() {
 #[test]
 fn modelless_item_folders_mark_their_wearers_fpc_on() {
     let sandbox = Sandbox::new("ply_empty_items");
-    sandbox.logo("co Spring");
     face(&sandbox, "co Spring/Faces/XXX03 - Ann");
     sandbox.write("co Spring/Boots/k0430 - EMPTY/boots.skl", b"skl");
     fs::create_dir_all(sandbox.path("co Spring/Gloves/g0432 - EMPTY")).unwrap();
@@ -787,6 +777,7 @@ fn modelless_item_folders_mark_their_wearers_fpc_on() {
         wears(file, 71403, 430, 432);
         wears(file, 71404, 430, 0);
     });
+    sandbox.complete_old("co Spring");
 
     let run = upgrade(&sandbox, "co Spring", "EDIT");
     assert_eq!(run.exit_code(), 0, "{}", run.stdout());
@@ -845,7 +836,6 @@ fn modelless_item_folders_mark_their_wearers_fpc_on() {
 #[test]
 fn stray_files_in_face_and_item_folders_are_leftovers() {
     let sandbox = Sandbox::new("ply_strays");
-    sandbox.logo("co Spring");
     sandbox.write("co Spring/Faces/XXX05 - Bob/face.mtl", &mtl(&[]));
     sandbox.write("co Spring/Faces/XXX05 - Bob/face.mtl.backup", b"backup");
     sandbox.write("co Spring/Boots/k0430 - Crocs/boots.model", b"model");
@@ -855,6 +845,7 @@ fn stray_files_in_face_and_item_folders_are_leftovers() {
         wears(file, 71403, 430, 0);
         wears(file, 71404, 430, 0);
     });
+    sandbox.complete_old("co Spring");
 
     let run = upgrade(&sandbox, "co Spring", "EDIT16");
     assert_eq!(run.exit_code(), 0, "{}", run.stdout());
@@ -897,7 +888,6 @@ fn stray_files_in_face_and_item_folders_are_leftovers() {
 #[test]
 fn copy_named_fmdls_in_item_folders_are_leftovers() {
     let sandbox = Sandbox::new("ply_fmdl_copies");
-    sandbox.logo("co Spring");
     face(&sandbox, "co Spring/Faces/XXX05 - A");
     sandbox.write("co Spring/Boots/k0430 - IKA-CHAN/boots.fmdl", b"boots");
     sandbox.write(
@@ -910,6 +900,7 @@ fn copy_named_fmdls_in_item_folders_are_leftovers() {
     sandbox.save_edited("EDIT", pes_version::PesVersion::Pes21, |file| {
         wears(file, 71405, 430, 432);
     });
+    sandbox.complete_old("co Spring");
 
     let run = upgrade(&sandbox, "co Spring", "EDIT");
     assert_eq!(run.exit_code(), 0, "{}", run.stdout());
@@ -942,7 +933,6 @@ fn copy_named_fmdls_in_item_folders_are_leftovers() {
 #[test]
 fn a_game_path_face_folder_migrates_its_innermost_folder() {
     let sandbox = Sandbox::new("ply_game_path");
-    sandbox.logo("co Spring");
     for (name, bytes) in [
         ("face.xml", b"<config/>" as &[u8]),
         ("face_high_win32.model", b"face high"),
@@ -960,6 +950,7 @@ fn a_game_path_face_folder_migrates_its_innermost_folder() {
         pes_savefile::fixture_save(pes_version::PesVersion::Pes16),
     )
     .unwrap();
+    sandbox.complete_old("co Spring");
 
     let run = upgrade(&sandbox, "co Spring", "EDIT16");
     assert_eq!(run.exit_code(), 0, "{}", run.stdout());
@@ -990,12 +981,12 @@ fn a_game_path_face_folder_migrates_its_innermost_folder() {
 #[test]
 fn only_the_folderless_player_gets_ingame_face_toml_filled() {
     let sandbox = Sandbox::new("ply_folderless_face");
-    sandbox.logo("co Spring");
     face(&sandbox, "co Spring/Faces/XXX03 - A");
     boots(&sandbox, "co Spring/Boots/k0430 - Crocs");
     sandbox.save_edited("EDIT", pes_version::PesVersion::Pes21, |file| {
         wears(file, 71405, 430, 0);
     });
+    sandbox.complete_old("co Spring");
 
     let run = upgrade(&sandbox, "co Spring", "EDIT");
     assert_eq!(run.exit_code(), 0, "{}", run.stdout());
@@ -1031,7 +1022,6 @@ fn only_the_folderless_player_gets_ingame_face_toml_filled() {
 #[test]
 fn an_unworn_folder_named_for_the_wearer_pairs_his_custom_id() {
     let sandbox = Sandbox::new("ply_wearer_by_name");
-    sandbox.logo("co Spring");
     // VGL26 /omg/'s shape: the save numbers him 2552 while the folder made
     // for him is `k2952`.
     face(&sandbox, "co Spring/Faces/XXX05 - BANISHED");
@@ -1039,6 +1029,7 @@ fn an_unworn_folder_named_for_the_wearer_pairs_his_custom_id() {
     sandbox.save_edited("EDIT", pes_version::PesVersion::Pes21, |file| {
         wears(file, 71405, 2552, 0);
     });
+    sandbox.complete_old("co Spring");
 
     let run = upgrade(&sandbox, "co Spring", "EDIT");
     assert_eq!(run.exit_code(), 0, "{}", run.stdout());
@@ -1097,13 +1088,13 @@ fn two_unworn_folders_of_one_name_refuse_the_export() {
 #[test]
 fn an_id_numbered_in_the_other_kind_means_no_custom_item() {
     let sandbox = Sandbox::new("ply_not_worn");
-    sandbox.logo("co Spring");
     face(&sandbox, "co Spring/Faces/XXX05 - Hagoromo");
     boots(&sandbox, "co Spring/Boots/k2780 - Hagoromoslop");
     gloves(&sandbox, "co Spring/Gloves/g2799 - Momo");
     sandbox.save_edited("EDIT", pes_version::PesVersion::Pes21, |file| {
         wears(file, 71405, 2780, 2780);
     });
+    sandbox.complete_old("co Spring");
 
     let run = upgrade(&sandbox, "co Spring", "EDIT");
     assert_eq!(run.exit_code(), 0, "{}", run.stdout());
@@ -1148,7 +1139,6 @@ fn an_id_numbered_in_the_other_kind_means_no_custom_item() {
 #[test]
 fn order_then_number_pair_the_renumbered_saves_folders() {
     let sandbox = Sandbox::new("ply_order_number");
-    sandbox.logo("co Spring");
     for slot in [
         "XXX01 - CHALICE OF HEAVEN",
         "XXX05 - PARADISE",
@@ -1184,6 +1174,7 @@ fn order_then_number_pair_the_renumbered_saves_folders() {
         wears(file, 71405, 2229, 2229);
         wears(file, 71412, 2226, 2226);
     });
+    sandbox.complete_old("co Spring");
 
     let run = upgrade(&sandbox, "co Spring", "EDIT");
     let stdout = run.stdout();

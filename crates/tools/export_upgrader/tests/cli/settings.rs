@@ -31,10 +31,10 @@ fn settings(sandbox: &Sandbox, path: &str) -> PlayerSettings {
 #[test]
 fn a_face_folder_gets_a_settings_toml_of_his_record_but_the_face_keys() {
     let sandbox = Sandbox::new("set_record");
-    sandbox.logo("co Spring");
     // The /co/ fixture's slot 05 is named "PLACEHOLDER".
     face(&sandbox, "co Spring/Faces/XXX05 - PLACEHOLDER");
     sandbox.save("EDIT");
+    sandbox.complete_old("co Spring");
 
     let run = upgrade(&sandbox, "co Spring", "EDIT");
     assert_eq!(run.exit_code(), 0, "{}", run.stdout());
@@ -67,7 +67,6 @@ fn a_face_folder_gets_a_settings_toml_of_his_record_but_the_face_keys() {
 #[test]
 fn an_upgraded_export_keeps_a_seven_star_teams_seven() {
     let sandbox = Sandbox::new("set_star");
-    sandbox.logo("co Spring");
     for slot in ["05", "06", "07"] {
         face(&sandbox, &format!("co Spring/Faces/XXX{slot} - A"));
     }
@@ -76,6 +75,7 @@ fn an_upgraded_export_keeps_a_seven_star_teams_seven() {
             player.stats.star = Some(7);
         }
     });
+    sandbox.complete_old("co Spring");
 
     let run = upgrade(&sandbox, "co Spring", "EDIT");
     assert_eq!(run.exit_code(), 0, "{}", run.stdout());
@@ -99,11 +99,11 @@ fn an_upgraded_export_keeps_a_seven_star_teams_seven() {
 #[test]
 fn the_id_rules_stock_kept_zero_written_midcup_and_folder_claimed() {
     let sandbox = Sandbox::new("set_ids");
-    sandbox.logo("co Spring");
     for input in ["co Spring", "co Midcup Spring"] {
         face(&sandbox, &format!("{input}/Faces/XXX05 - A"));
         face(&sandbox, &format!("{input}/Faces/XXX06 - B"));
         boots(&sandbox, &format!("{input}/Boots/k0430 - Crocs"));
+        sandbox.complete_old(input);
     }
     sandbox.save_edited("EDIT", PesVersion::Pes21, |file| {
         wears(file, 71405, 12, 0);
@@ -147,13 +147,13 @@ fn the_id_rules_stock_kept_zero_written_midcup_and_folder_claimed() {
 fn an_unclaimed_custom_model_becomes_the_hide_id_with_a_folder() {
     let sandbox = Sandbox::new("set_hidden");
     face(&sandbox, "co Spring/Faces/XXX05 - A");
-    sandbox.logo("co Spring");
     // "co Summer" gives slot 05 no folder: the same worn IDs are missing there.
     face(&sandbox, "co Summer/Faces/XXX03 - A");
-    sandbox.logo("co Summer");
     sandbox.save_edited("EDIT", PesVersion::Pes21, |file| {
         wears(file, 71405, 433, 434)
     });
+    sandbox.complete_old("co Summer");
+    sandbox.complete_old("co Spring");
 
     let run = upgrade(&sandbox, "co Spring", "EDIT");
     assert_eq!(run.exit_code(), 0, "{}", run.stdout());
@@ -184,7 +184,6 @@ fn an_unclaimed_custom_model_becomes_the_hide_id_with_a_folder() {
 #[test]
 fn the_name_is_true_explicit_or_the_coded_save_name() {
     let sandbox = Sandbox::new("set_names");
-    sandbox.logo("co Spring");
     face(&sandbox, "co Spring/Faces/XXX05 - PLACEHOLDER");
     face(&sandbox, "co Spring/Faces/XXX06 - Other");
     face(&sandbox, "co Spring/Faces/XXX09");
@@ -196,6 +195,7 @@ fn the_name_is_true_explicit_or_the_coded_save_name() {
         // `name = true` would write "skin", stripping the codes.
         file.player_mut(71410).unwrap().name = "\u{11}c789922ffskin".to_owned();
     });
+    sandbox.complete_old("co Spring");
 
     let run = upgrade(&sandbox, "co Spring", "EDIT");
     assert_eq!(run.exit_code(), 0, "{}", run.stdout());
@@ -227,7 +227,6 @@ fn the_name_is_true_explicit_or_the_coded_save_name() {
 #[test]
 fn a_value_past_the_assumed_cap_is_written_as_stored() {
     let sandbox = Sandbox::new("set_past_top");
-    sandbox.logo("an Spring");
     // The PES 18 fixture save's /an/ is team 704, as the save itself numbers
     // it; its slot-04 player wears k0430 and holds a `cheek_type` past the
     // assumed cap (his 5, inside the field's bits the unmeasured cap is).
@@ -247,6 +246,7 @@ fn a_value_past_the_assumed_cap_is_written_as_stored() {
             .apply(file.player_mut(70404).unwrap(), PesVersion::Pes18)
             .unwrap();
     });
+    sandbox.complete_old("an Spring");
 
     let run = upgrade(&sandbox, "an Spring", "EDIT18");
     assert_eq!(run.exit_code(), 0, "{}", run.stdout());
@@ -274,7 +274,6 @@ fn a_value_past_the_assumed_cap_is_written_as_stored() {
 #[test]
 fn an_fpc_strip_writes_no_marker_and_the_raw_values() {
     let sandbox = Sandbox::new("set_fpc");
-    sandbox.logo("co Spring");
     face(&sandbox, "co Spring/Faces/XXX05 - A");
     boots(&sandbox, "co Spring/Boots/k0126 - Blank");
     gloves(&sandbox, "co Spring/Gloves/g0127 - Blank");
@@ -287,6 +286,7 @@ fn an_fpc_strip_writes_no_marker_and_the_raw_values() {
         player.appearance.socks = 2;
         wears(file, 71405, 126, 127);
     });
+    sandbox.complete_old("co Spring");
 
     let run = upgrade(&sandbox, "co Spring", "EDIT");
     assert_eq!(run.exit_code(), 0, "{}", run.stdout());
@@ -311,9 +311,9 @@ fn an_fpc_strip_writes_no_marker_and_the_raw_values() {
 #[test]
 fn a_folderless_stock_wearer_gets_no_folder() {
     let sandbox = Sandbox::new("set_no_folder");
-    sandbox.logo("co Spring");
     face(&sandbox, "co Spring/Faces/XXX03 - A");
     sandbox.save_edited("EDIT", PesVersion::Pes21, |file| wears(file, 71410, 12, 3));
+    sandbox.complete_old("co Spring");
 
     let run = upgrade(&sandbox, "co Spring", "EDIT");
     assert_eq!(run.exit_code(), 0, "{}", run.stdout());
@@ -328,7 +328,6 @@ fn a_folderless_stock_wearer_gets_no_folder() {
 #[test]
 fn an_unwritable_value_is_left_out_and_reported() {
     let sandbox = Sandbox::new("set_refused");
-    sandbox.logo("jp Spring");
     // /jp/ player 73105, the PES 16 fixture save's slot-5 "SHITEYANYO" — the
     // same player `from_player_skipping`'s unit test finds by walking the
     // fixture for a stored 183 in `goal_celebration_2`; pinned 2026-10-18.
@@ -341,6 +340,7 @@ fn an_unwritable_value_is_left_out_and_reported() {
         sandbox.write(&format!("jp Spring/Faces/XXX05 - SHITEYANYO/{name}"), bytes);
     }
     sandbox.save_edited("EDIT16", PesVersion::Pes16, |_| {});
+    sandbox.complete_old("jp Spring");
 
     let run = upgrade(&sandbox, "jp Spring", "EDIT16");
     assert_eq!(run.exit_code(), 0, "{}", run.stdout());
