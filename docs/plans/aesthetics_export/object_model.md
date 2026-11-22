@@ -42,7 +42,9 @@ reported there, nor for a referee export, whose portraits reach no output.
 
 A `Midcup` player keeps his installed portrait, so in a `Midcup` export he is reported only
 when the installed CPKs loaded before the run's hold no portrait for him either
-(`common/render/symbol/player/<player id>.dds`). The consumer finds them with the walk its
+(at the path `pes_savefile::portrait::portrait_path` gives: under
+`common/render/symbol/player/`, `player_<player id>.dds` up to PES 2018 and `<player id>.dds`
+from PES 2019). The consumer finds them with the walk its
 bins accumulation already makes over those CPKs' tables of contents
 (`spec/team_compiler/pipeline.md` "Bins accumulation"), and hands the validation the
 team's slots that have one, as `installed_portrait_slots` in `ValidationContext`. When that
@@ -56,7 +58,9 @@ A file that maps to the slot counts as his portrait whatever a later check finds
 that check's own finding names the file. So does a `Portraits/` file whose name maps to the
 slot but that is no texture directly in `Portraits/` (`Portraits/05.psd`,
 `Portraits/Portraits/05.dds`): its `portrait_name_invalid` names it, and the Compiler's grid
-counts it as his portrait too. A `Portraits/` file whose name maps to no slot
+counts it as his portrait too. In the player folder, likewise, a file directly in it whose
+stem is `portrait` counts whatever its kind (`portrait.psd`): the finding that refuses it
+names it. A `Portraits/` file whose name maps to no slot
 (`portrait_name_invalid`) is no one's portrait, so its player is reported too, which tells the
 member whose portrait the misnamed file was meant to be.
 

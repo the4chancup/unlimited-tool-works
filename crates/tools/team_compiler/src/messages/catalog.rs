@@ -1435,7 +1435,7 @@ pub(super) const CATALOG: &[(&str, CatalogSeverity, &str, &str)] = &[
     (
         "portrait_missing",
         CatalogSeverity::Warning,
-        r#"In PES 2017 to 2021, a player has no portrait in his folder or in `Portraits/` (in a `Midcup` export, none installed either)."#,
+        r#"In PES 2017 to 2021, a player has no portrait in his folder or in `Portraits/`; in a `Midcup` export, the CPKs installed before the one being compiled hold none for him either."#,
         r#"The player is compiled without a portrait. Add a `portrait` image to his folder, or one named by his number (`05`) to `Portraits/`."#,
     ),
     (

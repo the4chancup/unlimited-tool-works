@@ -19611,3 +19611,13 @@ saying he has a portrait beside a finding saying he has none. The file's own
 (`player_04.dds`) is still no one's portrait, and its player is still reported.
 Plan: `plans/aesthetics_export/object_model.md` "Validation semantics", the paragraph "A file
 that maps to the slot".
+
+## 2026-11-22 — aesthetics_export — a player folder's file named `portrait` counts as his portrait, whatever its kind
+Decision: `portrait_missing` is not reported for a player whose folder holds, directly in it, a
+file whose stem is `portrait` (`portrait.psd`, `portrait.txt`), even when it is no texture.
+Why: the same reasoning as the `Portraits/` entry above: the finding that refuses the file
+names it, and the Compiler's grid already counts such a file as his portrait, so a
+`portrait_missing` beside it would be a second finding on one file and a count that
+contradicts it.
+Plan: `plans/aesthetics_export/object_model.md` "Validation semantics", the paragraph "A file
+that maps to the slot".
