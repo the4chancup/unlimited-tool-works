@@ -985,11 +985,14 @@ function cellNotes(r, c, what) {
 // portraits as a 6 x 4 grid with the logo last (23 portraits and it make 24),
 // and the export's logo for a label. sample: /dbg/'s kits and portraits are the
 // real export's, scaled; the other rows have none to show.
-const KIT_TEX = { dbg: { GK: "g1", K1: "p1", K2: "p2", K3: "p3" } };
+// Each path spelled whole: the bundler inlines a quoted assets/ literal, never a built one.
+const KIT_TEX = { dbg: { GK: "assets/kits/dbg_g1.png", K1: "assets/kits/dbg_p1.png",
+  K2: "assets/kits/dbg_p2.png", K3: "assets/kits/dbg_p3.png" } };
+const DBG_PORTRAITS = { "01": "assets/portraits/dbg/01.png", "02": "assets/portraits/dbg/02.png", "03": "assets/portraits/dbg/03.png", "04": "assets/portraits/dbg/04.png", "05": "assets/portraits/dbg/05.png", "06": "assets/portraits/dbg/06.png", "07": "assets/portraits/dbg/07.png", "08": "assets/portraits/dbg/08.png", "09": "assets/portraits/dbg/09.png", "10": "assets/portraits/dbg/10.png", "11": "assets/portraits/dbg/11.png", "12": "assets/portraits/dbg/12.png", "13": "assets/portraits/dbg/13.png", "14": "assets/portraits/dbg/14.png", "15": "assets/portraits/dbg/15.png", "16": "assets/portraits/dbg/16.png", "17": "assets/portraits/dbg/17.png", "18": "assets/portraits/dbg/18.png", "19": "assets/portraits/dbg/19.png", "20": "assets/portraits/dbg/20.png", "21": "assets/portraits/dbg/21.png", "22": "assets/portraits/dbg/22.png", "23": "assets/portraits/dbg/23.png" };
 function previewBox(r, at) {
   const logo = r.logo ? h("img", { src: r.logo, alt: "" }) : "No logo";
   if (at.what === "player") {
-    const own = r.key === "dbg" ? h("img", { src: `assets/portraits/dbg/${at.slot}.png`, alt: "" }) : null;
+    const own = r.key === "dbg" ? h("img", { src: DBG_PORTRAITS[at.slot], alt: "" }) : null;
     return h("div", { class: "preview weak" }, "3D preview (a later feature)",
       own ? h("div", { class: "tile corner left" }, own) : null,
       h("div", { class: "tile corner right" }, h("span", { class: "logo" }, logo)));
@@ -997,11 +1000,11 @@ function previewBox(r, at) {
   if (at.what === "kit") {
     const tex = (KIT_TEX[r.key] || {})[at.slot];
     return h("div", { class: "preview weak" },
-      tex ? h("img", { src: `assets/kits/${r.key}_${tex}.png`, alt: "" }) : "Kit texture (sample: none to show)");
+      tex ? h("img", { src: tex, alt: "" }) : "Kit texture (sample: none to show)");
   }
   if (at.what === "portraits") {
     const tile = n => r.players[n]
-      ? (r.key === "dbg" ? h("img", { src: `assets/portraits/dbg/${pad(n)}.png`, alt: "" }) : h("span", { class: "mono" }, pad(n)))
+      ? (r.key === "dbg" ? h("img", { src: DBG_PORTRAITS[pad(n)], alt: "" }) : h("span", { class: "mono" }, pad(n)))
       : null;
     const tiles = [...Array.from({ length: 23 }, (_, i) => tile(i + 1)), h("span", { class: "logo" }, logo)];
     return h("div", { class: "preview portraits" }, tiles.map(t => h("div", { class: "tile" }, t)));
