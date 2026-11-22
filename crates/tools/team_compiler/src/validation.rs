@@ -61,6 +61,10 @@ pub(crate) struct CheckedSource {
     pub(crate) messages: Vec<Message>,
     /// The export with its identity resolved; `None` when a finding dropped it.
     pub(crate) resolved: Option<ResolvedAestheticsExport>,
+    /// The export as its listing parsed, before any finding dropped a part of it: the
+    /// window's grid draws a dropped export's player and kit folders from it. `None` when
+    /// routing or the parse set the source aside.
+    pub(crate) parsed: Option<ParsedAestheticsExport>,
     /// The valid colors of the export's root `colors.txt`, at most four (empty when no line
     /// gives one); `None` when the export has no such file, is a referee export, or a
     /// finding dropped it before its identity was resolved. Read only beside `resolved`.
@@ -320,6 +324,7 @@ fn check_source(
             context,
         )],
         resolved: None,
+        parsed: None,
         team_colors: None,
         notes: None,
         hand_weighted: BTreeSet::new(),
@@ -495,6 +500,7 @@ fn check_source(
         source,
         messages,
         resolved,
+        parsed: Some(report.parsed),
         team_colors,
         notes,
         hand_weighted,
@@ -1920,6 +1926,7 @@ mod tests {
             source: source(export_id, file_name),
             messages: vec![identified_message(export, &resolved.identity)],
             resolved: Some(resolved),
+            parsed: None,
             team_colors: None,
             notes: None,
             hand_weighted: BTreeSet::new(),
@@ -1947,6 +1954,7 @@ mod tests {
                 vec![],
             )],
             resolved: None,
+            parsed: None,
             team_colors: None,
             notes: None,
             hand_weighted: BTreeSet::new(),

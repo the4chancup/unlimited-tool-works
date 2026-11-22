@@ -37,7 +37,7 @@ while todo:
         reach.add(name)
         todo.extend(deps[name])
 
-WIDGET_LIBS = ["color_tools", "team_widgets"]
+WIDGET_LIBS = ["color_tools", "export_grid", "team_widgets"]
 TOOLS = sorted(n for n, f in folder.items() if f == "tools")
 LIBS = sorted(n for n, f in folder.items() if f == "libs" and n not in WIDGET_LIBS)
 

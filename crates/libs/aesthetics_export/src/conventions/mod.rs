@@ -82,7 +82,7 @@ pub fn is_os_artifact(name: &str) -> bool {
 /// A player or kit folder's `<head>[ - <label>]` split ("Validation
 /// semantics" → "Folder names"): the name before the first `-`, trimmed, and
 /// the trimmed remainder when it is non-empty.
-pub(crate) fn split_folder_name(name: &str) -> (&str, Option<&str>) {
+pub fn split_folder_name(name: &str) -> (&str, Option<&str>) {
     match name.split_once('-') {
         Some((head, label)) => {
             let label = label.trim();
@@ -97,7 +97,7 @@ pub(crate) fn split_folder_name(name: &str) -> (&str, Option<&str>) {
 /// `split_folder_name` head all ASCII digits making a `PlayerSlot` (`05`,
 /// `05 - Bob` and `05-Bob` alike read as slot 05; `081` is no slot 08,
 /// `player_05` no slot at all).
-pub(crate) fn folder_slot(name: &str) -> Option<PlayerSlot> {
+pub fn folder_slot(name: &str) -> Option<PlayerSlot> {
     let (head, _) = split_folder_name(name);
     head.bytes()
         .all(|byte| byte.is_ascii_digit())
