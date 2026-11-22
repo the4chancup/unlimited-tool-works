@@ -19404,3 +19404,14 @@ Why: the box shows what each cell is about rather than the logo everywhere, and 
 take 23 portraits and the logo exactly.
 Plan: plans/team_compiler/gui.md "GUI: the live-validating team grid" (the detail window),
 "Sizes and sorting"; plans/team_compiler/README.md TC-GUI-28, TC-GUI-31.
+
+## 2026-11-22 — compiler view — players' thresholds 10/20/32 MB; the player's box shows his portrait and the logo
+Decision (the maintainer): a player is green up to 10 MB, so his thresholds keep an export's
+proportions (150/300/500); a player's window box shows his portrait (when his folder holds it)
+in the bottom-left corner and the export's logo in the bottom-right one, each a portraits
+tile's size; the portraits grid's logo moves to the bottom-right tile; Disk | VRAM, disabled in
+Status, takes the Save editor's disabled look (the chosen entry as a disabled button).
+Why: the corners name the player and the team at a glance in a box that is otherwise empty
+until the 3D preview is built, and the same size in both boxes reads as one set of pictures.
+Plan: plans/team_compiler/gui.md "GUI: the live-validating team grid" (the detail window),
+"Sizes and sorting"; plans/team_compiler/README.md TC-GUI-31.

@@ -90,11 +90,13 @@ it, one cell per player at a fixed position by number, plus one cell per kit:
   The window opens on a box the 3D preview's size. The box is there on every cell, so the
   text under it stays in place as the window moves between cells. What it holds depends on
   the cell:
-  - a player: his 3D preview (Future Features); until that is built, the export's logo;
+  - a player: his 3D preview (Future Features), with his portrait in the bottom-left corner
+    when his folder holds it and the export's logo in the bottom-right one, each the size of
+    a portraits tile; until the preview is built, the box holds those two alone;
   - a kit: its main texture (`kit.dds`), fitted inside the box;
   - the portraits: every portrait as a 6 × 4 grid in the players' order, the export's logo
-    in the bottom-left tile, so 23 portraits and the logo fill the 24 tiles; a player with
-    no portrait leaves his tile empty;
+    in the last tile, at the bottom right, so 23 portraits and the logo fill the 24 tiles; a
+    player with no portrait leaves his tile empty;
   - a team label: the export's logo (its root `logo*` texture), fitted inside the box.
   An export with no logo shows "No logo" where the logo would be.
   - **Hover** opens it on the cell under the pointer, and leaving the cell closes it. It opens
@@ -145,7 +147,7 @@ whether the legend is folded or not:
   plus what it takes from `all/`, the portraits cell its portraits, and a team label its whole
   export.
 - **The scale.** Each kind has three fixed thresholds: green up to the first, amber at the
-  second, red from the third, blended on a log scale between. They are players 12, 20 and
+  second, red from the third, blended on a log scale between. They are players 10, 20 and
   32 MB, kits 6, 10 and 16 MB, portraits 1, 2 and 4 MB, and exports 150, 300 and 500 MB.
   In Sizes the legend shows them in place of the states.
 
@@ -153,11 +155,15 @@ whether the legend is folded or not:
   player totals in 36 upgraded VGL exports had a median of 7.8 MB, p75 12.4 and p90 18.9; their
   164 kits clustered at 5.3 MB; 117 exports had a median of 123 MB and p75 235 MB. An
   export's green ends at 150 MB, near the median, because 250 MB is already large for an
-  export. The red ends are the 4cc rules page's own (a model folder over 32 MB, an export over 500 MB, "unless it
+  export. A player's thresholds keep the same proportions to his red end, 32 MB, as an
+  export's keep to its 500 MB. The red ends are
+  the 4cc rules page's own (a model folder over 32 MB, an export over 500 MB, "unless it
   is absolutely required"). Fixed thresholds, not a scale relative to the folder's largest,
   because a relative scale paints someone red in a cup where every export is fine.
 - **Disk | VRAM**, always shown and enabled only in Sizes: the controls are right-aligned,
   so a pair appearing on a click on Sizes would push the toggle out from under the pointer.
+  Disabled, it is drawn as the Save editor's disabled formation picker: the chosen unit as a
+  disabled button, not on the selection's blue, the other in the disabled grey.
   Disk is the files' size. VRAM is what the textures and
   models take in the game's video memory, read from headers at check time with no compile:
   - a DDS takes its payload;

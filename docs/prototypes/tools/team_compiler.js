@@ -192,8 +192,11 @@ const TEAM_COMPILER_CSS = `
   .tc-modes .sep-v { width: 1px; height: 14px; background: var(--stroke); margin: 0 6px; }
   .tc-modes select { margin-left: 4px; }
   .tc-unit { display: inline-flex; gap: 2px; }
-  .tc-unit.off { opacity: .5; }
-  .tc-unit.off .sel { pointer-events: none; }
+  /* Disabled as the Save editor's formation picker is (.fsel.off): the chosen
+     unit as a disabled button, not on the selection's blue, the other in the
+     disabled grey. */
+  .tc-unit.off .sel { pointer-events: none; color: #5a5a5a; }
+  .tc-unit.off .sel.on { background: #2b2b2b; color: #5a5a5a; }
   /* A kit's texture or the logo, fitted in the top box. */
   .tc-detail .preview img { max-width: 180px; }
   /* The portraits: 6 x 4 tiles filling the box, the logo at the bottom left. */
@@ -202,7 +205,16 @@ const TEAM_COMPILER_CSS = `
   .tc-detail .preview.portraits .tile { display: flex; align-items: center; justify-content: center;
     min-width: 0; min-height: 0; background: var(--panel); border-radius: 2px; color: var(--weak); overflow: hidden; }
   .tc-detail .preview.portraits img { width: 100%; height: 100%; object-fit: contain; max-width: none; max-height: none; }
-  .tc-detail .preview.portraits .logo { font-size: 9px; text-align: center; width: 100%; height: 100%;
+  /* A player's box: his portrait and the logo in its bottom corners, each a
+     portraits tile's size (the box's width less its padding, over six). */
+  .tc-detail .preview { position: relative; }
+  .tc-detail .preview .tile.corner { position: absolute; bottom: 2px; width: 44px; height: 43px;
+    display: flex; align-items: center; justify-content: center; background: var(--panel);
+    border-radius: 2px; overflow: hidden; }
+  .tc-detail .preview .tile.corner.left { left: 2px; }
+  .tc-detail .preview .tile.corner.right { right: 2px; }
+  .tc-detail .preview .tile.corner img { width: 100%; height: 100%; object-fit: contain; max-width: none; max-height: none; }
+  .tc-detail .preview .logo { font-size: 9px; text-align: center; width: 100%; height: 100%;
     display: flex; align-items: center; justify-content: center; }
   /* The window's sizes, in the Sizes colouring. */
   .tc-detail .sizes { margin: 6px 0; }
@@ -413,8 +425,9 @@ function labelOut(r) {
 // from the 2026-11-22 census of the exports on the maintainer's PC (players:
 // median 7.8, p75 12.4, p90 18.9; kits: 5.3 typical; exports: median 123, p75
 // 235) and the 4cc rules page's 32 MB per model folder and 500 MB per export;
-// an export's green ends near the median, since 250 MB is already large.
-const SIZE_GUIDE = { player: [12, 20, 32], kit: [6, 10, 16], portraits: [1, 2, 4], export: [150, 300, 500] };
+// an export's green ends near the median, since 250 MB is already large, and
+// a player's thresholds stand to 32 MB as an export's to 500 MB.
+const SIZE_GUIDE = { player: [10, 20, 32], kit: [6, 10, 16], portraits: [1, 2, 4], export: [150, 300, 500] };
 const SIZE_KINDS = [["player", "Player"], ["kit", "Kit"], ["export", "Export"]];
 const SIZE_GREEN = "#3fb950", SIZE_AMBER = "#d29922", SIZE_RED = "#f85149";
 const mix = (a, b, t) => "#" + [1, 3, 5].map(i => Math.round(parseInt(a.slice(i, i + 2), 16) * (1 - t)
@@ -943,14 +956,20 @@ function cellNotes(r, c, what) {
 }
 // The window's top box, the 3D preview's size on every cell, so the text
 // under it stays put as the window moves between cells: a player's 3D preview
-// (a later feature), a kit's main texture, the portraits as a 6 x 4 grid with
-// the export's logo at its bottom left (23 portraits and the logo make 24),
+// (a later feature) with his portrait (when his folder holds it) at its bottom
+// left and the export's logo at its bottom right, a kit's main texture, the
+// portraits as a 6 x 4 grid with the logo last (23 portraits and it make 24),
 // and the export's logo for a label. sample: /dbg/'s kits and portraits are the
 // real export's, scaled; the other rows have none to show.
 const KIT_TEX = { dbg: { GK: "g1", K1: "p1", K2: "p2", K3: "p3" } };
 function previewBox(r, at) {
   const logo = r.logo ? h("img", { src: r.logo, alt: "" }) : "No logo";
-  if (at.what === "player") return h("div", { class: "preview weak" }, "3D preview (a later feature)");
+  if (at.what === "player") {
+    const own = r.key === "dbg" ? h("img", { src: `assets/portraits/dbg/${at.slot}.png`, alt: "" }) : null;
+    return h("div", { class: "preview weak" }, "3D preview (a later feature)",
+      own ? h("div", { class: "tile corner left" }, own) : null,
+      h("div", { class: "tile corner right" }, h("span", { class: "logo" }, logo)));
+  }
   if (at.what === "kit") {
     const tex = (KIT_TEX[r.key] || {})[at.slot];
     return h("div", { class: "preview weak" },
@@ -960,8 +979,7 @@ function previewBox(r, at) {
     const tile = n => r.players[n]
       ? (r.key === "dbg" ? h("img", { src: `assets/portraits/dbg/${pad(n)}.png`, alt: "" }) : h("span", { class: "mono" }, pad(n)))
       : null;
-    const tiles = [...Array.from({ length: 18 }, (_, i) => tile(i + 1)), h("span", { class: "logo" }, logo),
-      ...Array.from({ length: 5 }, (_, i) => tile(i + 19))];
+    const tiles = [...Array.from({ length: 23 }, (_, i) => tile(i + 1)), h("span", { class: "logo" }, logo)];
     return h("div", { class: "preview portraits" }, tiles.map(t => h("div", { class: "tile" }, t)));
   }
   return h("div", { class: "preview weak" }, logo);
@@ -1428,5 +1446,6 @@ registerTool({ id: "compiler", css: TEAM_COMPILER_CSS, draw: drawView,
     "compiler/main?empty=1", "compiler/main?dest=running",
     "compiler/main?colour=sizes", "compiler/main?detail=adv.player.05&colour=sizes&sort=player",
     "compiler/main?detail=a.label&colour=sizes&measure=vram",
-    "compiler/main?detail=dbg.kit.K1", "compiler/main?detail=dbg.portraits"] });
+    "compiler/main?detail=dbg.kit.K1", "compiler/main?detail=dbg.portraits",
+    "compiler/main?detail=dbg.player.14"] });
 })();

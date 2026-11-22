@@ -300,10 +300,13 @@ TC-GUI-30  GIVEN three exports of 120, 480 and 300 MB, the 120 MB one holding th
                 folder's order; and the same sorts work in Status
 TC-GUI-31  GIVEN an export with a logo, a kit whose main texture is kit.dds, and 22 of its 23
                 players with a portrait (player 20 without)
-           WHEN the window opens on the kit, on the portraits cell and on the label
+           WHEN the window opens on the kit, on the portraits cell, on the label and on
+                player 05, whose folder holds his portrait
            THEN its top box shows kit.dds; then a 6 × 4 grid holding the 22 portraits in the
-                players' order, the logo in the bottom-left tile and player 20's tile empty;
-                then the logo; and the text under the box starts at the same height each time
+                players' order, player 20's tile empty and the logo in the bottom-right tile;
+                then the logo; then player 05's portrait in its bottom-left corner and the
+                logo in its bottom-right one; and the text under the box starts at the same
+                height each time
 TC-GUI-13  GIVEN a run in flight over two exports
            WHEN Cancel is clicked
            THEN the run ends after the task or texture in progress, no CPK is written or
