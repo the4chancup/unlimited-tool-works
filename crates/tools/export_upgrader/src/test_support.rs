@@ -17,19 +17,11 @@ pub(crate) fn scratch(name: &str) -> PathBuf {
     root
 }
 
-/// Gives the old export at `export` the `co Spring` fixture's logo
-/// (`Logo/emblem_0XXX_r_ll.png`, 512²). A `Full` export with no logo is
-/// refused, and a lone large logo upgrades with no report line.
-pub(crate) fn logo(export: &Path) {
-    let logo = Path::new("Logo").join("emblem_0XXX_r_ll.png");
-    fs::create_dir_all(export.join("Logo")).unwrap();
-    fs::copy(
-        Path::new(env!("CARGO_MANIFEST_DIR"))
-            .join("tests/fixtures/co Spring")
-            .join(&logo),
-        export.join(&logo),
-    )
-    .unwrap();
+/// Writes into the old export at `export` the files it still lacks for its
+/// upgrade to be clean (`test_exports::complete_old`). A test writes the files
+/// it is about first.
+pub(crate) fn complete_old(export: &Path) {
+    crate::test_exports::complete_old(export, &[]);
 }
 
 /// The files below `folder`, counted; a folder itself is no file.

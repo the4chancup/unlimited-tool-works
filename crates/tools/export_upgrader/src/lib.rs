@@ -32,6 +32,8 @@ mod roster;
 mod settings;
 mod source;
 mod staging;
+#[cfg(any(test, feature = "test-support"))]
+pub mod test_exports;
 #[cfg(test)]
 mod test_support;
 mod texture_pairs;
