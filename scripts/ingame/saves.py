@@ -24,6 +24,7 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parents[2] / ".tmp" / "ingame_saves"
 KONAMI = Path(r"C:\Data\Documents\KONAMI")
 LIVE = {
+    "14": (KONAMI / "Pro Evolution Soccer 2014/save", "EDIT.bin", ["SYSTEM.bin"], "pes2014.exe"),
     "15": (KONAMI / "Pro Evolution Soccer 2015/save", "EDIT.bin", ["SYSTEM.bin"], "pes2015.exe"),
     "16": (KONAMI / "Pro Evolution Soccer 2016/save", "EDIT00000000", ["SYSTEM00000000"], "pes2016.exe"),
     "17": (KONAMI / "Pro Evolution Soccer 2017/save", "EDIT00000000", ["SYSTEM00000000"], "pes2017.exe"),
