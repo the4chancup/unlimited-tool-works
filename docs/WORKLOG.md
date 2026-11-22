@@ -103,9 +103,9 @@ other items run beside it. **After the detour**, in this order:
    - [x] 1a (2026-11-22, merge `304822e4`, Opus, two reworks) the grid, read-only, in the
      new lib `export_grid`, filled by `check`'s validation when the view opens and after each
      Compile: rows, label, ID, player, portraits and kit cells, check states, the legend
-     (TC-GUI-04 without its watcher part, 20, 21). Owed: its look beside the draft, compared
-     once: the portraits count left out a dropped player's portrait (fixed, `bbe765a6`); the
-     next capture, on a build with the fix, goes to the tasks page with the draft's. The
+     (TC-GUI-04 without its watcher part, 20, 21). Its look: checked by the lead beside the
+     draft (the portraits count left out a dropped player's portrait, fixed in `bbe765a6`),
+     now the maintainer's on the tasks page (card "The Compiler's grid, its first slice"). The
      shipped build still greys the Compiler (`CLI_ONLY`, `crates/studio/src/main.rs:130`), so
      the look runs on a build made for it, with `compiler` off that list and nothing
      committed; the slice that presents the view takes it off for good (1c, unless the plan

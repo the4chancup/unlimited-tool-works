@@ -90,7 +90,38 @@ card.</p>
 <p class="group-intro">Each matched its draft when the lead compared them; anything you see
 otherwise goes back as a fix.</p>
 
-<p>Nothing waiting.</p>
+<section class="entry" id="grid-1a-look">
+  <h3>The Compiler's grid, its first slice</h3>
+  <p class="from">From: worklog 0.0.2, the Compiler's view, slice 1a</p>
+  <p>The Compiler's window now shows the grid: a row per export with its team label and ID, a
+  cell per player, the portraits count and a cell per kit, each coloured by the export's
+  check, and the legend above. The released build still greys the Compiler out, so this look
+  has its own copy, built from main at <code>de78b106</code> with the Compiler turned on:
+  <code>C:\Data\4cc\Tools_Mine\4cc-studio\.tmp\grid_look\app\UTW.exe</code>. It has its own
+  settings (PES 2017) and three exports: /4ccg/, /dbg/ and the tracer, whose /egg/ is not on
+  the teams list.</p>
+  <ol>
+    <li>Start that <code>UTW.exe</code> and click the Compiler, the first icon on the left.</li>
+    <li>Compare the grid with the draft (right, below), which draws sample exports of its
+      own.</li>
+  </ol>
+  <p>Not built yet, so missing beside the draft: the toolbar's controls and the counts under
+  the grid, the log's lines, the colour swatch under each kit, and the box for typing a missing
+  ID (/egg/'s ID is a bare <code>???</code> on red until then). Every player cell has a red
+  outline because each player's <code>settings.toml</code> holds <code>dribbling = 0</code>,
+  which the check refuses; /dbg/'s label has a yellow one because a file in one of its gloves
+  folders is never read on PES 2017.</p>
+  <div class="shots">
+    <figure><img src="img/grid1a_build.png" alt="The built grid"><figcaption>The build</figcaption></figure>
+    <figure><img src="img/grid1a_draft.png" alt="The draft's grid"><figcaption>The draft</figcaption></figure>
+  </div>
+  <div class="options">
+    <label class="opt"><input type="radio" value="looks right"><b>It looks right</b></label>
+    <label class="opt"><input type="radio" value="differences"><b>Something differs</b>
+      <div class="note">Say what below.</div></label>
+  </div>
+  <textarea class="own" placeholder="What differs (optional)"></textarea>
+</section>
 
 <h2>Coming once the lead has checked them</h2>
 <p class="group-intro">Yours by the worklog, but not yet compared with their drafts by the lead,
