@@ -130,15 +130,19 @@ other items run beside it. **After the detour**, in this order:
        `export_upgrader::test_exports`. Each slice proves itself with a dummy requirement: a
        new check alone breaks the slice's tests, and with its rule in `missing` only the
        builder's own tests fail:
-       - [ ] 1: the builder, and `team_compiler`'s unit tests through `resolved*` and the deep
-         helpers (about 150 tests, no call site edited)
+       - [x] 1 (2026-11-22, merge `4382ae18`, Opus) the builder, and `team_compiler`'s unit
+         tests through `resolved*` and the deep helpers, no call site edited. The dummy
+         requirement's `notes.txt` holds a single newline, since any text in it reports
+         `notes_found`. Tier 3: one SWE-2 round owed
        - [ ] 2: `aesthetics_export`'s validator tests through `report*` (about 160)
        - [ ] 3: the Compiler's CLI tests the logo slice touched, through `complete` (about
-         155), and the CONTRIBUTING rule
+         155), `view::a_player_folder_s_finding_colours_its_player` (its export written by the
+         view tests' own helpers), and the CONTRIBUTING rule
        - [ ] 4: the Compiler's other CLI tests (about 270)
        - [ ] 5: `export_upgrader` (about 130)
        - [ ] 6: `studio` (6)
-       - [ ] 7: the `.zip` fixtures packed when the tests run; the `.7z` ones stay stored,
+       - [ ] 7: the `.zip` fixtures packed when the tests run, with the three `gui_run` and
+         `view` tests that compile the tracer export as it is; the `.7z` ones stay stored,
          since writing one needs `sevenz-rust2`'s `compress` feature, which the workspace
          leaves off
      - b waits for builder slice 3, so its tests are written on `complete`
