@@ -19738,3 +19738,34 @@ cards that wait on nothing would bury them. This narrows the entry before it, wh
 turn's report as the place to show a decision.
 Plan: `RUNBOOK.md` "Lead and sidekick", "Every UI decision is seen by the maintainer"; the
 `docs/maintainer/*.html` row of `AGENTS.md`.
+
+## 2026-11-23 — team_compiler, detail window — a zip export shows its pictures; a 7z's boxes stay empty
+Decision: the detail window's top box shows a `.zip` export's logo, kit textures and portraits,
+each read from its own entry in the zip. A `.7z` export's boxes stay empty until the check cache
+keeps its pictures, as the 2026-11-22 entry "what the top box shows, and how" ruled for every
+archive.
+Why: the maintainer kept the empty boxes for 7z and asked whether a zip's logo could be shown.
+It can: a zip unpacks one entry without the others (`archives::Archive::read`), so a picture
+costs one entry's read, as from a folder, while a solid 7z unpacks whole on its first read.
+Plan: `plans/team_compiler/gui.md` "The detail window" (the paragraph on where the pictures
+come from); TC-GUI-31.
+
+## 2026-11-23 — team_compiler, live check — only a .7z export is checked shallowly first; a .zip gets the deep check as a folder does
+Decision: a `.zip` export gets the live deep check at once, as a folder does. A `.7z` export
+gets the shallow check (its entry table alone) first. Its deep check runs once every folder and
+`.zip` export is checked, one `.7z` at a time, each when its unpacked size fits the memory
+budget the compile uses, and its buffer is freed when the check ends. A `.7z`'s cells are blue
+only until then, and the compile-start deep check is left for a `.7z` whose turn has not come.
+Why: the maintainer asked whether shallow checks could be kept for `.7z` and densely packed
+zips, then recalled their reason, that a packed export must be held in memory, and proposed
+deep checks after the unpacked exports, up to the memory limit. That reason holds for a solid
+`.7z`, whose first read unpacks it whole into one buffer (charged to the memory budget, as the
+compile's own check does, `spec/team_compiler/pipeline.md`). A `.zip` is never held whole: it
+is read one entry at a time from the file on disk (`reader/source.rs`), and zip has no solid
+mode, so no densely packed zip exists. The 26 real export archives on the maintainer's PC (11
+zips, 15 `.7z`, medians 1.6 and 2.1 MB) hold only deflate and stored entries, so a zip's deep
+check costs about what its folder's does. A `.7z` unpacked again at compile costs well under a
+second at that size, against holding every archive's contents while the view is open.
+Plan: `plans/team_compiler/gui.md` "Deep check (plain-folder and `.zip` exports)" and "Shallow
+check, then a deep one in its turn (`.7z` exports)"; `plans/team_compiler/pipeline.md`;
+`plans/core/README.md`'s table; TC-GUI-04.

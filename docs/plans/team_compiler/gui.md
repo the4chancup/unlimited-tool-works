@@ -119,10 +119,11 @@ would drift apart.
   marker texture (`ref_marker.dds`), when there is one, takes the logo's place in the window,
   because a referee export's logo reaches no output while the marker is the emblem the
   referees wear in game. The pictures are the files the compile packs, taken from the export's
-  listing when the check dropped the whole export, so a member still sees what it holds. An
-  archive export's boxes stay empty until the check cache (below) keeps its pictures: reading
-  one out of a solid `.7z` means decompressing it whole, which the shallow check exists to
-  avoid.
+  listing when the check dropped the whole export, so a member still sees what it holds. A
+  `.zip` export's pictures are read from the archive, each from its own entry, since a zip
+  unpacks one entry without the rest. A `.7z` export's boxes stay empty until the check cache
+  (below) keeps its pictures: reading one out of a solid `.7z` means decompressing it whole,
+  which only its deep check does, in its turn.
   - **Hover** opens it on the cell under the pointer, and leaving the cell closes it. It opens
     after 0.15 s, and then follows the pointer from cell to cell with no delay. That is
     longer than the sidebar's 0.1 s, so a pointer crossing the grid does not flash a window
@@ -200,7 +201,7 @@ whether the legend is folded or not:
   The compile, without BC7, picks DXT1 for a PNG whose pixels are all opaque (`dds_convert`'s
   codec choice), which only a full decode tells, too slow for a check. So before a compile
   such a PNG counts as DXT5, the most it can take, and after one its real size is shown. An
-  archive export, read shallowly, has no VRAM size until a compile. One set of thresholds
+  `.7z` export, read shallowly, has no VRAM size until its deep check. One set of thresholds
   serves both units, because today's exports ship DDS textures, whose VRAM size equals their
   payload on disk (the census: VRAM over disk 1.00 to 1.01 on 75 exports).
 - **Sort**, in either colouring: Folder order, Errors first (an Error, then a Warning, then
@@ -308,9 +309,11 @@ the cache below are `libs/pipeline`'s, shared with the Balls compiler's list vie
   row-label cell. Cells flip from `checking` as each scope finishes, not per export. Events
   carry the run and export revision they were computed from, and the receiver rejects results
   older than the row's current revision, so a stale check can never overwrite newer state.
-- **Deep check (plain-folder exports)**: full parse + validation of every file. Rust makes this
-  near-instant for folders. When compiling a full DLC, users normally submit plain folders, so the
-  main workflow gets full validation automatically.
+- **Deep check (plain-folder and `.zip` exports)**: full parse + validation of every file. Rust
+  makes this near-instant for folders. A `.zip` is read the same way, one entry at a time from
+  the file on disk, so it costs no more memory than a folder: a zip has no solid mode, and the
+  zipped exports on record are deflated or stored, which unpacks fast. When compiling a full DLC, users normally
+  submit plain folders, so the main workflow gets full validation automatically.
 
   **Deep means every check whose inputs exist before a compile**: the export's own files, the
   teams list, the settings and the installed CPKs the compile would read. A finding the
@@ -323,25 +326,27 @@ the cache below are `libs/pipeline`'s, shared with the Balls compiler's list vie
   a test pair keeping them in agreement). Only a finding about something the compile itself
   produces (a merged model's combined texture list, a retargeted model, a converted model over
   its limit) stays with the compile, and its catalog row says why.
-- **Shallow check (packed archives)**: archive extraction (LZMA) is the real bottleneck, not
-  CPU, so `.zip`/`.7z` exports get a shallow check only. The archive's directory listing is
-  read (file names, sizes, structure) without extraction, catching naming/nesting/file-type
-  issues in milliseconds.
+- **Shallow check, then a deep one in its turn (`.7z` exports)**: a solid `.7z` is read by
+  decompressing it whole into one buffer, so its deep check costs its whole unpacked size in
+  memory. A `.7z` therefore gets a shallow check first: its entry table alone (file names,
+  sizes, structure), read without decompressing, which catches naming, nesting and file-type
+  issues in milliseconds. Its content-dependent checks (roster syntax, config parsing) wait,
+  and the parse result records the roster as *unread* rather than missing.
 
-  Shallow checks never decompress solid data. A `.zip`'s per-entry random access lets the
-  structure pass also read small root metadata (`players.txt`, kit `config.toml`) cheaply,
-  while a solid `.7z` yields only its entry table. Its content-dependent checks (roster
-  syntax, config parsing) defer to the compile-start deep check, and the parse result records
-  the roster as *unread* rather than missing.
+  Its deep check comes once every folder and `.zip` export has been checked, one `.7z` at a
+  time, each when its unpacked size fits the memory budget the compile uses (the compile's own
+  check orders them the same way). The buffer is freed when the check ends, and the compile
+  decompresses the archive again: at a real `.7z` export's size (about 2 MB) that costs well
+  under a second, against holding every archive's contents for as long as the view is open.
 
-  **Shallow-passed cells are blue instead of purple**, indicating the export may still contain
-  issues that only a deep check would find.
-- **Compile-start deep check for archives**: compilation must materialize archive contents, so at
-  Compile their deferred deep check runs before the process-or-skip decision. ZIP entries are
-  materialized lazily as needed; solid 7z data is decompressed into an archive-owned buffer. Neither
-  format is extracted into a mutable filesystem tree. Errors missed by the shallow check surface
-  here with complete messages, so one compile round reports everything wrong with an archive instead
-  of leaking them across successive attempts.
+  **Shallow-passed cells are blue instead of purple** until the deep check replaces their
+  result, indicating the export may still contain issues that only a deep check would find.
+- **Compile-start deep check for `.7z` exports**: a `.7z` whose deep check has not run yet when
+  Compile is pressed gets it then, before the process-or-skip decision. Its solid data is
+  decompressed into an archive-owned buffer, never extracted into a mutable filesystem tree.
+  Errors missed by the shallow check surface here with complete messages, so one compile round
+  reports everything wrong with an archive instead of leaking them across successive
+  attempts.
 - **Check cache**: unchanged exports are not re-checked, so the grid can be warm on launch. A root
   `(path, size, mtime)` tuple is insufficient (it misses child-file edits). The cache identity
   is a **recursive manifest fingerprint**, a hash over the export's sorted relative paths,

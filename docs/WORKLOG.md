@@ -136,17 +136,21 @@ other items run beside it. **Ahead of item 6:** the `pes14` branch's step 12, a 
        (TC-GUI-31, 32), read off the UI thread, at most 256 texels; a box picture never
        enlarged (kept by the maintainer: every real logo is 512 or 256). Release build beside
        the draft (scene `.tmp/look_1b2/app`): kit, player and portraits boxes match; three
-       decisions went to `maintainer/ui_decisions.html`. An archive's pictures wait for the
-       watcher-and-cache slice
+       decisions went to `maintainer/ui_decisions.html`, all kept, the empty archive boxes
+       for `.7z` only. A `.7z`'s pictures wait for the watcher-and-cache slice
+     - [ ] 1b-iii: a `.zip` export's pictures read from the zip, each from its own entry
+       (TC-GUI-31's zip clause; DECISIONS 2026-11-23). Small, SWE-2, briefed once 1c-i
+       merges, since both touch `view/`
    - [ ] 1c: the toolbar's strip and its counts, the log's lines linked to cells, the log
      collapsed when it would hide rows → verify: TC-GUI-15, 26, 27. It starts with a pure
      move of `team_compiler`'s `view/mod.rs` tests (1,230 lines since 1b-ii) into
      `view/tests.rs` and `view/tests/`, committed apart (`CONTRIBUTING.md` "Placement")
    - Then the kit cells' swatch (TC-GUI-10), the row actions, the ID cell's editing, the
      watcher and cache, Sizes and sorting.
-     The watcher and cache's slice also owes TC-GUI-04's shallow archive check: 1a's check
-     reads a zip or 7z export whole, where the scenario wants nothing decompressed past its
-     root metadata.
+     The watcher and cache's slice also owes TC-GUI-04's `.7z` order: 1a's check reads a
+     `.7z` whole at once, where the scenario wants its entry table first and its deep check
+     after the folders and zips, within the memory budget (a `.zip`'s deep check, as built,
+     is right).
    - Slices of their own beside the view: 0.0.2-logo, `logo_missing`, a
      `Full` team export with no logo is an Error, and `portrait_missing`, on PES 2017 to 2021
      a player with no portrait is a Warning (`plans/aesthetics_export/object_model.md`

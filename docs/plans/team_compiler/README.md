@@ -187,14 +187,15 @@ settings menu, status bar, help) is `ST`'s (`plans/core/gui.md` "Acceptance").
 
 ```
 TC-GUI-04  GIVEN an exports folder holding a plain-folder export with players 01, 03 and kits p1,
-                 g1, and one archived (.zip) export
+                 g1, the same export as a .zip, and one as a .7z
            WHEN the view opens
            THEN each export is a row with its team label and ID cell, the plain-folder row's
                 cells at the fixed positions 01 and 03 (02 empty, no cell) and GK and K1, each
-                cell checking then full-ok, warning or error as its scope's deep check ends;
-                the archive's cells end partial-ok (blue) or partial-error with nothing
-                decompressed beyond the root metadata a shallow check reads (players.txt, a kit's
-                config.toml; a solid .7z, its entry table alone)
+                cell checking then full-ok, warning or error as its scope's deep check ends, and
+                the .zip row's cells the same; the .7z's cells are partial-ok (blue) or
+                partial-error from its entry table alone, nothing decompressed, until the folder
+                and the .zip are checked, then end as their deep check ends, the .7z's buffer
+                released after it
 TC-GUI-05  GIVEN the view open on an exports folder
            WHEN an export folder is copied in and has been quiet for the debounce period
            THEN a row for it appears and is checked; WHEN an export is deleted or renamed THEN
@@ -310,8 +311,9 @@ TC-GUI-31  GIVEN an export with a logo, a kit whose main texture is kit.dds, and
                 logo in its bottom-right one; and the text under the box starts at the same
                 height each time; GIVEN a logo smaller than the box THEN it stands at its own
                 size; GIVEN an export the check dropped whole THEN its boxes show its logo, kit
-                texture and portraits from its listing; GIVEN an archive export THEN every box
-                is empty
+                texture and portraits from its listing; GIVEN the export as a .zip THEN the
+                boxes show the same pictures, read from the zip; GIVEN it as a .7z THEN every
+                box is empty
 TC-GUI-32  GIVEN a referee export holding ref_marker.dds and a logo.png, and one holding
                  neither
            WHEN the window opens on each one's label

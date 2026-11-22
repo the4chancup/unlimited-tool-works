@@ -281,9 +281,11 @@ Resolved decisions:
 - **Check-cache identity**: recursive manifest fingerprint combined with teams-list and
   validation-settings revisions; the watcher only triggers re-fingerprinting (see "Live
   validation").
-- **Shallow archive checks never decompress solid data**: `.zip` per-entry access may read small
-  metadata; solid-`.7z` content checks defer to the compile-start deep check, with the roster
-  recorded as unread.
+- **Only a `.7z` is checked shallowly first**: a `.zip` is read one entry at a time, as a folder
+  is, and gets the deep check at once; a solid `.7z`'s shallow check reads its entry table
+  alone, with the roster recorded as unread, and its deep check runs once the other exports
+  are checked, within the memory budget (`gui.md` "Shallow check, then a deep one in its
+  turn").
 - **Model source selection**: in-representation duplicates are rejected (`model_source_ambiguous`).
 - **Source snapshot**: The GUI watcher (Phase 8) keys its stale-result envelopes on
   the same value.
