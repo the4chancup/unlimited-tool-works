@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Unlimited Tool Works: the lead's UI decisions</title>
+<link rel="stylesheet" href="maintainer.css">
+<!--
+For the lead: every choice about what a member sees that the lead made itself and the draft
+cannot show (RUNBOOK.md "Lead and sidekick", its rule "Every UI decision is seen"),
+one card each, put up when the decision is made. Vetting blocks nothing: the work goes on.
+A card leaves once the maintainer keeps it or rules a change; a change lands as any change
+does (plan, DECISIONS.md, the work), and the decision's entry stays in DECISIONS.md.
+
+A card: <section class="entry" id="a-stable-slug"> with an <h3> naming the choice, a
+<p class="from"> naming its DECISIONS.md entry and plan section, what was chosen and why, the
+chosen look beside the one passed over in <div class="shots"> (captures or rendered mocks in
+img/, ignored by git), the options Keep it and Change it, and a <textarea class="own">.
+`just doc-pointers` checks the page.
+-->
+</head>
+<body data-page="ui_decisions">
+<nav class="pages">
+  <a href="questions.html">Questions</a>
+  <a href="proposals.html">Proposals</a>
+  <a href="tasks.html">Tasks</a>
+  <a class="here" href="ui_decisions.html">UI decisions</a>
+  <span class="count" id="count"></span>
+</nav>
+
+<h1>UI decisions to check</h1>
+<p class="intro">Each card is a choice about what a member sees that the lead made where the
+plan and the draft said nothing, shown as the build draws it beside the look it passed over.
+Nothing waits on these: check them when you like. Mark Keep it, or Change it and say how in
+the box; your marks stay in this browser. When you're done, press <b>Copy my answers</b> at the
+bottom and paste the text into the chat.</p>
+<ul id="toc"></ul>
+
+<h2>The Compiler's detail window</h2>
+
+<section class="entry" id="uid-pin-under-titles">
+  <h3>A pinned cell scrolled under the title row has its pin covered</h3>
+  <p class="from">From: <code>DECISIONS.md</code> 2026-11-22 "what the top box shows, and how";
+  <code>plans/team_compiler/gui.md</code> "The detail window", "A click pins it"</p>
+  <p>When the grid is scrolled so a pinned cell sits under the title row, the title row covers
+  the cell's pin as it covers the cell. A pin on the first row is still drawn whole, although
+  it reaches 5 points above its cell. The draft draws a covered cell's pin over the titles, but
+  only because its CSS cannot clip it there.</p>
+  <p>Why: a pin drawn over the titles floats where no cell can be seen.</p>
+  <div class="shots">
+    <figure><img src="img/uid_pin_build.png" alt="The build, the pin covered"><figcaption>The
+      build: /a/ 05 pinned and scrolled under the title row</figcaption></figure>
+    <figure><img src="img/uid_pin_draft.png" alt="The draft, the pin over the titles"><figcaption>The
+      draft: the same, its pin over the titles beside "Players"</figcaption></figure>
+  </div>
+  <div class="options">
+    <label class="opt"><input type="radio" value="keep"><b>Keep it</b></label>
+    <label class="opt"><input type="radio" value="change"><b>Change it</b>
+      <div class="note">Say how below.</div></label>
+  </div>
+  <textarea class="own" placeholder="How to change it (optional)"></textarea>
+</section>
+
+<section class="entry" id="uid-archive-boxes-empty">
+  <h3>An archive export's window shows no pictures, for now</h3>
+  <p class="from">From: <code>DECISIONS.md</code> 2026-11-22 "what the top box shows, and how";
+  <code>plans/team_compiler/gui.md</code> "The detail window"</p>
+  <p>For an export packed as a <code>.zip</code> or <code>.7z</code>, the box at the top of the
+  window stays empty: no logo, no portraits, no kit texture. This lasts until the check keeps
+  a cache of what it read. The draft shows the archive's logo.</p>
+  <p>Why: reading one picture out of a <code>.7z</code> means decompressing the whole archive,
+  which the quick check of an archive is there to avoid.</p>
+  <div class="shots">
+    <figure><img src="img/uid_archive_build.png" alt="The build, an archive's empty box"><figcaption>The
+      build: /domg/'s export as a zip</figcaption></figure>
+    <figure><img src="img/uid_archive_draft.png" alt="The draft, an archive's logo"><figcaption>The
+      draft: /biz/'s export as a 7z, its logo shown</figcaption></figure>
+  </div>
+  <div class="options">
+    <label class="opt"><input type="radio" value="keep"><b>Keep it</b></label>
+    <label class="opt"><input type="radio" value="change"><b>Change it</b>
+      <div class="note">Say how below.</div></label>
+  </div>
+  <textarea class="own" placeholder="How to change it (optional)"></textarea>
+</section>
+
+<section class="entry" id="uid-dropped-export-pictures">
+  <h3>An export the check skips whole still shows its pictures</h3>
+  <p class="from">From: <code>DECISIONS.md</code> 2026-11-22 "what the top box shows, and how";
+  <code>plans/team_compiler/gui.md</code> "The detail window"</p>
+  <p>When the check skips a whole export (its team is not in the teams list, say), its cells
+  still open a window, and the box shows the logo, portraits and kit textures the export's
+  files hold. The draft's skipped sample, /egg/, has no logo, so the draft never shows this.</p>
+  <p>Why: the window of an export with a problem is the one a member most needs.</p>
+  <div class="shots">
+    <figure><img src="img/uid_dropped_build.png" alt="The build, a skipped export's logo"><figcaption>The
+      build: /smtg/, not in the teams list, with its logo</figcaption></figure>
+    <figure><img src="img/uid_dropped_draft.png" alt="The draft, a skipped export with no logo"><figcaption>The
+      draft: /egg/, whose sample has no logo</figcaption></figure>
+  </div>
+  <div class="options">
+    <label class="opt"><input type="radio" value="keep"><b>Keep it</b></label>
+    <label class="opt"><input type="radio" value="change"><b>Change it</b>
+      <div class="note">Say how below.</div></label>
+  </div>
+  <textarea class="own" placeholder="How to change it (optional)"></textarea>
+</section>
+
+<div class="picks">
+  <button id="copy">Copy my answers</button>
+  <button id="clear">Clear my answers</button>
+  <textarea id="out" readonly placeholder="Your answers appear here, ready to paste into the chat"></textarea>
+</div>
+<script src="maintainer.js"></script>
+</body>
+</html>

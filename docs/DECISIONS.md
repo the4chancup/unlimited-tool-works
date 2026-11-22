@@ -19726,3 +19726,15 @@ reached the maintainer as one sentence of a report. A decision they cannot see i
 veto.
 Plan: `RUNBOOK.md` "Lead and sidekick", beside "A brief for a change a member sees or does names
 the draft".
+
+## 2026-11-23 — conduct, UI drafts — the lead's UI decisions get a page of their own, ui_decisions.html
+Decision: a UI decision the draft cannot show goes on `docs/maintainer/ui_decisions.html` as a
+card: the decision in a sentence, why, and a capture or rendered mock of the chosen look beside
+the one passed over, with Keep it and Change it. Vetting blocks nothing: the work goes on, and a
+veto lands as any change does. A card leaves once vetted; the decision stays in DECISIONS.md.
+Why: DECISIONS.md is too long to read for a veto, and the maintainer opens it only to see who
+made a decision. The questions, proposals and tasks pages hold what waits on the maintainer, so
+cards that wait on nothing would bury them. This narrows the entry before it, which named the
+turn's report as the place to show a decision.
+Plan: `RUNBOOK.md` "Lead and sidekick", "Every UI decision is seen by the maintainer"; the
+`docs/maintainer/*.html` row of `AGENTS.md`.

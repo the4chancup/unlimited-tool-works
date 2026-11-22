@@ -774,8 +774,10 @@ built undrafted beside it. **Every UI decision is seen by the maintainer, in the
 picture.** A choice about what a member sees, made in a plan edit, a ruling on a review or a
 brief, is either shown by the draft, with a sample that reaches the case (a draft rule its
 samples never meet is not shown: CSS that only shrinks pictures, with every sample logo
-larger than the box), or shown to the maintainer in the turn's report: a rendered mock or a
-capture of the chosen look beside the one rejected, named as theirs to veto. A report line
+larger than the box), or shown on `maintainer/ui_decisions.html`: a card with a capture or
+a rendered mock of the chosen look beside the one passed over, for the maintainer to veto
+when they like. The card goes up when the decision is made; vetting blocks nothing, so the
+work goes on, and a veto lands as any change does (plan, DECISIONS, the work). A report line
 alone is not shown: slice 1b-ii's "a picture is never enlarged" reached the maintainer as a
 sentence, from a draft with no small logo to see it on. **A brief is
 sized for one review.** Past about 500 lines of new code, a diff is read but not resteered: a

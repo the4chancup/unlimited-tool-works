@@ -39,7 +39,7 @@ phase, whose sections stay in the plans until it closes although its code is bei
 A relative Markdown link to a `.md` file (`[core plan](core/README.md)`) must name a file that
 exists beside the linking one; its `#anchor` is not checked.
 
-The maintainer's pages (`docs/maintainer/*.html`: questions, proposals, tasks) are read too,
+The maintainer's pages (`docs/maintainer/*.html`: questions, proposals, tasks, ui_decisions) are read too,
 with their tags removed, so `<code>plans/x.md</code> "Section"` is a pointer like any other.
 A pointer may also name one of these pages (`` `maintainer/questions.html` "After the release" ``),
 whose places are its group and entry headings: a question that leaves its page once answered

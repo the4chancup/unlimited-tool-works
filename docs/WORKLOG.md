@@ -138,12 +138,11 @@ other items run beside it. **Ahead of item 6:** the `pes14` branch's step 12, a 
        the maintainer, 2026-11-23: every real logo is 512 or 256), one rule for the marker's
        name, citations. Gates running. An archive export's pictures wait for the
        watcher-and-cache slice: reading one out of a 7z means decompressing it whole.
-       Before the merge, the look shows the maintainer three decisions of DECISIONS
-       2026-11-22 "what the top box shows, and how" as captures of the built window beside
-       the draft, for their veto (RUNBOOK "Every UI decision is seen"): the title row
-       covering a scrolled-under pin (the draft draws it over the titles), an archive's
-       empty boxes (the draft's /biz/ shows its logo), and an export dropped whole showing
-       its listing's pictures (the draft's /egg/ has no logo to show)
+       The look (release build in `look_grid`, scene `.tmp/look_1b2/app`) also puts three
+       decisions of DECISIONS 2026-11-22 "what the top box shows, and how" on
+       `maintainer/ui_decisions.html` as captures beside the draft (RUNBOOK "Lead and
+       sidekick"; not blocking): the title row covering a scrolled-under pin, an
+       archive's empty boxes, and an export dropped whole showing its listing's pictures
    - [ ] 1c: the toolbar's strip and its counts, the log's lines linked to cells, the log
      collapsed when it would hide rows → verify: TC-GUI-15, 26, 27. It starts with a pure
      move of `team_compiler`'s `view/mod.rs` tests (1,230 lines since 1b-ii) into

@@ -22,7 +22,7 @@ One job per document. Do not let content leak between them; two homes means they
 | `docs/WORKLOG.md` | *Where we are*: current status, phase/step checklist, current-state gotchas, open issues (the lead's and the sidekick's) |
 | `docs/LOG.md` | *What happened* up to 2026-11-11, frozen: since then the dated log is `git log` |
 | `docs/DECISIONS.md` | Choices made where the plan was silent (append-only) |
-| `docs/maintainer/*.html` | The maintainer's pages, cards with choice buttons: `questions` (what only the maintainer can answer: in-game behavior, cup practice, a preference; an answer lands in the plan and `DECISIONS.md`), `proposals` (usability ideas nobody asked for, vetoed or accepted; an unruled one is not built), `tasks` (tests and looks for the maintainer, each look checked by the lead first) |
+| `docs/maintainer/*.html` | The maintainer's pages, cards with choice buttons: `questions` (what only the maintainer can answer: in-game behavior, cup practice, a preference; an answer lands in the plan and `DECISIONS.md`), `proposals` (usability ideas nobody asked for, vetoed or accepted; an unruled one is not built), `tasks` (tests and looks for the maintainer, each look checked by the lead first), `ui_decisions` (the lead's UI choices, pictured, for a veto that blocks nothing) |
 
 **Before a step:** read the worklog's current status, then the plan section the step points at,
 from the document, not from memory. **After a step:** run the step's checkpoint gates
