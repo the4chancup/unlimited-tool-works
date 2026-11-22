@@ -121,7 +121,27 @@ other items run beside it. **After the detour**, in this order:
        both catalogs, `installed_portrait_slots` `None` at every caller; 172 tests and five
        fixture archives given the logo and portraits they now need
      - [ ] The shared export builder (the open issue "Every new check on what an export must
-       hold breaks every test"), so b's tests are written on it
+       hold breaks every test"). `aesthetics_export::test_exports::missing` lists the files an
+       export lacks to be clean, one rule per requirement: some content, a `Full` export's
+       logo, a portrait per player from PES 2017. A test of one check turns its rule off with
+       `without`. In memory it runs through `TestExport` and the `report`/`resolved` wrappers,
+       on disk through a sandbox's `complete`. The real bytes come from
+       `team_compiler::test_files`, and the old Red export's rules live in
+       `export_upgrader::test_exports`. Each slice proves itself with a dummy requirement: a
+       new check alone breaks the slice's tests, and with its rule in `missing` only the
+       builder's own tests fail:
+       - [ ] 1: the builder, and `team_compiler`'s unit tests through `resolved*` and the deep
+         helpers (about 150 tests, no call site edited)
+       - [ ] 2: `aesthetics_export`'s validator tests through `report*` (about 160)
+       - [ ] 3: the Compiler's CLI tests the logo slice touched, through `complete` (about
+         155), and the CONTRIBUTING rule
+       - [ ] 4: the Compiler's other CLI tests (about 270)
+       - [ ] 5: `export_upgrader` (about 130)
+       - [ ] 6: `studio` (6)
+       - [ ] 7: the `.zip` fixtures packed when the tests run; the `.7z` ones stay stored,
+         since writing one needs `sevenz-rust2`'s `compress` feature, which the workspace
+         leaves off
+     - b waits for builder slice 3, so its tests are written on `complete`
      - [ ] b: `installed_portrait_slots` filled from the Compiler's walk over the installed
        CPKs → verify: TC-ROOT-17
    - Not urgent, a small slice of its own (SWE-2), after the view's or beside it: player
@@ -3669,7 +3689,15 @@ points there.
   `Midcup`, an old Red export) in `aesthetics_export`, behind a `test-support` feature as
   `pes_savefile`'s fixtures are. Every test starts from it and removes or breaks only what it
   tests, and the archive fixtures are packed from it when the tests run. A new check then
-  changes the builder and the tests of what it catches, not every test.
+  changes the builder and the tests of what it catches, not every test. Slices: step 6's
+  "The shared export builder".
+- open (2026-11-22) — The Compiler's test teams lists pair ids with names the bundled list
+  does not: `team_compiler/tests/common/mod.rs:18-19` and `src/testing.rs:277` hold `790 /dbg/`,
+  `792 /egg/` and `793 /esg/`, where `crates/libs/teams_list/data/teams_list.txt` holds
+  `789 /dbg/`, `790 /domg/`, `792 /END/`, `793 /feg/`, and no `/egg/` or `/esg/`; the comment at
+  `common/mod.rs:15-17` says each row is the bundled list's own. `/egg/` is the tracer's team,
+  which the bundled list lacks, so its row stays and the comment says why; the others take
+  their real ids (the test-data rule). Small, SWE-2, beside the builder's slice 3.
 
 - resolved (2026-11-21) — The maintainer's PES 2021 save opens with an empty team list. The
   release build at `1b9c5f27`, File > PES 2021, opened
