@@ -19598,3 +19598,16 @@ Compiler's own IDs, with one Warning a member clears by deleting the file.
 Plan: `plans/core/development_plan.md` the `quick_upgrade.bat` bullet; `RUNBOOK.md` "The VGL
 organizer's build"; the plan and spec sections describing legacy mode are removed with the
 code.
+
+## 2026-11-22 — aesthetics_export — a `Portraits/` file whose name maps to a slot counts as his portrait, even when it is no valid member
+Decision: `portrait_missing` is not reported for a slot that a `Portraits/` file's name maps
+to, even when that file is no texture directly in `Portraits/` (`Portraits/05.psd`,
+`Portraits/Portraits/05.dds`) and is `portrait_name_invalid`.
+Why: the plan already counted a file mapping to the slot as his portrait "whatever a later
+check finds in it", and the Compiler's grid counts such a file as his portrait. Reporting
+`portrait_missing` beside it would put two findings on one misplaced file, and a cell count
+saying he has a portrait beside a finding saying he has none. The file's own
+`portrait_name_invalid` already tells the member what to fix. A name that maps to no slot
+(`player_04.dds`) is still no one's portrait, and its player is still reported.
+Plan: `plans/aesthetics_export/object_model.md` "Validation semantics", the paragraph "A file
+that maps to the slot".

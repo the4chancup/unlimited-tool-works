@@ -53,7 +53,10 @@ one for each of its players. The Export upgrader makes no walk, so its `Midcup` 
 report none.
 
 A file that maps to the slot counts as his portrait whatever a later check finds in it, since
-that check's own finding names the file. A `Portraits/` file whose name maps to no slot
+that check's own finding names the file. So does a `Portraits/` file whose name maps to the
+slot but that is no texture directly in `Portraits/` (`Portraits/05.psd`,
+`Portraits/Portraits/05.dds`): its `portrait_name_invalid` names it, and the Compiler's grid
+counts it as his portrait too. A `Portraits/` file whose name maps to no slot
 (`portrait_name_invalid`) is no one's portrait, so its player is reported too, which tells the
 member whose portrait the misnamed file was meant to be.
 
