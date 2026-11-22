@@ -19997,3 +19997,13 @@ them. The maintainer described the new keys as optional, required only when impo
 PES 2014 save. They are optional on every import instead: every Team TOML key already leaves
 the save's value when absent, and a document exported from a PES 2014 save always carries them.
 Plan: `plans/pes14.md` "PES 2014 in the code", the bullet "Team TOML on PES 2014"; step 12.
+
+## 2026-11-22 — save_editor (pes14 branch) — A PES 2014 team file is named `.pes14.toml`
+
+Decision: the maintainer ruled that a Team TOML exported from a PES 2014 save is named
+`<team name>.pes14.toml`, and `<team id>.pes14.toml` when the command line's `--out-dir`
+writes one per team.
+Why: only another PES 2014 save takes such a file, so its name tells it from the other
+versions' `.toml` before anyone tries to import it elsewhere.
+Plan: `plans/pes14.md` "PES 2014 in the code", the bullet "Team TOML on PES 2014"; step 12,
+slice e.

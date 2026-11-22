@@ -791,6 +791,9 @@ button would stay on every PES 2014 save, its tooltip saying the folder holds no
   - A PES 2014 document imports only into a PES 2014 save, and a PES 2014 save takes only a
     PES 2014 document; the refusal names both versions. The conversion between versions has
     no map for these fields, and both saves the organizer uses are PES 2014.
+  - A PES 2014 team file is named `<team name>.pes14.toml`, and `<team id>.pes14.toml` when
+    the command line's `--out-dir` writes one per team: a file only another PES 2014 save
+    takes is told from the other versions' `.toml` by its name.
   - The greyed menu items and the command line's refusals for Team TOML go. Patches, diff, the
     teams-list export and Texport stay refused.
 - **Gloves 262143 is no gloves model.** A record the game creates on an in-game edit holds
@@ -980,4 +983,4 @@ player, who uses only the Save editor.
     - b: Tenacity and the Punt Kick motion;
     - c: each preset's Strategy and sliders, and Combination Play;
     - d: the appearance record;
-    - e: the Save editor's and the command line's refusals lifted.
+    - e: the Save editor's and the command line's refusals lifted, and the `.pes14.toml` name.
