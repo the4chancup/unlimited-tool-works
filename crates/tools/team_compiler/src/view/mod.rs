@@ -111,11 +111,13 @@ mod tests {
     use crossbeam_channel::unbounded;
     use egui::accesskit;
     use export_grid::{Cell, IdCell, Position, RowBody};
+    use pes_version::PesVersion;
     use studio_core::StudioTool;
 
     use super::*;
     use crate::Tool;
     use crate::check::live::LiveCheck;
+    use crate::test_files::complete;
     use crate::testing::{copy_tree, install_pes, poll_until_done, sandbox, tool_context};
 
     /// A headless window: one egui context with AccessKit on and animations off (so a
@@ -574,6 +576,7 @@ mod tests {
         add_file(root, "co Midcup Map/Players/03 - B/notes.exe", b"");
         add_file(root, "co Midcup Map/Players/07 - C/fpc_on", b"");
         add_file(root, "co Midcup Map/Players/07 - C/fpc_off", b"");
+        complete(&root.join("exports/co Midcup Map"), PesVersion::Pes21, &[]);
         let rows = checked_rows(root);
         let team = row(&rows, "/co/");
         assert_eq!(codes(player(team, 3).unwrap()), ["file_type_disallowed"]);

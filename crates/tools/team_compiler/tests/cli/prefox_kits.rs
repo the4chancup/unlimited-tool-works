@@ -7,21 +7,22 @@ use std::fs;
 use std::path::Path;
 
 use dds_convert::{SourceFormat, decode};
+use pes_version::PesVersion::Pes17;
 
 use crate::common::Sandbox;
 use crate::compile::{cpk_entries, kit_texture, pes21_settings, tracer_export, tracer_kit};
 use crate::compile_exports::{
     TEAM_COLOR, UNI_COLOR, bundled_team_color, bundled_uni_color, config_path,
 };
+use crate::findings_of;
 use crate::kit_layout::{
-    PRE_FOX_BANDS, PRE_FOX_ISLANDS, STRIPES_FINDINGS, STRIPES_PRE_FOX_FINDINGS,
+    LAYOUT, PRE_FOX_BANDS, PRE_FOX_ISLANDS, STRIPES_FINDINGS, STRIPES_PRE_FOX_FINDINGS,
     assert_moved_inside_bands_only, bc1_dds, compiled_entries, compiled_pre_fox_top_level,
     stripe_centre, stripes, stripes_dds, stripes_dds_at_fox, write_stripes_export,
 };
 use crate::prefox_faces::{
     CLEAN, card_materials, card_model, compile_pes17, materials_naming, pes17, small_dds,
 };
-use crate::{findings_of, write_logo};
 
 /// The CPK path of the pre-Fox kit texture `name` (`u0714p1`, `u0714p1_mask`).
 fn pre_fox_kit_texture(name: &str) -> String {
@@ -53,7 +54,7 @@ pub(crate) fn write_kit(sandbox: &Sandbox, export: &str, slot: &str) {
 fn a_pes_17_kit_without_a_mask_gets_the_bundled_template_as_it_is() {
     let sandbox = Sandbox::new("prefox_kit_mask_template");
     write_kit(&sandbox, "co Full Mask", "p1");
-    write_logo(&sandbox, "exports/co Full Mask");
+    sandbox.complete_for("exports/co Full Mask", Pes17, &[]);
 
     // The export's identity and its missing root colors, the generated and placeholder g1
     // a `Full` export plans, and p1's colors taken from its texture (no `colors.txt`):
@@ -84,6 +85,7 @@ fn pes_17_kit_configs_are_loose_files_and_no_uniform_parameter_bin_is_written() 
     let sandbox = Sandbox::new("prefox_kit_configs");
     write_kit(&sandbox, "co Midcup Configs", "p1");
     write_kit(&sandbox, "co Midcup Configs", "g1");
+    sandbox.complete_for("exports/co Midcup Configs", Pes17, &[]);
 
     let entries = compile_pes17(&sandbox, "co Midcup Configs", &[CLEAN[0], CLEAN[1]]);
 
@@ -109,6 +111,7 @@ fn the_mask_is_emitted_on_pes_17_and_the_srm_on_pes_21_each_dropping_the_other()
     let srm = bc1_dds(64, 64, |_, _| [0, 0, 255, 255]);
     sandbox.write(&format!("{folder}/kit_mask.dds"), &mask);
     sandbox.write(&format!("{folder}/kit_srm.dds"), &srm);
+    sandbox.complete_for("exports/co Midcup Maps", Pes17, &[]);
     let not_used =
         |file: &str| format!("Info kit_texture_not_used [DropFile] at Kits/p1 (file={file})");
 
@@ -162,6 +165,9 @@ fn a_pes_17_kit_marked_pre_fox_is_as_unmarked_and_one_marked_fox_is_re_laid() {
     write_stripes_export(&pre_fox, Some("pre-fox"));
     let fox = Sandbox::new("prefox_kit_layout_fox");
     write_stripes_export(&fox, Some("fox"));
+    for sandbox in [&unmarked, &pre_fox, &fox] {
+        sandbox.complete_for(LAYOUT, Pes17, &[]);
+    }
 
     for sandbox in [&unmarked, &pre_fox] {
         compile_pes17(sandbox, "co Midcup Layout", &STRIPES_PRE_FOX_FINDINGS);
@@ -187,6 +193,7 @@ fn a_pes_17_kit_marked_pre_fox_is_as_unmarked_and_one_marked_fox_is_re_laid() {
         &stripes_dds_at_fox(),
     );
     drawn_for_fox.write("exports/co Midcup Layout/Kits/p1/fox", b"");
+    drawn_for_fox.complete_for(LAYOUT, Pes17, &[]);
     compile_pes17(&drawn_for_fox, "co Midcup Layout", &converted);
     let (relaid, _, _) = compiled_pre_fox_top_level(&drawn_for_fox, "u0714p1");
     for stripe in stripes() {
@@ -214,6 +221,7 @@ fn a_pes_17_kit_marked_fox_has_its_mask_re_laid_with_it() {
             "exports/co Midcup Layout/Kits/p1/kit_mask.dds",
             &stripes_dds(),
         );
+        sandbox.complete_for(LAYOUT, Pes17, &[]);
     };
     let unmarked = Sandbox::new("prefox_kit_mask_layout_unmarked");
     write(&unmarked, None);
@@ -255,7 +263,7 @@ fn a_pes_17_placeholder_kit_marked_fox_has_only_its_own_mask_re_laid() {
         if let Some(marker) = marker {
             sandbox.write(&format!("{folder}/{marker}"), b"");
         }
-        write_logo(sandbox, "exports/co Full Layout");
+        sandbox.complete_for("exports/co Full Layout", Pes17, &[]);
     };
     let unmarked = Sandbox::new("prefox_placeholder_mask_unmarked");
     write(&unmarked, None);
@@ -319,6 +327,7 @@ fn a_pes_17_compile_writes_both_color_bins_and_no_fox_bin() {
     sandbox.write(&format!("{crocs}/boots.model"), &card_model());
     sandbox.write(&format!("{crocs}/boots.mtl"), &materials_naming("crocs"));
     sandbox.write(&format!("{crocs}/crocs.dds"), &small_dds());
+    sandbox.complete_for(&format!("exports/{export}"), Pes17, &[]);
 
     let run = sandbox.run(&pes17(&sandbox), &["compile", "--no-deploy"]);
 

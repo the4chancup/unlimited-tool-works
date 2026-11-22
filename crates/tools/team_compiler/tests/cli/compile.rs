@@ -6,9 +6,7 @@ use std::path::{Path, PathBuf};
 
 use crate::common::{Run, Sandbox};
 use crate::models::package_names;
-use crate::{
-    CLEAN_PLAYER, bundled_bins_then, clean_model, findings_of, patch_written, snapshot, write_logo,
-};
+use crate::{CLEAN_PLAYER, bundled_bins_then, clean_model, findings_of, patch_written, snapshot};
 
 impl Sandbox {
     /// Copies every file under `source` into `<folder>`, leaving `source` untouched.
@@ -100,11 +98,18 @@ fn compile_no_deploy_writes_the_cpk_to_the_output_folder_and_leaves_pes_alone() 
     let sandbox = Sandbox::new("no_deploy");
     sandbox.write("PES/download/4cc_99_test.cpk", b"the installed CPK");
     sandbox.write("PES/PES2021.exe", b"the game");
+    sandbox.copy_tracer("egg Midcup Tracer");
+    sandbox.complete("exports/egg Midcup Tracer");
     let pes_before = snapshot(&sandbox.root.join("PES"));
 
     let run = sandbox.run(
         &pes21_settings(&sandbox),
-        &["compile", "--no-deploy", "--export", &tracer_export()],
+        &[
+            "compile",
+            "--no-deploy",
+            "--export",
+            &sandbox.arg("exports/egg Midcup Tracer"),
+        ],
     );
 
     assert_eq!(run.exit_code(), 0);
@@ -187,6 +192,7 @@ fn a_failed_cpk_write_discards_the_staging_and_leaves_the_previous_cpk() {
         &format!("exports/co Midcup A/{CLEAN_PLAYER}"),
         &clean_model(),
     );
+    sandbox.complete("exports/co Midcup A");
     let before = snapshot(&sandbox.root.join("output"));
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
@@ -255,6 +261,7 @@ fn a_previous_cpk_held_open_without_delete_sharing_fails_the_commit_and_is_kept(
     let sandbox = Sandbox::new("output_commit_held_open");
     sandbox.write("output/4cc_99_test.cpk", b"the previous CPK");
     sandbox.copy_tracer("egg Midcup Tracer");
+    sandbox.complete("exports/egg Midcup Tracer");
     let before = snapshot(&sandbox.root.join("output"));
     let held_open = fs::OpenOptions::new()
         .read(true)
@@ -274,6 +281,7 @@ fn a_previous_cpk_that_is_a_folder_fails_the_commit_and_is_kept() {
     let sandbox = Sandbox::new("output_commit_folder");
     sandbox.write("output/4cc_99_test.cpk/kept.txt", b"not a CPK");
     sandbox.copy_tracer("egg Midcup Tracer");
+    sandbox.complete("exports/egg Midcup Tracer");
     let before = snapshot(&sandbox.root.join("output"));
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
@@ -353,6 +361,7 @@ fn a_gloves_subfolder_s_model_naming_no_part_is_face_content_and_no_gloves_packa
     for model in ["face_high.fmdl", "gloves/keeper.fmdl"] {
         sandbox.write(&format!("{player}/{model}"), &clean_model());
     }
+    sandbox.complete("exports/co Midcup Keeper");
     // The subfolder's name forces nothing: a model named for no part is the hair's.
     let fallback = "Info fmdl_fcl_hair_fallback [Keep] at Players/05 - A (file=gloves/keeper.fmdl)";
 
@@ -452,7 +461,9 @@ fn an_export_of_an_unknown_team_is_skipped_and_the_one_beside_it_compiled() {
         &format!("exports/zz Midcup Spring/{CLEAN_PLAYER}"),
         &clean_model(),
     );
+    sandbox.complete("exports/zz Midcup Spring");
     sandbox.copy_tracer("egg Midcup Tracer");
+    sandbox.complete("exports/egg Midcup Tracer");
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -472,6 +483,7 @@ fn an_export_without_its_coverage_tag_is_skipped_and_the_one_beside_it_compiled(
     let sandbox = Sandbox::new("tag_missing");
     for name in ["co Spring 2026", "a Midcup Spring 2026"] {
         sandbox.write(&format!("exports/{name}/{CLEAN_PLAYER}"), &clean_model());
+        sandbox.complete(&format!("exports/{name}"));
     }
     let tag_missing = ["Error export_tag_missing [DropExport] (name=co Spring 2026)"];
 
@@ -511,6 +523,7 @@ fn an_old_layout_export_is_export_layout_old_alone_and_skipped() {
         &format!("exports/a Midcup Spring 2026/{CLEAN_PLAYER}"),
         &clean_model(),
     );
+    sandbox.complete("exports/a Midcup Spring 2026");
     let layout_old = ["Error export_layout_old [DropExport] (folder=Kit Configs)"];
 
     let check = sandbox.run(&pes21_settings(&sandbox), &["check"]);
@@ -544,13 +557,8 @@ fn only_the_second_word_is_the_coverage_tag_in_any_letter_case() {
     let sandbox = Sandbox::new("tag_case");
     for name in ["co midcup day 5", "a FULL v2", "b Spring Full"] {
         sandbox.write(&format!("exports/{name}/{CLEAN_PLAYER}"), &clean_model());
+        sandbox.complete(&format!("exports/{name}"));
     }
-    // `a FULL v2` is a `Full` export: its logo and its player's portrait.
-    write_logo(&sandbox, "exports/a FULL v2");
-    sandbox.write(
-        "exports/a FULL v2/Players/03 - A/portrait.dds",
-        &tracer_portrait(),
-    );
 
     let run = sandbox.run("", &["check"]);
 
@@ -602,11 +610,13 @@ fn compile_creates_a_missing_teams_list_and_check_does_not() {
     );
 }
 
-/// `exports/co Midcup Links`: player 03 compiles, player 07 links boots the export does not hold.
+/// `exports/co Midcup Links`, completed: player 03 compiles, player 07 links boots the export
+/// does not hold.
 fn links_export(sandbox: &Sandbox) {
     sandbox.copy_tracer_face("exports/co Midcup Links/Players/03 - A");
     sandbox.copy_tracer_face("exports/co Midcup Links/Players/07 - B");
     sandbox.write("exports/co Midcup Links/Players/07 - B/Crocs.boots", b"");
+    sandbox.complete("exports/co Midcup Links");
 }
 
 // TC-DSP-01
@@ -842,6 +852,7 @@ fn pass_through_keeps_no_finding_whose_drop_it_cannot_keep() {
     for case in DROP_CASES {
         let sandbox = Sandbox::new(&format!("dsp_{}", case.name));
         (case.setup)(&sandbox);
+        sandbox.complete(CASE);
 
         let run = sandbox.run(
             &pass_through_settings(&sandbox),
@@ -875,8 +886,11 @@ fn an_export_skipped_by_its_roster_leaves_the_export_beside_it_as_compiled_alone
     beside.copy_tracer_face("exports/co Midcup Dup/Players/A");
     beside.copy_tracer_face("exports/co Midcup Dup/Players/B");
     beside.copy_tracer("egg Midcup Tracer");
+    beside.complete("exports/co Midcup Dup");
+    beside.complete("exports/egg Midcup Tracer");
     let alone = Sandbox::new("dsp_tracer_alone");
     alone.copy_tracer("egg Midcup Tracer");
+    alone.complete("exports/egg Midcup Tracer");
 
     let run = beside.run(&pes21_settings(&beside), &["compile", "--no-deploy"]);
     assert_eq!(
@@ -904,6 +918,7 @@ fn a_compile_reports_progress_per_task_and_ends_with_one_complete_holding_the_co
 
     let sandbox = Sandbox::new("progress_events");
     sandbox.copy_tracer("egg Midcup Tracer");
+    sandbox.complete("exports/egg Midcup Tracer");
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 

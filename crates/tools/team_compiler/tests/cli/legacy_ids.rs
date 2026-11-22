@@ -7,24 +7,22 @@
 
 use std::fs;
 
+use crate::clean_model;
 use crate::common::Sandbox;
-use crate::compile::{cpk_entries, pes21_settings, tracer_portrait};
+use crate::compile::{cpk_entries, pes21_settings};
 use crate::patch::read_patch;
-use crate::{clean_model, write_logo};
 
 /// TC-LEG-01's `legacy_ids.toml`: slot 05's boots under 2305, slots 06 and 07's gloves
 /// under 2310.
 const LEGACY_IDS: &[u8] = b"# The old export's boots and gloves IDs, which the Compiler packs instead of its own (VGL27).\n[05]\nboots = 2305\n[06]\ngloves = 2310\n[07]\ngloves = 2310\n";
 
 /// The sandbox's `/gbfg/` export `gbfg Full Legacy` (team 796, its Studio block 3901 to
-/// 3940), with its logo and each player's portrait: slot 05 holds boots, slots 06 and 07 the
-/// same gloves model byte for byte, slot 08 boots; with `ids` as its root `legacy_ids.toml`
-/// when given.
+/// 3940), completed: slot 05 holds boots, slots 06 and 07 the same gloves model byte for byte,
+/// slot 08 boots; with `ids` as its root `legacy_ids.toml` when given.
 fn legacy_export(sandbox: &Sandbox, ids: Option<&[u8]>) -> &'static str {
     // The sandbox's default teams list does not hold /gbfg/.
     sandbox.write("data/teams_list.txt", b"ID\tName\n796\t/gbfg/\n");
     let export = "exports/gbfg Full Legacy";
-    write_logo(sandbox, export);
     for (folder, model) in [
         ("05 - A", "boots"),
         ("06 - B", "glove_l"),
@@ -35,14 +33,11 @@ fn legacy_export(sandbox: &Sandbox, ids: Option<&[u8]>) -> &'static str {
             &format!("{export}/Players/{folder}/{model}.fmdl"),
             &clean_model(),
         );
-        sandbox.write(
-            &format!("{export}/Players/{folder}/portrait.dds"),
-            &tracer_portrait(),
-        );
     }
     if let Some(ids) = ids {
         sandbox.write(&format!("{export}/legacy_ids.toml"), ids);
     }
+    sandbox.complete(export);
     export
 }
 
@@ -152,7 +147,6 @@ fn a_legacy_ids_toml_that_does_not_parse_is_an_error_and_the_export_compiles_on_
 #[test]
 fn a_legacy_export_packs_a_kept_shared_folder_under_its_wearers_old_id() {
     let sandbox = Sandbox::new("leg_ids_shared");
-    write_logo(&sandbox, "exports/gbfg Full Legacy");
     // The sandbox's default teams list does not hold /gbfg/.
     sandbox.write("data/teams_list.txt", b"ID\tName\n796\t/gbfg/\n");
     let export = "exports/gbfg Full Legacy";
@@ -170,6 +164,7 @@ fn a_legacy_export_packs_a_kept_shared_folder_under_its_wearers_old_id() {
         &format!("{export}/legacy_ids.toml"),
         b"[05]\nboots = 2305\n[06]\ngloves = 2310\n[08]\nboots = 2305\n",
     );
+    sandbox.complete(export);
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 

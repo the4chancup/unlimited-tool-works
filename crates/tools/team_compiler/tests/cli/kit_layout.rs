@@ -11,10 +11,11 @@ use std::ops::Range;
 use std::path::Path;
 
 use dds_convert::{BlockCodec, SourceFormat, decode, encode_dds};
+use pes_version::PesVersion;
 
 use crate::common::Sandbox;
 use crate::compile::{cpk_entries, kit_texture, pes_settings, pes21_settings, tracer_kit};
-use crate::{findings_of, write_logo};
+use crate::findings_of;
 
 /// The bytes of `tests/fixtures/kit_layout/<name>`.
 fn kit_layout_fixture(name: &str) -> Vec<u8> {
@@ -208,6 +209,10 @@ pub(crate) fn stripe_centre(
     (count > 0).then(|| sum / f64::from(count))
 }
 
+/// `write_stripes_export`'s export folder, which its tests complete once they wrote their
+/// own files into it.
+pub(crate) const LAYOUT: &str = "exports/co Midcup Layout";
+
 /// Writes `exports/co Midcup Layout` holding `p1/kit.dds`, the stripes, plus the empty file
 /// `p1/<marker>` when `marker` names one.
 pub(crate) fn write_stripes_export(sandbox: &Sandbox, marker: Option<&str>) {
@@ -238,8 +243,10 @@ pub(crate) const STRIPES_PRE_FOX_FINDINGS: [&str; 3] = [
 fn a_kit_marked_pre_fox_compiled_for_pes_21_has_its_socks_where_the_fox_models_read_them() {
     let marked = Sandbox::new("kit_layout_pre_fox");
     write_stripes_export(&marked, Some("pre-fox"));
+    marked.complete(LAYOUT);
     let unmarked = Sandbox::new("kit_layout_pre_fox_unmarked");
     write_stripes_export(&unmarked, None);
+    unmarked.complete(LAYOUT);
 
     let marked_run = marked.run(&pes21_settings(&marked), &["compile", "--no-deploy"]);
     let unmarked_run = unmarked.run(&pes21_settings(&unmarked), &["compile", "--no-deploy"]);
@@ -295,7 +302,7 @@ fn a_placeholder_kit_marked_pre_fox_compiles_as_without_the_marker() {
             sandbox.write("exports/co Full Layout/Kits/p3/pre-fox", b"");
         }
         sandbox.write("exports/co Full Layout/Kits/all/fox", b"");
-        write_logo(sandbox, "exports/co Full Layout");
+        sandbox.complete("exports/co Full Layout");
     };
     let marked = Sandbox::new("kit_layout_placeholder");
     write(&marked, true);
@@ -336,8 +343,10 @@ fn a_placeholder_kit_marked_pre_fox_compiles_as_without_the_marker() {
 fn a_kit_marked_fox_compiled_for_pes_21_is_as_without_the_marker() {
     let marked = Sandbox::new("kit_layout_fox");
     write_stripes_export(&marked, Some("fox"));
+    marked.complete(LAYOUT);
     let unmarked = Sandbox::new("kit_layout_fox_unmarked");
     write_stripes_export(&unmarked, None);
+    unmarked.complete(LAYOUT);
 
     let marked_run = marked.run(&pes21_settings(&marked), &["compile", "--no-deploy"]);
     let unmarked_run = unmarked.run(&pes21_settings(&unmarked), &["compile", "--no-deploy"]);
@@ -360,6 +369,7 @@ fn a_kit_srm_marked_pre_fox_compiled_for_pes_21_is_re_laid_with_its_kit() {
             "exports/co Midcup Layout/Kits/p1/kit_srm.dds",
             &stripes_dds(),
         );
+        sandbox.complete(LAYOUT);
     };
     let marked = Sandbox::new("kit_layout_srm_pre_fox");
     write(&marked, Some("pre-fox"));
@@ -447,6 +457,7 @@ fn a_column_number_atlas_compiled_for_pes_21_becomes_a_row_and_a_row_stays_as_gi
         sandbox.write(&format!("{folder}/kit.dds"), &tracer_kit());
         sandbox.write(&format!("{folder}/kit_back.dds"), back);
     }
+    sandbox.complete("exports/co Midcup Numbers");
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -497,6 +508,7 @@ fn a_row_number_atlas_compiled_for_pes_17_becomes_a_column_and_a_column_stays_as
         sandbox.write(&format!("{folder}/kit.dds"), &tracer_kit());
         sandbox.write(&format!("{folder}/kit_back.dds"), back);
     }
+    sandbox.complete_for("exports/co Midcup Numbers", PesVersion::Pes17, &[]);
 
     let run = sandbox.run(&pes_settings(&sandbox, 17), &["compile", "--no-deploy"]);
 

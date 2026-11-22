@@ -13,9 +13,7 @@ use uniparam::UniformParameter;
 
 use crate::collars::pre_fox_model;
 use crate::common::Sandbox;
-use crate::compile::{
-    cpk_entries, pes_settings, pes21_settings, tracer_kit, tracer_player_file, tracer_portrait,
-};
+use crate::compile::{cpk_entries, pes_settings, pes21_settings, tracer_kit, tracer_player_file};
 use crate::compile_exports::{
     TEAM_COLOR, UNI_COLOR, UNIFORM_PARAMETER, bundled_team_color, bundled_uni_color,
     bundled_uniform_parameter, config_path, record_of, uni_record, with_uni_record,
@@ -23,9 +21,7 @@ use crate::compile_exports::{
 use crate::models::conflicting_boots;
 use crate::patch::read_patch;
 use crate::prefox_faces::write_slot_05_face;
-use crate::{
-    BUNDLED_BINS, clean_model, deploy_skipped, no_deploy_lines, patch_written, write_logo,
-};
+use crate::{BUNDLED_BINS, clean_model, deploy_skipped, no_deploy_lines, patch_written};
 
 /// Team `/co/`, whose `UniColor.bin` record the tests set.
 const CO: usize = 714;
@@ -38,6 +34,9 @@ const B: [u8; 8] = [0x00, 0x03, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff];
 
 /// The entry `p2_export`'s kit compiles to: kit 1, icon 3, the two colors of its `colors.txt`.
 const P2: [u8; 8] = [0x01, 0x03, 0x0a, 0x1b, 0x2c, 0xd4, 0xe5, 0xf6];
+
+/// `p2_export`'s export folder, which a test completes once it wrote its own files into it.
+const KITS: &str = "exports/co Midcup Kits";
 
 /// The export every test compiles: a Midcup `/co/` export with only `p2/`, its kit texture and
 /// a `colors.txt` giving two colors, and no root `colors.txt`.
@@ -143,6 +142,7 @@ fn each_bin_comes_from_the_nearest_cpk_listed_below_the_run_s_own() {
     let sandbox = Sandbox::new("bins_walk");
     install_two_cpks(&sandbox);
     p2_export(&sandbox);
+    sandbox.complete(KITS);
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -211,6 +211,7 @@ fn the_installed_refs_cpk_is_passed_over_when_the_run_holds_a_refs_export() {
         &[(TEAM_COLOR, &refs_team_color)],
     );
     p2_export(&sandbox);
+    sandbox.complete(KITS);
     let bins_sources = |team_color_cpk: &str| {
         vec![
             source("TeamColor.bin", team_color_cpk),
@@ -232,6 +233,7 @@ fn the_installed_refs_cpk_is_passed_over_when_the_run_holds_a_refs_export() {
         "exports/refs Cup/Players/Keeper/face_high.fmdl",
         &clean_model(),
     );
+    sandbox.complete("exports/refs Cup");
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -253,6 +255,7 @@ fn the_walk_reads_the_pes_folder_with_its_version_placeholder_expanded() {
     );
     fs::rename(sandbox.root.join("PES"), sandbox.root.join("PES2021")).unwrap();
     p2_export(&sandbox);
+    sandbox.complete(KITS);
     let settings = format!(
         "[common]\npes_version = 21\npes_folder_path = '{}'\n",
         sandbox.root.join("PES20**").display()
@@ -279,6 +282,7 @@ fn a_wesys_wrapped_installed_bin_is_read_unwrapped_and_written_plain() {
     let wrapped = wezlib::compress(&uni_color_with_kit_0(A));
     install_cpk(&sandbox, "4cc_08_bins.cpk", &[(UNI_COLOR, &wrapped)]);
     p2_export(&sandbox);
+    sandbox.complete(KITS);
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -302,6 +306,7 @@ fn a_wesys_wrapped_installed_bin_is_read_unwrapped_and_written_plain() {
 fn with_no_dpfilelist_the_bins_are_bundled_and_the_list_s_absence_reported() {
     let alone = Sandbox::new("bins_no_pes");
     p2_export(&alone);
+    alone.complete(KITS);
     let run = alone.run(&pes21_settings(&alone), &["compile", "--no-deploy"]);
     assert_eq!(run.exit_code(), 0, "{:#?}", run.messages());
     let bundled = cpk_entries(&alone.root.join("output/4cc_99_test.cpk"));
@@ -311,6 +316,7 @@ fn with_no_dpfilelist_the_bins_are_bundled_and_the_list_s_absence_reported() {
     // The run's exe, so the deploying run's only finding about the install is the list's.
     sandbox.write("PES/PES2021.exe", b"the game");
     p2_export(&sandbox);
+    sandbox.complete(KITS);
     let list = sandbox.display("PES/download/DpFileList.bin");
     let bundled_sources = [
         source("TeamColor.bin", "bundled"),
@@ -350,6 +356,7 @@ fn test_and_sideload_modes_without_a_dpfilelist_warn_and_build_on_the_bundled_bi
     fs::create_dir_all(sandbox.root.join("PES/download")).unwrap();
     sandbox.write("PES/PES2021.exe", b"the game");
     p2_export(&sandbox);
+    sandbox.complete(KITS);
     let list = sandbox.display("PES/download/DpFileList.bin");
     // Neither mode deploys a CPK, so the list's absence is a Warning in both, and neither
     // ends with a deployment note.
@@ -379,6 +386,7 @@ fn an_installed_team_color_record_whose_header_holds_colors_gets_its_header_back
     installed[record..record + 4].copy_from_slice(&[0xaa, 0xbb, 0xcc, 0xdd]);
     install_cpk(&sandbox, "4cc_08_bins.cpk", &[(TEAM_COLOR, &installed)]);
     p2_export(&sandbox);
+    sandbox.complete(KITS);
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -539,6 +547,7 @@ fn a_midcup_fpc_on_export_patches_the_installed_configs_of_the_kits_it_does_not_
         &clean_model(),
     );
     sandbox.write("exports/co Midcup Kits/Players/05 - A/fpc_on", b"");
+    sandbox.complete(KITS);
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -604,6 +613,7 @@ fn a_midcup_export_s_collar_reports_the_kit_it_does_not_hold_that_has_no_config_
         "exports/co Midcup Kits/Collars/collar_12.fmdl",
         &clean_model(),
     );
+    sandbox.complete(KITS);
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -661,6 +671,7 @@ fn a_midcup_kit_without_config_or_an_installed_one_gets_the_template() {
     );
     // p4: a `kit.dds` alone; the install holds no p4 config.
     sandbox.write("exports/co Midcup Kits/Kits/p4/kit.dds", &tracer_kit());
+    sandbox.complete(KITS);
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -748,6 +759,7 @@ fn a_midcup_fpc_on_pes_17_export_re_emits_the_loose_configs_of_the_kits_it_does_
     install_pre_fox_p1(&sandbox);
     p2_export(&sandbox);
     write_fpc_player(&sandbox, "co Midcup Kits");
+    sandbox.complete_for(KITS, PesVersion::Pes17, &[]);
 
     let run = sandbox.run(&pes_settings(&sandbox, 17), &["compile", "--no-deploy"]);
 
@@ -806,6 +818,7 @@ fn an_installed_loose_config_re_encoded_for_the_fpc_values_reports_the_value_it_
     install_pre_fox(&sandbox, &installed);
     p2_export(&sandbox);
     write_fpc_player(&sandbox, "co Midcup Kits");
+    sandbox.complete_for(KITS, PesVersion::Pes17, &[]);
 
     let run = sandbox.run(&pes_settings(&sandbox, 17), &["compile", "--no-deploy"]);
 
@@ -837,6 +850,7 @@ fn a_midcup_pes_17_export_s_collar_reaches_the_loose_configs_of_the_kits_it_does
         "exports/co Midcup Kits/Collars/collar_12.model",
         &pre_fox_model(),
     );
+    sandbox.complete_for(KITS, PesVersion::Pes17, &[]);
 
     let run = sandbox.run(&pes_settings(&sandbox, 17), &["compile", "--no-deploy"]);
 
@@ -868,10 +882,10 @@ fn a_midcup_pes_17_export_s_collar_reaches_the_loose_configs_of_the_kits_it_does
 #[test]
 fn a_full_pes_17_export_re_emits_no_installed_loose_config() {
     let sandbox = Sandbox::new("bins_full_loose_configs");
-    write_logo(&sandbox, "exports/co Full Kits");
     install_pre_fox_p1(&sandbox);
     sandbox.write("exports/co Full Kits/Kits/p2/kit.dds", &tracer_kit());
     write_fpc_player(&sandbox, "co Full Kits");
+    sandbox.complete_for("exports/co Full Kits", PesVersion::Pes17, &[]);
 
     let run = sandbox.run(&pes_settings(&sandbox, 17), &["compile", "--no-deploy"]);
 
@@ -902,6 +916,7 @@ fn the_nearest_cpk_s_loose_config_is_the_one_an_absent_slot_s_edit_starts_from()
     );
     p2_export(&sandbox);
     write_fpc_player(&sandbox, "co Midcup Kits");
+    sandbox.complete_for(KITS, PesVersion::Pes17, &[]);
 
     let run = sandbox.run(&pes_settings(&sandbox, 17), &["compile", "--no-deploy"]);
 
@@ -927,7 +942,6 @@ fn the_nearest_cpk_s_loose_config_is_the_one_an_absent_slot_s_edit_starts_from()
 #[test]
 fn a_full_export_removes_its_team_s_installed_configs_of_kits_it_does_not_hold() {
     let sandbox = Sandbox::new("bins_full_configs");
-    write_logo(&sandbox, "exports/co Full Kits");
     install_list(&sandbox);
     let installed = installed_configs(&[
         (714, KitSlot::P1),
@@ -945,6 +959,7 @@ fn a_full_export_removes_its_team_s_installed_configs_of_kits_it_does_not_hold()
         ],
     );
     sandbox.write("exports/co Full Kits/Kits/p1/kit.dds", &tracer_kit());
+    sandbox.complete("exports/co Full Kits");
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -981,6 +996,7 @@ fn a_templates_file_replaces_the_bundled_base_and_one_that_cannot_be_read_stops_
     let template = with_uni_record(&base, 701, &record);
     sandbox.write("data/templates/UniColor.bin", &template);
     p2_export(&sandbox);
+    sandbox.complete(KITS);
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -1099,6 +1115,7 @@ fn a_player_s_own_gloves_and_a_linked_shared_folder_s_give_their_gloves_ids() {
         &format!("{export}/Gloves/Grip/glove_l.fmdl"),
         &tracer_player_file("glove_l.fmdl"),
     );
+    sandbox.complete(export);
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -1140,7 +1157,7 @@ fn a_full_export_zeroes_a_markerless_player_s_boots_id_and_a_midcup_gives_none()
             &clean_model(),
         );
         sandbox.write(&format!("{export}/Players/07 - C/fpc_off"), b"");
-        write_logo(&sandbox, &export);
+        sandbox.complete(&export);
 
         let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -1160,15 +1177,11 @@ fn a_full_export_zeroes_a_markerless_player_s_boots_id_and_a_midcup_gives_none()
 #[test]
 fn a_compile_writes_only_the_three_bins_and_the_patch_carries_the_boots_id() {
     let sandbox = Sandbox::new("bins_no_tables");
-    write_logo(&sandbox, "exports/co Full Boots");
     sandbox.write(
         "exports/co Full Boots/Players/05 - A/boots.fmdl",
         &tracer_player_file("boots.fmdl"),
     );
-    sandbox.write(
-        "exports/co Full Boots/Players/05 - A/portrait.dds",
-        &tracer_portrait(),
-    );
+    sandbox.complete("exports/co Full Boots");
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -1213,7 +1226,6 @@ fn a_compile_writes_only_the_three_bins_and_the_patch_carries_the_boots_id() {
 #[test]
 fn the_authored_stock_id_the_marker_defaults_and_the_assigned_id_resolve_in_order() {
     let sandbox = Sandbox::new("bins_id_resolution");
-    write_logo(&sandbox, "exports/co Full Ids");
     let export = "exports/co Full Ids";
     // Slot 05: fpc_on and an authored stock boots ID.
     sandbox.write(&format!("{export}/Players/05 - A/fpc_on"), b"");
@@ -1236,6 +1248,7 @@ fn the_authored_stock_id_the_marker_defaults_and_the_assigned_id_resolve_in_orde
         &format!("{export}/Players/07 - C/settings.toml"),
         b"boots_id = 12\n",
     );
+    sandbox.complete(export);
 
     // A `settings.toml` finding: `check` and `compile` report it alike. Slot 07's own boots
     // take the assigned ID, so its key conflicts; slot 05's is used (the folder has no boots
@@ -1275,7 +1288,6 @@ fn the_authored_stock_id_the_marker_defaults_and_the_assigned_id_resolve_in_orde
 #[test]
 fn the_fpc_marker_defaults_are_the_common_settings_hide_ids() {
     let sandbox = Sandbox::new("bins_hide_ids_setting");
-    write_logo(&sandbox, "exports/co Full Hide Ids");
     let export = "exports/co Full Hide Ids";
     // Slot 05: fpc_on, no boots or gloves models and no authored IDs.
     sandbox.write(&format!("{export}/Players/05 - A/fpc_on"), b"");
@@ -1283,6 +1295,7 @@ fn the_fpc_marker_defaults_are_the_common_settings_hide_ids() {
         &format!("{export}/Players/05 - A/face_high.fmdl"),
         &clean_model(),
     );
+    sandbox.complete(export);
 
     let settings = format!(
         "{}fpc_hide_boots_id = 60\nfpc_hide_gloves_id = 12\n",
@@ -1322,6 +1335,7 @@ fn a_linked_shared_folder_s_gloves_id_wins_over_an_authored_gloves_id() {
         &format!("{export}/Gloves/Crocs/glove_l.fmdl"),
         &tracer_player_file("glove_l.fmdl"),
     );
+    sandbox.complete(export);
 
     for args in [&["check"][..], &["compile", "--no-deploy"][..]] {
         let run = sandbox.run(&pes21_settings(&sandbox), args);
@@ -1360,6 +1374,7 @@ fn a_combined_face_folder_s_boots_part_assigns_the_id() {
         &format!("{export}/Faces/Round/boots.fmdl"),
         &tracer_player_file("boots.fmdl"),
     );
+    sandbox.complete(export);
 
     for args in [&["check"][..], &["compile", "--no-deploy"][..]] {
         let run = sandbox.run(&pes21_settings(&sandbox), args);
@@ -1393,6 +1408,7 @@ fn a_plainly_linked_folder_holding_no_model_leaves_the_authored_id_its_row() {
         &format!("{export}/Boots/Crocs/crocs.dds"),
         &tracer_player_file("shirt.dds"),
     );
+    sandbox.complete(export);
 
     for args in [&["check"][..], &["compile", "--no-deploy"][..]] {
         let run = sandbox.run(&pes21_settings(&sandbox), args);
@@ -1430,6 +1446,7 @@ fn a_hand_split_face_part_assigns_the_gloves_id_over_an_authored_one() {
         &format!("{export}/Players/05 - A/settings.toml"),
         b"gloves_id = 3\n",
     );
+    sandbox.complete(export);
 
     for args in [&["check"][..], &["compile", "--no-deploy"][..]] {
         let run = sandbox.run(&pes21_settings(&sandbox), args);
@@ -1465,6 +1482,7 @@ fn a_midcup_export_holding_only_settings_files_writes_the_cpk_and_patch() {
         "exports/co Midcup Settings/Players/05 - A/settings.toml",
         toml.as_bytes(),
     );
+    sandbox.complete("exports/co Midcup Settings");
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -1514,7 +1532,7 @@ fn a_settings_value_past_the_target_s_range_writes_the_key_s_default() {
             &format!("exports/{export}/Players/05 - A/ingame_face.toml"),
             face_toml.as_bytes(),
         );
-        write_logo(&sandbox, &format!("exports/{export}"));
+        sandbox.complete_for(&format!("exports/{export}"), version, &[]);
 
         let run = sandbox.run(&pes_settings(&sandbox, number), &["compile", "--no-deploy"]);
 
@@ -1693,6 +1711,7 @@ fn an_ingame_face_toml_s_keys_reach_the_patch_beside_a_plain_one_s_defaults() {
         &format!("{export}/Players/06 - B/ingame_face.toml"),
         face_toml.as_bytes(),
     );
+    sandbox.complete(export);
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -1801,7 +1820,6 @@ fn an_invalid_settings_toml_is_reported_and_gives_no_patch_entry() {
 #[test]
 fn an_fpc_on_player_gets_the_hide_preset_with_the_interference_reported() {
     let sandbox = Sandbox::new("bins_fpc_strip");
-    write_logo(&sandbox, "exports/co Full Fpc");
     let export = "exports/co Full Fpc";
     // Slot 05: `fpc_on`; his `sleeves` is the one key the preset sets that he set otherwise.
     let toml = "[appearance.strip]\nsleeves = \"short\"\ninners = \"normal\"\n\
@@ -1820,6 +1838,7 @@ fn an_fpc_on_player_gets_the_hide_preset_with_the_interference_reported() {
         &format!("{export}/Players/06 - B/settings.toml"),
         b"[appearance.strip]\ngloves = true\n",
     );
+    sandbox.complete(export);
 
     // A `settings.toml` finding: `check` and `compile` report it alike.
     for args in [&["check"][..], &["compile", "--no-deploy"][..]] {
@@ -1888,6 +1907,7 @@ fn a_midcup_markerless_player_is_not_checked_for_the_gloves_rule() {
         &format!("{export}/Players/05 - A/settings.toml"),
         b"[appearance.strip]\ngloves = true\n",
     );
+    sandbox.complete(export);
 
     for args in [&["check"][..], &["compile", "--no-deploy"][..]] {
         let run = sandbox.run(&pes21_settings(&sandbox), args);
@@ -1920,7 +1940,6 @@ pub(crate) fn record(boots: &[(u16, &str)]) -> Vec<u8> {
 #[test]
 fn a_full_export_s_shared_ids_are_numbered_alphabetically_and_recorded() {
     let sandbox = Sandbox::new("bins_shared_ids_full");
-    write_logo(&sandbox, "exports/co Full Shared");
     let export = "exports/co Full Shared";
     for folder in ["adidas", "Birk", "Crocs"] {
         sandbox.write(
@@ -1934,6 +1953,7 @@ fn a_full_export_s_shared_ids_are_numbered_alphabetically_and_recorded() {
     sandbox.write(&format!("{export}/Players/08 - D/adidas.boots"), b"");
     // Birk, which slot 09 alone links, takes his exclusive id and is not recorded.
     sandbox.write(&format!("{export}/Players/09 - E/Birk.boots"), b"");
+    sandbox.complete(export);
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -1971,6 +1991,7 @@ fn a_midcup_export_keeps_the_installed_shared_ids_for_the_folders_it_resends() {
     sandbox.write(&format!("{export}/Players/05 - A/Birk.boots"), b"");
     sandbox.write(&format!("{export}/Players/07 - C/Birk.boots"), b"");
     sandbox.write(&format!("{export}/Players/06 - B/crocs.boots"), b"");
+    sandbox.complete(export);
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -2008,6 +2029,7 @@ fn a_midcup_export_with_no_installed_record_is_warned_and_records_its_own() {
     sandbox.write(&format!("{export}/Boots/Birk/boots.fmdl"), &clean_model());
     sandbox.write(&format!("{export}/Players/05 - A/Birk.boots"), b"");
     sandbox.write(&format!("{export}/Players/06 - B/Birk.boots"), b"");
+    sandbox.complete(export);
 
     // `check` reports the missing record as `compile` does.
     for args in [&["check"][..], &["compile", "--no-deploy"][..]] {
@@ -2075,6 +2097,7 @@ fn a_midcup_export_with_nothing_to_record_writes_no_shared_ids_record() {
         &format!("{export}/Players/05 - A/settings.toml"),
         b"boots_id = 12\n",
     );
+    sandbox.complete(export);
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -2107,6 +2130,7 @@ fn a_midcup_export_with_nothing_to_record_rewrites_the_installed_one() {
         &format!("{export}/Players/05 - A/settings.toml"),
         b"boots_id = 12\n",
     );
+    sandbox.complete(export);
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -2126,7 +2150,6 @@ fn a_midcup_export_with_nothing_to_record_rewrites_the_installed_one() {
 #[test]
 fn a_full_export_with_nothing_to_record_writes_an_empty_one() {
     let sandbox = Sandbox::new("bins_shared_ids_full_empty");
-    write_logo(&sandbox, "exports/co Full Settings");
     // A `Full` export's record means "no shared folders": it writes it even empty.
     let export = "exports/co Full Settings";
     sandbox.write(&format!("{export}/Players/05 - A/ingame_face.toml"), b"");
@@ -2134,6 +2157,7 @@ fn a_full_export_with_nothing_to_record_writes_an_empty_one() {
         &format!("{export}/Players/05 - A/settings.toml"),
         b"boots_id = 12\n",
     );
+    sandbox.complete(export);
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
@@ -2153,7 +2177,6 @@ fn a_full_export_with_nothing_to_record_writes_an_empty_one() {
 #[test]
 fn a_face_link_feeding_the_own_package_is_no_gloves_id_for_the_checkbox_rule() {
     let sandbox = Sandbox::new("bins_face_link_gloves_rule");
-    write_logo(&sandbox, "exports/co Full Face Link");
     let export = "exports/co Full Face Link";
     // A shared face feeds his own package always, but it is no gloves ID: the gloves
     // checkbox with no gloves warns as it does without a link.
@@ -2166,6 +2189,7 @@ fn a_face_link_feeding_the_own_package_is_no_gloves_id_for_the_checkbox_rule() {
         &format!("{export}/Faces/Round/face_high.fmdl"),
         &clean_model(),
     );
+    sandbox.complete(export);
 
     for args in [&["check"][..], &["compile", "--no-deploy"][..]] {
         let run = sandbox.run(&pes21_settings(&sandbox), args);
