@@ -94,7 +94,11 @@ def hits_in(path: str, text: str) -> list[tuple[int, str, str]]:
 
 
 def tracked_files() -> list[str]:
-    """The tracked Rust, TOML and Python files, repository-relative with forward slashes."""
+    """The tracked Rust, TOML and Python files, repository-relative with forward slashes.
+
+    A file deleted from the tree but not yet from the index is left out: it holds no comment
+    left to check, and reading it would stop the gate.
+    """
     listed = subprocess.run(
         ["git", "ls-files", "*.rs", "*.toml", "*.py"],
         cwd=ROOT,
@@ -102,7 +106,11 @@ def tracked_files() -> list[str]:
         text=True,
         check=True,
     ).stdout.split("\n")
-    return [path for path in listed if path and path not in SKIPPED]
+    return [
+        path
+        for path in listed
+        if path and path not in SKIPPED and (ROOT / path).is_file()
+    ]
 
 
 def main(argv: list[str]) -> int:
