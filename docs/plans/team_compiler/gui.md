@@ -16,6 +16,13 @@ it, one cell per player at a fixed position by number, plus one cell per kit:
 /cc/   [809]   [01][  ][03][  ][05][  ][  ][  ]   [GK]
 ```
 
+The grid is drawn by `libs/export_grid`, which the Export upgrader's Grid look draws too
+(`plans/export_upgrader.md` "GUI"). The lib draws the rows a tool hands it: labels, lines of
+cells at fixed positions, their states and messages, the legend and the detail window. It reads no export and runs no check: each tool maps its own results to
+rows, the Compiler its check's findings and the upgrader its run's folders. It is a lib, not
+part of this crate, because a tool crate never depends on another, and two copies of one grid
+would drift apart.
+
 - **Team name label**: fixed-width left column with the canonical `/xx/` `team_name`; its detail
   window shows the complete `export_display_name` and resolved identity. The label doubles as the **cell
   for export-scoped and non-slot task messages**: shared model folders, Logo, Common, Collars,

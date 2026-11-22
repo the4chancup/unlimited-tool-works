@@ -19516,3 +19516,16 @@ not gate. The half's tests leave a folder behind on each caught mutant, so its u
 the run, past the 23.6 GiB measured on 2026-11-12. The new floor is that failure's start plus
 a third. The clone's build cache (37 GB) was removed the same day, leaving 72 GiB free.
 Plan: `RUNBOOK.md` "The scratch folder"; `scripts/mutation/mutants.py`'s `REMOTE_FREE_FLOOR`.
+
+## 2026-11-22 — export_grid — The export grid is a lib both pipeline tools draw
+
+Decision: the Compiler's grid (rows, cells at fixed positions, their states, the legend, the
+detail window) is a new lib crate, `export_grid`, which the Export upgrader's Grid look draws
+too. Each tool hands it rows built from its own results; the lib reads no export and runs no
+check.
+Why: the maintainer asked for the grid to be reusable by the upgrader. A tool crate never
+depends on another, so the shared part cannot stay in `team_compiler`, and `team_widgets` is
+built over the save file's model, which the grid never sees. The upgrader's rows differ (three
+lines an export, wide file cells), so the lib's row is lines of positions, not the Compiler's
+one line.
+Plan: `plans/team_compiler/gui.md` "GUI: the live-validating team grid"; `plans/export_upgrader.md` "GUI"; `plans/core/architecture.md`'s crate tree; `GLOSSARY.md`.

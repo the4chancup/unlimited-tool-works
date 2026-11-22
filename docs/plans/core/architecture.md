@@ -34,6 +34,8 @@ These planned crates extend the spec's workspace tree:
 │   │   ├── db_generator/             # The game's database tables from the teams list (libs/pesdb's formats)
 │   │   └── ...                       # Future tools (CPK tools, ...)
 │   └── libs/
+│       ├── export_grid/              # (Phase 8) The export grid: rows of cells at fixed positions, their
+│       │                             #   states, the legend, the detail window (Compiler + Export upgrader)
 │       ├── team_widgets/             # (Phase 8) Shared egui widgets over the pes_savefile team model: tactics
 │       │                             #   pitch/instructions, card pickers, AATF violations list
 │       │                             #   (Save editor + Team creator)
