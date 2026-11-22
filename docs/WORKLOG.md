@@ -3670,16 +3670,17 @@ points there.
   through `fpc`, the Appearance page's check showing an error line, `settings_toml`'s byte
   read returning an error, the tactics wording showing the stored number. The `pes14`
   branch's own code gets the same census after it merges.
-- open (2026-11-22) — A new rule on what an export must hold breaks every test that builds
-  one. Slice 0.0.2-logo a made a `Full` export with no logo an error (`logo_missing`), and 172
-  tests failed: each test writes its own export file by file, directly or through one of about
-  a dozen helpers spread over the tests of `team_compiler`, `export_upgrader` and `studio`, and
-  the fixture archives are stored binaries. Each had to learn the rule by hand: about 130 added
-  logo calls and five rebuilt archives. Fix, after logo slice b: one builder of the smallest
-  clean export of each kind (`Full`, `Midcup`, an old Red export) in `aesthetics_export`,
-  behind a `test-support` feature as `pes_savefile`'s fixtures are. Every test starts from it
-  and removes or breaks only what it tests, and the archive fixtures are packed from it when
-  the tests run. A new requirement then changes the builder and the tests of its absence.
+- open (2026-11-22) — Every new check on what an export must hold breaks every test that
+  builds one, and more checks are coming. Slice 0.0.2-logo a's `logo_missing` broke 172 tests:
+  each test writes its own export file by file, directly or through one of about a dozen
+  helpers spread over the tests of `team_compiler`, `export_upgrader` and `studio`, and the
+  fixture archives are stored binaries. Each had to learn the check by hand: about 130 added
+  logo calls and five rebuilt archives. Fix, after logo slice a merges and before slice b, so
+  b's tests are written on it: one builder of the smallest clean export of each kind (`Full`,
+  `Midcup`, an old Red export) in `aesthetics_export`, behind a `test-support` feature as
+  `pes_savefile`'s fixtures are. Every test starts from it and removes or breaks only what it
+  tests, and the archive fixtures are packed from it when the tests run. A new check then
+  changes the builder and the tests of what it catches, not every test.
 
 - resolved (2026-11-21) — The maintainer's PES 2021 save opens with an empty team list. The
   release build at `1b9c5f27`, File > PES 2021, opened
