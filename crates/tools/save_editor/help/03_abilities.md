@@ -52,7 +52,7 @@ same fields stay in the same places on every version, so the page never rearrang
 
 **Cards used**
 
-**Cards used** counts the paid cards the player holds: the skills and COM
+**Cards used** counts the non-free cards the player holds: the skills and COM
 playing styles that count against his tier's limit under the AATF rules in use
 (the ruleset picked in the dropdown on the toolbar). His tier is read as the AATF
 check reads it, from his stats, registered position and height.

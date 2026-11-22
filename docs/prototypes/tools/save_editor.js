@@ -3177,12 +3177,12 @@ function cardLimits(p, t, tier) {
     Object.entries(rs.card_groups || {})
       .filter(([, members]) => members.includes(card)).map(([g]) => g)
       .concat(COM_STYLES.includes(card) ? ["com"] : []);
-  let paid = 0;
+  let nonFree = 0;
   for (const card of p.skills.concat(p.com_styles)) {
     if (freeCards.has(card)) continue;
     const cover = groupsOf(card).find(g => left[g] > 0);
     if (cover) left[cover] -= 1;
-    else paid += 1;
+    else nonFree += 1;
   }
   let a = 0, b = 0;
   for (const r of Object.values(p.positions.playable)) {
@@ -3190,7 +3190,7 @@ function cardLimits(p, t, tier) {
   }
   const counted = a + (rs.b_uses_a ? b : 0);
   const limit = tier.cards - Math.max(0, counted - (tier.a_positions || 0));
-  return { paid, limit, left: limit - paid };
+  return { nonFree, limit, left: limit - nonFree };
 }
 // One badge: the player's own tier under the active ruleset (the tier his
 // stats, registered position and height read as, per recognizedTier), the
@@ -3199,15 +3199,15 @@ function cardBadges(p, t) {
   if (p.group) return null;
   const tier = recognizedTier(p, RULESETS[D.ruleset]);
   return h("span", { class: "row", id: "card-badges",
-      title: "Cards used under the player's own tier of the active ruleset (paid cards vs its limit)" },
+      title: "Cards used under the player's own tier of the active ruleset (non-free cards vs its limit)" },
     // "Cards used for Regular: 3 of 3" (no "cards" after the count: the
     // label before it says so); a player no tier matches reads "Cards
     // used:" then why. The words in the field labels' colour.
     h("span", {}, tier ? "Cards used for" : "Cards used:"),
     tier ? (() => { const c = cardLimits(p, t, tier);
       return h("span", { class: "badge" + (c.left < 0 ? " over" : ""),
-        title: tier.label + ": " + c.paid + " paid of " + c.limit },
-        tier.label + ": " + c.paid + " of " + c.limit); })()
+        title: tier.label + ": " + c.nonFree + " non-free of " + c.limit },
+        tier.label + ": " + c.nonFree + " of " + c.limit); })()
     : h("span", {}, "No tier matches"));
 }
 
@@ -8433,8 +8433,8 @@ function violationSentence(rule, kv, sev) {
     case "NameColor": return v("expected") === undefined
       ? "name color " + v("color", "none") + ", which belongs to another tier"
       : "name color " + v("color", "none") + ", where his tier wants " + v("expected");
-    case "Cards": return v("paid") + " paid cards, over the limit of " + v("limit");
-    case "MinCards": return v("paid") + " paid skill cards and extra positions, under the minimum of " + v("min");
+    case "Cards": return v("non_free") + " non-free cards, over the limit of " + v("limit");
+    case "MinCards": return v("non_free") + " non-free skill cards and extra positions, under the minimum of " + v("min");
     case "SkillCardCap": return v("count") + " skill cards, over the cap of " + v("max");
     case "ComStyleCap": return v("count") + " COM styles, over the cap of " + v("max");
     case "RequiredCard": return "the required card " + cardName(v("card")) + " is missing";
@@ -8495,7 +8495,7 @@ const detailRows = (rule, fields, team) => violationDetail(rule, kvOf(fields), t
 // uses for it; a card group's free cards under the group's name.
 function unusedSentence(allowance, used, allowed) {
   switch (allowance) {
-    case "cards": return used + " of " + allowed + " paid cards used";
+    case "cards": return used + " of " + allowed + " non-free cards used";
     case "a_positions": return used + " of " + allowed + " A positions used";
     case "free_cards": return used + " of " + allowed + " free cards held";
     case "weak_foot_usage": return "Weak Foot Usage " + used + ", where the rules allow " + allowed;
@@ -8548,7 +8548,7 @@ function suggestionsFor(p, t) {
   for (const word of list) {
     if (word === "cards") {
       const c = cardLimits(p, t, tier);
-      if (c.paid < c.limit) out.push({ allowance: "cards", used: c.paid, allowed: c.limit });
+      if (c.nonFree < c.limit) out.push({ allowance: "cards", used: c.nonFree, allowed: c.limit });
     } else if (word === "a_positions") {
       let a = 0, b = 0;
       for (const r of Object.values(p.positions.playable)) { if (r === "A") a++; else if (r === "B") b++; }
@@ -8956,7 +8956,7 @@ function cardRows(t) {
     if (!tier || !was) return [];
     const c = cardLimits(p, t, tier), shortThen = Math.max(0, -cardLimits(was, opened, tier).left);
     return c.left + shortThen < 0
-      ? [["Error", t.id, p.id, "Cards", "paid=" + c.paid + ";limit=" + (c.limit + shortThen)]] : [];
+      ? [["Error", t.id, p.id, "Cards", "non_free=" + c.nonFree + ";limit=" + (c.limit + shortThen)]] : [];
   });
 }
 // The team's rows, errors first, each severity in the check's order (by slot,

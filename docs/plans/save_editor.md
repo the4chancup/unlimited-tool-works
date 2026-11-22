@@ -957,7 +957,7 @@ vertical room a tab row takes; a toggle on the title's own row takes none.
     ("Configurable AATF rules"). It reads the player's own tier alone: the tier his stats,
     registered position and height match under that ruleset, as `check-aatf` recognizes it.
     It is not one badge per tier, which a member had to match to the player by eye. It reads
-    `Cards used for Gold: 2 of 8`, the tier, the paid cards and the limit in a chip (the
+    `Cards used for Gold: 2 of 8`, the tier, the non-free cards and the limit in a chip (the
     draft's `.badge`: the widget fill, corners rounded 2, 4 points of margin across and none
     down), with no `cards` after the count, which the label before it already says. When no
     tier matches it reads `Cards used: No tier matches`, the reason after the colon.
@@ -2875,7 +2875,7 @@ What this editor adds on top of the lib:
     - the skills or the COM styles for `RequiredCard` by its card's kind;
     - the Skills header for `Cards` and `MinCards` (the Cards used badge's), which no one
       field causes: `Cards`' budget counts every card kind and the extra A positions,
-      `MinCards`' count the paid skills and the extra A positions;
+      `MinCards`' count the non-free skills and the extra A positions;
     - and for a suggestion (`Unused`), the field of its allowance: the Skills header for the
       cards, the positions grid for the A positions, the `Weak Foot: Usage` box for the weak
       foot's usage and the `Accuracy` box for its accuracy (the rules file's `weak_foot` word
@@ -3421,7 +3421,7 @@ SE-GUI-63  GIVEN the PES 17 save open on team 734 under the official rules, Live
                 passes THEN the list reads `All clean`, the button is not greyed out and the
                 copied text is the header line and `All clean`; GIVEN Show suggestions off
                 THEN no suggestion is drawn, and on THEN the list ends with `Suggestions`,
-                then each player's head and his `Unused` rows (73410's `Unused: 4 of 5 paid
+                then each player's head and his `Unused` rows (73410's `Unused: 4 of 5 non-free
                 cards used` first), their rule name in the normal text colour; GIVEN no
                 check returned yet THEN the button is not greyed out and the copied text is
                 `Checking /lit/…`, and with All teams picked and nothing selected `No team is
@@ -3663,12 +3663,12 @@ SE-GUI-70  GIVEN a PES 17 save open on a player
                 text colour, a hover on either shows `PES 20+`, and `Speed`'s label paints
                 the normal colour; GIVEN a PES 21 save
                 THEN `Tight Possession` and `Aggression` paint the normal text colour
-SE-GUI-66  GIVEN the PES 17 save open on a player whose own tier, Regular, allows 3 paid
+SE-GUI-66  GIVEN the PES 17 save open on a player whose own tier, Regular, allows 3 non-free
                cards, 3 of them ticked
            WHEN Abilities shows
            THEN the Skills header reads `Cards used for` and the chip `Regular: 3 of 3`;
                `Cards used for` and the skills' labels (`Heel Trick`) paint the normal
-               text colour, `Stronger foot`'s; WHEN a fourth paid card is ticked THEN the
+               text colour, `Stronger foot`'s; WHEN a fourth non-free card is ticked THEN the
                chip reads `Regular: 4 of 3` in the error colour
 SE-GUI-62  GIVEN the PES 17 save open on a player, the keyboard moved by Tab to a rating cell
                 of his Playable positions and Space pressed on it (the rating stepped)

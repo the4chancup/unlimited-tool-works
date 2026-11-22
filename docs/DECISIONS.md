@@ -19658,3 +19658,19 @@ it is would copy a team without its name. The same rule already sets the edited-
 on a written player name.
 Plan: `plans/pes_savefile/operations.md` "Team TOML", the paragraph "A written team name
 shows".
+
+## 2026-11-22 — aatf, AATF texts — a card no free allowance covers is a "non-free card"
+Decision: every text and name that called these cards "paid" says "non-free" instead: the
+Save editor's and the Ruleset editor's labels and findings, the help, the plans and the spec,
+and the code's names. The rules file's own key changes too (`paid` becomes `non_free` in the
+logic's `card_limits` map and in the `Cards` and `MinCards` findings). The logic stays
+version 1, its hash in the version table following the edit: until 1.0.0 a changed logic is
+not a new version.
+Why: "non-free cards" is the word 4cc uses for them. "Paid" was ours alone, so a member read
+a term the cup never uses, and two names for one count would drift apart in the code. A new
+logic version would keep a file saved under the old one recognized, which is compatibility
+work, and none is done before 1.0.0; no rules file is in use outside our tests yet anyway.
+Plan: `spec/aatf_rules.md` "The card economy" and its "Logic identity" paragraph (a new logic
+version only from 1.0.0, where it said from the first release); `plans/aatf_rules.md` "Loading
+and validation" (version 1 frozen at 1.0.0, where it said at 0.0.1); the plans that use the
+term; `GLOSSARY.md` "Non-free card".

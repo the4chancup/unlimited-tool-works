@@ -59,7 +59,7 @@ VTL11 (the VTLEditor fork, `VTL7/stats.h` + `aatf.cpp` at `ab5f0e2`) adds furthe
 - exact weak foot;
 - banned and required cards;
 - free cards for some tiers, a free COM style (Long Ranger) and a cap of five COM styles;
-- a minimum of three paid skill cards, each extra A position counting as one;
+- a minimum of three non-free skill cards, each extra A position counting as one;
 - B ratings allowed only for 188 cm players at CB, which also count toward the A-position
   allowance, and an A at CB or GK forbidden for them;
 - medals' names required to carry a gold or silver colour code and other players' forbidden to;
@@ -204,7 +204,7 @@ pub struct Tier {
     pub weak_foot: WeakFoot,
     /// Cards a player pays for: skills and COM styles that no free allowance covers.
     pub cards: u8,
-    /// At least this many paid skill cards, each extra A position counting as one.
+    /// At least this many non-free skill cards, each extra A position counting as one.
     pub min_cards: u8,
     /// Free cards per group.
     pub free: BTreeMap<GroupId, u8>,
@@ -374,9 +374,9 @@ pub struct Effects {
     /// tier raises nothing, nor does a replacement a later special overrides); a `stat_bonus`
     /// raises the stat targets, so it is used when, without it, a stat it raises is over its own
     /// target (a stat whose tier override sits below the rate counts, as VGL26's silver place
-    /// kicking does; the overall rating alone would miss it); a `free_cards` option, when, without it, the paid cards are over
-    /// the limit and, with it, fewer are paid (a card a group covers can still help, its
-    /// group's allowance passing to a paid groupmate). A one-option
+    /// kicking does; the overall rating alone would miss it); a `free_cards` option, when, without it, the non-free cards are over
+    /// the limit and, with it, fewer are non-free (a card a group covers can still help, its
+    /// group's allowance passing to a non-free groupmate). A one-option
     /// choice is an optional effect (VGL25's manlet bonus). An option holds only effects that
     /// raise a limit (`stat_bonus`, `cards`, `free`, `free_cards`, `a_positions`,
     /// `max_a_positions`, `weak_foot`): any other could never be found used. Choices are
@@ -492,7 +492,7 @@ giant's target is 89, so a rating of 89 reads as silver, not bronze.
 
 ### The card economy
 
-A player's **paid cards** are their skills plus COM styles, less the free ones held: per group,
+A player's **non-free cards** are their skills plus COM styles, less the free ones held: per group,
 up to that group's free count; every held card in `free_cards`. The **limit** is the tier's
 `cards` plus every `cards` effect, less one per A position beyond the allowance (`a_positions`
 plus effects; B ratings counted with the A positions under `b_uses_a_allowance`).
@@ -506,10 +506,10 @@ VTL's rulesets have none.
 
 Each of these is a violation:
 
-- paid cards over the limit, the limit falling below zero when the extra A positions outnumber
+- non-free cards over the limit, the limit falling below zero when the extra A positions outnumber
   the cards (a regular with three cards and five A positions over one allowed is over it with
   no card at all);
-- paid skill cards plus extra A positions under `min_cards`;
+- non-free skill cards plus extra A positions under `min_cards`;
 - a required card not held;
 - more A positions than `max_a_positions`;
 - more skill cards than `max_skill_cards`;
@@ -712,7 +712,7 @@ Finishing; it adds nothing to test and has no file. What VGL25 exercises that th
 | Optional manlet bonus | `when: #{ brackets: ["manlet"] }`, `choice: [#{ stat_bonus: #{ all: #{ regular: 5, silver: 2, gold: 2 } } }]`; with `choices` in `suggestions` |
 | Heights | manlet up to 175, then exactly 180, 185, 190, 210 under one system (quotas 6, 6, 5, 6, 0); a goalkeeper at 189 counts as 185; goalkeepers at 181–188 forbidden, medals and goalkeepers at 190 forbidden |
 | Manlets | the official "Manlets" special (+1 card, +1 A position, weak foot 4/4) |
-| Cards | `tricks` (Malicia included) all free; free COM 1, 1, 0; paid 5, 4, 3; `a_positions` 2; Captaincy for the captain and Acrobatic Finishing free; the captain one extra card |
+| Cards | `tricks` (Malicia included) all free; free COM 1, 1, 0; non-free 5, 4, 3; `a_positions` 2; Captaincy for the captain and Acrobatic Finishing free; the captain one extra card |
 | Universal | no captain or goalkeeper requirement; a B rating, itself a violation under `no_b_ratings`, still counts toward the A positions (`b_uses_a_allowance`); `max_skill_cards` 41, the most skills any version has, so no cap |
 | Injury resistance | exact: 2 for medals, 1 for non-medals (not in `at_most`) |
 | Suggestions | `cards`, `com`, `a_positions`, `weak_foot`, `height`, `free_cards`, `choices` |
@@ -741,7 +741,7 @@ from the VGL26 rules page and 4ccEditor-VGL's `vgl26` branch (tip `ad378d2`; `st
 | Per-stat targets | each tier's `rate` (99, 95, 91, 85, 80; 72 for goalkeepers) plus `stats` overrides (silver: finishing, heading and attacking prowess 99, defensive prowess 60, …) |
 | Tier recognition | each outfield tier's `when` fixes one height (gold and silver 195, bronze 190, buffed 185 and not a goalkeeper, regular 180); the goalkeeper's `when` is `positions: ["GK"]` alone, a `forbid` special holding him to 185; no brackets, no systems |
 | Rating stats | the official set less finishing, heading and aggression |
-| Cards | `tricks` (the rules page's twelve, Malicia included) free; Heading free for everyone (`free_cards`); paid 9, 8, 8, 7, 6, goalkeeper 5; free COM 2 for medals, 1 for the rest; `a_positions` 2 (goalkeeper 1); the captain's Captaincy free and one extra card (`cards: 1` for `captain: true`) |
+| Cards | `tricks` (the rules page's twelve, Malicia included) free; Heading free for everyone (`free_cards`); non-free 9, 8, 8, 7, 6, goalkeeper 5; free COM 2 for medals, 1 for the rest; `a_positions` 2 (goalkeeper 1); the captain's Captaincy free and one extra card (`cards: 1` for `captain: true`) |
 | Injury resistance | exact: 2 for medals, 1 for the rest |
 | Universal | `fielded_at_a: [1]`; `max_skill_cards` 41, so no cap |
 | Team settings | no man marking; auto substitution, offside trap and preset change off; `forbidden_shapes: [[3, 4, 3]]` |
@@ -783,7 +783,7 @@ others do not:
 | Tiers | gold 1, silver 2, bronze 2 (rates 99, 94, 89), goalkeeper (77) `counts_as` regular (77, the rest); no per-stat targets |
 | Tier recognition | rating alone; every other tier's `when` excludes GK (the regular's too, or a GK rated under 77 would fall back to it), so a registered GK is a goalkeeper whatever his rating |
 | Heights | five brackets of one exact height each (175, 180, 185, 190, 210) under one system with no `any_player` (quotas 6, 7, 10, 0, 0); a goalkeeper at 189 counts as 185 (`height_allowance: 4`); the official "Manlets" special |
-| Cards | VGL26's shape with smaller numbers and no free Heading: paid 6, 5, 5, 4, goalkeeper 4; free COM 1, 1, 1, 0, 0 |
+| Cards | VGL26's shape with smaller numbers and no free Heading: non-free 6, 5, 5, 4, goalkeeper 4; free COM 1, 1, 1, 0, 0 |
 | Injury resistance, universal, team settings | as VGL26, without the formation ban |
 | Rating stats, suggestions | as VGL26 |
 
@@ -804,7 +804,7 @@ Where the data reads differently from `aatf_single_vgl`, on purpose:
 A rating between two tiers' targets (96) is placed by expected rating, as in the official file,
 where `aatf_single_vgl` reports no tier.
 
-`VGL27.B` brought the checker to the page on the rest: Heading is a paid card, a medal's injury
+`VGL27.B` brought the checker to the page on the rest: Heading is a non-free card, a medal's injury
 resistance is exact, a height in no bracket is a violation for that player, and each quota
 message prints its own bracket's count (before it, the 185 cm count for every bracket).
 
@@ -818,8 +818,8 @@ VTL10's first matchday on 2026-03-13: `5b78e5b` ("small aatf changes", 2026-04-1
   and their goalkeepers at 180 (a special for each wrong one), the buffed at 188;
 - targets: its own per tier (silver's rate 92; the file stores absolute values); no
   playing-style bonuses or warnings;
-- cards: gold's paid 6 and free COM 2; its own thirteen free skills; Incisive Run free beside Long
-  Ranger; no banned card; the skill card cap at 12;
+- cards: gold's non-free 6 and free COM 2; its own thirteen free skills; Incisive Run free beside
+  Long Ranger; no banned card; the skill card cap at 12;
 - no B rating anywhere (`no_b_ratings`); a buffed player rated A at LB or RB has weak foot 2/2;
 - no name colours.
 
@@ -841,12 +841,12 @@ host's registered accessors:
 - `check_team(team) -> [violation]`: steps 1–4 of "How a player is read" for every player.
 - `tier_values(player, tier, team) -> map`: the targets a player of `tier` must carry (per stat,
   form, injury resistance, weak foot), specials applied. Behind `apply_tier`.
-- `card_limits(player, tier, team) -> map`: the paid cards the player holds now, paid limit
-  (below zero when the extra A positions outnumber the cards), free count per group, free and
-  required cards, A positions allowed, and the `max_a_positions` cap when a special sets one.
+- `card_limits(player, tier, team) -> map`: the non-free cards the player holds now and their
+  limit (below zero when the extra A positions outnumber the cards), free count per group, free
+  and required cards, A positions allowed, and the `max_a_positions` cap when a special sets one.
   Behind the card pickers' remaining-count badges (the Save editor's, Phase 8), each `limit -
-  paid`: the logic counts the paid cards, so a widget never recounts them with a second card
-  economy that could drift from the checks.
+  non_free`: the logic counts the non-free cards, so a widget never recounts them with a second
+  card economy that could drift from the checks.
 
 A violation crosses back as a map the host converts into:
 
@@ -883,8 +883,8 @@ pub enum ViolationKind {
     /// sets none, met by a name with no colour code the tiers set.
     NameColor { color: Option<String>, expected: Option<String> },
     /// `limit` below zero: more extra A positions than cards (see "The card economy").
-    Cards { paid: u8, limit: i8 },
-    MinCards { paid: u8, min: u8 },
+    Cards { non_free: u8, limit: i8 },
+    MinCards { non_free: u8, min: u8 },
     SkillCardCap { count: u8, max: u8 },
     ComStyleCap { count: u8, max: u8 },
     RequiredCard { card: Card },
@@ -957,7 +957,7 @@ is not dropped: it is a bug in the logic or a custom check, and a check that ski
 pass a team the file means to flag.
 
 **Suggestions** need no authoring. Every allowance named in `suggestions` that a player does not
-use up yields an `Unused` suggestion: paid cards under the limit, a group's free cards not all
+use up yields an `Unused` suggestion: non-free cards under the limit, a group's free cards not all
 held, a free card not held, fewer A positions than allowed, weak foot or injury resistance below
 the maximum, a height below an `up_to` bracket's maximum. Under `choices`, a choice the player
 takes no option of yields an `UnusedChoice` (a manlet at 77 who may carry 82). An ability stat
@@ -1135,9 +1135,9 @@ The logic section runs from the start of the LOGIC banner line to the start of t
 banner line, or to the end of a file without one; in an assembled file it is `logic/logic.rhai`
 whole. A file without the LOGIC banner has a modified logic.
 
-The current logic is the table's last entry. Until the first release, its hash follows every
-edit of the logic; after it, a changed logic is a new version, in the banner and the table, since
-a file in the wild carries the released one.
+The current logic is the table's last entry. Until 1.0.0, its hash follows every edit of the
+logic, because nothing before 1.0.0 keeps an older file working; after it, a changed logic is a
+new version, in the banner and the table, since a file in the wild carries the released one.
 
 A file's logic section is one of:
 

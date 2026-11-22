@@ -60,7 +60,7 @@ minor invitational's ruleset would never have joined it.
 
 **Blank** is a ruleset named "New ruleset", Autumn 26's rating and at-most stats, one tier
 (`regular`, "Regular", the rest of the squad, rate 75, form 4, injury resistance 1, weak foot 2
-and 2, 3 paid cards, 1 A position), no brackets, no specials, and the universal rules on:
+and 2, 3 non-free cards, 1 A position), no brackets, no specials, and the universal rules on:
 registered position rated A, no B ratings, a GK A never a second A, a captain, at least one
 goalkeeper, at most 10 skill cards.
 
@@ -105,7 +105,7 @@ pane is shown, the lines the last edit changed are highlighted.
   the recognition order and the quick-action buttons' order.
 
   Columns: label, id, count (a number or "the rest"), counts as, rate, form, injury
-  resistance, weak foot, paid cards, minimum cards, A positions, name colour (none or a
+  resistance, weak foot, non-free cards, minimum cards, A positions, name colour (none or a
   swatch), warning band (`stat_warning`: points over the target that warn rather than err, 0
   meaning none) and a "stats add up to at most the targets" checkbox (`total_within_targets`).
   The warning band and the checkbox both cover only the ability stats that may sit below their
@@ -113,8 +113,8 @@ pane is shown, the lines the last edit changed are highlighted.
   tooltips say.
 
   Every number, here and in every section, draws its value as stored, never clamped to its
-  control's range on sight (DBC7's 48 paid cards, past a 0-20 range, were rewritten to 20 by
-  drawing the section). The paid and minimum cards run to 48, every card the game has.
+  control's range on sight (DBC7's 48 non-free cards, past a 0-20 range, were rewritten to 20 by
+  drawing the section). The non-free and minimum cards run to 48, every card the game has.
 
   The id commits on Enter or focus loss, as a path row does, not per keystroke. The commit
   carries the tier's key in the medal systems from the id it had to the one committed, but only
@@ -180,13 +180,13 @@ pane is shown, the lines the last edit changed are highlighted.
     sub-conditions, one of which must hold); and an "except when" sub-condition (`not`).
   - *Then* is a list of effects, added from a menu that names them in words, one entry per
     effect of the schema ("Add to every stat" and "Add to one stat", `stat_bonus`'s two keys;
-    "Set one stat's target"; "Extra paid cards"; "Free cards of a group", `free`; "Free card",
+    "Set one stat's target"; "Extra non-free cards"; "Free cards of a group", `free`; "Free card",
     `free_cards`; "Required card"; "Extra A positions"; "At most N A positions"; "Change form";
     "Change injury resistance"; "Weak-foot limits"; "Height allowance"; "Warning band";
     "Forbid").
 
     A numeric effect the schema gives per tier (`PerTier`: the stat bonuses and targets, extra
-    paid cards, free cards of a group, extra A positions, form, injury resistance, the warning
+    non-free cards, free cards of a group, extra A positions, form, injury resistance, the warning
     band) has a "same for every tier / per tier" switch; per tier shows one field per tier. "At
     most N A positions" and "Height allowance" are one number for every player they apply to.
 
@@ -194,7 +194,7 @@ pane is shown, the lines the last edit changed are highlighted.
     under it ("the first option the player needs is given"). A choice of one option reads *May
     get* ("players matching this may take it").
   - A severity selector appears when the effects include Forbid or Required card.
-- **Suggestions**: a checkbox per allowance (paid cards, A positions, weak foot, injury
+- **Suggestions**: a checkbox per allowance (non-free cards, A positions, weak foot, injury
   resistance, height, free cards, choices not taken, and one per card group, COM included).
 - **Custom checks**: present only when the file has them (the empty stub `fn custom_checks(team)
   { [] }` that every assembled file without checks carries counts as none, and is kept as it
@@ -208,7 +208,7 @@ pane is shown, the lines the last edit changed are highlighted.
   Each sentence states the rule the logic applies, not a looser one:
   - the warning band and the stat total name the ability stats that may sit below their target
     (the ability stats among `stats.at_most`), the only ones they cover;
-  - the minimum names paid skills, an extra A position counting as one, not COM styles;
+  - the minimum names non-free skills, an extra A position counting as one, not COM styles;
   - an effect's weak foot is a target like the tier's, not an upper limit;
   - an effect's cards are joined with "and" (each one free, each one required), a condition's
     with "or".
@@ -450,7 +450,7 @@ RE-GUI-09  GIVEN Blank open
                 stat for every tier; WHEN its "same for every tier" switch is set to per tier
                 and only Regular is given 5 THEN the bonus is by tier, Regular 5
 RE-GUI-10  GIVEN a special in Blank
-           WHEN "One of" is added with two options (one extra paid card; one extra A position)
+           WHEN "One of" is added with two options (one extra non-free card; one extra A position)
            THEN the rule under it reads that the first option the player needs is given, and
                 the saved file's special holds a choice of those two options in that order;
                 with one option only, the choice reads "May get"
@@ -509,7 +509,7 @@ RE-GUI-18  GIVEN Autumn 26 open
                 menu is opened THEN it offers the fifteen effects "The editor" lists and One
                 of, and
                 inside a choice's option only those an option may hold (the stat bonuses,
-                extra paid cards, free cards of a group, a free card, extra A positions, at
+                extra non-free cards, free cards of a group, a free card, extra A positions, at
                 most N A positions, weak-foot limits)
 RE-GUI-19  GIVEN a ruleset open with no logo
            WHEN a PNG of 2 KB, 40 × 40 pixels, is chosen in General's Event logo
@@ -590,8 +590,8 @@ RE-FILE-10  GIVEN a.4ccrules open and edited
 
 The older-official path (the banner offering **Update logic**, and `update-logic` migrating a
 file) has no scenario in Phase 20: logic version 1 is the only one, so no real file of an older
-official logic exists. The first such file is one the 0.0.1 preview saves, once a later logic
-change makes version 2 (`aatf_rules.md` "Loading and validation"). The scenarios are written
+official logic exists. The first such file is one 1.0.0 saves, once a later logic change makes
+version 2 (`aatf_rules.md` "Loading and validation"). The scenarios are written
 then, with such a file as their fixture. Phase 20 builds the path. `libs/aatf`'s own tests prove the
 identity and the section's replacement against a versions table holding a second entry.
 
@@ -603,7 +603,7 @@ RE-SUM-01  GIVEN Autumn 26 open
            THEN it has one line per tier, highest first, naming its count, rate and the targets
                 it sets (the draft's "- **Gold**: 1 per team; every stat 99; form 8, …"), the
                 height brackets and systems, the universal rules, and one sentence per special
-                built from its When and Then, and its suggestions (paid cards, free tricks, free
+                built from its When and Then, and its suggestions (non-free cards, free tricks, free
                 COM styles, weak foot, injury resistance and choices not taken); Copy puts the same text on the clipboard as
                 Markdown; GIVEN DBC7 THEN it also has the medal systems with each one's counts,
                 Gold and Silver counted "by medal system", the regular's and silver's warning
