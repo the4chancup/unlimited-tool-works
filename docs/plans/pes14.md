@@ -999,4 +999,8 @@ player, who uses only the Save editor.
       so they cannot travel, and the target players keep their own;
     - the basic settings flag, which the write sets as the game does.
 
-    The in-game look waits for a time when OBS may be used or focus taken.
+    In game, in Edit mode on the organizer's save, the team's 23 names, positions, shirt
+    numbers and Game Plan are /gd/'s, and its one player with a record wears /gd/'s look. The
+    team's name first showed as the league slot's own label: the import had copied the name
+    flag from /gd/'s save, where it was off, and an import that renames a team now sets it
+    (`042e60b8`); a second look shows "/gd/". Released as `0.0.2-pes14.3` (2026-11-23).

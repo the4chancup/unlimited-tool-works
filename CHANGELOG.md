@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [0.0.2-pes14.3] - 2026-11-23
 
 ### Useful
 
@@ -9,18 +9,20 @@
 - **Save editor**: a whole team, with its players' looks and its Gameplan, can now be copied
   from one PES 2014 save to another as a Team TOML file. This works through Team > Import /
   export team file…, Copy and Paste on the Gameplan, and the `export-toml` and `import-toml`
-  commands. The file is named `<team name>.pes14.toml`, and only a PES 2014 save takes it.
+  commands. The file is named `<team name>.pes14.toml`, and only a PES 2014 save accepts it.
 - **All tools**: UTW now keeps a record of the five times it was opened before the current
-  one, with the saves opened and written each time. Report a problem's new box `Include earlier sessions` adds
-  them to the file, for a problem that began before UTW was last opened, such as a crash.
-- **All tools**: when UTW stops on an error of its own, its dialog now asks for the log file
-  first, with the file's path on a line of its own, and gives the error's details last.
+  one, with the saves opened and written each time. Report a problem's new box `Include
+  earlier sessions` adds those to the file, so that problems that began before UTW was last
+  opened can be reported.
 
 ### Fixes
 
-- **Save editor**: on a PES 2014 save, a player edited in the game closed UTW when his
+- **Save editor**: on a PES 2014 save, a player edited in the game crashed UTW when his
   Appearance page opened or Hide default body was used on him. Both now work, and count his
   gloves as none, as the game draws them.
+
+### Minor fixes
+
 - **Ruleset editor**: in a window larger than the default, the toolbar, the bottom bar and the
   form stretched across it. They now keep their default width, centred. The preview now
   stands at the window's right edge, wide enough for the data block's 100 columns, and can no
@@ -30,6 +32,9 @@
 
 - **All tools**: the sidebar now marks the active tool with a thin outline around its
   highlight, in place of the bar at its left.
+- **All tools**: when UTW stops on an error of its own, its dialog now asks for the log file
+  first, with the file's path on a line of its own, and gives the error's details last.
+
 
 ## [0.0.2-pes14.2] - 2026-11-21
 
