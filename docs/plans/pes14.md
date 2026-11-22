@@ -985,4 +985,18 @@ player, who uses only the Save editor.
     - b: Tenacity and the Punt Kick motion;
     - c: each preset's Strategy and sliders, and Combination Play;
     - d: the appearance record;
-    - e: the Save editor's and the command line's refusals lifted, and the `.pes14.toml` name.
+    - e: the Save editor's and the command line's refusals lifted, and the `.pes14.toml` name;
+    - f: the roster-order note only on cup team ids (701 to 920), since /gd/'s export put it
+      on all 23 players.
+
+    Slices a to f landed 2026-11-22 (`4ed2dfd2`, `a5f2b3b2`, `43817f79`, `6294f8c8`,
+    `d407c6a3`, `1307d25b`). The data check passed on the release build: /gd/ was imported
+    onto /hi3/ (853) of the Akko7 organizer's newer save, and the second export differs only
+    in what follows:
+    - the team id;
+    - the appearance record's id bytes on the one /gd/ player who has a record;
+    - the 22 /gd/ players without a record: their looks come from the game's own database,
+      so they cannot travel, and the target players keep their own;
+    - the basic settings flag, which the write sets as the game does.
+
+    The in-game look waits for a time when OBS may be used or focus taken.
