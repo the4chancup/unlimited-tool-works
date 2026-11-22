@@ -651,7 +651,8 @@ Like the settings menu it is **assembled from the tools**, not written centrally
 
 - Fixed-height region below the toolbar, monospace, colored lines (info/warning/error mapped from
   `PipelineEvent`); its chevron collapses it to its header row and back, and dragging its
-  divider resizes it, the height kept across frames.
+  divider resizes it, the height kept across frames. A collapsed log's header shows no
+  filter buttons (All, Warnings, Errors), since it shows no lines to filter.
 
   The divider carries a grip at its middle, a line 24 points long and 2 high, rounded, in the
   plain text grey (the noninteractive widgets' text colour, the drafts' `--text`, in
@@ -1957,8 +1958,8 @@ ST-LOG-03   GIVEN a log holding info, warning, error and fatal lines
                  the error and fatal lines alone; All, every line again
 ST-LOG-04   GIVEN the log panel open at its default height
             WHEN its chevron is clicked
-            THEN the panel collapses to its header row and the view above it takes the space,
-                 and a second click restores it at its height; WHEN its divider is dragged THEN the panel takes the dragged height, kept across
+            THEN the panel collapses to its header row, without its filter buttons, and the
+                 view above it takes the space, and a second click restores it at its height; WHEN its divider is dragged THEN the panel takes the dragged height, kept across
                  frames; while open, its divider draws the grip at its middle, collapsed none
 ST-LOG-05   GIVEN a log line `Error - /aco/ - <code> at <a path>` longer than the panel is wide
             WHEN the panel is drawn

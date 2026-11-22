@@ -19348,3 +19348,17 @@ whole run. Esc is the key people try first to close a window. The counts answer 
 wrong?", and the link takes the organizer straight to the lines.
 Plan: plans/team_compiler/gui.md "GUI: the live-validating team grid" (the detail window),
 "Toolbar" (the run strip); plans/team_compiler/README.md TC-GUI-24, TC-GUI-25, TC-GUI-26.
+
+## 2026-11-22 — compiler view — the strip's counts are blue only with the log collapsed; the log may start collapsed
+Decision (the maintainer): while the log is open, the strip's error and warning counts are in
+the strip's grey, still clickable; while it is collapsed they are in the link blue, never
+underlined, and the log's header shows no All, Warnings and Errors buttons. The log starts
+collapsed when, open, it would push some of the grid's cells out of view.
+Decision (the lead): the filter buttons hide on every tool's collapsed log, since the panel is
+shared; whether the log starts collapsed is decided once per launch, at the view's first frame
+with rows, and the chevron rules after.
+Why: blue underlined counts right above the log's own filter buttons offered the same choice
+twice, loudly. A collapsed log has nothing to filter, and the counts then are the way into it.
+The grid is what the view is opened for.
+Plan: plans/team_compiler/gui.md "Toolbar" (the run strip); plans/core/gui.md "Log panel";
+plans/team_compiler/README.md TC-GUI-26, TC-GUI-27; plans/core/gui.md ST-LOG-04.

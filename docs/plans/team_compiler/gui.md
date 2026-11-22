@@ -447,8 +447,17 @@ A single primary action:
 
   While nothing runs, the strip also sums up the grid after the last run's line: `14 exports ·
   6 skipped · 3 with errors · 1 with warnings`. Each count is of exports, not of messages, and
-  a count of zero is left out. This answers an organizer's first question, whether anything is wrong at all. The
-  error and warning counts are links that set the log's filter to Errors or Warnings, and
-  expand the log if it is collapsed.
+  a count of zero is left out. This answers an organizer's first question, whether anything is wrong at all. A click
+  on the error or warning count sets the log's filter to Errors or Warnings, and expands the
+  log if it is collapsed. The two counts are in the link blue, never underlined, only while
+  the log is collapsed. While it is open they are in the strip's own grey, still clickable,
+  because the log's own filter buttons sit right below them and two blue rows of the same
+  choice are one too many.
+
+  The log starts collapsed when, open, it would push some of the grid's cells out of view
+  (the grid scrolling to reach them): the grid is
+  what the view is opened for, and the strip's counts still say whether anything is wrong.
+  This is decided once per launch, at the view's first frame with rows. After that, the
+  chevron and the counts open and close the log.
 
 ---

@@ -271,9 +271,14 @@ TC-GUI-26  GIVEN no run in flight, the log showing All, and the grid with errors
                 and warnings on one
            WHEN the strip is drawn
            THEN after the last run's line, if any, it reads the export count, the skipped
-                count, `2 with errors` and `1 with warnings`; WHEN `2 with errors` is clicked
-                THEN the log shows Errors; WHEN `1 with warnings` is clicked THEN the log
-                shows Warnings
+                count, `2 with errors` and `1 with warnings`, the two counts in the strip's
+                grey while the log is open and in the link blue while it is collapsed; WHEN
+                `2 with errors` is clicked THEN the log is open and shows Errors; WHEN
+                `1 with warnings` is clicked THEN it shows Warnings
+TC-GUI-27  GIVEN more export rows than fit above the open log at the window's size
+           WHEN the app starts on the Compiler's view
+           THEN the log starts collapsed; GIVEN rows that all fit above it THEN the log starts
+                open
 TC-GUI-13  GIVEN a run in flight over two exports
            WHEN Cancel is clicked
            THEN the run ends after the task or texture in progress, no CPK is written or

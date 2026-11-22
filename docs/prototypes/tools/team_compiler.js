@@ -166,6 +166,8 @@ const TEAM_COMPILER_CSS = `
     border-top: 1px solid var(--stroke); }
   .tc-bar .strip { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis;
     white-space: nowrap; }
+  .tc-count { cursor: pointer; }
+  .tc-count.on { color: var(--link); }
   .tc-split { display: flex; gap: 1px; }
   .tc-split button:first-child { border-radius: 2px 0 0 2px; min-width: 150px; }
   .tc-split button:last-child { border-radius: 0 2px 2px 0; padding: 0 4px; }
@@ -838,14 +840,17 @@ const BADGES = {
   running: "PES is running: the compile cannot replace the installed CPKs. Close the game, or the run writes to the output folder only",
   elevation: "The game folder needs administrator rights to write to. Restart the app as administrator, or the run writes to the output folder only" };
 // The grid summed up, what the strip says while nothing runs: can I compile?
-// The error and warning counts are links that set the log's filter.
+// The error and warning counts set the log's filter on a click. They are in
+// the link blue only while the log is collapsed: open, its own filter buttons
+// sit right below them, and a blue pair over those is one too many.
 function summary() {
   if (D.empty) return [];
   const on = S.rows.filter(eligible);
   const having = states => on.filter(r => [r.label, ...cellsOf(r)].some(c => states.includes(c.status))).length;
   const count = (n, one, many = one) => n ? `${n} ${n === 1 ? one : many}` : null;
-  const filterLink = (text, filter, title) => text && h("a", { href: "#", title, onclick: e => {
-    e.preventDefault(); L.logFilter = filter; L.logCollapsed = false; render(); } }, text);
+  const filterLink = (text, filter, title) => text && h("span", {
+    class: "tc-count" + (L.logCollapsed ? " on" : ""), title,
+    onclick: () => { L.logFilter = filter; L.logCollapsed = false; render(); } }, text);
   const parts = [count(S.rows.length, "export", "exports"), count(S.rows.length - on.length, "skipped"),
     filterLink(count(having(["error", "partialError"]), "with errors"), "errors", "Show only the errors in the log"),
     filterLink(count(having(["warning"]), "with warnings"), "warnings", "Show only the warnings and errors in the log")]
@@ -1116,6 +1121,16 @@ function drawView(center) {
     detailPanel()));
   const lb = center.querySelector(".log-body");
   if (lb) lb.scrollTop = L.logStick ? lb.scrollHeight : S.logScroll;
+  // The log starts collapsed when, open, it would hide some of the grid's
+  // cells: decided once, at the first draw with rows; the chevron rules after.
+  // Measured on the next frame, once the host has laid the window out.
+  if (!S.logStartSet && !D.empty) {
+    S.logStartSet = true;
+    requestAnimationFrame(() => {
+      const g = document.querySelector("#center .pipe-grid");
+      if (g && !L.logCollapsed && g.scrollHeight > g.clientHeight) { L.logCollapsed = true; render(); }
+    });
+  }
 }
 
 // ---- Draft controls: the scenarios' GIVENs, visibly outside Studio ----

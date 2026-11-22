@@ -3529,7 +3529,8 @@ function logPanel(st = S, opts = LOG_COMPILER) {
   const count = shown.length > LOG_CAP ? `last ${LOG_CAP} of ${shown.length} lines`
     : shown.length < st.log.length ? `${shown.length} of ${st.log.length} lines`
     : `${shown.length} lines`;
-  const header = h("div", { class: "log-header" }, chevron, strong("Log"), chips,
+  // A collapsed log has no lines to filter, so no filter buttons.
+  const header = h("div", { class: "log-header" }, chevron, strong("Log"), st.logCollapsed ? null : chips,
     h("span", { class: "weak log-count" }, count));
   if (st.logCollapsed) return h("div", { class: "log-panel" }, header);
   return h("div", { class: "log-panel" }, logDivider(st), header, logBody(st, drawn, opts));
