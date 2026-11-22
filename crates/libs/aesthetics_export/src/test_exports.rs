@@ -8,7 +8,9 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use pes_version::{Engine, PesVersion};
 
-use crate::conventions::{FileKind, classify, folder_slot, is_small_metadata};
+use crate::conventions::{
+    FileKind, MetadataFile, classify, folder_slot, is_logo_texture, is_small_metadata,
+};
 use crate::listing::{CanonicalListing, ListedEntry, ListedKind, SmallMetadata};
 use crate::parse::{ExportCoverage, coverage, team_name};
 use crate::validate::{is_logo_name, is_portrait_name, stem};
@@ -19,7 +21,10 @@ use crate::validate::{is_logo_name, is_portrait_name, stem};
 pub enum Requirement {
     /// Some content (`export_empty`): an export whose files and empty folders all sit at its
     /// root gets the default player, `Players/03 - A/` (`Players/Ref A/` and a `players.txt`
-    /// of `01 Ref A` for a referee export).
+    /// of `01 Ref A` for a referee export) — but nothing beside a root `players.txt` or
+    /// `refs.txt`, whose lines decide the folders instead, nor a root `logo*` texture, which
+    /// alone satisfies the check. That texture is `Logo`'s fill, so `without(Content)` alone
+    /// stays clean on a `Full` export; a test of `export_empty` there turns `Logo` off too.
     Content,
     /// A `Full` team export's root logo (`logo_missing`): `logo.png` when no root file's stem
     /// starts with `logo`.
@@ -69,22 +74,31 @@ impl CleanFiles {
     }
 }
 
-/// The files the export `name` lacks to be clean on `version`, given `paths`, every file and
-/// empty folder it holds (relative to its root, `/`-separated), with the requirements in
-/// `without` left out: (path, bytes), sorted by path. The export's kind comes from `name` as
-/// `parse_listing` reads it (`team_name`, then `coverage`). The one place a requirement is
-/// written.
+/// The files the export `name` lacks to be clean on `version`, given `files` and `folders`
+/// (the export's empty folders), both relative to its root and `/`-separated, with the
+/// requirements in `without` left out: (path, bytes), sorted by path. The export's kind comes
+/// from `name` as `parse_listing` reads it (`team_name`, then `coverage`). The one place a
+/// requirement is written.
 pub fn missing(
     name: &str,
     version: PesVersion,
-    paths: &[&str],
+    files: &[&str],
+    folders: &[&str],
     without: &[Requirement],
     clean: &CleanFiles,
 ) -> Vec<(String, Vec<u8>)> {
     let referee = team_name(name).is_some_and(|team| team.is_referees());
     let full_team = !referee && coverage(name) == Some(ExportCoverage::Full);
     let mut added: Vec<(String, Vec<u8>)> = Vec::new();
-    if !without.contains(&Requirement::Content) && paths.iter().all(|path| at_root(path)) {
+    // Content adds nothing beside a root roster, whose lines decide the player folders,
+    // or a root `logo*` texture, which alone satisfies `export_empty`.
+    let at_root_file =
+        |predicate: fn(&str) -> bool| files.iter().any(|path| at_root(path) && predicate(path));
+    if !without.contains(&Requirement::Content)
+        && files.iter().chain(folders.iter()).all(|path| at_root(path))
+        && !at_root_file(is_roster_name)
+        && !at_root_file(is_logo_texture)
+    {
         let folder = if referee {
             added.push(("players.txt".to_owned(), b"01 Ref A\n".to_vec()));
             "Players/Ref A"
@@ -95,22 +109,27 @@ pub fn missing(
             added.push((format!("{folder}/{file}"), bytes.clone()));
         }
     }
-    let has_logo = paths.iter().any(|path| at_root(path) && is_logo_name(path));
+    let has_logo = at_root_file(is_logo_name);
     if full_team && !without.contains(&Requirement::Logo) && !has_logo {
         added.push(("logo.png".to_owned(), clean.logo.clone()));
     }
     if full_team && version >= PesVersion::Pes17 && !without.contains(&Requirement::Portraits) {
-        let all: Vec<&str> = paths
+        let all: Vec<&str> = files
             .iter()
             .copied()
             .chain(added.iter().map(|(path, _)| path.as_str()))
             .collect();
-        for folder in without_portrait(&all) {
+        for folder in without_portrait(&all, folders) {
             added.push((format!("{folder}/portrait.dds"), clean.portrait.clone()));
         }
     }
     // A default file never replaces one the test gave (a referee's own `players.txt`).
-    added.retain(|(path, _)| !paths.iter().any(|given| given.eq_ignore_ascii_case(path)));
+    added.retain(|(path, _)| {
+        !files
+            .iter()
+            .chain(folders.iter())
+            .any(|given| given.eq_ignore_ascii_case(path))
+    });
     added.sort();
     added
 }
@@ -120,32 +139,53 @@ fn at_root(path: &str) -> bool {
     !path.contains('/')
 }
 
-/// The player folders (`Players/<name>`) among `paths` that have no `portrait.*` texture
-/// directly in them and no `Portraits/NN` file for the number their name starts with.
-fn without_portrait(paths: &[&str]) -> BTreeSet<String> {
-    let mut folders = BTreeSet::new();
+/// Whether `name`, a root file's, is a roster file name: `players.txt` or `refs.txt`,
+/// matched whole, ASCII-case-insensitively.
+fn is_roster_name(name: &str) -> bool {
+    matches!(
+        classify(name),
+        FileKind::Metadata(MetadataFile::PlayersTxt | MetadataFile::RefsTxt)
+    )
+}
+
+/// The player folders with no `portrait.*` texture directly in them and no `Portraits/NN`
+/// texture for the number their name starts with. `Players/<x>` is a player folder when it
+/// is an empty folder in `folders` or some file lies below it (`Players/<x>/...`); a file
+/// directly in `Players/` is not.
+fn without_portrait(files: &[&str], folders: &[&str]) -> BTreeSet<String> {
+    let mut players = BTreeSet::new();
     let mut with_portrait = BTreeSet::new();
     let mut portrait_slots = BTreeSet::new();
-    for path in paths {
+    for path in files {
         let segments: Vec<&str> = path.split('/').collect();
         match segments.as_slice() {
+            // `check_portraits` counts only a texture at `Portraits/NN`.
             [root, file] if root.eq_ignore_ascii_case("Portraits") => {
-                portrait_slots.extend(folder_slot(stem(file)));
+                if classify(file) == FileKind::Texture {
+                    portrait_slots.extend(folder_slot(stem(file)));
+                }
             }
-            [root, folder, rest @ ..] if root.eq_ignore_ascii_case("Players") => {
-                let folder = format!("{root}/{folder}");
-                if let [file] = rest
+            [root, name, _, ..] if root.eq_ignore_ascii_case("Players") => {
+                let folder = format!("{root}/{name}");
+                if let [file] = &segments[2..]
                     && classify(file) == FileKind::Texture
                     && is_portrait_name(file)
                 {
                     with_portrait.insert(folder.clone());
                 }
-                folders.insert(folder);
+                players.insert(folder);
             }
             _ => {}
         }
     }
-    folders
+    for path in folders {
+        if let [root, name, ..] = path.split('/').collect::<Vec<_>>().as_slice()
+            && root.eq_ignore_ascii_case("Players")
+        {
+            players.insert(format!("{root}/{name}"));
+        }
+    }
+    players
         .into_iter()
         .filter(|folder| !with_portrait.contains(folder))
         .filter(|folder| {
@@ -282,13 +322,16 @@ impl TestExport {
 
     /// `missing` over the test's files and folders.
     fn missing(&self, clean: &CleanFiles) -> Vec<(String, Vec<u8>)> {
-        let paths: Vec<&str> = self
-            .files
-            .keys()
-            .chain(&self.folders)
-            .map(String::as_str)
-            .collect();
-        missing(&self.name, self.version, &paths, &self.without, clean)
+        let files: Vec<&str> = self.files.keys().map(String::as_str).collect();
+        let folders: Vec<&str> = self.folders.iter().map(String::as_str).collect();
+        missing(
+            &self.name,
+            self.version,
+            &files,
+            &folders,
+            &self.without,
+            clean,
+        )
     }
 }
 
@@ -422,5 +465,80 @@ mod tests {
         let export = export.sized("Portraits/05.dds", 4);
         assert_eq!(added(&export), ["Players/07 - B/portrait.dds", "logo.png"]);
         assert_eq!(issue_codes(&export), Vec::<&str>::new());
+    }
+
+    #[test]
+    fn a_file_directly_in_players_is_no_player_folder() {
+        let export = TestExport::new("co Full Spring", Pes21)
+            .sized("Players/notes.txt", 5)
+            .sized("Players/05 - A/face_high.fmdl", 4);
+        // `Players/notes.txt` is a stray file, not a folder: no `portrait.dds` beneath it.
+        assert_eq!(added(&export), ["Players/05 - A/portrait.dds", "logo.png"]);
+        // The stray itself is the one finding the pass reports.
+        assert_eq!(issue_codes(&export), ["root_file_unexpected"]);
+    }
+
+    #[test]
+    fn a_given_roster_decides_the_player_folders() {
+        let midcup = TestExport::new("co Midcup Spring", Pes21)
+            .file("players.txt", "03 B\n")
+            .sized("Players/B/face_high.fmdl", 4);
+        assert_eq!(added(&midcup), Vec::<String>::new());
+        assert_eq!(issue_codes(&midcup), Vec::<&str>::new());
+
+        let refs = TestExport::new("refs Cup", Pes21)
+            .file("refs.txt", "01 arbiter\n")
+            .sized("Players/arbiter/face_high.fmdl", 4);
+        assert_eq!(added(&refs), Vec::<String>::new());
+        assert_eq!(issue_codes(&refs), Vec::<&str>::new());
+
+        // A roster alone still blocks the default player: the folders its
+        // lines do not name are unlisted, so the export stays empty instead.
+        let midcup = TestExport::new("co Midcup Spring", Pes21).file("players.txt", "03 B\n");
+        assert_eq!(added(&midcup), Vec::<String>::new());
+        assert_eq!(
+            issue_codes(&midcup),
+            ["export_empty", "players_txt_target_missing"]
+        );
+
+        // A referee export's empty surviving roster also fails it.
+        let refs = TestExport::new("refs Cup", Pes21).file("refs.txt", "03 B\n");
+        assert_eq!(added(&refs), Vec::<String>::new());
+        assert_eq!(
+            issue_codes(&refs),
+            [
+                "export_empty",
+                "players_txt_target_missing",
+                "players_txt_invalid"
+            ]
+        );
+    }
+
+    #[test]
+    fn a_root_logo_texture_alone_satisfies_content() {
+        let export = TestExport::new("co Midcup Spring", Pes21).sized("logo.png", 4);
+        assert_eq!(added(&export), Vec::<String>::new());
+        assert_eq!(issue_codes(&export), Vec::<&str>::new());
+    }
+
+    #[test]
+    fn only_a_portraits_texture_covers_a_players_slot() {
+        let export = TestExport::new("co Full Spring", Pes21)
+            .sized("Players/05 - A/face_high.fmdl", 4)
+            .sized("Portraits/05.txt", 3);
+        assert_eq!(added(&export), ["Players/05 - A/portrait.dds", "logo.png"]);
+        // `Portraits/05.txt` counts for no slot; the pass reports it alone.
+        assert_eq!(issue_codes(&export), ["portrait_name_invalid"]);
+    }
+
+    #[test]
+    fn a_full_export_without_content_stays_clean_thanks_to_its_logo() {
+        let export = TestExport::new("co Full Spring", Pes21).without(Requirement::Content);
+        assert_eq!(issue_codes(&export), Vec::<&str>::new());
+        // With the logo fill off too, nothing satisfies `export_empty`.
+        assert_eq!(
+            issue_codes(&export.without(Requirement::Logo)),
+            ["export_empty"]
+        );
     }
 }
