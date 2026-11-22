@@ -35,6 +35,7 @@ mod portraits;
 pub(crate) mod prompt;
 mod quick_actions;
 mod ruleset_picker;
+mod similar;
 mod tactics;
 mod team;
 pub(crate) mod terms;
@@ -390,6 +391,10 @@ pub(crate) struct SaveView {
     /// (the Player menu's `…` items, and Ctrl+B); `None` while it is
     /// closed.
     stat_num: Option<menus::StatNum>,
+    /// The Select all similar players window's state while it is open
+    /// (the quick actions' `Select all similar players` button);
+    /// `None` while it is closed.
+    similar: Option<similar::Similar>,
     /// The Bump dialog's last N used in this window (its field's
     /// prefill), starting at 0.
     bump: i32,
@@ -614,6 +619,7 @@ impl SaveView {
             edit_aesthetics: false,
             boglo: None,
             stat_num: None,
+            similar: None,
             bump: 0,
             set_stats: 77,
             copy_swap: None,
@@ -741,6 +747,7 @@ impl SaveView {
         self.refusal = None;
         self.boglo = None;
         self.stat_num = None;
+        self.similar = None;
         self.copy_swap = None;
         self.generate = None;
         self.picture = None;
@@ -1023,6 +1030,7 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() ->
     team::kit_slots_dialog(ui, view);
     menus::boglo_dialog(ui, view);
     menus::stat_num_dialog(ui, view);
+    similar::dialog(ui, view);
     copy_stats::window(ui, view);
     menus::fix_database_dialog(ui, view);
     multi_aatf::dialog(ui, view);
