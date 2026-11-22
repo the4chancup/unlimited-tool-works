@@ -19714,3 +19714,15 @@ titles floats away from a cell the member cannot see; clipping at the rows' own 
 every first-row badge. The draft cannot clip there in CSS, and its comment says so.
 Plan: `plans/team_compiler/gui.md` "The detail window" (the top box, and "A click pins it");
 TC-GUI-24 and TC-GUI-31 widened.
+
+## 2026-11-22 — conduct, UI drafts — every UI decision is seen by the maintainer, in the draft or in a picture
+Decision: a choice about what a member sees, made by the lead in a plan edit, a review ruling or
+a brief, is shown either by the draft, with a sample that reaches its case, or in the turn's
+report as a rendered mock or capture of the chosen look beside the rejected one, named as the
+maintainer's to veto.
+Why: slice 1b-ii's "a picture fitted in the box is never enlarged" was taken from draft CSS
+whose samples all carry logos larger than the box, so the rule could not be seen there, and it
+reached the maintainer as one sentence of a report. A decision they cannot see is one they cannot
+veto.
+Plan: `RUNBOOK.md` "Lead and sidekick", beside "A brief for a change a member sees or does names
+the draft".

@@ -770,7 +770,14 @@ for each change in a brief, not for the brief as a whole: every deliverable a me
 does carries its own `Draft:` line naming the function, or `No draft:` with the reason (no
 visible change), and the lead checks each against the draft's diff before sending. A brief
 of four small asks once named the draft of one, and the page keys' scroll to the top was
-built undrafted beside it. **A brief is
+built undrafted beside it. **Every UI decision is seen by the maintainer, in the draft or in a
+picture.** A choice about what a member sees, made in a plan edit, a ruling on a review or a
+brief, is either shown by the draft, with a sample that reaches the case (a draft rule its
+samples never meet is not shown: CSS that only shrinks pictures, with every sample logo
+larger than the box), or shown to the maintainer in the turn's report: a rendered mock or a
+capture of the chosen look beside the one rejected, named as theirs to veto. A report line
+alone is not shown: slice 1b-ii's "a picture is never enlarged" reached the maintainer as a
+sentence, from a draft with no small logo to see it on. **A brief is
 sized for one review.** Past about 500 lines of new code, a diff is read but not resteered: a
 wrong shape in the first module is already copied into the third by the time the lead sees it
 (`model_convert` took a 666-line rework commit after a single review of its first four
