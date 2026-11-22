@@ -98,18 +98,28 @@ other items run beside it. **After the detour**, in this order:
    The maintainer approved both drafts on 2026-11-22, the Compiler's with the logo and
    portrait findings, the upgrader's once each export's two names stood under their columns.
    The Sizes colouring and sorting were drafted and stamped the same day (gui.md "Sizes and
-   sorting"). Next: the first slice's brief (grid, window, log); Sizes and sorting come in a
-   later slice.
-   - Small slices of their own (SWE-2), beside the view: 0.0.2-logo, `logo_missing`, a
+   sorting"). The view is built in ordered slices (Opus), each landing and reviewed before
+   the next is briefed:
+   - [ ] 1a: the grid, read-only, filled by a check the view runs when it opens and after
+     each Compile (the watcher comes later): rows, label, ID, player, portraits and kit
+     cells, check states, the legend → verify: TC-GUI-04 without its watcher part, 20, 21
+   - [ ] 1b: the detail window: hover, pin, Esc, double-click, its top box, Copy messages
+     → verify: TC-GUI-09, 24, 25, 31, 32
+   - [ ] 1c: the toolbar's strip and its counts, the log's lines linked to cells, the log
+     collapsed when it would hide rows → verify: TC-GUI-15, 26, 27
+   - Then the row actions, the ID cell's editing, the watcher and cache, Sizes and sorting.
+   - Slices of their own beside the view: 0.0.2-logo, `logo_missing`, a
      `Full` team export with no logo is an Error, and `portrait_missing`, on PES 2017 to 2021
      a player with no portrait is a Warning (`plans/aesthetics_export/object_model.md`
      "Validation semantics"; `plans/team_compiler/messages.md`; `plans/export_upgrader.md`
      "What it does"):
-     - [ ] a: `aesthetics_export`'s validation for `Full` exports, the Compiler's and the
-       upgrader's catalog rows, and the tests' `Full` fixtures given a logo and portraits or
-       the `Midcup` tag → verify: TC-ROOT-15, TC-ROOT-16, EU-MDL-43
-     - [ ] b: a `Midcup` export's players, through `installed_portrait_slots` filled from the
-       Compiler's walk over the installed CPKs → verify: TC-ROOT-17
+     - [ ] a (Opus: about 500 test mentions of `Full` exports may meet the new findings):
+       `aesthetics_export`'s validation, `Midcup` included through `installed_portrait_slots`
+       (`None` at every caller), both catalogs, the team tracers' goldens upgraded as
+       `Midcup`, then a census of the tests the findings break before they are fixed →
+       verify: TC-ROOT-15, TC-ROOT-16, EU-MDL-43, TC-ROOT-17's validation half
+     - [ ] b: `installed_portrait_slots` filled from the Compiler's walk over the installed
+       CPKs → verify: TC-ROOT-17
    - Not urgent, a small slice of its own (SWE-2), after the view's or beside it: player
      numbering without the hyphen (`plans/aesthetics_export/player_folders.md`, the section of
      that name): `aesthetics_export`'s `conventions` (`folder_slot`, `folder_player_name`), the
