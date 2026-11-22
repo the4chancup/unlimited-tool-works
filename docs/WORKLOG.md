@@ -167,8 +167,10 @@ other items run beside it. **Ahead of item 6:** the `pes14` branch's step 12, a 
          touched (147 tests), through `complete`, whose folder walk is
          `team_compiler::test_files::complete`, shared with the unit tests; the CONTRIBUTING
          rule
-       - [ ] 4: the Compiler's other CLI tests (about 270), `deploy` and
-         `prefox_kit_variants` included: running (Opus, `sk/builder4`)
+       - [x] 4 (2026-11-22, merge `3efc8619`, Opus) the Compiler's other CLI tests, `deploy` and
+         `prefox_kit_variants` included: 455 tests in 17 files through `complete`. A Run B over
+         every export kind found 10 referee tests still on their own files, since the dummy
+         check fired on team exports only
        - [ ] 5: `export_upgrader` (about 130): running (Opus, `sk/builder5`), `old_missing`
          taking files and empty folders apart from the start
        - [ ] 6: `studio` (6)
