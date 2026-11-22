@@ -33,6 +33,11 @@
 
 ### Fixes
 
+- **Save editor**: importing a team from a Team TOML file now sets the team's name flag when
+  the import renames the team, as renaming it in the game does. The game shows a team's own
+  name only with that flag set, so an imported team could show its league slot's label
+  instead. A team imported with 0.0.2 keeps the flag clear when the same file is imported
+  again: rename it once in the game.
 - **Compiler**: a referee with no face model, whose body model brings his head, showed the
   game's own referee head floating over it. He now gets an empty face, as a team player in the
   same case does.
