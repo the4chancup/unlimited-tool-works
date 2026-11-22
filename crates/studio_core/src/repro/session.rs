@@ -1757,6 +1757,83 @@ mod tests {
         );
     }
 
+    // A `journal.toml` that cannot be read — a directory here, not a
+    // missing file — is the first write's error naming it, never a fresh
+    // folder made over it.
+    // ST-REP-10
+    #[test]
+    fn an_unreadable_journal_is_an_error_not_a_fresh_folder() {
+        let dir = TestDir::new("studio_core_session_journal_dir");
+        let root = dir.path().join("sessions");
+        let folder = root.join("2026-11-21-093015-4242");
+        fs::create_dir_all(folder.join("journal.toml")).unwrap();
+
+        let mut writer = SessionWriter::new(&root, header(4242));
+        let error = writer
+            .write(&SessionMessage::Step {
+                seconds: 0.5,
+                tool: "stub".to_owned(),
+                what: "a step".to_owned(),
+                op: None,
+            })
+            .expect_err("the unreadable journal is the write's error");
+        assert!(
+            format!("{error:#}").contains("journal.toml"),
+            "the error names the journal: {error:#}"
+        );
+        assert!(
+            !folder.join("inputs").exists() && !folder.join("outputs").exists(),
+            "no fresh folder was made"
+        );
+    }
+
+    // The adopted journal's output rows give the writer's index one entry
+    // each: a path's second row (its rewritten output) does not take a
+    // second index, and a row sharing only the tool or only the path is a
+    // new entry.
+    // ST-REP-10
+    #[test]
+    fn adoption_keeps_one_index_per_tool_and_path() {
+        let dir = TestDir::new("studio_core_session_adopt_dedupe");
+        let root = dir.path().join("sessions");
+        let mut first = SessionWriter::new(&root, header(4242));
+        for (tool, path, bytes) in [
+            ("stub", "C:/Data/out/a.bin", &b"A_FIRST"[..]),
+            ("stub", "C:/Data/out/a.bin", &b"A_SECOND"[..]),
+            ("stub", "C:/Data/out/b.bin", &b"B"[..]),
+            ("other", "C:/Data/out/a.bin", &b"OTHER_A"[..]),
+        ] {
+            first
+                .write(&SessionMessage::Output {
+                    tool: tool.to_owned(),
+                    path: Path::new(path).to_path_buf(),
+                    file: SessionFile::Raw(Arc::from(bytes)),
+                })
+                .unwrap();
+        }
+
+        let mut second = SessionWriter::new(&root, header(4242));
+        second.end(SessionEnd::Closed).unwrap();
+        assert_eq!(
+            second.outputs,
+            [
+                (
+                    "stub".to_owned(),
+                    Path::new("C:/Data/out/a.bin").to_path_buf()
+                ),
+                (
+                    "stub".to_owned(),
+                    Path::new("C:/Data/out/b.bin").to_path_buf()
+                ),
+                (
+                    "other".to_owned(),
+                    Path::new("C:/Data/out/a.bin").to_path_buf()
+                ),
+            ],
+            "the path's second row keeps its one index"
+        );
+    }
+
     // A journal left with half a block past its last marker is cut back
     // there on adoption: the second writer's step lands where the
     // fragment sat and the bundle reads every whole block and it.

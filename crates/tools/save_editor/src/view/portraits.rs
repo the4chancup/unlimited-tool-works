@@ -728,6 +728,31 @@ mod tests {
         );
     }
 
+    // The game's placeholder is read only when a filled slot's portrait is missing: an
+    // empty slot alone does not ask for it, and the read lands in the cache passed in.
+    #[test]
+    fn the_game_s_placeholder_is_read_only_for_a_missing_portrait() {
+        let path = portrait_path(PesVersion::Pes21, 75823);
+        let folder = pes_folder(
+            "portraits_placeholder_needed",
+            &[("4cc_40_faces.cpk", &[(path.as_str(), FACES)])],
+        );
+        let mut cache = None;
+        let ids = [Some(75823), None];
+        read_images(Some(&folder), PesVersion::Pes21, &ids, &mut cache);
+        assert!(
+            cache.is_none(),
+            "every filled slot holding its portrait: the placeholder is not read"
+        );
+
+        let ids = [Some(75823), Some(75824), None];
+        read_images(Some(&folder), PesVersion::Pes21, &ids, &mut cache);
+        assert!(
+            cache.is_some(),
+            "75824's missing portrait read the placeholder into the cache"
+        );
+    }
+
     // The same source on a pre-Fox portrait: `player_71801.dds`, WESYS-wrapped as the game
     // ships it, decoded at the size its header gives.
     #[test]
