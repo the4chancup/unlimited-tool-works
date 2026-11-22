@@ -185,7 +185,8 @@ fn copy_stat_fields(source: &PlayerEntry, dest: &mut PlayerEntry) {
 
 /// `kind`'s preset for `player`, his own IDs kept, since a full body model
 /// may use its own boots or gloves: a preset's boots or gloves ID is
-/// written only where the record holds 0 or `ids`'s hide ID, so hiding
+/// written only where the record holds 0 (a gloves ID read through
+/// `gloves_model`, so PES 2014's 262143 counts) or `ids`'s hide ID, so hiding
 /// turns 0 into the hide ID and keeps 627, showing turns the hide ID into
 /// 0 and keeps 627. The per-player and the team operations both apply
 /// this.
@@ -197,7 +198,7 @@ pub(crate) fn preset_for(
     let mut appearance = fpc::preset(kind, ids);
     appearance.boots_id = preset_id(player.appearance.boots_id, ids.boots(), appearance.boots_id);
     appearance.gloves_id = preset_id(
-        player.appearance.gloves_id,
+        pes_savefile::ops::fpc::gloves_model(player.appearance.gloves_id),
         ids.gloves(),
         appearance.gloves_id,
     );
@@ -279,6 +280,19 @@ mod tests {
             hide, expected,
             "the model's own IDs, the rest the hide preset's"
         );
+    }
+
+    // A record the game creates on an in-game edit stores the gloves
+    // id's 18 bits all set (262143), which the game draws as bare hands
+    // like a stored 0: the hide preset writes the hide gloves ID over
+    // it, as over a 0.
+    #[test]
+    fn the_hide_preset_writes_over_a_stored_all_bits_gloves_id() {
+        let mut player = PlayerEntry::default();
+        player.appearance.gloves_id = 262_143;
+        let hide = preset_for(&player, fpc::Preset::Hide, fpc::HideIds::CONVENTION);
+        assert_eq!(hide.gloves_id, 11);
+        assert_eq!(hide.boots_id, 55, "the boots slot is the preset's own");
     }
 
     // The bump's whole-number read and the 40 to 99 clamp, the parts a
