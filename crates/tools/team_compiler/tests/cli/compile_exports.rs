@@ -357,6 +357,52 @@ fn a_player_with_no_portrait_is_portrait_missing_on_pes_17_to_21_only() {
     );
 }
 
+// TC-ROOT-17
+#[test]
+fn a_midcup_player_with_no_portrait_is_portrait_missing_only_when_none_is_installed() {
+    let sandbox = Sandbox::new("portraits_missing_midcup");
+    let export = "exports/co Midcup Day 5";
+    for folder in ["03 - C", "04 - D"] {
+        sandbox.write(
+            &format!("{export}/Players/{folder}/face_high.fmdl"),
+            &clean_model(),
+        );
+    }
+    sandbox.complete_for(export, PesVersion::Pes21, &[Requirement::Portraits]);
+    install_names(&sandbox, &["4cc_40_portraits.cpk", "4cc_99_test.cpk"]);
+    install_cpk(
+        &sandbox,
+        "4cc_40_portraits.cpk",
+        &[("common/render/symbol/player/71403.dds", &tracer_portrait())],
+    );
+
+    let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
+
+    assert_eq!(
+        findings_of(&run.messages(), "co Midcup Day 5"),
+        [
+            "Warning portrait_missing [Keep] at Players/04 - D (slot=04)",
+            "Info export_identified [Keep] (team=/co/, id=714)",
+            TEAM_COLORS_MISSING,
+        ]
+    );
+
+    // A folder that does not exist: the sandbox's own `PES/` would stand in for a missing key.
+    let settings = format!(
+        "[common]\npes_version = 21\npes_folder_path = '{}'\n",
+        sandbox.root.join("no PES").display()
+    );
+    let run = sandbox.run(&settings, &["compile", "--no-deploy"]);
+
+    assert_eq!(
+        findings_of(&run.messages(), "co Midcup Day 5"),
+        [
+            "Info export_identified [Keep] (team=/co/, id=714)",
+            TEAM_COLORS_MISSING
+        ]
+    );
+}
+
 // TC-PRT-02
 #[test]
 fn a_slot_s_two_portraits_skip_the_export_when_they_differ_and_are_one_when_identical() {
@@ -619,7 +665,11 @@ fn content_nested_one_folder_down_compiles_as_if_at_the_root() {
     sandbox.copy_tracer_face("exports/co Midcup Wrapped/wrapper/Players/03 - A");
     sandbox.copy_tracer_face("exports/dbg Midcup Doubled/Players/Players/03 - A");
     sandbox.complete("exports/co Midcup Wrapped");
-    sandbox.complete("exports/dbg Midcup Doubled");
+    sandbox.complete_for(
+        "exports/dbg Midcup Doubled",
+        PesVersion::Pes21,
+        &[Requirement::Portraits],
+    );
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 

@@ -30,9 +30,11 @@ pub enum Requirement {
     /// A `Full` team export's root logo (`logo_missing`): `logo.png` when no root file's stem
     /// starts with `logo`.
     Logo,
-    /// On PES 2017 to 2021, a `portrait.dds` in each player folder of a `Full` team export
-    /// that has no portrait of its own and no `Portraits/NN` texture for its folder's number
-    /// (`portrait_missing`).
+    /// On PES 2017 to 2021, a `portrait.dds` in each player folder of a team export, `Full` or
+    /// `Midcup`, that has no portrait of its own and no `Portraits/NN` texture for its folder's
+    /// number (`portrait_missing`). A `Midcup` player is reported only when the installed CPKs
+    /// hold no portrait for him either, so only a portrait in the export keeps him clean in
+    /// every install.
     Portraits,
 }
 
@@ -89,7 +91,8 @@ pub fn missing(
     clean: &CleanFiles,
 ) -> Vec<(String, Vec<u8>)> {
     let referee = team_name(name).is_some_and(|team| team.is_referees());
-    let full_team = !referee && coverage(name) == Some(ExportCoverage::Full);
+    let team = !referee && coverage(name).is_some();
+    let full_team = team && coverage(name) == Some(ExportCoverage::Full);
     let mut added: Vec<(String, Vec<u8>)> = Vec::new();
     // Content adds nothing beside a root roster, whose lines decide the player folders,
     // or a root `logo*` texture, which alone satisfies `export_empty`.
@@ -116,7 +119,7 @@ pub fn missing(
     if full_team && !without.contains(&Requirement::Logo) && !has_logo {
         added.push(("logo.png".to_owned(), clean.logo.clone()));
     }
-    if full_team && version >= PesVersion::Pes17 && !without.contains(&Requirement::Portraits) {
+    if team && version >= PesVersion::Pes17 && !without.contains(&Requirement::Portraits) {
         let all: Vec<&str> = files
             .iter()
             .copied()
@@ -156,7 +159,8 @@ fn is_roster_name(name: &str, referee: bool) -> bool {
 /// The player folders with no `portrait.*` texture directly in them and no `Portraits/NN`
 /// texture for the number their name starts with. `Players/<x>` is a player folder when it
 /// is an empty folder in `folders` or some file lies below it (`Players/<x>/...`); a file
-/// directly in `Players/` is not.
+/// directly in `Players/` is not. A doubled `Players/Players/` layer is not seen through, so
+/// a test of one turns `Portraits` off.
 fn without_portrait(files: &[&str], folders: &[&str]) -> BTreeSet<String> {
     let mut players = BTreeSet::new();
     let mut with_portrait = BTreeSet::new();
@@ -401,7 +405,7 @@ mod tests {
         let portrait = "Players/03 - A/portrait.dds";
         let cases: [(&str, PesVersion, &[&str]); 8] = [
             ("co Midcup Spring", Pes15, &[model, mtl, skin]),
-            ("co Midcup Spring", Pes21, &[fmdl]),
+            ("co Midcup Spring", Pes21, &[fmdl, portrait]),
             ("co Full Spring", Pes15, &[model, mtl, skin, "logo.png"]),
             ("co Full Spring", Pes16, &[model, mtl, skin, "logo.png"]),
             (
@@ -473,6 +477,18 @@ mod tests {
     }
 
     #[test]
+    fn a_midcup_export_gets_a_portrait_for_each_player_without_one() {
+        let export =
+            TestExport::new("co Midcup Day 5", Pes21).sized("Players/05 - A/face_high.fmdl", 4);
+        assert_eq!(added(&export), ["Players/05 - A/portrait.dds"]);
+        assert_eq!(issue_codes(&export), Vec::<&str>::new());
+
+        let export =
+            TestExport::new("co Midcup Day 5", Pes16).sized("Players/05 - A/face_high.fmdl", 4);
+        assert_eq!(added(&export), Vec::<String>::new());
+    }
+
+    #[test]
     fn a_file_directly_in_players_is_no_player_folder() {
         let export = TestExport::new("co Full Spring", Pes21)
             .sized("Players/notes.txt", 5)
@@ -493,7 +509,13 @@ mod tests {
     #[test]
     fn a_team_s_refs_txt_is_no_roster() {
         let export = TestExport::new("co Midcup Spring", Pes21).file("refs.txt", "01 arbiter\n");
-        assert_eq!(added(&export), ["Players/03 - A/face_high.fmdl"]);
+        assert_eq!(
+            added(&export),
+            [
+                "Players/03 - A/face_high.fmdl",
+                "Players/03 - A/portrait.dds"
+            ]
+        );
         // A team ignores a `refs.txt`: it is a stray, and the default player keeps the
         // export from being empty.
         assert_eq!(issue_codes(&export), ["root_file_unexpected"]);
@@ -504,7 +526,7 @@ mod tests {
         let midcup = TestExport::new("co Midcup Spring", Pes21)
             .file("players.txt", "03 B\n")
             .sized("Players/B/face_high.fmdl", 4);
-        assert_eq!(added(&midcup), Vec::<String>::new());
+        assert_eq!(added(&midcup), ["Players/B/portrait.dds"]);
         assert_eq!(issue_codes(&midcup), Vec::<&str>::new());
 
         let refs = TestExport::new("refs Cup", Pes21)
@@ -581,12 +603,20 @@ mod tests {
             .folder("Players/06 - B");
         assert_eq!(export.name(), "co Midcup Spring");
         assert_eq!(export.folders(), ["Players/06 - B"]);
-        // A Midcup export with a player's model lacks nothing, so the test's files alone,
-        // sorted by path.
+        // A Midcup export with a player's model lacks only its player folders' portraits, so
+        // the test's files and those, sorted by path.
         assert_eq!(
             export.files(&CleanFiles::placeholders()),
             [
                 ("Players/05 - A/face_high.fmdl".to_owned(), vec![0, 0]),
+                (
+                    "Players/05 - A/portrait.dds".to_owned(),
+                    b"portrait".to_vec()
+                ),
+                (
+                    "Players/06 - B/portrait.dds".to_owned(),
+                    b"portrait".to_vec()
+                ),
                 ("notes.txt".to_owned(), b"\n".to_vec()),
             ]
         );

@@ -131,7 +131,8 @@ fn a_common_model_link_bakes_the_model_into_the_face_and_its_texture_stays_in_th
             FACE_05,
             FACE_05_FPKD,
             "common/character0/model/character/uniform/team/UniColor.bin",
-            "common/etc/TeamColor.bin"
+            "common/etc/TeamColor.bin",
+            "common/render/symbol/player/71405.dds"
         ],
         "cloth once, in the team's Common output and not under the player's subfolder"
     );
@@ -229,6 +230,8 @@ fn a_boots_link_packs_the_common_skeleton_and_two_players_linking_one_model_shar
             "Asset/model/character/face/real/71407/#Win/face.fpkd",
             "common/character0/model/character/uniform/team/UniColor.bin",
             "common/etc/TeamColor.bin",
+            "common/render/symbol/player/71405.dds",
+            "common/render/symbol/player/71407.dds",
         ],
         "each player's package and blank face, the Common texture once"
     );
@@ -347,6 +350,7 @@ fn a_boots_link_beside_a_shared_boots_link_combines_the_shared_folder() {
             FACE_05_FPKD,
             "common/character0/model/character/uniform/team/UniColor.bin",
             "common/etc/TeamColor.bin",
+            "common/render/symbol/player/71405.dds",
         ],
         "no k0644: the shared folder is only a source of parts"
     );
@@ -460,7 +464,8 @@ fn a_common_model_link_converts_the_model_with_its_common_mtl_into_the_player_s_
             FACE_05,
             FACE_05_FPKD,
             "common/character0/model/character/uniform/team/UniColor.bin",
-            "common/etc/TeamColor.bin"
+            "common/etc/TeamColor.bin",
+            "common/render/symbol/player/71405.dds"
         ],
         "skin once, in the team's Common output"
     );
@@ -570,7 +575,8 @@ fn a_common_model_converted_with_the_player_s_own_mtl_names_his_texture_of_its_s
             FACE_05,
             FACE_05_FPKD,
             "common/character0/model/character/uniform/team/UniColor.bin",
-            "common/etc/TeamColor.bin"
+            "common/etc/TeamColor.bin",
+            "common/render/symbol/player/71405.dds"
         ],
         "his skin at his home, Common's packed by the Common textures task all the same"
     );
@@ -668,7 +674,9 @@ fn two_players_linking_one_common_model_each_convert_it_and_share_its_texture() 
             face_07,
             "Asset/model/character/face/real/71407/#Win/face.fpkd",
             "common/character0/model/character/uniform/team/UniColor.bin",
-            "common/etc/TeamColor.bin"
+            "common/etc/TeamColor.bin",
+            "common/render/symbol/player/71405.dds",
+            "common/render/symbol/player/71407.dds"
         ],
         "each player's face, the Common texture once"
     );
@@ -746,8 +754,11 @@ fn a_material_a_local_and_a_common_part_define_over_textures_in_two_places_drops
             "Asset/model/character/face/real/71407/#Win/face.fpkd",
             "common/character0/model/character/uniform/team/UniColor.bin",
             "common/etc/TeamColor.bin",
+            "common/render/symbol/player/71405.dds",
+            "common/render/symbol/player/71407.dds",
         ],
-        "nothing of slot 05, its own shirt included; the Common texture is the team's"
+        "nothing of slot 05's models or textures, its own shirt included (its portrait is a \
+         task of its own); the Common texture is the team's"
     );
 }
 
@@ -800,7 +811,8 @@ fn a_common_texture_that_cannot_convert_fails_the_common_task_and_the_linking_pl
             FACE_05,
             FACE_05_FPKD,
             "common/character0/model/character/uniform/team/UniColor.bin",
-            "common/etc/TeamColor.bin"
+            "common/etc/TeamColor.bin",
+            "common/render/symbol/player/71405.dds"
         ],
         "no Common texture, `cloth` included; the player's face is in"
     );
@@ -871,7 +883,8 @@ fn a_texture_link_points_the_player_s_model_at_the_one_copy_in_the_team_s_common
             FACE_05,
             FACE_05_FPKD,
             "common/character0/model/character/uniform/team/UniColor.bin",
-            "common/etc/TeamColor.bin"
+            "common/etc/TeamColor.bin",
+            "common/render/symbol/player/71405.dds"
         ],
         "hair once, in the team's Common output; the player's own folder holds skin alone"
     );
@@ -940,7 +953,8 @@ fn a_link_to_an_ftex_points_the_player_s_model_at_the_one_copy_in_the_team_s_com
             FACE_05,
             FACE_05_FPKD,
             "common/character0/model/character/uniform/team/UniColor.bin",
-            "common/etc/TeamColor.bin"
+            "common/etc/TeamColor.bin",
+            "common/render/symbol/player/71405.dds"
         ],
         "hair once, in the team's Common output; the player's own folder holds skin alone"
     );
@@ -3261,7 +3275,8 @@ fn an_unlinked_common_model_builds_nothing() {
             FACE_05,
             FACE_05_FPKD,
             "common/character0/model/character/uniform/team/UniColor.bin",
-            "common/etc/TeamColor.bin"
+            "common/etc/TeamColor.bin",
+            "common/render/symbol/player/71405.dds"
         ]
     );
 }

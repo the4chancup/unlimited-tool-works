@@ -131,6 +131,7 @@ fn a_player_s_own_boots_and_gloves_compile_under_its_exclusive_id_with_the_textu
             "Asset/model/character/glove/g0625/#Win/glove.fpkd",
             "common/character0/model/character/uniform/team/UniColor.bin",
             "common/etc/TeamColor.bin",
+            "common/render/symbol/player/71405.dds",
         ]
     );
     assert_eq!(
@@ -361,6 +362,8 @@ fn a_folder_mapped_to_two_slots_emits_its_boots_under_both_ids_and_its_textures_
             "Asset/model/character/face/real/71407/#Win/face.fpkd",
             "common/character0/model/character/uniform/team/UniColor.bin",
             "common/etc/TeamColor.bin",
+            "common/render/symbol/player/71403.dds",
+            "common/render/symbol/player/71407.dds",
         ]
     );
     assert_eq!(
@@ -431,8 +434,10 @@ fn a_texture_that_cannot_convert_drops_the_whole_folder_and_the_folder_beside_it
             "Asset/model/character/glove/g0627/#Win/glove.fpkd",
             "common/character0/model/character/uniform/team/UniColor.bin",
             "common/etc/TeamColor.bin",
+            "common/render/symbol/player/71405.dds",
+            "common/render/symbol/player/71407.dds",
         ],
-        "nothing of slot 05 is in the CPK"
+        "nothing of slot 05's models or textures is in the CPK (its portrait is a task of its own)"
     );
 }
 
@@ -544,6 +549,7 @@ fn a_boots_link_beside_a_local_boots_model_combines_the_shared_folder_into_the_p
             "Asset/model/character/glove/g0625/#Win/glove.fpkd",
             "common/character0/model/character/uniform/team/UniColor.bin",
             "common/etc/TeamColor.bin",
+            "common/render/symbol/player/71405.dds",
         ],
         "no k0644: the shared folder is only a source of parts"
     );
@@ -589,6 +595,7 @@ fn a_boots_link_beside_a_local_boots_model_combines_the_shared_folder_into_the_p
             "Asset/model/character/boots/k0627/#windx11/sole.ftex",
             "Asset/model/character/face/real/71407/#Win/face.fpk",
             "Asset/model/character/face/real/71407/#Win/face.fpkd",
+            "common/render/symbol/player/71407.dds",
         ]
     );
     assert_eq!(boots_mesh_count(&entries, k0627), tracer_boots_mesh_count());
@@ -1246,6 +1253,7 @@ fn a_subfolder_s_parts_combine_with_loose_root_files_of_their_category() {
             "Asset/model/character/glove/g0625/#Win/glove.fpkd",
             "common/character0/model/character/uniform/team/UniColor.bin",
             "common/etc/TeamColor.bin",
+            "common/render/symbol/player/71405.dds",
         ]
     );
     let package = face_package(&entries);
@@ -1347,6 +1355,7 @@ fn a_face_link_combines_the_shared_face_folder_into_the_player_s_face() {
             "Asset/model/character/face/real/71405/#Win/face.fpkd",
             "common/character0/model/character/uniform/team/UniColor.bin",
             "common/etc/TeamColor.bin",
+            "common/render/symbol/player/71405.dds",
         ],
         "nothing for Longhair on its own"
     );
@@ -1641,6 +1650,7 @@ fn a_texture_the_player_and_a_combined_boots_folder_hold_is_packed_once_or_overr
             "Asset/model/character/face/real/71405/#Win/face.fpkd",
             "common/character0/model/character/uniform/team/UniColor.bin",
             "common/etc/TeamColor.bin",
+            "common/render/symbol/player/71405.dds",
         ]
     );
 
@@ -1676,6 +1686,7 @@ fn a_texture_the_player_and_a_combined_boots_folder_hold_is_packed_once_or_overr
             "Asset/model/character/face/real/71405/#Win/face.fpkd",
             "common/character0/model/character/uniform/team/UniColor.bin",
             "common/etc/TeamColor.bin",
+            "common/render/symbol/player/71405.dds",
         ],
         "the same paths as the same-bytes run"
     );
@@ -1750,6 +1761,8 @@ fn under_ingame_face_a_texture_the_player_and_a_combined_boots_folder_hold_diffe
             "Asset/model/character/face/real/71407/#Win/face.fpkd",
             "common/character0/model/character/uniform/team/UniColor.bin",
             "common/etc/TeamColor.bin",
+            "common/render/symbol/player/71405.dds",
+            "common/render/symbol/player/71407.dds",
         ],
         "slot 05's boots and textures kept, no face under the marker"
     );
@@ -1803,6 +1816,8 @@ fn a_texture_the_player_s_folder_and_a_combined_face_folder_hold_differently_is_
             "Asset/model/character/face/real/71407/#Win/face.fpkd",
             "common/character0/model/character/uniform/team/UniColor.bin",
             "common/etc/TeamColor.bin",
+            "common/render/symbol/player/71405.dds",
+            "common/render/symbol/player/71407.dds",
         ],
         "slot 05 kept, the shared folder's skin left out of his texture folder"
     );
@@ -1894,6 +1909,9 @@ fn parts_with_a_skeleton_mismatch_or_a_material_defined_twice_leave_their_boots_
             "Asset/model/character/face/real/71409/#Win/face.fpkd",
             "common/character0/model/character/uniform/team/UniColor.bin",
             "common/etc/TeamColor.bin",
+            "common/render/symbol/player/71405.dds",
+            "common/render/symbol/player/71407.dds",
+            "common/render/symbol/player/71409.dds",
         ],
         "no k0625 or k0627: the failed boots are left out; each folder's blank face commits \
          with the folder's textures"
@@ -1954,6 +1972,9 @@ fn shared_boots_folders_compile_once_each_under_the_shared_ids_in_name_order() {
             "Asset/model/character/face/real/71411/#Win/face.fpkd",
             "common/character0/model/character/uniform/team/UniColor.bin",
             "common/etc/TeamColor.bin",
+            "common/render/symbol/player/71403.dds",
+            "common/render/symbol/player/71407.dds",
+            "common/render/symbol/player/71411.dds",
             "unlimited-tool-works/shared_ids/714.toml",
         ],
         "no k0623 or k0627 for the linking slots; each one's face is blank"
@@ -2114,6 +2135,8 @@ fn the_planned_ids_are_the_slot_s_and_two_compiles_write_the_same_bytes() {
             "Asset/model/character/glove/g0643/#Win/glove.fpkd",
             "common/character0/model/character/uniform/team/UniColor.bin",
             "common/etc/TeamColor.bin",
+            "common/render/symbol/player/71405.dds",
+            "common/render/symbol/player/71423.dds",
         ]
     );
     assert_eq!(

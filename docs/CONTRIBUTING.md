@@ -349,8 +349,9 @@ Requirements:
 - **A test gives an export only the files it is about, and `test_exports` adds the rest.**
   `aesthetics_export::test_exports::missing` lists what an export still lacks to pass the
   checks every export must pass: some content (`export_empty`), a `Full` team's logo
-  (`logo_missing`) and, from PES 2017, its portraits (`portrait_missing`). A test that writes
-  an export on disk writes its own files first, then calls `complete` once per export:
+  (`logo_missing`) and, from PES 2017, every team export's portraits (`portrait_missing`). A
+  test that writes an export on disk writes its own files first, then calls `complete` once per
+  export:
   `Sandbox::complete` in the Compiler's CLI tests (`complete_for` for another PES version or a
   requirement turned off), `test_files::complete` in its unit tests. A test that never touches
   the disk builds a `TestExport`. A test of one of those checks turns its requirement off with

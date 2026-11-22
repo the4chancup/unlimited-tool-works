@@ -2468,10 +2468,14 @@ mod tests {
                 "0 790 Face Players/Zed [79003] charge 10",
                 "0 790 textures Players/Zed charge 5",
                 "0 790 Face Players/Amy [79007, 79009] charge 20",
+                "0 790 portrait 79003 Players/Zed/portrait.dds charge 8",
+                "0 790 portrait 79007 Players/Amy/portrait.dds charge 8",
+                "0 790 portrait 79009 Players/Amy/portrait.dds charge 8",
                 "0 790 kit p1 Kits/p1 charge 0",
                 "0 790 kit p2 Kits/p2 - Away charge 8",
                 "0 790 kit g1 Kits/g1 charge 10",
                 "1 714 Face Players/04 - B [71404] charge 1",
+                "1 714 portrait 71404 Players/04 - B/portrait.dds charge 8",
             ]
         );
         // Zed's two tasks are one group charged as one; Amy, with no textures, is ungrouped.
@@ -2485,7 +2489,22 @@ mod tests {
             tasks: 0..2,
             charge: 15,
         });
-        assert_eq!(groups, [zed.clone(), zed, None, None, None, None, None]);
+        assert_eq!(
+            groups,
+            [
+                zed.clone(),
+                zed,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None
+            ]
+        );
     }
 
     #[test]
@@ -2513,11 +2532,12 @@ mod tests {
             summary(&report),
             [
                 "0 714 Face Players/04 - B [71404] charge 1",
+                "0 714 portrait 71404 Players/04 - B/portrait.dds charge 8",
                 "0 714 kit p1 Kits/p1 charge 8",
                 "0 714 logo logo.png charge 49",
             ]
         );
-        let logo = &report.manifest.tasks[2];
+        let logo = &report.manifest.tasks[3];
         assert_eq!(logo.group, None);
         assert_eq!(logo.kind.folder_path(), scope_path("logo.png"));
         let files: Vec<&str> = logo
@@ -2565,6 +2585,9 @@ mod tests {
                 "0 714 textures Players/A charge 16",
                 "0 714 Face Players/23 - B [71423] charge 0",
                 "0 714 Boots Players/23 - B [643] charge 64",
+                "0 714 portrait 71405 Players/A/portrait.dds charge 8",
+                "0 714 portrait 71407 Players/A/portrait.dds charge 8",
+                "0 714 portrait 71423 Players/23 - B/portrait.dds charge 8",
             ]
         );
         let group = Some(TaskGroup {
@@ -2641,7 +2664,10 @@ mod tests {
         // `pants_kit2.fmdl` is read by no task, so no charge counts it.
         assert_eq!(
             summary(&report),
-            ["0 714 Face Players/05 - A [71405] charge 9"]
+            [
+                "0 714 Face Players/05 - A [71405] charge 9",
+                "0 714 portrait 71405 Players/05 - A/portrait.dds charge 8",
+            ]
         );
         let files: Vec<&str> = report.manifest.tasks[0]
             .kind
@@ -2666,7 +2692,10 @@ mod tests {
         assert!(report.messages.is_empty(), "{:?}", report.messages);
         assert_eq!(
             summary(&report),
-            ["0 714 Face Players/05 - A [71405] charge 16"]
+            [
+                "0 714 Face Players/05 - A [71405] charge 16",
+                "0 714 portrait 71405 Players/05 - A/portrait.dds charge 8",
+            ]
         );
 
         // On a pre-Fox target the face converts and packs the whole set, listed once for the
@@ -2851,6 +2880,8 @@ mod tests {
                 "0 714 Face Players/05 - A [71405] charge 0",
                 "0 714 Face Players/06 - B [71406] charge 0",
                 "0 714 Boots Boots/Zebra [626] charge 8",
+                "0 714 portrait 71405 Players/05 - A/portrait.dds charge 8",
+                "0 714 portrait 71406 Players/06 - B/portrait.dds charge 8",
             ]
         );
     }
@@ -2898,6 +2929,9 @@ mod tests {
                 "0 714 textures Boots/Zebra charge 16",
                 "0 714 Gloves Gloves/Grip [623] charge 64",
                 "0 714 textures Gloves/Grip charge 128",
+                "0 714 portrait 71403 Players/03 - A/portrait.dds charge 8",
+                "0 714 portrait 71407 Players/07 - B/portrait.dds charge 8",
+                "0 714 portrait 71411 Players/11 - C/portrait.dds charge 8",
             ]
         );
         let groups: Vec<Option<TaskGroup>> = report
@@ -2924,7 +2958,10 @@ mod tests {
                 zebra.clone(),
                 zebra,
                 grip.clone(),
-                grip
+                grip,
+                None,
+                None,
+                None
             ]
         );
         let homes: Vec<&TextureHome> = report
@@ -3021,6 +3058,7 @@ mod tests {
             [
                 "0 714 Face Players/07 - B [71407] charge 0",
                 "0 714 Boots Players/07 - B [627] charge 16",
+                "0 714 portrait 71407 Players/07 - B/portrait.dds charge 8",
             ]
         );
         assert_eq!(
@@ -3084,7 +3122,8 @@ mod tests {
             !folders.is_empty()
                 && folders
                     .iter()
-                    .all(|folder| folder.as_str() == "Players/07 - B"),
+                    .all(|folder| folder.as_str() == "Players/07 - B"
+                        || folder.as_str().starts_with("Players/07 - B/")),
             "{folders:?}"
         );
 
@@ -3207,7 +3246,11 @@ mod tests {
                 .collect();
             assert_eq!(
                 folders,
-                BTreeSet::from(["Boots/Mud".to_owned(), "Players/09 - D".to_owned()]),
+                BTreeSet::from([
+                    "Boots/Mud".to_owned(),
+                    "Players/09 - D".to_owned(),
+                    "Players/09 - D/portrait.dds".to_owned(),
+                ]),
                 "{version}"
             );
         }
@@ -3324,7 +3367,10 @@ mod tests {
         assert!(kept.export.faces.is_empty(), "{:?}", kept.export.faces);
         assert_eq!(
             summary(&report),
-            ["0 714 Face Players/07 - C [71407] charge 8"]
+            [
+                "0 714 Face Players/07 - C [71407] charge 8",
+                "0 714 portrait 71407 Players/07 - C/portrait.dds charge 8",
+            ]
         );
 
         // Slot 07 linking it too keeps the folder, whose set is reported once.
@@ -3396,6 +3442,7 @@ mod tests {
                 "0 714 Boots Players/05 - A [625] charge 27",
                 "0 714 Gloves Players/05 - A [625] charge 68",
                 "0 714 textures Players/05 - A charge 32",
+                "0 714 portrait 71405 Players/05 - A/portrait.dds charge 8",
             ]
         );
         assert_eq!(
@@ -3502,6 +3549,7 @@ mod tests {
                 "0 714 Face Players/05 - A [71405] charge 0",
                 "0 714 Boots Players/05 - A [625] charge 14",
                 "0 714 textures Players/05 - A charge 16",
+                "0 714 portrait 71405 Players/05 - A/portrait.dds charge 8",
             ]
         );
         assert_eq!(
@@ -3578,6 +3626,7 @@ mod tests {
                 "0 714 Boots Boots/Crocs [627] charge 2",
                 "0 714 common textures Common (2) charge 3072",
                 "0 714 portrait 71405 Portraits/05.dds charge 3",
+                "0 714 portrait 71407 Players/07 - B/portrait.dds charge 8",
             ]
         );
         let files = |index: usize| -> Vec<&str> {
@@ -3739,6 +3788,8 @@ mod tests {
                 "0 714 textures Players/05 - A charge 4",
                 "0 714 Face Players/07 - B [71407] charge 16",
                 "0 714 common textures Common (2) charge 96",
+                "0 714 portrait 71405 Players/05 - A/portrait.dds charge 8",
+                "0 714 portrait 71407 Players/07 - B/portrait.dds charge 8",
             ]
         );
         let files = |index: usize| -> Vec<&str> {
@@ -3785,6 +3836,7 @@ mod tests {
             [
                 "0 714 Face Players/05 - A [71405] charge 19",
                 "0 714 textures Players/05 - A charge 37",
+                "0 714 portrait 71405 Players/05 - A/portrait.dds charge 8",
             ]
         );
         assert_eq!(
@@ -3913,6 +3965,8 @@ mod tests {
                 "0 714 Boots Players/05 - A [625] charge 24",
                 "0 714 Face Players/07 - B [71407] charge 0",
                 "0 714 Boots Boots/Crocs [627] charge 16",
+                "0 714 portrait 71405 Players/05 - A/portrait.dds charge 8",
+                "0 714 portrait 71407 Players/07 - B/portrait.dds charge 8",
             ]
         );
         assert_eq!(
@@ -3954,6 +4008,9 @@ mod tests {
                 "0 714 Face Players/07 - B [71407] charge 0",
                 "0 714 Boots Players/07 - B [627] charge 16",
                 "0 714 Face Players/09 - C [71409] charge 0",
+                "0 714 portrait 71405 Players/05 - A/portrait.dds charge 8",
+                "0 714 portrait 71407 Players/07 - B/portrait.dds charge 8",
+                "0 714 portrait 71409 Players/09 - C/portrait.dds charge 8",
             ]
         );
         let files = |index: usize| -> Vec<&str> {
@@ -3990,7 +4047,10 @@ mod tests {
         ]);
         assert_eq!(
             summary(&report),
-            ["0 714 Boots Players/05 - A [625] charge 24"]
+            [
+                "0 714 Boots Players/05 - A [625] charge 24",
+                "0 714 portrait 71405 Players/05 - A/portrait.dds charge 8",
+            ]
         );
         assert_eq!(
             message_summary(&report),
@@ -4006,7 +4066,10 @@ mod tests {
         ]);
         assert_eq!(
             summary(&report),
-            ["0 714 Boots Boots/Crocs [625] charge 16"]
+            [
+                "0 714 Boots Boots/Crocs [625] charge 16",
+                "0 714 portrait 71405 Players/05 - A/portrait.dds charge 8",
+            ]
         );
         assert!(report.messages.is_empty(), "{:?}", report.messages);
     }
@@ -4765,7 +4828,10 @@ mod tests {
         );
         assert_eq!(
             summary(&report),
-            ["0 714 Face Players/05 - A [71405] charge 10"]
+            [
+                "0 714 Face Players/05 - A [71405] charge 10",
+                "0 714 portrait 71405 Players/05 - A/portrait.dds charge 8",
+            ]
         );
         assert!(!models_folder(&report.manifest.tasks[0]).refkit_body);
     }
@@ -4804,6 +4870,8 @@ mod tests {
                 "0 714 Face Players/06 - B [71406] charge 0",
                 "0 714 Boots Boots/Crocs [626] charge 17",
                 "0 714 textures Boots/Crocs charge 32",
+                "0 714 portrait 71405 Players/05 - A/portrait.dds charge 8",
+                "0 714 portrait 71406 Players/06 - B/portrait.dds charge 8",
             ]
         );
         assert_eq!(
@@ -4855,6 +4923,7 @@ mod tests {
             [
                 "0 714 Face Players/05 - A [71405] charge 7",
                 "0 714 textures Players/05 - A charge 16",
+                "0 714 portrait 71405 Players/05 - A/portrait.dds charge 8",
             ]
         );
         assert_eq!(
@@ -4896,6 +4965,7 @@ mod tests {
                 "0 714 Face Players/05 - A [71405] charge 8",
                 "0 714 Boots Players/05 - A [625] charge 7",
                 "0 714 textures Players/05 - A charge 32",
+                "0 714 portrait 71405 Players/05 - A/portrait.dds charge 8",
             ]
         );
         assert_eq!(
@@ -4949,6 +5019,8 @@ mod tests {
                 "0 714 Gloves Players/05 - A [625] charge 12",
                 "0 714 Gloves Players/07 - B [627] charge 12",
                 "0 714 Boots Boots/Crocs [627] charge 17",
+                "0 714 portrait 71405 Players/05 - A/portrait.dds charge 8",
+                "0 714 portrait 71407 Players/07 - B/portrait.dds charge 8",
             ]
         );
         assert_eq!(
@@ -5016,6 +5088,8 @@ mod tests {
                 "0 714 Gloves Players/05 - A [625] charge 13",
                 "0 714 Face Players/07 - B [71407] charge 0",
                 "0 714 Boots Boots/Crocs [627] charge 17",
+                "0 714 portrait 71405 Players/05 - A/portrait.dds charge 8",
+                "0 714 portrait 71407 Players/07 - B/portrait.dds charge 8",
             ]
         );
         // His own skeletons go into both his packages, as his `.mtl` files do, each of which
@@ -5125,6 +5199,7 @@ mod tests {
                 "0 714 Boots Players/05 - A [625] charge 77",
                 "0 714 Gloves Players/05 - A [625] charge 91",
                 "0 714 common models Common (5) charge 124",
+                "0 714 portrait 71405 Players/05 - A/portrait.dds charge 8",
             ]
         );
         let tasks = &report.manifest.tasks;
@@ -5921,6 +5996,8 @@ mod tests {
                 "0 714 Gloves Players/05 - A [625] charge 3",
                 "0 714 Face Players/06 - B [71406] charge 0",
                 "0 714 Boots Players/06 - B [626] charge 5",
+                "0 714 portrait 71405 Players/05 - A/portrait.dds charge 8",
+                "0 714 portrait 71406 Players/06 - B/portrait.dds charge 8",
             ]
         );
         let tasks = &report.manifest.tasks;
@@ -6001,6 +6078,10 @@ mod tests {
                 "0 714 Boots Players/07 - C [627] charge 10",
                 "0 714 Face Players/08 - D [71408] charge 7",
                 "0 714 common models Common (2) charge 8",
+                "0 714 portrait 71405 Players/05 - A/portrait.dds charge 8",
+                "0 714 portrait 71406 Players/06 - B/portrait.dds charge 8",
+                "0 714 portrait 71407 Players/07 - C/portrait.dds charge 8",
+                "0 714 portrait 71408 Players/08 - D/portrait.dds charge 8",
             ]
         );
         let tasks = &report.manifest.tasks;
@@ -6067,6 +6148,8 @@ mod tests {
             [
                 "0 714 Face Players/05 - A [71405] charge 5",
                 "0 714 Face Players/07 - B [71407] charge 11",
+                "0 714 portrait 71405 Players/05 - A/portrait.dds charge 8",
+                "0 714 portrait 71407 Players/07 - B/portrait.dds charge 8",
             ]
         );
         // The xml says what the face loads: the face task splits nothing, so it reports no

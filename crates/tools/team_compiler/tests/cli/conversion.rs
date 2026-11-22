@@ -760,6 +760,7 @@ fn a_model_whose_conversion_fails_leaves_its_package_out_even_with_pass_through(
                 "Asset/model/character/face/real/71405/#Win/face.fpkd",
                 "common/character0/model/character/uniform/team/UniColor.bin",
                 "common/etc/TeamColor.bin",
+                "common/render/symbol/player/71405.dds",
             ],
             "pass_through {pass_through}"
         );

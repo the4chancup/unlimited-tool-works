@@ -10,11 +10,13 @@ use std::sync::Arc;
 
 use aesthetics_export::{
     ExportCoverage, ExportIdentity, FileDescriptor, FileKind, FpcDirective, ModelFormat,
-    ModelSuffix, ParsedAestheticsExport, PlayerIndex, ResolvedAestheticsExport, SharedKind,
-    SourceError, ValidatedAestheticsExport, ValidatedRoster, ValidationContext, common_link_name,
-    common_link_target, is_txt_note, model_suffix, parse_listing, read_colors_txt,
+    ModelSuffix, ParsedAestheticsExport, PlayerIndex, PlayerSlot, ResolvedAestheticsExport,
+    SharedKind, SourceError, ValidatedAestheticsExport, ValidatedRoster, ValidationContext,
+    common_link_name, common_link_target, is_txt_note, model_suffix, parse_listing,
+    read_colors_txt,
 };
 use anyhow::Context;
+use pes_savefile::portrait::portrait_path;
 use pes_savefile::settings_toml::PlayerSettings;
 use pes_version::{Engine, PesVersion};
 use pipeline::{MIN_FREE_BUDGET, MemoryBudget};
@@ -368,7 +370,7 @@ fn check_source(
         strict_file_type_check: strict,
         pass_through: inputs.settings.pass_through,
         installed_common_textures: installed_common_textures(inputs, installed, team_id),
-        installed_portrait_slots: None,
+        installed_portrait_slots: installed_portrait_slots(inputs, installed, team_id),
     };
     let mut report = parsed.validate(&context);
     // The deep pass reads only what the structure pass kept; its findings derive the report
@@ -551,6 +553,32 @@ fn installed_common_stems(
         InstalledPaths::Known(_) => {
             Some(installed.common_texture_stems(inputs.common.pes_version.engine(), team_id.get()))
         }
+    }
+}
+
+/// Team `team_id`'s slots whose portrait the `installed` CPKs already hold, at the path the
+/// run's version gives it. A `Midcup` player with no portrait is reported only when his slot
+/// is not among them. `None` when the lookup cannot be made or the export has no team ID: a
+/// portrait not in the export may still be installed.
+fn installed_portrait_slots(
+    inputs: &RunInputs,
+    installed: &InstalledPaths,
+    team_id: Option<TeamId>,
+) -> Option<BTreeSet<PlayerSlot>> {
+    let team_id = team_id?;
+    match installed {
+        InstalledPaths::Unknown => None,
+        InstalledPaths::Known(_) => Some(
+            (1..=23)
+                .filter_map(PlayerSlot::new)
+                .filter(|slot| {
+                    installed.holds(&portrait_path(
+                        inputs.common.pes_version,
+                        slot.player_id(team_id),
+                    ))
+                })
+                .collect(),
+        ),
     }
 }
 
@@ -2327,5 +2355,39 @@ mod tests {
                 "Warning shared_folder_no_model [Keep] at Boots/Studs (player=Players/05 - A)",
             ]
         );
+    }
+
+    #[test]
+    fn installed_portrait_slots_are_the_team_s_slots_whose_portrait_the_walk_holds() {
+        let walked = InstalledPaths::Known(crate::bins::installed::WalkedCpks::from(
+            std::collections::HashSet::from(["common/render/symbol/player/71403.dds".to_owned()]),
+        ));
+        let co = TeamId::new(714).ok();
+        let slot_03 = BTreeSet::from([PlayerSlot::new(3).unwrap()]);
+        for (version, installed, team_id, expected) in [
+            (PesVersion::Pes21, &walked, co, Some(slot_03)),
+            // PES 18 names slot 03's portrait `player_71403.dds`, which the walk does not hold.
+            (PesVersion::Pes18, &walked, co, Some(BTreeSet::new())),
+            (PesVersion::Pes21, &InstalledPaths::Unknown, co, None),
+            (PesVersion::Pes21, &walked, None, None),
+        ] {
+            let inputs = RunInputs {
+                settings: crate::settings::TeamCompilerSettings::default(),
+                common: studio_core::CommonSettings {
+                    pes_version: version,
+                    ..Default::default()
+                },
+                hide_ids: fpc::HideIds::CONVENTION,
+                teams_list: teams_list::TeamsList::parse("ID\tName\n714\t/co/\n").unwrap(),
+                exports_root: std::path::PathBuf::new(),
+                exports: Vec::new(),
+                timestamps: false,
+            };
+            assert_eq!(
+                installed_portrait_slots(&inputs, installed, team_id),
+                expected,
+                "{version}, {installed:?}, {team_id:?}"
+            );
+        }
     }
 }
