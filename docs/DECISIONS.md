@@ -19682,3 +19682,18 @@ Why: the 2026-11-22 citation rulings were miscounted, and only the texts were co
 first, because the rule read as one about tools. The cause, counting by hand, is now removed:
 the citation audit prints the day's rulings counted.
 Plan: `AGENTS.md` "Conduct", the paragraph "A snag is a finding".
+
+## 2026-11-22 — pes_savefile — the imported team name sets the name flag only when it renames the team
+Decision: this narrows the entry above ("a Team TOML import that writes the team's name sets
+its name flag"). The flag is set when the file's `name` differs from the team's stored name.
+With a `name` key the file's own flag is not read, and an equal `name` leaves the flag as it
+is. Without a `name` key, the file's flag is written as before.
+Why: every export carries `name`, so the wider rule set the flag on every round trip. A team's
+own file then changed the team, against SE-GUI-17 and SE-GUI-79, and nine tests failed. Letting
+the file's flag decide when the names are equal made a second import of the same file clear
+the flag the first set. The PES 2014 Build 3 case renames the team, so it is still fixed. A
+save where an earlier build wrote the name without the flag stays unfixed on a re-import.
+On PES 2014 no released build imports Team TOML, so only test saves hold one; on PES 2015 to
+2021, where import shipped in 0.0.2, it is weighed when the rule reaches main.
+Plan: `plans/pes_savefile/operations.md` "Team TOML", the paragraph "A written team name
+shows".

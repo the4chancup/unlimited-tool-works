@@ -45,15 +45,20 @@ Every comment the export writes reads as a plain description for a member editin
 Where a comment cannot say what a value means in plain words, it says where the value comes
 from ("as the game stores it").
 
-**A written team name shows.** An import that writes `[team] name` also sets the team's
-name flag (`[team.edit_flags] name`), whatever the file says. The game shows a team's stored
-name only with that flag set, and otherwise falls back to its slot's own label: on PES 2014,
-/gd/ imported onto team 853 showed as "Invitational 3" in game (2026-11-22), since /gd/'s
-file carried `name = false`. The flag in a file describes the save it came from, where the
-name may have been the slot's own; in the save it lands in, the name is the import's. It is
-the team's twin of "a written name sets the edited-player flag" (`spec/pes_savefile/operations.md`,
-the aesthetics patch). On PES 2015 to 2021 it follows from that rule and from PES 2014, not
-from a check in game yet.
+**A written team name shows.** An import whose `[team] name` renames the team also sets the
+team's name flag (`[team.edit_flags] name`), whatever the file says. The game shows a team's
+stored name only with that flag set, and otherwise falls back to its slot's own label: on PES
+2014, /gd/ imported onto team 853 showed as "Invitational 3" in game (2026-11-22), since
+/gd/'s file carried `name = false`. The flag in a file describes the save it came from, where
+the name may have been the slot's own; in the save it lands in, the name is the import's. With
+a `name` key the file's flag is not read, and a `name` equal to the team's leaves the flag as
+it is. We do not set the flag whenever `name` is present, because every export carries
+`name`: a team's own file, which must change nothing (SE-GUI-17), would set its flag, and an
+export imported back would no longer give the same save. Nor do we let the
+file's flag decide when the names are equal: a second import of the same file would then
+clear the flag the first one set. It is the team's twin of "a written name sets the
+edited-player flag" (`spec/pes_savefile/operations.md`, the aesthetics patch). On PES 2015 to
+2021 it follows from that rule and from PES 2014, not from a check in game yet.
 
 **Roster order.** Export from a team that breaks 4cc's roster order (slot `NN` holding a player
 other than `team id × 100 + NN`: `roster_order_breaks`, `plans/aatf_rules.md` "The host")
