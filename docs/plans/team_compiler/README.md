@@ -476,6 +476,18 @@ TC-CLI-13  GIVEN TC-CLI-11's root (a kit whose task fails, a disabled export)
                 --timestamps` prefixes its lines the same way
 ```
 
+**0.0.2-logo scope.** `logo_missing` (`messages.md` "Export level").
+
+```
+TC-ROOT-15 GIVEN "co Full Spring" with players and kits and no root logo file; "co Midcup Day
+                 5" with none; a refs export with none; and "co Full Autumn" whose only logo
+                 file is an undecodable logo.png
+           WHEN each is compiled for PES 21
+           THEN the first reports logo_missing (Error) on its export, and its CPK holds its
+                players and kits and no e_000714_* file; the second and the refs export report
+                no logo_missing; the fourth reports logo_file_invalid and no logo_missing
+```
+
 **0.0.2-poc2 scope.** What exists of this is in `spec/team_compiler/pipeline.md` "Resolved
 decisions and open questions", "A texture a model names must exist": a texture nobody
 supplies is a Warning on every engine. TC-MOD-71's last clause and TC-TEX-05's second

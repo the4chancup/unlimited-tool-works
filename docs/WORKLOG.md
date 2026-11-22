@@ -95,9 +95,15 @@ other items run beside it. **After the detour**, in this order:
    a cell's detail window now opens on hover and pins on a click, and long log lines wrap; a
    log line acts for its cell (`plans/team_compiler/gui.md`). The maintainer stamped that
    draft on 2026-11-22, and the Export upgrader's draft took the same window, log and counts.
-   Next: the Sizes colouring and sorting drafted and looked at with the maintainer (gui.md
-   "Sizes and sorting"), then the first slice's brief (grid, window, log); Sizes and sorting
-   come in a later slice.
+   The Sizes colouring and sorting were drafted and stamped the same day (gui.md "Sizes and
+   sorting"). Next: the first slice's brief (grid, window, log); Sizes and sorting come in a
+   later slice.
+   - A small slice of its own (SWE-2), beside the view: 0.0.2-logo, `logo_missing`, a `Full`
+     team export with no logo is an Error (`plans/aesthetics_export/object_model.md`
+     "Validation semantics"; `plans/team_compiler/messages.md` "Export level";
+     `plans/export_upgrader.md` "What it does"): `aesthetics_export`'s export findings, the
+     Compiler's and the upgrader's catalog rows, and the tests' logo-less `Full` fixtures
+     given a logo or the `Midcup` tag → verify: TC-ROOT-15, EU-MDL-43
    - Not urgent, a small slice of its own (SWE-2), after the view's or beside it: player
      numbering without the hyphen (`plans/aesthetics_export/player_folders.md`, the section of
      that name): `aesthetics_export`'s `conventions` (`folder_slot`, `folder_player_name`), the

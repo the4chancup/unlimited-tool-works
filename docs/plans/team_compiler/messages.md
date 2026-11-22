@@ -86,6 +86,7 @@ paragraph), three rows join "Player folders and shared model folders", beside
 | `export_disabled` | I | as the spec's row | GUI: a greyed row with **Enable** (`gui.md` "Row actions") |
 | `export_tag_missing` | E | as the spec's row | GUI: the row offers the two tags as buttons |
 | `team_name_unknown` | E | as the spec's row | GUI: ID cell becomes editable for inline assignment |
+| `logo_missing` | E | a `Full` team export with no root file whose stem starts with `logo` (`plans/aesthetics_export/object_model.md` "Validation semantics"); not a `Midcup` one, which keeps the installed logo, nor a referee export. The text names the two ways out: add a logo, or rename the export `Midcup` when it only adds to what is installed | kept: the export compiles without a logo (`Keep`) |
 | `kits_folder_missing` | W | a `Full` team export with no `Kits/` folder at all, which compiles to placeholder `p1` and `g1` kits and so resets the team's kits in game (`spec/aesthetics_export/object_model.md` "Coverage tag"); not a full-body team, which writes `Kits/p1/` itself. The text names the two ways out: add the kits, or rename the export `Midcup` | kept: the placeholders are written as today (`kit_placeholder`) |
 
 **Player folders and shared model folders**

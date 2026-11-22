@@ -19415,3 +19415,20 @@ Why: the corners name the player and the team at a glance in a box that is other
 until the 3D preview is built, and the same size in both boxes reads as one set of pictures.
 Plan: plans/team_compiler/gui.md "GUI: the live-validating team grid" (the detail window),
 "Sizes and sorting"; plans/team_compiler/README.md TC-GUI-31.
+
+## 2026-11-22 — aesthetics_export, team_compiler, export_upgrader — A `Full` team export with no logo is an Error
+Decision: the maintainer ruled that a `Full` team export with no logo is an Error, because the
+cup's rules require a logo and the coverage tag now tells a full export from a midcup one. The
+lead placed it in the shared validation as `logo_missing`, on the export, dropping nothing
+(`Keep`): the rest compiles without a logo. It is reported only when the export has no root
+`logo*` file at all, never beside a refused one, and never for a `Midcup` or referee export.
+Because the validation is shared, the Export upgrader writes nothing for a `Full` output with no
+logo. The text names the two ways out: add a logo, or tag the export `Midcup`.
+Why: shared and not Compiler-only, because an upgrade must end in an export the compiler
+accepts, or write nothing. `Keep` and not `DropExport`, because the absence is the only fault,
+and leaving a team out of the cup's compile over its logo costs more than it saves: a person
+looks at every export with an Error anyway. On the maintainer's machine, 19 of about 100 old exports that would be upgraded
+as `Full` have no `Logo/` folder: each now needs a logo, or `--coverage midcup`, before it
+upgrades.
+Plan: plans/aesthetics_export/object_model.md "Validation semantics"; plans/team_compiler/
+messages.md "Export level"; plans/export_upgrader.md "What it does"; TC-ROOT-15, EU-MDL-43.

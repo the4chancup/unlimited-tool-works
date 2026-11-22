@@ -33,6 +33,16 @@ A copying player the upgrade gives no folder (a stock-booted player with no face
 no link, because no patch entry names him, so his record, copy included, stays as the save
 holds it. Loose mode, which has no save, writes none.
 
+The shared validation's `logo_missing` (`plans/aesthetics_export/object_model.md`
+"Validation semantics") reaches the upgrader too. An export upgraded as `Full` (from its name,
+from `--coverage full`, or by default) whose `Logo/` folder gives no logo writes nothing. On
+the maintainer's machine, 19 of about 100 old exports that would be `Full` have no `Logo/`
+folder. Most are from 2016 to 2020, and at least one holds only faces, likely a mid-cup
+export named neither way, which the Error now stops before a compile resets its team. The
+text names the two
+ways out: put the logo in the old export's `Logo/` folder, or upgrade it with
+`--coverage midcup` when it only adds to what is installed.
+
 What worklog 0.0.2-poc1, poc4 and poc6 built is in `spec/export_upgrader.md` "What it
 does": step 3 ("When the save and the folders disagree"), step 8 (the hide ID of a
 custom ID no folder claims) and step 10 (a `.dds` beside a `.ftex` of one stem).
@@ -547,3 +557,12 @@ EU-SET-13  GIVEN EU-SET-12's export
                 no player folder holds a .copy, and no base_copy_beside_face is reported
 ```
 
+**0.0.2-logo scope.** `logo_missing` from the shared validation (above, "What it does").
+
+```
+EU-MDL-43  GIVEN an old export "co - Spring" with faces, kits and no Logo folder
+           WHEN it is upgraded, then upgraded again with --coverage midcup
+           THEN the first run reports logo_missing (Error) on "co Full - Spring", writes
+                nothing and ends migration_not_clean with exit code 1; the second writes
+                "co Midcup - Spring" with no logo file and ends migration_clean
+```

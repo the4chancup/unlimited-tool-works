@@ -279,8 +279,9 @@ const cellsOf = r => [...Object.values(r.players), ...(r.portraits ? [r.portrait
 
 function sampleRows() {
   return [
-    // The one row with its logo (the real /dbg/ export's logo.png, scaled to 160);
-    // the others stand for exports with none.
+    // Logos: the real /dbg/ export's logo.png, and the 4cc DLC's emblems of the
+    // other teams that have one, scaled to 160. /adv/ (a Midcup export) and
+    // Invitational 1 (a Full one, so an Error) stand for exports with none.
     { key: "dbg", name: "/dbg/", id: 789, display: "dbg Full Aesthetics Export Autumn26",
       logo: "assets/team_logos/dbg.png",
       label: { status: "fullOk", codes: [] }, players: players(1, 23),
@@ -292,7 +293,7 @@ function sampleRows() {
         K8: kit("p8 - Violet", "#7040b0", "#f0c020"), K9: kit("p9 - Grey", "#808080", "#202020") } },
     // A player folder named `15_Snuffy` claims no slot, so it has no cell: its
     // error is the label's, with the one-click rename that gives it slot 15.
-    { key: "a", name: "/a/", id: 702, display: "a Full Aesthetics Export Autumn26",
+    { key: "a", name: "/a/", id: 702, display: "a Full Aesthetics Export Autumn26", logo: "assets/team_logos/a.png",
       label: { status: "error", codes: ["shared_folder_orphaned", "player_folder_number_invalid"],
         at: { shared_folder_orphaned: "Boots/Predator", player_folder_number_invalid: "Players/15_Snuffy" },
         fix: { label: "Rename 15_Snuffy to 15 - Snuffy", apply: r => {
@@ -306,6 +307,7 @@ function sampleRows() {
           at: { kit_colors_derived: "Kits/p2 - Black" } },
         K3: kit("p3 - Third", "#6040a0", "#f0c020") } },
     { key: "aco", name: "/aco/", id: 703, display: "aco Full Aesthetics Export Autumn26.zip", archive: true,
+      logo: "assets/team_logos/aco.png",
       label: { status: "partialOk", codes: [] },
       players: with_(players(1, 23, "partialOk"), 4, { status: "partialError", codes: ["texture_not_div4"],
         at: { texture_not_div4: "Players/04 - Player 04/face.dds" } }),
@@ -319,7 +321,7 @@ function sampleRows() {
           at: { texture_not_pow2: "Players/11 - Player 11/portrait.png" },
           note: "The finding is on this player's portrait, which is in his folder" }),
       kits: { K1: kit("p1 - Lakers", "#602080", "#f0c020") } },
-    { key: "an", name: "/an/", id: 705, display: "an Full Aesthetics Export Autumn26",
+    { key: "an", name: "/an/", id: 705, display: "an Full Aesthetics Export Autumn26", logo: "assets/team_logos/an.png",
       label: { status: "checking", codes: [] },
       players: { ...players(1, 9), ...players(10, 16, "checking"), ...players(17, 23, "unchecked") },
       kits: { GK: kit("g1", "#0a0a0a", "#0a0a0a", "unchecked"), K1: kit("p1", "#0a0a0a", "#0a0a0a", "unchecked") } },
@@ -333,24 +335,26 @@ function sampleRows() {
       label: { status: "error", codes: ["export_layout_old"], ctx: { export_layout_old: "folder=Kit Configs" } },
       players: {}, kits: {} },
     { key: "bant", name: "/bant/", id: 708, display: "bant Full Aesthetics Export Autumn26", special: "disabled",
+      logo: "assets/team_logos/bant.png",
       label: { status: "fullOk", codes: ["export_disabled"] }, players: players(1, 23),
       kits: { GK: kit("g1", "#101010", "#f0f0f0"), K1: kit("p1", "#208040", "#f0f0f0") } },
     { key: "biz1", name: "/biz/", id: 709, display: "biz Full Aesthetics Export Autumn26", special: "clash",
+      logo: "assets/team_logos/biz.png",
       label: { status: "error", codes: ["duplicate_aesthetics_export"],
         ctx: { duplicate_aesthetics_export: "id=709, exports=biz Full Aesthetics Export Autumn26, biz Full Aesthetics Export Autumn26 v2.7z" } }, blocked: "duplicate_aesthetics_export",
       players: players(1, 23), kits: { K1: kit("p1", "#c0a020", "#101010") } },
     { key: "biz2", name: "/biz/", id: 709, display: "biz Full Aesthetics Export Autumn26 v2.7z", special: "clash",
-      archive: true, label: { status: "error", codes: ["duplicate_aesthetics_export"],
+      archive: true, logo: "assets/team_logos/biz.png", label: { status: "error", codes: ["duplicate_aesthetics_export"],
         ctx: { duplicate_aesthetics_export: "id=709, exports=biz Full Aesthetics Export Autumn26, biz Full Aesthetics Export Autumn26 v2.7z" } },
       blocked: "duplicate_aesthetics_export",
       players: players(1, 23, "partialOk"), kits: { K1: kit("p1", "#c0a020", "#101010", "partialOk") } },
     // A name too long for the label at the usual size.
-    { key: "civ4xg", name: "/civ4xg/", id: 788, display: "civ4xg Full Aesthetics Export Autumn26",
+    { key: "civ4xg", name: "/civ4xg/", id: 788, display: "civ4xg Full Aesthetics Export Autumn26", logo: "assets/team_logos/civ4xg.png",
       label: { status: "fullOk", codes: [] }, players: players(1, 23),
       kits: { GK: kit("g1", "#c0a020", "#202020"), K1: kit("p1", "#2050a0", "#c0a020") } },
     // A name that takes two lines of the label.
     { key: "inv1", name: "Invitational 1", id: 851, display: "Invitational 1 Full Aesthetics Export Autumn26",
-      label: { status: "fullOk", codes: [] }, players: players(1, 23),
+      label: { status: "error", codes: ["logo_missing"] }, players: players(1, 23),
       kits: { GK: kit("g1", "#202020", "#f0f0f0"), K1: kit("p1", "#f0f0f0", "#c02020") } },
     { key: "refs", name: "/refs/", id: null, refs: true, display: "refs Full Aesthetics Export Autumn26",
       label: { status: "fullOk", codes: [] },
@@ -385,7 +389,13 @@ const L = { log: [], logHeight: 180, logCollapsed: false, logFilter: "all",
 
 const MODES = { normal: "Compile", sideload: "Compile for sideloading", test: "Test output" };
 const rowOf = key => S.rows.find(r => r.key === key);
-const catalog = code => CATALOG["compiler"].find(r => r.code === code);
+// Codes the plan adds that the build's catalog (the host's CATALOG) lacks yet.
+const PLANNED = {
+  logo_missing: { code: "logo_missing", severity: "Error",
+    condition: "A `Full` export has no logo: no file at its root whose name starts with `logo`.",
+    consequence: "The export is compiled without a logo. Add one at its root, or rename the export `<team> Midcup ...` if it only adds to what is installed." },
+};
+const catalog = code => CATALOG["compiler"].find(r => r.code === code) || PLANNED[code];
 const severity = code => {
   const s = (catalog(code) || {}).severity || "Error";
   return s === "W" ? "Warning" : s.startsWith("E") ? "Error" : s;
@@ -1447,5 +1457,5 @@ registerTool({ id: "compiler", css: TEAM_COMPILER_CSS, draw: drawView,
     "compiler/main?colour=sizes", "compiler/main?detail=adv.player.05&colour=sizes&sort=player",
     "compiler/main?detail=a.label&colour=sizes&measure=vram",
     "compiler/main?detail=dbg.kit.K1", "compiler/main?detail=dbg.portraits",
-    "compiler/main?detail=dbg.player.14"] });
+    "compiler/main?detail=dbg.player.14", "compiler/main?detail=inv1.label"] });
 })();

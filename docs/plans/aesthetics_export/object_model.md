@@ -18,6 +18,22 @@ its tactical patch (`team_compiler/pipeline.md` "6. Post-processing"). Its other
 team, its players) reach no output: the roster is the Save editor's to import. A `team.toml`
 that is not a Team TOML is an Error naming the file, and the export compiles without it.
 
+The cup's rules require every team's logo, so a `Full` team export with no logo is an Error,
+`logo_missing`: one of `validate`'s export findings, beside `export_empty`. Only a `Full`
+export is reported:
+- a `Midcup` export replaces only what it holds, so the installed logo stays;
+- a referee export's logo reaches no output.
+
+"No logo" means no root file whose stem starts with `logo`. A logo file that is there but
+refused reports its own Error (`logo_file_invalid`, `logo_role_duplicate`,
+`logo_small_without_main`), and a second finding beside it would only repeat it. The finding is
+on the export and drops nothing (`Keep`): the rest of the export compiles, without a logo.
+
+It is a validation finding, not a Compiler-only one, so the Export upgrader, which runs the
+same validation on what it writes, refuses a `Full` output that would have no logo (its
+"Verification": a run with an Error writes nothing). A Compiler-only finding would let the
+upgrader call clean an export whose first compile then reports an Error.
+
 ### `aesthetics_export` crate layout
 
 What exists of this is in `spec/aesthetics_export/object_model.md` "`aesthetics_export` crate layout".
