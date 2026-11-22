@@ -3634,10 +3634,15 @@ points there.
   `u16`, and the view `expect`s the result. 262143 is every bit set. In the save he posted
   first (`C:\Data\4cc\Lab\Temp\pes14_crash\EDIT.bin`, a few hours older), no /hi3/ player has
   an appearance record yet, which is why the page was greyed there, and all 4,922 records
-  hold gloves 0. His newer save will tell whether the game fills a new record's colour with
-  every bit set or he chose a white accessory. The fix (SWE-2, on `pes14`): the gloves ID at
-  its full width through `StripStyle`, since the check only asks whether it is 0, and the
-  view showing an error line instead of panicking; then Build 3, with the maintainer's yes.
+  hold gloves 0. His newer save (`.tmp/pes14_crash/EDIT.bin.newer`) holds 91 more records,
+  90 of them gloves 262143 (every /hi3/ player among them) and one 4161: a record the game
+  creates on an in-game edit carries the accessory colour at its maximum, so every player
+  edited in game reads gloves 262143. Hide default body and Ctrl+I crash on such a player
+  too (`session/player_ops.rs` `preset_id`'s `u16::try_from(own).expect`). The fix (SWE-2,
+  on `pes14`): the gloves ID at its full width through `fpc::StripStyle` and
+  `fpc::Appearance`, and no `expect` on it; what 262143 means for the hide presets waits on
+  an in-game look (run `hi3gloves`: are a 262143 player's hands plain, as gloves 0, or gone,
+  as the DLC's hidden gloves 11?). Then Build 3, with the maintainer's yes.
 - open (2026-11-22) — The Save editor's tests leave their scratch behind:
   `test_support::scratch` empties `target/<profile>/save_editor_tests/<test>` when a test
   starts and never removes it after, so every checkout keeps 1,064 folders, many holding a

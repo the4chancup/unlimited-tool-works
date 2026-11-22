@@ -19553,3 +19553,15 @@ gloves ID, 18 bits on that version, did not fit the 16 bits an `expect` assumed.
 promised; AGENTS.md's "malformed input still errors instead of panicking" already said so,
 without naming the `expect`s that break it.
 Plan: `CONTRIBUTING.md` "Code style", the Errors bullet.
+
+## 2026-11-22 — code style — A decoded value keeps the type it was decoded into
+
+Decision: a value read from a file is not narrowed with an `expect` on the grounds that its
+field's schema width fits the narrower type; it keeps the type it was decoded into (`u32` for
+a boots or gloves ID), and a narrowing that can fail returns an error.
+Why: the census of the program's panics (worklog issue "Panics on file content") found one
+call on main that panics on file content, and a class it rightly called safe on main that is
+not safe across versions: an `expect` on `u16::try_from` of a boots or gloves ID holds while
+every version stores 14 bits, and crashed the PES 2014 build, whose gloves ID is 18. A width
+is a fact of one schema, not of the value's type.
+Plan: `CONTRIBUTING.md` "Code style", the Errors bullet.

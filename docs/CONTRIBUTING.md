@@ -125,7 +125,9 @@ exist yet (every Phase 2 crate), the plan's data-shape rules stand in for one.
   any value a game, another tool or a hand wrote: a field wider than ours, a record missing, a
   number out of range. Such a value reaches the member as an error, a finding or a line in the
   view, never as a panic; an `expect` rests only on what our own code made (a value it built,
-  or checked a few lines up). `.lock().unwrap()` on a `std::sync::Mutex` is the one bare `unwrap` allowed: it asserts "no
+  or checked a few lines up). A field's width in the schema is not such a check: a decoded
+  value keeps the type it was decoded into, because another version may store the field
+  wider (PES 2014's gloves ID is 18 bits where the others hold 14). `.lock().unwrap()` on a `std::sync::Mutex` is the one bare `unwrap` allowed: it asserts "no
   thread panicked while holding this lock", which needs no message.
 - A discarded `Result` is a decision, and `clippy::let_underscore_must_use` (denied workspace-wide)
   makes `let _ = fallible()` a compile error. The ways out, in order of preference: handle it
