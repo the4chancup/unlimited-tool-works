@@ -725,7 +725,7 @@ const CLOUDS = {
     special("A Fox in the Box: +3 attacking prowess at most (playing_style, stats_<stat>_mod)",
       { playing_styles: ["fox_in_the_box"] },
       { stat_bonus: { attacking_prowess: 3 } }),
-    special("Left-footed wingers: +1 paid card (strong_foot)",
+    special("Left-footed wingers: +1 non-free card (strong_foot)",
       { strong_foot: "left", positions: ["LWF", "LMF"] },
       { cards: 1 }),
     special("Speed 95 or more: a free COM style (stats_<stat> in a condition)",
@@ -737,7 +737,7 @@ const CLOUDS = {
     special("Form 8: +1 A position (form in a condition)",
       { ranges: { form: [8, 8] } },
       { a_positions: 1 }),
-    special("Holds Fighting Spirit: +1 paid card (cards_<card> in a condition)",
+    special("Holds Fighting Spirit: +1 non-free card (cards_<card> in a condition)",
       { holds: ["fighting_spirit"] },
       { cards: 1 }),
     special("195 cm or a Target Man: +1 card (any)",
@@ -1296,7 +1296,7 @@ function effectsText(e) {
   for (const [k, v] of Object.entries(e.stat_bonus || {})) p.push(`${perTierText(v, "")} to ${k === "all" ? "every stat" : human(k).toLowerCase()}`);
   for (const [k, v] of Object.entries(e.stat_target || {})) p.push(`${human(k).toLowerCase()} target ${typeof v === "number" ? v
     : byTier(v).map(([t, n]) => `${n} for ${tierLabel(t)}`).join(", ")}`);
-  if (e.cards != null) p.push(`${perTierText(e.cards, "")} paid card${e.cards === 1 ? "" : "s"}`);
+  if (e.cards != null) p.push(`${perTierText(e.cards, "")} non-free card${e.cards === 1 ? "" : "s"}`);
   for (const [k, v] of Object.entries(e.free || {})) p.push(`${perTierText(v, "")} free ${k === "com" ? "COM style" : human(k).toLowerCase()}`);
   if ((e.free_cards || []).length) p.push(list(e.free_cards, cardName, "and") + " free");
   if ((e.require_cards || []).length) p.push("must hold " + list(e.require_cards, cardName, "and"));
@@ -1326,7 +1326,7 @@ function summary(r) {
     const band = t.stat_warning ? `; an ability stat that may sit below its target warns up to ${t.stat_warning} over it, past that it is not allowed` : "";
     const total = !t.total_within_targets ? ""
       : `; ${t.stat_warning ? "those stats" : "the ability stats that may sit below their target"} added up may not exceed their targets' sum`;
-    L.push(`- **${t.label}**: ${count}${when ? ", " + when : ""}; every stat ${t.rate}${stats.length ? " (" + stats.join(", ") + ")" : ""}${band}${total}; form ${t.form}, injury resistance ${t.injury_resistance}, weak foot ${t.weak_foot.usage}/${t.weak_foot.accuracy}; ${t.cards} paid cards${t.min_cards ? ` (at least ${t.min_cards} paid skill${t.min_cards === 1 ? "" : "s"}, an extra A position counting as one)` : ""}${free.length ? ", " + free.join(", ") : ""}; ${t.a_positions} A position${t.a_positions === 1 ? "" : "s"}${t.name_color ? `; name in color ${t.name_color}` : ""}.`);
+    L.push(`- **${t.label}**: ${count}${when ? ", " + when : ""}; every stat ${t.rate}${stats.length ? " (" + stats.join(", ") + ")" : ""}${band}${total}; form ${t.form}, injury resistance ${t.injury_resistance}, weak foot ${t.weak_foot.usage}/${t.weak_foot.accuracy}; ${t.cards} non-free cards${t.min_cards ? ` (at least ${t.min_cards} non-free skill${t.min_cards === 1 ? "" : "s"}, an extra A position counting as one)` : ""}${free.length ? ", " + free.join(", ") : ""}; ${t.a_positions} A position${t.a_positions === 1 ? "" : "s"}${t.name_color ? `; name in color ${t.name_color}` : ""}.`);
   });
   if ((r.medal_systems || []).length) {
     const named = r.tiers.filter(t => medalTiers.has(t.id));
@@ -1382,7 +1382,7 @@ function summary(r) {
     r.specials.forEach(s => { const w = condText(s.when); L.push(`- **${s.label}**${s.severity !== "error" ? ` (${s.severity})` : ""}: ${w ? w.charAt(0).toUpperCase() + w.slice(1) + ": " : ""}${effectsText(s.then)}.`); });
   }
   if (r.suggestions.length) {
-    const WORD = { cards: "paid cards", a_positions: "A positions", weak_foot: "weak foot",
+    const WORD = { cards: "non-free cards", a_positions: "A positions", weak_foot: "weak foot",
       injury_resistance: "injury resistance", height: "height", free_cards: "free cards",
       choices: "choices not taken", com: "free COM styles" };
     L.push("", "## Suggestions", "Allowances not used up, listed as suggestions: "
@@ -1555,7 +1555,7 @@ const VIEWS = {
       "Highest first: a player gets the first tier whose conditions he meets and whose rating he reaches. The Save editor's tier buttons follow this order."));
     const ids = R.tiers.map(t => [t.id, t.label]);
     const medalTiers = new Set(R.medal_systems.flatMap(s => Object.keys(s.counts)));
-    const g = named(h("table", { class: "grid" }, h("tr", {}, ["", "Label", "Id", "Count", "Counts as", "Rate", "Form", "Injury res.", "Weak foot", "Paid cards", "Min. cards", "A positions", "Name color", "Warn band", "Stats ≤ targets", ""].map(x => h("th", {}, x)))), "tiers-table");
+    const g = named(h("table", { class: "grid" }, h("tr", {}, ["", "Label", "Id", "Count", "Counts as", "Rate", "Form", "Injury res.", "Weak foot", "Non-free cards", "Min. cards", "A positions", "Name color", "Warn band", "Stats ≤ targets", ""].map(x => h("th", {}, x)))), "tiers-table");
     R.tiers.forEach((t, i) => {
       g.append(reorderable(h("tr", {},
         h("td", {}, handle(i)),
@@ -1737,7 +1737,7 @@ const VIEWS = {
   suggestions() {
     const d = h("div", {}, h("h2", {}, "Suggestions"), h("div", { class: "weak" },
       "Allowances a player does not use up are listed as suggestions (off by default where results are shown)."));
-    const all = [["cards", "Paid cards"], ["a_positions", "A positions"], ["weak_foot", "Weak foot"], ["injury_resistance", "Injury resistance"],
+    const all = [["cards", "Non-free cards"], ["a_positions", "A positions"], ["weak_foot", "Weak foot"], ["injury_resistance", "Injury resistance"],
       ["height", "Height"], ["free_cards", "Free cards"], ["choices", "Choices not taken"], ["com", "Free COM styles"]]
       .concat(Object.keys(R.card_groups).map(g => [g, "Free " + human(g).toLowerCase()]));
     d.append(h("div", { class: "col", "data-panel": "suggestions-list" }, all.map(([id, label]) => checkbox(label, R.suggestions.includes(id),
@@ -1867,7 +1867,7 @@ const EFFECTS = [
   ["stat_bonus_all", "Add to every stat", e => e.stat_bonus = Object.assign(e.stat_bonus || {}, { all: 1 })],
   ["stat_bonus_one", "Add to one stat", e => e.stat_bonus = Object.assign(e.stat_bonus || {}, { [STATS.find(s => !((e.stat_bonus || {})[s] !== undefined))]: 1 })],
   ["stat_target", "Set one stat's target", e => e.stat_target = Object.assign(e.stat_target || {}, { [STATS.find(s => !((e.stat_target || {})[s] !== undefined))]: 80 })],
-  ["cards", "Extra paid cards", e => e.cards = 1],
+  ["cards", "Extra non-free cards", e => e.cards = 1],
   ["free", "Free cards of a group", e => e.free = Object.assign(e.free || {}, { com: 1 })],
   ["free_cards", "Free card", e => e.free_cards = (e.free_cards || []).concat([CARDS.find(c => !(e.free_cards || []).includes(c))])],
   ["require_cards", "Required card", e => e.require_cards = (e.require_cards || []).concat([CARDS.find(c => !(e.require_cards || []).includes(c))])],
@@ -1913,7 +1913,7 @@ function effectsEditor(e, path, inChoice) {
   for (const k of Object.keys(e.stat_target || {}))
     line("Set the target of", h("span", { class: "row", style: "margin:0" }, statCombo(e.stat_target, k), "to", perTier(() => e.stat_target[k], v => e.stat_target[k] = v)),
       () => { delete e.stat_target[k]; if (!Object.keys(e.stat_target).length) delete e.stat_target; });
-  if (e.cards != null) line("Extra paid cards", perTier(() => e.cards, v => e.cards = v), () => delete e.cards);
+  if (e.cards != null) line("Extra non-free cards", perTier(() => e.cards, v => e.cards = v), () => delete e.cards);
   for (const g of Object.keys(e.free || {}))
     line("Free cards of a group", h("span", { class: "row", style: "margin:0" },
       combo(["com"].concat(Object.keys(R.card_groups)).filter(x => x === g || !(x in e.free)).map(x => [x, x === "com" ? "COM styles" : human(x)]), g, v => {

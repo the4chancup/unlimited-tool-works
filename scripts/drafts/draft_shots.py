@@ -14,9 +14,10 @@ its newest earlier copy, the same file name in the newest earlier run folder tha
 `baseline/` folder reads as older than every run), and one line prints per shot that changed
 (with the share of its pixels that differ) or is new, and, on a full run only, per shot
 missing: one the newest earlier full run had and this one has not.
-Earlier folders whose shots all have a copy in a later run are then deleted, so each shot's
-newest copy is always kept and the folder count stays small. The newest full run is never
-deleted: the missing rows and the full-run reminder measure from it. Run it with a filter
+Before the capture, earlier folders whose shots all have a copy in a later run are deleted, so
+each shot's newest copy is always kept and the folder count stays small. The copies a run
+was compared with stay until the next run, so a changed shot's old picture can still be opened.
+The newest full run is never deleted: the missing rows and the full-run reminder measure from it. Run it with a filter
 after each draft edit and once without about once a day: a filtered run whose newest earlier
 full run is more than a day old, or that has none, says so.
 
@@ -271,6 +272,10 @@ def main(argv: list[str]) -> int:
     stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
     name = stamp if not texts else stamp + "-" + "+".join(safe_name(text) for text in texts)
     run = SHOTS / name
+    # Pruned before the capture, not after the report: the copies this run is compared with
+    # stay on disk until the next run, so a changed shot's old picture can still be opened.
+    if SHOTS.is_dir():
+        prune_runs(SHOTS)
     unread, unmatched = capture_all(run, texts)
     if unmatched:
         for text in unmatched:
@@ -279,7 +284,6 @@ def main(argv: list[str]) -> int:
     report(SHOTS, run)
     for line in unread:
         print(f"error: {line}")
-    prune_runs(SHOTS)
     print(f"run: {run.relative_to(ROOT).as_posix()}")
     return 1 if unread else 0
 

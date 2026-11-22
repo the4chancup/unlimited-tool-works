@@ -8,8 +8,8 @@ import urllib.error
 from unittest import mock
 
 from acceptance import Scan, scan_plan, scan_source
-from citation_audit import (RULING_ROW, THRESHOLD, AuditError, Keys, Pair, ask, cited_test, pairs, report,
-                            ruled_keys, scenario_text, state)
+from citation_audit import (RULING_ROW, THRESHOLD, AuditError, Keys, Pair, ask, cited_test, day_tally, pairs,
+                            report, ruled_keys, scenario_text, state)
 
 PLAN = """# Tool
 
@@ -133,6 +133,18 @@ class ReportTests(unittest.TestCase):
         rows = "| Key | Verdict |\n|---|---|\n| 0123456789abcdef | rejected | 2026-10-17 | TC-KIT-01 | a | 0.10 | why |\n"
         self.assertEqual(ruled_keys(rows), {"0123456789abcdef"})
         self.assertIsNone(RULING_ROW.match("| 0123 | rejected |"))
+
+    def test_a_day_s_rulings_are_counted_by_verdict_and_accepted_scenario(self):
+        rows = "\n".join([
+            "| 0000000000000001 | accepted | 2026-11-22 | SE-GUI-82 | a.rs::a | 0.10 | widen \\| it |",
+            "| 0000000000000002 | accepted | 2026-11-22 | SE-GUI-82 | a.rs::b | 0.12 | widen |",
+            "| 0000000000000003 | accepted | 2026-11-22 | ST-REP-06 | b.rs::c | 0.05 | widen |",
+            "| 0000000000000004 | rejected | 2026-11-22 | SE-GUI-82 | a.rs::a | 0.17 | proves it |",
+            "| 0000000000000005 | accepted | 2026-11-21 | TC-KIT-01 | c.rs::d | 0.01 | widen |",
+        ])
+        self.assertEqual(day_tally(rows, "2026-11-22"),
+                         "rulings dated 2026-11-22: 4 rows, 3 accepted (2 scenarios), 1 rejected")
+        self.assertIsNone(day_tally(rows, "2026-11-23"))
 
 
 class KeyTests(unittest.TestCase):

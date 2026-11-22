@@ -109,19 +109,26 @@ would drift apart.
     in the last tile, at the bottom right, so 23 portraits and the logo fill the 24 tiles; a
     player with no portrait leaves his tile empty;
   - a team label: the export's logo (its root `logo*` texture), fitted inside the box.
+  A picture fitted inside the box is shrunk to fit, never enlarged: a small logo stands at
+  its own size, as it would blur if enlarged. A tile's picture (a portrait, or the logo in a
+  tile or a corner) fills its tile either way, its shape kept.
   Portraits and logos keep their transparency: each is drawn straight on the box's
   background, with no tile or frame behind it, so a crest or a cut-out portrait shows its
   own shape rather than a square. An export with no logo shows "No logo" where the logo
   would be. In a referee export, the
   marker texture (`ref_marker.dds`), when there is one, takes the logo's place in the window,
   because a referee export's logo reaches no output while the marker is the emblem the
-  referees wear in game.
+  referees wear in game. The pictures are the files the compile packs, taken from the export's
+  listing when the check dropped the whole export, so a member still sees what it holds. An
+  archive export's boxes stay empty: reading a picture out of an archive means decompressing
+  it, which its shallow check ("Live validation") exists to avoid.
   - **Hover** opens it on the cell under the pointer, and leaving the cell closes it. It opens
     after 0.15 s, and then follows the pointer from cell to cell with no delay. That is
     longer than the sidebar's 0.1 s, so a pointer crossing the grid does not flash a window
     the size of the 3D preview over every cell it passes.
   - **A click pins it**: a pin shows on the cell and in the window's title bar, and the window
     stays open on that cell, with its buttons usable, and dragging its title bar moves it.
+    Scrolled under the grid's title row, the cell's pin is covered with the cell.
     While a cell is pinned, hovering another opens nothing, so the pointer can cross the grid
     to the window. A click on the pinned cell, on the window's pin or on the grid's empty
     space unpins it; a click on another cell pins that one. After a click that unpins, the

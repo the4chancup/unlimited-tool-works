@@ -306,6 +306,25 @@ def ruled_keys(text: str) -> set[str]:
     return {m["key"] for line in text.splitlines() if (m := RULING_ROW.match(line))}
 
 
+def day_tally(text: str, day: str) -> str | None:
+    """The rulings rows dated `day` counted, for the worklog line and commit message that
+    report them: rows, accepted with the distinct scenarios they widen, rejected. `None` when
+    no row has that date. A pair flagged again after its scenario was widened is a row of its
+    own, so the rows can outnumber the flags a report listed."""
+    verdicts: list[tuple[str, str]] = []
+    for line in text.splitlines():
+        if RULING_ROW.match(line):
+            # Key, verdict, date and scenario come before the first free-text cell.
+            _, _, verdict, row_day, scenario = (cell.strip() for cell in line.split("|")[:5])
+            if row_day == day:
+                verdicts.append((verdict, scenario))
+    if not verdicts:
+        return None
+    accepted = [scenario for verdict, scenario in verdicts if verdict == "accepted"]
+    return (f"rulings dated {day}: {len(verdicts)} rows, {len(accepted)} accepted "
+            f"({len(set(accepted))} scenarios), {len(verdicts) - len(accepted)} rejected")
+
+
 def report(scored: list[tuple[Pair, float]], ruled: set[str]) -> str:
     flags = sorted(((pair, score) for pair, score in scored if score < THRESHOLD), key=lambda item: item[1])
     new = [(pair, score) for pair, score in flags if pair.key not in ruled]
@@ -346,11 +365,14 @@ def main() -> int:
         temporary.write_text(json.dumps(cache, indent=0), encoding="utf-8")
         os.replace(temporary, cache_path)
     scored = [(pair, cache[cache_key(pair.state)]) for pair in found]
-    ruled = ruled_keys(RULINGS.read_text(encoding="utf-8")) if RULINGS.exists() else set()
-    text = report(scored, ruled)
+    rulings = RULINGS.read_text(encoding="utf-8") if RULINGS.exists() else ""
+    text = report(scored, ruled_keys(rulings))
     (OUT / "citations.md").write_text(text + "\n", encoding="utf-8")
     print(text.splitlines()[2])
     print(f"citation audit: {len(todo)} asked now, {len(found) - len(todo)} from the cache; report in snap.out/citations.md")
+    tally = day_tally(rulings, str(date.today()))
+    if tally:
+        print(f"citation audit: {tally}")
     return 0
 
 

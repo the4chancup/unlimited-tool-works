@@ -19646,3 +19646,70 @@ Why: the plan named his folder alone, while the portraits cell's grid shows a `P
 file as his. Showing it in the grid and not in his own window would tell the member two
 different things about one portrait.
 Plan: `plans/team_compiler/gui.md` "The detail window", the list of what the box holds.
+
+## 2026-11-22 — pes_savefile — a Team TOML import that writes the team's name sets its name flag
+Decision: importing a Team TOML whose `[team]` holds `name` sets the team's name flag, even
+when the file's `[team.edit_flags] name` is `false`. On every version, the PES 2014 side line
+included.
+Why: the game shows a team's stored name only with that flag set. PES 2014 Build 3's in-game
+check imported /gd/ onto team 853, and the team showed as "Invitational 3", because /gd/'s file
+carried the flag its own save had (its name was that slot's own). Writing the file's flag as
+it is would copy a team without its name. The same rule already sets the edited-player flag
+on a written player name.
+Plan: `plans/pes_savefile/operations.md` "Team TOML", the paragraph "A written team name
+shows".
+
+## 2026-11-22 — aatf, AATF texts — a card no free allowance covers is a "non-free card"
+Decision: every text and name that called these cards "paid" says "non-free" instead: the
+Save editor's and the Ruleset editor's labels and findings, the help, the plans and the spec,
+and the code's names. The rules file's own key changes too (`paid` becomes `non_free` in the
+logic's `card_limits` map and in the `Cards` and `MinCards` findings). The logic stays
+version 1, its hash in the version table following the edit: until 1.0.0 a changed logic is
+not a new version.
+Why: "non-free cards" is the word 4cc uses for them. "Paid" was ours alone, so a member read
+a term the cup never uses, and two names for one count would drift apart in the code. A new
+logic version would keep a file saved under the old one recognized, which is compatibility
+work, and none is done before 1.0.0; no rules file is in use outside our tests yet anyway.
+Plan: `spec/aatf_rules.md` "The card economy" and its "Logic identity" paragraph (a new logic
+version only from 1.0.0, where it said from the first release); `plans/aatf_rules.md` "Loading
+and validation" (version 1 frozen at 1.0.0, where it said at 0.0.1); the plans that use the
+term; `GLOSSARY.md` "Non-free card".
+
+## 2026-11-22 — conduct — a mistake in the lead's own output is a snag too
+Decision: "A snag is a finding" names your own output (a wrong count) beside tools, scripts
+and steps, so a mistake you correct also gets the question of what let it through.
+Why: the 2026-11-22 citation rulings were miscounted, and only the texts were corrected at
+first, because the rule read as one about tools. The cause, counting by hand, is now removed:
+the citation audit prints the day's rulings counted.
+Plan: `AGENTS.md` "Conduct", the paragraph "A snag is a finding".
+
+## 2026-11-22 — pes_savefile — the imported team name sets the name flag only when it renames the team
+Decision: this narrows the entry above ("a Team TOML import that writes the team's name sets
+its name flag"). The flag is set when the file's `name` differs from the team's stored name.
+With a `name` key the file's own flag is not read, and an equal `name` leaves the flag as it
+is. Without a `name` key, the file's flag is written as before.
+Why: every export carries `name`, so the wider rule set the flag on every round trip. A team's
+own file then changed the team, against SE-GUI-17 and SE-GUI-79, and nine tests failed. Letting
+the file's flag decide when the names are equal made a second import of the same file clear
+the flag the first set. The PES 2014 Build 3 case renames the team, so it is still fixed. A
+save where an earlier build wrote the name without the flag stays unfixed on a re-import.
+On PES 2014 no released build imports Team TOML, so only test saves hold one; on PES 2015 to
+2021, where import shipped in 0.0.2, it is weighed when the rule reaches main.
+Plan: `plans/pes_savefile/operations.md` "Team TOML", the paragraph "A written team name
+shows".
+
+## 2026-11-22 — team_compiler, detail window — what the top box shows, and how
+Decision: a picture fitted inside the top box (a kit's texture, a label's logo) is shrunk to
+fit and never enlarged, while a tile's picture fills its tile, as the draft's CSS draws them.
+The pictures are the files the compile packs, taken from the listing when the check dropped the
+whole export. An archive export's boxes stay empty. The title row covers the pin of a cell
+scrolled under it: the badge is clipped 5 points above the rows' area, so a first-row badge,
+which stands 5 points above its cell, is still drawn whole.
+Why: enlarging a small logo blurs it, and the draft shows it at its own size. An export dropped
+whole is the one whose window a member most needs, so its listing stands in for the validated
+export. Reading a picture out of an archive means decompressing it, which the shallow check
+exists to avoid. A badge drawn over the titles floats away from a cell the member cannot see;
+clipping at the rows' own top would cut every first-row badge. The draft cannot clip there in
+CSS, and its comment says so.
+Plan: `plans/team_compiler/gui.md` "The detail window" (the top box, and "A click pins it");
+TC-GUI-24 and TC-GUI-31 widened.

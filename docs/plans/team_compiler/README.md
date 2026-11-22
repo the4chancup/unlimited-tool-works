@@ -240,7 +240,8 @@ TC-GUI-24  GIVEN the pointer on a cell with findings
                 THEN it closes the same way; GIVEN a double-click on a cell THEN its folder opens in the
                 file manager and the pin is as it was before the double-click; GIVEN an export
                 with no Portraits folder THEN a double-click on its portraits cell opens
-                nothing
+                nothing; GIVEN the pinned cell scrolled under the title row THEN the title row
+                covers its pin
 TC-GUI-25  GIVEN an export with three findings in the log, one on its label and two on its
                 players
            WHEN its label's window shows Copy messages and that button is clicked
@@ -307,7 +308,10 @@ TC-GUI-31  GIVEN an export with a logo, a kit whose main texture is kit.dds, and
                 players' order, player 20's tile empty and the logo in the bottom-right tile;
                 then the logo; then player 05's portrait in its bottom-left corner and the
                 logo in its bottom-right one; and the text under the box starts at the same
-                height each time
+                height each time; GIVEN a logo smaller than the box THEN it stands at its own
+                size; GIVEN an export the check dropped whole THEN its boxes show its logo, kit
+                texture and portraits from its listing; GIVEN an archive export THEN every box
+                is empty
 TC-GUI-32  GIVEN a referee export holding ref_marker.dds and a logo.png, and one holding
                  neither
            WHEN the window opens on each one's label

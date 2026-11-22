@@ -3735,9 +3735,15 @@ points there.
   `pes14` 2026-11-22 (slices a to f, then `91d84e69`), its data check passed on the rebuilt
   release. Build 3 was rebuilt at `be6f9ed5` (`pes14`): full gates passed, the /gd/ check
   and HAGSEO's Appearance page and Hide default body checked again on its release build. Its
-  `tasks.html` card is back: the maintainer approves the `[Unreleased]` section and chooses
-  whether the release waits for step 12's in-game look, which waits with every in-game check
-  until the maintainer resumes them (2026-11-22).
+  `tasks.html` card is back: the maintainer approves the `[Unreleased]` section.
+  Step 12's in-game look (2026-11-22, SWE-2, `.tmp/step12/ingame/findings.md`): the imported
+  /hi3/ shows /gd/'s names, positions, numbers and Game Plan, its one appearance record
+  travels, and gloves 262143 draws plain hands. The team's name showed as "Invitational 3":
+  the import wrote /gd/'s `edit_flags.name = false`, and the game shows a stored team name
+  only with it set. Fix: a written name sets the flag (`plans/pes_savefile/operations.md` "A
+  written team name shows", DECISIONS), SWE-2 on `pes14` (`.tmp/brief_teamname_flag.md` in
+  its worktree): running. Then a rebuilt Build 3, its gates, and a second in-game look at the
+  name; main gets the same rule after.
   The Compiler's view (item 6) goes on without waiting for it (the maintainer, 2026-11-22).
 - open (2026-11-22) — The Save editor's tests leave their scratch behind:
   `test_support::scratch` empties `target/<profile>/save_editor_tests/<test>` when a test
@@ -3772,12 +3778,14 @@ points there.
   tests; the archive fixtures stay stored and gain the new file by script. A new check then
   changes the builder and the tests of what it catches, not every test. Slices: step 6's
   "The shared export builder".
-- open (2026-11-22) — The citation audit of 2026-11-22 left 24 new flags unruled
-  (`snap.out/citations.md`): Save editor GUI scenarios (SE-GUI-69, 74, 82, 83, 85, 106),
-  `studio_core`'s report and updater (ST-REP-06, 09, 10, ST-UPD-01, ST-BAR-02), and TC-MOD-26,
-  TC-MOD-56, TC-REF-26, TC-SAV-03 and EU-SET-10. None is on the logo slices' review surface,
-  so that round went ahead; each is ruled in `scripts/gates/citation_rulings.md` before its
-  own surface's next review round, or at the phase's converge.
+- fixed (2026-11-22) — The citation audit's 24 unruled flags: 20 accepted, their 12 scenarios
+  widened (SE-GUI-69, 74, 82, 83, 85, 106; ST-REP-06, 09, 10; ST-UPD-01; ST-BAR-02;
+  TC-REF-26), 4 rejected, and SE-GUI-82's new flag after its widening rejected too;
+  `scripts/gates/citation_rulings.md`.
+- open (2026-11-22) — The code still says "paid cards" where the docs and drafts say
+  "non-free cards" (`49da6211`): the Save editor's findings and badge, the Ruleset editor's
+  Tiers column and summary, and the rules file's `paid` key. Brief `.tmp/lead/brief_nonfree.md`
+  (Opus, worktree `sk_nonfree`); its CHANGELOG line, under Other stuff, lands with the merge.
 - open (2026-11-22) — The Compiler's test teams lists pair ids with names the bundled list
   does not: `team_compiler/tests/common/mod.rs:18-19` and `src/testing.rs:277` hold `790 /dbg/`,
   `792 /egg/` and `793 /esg/`, where `crates/libs/teams_list/data/teams_list.txt` holds

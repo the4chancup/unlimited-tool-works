@@ -3,7 +3,7 @@ out unpacked in a folder of its own outside the repository (`scripts/release/rel
 lines "top = staging / ..." to the empty folders), from the release exe built at the
 candidate's commit (`scripts/release/build_remapped.py`), and packed beside it as the .7z handed
 to the maintainer. Writes nothing under `target/dist`: a version's release archive is written
-once, by `just release`, after logic version 1's hash is frozen.
+once, by `just release`.
 
 Refuses unless the tree is clean, HEAD is the commit named, the exe is newer than the last
 commit that changed code, the build's config or bundle resources, the destination does not

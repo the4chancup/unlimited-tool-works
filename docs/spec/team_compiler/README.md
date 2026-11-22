@@ -2501,7 +2501,8 @@ TC-REF-26  GIVEN a refs export whose Ref A, in slot 01, holds skin.dds alone; an
            WHEN each is checked, and compiled for PES 21
            THEN no file_not_used is reported, slot 01 gets the blank face, and skin.ftex is
                 packed: the first under common/999/Ref A/, the second as the referees' Common
-                texture (restates TC-REF-11's last clause)
+                texture (restates TC-REF-11's last clause); GIVEN the first Ref A marked
+                `ingame_face` THEN skin.dds is reported file_not_used, no package naming it
 TC-REF-27  GIVEN a refs export whose Ref A, in slot 01, holds fpc_off alone
            WHEN it is compiled for PES 17
            THEN referee001.cpk's face.xml lists the refkit body's entries, then the face_neck

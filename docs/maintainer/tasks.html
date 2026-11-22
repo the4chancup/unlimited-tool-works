@@ -57,8 +57,20 @@ card.</p>
       from its database, so they cannot travel), and two values the write sets as the game
       does: the one record's player ID bytes and the basic settings flag.</li>
   </ul>
-  <p>Not checked yet: the imported team in the game's Edit mode (names, looks, Game Plan),
-  since in-game checks wait for your word.</p>
+  <p>Then in the game's Edit mode, on the organizer's save with /gd/ imported onto /hi3/:</p>
+  <ul>
+    <li>the team's 23 player names, positions, shirt numbers and Game Plan are /gd/'s;</li>
+    <li>the one player with an appearance record of his own wears /gd/'s look;</li>
+    <li>a player whose gloves value is 262143 has plain hands, as one with 0 has.</li>
+  </ul>
+  <p>One thing failed: the team's name shows as "Invitational 3", the league slot's own label,
+  not "/gd/". The game shows a team's stored name only when a flag beside it is set, and the
+  import copied that flag from /gd/'s save, where it was off. The import now sets the flag
+  whenever it writes a name. A new build replaces <code>UTW-pes14-be6f9ed5.exe</code> once
+  that fix passes its gates and a second look in the game shows the name.</p>
+  <p>Not compared side by side: /gd/ in your <code>EDIT.bin.autumn14</code>, which the game
+  refuses to load ("data from a different version"), so /gd/'s looks were checked against the
+  exported file instead.</p>
   <ol>
     <li>Read the release notes: the <code>[Unreleased]</code> section at the top of
       <code>C:\Data\4cc\Tools_Mine\4cc-studio-temp\pes14\CHANGELOG.md</code>. It becomes
@@ -66,10 +78,9 @@ card.</p>
     <li>Optionally, try the build on a PES 2014 save of your own.</li>
   </ol>
   <div class="options">
-    <label class="opt"><input type="radio" value="release now"><b>Release it now</b>
-      <div class="note">The in-game look follows when in-game checks resume.</div></label>
-    <label class="opt"><input type="radio" value="release after the look"><b>Release it after the
-      in-game look</b></label>
+    <label class="opt"><input type="radio" value="release once the name shows"><b>Release it
+      once the name shows in the game</b><div class="note">The new build, after its second
+      look.</div></label>
     <label class="opt"><input type="radio" value="release after changes"><b>Release it after
       changes</b><div class="note">Say what below: in the notes or in the build.</div></label>
     <label class="opt"><input type="radio" value="not yet"><b>Not yet</b>

@@ -476,7 +476,7 @@ the two differ.
 | Tier recognition | rating alone (the official rating stats) |
 | Heights | four brackets of one height each (175, 180, 185, 195); three systems `by_quotas` in the organizer's order, Height (6, 6, 5, 6 from 195 down), Manlet (0, 10, 7, 6) and Universal (0, 23, 0, 0), then GigaHeight (0, 7, 10, 6 with `extra_height` 50, at most 210) for every other team; a player counts in the bracket of his own height alone (a 180 is a Mid, never a Tall), so a team with a player shorter than its slot fits no quota system and is read as "A team no quota system takes" says (DBC6's /cookie☆/ as Manlet, 893 and 897 as Height); a registered goalkeeper at 189 counts as 185 (`height_allowance: 4`) in every system, after the pool under GigaHeight, as the page says |
 | Specials | the GK allowance; a goalkeeper at 189 holds at most one A position (`max_a_positions: 1`, an error; that it is the registered one is the registered-position warning's); under Manlet, players at 175 may take +5 on every stat, regulars and silvers (the page's "silvers can also be buffed"; a gold is at 99 already), a one-option `choice` since the page allows the bonus rather than requiring it, and a Manlet regular's band narrowed to 5 (`stat_warning`), so his warning stops short of a silver's 88; the registered position not rated A, a warning (a `forbid` special over the 13 positions) |
-| Cards, positions, form, weak foot, injury resistance | none: "No tactical export rules for anything else … go crazy". Paid cards 48 (the 41 skills of the version with the most, and 7 COM styles), 13 A positions, B ratings allowed, form, injury resistance and weak foot at most the game's maxima |
+| Cards, positions, form, weak foot, injury resistance | none: "No tactical export rules for anything else … go crazy". Non-free cards 48 (the 41 skills of the version with the most, and 7 COM styles), 13 A positions, B ratings allowed, form, injury resistance and weak foot at most the game's maxima |
 | Universal | none of the official file's checks; `max_skill_cards` 41, so no cap |
 
 The page and the fork differ on seven points; the organizer chose one side for each
@@ -503,7 +503,7 @@ The page and the fork differ on seven points; the organizer chose one side for e
 
 No card is capped: the game does not hold a player to ten skill cards in play (the organizer's
 finding of 2026-10-21; the fork checks no card count either), so the block caps neither skill
-cards nor paid cards below every card the game has.
+cards nor non-free cards below every card the game has.
 
 Where the data still reads differently from the fork:
 
@@ -563,8 +563,7 @@ does: a widget that recognized tiers in Rust would be a second recognition that 
 checks (recognition before choices, a height system told apart by its quotas, a special that
 moves a threshold), and from a file whose logic is not the build's.
 
-Loading step 1 requires it with its two parameters, like the other three. It lands before the
-0.0.1 cut freezes logic version 1, so no released file lacks it.
+Loading step 1 requires it with its two parameters, like the other three.
 
 **Violations in words.** A violation's kind and fields are the program's spelling
 (`FieldedNotA`, `stat=attacking_prowess`); no surface shows them to a person. `team_widgets`
@@ -635,15 +634,11 @@ The Ruleset editor validates a file before saving it (`plans/ruleset_editor.md`)
 change that needs a new data shape bumps `schema`; `libs/aatf` keeps a migration from every
 earlier schema, run by the update.
 
-**The first release, for logic identity, is the 0.0.1 preview** (`core/development_plan.md`
-"Divegrass Before Christmas"): its Ruleset editor saves files that DBC's organizers and
-managers keep, so from the cut on a changed logic is version 2, in the banner and in
-`LOGIC_VERSIONS` beside version 1's frozen hash. Waiting for 0.1.0 instead would turn every
-file saved with the preview into a *modified* one at the next logic edit: the editor would no
-longer offer to update it, and would keep its old logic on every save.
-
-The hash is frozen only on the maintainer's final confirmation, given once the UI is polished,
-never earlier: until then a logic edit is still version 1.
+**Logic version 1's hash is frozen at 1.0.0**, not at the first preview: until then a logic
+edit is still version 1, its hash in `LOGIC_VERSIONS` following the edit. After such an edit, a
+file saved under the earlier logic reads as *modified*, so the Ruleset editor no longer offers
+to update it; keeping such files recognized would be compatibility work, and none is done
+before 1.0.0.
 
 ## Crate layout
 
