@@ -553,6 +553,46 @@ mod tests {
     }
 
     #[test]
+    fn a_player_folder_s_own_portrait_texture_covers_it() {
+        // `portrait.png`, not the `portrait.dds` the builder would add: a given file at that
+        // path is kept over the added one, which would hide whether the folder counted.
+        let export = TestExport::new("co Full Spring", Pes21)
+            .sized("Players/05 - A/face_high.fmdl", 4)
+            .sized("Players/05 - A/portrait.png", 4)
+            .sized("Players/07 - B/face_high.fmdl", 4)
+            .sized("Players/07 - B/portrait.txt", 4);
+        // B's `portrait.txt` is no texture, so his folder still gets one.
+        assert_eq!(added(&export), ["Players/07 - B/portrait.dds", "logo.png"]);
+    }
+
+    #[test]
+    fn a_texture_named_for_a_slot_outside_portraits_covers_no_player() {
+        let export = TestExport::new("co Full Spring", Pes21)
+            .sized("Players/05 - A/face_high.fmdl", 4)
+            .sized("Common/05.dds", 4);
+        assert_eq!(added(&export), ["Players/05 - A/portrait.dds", "logo.png"]);
+    }
+
+    #[test]
+    fn the_accessors_give_the_export_as_the_test_built_it() {
+        let export = TestExport::new("co Midcup Spring", Pes21)
+            .file("notes.txt", "\n")
+            .sized("Players/05 - A/face_high.fmdl", 2)
+            .folder("Players/06 - B");
+        assert_eq!(export.name(), "co Midcup Spring");
+        assert_eq!(export.folders(), ["Players/06 - B"]);
+        // A Midcup export with a player's model lacks nothing, so the test's files alone,
+        // sorted by path.
+        assert_eq!(
+            export.files(&CleanFiles::placeholders()),
+            [
+                ("Players/05 - A/face_high.fmdl".to_owned(), vec![0, 0]),
+                ("notes.txt".to_owned(), b"\n".to_vec()),
+            ]
+        );
+    }
+
+    #[test]
     fn a_full_export_without_content_stays_clean_thanks_to_its_logo() {
         let export = TestExport::new("co Full Spring", Pes21).without(Requirement::Content);
         assert_eq!(issue_codes(&export), Vec::<&str>::new());
