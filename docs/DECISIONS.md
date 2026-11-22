@@ -19432,3 +19432,27 @@ as `Full` have no `Logo/` folder: each now needs a logo, or `--coverage midcup`,
 upgrades.
 Plan: plans/aesthetics_export/object_model.md "Validation semantics"; plans/team_compiler/
 messages.md "Export level"; plans/export_upgrader.md "What it does"; TC-ROOT-15, EU-MDL-43.
+
+## 2026-11-22 — aesthetics_export, team_compiler — A player with no portrait is a Warning on PES 2017 to 2021
+Decision: the maintainer ruled that on the versions that show portraits, PES 2017 to 2021, a
+player with no portrait, in his folder or in `Portraits/`, is a Warning. The lead placed it
+beside `logo_missing` in the shared validation as `portrait_missing`, on the player folder
+with the slot in its context, dropping nothing, and reported only for a `Full` team export. A
+portrait file that maps to the slot counts whatever later checks find in it; a misnamed
+`Portraits/` file maps to none, so its player is reported too.
+Why: `Full` only, because a `Midcup` player keeps his installed portrait, so a warning on each
+of its players with no portrait file would mostly be wrong; referee portraits reach no output.
+A refused-but-present file is not counted as missing, because its own finding already names
+it, while a misnamed one is: the warning then tells the member whose portrait it was meant to
+be.
+Plan: plans/aesthetics_export/object_model.md "Validation semantics"; plans/team_compiler/
+messages.md "Player folders and shared model folders"; plans/export_upgrader.md "What it
+does"; TC-ROOT-16.
+
+## 2026-11-22 — team_compiler — A referee export's window shows its marker texture as its logo
+Decision: the maintainer ruled that the Compiler's window on a referee export shows its
+`ref_marker.dds`, when there is one, where a team's shows the logo.
+Why: a referee export's logo reaches no output, while the marker is the emblem the referees
+wear in game.
+Plan: plans/team_compiler/gui.md "GUI: the live-validating team grid" (the detail window);
+plans/team_compiler/README.md TC-GUI-32.

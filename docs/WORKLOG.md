@@ -99,11 +99,13 @@ other items run beside it. **After the detour**, in this order:
    sorting"). Next: the first slice's brief (grid, window, log); Sizes and sorting come in a
    later slice.
    - A small slice of its own (SWE-2), beside the view: 0.0.2-logo, `logo_missing`, a `Full`
-     team export with no logo is an Error (`plans/aesthetics_export/object_model.md`
-     "Validation semantics"; `plans/team_compiler/messages.md` "Export level";
-     `plans/export_upgrader.md` "What it does"): `aesthetics_export`'s export findings, the
-     Compiler's and the upgrader's catalog rows, and the tests' logo-less `Full` fixtures
-     given a logo or the `Midcup` tag → verify: TC-ROOT-15, EU-MDL-43
+     team export with no logo is an Error, and `portrait_missing`, on PES 2017 to 2021 a
+     player with no portrait in such an export is a Warning
+     (`plans/aesthetics_export/object_model.md` "Validation semantics";
+     `plans/team_compiler/messages.md`; `plans/export_upgrader.md` "What it does"):
+     `aesthetics_export`'s validation, the Compiler's and the upgrader's catalog rows, and the
+     tests' `Full` fixtures given a logo and portraits or the `Midcup` tag → verify:
+     TC-ROOT-15, TC-ROOT-16, EU-MDL-43
    - Not urgent, a small slice of its own (SWE-2), after the view's or beside it: player
      numbering without the hyphen (`plans/aesthetics_export/player_folders.md`, the section of
      that name): `aesthetics_export`'s `conventions` (`folder_slot`, `folder_player_name`), the

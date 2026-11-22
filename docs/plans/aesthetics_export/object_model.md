@@ -34,6 +34,18 @@ same validation on what it writes, refuses a `Full` output that would have no lo
 "Verification": a run with an Error writes nothing). A Compiler-only finding would let the
 upgrader call clean an export whose first compile then reports an Error.
 
+On PES 2017 to 2021, which show players' portraits, a player with no portrait is a Warning,
+`portrait_missing`: a slot a player folder maps to that has neither a `portrait` texture in
+the folder nor a `Portraits/NN` file. It is reported on the player folder, with the slot in
+its context, and drops nothing (`Keep`). PES 2015 and 2016 show no portraits, so it is not
+reported there. As with `logo_missing`, only a `Full` team export is reported: a `Midcup`
+player keeps his installed portrait, and a referee export's portraits reach no output.
+
+A file that maps to the slot counts as his portrait whatever a later check finds in it, since
+that check's own finding names the file. A `Portraits/` file whose name maps to no slot
+(`portrait_name_invalid`) is no one's portrait, so its player is reported too, which tells the
+member whose portrait the misnamed file was meant to be.
+
 ### `aesthetics_export` crate layout
 
 What exists of this is in `spec/aesthetics_export/object_model.md` "`aesthetics_export` crate layout".

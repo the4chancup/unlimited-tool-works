@@ -94,6 +94,7 @@ paragraph), three rows join "Player folders and shared model folders", beside
 | ID | Sev | Condition | Consequence |
 |---|---|---|---|
 | `players_txt_missing` | E | as the spec's row | `ParsedAestheticsExport` remains available to the Refs arranger for repair |
+| `portrait_missing` | W | on PES 2017 to 2021, in a `Full` team export, a slot a player folder maps to with no portrait: no `portrait` texture in the folder and no `Portraits/NN` file (`plans/aesthetics_export/object_model.md` "Validation semantics"; context: `slot`). The text names the two places a portrait goes | kept: the player compiles without a portrait (`Keep`) |
 | `materials_toml_invalid` | E | a `materials.toml` or `*.materials.toml` file fails to parse | folder discarded |
 | `material_file_missing` | E | a glTF file has no matched material file (no name-matched `*.materials.toml`, no catch-all `materials.toml`, no `.common` link to either) | folder discarded |
 | `material_undefined` | E | a material name referenced by a glTF file has no definition in any matched material toml | folder discarded |

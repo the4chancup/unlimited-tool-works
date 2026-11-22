@@ -43,6 +43,10 @@ text names the two
 ways out: put the logo in the old export's `Logo/` folder, or upgrade it with
 `--coverage midcup` when it only adds to what is installed.
 
+The shared validation's `portrait_missing`, a Warning for a player with no portrait on PES
+2017 to 2021, reaches the upgrader the same way. Being a Warning that drops nothing, it
+leaves the run clean.
+
 What worklog 0.0.2-poc1, poc4 and poc6 built is in `spec/export_upgrader.md` "What it
 does": step 3 ("When the save and the folders disagree"), step 8 (the hide ID of a
 custom ID no folder claims) and step 10 (a `.dds` beside a `.ftex` of one stem).

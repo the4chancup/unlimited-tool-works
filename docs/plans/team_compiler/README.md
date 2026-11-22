@@ -307,6 +307,11 @@ TC-GUI-31  GIVEN an export with a logo, a kit whose main texture is kit.dds, and
                 then the logo; then player 05's portrait in its bottom-left corner and the
                 logo in its bottom-right one; and the text under the box starts at the same
                 height each time
+TC-GUI-32  GIVEN a referee export holding ref_marker.dds and a logo.png, and one holding
+                 neither
+           WHEN the window opens on each one's label
+           THEN the first's top box shows ref_marker.dds, not the logo; the second's reads
+                "No logo"
 TC-GUI-13  GIVEN a run in flight over two exports
            WHEN Cancel is clicked
            THEN the run ends after the task or texture in progress, no CPK is written or
@@ -476,7 +481,7 @@ TC-CLI-13  GIVEN TC-CLI-11's root (a kit whose task fails, a disabled export)
                 --timestamps` prefixes its lines the same way
 ```
 
-**0.0.2-logo scope.** `logo_missing` (`messages.md` "Export level").
+**0.0.2-logo scope.** `logo_missing` and `portrait_missing` (`messages.md`).
 
 ```
 TC-ROOT-15 GIVEN "co Full Spring" with players and kits and no root logo file; "co Midcup Day
@@ -486,6 +491,14 @@ TC-ROOT-15 GIVEN "co Full Spring" with players and kits and no root logo file; "
            THEN the first reports logo_missing (Error) on its export, and its CPK holds its
                 players and kits and no e_000714_* file; the second and the refs export report
                 no logo_missing; the fourth reports logo_file_invalid and no logo_missing
+TC-ROOT-16 GIVEN "co Full Spring" whose player folder 01 holds portrait.dds, 02 has
+                 Portraits/02.dds, 03 has neither and 04 has only Portraits/player_04.dds; and
+                 "co Midcup Day 5" whose player folder 03 has no portrait
+           WHEN each is compiled for PES 21, then the first for PES 16
+           THEN on PES 21 the first reports portrait_missing on Players/03 (slot 03) and on
+                Players/04 (slot 04) beside portrait_name_invalid, compiles both players, and
+                reports nothing for 01 and 02; the Midcup reports no portrait_missing; on
+                PES 16 the first reports no portrait_missing
 ```
 
 **0.0.2-poc2 scope.** What exists of this is in `spec/team_compiler/pipeline.md` "Resolved

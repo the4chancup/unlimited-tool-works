@@ -260,8 +260,12 @@ const with_ = (cells, n, patch) => { Object.assign(cells[n], patch); return cell
 const PORTRAITS = {
   dbg: [23, "fullOk"],
   // An old Portraits/player_05.dds, with the one-click rename the plan gives it.
+  // The rename gives player 05 his portrait, so his portrait_missing goes too.
   a: [21, "error", ["portrait_name_invalid"],
-    { label: "Rename player_05.dds to 05.dds", folder: "Portraits", count: 22 }, false,
+    { label: "Rename player_05.dds to 05.dds", apply: r => {
+      Object.assign(r.portraits, { folder: "Portraits", count: 22, status: "fullOk", codes: [] });
+      delete r.portraits.fix;
+      Object.assign(r.players[5], { status: "fullOk", codes: [] }); } }, false,
     { portrait_name_invalid: "Portraits/player_05.dds" }],
   // /adv/ 11's portrait is in the player's own folder: its finding colours
   // this cell and the player's.
@@ -300,8 +304,12 @@ function sampleRows() {
           r.players[15] = { status: "fullOk", folder: "15 - Snuffy", codes: [] };
           r.label = { status: "warning", codes: ["shared_folder_orphaned"],
             at: { shared_folder_orphaned: "Boots/Predator" } }; } } },
-      players: (({ 15: _, ...rest }) => rest)(with_(players(1, 23), 7, { status: "warning",
-        codes: ["fmdl_texture_not_found"], at: { fmdl_texture_not_found: "Players/07 - Player 07/face_high.fmdl" } })),
+      // Player 05's one portrait is the misnamed Portraits/player_05.dds (on PES
+      // 2017 to 2021, the draft's default, a player with none is a Warning).
+      players: (({ 15: _, ...rest }) => rest)(with_(with_(players(1, 23), 7, { status: "warning",
+        codes: ["fmdl_texture_not_found"], at: { fmdl_texture_not_found: "Players/07 - Player 07/face_high.fmdl" } }),
+        5, { status: "warning", codes: ["portrait_missing"], at: { portrait_missing: "Players/05 - Player 05" },
+          ctx: { portrait_missing: "slot=05" } })),
       kits: { GK: kit("g1", "#30a050", "#101010"), K1: kit("p1 - Pink", "#f080b0", "#f0f0f0"),
         K2: { ...kit("p2 - Black", "#101010", "#101010", "fullOk", ["kit_colors_derived"]),
           at: { kit_colors_derived: "Kits/p2 - Black" } },
@@ -356,7 +364,10 @@ function sampleRows() {
     { key: "inv1", name: "Invitational 1", id: 851, display: "Invitational 1 Full Aesthetics Export Autumn26",
       label: { status: "error", codes: ["logo_missing"] }, players: players(1, 23),
       kits: { GK: kit("g1", "#202020", "#f0f0f0"), K1: kit("p1", "#f0f0f0", "#c02020") } },
+    // A referee export's window shows its marker texture (the real VGL27
+    // ref_marker.dds) where a team's shows the logo.
     { key: "refs", name: "/refs/", id: null, refs: true, display: "refs Full Aesthetics Export Autumn26",
+      logo: "assets/team_logos/refs.png",
       label: { status: "fullOk", codes: [] },
       players: players(1, 35, "fullOk", n => `${pad(1 + (n - 1) % 5)} - Referee ${1 + (n - 1) % 5}`),
       kits: { K1: kit("p1 - Referee", "#101010", "#f0e020") } },
@@ -394,6 +405,9 @@ const PLANNED = {
   logo_missing: { code: "logo_missing", severity: "Error",
     condition: "A `Full` export has no logo: no file at its root whose name starts with `logo`.",
     consequence: "The export is compiled without a logo. Add one at its root, or rename the export `<team> Midcup ...` if it only adds to what is installed." },
+  portrait_missing: { code: "portrait_missing", severity: "Warning",
+    condition: "In PES 2017 to 2021, a player of a `Full` export has no portrait: none in his folder and none in `Portraits/`.",
+    consequence: "The player is compiled without a portrait. Add a `portrait` image to his folder, or one named by his number (`05`) to `Portraits/`." },
 };
 const catalog = code => CATALOG["compiler"].find(r => r.code === code) || PLANNED[code];
 const severity = code => {
@@ -1457,5 +1471,6 @@ registerTool({ id: "compiler", css: TEAM_COMPILER_CSS, draw: drawView,
     "compiler/main?colour=sizes", "compiler/main?detail=adv.player.05&colour=sizes&sort=player",
     "compiler/main?detail=a.label&colour=sizes&measure=vram",
     "compiler/main?detail=dbg.kit.K1", "compiler/main?detail=dbg.portraits",
-    "compiler/main?detail=dbg.player.14", "compiler/main?detail=inv1.label"] });
+    "compiler/main?detail=dbg.player.14", "compiler/main?detail=inv1.label",
+    "compiler/main?detail=a.player.05", "compiler/main?detail=refs.label"] });
 })();
