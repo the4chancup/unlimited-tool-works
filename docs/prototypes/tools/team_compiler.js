@@ -140,7 +140,9 @@ const TEAM_COMPILER_CSS = `
      outside it, on the panel's fill so it reads over any cell colour and ring
      (egui: a circle and the glyph in the strong text colour, set here because
      the glyph would otherwise take whatever colour holds it, painted after the
-     row's cells, unclipped).
+     row's cells, clipped 5 above the rows' area: a first-row badge is drawn
+     whole, and the title row covers the badge of a cell scrolled under it. The
+     draft cannot clip there, so here such a badge shows over the titles).
      A team label holds it inside its own top right corner. */
   .tc-slot { position: relative; }
   .tc-pin { position: absolute; top: -5px; right: -5px; width: 14px; height: 14px;

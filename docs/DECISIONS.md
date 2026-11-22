@@ -19697,3 +19697,19 @@ On PES 2014 no released build imports Team TOML, so only test saves hold one; on
 2021, where import shipped in 0.0.2, it is weighed when the rule reaches main.
 Plan: `plans/pes_savefile/operations.md` "Team TOML", the paragraph "A written team name
 shows".
+
+## 2026-11-22 — team_compiler, detail window — what the top box shows, and how
+Decision: a picture fitted inside the top box (a kit's texture, a label's logo) is shrunk to
+fit and never enlarged, while a tile's picture fills its tile, as the draft's CSS draws them.
+The pictures are the files the compile packs, taken from the listing when the check dropped the
+whole export. An archive export's boxes stay empty. The title row covers the pin of a cell
+scrolled under it: the badge is clipped 5 points above the rows' area, so a first-row badge,
+which stands 5 points above its cell, is still drawn whole.
+Why: enlarging a small logo blurs it, and the draft shows it at its own size. An export dropped
+whole is the one whose window a member most needs, so its listing stands in for the validated
+export. Reading a picture out of an archive means decompressing it, which the shallow check
+exists to avoid. A badge drawn over the titles floats away from a cell the member cannot see;
+clipping at the rows' own top would cut every first-row badge. The draft cannot clip there in
+CSS, and its comment says so.
+Plan: `plans/team_compiler/gui.md` "The detail window" (the top box, and "A click pins it");
+TC-GUI-24 and TC-GUI-31 widened.
