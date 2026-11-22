@@ -8,7 +8,7 @@ use pes_version::PesVersion;
 use studio_core::PipelineEvent;
 
 use crate::common::Sandbox;
-use crate::players::{face, wears};
+use crate::players::wears;
 
 /// `upgrade <input> --savefile <save>`.
 fn upgrade(sandbox: &Sandbox, input: &str, save: &str) -> crate::common::Run {
@@ -69,8 +69,8 @@ fn a_note_only_export_reports_no_unmigrated_content() {
         sandbox.path("Numbers/co Note.txt"),
     )
     .unwrap();
-    sandbox.logo("Numbers");
     sandbox.save("EDIT");
+    sandbox.complete_old("Numbers");
 
     let run = upgrade(&sandbox, "Numbers", "EDIT");
     assert_eq!(run.exit_code(), 0, "{}", run.stdout());
@@ -98,10 +98,8 @@ fn without_a_note_the_first_word_resolves() {
         b"not migrated",
     )
     .unwrap();
-    // A face folder, so the run is clean and the output is written at all.
-    face(&sandbox, "co Spring 26/Faces/XXX05 - A");
-    sandbox.logo("co Spring 26");
     sandbox.save("EDIT");
+    sandbox.complete_old("co Spring 26");
 
     let run = upgrade(&sandbox, "co Spring 26", "EDIT");
     assert_eq!(run.exit_code(), 0, "{}", run.stdout());
@@ -224,10 +222,8 @@ fn a_team_entry_holding_two_colors_keeps_the_first() {
         "Team: /co/\r\n\r\nTeam Colours:\r\n- 1st: 048 146 082 - 255 255 255\r\n- 2nd: #FFFFFF\r\n",
     )
     .unwrap();
-    // A face folder, so the output holds content at all.
-    face(&sandbox, "co Spring/Faces/XXX05 - A");
-    sandbox.logo("co Spring");
     sandbox.save("EDIT");
+    sandbox.complete_old("co Spring");
 
     let run = upgrade(&sandbox, "co Spring", "EDIT");
     assert_eq!(run.exit_code(), 0, "{}", run.stdout());
@@ -249,8 +245,8 @@ fn a_team_entry_holding_two_colors_keeps_the_first() {
 fn a_shift_jis_notes_ascii_colors_read() {
     let sandbox = Sandbox::new("root_jp_note");
     sandbox.copy_fixture_dir("jp Summer 18", "jp Summer 18");
-    sandbox.logo("jp Summer 18");
     sandbox.save("EDIT");
+    sandbox.complete_old("jp Summer 18");
 
     let run = upgrade(&sandbox, "jp Summer 18", "EDIT");
     assert_eq!(run.exit_code(), 0, "{}", run.stdout());
@@ -297,8 +293,6 @@ fn a_team_no_list_holds_upgrades_and_the_save_s_own_id_decides() {
     )
     .unwrap();
     fs::create_dir_all(sandbox.path("co Spring 26/Faces/XXX05")).unwrap();
-    sandbox.logo("hist Spring 26");
-    sandbox.logo("co Spring 26");
     sandbox.save_edited("EDIT", PesVersion::Pes21, |file| {
         // The fixture's /co/ sits at 714: renumber it away so the save
         // holds /co/ at 750 alone, /hist/ at 760 alone.
@@ -316,6 +310,8 @@ fn a_team_no_list_holds_upgrades_and_the_save_s_own_id_decides() {
             crate::players::wears(file, id, 0, 0);
         }
     });
+    sandbox.complete_old("co Spring 26");
+    sandbox.complete_old("hist Spring 26");
 
     for (input, output, player) in [
         ("hist Spring 26", "hist Full Spring 26", "05 - Ann"),
@@ -381,7 +377,6 @@ fn a_value_or_name_that_is_no_team_name_is_reported_nothing_written() {
 fn the_first_save_team_of_the_name_is_read_the_later_reported() {
     let sandbox = Sandbox::new("root_repeated_team");
     fs::create_dir_all(sandbox.path("co Spring 26/Faces/XXX05")).unwrap();
-    sandbox.logo("co Spring 26");
     sandbox.save_edited("EDIT", PesVersion::Pes21, |file| {
         // /co/ twice: 750 first in record order (its entry swapped before
         // 714's, which the fixture keeps at index 13 against 49), 714
@@ -398,6 +393,7 @@ fn the_first_save_team_of_the_name_is_read_the_later_reported() {
             crate::players::wears(file, id, 0, 0);
         }
     });
+    sandbox.complete_old("co Spring 26");
 
     let run = upgrade(&sandbox, "co Spring 26", "EDIT");
     assert_eq!(run.exit_code(), 0, "{}", run.stdout());

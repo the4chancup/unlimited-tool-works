@@ -9,6 +9,7 @@ use std::sync::{Arc, Mutex};
 
 use crossbeam_channel::unbounded;
 use export_upgrader::Tool;
+use export_upgrader::test_exports::{OldRequirement, complete_old};
 use pes_version::PesVersion;
 use studio_core::{
     AppPaths, CliError, EventLines, PipelineEvent, PipelineEventEnvelope, Settings, StudioTool,
@@ -91,12 +92,16 @@ impl Sandbox {
         fs::copy(self.fixture(name), &target).unwrap();
     }
 
-    /// Gives the old export at `export` the `co Spring` fixture's logo
-    /// (`Logo/emblem_0XXX_r_ll.png`, 512²). A `Full` export with no logo is
-    /// refused, and a lone large logo upgrades with no report line.
-    pub fn logo(&self, export: &str) {
-        let logo = "Logo/emblem_0XXX_r_ll.png";
-        self.copy_fixture(&format!("co Spring/{logo}"), &format!("{export}/{logo}"));
+    /// Writes into the old export at `export` the files it still lacks for its upgrade to be
+    /// clean (`test_exports::complete_old`). A test writes the files it is about first.
+    pub fn complete_old(&self, export: &str) {
+        self.complete_old_without(export, &[]);
+    }
+
+    /// `complete_old` with the requirements in `without` turned off, for a test of the check
+    /// that asks for one.
+    pub fn complete_old_without(&self, export: &str, without: &[OldRequirement]) {
+        complete_old(&self.path(export), without);
     }
 
     /// Copies the fixture folder `name` (`tests/fixtures/<name>`) to

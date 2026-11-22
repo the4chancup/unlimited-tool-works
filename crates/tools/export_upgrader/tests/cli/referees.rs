@@ -409,7 +409,6 @@ fn either_ingame_face_spelling_in_a_referee_folder_becomes_ingame_face_toml() {
 fn a_subfolder_with_a_face_model_is_carried_in_both_kinds_of_player_folder() {
     let sandbox = Sandbox::new("ref_alt_subfolder");
     face(&sandbox, "co Spring/Faces/XXX07 - A");
-    sandbox.logo("co Spring");
     sandbox.write("co Spring/Faces/XXX07 - A/alt/face_high.fmdl", b"team alt");
     let save = sandbox.arg("EDIT");
     sandbox.save("EDIT");
@@ -418,6 +417,7 @@ fn a_subfolder_with_a_face_model_is_carried_in_both_kinds_of_player_folder() {
     sandbox.write("refs Spring/Players/arbiter/alt/face_high.fmdl", b"ref alt");
 
     let input = sandbox.arg("co Spring");
+    sandbox.complete_old("co Spring");
     let team = sandbox.run(&["upgrade", &input, "--savefile", &save]);
     assert_eq!(
         fs::read(sandbox.path("co Full Spring/Players/07 - A/alt/face_high.fmdl")).unwrap(),

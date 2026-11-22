@@ -20,12 +20,12 @@ fn upgrade_loose(sandbox: &Sandbox, input: &str) -> crate::common::Run {
 #[test]
 fn the_ids_position_in_the_block_pairs_the_wearer() {
     let sandbox = Sandbox::new("loose_ids");
-    sandbox.logo("a Spring");
     // /a/'s old block is 126 to 150, so 0128 is slot 03 and 0130 slot 05.
     sandbox.write("a Spring/a Note.txt", b"Team: /a/\r\n");
     face(&sandbox, "a Spring/Faces/XXX03 - Ann");
     boots(&sandbox, "a Spring/Boots/k0128 - Rex");
     boots(&sandbox, "a Spring/Boots/k0130");
+    sandbox.complete_old("a Spring");
 
     let run = upgrade_loose(&sandbox, "a Spring");
     assert_eq!(run.exit_code(), 0, "{}", run.stdout());
@@ -107,9 +107,9 @@ fn an_empty_face_folder_makes_its_player_folder() {
     // writes no settings.toml for a number-only name), for the compiler to
     // fill the blank face.
     let sandbox = Sandbox::new("loose_empty_face");
-    sandbox.logo("a Spring");
     sandbox.write("a Spring/a Note.txt", b"Team: /a/\r\n");
     fs::create_dir_all(sandbox.path("a Spring/Faces/71405")).unwrap();
+    sandbox.complete_old("a Spring");
 
     let run = upgrade_loose(&sandbox, "a Spring");
     assert_eq!(run.exit_code(), 0, "{}", run.stdout());

@@ -28,8 +28,15 @@ toml.workspace = true
 vtree.workspace = true
 wezlib.workspace = true
 
+[features]
+# `test_exports`, the files a clean old export lacks, for tests that write old exports.
+test-support = []
+
 [dev-dependencies]
 crossbeam-channel.workspace = true
+# The integration tests are their own crate, which `cfg(test)` does not reach: they turn on
+# `test-support` to complete their old exports with `test_exports`.
+export_upgrader = { workspace = true, features = ["test-support"] }
 pes_savefile = { workspace = true, features = ["test-support"] }
 zip.workspace = true
 

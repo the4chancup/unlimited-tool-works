@@ -1611,6 +1611,7 @@ dependencies = [
  "crossbeam-channel",
  "dds_convert",
  "egui",
+ "export_upgrader",
  "fmdl",
  "fpc",
  "ftex",
