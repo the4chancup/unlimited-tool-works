@@ -191,6 +191,19 @@ const TEAM_COMPILER_CSS = `
   .tc-modes { display: inline-flex; align-items: center; gap: 2px; margin-left: auto; white-space: nowrap; }
   .tc-modes .sep-v { width: 1px; height: 14px; background: var(--stroke); margin: 0 6px; }
   .tc-modes select { margin-left: 4px; }
+  .tc-unit { display: inline-flex; gap: 2px; }
+  .tc-unit.off { opacity: .5; }
+  .tc-unit.off .sel { pointer-events: none; }
+  /* A kit's texture or the logo, fitted in the top box. */
+  .tc-detail .preview img { max-width: 180px; }
+  /* The portraits: 6 x 4 tiles filling the box, the logo at the bottom left. */
+  .tc-detail .preview.portraits { display: grid; grid-template-columns: repeat(6, 1fr);
+    grid-template-rows: repeat(4, 1fr); gap: 2px; padding: 2px; box-sizing: border-box; }
+  .tc-detail .preview.portraits .tile { display: flex; align-items: center; justify-content: center;
+    min-width: 0; min-height: 0; background: var(--panel); border-radius: 2px; color: var(--weak); overflow: hidden; }
+  .tc-detail .preview.portraits img { width: 100%; height: 100%; object-fit: contain; max-width: none; max-height: none; }
+  .tc-detail .preview.portraits .logo { font-size: 9px; text-align: center; width: 100%; height: 100%;
+    display: flex; align-items: center; justify-content: center; }
   /* The window's sizes, in the Sizes colouring. */
   .tc-detail .sizes { margin: 6px 0; }
   .tc-detail .sizes .file { display: flex; justify-content: space-between; gap: 8px; }
@@ -398,9 +411,10 @@ function labelOut(r) {
 // The thresholds, MB, per kind: green up to the first, amber at the second,
 // red from the third, blended on a log scale between. sample: provisional,
 // from the 2026-11-22 census of the exports on the maintainer's PC (players:
-// median 7.8, p75 12.4, p90 18.9; kits: 5.3 typical; exports: p75 235, p90
-// 346) and the 4cc rules page's 32 MB per model folder and 500 MB per export.
-const SIZE_GUIDE = { player: [12, 20, 32], kit: [6, 10, 16], portraits: [1, 2, 4], export: [250, 350, 500] };
+// median 7.8, p75 12.4, p90 18.9; kits: 5.3 typical; exports: median 123, p75
+// 235) and the 4cc rules page's 32 MB per model folder and 500 MB per export;
+// an export's green ends near the median, since 250 MB is already large.
+const SIZE_GUIDE = { player: [12, 20, 32], kit: [6, 10, 16], portraits: [1, 2, 4], export: [150, 300, 500] };
 const SIZE_KINDS = [["player", "Player"], ["kit", "Kit"], ["export", "Export"]];
 const SIZE_GREEN = "#3fb950", SIZE_AMBER = "#d29922", SIZE_RED = "#f85149";
 const mix = (a, b, t) => "#" + [1, 3, 5].map(i => Math.round(parseInt(a.slice(i, i + 2), 16) * (1 - t)
@@ -751,10 +765,14 @@ function legend() {
   const modes = h("span", { class: "tc-modes", "data-panel": "colouring" },
     selectable("Status", !sizes, () => { S.colour = "status"; }, "Each cell's check and compile state"),
     selectable("Sizes", sizes, () => { S.colour = "sizes"; }, "Each cell's size against the size guide, green to red"),
-    sizes ? h("span", { class: "sep-v" }) : null,
-    sizes ? selectable("Disk", S.measure === "disk", () => { S.measure = "disk"; }, "The files' size on disk") : null,
-    sizes ? selectable("VRAM", S.measure === "vram", () => { S.measure = "vram"; },
-      "The textures' and models' size in the game's video memory: exact after a compile; before one, a PNG counts as DXT5") : null,
+    // Always there, disabled in Status, so a click on Sizes moves nothing:
+    // the group is right-aligned, and a pair appearing would push the toggle
+    // out from under the pointer (egui: add_enabled_ui).
+    h("span", { class: "sep-v" }),
+    h("span", { class: "tc-unit" + (sizes ? "" : " off"), title: sizes ? null : "The unit of the Sizes colouring" },
+      selectable("Disk", S.measure === "disk", () => { S.measure = "disk"; }, "The files' size on disk"),
+      selectable("VRAM", S.measure === "vram", () => { S.measure = "vram"; },
+        "The textures' and models' size in the game's video memory: exact after a compile; before one, a PNG with alpha counts as DXT5")),
     h("span", { class: "sep-v" }), h("span", {}, "Sort"),
     combo(SORT_NAMES, S.sort, v => { S.sort = v; }, { title: "The order of the rows" }));
   const bar = (...kids) => h("div", { class: "tc-legend-bar top weak", "data-panel": "legend" }, ...kids, modes);
@@ -923,6 +941,31 @@ function cellNotes(r, c, what) {
     notes.push("The menu colors shown are the ones derived from the texture");
   return notes;
 }
+// The window's top box, the 3D preview's size on every cell, so the text
+// under it stays put as the window moves between cells: a player's 3D preview
+// (a later feature), a kit's main texture, the portraits as a 6 x 4 grid with
+// the export's logo at its bottom left (23 portraits and the logo make 24),
+// and the export's logo for a label. sample: /dbg/'s kits and portraits are the
+// real export's, scaled; the other rows have none to show.
+const KIT_TEX = { dbg: { GK: "g1", K1: "p1", K2: "p2", K3: "p3" } };
+function previewBox(r, at) {
+  const logo = r.logo ? h("img", { src: r.logo, alt: "" }) : "No logo";
+  if (at.what === "player") return h("div", { class: "preview weak" }, "3D preview (a later feature)");
+  if (at.what === "kit") {
+    const tex = (KIT_TEX[r.key] || {})[at.slot];
+    return h("div", { class: "preview weak" },
+      tex ? h("img", { src: `assets/kits/${r.key}_${tex}.png`, alt: "" }) : "Kit texture (sample: none to show)");
+  }
+  if (at.what === "portraits") {
+    const tile = n => r.players[n]
+      ? (r.key === "dbg" ? h("img", { src: `assets/portraits/dbg/${pad(n)}.png`, alt: "" }) : h("span", { class: "mono" }, pad(n)))
+      : null;
+    const tiles = [...Array.from({ length: 18 }, (_, i) => tile(i + 1)), h("span", { class: "logo" }, logo),
+      ...Array.from({ length: 5 }, (_, i) => tile(i + 19))];
+    return h("div", { class: "preview portraits" }, tiles.map(t => h("div", { class: "tile" }, t)));
+  }
+  return h("div", { class: "preview weak" }, logo);
+}
 function detailPanel() {
   const at = S.pin || S.hover;
   if (!at) return null;
@@ -944,11 +987,7 @@ function detailPanel() {
       pinned ? button(h("span", { class: "pin" }, "📌"), () => { S.pin = null; render(); },
         { frame0: true, title: "Unpin" }) : null),
     h("div", { class: "body" },
-      // One box the 3D preview's size on every cell, so the text under it stays
-      // put as the window moves between cells: a player's preview, else the
-      // export's logo (a later feature's box, the logo, or "No logo").
-      at.what === "player" ? h("div", { class: "preview weak" }, "3D preview (a later feature)")
-        : h("div", { class: "preview weak" }, r.logo ? h("img", { src: r.logo, alt: "" }) : "No logo"),
+      previewBox(r, at),
       h("div", { class: "mono" }, where),
       h("div", { class: "weak" }, rowOff(r) ? "Off: not compiled" : STATE_NAMES[shown(r, cell)]),
       cellNotes(r, cell, at.what).map(n => h("div", { class: "weak" }, n)),
@@ -1388,5 +1427,6 @@ registerTool({ id: "compiler", css: TEAM_COMPILER_CSS, draw: drawView,
     "compiler/main?run=done", "compiler/main?mode=sideload&column=1",
     "compiler/main?empty=1", "compiler/main?dest=running",
     "compiler/main?colour=sizes", "compiler/main?detail=adv.player.05&colour=sizes&sort=player",
-    "compiler/main?detail=a.label&colour=sizes&measure=vram"] });
+    "compiler/main?detail=a.label&colour=sizes&measure=vram",
+    "compiler/main?detail=dbg.kit.K1", "compiler/main?detail=dbg.portraits"] });
 })();

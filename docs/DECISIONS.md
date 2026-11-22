@@ -19392,3 +19392,15 @@ are DDS, whose VRAM equals their payload on disk (VRAM over disk 1.00 to 1.01 on
 so one scale fits both.
 Plan: plans/team_compiler/gui.md "Sizes and sorting"; plans/team_compiler/README.md TC-GUI-28,
 TC-GUI-29, TC-GUI-30.
+
+## 2026-11-22 — compiler view — export thresholds 150/300/500 MB; a kit's and the portraits' window boxes
+Decision (the maintainer): an export is green up to 150 MB, amber at 300, red from 500, since
+250 MB is already large and the census's median export is 123 MB. A kit's window shows its main
+texture in the top box, and the portraits' window a 6 × 4 grid of every portrait with the
+export's logo in the bottom-left tile. A click on Sizes must not move the toggle.
+Decision (the lead): Disk | VRAM is always drawn and enabled only in Sizes, which keeps the
+right-aligned controls in place; a player with no portrait leaves his tile empty.
+Why: the box shows what each cell is about rather than the logo everywhere, and the 24 tiles
+take 23 portraits and the logo exactly.
+Plan: plans/team_compiler/gui.md "GUI: the live-validating team grid" (the detail window),
+"Sizes and sorting"; plans/team_compiler/README.md TC-GUI-28, TC-GUI-31.

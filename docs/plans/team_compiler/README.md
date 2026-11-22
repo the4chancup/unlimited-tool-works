@@ -282,7 +282,8 @@ TC-GUI-27  GIVEN more export rows than fit above the open log at the window's si
 TC-GUI-28  GIVEN a player folder of 9 MB, one of 40 MB, and a player of 25 MB whose own folder
                 is 10 MB and who links a 15 MB shared Boots folder
            WHEN Sizes is picked
-           THEN their cells are green, red and between amber and red, a cell not read yet keeps
+           THEN the Status | Sizes toggle stays under the pointer, their cells are green, red
+                and between amber and red, a cell not read yet keeps
                 the unchecked colour, no cell shows a warning or error ring, and the legend
                 shows each kind's three thresholds; GIVEN the 25 MB player's window THEN it gives
                 25 MB on disk and names the Boots folder it takes in
@@ -297,6 +298,12 @@ TC-GUI-30  GIVEN three exports of 120, 480 and 300 MB, the 120 MB one holding th
            WHEN Largest export, Largest player and Errors first are picked in turn
            THEN the rows read 480, 300, 120; then 120 first; then 300 first, the others in the
                 folder's order; and the same sorts work in Status
+TC-GUI-31  GIVEN an export with a logo, a kit whose main texture is kit.dds, and 22 of its 23
+                players with a portrait (player 20 without)
+           WHEN the window opens on the kit, on the portraits cell and on the label
+           THEN its top box shows kit.dds; then a 6 × 4 grid holding the 22 portraits in the
+                players' order, the logo in the bottom-left tile and player 20's tile empty;
+                then the logo; and the text under the box starts at the same height each time
 TC-GUI-13  GIVEN a run in flight over two exports
            WHEN Cancel is clicked
            THEN the run ends after the task or texture in progress, no CPK is written or
