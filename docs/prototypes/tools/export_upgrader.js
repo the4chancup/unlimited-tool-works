@@ -720,7 +720,10 @@ function summary() {
     class: "tc-count" + (L.logCollapsed ? " on" : ""), title,
     onclick: () => { L.logFilter = filter; L.logCollapsed = false; render(); } }, text);
   const errors = "Show only the errors in the log";
-  const parts = [count(all.length, "old export", "old exports"), count(all.filter(eligible).length, "ready"),
+  // After a run its line already says how many were written (the ready ones)
+  // and the exports with errors are the ones not written: no count twice.
+  const parts = [S.last ? null : count(all.length, "old export", "old exports"),
+    S.last ? null : count(all.filter(eligible).length, "ready"),
     filterLink(count(all.filter(x => !blocked(x) && hasError(x)).length, "with errors"), "errors", errors),
     filterLink(count(all.filter(x => blocked(x)).length, "cannot be read", "cannot be read"), "errors", errors),
     filterLink(count(all.filter(x => eligible(x) && (x.left.length || everyCell(x).some(c => c.status === "warning"))).length, "with warnings"),
@@ -731,7 +734,7 @@ function summary() {
 function toolbar() {
   const run = S.run, can = rows().some(eligible), sum = summary();
   const strip = run ? `Upgrading · ${mmss(run.elapsed)} · ${run.done} of ${run.tasks.length} folders written`
-    : S.last && sum.length ? [S.last, "  —  ", ...sum] : S.last || sum;
+    : S.last && sum.length ? [S.last, " · ", ...sum] : S.last || sum;
   const main = button(run ? "Cancel" : "Upgrade", run ? cancelRun : askRun,
     { disabled: !run && !can, title: !run && !can ? "No old export is ready to upgrade" : null });
   main.id = "upgrade-btn";
@@ -786,7 +789,7 @@ function startRun() {
     .map((t, i) => ({ ...t, order: (i * 7919) % 211 })).sort((a, b) => a.order - b.order);
   const start = Date.now();
   S.finished = false; S.last = null;
-  S.run = { tasks, at: 0, done: 0, elapsed: 0, exports: ready.length, failed: lines.length };
+  S.run = { tasks, at: 0, done: 0, elapsed: 0, exports: ready.length };
   appendLog([{ severity: "Info", code: null, scope: null, text: `Info - Upgrade: ${ready.length} exports` }, ...lines], L);
   S.run.timer = setInterval(() => {
     const run = S.run;
@@ -806,8 +809,7 @@ function stopRun() { clearInterval(S.run.timer); toolActivity("export-upgrader",
 function endRun() {
   const run = S.run;
   stopRun(); S.run = null; S.finished = true;
-  S.last = `Upgrade finished in ${mmss(run.elapsed)} · ${run.exports} written to exports`
-    + (run.failed ? ` · ${run.failed} not written` : "");
+  S.last = `Upgrade finished in ${mmss(run.elapsed)} · ${run.exports} written to exports`;
   appendLog(rows().filter(x => labelOut(x) === "done" || labelOut(x) === "doneWarn").flatMap(x => [
     ...x.left.map(([path, why]) => line("Warning", x, cellAt(x.key, "left"), "leftover_dropped", scopeOf(x, "left"),
       ` at ${path} (${why})`)),

@@ -19495,3 +19495,13 @@ Decision: the maintainer renamed the Export upgrader's button that leads to the 
 "Switch to the Compiler".
 Why: the Compiler is already open in the same window, so the button switches to it.
 Plan: plans/export_upgrader.md "GUI" (the toolbar); plans/core/README.md (the name's example).
+
+## 2026-11-22 — export_upgrader — After a run, the strip names each count once
+Decision: after a run, the Export upgrader's strip gives the run's line and only the counts
+it leaves out: `Upgrade finished in 00:18 · 7 written to exports · 2 with errors · 3 cannot be
+read · 2 with warnings`. The total of old exports, `ready` and `not written` go. Before any
+run the strip keeps its counts as they were.
+Why: the maintainer found the line repeating itself. The exports written are the ones that
+were ready, and those with errors are the ones not written; a line naming both said each
+twice and did not fit beside the buttons at the default window.
+Plan: plans/export_upgrader.md "GUI" (the toolbar's strip).

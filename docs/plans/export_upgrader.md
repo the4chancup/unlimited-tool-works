@@ -326,9 +326,13 @@ members use (`quick_upgrade.bat`) reads the same two.
 - **A log line** is the Compiler's, `Severity - /team/ - code at <the old path>`, and acts
   for its cell as there; the finding's own text is the window's.
 - **The toolbar** is the Compiler's:
-  - **The strip.** Idle, it gives the last run's line and the counts
+  - **The strip.** Before any run it gives the counts
     (`13 old exports · 8 ready · 1 with errors · 3 cannot be read · 2 with warnings`).
-    During a run it reads `Upgrading · mm:ss · n of N folders written`. As in the Compiler,
+    After a run it gives the run's line and only the counts that line leaves out
+    (`Upgrade finished in 00:18 · 7 written to exports · 2 with errors · 3 cannot be read ·
+    2 with warnings`): the exports written are the ones that were ready, and those with
+    errors are the ones not written, so naming both would say each twice. During a run it
+    reads `Upgrading · mm:ss · n of N folders written`. As in the Compiler,
     a click on `with errors` or `cannot be read` sets the log to Errors and one on
     `with warnings` sets it to Warnings. They are in the link blue only while the log is
     collapsed.
