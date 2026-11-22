@@ -4,6 +4,10 @@ copy's `UTW.exe`, and set the settings' window to the default client area (1280 
 (312, 130)) and the theme to the one asked, so every check starts from one window. Refuses while
 the copy runs. The copy is the folder `UTW_APP` names, `.tmp/0_0_1s4t_v2/app` by default.
 
+A CLI run meant to find what the window shows goes through the copy's `UTW.exe`: the program
+reads the settings in the `data/` folder beside its own exe, so the built `utw.exe` finds none
+and checks with the defaults (another game version, other findings).
+
 Run: python scripts/built_window/setup.py dark|light
 """
 import os
