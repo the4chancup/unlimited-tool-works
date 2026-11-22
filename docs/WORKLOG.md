@@ -199,7 +199,11 @@ other items run beside it. **After the detour**, in this order:
     third add-on, EssexDotDev's 4cc-FMDL-Toolkit, to the Blender plan.
 15. The checkpoint on `f51c570a` (2026-11-22): fmt, clippy and every test suite passed, but
     the mutation run left 10 mutants alive, so `refs/checkpoints/gated` stays at `fc6e8cf0`
-    (list: `.tmp/lead/mutants_f51c570a/missed_all.txt`). Triaged 2026-11-22:
+    (list: `.tmp/lead/mutants_f51c570a/missed_all.txt`). The gate stayed for another reason
+    too: the VPS's disk filled during the `save_editor` half, so two mutants never ran
+    (`Portraits::shown_placeholder` and `player_list.rs` `toggle_in_group`); the next run
+    tests them again, the floor now 48 GiB and 72 GiB free (DECISIONS 2026-11-22). Triaged
+    2026-11-22:
     - the two `session_link.rs` timeouts are caught: each mutant makes `give`'s send loop
       endless, and a timeout an infinite loop explains counts as caught (RUNBOOK "Mutation
       runs");

@@ -19505,3 +19505,14 @@ Why: the maintainer found the line repeating itself. The exports written are the
 were ready, and those with errors are the ones not written; a line naming both said each
 twice and did not fit beside the buttons at the default window.
 Plan: plans/export_upgrader.md "GUI" (the toolbar's strip).
+
+## 2026-11-22 — tooling — The VPS free-space floor for a mutation half is 48 GiB
+
+Decision: a split mutation run starts on the VPS only with at least 48 GiB free on its disk
+(`REMOTE_FREE_FLOOR`), where it took 26.
+Why: the checkpoint on `f51c570a` passed the 26 GiB guard with 35.4 GiB free, and its
+`save_editor` half still filled the disk and left a mutant untested, so the checkpoint could
+not gate. The half's tests leave a folder behind on each caught mutant, so its use grows with
+the run, past the 23.6 GiB measured on 2026-11-12. The new floor is that failure's start plus
+a third. The clone's build cache (37 GB) was removed the same day, leaving 72 GiB free.
+Plan: `RUNBOOK.md` "The scratch folder"; `scripts/mutation/mutants.py`'s `REMOTE_FREE_FLOOR`.

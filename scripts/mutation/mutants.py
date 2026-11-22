@@ -180,17 +180,19 @@ LOCAL_ONLY_CRATES: frozenset[str] = frozenset()
 # rebuilds of 1-2 GiB on top of two such trees, not the egui build itself.
 REMOTE_TMPDIR = "$HOME/studio-mutants/tmp"
 # The least free space the host's disk must have when a run that uses the remote
-# starts, whatever this project holds: a half's two build copies take 24 GiB of it
-# (measured on 2026-11-12: a `save_editor` half's peaked at 23.6 GiB in
-# `REMOTE_TMPDIR`; no other crate's is measured), and 2 more stay for the host's own
-# system (its logs, its other services, idle since 2026-10-29). At 12, the floor
-# before that measurement, a `save_editor` half that started with 19.5 GiB free
-# filled the disk and lost a mutant. Nothing bounds what `REMOTE_BASE` itself holds:
+# starts, whatever this project holds. A `save_editor` half takes more than 33 GiB of
+# it: one that started with 35.4 GiB free filled the disk on 2026-11-22 and lost a
+# mutant, where on 2026-11-12 one had peaked at 23.6 GiB in `REMOTE_TMPDIR` (its
+# tests' leftovers grow with each caught mutant; no other crate's is measured). So
+# the floor is that failure's start plus a third; 2 of it stay for the host's own
+# system (its logs, its other services, idle since 2026-10-29). Each earlier floor
+# failed the same way: at 12, a half that started with 19.5 GiB free; at 26, set from
+# the 23.6 measurement, the 2026-11-22 one. Nothing bounds what `REMOTE_BASE` itself holds:
 # the host can spare its whole disk but those 2, so only the free space is guarded.
 # On 2026-10-22 the folder held 50 GB (28.6 of them tests' leftovers in
 # `REMOTE_TMPDIR`, 22 the clone's build cache), the disk was at 99%, and a half
 # lost five mutants to it (RUNBOOK "The scratch folder").
-REMOTE_FREE_FLOOR = 26 * 2**30
+REMOTE_FREE_FLOOR = 48 * 2**30
 # Where the local half's cargo-mutants makes its copies of the tree (and its
 # builds and tests their temporary files): one fixed folder, so a single
 # antivirus exclusion covers every run's randomly named copy, whose tests write

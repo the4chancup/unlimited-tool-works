@@ -414,9 +414,9 @@ host passes a guard first (`remote_refusal`):
 it empties `~/studio-mutants/tmp` (`REMOTE_TMPDIR`, the remote tests' temp dir), where a test
 that removes its folder at its end leaves it on every caught mutant and a killed half leaves its
 tree copies, then refuses when the disk has under
-26 GiB free (`REMOTE_FREE_FLOOR`: a half's two build copies take 24, measured on a
-`save_editor` half, whose temp folder peaked at 23.6 GiB, and 2 stay for
-the host's system). The refusal prints what `~/studio-mutants` holds: the cleanup below frees
+48 GiB free (`REMOTE_FREE_FLOOR`: a `save_editor` half that started with 35.4 GiB free
+filled the disk on 2026-11-22, its tests' leftovers growing with each caught mutant, so the
+floor is that start plus a third, 2 of it for the host's system). The refusal prints what `~/studio-mutants` holds: the cleanup below frees
 the clone's build cache, usually most of it (a finished run's results stay until the next
 launch), and when that cannot lift the floor the maintainer is asked.
 Before the guard, the folder once held 50 GB (28.6 of them test leftovers, 27 the Save
