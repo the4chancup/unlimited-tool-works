@@ -96,7 +96,9 @@ clicks its UI is fixed in the test.
 checklist or into a report only after the lead or an Opus sidekick has made it first: the
 release build captured at each state the look names (`scripts/built_window/`), the draft
 rendered at the same state, the two read side by side, and every difference fixed or written
-down as one the maintainer is asked about. The look's card shows its capture pair,
+down as one the maintainer is asked about. A difference traced to a draft's CSS rule is searched
+for in that rule's other selectors too (`.sel` in the help's tree and in its search results), since
+the slice that missed one usually missed its siblings. The look's card shows its capture pair,
 copied into `docs/maintainer/img/`, so a look without one is not ready to hand over. The maintainer's look
 is a second pair of eyes on what was already checked, never the first: a checklist once went
 out with the Appearance screen's Physique group laid out unlike its draft, which one capture
