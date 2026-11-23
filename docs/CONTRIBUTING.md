@@ -487,7 +487,9 @@ Requirements:
   an automated proof whenever the UI toolkit allows one; `manual` is for what it does not.
 - `scripts/gates/acceptance.py` checks both halves. Every mode fails on a citation that proves nothing:
   one naming an ID no scenario defines or a withdrawn one, an ID-only `//` comment not directly
-  above a `#[test]`, a manual check of a scenario not marked `manual`, an ID defined twice, or
+  above a `#[test]`, a comment line above a `#[test]` that starts with IDs and a colon
+  (`// TC-KIT-03: prose`, which the scan cannot read as a citation, so its scenario would stay
+  unproven), a manual check of a scenario not marked `manual`, an ID defined twice, or
   an Acceptance-section line that starts with an ID but is not a scenario. `report` (gate 5)
   lists unproven scenarios without failing, since an open phase's scenarios precede their
   tests; `strict`, run at converge, also fails on each of them. Strict checks every scenario in

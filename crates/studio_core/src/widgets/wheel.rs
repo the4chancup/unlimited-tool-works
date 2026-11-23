@@ -644,9 +644,10 @@ mod tests {
         assert_eq!(window.offset, 0.0);
     }
 
-    // ST-WHEEL-04: the stepped control itself in typing mode leaves it, and
+    // The stepped control itself in typing mode leaves it, and
     // the step lands on the value typed. egui's drag value commits each
     // keystroke while typing, so the typed value holds before the notch.
+    // ST-WHEEL-04
     #[test]
     fn a_notch_over_a_drag_value_being_typed_in_ends_typing_then_steps() {
         let mut window = Window::new();

@@ -113,17 +113,20 @@ impl DpflDialog {
                     gap(ui);
                     // The tick is asked for only over boxes: a dropped entry without a
                     // file in download/ gets none.
-                    if preview.dropped.iter().any(|(_, size)| size.is_some()) {
-                        ui.label(format!(
-                            "No longer loaded by the game ({}). Tick any you want deleted:",
-                            preview.dropped.len()
-                        ));
-                    } else {
-                        ui.label(format!(
-                            "No longer loaded by the game ({}):",
-                            preview.dropped.len()
-                        ));
-                    }
+                    let boxes = preview
+                        .dropped
+                        .iter()
+                        .filter(|(_, size)| size.is_some())
+                        .count();
+                    let tail = match boxes {
+                        0 => ":",
+                        1 => ". Tick the box to have it deleted:",
+                        _ => ". Tick any you want deleted:",
+                    };
+                    ui.label(format!(
+                        "No longer loaded by the game ({}){tail}",
+                        preview.dropped.len()
+                    ));
                     dropped_list(ui, &preview.dropped, &mut self.delete);
                 }
                 let buttons = modal_buttons(ui, |ui| {

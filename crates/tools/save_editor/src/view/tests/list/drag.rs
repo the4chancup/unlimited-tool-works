@@ -88,8 +88,9 @@ fn a_row_dragged_above_another_trades_their_records_between_the_ids() {
     );
 }
 
-// SE-GUI-08: a filter box holding only spaces is no filter — the drag
+// A filter box holding only spaces is no filter — the drag
 // stays on, as it does with the box empty.
+// SE-GUI-08
 #[test]
 fn a_whitespace_only_filter_keeps_the_drag_on() {
     let path = fixture(PesVersion::Pes21, "drag_whitespace_filter");

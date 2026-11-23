@@ -10,7 +10,9 @@ IDs, directly above a `#[test]` line or another citation line, in any `.rs` file
 `crates/` (inline test modules included). A `manual` scenario is also proven by a worklog line `<ID> manual: checked <yyyy-mm-dd>`.
 
 Both modes fail on what makes a citation or a definition untrustworthy: a citation of an ID no
-scenario defines or of a withdrawn one, an ID-only comment not above a `#[test]`, a manual
+scenario defines or of a withdrawn one, an ID-only comment not above a `#[test]`, a `//` line
+of the comment block above a `#[test]` that starts with IDs and a colon (`// TC-GUI-10: prose`,
+a citation the scan would miss), a manual
 check for a scenario not marked `manual`, an ID defined twice (an archived ID reused live
 included), a line in an Acceptance section that starts with an ID but is not a scenario, a range
 that does not run forward, an archive line that is not a withdrawn scenario, and a withdrawn line
@@ -36,6 +38,7 @@ RANGE = re.compile(r"^(?P<area>[A-Z]{2}-[A-Z]+-)(?P<first>\d+) to (?P<last>\d+)\
 STARTS_WITH_ID = re.compile(rf"^{ID}\b")
 HEADING = re.compile(r"^(?P<level>#+)\s+(?P<title>.*)$")
 CITATION = re.compile(rf"^\s*//\s*(?P<ids>{ID}(?:\s*,\s*{ID}|\s+{ID})*)\s*$")
+PROSE_CITATION = re.compile(rf"^\s*//\s*(?P<ids>{ID}(?:\s*,\s*{ID})*)\s*:")
 CITED_ID = re.compile(ID)
 MANUAL_CHECK = re.compile(rf"\b(?P<id>{ID}) manual: checked \d{{4}}-\d{{2}}-\d{{2}}\b")
 CLI_SUITE = re.compile(r"^crates/tools/[^/]+/tests/cli/")
@@ -146,6 +149,9 @@ def check_archive(scan: Scan) -> None:
 def scan_source(scan: Scan, name: str, text: str) -> None:
     cli_suite = CLI_SUITE.match(name) is not None
     pending: list[tuple[str, str]] = []
+    # `// TC-..: prose` lines of the comment block above a test: a citation the scan cannot
+    # read, which would leave its scenario silently unproven.
+    prose: list[tuple[str, str]] = []
     for number, line in enumerate(text.splitlines(), start=1):
         citation = CITATION.match(line)
         if citation:
@@ -157,9 +163,20 @@ def scan_source(scan: Scan, name: str, text: str) -> None:
                 scan.uncited.append(f"{name}:{number}")
             for cited, where in pending:
                 scan.citations.setdefault(cited, []).append(where)
+            for cited, where in prose:
+                scan.problems.append(
+                    f"{where}: {cited} is cited before prose; a citation is a line of IDs alone"
+                )
+            prose = []
         else:
             for cited, where in pending:
                 scan.problems.append(f"{where}: citation of {cited} is not directly above a #[test]")
+            prose_citation = PROSE_CITATION.match(line)
+            if prose_citation:
+                where = f"{name}:{number}"
+                prose.extend((cited, where) for cited in CITED_ID.findall(prose_citation["ids"]))
+            elif not line.strip().startswith("//"):
+                prose = []
         pending = []
     for cited, where in pending:
         scan.problems.append(f"{where}: citation of {cited} is not directly above a #[test]")

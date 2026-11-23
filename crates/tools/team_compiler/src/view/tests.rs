@@ -9,12 +9,13 @@ use std::sync::{Arc, Mutex};
 use std::time::Instant;
 
 use aesthetics_export::test_exports::Requirement;
-use crossbeam_channel::unbounded;
+use crossbeam_channel::{Receiver, unbounded};
 use egui::accesskit;
 use export_grid::{Cell, IdCell, Position, RowBody, Tone, TopBox};
 use pes_version::PesVersion;
 use studio_core::{
-    AppPaths, Disposition, ExportId, Message, MessageCode, Scope, Settings, StudioTool,
+    AppPaths, Disposition, ExportId, Message, MessageCode, Scope, Settings, ShellRequest,
+    StudioTool,
 };
 
 use super::*;
@@ -107,12 +108,13 @@ fn tool_context_at(root: &Path, version: PesVersion) -> ToolContext {
     tool_context_with_settings(root, version).0
 }
 
-/// `tool_context_at`'s context, and the shared settings it is built on, so a test writes
-/// them through the lock as the sidebar does.
+/// `tool_context_at`'s context, the shared settings it is built on, so a test writes
+/// them through the lock as the sidebar does, and the receiving end of its shell
+/// requests, so a test reads what a click asked of the shell.
 fn tool_context_with_settings(
     root: &Path,
     version: PesVersion,
-) -> (ToolContext, Arc<Mutex<Settings>>) {
+) -> (ToolContext, Arc<Mutex<Settings>>, Receiver<ShellRequest>) {
     let mut settings = Settings::parse("").unwrap();
     settings.common.pes_version = version;
     settings.common.pes_folder_path = root.join("PES").display().to_string();
@@ -124,7 +126,7 @@ fn tool_context_with_settings(
     settings.set_tool(TOOL_ID, tool);
     settings.merge_defaults(TOOL_ID, &default_table());
     let (events_tx, _events_rx) = unbounded();
-    let (requests_tx, _requests_rx) = unbounded();
+    let (requests_tx, requests_rx) = unbounded();
     let settings = Arc::new(Mutex::new(settings));
     let ctx = ToolContext::new(
         settings.clone(),
@@ -135,7 +137,7 @@ fn tool_context_with_settings(
         events_tx,
         requests_tx,
     );
-    (ctx, settings)
+    (ctx, settings, requests_rx)
 }
 
 /// The shared settings' PES folder made `folder`, as the sidebar's pick writes it.
@@ -160,7 +162,7 @@ fn two_installs(
     install(temp.path(), 2017, first, None);
     let other = crate::testing::scratch(&format!("{test}_other"));
     install(other.path(), 2017, second, None);
-    let (ctx, settings) = tool_context_with_settings(temp.path(), PesVersion::Pes17);
+    let (ctx, settings, _requests) = tool_context_with_settings(temp.path(), PesVersion::Pes17);
     (temp, other, ctx, settings)
 }
 

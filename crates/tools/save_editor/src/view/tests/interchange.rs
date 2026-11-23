@@ -416,8 +416,9 @@ fn a_team_toml_with_stats_alone_writes_the_abilities_as_one_undoable_edit() {
     );
 }
 
-// SE-GUI-16: the extension names the format case-insensitively, so a
+// The extension names the format case-insensitively, so a
 // `CO.TOML` reads as a Team TOML like `co.toml` does.
+// SE-GUI-16
 #[test]
 fn an_upper_case_extension_reads_as_a_team_toml() {
     let (mut view, mut window) =

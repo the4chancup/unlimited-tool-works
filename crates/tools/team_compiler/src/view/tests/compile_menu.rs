@@ -238,7 +238,7 @@ fn sideloading_is_off_on_pes_2015_and_2016_and_on_later_ones() {
 #[test]
 fn a_sideload_pick_disables_the_main_part_on_an_unserved_version() {
     let temp = sandbox("view_compile_menu_sideload_pick");
-    let (ctx, settings) = tool_context_with_settings(temp.path(), PesVersion::Pes17);
+    let (ctx, settings, _requests) = tool_context_with_settings(temp.path(), PesVersion::Pes17);
     let log = RunLog::default();
     let mut panel = LogPanel::new(TOOL_ID);
     let mut detail = GridDetail::new();
@@ -271,7 +271,8 @@ fn a_sideload_pick_disables_the_main_part_on_an_unserved_version() {
     );
 }
 
-// TC-GUI-33's clause: an outdated list stops the mode that installs the CPKs alone.
+// An outdated list stops the mode that installs the CPKs alone.
+// TC-GUI-33
 #[test]
 fn an_outdated_list_blocks_the_normal_mode_alone() {
     let temp = sandbox("view_compile_menu_outdated");

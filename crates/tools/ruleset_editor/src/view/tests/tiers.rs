@@ -622,10 +622,11 @@ fn a_handle_drag_reorders_the_tiers() {
     a_bronze_drag_onto_silver_reorders("gui_04_drag", centre);
 }
 
-// RE-GUI-04: a press two points left of the glyph, outside the label's
+// A press two points left of the glyph, outside the label's
 // bounds but within egui's interaction radius of it, still starts the
 // drag: the drag source covers the glyph, so the hit test hands it
 // the press, never the label.
+// RE-GUI-04
 #[test]
 fn a_handle_drag_from_beside_its_glyph_reorders_the_tiers() {
     a_bronze_drag_onto_silver_reorders("gui_04_beside", |handle| {

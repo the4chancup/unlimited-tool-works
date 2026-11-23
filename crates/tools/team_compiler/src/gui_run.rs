@@ -45,7 +45,8 @@ pub(crate) struct RunLog {
     /// The check's lines, then the run's.
     lines: Vec<LogLine>,
     /// How many of `lines` are the check's: the first `cells.len()`, one per cell line, then
-    /// one per run-scoped finding ([`crate::check::live::LiveCheck::list_findings`]).
+    /// one per run-scoped finding ([`crate::check::live::LiveCheck::list_findings`]), or
+    /// a refused check's one `error:` line.
     check_len: usize,
     /// The cell each of the check's lines acts for, one per cell line: the cell lines are the
     /// first `cells.len()` of `lines`, so a run-scoped line's `cell_of` is `None`.
@@ -185,11 +186,25 @@ impl RunLog {
         self.lines.push(LogLine::plain(severity, last));
     }
 
-    /// Adds a refusal's line, `error: ` and then `error`, as the binary prints one: the
-    /// Compile run's, or the grid's check's.
+    /// Adds a refusal's line, `error: ` and then `error`, as the binary prints one, at
+    /// the log's end: a run's, or a click's that could not start one (the upgrade's
+    /// preview, the output folder). A refused check's is `set_check_refusal`'s.
     pub(crate) fn append_refusal(&mut self, error: &str) {
         self.lines
             .push(LogLine::plain(Severity::Error, format!("error: {error}")));
+    }
+
+    /// Replaces the check's lines with the refused check's one `error: ` line, the run's
+    /// kept after it: the refusal is the check's whole outcome, so it counts as the
+    /// check's `check_len` alone and acts for no cell. `dpfl` keeps the last check's
+    /// verdict: a refused check found nothing of the game's list.
+    pub(crate) fn set_check_refusal(&mut self, error: &str) {
+        self.lines.splice(
+            ..self.check_len,
+            [LogLine::plain(Severity::Error, format!("error: {error}"))],
+        );
+        self.check_len = 1;
+        self.cells = Vec::new();
     }
 
     /// Replaces the check's lines with `rows`' and its `list` of run-scoped findings, a
@@ -502,6 +517,23 @@ mod tests {
         }
     }
 
+    /// A row keyed `key`, labelled `team`, holding one `export_identified` finding.
+    fn identified_row(key: &str, team: &str, id: &str) -> Row {
+        row(
+            key,
+            team,
+            vec![finding(
+                "export_identified",
+                Severity::Info,
+                Scope::Export {
+                    export_id: ExportId(1),
+                },
+                &[("team", team), ("id", id)],
+            )],
+            Vec::new(),
+        )
+    }
+
     /// A checked cell showing `text`, holding `messages`.
     fn cell(text: &str, messages: Vec<Message>) -> Position {
         Position::Cell(Box::new(Cell {
@@ -625,24 +657,13 @@ mod tests {
 
     #[test]
     fn a_new_check_replaces_the_check_s_lines_and_keeps_the_run_s() {
-        let identified = |key: &str, team: &str, id: &str| {
-            let message = finding(
-                "export_identified",
-                Severity::Info,
-                Scope::Export {
-                    export_id: ExportId(1),
-                },
-                &[("team", team), ("id", id)],
-            );
-            row(key, team, vec![message], Vec::new())
-        };
         let mut log = RunLog::default();
-        log.set_check(&[identified("co Midcup Map", "/co/", "714")], &[]);
+        log.set_check(&[identified_row("co Midcup Map", "/co/", "714")], &[]);
         log.append_test_line(Severity::Info, "Run finished with exit code 0");
         log.set_check(
             &[
-                identified("a Midcup Grid", "/a/", "702"),
-                identified("co Midcup Map", "/co/", "714"),
+                identified_row("a Midcup Grid", "/a/", "702"),
+                identified_row("co Midcup Map", "/co/", "714"),
             ],
             &[],
         );
@@ -745,17 +766,6 @@ mod tests {
 
     #[test]
     fn a_check_s_list_line_is_replaced_by_the_next_check_s_and_the_run_s_kept() {
-        let identified = |key: &str, team: &str, id: &str| {
-            let message = finding(
-                "export_identified",
-                Severity::Info,
-                Scope::Export {
-                    export_id: ExportId(1),
-                },
-                &[("team", team), ("id", id)],
-            );
-            row(key, team, vec![message], Vec::new())
-        };
         let cpk_missing = finding(
             "dpfilelist_cpk_missing",
             Severity::Warning,
@@ -770,7 +780,7 @@ mod tests {
         );
         let mut log = RunLog::default();
         log.set_check(
-            &[identified("co Midcup Map", "/co/", "714")],
+            &[identified_row("co Midcup Map", "/co/", "714")],
             &[cpk_missing],
         );
         assert!(
@@ -779,7 +789,10 @@ mod tests {
         );
         assert!(log.dpfl_found());
         log.append_test_line(Severity::Info, "Run finished with exit code 0");
-        log.set_check(&[identified("a Midcup Grid", "/a/", "702")], &[outdated]);
+        log.set_check(
+            &[identified_row("a Midcup Grid", "/a/", "702")],
+            &[outdated],
+        );
         assert_eq!(
             log.texts(),
             [
@@ -792,22 +805,61 @@ mod tests {
     }
 
     #[test]
+    fn a_refused_check_replaces_the_check_s_lines_and_a_good_check_replaces_it() {
+        let mut log = RunLog::default();
+        log.set_check(&[identified_row("co Midcup Map", "/co/", "714")], &[]);
+        log.set_check_refusal("the exports folder could not be read");
+        assert_eq!(log.texts(), ["error: the exports folder could not be read"]);
+        assert_eq!(log.cell_of(0), None, "the refusal acts for no cell");
+
+        log.set_check(&[identified_row("a Midcup Grid", "/a/", "702")], &[]);
+        assert_eq!(
+            log.texts(),
+            ["- a Midcup Grid: Info export_identified (team=/a/, id=702)"]
+        );
+        assert_eq!(
+            log.cell_of(0).map(|cell| cell.row.as_str()),
+            Some("a Midcup Grid")
+        );
+    }
+
+    #[test]
+    fn a_refused_check_s_line_goes_ahead_of_the_run_s() {
+        let mut log = RunLog::default();
+        log.set_check(&[identified_row("co Midcup Map", "/co/", "714")], &[]);
+        log.append_test_line(Severity::Info, "Run finished with exit code 0");
+        log.set_check_refusal("the exports folder could not be read");
+        assert_eq!(
+            log.texts(),
+            [
+                "error: the exports folder could not be read",
+                "Run finished with exit code 0",
+            ]
+        );
+    }
+
+    #[test]
     fn a_refused_compile_logs_the_error_line_then_its_exit_code() {
         let temp = sandbox("gui_run_refused");
         let root = temp.path();
         let ctx = tool_context(root, "[compiler]\ncpk_name = 'a/b'\n");
         let mut log = RunLog::default();
+        log.set_check(&[identified_row("co Midcup Map", "/co/", "714")], &[]);
         log.start_compile(&ctx, cli::Mode::Normal, Vec::new);
         finish(&mut log);
         let lines = log.lines();
-        assert_eq!(lines.len(), 2, "{lines:?}");
-        assert!(lines[0].text.starts_with("error: "), "{lines:?}");
+        assert_eq!(lines.len(), 3, "{lines:?}");
         assert_eq!(
-            lines[0].severity,
+            lines[0].text, "- co Midcup Map: Info export_identified (team=/co/, id=714)",
+            "the check's lines stay"
+        );
+        assert!(lines[1].text.starts_with("error: "), "{lines:?}");
+        assert_eq!(
+            lines[1].severity,
             Severity::Error,
             "the refusal is an error"
         );
-        assert_eq!(lines[1].text, "Run ended with exit code 2");
-        assert_eq!(lines[1].severity, Severity::Info, "the exit line is info");
+        assert_eq!(lines[2].text, "Run ended with exit code 2");
+        assert_eq!(lines[2].severity, Severity::Info, "the exit line is info");
     }
 }

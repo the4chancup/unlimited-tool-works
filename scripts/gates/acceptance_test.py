@@ -118,6 +118,24 @@ class CitationTests(unittest.TestCase):
         self.assertEqual(scan.problems, [])
         self.assertEqual(scan.citations, {})
 
+    def test_ids_before_prose_above_a_test_are_a_problem_and_prove_nothing(self):
+        sources = {
+            "a.rs": "// TC-KIT-01: a kit compiles,\n// and is written.\n#[test]\nfn a() {}\n",
+            "b.rs": "// TC-KIT-03, TC-KIT-04: two\n#[test]\nfn b() {}\n",
+            "c.rs": "// TC-KIT-01: in a body\nlet x = 1;\n#[test]\nfn c() {}\n",
+            "d.rs": "// TC-KIT-01's install: a\n/// TC-KIT-03: doc\n// A kit:\n// TC-KIT-04\n#[test]\nfn d() {}\n",
+        }
+        scan = scan_of(sources=sources)
+        self.assertEqual(
+            scan.problems,
+            [
+                "a.rs:1: TC-KIT-01 is cited before prose; a citation is a line of IDs alone",
+                "b.rs:1: TC-KIT-03 is cited before prose; a citation is a line of IDs alone",
+                "b.rs:1: TC-KIT-04 is cited before prose; a citation is a line of IDs alone",
+            ],
+        )
+        self.assertEqual(scan.citations, {"TC-KIT-04": ["d.rs:4"]})
+
     def test_a_cli_test_citing_no_scenario_is_listed_and_no_other_test_is(self):
         sources = {
             "crates/tools/tc/tests/cli/a.rs": "#[test]\nfn a() {}\n// TC-KIT-01\n#[test]\nfn b() {}\n",

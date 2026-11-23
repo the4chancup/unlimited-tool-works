@@ -615,9 +615,10 @@ mod tests {
         assert_eq!(frame_line(3, 0x7ff6_a123_59c4, None), "  3: 0x7ff6a12359c4");
     }
 
-    // ST-RUN-09: a clean run (the window's own error exit included) closes the session
+    // A clean run (the window's own error exit included) closes the session
     // first, then leaves the closing line as the log's last, so the next start shows
     // no unclean-shutdown dialog.
+    // ST-RUN-09
     #[test]
     fn a_clean_run_returns_its_own_code_and_shows_no_dialog() {
         let events = Arc::new(Mutex::new(Vec::<String>::new()));
@@ -641,9 +642,10 @@ mod tests {
         );
     }
 
-    // ST-RUN-09: the reported-crash line lands after the dialog and the session's
+    // The reported-crash line lands after the dialog and the session's
     // close — the close sees the panic's exit code — so a crash the member was told
     // about does not raise the next start's dialog.
+    // ST-RUN-09
     #[test]
     fn a_panic_shows_the_dialog_text_and_exits_with_101() {
         let events = Arc::new(Mutex::new(Vec::<String>::new()));
@@ -795,8 +797,9 @@ mod tests {
         );
     }
 
-    // ST-RUN-10: the log is append-mode, so a line the monitor appends from its own
+    // The log is append-mode, so a line the monitor appends from its own
     // process between two of the window's writes is kept rather than overwritten.
+    // ST-RUN-10
     #[test]
     fn open_log_appends_so_a_monitors_line_lands_between_the_windows() {
         let dir = TestDir::new("append");
@@ -837,7 +840,8 @@ mod tests {
         );
     }
 
-    // ST-RUN-09: the dialog names the file `open_log` renamed the previous log to.
+    // The dialog names the file `open_log` renamed the previous log to.
+    // ST-RUN-09
     #[test]
     fn old_path_is_the_old_log_beside_the_log() {
         let installed = InstalledLog {
@@ -851,8 +855,9 @@ mod tests {
         );
     }
 
-    // ST-RUN-10: the dialog names the dump only when the monitor said it wrote one and
+    // The dialog names the dump only when the monitor said it wrote one and
     // the file is still there.
+    // ST-RUN-10
     #[test]
     fn dump_path_names_the_dump_beside_a_dumped_log_still_there() {
         let dir = TestDir::new("dump_path");
@@ -878,8 +883,9 @@ mod tests {
         assert_eq!(installed.dump_path(), None);
     }
 
-    // ST-RUN-09, ST-RUN-10: the window's start shows the notice only after a session
+    // The window's start shows the notice only after a session
     // that did not close, naming the dump when the monitor wrote one.
+    // ST-RUN-09, ST-RUN-10
     #[test]
     fn unclean_notice_is_shown_only_for_a_session_that_did_not_close() {
         let dir = TestDir::new("unclean_notice");

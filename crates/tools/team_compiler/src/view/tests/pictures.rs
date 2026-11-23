@@ -19,9 +19,10 @@ fn picture(export: &Path, path: &str) -> PictureFile {
     }
 }
 
-// TC-GUI-31: a Full export with a logo, a kit whose main texture is `kit.dds`, and 22 of
+// A Full export with a logo, a kit whose main texture is `kit.dds`, and 22 of
 // its 23 players with a portrait: 05's in his folder, 20 without, the others' in
 // `Portraits/`.
+// TC-GUI-31
 #[test]
 fn each_cell_s_box_names_the_pictures_the_compile_packs() {
     let temp = sandbox("view_grid_pictures");
@@ -126,8 +127,9 @@ fn a_referee_export_s_label_shows_its_marker_in_place_of_its_logo() {
     assert_eq!(top, TopBox::Logo(None));
 }
 
-// TC-GUI-32: a referee's portrait and a referee export's kit texture reach no output
+// A referee's portrait and a referee export's kit texture reach no output
 // either, so no cell pictures them (each holds `portrait.dds`/`kit.dds` on disk).
+// TC-GUI-32
 #[test]
 fn a_referee_export_s_cells_show_no_portrait_or_kit_texture() {
     let (referees, _) = referee_row("view_grid_ref_cells", &[(1, "A")], &["p1"], &["logo.png"]);
@@ -142,9 +144,10 @@ fn a_referee_export_s_cells_show_no_portrait_or_kit_texture() {
     assert_eq!(kit(&referees, 1).expect("the K1 cell").top, TopBox::Empty);
 }
 
-// TC-GUI-32: an export dropped whole still shows its listing's pictures, but a
+// An export dropped whole still shows its listing's pictures, but a
 // dropped referee export's compile packs none of them (players_txt_slot_duplicate
 // drops it while its roster still maps the folders to slots).
+// TC-GUI-32
 #[test]
 fn a_dropped_referee_export_s_boxes_hold_no_unused_pictures() {
     let (referees, _) = referee_row(

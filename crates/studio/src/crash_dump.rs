@@ -979,8 +979,9 @@ mod tests {
         assert_eq!(format!("{error:#}"), "gone 2");
     }
 
-    // ST-RUN-13: anything but a failure at once (no answer within the timeout, or
+    // Anything but a failure at once (no answer within the timeout, or
     // the rest) comes back after the one start, error and kind unchanged.
+    // ST-RUN-13
     #[test]
     fn a_start_without_an_answer_is_not_tried_again() {
         type Failure = fn() -> StartFailure;
@@ -1013,8 +1014,9 @@ mod tests {
         }
     }
 
-    // ST-RUN-10: the next start's dialog text is built from what the monitor leaves:
+    // The next start's dialog text is built from what the monitor leaves:
     // its line in `utw.log` and `utw.dmp` beside it.
+    // ST-RUN-10
     #[test]
     fn a_written_dump_appends_the_line_the_next_start_names() {
         let dir = TestDir::new("dump_written");
@@ -1090,8 +1092,9 @@ mod tests {
         );
     }
 
-    // ST-RUN-10: a dump that fails appends the failure's line with its error, and a
+    // A dump that fails appends the failure's line with its error, and a
     // folder holding no `utw.log` gets none.
+    // ST-RUN-10
     #[test]
     fn a_failed_dump_appends_the_failure_line_and_no_log_gets_none() {
         let dir = TestDir::new("dump_failed");

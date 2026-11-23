@@ -491,11 +491,12 @@ fn own_matches(
         .collect()
 }
 
-// SE-GUI-91: the window opens on the selected player, its boxes ticked
+// The window opens on the selected player, its boxes ticked
 // and his team chosen, the button reading `Select N players` (`No other
 // player matches`, disabled, when he alone matches); each box or radio
 // change recounts the match. Select makes the match the group, him
 // first, and the view is titled `N players`.
+// SE-GUI-91
 #[test]
 fn the_window_counts_the_matches_as_the_boxes_and_scope_change() {
     let path = fixture(PesVersion::Pes21, "similar_91");

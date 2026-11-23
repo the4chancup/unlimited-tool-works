@@ -380,8 +380,9 @@ fn the_rail_opens_the_sidebar_over_the_view_on_hover_and_closes_on_leave() {
     );
 }
 
-// ST-SIDE-02: the rail's widgets leave on the frame the overlay opens, so an
+// The rail's widgets leave on the frame the overlay opens, so an
 // overlay that faded in would show a dim, half-empty sidebar on every open.
+// ST-SIDE-02
 #[test]
 fn the_overlay_opens_opaque_on_every_open() {
     let Shell { mut app, _dir, .. } = shell();

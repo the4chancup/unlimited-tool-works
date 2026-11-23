@@ -313,8 +313,8 @@ struct Disk<'a> {
 }
 
 impl Disk<'_> {
-    /// What opens the export itself: its folder, or the archive selected in the folder
-    /// holding it.
+    /// What opens the export itself: its folder, or for an archive the folder holding it
+    /// ([`studio_core::files::show_in_folder`]).
     fn root(&self) -> Open {
         if self.archive {
             Open::Select(self.path.to_owned())
@@ -324,7 +324,8 @@ impl Disk<'_> {
     }
 
     /// What opens `folder`, a folder inside the export, or `None` for a cell with none. Any
-    /// cell of an archive opens the archive's own folder, the archive selected. Under a
+    /// cell of an archive opens the folder holding the archive
+    /// ([`studio_core::files::show_in_folder`]). Under a
     /// layer the listing flattened (a wrapper folder, a doubled content folder), the
     /// folder's own path names nothing on disk: the first file the listing has inside it
     /// gives the place, its path's segments past the folder's dropped. A folder holding no

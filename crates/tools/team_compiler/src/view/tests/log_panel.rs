@@ -181,6 +181,8 @@ fn a_check_of_an_empty_exports_folder_reports_no_exports_found() {
 struct Scene {
     window: Headless,
     ctx: ToolContext,
+    /// The receiving end of `ctx`'s shell requests, for a click's ask of the shell.
+    requests: Receiver<ShellRequest>,
     log: RunLog,
     panel: LogPanel,
     detail: GridDetail,
@@ -191,9 +193,12 @@ impl Scene {
     fn new(rows: Vec<Row>) -> Scene {
         let mut log = RunLog::default();
         log.set_check(&rows, &[]);
+        let (ctx, _settings, requests) =
+            tool_context_with_settings(Path::new("exe"), PesVersion::Pes21);
         Scene {
             window: Headless::new(),
-            ctx: settings_only_context(),
+            ctx,
+            requests,
             log,
             panel: LogPanel::new(TOOL_ID),
             detail: GridDetail::new(),
@@ -210,6 +215,7 @@ impl Scene {
             panel,
             detail,
             rows,
+            ..
         } = self;
         window
             .frame(events, |ui| show(ui, ctx, log, panel, rows, false, detail))
@@ -335,4 +341,27 @@ fn an_error_line_s_click_outlines_its_cell_and_pins_its_window() {
     assert!(shows_text(&nodes, "/co/ 03"), "the player's window");
     button(&nodes, "📌");
     assert_eq!(scene.outlines(), [cell_rect(&nodes, "03")]);
+}
+
+// A finding line's code is a link: the click reaches the shell as a request to open
+// the help at that message.
+#[test]
+fn a_log_line_s_code_link_asks_the_shell_for_the_help() {
+    let temp = check_sandbox("view_log_code_link");
+    let root = temp.path();
+    let mut scene = Scene::new(checked_rows(root));
+    let nodes = scene.frame(Vec::new());
+    let link = nodes
+        .iter()
+        .filter(|node| node.role() == accesskit::Role::Link)
+        .find(|node| node.label() == Some("shared_folder_orphaned"))
+        .expect("the code's link in the log");
+    let at = centre(link);
+    scene.click(at);
+    assert_eq!(
+        scene.requests.try_recv(),
+        Ok(ShellRequest::OpenHelp(HelpTarget::message(
+            &finding("shared_folder_orphaned", Severity::Warning).code
+        )))
+    );
 }

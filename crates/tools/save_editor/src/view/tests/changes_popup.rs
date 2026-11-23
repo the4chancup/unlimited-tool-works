@@ -686,8 +686,9 @@ fn the_list_is_460_points_wide_with_its_margins() {
     );
 }
 
-// SE-GUI-43: a window narrower than the long row holds the box at 8
+// A window narrower than the long row holds the box at 8
 // points inside it at each side, and the row scrolls sideways inside.
+// SE-GUI-43
 #[test]
 fn a_window_narrower_than_the_row_spans_it_and_scrolls() {
     let mut view = long_name_change("changes_list_narrow_window");
@@ -715,12 +716,13 @@ fn a_window_narrower_than_the_row_spans_it_and_scrolls() {
     );
 }
 
-// SE-GUI-43: the list opens 3 points under the label at its left edge
+// The list opens 3 points under the label at its left edge
 // where the window has room; a row wider than the room right of the
 // label makes the list as wide as that row, slid left so its right
 // edge is 8 points inside the window's and its left edge is left of
 // the label, and nothing scrolls sideways (the draft's
 // `changesPopup`).
+// SE-GUI-43
 #[test]
 fn the_list_opens_under_the_label_at_its_left_edge() {
     let (mut view, _) = three_changes("changes_list_place");

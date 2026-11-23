@@ -80,7 +80,7 @@ fn switching_to_an_outdated_install_checks_the_grid_again() {
 #[test]
 fn a_tool_switch_or_a_theme_change_starts_no_check() {
     let temp = sandbox("view_check_tool_switch");
-    let (ctx, settings) = tool_context_with_settings(temp.path(), PesVersion::Pes17);
+    let (ctx, settings, _requests) = tool_context_with_settings(temp.path(), PesVersion::Pes17);
     let mut tool = Tool::new();
     let mut window = Headless::new();
     first_check(&mut tool, &ctx, &mut window);
@@ -104,15 +104,15 @@ fn a_tool_switch_or_a_theme_change_starts_no_check() {
 #[test]
 fn an_exports_folder_change_checks_the_grid_again() {
     let temp = sandbox("view_check_exports_folder");
-    let (ctx, settings) = tool_context_with_settings(temp.path(), PesVersion::Pes17);
+    let (ctx, settings, _requests) = tool_context_with_settings(temp.path(), PesVersion::Pes17);
     let mut tool = Tool::new();
     let mut window = Headless::new();
     first_check(&mut tool, &ctx, &mut window);
 
     settings.lock().unwrap().common.exports_folder_path = PathBuf::from("elsewhere");
     tool.tick(&ctx);
-    // The check it starts is refused at once (no such folder) and `tick` polls it in the
-    // same call, so it may be over already: the settings a started check keeps are read.
+    // The check it starts may be over within the same `tick`, which polls it: the
+    // settings a started check keeps are read.
     assert_eq!(
         tool.checked_settings
             .as_ref()
@@ -245,4 +245,37 @@ fn a_refused_check_is_a_log_line_and_the_grid_keeps_its_rows() {
     let lines = tool.run_log.texts();
     assert_eq!(lines.len(), 1, "{lines:?}");
     assert!(lines[0].starts_with("error: "), "{lines:?}");
+}
+
+// A refused check's `error:` line is the check's own line of the log: it replaces the
+// check's lines, and the check after its folder comes back replaces it.
+#[test]
+fn a_refused_check_s_line_is_replaced_by_the_next_check_s() {
+    let temp = sandbox("view_check_refused_then_good");
+    let (ctx, settings, _requests) = tool_context_with_settings(temp.path(), PesVersion::Pes21);
+    let exports = settings.lock().unwrap().common.exports_folder_path.clone();
+    let mut tool = Tool::new();
+    let mut window = Headless::new();
+    first_check(&mut tool, &ctx, &mut window);
+    let check: Vec<String> = tool
+        .run_log
+        .texts()
+        .iter()
+        .map(|line| (*line).to_owned())
+        .collect();
+    assert!(!check.is_empty(), "premise: the first check logged lines");
+
+    // The exports folder gone (an absolute path that is not there, which a check
+    // refuses: a relative one is created instead), the check its change starts is
+    // refused: its `error:` line in place of the check's.
+    settings.lock().unwrap().common.exports_folder_path = temp.path().join("missing");
+    finish_check(&mut tool, &ctx);
+    let texts = tool.run_log.texts();
+    assert_eq!(texts.len(), 1, "{texts:?}");
+    assert!(texts[0].starts_with("error: "), "{texts:?}");
+
+    // The folder back, the next check's lines are there and the refusal is gone.
+    settings.lock().unwrap().common.exports_folder_path = exports;
+    finish_check(&mut tool, &ctx);
+    assert_eq!(tool.run_log.texts(), check);
 }

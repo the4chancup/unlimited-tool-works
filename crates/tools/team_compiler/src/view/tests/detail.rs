@@ -169,3 +169,37 @@ fn the_windows_of_two_referee_slots_sharing_a_folder_both_name_it() {
         "slot 35's window"
     );
 }
+
+// A finding's code in the pinned window is a link: the click reaches the shell as a
+// request to open the help at that message.
+#[test]
+fn a_finding_s_code_link_in_the_pinned_window_asks_the_shell_for_the_help() {
+    let temp = sandbox("view_window_code_link");
+    let root = temp.path();
+    list_teams(root);
+    add_player(root, "co Midcup Map", "03 - B");
+    add_file(root, "co Midcup Map/Boots/Solo/boots.fmdl", b"");
+    let (ctx, _settings, requests) = tool_context_with_settings(root, PesVersion::Pes21);
+    let mut tool = Tool::new();
+    let mut window = Headless::new();
+    let nodes = first_check(&mut tool, &ctx, &mut window);
+    let nodes = pin_cell(&mut window, &nodes, "/co/", &mut tool, &ctx);
+
+    // The code's link inside the window, not the same code's link of the log's line.
+    let window_area = window_rect(&window.ctx);
+    let link = nodes
+        .iter()
+        .filter(|node| node.role() == accesskit::Role::Link)
+        .filter(|node| node.label() == Some("shared_folder_orphaned"))
+        .find(|node| node_rect(node).is_some_and(|rect| window_area.contains(rect.center())))
+        .expect("the code's link inside the window");
+    click_on(&mut window, link, |window, events| {
+        window.frame(events, |ui| tool.view(ui, &ctx)).1
+    });
+    assert_eq!(
+        requests.try_recv(),
+        Ok(ShellRequest::OpenHelp(HelpTarget::message(
+            &finding("shared_folder_orphaned", Severity::Warning).code
+        )))
+    );
+}
