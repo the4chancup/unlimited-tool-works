@@ -39,4 +39,4 @@ pub use shell::{
 };
 pub use status::{ActionEffect, Notice, NoticeAction, NoticeKind, ToolActivity};
 pub use tool::{AppPaths, CliError, ExeCheck, PlannedTool, ShellRequest, StudioTool, ToolContext};
-pub use widgets::{BottomDock, LogFilter, LogLine, LogPanel};
+pub use widgets::{BottomDock, LogFilter, LogLine, LogPanel, LogResponse};

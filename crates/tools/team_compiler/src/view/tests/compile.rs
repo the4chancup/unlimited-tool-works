@@ -78,9 +78,16 @@ fn a_compile_click_through_the_tool_starts_a_run() {
         tool.tick(&ctx);
         tool.run_log.is_running()
     });
+    // The view started the grid's check on its first frame, and the run's end another: the
+    // log opens with the last one's findings once both have ended.
+    finish_check(&mut tool, &ctx);
     assert_eq!(
         tool.run_log.texts(),
         [
+            "- egg Midcup Tracer: Info export_identified (team=/egg/, id=792)".to_owned(),
+            "- egg Midcup Tracer: Info fmdl_weights_not_normalized at Players/05 - The Chad Stormworks Player (file=boots.fmdl, count=1662)".to_owned(),
+            "- egg Midcup Tracer: Info fmdl_weights_not_normalized at Players/05 - The Chad Stormworks Player (file=fcl_hair.fmdl, count=1662)".to_owned(),
+            "- egg Midcup Tracer: Info fmdl_weights_not_normalized at Players/05 - The Chad Stormworks Player (file=glove_l.fmdl, count=2)".to_owned(),
             "- Info bin_source (bin=TeamColor.bin, cpk=bundled)".to_owned(),
             "- Info bin_source (bin=UniColor.bin, cpk=bundled)".to_owned(),
             "- Info bin_source (bin=UniformParameter.bin, cpk=bundled)".to_owned(),
@@ -105,6 +112,4 @@ fn a_compile_click_through_the_tool_starts_a_run() {
             "Run finished with exit code 0".to_owned(),
         ]
     );
-    // The view started the grid's check on its first frame, and the run's end another.
-    finish_check(&mut tool, &ctx);
 }

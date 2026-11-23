@@ -176,7 +176,7 @@ impl StudioTool for StubTool {
             None => {}
         }
         if let Some((panel, lines)) = &mut self.log
-            && let Some(code) = panel.show(ui, lines)
+            && let Some(code) = panel.show(ui, lines).help
         {
             ctx.open_help(HelpTarget::message(&code));
         }

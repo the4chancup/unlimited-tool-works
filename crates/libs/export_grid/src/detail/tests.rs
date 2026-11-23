@@ -230,6 +230,9 @@ struct Scene {
     textures: HashMap<PictureFile, egui::TextureHandle>,
     /// Every picture the window asked for, in the order it asked.
     asked: Vec<PictureFile>,
+    /// The cell the tool's log line under the pointer stands for, handed to `point_at`
+    /// before each frame.
+    pointing: Option<CellKey>,
 }
 
 impl Scene {
@@ -252,6 +255,7 @@ impl Scene {
             catalog: catalog(),
             textures,
             asked: Vec::new(),
+            pointing: None,
         }
     }
 
@@ -264,7 +268,9 @@ impl Scene {
             catalog,
             textures,
             asked,
+            pointing,
         } = self;
+        detail.point_at(pointing.clone());
         let mut pictures = |file: &PictureFile| {
             asked.push(file.clone());
             textures.get(file).cloned()
@@ -958,4 +964,178 @@ fn a_pinned_cell_scrolled_under_the_title_row_shows_no_badge() {
     );
     assert!(shows(&drawn, "/co/ 03"), "premise: still pinned");
     assert_eq!(badge(&drawn), None);
+}
+
+/// /co/'s cell at `place`.
+fn co(place: Place) -> CellKey {
+    CellKey {
+        row: "co Midcup Map".to_owned(),
+        place,
+    }
+}
+
+/// /co/'s player 03, its portraits and its kit K6.
+const THREE: Place = Place::Position {
+    line: 0,
+    group: 0,
+    index: 2,
+};
+const PORTRAITS: Place = Place::Position {
+    line: 0,
+    group: 1,
+    index: 0,
+};
+const K6: Place = Place::Position {
+    line: 0,
+    group: 2,
+    index: 6,
+};
+
+/// The rectangles the frame stroked in the selection colour, 2 points wide: the outline.
+fn outlines(drawn: &Drawn) -> Vec<Rect> {
+    let colour = dark().selection.stroke.color;
+    drawn
+        .shapes
+        .iter()
+        .filter_map(|shape| match shape {
+            Shape::Rect(rect) if rect.stroke.color == colour && rect.stroke.width == 2.0 => {
+                Some(rect.rect)
+            }
+            _ => None,
+        })
+        .collect()
+}
+
+#[test]
+fn cell_places_walks_the_label_then_each_line_s_cells_in_order() {
+    let places: Vec<Place> = cell_places(&co_row()).map(|(place, _)| place).collect();
+    let player = |index| Place::Position {
+        line: 0,
+        group: 0,
+        index,
+    };
+    assert_eq!(
+        places,
+        [
+            Place::Label,
+            player(0),
+            player(2),
+            PORTRAITS,
+            Place::Position {
+                line: 0,
+                group: 2,
+                index: 0
+            },
+            K6
+        ]
+    );
+}
+
+// The pointer touches no cell of the grid in these tests: the window opens from the log
+// line alone.
+#[test]
+fn a_log_line_pointing_at_a_cell_opens_its_window_after_the_hover_delay() {
+    let mut scene = Scene::new();
+    scene.idle();
+    scene.pointing = Some(co(THREE));
+    scene.idle();
+    scene.wait(0.05);
+    assert!(!shows(&scene.settled(), "/co/ 03"), "not before the delay");
+    scene.wait(HOVER_DELAY);
+    assert!(shows(&scene.settled(), "/co/ 03"), "after the delay");
+    scene.pointing = None;
+    assert!(!any_window(&scene.idle()), "closed when the line is left");
+}
+
+#[test]
+fn a_log_line_pointing_at_a_cell_opens_nothing_while_another_is_pinned() {
+    let mut scene = Scene::new();
+    let at = spots(&scene.idle());
+    scene.click(at.one);
+    // The pointer leaves the grid for the log.
+    scene.frame(vec![egui::Event::PointerGone]);
+    scene.pointing = Some(co(THREE));
+    scene.wait(APART);
+    let drawn = scene.settled();
+    assert!(shows(&drawn, "/co/ 01") && !shows(&drawn, "/co/ 03"));
+    // Unpinned, a line pointing at another cell opens it: the pin was what held 03 back.
+    assert!(
+        !any_window(&scene.key(Key::Escape)),
+        "premise: Esc closed 01"
+    );
+    scene.pointing = Some(co(PORTRAITS));
+    scene.idle();
+    scene.wait(HOVER_DELAY);
+    assert!(shows(&scene.settled(), "/co/ portraits"));
+}
+
+#[test]
+fn go_to_pins_and_outlines_the_cell_and_a_second_unpins_it_keeping_the_outline() {
+    let mut scene = Scene::new();
+    let at = spots(&scene.idle());
+    scene.detail.go_to(co(THREE));
+    let drawn = scene.settled();
+    assert!(shows(&drawn, "/co/ 03"), "pinned");
+    assert!(badge(&drawn).is_some(), "its pin shows");
+    assert_eq!(outlines(&drawn), [drawn.one("03")]);
+
+    scene.detail.go_to(co(THREE));
+    let drawn = scene.settled();
+    assert!(!any_window(&drawn), "unpinned");
+    assert_eq!(outlines(&drawn), [drawn.one("03")], "the outline stays");
+
+    // A click in the grid pins another cell and leaves the outline where it is.
+    let (_, drawn) = scene.click(at.one);
+    assert!(shows(&drawn, "/co/ 01"));
+    assert_eq!(outlines(&drawn), [drawn.one("03")]);
+
+    // Another line's click moves it, to the label too.
+    scene.detail.go_to(co(Place::Label));
+    let drawn = scene.settled();
+    assert_eq!(outlines(&drawn), [drawn.all("/co/")[0]]);
+}
+
+#[test]
+fn go_to_scrolls_a_cell_out_of_view_into_it_once() {
+    let mut scene = Scene::new();
+    scene.window.ctx.global_style_mut(|style| {
+        style.scroll_animation = egui::style::ScrollAnimation::none();
+    });
+    scene.window.screen = vec2(1280.0, 300.0);
+    let others = (1..40).map(|n| Row {
+        key: format!("a Midcup {n}"),
+        ..a_row()
+    });
+    scene.rows = others.chain([co_row()]).collect();
+    let drawn = scene.settled();
+    assert!(
+        drawn.all("K6").is_empty(),
+        "premise: the last row is not drawn"
+    );
+    let rows_top = drawn.all("/a/")[0].top();
+
+    scene.detail.go_to(co(K6));
+    scene.idle();
+    let drawn = scene.settled();
+    let k6 = drawn.one("K6");
+    assert!(
+        k6.top() >= rows_top && k6.bottom() <= 300.0,
+        "K6 in view, under the title row: {k6:?}"
+    );
+
+    // Scrolled back up by the member, the grid stays there.
+    let wheel = vec![
+        egui::Event::PointerMoved(pos2(600.0, 150.0)),
+        egui::Event::MouseWheel {
+            unit: egui::MouseWheelUnit::Point,
+            delta: vec2(0.0, 2000.0),
+            phase: egui::TouchPhase::Move,
+            source: egui::MouseWheelSource::Unknown,
+            modifiers: Modifiers::NONE,
+        },
+    ];
+    scene.frame(wheel);
+    scene.wait(1.0);
+    scene.idle();
+    assert!(scene.idle().all("K6").is_empty(), "not scrolled to again");
 }

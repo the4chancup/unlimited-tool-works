@@ -1,7 +1,7 @@
 //! The toolbar under the grid, the draft's `.tc-bar`: the strip, which sums up the grid while
 //! no Compile runs, and the Compile button at its right.
 
-use export_grid::{Cell, CellState, Position, Row, RowBody};
+use export_grid::{Cell, CellState, Row, cell_places};
 use studio_core::widgets::add_enabled;
 use studio_core::{LogFilter, LogPanel, Severity};
 
@@ -56,15 +56,7 @@ pub(crate) fn summary(rows: &[Row]) -> Summary {
 
 /// `row`'s label, then every cell of its lines.
 fn cells(row: &Row) -> impl Iterator<Item = &Cell> {
-    let lines = match &row.body {
-        RowBody::Lines(lines) => lines.as_slice(),
-        RowBody::Message { .. } => &[],
-    };
-    let positions = lines.iter().flat_map(|line| line.groups.iter().flatten());
-    std::iter::once(&row.label).chain(positions.filter_map(|position| match position {
-        Position::Cell(cell) => Some(cell.as_ref()),
-        Position::Empty => None,
-    }))
+    cell_places(row).map(|(_, cell)| cell)
 }
 
 /// A run of the strip's text. A count that is a link carries the log filter a click on it

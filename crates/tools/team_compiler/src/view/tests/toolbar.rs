@@ -7,6 +7,8 @@ use export_grid::Line;
 use studio_core::{Disposition, ExportId, LogFilter, Message, MessageCode, Scope, Severity};
 use teams_list::TeamsList;
 
+use crate::testing::ScratchFolder;
+
 use super::*;
 use crate::view::toolbar::{Part, Summary, strip, summary};
 
@@ -277,18 +279,17 @@ fn click_on(
     frame(window, Vec::new())
 }
 
-// TC-GUI-26
-#[test]
-fn the_strip_counts_the_rows_with_errors_and_warnings_and_its_counts_filter_the_log() {
-    let temp = sandbox("view_toolbar_strip");
+/// Exports with errors on two of them and a warning on a third: /co/'s player folder turns
+/// FPC both on and off, /a/'s is at no slot, and /3/'s players.txt leaves a folder unlisted.
+/// The sandbox's /egg/ checks clean.
+fn strip_sandbox(name: &str) -> ScratchFolder {
+    let temp = sandbox(name);
     let root = temp.path();
     fs::write(
         root.join("data/teams_list.txt"),
         "ID\tName\n701\t/3/\n702\t/a/\n714\t/co/\n792\t/egg/\n",
     )
     .unwrap();
-    // Errors: /co/'s player folder turns FPC both on and off, /a/'s is at no slot. A warning:
-    // /3/'s players.txt leaves a folder unlisted. The sandbox's /egg/ checks clean.
     add_player(root, "co Midcup Map", "01 - A");
     add_player(root, "co Midcup Map", "03 - B");
     add_file(root, "co Midcup Map/Players/03 - B/fpc_on", b"");
@@ -301,7 +302,14 @@ fn the_strip_counts_the_rows_with_errors_and_warnings_and_its_counts_filter_the_
     for export in ["co Midcup Map", "a Midcup Map", "3 Midcup Roster"] {
         complete(&root.join("exports").join(export), PesVersion::Pes21, &[]);
     }
-    let rows = checked_rows(root);
+    temp
+}
+
+// TC-GUI-26
+#[test]
+fn the_strip_counts_the_rows_with_errors_and_warnings_and_its_counts_filter_the_log() {
+    let temp = strip_sandbox("view_toolbar_strip");
+    let rows = checked_rows(temp.path());
     let ctx = settings_only_context();
     let mut log = RunLog::default();
     log.append_test_lines(&["- egg Midcup Tracer: Info export_identified (team=/egg/, id=792)"]);
@@ -368,6 +376,40 @@ fn the_strip_counts_the_rows_with_errors_and_warnings_and_its_counts_filter_the_
     }
     let nodes = click_on(&mut window, reading(&nodes, "1 with warnings"), &mut frame);
     assert_eq!(log_shows(&nodes), [false, true, true]);
+}
+
+/// The heads of the log lines drawn, `- <export>: <Severity> `, the text before a code.
+fn line_heads(nodes: &[accesskit::Node]) -> Vec<&str> {
+    nodes
+        .iter()
+        .filter_map(accesskit::Node::value)
+        .filter(|text| text.starts_with("- ") && text.ends_with(' '))
+        .collect()
+}
+
+// The strip's count filters the check's own lines, which the log opens with.
+// TC-GUI-26
+#[test]
+fn the_errors_count_shows_the_check_s_error_lines() {
+    let temp = strip_sandbox("view_toolbar_check_lines");
+    let ctx = tool_context(temp.path(), "");
+    let mut tool = Tool::new();
+    tool.live_check.start(&ctx);
+    finish_check(&mut tool, &ctx);
+    let mut window = Headless::new();
+    let mut frame =
+        |window: &mut Headless, events| window.frame(events, |ui| tool.view(ui, &ctx)).1;
+    let nodes = frame(&mut window, Vec::new());
+    assert!(
+        line_heads(&nodes).contains(&"- 3 Midcup Roster: Warning "),
+        "premise: the log shows All, {:?}",
+        line_heads(&nodes)
+    );
+    let nodes = click_on(&mut window, reading(&nodes, "2 with errors"), &mut frame);
+    let mut heads = line_heads(&nodes);
+    heads.sort_unstable();
+    heads.dedup();
+    assert_eq!(heads, ["- a Midcup Map: Error ", "- co Midcup Map: Error "]);
 }
 
 /// Frames of the view over `rows` with an empty log, `frames` of them.

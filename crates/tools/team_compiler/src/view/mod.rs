@@ -13,7 +13,7 @@ use export_grid::{
     Width,
 };
 use studio_core::files::{open_folder, show_in_folder};
-use studio_core::{CatalogRow, HelpTarget, LogPanel, ToolContext};
+use studio_core::{CatalogRow, HelpTarget, LogPanel, Severity, ToolContext};
 
 use crate::gui_run::RunLog;
 use crate::messages::{self, TOOL_ID};
@@ -128,8 +128,19 @@ pub(crate) fn show(
     // toolbar the row above it, and the legend and the grid take what is left. A
     // clicked message code is a shell request, not a pipeline call: the view
     // stays render-only.
-    if let Some(code) = panel.show(ui, log.lines()) {
+    let on_log = panel.show(ui, log.lines());
+    if let Some(code) = on_log.help {
         ctx.open_help(HelpTarget::message(&code));
+    }
+    // A check's line acts for its cell: resting on it opens the cell's window, and a click
+    // on a Warning's or an Error's goes to the cell. An Info takes no click.
+    let pointed = on_log.hovered.and_then(|line| log.cell_of(line));
+    detail.state.point_at(pointed.cloned());
+    if let Some(line) = on_log.clicked
+        && log.lines()[line].severity >= Severity::Warning
+        && let Some(cell) = log.cell_of(line)
+    {
+        detail.state.go_to(cell.clone());
     }
     let clicked = toolbar::show(ui, panel, rows, log.is_running());
     export_grid::legend(ui, (TOOL_ID, "legend"), &LEGEND);

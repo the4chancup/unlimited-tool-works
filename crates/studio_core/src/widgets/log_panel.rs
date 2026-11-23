@@ -1,9 +1,9 @@
 //! The log panel, the draft `docs/prototypes/index.html`'s `logPanel`: a `BottomDock`
 //! titled `Log` holding a run's newest `LOG_CAP` lines. They are colored by severity,
 //! filterable, and stuck to the bottom until the member scrolls up; each finding's
-//! message code links to its row in the help. The other half of the draft's
-//! cross-linking, a line click highlighting its grid cell, waits for the grid itself:
-//! only the code is clickable here.
+//! message code links to its row in the help. The panel reports the line under the
+//! pointer and the line clicked, and the tool decides what they stand for (the
+//! Compiler's lines stand for the grid's cells).
 
 use std::cell::Cell;
 
@@ -101,6 +101,18 @@ struct Follow {
     snap: bool,
 }
 
+/// What the member did on the log this frame. A line is named by its index in the
+/// `lines` slice `LogPanel::show` was given.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct LogResponse {
+    /// The message code whose help link was clicked.
+    pub help: Option<MessageCode>,
+    /// The line under the pointer.
+    pub hovered: Option<usize>,
+    /// The line clicked anywhere but on its help link.
+    pub clicked: Option<usize>,
+}
+
 /// The docked log: the `BottomDock` frame plus the view's own state — the severity
 /// filter and the follow state. The lines live with the tool.
 pub struct LogPanel {
@@ -131,9 +143,9 @@ impl LogPanel {
         }
     }
 
-    /// Draws the panel over `lines` (oldest first) and returns the message code
-    /// whose help link was clicked this frame.
-    pub fn show(&mut self, ui: &mut egui::Ui, lines: &[LogLine]) -> Option<MessageCode> {
+    /// Draws the panel over `lines` (oldest first) and returns what the member did on
+    /// them this frame.
+    pub fn show(&mut self, ui: &mut egui::Ui, lines: &[LogLine]) -> LogResponse {
         // A shorter `lines` than last frame is a new run's cleared log: the jump
         // counter starts over.
         if lines.len() < self.follow.seen {
@@ -144,7 +156,7 @@ impl LogPanel {
         // chips set it: it crosses through a cell so the count and the body see the
         // click's result in the same frame.
         let filter = Cell::new(self.filter);
-        let mut clicked = None;
+        let mut response = LogResponse::default();
         // A collapsed log shows no lines, so it has nothing to filter: no chips.
         let open = self.dock.is_expanded();
         self.dock.show(
@@ -173,12 +185,12 @@ impl LogPanel {
                     ui,
                     lines,
                     filter.get(),
-                    &mut clicked,
+                    &mut response,
                 )
             },
         );
         self.filter = filter.get();
-        clicked
+        response
     }
 
     /// Picks `filter`'s chip and opens the log if it is collapsed: what a click on a
@@ -208,7 +220,7 @@ fn body(
     ui: &mut egui::Ui,
     lines: &[LogLine],
     filter: LogFilter,
-    clicked: &mut Option<MessageCode>,
+    response: &mut LogResponse,
 ) {
     // A paused view draws only the lines present when the pause began
     // (`lines[..follow.left_at]`): later arrivals raise the `↓ N new` count
@@ -236,13 +248,21 @@ fn body(
                     // Labels in a vertical layout wrap by default
                     // (`Ui::wrap_mode`); a long line scrolls sideways instead.
                     ui.style_mut().wrap_mode = Some(egui::TextWrapMode::Extend);
-                    for line in pool
+                    for (index, line) in pool
                         .iter()
-                        .filter(|line| filter.shows(line.severity))
+                        .enumerate()
+                        .filter(|(_, line)| filter.shows(line.severity))
                         .skip(skip)
                     {
-                        if let Some(code) = show_line(ui, line) {
-                            *clicked = Some(code);
+                        let drawn = show_line(ui, index, line);
+                        if drawn.hovered {
+                            response.hovered = Some(index);
+                        }
+                        if drawn.clicked {
+                            response.clicked = Some(index);
+                        }
+                        if drawn.help.is_some() {
+                            response.help = drawn.help;
                         }
                     }
                     if follow.snap {
@@ -318,11 +338,22 @@ fn line_color(severity: Severity, visuals: &egui::Visuals) -> Option<egui::Color
     }
 }
 
-/// One line of the body: monospace, severity-colored, one row. A line with a code
-/// draws the code as a link to its catalog row in the help (ST-HELP-03), found as
-/// the first `"<severity name> <code>"` in the `EventLines` text; the rest of the
-/// text is inert while the grid cross-link is unbuilt. Returns the clicked code.
-fn show_line(ui: &mut egui::Ui, line: &LogLine) -> Option<MessageCode> {
+/// What the pointer did on one drawn line.
+struct LineResponse {
+    hovered: bool,
+    /// Clicked anywhere but on the help link.
+    clicked: bool,
+    /// The code whose help link was clicked.
+    help: Option<MessageCode>,
+}
+
+/// One line of the body: monospace, severity-colored, one row at least as wide as the
+/// body, which senses the pointer and clicks as a whole, for the tool to act on. A line
+/// with a code draws the code as a link to its catalog row in the help (ST-HELP-03),
+/// found as the first `"<severity name> <code>"` in the `EventLines` text. A click on
+/// the link opens the help and is not the line's click. `index` is the line's place in
+/// the log, which keeps its identity from frame to frame.
+fn show_line(ui: &mut egui::Ui, index: usize, line: &LogLine) -> LineResponse {
     let color = line_color(line.severity, ui.visuals());
     let rich = |text: &str| {
         let text = egui::RichText::new(text).monospace();
@@ -331,31 +362,49 @@ fn show_line(ui: &mut egui::Ui, line: &LogLine) -> Option<MessageCode> {
             None => text,
         }
     };
-    let Some(code) = &line.code else {
-        ui.label(rich(&line.text));
-        return None;
-    };
+    let mut help = None;
+    let mut link_hovered = false;
+    // A `Ui` built with a sense senses below the widgets drawn in it, so the link takes
+    // its own clicks.
+    let row = ui.scope_builder(
+        egui::UiBuilder::new()
+            .id_salt(index)
+            .sense(egui::Sense::click())
+            .layout(egui::Layout::left_to_right(egui::Align::Min)),
+        |ui| {
+            ui.set_min_width(ui.available_width());
+            ui.spacing_mut().item_spacing.x = 0.0;
+            let Some((code, code_start, code_end)) = code_span(line) else {
+                return ui.label(rich(&line.text));
+            };
+            let before = ui.label(rich(&line.text[..code_start]));
+            let link = ui
+                .link(egui::RichText::new(&line.text[code_start..code_end]).monospace())
+                .on_hover_text("Open the help at this message");
+            link_hovered = link.hovered();
+            if link.clicked() {
+                help = Some(code.clone());
+            }
+            before | ui.label(rich(&line.text[code_end..]))
+        },
+    );
+    // The text's labels are selectable, so they take the clicks and the hover on the
+    // text from the row beneath them.
+    let text = row.response | row.inner;
+    LineResponse {
+        hovered: text.hovered() || link_hovered,
+        clicked: text.clicked(),
+        help,
+    }
+}
+
+/// `line`'s code and where it stands in the line's text, when the text names it as
+/// `"<severity name> <code>"`.
+fn code_span(line: &LogLine) -> Option<(&MessageCode, usize, usize)> {
+    let code = line.code.as_ref()?;
     let needle = format!("{} {}", line.severity.name(), code.code);
-    let Some(start) = line.text.find(&needle) else {
-        ui.label(rich(&line.text));
-        return None;
-    };
-    let code_start = start + line.severity.name().len() + 1;
-    let code_end = code_start + code.code.len();
-    let mut clicked = None;
-    ui.horizontal(|ui| {
-        ui.spacing_mut().item_spacing.x = 0.0;
-        ui.label(rich(&line.text[..code_start]));
-        if ui
-            .link(egui::RichText::new(&line.text[code_start..code_end]).monospace())
-            .on_hover_text("Open the help at this message")
-            .clicked()
-        {
-            clicked = Some(code.clone());
-        }
-        ui.label(rich(&line.text[code_end..]));
-    });
-    clicked
+    let start = line.text.find(&needle)? + line.severity.name().len() + 1;
+    Some((code, start, start + code.code.len()))
 }
 
 #[cfg(test)]
