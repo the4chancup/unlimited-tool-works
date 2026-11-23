@@ -148,13 +148,18 @@ mod tests {
             .find(|node| node.role() == Role::Button && node.label() == Some(label))
     }
 
+    /// A node's bounds, in points.
+    fn rect(node: &accesskit::Node) -> egui::Rect {
+        let bounds = node.bounds().expect("a drawn button has bounds");
+        egui::Rect::from_min_max(
+            egui::pos2(bounds.x0 as f32, bounds.y0 as f32),
+            egui::pos2(bounds.x1 as f32, bounds.y1 as f32),
+        )
+    }
+
     /// The centre of a node's bounds.
     fn centre(node: &accesskit::Node) -> egui::Pos2 {
-        let bounds = node.bounds().expect("a drawn button has bounds");
-        egui::pos2(
-            ((bounds.x0 + bounds.x1) / 2.0) as f32,
-            ((bounds.y0 + bounds.y1) / 2.0) as f32,
-        )
+        rect(node).center()
     }
 
     /// The primary button pressed (or released) at `pos`, the pointer moved
@@ -305,10 +310,10 @@ mod tests {
         }
     }
 
-    /// The entry `menu_above`'s tests give its menu: a button that reports its
-    /// click.
+    /// The entries `menu_above`'s tests give its menu: two buttons reporting a
+    /// click on either.
     fn entry(ui: &mut egui::Ui) -> bool {
-        ui.button("Set edited flag").clicked()
+        ui.button("Set edited flag").clicked() | ui.button("Clear edited flag").clicked()
     }
 
     /// A `menu_above` menu clicked open on the "Team" button: the last frame's
@@ -326,6 +331,19 @@ mod tests {
             "premise: the menu is open"
         );
         drawn
+    }
+
+    // ST-COMBO-02
+    #[test]
+    fn the_upward_menus_entries_meet_as_a_downward_ones_do() {
+        let ctx = themed();
+        let drawn = open_above(&ctx);
+        let first = rect(button(&drawn.nodes, "Set edited flag").expect("the first entry"));
+        let second = rect(button(&drawn.nodes, "Clear edited flag").expect("the second entry"));
+        for entry in [first, second] {
+            assert_eq!(entry.height(), 21.0, "each entry is 21 high: {entry:?}");
+        }
+        assert_eq!(second.min.y, first.max.y, "the two entries meet");
     }
 
     #[test]
