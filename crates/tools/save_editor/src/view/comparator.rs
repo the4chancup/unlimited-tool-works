@@ -354,10 +354,12 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
                         (Some(DiffScope::Gameplay), "Gameplay"),
                         (Some(DiffScope::Aesthetics), "Aesthetics"),
                     ] {
-                        // A chip is a row, not a control (`row`): the
-                        // picked one's blue draws no resting edge.
+                        // A chip is a row, not a control (`row`), whose
+                        // edge `row` paints over the picked one's blue at
+                        // rest.
                         let chip = studio_core::widgets::row(
                             ui,
+                            comparator.scope == scope,
                             egui::Button::selectable(comparator.scope == scope, label),
                         );
                         if chip.clicked() {

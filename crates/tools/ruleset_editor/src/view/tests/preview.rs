@@ -20,14 +20,17 @@ fn logo_png(view: &RulesetView) -> Vec<u8> {
         .expect("a logo")
 }
 
-// A toolbar toggle is a row, not a control: held, the Show preview
-// one's blue draws no edge at rest.
+// A toolbar toggle is a row, not a control, but the selection blue
+// never fills without its edge: held, the Show preview one's blue is
+// stroked in the fill's `edge_color` at rest.
 #[test]
-fn the_show_preview_toggle_draws_its_blue_with_no_edge() {
+fn the_show_preview_toggle_draws_its_blue_with_its_edge() {
     let (ctx, _events, mut window, mut view) = fresh_blank();
     view.show_preview = true;
     let frame = settled(&mut window, &mut view, &ctx);
-    let blue = window.ctx.global_style().visuals.selection.bg_fill;
+    let visuals = &window.ctx.global_style().visuals;
+    let blue = visuals.selection.bg_fill;
+    let edge = studio_core::theme::edge_color(visuals, blue);
     let toggle = node(&frame.nodes, "Show preview")
         .bounds()
         .expect("the toggle's bounds");
@@ -35,7 +38,28 @@ fn the_show_preview_toggle_draws_its_blue_with_no_edge() {
     assert_eq!(
         button.stroke,
         egui::Stroke::NONE,
-        "a row draws no resting edge"
+        "the toggle's frame carries no stroke of its own"
+    );
+    let strokes: Vec<egui::Stroke> = frame
+        .shapes
+        .iter()
+        .filter_map(|clipped| match &clipped.shape {
+            egui::Shape::Rect(shape)
+                if !shape.stroke.is_empty()
+                    && (f64::from(shape.rect.min.x) - toggle.x0).abs() <= 2.0
+                    && (f64::from(shape.rect.min.y) - toggle.y0).abs() <= 2.0
+                    && (f64::from(shape.rect.max.x) - toggle.x1).abs() <= 2.0
+                    && (f64::from(shape.rect.max.y) - toggle.y1).abs() <= 2.0 =>
+            {
+                Some(shape.stroke)
+            }
+            _ => None,
+        })
+        .collect();
+    assert_eq!(
+        strokes,
+        [egui::Stroke::new(1.0, edge)],
+        "the held toggle's edge painted over its blue"
     );
 }
 

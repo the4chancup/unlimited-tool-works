@@ -371,9 +371,9 @@ fn every_player_row_spans_the_team_rows_width_and_selects_at_its_end() {
     );
 }
 
-// A selected row's blue draws no edge at rest (a row is not a control),
-// but hovered it keeps the hovered state's stroke, as a hovered widget
-// does.
+// A selected row's blue draws its `edge_color` at rest (the selection
+// blue never fills without its edge); hovered, the row keeps the
+// hovered state's stroke, as a hovered widget does.
 #[test]
 fn a_hovered_selected_row_keeps_the_hovered_states_edge() {
     let path = fixture(PesVersion::Pes21, "row_hover_edge");

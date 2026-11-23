@@ -162,13 +162,13 @@ impl LogPanel {
         self.dock.show(
             ui,
             |ui| {
-                // A chip is a row, not a control (`row`): a picked one fills
-                // in the selection blue and draws none of the resting edge
-                // the theme gives live controls.
+                // A chip is a row, not a control (`row`): a picked one
+                // fills in the selection blue, whose edge `row` paints at
+                // rest.
                 if open {
                     for (choice, label) in LogFilter::CHIPS {
-                        if super::row(ui, egui::Button::selectable(filter.get() == choice, label))
-                            .clicked()
+                        let picked = filter.get() == choice;
+                        if super::row(ui, picked, egui::Button::selectable(picked, label)).clicked()
                         {
                             filter.set(choice);
                         }

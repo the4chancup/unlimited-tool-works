@@ -1357,10 +1357,11 @@ fn the_positions_layout_setting_survives_a_restart() {
     );
 }
 
-// A list row is not a control: the selected row's blue draws no edge at
-// rest, the state's stroke only hovered or focused.
+// A list row is not a control, but the selection blue never fills
+// without its edge: the selected row's blue is stroked in the fill's
+// `edge_color` at rest, the state's stroke only hovered or focused.
 #[test]
-fn the_selected_player_row_draws_its_blue_with_no_edge() {
+fn the_selected_player_row_draws_its_blue_with_its_edge() {
     let path = fixture(PesVersion::Pes21, "selected_row_edge");
     let mut view = SaveView::new();
     view.open(&path);
@@ -1370,12 +1371,9 @@ fn the_selected_player_row_draws_its_blue_with_no_edge() {
         "premise: the first row selected"
     );
     let mut window = Headless::new();
-    let blue = window
-        .ctx
-        .style_of(window.ctx.theme())
-        .visuals
-        .selection
-        .bg_fill;
+    let visuals = window.ctx.style_of(window.ctx.theme()).visuals.clone();
+    let blue = visuals.selection.bg_fill;
+    let edge = studio_core::theme::edge_color(&visuals, blue);
     window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     let selected = nodes
@@ -1387,7 +1385,7 @@ fn the_selected_player_row_draws_its_blue_with_no_edge() {
     let frame = rect_of_fill_at(&shapes, selected, blue);
     assert_eq!(
         frame.stroke,
-        egui::Stroke::NONE,
-        "a row draws no resting edge"
+        egui::Stroke::new(1.0, edge),
+        "the selected row's edge at rest"
     );
 }

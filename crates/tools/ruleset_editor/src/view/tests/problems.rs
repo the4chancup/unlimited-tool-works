@@ -144,13 +144,16 @@ fn the_rails_and_bottom_bars_fills_start_at_the_views_left_edge() {
     );
 }
 
-// A rail entry is a row, not a control: the selected one's blue draws
-// no edge at rest (the draft's `.rail .sel` carries none, held or not).
+// A rail entry is a row, not a control, but the selection blue never
+// fills without its edge: the selected one's blue is stroked in the
+// fill's `edge_color` at rest.
 #[test]
-fn the_selected_rail_entry_draws_its_blue_with_no_edge() {
+fn the_selected_rail_entry_draws_its_blue_with_its_edge() {
     let (ctx, _events, mut window, mut view) = fresh_blank();
     let frame = settled(&mut window, &mut view, &ctx);
-    let blue = window.ctx.global_style().visuals.selection.bg_fill;
+    let visuals = &window.ctx.global_style().visuals;
+    let blue = visuals.selection.bg_fill;
+    let edge = studio_core::theme::edge_color(visuals, blue);
     let entry = frame
         .nodes
         .iter()
@@ -161,7 +164,28 @@ fn the_selected_rail_entry_draws_its_blue_with_no_edge() {
     assert_eq!(
         row.stroke,
         egui::Stroke::NONE,
-        "a row draws no resting edge"
+        "the entry's frame carries no stroke of its own"
+    );
+    let strokes: Vec<egui::Stroke> = frame
+        .shapes
+        .iter()
+        .filter_map(|clipped| match &clipped.shape {
+            egui::Shape::Rect(shape)
+                if !shape.stroke.is_empty()
+                    && (f64::from(shape.rect.min.x) - entry.x0).abs() <= 2.0
+                    && (f64::from(shape.rect.min.y) - entry.y0).abs() <= 2.0
+                    && (f64::from(shape.rect.max.x) - entry.x1).abs() <= 2.0
+                    && (f64::from(shape.rect.max.y) - entry.y1).abs() <= 2.0 =>
+            {
+                Some(shape.stroke)
+            }
+            _ => None,
+        })
+        .collect();
+    assert_eq!(
+        strokes,
+        [egui::Stroke::new(1.0, edge)],
+        "the selected entry's edge painted over its blue"
     );
 }
 

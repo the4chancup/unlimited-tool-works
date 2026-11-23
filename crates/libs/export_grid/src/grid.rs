@@ -753,10 +753,10 @@ mod tests {
         }
     }
 
-    /// The grid scroll area's offset, read without running a frame (one would
-    /// move the window's clock).
+    /// The grid scroll area's offset, read without running a frame: one would
+    /// advance egui's own frame count and input time.
     fn scroll_offset_of(ctx: &egui::Context) -> egui::Vec2 {
-        let top = egui::Id::unique((egui::ViewportId::ROOT, "__top_ui"));
+        let top = egui::ViewportId::ROOT.root_ui_id();
         let id = top.with(egui::IdSalt::new(top.with("grid")));
         egui::containers::scroll_area::State::load(ctx, id)
             .map(|state| state.unclamped_offset())
@@ -953,8 +953,8 @@ mod tests {
             .map(egui::Rect::top)
             .fold(f32::INFINITY, f32::min);
         // A wheel delta under 8 points lands at once; a big one is smoothed over
-        // frames, and each of those frames' wheel handling would clear the
-        // scroll-to-cell's target again.
+        // frames, and each of those frames' wheel handling would keep clearing
+        // the scroll-to-cell's target.
         let mut to_bottom = vec![egui::Event::PointerMoved(pos2(600.0, 300.0))];
         to_bottom.extend((0..90).map(|_| egui::Event::MouseWheel {
             unit: egui::MouseWheelUnit::Point,
@@ -982,6 +982,7 @@ mod tests {
         grid(&mut detail, Vec::new());
         // The scroll lands over the next frames; run until the cell's top stops moving.
         let mut top = f32::MAX;
+        let mut settled = false;
         for _ in 0..120 {
             let drawn = grid(&mut detail, Vec::new());
             let now = drawn
@@ -990,11 +991,12 @@ mod tests {
                 .map(egui::Rect::top)
                 .fold(f32::INFINITY, f32::min);
             if now == top {
+                settled = true;
                 break;
             }
             top = now;
         }
-        assert_ne!(top, f32::MAX, "the cell never settled in 120 frames");
+        assert!(settled, "the cell's top never settled in 120 frames");
         // The rows are alike, so a scroll to another row would also put an "01" under the
         // title: the offset says it is the first row's.
         assert!(
@@ -1002,9 +1004,34 @@ mod tests {
             "scrolled back up to the first row: {:?}",
             scroll_offset_of(&ctx)
         );
+        assert!(top.is_finite(), "the cell is drawn: {top}");
         assert!(
             top >= title_bottom,
             "the cell's top is at or below the title row's bottom: {top} vs {title_bottom}"
+        );
+        // Wheel steps after the settle stay where they land: the
+        // scroll-to-cell's target was taken once, so nothing pulls the
+        // view back to the first row.
+        let mut steps = vec![egui::Event::PointerMoved(pos2(600.0, 300.0))];
+        steps.extend((0..10).map(|_| egui::Event::MouseWheel {
+            unit: egui::MouseWheelUnit::Point,
+            delta: vec2(0.0, -7.0),
+            phase: egui::TouchPhase::Move,
+            source: egui::MouseWheelSource::Wheel,
+            modifiers: egui::Modifiers::default(),
+        }));
+        grid(&mut detail, steps);
+        grid(&mut detail, Vec::new());
+        let offset = scroll_offset_of(&ctx).y;
+        assert!(
+            offset >= 28.0,
+            "the wheel moved the view off the first row: {offset}"
+        );
+        grid(&mut detail, Vec::new());
+        assert_eq!(
+            scroll_offset_of(&ctx).y,
+            offset,
+            "the offset holds a frame later"
         );
     }
 
