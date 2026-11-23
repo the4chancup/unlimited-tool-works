@@ -407,6 +407,10 @@ draft checked, for the maintainer to publish; running sidekicks and jobs are not
       with `save_editor`'s two, got tests (Opus, one rework, merge `881c9a32`), and the
       survivor that was unreachable code, a validated export's own portrait count, is gone;
     - [ ] then `just pipeline` at the new HEAD.
+16. The VPS disk guard refuses only at the mutation step, after the checkpoint's whole test
+    pass (2026-11-23, on `e9b0a3d0`: 11 minutes of tests, then 42 GiB free against the 48 GiB
+    floor; the build cache's cleanup freed 30 GB and the pipeline ran again from the start).
+    Fix: the pipeline checks the remote disk before its tests, so a refusal comes first.
 
 Most open steps below wait only on a check in the game or the built window that the lead's
 harness makes ("Pending looks" below), not on the maintainer.
