@@ -377,8 +377,9 @@ vertical room a tab row takes; a toggle on the title's own row takes none.
   pointer, and its place in the list is left blank, as for a dragged lineup row (SE-GUI-65).
   It keeps floating while the wheel scrolls the list, and Esc drops it back with no move. A
   draggable row shows the pointing hand wherever the
-  pointer is on it (egui leaves a row that also takes clicks on the arrow, so the row asks for
-  it). The lineup rows keep the move cross, which Windows draws for egui's grab hand.
+  pointer is on it (egui leaves the arrow over a row that can be dragged and clicked both, so
+  the row sets the pointing hand itself). The lineup rows keep the move cross, which Windows
+  draws for egui's grab hand.
 
   A dot marks players with unsaved changes. Names render with their savefile colour codes
   applied as text colours (the in-game look; 4ccEditor shows the raw control characters), and
@@ -3214,8 +3215,10 @@ SE-GUI-13  GIVEN the save open and a second save of the same version picked in t
                 three columns, at 4, 202 and 410 points from the row's left, under one head
                 row `Item`, `Picked save`, `Open save`, and no arrow; a value wider than its
                 column is cut with an ellipsis, and its row's hover then holds the whole row's
-                text above the click hint; a comparison with no field row (players in one
-                save alone) paints no head row;
+                text above the click hint; dragged to its narrowest, the window keeps the
+                three heads whole, `Open save` ending at the row's right inset, and each value
+                too wide for its column cut with an ellipsis; a comparison with no field row
+                (players in one save alone) paints no head row;
            GIVEN a save of another version picked THEN it is refused naming both versions;
            GIVEN team 734 picked in the team filter WHEN another save is opened THEN the
                 filter reads All teams; WHEN the same path is picked again after the file changed on
@@ -3436,10 +3439,17 @@ SE-GUI-65  GIVEN the Tactics view, a Starting eleven row pressed 20 points right
            THEN the dragged row is drawn with that point under the pointer, not its centre
 SE-GUI-69  GIVEN a team's player list, row 03 pressed 20 points right of its name's start
            WHEN it is dragged 30 points right and 40 down
-           THEN the row's name is drawn 30 points right and 40 below where it stood, on top
-                of the list; GIVEN the wheel turned while it is held, until its row leaves the
-                view THEN the name stays under the pointer; GIVEN a filter typed THEN a press
-                and the same move draw nothing there
+           THEN the row's handle, place, position and name are drawn 30 points right and 40
+                below where they stood, on top of the list, in the colours the row has at rest
+                (selected when it is one of a selected group), and its place in the list is
+                blank; GIVEN the wheel turned while it is held, until its row leaves the view
+                THEN they stay under the pointer, every other row in view is drawn, and a
+                release on a teammate's row moves the player there; GIVEN the wheel turned
+                between the press and the move THEN the pressed row is the one that follows
+                the pointer; WHEN Esc is pressed while it is held THEN nothing follows the
+                pointer and the row stands in its place, no player moved; WHEN it is released
+                outside the list THEN nothing follows the pointer from that frame on; GIVEN a
+                filter typed THEN a press and the same move draw nothing there
 SE-GUI-75  GIVEN a team's player list and row 02 held dragged
            WHEN the pointer is over row 06
            THEN a line 2 points thick in the selection colour is drawn across row 06's lower
@@ -4042,7 +4052,7 @@ SE-GUI-49  GIVEN SE-GUI-48's save, team, edit and check, the list in the dock
                 the dock's close button is the window's in size and stroke, and stands right of
                 the pop-out icon by the window's spacing between its dock icon and close button
 SE-GUI-50  GIVEN the PES 17 save open on team 718 in the team view, the sidebar's selector on
-                PES 2019 with a folder that passes its check, and the exe check reporting
+                PES 2021 with a folder that passes its check, and the exe check reporting
                 that PES 2017's folder does not exist
            WHEN the view is drawn
            THEN a `Set PES path` button stands in the pitch's bottom-right corner, its
@@ -4051,11 +4061,11 @@ SE-GUI-50  GIVEN the PES 17 save open on team 718 in the team view, the sidebar'
                 a point, its tooltip names PES 2017, and every starter's portrait is the
                 placeholder; WHEN the check reports PES 2017's folder holding `PES2017.exe`
                 THEN the button is gone and the portraits are read from that folder, not
-                from PES 2019's; WHEN it reports `PES2019.exe` there instead THEN it is
+                from PES 2021's; WHEN it reports `PES2019.exe` there instead THEN it is
                 back; WHEN it is clicked and the folder picker returns
                 `<test folder>/Pro Evolution Soccer 2017` THEN the common settings'
                 `pes_folder_path` reads `<test folder>/Pro Evolution Soccer 20**`, and the
-                selector's setting is still PES 2019. Manual: the click opens the native
+                selector's setting is still PES 2021. Manual: the click opens the native
                 folder picker. (The check itself, a folder's listing on a change and on the
                 window's focus, is the shell's, ST-SIDE-03.)
 SE-GUI-36  GIVEN SE-GUI-30's save and team, Live AATF on and its first check returned, one

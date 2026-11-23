@@ -1461,7 +1461,9 @@ const runningPesKey = () => !S.runningPes ? "none"
 // sample wording: the tooltip texts.
 const pesSelectorClass = () =>
   S.exeFound === "other" ? "err" : S.exeFound === "none" || S.exeFound === "no_folder" ? "warn" : "";
-function pesSelectorTip() {
+// `found` is the first line of a found exe's tip: the sidebar's names "this tool", the
+// settings row's the tools that work with one game.
+function pesSelectorTip(found = "The PES version this tool works with") {
   if (S.blocker) return S.blocker.tool + ": " + S.blocker.reason;
   const folder = resolvedPesFolder();
   if (S.exeFound === "other")
@@ -1469,7 +1471,7 @@ function pesSelectorTip() {
       + S.exeFoundVersion + ", or check the PES folder setting";
   if (S.exeFound === "none") return "There is no PES exe in " + folder + ". Check the PES folder setting";
   if (S.exeFound === "no_folder") return folder + " does not exist. Check the PES folder setting";
-  return "The PES version this tool works with\nInstalled in " + folder;
+  return found + "\nInstalled in " + folder;
 }
 // The one writer of pes_version (a common setting): a blocked change does not
 // take; a manual change consumes the auto-switch and is saved like any
@@ -2573,11 +2575,11 @@ function commonSettingsRows() {
     v => { c.theme = v; saveSettings(); });
   theme.id = "set-theme";
   return [
-    sRow("PES version", "pes_version", "The PES version every tool works with, the same setting as the PES picker on the sidebar.",
+    sRow("PES version", "pes_version", "The PES version for the tools that work with one game, the same setting as the sidebar's PES version box.",
       // The blocked reason on a hover-sensing wrapper, as in the sidebar.
       h("span", { title: S.blocker ? pesSelectorTip() : null },
         combo(PES_VERSIONS.map(v => [v, "PES " + v]), c.pes_version, setPesVersion,
-          { disabled: !!S.blocker, title: pesSelectorTip() }))),
+          { disabled: !!S.blocker, title: pesSelectorTip("The PES version for the tools that work with one game") }))),
     sRow("PES folder", "pes_folder_path", "The folder PES is installed in, where ** stands for the version's two digits (20** becomes 2019 for PES 2019). When the folder you browse to has the selected version's year in its name, the year is stored as 20** so that switching versions switches folders too. Any other folder is stored as you picked it.",
       [text("pes_folder_path"), browse("folder")]),
     ...perVersionRows(),

@@ -8317,7 +8317,7 @@ function comparatorPanel() {
     h("div", { class: "row" },
       weak("Second save "),
       combo([[null, "(pick a save)"]].concat(SECOND_SAVES.map(d => [d.key, d.label + " (PES " + d.version + ")"])),
-        S.cmp.second, v => v && cmpPick(v), { title: "The save the open one is compared against" }),
+        S.cmp.second, v => v && cmpPick(v), { title: "Pick the save to compare the open one against" }),
       S.cmp.second ? button("Export", () => {
         S.cmp.exportText = cmpExport();
         publishNotice("Diff exported: the report's lines for the " + cmpRows().length + " rows shown", null, "success");
