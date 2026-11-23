@@ -35,7 +35,33 @@ the box; your marks stay in this browser. When you're done, press <b>Copy my ans
 bottom and paste the text into the chat.</p>
 <ul id="toc"></ul>
 
-<p>Nothing waiting.</p>
+<h2>The Compiler's grid</h2>
+
+<section class="entry" id="uid-kit-icon-stretched">
+  <h3>A kit's menu icon pattern is stretched over the strip at its cell's foot</h3>
+  <p class="from">From: <code>DECISIONS.md</code> 2026-11-23 "a kit's menu icon pattern is a
+  strip along its cell's foot, stretched to fit"; <code>plans/team_compiler/gui.md</code> "GUI:
+  the live-validating team grid"</p>
+  <p>Each kit cell now draws its kit's menu icon pattern (the <code>icon_&lt;N&gt;</code>
+  marker, 3 without one) in the kit's two menu colours, in the strip where the draft draws the
+  two colours as plain halves. The pattern is stretched to the strip's 22 by 9 points, so a
+  sash runs corner to corner and a V spans the whole width. The other way was to draw the
+  pattern in a 9-point square in the strip's middle.</p>
+  <p>Why: a square that small would show a sash or a V as a few pixels, and leave most of the
+  strip in one colour.</p>
+  <div class="shots">
+    <figure><img src="img/uid_kit_icon_build.png" alt="The build, ten kit patterns"><figcaption>The
+      build: GK (icon 11), then K1 to K9 on icons 0, 1, 2, 5, 7, 9, 10, 13 and 22</figcaption></figure>
+    <figure><img src="img/uid_kit_icon_draft.png" alt="The draft, two halves per kit"><figcaption>The
+      draft: the same strip, each kit's two colours as halves</figcaption></figure>
+  </div>
+  <div class="options">
+    <label class="opt"><input type="radio" value="keep"><b>Keep it</b></label>
+    <label class="opt"><input type="radio" value="change"><b>Change it</b>
+      <div class="note">Say how below.</div></label>
+  </div>
+  <textarea class="own" placeholder="How to change it (optional)"></textarea>
+</section>
 
 <div class="picks">
   <button id="copy">Copy my answers</button>

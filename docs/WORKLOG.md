@@ -215,8 +215,11 @@ draft checked, for the maintainer to publish; running sidekicks and jobs are not
      - [x] b a kit cell carries its menu icon and colours when the check kept the kit and its
        `colors.txt` lists two (2026-11-23, merge `057c55db`, SWE-2, landed first time;
        reviewed with c)
-     - [ ] c the grid paints the strip under the label (SWE-2, running); then one SWE-2
-       review round over a, b and c, and the strip captured beside the draft
+     - [x] c the grid paints the strip under the label (2026-11-23, merge `a19e622d`, SWE-2,
+       landed first time). Captured beside the draft (scene `.tmp/look_sw`, ten kits on ten
+       icons): the strip's place and size match; the label's glyphs stand 1 pixel lower.
+       The stretched pattern is a `ui_decisions.html` card
+     - [ ] SWE-2 round SW1 over a, b and c (two parts, running)
      - [ ] d a compile's colours worked out from the texture, and a dropped kit's base
        `UniColor.bin` colours
    - Then the row actions, the ID cell's editing, the
