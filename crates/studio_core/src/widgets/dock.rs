@@ -112,6 +112,17 @@ impl BottomDock {
         }
     }
 
+    /// Opens the dock, or collapses it to its header row, from outside it: the
+    /// chevron does the same from inside.
+    pub fn set_expanded(&mut self, expanded: bool) {
+        self.expanded = expanded;
+    }
+
+    /// Whether the body is shown: `false` while the dock is collapsed to its header row.
+    pub fn is_expanded(&self) -> bool {
+        self.expanded
+    }
+
     /// The open panel's first height: the asked body height plus what the panel
     /// draws around it. A bottom `Panel`'s size is its outer one: the
     /// default panel frame's margins, the separator line egui reserves on its top

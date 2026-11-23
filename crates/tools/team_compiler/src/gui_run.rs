@@ -132,6 +132,12 @@ impl RunLog {
         );
     }
 
+    /// Appends one line of `severity`: a view test's log with warnings and errors in it.
+    #[cfg(test)]
+    pub(crate) fn append_test_line(&mut self, severity: Severity, text: &str) {
+        self.lines.push(LogLine::plain(severity, text));
+    }
+
     /// The line texts, for assertions about the text the member reads.
     #[cfg(test)]
     pub(crate) fn texts(&self) -> Vec<&str> {

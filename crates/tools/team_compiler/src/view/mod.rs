@@ -1,9 +1,10 @@
 //! The Compiler's window, render-only (`spec/team_compiler/README.md` "Crate layout"): it
 //! reads the tool's state (the run log, the grid's rows) and reports the user's intent
-//! (Compile clicked); it never calls into the pipeline itself. It shows the Compile button,
-//! the export grid under its legend, and the log panel; the toolbar is not built yet.
+//! (Compile clicked); it never calls into the pipeline itself. It shows the export grid under
+//! its legend, the toolbar under the grid, and the log panel.
 
 mod pictures;
+mod toolbar;
 
 use std::time::Duration;
 
@@ -12,7 +13,6 @@ use export_grid::{
     Width,
 };
 use studio_core::files::{open_folder, show_in_folder};
-use studio_core::widgets::add_enabled;
 use studio_core::{CatalogRow, HelpTarget, LogPanel, ToolContext};
 
 use crate::gui_run::RunLog;
@@ -84,10 +84,12 @@ const LEGEND: [&[LegendEntry]; 6] = [
 
 /// The grid's detail window: what it keeps from frame to frame, the catalog it explains
 /// findings from, built once rather than on every frame, and the pictures of its top box.
+/// It also keeps whether `show` has already decided if the log starts collapsed.
 pub(crate) struct GridDetail {
     state: Detail,
     catalog: Vec<CatalogRow>,
     pictures: Pictures,
+    log_start_decided: bool,
 }
 
 impl GridDetail {
@@ -97,6 +99,7 @@ impl GridDetail {
             state: Detail::default(),
             catalog: messages::catalog(),
             pictures: Pictures::default(),
+            log_start_decided: false,
         }
     }
 
@@ -109,7 +112,9 @@ impl GridDetail {
 
 /// Shows the window over `rows`, the grid's check's, drawn as being checked while `checking`,
 /// with `detail`'s window over the grid; `true` when Compile was clicked this frame. A folder
-/// the grid asks for opens in the file manager.
+/// the grid asks for opens in the file manager. At the first frame with rows the log is
+/// collapsed if, open, it left the grid too little room to show them all; after that only
+/// the member opens and closes it.
 pub(crate) fn show(
     ui: &mut egui::Ui,
     ctx: &ToolContext,
@@ -119,14 +124,14 @@ pub(crate) fn show(
     checking: bool,
     detail: &mut GridDetail,
 ) -> bool {
-    // The dock claims the bottom first (`spec/core/gui.md` "Shell layout"); the
-    // button and the grid take what is left. A
+    // The dock claims the bottom first (`spec/core/gui.md` "Shell layout"), the
+    // toolbar the row above it, and the legend and the grid take what is left. A
     // clicked message code is a shell request, not a pipeline call: the view
     // stays render-only.
     if let Some(code) = panel.show(ui, log.lines()) {
         ctx.open_help(HelpTarget::message(&code));
     }
-    let clicked = add_enabled(ui, !log.is_running(), egui::Button::new("Compile")).clicked();
+    let clicked = toolbar::show(ui, panel, rows, log.is_running());
     export_grid::legend(ui, (TOOL_ID, "legend"), &LEGEND);
     let egui_ctx = ui.ctx().clone();
     detail.pictures.receive(&egui_ctx);
@@ -144,6 +149,12 @@ pub(crate) fn show(
         &mut detail.state,
         &mut sources,
     );
+    if !detail.log_start_decided && !rows.is_empty() {
+        detail.log_start_decided = true;
+        if grid.overflows {
+            panel.collapse();
+        }
+    }
     if let Some(code) = grid.help {
         ctx.open_help(HelpTarget::message(&code));
     }

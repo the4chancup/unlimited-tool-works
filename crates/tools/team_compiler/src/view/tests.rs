@@ -25,6 +25,8 @@ struct Headless {
     ctx: egui::Context,
     /// The last frame's ask for the next repaint: `Duration::MAX` when nothing asked.
     repaint_delay: Duration,
+    /// The last frame's painted shapes.
+    shapes: Vec<egui::epaint::ClippedShape>,
 }
 
 impl Headless {
@@ -38,12 +40,13 @@ impl Headless {
         Headless {
             ctx,
             repaint_delay: Duration::MAX,
+            shapes: Vec::new(),
         }
     }
 
     /// Runs one frame of `contents` on a 1280 by 780 screen, the window's own size, with
     /// `events` as its input; returns what `contents` returned and the frame's AccessKit
-    /// nodes.
+    /// nodes, and keeps its shapes in `shapes`.
     fn frame<R>(
         &mut self,
         events: Vec<egui::Event>,
@@ -69,6 +72,7 @@ impl Headless {
             .get(&egui::ViewportId::ROOT)
             .expect("every frame produces the root viewport")
             .repaint_delay;
+        self.shapes = std::mem::take(&mut output.shapes);
         // Nothing renders here, so the frame's texture deltas are dropped on purpose.
         output.drop_without_applying_deltas();
         let nodes = update.nodes.into_iter().map(|(_, node)| node).collect();
@@ -175,6 +179,52 @@ fn finish_check(tool: &mut Tool, ctx: &ToolContext) {
     });
 }
 
+/// The node of the button (or collapsing header) labeled `label`.
+fn button<'a>(nodes: &'a [accesskit::Node], label: &str) -> &'a accesskit::Node {
+    nodes
+        .iter()
+        .find(|node| node.label() == Some(label))
+        .unwrap_or_else(|| panic!("no widget labeled {label:?}"))
+}
+
+/// The centre of a node's bounds, where a click lands.
+fn centre(node: &accesskit::Node) -> egui::Pos2 {
+    let bounds = node.bounds().expect("a widget has bounds");
+    egui::pos2(
+        ((bounds.x0 + bounds.x1) / 2.0) as f32,
+        ((bounds.y0 + bounds.y1) / 2.0) as f32,
+    )
+}
+
+/// The pointer moved to `pos` and the primary button went down there.
+fn press(pos: egui::Pos2) -> Vec<egui::Event> {
+    vec![
+        egui::Event::PointerMoved(pos),
+        egui::Event::PointerButton {
+            pos,
+            button: egui::PointerButton::Primary,
+            pressed: true,
+            modifiers: egui::Modifiers::default(),
+        },
+    ]
+}
+
+/// The primary button came up at `pos`: egui reports the click on this frame.
+fn release(pos: egui::Pos2) -> Vec<egui::Event> {
+    vec![egui::Event::PointerButton {
+        pos,
+        button: egui::PointerButton::Primary,
+        pressed: false,
+        modifiers: egui::Modifiers::default(),
+    }]
+}
+
+/// Whether some label widget shows exactly `text`. egui puts a label's text in its
+/// AccessKit node's value, not its label.
+fn shows_text(nodes: &[accesskit::Node], text: &str) -> bool {
+    nodes.iter().any(|node| node.value() == Some(text))
+}
+
 /// A row a test check hands back: /egg/'s label alone.
 fn label_only_row() -> Row {
     Row {
@@ -191,3 +241,4 @@ mod grid;
 mod live_check;
 mod log_panel;
 mod pictures;
+mod toolbar;

@@ -3,12 +3,6 @@
 
 use super::*;
 
-/// Whether some label widget shows exactly `text`. egui puts a label's text in its
-/// AccessKit node's value, not its label.
-fn shows_text(nodes: &[accesskit::Node], text: &str) -> bool {
-    nodes.iter().any(|node| node.value() == Some(text))
-}
-
 /// The codes of `cell`'s findings.
 fn codes(cell: &Cell) -> Vec<&str> {
     cell.messages

@@ -3,46 +3,6 @@
 
 use super::*;
 
-/// The node of the button (or collapsing header) labeled `label`.
-fn button<'a>(nodes: &'a [accesskit::Node], label: &str) -> &'a accesskit::Node {
-    nodes
-        .iter()
-        .find(|node| node.label() == Some(label))
-        .unwrap_or_else(|| panic!("no widget labeled {label:?}"))
-}
-
-/// The centre of a node's bounds, where a click lands.
-fn centre(node: &accesskit::Node) -> egui::Pos2 {
-    let bounds = node.bounds().expect("a widget has bounds");
-    egui::pos2(
-        ((bounds.x0 + bounds.x1) / 2.0) as f32,
-        ((bounds.y0 + bounds.y1) / 2.0) as f32,
-    )
-}
-
-/// The pointer moved to `pos` and the primary button went down there.
-fn press(pos: egui::Pos2) -> Vec<egui::Event> {
-    vec![
-        egui::Event::PointerMoved(pos),
-        egui::Event::PointerButton {
-            pos,
-            button: egui::PointerButton::Primary,
-            pressed: true,
-            modifiers: egui::Modifiers::default(),
-        },
-    ]
-}
-
-/// The primary button came up at `pos`: egui reports the click on this frame.
-fn release(pos: egui::Pos2) -> Vec<egui::Event> {
-    vec![egui::Event::PointerButton {
-        pos,
-        button: egui::PointerButton::Primary,
-        pressed: false,
-        modifiers: egui::Modifiers::default(),
-    }]
-}
-
 // TC-GUI-03
 #[test]
 fn without_a_click_nothing_is_reported_and_compile_is_enabled() {

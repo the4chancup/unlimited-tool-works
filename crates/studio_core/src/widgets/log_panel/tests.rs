@@ -703,6 +703,61 @@ fn the_filter_chips_hide_lines_without_dropping_them() {
     assert!(shows(&nodes, "4 lines"));
 }
 
+/// An info, a warning, an error and a fatal line.
+fn one_line_of_each() -> Vec<LogLine> {
+    vec![
+        LogLine::plain(Severity::Info, "an info line"),
+        LogLine::plain(Severity::Warning, "a warning line"),
+        LogLine::plain(Severity::Error, "an error line"),
+        LogLine::plain(Severity::Fatal, "a fatal line"),
+    ]
+}
+
+#[test]
+fn show_only_opens_a_collapsed_log_on_the_lines_its_filter_keeps() {
+    let lines = one_line_of_each();
+    let mut panel = LogPanel::new("test-log");
+    let mut window = Headless::new();
+    let nodes = window.idle(&mut panel, &lines);
+    click(&mut window, &mut panel, &lines, entry(&nodes, "▾"));
+    let nodes = window.idle(&mut panel, &lines);
+    assert!(!panel.is_expanded());
+    assert!(!shows(&nodes, "an error line"), "collapsed: no line drawn");
+
+    panel.show_only(LogFilter::Errors);
+    let nodes = window.idle(&mut panel, &lines);
+    assert!(panel.is_expanded());
+    for text in ["an info line", "a warning line"] {
+        assert!(!shows(&nodes, text), "Errors hides {text}");
+    }
+    for text in ["an error line", "a fatal line"] {
+        assert!(shows(&nodes, text), "Errors draws {text}");
+    }
+    assert!(shows(&nodes, "2 of 4 lines"));
+}
+
+#[test]
+fn collapse_leaves_the_header_alone() {
+    let lines = one_line_of_each();
+    let mut panel = LogPanel::new("test-log");
+    let mut window = Headless::new();
+    let nodes = window.idle(&mut panel, &lines);
+    assert!(shows(&nodes, "an info line"), "open: the lines are drawn");
+
+    panel.collapse();
+    let nodes = window.idle(&mut panel, &lines);
+    assert!(!panel.is_expanded());
+    for line in &lines {
+        assert!(
+            !shows(&nodes, &line.text),
+            "collapsed: {} is not drawn",
+            line.text
+        );
+    }
+    assert!(shows(&nodes, "4 lines"), "the header's count still shows");
+    entry(&nodes, "▸");
+}
+
 /// One frame drawing `panel` with a central panel over the space left
 /// above it; returns the frame's nodes and the central panel's height —
 /// the "view above" whose growth the collapsed dock hands back.
@@ -1004,9 +1059,9 @@ fn from_event_maps_a_message_to_its_severity_and_code() {
 #[test]
 fn the_count_line_changes_at_the_cap() {
     let lines = plain_lines(LOG_CAP);
-    assert_eq!(count_text(Filter::All, &lines), "300 lines");
+    assert_eq!(count_text(LogFilter::All, &lines), "300 lines");
     let lines = plain_lines(LOG_CAP + 1);
-    assert_eq!(count_text(Filter::All, &lines), "last 300 of 301 lines");
+    assert_eq!(count_text(LogFilter::All, &lines), "last 300 of 301 lines");
 }
 
 #[test]
