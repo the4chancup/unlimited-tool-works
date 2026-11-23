@@ -83,8 +83,8 @@ draft checked, for the maintainer to publish; running sidekicks and jobs are not
      - the packed round trip tested with a non-empty logo, identifier and serial;
      - `frames_until` back to CONTRIBUTING's 120 s, and the comparator test that ran out at
        120 s in the 2026-11-21 checkpoint made not to wait on a loaded worker;
-     both briefed as SWE-2 slice N2 (`.tmp/s5c/brief_n2.md`), running; then a SWE-2 subloop
-     over the fixes, and Carbon's loop (queued);
+     both SWE-2 slice N2, one rework (the overlap test's comparator screen), merged
+     `7082df7f`; then a SWE-2 subloop over the fixes, and Carbon's loop (queued);
    - [x] 5d the dialog's "Include earlier sessions" box and the help page's line (ST-REP-09,
      12), the draft's ending line settled (DECISIONS 2026-11-21 "an earlier session with no
      `[end]` reads "ending unknown""): merged `db2900cd`. Seen in the release build beside
@@ -244,8 +244,8 @@ draft checked, for the maintainer to publish; running sidekicks and jobs are not
      menu's tests) `4f5cbe58`, G2 (the layout of duplicate kit folders and referee rows)
      `fd84b216`, G3 (the archive tooltip, the menu's 2 px gap, the shared widgets' tests)
      `4ee3aa5b`. SWE-2's round over the three, 2026-11-23 (rulings "S-g1 r1" to "S-g3 r1"):
-     4 accepted, none of reach (a), which ends the loop; their fixes are slice G4 (SWE-2,
-     `.tmp/grid2/brief_g4.md`, running). Next: Carbon round 3
+     4 accepted, none of reach (a), which ends the loop; their fixes, slice G4, merged
+     `2ce16798`. Carbon round 3 over the same surface, at `2ce16798`: running
    - [ ] The Compile button's mode list, Open output folder and Copy report (TC-GUI-11, and
      TC-GUI-33's clause that Compile for sideloading stays enabled while the DpFileList is
      outdated; DECISIONS 2026-11-23 "the Compile menu's Copy report copies the whole log").
@@ -2766,9 +2766,9 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         `044955c1` (SWE-2). Round c2 over them found nothing, which ends the SWE-2 loop
       - [ ] Carbon's round 2, 2026-11-23 (at `bb2ccfb4`, rulings "C-cmp r2"): 9 accepted, one of
         reach (a): a held row's id passed to another row while the wheel scrolled the list,
-        which blanked a bystander. The lead's text: SE-GUI-69 and SE-GUI-13 (`72bfe950`). Next:
-        the fix slice C1 (SWE-2, `.tmp/c2fix/brief_c1.md`) once N2 (item 5c) merges, as both
-        touch the Comparator's tests; then a SWE-2 loop over it, then Carbon's round 3
+        which blanked a bystander. The lead's text: SE-GUI-69 and SE-GUI-13 (`72bfe950`). Its
+        fixes are slice C1 (SWE-2, `.tmp/c2fix/brief_c1.md`, from `2ce16798`, after N2),
+        running; then a SWE-2 loop over it, then Carbon's round 3
   - [ ] 0.0.2-bar the toolbar as a menu bar (the maintainer, 2026-11-07 and 2026-11-12): the
     Ruleset editor draft's look, unframed menus on a band edge to edge, on the Save editor
     and the Ruleset editor; in the Save editor `File` (the opens, then Save and Save as) and
@@ -2879,8 +2879,8 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     - [ ] Carbon's round 2, 2026-11-23 (at `bb2ccfb4`, rulings "C-sel r2"): 7 accepted, none of
       reach (a), which ends Carbon's loop: texts still saying every tool uses the version,
       and three guards meant to act once per change, each tested on one frame. The lead's
-      text: SE-GUI-50 and the drafts' tooltips (`72bfe950`). Its fixes are slice C2 (SWE-2,
-      `.tmp/c2fix/brief_c2.md`, running); then one SWE-2 round over them
+      text: SE-GUI-50 and the drafts' tooltips (`72bfe950`). Its fixes, slice C2 (SWE-2),
+      merged `b96b64b7`; one SWE-2 round over them, running
     - [x] the look in the built window, both themes: checked 2026-11-15 at `4b9f2258`; the
       maintainer's look 2026-11-17: fine
   - [x] 0.0.2-undo an X on each row of the unsaved changes list undoing that change alone,
@@ -3345,8 +3345,8 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       reach (a), which ends Carbon's loop. The lead's texts `f05659ef`; the tests for each
       place that keeps or encodes an uncompressed source, SWE-2 slice N1, merged `6b5ace55`.
       SWE-2's round over both (rulings "S-n1 r1"): 3 accepted, none of reach (a); the lead
-      widened the scenarios and the BC7 texts. Next: the lead's fix to two test helpers, so
-      each asserts the texture it writes is stored uncompressed, then Astra's round
+      widened the scenarios and the BC7 texts, and the two test helpers now check that the
+      texture each writes is stored uncompressed (`64a79e9c`). Next: Astra's round
     - the same run's PoC look passed: /dbg/ and /4ccg/ upgrade and compile clean (about 2 s
       for both), and the 8 players checked show their own faces and bodies
   - [x] 0.0.2c the illegal formation check (`plans/aatf_rules.md` "The illegal formation
