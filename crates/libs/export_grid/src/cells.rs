@@ -48,12 +48,12 @@ pub enum Width {
 }
 
 /// A kit's menu icon as its cell shows it: the icon's pattern drawn in the kit's two menu
-/// colors.
+/// colours.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct KitIcon {
     /// The icon's number, 0 to 23 (`color_tools::icon` draws each).
     pub number: u8,
-    /// The kit's two menu colors, first then second.
+    /// The kit's two menu colours, first then second.
     pub colors: [Color32; 2],
 }
 
@@ -79,7 +79,7 @@ pub struct Cell {
     pub open: Option<Open>,
     /// The pictures its detail window shows in the box at its top.
     pub top: TopBox,
-    /// A kit cell's menu icon once its colors are known; `None` on every other cell.
+    /// A kit cell's menu icon once its colours are known; `None` on every other cell.
     pub kit_icon: Option<KitIcon>,
 }
 
@@ -215,8 +215,9 @@ pub(crate) fn look(state: CellState, outline: Option<Outline>, visuals: &egui::V
     }
 }
 
-/// Whether a cell drawn in `state` shows its kit's menu icon: the draft's `swatch`
-/// test, which hides it on an unchecked, checking or blocked cell.
+/// Whether a cell drawn in `state` shows its kit's menu icon: the state part of the
+/// draft's `swatch` test, which hides it on an unchecked, checking or blocked cell.
+/// The test's `rowOff` half has no counterpart here: the grid draws no off row yet.
 pub(crate) fn shows_icon(state: CellState) -> bool {
     !matches!(
         state,

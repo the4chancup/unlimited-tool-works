@@ -405,8 +405,8 @@ impl Grid<'_> {
     }
 
     /// A cell: its fill, a kit's menu icon along its foot when the state shows one,
-    /// its ring, then its text, at the cell's top over an icon and centred without
-    /// one; returns its response to the pointer.
+    /// its ring, then its text, at the cell's top when an icon shows and centred
+    /// without one; returns its response to the pointer.
     fn cell(&self, cell: &Cell, rect: Rect, id: egui::Id) -> egui::Response {
         let (state, outline) = self.shown(cell);
         let look = look(state, outline, self.ui.visuals());
@@ -1246,6 +1246,30 @@ mod tests {
             assert!(
                 off.length() < 0.5,
                 "the label stays centred while {state:?} (checking {checking}): {off:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn a_kit_cell_shows_its_icon_on_the_states_that_keep_it() {
+        for state in [
+            CellState::PartialOk,
+            CellState::Done,
+            CellState::DoneWithErrors,
+        ] {
+            let mut row = icon_row();
+            let Position::Cell(gk) = &mut kits_mut(&mut row)[0] else {
+                unreachable!("GK is a cell")
+            };
+            gk.state = state;
+            let drawn = draw(&COLUMNS, &[row], false);
+            let cell = drawn.one("GK");
+            let pattern = pattern_shapes(icon_strip(cell), 7, [Color32::RED, Color32::WHITE]);
+            run_at(&drawn.shapes, &pattern);
+            let top = text_pos(&drawn, "GK").y - cell.top();
+            assert!(
+                (top - 3.0).abs() < 0.5,
+                "the label at the top while {state:?}: {top}"
             );
         }
     }

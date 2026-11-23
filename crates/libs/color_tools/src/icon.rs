@@ -54,7 +54,7 @@ const V_ARMS: &[Polygon] = &[V_LEFT, V_RIGHT];
 const CROSS: &[Polygon] = &[CENTER_STRIPE, CHEST_BAND];
 
 /// The 24 icon patterns in `icon_<N>` order: 0 to 17 on the kit's first menu color, 18 to 23
-/// the colour-swapped twins of 3, 4, 5, 6, 9 and 17 on the second.
+/// the color-swapped twins of 3, 4, 5, 6, 9 and 17 on the second.
 const PATTERNS: [Pattern; 24] = [
     // 0: plain.
     Pattern {
@@ -163,32 +163,32 @@ const PATTERNS: [Pattern; 24] = [
         ground: 0,
         polygons: CROSS,
     },
-    // 18: the centre stripe, colours swapped.
+    // 18: the centre stripe, colors swapped.
     Pattern {
         ground: 1,
         polygons: &[CENTER_STRIPE],
     },
-    // 19: the chest band, colours swapped.
+    // 19: the chest band, colors swapped.
     Pattern {
         ground: 1,
         polygons: &[CHEST_BAND],
     },
-    // 20: the sash from the top right, colours swapped.
+    // 20: the sash from the top right, colors swapped.
     Pattern {
         ground: 1,
         polygons: &[SASH_TOP_RIGHT],
     },
-    // 21: the sash from the top left, colours swapped.
+    // 21: the sash from the top left, colors swapped.
     Pattern {
         ground: 1,
         polygons: &[SASH_TOP_LEFT],
     },
-    // 22: the V's two arms, colours swapped.
+    // 22: the V's two arms, colors swapped.
     Pattern {
         ground: 1,
         polygons: V_ARMS,
     },
-    // 23: the cross, colours swapped.
+    // 23: the cross, colors swapped.
     Pattern {
         ground: 1,
         polygons: CROSS,
@@ -199,7 +199,7 @@ const PATTERNS: [Pattern; 24] = [
 /// colors `[first, second]`: `rect` filled with the pattern's ground color, then its polygons
 /// in the other color. Flat fills stretched to `rect`, no shirt outline.
 ///
-/// `icon` is the kit's `icon_<N>` marker, 0 to 23.
+/// `icon` is the kit's `icon_<N>` marker's number, 0 to 23.
 ///
 /// # Panics
 ///
@@ -315,9 +315,13 @@ mod tests {
                 &[
                     (0.1, 0.1, C1),
                     (0.9, 0.9, C1),
+                    (0.3, 0.3, C1),
+                    (0.7, 0.7, C1),
                     (0.5, 0.5, C2),
                     (0.9, 0.1, C2),
                     (0.1, 0.9, C2),
+                    (0.35, 0.4, C2),
+                    (0.65, 0.6, C2),
                 ],
             ),
             (
@@ -325,9 +329,11 @@ mod tests {
                 &[
                     (0.9, 0.1, C1),
                     (0.1, 0.9, C1),
+                    (0.5, 0.15, C1),
                     (0.5, 0.5, C2),
                     (0.1, 0.1, C2),
                     (0.9, 0.9, C2),
+                    (0.4, 0.15, C2),
                 ],
             ),
             (7, &[(0.75, 0.5, C1), (0.25, 0.5, C2)]),
@@ -338,9 +344,13 @@ mod tests {
                     (0.5, 0.1, C1),
                     (0.5, 0.9, C1),
                     (0.1, 0.6, C1),
+                    (0.5, 0.75, C1),
+                    (0.38, 0.1, C1),
                     (0.1, 0.05, C2),
                     (0.9, 0.05, C2),
                     (0.5, 0.55, C2),
+                    (0.5, 0.68, C2),
+                    (0.33, 0.1, C2),
                 ],
             ),
             (
@@ -349,6 +359,7 @@ mod tests {
                     (0.375, 0.125, C1),
                     (0.125, 0.375, C1),
                     (0.625, 0.875, C1),
+                    (0.45, 0.125, C1),
                     (0.125, 0.125, C2),
                     (0.375, 0.375, C2),
                     (0.875, 0.875, C2),
