@@ -29,17 +29,20 @@ pub(crate) struct Summary {
     pub(crate) with_warnings: usize,
 }
 
-/// `rows` summed up. A row is skipped when the check dropped its export whole, its cells
-/// blocked; it then counts in no other way, since a Compile reads none of it. The others count
-/// by the colour each cell shows, its worst finding's (the draft's cell status): a row is with
-/// errors when its label or one of its cells shows an Error or a Fatal, and with warnings when
-/// one shows a Warning, so a row can count in both. A cell holding both an Error and a Warning
-/// shows the Error alone, and counts only there.
+/// `rows` summed up. A row is skipped when the check dropped its export whole: it has no
+/// cell past its label (set aside before its files were listed, or showing a message in
+/// place of the cells), or one of its cells is blocked. It then counts in no other way, since
+/// a Compile reads none of it. The others count by the colour each cell shows, its worst
+/// finding's (the draft's cell status): a row is with errors when its label or one of its
+/// cells shows an Error or a Fatal, and with warnings when one shows a Warning, so a row can
+/// count in both. A cell holding both an Error and a Warning shows the Error alone, and counts
+/// only there.
 pub(crate) fn summary(rows: &[Row]) -> Summary {
     let skipped = |row: &&Row| {
-        cells(row)
-            .skip(1)
-            .any(|cell| cell.state == CellState::Blocked)
+        cells(row).nth(1).is_none()
+            || cells(row)
+                .skip(1)
+                .any(|cell| cell.state == CellState::Blocked)
     };
     let having = |wanted: fn(Severity) -> bool| {
         rows.iter()

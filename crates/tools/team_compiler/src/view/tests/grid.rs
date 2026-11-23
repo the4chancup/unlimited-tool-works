@@ -124,6 +124,18 @@ fn a_referee_folder_backing_two_slots_colours_both() {
     assert_eq!(player(referees, 2).unwrap().outline, None);
 }
 
+// A `/balls/` export is the Balls compiler's, skipped before it is read: like a referee
+// export it has no team, so its ID cell stays blank rather than naming one.
+#[test]
+fn a_balls_export_s_id_cell_is_blank() {
+    let temp = sandbox("view_grid_balls");
+    let root = temp.path();
+    list_teams(root);
+    add_file(root, "balls Spring/Players/03 - B/portrait.dds", b"");
+    let rows = checked_rows(root);
+    assert_eq!(row(&rows, "/balls/").id, Some(IdCell::Blank));
+}
+
 // TC-GUI-21
 #[test]
 fn a_shared_folder_s_and_a_logo_s_findings_colour_the_label_alone() {
@@ -265,6 +277,43 @@ fn a_dropped_kit_folder_keeps_its_cell() {
     assert_eq!(home.outline, Some(Outline::Error));
 }
 
+// A `Full` export is given an empty `Kits/p1` when no player kit survived, but the
+// dropped folder keeps its cell: its finding is that kit's, not the label's.
+#[test]
+fn a_dropped_kit_folder_keeps_its_cell_past_the_synthetic_p1() {
+    let temp = sandbox("view_grid_dropped_kit_full");
+    let root = temp.path();
+    list_teams(root);
+    add_player(root, "co Full Spring", "03 - B");
+    add_kit(root, "co Full Spring", "g1");
+    add_kit(root, "co Full Spring", "p1 - Home");
+    add_file(root, "co Full Spring/Kits/p1 - Home/pre-fox", b"");
+    add_file(root, "co Full Spring/Kits/p1 - Home/fox", b"");
+    complete(&root.join("exports/co Full Spring"), PesVersion::Pes21, &[]);
+    let rows = checked_rows(root);
+    let team = row(&rows, "/co/");
+    let home = kit(team, 1).expect("the K1 cell");
+    assert_eq!(home.place, "Kits/p1 - Home");
+    assert_eq!(codes(home), ["kit_layout_conflict"]);
+    assert!(
+        !codes(&team.label).contains(&"kit_layout_conflict"),
+        "{:?}",
+        codes(&team.label)
+    );
+}
+
+// A `Full` export with no `g1` is given an empty `Kits/g1` to compile, which is no
+// folder of the export: the GK column stays empty.
+#[test]
+fn a_full_export_without_a_keeper_kit_draws_no_gk_cell() {
+    let temp = sandbox("view_grid_full_no_gk");
+    let root = temp.path();
+    list_teams(root);
+    complete(&root.join("exports/co Full Spring"), PesVersion::Pes21, &[]);
+    let rows = checked_rows(root);
+    assert!(kit(row(&rows, "/co/"), 0).is_none(), "the GK column");
+}
+
 // TC-GUI-10: a kept kit whose `colors.txt` gives two colors carries its menu icon and those
 // colors; one without two listed colors, or dropped by a finding, carries none.
 #[test]
@@ -333,6 +382,20 @@ fn a_dropped_export_counts_its_portraits_from_its_listing() {
     assert_eq!(team.id, Some(IdCell::Missing));
     assert!(codes(&team.label).contains(&"team_name_unknown"));
     assert_eq!(player(team, 3).unwrap().state, CellState::Blocked);
+    assert_eq!(portraits(team).unwrap().text, "1/1");
+}
+
+// Two folders claiming one slot draw one cell, and the portraits count counts it once:
+// `05 - A` and `05 - B`, each with a portrait, read `1/1`.
+#[test]
+fn two_folders_on_one_slot_count_the_slot_s_portrait_once() {
+    let temp = sandbox("view_grid_portraits_one_slot");
+    let root = temp.path();
+    list_teams(root);
+    add_player(root, "co Midcup Map", "05 - A");
+    add_player(root, "co Midcup Map", "05 - B");
+    let rows = checked_rows(root);
+    let team = row(&rows, "/co/");
     assert_eq!(portraits(team).unwrap().text, "1/1");
 }
 
@@ -414,6 +477,38 @@ fn each_cell_names_and_opens_its_folder() {
         assert_eq!(cell.place, place);
         assert_eq!(opened(cell.open.as_ref()), folder_at(&folder), "{place}");
     }
+}
+
+// Under a layer the listing flattened (here a wrapper folder), a cell's folder is opened
+// where it is on disk: the 03 cell opens `co Full Map/co Full Map/Players/03 - B`, the
+// label still the export's own root.
+#[test]
+fn a_cell_under_a_flattened_wrapper_opens_the_folder_on_disk() {
+    let temp = sandbox("view_grid_wrapper_open");
+    let root = temp.path();
+    list_teams(root);
+    add_player(root, "co Full Map/co Full Map", "03 - B");
+    complete(
+        &root.join("exports/co Full Map/co Full Map"),
+        PesVersion::Pes21,
+        &[],
+    );
+    let rows = checked_rows(root);
+    let team = row(&rows, "/co/");
+    let export = root.join("exports/co Full Map");
+    let Some(Open::Folder(on_disk)) = player(team, 3).unwrap().open.as_ref() else {
+        panic!("the 03 cell opens a folder");
+    };
+    assert!(on_disk.is_dir(), "{on_disk:?} is a folder on disk");
+    assert_eq!(
+        opened(player(team, 3).unwrap().open.as_ref()),
+        folder_at(&export.join("co Full Map/Players/03 - B"))
+    );
+    assert_eq!(
+        opened(team.label.open.as_ref()),
+        folder_at(&export),
+        "the label's root"
+    );
 }
 
 // With no `Portraits/` folder, the portraits are in the player folders: the cell has no one
