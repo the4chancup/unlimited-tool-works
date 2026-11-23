@@ -324,10 +324,11 @@ impl ToolContext {
 
     /// The exe check's verdict for `version`: what `check_pes_folder` finds in the PES
     /// folder the settings resolve for it (`CommonSettings::pes_folder_for`), the same
-    /// listing the sidebar's selector is coloured by, so a tool that works a file of one
-    /// version asks that version's folder's verdict here rather than the selector's. An
-    /// entry is kept per version keyed by the resolved folder and listed again when the
-    /// resolution changes, never per ask; `clear_pes_exe_checks` drops the map. The ask
+    /// check the sidebar runs for its selector, each keeping its own verdict, so a tool
+    /// that works a file of one version asks that version's folder's verdict here rather
+    /// than the selector's. An entry is kept per version keyed by the resolved folder and
+    /// listed again when the resolution changes, never per ask; `clear_pes_exe_checks`
+    /// drops the map. The ask
     /// runs the listing itself on a miss, so there is always a verdict.
     pub fn pes_exe_check_for(&self, version: PesVersion) -> ExeCheck {
         let folder = self.settings.lock().unwrap().common.pes_folder_for(version);

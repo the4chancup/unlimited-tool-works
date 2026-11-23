@@ -137,6 +137,20 @@ fn comparator_nodes(pairs: &[(accesskit::NodeId, accesskit::Node)]) -> Vec<&acce
         .collect()
 }
 
+/// The comparator window's frame: its Window node's bounds out of `pairs`.
+fn comparator_frame(pairs: &[(accesskit::NodeId, accesskit::Node)]) -> accesskit::Rect {
+    pairs
+        .iter()
+        .find(|(_, node)| {
+            node.role() == Role::Window
+                && node
+                    .label()
+                    .is_some_and(|label| label.starts_with("Comparator"))
+        })
+        .and_then(|(_, node)| node.bounds())
+        .expect("the Comparator window")
+}
+
 /// The `(NodeId, node)` pair of the Button labeled `label` inside the
 /// comparator window (the player list's buttons share the screen); each
 /// caller takes the half it needs.
@@ -261,8 +275,6 @@ fn scroll_to(
     view: &mut SaveView,
     text: &str,
 ) -> Vec<(accesskit::NodeId, accesskit::Node)> {
-    // The window's centre, where the list is.
-    let at = egui::pos2(400.0, 400.0);
     let mut bounds = None;
     for _ in 0..600 {
         let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, view, &|| Vec::new()));
@@ -279,8 +291,25 @@ fn scroll_to(
             continue;
         }
         bounds = None;
-        // Not in view: one notch down; the next settle frame reads where
-        // its animation lands.
+        // Not in view: one notch down, the wheel over the list — just
+        // left of its own scroll bar, drawn once the list overflows (the
+        // window's centre while the bar is not up yet). The next settle
+        // frame reads where its animation lands.
+        let at = nodes
+            .iter()
+            .find_map(|node| {
+                (node.role() == Role::ScrollBar)
+                    .then(|| node.bounds())
+                    .flatten()
+            })
+            .map(|bar| egui::pos2((bar.x0 - 8.0) as f32, ((bar.y0 + bar.y1) / 2.0) as f32))
+            .unwrap_or_else(|| {
+                let frame = comparator_frame(&pairs);
+                egui::pos2(
+                    ((frame.x0 + frame.x1) / 2.0) as f32,
+                    ((frame.y0 + frame.y1) / 2.0) as f32,
+                )
+            });
         window.frame_ids(
             vec![
                 egui::Event::PointerMoved(at),

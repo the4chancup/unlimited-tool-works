@@ -1030,14 +1030,8 @@ fn the_held_rows_float_stays_under_the_pointer_while_the_list_scrolls() {
     // All teams: enough rows that the wheel takes the held row out of view.
     view.team = TeamChoice::All;
     let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
-    let bounds = row(&nodes, "02 CB SECOND")
-        .bounds()
-        .expect("row 02's bounds");
-    let bounds = egui::Rect::from_min_max(
-        egui::pos2(bounds.x0 as f32, bounds.y0 as f32),
-        egui::pos2(bounds.x1 as f32, bounds.y1 as f32),
-    );
-    let rest = texts_inside(&shapes, bounds);
+    let second = bounds(row(&nodes, "02 CB SECOND"));
+    let rest = texts_inside(&shapes, second);
     let texts: Vec<&str> = rest.iter().map(|(text, _)| text.as_str()).collect();
     assert_eq!(
         texts,
@@ -1046,14 +1040,9 @@ fn the_held_rows_float_stays_under_the_pointer_while_the_list_scrolls() {
     );
     // Pressed 20 points right of the name's start, as SE-GUI-69.
     let name_rest = rest[3].1;
-    let press = egui::pos2(name_rest.x + 20.0, bounds.center().y);
+    let press = egui::pos2(name_rest.x + 20.0, second.center().y);
     let over = press + egui::vec2(30.0, 40.0);
-    window.frame(pointer_at(press, true), |ui| {
-        show(ui, &mut view, &|| Vec::new())
-    });
-    window.frame(vec![egui::Event::PointerMoved(over)], |ui| {
-        show(ui, &mut view, &|| Vec::new())
-    });
+    hold_from_to(&mut window, &mut view, press, over);
     // Wheel, still holding, until the held row leaves the drawn rows
     // (bounded, so a list that never scrolls fails rather than hangs).
     let mut gone = false;
@@ -1096,6 +1085,119 @@ fn the_held_rows_float_stays_under_the_pointer_while_the_list_scrolls() {
         found,
         ["SECOND"],
         "the held row's name painted once at rest plus the travel ({at:?}), got {found:?}"
+    );
+    window.frame(pointer_at(over, false), |ui| {
+        show(ui, &mut view, &|| Vec::new())
+    });
+}
+
+/// The text shapes in `shapes` that paint exactly `text`.
+fn text_shapes<'a>(
+    shapes: &'a [egui::epaint::ClippedShape],
+    text: &str,
+) -> Vec<&'a egui::epaint::TextShape> {
+    shapes
+        .iter()
+        .filter_map(|clipped| match &clipped.shape {
+            egui::Shape::Text(shape) if shape.galley.job.text == text => Some(shape),
+            _ => None,
+        })
+        .collect()
+}
+
+// The float lifts the row as the row paints it: a player Ctrl+clicked
+// into a group of two, then dragged by the group's other member — the
+// row `selected` does not name — floats in the selection colour the
+// row itself paints, not the held-drag one.
+// SE-GUI-69
+#[test]
+fn a_grouped_rows_float_is_painted_selected_as_its_row_is() {
+    let (_file, mut view, mut window, visuals) =
+        mark_scene("drag_float_selected", DEFAULT_PANE.y, |_| {});
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    // SECOND selected alone first: the group's first entry.
+    click(&mut window, row(&nodes, "02 CB SECOND"), &mut view);
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    ctrl_click(&mut window, row(&nodes, "06 CB SIXTH"), &mut view);
+    assert_eq!(
+        view.group,
+        [(701, 1), (701, 5)],
+        "premise: SECOND and SIXTH selected together"
+    );
+    assert_eq!(
+        view.selected,
+        Some(Selection::Player(701, 1)),
+        "premise: `selected` names SECOND, not the dragged row"
+    );
+
+    // SIXTH, the group member `selected` does not name, held dragged:
+    // his float's name paints in the selection colour his row's does.
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let from = centre(row(&nodes, "06 CB SIXTH"));
+    let over = from + egui::vec2(30.0, 40.0);
+    let shapes = hold_from_to(&mut window, &mut view, from, over);
+    let painted: Vec<egui::Color32> = text_shapes(&shapes, "SIXTH")
+        .iter()
+        .map(|shape| shape.fallback_color)
+        .collect();
+    assert_eq!(
+        painted,
+        [visuals.selection.stroke.color],
+        "the float paints SIXTH's name once, in the selection colour"
+    );
+    window.frame(pointer_at(over, false), |ui| {
+        show(ui, &mut view, &|| Vec::new())
+    });
+}
+
+// The float is the row's own width — the list's span less the frame's
+// stroke on each side, the box `row_rect` lays the row in — so its name
+// is cut where the row's would be: 03's name overlong, held dragged 30
+// points right and 40 down, the name's painted right end stands the
+// row's right edge plus the travel less the row's right padding, within
+// half a point.
+// SE-GUI-69
+#[test]
+fn the_held_rows_float_is_the_rows_own_width() {
+    let path = fixture(PesVersion::Pes21, "drag_float_width");
+    let mut file = EditFile::from_bytes(&fixture_save(PesVersion::Pes21)).unwrap();
+    file.player_mut(70103).unwrap().name =
+        "THE EXTRAORDINARILY LONG-LEGGED FORWARD WHO NEVER MISSES".to_owned();
+    file.save(&path).unwrap();
+    let mut view = SaveView::new();
+    view.open(&path);
+    view.team = TeamChoice::Team(701);
+    let mut window = Headless::new();
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let third = bounds(row(
+        &nodes,
+        "03 CB THE EXTRAORDINARILY LONG-LEGGED FORWARD WHO NEVER MISSES",
+    ));
+    let padding = window
+        .ctx
+        .style_of(window.ctx.theme())
+        .spacing
+        .button_padding
+        .x;
+    let travel = egui::vec2(30.0, 40.0);
+    let from = third.center();
+    let over = from + travel;
+    let shapes = hold_from_to(&mut window, &mut view, from, over);
+    let painted = text_shapes(
+        &shapes,
+        "THE EXTRAORDINARILY LONG-LEGGED FORWARD WHO NEVER MISSES",
+    );
+    let [name] = painted[..] else {
+        panic!("the float's name painted once, got {}", painted.len())
+    };
+    assert!(name.galley.elided, "premise: the name is cut");
+    // `pos.x` plus the wrap width is where the room the float gave the
+    // name runs out (`galley.size` stops at the ellipsis).
+    let right = f64::from(name.pos.x + name.galley.job.wrap.max_width);
+    let expected = f64::from(third.max.x + travel.x - padding);
+    assert!(
+        (right - expected).abs() <= 0.5,
+        "the float's name room ends at {right}, the row's right plus the travel less the padding {expected}"
     );
     window.frame(pointer_at(over, false), |ui| {
         show(ui, &mut view, &|| Vec::new())

@@ -373,15 +373,8 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
                 if let Some(dragged) = egui::DragAndDrop::payload::<DraggedRow>(ui.ctx())
                     && let Some(at) = ui.input(|i| i.pointer.interact_pos())
                 {
-                    let rect = egui::Rect::from_min_size(
-                        at - dragged.grab,
-                        egui::vec2(layout.width, layout.row_height),
-                    );
-                    let is_selected = matches!(
-                        view.selected,
-                        Some(Selection::Player(id, slot))
-                            if id == dragged.row.team_id && slot == dragged.row.slot
-                    );
+                    let rect = egui::Rect::from_min_size(at - dragged.grab, row_size(ui, layout));
+                    let is_selected = row_is_selected(view.selected, &view.group, &dragged.row);
                     let color = if is_selected {
                         ui.visuals().selection.stroke.color
                     } else {
@@ -557,6 +550,14 @@ struct RowLayout {
     draggable: bool,
 }
 
+/// The size `row_rect` lays a row out at: `layout`'s span less the list
+/// frame's stroke on each side, its height `layout`'s. The held row's
+/// float takes the same, so the float's name is cut where the row's is.
+fn row_size(ui: &egui::Ui, layout: RowLayout) -> egui::Vec2 {
+    let inset = ui.visuals().widgets.noninteractive.bg_stroke.width;
+    egui::vec2(layout.width - 2.0 * inset, layout.row_height)
+}
+
 /// The box a list row occupies, the draft's `.prow` inside `.rows`'s
 /// border: `layout`'s span inset by the list frame's stroke on each side.
 /// A row's own edge, painted inside the box, then stands inside the frame's
@@ -569,10 +570,7 @@ fn row_rect(
 ) -> (egui::Rect, egui::Response) {
     let inset = ui.visuals().widgets.noninteractive.bg_stroke.width;
     let avail = ui.available_rect_before_wrap();
-    let rect = egui::Rect::from_min_size(
-        avail.min + egui::vec2(inset, 0.0),
-        egui::vec2(layout.width - 2.0 * inset, layout.row_height),
-    );
+    let rect = egui::Rect::from_min_size(avail.min + egui::vec2(inset, 0.0), row_size(ui, layout));
     let response = ui.allocate_rect(rect, sense);
     (rect, response)
 }
@@ -915,6 +913,17 @@ struct DraggedRow {
     grab: egui::Vec2,
 }
 
+/// Whether `row`'s selection paint is on: an on group's every entry,
+/// else the one selected row. `player_row` and the held row's float both
+/// ask, so the float paints as its row does.
+fn row_is_selected(selected: Option<Selection>, group: &[(u32, u8)], row: &Row) -> bool {
+    if group_on(selected, group) {
+        group.contains(&(row.team_id, row.slot))
+    } else {
+        selected == Some(Selection::Player(row.team_id, row.slot))
+    }
+}
+
 /// One list row: place, position, and the name with its colour codes drawn.
 /// The whole row is one click target; a click selects it, a Ctrl+click
 /// (Cmd on a Mac) adds it to or takes it from the group of players
@@ -955,11 +964,7 @@ fn player_row(
     // A group's rows are filled and report selected as the selected row
     // does (the draft's `.on`): every entry of the on group, else the
     // one selected row.
-    let is_selected = if group_on(*selection.selected, selection.group) {
-        selection.group.contains(&(row.team_id, row.slot))
-    } else {
-        *selection.selected == Some(Selection::Player(row.team_id, row.slot))
-    };
+    let is_selected = row_is_selected(*selection.selected, selection.group, row);
     let font = egui::TextStyle::Body.resolve(ui.style());
     let texts = row_text(player, row, &font);
     // The unsaved dot paints at the row's right end, never inside the
