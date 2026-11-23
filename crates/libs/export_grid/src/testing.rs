@@ -163,6 +163,32 @@ impl Drawn {
     }
 }
 
+/// `text`'s painted run: what the painter draws is no AccessKit node, so it is found
+/// among the frame's shapes; panics when no run of `text` was painted.
+pub(crate) fn text_shape<'a>(drawn: &'a Drawn, text: &str) -> &'a egui::epaint::TextShape {
+    drawn
+        .shapes
+        .iter()
+        .find_map(|shape| match shape {
+            Shape::Text(text_shape) if text_shape.galley.text() == text => Some(text_shape),
+            _ => None,
+        })
+        .unwrap_or_else(|| panic!("no text run of {text:?}"))
+}
+
+/// The ends of every line segment painted in `stroke`: lines, like painted text, are no
+/// AccessKit node.
+pub(crate) fn lines(drawn: &Drawn, stroke: egui::Stroke) -> Vec<[egui::Pos2; 2]> {
+    drawn
+        .shapes
+        .iter()
+        .filter_map(|shape| match shape {
+            Shape::LineSegment { points, stroke: s } if *s == stroke => Some(*points),
+            _ => None,
+        })
+        .collect()
+}
+
 /// A node's bounds, in points.
 fn bounds(node: &accesskit::Node) -> egui::Rect {
     let bounds = node.bounds().expect("a node has bounds");

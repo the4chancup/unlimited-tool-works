@@ -456,6 +456,16 @@ fn badge(drawn: &Drawn) -> Option<Pos2> {
     })
 }
 
+/// The `severity` label on `code`'s line in the open window: the cell's state line can
+/// read the same severity, so the label is picked out by standing beside the code.
+fn severity_label(drawn: &Drawn, severity: &str, code: Rect) -> Rect {
+    drawn
+        .all(severity)
+        .into_iter()
+        .find(|rect| rect.center().y == code.center().y)
+        .expect("the severity label on the code's line")
+}
+
 // TC-GUI-09
 #[test]
 fn a_resting_pointer_opens_the_cells_window_after_the_delay_and_it_follows_at_once() {
@@ -579,6 +589,31 @@ fn many_findings_scroll_inside_a_window_that_stays_on_screen() {
 
 // TC-GUI-09
 #[test]
+fn each_finding_starts_with_its_severity_left_of_its_code() {
+    let mut scene = Scene::new();
+    let at = spots(&scene.idle());
+    let (_, drawn) = scene.click(at.three);
+    let code = drawn.one("fpc_conflict");
+    let label = severity_label(&drawn, "Error", code);
+    assert!(label.right() <= code.left(), "{label:?} left of {code:?}");
+}
+
+#[test]
+fn no_findings_stands_where_a_windows_first_finding_would() {
+    let mut scene = Scene::new();
+    let at = spots(&scene.idle());
+    let (_, drawn) = scene.click(at.three);
+    let first = severity_label(&drawn, "Error", drawn.one("fpc_conflict")).top();
+    let (_, drawn) = scene.click(at.one);
+    assert_eq!(
+        drawn.one("No findings.").top(),
+        first,
+        "as far down as a first finding"
+    );
+}
+
+// TC-GUI-09
+#[test]
 fn the_window_of_a_cell_alone_in_its_group_is_named_by_the_group() {
     let mut scene = Scene::new();
     let at = spots(&scene.idle());
@@ -643,6 +678,27 @@ fn a_label_s_pin_stands_inside_its_corner() {
     assert_eq!(
         badge(&drawn),
         Some(pos2(label.right() - 8.0, label.top() + 8.0))
+    );
+}
+
+// The title bar's Unpin button paints PIN too: the badge's is the run inside its disc.
+// TC-GUI-24
+#[test]
+fn the_pin_glyph_is_painted_on_the_pinned_cells_badge() {
+    let mut scene = Scene::new();
+    let at = spots(&scene.idle());
+    let (_, drawn) = scene.click(at.three);
+    let centre = badge(&drawn).expect("the badge painted");
+    let disc = Rect::from_center_size(centre, Vec2::splat(2.0 * BADGE_RADIUS));
+    let on_badge = drawn.shapes.iter().any(|shape| {
+        matches!(
+            shape,
+            Shape::Text(text) if text.galley.text() == PIN && disc.contains(text.pos)
+        )
+    });
+    assert!(
+        on_badge,
+        "PIN painted inside the badge's disc at {centre:?}"
     );
 }
 
@@ -1042,6 +1098,28 @@ fn the_pinned_window_s_title_bar_drags_it_and_it_reopens_where_it_was_left() {
     scene.click(at.three);
     let (_, drawn) = scene.click(at.one);
     assert_eq!(drawn.one("/co/ 01").min, moved.min);
+}
+
+#[test]
+fn a_line_runs_across_the_window_under_its_title_bar() {
+    let mut scene = Scene::new();
+    let at = spots(&scene.idle());
+    let (_, drawn) = scene.click(at.three);
+    let window = window_rect(&drawn);
+    let stroke = dark().widgets.noninteractive.bg_stroke;
+    // The bar's bottom: the window's 1 stroke, then its 22.
+    let at_y = window.top() + 1.0 + BAR_HEIGHT;
+    let lines: Vec<[Pos2; 2]> = crate::testing::lines(&drawn, stroke)
+        .into_iter()
+        .filter(|[from, to]| from.y == at_y && to.y == at_y)
+        .collect();
+    assert_eq!(lines.len(), 1, "one line at the bar's bottom: {lines:?}");
+    let [from, to] = lines[0];
+    assert_eq!(
+        (from.x, to.x),
+        (window.left() + 1.0, window.right() - 1.0),
+        "across the window's width"
+    );
 }
 
 // A pin names its row by key, so it survives the rows being made again, and goes with
