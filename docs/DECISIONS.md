@@ -20026,3 +20026,23 @@ hand, so it cannot drift. Moving the issues alone would not make them less stale
 are open, some since October, and 21 resolved ones are still listed.
 Plan: no plan edit needed: it is how the work is tracked, not what the suite does; the
 worklog's step holds it, and `AGENTS.md`'s table changes when the page exists.
+
+## 2026-11-23 — mutation runs — a tier between `mutants-diff` and whole-crate runs, before 1.0.0
+Decision: a phase's close runs every mutant kind over the diff since each touched crate's last
+triaged whole-crate run, not over the whole crate. A tracked file keeps that commit per crate,
+and each triaged whole run moves it forward. Whole-crate runs leave the closure's path: a
+rolling background job on the VPS, one crate at a time, the crate checked longest ago
+first, never waited on. The extra kinds learn to take a diff, which also brings them into the review
+loops' `mutants-diff`, where they do not run today. Built once the `call` backfill has
+measured each crate, and before 1.0.0's first phase close.
+Why: the `call` kind adds about 3,900 mutants. `save_editor`'s whole run measured over 30 hours
+before it, and its 847 `call` mutants at about 217 s each add some 51 more. 0.x.x cuts already
+go out before their whole runs end, but 1.0.0 cannot. A diff since the last whole run costs
+what changed, not the crate's size, and still covers every line changed since a full check.
+Rotating shards were not chosen: they test a slice of the crate that need not hold the phase's
+changes. Dropping `call` from whole runs was not chosen either: its trial found 8 real missing
+tests in `export_grid`. The tier misses one case: a test weakened in a file whose source did not
+change. The rolling whole runs catch that.
+Plan: no plan edit needed: it is how the work is verified, not what the suite does. RUNBOOK
+"Phases and releases" and CONTRIBUTING "Mutation runs" change when it is built; the worklog
+item holds it until then.

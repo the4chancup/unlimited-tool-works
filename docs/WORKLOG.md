@@ -566,6 +566,23 @@ and no phase closes with one outstanding.
   slices crate by crate. Its first crate, `export_grid` (the trial), has 8 survivors, all
   missing tests, now tested (slice G7, merged `863813d8`). Once each crate's run is measured, CONTRIBUTING's time for the
   extra kinds gets the real figures.
+- [ ] A mutation tier between `mutants-diff` and whole-crate runs (DECISIONS 2026-11-23 "a tier
+  between `mutants-diff` and whole-crate runs"), built after the `call` backfill's
+  measurements and before 1.0.0's first phase close, in slices:
+  - [ ] the extra kinds take a diff (`extra_mutants.py` keeps a mutant only on a changed
+    line), and `mutants-diff` runs them, so the review loops test `call` mutants too;
+  - [ ] a tracked record of each crate's last triaged whole-run commit, and the closure run:
+    every kind over the diff since that commit;
+  - [ ] whole-crate runs as a rolling job on the VPS, the crate checked longest ago first;
+    RUNBOOK "Phases and releases" and CONTRIBUTING "Mutation runs" rewritten to match.
+- [ ] Evaluate running only the tests that cover each mutant (the maintainer, 2026-11-23: worth
+  a look, since it could cut a mutant's cost tenfold). First, from the logs of a finished
+  whole-crate run (`save_editor`, `pes_savefile`), split each mutant's time into its build and
+  its tests: selection only shortens the tests, so this split bounds the gain. If the tests
+  dominate, a trial on one crate: each test's line coverage recorded once (`cargo llvm-cov`),
+  each mutant run with only the tests covering its line, against the same mutants run with
+  the full suite. It passes if the caught and missed sets are identical and the time is
+  measured both ways.
 
 ---
 
