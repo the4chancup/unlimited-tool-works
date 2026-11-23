@@ -148,9 +148,14 @@ draft checked, for the maintainer to publish; running sidekicks and jobs are not
        (TC-GUI-31's zip clause; DECISIONS 2026-11-23). Small, SWE-2, briefed once 1c-i
        merges, since both touch `view/`
    - [ ] 1c: the toolbar's strip and its counts, the log's lines linked to cells, the log
-     collapsed when it would hide rows → verify: TC-GUI-15, 26, 27. It starts with a pure
-     move of `team_compiler`'s `view/mod.rs` tests (1,230 lines since 1b-ii) into
-     `view/tests.rs` and `view/tests/`, committed apart (`CONTRIBUTING.md` "Placement")
+     collapsed when it would hide rows → verify: TC-GUI-15, 26, 27. The pure move of the
+     view's tests came first (`3aa75bac` on `sk/grid1c`).
+     - 1c-i (Opus, `sk/grid1c`): the strip, its counts and the log's start (TC-GUI-26, 27);
+       reviewed, the lead counting a row's warnings by the colour its cells show, as the
+       draft does. Its look and merge next
+     - 1c-ii: the log's lines linked to cells (TC-GUI-15). It also puts the check's findings
+       in the log (the plan's "the export's log lines"), which today holds only a Compile's
+       lines, so the strip's counts filter the findings the grid shows
    - Then the kit cells' swatch (TC-GUI-10), the row actions, the ID cell's editing, the
      watcher and cache, Sizes and sorting, and the Upgrade DpFileList button and its dialog
      (`plans/team_compiler/pipeline.md` "DpFileList upgrade"; only the CLI's `upgrade-dpfl`
