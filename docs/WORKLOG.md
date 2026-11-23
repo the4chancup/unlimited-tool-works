@@ -568,6 +568,15 @@ and no phase closes with one outstanding.
   slices crate by crate. Its first crate, `export_grid` (the trial), has 8 survivors, all
   missing tests, now tested (slice G7, merged `863813d8`). Once each crate's run is measured, CONTRIBUTING's time for the
   extra kinds gets the real figures.
+- [ ] The drafts' help made from the build's (the maintainer, 2026-11-23: the draft's copied
+  help texts are updated by hand each time a catalog row changes). A test in `studio`, which
+  registers every tool, builds the help chapters (topics and catalog) and compares them with
+  a checked-in `docs/prototypes/help.js` that the drafts load in place of their copies,
+  failing on a difference and naming the recipe that writes the file again. Texts the plan
+  adds before the build has them stay in each tool's draft script, as `team_compiler.js`'s
+  `PLANNED` codes do. Not placeholder stubs: the draft's windows show catalog text, so stubs
+  would change their sizes and the draft-to-build comparisons. SWE-2; the plan's "Prototypes
+  before implementation" and a DECISIONS entry with it.
 - [ ] A mutation tier between `mutants-diff` and whole-crate runs (DECISIONS 2026-11-23 "a tier
   between `mutants-diff` and whole-crate runs"), built after the `call` backfill's
   measurements and before 1.0.0's first phase close, in slices:
