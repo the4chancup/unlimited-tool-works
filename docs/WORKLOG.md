@@ -191,6 +191,10 @@ draft checked, for the maintainer to publish; running sidekicks and jobs are not
        asserting none flip. SWE-2, small, `studio_core`, `player_list.rs` and the callers'
        tests only (the Ruleset editor's draft is not buildable: its tests change, nothing
        else of it)
+     - Report a problem keeps its "Saved to" line's room while hidden, so its buttons do not
+       move when the line shows (DECISIONS 2026-11-23, `plans/core/gui.md` "Modals"). SWE-2,
+       `studio_core`'s `shell/report.rs` alone; it starts when a SWE-2 session and a cargo
+       job are free
    - Then the kit cells' swatch (TC-GUI-10), the row actions, the ID cell's editing, the
      watcher and cache, Sizes and sorting, and the rest of the toolbar
      (`plans/team_compiler/gui.md` "Toolbar"; the build has a plain Compile button): the
