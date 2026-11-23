@@ -11,13 +11,13 @@
 
 [common]
 
-# The PES the tools work for, the same as the PES picker on the sidebar.
+# The PES version for the tools that work with one game, the same as the PES version box on the sidebar.
 # Accepted values: 15 - 16 - 17 - 18 - 19 - 20 - 21
 # Default: 19
 pes_version = 17
 
 # The folder where the PES exe is.
-# The ** in it is replaced by pes_version's number: with pes_version = 19, the default
+# The ** in it stands for the last two digits of the version's year: for PES 2019, the default
 # below means C:\Program Files (x86)\Pro Evolution Soccer 2019.
 # If your PES is installed somewhere else, write its folder here. When you have several
 # PES versions in different places, each can have its own folder: see pes_folders, at

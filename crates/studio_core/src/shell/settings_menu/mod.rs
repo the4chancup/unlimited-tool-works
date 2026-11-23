@@ -444,8 +444,8 @@ fn version_row(
         ui,
         "PES version",
         "pes_version",
-        "The PES version every tool works with, the same setting as the PES picker \
-         on the sidebar.",
+        "The PES version for the tools that work with one game, the same setting as \
+         the sidebar's PES version box.",
     );
     let blocker = version_blocker(tools);
     let mut picked = common.pes_version;
@@ -470,7 +470,11 @@ fn version_row(
         }
         None => {
             let check = sidebar.exe_check(common, ui.input(|input| input.focused));
-            combo.on_hover_text(exe_tooltip(check, &common.pes_folder(), "every tool"));
+            combo.on_hover_text(exe_tooltip(
+                check,
+                &common.pes_folder(),
+                "The PES version for the tools that work with one game",
+            ));
         }
     }
     ui.end_row();

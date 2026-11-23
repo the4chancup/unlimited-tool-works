@@ -1204,20 +1204,24 @@ mod tests {
     #[test]
     fn the_contexts_exe_checks_are_dropped_on_the_windows_regained_focus() {
         let egui_ctx = test_context();
-        let dir = test_dir("studio_core_shell_exe_focus");
-        fs::create_dir_all(&dir).unwrap();
+        let dir = TestDir::new("studio_core_shell_exe_focus");
         let (a, calls_a) = stub("a", "A", None);
         let mut settings = Settings::default();
         settings.common.pes_version = PesVersion::Pes21;
-        settings.common.pes_folder_path = dir.display().to_string();
-        let Shell { mut app, ctx, .. } =
-            shell_with(settings, vec![a], &[], Some(dir.clone()), vec![calls_a]);
+        settings.common.pes_folder_path = dir.path().display().to_string();
+        let Shell { mut app, ctx, .. } = shell_with(
+            settings,
+            vec![a],
+            &[],
+            Some(dir.path().to_path_buf()),
+            vec![calls_a],
+        );
         assert_eq!(
             ctx.pes_exe_check_for(PesVersion::Pes21),
             crate::ExeCheck::NoExe,
             "an empty folder"
         );
-        fs::write(dir.join("PES2021.exe"), b"").unwrap();
+        fs::write(dir.path().join("PES2021.exe"), b"").unwrap();
         frame(&egui_ctx, &mut app, Vec::new(), false);
         assert_eq!(
             ctx.pes_exe_check_for(PesVersion::Pes21),
@@ -1230,7 +1234,13 @@ mod tests {
             crate::ExeCheck::Found,
             "the regained focus re-lists"
         );
-        fs::remove_dir_all(&dir).unwrap();
+        fs::remove_file(dir.path().join("PES2021.exe")).unwrap();
+        frame(&egui_ctx, &mut app, Vec::new(), true);
+        assert_eq!(
+            ctx.pes_exe_check_for(PesVersion::Pes21),
+            crate::ExeCheck::Found,
+            "a focused frame that regained nothing does not re-list"
+        );
     }
 
     /// A shell over `a`, `b`, `c` with `data_dir` under `dir`: the close scenarios need

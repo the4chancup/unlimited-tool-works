@@ -365,7 +365,7 @@ pub(crate) struct SaveView {
     /// the run in flight. `player_tier` runs again only when the key
     /// differs, not on every frame.
     medals: tactics::Medals,
-    /// The Tactics pitch's portraits, read from the selected game's
+    /// The Tactics pitch's portraits, read from the open save's game's
     /// `download/` CPKs off the UI thread (`select_portraits` points it at
     /// the PES folder each frame).
     portraits: portraits::Portraits,

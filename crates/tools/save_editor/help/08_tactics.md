@@ -28,7 +28,7 @@ game's does, and a gold, silver or bronze outline round the badge names his
 medal tier under the active ruleset, where he has one.
 
 The portraits come from the save's own game, out of the `download` folder
-inside that version's **PES folder** setting; a portrait that cannot be read
+inside the **PES folder** set for that version. A portrait that cannot be read
 from there shows as the game's blank one. When that folder is missing, or does
 not hold that version's game, a **Set PES path** button stands on the pitch's
 bottom right for picking the right folder.

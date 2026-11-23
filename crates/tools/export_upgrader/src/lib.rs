@@ -106,8 +106,8 @@ impl StudioTool for Tool {
         cli::run(matches, ctx)
     }
 
-    /// An upgrade runs against a save of the version the sidebar's selector
-    /// holds (the window's discovery finds that version's).
+    /// The window's save discovery looks for saves of the version the sidebar's
+    /// selector holds.
     fn targets_pes_version(&self) -> bool {
         true
     }

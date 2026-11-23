@@ -1,4 +1,4 @@
-//! The selected game's portraits for the Tactics pitch: an index of the portraits the CPKs
+//! The open save's game's portraits for the Tactics pitch: an index of the portraits the CPKs
 //! `download/DpFileList.bin` lists hold (a later CPK winning), built off the UI thread, and the
 //! textures of the players asked for, decoded off it. A portrait the index cannot serve gets
 //! the install's own `player-dummy.png` once it is read, the suite's bundled drawing before
@@ -662,7 +662,7 @@ mod tests {
         }
     }
 
-    // The pitch's portrait source: the CPKs the selected game's `download/DpFileList.bin`
+    // The pitch's portrait source: the CPKs `download/DpFileList.bin`
     // lists, a later one's portrait winning, as in game.
     #[test]
     fn a_later_listed_cpk_s_portrait_wins() {
@@ -819,10 +819,11 @@ mod tests {
         assert_eq!(shown, [None, Some(placeholder), Some(placeholder)]);
     }
 
-    // The placeholder is the selected game's (the version `select` was last given, the
-    // sidebar's), not the open save's: a source selected for PES 2017 with
-    // an unreadable folder, then with none set, draws PES 2017's placeholder for a PES 2021
-    // save's roster, never PES 2021's.
+    // The placeholder belongs to the version `select` was last given — in the
+    // window, the open save's game — not to the save the roster came from: a
+    // source selected for PES 2017 with an unreadable folder, then with none
+    // set, draws PES 2017's placeholder for a PES 2021 save's roster, never
+    // PES 2021's.
     #[test]
     fn the_placeholder_is_the_selected_games() {
         let ctx = egui::Context::default();
