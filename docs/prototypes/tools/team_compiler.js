@@ -1056,7 +1056,7 @@ function detailPanel() {
       }) : h("div", { class: "find weak" }, "No findings."),
       row(folderPath(r, at.what, cell) === null ? null
           : button("Open folder", () => openFolder(folderPath(r, at.what, cell)),
-            { title: r.archive ? "An archive export: its folder opens with the archive selected" : null }),
+            { title: r.archive ? "Opens the folder holding this archive" : null }),
         at.what === "label" && L.log.some(l => l.at && l.at.row === r.key)
           ? button(S.copied === r.key ? "Copied" : "Copy messages", () => copyMessages(r),
             { title: "Puts this export's log lines on the clipboard, to send to its member" }) : null,
@@ -1190,9 +1190,12 @@ function upgradeDpfl() {
       h("tr", {}, th("Current name"), th("Official name")),
       DPFL_RENAMES.map(([from, to]) => h("tr", {},
         h("td", { class: "mono" }, from + ".cpk"), h("td", { class: "mono" }, to + ".cpk")))), ""),
-    h("p", {}, `An empty placeholder is written for each of the ${DPFL_PLACEHOLDERS} official CPKs with no `
-      + "file, because the game loads nothing from download/ while a CPK its list names is missing."),
-    h("p", {}, `No longer loaded by the game (${DPFL_DROPPED.length}). Tick any you want deleted:`),
+    h("p", {}, (DPFL_PLACEHOLDERS === 1
+      ? "An empty placeholder is written for the official CPK with no file"
+      : `An empty placeholder is written for each of the ${DPFL_PLACEHOLDERS} official CPKs with no file`)
+      + ", because the game loads nothing from download/ while a CPK its list names is missing."),
+    h("p", {}, `No longer loaded by the game (${DPFL_DROPPED.length}). `
+      + (DPFL_DROPPED.length === 1 ? "Tick the box to have it deleted:" : "Tick any you want deleted:")),
     list(DPFL_DROPPED.map(f => h("label", { class: "cb", style: "margin-top:4px" },
       h("input", { type: "checkbox", onchange: e => { del[f.name] = e.target.checked; } }),
       `${f.name} (${f.size})`)))),

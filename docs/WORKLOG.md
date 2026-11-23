@@ -245,7 +245,14 @@ draft checked, for the maintainer to publish; running sidekicks and jobs are not
      `fd84b216`, G3 (the archive tooltip, the menu's 2 px gap, the shared widgets' tests)
      `4ee3aa5b`. SWE-2's round over the three, 2026-11-23 (rulings "S-g1 r1" to "S-g3 r1"):
      4 accepted, none of reach (a), which ends the loop; their fixes, slice G4, merged
-     `2ce16798`. Carbon round 3 over the same surface, at `2ce16798`: running
+     `2ce16798`. Carbon round 3 over the same surface, at `2ce16798` (rulings "C-grid r3"):
+     11 accepted, four of them a real input whose outcome changes (Esc under a dialog unpins
+     the hidden detail window, a double-click under the window opens nothing, Help opens
+     behind it, a refused check's line stays in the log), so a round 4 is owed. The lead's
+     draft text: the dialog's counts at one and the archive tooltip. Its fixes are two SWE-2
+     slices: G5a (`export_grid`'s detail window, the upward menu's test) and G5b
+     (`team_compiler`: the log, the dialog, the help links, the citations); then their SWE-2
+     loop, then Carbon round 4
    - [ ] The Compile button's mode list, Open output folder and Copy report (TC-GUI-11, and
      TC-GUI-33's clause that Compile for sideloading stays enabled while the DpFileList is
      outdated; DECISIONS 2026-11-23 "the Compile menu's Copy report copies the whole log").
@@ -3901,6 +3908,17 @@ pruned when their phase closes; they stay in git history. A question only the ma
 can answer is not an issue: it goes to `docs/maintainer/questions.html`, and an issue that waits on one
 points there.
 
+- open (2026-11-23) — `just corner-radius` reads only `CornerRadius::same(` and
+  `.corner_radius(`, so a painter's `rect_filled(rect, 2.0, …)` passed (`export_grid`'s detail
+  top box, Carbon "C-grid3-11"). Widening it to a numeric radius of `rect_filled` and
+  `rect_stroke` (0 allowed: a square rectangle) also flags the dock's grip,
+  `studio_core/src/widgets/dock.rs` `paint_grip`, painted with 1.0: that grip's radius wants a
+  look against its draft first, then the gate's change.
+- open (2026-11-23) — `just acceptance` counts a citation only on a line holding scenario IDs
+  alone, and says nothing of `// TC-GUI-10: prose` directly above `#[test]`: six such lines in
+  `team_compiler/src/view/tests/` went uncounted (Carbon "C-grid3-7"). Once slice G5b moves
+  their prose, the gate reports a comment block directly above `#[test]` whose line starts
+  with a scenario ID and carries more than IDs.
 - resolved (2026-11-23) — the checkpoint on `6c8efed2` failed in `studio_core`'s
   `no_source_file_passes_a_number_as_a_corner_radius` (ST-CORNER-01): 1c-iii-b's dialog
   (`team_compiler/src/view/upgrade_dpfl.rs`, `list_box`) writes `CornerRadius::same(2)`. The
