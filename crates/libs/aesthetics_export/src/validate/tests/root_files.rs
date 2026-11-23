@@ -433,6 +433,24 @@ fn referee_files_are_unexpected_on_a_team_export() {
 }
 
 #[test]
+fn a_refs_exports_root_texture_of_another_name_is_unexpected_and_no_marker() {
+    let report = report(
+        "refs Cup",
+        &[("players.txt", 10), ("marker.dds", 9)],
+        &["Players/Keeper"],
+        &[("players.txt", Ok(b"01 Keeper"))],
+    );
+    let unexpected: Vec<_> = report
+        .issues
+        .iter()
+        .filter(|issue| issue.code == "root_file_unexpected")
+        .map(|issue| &issue.scope)
+        .collect();
+    assert_eq!(unexpected, vec![&file_scope("marker.dds")]);
+    assert_eq!(report.validated.unwrap().root.referee_marker, None);
+}
+
+#[test]
 fn a_ref_marker_is_admitted_on_a_refs_export() {
     // The name matches case-insensitively.
     for name in ["ref_marker.dds", "Ref_Marker.dds"] {
