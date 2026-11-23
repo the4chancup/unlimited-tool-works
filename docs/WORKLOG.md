@@ -233,7 +233,8 @@ draft checked, for the maintainer to publish; running sidekicks and jobs are not
    - [ ] The Compile button's mode list, Open output folder and Copy report (TC-GUI-11, and
      TC-GUI-33's clause that Compile for sideloading stays enabled while the DpFileList is
      outdated; DECISIONS 2026-11-23 "the Compile menu's Copy report copies the whole log").
-     SWE-2, running in `sk_tbmenu`
+     Merged `997c2e09` (SWE-2, one rework for three untested paths; the lead shared a test
+     closure). Its SWE-2 review loop is due
    - Then the row actions, the ID cell's editing, the
      watcher and cache, Sizes and sorting, and the rest of the toolbar
      (`plans/team_compiler/gui.md` "Toolbar"): Launch PES, the writability badge and the
