@@ -2,6 +2,7 @@
 //! into a run, refused before any export is read when its invocation or configuration is
 //! invalid, and the run's outcome turned into the exit code scripts read.
 
+use std::collections::BTreeSet;
 use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
@@ -176,7 +177,8 @@ pub(crate) fn run(
         }
         TeamCompilerCommand::UpgradeDpfl { yes } => {
             let download = download_folder(&ctx.common())?;
-            verdict(upgrade::run(&download, yes, ctx))
+            // The command line never deletes: the window's dialog passes its ticked CPKs.
+            verdict(upgrade::run(&download, yes, &BTreeSet::new(), ctx))
         }
     }
 }

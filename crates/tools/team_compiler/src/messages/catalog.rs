@@ -914,31 +914,37 @@ pub(super) const CATALOG: &[(&str, CatalogSeverity, &str, &str)] = &[
     (
         "dpfilelist_cpk_renamed",
         CatalogSeverity::Info,
-        r#"`upgrade-dpfl` renamed a CPK of an older DLC to the official name of its kind."#,
+        r#"The DpFileList upgrade renamed a CPK of an older DLC to the official name of its kind."#,
         r#"Nothing to do. The game still loads it under the official list."#,
     ),
     (
         "dpfilelist_placeholder_written",
         CatalogSeverity::Info,
-        r#"`upgrade-dpfl` wrote the empty placeholder CPK for an official entry with no file in `download/`."#,
+        r#"The DpFileList upgrade wrote the empty placeholder CPK for an official entry with no file in `download/`."#,
         r#"Nothing to do."#,
     ),
     (
         "dpfilelist_replaced",
         CatalogSeverity::Info,
-        r#"`upgrade-dpfl` replaced the game's `DpFileList.bin` with the official one."#,
+        r#"The DpFileList upgrade replaced the game's `DpFileList.bin` with the official one."#,
         r#"The old list is kept beside it as `DpFileList.bin.bak`, replacing an older backup."#,
     ),
     (
         "dpfilelist_cpk_dropped",
         CatalogSeverity::Warning,
-        r#"`upgrade-dpfl` could not rename a CPK of the old list that the official one does not have (no official name of its kind is left, its name is not of the `4cc_NN_kind.cpk` shape, or the official name it would take is in use). The line names its size."#,
+        r#"The DpFileList upgrade could not rename a CPK of the old list that the official one does not have (no official name of its kind is left, its name is not of the `4cc_NN_kind.cpk` shape, or the official name it would take is in use). The line names its size."#,
         r#"The game no longer loads it, and the file is left for you to remove."#,
+    ),
+    (
+        "dpfilelist_cpk_deleted",
+        CatalogSeverity::Info,
+        r#"Upgrade DpFileList deleted a CPK the official list does not name, because you ticked its box in the dialog."#,
+        r#"Nothing to do: the game would no longer have loaded it."#,
     ),
     (
         "dpfilelist_up_to_date",
         CatalogSeverity::Info,
-        r#"`upgrade-dpfl` found that the game's `DpFileList.bin` already is the official one, and every CPK it names is in `download/`."#,
+        r#"The DpFileList upgrade found that the game's `DpFileList.bin` already is the official one, and every CPK it names is in `download/`."#,
         r#"Nothing is written."#,
     ),
     (

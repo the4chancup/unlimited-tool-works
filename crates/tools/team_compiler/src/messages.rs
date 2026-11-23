@@ -566,6 +566,9 @@ pub(crate) enum Code {
     /// `upgrade-dpfl`: an installed entry the official list lacks and that is not renamed: the
     /// game no longer loads it, and its file is left for the user to remove.
     DpfilelistCpkDropped,
+    /// A dropped CPK the window's Upgrade DpFileList dialog deleted because the member ticked
+    /// its box: the game would no longer load it. The command line never deletes.
+    DpfilelistCpkDeleted,
     /// `upgrade-dpfl`: the installed list is the official one byte for byte and every CPK it
     /// names is in `download/`, so nothing is written.
     DpfilelistUpToDate,
@@ -606,7 +609,7 @@ impl Code {
     /// Every code, for the catalog test: a variant missing here would make its first message
     /// panic in `severity`, so a new variant is added to this list too.
     #[cfg(test)]
-    const ALL: [Code; 164] = [
+    const ALL: [Code; 165] = [
         Code::ExportExtractFailed,
         Code::NoExportsFound,
         Code::ExportDisabled,
@@ -760,6 +763,7 @@ impl Code {
         Code::DpfilelistPlaceholderWritten,
         Code::DpfilelistReplaced,
         Code::DpfilelistCpkDropped,
+        Code::DpfilelistCpkDeleted,
         Code::DpfilelistUpToDate,
         Code::DpfilelistUpgradePlanned,
         Code::CpkNameUnlisted,
@@ -929,6 +933,7 @@ impl Code {
             Code::DpfilelistPlaceholderWritten => "dpfilelist_placeholder_written",
             Code::DpfilelistReplaced => "dpfilelist_replaced",
             Code::DpfilelistCpkDropped => "dpfilelist_cpk_dropped",
+            Code::DpfilelistCpkDeleted => "dpfilelist_cpk_deleted",
             Code::DpfilelistUpToDate => "dpfilelist_up_to_date",
             Code::DpfilelistUpgradePlanned => "dpfilelist_upgrade_planned",
             Code::CpkNameUnlisted => "cpk_name_unlisted",
