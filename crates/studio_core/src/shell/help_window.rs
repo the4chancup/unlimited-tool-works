@@ -441,9 +441,9 @@ fn paragraphs(body: &str) -> Vec<&str> {
 
 /// The draft's `helpSearch`: case-insensitive substring over every paragraph of every
 /// topic and every catalog row (code, severity, when, effect), in chapter order. A
-/// paragraph hit is labeled `<chapter> › <topic> › <its first matching line>`, the line
-/// shown without its Markdown marks, a row hit
-/// `<chapter> › Messages › <code>: <when, or the cell that matched>`.
+/// paragraph hit is labeled `<chapter> › <topic> › <its first matching line>`, a row hit
+/// `<chapter> › Messages › <code>: <when, or the cell that matched>` — the line or the
+/// cell shown without its Markdown marks.
 fn search(chapters: &[(&'static str, HelpSection)], query: &str) -> Vec<SearchResult> {
     let needle = query.trim().to_lowercase();
     let mut results = Vec::new();
@@ -495,7 +495,12 @@ fn search(chapters: &[(&'static str, HelpSection)], query: &str) -> Vec<SearchRe
                 topic: section.topics.len(),
                 paragraph: None,
                 code: Some(row.code),
-                label: format!("{} › Messages › {}: {}", section.title, row.code, text),
+                label: format!(
+                    "{} › Messages › {}: {}",
+                    section.title,
+                    row.code,
+                    plain_text(text)
+                ),
             });
         }
     }
@@ -605,7 +610,7 @@ fn messages(
                         ),
                     );
                     if scroll {
-                        code.scroll_to_me(Some(egui::Align::TOP));
+                        ui.scroll_to_rect(rect, Some(egui::Align::TOP));
                     }
                 }
                 ui.end_row();
@@ -814,6 +819,31 @@ mod tests {
             "Save editor › Running from a terminal › Writing a save"
         );
         assert_eq!(hits[0].paragraph, Some(1));
+    }
+
+    // A catalog row's label drops the same marks: the When cell is rendered
+    // Markdown like a topic's body, so `players.txt` and `**bold**` list plain.
+    #[test]
+    fn a_catalog_rows_hit_label_drops_the_cells_markdown_marks() {
+        let chapters = vec![(
+            "c",
+            HelpSection {
+                title: "Compiler",
+                topics: Vec::new(),
+                messages: vec![CatalogRow {
+                    code: "c_code",
+                    severity: "Info",
+                    when: "a `players.txt` that is **missing**",
+                    effect: "plain",
+                }],
+            },
+        )];
+        let hits = search(&chapters, "missing");
+        assert_eq!(hits.len(), 1);
+        assert_eq!(
+            hits[0].label,
+            "Compiler › Messages › c_code: a players.txt that is missing"
+        );
     }
 
     /// The first stub's chapter: two topics, the first holding an in-doc link to the
@@ -2208,11 +2238,15 @@ mod tests {
     }
 
     // The draft's `hl.scrollIntoView()` stands the hit at the pane's top: a jump's
-    // anchored row lands there, the scroll's own margin under it.
+    // anchored row lands there, the scroll's own margin under it. The row's
+    // When cell wraps over several lines, so the code cell stands in the row's
+    // middle and the mark's top is the row's.
     #[test]
     fn a_row_jump_scrolls_the_row_to_the_topic_panes_top() {
         let dir = TestDir::new("studio_core_help_rowtop");
-        let (b, calls_b) = stub_help("b", "Beta", None, rows_section());
+        let mut section = rows_section();
+        section.messages[30].when = Box::leak("when it happens ".repeat(12).into_boxed_str());
+        let (b, calls_b) = stub_help("b", "Beta", None, section);
         let Shell { mut app, ctx, .. } = shell_with(
             test_settings(dir.path()),
             vec![b],
@@ -2241,16 +2275,36 @@ mod tests {
         let out = idle(&egui_ctx, &mut app, 25);
         assert_eq!(app.help_window.highlight(), (None, Some("row_30")));
 
-        let row = label_bounds(&out.nodes, "row_30").expect("the anchored row's code node");
+        let code = label_bounds(&out.nodes, "row_30").expect("the anchored row's code node");
+        // The row's mark, the hit green over its four cells: its top is the
+        // row's own, the code cell's standing in the row's middle.
+        let green = crate::theme::palette(&egui_ctx.global_style().visuals).search_hit;
+        let mark = out
+            .shapes
+            .iter()
+            .find_map(|clipped| match &clipped.shape {
+                egui::Shape::Rect(shape)
+                    if shape.fill == green && shape.rect.contains(centre(code)) =>
+                {
+                    Some(shape.rect)
+                }
+                _ => None,
+            })
+            .expect("the hit green marks the row");
+        assert!(
+            code.bounds().unwrap().y0 > f64::from(mark.min.y) + 1.0,
+            "premise: a tall row's code cell stands under the row's top ({:?} vs {mark:?})",
+            code.bounds().unwrap()
+        );
         // The pane's visible top edge, read off the scrolled clip of the row's
         // own text shape; egui lands the scrolled-to rect's top `item_spacing`
         // under it.
         let clip_top = pane_clip_top(&out.shapes, "row_30");
         let expected = f64::from(egui_ctx.global_style().spacing.item_spacing.y);
-        let gap = row.bounds().unwrap().y0 - clip_top;
+        let gap = f64::from(mark.min.y) - clip_top;
         assert!(
             (gap - expected).abs() <= 0.5,
-            "the row's top stands at the pane's top: {gap} (the scroll's \
+            "the mark's top stands at the pane's top: {gap} (the scroll's \
              {expected} expected)"
         );
     }
