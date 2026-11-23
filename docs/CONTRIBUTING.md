@@ -281,12 +281,16 @@ the toolchain, `Cargo.lock`, `.cargo/` and `resources/` reach them all.
 
 How often each runs. A commit that touches only `docs/` or the root's `*.md` runs `just
 doc-pointers` and `just acceptance`; one that touches a draft (`docs/prototypes/`) also gets
-the drafts bundler's test. `scripts/commit.py` runs the bundler's test itself, and the
-pointer gate on any commit changing a `.md` or `.html` file, because a draft is often pushed for the maintainer
+the drafts bundler's test. `scripts/commit.py` runs the bundler's test itself, the
+pointer gate on any commit changing a `.md` or `.html` file, and the comment gate on any
+changing a `.rs`, `.toml` or `.py` file, because a draft is often pushed for the maintainer
 before a checkpoint, and a broken pointer otherwise fails the next checkpoint long after. A code commit reruns, in the real workspace, the changed
 packages' own tests (`cargo test -p <each>`), `cargo clippy -p <each> --all-targets -- -D
 warnings` and `cargo fmt --all --check`: the sidekick's pasted runs are a claim, and these are
-the checks a slice's own change fails first. A commit that adds or changes a test of printed
+the checks a slice's own change fails first. A commit that changes a help topic or a catalog
+row also runs `just draft-help` and commits `docs/prototypes/help.js` with it: the drafts
+read that file, and a test in `studio`, which a tool crate's own tests never run, fails until
+it matches the build. A commit that adds or changes a test of printed
 text (a log file's lines, a command's output) also runs that test on Linux before it merges
 (`just remote cargo test -p <crate> <filter>`): the checkpoint's gates run on Windows only, and
 printed text differs between the two (the program is `UTW` on Windows and `utw` on Linux, which
