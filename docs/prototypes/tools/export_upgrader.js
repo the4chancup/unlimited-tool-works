@@ -314,10 +314,13 @@ function emptyClick(e) {
   S.pin = null;
   render();
 }
-// Esc closes the window, pinned or not; a text box with the keyboard (Help's
-// search) takes it first, and the window stays.
+// Esc closes the window, pinned or not; an open menu or dialog, or a text box
+// with the keyboard (Help's search), takes it first, and the window stays.
 function onKey(e) {
-  if (e.key !== "Escape" || !(S.pin || S.hover)) return;
+  if (e.key !== "Escape") return;
+  if (document.querySelector(".menu")) { closeMenus(); render(); return; }
+  if (document.querySelector("#overlay .modal-bg:not(.floating)")) { closeWindow(); render(); return; }
+  if (!(S.pin || S.hover)) return;
   if (e.target.closest("input, textarea")) { e.target.blur(); return; }
   clearTimeout(hoverTimer);
   S.pin = S.hover = null;

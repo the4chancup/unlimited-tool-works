@@ -23,8 +23,8 @@ traced again at a phase's converge.
 
 One line per piece of work in flight; the items below hold the detail.
 
-- The Compiler's grid (item 6): Carbon's round 4's fixes are merged and SWE-2's round over
-  them is ruled and fixed; Carbon's round 5 is running.
+- The Compiler's grid (item 6): Carbon's round 5 is ruled; its fixes are slice G9, then a
+  SWE-2 round over them and Carbon's round 6.
 - `0.0.3-vgl27.2`, the next VGL build: built and checked, waiting for the maintainer to hand
   it over.
 - `0.0.2-pes14.3`, PES 2014 Build 3: tagged and checked, waiting for the maintainer to publish.
@@ -312,7 +312,15 @@ draft checked, for the maintainer to publish; running sidekicks and jobs are not
        changing a real input's outcome, so its loop ends; the lead fixed them (Esc in Help's
        search in TC-GUI-24 and both drafts `2744244b`, a test of the faulted DpFileList words
        `28f3a3bd`)
-     - [ ] **C5** [after S-g8] round 5: running
+     - [x] **C5** [after S-g8] round 5, at `9f80a7a8` (rulings "C-grid r5"): 8 of 10
+       accepted, one a real input whose outcome changes (a CPK name the lists lack reads
+       "The run stops" before any run). The lead's fixes: Esc to an open menu or dialog
+       first in both drafts, TC-GUI-11 and TC-GUI-31 widened to what their tests assert
+     - [ ] **G9** [after C5] the rest: `cpk_name_unlisted`'s text, the detail body's
+       tie-break and the legend's title click tested, a dead portrait fallback, two doc
+       comments (SWE-2)
+     - [ ] **S-g9** [after G9] SWE-2's round over G9
+     - [ ] **C6** [after S-g9] round 6
    - [x] **tbmenu** The Compile button's mode list, Open output folder and Copy report (TC-GUI-11, and
      TC-GUI-33's clause that Compile for sideloading stays enabled while the DpFileList is
      outdated; DECISIONS 2026-11-23 "the Compile menu's Copy report copies the whole log").

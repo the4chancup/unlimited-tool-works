@@ -110,9 +110,11 @@ would drift apart.
     export's logo in the bottom-right one, each the size of a portraits tile; until the
     preview is built, the box holds those two alone;
   - a kit: its main texture (`kit.dds`), fitted inside the box;
-  - the portraits: every portrait as a 6 × 4 grid in the players' order, the export's logo
-    in the last tile, at the bottom right, so 23 portraits and the logo fill the 24 tiles; a
-    player with no portrait leaves his tile empty;
+  - the portraits: every portrait the compile packs, as a 6 × 4 grid in slot order (01 to
+    23), the export's logo in the last tile, at the bottom right, so 23 portraits and the
+    logo fill the 24 tiles. A slot's tile shows its player's own portrait, else the slot's
+    file in `Portraits/`, which also fills a slot no player folder backs (the cell's count
+    still counts players alone); a slot with neither leaves its tile empty;
   - a team label: the export's logo (its root `logo*` texture), fitted inside the box.
   A picture fitted inside the box is shrunk to fit, never enlarged: a small logo stands at
   its own size, as it would blur if enlarged. A tile's picture (a portrait, or the logo in a
@@ -518,7 +520,10 @@ A single primary action:
   the sideload mode exists for (compile → alt-tab to PES → adjust → compile again) is one click
   per iteration after the first. The mode resets to normal on the next launch (output mode is
   deliberately not a persisted setting), and a `--gui` autorun always uses its own `--mode`, so
-  `quick_compile.bat` cannot be hijacked by a leftover session mode. The modes get no separate
+  `quick_compile.bat` cannot be hijacked by a leftover session mode. A sideload pick made on
+  PES 2017 or later stays picked after a switch to PES 15 or 16, its main part disabled with
+  the tooltip "No runtime serves sideloaded files on PES 2015 and 2016", and enabled again on
+  a switch back. The modes get no separate
   buttons, because the three are the same compile with a different sink, so they belong to the
   same control.
 
@@ -563,7 +568,8 @@ A single primary action:
   see `spec/team_compiler/pipeline.md` "Post-processing") with the reason and remedy in its
   tooltip, and its dropdown always contains **Open output folder** and **Copy report**.
   Open output folder creates the folder first when no run has made it yet, since a file
-  manager asked for a missing folder opens another one instead. Copy report puts every line
+  manager asked for a missing folder opens another one instead; a folder it cannot create
+  is a line in the log. Copy report puts every line
   of the log on the clipboard as the console prints them, the check's findings and then the
   run's, whatever the log's filter is set to: a member asking for help in the cup's thread needs the
   findings too, and before any run they are all the log holds. The Export upgrader's Upgrade

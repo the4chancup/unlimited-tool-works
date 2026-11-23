@@ -264,7 +264,11 @@ TC-GUI-11  GIVEN the toolbar at rest
            THEN the list offers Compile, Compile for sideloading (disabled on PES 15 and 16),
                 Test output, Open output folder and Copy report; picking a mode relabels the main part and
                 the next main-part click runs that mode; the mode is normal again at the next
-                launch
+                launch; GIVEN Compile for sideloading picked on PES 2017 WHEN the version
+                switches to PES 2016 THEN the pick stays, its main part disabled with its
+                tooltip, and a switch back enables it; WHEN Open output folder cannot create
+                the folder THEN the log gains a line saying so; WHEN Copy report is clicked
+                with the log filtered THEN the clipboard holds every line of the log
 TC-GUI-12  GIVEN a run in flight
            WHEN frames are drawn
            THEN each cell being processed keeps its check color and label, a light bar
@@ -315,8 +319,12 @@ TC-GUI-31  GIVEN an export with a logo, a kit whose main texture is kit.dds, and
                 then the logo; then player 05's portrait in its bottom-left corner and the
                 logo in its bottom-right one; and the text under the box starts at the same
                 height each time; GIVEN a logo smaller than the box THEN it stands at its own
-                size; GIVEN an export the check dropped whole THEN its boxes show its logo, kit
-                texture and portraits from its listing; GIVEN the export as a .zip THEN the
+                size; GIVEN a Portraits/ file for a slot no player folder backs THEN the
+                portraits box shows it in that slot's tile, and the cell's count leaves it
+                out; GIVEN player 05's folder portrait and a Portraits/05 file THEN his tile
+                shows the folder's; GIVEN an export the check dropped whole THEN its boxes
+                show its logo, kit texture and portraits from its listing, the Portraits/
+                file of a slot no folder backs among them; GIVEN the export as a .zip THEN the
                 boxes show the same pictures, read from the zip; GIVEN it as a .7z THEN every
                 box is empty
 TC-GUI-32  GIVEN a referee export holding ref_marker.dds and a logo.png, one holding
