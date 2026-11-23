@@ -69,10 +69,13 @@ otherwise goes back as a fix.</p>
   hand. Once you are happy with it, every commit that changes the worklog makes it again.</p>
   <p>Now added, as you asked: each step shows its ID (such as <code>GRID/carbon/C5</code>), Next
   says what a step waits on, and a Timeline section draws the steps as a vertical graph, one
-  lane per piece of work running in parallel, a line from each step to what it waits on, the
-  open steps above the "today" line and the last week's done ones below it. Hover over a step
-  for its whole text. The page also refuses a worklog whose waits name no step, so a
-  dependency is written right once and not traced again.</p>
+  lane per piece of work running in parallel and a line from each step to what it waits on.
+  Hover over a step for its whole text. The page also refuses a worklog whose waits name no
+  step, so a dependency is written right once and not traced again.</p>
+  <p>Changed since your first look: the line now reads "now", and the steps being worked on
+  sit on it, as a band across the timeline, with the open steps above and the last week's done
+  ones below. The lanes stand twice as far apart, so a line from one lane to another is easier
+  to follow.</p>
   <p>One gap is left: Later shows 0.0.1 and 0.0.2 as todo, as the worklog's phase table does.</p>
   <div class="options">
     <label class="opt"><input type="radio" value="keep"><b>Keep it as it is</b></label>

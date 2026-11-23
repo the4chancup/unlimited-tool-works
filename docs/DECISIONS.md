@@ -20089,3 +20089,20 @@ the why and the history, and the list gives the values a new view, draft or page
 glance; repeating the reasons would make two homes that drift.
 Plan: `spec/core/design.md` written; `plans/core/gui.md` "Other UI components" unchanged but
 for a stale light-theme edge example (the code draws grey 195 on the resting 225).
+
+## 2026-11-24 — worklog, roadmap — the timeline's "now" line holds the steps in progress (maintainer)
+Decision: the roadmap's timeline labels its line "now", and the steps being worked on sit on
+it, drawn as a band across the timeline, with the open steps above and the last week's done
+steps below. A step in progress is the worklog's `[~]` checkbox, which the worklog's legend
+already defined; the lanes stand 32 points apart, not 16.
+Why: "today" split the steps by date, so the work running at that moment sat among the open
+steps with nothing to tell it apart. The checkbox is the one place the worklog says a step is
+under way, so the timeline cannot show a step running that the worklog calls open. At 16
+points the edges between neighbouring lanes ran together.
+Plan: none; the worklog's header says what `[~]` does on the timeline.
+
+## 2026-11-24 — vgl27 — no further VGL build for now (maintainer)
+Decision: `0.0.3-vgl27.2` was handed over, and the VGL organizer compiles VGL27 with Red, so
+no further VGL build is planned for now; the `vgl27` branch stays as it is.
+Why: the organizer's choice, which the maintainer reported.
+Plan: none; the worklog's step vgl27.2 is closed with it.

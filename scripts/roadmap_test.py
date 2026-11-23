@@ -303,6 +303,34 @@ class Timeline(unittest.TestCase):
         self.assertIn('<tspan font-weight="600">TOP/c</tspan>', svg)
         self.assertIn('<title>TOP/c open bullet: tail. — waits on b, MODE</title>', svg)
 
+    NOW = wl("""\
+1. [ ] **A** item.
+   - [ ] **a1** [after a2] open.
+   - [~] **a2** [after a3] in progress.
+   - [x] **a3** done `abc1234`.
+2. [~] **B** in progress too.
+""")
+
+    def test_steps_in_progress_sit_on_the_now_band_between_open_and_done(self) -> None:
+        svg = roadmap.timeline(parse(self.NOW), {"A/a3": TODAY}, TODAY)
+        cy = {p: y for p, (_, y) in circles(svg).items()}
+        band = re.search(r'<rect x="0" y="(\d+)" width="\d+" height="(\d+)" rx="2"', svg)
+        top, bottom = int(band[1]), int(band[1]) + int(band[2])
+        self.assertLess(cy["A/a1"], top)
+        for path in ("A/a2", "B"):
+            self.assertTrue(top < cy[path] < bottom, (path, cy[path], top, bottom))
+        self.assertGreater(cy["A/a3"], bottom)
+        self.assertIn('dominant-baseline="central">now</text>', svg)
+        self.assertNotIn("today", svg)
+
+    def test_without_steps_in_progress_a_line_labelled_now_parts_open_from_done(self) -> None:
+        svg = roadmap.timeline(parse(WORKLOG), self.DATES, TODAY)
+        self.assertNotIn("<rect", svg)
+        line = re.search(r'<line x1="0" y1="(\d+)" x2="\d+" y2="\d+" stroke="#555"/>', svg)
+        cy = {p: y for p, (_, y) in circles(svg).items()}
+        self.assertTrue(cy["NEXT"] < int(line[1]) < cy["TOP/b"])
+        self.assertIn('dominant-baseline="central">now</text>', svg)
+
 
 class Lanes(unittest.TestCase):
     LANES = wl("""\
@@ -319,7 +347,7 @@ class Lanes(unittest.TestCase):
         svg = roadmap.timeline(parse(self.LANES), {}, TODAY)
         xs = re.findall(r'<line x1="(\d+)" y1="\d+" x2="\d+" y2="\d+" '
                         r'stroke="#[0-9A-F]+" stroke-width="2"/>', svg)
-        self.assertEqual([int(x) for x in xs], [10, 26, 10])
+        self.assertEqual([int(x) for x in xs], [10, 42, 10])
 
     def test_an_open_rows_circle_is_hollow_and_a_done_rows_filled(self) -> None:
         svg = roadmap.timeline(parse(WORKLOG), Timeline.DATES, TODAY)
@@ -349,7 +377,7 @@ class Edges(unittest.TestCase):
     def test_a_wait_on_an_unshown_parent_ends_at_its_topmost_descendant(self) -> None:
         svg = roadmap.timeline(parse(self.EDGES), {}, TODAY)
         self.assertIn('d="M 10 78 C 10 45, 10 45, 10 12"', svg)   # b1 on A, ends at a2
-        self.assertIn('d="M 26 34 C 26 45, 10 45, 10 56"', svg)   # g1 on a1
+        self.assertIn('d="M 42 34 C 42 45, 10 45, 10 56"', svg)   # g1 on a1
 
 
 class Main(unittest.TestCase):

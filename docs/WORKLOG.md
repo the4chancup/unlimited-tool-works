@@ -13,7 +13,8 @@ looked up among the step's siblings first, then among its parent's, and so on up
 top-level items; a path such as `GRID/1b` names a step inside another, its first name looked
 up the same way. The maintainer's roadmap
 (`scripts/roadmap.py`) draws its timeline from both, so a dependency written here is not
-traced again at a phase's converge.
+traced again at a phase's converge. A step being worked on is marked `[~]`, and the
+timeline draws it on its "now" line.
 
 ---
 
@@ -25,14 +26,12 @@ One line per piece of work in flight; the items below hold the detail.
 
 - The Compiler's grid (item 6): Carbon's round 5's fixes and SWE-2's round over them are in;
   Carbon's round 6 is running.
-- `0.0.3-vgl27.2`, the next VGL build: built and checked, waiting for the maintainer to hand
-  it over.
-- `0.0.2-pes14.3`, PES 2014 Build 3: tagged and checked, waiting for the maintainer to publish.
 - The checkpoint: `fb053617` passed it and is pushed; the next one waits for the VPS, which
   the `call` backfill holds.
 - The `call` mutant kind's backfill: running on the VPS, crate by crate.
-- The roadmap page: its generator is merged, and its sample (`maintainer/roadmap.html`) waits
-  for the maintainer's look before `commit.py` regenerates it on every worklog commit.
+- The roadmap page: the maintainer's first changes are in (the timeline's "now" line holds the
+  steps in progress, its lanes further apart); the sample (`maintainer/roadmap.html`) waits for
+  their look again before `commit.py` regenerates it on every worklog commit.
 - The periodic review of the dev cycle: waiting for the maintainer's start.
 
 ### Where the work stands
@@ -65,7 +64,7 @@ draft looked at again first; the Export upgrader's view may follow in a later bu
 other items run beside it. **Ahead of item 6:** the `pes14` branch's step 12, a whole PES
 2014 team exported and imported as Team TOML, which Build 3 carries (the maintainer,
 2026-11-22): `0.0.2-pes14.3`, tagged 2026-11-23 on `48ab28bc`, its Release run passed and its
-draft checked, for the maintainer to publish; running sidekicks and jobs are not stopped for it. **After the detour**, in this order:
+draft checked, handed over by the maintainer 2026-11-23. **After the detour**, in this order:
 1. [x] **NATION** The Nation list: done (merges `467790ab`, `1b9c5f27`; SWE-2 round S1n). It opens on the
    held nation, a typed name picks as an ID does, Escape puts the old nation back, and one
    opening is one undo entry; the General info review's fixes (rulings "geninfo A1") with it.
@@ -153,7 +152,7 @@ draft checked, for the maintainer to publish; running sidekicks and jobs are not
      the `vgl27` worktree's `target/dist/` and checked in its built window (both tools
      clickable, the Compiler's grid opening, the upgrader on its placeholder line), handed over
      by the maintainer as it is
-   - [ ] **vgl27.2** [after 1b, 1c] The next VGL build, `0.0.3-vgl27.2`, once the Compiler's slices 1b and 1c have landed
+   - [x] **vgl27.2** [after 1b, 1c] The next VGL build, `0.0.3-vgl27.2`, once the Compiler's slices 1b and 1c have landed
      (the maintainer, 2026-11-22), 1c-iii's Upgrade DpFileList button included (2026-11-23):
      `vgl27` merges main, raises the version, is packed. Built 2026-11-23: `vgl27` merged the
      gated `88040bcc` (`76e46277`, its legacy-ID tests moved onto main's test helpers), raised
@@ -161,7 +160,9 @@ draft checked, for the maintainer to publish; running sidekicks and jobs are not
      its built window (the version on the sidebar, the four tools, the Compiler's grid and
      split Compile button, the upgrader's placeholder line). Ready for the maintainer to hand
      over: the button ships working on PES 2019 as elsewhere (DECISIONS 2026-11-23
-     "Upgrade DpFileList ships on PES 2019 as it is")
+     "Upgrade DpFileList ships on PES 2019 as it is"). Handed over by the maintainer
+     2026-11-24; the organizer compiles VGL27 with Red, so no further VGL build is planned
+     for now (DECISIONS 2026-11-24 "no further VGL build for now")
    - [x] **legacy** VGL27's legacy mode off main, onto `vgl27` alone (2026-11-22, DECISIONS 2026-11-22):
      main's merge `8cc425a3` (Opus; the lead dropped three tests of the old names and the
      draft's `IDs` cell), TC-LEG-01 to 05 and EU-SET-15 to 17 withdrawn, and a CHANGELOG
@@ -324,7 +325,7 @@ draft checked, for the maintainer to publish; running sidekicks and jobs are not
      - [x] **S-g9** [after G9] SWE-2's round over G9 (rulings "S-g9 r1"): 1 accepted, a real
        input (two `refs` exports read "is in the run" before any run); the lead reworded five
        catalog rows the check logs before a run (`4e4c999b`)
-     - [ ] **C6** [after S-g9] round 6, at `4e4c999b`: running
+     - [~] **C6** [after S-g9] round 6, at `4e4c999b`: running
    - [x] **tbmenu** The Compile button's mode list, Open output folder and Copy report (TC-GUI-11, and
      TC-GUI-33's clause that Compile for sideloading stays enabled while the DpFileList is
      outdated; DECISIONS 2026-11-23 "the Compile menu's Copy report copies the whole log").
@@ -624,7 +625,7 @@ and no phase closes with one outstanding.
     (merged `863813d8`);
   - [x] **RX** the extra kinds run on the VPS without cargo-mutants (SWE-2,
     `.tmp/call_backfill/brief_remote_extra.md`; merged `490fd68b`, one rework);
-  - [ ] **backfill** [after RX] `.tmp/call_backfill/run.py` over every other crate, started
+  - [~] **backfill** [after RX] `.tmp/call_backfill/run.py` over every other crate, started
     2026-11-23 once the checkpoint left the VPS (a first local start was stopped in its third
     crate, `pipeline`, after two with no survivors, `pes_strings` and `vtree`): 13 crates
     run, then `studio` stopped it, its baseline failing the drafts' help test on Linux (fixed

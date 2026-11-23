@@ -32,6 +32,8 @@ HEAD = re.compile(r"^\[(?P<mark>[ x~!])\] \*\*(?P<id>[^*]+)\*\*"
 HASH = re.compile(r"`([0-9a-fA-F]{7,12})`")
 DATE = re.compile(r"\d{4}-\d{2}-\d{2}")
 OPEN_MARKS = " ~!"
+# The timeline's room between two lanes, wide enough for an edge between them to be followed.
+LANE_GAP = 32
 # One per top-level step, in the order they are listed: the Okabe-Ito palette, every one readable on
 # the page's `#1e1e1e`.
 PALETTE = ["#E69F00", "#56B4E9", "#009E73", "#F0E442",
@@ -393,15 +395,18 @@ def mono(text: str) -> str:
 
 def timeline(roadmap: Roadmap, dates: dict[str, str], today: str) -> str:
     """The steps as a vertical `git log --graph`: the open steps on top, each above
-    every open step it waits on, then a line labelled `today`, then the last week's
-    done steps, newest first; a lane per track and an edge to what each step waits on.
-    `dates` maps a step's path to its commit's ISO time or a bare `YYYY-MM-DD`, which
-    sorts before the times of its day."""
+    every open step it waits on, then the steps in progress (`[~]`) on a band labelled
+    `now` (a bare line when there are none), then the last week's done steps, newest
+    first; a lane per track and an edge to what each step waits on. `dates` maps a step's
+    path to its commit's ISO time or a bare `YYYY-MM-DD`, which sorts before the times of
+    its day."""
     top = roadmap.steps
-    open_rows = order_open([s for s in walk(top)
-                            if s.mark in OPEN_MARKS
-                            and not any(c.mark in OPEN_MARKS for c in s.children)],
-                           top)
+    leaves = order_open([s for s in walk(top)
+                         if s.mark in OPEN_MARKS
+                         and not any(c.mark in OPEN_MARKS for c in s.children)],
+                        top)
+    open_rows = [s for s in leaves if s.mark != "~"]
+    now_rows = [s for s in leaves if s.mark == "~"]
     end = datetime.date.fromisoformat(today)
     since = end - datetime.timedelta(days=6)
     done, undated = [], 0
@@ -415,10 +420,12 @@ def timeline(roadmap: Roadmap, dates: dict[str, str], today: str) -> str:
             done.append((day, s))
     done.sort(key=lambda d: (d[0], d[1].line), reverse=True)
     done_rows = [s for _, s in done]
-    rows = open_rows + done_rows
+    rows = open_rows + now_rows + done_rows
 
-    slot = {id(s): i for i, s in enumerate(open_rows)}
-    slot.update({id(s): len(open_rows) + 1 + j for j, s in enumerate(done_rows)})
+    # With steps in progress, their rows are the band; with none, an empty row is the line.
+    first_done = len(open_rows) + (len(now_rows) or 1)
+    slot = {id(s): i for i, s in enumerate(open_rows + now_rows)}
+    slot.update({id(s): first_done + j for j, s in enumerate(done_rows)})
 
     def cy(s: Step) -> int:
         return 12 + 22 * slot[id(s)]
@@ -426,14 +433,28 @@ def timeline(roadmap: Roadmap, dates: dict[str, str], today: str) -> str:
     tracks, member, ncols = lanes(rows, slot, top)
 
     def col_x(col: int) -> int:
-        return 10 + 16 * col
+        return 10 + LANE_GAP * col
 
-    text_x = col_x(ncols - 1) + 14 if ncols else 24
-    sep_y = 12 + 22 * len(open_rows)
-    height = (cy(done_rows[-1]) if done_rows else sep_y) + 12
+    text_x = col_x(ncols - 1) + 18 if ncols else 24
+    width = text_x + 800
+    band_top = 1 + 22 * len(open_rows)
+    band_bottom = 1 + 22 * first_done
+    height = (cy(done_rows[-1]) + 12 if done_rows else band_bottom)
 
-    parts = [f'<svg viewBox="0 0 940 {height}" width="100%" '
+    parts = [f'<svg viewBox="0 0 {width} {height}" width="100%" '
              'xmlns="http://www.w3.org/2000/svg">']
+    if now_rows:
+        parts.append(f'<rect x="0" y="{band_top}" width="{width}" '
+                     f'height="{band_bottom - band_top}" rx="2" fill="#2b2b2b" '
+                     'stroke="#555"/>')
+        label_y = (band_top + band_bottom) / 2
+    else:
+        sep_y = (band_top + band_bottom) / 2
+        parts.append(f'<line x1="0" y1="{sep_y:g}" x2="{width}" y2="{sep_y:g}" '
+                     'stroke="#555"/>')
+        label_y = sep_y - 7
+    parts.append(f'<text x="{width - 8}" y="{label_y:g}" fill="#999" font-size="13" '
+                 'text-anchor="end" dominant-baseline="central">now</text>')
     for lo, hi, colour, col in tracks:
         parts.append(f'<line x1="{col_x(col)}" y1="{12 + 22 * lo}" '
                      f'x2="{col_x(col)}" y2="{12 + 22 * hi}" '
@@ -456,9 +477,6 @@ def timeline(roadmap: Roadmap, dates: dict[str, str], today: str) -> str:
             parts.append(f'<path d="M {x1} {y1} C {x1} {ym:g}, {x2} {ym:g}, {x2} {y2}" '
                          f'stroke="{tracks[member[id(s)]][2]}" stroke-width="1.5" '
                          'opacity="0.6" fill="none"/>')
-    parts.append(f'<line x1="0" y1="{sep_y}" x2="940" y2="{sep_y}" stroke="#555"/>')
-    parts.append(f'<text x="{text_x}" y="{sep_y - 7}" fill="#999" '
-                 'font-size="13">today</text>')
     for s in rows:
         ti = member[id(s)]
         colour, x, y = tracks[ti][2], col_x(tracks[ti][3]), cy(s)
