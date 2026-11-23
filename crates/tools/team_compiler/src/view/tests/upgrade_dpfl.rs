@@ -417,10 +417,10 @@ fn the_dialog_s_cancel_writes_nothing() {
     assert!(labeled(&nodes, "Upgrade DpFileList"));
 }
 
-// TC-GUI-33
 // The dialog's Upgrade acts in the install its preview was made for, not the one the
 // settings name by the click's frame (they may have changed while the dialog was open):
 // the preview's folder is what the outcome carries.
+// TC-GUI-33
 #[test]
 fn the_upgrade_acts_in_the_install_its_dialog_previewed() {
     let temp = sandbox("view_dpfl_switched");
