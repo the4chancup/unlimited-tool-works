@@ -156,9 +156,10 @@ would drift apart.
   paragraph, is the window's and the help's, which the code links to.
 
   A line acts for its cell (the team label for an export's own message). Hovering it opens
-  the cell's window as hovering the cell does, under the same rules. A click outlines the cell,
-  scrolls it into view and pins its window; a second click on the line unpins the window and
-  keeps the outline.
+  the cell's window as hovering the cell does, under the same rules. A click on a warning or
+  error line outlines the cell, scrolls it into view and pins its window; a second click on
+  the line unpins the window and keeps the outline. An info line takes no click: it names
+  nothing to fix, so the outline stays where the member put it.
 - One row per team bounds the row count (~50), so no virtualization is needed; direct egui rendering
   suffices.
 
