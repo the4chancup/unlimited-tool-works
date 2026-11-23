@@ -122,6 +122,23 @@ impl Tool {
         self.live_check.start(ctx);
     }
 
+    /// What a change to the settings the grid's check started with asks of the window:
+    /// an open dialog's preview is stale, so it closes, and the check runs again.
+    /// Called in `tick` and again at the start of `view`, since the shell may change
+    /// the settings between the two (the sidebar's switch to a game that started
+    /// running): the dialog and buttons drawn would describe the old install.
+    fn recheck_settings(&mut self, ctx: &ToolContext) {
+        // `common` and `tool_settings` are small in-memory copies under the settings lock
+        // (no file read), so comparing them each frame is cheap.
+        let settings = check_settings(ctx);
+        if let Some(checked) = &self.checked_settings
+            && *checked != settings
+        {
+            self.detail.dpfl_dialog = None;
+            self.start_check(ctx);
+        }
+    }
+
     /// The Compile menu's Open output folder: `create_output_folder`'s folder opened in
     /// the file manager; a folder that cannot be resolved or created is a line in the
     /// log, as a refused run's is.
@@ -205,6 +222,9 @@ impl StudioTool for Tool {
 
     /// The window; the first time it is shown, it starts the grid's check.
     fn view(&mut self, ui: &mut egui::Ui, ctx: &ToolContext) {
+        if !self.run_log.is_running() {
+            self.recheck_settings(ctx);
+        }
         if !self.live_check.has_started() && !self.run_log.is_running() {
             self.start_check(ctx);
         }
@@ -244,17 +264,7 @@ impl StudioTool for Tool {
         if compiling {
             self.start_check(ctx);
         }
-        // `common` and `tool_settings` are small in-memory copies under the settings lock
-        // (no file read), so comparing them each frame is cheap.
-        let settings = check_settings(ctx);
-        if let Some(checked) = &self.checked_settings
-            && *checked != settings
-        {
-            // What the grid and the toolbar's buttons describe changed: an open dialog's
-            // preview is stale, so it closes, and the check runs again.
-            self.detail.dpfl_dialog = None;
-            self.start_check(ctx);
-        }
+        self.recheck_settings(ctx);
         match self.live_check.poll(ctx) {
             Polled::Nothing => {}
             Polled::Rows => {

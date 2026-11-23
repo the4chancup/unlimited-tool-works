@@ -442,8 +442,27 @@ fn the_log_starts_collapsed_when_open_it_would_hide_rows() {
         // The check has not returned yet: the first frames have no rows.
         draw_frames(&mut window, &mut panel, &mut detail, &[], 2);
         assert!(panel.is_expanded(), "premise: open before the rows");
-        draw_frames(&mut window, &mut panel, &mut detail, &rows, 2);
+        // The first frame with rows is drawn with the log still open, the collapse
+        // decided after the log and the toolbar were drawn, so that frame asks for the
+        // next one. The grid's scroll bar appearing asks on the same frame, so the
+        // collapse's own ask is told apart by its cause.
+        draw_frames(&mut window, &mut panel, &mut detail, &rows, 1);
+        let asked = if open { Duration::MAX } else { Duration::ZERO };
+        assert_eq!(window.repaint_delay, asked, "{count} rows, the first frame");
+        // The frame after, whose own draw makes the first one's causes readable.
+        draw_frames(&mut window, &mut panel, &mut detail, &rows, 1);
         assert_eq!(panel.is_expanded(), open, "{count} rows");
+        let causes: Vec<String> = window
+            .ctx
+            .repaint_causes()
+            .iter()
+            .map(|cause| cause.file.replace('\\', "/"))
+            .collect();
+        assert_eq!(
+            causes.iter().any(|file| file.ends_with("view/mod.rs")),
+            !open,
+            "{count} rows, the first frame's ask is the collapse's: {causes:?}"
+        );
     }
 }
 

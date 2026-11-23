@@ -45,10 +45,10 @@ pub(crate) struct RunLog {
     /// The check's lines, then the run's.
     lines: Vec<LogLine>,
     /// How many of `lines` are the check's: the first `cells.len()`, one per cell line, then
-    /// one per finding about the game's `DpFileList.bin`.
+    /// one per run-scoped finding ([`crate::check::live::LiveCheck::list_findings`]).
     check_len: usize,
     /// The cell each of the check's lines acts for, one per cell line: the cell lines are the
-    /// first `cells.len()` of `lines`, so a `DpFileList.bin` line's `cell_of` is `None`.
+    /// first `cells.len()` of `lines`, so a run-scoped line's `cell_of` is `None`.
     cells: Vec<CellKey>,
     formatter: EventLines,
     run: Option<Run>,
@@ -192,8 +192,8 @@ impl RunLog {
             .push(LogLine::plain(Severity::Error, format!("error: {error}")));
     }
 
-    /// Replaces the check's lines with `rows`' and its `list` of findings about the game's
-    /// `DpFileList.bin`, a new check's, ahead of the run's: the rows' lines each act for their
+    /// Replaces the check's lines with `rows`' and its `list` of run-scoped findings, a
+    /// new check's, ahead of the run's: the rows' lines each act for their
     /// cell, then one line per list finding, as the console prints a run-scoped finding,
     /// acting for none. `dpfl` is set from `list`.
     pub(crate) fn set_check(&mut self, rows: &[Row], list: &[Message]) {
@@ -240,7 +240,7 @@ impl RunLog {
     }
 
     /// The grid cell the line at `line` in `lines` acts for: a check's cell line has one,
-    /// a check's `DpFileList.bin` list line and a run's line none.
+    /// a check's run-scoped list line and a run's line none.
     pub(crate) fn cell_of(&self, line: usize) -> Option<&CellKey> {
         self.cells.get(line)
     }
