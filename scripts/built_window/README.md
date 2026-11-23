@@ -23,6 +23,12 @@ touches the user's settings). The window's title is "Unlimited Tool Works". In t
 window, Open at (88, 17) then the PES 2021 entry at (120, 168) opens the maintainer's real
 save: a check only reads it and never presses Save.
 
+A shipped build greys out the tools still listed in `CLI_ONLY` (`crates/studio/src/main.rs`):
+the Compiler and the Export upgrader until their views land. A look at one of their windows
+runs on a release build made in the `look_grid` worktree (beside the repository, under
+`4cc-studio-temp`), checked out at the commit to look at, with the tool taken off that list
+and the edit never committed. A build in a sidekick's worktree cannot open them.
+
 ## The rules `gui.py` keeps
 
 Input goes only into the app's own window: every point is in client coordinates and asserted
