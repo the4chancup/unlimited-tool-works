@@ -13,15 +13,15 @@ is in `AGENTS.md` ("Working documents").
 
 One line per piece of work in flight; the items below hold the detail.
 
-- The Compiler's grid (item 6): Carbon's round 4 is reviewing it; its rulings, and a fix slice
-  if they need one, come next.
+- The Compiler's grid (item 6): Carbon's round 4 is ruled; its fixes are in three SWE-2
+  slices, then a SWE-2 round over them and Carbon's round 5.
 - `0.0.3-vgl27.2`, the next VGL build: built and checked, waiting for the maintainer to hand
   it over.
 - `0.0.2-pes14.3`, PES 2014 Build 3: tagged and checked, waiting for the maintainer to publish.
 - The checkpoint over the grid's latest slices: running; main is pushed once it passes and the
   maintainer says yes.
 - The `call` mutant kind's backfill: slice RX, which runs the extra kinds alone on the VPS, is
-  in rework; the backfill starts there once RX merges.
+  merged; the backfill starts there once the checkpoint's mutation run leaves the VPS.
 - The roadmap page: this block is its first step; `scripts/roadmap.py` comes next, shown to
   the maintainer as a sample first.
 - The periodic review of the dev cycle: waiting for the maintainer's start.
@@ -275,8 +275,16 @@ draft checked, for the maintainer to publish; running sidekicks and jobs are not
      "S-g5b r1"): 6 accepted, one of reach (a) (Esc with the Compile mode menu open closes
      the menu and unpins the window), which ends the loop. The lead's fixes: the gate's ID
      lists `53dd5466`, TC-GUI-24 and a doc `9aebb45f`; the rest is slice G6 (SWE-2),
-     merged `53d501f4`. Due: Carbon round 4 over the grid (its first run, 2026-11-23, ended
-     with no report: it runs again)
+     merged `53d501f4`. Carbon round 4 over the same surface, at `9bec7d4b` (rulings
+     "C-grid r4"): 9 accepted, four of them a real input whose outcome changes (a portrait
+     packed with no player folder left out of the portraits box, Esc in Help's search box
+     unpinning the window, Help left behind the window by a second code link, the
+     DpFileList help texts naming only the terminal command), so a round 5 is owed. The
+     lead's fixes: the draft's sideload button `172444d2`, the log line's click in the plan
+     and TC-GUI-15 `81b7a48c`. The rest is three SWE-2 slices: G8a (`export_grid`'s Esc,
+     Help raised again), G8c (the portraits box, the help texts, a dead branch), G8d (the
+     legend, a tooltip and an error line, tested). Then a SWE-2 round over them, then
+     Carbon's round 5.
    - [ ] The Compile button's mode list, Open output folder and Copy report (TC-GUI-11, and
      TC-GUI-33's clause that Compile for sideloading stays enabled while the DpFileList is
      outdated; DECISIONS 2026-11-23 "the Compile menu's Copy report copies the whole log").
@@ -551,8 +559,7 @@ and no phase closes with one outstanding.
 - [ ] The `call` mutant kind's backfill (DECISIONS 2026-11-23 "a `call` extra mutant kind"):
   about 3,900 mutants over every crate, smallest first, on the VPS alone as whole-crate runs
   are. It needs the extra kinds to run there without cargo-mutants: slice RX (SWE-2,
-  `.tmp/call_backfill/brief_remote_extra.md`; in rework, its fetch folded into the whole
-  run's), then `.tmp/call_backfill/run.py`, already repointed at its recipe. A first local start was stopped in its third crate, `pipeline`, after two with no
+  `.tmp/call_backfill/brief_remote_extra.md`; merged, one rework), then `.tmp/call_backfill/run.py`, already repointed at its recipe. A first local start was stopped in its third crate, `pipeline`, after two with no
   survivors (`pes_strings`, `vtree`). Each crate's survivors (`.tmp/call_backfill/<crate>.missed.txt`)
   are triaged as CONTRIBUTING "Mutation runs" says, the missing tests going into SWE-2
   slices crate by crate. Its first crate, `export_grid` (the trial), has 8 survivors, all
