@@ -9,6 +9,7 @@ mod toolbar;
 mod upgrade_dpfl;
 
 use std::collections::BTreeSet;
+use std::path::PathBuf;
 use std::time::Duration;
 
 use export_grid::{
@@ -35,8 +36,9 @@ pub(crate) enum Intent {
     /// at once when the preview has nothing to do ([`crate::upgrade::Preview::up_to_date`]),
     /// with nothing deleted.
     UpgradeDpfl,
-    /// The dialog's Upgrade: the upgrade applies, the ticked dropped CPKs deleted.
-    Upgrade(BTreeSet<String>),
+    /// The dialog's Upgrade: the upgrade applies in `download`, the folder the dialog's
+    /// preview was made for, the ticked dropped CPKs deleted.
+    Upgrade(PathBuf, BTreeSet<String>),
     /// Open output folder: the folder a compile writes into, opened in the file manager.
     OpenOutputFolder,
 }
@@ -210,9 +212,9 @@ pub(crate) fn show(
         match open.show(ui) {
             Outcome::Open => {}
             Outcome::Closed => detail.dpfl_dialog = None,
-            Outcome::Upgrade(delete) => {
+            Outcome::Upgrade(download, delete) => {
                 detail.dpfl_dialog = None;
-                intent = Some(Intent::Upgrade(delete));
+                intent = Some(Intent::Upgrade(download, delete));
             }
         }
     }

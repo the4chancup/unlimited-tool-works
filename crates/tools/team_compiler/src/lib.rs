@@ -41,7 +41,8 @@ use std::fs;
 use std::path::PathBuf;
 
 use studio_core::{
-    CliError, HelpSection, HelpTopic, LogPanel, RunningPes, StudioTool, ToolContext,
+    CliError, CommonSettings, HelpSection, HelpTopic, LogPanel, RunningPes, StudioTool, Theme,
+    ToolContext,
 };
 
 use crate::check::live::{LiveCheck, Polled};
@@ -58,6 +59,10 @@ pub struct Tool {
     live_check: LiveCheck,
     detail: GridDetail,
     log_panel: LogPanel,
+    /// The settings the grid's check last started with, the common ones and the tool's
+    /// table: the rows, the toolbar's buttons and an open dialog all describe what a
+    /// check found under them, so a change to either checks the grid again.
+    checked_settings: Option<(CommonSettings, toml::Table)>,
     /// The running-PES probe the savefile step asks: the real process list in
     /// production, a stub reporting no game under `cargo test` (`running_probe`),
     /// the in-process command-line tests' probe through `with_running_probe`.
@@ -79,6 +84,7 @@ impl Tool {
             live_check: LiveCheck::default(),
             detail: GridDetail::new(),
             log_panel: LogPanel::new(TOOL_ID),
+            checked_settings: None,
             running,
         }
     }
@@ -87,19 +93,33 @@ impl Tool {
     /// command finds it), read once now, opens the dialog on it, unless the list is already
     /// the official one with every CPK it names there (`up_to_date`, the member having fixed
     /// it by hand or through the command line), when the upgrade runs at once with nothing
-    /// deleted. A plan that cannot be made, `download/` missing or a file it cannot read, is a
-    /// line in the log as a refused run's is, and opens nothing.
+    /// deleted. The folder the plan was made for goes with the dialog and the run, since the
+    /// settings may have changed while the dialog was open. A plan that cannot be made,
+    /// `download/` missing or a file it cannot read, is a line in the log as a refused
+    /// run's is, and opens nothing.
     fn open_upgrade(&mut self, ctx: &ToolContext) {
         let preview = cli::download_folder(&ctx.common())
             .map_err(|error| error.to_string())
             .and_then(|download| {
-                upgrade::preview(&download, ctx).map_err(|error| format!("{error:#}"))
+                upgrade::preview(&download, ctx)
+                    .map(|preview| (download, preview))
+                    .map_err(|error| format!("{error:#}"))
             });
         match preview {
-            Ok(preview) if preview.up_to_date => self.run_log.start_upgrade(BTreeSet::new(), ctx),
-            Ok(preview) => self.detail.dpfl_dialog = Some(DpflDialog::new(preview)),
+            Ok((download, preview)) if preview.up_to_date => {
+                self.run_log.start_upgrade(download, BTreeSet::new(), ctx)
+            }
+            Ok((download, preview)) => {
+                self.detail.dpfl_dialog = Some(DpflDialog::new(preview, download))
+            }
             Err(error) => self.run_log.append_refusal(&error),
         }
+    }
+
+    /// Starts the grid's check and keeps the settings it started with (`checked_settings`).
+    fn start_check(&mut self, ctx: &ToolContext) {
+        self.checked_settings = Some(check_settings(ctx));
+        self.live_check.start(ctx);
     }
 
     /// The Compile menu's Open output folder: `create_output_folder`'s folder opened in
@@ -125,6 +145,29 @@ pub(crate) fn create_output_folder(ctx: &ToolContext) -> Result<PathBuf, String>
         )
     })?;
     Ok(folder)
+}
+
+/// The settings the grid's check is compared against (`checked_settings`): `ctx`'s common
+/// ones with the fields only the window and the updater read reset to fixed values
+/// (`theme`, `invert_number_scrolling`, `check_for_updates`, `skipped_version`,
+/// `last_tool`, `last_run_version`, `window_main`), and the tool's table whole.
+/// `last_tool` matters because the shell writes it at every tool switch, which the member
+/// does freely while the window is up: compared, each switch would re-check every export.
+/// Struct-update syntax over `ctx.common()`, so a field added later is compared unless
+/// someone resets it here: a needless re-check is the safe way to be wrong, a missed one
+/// leaves the grid stale.
+fn check_settings(ctx: &ToolContext) -> (CommonSettings, toml::Table) {
+    let common = CommonSettings {
+        theme: Theme::Dark,
+        invert_number_scrolling: false,
+        check_for_updates: false,
+        skipped_version: None,
+        last_tool: None,
+        last_run_version: None,
+        window_main: None,
+        ..ctx.common()
+    };
+    (common, ctx.tool_settings(TOOL_ID))
 }
 
 impl Default for Tool {
@@ -163,7 +206,7 @@ impl StudioTool for Tool {
     /// The window; the first time it is shown, it starts the grid's check.
     fn view(&mut self, ui: &mut egui::Ui, ctx: &ToolContext) {
         if !self.live_check.has_started() && !self.run_log.is_running() {
-            self.live_check.start(ctx);
+            self.start_check(ctx);
         }
         let rows = self.live_check.rows();
         let checking = self.live_check.is_running();
@@ -180,7 +223,9 @@ impl StudioTool for Tool {
             Some(Intent::Compile(mode)) => self.run_log.start_compile(ctx, mode, self.running),
             Some(Intent::OpenOutputFolder) => self.open_output_folder(ctx),
             Some(Intent::UpgradeDpfl) => self.open_upgrade(ctx),
-            Some(Intent::Upgrade(delete)) => self.run_log.start_upgrade(delete, ctx),
+            Some(Intent::Upgrade(download, delete)) => {
+                self.run_log.start_upgrade(download, delete, ctx)
+            }
             None => {}
         }
     }
@@ -197,7 +242,18 @@ impl StudioTool for Tool {
             return;
         }
         if compiling {
-            self.live_check.start(ctx);
+            self.start_check(ctx);
+        }
+        // `common` and `tool_settings` are small in-memory copies under the settings lock
+        // (no file read), so comparing them each frame is cheap.
+        let settings = check_settings(ctx);
+        if let Some(checked) = &self.checked_settings
+            && *checked != settings
+        {
+            // What the grid and the toolbar's buttons describe changed: an open dialog's
+            // preview is stale, so it closes, and the check runs again.
+            self.detail.dpfl_dialog = None;
+            self.start_check(ctx);
         }
         match self.live_check.poll(ctx) {
             Polled::Nothing => {}

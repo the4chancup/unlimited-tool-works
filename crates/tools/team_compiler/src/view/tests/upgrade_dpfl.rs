@@ -417,6 +417,60 @@ fn the_dialog_s_cancel_writes_nothing() {
     assert!(labeled(&nodes, "Upgrade DpFileList"));
 }
 
+// TC-GUI-33
+#[test]
+fn the_upgrade_acts_in_the_install_its_dialog_previewed() {
+    // Two installs, the same old list on each; the PES folder is switched to the second
+    // in the frame of the Upgrade click.
+    let (temp, other, ctx, settings) =
+        two_installs("view_dpfl_switched", &pes17_list(), &pes17_list());
+    let root = temp.path();
+    let mut tool = Tool::new();
+    let mut window = Headless::new();
+    let nodes = open_dialog(&mut tool, &ctx, &mut window);
+    let download = root.join("PES/download");
+    let other_download = other.path().join("PES/download");
+    let before = snapshot(&other_download);
+    let expected = upgrade_leaves(&download, &BTreeSet::new(), &ctx);
+
+    // The folder the preview was made for is the one the upgrade acts in, not the one
+    // the settings name by the click's frame.
+    let at = centre(button(&nodes, "Upgrade"));
+    window.frame(press(at), |ui| tool.view(ui, &ctx));
+    window.frame(release(at), |ui| {
+        set_pes_folder(&settings, &other.path().join("PES"));
+        tool.view(ui, &ctx)
+    });
+    poll_until_done(|| {
+        tool.tick(&ctx);
+        tool.run_log.is_running()
+    });
+    assert_eq!(snapshot(&download), expected, "the previewed install's");
+    assert_eq!(
+        snapshot(&other_download),
+        before,
+        "the switched-to install's, unchanged"
+    );
+}
+
+// A preview describes the install it was made for: a settings change while the dialog is
+// open closes it rather than letting Upgrade act on a stale plan.
+#[test]
+fn a_settings_change_closes_the_dialog() {
+    let (_temp, other, ctx, settings) =
+        two_installs("view_dpfl_close_switch", &pes17_list(), &pes17_list());
+    let mut tool = Tool::new();
+    let mut window = Headless::new();
+    open_dialog(&mut tool, &ctx, &mut window);
+
+    set_pes_folder(&settings, &other.path().join("PES"));
+    tool.tick(&ctx);
+    assert!(
+        tool.detail.dpfl_dialog.is_none(),
+        "the settings change closed the dialog"
+    );
+}
+
 #[test]
 fn the_button_is_hidden_while_a_run_is_in_flight() {
     let ctx = settings_only_context();
@@ -654,7 +708,7 @@ fn a_preview_that_cannot_be_made_is_a_log_line_and_no_dialog() {
 /// A `DpflDialog` over `preview`, drawn for three frames (a fresh modal's first is a
 /// sizing pass): the last frame's nodes.
 fn dialog_nodes(preview: Preview) -> Vec<accesskit::Node> {
-    let mut dialog = DpflDialog::new(preview);
+    let mut dialog = DpflDialog::new(preview, PathBuf::from("download"));
     let mut window = Headless::new();
     let mut nodes = Vec::new();
     for _ in 0..3 {
@@ -725,9 +779,60 @@ fn the_first_paragraph_shows_only_when_the_list_is_replaced() {
     );
     assert!(shows_text(
         &nodes,
-        "An empty placeholder is written for each of the 1 official CPKs with no file, \
-         because the game loads nothing from download/ while a CPK its list names is missing."
+        "An empty placeholder is written for the official CPK with no file, because the \
+         game loads nothing from download/ while a CPK its list names is missing."
     ));
+}
+
+// With no dropped entry's file in `download/` there is no box to tick, so the sentence
+// over the list asks for none.
+#[test]
+fn the_dropped_sentence_asks_for_a_tick_only_over_boxes() {
+    let preview = Preview {
+        renames: Vec::new(),
+        placeholders: 0,
+        dropped: vec![
+            ("4cc_60_midcup.cpk".to_owned(), None),
+            ("4cc_90_test.cpk".to_owned(), None),
+        ],
+        up_to_date: false,
+        replaces_list: true,
+    };
+    let nodes = dialog_nodes(preview);
+    assert!(shows_text(&nodes, "No longer loaded by the game (2):"));
+    assert!(
+        !nodes
+            .iter()
+            .any(|node| { node.value().is_some_and(|text| text.contains("Tick")) }),
+        "no tick asked over no box"
+    );
+}
+
+// One placeholder is "the official CPK with no file"; two or more are counted.
+#[test]
+fn the_placeholders_sentence_is_singular_for_one() {
+    for (count, expected) in [
+        (
+            1,
+            "An empty placeholder is written for the official CPK with no file, because \
+             the game loads nothing from download/ while a CPK its list names is missing.",
+        ),
+        (
+            2,
+            "An empty placeholder is written for each of the 2 official CPKs with no \
+             file, because the game loads nothing from download/ while a CPK its list \
+             names is missing.",
+        ),
+    ] {
+        let nodes = dialog_nodes(Preview {
+            renames: Vec::new(),
+            placeholders: count,
+            dropped: Vec::new(),
+            up_to_date: false,
+            replaces_list: true,
+        });
+        assert!(shows_text(&nodes, expected), "{count}");
+    }
 }
 
 // With the first paragraph left out, the first part shown takes its place: no sentence gap
@@ -781,7 +886,7 @@ fn the_dialogs_content_is_460_wide_and_its_frame_adds_the_modals_margins() {
         "premise: the old list's preview shows every part"
     );
 
-    let mut dialog = DpflDialog::new(preview);
+    let mut dialog = DpflDialog::new(preview, root.join("PES/download"));
     let mut window = Headless::new();
     for _ in 0..3 {
         window.frame(Vec::new(), |ui| dialog.show(ui));
@@ -815,7 +920,7 @@ fn the_dropped_list_names_draw_in_the_monospace_font() {
         up_to_date: false,
         replaces_list: true,
     };
-    let mut dialog = DpflDialog::new(preview);
+    let mut dialog = DpflDialog::new(preview, PathBuf::from("download"));
     let mut window = Headless::new();
     for _ in 0..3 {
         window.frame(Vec::new(), |ui| dialog.show(ui));

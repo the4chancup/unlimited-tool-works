@@ -1,7 +1,127 @@
 //! The grid check's lifecycle: when the window starts one, what holds its rows
-//! back, and what a refused check leaves behind.
+//! back, what a refused check leaves behind, and a settings change's re-check.
 
 use super::*;
+
+/// `root`'s PES folder switched to `other`'s through the shared settings, as the sidebar's
+/// pick writes it, then the check `tick` starts for the change run to its end.
+fn switch_install(
+    settings: &Arc<Mutex<Settings>>,
+    other: &Path,
+    tool: &mut Tool,
+    ctx: &ToolContext,
+) {
+    set_pes_folder(settings, &other.join("PES"));
+    tool.tick(ctx);
+    assert!(
+        tool.live_check.is_running(),
+        "the settings change started a check"
+    );
+    finish_check(tool, ctx);
+}
+
+// The outdated list's button and disabled Compile describe the install the check ran on:
+// a switch to an install whose list is the official one checks the grid again, and they
+// are gone once that check ends.
+#[test]
+fn switching_to_an_official_install_checks_the_grid_again() {
+    let templates = crate::templates::Templates::embedded();
+    let official = templates.official_list_file();
+    let (_temp, other, ctx, settings) =
+        two_installs("view_check_to_official", &pes17_list(), official);
+    let mut tool = Tool::new();
+    let mut window = Headless::new();
+    let nodes = first_check(&mut tool, &ctx, &mut window);
+    assert!(labeled(&nodes, "Upgrade DpFileList"), "premise: the button");
+    assert!(
+        button(&nodes, "Compile").is_disabled(),
+        "premise: Compile disabled"
+    );
+
+    switch_install(&settings, other.path(), &mut tool, &ctx);
+
+    let (_, nodes) = window.frame(Vec::new(), |ui| tool.view(ui, &ctx));
+    assert!(!labeled(&nodes, "Upgrade DpFileList"), "the button is gone");
+    assert!(
+        !button(&nodes, "Compile").is_disabled(),
+        "Compile is enabled"
+    );
+}
+
+// The other way: a switch to an install whose list is the outdated one checks the grid
+// again, and the button is up with Compile disabled once that check ends.
+#[test]
+fn switching_to_an_outdated_install_checks_the_grid_again() {
+    let templates = crate::templates::Templates::embedded();
+    let official = templates.official_list_file();
+    let (_temp, other, ctx, settings) =
+        two_installs("view_check_to_outdated", official, &pes17_list());
+    let mut tool = Tool::new();
+    let mut window = Headless::new();
+    let nodes = first_check(&mut tool, &ctx, &mut window);
+    assert!(
+        !labeled(&nodes, "Upgrade DpFileList") && !button(&nodes, "Compile").is_disabled(),
+        "premise: no button, Compile enabled"
+    );
+
+    switch_install(&settings, other.path(), &mut tool, &ctx);
+
+    let (_, nodes) = window.frame(Vec::new(), |ui| tool.view(ui, &ctx));
+    assert!(labeled(&nodes, "Upgrade DpFileList"), "the button is back");
+    assert!(
+        button(&nodes, "Compile").is_disabled(),
+        "Compile is disabled"
+    );
+}
+
+// The shell writes `last_tool` at every tool switch, and the window's own settings
+// (the theme, the update check, the window's place) change without the install: none of
+// them checks the grid again.
+#[test]
+fn a_tool_switch_or_a_theme_change_starts_no_check() {
+    let temp = sandbox("view_check_tool_switch");
+    let (ctx, settings) = tool_context_with_settings(temp.path(), PesVersion::Pes17);
+    let mut tool = Tool::new();
+    let mut window = Headless::new();
+    first_check(&mut tool, &ctx, &mut window);
+
+    settings.lock().unwrap().common.last_tool = Some("save-editor".to_owned());
+    tool.tick(&ctx);
+    assert!(
+        !tool.live_check.is_running(),
+        "a tool switch starts no check"
+    );
+    settings.lock().unwrap().common.theme = studio_core::Theme::Light;
+    tool.tick(&ctx);
+    assert!(
+        !tool.live_check.is_running(),
+        "a theme change starts no check"
+    );
+}
+
+// The exports folder is a setting the check reads: pointing it elsewhere checks the
+// grid again (the new folder's exports, or its refusal in the log).
+#[test]
+fn an_exports_folder_change_checks_the_grid_again() {
+    let temp = sandbox("view_check_exports_folder");
+    let (ctx, settings) = tool_context_with_settings(temp.path(), PesVersion::Pes17);
+    let mut tool = Tool::new();
+    let mut window = Headless::new();
+    first_check(&mut tool, &ctx, &mut window);
+
+    settings.lock().unwrap().common.exports_folder_path = PathBuf::from("elsewhere");
+    tool.tick(&ctx);
+    // The check it starts is refused at once (no such folder) and `tick` polls it in the
+    // same call, so it may be over already: the settings a started check keeps are read.
+    assert_eq!(
+        tool.checked_settings
+            .as_ref()
+            .map(|(common, _)| common.exports_folder_path.clone()),
+        Some(PathBuf::from("elsewhere")),
+        "an exports folder change started a check"
+    );
+    finish_check(&mut tool, &ctx);
+}
 
 #[test]
 fn a_check_s_rows_reach_the_grid_only_once_the_compile_has_ended() {
