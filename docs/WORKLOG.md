@@ -169,7 +169,11 @@ draft checked, for the maintainer to publish; running sidekicks and jobs are not
      - 1c-iii: the Upgrade DpFileList button beside Compile and its dialog (TC-GUI-33;
        `plans/team_compiler/gui.md` "Toolbar", `plans/team_compiler/pipeline.md` "DpFileList
        upgrade"; the draft's `compiler/main?dpfl=outdated`), over the CLI's `upgrade-dpfl`,
-       with the new `dpfilelist_cpk_deleted`. On PES 2019 it waits for item 8
+       with the new `dpfilelist_cpk_deleted`. On PES 2019 it waits for item 8. SWE-2, in two
+       parts (Opus only when truly needed until the weekly reset of 2026-11-26):
+       - 1c-iii-a: `upgrade.rs`'s preview as data, the deletions the member ticked, the new
+         code and the catalog's texts; no window code, so it can start before 1c-ii merges
+       - 1c-iii-b: the button and the dialog over them, after 1c-ii and 1c-iii-a
    - Then the kit cells' swatch (TC-GUI-10), the row actions, the ID cell's editing, the
      watcher and cache, Sizes and sorting, and the rest of the toolbar
      (`plans/team_compiler/gui.md` "Toolbar"; the build has a plain Compile button): the
