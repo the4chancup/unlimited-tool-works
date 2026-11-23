@@ -1,7 +1,8 @@
 //! Finds the mutants `cargo-mutants` never makes: `if` guards dropped by
 //! replacing the condition with `false`, elements removed from the literal lists a
 //! `matches!` or a separator method decides by, `.trim()`-style calls stripped,
-//! in-place ordering statements deleted and `true`/`false` arguments flipped.
+//! in-place ordering statements deleted, any other method-call statement deleted
+//! (`call`, on trial) and `true`/`false` arguments flipped.
 //!
 //! A mutant is a text patch, so positions come from `proc_macro2::Span`'s line and column
 //! (columns count chars, not bytes) and are converted to byte offsets against the source.
@@ -447,13 +448,19 @@ impl<'ast> Visit<'ast> for Lister<'_> {
             && let Expr::MethodCall(call) = expr
         {
             let method = call.method.to_string();
-            if ORDER_METHODS.contains(&method.as_str()) {
-                let start = self.start_of(expr.span());
-                let end = self.end_of(semicolon.spans[0]);
-                let line = self.line_of(start);
-                let change = format!("the {method}() statement is deleted");
-                self.push("order", start, end, "", &change, line);
-            }
+            // Any other call made for its effect alone (a repaint asked, a message sent):
+            // cargo-mutants never removes a call, so a test that never observes the effect
+            // passes either way.
+            let kind = if ORDER_METHODS.contains(&method.as_str()) {
+                "order"
+            } else {
+                "call"
+            };
+            let start = self.start_of(expr.span());
+            let end = self.end_of(semicolon.spans[0]);
+            let line = self.line_of(start);
+            let change = format!("the {method}() statement is deleted");
+            self.push(kind, start, end, "", &change, line);
         }
         visit::visit_stmt(self, stmt);
     }
@@ -794,6 +801,24 @@ mod tests {
     }
 
     #[test]
+    fn deletes_any_other_method_call_statement_as_a_call_mutant() {
+        let text = "fn f(ctx: &Ctx, v: &mut Vec<u32>) {\n    ctx.request_repaint();\n    v.sort();\n    let _id = ctx.id();\n}\n";
+        let mutants = scan(text);
+        let kinds: Vec<&str> = mutants.iter().map(|m| m.kind).collect();
+        assert_eq!(
+            kinds,
+            ["call", "order"],
+            "one mutant a statement, none for the let"
+        );
+        assert_eq!(
+            &text[mutants[0].start..mutants[0].end],
+            "ctx.request_repaint();"
+        );
+        assert_eq!(mutants[0].replacement, "");
+        assert_patches_parse(text, &mutants);
+    }
+
+    #[test]
     fn an_order_method_as_an_expression_gives_nothing() {
         let text = "fn f(v: &mut Vec<u32>) {\n    let _x = v.sort();\n}\n";
         assert!(scan(text).is_empty());
@@ -840,9 +865,12 @@ mod tests {
         // Two calls of one method on different receivers get different
         // descriptions, so an exclusion names the flag it means.
         let text = "fn f() {\n    textures.insert(true, &below);\n    common_folders.insert(true, stem);\n}\n";
-        let mutants = scan(text);
+        // Each statement also gives a `call` mutant, not this test's subject.
+        let mutants: Vec<Mutant> = scan(text)
+            .into_iter()
+            .filter(|m| m.kind == "bool")
+            .collect();
         assert_eq!(mutants.len(), 2);
-        assert!(mutants.iter().all(|m| m.kind == "bool"));
         assert_eq!(
             mutants[0].description,
             "in f: textures.insert arg 1: true becomes false | removed: true"

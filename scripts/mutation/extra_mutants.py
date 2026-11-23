@@ -3,7 +3,8 @@
 `crates/dev/extra_mutants` lists the kinds cargo-mutants never makes: `guard` (an `if`
 condition replaced with `false`), `literal` (an element removed from a literal list),
 `normalize` (a `.trim()`-style call removed), `order` (a `sort()`-style statement
-deleted) and `bool` (a `true`/`false` flipped). This script applies each listed patch
+deleted), `call` (any other method-call statement deleted; on trial, run by hand)
+and `bool` (a `true`/`false` flipped). This script applies each listed patch
 in a copy of the working tree and lets
 `cargo test -p <crate>` decide whether the suite catches it. An `[[exclude]]`
 entry of `.cargo/extra_mutants.toml` (path, kind and whole description, never a
@@ -39,7 +40,7 @@ ROOT = Path(__file__).resolve().parents[2]
 OUT_DIR = ROOT / "extra_mutants.out"
 LISTER = ["cargo", "run", "-q", "--release", "-p", "extra_mutants", "--", "list"]
 # Every kind the lister can emit; `--kind` restricts a run or listing to a subset.
-ALL_KINDS = ("bool", "guard", "literal", "normalize", "order")
+ALL_KINDS = ("bool", "call", "guard", "literal", "normalize", "order")
 # Each mutant's `cargo test` may take up to this multiple of the unmutated baseline.
 TIMEOUT_FACTOR = 3
 # Above a test's 120 s bound on a wait (`.cargo/mutants.toml`'s `minimum_test_timeout` says why).
@@ -372,6 +373,9 @@ def run_crate(
 
 
 def main(argv: list[str]) -> int:
+    # A description quotes the source, whose characters a Windows console's code page lacks
+    # (a `▸` in a UI string stopped a listing).
+    sys.stdout.reconfigure(encoding="utf-8")
     crate, kinds, list_only = parse_args(argv)
     if list_only:
         directory = crate_dir(crate, ROOT)
