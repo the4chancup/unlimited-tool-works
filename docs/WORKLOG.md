@@ -230,9 +230,9 @@ draft checked, for the maintainer to publish; running sidekicks and jobs are not
        run updating the cells (TC-GUI-12)
    - [ ] One paid round (tier 2, Carbon) over slices 1a to 1c and the swatch, whose SWE-2
      loops have ended. Round 1 ran on `5baf8835`: 17 accepted, 10 of them a real input
-     whose outcome changes. Its fixes are three SWE-2 slices: A (the check's rows) running, B (the
-     detail window and title row) merged `76bcad35`, then C (the settings re-check and the Upgrade
-     dialog). Carbon round 2 is due after them
+     whose outcome changes. Its fixes are three SWE-2 slices: A (the check's rows) merged
+     `0fc94490`, B (the detail window and title row) merged `76bcad35`, and C (the settings re-check and the Upgrade
+     dialog) running. Carbon round 2 is due after them
    - [ ] The Compile button's mode list, Open output folder and Copy report (TC-GUI-11, and
      TC-GUI-33's clause that Compile for sideloading stays enabled while the DpFileList is
      outdated; DECISIONS 2026-11-23 "the Compile menu's Copy report copies the whole log").
