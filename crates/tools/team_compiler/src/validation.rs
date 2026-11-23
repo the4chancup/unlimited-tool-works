@@ -16,6 +16,7 @@ use aesthetics_export::{
     read_colors_txt,
 };
 use anyhow::Context;
+use kit_config::KitSlot;
 use pes_savefile::portrait::portrait_path;
 use pes_savefile::settings_toml::PlayerSettings;
 use pes_version::{Engine, PesVersion};
@@ -27,7 +28,7 @@ use vtree::ScopePath;
 
 use crate::bins::installed::InstalledPaths;
 use crate::bins::shared_ids::SharedIds;
-use crate::bins::{Rgb, TEAM_COLORS};
+use crate::bins::{KIT_COLORS, Rgb, TEAM_COLORS};
 use crate::cli::RunInputs;
 use crate::deep;
 use crate::messages::{Code, issue_message, tool_message};
@@ -42,6 +43,7 @@ use crate::plan::roles::{
     is_read_common_file, is_user_face_xml, linked_common_files, part_source_models,
     plans_a_package, player_file, role_position, shared_folders,
 };
+use crate::processing::{DEFAULT_ICON, listed_colors};
 use crate::reader::{self, ContentSource, ExportSource, Route, SourceKind, SourceRevision};
 
 /// Validation's outcome for the whole run.
@@ -70,6 +72,11 @@ pub(crate) struct CheckedSource {
     /// gives one); `None` when the export has no such file, is a referee export, or a
     /// finding dropped it before its identity was resolved. Read only beside `resolved`.
     pub(crate) team_colors: Option<Vec<Rgb>>,
+    /// Each kept kit's menu colors and menu icon, by slot: a kit whose `colors.txt` gives
+    /// two colors is in it, a kit without such a file is not (`kit_menus` says why). Empty
+    /// when a finding dropped the export before its identity was resolved. Read only beside
+    /// `resolved`.
+    pub(crate) kit_menus: BTreeMap<KitSlot, KitMenu>,
     /// The text of the root `notes.txt` validation kept, its BOM removed; `None` when the
     /// export has no such note or a finding dropped it before its identity was resolved.
     pub(crate) notes: Option<String>,
@@ -99,6 +106,15 @@ pub(crate) struct CheckedSource {
     /// the same buffer; `None` for a folder or a `.zip` (opened cheaply by the coordinator),
     /// for a `.7z` not kept, and under `check`, which has no tasks.
     pub(crate) content: Option<ContentSource>,
+}
+
+/// A kept kit's menu colors and menu icon number: what the kit's `UniColor.bin` entry
+/// writes, and what the grid's cell for the kit shows.
+pub(crate) struct KitMenu {
+    /// The kit's two menu colors, first then second.
+    pub(crate) colors: [Rgb; KIT_COLORS],
+    /// The menu icon's number, 0 to 23.
+    pub(crate) icon: u8,
 }
 
 /// The run's memory budget, at the share of the available memory the settings give.
@@ -323,6 +339,7 @@ fn check_source(
         resolved: None,
         parsed: None,
         team_colors: None,
+        kit_menus: BTreeMap::new(),
         notes: None,
         hand_weighted: BTreeSet::new(),
         metal_models: BTreeSet::new(),
@@ -403,6 +420,11 @@ fn check_source(
         .validated
         .as_ref()
         .and_then(|validated| notes(validated, &content));
+    let kit_menus = report
+        .validated
+        .as_ref()
+        .map(|validated| kit_menus(validated, &content))
+        .unwrap_or_default();
     // Nothing past the deep pass reads the source. A folder or a zip is let go now: its tasks
     // open it again cheaply. A `.7z` is returned for the caller to keep for its tasks or let
     // go, which holds its buffer and permit through identity too, a few microseconds.
@@ -497,6 +519,7 @@ fn check_source(
         resolved,
         parsed: Some(report.parsed),
         team_colors,
+        kit_menus,
         notes,
         hand_weighted,
         metal_models,
@@ -603,6 +626,44 @@ fn team_colors(export: &ValidatedAestheticsExport, content: &ContentSource) -> O
             Some(Vec::new())
         }
     }
+}
+
+/// Each kit of `export`'s menu colors and menu icon, by slot: a kit whose `colors.txt`,
+/// read from `content`, gives two colors (`listed_colors`) and the `icon_<N>` marker's
+/// number, the default 3 without one. A kit with no `colors.txt`, or one giving fewer than
+/// two colors, is not in the map: the compile works its colors out from the texture. The
+/// deep pass has already reported the file's refused lines, and a read that failed there
+/// removed the file from `export`, so nothing is reported here; a read that fails only now
+/// is logged and the kit is left out.
+fn kit_menus(
+    export: &ValidatedAestheticsExport,
+    content: &ContentSource,
+) -> BTreeMap<KitSlot, KitMenu> {
+    let mut menus = BTreeMap::new();
+    for (slot, kit) in &export.kits.kits {
+        let Some(file) = &kit.colors else { continue };
+        let bytes = match content.read(file.source.as_str()) {
+            Ok(bytes) => bytes,
+            Err(failure) => {
+                log::debug!(
+                    "{}: the kit colors cannot be read again: {}",
+                    failure.path,
+                    failure.error
+                );
+                continue;
+            }
+        };
+        if let Some(colors) = listed_colors(&bytes) {
+            menus.insert(
+                *slot,
+                KitMenu {
+                    colors,
+                    icon: kit.icon.unwrap_or(DEFAULT_ICON),
+                },
+            );
+        }
+    }
+    menus
 }
 
 /// The text of `export`'s root `notes.txt`, read from `content`, its BOM removed, or `None`
@@ -1948,6 +2009,7 @@ mod tests {
             resolved: Some(resolved),
             parsed: None,
             team_colors: None,
+            kit_menus: BTreeMap::new(),
             notes: None,
             hand_weighted: BTreeSet::new(),
             metal_models: BTreeSet::new(),
@@ -1975,6 +2037,7 @@ mod tests {
             resolved: None,
             parsed: None,
             team_colors: None,
+            kit_menus: BTreeMap::new(),
             notes: None,
             hand_weighted: BTreeSet::new(),
             metal_models: BTreeSet::new(),

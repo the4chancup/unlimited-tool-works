@@ -37,6 +37,7 @@ use crate::plan::roles::{ModelPackage, texture_format};
 use crate::plan::{BuildTask, TaskKind, keeps_installed};
 use crate::templates::Templates;
 use conversion::ConvertedMaterials;
+pub(crate) use kit::{DEFAULT_ICON, listed_colors};
 pub(crate) use materialize::{EntryTarget, TEST_BINS_PREFIX};
 use materialize::{TaskOutput, materialize};
 pub(crate) use texture::texture_role;

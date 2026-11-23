@@ -11,9 +11,10 @@ use aesthetics_export::{
     ResolvedAestheticsExport, ValidatedRoster, folder_slot, is_referee_marker, kit_textures,
     logo_parts, split_folder_name,
 };
+use egui::Color32;
 use export_grid::{
-    Cell, CellState, IdCell, Line, Open, Outline, PictureFile, Position, Row, RowBody, Tone,
-    TopBox, Width,
+    Cell, CellState, IdCell, KitIcon, Line, Open, Outline, PictureFile, Position, Row, RowBody,
+    Tone, TopBox, Width,
 };
 use kit_config::KitSlot;
 use studio_core::{Message, Scope, Severity, ToolContext, message_line};
@@ -24,7 +25,7 @@ use crate::check::validate;
 use crate::cli;
 use crate::compile;
 use crate::reader::{self, ExportSource, SourceKind};
-use crate::validation::CheckedSource;
+use crate::validation::{CheckedSource, KitMenu};
 
 /// What a check's thread hands back: the rows and the DpFileList findings, or the text of
 /// the `error:` line that refused it.
@@ -221,10 +222,11 @@ fn export_row(checked: CheckedSource, teams_list: &TeamsList) -> Row {
     // Validation gives every export it resolves its listing too, so none is without one.
     let layout = match (&checked.resolved, &checked.parsed) {
         _ if message.is_some() => None,
-        (Some(resolved), Some(parsed)) => Some(with_dropped(
-            resolved_layout(resolved),
-            draft_layout(parsed),
-        )),
+        (Some(resolved), Some(parsed)) => {
+            let mut layout = with_dropped(resolved_layout(resolved), draft_layout(parsed));
+            layout.kit_menus = checked.kit_menus;
+            Some(layout)
+        }
         (None, Some(parsed)) => Some(draft_layout(parsed)),
         (_, None) => None,
     };
@@ -363,6 +365,9 @@ struct Layout {
     portrait_files: BTreeMap<u8, FileDescriptor>,
     /// Each kit's main texture.
     kit_textures: BTreeMap<KitSlot, FileDescriptor>,
+    /// Each kept kit's menu colors and menu icon, by slot; filled from the check where the
+    /// layout is a validated export's, empty for one drawn from a listing alone.
+    kit_menus: BTreeMap<KitSlot, KitMenu>,
 }
 
 /// A validated export's layout: its roster's folders, its kits and their pictures. It counts
@@ -424,6 +429,7 @@ fn resolved_layout(resolved: &ResolvedAestheticsExport) -> Layout {
         referee,
         portrait_files,
         kit_textures,
+        kit_menus: BTreeMap::new(),
     }
 }
 
@@ -550,6 +556,7 @@ fn draft_layout(parsed: &ParsedAestheticsExport) -> Layout {
         referee,
         portrait_files,
         kit_textures,
+        kit_menus: BTreeMap::new(),
     }
 }
 
@@ -799,6 +806,10 @@ fn lines(
                 let folder = kit_folders.get(slot).copied();
                 let texture = layout.kit_textures.get(slot);
                 Position::Cell(Box::new(Cell {
+                    kit_icon: layout.kit_menus.get(slot).map(|menu| KitIcon {
+                        number: menu.icon,
+                        colors: menu.colors.map(|[r, g, b]| Color32::from_rgb(r, g, b)),
+                    }),
                     top: boxes.map_or(TopBox::Empty, |boxes| boxes.kit(texture)),
                     ..disk.cell((*text).to_owned(), messages, blocked, folder)
                 }))

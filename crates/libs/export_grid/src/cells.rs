@@ -47,6 +47,16 @@ pub enum Width {
     Wide,
 }
 
+/// A kit's menu icon as its cell shows it: the icon's pattern drawn in the kit's two menu
+/// colors.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct KitIcon {
+    /// The icon's number, 0 to 23 (`color_tools::icon` draws each).
+    pub number: u8,
+    /// The kit's two menu colors, first then second.
+    pub colors: [Color32; 2],
+}
+
 /// One cell: its text, its state, its ring, the findings it stands for, and the folder its
 /// detail window names and opens.
 #[derive(Debug, Clone, PartialEq)]
@@ -69,6 +79,8 @@ pub struct Cell {
     pub open: Option<Open>,
     /// The pictures its detail window shows in the box at its top.
     pub top: TopBox,
+    /// A kit cell's menu icon once its colors are known; `None` on every other cell.
+    pub kit_icon: Option<KitIcon>,
 }
 
 impl Cell {
@@ -84,6 +96,7 @@ impl Cell {
             place: String::new(),
             open: None,
             top: TopBox::Empty,
+            kit_icon: None,
         }
     }
 }
