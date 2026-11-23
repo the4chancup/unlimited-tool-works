@@ -197,6 +197,25 @@ in <code>DECISIONS.md</code>.</p>
   <textarea class="own" placeholder="Your own ruling or a note (optional)"></textarea>
 </section>
 
+<section class="entry" id="p60">
+  <h3>P60: The roadmap's Now column made from the steps in progress</h3>
+  <p class="from">From: your look at the roadmap page, 2026-11-24</p>
+  <p>The Now column is a list of lines the lead writes by hand at the top of the worklog, so
+  it goes stale when the lead misses an update: it still showed the two builds you had
+  already handed over. The timeline's "now" band, by contrast, is made from the steps
+  marked in progress.</p>
+  <p><b>Adds:</b> the Now column shows the same steps as the band, one card each, so the two
+  always agree. The hand-written list keeps only what is not a step, such as a build waiting
+  for you or the checkpoint waiting for the server.</p>
+  <p><b>Costs:</b> a few lines in <code>scripts/roadmap.py</code>. The lead marks every step it
+  starts and clears the mark when the step ends, as the band already needs.</p>
+  <div class="options">
+    <label class="opt"><input type="radio" value="accept"><b>Accept</b></label>
+    <label class="opt"><input type="radio" value="veto"><b>Veto</b></label>
+  </div>
+  <textarea class="own" placeholder="Your own ruling or a note (optional)"></textarea>
+</section>
+
 <h2>Ruled earlier</h2>
 <details>
   <summary>Each ruling's <code>DECISIONS.md</code> entry</summary>
