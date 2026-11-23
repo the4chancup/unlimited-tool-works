@@ -170,6 +170,26 @@ fn a_dropped_referee_export_s_boxes_hold_no_unused_pictures() {
     assert_eq!(kit(&referees, 1).expect("the K1 cell").top, TopBox::Empty);
 }
 
+// TC-GUI-32
+#[test]
+fn a_dropped_referee_export_s_label_shows_its_marker() {
+    let (referees, export) = referee_row(
+        "view_grid_ref_dropped_marker",
+        &[(1, "A"), (1, "B")],
+        &[],
+        &["ref_marker.dds", "logo.png"],
+    );
+    assert_eq!(
+        player(&referees, 1).expect("the 01 cell").state,
+        CellState::Blocked,
+        "premise: the check dropped the export"
+    );
+    assert_eq!(
+        referees.label.top,
+        TopBox::Logo(Some(picture(&export, "ref_marker.dds")))
+    );
+}
+
 // An export dropped whole (a team the teams list lacks) shows its pictures from its
 // listing: its logo, its kit's texture, 03's portrait in his folder and 05's in
 // `Portraits/`.

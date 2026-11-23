@@ -219,7 +219,7 @@ fn a_row() -> Row {
     }
 }
 
-/// A row with one cell, player 07's, whose Open folder selects the archive
+/// /co/'s row with one cell, player 07's, whose Open folder selects the archive
 /// `co Midcup Map.zip` in the exports folder: an export packed in an archive has
 /// no folder of its own on disk.
 fn archive_row() -> Row {
@@ -229,6 +229,11 @@ fn archive_row() -> Row {
         ..cell("07", "co Midcup Map.zip", Vec::new())
     }));
     Row {
+        key: "co Midcup Map".to_owned(),
+        label: Cell {
+            top: TopBox::Logo(None),
+            ..cell("/co/", "co Midcup Map", Vec::new())
+        },
         body: RowBody::Lines(vec![Line {
             name: None,
             groups: vec![players, vec![Position::Empty], vec![Position::Empty; 10]],

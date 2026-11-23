@@ -492,9 +492,9 @@ fn resolved_layout(resolved: &ResolvedAestheticsExport) -> Layout {
 /// from `listed`, its listing's layout, so a dropped folder keeps its cell and its finding
 /// colours its own player or kit rather than the label. A dropped player folder joins at the
 /// slots its listing gives it that no kept folder holds. The kits are `listed`'s outright:
-/// it holds every kit folder of the export, a dropped one included; the empty `Kits/p1`
-/// or `Kits/g1` a `Full` export is given where no kit of the kind survived is not there,
-/// since it is no folder of the export.
+/// it holds every kit folder of the export that claims a slot, a dropped one included;
+/// the empty `Kits/p1` or `Kits/g1` a `Full` export is given where no kit of the kind
+/// survived is not there, since it is no folder of the export.
 /// The portraits count is `listed`'s: a dropped folder's portrait is still in the export,
 /// and the portraits cell counts the players that have one, as it does for an export dropped
 /// whole (`draft_layout`). The pictures stay `kept`'s, the files the compile packs.

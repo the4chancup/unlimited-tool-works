@@ -429,12 +429,11 @@ fn the_upgrade_acts_in_the_install_its_dialog_previewed() {
     let ctx = tool_context_at(root, PesVersion::Pes17);
     let download = root.join("PES/download");
     let preview = upgrade::preview(&download, &ctx).unwrap();
-    let mut dialog = DpflDialog::new(preview, download.clone());
-    let mut window = Headless::new();
-    let mut nodes = Vec::new();
-    for _ in 0..3 {
-        nodes = window.frame(Vec::new(), |ui| dialog.show(ui)).1;
-    }
+    let (mut dialog, mut window, nodes) = dialog_window(
+        preview,
+        download.clone(),
+        &[Vec::new(), Vec::new(), Vec::new()],
+    );
 
     let at = centre(button(&nodes, "Upgrade"));
     window.frame(press(at), |ui| dialog.show(ui));
@@ -719,14 +718,15 @@ fn a_preview_that_cannot_be_made_is_a_log_line_and_no_dialog() {
     assert!(labeled(&nodes, "Upgrade DpFileList"), "the button stays");
 }
 
-/// A `DpflDialog` over `preview` drawn in a `Headless`, each of `frames`' event lists one
-/// frame (a fresh modal's first is a sizing pass): the dialog, the window and the last
-/// frame's nodes, for a test that acts past the setup.
+/// A `DpflDialog` over `preview` acting on `download` drawn in a `Headless`, each of
+/// `frames`' event lists one frame (a fresh modal's first is a sizing pass): the dialog,
+/// the window and the last frame's nodes, for a test that acts past the setup.
 fn dialog_window(
     preview: Preview,
+    download: PathBuf,
     frames: &[Vec<egui::Event>],
 ) -> (DpflDialog, Headless, Vec<accesskit::Node>) {
-    let mut dialog = DpflDialog::new(preview, PathBuf::from("download"));
+    let mut dialog = DpflDialog::new(preview, download);
     let mut window = Headless::new();
     let mut nodes = Vec::new();
     for events in frames {
@@ -738,7 +738,12 @@ fn dialog_window(
 /// A `DpflDialog` over `preview`, drawn for three frames (a fresh modal's first is a
 /// sizing pass): the last frame's nodes.
 fn dialog_nodes(preview: Preview) -> Vec<accesskit::Node> {
-    dialog_window(preview, &[Vec::new(), Vec::new(), Vec::new()]).2
+    dialog_window(
+        preview,
+        PathBuf::from("download"),
+        &[Vec::new(), Vec::new(), Vec::new()],
+    )
+    .2
 }
 
 /// The wheel turned down `delta` points at `at`: the pointer there, so the scroll goes to
@@ -951,11 +956,11 @@ fn the_dialogs_content_is_460_wide_and_its_frame_adds_the_modals_margins() {
         "premise: the old list's preview shows every part"
     );
 
-    let mut dialog = DpflDialog::new(preview, root.join("PES/download"));
-    let mut window = Headless::new();
-    for _ in 0..3 {
-        window.frame(Vec::new(), |ui| dialog.show(ui));
-    }
+    let (_, window, _) = dialog_window(
+        preview,
+        root.join("PES/download"),
+        &[Vec::new(), Vec::new(), Vec::new()],
+    );
     let outer = window
         .ctx
         .memory(|memory| memory.area_rect(egui::Id::unique("upgrade_dpfl")))
@@ -985,11 +990,11 @@ fn the_dropped_list_names_draw_in_the_monospace_font() {
         up_to_date: false,
         replaces_list: true,
     };
-    let mut dialog = DpflDialog::new(preview, PathBuf::from("download"));
-    let mut window = Headless::new();
-    for _ in 0..3 {
-        window.frame(Vec::new(), |ui| dialog.show(ui));
-    }
+    let (_, window, _) = dialog_window(
+        preview,
+        PathBuf::from("download"),
+        &[Vec::new(), Vec::new(), Vec::new()],
+    );
 
     for label in [
         "4cc_60_midcup.cpk (6.1 KiB)",
@@ -1030,8 +1035,11 @@ fn the_renames_list_scrolls_to_its_last_row() {
         up_to_date: false,
         replaces_list: true,
     };
-    let (mut dialog, mut window, nodes) =
-        dialog_window(preview, &[Vec::new(), Vec::new(), Vec::new()]);
+    let (mut dialog, mut window, nodes) = dialog_window(
+        preview,
+        PathBuf::from("download"),
+        &[Vec::new(), Vec::new(), Vec::new()],
+    );
     // The renames list's box: the extreme-background rect the header row sits in.
     let header = cell_rect(&nodes, "Current name");
     let background = window
