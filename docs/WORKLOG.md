@@ -147,10 +147,11 @@ draft checked, for the maintainer to publish; running sidekicks and jobs are not
        the draft (scene `.tmp/look_1b2/app`): kit, player and portraits boxes match; three
        decisions went to `maintainer/ui_decisions.html`, all kept, the empty archive boxes
        for `.7z` only. A `.7z`'s pictures wait for the watcher-and-cache slice
-     - [ ] 1b-iii: a `.zip` export's pictures read from the zip, each from its own entry
-       (TC-GUI-31's zip clause; DECISIONS 2026-11-23). SWE-2, `sk/zip_pictures`, running,
-       beside 1c-ii and kept out of `export_grid`: once both merge, the lead makes
-       `PictureFile`'s doc say its `export` may be the `.zip`
+     - [x] 1b-iii (2026-11-23, merge `2eeccf60`, SWE-2): a `.zip` export's pictures read from
+       the zip, each from its own entry; a `.7z`'s boxes stay empty (TC-GUI-31's zip clause).
+       Kept out of `export_grid` while 1c-ii edits it: once 1c-ii merges, the lead makes
+       `PictureFile`'s doc say its `export` may be the `.zip`. Its review rounds go with
+       1c-ii's
    - [ ] 1c: the toolbar's strip and its counts, the log's lines linked to cells, the log
      collapsed when it would hide rows, the Upgrade DpFileList button → verify: TC-GUI-15,
      26, 27, 33. The pure move of the
@@ -170,7 +171,7 @@ draft checked, for the maintainer to publish; running sidekicks and jobs are not
        `plans/team_compiler/gui.md` "Toolbar", `plans/team_compiler/pipeline.md` "DpFileList
        upgrade"; the draft's `compiler/main?dpfl=outdated`), over the CLI's `upgrade-dpfl`,
        with the new `dpfilelist_cpk_deleted`. On PES 2019 it waits for item 8. SWE-2, in two
-       parts (Opus only when truly needed until the weekly reset of 2026-11-26):
+       parts:
        - 1c-iii-a: `upgrade.rs`'s preview as data, the deletions the member ticked, the new
          code and the catalog's texts; no window code, so it can start before 1c-ii merges
        - 1c-iii-b: the button and the dialog over them, after 1c-ii and 1c-iii-a
