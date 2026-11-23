@@ -15,7 +15,7 @@ python := if os_family() == "windows" { "python" } else { "python3" }
 script_test := python + " scripts/gates/temp_alias.py"
 
 # The verification gates, in order. CI runs this same recipe.
-gates: line-endings fmt-check acceptance doc-pointers changelog comment-refs colour-literals commit-messages clippy test wasm-check
+gates: line-endings fmt-check acceptance doc-pointers changelog comment-refs colour-literals corner-radius commit-messages clippy test wasm-check
 
 # The same gates on the mutants host (STUDIO_MUTANTS_REMOTE) against the working tree, while this machine should not carry the load
 gates-remote:
@@ -71,7 +71,7 @@ test:
     {{python}} scripts/gates/run_tests.py
 
 # The gates with gate 3 over the packages the working tree changes since `base` and the packages depending on them (CONTRIBUTING.md "Testing and verification")
-gates-changed base="HEAD": line-endings fmt-check acceptance doc-pointers changelog comment-refs colour-literals (commit-messages base) clippy (test-changed base) wasm-check
+gates-changed base="HEAD": line-endings fmt-check acceptance doc-pointers changelog comment-refs colour-literals corner-radius (commit-messages base) clippy (test-changed base) wasm-check
 
 # Every commit since `base` has a message of the project's shape (CONTRIBUTING.md "Commits"); `scripts/commit.py` checks one before it commits it
 commit-messages base="HEAD":
@@ -149,6 +149,12 @@ comment-refs:
 colour-literals:
     {{script_test}} scripts/gates/colour_literals_test.py
     {{python}} scripts/gates/colour_literals.py
+
+# Gate 8b: the corner-radius check's own tests, then the check (no corner radius is written as a
+# number outside `studio_core`'s theme.rs, which gives every rectangle the suite's 2 points: ST-CORNER-01)
+corner-radius:
+    {{script_test}} scripts/gates/corner_radius_test.py
+    {{python}} scripts/gates/corner_radius.py
 
 # Gate 0, first since it takes a second: the line-endings check's own tests, then the check (every
 # tracked file's working copy has the line endings .gitattributes asks: CONTRIBUTING.md "Toolchain notes")
