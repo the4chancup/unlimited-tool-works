@@ -13,6 +13,7 @@ The spec is split into parts:
 |---|---|
 | [Architecture](architecture.md) | Architecture |
 | [GUI design](gui.md) | GUI Design |
+| [Design guidelines](design.md) | The suite's look in one list: corners, control edges, colours, type, spacing |
 | [Parallelism](parallelism.md) | Parallelism |
 | [Distribution and updates](distribution.md) | Distribution and updates |
 | [Development plan](development_plan.md) | Development Plan |

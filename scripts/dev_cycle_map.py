@@ -262,7 +262,7 @@ for i, stage in enumerate(STAGES):
 for key, label, colour in BANDS:
     y, band_h = BAND_Y[key], BAND_H[key]
     svg.append(f'<rect class="band" x="0" y="{y}" width="{WIDTH}" height="{band_h - 4}" '
-               f'rx="6" style="fill: var({colour})"/>')
+               f'rx="2" style="fill: var({colour})"/>')
     svg.append(f'<text class="band-label" x="12" y="{y + band_h / 2 + 2:.0f}" '
                f'font-size="13">{html.escape(label)}</text>')
 for source, target in EDGES:
@@ -283,7 +283,7 @@ for node in NODES:
     svg.append(f'<g class="node" data-name="{key}" data-label="{html.escape(label)}" '
                f'data-about="{html.escape(about)}"><title>{html.escape(label)}: '
                f'{html.escape(about)}</title><rect x="{x:.1f}" y="{y}" width="{BOX_W}" '
-               f'height="{BOX_H}" rx="5"/><text x="{x + BOX_W / 2:.1f}" y="{y + 20}" '
+               f'height="{BOX_H}" rx="2"/><text x="{x + BOX_W / 2:.1f}" y="{y + 20}" '
                f'font-size="12" text-anchor="middle">{html.escape(label)}</text></g>')
 svg.append('</g></svg>')
 
@@ -309,10 +309,10 @@ body { font-family: "Segoe UI", sans-serif; margin: 24px; color: var(--text);
   background: var(--page); }
 h1 { font-size: 20px; margin: 0 0 6px; }
 p { margin: 4px 0; font-size: 14px; color: var(--soft); max-width: 1100px; }
-code { background: var(--code); padding: 0 3px; border-radius: 3px; }
+code { background: var(--code); padding: 0 3px; border-radius: 2px; }
 #theme { position: absolute; top: 24px; right: 24px; font: inherit; font-size: 13px;
   color: var(--text); background: var(--code); border: 1px solid var(--line);
-  border-radius: 4px; padding: 3px 10px; cursor: pointer; }
+  border-radius: 2px; padding: 3px 10px; cursor: pointer; }
 .band { opacity: 0.55; }
 :root:not([data-theme="light"]) .band { opacity: 0.35; }
 .band-label { fill: var(--band-label); font-weight: 600; }

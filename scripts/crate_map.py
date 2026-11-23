@@ -242,7 +242,7 @@ for index, (label, row) in enumerate(ROWS):
 for label, band, first, last in bands:
     y = TOP + first * ROW_H - 18
     height = (last - first + 1) * ROW_H - 10
-    svg.append(f'<rect x="10" y="{y}" width="{WIDTH - 20}" height="{height}" rx="8" '
+    svg.append(f'<rect x="10" y="{y}" width="{WIDTH - 20}" height="{height}" rx="2" '
                f'class="band {band}"/>')
     svg.append(f'<text class="band-label" x="22" y="{y + 30}" font-size="15" '
                f'font-weight="600">{html.escape(label)}</text>')
@@ -271,7 +271,7 @@ for name, (x, y) in pos.items():
     svg.append(f'<g class="node{" outside" if outside else ""}" data-name="{name}" '
                f'data-about="{about}">'
                f'<title>{name}: {about}</title>'
-               f'<rect x="{x}" y="{y}" width="{BOX_W}" height="{BOX_H}" rx="5"{dash}/>'
+               f'<rect x="{x}" y="{y}" width="{BOX_W}" height="{BOX_H}" rx="2"{dash}/>'
                f'<text x="{x + BOX_W / 2}" y="{y + 20}" font-size="12" '
                f'text-anchor="middle">{name}</text></g>')
 svg.append("</g></svg>")
@@ -298,10 +298,10 @@ body {{ font-family: "Segoe UI", sans-serif; margin: 24px; color: var(--text);
   background: var(--page); }}
 h1 {{ font-size: 20px; margin: 0 0 6px; }}
 p {{ margin: 4px 0; font-size: 14px; color: var(--soft); max-width: 1100px; }}
-code {{ background: var(--code); padding: 0 3px; border-radius: 3px; }}
+code {{ background: var(--code); padding: 0 3px; border-radius: 2px; }}
 #theme {{ position: absolute; top: 24px; right: 24px; font: inherit; font-size: 13px;
   color: var(--text); background: var(--code); border: 1px solid var(--out-line);
-  border-radius: 4px; padding: 3px 10px; cursor: pointer; }}
+  border-radius: 2px; padding: 3px 10px; cursor: pointer; }}
 .band {{ opacity: 0.55; }}
 /* The dark bands at the light ones' distance from their page (CIELAB delta E 3 to 9 in
    both themes): brighter, they outweighed the arrows. */

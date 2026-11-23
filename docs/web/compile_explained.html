@@ -20,11 +20,11 @@ h2 { font-size: 19px; margin: 40px 0 8px; padding-top: 16px; border-top: 1px sol
 p, li { font-size: 15px; color: var(--soft); max-width: 860px; }
 p.lead { font-size: 16px; color: var(--text); }
 a { color: var(--players); }
-code { background: var(--code); padding: 0 4px; border-radius: 3px; font-size: 13.5px;
+code { background: var(--code); padding: 0 4px; border-radius: 2px; font-size: 13.5px;
   color: var(--text); font-family: Consolas, "Cascadia Mono", monospace; }
 #theme { position: absolute; top: 24px; right: 24px; font: inherit; font-size: 13px;
   color: var(--text); background: var(--code); border: 1px solid var(--line);
-  border-radius: 4px; padding: 3px 10px; cursor: pointer; }
+  border-radius: 2px; padding: 3px 10px; cursor: pointer; }
 table { border-collapse: collapse; margin: 12px 0; width: 100%; font-size: 14.5px; }
 th, td { text-align: left; vertical-align: top; padding: 8px 10px;
   border-bottom: 1px solid var(--rule); }
@@ -32,7 +32,7 @@ th { color: var(--text); font-weight: 600; }
 td { color: var(--soft); }
 td:first-child { color: var(--text); white-space: nowrap; }
 .callout { border-left: 4px solid var(--players); background: var(--box); padding: 10px 16px;
-  margin: 16px 0; border-radius: 0 4px 4px 0; }
+  margin: 16px 0; border-radius: 0 2px 2px 0; }
 .callout p { margin: 4px 0; color: var(--text); }
 figure { margin: 18px 0 8px; }
 figcaption { font-size: 14px; color: var(--hint); max-width: 860px; margin-top: 6px; }
@@ -60,7 +60,7 @@ svg.map.focus .edge.on { opacity: 1; stroke-width: 3; }
 .legend { display: flex; flex-wrap: wrap; gap: 6px 22px; font-size: 13.5px; color: var(--soft);
   margin: 8px 0 0; }
 .legend span { display: inline-flex; align-items: center; gap: 7px; }
-.sw { display: inline-block; width: 14px; height: 14px; border-radius: 3px; }
+.sw { display: inline-block; width: 14px; height: 14px; border-radius: 2px; }
 .sw.players { background: var(--players); } .sw.boots { background: var(--boots); }
 .sw.kits { background: var(--kits); }
 .sw.plain { background: var(--box); border: 1.5px solid var(--line); }
@@ -112,38 +112,38 @@ matchdays after it" below.</p>
     <path class="edge plain info" data-a="T" data-b="R2" d="M570 80 C625 80 615 279 660 279"/>
   </g>
 
-  <g class="node" id="L1"><rect class="box" x="20" y="120" width="300" height="44" rx="5"/>
+  <g class="node" id="L1"><rect class="box" x="20" y="120" width="300" height="44" rx="2"/>
     <rect class="stripe players" x="20" y="120" width="6" height="44" rx="2"/>
     <text class="title" x="36" y="139">Players/05 - Snuffy/</text>
     <text class="sub" x="36" y="157">his models, textures and settings.toml</text></g>
-  <g class="node" id="L2"><rect class="box" x="20" y="172" width="300" height="44" rx="5"/>
+  <g class="node" id="L2"><rect class="box" x="20" y="172" width="300" height="44" rx="2"/>
     <rect class="stripe boots" x="20" y="172" width="6" height="44" rx="2"/>
     <text class="title" x="36" y="191">Boots/Crocs/, Gloves/Mitts/</text>
     <text class="sub" x="36" y="209">boots and gloves several players share</text></g>
-  <g class="node" id="L4"><rect class="box" x="20" y="224" width="300" height="44" rx="5"/>
+  <g class="node" id="L4"><rect class="box" x="20" y="224" width="300" height="44" rx="2"/>
     <rect class="stripe kits" x="20" y="224" width="6" height="44" rx="2"/>
     <text class="title" x="36" y="243">Kits/p1/ … Kits/g1/</text>
     <text class="sub" x="36" y="261">texture, settings and colours, per kit</text></g>
-  <g class="node" id="L5"><rect class="box" x="20" y="276" width="300" height="44" rx="5"/>
+  <g class="node" id="L5"><rect class="box" x="20" y="276" width="300" height="44" rx="2"/>
     <text class="title" x="36" y="295">colors.txt</text>
     <text class="sub" x="36" y="313">the team's colours</text></g>
-  <g class="node" id="L6"><rect class="box" x="20" y="328" width="300" height="44" rx="5"/>
+  <g class="node" id="L6"><rect class="box" x="20" y="328" width="300" height="44" rx="2"/>
     <text class="title" x="36" y="347">logo.png</text>
     <text class="sub" x="36" y="365">the team's emblem, any size</text></g>
-  <g class="node" id="L7"><rect class="box" x="20" y="380" width="300" height="44" rx="5"/>
+  <g class="node" id="L7"><rect class="box" x="20" y="380" width="300" height="44" rx="2"/>
     <text class="title" x="36" y="399">Portraits/05.dds</text>
     <text class="sub" x="36" y="417">the players' portraits</text></g>
-  <g class="node" id="L8"><rect class="box" x="20" y="432" width="300" height="44" rx="5"/>
+  <g class="node" id="L8"><rect class="box" x="20" y="432" width="300" height="44" rx="2"/>
     <text class="title" x="36" y="451">Common/, Collars/</text>
     <text class="sub" x="36" y="469">files the players share</text></g>
-  <g class="node" id="L9"><rect class="box" x="20" y="484" width="300" height="44" rx="5"/>
+  <g class="node" id="L9"><rect class="box" x="20" y="484" width="300" height="44" rx="2"/>
     <text class="title" x="36" y="503">notes.txt</text>
     <text class="sub" x="36" y="521">the manager's note to you</text></g>
-  <g class="node" id="T"><rect class="box" x="350" y="46" width="220" height="48" rx="5"/>
+  <g class="node" id="T"><rect class="box" x="350" y="46" width="220" height="48" rx="2"/>
     <text class="title" x="366" y="65">data\teams_list.txt</text>
     <text class="sub" x="366" y="83">gives each team its ID</text></g>
 
-  <g class="node" id="R1"><rect class="box" x="660" y="120" width="320" height="135" rx="5"/>
+  <g class="node" id="R1"><rect class="box" x="660" y="120" width="320" height="135" rx="2"/>
     <text class="title" x="676" y="139">4cc_41_teams.cpk and after</text>
     <text class="sub" x="676" y="157">each player's face, hair, boots and gloves</text>
     <text class="sub" x="676" y="174">kit textures and kit settings</text>
@@ -151,19 +151,19 @@ matchdays after it" below.</p>
     <text class="sub" x="676" y="208">portraits</text>
     <text class="sub" x="676" y="225">shared files and collars</text>
     <text class="note" x="676" y="244">installed in the game's download folder</text></g>
-  <g class="node" id="R2"><rect class="box" x="660" y="269" width="320" height="62" rx="5"/>
+  <g class="node" id="R2"><rect class="box" x="660" y="269" width="320" height="62" rx="2"/>
     <text class="title" x="676" y="288">4cc_08_bins.cpk</text>
     <text class="sub" x="676" y="306">one kit list and one colour table for the</text>
     <text class="sub" x="676" y="322">whole league, every team's rows in them</text></g>
-  <g class="node" id="R3"><rect class="box" x="660" y="347" width="320" height="62" rx="5"/>
+  <g class="node" id="R3"><rect class="box" x="660" y="347" width="320" height="62" rx="2"/>
     <rect class="stripe players" x="660" y="347" width="6" height="62" rx="2"/>
     <text class="title" x="676" y="366">output\aesthetics_patch.toml</text>
     <text class="sub" x="676" y="384">each player's looks, and the IDs of the</text>
     <text class="sub" x="676" y="400">boots and gloves he was compiled with</text></g>
-  <g class="node" id="R4"><rect class="box save" x="660" y="435" width="320" height="48" rx="5"/>
+  <g class="node" id="R4"><rect class="box save" x="660" y="435" width="320" height="48" rx="2"/>
     <text class="title" x="676" y="454">The save</text>
     <text class="sub" x="676" y="472">the patch is written into it; a .bak is kept</text></g>
-  <g class="node" id="R5"><rect class="box" x="660" y="501" width="320" height="44" rx="5"/>
+  <g class="node" id="R5"><rect class="box" x="660" y="501" width="320" height="44" rx="2"/>
     <text class="title" x="676" y="520">output\teamnotes.txt</text>
     <text class="sub" x="676" y="538">every team's note, in one file</text></g>
 </svg>
@@ -188,7 +188,7 @@ That is why a compile changes both the game folder and the save.</figcaption>
   <defs><marker id="tip" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7"
     orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="var(--line)"/></marker></defs>
   <g>
-    <rect class="box" x="10" y="40" width="180" height="150" rx="6"/>
+    <rect class="box" x="10" y="40" width="180" height="150" rx="2"/>
     <circle class="numdot" cx="32" cy="62" r="13"/><text class="num" x="32" y="67" text-anchor="middle">1</text>
     <text x="52" y="67" class="head">Look at the game</text>
     <text class="sub" x="24" y="96">Can the CPKs go into</text>
@@ -198,7 +198,7 @@ That is why a compile changes both the game folder and the save.</figcaption>
   </g>
   <path class="arrow" d="M190 115 L206 115" marker-end="url(#tip)"/>
   <g>
-    <rect class="box" x="208" y="40" width="180" height="150" rx="6"/>
+    <rect class="box" x="208" y="40" width="180" height="150" rx="2"/>
     <circle class="numdot" cx="230" cy="62" r="13"/><text class="num" x="230" y="67" text-anchor="middle">2</text>
     <text x="250" y="67" class="head">Check</text>
     <text class="sub" x="222" y="96">Every export is read</text>
@@ -208,7 +208,7 @@ That is why a compile changes both the game folder and the save.</figcaption>
   </g>
   <path class="arrow" d="M388 115 L404 115" marker-end="url(#tip)"/>
   <g>
-    <rect class="box" x="406" y="40" width="180" height="150" rx="6"/>
+    <rect class="box" x="406" y="40" width="180" height="150" rx="2"/>
     <circle class="numdot" cx="428" cy="62" r="13"/><text class="num" x="428" y="67" text-anchor="middle">3</text>
     <text x="448" y="67" class="head">Build</text>
     <text class="sub" x="420" y="96">Models and textures are</text>
@@ -218,7 +218,7 @@ That is why a compile changes both the game folder and the save.</figcaption>
   </g>
   <path class="arrow" d="M586 115 L602 115" marker-end="url(#tip)"/>
   <g>
-    <rect class="box" x="604" y="40" width="180" height="150" rx="6"/>
+    <rect class="box" x="604" y="40" width="180" height="150" rx="2"/>
     <circle class="numdot" cx="626" cy="62" r="13"/><text class="num" x="626" y="67" text-anchor="middle">4</text>
     <text x="646" y="67" class="head">Install</text>
     <text class="sub" x="618" y="96">The new CPKs replace</text>
@@ -228,7 +228,7 @@ That is why a compile changes both the game folder and the save.</figcaption>
   </g>
   <path class="arrow" d="M784 115 L800 115" marker-end="url(#tip)"/>
   <g>
-    <rect class="box save" x="802" y="40" width="188" height="150" rx="6"/>
+    <rect class="box save" x="802" y="40" width="188" height="150" rx="2"/>
     <circle class="numdot" cx="824" cy="62" r="13"/><text class="num" x="824" y="67" text-anchor="middle">5</text>
     <text x="844" y="67" class="head">Patch the save</text>
     <text class="sub" x="816" y="96">The patch is written,</text>

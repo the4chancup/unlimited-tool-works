@@ -17,8 +17,13 @@ What passes:
 
 It was a test of `studio_core` until a slice whose Verify ran only its own crate's tests let
 a numbered radius through: a gate runs over every crate whichever crate changed.
+
+The project's pages share the radius (`docs/spec/core/design.md` "Corners"): the
+maintainer's pages, the web pages and the scripts that generate some of them are read for
+a CSS `border-radius` other than 0, 2px or 50% and an SVG `rx` other than 0 or 2.
 """
 
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -59,6 +64,33 @@ def product_files() -> list[str]:
     return sorted(path for path in set(listed) if path != THEME and not is_test_file(path))
 
 
+# The project's pages take the same radius: the maintainer's pages, the web pages, and the
+# scripts that generate some of them (`docs/spec/core/design.md` "Corners").
+PAGE_GLOBS = ("docs/maintainer/*.css", "docs/maintainer/*.html", "docs/web/*.html")
+GENERATORS = ("scripts/roadmap.py", "scripts/dev_cycle_map.py", "scripts/crate_map.py")
+BORDER_RADIUS = re.compile(r"border-radius:\s*([^;\"}]+)")
+RECT_RX = re.compile(r'\brx="([^"]*)"')
+# 0 is a square corner, 50% a round dot; neither is a rounded rectangle.
+PAGE_VALUES = {"0", "2px", "50%"}
+
+
+def page_radius(line: str) -> bool:
+    """`line` gives a page a corner radius other than the suite's: a `border-radius` with a
+    value outside 0, 2px and 50%, or an SVG `rx` other than 0 or 2."""
+    for match in BORDER_RADIUS.finditer(line):
+        if any(value not in PAGE_VALUES for value in match.group(1).split()):
+            return True
+    return any(match.group(1) not in ("0", "2") for match in RECT_RX.finditer(line))
+
+
+def page_files() -> list[str]:
+    """The tracked pages and page generators the page check reads."""
+    listed = subprocess.run(
+        ["git", "ls-files", *PAGE_GLOBS], cwd=ROOT, capture_output=True, text=True, check=True,
+    ).stdout.split()
+    return sorted({*listed, *GENERATORS})
+
+
 def main() -> int:
     found = []
     for path in product_files():
@@ -66,13 +98,21 @@ def main() -> int:
         for number, line in enumerate(text.splitlines(), start=1):
             if numbered_radius(line):
                 found.append(f"{path}:{number}: {line.strip()}")
-    for hit in found:
+    pages = []
+    for path in page_files():
+        text = (ROOT / path).read_text(encoding="utf-8")
+        for number, line in enumerate(text.splitlines(), start=1):
+            if page_radius(line):
+                pages.append(f"{path}:{number}: {line.strip()[:160]}")
+    for hit in found + pages:
         print(hit)
     if found:
         print("corner_radius: a number passed as a corner radius; take the theme's "
               "(ui.visuals().widgets.*.corner_radius, or a style value)")
-        return 1
-    return 0
+    if pages:
+        print("corner_radius: a page's corner radius is not the suite's 2px (border-radius "
+              "2px, SVG rx=\"2\"; 0 and 50% pass)")
+    return 1 if found or pages else 0
 
 
 if __name__ == "__main__":

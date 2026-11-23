@@ -2,7 +2,8 @@
 
 import unittest
 
-from corner_radius import THEME, is_test_file, numbered_radius, product_files
+from corner_radius import (THEME, is_test_file, numbered_radius, page_files, page_radius,
+                           product_files)
 
 
 class NumberedRadiusTest(unittest.TestCase):
@@ -23,6 +24,38 @@ class NumberedRadiusTest(unittest.TestCase):
             "let corner_radius = 2;",
         ]:
             self.assertFalse(numbered_radius(line), line)
+
+
+class PageRadiusTest(unittest.TestCase):
+    def test_a_radius_other_than_the_suite_s_is_listed(self):
+        for line in [
+            ".card { border-radius: 6px; }",
+            "blockquote { border-radius: 0 4px 4px 0; }",
+            '<rect x="1" y="2" width="3" height="4" rx="5"/>',
+            "f'<rect rx=\"8\" />'",
+            "a { border-radius: 2px; } b { border-radius: 3px; }",
+        ]:
+            self.assertTrue(page_radius(line), line)
+
+    def test_the_suite_s_radius_a_square_and_a_dot_pass(self):
+        for line in [
+            ".card { border-radius: 2px; }",
+            "blockquote { border-radius: 0 2px 2px 0; }",
+            ".dot { border-radius: 50%; }",
+            "td { border-radius: 0; }",
+            '<rect x="1" rx="2"/>',
+            '<rect x="1" rx="0"/>',
+            "a { border: 1px solid #383838; }",
+        ]:
+            self.assertFalse(page_radius(line), line)
+
+    def test_the_pages_and_their_generators_are_read(self):
+        files = page_files()
+        for path in ["docs/maintainer/maintainer.css", "docs/maintainer/tasks.html",
+                     "docs/web/dev_cycle.html", "scripts/roadmap.py",
+                     "scripts/dev_cycle_map.py", "scripts/crate_map.py"]:
+            self.assertIn(path, files)
+        self.assertNotIn("docs/prototypes/index.html", files)
 
 
 class FilesTest(unittest.TestCase):

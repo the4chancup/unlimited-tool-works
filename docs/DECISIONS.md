@@ -20074,3 +20074,18 @@ than traced again from the history at each phase's converge. A bracketed tag was
 a sentence in the prose: a script reads it without guessing, and a reader still sees it.
 Plan: no plan section: the convention is in the worklog's header, the steps in its roadmap
 item.
+
+## 2026-11-23 — design — the project's pages take the suite's corner radius, and the look is listed in one file (maintainer)
+Decision: the maintainer's pages, the web pages and the scripts that generate them draw every
+rounded corner at the suite's 2 px, as the app and the drafts do, and
+`scripts/gates/corner_radius.py` now fails on any other radius there too (0 and 50% pass, a
+square and a dot). A new spec file, `spec/core/design.md`, lists the suite's look in one
+place (corners, control edges, colours, type, spacing, surfaces), each value pointing at the
+plan row that holds its reasons.
+Why: the corner radius is part of the program's identity, so a page about the program wears
+it too, and a gate keeps a page from bringing its own, as it already did for the code. One
+list, not the reasons repeated: the rows of `plans/core/gui.md` "Other UI components" keep
+the why and the history, and the list gives the values a new view, draft or page needs at a
+glance; repeating the reasons would make two homes that drift.
+Plan: `spec/core/design.md` written; `plans/core/gui.md` "Other UI components" unchanged but
+for a stale light-theme edge example (the code draws grey 195 on the resting 225).
