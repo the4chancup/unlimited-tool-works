@@ -1,11 +1,14 @@
 //! The toolbar under the grid, the draft's `.tc-bar`: the strip, which sums up the grid while
-//! no Compile runs, and the Compile button at its right.
+//! no run is in flight, and the Compile button at its right, the Upgrade DpFileList button
+//! beside it when the last run's preflight found the game's list not the official one.
 
 use export_grid::{Cell, CellState, Row, cell_places};
 use studio_core::widgets::add_enabled;
 use studio_core::{LogFilter, LogPanel, Severity};
 
+use crate::gui_run::RunLog;
 use crate::messages::TOOL_ID;
+use crate::view::Intent;
 
 /// The room between the strip and the button (the draft's `.tc-bar` gap).
 const GAP: f32 = 8.0;
@@ -110,10 +113,18 @@ pub(crate) fn strip(summary: &Summary) -> Vec<Part> {
     parts
 }
 
-/// Draws the toolbar as a bottom panel of `ui`: the strip summing up `rows` while no Compile
-/// is `running`, and the Compile button, disabled while one is. A click on a count shows only
-/// its lines in `panel`. `true` when Compile was clicked.
-pub(crate) fn show(ui: &mut egui::Ui, panel: &mut LogPanel, rows: &[Row], running: bool) -> bool {
+/// Draws the toolbar as a bottom panel of `ui`: the strip summing up `rows` while `log` has
+/// no run in flight, the Compile button, disabled while one runs, and the Upgrade
+/// DpFileList button beside it while `log`'s last run reported a finding the upgrade
+/// remedies. A click on a count shows only its lines in `panel`. The `Intent` a click asked
+/// for, when one was made this frame.
+pub(crate) fn show(
+    ui: &mut egui::Ui,
+    panel: &mut LogPanel,
+    rows: &[Row],
+    log: &RunLog,
+) -> Option<Intent> {
+    let running = log.is_running();
     let frame = egui::Frame::side_top_panel(ui.style()).inner_margin(egui::Margin::symmetric(8, 4));
     egui::Panel::bottom((TOOL_ID, "toolbar"))
         .resizable(false)
@@ -121,7 +132,23 @@ pub(crate) fn show(ui: &mut egui::Ui, panel: &mut LogPanel, rows: &[Row], runnin
         .show(ui, |ui| {
             ui.spacing_mut().item_spacing.x = GAP;
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                let clicked = add_enabled(ui, !running, egui::Button::new("Compile")).clicked();
+                let mut intent = None;
+                if add_enabled(ui, !running, egui::Button::new("Compile")).clicked() {
+                    intent = Some(Intent::Compile);
+                }
+                // Left of Compile in the right-to-left row, beside the button it
+                // unblocks; gone while a run is in flight.
+                if !running
+                    && log.dpfl_found()
+                    && ui
+                        .button("Upgrade DpFileList")
+                        .on_hover_text(
+                            "Replace the game's DpFileList.bin with the cup's official list",
+                        )
+                        .clicked()
+                {
+                    intent = Some(Intent::UpgradeDpfl);
+                }
                 let parts = if running {
                     Vec::new()
                 } else {
@@ -144,7 +171,7 @@ pub(crate) fn show(ui: &mut egui::Ui, panel: &mut LogPanel, rows: &[Row], runnin
                         }
                     }
                 });
-                clicked
+                intent
             })
             .inner
         })

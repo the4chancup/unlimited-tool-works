@@ -213,7 +213,7 @@ pub(crate) fn check_inputs(ctx: &ToolContext) -> Result<RunInputs, CliError> {
 
 /// The PES folder's `download/`, which `upgrade-dpfl` works in. Refused, naming the path and
 /// the setting, when it or the PES folder is not a folder.
-fn download_folder(common: &CommonSettings) -> Result<PathBuf, CliError> {
+pub(crate) fn download_folder(common: &CommonSettings) -> Result<PathBuf, CliError> {
     let pes_folder = common.pes_folder();
     let download = pes_folder.join(deploy::DOWNLOAD);
     let not_a_folder = if !pes_folder.is_dir() {

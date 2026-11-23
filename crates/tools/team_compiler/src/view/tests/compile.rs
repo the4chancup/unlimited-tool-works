@@ -13,7 +13,7 @@ fn without_a_click_nothing_is_reported_and_compile_is_enabled() {
     let (clicked, nodes) = Headless::new().frame(Vec::new(), |ui| {
         show(ui, &ctx, &log, &mut panel, &[], false, &mut detail)
     });
-    assert!(!clicked);
+    assert!(clicked.is_none());
     assert!(!button(&nodes, "Compile").is_disabled());
 }
 
@@ -33,11 +33,11 @@ fn a_click_on_compile_is_reported_on_the_frame_of_the_release() {
     let (clicked, _) = window.frame(press(target), |ui| {
         show(ui, &ctx, &log, &mut panel, &[], false, &mut detail)
     });
-    assert!(!clicked, "not before the release");
+    assert!(clicked.is_none(), "not before the release");
     let (clicked, _) = window.frame(release(target), |ui| {
         show(ui, &ctx, &log, &mut panel, &[], false, &mut detail)
     });
-    assert!(clicked);
+    assert!(matches!(clicked, Some(Intent::Compile)));
 }
 
 // TC-GUI-03

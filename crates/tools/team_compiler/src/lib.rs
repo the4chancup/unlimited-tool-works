@@ -43,7 +43,7 @@ use studio_core::{
 use crate::check::live::{LiveCheck, Polled};
 use crate::gui_run::RunLog;
 use crate::messages::TOOL_ID;
-use crate::view::GridDetail;
+use crate::view::{DpflDialog, GridDetail, Intent};
 
 /// The Compiler, as registered with the `studio` binary. Its window state is
 /// the run log — the `compile` the Compile button started, and its lines — the
@@ -76,6 +76,22 @@ impl Tool {
             detail: GridDetail::new(),
             log_panel: LogPanel::new(TOOL_ID),
             running,
+        }
+    }
+
+    /// The Upgrade DpFileList button's click: `upgrade`'s plan for `download/` (found as the
+    /// command finds it), read once now, opens the dialog on it. A plan that cannot be made,
+    /// `download/` missing or a file it cannot read, is a line in the log as a refused run's
+    /// is, and opens nothing.
+    fn open_upgrade(&mut self, ctx: &ToolContext) {
+        let preview = cli::download_folder(&ctx.common())
+            .map_err(|error| error.to_string())
+            .and_then(|download| {
+                upgrade::preview(&download, ctx).map_err(|error| format!("{error:#}"))
+            });
+        match preview {
+            Ok(preview) => self.detail.dpfl_dialog = Some(DpflDialog::new(preview)),
+            Err(error) => self.run_log.append_refusal(&error),
         }
     }
 }
@@ -121,7 +137,7 @@ impl StudioTool for Tool {
         let rows = self.live_check.rows();
         let checking = self.live_check.is_running();
         let panel = &mut self.log_panel;
-        if view::show(
+        match view::show(
             ui,
             ctx,
             &self.run_log,
@@ -130,7 +146,10 @@ impl StudioTool for Tool {
             checking,
             &mut self.detail,
         ) {
-            self.run_log.start_compile(ctx, self.running);
+            Some(Intent::Compile) => self.run_log.start_compile(ctx, self.running),
+            Some(Intent::UpgradeDpfl) => self.open_upgrade(ctx),
+            Some(Intent::Upgrade(delete)) => self.run_log.start_upgrade(delete, ctx),
+            None => {}
         }
     }
 
