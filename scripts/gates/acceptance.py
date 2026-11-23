@@ -37,8 +37,11 @@ SCENARIO = re.compile(rf"^(?P<id>{ID})\s+(?:(?P<manual>manual)\s+)?(?P<kind>GIVE
 RANGE = re.compile(r"^(?P<area>[A-Z]{2}-[A-Z]+-)(?P<first>\d+) to (?P<last>\d+)\s+withdrawn:")
 STARTS_WITH_ID = re.compile(rf"^{ID}\b")
 HEADING = re.compile(r"^(?P<level>#+)\s+(?P<title>.*)$")
-CITATION = re.compile(rf"^\s*//\s*(?P<ids>{ID}(?:\s*,\s*{ID}|\s+{ID})*)\s*$")
-PROSE_CITATION = re.compile(rf"^\s*//\s*(?P<ids>{ID}(?:\s*,\s*{ID})*)\s*:")
+# One list of IDs for both: a list shape the prose check did not share was neither counted
+# nor flagged.
+ID_LIST = rf"^\s*//\s*(?P<ids>{ID}(?:\s*,\s*{ID}|\s+{ID})*)"
+CITATION = re.compile(rf"{ID_LIST}\s*$")
+PROSE_CITATION = re.compile(rf"{ID_LIST}\s*:")
 CITED_ID = re.compile(ID)
 MANUAL_CHECK = re.compile(rf"\b(?P<id>{ID}) manual: checked \d{{4}}-\d{{2}}-\d{{2}}\b")
 CLI_SUITE = re.compile(r"^crates/tools/[^/]+/tests/cli/")

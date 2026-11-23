@@ -124,6 +124,7 @@ class CitationTests(unittest.TestCase):
             "b.rs": "// TC-KIT-03, TC-KIT-04: two\n#[test]\nfn b() {}\n",
             "c.rs": "// TC-KIT-01: in a body\nlet x = 1;\n#[test]\nfn c() {}\n",
             "d.rs": "// TC-KIT-01's install: a\n/// TC-KIT-03: doc\n// A kit:\n// TC-KIT-04\n#[test]\nfn d() {}\n",
+            "e.rs": "// TC-KIT-05 TC-KIT-06: two, as a citation may list them\n#[test]\nfn e() {}\n",
         }
         scan = scan_of(sources=sources)
         self.assertEqual(
@@ -132,6 +133,8 @@ class CitationTests(unittest.TestCase):
                 "a.rs:1: TC-KIT-01 is cited before prose; a citation is a line of IDs alone",
                 "b.rs:1: TC-KIT-03 is cited before prose; a citation is a line of IDs alone",
                 "b.rs:1: TC-KIT-04 is cited before prose; a citation is a line of IDs alone",
+                "e.rs:1: TC-KIT-05 is cited before prose; a citation is a line of IDs alone",
+                "e.rs:1: TC-KIT-06 is cited before prose; a citation is a line of IDs alone",
             ],
         )
         self.assertEqual(scan.citations, {"TC-KIT-04": ["d.rs:4"]})
