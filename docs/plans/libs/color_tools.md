@@ -95,8 +95,9 @@ at any size.
 Two render modes:
 
 - the **full shirt shape** (the editor's icon gallery);
-- **pattern-only**: just the two-color fill pattern as a flat square swatch, for sizes where
-  a shirt silhouette would turn to mush (the Compiler's grid cells).
+- **pattern-only**: just the two-color fill pattern, stretched over whatever rectangle it is
+  given, for sizes where a shirt silhouette would turn to mush (the Compiler's grid cells,
+  whose swatch is a strip along the cell's foot).
 
 The pattern shapes are transcribed from the PES 15 settings reference sheet (`Kiticons.png`,
 kept with the crate's test data).

@@ -19875,3 +19875,15 @@ Why: the drafts draw both in that green (`.help-win .hl`, `.pipe-grid tr.highlig
 selection blue marks a choice, always with its edge; a hit is not a choice. The light value
 follows the plan's rule for a fill. Found by review round S3.
 Plan: `plans/core/gui.md` "Help window", the Search paragraph.
+
+## 2026-11-23 — team_compiler, color_tools — a kit's menu icon pattern is a strip along its cell's foot, stretched to fit
+Decision: a kit cell shows its menu icon's pattern as a strip along the cell's foot (the
+draft's strip, 9 points high), with the label moved to the cell's top, and `color_tools` stretches
+each of the 24 patterns over whatever rectangle it is given. The plan said a square swatch
+centred under the label.
+Why: the Compiler's draft is buildable, and its kit cells put the swatch in that strip; the
+plan's square was written before the draft. Stretching the pattern, not cutting a square out of
+the strip, keeps each pattern whole (a sash still runs corner to corner, a halved kit still
+shows both halves), which a square cut from the middle of a 24 by 9 strip would lose.
+Plan: `plans/team_compiler/gui.md` "GUI: the live-validating team grid" (Kit cells), `plans/libs/color_tools.md` "Kit menu icon
+rendering (Phase 8)".

@@ -70,9 +70,10 @@ would drift apart.
 
   Once a kit's menu colors are known (its `colors.txt` parses at check time, or the compile
   derives them from the texture), the cell additionally shows its **menu icon's pattern**,
-  drawn centered under the label on the status background. That is the `icon_<N>` marker's
-  pattern rendered by `color_tools` in pattern-only mode: a flat two-color swatch, no shirt
-  silhouette, which wouldn't read at cell size. A failed kit keeps its error state and shows
+  drawn as a strip along the cell's foot, under the label, which moves to the cell's top. That
+  is the `icon_<N>` marker's pattern rendered by `color_tools` in pattern-only mode: a flat
+  two-color swatch stretched over the strip, no shirt silhouette, which wouldn't read at cell
+  size. A failed kit keeps its error state and shows
   the existing base-`UniColor.bin` colors rather than the unwritten pair.
 
   This is the kit colors' proof-of-life: a row of identical all-black miniatures exposes a lazy
