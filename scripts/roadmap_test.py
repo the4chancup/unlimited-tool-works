@@ -278,6 +278,21 @@ class Timeline(unittest.TestCase):
         self.assertLess(int(phase_2[1]), top_step)
         self.assertIn('<title>Phase 3 GUI after Phase 2 (in progress)</title>', svg)
 
+    def test_the_phases_text_starts_at_one_column_past_the_longest_label(self) -> None:
+        text = WORKLOG.replace("| 2 | Libs |", "| 0.1.0 | Libs |")
+        svg = roadmap.timeline(parse(text), self.DATES, TODAY)
+        found = re.findall(r'<text x="(\d+)" [^>]*><tspan font-weight="600">'
+                           r'(Phase 3|Release 0\.1\.0)</tspan></text>'
+                           r'<text x="(\d+)" [^>]*>([^<]*)</text>', svg)
+        self.assertEqual([(label, words) for _, label, _, words in found],
+                         [("Phase 3", "GUI after Phase 2 (in progress)"),
+                          ("Release 0.1.0", "Libs (todo)")])
+        (label_x, _, scope_x, _), (_, _, other_x, _) = found
+        self.assertEqual(scope_x, other_x)
+        self.assertGreaterEqual(int(scope_x) - int(label_x), 6.6 * len("Release 0.1.0"))
+        # A step's text still follows its ID in one text element.
+        self.assertIn('<tspan font-weight="600">TOP/c</tspan> open bullet', svg)
+
     def test_a_release_row_is_named_release_and_the_phases_lane_is_grey(self) -> None:
         text = WORKLOG.replace("| 2 | Libs |", "| 0.1.0 | Libs |")
         svg = roadmap.timeline(parse(text), self.DATES, TODAY)

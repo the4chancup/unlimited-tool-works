@@ -36,6 +36,10 @@ OPEN_MARKS = " ~!"
 LANE_GAP = 32
 # The phases' lane: grey, apart from the palette the work's lanes take.
 PHASE_COLOUR = "#999999"
+# A bold 13-point label's width per character, rounded up from Segoe UI's widest measured
+# (6.56, a two-digit phase's label), so the phases' text column clears the longest label in a
+# wider fallback font too.
+LABEL_CHAR_WIDTH = 6.6
 # One per top-level step, in the order they are listed: the Okabe-Ito palette, every one readable on
 # the page's `#1e1e1e`.
 PALETTE = ["#E69F00", "#56B4E9", "#009E73", "#F0E442",
@@ -440,6 +444,11 @@ def timeline(roadmap: Roadmap, dates: dict[str, str], today: str) -> str:
             parts.append(f'<path d="M {x1} {y1} C {x1} {ym:g}, {x2} {ym:g}, {x2} {y2}" '
                          f'stroke="{tracks[member[id(s)]][2]}" stroke-width="1.5" '
                          'opacity="0.6" fill="none"/>')
+    # The phases' labels differ in width (one digit or two, a release's longer, and Segoe UI's
+    # digits are not all one width), so their text starts at one column, past the longest.
+    phase_ids = {id(s) for s in phase_rows}
+    scope_x = text_x + round(LABEL_CHAR_WIDTH * max((len(s.path) for s in phase_rows),
+                                                    default=0)) + 8
     for s in rows:
         ti = member[id(s)]
         colour, x, y = tracks[ti][2], col_x(tracks[ti][3]), cy(s)
@@ -452,12 +461,17 @@ def timeline(roadmap: Roadmap, dates: dict[str, str], today: str) -> str:
         head_part = (shown_text[:len(s.path)]
                      if shown_text.startswith(s.path) else shown_text)
         title = whole + (f" — waits on {', '.join(s.after)}" if s.after else "")
-        parts.append(f'<g><title>{html.escape(title)}</title>{circle}'
-                     f'<text x="{text_x}" y="{y}" '
-                     f'fill="{"#fff" if open_ else "#ddd"}" font-size="13" '
-                     'dominant-baseline="central">'
-                     f'<tspan font-weight="600">{html.escape(head_part)}</tspan>'
-                     f'{mono(shown_text[len(head_part):])}</text></g>')
+        attrs = (f'y="{y}" fill="{"#fff" if open_ else "#ddd"}" font-size="13" '
+                 'dominant-baseline="central"')
+        label = f'<tspan font-weight="600">{html.escape(head_part)}</tspan>'
+        rest = mono(shown_text[len(head_part):])
+        if id(s) in phase_ids:
+            drawn = (f'<text x="{text_x}" {attrs}>{label}</text>'
+                     f'<text x="{scope_x}" {attrs}>{rest.lstrip()}'
+                     '</text>')
+        else:
+            drawn = f'<text x="{text_x}" {attrs}>{label}{rest}</text>'
+        parts.append(f'<g><title>{html.escape(title)}</title>{circle}{drawn}</g>')
     parts.append("</svg>")
     if undated:
         parts.append(f'<p class="from">{undated} done step'
