@@ -187,7 +187,11 @@ draft checked, for the maintainer to publish; running sidekicks and jobs are not
          placeholders also takes it away
        - Round S3 (SWE-2) over 1c-iii-c, the selection edge and round S2's fixes: 7 accepted,
          one of reach (a), among them the help window's search hit drawn in the drafts' green
-         (DECISIONS 2026-11-23). Its fixes run on `sk/review_s3` (SWE-2); round S4 reviews them
+         (DECISIONS 2026-11-23)
+       - [x] Review round S3's fixes (2026-11-23, merge `35184122`, SWE-2, one rework for a
+         shared test helper): a check of the exports that ends after another was asked for no
+         longer shows its rows, and the help window's search hits are filled in green. Round S4 (SWE-2)
+         reviews them
      - [x] The selection's edge on every blue fill (2026-11-23, merge `749dd2ae`, SWE-2, one
        rework with round S2's test fixes): a picked row drawn through `widgets::row` and the
        Save editor's selected player row draw the `#1e7a9e` edge at rest
