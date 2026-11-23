@@ -19801,3 +19801,8 @@ follows meanwhile. The rule and the worklog's list use it.
 Why: the maintainer: a UI that is final can still receive improvements later on.
 Plan: `RUNBOOK.md` "How the work runs", the rule "A tool whose draft is not buildable gets no
 work on its built UI"; `WORKLOG.md` "Current status".
+
+## 2026-11-23 — team_compiler GUI — Upgrade DpFileList sits in the toolbar beside Compile, built with slice 1c
+Decision: the maintainer wants the Upgrade DpFileList button in the toolbar work (read as: in the toolbar, built with slice 1c, not left with the later slices). It shows when the last run's preflight found the installed list not the official one (`dpfilelist_outdated`, `dpfilelist_not_official` or `dpfilelist_cpk_missing`), and stays until an upgrade replaces the list. Its dialog lists the renames, the number of placeholders and the CPKs no longer loaded, each with an unticked delete box. A deleted CPK logs the new `dpfilelist_cpk_deleted` (Info). The draft has it (`compiler/main?dpfl=outdated`), and TC-GUI-33 is its scenario.
+Why: an outdated list stops every compile, so its remedy sits beside the button it unblocks, not only in a log line. It shows after a run, not from a live check, because the preflight stops the run before anything is compiled: the member loses one click and no time. A deletion gets its own code, not `dpfilelist_cpk_dropped`, because that one says the file is left for the member to remove, and the CLI never deletes.
+Plan: team_compiler/gui.md#Toolbar, team_compiler/README.md TC-GUI-33 and team_compiler/messages.md "Output stage and savefile" edited.

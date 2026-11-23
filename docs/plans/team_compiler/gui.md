@@ -517,6 +517,18 @@ A single primary action:
   runs (the running-PES probe, `spec/core/architecture.md` "Crate structure", polled by the
   sidebar's selector). It starts the game and does nothing else.
 
+  When the last run's preflight found the game's `DpFileList.bin` not the official one
+  (`dpfilelist_outdated`, `dpfilelist_not_official` or `dpfilelist_cpk_missing`), an **Upgrade
+  DpFileList** button sits beside Compile. It opens the upgrade's dialog
+  (`pipeline.md` "DpFileList upgrade"). Once the member confirms, the upgrade does what
+  `upgrade-dpfl --yes` does and deletes the CPKs ticked in the dialog, its lines going to the
+  log. The button stays until an upgrade
+  replaces the list or a later run's preflight finds it official. It is in the toolbar, not
+  only in the finding's log line, because an outdated list stops every compile until it is
+  replaced: the remedy sits beside the button it unblocks. It shows after a run, not from a
+  live check, because the preflight stops a run before anything is compiled, so the member
+  loses one click and no time.
+
   Red's staged operations as separate runs ("extracted → contents", "contents → CPK") are
   superseded by the unified pipeline and are not exposed.
 

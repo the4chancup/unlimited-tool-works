@@ -319,6 +319,17 @@ TC-GUI-32  GIVEN a referee export holding ref_marker.dds and a logo.png, and one
            WHEN the window opens on each one's label
            THEN the first's top box shows ref_marker.dds, not the logo; the second's reads
                 "No logo"
+TC-GUI-33  GIVEN a PES 2017 install whose DpFileList.bin is the old faces/uniform list, every
+                CPK it names in download/
+           WHEN Compile is pressed, then Upgrade DpFileList, then Upgrade in its dialog
+           THEN the run stops with dpfilelist_outdated and the button appears beside Compile;
+                the dialog lists 4cc_40_faces.cpk → 4cc_41_teams.cpk among its renames and
+                4cc_60_midcup.cpk (6.1 KiB) among the CPKs no longer loaded, each with its
+                own delete box, unticked; after the upgrade download/ holds what
+                upgrade-dpfl --yes leaves, the log has its lines, the button is gone and the
+                next Compile passes the preflight; GIVEN a delete box ticked THEN that file
+                alone is deleted and its line is dpfilelist_cpk_deleted; GIVEN Cancel THEN
+                nothing in download/ changes
 TC-GUI-13  GIVEN a run in flight over two exports
            WHEN Cancel is clicked
            THEN the run ends after the task or texture in progress, no CPK is written or

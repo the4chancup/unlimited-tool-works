@@ -379,7 +379,9 @@ function sampleRows() {
 // ---- State ----
 // D: the draft controls (the scenarios' GIVENs). S: the view's own state.
 // L: the log panel's state, in the host's shape.
-const D = { writable: "yes", dataReadOnly: false, empty: false, closeOnSuccess: false };
+// dpfl: what the installed DpFileList.bin is, against the cup's official list
+// (TC-GUI-33): "official", "outdated", "not_official" or "cpk_missing".
+const D = { writable: "yes", dataReadOnly: false, empty: false, closeOnSuccess: false, dpfl: "official" };
 // A compiling cell's bar, sliding left to right along its bottom edge,
 // entering and leaving it, once every 0.9 s.
 const sweepEl = cell => h("span", { class: "tc-sweep",
@@ -393,6 +395,9 @@ const busyPhase = (cell, periodMs) => ((performance.now() - cell.busyAt) % perio
 const S = { rows: sampleRows(), mode: "normal", column: false, unticked: {}, pin: null, hover: null,
   colour: "status", measure: "disk", sort: "name", compiled: false,
   highlight: null, run: null, last: null, finished: false, ids: {}, logScroll: 0,
+  // dpflFound: the last run's preflight found the DpFileList not the official
+  // one, so the toolbar offers its upgrade.
+  dpflFound: false,
   // Where the member left the detail window (null until it first opens), and
   // the legend folded away: both kept across launches (localStorage here).
   detailPos: JSON.parse(localStorage.getItem("drafts.tc.detail_pos") || "null"),
@@ -403,7 +408,10 @@ const L = { log: [], logHeight: 180, logCollapsed: false, logFilter: "all",
 const MODES = { normal: "Compile", sideload: "Compile for sideloading", test: "Test output" };
 const rowOf = key => S.rows.find(r => r.key === key);
 // Codes the plan adds that the build's catalog (the host's CATALOG) lacks yet.
-const PLANNED = {};
+const PLANNED = {
+  dpfilelist_cpk_deleted: { code: "dpfilelist_cpk_deleted", severity: "Info",
+    condition: "The DpFileList upgrade deleted a CPK the game no longer loads under the official list, as its box was ticked in the dialog.",
+    consequence: "Nothing to do." } };
 const catalog = code => CATALOG["compiler"].find(r => r.code === code) || PLANNED[code];
 const severity = code => {
   const s = (catalog(code) || {}).severity || "Error";
@@ -1107,8 +1115,76 @@ function toolbar() {
           button("Close", closeWindow), "launch-pes"),
           { title: "Starts the selected version's game from its install folder" })
       : null,
+    S.dpflFound && !run ? button("Upgrade DpFileList", upgradeDpfl,
+      { title: "Replace the game's DpFileList.bin with the cup's official list" }) : null,
     D.writable !== "yes" ? h("span", { class: "tc-badge", title: BADGES[D.writable] }, "⚠") : null,
     h("div", { class: "tc-split" }, main, arrow));
+}
+
+// ---- The DpFileList upgrade (TC-GUI-33) ----
+// The sample is the PES 2017 test install's old faces/uniform list, as
+// `upgrade-dpfl` plans it: its renames in the order they run, the official
+// entries left with no file, and the CPKs the official list drops.
+const DPFL_RENAMES = [["4cc_15_billboard", "4cc_11_billboard"], ["4cc_20_swipe", "4cc_12_swipe"],
+  ["4cc_25_gametips", "4cc_14_gametips"], ["4cc_32_stadiums2", "4cc_22_stadiums"],
+  ["4cc_31_stadiums1", "4cc_21_stadiums"], ["4cc_30_stadiums0", "4cc_20_stadiums"],
+  ["4cc_35_referees", "4cc_18_referees"], ["4cc_38_balls", "4cc_16_balls"],
+  ["4cc_45_uniform", "4cc_42_teams"], ["4cc_40_faces", "4cc_41_teams"],
+  ["4cc_55_other_uniform", "4cc_52_teams2"], ["4cc_50_other_faces", "4cc_51_teams2"],
+  ["4cc_90_test", "4cc_99_test"]];
+const DPFL_PLACEHOLDERS = 19;
+const DPFL_DROPPED = ["4cc_60_midcup", "4cc_76_midcup", "4cc_77_midcup", "4cc_78_midcup", "4cc_79_midcup"]
+  .map(name => ({ name: name + ".cpk", size: "6.1 KiB" }));
+const DPFL_PATH = "E:\\PES2017\\download\\DpFileList.bin";
+const DPFL_CODES = { outdated: "dpfilelist_outdated", not_official: "dpfilelist_not_official",
+  cpk_missing: "dpfilelist_cpk_missing" };
+// The preflight's line for the installed list, and the button it brings.
+function dpflFinding() {
+  const code = DPFL_CODES[D.dpfl];
+  const ctx = D.dpfl === "outdated" ? "cpk=4cc_41_teams.cpk, " : "";
+  appendLog([{ severity: severity(code), code, scope: null,
+    text: `${severity(code)} - ${code} (${ctx}path=${DPFL_PATH})` }], L);
+  S.dpflFound = true;
+}
+// The dialog lists every rename and every CPK no longer loaded before anything
+// is written; each of those CPKs has its own delete box, unticked.
+function upgradeDpfl() {
+  const del = {};
+  const go = () => {
+    closeWindow();
+    appendLog([
+      ...DPFL_RENAMES.map(([from, to]) => ({ severity: "Info", code: "dpfilelist_cpk_renamed", scope: null,
+        text: `Info - dpfilelist_cpk_renamed (from=${from}.cpk, to=${to}.cpk)` })),
+      { severity: "Info", code: "dpfilelist_replaced", scope: null,
+        text: `Info - dpfilelist_replaced (path=${DPFL_PATH}, backup=${DPFL_PATH}.bak)` },
+      ...DPFL_DROPPED.map(f => del[f.name]
+        ? { severity: "Info", code: "dpfilelist_cpk_deleted", scope: null,
+            text: `Info - dpfilelist_cpk_deleted (cpk=${f.name}, size=${f.size})` }
+        : { severity: "Warning", code: "dpfilelist_cpk_dropped", scope: null,
+            text: `Warning - dpfilelist_cpk_dropped (cpk=${f.name}, size=${f.size})` })], L);
+    D.dpfl = "official";
+    S.dpflFound = false;
+    render();
+  };
+  const list = (lines, cls = "mono") => h("div", { class: cls, style: "max-height:120px; overflow:auto;"
+    + " margin:4px 0 8px; padding:0 6px 4px; background:var(--extreme); border-radius:2px" }, lines);
+  // The header row stays at the top while the names scroll under it.
+  const th = text => h("th", { style: "position:sticky; top:0; background:var(--extreme); padding-top:4px" }, text);
+  window_("Upgrade DpFileList", h("div", { style: "width:460px" },
+    h("p", {}, "Upgrade replaces the game's DpFileList.bin with the cup's official list, keeping "
+      + "the old one beside it as DpFileList.bin.bak."),
+    h("p", {}, `Renamed to their official names, so the game keeps loading them (${DPFL_RENAMES.length}):`),
+    list(h("table", { class: "grid" },
+      h("tr", {}, th("Current name"), th("Official name")),
+      DPFL_RENAMES.map(([from, to]) => h("tr", {},
+        h("td", { class: "mono" }, from + ".cpk"), h("td", { class: "mono" }, to + ".cpk")))), ""),
+    h("p", {}, `An empty placeholder is written for each of the ${DPFL_PLACEHOLDERS} official CPKs with no `
+      + "file, because the game loads nothing from download/ while a CPK its list names is missing."),
+    h("p", {}, `No longer loaded by the game (${DPFL_DROPPED.length}). Tick any you want deleted:`),
+    list(DPFL_DROPPED.map(f => h("label", { class: "cb", style: "margin-top:4px" },
+      h("input", { type: "checkbox", onchange: e => { del[f.name] = e.target.checked; } }),
+      `${f.name} (${f.size})`)))),
+    [button("Cancel", closeWindow), button("Upgrade", go)], "upgrade-dpfl");
 }
 function modeMenu(btn, sideloadOff) {
   closeMenus();
@@ -1145,6 +1221,12 @@ const BUSY = 16;
 const OUTCOME = { fullOk: "done", partialOk: "done", warning: "doneWarn" };
 function startRun(only) {
   if (S.run) return;
+  // The preflight's DpFileList check, on a run that installs: an outdated list
+  // stops the run before anything is compiled, the other two let it go on.
+  if (S.mode === "normal" && D.dpfl !== "official") {
+    dpflFinding();
+    if (D.dpfl === "outdated") { render(); return; }
+  }
   const rows = S.rows.filter(r => only ? only.includes(r.key) : eligible(r));
   for (const r of S.rows) for (const cell of cellsOf(r)) { delete cell.out; delete cell.busy; }
   const tasks = rows.flatMap(r => cellsOf(r)
@@ -1376,6 +1458,10 @@ function draftControls() {
     h("label", { class: "cb", title: "TC-GUI-16" }, "The destination is",
       combo([["yes", "writable"], ["running", "locked: PES is running"], ["elevation", "locked: elevation needed"]],
         D.writable, v => D.writable = v)),
+    h("label", { class: "cb", title: "TC-GUI-33" }, "The installed DpFileList is",
+      combo([["official", "the official one"], ["outdated", "older: it lacks the run's CPKs"],
+        ["not_official", "another layout"], ["cpk_missing", "naming a missing CPK"]],
+        D.dpfl, v => D.dpfl = v)),
     h("span", { title: "TC-GUI-07" },
       cb("The data folder is read-only", D.dataReadOnly, v => D.dataReadOnly = v)),
     h("span", { title: "gui.md \"Row actions\", the empty grid" },
@@ -1407,6 +1493,7 @@ const WALK = [
   ["TC-GUI-24", "click a cell: a pin on it and in the window's title bar, the window stays and hovering other cells leaves it; drag it by its title bar; click another cell to pin that one, the pinned cell, the window's pin or empty grid to unpin; double-click a cell to open its folder"],
   ["TC-GUI-15", "click a warning or error line of the log: its cell, or the row's label, is outlined"],
   ["TC-GUI-16", "the destination control: the badge beside the button, its tooltip the reason and the remedy"],
+  ["TC-GUI-33", "set the installed DpFileList to older and Compile: the run stops with dpfilelist_outdated and Upgrade DpFileList appears beside Compile; its dialog lists the renames and the CPKs no longer loaded, each with a delete box; Upgrade logs what it did and the button goes"],
   ["live check", "Check every export again: every cell reads Checking, then flips to its result as its check ends, scattered over the rows"],
   ["drop", "drag a folder or a .zip from the desktop onto the grid (or use the two Drop controls): a new name is copied in and checked live; a name already there is refused, naming it"],
   ["Edit mode", "set the destination to \"locked: PES is running\" and Compile: once the CPKs are packed, the save's step asks whether to update the save; Update save does, Skip leaves it and logs why"],
@@ -1421,6 +1508,8 @@ function linkKeys() {
   if (S.column) k.column = "1";
   if (D.empty) k.empty = "1";
   if (D.writable !== "yes") k.dest = D.writable;
+  if (S.dpflFound) k.dpfl = D.dpfl;
+  if (document.querySelector('[data-dlg="upgrade-dpfl"]')) k.dialog = "upgrade-dpfl";
   // A link opens the window pinned: a hover is no state a link can hold.
   if (S.pin) k.detail = S.pin.row + "." + S.pin.what + (S.pin.slot ? "." + S.pin.slot : "");
   if (S.finished && !S.run) k.run = "done";
@@ -1436,6 +1525,13 @@ function linkOpen(scr, keys) {
   if (keys.column !== undefined) S.column = keys.column === "1";
   if (keys.empty !== undefined) D.empty = keys.empty === "1";
   if (keys.dest !== undefined) { if (BADGES[keys.dest]) D.writable = keys.dest; else linkWarn("dest=" + keys.dest); }
+  // dpfl=<state>: the last run's preflight found the installed list so.
+  if (keys.dpfl !== undefined) {
+    if (DPFL_CODES[keys.dpfl]) { D.dpfl = keys.dpfl; dpflFinding(); } else linkWarn("dpfl=" + keys.dpfl);
+  }
+  if (keys.dialog !== undefined) {
+    if (keys.dialog === "upgrade-dpfl" && S.dpflFound) upgradeDpfl(); else linkWarn("dialog=" + keys.dialog);
+  }
   if (keys.detail !== undefined) {
     const [key, what, slot] = keys.detail.split(".");
     if (rowOf(key) && ["label", "player", "kit", "portraits"].includes(what)) S.pin = { row: key, what, slot };
@@ -1470,5 +1566,6 @@ registerTool({ id: "compiler", css: TEAM_COMPILER_CSS, draw: drawView,
     "compiler/main?detail=a.label&colour=sizes&measure=vram",
     "compiler/main?detail=dbg.kit.K1", "compiler/main?detail=dbg.portraits",
     "compiler/main?detail=dbg.player.14", "compiler/main?detail=inv1.label",
-    "compiler/main?detail=a.player.05", "compiler/main?detail=refs.label"] });
+    "compiler/main?detail=a.player.05", "compiler/main?detail=refs.label",
+    "compiler/main?dpfl=outdated", "compiler/main?dpfl=outdated&dialog=upgrade-dpfl"] });
 })();

@@ -125,5 +125,7 @@ states one-to-one; a glTF material with states absent just gets its family's sta
 |---|---|---|---|
 | `dpfilelist_not_official` | W | as the spec's row | the GUI offers **Upgrade DpFileList**, which asks before replacing the list |
 | `dpfilelist_outdated` | F | as the spec's row | GUI offers Upgrade DpFileList |
+| `dpfilelist_cpk_missing` | W | as the spec's row | GUI offers Upgrade DpFileList |
+| `dpfilelist_cpk_deleted` | I | the GUI's DpFileList upgrade deleted a CPK the official list drops, its delete box ticked in the dialog (context: `cpk`, `size`); the CLI deletes none | none; the CPK's `dpfilelist_cpk_dropped` line is not written |
 | `old_cpk_locked` | E | as the spec's row | GUI offers Retry (deployment only) and Open output folder |
 | `deploy_target_unwritable` | E | as the spec's row | GUI offers Relaunch as administrator. Normally pre-empted by the live writability preflight (see `pipeline.md` "6. Post-processing") |
