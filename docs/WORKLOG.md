@@ -236,11 +236,13 @@ draft checked, for the maintainer to publish; running sidekicks and jobs are not
      whose outcome changes. Its fixes are three SWE-2 slices: A (the check's rows) merged
      `0fc94490`, B (the detail window and title row) merged `76bcad35`, and C (the settings re-check and the Upgrade
      dialog, one rework) merged `d3e7be78`. Carbon round 2, over the grid and the Compile
-     menu together (at `ca8559a1`): 11 accepted, three of them a real input whose outcome
-     changes (the dialog's two lists sharing one scroll, the log still drawn open after
-     the first check collapsed it, a game started while the window is idle leaving the old state drawn),
-     so a round 3 is owed. Next: their fix slice (SWE-2, with the menu's 2 px gap below),
-     its SWE-2 subloop, then Carbon round 3
+     menu together (at `ca8559a1`): 11 accepted, two of them a real input whose outcome
+     changes (the dialog's two lists sharing one scroll, a game started while the window
+     is idle leaving the old state drawn), so a round 3 is owed. Their fixes are three
+     SWE-2 slices, merged 2026-11-23: G1 (the dialog, the settings re-check, the Compile
+     menu's tests) `4f5cbe58`, G2 (the layout of duplicate kit folders and referee rows)
+     `fd84b216`, G3 (the archive tooltip, the menu's 2 px gap, the shared widgets' tests)
+     `4ee3aa5b`. Next: a SWE-2 subloop over the three, then Carbon round 3
    - [ ] The Compile button's mode list, Open output folder and Copy report (TC-GUI-11, and
      TC-GUI-33's clause that Compile for sideloading stays enabled while the DpFileList is
      outdated; DECISIONS 2026-11-23 "the Compile menu's Copy report copies the whole log").
@@ -250,8 +252,9 @@ draft checked, for the maintainer to publish; running sidekicks and jobs are not
      version rule and the menu's place. Their fixes merged `f63bf2aa` (SWE-2, no rework). Its
      Carbon round is part of the grid's round 2, whose surface holds the toolbar. Its look,
      2026-11-23 (release build at `ca8559a1` beside the draft, `.tmp/look_menu/`): the menu,
-     the closed arrow and the sideload pick match, but for one difference to fix with round
-     2's rework: the menu sits flush on the arrow, where the draft leaves 2 px (SB1-11).
+     the closed arrow and the sideload pick match, but for one difference: the menu sat
+     flush on the arrow, where the draft leaves 2 px (SB1-11). G3 gave it the gap
+     (`4ee3aa5b`); owed: the menu seen again in the built window beside the draft.
      The column toggle the draft lists comes with its later slice
    - Then the row actions, the ID cell's editing, the
      watcher and cache, Sizes and sorting, and the rest of the toolbar
