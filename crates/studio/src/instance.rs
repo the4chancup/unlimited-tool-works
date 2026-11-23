@@ -81,6 +81,7 @@ pub(crate) fn claim(data_dir: &Path) -> Option<Instance> {
 mod tests {
     use super::*;
     use crate::test_dir::TestDir;
+    use std::time::{Duration, Instant};
 
     /// Holds `data_dir`'s `slot`'s lock the way another copy would, for as long as the
     /// returned `File` is alive.
@@ -94,6 +95,27 @@ mod tests {
             .unwrap();
         file.try_lock().unwrap();
         file
+    }
+
+    /// Claims `data_dir`'s `slot`, which this test has just freed, retrying for up to 5 s.
+    /// On Linux a lock is freed only once every copy of its file is closed, and a child
+    /// process that another test starts holds a copy of each of this process's open files
+    /// from its fork until its exec: briefly, but long enough on a loaded machine to fail
+    /// a checkpoint once. Code that really keeps the slot held still fails the test,
+    /// after 5 s.
+    fn claim_once_freed(data_dir: &Path, slot: u32) -> Instance {
+        let start = Instant::now();
+        loop {
+            match claim(data_dir) {
+                Some(instance) if instance.slot() == slot => return instance,
+                other => assert!(
+                    start.elapsed() < Duration::from_secs(5),
+                    "the claim took slot {:?} for 5 s, not the freed slot {slot}",
+                    other.map(|instance| instance.slot())
+                ),
+            }
+            std::thread::sleep(Duration::from_millis(10));
+        }
     }
 
     // With no copy running, the claim takes slot 1's `utw.lock`.
@@ -121,7 +143,7 @@ mod tests {
         assert_eq!(instance.slot(), 2);
         drop(instance);
         let _third = hold(dir.path(), 3);
-        assert_eq!(claim(dir.path()).unwrap().slot(), 2);
+        claim_once_freed(dir.path(), 2);
     }
 
     // A lock the system freed when a copy ended is simply free, so the next
@@ -131,10 +153,10 @@ mod tests {
     fn a_freed_slot_is_taken_again() {
         let dir = TestDir::new("claim_freed");
         drop(claim(dir.path()).unwrap());
-        let _first = hold(dir.path(), 1);
+        let first = claim_once_freed(dir.path(), 1);
         assert_eq!(claim(dir.path()).unwrap().slot(), 2);
-        drop(_first);
-        assert_eq!(claim(dir.path()).unwrap().slot(), 1);
+        drop(first);
+        claim_once_freed(dir.path(), 1);
     }
 
     // The slot's `.n` goes after the name's first part, so `utw.old.log`
@@ -167,6 +189,6 @@ mod tests {
             .collect();
         assert!(claim(dir.path()).is_none());
         drop(held);
-        assert_eq!(claim(dir.path()).unwrap().slot(), 1);
+        claim_once_freed(dir.path(), 1);
     }
 }
