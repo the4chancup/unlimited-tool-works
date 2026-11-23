@@ -582,6 +582,32 @@ fn every_cell_of_an_archive_selects_the_archive() {
     );
 }
 
+// The window draws the legend's names itself: a name's node is its `interact`
+// response's `widget_info`, which keeps the whole `entry.name` as the node's value, the
+// two-line one's `\n` included.
+#[test]
+fn the_view_draws_the_legends_names() {
+    let temp = sandbox("view_grid_legend");
+    let ctx = tool_context(temp.path(), "");
+    let mut tool = Tool::new();
+    let mut window = Headless::new();
+    let nodes = first_check(&mut tool, &ctx, &mut window);
+    for name in [
+        "Unchecked",
+        "Checking",
+        "Shallow check done\n(archive)",
+        "Warning",
+        "Error",
+        "Done with warnings",
+        "Done with errors",
+        "Checked",
+        "Done",
+        "Blocked",
+    ] {
+        assert!(shows_text(&nodes, name), "the legend shows {name:?}");
+    }
+}
+
 // The label's Copy messages copies the export's findings as the log prints them, in the
 // order the check reported them: three findings on two players and the label, then the
 // Info every identified export carries.

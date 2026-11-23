@@ -386,6 +386,28 @@ fn click_labeled(
     })
 }
 
+/// Asserts the disabled widget `node` shows the disabled hover text `expected`, `frame`
+/// running the frames that draw it (as `click_on`'s does): the pointer rests on it until
+/// the tooltip shows, failing rather than hanging. The wait needs no real time with
+/// `tooltip_delay` turned off, only the frames the pointer needs to read as still.
+fn disabled_tooltip_is(
+    window: &mut Headless,
+    node: &accesskit::Node,
+    expected: &str,
+    mut frame: impl FnMut(&mut Headless, Vec<egui::Event>) -> Vec<accesskit::Node>,
+) {
+    window
+        .ctx
+        .all_styles_mut(|style| style.interaction.tooltip_delay = 0.0);
+    frame(window, vec![egui::Event::PointerMoved(centre(node))]);
+    for _ in 0..30 {
+        if shows_text(&frame(window, Vec::new()), expected) {
+            return;
+        }
+    }
+    panic!("no tooltip {expected:?} showed over the disabled widget");
+}
+
 /// The view's first frames: the check the window opens with ended, and the frame after's
 /// nodes, the state the check left (the log's lines, the toolbar's buttons).
 fn first_check(tool: &mut Tool, ctx: &ToolContext, window: &mut Headless) -> Vec<accesskit::Node> {
