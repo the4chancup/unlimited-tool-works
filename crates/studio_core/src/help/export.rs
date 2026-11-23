@@ -6,7 +6,7 @@
 use std::io::Write;
 use std::path::Path;
 
-use crate::help::{CatalogRow, HelpSection, MESSAGES_SLUG, chapters};
+use crate::help::{CatalogRow, HelpSection, MESSAGES_SLUG, WHATS_NEW_ID, chapters};
 use crate::tool::{CliError, StudioTool};
 
 /// The chapter as one Markdown document: `# <title>`, then each topic as `## <title>` and its
@@ -132,6 +132,52 @@ pub fn run_help(
         })?,
     };
     out.write_all(markdown.as_bytes()).map_err(out_error)
+}
+
+/// `docs/prototypes/help.js`, the file the drafts draw their help window and their log
+/// lines' texts from: two comment lines naming it, then the help the build assembles as one
+/// `const BUILD_HELP` of JSON, every chapter's topics and catalog rows plus the line above a
+/// Messages table. A test in `studio` fails while the file differs from this text, so a
+/// changed topic or catalog row rewrites it rather than letting a hand-made copy drift. The
+/// What's new chapter keeps its place but not its topic: its body is the changelog, which
+/// changes with nearly every commit a member notices, and the drafts show a sample
+/// changelog in its place.
+pub fn draft_script(tools: &[Box<dyn StudioTool>]) -> String {
+    let chapters: Vec<serde_json::Value> = chapters(tools.iter().map(Box::as_ref))
+        .into_iter()
+        .map(|(id, section)| {
+            let topics = if id == WHATS_NEW_ID {
+                &[][..]
+            } else {
+                &section.topics[..]
+            };
+            serde_json::json!({
+                "id": id,
+                "title": section.title,
+                "topics": topics.iter().map(|topic| serde_json::json!({
+                    "slug": topic.slug,
+                    "title": topic.title,
+                    "body": topic.body,
+                })).collect::<Vec<_>>(),
+                "messages": section.messages.iter().map(|row| serde_json::json!({
+                    "code": row.code,
+                    "severity": row.severity,
+                    "when": row.when,
+                    "effect": row.effect,
+                })).collect::<Vec<_>>(),
+            })
+        })
+        .collect();
+    let help = serde_json::json!({
+        "messagesIntro": crate::help::MESSAGES_INTRO,
+        "chapters": chapters,
+    });
+    let json = serde_json::to_string_pretty(&help).expect("a serde_json::Value always serializes");
+    format!(
+        "// The build's help for the drafts' help window and log lines, never edited by hand:\n\
+         // `just draft-help` writes it again; a test in `studio` fails while it differs from the build's.\n\
+         const BUILD_HELP = {json};\n"
+    )
 }
 
 #[cfg(test)]
@@ -305,6 +351,86 @@ mod tests {
 
     fn text(out: Vec<u8>) -> String {
         String::from_utf8(out).unwrap()
+    }
+
+    // The script's payload: the JSON value after `const BUILD_HELP = `, its closing `;`
+    // stripped, parsed back.
+    fn draft_json(script: &str) -> serde_json::Value {
+        let json = script
+            .split_once("const BUILD_HELP = ")
+            .expect("the constant's line")
+            .1
+            .strip_suffix(";\n")
+            .expect("the closing semicolon and newline");
+        serde_json::from_str(json).unwrap()
+    }
+
+    #[test]
+    fn the_draft_script_holds_every_chapter_in_registry_order_whats_new_without_its_topic() {
+        let json = draft_json(&draft_script(&stub_tools()));
+        let chapters = json["chapters"].as_array().unwrap();
+        let ids: Vec<&str> = chapters
+            .iter()
+            .map(|chapter| chapter["id"].as_str().unwrap())
+            .collect();
+        assert_eq!(
+            ids,
+            [
+                "setting-up",
+                "first-run",
+                "updates",
+                "reporting",
+                "whats-new",
+                "alpha",
+                "beta"
+            ]
+        );
+        assert_eq!(chapters[4]["topics"], serde_json::json!([]));
+        let alpha = &chapters[5];
+        assert_eq!(
+            alpha["topics"][0],
+            serde_json::json!({"slug": "topic-a", "title": "Topic A", "body": "Alpha's topic.\n"})
+        );
+        assert_eq!(
+            alpha["messages"][0],
+            serde_json::json!({"code": "a_code", "severity": "Error", "when": "a trigger", "effect": "an effect"})
+        );
+        assert_eq!(chapters[6]["messages"], serde_json::json!([]));
+        assert_eq!(json["messagesIntro"], crate::help::MESSAGES_INTRO);
+    }
+
+    #[test]
+    fn the_draft_script_keeps_a_body_s_quotes_backslashes_and_newlines() {
+        let body = "a \"quoted\" `C:\\path`\nnext line\n";
+        let mut gamma = stub("gamma", "Gamma");
+        gamma.topics = vec![HelpTopic {
+            slug: "t",
+            title: "T",
+            body,
+        }];
+        let json = draft_json(&draft_script(&[Box::new(gamma)]));
+        let gamma = json["chapters"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|chapter| chapter["id"] == "gamma")
+            .expect("the gamma chapter");
+        assert_eq!(gamma["topics"][0]["body"], body);
+    }
+
+    #[test]
+    fn the_draft_script_is_a_comment_then_one_constant() {
+        let script = draft_script(&stub_tools());
+        let (comment, rest) = script
+            .split_once("const BUILD_HELP = ")
+            .expect("the constant's line");
+        let lines: Vec<&str> = comment.lines().collect();
+        assert_eq!(lines.len(), 2, "{comment}");
+        assert!(
+            lines.iter().all(|line| line.starts_with("// ")),
+            "{comment}"
+        );
+        assert!(rest.ends_with("};\n"));
     }
 
     #[test]

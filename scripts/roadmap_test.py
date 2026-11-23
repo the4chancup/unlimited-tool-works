@@ -5,8 +5,6 @@ import unittest
 from roadmap import group, headline, inline, parse, render
 
 WORKLOG = """\
-# Worklog
-
 ## Current status
 
 ### Now

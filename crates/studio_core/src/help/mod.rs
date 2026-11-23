@@ -8,7 +8,7 @@ mod export;
 use crate::events::MessageCode;
 use crate::tool::StudioTool;
 
-pub use export::run_help;
+pub use export::{draft_script, run_help};
 
 /// The generated Messages topic's slug: the one topic not in a chapter's `topics`
 /// list, spelled wherever a slug or anchor names it (the window's `topic_index`
