@@ -126,7 +126,8 @@ draft checked, for the maintainer to publish; running sidekicks and jobs are not
      by the maintainer as it is
    - [ ] The next VGL build, `0.0.3-vgl27.2`, once the Compiler's slices 1b and 1c have landed
      (the maintainer, 2026-11-22), 1c-iii's Upgrade DpFileList button included (2026-11-23):
-     `vgl27` merges main, raises the version, is packed. What the button does on PES 2019
+     `vgl27` merges main, raises the version, is packed. Slices 1b and 1c have landed (2026-11-23): it is
+     built from main once the checkpoint on `6ef6ea58` passes. What the button does on PES 2019
      waits on item 8 (`maintainer/questions.html` "Upgrade DpFileList in the organizer's PES
      2019 build")
    - [x] VGL27's legacy mode off main, onto `vgl27` alone (2026-11-22, DECISIONS 2026-11-22):
@@ -150,7 +151,7 @@ draft checked, for the maintainer to publish; running sidekicks and jobs are not
      - [x] 1b-iii (2026-11-23, merge `2eeccf60`, SWE-2): a `.zip` export's pictures read from
        the zip, each from its own entry; a `.7z`'s boxes stay empty (TC-GUI-31's zip clause).
        Its review rounds go with 1c-ii's
-   - [ ] 1c: the toolbar's strip and its counts, the log's lines linked to cells, the log
+   - [x] 1c: the toolbar's strip and its counts, the log's lines linked to cells, the log
      collapsed when it would hide rows, the Upgrade DpFileList button → verify: TC-GUI-15,
      26, 27, 33. The pure move of the
      view's tests came first (`3aa75bac` on `sk/grid1c`).
@@ -227,12 +228,14 @@ draft checked, for the maintainer to publish; running sidekicks and jobs are not
        colours for a kit the check dropped or whose compile failed (a failed kit keeps its
        listed pair today, though its entry is never written). Its compile half waits on a
        run updating the cells (TC-GUI-12)
+   - [ ] The Compile button's mode list, Open output folder and Copy report (TC-GUI-11, and
+     TC-GUI-33's clause that Compile for sideloading stays enabled while the DpFileList is
+     outdated; DECISIONS 2026-11-23 "the Compile menu's Copy report copies the whole log").
+     SWE-2, running in `sk_tbmenu`
    - Then the row actions, the ID cell's editing, the
      watcher and cache, Sizes and sorting, and the rest of the toolbar
-     (`plans/team_compiler/gui.md` "Toolbar"; the build has a plain Compile button): the
-     split button with its mode list, Launch PES, the writability badge, and the dropdown's
-     Open output folder and Copy report. The mode list owes a clause of TC-GUI-33: while the
-     DpFileList is outdated, Compile for sideloading stays enabled. The log's lines also owe the plan's
+     (`plans/team_compiler/gui.md` "Toolbar"): Launch PES, the writability badge and the
+     compile column's toggle. The log's lines also owe the plan's
      `Severity - /team/ - code` form (`plans/team_compiler/gui.md` "A message's log line"),
      their wrapping under that head (ST-LOG-05), and Open folder in a line's context menu.
      The watcher and cache's slice also owes TC-GUI-04's `.7z` order: 1a's check reads a
