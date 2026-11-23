@@ -83,7 +83,8 @@ draft checked, for the maintainer to publish; running sidekicks and jobs are not
      - the packed round trip tested with a non-empty logo, identifier and serial;
      - `frames_until` back to CONTRIBUTING's 120 s, and the comparator test that ran out at
        120 s in the 2026-11-21 checkpoint made not to wait on a loaded worker;
-     - then a SWE-2 subloop over the fixes, and Carbon's loop (queued);
+     both briefed as SWE-2 slice N2 (`.tmp/s5c/brief_n2.md`), running; then a SWE-2 subloop
+     over the fixes, and Carbon's loop (queued);
    - [x] 5d the dialog's "Include earlier sessions" box and the help page's line (ST-REP-09,
      12), the draft's ending line settled (DECISIONS 2026-11-21 "an earlier session with no
      `[end]` reads "ending unknown""): merged `db2900cd`. Seen in the release build beside
@@ -242,7 +243,8 @@ draft checked, for the maintainer to publish; running sidekicks and jobs are not
      SWE-2 slices, merged 2026-11-23: G1 (the dialog, the settings re-check, the Compile
      menu's tests) `4f5cbe58`, G2 (the layout of duplicate kit folders and referee rows)
      `fd84b216`, G3 (the archive tooltip, the menu's 2 px gap, the shared widgets' tests)
-     `4ee3aa5b`. Next: a SWE-2 subloop over the three, then Carbon round 3
+     `4ee3aa5b`. Next: a SWE-2 subloop over the three (round 1 running, one brief each,
+     `.tmp/grid2/swe_g1.md` to `swe_g3.md`), then Carbon round 3
    - [ ] The Compile button's mode list, Open output folder and Copy report (TC-GUI-11, and
      TC-GUI-33's clause that Compile for sideloading stays enabled while the DpFileList is
      outdated; DECISIONS 2026-11-23 "the Compile menu's Copy report copies the whole log").
@@ -2756,8 +2758,12 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       - [ ] the rework merged (`9e757880`); due: a SWE-2 loop over it, then Carbon's round 2
         (round 1 had two of reach (a)). SWE-2 round "S-cmp c1", 2026-11-23: 6 accepted, one
         a group member's float drawn unselected; its fixes, with S-sel c1's, merged
-        `044955c1` (SWE-2). Round c2 over them found nothing, which ends the SWE-2 loop:
-        Carbon's round 2 is next
+        `044955c1` (SWE-2). Round c2 over them found nothing, which ends the SWE-2 loop
+      - [ ] Carbon's round 2, 2026-11-23 (at `bb2ccfb4`, rulings "C-cmp r2"): 9 accepted, one of
+        reach (a): a held row's id passed to another row while the wheel scrolled the list,
+        which blanked a bystander. The lead's text: SE-GUI-69 and SE-GUI-13 (`72bfe950`). Next:
+        the fix slice C1 (SWE-2, `.tmp/c2fix/brief_c1.md`) once N2 (item 5c) merges, as both
+        touch the Comparator's tests; then a SWE-2 loop over it, then Carbon's round 3
   - [ ] 0.0.2-bar the toolbar as a menu bar (the maintainer, 2026-11-07 and 2026-11-12): the
     Ruleset editor draft's look, unframed menus on a band edge to edge, on the Save editor
     and the Ruleset editor; in the Save editor `File` (the opens, then Save and Save as) and
@@ -2864,7 +2870,12 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       (round 1 had one of reach (a)). SWE-2 round "S-sel c1", 2026-11-23: 2 accepted (a test
       copying a helper's loop, a doc), which ends the loop; one concern waits on
       `maintainer/questions.html` "Portraits after a compile in the same session". Its fixes
-      merged with S-cmp c1's (`044955c1`); Carbon's round 2 is next
+      merged with S-cmp c1's (`044955c1`)
+    - [ ] Carbon's round 2, 2026-11-23 (at `bb2ccfb4`, rulings "C-sel r2"): 7 accepted, none of
+      reach (a), which ends Carbon's loop: texts still saying every tool uses the version,
+      and three guards meant to act once per change, each tested on one frame. The lead's
+      text: SE-GUI-50 and the drafts' tooltips (`72bfe950`). Its fixes are slice C2 (SWE-2,
+      `.tmp/c2fix/brief_c2.md`, running); then one SWE-2 round over them
     - [x] the look in the built window, both themes: checked 2026-11-15 at `4b9f2258`; the
       maintainer's look 2026-11-17: fine
   - [x] 0.0.2-undo an X on each row of the unsaved changes list undoing that change alone,
@@ -3324,7 +3335,11 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       logos not seen, which Edit mode never places (look: Pending looks)
     - Astra A-nobc7 r1 (3 accepted) and its rework 2026-11-08; SWE-2 S-nobc7 r1 2026-11-11
       (3 accepted, among them `texture_not_div4` skipping a pre-Fox texture written
-      uncompressed, DECISIONS 2026-11-11; look: Pending looks), its loop ended; Carbon's round is due
+      uncompressed, DECISIONS 2026-11-11; look: Pending looks), its loop ended
+    - [ ] Carbon's round, 2026-11-23 (at `ca8559a1`, rulings "C-nobc7 r1"): 6 accepted, none of
+      reach (a), which ends Carbon's loop. The lead's texts `f05659ef`; the tests for each
+      place that keeps or encodes an uncompressed source, SWE-2 slice N1, merged `6b5ace55`.
+      Next: one SWE-2 round over both, then Astra's round
     - the same run's PoC look passed: /dbg/ and /4ccg/ upgrade and compile clean (about 2 s
       for both), and the 8 players checked show their own faces and bodies
   - [x] 0.0.2c the illegal formation check (`plans/aatf_rules.md` "The illegal formation
@@ -4194,10 +4209,6 @@ points there.
   subsystem" names only the interleaved prompt as the arrangement's cost. Unmeasured:
   PowerShell. `--log-file` covers a tool's findings; a `diff` or `--json` to a file from
   `cmd` has no route yet (a console-subsystem shim beside the exe is the usual one).
-- open 2026-11-12 (0.0.2-drag) — the player list draws only the rows in view, so a row
-  dragged while the wheel scrolls its place out of view stops floating until the release
-  (the drop still lands). Harmless on a team's list, which fits the window; a fix would
-  paint the float from outside the rows.
 - open 2026-11-12 (0.0.2-upd, the look in the built exe) — a dialog whose button row is
   wider than its body draws the buttons out past the body's left edge
   (`widgets::modal_buttons` lays them out from the right in the body's width). Seen on the
