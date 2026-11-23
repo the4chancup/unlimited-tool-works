@@ -221,7 +221,8 @@ draft checked, for the maintainer to publish; running sidekicks and jobs are not
        The stretched pattern is a `ui_decisions.html` card
      - SWE-2 round SW1 over a, b and c (two parts): 5 accepted, none of reach (a), so the
        rounds end here; among them, a referee export's kits no longer carry an icon (the
-       compile writes none for them). The fixes: SWE-2, running
+       compile writes none for them). The fixes merged `356e1591` (SWE-2, the lead moving
+       two test samples off the edge they were to catch)
      - [ ] d a compile's colours worked out from the texture, and the base `UniColor.bin`
        colours for a kit the check dropped or whose compile failed (a failed kit keeps its
        listed pair today, though its entry is never written). Its compile half waits on a
