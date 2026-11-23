@@ -1,12 +1,20 @@
 """Writes `docs/maintainer/roadmap.html`: the maintainer's at-a-glance page of what is in
-flight, what is next and what is later, made from `docs/WORKLOG.md` and the git log's recent
-merges so it cannot drift from them. Run from the repository root (`just roadmap`) after the
-worklog changes; the page is never written by hand. A sample for the maintainer's look for
-now: wiring it into `scripts/commit.py` waits on that look."""
+flight, what is next and what is later, and a timeline of the steps and what they wait on,
+made from `docs/WORKLOG.md` and the git log's recent merges so it cannot drift from them.
+It refuses a worklog whose "Where the work stands" items break the header's convention (no
+checkbox and ID, an ID twice among siblings, an `[after …]` naming no step, a wait that
+comes back to its step), so a wrong dependency fails when it is written, not at a converge.
+Run from the repository root (`just roadmap`) after the worklog changes; the page is never
+written by hand. A sample for the maintainer's look for now: wiring it into
+`scripts/commit.py` waits on that look."""
+import datetime
+import heapq
 import html
 import os
 import re
 import subprocess
+import sys
+from collections.abc import Iterator
 from dataclasses import dataclass, field
 from itertools import groupby
 from operator import itemgetter
@@ -15,23 +23,50 @@ WORKLOG = "docs/WORKLOG.md"
 OUT = "docs/maintainer/roadmap.html"
 
 BULLET = re.compile(r"^\s*-\s+")
-CHECKBOX = re.compile(r"^\s*- \[(?P<mark>[ x~!])\]\s*")
-# A numbered item of "Where the work stands" (`6. The Compiler's view…`), always at column 0.
-NUMBERED = re.compile(r"^\d+\.\s+")
-# A run-in bold opening a paragraph (`**Working mode.** The lead plans…`).
-RUNIN = re.compile(r"^\*\*(?P<bold>[^*]+?)\*\*")
+# An item of "Where the work stands" (`- ` or `6. `), with its leading spaces.
+ITEM = re.compile(r"^( *)(-|\d+\.) ")
+# What an item's rest must open with: checkbox, bold ID, the optional `[after …]` list.
+HEAD = re.compile(r"^\[(?P<mark>[ x~!])\] \*\*(?P<id>[^*]+)\*\*"
+                  r"(?: \[after (?P<after>[^\]]+)\])? ?")
+# A done step's date: its first backticked short hash, else the first date in its text.
+HASH = re.compile(r"`([0-9a-fA-F]{7,12})`")
+DATE = re.compile(r"\d{4}-\d{2}-\d{2}")
 OPEN_MARKS = " ~!"
+# One per top-level step, in the order they are listed: the Okabe-Ito palette, every one readable on
+# the page's `#1e1e1e`.
+PALETTE = ["#E69F00", "#56B4E9", "#009E73", "#F0E442",
+           "#0072B2", "#D55E00", "#CC79A7", "#999999"]
+
+
+@dataclass
+class Step:
+    """One item of "Where the work stands": `id` (its bold code), `path` (the IDs from the
+    top-level item down, joined by `/`), `mark` (the checkbox), `text` (what follows the ID
+    and the `[after …]`, continuation lines joined), `after` (the names as written),
+    `children`, `parent` and `line` (its 1-based line in the worklog)."""
+    id: str
+    path: str
+    mark: str
+    text: str
+    after: list[str]
+    children: list["Step"]
+    parent: "Step | None" = field(repr=False, compare=False, default=None)
+    line: int = 0
 
 
 @dataclass
 class Roadmap:
-    """What the page shows: `now` one line per thread in flight, `next` (group, text) per
-    open checkbox of "Where the work stands", `later` (phase, scope, status) per unfinished
-    row of the phases table, and `open_issues` the count of open lines under "Issues"."""
+    """What the page shows: `now` one line per thread in flight, `next` one
+    (group, path, text, after) per open step with no open child, `later`
+    (phase, scope, status) per unfinished row of the phases table, `open_issues` the count
+    of open lines under "Issues", `steps` the section's tree and `problems` the convention
+    problems found in it."""
     now: list[str] = field(default_factory=list)
-    next: list[tuple[str, str]] = field(default_factory=list)
+    next: list[tuple[str, str, str, list[str]]] = field(default_factory=list)
     later: list[tuple[str, str, str]] = field(default_factory=list)
     open_issues: int = 0
+    steps: list[Step] = field(default_factory=list)
+    problems: list[str] = field(default_factory=list)
 
 
 def heading(lines: list[str], title: str) -> int:
@@ -39,31 +74,139 @@ def heading(lines: list[str], title: str) -> int:
     return next(i for i, line in enumerate(lines) if line.strip() == title)
 
 
-def joined(block: list[str], index: int, start: int) -> str:
+def joined(block: list[str], index: int, start: int, items: bool = True) -> str:
     """The text of the item at `index` from `start`, joined with its continuation lines:
     the following lines indented deeper than its own, until a blank line or one at the same
-    or a lower indentation."""
+    or a lower indentation, or, with `items` false, the first line that is an item of its
+    own (a child step, whose text is its own)."""
     indent = len(block[index]) - len(block[index].lstrip())
     parts = [block[index][start:].strip()]
     for line in block[index + 1:]:
         if not line.strip() or len(line) - len(line.lstrip()) <= indent:
             break
+        if not items and ITEM.match(line):
+            break
         parts.append(line.strip())
     return " ".join(parts)
 
 
-def group(block: list[str], index: int) -> str:
-    """The group the checkbox at `index` shows under: the nearest numbered item above it,
-    or the nearest run-in bold paragraph when that one is nearer; "" when neither is."""
-    for back in range(index - 1, -1, -1):
-        line = block[back]
-        numbered = NUMBERED.match(line)
-        if numbered:
-            return headline(joined(block, back, numbered.end()))
-        runin = RUNIN.match(line)
-        if runin:
-            return runin["bold"].removesuffix(".").removesuffix(":")
-    return ""
+def walk(top: list[Step]) -> Iterator[Step]:
+    """Every step in `top`, in worklog order: each step before its children."""
+    for step in top:
+        yield step
+        yield from walk(step.children)
+
+
+def resolve(name: str, step: Step, top: list[Step]) -> Step | None:
+    """The step `name` in `[after …]` names, by the header's rule: looked up among the
+    step's siblings first, then among its parent's, and so on up to the top-level items;
+    a path such as `GRID/1b` names a step inside another, its first name looked up the
+    same way."""
+    first, *rest = name.split("/")
+    node = step.parent
+    while True:
+        scope = node.children if node else top
+        hit = next((c for c in scope if c.id == first), None)
+        if hit:
+            for part in rest:
+                hit = next((c for c in hit.children if c.id == part), None)
+                if hit is None:
+                    return None
+            return hit
+        if node is None:
+            return None
+        node = node.parent
+
+
+def reaches(source: Step, wanted: Step, top: list[Step]) -> bool:
+    """`wanted` is reachable from `source` through resolved `[after …]` waits."""
+    seen, queue = set(), [source]
+    while queue:
+        step = queue.pop()
+        if step is wanted:
+            return True
+        if id(step) in seen:
+            continue
+        seen.add(id(step))
+        queue += [t for name in step.after
+                  if (t := resolve(name, step, top)) is not None]
+    return False
+
+
+def steps(text: str) -> tuple[list[Step], list[str]]:
+    """The top-level steps of "Where the work stands" and the problems found: an item
+    without its checkbox and ID, an ID twice among siblings, an `[after …]` name that
+    resolves to nothing, a wait that comes back to its step. Nesting is by indentation;
+    a column-0 line that is not an item ends every open list."""
+    lines = text.splitlines()
+    start = heading(lines, "### Where the work stands")
+    block, index = [], start + 1
+    while index < len(lines) and not lines[index].startswith(("## ", "---")):
+        block.append(lines[index])
+        index += 1
+
+    top, stack, problems = [], [], []
+    for i, line in enumerate(block):
+        item = ITEM.match(line)
+        if not item:
+            if line and not line.startswith(" "):
+                stack = []
+            continue
+        head = HEAD.match(line[item.end():])
+        if not head:
+            problems.append(f"{start + 2 + i}: no checkbox and ID")
+            continue
+        indent = len(item.group(1))
+        while stack and stack[-1][0] >= indent:
+            stack.pop()
+        parent = stack[-1][1] if stack else None
+        step = Step(id=head["id"],
+                    path=f"{parent.path}/{head['id']}" if parent else head["id"],
+                    mark=head["mark"],
+                    text=joined(block, i, item.end() + head.end(), items=False),
+                    after=[a.strip() for a in head["after"].split(",")]
+                          if head["after"] else [],
+                    children=[], parent=parent, line=start + 2 + i)
+        (parent.children if parent else top).append(step)
+        stack.append((indent, step))
+
+    all_steps = list(walk(top))
+    for parent in [None] + all_steps:
+        children = top if parent is None else parent.children
+        seen = set()
+        for child in children:
+            if child.id in seen:
+                where = parent.path if parent else "the top"
+                problems.append(f"{child.line}: {child.id} twice under {where}")
+            else:
+                seen.add(child.id)
+    for step in all_steps:
+        for name in step.after:
+            target = resolve(name, step, top)
+            if target is None:
+                problems.append(f"{step.line}: {step.path} waits on {name}, "
+                                "which names no step")
+            elif reaches(target, step, top):
+                problems.append(f"{step.line}: {step.path} waits on itself "
+                                f"through {name}")
+    return top, problems
+
+
+def next_entries(top: list[Step]) -> list[tuple[str, str, str, list[str]]]:
+    """One entry per open step with no open child, in worklog order:
+    (group, path, text, after), the group its top-level step's ID and headline."""
+    entries = []
+    for step in walk(top):
+        if step.mark not in OPEN_MARKS:
+            continue
+        if any(child.mark in OPEN_MARKS for child in step.children):
+            continue
+        root = step
+        while root.parent is not None:
+            root = root.parent
+        entries.append((f"{root.id} {headline(root.text)}",
+                        step.path, step.text, step.after))
+    return entries
 
 
 def parse(text: str) -> Roadmap:
@@ -79,17 +222,8 @@ def parse(text: str) -> Roadmap:
             roadmap.now.append(joined(lines, index, bullet.end()))
         index += 1
 
-    start = heading(lines, "### Where the work stands")
-    index = start + 1
-    block = []
-    while index < len(lines) and not lines[index].startswith(("## ", "---")):
-        block.append(lines[index])
-        index += 1
-    for index, line in enumerate(block):
-        checkbox = CHECKBOX.match(line)
-        if checkbox and checkbox["mark"] in OPEN_MARKS:
-            roadmap.next.append((group(block, index),
-                                 headline(joined(block, index, checkbox.end()))))
+    roadmap.steps, roadmap.problems = steps(text)
+    roadmap.next = next_entries(roadmap.steps)
 
     start = heading(lines, "## Phases")
     index = start + 1
@@ -153,10 +287,237 @@ def recent_merges(days: int = 7) -> list[tuple[str, str]]:
     return [tuple(line.split("\t", 1)) for line in log.splitlines()]
 
 
+def order_open(shown: list[Step], top: list[Step]) -> list[Step]:
+    """`shown`, worklog order, re-sorted so a step sits above every shown step it waits
+    on: a stable topological order whose ties keep the worklog's. A wait that forms a
+    cycle is a `steps` problem; a step still in one sinks to the end here."""
+    place = {id(s): i for i, s in enumerate(shown)}
+    targets = {id(s): [t for name in s.after
+                       if (t := resolve(name, s, top)) is not None]
+               for s in shown}
+    waiting = [0] * len(shown)    # how many shown steps wait on each
+    for s in shown:
+        for t in targets[id(s)]:
+            if id(t) in place:
+                waiting[place[id(t)]] += 1
+    ready = [i for i in range(len(shown)) if not waiting[i]]
+    heapq.heapify(ready)
+    order, emitted = [], set()
+    while ready:
+        i = heapq.heappop(ready)
+        order.append(shown[i])
+        emitted.add(i)
+        for t in targets[id(shown[i])]:
+            if id(t) not in place:
+                continue
+            j = place[id(t)]
+            waiting[j] -= 1
+            if not waiting[j]:
+                heapq.heappush(ready, j)
+    order += [s for i, s in enumerate(shown) if i not in emitted]
+    return order
+
+
+def lanes(rows: list[Step], slot: dict[int, int], top: list[Step]):
+    """The timeline's tracks, `[top slot, bottom slot, colour, column]` each, and every
+    shown step's track index. A track is the shown rows of one top-level step and its
+    direct leaf children, or of one second-level step's whole subtree. Columns are
+    greedy: tracks sorted by top row, each takes the lowest column no track already in
+    it overlaps (spans sharing a row overlap)."""
+    shown = {id(s) for s in rows}
+    tracks, member = [], {}
+    for i, t in enumerate(top):
+        colour = PALETTE[i % len(PALETTE)]
+
+        def add(members: list[Step]) -> None:
+            ids = [id(m) for m in members if id(m) in shown]
+            if ids:
+                member.update((m, len(tracks)) for m in ids)
+                tracks.append([min(slot[m] for m in ids),
+                               max(slot[m] for m in ids), colour])
+
+        if not t.children:
+            add([t])
+            continue
+        add([t] + [c for c in t.children if not c.children])
+        for c in t.children:
+            if c.children:
+                add(list(walk([c])))
+
+    columns: list[list[tuple[int, int]]] = []
+    for k in sorted(range(len(tracks)), key=lambda k: tracks[k][0]):
+        lo, hi = tracks[k][0], tracks[k][1]
+        for c, spans in enumerate(columns):
+            if all(hi < a or lo > b for a, b in spans):
+                tracks[k].append(c)
+                spans.append((lo, hi))
+                break
+        else:
+            tracks[k].append(len(columns))
+            columns.append([(lo, hi)])
+    return tracks, member, len(columns)
+
+
+def cut(text: str, limit: int = 110) -> str:
+    """`text` cut at `limit` characters, `…` marking the cut; a cut that would split a
+    backticked or a double-quoted span moves back to before it, since half a section
+    pointer (`` `plans/x.md` "Phase 8: GUI" ``) fails `scripts/gates/doc_pointers.py`."""
+    if len(text) <= limit:
+        return text
+    in_code = in_quote = False
+    opened = 0
+    for i, char in enumerate(text[:limit]):
+        if char == "`" and not in_quote:
+            if not in_code:
+                opened = i
+            in_code = not in_code
+        elif char == '"' and not in_code:
+            if not in_quote:
+                opened = i
+            in_quote = not in_quote
+    end = opened if in_code or in_quote else limit
+    return text[:end].rstrip() + "…"
+
+
+def mono(text: str) -> str:
+    """`text` HTML-escaped, each backticked span a monospace `<tspan>` with the
+    backticks dropped."""
+    out = []
+    for i, part in enumerate(html.escape(text).split("`")):
+        if i % 2:
+            out.append(f'<tspan font-family="Consolas, monospace">{part}</tspan>')
+        else:
+            out.append(part)
+    return "".join(out)
+
+
+def timeline(roadmap: Roadmap, dates: dict[str, str], today: str) -> str:
+    """The steps as a vertical `git log --graph`: the open steps on top, each above
+    every open step it waits on, then a line labelled `today`, then the last week's
+    done steps, newest first; a lane per track and an edge to what each step waits on.
+    `dates` maps a step's path to its commit's ISO time or a bare `YYYY-MM-DD`, which
+    sorts before the times of its day."""
+    top = roadmap.steps
+    open_rows = order_open([s for s in walk(top)
+                            if s.mark in OPEN_MARKS
+                            and not any(c.mark in OPEN_MARKS for c in s.children)],
+                           top)
+    end = datetime.date.fromisoformat(today)
+    since = end - datetime.timedelta(days=6)
+    done, undated = [], 0
+    for s in walk(top):
+        if s.mark in OPEN_MARKS or s.children:
+            continue
+        day = dates.get(s.path)
+        if day is None:
+            undated += 1
+        elif since <= datetime.date.fromisoformat(day[:10]) <= end:
+            done.append((day, s))
+    done.sort(key=lambda d: (d[0], d[1].line), reverse=True)
+    done_rows = [s for _, s in done]
+    rows = open_rows + done_rows
+
+    slot = {id(s): i for i, s in enumerate(open_rows)}
+    slot.update({id(s): len(open_rows) + 1 + j for j, s in enumerate(done_rows)})
+
+    def cy(s: Step) -> int:
+        return 12 + 22 * slot[id(s)]
+
+    tracks, member, ncols = lanes(rows, slot, top)
+
+    def col_x(col: int) -> int:
+        return 10 + 16 * col
+
+    text_x = col_x(ncols - 1) + 14 if ncols else 24
+    sep_y = 12 + 22 * len(open_rows)
+    height = (cy(done_rows[-1]) if done_rows else sep_y) + 12
+
+    parts = [f'<svg viewBox="0 0 940 {height}" width="100%" '
+             'xmlns="http://www.w3.org/2000/svg">']
+    for lo, hi, colour, col in tracks:
+        parts.append(f'<line x1="{col_x(col)}" y1="{12 + 22 * lo}" '
+                     f'x2="{col_x(col)}" y2="{12 + 22 * hi}" '
+                     f'stroke="{colour}" stroke-width="2"/>')
+    for s in rows:
+        for name in s.after:
+            t = resolve(name, s, top)
+            if t is None:
+                continue
+            if id(t) not in member:
+                inside = [d for d in walk([t]) if id(d) in member]
+                if not inside:
+                    continue
+                t = min(inside, key=lambda d: slot[id(d)])
+            if member[id(t)] == member[id(s)]:
+                continue
+            x1 = col_x(tracks[member[id(s)]][3])
+            x2 = col_x(tracks[member[id(t)]][3])
+            y1, y2, ym = cy(s), cy(t), (cy(s) + cy(t)) / 2
+            parts.append(f'<path d="M {x1} {y1} C {x1} {ym:g}, {x2} {ym:g}, {x2} {y2}" '
+                         f'stroke="{tracks[member[id(s)]][2]}" stroke-width="1.5" '
+                         'opacity="0.6" fill="none"/>')
+    parts.append(f'<line x1="0" y1="{sep_y}" x2="940" y2="{sep_y}" stroke="#555"/>')
+    parts.append(f'<text x="{text_x}" y="{sep_y - 7}" fill="#999" '
+                 'font-size="13">today</text>')
+    for s in rows:
+        ti = member[id(s)]
+        colour, x, y = tracks[ti][2], col_x(tracks[ti][3]), cy(s)
+        open_ = s.mark in OPEN_MARKS
+        circle = (f'<circle cx="{x}" cy="{y}" r="5" fill="#1e1e1e" '
+                  f'stroke="{colour}" stroke-width="2"/>' if open_ else
+                  f'<circle cx="{x}" cy="{y}" r="5" fill="{colour}"/>')
+        whole = f"{s.path} {s.text.rstrip(';,')}"
+        shown_text = cut(whole)
+        head_part = (shown_text[:len(s.path)]
+                     if shown_text.startswith(s.path) else shown_text)
+        title = whole + (f" — waits on {', '.join(s.after)}" if s.after else "")
+        parts.append(f'<g><title>{html.escape(title)}</title>{circle}'
+                     f'<text x="{text_x}" y="{y}" '
+                     f'fill="{"#fff" if open_ else "#ddd"}" font-size="13" '
+                     'dominant-baseline="central">'
+                     f'<tspan font-weight="600">{html.escape(head_part)}</tspan>'
+                     f'{mono(shown_text[len(head_part):])}</text></g>')
+    parts.append("</svg>")
+    if undated:
+        parts.append(f'<p class="from">{undated} done step'
+                     f'{" has" if undated == 1 else "s have"} no date</p>')
+    return "\n".join(parts)
+
+
+def step_dates(top: list[Step]) -> dict[str, str]:
+    """Each done step's date: its first backticked short hash's commit time (ISO), else the
+    first `YYYY-MM-DD` in its text, else none. One `git show` resolves every hash."""
+    wanted = {}
+    for s in walk(top):
+        if s.mark not in OPEN_MARKS:
+            hit = HASH.search(s.text)
+            if hit:
+                wanted[s.path] = hit.group(1)
+    dates = {}
+    if wanted:
+        out = subprocess.run(["git", "show", "-s", "--format=%h%x09%aI",
+                              *wanted.values()],
+                             capture_output=True, text=True, check=False).stdout
+        shown = dict(line.split("\t", 1) for line in out.splitlines()
+                     if "\t" in line)
+        for path, short in wanted.items():
+            for full, day in shown.items():
+                if full.startswith(short) or short.startswith(full):
+                    dates[path] = day
+                    break
+    for s in walk(top):
+        if s.mark in OPEN_MARKS or s.path in dates:
+            continue
+        hit = DATE.search(s.text)
+        if hit:
+            dates[s.path] = hit.group(0)
+    return dates
+
+
 STYLE = """\
 .cols { display: flex; gap: 14px; align-items: flex-start; }
 .col { flex: 1; min-width: 0; }
-.card { border: 1px solid #383838; border-radius: 6px; padding: 10px 12px;
+.card { border: 1px solid #383838; border-radius: 2px; padding: 10px 12px;
   margin: 10px 0; background: #222; }
 .card p { margin: 0 0 6px; }
 .card p:last-child { margin-bottom: 0; }
@@ -173,19 +534,24 @@ NAV = """\
 </nav>"""
 
 
-def render(roadmap: Roadmap, merges: list[tuple[str, str]]) -> str:
-    """The page: three columns (Now, Next, Later), the week's merges in one `<details>`
-    per day, the open-issue count."""
+def render(roadmap: Roadmap, merges: list[tuple[str, str]],
+           dates: dict[str, str], today: str) -> str:
+    """The page: three columns (Now, Next, Later), the timeline, the week's merges in
+    one `<details>` per day, the open-issue count."""
     now = "\n".join(f'<div class="card">{inline(item)}</div>' for item in roadmap.now)
 
     nexts = []
     last_group = None
-    for item_group, text in roadmap.next:
+    for item_group, path, text, after in roadmap.next:
         if item_group != last_group:
             last_group = item_group
-            if last_group:
-                nexts.append(f'<p class="group">{inline(last_group)}</p>')
-        nexts.append(f'<div class="card">{inline(text)}</div>')
+            nexts.append(f'<p class="group">{inline(item_group)}</p>')
+        card = (f'<div class="card"><strong>{html.escape(path)}</strong> '
+                f'{inline(headline(text))}')
+        if after:
+            card += (f'<p class="from">waits on '
+                     f'{html.escape(", ".join(after))}</p>')
+        nexts.append(card + "</div>")
     nexts = "\n".join(nexts)
 
     later = "\n".join(
@@ -241,6 +607,9 @@ def render(roadmap: Roadmap, merges: list[tuple[str, str]]) -> str:
 </div>
 </div>
 
+<h2>Timeline</h2>
+{timeline(roadmap, dates, today)}
+
 <h2>Merged in the last 7 days</h2>
 {merged}
 <p>{issues}</p>
@@ -252,8 +621,12 @@ def render(roadmap: Roadmap, merges: list[tuple[str, str]]) -> str:
 def main() -> None:
     with open(WORKLOG, encoding="utf-8") as f:
         roadmap = parse(f.read())
+    if roadmap.problems:
+        print("\n".join(roadmap.problems))
+        sys.exit(1)
     merges = recent_merges()
-    page = render(roadmap, merges)
+    page = render(roadmap, merges, step_dates(roadmap.steps),
+                  datetime.date.today().isoformat())
     with open(OUT + ".new", "w", encoding="utf-8", newline="\n") as f:
         f.write(page)
     os.replace(OUT + ".new", OUT)

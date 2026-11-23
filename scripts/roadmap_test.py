@@ -1,8 +1,15 @@
 """Tests of scripts/roadmap.py; `just test` runs them."""
 
+import contextlib
+import io
+import os
+import re
+import tempfile
 import unittest
+from pathlib import Path
 
-from roadmap import group, headline, inline, parse, render
+import roadmap
+from roadmap import headline, inline, parse, render
 
 WORKLOG = """\
 ## Current status
@@ -17,14 +24,25 @@ One line per piece of work in flight.
 
 ### Where the work stands
 
-1. A numbered item: its detail.
-   - [ ] open sub bullet: its tail.
-   - [~] tilde sub bullet.
-   - [!] bang sub bullet.
-   - [x] done sub bullet.
+1. [ ] **TOP** A numbered item: its detail.
+   - [ ] **a** [after b] open sub bullet: its tail
+     runs on here.
+     - [x] **aa** [after ab] done nested bullet `63ecaae8`.
+     - [ ] **ab** [after TOP/b] open nested bullet.
+   - [x] **b** done sub bullet `a1b2c3d`.
+   - [ ] **c** [after b, MODE] open bullet: tail.
+2. [x] **DONE** done item `e5f6a7b` 2026-11-22.
+   - [x] **x** done child `12345678` 2026-11-21.
+   - [ ] **y** [after x] open child.
+3. [ ] **P2** second item: tail.
+   - [x] **x** done child `23456789` 2026-11-18.
 
 **Working mode.** How the work runs.
-- [ ] mode bullet: its tail.
+- [ ] **MODE** mode bullet: its tail.
+- [ ] **NEXT** [after MODE] next bullet.
+
+**Second block.** More prose.
+- [ ] **b** top-level b.
 
 ---
 
@@ -53,6 +71,28 @@ One line per piece of work in flight.
 ## Log
 """
 
+TODAY = "2026-11-23"
+
+
+def wl(body: str) -> str:
+    """A minimal worklog whose "Where the work stands" section is `body`, which starts
+    at line 9."""
+    return ("## Current status\n\n### Now\n\n- n.\n\n### Where the work stands\n\n"
+            + body + "\n---\n\n"
+            "## Phases\n\n| Phase | Scope | Crates | Status |\n|---|---|---|---|\n"
+            "| 1 | Boot | `s` | done |\n\n## Issues\n\n"
+            "- open (2026-01-01) — one.\n\n## Log\n")
+
+
+def circles(svg: str) -> dict[str, tuple[int, int]]:
+    """Each row's circle by the path its `<title>` opens with: path -> (cx, cy)."""
+    found = {}
+    for match in re.finditer(
+            r'<g><title>([^<]*)</title><circle cx="(\d+)" cy="(\d+)"', svg):
+        path = match[1].split(" ")[0]
+        found[path] = (int(match[2]), int(match[3]))
+    return found
+
 
 class Parse(unittest.TestCase):
     def test_now_holds_each_bullet_with_its_continuation_joined(self) -> None:
@@ -60,17 +100,17 @@ class Parse(unittest.TestCase):
         self.assertEqual(found.now, ["First thing in flight.",
                                      "Second thing, over two lines."])
 
-    def test_next_keeps_each_open_mark(self) -> None:
-        texts = [text for _, text in parse(WORKLOG).next]
-        self.assertIn("open sub bullet", texts)
-        self.assertIn("tilde sub bullet.", texts)
-        self.assertIn("bang sub bullet.", texts)
-        self.assertNotIn("done sub bullet.", texts)
+    def test_next_keeps_each_open_step_without_an_open_child(self) -> None:
+        paths = [path for _, path, _, _ in parse(WORKLOG).next]
+        self.assertEqual(paths,
+                         ["TOP/a/ab", "TOP/c", "DONE/y", "P2", "MODE", "NEXT", "b"])
 
-    def test_next_names_each_bullets_group(self) -> None:
+    def test_next_groups_under_the_top_level_steps_headline(self) -> None:
         found = parse(WORKLOG).next
-        self.assertEqual(found[0], ("A numbered item", "open sub bullet"))
-        self.assertEqual(found[-1], ("Working mode", "mode bullet"))
+        self.assertEqual(found[0][0], "TOP A numbered item")
+        self.assertEqual(found[2][0], "DONE done item `e5f6a7b` 2026-11-22.")
+        self.assertEqual(found[3][0], "P2 second item")
+        self.assertEqual(found[6][0], "b top-level b.")
 
     def test_later_keeps_the_rows_not_done(self) -> None:
         self.assertEqual(parse(WORKLOG).later,
@@ -80,8 +120,72 @@ class Parse(unittest.TestCase):
     def test_open_issues_counts_only_the_open_lines(self) -> None:
         self.assertEqual(parse(WORKLOG).open_issues, 2)
 
-    def test_a_run_in_group_ending_in_a_colon_loses_it(self) -> None:
-        self.assertEqual(group(["**Done today:** prose.", "- [ ] task"], 1), "Done today")
+
+class Steps(unittest.TestCase):
+    def test_a_nested_items_path_mark_after_and_text(self) -> None:
+        top, problems = roadmap.steps(WORKLOG)
+        self.assertEqual(problems, [])
+        self.assertEqual([s.id for s in top],
+                         ["TOP", "DONE", "P2", "MODE", "NEXT", "b"])
+        a = top[0].children[0]
+        self.assertEqual((a.path, a.mark, a.after, a.line),
+                         ("TOP/a", " ", ["b"], 14))
+        ab = a.children[1]
+        self.assertEqual((ab.path, ab.mark, ab.after, ab.text),
+                         ("TOP/a/ab", " ", ["TOP/b"], "open nested bullet."))
+
+    def test_an_items_text_joins_its_continuation_lines(self) -> None:
+        top, _ = roadmap.steps(WORKLOG)
+        a = top[0].children[0]
+        self.assertTrue(a.text.startswith("open sub bullet: its tail runs on here."))
+
+    def test_an_items_text_stops_at_its_first_child(self) -> None:
+        top, _ = roadmap.steps(WORKLOG)
+        self.assertEqual(top[0].children[0].text, "open sub bullet: its tail runs on here.")
+        self.assertEqual(top[1].text, "done item `e5f6a7b` 2026-11-22.")
+
+    def test_bullets_after_a_run_in_paragraph_are_top_level(self) -> None:
+        top, _ = roadmap.steps(WORKLOG)
+        self.assertEqual([s.id for s in top[3:]], ["MODE", "NEXT", "b"])
+        self.assertIsNone(top[3].parent)
+
+    def test_an_item_without_a_checkbox_and_id_is_a_problem_naming_its_line(self) -> None:
+        _, problems = roadmap.steps(WORKLOG.replace("- [ ] **a**", "- **a**"))
+        self.assertEqual(problems, ["14: no checkbox and ID"])
+        self.assertEqual(roadmap.steps(WORKLOG)[1], [])
+
+    def test_an_id_twice_under_one_parent_is_a_problem(self) -> None:
+        _, problems = roadmap.steps(WORKLOG.replace(
+            "**y** [after x] open child.", "**x** [after x] open child."))
+        self.assertEqual(problems, ["22: x twice under DONE"])
+
+    def test_the_same_id_under_two_parents_is_not_a_problem(self) -> None:
+        self.assertEqual(roadmap.steps(WORKLOG)[1], [])
+
+    def test_resolve_searches_siblings_then_upward_and_down_paths(self) -> None:
+        top, _ = roadmap.steps(WORKLOG)
+        c = top[0].children[2]
+        ab = top[0].children[0].children[1]
+        self.assertEqual(roadmap.resolve("b", c, top).path, "TOP/b")
+        self.assertEqual(roadmap.resolve("MODE", c, top).path, "MODE")
+        self.assertEqual(roadmap.resolve("TOP/b", ab, top).path, "TOP/b")
+        self.assertIsNone(roadmap.resolve("nope", c, top))
+        self.assertIsNone(roadmap.resolve("TOP/nope", ab, top))
+
+    def test_an_unresolvable_after_name_is_a_problem(self) -> None:
+        _, problems = roadmap.steps(WORKLOG.replace("[after TOP/b]", "[after TOP/nope]"))
+        self.assertEqual(problems,
+                         ["17: TOP/a/ab waits on TOP/nope, which names no step"])
+
+    def test_a_wait_cycle_is_a_problem(self) -> None:
+        _, problems = roadmap.steps(
+            wl("- [ ] **x** [after y] one.\n- [ ] **y** [after x] two.\n"))
+        self.assertEqual(problems, ["9: x waits on itself through y",
+                                    "10: y waits on itself through x"])
+
+    def test_the_real_worklog_breaks_no_convention(self) -> None:
+        text = Path("docs/WORKLOG.md").read_text(encoding="utf-8")
+        self.assertEqual(parse(text).problems, [])
 
 
 class Headline(unittest.TestCase):
@@ -109,31 +213,178 @@ class Inline(unittest.TestCase):
 
 class Render(unittest.TestCase):
     def test_the_page_holds_each_card_and_head(self) -> None:
-        page = render(parse(WORKLOG), [("2026-11-23", "merge(x): a merge")])
+        page = render(parse(WORKLOG), [("2026-11-23", "merge(x): a merge")],
+                      {}, TODAY)
         for text in ("First thing in flight.", "Second thing, over two lines.",
-                     "open sub bullet", "mode bullet", "Phase 2", "Phase 3",
+                     "open nested bullet", "mode bullet", "Phase 2", "Phase 3",
                      "merge(x): a merge"):
             self.assertIn(text, page)
-        for head in ("<h2>Now</h2>", "<h2>Next</h2>", "<h2>Later</h2>"):
+        for head in ("<h2>Now</h2>", "<h2>Next</h2>", "<h2>Later</h2>",
+                     "<h2>Timeline</h2>"):
             self.assertIn(head, page)
+        self.assertLess(page.index("<h2>Timeline</h2>"),
+                        page.index("<h2>Merged in the last 7 days</h2>"))
         self.assertIn("2 open issues in", page)
         self.assertNotIn('class="entry"', page)
 
+    def test_a_next_card_shows_its_path_headline_and_waits(self) -> None:
+        page = render(parse(WORKLOG), [], {}, TODAY)
+        self.assertIn('<div class="card"><strong>TOP/c</strong> open bullet'
+                      '<p class="from">waits on b, MODE</p></div>', page)
+        self.assertIn('<div class="card"><strong>TOP/a/ab</strong> '
+                      'open nested bullet.'
+                      '<p class="from">waits on TOP/b</p></div>', page)
+        self.assertIn('<div class="card"><strong>MODE</strong> mode bullet</div>',
+                      page)
+        self.assertEqual(page.count('<p class="from">waits on'), 4)
+
     def test_one_open_issue_is_singular(self) -> None:
-        roadmap = parse(WORKLOG)
-        roadmap.open_issues = 1
-        self.assertIn("1 open issue in", render(roadmap, []))
+        found = parse(WORKLOG)
+        found.open_issues = 1
+        self.assertIn("1 open issue in", render(found, [], {}, TODAY))
 
     def test_merges_fold_per_day_newest_first(self) -> None:
         merges = [("2026-11-23", "one"), ("2026-11-23", "two"), ("2026-11-22", "three")]
-        page = render(parse(WORKLOG), merges)
+        page = render(parse(WORKLOG), merges, {}, TODAY)
         self.assertEqual(page.count("<details>"), 2)
         self.assertIn("2026-11-23: 2 merges", page)
         self.assertIn("2026-11-22: 1 merge", page)
-        self.assertLess(page.index("2026-11-23"), page.index("2026-11-22"))
+        self.assertLess(page.index("2026-11-23: 2 merges"),
+                        page.index("2026-11-22: 1 merge"))
 
     def test_no_merges_is_a_line(self) -> None:
-        self.assertIn("No merges in the last 7 days.", render(parse(WORKLOG), []))
+        self.assertIn("No merges in the last 7 days.",
+                      render(parse(WORKLOG), [], {}, TODAY))
+
+
+class Timeline(unittest.TestCase):
+    DATES = {"TOP/a/aa": "2026-11-20", "TOP/b": "2026-11-23",
+             "DONE/x": "2026-11-17", "P2/x": "2026-11-16"}
+
+    def test_an_open_step_sits_above_the_open_step_it_waits_on(self) -> None:
+        cy = {p: y for p, (_, y) in
+              circles(roadmap.timeline(parse(WORKLOG), self.DATES, TODAY)).items()}
+        self.assertLess(cy["NEXT"], cy["MODE"])     # NEXT is listed after MODE
+        self.assertLess(cy["TOP/c"], cy["MODE"])    # c waits on MODE too
+
+    def test_done_rows_are_newest_first_and_within_the_week(self) -> None:
+        cy = {p: y for p, (_, y) in
+              circles(roadmap.timeline(parse(WORKLOG), self.DATES, TODAY)).items()}
+        self.assertLess(cy["TOP/b"], cy["TOP/a/aa"])
+        self.assertLess(cy["TOP/a/aa"], cy["DONE/x"])
+        self.assertNotIn("P2/x", cy)    # 7 days before today is out
+        self.assertIn("DONE/x", cy)     # 6 days before is in
+
+    def test_done_rows_of_one_day_follow_their_commits_times(self) -> None:
+        # TOP/b is listed after TOP/a/aa: their times, not the listing's order, place them.
+        dates = {**self.DATES, "TOP/a/aa": "2026-11-23T09:00:00+01:00",
+                 "TOP/b": "2026-11-23T08:00:00+01:00"}
+        cy = {p: y for p, (_, y) in
+              circles(roadmap.timeline(parse(WORKLOG), dates, TODAY)).items()}
+        self.assertLess(cy["TOP/a/aa"], cy["TOP/b"])
+        dates.update({"TOP/a/aa": "2026-11-23T08:00:00+01:00",
+                      "TOP/b": "2026-11-23T09:00:00+01:00"})
+        cy = {p: y for p, (_, y) in
+              circles(roadmap.timeline(parse(WORKLOG), dates, TODAY)).items()}
+        self.assertLess(cy["TOP/b"], cy["TOP/a/aa"])
+
+    def test_done_steps_without_a_date_are_counted(self) -> None:
+        svg = roadmap.timeline(parse(WORKLOG), self.DATES, TODAY)
+        self.assertNotIn("done steps have no date", svg)
+        dates = {k: v for k, v in self.DATES.items() if k != "P2/x"}
+        svg = roadmap.timeline(parse(WORKLOG), dates, TODAY)
+        self.assertIn("1 done step has no date", svg)
+        dates = {k: v for k, v in dates.items() if k != "DONE/x"}
+        svg = roadmap.timeline(parse(WORKLOG), dates, TODAY)
+        self.assertIn("2 done steps have no date", svg)
+
+    def test_a_rows_text_is_its_bold_path_and_whole_text(self) -> None:
+        svg = roadmap.timeline(parse(WORKLOG), self.DATES, TODAY)
+        self.assertIn('<tspan font-weight="600">TOP/c</tspan>', svg)
+        self.assertIn('<title>TOP/c open bullet: tail. — waits on b, MODE</title>', svg)
+
+
+class Lanes(unittest.TestCase):
+    LANES = wl("""\
+1. [ ] **A** item.
+   - [ ] **a1** s.
+   - [ ] **a2** s.
+2. [ ] **B** item.
+   - [ ] **b1** [after A/a2] s.
+3. [ ] **C** item.
+   - [ ] **c1** s.
+""")
+
+    def test_overlapping_tracks_take_different_columns_a_later_one_reuses(self) -> None:
+        svg = roadmap.timeline(parse(self.LANES), {}, TODAY)
+        xs = re.findall(r'<line x1="(\d+)" y1="\d+" x2="\d+" y2="\d+" '
+                        r'stroke="#[0-9A-F]+" stroke-width="2"/>', svg)
+        self.assertEqual([int(x) for x in xs], [10, 26, 10])
+
+    def test_an_open_rows_circle_is_hollow_and_a_done_rows_filled(self) -> None:
+        svg = roadmap.timeline(parse(WORKLOG), Timeline.DATES, TODAY)
+        cx, cy = circles(svg)["TOP/c"]
+        self.assertIn(f'<circle cx="{cx}" cy="{cy}" r="5" fill="#1e1e1e" '
+                      f'stroke="#E69F00" stroke-width="2"/>', svg)
+        cx, cy = circles(svg)["TOP/b"]
+        self.assertIn(f'<circle cx="{cx}" cy="{cy}" r="5" fill="#E69F00"/>', svg)
+
+
+class Edges(unittest.TestCase):
+    EDGES = wl("""\
+1. [ ] **A** item.
+   - [ ] **a1** s.
+   - [ ] **a2** [after a1] s.
+   - [ ] **g** group.
+     - [ ] **g1** [after a1] s.
+2. [ ] **B** item.
+   - [ ] **b1** [after A, OLD] s.
+3. [x] **OLD** old done, undated.
+""")
+
+    def test_each_shown_wait_across_tracks_is_one_edge(self) -> None:
+        svg = roadmap.timeline(parse(self.EDGES), {}, TODAY)
+        self.assertEqual(svg.count("<path"), 2)
+
+    def test_a_wait_on_an_unshown_parent_ends_at_its_topmost_descendant(self) -> None:
+        svg = roadmap.timeline(parse(self.EDGES), {}, TODAY)
+        self.assertIn('d="M 10 78 C 10 45, 10 45, 10 12"', svg)   # b1 on A, ends at a2
+        self.assertIn('d="M 26 34 C 26 45, 10 45, 10 56"', svg)   # g1 on a1
+
+
+class Main(unittest.TestCase):
+    def run_main(self, text: str) -> tuple[int, str, "str | None"]:
+        """`main()` with WORKLOG and OUT pointed at temp files: (code, output, page)."""
+        with tempfile.TemporaryDirectory() as folder:
+            worklog = os.path.join(folder, "WORKLOG.md")
+            out = os.path.join(folder, "roadmap.html")
+            Path(worklog).write_text(text, encoding="utf-8", newline="\n")
+            keep = roadmap.WORKLOG, roadmap.OUT
+            roadmap.WORKLOG, roadmap.OUT = worklog, out
+            shown = io.StringIO()
+            try:
+                code = 0
+                with contextlib.redirect_stdout(shown):
+                    try:
+                        roadmap.main()
+                    except SystemExit as error:
+                        code = error.code or 0
+                page = (Path(out).read_text(encoding="utf-8")
+                        if os.path.exists(out) else None)
+            finally:
+                roadmap.WORKLOG, roadmap.OUT = keep
+            return code, shown.getvalue(), page
+
+    def test_main_refuses_a_worklog_with_a_problem(self) -> None:
+        code, out, page = self.run_main(wl("- a line with no checkbox and ID.\n"))
+        self.assertEqual(code, 1)
+        self.assertIsNone(page)
+        self.assertIn("9: no checkbox and ID", out)
+
+    def test_main_writes_the_page_on_a_clean_worklog(self) -> None:
+        code, _, page = self.run_main(WORKLOG)
+        self.assertEqual(code, 0)
+        self.assertIn("<h2>Timeline</h2>", page)
 
 
 if __name__ == "__main__":
