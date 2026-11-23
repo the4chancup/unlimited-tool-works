@@ -63,20 +63,27 @@ otherwise goes back as a fix.</p>
 <section class="entry" id="roadmap-sample">
   <h3>The roadmap page</h3>
   <p class="from">From: worklog, "A roadmap page for the maintainer"</p>
-  <p>A new page, <a href="roadmap.html">Roadmap</a>, first in the menu above, shows what is in
-  flight (Now), the open steps (Next), the phases not yet closed (Later), the last week's merges
-  by day and the count of open issues. It is made from the worklog and git's merges, never by
-  hand. Once you are happy with it, every commit that changes the worklog makes it again.</p>
-  <p>Now added, as you asked: each step shows its ID (such as <code>GRID/carbon/C5</code>), Next
-  says what a step waits on, and a Timeline section draws the steps as a vertical graph, one
-  lane per piece of work running in parallel and a line from each step to what it waits on.
-  Hover over a step for its whole text. The page also refuses a worklog whose waits name no
-  step, so a dependency is written right once and not traced again.</p>
-  <p>Changed since your first look: the line now reads "now", and the steps being worked on
-  sit on it, as a band across the timeline, with the open steps above and the last week's done
-  ones below. The lanes stand twice as far apart, so a line from one lane to another is easier
-  to follow.</p>
-  <p>One gap is left: Later shows 0.0.1 and 0.0.2 as todo, as the worklog's phase table does.</p>
+  <p>A new page, <a href="roadmap.html">Roadmap</a>, first in the menu above, is made from the
+  worklog and git's merges, never by hand. Once you are happy with it, every commit that
+  changes the worklog makes it again.</p>
+  <p>Its timeline draws the work as a vertical graph, one lane per piece of work running in
+  parallel and a line from each step to what it waits on, with each step's ID (such as
+  <code>GRID/carbon/C5</code>). Hover over a step for its whole text. The page also refuses a
+  worklog whose waits name no step, so a dependency is written right once and not traced
+  again.</p>
+  <p>Changed since your last look, as you asked:</p>
+  <ul>
+    <li>The Now, Next and Later columns are gone; the timeline holds what they showed.</li>
+    <li>Every phase and release not yet done stands at the top, the next to run lowest, on a
+      grey lane.</li>
+    <li>The line reads "now", and the steps being worked on sit on it as a band, with the open
+      steps above and the last week's done ones below.</li>
+    <li><b>Go to now</b>, at the top, brings that band to the middle of the window.</li>
+    <li>The lanes stand twice as far apart, so a line from one lane to another is easier to
+      follow.</li>
+  </ul>
+  <p>The worklog's phase table now lists the phases in the order they run, and 0.0.1 and 0.0.2
+  are marked done.</p>
   <div class="options">
     <label class="opt"><input type="radio" value="keep"><b>Keep it as it is</b></label>
     <label class="opt"><input type="radio" value="keep, with changes"><b>Keep it, with changes</b>

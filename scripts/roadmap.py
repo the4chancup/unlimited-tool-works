@@ -1,6 +1,7 @@
-"""Writes `docs/maintainer/roadmap.html`: the maintainer's at-a-glance page of what is in
-flight, what is next and what is later, and a timeline of the steps and what they wait on,
-made from `docs/WORKLOG.md` and the git log's recent merges so it cannot drift from them.
+"""Writes `docs/maintainer/roadmap.html`: the maintainer's at-a-glance page, a timeline of the
+phases not yet done, the open steps and what they wait on, the steps in progress on its "now"
+line and the last week's done steps, made from `docs/WORKLOG.md` and the git log's recent
+merges so it cannot drift from them.
 It refuses a worklog whose "Where the work stands" items break the header's convention (no
 checkbox and ID, an ID twice among siblings, an `[after …]` naming no step, a wait that
 comes back to its step), so a wrong dependency fails when it is written, not at a converge.
@@ -22,7 +23,6 @@ from operator import itemgetter
 WORKLOG = "docs/WORKLOG.md"
 OUT = "docs/maintainer/roadmap.html"
 
-BULLET = re.compile(r"^\s*-\s+")
 # An item of "Where the work stands" (`- ` or `6. `), with its leading spaces.
 ITEM = re.compile(r"^( *)(-|\d+\.) ")
 # What an item's rest must open with: checkbox, bold ID, the optional `[after …]` list.
@@ -34,6 +34,8 @@ DATE = re.compile(r"\d{4}-\d{2}-\d{2}")
 OPEN_MARKS = " ~!"
 # The timeline's room between two lanes, wide enough for an edge between them to be followed.
 LANE_GAP = 32
+# The phases' lane: grey, apart from the palette the work's lanes take.
+PHASE_COLOUR = "#999999"
 # One per top-level step, in the order they are listed: the Okabe-Ito palette, every one readable on
 # the page's `#1e1e1e`.
 PALETTE = ["#E69F00", "#56B4E9", "#009E73", "#F0E442",
@@ -58,14 +60,11 @@ class Step:
 
 @dataclass
 class Roadmap:
-    """What the page shows: `now` one line per thread in flight, `next` one
-    (group, path, text, after) per open step with no open child, `later`
-    (phase, scope, status) per unfinished row of the phases table, `open_issues` the count
+    """What the page shows: `phases` (phase, scope, status) per row of the phases table not
+    done, in the table's order, which is the order the phases run; `open_issues` the count
     of open lines under "Issues", `steps` the section's tree and `problems` the convention
     problems found in it."""
-    now: list[str] = field(default_factory=list)
-    next: list[tuple[str, str, str, list[str]]] = field(default_factory=list)
-    later: list[tuple[str, str, str]] = field(default_factory=list)
+    phases: list[tuple[str, str, str]] = field(default_factory=list)
     open_issues: int = 0
     steps: list[Step] = field(default_factory=list)
     problems: list[str] = field(default_factory=list)
@@ -194,38 +193,11 @@ def steps(text: str) -> tuple[list[Step], list[str]]:
     return top, problems
 
 
-def next_entries(top: list[Step]) -> list[tuple[str, str, str, list[str]]]:
-    """One entry per open step with no open child, in worklog order:
-    (group, path, text, after), the group its top-level step's ID and headline."""
-    entries = []
-    for step in walk(top):
-        if step.mark not in OPEN_MARKS:
-            continue
-        if any(child.mark in OPEN_MARKS for child in step.children):
-            continue
-        root = step
-        while root.parent is not None:
-            root = root.parent
-        entries.append((f"{root.id} {headline(root.text)}",
-                        step.path, step.text, step.after))
-    return entries
-
-
 def parse(text: str) -> Roadmap:
     """The worklog's parts the page shows, as a `Roadmap`."""
     lines = text.splitlines()
     roadmap = Roadmap()
-
-    start = heading(lines, "### Now")
-    index = start + 1
-    while index < len(lines) and not lines[index].startswith("#"):
-        bullet = BULLET.match(lines[index])
-        if bullet:
-            roadmap.now.append(joined(lines, index, bullet.end()))
-        index += 1
-
     roadmap.steps, roadmap.problems = steps(text)
-    roadmap.next = next_entries(roadmap.steps)
 
     start = heading(lines, "## Phases")
     index = start + 1
@@ -234,7 +206,7 @@ def parse(text: str) -> Roadmap:
         if line.startswith("|"):
             cells = [cell.strip() for cell in line.split("|")[1:-1]]
             if len(cells) >= 4 and cells[0] not in ("Phase", "---") and cells[3] != "done":
-                roadmap.later.append((cells[0], cells[1], cells[3]))
+                roadmap.phases.append((cells[0], cells[1], cells[3]))
         index += 1
 
     start = heading(lines, "## Issues")
@@ -245,29 +217,6 @@ def parse(text: str) -> Roadmap:
         index += 1
 
     return roadmap
-
-
-def headline(text: str) -> str:
-    """`text` up to its first `: ` or `. ` outside backticks, double quotes and parentheses,
-    without the separator; the whole text when there is none. A cut inside one of those
-    could leave half a section pointer (`` `plans/x.md` "Phase 8: GUI" ``), which the
-    doc-pointer gate reads from the page and fails, and a cut inside parentheses leaves a
-    card ending inside an open one."""
-    in_code = in_quote = False
-    depth = 0
-    for index, char in enumerate(text):
-        if char == "`" and not in_quote:
-            in_code = not in_code
-        elif char == '"' and not in_code:
-            in_quote = not in_quote
-        elif char == "(" and not in_code and not in_quote:
-            depth += 1
-        elif char == ")" and depth and not in_code and not in_quote:
-            depth -= 1
-        elif (char in ":." and not depth and not in_code and not in_quote
-              and text[index + 1:index + 2] == " "):
-            return text[:index]
-    return text
 
 
 def inline(text: str) -> str:
@@ -320,14 +269,20 @@ def order_open(shown: list[Step], top: list[Step]) -> list[Step]:
     return order
 
 
-def lanes(rows: list[Step], slot: dict[int, int], top: list[Step]):
+def lanes(rows: list[Step], slot: dict[int, int], top: list[Step],
+          phases: list[Step]):
     """The timeline's tracks, `[top slot, bottom slot, colour, column]` each, and every
-    shown step's track index. A track is the shown rows of one top-level step and its
-    direct leaf children, or of one second-level step's whole subtree. Columns are
-    greedy: tracks sorted by top row, each takes the lowest column no track already in
-    it overlaps (spans sharing a row overlap)."""
+    shown step's track index. The phases not done are one grey track; besides it, a track
+    is the shown rows of one top-level step and its direct leaf children, or of one
+    second-level step's whole subtree. Columns are greedy: tracks sorted by top row, each
+    takes the lowest column no track already in it overlaps (spans sharing a row
+    overlap)."""
     shown = {id(s) for s in rows}
     tracks, member = [], {}
+    if phases:
+        member.update((id(s), 0) for s in phases)
+        tracks.append([min(slot[id(s)] for s in phases),
+                       max(slot[id(s)] for s in phases), PHASE_COLOUR])
     for i, t in enumerate(top):
         colour = PALETTE[i % len(PALETTE)]
 
@@ -394,18 +349,26 @@ def mono(text: str) -> str:
 
 
 def timeline(roadmap: Roadmap, dates: dict[str, str], today: str) -> str:
-    """The steps as a vertical `git log --graph`: the open steps on top, each above
-    every open step it waits on, then the steps in progress (`[~]`) on a band labelled
-    `now` (a bare line when there are none), then the last week's done steps, newest
-    first; a lane per track and an edge to what each step waits on. `dates` maps a step's
-    path to its commit's ISO time or a bare `YYYY-MM-DD`, which sorts before the times of
-    its day."""
+    """The steps as a vertical `git log --graph`: on top the phases not done, the last to
+    run highest, then the open steps, each above every open step it waits on, then the
+    steps in progress (`[~]`) on a band labelled `now` (a bare line when there are none),
+    then the last week's done steps, newest first; a lane per track and an edge to what
+    each step waits on. `dates` maps a step's path to its commit's ISO time or a bare
+    `YYYY-MM-DD`, which sorts before the times of its day."""
     top = roadmap.steps
+    phase_rows = []
+    for phase, scope, status in reversed(roadmap.phases):
+        name = f"Release {phase}" if "." in phase else f"Phase {phase}"
+        # A release's scope opens with its own name, which the row's bold label already says.
+        if scope.startswith(name):
+            scope = scope[len(name):].lstrip(", ")
+        phase_rows.append(Step(id=name, path=name, mark=" ", text=f"{scope} ({status})",
+                               after=[], children=[]))
     leaves = order_open([s for s in walk(top)
                          if s.mark in OPEN_MARKS
                          and not any(c.mark in OPEN_MARKS for c in s.children)],
                         top)
-    open_rows = [s for s in leaves if s.mark != "~"]
+    open_rows = phase_rows + [s for s in leaves if s.mark != "~"]
     now_rows = [s for s in leaves if s.mark == "~"]
     end = datetime.date.fromisoformat(today)
     since = end - datetime.timedelta(days=6)
@@ -430,7 +393,7 @@ def timeline(roadmap: Roadmap, dates: dict[str, str], today: str) -> str:
     def cy(s: Step) -> int:
         return 12 + 22 * slot[id(s)]
 
-    tracks, member, ncols = lanes(rows, slot, top)
+    tracks, member, ncols = lanes(rows, slot, top, phase_rows)
 
     def col_x(col: int) -> int:
         return 10 + LANE_GAP * col
@@ -444,13 +407,13 @@ def timeline(roadmap: Roadmap, dates: dict[str, str], today: str) -> str:
     parts = [f'<svg viewBox="0 0 {width} {height}" width="100%" '
              'xmlns="http://www.w3.org/2000/svg">']
     if now_rows:
-        parts.append(f'<rect x="0" y="{band_top}" width="{width}" '
+        parts.append(f'<rect id="now" x="0" y="{band_top}" width="{width}" '
                      f'height="{band_bottom - band_top}" rx="2" fill="#2b2b2b" '
                      'stroke="#555"/>')
         label_y = (band_top + band_bottom) / 2
     else:
         sep_y = (band_top + band_bottom) / 2
-        parts.append(f'<line x1="0" y1="{sep_y:g}" x2="{width}" y2="{sep_y:g}" '
+        parts.append(f'<line id="now" x1="0" y1="{sep_y:g}" x2="{width}" y2="{sep_y:g}" '
                      'stroke="#555"/>')
         label_y = sep_y - 7
     parts.append(f'<text x="{width - 8}" y="{label_y:g}" fill="#999" font-size="13" '
@@ -532,16 +495,6 @@ def step_dates(top: list[Step]) -> dict[str, str]:
     return dates
 
 
-STYLE = """\
-.cols { display: flex; gap: 14px; align-items: flex-start; }
-.col { flex: 1; min-width: 0; }
-.card { border: 1px solid #383838; border-radius: 2px; padding: 10px 12px;
-  margin: 10px 0; background: #222; }
-.card p { margin: 0 0 6px; }
-.card p:last-child { margin-bottom: 0; }
-.group { color: #999; font-size: 13px; margin: 12px 0 -4px; }
-"""
-
 NAV = """\
 <nav class="pages">
   <a class="here" href="roadmap.html">Roadmap</a>
@@ -554,29 +507,9 @@ NAV = """\
 
 def render(roadmap: Roadmap, merges: list[tuple[str, str]],
            dates: dict[str, str], today: str) -> str:
-    """The page: three columns (Now, Next, Later), the timeline, the week's merges in
-    one `<details>` per day, the open-issue count."""
-    now = "\n".join(f'<div class="card">{inline(item)}</div>' for item in roadmap.now)
-
-    nexts = []
-    last_group = None
-    for item_group, path, text, after in roadmap.next:
-        if item_group != last_group:
-            last_group = item_group
-            nexts.append(f'<p class="group">{inline(item_group)}</p>')
-        card = (f'<div class="card"><strong>{html.escape(path)}</strong> '
-                f'{inline(headline(text))}')
-        if after:
-            card += (f'<p class="from">waits on '
-                     f'{html.escape(", ".join(after))}</p>')
-        nexts.append(card + "</div>")
-    nexts = "\n".join(nexts)
-
-    later = "\n".join(
-        f'<div class="card"><h3>Phase {inline(phase)}</h3>'
-        f'<p>{inline(scope)}</p><p class="from">{inline(status)}</p></div>'
-        for phase, scope, status in roadmap.later)
-
+    """The page: a button that brings the timeline's "now" line to the middle of the
+    window, the timeline, the week's merges in one `<details>` per day, the open-issue
+    count."""
     days = [(day, [subject for _, subject in same_day])
             for day, same_day in groupby(merges, key=itemgetter(0))]
     if days:
@@ -600,8 +533,6 @@ def render(roadmap: Roadmap, merges: list[tuple[str, str]],
 <meta charset="utf-8">
 <title>Unlimited Tool Works: roadmap</title>
 <link rel="stylesheet" href="maintainer.css">
-<style>
-{STYLE}</style>
 </head>
 <body data-page="roadmap">
 {NAV}
@@ -609,21 +540,7 @@ def render(roadmap: Roadmap, merges: list[tuple[str, str]],
 <h1>Roadmap</h1>
 <p class="intro">Made from the worklog and git's merges; regenerated with
 <code>just roadmap</code>.</p>
-
-<div class="cols">
-<div class="col">
-<h2>Now</h2>
-{now}
-</div>
-<div class="col">
-<h2>Next</h2>
-{nexts}
-</div>
-<div class="col">
-<h2>Later</h2>
-{later}
-</div>
-</div>
+<p><button id="to-now" type="button">Go to now</button></p>
 
 <h2>Timeline</h2>
 {timeline(roadmap, dates, today)}
@@ -631,6 +548,10 @@ def render(roadmap: Roadmap, merges: list[tuple[str, str]],
 <h2>Merged in the last 7 days</h2>
 {merged}
 <p>{issues}</p>
+<script>
+document.getElementById("to-now").addEventListener("click", () =>
+  document.getElementById("now").scrollIntoView({{block: "center", behavior: "smooth"}}));
+</script>
 </body>
 </html>
 """
@@ -648,7 +569,7 @@ def main() -> None:
     with open(OUT + ".new", "w", encoding="utf-8", newline="\n") as f:
         f.write(page)
     os.replace(OUT + ".new", OUT)
-    print(f"now {len(roadmap.now)}, next {len(roadmap.next)}, later {len(roadmap.later)}, "
+    print(f"phases {len(roadmap.phases)}, steps {len(list(walk(roadmap.steps)))}, "
           f"open issues {roadmap.open_issues}, merges {len(merges)}")
 
 

@@ -9,7 +9,7 @@ import unittest
 from pathlib import Path
 
 import roadmap
-from roadmap import headline, inline, parse, render
+from roadmap import inline, parse, render
 
 WORKLOG = """\
 ## Current status
@@ -95,25 +95,8 @@ def circles(svg: str) -> dict[str, tuple[int, int]]:
 
 
 class Parse(unittest.TestCase):
-    def test_now_holds_each_bullet_with_its_continuation_joined(self) -> None:
-        found = parse(WORKLOG)
-        self.assertEqual(found.now, ["First thing in flight.",
-                                     "Second thing, over two lines."])
-
-    def test_next_keeps_each_open_step_without_an_open_child(self) -> None:
-        paths = [path for _, path, _, _ in parse(WORKLOG).next]
-        self.assertEqual(paths,
-                         ["TOP/a/ab", "TOP/c", "DONE/y", "P2", "MODE", "NEXT", "b"])
-
-    def test_next_groups_under_the_top_level_steps_headline(self) -> None:
-        found = parse(WORKLOG).next
-        self.assertEqual(found[0][0], "TOP A numbered item")
-        self.assertEqual(found[2][0], "DONE done item `e5f6a7b` 2026-11-22.")
-        self.assertEqual(found[3][0], "P2 second item")
-        self.assertEqual(found[6][0], "b top-level b.")
-
-    def test_later_keeps_the_rows_not_done(self) -> None:
-        self.assertEqual(parse(WORKLOG).later,
+    def test_phases_keeps_the_rows_not_done_in_the_tables_order(self) -> None:
+        self.assertEqual(parse(WORKLOG).phases,
                          [("2", "Libs", "todo"),
                           ("3", "GUI after Phase 2", "in progress")])
 
@@ -188,22 +171,6 @@ class Steps(unittest.TestCase):
         self.assertEqual(parse(text).problems, [])
 
 
-class Headline(unittest.TestCase):
-    def test_a_separator_inside_backticks_or_quotes_is_not_cut(self) -> None:
-        self.assertEqual(headline("a `x: y` b: c"), "a `x: y` b")
-        self.assertEqual(headline('a "x: y" b: c'), 'a "x: y" b')
-
-    def test_the_first_separator_outside_is_cut(self) -> None:
-        self.assertEqual(headline("head: tail"), "head")
-        self.assertEqual(headline("head. tail"), "head")
-
-    def test_a_text_without_a_separator_comes_back_whole(self) -> None:
-        self.assertEqual(headline("whole text"), "whole text")
-
-    def test_a_separator_inside_parentheses_is_not_cut(self) -> None:
-        self.assertEqual(headline("a (b: c) d: e"), "a (b: c) d")
-
-
 class Inline(unittest.TestCase):
     def test_html_is_escaped_and_marks_rendered(self) -> None:
         self.assertEqual(inline("<b>"), "&lt;b&gt;")
@@ -215,28 +182,24 @@ class Render(unittest.TestCase):
     def test_the_page_holds_each_card_and_head(self) -> None:
         page = render(parse(WORKLOG), [("2026-11-23", "merge(x): a merge")],
                       {}, TODAY)
-        for text in ("First thing in flight.", "Second thing, over two lines.",
-                     "open nested bullet", "mode bullet", "Phase 2", "Phase 3",
-                     "merge(x): a merge"):
+        for text in ("open nested bullet", "mode bullet", "Phase 2", "Phase 3",
+                     "merge(x): a merge", "<h2>Timeline</h2>"):
             self.assertIn(text, page)
-        for head in ("<h2>Now</h2>", "<h2>Next</h2>", "<h2>Later</h2>",
-                     "<h2>Timeline</h2>"):
-            self.assertIn(head, page)
+        for head in ("<h2>Now</h2>", "<h2>Next</h2>", "<h2>Later</h2>"):
+            self.assertNotIn(head, page)
+        self.assertNotIn("First thing in flight.", page)
         self.assertLess(page.index("<h2>Timeline</h2>"),
                         page.index("<h2>Merged in the last 7 days</h2>"))
         self.assertIn("2 open issues in", page)
         self.assertNotIn('class="entry"', page)
 
-    def test_a_next_card_shows_its_path_headline_and_waits(self) -> None:
+    def test_a_button_brings_the_now_line_to_the_middle(self) -> None:
         page = render(parse(WORKLOG), [], {}, TODAY)
-        self.assertIn('<div class="card"><strong>TOP/c</strong> open bullet'
-                      '<p class="from">waits on b, MODE</p></div>', page)
-        self.assertIn('<div class="card"><strong>TOP/a/ab</strong> '
-                      'open nested bullet.'
-                      '<p class="from">waits on TOP/b</p></div>', page)
-        self.assertIn('<div class="card"><strong>MODE</strong> mode bullet</div>',
-                      page)
-        self.assertEqual(page.count('<p class="from">waits on'), 4)
+        self.assertLess(page.index('<button id="to-now" type="button">Go to now</button>'),
+                        page.index("<h2>Timeline</h2>"))
+        self.assertEqual(page.count('id="now"'), 1)
+        self.assertIn('document.getElementById("now").scrollIntoView'
+                      '({block: "center"', page)
 
     def test_one_open_issue_is_singular(self) -> None:
         found = parse(WORKLOG)
@@ -303,6 +266,28 @@ class Timeline(unittest.TestCase):
         self.assertIn('<tspan font-weight="600">TOP/c</tspan>', svg)
         self.assertIn('<title>TOP/c open bullet: tail. — waits on b, MODE</title>', svg)
 
+    def test_the_phases_not_done_stand_above_the_open_steps_the_next_lowest(self) -> None:
+        svg = roadmap.timeline(parse(WORKLOG), self.DATES, TODAY)
+        cy = {p: y for p, (_, y) in circles(svg).items()}
+        self.assertNotIn("Phase 1", svg)    # done
+        rows = re.findall(r'<g><title>(Phase \d)', svg)
+        self.assertEqual(rows, ["Phase 3", "Phase 2"])     # 3 runs after 2: higher
+        top_step = min(cy[p] for p in ("TOP/a/ab", "TOP/c", "MODE", "NEXT", "b"))
+        phase_2 = re.search(r'<g><title>Phase 2[^<]*</title><circle cx="\d+" cy="(\d+)"',
+                            svg)
+        self.assertLess(int(phase_2[1]), top_step)
+        self.assertIn('<title>Phase 3 GUI after Phase 2 (in progress)</title>', svg)
+
+    def test_a_release_row_is_named_release_and_the_phases_lane_is_grey(self) -> None:
+        text = WORKLOG.replace("| 2 | Libs |", "| 0.1.0 | Libs |")
+        svg = roadmap.timeline(parse(text), self.DATES, TODAY)
+        self.assertIn("<title>Release 0.1.0 Libs (todo)</title>", svg)
+        text = WORKLOG.replace("| 2 | Libs |", "| 0.2.0 | Release 0.2.0, a later one |")
+        self.assertIn("<title>Release 0.2.0 a later one (todo)</title>",
+                      roadmap.timeline(parse(text), self.DATES, TODAY))
+        self.assertRegex(svg, r'<title>Release 0\.1\.0[^<]*</title><circle cx="\d+" '
+                              r'cy="\d+" r="5" fill="#1e1e1e" stroke="#999999"')
+
     NOW = wl("""\
 1. [ ] **A** item.
    - [ ] **a1** [after a2] open.
@@ -314,7 +299,7 @@ class Timeline(unittest.TestCase):
     def test_steps_in_progress_sit_on_the_now_band_between_open_and_done(self) -> None:
         svg = roadmap.timeline(parse(self.NOW), {"A/a3": TODAY}, TODAY)
         cy = {p: y for p, (_, y) in circles(svg).items()}
-        band = re.search(r'<rect x="0" y="(\d+)" width="\d+" height="(\d+)" rx="2"', svg)
+        band = re.search(r'<rect id="now" x="0" y="(\d+)" width="\d+" height="(\d+)" rx="2"', svg)
         top, bottom = int(band[1]), int(band[1]) + int(band[2])
         self.assertLess(cy["A/a1"], top)
         for path in ("A/a2", "B"):
@@ -326,7 +311,7 @@ class Timeline(unittest.TestCase):
     def test_without_steps_in_progress_a_line_labelled_now_parts_open_from_done(self) -> None:
         svg = roadmap.timeline(parse(WORKLOG), self.DATES, TODAY)
         self.assertNotIn("<rect", svg)
-        line = re.search(r'<line x1="0" y1="(\d+)" x2="\d+" y2="\d+" stroke="#555"/>', svg)
+        line = re.search(r'<line id="now" x1="0" y1="(\d+)" x2="\d+" y2="\d+" stroke="#555"/>', svg)
         cy = {p: y for p, (_, y) in circles(svg).items()}
         self.assertTrue(cy["NEXT"] < int(line[1]) < cy["TOP/b"])
         self.assertIn('dominant-baseline="central">now</text>', svg)

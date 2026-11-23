@@ -20106,3 +20106,14 @@ Decision: `0.0.3-vgl27.2` was handed over, and the VGL organizer compiles VGL27 
 no further VGL build is planned for now; the `vgl27` branch stays as it is.
 Why: the organizer's choice, which the maintainer reported.
 Plan: none; the worklog's step vgl27.2 is closed with it.
+
+## 2026-11-24 — worklog, roadmap — the roadmap is its timeline alone, with the phases not done on top (maintainer)
+Decision: the roadmap page drops its Now, Next and Later columns. Its timeline draws every
+phase and release not yet done above the open steps, in the order they run, the next one
+lowest, on a grey lane of their own; a **Go to now** button at the top brings the "now" band
+to the middle of the window. The worklog's phase table lists its rows in that order (1–6,
+0.0.1, 0.0.2, 8, 0.1.0, 7, 0.2.0, 9–20), and 0.0.1 and 0.0.2, both released, are marked done.
+Why: the timeline already showed the open steps and what runs now, so the columns repeated it,
+and the hand-kept Now list went stale. Drawing the phases from the table keeps one source for
+the run order; the table's old order put Phase 7 before 8, though 7 runs after Release 0.1.0.
+Plan: none; the worklog's phase table says its order is the run order.
