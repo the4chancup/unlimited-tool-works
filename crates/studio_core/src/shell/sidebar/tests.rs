@@ -1490,10 +1490,11 @@ fn the_exe_tooltips_found_line_is_the_callers() {
     }
 }
 
-// The Settings row's enabled tooltip at Found opens with the row's own line —
-// the tools that work with one game — never the selector's "this tool".
+// The Settings row's tooltips name the tools that work with one game: the
+// label's after its settings key, and the enabled combo's at Found as its first
+// line, never the selector's "this tool".
 #[test]
-fn the_settings_rows_enabled_tooltip_names_the_tools_with_one_game() {
+fn the_settings_rows_tooltips_name_the_tools_with_one_game() {
     let dir = TestDir::new("studio_core_settings_row_found_tip");
     fs::write(dir.path().join("PES2021.exe"), b"").unwrap();
     let (a, calls_a) = stub("a", "A", None);
@@ -1532,6 +1533,23 @@ fn the_settings_rows_enabled_tooltip_names_the_tools_with_one_game() {
     assert!(
         !has_text(&nodes, "this tool works with"),
         "not the selector's first line"
+    );
+
+    idle(&egui_ctx, &mut app, 8);
+    frame(
+        &egui_ctx,
+        &mut app,
+        hover(text_node(&nodes, "PES version")),
+        true,
+    );
+    let nodes = idle(&egui_ctx, &mut app, 8).nodes;
+    assert!(
+        has_text(
+            &nodes,
+            "pes_version: The PES version for the tools that work with one game, the \
+             same setting as the sidebar's PES version box."
+        ),
+        "the label's tooltip is the settings key, then the row's tip"
     );
 }
 
