@@ -63,6 +63,12 @@ fn catalog() -> Vec<CatalogRow> {
             "Nothing to do.",
         ),
         (
+            "file_not_used",
+            "Warning",
+            "A file sits where the folder allows it, but nothing reads it.",
+            "The file is left out.",
+        ),
+        (
             "shared_folder_orphaned",
             "Warning",
             "A shared `Faces/`, `Boots/` or `Gloves/` folder is linked by no player.",
@@ -603,6 +609,33 @@ fn each_finding_starts_with_its_severity_left_of_its_code() {
     let code = drawn.one("fpc_conflict");
     let label = severity_label(&drawn, "Error", code);
     assert!(label.right() <= code.left(), "{label:?} left of {code:?}");
+}
+
+// The cell reports the later code first: the sort's tie-break by code, not the
+// findings' order in the cell, decides which stands above.
+// TC-GUI-09
+#[test]
+fn two_findings_of_one_severity_stand_by_code() {
+    let mut scene = Scene::new();
+    scene.rows[0].label.messages = vec![
+        finding(
+            "shared_folder_orphaned",
+            Severity::Warning,
+            folder("Boots/Solo"),
+            &[],
+        ),
+        finding(
+            "file_not_used",
+            Severity::Warning,
+            folder("Boots/Solo"),
+            &[],
+        ),
+    ];
+    let at = spots(&scene.idle());
+    let (_, drawn) = scene.click(at.label);
+    let used = drawn.one("file_not_used");
+    let orphaned = drawn.one("shared_folder_orphaned");
+    assert!(used.top() < orphaned.top(), "{used:?} over {orphaned:?}");
 }
 
 #[test]

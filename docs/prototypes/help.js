@@ -925,21 +925,21 @@ const BUILD_HELP = {
         },
         {
           "code": "dpfilelist_not_official",
-          "effect": "The run compiles and installs anyway. Upgrade DpFileList, in the Compiler's toolbar, or `UTW compiler upgrade-dpfl` installs the official list.",
+          "effect": "A compile goes ahead anyway. Upgrade DpFileList, in the Compiler's toolbar, or `UTW compiler upgrade-dpfl` installs the official list.",
           "severity": "Warning",
-          "when": "The game's `DpFileList.bin` differs from the cup's official list (it is missing entries, it has entries the official list does not, or the order is different), while every CPK of this run is listed."
+          "when": "The game's `DpFileList.bin` differs from the cup's official list (it is missing entries, it has entries the official list does not, or the order is different), while every CPK of this compile is listed."
         },
         {
           "code": "dpfilelist_cpk_missing",
-          "effect": "The run compiles and installs anyway, but the save step is skipped. Upgrade DpFileList, in the Compiler's toolbar, or `UTW compiler upgrade-dpfl` writes a placeholder for each official entry missing its file.",
+          "effect": "A compile goes ahead anyway, but the save step is skipped. Upgrade DpFileList, in the Compiler's toolbar, or `UTW compiler upgrade-dpfl` writes a placeholder for each official entry missing its file.",
           "severity": "Warning",
-          "when": "The game's `DpFileList.bin` names CPKs, other than this run's own, with no file in `download/`, so the game rejects the whole `download/` folder and loads none of its CPKs."
+          "when": "The game's `DpFileList.bin` names CPKs, other than this compile's own, with no file in `download/`, so the game rejects the whole `download/` folder and loads none of its CPKs."
         },
         {
           "code": "dpfilelist_outdated",
           "effect": "A compile stops before compiling anything: nothing is installed or written, and the save is not touched. In the Compiler's window, Compile stays disabled until Upgrade DpFileList installs the official list; in a terminal, `UTW compiler upgrade-dpfl` installs it, then compile again.",
           "severity": "Fatal",
-          "when": "The cup's official list names one or more CPKs of this run that the game's older `DpFileList.bin` lacks (the line names them)."
+          "when": "The cup's official list names one or more CPKs of this compile that the game's older `DpFileList.bin` lacks (the line names them)."
         },
         {
           "code": "dpfilelist_cpk_renamed",
@@ -985,9 +985,9 @@ const BUILD_HELP = {
         },
         {
           "code": "cpk_name_unlisted",
-          "effect": "The run stops before compiling anything: nothing is installed or written, and the save is not touched. Set `cpk_name` to a name the list has; then compile again.",
+          "effect": "A compile stops before compiling anything: nothing is installed or written, and the save is not touched. Set `cpk_name` to a name the list has; then compile again.",
           "severity": "Fatal",
-          "when": "The run's CPK name is in neither the game's `DpFileList.bin` nor the cup's official list."
+          "when": "This compile's CPK name is in neither the game's `DpFileList.bin` nor the cup's official list."
         },
         {
           "code": "cpk_slots_exhausted",

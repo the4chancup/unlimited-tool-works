@@ -882,9 +882,9 @@ pub(super) const CATALOG: &[(&str, CatalogSeverity, &str, &str)] = &[
     (
         "dpfilelist_not_official",
         CatalogSeverity::Warning,
-        r#"The game's `DpFileList.bin` differs from the cup's official list (it is missing entries, it has entries the official list does not, or the order is different), while every CPK of this run is listed."#,
+        r#"The game's `DpFileList.bin` differs from the cup's official list (it is missing entries, it has entries the official list does not, or the order is different), while every CPK of this compile is listed."#,
         concat!(
-            "The run compiles and installs anyway. Upgrade DpFileList, in the Compiler's \
+            "A compile goes ahead anyway. Upgrade DpFileList, in the Compiler's \
              toolbar, or `",
             studio_core::exe_name!(),
             " compiler upgrade-dpfl` installs the official list."
@@ -893,9 +893,9 @@ pub(super) const CATALOG: &[(&str, CatalogSeverity, &str, &str)] = &[
     (
         "dpfilelist_cpk_missing",
         CatalogSeverity::Warning,
-        r#"The game's `DpFileList.bin` names CPKs, other than this run's own, with no file in `download/`, so the game rejects the whole `download/` folder and loads none of its CPKs."#,
+        r#"The game's `DpFileList.bin` names CPKs, other than this compile's own, with no file in `download/`, so the game rejects the whole `download/` folder and loads none of its CPKs."#,
         concat!(
-            "The run compiles and installs anyway, but the save step is skipped. Upgrade \
+            "A compile goes ahead anyway, but the save step is skipped. Upgrade \
              DpFileList, in the Compiler's toolbar, or `",
             studio_core::exe_name!(),
             " compiler upgrade-dpfl` writes a placeholder for each official entry missing \
@@ -905,7 +905,7 @@ pub(super) const CATALOG: &[(&str, CatalogSeverity, &str, &str)] = &[
     (
         "dpfilelist_outdated",
         CatalogSeverity::Fatal,
-        r#"The cup's official list names one or more CPKs of this run that the game's older `DpFileList.bin` lacks (the line names them)."#,
+        r#"The cup's official list names one or more CPKs of this compile that the game's older `DpFileList.bin` lacks (the line names them)."#,
         concat!(
             "A compile stops before compiling anything: nothing is installed or written, and the \
              save is not touched. In the Compiler's window, Compile stays disabled until Upgrade \
@@ -959,8 +959,8 @@ pub(super) const CATALOG: &[(&str, CatalogSeverity, &str, &str)] = &[
     (
         "cpk_name_unlisted",
         CatalogSeverity::Fatal,
-        r#"The run's CPK name is in neither the game's `DpFileList.bin` nor the cup's official list."#,
-        r#"The run stops before compiling anything: nothing is installed or written, and the save is not touched. Set `cpk_name` to a name the list has; then compile again."#,
+        r#"This compile's CPK name is in neither the game's `DpFileList.bin` nor the cup's official list."#,
+        r#"A compile stops before compiling anything: nothing is installed or written, and the save is not touched. Set `cpk_name` to a name the list has; then compile again."#,
     ),
     (
         "cpk_slots_exhausted",

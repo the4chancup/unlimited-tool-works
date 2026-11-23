@@ -117,10 +117,9 @@ impl RunLog {
     }
 
     /// Starts the DpFileList upgrade on a thread of its own: `upgrade::run` applied in
-    /// `download`, the folder its preview was made for (kept, never resolved again from
-    /// the settings, which may have changed while the dialog was open), with `delete`,
-    /// the dropped CPKs the dialog ticked for deletion, which the command line's `--yes`
-    /// never deletes. The upgrade's lines are appended after the run's it answers: what
+    /// `download`, the folder its preview was made for, never one resolved again from
+    /// the settings in the click's frame, with `delete`, the dropped CPKs the dialog
+    /// ticked for deletion, which the command line's `--yes` never deletes. The upgrade's lines are appended after the run's it answers: what
     /// the preflight said stays in the log. Called only while no run is in flight (the
     /// dialog opens only then).
     pub(crate) fn start_upgrade(

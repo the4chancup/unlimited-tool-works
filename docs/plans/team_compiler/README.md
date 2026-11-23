@@ -225,9 +225,10 @@ TC-GUI-08  GIVEN a team export whose name carries neither Full nor Midcup
 TC-GUI-09  GIVEN a cell with findings and no cell pinned
            WHEN the pointer rests on it
            THEN the detail window opens on it, showing the folder name and each finding's
-                code, file and catalog text, worst severity first; WHEN the pointer leaves
-                the cell for empty grid THEN the window closes; WHEN it moves onto another cell
-                instead, one under the window included, THEN the window shows that cell at once
+                code, file and catalog text, worst severity first, then by code; WHEN the
+                pointer leaves the cell for empty grid THEN the window closes; WHEN it moves
+                onto another cell instead, one under the window included, THEN the window
+                shows that cell at once
 TC-GUI-24  GIVEN the pointer on a cell with findings
            WHEN the cell is clicked
            THEN the window stays open on it, a pin on the cell and in the window's title bar,

@@ -1491,6 +1491,34 @@ mod tests {
         }
     }
 
+    // These findings are logged by the check when the window opens, before any run, so
+    // their texts speak of a compile, never of "the run" or "this run".
+    #[test]
+    fn the_findings_logged_before_a_run_presuppose_none() {
+        for code in [
+            "cpk_name_unlisted",
+            "dpfilelist_not_official",
+            "dpfilelist_cpk_missing",
+            "dpfilelist_outdated",
+        ] {
+            let (.., when, effect) = CATALOG
+                .iter()
+                .find(|row| row.0 == code)
+                .unwrap_or_else(|| panic!("no row {code}"));
+            for text in [when, effect] {
+                let run = text
+                    .split(|c: char| !c.is_alphanumeric())
+                    .any(|word| word == "run");
+                assert!(!run, "{code}: {text}");
+            }
+        }
+        let (.., effect) = CATALOG
+            .iter()
+            .find(|row| row.0 == "cpk_name_unlisted")
+            .expect("the cpk_name_unlisted row");
+        assert!(effect.starts_with("A compile stops"), "{effect}");
+    }
+
     #[test]
     fn the_help_chapter_lists_the_whole_catalog_in_order() {
         use studio_core::StudioTool;

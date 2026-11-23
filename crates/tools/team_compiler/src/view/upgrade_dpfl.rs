@@ -21,8 +21,9 @@ const COLUMN_GAP: f32 = 8.0;
 /// ticked for deletion.
 pub(crate) struct DpflDialog {
     preview: Preview,
-    /// The `download/` the preview was made for, which the upgrade acts in: kept, since
-    /// the settings it was resolved from may have changed while the dialog is open.
+    /// The `download/` the preview was made for, which the upgrade acts in: the run
+    /// acts on the folder the dialog showed, not one resolved again in the click's
+    /// frame.
     download: PathBuf,
     delete: BTreeSet<String>,
 }
