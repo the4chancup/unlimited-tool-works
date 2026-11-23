@@ -315,11 +315,12 @@ TC-GUI-31  GIVEN an export with a logo, a kit whose main texture is kit.dds, and
                 texture and portraits from its listing; GIVEN the export as a .zip THEN the
                 boxes show the same pictures, read from the zip; GIVEN it as a .7z THEN every
                 box is empty
-TC-GUI-32  GIVEN a referee export holding ref_marker.dds and a logo.png, and one holding
-                 neither
-           WHEN the window opens on each one's label
-           THEN the first's top box shows ref_marker.dds, not the logo; the second's reads
-                "No logo"
+TC-GUI-32  GIVEN a referee export holding ref_marker.dds and a logo.png, one holding
+                 logo.png alone, and one holding neither; a referee's folder holding a
+                 portrait.dds
+           WHEN the window opens on each one's label, and on that referee's cell
+           THEN the first's top box shows ref_marker.dds, not the logo; the second's and
+                the third's read "No logo"; the referee's cell shows no portrait
 TC-GUI-33  GIVEN a PES 2017 install whose DpFileList.bin is the old faces/uniform list, every
                 CPK it names in download/
            WHEN the Compiler's view opens, then Upgrade DpFileList is clicked, then Upgrade in
