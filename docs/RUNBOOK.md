@@ -499,8 +499,9 @@ commands, and the harness tells the lead only when a command exits; a run whose 
 quiet mid-turn never exits. A rework's resumed session once went idle in the middle of a red
 run, its hand perturbation still applied, and only a check by the lead found it; the
 background command's 2-hour cap would have ended it nearly two hours later. So every such run
-gets a second background command beside it, `python ~/.claude/skills/duck/devin_watch.py
-<brief>` (timeout 7200000): it exits quietly when the run ends, and with `STALLED` (exit 3) when
+is waited on through `python ~/.claude/skills/duck/devin_watch.py <brief>`, chained before
+the wait for the run's log in one background command (timeout 7200000; one command, since
+each command's end is a notification): it exits when the run ends, and with `STALLED` (exit 3) when
 for 20 minutes neither the session's `last_activity_at` in Devin's `sessions.db` moved nor the
 run's process tree burned CPU (a build or test burns it without any step). The watcher never
 stops the run: what to do is the lead's call, after reading `git diff`, since a stalled run can
