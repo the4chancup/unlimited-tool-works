@@ -3,15 +3,21 @@
 //! beside it when the check found the game's list not the official one.
 
 use export_grid::{Cell, CellState, Row, cell_places};
-use studio_core::widgets::{add_enabled, resting_edge};
-use studio_core::{LogFilter, LogPanel, Severity};
+use studio_core::widgets::{add_enabled, menu_above, menu_separator, resting_edge};
+use studio_core::{LogFilter, LogPanel, Severity, ToolContext};
 
+use crate::cli::{self, Mode};
 use crate::gui_run::RunLog;
 use crate::messages::TOOL_ID;
 use crate::view::Intent;
 
 /// The room between the strip and the button (the draft's `.tc-bar` gap).
 const GAP: f32 = 8.0;
+/// The room between the split button's main part and its arrow (the draft's `.tc-split`
+/// gap): the two meet as one control.
+const SPLIT_GAP: f32 = 1.0;
+/// The main part's smallest width (the draft's `.tc-split button:first-child`).
+const MAIN_MIN_WIDTH: f32 = 150.0;
 
 /// The grid summed up: its rows, how many of them a Compile skips, and how many of the others
 /// have an error or a warning.
@@ -113,16 +119,75 @@ pub(crate) fn strip(summary: &Summary) -> Vec<Part> {
     parts
 }
 
+/// The main part's and the menu's label for `mode` (the draft's `MODES`).
+fn mode_label(mode: Mode) -> &'static str {
+    match mode {
+        Mode::Normal => "Compile",
+        Mode::Sideload => "Compile for sideloading",
+        Mode::Test => "Test output",
+    }
+}
+
+/// The arrow's menu (the draft's `modeMenu`): the three output modes, a pick writing
+/// `mode` and so relabelling the main part for the session, then Open output folder
+/// and Copy report. The `Intent` a non-mode entry asked for, when one was picked.
+fn mode_menu(
+    ui: &mut egui::Ui,
+    ctx: &ToolContext,
+    log: &RunLog,
+    mode: &mut Mode,
+) -> Option<Intent> {
+    if ui.button(mode_label(Mode::Normal)).clicked() {
+        *mode = Mode::Normal;
+        ui.close();
+    }
+    let served = cli::sideload_served(ctx.common().pes_version);
+    let sideload = add_enabled(ui, served, egui::Button::new(mode_label(Mode::Sideload)));
+    let sideload = if served {
+        sideload.on_hover_text("Unpacked into the game folder's livecpk")
+    } else {
+        sideload.on_disabled_hover_text("No runtime serves sideloaded files on PES 2015 and 2016")
+    };
+    if sideload.clicked() {
+        *mode = Mode::Sideload;
+        ui.close();
+    }
+    if ui
+        .button(mode_label(Mode::Test))
+        .on_hover_text("The processed exports, unpacked in their own layout")
+        .clicked()
+    {
+        *mode = Mode::Test;
+        ui.close();
+    }
+    menu_separator(ui);
+    let mut intent = None;
+    if ui.button("Open output folder").clicked() {
+        intent = Some(Intent::OpenOutputFolder);
+        ui.close();
+    }
+    menu_separator(ui);
+    if ui.button("Copy report").clicked() {
+        ui.ctx().copy_text(log.report());
+        ui.close();
+    }
+    intent
+}
+
 /// Draws the toolbar as a bottom panel of `ui`: the strip summing up `rows` while `log` has
-/// no run in flight, the Compile button, disabled while one runs or while `log`'s findings
-/// say the game's list is the cup's outdated one, and the Upgrade DpFileList button beside
-/// it while they say it is not the official one. A click on a count shows only its
+/// no run in flight, the Compile split button (its main part running a `mode` compile,
+/// disabled while one runs or, in the installing mode alone, while `log`'s findings say the
+/// game's list is the cup's outdated one; its arrow opening the mode menu, disabled
+/// while a run is in flight), and the Upgrade DpFileList button beside it while the
+/// findings say the list is not the official one. A click on a count shows only its
 /// lines in `panel`. The `Intent` a click asked for, when one was made this frame.
 pub(crate) fn show(
     ui: &mut egui::Ui,
+    ctx: &ToolContext,
     panel: &mut LogPanel,
     rows: &[Row],
     log: &RunLog,
+    mode: &mut Mode,
 ) -> Option<Intent> {
     let running = log.is_running();
     let frame = egui::Frame::side_top_panel(ui.style()).inner_margin(egui::Margin::symmetric(8, 4));
@@ -133,14 +198,37 @@ pub(crate) fn show(
             ui.spacing_mut().item_spacing.x = GAP;
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                 let mut intent = None;
+                // The draft's `.tc-split`: the arrow at the row's right edge, the main
+                // part meeting it at its left, their shared corners square. The gap
+                // between them is the arrow's own advance, so SPLIT_GAP is set first.
+                let radius = ui.visuals().widgets.inactive.corner_radius;
+                ui.spacing_mut().item_spacing.x = SPLIT_GAP;
+                let arrow = add_enabled(
+                    ui,
+                    !running,
+                    egui::Button::new("\u{23f7}").corner_radius(egui::CornerRadius {
+                        nw: 0,
+                        sw: 0,
+                        ..radius
+                    }),
+                )
+                .on_hover_text("The output modes");
+                ui.spacing_mut().item_spacing.x = GAP;
                 let compile = add_enabled(
                     ui,
-                    !running && !log.dpfl_outdated(),
-                    egui::Button::new("Compile"),
+                    !running && !(*mode == Mode::Normal && log.dpfl_outdated()),
+                    egui::Button::new(mode_label(*mode))
+                        .min_size(egui::vec2(MAIN_MIN_WIDTH, 0.0))
+                        .corner_radius(egui::CornerRadius {
+                            ne: 0,
+                            se: 0,
+                            ..radius
+                        }),
                 );
-                // The run's preflight would stop it before anything is compiled, so the
-                // outdated list is why it is off; the two Warnings leave it enabled.
-                let compile = if !running && log.dpfl_outdated() {
+                // A Normal-mode run's preflight would stop it before anything is
+                // compiled, so the outdated list is why the installing mode is off; the
+                // loose-file modes install no CPK, and the two Warnings leave it enabled.
+                let compile = if !running && *mode == Mode::Normal && log.dpfl_outdated() {
                     compile.on_disabled_hover_text(
                         "The game's DpFileList.bin does not list this compile's CPK, so the \
                          game would not load it. Upgrade DpFileList first",
@@ -149,7 +237,12 @@ pub(crate) fn show(
                     compile
                 };
                 if compile.clicked() {
-                    intent = Some(Intent::Compile);
+                    intent = Some(Intent::Compile(*mode));
+                }
+                if let Some(asked) =
+                    menu_above(&arrow, |ui| mode_menu(ui, ctx, log, mode)).flatten()
+                {
+                    intent = Some(asked);
                 }
                 // Left of Compile in the right-to-left row, beside the button it
                 // unblocks; gone while a run is in flight. Filled in the selection blue

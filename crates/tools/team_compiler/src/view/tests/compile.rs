@@ -37,7 +37,7 @@ fn a_click_on_compile_is_reported_on_the_frame_of_the_release() {
     let (clicked, _) = window.frame(release(target), |ui| {
         show(ui, &ctx, &log, &mut panel, &[], false, &mut detail)
     });
-    assert!(matches!(clicked, Some(Intent::Compile)));
+    assert!(matches!(clicked, Some(Intent::Compile(Mode::Normal))));
 }
 
 // TC-GUI-03

@@ -103,7 +103,8 @@ fn the_log_holds_the_check_s_findings_ahead_of_a_compile_s_lines() {
     ];
     assert_eq!(tool.run_log.texts(), check);
 
-    tool.run_log.start_compile(&ctx, Vec::new);
+    tool.run_log
+        .start_compile(&ctx, crate::cli::Mode::Normal, Vec::new);
     assert_eq!(tool.run_log.texts(), check, "a Compile keeps them");
     poll_until_done(|| {
         tool.tick(&ctx);

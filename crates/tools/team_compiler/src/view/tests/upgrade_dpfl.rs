@@ -9,33 +9,6 @@ use std::path::{Path, PathBuf};
 use super::*;
 use crate::upgrade::{self, Preview};
 
-/// A test CPK's bytes: `name`'s own bytes cycled to the placeholder's 6,272 (`size_text`'s
-/// "6.1 KiB"), so a renamed file is told from the file that took its name.
-fn cpk_bytes(name: &str) -> Vec<u8> {
-    name.bytes().cycle().take(6272).collect()
-}
-
-/// The PES 2017 install's `DpFileList.bin` (`examples/DpFileList.bin`), the old
-/// faces/uniform list.
-fn pes17_list() -> Vec<u8> {
-    fs::read(Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../examples/DpFileList.bin"))
-        .unwrap()
-}
-
-/// A `PES<year>.exe` install under `root`: `download/` holding `list` as its
-/// `DpFileList.bin` and `cpk_bytes` for every CPK it names but `missing` (`None` for none).
-fn install(root: &Path, year: u16, list: &[u8], missing: Option<&str>) {
-    let download = root.join("PES/download");
-    fs::create_dir_all(&download).unwrap();
-    fs::write(root.join(format!("PES/PES{year}.exe")), "the game").unwrap();
-    fs::write(download.join("DpFileList.bin"), list).unwrap();
-    for name in cpk::dp_file_list::read(list).unwrap() {
-        if Some(name.as_str()) != missing {
-            fs::write(download.join(&name), cpk_bytes(&name)).unwrap();
-        }
-    }
-}
-
 /// The files of `folder`, by name, with their bytes.
 fn snapshot(folder: &Path) -> BTreeMap<PathBuf, Vec<u8>> {
     fs::read_dir(folder)
@@ -58,35 +31,6 @@ fn upgrade_leaves(
     copy_tree(download, &twin);
     upgrade::run(&twin, true, delete, ctx).unwrap();
     snapshot(&twin)
-}
-
-/// A click on the node `nodes` holds labelled `label`, on `tool`'s view: press, release,
-/// then the frame after, whose nodes it returns.
-fn click_labeled(
-    window: &mut Headless,
-    nodes: &[accesskit::Node],
-    label: &str,
-    tool: &mut Tool,
-    ctx: &ToolContext,
-) -> Vec<accesskit::Node> {
-    let at = centre(button(nodes, label));
-    window.frame(press(at), |ui| tool.view(ui, ctx));
-    window.frame(release(at), |ui| tool.view(ui, ctx));
-    window.frame(Vec::new(), |ui| tool.view(ui, ctx)).1
-}
-
-/// Whether some widget's node is labelled `label` (a button's or a check box's).
-fn labeled(nodes: &[accesskit::Node], label: &str) -> bool {
-    nodes.iter().any(|node| node.label() == Some(label))
-}
-
-/// The view's first frames: the check the window opens with ended, and the frame after's
-/// nodes, the state the check left (the log's lines, the toolbar's buttons).
-fn first_check(tool: &mut Tool, ctx: &ToolContext, window: &mut Headless) -> Vec<accesskit::Node> {
-    // The first frame starts the grid's check.
-    window.frame(Vec::new(), |ui| tool.view(ui, ctx));
-    finish_check(tool, ctx);
-    window.frame(Vec::new(), |ui| tool.view(ui, ctx)).1
 }
 
 /// The nodes after the Upgrade DpFileList button's click on the `nodes` frame opens the
@@ -144,7 +88,7 @@ fn the_outdated_list_brings_the_button_whose_dialog_upgrades_it() {
     let temp = sandbox("view_dpfl_upgrade");
     let root = temp.path();
     install(root, 2017, &pes17_list(), None);
-    let ctx = tool_context_pes17(root);
+    let ctx = tool_context_at(root, PesVersion::Pes17);
     let mut tool = Tool::new();
     let mut window = Headless::new();
     let nodes = first_check(&mut tool, &ctx, &mut window);
@@ -262,7 +206,7 @@ fn a_list_not_the_official_one_shows_the_button_and_keeps_compile_enabled() {
     names.push("4cc_80_mine.cpk".to_owned());
     let borrowed: Vec<&str> = names.iter().map(String::as_str).collect();
     install(root, 2017, &crate::testing::dpfilelist(&borrowed), None);
-    let ctx = tool_context_pes17(root);
+    let ctx = tool_context_at(root, PesVersion::Pes17);
     let mut tool = Tool::new();
     let mut window = Headless::new();
     let nodes = first_check(&mut tool, &ctx, &mut window);
@@ -306,7 +250,7 @@ fn an_upgrade_that_only_writes_placeholders_takes_the_button_away() {
         crate::templates::Templates::embedded().official_list_file(),
         Some("4cc_16_balls.cpk"),
     );
-    let ctx = tool_context_pes17(root);
+    let ctx = tool_context_at(root, PesVersion::Pes17);
     let mut tool = Tool::new();
     let mut window = Headless::new();
     let nodes = first_check(&mut tool, &ctx, &mut window);
@@ -356,7 +300,7 @@ fn a_ticked_delete_box_removes_only_that_cpk() {
     let temp = sandbox("view_dpfl_tick");
     let root = temp.path();
     install(root, 2017, &pes17_list(), None);
-    let ctx = tool_context_pes17(root);
+    let ctx = tool_context_at(root, PesVersion::Pes17);
     let mut tool = Tool::new();
     let mut window = Headless::new();
     let nodes = open_dialog(&mut tool, &ctx, &mut window);
@@ -407,7 +351,7 @@ fn an_unticked_box_deletes_nothing() {
     let temp = sandbox("view_dpfl_untick");
     let root = temp.path();
     install(root, 2017, &pes17_list(), None);
-    let ctx = tool_context_pes17(root);
+    let ctx = tool_context_at(root, PesVersion::Pes17);
     let mut tool = Tool::new();
     let mut window = Headless::new();
     let nodes = open_dialog(&mut tool, &ctx, &mut window);
@@ -456,7 +400,7 @@ fn the_dialog_s_cancel_writes_nothing() {
     let temp = sandbox("view_dpfl_cancel");
     let root = temp.path();
     install(root, 2017, &pes17_list(), None);
-    let ctx = tool_context_pes17(root);
+    let ctx = tool_context_at(root, PesVersion::Pes17);
     let mut tool = Tool::new();
     let mut window = Headless::new();
     let download = root.join("PES/download");
@@ -685,7 +629,7 @@ fn a_preview_that_cannot_be_made_is_a_log_line_and_no_dialog() {
     let temp = sandbox("view_dpfl_no_preview");
     let root = temp.path();
     install(root, 2017, &pes17_list(), None);
-    let ctx = tool_context_pes17(root);
+    let ctx = tool_context_at(root, PesVersion::Pes17);
     let mut tool = Tool::new();
     let mut window = Headless::new();
     let nodes = first_check(&mut tool, &ctx, &mut window);
@@ -827,7 +771,7 @@ fn the_dialogs_content_is_460_wide_and_its_frame_adds_the_modals_margins() {
     let temp = crate::testing::scratch("view_dpfl_width");
     let root = temp.path();
     install(root, 2017, &pes17_list(), None);
-    let ctx = tool_context_pes17(root);
+    let ctx = tool_context_at(root, PesVersion::Pes17);
     let preview = upgrade::preview(&root.join("PES/download"), &ctx).unwrap();
     assert!(
         preview.replaces_list

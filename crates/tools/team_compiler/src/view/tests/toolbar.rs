@@ -1,32 +1,14 @@
 //! The toolbar: the strip summing up the grid, its counts showing only their lines in the
 //! log, and the log starting collapsed when, open, it would hide some of the grid's rows.
 
-use std::borrow::Cow;
-
 use export_grid::Line;
-use studio_core::{Disposition, ExportId, LogFilter, Message, MessageCode, Scope, Severity};
+use studio_core::{LogFilter, Message, Severity};
 use teams_list::TeamsList;
 
 use crate::testing::ScratchFolder;
 
 use super::*;
 use crate::view::toolbar::{Part, Summary, strip, summary};
-
-/// A finding of the Compiler's `code` at `severity`, about the whole export.
-fn finding(code: &'static str, severity: Severity) -> Message {
-    Message {
-        code: MessageCode {
-            tool_id: TOOL_ID,
-            code: Cow::Borrowed(code),
-        },
-        severity,
-        disposition: Disposition::Keep,
-        scope: Scope::Export {
-            export_id: ExportId(1),
-        },
-        context: Vec::new(),
-    }
-}
 
 /// The first `count` teams of the bundled teams list, each a row of its label alone.
 fn listed_rows(count: usize) -> Vec<Row> {
@@ -203,9 +185,9 @@ fn a_strip_too_long_for_its_room_is_cut_short_with_an_ellipsis() {
     let mut panel = LogPanel::new(TOOL_ID);
     let mut detail = GridDetail::new();
     let mut window = Headless::new();
-    // A view 230 points wide leaves the strip room for `4 exports · ` and part of the
+    // A view 290 points wide leaves the strip room for `4 exports · ` and part of the
     // count after it.
-    let narrow = egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(230.0, 780.0));
+    let narrow = egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(290.0, 780.0));
     let (_, nodes) = window.frame(Vec::new(), |ui| {
         ui.scope_builder(egui::UiBuilder::new().max_rect(narrow), |ui| {
             show(ui, &ctx, &log, &mut panel, &rows, false, &mut detail)
@@ -264,19 +246,6 @@ fn log_chevron(nodes: &[accesskit::Node]) -> &accesskit::Node {
                 })
         })
         .expect("the open log's chevron")
-}
-
-/// A click on `node`: the press frame, the release frame, and the frame after, which shows
-/// what the click changed. Returns that frame's nodes.
-fn click_on(
-    window: &mut Headless,
-    node: &accesskit::Node,
-    mut frame: impl FnMut(&mut Headless, Vec<egui::Event>) -> Vec<accesskit::Node>,
-) -> Vec<accesskit::Node> {
-    let at = centre(node);
-    frame(window, press(at));
-    frame(window, release(at));
-    frame(window, Vec::new())
 }
 
 /// Exports with errors on two of them and a warning on a third: /co/'s player folder turns
