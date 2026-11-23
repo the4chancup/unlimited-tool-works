@@ -6,7 +6,10 @@
 use egui::{Align2, Color32, FontId, Pos2, Rect, Sense, TextStyle, pos2, vec2};
 use studio_core::theme::palette;
 
-use crate::cells::{Cell, CellState, Outline, Position, RADIUS, Width, look, paint};
+use crate::cells::{
+    Cell, CellState, KIT_LABEL_TOP, Outline, Position, RADIUS, Width, look, paint, paint_fill,
+    paint_ring, paint_swatch, shows_icon,
+};
 use crate::detail::{
     CellKey, Contents, Detail, Found, GridResponse, OUTLINE_WIDTH, Place, Sources, open_of,
 };
@@ -401,15 +404,34 @@ impl Grid<'_> {
         look.text
     }
 
-    /// A cell: its background, then its text centred; returns its response to the pointer.
+    /// A cell: its fill, a kit's menu icon along its foot when the state shows one,
+    /// its ring, then its text, at the cell's top over an icon and centred without
+    /// one; returns its response to the pointer.
     fn cell(&self, cell: &Cell, rect: Rect, id: egui::Id) -> egui::Response {
-        let colour = self.background(cell, rect);
-        self.ui.painter().text(
-            rect.center(),
-            Align2::CENTER_CENTER,
+        let (state, outline) = self.shown(cell);
+        let look = look(state, outline, self.ui.visuals());
+        let painter = self.ui.painter();
+        paint_fill(painter, &look, rect);
+        let icon = cell.kit_icon.filter(|_| shows_icon(state));
+        if let Some(icon) = icon {
+            paint_swatch(painter, icon, rect);
+        }
+        // The ring goes over the swatch: the draft's `.ol` stands over both.
+        paint_ring(painter, &look, rect);
+        let (at, align) = if icon.is_some() {
+            (
+                pos2(rect.center().x, rect.top() + KIT_LABEL_TOP),
+                Align2::CENTER_TOP,
+            )
+        } else {
+            (rect.center(), Align2::CENTER_CENTER)
+        };
+        painter.text(
+            at,
+            align,
             &cell.text,
             FontId::monospace(CELL_FONT),
-            colour,
+            look.text,
         );
         self.node(rect, id, &cell.text, Sense::click())
     }
@@ -514,7 +536,10 @@ fn name_lines(painter: &egui::Painter, name: &str) -> (Vec<String>, f32) {
 
 #[cfg(test)]
 mod tests {
+    use color_tools::icon::pattern_shapes;
+
     use super::*;
+    use crate::cells::KitIcon;
     use crate::testing::{COLUMNS, Drawn, GROUPS, Headless, dark};
 
     /// A checked cell showing `text`.
@@ -547,6 +572,28 @@ mod tests {
             }]),
             log_lines: Vec::new(),
         }
+    }
+
+    /// The row's kit positions: GK, then K1 to K9.
+    fn kits_mut(row: &mut Row) -> &mut Vec<Position> {
+        let RowBody::Lines(lines) = &mut row.body else {
+            unreachable!("the rows are lines")
+        };
+        &mut lines[0].groups[2]
+    }
+
+    /// `team_row` with GK's menu icon (pattern 7, red on white) under an Error ring.
+    fn icon_row() -> Row {
+        let mut row = team_row();
+        let Position::Cell(gk) = &mut kits_mut(&mut row)[0] else {
+            unreachable!("GK is a cell")
+        };
+        gk.outline = Some(Outline::Error);
+        gk.kit_icon = Some(KitIcon {
+            number: 7,
+            colors: [Color32::RED, Color32::WHITE],
+        });
+        row
     }
 
     /// The grid of `rows` in `columns`, with a detail window that has nothing open.
@@ -794,19 +841,39 @@ mod tests {
         last_title: "Export type",
     };
 
-    /// Where the text run of `text` is painted: the label's and cells' painted text is no
-    /// node, it is a `Shape::Text` whose `pos` is the galley's top-left corner.
-    fn text_pos(drawn: &Drawn, text: &str) -> egui::Pos2 {
+    /// `text`'s painted run: the label's and cells' painted text is no node, it is a
+    /// `Shape::Text`.
+    fn text_shape<'a>(drawn: &'a Drawn, text: &str) -> &'a egui::epaint::TextShape {
         drawn
             .shapes
             .iter()
             .find_map(|shape| match shape {
                 egui::Shape::Text(text_shape) if text_shape.galley.text() == text => {
-                    Some(text_shape.pos)
+                    Some(text_shape)
                 }
                 _ => None,
             })
             .unwrap_or_else(|| panic!("no text run of {text:?}"))
+    }
+
+    /// Where the text run of `text` is painted: `pos` is the galley's top-left corner.
+    fn text_pos(drawn: &Drawn, text: &str) -> egui::Pos2 {
+        text_shape(drawn, text).pos
+    }
+
+    /// The middle of `text`'s painted run, from its galley's top-left corner and size.
+    fn text_center(drawn: &Drawn, text: &str) -> egui::Pos2 {
+        let shape = text_shape(drawn, text);
+        shape.pos + shape.galley.size() / 2.0
+    }
+
+    /// The index in `shapes` where `run` sits as one contiguous run; panics when no
+    /// window of its length matches it.
+    fn run_at(shapes: &[egui::Shape], run: &[egui::Shape]) -> usize {
+        shapes
+            .windows(run.len())
+            .position(|window| window == run)
+            .expect("the run of shapes")
     }
 
     /// The scroll area's persisted state, for the grid `show` draws under `salt`: the salt
@@ -1092,5 +1159,94 @@ mod tests {
         // Centred on its 26-high line at 26.65625: 39.65625, the third line's 56 down.
         assert_eq!(drawn.one("Face").center().y, 39.65625);
         assert_eq!(drawn.one("Gloves").center().y, 95.65625);
+    }
+
+    /// The strip a kit cell's menu icon fills, worked out from the cell's `rect` as the
+    /// draft's `.tc-sw` marks it out: 2 in from the left, right and bottom, 9 high.
+    fn icon_strip(rect: Rect) -> Rect {
+        Rect::from_min_max(
+            pos2(rect.left() + 2.0, rect.bottom() - 11.0),
+            pos2(rect.right() - 2.0, rect.bottom() - 2.0),
+        )
+    }
+
+    #[test]
+    fn a_kit_cell_paints_its_menu_icon_between_its_fill_and_its_ring() {
+        let drawn = draw(&COLUMNS, &[icon_row()], false);
+        let cell = drawn.one("GK");
+        let pattern = pattern_shapes(icon_strip(cell), 7, [Color32::RED, Color32::WHITE]);
+        let run = run_at(&drawn.shapes, &pattern);
+        let visuals = dark();
+        let fill = drawn
+            .shapes
+            .iter()
+            .position(|shape| {
+                matches!(
+                    shape,
+                    egui::Shape::Rect(rect)
+                        if rect.rect == cell && rect.fill == palette(&visuals).grid_full_ok
+                )
+            })
+            .expect("the cell's fill");
+        let ring = drawn
+            .shapes
+            .iter()
+            .position(|shape| {
+                matches!(
+                    shape,
+                    egui::Shape::Rect(rect)
+                        if rect.rect == cell && rect.stroke.color == visuals.error_fg_color
+                )
+            })
+            .expect("the cell's Error ring");
+        assert!(fill < run, "the fill paints before the pattern");
+        assert!(
+            run + pattern.len() <= ring,
+            "the ring paints after the pattern"
+        );
+    }
+
+    #[test]
+    fn an_icon_cells_label_stands_at_the_top_a_plain_ones_stays_centred() {
+        let mut row = icon_row();
+        kits_mut(&mut row)[1] = checked("K1");
+        let drawn = draw(&COLUMNS, &[row], false);
+        let top = text_pos(&drawn, "GK").y - drawn.one("GK").top();
+        assert!(
+            (top - 3.0).abs() < 0.5,
+            "the galley 3 under the cell's top: {top}"
+        );
+        let off = text_center(&drawn, "K1") - drawn.one("K1").center();
+        assert!(off.length() < 0.5, "K1's label stays centred: {off:?}");
+    }
+
+    #[test]
+    fn a_kit_cell_shows_no_icon_while_checking_blocked_or_unchecked() {
+        for (checking, state) in [
+            (true, CellState::FullOk),
+            (false, CellState::Blocked),
+            (false, CellState::Unchecked),
+        ] {
+            let mut row = icon_row();
+            let Position::Cell(gk) = &mut kits_mut(&mut row)[0] else {
+                unreachable!("GK is a cell")
+            };
+            gk.state = state;
+            let drawn = draw(&COLUMNS, &[row], checking);
+            let cell = drawn.one("GK");
+            let pattern = pattern_shapes(icon_strip(cell), 7, [Color32::RED, Color32::WHITE]);
+            assert!(
+                !drawn
+                    .shapes
+                    .windows(pattern.len())
+                    .any(|window| window == pattern),
+                "no icon while {state:?} (checking {checking})"
+            );
+            let off = text_center(&drawn, "GK") - cell.center();
+            assert!(
+                off.length() < 0.5,
+                "the label stays centred while {state:?} (checking {checking}): {off:?}"
+            );
+        }
     }
 }

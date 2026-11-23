@@ -8,6 +8,8 @@ repository.workspace = true
 rust-version.workspace = true
 
 [dependencies]
+# The kit cells' menu icon patterns.
+color_tools.workspace = true
 egui.workspace = true
 # The palette the cells are painted in, the message type a cell holds, and, in the
 # tests, the window's fonts and style (`theme::install`).
