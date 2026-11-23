@@ -590,7 +590,9 @@ Like the settings menu it is **assembled from the tools**, not written centrally
   own severity and text.
 - **Search.** One text box above the chapter tree, case-insensitive substring over every topic's
   paragraphs and every catalog row; results list as *Chapter › Topic › matching line*, click to
-  jump with the hit highlighted. The line is shown as plain text without its Markdown marks
+  jump with the hit highlighted: its paragraph or catalog row filled in the drafts' highlight
+  green, `#2a3a1e` on the dark panel and `#a7db80` on the light one (the same contrast with
+  each panel, 1.41), not the selection blue, which marks a choice. The line is shown as plain text without its Markdown marks
   (`**`, backticks, a list item's leading dash and indent), since a label draws none: a
   subheading's hit reads "Saving", not "\*\*Saving\*\*".
 

@@ -19865,3 +19865,13 @@ Why: the maintainer, after a defect passed both the brief's author and its sidek
 accepted concern gets that question, which "ties in with the snag fixing rule: it all boils
 down to taking a step back and self-improving".
 Plan: `AGENTS.md` "Conduct".
+
+## 2026-11-23 — studio_core — the help window's search hit is highlighted in the drafts' green, not the selection blue
+Decision: the paragraph or catalog row a search result jumps to is filled in the drafts'
+highlight green (`--changed`, `#2a3a1e` dark), with `#a7db80` on the light theme, which keeps
+the dark value's contrast with its panel (1.41). The build filled the paragraph in the selection
+blue and marked a catalog row with the blue at 40%.
+Why: the drafts draw both in that green (`.help-win .hl`, `.pipe-grid tr.highlight`), and the
+selection blue marks a choice, always with its edge; a hit is not a choice. The light value
+follows the plan's rule for a fill. Found by review round S3.
+Plan: `plans/core/gui.md` "Help window", the Search paragraph.
