@@ -30,7 +30,8 @@ use upgrade_dpfl::Outcome;
 pub(crate) enum Intent {
     /// Compile.
     Compile,
-    /// Upgrade DpFileList: the upgrade's dialog opens on its preview.
+    /// Upgrade DpFileList: the upgrade's dialog opens on its preview, or the upgrade runs
+    /// at once when the list is already the official one, with nothing deleted.
     UpgradeDpfl,
     /// The dialog's Upgrade: the upgrade applies, the ticked dropped CPKs deleted.
     Upgrade(BTreeSet<String>),

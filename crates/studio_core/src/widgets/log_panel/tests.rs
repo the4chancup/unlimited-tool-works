@@ -159,7 +159,7 @@ fn click(
 /// `parent_scope.with_salt(IdSalt::new(id_salt))` and gives its child ui the same for a
 /// scope — the salt chain resolves the stored `panel_ids()` against the root ui's top id.
 fn panel_id(salt: egui::Id) -> egui::Id {
-    egui::Id::unique((egui::ViewportId::ROOT, "__top_ui")).with(salt)
+    egui::ViewportId::ROOT.root_ui_id().with(salt)
 }
 
 /// The log body's scroll offset: its `scroll_area::State` under the id the
@@ -168,7 +168,8 @@ fn panel_id(salt: egui::Id) -> egui::Id {
 /// the panel's `salt`.
 fn scroll_offset(ctx: &egui::Context, panel: &LogPanel) -> f32 {
     let (open, _) = panel.dock.panel_ids();
-    let id = egui::Id::unique((egui::ViewportId::ROOT, "__top_ui"))
+    let id = egui::ViewportId::ROOT
+        .root_ui_id()
         .with(egui::IdSalt::new(panel_id(open)))
         .with(egui::IdSalt::new("child"))
         .with(egui::IdSalt::new("child"))

@@ -216,8 +216,8 @@ impl RunLog {
         &self.lines
     }
 
-    /// The grid cell the line at `line` in `lines` acts for: a check's line has one, a run's
-    /// line none.
+    /// The grid cell the line at `line` in `lines` acts for: a check's cell line has one,
+    /// a check's `DpFileList.bin` list line and a run's line none.
     pub(crate) fn cell_of(&self, line: usize) -> Option<&CellKey> {
         self.cells.get(line)
     }
@@ -236,7 +236,8 @@ impl RunLog {
     }
 }
 
-/// The `Dpfl` a run's message of `code` sets: `Outdated` for `dpfilelist_outdated`, `Other`
+/// The `Dpfl` a `DpFileList.bin` finding of `code` sets — a run's message in `append`, a
+/// check's list finding in `set_check`: `Outdated` for `dpfilelist_outdated`, `Other`
 /// for the two Warnings the upgrade remedies, `Official` for the upgrade's own report that
 /// the list is now the official one (a replacement, or nothing to do): a failed upgrade emits
 /// neither, so its button stays for the retry. `None` for every other code.
@@ -675,14 +676,20 @@ mod tests {
 
     #[test]
     fn a_run_s_dpfilelist_messages_set_the_button_s_state() {
-        for (code, found, outdated) in [
-            ("dpfilelist_outdated", true, true),
-            ("dpfilelist_not_official", true, false),
-            ("dpfilelist_cpk_missing", true, false),
-            ("dpfilelist_replaced", false, false),
-            ("dpfilelist_up_to_date", false, false),
+        for (code, start, found, outdated) in [
+            ("dpfilelist_outdated", Dpfl::Other, true, true),
+            ("dpfilelist_not_official", Dpfl::Outdated, true, false),
+            ("dpfilelist_cpk_missing", Dpfl::Outdated, true, false),
+            ("dpfilelist_replaced", Dpfl::Outdated, false, false),
+            ("dpfilelist_up_to_date", Dpfl::Other, false, false),
+            // Not about the game's list: each leaves the state as it was.
+            ("cpk_name_unlisted", Dpfl::Outdated, true, true),
+            ("dpfilelist_missing", Dpfl::Other, true, false),
         ] {
-            let mut log = RunLog::default();
+            let mut log = RunLog {
+                dpfl: start,
+                ..RunLog::default()
+            };
             drain(&mut log, finding(code, Severity::Warning, Scope::Run, &[]));
             assert_eq!(log.dpfl_found(), found, "{code}");
             assert_eq!(log.dpfl_outdated(), outdated, "{code}");

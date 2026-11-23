@@ -258,8 +258,8 @@ pub(crate) fn run(
 /// `inputs`' settings give that mode (the refs CPK only when `referees`, a refs export being
 /// among them), its CPK file names checked by `deploy::list_findings` in the PES folder's
 /// `download/` against the official list `data_dir`'s templates give. Empty when the settings
-/// or the templates are refused, or the list is missing, because the Compile run reports each
-/// of those itself.
+/// or the templates are refused, or the list is missing or unreadable, because the Compile
+/// run reports each of those itself.
 pub(crate) fn list_findings(
     inputs: &RunInputs,
     referees: bool,

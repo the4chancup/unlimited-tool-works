@@ -22,52 +22,17 @@ fn pes17_list() -> Vec<u8> {
         .unwrap()
 }
 
-/// A PES 2017 install, TC-GUI-33's: `PES2017.exe` and `download/` holding the old list,
-/// `cpk_bytes` for every CPK it names.
-fn install_pes17(root: &Path) {
-    let download = root.join("PES/download");
-    fs::create_dir_all(&download).unwrap();
-    fs::write(root.join("PES/PES2017.exe"), "the game").unwrap();
-    let list = pes17_list();
-    fs::write(download.join("DpFileList.bin"), &list).unwrap();
-    for name in cpk::dp_file_list::read(&list).unwrap() {
-        fs::write(download.join(&name), cpk_bytes(&name)).unwrap();
-    }
-}
-
-/// A PES install's `download/` (under `root/PES`, its `PES<year>.exe` written): the official
-/// `DpFileList.bin` byte for byte, `cpk_bytes` for every entry it names but `missing`.
-fn install_official(root: &Path, year: u16, missing: Option<&str>) {
+/// A `PES<year>.exe` install under `root`: `download/` holding `list` as its
+/// `DpFileList.bin` and `cpk_bytes` for every CPK it names but `missing` (`None` for none).
+fn install(root: &Path, year: u16, list: &[u8], missing: Option<&str>) {
     let download = root.join("PES/download");
     fs::create_dir_all(&download).unwrap();
     fs::write(root.join(format!("PES/PES{year}.exe")), "the game").unwrap();
-    let templates = crate::templates::Templates::embedded();
-    fs::write(
-        download.join("DpFileList.bin"),
-        templates.official_list_file(),
-    )
-    .unwrap();
-    for name in templates.official_list() {
+    fs::write(download.join("DpFileList.bin"), list).unwrap();
+    for name in cpk::dp_file_list::read(list).unwrap() {
         if Some(name.as_str()) != missing {
             fs::write(download.join(&name), cpk_bytes(&name)).unwrap();
         }
-    }
-}
-
-/// `install_pes17` whose `download/` holds a `DpFileList.bin` listing `names` instead of the
-/// old list, `cpk_bytes` for every CPK it names.
-fn install_pes17_listing(root: &Path, names: &[String]) {
-    let download = root.join("PES/download");
-    fs::create_dir_all(&download).unwrap();
-    fs::write(root.join("PES/PES2017.exe"), "the game").unwrap();
-    let borrowed: Vec<&str> = names.iter().map(String::as_str).collect();
-    fs::write(
-        download.join("DpFileList.bin"),
-        crate::testing::dpfilelist(&borrowed),
-    )
-    .unwrap();
-    for name in names {
-        fs::write(download.join(name), cpk_bytes(name)).unwrap();
     }
 }
 
@@ -178,7 +143,7 @@ fn disabled_tooltip_is(
 fn the_outdated_list_brings_the_button_whose_dialog_upgrades_it() {
     let temp = sandbox("view_dpfl_upgrade");
     let root = temp.path();
-    install_pes17(root);
+    install(root, 2017, &pes17_list(), None);
     let ctx = tool_context_pes17(root);
     let mut tool = Tool::new();
     let mut window = Headless::new();
@@ -222,6 +187,11 @@ fn the_outdated_list_brings_the_button_whose_dialog_upgrades_it() {
     ] {
         assert!(shows_text(&nodes, text), "the dialog shows {text:?}");
     }
+    let boxes = nodes
+        .iter()
+        .filter(|node| node.role() == accesskit::Role::CheckBox)
+        .count();
+    assert_eq!(boxes, 5, "one delete box per dropped CPK with a file");
     assert!(labeled(&nodes, "4cc_60_midcup.cpk (6.1 KiB)"));
     assert!(labeled(&nodes, "Cancel") && labeled(&nodes, "Upgrade"));
 
@@ -273,6 +243,13 @@ fn the_outdated_list_brings_the_button_whose_dialog_upgrades_it() {
             .any(|line| line.contains("dpfilelist_outdated")),
         "the second run passes the preflight: {texts:?}"
     );
+    // The run reached past it: the installed CPKs' walk refuses the fake archives.
+    assert!(
+        texts
+            .iter()
+            .any(|line| line.contains("installed_bin_unreadable")),
+        "the second run reached the bins walk: {texts:?}"
+    );
 }
 
 // TC-GUI-33
@@ -283,7 +260,8 @@ fn a_list_not_the_official_one_shows_the_button_and_keeps_compile_enabled() {
     // The list names every CPK the run installs plus one entry the official list lacks.
     let mut names = crate::templates::Templates::embedded().official_list();
     names.push("4cc_80_mine.cpk".to_owned());
-    install_pes17_listing(root, &names);
+    let borrowed: Vec<&str> = names.iter().map(String::as_str).collect();
+    install(root, 2017, &crate::testing::dpfilelist(&borrowed), None);
     let ctx = tool_context_pes17(root);
     let mut tool = Tool::new();
     let mut window = Headless::new();
@@ -322,7 +300,12 @@ fn a_list_not_the_official_one_shows_the_button_and_keeps_compile_enabled() {
 fn an_upgrade_that_only_writes_placeholders_takes_the_button_away() {
     let temp = sandbox("view_dpfl_placeholder");
     let root = temp.path();
-    install_official(root, 2017, Some("4cc_16_balls.cpk"));
+    install(
+        root,
+        2017,
+        crate::templates::Templates::embedded().official_list_file(),
+        Some("4cc_16_balls.cpk"),
+    );
     let ctx = tool_context_pes17(root);
     let mut tool = Tool::new();
     let mut window = Headless::new();
@@ -372,7 +355,7 @@ fn an_upgrade_that_only_writes_placeholders_takes_the_button_away() {
 fn a_ticked_delete_box_removes_only_that_cpk() {
     let temp = sandbox("view_dpfl_tick");
     let root = temp.path();
-    install_pes17(root);
+    install(root, 2017, &pes17_list(), None);
     let ctx = tool_context_pes17(root);
     let mut tool = Tool::new();
     let mut window = Headless::new();
@@ -423,7 +406,7 @@ fn a_ticked_delete_box_removes_only_that_cpk() {
 fn an_unticked_box_deletes_nothing() {
     let temp = sandbox("view_dpfl_untick");
     let root = temp.path();
-    install_pes17(root);
+    install(root, 2017, &pes17_list(), None);
     let ctx = tool_context_pes17(root);
     let mut tool = Tool::new();
     let mut window = Headless::new();
@@ -472,7 +455,7 @@ fn an_unticked_box_deletes_nothing() {
 fn the_dialog_s_cancel_writes_nothing() {
     let temp = sandbox("view_dpfl_cancel");
     let root = temp.path();
-    install_pes17(root);
+    install(root, 2017, &pes17_list(), None);
     let ctx = tool_context_pes17(root);
     let mut tool = Tool::new();
     let mut window = Headless::new();
@@ -602,6 +585,20 @@ fn the_upgrade_button_is_filled_blue_with_its_edge() {
         Some(&egui::Stroke::new(1.0, edge)),
         "the button's edge is the selection blue's own at rest"
     );
+
+    // Beside Compile: its right edge at or just left of Compile's, the two on one row.
+    let compile = button(&nodes, "Compile")
+        .bounds()
+        .expect("a widget has bounds");
+    let gap = compile.x0 - bounds.x1;
+    assert!(
+        (-0.5..=8.5).contains(&gap),
+        "the button ends at or within an item spacing of Compile's left edge: {gap}"
+    );
+    assert!(
+        bounds.y0 < compile.y1 && bounds.y1 > compile.y0,
+        "the buttons' rows overlap: {bounds:?} vs {compile:?}"
+    );
 }
 
 // TC-GUI-33
@@ -609,7 +606,12 @@ fn the_upgrade_button_is_filled_blue_with_its_edge() {
 fn a_preview_with_nothing_to_do_opens_no_dialog_and_the_button_goes() {
     let temp = sandbox("view_dpfl_up_to_date");
     let root = temp.path();
-    install_official(root, 2021, None);
+    install(
+        root,
+        2021,
+        crate::templates::Templates::embedded().official_list_file(),
+        None,
+    );
     let ctx = tool_context(root, "");
     let mut tool = Tool::new();
     // The list is the official one and every CPK it names is there: the button can only
@@ -682,7 +684,7 @@ fn no_button_after_a_run_whose_preflight_found_nothing() {
 fn a_preview_that_cannot_be_made_is_a_log_line_and_no_dialog() {
     let temp = sandbox("view_dpfl_no_preview");
     let root = temp.path();
-    install_pes17(root);
+    install(root, 2017, &pes17_list(), None);
     let ctx = tool_context_pes17(root);
     let mut tool = Tool::new();
     let mut window = Headless::new();
@@ -756,7 +758,12 @@ fn a_part_whose_count_is_zero_is_left_out_and_a_dropped_entry_without_a_file_has
 fn the_first_paragraph_shows_only_when_the_list_is_replaced() {
     let temp = crate::testing::scratch("view_dpfl_same_list");
     let root = temp.path();
-    install_official(root, 2021, Some("4cc_16_balls.cpk"));
+    install(
+        root,
+        2021,
+        crate::templates::Templates::embedded().official_list_file(),
+        Some("4cc_16_balls.cpk"),
+    );
     let ctx = tool_context(root, "");
     let preview = upgrade::preview(&root.join("PES/download"), &ctx).unwrap();
     assert!(

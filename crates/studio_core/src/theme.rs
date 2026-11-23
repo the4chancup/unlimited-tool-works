@@ -177,6 +177,11 @@ pub struct Palette {
     /// of this hue reaches the dark one's contrast on the light panel, so
     /// the light value is the dark one.
     pub grid_blocked: egui::Color32,
+    /// The fill a search hit gets in the help window (the drafts' `.help-win
+    /// .hl` and `tr.highlight` green): the jumped-to paragraph's frame and the
+    /// marked catalog row. Not the selection blue, which marks a choice. Its
+    /// light value keeps the dark one's contrast with its panel, 1.41.
+    pub search_hit: egui::Color32,
 }
 
 impl Palette {
@@ -228,6 +233,7 @@ impl Palette {
         grid_text_light: egui::Color32::from_gray(0xdc),
         grid_empty: egui::Color32::from_gray(0x20),
         grid_blocked: egui::Color32::from_rgb(0x8c, 0x2a, 0x2a),
+        search_hit: egui::Color32::from_rgb(0x2a, 0x3a, 0x1e),
     };
 
     /// The light theme's colours. Only the ones drawn on the theme's own panel
@@ -280,6 +286,7 @@ impl Palette {
         grid_text_light: egui::Color32::from_gray(0xdc),
         grid_empty: egui::Color32::from_gray(234),
         grid_blocked: egui::Color32::from_rgb(0x8c, 0x2a, 0x2a),
+        search_hit: egui::Color32::from_rgb(0xa7, 0xdb, 0x80),
     };
 }
 
@@ -850,6 +857,7 @@ mod tests {
             grid_text_light,
             grid_empty,
             grid_blocked,
+            search_hit,
         } = palette;
         vec![
             ("success", *success),
@@ -895,6 +903,7 @@ mod tests {
             ("grid_text_light", *grid_text_light),
             ("grid_empty", *grid_empty),
             ("grid_blocked", *grid_blocked),
+            ("search_hit", *search_hit),
         ]
     }
 
@@ -902,7 +911,7 @@ mod tests {
     // their own; every other is on a surface both themes share.
     #[test]
     fn only_the_panel_colours_differ_between_the_themes() {
-        const THEMED: [&str; 10] = [
+        const THEMED: [&str; 11] = [
             "grid_empty",
             "success",
             "readout",
@@ -913,6 +922,7 @@ mod tests {
             "lineup_defender",
             "lineup_midfielder",
             "lineup_forward",
+            "search_hit",
         ];
         for ((name, dark), (_, light)) in named_fields(&Palette::DARK)
             .into_iter()
@@ -1408,6 +1418,25 @@ mod tests {
                 contrast(Palette::DARK.readout, dark_box),
                 light_box
             )),
+        );
+    }
+
+    // The help window's search-hit green: the light value keeps the dark
+    // one's contrast with its panel (the drafts' highlight, drawn on the
+    // panel of each theme).
+    #[test]
+    fn the_search_hits_light_value_keeps_the_dark_ones_contrast_on_its_panel() {
+        let ctx = egui::Context::default();
+        install(&ctx);
+        let (dark, light) = (
+            ctx.style_of(egui::Theme::Dark).visuals.clone(),
+            ctx.style_of(egui::Theme::Light).visuals.clone(),
+        );
+        let want = contrast(Palette::DARK.search_hit, dark.panel_fill);
+        let got = contrast(Palette::LIGHT.search_hit, light.panel_fill);
+        assert!(
+            (want - got).abs() <= 0.05,
+            "search_hit: {got:.2} on the light panel, {want:.2} on the dark"
         );
     }
 

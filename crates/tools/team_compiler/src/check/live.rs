@@ -35,7 +35,8 @@ type Outcome = Result<(Vec<Row>, Vec<Message>), String>;
 pub(crate) enum Polled {
     /// No check ended since the last poll.
     Nothing,
-    /// A check ended, and its rows replaced the grid's.
+    /// A check ended: its rows replaced the grid's, and its `DpFileList.bin` findings the
+    /// button's state.
     Rows,
     /// A check ended refused: the text of its `error:` line, for the log.
     Refused(String),
@@ -49,8 +50,8 @@ pub(crate) struct LiveCheck {
     /// The findings about the game's `DpFileList.bin` `rows`' check made.
     list: Vec<Message>,
     running: Option<JoinHandle<Outcome>>,
-    /// A check was asked for while one ran: it starts once that one ends, since the
-    /// running one may predate what made the caller ask.
+    /// A check was asked for while one ran: it starts once that one ends, and the ended
+    /// one's outcome is dropped, since it may predate what made the caller ask.
     again: bool,
     started: bool,
 }
@@ -69,13 +70,20 @@ impl LiveCheck {
     }
 
     /// Takes the check's outcome once its thread has ended: its rows replace the grid's, or
-    /// the grid keeps its rows and the refusal is returned for the log. Then starts the check
-    /// asked for meanwhile. Returns at once while the check runs.
+    /// the grid keeps its rows and the refusal is returned for the log. The outcome is
+    /// dropped instead when another check was asked for while it ran — it may predate what
+    /// made the caller ask — and the asked-for check starts. Returns at once while the
+    /// check runs.
     pub(crate) fn poll(&mut self, ctx: &ToolContext) -> Polled {
         let Some(running) = self.running.take_if(|running| running.is_finished()) else {
             return Polled::Nothing;
         };
-        let polled = match running.join() {
+        let outcome = running.join();
+        if std::mem::take(&mut self.again) {
+            self.start(ctx);
+            return Polled::Nothing;
+        }
+        match outcome {
             Ok(Ok((rows, list))) => {
                 // Replaced together: a list older than the rows would gate Compile on a
                 // `DpFileList.bin` that may have changed since.
@@ -85,11 +93,7 @@ impl LiveCheck {
             }
             Ok(Err(error)) => Polled::Refused(error),
             Err(_) => Polled::Refused("the grid's check stopped because it crashed".to_owned()),
-        };
-        if std::mem::take(&mut self.again) {
-            self.start(ctx);
         }
-        polled
     }
 
     /// Whether a check is in flight.
@@ -842,5 +846,46 @@ impl LiveCheck {
     /// Whether the check in flight has ended, its outcome not taken yet.
     pub(crate) fn has_ended(&self) -> bool {
         self.running.as_ref().is_some_and(JoinHandle::is_finished)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crossbeam_channel::unbounded;
+    use export_grid::{Cell, CellState, RowBody};
+
+    use super::*;
+    use crate::testing::{poll_until_done, sandbox, tool_context};
+
+    /// A row the ended check's outcome holds.
+    fn stale_row() -> Row {
+        Row {
+            key: "co Midcup Map".to_owned(),
+            label: Cell::new("/co/", CellState::FullOk),
+            id: None,
+            body: RowBody::Lines(Vec::new()),
+            log_lines: Vec::new(),
+        }
+    }
+
+    // A check asked for while one ran starts once it ends, and the ended one's outcome is
+    // dropped: it may predate what made the caller ask (an upgrade run, whose own drained
+    // findings set the button's state from the newer list).
+    #[test]
+    fn a_check_ended_while_another_was_asked_for_drops_its_outcome() {
+        let temp = sandbox("live_check_stale");
+        let ctx = tool_context(temp.path(), "");
+        let (release, until) = unbounded();
+        let mut check = LiveCheck::in_flight(until, vec![stale_row()]);
+        check.start(&ctx);
+        release.send(()).unwrap();
+        poll_until_done(|| !check.has_ended());
+
+        assert_eq!(check.poll(&ctx), Polled::Nothing);
+        assert!(
+            check.rows().is_empty(),
+            "the ended check's rows are dropped"
+        );
+        assert!(check.is_running(), "the asked-for check is running");
     }
 }

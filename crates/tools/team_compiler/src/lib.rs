@@ -159,8 +159,8 @@ impl StudioTool for Tool {
     }
 
     /// The run's events into the log; the grid checked again once a run ends. A
-    /// check's rows reach the grid only while no Compile runs, since the run may change
-    /// what they describe; its detail window then reads its pictures again, and the
+    /// check's rows reach the grid only while no run is in flight, since the run may
+    /// change what they describe; its detail window then reads its pictures again, and the
     /// check's findings replace the last check's at the top of the log. A refused check is
     /// a line of the log.
     fn tick(&mut self, ctx: &ToolContext) {
