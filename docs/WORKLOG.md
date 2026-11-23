@@ -212,9 +212,11 @@ draft checked, for the maintainer to publish; running sidekicks and jobs are not
      "a kit's menu icon pattern is a strip along its cell's foot"), in slices:
      - [x] a `color_tools::icon`: the 24 menu icon patterns as shapes over any rectangle
        (2026-11-23, merge `0e9ba0e0`, SWE-2, landed first time; reviewed with c)
-     - [ ] b a kit cell carries its menu icon and colours when the check kept the kit and its
-       `colors.txt` lists two (SWE-2, running)
-     - [ ] c the grid paints the strip under the label (after a and b)
+     - [x] b a kit cell carries its menu icon and colours when the check kept the kit and its
+       `colors.txt` lists two (2026-11-23, merge `057c55db`, SWE-2, landed first time;
+       reviewed with c)
+     - [ ] c the grid paints the strip under the label (SWE-2, running); then one SWE-2
+       review round over a, b and c, and the strip captured beside the draft
      - [ ] d a compile's colours worked out from the texture, and a dropped kit's base
        `UniColor.bin` colours
    - Then the row actions, the ID cell's editing, the
