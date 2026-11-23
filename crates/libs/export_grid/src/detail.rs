@@ -824,9 +824,7 @@ fn buttons(
             let button = ui.button("Open folder");
             let button = match open {
                 Open::Folder(_) => button,
-                Open::Select(_) => button.on_hover_text(
-                    "Opens the folder holding this archive, with the archive selected",
-                ),
+                Open::Select(_) => button.on_hover_text("Opens the folder holding this archive"),
             };
             if button.clicked() {
                 response.open = Some(open.clone());

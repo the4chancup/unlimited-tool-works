@@ -37,8 +37,10 @@ pub fn menu_button<R>(
     egui::InnerResponse::new(inner.map(|inner| inner.inner), response)
 }
 
-/// A menu drawn above `response`'s widget, their right edges meeting
-/// (`RectAlign::TOP_END`): a click on the widget opens it, one inside or
+/// A menu drawn above `response`'s widget, its bottom 2 points above the
+/// widget's top and their right edges meeting (the draft's `modeMenu`;
+/// `RectAlign::TOP_END` and a 2-point gap, since `Popup::menu` sits flush):
+/// a click on the widget opens it, one inside or
 /// outside it closes it, and a click on the widget while it is open closes
 /// it too. Styled as `menu_button`'s menu is, so its entries
 /// meet the same way; for a button that opens its menu upward rather than
@@ -49,6 +51,7 @@ pub fn menu_above<R>(
 ) -> Option<R> {
     egui::Popup::menu(response)
         .align(egui::RectAlign::TOP_END)
+        .gap(2.0)
         .style(menu_style_meeting)
         .show(add_contents)
         .map(|inner| inner.inner)
@@ -69,13 +72,33 @@ mod tests {
 
     use super::*;
 
-    /// One frame of a toolbar holding the "Team" menu, `contents` its
-    /// popup's, with `events` as its input; the frame's AccessKit nodes.
+    /// The widget a `frame`'s toolbar holds: `menu_button`, or a plain "Team"
+    /// button whose menu `menu_above` opens (the Compile arrow's pair).
+    #[derive(Clone, Copy)]
+    enum Widget {
+        MenuButton,
+        MenuAbove,
+    }
+
+    /// What one `frame` left: its AccessKit nodes, the "Team" button's
+    /// response (its rect `menu_above`'s anchor, the popup's id its
+    /// `id.with("popup")`), and what the widget's menu call returned
+    /// (`None` while the menu was closed, `contents`'s return while open).
+    struct Drawn<R> {
+        nodes: Vec<accesskit::Node>,
+        button: egui::Response,
+        returned: Option<R>,
+    }
+
+    /// One frame of a toolbar holding `widget`'s "Team" button, `contents` its
+    /// popup's, with `events` as its input. `MenuAbove` draws its button at
+    /// `above_anchor`, low on the screen so the menu has room above it.
     fn frame<R>(
         ctx: &egui::Context,
         events: Vec<egui::Event>,
+        widget: Widget,
         mut contents: impl FnMut(&mut egui::Ui) -> R,
-    ) -> Vec<accesskit::Node> {
+    ) -> Drawn<R> {
         let input = egui::RawInput {
             screen_rect: Some(egui::Rect::from_min_size(
                 egui::Pos2::ZERO,
@@ -84,8 +107,19 @@ mod tests {
             events,
             ..Default::default()
         };
-        let mut output = ctx.run_ui(input, |ui| {
-            menu_button(ui, "Team", &mut contents);
+        let mut button = None;
+        let mut returned = None;
+        let mut output = ctx.run_ui(input, |ui| match widget {
+            Widget::MenuButton => {
+                let inner = menu_button(ui, "Team", &mut contents);
+                returned = inner.inner;
+                button = Some(inner.response);
+            }
+            Widget::MenuAbove => {
+                let drawn = ui.put(above_anchor(), egui::Button::new("Team"));
+                returned = menu_above(&drawn, &mut contents);
+                button = Some(drawn);
+            }
         });
         let update = output
             .platform_output
@@ -95,7 +129,17 @@ mod tests {
         // Nothing renders here, so the frame's texture deltas are dropped on
         // purpose.
         output.drop_without_applying_deltas();
-        update.nodes.into_iter().map(|(_, node)| node).collect()
+        Drawn {
+            nodes: update.nodes.into_iter().map(|(_, node)| node).collect(),
+            button: button.expect("a button is drawn"),
+            returned,
+        }
+    }
+
+    /// Where `Widget::MenuAbove`'s button stands, low on the screen so its
+    /// menu has room above it.
+    fn above_anchor() -> egui::Rect {
+        egui::Rect::from_min_size(egui::pos2(100.0, 500.0), egui::vec2(80.0, 21.0))
     }
 
     fn button<'a>(nodes: &'a [accesskit::Node], label: &str) -> Option<&'a accesskit::Node> {
@@ -139,16 +183,16 @@ mod tests {
     fn the_label_ends_in_the_arrow_and_a_click_opens_the_menu() {
         let ctx = themed();
         let item = |ui: &mut egui::Ui| ui.button("Set edited flag");
-        let nodes = frame(&ctx, Vec::new(), item);
+        let nodes = frame(&ctx, Vec::new(), Widget::MenuButton, item).nodes;
         let team = button(&nodes, "Team \u{23f7}").expect("the menu button reads \"Team ⏷\"");
         assert!(
             button(&nodes, "Set edited flag").is_none(),
             "the menu starts closed"
         );
         let pos = centre(team);
-        frame(&ctx, pointer_at(pos, true), item);
-        frame(&ctx, pointer_at(pos, false), item);
-        let nodes = frame(&ctx, Vec::new(), item);
+        frame(&ctx, pointer_at(pos, true), Widget::MenuButton, item);
+        frame(&ctx, pointer_at(pos, false), Widget::MenuButton, item);
+        let nodes = frame(&ctx, Vec::new(), Widget::MenuButton, item).nodes;
         assert!(
             button(&nodes, "Set edited flag").is_some(),
             "the click opened the menu"
@@ -169,7 +213,7 @@ mod tests {
         fn frame(&mut self, events: Vec<egui::Event>) -> Vec<accesskit::Node> {
             let (rects, acted) = (&mut self.rects, &mut self.acted);
             rects.clear();
-            frame(&self.ctx, events, |ui| {
+            frame(&self.ctx, events, Widget::MenuButton, |ui| {
                 // A popup's first frame runs twice: the last pass's rects count.
                 rects.clear();
                 for (index, label) in ["One", "Two", "Three"].into_iter().enumerate() {
@@ -184,6 +228,7 @@ mod tests {
                     }
                 }
             })
+            .nodes
         }
 
         /// A press and a release at `pos`, one frame each, then a frame
@@ -258,5 +303,75 @@ mod tests {
             }
             y += 0.5;
         }
+    }
+
+    /// The entry `menu_above`'s tests give its menu: a button that reports its
+    /// click.
+    fn entry(ui: &mut egui::Ui) -> bool {
+        ui.button("Set edited flag").clicked()
+    }
+
+    /// A `menu_above` menu clicked open on the "Team" button: the last frame's
+    /// `Drawn`, the menu open in its aligned place.
+    fn open_above(ctx: &egui::Context) -> Drawn<bool> {
+        let first = frame(ctx, Vec::new(), Widget::MenuAbove, entry);
+        let pos = centre(button(&first.nodes, "Team").expect("the Team button"));
+        frame(ctx, pointer_at(pos, true), Widget::MenuAbove, entry);
+        frame(ctx, pointer_at(pos, false), Widget::MenuAbove, entry);
+        // A popup's first pass only measures; the next frame holds its place.
+        frame(ctx, Vec::new(), Widget::MenuAbove, entry);
+        let drawn = frame(ctx, Vec::new(), Widget::MenuAbove, entry);
+        assert!(
+            button(&drawn.nodes, "Set edited flag").is_some(),
+            "premise: the menu is open"
+        );
+        drawn
+    }
+
+    #[test]
+    fn menu_above_opens_its_menu_two_points_above_the_buttons_right_edge() {
+        let ctx = themed();
+        let drawn = open_above(&ctx);
+        let menu = ctx
+            .memory(|memory| memory.area_rect(drawn.button.id.with("popup")))
+            .expect("the open menu's area");
+        let anchor = drawn.button.rect;
+        assert!(
+            (menu.max.x - anchor.max.x).abs() <= 0.5,
+            "the right edges meet: {menu:?} on {anchor:?}"
+        );
+        assert!(
+            (anchor.min.y - menu.max.y - 2.0).abs() <= 0.5,
+            "the menu's bottom 2 points above the button's top: {menu:?} on {anchor:?}"
+        );
+    }
+
+    #[test]
+    fn menu_above_returns_the_entry_s_result_and_closes_on_its_click() {
+        let ctx = themed();
+        let drawn = open_above(&ctx);
+        let pos = centre(button(&drawn.nodes, "Set edited flag").expect("the entry"));
+        frame(&ctx, pointer_at(pos, true), Widget::MenuAbove, entry);
+        let picked = frame(&ctx, pointer_at(pos, false), Widget::MenuAbove, entry);
+        assert_eq!(picked.returned, Some(true), "the entry's click returned");
+        let after = frame(&ctx, Vec::new(), Widget::MenuAbove, entry);
+        assert!(
+            button(&after.nodes, "Set edited flag").is_none(),
+            "the menu closed"
+        );
+    }
+
+    #[test]
+    fn menu_above_closes_on_a_second_click_on_the_button() {
+        let ctx = themed();
+        let drawn = open_above(&ctx);
+        let pos = centre(button(&drawn.nodes, "Team").expect("the Team button"));
+        frame(&ctx, pointer_at(pos, true), Widget::MenuAbove, entry);
+        frame(&ctx, pointer_at(pos, false), Widget::MenuAbove, entry);
+        let after = frame(&ctx, Vec::new(), Widget::MenuAbove, entry);
+        assert!(
+            button(&after.nodes, "Set edited flag").is_none(),
+            "the second click closed it"
+        );
     }
 }
