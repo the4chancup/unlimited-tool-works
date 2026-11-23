@@ -2,8 +2,6 @@
 //! the main part for the session, Open output folder and Copy report (TC-GUI-11).
 
 use super::*;
-use crate::cli::Mode;
-use crate::view::Intent;
 
 /// The Compile button's arrow, labelled by the arrow alone (the mode entries and the
 /// menu buttons carry their text first).
@@ -24,6 +22,25 @@ fn view_frame<'a>(
     }
 }
 
+/// The arrow clicked once: the nodes of the frame the click leaves, the mode list
+/// drawn open over the toolbar.
+fn open_mode_menu(
+    window: &mut Headless,
+    ctx: &ToolContext,
+    log: &RunLog,
+    panel: &mut LogPanel,
+    detail: &mut GridDetail,
+) -> Vec<accesskit::Node> {
+    let (_, nodes) = window.frame(Vec::new(), |ui| {
+        show(ui, ctx, log, panel, &[], false, detail)
+    });
+    click_on(
+        window,
+        button(&nodes, ARROW),
+        view_frame(ctx, log, panel, detail),
+    )
+}
+
 // TC-GUI-11
 #[test]
 fn a_mode_pick_relabels_the_main_part_and_its_click_runs_that_mode() {
@@ -32,14 +49,7 @@ fn a_mode_pick_relabels_the_main_part_and_its_click_runs_that_mode() {
     let mut panel = LogPanel::new(TOOL_ID);
     let mut detail = GridDetail::new();
     let mut window = Headless::new();
-    let (_, nodes) = window.frame(Vec::new(), |ui| {
-        show(ui, &ctx, &log, &mut panel, &[], false, &mut detail)
-    });
-    let nodes = click_on(
-        &mut window,
-        button(&nodes, ARROW),
-        view_frame(&ctx, &log, &mut panel, &mut detail),
-    );
+    let nodes = open_mode_menu(&mut window, &ctx, &log, &mut panel, &mut detail);
     // The menu is open over the toolbar: the modes, then the two actions.
     for label in [
         "Compile",
@@ -109,6 +119,62 @@ fn a_mode_pick_relabels_the_main_part_and_its_click_runs_that_mode() {
 
 // TC-GUI-11
 #[test]
+fn the_mode_menu_opens_above_the_arrow_right_aligned() {
+    let ctx = settings_only_context();
+    let log = RunLog::default();
+    let mut panel = LogPanel::new(TOOL_ID);
+    let mut detail = GridDetail::new();
+    let mut window = Headless::new();
+    open_mode_menu(&mut window, &ctx, &log, &mut panel, &mut detail);
+    // A popup's first pass only measures; the next frame holds its aligned place.
+    let margin = std::cell::Cell::new(0.0_f32);
+    let stroke = std::cell::Cell::new(0.0_f32);
+    let (_, nodes) = window.frame(Vec::new(), |ui| {
+        margin.set(ui.spacing().menu_margin.right as f32);
+        stroke.set(ui.visuals().window_stroke().width);
+        show(ui, &ctx, &log, &mut panel, &[], false, &mut detail)
+    });
+    let arrow = node_rect(button(&nodes, ARROW)).expect("the arrow has bounds");
+    // "Compile" is left out: the main part reads the same while the mode is
+    // Normal. The four measured entries span the menu's width and bottom edge.
+    let rects: Vec<egui::Rect> = [
+        "Compile for sideloading",
+        "Test output",
+        "Open output folder",
+        "Copy report",
+    ]
+    .into_iter()
+    .map(|label| node_rect(button(&nodes, label)).expect("an open menu entry has bounds"))
+    .collect();
+    let bottom = rects
+        .iter()
+        .map(|rect| rect.max.y)
+        .fold(f32::NEG_INFINITY, f32::max);
+    assert!(
+        bottom <= arrow.min.y,
+        "the lowest entry's bottom edge {bottom} sits at or above the arrow's top {}",
+        arrow.min.y
+    );
+    // The entries' nodes carry their own rects, not the popup's: the menu's right
+    // edge is their shared right edge plus the popup's margin and frame stroke,
+    // and it is that edge that meets the arrow's right edge.
+    let right = rects
+        .iter()
+        .map(|rect| rect.max.x)
+        .fold(f32::NEG_INFINITY, f32::max);
+    let inset = arrow.max.x - right;
+    assert!(
+        0.0 < inset && inset <= margin.get() + stroke.get() + 1.0,
+        "the widest entry's right edge {right} sits the popup's margin {} and stroke {} \
+         inside the arrow's right edge {}",
+        margin.get(),
+        stroke.get(),
+        arrow.max.x
+    );
+}
+
+// TC-GUI-11
+#[test]
 fn a_picked_mode_reaches_the_run_through_the_tool() {
     let temp = sandbox("view_compile_menu_test_mode");
     let root = temp.path();
@@ -138,7 +204,11 @@ fn a_picked_mode_reaches_the_run_through_the_tool() {
 // TC-GUI-11
 #[test]
 fn sideloading_is_off_on_pes_2016_and_on_on_later_ones() {
-    for (version, disabled) in [(PesVersion::Pes16, true), (PesVersion::Pes21, false)] {
+    for (version, disabled) in [
+        (PesVersion::Pes16, true),
+        (PesVersion::Pes17, false),
+        (PesVersion::Pes21, false),
+    ] {
         let temp = sandbox("view_compile_menu_sideload_version");
         let ctx = tool_context_at(temp.path(), version);
         let mut tool = Tool::new();
@@ -151,6 +221,43 @@ fn sideloading_is_off_on_pes_2016_and_on_on_later_ones() {
             "{version}"
         );
     }
+}
+
+// TC-GUI-11
+#[test]
+fn a_sideload_pick_disables_the_main_part_on_an_unserved_version() {
+    let temp = sandbox("view_compile_menu_sideload_pick");
+    let (ctx, settings) = tool_context_with_settings(temp.path(), PesVersion::Pes17);
+    let log = RunLog::default();
+    let mut panel = LogPanel::new(TOOL_ID);
+    let mut detail = GridDetail::new();
+    let mut window = Headless::new();
+    let nodes = open_mode_menu(&mut window, &ctx, &log, &mut panel, &mut detail);
+    let nodes = click_on(
+        &mut window,
+        button(&nodes, "Compile for sideloading"),
+        view_frame(&ctx, &log, &mut panel, &mut detail),
+    );
+    assert!(
+        !button(&nodes, "Compile for sideloading").is_disabled(),
+        "premise: the pick sticks and the main part stays enabled on PES 2017"
+    );
+    settings.lock().unwrap().common.pes_version = PesVersion::Pes16;
+    let (_, nodes) = window.frame(Vec::new(), |ui| {
+        show(ui, &ctx, &log, &mut panel, &[], false, &mut detail)
+    });
+    assert!(
+        button(&nodes, "Compile for sideloading").is_disabled(),
+        "the pick stays but PES 2016 cannot serve it: the main part is disabled"
+    );
+    settings.lock().unwrap().common.pes_version = PesVersion::Pes17;
+    let (_, nodes) = window.frame(Vec::new(), |ui| {
+        show(ui, &ctx, &log, &mut panel, &[], false, &mut detail)
+    });
+    assert!(
+        !button(&nodes, "Compile for sideloading").is_disabled(),
+        "a switch back to PES 2017 enables the main part again"
+    );
 }
 
 // TC-GUI-33's clause: an outdated list stops the mode that installs the CPKs alone.

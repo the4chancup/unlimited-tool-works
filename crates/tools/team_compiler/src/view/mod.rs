@@ -39,7 +39,8 @@ pub(crate) enum Intent {
     /// The dialog's Upgrade: the upgrade applies in `download`, the folder the dialog's
     /// preview was made for, the ticked dropped CPKs deleted.
     Upgrade(PathBuf, BTreeSet<String>),
-    /// Open output folder: the folder a compile writes into, opened in the file manager.
+    /// Open output folder: the folder a compile writes into, opened in the file manager,
+    /// created first when no run has made it yet.
     OpenOutputFolder,
 }
 
