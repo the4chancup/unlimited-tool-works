@@ -125,7 +125,9 @@ draft checked, for the maintainer to publish; running sidekicks and jobs are not
      clickable, the Compiler's grid opening, the upgrader on its placeholder line), handed over
      by the maintainer as it is
    - [ ] The next VGL build, `0.0.3-vgl27.2`, once the Compiler's slices 1b and 1c have landed
-     (the maintainer, 2026-11-22): `vgl27` merges main, raises the version, is packed
+     (the maintainer, 2026-11-22), 1c-iii's Upgrade DpFileList button included (2026-11-23):
+     `vgl27` merges main, raises the version, is packed. What the button does on PES 2019
+     waits on item 8 (`questions.html` "vgl27-dpfl-on-pes19")
    - [x] VGL27's legacy mode off main, onto `vgl27` alone (2026-11-22, DECISIONS 2026-11-22):
      main's merge `8cc425a3` (Opus; the lead dropped three tests of the old names and the
      draft's `IDs` cell), TC-LEG-01 to 05 and EU-SET-15 to 17 withdrawn, and a CHANGELOG
