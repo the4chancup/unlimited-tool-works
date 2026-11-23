@@ -13,6 +13,10 @@ in another worktree (a sidekick's under `4cc-studio-temp/`): a `cd` chained befo
 command makes the agent harness ask the maintainer for permission. The message file is read
 from where the script was run, while paths name the worktree's files.
 
+A message file written under `FRESH_SECONDS` ago is refused too: only the command that
+commits could have written it, so it skipped the three readings every message gets
+(`~/.claude/rules/shakespeare.md`) between being written and being committed.
+
 With no paths and no `-a`, git commits the index alone; the script then names any tracked
 file left changed and unstaged.
 
@@ -33,10 +37,14 @@ around this file before it is pushed.
 import os
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent / "gates"))
 from commit_message import problems
+
+# A message file younger than this was written by the command that commits it.
+FRESH_SECONDS = 5
 
 
 def main(argv: list[str]) -> int:
@@ -51,6 +59,13 @@ def main(argv: list[str]) -> int:
         print(__doc__)
         return 2
     message, rest = start / argv[0], argv[1:]
+    # A message written seconds ago was written by the same command: the Shakespeare readings
+    # come between writing a text and committing it, so they were skipped.
+    age = time.time() - message.stat().st_mtime
+    if age < FRESH_SECONDS:
+        print(f"commit: nothing committed; {message} was written {age:.0f} s ago, in this same "
+              "command: read it three times (the Shakespeare rule), then commit")
+        return 1
     found = problems(message.read_text(encoding="utf-8"))
     for problem in found:
         print(f"commit: {problem}")
