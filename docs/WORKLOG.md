@@ -191,7 +191,8 @@ draft checked, for the maintainer to publish; running sidekicks and jobs are not
        - [x] Review round S3's fixes (2026-11-23, merge `35184122`, SWE-2, one rework for a
          shared test helper): a check of the exports that ends after another was asked for no
          longer shows its rows, and the help window's search hits are filled in green. Round S4 (SWE-2)
-         reviews them
+         over them: 2 accepted, both doc comments that state a condition wrongly, so the
+         rounds end here; the lead fixes them once `sk/looks_s3` merges
      - [x] The selection's edge on every blue fill (2026-11-23, merge `749dd2ae`, SWE-2, one
        rework with round S2's test fixes): a picked row drawn through `widgets::row` and the
        Save editor's selected player row draw the `#1e7a9e` edge at rest
