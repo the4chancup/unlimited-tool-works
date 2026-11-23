@@ -179,6 +179,12 @@ draft checked, for the maintainer to publish; running sidekicks and jobs are not
          by a run alone; the button in the selection blue; Compile disabled while the list is
          outdated, sideloading and the test mode enabled (DECISIONS 2026-11-23); with review
          round S1's fixes, after 1c-iii-b
+     - The selection's edge on every blue fill (DECISIONS 2026-11-23, `plans/core/gui.md`
+       "Control edges"): a picked row or chip drawn through `widgets::row` (the log's chips, a
+       dropdown's picked row, the help's shown topic, the comparator's show chip, the Ruleset
+       editor's rail and preview toggle) takes the `#1e7a9e` edge; the tests asserting none
+       flip. SWE-2, small, `studio_core` and the callers' tests only (the Ruleset editor's
+       draft is not buildable: its tests change, nothing else of it)
    - Then the kit cells' swatch (TC-GUI-10), the row actions, the ID cell's editing, the
      watcher and cache, Sizes and sorting, and the rest of the toolbar
      (`plans/team_compiler/gui.md` "Toolbar"; the build has a plain Compile button): the

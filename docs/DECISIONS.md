@@ -19827,3 +19827,15 @@ outdated list, the one finding that stops a run: the other two are Warnings whos
 and the spec keeps an edited or old DLC list usable. The test mode installs no CPK either, so
 it stays enabled with sideloading.
 Plan: `plans/team_compiler/gui.md` "Toolbar" (the two DpFileList paragraphs); TC-GUI-33.
+
+## 2026-11-23 — core GUI — the selection blue never fills without its edge: picked chips and rows take it too
+Decision: every fill in the selection blue carries its 1-point edge (`#1e7a9e`): a picked chip
+(the log's filter chips, the Save editor comparator's show chip), a dropdown's or a list's
+picked row (the help window's shown topic), the active tool, a held toggle, a lit button
+(Upgrade DpFileList, the Export upgrader's Next). A disabled control still draws none. Before,
+a chip or row drawn through `widgets::row` dropped the edge, being "not a control".
+Why: the maintainer, on the Compiler's blue Upgrade DpFileList and the log's picked chip:
+"Both should have the edge, like on the save editor and the sidebar. It's part of the program's
+identity." The lead applies it to the whole class rather than the two widgets named, since a
+picked row without the edge beside a held toggle with it is the inconsistency the rule removes.
+Plan: `plans/core/gui.md` "Control edges"; `plans/team_compiler/gui.md` "Toolbar".

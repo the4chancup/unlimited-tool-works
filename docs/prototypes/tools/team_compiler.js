@@ -171,8 +171,8 @@ const TEAM_COMPILER_CSS = `
   .tc-count { cursor: pointer; }
   .tc-count.on { color: var(--link); }
   /* Upgrade DpFileList: the remedy for what blocks Compile, in the selection blue
-     and with no edge, as a picked chip draws it. */
-  .tc-bar button.tc-upgrade { background: var(--sel-bg); color: var(--sel-fg); box-shadow: none; }
+     with its edge, as the Export upgrader's Next. */
+  .tc-bar button.tc-upgrade { background: var(--sel-bg); color: var(--sel-fg); }
   .tc-bar button.tc-upgrade:hover { background: var(--sel-bg); color: #ffffff; filter: brightness(1.15); }
   .tc-split { display: flex; gap: 1px; }
   .tc-split button:first-child { border-radius: 2px 0 0 2px; min-width: 150px; }

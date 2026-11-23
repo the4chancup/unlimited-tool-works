@@ -521,8 +521,8 @@ A single primary action:
   with each check of the exports (when the view opens, and after a run) and again after an
   upgrade, its finding going to the log. While it is not the official one
   (`dpfilelist_outdated`, `dpfilelist_not_official` or `dpfilelist_cpk_missing`), an **Upgrade
-  DpFileList** button sits beside Compile, filled in the selection blue with no edge, as a
-  picked chip is. It opens the upgrade's dialog (`pipeline.md` "DpFileList upgrade"). Once
+  DpFileList** button sits beside Compile, filled in the selection blue with its edge, as
+  the Export upgrader's Next is. It opens the upgrade's dialog (`pipeline.md` "DpFileList upgrade"). Once
   the member confirms, the upgrade does what `upgrade-dpfl --yes` does and deletes the CPKs
   ticked in the dialog, its lines going to the log. The button stays until a check finds the
   list official. It is in the toolbar, not only in the finding's log line, because an
