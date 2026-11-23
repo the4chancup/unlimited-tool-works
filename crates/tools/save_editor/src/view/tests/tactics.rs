@@ -2910,10 +2910,10 @@ fn the_target_chip_stays_inside_the_settings_column() {
 }
 
 // The pitch draws a starter's portrait read off the UI thread from the
-// selected game's `download/` CPKs; the markers without one paint the
+// open save's game's `download/` CPKs; the markers without one paint the
 // bundled placeholder (the turf's is the only other image).
 #[test]
-fn the_pitch_draws_a_starter_s_portrait_from_the_selected_game() {
+fn the_pitch_draws_a_starter_s_portrait_from_the_open_saves_game() {
     let dir = crate::test_support::scratch("tactics_portrait");
     let path = dir.join("EDIT00000000");
     std::fs::write(&path, fixture_save(PesVersion::Pes21)).unwrap();
@@ -3036,9 +3036,9 @@ fn assert_set_path_margins(nodes: &[accesskit::Node], line: f64, margin: f64, wh
     }
 }
 
-// While the sidebar's exe check fails the pitch carries a Set PES path
-// button in the corner beside the bottom penalty box, the portraits all
-// placeholders; it is gone while the check finds the selected game's exe,
+// While the open save's version's exe check fails the pitch carries a Set
+// PES path button in the corner beside the bottom penalty box, the portraits
+// all placeholders; it is gone while the check finds the save's game's exe,
 // back on another version's, and its picker's folder becomes the view's
 // ask. PES 2017's box is 130 wide, its right line's outer edge at 160 + 65
 // + 1 = 226, leaving 94 points for the 76-point button: margins of 9.
@@ -3145,6 +3145,22 @@ fn tool_frame(
 
     let (_, nodes, shapes) = window.frame(Vec::new(), |ui| tool.view(ui, ctx));
     (nodes, shapes)
+}
+
+/// A `tool_frame` after `player_id`'s portrait drew: the check's holding
+/// `Found` restarts no worker — the turn to `Found` re-asked the id once —
+/// so the answer stands.
+fn a_second_found_frame_keeps_the_portrait(
+    window: &mut Headless,
+    tool: &mut crate::Tool,
+    ctx: &studio_core::ToolContext,
+    player_id: u32,
+) {
+    tool_frame(window, tool, ctx);
+    assert!(
+        tool.view.portraits.answered(player_id).flatten().is_some(),
+        "a second Found frame keeps the portrait"
+    );
 }
 
 // The editor reads the sidebar's selector for nothing: over a PES 2017 save
@@ -3275,6 +3291,7 @@ fn the_editor_follows_the_open_saves_version_not_the_selectors() {
     );
     let spot = portrait_spot(&tool.view, canvas, 718, position);
     portrait_drawn(&mut window, &mut tool.view, spot);
+    a_second_found_frame_keeps_the_portrait(&mut window, &mut tool, &ctx, 71808);
 
     // Another version's exe in it: the button is back.
     set_pattern(&games_wrong);
@@ -3491,6 +3508,7 @@ fn the_portrait_source_restarts_when_the_check_reads_found() {
     let canvas = canvas_of(&nodes);
     let spot = portrait_spot(&tool.view, canvas, 718, position);
     portrait_drawn(&mut window, &mut tool.view, spot);
+    a_second_found_frame_keeps_the_portrait(&mut window, &mut tool, &ctx, 71808);
 }
 
 // An empty PES folder setting (the default where no install path is known)

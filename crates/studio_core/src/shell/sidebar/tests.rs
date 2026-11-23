@@ -1458,9 +1458,80 @@ fn the_exe_tooltip_says_when_no_folder_is_set() {
         super::exe_tooltip(
             crate::ExeCheck::NoFolder,
             std::path::Path::new(""),
-            "this tool"
+            "The PES version this tool works with"
         ),
         "No PES folder is set"
+    );
+}
+
+// The Found tooltip's first line is the caller's, whole: the sidebar names the
+// tool, the Settings row the tools that work with one game.
+#[test]
+fn the_exe_tooltips_found_line_is_the_callers() {
+    for (line, expected) in [
+        (
+            "The PES version this tool works with",
+            "The PES version this tool works with\nInstalled in D:\\Games\\PES 2021",
+        ),
+        (
+            "The PES version for the tools that work with one game",
+            "The PES version for the tools that work with one game\n\
+             Installed in D:\\Games\\PES 2021",
+        ),
+    ] {
+        assert_eq!(
+            super::exe_tooltip(
+                crate::ExeCheck::Found,
+                std::path::Path::new("D:\\Games\\PES 2021"),
+                line
+            ),
+            expected
+        );
+    }
+}
+
+// The Settings row's enabled tooltip at Found opens with the row's own line —
+// the tools that work with one game — never the selector's "this tool".
+#[test]
+fn the_settings_rows_enabled_tooltip_names_the_tools_with_one_game() {
+    let dir = TestDir::new("studio_core_settings_row_found_tip");
+    fs::write(dir.path().join("PES2021.exe"), b"").unwrap();
+    let (a, calls_a) = stub("a", "A", None);
+    let mut settings = test_settings(dir.path());
+    settings.common.pes_version = PesVersion::Pes21;
+    let Shell { mut app, .. } = shell_with(
+        settings,
+        vec![a],
+        &[],
+        Some(dir.path().to_path_buf()),
+        vec![calls_a],
+    );
+    let egui_ctx = test_context();
+    egui_ctx.all_styles_mut(|style| style.interaction.tooltip_delay = 0.0);
+
+    let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
+    click(&egui_ctx, &mut app, entry(&nodes, SETTINGS_LABEL));
+    let nodes = idle(&egui_ctx, &mut app, 10).nodes;
+    let row_combo = widget_on_row(&nodes, "PES version", Role::ComboBox);
+    assert!(!row_combo.is_disabled(), "premise: nothing blocks the row");
+    // The click's tooltip cooldown ages out first, then `is_still` takes about
+    // 0.1 s of idle frames.
+    idle(&egui_ctx, &mut app, 8);
+    frame(&egui_ctx, &mut app, hover(row_combo), true);
+    let nodes = idle(&egui_ctx, &mut app, 8).nodes;
+    assert!(
+        has_text(
+            &nodes,
+            &format!(
+                "The PES version for the tools that work with one game\nInstalled in {}",
+                dir.path().display()
+            )
+        ),
+        "the row's tooltip opens with its own line, then the folder"
+    );
+    assert!(
+        !has_text(&nodes, "this tool works with"),
+        "not the selector's first line"
     );
 }
 
@@ -1653,6 +1724,11 @@ fn under_a_tool_that_does_not_use_it_the_selector_stands_disabled_and_empty() {
     let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
     click(&egui_ctx, &mut app, entry(&nodes, SETTINGS_LABEL));
     let nodes = idle(&egui_ctx, &mut app, 10).nodes;
+    assert_eq!(
+        app.sidebar.exe_listings,
+        listings + 1,
+        "the settings row's ask listed the folder once, not once a frame"
+    );
     assert_eq!(
         widget_on_row(&nodes, "PES version", Role::ComboBox).value(),
         Some("PES 2019"),

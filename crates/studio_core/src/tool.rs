@@ -77,11 +77,10 @@ pub trait StudioTool {
 
     /// Whether the tool works with the PES version the sidebar's selector holds:
     /// `true` for a tool whose work is for the selected game (the Compiler
-    /// compiles for it, the Export upgrader's run is against a save of it).
-    /// The selector shows the version only while the active tool does; under
-    /// one it governs nothing in (the Save editor follows its open save's
-    /// version, a ruleset names no game) it stands disabled and empty.
-    /// Default: false.
+    /// compiles for it; the Export upgrader's window looks for that version's
+    /// saves). The selector shows the version only under such a tool. Under any
+    /// other (the Save editor follows its open save's version, and a ruleset
+    /// names no game) it stands disabled and empty. Default: false.
     fn targets_pes_version(&self) -> bool {
         false
     }

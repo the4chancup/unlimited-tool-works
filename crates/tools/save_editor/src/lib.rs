@@ -408,7 +408,7 @@ mod tests {
     fn the_picked_pes_folder_is_stored_for_the_saves_version() {
         let dir = crate::test_support::scratch("lib_set_pes_folder");
         let mut settings = studio_core::Settings::default();
-        settings.common.pes_version = pes_version::PesVersion::Pes19;
+        settings.common.pes_version = pes_version::PesVersion::Pes21;
         let (ctx, shared, _events_rx, _requests_rx) =
             crate::test_support::shared_tool_context(&dir, settings);
         let expected = dir.join("Pro Evolution Soccer 20**");
@@ -437,7 +437,7 @@ mod tests {
         );
         assert_eq!(
             shared.lock().unwrap().common.pes_version,
-            pes_version::PesVersion::Pes19,
+            pes_version::PesVersion::Pes21,
             "the selector unmoved"
         );
         assert_eq!(tool.view.picked_pes_folder, None, "the ask was taken");

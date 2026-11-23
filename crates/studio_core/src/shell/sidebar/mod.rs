@@ -676,7 +676,11 @@ impl Sidebar {
                 combo_response.on_disabled_hover_text(format!("{label}: {reason}"));
             }
             (Some(check), None) => {
-                combo_response.on_hover_text(exe_tooltip(check, &common.pes_folder(), "this tool"));
+                combo_response.on_hover_text(exe_tooltip(
+                    check,
+                    &common.pes_folder(),
+                    "The PES version this tool works with",
+                ));
             }
         }
 
@@ -1028,26 +1032,25 @@ pub(super) fn version_blocker(tools: &[Box<dyn StudioTool>]) -> Option<(&'static
 }
 
 /// The version selector's enabled-state tooltip for an exe-check verdict (ST-SIDE-03):
-/// what the last listing of the resolved PES folder found, `works_with` naming on the
-/// found line whose version it is: the sidebar's "this tool", the settings menu's
-/// "every tool" (the draft's `pesSelectorTip`, which the row shares).
-pub(super) fn exe_tooltip(check: ExeCheck, folder: &Path, works_with: &str) -> String {
+/// what the last listing of the resolved PES folder found. `found` is the Found
+/// tooltip's whole first line, each caller naming whose version it is: the
+/// sidebar's "The PES version this tool works with", the settings menu's
+/// "The PES version for the tools that work with one game" (the draft's
+/// `pesSelectorTip`, which the row shares).
+pub(super) fn exe_tooltip(check: ExeCheck, folder: &Path, found: &str) -> String {
     // An empty setting is no folder (the default where no install path is known):
     // there is no path to name.
     if folder.as_os_str().is_empty() {
         return "No PES folder is set".to_owned();
     }
     match check {
-        ExeCheck::Found => format!(
-            "The PES version {works_with} works with\nInstalled in {}",
-            folder.display()
-        ),
-        ExeCheck::OtherVersion(found) => format!(
+        ExeCheck::Found => format!("{found}\nInstalled in {}", folder.display()),
+        ExeCheck::OtherVersion(other) => format!(
             "{} holds PES{}.exe, a different version from the one selected. Pick PES \
              {}, or check the PES folder setting",
             folder.display(),
-            found.year(),
-            found.year()
+            other.year(),
+            other.year()
         ),
         ExeCheck::NoExe => format!(
             "There is no PES exe in {}. Check the PES folder setting",
