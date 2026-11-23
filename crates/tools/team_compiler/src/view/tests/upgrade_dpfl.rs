@@ -56,32 +56,6 @@ fn open_dialog(tool: &mut Tool, ctx: &ToolContext, window: &mut Headless) -> Vec
     dialog_open(&first_check(tool, ctx, window), tool, ctx, window)
 }
 
-/// Asserts the disabled widget `node` shows the disabled hover text `expected`: the
-/// pointer rests on it until the tooltip shows, failing rather than hanging. The wait
-/// needs no real time with `tooltip_delay` turned off, only the frames the pointer
-/// needs to read as still.
-fn disabled_tooltip_is(
-    window: &mut Headless,
-    node: &accesskit::Node,
-    expected: &str,
-    tool: &mut Tool,
-    ctx: &ToolContext,
-) {
-    window
-        .ctx
-        .all_styles_mut(|style| style.interaction.tooltip_delay = 0.0);
-    window.frame(vec![egui::Event::PointerMoved(centre(node))], |ui| {
-        tool.view(ui, ctx)
-    });
-    for _ in 0..30 {
-        let (_, nodes) = window.frame(Vec::new(), |ui| tool.view(ui, ctx));
-        if shows_text(&nodes, expected) {
-            return;
-        }
-    }
-    panic!("no tooltip {expected:?} showed over the disabled widget");
-}
-
 // TC-GUI-33
 #[test]
 fn the_outdated_list_brings_the_button_whose_dialog_upgrades_it() {
@@ -110,8 +84,7 @@ fn the_outdated_list_brings_the_button_whose_dialog_upgrades_it() {
         compile,
         "The game's DpFileList.bin does not list this compile's CPK, so the game would \
          not load it. Upgrade DpFileList first",
-        &mut tool,
-        &ctx,
+        |window, events| window.frame(events, |ui| tool.view(ui, &ctx)).1,
     );
 
     dialog_open(&nodes, &mut tool, &ctx, &mut window);
@@ -418,8 +391,8 @@ fn the_dialog_s_cancel_writes_nothing() {
 }
 
 // The Upgrade outcome carries the folder the dialog's preview was made for, so the run
-// acts in it rather than a folder the settings name by the click's frame (the settings
-// may have changed while the dialog was open).
+// acts in it: a folder resolved from the settings in the click's own frame would already
+// follow a settings change that landed in that frame.
 #[test]
 fn the_upgrade_acts_in_the_install_its_dialog_previewed() {
     let temp = sandbox("view_dpfl_switched");

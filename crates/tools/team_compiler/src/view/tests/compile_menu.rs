@@ -257,9 +257,16 @@ fn a_sideload_pick_disables_the_main_part_on_an_unserved_version() {
     let (_, nodes) = window.frame(Vec::new(), |ui| {
         show(ui, &ctx, &log, &mut panel, &[], false, &mut detail)
     });
+    let main = button(&nodes, "Compile for sideloading");
     assert!(
-        button(&nodes, "Compile for sideloading").is_disabled(),
+        main.is_disabled(),
         "the pick stays but PES 2016 cannot serve it: the main part is disabled"
+    );
+    disabled_tooltip_is(
+        &mut window,
+        main,
+        "No runtime serves sideloaded files on PES 2015 and 2016",
+        view_frame(&ctx, &log, &mut panel, &mut detail),
     );
     settings.lock().unwrap().common.pes_version = PesVersion::Pes17;
     let (_, nodes) = window.frame(Vec::new(), |ui| {
