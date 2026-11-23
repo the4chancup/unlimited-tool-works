@@ -52,7 +52,7 @@ impl DpflDialog {
             egui::Id::unique("upgrade_dpfl"),
             "Upgrade DpFileList",
             |ui| {
-                ui.set_min_width(WIDTH - modal_frame(ui.style()).total_margin().sum().x);
+                ui.set_width(WIDTH - modal_frame(ui.style()).total_margin().sum().x);
                 let preview = &self.preview;
                 // The gap goes between two parts shown, none above the first: the first
                 // paragraph is left out when the list already is the official one.
@@ -192,8 +192,9 @@ fn renames_row(ui: &mut egui::Ui, column: f32, left: &str, right: &str, names: b
     });
 }
 
-/// The dropped CPKs' list, the same `.list` box: `name (size)` with an unticked delete
-/// box for each whose file is there, the name alone for one without.
+/// The dropped CPKs' list, the same `.list` box with the draft's `mono`
+/// class: `name (size)` with an unticked delete box for each whose file is
+/// there, the name alone for one without, all in the monospace font.
 fn dropped_list(
     ui: &mut egui::Ui,
     dropped: &[(String, Option<u64>)],
@@ -211,7 +212,8 @@ fn dropped_list(
                             if studio_core::widgets::checkbox(
                                 ui,
                                 &mut ticked,
-                                format!("{name} ({})", size_text(*size)),
+                                egui::RichText::new(format!("{name} ({})", size_text(*size)))
+                                    .monospace(),
                             )
                             .changed()
                             {
@@ -223,7 +225,7 @@ fn dropped_list(
                             }
                         }
                         None => {
-                            ui.label(name);
+                            ui.label(egui::RichText::new(name).monospace());
                         }
                     }
                 }

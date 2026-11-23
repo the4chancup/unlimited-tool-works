@@ -330,10 +330,10 @@ fn assert_line(
     when: &str,
 ) {
     let (segments, outlines) = drop_marks(shapes, visuals.selection.stroke.color, frame);
-    // The frame's border is stroked inside it, and a row spans the
-    // frame's width: nothing of a mark reaches into the border, on
-    // either side (a horizontal segment's stroke is its height; a
-    // vertical one's its width).
+    // The frame's border is stroked inside it, and a row's box stands
+    // inside it: nothing of a mark reaches into the border, on either
+    // side (a horizontal segment's stroke is its height; a vertical
+    // one's its width).
     let border = visuals.widgets.noninteractive.bg_stroke.width;
     for (_, points, width) in &segments {
         let (lo, hi) = if points[0].x == points[1].x {
@@ -362,8 +362,8 @@ fn assert_line(
     );
     let (x0, x1) = (line[0].x.min(line[1].x), line[0].x.max(line[1].x));
     assert!(
-        (x0 - (target.min.x + border)).abs() < 0.01 && (x1 - (target.max.x - border)).abs() < 0.01,
-        "the line spans the row inside the frame's border {when} ({x0}..{x1} vs {target:?}, border {border})"
+        (x0 - target.min.x).abs() < 0.01 && (x1 - target.max.x).abs() < 0.01,
+        "the line spans the row inside the frame's border {when} ({x0}..{x1} vs {target:?})"
     );
     let mut serif_xs: Vec<f32> = segments
         .iter()
@@ -383,9 +383,8 @@ fn assert_line(
         panic!("a serif at each end {when}, got {segments:?}")
     };
     assert!(
-        (left - (target.min.x + border + 1.0)).abs() < 0.01
-            && (right - (target.max.x - border - 1.0)).abs() < 0.01,
-        "the serifs' outer sides at the border's inner side {when} ({left}, {right} vs {target:?}, border {border})"
+        (left - (target.min.x + 1.0)).abs() < 0.01 && (right - (target.max.x - 1.0)).abs() < 0.01,
+        "the serifs' outer sides at the row's edges {when} ({left}, {right} vs {target:?})"
     );
     assert!(
         outlines.is_empty(),

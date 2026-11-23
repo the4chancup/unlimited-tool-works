@@ -694,7 +694,7 @@ fn the_lists_scroll_bar_stands_outside_its_frame() {
     );
 
     // The selected row's fill, as far as it shows, reaches the frame's
-    // right edge.
+    // right edge, its box inside the border.
     let selected = nodes
         .iter()
         .filter(|node| player_row(node))
@@ -714,9 +714,22 @@ fn the_lists_scroll_bar_stands_outside_its_frame() {
             _ => None,
         })
         .expect("the selected row's fill");
+    // The fill ends at the border's inner side, the row's box being inside
+    // the frame's border.
+    let border = f64::from(
+        window
+            .ctx
+            .style_of(window.ctx.theme())
+            .visuals
+            .widgets
+            .noninteractive
+            .bg_stroke
+            .width,
+    );
     assert!(
-        (f64::from(fill.max.x) - content_right).abs() <= 0.5,
-        "the selection fill reaches the frame's edge ({fill:?} vs {content_right})"
+        (f64::from(fill.max.x) - (content_right - border)).abs() <= 0.5,
+        "the selection fill reaches the frame's border ({fill:?} vs {})",
+        content_right - border
     );
 
     // The combo and the filter end at the frame's right edge.
@@ -981,10 +994,22 @@ fn a_filter_leaving_three_rows_keeps_the_bars_strip() {
         (filtered.min.x - whole.min.x).abs() <= 0.5 && (filtered.max.x - whole.max.x).abs() <= 0.5,
         "the frame keeps its width ({filtered:?} vs {whole:?})"
     );
+    // A row fills the frame's content box: its box ends at the border's
+    // inner side, as the draft's `.prow` inside `.rows`'s border does.
+    let border = f64::from(
+        window
+            .ctx
+            .style_of(window.ctx.theme())
+            .visuals
+            .widgets
+            .noninteractive
+            .bg_stroke
+            .width,
+    );
     for row in rows {
         assert!(
-            (row.x1 - f64::from(filtered.max.x)).abs() <= 0.5,
-            "a row spans the frame ({row:?} vs {filtered:?})"
+            (row.x1 - (f64::from(filtered.max.x) - border)).abs() <= 0.5,
+            "a row fills the frame's content box ({row:?} vs {filtered:?})"
         );
     }
     assert!(

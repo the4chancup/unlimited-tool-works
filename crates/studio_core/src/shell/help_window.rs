@@ -238,24 +238,25 @@ impl HelpWindow {
                 // A topic's row is not a control (`row`): the shown
                 // topic's fills in the selection blue, whose edge `row`
                 // paints at rest.
+                // The draft's `.sel { display: block }`: an entry is the
+                // body's whole width, so the shown one's blue runs across
+                // the tree.
+                let width = ui.available_width();
+                let entry_button = |shown, title| {
+                    egui::Button::selectable(shown, title).min_size(egui::vec2(width, 0.0))
+                };
                 for (topic, entry) in section.topics.iter().enumerate() {
                     let shown = chapter == self.chapter && topic == self.topic;
-                    if crate::widgets::row(ui, shown, egui::Button::selectable(shown, entry.title))
-                        .clicked()
-                    {
+                    if crate::widgets::row(ui, shown, entry_button(shown, entry.title)).clicked() {
                         clicked = Some((chapter, topic));
                     }
                 }
                 let shown_messages = chapter == self.chapter && self.topic == section.topics.len();
-                if !section.messages.is_empty()
-                    && crate::widgets::row(
-                        ui,
-                        shown_messages,
-                        egui::Button::selectable(shown_messages, "Messages"),
-                    )
-                    .clicked()
-                {
-                    clicked = Some((chapter, section.topics.len()));
+                if !section.messages.is_empty() {
+                    let messages_button = entry_button(shown_messages, "Messages");
+                    if crate::widgets::row(ui, shown_messages, messages_button).clicked() {
+                        clicked = Some((chapter, section.topics.len()));
+                    }
                 }
             });
         }
@@ -317,7 +318,7 @@ impl HelpWindow {
                         })
                         .response;
                     if scroll && self.highlight_para == Some(index) {
-                        response.scroll_to_me(Some(egui::Align::Center));
+                        response.scroll_to_me(Some(egui::Align::TOP));
                     }
                     if let Some((dest, _)) = self.cache.link_hooks().iter().find(|(_, hit)| **hit) {
                         clicked_link = Some(dest.clone());
@@ -344,8 +345,19 @@ impl HelpWindow {
             ui.weak("Nothing matches.");
             return;
         }
+        // The draft's `.help-res .sel { display: block; white-space: nowrap;
+        // overflow: hidden; text-overflow: ellipsis }`: a result is the pane's
+        // whole width on one line, cut with an ellipsis.
+        let width = ui.available_width();
         for result in results {
-            if ui.selectable_label(false, &result.label).clicked() {
+            if ui
+                .add(
+                    egui::Button::selectable(false, &result.label)
+                        .min_size(egui::vec2(width, 0.0))
+                        .truncate(),
+                )
+                .clicked()
+            {
                 self.search.clear();
                 self.chapter = result.chapter;
                 self.topic = result.topic;
@@ -593,7 +605,7 @@ fn messages(
                         ),
                     );
                     if scroll {
-                        code.scroll_to_me(Some(egui::Align::Center));
+                        code.scroll_to_me(Some(egui::Align::TOP));
                     }
                 }
                 ui.end_row();
@@ -920,17 +932,16 @@ mod tests {
         shell
     }
 
-    /// A help search to its jump's end: F1 opens the window, `query` is typed in the
-    /// search box and `entry_label` clicked in the results, each step's frames letting
-    /// it settle. Returns the settled frame after the jump.
-    fn jump_through_search(
+    /// F1 opens the help, `settle` frames let the window land, a click focuses
+    /// the search box and `query` is typed as one `Text` event: the frame after.
+    fn search_for(
         egui_ctx: &egui::Context,
         app: &mut StudioApp,
         query: &str,
-        entry_label: &str,
+        settle: usize,
     ) -> FrameOutput {
         frame(egui_ctx, app, vec![key(egui::Key::F1, true)], true);
-        let nodes = idle(egui_ctx, app, 15).nodes;
+        let nodes = idle(egui_ctx, app, settle).nodes;
         click(egui_ctx, app, search_box(&nodes));
         frame(
             egui_ctx,
@@ -938,7 +949,19 @@ mod tests {
             vec![egui::Event::Text(query.to_owned())],
             true,
         );
-        let nodes = frame(egui_ctx, app, Vec::new(), true).nodes;
+        frame(egui_ctx, app, Vec::new(), true)
+    }
+
+    /// A help search to its jump's end: `query` is typed in the search box and
+    /// `entry_label` clicked in the results, each step's frames letting it
+    /// settle. Returns the settled frame after the jump.
+    fn jump_through_search(
+        egui_ctx: &egui::Context,
+        app: &mut StudioApp,
+        query: &str,
+        entry_label: &str,
+    ) -> FrameOutput {
+        let nodes = search_for(egui_ctx, app, query, 15).nodes;
         click(egui_ctx, app, entry(&nodes, entry_label));
         idle(egui_ctx, app, 15)
     }
@@ -1156,18 +1179,8 @@ mod tests {
         let Shell { mut app, .. } = help_shell(dir.path());
         let egui_ctx = test_context();
 
-        frame(&egui_ctx, &mut app, vec![key(egui::Key::F1, true)], true);
-        let nodes = idle(&egui_ctx, &mut app, 10).nodes;
-        click(&egui_ctx, &mut app, search_box(&nodes));
-
         // A catalog code lists its row as "<chapter> › Messages › <code>: <when>".
-        frame(
-            &egui_ctx,
-            &mut app,
-            vec![egui::Event::Text("beta_warn".to_owned())],
-            true,
-        );
-        let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
+        let nodes = search_for(&egui_ctx, &mut app, "beta_warn", 10).nodes;
         click(
             &egui_ctx,
             &mut app,
@@ -1223,6 +1236,98 @@ mod tests {
         );
         let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
         assert!(has_text(&nodes, "Nothing matches."));
+    }
+
+    // The draft's `.help-res .sel { display: block }`: every result is the
+    // pane's whole width, a longer and a shorter one spanning the same range
+    // to the pane's right edge (the window content's, less the panel's own
+    // margin).
+    #[test]
+    fn every_result_row_spans_the_panes_width() {
+        let dir = TestDir::new("studio_core_help_res_span");
+        let Shell { mut app, .. } = help_shell(dir.path());
+        let egui_ctx = test_context();
+
+        search_for(&egui_ctx, &mut app, "alpha", 10);
+        let nodes = idle(&egui_ctx, &mut app, 4).nodes;
+
+        let bounds = |label: &str| {
+            nodes
+                .iter()
+                .find(|node| node.label() == Some(label))
+                .and_then(accesskit::Node::bounds)
+                .unwrap_or_else(|| panic!("no result {label:?}"))
+        };
+        // "alpha" hits four entries of different label lengths: the pane's
+        // right edge is the search box's (the window content's right) less
+        // the central panel's inner margin.
+        let right = search_box(&nodes).bounds().expect("search box bounds").x1
+            - f64::from(
+                egui::Frame::central_panel(&egui_ctx.style_of(egui_ctx.theme()))
+                    .inner_margin
+                    .right,
+            );
+        for label in [
+            "Alpha › Alpha start › Alpha keeps its TEAMS in a folder.",
+            "Alpha › Alpha more › More of alpha.",
+            "Alpha › Messages › alpha_info: alpha informs",
+            "Alpha › Messages › alpha_error: alpha fails",
+        ] {
+            let entry = bounds(label);
+            assert!(
+                (entry.x1 - right).abs() <= 0.5,
+                "{label:?} reaches the pane's right edge: {} vs {right}",
+                entry.x1
+            );
+            assert!(
+                (entry.x0 - bounds("Alpha › Alpha start › Alpha keeps its TEAMS in a folder.").x0)
+                    .abs()
+                    <= 0.5,
+                "{label:?} shares the first result's left edge: {entry:?}"
+            );
+        }
+    }
+
+    // The draft's `text-overflow: ellipsis` on the same rule: a result longer
+    // than the pane shows on one line ending in "…", not wrapped over two.
+    #[test]
+    fn a_result_too_long_for_the_pane_is_one_row_ending_in_an_ellipsis() {
+        let dir = TestDir::new("studio_core_help_res_elide");
+        let mut alpha = alpha_section();
+        alpha.topics[0].body = Box::leak("zzwide ".repeat(40).into_boxed_str());
+        let (a, calls_a) = stub_help("a", "Alpha", None, alpha);
+        let Shell { mut app, .. } = shell_with(
+            test_settings(dir.path()),
+            vec![a],
+            &[],
+            Some(dir.path().to_path_buf()),
+            vec![calls_a],
+        );
+        let egui_ctx = test_context();
+
+        search_for(&egui_ctx, &mut app, "zzwide", 10);
+        let out = idle(&egui_ctx, &mut app, 4);
+
+        let label = format!("Alpha › Alpha start › {}", "zzwide ".repeat(40).trim_end());
+        let entry = out
+            .nodes
+            .iter()
+            .find(|node| node.label() == Some(label.as_str()))
+            .and_then(accesskit::Node::bounds)
+            .expect("the long result is drawn");
+        assert!(
+            entry.height() < 20.0,
+            "the result is one row high: {entry:?}"
+        );
+        let text = text_shape(&out, &label);
+        assert!(text.galley.elided, "the galley is truncated");
+        let last = text
+            .galley
+            .rows
+            .last()
+            .and_then(|row| row.glyphs.last())
+            .expect("the galley's last glyph");
+        assert_eq!(last.chr, '…', "the line ends in the ellipsis");
     }
 
     // ST-HELP-03
@@ -1664,13 +1769,30 @@ mod tests {
         assert_eq!(window.showing(), Some(("a", "a-one")));
     }
 
-    /// A stub whose first topic is 60 one-line paragraphs: the first and the 55th
-    /// (index 54) are findable by text.
-    fn long_section() -> HelpSection {
+    /// `beta_section` with 60 catalog rows: a Messages table longer than the pane,
+    /// so a jump to a row inside it scrolls.
+    fn rows_section() -> HelpSection {
+        let mut section = beta_section();
+        section.messages = (0..60)
+            .map(|index| CatalogRow {
+                code: Box::leak(format!("row_{index:02}").into_boxed_str()),
+                severity: "Info",
+                when: "when it happens",
+                effect: "what the tool does",
+            })
+            .collect();
+        section
+    }
+
+    /// A stub whose first topic is one-line paragraphs: the first is findable by text,
+    /// the paragraph at index 55 (`zzdistinct`) is the search jump's target, and
+    /// `tail` paragraphs follow it — a test that scrolls the target to the pane's
+    /// top needs enough under it for the pane to reach.
+    fn long_section(tail: usize) -> HelpSection {
         let body = "firstpara opener.\n\n".to_owned()
             + &"filler text.\n\n".repeat(54)
             + "zzdistinct target.\n\n"
-            + &"filler text.\n\n".repeat(5);
+            + &"filler text.\n\n".repeat(tail);
         HelpSection {
             title: "Long",
             topics: vec![HelpTopic {
@@ -1685,6 +1807,44 @@ mod tests {
     /// The topic pane's top edge: the y just under the search box.
     fn pane_top(nodes: &[accesskit::Node]) -> f64 {
         search_box(nodes).bounds().expect("search box bounds").y1
+    }
+
+    /// The topic pane's visible top edge as its scroll's clip marks it: the
+    /// `clip_rect.min.y` of the `Shape::Text` `text` paints inside the pane.
+    fn pane_clip_top(shapes: &[egui::epaint::ClippedShape], text: &str) -> f64 {
+        shapes
+            .iter()
+            .find(|clipped| {
+                matches!(&clipped.shape, egui::Shape::Text(shape) if shape.galley.text() == text)
+            })
+            .map(|clipped| f64::from(clipped.clip_rect.min.y))
+            .unwrap_or_else(|| panic!("no painted text {text:?} in the pane"))
+    }
+
+    /// The tree panel's separator line, the vertical line in `separator`'s
+    /// stroke under the search box that spans the panel's height (an open
+    /// chapter's indent line shares the stroke but is shorter; the shell's
+    /// sidebar edge shares it too but starts above the box).
+    fn tree_right_edge(out: &FrameOutput, separator: egui::Stroke) -> f64 {
+        let below_box = search_box(&out.nodes)
+            .bounds()
+            .expect("the search box carries bounds")
+            .y1;
+        out.shapes
+            .iter()
+            .filter_map(|clipped| match &clipped.shape {
+                egui::Shape::LineSegment { points, stroke }
+                    if *stroke == separator
+                        && points[0].x == points[1].x
+                        && f64::from(points[0].y.min(points[1].y)) > below_box =>
+                {
+                    Some((points[0].x, (points[1].y - points[0].y).abs()))
+                }
+                _ => None,
+            })
+            .max_by(|a, b| a.1.total_cmp(&b.1))
+            .map(|(x, _)| f64::from(x))
+            .expect("the tree panel's separator line")
     }
 
     /// A `Label` node's bounds by its value.
@@ -1784,7 +1944,7 @@ mod tests {
     #[test]
     fn the_highlighted_paragraph_is_scrolled_into_view() {
         let dir = TestDir::new("studio_core_help_parascroll");
-        let (a, calls_a) = stub_help("a", "Long", None, long_section());
+        let (a, calls_a) = stub_help("a", "Long", None, long_section(5));
         let Shell { mut app, .. } = shell_with(
             test_settings(dir.path()),
             vec![a],
@@ -1831,10 +1991,56 @@ mod tests {
         }
     }
 
+    // The same `hl.scrollIntoView()` for a paragraph hit: the highlighted
+    // paragraph stands at the pane's top, the highlight frame's margin
+    // under it.
+    #[test]
+    fn a_paragraph_jump_scrolls_the_paragraph_to_the_topic_panes_top() {
+        let dir = TestDir::new("studio_core_help_paratop");
+        let (a, calls_a) = stub_help("a", "Long", None, long_section(30));
+        let Shell { mut app, .. } = shell_with(
+            test_settings(dir.path()),
+            vec![a],
+            &[],
+            Some(dir.path().to_path_buf()),
+            vec![calls_a],
+        );
+        let egui_ctx = test_context();
+
+        jump_through_search(
+            &egui_ctx,
+            &mut app,
+            "zzdistinct",
+            "Long › Long topic › zzdistinct target.",
+        );
+        // The jump's scroll animates over up to 0.3 s, longer than the jump's
+        // settling frames: let it land.
+        let out = idle(&egui_ctx, &mut app, 25);
+        assert_eq!(
+            app.help_window.highlight(),
+            (Some(55), None),
+            "premise: the 55th paragraph is the highlight"
+        );
+
+        let target = label_bounds(&out.nodes, "zzdistinct target")
+            .expect("the highlighted paragraph's node");
+        // The pane's visible top edge, read off the scrolled clip of the
+        // paragraph's own text shape; egui lands the scrolled-to rect's top
+        // `item_spacing` under it, the highlight frame's margin under that.
+        let clip_top = pane_clip_top(&out.shapes, "zzdistinct target.");
+        let expected = f64::from(egui_ctx.global_style().spacing.item_spacing.y + 4.0);
+        let gap = target.bounds().unwrap().y0 - clip_top;
+        assert!(
+            (gap - expected).abs() <= 0.5,
+            "the paragraph's top stands at the pane's top: {gap} (the scroll's \
+             {expected} expected)"
+        );
+    }
+
     #[test]
     fn a_jump_scrolls_the_pane_to_its_top_only_once() {
         let dir = TestDir::new("studio_core_help_scrolltop");
-        let (a, calls_a) = stub_help("a", "Long", None, long_section());
+        let (a, calls_a) = stub_help("a", "Long", None, long_section(5));
         let Shell { mut app, .. } = shell_with(
             test_settings(dir.path()),
             vec![a],
@@ -1891,16 +2097,7 @@ mod tests {
     #[test]
     fn an_openhelp_anchor_scrolls_the_catalog_row_into_view() {
         let dir = TestDir::new("studio_core_help_rowscroll");
-        let mut section = beta_section();
-        section.messages = (0..60)
-            .map(|index| CatalogRow {
-                code: Box::leak(format!("row_{index:02}").into_boxed_str()),
-                severity: "Info",
-                when: "when it happens",
-                effect: "what the tool does",
-            })
-            .collect();
-        let (b, calls_b) = stub_help("b", "Beta", None, section);
+        let (b, calls_b) = stub_help("b", "Beta", None, rows_section());
         let Shell { mut app, ctx, .. } = shell_with(
             test_settings(dir.path()),
             vec![b],
@@ -1950,16 +2147,7 @@ mod tests {
     #[test]
     fn a_row_jump_scrolls_only_once() {
         let dir = TestDir::new("studio_core_help_rowonce");
-        let mut section = beta_section();
-        section.messages = (0..60)
-            .map(|index| CatalogRow {
-                code: Box::leak(format!("row_{index:02}").into_boxed_str()),
-                severity: "Info",
-                when: "when it happens",
-                effect: "what the tool does",
-            })
-            .collect();
-        let (b, calls_b) = stub_help("b", "Beta", None, section);
+        let (b, calls_b) = stub_help("b", "Beta", None, rows_section());
         let Shell { mut app, ctx, .. } = shell_with(
             test_settings(dir.path()),
             vec![b],
@@ -2019,6 +2207,54 @@ mod tests {
         );
     }
 
+    // The draft's `hl.scrollIntoView()` stands the hit at the pane's top: a jump's
+    // anchored row lands there, the scroll's own margin under it.
+    #[test]
+    fn a_row_jump_scrolls_the_row_to_the_topic_panes_top() {
+        let dir = TestDir::new("studio_core_help_rowtop");
+        let (b, calls_b) = stub_help("b", "Beta", None, rows_section());
+        let Shell { mut app, ctx, .. } = shell_with(
+            test_settings(dir.path()),
+            vec![b],
+            &[],
+            Some(dir.path().to_path_buf()),
+            vec![calls_b],
+        );
+        let egui_ctx = test_context();
+
+        ctx.notify(Notice {
+            text: "open the help".to_owned(),
+            kind: NoticeKind::Info,
+            action: Some(NoticeAction {
+                label: "Open help".to_owned(),
+                effect: ActionEffect::OpenHelp(HelpTarget {
+                    tool: "b".to_owned(),
+                    topic: Some("messages".to_owned()),
+                    anchor: Some("row_30".to_owned()),
+                }),
+            }),
+        });
+        let nodes = idle(&egui_ctx, &mut app, 2).nodes;
+        click(&egui_ctx, &mut app, entry(&nodes, "Open help"));
+        // The jump's scroll animates over up to 0.3 s, past a modal's settle
+        // frames: let it land.
+        let out = idle(&egui_ctx, &mut app, 25);
+        assert_eq!(app.help_window.highlight(), (None, Some("row_30")));
+
+        let row = label_bounds(&out.nodes, "row_30").expect("the anchored row's code node");
+        // The pane's visible top edge, read off the scrolled clip of the row's
+        // own text shape; egui lands the scrolled-to rect's top `item_spacing`
+        // under it.
+        let clip_top = pane_clip_top(&out.shapes, "row_30");
+        let expected = f64::from(egui_ctx.global_style().spacing.item_spacing.y);
+        let gap = row.bounds().unwrap().y0 - clip_top;
+        assert!(
+            (gap - expected).abs() <= 0.5,
+            "the row's top stands at the pane's top: {gap} (the scroll's \
+             {expected} expected)"
+        );
+    }
+
     #[test]
     fn a_when_cell_link_jumps_to_its_target() {
         let dir = TestDir::new("studio_core_help_celllink");
@@ -2058,16 +2294,7 @@ mod tests {
         let Shell { mut app, .. } = help_shell(dir.path());
         let egui_ctx = test_context();
 
-        frame(&egui_ctx, &mut app, vec![key(egui::Key::F1, true)], true);
-        let nodes = idle(&egui_ctx, &mut app, 15).nodes;
-        click(&egui_ctx, &mut app, search_box(&nodes));
-        frame(
-            &egui_ctx,
-            &mut app,
-            vec![egui::Event::Text("alpha".to_owned())],
-            true,
-        );
-        let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
+        let nodes = search_for(&egui_ctx, &mut app, "alpha", 15).nodes;
         assert!(
             has_label(
                 &nodes,
@@ -2282,36 +2509,17 @@ mod tests {
 
         frame(&egui_ctx, &mut app, vec![key(egui::Key::F1, true)], true);
         let out = idle(&egui_ctx, &mut app, 15);
-        let search = search_box(&out.nodes)
+        let content_left = search_box(&out.nodes)
             .bounds()
-            .expect("the search box carries bounds");
-        let content_left = search.x0;
+            .expect("the search box carries bounds")
+            .x0;
         let separator = egui_ctx
             .style_of(egui_ctx.theme())
             .visuals
             .widgets
             .noninteractive
             .bg_stroke;
-        // The vertical lines in the separator's stroke under the search box:
-        // the shell's sidebar edge spans the whole window, above it, and an
-        // open chapter's indent line is shorter than the separator, which
-        // spans the panel's height.
-        let edge = out
-            .shapes
-            .iter()
-            .filter_map(|clipped| match &clipped.shape {
-                egui::Shape::LineSegment { points, stroke }
-                    if *stroke == separator
-                        && points[0].x == points[1].x
-                        && f64::from(points[0].y.min(points[1].y)) > search.y1 =>
-                {
-                    Some((points[0].x, (points[1].y - points[0].y).abs()))
-                }
-                _ => None,
-            })
-            .max_by(|a, b| a.1.total_cmp(&b.1))
-            .map(|(x, _)| f64::from(x))
-            .expect("the tree panel's separator line");
+        let edge = tree_right_edge(&out, separator);
         for (role, label) in [
             (Role::DisclosureTriangle, "First run and data location"),
             (Role::Button, "Running from a terminal"),
@@ -2393,6 +2601,84 @@ mod tests {
             strokes,
             [egui::Stroke::new(1.0, edge)],
             "the blue's edge painted over the row"
+        );
+    }
+
+    // The draft's `.help-tree .sel { display: block }`: every tree entry is the
+    // collapsing body's whole width, so the shown one's blue runs across the
+    // tree and an unselected entry's response rect is the same span.
+    #[test]
+    fn every_tree_entry_spans_the_bodys_width() {
+        let dir = TestDir::new("studio_core_help_tree_span");
+        let Shell { mut app, .. } = help_shell(dir.path());
+        let egui_ctx = test_context();
+
+        frame(&egui_ctx, &mut app, vec![key(egui::Key::F1, true)], true);
+        let out = idle(&egui_ctx, &mut app, 15);
+        let bounds = |label: &str| {
+            out.nodes
+                .iter()
+                .find(|node| node.role() == Role::Button && node.label() == Some(label))
+                .and_then(accesskit::Node::bounds)
+                .unwrap_or_else(|| panic!("no tree entry {label:?}"))
+        };
+        // Beta's chapter entries: "Beta topic" is the shown (selected) one,
+        // "Beta more" and "Messages" are not; all span the body's width, which
+        // ends the panel's inner margin (8, and the separator line's own half
+        // point) inside the separator.
+        let shown = bounds("Beta topic");
+        let separator = egui_ctx
+            .style_of(egui_ctx.theme())
+            .visuals
+            .widgets
+            .noninteractive
+            .bg_stroke;
+        let body_right = tree_right_edge(&out, separator) - 8.5;
+        for label in ["Beta topic", "Beta more", "Messages"] {
+            let entry = bounds(label);
+            assert!(
+                (entry.x0 - shown.x0).abs() <= 0.5 && (entry.x1 - shown.x1).abs() <= 0.5,
+                "{label:?} spans the body's width as the shown entry's: {entry:?} vs {shown:?}"
+            );
+            assert!(
+                (entry.x1 - body_right).abs() <= 1.0,
+                "{label:?} reaches the body's right edge: {} vs {body_right}",
+                entry.x1
+            );
+        }
+
+        // The shown entry's blue fill covers the same span (the blue's rect
+        // over the entry's bounds, as the selected-row test reads it).
+        let blue = egui_ctx.global_style().visuals.selection.bg_fill;
+        let over: Vec<_> = out
+            .shapes
+            .iter()
+            .filter_map(|clipped| match &clipped.shape {
+                egui::Shape::Rect(shape)
+                    if (f64::from(shape.rect.min.x) - shown.x0).abs() <= 2.0
+                        && (f64::from(shape.rect.min.y) - shown.y0).abs() <= 2.0
+                        && (f64::from(shape.rect.max.x) - shown.x1).abs() <= 2.0
+                        && (f64::from(shape.rect.max.y) - shown.y1).abs() <= 2.0 =>
+                {
+                    Some(shape)
+                }
+                _ => None,
+            })
+            .collect();
+        assert!(
+            over.iter().any(|shape| shape.fill == blue),
+            "the shown entry's blue spans the body's width: {over:?}"
+        );
+        let edge = crate::theme::edge_color(&egui_ctx.global_style().visuals, blue);
+        let strokes: Vec<egui::Stroke> = over
+            .iter()
+            .map(|shape| shape.stroke)
+            .filter(|stroke| !stroke.is_empty())
+            .collect();
+        assert_eq!(
+            strokes,
+            [egui::Stroke::new(1.0, edge)],
+            "the blue's edge painted over the body's span"
         );
     }
 

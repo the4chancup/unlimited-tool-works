@@ -349,19 +349,16 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
                 }
                 // Painted once, after the rows: painted with its row,
                 // the next row's background would cover its lower
-                // half. The mark's ends stop at the frame border's
-                // inner side: a row spans the frame's width, and the
-                // border, stroked inside it, would cover a serif's
-                // outer point.
+                // half. The mark's ends are the row's own edges, inside
+                // the frame's border as the row's box is.
                 if let Some(mark) = drop_mark {
-                    let inset = ui.visuals().widgets.noninteractive.bg_stroke.width;
                     let stroke = egui::Stroke::new(2.0, ui.visuals().selection.stroke.color);
                     let y = if mark.lower {
                         mark.rect.max.y
                     } else {
                         mark.rect.min.y
                     };
-                    let (x0, x1) = (mark.rect.min.x + inset, mark.rect.max.x - inset);
+                    let (x0, x1) = (mark.rect.min.x, mark.rect.max.x);
                     ui.painter().hline(x0..=x1, y, stroke);
                     ui.painter().vline(x0 + 1.0, y - 3.5..=y + 3.5, stroke);
                     ui.painter().vline(x1 - 1.0, y - 3.5..=y + 3.5, stroke);
@@ -552,11 +549,32 @@ fn row_selection(row: ListRow) -> Selection {
 struct RowLayout {
     /// The row's height (`interact_size.y`, what a selectable occupies).
     row_height: f32,
-    /// The row's width, the frame's: the scroll area's own spans the bar's
-    /// strip while nothing scrolls.
+    /// The span a row is laid out in, the rows' frame's width: the scroll
+    /// area's viewport covers the scroll bar's strip while nothing scrolls,
+    /// so the frame's width, not the viewport's, is a row's.
     width: f32,
     /// Player rows drag and take drops.
     draggable: bool,
+}
+
+/// The box a list row occupies, the draft's `.prow` inside `.rows`'s
+/// border: `layout`'s span inset by the list frame's stroke on each side.
+/// A row's own edge, painted inside the box, then stands inside the frame's
+/// border rather than under it — the frame's stroke is painted after the
+/// rows, and a band sharing it would be covered.
+fn row_rect(
+    ui: &mut egui::Ui,
+    layout: RowLayout,
+    sense: egui::Sense,
+) -> (egui::Rect, egui::Response) {
+    let inset = ui.visuals().widgets.noninteractive.bg_stroke.width;
+    let avail = ui.available_rect_before_wrap();
+    let rect = egui::Rect::from_min_size(
+        avail.min + egui::vec2(inset, 0.0),
+        egui::vec2(layout.width - 2.0 * inset, layout.row_height),
+    );
+    let response = ui.allocate_rect(rect, sense);
+    (rect, response)
 }
 
 /// The team selector: `All teams`, or the category's name in `All`'s
@@ -763,10 +781,7 @@ fn team_row(
     };
     let is_selected = *selection.selected == Some(Selection::Team(team_id));
     let dirty = session.team_dirty(team_id);
-    let (rect, response) = ui.allocate_exact_size(
-        egui::vec2(layout.width, layout.row_height),
-        egui::Sense::click(),
-    );
+    let (rect, response) = row_rect(ui, layout, egui::Sense::click());
     response.widget_info(|| {
         egui::WidgetInfo::selected(
             egui::Role::Button,
@@ -945,7 +960,6 @@ fn player_row(
     } else {
         *selection.selected == Some(Selection::Player(row.team_id, row.slot))
     };
-    let row_height = layout.row_height;
     let font = egui::TextStyle::Body.resolve(ui.style());
     let texts = row_text(player, row, &font);
     // The unsaved dot paints at the row's right end, never inside the
@@ -965,7 +979,7 @@ fn player_row(
     } else {
         egui::Sense::click()
     };
-    let (rect, response) = ui.allocate_exact_size(egui::vec2(layout.width, row_height), sense);
+    let (rect, response) = row_rect(ui, layout, sense);
     response.widget_info(|| {
         egui::WidgetInfo::selected(
             egui::Role::Button,
