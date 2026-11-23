@@ -19981,3 +19981,23 @@ painted names whose tests read only the accessibility label), three were look de
 separators, a gap), and none was equivalent or unreachable. That is a better yield than the
 `guard` kind, shelved for its share of survivors that were no real gap.
 Plan: `CONTRIBUTING.md` "Mutation runs"; the worklog's backfill step.
+
+## 2026-11-23 — team_compiler — Upgrade DpFileList ships on PES 2019 as it is (maintainer)
+Decision: the VGL organizer's next build, `0.0.3-vgl27.2`, has the Upgrade DpFileList button
+working on PES 2019 as on every other version: not disabled there, and with no warning of its
+own.
+Why: the organizer's poc.5 report (PES 2019 ran vanilla after `upgrade-dpfl`) cannot be
+traced: the organizer cannot recall the setup behind it, so nothing yet says what to change.
+The work continues as planned, and the worklog keeps the report open until a PES 2019 setup
+shows it again.
+Plan: no plan edit needed: `team_compiler/pipeline.md` "DpFileList upgrade" never set PES
+2019 apart.
+
+## 2026-11-23 — save_editor — portraits follow the game's CPKs through the session, read again when the window regains focus (maintainer)
+Decision: the Save editor reads the DpFileList and its CPKs' tables again each time UTW's
+window comes back into focus, so a portrait compiled (or a facepack copied in) while UTW
+stays open shows without a restart. Low priority: queued for 0.1.0, not for `0.0.3-vgl27.2`.
+Why: iterating on a portrait, compiling and looking again, is one of the reasons the editor
+shows portraits at all. Read once per PES folder, they stayed as they were until a restart.
+The cost is that reading on every return to the window, off the UI thread.
+Plan: `save_editor.md` "Tactics editor", the Portraits item.

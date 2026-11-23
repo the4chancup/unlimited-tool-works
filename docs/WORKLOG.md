@@ -131,9 +131,9 @@ draft checked, for the maintainer to publish; running sidekicks and jobs are not
      gated `88040bcc` (`76e46277`, its legacy-ID tests moved onto main's test helpers), raised
      to `0.0.3-vgl27.2` (`de9c9ccb`), packed in the worktree's `target/dist/`, and checked in
      its built window (the version on the sidebar, the four tools, the Compiler's grid and
-     split Compile button, the upgrader's placeholder line). It is handed over once item 8 is
-     answered (`maintainer/questions.html` "Upgrade DpFileList in the organizer's PES 2019
-     build"), since that answer decides what the button does on PES 2019
+     split Compile button, the upgrader's placeholder line). Ready for the maintainer to hand
+     over: the button ships working on PES 2019 as elsewhere (DECISIONS 2026-11-23
+     "Upgrade DpFileList ships on PES 2019 as it is")
    - [x] VGL27's legacy mode off main, onto `vgl27` alone (2026-11-22, DECISIONS 2026-11-22):
      main's merge `8cc425a3` (Opus; the lead dropped three tests of the old names and the
      draft's `IDs` cell), TC-LEG-01 to 05 and EU-SET-15 to 17 withdrawn, and a CHANGELOG
@@ -174,7 +174,7 @@ draft checked, for the maintainer to publish; running sidekicks and jobs are not
      - 1c-iii: the Upgrade DpFileList button beside Compile and its dialog (TC-GUI-33;
        `plans/team_compiler/gui.md` "Toolbar", `plans/team_compiler/pipeline.md` "DpFileList
        upgrade"; the draft's `compiler/main?dpfl=outdated`), over the CLI's `upgrade-dpfl`,
-       with the new `dpfilelist_cpk_deleted`. On PES 2019 it waits for item 8. SWE-2, in two
+       with the new `dpfilelist_cpk_deleted`. On PES 2019 it works as elsewhere (item 8). SWE-2, in two
        parts:
        - [x] 1c-iii-a (2026-11-23, merge `7a488e81`, SWE-2): `upgrade.rs`'s preview as data,
          the deletions the member ticked (`dpfilelist_cpk_deleted`), the catalog's texts
@@ -368,7 +368,9 @@ draft checked, for the maintainer to publish; running sidekicks and jobs are not
    after `upgrade-dpfl` the game ran vanilla and made a new save of the real teams; the
    official list has no stem for the PES 2019 list's `03_base`, `10_scoreboard`,
    `11_interface`, `12_cutscenes`, `13_competition`, so they drop out, and PES 2019's records
-   carry a countdown at byte 36 ours lack; the maintainer is settling it with the organizer).
+   carry a countdown at byte 36 ours lack). The organizer cannot recall the setup behind it,
+   so the button ships as it is (DECISIONS 2026-11-23); this stays open until a PES 2019
+   setup shows it again.
 9. The rest of Team TOML's numbers as the game shows them, as 0.0.2 did for form, injury
    resistance and weak foot: team colours in 8 bits as on screen (the file holds the save's 0
    to 63), `[tactics.auto] substitution` and the appearance colours by name. The Save editor
@@ -515,8 +517,11 @@ and no phase closes with one outstanding.
   start, `AGENTS.md` gains the file's row (it is at its 16 KB cap: something is cut first)
   and the dev cycle chart its loop.
 - [ ] The `call` mutant kind's backfill (DECISIONS 2026-11-23 "a `call` extra mutant kind"):
-  `.tmp/call_backfill/run.py` runs it over every crate, smallest first, detached and
-  resumable, about 3,900 mutants. Each crate's survivors (`.tmp/call_backfill/<crate>.missed.txt`)
+  about 3,900 mutants over every crate, smallest first, on the VPS alone as whole-crate runs
+  are. It needs the extra kinds to run there without cargo-mutants: slice RX (SWE-2,
+  `.tmp/call_backfill/brief_remote_extra.md`), then `.tmp/call_backfill/run.py` repointed at
+  its recipe. A first local start was stopped in its third crate, `pipeline`, after two with no
+  survivors (`pes_strings`, `vtree`). Each crate's survivors (`.tmp/call_backfill/<crate>.missed.txt`)
   are triaged as CONTRIBUTING "Mutation runs" says, the missing tests going into SWE-2
   slices crate by crate. Its first crate, `export_grid` (the trial), has 8 survivors, all
   missing tests, for slice G7. Once each crate's run is measured, CONTRIBUTING's time for the
@@ -1674,6 +1679,10 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
   freeze columns at the left. The first slice tries it (with the frozen columns painted at
   its scroll offset) beside a grid of our own, and keeps the simpler; the maintainer allows
   the direct dependency (2026-11-14)
+- [ ] 8.50 for 0.1.0, low priority (the maintainer, 2026-11-23): the Save editor's portraits
+  follow a CPK changed while UTW stays open (a compile, a facepack), read again when the
+  window comes back into focus (`plans/save_editor.md` "Tactics editor", the Portraits item;
+  DECISIONS "portraits follow the game's CPKs"). Left: its scenario, then the code
 
 ### Releases 0.0.1 and 0.0.2 — the preview builds
 
@@ -2893,8 +2902,8 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       architecture section, a changelog line (`cef04d9c`)
     - [ ] the rework merged (`97d073e4`); due: a SWE-2 loop over it, then Carbon's round 2
       (round 1 had one of reach (a)). SWE-2 round "S-sel c1", 2026-11-23: 2 accepted (a test
-      copying a helper's loop, a doc), which ends the loop; one concern waits on
-      `maintainer/questions.html` "Portraits after a compile in the same session". Its fixes
+      copying a helper's loop, a doc), which ends the loop; one concern, portraits after a
+      compile in the same session, the maintainer queued for 0.1.0 (8.50). Its fixes
       merged with S-cmp c1's (`044955c1`)
     - [x] Carbon's round 2, 2026-11-23 (at `bb2ccfb4`, rulings "C-sel r2"): 7 accepted, none of
       reach (a), which ends Carbon's loop: texts still saying every tool uses the version,
