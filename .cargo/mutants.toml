@@ -515,4 +515,8 @@ exclude_re = [
     # a layout that the body's `(Some(message), _)` arm then drops, so `false` shows the same
     # row: the message in place of the cells.
     "team_compiler/src/check/live\\.rs:\\d+:\\d+: replace match guard message\\.is_some\\(\\) with false in export_row",
+    # save_editor: `row_size`'s `2.0 * inset`, the list frame's stroke on each side, is
+    # `2.0 / inset` at the 1-point stroke both themes give it (`theme.rs`,
+    # `noninteractive.bg_stroke`). Re-check if that width changes.
+    "save_editor/src/view/player_list\\.rs:\\d+:\\d+: replace \\* with / in row_size",
 ]
