@@ -228,6 +228,8 @@ draft checked, for the maintainer to publish; running sidekicks and jobs are not
        colours for a kit the check dropped or whose compile failed (a failed kit keeps its
        listed pair today, though its entry is never written). Its compile half waits on a
        run updating the cells (TC-GUI-12)
+   - [ ] One paid round (tier 2, Carbon) over slices 1a to 1c and the swatch, whose SWE-2
+     loops have ended: due
    - [ ] The Compile button's mode list, Open output folder and Copy report (TC-GUI-11, and
      TC-GUI-33's clause that Compile for sideloading stays enabled while the DpFileList is
      outdated; DECISIONS 2026-11-23 "the Compile menu's Copy report copies the whole log").
@@ -411,6 +413,12 @@ draft checked, for the maintainer to publish; running sidekicks and jobs are not
     pass (2026-11-23, on `e9b0a3d0`: 11 minutes of tests, then 42 GiB free against the 48 GiB
     floor; the build cache's cleanup freed 30 GB and the pipeline ran again from the start).
     Fix: the pipeline checks the remote disk before its tests, so a refusal comes first.
+17. Owed paid rounds went unseen (census of 2026-11-23): the Compiler grid's slices never
+    named their tier, so their Carbon round was never queued, and four reworks of Carbon's
+    round 1 merged without their worklog lines saying so, which left two round 2s looking
+    blocked. The first broke RUNBOOK's rule that a step's worklog line names its tier when
+    it lands. Fix: the rulings file's line that ends a loop names the next review owed,
+    and the worklog line is updated in the commit that merges a review's rework.
 
 Most open steps below wait only on a check in the game or the built window that the lead's
 harness makes ("Pending looks" below), not on the maintainer.
@@ -2424,7 +2432,8 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     (`invert_number_scrolling`), which turns number boxes only (the maintainer, 2026-11-15;
     DECISIONS 2026-11-15). Landed (SWE-2, `bdb78173`, merge `4bc6bd55`): ST-WHEEL-05 and 06
     red first; a preset's wheel step writes no undo entry, which ST-WHEEL-05 now says
-    - [ ] its review (tier 2): a SWE-2 loop, then one Carbon round
+    - [ ] its review (tier 2): SWE-2's loop ended (S-wheel r1, 2 accepted); one Carbon round
+      is due
   - [x] 0.0.2-recents the Save editor keeps its last 10 saves opened or saved between runs
     (`recent_files`, each with its version) and lists them under Recent on the welcome panel
     and in the File menu, each `[PES 2021] backups\EDIT00000000 - VGL26` (P58, the
@@ -2712,7 +2721,8 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         away from the pointer and vanished while the wheel scrolled the list; Esc's cancel
         of a drop untested (a test first); two tests that could not fail; the lead's text:
         the plan's drag and Comparator paragraphs (`10a7b2d3`)
-      - [ ] the rework (SWE-2, `sk/cmprw`), then Carbon's round 2
+      - [ ] the rework merged (`9e757880`); due: a SWE-2 loop over it, then Carbon's round 2
+        (round 1 had two of reach (a))
   - [ ] 0.0.2-bar the toolbar as a menu bar (the maintainer, 2026-11-07 and 2026-11-12): the
     Ruleset editor draft's look, unframed menus on a band edge to edge, on the Save editor
     and the Ruleset editor; in the Save editor `File` (the opens, then Save and Save as) and
@@ -2815,7 +2825,8 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       context API (`pes_exe_check`) beside the sidebar's own check; six tests that could not
       fail; the lead's text: the help's PES version paragraph and Set PES path trigger, the
       architecture section, a changelog line (`cef04d9c`)
-    - [ ] the rework (SWE-2, `sk/selrw`, after `sk/barrw` merges), then Carbon's round 2
+    - [ ] the rework merged (`97d073e4`); due: a SWE-2 loop over it, then Carbon's round 2
+      (round 1 had one of reach (a))
     - [x] the look in the built window, both themes: checked 2026-11-15 at `4b9f2258`; the
       maintainer's look 2026-11-17: fine
   - [x] 0.0.2-undo an X on each row of the unsaved changes list undoing that change alone,
@@ -2967,7 +2978,8 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         counted as missed on the VPS; a test helper that accepted a value of the wrong
         type; two hidden-window tests where one covers both; the lead's text: the GUI
         plan's taskbar section, the dependency row and the `Cargo.toml` note (`10a7b2d3`)
-      - [ ] the rework (SWE-2, `sk/instrw`), then Carbon's round 2
+      - [x] the rework merged (`43a7bbdc`); round 1 had none of reach (a), so Carbon's loop
+        ended
   - [x] 0.0.2-drift 2026-11-12 (`c069deab`, SWE-2 and the lead; merge `69368443`; DECISIONS
     2026-11-12 "A settings save writes only what its session changed"): today a save wrote
     the window's whole copy, so the last of two windows to save undid every value the other
@@ -3189,7 +3201,8 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
           as Blender's exporter writes it), compiled with no finding; five checks no test
           could fail; the catalog row's text, the help and two spec passages (`64d1981f`,
           the rest with the rework)
-        - [ ] the rework (SWE-2, `sk/ktorw`), then Carbon's round 2
+        - [x] the rework merged (`b03c533d`); round 1 had none of reach (a), so Carbon's
+          loop ended
   - [ ] 0.0.2-poc13 VGL27 keeps the managers' boots and gloves IDs (the maintainer,
     2026-11-09, after the PoC): managers keep the old format and Red for their own tests, so
     an official DLC whose boots/gloves IDs differ from what they sent (Studio's slot-based
@@ -3273,7 +3286,7 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       logos not seen, which Edit mode never places (look: Pending looks)
     - Astra A-nobc7 r1 (3 accepted) and its rework 2026-11-08; SWE-2 S-nobc7 r1 2026-11-11
       (3 accepted, among them `texture_not_div4` skipping a pre-Fox texture written
-      uncompressed, DECISIONS 2026-11-11; look: Pending looks), its loop ended, Carbon owed
+      uncompressed, DECISIONS 2026-11-11; look: Pending looks), its loop ended; Carbon's round is due
     - the same run's PoC look passed: /dbg/ and /4ccg/ upgrade and compile clean (about 2 s
       for both), and the 8 players checked show their own faces and bodies
   - [x] 0.0.2c the illegal formation check (`plans/aatf_rules.md` "The illegal formation
