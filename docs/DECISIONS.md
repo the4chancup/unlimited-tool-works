@@ -20061,3 +20061,16 @@ would notice, which would make the test fail on most commits, while a sample sho
 as well.
 Plan: `core/gui.md` "Prototypes before implementation", the paragraph starting "The help's
 texts are the one thing".
+
+## 2026-11-23 — worklog, roadmap — every open step carries its ID and what it waits on, and the roadmap draws them as a timeline (maintainer)
+Decision: every item and sub-step under the worklog's "Where the work stands" opens with its
+ID in bold (the code its briefs and merges use, or a short new one), and names what it waits
+on as `[after ID, ID]`. The roadmap page shows the IDs and draws a vertical timeline: a lane
+per thread run in parallel, an edge from each step to what it waits on, open steps above and
+done ones below, matched to their item by the ID in their merge subjects.
+Why: the maintainer asked for the codes and for the timeline with its branches and
+dependencies. Written in the worklog, a dependency is recorded once, when it is known, rather
+than traced again from the history at each phase's converge. A bracketed tag was chosen over
+a sentence in the prose: a script reads it without guessing, and a reader still sees it.
+Plan: no plan section: the convention is in the worklog's header, the steps in its roadmap
+item.

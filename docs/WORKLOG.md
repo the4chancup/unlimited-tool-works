@@ -5,6 +5,12 @@ Where the implementation is and what comes next. The plan (`docs/plans/`) holds 
 Never duplicate rationale here — link to the plan section instead. Procedure for using this file
 is in `AGENTS.md` ("Working documents").
 
+Every item and sub-step under "Where the work stands" opens with its ID in bold (`**RX**`):
+the code its briefs, branches and merge subjects use, or a short new one where it has none.
+What a step waits on is written in it as `[after ID, ID]`. The maintainer's roadmap
+(`scripts/roadmap.py`) draws its timeline from both, so a dependency written here is not
+traced again at a phase's converge.
+
 ---
 
 ## Current status
@@ -566,7 +572,13 @@ and no phase closes with one outstanding.
     three parts. 13 closed, 3 made steps (two already tracked, Fox per-kit models added to
     the post-0.0.2 paragraph), 25 resolved entries pruned, 88 left;
   - [x] the Issues section stays here (2026-11-23): AGENTS.md names this file its home,
-    `scripts/roadmap.py` counts its open entries, and pruned it no longer crowds the file.
+    `scripts/roadmap.py` counts its open entries, and pruned it no longer crowds the file;
+  - [ ] every open item and sub-step under "Where the work stands" given its ID and its
+    `[after …]` dependencies (this file's header); the lead, by hand;
+  - [ ] the page shows each step's ID, and a vertical timeline with a lane per thread run in
+    parallel and an edge from each step to what it waits on, drawn as an SVG by
+    `scripts/roadmap.py`: open steps above, done ones below on their item's lane, matched by
+    the ID their merge subjects carry; a new sample for the maintainer's look. SWE-2.
 - [ ] The `call` mutant kind's backfill (DECISIONS 2026-11-23 "a `call` extra mutant kind"):
   about 3,900 mutants over every crate, smallest first, on the VPS alone as whole-crate runs
   are. It needs the extra kinds to run there without cargo-mutants: slice RX (SWE-2,
