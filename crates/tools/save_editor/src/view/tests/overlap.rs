@@ -454,15 +454,7 @@ fn comparator(version: PesVersion) -> Screens {
         node_labeled(&nodes, Role::Button, "Pick\u{2026}"),
         &mut view,
     );
-    frames_until(
-        &mut window,
-        &mut view,
-        |view| {
-            view.comparator.comparison.pending.is_none()
-                && view.comparator.comparison.result.is_some()
-        },
-        "the comparison never returned",
-    );
+    super::comparator::compared(&mut window, &mut view);
     let listed = settled_over(&mut window, &mut view, "the comparator");
     vec![
         ("Comparator, nothing picked", empty),

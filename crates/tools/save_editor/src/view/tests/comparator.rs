@@ -95,38 +95,71 @@ fn pick_comparator_team(window: &mut Headless, view: &mut SaveView, name: &str) 
     panic!("the Team combo never showed {name:?}")
 }
 
-/// Frames until the comparison lands: `pending` empty and the result keyed
-/// to the session's current revision, the picked session's and the scope
-/// (bounded, so a worker that never replies fails rather than hangs).
-/// Returns the landing frame's node pairs.
-fn compared(
+/// Frames until the comparison's result lands, keyed to the session's
+/// current revision, the picked session's and the scope. The run in
+/// flight is taken, its reply — `comparator::compare` on this thread —
+/// sent on a channel the test holds (`worker::Pending::held`, the AATF
+/// checks' seam), so the test never waits on the worker's real thread,
+/// which a loaded machine can starve past any bound. Only the run's
+/// start is awaited, and a start is a frame's own work: a comparison
+/// that never starts fails rather than hangs. Returns the landing
+/// frame's node pairs.
+pub(super) fn compared(
     window: &mut Headless,
     view: &mut SaveView,
 ) -> Vec<(accesskit::NodeId, accesskit::Node)> {
-    frames_until(
-        window,
-        view,
-        |view| {
-            let session = view.session.as_ref().expect("an open save");
-            let picked = view
+    for _ in 0..30 {
+        let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, view, &|| Vec::new()));
+        let session = view.session.as_ref().expect("an open save");
+        let key = crate::view::comparator::CompareKey {
+            revision: session.revision(),
+            picked: view
                 .comparator
                 .picked
                 .as_ref()
-                .map(|(_, picked)| picked.revision());
-            view.comparator.comparison.pending.is_none()
-                && view
-                    .comparator
-                    .comparison
-                    .result
+                .expect("a picked save")
+                .1
+                .revision(),
+            scope: view.comparator.scope,
+        };
+        let comparison = &view.comparator.comparison;
+        if comparison.pending.is_none()
+            && comparison
+                .result
+                .as_ref()
+                .is_some_and(|(held, _)| *held == key)
+        {
+            return pairs;
+        }
+        if comparison
+            .pending
+            .as_ref()
+            .is_some_and(|pending| pending.key == key)
+        {
+            let real = view
+                .comparator
+                .comparison
+                .pending
+                .take()
+                .expect("pending above");
+            let (held, sender) = worker::Pending::held(real.key.clone());
+            let reply = crate::view::comparator::compare(
+                view.comparator
+                    .picked
                     .as_ref()
-                    .is_some_and(|(key, _)| {
-                        key.revision == session.revision()
-                            && Some(key.picked) == picked
-                            && key.scope == view.comparator.scope
-                    })
-        },
-        "the comparison never returned",
-    )
+                    .expect("a picked save")
+                    .1
+                    .file(),
+                session.file(),
+                real.key.scope,
+            );
+            view.comparator.comparison.pending = Some(held);
+            sender
+                .send((real.key, reply))
+                .expect("the held channel is open");
+        }
+    }
+    panic!("the comparison never ran")
 }
 
 /// The comparator window's nodes out of `pairs` (`frame_ids`' output).

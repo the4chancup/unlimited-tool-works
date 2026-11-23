@@ -2030,10 +2030,8 @@ fn frames_until(
     // A hang guard, not a speed bound: a passing test returns when the
     // reply lands, so the bound costs nothing and only stops a worker
     // that never replies (four AATF-panel tests starved past 30 s under
-    // a mutation run's below-normal priority, 2026-10-26; a comparator
-    // test ran out 120 s in a checkpoint run beside other builds,
-    // 2026-11-21).
-    let deadline = Instant::now() + Duration::from_secs(300);
+    // a mutation run's below-normal priority, 2026-10-26).
+    let deadline = Instant::now() + Duration::from_secs(120);
     let revision = |view: &SaveView| view.session.as_ref().map(Session::revision);
     let mut previous = None;
     loop {
