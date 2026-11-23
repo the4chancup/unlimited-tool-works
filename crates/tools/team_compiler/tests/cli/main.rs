@@ -44,6 +44,7 @@ use std::path::{Path, PathBuf};
 
 use aesthetics_export::test_exports::Requirement;
 use common::{Run, Sandbox};
+use dds_convert::{Decoded, Target, TextureRole};
 use pes_version::PesVersion;
 use studio_core::{ExportId, PipelineEvent, Scope};
 use team_compiler::test_files::{self, clean_model};
@@ -218,6 +219,37 @@ fn source_fixture(name: &str) -> Vec<u8> {
         .join("tests/fixtures/sources")
         .join(name);
     fs::read(fixture).unwrap()
+}
+
+/// `dds_convert`'s fixture `rgba8.dds`: 32x16 uncompressed RGBA8 under a DX10 header, six
+/// levels.
+fn uncompressed_dds() -> Vec<u8> {
+    fs::read(
+        Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../libs/dds_convert/tests/fixtures/rgba8.dds"),
+    )
+    .unwrap()
+}
+
+/// A single-level `width`x`height` DDS stored uncompressed (A8R8G8B8), written by the
+/// converter itself so the header reads as stored uncompressed.
+fn uncompressed_dds_at(width: u32, height: u32) -> Vec<u8> {
+    dds_convert::convert(
+        &Decoded {
+            width,
+            height,
+            mips: vec![vec![0; (width * height * 4) as usize]],
+            blocks: None,
+            authored_mips: true,
+            uncompressed: true,
+        },
+        Target {
+            version: PesVersion::Pes17,
+            role: TextureRole::Color,
+            keep_uncompressed: true,
+        },
+    )
+    .unwrap()
 }
 
 /// Every file under `root`, by relative path, with its bytes.

@@ -29,7 +29,9 @@ use crate::prefox_faces::{
     CLEAN, card_materials, card_model, compile_pes17, face_cpk, face_folder, materials_naming,
     nested_entries, sampler_paths, small_dds,
 };
-use crate::{CLEAN_PLAYER, clean_model, command_args, findings_of};
+use crate::{
+    CLEAN_PLAYER, clean_model, command_args, findings_of, uncompressed_dds, uncompressed_dds_at,
+};
 use pes_model::format::mtl::MaterialEntry;
 
 /// The player's texture home, the per-player common subfolder.
@@ -434,37 +436,6 @@ fn bc1_dds_levels(width: u32, height: u32, levels: u32) -> Vec<u8> {
     encode_dds(&decoded, BlockCodec::Bc1).unwrap()
 }
 
-/// `dds_convert`'s fixture `rgba8.dds`: 32x16 uncompressed RGBA8 under a DX10 header, six
-/// levels.
-fn uncompressed_dds() -> Vec<u8> {
-    fs::read(
-        Path::new(env!("CARGO_MANIFEST_DIR"))
-            .join("../../libs/dds_convert/tests/fixtures/rgba8.dds"),
-    )
-    .unwrap()
-}
-
-/// A single-level `width`x`height` DDS stored uncompressed (A8R8G8B8), written by the
-/// converter itself so the header reads as stored uncompressed.
-fn uncompressed_dds_at(width: u32, height: u32) -> Vec<u8> {
-    dds_convert::convert(
-        &Decoded {
-            width,
-            height,
-            mips: vec![vec![0; (width * height * 4) as usize]],
-            blocks: None,
-            authored_mips: true,
-            uncompressed: true,
-        },
-        Target {
-            version: PesVersion::Pes17,
-            role: TextureRole::Color,
-            keep_uncompressed: true,
-        },
-    )
-    .unwrap()
-}
-
 /// Writes `exports/co Midcup Sizes`: slot 03 a 3x3 skin, slot 04 a 300x300 one, slot 05 PNG bytes
 /// under `skin.dds` (renamed, not resaved), slot 07 a 512x461 one with a full mip chain,
 /// each beside the hair model naming it, and a kit, so the CPK is written whatever the
@@ -816,6 +787,53 @@ fn an_uncompressed_player_texture_of_an_odd_size_compiles_on_pes_17() {
         ftex::dds::DdsPixel::Format(PixelFormat::Argb8)
     );
     assert_eq!((layout.width, layout.height), (1002, 1004));
+}
+
+// TC-TEX-07
+#[test]
+fn an_uncompressed_normal_map_of_an_odd_size_drops_the_player_folder_on_pes_17() {
+    let sandbox = Sandbox::new("tex_uncompressed_nrm_odd");
+    let export = "exports/co Midcup Nrm Sizes";
+    // A color texture stored uncompressed of the same size compiles as it is (the test
+    // above): a normal map is always encoded, so the size rule holds for it.
+    for (slot, texture, materials, bytes) in [
+        (
+            "05",
+            "skin_nrm.dds",
+            materials_naming("skin_nrm"),
+            uncompressed_dds_at(1002, 1002),
+        ),
+        // A clean player beside it, so the CPK is written and slot 05's absence observable.
+        ("07", "skin.dds", card_materials(), small_dds()),
+    ] {
+        let player = format!("{export}/Players/{slot} - A");
+        sandbox.write(&format!("{player}/face_high.model"), &card_model());
+        sandbox.write(&format!("{player}/face_high.mtl"), &materials);
+        sandbox.write(&format!("{player}/{texture}"), &bytes);
+    }
+    sandbox.complete_for(export, PesVersion::Pes17, &[]);
+    let finding = "Error texture_not_div4 [DropFolder] at Players/05 - A (file=skin_nrm.dds)";
+
+    let check = sandbox.run(&pes_settings(&sandbox, 17), &["check"]);
+    assert_eq!(
+        findings_of(&check.messages(), "co Midcup Nrm Sizes"),
+        [finding, "Info export_identified [Keep] (team=/co/, id=714)",]
+    );
+    assert_eq!(check.exit_code(), 1);
+
+    let compile = sandbox.run(&pes_settings(&sandbox, 17), &["compile", "--no-deploy"]);
+    assert_eq!(
+        findings_of(&compile.messages(), "co Midcup Nrm Sizes"),
+        [
+            finding,
+            "Info export_identified [Keep] (team=/co/, id=714)",
+            "Info team_colors_missing [Keep] ()",
+        ]
+    );
+    assert_eq!(compile.exit_code(), 1);
+    let entries = cpk_entries(&sandbox.root.join("output/4cc_99_test.cpk"));
+    assert!(entries.contains_key(&face_cpk(7)), "{:?}", entries.keys());
+    assert!(!entries.contains_key(&face_cpk(5)), "{:?}", entries.keys());
 }
 
 // TC-TEX-01, TC-TEX-09

@@ -18,11 +18,13 @@ use crate::findings_of;
 use crate::kit_layout::{
     LAYOUT, PRE_FOX_BANDS, PRE_FOX_ISLANDS, STRIPES_FINDINGS, STRIPES_PRE_FOX_FINDINGS,
     assert_moved_inside_bands_only, bc1_dds, compiled_entries, compiled_pre_fox_top_level,
-    stripe_centre, stripes, stripes_dds, stripes_dds_at_fox, write_stripes_export,
+    stripe_centre, stripes, stripes_dds, stripes_dds_at_fox, uncompressed_stripes_dds,
+    write_stripes_export,
 };
 use crate::prefox_faces::{
     CLEAN, card_materials, card_model, compile_pes17, materials_naming, pes17, small_dds,
 };
+use crate::uncompressed_dds;
 
 /// The CPK path of the pre-Fox kit texture `name` (`u0714p1`, `u0714p1_mask`).
 fn pre_fox_kit_texture(name: &str) -> String {
@@ -154,6 +156,32 @@ fn the_mask_is_emitted_on_pes_17_and_the_srm_on_pes_21_each_dropping_the_other()
         .filter(|path| path.contains("_mask"))
         .collect();
     assert_eq!(maps, Vec::<&String>::new());
+}
+
+// TC-TEX-01, TC-CHK-04
+#[test]
+fn a_pes_17_kits_uncompressed_mask_stays_uncompressed_while_its_main_texture_is_encoded() {
+    let sandbox = Sandbox::new("prefox_kit_uncompressed");
+    let folder = "exports/co Midcup Uncompressed/Kits/p1";
+    sandbox.write(&format!("{folder}/kit.dds"), &uncompressed_stripes_dds());
+    sandbox.write(&format!("{folder}/config.toml"), &tracer_config());
+    sandbox.write(&format!("{folder}/kit_mask.dds"), &uncompressed_dds());
+
+    let entries = compile_pes17(&sandbox, "co Midcup Uncompressed", &[CLEAN[0], CLEAN[1]]);
+
+    // PES 15-17 edit a kit's main texture in memory and soft-crash on an uncompressed
+    // one: it is the kit's one texture they encode. The stripes are fully opaque: BC1.
+    let main = wezlib::decompress_if_wrapped(&entries[&pre_fox_kit_texture("u0714p1")]).unwrap();
+    assert_eq!(
+        ftex::dds::read_layout(&main).unwrap().pixel,
+        ftex::dds::DdsPixel::Format(ftex::PixelFormat::Bc1)
+    );
+    let mask =
+        wezlib::decompress_if_wrapped(&entries[&pre_fox_kit_texture("u0714p1_mask")]).unwrap();
+    assert_eq!(
+        ftex::dds::read_layout(&mask).unwrap().pixel,
+        ftex::dds::DdsPixel::Format(ftex::PixelFormat::Argb8)
+    );
 }
 
 // TC-KIT-19

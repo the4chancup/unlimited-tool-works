@@ -10,12 +10,13 @@ use std::fs;
 use std::ops::Range;
 use std::path::Path;
 
-use dds_convert::{BlockCodec, SourceFormat, decode, encode_dds};
+use dds_convert::{BlockCodec, SourceFormat, Target, TextureRole, decode, encode_dds};
+use ftex::PixelFormat;
 use pes_version::PesVersion;
 
 use crate::common::Sandbox;
 use crate::compile::{cpk_entries, kit_texture, pes_settings, pes21_settings, tracer_kit};
-use crate::findings_of;
+use crate::{findings_of, uncompressed_dds_at};
 
 /// The bytes of `tests/fixtures/kit_layout/<name>`.
 fn kit_layout_fixture(name: &str) -> Vec<u8> {
@@ -78,6 +79,22 @@ pub(crate) fn stripes_dds_at_fox() -> Vec<u8> {
         }
     }
     encode_dds(&image, BlockCodec::Bc1).unwrap()
+}
+
+/// `stripes_image()` as a DDS stored uncompressed (A8R8G8B8): a kit texture source the
+/// compile writes back uncompressed where `Target::keep_uncompressed` asks for it.
+pub(crate) fn uncompressed_stripes_dds() -> Vec<u8> {
+    let mut image = stripes_image();
+    image.uncompressed = true;
+    dds_convert::convert(
+        &image,
+        Target {
+            version: PesVersion::Pes17,
+            role: TextureRole::Color,
+            keep_uncompressed: true,
+        },
+    )
+    .unwrap()
 }
 
 /// The top level of the kit texture `name` the sandbox's last `compile` wrote, decoded to
@@ -403,6 +420,61 @@ fn a_kit_srm_marked_pre_fox_compiled_for_pes_21_is_re_laid_with_its_kit() {
     assert!(as_drawn == given.mips[0], "the unmarked srm as given");
 }
 
+// TC-KIT-18, TC-KIT-19
+#[test]
+fn a_re_laid_uncompressed_main_texture_stays_uncompressed_on_pes_21_and_is_encoded_on_pes_17() {
+    // A kit drawn for the other engine's layout has its main texture re-laid, and the
+    // re-laid copy keeps the source's uncompressed layout on Fox; on PES 15-17, which
+    // edit a kit's main texture in memory, it is encoded like any main texture.
+    let write = |sandbox: &Sandbox, marker: &str| {
+        sandbox.write(
+            "exports/co Midcup Layout/Kits/p1/kit.dds",
+            &uncompressed_stripes_dds(),
+        );
+        sandbox.write(&format!("exports/co Midcup Layout/Kits/p1/{marker}"), b"");
+    };
+    let fox = Sandbox::new("kit_layout_uncompressed_fox");
+    write(&fox, "pre-fox");
+    fox.complete(LAYOUT);
+    let pre_fox = Sandbox::new("kit_layout_uncompressed_pre_fox");
+    write(&pre_fox, "fox");
+    pre_fox.complete_for(LAYOUT, PesVersion::Pes17, &[]);
+
+    let fox_run = fox.run(&pes21_settings(&fox), &["compile", "--no-deploy"]);
+    let mut converted = STRIPES_FINDINGS.to_vec();
+    converted.insert(
+        2,
+        "Info kit_layout_converted [Keep] at Kits/p1 (from=pre-fox, to=fox)",
+    );
+    assert_eq!(
+        findings_of(&fox_run.messages(), "co Midcup Layout"),
+        converted
+    );
+    assert_eq!(fox_run.exit_code(), 0);
+    let info = ftex::info(&compiled_entries(&fox)[&kit_texture("u0714p1")]).unwrap();
+    assert_eq!(info.format, PixelFormat::Argb8);
+
+    let pre_fox_run = pre_fox.run(&pes_settings(&pre_fox, 17), &["compile", "--no-deploy"]);
+    let mut converted = STRIPES_PRE_FOX_FINDINGS.to_vec();
+    converted.insert(
+        2,
+        "Info kit_layout_converted [Keep] at Kits/p1 (from=fox, to=pre-fox)",
+    );
+    assert_eq!(
+        findings_of(&pre_fox_run.messages(), "co Midcup Layout"),
+        converted
+    );
+    assert_eq!(pre_fox_run.exit_code(), 0);
+    let entries = compiled_entries(&pre_fox);
+    let emitted = wezlib::decompress_if_wrapped(
+        &entries["common/character0/model/character/uniform/texture/u0714p1.dds"],
+    )
+    .unwrap();
+    let layout = ftex::dds::read_layout(&emitted).unwrap();
+    // The stripes are fully opaque: the encode a pre-Fox main texture gets is BC1.
+    assert_eq!(layout.pixel, ftex::dds::DdsPixel::Format(PixelFormat::Bc1));
+}
+
 /// One opaque color per digit, every channel 0, 128 or 255, which the block codecs keep
 /// within `CODEC_TOLERANCE`.
 const DIGIT_COLORS: [[u8; 4]; 10] = [
@@ -535,5 +607,51 @@ fn a_row_number_atlas_compiled_for_pes_17_becomes_a_column_and_a_column_stays_as
         let texel = &p2_back[at..at + 4];
         let near = (0..4).all(|c| texel[c].abs_diff(color[c]) <= CODEC_TOLERANCE);
         assert!(near, "digit {digit} at y {y}: {texel:?}");
+    }
+}
+
+// TC-KIT-26
+#[test]
+fn an_uncompressed_number_atlas_stays_uncompressed_whether_re_arranged_or_not() {
+    let column = uncompressed_dds_at(128, 2048);
+    let row = uncompressed_dds_at(2048, 256);
+    for (label, atlas) in [("column", &column), ("row", &row)] {
+        assert!(
+            dds_convert::probe(atlas, SourceFormat::Dds)
+                .unwrap()
+                .uncompressed,
+            "premise: the {label} atlas is stored uncompressed"
+        );
+    }
+    let sandbox = Sandbox::new("number_atlas_uncompressed_pes21");
+    for (kit, back) in [("p1", &column), ("p2", &row)] {
+        let folder = format!("exports/co Midcup Numbers/Kits/{kit}");
+        sandbox.write(&format!("{folder}/kit.dds"), &tracer_kit());
+        sandbox.write(&format!("{folder}/kit_back.dds"), back);
+    }
+    sandbox.complete("exports/co Midcup Numbers");
+
+    let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
+
+    assert_eq!(
+        findings_of(&run.messages(), "co Midcup Numbers"),
+        [IDENTIFIED, TEAM_COLORS_MISSING]
+    );
+    assert_eq!(run.exit_code(), 0);
+
+    // p1's column is re-arranged into a row, p2's row stays as given; an uncompressed
+    // atlas is written uncompressed through either path.
+    let entries = compiled_entries(&sandbox);
+    for (name, label) in [
+        ("u0714p1_back", "re-arranged"),
+        ("u0714p2_back", "as given"),
+    ] {
+        let info = ftex::info(&entries[&kit_texture(name)]).unwrap();
+        assert_eq!(info.format, PixelFormat::Argb8, "{label}");
+        assert_eq!(
+            (u32::from(info.width), u32::from(info.height)),
+            (2048, 256),
+            "{label}"
+        );
     }
 }
