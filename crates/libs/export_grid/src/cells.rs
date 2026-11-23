@@ -312,7 +312,7 @@ pub(crate) fn text_colour(fill: Color32, visuals: &egui::Visuals) -> Color32 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::testing::dark;
+    use crate::testing::{Headless, dark, lines};
 
     #[test]
     fn a_warning_or_an_error_rings_the_checked_fill_and_a_blocked_cell_has_none() {
@@ -363,5 +363,36 @@ mod tests {
         ] {
             assert_eq!(look(state, None, &visuals).text, text, "{state:?}");
         }
+    }
+
+    // A blocked cell's edge is dashes, which paint no node: they are looked up in the
+    // frame's shapes.
+    #[test]
+    fn a_blocked_cell_paints_dashes_on_its_edge_and_no_fill() {
+        let visuals = dark();
+        let look = look(CellState::Blocked, None, &visuals);
+        let cell = egui::Rect::from_min_size(egui::pos2(10.0, 10.0), egui::vec2(26.0, 26.0));
+        let drawn = Headless::new().frame(Vec::new(), |ui| {
+            paint_fill(ui.painter(), &look, cell);
+        });
+        let edge = cell.shrink(0.5);
+        let dashes = lines(&drawn, egui::Stroke::new(1.0, look.text));
+        assert!(!dashes.is_empty(), "dashes in the look's text colour");
+        for points in dashes {
+            assert!(
+                points[0].x == points[1].x || points[0].y == points[1].y,
+                "a dash straight along the edge: {points:?}"
+            );
+            for point in points {
+                assert!(
+                    point.y == edge.top()
+                        || point.y == edge.bottom()
+                        || point.x == edge.left()
+                        || point.x == edge.right(),
+                    "{point:?} on the cell's edge {edge:?}"
+                );
+            }
+        }
+        assert_eq!(drawn.fill_at(cell), None, "a blocked cell has no fill");
     }
 }

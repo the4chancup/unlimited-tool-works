@@ -9,6 +9,25 @@ is in `AGENTS.md` ("Working documents").
 
 ## Current status
 
+### Now
+
+One line per piece of work in flight; the items below hold the detail.
+
+- The Compiler's grid (item 6): Carbon's round 4 is ruled; its fixes are in three SWE-2
+  slices, then a SWE-2 round over them and Carbon's round 5.
+- `0.0.3-vgl27.2`, the next VGL build: built and checked, waiting for the maintainer to hand
+  it over.
+- `0.0.2-pes14.3`, PES 2014 Build 3: tagged and checked, waiting for the maintainer to publish.
+- The checkpoint over the grid's latest slices: running; main is pushed once it passes and the
+  maintainer says yes.
+- The `call` mutant kind's backfill: slice RX, which runs the extra kinds alone on the VPS, is
+  merged; the backfill starts there once the checkpoint's mutation run leaves the VPS.
+- The roadmap page: its generator is merged, and its sample (`maintainer/roadmap.html`) waits
+  for the maintainer's look before `commit.py` regenerates it on every worklog commit.
+- The periodic review of the dev cycle: waiting for the maintainer's start.
+
+### Where the work stands
+
 **Release 0.0.2, the VGL preview, is out** (`plans/core/development_plan.md` "The /vg/ League
 27 (VGL)"): tagged `v0.0.2` on `aab124dc` and published by the maintainer 2026-11-18, once CI
 and the Release run had passed. It went out without Select all similar, the Carbon rounds and
@@ -131,9 +150,9 @@ draft checked, for the maintainer to publish; running sidekicks and jobs are not
      gated `88040bcc` (`76e46277`, its legacy-ID tests moved onto main's test helpers), raised
      to `0.0.3-vgl27.2` (`de9c9ccb`), packed in the worktree's `target/dist/`, and checked in
      its built window (the version on the sidebar, the four tools, the Compiler's grid and
-     split Compile button, the upgrader's placeholder line). It is handed over once item 8 is
-     answered (`maintainer/questions.html` "Upgrade DpFileList in the organizer's PES 2019
-     build"), since that answer decides what the button does on PES 2019
+     split Compile button, the upgrader's placeholder line). Ready for the maintainer to hand
+     over: the button ships working on PES 2019 as elsewhere (DECISIONS 2026-11-23
+     "Upgrade DpFileList ships on PES 2019 as it is")
    - [x] VGL27's legacy mode off main, onto `vgl27` alone (2026-11-22, DECISIONS 2026-11-22):
      main's merge `8cc425a3` (Opus; the lead dropped three tests of the old names and the
      draft's `IDs` cell), TC-LEG-01 to 05 and EU-SET-15 to 17 withdrawn, and a CHANGELOG
@@ -174,7 +193,7 @@ draft checked, for the maintainer to publish; running sidekicks and jobs are not
      - 1c-iii: the Upgrade DpFileList button beside Compile and its dialog (TC-GUI-33;
        `plans/team_compiler/gui.md` "Toolbar", `plans/team_compiler/pipeline.md` "DpFileList
        upgrade"; the draft's `compiler/main?dpfl=outdated`), over the CLI's `upgrade-dpfl`,
-       with the new `dpfilelist_cpk_deleted`. On PES 2019 it waits for item 8. SWE-2, in two
+       with the new `dpfilelist_cpk_deleted`. On PES 2019 it works as elsewhere (item 8). SWE-2, in two
        parts:
        - [x] 1c-iii-a (2026-11-23, merge `7a488e81`, SWE-2): `upgrade.rs`'s preview as data,
          the deletions the member ticked (`dpfilelist_cpk_deleted`), the catalog's texts
@@ -256,7 +275,16 @@ draft checked, for the maintainer to publish; running sidekicks and jobs are not
      "S-g5b r1"): 6 accepted, one of reach (a) (Esc with the Compile mode menu open closes
      the menu and unpins the window), which ends the loop. The lead's fixes: the gate's ID
      lists `53dd5466`, TC-GUI-24 and a doc `9aebb45f`; the rest is slice G6 (SWE-2),
-     merged `53d501f4`. Due: Carbon round 4 over the grid
+     merged `53d501f4`. Carbon round 4 over the same surface, at `9bec7d4b` (rulings
+     "C-grid r4"): 9 accepted, four of them a real input whose outcome changes (a portrait
+     packed with no player folder left out of the portraits box, Esc in Help's search box
+     unpinning the window, Help left behind the window by a second code link, the
+     DpFileList help texts naming only the terminal command), so a round 5 is owed. The
+     lead's fixes: the draft's sideload button `172444d2`, the log line's click in the plan
+     and TC-GUI-15 `81b7a48c`. The rest is three SWE-2 slices: G8a (`export_grid`'s Esc,
+     Help raised again), G8c (the portraits box, the help texts, a dead branch), G8d (the
+     legend, a tooltip and an error line, tested). Then a SWE-2 round over them, then
+     Carbon's round 5.
    - [ ] The Compile button's mode list, Open output folder and Copy report (TC-GUI-11, and
      TC-GUI-33's clause that Compile for sideloading stays enabled while the DpFileList is
      outdated; DECISIONS 2026-11-23 "the Compile menu's Copy report copies the whole log").
@@ -368,7 +396,9 @@ draft checked, for the maintainer to publish; running sidekicks and jobs are not
    after `upgrade-dpfl` the game ran vanilla and made a new save of the real teams; the
    official list has no stem for the PES 2019 list's `03_base`, `10_scoreboard`,
    `11_interface`, `12_cutscenes`, `13_competition`, so they drop out, and PES 2019's records
-   carry a countdown at byte 36 ours lack; the maintainer is settling it with the organizer).
+   carry a countdown at byte 36 ours lack). The organizer cannot recall the setup behind it,
+   so the button ships as it is (DECISIONS 2026-11-23); this stays open until a PES 2019
+   setup shows it again.
 9. The rest of Team TOML's numbers as the game shows them, as 0.0.2 did for form, injury
    resistance and weak foot: team colours in 8 bits as on screen (the file holds the save's 0
    to 63), `[tactics.auto] substitution` and the appearance colours by name. The Save editor
@@ -514,13 +544,48 @@ and no phase closes with one outstanding.
   lines into the log, then the first review, then the first look-ahead. At the
   start, `AGENTS.md` gains the file's row (it is at its 16 KB cap: something is cut first)
   and the dev cycle chart its loop.
+- [ ] A roadmap page for the maintainer (DECISIONS 2026-11-23 "the worklog stays Markdown,
+  and a roadmap page is generated from it"), in three steps:
+  - [x] a "Now" block at the top of this file, one line per thread in flight (what, state,
+    what it waits on, link); the handover keeps only session mechanics and points here:
+    written 2026-11-23;
+  - [ ] `scripts/roadmap.py` writing `docs/maintainer/roadmap.html` from this file (the Now
+    block as cards, the open items as Now, Next and Later columns, recent closes, the open
+    issues' count), regenerated by `commit.py` whenever this file is committed; a sample
+    for the maintainer's look before it is wired in; SWE-2. Generator and sample merged
+    `c8977365` (one rework: the merges folded per day); waiting for the maintainer's look;
+  - [ ] the Issues section audited (each open issue checked against today's code: closed,
+    kept, or made a step) and its resolved entries pruned; whether it then moves to a
+    file of its own is decided after. SWE-2.
 - [ ] The `call` mutant kind's backfill (DECISIONS 2026-11-23 "a `call` extra mutant kind"):
-  `.tmp/call_backfill/run.py` runs it over every crate, smallest first, detached and
-  resumable, about 3,900 mutants. Each crate's survivors (`.tmp/call_backfill/<crate>.missed.txt`)
+  about 3,900 mutants over every crate, smallest first, on the VPS alone as whole-crate runs
+  are. It needs the extra kinds to run there without cargo-mutants: slice RX (SWE-2,
+  `.tmp/call_backfill/brief_remote_extra.md`; merged, one rework), then `.tmp/call_backfill/run.py`, already repointed at its recipe. A first local start was stopped in its third crate, `pipeline`, after two with no
+  survivors (`pes_strings`, `vtree`). Each crate's survivors (`.tmp/call_backfill/<crate>.missed.txt`)
   are triaged as CONTRIBUTING "Mutation runs" says, the missing tests going into SWE-2
   slices crate by crate. Its first crate, `export_grid` (the trial), has 8 survivors, all
-  missing tests, for slice G7. Once each crate's run is measured, CONTRIBUTING's time for the
+  missing tests, now tested (slice G7, merged `863813d8`). Once each crate's run is measured, CONTRIBUTING's time for the
   extra kinds gets the real figures.
+- [ ] A mutation tier between `mutants-diff` and whole-crate runs (DECISIONS 2026-11-23 "a tier
+  between `mutants-diff` and whole-crate runs"), built after the `call` backfill's
+  measurements and before 1.0.0's first phase close, in slices:
+  - [ ] the extra kinds take a diff (`extra_mutants.py` keeps a mutant only on a changed
+    line), and `mutants-diff` runs them, so the review loops test `call` mutants too;
+  - [ ] a tracked record of each crate's last triaged whole-run commit, and the closure run:
+    every kind over the diff since that commit;
+  - [ ] whole-crate runs as a rolling job on the VPS, the crate checked longest ago first;
+    RUNBOOK "Phases and releases" and CONTRIBUTING "Mutation runs" rewritten to match.
+- [ ] Evaluate running only the tests that cover each mutant (the maintainer, 2026-11-23: worth
+  a look, since it could cut a mutant's cost tenfold). First, from the logs of a finished
+  whole-crate run (`save_editor`, `pes_savefile`), split each mutant's time into its build and
+  its tests: selection only shortens the tests, so this split bounds the gain. If the tests
+  dominate, a trial on one crate: each test's line coverage recorded once (`cargo llvm-cov`),
+  each mutant run with only the tests covering its line, against the same mutants run with
+  the full suite, the time measured both ways. Identical caught and missed sets make it a
+  drop-in for every tier. A selection that misses some catches still serves two ways if it is
+  fast enough (the maintainer, 2026-11-23): as a new lowest tier, or as an exact one with its
+  survivors run again on the full suite. A catch under selection is sound (one of its tests
+  failed), so only its survivors can be wrong, and they are few.
 
 ---
 
@@ -1674,6 +1739,10 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
   freeze columns at the left. The first slice tries it (with the frozen columns painted at
   its scroll offset) beside a grid of our own, and keeps the simpler; the maintainer allows
   the direct dependency (2026-11-14)
+- [ ] 8.50 for 0.1.0, low priority (the maintainer, 2026-11-23): the Save editor's portraits
+  follow a CPK changed while UTW stays open (a compile, a facepack), read again when the
+  window comes back into focus (`plans/save_editor.md` "Tactics editor", the Portraits item;
+  DECISIONS "portraits follow the game's CPKs"). Left: its scenario, then the code
 
 ### Releases 0.0.1 and 0.0.2 — the preview builds
 
@@ -2893,8 +2962,8 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       architecture section, a changelog line (`cef04d9c`)
     - [ ] the rework merged (`97d073e4`); due: a SWE-2 loop over it, then Carbon's round 2
       (round 1 had one of reach (a)). SWE-2 round "S-sel c1", 2026-11-23: 2 accepted (a test
-      copying a helper's loop, a doc), which ends the loop; one concern waits on
-      `maintainer/questions.html` "Portraits after a compile in the same session". Its fixes
+      copying a helper's loop, a doc), which ends the loop; one concern, portraits after a
+      compile in the same session, the maintainer queued for 0.1.0 (8.50). Its fixes
       merged with S-cmp c1's (`044955c1`)
     - [x] Carbon's round 2, 2026-11-23 (at `bb2ccfb4`, rulings "C-sel r2"): 7 accepted, none of
       reach (a), which ends Carbon's loop: texts still saying every tool uses the version,

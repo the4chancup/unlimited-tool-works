@@ -544,7 +544,7 @@ mod tests {
 
     use super::*;
     use crate::cells::KitIcon;
-    use crate::testing::{COLUMNS, Drawn, GROUPS, Headless, dark};
+    use crate::testing::{COLUMNS, Drawn, GROUPS, Headless, dark, text_shape};
 
     /// A checked cell showing `text`.
     fn checked(text: &str) -> Position {
@@ -695,6 +695,15 @@ mod tests {
         });
         assert!(!text, "no text painted in the blank cell");
         assert!(drawn.all("???").is_empty(), "no question marks");
+    }
+
+    // The ID cell's node reads the ID, but the ID is painted, not drawn by the node.
+    #[test]
+    fn a_rows_id_is_painted_inside_its_id_cell() {
+        let drawn = draw(&COLUMNS, &[team_row()], false);
+        let cell = drawn.one("702");
+        let at = text_pos(&drawn, "702");
+        assert!(cell.contains(at), "the run at {at:?} inside {cell:?}");
     }
 
     #[test]
@@ -884,21 +893,6 @@ mod tests {
         groups: &GROUPS,
         last_title: "Export type",
     };
-
-    /// `text`'s painted run: the label's and cells' painted text is no node, it is a
-    /// `Shape::Text`.
-    fn text_shape<'a>(drawn: &'a Drawn, text: &str) -> &'a egui::epaint::TextShape {
-        drawn
-            .shapes
-            .iter()
-            .find_map(|shape| match shape {
-                egui::Shape::Text(text_shape) if text_shape.galley.text() == text => {
-                    Some(text_shape)
-                }
-                _ => None,
-            })
-            .unwrap_or_else(|| panic!("no text run of {text:?}"))
-    }
 
     /// Where the text run of `text` is painted: `pos` is the galley's top-left corner.
     fn text_pos(drawn: &Drawn, text: &str) -> egui::Pos2 {

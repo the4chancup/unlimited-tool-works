@@ -1693,6 +1693,12 @@ Win32 original hurt the most):
     PES 2018, `<id>.dds` from PES 2019; a WESYS-wrapped DDS unwrapped). The list and the
     CPKs' tables are read, and the shown team's portraits decoded, off the UI thread.
 
+    They follow the game's CPKs through the session: each time UTW's window comes back into
+    focus, the list and the tables are read again, so a member who compiles a portrait (or
+    copies in a facepack) and comes back sees the new one. Iterating on a portrait this way
+    is one of the reasons the editor shows them; read once per PES folder, the old ones
+    stayed until UTW restarted.
+
     A folder, list or CPK that cannot be read leaves every marker with the placeholder, the
     reason logged. A listed CPK that is missing counts as one that cannot be read: the game
     then loads none of `download/`'s CPKs (the Compiler's `dpfilelist_cpk_missing`), so

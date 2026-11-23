@@ -19981,3 +19981,68 @@ painted names whose tests read only the accessibility label), three were look de
 separators, a gap), and none was equivalent or unreachable. That is a better yield than the
 `guard` kind, shelved for its share of survivors that were no real gap.
 Plan: `CONTRIBUTING.md` "Mutation runs"; the worklog's backfill step.
+
+## 2026-11-23 — team_compiler — Upgrade DpFileList ships on PES 2019 as it is (maintainer)
+Decision: the VGL organizer's next build, `0.0.3-vgl27.2`, has the Upgrade DpFileList button
+working on PES 2019 as on every other version: not disabled there, and with no warning of its
+own.
+Why: the organizer's poc.5 report (PES 2019 ran vanilla after `upgrade-dpfl`) cannot be
+traced: the organizer cannot recall the setup behind it, so nothing yet says what to change.
+The work continues as planned, and the worklog keeps the report open until a PES 2019 setup
+shows it again.
+Plan: no plan edit needed: `team_compiler/pipeline.md` "DpFileList upgrade" never set PES
+2019 apart.
+
+## 2026-11-23 — save_editor — portraits follow the game's CPKs through the session, read again when the window regains focus (maintainer)
+Decision: the Save editor reads the DpFileList and its CPKs' tables again each time UTW's
+window comes back into focus, so a portrait compiled (or a facepack copied in) while UTW
+stays open shows without a restart. Low priority: queued for 0.1.0, not for `0.0.3-vgl27.2`.
+Why: iterating on a portrait, compiling and looking again, is one of the reasons the editor
+shows portraits at all. Read once per PES folder, they stayed as they were until a restart.
+The cost is that reading on every return to the window, off the UI thread.
+Plan: `save_editor.md` "Tactics editor", the Portraits item.
+
+## 2026-11-23 — team_compiler — the stretched kit icon pattern is kept, a difference from the draft the maintainer accepts (maintainer)
+Decision: the kit cells keep drawing the kit's menu icon pattern stretched over the strip at
+the cell's foot (DECISIONS 2026-11-23 "a kit's menu icon pattern is a strip along its cell's
+foot, stretched to fit"). The draft still draws the kit's two colours as halves there; that
+difference is accepted by name, so a comparison of the build with the draft does not report
+it.
+Why: the maintainer's answer on the UI decisions page: "Pretty nice change."
+Plan: no plan edit needed: `team_compiler/gui.md` "GUI: the live-validating team grid"
+already describes the pattern.
+
+## 2026-11-23 — worklog — the worklog stays Markdown, and a roadmap page is generated from it (maintainer)
+Decision: what the lead is working on is read from a "Now" block at the top of
+`docs/WORKLOG.md`, one line per thread in flight, and shown in `docs/maintainer/roadmap.html`,
+which a script writes from the worklog whenever it is committed. The worklog itself stays
+Markdown. Its Issues section is audited and pruned first; whether it moves to a file of its
+own is decided after.
+Why: the maintainer, back from an absence, could not find a slice in flight (RX) in the
+worklog's 4,975 lines, where it was a mention inside another item. Writing the worklog in
+HTML would make every agent's frequent edits costlier and easier to break, and the five
+scripts that read it as Markdown would change; a page generated from it repeats nothing by
+hand, so it cannot drift. Moving the issues alone would not make them less stale: about 100
+are open, some since October, and 21 resolved ones are still listed.
+Plan: no plan edit needed: it is how the work is tracked, not what the suite does; the
+worklog's step holds it, and `AGENTS.md`'s table changes when the page exists.
+
+## 2026-11-23 — mutation runs — a tier between `mutants-diff` and whole-crate runs, before 1.0.0
+Decision: a phase's close runs every mutant kind over the diff since each touched crate's last
+triaged whole-crate run, not over the whole crate. A tracked file keeps that commit per crate,
+and each triaged whole run moves it forward. Whole-crate runs leave the closure's path: a
+rolling background job on the VPS, one crate at a time, the crate checked longest ago
+first, never waited on. The extra kinds learn to take a diff, which also brings them into the review
+loops' `mutants-diff`, where they do not run today. Built once the `call` backfill has
+measured each crate, and before 1.0.0's first phase close.
+Why: the `call` kind adds about 3,900 mutants. `save_editor`'s whole run measured over 30 hours
+before it, and its 847 `call` mutants at about 217 s each add some 51 more. 0.x.x cuts already
+go out before their whole runs end, but 1.0.0 cannot. A diff since the last whole run costs
+what changed, not the crate's size, and still covers every line changed since a full check.
+Rotating shards were not chosen: they test a slice of the crate that need not hold the phase's
+changes. Dropping `call` from whole runs was not chosen either: its trial found 8 real missing
+tests in `export_grid`. The tier misses one case: a test weakened in a file whose source did not
+change. The rolling whole runs catch that.
+Plan: no plan edit needed: it is how the work is verified, not what the suite does. RUNBOOK
+"Phases and releases" and CONTRIBUTING "Mutation runs" change when it is built; the worklog
+item holds it until then.

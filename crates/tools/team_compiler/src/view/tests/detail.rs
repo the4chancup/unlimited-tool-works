@@ -193,6 +193,12 @@ fn a_finding_s_code_link_in_the_pinned_window_asks_the_shell_for_the_help() {
         .filter(|node| node.label() == Some("shared_folder_orphaned"))
         .find(|node| node_rect(node).is_some_and(|rect| window_area.contains(rect.center())))
         .expect("the code's link inside the window");
+    // The window lets the pointer through while it rests where the pinning click was, and
+    // egui hit-tests a press against the frame before: the pointer reaches the link first,
+    // as a real one does.
+    window.frame(vec![egui::Event::PointerMoved(centre(link))], |ui| {
+        tool.view(ui, &ctx)
+    });
     click_on(&mut window, link, |window, events| {
         window.frame(events, |ui| tool.view(ui, &ctx)).1
     });

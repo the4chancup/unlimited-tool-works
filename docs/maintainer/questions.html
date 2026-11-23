@@ -21,6 +21,7 @@ their pair side by side in <div class="shots">; `just doc-pointers` checks the p
 </head>
 <body data-page="questions">
 <nav class="pages">
+  <a href="roadmap.html">Roadmap</a>
   <a class="here" href="questions.html">Questions</a>
   <a href="proposals.html">Proposals</a>
   <a href="tasks.html">Tasks</a>
@@ -35,48 +36,7 @@ in this browser. When you're done, press <b>Copy my answers</b> at the bottom an
 text into the chat. The answered ones then leave this page, and each answer goes into the plan.</p>
 <ul id="toc"></ul>
 
-<h2>Before the next VGL build</h2>
-
-<section class="entry" id="vgl27-dpfl-on-pes19">
-  <h3>Upgrade DpFileList in the organizer's PES 2019 build</h3>
-  <p class="from">From: worklog, the next VGL build (0.0.3-vgl27.2), and open item 8</p>
-  <p>The next VGL build will have the Upgrade DpFileList button beside Compile, as you asked.
-  It runs the same upgrade as <code>upgrade-dpfl</code>, which left the organizer's PES 2019
-  game vanilla in the poc.5 report: the official list has no names for PES 2019's
-  <code>03_base</code>, <code>10_scoreboard</code>, <code>11_interface</code>,
-  <code>12_cutscenes</code> and <code>13_competition</code> CPKs, so they stop loading. You
-  were settling this with the organizer.</p>
-  <p class="ask">What should the button do on PES 2019 in that build?</p>
-  <div class="options">
-    <label class="opt"><input type="radio" value="settle item 8 first"><b>Wait: the build ships once the PES 2019 upgrade is fixed</b>
-      <div class="note">Say below what the organizer and you settled, if you have.</div></label>
-    <label class="opt"><input type="radio" value="disabled on PES 2019"><b>Ship the button greyed out on PES 2019</b>
-      <div class="note">Its tooltip says the upgrade does not support PES 2019 yet.</div></label>
-    <label class="opt"><input type="radio" value="ship as it is"><b>Ship it working as it is</b>
-      <div class="note">The organizer knows the five CPKs drop out.</div></label>
-  </div>
-  <textarea class="own" placeholder="Your own answer or a note (optional)"></textarea>
-</section>
-
 <h2>After the release</h2>
-
-<section class="entry" id="portraits-after-a-compile">
-  <h3>Portraits after a compile in the same session</h3>
-  <p class="from">From: the SWE-2 review of the PES version selector's rework (S-sel c1-1)</p>
-  <p>The Save editor shows each player's portrait from the CPKs the game's
-  <code>download/</code> folder lists, read once for the PES folder. When one of those CPKs
-  changes while UTW stays open (a compile installs one, a facepack is copied in), the
-  portraits stay as they were until the folder or the version changes, or UTW restarts.
-  Reading the CPKs again each time UTW's window comes back into focus would fix it, at the
-  cost of that reading on every return to the window.</p>
-  <p class="ask">Do members compile or install faces, then look at the portraits in the Save
-  editor without restarting UTW?</p>
-  <div class="options">
-    <label class="opt"><input type="radio" value="yes, fix it"><b>Yes, often enough to fix it</b></label>
-    <label class="opt"><input type="radio" value="rarely, a restart is fine"><b>Rarely: a restart is fine</b></label>
-  </div>
-  <textarea class="own" placeholder="Your own answer or a note (optional)"></textarea>
-</section>
 
 <section class="entry" id="wrist-tape-colours">
   <h3>The wrist tape's colours in the other games</h3>

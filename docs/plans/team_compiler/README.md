@@ -359,7 +359,9 @@ TC-GUI-15  GIVEN a warning line in the log panel and no cell pinned
            THEN the detail window opens on the cell of its scope (the row label for a line
                 whose scope is the export); WHEN it is clicked THEN that cell is outlined in
                 the grid and its window pinned; WHEN it is clicked again THEN the window
-                closes and the outline stays
+                closes and the outline stays; GIVEN an error line THEN its click does the
+                same; GIVEN an info line THEN resting on it opens its cell's window, and a
+                click on it leaves the outline and the pin as they were
 TC-GUI-16  GIVEN the destination not writable (the game running, or elevation needed)
            WHEN the toolbar is drawn
            THEN the Compile button carries the writability badge, its tooltip naming the reason

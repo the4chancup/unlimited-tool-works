@@ -1108,9 +1108,14 @@ function toolbar() {
   // An outdated list stops a compile that installs at its preflight, so that
   // compile is not offered until the list is upgraded; sideloading and test
   // mode install no CPK and stay usable.
+  // A sideload mode picked on PES 2017-2021 stays picked when the sidebar moves to 2015 or
+  // 2016, where no runtime serves it.
   const blocked = !run && S.mode === "normal" && D.dpfl === "outdated";
+  const unserved = !run && S.mode === "sideload" && sideloadOff;
   const main = button(run ? "Cancel" : MODES[S.mode], run ? cancelRun : () => startRun(),
-    { disabled: blocked, title: blocked ? "The game's DpFileList.bin does not list this compile's CPK, so the game would not load it. Upgrade DpFileList first" : undefined });
+    { disabled: blocked || unserved,
+      title: blocked ? "The game's DpFileList.bin does not list this compile's CPK, so the game would not load it. Upgrade DpFileList first"
+        : unserved ? "No runtime serves sideloaded files on PES 2015 and 2016" : undefined });
   main.id = "compile-btn";
   const arrow = button("⏷", e => { e.stopPropagation(); modeMenu(e.currentTarget, sideloadOff); },
     { disabled: !!run, title: "The output modes" });

@@ -20,6 +20,7 @@ the page.
 </head>
 <body data-page="tasks">
 <nav class="pages">
+  <a href="roadmap.html">Roadmap</a>
   <a href="questions.html">Questions</a>
   <a href="proposals.html">Proposals</a>
   <a class="here" href="tasks.html">Tasks</a>
@@ -58,6 +59,26 @@ card.</p>
 <h2>Looks the lead has checked first</h2>
 <p class="group-intro">Each matched its draft when the lead compared them; anything you see
 otherwise goes back as a fix.</p>
+
+<section class="entry" id="roadmap-sample">
+  <h3>The roadmap page</h3>
+  <p class="from">From: worklog, "A roadmap page for the maintainer"</p>
+  <p>A new page, <a href="roadmap.html">Roadmap</a>, first in the menu above, shows what is in
+  flight (Now), the open steps (Next), the phases not yet closed (Later), the last week's merges
+  by day and the count of open issues. It is made from the worklog and git's merges, never by
+  hand. Once you are happy with it, every commit that changes the worklog makes it again.</p>
+  <p>Two gaps come from the worklog itself, and its Issues audit will close them: Next shows only
+  steps with a checkbox, so numbered items with none (Select all similar, the PES 2019 check)
+  are missing; and Later shows 0.0.1 and 0.0.2 as todo, as the worklog's phase table does.</p>
+  <div class="options">
+    <label class="opt"><input type="radio" value="keep"><b>Keep it as it is</b></label>
+    <label class="opt"><input type="radio" value="keep, with changes"><b>Keep it, with changes</b>
+      <div class="note">Say what below.</div></label>
+    <label class="opt"><input type="radio" value="not what I need"><b>Not what I need</b>
+      <div class="note">Say what below.</div></label>
+  </div>
+  <textarea class="own" placeholder="What to change (optional)"></textarea>
+</section>
 
 <section class="entry" id="grid-1a-look">
   <h3>The Compiler's grid, its first slice</h3>
