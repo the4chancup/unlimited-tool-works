@@ -318,9 +318,11 @@ code {{ background: var(--code); padding: 0 3px; border-radius: 3px; }}
 svg.focus .edge, svg.focus .node {{ opacity: 0.12; }}
 svg.focus .edge.uses {{ opacity: 1; stroke: var(--uses); stroke-width: 2; }}
 svg.focus .edge.usedby {{ opacity: 1; stroke: var(--usedby); stroke-width: 2; }}
-/* An arrow a longer path already implies: drawn only while an end is highlighted. */
-.edge.implied {{ display: none; }}
-svg.focus .edge.implied.uses, svg.focus .edge.implied.usedby {{ display: inline; }}
+/* An arrow a longer path already implies: drawn only while an end is highlighted. Hidden
+   by opacity, not display: display cannot transition, so it appeared at once while the
+   other arrows faded in. */
+.edge.implied, svg.focus .edge.implied {{ opacity: 0; }}
+svg.focus .edge.implied.uses, svg.focus .edge.implied.usedby {{ opacity: 1; }}
 svg.focus .node.on {{ opacity: 1; }}
 .node {{ cursor: pointer; }}
 .node.pinned rect {{ stroke: var(--uses); stroke-width: 2.5; }}
