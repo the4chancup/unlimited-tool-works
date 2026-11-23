@@ -985,7 +985,7 @@ fn a_shortcut_with_no_save_found_opens_the_picker() {
     assert!(view.session.is_none(), "a cancelled picker opens nothing");
 }
 
-// SE-GUI-05, SE-GUI-26: a shortcut under unsaved changes asks first, as
+// A shortcut under unsaved changes asks first, as
 // the File menu's opens do; Discard opens the version's save.
 // SE-GUI-05, SE-GUI-26
 #[test]
@@ -1236,8 +1236,9 @@ fn a_cancelled_save_as_writes_nothing() {
     );
 }
 
-// SE-GUI-21, SE-GUI-26: Save as with the save's own PES running asks the
+// Save as with the save's own PES running asks the
 // running-game question first; its Save writes to the Save as target.
+// SE-GUI-21, SE-GUI-26
 #[test]
 fn save_as_with_the_game_running_asks_then_writes_the_target() {
     let path = fixture(PesVersion::Pes21, "save_as_running");
@@ -1460,7 +1461,7 @@ fn a_failed_open_keeps_the_journal_and_records_the_file_that_failed() {
     );
 }
 
-// SE-GUI-90: with no save open the middle of the view is the welcome
+// With no save open the middle of the view is the welcome
 // panel, titled "Save editor" — the File menu's opens in the menu's
 // order, the strong headings included, no modal up.
 // SE-GUI-90

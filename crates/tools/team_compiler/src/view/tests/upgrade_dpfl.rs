@@ -417,10 +417,9 @@ fn the_dialog_s_cancel_writes_nothing() {
     assert!(labeled(&nodes, "Upgrade DpFileList"));
 }
 
-// The dialog's Upgrade acts in the install its preview was made for, not the one the
-// settings name by the click's frame (they may have changed while the dialog was open):
-// the preview's folder is what the outcome carries.
-// TC-GUI-33
+// The Upgrade outcome carries the folder the dialog's preview was made for, so the run
+// acts in it rather than a folder the settings name by the click's frame (the settings
+// may have changed while the dialog was open).
 #[test]
 fn the_upgrade_acts_in_the_install_its_dialog_previewed() {
     let temp = sandbox("view_dpfl_switched");
@@ -826,6 +825,39 @@ fn the_first_paragraph_shows_only_when_the_list_is_replaced() {
         "An empty placeholder is written for the official CPK with no file, because the \
          game loads nothing from download/ while a CPK its list names is missing."
     ));
+}
+
+// The tick sentence is asked over the delete boxes, not the dropped entries: one box is
+// "the box", two or more "any", while the count names every dropped entry.
+#[test]
+fn the_dropped_sentence_is_asked_over_the_boxes() {
+    let cpk = |name: &str, size: Option<u64>| (name.to_owned(), size);
+    for (dropped, expected) in [
+        (
+            vec![
+                cpk("4cc_60_midcup.cpk", Some(6272)),
+                cpk("4cc_90_test.cpk", None),
+            ],
+            "No longer loaded by the game (2). Tick the box to have it deleted:",
+        ),
+        (
+            vec![
+                cpk("4cc_60_midcup.cpk", Some(6272)),
+                cpk("4cc_76_midcup.cpk", Some(6272)),
+                cpk("4cc_90_test.cpk", None),
+            ],
+            "No longer loaded by the game (3). Tick any you want deleted:",
+        ),
+    ] {
+        let nodes = dialog_nodes(Preview {
+            renames: Vec::new(),
+            placeholders: 0,
+            dropped,
+            up_to_date: false,
+            replaces_list: true,
+        });
+        assert!(shows_text(&nodes, expected), "{expected}");
+    }
 }
 
 // With no dropped entry's file in `download/` there is no box to tick, so the sentence

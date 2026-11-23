@@ -255,8 +255,9 @@ fn the_question_says_how_to_keep_the_write() {
     );
 }
 
-// SE-GUI-05: a window close asked while the Open prompt waits retargets
+// A window close asked while the Open prompt waits retargets
 // it — the answer goes toward the close, the picker never runs.
+// SE-GUI-05
 #[test]
 fn a_close_asked_while_the_open_prompt_waits_takes_the_answer() {
     let first = fixture(PesVersion::Pes21, "prompt_close_retarget");
@@ -285,8 +286,9 @@ fn a_close_asked_while_the_open_prompt_waits_takes_the_answer() {
     );
 }
 
-// SE-GUI-05: a Save the write refuses leaves the prompt up and shows
+// A Save the write refuses leaves the prompt up and shows
 // the refusal on top of it (the modals' top layer), its OK clickable.
+// SE-GUI-05
 #[test]
 fn a_refused_write_under_the_prompt_shows_the_refusal_on_top() {
     let path = fixture(PesVersion::Pes21, "prompt_refusal_top");
@@ -371,8 +373,9 @@ fn a_refused_write_under_the_question_keeps_the_prompt_and_shows_the_refusal() {
         .expect("the refusal's OK in the top dialog's subtree");
 }
 
-// SE-GUI-05: Esc on the prompt is its Cancel — it closes, the session
+// Esc on the prompt is its Cancel — it closes, the session
 // untouched and still dirty.
+// SE-GUI-05
 #[test]
 fn escape_on_the_prompt_closes_it_and_changes_nothing() {
     let path = fixture(PesVersion::Pes21, "prompt_escape");

@@ -254,7 +254,7 @@ impl StudioTool for Tool {
     /// check's rows reach the grid only while no run is in flight, since the run may
     /// change what they describe; its detail window then reads its pictures again, and the
     /// check's findings replace the last check's at the top of the log. A refused check is
-    /// a line of the log.
+    /// the check's one `error:` line there.
     fn tick(&mut self, ctx: &ToolContext) {
         let compiling = self.run_log.is_running();
         self.run_log.poll();
@@ -272,7 +272,7 @@ impl StudioTool for Tool {
                 self.run_log
                     .set_check(self.live_check.rows(), self.live_check.list_findings());
             }
-            Polled::Refused(refusal) => self.run_log.append_refusal(&refusal),
+            Polled::Refused(refusal) => self.run_log.set_check_refusal(&refusal),
         }
     }
 

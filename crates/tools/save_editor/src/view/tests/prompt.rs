@@ -304,9 +304,10 @@ fn opening_the_prompt_closes_the_changes_list_over_it() {
     );
 }
 
-// SE-GUI-05: the prompt is its heading, the table and the three answers —
+// The prompt is its heading, the table and the three answers —
 // no "unsaved changes" line under the heading and no line about the path
 // above the buttons (the title and the answers already say both).
+// SE-GUI-05
 #[test]
 fn the_prompt_shows_only_the_table_and_the_answers() {
     let path = fixture(PesVersion::Pes21, "prompt_no_prose");
@@ -331,9 +332,10 @@ fn the_prompt_shows_only_the_table_and_the_answers() {
     );
 }
 
-// SE-GUI-05: the prompt is as wide as its widest row up to nine tenths of
+// The prompt is as wide as its widest row up to nine tenths of
 // the window: a row between egui's 600-point default area and the cap
 // sits on one line, the modal at least as wide.
+// SE-GUI-05
 #[test]
 fn a_row_wider_than_the_default_keeps_one_line() {
     let path = fixture(PesVersion::Pes21, "prompt_wide_row");
@@ -396,8 +398,9 @@ fn a_row_wider_than_the_default_keeps_one_line() {
     );
 }
 
-// SE-GUI-05: a row wider than nine tenths of the window caps the modal
+// A row wider than nine tenths of the window caps the modal
 // there and scrolls sideways inside the table.
+// SE-GUI-05
 #[test]
 fn a_row_past_the_cap_scrolls_sideways() {
     let path = fixture(PesVersion::Pes21, "prompt_over_cap");
@@ -481,8 +484,9 @@ fn a_teams_row_comes_after_the_players() {
     );
 }
 
-// SE-GUI-05: a team colour's row draws each value's swatch before its hex,
+// A team colour's row draws each value's swatch before its hex,
 // the toolbar's changes list's table and the prompt's being one.
+// SE-GUI-05
 #[test]
 fn the_prompts_colour_row_draws_a_swatch_before_each_hex() {
     let path = fixture(PesVersion::Pes21, "prompt_colour_row");
@@ -557,9 +561,10 @@ pub(super) fn modal_button<'a>(
         .unwrap_or_else(|| panic!("no {label:?} in the {heading:?} modal"))
 }
 
-// SE-GUI-05: the prompt's Item cells read the rows; they are no click
+// The prompt's Item cells read the rows; they are no click
 // targets — a selectable table would hover `Click to switch to this player` and
 // answer with an index the prompt ignores.
+// SE-GUI-05
 #[test]
 fn the_prompts_item_cells_take_no_click() {
     let path = fixture(PesVersion::Pes21, "prompt_no_click");
@@ -677,9 +682,10 @@ fn the_last_rows_x_lets_the_close_or_open_go_on() {
     );
 }
 
-// SE-GUI-05: a player rostered on two teams gets his own rows under his
+// A player rostered on two teams gets his own rows under his
 // first listing only — the row a `Number` diff would take per slot stays
 // per slot, his field rows do not repeat.
+// SE-GUI-05
 #[test]
 fn a_player_on_two_rosters_gets_his_rows_once() {
     let path = fixture(PesVersion::Pes21, "prompt_two_rosters");
@@ -713,8 +719,9 @@ fn a_player_on_two_rosters_gets_his_rows_once() {
     assert_eq!(heights.len(), 1, "one Height row: {rows:?}");
 }
 
-// SE-GUI-05: a changed player no roster lists is shown after the listed
+// A changed player no roster lists is shown after the listed
 // players' rows.
+// SE-GUI-05
 #[test]
 fn an_unlisted_players_rows_come_after_the_listed() {
     let path = fixture(PesVersion::Pes21, "prompt_unlisted");
@@ -764,8 +771,9 @@ fn an_unlisted_players_rows_come_after_the_listed() {
     );
 }
 
-// SE-GUI-05: the unlisted changed players themselves run in id order
+// The unlisted changed players themselves run in id order
 // (the names are in reverse id order, so id order is not name order).
+// SE-GUI-05
 #[test]
 fn unlisted_players_run_in_id_order() {
     let path = fixture(PesVersion::Pes21, "prompt_unlisted_order");
@@ -923,10 +931,11 @@ fn a_tactics_row_names_the_player_as_the_roster_shows_him() {
     );
 }
 
-// SE-GUI-05: a tactics row's old side names the player the saved file
+// A tactics row's old side names the player the saved file
 // holds in the slot — a drag moves records between the roster's ids, so
 // the current roster would name the wrong one (the new side reads the
 // current roster, the old the baseline's).
+// SE-GUI-05
 #[test]
 fn a_tactics_rows_old_side_names_the_baseline_records() {
     let path = fixture(PesVersion::Pes21, "prompt_captain_baseline");
@@ -972,7 +981,8 @@ fn a_tactics_rows_old_side_names_the_baseline_records() {
     );
 }
 
-// SE-GUI-05: a team's own row names the team by its display name too.
+// A team's own row names the team by its display name too.
+// SE-GUI-05
 #[test]
 fn a_team_rows_item_is_the_teams_display_name() {
     let path = fixture(PesVersion::Pes21, "prompt_team_display_name");
@@ -1009,8 +1019,9 @@ fn a_team_rows_item_is_the_teams_display_name() {
     );
 }
 
-// SE-GUI-05: the Item column reads the display name (the colour codes
+// The Item column reads the display name (the colour codes
 // dropped), worded in the views' terms as the Comparator panel's rows are.
+// SE-GUI-05
 #[test]
 fn the_item_column_is_the_display_name() {
     let path = fixture(PesVersion::Pes21, "prompt_display_name");
@@ -1041,8 +1052,9 @@ fn the_item_column_is_the_display_name() {
     );
 }
 
-// SE-GUI-05: a click on the backdrop is the prompt's Cancel too — it
+// A click on the backdrop is the prompt's Cancel too — it
 // closes, the session untouched and still dirty.
+// SE-GUI-05
 #[test]
 fn a_backdrop_click_on_the_prompt_closes_it_and_changes_nothing() {
     let path = fixture(PesVersion::Pes21, "prompt_backdrop");

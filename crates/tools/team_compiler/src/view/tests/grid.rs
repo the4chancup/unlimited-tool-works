@@ -339,8 +339,9 @@ fn a_full_export_without_a_keeper_kit_draws_no_gk_cell() {
     assert!(kit(row(&rows, "/co/"), 0).is_none(), "the GK column");
 }
 
-// TC-GUI-10: a kept kit whose `colors.txt` gives two colors carries its menu icon and those
+// A kept kit whose `colors.txt` gives two colors carries its menu icon and those
 // colors; one without two listed colors, or dropped by a finding, carries none.
+// TC-GUI-10
 #[test]
 fn a_kit_cell_carries_its_menu_icon_and_menu_colours() {
     let temp = sandbox("view_grid_kit_menu");
@@ -609,8 +610,9 @@ fn a_row_s_log_lines_are_its_export_s_findings_as_the_log_prints_them() {
     );
 }
 
-// TC-GUI-25: an export with no Warning and no Error has nothing to send its member, so its
+// An export with no Warning and no Error has nothing to send its member, so its
 // label offers no Copy messages, though the check's Info `export_identified` is in the log.
+// TC-GUI-25
 #[test]
 fn a_clean_export_s_row_has_no_log_lines() {
     let temp = sandbox("view_grid_clean_log_lines");
