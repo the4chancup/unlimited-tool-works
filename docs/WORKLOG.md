@@ -152,7 +152,9 @@ draft checked, for the maintainer to publish; running sidekicks and jobs are not
      move of `team_compiler`'s `view/mod.rs` tests (1,230 lines since 1b-ii) into
      `view/tests.rs` and `view/tests/`, committed apart (`CONTRIBUTING.md` "Placement")
    - Then the kit cells' swatch (TC-GUI-10), the row actions, the ID cell's editing, the
-     watcher and cache, Sizes and sorting.
+     watcher and cache, Sizes and sorting, and the Upgrade DpFileList button and its dialog
+     (`plans/team_compiler/pipeline.md` "DpFileList upgrade"; only the CLI's `upgrade-dpfl`
+     exists), drafted first, since the draft has none. On PES 2019 it waits for item 8.
      The watcher and cache's slice also owes TC-GUI-04's `.7z` order: 1a's check reads a
      `.7z` whole at once, where the scenario wants its entry table first and its deep check
      after the folders and zips, within the memory budget (a `.zip`'s deep check, as built,
