@@ -2876,11 +2876,12 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       copying a helper's loop, a doc), which ends the loop; one concern waits on
       `maintainer/questions.html` "Portraits after a compile in the same session". Its fixes
       merged with S-cmp c1's (`044955c1`)
-    - [ ] Carbon's round 2, 2026-11-23 (at `bb2ccfb4`, rulings "C-sel r2"): 7 accepted, none of
+    - [x] Carbon's round 2, 2026-11-23 (at `bb2ccfb4`, rulings "C-sel r2"): 7 accepted, none of
       reach (a), which ends Carbon's loop: texts still saying every tool uses the version,
       and three guards meant to act once per change, each tested on one frame. The lead's
       text: SE-GUI-50 and the drafts' tooltips (`72bfe950`). Its fixes, slice C2 (SWE-2),
-      merged `b96b64b7`; one SWE-2 round over them, running
+      merged `b96b64b7`; SWE-2's round over them ("S-c2 r1"): 1 accepted, the label
+      tooltip's test (`34b0253f`). The review loops are done
     - [x] the look in the built window, both themes: checked 2026-11-15 at `4b9f2258`; the
       maintainer's look 2026-11-17: fine
   - [x] 0.0.2-undo an X on each row of the unsaved changes list undoing that change alone,
@@ -3341,12 +3342,15 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     - Astra A-nobc7 r1 (3 accepted) and its rework 2026-11-08; SWE-2 S-nobc7 r1 2026-11-11
       (3 accepted, among them `texture_not_div4` skipping a pre-Fox texture written
       uncompressed, DECISIONS 2026-11-11; look: Pending looks), its loop ended
-    - [ ] Carbon's round, 2026-11-23 (at `ca8559a1`, rulings "C-nobc7 r1"): 6 accepted, none of
+    - [x] Carbon's round, 2026-11-23 (at `ca8559a1`, rulings "C-nobc7 r1"): 6 accepted, none of
       reach (a), which ends Carbon's loop. The lead's texts `f05659ef`; the tests for each
       place that keeps or encodes an uncompressed source, SWE-2 slice N1, merged `6b5ace55`.
       SWE-2's round over both (rulings "S-n1 r1"): 3 accepted, none of reach (a); the lead
       widened the scenarios and the BC7 texts, and the two test helpers now check that the
-      texture each writes is stored uncompressed (`64a79e9c`). Next: Astra's round
+      texture each writes is stored uncompressed (`64a79e9c`). Astra's round 2 through Devin
+      (rulings "A-nobc7 r2"): 2 accepted, none of reach (a), a help line and a test comment
+      (`65d2ee4d`); SWE-2's round over them ("S-a2 r1"): 2 accepted, none of reach (a)
+      (`2544b106`). The review loops are done
     - the same run's PoC look passed: /dbg/ and /4ccg/ upgrade and compile clean (about 2 s
       for both), and the 8 players checked show their own faces and bodies
   - [x] 0.0.2c the illegal formation check (`plans/aatf_rules.md` "The illegal formation
