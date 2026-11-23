@@ -260,6 +260,9 @@ struct Scene {
     /// `should_close` has fired.
     modal: bool,
     modal_closed: bool,
+    /// A button drawn before the grid, opening its `egui::Popup::menu` on a click (the
+    /// Compiler toolbar's Compile mode menu draws before the grid too).
+    menu: bool,
     /// An `egui::Window` drawn over `rect` every frame (the Help window over the detail
     /// window). `help_clicked` holds whether its button has taken a click.
     help: Option<Rect>,
@@ -289,6 +292,7 @@ impl Scene {
             pointing: None,
             modal: false,
             modal_closed: false,
+            menu: false,
             help: None,
             help_clicked: false,
         }
@@ -306,6 +310,7 @@ impl Scene {
             pointing,
             modal,
             modal_closed,
+            menu,
             help,
             help_clicked,
         } = self;
@@ -319,6 +324,12 @@ impl Scene {
             pictures: &mut pictures,
         };
         window.frame_with(events, |ui| {
+            if *menu {
+                let button = ui.button("Menu");
+                egui::Popup::menu(&button).show(|ui| {
+                    ui.label("An entry");
+                });
+            }
             let response = show(ui, "grid", &COLUMNS, rows, false, detail, &mut sources);
             if *modal {
                 *modal_closed |= egui::Modal::new(egui::Id::unique("modal"))
@@ -716,6 +727,33 @@ fn esc_reaches_a_modal_over_the_pinned_window_and_the_window_stays() {
     );
 }
 
+// A menu drawn before the grid closes on the same Esc the grid reads: egui has already
+// taken the popup out of its open state by then, so the grid's cover check reads the
+// last frame's.
+// TC-GUI-24
+#[test]
+fn esc_reaches_a_menu_drawn_before_the_grid_and_the_window_stays() {
+    let mut scene = Scene::new();
+    // The button takes room over the grid, so the spots come from a frame with it drawn.
+    scene.menu = true;
+    let at = spots(&scene.idle());
+    scene.click(at.three);
+    let menu = scene.idle().one("Menu").center();
+    let (_, drawn) = scene.click(menu);
+    assert!(shows(&drawn, "An entry"), "premise: the menu is open");
+    assert!(shows(&drawn, "/co/ 03"), "premise: still pinned under it");
+
+    scene.key(Key::Escape);
+    let drawn = scene.idle();
+    assert!(!shows(&drawn, "An entry"), "premise: the menu read Esc");
+    assert!(shows(&drawn, "/co/ 03"), "the window stays pinned");
+    scene.key(Key::Escape);
+    assert!(
+        !any_window(&scene.idle()),
+        "the next Esc reaches the window"
+    );
+}
+
 /// The detail window's painted rect: the one panel-fill rectangle of its width.
 fn window_rect(drawn: &Drawn) -> Rect {
     fn rects(shape: &Shape, into: &mut Vec<(Rect, Color32)>) {
@@ -845,25 +883,37 @@ fn a_double_click_on_a_cell_the_pinned_window_covers_opens_its_folder() {
     assert!(!shows(&drawn, "/co/ K6"), "closed as it was");
 }
 
+// The pinning click holds the window back from the pointer for egui's double-click
+// delay; the hold's end is what the repaint is asked for.
 // TC-GUI-24
 #[test]
-fn the_pinned_window_takes_a_drag_once_the_double_click_delay_has_passed() {
+fn the_window_asks_a_repaint_for_when_the_pinning_click_s_hold_ends() {
     let mut scene = Scene::new();
     let at = spots(&scene.idle());
-    let (_, drawn) = scene.click(at.three);
-    let title = drawn.one("/co/ 03");
-    let from = title.center();
-    let to = from + vec2(-100.0, 50.0);
+    let (_, mut drawn) = scene.click(at.three);
+    // The frames around the click carry egui's own immediate repaints (the window first
+    // drawn, the scroll bars shown and hidden again), which mask a delayed ask in the
+    // frame's delay: the hold's is what is left once they have settled, well inside the
+    // delay.
+    for _ in 0..10 {
+        if drawn.repaint_delay != Duration::ZERO {
+            break;
+        }
+        drawn = scene.idle();
+    }
+    let delay = scene
+        .window
+        .ctx
+        .options(|options| options.input_options.max_double_click_delay);
+    assert!(
+        drawn.repaint_delay > Duration::ZERO
+            && drawn.repaint_delay <= Duration::from_secs_f64(delay),
+        "a repaint when the hold ends: {:?}",
+        drawn.repaint_delay
+    );
+    // Once the hold has passed, nothing asks for a repaint: the hold was what asked.
     scene.wait(APART);
-    // A layer that just turned interactable is click-through until a frame has
-    // drawn it that way; a real wait renders the repaints asked for.
-    scene.idle();
-    scene.frame(press(from));
-    scene.hover(from + vec2(-50.0, 25.0));
-    scene.hover(to);
-    scene.frame(release(to));
-    let moved = scene.idle().one("/co/ 03");
-    assert_eq!(moved.min, title.min + vec2(-100.0, 50.0));
+    assert_eq!(scene.idle().repaint_delay, Duration::MAX);
 }
 
 // TC-GUI-24
@@ -953,6 +1003,7 @@ fn a_finding_s_code_clicked_asks_for_the_help_at_it() {
 
 // A window opened over the pinned window (the help, at a finding's code) takes the
 // clicks it covers.
+// TC-GUI-24
 #[test]
 fn a_window_over_the_pinned_window_takes_the_click() {
     let mut scene = Scene::new();

@@ -146,6 +146,10 @@ pub struct Detail {
     /// it: `None` once a cell is muted or the pointer moves on. A cell can take a frame
     /// to appear, the hit test still seeing the closed window's widgets.
     mute_next: Option<Pos2>,
+    /// Whether a popup was open when the grid last drew. A popup drawn before the grid
+    /// closes on the same Esc and is gone from egui's open-popup state by the time the
+    /// grid reads it, so Esc's guard needs the last frame's answer.
+    popup_was_open: bool,
 }
 
 /// The cell under the pointer, and when its window opens on hover.
@@ -305,9 +309,13 @@ impl Detail {
         }
         let open = self.pinned.is_some() || self.hover_shown(now);
         // A modal or a popup over the grid takes Esc first: it closes that layer, not the
-        // window under it.
+        // window under it. A popup drawn before the grid has closed on this same Esc and
+        // left egui's popup state by the time the grid reads it, so the last frame's is
+        // read too.
         let covered = ui.ctx().memory(|memory| memory.top_modal_layer()).is_some()
-            || egui::Popup::is_any_open(ui.ctx());
+            || egui::Popup::is_any_open(ui.ctx())
+            || self.popup_was_open;
+        self.popup_was_open = egui::Popup::is_any_open(ui.ctx());
         if open && !covered && ui.input_mut(|input| input.consume_key(Modifiers::NONE, Key::Escape))
         {
             self.pinned = None;
@@ -491,7 +499,7 @@ impl Detail {
                 )
             });
             let pos = ui.input(|input| input.pointer.latest_pos());
-            let holding = now - when < delay && pos.is_some_and(|pos| pos.distance(spot) <= dist);
+            let holding = now - when < delay && pos.is_some_and(|pos| pos.distance(spot) < dist);
             holding.then_some(when + delay)
         });
         if let Some(until) = hold_until {
