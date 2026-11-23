@@ -22,6 +22,9 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT / "scripts" / "mutation"))
+import mutants  # noqa: E402 (found through the line above)
+
 GATE = Path(os.environ.get("STUDIO_GATE_WORKTREE") or ROOT.parent / "4cc-studio-temp" / "gate")
 MARKER = GATE / ".tmp" / "pipeline.running"
 
@@ -39,6 +42,12 @@ def main(argv: list[str]) -> int:
         sys.exit(f"a pipeline run is going ({MARKER.read_text().strip()}); if none is, delete {MARKER}")
     if git(GATE, "status", "--porcelain"):
         sys.exit(f"the gate worktree is not clean: {GATE}")
+    # The checkpoint's mutation step and the Linux gates both refuse a remote that is busy or
+    # short of disk, but only once they start, after the checkpoint's tests: ask it first.
+    host = mutants.remote_host()
+    refusal = host and mutants.remote_refusal(host)
+    if refusal:
+        sys.exit(f"the remote cannot take this run: {refusal}")
     head = git(ROOT, "rev-parse", "HEAD")
     MARKER.parent.mkdir(exist_ok=True)
     MARKER.write_text(f"{head[:8]}, pid {os.getpid()}\n", encoding="utf-8")

@@ -420,7 +420,8 @@ draft checked, for the maintainer to publish; running sidekicks and jobs are not
 16. The VPS disk guard refuses only at the mutation step, after the checkpoint's whole test
     pass (2026-11-23, on `e9b0a3d0`: 11 minutes of tests, then 42 GiB free against the 48 GiB
     floor; the build cache's cleanup freed 30 GB and the pipeline ran again from the start).
-    Fix: the pipeline checks the remote disk before its tests, so a refusal comes first.
+    Fixed: `just pipeline` now asks the remote whether it can take the run (not busy, not
+    short of disk) before the checkpoint starts, so a refusal comes first.
 17. Owed paid rounds went unseen (census of 2026-11-23): the Compiler grid's slices never
     named their tier, so their Carbon round was never queued, and four reworks of Carbon's
     round 1 merged without their worklog lines saying so, which left two round 2s looking

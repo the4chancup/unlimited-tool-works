@@ -46,7 +46,9 @@ a broken pointer.
 checkpoint and then `just gates-remote` on the commit main's HEAD is on, from the gate
 worktree (`../4cc-studio-temp/gate`, with its own `target/`), so main's tree stays free:
 the lead commits, merges and briefs the next slice while it runs, and reads its log when it
-ends (`scripts/gates/pipeline.py`; started detached and logged, one run at a time). A pass
+ends (`scripts/gates/pipeline.py`; started detached and logged, one run at a time). It
+refuses at once when the remote is busy or short of disk, rather than after the
+checkpoint's tests. A pass
 moves the same ref. A failure is fixed by a commit on top and the next run gates it, as a
 red CI run is handled. We do not run `just checkpoint` in main's own tree while there is
 other work to do: it froze the tree for the gates' length after every slice, with the
