@@ -448,15 +448,7 @@ fn resolved_layout(resolved: &ResolvedAestheticsExport) -> Layout {
         }
         for (index, slots) in &slots {
             for slot in slots {
-                let in_portraits = || {
-                    let slot = PlayerSlot::new(*slot)?;
-                    export.portraits.get(&slot)
-                };
-                if let Some(file) = export.players[*index]
-                    .portrait
-                    .as_ref()
-                    .or_else(in_portraits)
-                {
+                if let Some(file) = export.players[*index].portrait.as_ref() {
                     portrait_files.insert(*slot, file.clone());
                 }
             }

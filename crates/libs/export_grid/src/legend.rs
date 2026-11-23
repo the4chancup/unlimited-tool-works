@@ -158,9 +158,9 @@ mod tests {
         assert!(drawn.all("Unchecked").is_empty(), "folded to its title");
         // A label's node and its text run's both read it.
         assert!(!drawn.all("Legend").is_empty(), "the title stays");
-        let chevron = drawn.one("▸").center();
-        bar(press(chevron));
-        bar(release(chevron));
+        let title = drawn.one("Legend").center();
+        bar(press(title));
+        bar(release(title));
         bar(Vec::new()).one("Unchecked");
     }
 
