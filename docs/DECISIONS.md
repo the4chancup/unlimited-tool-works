@@ -19839,3 +19839,11 @@ Why: the maintainer, on the Compiler's blue Upgrade DpFileList and the log's pic
 identity." The lead applies it to the whole class rather than the two widgets named, since a
 picked row without the edge beside a held toggle with it is the inconsistency the rule removes.
 Plan: `plans/core/gui.md` "Control edges"; `plans/team_compiler/gui.md` "Toolbar".
+
+## 2026-11-23 — save_editor — the picked player row keeps the selection's edge
+Decision: the Save editor's picked player row carries the selection's edge (`#1e7a9e`) in the
+draft, and the build follows it.
+Why: the lead gave the row the edge under the same day's "the selection blue never fills without
+its edge" entry, and the maintainer kept it. The row is not a button, so it did not need the
+edge, "but it looks good so we should keep it and port it to the build."
+Plan: `plans/core/gui.md` "Control edges".
