@@ -19932,3 +19932,12 @@ not built yet, though the report's readme sends its reader to it. Every report w
 sessions hold a save meets this (Astra round A-s5c, concern 1).
 Plan: `plans/core/architecture.md` "Repro bundles", "Unpacking a bundle's saves";
 `plans/save_editor.md` SE-REP-08.
+
+## 2026-11-23 — team_compiler GUI — A referee row's detail window shows only the files its compile packs
+Decision: on a referee export's row, the logo box shows the marker (`ref_marker.dds`) or "No
+logo", never `logo.png`, and the window shows none of the export's portraits or kit textures.
+Why: the compile packs none of them for a referee export and warns `file_not_used` on each, so
+a picture of one would show the member something that never reaches the game. Old referee
+exports carry a `portrait.dds` in each referee's folder, so an export made from one can still
+hold them.
+Plan: `plans/team_compiler/gui.md` "The detail window".

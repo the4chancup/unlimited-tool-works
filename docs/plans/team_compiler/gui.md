@@ -120,11 +120,11 @@ would drift apart.
   Portraits and logos keep their transparency: each is drawn straight on the box's
   background, with no tile or frame behind it, so a crest or a cut-out portrait shows its
   own shape rather than a square. An export with no logo shows "No logo" where the logo
-  would be. In a referee export, the
-  marker texture (`ref_marker.dds`), when there is one, takes the logo's place in the window,
-  because a referee export's logo reaches no output while the marker is the emblem the
-  referees wear in game. The pictures are the files the compile packs, taken from the export's
-  listing when the check dropped the whole export, so a member still sees what it holds. A
+  would be. In a referee export, the marker texture (`ref_marker.dds`) takes the logo's place
+  in the window, because the marker is the emblem the referees wear in game, while a referee
+  export's logo, portraits and kits reach no output: a referee row with no marker shows "No
+  logo", and none of its portraits or kit textures. The pictures are the files the compile
+  packs, taken from the export's listing when the check dropped the whole export, so a member still sees what it holds. A
   `.zip` export's pictures are read from the archive, each from its own entry, since a zip
   unpacks one entry without the rest. A `.7z` export's boxes stay empty until the check cache
   (below) keeps its pictures: reading one out of a solid `.7z` means decompressing it whole,
@@ -143,7 +143,7 @@ would drift apart.
     next frame, which would open the window the click just closed.
   - **Esc** closes the window, pinned or not, as a click that unpins does.
   - **A double-click** opens the cell's folder in the file manager (for an archive export, the
-    folder holding it, with the archive selected), and leaves the pin as it was before it.
+    folder holding it, the archive selected as Open folder selects a file), and leaves the pin as it was before it.
     The portraits cell's folder is the export's `Portraits/` when it has one. Most exports have
     none and keep each portrait in its player's folder, so the cell has no folder: a
     double-click does nothing, and the window shows no Open folder. A finding about such a
@@ -230,7 +230,8 @@ other columns, so on the rows with none the column reads as theirs, not as unuse
 - **Open folder.** The detail panel and a log line's context menu carry **Open folder**,
   opening the scope's folder in the file manager, a file's folder with the file selected
   (`explorer /select,` on Windows, `xdg-open` on the folder elsewhere); for an archive export,
-  the archive's folder with the archive selected. The fix for a finding is nearly always a
+  the archive's folder, the archive selected as a file is. Its tooltip says only that it
+  opens the folder holding the archive, which holds on every platform. The fix for a finding is nearly always a
   rename, a link or a removal in the file manager, so the click saves finding the folder by
   hand.
 - **One-click fixes for the mechanical cases.** A finding with one obvious fix gets a button

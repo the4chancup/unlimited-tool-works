@@ -195,6 +195,15 @@ exist yet (every Phase 2 crate), the plan's data-shape rules stand in for one.
   content grows with its input (a cell's findings) scrolls inside the screen, its buttons
   always in view. A panel painted over scrolled widgets (a sticky title row) also takes the
   pointer there, or the hidden widgets react through it.
+- **Two scroll areas under one parent each get an `id_salt`.** egui gives a scroll area an id
+  from its parent's, and two `Frame`s in one parent give their contents the same one, so
+  unsalted areas inside them share one scroll offset, and the shorter list keeps the longer
+  one scrolled to the top.
+- **A state set after the widgets that show it asks for the next frame.** egui draws again
+  only on input or on request, so when a frame changes what it already drew (the log collapsed
+  once the grid is measured), it calls `request_repaint`, or the window keeps the old picture
+  until the pointer moves. A setting another part of the shell may change after a tool's
+  `tick` (a switch to the running game) is compared again where the tool draws.
 - **Text a member reads is written for a layman**: the help chapters, the catalog rows' When and
   Effect, UI strings and the injected `settings.toml` comments say, in plain words, what happened
   and what the member can do about it, as easy to follow as the fact allows. None of the code's

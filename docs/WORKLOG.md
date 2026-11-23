@@ -75,13 +75,11 @@ draft checked, for the maintainer to publish; running sidekicks and jobs are not
      missed mutants in `repro.rs` and `session.rs`. SWE-2 round S5c r1's fixes merged
      `9d9e1786` (that loop ended). Astra round A-s5c r1 ran first, Carbon's login being spent
      until its reset (RUNBOOK "Review rounds": the next loop runs meanwhile): 3 accepted,
-     which ends Astra's loop (rulings "A-s5c r1"). Owed, not yet briefed:
-     - a `save-editor unpack-session <session.zip> <folder>` command writing an earlier
-       session's saves back as files through `repro::read_bundle` and the Save editor's
-       rebuild, since no shipped command reads a `.packed` save (replay's command, 3b, is
-       deferred); the report readme names it. Its plan, decision and scenario are written
-       (2026-11-23, `plans/core/architecture.md` "Unpacking a bundle's saves", SE-REP-08):
-       next, its SWE-2 slice;
+     which ends Astra's loop (rulings "A-s5c r1"). Then:
+     - [x] `save-editor unpack-session <session.zip> <folder>` writes an earlier session's
+       saves back as files, since no shipped command read a `.packed` save (SE-REP-08):
+       merged `3dba53b7`, SWE-2's slice; the report readme names it;
+     Owed, not yet briefed:
      - the packed round trip tested with a non-empty logo, identifier and serial;
      - `frames_until` back to CONTRIBUTING's 120 s, and the comparator test that ran out at
        120 s in the 2026-11-21 checkpoint made not to wait on a loaded worker;
@@ -234,8 +232,12 @@ draft checked, for the maintainer to publish; running sidekicks and jobs are not
      loops have ended. Round 1 ran on `5baf8835`: 17 accepted, 10 of them a real input
      whose outcome changes. Its fixes are three SWE-2 slices: A (the check's rows) merged
      `0fc94490`, B (the detail window and title row) merged `76bcad35`, and C (the settings re-check and the Upgrade
-     dialog, one rework) merged `d3e7be78`. Carbon round 2 is due, over the grid and the Compile menu
-     together
+     dialog, one rework) merged `d3e7be78`. Carbon round 2, over the grid and the Compile
+     menu together (at `ca8559a1`): 11 accepted, three of them a real input whose outcome
+     changes (the dialog's two lists sharing one scroll, the log still drawn open after
+     the first check collapsed it, a game started while the window is idle leaving the old state drawn),
+     so a round 3 is owed. Next: their fix slice (SWE-2, with the menu's 2 px gap below),
+     its SWE-2 subloop, then Carbon round 3
    - [ ] The Compile button's mode list, Open output folder and Copy report (TC-GUI-11, and
      TC-GUI-33's clause that Compile for sideloading stays enabled while the DpFileList is
      outdated; DECISIONS 2026-11-23 "the Compile menu's Copy report copies the whole log").
@@ -2746,8 +2748,9 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         the plan's drag and Comparator paragraphs (`10a7b2d3`)
       - [ ] the rework merged (`9e757880`); due: a SWE-2 loop over it, then Carbon's round 2
         (round 1 had two of reach (a)). SWE-2 round "S-cmp c1", 2026-11-23: 6 accepted, one
-        a group member's float drawn unselected, so its fixes (with S-sel c1's, SWE-2
-        `sk/cmpsel`) get a round c2
+        a group member's float drawn unselected; its fixes, with S-sel c1's, merged
+        `044955c1` (SWE-2). Round c2 over them found nothing, which ends the SWE-2 loop:
+        Carbon's round 2 is next
   - [ ] 0.0.2-bar the toolbar as a menu bar (the maintainer, 2026-11-07 and 2026-11-12): the
     Ruleset editor draft's look, unframed menus on a band edge to edge, on the Save editor
     and the Ruleset editor; in the Save editor `File` (the opens, then Save and Save as) and
@@ -2854,7 +2857,7 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       (round 1 had one of reach (a)). SWE-2 round "S-sel c1", 2026-11-23: 2 accepted (a test
       copying a helper's loop, a doc), which ends the loop; one concern waits on
       `maintainer/questions.html` "Portraits after a compile in the same session". Its fixes
-      go with S-cmp c1's (`sk/cmpsel`); Carbon's round 2 is next
+      merged with S-cmp c1's (`044955c1`); Carbon's round 2 is next
     - [x] the look in the built window, both themes: checked 2026-11-15 at `4b9f2258`; the
       maintainer's look 2026-11-17: fine
   - [x] 0.0.2-undo an X on each row of the unsaved changes list undoing that change alone,
