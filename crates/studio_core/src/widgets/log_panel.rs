@@ -59,10 +59,10 @@ impl LogLine {
     }
 }
 
-/// The header's filter chips (the draft's `LOG_FILTERS`): which severities the body
-/// shows. A filter hides lines; it never drops them.
+/// Which severities the log's body shows, as its header's filter chips pick them (the
+/// draft's `LOG_FILTERS`). A filter hides lines; it never drops them.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum Filter {
+pub enum LogFilter {
     /// Every line.
     All,
     /// Warning, error and fatal.
@@ -71,20 +71,20 @@ enum Filter {
     Errors,
 }
 
-impl Filter {
+impl LogFilter {
     /// `(filter, chip label)` in header order.
-    const CHIPS: [(Filter, &'static str); 3] = [
-        (Filter::All, "All"),
-        (Filter::Warnings, "Warnings"),
-        (Filter::Errors, "Errors"),
+    const CHIPS: [(LogFilter, &'static str); 3] = [
+        (LogFilter::All, "All"),
+        (LogFilter::Warnings, "Warnings"),
+        (LogFilter::Errors, "Errors"),
     ];
 
     /// Whether a line of `severity` is drawn under this filter.
     fn shows(self, severity: Severity) -> bool {
         match self {
-            Filter::All => true,
-            Filter::Warnings => severity >= Severity::Warning,
-            Filter::Errors => severity >= Severity::Error,
+            LogFilter::All => true,
+            LogFilter::Warnings => severity >= Severity::Warning,
+            LogFilter::Errors => severity >= Severity::Error,
         }
     }
 }
@@ -108,7 +108,7 @@ pub struct LogPanel {
     /// The body scroll area's salt, derived from the dock's, so two tools' panels keep
     /// their scroll and dock heights apart: the Export upgrader has a log of its own.
     salt: egui::Id,
-    filter: Filter,
+    filter: LogFilter,
     follow: Follow,
 }
 
@@ -121,7 +121,7 @@ impl LogPanel {
         LogPanel {
             dock: BottomDock::new(id, "Log", "the log", 180.0),
             salt: id.with("body"),
-            filter: Filter::All,
+            filter: LogFilter::All,
             follow: Follow {
                 stick: true,
                 left_at: 0,
@@ -145,17 +145,21 @@ impl LogPanel {
         // click's result in the same frame.
         let filter = Cell::new(self.filter);
         let mut clicked = None;
+        // A collapsed log shows no lines, so it has nothing to filter: no chips.
+        let open = self.dock.is_expanded();
         self.dock.show(
             ui,
             |ui| {
                 // A chip is a row, not a control (`row`): a picked one fills
                 // in the selection blue and draws none of the resting edge
                 // the theme gives live controls.
-                for (choice, label) in Filter::CHIPS {
-                    if super::row(ui, egui::Button::selectable(filter.get() == choice, label))
-                        .clicked()
-                    {
-                        filter.set(choice);
+                if open {
+                    for (choice, label) in LogFilter::CHIPS {
+                        if super::row(ui, egui::Button::selectable(filter.get() == choice, label))
+                            .clicked()
+                        {
+                            filter.set(choice);
+                        }
                     }
                 }
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
@@ -176,6 +180,23 @@ impl LogPanel {
         self.filter = filter.get();
         clicked
     }
+
+    /// Picks `filter`'s chip and opens the log if it is collapsed: what a click on a
+    /// count elsewhere in the tool's view asks of the log (`2 with errors`).
+    pub fn show_only(&mut self, filter: LogFilter) {
+        self.filter = filter;
+        self.dock.set_expanded(true);
+    }
+
+    /// Collapses the log to its header row, as its chevron does.
+    pub fn collapse(&mut self) {
+        self.dock.set_expanded(false);
+    }
+
+    /// Whether the log's body is shown: `false` while it is collapsed to its header row.
+    pub fn is_expanded(&self) -> bool {
+        self.dock.is_expanded()
+    }
 }
 
 /// The body: the capped tail of the filtered lines in a both-ways scroll area (the
@@ -186,7 +207,7 @@ fn body(
     salt: egui::Id,
     ui: &mut egui::Ui,
     lines: &[LogLine],
-    filter: Filter,
+    filter: LogFilter,
     clicked: &mut Option<MessageCode>,
 ) {
     // A paused view draws only the lines present when the pause began
@@ -273,7 +294,7 @@ pub fn well_frame(visuals: &egui::Visuals) -> egui::Frame {
 /// The header's count line (the draft's `log-count`): `last 300 of N lines` when the
 /// shown lines overflow the cap, `N of M lines` when a filter hides some, `N lines`
 /// when everything shows.
-fn count_text(filter: Filter, lines: &[LogLine]) -> String {
+fn count_text(filter: LogFilter, lines: &[LogLine]) -> String {
     let shown = lines
         .iter()
         .filter(|line| filter.shows(line.severity))

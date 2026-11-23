@@ -110,6 +110,9 @@ pub struct GridResponse {
     pub open: Option<Open>,
     /// A finding's code clicked in the window: the help opens at its catalog row.
     pub help: Option<MessageCode>,
+    /// The rows were taller than the room the grid had this frame, so some can be
+    /// reached only by scrolling.
+    pub overflows: bool,
 }
 
 /// What the detail window draws from beside the rows: the catalog that explains a finding,

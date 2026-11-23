@@ -138,6 +138,7 @@ pub fn show(
     GridResponse {
         open: double_clicked.or(window.open),
         help: window.help,
+        overflows: scroll.content_size.y > scroll.inner_rect.height(),
     }
 }
 
@@ -507,7 +508,7 @@ mod tests {
     }
 
     /// The grid of `rows` in `columns`, with a detail window that has nothing open.
-    fn plain(ui: &mut egui::Ui, columns: &Columns, rows: &[Row], checking: bool) {
+    fn plain(ui: &mut egui::Ui, columns: &Columns, rows: &[Row], checking: bool) -> GridResponse {
         let mut sources = Sources {
             catalog: &[],
             pictures: &mut |_| None,
@@ -520,7 +521,7 @@ mod tests {
             checking,
             &mut Detail::default(),
             &mut sources,
-        );
+        )
     }
 
     /// One frame of the grid of `rows` in `columns`.
@@ -695,6 +696,19 @@ mod tests {
         let drawn = draw(&COLUMNS, &rows, false);
         let labels = drawn.all("/a/").len();
         assert!((1..40).contains(&labels), "{labels} labels drawn");
+    }
+
+    #[test]
+    fn rows_taller_than_the_room_the_grid_has_overflow_it() {
+        // 300 points hold the title row and about nine rows of 28.
+        for (count, overflows) in [(30, true), (2, false)] {
+            let mut window = Headless::new();
+            window.screen = vec2(1280.0, 300.0);
+            let rows = vec![team_row(); count];
+            let (response, _) =
+                window.frame_with(Vec::new(), |ui| plain(ui, &COLUMNS, &rows, false));
+            assert_eq!(response.overflows, overflows, "{count} rows");
+        }
     }
 
     /// A window whose scroll moves at once, for a test that scrolls the grid.
