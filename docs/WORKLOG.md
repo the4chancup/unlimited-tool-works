@@ -5,9 +5,13 @@ Where the implementation is and what comes next. The plan (`docs/plans/`) holds 
 Never duplicate rationale here — link to the plan section instead. Procedure for using this file
 is in `AGENTS.md` ("Working documents").
 
-Every item and sub-step under "Where the work stands" opens with its ID in bold (`**RX**`):
-the code its briefs, branches and merge subjects use, or a short new one where it has none.
-What a step waits on is written in it as `[after ID, ID]`. The maintainer's roadmap
+Every item and sub-step under "Where the work stands" opens with its checkbox and its ID in
+bold (`- [ ] **RX**`, `6. [ ] **GRID**`): the code its briefs, branches and merge subjects use,
+or a short new one where it has none. What a step waits on follows the ID as
+`[after ID, ID]`. An ID need only be unique among its siblings: a name in `[after …]` is
+looked up among the step's siblings first, then among its parent's, and so on up to the
+top-level items; a path such as `GRID/1b` names a step inside another, its first name looked
+up the same way. The maintainer's roadmap
 (`scripts/roadmap.py`) draws its timeline from both, so a dependency written here is not
 traced again at a phase's converge.
 
@@ -20,14 +24,13 @@ traced again at a phase's converge.
 One line per piece of work in flight; the items below hold the detail.
 
 - The Compiler's grid (item 6): Carbon's round 4's fixes are merged and SWE-2's round over
-  them is ruled and fixed; Carbon's round 5 is next.
+  them is ruled and fixed; Carbon's round 5 is running.
 - `0.0.3-vgl27.2`, the next VGL build: built and checked, waiting for the maintainer to hand
   it over.
 - `0.0.2-pes14.3`, PES 2014 Build 3: tagged and checked, waiting for the maintainer to publish.
-- The checkpoint over the grid's latest slices: running; main is pushed once it passes and the
-  maintainer says yes.
-- The `call` mutant kind's backfill: slice RX, which runs the extra kinds alone on the VPS, is
-  merged; the backfill starts there once the checkpoint's mutation run leaves the VPS.
+- The checkpoint: `fb053617` passed it and is pushed; the next one waits for the VPS, which
+  the `call` backfill holds.
+- The `call` mutant kind's backfill: running on the VPS, crate by crate.
 - The roadmap page: its generator is merged, and its sample (`maintainer/roadmap.html`) waits
   for the maintainer's look before `commit.py` regenerates it on every worklog commit.
 - The periodic review of the dev cycle: waiting for the maintainer's start.
@@ -63,37 +66,37 @@ other items run beside it. **Ahead of item 6:** the `pes14` branch's step 12, a 
 2014 team exported and imported as Team TOML, which Build 3 carries (the maintainer,
 2026-11-22): `0.0.2-pes14.3`, tagged 2026-11-23 on `48ab28bc`, its Release run passed and its
 draft checked, for the maintainer to publish; running sidekicks and jobs are not stopped for it. **After the detour**, in this order:
-1. The Nation list: done (merges `467790ab`, `1b9c5f27`; SWE-2 round S1n). It opens on the
+1. [x] **NATION** The Nation list: done (merges `467790ab`, `1b9c5f27`; SWE-2 round S1n). It opens on the
    held nation, a typed name picks as an ID does, Escape puts the old nation back, and one
    opening is one undo entry; the General info review's fixes (rulings "geninfo A1") with it.
    Seen in the release build on the PES 2021 fixture (2026-11-21:
    opened on 231, `ital` picked 215, Escape put 231 back with nothing left to undo).
-2. 0.0.2-nostretch's slices: done for every built view (the Save editor, the Ruleset
+2. [x] **0.0.2-nostretch** The no-stretch slices: done for every built view (the Save editor, the Ruleset
    editor); the Compiler's and the Export upgrader's views take the rule in step 8.10.
-3. Earlier sessions in Report a problem: the repro bundles issue's slice (5), in slices:
-   - [x] the crash monitor's start tried once more (ST-RUN-13): merged 2026-11-21, SWE-2
+3. [ ] **REPRO5** Earlier sessions in Report a problem: the repro bundles issue's slice (5), in slices:
+   - [x] **retry** the crash monitor's start tried once more (ST-RUN-13): merged 2026-11-21, SWE-2
      round S1rt; Astra round A-s5b r1 with 5b's (below);
-   - [x] 5a the session folder's writer and reader in `studio_core::repro`, called in
+   - [x] **5a** the session folder's writer and reader in `studio_core::repro`, called in
      process (ST-REP-06 to 08): merged `08d65aa6`, SWE-2 round S1s5a; Astra round A-s5a r1,
      2 accepted (a marker line ending each journal block, and a test of several files),
      fixed with 5b-i;
-   - [x] 5b-i the monitor's half: it writes the session from the frames on its standard
+   - [x] **5b-i** [after 5a] the monitor's half: it writes the session from the frames on its standard
      input and ends it (ST-REP-06, 07): merged `d496aebd`, SWE-2 round S1s5b1;
-   - [x] 5b-ii the window's half: the recorder's queue, the thread sending each message down
+   - [x] **5b-ii** [after 5a] the window's half: the recorder's queue, the thread sending each message down
      the pipe, the window's own writer when no monitor started, a caught panic ending
      `crashed` (ST-REP-10's first cases, ST-REP-11): merged `e27d9f2b`, one rework, SWE-2
      round S1s5b2 (3 accepted, the loop ended); with it the tests for the checkpoint's seven
      mutants in 5a's writer;
-   - [x] 5b2 a new monitor after the pipe breaks, writing on into the same folder (ST-REP-10's
+   - [x] **5b2** [after 5b-i, 5b-ii] a new monitor after the pipe breaks, writing on into the same folder (ST-REP-10's
      last cases): its writer adopts the folder, cut back to its last marker, the next
      indexes from its rows (DECISIONS 2026-11-21 "a new monitor's writer adopts the session
      folder"): merged `51643014`, one rework, SWE-2 round S1s5b2b (3 accepted, the loop
      ended);
-   - [x] the retry's and 5b's Astra round A-s5b r1 (4 of 7 accepted, the loop ended: a close
+   - [x] **A-s5b** [after retry, 5b2] the retry's and 5b's Astra round A-s5b r1 (4 of 7 accepted, the loop ended: a close
      read as a crash at the next start after an idle pipe break, a warning left by a monitor
      that served on its second start, two test gaps): the fixes merged `ba254801`, SWE-2
      round S5b r1 over them (the loop ended);
-   - [x] 5c the Save editor's saves kept decrypted and rebuilt on reading (SE-REP-07): packed
+   - [x] **5c** [after A-s5b] the Save editor's saves kept decrypted and rebuilt on reading (SE-REP-07): packed
      and compressed by the writer, rebuilt through a function the Save editor gives the
      bundle reader (DECISIONS 2026-11-21 "a session keeps each save packed and
      compressed"): merged `53398fdc`, one rework, with the tests for the checkpoint's two
@@ -101,16 +104,16 @@ draft checked, for the maintainer to publish; running sidekicks and jobs are not
      `9d9e1786` (that loop ended). Astra round A-s5c r1 ran first, Carbon's login being spent
      until its reset (RUNBOOK "Review rounds": the next loop runs meanwhile): 3 accepted,
      which ends Astra's loop (rulings "A-s5c r1"). Then:
-     - [x] `save-editor unpack-session <session.zip> <folder>` writes an earlier session's
+     - [x] **unpack** `save-editor unpack-session <session.zip> <folder>` writes an earlier session's
        saves back as files, since no shipped command read a `.packed` save (SE-REP-08):
        merged `3dba53b7`, SWE-2's slice; the report readme names it;
-     Owed, not yet briefed:
-     - the packed round trip tested with a non-empty logo, identifier and serial;
-     - `frames_until` back to CONTRIBUTING's 120 s, and the comparator test that ran out at
-       120 s in the 2026-11-21 checkpoint made not to wait on a loaded worker;
-     both SWE-2 slice N2, one rework (the overlap test's comparator screen), merged
-     `7082df7f`; then a SWE-2 subloop over the fixes, and Carbon's loop (queued);
-   - [x] 5d the dialog's "Include earlier sessions" box and the help page's line (ST-REP-09,
+     - [x] **N2** the packed round trip tested with a non-empty logo, identifier and serial;
+       `frames_until` back to CONTRIBUTING's 120 s, and the comparator test that ran out at
+       120 s in the 2026-11-21 checkpoint made not to wait on a loaded worker: SWE-2, one
+       rework (the overlap test's comparator screen), merged `7082df7f`;
+     - [ ] **S-N2** [after N2] a SWE-2 subloop over N2's fixes;
+     - [ ] **carbon** [after S-N2] Carbon's loop (queued);
+   - [x] **5d** [after 5c] the dialog's "Include earlier sessions" box and the help page's line (ST-REP-09,
      12), the draft's ending line settled (DECISIONS 2026-11-21 "an earlier session with no
      `[end]` reads "ending unknown""): merged `db2900cd`. Seen in the release build beside
      the draft, box clear and ticked (2026-11-21). SWE-2 round S5d r1 (4 accepted, the loop
@@ -118,11 +121,11 @@ draft checked, for the maintainer to publish; running sidekicks and jobs are not
      2026-11-21 "Report a problem's earlier sessions in the regular colour") merged
      `5583611a`, and seen in the release build beside the draft, box clear and ticked
      (2026-11-21): the earlier sessions in the regular colour, the `~` line weak.
-4. 0.0.2-similar, Select all similar players: slices 1a and 1b merged (the group, the button
+4. [ ] **0.0.2-similar** Select all similar players: slices 1a and 1b merged (the group, the button
    and its window), 1c and slice 2 to build (code map `.tmp/similar/code_map.md`). Review rounds owed: every Carbon round a 0.0.2 step still
    owes (Report a problem has had its whole review).
-5. 0.0.2-pes19, and with it the readme's PES 2019 claim.
-6. The Compiler's view in the build, unpolished, for the VGL organizer (the maintainer,
+5. [ ] **0.0.2-pes19** The PES 2019 check, and with it the readme's PES 2019 claim.
+6. [ ] **GRID** The Compiler's view in the build, unpolished, for the VGL organizer (the maintainer,
    2026-11-20; `plans/core/development_plan.md` "Phase 8: GUI"): step 8.10's grid first,
    showing which of an export's components has an error or a warning and what it says;
    the row actions and the finish in later builds. The draft was looked at again on 2026-11-22:
@@ -134,7 +137,7 @@ draft checked, for the maintainer to publish; running sidekicks and jobs are not
    The Sizes colouring and sorting were drafted and stamped the same day
    (`plans/team_compiler/gui.md` "Sizes and sorting"). The view is built in ordered slices (Opus), each landing and reviewed before
    the next is briefed:
-   - [x] 1a (2026-11-22, merge `304822e4`, Opus, two reworks) the grid, read-only, in the
+   - [x] **1a** (2026-11-22, merge `304822e4`, Opus, two reworks) the grid, read-only, in the
      new lib `export_grid`, filled by `check`'s validation when the view opens and after each
      Compile: rows, label, ID, player, portraits and kit cells, check states, the legend
      (TC-GUI-04 without its watcher part, 20, 21). Its look: checked by the lead beside the
@@ -144,13 +147,13 @@ draft checked, for the maintainer to publish; running sidekicks and jobs are not
      `crates/studio/src/main.rs`); only the VGL organizer's hand-given build opens them
      (merge `e92af4a0`, `plans/core/gui.md` ST-SIDE-11). When they open for every member is
      the maintainer's call
-   - [x] The VGL organizer's build `0.0.3-vgl27.1` (2026-11-22, branch `vgl27`, `c2db362c`):
+   - [x] **vgl27.1** [after 1a] The VGL organizer's build `0.0.3-vgl27.1` (2026-11-22, branch `vgl27`, `c2db362c`):
      the version opens the two tools, and the update check's tag prefix `vgl27-v` keeps main's
      releases from being offered to it (`RUNBOOK.md` "The VGL organizer's build"); packed in
      the `vgl27` worktree's `target/dist/` and checked in its built window (both tools
      clickable, the Compiler's grid opening, the upgrader on its placeholder line), handed over
      by the maintainer as it is
-   - [ ] The next VGL build, `0.0.3-vgl27.2`, once the Compiler's slices 1b and 1c have landed
+   - [ ] **vgl27.2** [after 1b, 1c] The next VGL build, `0.0.3-vgl27.2`, once the Compiler's slices 1b and 1c have landed
      (the maintainer, 2026-11-22), 1c-iii's Upgrade DpFileList button included (2026-11-23):
      `vgl27` merges main, raises the version, is packed. Built 2026-11-23: `vgl27` merged the
      gated `88040bcc` (`76e46277`, its legacy-ID tests moved onto main's test helpers), raised
@@ -159,77 +162,77 @@ draft checked, for the maintainer to publish; running sidekicks and jobs are not
      split Compile button, the upgrader's placeholder line). Ready for the maintainer to hand
      over: the button ships working on PES 2019 as elsewhere (DECISIONS 2026-11-23
      "Upgrade DpFileList ships on PES 2019 as it is")
-   - [x] VGL27's legacy mode off main, onto `vgl27` alone (2026-11-22, DECISIONS 2026-11-22):
+   - [x] **legacy** VGL27's legacy mode off main, onto `vgl27` alone (2026-11-22, DECISIONS 2026-11-22):
      main's merge `8cc425a3` (Opus; the lead dropped three tests of the old names and the
      draft's `IDs` cell), TC-LEG-01 to 05 and EU-SET-15 to 17 withdrawn, and a CHANGELOG
      `### Important` line telling members to delete the `legacy_ids.toml` 0.0.2 wrote. `vgl27`
      merged main and reverted the removal (`a0c24750`), its gates green with the mode back
-   - [x] 1b: the detail window, in two slices, since its pictures need decoding and a cache
+   - [x] **1b** [after 1a] the detail window, in two slices, since its pictures need decoding and a cache
      of their own:
-     - [x] 1b-i (2026-11-22, merge `63ecaae8`, Opus): hover, pin, Esc, double-click, Open
+     - [x] **1b-i** (2026-11-22, merge `63ecaae8`, Opus): hover, pin, Esc, double-click, Open
        folder and Copy messages in `export_grid`, the top box drawn empty (TC-GUI-09, 24, 25).
        The lead dropped the portraits cell's one-finding fallback, which no export reaches,
        and offers Copy messages only on an export with a Warning or an Error (DECISIONS); the
        built window beside the draft found the Effect line weak, fixed (`4fb5d8ec`)
-     - [x] 1b-ii (2026-11-23, merge `e3ca6a56`, Opus, rework SWE-2): the top box's pictures
+     - [x] **1b-ii** [after 1b-i] (2026-11-23, merge `e3ca6a56`, Opus, rework SWE-2): the top box's pictures
        (TC-GUI-31, 32), read off the UI thread, at most 256 texels; a box picture never
        enlarged (kept by the maintainer: every real logo is 512 or 256). Release build beside
        the draft (scene `.tmp/look_1b2/app`): kit, player and portraits boxes match; three
        decisions went to `maintainer/ui_decisions.html`, all kept, the empty archive boxes
        for `.7z` only. A `.7z`'s pictures wait for the watcher-and-cache slice
-     - [x] 1b-iii (2026-11-23, merge `2eeccf60`, SWE-2): a `.zip` export's pictures read from
+     - [x] **1b-iii** [after 1b-ii] (2026-11-23, merge `2eeccf60`, SWE-2): a `.zip` export's pictures read from
        the zip, each from its own entry; a `.7z`'s boxes stay empty (TC-GUI-31's zip clause).
        Its review rounds go with 1c-ii's
-   - [x] 1c: the toolbar's strip and its counts, the log's lines linked to cells, the log
+   - [x] **1c** [after 1b] the toolbar's strip and its counts, the log's lines linked to cells, the log
      collapsed when it would hide rows, the Upgrade DpFileList button → verify: TC-GUI-15,
      26, 27, 33. The pure move of the
      view's tests came first (`3aa75bac` on `sk/grid1c`).
-     - [x] 1c-i (2026-11-23, merge `185d9e01`, Opus): the strip, its counts and the log's
+     - [x] **1c-i** (2026-11-23, merge `185d9e01`, Opus): the strip, its counts and the log's
        start (TC-GUI-26, 27). The lead counts a row's warnings by the colour its cells show,
        as the draft does. The release build beside the draft (scene `.tmp/look_1b2/app`,
        built in `look_grid`) found two differences, fixed in `99d51f81`: an export the check
        drops whole counts as skipped, and a collapsed log shows no filter chips. The strip
        cut short in a narrow window cannot be captured (a narrower window scales the whole
        UI); its unit test covers it
-     - [x] 1c-ii (2026-11-23, merge `9b7f7007`, Opus): the log opens with the check's
+     - [x] **1c-ii** [after 1c-i] (2026-11-23, merge `9b7f7007`, Opus): the log opens with the check's
        findings, each line acting for its cell: hover opens the cell's window, a click on a
        Warning or an Error outlines the cell, scrolls to it and pins it (TC-GUI-15). The lead
        made `cell_places` allocate nothing, since the strip walks every cell each frame. Its
        built-window look was taken with 1c-iii's (below)
-     - 1c-iii: the Upgrade DpFileList button beside Compile and its dialog (TC-GUI-33;
+     - [x] **1c-iii** the Upgrade DpFileList button beside Compile and its dialog (TC-GUI-33;
        `plans/team_compiler/gui.md` "Toolbar", `plans/team_compiler/pipeline.md` "DpFileList
        upgrade"; the draft's `compiler/main?dpfl=outdated`), over the CLI's `upgrade-dpfl`,
        with the new `dpfilelist_cpk_deleted`. On PES 2019 it works as elsewhere (item 8). SWE-2, in two
        parts:
-       - [x] 1c-iii-a (2026-11-23, merge `7a488e81`, SWE-2): `upgrade.rs`'s preview as data,
+       - [x] **1c-iii-a** (2026-11-23, merge `7a488e81`, SWE-2): `upgrade.rs`'s preview as data,
          the deletions the member ticked (`dpfilelist_cpk_deleted`), the catalog's texts
-       - [x] 1c-iii-b (2026-11-23, merge `bdfccc40`, SWE-2): the button and the dialog over
+       - [x] **1c-iii-b** [after 1c-iii-a] (2026-11-23, merge `bdfccc40`, SWE-2): the button and the dialog over
          them (TC-GUI-33), the button shown after a run's preflight, as briefed before
          1c-iii-c's decision
-       - [x] Review round S1's fixes (2026-11-23, merge `3c47d77a`, SWE-2): a failed delete
+       - [x] **review_s1** [after 1c-iii-a] Review round S1's fixes (2026-11-23, merge `3c47d77a`, SWE-2): a failed delete
          no longer stops the upgrade, the dialog names a replacement only when it makes one,
          a `.zip`'s cells are deep-checked, and tests that passed on wrong code were tightened.
          Round S2 (SWE-2) reviews 1c-iii-b and these fixes
-       - [x] 1c-iii-c (2026-11-23, merge `393312d2`, SWE-2, one rework with round S2's
+       - [x] **1c-iii-c** [after 1c-iii-b, review_s1] (2026-11-23, merge `393312d2`, SWE-2, one rework with round S2's
          Compiler fixes): the list checked with each check of the exports, its findings in
          the log before any Compile; Compile disabled while the list is outdated; the button
          in the selection blue, following the check, so an upgrade that only writes
          placeholders also takes it away
-       - Round S3 (SWE-2) over 1c-iii-c, the selection edge and round S2's fixes: 7 accepted,
+       - [x] **S3** [after 1c-iii-c, sel_edge] Round S3 (SWE-2) over 1c-iii-c, the selection edge and round S2's fixes: 7 accepted,
          one of reach (a), among them the help window's search hit drawn in the drafts' green
          (DECISIONS 2026-11-23)
-       - [x] Review round S3's fixes (2026-11-23, merge `35184122`, SWE-2, one rework for a
+       - [x] **review_s3** [after S3] Review round S3's fixes (2026-11-23, merge `35184122`, SWE-2, one rework for a
          shared test helper): a check of the exports that ends after another was asked for no
          longer shows its rows, and the help window's search hits are filled in green. Round S4 (SWE-2)
          over them: 2 accepted, both doc comments that state a condition wrongly, so the
          rounds end here; the lead fixes them once `sk/looks_s3` merges
-     - [x] The selection's edge on every blue fill (2026-11-23, merge `749dd2ae`, SWE-2, one
+     - [x] **sel_edge** The selection's edge on every blue fill (2026-11-23, merge `749dd2ae`, SWE-2, one
        rework with round S2's test fixes): a picked row drawn through `widgets::row` and the
        Save editor's selected player row draw the `#1e7a9e` edge at rest
-     - [x] Report a problem keeps its "Saved to" line's room while hidden, so its buttons do
+     - [x] **report_gap** Report a problem keeps its "Saved to" line's room while hidden, so its buttons do
        not move when the line shows (2026-11-23, merge `cb4b3fbd`, SWE-2, landed first time);
        no changelog line, a spacing change
-     - [x] The built window beside the drafts (2026-11-23, merges `b174f18b` and `29bad046`,
+     - [x] **looks_s3** [after 1c-iii, sel_edge, report_gap] The built window beside the drafts (2026-11-23, merges `b174f18b` and `29bad046`,
        SWE-2, three reworks; scene `.tmp/look_s3`, its game folder a fake PES 2017 install
        holding the old list): the log's lines, the Upgrade DpFileList button, the picked rows'
        edge, Report a problem's kept room and the help search's highlight green matched. The
@@ -238,64 +241,79 @@ draft checked, for the maintainer to publish; running sidekicks and jobs are not
        the pane's top; the help tree's entries and search results span their pane, a long
        result cut with an ellipsis; the Save editor's selected row shows its edge on all four
        sides. Found in passing and fixed: a catalog row's search result showed its Markdown marks
-   - The kit cells' swatch (TC-GUI-10), a strip along the cell's foot (DECISIONS 2026-11-23
+   - [ ] **swatch** The kit cells' swatch (TC-GUI-10), a strip along the cell's foot (DECISIONS 2026-11-23
      "a kit's menu icon pattern is a strip along its cell's foot"), in slices:
-     - [x] a `color_tools::icon`: the 24 menu icon patterns as shapes over any rectangle
+     - [x] **a** `color_tools::icon`: the 24 menu icon patterns as shapes over any rectangle
        (2026-11-23, merge `0e9ba0e0`, SWE-2, landed first time; reviewed with c)
-     - [x] b a kit cell carries its menu icon and colours when the check kept the kit and its
+     - [x] **b** [after a] a kit cell carries its menu icon and colours when the check kept the kit and its
        `colors.txt` lists two (2026-11-23, merge `057c55db`, SWE-2, landed first time;
        reviewed with c)
-     - [x] c the grid paints the strip under the label (2026-11-23, merge `a19e622d`, SWE-2,
+     - [x] **c** [after b] the grid paints the strip under the label (2026-11-23, merge `a19e622d`, SWE-2,
        landed first time). Captured beside the draft (scene `.tmp/look_sw`, ten kits on ten
        icons): the strip's place and size match; the label's glyphs stand 1 pixel lower.
        The stretched pattern is a `ui_decisions.html` card
-     - SWE-2 round SW1 over a, b and c (two parts): 5 accepted, none of reach (a), so the
+     - [x] **SW1** [after c] SWE-2 round SW1 over a, b and c (two parts): 5 accepted, none of reach (a), so the
        rounds end here; among them, a referee export's kits no longer carry an icon (the
        compile writes none for them). The fixes merged `356e1591` (SWE-2, the lead moving
        two test samples off the edge they were to catch)
-     - [ ] d a compile's colours worked out from the texture, and the base `UniColor.bin`
+     - [ ] **d** [after rest/run] a compile's colours worked out from the texture, and the base `UniColor.bin`
        colours for a kit the check dropped or whose compile failed (a failed kit keeps its
        listed pair today, though its entry is never written). Its compile half waits on a
        run updating the cells (TC-GUI-12)
-   - [ ] One paid round (tier 2, Carbon) over slices 1a to 1c and the swatch, whose SWE-2
-     loops have ended. Round 1 ran on `5baf8835`: 17 accepted, 10 of them a real input
-     whose outcome changes. Its fixes are three SWE-2 slices: A (the check's rows) merged
-     `0fc94490`, B (the detail window and title row) merged `76bcad35`, and C (the settings re-check and the Upgrade
-     dialog, one rework) merged `d3e7be78`. Carbon round 2, over the grid and the Compile
-     menu together (at `ca8559a1`): 11 accepted, two of them a real input whose outcome
-     changes (the dialog's two lists sharing one scroll, a game started while the window
-     is idle leaving the old state drawn), so a round 3 is owed. Their fixes are three
-     SWE-2 slices, merged 2026-11-23: G1 (the dialog, the settings re-check, the Compile
-     menu's tests) `4f5cbe58`, G2 (the layout of duplicate kit folders and referee rows)
-     `fd84b216`, G3 (the archive tooltip, the menu's 2 px gap, the shared widgets' tests)
-     `4ee3aa5b`. SWE-2's round over the three, 2026-11-23 (rulings "S-g1 r1" to "S-g3 r1"):
-     4 accepted, none of reach (a), which ends the loop; their fixes, slice G4, merged
-     `2ce16798`. Carbon round 3 over the same surface, at `2ce16798` (rulings "C-grid r3"):
-     11 accepted, four of them a real input whose outcome changes (Esc under a dialog unpins
-     the hidden detail window, a double-click under the window opens nothing, Help opens
-     behind it, a refused check's line stays in the log), so a round 4 is owed. The lead's
-     draft text: the dialog's counts at one and the archive tooltip. Its fixes are two SWE-2
-     slices, both merged: G5a (`export_grid`'s detail window, the upward menu's test),
-     `daab1034`, and G5b (`team_compiler`: the log, the dialog, the help links, the
-     citations), `51cab105`. SWE-2's round over the two, 2026-11-23 (rulings "S-g5a r1",
-     "S-g5b r1"): 6 accepted, one of reach (a) (Esc with the Compile mode menu open closes
-     the menu and unpins the window), which ends the loop. The lead's fixes: the gate's ID
-     lists `53dd5466`, TC-GUI-24 and a doc `9aebb45f`; the rest is slice G6 (SWE-2),
-     merged `53d501f4`. Carbon round 4 over the same surface, at `9bec7d4b` (rulings
-     "C-grid r4"): 9 accepted, four of them a real input whose outcome changes (a portrait
-     packed with no player folder left out of the portraits box, Esc in Help's search box
-     unpinning the window, Help left behind the window by a second code link, the
-     DpFileList help texts naming only the terminal command), so a round 5 is owed. The
-     lead's fixes: the draft's sideload button `172444d2`, the log line's click in the plan
-     and TC-GUI-15 `81b7a48c`. The rest is three SWE-2 slices: G8a (`export_grid`'s Esc,
-     Help raised again), G8c (the portraits box, the help texts, a dead branch), G8d (the
-     legend, a tooltip and an error line, tested), all merged: G8a `e0215253`, G8c
-     `e75b033b` (the draft's help texts with it, `79ceba74`), G8d `8baf7779` (its error
-     line was tested already). The SWE-2 round over the three, 2026-11-23: 3 of 8 concerns
-     accepted, none changing a real input's outcome, so its loop ends; the lead fixed them
-     (Esc in Help's search in TC-GUI-24 and both drafts `2744244b`, a test of the faulted
-     DpFileList words `28f3a3bd`). Next: Carbon's round 5.
-   - [ ] The Compile button's mode list, Open output folder and Copy report (TC-GUI-11, and
+   - [ ] **carbon** [after 1c, swatch, tbmenu] The paid rounds (tier 2, Carbon) over slices
+     1a to 1c, the swatch and the Compile menu, whose SWE-2 loops have ended. Each round's
+     fixes are SWE-2 slices, then a SWE-2 round over them; a round with a real input whose
+     outcome changes owes the next:
+     - [x] **C1** round 1, on `5baf8835`: 17 accepted, 10 of them a real input whose outcome
+       changes
+     - [x] **A** [after C1] the check's rows, merged `0fc94490`
+     - [x] **B** [after C1] the detail window and title row, merged `76bcad35`
+     - [x] **C** [after C1] the settings re-check and the Upgrade dialog, one rework, merged
+       `d3e7be78`
+     - [x] **C2** [after A, B, C] round 2, over the grid and the Compile menu together, at
+       `ca8559a1`: 11 accepted, two of them a real input whose outcome changes (the dialog's
+       two lists sharing one scroll, a game started while the window is idle leaving the old
+       state drawn)
+     - [x] **G1** [after C2] the dialog, the settings re-check, the Compile menu's tests,
+       merged `4f5cbe58`
+     - [x] **G2** [after C2] the layout of duplicate kit folders and referee rows, merged
+       `fd84b216`
+     - [x] **G3** [after C2] the archive tooltip, the menu's 2 px gap, the shared widgets'
+       tests, merged `4ee3aa5b`
+     - [x] **S-g1** [after G1, G2, G3] SWE-2's round over the three (rulings "S-g1 r1" to
+       "S-g3 r1"): 4 accepted, none of reach (a), which ends the loop
+     - [x] **G4** [after S-g1] that round's fixes, merged `2ce16798`
+     - [x] **C3** [after G4] round 3, at `2ce16798` (rulings "C-grid r3"): 11 accepted, four
+       of them a real input whose outcome changes (Esc under a dialog unpins the hidden
+       detail window, a double-click under the window opens nothing, Help opens behind it, a
+       refused check's line stays in the log). The lead's draft text: the dialog's counts
+       at one and the archive tooltip
+     - [x] **G5a** [after C3] `export_grid`'s detail window, the upward menu's test, merged
+       `daab1034`
+     - [x] **G5b** [after C3] `team_compiler`: the log, the dialog, the help links, the
+       citations, merged `51cab105`
+     - [x] **S-g5** [after G5a, G5b] SWE-2's round over the two (rulings "S-g5a r1",
+       "S-g5b r1"): 6 accepted, one of reach (a) (Esc with the Compile mode menu open closes
+       the menu and unpins the window), which ends the loop. The lead's fixes: the gate's ID
+       lists `53dd5466`, TC-GUI-24 and a doc `9aebb45f`
+     - [x] **G6** [after S-g5] the rest of that round's fixes, merged `53d501f4`
+     - [x] **C4** [after G6] round 4, at `9bec7d4b` (rulings "C-grid r4"): 9 accepted, four
+       of them a real input whose outcome changes (a portrait packed with no player folder
+       left out of the portraits box, Esc in Help's search box unpinning the window, Help
+       left behind the window by a second code link, the DpFileList help texts naming only
+       the terminal command). The lead's fixes: the draft's sideload button `172444d2`, the
+       log line's click in the plan and TC-GUI-15 `81b7a48c`
+     - [x] **G8a** [after C4] `export_grid`'s Esc, Help raised again, merged `e0215253`
+     - [x] **G8c** [after C4] the portraits box, the help texts, a dead branch, merged
+       `e75b033b` (the draft's help texts with it, `79ceba74`)
+     - [x] **G8d** [after C4] the legend, a tooltip and an error line, tested, merged
+       `8baf7779` (its error line was tested already)
+     - [x] **S-g8** [after G8a, G8c, G8d] SWE-2's round over the three: 3 of 8 accepted, none
+       changing a real input's outcome, so its loop ends; the lead fixed them (Esc in Help's
+       search in TC-GUI-24 and both drafts `2744244b`, a test of the faulted DpFileList words
+       `28f3a3bd`)
+     - [ ] **C5** [after S-g8] round 5: running
+   - [x] **tbmenu** The Compile button's mode list, Open output folder and Copy report (TC-GUI-11, and
      TC-GUI-33's clause that Compile for sideloading stays enabled while the DpFileList is
      outdated; DECISIONS 2026-11-23 "the Compile menu's Copy report copies the whole log").
      Merged `997c2e09` (SWE-2, one rework for three untested paths; the lead shared a test
@@ -310,27 +328,31 @@ draft checked, for the maintainer to publish; running sidekicks and jobs are not
      the right edges aligned. The draft's menu had stood 3.5 px past the arrow, its width
      measured while the window's edge squeezed it; fixed there and in the Export upgrader's
      More menu.
-     The column toggle the draft lists comes with its later slice
-   - Then the row actions, the ID cell's editing and its tooltips (each variant's, as the
-     draft gives them), the
-     watcher and cache, Sizes and sorting, and the rest of the toolbar
-     (`plans/team_compiler/gui.md` "Toolbar"): Launch PES, the writability badge and the
-     compile column's toggle. The log's lines also owe the plan's
-     `Severity - /team/ - code` form (`plans/team_compiler/gui.md` "A message's log line"),
-     their wrapping under that head (ST-LOG-05), and Open folder in a line's context menu.
-     The watcher and cache's slice also owes TC-GUI-04's `.7z` order: 1a's check reads a
-     `.7z` whole at once, where the scenario wants its entry table first and its deep check
-     after the folders and zips, within the memory budget (a `.zip`'s deep check, as built,
-     is right).
-   - Slices of their own beside the view: 0.0.2-logo, `logo_missing`, a
+   - [ ] **rest** [after 1c] The view's later slices:
+     - [ ] **rows** the row actions
+     - [ ] **ids** the ID cell's editing and its tooltips (each variant's, as the draft gives
+       them)
+     - [ ] **watcher** the watcher and cache, with TC-GUI-04's `.7z` order: 1a's check reads
+       a `.7z` whole at once, where the scenario wants its entry table first and its deep
+       check after the folders and zips, within the memory budget (a `.zip`'s deep check, as
+       built, is right)
+     - [ ] **run** a run updating the cells as it goes (TC-GUI-12)
+     - [ ] **sizes** Sizes and sorting
+     - [ ] **toolbar** the rest of the toolbar (`plans/team_compiler/gui.md` "Toolbar"):
+       Launch PES, the writability badge, and the compile column's toggle that the draft's
+       Compile menu lists
+     - [ ] **loglines** the log's lines in the plan's `Severity - /team/ - code` form
+       (`plans/team_compiler/gui.md` "A message's log line"), their wrapping under that head
+       (ST-LOG-05), and Open folder in a line's context menu
+   - [x] **0.0.2-logo** Slices of their own beside the view: `logo_missing`, a
      `Full` team export with no logo is an Error, and `portrait_missing`, on PES 2017 to 2021
      a player with no portrait is a Warning (`plans/aesthetics_export/object_model.md`
      "Validation semantics"; `plans/team_compiler/messages.md`; `plans/export_upgrader.md`
      "What it does"):
-     - [x] a — 2026-11-22, `ee108bbf`: both findings in `aesthetics_export`'s validation and
+     - [x] **a** 2026-11-22, `ee108bbf`: both findings in `aesthetics_export`'s validation and
        both catalogs, `installed_portrait_slots` `None` at every caller; 172 tests and five
        fixture archives given the logo and portraits they now need
-     - [x] The shared export builder (the open issue "Every new check on what an export must
+     - [x] **builder** The shared export builder (the open issue "Every new check on what an export must
        hold breaks every test"). `aesthetics_export::test_exports::missing` lists the files an
        export lacks to be clean, one rule per requirement: some content, a `Full` export's
        logo, a portrait per player from PES 2017. A test of one check turns its rule off with
@@ -340,7 +362,7 @@ draft checked, for the maintainer to publish; running sidekicks and jobs are not
        `export_upgrader::test_exports`. Each slice proves itself with a dummy requirement: a
        new check alone breaks the slice's tests, and with its rule in `missing` only the
        builder's own tests fail:
-       - [x] 1 (2026-11-22, merge `4382ae18`, Opus) the builder, and `team_compiler`'s unit
+       - [x] **1** (2026-11-22, merge `4382ae18`, Opus) the builder, and `team_compiler`'s unit
          tests through `resolved*` and the deep helpers, no call site edited. The dummy
          requirement's `notes.txt` holds a single newline, since any text in it reports
          `notes_found`. SWE-2 round S1: 6 accepted, one a real test's input (rulings
@@ -349,27 +371,27 @@ draft checked, for the maintainer to publish; running sidekicks and jobs are not
          fixed by the lead (a team's `refs.txt` is no roster; the empty-folder loop's test).
          The round's part over the grid's position tests and `commit.py`: 4 accepted, which
          ends its loop, all fixed (merge `50bed6bc`, `7b00659c`)
-       - [x] 2 (2026-11-22, merge `5a46d101`, SWE-2) `aesthetics_export`'s validator tests
+       - [x] **2** [after 1] (2026-11-22, merge `5a46d101`, SWE-2) `aesthetics_export`'s validator tests
          through `report*`, nine tests of a requirement's own check on `without`
-       - [x] 3 (2026-11-22, merge `beeb2094`, Opus) the Compiler's CLI tests the logo slice
+       - [x] **3** [after 1] (2026-11-22, merge `beeb2094`, Opus) the Compiler's CLI tests the logo slice
          touched (147 tests), through `complete`, whose folder walk is
          `team_compiler::test_files::complete`, shared with the unit tests; the CONTRIBUTING
          rule
-       - [x] 4 (2026-11-22, merge `3efc8619`, Opus) the Compiler's other CLI tests, `deploy` and
+       - [x] **4** [after 3] (2026-11-22, merge `3efc8619`, Opus) the Compiler's other CLI tests, `deploy` and
          `prefox_kit_variants` included: 455 tests in 17 files through `complete`. A Run B over
          every export kind found 10 referee tests still on their own files, since the dummy
          check fired on team exports only
-       - [x] 5 (2026-11-22, merge `807e376b`, Opus) `export_upgrader`: 109 tests (105 CLI, 4
+       - [x] **5** [after 1] (2026-11-22, merge `807e376b`, Opus) `export_upgrader`: 109 tests (105 CLI, 4
          unit) through `complete_old`, whose `old_missing` counts a `Full` export's added logo
          as its content. The dummy run uses a `Collars/` file (Run B'), since an upgraded
          `notes.txt` always reports `notes_found`; its 13 failures are the builder's own
          tests, the tracer goldens, 5 tests reading the `co Spring` fixture as it is, and 4
          archive tests for slice 7
-       - [x] 6 (2026-11-22, merge `86928756`, SWE-2) `studio`: the six Compiler CLI tests
+       - [x] **6** [after 1] (2026-11-22, merge `86928756`, SWE-2) `studio`: the six Compiler CLI tests
          through `complete`, `console.rs`'s old export through `complete_old`; `launchers.rs`
          reads the upgrader's fixtures as they are. Its dummy runs come in two pairs, since
          both checks sit in the validator the upgrader also runs on its output
-       - [x] 7 (2026-11-22, `65341792`, lead) the unit tests' tracer copy (`testing.rs`'s
+       - [x] **7** [after 4] (2026-11-22, `65341792`, lead) the unit tests' tracer copy (`testing.rs`'s
          `sandbox`) completed, as the CLI
          tests' copy is since slice 4, so the `gui_run` tests that compile it pass a dummy run.
          The archive fixtures all stay stored. Packing a `.zip` when the tests run would save
@@ -378,23 +400,22 @@ draft checked, for the maintainer to publish; running sidekicks and jobs are not
          a requirement adds a file. When the next requirement comes,
          `tracer_archives_team_folder.py`'s `ADDED` grows to the `co Midcup Spring` archives
          and the upgrader's `co Spring` ones, which have no script in the repository yet
-     - b's tests are written on `complete` (builder slice 3 landed)
-     - [x] b (2026-11-22, merge `e0c24349`, Opus) `installed_portrait_slots` filled from the
+     - [x] **b** [after a, builder/3] (2026-11-22, merge `e0c24349`, Opus) `installed_portrait_slots` filled from the
        Compiler's walk over the installed CPKs (TC-ROOT-17). The builder's `Portraits` fills
        every team export, so 64 tests gained portrait entries; a portrait is a task of its own,
        so a folder a failing task drops still ships it, as the spec's group commit says
-     - [x] Tier 2 review of slices a and b (2026-11-22): SWE-2's round S1 (its fixes
+     - [x] **tier2** [after a, b] Tier 2 review of slices a and b (2026-11-22): SWE-2's round S1 (its fixes
        `dc5e32ea` to `33c9a675`), then Carbon's round C1, 7 accepted, none of reach (a), which
        ends the loop. Its fixes: the texts `d70e56ea`, and a player folder's `portrait.*`
        counted whatever its kind, EU-MDL-43 widened to `portrait_missing` (SWE-2,
        `f4a8ac22`)
-   - Not urgent, a small slice of its own (SWE-2), after the view's or beside it: player
+   - [ ] **nohyphen** Not urgent, a small slice of its own (SWE-2), after the view's or beside it: player
      numbering without the hyphen (`plans/aesthetics_export/player_folders.md`, the section of
      that name): `aesthetics_export`'s `conventions` (`folder_slot`, `folder_player_name`), the
      `Portraits/` names and the kit folders (`validate/kits.rs`), their tests, and the catalog
      texts of `player_folder_number_invalid`, `portrait_name_invalid` and `kit_folder_invalid`
      in `messages/catalog.rs`.
-7. The drafts in two copies (the maintainer, 2026-11-17: a spec draft of what the build holds
+7. [ ] **DRAFTS2** The drafts in two copies (the maintainer, 2026-11-17: a spec draft of what the build holds
    and a plan draft for prototyping, which the app's unbuilt sections open with `demo=1`. Git
    keeps the two: the spec draft is `docs/prototypes/` on main, which `draft_compare`, the
    looks and the tasks cards read; the plan draft a long-lived branch in its own worktree, a
@@ -402,34 +423,34 @@ draft checked, for the maintainer to publish; running sidekicks and jobs are not
    branch, never rebased; then the plan and spec text keeps the reasons, the behaviour and what
    no draft shows, such as the light theme, and points at the draft for measurements rather
    than copying them, a copy that drifted once: rows "22 apart" against the draft's 24).
-8. The DpFileList upgrade on a PES 2019 DLC (the VGL organizer's poc.5 report, 2026-11-17:
+8. [ ] **DPFL19** The DpFileList upgrade on a PES 2019 DLC (the VGL organizer's poc.5 report, 2026-11-17:
    after `upgrade-dpfl` the game ran vanilla and made a new save of the real teams; the
    official list has no stem for the PES 2019 list's `03_base`, `10_scoreboard`,
    `11_interface`, `12_cutscenes`, `13_competition`, so they drop out, and PES 2019's records
    carry a countdown at byte 36 ours lack). The organizer cannot recall the setup behind it,
    so the button ships as it is (DECISIONS 2026-11-23); this stays open until a PES 2019
    setup shows it again.
-9. The rest of Team TOML's numbers as the game shows them, as 0.0.2 did for form, injury
+9. [ ] **TOMLNUM** The rest of Team TOML's numbers as the game shows them, as 0.0.2 did for form, injury
    resistance and weak foot: team colours in 8 bits as on screen (the file holds the save's 0
    to 63), `[tactics.auto] substitution` and the appearance colours by name. The Save editor
    draft's sample Team TOML (`save_editor.js`, `"pes17/718"`) is the CLI's export of
    2026-11-21, so it is exported again once these land.
-10. Reset window's first click on Linux (the maintainer's check of 0.0.2-rc.3, 2026-11-17,
+10. [ ] **RESETWIN** Reset window's first click on Linux (the maintainer's check of 0.0.2-rc.3, 2026-11-17,
     "good enough for 0.0.2": the first click resets the window but the button stays, a second
     click changes nothing and the button goes, its pointer a hand; likely the window manager
     leaving the reset window off the fitted size, so the button waits for a click the window
     does not follow).
-11. The mutation run the 0.0.2 window never had: `abbae531..aab124dc` (2026-11-14 to the
+11. [ ] **CATCHUP** The mutation run the 0.0.2 window never had: `abbae531..aab124dc` (2026-11-14 to the
     0.0.2 cut; 166 commits touching code, about 28,000 lines added). The pipelines of those
     days ran `--no-mutants` while mutfast was awaited, and `checkpoint.py run` moves
     `refs/checkpoints/gated` with or without the mutation run, so the first run after mutfast
     (2026-11-20) diffed from `aab124dc` and nothing came back for the range. The cause is
     fixed (2026-11-22): the mutation run starts from `refs/checkpoints/mutated`, which only a
     run whose mutants all ran moves (RUNBOOK "How the work runs"). Owed:
-    - the catch-up: `mutants-diff abbae531` over the range, sized first with its own
+    - [ ] **run** the catch-up: `mutants-diff abbae531` over the range, sized first with its own
       estimate; per crate past about an hour a side, the crate's run goes to the VPS (RUNBOOK
       "Mutation runs and the VPS"), the rest here; then its triage as the checkpoints' are.
-12. The suite's own images (DECISIONS 2026-11-20 "the placeholder portraits and the Team
+12. [ ] **IMAGES** The suite's own images (DECISIONS 2026-11-20 "the placeholder portraits and the Team
     Export thumbnail are the suite's own"): the three placeholder portraits drawn as SVGs and
     the 4cc clover thumbnail, both rendered to the PNGs the binary embeds by one script; a
     look of each beside the game's. PES 2017 lists and imports a Team Export carrying the
@@ -438,19 +459,20 @@ draft checked, for the maintainer to publish; running sidekicks and jobs are not
     install's own `player-dummy.png` on the pitch and in the team picture, the drawing only
     without one (merged `cc113dc2`); its SWE-2 round S1dm (2 accepted, the loop ended): a
     range of pictures reads the game's copy once, and two test gaps, merged `c20681a1`.
-    Owed: the paid review rounds of both commits (Tier 1).
-    Can run beside the detour: it touches no PES 2014 file.
-13. The pitch from the game's own texture, as the placeholder portrait is (the maintainer,
+    - [ ] **rounds** the paid review rounds of both commits (Tier 1)
+13. [ ] **PITCH** The pitch from the game's own texture, as the placeholder portrait is (the maintainer,
     2026-11-21), the painted pitch staying for a member without the PES folder (DECISIONS
     2026-11-21 "the pitch is the game's own texture when the PES folder is set"). The texture
     is in Konami's apk menu packs; the `apk` crate's plan (`plans/libs/apk.md`, `c8daca62`)
     holds the format, from two research passes over every PES 2014-2021 copy (SWE-2,
     `.tmp/apk_re/findings.md`, `findings_write.md`; the Python prototype `apk_write.py`
     beside them), checked against CPGE V0.7.1's reader and the maintainer's
-    `pesafp_texturetool.py`. Next: the code, in two slices: the crate's reader with the
-    Tactics screen's pitch (`save_editor.md` "Tactics editor"), then the writer, ending in
-    the in-game check its plan's "Tests" names.
-14. The PES file explorer (`plans/core/development_plan.md` "Unscheduled tools"), medium
+    `pesafp_texturetool.py`. The code comes in two slices:
+    - [ ] **reader** the crate's reader with the Tactics screen's pitch (`save_editor.md`
+      "Tactics editor")
+    - [ ] **writer** [after reader] the writer, ending in the in-game check its plan's "Tests"
+      names
+14. [ ] **EXPLORER** [after PITCH] The PES file explorer (`plans/core/development_plan.md` "Unscheduled tools"), medium
     priority, from two tools: Jenkey's PES File Explorer for PES 2014
     (`C:/Data/4cc/0Tools/S_File_Explorer_2014`; native and BoxedApp-packed, so evidence by
     what it does, not by its code; it browses CPKs and edits DDS and apk textures) and CPGE
@@ -466,7 +488,7 @@ draft checked, for the maintainer to publish; running sidekicks and jobs are not
     a Video encoder for the cup's USM videos (the format in `plans/libs/usm.md`) and an Export
     viewer (MFG's FMDL-Viewer), two file kinds to the explorer (`.mtar`, `.fsop`), and a
     third add-on, EssexDotDev's 4cc-FMDL-Toolkit, to the Blender plan.
-15. The checkpoints of 2026-11-22. The one on `f51c570a` left eight mutants alive, whose
+15. [x] **CP1122** The checkpoints of 2026-11-22. The one on `f51c570a` left eight mutants alive, whose
     tests landed (merge `36458a20`). The one on `625e7147` passed its gates and ran every
     mutant, yet left the gate at `fc6e8cf0`, as `f51c570a`'s had. Neither was
     stopped by its survivors: PowerShell, the shell `just` runs recipes under on Windows,
@@ -475,26 +497,26 @@ draft checked, for the maintainer to publish; running sidekicks and jobs are not
     `mutants_diff.py` directly; `refs/checkpoints/gated` and `mutated` were then moved to
     `625e7147` by hand, as the fixed script would have. Its 107 survivors (`.tmp/lead/mutants_625e7147/missed_all.txt`),
     triaged:
-    - the two `session_link.rs` timeouts are caught: each mutant makes `give`'s send loop
+    - [x] **timeouts** the two `session_link.rs` timeouts are caught: each mutant makes `give`'s send loop
       endless, and a timeout an infinite loop explains counts as caught (RUNBOOK "Mutation
       runs");
-    - `save_editor`: four are equivalent, now in `.cargo/mutants.toml` (`toggle_in_group`'s
+    - [x] **save_editor** four are equivalent, now in `.cargo/mutants.toml` (`toggle_in_group`'s
       `>=`, the Similar dialog's three `|` to `^`); two need tests: `alike`'s
       `skills && com_styles` (a player matching on skills alone must not match on Cards)
       and the dialog's `!team_category.contains` (Every team keeps a category that holds
       every match);
-    - `export_grid` and `team_compiler`, rerun at HEAD since the grid's position tests landed
+    - [x] **grid** `export_grid` and `team_compiler`, rerun at HEAD since the grid's position tests landed
       after `625e7147`: 6 and 11 left. Two timeouts are caught (endless loops); `text_colour`'s
       `>=` and `export_row`'s message guard are equivalent (`.cargo/mutants.toml`); the rest,
       with `save_editor`'s two, got tests (Opus, one rework, merge `881c9a32`), and the
       survivor that was unreachable code, a validated export's own portrait count, is gone;
-    - [ ] then `just pipeline` at the new HEAD.
-16. The VPS disk guard refuses only at the mutation step, after the checkpoint's whole test
+    - [x] **pipeline** [after save_editor, grid] then `just pipeline` at the new HEAD (run since, on later heads).
+16. [x] **DISKGUARD** The VPS disk guard refuses only at the mutation step, after the checkpoint's whole test
     pass (2026-11-23, on `e9b0a3d0`: 11 minutes of tests, then 42 GiB free against the 48 GiB
     floor; the build cache's cleanup freed 30 GB and the pipeline ran again from the start).
     Fixed: `just pipeline` now asks the remote whether it can take the run (not busy, not
     short of disk) before the checkpoint starts, so a refusal comes first.
-17. Owed paid rounds went unseen (census of 2026-11-23): the Compiler grid's slices never
+17. [x] **OWED** Owed paid rounds went unseen (census of 2026-11-23): the Compiler grid's slices never
     named their tier, so their Carbon round was never queued, and four reworks of Carbon's
     round 1 merged without their worklog lines saying so, which left two round 2s looking
     blocked. The first broke RUNBOOK's rule that a step's worklog line names its tier when
@@ -551,68 +573,76 @@ work no longer waits on it.
 writes what is correctness-critical; sidekicks implement, two or three at once; a review's
 depth follows its surface's tier. A review that cannot run is queued in the lead's handover,
 and no phase closes with one outstanding.
-- [ ] A periodic review of the dev cycle itself (`PREVENTION.md`, DECISIONS 2026-11-23 "a
+- [ ] **CYCLE** A periodic review of the dev cycle itself (`PREVENTION.md`, DECISIONS 2026-11-23 "a
   periodic review of the cycle", and "a look-ahead every two or three phases"): designed,
-  waiting on the maintainer's start. It begins with a backfill of two weeks of prevention
-  lines into the log, then the first review, then the first look-ahead. At the
-  start, `AGENTS.md` gains the file's row (it is at its 16 KB cap: something is cut first)
-  and the dev cycle chart its loop.
-- [ ] A roadmap page for the maintainer (DECISIONS 2026-11-23 "the worklog stays Markdown,
+  waiting on the maintainer's start. At the start, `AGENTS.md` gains the file's row (it is at
+  its 16 KB cap: something is cut first) and the dev cycle chart its loop. Then:
+  - [ ] **backfill** two weeks of prevention lines written into the log;
+  - [ ] **review1** [after backfill] the first review;
+  - [ ] **lookahead1** [after review1] the first look-ahead.
+- [ ] **ROADMAP** A roadmap page for the maintainer (DECISIONS 2026-11-23 "the worklog stays Markdown,
   and a roadmap page is generated from it"), in steps:
-  - [x] a "Now" block at the top of this file, one line per thread in flight (what, state,
+  - [x] **now** a "Now" block at the top of this file, one line per thread in flight (what, state,
     what it waits on, link); the handover keeps only session mechanics and points here:
     written 2026-11-23;
-  - [ ] `scripts/roadmap.py` writing `docs/maintainer/roadmap.html` from this file (the Now
+  - [ ] **page** `scripts/roadmap.py` writing `docs/maintainer/roadmap.html` from this file (the Now
     block as cards, the open items as Now, Next and Later columns, recent closes, the open
     issues' count), regenerated by `commit.py` whenever this file is committed; a sample
     for the maintainer's look before it is wired in; SWE-2. Generator and sample merged
     `c8977365` (one rework: the merges folded per day); waiting for the maintainer's look;
-  - [x] the Issues section audited (each open issue checked against today's code: closed,
+  - [x] **audit** the Issues section audited (each open issue checked against today's code: closed,
     kept, or made a step) and its resolved entries pruned: 2026-11-23, SWE-2 read-only in
     three parts. 13 closed, 3 made steps (two already tracked, Fox per-kit models added to
     the post-0.0.2 paragraph), 25 resolved entries pruned, 88 left;
-  - [x] the Issues section stays here (2026-11-23): AGENTS.md names this file its home,
+  - [x] **issues** [after audit] the Issues section stays here (2026-11-23): AGENTS.md names this file its home,
     `scripts/roadmap.py` counts its open entries, and pruned it no longer crowds the file;
-  - [ ] every open item and sub-step under "Where the work stands" given its ID and its
-    `[after …]` dependencies (this file's header); the lead, by hand;
-  - [ ] the page shows each step's ID, and a vertical timeline with a lane per thread run in
-    parallel and an edge from each step to what it waits on, drawn as an SVG by
-    `scripts/roadmap.py`: open steps above, done ones below on their item's lane, matched by
-    the ID their merge subjects carry; a new sample for the maintainer's look. SWE-2.
-- [ ] The `call` mutant kind's backfill (DECISIONS 2026-11-23 "a `call` extra mutant kind"):
+  - [x] **ids** every item and sub-step under "Where the work stands" given its checkbox, its
+    ID and its `[after …]` dependencies (this file's header): the lead, 2026-11-23;
+  - [ ] **timeline** [after page, ids] the page shows each step's ID, and a vertical timeline
+    with a lane per thread run in parallel and an edge from each step to what it waits on,
+    drawn as an SVG by `scripts/roadmap.py`: open steps above, done ones below on their
+    item's lane, dated by the commit their line names; a new sample for the maintainer's
+    look. SWE-2.
+- [ ] **CALL** The `call` mutant kind's backfill (DECISIONS 2026-11-23 "a `call` extra mutant kind"):
   about 3,900 mutants over every crate, smallest first, on the VPS alone as whole-crate runs
-  are. It needs the extra kinds to run there without cargo-mutants: slice RX (SWE-2,
-  `.tmp/call_backfill/brief_remote_extra.md`; merged, one rework), then `.tmp/call_backfill/run.py`, already repointed at its recipe. A first local start was stopped in its third crate, `pipeline`, after two with no
-  survivors (`pes_strings`, `vtree`). Each crate's survivors (`.tmp/call_backfill/<crate>.missed.txt`)
-  are triaged as CONTRIBUTING "Mutation runs" says, the missing tests going into SWE-2
-  slices crate by crate. Its first crate, `export_grid` (the trial), has 8 survivors, all
-  missing tests, now tested (slice G7, merged `863813d8`). Once each crate's run is measured, CONTRIBUTING's time for the
-  extra kinds gets the real figures.
-- [x] The drafts' help made from the build's, 2026-11-23 (`core/gui.md` "Prototypes before
+  are. Each crate's survivors (`.tmp/call_backfill/<crate>.missed.txt`) are triaged as
+  CONTRIBUTING "Mutation runs" says, the missing tests going into SWE-2 slices crate by crate:
+  - [x] **G7** the trial on `export_grid`: 8 survivors, all missing tests, now tested
+    (merged `863813d8`);
+  - [x] **RX** the extra kinds run on the VPS without cargo-mutants (SWE-2,
+    `.tmp/call_backfill/brief_remote_extra.md`; merged `490fd68b`, one rework);
+  - [ ] **backfill** [after RX] `.tmp/call_backfill/run.py` over every other crate, started
+    2026-11-23 once the checkpoint left the VPS (a first local start was stopped in its third
+    crate, `pipeline`, after two with no survivors, `pes_strings` and `vtree`);
+  - [ ] **figures** [after backfill] CONTRIBUTING's time for the extra kinds given each
+    crate's measured run.
+- [x] **DRAFTHELP** The drafts' help made from the build's, 2026-11-23 (`core/gui.md` "Prototypes before
   implementation", `f5c2934d`): `docs/prototypes/help.js`, written by `just draft-help` and
   checked by a test in `studio` (SWE-2, merge `7d8d2c15`); the drafts draw their help window
   and log lines from it (`3041aec7`). A changed topic or catalog row now fails that test
   until `just draft-help` runs.
-- [ ] A mutation tier between `mutants-diff` and whole-crate runs (DECISIONS 2026-11-23 "a tier
+- [ ] **TIER** [after CALL] A mutation tier between `mutants-diff` and whole-crate runs (DECISIONS 2026-11-23 "a tier
   between `mutants-diff` and whole-crate runs"), built after the `call` backfill's
   measurements and before 1.0.0's first phase close, in slices:
-  - [ ] the extra kinds take a diff (`extra_mutants.py` keeps a mutant only on a changed
+  - [ ] **diff** the extra kinds take a diff (`extra_mutants.py` keeps a mutant only on a changed
     line), and `mutants-diff` runs them, so the review loops test `call` mutants too;
-  - [ ] a tracked record of each crate's last triaged whole-run commit, and the closure run:
+  - [ ] **closure** [after diff] a tracked record of each crate's last triaged whole-run commit, and the closure run:
     every kind over the diff since that commit;
-  - [ ] whole-crate runs as a rolling job on the VPS, the crate checked longest ago first;
+  - [ ] **rolling** [after closure] whole-crate runs as a rolling job on the VPS, the crate checked longest ago first;
     RUNBOOK "Phases and releases" and CONTRIBUTING "Mutation runs" rewritten to match.
-- [ ] Evaluate running only the tests that cover each mutant (the maintainer, 2026-11-23: worth
-  a look, since it could cut a mutant's cost tenfold). First, from the logs of a finished
-  whole-crate run (`save_editor`, `pes_savefile`), split each mutant's time into its build and
-  its tests: selection only shortens the tests, so this split bounds the gain. If the tests
-  dominate, a trial on one crate: each test's line coverage recorded once (`cargo llvm-cov`),
-  each mutant run with only the tests covering its line, against the same mutants run with
-  the full suite, the time measured both ways. Identical caught and missed sets make it a
-  drop-in for every tier. A selection that misses some catches still serves two ways if it is
-  fast enough (the maintainer, 2026-11-23): as a new lowest tier, or as an exact one with its
-  survivors run again on the full suite. A catch under selection is sound (one of its tests
-  failed), so only its survivors can be wrong, and they are few.
+- [ ] **TESTSEL** Evaluate running only the tests that cover each mutant (the maintainer, 2026-11-23: worth
+  a look, since it could cut a mutant's cost tenfold):
+  - [ ] **split** from the logs of a finished whole-crate run (`save_editor`, `pes_savefile`),
+    each mutant's time split into its build and its tests: selection only shortens the
+    tests, so this split bounds the gain;
+  - [ ] **trial** [after split] if the tests dominate, a trial on one crate: each test's line
+    coverage recorded once (`cargo llvm-cov`), each mutant run with only the tests covering
+    its line, against the same mutants run with the full suite, the time measured both ways.
+    Identical caught and missed sets make it a drop-in for every tier. A selection that
+    misses some catches still serves two ways if it is fast enough (the maintainer,
+    2026-11-23): as a new lowest tier, or as an exact one with its survivors run again on
+    the full suite. A catch under selection is sound (one of its tests failed), so only its
+    survivors can be wrong, and they are few.
 
 ---
 
