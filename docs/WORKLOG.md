@@ -127,7 +127,8 @@ draft checked, for the maintainer to publish; running sidekicks and jobs are not
    - [ ] The next VGL build, `0.0.3-vgl27.2`, once the Compiler's slices 1b and 1c have landed
      (the maintainer, 2026-11-22), 1c-iii's Upgrade DpFileList button included (2026-11-23):
      `vgl27` merges main, raises the version, is packed. What the button does on PES 2019
-     waits on item 8 (`questions.html` "vgl27-dpfl-on-pes19")
+     waits on item 8 (`maintainer/questions.html` "Upgrade DpFileList in the organizer's PES
+     2019 build")
    - [x] VGL27's legacy mode off main, onto `vgl27` alone (2026-11-22, DECISIONS 2026-11-22):
      main's merge `8cc425a3` (Opus; the lead dropped three tests of the old names and the
      draft's `IDs` cell), TC-LEG-01 to 05 and EU-SET-15 to 17 withdrawn, and a CHANGELOG
@@ -164,14 +165,15 @@ draft checked, for the maintainer to publish; running sidekicks and jobs are not
        in the log (the plan's "the export's log lines"), which today holds only a Compile's
        lines, so the strip's counts filter the findings the grid shows
      - 1c-iii: the Upgrade DpFileList button beside Compile and its dialog (TC-GUI-33;
-       `plans/team_compiler/gui.md` "Toolbar", `pipeline.md` "DpFileList upgrade"; the
+       `plans/team_compiler/gui.md` "Toolbar", `plans/team_compiler/pipeline.md` "DpFileList
+       upgrade"; the
        draft's `compiler/main?dpfl=outdated`), over the CLI's `upgrade-dpfl`, with the new
        `dpfilelist_cpk_deleted`. On PES 2019 it waits for item 8
    - Then the kit cells' swatch (TC-GUI-10), the row actions, the ID cell's editing, the
-     watcher and cache, Sizes and sorting, and the rest of the toolbar (`plans/team_compiler/
-     gui.md` "Toolbar"; the build has a plain Compile button): the split button with its
-     mode list, Launch PES, the writability badge, and the dropdown's Open output folder
-     and Copy report.
+     watcher and cache, Sizes and sorting, and the rest of the toolbar
+     (`plans/team_compiler/gui.md` "Toolbar"; the build has a plain Compile button): the
+     split button with its mode list, Launch PES, the writability badge, and the dropdown's
+     Open output folder and Copy report.
      The watcher and cache's slice also owes TC-GUI-04's `.7z` order: 1a's check reads a
      `.7z` whole at once, where the scenario wants its entry table first and its deep check
      after the folders and zips, within the memory budget (a `.zip`'s deep check, as built,
