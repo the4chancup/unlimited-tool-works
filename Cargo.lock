@@ -1596,6 +1596,7 @@ dependencies = [
 name = "export_grid"
 version = "0.0.2"
 dependencies = [
+ "color_tools",
  "egui",
  "studio_core",
  "vtree",

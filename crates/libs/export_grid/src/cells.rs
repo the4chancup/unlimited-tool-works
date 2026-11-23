@@ -215,15 +215,37 @@ pub(crate) fn look(state: CellState, outline: Option<Outline>, visuals: &egui::V
     }
 }
 
+/// Whether a cell drawn in `state` shows its kit's menu icon: the draft's `swatch`
+/// test, which hides it on an unchecked, checking or blocked cell.
+pub(crate) fn shows_icon(state: CellState) -> bool {
+    !matches!(
+        state,
+        CellState::Unchecked | CellState::Checking | CellState::Blocked
+    )
+}
+
 /// A cell's and a swatch's corner radius.
 pub(crate) const RADIUS: f32 = 2.0;
 /// The width of a Warning's or an Error's ring, inside the cell's edge.
 const RING: f32 = 3.0;
 /// A blocked cell's dashes, and the gaps between them.
 const DASH: f32 = 3.0;
+/// A kit swatch's height, and its inset from the cell's left, right and bottom edges
+/// (the draft's `.tc-sw`).
+const SWATCH_HEIGHT: f32 = 9.0;
+const SWATCH_INSET: f32 = 2.0;
+/// How far under its top edge a kit cell's label stands while its swatch shows (the
+/// draft's `.tc-cell.kit`).
+pub(crate) const KIT_LABEL_TOP: f32 = 3.0;
 
 /// Paints `look` in `rect`: its fill, or a blocked cell's dashed edge, then its ring.
 pub(crate) fn paint(painter: &egui::Painter, look: &Look, rect: egui::Rect) {
+    paint_fill(painter, look, rect);
+    paint_ring(painter, look, rect);
+}
+
+/// `look`'s fill in `rect`, or a blocked cell's dashed edge.
+pub(crate) fn paint_fill(painter: &egui::Painter, look: &Look, rect: egui::Rect) {
     if look.dashed {
         let edge = rect.shrink(0.5);
         let path = [
@@ -242,6 +264,10 @@ pub(crate) fn paint(painter: &egui::Painter, look: &Look, rect: egui::Rect) {
     } else {
         painter.rect_filled(rect, RADIUS, look.fill);
     }
+}
+
+/// `look`'s ring in `rect`, inside its edge.
+pub(crate) fn paint_ring(painter: &egui::Painter, look: &Look, rect: egui::Rect) {
     if let Some(ring) = look.ring {
         painter.rect_stroke(
             rect,
@@ -250,6 +276,22 @@ pub(crate) fn paint(painter: &egui::Painter, look: &Look, rect: egui::Rect) {
             egui::StrokeKind::Inside,
         );
     }
+}
+
+/// Paints `icon`'s pattern in the strip along `rect`'s foot (the draft's `.tc-sw`).
+pub(crate) fn paint_swatch(painter: &egui::Painter, icon: KitIcon, rect: egui::Rect) {
+    let strip = egui::Rect::from_min_max(
+        egui::pos2(
+            rect.left() + SWATCH_INSET,
+            rect.bottom() - SWATCH_INSET - SWATCH_HEIGHT,
+        ),
+        egui::pos2(rect.right() - SWATCH_INSET, rect.bottom() - SWATCH_INSET),
+    );
+    painter.extend(color_tools::icon::pattern_shapes(
+        strip,
+        icon.number,
+        icon.colors,
+    ));
 }
 
 /// The text colour on `fill`: a soft dark grey on a light fill, a soft light grey on a dark
