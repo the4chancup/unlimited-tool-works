@@ -31,8 +31,9 @@ NODES = [
      "Rules and choices the maintainer sets; each lands in a plan, AGENTS.md or RUNBOOK.md "
      "and a DECISIONS.md entry, never in chat alone."),
     ("look", "Draft look", "maintainer", 1, 0,
-     "The maintainer looks at a UI draft rendered from docs/prototypes/ before anything a "
-     "member sees is briefed."),
+     "No work starts on a tool's built UI until the maintainer calls its draft "
+     "(docs/prototypes/) buildable. The lead's own UI choices reach the maintainer in the "
+     "draft, or pictured on the UI decisions page, for a veto that blocks nothing."),
     ("answers", "Answers and rulings", "maintainer", 1, 1,
      "Answers on the questions page (in-game behavior, cup practice, preferences) and vetoes "
      "or approvals on the proposals page; an answer is open to discussion when the lead sees "
@@ -42,7 +43,9 @@ NODES = [
      "The proof becomes a 'manual: checked' line in the worklog."),
     ("release", "Release and push", "maintainer", 7, 0,
      "Pushes and release cuts need the maintainer's OK, and a push is asked for only at a "
-     "gated commit; the lead reads CI after it. During 0.x.x a release does not wait for "
+     "gated commit; the lead reads CI after it. A cut starts only once the maintainer has worked "
+     "through the tasks page and approved or rewritten the release's CHANGELOG section. During 0.x.x "
+     "a release does not wait for "
      "whole-crate mutation runs: their findings ship in the next release or a patch."),
     ("plans", "Plans", "docs", 0, 0,
      "docs/plans/: the design of what is not built yet, its rationale ('we do X, not Y, because "
@@ -55,8 +58,8 @@ NODES = [
      "for that phase, never for the whole project up front."),
     ("questions", "Maintainer pages", "docs", 1, 1,
      "docs/maintainer/: the questions only the maintainer can answer, the proposals (usability "
-     "ideas nobody asked for, unbuilt until ruled) and the tasks waiting on the maintainer, "
-     "each a card with choice buttons."),
+     "ideas nobody asked for, unbuilt until ruled), the tasks waiting on the maintainer and the "
+     "lead's UI choices, pictured for a veto, each a card with choice buttons."),
     ("worklog", "WORKLOG.md", "docs", 2, 0,
      "Where we are: the release's blocking path, the open steps with their verify criteria, "
      "the looks still owed in the game or the built window, and open issues. A step "
@@ -73,7 +76,8 @@ NODES = [
      "entry); only a truly open choice goes to the questions page."),
     ("draft", "UI draft", "lead", 1, 0,
      "Anything a member sees is drafted first under docs/prototypes/, rendered and critiqued; "
-     "a brief names the draft function it builds."),
+     "a brief names the draft function it builds. The built window is captured beside its "
+     "draft and compared before any look reaches the maintainer."),
     ("brief", "Brief", "lead", 2, 0,
      "One reviewable slice (about 500 lines at most): reading pointers, exact deliverables, a "
      "Verify list whose every check can fail, and a closing 'Errors hit' section. The "
@@ -86,7 +90,9 @@ NODES = [
      "sweep (hidden failures) and the design sweep (code that passes and is worse)."),
     ("rulings", "Rulings", "lead", 4, 1,
      "Every reviewer concern is accepted or rejected with a reason. Being true is not enough: "
-     "an accepted concern changes a real export, contradicts a rule, or fixes a wrong fact."),
+     "an accepted concern changes a real input's outcome, contradicts the code or a rule, "
+     "names an outcome no test observes, or fixes a wrong fact. Its cause then gets a "
+     "prevention line: a brief rule, a skill line, a gate or a review sweep."),
     ("commit", "Commit", "lead", 6, 0,
      "The changed crates' tests, clippy and fmt run, the worklog step collapses to one "
      "line, then scripts/commit.py checks the message and commits: the message is the log."),
@@ -114,12 +120,12 @@ NODES = [
      "layer's fixes."),
     ("argon", "Carbon rounds", "reviewers", 4, 1,
      "Gemini 4 Carbon High, the middle layer: better than SWE-2, much cheaper than Astra. "
-     "Shipped code gets one paid round; only what writes game files or saves gets both "
-     "paid loops."),
+     "Shipped code gets one paid round; only code writing what the game reads, or a member's "
+     "save, gets both paid loops, with the few surfaces RUNBOOK.md adds."),
     ("astra", "Astra rounds", "reviewers", 4, 2,
      "GPT-6 Astra, the last layer, on what the cheaper ones could not see. Each layer loops "
-     "until a round accepts fewer than five; a loop not started within a week folds into "
-     "the converge audit."),
+     "until a round accepts fewer than five; a loop waiting for its reviewer's usage stays "
+     "queued."),
     ("unit", "Unit & integration tests", "checks", 3, 0,
      "Each crate's tests, written red first; a test fails, it never hangs."),
     ("accept_tests", "Acceptance tests", "checks", 3, 1,
@@ -127,9 +133,10 @@ NODES = [
      "'manual: checked' line proves."),
     ("gates", "Gates", "checks", 5, 0,
      "just gates: fmt, clippy with warnings as errors, every test, line endings, comment "
-     "references and doc pointers. just checkpoint runs them over everything since the last "
-     "gated commit, with mutants-diff, and moves that commit: at a loop's end, a step's "
-     "close, a merge, and before a push is asked for."),
+     "references and doc pointers. just pipeline runs them in a gate worktree, so main stays "
+     "free to work in: just checkpoint over everything since the last gated commit, with "
+     "mutants-diff, then the Linux gates on the VPS. A pass moves the gated commit. It "
+     "runs after merged slices and before a push is asked for."),
     ("citation", "Citation audit", "checks", 4, 0,
      "Flags tests whose cited scenario they may not prove; every flag is ruled before a crate's "
      "review."),
@@ -146,8 +153,8 @@ NODES = [
      "the pushed commit."),
     ("mdiff", "mutants-diff", "mutation", 5, 0,
      "Part of just checkpoint, over the commits since the last gated one: each surviving "
-     "mutant is an assertion nobody wrote. It runs on the lead's PC, so a whole-crate run "
-     "can hold the VPS meanwhile."),
+     "mutant is an assertion nobody wrote. A larger crate's mutants are split between the "
+     "lead's PC and the VPS, sized so both halves end together."),
     ("extra", "Extra mutant kinds", "mutation", 5, 1,
      "bool, literal, normalize and order mutants cargo-mutants does not make, run before a "
      "whole-crate run into the same survivor list."),
