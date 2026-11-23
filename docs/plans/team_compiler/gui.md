@@ -548,9 +548,13 @@ A single primary action:
 
   The button carries the **destination writability badge** (PES running / elevation needed;
   see `spec/team_compiler/pipeline.md` "Post-processing") with the reason and remedy in its
-  tooltip, and its dropdown always contains **Open output folder** and **Copy report** (the
-  run's lines as the console prints them, for a member asking for help in the cup's thread,
-  as the Export upgrader's Upgrade menu offers).
+  tooltip, and its dropdown always contains **Open output folder** and **Copy report**.
+  Open output folder creates the folder first when no run has made it yet, since a file
+  manager asked for a missing folder opens another one instead. Copy report puts every line
+  of the log on the clipboard as the console prints them, the check's findings and then the
+  run's, whatever the log's filter is set to: a member asking for help in the cup's thread needs the
+  findings too, and before any run they are all the log holds. The Export upgrader's Upgrade
+  menu offers the same.
 - **Run strip**: a one-line bar next to the button: current stage, elapsed time, files written
   with their total size so far (`592 files written (306 MB)`, summed as each file is written),
   memory in use. Once a run ends it gives the run's line, `Compile finished in 00:42 · 1184

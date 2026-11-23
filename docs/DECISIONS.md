@@ -19887,3 +19887,13 @@ the strip, keeps each pattern whole (a sash still runs corner to corner, a halve
 shows both halves), which a square cut from the middle of a 24 by 9 strip would lose.
 Plan: `plans/team_compiler/gui.md` "GUI: the live-validating team grid" (Kit cells), `plans/libs/color_tools.md` "Kit menu icon
 rendering (Phase 8)".
+
+## 2026-11-23 — team_compiler — the Compile menu's Copy report copies the whole log, and Open output folder creates the folder
+Decision: Copy report puts every line of the log on the clipboard, the check's findings and
+then the run's, whatever the log's filter is set to. Open output folder creates the output
+folder first when no run has made it yet. The plan said only "the run's lines as the console
+prints them", and nothing about a missing folder.
+Why: a member asking for help in the cup's thread needs the check's findings as much as the
+run's, and before any run they are all the log holds. A file manager asked for a missing
+folder opens another one instead, which reads as the wrong folder.
+Plan: `plans/team_compiler/gui.md` "Toolbar", the Compile button's dropdown.
