@@ -1118,6 +1118,10 @@ mod tests {
     }
 
     // UTW_WRITE_DRAFT_HELP is the recipe's write mode: `just draft-help` reruns the test with it set.
+    // Windows only: the drafts show the Windows build, whose help names the program `UTW`,
+    // where every other platform's build writes `utw` (`exe_name!`), so the file can match
+    // one platform's help alone.
+    #[cfg(windows)]
     #[test]
     fn the_draft_help_file_is_the_builds_help() {
         let expected = studio_core::help::draft_script(&tools());
