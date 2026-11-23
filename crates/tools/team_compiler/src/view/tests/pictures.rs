@@ -75,12 +75,27 @@ fn each_cell_s_box_names_the_pictures_the_compile_packs() {
     assert_eq!(portraits(team).unwrap().top, expected);
 }
 
-/// The label's box of a referee export holding `files` besides its referee, `A`.
-fn referee_label_box(test: &str, files: &[&str]) -> (TopBox, PathBuf) {
+/// The `/refs/` row and export folder of a referee export whose `players.txt` gives each
+/// of `referees` its slot (each folder a copy of the tracer's player), holding the kit
+/// folders `kits` and the root files `files`: `logo.png` gets a logo's bytes, any other
+/// name the marker's.
+fn referee_row(
+    test: &str,
+    referees: &[(u8, &str)],
+    kits: &[&str],
+    files: &[&str],
+) -> (Row, PathBuf) {
     let temp = sandbox(test);
     let root = temp.path();
-    add_file(root, "refs Cup/players.txt", b"01 A\n");
-    add_player(root, "refs Cup", "A");
+    let mut roster = String::new();
+    for (slot, folder) in referees {
+        roster.push_str(&format!("{slot:02} {folder}\n"));
+        add_player(root, "refs Cup", folder);
+    }
+    add_file(root, "refs Cup/players.txt", roster.as_bytes());
+    for folder in kits {
+        add_kit(root, "refs Cup", folder);
+    }
     let marker = fs::read(tracer().join("Kits/g1/kit.dds")).unwrap();
     let logo = dds_convert::encode_png(&[255; 16 * 16 * 4], 16, 16).unwrap();
     for file in files {
@@ -89,8 +104,15 @@ fn referee_label_box(test: &str, files: &[&str]) -> (TopBox, PathBuf) {
     }
     complete(&root.join("exports/refs Cup"), PesVersion::Pes21, &[]);
     let rows = checked_rows(root);
-    let label = &row(&rows, "/refs/").label;
-    (label.top.clone(), export_folder(label))
+    let referees = row(&rows, "/refs/").clone();
+    let export = export_folder(&referees.label);
+    (referees, export)
+}
+
+/// The label's box of a referee export holding `files` besides its referee, `A`.
+fn referee_label_box(test: &str, files: &[&str]) -> (TopBox, PathBuf) {
+    let (referees, export) = referee_row(test, &[(1, "A")], &[], files);
+    (referees.label.top, export)
 }
 
 // TC-GUI-32
@@ -98,8 +120,54 @@ fn referee_label_box(test: &str, files: &[&str]) -> (TopBox, PathBuf) {
 fn a_referee_export_s_label_shows_its_marker_in_place_of_its_logo() {
     let (top, export) = referee_label_box("view_grid_ref_marker", &["ref_marker.dds", "logo.png"]);
     assert_eq!(top, TopBox::Logo(Some(picture(&export, "ref_marker.dds"))));
+    let (top, _) = referee_label_box("view_grid_ref_logo_alone", &["logo.png"]);
+    assert_eq!(top, TopBox::Logo(None));
     let (top, _) = referee_label_box("view_grid_ref_no_logo", &[]);
     assert_eq!(top, TopBox::Logo(None));
+}
+
+// TC-GUI-32: a referee's portrait and a referee export's kit texture reach no output
+// either, so no cell pictures them (each holds `portrait.dds`/`kit.dds` on disk).
+#[test]
+fn a_referee_export_s_cells_show_no_portrait_or_kit_texture() {
+    let (referees, _) = referee_row("view_grid_ref_cells", &[(1, "A")], &["p1"], &["logo.png"]);
+    assert_eq!(
+        player(&referees, 1).expect("the 01 cell").top,
+        TopBox::Player {
+            portrait: None,
+            logo: None
+        },
+        "A's folder holds portrait.dds"
+    );
+    assert_eq!(kit(&referees, 1).expect("the K1 cell").top, TopBox::Empty);
+}
+
+// TC-GUI-32: an export dropped whole still shows its listing's pictures, but a
+// dropped referee export's compile packs none of them (players_txt_slot_duplicate
+// drops it while its roster still maps the folders to slots).
+#[test]
+fn a_dropped_referee_export_s_boxes_hold_no_unused_pictures() {
+    let (referees, _) = referee_row(
+        "view_grid_ref_dropped",
+        &[(1, "A"), (1, "B")],
+        &["p1"],
+        &["logo.png"],
+    );
+    assert_eq!(
+        player(&referees, 1).expect("the 01 cell").state,
+        CellState::Blocked,
+        "premise: the check dropped the export"
+    );
+    assert_eq!(referees.label.top, TopBox::Logo(None));
+    assert_eq!(
+        player(&referees, 1).expect("the 01 cell").top,
+        TopBox::Player {
+            portrait: None,
+            logo: None
+        },
+        "A and B each hold portrait.dds"
+    );
+    assert_eq!(kit(&referees, 1).expect("the K1 cell").top, TopBox::Empty);
 }
 
 // An export dropped whole (a team the teams list lacks) shows its pictures from its

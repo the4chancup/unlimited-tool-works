@@ -405,7 +405,9 @@ struct Layout {
     portraits: Option<usize>,
     /// The export's `Portraits/` folder, as its listing spells it; `None` without one.
     portraits_folder: Option<ScopePath>,
-    /// Whether the export is the referees': its slots run to 35, on two lines.
+    /// Whether the export is the referees': its slots run to 35, on two lines, and its
+    /// compile packs no portrait or kit file, so `portrait_files` and `kit_textures`
+    /// stay empty.
     referee: bool,
     /// Each player slot's portrait, the one the compile packs: his folder's own, else his
     /// `Portraits/` file.
@@ -436,30 +438,36 @@ fn resolved_layout(resolved: &ResolvedAestheticsExport) -> Layout {
         }
     }
     let mut portrait_files = BTreeMap::new();
-    for (index, slots) in &slots {
-        for slot in slots {
-            let in_portraits = || {
-                let slot = PlayerSlot::new(*slot)?;
-                export.portraits.get(&slot)
-            };
-            if let Some(file) = export.players[*index]
-                .portrait
-                .as_ref()
-                .or_else(in_portraits)
-            {
-                portrait_files.insert(*slot, file.clone());
+    if !referee {
+        for (index, slots) in &slots {
+            for slot in slots {
+                let in_portraits = || {
+                    let slot = PlayerSlot::new(*slot)?;
+                    export.portraits.get(&slot)
+                };
+                if let Some(file) = export.players[*index]
+                    .portrait
+                    .as_ref()
+                    .or_else(in_portraits)
+                {
+                    portrait_files.insert(*slot, file.clone());
+                }
             }
         }
     }
-    let kit_textures = export
-        .kits
-        .kits
-        .iter()
-        .filter_map(|(slot, kit)| {
-            let main = kit.textures.iter().find(|texture| texture.stem == "kit")?;
-            Some((*slot, main.file.clone()))
-        })
-        .collect();
+    let kit_textures = if referee {
+        BTreeMap::new()
+    } else {
+        export
+            .kits
+            .kits
+            .iter()
+            .filter_map(|(slot, kit)| {
+                let main = kit.textures.iter().find(|texture| texture.stem == "kit")?;
+                Some((*slot, main.file.clone()))
+            })
+            .collect()
+    };
     Layout {
         players: slots
             .into_iter()
@@ -481,19 +489,19 @@ fn resolved_layout(resolved: &ResolvedAestheticsExport) -> Layout {
 }
 
 /// `kept`, a validated export's layout, with the folders a finding dropped from it added
-/// from `listed`, its listing's layout: each at the slots its listing gives it that no kept
-/// folder holds. A dropped folder keeps its cell, so its finding colours its own player or
-/// kit rather than the label. A kept kit folder that is no folder of the export is left out
-/// first: a `Full` export is given an empty `Kits/p1` or `Kits/g1` where no kit of the kind
-/// survived, and it would hold the slot the dropped folder's cell belongs on. The portraits
-/// count is `listed`'s: a dropped folder's portrait is still in the export, and the
-/// portraits cell counts the players that have one, as it does for an export dropped whole
-/// (`draft_layout`). The pictures stay `kept`'s, the files the compile packs.
+/// from `listed`, its listing's layout, so a dropped folder keeps its cell and its finding
+/// colours its own player or kit rather than the label. A dropped player folder joins at the
+/// slots its listing gives it that no kept folder holds. The kits are `listed`'s outright:
+/// it holds every kit folder of the export, a dropped one included; the empty `Kits/p1`
+/// or `Kits/g1` a `Full` export is given where no kit of the kind survived is not there,
+/// since it is no folder of the export.
+/// The portraits count is `listed`'s: a dropped folder's portrait is still in the export,
+/// and the portraits cell counts the players that have one, as it does for an export dropped
+/// whole (`draft_layout`). The pictures stay `kept`'s, the files the compile packs.
 fn with_dropped(mut kept: Layout, listed: Layout) -> Layout {
     kept.portraits = listed.portraits;
     kept.portraits_folder = listed.portraits_folder;
-    let listed_kits: BTreeSet<&ScopePath> = listed.kits.iter().map(|(_, folder)| folder).collect();
-    kept.kits.retain(|(_, folder)| listed_kits.contains(folder));
+    kept.kits = listed.kits;
     let taken: BTreeSet<u8> = kept
         .players
         .iter()
@@ -509,11 +517,6 @@ fn with_dropped(mut kept: Layout, listed: Layout) -> Layout {
             .collect();
         if !free.is_empty() {
             kept.players.push((folder, free));
-        }
-    }
-    for (slot, folder) in listed.kits {
-        if !kept.kits.iter().any(|(held, _)| *held == slot) {
-            kept.kits.push((slot, folder));
         }
     }
     kept
@@ -575,20 +578,30 @@ fn draft_layout(parsed: &ParsedAestheticsExport) -> Layout {
             .collect::<BTreeSet<u8>>()
             .len()
     });
-    let portrait_files = at_slots
-        .iter()
-        .filter_map(|(folder, slot)| Some((*slot, draft_portrait(parsed, folder, *slot)?.clone())))
-        .collect();
-    let kit_textures = draft
-        .kits
-        .iter()
-        .filter_map(|kit| {
-            let (head, _) = split_folder_name(kit.path.name());
-            let main = kit_textures(kit)
-                .find(|file| stem(file.path.name()).eq_ignore_ascii_case("kit"))?;
-            Some((KitSlot::parse(head)?, main.clone()))
-        })
-        .collect();
+    let portrait_files = if referee {
+        BTreeMap::new()
+    } else {
+        at_slots
+            .iter()
+            .filter_map(|(folder, slot)| {
+                Some((*slot, draft_portrait(parsed, folder, *slot)?.clone()))
+            })
+            .collect()
+    };
+    let kit_textures = if referee {
+        BTreeMap::new()
+    } else {
+        draft
+            .kits
+            .iter()
+            .filter_map(|kit| {
+                let (head, _) = split_folder_name(kit.path.name());
+                let main = kit_textures(kit)
+                    .find(|file| stem(file.path.name()).eq_ignore_ascii_case("kit"))?;
+                Some((KitSlot::parse(head)?, main.clone()))
+            })
+            .collect()
+    };
     Layout {
         players: slots
             .into_iter()
@@ -615,25 +628,34 @@ fn draft_layout(parsed: &ParsedAestheticsExport) -> Layout {
     }
 }
 
-/// The file standing for `checked`'s export in its boxes: a referee export's marker when it
-/// has one, since its logo reaches no output while the referees wear the marker in game;
-/// else the export's main logo. Taken from the validated export when there is one, else
-/// from the export's listing; `None` without either.
+/// The file standing for `checked`'s export in its boxes: a referee export's marker
+/// (`None` without one), since its logo reaches no output while the referees wear the
+/// marker in game; a team export's main logo. Taken from the validated export when there
+/// is one, else from the export's listing; `None` without either.
 fn logo_file(checked: &CheckedSource, referee: bool) -> Option<FileDescriptor> {
     if let Some(resolved) = &checked.resolved {
         let export = &resolved.export;
-        let main = export.logo.as_ref().map(|logo| &logo.main.file);
-        return export.root.referee_marker.as_ref().or(main).cloned();
+        if referee {
+            return export.root.referee_marker.clone();
+        }
+        return export.logo.as_ref().map(|logo| logo.main.file.clone());
     }
     let draft = &checked.parsed.as_ref()?.draft;
-    let marker = draft.root_files.iter().find(|file| {
-        referee && file.kind == FileKind::Texture && is_referee_marker(file.path.name())
-    });
-    let main = draft.root_files.iter().find(|file| {
-        file.kind == FileKind::Texture
-            && logo_parts(stem(file.path.name())).is_some_and(|(small, _)| !small)
-    });
-    marker.or(main).cloned()
+    if referee {
+        return draft
+            .root_files
+            .iter()
+            .find(|file| file.kind == FileKind::Texture && is_referee_marker(file.path.name()))
+            .cloned();
+    }
+    draft
+        .root_files
+        .iter()
+        .find(|file| {
+            file.kind == FileKind::Texture
+                && logo_parts(stem(file.path.name())).is_some_and(|(small, _)| !small)
+        })
+        .cloned()
 }
 
 /// What an export's top boxes show: its files as pictures, and the file standing for the

@@ -166,6 +166,31 @@ fn a_shared_folder_s_and_a_logo_s_findings_colour_the_label_alone() {
     }
 }
 
+// Two kit folders claiming one slot are both dropped by validation, one finding
+// each, but the slot's cell is still theirs: both findings land on it.
+#[test]
+fn duplicate_kit_folders_share_the_slot_s_cell() {
+    let temp = sandbox("view_grid_dup_kit");
+    let root = temp.path();
+    list_teams(root);
+    add_player(root, "co Midcup Map", "03 - B");
+    add_kit(root, "co Midcup Map", "p1 - A");
+    add_kit(root, "co Midcup Map", "p1 - B");
+    let rows = checked_rows(root);
+    let team = row(&rows, "/co/");
+    let p1 = kit(team, 1).expect("the K1 cell");
+    let duplicates = codes(p1)
+        .into_iter()
+        .filter(|code| *code == "kit_slot_duplicate")
+        .count();
+    assert_eq!(duplicates, 2, "one per folder: {:?}", codes(p1));
+    assert!(
+        !codes(&team.label).contains(&"kit_slot_duplicate"),
+        "{:?}",
+        codes(&team.label)
+    );
+}
+
 // A finding about a player folder, or a file in one, is that player's: a dropped
 // folder's included, which keeps its slot's cell.
 #[test]
