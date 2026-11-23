@@ -19897,3 +19897,15 @@ Why: a member asking for help in the cup's thread needs the check's findings as 
 run's, and before any run they are all the log holds. A file manager asked for a missing
 folder opens another one instead, which reads as the wrong folder.
 Plan: `plans/team_compiler/gui.md` "Toolbar", the Compile button's dropdown.
+
+## 2026-11-23 — team_compiler — a change of the settings the grid's check reads checks the grid again
+Decision: the grid's check runs again when a setting it reads changes: the PES version or
+folder (the sidebar's pick, or the switch to the game that started running), or the
+Compiler's own settings. An open Upgrade DpFileList dialog closes then, since its preview
+was of the old install.
+Why: the check ran only when the window first opened and after a run, so switching the PES
+version in the sidebar left the grid, the log and the toolbar describing the old install:
+Compile stayed disabled for a list that was no longer the active one, or Upgrade DpFileList
+stayed hidden for one that was outdated. The plan's live validation watched only the exports
+folder.
+Plan: `plans/team_compiler/gui.md` "Live validation (no Check or Refresh buttons)".

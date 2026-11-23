@@ -8,12 +8,13 @@ Part of the [Compiler plan](README.md). Section headings are unchanged from the 
 
 The primary view is a grid where **each aesthetics export is a row**, keyed internally by stable
 `ExportId` rather than display name, with the team name label on the left, the team ID cell next to
-it, one cell per player at a fixed position by number, plus one cell per kit:
+it, one cell per player at a fixed position by number, the portraits cell, then one cell per
+kit:
 
 ```
-/aa/   [714]   [01][02][03][04][  ][  ][  ][  ]   [GK][K1][K2]
-/bb/   [???]   [01][02][03][04][05][06][07][08]   [GK][K1]
-/cc/   [809]   [01][  ][03][  ][05][  ][  ][  ]   [GK]
+/aa/   [714]   [01][02][03][04][··][··][··][··]   [ 3/4 ]   [GK][K1][K2]
+/bb/   [???]   [01][02][03][04][05][06][07][08]   [ 8/8 ]   [GK][K1]
+/cc/   [809]   [01][··][03][··][05][··][··][··]   [ 0/3 ]   [GK]
 ```
 
 The grid is drawn by `libs/export_grid`, which the Export upgrader's Grid look draws too
@@ -53,11 +54,14 @@ would drift apart.
   after the team name, and the row revalidates like after any rename.
 - **Player cells**: one per player, labeled with the player number (`01`–`23`, from the folder name
   or the root `players.txt`). The columns are **fixed positions 01–23**: a player without a folder
-  in the export leaves its column completely empty (no cell, no number), so columns always align
+  in the export leaves a faint empty square with no number in its column, so columns always align
   across rows by number: missing players are visible at a glance.
-- **Referee rows**: the fixed positions extend to `01`–`35` (one per referee slot). Each slot listed
-  in `players.txt` gets a cell, and slots backed by the same model folder share its status (the
-  detail window names the folder, making the repetition visible).
+- **Portraits cell**: right of the players, a wide cell counting the players that have a
+  portrait (`3/4`). Referee rows have none.
+- **Referee rows**: 35 fixed positions, one per referee slot: `01`–`23` on the row's first
+  line, `24`–`35` on a second line under `01`–`12`. Each slot listed in `players.txt` gets a
+  cell, and slots backed by the same model folder share its status (the detail window names
+  the folder, making the repetition visible).
 - **Kit cells**: one per kit. The `Kits/` folder has one subfolder per kit (containing
   `config.toml`, `colors.txt`, and that kit's textures), which gives the per-kit cell
   granularity naturally. `all/` is not a kit and gets no cell: its effect shows in the kit
@@ -295,7 +299,11 @@ other columns, so on the rows with none the column reads as theirs, not as unuse
 
 The exports folder is monitored continuously; checking requires no user input. The watcher and
 the cache below are `libs/pipeline`'s, shared with the Balls compiler's list view; this crate's
-`check/` decides what to check when and maps the results to rows (`README.md` "Crate layout"):
+`check/` decides what to check when and maps the results to rows (`README.md` "Crate layout").
+A change of a setting the check reads checks the grid again, as a run's end does: the PES
+version or folder (picked in the sidebar, or switched to the running game), or the
+Compiler's own settings. Without it, the grid, the log and the toolbar's buttons would keep
+describing the install the window opened on.
 
 - **Folder watching** via the `notify` crate (`ReadDirectoryChangesW` on Windows, inotify on Linux),
   with `notify-debouncer-full` for event debouncing. New exports trigger checks after a ~1–2s quiet
@@ -440,8 +448,9 @@ let bg = ui.visuals().extreme_bg_color;
 let fg = ui.visuals().extreme_fg_color;
 let slot_count = if row.is_referee { 35 } else { 23 };
 
-// Allocate every slot position even when it is empty, so 01-23/35 remain
-// fixed columns across rows. Empty slots reserve space but paint no cell.
+// Allocate every slot position even when it is empty, so 01-23 remain fixed
+// columns across rows (a referee row's 24-35 take a second line under 01-12).
+// An empty slot gets a faint square with no number (left out of this sketch).
 for slot in 1..=slot_count {
     let (rect, response) = ui.allocate_exact_size(
         egui::vec2(26.0, 26.0),
