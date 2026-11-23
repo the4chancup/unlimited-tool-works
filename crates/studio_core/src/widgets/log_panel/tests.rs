@@ -1218,11 +1218,82 @@ fn a_click_on_a_line_is_reported() {
             right_of_second_line(&nodes)
         };
         let pressed = respond(&mut window, &mut panel, &lines, pointer_at(at, true));
-        assert_eq!(pressed.clicked, None, "not before the release, {on_text}");
+        assert_eq!(
+            pressed.clicked, None,
+            "not before the release, on_text={on_text}"
+        );
         let released = respond(&mut window, &mut panel, &lines, pointer_at(at, false));
-        assert_eq!(released.clicked, Some(1), "on the text {on_text}");
+        assert_eq!(
+            released.clicked,
+            Some(1),
+            "the released click, on_text={on_text}"
+        );
         assert_eq!(released.help, None);
     }
+}
+
+/// The centre of the line whose text is exactly `text`, where a click lands.
+fn on_line_text(nodes: &[accesskit::Node], text: &str) -> egui::Pos2 {
+    centre(
+        nodes
+            .iter()
+            .find(|node| node.value() == Some(text))
+            .unwrap_or_else(|| panic!("no line reads {text:?}")),
+    )
+}
+
+#[test]
+fn a_filtered_line_s_click_reports_its_index_in_the_log() {
+    // Info, Warning, Info, Error: the Errors chip draws the Error alone, the
+    // drawn index 0, whose place in the log is 3.
+    let lines = vec![
+        LogLine::plain(Severity::Info, "an info line"),
+        LogLine::plain(Severity::Warning, "a warning line"),
+        LogLine::plain(Severity::Info, "another info line"),
+        LogLine::plain(Severity::Error, "an error line"),
+    ];
+    let mut panel = LogPanel::new("test-log");
+    let mut window = Headless::new();
+    let nodes = window.idle(&mut panel, &lines);
+    let nodes = click(&mut window, &mut panel, &lines, entry(&nodes, "Errors"));
+    assert!(shows(&nodes, "an error line"), "premise: it alone is drawn");
+    assert!(!shows(&nodes, "a warning line"));
+
+    let at = on_line_text(&nodes, "an error line");
+    respond(&mut window, &mut panel, &lines, pointer_at(at, true));
+    let released = respond(&mut window, &mut panel, &lines, pointer_at(at, false));
+    assert_eq!(released.clicked, Some(3), "the index in the log");
+}
+
+#[test]
+fn a_filtered_line_s_click_reports_its_index_while_the_log_is_paused() {
+    // The same under a paused (scrolled-up) log, which draws the lines the
+    // pause began with. The Errors chip draws 20, so the view has a bottom
+    // to leave: the first, index 3 in the log, is clicked at the top.
+    let mut lines = vec![
+        LogLine::plain(Severity::Info, "an info line"),
+        LogLine::plain(Severity::Warning, "a warning line"),
+        LogLine::plain(Severity::Info, "another info line"),
+    ];
+    lines.extend((1..=20).map(|n| LogLine::plain(Severity::Error, format!("error line {n}"))));
+    let mut panel = LogPanel::new("test-log");
+    let mut window = Headless::new();
+    let nodes = window.idle(&mut panel, &lines);
+    click(&mut window, &mut panel, &lines, entry(&nodes, "Errors"));
+    // Wheel up over the body; egui drains the delta over a few frames.
+    window.show(
+        &mut panel,
+        &lines,
+        wheel_at(egui::pos2(400.0, 500.0), 1000.0),
+    );
+    for _ in 0..15 {
+        window.idle(&mut panel, &lines);
+    }
+    let nodes = window.idle(&mut panel, &lines);
+    let at = on_line_text(&nodes, "error line 1");
+    respond(&mut window, &mut panel, &lines, pointer_at(at, true));
+    let released = respond(&mut window, &mut panel, &lines, pointer_at(at, false));
+    assert_eq!(released.clicked, Some(3), "the index in the log");
 }
 
 #[test]

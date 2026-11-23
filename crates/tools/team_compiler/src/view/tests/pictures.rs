@@ -176,6 +176,41 @@ fn top_paths(top: &TopBox) -> Vec<Option<&str>> {
     }
 }
 
+/// Copies the tracer `.zip` fixture in as `root`'s `/co/` export and unzips it under
+/// another team's name, as `/a/`'s folder.
+fn zip_and_folder(root: &Path) {
+    let fixture =
+        Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/sources/egg Midcup Tracer.zip");
+    fs::copy(&fixture, root.join("exports/co Midcup Tracer.zip")).unwrap();
+    unzip(&fixture, &root.join("exports/a Midcup Tracer"));
+}
+
+// A `.zip` gets the folder's deep check: its cells show the folder form's states, not the
+// partial-ok of a `.7z` (whose listing alone is read).
+// TC-GUI-04
+#[test]
+fn a_zip_export_s_cells_show_the_folder_form_s_states() {
+    let temp = sandbox("view_grid_zip_states");
+    let root = temp.path();
+    list_teams(root);
+    zip_and_folder(root);
+    let rows = checked_rows(root);
+    let (zipped, foldered) = (row(&rows, "/co/"), row(&rows, "/a/"));
+    for (zip_cell, folder_cell) in [
+        (&zipped.label, &foldered.label),
+        (player(zipped, 5).unwrap(), player(foldered, 5).unwrap()),
+        (kit(zipped, 0).unwrap(), kit(foldered, 0).unwrap()),
+        (portraits(zipped).unwrap(), portraits(foldered).unwrap()),
+    ] {
+        assert_eq!(
+            (zip_cell.state, zip_cell.outline),
+            (folder_cell.state, folder_cell.outline),
+            "{}",
+            zip_cell.text
+        );
+    }
+}
+
 // A `.zip` export's boxes name the same pictures the folder form of the export gives,
 // each a `PictureFile` of the archive itself, read from its own entry.
 // TC-GUI-31
@@ -184,12 +219,8 @@ fn a_zip_export_s_boxes_name_the_pictures_the_folder_form_s_do() {
     let temp = sandbox("view_grid_zip_pictures");
     let root = temp.path();
     list_teams(root);
-    let fixture =
-        Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/sources/egg Midcup Tracer.zip");
+    zip_and_folder(root);
     let archive = root.join("exports/co Midcup Tracer.zip");
-    fs::copy(&fixture, &archive).unwrap();
-    // The same export unzipped, under another team's name.
-    unzip(&fixture, &root.join("exports/a Midcup Tracer"));
     let rows = checked_rows(root);
     let (zipped, foldered) = (row(&rows, "/co/"), row(&rows, "/a/"));
     for (zip_cell, folder_cell) in [
@@ -215,7 +246,7 @@ fn a_zip_export_s_boxes_name_the_pictures_the_folder_form_s_do() {
 }
 
 // A `.7z` export's boxes stay empty: reading a picture out of a solid `.7z` means
-// decompressing it whole.
+// decompressing it whole. Its cells are the shallow check's partial-ok (TC-GUI-04).
 // TC-GUI-31
 #[test]
 fn a_7z_export_s_boxes_stay_empty() {
@@ -236,6 +267,7 @@ fn a_7z_export_s_boxes_stay_empty() {
         portraits(team).unwrap(),
     ] {
         assert_eq!(cell.top, TopBox::Empty, "{}", cell.text);
+        assert_eq!(cell.state, CellState::PartialOk, "{}", cell.text);
     }
 }
 

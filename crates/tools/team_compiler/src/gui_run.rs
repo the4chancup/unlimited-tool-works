@@ -46,10 +46,10 @@ pub(crate) fn check_lines(rows: &[Row]) -> (Vec<LogLine>, Vec<CellKey>) {
     let mut lines = Vec::new();
     let mut cells = Vec::new();
     for row in rows {
-        let mut earlier_cells: Vec<&Message> = Vec::new();
+        let mut earlier_findings: Vec<&Message> = Vec::new();
         for (place, cell) in cell_places(row) {
             for message in &cell.messages {
-                if earlier_cells.contains(&message) {
+                if earlier_findings.contains(&message) {
                     continue;
                 }
                 lines.push(LogLine {
@@ -62,7 +62,7 @@ pub(crate) fn check_lines(rows: &[Row]) -> (Vec<LogLine>, Vec<CellKey>) {
                     place,
                 });
             }
-            earlier_cells.extend(&cell.messages);
+            earlier_findings.extend(&cell.messages);
         }
     }
     (lines, cells)
@@ -102,15 +102,7 @@ impl RunLog {
         let ctx = ctx.with_events(sender);
         let thread = std::thread::spawn(move || {
             let download = cli::download_folder(&ctx.common())?;
-            // The outcome mapped as `cli`'s `verdict` maps the `upgrade-dpfl` arm's: a Fatal
-            // finding aborts at 3, an Error is 1, warnings and infos a clean 0.
-            upgrade::run(&download, true, &delete, &ctx)
-                .map_err(|error| CliError::new(3, error))
-                .map(|worst| match worst {
-                    Some(Severity::Fatal) => 3,
-                    Some(Severity::Error) => 1,
-                    Some(Severity::Warning | Severity::Info) | None => 0,
-                })
+            cli::verdict(upgrade::run(&download, true, &delete, &ctx))
         });
         self.run = Some(Run { events, thread });
     }

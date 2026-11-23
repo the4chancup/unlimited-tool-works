@@ -131,10 +131,14 @@ fn read(file: &PictureFile) -> anyhow::Result<egui::ColorImage> {
         .and_then(|extension| extension.to_str())
         .and_then(SourceFormat::from_extension)
         .context("not an image the Compiler reads")?;
-    // For an archive export `export` is the archive itself, opened again for each picture:
+    // For a `.zip` export `export` is the archive itself, opened again for each picture:
     // `open` reads the entry table alone and inflates nothing, so holding a zip open per
     // export would save little.
-    let bytes = if file.export.is_file() {
+    let zip = file
+        .export
+        .extension()
+        .is_some_and(|extension| extension.eq_ignore_ascii_case("zip"));
+    let bytes = if zip {
         Archive::open(&file.export)?.read(&file.path)?
     } else {
         fs::read(file.export.join(&file.path))?

@@ -374,6 +374,7 @@ fn a_part_whose_count_is_zero_is_left_out_and_a_dropped_entry_without_a_file_has
             ("4cc_90_test.cpk".to_owned(), None),
         ],
         up_to_date: false,
+        replaces_list: true,
     };
     let nodes = dialog_nodes(preview);
     assert!(shows_text(
@@ -394,4 +395,78 @@ fn a_part_whose_count_is_zero_is_left_out_and_a_dropped_entry_without_a_file_has
         .collect();
     assert_eq!(boxes, ["4cc_60_midcup.cpk (6.1 KiB)"]);
     assert!(shows_text(&nodes, "4cc_90_test.cpk"), "the name alone");
+}
+
+// The "Upgrade replaces" paragraph shows only when the preview replaces the list: over an
+// install already on the official list, one CPK's file missing, it is left out.
+#[test]
+fn the_first_paragraph_shows_only_when_the_list_is_replaced() {
+    let temp = sandbox("view_dpfl_same_list");
+    let root = temp.path();
+    let download = root.join("PES/download");
+    fs::create_dir_all(&download).unwrap();
+    let templates = crate::templates::Templates::embedded();
+    fs::write(
+        download.join("DpFileList.bin"),
+        templates.official_list_file(),
+    )
+    .unwrap();
+    for name in templates.official_list() {
+        if name != "4cc_16_balls.cpk" {
+            fs::write(download.join(&name), cpk_bytes(&name)).unwrap();
+        }
+    }
+    let ctx = tool_context(root, "");
+    let preview = upgrade::preview(&download, &ctx).unwrap();
+    assert!(
+        !preview.replaces_list,
+        "premise: the list is the official one"
+    );
+
+    let nodes = dialog_nodes(preview);
+
+    assert!(
+        !nodes.iter().any(|node| node
+            .value()
+            .is_some_and(|text| text.contains("DpFileList.bin.bak"))),
+        "no replacement paragraph"
+    );
+    assert!(shows_text(
+        &nodes,
+        "An empty placeholder is written for each of the 1 official CPKs with no file, \
+         because the game loads nothing from download/ while a CPK its list names is missing."
+    ));
+}
+
+// With the first paragraph left out, the first part shown takes its place: no sentence gap
+// above it.
+#[test]
+fn the_first_part_shown_sits_where_the_first_paragraph_would() {
+    // How far under the dialog's title the first text starting with `start` sits.
+    let below_title = |replaces_list: bool, start: &str| {
+        let nodes = dialog_nodes(Preview {
+            renames: Vec::new(),
+            placeholders: 1,
+            dropped: Vec::new(),
+            up_to_date: false,
+            replaces_list,
+        });
+        let top = |found: Option<&accesskit::Node>| {
+            found
+                .and_then(accesskit::Node::bounds)
+                .expect("a drawn text")
+                .y0
+        };
+        let title = top(nodes
+            .iter()
+            .find(|node| node.value() == Some("Upgrade DpFileList")));
+        let text = top(nodes
+            .iter()
+            .find(|node| node.value().is_some_and(|text| text.starts_with(start))));
+        text - title
+    };
+    assert_eq!(
+        below_title(false, "An empty placeholder"),
+        below_title(true, "Upgrade replaces"),
+    );
 }

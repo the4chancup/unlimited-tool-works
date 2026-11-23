@@ -155,7 +155,7 @@ pub(crate) fn show(
         ctx.open_help(HelpTarget::message(&code));
     }
     // A check's line acts for its cell: resting on it opens the cell's window, and a click
-    // on a Warning's or an Error's goes to the cell. An Info takes no click.
+    // on a Warning or Error line goes to the cell. An Info takes no click.
     let pointed = on_log.hovered.and_then(|line| log.cell_of(line));
     detail.state.point_at(pointed.cloned());
     if let Some(line) = on_log.clicked

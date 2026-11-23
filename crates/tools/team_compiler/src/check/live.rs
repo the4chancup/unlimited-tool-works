@@ -159,8 +159,9 @@ fn export_row(checked: CheckedSource, teams_list: &TeamsList) -> Row {
             SourceKind::Folder => false,
             SourceKind::Zip | SourceKind::SevenZ => true,
         },
+        shallow: source.kind == SourceKind::SevenZ,
     };
-    let shallow = disk.archive;
+    let shallow = disk.shallow;
     // An export set aside before its files were listed shows no box: nothing is known of
     // it. Nor does a `.7z`: reading a picture out of the solid archive decompresses it
     // whole, which only its deep check does.
@@ -252,6 +253,9 @@ struct Disk<'a> {
     path: &'a Path,
     /// Whether it is an archive, whose folders have no place of their own on disk.
     archive: bool,
+    /// Whether its cells draw the partial-ok ("Shallow check done (archive)") state: a
+    /// `.7z`'s alone; a `.zip` gets the folder's deep check.
+    shallow: bool,
 }
 
 impl Disk<'_> {
@@ -290,12 +294,12 @@ impl Disk<'_> {
         Cell {
             place: folder.map(ScopePath::as_str).unwrap_or_default().to_owned(),
             open: self.open(folder),
-            ..cell(text, messages, self.archive, blocked)
+            ..cell(text, messages, self.shallow, blocked)
         }
     }
 }
 
-/// A cell showing `text` for `messages`: checked (partial-ok when `shallow`, from an archive),
+/// A cell showing `text` for `messages`: checked (partial-ok when `shallow`, a `.7z`),
 /// ringed by the worst Warning or Error, an Info changing nothing; blocked, with no ring, when
 /// its export will not compile. It has no folder: `Disk::cell` gives one.
 fn cell(text: String, messages: Vec<Message>, shallow: bool, blocked: bool) -> Cell {
@@ -689,7 +693,7 @@ fn lines(
     blocked: bool,
     label: &mut Vec<Message>,
 ) -> Vec<Line> {
-    let shallow = disk.archive;
+    let shallow = disk.shallow;
     let folders: BTreeMap<u8, &ScopePath> = layout
         .players
         .iter()

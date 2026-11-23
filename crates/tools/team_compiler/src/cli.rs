@@ -232,8 +232,8 @@ pub(crate) fn download_folder(common: &CommonSettings) -> Result<PathBuf, CliErr
 }
 
 /// A run's outcome as the exit code: its worst finding's, or `ABORTED` with the error when the
-/// run could not go on.
-fn verdict(outcome: anyhow::Result<Option<Severity>>) -> Result<u8, CliError> {
+/// run could not go on. The window's runs use it too, so their exit lines match the console's.
+pub(crate) fn verdict(outcome: anyhow::Result<Option<Severity>>) -> Result<u8, CliError> {
     outcome
         .map(exit_code)
         .map_err(|error| CliError::new(ABORTED, error))

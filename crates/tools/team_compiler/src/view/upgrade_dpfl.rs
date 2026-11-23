@@ -43,7 +43,8 @@ impl DpflDialog {
     }
 
     /// Draws the dialog for this frame: the member's decision when one was made. A part
-    /// of the preview whose count is zero is left out, its sentence included.
+    /// of the preview whose count is zero is left out, its sentence included, and the
+    /// first paragraph shows only when the preview replaces the list.
     pub(crate) fn show(&mut self, ui: &mut egui::Ui) -> Outcome {
         let mut outcome = Outcome::Open;
         let response = studio_core::widgets::modal(
@@ -52,13 +53,25 @@ impl DpflDialog {
             "Upgrade DpFileList",
             |ui| {
                 ui.set_min_width(WIDTH - modal_frame(ui.style()).total_margin().sum().x);
-                ui.label(
-                    "Upgrade replaces the game's DpFileList.bin with the cup's official \
-                     list, keeping the old one beside it as DpFileList.bin.bak.",
-                );
                 let preview = &self.preview;
+                // The gap goes between two parts shown, none above the first: the first
+                // paragraph is left out when the list already is the official one.
+                let mut shown = 0;
+                let mut gap = |ui: &mut egui::Ui| {
+                    if shown > 0 {
+                        modal_sentence_gap(ui);
+                    }
+                    shown += 1;
+                };
+                if preview.replaces_list {
+                    gap(ui);
+                    ui.label(
+                        "Upgrade replaces the game's DpFileList.bin with the cup's official \
+                         list, keeping the old one beside it as DpFileList.bin.bak.",
+                    );
+                }
                 if !preview.renames.is_empty() {
-                    modal_sentence_gap(ui);
+                    gap(ui);
                     ui.label(format!(
                         "Renamed to their official names, so the game keeps loading \
                          them ({}):",
@@ -67,7 +80,7 @@ impl DpflDialog {
                     renames_list(ui, &preview.renames);
                 }
                 if preview.placeholders > 0 {
-                    modal_sentence_gap(ui);
+                    gap(ui);
                     ui.label(format!(
                         "An empty placeholder is written for each of the {} official \
                          CPKs with no file, because the game loads nothing from \
@@ -76,7 +89,7 @@ impl DpflDialog {
                     ));
                 }
                 if !preview.dropped.is_empty() {
-                    modal_sentence_gap(ui);
+                    gap(ui);
                     ui.label(format!(
                         "No longer loaded by the game ({}). Tick any you want deleted:",
                         preview.dropped.len()
@@ -109,7 +122,7 @@ impl DpflDialog {
 fn list_box(ui: &mut egui::Ui, contents: impl FnOnce(&mut egui::Ui)) {
     egui::Frame::new()
         .fill(ui.visuals().extreme_bg_color)
-        .corner_radius(egui::CornerRadius::same(2))
+        .corner_radius(ui.visuals().widgets.noninteractive.corner_radius)
         .inner_margin(egui::Margin {
             left: 6,
             right: 6,

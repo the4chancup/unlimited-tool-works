@@ -6,7 +6,7 @@
 use egui::{Align2, Color32, FontId, Pos2, Rect, Sense, TextStyle, pos2, vec2};
 use studio_core::theme::palette;
 
-use crate::cells::{Cell, CellState, Outline, Position, Width, look, paint};
+use crate::cells::{Cell, CellState, Outline, Position, RADIUS, Width, look, paint};
 use crate::detail::{
     CellKey, Contents, Detail, Found, GridResponse, OUTLINE_WIDTH, Place, Sources, open_of,
 };
@@ -36,8 +36,6 @@ const GAP: f32 = 4.0;
 const MARGIN: f32 = 6.0;
 /// The room right of the last column's title.
 const RIGHT_MARGIN: f32 = 8.0;
-/// An empty position's and the ID cell's corner radius, a cell's.
-const RADIUS: f32 = 2.0;
 const CELL_FONT: f32 = 11.0;
 const ID_FONT: f32 = 12.0;
 /// The room above and below the titles' text.
@@ -755,6 +753,16 @@ mod tests {
         }
     }
 
+    /// The grid scroll area's offset, read without running a frame (one would
+    /// move the window's clock).
+    fn scroll_offset_of(ctx: &egui::Context) -> egui::Vec2 {
+        let top = egui::Id::unique((egui::ViewportId::ROOT, "__top_ui"));
+        let id = top.with(egui::IdSalt::new(top.with("grid")));
+        egui::containers::scroll_area::State::load(ctx, id)
+            .map(|state| state.unclamped_offset())
+            .expect("the grid's scroll area")
+    }
+
     /// A window whose scroll moves at once, for a test that scrolls the grid.
     fn scrolling() -> Headless {
         let window = Headless::new();
@@ -918,6 +926,85 @@ mod tests {
         assert!(
             labels.iter().all(|rect| rect.top() < 600.0),
             "no row drawn below the view"
+        );
+    }
+
+    // A click on the tool's log line scrolls its cell into view under the title row, which
+    // stays put over the rows.
+    #[test]
+    fn a_go_to_scrolls_the_cell_to_just_under_the_title_row() {
+        let rows = vec![team_row(); 40];
+        let mut detail = Detail::default();
+        let mut window = scrolling();
+        let ctx = window.ctx.clone();
+        let mut grid = |detail: &mut Detail, events| {
+            let mut sources = Sources {
+                catalog: &[],
+                pictures: &mut |_| None,
+            };
+            window.frame(events, |ui| {
+                show(ui, "grid", &COLUMNS, &rows, false, detail, &mut sources)
+            })
+        };
+        // The first row's top in an unscrolled frame is the title row's bottom.
+        let title_bottom = grid(&mut detail, Vec::new())
+            .all("/a/")
+            .iter()
+            .map(egui::Rect::top)
+            .fold(f32::INFINITY, f32::min);
+        // A wheel delta under 8 points lands at once; a big one is smoothed over
+        // frames, and each of those frames' wheel handling would clear the
+        // scroll-to-cell's target again.
+        let mut to_bottom = vec![egui::Event::PointerMoved(pos2(600.0, 300.0))];
+        to_bottom.extend((0..90).map(|_| egui::Event::MouseWheel {
+            unit: egui::MouseWheelUnit::Point,
+            delta: vec2(0.0, -7.0),
+            phase: egui::TouchPhase::Move,
+            source: egui::MouseWheelSource::Wheel,
+            modifiers: egui::Modifiers::default(),
+        }));
+        grid(&mut detail, to_bottom);
+        grid(&mut detail, Vec::new());
+        assert!(
+            scroll_offset_of(&ctx).y > 500.0,
+            "premise: scrolled to the bottom: {:?}",
+            scroll_offset_of(&ctx)
+        );
+
+        detail.go_to(CellKey {
+            row: "a Midcup Grid".to_owned(),
+            place: Place::Position {
+                line: 0,
+                group: 0,
+                index: 0,
+            },
+        });
+        grid(&mut detail, Vec::new());
+        // The scroll lands over the next frames; run until the cell's top stops moving.
+        let mut top = f32::MAX;
+        for _ in 0..120 {
+            let drawn = grid(&mut detail, Vec::new());
+            let now = drawn
+                .all("01")
+                .iter()
+                .map(egui::Rect::top)
+                .fold(f32::INFINITY, f32::min);
+            if now == top {
+                break;
+            }
+            top = now;
+        }
+        assert_ne!(top, f32::MAX, "the cell never settled in 120 frames");
+        // The rows are alike, so a scroll to another row would also put an "01" under the
+        // title: the offset says it is the first row's.
+        assert!(
+            scroll_offset_of(&ctx).y < 28.0,
+            "scrolled back up to the first row: {:?}",
+            scroll_offset_of(&ctx)
+        );
+        assert!(
+            top >= title_bottom,
+            "the cell's top is at or below the title row's bottom: {top} vs {title_bottom}"
         );
     }
 
