@@ -181,6 +181,11 @@ mutants-diff base="HEAD" *paths:
 extra-mutants crate *args:
     {{python}} scripts/mutation/extra_mutants.py {{crate}} {{args}}
 
+# The extra mutant kinds over one crate on the STUDIO_MUTANTS_REMOTE host alone — a kind's
+# backfill without the whole run's cargo-mutants; `--kind <name>` (repeatable) narrows it
+extra-mutants-remote crate *args:
+    {{python}} scripts/mutation/mutants.py --extra-only {{crate}} {{args}}
+
 # The python_bindings wheel: maturin build, then the smoke test with the wheel on sys.path
 # (`just bindings <interpreter>` runs the smoke test under that Python, e.g. Blender's)
 bindings interpreter=python:
