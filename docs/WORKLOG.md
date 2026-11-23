@@ -153,9 +153,13 @@ draft checked, for the maintainer to publish; running sidekicks and jobs are not
      collapsed when it would hide rows, the Upgrade DpFileList button → verify: TC-GUI-15,
      26, 27, 33. The pure move of the
      view's tests came first (`3aa75bac` on `sk/grid1c`).
-     - 1c-i (Opus, `sk/grid1c`): the strip, its counts and the log's start (TC-GUI-26, 27);
-       reviewed, the lead counting a row's warnings by the colour its cells show, as the
-       draft does. Its look and merge next
+     - [x] 1c-i (2026-11-23, merge `185d9e01`, Opus): the strip, its counts and the log's
+       start (TC-GUI-26, 27). The lead counts a row's warnings by the colour its cells show,
+       as the draft does. The release build beside the draft (scene `.tmp/look_1b2/app`,
+       built in `look_grid`) found two differences, fixed in `99d51f81`: an export the check
+       drops whole counts as skipped, and a collapsed log shows no filter chips. The strip
+       cut short in a narrow window cannot be captured (a narrower window scales the whole
+       UI); its unit test covers it
      - 1c-ii: the log's lines linked to cells (TC-GUI-15). It also puts the check's findings
        in the log (the plan's "the export's log lines"), which today holds only a Compile's
        lines, so the strip's counts filter the findings the grid shows
@@ -164,7 +168,10 @@ draft checked, for the maintainer to publish; running sidekicks and jobs are not
        draft's `compiler/main?dpfl=outdated`), over the CLI's `upgrade-dpfl`, with the new
        `dpfilelist_cpk_deleted`. On PES 2019 it waits for item 8
    - Then the kit cells' swatch (TC-GUI-10), the row actions, the ID cell's editing, the
-     watcher and cache, and Sizes and sorting.
+     watcher and cache, Sizes and sorting, and the rest of the toolbar (`plans/team_compiler/
+     gui.md` "Toolbar"; the build has a plain Compile button): the split button with its
+     mode list, Launch PES, the writability badge, and the dropdown's Open output folder
+     and Copy report.
      The watcher and cache's slice also owes TC-GUI-04's `.7z` order: 1a's check reads a
      `.7z` whole at once, where the scenario wants its entry table first and its deep check
      after the folders and zips, within the memory budget (a `.zip`'s deep check, as built,
