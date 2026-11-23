@@ -238,8 +238,9 @@ TC-GUI-24  GIVEN the pointer on a cell with findings
                 pin or the grid's empty space is clicked THEN nothing is pinned and the
                 window closes, and resting the pointer on that cell opens nothing until it
                 has left the cell; WHEN Esc is pressed with the window open, pinned or not,
-                THEN it closes the same way, unless a dialog or a menu is open: Esc closes
-                that, and the window stays; GIVEN Help opened from a finding's
+                THEN it closes the same way, unless a dialog or a menu is open, or a text
+                box (Help's search) has the keyboard: Esc goes to that, and the window
+                stays; GIVEN Help opened from a finding's
                 code in the pinned window THEN Help sits above it, and a click on Help
                 reaches Help, not the window; GIVEN a double-click on a cell THEN its folder opens in the
                 file manager and the pin is as it was before the double-click; GIVEN an export

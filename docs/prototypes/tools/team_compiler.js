@@ -897,9 +897,11 @@ function cellDoubleClick(r, cell) {
 const detailEvents = (r, cell) => ({
   onmouseenter: () => hoverEnter(cell), onmouseleave: hoverLeave,
   onclick: e => cellClick(e, cell), ondblclick: () => cellDoubleClick(r, cell) });
-// Esc closes the window, pinned or not.
+// Esc closes the window, pinned or not; a text box with the keyboard (Help's
+// search) takes it first, and the window stays.
 function onKey(e) {
   if (e.key !== "Escape" || !(S.pin || S.hover)) return;
+  if (e.target.closest("input, textarea")) { e.target.blur(); return; }
   clearTimeout(hoverTimer);
   S.pin = S.hover = null;
   S.muted = S.under;

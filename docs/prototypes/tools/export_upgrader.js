@@ -314,8 +314,11 @@ function emptyClick(e) {
   S.pin = null;
   render();
 }
+// Esc closes the window, pinned or not; a text box with the keyboard (Help's
+// search) takes it first, and the window stays.
 function onKey(e) {
   if (e.key !== "Escape" || !(S.pin || S.hover)) return;
+  if (e.target.closest("input, textarea")) { e.target.blur(); return; }
   clearTimeout(hoverTimer);
   S.pin = S.hover = null;
   S.muted = S.under;
