@@ -165,7 +165,7 @@ draft checked, for the maintainer to publish; running sidekicks and jobs are not
        findings, each line acting for its cell: hover opens the cell's window, a click on a
        Warning or an Error outlines the cell, scrolls to it and pins it (TC-GUI-15). The lead
        made `cell_places` allocate nothing, since the strip walks every cell each frame. Its
-       built-window look waits for 1c-iii-b's, one release build for both
+       built-window look was taken with 1c-iii's (below)
      - 1c-iii: the Upgrade DpFileList button beside Compile and its dialog (TC-GUI-33;
        `plans/team_compiler/gui.md` "Toolbar", `plans/team_compiler/pipeline.md` "DpFileList
        upgrade"; the draft's `compiler/main?dpfl=outdated`), over the CLI's `upgrade-dpfl`,
@@ -198,6 +198,13 @@ draft checked, for the maintainer to publish; running sidekicks and jobs are not
      - [x] Report a problem keeps its "Saved to" line's room while hidden, so its buttons do
        not move when the line shows (2026-11-23, merge `cb4b3fbd`, SWE-2, landed first time);
        no changelog line, a spacing change
+     - [ ] The built window beside the drafts (2026-11-23, release build of `2fce61c9`, scene
+       `.tmp/look_s3`, its game folder a fake PES 2017 install holding the old list): the
+       log's lines, the Upgrade DpFileList button, the picked rows' edge, Report a problem's
+       kept room and the help search's highlight green match. Five differences, fixed on `sk/looks_s3`
+       (SWE-2): the upgrade dialog is wider than 460, its delete list is not monospace, a
+       help jump centres its hit where the draft puts it at the top, the help tree's entries
+       are as wide as their text, and the Save editor's selected row loses its side edges
    - Then the kit cells' swatch (TC-GUI-10), the row actions, the ID cell's editing, the
      watcher and cache, Sizes and sorting, and the rest of the toolbar
      (`plans/team_compiler/gui.md` "Toolbar"; the build has a plain Compile button): the
