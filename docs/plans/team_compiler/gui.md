@@ -526,7 +526,9 @@ A single primary action:
   the Export upgrader's Next is. It opens the upgrade's dialog (`pipeline.md` "DpFileList upgrade"). Once
   the member confirms, the upgrade does what `upgrade-dpfl --yes` does and deletes the CPKs
   ticked in the dialog, its lines going to the log. The button stays until a check finds the
-  list official. It is in the toolbar, not only in the finding's log line, because an
+  list official. A list made official since the last check (by hand, or with the command line)
+  leaves the dialog nothing to show, so the click runs the upgrade at once, which deletes
+  nothing and takes the button away. It is in the toolbar, not only in the finding's log line, because an
   outdated list stops every compile until it is replaced: the remedy sits beside the button
   it unblocks.
 

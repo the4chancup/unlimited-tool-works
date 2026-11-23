@@ -281,7 +281,8 @@ TC-GUI-26  GIVEN no run in flight, the log showing All, and the grid with errors
 TC-GUI-27  GIVEN more export rows than fit above the open log at the window's size
            WHEN the app starts on the Compiler's view
            THEN the log starts collapsed; GIVEN rows that all fit above it THEN the log starts
-                open
+                open; GIVEN it started open and a later check adds rows that no longer fit
+                THEN it stays open
 TC-GUI-28  GIVEN a player folder of 9 MB, one of 40 MB, and a player of 25 MB whose own folder
                 is 10 MB and who links a 15 MB shared Boots folder
            WHEN Sizes is picked
@@ -333,7 +334,9 @@ TC-GUI-33  GIVEN a PES 2017 install whose DpFileList.bin is the old faces/unifor
                 preflight; GIVEN the list another layout (dpfilelist_not_official) THEN the
                 button shows and Compile stays enabled; GIVEN a delete box ticked THEN that
                 file alone is deleted and its line is dpfilelist_cpk_deleted; GIVEN Cancel
-                THEN nothing in download/ changes
+                THEN nothing in download/ changes; GIVEN the list made the official one after
+                the check THEN the click opens no dialog, the upgrade runs, deleting nothing,
+                and the button is gone
 TC-GUI-13  GIVEN a run in flight over two exports
            WHEN Cancel is clicked
            THEN the run ends after the task or texture in progress, no CPK is written or
