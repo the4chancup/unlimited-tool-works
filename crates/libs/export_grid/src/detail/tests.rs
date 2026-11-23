@@ -452,6 +452,65 @@ fn a_resting_pointer_opens_the_cells_window_after_the_delay_and_it_follows_at_on
 
 // TC-GUI-09
 #[test]
+fn many_findings_scroll_inside_a_window_that_stays_on_screen() {
+    let mut scene = Scene::new();
+    scene.window.screen = vec2(1280.0, 780.0);
+    scene.window.ctx.global_style_mut(|style| {
+        style.scroll_animation = egui::style::ScrollAnimation::none();
+    });
+
+    // A window whose findings fit keeps its size and shows no scroll bar.
+    let at = spots(&scene.idle());
+    let (_, drawn) = scene.click(at.three);
+    assert_eq!(window_rect(&drawn).height(), 477.0, "a window that fits");
+
+    // Thirty findings on the label: the window and its buttons stay on screen.
+    scene.rows[0].label.messages = (1..=30)
+        .map(|slot| {
+            finding(
+                "shared_folder_orphaned",
+                Severity::Warning,
+                folder("Boots/Solo"),
+                &[("slot", &format!("{slot:02}"))],
+            )
+        })
+        .collect();
+    let (_, drawn) = scene.click(at.label);
+    let window = window_rect(&drawn);
+    for button in ["Open folder", "Copy messages"] {
+        let button = drawn.one(button);
+        assert!(
+            button.bottom() <= 780.0,
+            "{button:?} inside the screen: {button:?}"
+        );
+    }
+    assert!(
+        window.bottom() <= 780.0,
+        "the window inside the screen: {window:?}"
+    );
+
+    // The last finding is reached by scrolling the findings.
+    let last = || drawn.one("slot=30");
+    assert!(
+        last().top() > window.bottom(),
+        "premise: the last finding starts below: {:?}",
+        last()
+    );
+    let findings = drawn.one("slot=01").center();
+    scene.frame(wheel(findings, vec2(0.0, -6000.0)));
+    scene.wait(1.0);
+    scene.idle();
+    let drawn = scene.idle();
+    let window = window_rect(&drawn);
+    let last = drawn.one("slot=30");
+    assert!(
+        window.contains(last.center()) && last.bottom() < drawn.one("Open folder").top(),
+        "the last finding in the drawn area: {last:?}"
+    );
+}
+
+// TC-GUI-09
+#[test]
 fn the_window_of_a_cell_alone_in_its_group_is_named_by_the_group() {
     let mut scene = Scene::new();
     let at = spots(&scene.idle());
@@ -576,6 +635,88 @@ fn esc_closes_the_window_pinned_or_not_as_an_unpinning_click_does() {
         scene.wait(APART);
         assert!(!shows(&scene.idle(), "/co/ 03"), "muted, pinned {pinned}");
     }
+}
+
+/// The detail window's painted rect: the one panel-fill rectangle of its width.
+fn window_rect(drawn: &Drawn) -> Rect {
+    fn rects(shape: &Shape, into: &mut Vec<(Rect, Color32)>) {
+        match shape {
+            Shape::Rect(shape) => into.push((shape.rect, shape.fill)),
+            Shape::Vec(shapes) => shapes.iter().for_each(|shape| rects(shape, into)),
+            _ => {}
+        }
+    }
+    let fill = dark().panel_fill;
+    let mut all = Vec::new();
+    for shape in &drawn.shapes {
+        rects(shape, &mut all);
+    }
+    let found: Vec<Rect> = all
+        .into_iter()
+        .filter(|(rect, colour)| {
+            *colour == fill && rect.width() > WIDTH - 5.0 && rect.width() < WIDTH + 20.0
+        })
+        .map(|(rect, _)| rect)
+        .collect();
+    assert_eq!(found.len(), 1, "one window rect: {found:?}");
+    found[0]
+}
+
+/// `spot` rested on opens nothing once a window closed over it; the pointer leaving it
+/// and coming back opens `title`'s window as usual.
+fn resting_where_a_window_closed_opens_nothing(
+    scene: &mut Scene,
+    at: &Spots,
+    spot: Pos2,
+    title: &str,
+) {
+    scene.wait(HOVER_DELAY);
+    assert!(!any_window(&scene.settled()), "resting on {spot:?}");
+    scene.hover(at.empty);
+    scene.hover(spot);
+    scene.wait(HOVER_DELAY);
+    assert!(shows(&scene.settled(), title), "back on {spot:?}");
+}
+
+// TC-GUI-24
+#[test]
+fn esc_on_a_pinned_window_over_the_pointer_opens_nothing_until_the_pointer_leaves() {
+    let mut scene = Scene::new();
+    let at = spots(&scene.idle());
+    let (_, drawn) = scene.click(at.three);
+    assert!(
+        window_rect(&drawn).contains(at.k6),
+        "premise: the window covers K6"
+    );
+    // The pointer rests on the window, over K6, while Esc closes it.
+    scene.hover(at.k6);
+    scene.key(Key::Escape);
+    assert!(!any_window(&scene.idle()), "premise: closed");
+    resting_where_a_window_closed_opens_nothing(&mut scene, &at, at.k6, "/co/ K6");
+}
+
+// TC-GUI-24
+#[test]
+fn the_pin_of_a_pinned_window_over_the_pointer_opens_nothing_until_the_pointer_leaves() {
+    let mut scene = Scene::new();
+    let at = spots(&scene.idle());
+    let (_, drawn) = scene.click(at.three);
+    let bar = drawn.one("/co/ 03").center();
+    // The window dragged by its title bar until its pin rests on K6.
+    let delta = at.k6 - drawn.one(PIN).center();
+    scene.frame(press(bar));
+    scene.hover(bar + delta / 2.0);
+    scene.hover(bar + delta);
+    scene.frame(release(bar + delta));
+    let drawn = scene.settled();
+    let pin = drawn.one(PIN).center();
+    assert!(
+        window_rect(&drawn).contains(pin) && drawn.one("K6").contains(pin),
+        "premise: the pin rests on the window, over K6"
+    );
+    let (_, drawn) = scene.click(pin);
+    assert!(!any_window(&drawn), "premise: closed");
+    resting_where_a_window_closed_opens_nothing(&mut scene, &at, pin, "/co/ K6");
 }
 
 // TC-GUI-24
@@ -942,17 +1083,7 @@ fn a_pinned_cell_scrolled_under_the_title_row_shows_no_badge() {
     let first_row = scene.idle().one("03").top();
     // The rows scrolled up by 10 more than the title row's height: 03 stands whole under
     // it, its row still in view and drawn.
-    let wheel = vec![
-        egui::Event::PointerMoved(at.empty),
-        egui::Event::MouseWheel {
-            unit: egui::MouseWheelUnit::Point,
-            delta: vec2(0.0, -first_row - 10.0),
-            phase: egui::TouchPhase::Move,
-            source: egui::MouseWheelSource::Unknown,
-            modifiers: Modifiers::NONE,
-        },
-    ];
-    scene.frame(wheel);
+    scene.frame(wheel(at.empty, vec2(0.0, -first_row - 10.0)));
     // egui spreads a wheel's delta over the frames that follow: a second has passed it all.
     scene.wait(1.0);
     scene.idle();
@@ -964,6 +1095,59 @@ fn a_pinned_cell_scrolled_under_the_title_row_shows_no_badge() {
     );
     assert!(shows(&drawn, "/co/ 03"), "premise: still pinned");
     assert_eq!(badge(&drawn), None);
+}
+
+/// A wheel's events at `pos`: the pointer moved there, then the wheel turned by `delta`.
+fn wheel(pos: Pos2, delta: Vec2) -> Vec<egui::Event> {
+    vec![
+        egui::Event::PointerMoved(pos),
+        egui::Event::MouseWheel {
+            unit: egui::MouseWheelUnit::Point,
+            delta,
+            phase: egui::TouchPhase::Move,
+            source: egui::MouseWheelSource::Unknown,
+            modifiers: Modifiers::NONE,
+        },
+    ]
+}
+
+// TC-GUI-24
+#[test]
+fn the_title_row_takes_the_pointer_for_a_cell_scrolled_under_it() {
+    let mut scene = Scene::new();
+    scene.window.ctx.global_style_mut(|style| {
+        style.scroll_animation = egui::style::ScrollAnimation::none();
+    });
+    scene.rows.extend(vec![a_row(); 30]);
+    let first_row = scene.idle().one("03").top();
+    // The rows scrolled up by one row: /co/'s row stands under the title row, still in
+    // view and drawn, with the first /a/ row just below it.
+    scene.frame(wheel(pos2(600.0, 300.0), vec2(0.0, -28.0)));
+    scene.wait(1.0);
+    scene.idle();
+    let drawn = scene.idle();
+    let three = drawn.one("03");
+    assert!(
+        three.center().y < first_row,
+        "premise: 03 under the title row: {three:?}"
+    );
+
+    // Resting the pointer on the title row over it opens nothing, and a click pins
+    // nothing.
+    scene.hover(three.center());
+    scene.wait(HOVER_DELAY);
+    assert!(!any_window(&scene.settled()), "hover on the title row");
+    let (_, drawn) = scene.click(three.center());
+    assert!(!any_window(&drawn), "click on the title row");
+
+    // A cell just below the title row opens its window as usual.
+    let below = drawn.all("/a/")[0];
+    scene.hover(below.center());
+    scene.wait(HOVER_DELAY);
+    assert!(
+        shows(&scene.settled(), "a Midcup Grid"),
+        "below the title row"
+    );
 }
 
 /// /co/'s cell at `place`.
@@ -1124,17 +1308,7 @@ fn go_to_scrolls_a_cell_out_of_view_into_it_once() {
     );
 
     // Scrolled back up by the member, the grid stays there.
-    let wheel = vec![
-        egui::Event::PointerMoved(pos2(600.0, 150.0)),
-        egui::Event::MouseWheel {
-            unit: egui::MouseWheelUnit::Point,
-            delta: vec2(0.0, 2000.0),
-            phase: egui::TouchPhase::Move,
-            source: egui::MouseWheelSource::Unknown,
-            modifiers: Modifiers::NONE,
-        },
-    ];
-    scene.frame(wheel);
+    scene.frame(wheel(pos2(600.0, 150.0), vec2(0.0, 2000.0)));
     scene.wait(1.0);
     scene.idle();
     assert!(scene.idle().all("K6").is_empty(), "not scrolled to again");
