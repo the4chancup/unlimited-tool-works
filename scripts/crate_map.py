@@ -42,23 +42,29 @@ TOOLS = sorted(n for n, f in folder.items() if f == "tools")
 LIBS = sorted(n for n, f in folder.items() if f == "libs" and n not in WIDGET_LIBS)
 
 
-def lib_depth(name):
-    # Longest path up to a lib no other lib uses: each lib as high as it can go, one row under
-    # the lowest lib that uses it. As low as they go instead, the libs that use nothing all
-    # sat on the bottom row, however far from the tools that use them.
-    above = [n for n in LIBS if name in deps[n]]
-    return 1 + max(map(lib_depth, above)) if above else 0
+def depth_in(name, group):
+    # Longest path up to a crate of `group` no other of them uses: each as high as it can go,
+    # one row under the lowest of the group that uses it. As low as they go instead, the libs
+    # that use nothing all sat on the bottom row, however far from the tools that use them.
+    above = [n for n in group if name in deps[n]]
+    return 1 + max(depth_in(n, group) for n in above) if above else 0
+
+
+def depth_rows(label, group):
+    # `group` in rows by `depth_in`, the first row carrying `label` and the others sharing its
+    # band, so a crate never uses one beside it: an arrow along a row runs under both boxes.
+    deepest = max(depth_in(n, group) for n in group)
+    return [(label if depth == 0 else "", sorted(n for n in group if depth_in(n, group) == depth))
+            for depth in range(deepest + 1)]
 
 
 ROWS = [
     ("The binary", ["studio"]),
     ("Tools", TOOLS),
-    ("Widget libs", WIDGET_LIBS),
+    *depth_rows("Widget libs", WIDGET_LIBS),
     ("Platform", ["studio_core"]),
+    *depth_rows("Libs", LIBS),
 ]
-for depth in range(max(map(lib_depth, LIBS)) + 1):
-    label = "Libs" if depth == 0 else ""
-    ROWS.append((label, sorted(n for n in LIBS if lib_depth(n) == depth)))
 
 BOX_W, BOX_H, GAP, ROW_H, LEFT, TOP = 104, 30, 10, 84, 130, 40
 WIDTH = LEFT + max(len(r) for _, r in ROWS) * (BOX_W + GAP) + 30
