@@ -23,20 +23,38 @@ struct Run {
     thread: JoinHandle<Result<u8, CliError>>,
 }
 
-/// The window's log: the grid's last check's findings, then the lines of the latest `compile`, as
+/// What the last check, or a run's messages since, found of the game's `DpFileList.bin`.
+#[derive(Default, PartialEq)]
+enum Dpfl {
+    /// The official one (or nothing found yet): no Upgrade DpFileList button.
+    #[default]
+    Official,
+    /// The cup's outdated one (`dpfilelist_outdated`): a compile's preflight would stop it,
+    /// so Compile is disabled.
+    Outdated,
+    /// Neither (`dpfilelist_not_official` or `dpfilelist_cpk_missing`, both Warnings): the
+    /// button shows, Compile stays enabled.
+    Other,
+}
+
+/// The window's log: the grid's last check's findings, then the lines of the latest run, as
 /// the console prints them, ending with the run's exit code.
 #[derive(Default)]
 pub(crate) struct RunLog {
     /// The check's lines, then the run's.
     lines: Vec<LogLine>,
-    /// The cell each of the check's lines acts for, one per line: the check's lines are the
-    /// first `cells.len()` of `lines`.
+    /// How many of `lines` are the check's: the first `cells.len()`, one per cell line, then
+    /// one per finding about the game's `DpFileList.bin`.
+    check_len: usize,
+    /// The cell each of the check's lines acts for, one per cell line: the cell lines are the
+    /// first `cells.len()` of `lines`, so a `DpFileList.bin` line's `cell_of` is `None`.
     cells: Vec<CellKey>,
     formatter: EventLines,
     run: Option<Run>,
-    /// The last run's preflight found the game's `DpFileList.bin` not the official one and no
-    /// upgrade has replaced it since: the toolbar's Upgrade DpFileList button shows.
-    dpfl_found: bool,
+    /// The last check's verdict on the game's `DpFileList.bin`, or a run's latest word on it
+    /// since: the toolbar's Upgrade DpFileList button shows unless `Official`, and Compile is
+    /// disabled while `Outdated`.
+    dpfl: Dpfl,
 }
 
 /// The findings of a check's `rows` as the log prints them, each with the grid cell its line
@@ -75,10 +93,9 @@ impl RunLog {
     /// previous run's lines go; the check's stay. Called only while no run is in flight (the
     /// button is disabled while one runs).
     pub(crate) fn start_compile(&mut self, ctx: &ToolContext, running: fn() -> Vec<RunningPes>) {
-        self.lines.truncate(self.cells.len());
-        // The last run's verdict on the game's list goes with its lines: the new run's
-        // preflight finds it again when the list still is not the official one.
-        self.dpfl_found = false;
+        self.lines.truncate(self.check_len);
+        // The check's verdict on the game's list stays: the run's preflight reports it again
+        // when the list still is not the official one, and the check after the run sets it.
         // A fresh formatter: export ids restart with each run.
         self.formatter = EventLines::new();
         let matches = cli::command()
@@ -107,12 +124,19 @@ impl RunLog {
         self.run = Some(Run { events, thread });
     }
 
-    /// Whether the last run's preflight found the game's `DpFileList.bin` not the official one
-    /// (`dpfilelist_outdated`, `dpfilelist_not_official` or `dpfilelist_cpk_missing`), and no
-    /// upgrade has replaced it since: the Upgrade DpFileList button's condition beside "no run
-    /// in flight".
+    /// Whether the game's `DpFileList.bin` is not the official one as the last check, or a
+    /// run's messages since, found it (`dpfilelist_outdated`, `dpfilelist_not_official` or
+    /// `dpfilelist_cpk_missing`): the Upgrade DpFileList button's condition beside "no run in
+    /// flight".
     pub(crate) fn dpfl_found(&self) -> bool {
-        self.dpfl_found
+        self.dpfl != Dpfl::Official
+    }
+
+    /// Whether the game's `DpFileList.bin` is the cup's outdated one (`dpfilelist_outdated`),
+    /// whose Fatal finding a compile's preflight would make: the Compile button's disabled
+    /// condition beside "a run in flight".
+    pub(crate) fn dpfl_outdated(&self) -> bool {
+        self.dpfl == Dpfl::Outdated
     }
 
     /// Moves what the run has reported into the lines: every event so far while it runs; once
@@ -143,10 +167,7 @@ impl RunLog {
                     format!("Run ended with exit code {}", error.exit_code),
                 )
             }
-            Err(_) => (
-                Severity::Error,
-                "Run stopped because the compile crashed".to_owned(),
-            ),
+            Err(_) => (Severity::Error, "Run stopped because it crashed".to_owned()),
         };
         self.lines.push(LogLine::plain(severity, last));
     }
@@ -158,14 +179,34 @@ impl RunLog {
             .push(LogLine::plain(Severity::Error, format!("error: {error}")));
     }
 
-    /// Replaces the check's lines with those of `rows`, a new check's, ahead of the run's.
-    pub(crate) fn set_check(&mut self, rows: &[Row]) {
-        let (lines, cells) = check_lines(rows);
-        self.lines.splice(..self.cells.len(), lines);
+    /// Replaces the check's lines with `rows`' and its `list` of findings about the game's
+    /// `DpFileList.bin`, a new check's, ahead of the run's: the rows' lines each act for their
+    /// cell, then one line per list finding, as the console prints a run-scoped finding,
+    /// acting for none. `dpfl` is set from `list`.
+    pub(crate) fn set_check(&mut self, rows: &[Row], list: &[Message]) {
+        let (mut lines, cells) = check_lines(rows);
+        lines.extend(list.iter().map(|message| LogLine {
+            severity: message.severity,
+            code: Some(message.code.clone()),
+            text: message_line(None, message),
+        }));
+        let check_len = lines.len();
+        self.lines.splice(..self.check_len, lines);
+        self.check_len = check_len;
         self.cells = cells;
+        self.dpfl = if list
+            .iter()
+            .any(|message| dpfl_flag(message.code.code.as_ref()) == Some(Dpfl::Outdated))
+        {
+            Dpfl::Outdated
+        } else {
+            list.iter()
+                .find_map(|message| dpfl_flag(message.code.code.as_ref()))
+                .unwrap_or(Dpfl::Official)
+        };
     }
 
-    /// Whether a compile is in flight.
+    /// Whether a run is in flight.
     pub(crate) fn is_running(&self) -> bool {
         self.run.is_some()
     }
@@ -184,9 +225,9 @@ impl RunLog {
     fn append(&mut self, events: &Receiver<PipelineEventEnvelope>) {
         for envelope in events.try_iter() {
             if let PipelineEvent::Message(message) = &envelope.event
-                && let Some(found) = dpfl_flag(message.code.code.as_ref())
+                && let Some(dpfl) = dpfl_flag(message.code.code.as_ref())
             {
-                self.dpfl_found = found;
+                self.dpfl = dpfl;
             }
             if let Some(line) = LogLine::from_event(&mut self.formatter, &envelope.event) {
                 self.lines.push(line);
@@ -195,26 +236,28 @@ impl RunLog {
     }
 }
 
-/// `Some(true)` for the preflight findings the Upgrade DpFileList button remedies,
-/// `Some(false)` for the upgrade's own report that the list is now the official one (a
-/// replacement, or nothing to do): a failed upgrade emits neither, so its button stays for
-/// the retry. `None` for every other code.
-fn dpfl_flag(code: &str) -> Option<bool> {
+/// The `Dpfl` a run's message of `code` sets: `Outdated` for `dpfilelist_outdated`, `Other`
+/// for the two Warnings the upgrade remedies, `Official` for the upgrade's own report that
+/// the list is now the official one (a replacement, or nothing to do): a failed upgrade emits
+/// neither, so its button stays for the retry. `None` for every other code.
+fn dpfl_flag(code: &str) -> Option<Dpfl> {
+    if code == Code::DpfilelistOutdated.as_str() {
+        return Some(Dpfl::Outdated);
+    }
     if [
-        Code::DpfilelistOutdated.as_str(),
         Code::DpfilelistNotOfficial.as_str(),
         Code::DpfilelistCpkMissing.as_str(),
     ]
     .contains(&code)
     {
-        return Some(true);
+        return Some(Dpfl::Other);
     }
     [
         Code::DpfilelistReplaced.as_str(),
         Code::DpfilelistUpToDate.as_str(),
     ]
     .contains(&code)
-    .then_some(false)
+    .then_some(Dpfl::Official)
 }
 
 #[cfg(test)]
@@ -226,20 +269,33 @@ impl RunLog {
         let thread = std::thread::spawn(move || Ok(u8::from(until.recv().is_err())));
         RunLog {
             lines: Vec::new(),
+            check_len: 0,
             cells: Vec::new(),
             formatter: EventLines::new(),
             run: Some(Run { events, thread }),
-            dpfl_found: false,
+            dpfl: Dpfl::Official,
         }
     }
 
-    /// `in_flight` whose last run's lines held a preflight DpFileList finding: the Upgrade
-    /// DpFileList button's `dpfl_found`, as a drained `dpfilelist_outdated` message sets it.
+    /// `in_flight` whose last check found the cup's outdated list: the `dpfl` a drained
+    /// `dpfilelist_outdated` message sets, which shows the Upgrade DpFileList button and
+    /// disables Compile once the run ends.
     #[cfg(test)]
     pub(crate) fn in_flight_dpfl(until: Receiver<()>) -> RunLog {
         let mut log = RunLog::in_flight(until);
-        log.dpfl_found = true;
+        log.dpfl = Dpfl::Outdated;
         log
+    }
+
+    /// A log whose `dpfl` is `Other`, as a drained `dpfilelist_not_official` or
+    /// `dpfilelist_cpk_missing` sets it, with no run: the Upgrade DpFileList button shows
+    /// and Compile is enabled.
+    #[cfg(test)]
+    pub(crate) fn dpfl_other() -> RunLog {
+        RunLog {
+            dpfl: Dpfl::Other,
+            ..RunLog::default()
+        }
     }
 
     /// Appends `lines`, as a run's events append them: a view test's overflowed log.
@@ -397,6 +453,21 @@ mod tests {
         }
     }
 
+    /// Feeds `log` `message` as one of a run's events, the way `poll` drains them.
+    fn drain(log: &mut RunLog, message: Message) {
+        let (sender, events) = unbounded();
+        sender
+            .send(PipelineEventEnvelope {
+                run_id: studio_core::RunId(0),
+                export_id: None,
+                export_revision: None,
+                made_at: None,
+                event: PipelineEvent::Message(message),
+            })
+            .unwrap();
+        log.append(&events);
+    }
+
     /// The folder `path` of export 1.
     fn folder(path: &str) -> Scope {
         Scope::Folder {
@@ -540,12 +611,15 @@ mod tests {
             row(key, team, vec![message], Vec::new())
         };
         let mut log = RunLog::default();
-        log.set_check(&[identified("co Midcup Map", "/co/", "714")]);
+        log.set_check(&[identified("co Midcup Map", "/co/", "714")], &[]);
         log.append_test_line(Severity::Info, "Run finished with exit code 0");
-        log.set_check(&[
-            identified("a Midcup Grid", "/a/", "702"),
-            identified("co Midcup Map", "/co/", "714"),
-        ]);
+        log.set_check(
+            &[
+                identified("a Midcup Grid", "/a/", "702"),
+                identified("co Midcup Map", "/co/", "714"),
+            ],
+            &[],
+        );
         assert_eq!(
             log.texts(),
             [
@@ -559,6 +633,130 @@ mod tests {
             Some("co Midcup Map")
         );
         assert_eq!(log.cell_of(2), None, "a run's line acts for no cell");
+    }
+
+    #[test]
+    fn a_check_s_list_findings_are_lines_after_the_cell_lines_acting_for_none() {
+        let identified = finding(
+            "export_identified",
+            Severity::Info,
+            Scope::Export {
+                export_id: ExportId(1),
+            },
+            &[("team", "/co/"), ("id", "714")],
+        );
+        let outdated = finding(
+            "dpfilelist_outdated",
+            Severity::Fatal,
+            Scope::Run,
+            &[
+                ("cpk", "4cc_99_test.cpk"),
+                ("command", crate::output::deploy::UPGRADE_COMMAND),
+            ],
+        );
+        let mut log = RunLog::default();
+        log.set_check(
+            &[row("co Midcup Map", "/co/", vec![identified], Vec::new())],
+            &[outdated],
+        );
+        assert_eq!(
+            log.texts(),
+            [
+                "- co Midcup Map: Info export_identified (team=/co/, id=714)",
+                &format!(
+                    "- Fatal dpfilelist_outdated (cpk=4cc_99_test.cpk, command={})",
+                    crate::output::deploy::UPGRADE_COMMAND
+                ),
+            ]
+        );
+        assert_eq!(log.cell_of(1), None, "a list line acts for no cell");
+        assert!(log.dpfl_outdated(), "the outdated list disables Compile");
+    }
+
+    #[test]
+    fn a_run_s_dpfilelist_messages_set_the_button_s_state() {
+        for (code, found, outdated) in [
+            ("dpfilelist_outdated", true, true),
+            ("dpfilelist_not_official", true, false),
+            ("dpfilelist_cpk_missing", true, false),
+            ("dpfilelist_replaced", false, false),
+            ("dpfilelist_up_to_date", false, false),
+        ] {
+            let mut log = RunLog::default();
+            drain(&mut log, finding(code, Severity::Warning, Scope::Run, &[]));
+            assert_eq!(log.dpfl_found(), found, "{code}");
+            assert_eq!(log.dpfl_outdated(), outdated, "{code}");
+        }
+    }
+
+    #[test]
+    fn a_check_that_finds_nothing_clears_the_button_s_state() {
+        let outdated = finding(
+            "dpfilelist_outdated",
+            Severity::Fatal,
+            Scope::Run,
+            &[("cpk", "4cc_99_test.cpk")],
+        );
+        let mut log = RunLog::default();
+        log.set_check(
+            &[row("co Midcup Map", "/co/", Vec::new(), Vec::new())],
+            &[outdated],
+        );
+        assert!(log.dpfl_found() && log.dpfl_outdated(), "premise: set");
+
+        log.set_check(&[row("co Midcup Map", "/co/", Vec::new(), Vec::new())], &[]);
+        assert!(
+            !log.dpfl_found() && !log.dpfl_outdated(),
+            "a check with no list finding clears the state"
+        );
+    }
+
+    #[test]
+    fn a_check_s_list_line_is_replaced_by_the_next_check_s_and_the_run_s_kept() {
+        let identified = |key: &str, team: &str, id: &str| {
+            let message = finding(
+                "export_identified",
+                Severity::Info,
+                Scope::Export {
+                    export_id: ExportId(1),
+                },
+                &[("team", team), ("id", id)],
+            );
+            row(key, team, vec![message], Vec::new())
+        };
+        let cpk_missing = finding(
+            "dpfilelist_cpk_missing",
+            Severity::Warning,
+            Scope::Run,
+            &[("files", "4cc_16_balls.cpk")],
+        );
+        let outdated = finding(
+            "dpfilelist_outdated",
+            Severity::Fatal,
+            Scope::Run,
+            &[("cpk", "4cc_99_test.cpk")],
+        );
+        let mut log = RunLog::default();
+        log.set_check(
+            &[identified("co Midcup Map", "/co/", "714")],
+            &[cpk_missing],
+        );
+        assert!(
+            !log.dpfl_outdated(),
+            "a Warning alone leaves Compile enabled"
+        );
+        assert!(log.dpfl_found());
+        log.append_test_line(Severity::Info, "Run finished with exit code 0");
+        log.set_check(&[identified("a Midcup Grid", "/a/", "702")], &[outdated]);
+        assert_eq!(
+            log.texts(),
+            [
+                "- a Midcup Grid: Info export_identified (team=/a/, id=702)",
+                "- Fatal dpfilelist_outdated (cpk=4cc_99_test.cpk)",
+                "Run finished with exit code 0",
+            ]
+        );
+        assert!(log.dpfl_outdated());
     }
 
     #[test]

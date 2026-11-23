@@ -230,22 +230,17 @@ pub(crate) struct Download {
 
 /// The checks a run that deploys makes before any export is read, in order: the PES folder
 /// `pes_folder` is a folder (`pes_folder_not_found`), it holds `version`'s exe
-/// (`pes_version_mismatch`, a Warning: the checks go on), its `download/DpFileList.bin` exists
-/// and lists every CPK of the run, `cpks` (those it lacks that the `official` list names are
-/// one `dpfilelist_outdated`, the others one `cpk_name_unlisted`, each joining their names in
-/// `cpks`' order), the list is the official one (`dpfilelist_not_official`, a Warning), every
-/// CPK it lists but the run's has its file in `download/` (`dpfilelist_cpk_missing`, a
-/// Warning), and each CPK can be written in `download/` (`deploy_target_unwritable`, the first
-/// that cannot). The first failing check ends them (both list findings when the list lacks both
-/// kinds). `dpfilelist_outdated` and `cpk_name_unlisted` are Fatal (`AbortRun`): the member has to
-/// fix the list or the CPK name and compile again anyway, so the run ends there rather than spend
-/// minutes on CPKs nobody installs; the other Errors end the checks but not the run. A missing or
-/// unreadable list adds no finding: the working-bin walk, which reads it next, reports it
-/// (`dpfilelist_missing`, `installed_bin_unreadable`). Returns the `download/` to install into,
-/// `loaded` `false` when the game will run vanilla over it, or `None` when a check failed, and the
-/// findings. `promoted` (the one CPK's path in the output folder, or the folder) is the CPKs'
-/// destination when the run goes on without deploying, which each remaining Error names; the list
-/// findings abort the run, so they name none.
+/// (`pes_version_mismatch`, a Warning: the checks go on), the findings about its
+/// `download/DpFileList.bin` (`list_findings` of the CPK file names of `cpks`), and each CPK
+/// can be written in `download/` (`deploy_target_unwritable`, the first that cannot). The
+/// first failing check ends them. `dpfilelist_outdated` and `cpk_name_unlisted` are Fatal
+/// (`AbortRun`): the member has to fix the list or the CPK name and compile again anyway, so
+/// the run ends there rather than spend minutes on CPKs nobody installs; the other Errors end
+/// the checks but not the run. Returns the `download/` to install into, `loaded` `false` when
+/// the game will run vanilla over it (`dpfilelist_cpk_missing`), or `None` when a check
+/// failed, and the findings. `promoted` (the one CPK's path in the output folder, or the
+/// folder) is the CPKs' destination when the run goes on without deploying, which each
+/// remaining Error names; the list findings abort the run, so they name none.
 pub(crate) fn preflight(
     pes_folder: &Path,
     version: PesVersion,
@@ -274,20 +269,71 @@ pub(crate) fn preflight(
         ));
     }
     let download = pes_folder.join(DOWNLOAD);
+    let names: Vec<String> = cpks.iter().map(cpk_file_name).collect();
+    let Some(list) = list_findings(&download, &names, official) else {
+        return (None, messages);
+    };
+    let aborted = list
+        .iter()
+        .any(|message| message.disposition == Disposition::AbortRun);
+    let loaded = !list
+        .iter()
+        .any(|message| message.code.code == Code::DpfilelistCpkMissing.as_str());
+    messages.extend(list);
+    if aborted {
+        return (None, messages);
+    }
+    for name in &names {
+        if let Err((path, error)) = probe_download(&download, name) {
+            messages.push(tool_message(
+                Code::DeployTargetUnwritable,
+                Scope::Run,
+                Disposition::Keep,
+                vec![
+                    ("path", path.display().to_string()),
+                    ("error", error.to_string()),
+                    output(),
+                ],
+            ));
+            return (None, messages);
+        }
+    }
+    (
+        Some(Download {
+            folder: download,
+            loaded,
+        }),
+        messages,
+    )
+}
+
+/// The findings about `download`'s `DpFileList.bin` for a run installing the CPK file names
+/// `names`: when it does not list every one, `dpfilelist_outdated` for those it lacks that
+/// the `official` list names and `cpk_name_unlisted` for the others (each Fatal, `AbortRun`,
+/// joining its names in `names`' order, both when it lacks both kinds), and nothing else;
+/// when it lists them all, `dpfilelist_not_official` unless it is the `official` list, and
+/// `dpfilelist_cpk_missing` for each CPK it lists but `names` that has no file in `download`
+/// (both Warnings). `None` when the list is missing or unreadable: a run's working-bin walk,
+/// which reads it next, reports it (`dpfilelist_missing`, `installed_bin_unreadable`).
+pub(crate) fn list_findings(
+    download: &Path,
+    names: &[String],
+    official: &[String],
+) -> Option<Vec<Message>> {
     let list_path = download.join(DPFILELIST);
     let list = match installed::read_list(&list_path) {
         Ok(Some(list)) => list,
-        Ok(None) => return (None, messages),
+        Ok(None) => return None,
         Err(unreadable) => {
             log::debug!(
                 "{}: not deployed: {:#}",
                 unreadable.path.display(),
                 unreadable.error
             );
-            return (None, messages);
+            return None;
         }
     };
-    let names: Vec<String> = cpks.iter().map(cpk_file_name).collect();
+    let mut messages = Vec::new();
     let (outdated, unlisted): (Vec<&str>, Vec<&str>) = names
         .iter()
         .map(String::as_str)
@@ -311,34 +357,11 @@ pub(crate) fn preflight(
                 vec![("cpk", unlisted.join(", ")), path()],
             ));
         }
-        return (None, messages);
+        return Some(messages);
     }
     messages.extend(not_official(&list_path, &list, official));
-    let missing = cpks_missing(&download, &list, &names);
-    let loaded = missing.is_none();
-    messages.extend(missing);
-    for name in &names {
-        if let Err((path, error)) = probe_download(&download, name) {
-            messages.push(tool_message(
-                Code::DeployTargetUnwritable,
-                Scope::Run,
-                Disposition::Keep,
-                vec![
-                    ("path", path.display().to_string()),
-                    ("error", error.to_string()),
-                    output(),
-                ],
-            ));
-            return (None, messages);
-        }
-    }
-    (
-        Some(Download {
-            folder: download,
-            loaded,
-        }),
-        messages,
-    )
+    messages.extend(cpks_missing(download, &list, names));
+    Some(messages)
 }
 
 /// The `command` context entry of a finding about the installed list.

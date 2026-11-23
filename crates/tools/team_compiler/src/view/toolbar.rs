@@ -1,9 +1,9 @@
 //! The toolbar under the grid, the draft's `.tc-bar`: the strip, which sums up the grid while
 //! no run is in flight, and the Compile button at its right, the Upgrade DpFileList button
-//! beside it when the last run's preflight found the game's list not the official one.
+//! beside it when the check found the game's list not the official one.
 
 use export_grid::{Cell, CellState, Row, cell_places};
-use studio_core::widgets::add_enabled;
+use studio_core::widgets::{add_enabled, resting_edge};
 use studio_core::{LogFilter, LogPanel, Severity};
 
 use crate::gui_run::RunLog;
@@ -114,10 +114,10 @@ pub(crate) fn strip(summary: &Summary) -> Vec<Part> {
 }
 
 /// Draws the toolbar as a bottom panel of `ui`: the strip summing up `rows` while `log` has
-/// no run in flight, the Compile button, disabled while one runs, and the Upgrade
-/// DpFileList button beside it while `log`'s last run reported a finding the upgrade
-/// remedies. A click on a count shows only its lines in `panel`. The `Intent` a click asked
-/// for, when one was made this frame.
+/// no run in flight, the Compile button, disabled while one runs or while `log`'s check found
+/// the cup's outdated list, and the Upgrade DpFileList button beside it while `log`'s
+/// findings say the game's list is not the official one. A click on a count shows only its
+/// lines in `panel`. The `Intent` a click asked for, when one was made this frame.
 pub(crate) fn show(
     ui: &mut egui::Ui,
     panel: &mut LogPanel,
@@ -133,21 +133,45 @@ pub(crate) fn show(
             ui.spacing_mut().item_spacing.x = GAP;
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                 let mut intent = None;
-                if add_enabled(ui, !running, egui::Button::new("Compile")).clicked() {
+                let compile = add_enabled(
+                    ui,
+                    !running && !log.dpfl_outdated(),
+                    egui::Button::new("Compile"),
+                );
+                // The run's preflight would stop it before anything is compiled, so the
+                // outdated list is why it is off; the two Warnings leave it enabled.
+                let compile = if !running && log.dpfl_outdated() {
+                    compile.on_disabled_hover_text(
+                        "The game's DpFileList.bin does not list this compile's CPK, so the \
+                         game would not load it. Upgrade DpFileList first",
+                    )
+                } else {
+                    compile
+                };
+                if compile.clicked() {
                     intent = Some(Intent::Compile);
                 }
                 // Left of Compile in the right-to-left row, beside the button it
-                // unblocks; gone while a run is in flight.
-                if !running
-                    && log.dpfl_found()
-                    && ui
-                        .button("Upgrade DpFileList")
+                // unblocks; gone while a run is in flight. Filled in the selection blue
+                // with its edge, as a held control is, so it reads as the run's remedy
+                // and not as one more button.
+                if !running && log.dpfl_found() {
+                    let upgrade = ui
+                        .add(egui::Button::new("Upgrade DpFileList").selected(true))
                         .on_hover_text(
                             "Replace the game's DpFileList.bin with the cup's official list",
-                        )
-                        .clicked()
-                {
-                    intent = Some(Intent::UpgradeDpfl);
+                        );
+                    resting_edge(
+                        ui,
+                        &upgrade,
+                        studio_core::theme::edge_color(
+                            ui.visuals(),
+                            ui.visuals().selection.bg_fill,
+                        ),
+                    );
+                    if upgrade.clicked() {
+                        intent = Some(Intent::UpgradeDpfl);
+                    }
                 }
                 let parts = if running {
                     Vec::new()

@@ -22,12 +22,13 @@ use vtree::{ScopePath, fold_name};
 
 use crate::check::validate;
 use crate::cli;
-use crate::reader::{self, SourceKind};
+use crate::compile;
+use crate::reader::{self, ExportSource, SourceKind};
 use crate::validation::CheckedSource;
 
-/// What a check's thread hands back: the rows, or the text of the `error:` line that
-/// refused it.
-type Outcome = Result<Vec<Row>, String>;
+/// What a check's thread hands back: the rows and the DpFileList findings, or the text of
+/// the `error:` line that refused it.
+type Outcome = Result<(Vec<Row>, Vec<Message>), String>;
 
 /// What `LiveCheck::poll` found.
 #[derive(Debug, PartialEq)]
@@ -40,10 +41,13 @@ pub(crate) enum Polled {
     Refused(String),
 }
 
-/// The grid's check: the rows of the last check that ended, and the check in flight.
+/// The grid's check: the rows of the last check that ended and its DpFileList findings,
+/// and the check in flight.
 #[derive(Default)]
 pub(crate) struct LiveCheck {
     rows: Vec<Row>,
+    /// The findings about the game's `DpFileList.bin` `rows`' check made.
+    list: Vec<Message>,
     running: Option<JoinHandle<Outcome>>,
     /// A check was asked for while one ran: it starts once that one ends, since the
     /// running one may predate what made the caller ask.
@@ -72,8 +76,11 @@ impl LiveCheck {
             return Polled::Nothing;
         };
         let polled = match running.join() {
-            Ok(Ok(rows)) => {
+            Ok(Ok((rows, list))) => {
+                // Replaced together: a list older than the rows would gate Compile on a
+                // `DpFileList.bin` that may have changed since.
                 self.rows = rows;
+                self.list = list;
                 Polled::Rows
             }
             Ok(Err(error)) => Polled::Refused(error),
@@ -99,20 +106,30 @@ impl LiveCheck {
     pub(crate) fn rows(&self) -> &[Row] {
         &self.rows
     }
+
+    /// The last check's findings about the game's `DpFileList.bin` (`compile::list_findings`
+    /// as a normal compile's preflight makes them); a refused check keeps the last ones.
+    pub(crate) fn list_findings(&self) -> &[Message] {
+        &self.list
+    }
 }
 
 /// The check a thread runs: `check` with no arguments, its preflight included, each export's
-/// outcome made a row.
+/// outcome made a row, and the findings about the game's `DpFileList.bin` a normal compile's
+/// preflight would report.
 fn check_rows(ctx: &ToolContext) -> Outcome {
     let inputs = cli::check_inputs(ctx).map_err(|error| error.to_string())?;
     let discovery = reader::discover(&inputs.exports_root, &inputs.exports)
         .map_err(|error| format!("{error:#}"))?;
+    let referees = discovery.sources.iter().any(ExportSource::is_referees);
     let pass = validate(&inputs, discovery.sources).map_err(|error| format!("{error:#}"))?;
-    Ok(pass
+    let rows = pass
         .sources
         .into_iter()
         .map(|checked| export_row(checked, &inputs.teams_list))
-        .collect())
+        .collect();
+    let list = compile::list_findings(&inputs, referees, ctx.paths().data_dir.as_deref());
+    Ok((rows, list))
 }
 
 /// The message a row shows in place of its cells when `message` is one of the two that leave
@@ -811,10 +828,11 @@ impl LiveCheck {
             until
                 .recv()
                 .map_err(|_| "the test dropped its check".to_owned())?;
-            Ok(rows)
+            Ok((rows, Vec::new()))
         });
         LiveCheck {
             rows: Vec::new(),
+            list: Vec::new(),
             running: Some(running),
             again: false,
             started: true,
