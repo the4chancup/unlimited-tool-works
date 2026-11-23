@@ -264,9 +264,11 @@ struct Scene {
     /// Compiler toolbar's Compile mode menu draws before the grid too).
     menu: bool,
     /// An `egui::Window` drawn over `rect` every frame (the Help window over the detail
-    /// window). `help_clicked` holds whether its button has taken a click.
+    /// window). `help_clicked` holds whether its button has taken a click; `help_text` is
+    /// its text box's text (the Help window's search box).
     help: Option<Rect>,
     help_clicked: bool,
+    help_text: String,
 }
 
 impl Scene {
@@ -295,6 +297,7 @@ impl Scene {
             menu: false,
             help: None,
             help_clicked: false,
+            help_text: String::new(),
         }
     }
 
@@ -313,6 +316,7 @@ impl Scene {
             menu,
             help,
             help_clicked,
+            help_text,
         } = self;
         detail.point_at(pointing.clone());
         let mut pictures = |file: &PictureFile| {
@@ -341,7 +345,10 @@ impl Scene {
             if let Some(rect) = help {
                 *help_clicked |= egui::Window::new("Help")
                     .fixed_rect(*rect)
-                    .show(ui.ctx(), |ui| ui.button("Its button").clicked())
+                    .show(ui.ctx(), |ui| {
+                        ui.add(egui::TextEdit::singleline(help_text));
+                        ui.button("Its button").clicked()
+                    })
                     .and_then(|inner| inner.inner)
                     .unwrap_or(false);
             }
@@ -803,6 +810,52 @@ fn esc_reaches_a_menu_drawn_before_the_grid_and_the_window_stays() {
     let drawn = scene.idle();
     assert!(!shows(&drawn, "An entry"), "premise: the menu read Esc");
     assert!(shows(&drawn, "/co/ 03"), "the window stays pinned");
+    scene.key(Key::Escape);
+    assert!(
+        !any_window(&scene.idle()),
+        "the next Esc reaches the window"
+    );
+}
+
+/// The help window's text box's centre: the frame's one `TextInput` node (the
+/// scene's Help window holds the search box and a button).
+fn text_input(drawn: &Drawn) -> Pos2 {
+    let found: Vec<_> = drawn
+        .nodes
+        .iter()
+        .filter(|node| node.role() == egui::accesskit::Role::TextInput)
+        .collect();
+    assert_eq!(found.len(), 1, "one text input");
+    let bounds = found[0].bounds().expect("a node has bounds");
+    pos2(
+        ((bounds.x0 + bounds.x1) / 2.0) as f32,
+        ((bounds.y0 + bounds.y1) / 2.0) as f32,
+    )
+}
+
+// A focused text box takes Esc first, as a modal does: egui drops the help
+// window's search box's focus on it, and the pinned window under it stays.
+// Once the box is unfocused, the next Esc reaches the window.
+// TC-GUI-24
+#[test]
+fn esc_in_the_help_windows_text_box_defocuses_it_and_the_window_stays() {
+    let mut scene = Scene::new();
+    let at = spots(&scene.idle());
+    let (_, drawn) = scene.click(at.three);
+    scene.help = Some(window_rect(&drawn));
+    let box_at = text_input(&scene.settled());
+    scene.click(box_at);
+    assert!(
+        scene.window.ctx.text_edit_focused(),
+        "premise: the click focused the box"
+    );
+
+    scene.key(Key::Escape);
+    assert!(shows(&scene.idle(), "/co/ 03"), "the window stays pinned");
+    assert!(
+        !scene.window.ctx.text_edit_focused(),
+        "the box lost focus to Esc"
+    );
     scene.key(Key::Escape);
     assert!(
         !any_window(&scene.idle()),

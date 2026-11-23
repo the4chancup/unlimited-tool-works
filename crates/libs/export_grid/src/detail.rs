@@ -150,6 +150,11 @@ pub struct Detail {
     /// closes on the same Esc and is gone from egui's open-popup state by the time the
     /// grid reads it, so Esc's guard needs the last frame's answer.
     popup_was_open: bool,
+    /// Whether a text box had focus when the grid last drew. A focused box (the help
+    /// window's search box, drawn after the grid) loses its focus at the Esc frame's
+    /// start, before the grid reads the key, so the guard needs the last frame's
+    /// answer for it as well.
+    text_edit_was_focused: bool,
 }
 
 /// The cell under the pointer, and when its window opens on hover.
@@ -311,11 +316,15 @@ impl Detail {
         // A modal or a popup over the grid takes Esc first: it closes that layer, not the
         // window under it. A popup drawn before the grid has closed on this same Esc and
         // left egui's popup state by the time the grid reads it, so the last frame's is
-        // read too.
+        // read too. A focused text box (the help window's search box) takes Esc the same
+        // way, egui dropping its focus as the frame begins, so its last frame's answer
+        // is read as well.
         let covered = ui.ctx().memory(|memory| memory.top_modal_layer()).is_some()
             || egui::Popup::is_any_open(ui.ctx())
-            || self.popup_was_open;
+            || self.popup_was_open
+            || self.text_edit_was_focused;
         self.popup_was_open = egui::Popup::is_any_open(ui.ctx());
+        self.text_edit_was_focused = ui.ctx().text_edit_focused();
         if open && !covered && ui.input_mut(|input| input.consume_key(Modifiers::NONE, Key::Escape))
         {
             self.pinned = None;
