@@ -674,15 +674,44 @@ mod tests {
     }
 
     #[test]
-    fn a_message_stands_where_the_cells_would() {
-        let message = Row {
+    fn a_row_with_no_id_draws_a_blank_id_cell() {
+        let row = Row {
+            id: Some(IdCell::Blank),
+            ..team_row()
+        };
+        let drawn = draw(&COLUMNS, &[row], false);
+        // The ID cell stands where the Missing one's does: at 62, on the first
+        // row at 26.65625 (the columns test's figures).
+        let id = Rect::from_min_size(pos2(62.0, 26.65625), vec2(ID_WIDTH, SQUARE));
+        let visuals = dark();
+        assert_eq!(
+            drawn.fill_at(id),
+            Some(visuals.widgets.inactive.bg_fill),
+            "the widgets' grey, not the error red"
+        );
+        let text = drawn.shapes.iter().any(|shape| match shape {
+            egui::Shape::Text(text) => id.contains(text.pos) && !text.galley.text().is_empty(),
+            _ => false,
+        });
+        assert!(!text, "no text painted in the blank cell");
+        assert!(drawn.all("???").is_empty(), "no question marks");
+    }
+
+    #[test]
+    fn a_message_stands_where_the_cells_would_in_its_tone_s_colour() {
+        let message = |text: &str, tone| Row {
             body: RowBody::Message {
-                text: "Old export format".to_owned(),
-                tone: Tone::Error,
+                text: text.to_owned(),
+                tone,
             },
             ..team_row()
         };
-        let drawn = draw(&COLUMNS, &[team_row(), message], false);
+        let rows = [
+            team_row(),
+            message("Old export format", Tone::Error),
+            message("Nothing to do", Tone::Warning),
+        ];
+        let drawn = draw(&COLUMNS, &rows, false);
         let first = drawn.all("01")[0];
         let text = drawn.one("Old export format");
         assert_eq!(text.left(), first.left());
@@ -691,6 +720,17 @@ mod tests {
             first.center().y + SQUARE + SPACING,
             "centred on the second row"
         );
+        let visuals = dark();
+        for (text, colour) in [
+            ("Old export format", visuals.error_fg_color),
+            ("Nothing to do", visuals.warn_fg_color),
+        ] {
+            assert_eq!(
+                text_shape(&drawn, text).galley.job.sections[0].format.color,
+                colour,
+                "{text}'s tone"
+            );
+        }
     }
 
     // The Export upgrader's shape: three named lines a row, with word cells over two kit

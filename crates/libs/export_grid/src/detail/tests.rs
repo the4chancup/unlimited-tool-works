@@ -219,6 +219,24 @@ fn a_row() -> Row {
     }
 }
 
+/// A row with one cell, player 07's, whose Open folder selects the archive
+/// `co Midcup Map.zip` in the exports folder: an export packed in an archive has
+/// no folder of its own on disk.
+fn archive_row() -> Row {
+    let mut players = vec![Position::Empty; 23];
+    players[6] = Position::Cell(Box::new(Cell {
+        open: Some(Open::Select(PathBuf::from("exports/co Midcup Map.zip"))),
+        ..cell("07", "co Midcup Map.zip", Vec::new())
+    }));
+    Row {
+        body: RowBody::Lines(vec![Line {
+            name: None,
+            groups: vec![players, vec![Position::Empty], vec![Position::Empty; 10]],
+        }]),
+        ..a_row()
+    }
+}
+
 /// The grid of /co/ and /a/ in a headless window, its detail window's state kept from
 /// frame to frame.
 struct Scene {
@@ -756,6 +774,59 @@ fn a_cell_with_no_folder_opens_nothing_and_its_window_has_no_open_folder() {
     let (response, _) = scene.click(button);
     let folder = PathBuf::from("exports/co Midcup Map/Players/03 - B");
     assert_eq!(response.open, Some(Open::Folder(folder)));
+}
+
+/// `pos`'s cell pinned and the pointer rested on its window's Open folder past
+/// the tooltip delay: the frame that follows.
+fn rested_on_open_folder(scene: &mut Scene, pos: Pos2) -> Drawn {
+    scene.click(pos);
+    // egui hides the tooltip of a widget the pointer reached in the 0.1 s after a
+    // click: the wait keeps the pinning click back before the pointer moves on.
+    scene.wait(0.2);
+    let delay = f64::from(scene.window.ctx.global_style().interaction.tooltip_delay);
+    let button = scene.idle().one("Open folder").center();
+    scene.hover(button);
+    scene.wait(delay + 0.1);
+    // A popup's first open frame only measures: the next one shows the tooltip.
+    scene.idle();
+    scene.idle()
+}
+
+/// Whether a text run of `text` was painted this frame.
+fn paints(drawn: &Drawn, text: &str) -> bool {
+    drawn
+        .shapes
+        .iter()
+        .any(|shape| matches!(shape, Shape::Text(shape) if shape.galley.text() == text))
+}
+
+// The archive has no folder of its own: Open folder shows it in its folder, and
+// the tooltip promises no selection since no Linux file manager makes one.
+#[test]
+fn an_archive_cell_s_open_folder_tooltip_names_only_the_folder() {
+    let mut scene = Scene::new();
+    scene.rows = vec![archive_row()];
+    let cell = scene.idle().one("07").center();
+    let drawn = rested_on_open_folder(&mut scene, cell);
+    assert!(
+        paints(&drawn, "Opens the folder holding this archive"),
+        "the tooltip drawn"
+    );
+}
+
+#[test]
+fn a_folder_cell_s_open_folder_has_no_tooltip() {
+    let mut scene = Scene::new();
+    let at = spots(&scene.idle());
+    let drawn = rested_on_open_folder(&mut scene, at.three);
+    let open = drawn
+        .nodes
+        .iter()
+        .find(|node| {
+            node.role() == egui::accesskit::Role::Button && node.label() == Some("Open folder")
+        })
+        .expect("the Open folder button");
+    assert_eq!(open.description(), None, "no hover text on it");
 }
 
 #[test]
