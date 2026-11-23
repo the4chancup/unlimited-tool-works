@@ -82,11 +82,13 @@ pub(crate) fn stripes_dds_at_fox() -> Vec<u8> {
 }
 
 /// `stripes_image()` as a DDS stored uncompressed (A8R8G8B8): a kit texture source the
-/// compile writes back uncompressed where `Target::keep_uncompressed` asks for it.
+/// compile writes back uncompressed where `Target::keep_uncompressed` asks for it. It checks
+/// its own output, so every test using it fails if the converter stops writing it
+/// uncompressed.
 pub(crate) fn uncompressed_stripes_dds() -> Vec<u8> {
     let mut image = stripes_image();
     image.uncompressed = true;
-    dds_convert::convert(
+    let dds = dds_convert::convert(
         &image,
         Target {
             version: PesVersion::Pes17,
@@ -94,7 +96,14 @@ pub(crate) fn uncompressed_stripes_dds() -> Vec<u8> {
             keep_uncompressed: true,
         },
     )
-    .unwrap()
+    .unwrap();
+    assert!(
+        dds_convert::probe(&dds, SourceFormat::Dds)
+            .unwrap()
+            .uncompressed,
+        "premise: the stripes are stored uncompressed"
+    );
+    dds
 }
 
 /// The top level of the kit texture `name` the sandbox's last `compile` wrote, decoded to
@@ -615,14 +624,6 @@ fn a_row_number_atlas_compiled_for_pes_17_becomes_a_column_and_a_column_stays_as
 fn an_uncompressed_number_atlas_stays_uncompressed_whether_re_arranged_or_not() {
     let column = uncompressed_dds_at(128, 2048);
     let row = uncompressed_dds_at(2048, 256);
-    for (label, atlas) in [("column", &column), ("row", &row)] {
-        assert!(
-            dds_convert::probe(atlas, SourceFormat::Dds)
-                .unwrap()
-                .uncompressed,
-            "premise: the {label} atlas is stored uncompressed"
-        );
-    }
     let sandbox = Sandbox::new("number_atlas_uncompressed_pes21");
     for (kit, back) in [("p1", &column), ("p2", &row)] {
         let folder = format!("exports/co Midcup Numbers/Kits/{kit}");

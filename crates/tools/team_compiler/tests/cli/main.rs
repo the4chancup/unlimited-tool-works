@@ -232,9 +232,10 @@ fn uncompressed_dds() -> Vec<u8> {
 }
 
 /// A single-level `width`x`height` DDS stored uncompressed (A8R8G8B8), written by the
-/// converter itself so the header reads as stored uncompressed.
+/// converter itself so the header reads as stored uncompressed. It checks its own output, so
+/// every test using it fails if the converter stops writing it uncompressed.
 fn uncompressed_dds_at(width: u32, height: u32) -> Vec<u8> {
-    dds_convert::convert(
+    let dds = dds_convert::convert(
         &Decoded {
             width,
             height,
@@ -249,7 +250,14 @@ fn uncompressed_dds_at(width: u32, height: u32) -> Vec<u8> {
             keep_uncompressed: true,
         },
     )
-    .unwrap()
+    .unwrap();
+    assert!(
+        dds_convert::probe(&dds, dds_convert::SourceFormat::Dds)
+            .unwrap()
+            .uncompressed,
+        "premise: the {width}x{height} DDS is stored uncompressed"
+    );
+    dds
 }
 
 /// Every file under `root`, by relative path, with its bytes.
