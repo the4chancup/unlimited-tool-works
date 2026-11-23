@@ -460,19 +460,6 @@ fn dragged_to_its_narrowest_the_window_keeps_heads_whole_and_cuts_elided() {
         &mut view,
     );
 
-    // The premise the asserts stand on: the drag left the window at its
-    // narrowest — its frame's width the minimum the code sets, within a
-    // point.
-    let (min, pairs, _) = window.frame_ids(Vec::new(), |ui| {
-        show(ui, &mut view, &|| Vec::new());
-        crate::view::comparator::min_window_width(ui)
-    });
-    let after = comparator_frame(&pairs);
-    assert!(
-        (after.width() - f64::from(min)).abs() <= 1.0,
-        "premise: the window at its narrowest ({after:?} vs {min})"
-    );
-
     let name = format!("Name {LONG_NAME}X \u{2192} {LONG_NAME}");
     scroll_to(&mut window, &mut view, &name);
     let (_, pairs, shapes) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
@@ -494,26 +481,32 @@ fn dragged_to_its_narrowest_the_window_keeps_heads_whole_and_cuts_elided() {
             })
             .next()
             .unwrap_or_else(|| panic!("{title:?} painted"));
+        let end = f64::from(shape.pos.x + shape.galley.size().x);
+        if title == "Open save" {
+            // The premise the cuts stand on: the window is at its
+            // narrowest when the last head ends inside the row's right
+            // inset (4 points, as the other cut tests take it).
+            assert!(
+                (end - (head_row.x1 - 4.0)).abs() <= 0.5,
+                "Open save ends at the head row's right inset: {end} vs {}",
+                head_row.x1 - 4.0
+            );
+        }
         assert!(
-            f64::from(shape.pos.x + shape.galley.size().x) <= head_row.x1 + 0.5,
+            end <= head_row.x1 + 0.5,
             "{title:?} whole inside the head row: {:?} vs {head_row:?}",
             shape.pos
         );
     }
-    for value in [format!("{LONG_NAME}X"), LONG_NAME.to_owned()] {
+    // The values' rooms: the Picked save's 200-point column, the Open
+    // save's the row's width less 414 (410 its start, 4 its inset).
+    let open_room = (row.x1 - row.x0) as f32 - 414.0;
+    for (value, width) in [
+        (format!("{LONG_NAME}X"), 200.0),
+        (LONG_NAME.to_owned(), open_room),
+    ] {
         let shape = text_in_row(&shapes, row, &value);
-        assert!(shape.galley.elided, "{value:?} is cut");
-        let last = shape
-            .galley
-            .rows
-            .last()
-            .and_then(|row| row.row.glyphs.last())
-            .map(|glyph| glyph.chr);
-        assert_eq!(
-            last,
-            Some('\u{2026}'),
-            "{value:?}'s cut ends in the ellipsis"
-        );
+        assert_cut(shape, width);
     }
 }
 

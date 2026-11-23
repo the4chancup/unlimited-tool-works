@@ -6,6 +6,7 @@
 use egui::AtomExt as _;
 use egui::Widget as _;
 use egui::class::HasClasses as _;
+use egui::emath::GuiRounding as _;
 use pes_savefile::EditFile;
 use pes_savefile::interchange::team_toml::labels::POSITIONS;
 use pes_savefile::model::PlayerEntry;
@@ -84,6 +85,21 @@ fn dot_right(ui: &egui::Ui, right_end: f32, mark_width: Option<f32>) -> f32 {
         - mark_width.map_or(0.0, |width| {
             width + ui.spacing().item_spacing.x + DOT_MARK_GAP
         })
+}
+
+/// A player row's right-end layout: the dirty dot's galley, `mark`'s
+/// width and the room `end_room` leaves for them — the row and the held
+/// row's float take it alike, so a name is cut at the same width either
+/// way.
+fn end_layout(
+    ui: &egui::Ui,
+    dirty: bool,
+    mark: Option<&live_marks::RowMark>,
+) -> (Option<std::sync::Arc<egui::Galley>>, Option<f32>, f32) {
+    let mark_width = mark.as_ref().map(|mark| mark.width(ui));
+    let dot = dirty_dot(ui, dirty);
+    let room = end_room(ui, dot.as_ref().map(|galley| galley.size().x), mark_width);
+    (dot, mark_width, room)
 }
 
 /// The selector, the filter box, the rows and the quick actions, top to
@@ -369,8 +385,12 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
                 // row itself scrolls with the list and its place is left
                 // blank, the float does not. Painted on the tooltip
                 // layer, the scroll area's clip would cut it at the
-                // list's edge.
+                // list's edge. The payload lives until egui's end of
+                // pass, so the release frame still reads it: skip it —
+                // the drag is over, and nothing would ask for the frame
+                // that removes it.
                 if let Some(dragged) = egui::DragAndDrop::payload::<DraggedRow>(ui.ctx())
+                    && !ui.input(|i| i.pointer.any_released())
                     && let Some(at) = ui.input(|i| i.pointer.interact_pos())
                 {
                     let rect = egui::Rect::from_min_size(at - dragged.grab, row_size(ui, layout));
@@ -386,12 +406,11 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
                         .map(|(_, violations)| {
                             live_marks::row_mark(violations, Some(dragged.row.slot))
                         });
-                    let mark_width = mark.as_ref().map(|mark| mark.width(ui));
-                    let dot = dirty_dot(
+                    let (_, _, room) = end_layout(
                         ui,
                         session.player_dirty(dragged.row.team_id, dragged.row.slot),
+                        mark.as_ref(),
                     );
-                    let room = end_room(ui, dot.as_ref().map(|galley| galley.size().x), mark_width);
                     let texts = row_text(
                         session.file().player(dragged.row.player_id),
                         &dragged.row,
@@ -562,16 +581,23 @@ fn row_size(ui: &egui::Ui, layout: RowLayout) -> egui::Vec2 {
 /// border: `layout`'s span inset by the list frame's stroke on each side.
 /// A row's own edge, painted inside the box, then stands inside the frame's
 /// border rather than under it — the frame's stroke is painted after the
-/// rows, and a band sharing it would be covered.
+/// rows, and a band sharing it would be covered. `id` is the row's own
+/// (its team, and its slot for a player), not `allocate_rect`'s automatic
+/// one: `show_rows` keeps an automatic id on its row only while every row
+/// takes exactly one, so a second widget with an automatic id in a row
+/// would hand a pressed or dragged row's state to its neighbour.
 fn row_rect(
     ui: &mut egui::Ui,
     layout: RowLayout,
+    id: egui::Id,
     sense: egui::Sense,
 ) -> (egui::Rect, egui::Response) {
     let inset = ui.visuals().widgets.noninteractive.bg_stroke.width;
     let avail = ui.available_rect_before_wrap();
-    let rect = egui::Rect::from_min_size(avail.min + egui::vec2(inset, 0.0), row_size(ui, layout));
-    let response = ui.allocate_rect(rect, sense);
+    let rect = egui::Rect::from_min_size(avail.min + egui::vec2(inset, 0.0), row_size(ui, layout))
+        .round_ui();
+    ui.advance_cursor_after_rect(rect);
+    let response = ui.interact(rect, id, sense);
     (rect, response)
 }
 
@@ -779,7 +805,12 @@ fn team_row(
     };
     let is_selected = *selection.selected == Some(Selection::Team(team_id));
     let dirty = session.team_dirty(team_id);
-    let (rect, response) = row_rect(ui, layout, egui::Sense::click());
+    let (rect, response) = row_rect(
+        ui,
+        layout,
+        ui.scope_id().with(("team_row", team_id)),
+        egui::Sense::click(),
+    );
     response.widget_info(|| {
         egui::WidgetInfo::selected(
             egui::Role::Button,
@@ -948,8 +979,9 @@ fn row_is_selected(selected: Option<Selection>, group: &[(u32, u8)], row: &Row) 
 /// the point pressed under the pointer, painted by the list from the drag
 /// payload (`DraggedRow`) so the float stays under the pointer while the
 /// row scrolls out of view; its own place is left blank. The row shows
-/// the pointing hand wherever the pointer is on it (egui leaves a row
-/// that also takes clicks on the arrow, so the row asks for it).
+/// the pointing hand wherever the pointer is on it (egui leaves the
+/// arrow over a row that can be dragged and clicked both, so the row
+/// sets the pointing hand itself).
 fn player_row(
     ui: &mut egui::Ui,
     selection: &mut RowSelection,
@@ -984,7 +1016,12 @@ fn player_row(
     } else {
         egui::Sense::click()
     };
-    let (rect, response) = row_rect(ui, layout, sense);
+    let (rect, response) = row_rect(
+        ui,
+        layout,
+        ui.scope_id().with(("player_row", row.team_id, row.slot)),
+        sense,
+    );
     response.widget_info(|| {
         egui::WidgetInfo::selected(
             egui::Role::Button,
@@ -1007,28 +1044,32 @@ fn player_row(
         let grab = ui
             .ctx()
             .data(|data| data.get_temp::<egui::Vec2>(response.id.with("grab")))
-            .or_else(|| ui.input(|i| i.pointer.press_origin().map(|origin| origin - rect.min)))
             .unwrap_or_default();
-        // Set before the paint below, so `lifted` sees the payload on the
-        // drag's first frame: it is what the list paints the float from.
+        // Set before `lifted` reads it below, so the payload names this
+        // row on the drag's first frame: it is what the list paints the
+        // float from.
         response.dnd_set_drag_payload(DraggedRow { row: *row, grab });
     }
     // While the row is held dragged the list paints its texts as the
     // float under the pointer; its place in the list is left blank, as
-    // egui leaves a dragged lineup row's.
-    let lifted = layout.draggable && response.dragged();
+    // egui leaves a dragged lineup row's. The payload survives to the
+    // end of the release frame's pass: the row paints at its place then,
+    // the float skipped.
+    let lifted = layout.draggable
+        && egui::DragAndDrop::payload::<DraggedRow>(ui.ctx()).is_some_and(|dragged| {
+            dragged.row.team_id == row.team_id && dragged.row.slot == row.slot
+        })
+        && !ui.input(|i| i.pointer.any_released());
     let mark_response = if !lifted && ui.is_rect_visible(rect) {
         // What `egui::Button::selectable` painted: the selectable's
         // visuals and the text row, drawn by hand so the mark can sit
         // at the right end with the text truncated before it.
         let visuals = paint_row_frame(ui, rect, &response, is_selected);
         let padding = ui.spacing().button_padding.x;
-        let mark_width = mark.as_ref().map(|mark| mark.width(ui));
         // The end's room comes off the truncation width, so a long name
         // never runs under the dot or the mark (the dot paints at the
         // row's right end, as the team row's does).
-        let dot = dirty_dot(ui, dirty);
-        let room = end_room(ui, dot.as_ref().map(|galley| galley.size().x), mark_width);
+        let (dot, mark_width, room) = end_layout(ui, dirty, mark.as_ref());
         paint_row_text(ui, ui.painter(), rect, texts, visuals.fg_stroke.color, room);
         // The dot at the row's right end in the warning colour, one item
         // spacing plus `DOT_MARK_GAP` before the mark when the row has
@@ -1099,6 +1140,9 @@ fn player_row(
         if accepts.is_some()
             && let Some(dropped) = response.dnd_release_payload::<DraggedRow>()
         {
+            // The rows drawn before this one already painted the old
+            // order, and no `request_repaint` is needed: the release is
+            // input, after which egui draws the next frame anyway.
             session.move_player(row.team_id, dropped.row.slot, row.slot);
             // The selection follows the dragged record to its new slot.
             *selection.selected = Some(Selection::Player(row.team_id, row.slot));

@@ -301,7 +301,7 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
                     }
                     if ui
                         .button("Pick\u{2026}")
-                        .on_hover_text("The save the open one is compared against")
+                        .on_hover_text("Pick the save to compare the open one against")
                         .clicked()
                     {
                         surrender_focus(ui);
@@ -451,29 +451,21 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
 }
 
 /// The narrowest the Comparator's window resizes to: the `Item`, `Picked
-/// save` and `Open save` heads whole at their places and each column left
-/// room for at least an ellipsis, the window frame's margin on top. Only
-/// this panel gets one (`panel_window` is shared): a narrower window cuts
-/// a head mid-word and clips the values with no ellipsis.
-pub(super) fn min_window_width(ui: &egui::Ui) -> f32 {
+/// save` and `Open save` heads whole at their places — `Open save`, the
+/// last to end, inside the row's right inset — and the window frame's
+/// margin on top. Only this panel gets one (`panel_window` is shared): a
+/// narrower window cuts a head mid-word and clips the values with no
+/// ellipsis.
+fn min_window_width(ui: &egui::Ui) -> f32 {
     let font = egui::TextStyle::Body.resolve(ui.style());
-    let weak = ui.visuals().weak_text_color();
-    let galley = |text: &str| {
-        ui.painter()
-            .layout_no_wrap(text.to_owned(), font.clone(), weak)
-            .size()
-            .x
-    };
-    let ellipsis = galley("\u{2026}");
     let (offsets, _) = column_offsets(0.0);
     let (inset, _, _) = drow_columns(0.0, RULE_COL);
-    let row = offsets
-        .into_iter()
-        .zip(["Item", "Picked save", "Open save"])
-        .map(|(x, head)| x + galley(head).max(ellipsis))
-        .fold(0.0_f32, f32::max)
-        + inset;
-    row + egui::Frame::window(ui.style()).total_margin().sum().x
+    let open = ui
+        .painter()
+        .layout_no_wrap("Open save".to_owned(), font, ui.visuals().weak_text_color())
+        .size()
+        .x;
+    offsets[2] + open + inset + egui::Frame::window(ui.style()).total_margin().sum().x
 }
 
 /// A floating panel's window (the Comparator's, the patch panel's, the team

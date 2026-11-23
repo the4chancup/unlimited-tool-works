@@ -202,12 +202,16 @@ exist yet (every Phase 2 crate), the plan's data-shape rules stand in for one.
 - **A state set after the widgets that show it asks for the next frame.** egui draws again
   only on input or on request, so when a frame changes what it already drew (the log collapsed
   once the grid is measured), it calls `request_repaint`, or the window keeps the old picture
-  until the pointer moves. A setting another part of the shell may change after a tool's
-  `tick` (a switch to the running game) is compared again where the tool draws.
+  until the pointer moves. A change made in answer to that frame's input (a click, a drop)
+  needs no call: egui draws the next frame after any input. A setting another part of the
+  shell may change after a tool's `tick` (a switch to the running game) is compared again
+  where the tool draws.
 - **A row of a `show_rows` list that keeps state across frames takes its id from what it
-  shows.** egui numbers a widget's automatic id by its order among the rows drawn, so a scroll
-  hands a pressed or dragged row's id to the row now drawn in its place. A player row's id is
-  its team and slot, given through `ui.interact`, never the one `allocate_rect` makes up.
+  shows.** `show_rows` skips the automatic ids ahead by the number of rows above the view.
+  That keeps a row's automatic id only while every row takes exactly one, so a second widget
+  with an automatic id in a row would hand a pressed or dragged row's state to its neighbour
+  on the next scroll. A player row's id
+  is its team and slot, given through `ui.interact`, never the one `allocate_rect` makes up.
 - **Text a member reads is written for a layman**: the help chapters, the catalog rows' When and
   Effect, UI strings and the injected `settings.toml` comments say, in plain words, what happened
   and what the member can do about it, as easy to follow as the fact allows. None of the code's
