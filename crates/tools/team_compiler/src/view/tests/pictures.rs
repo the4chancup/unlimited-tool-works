@@ -144,17 +144,87 @@ fn a_dropped_export_s_boxes_name_the_pictures_of_its_listing() {
     }
 }
 
-// Reading a picture out of an archive means decompressing it whole, so an archive
-// export's boxes stay empty.
+/// Extracts the archive at `archive` into `folder`, which it creates.
+fn unzip(archive: &Path, folder: &Path) {
+    let mut zip = archives::Archive::open(archive).unwrap();
+    let entries: Vec<String> = zip
+        .entries()
+        .iter()
+        .map(|entry| entry.path.clone())
+        .collect();
+    for entry in entries {
+        let into = folder.join(&entry);
+        fs::create_dir_all(into.parent().unwrap()).unwrap();
+        fs::write(&into, zip.read(&entry).unwrap()).unwrap();
+    }
+}
+
+/// The paths of the files `top` names, in the order the box draws them; `None` where a
+/// picture's spot is empty.
+fn top_paths(top: &TopBox) -> Vec<Option<&str>> {
+    fn path(file: &Option<PictureFile>) -> Option<&str> {
+        file.as_ref().map(|file| file.path.as_str())
+    }
+    match top {
+        TopBox::Empty => Vec::new(),
+        TopBox::Picture(file) => vec![Some(file.path.as_str())],
+        TopBox::Logo(logo) => vec![path(logo)],
+        TopBox::Player { portrait, logo } => vec![path(portrait), path(logo)],
+        TopBox::Portraits { portraits, logo } => {
+            portraits.iter().map(path).chain([path(logo)]).collect()
+        }
+    }
+}
+
+// A `.zip` export's boxes name the same pictures the folder form of the export gives,
+// each a `PictureFile` of the archive itself, read from its own entry.
 // TC-GUI-31
 #[test]
-fn an_archive_s_boxes_stay_empty() {
-    let temp = sandbox("view_grid_archive_pictures");
+fn a_zip_export_s_boxes_name_the_pictures_the_folder_form_s_do() {
+    let temp = sandbox("view_grid_zip_pictures");
+    let root = temp.path();
+    list_teams(root);
+    let fixture =
+        Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/sources/egg Midcup Tracer.zip");
+    let archive = root.join("exports/co Midcup Tracer.zip");
+    fs::copy(&fixture, &archive).unwrap();
+    // The same export unzipped, under another team's name.
+    unzip(&fixture, &root.join("exports/a Midcup Tracer"));
+    let rows = checked_rows(root);
+    let (zipped, foldered) = (row(&rows, "/co/"), row(&rows, "/a/"));
+    for (zip_cell, folder_cell) in [
+        (&zipped.label, &foldered.label),
+        (player(zipped, 5).unwrap(), player(foldered, 5).unwrap()),
+        (kit(zipped, 0).unwrap(), kit(foldered, 0).unwrap()),
+        (portraits(zipped).unwrap(), portraits(foldered).unwrap()),
+    ] {
+        assert_eq!(
+            top_paths(&zip_cell.top),
+            top_paths(&folder_cell.top),
+            "{}",
+            zip_cell.text
+        );
+    }
+    let TopBox::Logo(Some(logo)) = &zipped.label.top else {
+        panic!("the label's box is {:?}", zipped.label.top);
+    };
+    assert_eq!(logo.export, archive, "the export is the zip itself");
+    let mut tool = Tool::new();
+    let egui_ctx = egui::Context::default();
+    assert_eq!(read_size(&mut tool.detail, &egui_ctx, logo), [256, 256]);
+}
+
+// A `.7z` export's boxes stay empty: reading a picture out of a solid `.7z` means
+// decompressing it whole.
+// TC-GUI-31
+#[test]
+fn a_7z_export_s_boxes_stay_empty() {
+    let temp = sandbox("view_grid_7z_pictures");
     let root = temp.path();
     list_teams(root);
     fs::copy(
-        Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/sources/egg Midcup Tracer.zip"),
-        root.join("exports/co Midcup Tracer.zip"),
+        Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/sources/egg Midcup Tracer.7z"),
+        root.join("exports/co Midcup Tracer.7z"),
     )
     .unwrap();
     let rows = checked_rows(root);

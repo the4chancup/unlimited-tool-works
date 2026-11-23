@@ -7,6 +7,7 @@ use std::fs;
 use std::path::Path;
 
 use anyhow::Context as _;
+use archives::Archive;
 use crossbeam_channel::{Receiver, Sender};
 use dds_convert::SourceFormat;
 use export_grid::PictureFile;
@@ -130,7 +131,14 @@ fn read(file: &PictureFile) -> anyhow::Result<egui::ColorImage> {
         .and_then(|extension| extension.to_str())
         .and_then(SourceFormat::from_extension)
         .context("not an image the Compiler reads")?;
-    let bytes = fs::read(file.export.join(&file.path))?;
+    // For an archive export `export` is the archive itself, opened again for each picture:
+    // `open` reads the entry table alone and inflates nothing, so holding a zip open per
+    // export would save little.
+    let bytes = if file.export.is_file() {
+        Archive::open(&file.export)?.read(&file.path)?
+    } else {
+        fs::read(file.export.join(&file.path))?
+    };
     let decoded = dds_convert::decode(&bytes, format)?;
     let (pixels, width, height) = small_enough(&decoded)?;
     let size = [width as usize, height as usize];
