@@ -211,8 +211,8 @@ pub(crate) fn check_inputs(ctx: &ToolContext) -> Result<RunInputs, CliError> {
     check_preflight(source, ctx)
 }
 
-/// The PES folder's `download/`, which `upgrade-dpfl` works in. Refused, naming the path and
-/// the setting, when it or the PES folder is not a folder.
+/// The PES folder's `download/`, which the DpFileList upgrade works in. Refused, naming the
+/// path and the setting, when it or the PES folder is not a folder.
 pub(crate) fn download_folder(common: &CommonSettings) -> Result<PathBuf, CliError> {
     let pes_folder = common.pes_folder();
     let download = pes_folder.join(deploy::DOWNLOAD);
@@ -372,7 +372,7 @@ fn check_memory_cap(percent: f32) -> Result<(), CliError> {
 /// bins CPK's own; and a refs CPK name that is a CPK of the team side (`shared_with_team_side`).
 /// The teams stem is not checked otherwise: a stem no slot has gives no slot, and the first team
 /// then reports `cpk_slots_exhausted`.
-fn compile_settings(
+pub(crate) fn compile_settings(
     settings: &TeamCompilerSettings,
     mode: &OutputMode,
 ) -> Result<(CpkLayout, Option<CpkStem>), CliError> {

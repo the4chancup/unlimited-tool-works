@@ -1,6 +1,6 @@
-//! The Upgrade DpFileList button and its dialog (TC-GUI-33): the button the last run's
-//! preflight findings bring beside Compile, the dialog its click opens on the upgrade's
-//! preview, and the upgrade run the dialog's Upgrade starts.
+//! The Upgrade DpFileList button and its dialog (TC-GUI-33): the button the check's
+//! findings about the game's `DpFileList.bin` bring beside Compile, the dialog its click
+//! opens on the upgrade's preview, and the upgrade run the dialog's Upgrade starts.
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
@@ -32,6 +32,42 @@ fn install_pes17(root: &Path) {
     fs::write(download.join("DpFileList.bin"), &list).unwrap();
     for name in cpk::dp_file_list::read(&list).unwrap() {
         fs::write(download.join(&name), cpk_bytes(&name)).unwrap();
+    }
+}
+
+/// A PES install's `download/` (under `root/PES`, its `PES<year>.exe` written): the official
+/// `DpFileList.bin` byte for byte, `cpk_bytes` for every entry it names but `missing`.
+fn install_official(root: &Path, year: u16, missing: Option<&str>) {
+    let download = root.join("PES/download");
+    fs::create_dir_all(&download).unwrap();
+    fs::write(root.join(format!("PES/PES{year}.exe")), "the game").unwrap();
+    let templates = crate::templates::Templates::embedded();
+    fs::write(
+        download.join("DpFileList.bin"),
+        templates.official_list_file(),
+    )
+    .unwrap();
+    for name in templates.official_list() {
+        if Some(name.as_str()) != missing {
+            fs::write(download.join(&name), cpk_bytes(&name)).unwrap();
+        }
+    }
+}
+
+/// `install_pes17` whose `download/` holds a `DpFileList.bin` listing `names` instead of the
+/// old list, `cpk_bytes` for every CPK it names.
+fn install_pes17_listing(root: &Path, names: &[String]) {
+    let download = root.join("PES/download");
+    fs::create_dir_all(&download).unwrap();
+    fs::write(root.join("PES/PES2017.exe"), "the game").unwrap();
+    let borrowed: Vec<&str> = names.iter().map(String::as_str).collect();
+    fs::write(
+        download.join("DpFileList.bin"),
+        crate::testing::dpfilelist(&borrowed),
+    )
+    .unwrap();
+    for name in names {
+        fs::write(download.join(name), cpk_bytes(name)).unwrap();
     }
 }
 
@@ -79,53 +115,62 @@ fn labeled(nodes: &[accesskit::Node], label: &str) -> bool {
     nodes.iter().any(|node| node.label() == Some(label))
 }
 
-/// `root`'s PES 17 install compiled once: the run stopped by its outdated list, and a
-/// frame's nodes with the Upgrade DpFileList button up.
-fn compile_stops(
-    root: &Path,
-    tool: &mut Tool,
-    ctx: &ToolContext,
-    window: &mut Headless,
-) -> Vec<accesskit::Node> {
+/// The view's first frames: the check the window opens with ended, and the frame after's
+/// nodes, the state the check left (the log's lines, the toolbar's buttons).
+fn first_check(tool: &mut Tool, ctx: &ToolContext, window: &mut Headless) -> Vec<accesskit::Node> {
     // The first frame starts the grid's check.
     window.frame(Vec::new(), |ui| tool.view(ui, ctx));
     finish_check(tool, ctx);
-    let nodes = window.frame(Vec::new(), |ui| tool.view(ui, ctx)).1;
-    click_labeled(window, &nodes, "Compile", tool, ctx);
-    assert!(tool.run_log.is_running(), "the click started the run");
-    poll_until_done(|| {
-        tool.tick(ctx);
-        tool.run_log.is_running()
-    });
-    let texts = tool.run_log.texts();
-    assert!(
-        texts
-            .iter()
-            .any(|line| line.contains("dpfilelist_outdated")),
-        "premise: the run stopped at {}'s outdated list: {texts:?}",
-        root.display()
-    );
     window.frame(Vec::new(), |ui| tool.view(ui, ctx)).1
 }
 
-/// The TC-GUI-33 scene to the open dialog: `compile_stops`, then the button's click, and
-/// the last frame's nodes (a fresh modal's first frame is a sizing pass, the second
-/// draws it).
-fn open_dialog(
-    root: &Path,
+/// The nodes after the Upgrade DpFileList button's click on the `nodes` frame opens the
+/// dialog: the click, then two frames (a fresh modal's first is a sizing pass, the
+/// second draws it).
+fn dialog_open(
+    nodes: &[accesskit::Node],
     tool: &mut Tool,
     ctx: &ToolContext,
     window: &mut Headless,
 ) -> Vec<accesskit::Node> {
-    let nodes = compile_stops(root, tool, ctx, window);
-    click_labeled(window, &nodes, "Upgrade DpFileList", tool, ctx);
+    click_labeled(window, nodes, "Upgrade DpFileList", tool, ctx);
     assert!(
         tool.detail.dpfl_dialog.is_some(),
         "the click opened the dialog"
     );
-    // A fresh modal's first frames are a sizing pass; the dialog's widgets show after.
     window.frame(Vec::new(), |ui| tool.view(ui, ctx));
     window.frame(Vec::new(), |ui| tool.view(ui, ctx)).1
+}
+
+/// The TC-GUI-33 scene to the open dialog: `first_check`, then the button's click.
+fn open_dialog(tool: &mut Tool, ctx: &ToolContext, window: &mut Headless) -> Vec<accesskit::Node> {
+    dialog_open(&first_check(tool, ctx, window), tool, ctx, window)
+}
+
+/// Asserts the disabled widget `node` shows the disabled hover text `expected`: the
+/// pointer rests on it until the tooltip shows, failing rather than hanging. The wait
+/// needs no real time with `tooltip_delay` turned off, only the frames the pointer
+/// needs to read as still.
+fn disabled_tooltip_is(
+    window: &mut Headless,
+    node: &accesskit::Node,
+    expected: &str,
+    tool: &mut Tool,
+    ctx: &ToolContext,
+) {
+    window
+        .ctx
+        .all_styles_mut(|style| style.interaction.tooltip_delay = 0.0);
+    window.frame(vec![egui::Event::PointerMoved(centre(node))], |ui| {
+        tool.view(ui, ctx)
+    });
+    for _ in 0..30 {
+        let (_, nodes) = window.frame(Vec::new(), |ui| tool.view(ui, ctx));
+        if shows_text(&nodes, expected) {
+            return;
+        }
+    }
+    panic!("no tooltip {expected:?} showed over the disabled widget");
 }
 
 // TC-GUI-33
@@ -137,7 +182,30 @@ fn the_outdated_list_brings_the_button_whose_dialog_upgrades_it() {
     let ctx = tool_context_pes17(root);
     let mut tool = Tool::new();
     let mut window = Headless::new();
-    open_dialog(root, &mut tool, &ctx, &mut window);
+    let nodes = first_check(&mut tool, &ctx, &mut window);
+
+    // Before any Compile: the check's finding is a line of the log, the button shows,
+    // and Compile is disabled with why.
+    let texts = tool.run_log.texts();
+    assert!(
+        texts
+            .iter()
+            .any(|line| line.contains("dpfilelist_outdated")),
+        "the first check found the outdated list: {texts:?}"
+    );
+    assert!(labeled(&nodes, "Upgrade DpFileList"));
+    let compile = button(&nodes, "Compile");
+    assert!(compile.is_disabled());
+    disabled_tooltip_is(
+        &mut window,
+        compile,
+        "The game's DpFileList.bin does not list this compile's CPK, so the game would \
+         not load it. Upgrade DpFileList first",
+        &mut tool,
+        &ctx,
+    );
+
+    dialog_open(&nodes, &mut tool, &ctx, &mut window);
     let download = root.join("PES/download");
 
     // The dialog says what the upgrade will do before anything is written.
@@ -158,9 +226,13 @@ fn the_outdated_list_brings_the_button_whose_dialog_upgrades_it() {
     assert!(labeled(&nodes, "Cancel") && labeled(&nodes, "Upgrade"));
 
     // Upgrade: `download/` holds what `upgrade-dpfl --yes` leaves, its lines appended to
-    // the log, and the button gone.
+    // the log, the dialog closed, and the button gone.
     let expected = upgrade_leaves(&download, &BTreeSet::new(), &ctx);
     click_labeled(&mut window, &nodes, "Upgrade", &mut tool, &ctx);
+    assert!(
+        tool.detail.dpfl_dialog.is_none(),
+        "Upgrade closed the dialog"
+    );
     poll_until_done(|| {
         tool.tick(&ctx);
         tool.run_log.is_running()
@@ -170,7 +242,7 @@ fn the_outdated_list_brings_the_button_whose_dialog_upgrades_it() {
     for line in [
         "dpfilelist_cpk_renamed (from=4cc_40_faces.cpk, to=4cc_41_teams.cpk)",
         "dpfilelist_replaced",
-        "dpfilelist_cpk_dropped (cpk=4cc_60_midcup.cpk",
+        "dpfilelist_cpk_dropped (cpk=4cc_60_midcup.cpk, size=6.1 KiB)",
         "Run finished with exit code 0",
     ] {
         assert!(
@@ -178,11 +250,15 @@ fn the_outdated_list_brings_the_button_whose_dialog_upgrades_it() {
             "the log holds {line:?}: {texts:?}"
         );
     }
+    // The run's end starts a check: once it ends, the button is gone and Compile is
+    // enabled again.
+    finish_check(&mut tool, &ctx);
     let (_, nodes) = window.frame(Vec::new(), |ui| tool.view(ui, &ctx));
     assert!(
         !labeled(&nodes, "Upgrade DpFileList"),
         "the button is gone once the list is replaced"
     );
+    assert!(!button(&nodes, "Compile").is_disabled());
 
     // The next Compile passes the preflight.
     click_labeled(&mut window, &nodes, "Compile", &mut tool, &ctx);
@@ -201,6 +277,98 @@ fn the_outdated_list_brings_the_button_whose_dialog_upgrades_it() {
 
 // TC-GUI-33
 #[test]
+fn a_list_not_the_official_one_shows_the_button_and_keeps_compile_enabled() {
+    let temp = sandbox("view_dpfl_not_official");
+    let root = temp.path();
+    // The list names every CPK the run installs plus one entry the official list lacks.
+    let mut names = crate::templates::Templates::embedded().official_list();
+    names.push("4cc_80_mine.cpk".to_owned());
+    install_pes17_listing(root, &names);
+    let ctx = tool_context_pes17(root);
+    let mut tool = Tool::new();
+    let mut window = Headless::new();
+    let nodes = first_check(&mut tool, &ctx, &mut window);
+
+    let texts = tool.run_log.texts();
+    assert!(
+        texts
+            .iter()
+            .any(|line| line.contains("dpfilelist_not_official")),
+        "the first check found the list not the official one: {texts:?}"
+    );
+    assert!(labeled(&nodes, "Upgrade DpFileList"));
+    assert!(
+        !button(&nodes, "Compile").is_disabled(),
+        "the Warning leaves Compile enabled"
+    );
+
+    // The upgrade replaces the list; once the check after its run ends, the button is gone.
+    let nodes = dialog_open(&nodes, &mut tool, &ctx, &mut window);
+    click_labeled(&mut window, &nodes, "Upgrade", &mut tool, &ctx);
+    poll_until_done(|| {
+        tool.tick(&ctx);
+        tool.run_log.is_running()
+    });
+    finish_check(&mut tool, &ctx);
+    let (_, nodes) = window.frame(Vec::new(), |ui| tool.view(ui, &ctx));
+    assert!(
+        !labeled(&nodes, "Upgrade DpFileList"),
+        "the button is gone once the check finds the list official"
+    );
+}
+
+// TC-GUI-33
+#[test]
+fn an_upgrade_that_only_writes_placeholders_takes_the_button_away() {
+    let temp = sandbox("view_dpfl_placeholder");
+    let root = temp.path();
+    install_official(root, 2017, Some("4cc_16_balls.cpk"));
+    let ctx = tool_context_pes17(root);
+    let mut tool = Tool::new();
+    let mut window = Headless::new();
+    let nodes = first_check(&mut tool, &ctx, &mut window);
+
+    let texts = tool.run_log.texts();
+    assert!(
+        texts
+            .iter()
+            .any(|line| line.contains("dpfilelist_cpk_missing")),
+        "the first check found the missing CPK: {texts:?}"
+    );
+    assert!(labeled(&nodes, "Upgrade DpFileList"));
+    assert!(
+        !button(&nodes, "Compile").is_disabled(),
+        "the Warning leaves Compile enabled"
+    );
+
+    // The upgrade only writes the missing placeholder: no `dpfilelist_replaced` line
+    // clears the state, so the check after the run does.
+    let nodes = dialog_open(&nodes, &mut tool, &ctx, &mut window);
+    click_labeled(&mut window, &nodes, "Upgrade", &mut tool, &ctx);
+    poll_until_done(|| {
+        tool.tick(&ctx);
+        tool.run_log.is_running()
+    });
+    let texts = tool.run_log.texts();
+    assert!(
+        texts
+            .iter()
+            .any(|line| line.contains("dpfilelist_placeholder_written"))
+            && !texts
+                .iter()
+                .any(|line| line.contains("dpfilelist_replaced")),
+        "the placeholder written, the list not replaced: {texts:?}"
+    );
+    finish_check(&mut tool, &ctx);
+    let (_, nodes) = window.frame(Vec::new(), |ui| tool.view(ui, &ctx));
+    assert!(
+        !labeled(&nodes, "Upgrade DpFileList"),
+        "the button is gone once the check finds the list official"
+    );
+}
+
+// TC-GUI-33
+#[test]
 fn a_ticked_delete_box_removes_only_that_cpk() {
     let temp = sandbox("view_dpfl_tick");
     let root = temp.path();
@@ -208,7 +376,7 @@ fn a_ticked_delete_box_removes_only_that_cpk() {
     let ctx = tool_context_pes17(root);
     let mut tool = Tool::new();
     let mut window = Headless::new();
-    let nodes = open_dialog(root, &mut tool, &ctx, &mut window);
+    let nodes = open_dialog(&mut tool, &ctx, &mut window);
     let download = root.join("PES/download");
 
     // The box starts unticked and stays ticked once clicked, over the frames the dialog
@@ -252,6 +420,55 @@ fn a_ticked_delete_box_removes_only_that_cpk() {
 
 // TC-GUI-33
 #[test]
+fn an_unticked_box_deletes_nothing() {
+    let temp = sandbox("view_dpfl_untick");
+    let root = temp.path();
+    install_pes17(root);
+    let ctx = tool_context_pes17(root);
+    let mut tool = Tool::new();
+    let mut window = Headless::new();
+    let nodes = open_dialog(&mut tool, &ctx, &mut window);
+    let download = root.join("PES/download");
+    let midcup = "4cc_60_midcup.cpk (6.1 KiB)";
+
+    let nodes = click_labeled(&mut window, &nodes, midcup, &mut tool, &ctx);
+    assert_eq!(
+        button(&nodes, midcup).toggled(),
+        Some(accesskit::Toggled::True),
+        "premise: the box is ticked"
+    );
+    let nodes = click_labeled(&mut window, &nodes, midcup, &mut tool, &ctx);
+    assert_eq!(
+        button(&nodes, midcup).toggled(),
+        Some(accesskit::Toggled::False),
+        "the box is unticked again"
+    );
+
+    let expected = upgrade_leaves(&download, &BTreeSet::new(), &ctx);
+    click_labeled(&mut window, &nodes, "Upgrade", &mut tool, &ctx);
+    poll_until_done(|| {
+        tool.tick(&ctx);
+        tool.run_log.is_running()
+    });
+    assert_eq!(snapshot(&download), expected);
+    assert!(download.join("4cc_60_midcup.cpk").exists());
+    let texts = tool.run_log.texts();
+    assert!(
+        texts
+            .iter()
+            .any(|line| line.contains("dpfilelist_cpk_dropped (cpk=4cc_60_midcup.cpk")),
+        "the file kept, its line the dropped one: {texts:?}"
+    );
+    assert!(
+        !texts
+            .iter()
+            .any(|line| line.contains("dpfilelist_cpk_deleted")),
+        "and no deleted line: {texts:?}"
+    );
+}
+
+// TC-GUI-33
+#[test]
 fn the_dialog_s_cancel_writes_nothing() {
     let temp = sandbox("view_dpfl_cancel");
     let root = temp.path();
@@ -259,9 +476,9 @@ fn the_dialog_s_cancel_writes_nothing() {
     let ctx = tool_context_pes17(root);
     let mut tool = Tool::new();
     let mut window = Headless::new();
-    let nodes = open_dialog(root, &mut tool, &ctx, &mut window);
     let download = root.join("PES/download");
     let before = snapshot(&download);
+    let nodes = open_dialog(&mut tool, &ctx, &mut window);
 
     let nodes = click_labeled(&mut window, &nodes, "Cancel", &mut tool, &ctx);
     assert!(
@@ -300,6 +517,142 @@ fn the_button_is_hidden_while_a_run_is_in_flight() {
     assert!(labeled(&nodes, "Upgrade DpFileList"), "back once it ends");
 }
 
+/// The non-empty strokes of the rect shapes painted exactly over `bounds` (within half a
+/// point), in paint order: a widget's own frame and any edge painted over it.
+fn strokes_over(
+    shapes: &[egui::epaint::ClippedShape],
+    bounds: accesskit::Rect,
+) -> Vec<egui::Stroke> {
+    shapes
+        .iter()
+        .filter_map(|clipped| match &clipped.shape {
+            egui::Shape::Rect(shape)
+                if !shape.stroke.is_empty()
+                    && (f64::from(shape.rect.min.x) - bounds.x0).abs() <= 0.5
+                    && (f64::from(shape.rect.min.y) - bounds.y0).abs() <= 0.5
+                    && (f64::from(shape.rect.max.x) - bounds.x1).abs() <= 0.5
+                    && (f64::from(shape.rect.max.y) - bounds.y1).abs() <= 0.5 =>
+            {
+                Some(shape.stroke)
+            }
+            _ => None,
+        })
+        .collect()
+}
+
+/// Whether a rect of `fill` is painted over the centre of `bounds`.
+fn fills_over(
+    shapes: &[egui::epaint::ClippedShape],
+    bounds: accesskit::Rect,
+    fill: egui::Color32,
+) -> bool {
+    let centre = egui::pos2(
+        ((bounds.x0 + bounds.x1) / 2.0) as f32,
+        ((bounds.y0 + bounds.y1) / 2.0) as f32,
+    );
+    shapes.iter().any(|clipped| match &clipped.shape {
+        egui::Shape::Rect(shape) => shape.fill == fill && shape.rect.contains(centre),
+        _ => false,
+    })
+}
+
+/// A log whose run has ended over a `dpfl` left `Outdated`: the Upgrade DpFileList button
+/// the toolbar draws for it.
+fn ended_dpfl_log() -> RunLog {
+    let (release_run, until) = unbounded();
+    let mut log = RunLog::in_flight_dpfl(until);
+    release_run.send(()).unwrap();
+    poll_until_done(|| {
+        log.poll();
+        log.is_running()
+    });
+    log
+}
+
+// TC-GUI-33
+#[test]
+fn the_upgrade_button_is_filled_blue_with_its_edge() {
+    let ctx = settings_only_context();
+    let log = ended_dpfl_log();
+    assert!(
+        log.dpfl_found() && log.dpfl_outdated() && !log.is_running(),
+        "premise: the button shows"
+    );
+    let mut panel = LogPanel::new(TOOL_ID);
+    let mut detail = GridDetail::new();
+    let mut window = Headless::new();
+    let visuals = window.ctx.style_of(window.ctx.theme()).visuals.clone();
+    let blue = visuals.selection.bg_fill;
+    let edge = studio_core::theme::edge_color(&visuals, blue);
+    window.frame(Vec::new(), |ui| {
+        show(ui, &ctx, &log, &mut panel, &[], false, &mut detail)
+    });
+    // egui styles a widget from its state on the frame before.
+    let (_, nodes) = window.frame(Vec::new(), |ui| {
+        show(ui, &ctx, &log, &mut panel, &[], false, &mut detail)
+    });
+    let upgrade = button(&nodes, "Upgrade DpFileList");
+    let bounds = upgrade.bounds().expect("a widget has bounds");
+    assert!(
+        fills_over(&window.shapes, bounds, blue),
+        "the button's fill is the selection blue"
+    );
+    assert_eq!(
+        strokes_over(&window.shapes, bounds).last(),
+        Some(&egui::Stroke::new(1.0, edge)),
+        "the button's edge is the selection blue's own at rest"
+    );
+}
+
+// TC-GUI-33
+#[test]
+fn a_preview_with_nothing_to_do_opens_no_dialog_and_the_button_goes() {
+    let temp = sandbox("view_dpfl_up_to_date");
+    let root = temp.path();
+    install_official(root, 2021, None);
+    let ctx = tool_context(root, "");
+    let mut tool = Tool::new();
+    // The list is the official one and every CPK it names is there: the button can only
+    // still be up from a state a check has not replaced yet, which the in-flight check
+    // stands in for (a real first check would clear it before the click).
+    tool.run_log = RunLog::dpfl_other();
+    let (release_check, check_until) = unbounded();
+    tool.live_check = LiveCheck::in_flight(check_until, Vec::new());
+    let mut window = Headless::new();
+    let (_, nodes) = window.frame(Vec::new(), |ui| tool.view(ui, &ctx));
+    assert!(
+        labeled(&nodes, "Upgrade DpFileList"),
+        "premise: the button shows"
+    );
+
+    click_labeled(&mut window, &nodes, "Upgrade DpFileList", &mut tool, &ctx);
+    assert!(
+        tool.detail.dpfl_dialog.is_none(),
+        "a preview with nothing to do opens no dialog"
+    );
+    assert!(tool.run_log.is_running(), "the upgrade runs at once");
+    poll_until_done(|| {
+        tool.tick(&ctx);
+        tool.run_log.is_running()
+    });
+    let texts = tool.run_log.texts();
+    assert!(
+        texts
+            .iter()
+            .any(|line| line.contains("dpfilelist_up_to_date")),
+        "the up-to-date line: {texts:?}"
+    );
+
+    // The run's end starts a check: once it ends, the button is gone.
+    release_check.send(()).unwrap();
+    finish_check(&mut tool, &ctx);
+    let (_, nodes) = window.frame(Vec::new(), |ui| tool.view(ui, &ctx));
+    assert!(
+        !labeled(&nodes, "Upgrade DpFileList"),
+        "the button is gone once the check finds the list official"
+    );
+}
+
 #[test]
 fn no_button_after_a_run_whose_preflight_found_nothing() {
     let temp = sandbox("view_dpfl_clean");
@@ -333,7 +686,7 @@ fn a_preview_that_cannot_be_made_is_a_log_line_and_no_dialog() {
     let ctx = tool_context_pes17(root);
     let mut tool = Tool::new();
     let mut window = Headless::new();
-    let nodes = compile_stops(root, &mut tool, &ctx, &mut window);
+    let nodes = first_check(&mut tool, &ctx, &mut window);
     // A `DpFileList.bin` that cannot be read (a folder in its place) breaks the preview.
     fs::remove_file(root.join("PES/download/DpFileList.bin")).unwrap();
     fs::create_dir(root.join("PES/download/DpFileList.bin")).unwrap();
@@ -401,23 +754,11 @@ fn a_part_whose_count_is_zero_is_left_out_and_a_dropped_entry_without_a_file_has
 // install already on the official list, one CPK's file missing, it is left out.
 #[test]
 fn the_first_paragraph_shows_only_when_the_list_is_replaced() {
-    let temp = sandbox("view_dpfl_same_list");
+    let temp = crate::testing::scratch("view_dpfl_same_list");
     let root = temp.path();
-    let download = root.join("PES/download");
-    fs::create_dir_all(&download).unwrap();
-    let templates = crate::templates::Templates::embedded();
-    fs::write(
-        download.join("DpFileList.bin"),
-        templates.official_list_file(),
-    )
-    .unwrap();
-    for name in templates.official_list() {
-        if name != "4cc_16_balls.cpk" {
-            fs::write(download.join(&name), cpk_bytes(&name)).unwrap();
-        }
-    }
+    install_official(root, 2021, Some("4cc_16_balls.cpk"));
     let ctx = tool_context(root, "");
-    let preview = upgrade::preview(&download, &ctx).unwrap();
+    let preview = upgrade::preview(&root.join("PES/download"), &ctx).unwrap();
     assert!(
         !preview.replaces_list,
         "premise: the list is the official one"

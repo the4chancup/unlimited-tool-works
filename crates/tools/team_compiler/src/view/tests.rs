@@ -93,6 +93,7 @@ fn tool_context_pes17(root: &Path) -> ToolContext {
     let mut settings = Settings::parse("").unwrap();
     settings.common.pes_version = PesVersion::Pes17;
     settings.common.pes_folder_path = root.join("PES").display().to_string();
+    // Before `merge_defaults` fills `savefile_path` with `auto`: an existing key is kept.
     let mut tool = settings.tool(TOOL_ID).cloned().unwrap_or_default();
     tool.entry("savefile_path").or_insert_with(|| {
         toml::Value::String(root.join("save").join("EDIT00000000").display().to_string())

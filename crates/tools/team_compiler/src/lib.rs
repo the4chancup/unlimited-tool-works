@@ -36,6 +36,8 @@ mod user_face_xml;
 mod validation;
 mod view;
 
+use std::collections::BTreeSet;
+
 use studio_core::{
     CliError, HelpSection, HelpTopic, LogPanel, RunningPes, StudioTool, ToolContext,
 };
@@ -80,9 +82,11 @@ impl Tool {
     }
 
     /// The Upgrade DpFileList button's click: `upgrade`'s plan for `download/` (found as the
-    /// command finds it), read once now, opens the dialog on it. A plan that cannot be made,
-    /// `download/` missing or a file it cannot read, is a line in the log as a refused run's
-    /// is, and opens nothing.
+    /// command finds it), read once now, opens the dialog on it, unless the list is already
+    /// the official one with every CPK it names there (`up_to_date`, the member having fixed
+    /// it by hand or through the command line), when the upgrade runs at once with nothing
+    /// deleted. A plan that cannot be made, `download/` missing or a file it cannot read, is a
+    /// line in the log as a refused run's is, and opens nothing.
     fn open_upgrade(&mut self, ctx: &ToolContext) {
         let preview = cli::download_folder(&ctx.common())
             .map_err(|error| error.to_string())
@@ -90,6 +94,7 @@ impl Tool {
                 upgrade::preview(&download, ctx).map_err(|error| format!("{error:#}"))
             });
         match preview {
+            Ok(preview) if preview.up_to_date => self.run_log.start_upgrade(BTreeSet::new(), ctx),
             Ok(preview) => self.detail.dpfl_dialog = Some(DpflDialog::new(preview)),
             Err(error) => self.run_log.append_refusal(&error),
         }
@@ -153,7 +158,7 @@ impl StudioTool for Tool {
         }
     }
 
-    /// The Compile run's events into the log; the grid checked again once a run ends. A
+    /// The run's events into the log; the grid checked again once a run ends. A
     /// check's rows reach the grid only while no Compile runs, since the run may change
     /// what they describe; its detail window then reads its pictures again, and the
     /// check's findings replace the last check's at the top of the log. A refused check is
@@ -171,7 +176,8 @@ impl StudioTool for Tool {
             Polled::Nothing => {}
             Polled::Rows => {
                 self.detail.rows_replaced();
-                self.run_log.set_check(self.live_check.rows());
+                self.run_log
+                    .set_check(self.live_check.rows(), self.live_check.list_findings());
             }
             Polled::Refused(refusal) => self.run_log.append_refusal(&refusal),
         }

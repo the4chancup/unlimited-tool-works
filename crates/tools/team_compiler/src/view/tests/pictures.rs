@@ -246,8 +246,8 @@ fn a_zip_export_s_boxes_name_the_pictures_the_folder_form_s_do() {
 }
 
 // A `.7z` export's boxes stay empty: reading a picture out of a solid `.7z` means
-// decompressing it whole. Its cells are the shallow check's partial-ok (TC-GUI-04).
-// TC-GUI-31
+// decompressing it whole. Its cells are the shallow check's partial-ok.
+// TC-GUI-04, TC-GUI-31
 #[test]
 fn a_7z_export_s_boxes_stay_empty() {
     let temp = sandbox("view_grid_7z_pictures");

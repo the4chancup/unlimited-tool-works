@@ -144,7 +144,7 @@ struct Scene {
 impl Scene {
     fn new(rows: Vec<Row>) -> Scene {
         let mut log = RunLog::default();
-        log.set_check(&rows);
+        log.set_check(&rows, &[]);
         Scene {
             window: Headless::new(),
             ctx: settings_only_context(),

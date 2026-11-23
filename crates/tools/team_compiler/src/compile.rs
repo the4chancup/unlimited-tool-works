@@ -28,7 +28,7 @@ use studio_core::{Disposition, ExportId, Message, RunningPes, Scope, Severity, T
 
 use crate::bins::WorkingBins;
 use crate::bins::installed::{self, InstalledPaths};
-use crate::cli::RunInputs;
+use crate::cli::{self, RunInputs};
 use crate::events::RunEvents;
 use crate::messages::{Code, size_text, tool_message};
 use crate::output::deploy::{self, DeployFailure, Download, Installed, Staging};
@@ -251,6 +251,36 @@ pub(crate) fn run(
         ctx,
     )?;
     build(planned, bins, templates, layout, refs, paths, mode)
+}
+
+/// The findings about the game's `DpFileList.bin` that a normal compile, installing (no
+/// `--no-deploy`), would report in its preflight, for the CPKs it would install: the layout
+/// `inputs`' settings give that mode (the refs CPK only when `referees`, a refs export being
+/// among them), its CPK file names checked by `deploy::list_findings` in the PES folder's
+/// `download/` against the official list `data_dir`'s templates give. Empty when the settings
+/// or the templates are refused, or the list is missing, because the Compile run reports each
+/// of those itself.
+pub(crate) fn list_findings(
+    inputs: &RunInputs,
+    referees: bool,
+    data_dir: Option<&Path>,
+) -> Vec<Message> {
+    let installing = OutputMode::Normal { no_deploy: false };
+    let Ok((layout, refs_name)) = cli::compile_settings(&inputs.settings, &installing) else {
+        return Vec::new();
+    };
+    let Ok((templates, _)) = Templates::read(data_dir) else {
+        return Vec::new();
+    };
+    let official = templates.official_list();
+    let refs = refs_name.filter(|_| referees);
+    let names: Vec<String> = layout
+        .cpks(&official, refs.as_ref())
+        .iter()
+        .map(deploy::cpk_file_name)
+        .collect();
+    let download = inputs.common.pes_folder().join(deploy::DOWNLOAD);
+    deploy::list_findings(&download, &names, &official).unwrap_or_default()
 }
 
 /// The bins the run builds on, from the installed CPKs of the PES folder listed before

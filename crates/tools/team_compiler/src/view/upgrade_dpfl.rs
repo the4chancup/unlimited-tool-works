@@ -1,6 +1,6 @@
 //! The Upgrade DpFileList dialog (the draft's `upgradeDpfl`): what the upgrade will do in
-//! `download/` (the renames, the placeholders, the CPKs the game stops loading, each of
-//! those with an unticked delete box) before anything is written.
+//! `download/` (the renames, the placeholders, the CPKs the game stops loading, each with a
+//! file of its own given an unticked delete box) before anything is written.
 
 use std::collections::BTreeSet;
 
@@ -43,7 +43,7 @@ impl DpflDialog {
     }
 
     /// Draws the dialog for this frame: the member's decision when one was made. A part
-    /// of the preview whose count is zero is left out, its sentence included, and the
+    /// of the preview whose count is zero is left out with its sentence, and the
     /// first paragraph shows only when the preview replaces the list.
     pub(crate) fn show(&mut self, ui: &mut egui::Ui) -> Outcome {
         let mut outcome = Outcome::Open;
