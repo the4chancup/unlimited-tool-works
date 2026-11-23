@@ -232,12 +232,15 @@ draft checked, for the maintainer to publish; running sidekicks and jobs are not
      loops have ended. Round 1 ran on `5baf8835`: 17 accepted, 10 of them a real input
      whose outcome changes. Its fixes are three SWE-2 slices: A (the check's rows) merged
      `0fc94490`, B (the detail window and title row) merged `76bcad35`, and C (the settings re-check and the Upgrade
-     dialog) running. Carbon round 2 is due after them
+     dialog, one rework) merged `d3e7be78`. Carbon round 2 is due
    - [ ] The Compile button's mode list, Open output folder and Copy report (TC-GUI-11, and
      TC-GUI-33's clause that Compile for sideloading stays enabled while the DpFileList is
      outdated; DECISIONS 2026-11-23 "the Compile menu's Copy report copies the whole log").
      Merged `997c2e09` (SWE-2, one rework for three untested paths; the lead shared a test
-     closure). Its SWE-2 review loop is due
+     closure). Its SWE-2 round found 3 to fix, which ends the loop: a picked sideload mode
+     stays runnable after a switch to PES 15 or 16, and two tests miss a likely wrong
+     version rule and the menu's place. Their fixes go to SWE-2 once slice C is merged
+     (they share `view/mod.rs`); one Carbon round is due after them
    - Then the row actions, the ID cell's editing, the
      watcher and cache, Sizes and sorting, and the rest of the toolbar
      (`plans/team_compiler/gui.md` "Toolbar"): Launch PES, the writability badge and the
