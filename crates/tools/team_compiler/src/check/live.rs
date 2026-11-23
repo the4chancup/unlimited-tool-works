@@ -37,8 +37,8 @@ type Outcome = Result<(Vec<Row>, Vec<Message>), String>;
 pub(crate) enum Polled {
     /// No check ended since the last poll.
     Nothing,
-    /// A check ended: its rows replaced the grid's, and its `DpFileList.bin` findings the
-    /// button's state.
+    /// A check ended: its rows replaced the grid's, and its run-scoped findings
+    /// ([`LiveCheck::list_findings`]) the last check's.
     Rows,
     /// A check ended refused: the text of its `error:` line, for the log.
     Refused(String),
