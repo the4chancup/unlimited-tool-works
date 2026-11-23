@@ -25,7 +25,7 @@ pub(crate) fn rows_meet(spacing: &mut egui::style::Spacing) {
 /// neighbours, so it sets the list's own `Ui` (`rows_meet`), as every row
 /// does; a widget added to the list after a row therefore touches it too.
 /// The row is added through `row`, which takes the resting stroke out and
-/// paints the picked row's blue with its edge.
+/// strokes the picked row's blue with its edge.
 pub fn combo_label(
     ui: &mut egui::Ui,
     checked: bool,

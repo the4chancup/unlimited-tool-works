@@ -114,9 +114,9 @@ pub(crate) fn strip(summary: &Summary) -> Vec<Part> {
 }
 
 /// Draws the toolbar as a bottom panel of `ui`: the strip summing up `rows` while `log` has
-/// no run in flight, the Compile button, disabled while one runs or while `log`'s check found
-/// the cup's outdated list, and the Upgrade DpFileList button beside it while `log`'s
-/// findings say the game's list is not the official one. A click on a count shows only its
+/// no run in flight, the Compile button, disabled while one runs or while `log`'s findings
+/// say the game's list is the cup's outdated one, and the Upgrade DpFileList button beside
+/// it while they say it is not the official one. A click on a count shows only its
 /// lines in `panel`. The `Intent` a click asked for, when one was made this frame.
 pub(crate) fn show(
     ui: &mut egui::Ui,

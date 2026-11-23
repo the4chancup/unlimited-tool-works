@@ -25,7 +25,12 @@ fn a_check_s_rows_reach_the_grid_only_once_the_compile_has_ended() {
         tool.tick(&ctx);
         tool.run_log.is_running()
     });
-    assert_eq!(tool.live_check.rows(), [label_only_row()]);
+    // The ended check's outcome is dropped: it predates the check the run's end
+    // asks for, which delivers its own rows.
+    assert!(
+        tool.live_check.rows().is_empty(),
+        "the stale check's rows never reach the grid"
+    );
     assert!(tool.live_check.is_running(), "the run's end starts a check");
     finish_check(&mut tool, &ctx);
     assert_eq!(tool.live_check.rows()[0].label.text, "/egg/");

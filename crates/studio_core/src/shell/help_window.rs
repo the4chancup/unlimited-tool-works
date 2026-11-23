@@ -305,7 +305,7 @@ impl HelpWindow {
                             ui.set_max_width(ui.available_width().min(READING_WIDTH));
                             if self.highlight_para == Some(index) {
                                 egui::Frame::new()
-                                    .fill(ui.visuals().selection.bg_fill)
+                                    .fill(crate::theme::palette(ui.visuals()).search_hit)
                                     .inner_margin(egui::Margin::same(4))
                                     .show(ui, |ui| {
                                         CommonMarkViewer::new().show(ui, cache, para);
@@ -559,6 +559,9 @@ fn messages(
             }
             ui.end_row();
             for (index, row) in section.messages.iter().enumerate() {
+                // A hit's mark goes under the row's text: its slot stands in paint order
+                // before the cells, and is filled after them.
+                let mark = ui.painter().add(egui::Shape::Noop);
                 let code = ui.label(egui::RichText::new(row.code).monospace());
                 let severity = ui.label(
                     egui::RichText::new(row.severity)
@@ -573,18 +576,21 @@ fn messages(
                     clicked_link = dest;
                 }
                 if highlight == Some(row.code) {
-                    // The four cells' span, marked after them — a translucent fill
-                    // keeps the text readable under it.
+                    // The four cells' span, filled in the hit green under them (`mark`,
+                    // reserved before them).
                     let rect = code
                         .rect
                         .union(severity.rect)
                         .union(when.rect)
                         .union(effect.rect)
                         .expand2(egui::vec2(2.0, 0.0));
-                    ui.painter().rect_filled(
-                        rect,
-                        ui.visuals().widgets.noninteractive.corner_radius,
-                        ui.visuals().selection.bg_fill.gamma_multiply(0.4),
+                    ui.painter().set(
+                        mark,
+                        egui::Shape::rect_filled(
+                            rect,
+                            ui.visuals().widgets.noninteractive.corner_radius,
+                            crate::theme::palette(ui.visuals()).search_hit,
+                        ),
                     );
                     if scroll {
                         code.scroll_to_me(Some(egui::Align::Center));
@@ -662,6 +668,7 @@ mod tests {
     use super::*;
     use crate::events::{MessageCode, Severity};
     use crate::help::{CatalogRow, HelpTopic};
+    use crate::shell::StudioApp;
     use crate::shell::sidebar::SETTINGS_LABEL;
     use crate::shell::test_harness::*;
     use crate::status::{ActionEffect, Notice, NoticeAction, NoticeKind};
@@ -911,6 +918,29 @@ mod tests {
         );
         shell.ctx.switch_to_tool("b");
         shell
+    }
+
+    /// A help search to its jump's end: F1 opens the window, `query` is typed in the
+    /// search box and `entry_label` clicked in the results, each step's frames letting
+    /// it settle. Returns the settled frame after the jump.
+    fn jump_through_search(
+        egui_ctx: &egui::Context,
+        app: &mut StudioApp,
+        query: &str,
+        entry_label: &str,
+    ) -> FrameOutput {
+        frame(egui_ctx, app, vec![key(egui::Key::F1, true)], true);
+        let nodes = idle(egui_ctx, app, 15).nodes;
+        click(egui_ctx, app, search_box(&nodes));
+        frame(
+            egui_ctx,
+            app,
+            vec![egui::Event::Text(query.to_owned())],
+            true,
+        );
+        let nodes = frame(egui_ctx, app, Vec::new(), true).nodes;
+        click(egui_ctx, app, entry(&nodes, entry_label));
+        idle(egui_ctx, app, 15)
     }
 
     // ST-HELP-05
@@ -1764,22 +1794,13 @@ mod tests {
         );
         let egui_ctx = test_context();
 
-        frame(&egui_ctx, &mut app, vec![key(egui::Key::F1, true)], true);
-        let nodes = idle(&egui_ctx, &mut app, 15).nodes;
-        click(&egui_ctx, &mut app, search_box(&nodes));
-        frame(
+        let nodes = jump_through_search(
             &egui_ctx,
             &mut app,
-            vec![egui::Event::Text("zzdistinct".to_owned())],
-            true,
-        );
-        let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
-        click(
-            &egui_ctx,
-            &mut app,
-            entry(&nodes, "Long › Long topic › zzdistinct target."),
-        );
-        let nodes = idle(&egui_ctx, &mut app, 15).nodes;
+            "zzdistinct",
+            "Long › Long topic › zzdistinct target.",
+        )
+        .nodes;
         assert_eq!(
             app.help_window.highlight(),
             (Some(55), None),
@@ -2372,6 +2393,89 @@ mod tests {
             strokes,
             [egui::Stroke::new(1.0, edge)],
             "the blue's edge painted over the row"
+        );
+    }
+
+    // A search jump's mark is the drafts' highlight green, not the selection
+    // blue, which marks a choice.
+    #[test]
+    fn a_search_jump_fills_the_paragraph_in_the_hit_green() {
+        let dir = TestDir::new("studio_core_help_parahit");
+        let Shell { mut app, .. } = help_shell(dir.path());
+        let egui_ctx = test_context();
+
+        let out = jump_through_search(
+            &egui_ctx,
+            &mut app,
+            "TeAmS",
+            "Alpha › Alpha start › Alpha keeps its TEAMS in a folder.",
+        );
+        assert_eq!(
+            app.help_window.highlight(),
+            (Some(0), None),
+            "premise: the jump marked the paragraph"
+        );
+
+        let paragraph = label_bounds(&out.nodes, "Alpha keeps its TEAMS")
+            .expect("the jumped-to paragraph's node");
+        let at = centre(paragraph);
+        let fills = |colour| {
+            out.shapes.iter().any(|clipped| match &clipped.shape {
+                egui::Shape::Rect(shape) => shape.fill == colour && shape.rect.contains(at),
+                _ => false,
+            })
+        };
+        assert!(
+            fills(crate::theme::palette(&egui_ctx.global_style().visuals).search_hit),
+            "the hit green fills a rect over the paragraph"
+        );
+        assert!(
+            !fills(egui_ctx.global_style().visuals.selection.bg_fill),
+            "the selection blue does not mark a search hit"
+        );
+    }
+
+    // The catalog row's mark is the same green, opaque and painted under the
+    // row's text (the shapes are in paint order: a lower index is under).
+    #[test]
+    fn a_row_jump_marks_the_row_in_the_hit_green_under_its_text() {
+        let dir = TestDir::new("studio_core_help_rowhit");
+        let Shell { mut app, .. } = help_shell(dir.path());
+        let egui_ctx = test_context();
+
+        let out = jump_through_search(
+            &egui_ctx,
+            &mut app,
+            "beta_warn",
+            "Beta › Messages › beta_warn: beta warns",
+        );
+        assert_eq!(
+            app.help_window.highlight(),
+            (None, Some("beta_warn")),
+            "premise: the jump marked the row"
+        );
+
+        let row = label_bounds(&out.nodes, "beta_warn").expect("the marked row's code cell");
+        let at = centre(row);
+        let green = crate::theme::palette(&egui_ctx.global_style().visuals).search_hit;
+        let mut fill_index = None;
+        let mut text_index = None;
+        for (index, clipped) in out.shapes.iter().enumerate() {
+            match &clipped.shape {
+                egui::Shape::Rect(shape) if shape.fill == green && shape.rect.contains(at) => {
+                    fill_index.get_or_insert(index);
+                }
+                egui::Shape::Text(shape) if shape.galley.text() == "beta_warn" => {
+                    text_index.get_or_insert(index);
+                }
+                _ => {}
+            }
+        }
+        let fill_index = fill_index.expect("the hit green fills the row");
+        let text_index = text_index.expect("the row's code text is drawn");
+        assert!(
+            fill_index < text_index,
+            "the mark is painted under the row's text: shape {fill_index} before {text_index}"
         );
     }
 }

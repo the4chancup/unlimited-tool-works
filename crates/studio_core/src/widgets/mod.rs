@@ -18,7 +18,7 @@
 //! and checkboxes (`FIELD_SPACING`, `CHECKBOX_SPACING`, `checkbox_row`) and of a
 //! grid of text rows (`TEXT_ROW_SPACING`), and the resting edge a widget
 //! painting its own state draws (`at_rest`, `resting_edge`) or a row
-//! takes out (`row`).
+//! takes out, painting the picked one's (`row`).
 //! Where they sit in a tool's view is that tool's choice; the widgets
 //! themselves know no tool.
 
