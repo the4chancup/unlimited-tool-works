@@ -268,7 +268,7 @@ impl HelpWindow {
     /// The right pane's topic (the draft's `drawHelpTopic`): its title as a heading,
     /// then the body rendered paragraph by paragraph, `PARAGRAPH_SPACING` apart and at
     /// most `READING_WIDTH` wide, the highlighted one inside a filled frame and scrolled
-    /// into view once, on the first drawn frame after the jump. A Messages topic is the
+    /// to the top of the pane once, on the first drawn frame after the jump. A Messages topic is the
     /// catalog table instead. After the draw, an in-doc link whose hook reported a click
     /// jumps to its target.
     fn draw_topic(&mut self, ui: &mut egui::Ui) {
@@ -513,8 +513,8 @@ fn plain_text(line: &str) -> String {
 /// then one row per catalog row — the code monospace, the severity colored, the two
 /// text cells rendered with `CommonMarkViewer` inside a `Ui` of the text-column
 /// width, so a long cell wraps instead of overflowing the pane. The highlighted
-/// code's row is filled over all four cells and, on a jump frame (`scroll`), scrolled
-/// into view. Returns whether the scroll landed on a drawn pass (a `Grid`'s first
+/// code's row is filled in the search hit's green across its four cells, under their
+/// text, and on a jump frame (`scroll`) scrolled to the top of the pane. Returns whether the scroll landed on a drawn pass (a `Grid`'s first
 /// frame is an invisible sizing one, `ui.is_sizing_pass()`) and an in-doc link's
 /// destination if one of the cells' links was clicked.
 fn messages(

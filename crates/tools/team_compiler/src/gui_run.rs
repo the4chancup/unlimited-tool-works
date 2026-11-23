@@ -239,8 +239,9 @@ impl RunLog {
 /// The `Dpfl` a `DpFileList.bin` finding of `code` sets — a run's message in `append`, a
 /// check's list finding in `set_check`: `Outdated` for `dpfilelist_outdated`, `Other`
 /// for the two Warnings the upgrade remedies, `Official` for the upgrade's own report that
-/// the list is now the official one (a replacement, or nothing to do): a failed upgrade emits
-/// neither, so its button stays for the retry. `None` for every other code.
+/// the list is now the official one (a replacement, or nothing to do): an upgrade stopped
+/// before the list is replaced emits neither, so its button stays for the retry. `None` for
+/// every other code.
 fn dpfl_flag(code: &str) -> Option<Dpfl> {
     if code == Code::DpfilelistOutdated.as_str() {
         return Some(Dpfl::Outdated);
