@@ -1109,8 +1109,8 @@ def fetch_remote(host: str, partial: bool = False, *, extra_only: bool = False) 
     no `mutants.out` fails the fetch; a died one (`partial`) may have none.
     An extras-only run's fetch (`extra_only`) is the pass's `extra_mutants.out`
     alone, tarred whole into `extra_mutants.out/remote/`: the pass keeps no big
-    logs to filter out, and `REMOTE_FETCH_LIST`'s `mutants.out` half would pack
-    the last whole run's, which stays on the host between runs."""
+    logs to filter out, and the shared fetch's `[ -d mutants.out ]` guard would
+    read an extras-only run's absent `mutants.out` as a half with no results."""
     name = "extra_mutants.out" if extra_only else "mutants.out"
     out = ROOT / name / "remote"
     LOCAL_TMPDIR.mkdir(parents=True, exist_ok=True)
@@ -1148,6 +1148,18 @@ def fetch_remote(host: str, partial: bool = False, *, extra_only: bool = False) 
         elif partial:
             print(f"warning: the remote half left no {name}", file=sys.stderr)
         else:
+            # A collect on a tree whose pending record is missing or says
+            # otherwise takes this path for an extras-only half too: the `rm
+            # -r run` hint below would delete that half's results, so the
+            # pass's folder is probed first.
+            if not extra_only and ssh(
+                host, f"cd {REMOTE_BASE}/tree && [ -d extra_mutants.out ]"
+            ).returncode == 0:
+                raise RuntimeError(
+                    "the remote half is an extras-only run (it left "
+                    "extra_mutants.out, no mutants.out): collect it from the "
+                    "tree that launched it"
+                )
             raise RuntimeError(
                 f"the remote half finished but left no {name}: its log is "
                 f"{REMOTE_RUN}/log on {host}; once read, `rm -r {REMOTE_RUN}` there frees "
@@ -2215,7 +2227,7 @@ def extra_only_run(crate: str, kinds: list[str], host: str | None, tree: str) ->
         remote_head, remote_tree, nproc = remote_start(host, tree)
         upload_and_launch(
             host, ["-p", crate], tree, source, remote_head, remote_tree, nproc,
-            whole=True, local_half=False, extra=True, extra_only=True, kinds=kinds,
+            whole=True, local_half=False, extra=False, extra_only=True, kinds=kinds,
         )
     remote_code, _ = wait_remote(host)
     with run_lock():
