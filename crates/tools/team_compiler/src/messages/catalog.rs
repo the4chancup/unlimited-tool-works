@@ -884,7 +884,8 @@ pub(super) const CATALOG: &[(&str, CatalogSeverity, &str, &str)] = &[
         CatalogSeverity::Warning,
         r#"The game's `DpFileList.bin` differs from the cup's official list (it is missing entries, it has entries the official list does not, or the order is different), while every CPK of this run is listed."#,
         concat!(
-            "The run compiles and installs anyway. `",
+            "The run compiles and installs anyway. Upgrade DpFileList, in the Compiler's \
+             toolbar, or `",
             studio_core::exe_name!(),
             " compiler upgrade-dpfl` installs the official list."
         ),
@@ -894,10 +895,11 @@ pub(super) const CATALOG: &[(&str, CatalogSeverity, &str, &str)] = &[
         CatalogSeverity::Warning,
         r#"The game's `DpFileList.bin` names CPKs, other than this run's own, with no file in `download/`, so the game rejects the whole `download/` folder and loads none of its CPKs."#,
         concat!(
-            "The run compiles and installs anyway, but the save step is skipped. `",
+            "The run compiles and installs anyway, but the save step is skipped. Upgrade \
+             DpFileList, in the Compiler's toolbar, or `",
             studio_core::exe_name!(),
-            " compiler upgrade-dpfl` writes a placeholder for each official entry \
-             missing its file."
+            " compiler upgrade-dpfl` writes a placeholder for each official entry missing \
+             its file."
         ),
     ),
     (
@@ -905,10 +907,11 @@ pub(super) const CATALOG: &[(&str, CatalogSeverity, &str, &str)] = &[
         CatalogSeverity::Fatal,
         r#"The cup's official list names one or more CPKs of this run that the game's older `DpFileList.bin` lacks (the line names them)."#,
         concat!(
-            "The run stops before compiling anything: nothing is installed or written, and the save is \
-             not touched. `",
+            "A compile stops before compiling anything: nothing is installed or written, and the \
+             save is not touched. In the Compiler's window, Compile stays disabled until Upgrade \
+             DpFileList installs the official list; in a terminal, `",
             studio_core::exe_name!(),
-            " compiler upgrade-dpfl` installs the official list; then compile again."
+            " compiler upgrade-dpfl` installs it, then compile again."
         ),
     ),
     (
