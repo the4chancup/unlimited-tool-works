@@ -2,7 +2,7 @@
 //! replacing the condition with `false`, elements removed from the literal lists a
 //! `matches!` or a separator method decides by, `.trim()`-style calls stripped,
 //! in-place ordering statements deleted, any other method-call statement deleted
-//! (`call`, on trial) and `true`/`false` arguments flipped.
+//! (`call`) and `true`/`false` arguments flipped.
 //!
 //! A mutant is a text patch, so positions come from `proc_macro2::Span`'s line and column
 //! (columns count chars, not bytes) and are converted to byte offsets against the source.

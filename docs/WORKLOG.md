@@ -514,6 +514,13 @@ and no phase closes with one outstanding.
   lines into the log, then the first review, then the first look-ahead. At the
   start, `AGENTS.md` gains the file's row (it is at its 16 KB cap: something is cut first)
   and the dev cycle chart its loop.
+- [ ] The `call` mutant kind's backfill (DECISIONS 2026-11-23 "a `call` extra mutant kind"):
+  `.tmp/call_backfill/run.py` runs it over every crate, smallest first, detached and
+  resumable, about 3,900 mutants. Each crate's survivors (`.tmp/call_backfill/<crate>.missed.txt`)
+  are triaged as CONTRIBUTING "Mutation runs" says, the missing tests going into SWE-2
+  slices crate by crate. Its first crate, `export_grid` (the trial), has 8 survivors, all
+  missing tests, for slice G7. Once each crate's run is measured, CONTRIBUTING's time for the
+  extra kinds gets the real figures.
 
 ---
 

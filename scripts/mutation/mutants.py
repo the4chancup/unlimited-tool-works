@@ -85,7 +85,7 @@ REMOTE_ONLY = False
 # gaps, since each equivalent survivor costs a ruling every phase. `bool` joined
 # once `.cargo/extra_mutants.toml` gave its ruled equivalents a home.
 # `mutants-diff` does not run them: they run when a phase closes, only.
-EXTRA_KINDS = ("bool", "literal", "normalize", "order")
+EXTRA_KINDS = ("bool", "call", "literal", "normalize", "order")
 # missed.txt lines whose only catching tests are #[cfg(windows)]: they survive on
 # the Linux remote half, so summarize() reruns them on this machine when it is
 # Windows and REMOTE_ONLY is off. The seed is deploy.rs's match guards

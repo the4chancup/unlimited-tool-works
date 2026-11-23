@@ -176,7 +176,7 @@ mutants-diff base="HEAD" *paths:
     {{python}} scripts/mutation/mutants_diff.py {{base}} {{paths}}
 
 # The mutants cargo-mutants lacks (dropped `if` guards, literal-list elements) over one crate;
-# `just mutants` runs the bool, literal, normalize and order kinds inside the whole-crate run, so this stays
+# `just mutants` runs the bool, call, literal, normalize and order kinds inside the whole-crate run, so this stays
 # for `--list`, single `--kind` runs and trials of the other kinds
 extra-mutants crate *args:
     {{python}} scripts/mutation/extra_mutants.py {{crate}} {{args}}

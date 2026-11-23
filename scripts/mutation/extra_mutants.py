@@ -3,7 +3,7 @@
 `crates/dev/extra_mutants` lists the kinds cargo-mutants never makes: `guard` (an `if`
 condition replaced with `false`), `literal` (an element removed from a literal list),
 `normalize` (a `.trim()`-style call removed), `order` (a `sort()`-style statement
-deleted), `call` (any other method-call statement deleted; on trial, run by hand)
+deleted), `call` (any other method-call statement deleted)
 and `bool` (a `true`/`false` flipped). This script applies each listed patch
 in a copy of the working tree and lets
 `cargo test -p <crate>` decide whether the suite catches it. An `[[exclude]]`

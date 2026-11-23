@@ -19966,3 +19966,18 @@ cannot express (a call no test observes, a test that stops short of the window).
 first round it costs the same one run and saves a rework cycle.
 Plan: `CONTRIBUTING.md` "Mutation runs"; `RUNBOOK.md` "Phases and releases" (the design-health
 pass) and "Lead and sidekick"; the dev cycle chart (`scripts/dev_cycle_map.py`).
+
+## 2026-11-23 — mutation runs — a `call` extra mutant kind deletes a method-call statement, and the whole codebase is backfilled (maintainer)
+Decision: the extra mutant kinds gain `call`, which deletes any statement that is a method
+call alone (`order` keeps the `sort`-style ones). It runs in every whole-crate run, and a
+backfill runs it over every crate now, its survivors triaged into test slices crate by
+crate.
+Why: cargo-mutants never removes a call, so a call made only for its effect (a repaint
+asked, a shape painted) passed every suite when no test observed it. A SWE-2 review found
+one such call in the grid's detail window, a reviewer reading for what a measurement finds
+mechanically. On `export_grid`, 8 of its 72 mutants survived after several review rounds:
+five were meaningful (a cell's state pattern, the pin glyph, a finding's severity, two
+painted names whose tests read only the accessibility label), three were look details (two
+separators, a gap), and none was equivalent or unreachable. That is a better yield than the
+`guard` kind, shelved for its share of survivors that were no real gap.
+Plan: `CONTRIBUTING.md` "Mutation runs"; the worklog's backfill step.

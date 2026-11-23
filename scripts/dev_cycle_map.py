@@ -158,7 +158,7 @@ NODES = [
      "surviving mutant is an assertion nobody wrote. A larger crate's mutants are split "
      "between the lead's PC and the VPS, sized so both halves end together."),
     ("extra", "Extra mutant kinds", "mutation", 5, 1,
-     "bool, literal, normalize and order mutants cargo-mutants does not make, run before a "
+     "bool, call, literal, normalize and order mutants cargo-mutants does not make, run before a "
      "whole-crate run into the same survivor list."),
     ("whole", "Whole-crate run (VPS)", "mutation", 5, 2,
      "Every mutant of a crate, on the VPS alone: twice per crate, in the lead's audit and at "

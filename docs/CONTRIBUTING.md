@@ -550,13 +550,16 @@ Requirements:
   against its own baseline, every crate's survivors in `mutants.diff/missed_all.txt`. What a clean run cannot
   vouch for: `cargo-mutants` rewrites operators, a `!`, match arms and guards, a field, and a
   function's whole return value; it never edits a literal or removes a method call. So `just
-  mutants <crate>` first runs four such kinds (`EXTRA_KINDS` in `scripts/mutation/mutants.py`, listed by
+  mutants <crate>` first runs five such kinds (`EXTRA_KINDS` in `scripts/mutation/mutants.py`, listed by
   `crates/dev/extra_mutants`, run locally in a copy of the tree, a few minutes per crate and
-  about twenty for `team_compiler`), their survivors in the same `missed_all.txt` tagged with
+  about twenty for `team_compiler` before `call` joined them: `call` alone took ten minutes
+  for `export_grid`'s 72 mutants, and makes hundreds in the largest crates), their survivors in the same `missed_all.txt` tagged with
   their kind and triaged the same way: `literal` removes one alternative of a `matches!` or
   one element of a literal list a `split`, `contains` or similar method decides by;
   `normalize` removes a `.trim()`-style or case-changing call, or makes `eq_ignore_ascii_case`
-  an `==`; `order` drops a statement that is a `sort*`, `dedup*` or `reverse` call; `bool`
+  an `==`; `order` drops a statement that is a `sort*`, `dedup*` or `reverse` call; `call` drops any
+  other statement that is a method call alone, made for its effect (a repaint asked, a
+  message sent, a shape painted); `bool`
   flips a `true`/`false` argument or struct field, the flags that land in a written file and
   that cargo-mutants never touches. An equivalent extra mutant goes into
   `.cargo/extra_mutants.toml` with its reason, matched by path, kind and whole description (no
