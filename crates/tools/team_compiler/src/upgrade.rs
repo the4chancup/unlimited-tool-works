@@ -210,13 +210,6 @@ fn work_out(
 /// What the DpFileList upgrade would do in `download/`, worked out before anything is
 /// written: the window's Upgrade DpFileList dialog shows it before the member confirms.
 #[derive(Debug, PartialEq, Eq)]
-#[cfg_attr(
-    not(test),
-    expect(
-        dead_code,
-        reason = "called only from the module's tests until the window's dialog calls it"
-    )
-)]
 pub(crate) struct Preview {
     /// The CPKs renamed, as `(from, to)` file names, in the order the renames run.
     pub(crate) renames: Vec<(String, String)>,
@@ -236,13 +229,6 @@ pub(crate) struct Preview {
 /// dialog rather than findings: what the run would rename, write and drop, and whether there
 /// is nothing to do. The templates' findings are reported as `run` reports them; a file that
 /// cannot be read, a `templates/` file among them, is the error.
-#[cfg_attr(
-    not(test),
-    expect(
-        dead_code,
-        reason = "called only from the module's tests until the window's dialog calls it"
-    )
-)]
 pub(crate) fn preview(download: &Path, ctx: &ToolContext) -> anyhow::Result<Preview> {
     let mut events = RunEvents::new(ctx, false);
     let Some(worked) = work_out(download, ctx, &mut events)? else {

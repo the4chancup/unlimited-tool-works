@@ -4,6 +4,7 @@
 
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::sync::{Arc, Mutex};
 use std::time::Instant;
 
 use aesthetics_export::test_exports::Requirement;
@@ -11,11 +12,12 @@ use crossbeam_channel::unbounded;
 use egui::accesskit;
 use export_grid::{Cell, IdCell, Position, RowBody, Tone, TopBox};
 use pes_version::PesVersion;
-use studio_core::StudioTool;
+use studio_core::{AppPaths, Settings, StudioTool};
 
 use super::*;
 use crate::Tool;
 use crate::check::live::LiveCheck;
+use crate::settings::default_table;
 use crate::test_files::complete;
 use crate::testing::{copy_tree, install_pes, poll_until_done, sandbox, tool_context};
 
@@ -83,6 +85,31 @@ impl Headless {
 /// A context with no sandbox behind it, for frames that start no run.
 fn settings_only_context() -> ToolContext {
     tool_context(Path::new("exe"), "")
+}
+
+/// `tool_context` for a PES 17 install (`tool_context` itself is always PES 21's): the
+/// same settings built by hand, `pes_version` aside.
+fn tool_context_pes17(root: &Path) -> ToolContext {
+    let mut settings = Settings::parse("").unwrap();
+    settings.common.pes_version = PesVersion::Pes17;
+    settings.common.pes_folder_path = root.join("PES").display().to_string();
+    let mut tool = settings.tool(TOOL_ID).cloned().unwrap_or_default();
+    tool.entry("savefile_path").or_insert_with(|| {
+        toml::Value::String(root.join("save").join("EDIT00000000").display().to_string())
+    });
+    settings.set_tool(TOOL_ID, tool);
+    settings.merge_defaults(TOOL_ID, &default_table());
+    let (events_tx, _events_rx) = unbounded();
+    let (requests_tx, _requests_rx) = unbounded();
+    ToolContext::new(
+        Arc::new(Mutex::new(settings)),
+        AppPaths {
+            exe_dir: root.to_path_buf(),
+            data_dir: Some(root.join("data")),
+        },
+        events_tx,
+        requests_tx,
+    )
 }
 
 /// The tracer export, whose player and goalkeeper kit the grid's exports are built from.
@@ -242,3 +269,4 @@ mod live_check;
 mod log_panel;
 mod pictures;
 mod toolbar;
+mod upgrade_dpfl;

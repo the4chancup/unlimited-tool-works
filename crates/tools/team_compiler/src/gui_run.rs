@@ -1,20 +1,23 @@
 //! The window's log: the grid's check's findings, then the `compile` the Compile button starts,
 //! on a thread of its own and through the command line's own parser, preflight and verdict
-//! (`cli`), its events drained into the log each frame.
+//! (`cli`), its events drained into the log each frame. The Upgrade DpFileList button's
+//! upgrade runs the same way, its lines appended after the run's it answers.
 
+use std::collections::BTreeSet;
 use std::thread::JoinHandle;
 
 use crossbeam_channel::{Receiver, unbounded};
 use export_grid::{CellKey, Row, cell_places};
 use studio_core::{
-    CliError, EventLines, LogLine, Message, PipelineEventEnvelope, RunningPes, Severity,
-    ToolContext, message_line,
+    CliError, EventLines, LogLine, Message, PipelineEvent, PipelineEventEnvelope, RunningPes,
+    Severity, ToolContext, message_line,
 };
 
-use crate::cli;
-use crate::messages::TOOL_ID;
+use crate::messages::{Code, TOOL_ID};
+use crate::{cli, upgrade};
 
-/// A compile in flight: its events, and the thread that ends with its verdict.
+/// A compile or a DpFileList upgrade in flight: its events, and the thread that ends with its
+/// verdict.
 struct Run {
     events: Receiver<PipelineEventEnvelope>,
     thread: JoinHandle<Result<u8, CliError>>,
@@ -31,6 +34,9 @@ pub(crate) struct RunLog {
     cells: Vec<CellKey>,
     formatter: EventLines,
     run: Option<Run>,
+    /// The last run's preflight found the game's `DpFileList.bin` not the official one and no
+    /// upgrade has replaced it since: the toolbar's Upgrade DpFileList button shows.
+    dpfl_found: bool,
 }
 
 /// The findings of a check's `rows` as the log prints them, each with the grid cell its line
@@ -70,6 +76,9 @@ impl RunLog {
     /// button is disabled while one runs).
     pub(crate) fn start_compile(&mut self, ctx: &ToolContext, running: fn() -> Vec<RunningPes>) {
         self.lines.truncate(self.cells.len());
+        // The last run's verdict on the game's list goes with its lines: the new run's
+        // preflight finds it again when the list still is not the official one.
+        self.dpfl_found = false;
         // A fresh formatter: export ids restart with each run.
         self.formatter = EventLines::new();
         let matches = cli::command()
@@ -79,6 +88,39 @@ impl RunLog {
         let ctx = ctx.with_events(sender);
         let thread = std::thread::spawn(move || cli::run(&matches, &ctx, running));
         self.run = Some(Run { events, thread });
+    }
+
+    /// Starts the DpFileList upgrade on a thread of its own: `upgrade::run` applied in
+    /// `download/` (found as the command finds it) with `delete`, the dropped CPKs the dialog
+    /// ticked for deletion, which the command line's `--yes` never deletes. The upgrade's lines
+    /// are appended after the run's it answers: what the preflight said stays in the log.
+    /// Called only while no run is in flight (the dialog opens only then).
+    pub(crate) fn start_upgrade(&mut self, delete: BTreeSet<String>, ctx: &ToolContext) {
+        // A fresh formatter: export ids restart with each run.
+        self.formatter = EventLines::new();
+        let (sender, events) = unbounded();
+        let ctx = ctx.with_events(sender);
+        let thread = std::thread::spawn(move || {
+            let download = cli::download_folder(&ctx.common())?;
+            // The outcome mapped as `cli`'s `verdict` maps the `upgrade-dpfl` arm's: a Fatal
+            // finding aborts at 3, an Error is 1, warnings and infos a clean 0.
+            upgrade::run(&download, true, &delete, &ctx)
+                .map_err(|error| CliError::new(3, error))
+                .map(|worst| match worst {
+                    Some(Severity::Fatal) => 3,
+                    Some(Severity::Error) => 1,
+                    Some(Severity::Warning | Severity::Info) | None => 0,
+                })
+        });
+        self.run = Some(Run { events, thread });
+    }
+
+    /// Whether the last run's preflight found the game's `DpFileList.bin` not the official one
+    /// (`dpfilelist_outdated`, `dpfilelist_not_official` or `dpfilelist_cpk_missing`), and no
+    /// upgrade has replaced it since: the Upgrade DpFileList button's condition beside "no run
+    /// in flight".
+    pub(crate) fn dpfl_found(&self) -> bool {
+        self.dpfl_found
     }
 
     /// Moves what the run has reported into the lines: every event so far while it runs; once
@@ -149,11 +191,38 @@ impl RunLog {
 
     fn append(&mut self, events: &Receiver<PipelineEventEnvelope>) {
         for envelope in events.try_iter() {
+            if let PipelineEvent::Message(message) = &envelope.event
+                && let Some(found) = dpfl_flag(message.code.code.as_ref())
+            {
+                self.dpfl_found = found;
+            }
             if let Some(line) = LogLine::from_event(&mut self.formatter, &envelope.event) {
                 self.lines.push(line);
             }
         }
     }
+}
+
+/// `Some(true)` for the preflight findings the Upgrade DpFileList button remedies,
+/// `Some(false)` for the upgrade's own report that the list is now the official one (a
+/// replacement, or nothing to do): a failed upgrade emits neither, so its button stays for
+/// the retry. `None` for every other code.
+fn dpfl_flag(code: &str) -> Option<bool> {
+    if [
+        Code::DpfilelistOutdated.as_str(),
+        Code::DpfilelistNotOfficial.as_str(),
+        Code::DpfilelistCpkMissing.as_str(),
+    ]
+    .contains(&code)
+    {
+        return Some(true);
+    }
+    [
+        Code::DpfilelistReplaced.as_str(),
+        Code::DpfilelistUpToDate.as_str(),
+    ]
+    .contains(&code)
+    .then_some(false)
 }
 
 #[cfg(test)]
@@ -168,7 +237,17 @@ impl RunLog {
             cells: Vec::new(),
             formatter: EventLines::new(),
             run: Some(Run { events, thread }),
+            dpfl_found: false,
         }
+    }
+
+    /// `in_flight` whose last run's lines held a preflight DpFileList finding: the Upgrade
+    /// DpFileList button's `dpfl_found`, as a drained `dpfilelist_outdated` message sets it.
+    #[cfg(test)]
+    pub(crate) fn in_flight_dpfl(until: Receiver<()>) -> RunLog {
+        let mut log = RunLog::in_flight(until);
+        log.dpfl_found = true;
+        log
     }
 
     /// Appends `lines`, as a run's events append them: a view test's overflowed log.

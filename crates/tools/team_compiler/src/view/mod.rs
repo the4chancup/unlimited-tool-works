@@ -1,11 +1,14 @@
 //! The Compiler's window, render-only (`spec/team_compiler/README.md` "Crate layout"): it
 //! reads the tool's state (the run log, the grid's rows) and reports the user's intent
-//! (Compile clicked); it never calls into the pipeline itself. It shows the export grid under
-//! its legend, the toolbar under the grid, and the log panel.
+//! (Compile clicked, the DpFileList upgrade's dialog); it never calls into the pipeline
+//! itself. It shows the export grid under its legend, the toolbar under the grid, and the
+//! log panel.
 
 mod pictures;
 mod toolbar;
+mod upgrade_dpfl;
 
+use std::collections::BTreeSet;
 use std::time::Duration;
 
 use export_grid::{
@@ -18,6 +21,20 @@ use studio_core::{CatalogRow, HelpTarget, LogPanel, Severity, ToolContext};
 use crate::gui_run::RunLog;
 use crate::messages::{self, TOOL_ID};
 use crate::view::pictures::Pictures;
+
+pub(crate) use upgrade_dpfl::DpflDialog;
+use upgrade_dpfl::Outcome;
+
+/// A click's ask of the tool, reported for it to act on: the view is render-only, so a
+/// click never starts a run itself.
+pub(crate) enum Intent {
+    /// Compile.
+    Compile,
+    /// Upgrade DpFileList: the upgrade's dialog opens on its preview.
+    UpgradeDpfl,
+    /// The dialog's Upgrade: the upgrade applies, the ticked dropped CPKs deleted.
+    Upgrade(BTreeSet<String>),
+}
 
 /// The grid's column groups: a player's 23 positions, the portraits, the 10 kits.
 const GROUPS: [ColumnGroup; 3] = [
@@ -84,12 +101,16 @@ const LEGEND: [&[LegendEntry]; 6] = [
 
 /// The grid's detail window: what it keeps from frame to frame, the catalog it explains
 /// findings from, built once rather than on every frame, and the pictures of its top box.
-/// It also keeps whether `show` has already decided if the log starts collapsed.
+/// It also keeps whether `show` has already decided if the log starts collapsed, and the
+/// Upgrade DpFileList dialog while it is open.
 pub(crate) struct GridDetail {
     state: Detail,
     catalog: Vec<CatalogRow>,
     pictures: Pictures,
     log_start_decided: bool,
+    /// The Upgrade DpFileList dialog's state while it is open: the preview it was
+    /// opened on and the member's delete ticks.
+    pub(crate) dpfl_dialog: Option<DpflDialog>,
 }
 
 impl GridDetail {
@@ -100,6 +121,7 @@ impl GridDetail {
             catalog: messages::catalog(),
             pictures: Pictures::default(),
             log_start_decided: false,
+            dpfl_dialog: None,
         }
     }
 
@@ -111,10 +133,10 @@ impl GridDetail {
 }
 
 /// Shows the window over `rows`, the grid's check's, drawn as being checked while `checking`,
-/// with `detail`'s window over the grid; `true` when Compile was clicked this frame. A folder
-/// the grid asks for opens in the file manager. At the first frame with rows the log is
-/// collapsed if, open, it left the grid too little room to show them all; after that only
-/// the member opens and closes it.
+/// with `detail`'s windows over the grid; the `Intent` a click asked for this frame, when
+/// one was. A folder the grid asks for opens in the file manager. At the first frame with
+/// rows the log is collapsed if, open, it left the grid too little room to show them all;
+/// after that only the member opens and closes it.
 pub(crate) fn show(
     ui: &mut egui::Ui,
     ctx: &ToolContext,
@@ -123,7 +145,7 @@ pub(crate) fn show(
     rows: &[Row],
     checking: bool,
     detail: &mut GridDetail,
-) -> bool {
+) -> Option<Intent> {
     // The dock claims the bottom first (`spec/core/gui.md` "Shell layout"), the
     // toolbar the row above it, and the legend and the grid take what is left. A
     // clicked message code is a shell request, not a pipeline call: the view
@@ -142,7 +164,7 @@ pub(crate) fn show(
     {
         detail.state.go_to(cell.clone());
     }
-    let clicked = toolbar::show(ui, panel, rows, log.is_running());
+    let mut intent = toolbar::show(ui, panel, rows, log);
     export_grid::legend(ui, (TOOL_ID, "legend"), &LEGEND);
     let egui_ctx = ui.ctx().clone();
     detail.pictures.receive(&egui_ctx);
@@ -174,12 +196,22 @@ pub(crate) fn show(
         Some(Open::Select(file)) => show_in_folder(&file),
         None => {}
     }
+    if let Some(open) = detail.dpfl_dialog.as_mut() {
+        match open.show(ui) {
+            Outcome::Open => {}
+            Outcome::Closed => detail.dpfl_dialog = None,
+            Outcome::Upgrade(delete) => {
+                detail.dpfl_dialog = None;
+                intent = Some(Intent::Upgrade(delete));
+            }
+        }
+    }
     if log.is_running() || checking {
         // egui repaints only on input, and the run's events and the check's rows arrive on
         // their own: without this the window would advance only when the mouse moves.
         ui.ctx().request_repaint_after(Duration::from_millis(100));
     }
-    clicked
+    intent
 }
 
 #[cfg(test)]
