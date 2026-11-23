@@ -10,7 +10,8 @@ use crate::testing::ScratchFolder;
 use super::*;
 use crate::view::toolbar::{Part, Summary, strip, summary};
 
-/// The first `count` teams of the bundled teams list, each a row of its label alone.
+/// The first `count` teams of the bundled teams list, each a clean row holding only the
+/// portraits cell every team export draws.
 fn listed_rows(count: usize) -> Vec<Row> {
     TeamsList::UPSTREAM
         .lines()
@@ -20,11 +21,22 @@ fn listed_rows(count: usize) -> Vec<Row> {
             let (id, name) = line
                 .split_once('\t')
                 .expect("a teams list line is ID, tab, name");
+            let portraits = Cell {
+                width: Width::Wide,
+                ..Cell::new("0/1", CellState::FullOk)
+            };
             Row {
                 key: format!("{name} Midcup"),
                 label: Cell::new(name, CellState::FullOk),
                 id: Some(IdCell::Known(id.to_owned())),
-                body: RowBody::Lines(Vec::new()),
+                body: RowBody::Lines(vec![Line {
+                    name: None,
+                    groups: vec![
+                        vec![Position::Empty; 23],
+                        vec![Position::Cell(Box::new(portraits))],
+                        vec![Position::Empty; 10],
+                    ],
+                }]),
                 log_lines: Vec::new(),
             }
         })
@@ -67,9 +79,10 @@ fn the_summary_counts_rows_by_the_findings_of_their_labels_and_cells() {
     let mut rows = listed_rows(7);
     // /3/: an error on its label. /a/: a warning on a player. /aco/: an error on its label and
     // a warning on a player, counted in both. /adv/: a message in place of its cells, its
-    // finding on the label. /an/: only an Info. The sixth: one player cell holding an error
-    // and a warning, which shows the error alone, so it counts only with errors. The seventh:
-    // dropped whole, so skipped, and not with errors.
+    // finding on the label, so skipped, and not with errors. /an/: only an Info. The sixth:
+    // one player cell holding an error and a warning, which shows the error alone, so it
+    // counts only with errors. The seventh: dropped whole, its one cell blocked, so skipped.
+    // The last: dropped before its files were listed, its label alone drawn, so skipped too.
     rows[0].label.messages = vec![finding("player_folder_number_invalid", Severity::Error)];
     rows[1] = with_player_findings(
         rows[1].clone(),
@@ -94,12 +107,22 @@ fn the_summary_counts_rows_by_the_findings_of_their_labels_and_cells() {
         ],
     );
     rows[6] = dropped(rows[6].clone());
+    rows.push(Row {
+        key: "v Midcup Map".to_owned(),
+        label: Cell {
+            messages: vec![finding("team_name_unknown", Severity::Error)],
+            ..Cell::new("/v/", CellState::FullOk)
+        },
+        id: Some(IdCell::Missing),
+        body: RowBody::Lines(Vec::new()),
+        log_lines: Vec::new(),
+    });
     assert_eq!(
         summary(&rows),
         Summary {
-            exports: 7,
-            skipped: 1,
-            with_errors: 4,
+            exports: 8,
+            skipped: 3,
+            with_errors: 3,
             with_warnings: 2,
         }
     );
@@ -250,7 +273,8 @@ fn log_chevron(nodes: &[accesskit::Node]) -> &accesskit::Node {
 
 /// Exports with errors on two of them and a warning on a third: /co/'s player folder turns
 /// FPC both on and off, /a/'s is at no slot, and /3/'s players.txt leaves a folder unlisted.
-/// The sandbox's /egg/ checks clean.
+/// /co/'s second export's name says neither `Full` nor `Midcup`, so it is skipped. The
+/// sandbox's /egg/ checks clean.
 fn strip_sandbox(name: &str) -> ScratchFolder {
     let temp = sandbox(name);
     let root = temp.path();
@@ -268,6 +292,7 @@ fn strip_sandbox(name: &str) -> ScratchFolder {
     add_player(root, "3 Midcup Roster", "Snuffy");
     add_player(root, "3 Midcup Roster", "15 - B");
     add_file(root, "3 Midcup Roster/players.txt", b"03 snuffy\n");
+    add_player(root, "co Spring 2026", "03 - B");
     for export in ["co Midcup Map", "a Midcup Map", "3 Midcup Roster"] {
         complete(&root.join("exports").join(export), PesVersion::Pes21, &[]);
     }
@@ -309,11 +334,11 @@ fn the_strip_counts_the_rows_with_errors_and_warnings_and_its_counts_filter_the_
     let nodes = frame(&mut window, Vec::new());
     assert_eq!(
         strip_parts(&nodes).concat(),
-        "4 exports · 2 with errors · 1 with warnings"
+        "5 exports · 1 skipped · 2 with errors · 1 with warnings"
     );
     // The log is open on All: the counts are in the strip's own colour.
     assert_eq!(log_shows(&nodes), [true, true, true]);
-    let strip_colour = colour_of(&window, "4 exports");
+    let strip_colour = colour_of(&window, "5 exports");
     for count in ["2 with errors", "1 with warnings"] {
         assert_eq!(
             colour_of(&window, count),
@@ -378,7 +403,14 @@ fn the_errors_count_shows_the_check_s_error_lines() {
     let mut heads = line_heads(&nodes);
     heads.sort_unstable();
     heads.dedup();
-    assert_eq!(heads, ["- a Midcup Map: Error ", "- co Midcup Map: Error "]);
+    assert_eq!(
+        heads,
+        [
+            "- a Midcup Map: Error ",
+            "- co Midcup Map: Error ",
+            "- co Spring 2026: Error "
+        ]
+    );
 }
 
 /// Frames of the view over `rows` with an empty log, `frames` of them.

@@ -12,7 +12,7 @@ use super::*;
 /// the body frame's, then the dock id's `body` child salt (`studio_core`'s
 /// `widgets/log_panel.rs`).
 fn scroll_offset(ctx: &egui::Context) -> f32 {
-    let top = egui::Id::unique((egui::ViewportId::ROOT, "__top_ui"));
+    let top = egui::ViewportId::ROOT.root_ui_id();
     let id = top
         .with(egui::IdSalt::new(top.with(egui::Id::unique(TOOL_ID))))
         .with(egui::IdSalt::new("child"))
@@ -130,6 +130,51 @@ fn the_log_holds_the_check_s_findings_ahead_of_a_compile_s_lines() {
     );
     later.extend(run);
     assert_eq!(tool.run_log.texts(), later);
+}
+
+// The staging folder an interrupted upgrade leaves is no export, but the check reports it
+// as `check` does, after the exports' lines.
+#[test]
+fn a_check_reports_an_interrupted_upgrade_s_staging_folder() {
+    let temp = sandbox("view_log_upgrade_unfinished");
+    let root = temp.path();
+    let staging = root.join("exports").join("co Full Spring.upgrading");
+    fs::create_dir(&staging).unwrap();
+    let ctx = tool_context(root, "");
+    let mut tool = Tool::new();
+    tool.live_check.start(&ctx);
+    finish_check(&mut tool, &ctx);
+    let texts = tool.run_log.texts();
+    assert_eq!(
+        texts.last().copied(),
+        Some(
+            format!(
+                "- Warning export_upgrade_unfinished (path={})",
+                staging.display()
+            )
+            .as_str()
+        )
+    );
+}
+
+// An exports folder with no export is the run's own warning, `no_exports_found`.
+#[test]
+fn a_check_of_an_empty_exports_folder_reports_no_exports_found() {
+    let temp = sandbox("view_log_no_exports");
+    let root = temp.path();
+    fs::remove_dir_all(root.join("exports/egg Midcup Tracer")).unwrap();
+    let ctx = tool_context(root, "");
+    let mut tool = Tool::new();
+    tool.live_check.start(&ctx);
+    finish_check(&mut tool, &ctx);
+    assert_eq!(
+        tool.run_log.texts(),
+        [format!(
+            "- Warning no_exports_found (folder={})",
+            root.join("exports").display()
+        )
+        .as_str()]
+    );
 }
 
 /// The view over a check's `rows`, its log holding their lines, drawn a frame at a time.

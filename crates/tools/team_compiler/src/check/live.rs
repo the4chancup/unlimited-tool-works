@@ -7,9 +7,9 @@ use std::path::{Path, PathBuf};
 use std::thread::JoinHandle;
 
 use aesthetics_export::{
-    ExportKind, FileDescriptor, FileKind, FolderDraft, ParsedAestheticsExport, PlayerSlot, RefSlot,
-    ResolvedAestheticsExport, ValidatedRoster, folder_slot, is_referee_marker, kit_textures,
-    logo_parts, split_folder_name,
+    AestheticsExportDraft, ExportKind, FileDescriptor, FileKind, FolderDraft,
+    ParsedAestheticsExport, PlayerSlot, RefSlot, ResolvedAestheticsExport, ValidatedRoster,
+    folder_slot, is_referee_marker, kit_textures, logo_parts, split_folder_name,
 };
 use egui::Color32;
 use export_grid::{
@@ -17,17 +17,18 @@ use export_grid::{
     Tone, TopBox, Width,
 };
 use kit_config::KitSlot;
-use studio_core::{Message, Scope, Severity, ToolContext, message_line};
-use teams_list::TeamsList;
+use studio_core::{Disposition, Message, Scope, Severity, ToolContext, message_line};
+use teams_list::{TeamName, TeamsList};
 use vtree::{ScopePath, fold_name};
 
 use crate::check::validate;
 use crate::cli;
 use crate::compile;
+use crate::messages::{Code, tool_message};
 use crate::reader::{self, ExportSource, SourceKind};
 use crate::validation::{CheckedSource, KitMenu};
 
-/// What a check's thread hands back: the rows and the DpFileList findings, or the text of
+/// What a check's thread hands back: the rows and the run-scoped findings, or the text of
 /// the `error:` line that refused it.
 type Outcome = Result<(Vec<Row>, Vec<Message>), String>;
 
@@ -43,12 +44,13 @@ pub(crate) enum Polled {
     Refused(String),
 }
 
-/// The grid's check: the rows of the last check that ended and its DpFileList findings,
+/// The grid's check: the rows of the last check that ended and its run-scoped findings,
 /// and the check in flight.
 #[derive(Default)]
 pub(crate) struct LiveCheck {
     rows: Vec<Row>,
-    /// The findings about the game's `DpFileList.bin` `rows`' check made.
+    /// The findings `rows`' check made about the run rather than one export: a skipped
+    /// `.upgrading` staging folder's, `no_exports_found`, and the game's `DpFileList.bin`'s.
     list: Vec<Message>,
     running: Option<JoinHandle<Outcome>>,
     /// A check was asked for while one ran: it starts once that one ends, and the ended
@@ -112,28 +114,49 @@ impl LiveCheck {
         &self.rows
     }
 
-    /// The last check's findings about the game's `DpFileList.bin` (`compile::list_findings`
-    /// as a normal compile's preflight makes them); a refused check keeps the last ones.
+    /// The last check's findings about the run rather than one export: a skipped
+    /// `.upgrading` staging folder's `export_upgrade_unfinished` and `no_exports_found`, as
+    /// `check` reports them, then the findings about the game's `DpFileList.bin`
+    /// (`compile::list_findings` as a normal compile's preflight makes them); a refused
+    /// check keeps the last ones.
     pub(crate) fn list_findings(&self) -> &[Message] {
         &self.list
     }
 }
 
 /// The check a thread runs: `check` with no arguments, its preflight included, each export's
-/// outcome made a row, and the findings about the game's `DpFileList.bin` a normal compile's
-/// preflight would report.
+/// outcome made a row, and the findings about the run rather than one export (the
+/// `.upgrading` staging folders' and the validate pass's, as `check` reports them, then the
+/// `DpFileList.bin` ones a normal compile's preflight would report).
 fn check_rows(ctx: &ToolContext) -> Outcome {
     let inputs = cli::check_inputs(ctx).map_err(|error| error.to_string())?;
     let discovery = reader::discover(&inputs.exports_root, &inputs.exports)
         .map_err(|error| format!("{error:#}"))?;
     let referees = discovery.sources.iter().any(ExportSource::is_referees);
+    let mut list: Vec<Message> = discovery
+        .skipped
+        .iter()
+        .map(|path| {
+            tool_message(
+                Code::ExportUpgradeUnfinished,
+                Scope::Run,
+                Disposition::Keep,
+                vec![("path", path.display().to_string())],
+            )
+        })
+        .collect();
     let pass = validate(&inputs, discovery.sources).map_err(|error| format!("{error:#}"))?;
+    list.extend(pass.run_messages);
     let rows = pass
         .sources
         .into_iter()
         .map(|checked| export_row(checked, &inputs.teams_list))
         .collect();
-    let list = compile::list_findings(&inputs, referees, ctx.paths().data_dir.as_deref());
+    list.extend(compile::list_findings(
+        &inputs,
+        referees,
+        ctx.paths().data_dir.as_deref(),
+    ));
     Ok((rows, list))
 }
 
@@ -177,6 +200,11 @@ fn export_row(checked: CheckedSource, teams_list: &TeamsList) -> Row {
     let referee = source.is_referees();
     let disk = Disk {
         path: &source.path,
+        files: checked
+            .parsed
+            .as_ref()
+            .map(|parsed| listed_files(&parsed.draft).collect())
+            .unwrap_or_default(),
         archive: match source.kind {
             SourceKind::Folder => false,
             SourceKind::Zip | SourceKind::SevenZ => true,
@@ -213,7 +241,7 @@ fn export_row(checked: CheckedSource, teams_list: &TeamsList) -> Row {
         .as_ref()
         .and_then(|team| teams_list.id_of(team))
     {
-        _ if referee => IdCell::Blank,
+        _ if source.team_name.as_ref().is_some_and(TeamName::is_reserved) => IdCell::Blank,
         Some(id) => IdCell::Known(id.get().to_string()),
         None => IdCell::Missing,
     };
@@ -274,6 +302,9 @@ fn export_row(checked: CheckedSource, teams_list: &TeamsList) -> Row {
 struct Disk<'a> {
     /// The export's folder or archive.
     path: &'a Path,
+    /// The export's files as its listing gives them, which a flattened layer's folders are
+    /// found on disk through.
+    files: Vec<&'a FileDescriptor>,
     /// Whether it is an archive, whose folders have no place of their own on disk.
     archive: bool,
     /// Whether its cells draw the partial-ok ("Shallow check done (archive)") state: a
@@ -293,14 +324,30 @@ impl Disk<'_> {
     }
 
     /// What opens `folder`, a folder inside the export, or `None` for a cell with none. Any
-    /// cell of an archive opens the archive's own folder, the archive selected.
+    /// cell of an archive opens the archive's own folder, the archive selected. Under a
+    /// layer the listing flattened (a wrapper folder, a doubled content folder), the
+    /// folder's own path names nothing on disk: the first file the listing has inside it
+    /// gives the place, its path's segments past the folder's dropped. A folder holding no
+    /// file is opened as it was named.
     fn open(&self, folder: Option<&ScopePath>) -> Option<Open> {
         if self.archive {
             return Some(self.root());
         }
+        let folder = folder?;
         let mut path = self.path.to_owned();
-        for segment in folder?.segments() {
-            path.push(segment);
+        if let Some(file) = self.files.iter().find(|file| within(&file.path, folder)) {
+            let past_folder = file.path.segments().count() - folder.segments().count();
+            for segment in file
+                .source
+                .segments()
+                .take(file.source.segments().count() - past_folder)
+            {
+                path.push(segment);
+            }
+        } else {
+            for segment in folder.segments() {
+                path.push(segment);
+            }
         }
         Some(Open::Folder(path))
     }
@@ -354,7 +401,7 @@ struct Layout {
     players: Vec<(ScopePath, Vec<u8>)>,
     /// Each kit's folder.
     kits: Vec<(KitSlot, ScopePath)>,
-    /// How many players have a portrait; `None` when the row has no portraits cell.
+    /// How many player slots have a portrait; `None` when the row has no portraits cell.
     portraits: Option<usize>,
     /// The export's `Portraits/` folder, as its listing spells it; `None` without one.
     portraits_folder: Option<ScopePath>,
@@ -436,13 +483,17 @@ fn resolved_layout(resolved: &ResolvedAestheticsExport) -> Layout {
 /// `kept`, a validated export's layout, with the folders a finding dropped from it added
 /// from `listed`, its listing's layout: each at the slots its listing gives it that no kept
 /// folder holds. A dropped folder keeps its cell, so its finding colours its own player or
-/// kit rather than the label. The portraits count is `listed`'s: a dropped folder's
-/// portrait is still in the export, and the portraits cell counts the players that have
-/// one, as it does for an export dropped whole (`draft_layout`). The pictures stay `kept`'s,
-/// the files the compile packs.
+/// kit rather than the label. A kept kit folder that is no folder of the export is left out
+/// first: a `Full` export is given an empty `Kits/p1` or `Kits/g1` where no kit of the kind
+/// survived, and it would hold the slot the dropped folder's cell belongs on. The portraits
+/// count is `listed`'s: a dropped folder's portrait is still in the export, and the
+/// portraits cell counts the players that have one, as it does for an export dropped whole
+/// (`draft_layout`). The pictures stay `kept`'s, the files the compile packs.
 fn with_dropped(mut kept: Layout, listed: Layout) -> Layout {
     kept.portraits = listed.portraits;
     kept.portraits_folder = listed.portraits_folder;
+    let listed_kits: BTreeSet<&ScopePath> = listed.kits.iter().map(|(_, folder)| folder).collect();
+    kept.kits.retain(|(_, folder)| listed_kits.contains(folder));
     let taken: BTreeSet<u8> = kept
         .players
         .iter()
@@ -514,11 +565,15 @@ fn draft_layout(parsed: &ParsedAestheticsExport) -> Layout {
                 .map(move |slot| (&draft.players[*index], *slot))
         })
         .collect();
+    // Two folders claiming one slot still draw one cell and still count it once: the count
+    // is of the slots that have a portrait.
     let portraits = (!referee).then(|| {
         at_slots
             .iter()
             .filter(|(folder, slot)| draft_portrait(parsed, folder, *slot).is_some())
-            .count()
+            .map(|(_, slot)| *slot)
+            .collect::<BTreeSet<u8>>()
+            .len()
     });
     let portrait_files = at_slots
         .iter()
@@ -653,6 +708,23 @@ fn draft_portrait<'a>(
             .find(|file| folder_slot(stem(file.path.name())).map(PlayerSlot::get) == Some(slot))
     };
     in_folder.or_else(in_portraits)
+}
+
+/// Every file `draft`'s listing holds, whatever folder holds it: `Disk` finds a folder's
+/// place on disk through their `source` paths.
+fn listed_files(draft: &AestheticsExportDraft) -> impl Iterator<Item = &FileDescriptor> {
+    draft
+        .root_files
+        .iter()
+        .chain(&draft.stray_files)
+        .chain(&draft.portraits)
+        .chain(&draft.collars)
+        .chain(&draft.common)
+        .chain(draft.players.iter().flat_map(|folder| &folder.files))
+        .chain(draft.faces.iter().flat_map(|folder| &folder.files))
+        .chain(draft.boots.iter().flat_map(|folder| &folder.files))
+        .chain(draft.gloves.iter().flat_map(|folder| &folder.files))
+        .chain(draft.kits.iter().flat_map(|folder| &folder.files))
 }
 
 /// A file name without its extension.
