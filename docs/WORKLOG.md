@@ -148,8 +148,9 @@ draft checked, for the maintainer to publish; running sidekicks and jobs are not
        decisions went to `maintainer/ui_decisions.html`, all kept, the empty archive boxes
        for `.7z` only. A `.7z`'s pictures wait for the watcher-and-cache slice
      - [ ] 1b-iii: a `.zip` export's pictures read from the zip, each from its own entry
-       (TC-GUI-31's zip clause; DECISIONS 2026-11-23). Small, SWE-2, briefed once 1c-i
-       merges, since both touch `view/`
+       (TC-GUI-31's zip clause; DECISIONS 2026-11-23). SWE-2, `sk/zip_pictures`, running,
+       beside 1c-ii and kept out of `export_grid`: once both merge, the lead makes
+       `PictureFile`'s doc say its `export` may be the `.zip`
    - [ ] 1c: the toolbar's strip and its counts, the log's lines linked to cells, the log
      collapsed when it would hide rows, the Upgrade DpFileList button → verify: TC-GUI-15,
      26, 27, 33. The pure move of the
