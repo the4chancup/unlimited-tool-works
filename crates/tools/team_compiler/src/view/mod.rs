@@ -199,6 +199,10 @@ pub(crate) fn show(
         detail.log_start_decided = true;
         if grid.overflows {
             panel.collapse();
+            // The log and the toolbar were already drawn open this frame, so the collapse
+            // asks for the next one itself: the grid's scroll bar, appearing on this same
+            // frame, asks too today, but nothing ties the two together.
+            ui.ctx().request_repaint();
         }
     }
     if let Some(code) = grid.help {

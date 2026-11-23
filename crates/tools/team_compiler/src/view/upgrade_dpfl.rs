@@ -78,11 +78,18 @@ impl DpflDialog {
                 }
                 if !preview.renames.is_empty() {
                     gap(ui);
-                    ui.label(format!(
-                        "Renamed to their official names, so the game keeps loading \
-                         them ({}):",
-                        preview.renames.len()
-                    ));
+                    if preview.renames.len() == 1 {
+                        ui.label(
+                            "Renamed to its official name, so the game keeps loading \
+                             it (1):",
+                        );
+                    } else {
+                        ui.label(format!(
+                            "Renamed to their official names, so the game keeps loading \
+                             them ({}):",
+                            preview.renames.len()
+                        ));
+                    }
                     renames_list(ui, &preview.renames);
                 }
                 if preview.placeholders > 0 {
@@ -186,6 +193,7 @@ fn renames_list(ui: &mut egui::Ui, renames: &[(String, String)]) {
     list_box(ui, |ui| {
         renames_row(ui, column, "Current name", "Official name", false);
         egui::ScrollArea::vertical()
+            .id_salt("renames")
             .max_height(LIST_HEIGHT - header)
             .auto_shrink([false, true])
             .show(ui, |ui| {
@@ -228,6 +236,7 @@ fn dropped_list(
 ) {
     list_box(ui, |ui| {
         egui::ScrollArea::vertical()
+            .id_salt("dropped")
             .max_height(LIST_HEIGHT)
             .auto_shrink([false, true])
             .show(ui, |ui| {

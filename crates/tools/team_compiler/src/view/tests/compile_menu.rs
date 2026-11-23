@@ -199,12 +199,23 @@ fn a_picked_mode_reaches_the_run_through_the_tool() {
         tool.run_log.texts().last().copied(),
         Some("Run finished with exit code 0")
     );
+
+    // The mode lasted the session alone: a fresh tool over the same context draws the
+    // main part as "Compile", the mode not a saved one.
+    let mut fresh = Tool::new();
+    let (_, nodes) = window.frame(Vec::new(), |ui| fresh.view(ui, &ctx));
+    assert!(
+        labeled(&nodes, "Compile") && !labeled(&nodes, "Test output"),
+        "a fresh tool's main part reads Compile"
+    );
+    finish_check(&mut fresh, &ctx);
 }
 
 // TC-GUI-11
 #[test]
-fn sideloading_is_off_on_pes_2016_and_on_on_later_ones() {
+fn sideloading_is_off_on_pes_2015_and_2016_and_on_later_ones() {
     for (version, disabled) in [
+        (PesVersion::Pes15, true),
         (PesVersion::Pes16, true),
         (PesVersion::Pes17, false),
         (PesVersion::Pes21, false),
@@ -289,6 +300,17 @@ fn an_outdated_list_blocks_the_normal_mode_alone() {
     assert!(
         !button(&nodes, "Compile for sideloading").is_disabled(),
         "the sideload mode installs no CPK, so it stays enabled"
+    );
+
+    let nodes = click_labeled(&mut window, &nodes, ARROW, &mut tool, &ctx);
+    let nodes = click_labeled(&mut window, &nodes, "Test output", &mut tool, &ctx);
+    assert!(
+        !labeled(&nodes, "Open output folder"),
+        "the pick closed the menu"
+    );
+    assert!(
+        !button(&nodes, "Test output").is_disabled(),
+        "the test mode installs no CPK, so it stays enabled"
     );
 }
 

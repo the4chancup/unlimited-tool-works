@@ -418,39 +418,32 @@ fn the_dialog_s_cancel_writes_nothing() {
 }
 
 // TC-GUI-33
+// The dialog's Upgrade acts in the install its preview was made for, not the one the
+// settings name by the click's frame (they may have changed while the dialog was open):
+// the preview's folder is what the outcome carries.
 #[test]
 fn the_upgrade_acts_in_the_install_its_dialog_previewed() {
-    // Two installs, the same old list on each; the PES folder is switched to the second
-    // in the frame of the Upgrade click.
-    let (temp, other, ctx, settings) =
-        two_installs("view_dpfl_switched", &pes17_list(), &pes17_list());
+    let temp = sandbox("view_dpfl_switched");
     let root = temp.path();
-    let mut tool = Tool::new();
-    let mut window = Headless::new();
-    let nodes = open_dialog(&mut tool, &ctx, &mut window);
+    install(root, 2017, &pes17_list(), None);
+    let ctx = tool_context_at(root, PesVersion::Pes17);
     let download = root.join("PES/download");
-    let other_download = other.path().join("PES/download");
-    let before = snapshot(&other_download);
-    let expected = upgrade_leaves(&download, &BTreeSet::new(), &ctx);
+    let preview = upgrade::preview(&download, &ctx).unwrap();
+    let mut dialog = DpflDialog::new(preview, download.clone());
+    let mut window = Headless::new();
+    let mut nodes = Vec::new();
+    for _ in 0..3 {
+        nodes = window.frame(Vec::new(), |ui| dialog.show(ui)).1;
+    }
 
-    // The folder the preview was made for is the one the upgrade acts in, not the one
-    // the settings name by the click's frame.
     let at = centre(button(&nodes, "Upgrade"));
-    window.frame(press(at), |ui| tool.view(ui, &ctx));
-    window.frame(release(at), |ui| {
-        set_pes_folder(&settings, &other.path().join("PES"));
-        tool.view(ui, &ctx)
-    });
-    poll_until_done(|| {
-        tool.tick(&ctx);
-        tool.run_log.is_running()
-    });
-    assert_eq!(snapshot(&download), expected, "the previewed install's");
-    assert_eq!(
-        snapshot(&other_download),
-        before,
-        "the switched-to install's, unchanged"
-    );
+    window.frame(press(at), |ui| dialog.show(ui));
+    let (outcome, _) = window.frame(release(at), |ui| dialog.show(ui));
+    let Outcome::Upgrade(acted, delete) = outcome else {
+        panic!("the Upgrade click made the upgrade's outcome")
+    };
+    assert_eq!(acted, download, "the preview's download, not re-resolved");
+    assert!(delete.is_empty(), "no box ticked, nothing deleted");
 }
 
 // A preview describes the install it was made for: a settings change while the dialog is
@@ -469,6 +462,27 @@ fn a_settings_change_closes_the_dialog() {
         tool.detail.dpfl_dialog.is_none(),
         "the settings change closed the dialog"
     );
+}
+
+// The shell may switch the install between the tool's `tick` and its `view` in the same
+// frame (to a game that started running): `view` compares the settings again where it
+// draws, closing the dialog and starting the check in that frame, not a `tick` later.
+#[test]
+fn a_settings_change_since_the_last_tick_closes_the_dialog_in_view() {
+    let (_temp, other, ctx, settings) =
+        two_installs("view_dpfl_close_in_view", &pes17_list(), &pes17_list());
+    let mut tool = Tool::new();
+    let mut window = Headless::new();
+    open_dialog(&mut tool, &ctx, &mut window);
+
+    set_pes_folder(&settings, &other.path().join("PES"));
+    window.frame(Vec::new(), |ui| tool.view(ui, &ctx));
+    assert!(
+        tool.detail.dpfl_dialog.is_none(),
+        "the settings change since the last tick closed the dialog in the drawn frame"
+    );
+    assert!(tool.live_check.is_running(), "and a check runs from it");
+    finish_check(&mut tool, &ctx);
 }
 
 #[test]
@@ -705,16 +719,41 @@ fn a_preview_that_cannot_be_made_is_a_log_line_and_no_dialog() {
     assert!(labeled(&nodes, "Upgrade DpFileList"), "the button stays");
 }
 
-/// A `DpflDialog` over `preview`, drawn for three frames (a fresh modal's first is a
-/// sizing pass): the last frame's nodes.
-fn dialog_nodes(preview: Preview) -> Vec<accesskit::Node> {
+/// A `DpflDialog` over `preview` drawn in a `Headless`, each of `frames`' event lists one
+/// frame (a fresh modal's first is a sizing pass): the dialog, the window and the last
+/// frame's nodes, for a test that acts past the setup.
+fn dialog_window(
+    preview: Preview,
+    frames: &[Vec<egui::Event>],
+) -> (DpflDialog, Headless, Vec<accesskit::Node>) {
     let mut dialog = DpflDialog::new(preview, PathBuf::from("download"));
     let mut window = Headless::new();
     let mut nodes = Vec::new();
-    for _ in 0..3 {
-        nodes = window.frame(Vec::new(), |ui| dialog.show(ui)).1;
+    for events in frames {
+        nodes = window.frame(events.clone(), |ui| dialog.show(ui)).1;
     }
-    nodes
+    (dialog, window, nodes)
+}
+
+/// A `DpflDialog` over `preview`, drawn for three frames (a fresh modal's first is a
+/// sizing pass): the last frame's nodes.
+fn dialog_nodes(preview: Preview) -> Vec<accesskit::Node> {
+    dialog_window(preview, &[Vec::new(), Vec::new(), Vec::new()]).2
+}
+
+/// The wheel turned down `delta` points at `at`: the pointer there, so the scroll goes to
+/// what is under it, then the wheel.
+fn wheel_down(at: egui::Pos2, delta: f32) -> Vec<egui::Event> {
+    vec![
+        egui::Event::PointerMoved(at),
+        egui::Event::MouseWheel {
+            unit: egui::MouseWheelUnit::Point,
+            delta: egui::vec2(0.0, -delta),
+            phase: egui::TouchPhase::Move,
+            source: egui::MouseWheelSource::Wheel,
+            modifiers: egui::Modifiers::NONE,
+        },
+    ]
 }
 
 #[test]
@@ -732,7 +771,7 @@ fn a_part_whose_count_is_zero_is_left_out_and_a_dropped_entry_without_a_file_has
     let nodes = dialog_nodes(preview);
     assert!(shows_text(
         &nodes,
-        "Renamed to their official names, so the game keeps loading them (1):"
+        "Renamed to its official name, so the game keeps loading it (1):"
     ));
     assert!(
         !nodes.iter().any(|node| node
@@ -806,6 +845,32 @@ fn the_dropped_sentence_asks_for_a_tick_only_over_boxes() {
             .any(|node| { node.value().is_some_and(|text| text.contains("Tick")) }),
         "no tick asked over no box"
     );
+}
+
+// One rename is renamed "to its official name"; two or more to theirs.
+#[test]
+fn the_renames_sentence_is_singular_for_one() {
+    for (count, expected) in [
+        (
+            1,
+            "Renamed to its official name, so the game keeps loading it (1):",
+        ),
+        (
+            2,
+            "Renamed to their official names, so the game keeps loading them (2):",
+        ),
+    ] {
+        let nodes = dialog_nodes(Preview {
+            renames: (1..=count)
+                .map(|n| (format!("name_{n}.cpk"), format!("official_{n}.cpk")))
+                .collect(),
+            placeholders: 0,
+            dropped: Vec::new(),
+            up_to_date: false,
+            replaces_list: true,
+        });
+        assert!(shows_text(&nodes, expected), "{count}");
+    }
 }
 
 // One placeholder is "the official CPK with no file"; two or more are counted.
@@ -947,6 +1012,61 @@ fn the_dropped_list_names_draw_in_the_monospace_font() {
                 .collect::<Vec<_>>()
         );
     }
+}
+
+// The two lists sit in `list_box`es under the dialog's one parent: each scrolls on its
+// own, or the shorter dropped list would clamp the renames' offset back to the top.
+#[test]
+fn the_renames_list_scrolls_to_its_last_row() {
+    // 13 renames overflow `LIST_HEIGHT`; 5 dropped entries fit inside it.
+    let preview = Preview {
+        renames: (1..=13)
+            .map(|n| (format!("name_{n}.cpk"), format!("official_{n}.cpk")))
+            .collect(),
+        placeholders: 0,
+        dropped: (1..=5)
+            .map(|n| (format!("dropped_{n}.cpk"), Some(6272)))
+            .collect(),
+        up_to_date: false,
+        replaces_list: true,
+    };
+    let (mut dialog, mut window, nodes) =
+        dialog_window(preview, &[Vec::new(), Vec::new(), Vec::new()]);
+    // The renames list's box: the extreme-background rect the header row sits in.
+    let header = cell_rect(&nodes, "Current name");
+    let background = window
+        .ctx
+        .style_of(window.ctx.theme())
+        .visuals
+        .extreme_bg_color;
+    let renames_box = window
+        .shapes
+        .iter()
+        .filter_map(|clipped| match &clipped.shape {
+            egui::Shape::Rect(shape) if shape.fill == background => Some(shape.rect),
+            _ => None,
+        })
+        .find(|rect| rect.contains(header.center()))
+        .expect("the renames list's box");
+    let last = cell_rect(&nodes, "name_13.cpk");
+    assert!(
+        !renames_box.contains(last.center()),
+        "premise: the thirteenth rename overflows the box: {last:?} vs {renames_box:?}"
+    );
+
+    // Ten wheel steps of 80 points cover the ~130 points of overflow with margin, even
+    // spread over frames as egui's smooth scroll delivers them.
+    let at = egui::pos2(renames_box.center().x, renames_box.bottom() - 10.0);
+    let mut nodes = nodes;
+    for _ in 0..10 {
+        nodes = window.frame(wheel_down(at, 80.0), |ui| dialog.show(ui)).1;
+    }
+    let last = cell_rect(&nodes, "name_13.cpk");
+    assert!(
+        renames_box.contains(last.center()),
+        "the last rename is drawn inside the list's box once scrolled: \
+         {last:?} vs {renames_box:?}"
+    );
 }
 
 /// The `Shape::Text` whose galley is exactly `text`.
