@@ -252,7 +252,11 @@ draft checked, for the maintainer to publish; running sidekicks and jobs are not
      draft text: the dialog's counts at one and the archive tooltip. Its fixes are two SWE-2
      slices, both merged: G5a (`export_grid`'s detail window, the upward menu's test),
      `daab1034`, and G5b (`team_compiler`: the log, the dialog, the help links, the
-     citations), `51cab105`. Due: their SWE-2 loop, then Carbon round 4
+     citations), `51cab105`. SWE-2's round over the two, 2026-11-23 (rulings "S-g5a r1",
+     "S-g5b r1"): 6 accepted, one of reach (a) (Esc with the Compile mode menu open closes
+     the menu and unpins the window), which ends the loop. The lead's fixes: the gate's ID
+     lists `53dd5466`, TC-GUI-24 and a doc `9aebb45f`; the rest is slice G6 (SWE-2),
+     merged `53d501f4`. Due: Carbon round 4 over the grid
    - [ ] The Compile button's mode list, Open output folder and Copy report (TC-GUI-11, and
      TC-GUI-33's clause that Compile for sideloading stays enabled while the DpFileList is
      outdated; DECISIONS 2026-11-23 "the Compile menu's Copy report copies the whole log").
