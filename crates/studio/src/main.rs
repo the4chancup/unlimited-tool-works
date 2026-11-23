@@ -1116,4 +1116,43 @@ mod tests {
         assert_eq!(code, 2);
         assert!(text.starts_with("error: "), "{text}");
     }
+
+    // UTW_WRITE_DRAFT_HELP is the recipe's write mode: `just draft-help` reruns the test with it set.
+    #[test]
+    fn the_draft_help_file_is_the_builds_help() {
+        let expected = studio_core::help::draft_script(&tools());
+        let file = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../docs/prototypes/help.js");
+        if std::env::var_os("UTW_WRITE_DRAFT_HELP").is_some() {
+            let tmp = file.with_extension("js.tmp");
+            fs::write(&tmp, &expected).unwrap();
+            fs::rename(&tmp, &file).unwrap();
+            return;
+        }
+        let actual = fs::read_to_string(&file).unwrap_or_else(|error| {
+            panic!(
+                "{} cannot be read ({error}); `just draft-help` writes it",
+                file.display()
+            )
+        });
+        let actual_lines: Vec<&str> = actual.lines().collect();
+        let expected_lines: Vec<&str> = expected.lines().collect();
+        for index in 0..actual_lines.len().max(expected_lines.len()) {
+            let in_file = actual_lines.get(index).copied().unwrap_or("<absent>");
+            let in_build = expected_lines.get(index).copied().unwrap_or("<absent>");
+            if in_file != in_build {
+                panic!(
+                    "{} differs from the build's help at line {}; `just draft-help` writes \
+                     it again\n  the file: {in_file}\n  the build: {in_build}",
+                    file.display(),
+                    index + 1
+                );
+            }
+        }
+        // The lines match, so only their ends can differ: `lines()` reads CRLF as LF.
+        assert!(
+            actual == expected,
+            "{} differs from the build's help in its line ends; `just draft-help` writes it again",
+            file.display()
+        );
+    }
 }

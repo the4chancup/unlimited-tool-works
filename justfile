@@ -205,6 +205,14 @@ crate-map:
 roadmap:
     {{python}} scripts/roadmap.py
 
+# docs/prototypes/help.js, the drafts' copy of the build's help, written again from the
+# build (a test in `studio` fails while it differs)
+[script("python")]
+draft-help:
+    import os, subprocess, sys
+    env = {**os.environ, "UTW_WRITE_DRAFT_HELP": "1"}
+    sys.exit(subprocess.run(["just", "cargo", "test", "-p", "studio", "--bin", "utw", "draft_help"], env=env).returncode)
+
 # The census index of the real exports' textures and FMDL texture references, brought up to date
 # (.census/index.sqlite; queries: scripts/census/README.md)
 census-index *args:
