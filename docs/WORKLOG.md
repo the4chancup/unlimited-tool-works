@@ -250,9 +250,9 @@ draft checked, for the maintainer to publish; running sidekicks and jobs are not
      the hidden detail window, a double-click under the window opens nothing, Help opens
      behind it, a refused check's line stays in the log), so a round 4 is owed. The lead's
      draft text: the dialog's counts at one and the archive tooltip. Its fixes are two SWE-2
-     slices: G5a (`export_grid`'s detail window, the upward menu's test) and G5b
-     (`team_compiler`: the log, the dialog, the help links, the citations); then their SWE-2
-     loop, then Carbon round 4
+     slices: G5a (`export_grid`'s detail window, the upward menu's test), running, and G5b
+     (`team_compiler`: the log, the dialog, the help links, the citations), merged
+     `51cab105`; then their SWE-2 loop, then Carbon round 4
    - [ ] The Compile button's mode list, Open output folder and Copy report (TC-GUI-11, and
      TC-GUI-33's clause that Compile for sideloading stays enabled while the DpFileList is
      outdated; DECISIONS 2026-11-23 "the Compile menu's Copy report copies the whole log").
@@ -3916,11 +3916,12 @@ points there.
   `rect_stroke` (0 allowed: a square rectangle) also flags the dock's grip,
   `studio_core/src/widgets/dock.rs` `paint_grip`, painted with 1.0: that grip's radius wants a
   look against its draft first, then the gate's change.
-- open (2026-11-23) — `just acceptance` counts a citation only on a line holding scenario IDs
-  alone, and says nothing of `// TC-GUI-10: prose` directly above `#[test]`: six such lines in
-  `team_compiler/src/view/tests/` went uncounted (Carbon "C-grid3-7"). Once slice G5b moves
-  their prose, the gate reports a comment block directly above `#[test]` whose line starts
-  with a scenario ID and carries more than IDs.
+- resolved (2026-11-23) — `just acceptance` counted a citation only on a line holding
+  scenario IDs alone, and said nothing of `// TC-GUI-10: prose` directly above `#[test]`
+  (Carbon "C-grid3-7"). Since `51cab105` the gate fails a line of the comment block above a
+  `#[test]` that starts with IDs and a colon. The 41 such lines (G5b's six, and 35 more the
+  gate found across the workspace) now carry their IDs on a line of their own, which proved
+  TC-GUI-10 and SE-GUI-91.
 - resolved (2026-11-23) — the checkpoint on `6c8efed2` failed in `studio_core`'s
   `no_source_file_passes_a_number_as_a_corner_radius` (ST-CORNER-01): 1c-iii-b's dialog
   (`team_compiler/src/view/upgrade_dpfl.rs`, `list_box`) writes `CornerRadius::same(2)`. The
