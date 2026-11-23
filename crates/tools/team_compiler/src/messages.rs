@@ -1469,6 +1469,26 @@ mod tests {
         }
     }
 
+    // The findings the DpFileList upgrade remedies name the upgrade both ways in their
+    // Effect: the toolbar's button and the command.
+    #[test]
+    fn the_dpfilelist_effects_name_the_button_and_the_command() {
+        for code in [
+            "dpfilelist_not_official",
+            "dpfilelist_cpk_missing",
+            "dpfilelist_outdated",
+        ] {
+            let effect = CATALOG
+                .iter()
+                .find(|row| row.0 == code)
+                .unwrap_or_else(|| panic!("no row {code}"))
+                .3;
+            assert!(effect.contains("Upgrade DpFileList"), "{code}: {effect}");
+            let command = format!("`{} compiler upgrade-dpfl`", studio_core::exe_name!());
+            assert!(effect.contains(&command), "{code}: {effect}");
+        }
+    }
+
     #[test]
     fn the_help_chapter_lists_the_whole_catalog_in_order() {
         use studio_core::StudioTool;

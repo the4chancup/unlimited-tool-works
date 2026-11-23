@@ -410,8 +410,9 @@ struct Layout {
     /// compile packs no portrait or kit file, so `portrait_files` and `kit_textures`
     /// stay empty.
     referee: bool,
-    /// Each player slot's portrait, the one the compile packs: his folder's own, else his
-    /// `Portraits/` file.
+    /// Each slot's portrait, the one the compile packs: the portrait in the player's folder
+    /// when he has one, else the slot's `Portraits/` file, a slot with no player folder
+    /// included.
     portrait_files: BTreeMap<u8, FileDescriptor>,
     /// Each kit's main texture.
     kit_textures: BTreeMap<KitSlot, FileDescriptor>,
@@ -440,6 +441,11 @@ fn resolved_layout(resolved: &ResolvedAestheticsExport) -> Layout {
     }
     let mut portrait_files = BTreeMap::new();
     if !referee {
+        // A `Portraits/` file is packed for its slot whether a folder backs it or not, so
+        // the tiles seed from them all; a player's own portrait then keeps its slot's.
+        for (slot, file) in &export.portraits {
+            portrait_files.insert(slot.get(), file.clone());
+        }
         for (index, slots) in &slots {
             for slot in slots {
                 let in_portraits = || {
@@ -582,12 +588,21 @@ fn draft_layout(parsed: &ParsedAestheticsExport) -> Layout {
     let portrait_files = if referee {
         BTreeMap::new()
     } else {
-        at_slots
-            .iter()
-            .filter_map(|(folder, slot)| {
-                Some((*slot, draft_portrait(parsed, folder, *slot)?.clone()))
-            })
-            .collect()
+        // As `resolved_layout`: the `Portraits/` files seed the tiles, the first claimant
+        // of a slot kept as `draft_portrait`'s match keeps it, and each folder's own
+        // portrait then takes its slot's tile.
+        let mut files = BTreeMap::new();
+        for file in &draft.portraits {
+            if let Some(slot) = folder_slot(stem(file.path.name())) {
+                files.entry(slot.get()).or_insert_with(|| file.clone());
+            }
+        }
+        for (folder, slot) in &at_slots {
+            if let Some(file) = draft_portrait(parsed, folder, *slot) {
+                files.insert(*slot, file.clone());
+            }
+        }
+        files
     };
     let kit_textures = if referee {
         BTreeMap::new()

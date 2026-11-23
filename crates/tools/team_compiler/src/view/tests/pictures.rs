@@ -76,6 +76,67 @@ fn each_cell_s_box_names_the_pictures_the_compile_packs() {
     assert_eq!(portraits(team).unwrap().top, expected);
 }
 
+/// `root`'s `name` export holding the tracer's player as `05 - P` (his `portrait.dds`
+/// inside) and the same texture as `Portraits/07.dds`, a portrait for a slot no folder
+/// backs. Returns the export's folder.
+fn orphan_portrait_export(root: &Path, name: &str) -> PathBuf {
+    add_player(root, name, "05 - P");
+    let export = root.join("exports").join(name);
+    let portrait = fs::read(export.join("Players/05 - P/portrait.dds")).unwrap();
+    add_file(root, &format!("{name}/Portraits/07.dds"), &portrait);
+    export
+}
+
+/// The portraits box's tiles of the `orphan_portrait_export` export: 05's folder portrait
+/// and 07's `Portraits/` file, no logo's tile (the export has none).
+fn orphan_portrait_tiles() -> Vec<Option<&'static str>> {
+    let portrait = |slot: u8| match slot {
+        5 => Some("Players/05 - P/portrait.dds"),
+        7 => Some("Portraits/07.dds"),
+        _ => None,
+    };
+    (1..=23).map(portrait).chain([None]).collect()
+}
+
+// A `Portraits/` file for a slot with no player folder is packed all the same, so the
+// box shows it; the count still counts players alone.
+// TC-GUI-31
+#[test]
+fn the_portraits_box_shows_a_portrait_for_a_slot_with_no_folder() {
+    let temp = sandbox("view_grid_orphan_portrait");
+    let root = temp.path();
+    list_teams(root);
+    let export = orphan_portrait_export(root, "co Midcup Orphan");
+    complete(&export, PesVersion::Pes21, &[]);
+    let rows = checked_rows(root);
+    let team = row(&rows, "/co/");
+    let cell = portraits(team).unwrap();
+    assert_eq!(cell.text, "1/1");
+    assert_eq!(top_paths(&cell.top), orphan_portrait_tiles());
+}
+
+// A slot with a folder portrait and a `Portraits/` file keeps the folder's in the box,
+// as the compile keeps it.
+// TC-GUI-31
+#[test]
+fn the_portraits_box_keeps_the_folder_s_portrait_over_the_slot_s_file() {
+    let temp = sandbox("view_grid_portrait_order");
+    let root = temp.path();
+    list_teams(root);
+    let name = "co Midcup Both";
+    add_player(root, name, "05 - P");
+    let export = root.join("exports").join(name);
+    let portrait = fs::read(export.join("Players/05 - P/portrait.dds")).unwrap();
+    add_file(root, &format!("{name}/Portraits/05.dds"), &portrait);
+    complete(&export, PesVersion::Pes21, &[]);
+    let rows = checked_rows(root);
+    let team = row(&rows, "/co/");
+    let mut expected: Vec<Option<&str>> = vec![None; 23];
+    expected[4] = Some("Players/05 - P/portrait.dds");
+    expected.push(None); // the logo's tile: the export has none
+    assert_eq!(top_paths(&portraits(team).unwrap().top), expected);
+}
+
 /// The `/refs/` row and export folder of a referee export whose `players.txt` gives each
 /// of `referees` its slot (each folder a copy of the tracer's player), holding the kit
 /// folders `kits` and the root files `files`: `logo.png` gets a logo's bytes, any other
@@ -233,6 +294,28 @@ fn a_dropped_export_s_boxes_name_the_pictures_of_its_listing() {
         };
         assert_eq!(player(team, slot).unwrap().top, expected, "{slot}");
     }
+}
+
+// The same `Portraits/` file with no folder behind its slot, in an export the check
+// dropped whole (a team the teams list lacks): the box shows the listing's pictures.
+// TC-GUI-31
+#[test]
+fn a_dropped_export_s_portraits_box_shows_a_portrait_for_a_slot_with_no_folder() {
+    let temp = sandbox("view_grid_dropped_orphan_portrait");
+    let root = temp.path();
+    list_teams(root);
+    orphan_portrait_export(root, "v Midcup Orphan");
+    let rows = checked_rows(root);
+    let team = row(&rows, "/v/");
+    assert_eq!(
+        player(team, 5).unwrap().state,
+        CellState::Blocked,
+        "premise: the check dropped the export"
+    );
+    assert_eq!(
+        top_paths(&portraits(team).unwrap().top),
+        orphan_portrait_tiles()
+    );
 }
 
 // A leftover `logo - Copy.png` is no logo by the grammar and sorts ahead of `logo.png`

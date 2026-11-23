@@ -223,16 +223,10 @@ impl RunLog {
         self.lines.splice(..self.check_len, lines);
         self.check_len = check_len;
         self.cells = cells;
-        self.dpfl = if list
+        self.dpfl = list
             .iter()
-            .any(|message| dpfl_flag(message.code.code.as_ref()) == Some(Dpfl::Outdated))
-        {
-            Dpfl::Outdated
-        } else {
-            list.iter()
-                .find_map(|message| dpfl_flag(message.code.code.as_ref()))
-                .unwrap_or(Dpfl::Official)
-        };
+            .find_map(|message| dpfl_flag(message.code.code.as_ref()))
+            .unwrap_or(Dpfl::Official);
     }
 
     /// Whether a run is in flight.
