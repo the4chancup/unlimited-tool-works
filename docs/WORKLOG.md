@@ -581,8 +581,11 @@ and no phase closes with one outstanding.
   its tests: selection only shortens the tests, so this split bounds the gain. If the tests
   dominate, a trial on one crate: each test's line coverage recorded once (`cargo llvm-cov`),
   each mutant run with only the tests covering its line, against the same mutants run with
-  the full suite. It passes if the caught and missed sets are identical and the time is
-  measured both ways.
+  the full suite, the time measured both ways. Identical caught and missed sets make it a
+  drop-in for every tier. A selection that misses some catches still serves two ways if it is
+  fast enough (the maintainer, 2026-11-23): as a new lowest tier, or as an exact one with its
+  survivors run again on the full suite. A catch under selection is sound (one of its tests
+  failed), so only its survivors can be wrong, and they are few.
 
 ---
 
