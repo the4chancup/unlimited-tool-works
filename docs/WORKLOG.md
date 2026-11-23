@@ -417,8 +417,11 @@ draft checked, for the maintainer to publish; running sidekicks and jobs are not
     named their tier, so their Carbon round was never queued, and four reworks of Carbon's
     round 1 merged without their worklog lines saying so, which left two round 2s looking
     blocked. The first broke RUNBOOK's rule that a step's worklog line names its tier when
-    it lands. Fix: the rulings file's line that ends a loop names the next review owed,
-    and the worklog line is updated in the commit that merges a review's rework.
+    it lands. The rounds had fallen due while the reviewer's usage was short, and a round
+    held for that was noted nowhere the next session reads first. Fixed as three habits of
+    the lead's: the rulings line that ends a loop names the next review owed, a rework's
+    merge updates its worklog line in the commit right after, and a run held for usage is a
+    line of the lead's handover until it runs.
 
 Most open steps below wait only on a check in the game or the built window that the lead's
 harness makes ("Pending looks" below), not on the maintainer.
