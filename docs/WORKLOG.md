@@ -3778,6 +3778,13 @@ pruned when their phase closes; they stay in git history. A question only the ma
 can answer is not an issue: it goes to `docs/maintainer/questions.html`, and an issue that waits on one
 points there.
 
+- open (2026-11-23) — the checkpoint on `6c8efed2` failed in `studio_core`'s
+  `no_source_file_passes_a_number_as_a_corner_radius` (ST-CORNER-01): 1c-iii-b's dialog
+  (`team_compiler/src/view/upgrade_dpfl.rs`, `list_box`) writes `CornerRadius::same(2)`. The
+  scan is a test of `studio_core` that reads every crate's sources, so a slice whose Verify
+  tests only its own crate never runs it, and the lead's rerun of that slice's gates missed it
+  too. Fix: the line takes the theme's radius (with review round S1's fixes); the scan moves
+  into a gate script beside `just colour-literals`, which every brief already runs.
 - open (2026-11-23) — `team_compiler`'s test sandbox (`src/testing.rs` `sandbox`) writes a
   teams list holding `792 /egg/`, a pairing no user sees: the real list
   (`crates/libs/teams_list/data/teams_list.txt`) has 792 as `/END/`, and `/egg/` is not in
