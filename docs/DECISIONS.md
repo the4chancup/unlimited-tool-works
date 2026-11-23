@@ -19847,3 +19847,12 @@ Why: the lead gave the row the edge under the same day's "the selection blue nev
 its edge" entry, and the maintainer kept it. The row is not a button, so it did not need the
 edge, "but it looks good so we should keep it and port it to the build."
 Plan: `plans/core/gui.md` "Control edges".
+
+## 2026-11-23 — core GUI — a dialog's line shown after its action keeps its room while hidden
+Decision: a line a dialog's body shows only once its action is done (Report a problem's "Saved
+to …") keeps its room while hidden: the sentence gap and one line of text. The buttons under
+it then stay where they were when it shows.
+Why: the maintainer, on Report a problem: the dialog "should have a gap below the last line, so
+the 'Saved' line doesn't push the buttons down when it shows up". Close then appears where
+Save… was, under the pointer.
+Plan: `plans/core/gui.md` "Modals" row.

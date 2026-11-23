@@ -2756,7 +2756,9 @@ function drawReport() {
           sample.sessions.map(s => item(s.started + ": opened " + s.opened
             + "; " + (s.wrote ? "wrote at " + s.wrote : "wrote nothing") + "; " + s.ended)))) : null,
       h("div", { style: "margin-top:8px" }, weak("Your user folder is written as ~ in the file's paths.")),
-      r.saved ? h("div", { style: "margin-top:8px" }, "Saved to " + sample.savedTo) : null),
+      // Its room is kept while hidden, so the buttons do not move when it shows.
+      h("div", { style: "margin-top:8px" + (r.saved ? "" : "; visibility:hidden") },
+        "Saved to " + sample.savedTo)),
     r.saved ? [button("Close", closeWindow)]
       : [button("Save…", () => { r.saved = true; render(); }), button("Cancel", closeWindow)],
     "report");
