@@ -191,7 +191,7 @@ and a plan section only the writing session understood are not done, whatever th
 an outcome fails this test, say so and simplify before reporting. (The code half is
 `CONTRIBUTING.md`'s "boring Rust" intent; this is the standard it is accepted on.)
 
-**A snag is a finding.** When a tool, script, step or your own output (a wrong count) fails,
+**Prevention.** When a tool, script, step or your own output (a wrong count) fails,
 misleads or costs time (a retry, a workaround, a step done twice), and when a review concern
 is accepted, step back and ask what change to the work's cycle would remove its
 cause (a brief's line, a skill, a gate), then act: a small fix inside what you may edit is
