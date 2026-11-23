@@ -227,9 +227,13 @@ impl Report {
                         modal_sentence_gap(ui);
                     }
                     ui.weak("Your user folder is written as ~ in the file's paths.");
+                    // The draft's `visibility:hidden` line: its room is kept
+                    // while hidden, so the buttons do not move when it shows.
+                    modal_sentence_gap(ui);
                     if let Some(saved_to) = &self.saved_to {
-                        modal_sentence_gap(ui);
                         ui.label(saved_to.as_str());
+                    } else {
+                        ui.add_visible(false, egui::Label::new("Saved to"));
                     }
                 });
                 // Reading order Save…, Cancel; `modal_buttons` adds them from
