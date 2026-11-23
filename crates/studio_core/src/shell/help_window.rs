@@ -49,6 +49,11 @@ pub(super) struct HelpWindow {
     pending_open: Option<usize>,
     /// A jump scrolls the topic pane once: to the highlight, or to the top without one.
     scroll_pending: bool,
+    /// Set by `open`: the next `show` moves the window's layer to the top. egui raises
+    /// a window only when it first becomes visible or takes a pointer press, so a
+    /// retarget of a window already open would leave it behind the layer the
+    /// retargeting click raised (the detail window, on a finding code's click).
+    raise: bool,
     cache: CommonMarkCache,
 }
 
@@ -76,6 +81,7 @@ impl HelpWindow {
             search: String::new(),
             pending_open: None,
             scroll_pending: false,
+            raise: false,
             cache,
         }
     }
@@ -108,6 +114,7 @@ impl HelpWindow {
         self.search.clear();
         self.pending_open = Some(chapter);
         self.scroll_pending = true;
+        self.raise = true;
     }
 
     /// The extended topic index `slug` names within `chapter` — `messages` counts only
@@ -166,8 +173,12 @@ impl HelpWindow {
         // rect is kept by the window's id afterwards.
         let screen = egui_ctx.content_rect();
         let size = FIRST_SIZE.min((screen.size() * 0.9).round());
+        let id = egui::Id::unique("help-window");
+        if std::mem::take(&mut self.raise) {
+            egui_ctx.move_to_top(egui::LayerId::new(egui::Order::Middle, id));
+        }
         egui::Window::new(crate::theme::window_title_text(HELP_LABEL))
-            .id(egui::Id::unique("help-window"))
+            .id(id)
             .default_rect(egui::Rect::from_center_size(screen.center(), size))
             .collapsible(false)
             .resizable(true)
@@ -1797,6 +1808,92 @@ mod tests {
         assert_eq!(window.showing(), Some(("b", "b-one")));
         window.open(&target("nope"), "zz");
         assert_eq!(window.showing(), Some(("a", "a-one")));
+    }
+
+    // A retarget of a window already open asks for the top again: egui raises a
+    // window on its first frame and on a pointer press, so a window drawn over
+    // it (the grid's detail window, when a finding's code asks for the help)
+    // keeps the top while the help changes target.
+    #[test]
+    fn retargeting_an_open_help_raises_it_over_the_window_above_it() {
+        let egui_ctx = test_context();
+        let mut window = HelpWindow::new(vec![("a", alpha_section())]);
+        let target = |topic: &str| HelpTarget {
+            tool: "a".to_owned(),
+            topic: Some(topic.to_owned()),
+            anchor: None,
+        };
+        let help_layer = egui::LayerId::new(egui::Order::Middle, egui::Id::unique("help-window"));
+        let cover_layer = egui::LayerId::new(egui::Order::Middle, egui::Id::unique("cover"));
+        // The cover is drawn over the help window's lower right: where each of
+        // them stands is read off their areas once drawn.
+        let show = |window: &mut HelpWindow, events: Vec<egui::Event>| {
+            egui_ctx
+                .run_ui(raw_input(events, true, None, None), |ui| {
+                    window.show(ui.ctx());
+                    egui::Window::new("Cover")
+                        .id(egui::Id::unique("cover"))
+                        .fixed_pos(egui::pos2(560.0, 420.0))
+                        .default_size(egui::vec2(300.0, 210.0))
+                        .show(ui.ctx(), |ui| {
+                            ui.label("the window over the help");
+                        });
+                })
+                .drop_without_applying_deltas();
+        };
+        let pointer = |at: egui::Pos2, pressed: bool| {
+            vec![
+                egui::Event::PointerMoved(at),
+                egui::Event::PointerButton {
+                    pos: at,
+                    button: egui::PointerButton::Primary,
+                    pressed,
+                    modifiers: egui::Modifiers::default(),
+                },
+            ]
+        };
+
+        window.open(&target("alpha-start"), "a");
+        show(&mut window, Vec::new());
+        show(&mut window, Vec::new());
+        let rect = |layer: egui::LayerId| {
+            egui::AreaState::load(&egui_ctx, layer.id)
+                .map(|state| state.rect())
+                .expect("the window drew")
+        };
+        let (help_rect, cover_rect) = (rect(help_layer), rect(cover_layer));
+        // A point inside them both, and one on the cover's part the help does
+        // not reach: the two ends of the cover's overlap sliver.
+        let both = help_rect.intersect(cover_rect).center();
+        let bare = egui::pos2(
+            (cover_rect.right() + help_rect.right().max(cover_rect.left())) / 2.0,
+            cover_rect.center().y,
+        );
+        assert!(
+            help_rect.contains(both)
+                && cover_rect.contains(both)
+                && !help_rect.contains(bare)
+                && cover_rect.contains(bare),
+            "premise: the windows share {both:?}, the cover alone holds {bare:?}: \
+             {help_rect:?} {cover_rect:?}"
+        );
+
+        // The cover keeps the top where the windows overlap, as the detail
+        // window does on a finding code's click.
+        show(&mut window, pointer(both, true));
+        show(&mut window, pointer(both, false));
+        assert_eq!(egui_ctx.layer_id_at(both), Some(cover_layer), "premise");
+
+        // A second `open` retargets the window: the help comes back to the top.
+        window.open(&target("alpha-more"), "a");
+        show(&mut window, Vec::new());
+        assert_eq!(egui_ctx.layer_id_at(both), Some(help_layer));
+
+        // It is not raised on every frame: a click on the cover's own part puts
+        // the cover back on top.
+        show(&mut window, pointer(bare, true));
+        show(&mut window, pointer(bare, false));
+        assert_eq!(egui_ctx.layer_id_at(both), Some(cover_layer));
     }
 
     /// `beta_section` with 60 catalog rows: a Messages table longer than the pane,
