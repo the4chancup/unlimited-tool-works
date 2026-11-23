@@ -6,7 +6,10 @@ half would block in-game checks and restarts here, and a power cut would lose
 it. The run refuses without a host, and for a crate in `LOCAL_ONLY_CRATES`
 (its builds outgrow the remote's memory cap). The extra kinds (`EXTRA_KINDS`)
 run there too, in the same service before cargo-mutants (`--remote-extra`),
-their results fetched with the rest. The run waits for its remote half holding
+their results fetched with the rest. `just extra-mutants-remote <crate>`
+(`--extra-only`) runs the extra kinds alone the same way — a kind's backfill
+over the crates measures for days of its own — its results into
+`extra_mutants.out/remote/`. The run waits for its remote half holding
 no run lock — the launch, and the fetch and summary, each take it — so
 `just mutants-diff` runs meanwhile; it runs on this machine whole while the
 remote is busy (`mutants_diff.py`).
@@ -694,8 +697,9 @@ def remote_refusal(host: str) -> str | None:
 
 def remote_pending() -> Path:
     """`.tmp/mutants-remote-pending`, holding a JSON record of a remote half
-    launched from this tree — the host, whether the run has a local half and
-    whether the remote ran the extra pass — removed when it is fetched.
+    launched from this tree — the host, whether the run has a local half,
+    whether the remote ran the extra pass and whether the run is extras-only —
+    removed when it is fetched.
     Resolved under `ROOT` at call time, as `extra_run_record` is."""
     return ROOT / ".tmp" / "mutants-remote-pending"
 
@@ -823,6 +827,7 @@ def remote_selection(selection: list[str]) -> str:
 def launch_remote(
     host: str, selection: list[str], whole: bool = False, *,
     nproc: int, local_half: bool = True, extra: bool = False,
+    extra_only: bool = False, kinds: Iterable[str] = (),
 ) -> None:
     """Writes `run/job.sh` (and `run/in.diff` for a `--in-diff` selection,
     the same diff the local half reads) and starts it as the `REMOTE_UNIT`
@@ -835,7 +840,10 @@ def launch_remote(
     runs the extra kinds (`--remote-extra`, at `REMOTE_BUILD_JOBS` for the
     unit's memory cap) and
     logs `extra pass exit <code>`, then runs cargo-mutants whatever the code:
-    `run/exit` stays cargo-mutants'. The service is
+    `run/exit` stays cargo-mutants'. An extras-only run (`extra_only`) writes
+    the pass alone, `kinds` naming the kinds after the crate — `run/exit` is
+    the pass's own code, and the record carries `extra_only` for `collect`.
+    The service is
     detached from this ssh session
     by construction: the unit is memory-capped (`MemoryMax`, no swap) and
     CPU-idle so Fluxer's production services on the host win, and
@@ -847,12 +855,21 @@ def launch_remote(
     remote_args = remote_selection(selection)
     shard = "" if whole else "--shard 1/2 --sharding round-robin "
     extra_pass = ""
-    if extra:
+    if extra or extra_only:
         # The selection is ["-p", crate].
+        named = "".join(f" {kind}" for kind in kinds)
         extra_pass = (
             f"CARGO_BUILD_JOBS={REMOTE_BUILD_JOBS} nice -n 19 ionice -c3 "
-            f"python3 scripts/mutation/mutants.py --remote-extra {selection[1]}\n"
-            'echo "extra pass exit $?"\n'
+            f"python3 scripts/mutation/mutants.py --remote-extra {selection[1]}{named}\n"
+        )
+        if not extra_only:
+            extra_pass += 'echo "extra pass exit $?"\n'
+    mutants_line = ""
+    if not extra_only:
+        mutants_line = (
+            f"nice -n 19 ionice -c3 cargo mutants {remote_args} --jobs 2 "
+            f"--jobserver-tasks {REMOTE_JOBSERVER_TASKS or nproc} "
+            f"{shard}--config ../mutants.remote.toml\n"
         )
     job = (
         "#!/bin/bash\n"
@@ -860,10 +877,7 @@ def launch_remote(
         "start=$(date +%s)\n"
         # On disk, not the tmpfs `/tmp`: see REMOTE_TMPDIR.
         f'export TMPDIR="{REMOTE_TMPDIR}" && mkdir -p "$TMPDIR"\n'
-        f". ~/.cargo/env && {extra_pass}"
-        f"nice -n 19 ionice -c3 cargo mutants {remote_args} --jobs 2 "
-        f"--jobserver-tasks {REMOTE_JOBSERVER_TASKS or nproc} "
-        f"{shard}--config ../mutants.remote.toml\n"
+        f". ~/.cargo/env && {extra_pass}{mutants_line}"
         "code=$?\n"
         # `memory.peak` of this unit's cgroup tells whether the cap is tight;
         # `exit` stays the last file written: pollers treat it as finished.
@@ -901,10 +915,10 @@ def launch_remote(
     # to collect. `collect` removes a marker no half answers.
     pending = remote_pending()
     pending.parent.mkdir(parents=True, exist_ok=True)
-    pending.write_text(
-        json.dumps({"host": host, "local_half": local_half, "extra": extra}) + "\n",
-        encoding="utf-8",
-    )
+    record = {"host": host, "local_half": local_half, "extra": extra or extra_only}
+    if extra_only:
+        record["extra_only"] = True
+    pending.write_text(json.dumps(record) + "\n", encoding="utf-8")
     ssh(
         host,
         f"echo {memory_max} > {REMOTE_RUN}/memory_max && "
@@ -960,18 +974,21 @@ def upload_and_launch(
     remote_head: str | None, remote_tree: str | None, nproc: int,
     config_extra: dict | None = None, *,
     whole: bool = False, local_half: bool, extra: bool,
+    extra_only: bool = False, kinds: Iterable[str] = (),
 ) -> None:
     """The remote half's launch, shared by a split (`run_split`, in the local
-    half's shadow thread) and a whole run: the transfer when the clone's tree
-    differs from the run's snapshot, the remote config (`config_extra`: a file
-    split's `exclude_globs`) and the unit's start (`launch_remote`)."""
+    half's shadow thread), a whole run and an extras-only one: the transfer
+    when the clone's tree differs from the run's snapshot, the remote config
+    (`config_extra`: a file split's `exclude_globs`) and the unit's start
+    (`launch_remote`, `extra_only` and `kinds` as it takes them)."""
     if remote_tree == tree:
         print("remote tree up to date", flush=True)
     else:
         transfer(host, remote_head)
     remote_config(host, nproc, source, config_extra)
     launch_remote(
-        host, selection, whole=whole, nproc=nproc, local_half=local_half, extra=extra
+        host, selection, whole=whole, nproc=nproc, local_half=local_half,
+        extra=extra, extra_only=extra_only, kinds=kinds,
     )
     print("remote half launched", flush=True)
 
@@ -1083,25 +1100,36 @@ for base in ("mutants.out", "extra_mutants.out"):
 """
 
 
-def fetch_remote(host: str, partial: bool = False) -> None:
+def fetch_remote(host: str, partial: bool = False, *, extra_only: bool = False) -> None:
     """Copies the remote half's `mutants.out` (all but the caught mutants' logs:
     `REMOTE_FETCH_LIST`) and, for a whole run, its `extra_mutants.out`, plus the
     console log into `mutants.out/remote/`, emptied
     first so nothing of an earlier fetch is counted as this run's, then marks
     the run collected. A finished half with
-    no `mutants.out` fails the fetch; a died one (`partial`) may have none."""
-    out = ROOT / "mutants.out" / "remote"
+    no `mutants.out` fails the fetch; a died one (`partial`) may have none.
+    An extras-only run's fetch (`extra_only`) is the pass's `extra_mutants.out`
+    alone, tarred whole into `extra_mutants.out/remote/`: the pass keeps no big
+    logs to filter out, and `REMOTE_FETCH_LIST`'s `mutants.out` half would pack
+    the last whole run's, which stays on the host between runs."""
+    name = "extra_mutants.out" if extra_only else "mutants.out"
+    out = ROOT / name / "remote"
     LOCAL_TMPDIR.mkdir(parents=True, exist_ok=True)
     # The archive goes to a file, not memory: a fetch measured 11 GiB, and capturing it held
     # it twice (the captured bytes, then the reader over them).
     with tempfile.TemporaryFile(dir=LOCAL_TMPDIR) as archive:
-        # Exit 3 is the half's own answer, no `mutants.out`; any other failure (ssh's 255, a
+        # Exit 3 is the half's own answer, no results folder; any other failure (ssh's 255, a
         # broken archive) is the transfer's, and the half stays uncollected for a retry.
+        if extra_only:
+            members = f"tar -cf - {name}"
+            fed = {}
+        else:
+            members = "python3 - | tar -cf - --verbatim-files-from -T -"
+            fed = {"input": REMOTE_FETCH_LIST.encode()}
         fetched = ssh(
             host,
-            f"cd {REMOTE_BASE}/tree && {{ [ -d mutants.out ] || exit 3; }} && "
-            "set -o pipefail && python3 - | tar -cf - --verbatim-files-from -T -",
-            input=REMOTE_FETCH_LIST.encode(), stdout=archive, stderr=subprocess.PIPE,
+            f"cd {REMOTE_BASE}/tree && {{ [ -d {name} ] || exit 3; }} && "
+            f"set -o pipefail && {members}",
+            **fed, stdout=archive, stderr=subprocess.PIPE,
         )
         absent = fetched.returncode == 3
         size = archive.seek(0, os.SEEK_END)
@@ -1118,10 +1146,10 @@ def fetch_remote(host: str, partial: bool = False) -> None:
             with tarfile.open(fileobj=archive, mode="r|") as tar:
                 tar.extractall(out, filter="data")
         elif partial:
-            print("warning: the remote half left no mutants.out", file=sys.stderr)
+            print(f"warning: the remote half left no {name}", file=sys.stderr)
         else:
             raise RuntimeError(
-                "the remote half finished but left no mutants.out: its log is "
+                f"the remote half finished but left no {name}: its log is "
                 f"{REMOTE_RUN}/log on {host}; once read, `rm -r {REMOTE_RUN}` there frees "
                 "the host for the next run"
             )
@@ -1452,7 +1480,9 @@ def collect(host: str) -> int:
     launched from another tree) it summarizes the remote half alone, the extra
     pass counted when the fetch brings its record, and says so: nothing this
     tree holds is that run's. A record an earlier version wrote summarizes as a
-    split. A died half's partial results
+    split, and one that says `extra_only` takes the extras-only finish
+    (`finish_extra_run`): the pass's results and counts, no `mutants.out`. A
+    died half's partial results
     are fetched too, whether it died before or during the wait, and the run
     exits 1."""
     state = remote_run_state(host)
@@ -1485,6 +1515,8 @@ def collect(host: str) -> int:
             # The half's own run fetched it while this collect waited.
             print("the remote half is already collected")
             return 1
+        if record is not None and record.get("extra_only"):
+            return finish_extra_run(host, remote_code, partial=partial)
         extra_if_fetched = False
         if not remote_pending().exists():
             # Launched from another tree: this tree's `mutants.out` and extra
@@ -1946,6 +1978,30 @@ def finish_remote_run(
     )
 
 
+def finish_extra_run(host: str, code: int, *, partial: bool = False) -> int:
+    """An extras-only run's end (the caller holds the run lock): fetch the
+    pass's `extra_mutants.out`, print its `run.json`'s counts and the path of
+    the survivors file beside it. The pass's own code is the run's — no
+    cargo-mutants ran to take precedence over it (an untested mutant is the
+    pass's 1; its missed mutants, like its caught, count but do not fail)."""
+    fetch_remote(host, partial=partial, extra_only=True)
+    record_path = (
+        ROOT / "extra_mutants.out" / "remote" / "extra_mutants.out" / "run.json"
+    )
+    if not record_path.exists():
+        print("the extra pass left no record: see the remote log")
+        return 1
+    record = json.loads(record_path.read_text(encoding="utf-8"))
+    crate = record["crate"]
+    counts = record["counts"]
+    print(
+        f"extra pass ({crate}, {record['seconds']:.0f} s): "
+        + (", ".join(f"{name} {counts[name]}" for name in sorted(counts)) or "none")
+    )
+    print(f"survivors: {record_path.parent / f'missed_{crate}.txt'}")
+    return 0 if code == 0 else 1
+
+
 def split(
     selection: list[str], host: str, tree: str, source: Path, local: bool = True
 ) -> int:
@@ -2040,15 +2096,39 @@ def main(argv: list[str]) -> int:
             return 1
         return collect(host)
     if argv[1] == "--remote-extra":
-        # The remote job runs this inside the unit, before cargo-mutants
-        # (`launch_remote`): the extra kinds in a copy of the clone's own tree,
-        # their record where the fetch picks it up. No lock, no refusal: the
-        # unit is alone on the clone.
+        # The remote job runs this inside the unit: a whole run's job before
+        # cargo-mutants, an extras-only run's alone (`launch_remote`), the
+        # kinds after the crate (EXTRA_KINDS when none). The pass runs in a
+        # copy of the clone's own tree, its record where the fetch picks it up.
+        # No lock, no refusal: the unit is alone on the clone.
         import extra_mutants  # deferred: extra_mutants imports this module
 
-        _, counts, seconds = extra_mutants.run_crate(argv[2], list(EXTRA_KINDS))
+        _, counts, seconds = extra_mutants.run_crate(
+            argv[2], argv[3:] or list(EXTRA_KINDS)
+        )
         record_extra_run(argv[2], counts, seconds)
         return 1 if counts["untested"] else 0
+    if argv[1] == "--extra-only":
+        # `just extra-mutants-remote <crate> [--kind <name>]...`: the extra
+        # kinds alone on the VPS — a backfill (the `call` kind's over every
+        # crate) measures for days of its own, so it goes where a whole run
+        # goes, without the cargo-mutants part.
+        if len(argv) < 3:
+            print("usage: mutants.py --extra-only <crate> [--kind <name>]...")
+            return 1
+        kinds = []
+        i = 3
+        while i < len(argv):
+            if argv[i] != "--kind" or i + 1 == len(argv):
+                print("usage: mutants.py --extra-only <crate> [--kind <name>]...")
+                return 1
+            kinds.append(argv[i + 1])
+            i += 2
+        try:
+            return extra_only_run(argv[2], kinds, host, working_tree())
+        except Refused as refusal:
+            print(refusal)
+            return 1
     crate = argv[1]
     tree = working_tree()
     try:
@@ -2094,6 +2174,52 @@ def whole_run(crate: str, host: str | None, tree: str) -> int:
             host, 0, remote_code, (None, remote_seconds),
             local_half=False, extra_run=remote_extra_record(),
         )
+    print(f"remote run: {time.monotonic() - started:.0f} s wall")
+    return code
+
+
+def extra_only_run(crate: str, kinds: list[str], host: str | None, tree: str) -> int:
+    """`just extra-mutants-remote <crate>` (`--extra-only`) on the snapshot
+    `tree`: the extra kinds `kinds` alone on the remote (`EXTRA_KINDS` when
+    empty) — a kind's backfill over the crates measures for days of its own, so
+    it goes where a whole run goes, without the cargo-mutants part. The
+    refusals are `whole_run`'s and the launch, wait and finish are shaped the
+    same; nothing of `mutants.out` is set aside, summarized or folded into the
+    cost table — the finish reads the pass's own files."""
+    import extra_mutants  # deferred: extra_mutants imports this module
+
+    unknown = [kind for kind in kinds if kind not in extra_mutants.ALL_KINDS]
+    if unknown:
+        raise Refused(
+            f"unknown extra mutant kinds: {', '.join(sorted(set(unknown)))} "
+            f"(the kinds are {', '.join(extra_mutants.ALL_KINDS)})"
+        )
+    kinds = sorted(set(kinds)) or list(EXTRA_KINDS)
+    if host is None:
+        raise Refused(
+            'extra-mutant runs go to the VPS alone as whole-crate runs do '
+            '(RUNBOOK "Mutation runs and the VPS"): set STUDIO_MUTANTS_REMOTE'
+        )
+    if crate in LOCAL_ONLY_CRATES:
+        raise Refused(
+            f"{crate} is in LOCAL_ONLY_CRATES: its builds outgrow the remote's "
+            "memory cap"
+        )
+    started = time.monotonic()
+    with run_lock(), snapshot_source(tree) as source:
+        print(
+            f"running the extra mutant kinds ({', '.join(kinds)}) on {host} "
+            "(an extras-only run)",
+            flush=True,
+        )
+        remote_head, remote_tree, nproc = remote_start(host, tree)
+        upload_and_launch(
+            host, ["-p", crate], tree, source, remote_head, remote_tree, nproc,
+            whole=True, local_half=False, extra=True, extra_only=True, kinds=kinds,
+        )
+    remote_code, _ = wait_remote(host)
+    with run_lock():
+        code = finish_extra_run(host, remote_code)
     print(f"remote run: {time.monotonic() - started:.0f} s wall")
     return code
 
