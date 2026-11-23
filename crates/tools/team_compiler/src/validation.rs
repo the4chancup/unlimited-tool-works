@@ -74,8 +74,8 @@ pub(crate) struct CheckedSource {
     pub(crate) team_colors: Option<Vec<Rgb>>,
     /// Each kept kit's menu colors and menu icon, by slot: a kit whose `colors.txt` gives
     /// two colors is in it, a kit without such a file is not (`kit_menus` says why). Empty
-    /// when a finding dropped the export before its identity was resolved. Read only beside
-    /// `resolved`.
+    /// when the export is a referee export, or a finding dropped it before its identity was
+    /// resolved. Read only beside `resolved`.
     pub(crate) kit_menus: BTreeMap<KitSlot, KitMenu>,
     /// The text of the root `notes.txt` validation kept, its BOM removed; `None` when the
     /// export has no such note or a finding dropped it before its identity was resolved.
@@ -628,17 +628,21 @@ fn team_colors(export: &ValidatedAestheticsExport, content: &ContentSource) -> O
     }
 }
 
-/// Each kit of `export`'s menu colors and menu icon, by slot: a kit whose `colors.txt`,
-/// read from `content`, gives two colors (`listed_colors`) and the `icon_<N>` marker's
-/// number, the default 3 without one. A kit with no `colors.txt`, or one giving fewer than
-/// two colors, is not in the map: the compile works its colors out from the texture. The
-/// deep pass has already reported the file's refused lines, and a read that failed there
-/// removed the file from `export`, so nothing is reported here; a read that fails only now
-/// is logged and the kit is left out.
+/// Each kit of `export`'s menu colors and menu icon, by slot: the two colors its
+/// `colors.txt`, read from `content`, gives (`listed_colors`), and the number of its
+/// `icon_<N>` marker, the default 3 without one. A kit with no `colors.txt`, or one
+/// giving fewer than two colors, is not in the map: what the kit's `UniColor.bin` entry
+/// writes then is `processing::kit`'s choice. A referee export has no team record, so
+/// its kits' files are not read. The deep pass has already reported the file's refused
+/// lines, and a read that failed there removed the file from `export`, so nothing is
+/// reported here; a read that fails only now is logged and the kit is left out.
 fn kit_menus(
     export: &ValidatedAestheticsExport,
     content: &ContentSource,
 ) -> BTreeMap<KitSlot, KitMenu> {
+    if export.team_name.is_referees() {
+        return BTreeMap::new();
+    }
     let mut menus = BTreeMap::new();
     for (slot, kit) in &export.kits.kits {
         let Some(file) = &kit.colors else { continue };

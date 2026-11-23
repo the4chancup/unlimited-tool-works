@@ -301,6 +301,20 @@ fn a_kit_cell_carries_its_menu_icon_and_menu_colours() {
     assert_eq!(p3.kit_icon, None, "p3");
 }
 
+// A referee export has no team record, so its kits carry no menu icon however many
+// colors their `colors.txt` gives.
+#[test]
+fn a_referee_export_s_kit_cell_carries_no_menu_icon() {
+    let temp = sandbox("view_grid_refs_kit");
+    let root = temp.path();
+    add_file(root, "refs Cup/players.txt", b"01 A\n");
+    add_player(root, "refs Cup", "A");
+    add_kit(root, "refs Cup", "p1");
+    let rows = checked_rows(root);
+    let referees = row(&rows, "/refs/");
+    assert_eq!(kit(referees, 1).expect("the K1 cell").kit_icon, None);
+}
+
 // An export dropped whole is drawn from its listing: here a team the teams list lacks,
 // whose portraits count reads its `Portraits/` file. The copied player's own portrait is
 // removed, so the count can come from that file alone.
