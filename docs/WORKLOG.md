@@ -256,7 +256,8 @@ draft checked, for the maintainer to publish; running sidekicks and jobs are not
      "S-g5b r1"): 6 accepted, one of reach (a) (Esc with the Compile mode menu open closes
      the menu and unpins the window), which ends the loop. The lead's fixes: the gate's ID
      lists `53dd5466`, TC-GUI-24 and a doc `9aebb45f`; the rest is slice G6 (SWE-2),
-     merged `53d501f4`. Due: Carbon round 4 over the grid
+     merged `53d501f4`. Due: Carbon round 4 over the grid (its first run, 2026-11-23, ended
+     with no report: it runs again)
    - [ ] The Compile button's mode list, Open output folder and Copy report (TC-GUI-11, and
      TC-GUI-33's clause that Compile for sideloading stays enabled while the DpFileList is
      outdated; DECISIONS 2026-11-23 "the Compile menu's Copy report copies the whole log").
@@ -524,7 +525,7 @@ and no phase closes with one outstanding.
   survivors (`pes_strings`, `vtree`). Each crate's survivors (`.tmp/call_backfill/<crate>.missed.txt`)
   are triaged as CONTRIBUTING "Mutation runs" says, the missing tests going into SWE-2
   slices crate by crate. Its first crate, `export_grid` (the trial), has 8 survivors, all
-  missing tests, for slice G7. Once each crate's run is measured, CONTRIBUTING's time for the
+  missing tests, now tested (slice G7, merged `863813d8`). Once each crate's run is measured, CONTRIBUTING's time for the
   extra kinds gets the real figures.
 
 ---
