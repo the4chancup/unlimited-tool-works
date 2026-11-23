@@ -7,7 +7,7 @@ the script and rerun it.
 
 | File | What it is | Used for |
 |---|---|---|
-| `skin.png` | 1024x1024 RGBA, an alpha ramp over the right half | a raster texture with alpha: BC7 on PES 19-21, BC3 on PES 18, 11 generated mip levels (TC-TEX-01) |
+| `skin.png` | 1024x1024 RGBA, an alpha ramp over the right half | a raster texture with alpha: BC3 on PES 18 and PES 21, 11 generated mip levels (TC-TEX-01) |
 | `kit.png` | 256x128 RGBA, fully opaque | a raster kit texture (TC-TEX-06) |
 | `kit_back.tga` | 128x64, 32-bit uncompressed TGA, fully opaque | a TGA kit texture (TC-TEX-06) |
 | `portrait.png`, `portrait.webp` | 128x128, fully opaque; the WebP lossless | raster portraits, encoded to a BC3 DDS (TC-PRT-01, TC-TEX-06) |

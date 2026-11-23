@@ -250,12 +250,10 @@ check on record), or **Records disagree** (the repository states two different t
   5.33 MB, which is why Red refuses it there).
 - **Why:** a member saves a texture uncompressed on purpose; the two exceptions are cases
   the game cannot take as stored.
-- **Evidence:** the PES 15-17 soft-crash is the cited mechanism. **The records disagree:**
-  `tests/fixtures/tracer_prefox/README.md` says the compiler "encodes the uncompressed
-  `k2012_sr.dds` to BC1", while `processing/texture.rs` (`keep_uncompressed = true` for
-  player textures) and the parity row's codec comparison say a stored-uncompressed
-  color-role source is written as it is.
-- **Status:** Records disagree.
+- **Evidence:** the PES 15-17 soft-crash is the cited mechanism; neither exception has been
+  seen in game. A stored-uncompressed color-role source is written uncompressed, as Red
+  writes it: the pre-Fox parity row compares `k2012_sr.dds`'s codec with Red's.
+- **Status:** Not checked.
 - **Stated in:** `spec/libs/dds_convert.md` "Passthrough"; `tests/fixtures/tracer_prefox/README.md`;
   classes.md I8; DECISIONS 2026-10-11 "a BC4, BC5 or BC7 portrait for PES 15-18 is encoded
   to BC3" (the codec rule it builds on); DECISIONS 2026-11-11 "texture_not_div4".

@@ -54,11 +54,11 @@ A texture (a player's, a shared folder's, a Common one, a kit's or a portrait) c
 `.tiff` work too). Each one is converted to a format the chosen PES version reads: BC3, or BC1
 when the image has no transparency at all.
 
-A `.dds` or `.ftex` stored uncompressed stays uncompressed on every version, except a kit's main
-`kit` texture on PES 2015 to 2017: those versions write the season's logos into it in memory
-and crash on an uncompressed one. A normal map is encoded either way, since the game reads the
-compressed normal-map layout. A `.dds` or `.ftex` already in a format the version reads keeps
-its compressed blocks, packed into the version's own container (a `.dds` as an `.ftex` on PES
+A `.dds` or `.ftex` stored uncompressed stays uncompressed on every version, with two
+exceptions: a normal map (below), and a kit's main `kit` texture on PES 2015 to 2017, since
+those versions write the season's logos into it in memory and crash on an uncompressed one.
+A `.dds` or `.ftex` already in a format the version reads keeps its compressed blocks, packed
+into the version's own container (a `.dds` as an `.ftex` on PES
 2018 to 2021, a `.ftex` as a `.dds` on PES 2015 to 2017). Whatever its codec, a `.dds` or
 `.ftex` keeps the mip levels it brings (the smaller copies of itself the game needs), and an
 image of any other kind has its mip levels generated for it.
@@ -72,7 +72,8 @@ which cannot read BC4, BC5 or BC7, a `.dds` portrait in one of those formats, un
 header, is converted like any other image.
 
 A texture whose name ends in `_nrm` (`skin_nrm.png`), or in `_nrm` and a kit number
-(`pants_nrm_kit1.png`), is a normal map and is encoded as one.
+(`pants_nrm_kit1.png`), is a normal map. It is always compressed, even when stored
+uncompressed: the game reads a normal map in the compressed layout.
 
 **One texture or model per kit**
 

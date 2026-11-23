@@ -442,8 +442,8 @@ of times with minor edits to one or two files. Carrying the cache across runs is
 - Cache misses fall through to the normal decode → mipmap → encode path, or, for a source
   whose blocks the target keeps, to the passthrough, which rewraps them without a decode.
 - The cache is consulted after the build manifest has determined the target codec for each
-  texture, so the same source PNG cached as DXT5 for a pre-Fox compile is not wrongly reused for
-  a Fox BC7 compile (different `target_codec` → different key → separate entry).
+  texture, so the same opaque source PNG cached as BC1 color data is not wrongly reused as a
+  normal map's DXT5nm (different `target_codec` → different key → separate entry).
 - **Engagement limit:** the cache engages only when compiling **≤2 teams**. The build manifest
   knows the team count at planning time; for larger compiles (3+ teams, e.g. a 48-team DLC),
   the cache is bypassed entirely: entries are never inserted.

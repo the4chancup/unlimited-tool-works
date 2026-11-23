@@ -89,8 +89,8 @@ What the comparison found when it was written (the test's tables carry each row)
 - Red keeps a team player's textures in his face CPK, beside `.mtl` paths `./<name>`; the
   compiler relocates them to `common/character1/model/character/uniform/common/731/20 - Fumos/`
   as on Fox (`pipeline.md` step 6), with the same pixels: it writes a WESYS-wrapped file
-  unwrapped and every header in one form (mip count 1 with its flags), and encodes the
-  uncompressed `k2012_sr.dds` to BC1;
+  unwrapped and every header in one form (mip count 1 with its flags), and keeps the
+  uncompressed `k2012_sr.dds` uncompressed, as Red does;
 - the `.mtl` files define the same materials once the relocated paths are normalized; Red
   unwraps a WESYS `.mtl` too;
 - `face.xml`: the same `<dif>` bytes; the generated entries type the boots `parts`, as Red's own
