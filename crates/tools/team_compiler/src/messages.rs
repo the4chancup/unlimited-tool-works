@@ -1470,7 +1470,8 @@ mod tests {
     }
 
     // The findings the DpFileList upgrade remedies name the upgrade both ways in their
-    // Effect: the toolbar's button and the command.
+    // Effect: the toolbar's button and the command. None says "The run stops", which
+    // read as a compile stopped before any run, in the Compiler's window as well.
     #[test]
     fn the_dpfilelist_effects_name_the_button_and_the_command() {
         for code in [
@@ -1486,6 +1487,7 @@ mod tests {
             assert!(effect.contains("Upgrade DpFileList"), "{code}: {effect}");
             let command = format!("`{} compiler upgrade-dpfl`", studio_core::exe_name!());
             assert!(effect.contains(&command), "{code}: {effect}");
+            assert!(!effect.contains("The run stops"), "{code}: {effect}");
         }
     }
 
