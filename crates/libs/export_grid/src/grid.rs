@@ -120,6 +120,10 @@ pub fn show(
             let cover = Rect::from_x_y_ranges(view.x_range(), title_top..=title_top + rows_top);
             ui.painter()
                 .rect_filled(cover, 0.0, ui.visuals().panel_fill);
+            // Interacted after the rows are drawn: a later widget wins the hit test, so a
+            // cell scrolled under the title row neither opens its window on hover nor
+            // takes the click through it.
+            ui.interact(cover, id.with("cover"), Sense::click() | Sense::hover());
             let titles = Grid {
                 ui,
                 layout: &layout,

@@ -136,6 +136,12 @@ pub struct Detail {
     outlined: Option<CellKey>,
     /// The next `show` scrolls the outlined cell into view.
     scroll_to_outlined: bool,
+    /// The pointer's place when Esc or the window's pin closes a window it rests on.
+    /// While the pointer stays there, the first grid cell that appears under it is
+    /// muted, so the cell the window uncovered opens nothing until the pointer leaves
+    /// it: `None` once a cell is muted or the pointer moves on. A cell can take a frame
+    /// to appear, the hit test still seeing the closed window's widgets.
+    mute_next: Option<Pos2>,
 }
 
 /// The cell under the pointer, and when its window opens on hover.
@@ -261,6 +267,14 @@ impl Detail {
     ) -> Option<CellKey> {
         let now = ui.input(|input| input.time);
         let pointed = self.pointed.take();
+        if let Some(at) = self.mute_next {
+            if ui.input(|input| input.pointer.latest_pos()) != Some(at) {
+                self.mute_next = None;
+            } else if let Some(cell) = &found.hovered {
+                self.mute(cell);
+                self.mute_next = None;
+            }
+        }
         self.follow(found.hovered.as_ref().or(pointed.as_ref()), now);
         let mut double_clicked = None;
         if let Some(cell) = &found.clicked {
@@ -280,6 +294,7 @@ impl Detail {
         let open = self.pinned.is_some() || self.hover_shown(now);
         if open && ui.input_mut(|input| input.consume_key(Modifiers::NONE, Key::Escape)) {
             self.pinned = None;
+            self.mute_next = ui.input(|input| input.pointer.latest_pos());
             if let Some(under) = &mut self.under {
                 under.opens_at = None;
             }
@@ -471,7 +486,15 @@ impl Detail {
                             } else {
                                 (cell.state, cell.outline)
                             };
-                            body(ui, cell, shown_state, catalog, pictures, &mut response);
+                            body(
+                                ui,
+                                &key,
+                                cell,
+                                shown_state,
+                                catalog,
+                                pictures,
+                                &mut response,
+                            );
                             let copies = key.place == Place::Label && !row.log_lines.is_empty();
                             let copy_button = copies.then_some(copied);
                             copy = buttons(ui, cell, copy_button, &mut response);
@@ -480,6 +503,7 @@ impl Detail {
             });
         if unpin {
             self.pinned = None;
+            self.mute_next = ui.input(|input| input.pointer.latest_pos());
         }
         // From where the window stands, kept on the screen, not from where it was asked to.
         if let Some(delta) = dragged {
@@ -586,10 +610,12 @@ fn title_bar(ui: &mut egui::Ui, title: &str, pinned: bool) -> Bar {
 }
 
 /// The window's body above its buttons: the top box with the cell's pictures, the place,
-/// the state's name, then the findings worst first, or "No findings.". A finding's code
-/// clicked lands in `response`.
+/// the state's name, then the findings worst first, or "No findings.". The findings
+/// scroll when they would push the buttons off the screen, each cell's window keeping
+/// its own scroll offset. A finding's code clicked lands in `response`.
 fn body(
     ui: &mut egui::Ui,
+    key: &CellKey,
     cell: &Cell,
     (state, outline): (CellState, Option<Outline>),
     catalog: &[CatalogRow],
@@ -611,42 +637,56 @@ fn body(
             .cmp(&a.severity)
             .then_with(|| a.code.code.cmp(&b.code.code))
     });
-    if messages.is_empty() {
-        ui.add_space(FINDING_GAP);
-        ui.label(RichText::new("No findings.").color(visuals.weak_text_color()));
-    }
-    for message in messages {
-        ui.add_space(FINDING_GAP);
-        let colour = match message.severity {
-            Severity::Fatal | Severity::Error => visuals.error_fg_color,
-            Severity::Warning => visuals.warn_fg_color,
-            Severity::Info => visuals.text_color(),
-        };
-        ui.horizontal_wrapped(|ui| {
-            ui.label(RichText::new(message.severity.name()).color(colour));
-            let code = ui
-                .link(RichText::new(message.code.code.as_ref()).monospace())
-                .on_hover_text("Open the help at this message");
-            if code.clicked() {
-                response.help = Some(message.code.clone());
+    // The room the findings may take: what is left below down to the screen's bottom,
+    // less the gap, the buttons and the body's lower margin and the frame's stroke.
+    let room = ui.ctx().content_rect().bottom() - ui.cursor().min.y;
+    let below = ui.spacing().item_spacing.y
+        + FINDING_GAP
+        + buttons_height(ui)
+        + f32::from(BODY_MARGIN)
+        + ui.visuals().window_stroke().width;
+    egui::ScrollArea::vertical()
+        .auto_shrink([false, true])
+        .max_height((room - below).max(0.0))
+        .id_salt(format!("{} {:?}", key.row, key.place))
+        .show(ui, |ui| {
+            if messages.is_empty() {
+                ui.add_space(FINDING_GAP);
+                ui.label(RichText::new("No findings.").color(visuals.weak_text_color()));
+            }
+            for message in messages {
+                ui.add_space(FINDING_GAP);
+                let colour = match message.severity {
+                    Severity::Fatal | Severity::Error => visuals.error_fg_color,
+                    Severity::Warning => visuals.warn_fg_color,
+                    Severity::Info => visuals.text_color(),
+                };
+                ui.horizontal_wrapped(|ui| {
+                    ui.label(RichText::new(message.severity.name()).color(colour));
+                    let code = ui
+                        .link(RichText::new(message.code.code.as_ref()).monospace())
+                        .on_hover_text("Open the help at this message");
+                    if code.clicked() {
+                        response.help = Some(message.code.clone());
+                    }
+                });
+                if let Some(about) = about(&message.scope) {
+                    ui.label(RichText::new(about).monospace().color(colour));
+                }
+                if !message.context.is_empty() {
+                    let fields: Vec<String> = message
+                        .context
+                        .iter()
+                        .map(|(key, value)| format!("{key}={value}"))
+                        .collect();
+                    ui.label(RichText::new(fields.join(", ")).monospace().color(colour));
+                }
+                if let Some(row) = catalog.iter().find(|row| row.code == message.code.code) {
+                    ui.label(code_spans(ui, row.when, visuals.text_color()));
+                    ui.label(code_spans(ui, row.effect, visuals.text_color()));
+                }
             }
         });
-        if let Some(about) = about(&message.scope) {
-            ui.label(RichText::new(about).monospace().color(colour));
-        }
-        if !message.context.is_empty() {
-            let fields: Vec<String> = message
-                .context
-                .iter()
-                .map(|(key, value)| format!("{key}={value}"))
-                .collect();
-            ui.label(RichText::new(fields.join(", ")).monospace().color(colour));
-        }
-        if let Some(row) = catalog.iter().find(|row| row.code == message.code.code) {
-            ui.label(code_spans(ui, row.when, visuals.text_color()));
-            ui.label(code_spans(ui, row.effect, visuals.text_color()));
-        }
-    }
     ui.add_space(FINDING_GAP);
 }
 
@@ -762,6 +802,14 @@ fn paint_picture(
     painter.image(texture.id(), rect, whole, NO_TINT);
 }
 
+/// The height a button on the window takes: its text with its padding, at least the
+/// interact size.
+fn buttons_height(ui: &egui::Ui) -> f32 {
+    let spacing = ui.spacing();
+    (ui.text_style_height(&TextStyle::Button) + 2.0 * spacing.button_padding.y)
+        .max(spacing.interact_size.y)
+}
+
 /// The window's buttons: Open folder when `cell` has a folder to open, its click landing in
 /// `response`, then Copy messages when `copy` is given, reading "Copied" when it is `true`.
 /// Returns whether Copy messages was clicked.
@@ -777,8 +825,7 @@ fn buttons(
             let button = match open {
                 Open::Folder(_) => button,
                 Open::Select(_) => button.on_hover_text(
-                    "The export is an archive: the folder holding it opens, with the archive \
-                     selected",
+                    "Opens the folder holding this archive, with the archive selected",
                 ),
             };
             if button.clicked() {
