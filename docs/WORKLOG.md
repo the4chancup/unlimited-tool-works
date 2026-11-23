@@ -208,7 +208,16 @@ draft checked, for the maintainer to publish; running sidekicks and jobs are not
        the pane's top; the help tree's entries and search results span their pane, a long
        result cut with an ellipsis; the Save editor's selected row shows its edge on all four
        sides. Found in passing and fixed: a catalog row's search result showed its Markdown marks
-   - Then the kit cells' swatch (TC-GUI-10), the row actions, the ID cell's editing, the
+   - The kit cells' swatch (TC-GUI-10), a strip along the cell's foot (DECISIONS 2026-11-23
+     "a kit's menu icon pattern is a strip along its cell's foot"), in slices:
+     - [ ] a `color_tools::icon`: the 24 menu icon patterns as shapes over any rectangle
+       (SWE-2, running)
+     - [ ] b a kit cell carries its menu icon and colours when the check kept the kit and its
+       `colors.txt` lists two (SWE-2, running)
+     - [ ] c the grid paints the strip under the label (after a and b)
+     - [ ] d a compile's colours worked out from the texture, and a dropped kit's base
+       `UniColor.bin` colours
+   - Then the row actions, the ID cell's editing, the
      watcher and cache, Sizes and sorting, and the rest of the toolbar
      (`plans/team_compiler/gui.md` "Toolbar"; the build has a plain Compile button): the
      split button with its mode list, Launch PES, the writability badge, and the dropdown's
