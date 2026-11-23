@@ -204,7 +204,7 @@ input[type=range]:focus { outline: none; }
 .plist .rows .prow { display: flex; gap: 5px; align-items: center; padding: 1px 4px; white-space: nowrap;
   min-height: 18px; color: #b4b4b4; }
 .plist .rows .prow:hover { background: var(--hover); }
-.plist .rows .prow.on { background: var(--sel-bg); }
+.plist .rows .prow.on { background: var(--sel-bg); box-shadow: inset 0 0 0 1px #1e7a9e; }
 /* A player row drags from anywhere on it, so the whole row shows the pointing hand, never
    the text I-beam. */
 .plist .rows .prow[draggable=true] { cursor: pointer; user-select: none; }
@@ -312,7 +312,7 @@ input[type=checkbox]:indeterminate { background-image: url("data:image/svg+xml,%
 #squad-table .sqbox { display: inline-flex; width: 12px; height: 12px; box-sizing: border-box;
   border: 1px solid var(--stroke); border-radius: 2px; align-items: center; justify-content: center;
   font-size: 10px; line-height: 1; background: var(--widget); cursor: pointer; vertical-align: middle; }
-#squad-table .sqbox.on { background: var(--sel-bg); color: var(--sel-fg); }
+#squad-table .sqbox.on { background: var(--sel-bg); color: var(--sel-fg); border-color: #1e7a9e; }
 /* A held card fills its column, which is as wide as the widest card in it. */
 #squad-table td.sq-held { padding: 0 2px; }
 #squad-table .chip { display: block; padding: 0 5px; line-height: 15px; text-align: left;
@@ -320,7 +320,7 @@ input[type=checkbox]:indeterminate { background-image: url("data:image/svg+xml,%
 #squad-table .sqradio { display: inline-block; width: 12px; height: 12px; box-sizing: border-box;
   border: 1px solid var(--stroke); border-radius: 50%; background: var(--widget);
   vertical-align: middle; cursor: pointer; position: relative; }
-#squad-table .sqradio.on { background: var(--sel-bg); }
+#squad-table .sqradio.on { background: var(--sel-bg); border-color: #1e7a9e; }
 #squad-table .sqradio.on::after { content: ""; position: absolute; inset: 3px; border-radius: 50%;
   background: var(--sel-fg); }
 /* Live AATF's mark over the value that breaks the ruleset, faint so the value reads through
