@@ -121,8 +121,8 @@ Six lines name a texture that cannot be used, each with the file:
 
 - `texture_too_small`: a side under 4 pixels.
 - `texture_not_div4`: for PES 2015 to 2017, a width or height that is not a multiple of 4
-  (1000 is one, 1002 is not). A texture that stays uncompressed (see **Textures**) can have
-  any size.
+  (1000 is one, 1002 is not). A texture that stays uncompressed (see **Textures**) does not
+  get this finding.
 - `texture_not_pow2`: a portrait whose width or height is not a power of two (256, 512,
   1024, ...), or, for PES 2018 to 2021, a texture with mip levels when neither its width nor its
   height is. A `.png` or other image always gets mip levels, and a `.dds` or `.ftex` with a

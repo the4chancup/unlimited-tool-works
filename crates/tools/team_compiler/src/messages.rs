@@ -318,9 +318,9 @@ pub(crate) enum Code {
     /// A portrait with a side that is not a power of two (any target), or a mipmapped
     /// texture on PES 2018 to 2021 with neither side one; discarded the same way.
     TextureNotPow2,
-    /// PES 2015 to 2017: a texture with a side that is not a multiple of 4. Every pre-Fox texture
-    /// is written block-compressed, which those games cannot create at such a size; discarded
-    /// the same way, whatever `pass_through` says.
+    /// PES 2015 to 2017: a texture the compile block-compresses with a side that is not a
+    /// multiple of 4, which those games cannot create at such a size; discarded the same way,
+    /// whatever `pass_through` says.
     TextureNotDiv4,
     /// PES 2015 to 2017: a kit's main texture (`kit`, its own or inherited from `all/`)
     /// wider or taller than 2048 pixels, or with a side that is not a power of two; the kit
