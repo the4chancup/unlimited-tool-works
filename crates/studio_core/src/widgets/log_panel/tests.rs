@@ -518,6 +518,33 @@ fn the_filter_chips_show_their_selected_state() {
     assert_eq!(toggled(&nodes, "Errors"), Some(Some(Toggled::False)));
 }
 
+#[test]
+fn a_collapsed_log_shows_no_filter_chips_and_keeps_its_count() {
+    let lines = plain_lines(2);
+    let mut panel = LogPanel::new("test-log");
+    let mut window = Headless::new();
+    let chip = |nodes: &[accesskit::Node], label: &str| {
+        nodes
+            .iter()
+            .any(|node| node.role() == Role::Button && node.label() == Some(label))
+    };
+    let nodes = window.idle(&mut panel, &lines);
+    assert!(chip(&nodes, "Errors"), "open, the header has its chips");
+
+    panel.collapse();
+    let nodes = window.idle(&mut panel, &lines);
+    for label in ["All", "Warnings", "Errors"] {
+        assert!(
+            !chip(&nodes, label),
+            "collapsed, the header has no {label} chip"
+        );
+    }
+    assert!(
+        shows(&nodes, "2 lines"),
+        "collapsed, the header keeps its count"
+    );
+}
+
 // A chip is a row, not a control: the picked chip fills in the selection
 // blue and draws no resting edge, the stroke the theme gives live controls.
 #[test]

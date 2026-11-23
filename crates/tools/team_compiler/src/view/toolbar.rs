@@ -1,7 +1,7 @@
 //! The toolbar under the grid, the draft's `.tc-bar`: the strip, which sums up the grid while
 //! no Compile runs, and the Compile button at its right.
 
-use export_grid::{Cell, Position, Row, RowBody};
+use export_grid::{Cell, CellState, Position, Row, RowBody};
 use studio_core::widgets::add_enabled;
 use studio_core::{LogFilter, LogPanel, Severity};
 
@@ -10,21 +10,31 @@ use crate::messages::TOOL_ID;
 /// The room between the strip and the button (the draft's `.tc-bar` gap).
 const GAP: f32 = 8.0;
 
-/// The grid summed up: its rows, and how many of them have an error or a warning.
+/// The grid summed up: its rows, how many of them a Compile skips, and how many of the others
+/// have an error or a warning.
 #[derive(Debug, PartialEq, Eq)]
 pub(crate) struct Summary {
     pub(crate) exports: usize,
+    pub(crate) skipped: usize,
     pub(crate) with_errors: usize,
     pub(crate) with_warnings: usize,
 }
 
-/// `rows` summed up by the colour each cell shows, its worst finding's (the draft's cell
-/// status): a row is with errors when its label or one of its cells shows an Error or a
-/// Fatal, and with warnings when one shows a Warning, so a row can count in both. A cell
-/// holding both an Error and a Warning shows the Error alone, and counts only there.
+/// `rows` summed up. A row is skipped when the check dropped its export whole, its cells
+/// blocked; it then counts in no other way, since a Compile reads none of it. The others count
+/// by the colour each cell shows, its worst finding's (the draft's cell status): a row is with
+/// errors when its label or one of its cells shows an Error or a Fatal, and with warnings when
+/// one shows a Warning, so a row can count in both. A cell holding both an Error and a Warning
+/// shows the Error alone, and counts only there.
 pub(crate) fn summary(rows: &[Row]) -> Summary {
+    let skipped = |row: &&Row| {
+        cells(row)
+            .skip(1)
+            .any(|cell| cell.state == CellState::Blocked)
+    };
     let having = |wanted: fn(Severity) -> bool| {
         rows.iter()
+            .filter(|row| !skipped(row))
             .filter(|row| {
                 cells(row).any(|cell| {
                     cell.messages
@@ -38,6 +48,7 @@ pub(crate) fn summary(rows: &[Row]) -> Summary {
     };
     Summary {
         exports: rows.len(),
+        skipped: rows.iter().filter(skipped).count(),
         with_errors: having(|worst| worst >= Severity::Error),
         with_warnings: having(|worst| worst == Severity::Warning),
     }
@@ -65,11 +76,12 @@ pub(crate) struct Part {
 }
 
 /// The strip's text for `summary` (the draft's `summary`): the export count, then the rows
-/// with errors and with warnings, joined by ` · `. A count of zero is left out, so a grid
+/// skipped, with errors and with warnings, joined by ` · `. A count of zero is left out, so a grid
 /// with no rows gives no text.
 pub(crate) fn strip(summary: &Summary) -> Vec<Part> {
     let counts = [
         (summary.exports, "export", "exports", None),
+        (summary.skipped, "skipped", "skipped", None),
         (
             summary.with_errors,
             "with errors",

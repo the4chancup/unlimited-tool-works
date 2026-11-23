@@ -145,17 +145,21 @@ impl LogPanel {
         // click's result in the same frame.
         let filter = Cell::new(self.filter);
         let mut clicked = None;
+        // A collapsed log shows no lines, so it has nothing to filter: no chips.
+        let open = self.dock.is_expanded();
         self.dock.show(
             ui,
             |ui| {
                 // A chip is a row, not a control (`row`): a picked one fills
                 // in the selection blue and draws none of the resting edge
                 // the theme gives live controls.
-                for (choice, label) in LogFilter::CHIPS {
-                    if super::row(ui, egui::Button::selectable(filter.get() == choice, label))
-                        .clicked()
-                    {
-                        filter.set(choice);
+                if open {
+                    for (choice, label) in LogFilter::CHIPS {
+                        if super::row(ui, egui::Button::selectable(filter.get() == choice, label))
+                            .clicked()
+                        {
+                            filter.set(choice);
+                        }
                     }
                 }
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {

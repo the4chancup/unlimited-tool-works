@@ -63,13 +63,29 @@ fn with_player_findings(mut row: Row, messages: Vec<Message>) -> Row {
     row
 }
 
+/// `row` as the check leaves an export it drops whole: its player 01 blocked, and the cause, an
+/// Error, on its label.
+fn dropped(row: Row) -> Row {
+    let mut row = with_player_findings(row, Vec::new());
+    let RowBody::Lines(lines) = &mut row.body else {
+        unreachable!("with_player_findings gives the row lines")
+    };
+    let Position::Cell(cell) = &mut lines[0].groups[0][0] else {
+        unreachable!("player 01 has a cell")
+    };
+    cell.state = CellState::Blocked;
+    row.label.messages = vec![finding("team_name_unknown", Severity::Error)];
+    row
+}
+
 #[test]
 fn the_summary_counts_rows_by_the_findings_of_their_labels_and_cells() {
-    let mut rows = listed_rows(6);
+    let mut rows = listed_rows(7);
     // /3/: an error on its label. /a/: a warning on a player. /aco/: an error on its label and
     // a warning on a player, counted in both. /adv/: a message in place of its cells, its
     // finding on the label. /an/: only an Info. The sixth: one player cell holding an error
-    // and a warning, which shows the error alone, so it counts only with errors.
+    // and a warning, which shows the error alone, so it counts only with errors. The seventh:
+    // dropped whole, so skipped, and not with errors.
     rows[0].label.messages = vec![finding("player_folder_number_invalid", Severity::Error)];
     rows[1] = with_player_findings(
         rows[1].clone(),
@@ -93,10 +109,12 @@ fn the_summary_counts_rows_by_the_findings_of_their_labels_and_cells() {
             finding("player_unlisted", Severity::Warning),
         ],
     );
+    rows[6] = dropped(rows[6].clone());
     assert_eq!(
         summary(&rows),
         Summary {
-            exports: 6,
+            exports: 7,
+            skipped: 1,
             with_errors: 4,
             with_warnings: 2,
         }
@@ -105,9 +123,10 @@ fn the_summary_counts_rows_by_the_findings_of_their_labels_and_cells() {
 
 #[test]
 fn the_strip_leaves_out_a_count_of_zero() {
-    let texts = |exports, with_errors, with_warnings| -> Vec<String> {
+    let texts = |exports, skipped, with_errors, with_warnings| -> Vec<String> {
         strip(&Summary {
             exports,
+            skipped,
             with_errors,
             with_warnings,
         })
@@ -115,11 +134,24 @@ fn the_strip_leaves_out_a_count_of_zero() {
         .map(|part| part.text)
         .collect()
     };
-    assert_eq!(texts(1, 0, 0), ["1 export"]);
-    assert_eq!(texts(14, 0, 1), ["14 exports", " · ", "1 with warnings"]);
-    assert_eq!(texts(0, 0, 0), Vec::<String>::new());
+    assert_eq!(texts(1, 0, 0, 0), ["1 export"]);
+    assert_eq!(texts(14, 0, 0, 1), ["14 exports", " · ", "1 with warnings"]);
+    assert_eq!(
+        texts(14, 6, 3, 1),
+        [
+            "14 exports",
+            " · ",
+            "6 skipped",
+            " · ",
+            "3 with errors",
+            " · ",
+            "1 with warnings"
+        ]
+    );
+    assert_eq!(texts(0, 0, 0, 0), Vec::<String>::new());
     let parts = strip(&Summary {
         exports: 2,
+        skipped: 0,
         with_errors: 1,
         with_warnings: 0,
     });
