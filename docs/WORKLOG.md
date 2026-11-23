@@ -149,9 +149,7 @@ draft checked, for the maintainer to publish; running sidekicks and jobs are not
        for `.7z` only. A `.7z`'s pictures wait for the watcher-and-cache slice
      - [x] 1b-iii (2026-11-23, merge `2eeccf60`, SWE-2): a `.zip` export's pictures read from
        the zip, each from its own entry; a `.7z`'s boxes stay empty (TC-GUI-31's zip clause).
-       Kept out of `export_grid` while 1c-ii edits it: once 1c-ii merges, the lead makes
-       `PictureFile`'s doc say its `export` may be the `.zip`. Its review rounds go with
-       1c-ii's
+       Its review rounds go with 1c-ii's
    - [ ] 1c: the toolbar's strip and its counts, the log's lines linked to cells, the log
      collapsed when it would hide rows, the Upgrade DpFileList button → verify: TC-GUI-15,
      26, 27, 33. The pure move of the
@@ -163,17 +161,18 @@ draft checked, for the maintainer to publish; running sidekicks and jobs are not
        drops whole counts as skipped, and a collapsed log shows no filter chips. The strip
        cut short in a narrow window cannot be captured (a narrower window scales the whole
        UI); its unit test covers it
-     - 1c-ii (Opus, `sk/grid1c2`, running): the log's lines linked to cells (TC-GUI-15). It
-       also puts the check's findings in the log (the plan's "the export's log lines"), which
-       today holds only a Compile's lines, so the strip's counts filter the findings the grid
-       shows
+     - [x] 1c-ii (2026-11-23, merge `9b7f7007`, Opus): the log opens with the check's
+       findings, each line acting for its cell: hover opens the cell's window, a click on a
+       Warning or an Error outlines the cell, scrolls to it and pins it (TC-GUI-15). The lead
+       made `cell_places` allocate nothing, since the strip walks every cell each frame. Its
+       built-window look waits for 1c-iii-b's, one release build for both
      - 1c-iii: the Upgrade DpFileList button beside Compile and its dialog (TC-GUI-33;
        `plans/team_compiler/gui.md` "Toolbar", `plans/team_compiler/pipeline.md` "DpFileList
        upgrade"; the draft's `compiler/main?dpfl=outdated`), over the CLI's `upgrade-dpfl`,
        with the new `dpfilelist_cpk_deleted`. On PES 2019 it waits for item 8. SWE-2, in two
        parts:
-       - 1c-iii-a: `upgrade.rs`'s preview as data, the deletions the member ticked, the new
-         code and the catalog's texts; no window code, so it can start before 1c-ii merges
+       - [x] 1c-iii-a (2026-11-23, merge `7a488e81`, SWE-2): `upgrade.rs`'s preview as data,
+         the deletions the member ticked (`dpfilelist_cpk_deleted`), the catalog's texts
        - 1c-iii-b: the button and the dialog over them, after 1c-ii and 1c-iii-a
    - Then the kit cells' swatch (TC-GUI-10), the row actions, the ID cell's editing, the
      watcher and cache, Sizes and sorting, and the rest of the toolbar
@@ -3764,6 +3763,12 @@ pruned when their phase closes; they stay in git history. A question only the ma
 can answer is not an issue: it goes to `docs/maintainer/questions.html`, and an issue that waits on one
 points there.
 
+- open (2026-11-23) — `team_compiler`'s test sandbox (`src/testing.rs` `sandbox`) writes a
+  teams list holding `792 /egg/`, a pairing no user sees: the real list
+  (`crates/libs/teams_list/data/teams_list.txt`) has 792 as `/END/`, and `/egg/` is not in
+  it. Every test through `sandbox` inherits it, and fixtures name `egg` exports. Fix: a real
+  row from the list in `sandbox`, and the tests asserting `/egg/` moved to it. Found by the
+  1c-ii sidekick.
 - fixed on `pes14` (2026-11-22, `17463113`), in Build 3 (`0.0.2-pes14.3`) — PES 2014 Build 2
   (`0.0.2-pes14.2`) crashed on the Appearance page, and on Hide default body, of a player the
   game created on an in-game edit (the Akko7 organizer's /hi3/ players,

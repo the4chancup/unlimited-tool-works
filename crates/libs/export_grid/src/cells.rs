@@ -91,9 +91,10 @@ impl Cell {
 /// A picture a cell's top box shows: a file of an export, which the tool reads.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct PictureFile {
-    /// The export's folder.
+    /// The export's folder, or its `.zip`.
     pub export: PathBuf,
-    /// The file inside it, `/`-separated as the export's listing spells it.
+    /// The file inside it (an entry, in a `.zip`), `/`-separated as the export's listing
+    /// spells it.
     pub path: String,
 }
 
