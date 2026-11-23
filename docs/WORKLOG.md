@@ -2757,7 +2757,7 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     Item, Old value and New value, under one head row (SE-GUI-13)
   - [x] 0.0.2-drag 2026-11-12 (`5412b447`): the player list's dragged row floats under the
     pointer, its grab point kept, its place left blank (SE-GUI-69)
-    - [ ] review rounds over both (tier 2). SWE-2 S-se1 r1, 2026-11-12 (two parts): 4 of
+    - [x] review rounds over both (tier 2). SWE-2 S-se1 r1, 2026-11-12 (two parts): 4 of
       10 concerns accepted (`a6174e84`, Opus; merge `78212109`): the New value cut with an
       ellipsis as the other two columns are, and three tests that passed on wrong code
       (the cut's width bounded from below, the whole dragged row watched, the float gone
@@ -2767,15 +2767,17 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         away from the pointer and vanished while the wheel scrolled the list; Esc's cancel
         of a drop untested (a test first); two tests that could not fail; the lead's text:
         the plan's drag and Comparator paragraphs (`10a7b2d3`)
-      - [ ] the rework merged (`9e757880`); due: a SWE-2 loop over it, then Carbon's round 2
+      - [x] the rework merged (`9e757880`); due: a SWE-2 loop over it, then Carbon's round 2
         (round 1 had two of reach (a)). SWE-2 round "S-cmp c1", 2026-11-23: 6 accepted, one
         a group member's float drawn unselected; its fixes, with S-sel c1's, merged
         `044955c1` (SWE-2). Round c2 over them found nothing, which ends the SWE-2 loop
-      - [ ] Carbon's round 2, 2026-11-23 (at `bb2ccfb4`, rulings "C-cmp r2"): 9 accepted, one of
-        reach (a): a held row's id passed to another row while the wheel scrolled the list,
-        which blanked a bystander. The lead's text: SE-GUI-69 and SE-GUI-13 (`72bfe950`). Its
-        fixes are slice C1 (SWE-2, `.tmp/c2fix/brief_c1.md`, from `2ce16798`, after N2),
-        running; then a SWE-2 loop over it, then Carbon's round 3
+      - [x] Carbon's round 2, 2026-11-23 (at `bb2ccfb4`, rulings "C-cmp r2"): 9 accepted. Its
+        fixes, slice C1 (SWE-2), merged `1774139b`: the float gone on the release frame, its
+        name cut where the row's is, the Comparator's narrowest width tested against where its
+        last heading ends.
+        Its one concern of reach (a), a held row's id passed to another row while the wheel
+        scrolled, does not happen (egui's `show_rows` keeps the ids; rulings "C1 review"), so
+        the round holds none and the loop over the drag and the Comparator ends
   - [ ] 0.0.2-bar the toolbar as a menu bar (the maintainer, 2026-11-07 and 2026-11-12): the
     Ruleset editor draft's look, unframed menus on a band edge to edge, on the Save editor
     and the Ruleset editor; in the Save editor `File` (the opens, then Save and Save as) and
