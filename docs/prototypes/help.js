@@ -99,7 +99,7 @@ const BUILD_HELP = {
           "code": "multiple_ref_exports",
           "effect": "None of them is compiled. Disable or remove all but one.",
           "severity": "Error",
-          "when": "More than one `refs` export is in the run (one marked `NO_USE` does not count)."
+          "when": "More than one `refs` export is among the exports (one marked `NO_USE` does not count)."
         },
         {
           "code": "duplicate_aesthetics_export",
@@ -135,7 +135,7 @@ const BUILD_HELP = {
           "code": "kit_config_version_clamped",
           "effect": "The value is lowered to one the version can hold when the config is written.",
           "severity": "Warning",
-          "when": "A kit config value does not fit the PES version compiled for (a name `y` over 33 before PES 2021). The value is in the kit's own `config.toml`, or in an installed config that the run writes the FPC values or the collar into, for a kit the `Midcup` export does not hold."
+          "when": "A kit config value does not fit the PES version compiled for (a name `y` over 33 before PES 2021). The value is in the kit's own `config.toml`, or in an installed config that a compile writes the FPC values or the collar into, for a kit the `Midcup` export does not hold."
         },
         {
           "code": "kit_config_option_ignored",
@@ -207,7 +207,7 @@ const BUILD_HELP = {
           "code": "collar_id_conflict",
           "effect": "The file is left out and the team's kits keep their own collars.",
           "severity": "Error",
-          "when": "The collar number the file names is already taken: by an export earlier in this run, by another collar file of this export (an export brings one collar, since its kit configs take one ID), or by the compiler, which keeps 105 (the FPC collar) and 77 (the referees' marker). The line names who holds it."
+          "when": "The collar number the file names is already taken: by an export compiled before this one, by another collar file of this export (an export brings one collar, since its kit configs take one ID), or by the compiler, which keeps 105 (the FPC collar) and 77 (the referees' marker). The line names who holds it."
         },
         {
           "code": "logo_fit_applied",
@@ -435,7 +435,7 @@ const BUILD_HELP = {
           "code": "mtl_texture_not_found",
           "effect": "The folder is still built, because the game still loads a face with a missing texture. Check the player in the game.",
           "severity": "Warning",
-          "when": "In PES 2015 to 2017 (and in PES 2018 to 2021 for the `.mtl` of a `.model` being converted), a material a mesh uses names a texture that nothing supplies: not in the folder, and for a Common path neither in `Common/` nor in a CPK listed before this run's own."
+          "when": "In PES 2015 to 2017 (and in PES 2018 to 2021 for the `.mtl` of a `.model` being converted), a material a mesh uses names a texture that nothing supplies: not in the folder, and for a Common path neither in `Common/` nor in a CPK listed before this compile's own."
         },
         {
           "code": "mtl_texture_unused_missing",
@@ -759,7 +759,7 @@ const BUILD_HELP = {
           "code": "fmdl_texture_not_found",
           "effect": "The part is kept, with one line per missing texture: a mesh naming it shows without it.",
           "severity": "Warning",
-          "when": "In PES 2018 to 2021, one of the model's meshes names a texture that nothing supplies: not in the folder, not at the `./` path the mesh names, and for a Common path neither in `Common/` nor in a CPK the `DpFileList.bin` lists before this run's own. The texture may still be in an installed CPK that could not be checked."
+          "when": "In PES 2018 to 2021, one of the model's meshes names a texture that nothing supplies: not in the folder, not at the `./` path the mesh names, and for a Common path neither in `Common/` nor in a CPK the `DpFileList.bin` lists before this compile's own. The texture may still be in an installed CPK that could not be checked."
         },
         {
           "code": "fmdl_texture_kit_path",
@@ -987,7 +987,7 @@ const BUILD_HELP = {
           "code": "cpk_name_unlisted",
           "effect": "A compile stops before compiling anything: nothing is installed or written, and the save is not touched. Set `cpk_name` to a name the list has; then compile again.",
           "severity": "Fatal",
-          "when": "This compile's CPK name is in neither the game's `DpFileList.bin` nor the cup's official list."
+          "when": "One or more of this compile's CPK names are in neither the game's `DpFileList.bin` nor the cup's official list (the line names them)."
         },
         {
           "code": "cpk_slots_exhausted",
@@ -1347,7 +1347,7 @@ const BUILD_HELP = {
           "code": "common_link_missing",
           "effect": "The folder is left out.",
           "severity": "Error",
-          "when": "A `.common` link names a file missing from `Common/` (a `kitN` name or folder stands for its set). In PES 2018 to 2021, a texture link is satisfied when a CPK listed before this run's own holds it at the team's Common path."
+          "when": "A `.common` link names a file missing from `Common/` (a `kitN` name or folder stands for its set). In PES 2018 to 2021, a texture link is satisfied when a CPK listed before this compile's own holds it at the team's Common path."
         },
         {
           "code": "link_target_dropped",
@@ -2116,7 +2116,7 @@ const BUILD_HELP = {
           "code": "common_link_missing",
           "effect": "The run is not clean, so nothing is written.",
           "severity": "Error",
-          "when": "A `.common` link names a file missing from `Common/` (a `kitN` name or folder stands for its set). In PES 2018 to 2021, a texture link is satisfied when a CPK listed before this run's own holds it at the team's Common path."
+          "when": "A `.common` link names a file missing from `Common/` (a `kitN` name or folder stands for its set). In PES 2018 to 2021, a texture link is satisfied when a CPK listed before the compile's own holds it at the team's Common path."
         },
         {
           "code": "link_target_dropped",

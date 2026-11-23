@@ -1500,6 +1500,11 @@ mod tests {
             "dpfilelist_not_official",
             "dpfilelist_cpk_missing",
             "dpfilelist_outdated",
+            "multiple_ref_exports",
+            "collar_id_conflict",
+            "kit_config_version_clamped",
+            "mtl_texture_not_found",
+            "common_link_missing",
         ] {
             let (.., when, effect) = CATALOG
                 .iter()

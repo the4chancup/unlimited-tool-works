@@ -776,7 +776,7 @@ const CATALOG: &[(&str, Severity, &str, &str)] = &[
     (
         "common_link_missing",
         Severity::Error,
-        r#"A `.common` link names a file missing from `Common/` (a `kitN` name or folder stands for its set). In PES 2018 to 2021, a texture link is satisfied when a CPK listed before this run's own holds it at the team's Common path."#,
+        r#"A `.common` link names a file missing from `Common/` (a `kitN` name or folder stands for its set). In PES 2018 to 2021, a texture link is satisfied when a CPK listed before the compile's own holds it at the team's Common path."#,
         r#"The run is not clean, so nothing is written."#,
     ),
     (

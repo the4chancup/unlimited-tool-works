@@ -49,7 +49,7 @@ pub(super) const CATALOG: &[(&str, CatalogSeverity, &str, &str)] = &[
     (
         "multiple_ref_exports",
         CatalogSeverity::Error,
-        r#"More than one `refs` export is in the run (one marked `NO_USE` does not count)."#,
+        r#"More than one `refs` export is among the exports (one marked `NO_USE` does not count)."#,
         r#"None of them is compiled. Disable or remove all but one."#,
     ),
     (
@@ -85,7 +85,7 @@ pub(super) const CATALOG: &[(&str, CatalogSeverity, &str, &str)] = &[
     (
         "kit_config_version_clamped",
         CatalogSeverity::Warning,
-        r#"A kit config value does not fit the PES version compiled for (a name `y` over 33 before PES 2021). The value is in the kit's own `config.toml`, or in an installed config that the run writes the FPC values or the collar into, for a kit the `Midcup` export does not hold."#,
+        r#"A kit config value does not fit the PES version compiled for (a name `y` over 33 before PES 2021). The value is in the kit's own `config.toml`, or in an installed config that a compile writes the FPC values or the collar into, for a kit the `Midcup` export does not hold."#,
         r#"The value is lowered to one the version can hold when the config is written."#,
     ),
     (
@@ -157,7 +157,7 @@ pub(super) const CATALOG: &[(&str, CatalogSeverity, &str, &str)] = &[
     (
         "collar_id_conflict",
         CatalogSeverity::Error,
-        r#"The collar number the file names is already taken: by an export earlier in this run, by another collar file of this export (an export brings one collar, since its kit configs take one ID), or by the compiler, which keeps 105 (the FPC collar) and 77 (the referees' marker). The line names who holds it."#,
+        r#"The collar number the file names is already taken: by an export compiled before this one, by another collar file of this export (an export brings one collar, since its kit configs take one ID), or by the compiler, which keeps 105 (the FPC collar) and 77 (the referees' marker). The line names who holds it."#,
         r#"The file is left out and the team's kits keep their own collars."#,
     ),
     (
@@ -385,7 +385,7 @@ pub(super) const CATALOG: &[(&str, CatalogSeverity, &str, &str)] = &[
     (
         "mtl_texture_not_found",
         CatalogSeverity::Warning,
-        r#"In PES 2015 to 2017 (and in PES 2018 to 2021 for the `.mtl` of a `.model` being converted), a material a mesh uses names a texture that nothing supplies: not in the folder, and for a Common path neither in `Common/` nor in a CPK listed before this run's own."#,
+        r#"In PES 2015 to 2017 (and in PES 2018 to 2021 for the `.mtl` of a `.model` being converted), a material a mesh uses names a texture that nothing supplies: not in the folder, and for a Common path neither in `Common/` nor in a CPK listed before this compile's own."#,
         r#"The folder is still built, because the game still loads a face with a missing texture. Check the player in the game."#,
     ),
     (
@@ -709,7 +709,7 @@ pub(super) const CATALOG: &[(&str, CatalogSeverity, &str, &str)] = &[
     (
         "fmdl_texture_not_found",
         CatalogSeverity::Warning,
-        r#"In PES 2018 to 2021, one of the model's meshes names a texture that nothing supplies: not in the folder, not at the `./` path the mesh names, and for a Common path neither in `Common/` nor in a CPK the `DpFileList.bin` lists before this run's own. The texture may still be in an installed CPK that could not be checked."#,
+        r#"In PES 2018 to 2021, one of the model's meshes names a texture that nothing supplies: not in the folder, not at the `./` path the mesh names, and for a Common path neither in `Common/` nor in a CPK the `DpFileList.bin` lists before this compile's own. The texture may still be in an installed CPK that could not be checked."#,
         r#"The part is kept, with one line per missing texture: a mesh naming it shows without it."#,
     ),
     (
@@ -959,7 +959,7 @@ pub(super) const CATALOG: &[(&str, CatalogSeverity, &str, &str)] = &[
     (
         "cpk_name_unlisted",
         CatalogSeverity::Fatal,
-        r#"This compile's CPK name is in neither the game's `DpFileList.bin` nor the cup's official list."#,
+        r#"One or more of this compile's CPK names are in neither the game's `DpFileList.bin` nor the cup's official list (the line names them)."#,
         r#"A compile stops before compiling anything: nothing is installed or written, and the save is not touched. Set `cpk_name` to a name the list has; then compile again."#,
     ),
     (
@@ -1330,7 +1330,7 @@ pub(super) const CATALOG: &[(&str, CatalogSeverity, &str, &str)] = &[
     (
         "common_link_missing",
         CatalogSeverity::Error,
-        r#"A `.common` link names a file missing from `Common/` (a `kitN` name or folder stands for its set). In PES 2018 to 2021, a texture link is satisfied when a CPK listed before this run's own holds it at the team's Common path."#,
+        r#"A `.common` link names a file missing from `Common/` (a `kitN` name or folder stands for its set). In PES 2018 to 2021, a texture link is satisfied when a CPK listed before this compile's own holds it at the team's Common path."#,
         r#"The folder is left out."#,
     ),
     (
