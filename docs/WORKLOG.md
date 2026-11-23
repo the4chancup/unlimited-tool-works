@@ -23,8 +23,8 @@ traced again at a phase's converge.
 
 One line per piece of work in flight; the items below hold the detail.
 
-- The Compiler's grid (item 6): Carbon's round 5 is ruled; its fixes are slice G9, then a
-  SWE-2 round over them and Carbon's round 6.
+- The Compiler's grid (item 6): Carbon's round 5's fixes are merged (G9); SWE-2's round over
+  them is running, then Carbon's round 6.
 - `0.0.3-vgl27.2`, the next VGL build: built and checked, waiting for the maintainer to hand
   it over.
 - `0.0.2-pes14.3`, PES 2014 Build 3: tagged and checked, waiting for the maintainer to publish.
@@ -316,9 +316,11 @@ draft checked, for the maintainer to publish; running sidekicks and jobs are not
        accepted, one a real input whose outcome changes (a CPK name the lists lack reads
        "The run stops" before any run). The lead's fixes: Esc to an open menu or dialog
        first in both drafts, TC-GUI-11 and TC-GUI-31 widened to what their tests assert
-     - [ ] **G9** [after C5] the rest: `cpk_name_unlisted`'s text, the detail body's
-       tie-break and the legend's title click tested, a dead portrait fallback, two doc
-       comments (SWE-2)
+     - [x] **G9** [after C5] 2026-11-24, `60e2e502`: the four findings logged before a run
+       speak of a compile, not of "the run"; the detail body's tie-break by code (TC-GUI-09
+       now states it) and the legend's title click tested; a dead portrait fallback and two
+       stale doc comments gone (SWE-2; the lead fixed three DpFileList rows the slice's grep
+       found)
      - [ ] **S-g9** [after G9] SWE-2's round over G9
      - [ ] **C6** [after S-g9] round 6
    - [x] **tbmenu** The Compile button's mode list, Open output folder and Copy report (TC-GUI-11, and
@@ -4060,10 +4062,9 @@ pruned when their phase closes; they stay in git history. A question only the ma
 can answer is not an issue: it goes to `docs/maintainer/questions.html`, and an issue that waits on one
 points there.
 
-- open (2026-11-23) — `scripts/commit.py -a` commits the tracked changes only, as `git commit
-  -a` does, so a new file the commit needs is left out silently: `9ac41d0a` needed an amend
-  for `docs/spec/core/design.md`. Fix: with `-a`, `commit.py` refuses while untracked files
-  that are not ignored exist, naming them, and a flag (or naming the paths) commits them.
+- resolved (2026-11-24) — `scripts/commit.py -a` left a new file out silently, as `git commit
+  -a` does: `9ac41d0a` needed an amend for `docs/spec/core/design.md`. With `-a` it now
+  commits nothing while a file is untracked and not ignored, and names it (`69e1ac60`).
 
 - open (2026-11-23) — the grid's detail window grows for a few frames after it opens: when it
   replaces a smaller pinned window, it grows about 27 points a frame for four frames (387 to
