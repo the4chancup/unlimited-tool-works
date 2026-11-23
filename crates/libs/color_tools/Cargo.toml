@@ -1,6 +1,6 @@
 [package]
 name = "color_tools"
-description = "Kit-color extraction from kit textures and the suite's color-picker widget; later kit icon drawing"
+description = "Kit-color extraction from kit textures, kit menu icon drawing and the suite's color-picker widget"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
