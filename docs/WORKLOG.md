@@ -175,11 +175,14 @@ draft checked, for the maintainer to publish; running sidekicks and jobs are not
          the deletions the member ticked (`dpfilelist_cpk_deleted`), the catalog's texts
        - [x] 1c-iii-b (2026-11-23, merge `bdfccc40`, SWE-2): the button and the dialog over
          them (TC-GUI-33), the button shown after a run's preflight, as briefed before
-         1c-iii-c's decision. Review round S1's fixes run on `sk/review_s1`
+         1c-iii-c's decision
+       - [x] Review round S1's fixes (2026-11-23, merge `3c47d77a`, SWE-2): a failed delete
+         no longer stops the upgrade, the dialog names a replacement only when it makes one,
+         a `.zip`'s cells are deep-checked, and tests that passed on wrong code were tightened.
+         Round S2 (SWE-2) reviews 1c-iii-b and these fixes
        - 1c-iii-c: the list checked with each check of the exports and after an upgrade, not
          by a run alone; the button in the selection blue; Compile disabled while the list is
-         outdated, sideloading and the test mode enabled (DECISIONS 2026-11-23); with review
-         round S1's fixes, after 1c-iii-b
+         outdated, sideloading and the test mode enabled (DECISIONS 2026-11-23)
      - The selection's edge on every blue fill (DECISIONS 2026-11-23, `plans/core/gui.md`
        "Control edges"): a picked row or chip drawn through `widgets::row` (the log's chips, a
        dropdown's picked row, the help's shown topic, the comparator's show chip, the Ruleset
@@ -3783,8 +3786,8 @@ points there.
   (`team_compiler/src/view/upgrade_dpfl.rs`, `list_box`) writes `CornerRadius::same(2)`. The
   scan is a test of `studio_core` that reads every crate's sources, so a slice whose Verify
   tests only its own crate never runs it, and the lead's rerun of that slice's gates missed it
-  too. Fix: the line takes the theme's radius (with review round S1's fixes); the scan moves
-  into a gate script beside `just colour-literals`, which every brief already runs.
+  too. The line now takes the theme's radius (`3c47d77a`). Open: the scan moves into a gate
+  script beside `just colour-literals`, which every brief already runs.
 - open (2026-11-23) — `team_compiler`'s test sandbox (`src/testing.rs` `sandbox`) writes a
   teams list holding `792 /egg/`, a pairing no user sees: the real list
   (`crates/libs/teams_list/data/teams_list.txt`) has 792 as `/END/`, and `/egg/` is not in
