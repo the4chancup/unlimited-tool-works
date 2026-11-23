@@ -185,6 +185,16 @@ exist yet (every Phase 2 crate), the plan's data-shape rules stand in for one.
 - No child→parent back-references, anywhere: pass resolved identity/context down as parameters; no
   `Rc<RefCell<_>>` graphs. `Arc` for sharing immutable leaf data across threads (textures,
   snapshots, wake callbacks) is not a parent reference and is what the plan intends.
+- **What a view found is tied to the settings it was found with.** A check's rows and a
+  dialog's preview describe the install and settings they ran with, so when those change (the
+  sidebar's PES version, the switch to a game that started running), the check runs again and
+  an open dialog closes. A confirmation acts on what its preview showed, the folder included,
+  and never resolves it again from the settings: they may have changed while the dialog was
+  open.
+- **A window fits the screen, and what covers a widget takes its pointer.** A window whose
+  content grows with its input (a cell's findings) scrolls inside the screen, its buttons
+  always in view. A panel painted over scrolled widgets (a sticky title row) also takes the
+  pointer there, or the hidden widgets react through it.
 - **Text a member reads is written for a layman**: the help chapters, the catalog rows' When and
   Effect, UI strings and the injected `settings.toml` comments say, in plain words, what happened
   and what the member can do about it, as easy to follow as the fact allows. None of the code's
@@ -203,6 +213,9 @@ exist yet (every Phase 2 crate), the plan's data-shape rules stand in for one.
   save is from PES 2017, so the editor will keep treating it as a PES 2017 save." A member reads the
   dry version twice and still wonders what to do; the review of a change that adds such text
   reads each new line aloud.
+- **Text built from a count or a list is read in every case it meets**: none, one and
+  several, and with the thing it names absent. "Each of the 1 official CPKs" and "Tick any you
+  want deleted" above a list with no box to tick were each written for the common case alone.
 - **A help topic is read in pieces, one subject each**: a paragraph holds one subject in a
   few sentences, a topic with several subjects gives each its own subheading (a line of bold
   text alone, `**Teams and players**`, which the window and the drafts draw alike), and
