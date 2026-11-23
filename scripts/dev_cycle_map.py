@@ -153,9 +153,10 @@ NODES = [
      "release's bundles with their checksums. just checkpoint-status prints its verdict on "
      "the pushed commit."),
     ("mdiff", "mutants-diff", "mutation", 5, 0,
-     "Part of just checkpoint, over the commits since the last gated one: each surviving "
-     "mutant is an assertion nobody wrote. A larger crate's mutants are split between the "
-     "lead's PC and the VPS, sized so both halves end together."),
+     "Part of just checkpoint, over the commits since the last gated one, and run once as "
+     "each review loop starts, beside its first round, over the loop's slices: each "
+     "surviving mutant is an assertion nobody wrote. A larger crate's mutants are split "
+     "between the lead's PC and the VPS, sized so both halves end together."),
     ("extra", "Extra mutant kinds", "mutation", 5, 1,
      "bool, literal, normalize and order mutants cargo-mutants does not make, run before a "
      "whole-crate run into the same survivor list."),
@@ -163,8 +164,8 @@ NODES = [
      "Every mutant of a crate, on the VPS alone: twice per crate, in the lead's audit and at "
      "the phase's close. The next phase starts while it runs."),
     ("triage", "Survivor triage", "mutation", 6, 1,
-     "Each survivor is a missing test (into one rework brief) or an equivalent mutant, ruled "
-     "once and recorded."),
+     "Each survivor is a missing test (into a fix slice) or an equivalent mutant, ruled once "
+     "and recorded."),
 ]
 
 # (from, to): the first one feeds the second.
@@ -184,7 +185,7 @@ EDGES = [
     ("commit", "worklog"), ("commit", "log"),
     ("commit", "swe"), ("swe", "argon"), ("argon", "astra"), ("astra", "swe"),
     ("swe", "rulings"), ("argon", "rulings"), ("astra", "rulings"),
-    ("rulings", "rework"), ("rulings", "gates"), ("rulings", "mdiff"), ("mdiff", "triage"),
+    ("rulings", "rework"), ("rulings", "gates"), ("mdiff", "triage"),
     ("ingame_run", "ingame_ok"), ("ingame_ok", "worklog"),
     ("plans", "converge"), ("acceptance", "converge"), ("commit", "converge"),
     ("converge", "worklog"), ("converge", "astra"), ("converge", "whole"), ("converge", "citation"),

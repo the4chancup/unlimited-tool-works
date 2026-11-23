@@ -19954,3 +19954,15 @@ Why: the review acts only on causes that have already gone wrong, and a weak spo
 not failed yet leaves nothing to review. A script that deletes worktrees listed three running
 ones in its dry run, though it had been patched once for that very case.
 Plan: `PREVENTION.md` "Looking ahead".
+
+## 2026-11-23 — dev cycle — a review loop's mutation run starts with the loop, beside its first round (maintainer)
+Decision: the `just mutants-diff` over a review loop's slices runs as the loop starts, beside
+its first review round, and its survivors go into that round's fix slice. The next
+checkpoint's run measures the fix slice's own tests.
+Why: run at the loop's end, its survivors needed a rework slice of their own after the
+reviews. Run before the first round instead, it would hold every loop up for the length of
+the run, while reviewers would still report most missing tests, which are wiring a mutant
+cannot express (a call no test observes, a test that stops short of the window). Beside the
+first round it costs the same one run and saves a rework cycle.
+Plan: `CONTRIBUTING.md` "Mutation runs"; `RUNBOOK.md` "Phases and releases" (the design-health
+pass) and "Lead and sidekick"; the dev cycle chart (`scripts/dev_cycle_map.py`).

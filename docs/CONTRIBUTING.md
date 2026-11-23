@@ -532,10 +532,11 @@ Requirements:
   with `cargo install --locked cargo-nextest`, which runs each mutant's tests) measures that directly by rewriting one function or operator at a time and rerunning the
   tests; a mutant the suite does not catch ("missed") is an assertion nobody wrote. It runs at two
   points, never as a gate (a whole-workspace run is an hour today and grows with the code):
-  `just mutants-diff [base]` over the lines a surface's review loop changed, once at the loop's
-  end (its base the parent of the loop's first reviewed commit, its run right after that
-  checkpoint's `just gates-changed`), its survivors going into one rework brief, whose own
-  tests the next checkpoint's run measures; not once per rework round, since each run freezes
+  `just mutants-diff [base]` over the lines a surface's slices changed, once as its review
+  loop starts (its base the parent of the first slice's merge), beside the loop's first
+  review round so it holds nothing up, its survivors going into that round's fix slice, whose
+  own tests the next checkpoint's run measures; not at the loop's end, where its survivors
+  needed a rework slice of their own, and not once per rework round, since each run freezes
   the crates it mutates for its whole length and its baseline repeats the checkpoint's tests;
   and `just mutants <crate>` over each of a phase's crates at converge (when
   `STUDIO_MUTANTS_REMOTE` names an ssh host, it runs half the mutants there; prerequisites in

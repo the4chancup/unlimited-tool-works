@@ -644,7 +644,7 @@ dribbling-arm motion read as 2 bits of 3, misread for 2,808 players). Coverage a
 change?", which no test or lint measures and which compounds silently across phases. The
 whole-crate run happens twice per crate: in the lead's audit, where its survivors seed the first
 rework brief, and once at close, after the reviewer loop ends. The rework rounds in between are
-measured together, one `just mutants-diff` at each review loop's end over the loop's commits
+measured together, one `just mutants-diff` as each review loop starts, over its slices
 (`CONTRIBUTING.md` "Mutation runs"; 2.20f: 45-53 minutes per whole-crate run, 3 for a round's
 diff). Neither run holds the work up: the next phase starts while a run is under way, and
 the closing phase keeps its row open until the run's survivors are triaged and their tests
@@ -834,12 +834,12 @@ already past it grows unchecked; `aesthetics_export`'s `validate/tests.rs` reach
 `Blue`, `reference`, `add-on`, `Python`, `texconv`, `always`), a comment that does not stand on
 its own (it cites a plan, a decision, a step or a review: `just comment-refs`; or it is a chain
 of parentheses a maintainer has to read twice). The **mutation run** (`just
-mutants-diff <the loop's first commit's parent>`, once per review loop, over every diff the loop
-landed) is the third check and the only one that is a measurement rather than a reading: each
+mutants-diff <the parent of the first slice's merge>`, once per review loop, as it starts,
+beside its first review round) is the third check and the only one that is a measurement rather than a reading: each
 survivor is an assertion the sweeps cannot see because it was never written (the `kit_config`
 probe found twenty such gaps in a crate that had passed both sweeps, converge and the
 cross-family reviewer), and every survivor is triaged per `CONTRIBUTING.md` "Mutation runs"
-before the surface closes, the missing tests going into one rework brief. Each sweep item is a
+before the surface closes, the missing tests going into the first round's fix slice. Each sweep item is a
 `CONTRIBUTING.md` rule; the sweeps exist because a rule nobody greps for is a rule the review
 applies only when it happens to notice. When a review finds slop
 neither list names, the fix is a new entry in this section or in `CONTRIBUTING.md`, not a longer review:
