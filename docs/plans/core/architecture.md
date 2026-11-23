@@ -770,7 +770,7 @@ Compiler and the Export upgrader, then the rest as they are built.
   a bundle's kept files back as files. It reads the bundle as replay does, each packed save
   rebuilt by the Save editor and checked against its journal row's size and SHA-256. It then
   writes each input to `<folder>/inputs/` and each output to `<folder>/outputs/`, named
-  `<index>-<file name>` as in the session folder, without `.packed`, and prints each path.
+  `<index>-<file name>` as in the session folder, without `.packed`.
 
   - A bundle that does not read (not a zip, a save that does not rebuild to its SHA-256)
     writes nothing and exits 2, as replay does.

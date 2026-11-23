@@ -4213,8 +4213,8 @@ SE-REP-08  GIVEN SE-REP-07's earlier session as the bundle a report keeps under 
                 for a save of each version the tests hold, and a folder that does not exist
            WHEN `save-editor unpack-session` is run on the bundle and the folder
            THEN the folder holds `inputs/0-<name>` and `outputs/0-<name>`, `<name>` the
-                save's file name, each byte for byte the save the session opened or wrote;
-                it prints both paths and exits 0; GIVEN one byte of a decrypted section
+                save's file name, each byte for byte the save the session opened or wrote,
+                and it exits 0; GIVEN one byte of a decrypted section
                 changed, or the folder already holding a file, THEN it prints why, writes
                 nothing and exits 2
 ```
