@@ -268,23 +268,6 @@ fn on_line(nodes: &[accesskit::Node], rest: &str) -> egui::Pos2 {
     )
 }
 
-/// The rectangle of the painted grid cell reading `text`.
-fn cell_rect(nodes: &[accesskit::Node], text: &str) -> egui::Rect {
-    let found: Vec<egui::Rect> = nodes
-        .iter()
-        .filter(|node| node.role() == accesskit::Role::Label && node.value() == Some(text))
-        .filter_map(accesskit::Node::bounds)
-        .map(|bounds| {
-            egui::Rect::from_min_max(
-                egui::pos2(bounds.x0 as f32, bounds.y0 as f32),
-                egui::pos2(bounds.x1 as f32, bounds.y1 as f32),
-            )
-        })
-        .collect();
-    assert_eq!(found.len(), 1, "one cell reads {text:?}");
-    found[0]
-}
-
 // TC-GUI-15
 #[test]
 fn a_warning_line_opens_its_cell_s_window_on_hover_and_a_click_outlines_and_pins_it() {

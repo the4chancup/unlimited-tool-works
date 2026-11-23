@@ -22,7 +22,9 @@ use crate::Tool;
 use crate::check::live::LiveCheck;
 use crate::settings::default_table;
 use crate::test_files::complete;
-use crate::testing::{copy_tree, install_pes, poll_until_done, sandbox, tool_context};
+use crate::testing::{
+    ScratchFolder, copy_tree, install_pes, poll_until_done, sandbox, tool_context,
+};
 
 /// A headless window: one egui context with AccessKit on and animations off (so a
 /// collapsing header is fully open on the frame after its click), run a frame at a time.
@@ -102,6 +104,15 @@ fn settings_only_context() -> ToolContext {
 /// `tool_context` for a `version` install (`tool_context` itself is always PES 21's):
 /// the same settings built by hand, `pes_version` aside.
 fn tool_context_at(root: &Path, version: PesVersion) -> ToolContext {
+    tool_context_with_settings(root, version).0
+}
+
+/// `tool_context_at`'s context, and the shared settings it is built on, so a test writes
+/// them through the lock as the sidebar does.
+fn tool_context_with_settings(
+    root: &Path,
+    version: PesVersion,
+) -> (ToolContext, Arc<Mutex<Settings>>) {
     let mut settings = Settings::parse("").unwrap();
     settings.common.pes_version = version;
     settings.common.pes_folder_path = root.join("PES").display().to_string();
@@ -114,15 +125,43 @@ fn tool_context_at(root: &Path, version: PesVersion) -> ToolContext {
     settings.merge_defaults(TOOL_ID, &default_table());
     let (events_tx, _events_rx) = unbounded();
     let (requests_tx, _requests_rx) = unbounded();
-    ToolContext::new(
-        Arc::new(Mutex::new(settings)),
+    let settings = Arc::new(Mutex::new(settings));
+    let ctx = ToolContext::new(
+        settings.clone(),
         AppPaths {
             exe_dir: root.to_path_buf(),
             data_dir: Some(root.join("data")),
         },
         events_tx,
         requests_tx,
-    )
+    );
+    (ctx, settings)
+}
+
+/// The shared settings' PES folder made `folder`, as the sidebar's pick writes it.
+fn set_pes_folder(settings: &Arc<Mutex<Settings>>, folder: &Path) {
+    settings.lock().unwrap().common.pes_folder_path = folder.display().to_string();
+}
+
+/// The scene of a PES-folder switch: `root`'s install holds `first` as its `DpFileList.bin`
+/// and `other`'s `second` (each a PES 2017 install with every listed CPK in `download/`),
+/// the context and its shared settings pointing at `root`'s.
+fn two_installs(
+    test: &str,
+    first: &[u8],
+    second: &[u8],
+) -> (
+    ScratchFolder,
+    ScratchFolder,
+    ToolContext,
+    Arc<Mutex<Settings>>,
+) {
+    let temp = sandbox(test);
+    install(temp.path(), 2017, first, None);
+    let other = crate::testing::scratch(&format!("{test}_other"));
+    install(other.path(), 2017, second, None);
+    let (ctx, settings) = tool_context_with_settings(temp.path(), PesVersion::Pes17);
+    (temp, other, ctx, settings)
 }
 
 /// The tracer export, whose player and goalkeeper kit the grid's exports are built from.
@@ -297,6 +336,27 @@ fn labeled(nodes: &[accesskit::Node], label: &str) -> bool {
     nodes.iter().any(|node| node.label() == Some(label))
 }
 
+/// A node's bounds as an `egui::Rect`, when it has them.
+fn node_rect(node: &accesskit::Node) -> Option<egui::Rect> {
+    node.bounds().map(|bounds| {
+        egui::Rect::from_min_max(
+            egui::pos2(bounds.x0 as f32, bounds.y0 as f32),
+            egui::pos2(bounds.x1 as f32, bounds.y1 as f32),
+        )
+    })
+}
+
+/// The rectangle of the painted grid cell reading `text`.
+fn cell_rect(nodes: &[accesskit::Node], text: &str) -> egui::Rect {
+    let found: Vec<egui::Rect> = nodes
+        .iter()
+        .filter(|node| node.role() == accesskit::Role::Label && node.value() == Some(text))
+        .filter_map(node_rect)
+        .collect();
+    assert_eq!(found.len(), 1, "one cell reads {text:?}");
+    found[0]
+}
+
 /// A click on `node`: the press frame, the release frame, and the frame after, which shows
 /// what the click changed. Returns that frame's nodes.
 fn click_on(
@@ -362,6 +422,7 @@ fn label_only_row() -> Row {
 
 mod compile;
 mod compile_menu;
+mod detail;
 mod grid;
 mod live_check;
 mod log_panel;

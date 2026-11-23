@@ -3,6 +3,7 @@
 //! file of its own given an unticked delete box) before anything is written.
 
 use std::collections::BTreeSet;
+use std::path::PathBuf;
 
 use studio_core::widgets::{modal_buttons, modal_sentence_gap};
 
@@ -20,6 +21,9 @@ const COLUMN_GAP: f32 = 8.0;
 /// ticked for deletion.
 pub(crate) struct DpflDialog {
     preview: Preview,
+    /// The `download/` the preview was made for, which the upgrade acts in: kept, since
+    /// the settings it was resolved from may have changed while the dialog is open.
+    download: PathBuf,
     delete: BTreeSet<String>,
 }
 
@@ -29,15 +33,17 @@ pub(crate) enum Outcome {
     Open,
     /// Closed, nothing written (Cancel or a dismissal).
     Closed,
-    /// Upgrade: apply the upgrade, deleting the ticked CPKs.
-    Upgrade(BTreeSet<String>),
+    /// Upgrade: apply the upgrade in the folder the preview was made for, deleting the
+    /// ticked CPKs.
+    Upgrade(PathBuf, BTreeSet<String>),
 }
 
 impl DpflDialog {
-    /// The dialog over `preview`, every delete box unticked.
-    pub(crate) fn new(preview: Preview) -> DpflDialog {
+    /// The dialog over `preview`, made for `download`, every delete box unticked.
+    pub(crate) fn new(preview: Preview, download: PathBuf) -> DpflDialog {
         DpflDialog {
             preview,
+            download,
             delete: BTreeSet::new(),
         }
     }
@@ -81,19 +87,36 @@ impl DpflDialog {
                 }
                 if preview.placeholders > 0 {
                     gap(ui);
-                    ui.label(format!(
-                        "An empty placeholder is written for each of the {} official \
-                         CPKs with no file, because the game loads nothing from \
-                         download/ while a CPK its list names is missing.",
-                        preview.placeholders
-                    ));
+                    if preview.placeholders == 1 {
+                        ui.label(
+                            "An empty placeholder is written for the official CPK with \
+                             no file, because the game loads nothing from download/ \
+                             while a CPK its list names is missing.",
+                        );
+                    } else {
+                        ui.label(format!(
+                            "An empty placeholder is written for each of the {} official \
+                             CPKs with no file, because the game loads nothing from \
+                             download/ while a CPK its list names is missing.",
+                            preview.placeholders
+                        ));
+                    }
                 }
                 if !preview.dropped.is_empty() {
                     gap(ui);
-                    ui.label(format!(
-                        "No longer loaded by the game ({}). Tick any you want deleted:",
-                        preview.dropped.len()
-                    ));
+                    // The tick is asked for only over boxes: a dropped entry without a
+                    // file in download/ gets none.
+                    if preview.dropped.iter().any(|(_, size)| size.is_some()) {
+                        ui.label(format!(
+                            "No longer loaded by the game ({}). Tick any you want deleted:",
+                            preview.dropped.len()
+                        ));
+                    } else {
+                        ui.label(format!(
+                            "No longer loaded by the game ({}):",
+                            preview.dropped.len()
+                        ));
+                    }
                     dropped_list(ui, &preview.dropped, &mut self.delete);
                 }
                 let buttons = modal_buttons(ui, |ui| {
@@ -104,7 +127,10 @@ impl DpflDialog {
                 });
                 match buttons {
                     (true, _) => {
-                        outcome = Outcome::Upgrade(std::mem::take(&mut self.delete));
+                        outcome = Outcome::Upgrade(
+                            self.download.clone(),
+                            std::mem::take(&mut self.delete),
+                        );
                     }
                     (_, true) => outcome = Outcome::Closed,
                     (false, false) => {}

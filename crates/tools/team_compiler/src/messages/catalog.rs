@@ -932,8 +932,8 @@ pub(super) const CATALOG: &[(&str, CatalogSeverity, &str, &str)] = &[
     (
         "dpfilelist_cpk_dropped",
         CatalogSeverity::Warning,
-        r#"The DpFileList upgrade could not rename a CPK of the old list that the official one does not have (no official name of its kind is left, its name is not of the `4cc_NN_kind.cpk` shape, or the official name it would take is in use). The line names its size."#,
-        r#"The game no longer loads it, and the file is left for you to remove."#,
+        r#"The DpFileList upgrade could not rename a CPK of the old list that the official one does not have (no official name of its kind is left, its name is not of the `4cc_NN_kind.cpk` shape, or the official name it would take is in use). The line names its size when its file is in `download/`."#,
+        r#"The game no longer loads it. If its file is still in `download/`, it is yours to remove, and when a deletion you ticked failed, the line says why."#,
     ),
     (
         "dpfilelist_cpk_deleted",

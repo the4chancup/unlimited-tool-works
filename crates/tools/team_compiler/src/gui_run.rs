@@ -4,6 +4,7 @@
 //! upgrade runs the same way, its lines appended after the run's it answers.
 
 use std::collections::BTreeSet;
+use std::path::PathBuf;
 use std::thread::JoinHandle;
 
 use crossbeam_channel::{Receiver, unbounded};
@@ -115,19 +116,24 @@ impl RunLog {
     }
 
     /// Starts the DpFileList upgrade on a thread of its own: `upgrade::run` applied in
-    /// `download/` (found as the command finds it) with `delete`, the dropped CPKs the dialog
-    /// ticked for deletion, which the command line's `--yes` never deletes. The upgrade's lines
-    /// are appended after the run's it answers: what the preflight said stays in the log.
-    /// Called only while no run is in flight (the dialog opens only then).
-    pub(crate) fn start_upgrade(&mut self, delete: BTreeSet<String>, ctx: &ToolContext) {
+    /// `download`, the folder its preview was made for (kept, never resolved again from
+    /// the settings, which may have changed while the dialog was open), with `delete`,
+    /// the dropped CPKs the dialog ticked for deletion, which the command line's `--yes`
+    /// never deletes. The upgrade's lines are appended after the run's it answers: what
+    /// the preflight said stays in the log. Called only while no run is in flight (the
+    /// dialog opens only then).
+    pub(crate) fn start_upgrade(
+        &mut self,
+        download: PathBuf,
+        delete: BTreeSet<String>,
+        ctx: &ToolContext,
+    ) {
         // A fresh formatter: export ids restart with each run.
         self.formatter = EventLines::new();
         let (sender, events) = unbounded();
         let ctx = ctx.with_events(sender);
-        let thread = std::thread::spawn(move || {
-            let download = cli::download_folder(&ctx.common())?;
-            cli::verdict(upgrade::run(&download, true, &delete, &ctx))
-        });
+        let thread =
+            std::thread::spawn(move || cli::verdict(upgrade::run(&download, true, &delete, &ctx)));
         self.run = Some(Run { events, thread });
     }
 
