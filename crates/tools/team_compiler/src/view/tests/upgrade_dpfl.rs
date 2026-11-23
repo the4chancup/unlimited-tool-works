@@ -819,10 +819,11 @@ fn the_first_part_shown_sits_where_the_first_paragraph_would() {
     );
 }
 
-// The dialog's frame is 460 points wide (the draft's `width:460px`): the paragraphs wrap
-// at that instead of widening the window to fit their lines.
+// The dialog's content is 460 points wide (the draft's `width:460px`): the
+// paragraphs wrap at that instead of widening the window to fit their lines,
+// and its frame adds the modal frame's margins and stroke on top of it.
 #[test]
-fn the_dialog_is_460_points_wide() {
+fn the_dialogs_content_is_460_wide_and_its_frame_adds_the_modals_margins() {
     let temp = crate::testing::scratch("view_dpfl_width");
     let root = temp.path();
     install(root, 2017, &pes17_list(), None);
@@ -841,13 +842,16 @@ fn the_dialog_is_460_points_wide() {
     for _ in 0..3 {
         window.frame(Vec::new(), |ui| dialog.show(ui));
     }
-    let frame = window
+    let outer = window
         .ctx
         .memory(|memory| memory.area_rect(egui::Id::unique("upgrade_dpfl")))
         .expect("the dialog's area has a rect");
+    let modal = studio_core::widgets::modal_frame(&window.ctx.style_of(window.ctx.theme()));
+    let expected = 460.0 + modal.total_margin().sum().x;
     assert!(
-        (frame.width() - 460.0).abs() <= 1.0,
-        "the dialog's frame is 460 wide: {frame:?}"
+        (outer.width() - expected).abs() <= 1.0,
+        "the dialog's frame is the 460 content with the modal's margins: \
+         {outer:?} vs {expected}"
     );
 }
 

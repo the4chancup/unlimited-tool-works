@@ -4,12 +4,12 @@
 
 use std::collections::BTreeSet;
 
-use studio_core::widgets::{modal_buttons, modal_frame, modal_sentence_gap};
+use studio_core::widgets::{modal_buttons, modal_sentence_gap};
 
 use crate::messages::size_text;
 use crate::upgrade::Preview;
 
-/// The dialog's width (the draft's 460 points).
+/// The dialog's content width (the draft's `width:460px`).
 const WIDTH: f32 = 460.0;
 /// A list's most height before it scrolls (the draft's `.list` `max-height:120px`).
 const LIST_HEIGHT: f32 = 120.0;
@@ -52,7 +52,7 @@ impl DpflDialog {
             egui::Id::unique("upgrade_dpfl"),
             "Upgrade DpFileList",
             |ui| {
-                ui.set_width(WIDTH - modal_frame(ui.style()).total_margin().sum().x);
+                ui.set_width(WIDTH);
                 let preview = &self.preview;
                 // The gap goes between two parts shown, none above the first: the first
                 // paragraph is left out when the list already is the official one.
