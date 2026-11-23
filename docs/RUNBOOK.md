@@ -443,13 +443,12 @@ the clone's build cache, usually most of it (a finished run's results stay until
 launch), and when that cannot lift the floor the maintainer is asked.
 Before the guard, the folder once held 50 GB (28.6 of them test leftovers, 27 the Save
 editor's pid-named copies of a fixture save), the disk was at 99% and a half lost five
-mutants. **At each phase's close**, after its last mutation run, the lead
-removes the clone's build cache, `~/studio-mutants/tree/target` (22 GB after two phases; only
-`just gates-remote` builds there, which then starts cold) with `scripts/mutation/remote_clean_target.sh`
-(its header has the two ssh lines: a dry run first, then `--delete`); it refuses while a half,
-the gates or a cargo process runs. The same cleanup frees the folder whenever the guard refuses
-between closes (2026-10-29: 35 GB, the disk from 13 to 47 GB
-free). Claude Code's auto-mode classifier refuses the two ssh lines unless the project's
+mutants. **The clone's build cache**, `~/studio-mutants/tree/target`, is removed by
+`scripts/mutation/remote_clean_target.sh` (its header has the two ssh lines: a dry run first,
+then `--delete`), which refuses while a half, the gates or a cargo process runs. `just
+gates-remote` runs it when the whole gates end: their 30 GB cache left 42 GB free, under the
+floor, so every next pipeline was refused (twice on 2026-11-23), and the gates now start cold.
+The lead runs it by hand when the guard refuses with a cache left by `just remote`. Claude Code's auto-mode classifier refuses the two ssh lines unless the project's
 `.claude/settings.local.json` allows them, which it does on the maintainer's machine, each
 exactly as the header writes it.
 
@@ -815,7 +814,11 @@ new format crate's fixture round-trip, says so). Omitting the section or an item
 violation, not an oversight. On the lead's side, every review before a commit includes two
 sweeps of the diff and re-runs the changed packages' tests, clippy and fmt in the real
 workspace (the dependents' tests run at the next checkpoint, `CONTRIBUTING.md` "Testing and
-verification"); the sidekick's pasted gate tails are a claim. The **honesty sweep** looks for a hidden failure: `#[allow`, `#[expect`,
+verification"); the sidekick's pasted gate tails are a claim. It also runs the gates that
+read text, which take seconds: `just line-endings doc-pointers changelog comment-refs
+colour-literals corner-radius acceptance` (`acceptance` last, since it would take the next
+name as its mode). A comment that cited "the plan" once merged
+without them and failed the next checkpoint, an hour later. The **honesty sweep** looks for a hidden failure: `#[allow`, `#[expect`,
 `#[ignore`, `.ok();`, `let _ =`, `drop(` on a `Result`, `unwrap_or_default`, `unwrap_or(`, and
 a `while` or `loop` in a test with no bound (`CONTRIBUTING.md`: a test fails, it never hangs). The **design sweep** looks
 for code that passes and is worse, the thing neither the gates nor a model's training penalize,

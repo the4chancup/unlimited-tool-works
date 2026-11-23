@@ -86,7 +86,8 @@ NODES = [
      "What the lead writes itself because its wrong version passes: fixtures, golden files, "
      "lints, CI, measurements."),
     ("diff_review", "Diff review and sweeps", "lead", 4, 0,
-     "The lead reads the whole diff, reruns the tests, clippy and fmt, and runs the honesty "
+     "The lead reads the whole diff, reruns the tests, clippy, fmt and the gates that read "
+     "text, and runs the honesty "
      "sweep (hidden failures) and the design sweep (code that passes and is worse)."),
     ("rulings", "Rulings", "lead", 4, 1,
      "Every reviewer concern is accepted or rejected with a reason. Being true is not enough: "

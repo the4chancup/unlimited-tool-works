@@ -1,7 +1,8 @@
 #!/bin/bash
-# Removes the VPS clone's build cache, ~/studio-mutants/tree/target, at a phase's close
-# (RUNBOOK "The scratch folder"): only `just gates-remote` builds there, while mutation runs
-# build in their own copy of the tree under ~/studio-mutants/tmp. Nothing else is touched.
+# Removes the VPS clone's build cache, ~/studio-mutants/tree/target, when `just gates-remote`'s
+# whole gates end, or by hand (RUNBOOK "The scratch folder"): only the gates and `just remote`
+# build there, while mutation runs build in their own copy of the tree under
+# ~/studio-mutants/tmp. Nothing else is touched.
 # Runs on the host: `ssh <host> "bash -s" < scripts/mutation/remote_clean_target.sh` for a dry run,
 # `ssh <host> "bash -s -- --delete" < scripts/mutation/remote_clean_target.sh` to remove. Refuses
 # while a remote half, the gates or any cargo process runs.

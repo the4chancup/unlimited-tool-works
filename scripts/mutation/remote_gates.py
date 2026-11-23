@@ -6,8 +6,10 @@ load (2026-10-10: four MEMORY_MANAGEMENT bugchecks here, the last during a run;
 The tree goes over as a mutation run sends it (`mutants.snapshot`,
 `mutants.transfer`), into the same remote clone, so this refuses to start while
 a remote mutants half is running or uncollected, or other gates run there
-(`mutants.remote_refusal`). Its `target/` is gitignored and survives the
-checkout, so a rerun builds incrementally. The gates run as the transient
+(`mutants.remote_refusal`). The whole gates' build cache, the clone's
+`target/`, is removed when they end (`remote_clean_target.sh`), since it held
+the disk under the mutation runs' floor; `just remote` keeps it, so a crate's
+reruns build incrementally. The gates run as the transient
 service `mutants.GATES_UNIT`, memory-capped (`mutants.remote_memory_max`) and
 CPU-idle like a mutants half (the host's production Fluxer instance comes
 first), synchronously:
@@ -31,10 +33,12 @@ anything else is a typo or belongs on this machine.
 import shlex
 import subprocess
 import sys
+from pathlib import Path
 
 import mutants
 
 GATES_JOB = f"{mutants.REMOTE_BASE}/gates.sh"
+CLEAN_TARGET = Path(__file__).with_name("remote_clean_target.sh")
 
 
 def main(command: list[str]) -> int:
@@ -97,6 +101,11 @@ def main(command: list[str]) -> int:
         "< /dev/null",
     )
     print(f"`{run_line}` on {host}: exit {run.returncode}")
+    if not command:
+        # The whole gates leave a 30 GB build cache, which put the disk under the mutation
+        # runs' free floor, so the next pipeline was refused every time (2026-11-23): a
+        # cold build costs those gates a few minutes, a refusal a whole run.
+        mutants.ssh(host, "bash -s -- --delete", input=CLEAN_TARGET.read_bytes())
     return run.returncode
 
 

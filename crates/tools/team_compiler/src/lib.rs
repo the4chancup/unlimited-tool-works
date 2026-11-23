@@ -89,14 +89,14 @@ impl Tool {
         }
     }
 
-    /// The Upgrade DpFileList button's click: `upgrade`'s plan for `download/` (found as the
+    /// The Upgrade DpFileList button's click: `upgrade`'s preview of `download/` (found as the
     /// command finds it), read once now, opens the dialog on it, unless the list is already
     /// the official one with every CPK it names there (`up_to_date`, the member having fixed
     /// it by hand or through the command line), when the upgrade runs at once with nothing
-    /// deleted. The folder the plan was made for goes with the dialog and the run, since the
-    /// settings may have changed while the dialog was open. A plan that cannot be made,
-    /// `download/` missing or a file it cannot read, is a line in the log as a refused
-    /// run's is, and opens nothing.
+    /// deleted. The folder the preview was read from goes with the dialog and the run, since
+    /// the settings may have changed while the dialog was open. A preview that cannot be
+    /// read, `download/` missing or a file in it unreadable, is a line in the log as a
+    /// refused run's is, and opens nothing.
     fn open_upgrade(&mut self, ctx: &ToolContext) {
         let preview = cli::download_folder(&ctx.common())
             .map_err(|error| error.to_string())
