@@ -121,6 +121,10 @@ pub struct Detail {
     /// The pin as it was before the last click on a cell. A double-click starts with a click
     /// that pins or unpins, and puts this back.
     pinned_before_click: Option<CellKey>,
+    /// Where and when the click that pinned the window landed. While egui could still
+    /// report the next click at that spot as a double-click, the window lets the pointer
+    /// through rather than taking it.
+    pinned_click: Option<(Pos2, f64)>,
     /// The cell under the pointer.
     under: Option<Under>,
     /// When the last window a hover opened closed.
@@ -282,18 +286,32 @@ impl Detail {
             // click must not pin or unpin again.
             if found.double_clicked {
                 self.pinned = self.pinned_before_click.clone();
+                self.pinned_click = None;
                 self.mute(cell);
                 double_clicked = Some(cell.clone());
             } else {
                 self.pinned_before_click = self.pinned.clone();
                 self.toggle_pin(cell);
+                self.pinned_click = if self.pinned.is_some() {
+                    ui.input(|input| input.pointer.latest_pos())
+                        .map(|at| (at, now))
+                } else {
+                    None
+                };
             }
         } else if empty_clicked {
             self.pinned = None;
+            self.pinned_click = None;
         }
         let open = self.pinned.is_some() || self.hover_shown(now);
-        if open && ui.input_mut(|input| input.consume_key(Modifiers::NONE, Key::Escape)) {
+        // A modal or a popup over the grid takes Esc first: it closes that layer, not the
+        // window under it.
+        let covered = ui.ctx().memory(|memory| memory.top_modal_layer()).is_some()
+            || egui::Popup::is_any_open(ui.ctx());
+        if open && !covered && ui.input_mut(|input| input.consume_key(Modifiers::NONE, Key::Escape))
+        {
             self.pinned = None;
+            self.pinned_click = None;
             self.mute_next = ui.input(|input| input.pointer.latest_pos());
             if let Some(under) = &mut self.under {
                 under.opens_at = None;
@@ -450,6 +468,7 @@ impl Detail {
         let Some((row, cell)) = find(rows, &key) else {
             // The rows were made again without this cell.
             self.pinned = None;
+            self.pinned_click = None;
             return response;
         };
         let pinned = self.pinned.is_some();
@@ -459,13 +478,32 @@ impl Detail {
             .copied
             .as_ref()
             .is_some_and(|(copied, until)| *copied == row.key && now < *until);
+        // The click that pinned the window can still be the first of a double-click on a
+        // cell the window covers: while egui could still report a click at that spot as a
+        // double-click (its delay, and the pointer within its click distance), the window
+        // lets the pointer through as it does while unpinned. The repaint ends the wait
+        // without another event.
+        let hold_until = self.pinned_click.and_then(|(spot, when)| {
+            let (delay, dist) = ui.ctx().options(|options| {
+                (
+                    options.input_options.max_double_click_delay,
+                    options.input_options.max_click_dist,
+                )
+            });
+            let pos = ui.input(|input| input.pointer.latest_pos());
+            let holding = now - when < delay && pos.is_some_and(|pos| pos.distance(spot) <= dist);
+            holding.then_some(when + delay)
+        });
+        if let Some(until) = hold_until {
+            ui.ctx().request_repaint_after_secs((until - now) as f32);
+        }
         let mut unpin = false;
         let mut dragged = None;
         let mut copy = false;
         let area = egui::Area::new(id.with("detail"))
-            .order(egui::Order::Foreground)
+            .order(egui::Order::Middle)
             .fixed_pos(at)
-            .interactable(pinned)
+            .interactable(pinned && hold_until.is_none())
             .show(ui.ctx(), |ui| {
                 let visuals = ui.visuals().clone();
                 egui::Frame::window(ui.style())
@@ -503,6 +541,7 @@ impl Detail {
             });
         if unpin {
             self.pinned = None;
+            self.pinned_click = None;
             self.mute_next = ui.input(|input| input.pointer.latest_pos());
         }
         // From where the window stands, kept on the screen, not from where it was asked to.
@@ -626,7 +665,7 @@ fn body(
     let (top_box, _) =
         ui.allocate_exact_size(vec2(ui.available_width(), BOX_HEIGHT), Sense::hover());
     ui.painter()
-        .rect_filled(top_box, 2.0, visuals.extreme_bg_color);
+        .rect_filled(top_box, RADIUS, visuals.extreme_bg_color);
     let painter = ui.painter_at(top_box);
     paint_top_box(&painter, &cell.top, pictures, visuals.weak_text_color());
     ui.label(RichText::new(&cell.place).monospace());

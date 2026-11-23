@@ -143,8 +143,8 @@ pub enum TopBox {
 pub enum Open {
     /// This folder.
     Folder(PathBuf),
-    /// The folder holding this file, the file selected: a cell of an export packed in an
-    /// archive, which has no folder of its own on disk.
+    /// This file shown in its folder ([`studio_core::files::show_in_folder`]): a cell of
+    /// an export packed in an archive, which has no folder of its own on disk.
     Select(PathBuf),
 }
 

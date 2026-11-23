@@ -256,6 +256,14 @@ struct Scene {
     /// The cell the tool's log line under the pointer stands for, handed to `point_at`
     /// before each frame.
     pointing: Option<CellKey>,
+    /// A modal drawn over the grid (a tool's dialog). `modal_closed` holds whether its
+    /// `should_close` has fired.
+    modal: bool,
+    modal_closed: bool,
+    /// An `egui::Window` drawn over `rect` every frame (the Help window over the detail
+    /// window). `help_clicked` holds whether its button has taken a click.
+    help: Option<Rect>,
+    help_clicked: bool,
 }
 
 impl Scene {
@@ -279,6 +287,10 @@ impl Scene {
             textures,
             asked: Vec::new(),
             pointing: None,
+            modal: false,
+            modal_closed: false,
+            help: None,
+            help_clicked: false,
         }
     }
 
@@ -292,6 +304,10 @@ impl Scene {
             textures,
             asked,
             pointing,
+            modal,
+            modal_closed,
+            help,
+            help_clicked,
         } = self;
         detail.point_at(pointing.clone());
         let mut pictures = |file: &PictureFile| {
@@ -303,7 +319,22 @@ impl Scene {
             pictures: &mut pictures,
         };
         window.frame_with(events, |ui| {
-            show(ui, "grid", &COLUMNS, rows, false, detail, &mut sources)
+            let response = show(ui, "grid", &COLUMNS, rows, false, detail, &mut sources);
+            if *modal {
+                *modal_closed |= egui::Modal::new(egui::Id::unique("modal"))
+                    .show(ui.ctx(), |ui| {
+                        ui.label("A dialog.");
+                    })
+                    .should_close();
+            }
+            if let Some(rect) = help {
+                *help_clicked |= egui::Window::new("Help")
+                    .fixed_rect(*rect)
+                    .show(ui.ctx(), |ui| ui.button("Its button").clicked())
+                    .and_then(|inner| inner.inner)
+                    .unwrap_or(false);
+            }
+            response
         })
     }
 
@@ -334,6 +365,9 @@ impl Scene {
     /// returned, and what `settled` drew after it.
     fn click(&mut self, pos: Pos2) -> (GridResponse, Drawn) {
         self.wait(APART);
+        // A layer that just turned interactable is click-through until a frame has
+        // drawn it that way; a real wait renders the repaints asked for.
+        self.idle();
         self.frame(press(pos));
         let (response, _) = self.frame(release(pos));
         (response, self.settled())
@@ -660,6 +694,28 @@ fn esc_closes_the_window_pinned_or_not_as_an_unpinning_click_does() {
     }
 }
 
+// TC-GUI-24
+#[test]
+fn esc_reaches_a_modal_over_the_pinned_window_and_the_window_stays() {
+    let mut scene = Scene::new();
+    let at = spots(&scene.idle());
+    scene.click(at.three);
+    scene.modal = true;
+    // The modal's layer registers with the frame that draws it; Esc comes a frame later.
+    scene.idle();
+    scene.key(Key::Escape);
+    assert!(scene.modal_closed, "the modal read Esc");
+    assert!(shows(&scene.idle(), "/co/ 03"), "still pinned under it");
+    scene.modal = false;
+    // Its layer is gone from the frame after the modal's last one.
+    scene.idle();
+    scene.key(Key::Escape);
+    assert!(
+        !any_window(&scene.idle()),
+        "the next Esc reaches the window"
+    );
+}
+
 /// The detail window's painted rect: the one panel-fill rectangle of its width.
 fn window_rect(drawn: &Drawn) -> Rect {
     fn rects(shape: &Shape, into: &mut Vec<(Rect, Color32)>) {
@@ -723,7 +779,9 @@ fn esc_on_a_pinned_window_over_the_pointer_opens_nothing_until_the_pointer_leave
 fn the_pin_of_a_pinned_window_over_the_pointer_opens_nothing_until_the_pointer_leaves() {
     let mut scene = Scene::new();
     let at = spots(&scene.idle());
-    let (_, drawn) = scene.click(at.three);
+    scene.click(at.three);
+    scene.wait(APART);
+    let drawn = scene.idle();
     let bar = drawn.one("/co/ 03").center();
     // The window dragged by its title bar until its pin rests on K6.
     let delta = at.k6 - drawn.one(PIN).center();
@@ -767,6 +825,49 @@ fn a_double_click_opens_the_cell_s_folder_and_leaves_the_pin_as_it_was() {
 
 // TC-GUI-24
 #[test]
+fn a_double_click_on_a_cell_the_pinned_window_covers_opens_its_folder() {
+    let mut scene = Scene::new();
+    let at = spots(&scene.idle());
+    // The double-click's first click pins K6: the window opens over the cell at its
+    // first place, and the second click must reach the cell through it.
+    let (_, drawn) = scene.click(at.k6);
+    assert!(
+        window_rect(&drawn).contains(at.k6),
+        "premise: the window covers K6"
+    );
+    scene.frame(press(at.k6));
+    let response = scene.frame(release(at.k6)).0;
+    let folder = PathBuf::from("exports/co Midcup Map/Kits/p6");
+    assert_eq!(response.open, Some(Open::Folder(folder)));
+    scene.wait(APART);
+    let drawn = scene.idle();
+    assert_eq!(badge(&drawn), None, "the pin is as it was");
+    assert!(!shows(&drawn, "/co/ K6"), "closed as it was");
+}
+
+// TC-GUI-24
+#[test]
+fn the_pinned_window_takes_a_drag_once_the_double_click_delay_has_passed() {
+    let mut scene = Scene::new();
+    let at = spots(&scene.idle());
+    let (_, drawn) = scene.click(at.three);
+    let title = drawn.one("/co/ 03");
+    let from = title.center();
+    let to = from + vec2(-100.0, 50.0);
+    scene.wait(APART);
+    // A layer that just turned interactable is click-through until a frame has
+    // drawn it that way; a real wait renders the repaints asked for.
+    scene.idle();
+    scene.frame(press(from));
+    scene.hover(from + vec2(-50.0, 25.0));
+    scene.hover(to);
+    scene.frame(release(to));
+    let moved = scene.idle().one("/co/ 03");
+    assert_eq!(moved.min, title.min + vec2(-100.0, 50.0));
+}
+
+// TC-GUI-24
+#[test]
 fn a_cell_with_no_folder_opens_nothing_and_its_window_has_no_open_folder() {
     let mut scene = Scene::new();
     let at = spots(&scene.idle());
@@ -774,9 +875,11 @@ fn a_cell_with_no_folder_opens_nothing_and_its_window_has_no_open_folder() {
     let (_, drawn) = scene.click(at.portraits);
     assert!(shows(&drawn, "/co/ portraits"));
     assert!(drawn.all("Open folder").is_empty());
-    let (_, drawn) = scene.click(at.three);
-    let button = drawn.one("Open folder").center();
-    let (response, _) = scene.click(button);
+    scene.click(at.three);
+    scene.wait(APART);
+    let button = scene.idle().one("Open folder").center();
+    scene.frame(press(button));
+    let (response, _) = scene.frame(release(button));
     let folder = PathBuf::from("exports/co Midcup Map/Players/03 - B");
     assert_eq!(response.open, Some(Open::Folder(folder)));
 }
@@ -848,12 +951,34 @@ fn a_finding_s_code_clicked_asks_for_the_help_at_it() {
     );
 }
 
+// A window opened over the pinned window (the help, at a finding's code) takes the
+// clicks it covers.
+#[test]
+fn a_window_over_the_pinned_window_takes_the_click() {
+    let mut scene = Scene::new();
+    let at = spots(&scene.idle());
+    let (_, drawn) = scene.click(at.three);
+    scene.help = Some(window_rect(&drawn));
+    let drawn = scene.settled();
+    let button = drawn.one("Its button").center();
+    assert!(
+        scene.help.unwrap().contains(button),
+        "premise: the button stands over the pinned window"
+    );
+    let (response, _) = scene.click(button);
+    assert!(scene.help_clicked, "the click reached the window over it");
+    assert_eq!(response.open, None, "the pinned window took nothing");
+    assert!(shows(&scene.idle(), "/co/ 03"), "still pinned under it");
+}
+
 // TC-GUI-24
 #[test]
 fn the_pinned_window_s_title_bar_drags_it_and_it_reopens_where_it_was_left() {
     let mut scene = Scene::new();
     let at = spots(&scene.idle());
-    let (_, drawn) = scene.click(at.three);
+    scene.click(at.three);
+    scene.wait(APART);
+    let drawn = scene.idle();
     let title = drawn.one("/co/ 03");
     let from = title.center();
     let to = from + vec2(-100.0, 50.0);
@@ -898,9 +1023,9 @@ fn clipboard(drawn: &Drawn) -> Option<&str> {
 fn copy_messages_puts_the_export_s_log_lines_on_the_clipboard() {
     let mut scene = Scene::new();
     let at = spots(&scene.idle());
-    let (_, drawn) = scene.click(at.label);
-    let button = drawn.one("Copy messages").center();
+    scene.click(at.label);
     scene.wait(APART);
+    let button = scene.idle().one("Copy messages").center();
     scene.frame(press(button));
     let (_, drawn) = scene.frame(release(button));
     assert_eq!(
