@@ -3344,7 +3344,9 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     - [ ] Carbon's round, 2026-11-23 (at `ca8559a1`, rulings "C-nobc7 r1"): 6 accepted, none of
       reach (a), which ends Carbon's loop. The lead's texts `f05659ef`; the tests for each
       place that keeps or encodes an uncompressed source, SWE-2 slice N1, merged `6b5ace55`.
-      Next: one SWE-2 round over both, then Astra's round
+      SWE-2's round over both (rulings "S-n1 r1"): 3 accepted, none of reach (a); the lead
+      widened the scenarios and the BC7 texts. Next: the lead's fix to two test helpers, so
+      each asserts the texture it writes is stored uncompressed, then Astra's round
     - the same run's PoC look passed: /dbg/ and /4ccg/ upgrade and compile clean (about 2 s
       for both), and the 8 players checked show their own faces and bodies
   - [x] 0.0.2c the illegal formation check (`plans/aatf_rules.md` "The illegal formation

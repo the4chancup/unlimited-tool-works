@@ -724,10 +724,9 @@ independent parallel task (Red: `export_move.py`):
    in the model folder and converts according to the selected PES version, not just the
    Fox/pre-Fox split.
 
-   BC7 is supported on PES 19–21 only: PES 15–18 transcode BC7 to BC3, and PES 19–21 retain
-   supported BC7 inputs. No compile encodes BC7: every version encodes raster sources to BC3,
-   with BC1 for eligible fully opaque color textures under the library spec's alpha/role
-   rules (`spec/libs/dds_convert.md` "Target codecs and CPU encoder"). Role-specific
+   BC7 is supported on PES 19–21 only, which retain supported BC7 inputs. No compile encodes
+   BC7: every version encodes raster sources, and PES 15–18 a BC7 source too, to BC3, with BC1
+   for eligible fully opaque color textures under the library spec's alpha/role rules (`spec/libs/dds_convert.md` "Target codecs and CPU encoder"). Role-specific
    normal/data handling still applies; already-compatible blocks avoid re-encoding.
 
    A cube-map DDS (the `DDSCAPS2` cube bit, or the DX10 header's cube flag;

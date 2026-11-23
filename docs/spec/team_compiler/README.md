@@ -1498,11 +1498,13 @@ TC-TEX-05  GIVEN slot 05's face_high.fmdl naming hair in the team's Common outpu
 TC-TEX-06  GIVEN p1/kit.png, p1/kit_back.tga and Portraits/05.webp
            WHEN the export is compiled for PES 21
            THEN u0714p1.ftex and u0714p1_back.ftex are emitted and 71405.dds is a DDS
-TC-TEX-07  GIVEN slot 05 holding skin.png of 1002x1002 pixels, and another export whose
-           slot 05 holds an uncompressed skin.dds of 1002x1004 beside its face_high.model
+TC-TEX-07  GIVEN slot 05 holding skin.png of 1002x1002 pixels; another export whose slot 05
+           holds an uncompressed skin.dds of 1002x1004 beside its face_high.model; and a third
+           whose slot 05 holds an uncompressed skin_nrm.dds of 1002x1002 its model names
            WHEN each export is compiled for PES 17
-           THEN texture_not_div4 is reported and the first folder is dropped; the second
-                compiles with no finding, its skin.dds emitted uncompressed (A8R8G8B8)
+           THEN texture_not_div4 is reported and the folder dropped for the first and the
+                third (a normal map is always encoded); the second compiles with no finding,
+                its skin.dds emitted uncompressed (A8R8G8B8)
 TC-TEX-08  GIVEN a /co/ export whose slot 05 holds a face model naming skin and hair, skin.dds,
            and hair.dds already WESYS-wrapped; and dds_compression = true, then false, then
            auto with multicpk_mode off, then on
@@ -1624,12 +1626,13 @@ TC-CHK-03  GIVEN slot 05 holding a settings.toml with a key of the wrong type
            WHEN the export is compiled
            THEN settings_toml_invalid is reported, the folder's models compile, and the exit code
                 is 1
-TC-CHK-04  GIVEN p1/kit.dds of 4096x4096 and p2/kit.dds uncompressed (RGBA8)
+TC-CHK-04  GIVEN p1/kit.dds of 4096x4096, and p2/kit.dds and p2/kit_mask.dds uncompressed (RGBA8)
            WHEN the export is compiled for PES 17, then for PES 21
            THEN on 17 kit_texture_too_big is reported for p1 and the kit dropped; on 21 p1
                 compiles with no texture finding; p2 gets none on either, its u0714p2.dds on
-                17 is BC3 (a pre-Fox main kit texture is never uncompressed), and its
-                u0714p2.ftex on 21 stays uncompressed, A8R8G8B8
+                17 is BC3 (a pre-Fox main kit texture is never uncompressed) while its
+                u0714p2_mask.dds stays uncompressed, and its u0714p2.ftex on 21 stays
+                uncompressed, A8R8G8B8
 TC-CHK-05  GIVEN a root logo.png whose bytes are not a decodable image
            WHEN the export is checked
            THEN logo_file_invalid is reported and no logo is emitted when compiled
@@ -1850,12 +1853,14 @@ TC-KIT-18  GIVEN p1/ holding a 1024x1024 BC1 kit.dds drawn for the pre-Fox layou
            WHEN the export is compiled for PES 21
            THEN kit_layout_converted is reported for p1 naming pre-fox to fox, the decoded top mip
                 equals the no-marker compile's outside the sock rectangles, and each sock stripe's
-                centre lands within 6 px (of 2048) of where the games' uniform models put it
+                centre lands within 6 px (of 2048) of where the games' uniform models put it;
+                the same kit stored uncompressed is re-laid and stays uncompressed (A8R8G8B8)
 TC-KIT-19  GIVEN the same kit compiled for PES 17, and a kit marked fox compiled for PES 17
            WHEN each is compiled
            THEN the first equals the no-marker compile, as a fox-marked kit compiled for PES 21
                 does; the second is re-laid with the inverse table and reports
-                kit_layout_converted naming fox to pre-fox
+                kit_layout_converted naming fox to pre-fox, and stored uncompressed it is
+                re-laid and encoded like any pre-Fox main kit texture
 TC-KIT-20  GIVEN an empty p3/ marked pre-fox, and all/ holding a file named fox; and another
            export whose p1/, marked fox, holds kit_back.dds and kit_mask.dds and no kit.dds
            WHEN the first is compiled for PES 21, the second for PES 17
@@ -1889,7 +1894,8 @@ TC-KIT-26  GIVEN p1/ holding kit.dds and a kit_back.dds column atlas (128x2048, 
            digit cells), and p2/ holding kit.dds and a kit_back.dds row atlas (2048x256)
            WHEN the export is compiled for PES 21, then for PES 17
            THEN on 21 p1's back atlas is a row of the ten colors in digit order and p2's is as
-                given; on 17 p1's is as given and p2's is a column in digit order
+                given; on 17 p1's is as given and p2's is a column in digit order; an atlas
+                stored uncompressed stays uncompressed (A8R8G8B8) on 21, re-arranged or not
 TC-KIT-27  GIVEN p1/ holding kit.dds and a config.toml holding shirt = 144 where a [shirt] table
            belongs, and p2/ holding kit.dds; and another export whose p1/ holds kit.dds and a
            config.toml that is not valid TOML (shirt = [ unclosed)

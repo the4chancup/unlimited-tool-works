@@ -51,9 +51,9 @@ gain (the `.mtl` merge is a material-name merge either way).
 
 - **PES texture boundary:** `dds_convert` selects codecs by PES version and material role,
   independently of the model's source format. BC7 is supported on PES 19–21, not PES18 despite
-  its Fox model format. PES 15–18 convert BC7 inputs to BC3; PES 19–21 retain supported BC7.
-  Every version encodes raster sources to BC3 or eligible opaque-color BC1, since no compile
-  encodes BC7. The [library crates spec](../libs/README.md) owns alpha/mipmap/normal-map rules and the CPU encoder choice.
+  its Fox model format. PES 19–21 retain supported BC7, and no compile encodes BC7: every
+  version encodes raster sources, and PES 15–18 BC7 inputs too, to BC3 or eligible
+  opaque-color BC1. The [library crates spec](../libs/README.md) owns alpha/mipmap/normal-map rules and the CPU encoder choice.
   Already-compatible blocks are retained where only DDS/FTEX container adaptation is needed.
   `model_convert` supplies pixels and material roles, not final player/team paths; the run-level
   `BuildManifest` and texture-relocation step own those destinations.
