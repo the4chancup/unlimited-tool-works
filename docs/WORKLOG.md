@@ -243,8 +243,9 @@ draft checked, for the maintainer to publish; running sidekicks and jobs are not
      SWE-2 slices, merged 2026-11-23: G1 (the dialog, the settings re-check, the Compile
      menu's tests) `4f5cbe58`, G2 (the layout of duplicate kit folders and referee rows)
      `fd84b216`, G3 (the archive tooltip, the menu's 2 px gap, the shared widgets' tests)
-     `4ee3aa5b`. Next: a SWE-2 subloop over the three (round 1 running, one brief each,
-     `.tmp/grid2/swe_g1.md` to `swe_g3.md`), then Carbon round 3
+     `4ee3aa5b`. SWE-2's round over the three, 2026-11-23 (rulings "S-g1 r1" to "S-g3 r1"):
+     4 accepted, none of reach (a), which ends the loop; their fixes are slice G4 (SWE-2,
+     `.tmp/grid2/brief_g4.md`, running). Next: Carbon round 3
    - [ ] The Compile button's mode list, Open output folder and Copy report (TC-GUI-11, and
      TC-GUI-33's clause that Compile for sideloading stays enabled while the DpFileList is
      outdated; DECISIONS 2026-11-23 "the Compile menu's Copy report copies the whole log").
@@ -261,7 +262,8 @@ draft checked, for the maintainer to publish; running sidekicks and jobs are not
      measured while the window's edge squeezed it; fixed there and in the Export upgrader's
      More menu.
      The column toggle the draft lists comes with its later slice
-   - Then the row actions, the ID cell's editing, the
+   - Then the row actions, the ID cell's editing and its tooltips (each variant's, as the
+     draft gives them), the
      watcher and cache, Sizes and sorting, and the rest of the toolbar
      (`plans/team_compiler/gui.md` "Toolbar"): Launch PES, the writability badge and the
      compile column's toggle. The log's lines also owe the plan's
