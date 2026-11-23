@@ -3798,6 +3798,17 @@ points there.
   it. Every test through `sandbox` inherits it, and fixtures name `egg` exports. Fix: a real
   row from the list in `sandbox`, and the tests asserting `/egg/` moved to it. Found by the
   1c-ii sidekick.
+- open (2026-11-23) — the GUI tests' shape helpers are copied crate by crate: a function
+  collecting the strokes painted over a widget's bounds (`strokes_over`) is in
+  `team_widgets`' `test_support.rs` and `save_editor`'s `view/tests.rs`, and the 1c-iii-c
+  slice adds one to `team_compiler`'s `view/tests/upgrade_dpfl.rs`; the selection-edge slice
+  writes the same filter out inline in `studio_core`'s help window and log panel tests and in
+  the Ruleset editor's preview and problems tests. `rect_of_fill_at` and the `Headless` test
+  window are copied the same way.
+  Each crate stays under `CONTRIBUTING.md`'s third-copy line, but each new look test copies
+  them again. Fix: one home for them that every crate's tests can use, which `studio_core`
+  does not offer today (no test-support module or feature). That is a crate-boundary choice,
+  to be ruled before it is built.
 - fixed on `pes14` (2026-11-22, `17463113`), in Build 3 (`0.0.2-pes14.3`) — PES 2014 Build 2
   (`0.0.2-pes14.2`) crashed on the Appearance page, and on Hide default body, of a player the
   game created on an in-game edit (the Akko7 organizer's /hi3/ players,
