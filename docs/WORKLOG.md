@@ -13,8 +13,8 @@ is in `AGENTS.md` ("Working documents").
 
 One line per piece of work in flight; the items below hold the detail.
 
-- The Compiler's grid (item 6): Carbon's round 4's fixes are merged; a SWE-2 round over
-  them is running, then Carbon's round 5.
+- The Compiler's grid (item 6): Carbon's round 4's fixes are merged and SWE-2's round over
+  them is ruled and fixed; Carbon's round 5 is next.
 - `0.0.3-vgl27.2`, the next VGL build: built and checked, waiting for the maintainer to hand
   it over.
 - `0.0.2-pes14.3`, PES 2014 Build 3: tagged and checked, waiting for the maintainer to publish.
@@ -285,8 +285,10 @@ draft checked, for the maintainer to publish; running sidekicks and jobs are not
      Help raised again), G8c (the portraits box, the help texts, a dead branch), G8d (the
      legend, a tooltip and an error line, tested), all merged: G8a `e0215253`, G8c
      `e75b033b` (the draft's help texts with it, `79ceba74`), G8d `8baf7779` (its error
-     line was tested already). Running: a SWE-2 round over the three, in two parts. Then
-     Carbon's round 5.
+     line was tested already). The SWE-2 round over the three, 2026-11-23: 3 of 8 concerns
+     accepted, none changing a real input's outcome, so its loop ends; the lead fixed them
+     (Esc in Help's search in TC-GUI-24 and both drafts `2744244b`, a test of the faulted
+     DpFileList words `28f3a3bd`). Next: Carbon's round 5.
    - [ ] The Compile button's mode list, Open output folder and Copy report (TC-GUI-11, and
      TC-GUI-33's clause that Compile for sideloading stays enabled while the DpFileList is
      outdated; DECISIONS 2026-11-23 "the Compile menu's Copy report copies the whole log").
@@ -558,7 +560,8 @@ and no phase closes with one outstanding.
     `c8977365` (one rework: the merges folded per day); waiting for the maintainer's look;
   - [ ] the Issues section audited (each open issue checked against today's code: closed,
     kept, or made a step) and its resolved entries pruned; whether it then moves to a
-    file of its own is decided after. SWE-2.
+    file of its own is decided after. SWE-2 audits it read-only in three parts, a verdict
+    and its evidence per entry (running); the lead edits this file from the findings.
 - [ ] The `call` mutant kind's backfill (DECISIONS 2026-11-23 "a `call` extra mutant kind"):
   about 3,900 mutants over every crate, smallest first, on the VPS alone as whole-crate runs
   are. It needs the extra kinds to run there without cargo-mutants: slice RX (SWE-2,
@@ -575,8 +578,9 @@ and no phase closes with one outstanding.
   failing on a difference and naming the recipe that writes the file again. Texts the plan
   adds before the build has them stay in each tool's draft script, as `team_compiler.js`'s
   `PLANNED` codes do. Not placeholder stubs: the draft's windows show catalog text, so stubs
-  would change their sizes and the draft-to-build comparisons. SWE-2; the plan's "Prototypes
-  before implementation" and a DECISIONS entry with it.
+  would change their sizes and the draft-to-build comparisons. Plan and decision written
+  (`core/gui.md` "Prototypes before implementation", `f5c2934d`); the slice (generator,
+  test, `just draft-help`) is running on SWE-2, then the lead wires the drafts to the file.
 - [ ] A mutation tier between `mutants-diff` and whole-crate runs (DECISIONS 2026-11-23 "a tier
   between `mutants-diff` and whole-crate runs"), built after the `call` backfill's
   measurements and before 1.0.0's first phase close, in slices:
