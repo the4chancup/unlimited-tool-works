@@ -24,15 +24,15 @@ pub(crate) fn rows_meet(spacing: &mut egui::style::Spacing) {
 /// meeting the rows above and below it. A row cannot change its
 /// neighbours, so it sets the list's own `Ui` (`rows_meet`), as every row
 /// does; a widget added to the list after a row therefore touches it too.
-/// The row is added through `row`, which takes the resting stroke out:
-/// a row is not a control, so the picked row's blue draws no edge.
+/// The row is added through `row`, which takes the resting stroke out and
+/// paints the picked row's blue with its edge.
 pub fn combo_label(
     ui: &mut egui::Ui,
     checked: bool,
     text: impl Into<egui::WidgetText>,
 ) -> egui::Response {
     rows_meet(ui.spacing_mut());
-    super::row(ui, egui::Button::selectable(checked, text))
+    super::row(ui, checked, egui::Button::selectable(checked, text))
 }
 
 /// The height `combo_separator` takes in a combo's open list.
@@ -291,10 +291,11 @@ mod tests {
         assert_eq!(marked, [Some(ITEMS[1])], "the current row, and it alone");
     }
 
-    // A row is not a control: the picked row fills in the selection blue and
-    // draws no resting edge, the stroke the theme gives live controls.
+    // A row is not a control, but the selection blue never fills without
+    // its edge: the picked row's blue is stroked in the fill's
+    // `edge_color` at rest.
     #[test]
-    fn the_picked_row_draws_its_blue_with_no_edge() {
+    fn the_picked_row_draws_its_blue_with_its_edge() {
         let mut window = Window::new(false);
         open(&mut window);
         // The popup fades in over its first frames; a settled one paints
@@ -302,7 +303,9 @@ mod tests {
         for _ in 0..20 {
             window.frame(Vec::new());
         }
-        let blue = window.ctx.global_style().visuals.selection.bg_fill;
+        let visuals = &window.ctx.global_style().visuals;
+        let blue = visuals.selection.bg_fill;
+        let edge = crate::theme::edge_color(visuals, blue);
         let row = window.rows[1];
         // The popup's shapes nest in `Shape::Vec`s under its own layer.
         let mut stack: Vec<&egui::Shape> =
@@ -311,19 +314,23 @@ mod tests {
         while let Some(shape) = stack.pop() {
             match shape {
                 egui::Shape::Vec(children) => stack.extend(children.iter()),
-                egui::Shape::Rect(rect) if rect.rect == row && rect.fill == blue => {
-                    frames.push(rect)
-                }
+                egui::Shape::Rect(rect) if rect.rect == row => frames.push(rect),
                 _ => {}
             }
         }
-        let [frame] = frames[..] else {
-            panic!("one blue frame over the picked row {row:?}: {frames:?}")
-        };
+        assert!(
+            frames.iter().any(|frame| frame.fill == blue),
+            "the picked row's blue: {frames:?}"
+        );
+        let strokes: Vec<egui::Stroke> = frames
+            .iter()
+            .map(|frame| frame.stroke)
+            .filter(|stroke| !stroke.is_empty())
+            .collect();
         assert_eq!(
-            frame.stroke,
-            egui::Stroke::NONE,
-            "a row draws no resting edge"
+            strokes,
+            [egui::Stroke::new(1.0, edge)],
+            "the blue's edge painted over the row"
         );
     }
 }

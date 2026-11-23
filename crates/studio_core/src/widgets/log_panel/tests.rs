@@ -545,23 +545,25 @@ fn a_collapsed_log_shows_no_filter_chips_and_keeps_its_count() {
     );
 }
 
-// A chip is a row, not a control: the picked chip fills in the selection
-// blue and draws no resting edge, the stroke the theme gives live controls.
+// A chip is a row, not a control, but the selection blue never fills
+// without its edge: the picked chip's blue is stroked in the fill's
+// `edge_color` at rest.
 #[test]
-fn the_picked_chip_draws_its_blue_with_no_edge() {
+fn the_picked_chip_draws_its_blue_with_its_edge() {
     let lines = vec![LogLine::plain(Severity::Info, "an info line")];
     let mut panel = LogPanel::new("test-log");
     let mut window = Headless::new();
     let nodes = window.idle(&mut panel, &lines);
     let chip = entry(&nodes, "All").bounds().expect("the All chip");
-    let blue = window.ctx.global_style().visuals.selection.bg_fill;
-    let frames: Vec<_> = window
+    let visuals = &window.ctx.global_style().visuals;
+    let blue = visuals.selection.bg_fill;
+    let edge = crate::theme::edge_color(visuals, blue);
+    let over: Vec<_> = window
         .shapes
         .iter()
         .filter_map(|clipped| match &clipped.shape {
             egui::Shape::Rect(shape)
-                if shape.fill == blue
-                    && (f64::from(shape.rect.min.x) - chip.x0).abs() <= 2.0
+                if (f64::from(shape.rect.min.x) - chip.x0).abs() <= 2.0
                     && (f64::from(shape.rect.min.y) - chip.y0).abs() <= 2.0
                     && (f64::from(shape.rect.max.x) - chip.x1).abs() <= 2.0
                     && (f64::from(shape.rect.max.y) - chip.y1).abs() <= 2.0 =>
@@ -571,13 +573,19 @@ fn the_picked_chip_draws_its_blue_with_no_edge() {
             _ => None,
         })
         .collect();
-    let [frame] = frames[..] else {
-        panic!("one blue frame over the picked chip: {frames:?}")
-    };
+    assert!(
+        over.iter().any(|shape| shape.fill == blue),
+        "the picked chip's blue frame: {over:?}"
+    );
+    let strokes: Vec<egui::Stroke> = over
+        .iter()
+        .map(|shape| shape.stroke)
+        .filter(|stroke| !stroke.is_empty())
+        .collect();
     assert_eq!(
-        frame.stroke,
-        egui::Stroke::NONE,
-        "a row draws no resting edge"
+        strokes,
+        [egui::Stroke::new(1.0, edge)],
+        "the blue's edge painted over the chip"
     );
 }
 
@@ -1290,6 +1298,14 @@ fn a_filtered_line_s_click_reports_its_index_while_the_log_is_paused() {
         window.idle(&mut panel, &lines);
     }
     let nodes = window.idle(&mut panel, &lines);
+    assert!(
+        shows(&nodes, "error line 20"),
+        "the pause froze every line, the last included"
+    );
+    assert!(
+        !has_jump(&nodes),
+        "paused with nothing arriving, no jump button"
+    );
     let at = on_line_text(&nodes, "error line 1");
     respond(&mut window, &mut panel, &lines, pointer_at(at, true));
     let released = respond(&mut window, &mut panel, &lines, pointer_at(at, false));

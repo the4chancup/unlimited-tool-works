@@ -717,10 +717,11 @@ fn toolbar(
 /// bar's own style would drop its outline under the pointer.
 fn preview_toggle(ui: &mut egui::Ui, view: &mut RulesetView) {
     toolbar_framed(ui, |ui| {
-        // A toolbar toggle is a row, not a control (`row`): the held
-        // one's blue draws no resting edge.
+        // A toolbar toggle is a row, not a control (`row`), whose edge
+        // `row` paints over the held one's blue at rest.
         if studio_core::widgets::row(
             ui,
+            view.show_preview,
             egui::Button::selectable(view.show_preview, "Show preview"),
         )
         .on_hover_text("Show the rules file's data block as the editor writes it")

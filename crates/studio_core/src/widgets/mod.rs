@@ -91,14 +91,23 @@ pub fn at_rest(ui: &egui::Ui, response: &egui::Response) -> bool {
 }
 
 /// Adds `widget` with the theme's resting stroke taken out for that one
-/// widget (saved and put back around the `ui.add`), because a row is not a
-/// control: a picked row's blue draws no edge, and the next widget in `ui`
-/// keeps its own.
-pub fn row(ui: &mut egui::Ui, widget: impl egui::Widget) -> egui::Response {
+/// widget (saved and put back around the `ui.add`), so a row keeps no grey
+/// edge and the next widget in `ui` keeps its own. `picked` marks the row
+/// the selection fills: the blue never fills without its edge, so the
+/// fill's `edge_color` strokes over the row at rest (`resting_edge`), as
+/// a held toggle side's does.
+pub fn row(ui: &mut egui::Ui, picked: bool, widget: impl egui::Widget) -> egui::Response {
     let resting = ui.visuals().widgets.inactive.bg_stroke;
     ui.visuals_mut().widgets.inactive.bg_stroke = egui::Stroke::NONE;
     let response = ui.add(widget);
     ui.visuals_mut().widgets.inactive.bg_stroke = resting;
+    if picked {
+        resting_edge(
+            ui,
+            &response,
+            crate::theme::edge_color(ui.visuals(), ui.visuals().selection.bg_fill),
+        );
+    }
     response
 }
 
@@ -196,45 +205,70 @@ mod tests {
             .collect()
     }
 
-    // A row is not a control: the picked row fills in the selection blue
-    // and draws no edge, while the next widget keeps the theme's resting
-    // stroke (`row` takes it out for the one widget alone).
+    // A row is not a control, but the selection blue never fills without
+    // its edge: the picked row's blue is stroked over in the fill's
+    // `edge_color` at rest, an unpicked row draws none, and the next
+    // widget keeps the theme's resting stroke (`row` takes it out for the
+    // one widget alone).
     #[test]
-    fn a_row_draws_its_blue_with_no_edge_and_the_next_widget_keeps_its_own() {
+    fn a_picked_row_draws_its_blue_with_its_edge_and_the_next_widget_keeps_its_own() {
         let ctx = context();
         let visuals = ctx.style_of(egui::Theme::Dark).visuals.clone();
-        let edge = visuals.widgets.inactive.bg_stroke;
+        let resting = visuals.widgets.inactive.bg_stroke;
         assert_eq!(
-            edge,
+            resting,
             egui::Stroke::new(1.0, egui::Color32::from_gray(90)),
             "premise: the dark theme's resting edge"
         );
-        let mut rects = (egui::Rect::NOTHING, egui::Rect::NOTHING);
+        let edge = crate::theme::edge_color(&visuals, visuals.selection.bg_fill);
+        assert_eq!(
+            edge,
+            egui::Color32::from_rgb(0x1e, 0x7a, 0x9e),
+            "premise: the selection fill's edge"
+        );
+        let mut rects = (
+            egui::Rect::NOTHING,
+            egui::Rect::NOTHING,
+            egui::Rect::NOTHING,
+        );
         let mut draw = |ui: &mut egui::Ui| {
             rects = (
-                row(ui, egui::Button::selectable(true, "Pick")).rect,
+                row(ui, true, egui::Button::selectable(true, "Pick")).rect,
+                row(ui, false, egui::Button::selectable(false, "Rest")).rect,
                 ui.button("Plain").rect,
             );
         };
         // egui styles a widget from its state on the frame before.
         frame(&ctx, Vec::new(), &mut draw);
         let shapes = frame(&ctx, Vec::new(), &mut draw);
-        let [picked] = frames_at(&shapes, rects.0)[..] else {
-            panic!("one frame over the picked row {:?}", rects.0);
+        let [picked, edge_shape] = frames_at(&shapes, rects.0)[..] else {
+            panic!(
+                "the picked row's frame and edge over {:?}: {:?}",
+                rects.0,
+                frames_at(&shapes, rects.0)
+            );
         };
         assert_eq!(
             picked.fill, visuals.selection.bg_fill,
             "the picked row's blue"
         );
         assert_eq!(
-            picked.stroke,
-            egui::Stroke::NONE,
-            "a row draws no resting edge"
+            (edge_shape.stroke, edge_shape.fill, edge_shape.stroke_kind),
+            (
+                egui::Stroke::new(1.0, edge),
+                egui::Color32::TRANSPARENT,
+                egui::StrokeKind::Inside
+            ),
+            "the blue's edge painted over it"
         );
-        let [plain] = frames_at(&shapes, rects.1)[..] else {
-            panic!("one frame over the plain button {:?}", rects.1);
+        assert!(
+            strokes_at(&shapes, rects.1).is_empty(),
+            "an unpicked row draws no edge"
+        );
+        let [plain] = frames_at(&shapes, rects.2)[..] else {
+            panic!("one frame over the plain button {:?}", rects.2);
         };
-        assert_eq!(plain.stroke, edge, "the next widget keeps the edge");
+        assert_eq!(plain.stroke, resting, "the next widget keeps the edge");
     }
 
     // The self-painted edge shows at rest alone: hovered, the widget's

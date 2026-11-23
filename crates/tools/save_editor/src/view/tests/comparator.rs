@@ -180,17 +180,15 @@ fn a_scope_pick_without_a_pointer_press_still_runs() {
     compared(&mut window, &mut view);
 }
 
-// A Show chip is a row, not a control: the picked one's blue draws no
-// edge at rest.
+// A Show chip is a row, not a control, but the selection blue never
+// fills without its edge: the picked chip's blue is stroked in the
+// fill's `edge_color` at rest.
 #[test]
-fn the_picked_show_chip_draws_its_blue_with_no_edge() {
+fn the_picked_show_chip_draws_its_blue_with_its_edge() {
     let (mut view, mut window, _) = compared_73401("comparator_chip_edge");
-    let blue = window
-        .ctx
-        .style_of(window.ctx.theme())
-        .visuals
-        .selection
-        .bg_fill;
+    let visuals = window.ctx.style_of(window.ctx.theme()).visuals.clone();
+    let blue = visuals.selection.bg_fill;
+    let edge = studio_core::theme::edge_color(&visuals, blue);
     let (_, pairs, shapes) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     let (_, all) = comparator_button(&pairs, "All");
     assert_eq!(
@@ -203,7 +201,12 @@ fn the_picked_show_chip_draws_its_blue_with_no_edge() {
     assert_eq!(
         frame.stroke,
         egui::Stroke::NONE,
-        "a chip is a row: no resting edge"
+        "the chip's frame carries no stroke of its own"
+    );
+    assert_eq!(
+        strokes_over(&shapes, bounds),
+        [egui::Stroke::new(1.0, edge)],
+        "the picked chip's edge painted over it"
     );
 }
 

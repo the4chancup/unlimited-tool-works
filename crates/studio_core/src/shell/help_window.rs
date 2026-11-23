@@ -235,29 +235,23 @@ impl HelpWindow {
                 header = header.open(Some(true));
             }
             header.show(ui, |ui| {
-                // A topic's row is not a control (`row`): the shown topic's
-                // fills in the selection blue and draws none of the resting
-                // edge the theme gives live controls.
+                // A topic's row is not a control (`row`): the shown
+                // topic's fills in the selection blue, whose edge `row`
+                // paints at rest.
                 for (topic, entry) in section.topics.iter().enumerate() {
-                    if crate::widgets::row(
-                        ui,
-                        egui::Button::selectable(
-                            chapter == self.chapter && topic == self.topic,
-                            entry.title,
-                        ),
-                    )
-                    .clicked()
+                    let shown = chapter == self.chapter && topic == self.topic;
+                    if crate::widgets::row(ui, shown, egui::Button::selectable(shown, entry.title))
+                        .clicked()
                     {
                         clicked = Some((chapter, topic));
                     }
                 }
+                let shown_messages = chapter == self.chapter && self.topic == section.topics.len();
                 if !section.messages.is_empty()
                     && crate::widgets::row(
                         ui,
-                        egui::Button::selectable(
-                            chapter == self.chapter && self.topic == section.topics.len(),
-                            "Messages",
-                        ),
+                        shown_messages,
+                        egui::Button::selectable(shown_messages, "Messages"),
                     )
                     .clicked()
                 {
@@ -2320,11 +2314,11 @@ mod tests {
         );
     }
 
-    // A topic's row in the tree is not a control: the shown topic fills in
-    // the selection blue and draws no resting edge, the stroke the theme
-    // gives live controls.
+    // A topic's row in the tree is not a control, but the selection blue
+    // never fills without its edge: the shown topic's blue is stroked in
+    // the fill's `edge_color` at rest.
     #[test]
-    fn the_shown_topics_row_draws_its_blue_with_no_edge() {
+    fn the_shown_topics_row_draws_its_blue_with_its_edge() {
         let dir = TestDir::new("studio_core_help_tree_row_edge");
         let (tool, calls) = stub_help("save-editor", "Save editor", None, terminal_section());
         let shell = shell_with(
@@ -2349,13 +2343,13 @@ mod tests {
             .and_then(accesskit::Node::bounds)
             .expect("the topic's row");
         let blue = egui_ctx.global_style().visuals.selection.bg_fill;
-        let frames: Vec<_> = out
+        let edge = crate::theme::edge_color(&egui_ctx.global_style().visuals, blue);
+        let over: Vec<_> = out
             .shapes
             .iter()
             .filter_map(|clipped| match &clipped.shape {
                 egui::Shape::Rect(shape)
-                    if shape.fill == blue
-                        && (f64::from(shape.rect.min.x) - topic.x0).abs() <= 2.0
+                    if (f64::from(shape.rect.min.x) - topic.x0).abs() <= 2.0
                         && (f64::from(shape.rect.min.y) - topic.y0).abs() <= 2.0
                         && (f64::from(shape.rect.max.x) - topic.x1).abs() <= 2.0
                         && (f64::from(shape.rect.max.y) - topic.y1).abs() <= 2.0 =>
@@ -2365,13 +2359,19 @@ mod tests {
                 _ => None,
             })
             .collect();
-        let [frame] = frames[..] else {
-            panic!("one blue frame over the shown topic's row: {frames:?}")
-        };
+        assert!(
+            over.iter().any(|shape| shape.fill == blue),
+            "the shown topic's blue frame: {over:?}"
+        );
+        let strokes: Vec<egui::Stroke> = over
+            .iter()
+            .map(|shape| shape.stroke)
+            .filter(|stroke| !stroke.is_empty())
+            .collect();
         assert_eq!(
-            frame.stroke,
-            egui::Stroke::NONE,
-            "a row draws no resting edge"
+            strokes,
+            [egui::Stroke::new(1.0, edge)],
+            "the blue's edge painted over the row"
         );
     }
 }
