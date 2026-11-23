@@ -606,11 +606,12 @@ and no phase closes with one outstanding.
     `scripts/roadmap.py` counts its open entries, and pruned it no longer crowds the file;
   - [x] **ids** every item and sub-step under "Where the work stands" given its checkbox, its
     ID and its `[after …]` dependencies (this file's header): the lead, 2026-11-23;
-  - [ ] **timeline** [after page, ids] the page shows each step's ID, and a vertical timeline
+  - [x] **timeline** [after page, ids] the page shows each step's ID, and a vertical timeline
     with a lane per thread run in parallel and an edge from each step to what it waits on,
     drawn as an SVG by `scripts/roadmap.py`: open steps above, done ones below on their
-    item's lane, dated by the commit their line names; a new sample for the maintainer's
-    look. SWE-2.
+    item's lane, dated by the commit their line names; `roadmap.py` refuses a worklog
+    breaking the header's convention. SWE-2, merged `02da4763` with the lead's fixes; the
+    new sample is on the tasks page's card.
 - [ ] **CALL** The `call` mutant kind's backfill (DECISIONS 2026-11-23 "a `call` extra mutant kind"):
   about 3,900 mutants over every crate, smallest first, on the VPS alone as whole-crate runs
   are. Each crate's survivors (`.tmp/call_backfill/<crate>.missed.txt`) are triaged as
@@ -621,7 +622,11 @@ and no phase closes with one outstanding.
     `.tmp/call_backfill/brief_remote_extra.md`; merged `490fd68b`, one rework);
   - [ ] **backfill** [after RX] `.tmp/call_backfill/run.py` over every other crate, started
     2026-11-23 once the checkpoint left the VPS (a first local start was stopped in its third
-    crate, `pipeline`, after two with no survivors, `pes_strings` and `vtree`);
+    crate, `pipeline`, after two with no survivors, `pes_strings` and `vtree`): 13 crates
+    run, then `studio` stopped it, its baseline failing the drafts' help test on Linux (fixed
+    in `efed4913`, the test Windows only); running again from `studio`;
+  - [ ] **triage** [after backfill] each crate's survivors triaged, the missing tests in
+    SWE-2 slices crate by crate;
   - [ ] **figures** [after backfill] CONTRIBUTING's time for the extra kinds given each
     crate's measured run.
 - [x] **DRAFTHELP** The drafts' help made from the build's, 2026-11-23 (`core/gui.md` "Prototypes before
@@ -4054,6 +4059,11 @@ Bugs, unexpected behavior, things to revisit. `open` / `resolved (date)`. Resolv
 pruned when their phase closes; they stay in git history. A question only the maintainer
 can answer is not an issue: it goes to `docs/maintainer/questions.html`, and an issue that waits on one
 points there.
+
+- open (2026-11-23) — `scripts/commit.py -a` commits the tracked changes only, as `git commit
+  -a` does, so a new file the commit needs is left out silently: `9ac41d0a` needed an amend
+  for `docs/spec/core/design.md`. Fix: with `-a`, `commit.py` refuses while untracked files
+  that are not ignored exist, naming them, and a flag (or naming the paths) commits them.
 
 - open (2026-11-23) — the grid's detail window grows for a few frames after it opens: when it
   replaces a smaller pinned window, it grows about 27 points a frame for four frames (387 to
