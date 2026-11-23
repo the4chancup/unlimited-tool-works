@@ -196,8 +196,9 @@ impl RunLog {
 
     /// Replaces the check's lines with the refused check's one `error: ` line, the run's
     /// kept after it: the refusal is the check's whole outcome, so it counts as the
-    /// check's `check_len` alone and acts for no cell. `dpfl` keeps the last check's
-    /// verdict: a refused check found nothing of the game's list.
+    /// check's `check_len` alone and acts for no cell. `dpfl` keeps what it held (the last
+    /// check's verdict, or a run's word since): a refused check found nothing of the
+    /// game's list.
     pub(crate) fn set_check_refusal(&mut self, error: &str) {
         self.lines.splice(
             ..self.check_len,
