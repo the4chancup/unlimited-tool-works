@@ -214,7 +214,7 @@ version's game (`ExeCheck`: `Found`, `OtherVersion(version)`, `NoExe`, `NoFolder
 "Live exe check"). It is one listing (`pes_process::check_pes_folder`) kept per version, and
 listed again when that folder changes, when `ctx.set_pes_folder_for` stores a folder for the
 version, and when the window regains focus. The sidebar colours its selector from the same
-verdict, and only under a tool that targets a PES version. A tool never lists the folder
+check, which it runs and keeps on its own, and only under a tool that targets a PES version. A tool never lists the folder
 itself, because a check of its own could disagree with the selector, and a per-frame one would
 list the folder at every repaint.
 

@@ -60,6 +60,24 @@ text into the chat. The answered ones then leave this page, and each answer goes
 
 <h2>After the release</h2>
 
+<section class="entry" id="portraits-after-a-compile">
+  <h3>Portraits after a compile in the same session</h3>
+  <p class="from">From: the SWE-2 review of the PES version selector's rework (S-sel c1-1)</p>
+  <p>The Save editor shows each player's portrait from the CPKs the game's
+  <code>download/</code> folder lists, read once for the PES folder. When one of those CPKs
+  changes while UTW stays open (a compile installs one, a facepack is copied in), the
+  portraits stay as they were until the folder or the version changes, or UTW restarts.
+  Reading the CPKs again each time UTW's window comes back into focus would fix it, at the
+  cost of that reading on every return to the window.</p>
+  <p class="ask">Do members compile or install faces, then look at the portraits in the Save
+  editor without restarting UTW?</p>
+  <div class="options">
+    <label class="opt"><input type="radio" value="yes, fix it"><b>Yes, often enough to fix it</b></label>
+    <label class="opt"><input type="radio" value="rarely, a restart is fine"><b>Rarely: a restart is fine</b></label>
+  </div>
+  <textarea class="own" placeholder="Your own answer or a note (optional)"></textarea>
+</section>
+
 <section class="entry" id="wrist-tape-colours">
   <h3>The wrist tape's colours in the other games</h3>
   <p class="from">From: worklog 0.0.2-text, the wrist tape item</p>

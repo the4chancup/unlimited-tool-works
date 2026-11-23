@@ -241,7 +241,11 @@ draft checked, for the maintainer to publish; running sidekicks and jobs are not
      closure). Its SWE-2 round found 3 to fix, which ends the loop: a picked sideload mode
      stays runnable after a switch to PES 15 or 16, and two tests miss a likely wrong
      version rule and the menu's place. Their fixes merged `f63bf2aa` (SWE-2, no rework). Its
-     Carbon round is part of the grid's round 2, whose surface holds the toolbar
+     Carbon round is part of the grid's round 2, whose surface holds the toolbar. Its look,
+     2026-11-23 (release build at `ca8559a1` beside the draft, `.tmp/look_menu/`): the menu,
+     the closed arrow and the sideload pick match, but for one difference to fix with round
+     2's rework: the menu sits flush on the arrow, where the draft leaves 2 px (SB1-11).
+     The column toggle the draft lists comes with its later slice
    - Then the row actions, the ID cell's editing, the
      watcher and cache, Sizes and sorting, and the rest of the toolbar
      (`plans/team_compiler/gui.md` "Toolbar"): Launch PES, the writability badge and the
@@ -2739,7 +2743,9 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         of a drop untested (a test first); two tests that could not fail; the lead's text:
         the plan's drag and Comparator paragraphs (`10a7b2d3`)
       - [ ] the rework merged (`9e757880`); due: a SWE-2 loop over it, then Carbon's round 2
-        (round 1 had two of reach (a))
+        (round 1 had two of reach (a)). SWE-2 round "S-cmp c1", 2026-11-23: 6 accepted, one
+        a group member's float drawn unselected, so its fixes (with S-sel c1's, SWE-2
+        `sk/cmpsel`) get a round c2
   - [ ] 0.0.2-bar the toolbar as a menu bar (the maintainer, 2026-11-07 and 2026-11-12): the
     Ruleset editor draft's look, unframed menus on a band edge to edge, on the Save editor
     and the Ruleset editor; in the Save editor `File` (the opens, then Save and Save as) and
@@ -2843,7 +2849,10 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       fail; the lead's text: the help's PES version paragraph and Set PES path trigger, the
       architecture section, a changelog line (`cef04d9c`)
     - [ ] the rework merged (`97d073e4`); due: a SWE-2 loop over it, then Carbon's round 2
-      (round 1 had one of reach (a))
+      (round 1 had one of reach (a)). SWE-2 round "S-sel c1", 2026-11-23: 2 accepted (a test
+      copying a helper's loop, a doc), which ends the loop; one concern waits on
+      `maintainer/questions.html` "Portraits after a compile in the same session". Its fixes
+      go with S-cmp c1's (`sk/cmpsel`); Carbon's round 2 is next
     - [x] the look in the built window, both themes: checked 2026-11-15 at `4b9f2258`; the
       maintainer's look 2026-11-17: fine
   - [x] 0.0.2-undo an X on each row of the unsaved changes list undoing that change alone,
