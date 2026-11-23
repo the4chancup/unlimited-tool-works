@@ -256,7 +256,10 @@ draft checked, for the maintainer to publish; running sidekicks and jobs are not
      2026-11-23 (release build at `ca8559a1` beside the draft, `.tmp/look_menu/`): the menu,
      the closed arrow and the sideload pick match, but for one difference: the menu sat
      flush on the arrow, where the draft leaves 2 px (SB1-11). G3 gave it the gap
-     (`4ee3aa5b`); owed: the menu seen again in the built window beside the draft.
+     (`4ee3aa5b`), seen 2026-11-23 in the built window beside the draft: 2 px on both,
+     the right edges aligned. The draft's menu had stood 3.5 px past the arrow, its width
+     measured while the window's edge squeezed it; fixed there and in the Export upgrader's
+     More menu.
      The column toggle the draft lists comes with its later slice
    - Then the row actions, the ID cell's editing, the
      watcher and cache, Sizes and sorting, and the rest of the toolbar
@@ -4209,6 +4212,10 @@ points there.
   subsystem" names only the interleaved prompt as the arrangement's cost. Unmeasured:
   PowerShell. `--log-file` covers a tool's findings; a `diff` or `--json` to a file from
   `cmd` has no route yet (a console-subsystem shim beside the exe is the usual one).
+- open 2026-11-23 (the Export upgrader's view) — its draft's More menu stands flush on the
+  arrow, where the Compiler's draft leaves 2 px; the build's shared `menu_above` gives 2.
+  When the upgrader's toolbar slice is briefed, its draft takes the 2 px (a
+  `ui_decisions.html` card with both pictures), or `menu_above` takes a gap per caller.
 - open 2026-11-12 (0.0.2-upd, the look in the built exe) — a dialog whose button row is
   wider than its body draws the buttons out past the body's left edge
   (`widgets::modal_buttons` lays them out from the right in the body's width). Seen on the

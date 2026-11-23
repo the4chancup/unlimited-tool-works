@@ -748,7 +748,8 @@ function moreMenu(btn) {
   const r = btn.getBoundingClientRect(), [left, top] = inWin(r.right, r.top);
   const item = (text, what) => h("button", { onclick: ev => { ev.stopPropagation(); closeMenus();
     window_(text, h("p", {}, what), button("Close", closeWindow), "more"); } }, text);
-  const m = h("div", { class: "menu", style: `left:${left}px; top:${top}px` },
+  // Laid out at the window's left first, so its width is measured unsqueezed (modeMenu's note).
+  const m = h("div", { class: "menu", style: `left:0px; top:${top}px` },
     item("Open old_exports folder", `The file manager opens on ${EXE_FOLDER}\\old_exports.`),
     item("Open exports folder", `The file manager opens on ${EXE_FOLDER}\\exports.`),
     h("div", { class: "sep", style: "margin:5.5px 0" }),

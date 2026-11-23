@@ -1205,7 +1205,9 @@ function modeMenu(btn, sideloadOff) {
   const item = (text, fn, disabled, title) => h("button", { disabled, title,
     onclick: ev => { ev.stopPropagation(); closeMenus(); fn(); } }, text);
   const pick = m => () => { S.mode = m; render(); };
-  const m = h("div", { class: "menu", style: `left:${left}px; top:${top}px` },
+  // Laid out at the window's left first: at the arrow's right edge the window's own edge
+  // would squeeze the menu, and its width measured there would leave it short of the arrow.
+  const m = h("div", { class: "menu", style: `left:0px; top:${top}px` },
     item(MODES.normal, pick("normal")),
     item(MODES.sideload, pick("sideload"), sideloadOff,
       sideloadOff ? "No runtime serves sideloaded files on PES 2015 and 2016" : "Unpacked into the game folder's livecpk"),
