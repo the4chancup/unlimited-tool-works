@@ -126,10 +126,13 @@ draft checked, for the maintainer to publish; running sidekicks and jobs are not
      by the maintainer as it is
    - [ ] The next VGL build, `0.0.3-vgl27.2`, once the Compiler's slices 1b and 1c have landed
      (the maintainer, 2026-11-22), 1c-iii's Upgrade DpFileList button included (2026-11-23):
-     `vgl27` merges main, raises the version, is packed. Slices 1b and 1c have landed (2026-11-23): it is
-     built from main once the checkpoint on `6ef6ea58` passes. What the button does on PES 2019
-     waits on item 8 (`maintainer/questions.html` "Upgrade DpFileList in the organizer's PES
-     2019 build")
+     `vgl27` merges main, raises the version, is packed. Built 2026-11-23: `vgl27` merged the
+     gated `88040bcc` (`76e46277`, its legacy-ID tests moved onto main's test helpers), raised
+     to `0.0.3-vgl27.2` (`de9c9ccb`), packed in the worktree's `target/dist/`, and checked in
+     its built window (the version on the sidebar, the four tools, the Compiler's grid and
+     split Compile button, the upgrader's placeholder line). It is handed over once item 8 is
+     answered (`maintainer/questions.html` "Upgrade DpFileList in the organizer's PES 2019
+     build"), since that answer decides what the button does on PES 2019
    - [x] VGL27's legacy mode off main, onto `vgl27` alone (2026-11-22, DECISIONS 2026-11-22):
      main's merge `8cc425a3` (Opus; the lead dropped three tests of the old names and the
      draft's `IDs` cell), TC-LEG-01 to 05 and EU-SET-15 to 17 withdrawn, and a CHANGELOG
