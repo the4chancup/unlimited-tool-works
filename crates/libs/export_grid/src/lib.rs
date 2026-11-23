@@ -5,8 +5,8 @@
 //! with the [`Columns`] its lines share and the [`LegendEntry`]s of its states. A cell's
 //! detail window opens on hover and stays open on a click; the tool keeps its [`Detail`] and
 //! carries out what [`show`] returns (a folder to open, the help at a code). A tool whose log
-//! lines stand for cells names each by its [`CellKey`] and tells the [`Detail`] which line
-//! is under the pointer and which was clicked.
+//! lines stand for cells names each by its [`CellKey`] and tells the [`Detail`] which cell
+//! the line under the pointer stands for and which the clicked line stands for.
 
 mod cells;
 mod detail;

@@ -96,8 +96,8 @@ pub fn cell_places(row: &Row) -> impl Iterator<Item = (Place, &Cell)> {
             .groups
             .iter()
             .enumerate()
-            .flat_map(move |(group, cells)| {
-                cells
+            .flat_map(move |(group, group_positions)| {
+                group_positions
                     .iter()
                     .enumerate()
                     .filter_map(move |(index, position)| match position {
@@ -224,8 +224,8 @@ impl Found {
 
 impl Detail {
     /// The tool's log line under the pointer stands for `cell` this frame (`None`: no line, or
-    /// one that stands for no cell). While the pointer is on no cell of the grid, the window
-    /// treats `cell` as the cell under the pointer, with the same delay and rules. Called
+    /// one that stands for no cell). While the pointer is over none of the grid's cells, the
+    /// window treats `cell` as the cell under the pointer, with the same delay and rules. Called
     /// every frame, before `show`.
     pub fn point_at(&mut self, cell: Option<CellKey>) {
         self.pointed = cell;
@@ -240,8 +240,8 @@ impl Detail {
         self.scroll_to_outlined = true;
     }
 
-    /// The cell `show` scrolls into view this frame: the outlined one, on the frame after
-    /// `go_to` alone.
+    /// The cell `show` scrolls into view this frame: the outlined one, only on the frame
+    /// after a `go_to`.
     pub(crate) fn take_scroll_target(&mut self) -> Option<&CellKey> {
         if std::mem::take(&mut self.scroll_to_outlined) {
             self.outlined.as_ref()

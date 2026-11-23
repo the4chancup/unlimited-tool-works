@@ -223,6 +223,8 @@ pub(crate) struct Preview {
     /// The installed list already is the official one and every CPK it names is in
     /// `download/`: nothing to do (the other fields are then empty).
     pub(crate) up_to_date: bool,
+    /// The installed list is not the official one byte for byte: the upgrade replaces it.
+    pub(crate) replaces_list: bool,
 }
 
 /// `run` without `apply`'s plan for `download`, as data for the window's Upgrade DpFileList
@@ -244,21 +246,24 @@ pub(crate) fn preview(download: &Path, ctx: &ToolContext) -> anyhow::Result<Prev
         placeholders: worked.plan.placeholders.len(),
         dropped,
         up_to_date: worked.up_to_date,
+        replaces_list: !worked.list_is_official,
     })
 }
 
 /// The `upgrade-dpfl` command in `download`, the PES folder's `download/` (checked to be a
 /// folder); `delete` is the window's dialog's ticked dropped CPKs, empty on the command
 /// line, which never deletes. It reports the upgrade's findings (`plan`) in the order `apply`
-/// (`--yes`) acts, each emitted once its action succeeded (renames, placeholders, the list,
+/// (`--yes`) acts, each emitted once its action is done (renames, placeholders, the list,
 /// then the dropped entries). Applying, a dropped CPK named in `delete` whose file is
-/// present is removed, after the list is replaced, and its line is `dpfilelist_cpk_deleted`
-/// in place of `dpfilelist_cpk_dropped`; a `delete` name that is not a dropped CPK is
-/// ignored. Without `apply` it reports `dpfilelist_upgrade_planned` last and writes nothing;
-/// `dpfilelist_up_to_date` alone when there is nothing to do. Returns the worst severity
-/// reported. A file that cannot be read or written is the error, naming it, and what was
-/// done before stays done: the list is replaced last, so the old one stays in place and a
-/// second run finishes the work.
+/// present is removed after the list is replaced, and its line is `dpfilelist_cpk_deleted`
+/// in place of `dpfilelist_cpk_dropped`; one whose removal fails keeps the dropped line,
+/// with an `error` context saying why, and the run goes on to the next dropped entry. A
+/// `delete` name that is not a dropped CPK is ignored. Without `apply` it reports
+/// `dpfilelist_upgrade_planned` last and writes nothing; `dpfilelist_up_to_date` alone when
+/// there is nothing to do. Returns the worst severity reported. A file that cannot be read
+/// or written is the error, naming it — a failed delete aside — and what was done before
+/// stays done: the list is replaced before the deletions, so a run stopped earlier leaves
+/// the old one in place and a second run finishes the work.
 pub(crate) fn run(
     download: &Path,
     apply: bool,
@@ -322,9 +327,10 @@ pub(crate) fn run(
             context.push(("size", size_text(size)));
             if apply && delete.contains(cpk) {
                 let path = download.join(cpk);
-                fs::remove_file(&path)
-                    .with_context(|| format!("cannot delete {}", path.display()))?;
-                code = Code::DpfilelistCpkDeleted;
+                match fs::remove_file(&path) {
+                    Ok(()) => code = Code::DpfilelistCpkDeleted,
+                    Err(error) => context.push(("error", error.to_string())),
+                }
             }
         }
         events.message(finding(code, context));
@@ -738,11 +744,27 @@ mod tests {
         let preview = preview(&download, &ctx).unwrap();
 
         assert!(!preview.up_to_date);
-        assert_eq!(preview.renames.len(), 13);
         assert!(
-            preview
-                .renames
-                .contains(&("4cc_40_faces.cpk".to_owned(), "4cc_41_teams.cpk".to_owned()))
+            preview.replaces_list,
+            "the PES 17 list is not the official one"
+        );
+        assert_eq!(
+            preview.renames,
+            renames(&[
+                ("4cc_15_billboard", "4cc_11_billboard"),
+                ("4cc_20_swipe", "4cc_12_swipe"),
+                ("4cc_25_gametips", "4cc_14_gametips"),
+                ("4cc_32_stadiums2", "4cc_22_stadiums"),
+                ("4cc_31_stadiums1", "4cc_21_stadiums"),
+                ("4cc_30_stadiums0", "4cc_20_stadiums"),
+                ("4cc_35_referees", "4cc_18_referees"),
+                ("4cc_38_balls", "4cc_16_balls"),
+                ("4cc_45_uniform", "4cc_42_teams"),
+                ("4cc_40_faces", "4cc_41_teams"),
+                ("4cc_55_other_uniform", "4cc_52_teams2"),
+                ("4cc_50_other_faces", "4cc_51_teams2"),
+                ("4cc_90_test", "4cc_99_test"),
+            ])
         );
         assert_eq!(preview.placeholders, 19);
         let mut dropped = vec![("4cc_60_midcup.cpk".to_owned(), Some(1024))];
@@ -761,6 +783,89 @@ mod tests {
         preview(&download, &ctx).unwrap();
 
         assert!(snapshot(&download) == before, "nothing written");
+    }
+
+    /// An install on the official list byte for byte, with a `kib_of` file for every
+    /// official entry but `missing` (`""`: none missing).
+    fn install_official(download: &Path, missing: &str) {
+        fs::create_dir_all(download).unwrap();
+        let templates = Templates::embedded();
+        fs::write(download.join(DPFILELIST), templates.official_list_file()).unwrap();
+        for name in templates.official_list() {
+            if name != missing {
+                fs::write(download.join(&name), kib_of(&name)).unwrap();
+            }
+        }
+    }
+
+    // An install holding the official list with one official CPK missing: the upgrade writes
+    // its placeholder and replaces nothing.
+    #[test]
+    fn a_preview_of_the_official_list_with_a_missing_cpk_replaces_no_list() {
+        let temp = scratch("upgrade_preview_same_list");
+        let download = temp.path().join("PES/download");
+        install_official(&download, "4cc_16_balls.cpk");
+        let ctx = tool_context(temp.path(), "");
+
+        let preview = preview(&download, &ctx).unwrap();
+
+        assert!(!preview.up_to_date);
+        assert!(
+            !preview.replaces_list,
+            "the installed list is the official one"
+        );
+        assert_eq!(preview.renames, []);
+        assert_eq!(preview.placeholders, 1);
+        assert_eq!(preview.dropped, []);
+    }
+
+    // An install already upgraded: the official list and a file for every entry of it.
+    #[test]
+    fn a_preview_of_an_upgraded_install_has_nothing_to_do() {
+        let temp = scratch("upgrade_preview_up_to_date");
+        let download = temp.path().join("PES/download");
+        install_official(&download, "");
+        let ctx = tool_context(temp.path(), "");
+
+        let preview = preview(&download, &ctx).unwrap();
+
+        assert!(preview.up_to_date);
+        assert!(!preview.replaces_list);
+        assert_eq!(preview.renames, []);
+        assert_eq!(preview.placeholders, 0);
+        assert_eq!(preview.dropped, []);
+    }
+
+    // `delete` is the dialog's ticked CPKs; without `apply` the run writes and deletes
+    // nothing, whatever it holds.
+    #[test]
+    fn a_run_without_apply_deletes_nothing() {
+        let temp = scratch("upgrade_no_apply_delete");
+        let download = temp.path().join("PES/download");
+        install_pes17_full(&download);
+        let before = snapshot(&download);
+        let (events_tx, events) = crossbeam_channel::unbounded();
+        let ctx = tool_context(temp.path(), "").with_events(events_tx);
+        let delete = BTreeSet::from(["4cc_60_midcup.cpk".to_owned()]);
+
+        let worst = run(&download, false, &delete, &ctx).unwrap();
+
+        assert!(snapshot(&download) == before, "nothing written or deleted");
+        let lines: Vec<String> = events
+            .try_iter()
+            .filter_map(|envelope| {
+                let PipelineEvent::Message(message) = envelope.event else {
+                    return None;
+                };
+                Some(line(&message))
+            })
+            .collect();
+        assert!(
+            lines.iter().any(|line| line
+                == "Warning dpfilelist_cpk_dropped [Keep] (cpk=4cc_60_midcup.cpk, size=1 KiB)"),
+            "{lines:?}"
+        );
+        assert_eq!(worst, Some(Severity::Warning));
     }
 
     // The dialog's `delete` set: `4cc_60_midcup.cpk` ticked (a dropped CPK, deleted) and
@@ -818,5 +923,57 @@ mod tests {
             assert_eq!(fs::read(download.join(&name)).unwrap(), kib_of(&name));
         }
         assert!(download.join("4cc_16_balls.cpk").exists());
+    }
+
+    // A ticked dropped CPK whose file cannot be deleted (PES may hold it open) is reported
+    // dropped with the error, and the run goes on to the other dropped CPKs. The file is
+    // held open with no sharing, which a plain `File::open` does not block a delete under.
+    #[cfg(windows)]
+    #[test]
+    fn a_ticked_cpk_whose_delete_fails_is_reported_dropped_with_the_error() {
+        use std::os::windows::fs::OpenOptionsExt;
+
+        let temp = scratch("upgrade_delete_failed");
+        let download = temp.path().join("PES/download");
+        install_pes17_full(&download);
+        let _held = fs::OpenOptions::new()
+            .read(true)
+            .share_mode(0)
+            .open(download.join("4cc_60_midcup.cpk"))
+            .unwrap();
+        let (events_tx, events) = crossbeam_channel::unbounded();
+        let ctx = tool_context(temp.path(), "").with_events(events_tx);
+        let delete = BTreeSet::from(["4cc_60_midcup.cpk".to_owned()]);
+
+        let worst = run(&download, true, &delete, &ctx).unwrap();
+
+        assert_eq!(worst, Some(Severity::Warning));
+        let lines: Vec<String> = events
+            .try_iter()
+            .filter_map(|envelope| {
+                let PipelineEvent::Message(message) = envelope.event else {
+                    return None;
+                };
+                Some(line(&message))
+            })
+            .collect();
+        let held = lines
+            .iter()
+            .find(|line| line.contains("cpk=4cc_60_midcup.cpk"))
+            .expect("the held CPK's line");
+        assert!(
+            held.starts_with(
+                "Warning dpfilelist_cpk_dropped [Keep] (cpk=4cc_60_midcup.cpk, size=1 KiB, error="
+            ),
+            "{held}"
+        );
+        for number in 76..=79 {
+            let name = format!("cpk=4cc_{number}_midcup.cpk");
+            assert!(
+                lines.iter().any(|line| line.contains(&name)),
+                "the next dropped CPKs still get their lines: {name}"
+            );
+        }
+        assert!(download.join("4cc_60_midcup.cpk").exists(), "kept");
     }
 }

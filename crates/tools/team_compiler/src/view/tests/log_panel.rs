@@ -287,3 +287,23 @@ fn a_warning_line_opens_its_cell_s_window_on_hover_and_a_click_outlines_and_pins
         "no pin"
     );
 }
+
+// TC-GUI-15
+#[test]
+fn an_error_line_s_click_outlines_its_cell_and_pins_its_window() {
+    let temp = sandbox("view_log_error_line");
+    let root = temp.path();
+    list_teams(root);
+    add_player(root, "co Midcup Map", "03 - B");
+    add_file(root, "co Midcup Map/Players/03 - B/notes.exe", b"");
+    let mut scene = Scene::new(checked_rows(root));
+    scene.frame(Vec::new());
+    let nodes = scene.frame(Vec::new());
+    assert!(!shows_text(&nodes, "/co/ 03"), "premise: no window open");
+    let error_line = on_line(&nodes, " at Players/03 - B");
+
+    let nodes = scene.click(error_line);
+    assert!(shows_text(&nodes, "/co/ 03"), "the player's window");
+    button(&nodes, "📌");
+    assert_eq!(scene.outlines(), [cell_rect(&nodes, "03")]);
+}

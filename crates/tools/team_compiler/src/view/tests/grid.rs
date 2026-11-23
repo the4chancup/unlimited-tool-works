@@ -89,7 +89,7 @@ fn the_view_shows_a_row_per_export_once_its_check_has_returned() {
     {
         assert_eq!(
             (cell.state, cell.outline),
-            (CellState::PartialOk, None),
+            (CellState::FullOk, None),
             "{cell:?}"
         );
     }
