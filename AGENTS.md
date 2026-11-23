@@ -192,10 +192,11 @@ an outcome fails this test, say so and simplify before reporting. (The code half
 `CONTRIBUTING.md`'s "boring Rust" intent; this is the standard it is accepted on.)
 
 **A snag is a finding.** When a tool, script, step or your own output (a wrong count) fails,
-misleads or costs time (a retry, a workaround, a manual step done twice), ask unprompted whether its cause can be removed, then
-act: a small fix inside what you may edit (the script, its docstring, a rule line) is made at
-once; a bigger one becomes a worklog issue, or a `proposals.html` card for a new idea. A
-workaround alone does not close it, and the turn's report names the fix or the entry.
+misleads or costs time (a retry, a workaround, a step done twice), and when a review concern
+is accepted, step back and ask what change to the work's cycle would remove its
+cause (a brief's line, a skill, a gate), then act: a small fix inside what you may edit is
+made at once; a bigger one becomes a worklog issue, or a `proposals.html` card for a new idea.
+A workaround alone does not close it, and the turn's report names the fix or the entry.
 
 No look reaches the maintainer unchecked: the built window is captured beside its draft and
 compared first (`RUNBOOK.md` "Looks owed have one home each").

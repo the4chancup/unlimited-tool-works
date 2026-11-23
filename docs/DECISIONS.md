@@ -19856,3 +19856,12 @@ Why: the maintainer, on Report a problem: the dialog "should have a gap below th
 the 'Saved' line doesn't push the buttons down when it shows up". Close then appears where
 Save… was, under the pointer.
 Plan: `plans/core/gui.md` "Modals" row.
+
+## 2026-11-23 — process — an accepted review concern is a snag of the work's cycle
+Decision: `AGENTS.md`'s "A snag is a finding" covers an accepted review concern too: the agent
+steps back and asks what change to the work's cycle (a brief's line, a skill, a gate) would
+have removed its cause, and makes it.
+Why: the maintainer, after a defect passed both the brief's author and its sidekick: every
+accepted concern gets that question, which "ties in with the snag fixing rule: it all boils
+down to taking a step back and self-improving".
+Plan: `AGENTS.md` "Conduct".
