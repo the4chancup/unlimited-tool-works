@@ -765,6 +765,17 @@ Compiler and the Export upgrader, then the rest as they are built.
 
   A bundle from another Studio version replays with both versions named, and a step whose op
   this build cannot read fails, naming the step.
+- **Unpacking a bundle's saves.** An earlier session's saves are packed, which neither the
+  game nor the Save editor opens, so `utw save-editor unpack-session <bundle> <folder>` writes
+  a bundle's kept files back as files. It reads the bundle as replay does, each packed save
+  rebuilt by the Save editor and checked against its journal row's size and SHA-256. It then
+  writes each input to `<folder>/inputs/` and each output to `<folder>/outputs/`, named
+  `<index>-<file name>` as in the session folder, without `.packed`, and prints each path.
+
+  - A bundle that does not read (not a zip, a save that does not rebuild to its SHA-256)
+    writes nothing and exits 2, as replay does.
+  - So does a folder that already holds a file: the command never writes into one.
+  - The report's readme names the command where it says a save in `sessions/` is packed.
 - **One facility in `studio_core`**: the journal's type, the bundle writer, the button and the
   dialog are the platform's. Each tool contributes its steps and its kept inputs through the
   tool interface, so the bundle and its rules are the same in every tool.

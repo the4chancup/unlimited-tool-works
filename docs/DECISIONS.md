@@ -19920,3 +19920,15 @@ Why: prevention written one incident at a time cannot see a cause that returns a
 and its lines pile up whether they work or not: three slices in a row copied test setup
 although the briefing skill had gained a line against it twice.
 Plan: `PREVENTION.md` (new); its row in `AGENTS.md`'s documents table lands at the start.
+
+## 2026-11-23 — save_editor — `unpack-session` writes a bundle's packed saves back as files
+Decision: `utw save-editor unpack-session <bundle> <folder>` reads a repro bundle as replay
+does, each packed save rebuilt and checked against its size and SHA-256, and writes its kept
+inputs and outputs into a new folder as `inputs/<index>-<name>` and `outputs/<index>-<name>`.
+A bundle that does not read, or a folder that already holds a file, writes nothing and exits 2.
+The report's readme names it.
+Why: an earlier session keeps its saves packed, and no shipped command opens them: replay is
+not built yet, though the report's readme sends its reader to it. Every report whose earlier
+sessions hold a save meets this (Astra round A-s5c, concern 1).
+Plan: `plans/core/architecture.md` "Repro bundles", "Unpacking a bundle's saves";
+`plans/save_editor.md` SE-REP-08.

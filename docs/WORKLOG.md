@@ -79,7 +79,9 @@ draft checked, for the maintainer to publish; running sidekicks and jobs are not
      - a `save-editor unpack-session <session.zip> <folder>` command writing an earlier
        session's saves back as files through `repro::read_bundle` and the Save editor's
        rebuild, since no shipped command reads a `.packed` save (replay's command, 3b, is
-       deferred); the report readme names it; plan, DECISIONS and a scenario first;
+       deferred); the report readme names it. Its plan, decision and scenario are written
+       (2026-11-23, `plans/core/architecture.md` "Unpacking a bundle's saves", SE-REP-08):
+       next, its SWE-2 slice;
      - the packed round trip tested with a non-empty logo, identifier and serial;
      - `frames_until` back to CONTRIBUTING's 120 s, and the comparator test that ran out at
        120 s in the 2026-11-21 checkpoint made not to wait on a loaded worker;

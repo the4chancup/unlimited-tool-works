@@ -4209,6 +4209,14 @@ SE-REP-07  GIVEN SE-REP-01's steps kept as an earlier session (`plans/core/archi
            THEN each save rebuilds to the journal's SHA-256 and the write matches; GIVEN one
                 byte of a decrypted section changed THEN it prints that the rebuilt save does
                 not match its SHA-256, replays nothing and exits 2
+SE-REP-08  GIVEN SE-REP-07's earlier session as the bundle a report keeps under `sessions/`,
+                for a save of each version the tests hold, and a folder that does not exist
+           WHEN `save-editor unpack-session` is run on the bundle and the folder
+           THEN the folder holds `inputs/0-<name>` and `outputs/0-<name>`, `<name>` the
+                save's file name, each byte for byte the save the session opened or wrote;
+                it prints both paths and exits 0; GIVEN one byte of a decrypted section
+                changed, or the folder already holding a file, THEN it prints why, writes
+                nothing and exits 2
 ```
 
 The full-look patch's `apply-patch` scenarios (SE-PAT-07 to 11) moved to
