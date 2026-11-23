@@ -261,9 +261,11 @@ class Timeline(unittest.TestCase):
         svg = roadmap.timeline(parse(WORKLOG), dates, TODAY)
         self.assertIn("2 done steps have no date", svg)
 
-    def test_a_rows_text_is_its_bold_path_and_whole_text(self) -> None:
+    def test_a_row_is_its_monospace_label_and_its_description(self) -> None:
         svg = roadmap.timeline(parse(WORKLOG), self.DATES, TODAY)
-        self.assertIn('<tspan font-weight="600">TOP/c</tspan>', svg)
+        self.assertRegex(svg, r'<text x="\d+" [^>]*font-family="Consolas, monospace" '
+                              r'font-weight="600">TOP/c</text><text x="\d+" [^>]*>'
+                              r'open bullet: tail\.</text>')
         self.assertIn('<title>TOP/c open bullet: tail. — waits on b, MODE</title>', svg)
 
     def test_the_phases_not_done_stand_above_the_open_steps_the_next_lowest(self) -> None:
@@ -278,20 +280,18 @@ class Timeline(unittest.TestCase):
         self.assertLess(int(phase_2[1]), top_step)
         self.assertIn('<title>Phase 3 GUI after Phase 2 (in progress)</title>', svg)
 
-    def test_the_phases_text_starts_at_one_column_past_the_longest_label(self) -> None:
+    def test_every_description_starts_at_one_column_past_the_longest_label(self) -> None:
         text = WORKLOG.replace("| 2 | Libs |", "| 0.1.0 | Libs |")
         svg = roadmap.timeline(parse(text), self.DATES, TODAY)
-        found = re.findall(r'<text x="(\d+)" [^>]*><tspan font-weight="600">'
-                           r'(Phase 3|Release 0\.1\.0)</tspan></text>'
-                           r'<text x="(\d+)" [^>]*>([^<]*)</text>', svg)
-        self.assertEqual([(label, words) for _, label, _, words in found],
-                         [("Phase 3", "GUI after Phase 2 (in progress)"),
-                          ("Release 0.1.0", "Libs (todo)")])
-        (label_x, _, scope_x, _), (_, _, other_x, _) = found
-        self.assertEqual(scope_x, other_x)
-        self.assertGreaterEqual(int(scope_x) - int(label_x), 6.6 * len("Release 0.1.0"))
-        # A step's text still follows its ID in one text element.
-        self.assertIn('<tspan font-weight="600">TOP/c</tspan> open bullet', svg)
+        rows = re.findall(r'<text x="(\d+)" [^>]*font-weight="600">([^<]*)</text>'
+                          r'<text x="(\d+)" ', svg)
+        self.assertGreater(len(rows), 5)
+        self.assertEqual(len({label_x for label_x, _, _ in rows}), 1)
+        self.assertEqual(len({desc_x for _, _, desc_x in rows}), 1)
+        label_x, desc_x = int(rows[0][0]), int(rows[0][2])
+        longest = max(len(label) for _, label, _ in rows)
+        self.assertEqual(longest, len("Release 0.1.0"))
+        self.assertEqual(desc_x - label_x, round(7.8 * longest) + 12)
 
     def test_a_release_row_is_named_release_and_the_phases_lane_is_grey(self) -> None:
         text = WORKLOG.replace("| 2 | Libs |", "| 0.1.0 | Libs |")

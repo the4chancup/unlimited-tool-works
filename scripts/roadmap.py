@@ -36,10 +36,13 @@ OPEN_MARKS = " ~!"
 LANE_GAP = 32
 # The phases' lane: grey, apart from the palette the work's lanes take.
 PHASE_COLOUR = "#999999"
-# A bold 13-point label's width per character, rounded up from Segoe UI's widest measured
-# (6.56, a two-digit phase's label), so the phases' text column clears the longest label in a
-# wider fallback font too.
-LABEL_CHAR_WIDTH = 6.6
+# The labels are monospace, so the descriptions' column is the longest label's length times
+# one character's width: 0.6 em at 13 points, Consolas's 0.55 em rounded up to the
+# 0.602 em of DejaVu Sans Mono, the fallback where Consolas is missing.
+LABEL_FONT = "Consolas, monospace"
+LABEL_CHAR_WIDTH = 7.8
+# The room between the longest label and the descriptions' column.
+LABEL_GAP = 12
 # One per top-level step, in the order they are listed: the Okabe-Ito palette, every one readable on
 # the page's `#1e1e1e`.
 PALETTE = ["#E69F00", "#56B4E9", "#009E73", "#F0E442",
@@ -403,7 +406,9 @@ def timeline(roadmap: Roadmap, dates: dict[str, str], today: str) -> str:
         return 10 + LANE_GAP * col
 
     text_x = col_x(ncols - 1) + 18 if ncols else 24
-    width = text_x + 800
+    desc_x = text_x + round(LABEL_CHAR_WIDTH * max((len(s.path) for s in rows),
+                                                   default=0)) + LABEL_GAP
+    width = desc_x + 720
     band_top = 1 + 22 * len(open_rows)
     band_bottom = 1 + 22 * first_done
     height = (cy(done_rows[-1]) + 12 if done_rows else band_bottom)
@@ -444,11 +449,6 @@ def timeline(roadmap: Roadmap, dates: dict[str, str], today: str) -> str:
             parts.append(f'<path d="M {x1} {y1} C {x1} {ym:g}, {x2} {ym:g}, {x2} {y2}" '
                          f'stroke="{tracks[member[id(s)]][2]}" stroke-width="1.5" '
                          'opacity="0.6" fill="none"/>')
-    # The phases' labels differ in width (one digit or two, a release's longer, and Segoe UI's
-    # digits are not all one width), so their text starts at one column, past the longest.
-    phase_ids = {id(s) for s in phase_rows}
-    scope_x = text_x + round(LABEL_CHAR_WIDTH * max((len(s.path) for s in phase_rows),
-                                                    default=0)) + 8
     for s in rows:
         ti = member[id(s)]
         colour, x, y = tracks[ti][2], col_x(tracks[ti][3]), cy(s)
@@ -456,22 +456,16 @@ def timeline(roadmap: Roadmap, dates: dict[str, str], today: str) -> str:
         circle = (f'<circle cx="{x}" cy="{y}" r="5" fill="#1e1e1e" '
                   f'stroke="{colour}" stroke-width="2"/>' if open_ else
                   f'<circle cx="{x}" cy="{y}" r="5" fill="{colour}"/>')
-        whole = f"{s.path} {s.text.rstrip(';,')}"
-        shown_text = cut(whole)
-        head_part = (shown_text[:len(s.path)]
-                     if shown_text.startswith(s.path) else shown_text)
-        title = whole + (f" — waits on {', '.join(s.after)}" if s.after else "")
+        text = s.text.rstrip(";,")
+        title = (f"{s.path} {text}"
+                 + (f" — waits on {', '.join(s.after)}" if s.after else ""))
         attrs = (f'y="{y}" fill="{"#fff" if open_ else "#ddd"}" font-size="13" '
                  'dominant-baseline="central"')
-        label = f'<tspan font-weight="600">{html.escape(head_part)}</tspan>'
-        rest = mono(shown_text[len(head_part):])
-        if id(s) in phase_ids:
-            drawn = (f'<text x="{text_x}" {attrs}>{label}</text>'
-                     f'<text x="{scope_x}" {attrs}>{rest.lstrip()}'
-                     '</text>')
-        else:
-            drawn = f'<text x="{text_x}" {attrs}>{label}{rest}</text>'
-        parts.append(f'<g><title>{html.escape(title)}</title>{circle}{drawn}</g>')
+        parts.append(f'<g><title>{html.escape(title)}</title>{circle}'
+                     f'<text x="{text_x}" {attrs} font-family="{LABEL_FONT}" '
+                     'font-weight="600">'
+                     f'{html.escape(s.path)}</text>'
+                     f'<text x="{desc_x}" {attrs}>{mono(cut(text, 100))}</text></g>')
     parts.append("</svg>")
     if undated:
         parts.append(f'<p class="from">{undated} done step'
