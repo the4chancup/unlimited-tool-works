@@ -228,7 +228,7 @@ const savefile = () => S.savefileEdited ? S.savefile
   : `${DOCS}\\PRO EVOLUTION SOCCER ${shellPesVersion()}\\save\\EDIT00000000`;
 const catalog = code => CATALOG["export-upgrader"].find(r => r.code === code);
 const severity = code => (catalog(code) || {}).severity || "Error";
-const messageOf = code => (catalog(code) ? catalog(code).condition.replaceAll("`", "") : code);
+const messageOf = code => (catalog(code) ? catalog(code).when.replaceAll("`", "") : code);
 
 // What keeps an export from being read at all, by its `special`. sample wording.
 const BLOCKS = {

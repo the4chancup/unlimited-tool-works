@@ -114,7 +114,8 @@ class Bundle(unittest.TestCase):
     def test_the_real_drafts(self) -> None:
         drafts = ROOT / "docs" / "prototypes"
         text, scripts, images = bundle(drafts)
-        self.assertEqual(scripts, len(list((drafts / "tools").glob("*.js"))))
+        # The tool scripts and the host's own (help.js, the build's help).
+        self.assertEqual(scripts, len([*drafts.glob("*.js"), *(drafts / "tools").glob("*.js")]))
         # Every asset a source names exists, and every file is named by a source.
         referenced = set()
         for src in [drafts / "index.html", *(drafts / "tools").glob("*.js")]:

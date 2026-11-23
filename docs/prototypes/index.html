@@ -687,6 +687,7 @@
   .help-win .help-tree .sel { display: block; }
   .help-win .help-topic { flex: 1; overflow: auto; padding: 4px 12px 30px; }
   .help-win .help-topic h3 { font: 400 14px/1.2 var(--font-body); color: var(--strong); margin: 10px 0 4px; }
+  .help-win .help-topic h4 { font: 400 13px/1.2 var(--font-body); color: var(--strong); margin: 8px 0 4px; }
   .help-win .help-topic p { margin: 4px 0 8px; }
   /* A topic's text wraps at a reading width (P44): past about 110 characters a line's end
      loses the eye the next line's start. The Messages table keeps the pane's width. */
@@ -776,6 +777,7 @@
 <div id="help-layer"></div>
 <div id="overlay"></div>
 </div>
+<script src="help.js"></script>
 <script>
 "use strict";
 
@@ -1611,9 +1613,10 @@ document.addEventListener("keydown", e => {
 });
 
 // The topic body's Markdown, rendered by this tiny stand-in for
-// egui_commonmark: it covers only what the sample bodies use (## headings,
-// paragraphs split on blank lines, `code` spans, **strong**, - list items,
-// ``` fenced blocks as pre.mono, and [text](tool-id#topic-slug) links).
+// egui_commonmark: it covers only what the build's bodies use (## and ###
+// headings, paragraphs split on blank lines, `code` spans, **strong**, - and
+// 1. list items, | tables, ``` fenced blocks as pre.mono, and
+// [text](tool-id#topic-slug) links).
 function mdInline(text) {
   const kids = [];
   let rest = text;
@@ -1640,12 +1643,24 @@ function md(body, hlPara) {
   return body.split(/\n\s*\n/).map((b, i) => {
     const cls = i === hlPara ? "hl" : "";
     if (b.startsWith("## ")) return h("h3", { class: cls }, mdInline(b.slice(3)));
+    if (b.startsWith("### ")) return h("h4", { class: cls }, mdInline(b.slice(4)));
     if (b.startsWith("```"))
       return h("pre", { class: "mono" + (cls ? " " + cls : "") }, b.split("\n").slice(1, -1).join("\n"));
-    // A list: each item from its "- " to the next, its wrapped lines joined.
-    if (b.startsWith("- "))
-      return h("div", { class: "ul" + (cls ? " " + cls : "") }, b.split(/\n(?=- )/).map(item =>
-        h("div", {}, "• ", mdInline(item.slice(2).replaceAll("\n", " ").replace(/ +/g, " ")))));
+    // A list: each item from its "- " (or "1. ") to the next, its wrapped lines joined.
+    const item = b.startsWith("- ") ? /\n(?=- )/ : /^\d+\. /.test(b) ? /\n(?=\d+\. )/ : null;
+    if (item)
+      return h("div", { class: "ul" + (cls ? " " + cls : "") }, b.split(item).map(it => {
+        const mark = it.match(/^(- |\d+\. )/)[1];
+        return h("div", {}, mark === "- " ? "• " : mark,
+          mdInline(it.slice(mark.length).replaceAll("\n", " ").replace(/ +/g, " ")));
+      }));
+    // A table: the first row heads it, the |---| row under it is skipped.
+    if (b.startsWith("|")) {
+      const rows = b.split("\n").map(r => r.replace(/^\||\|$/g, "").split("|").map(c => c.trim()));
+      return h("table", { class: "grid" + (cls ? " " + cls : "") },
+        h("tr", {}, rows[0].map(c => h("th", {}, mdInline(c)))),
+        rows.slice(2).map(r => h("tr", {}, r.map(c => h("td", {}, mdInline(c))))));
+    }
     return h("p", { class: cls }, mdInline(b.replaceAll("\n", " ")));
   });
 }
@@ -1725,7 +1740,7 @@ function drawHelpPanes(win) {
 function drawHelpTopic(right) {
   const ch = helpChapter(S.help.tool) || HELP[0];
   if (S.help.topic === "messages" && CATALOG[ch.id])
-    right.append(h("h2", {}, "Messages"), messagesTable(ch.id));
+    right.append(h("h2", {}, "Messages"), h("p", {}, BUILD_HELP.messagesIntro), messagesTable(ch.id));
   else {
     const t = ch.topics.find(t => t.slug === S.help.topic) || ch.topics[0];
     right.append(h("h2", {}, t.title), ...md(t.body, S.help.para));
@@ -1742,15 +1757,14 @@ function drawHelpTopic(right) {
 function messagesTable(chId) {
   const sevCls = s => s === "Info" ? "weak" : s === "Warning" ? "warn"
     : /[EF]/.test(s) ? "err" : "";
-  const [h3, h4] = CATALOG_HEADERS[chId];
   return h("table", { class: "grid" },
     h("tr", {}, h("th", {}, "ID"), h("th", {}, "Severity"),
-      h("th", {}, h3), h("th", {}, h4)),
+      h("th", {}, "When"), h("th", {}, "Effect")),
     CATALOG[chId].map(r => h("tr", { class: r.code === S.help.anchor ? "hl" : "" },
       h("td", {}, h("code", { class: "mono", id: "msg-" + r.code }, r.code)),
       h("td", {}, h("span", { class: sevCls(r.severity) }, r.severity)),
-      h("td", {}, mdInline(r.condition)),
-      h("td", {}, mdInline(r.consequence)))));
+      h("td", {}, mdInline(r.when)),
+      h("td", {}, mdInline(r.effect)))));
 }
 // Case-insensitive substring over every topic paragraph and every catalog row
 // (gui.md "Help window": no index, no fuzzy matching). Each hit is a result:
@@ -1770,13 +1784,13 @@ function helpSearch(q) {
           label: `${ch.title} › ${t.title} › ${plain}` });
       });
     for (const r of CATALOG[ch.id] || []) {
-      const cells = [r.severity, r.condition, r.consequence];
+      const cells = [r.severity, r.when, r.effect];
       const codeHit = r.code.toLowerCase().includes(q);
       const cellHit = cells.findIndex(c => c.toLowerCase().includes(q));
       if (!codeHit && cellHit < 0) continue;
-      // The label ends with the cell that matched; a code match shows the condition.
+      // The label ends with the cell that matched; a code match shows the When cell.
       res.push({ ch: ch.id, slug: "messages", code: r.code,
-        label: `${ch.title} › Messages › ${r.code}: ${codeHit ? r.condition : cells[cellHit]}` });
+        label: `${ch.title} › Messages › ${r.code}: ${codeHit ? r.when : cells[cellHit]}` });
     }
   }
   return res;
@@ -1933,540 +1947,27 @@ function openUpdateReady() {
 }
 
 // ---- Help window (gui.md "Help window") ----
-// The help chapters (studio_core::help shapes): the four core chapters first,
-// then one per registered tool in sidebar order. sample wording: the bodies
-// stand for the include_str! topics and the CHANGELOG embed; the Messages topic
+// The help chapters as the build assembles them, from help.js, which `just
+// draft-help` writes from the build's help (gui.md "Prototypes before
+// implementation"). What's new is the one exception: its changelog is a
+// sample here, in the place the build gives the chapter. The Messages topic
 // is appended by the renderer, never written here.
-const HELP = [
-  { id: "setting-up", title: "Setting up", topics: [
-    { slug: "install", title: "Installing", body: [
-      "Unlimited Tool Works ships as a `.7z` archive: unpack it anywhere and run",
-      "`UTW.exe`. There is no installer. The folder you unpack it into is the",
-      "program's home, so move it, copy it or delete it as one piece.",
-      "",
-      "You reach each tool of the suite from the sidebar."
-    ].join("\n") },
-  ] },
-  { id: "first-run", title: "First run and data location", topics: [
-    { slug: "data-location", title: "Choosing the data location", body: [
-      "The first run asks where your settings and data live:",
-      "",
-      "- `Next to the program` puts them in a `data/` folder beside `UTW.exe`, which",
-      "  is fully portable, because the folder carries the program and everything it",
-      "  keeps, and deleting it removes both;",
-      "- `In my user folder` puts them in `%APPDATA%\\unlimited-tool-works` on Windows",
-      "  or `~/.config/unlimited-tool-works` on Linux, so the data survives deleting",
-      "  or replacing the program folder."
-    ].join("\n") },
-  ] },
-  { id: "updates", title: "Updates", topics: [
-    { slug: "checking", title: "Checking for updates", body: [
-      "The shell looks for a new release at startup and every",
-      "5 minutes while it stays open;",
-      "`check_for_updates` turns the check off. A newer version shows as `Update",
-      "available` in the status bar; its `Details` shows the release's notes, a link",
-      "to its page, where it downloads, and `Skip this version`, which hides it until",
-      "the next one."
-    ].join("\n") },
-  ] },
-  { id: "whats-new", title: "What's new", topics: [
-    { slug: "changelog", title: "Changelog", body: [
-      "## [Unreleased]",
-      "- **General**: the help window, searched from one box.",
-      "",
-      "## [0.1.0] - 2026-10-04",
-      "- **The Compiler**: first release.",
-      "- **Save editor**: first release.",
-      "- **Export upgrader**: first release."
-    ].join("\n") },
-  ] },
-  { id: "compiler", title: "The Compiler", topics: [
-    { slug: "command-line", title: "Running from a terminal", body: [
-      "The Compiler also runs without its window, from a terminal opened in the folder that holds",
-      "`UTW.exe`:",
-      "",
-      "```text",
-      "UTW compiler check [exports-root] [--export <path>]...",
-      "UTW compiler compile [exports-root] [--mode normal|test|sideload] [--export <path>]... [--no-deploy]",
-      "UTW compiler upgrade-dpfl [--yes]",
-      "```",
-      "",
-      "`check` reads your exports and reports what it finds, without writing anything. `compile` reads",
-      "them, reports the same findings, and builds the CPK named by the `cpk_name` setting in the output",
-      "folder (`output/` beside `UTW.exe` unless you changed the `output_folder_path` setting), as",
-      "`<cpk_name>.cpk`. The CPK is written in full before it replaces the previous one, so",
-      "`<cpk_name>.cpk` is never half-written. The same terminal runs [the Save editor's commands](save-editor#command-line)."
-    ].join("\n") },
-  ] },
-  { id: "save-editor", title: "Save editor", topics: [
-    { slug: "command-line", title: "Running from a terminal", body: [
-      "The Save editor's batch commands run from a terminal opened in the folder that holds `UTW.exe`.",
-      "Every command names the save it reads (the `EDIT00000000` file of your PES install's save",
-      "folder, or a copy of it), and no command picks one for you.",
-      "",
-      "**Writing a save**",
-      "",
-      "A command that writes a save reads the one `--base` names and writes the one `--out` names,",
-      "which may be the same file. A file already at `--out` is first copied to `<file>.bak`",
-      "(one level deep: the next write replaces that copy). No command creates a save from",
-      "nothing.",
-      "",
-      "**While the game is running**",
-      "",
-      "While the PES of the save's version is running, the game writes the save it holds over the file",
-      "when you leave its Edit mode after changing anything there, so a save written while Edit mode",
-      "is open is lost then unless Edit mode's Load reads it in first. A command that writes a save",
-      "therefore writes it while the game runs only when you add `--edit-mode-closed`, which says you",
-      "have closed Edit mode.",
-      "",
-      "Without it, the command writes nothing and names the running game: close Edit mode, then run",
-      "the command again with `--edit-mode-closed`. Opening Edit mode then reads the save in without",
-      "restarting the game. A PES of another version running does not count."
-    ].join("\n") },
-  ] },
-  { id: "export-upgrader", title: "Export upgrader", topics: [
-    { slug: "command-line", title: "Running from a terminal", body: [
-      "The Export upgrader migrates an export in the old (AET) layout to the one",
-      "the Compiler reads. Its commands run from a terminal opened in the",
-      "folder that holds `UTW.exe`.",
-      "",
-      "`upgrade` takes one old export: a folder, a `.zip` or a `.7z`. A team export",
-      "takes `--savefile`, naming the save (`EDIT00000000`) whose records say which",
-      "player wears which boots and gloves, or `--loose` to infer the wearers from the",
-      "IDs alone; a referee export (a name whose first word is `refs`) takes neither."
-    ].join("\n") },
-  ] },
-  { id: "ruleset-editor", title: "Ruleset editor", topics: [
-    { slug: "command-line", title: "Running from a terminal", body: [
-      "The Ruleset editor's commands run from a terminal opened in the folder that holds",
-      "`UTW.exe`. A rules file (a `.rhai` file) is what a cup's teams are checked",
-      "against: tiers, stat targets, heights, cards and special rules, plus the code that runs",
-      "the check.",
-      "",
-      "```text",
-      "UTW ruleset-editor validate <file>",
-      "UTW ruleset-editor update-logic <file>",
-      "UTW ruleset-editor summary <file> [-o <out>]",
-      "```",
-      "",
-      "`validate` checks that a rules file loads: the text parses, the rules hold together (no",
-      "empty names or doubled ids, every id named exists, the tier counts fit the squad, the",
-      "height brackets ascend), and the checking code runs on a sample team. A file that passes",
-      "prints nothing and exits 0. A file that fails prints one `rules_finding` line per",
-      "problem: where it failed when the text is broken (a line and column), or which entry",
-      "broke a rule (a path like `tiers[2].free.tricks`); the exit code is 1. A file that",
-      "cannot be read at all is refused with exit code 2. Nothing is written either way.",
-      "",
-      "`update-logic` refreshes a file's checking code when it is an older official version:",
-      "the file keeps working as it is until you run this, which writes this build's code in",
-      "and first copies the file it replaces to `<file>.bak`. A file already carrying this",
-      "build's code is left alone (`logic_already_current`, exit 0). A file whose checking code",
-      "was edited by hand is refused: replacing it would discard someone's code. A file that",
-      "does not load is refused as well; run `validate` on it to see why.",
-      "",
-      "`summary` prints the ruleset as readable rules text, the tiers, heights, card groups and",
-      "special rules spelled out, ready to post as an invitational's rules. With `-o` the text is",
-      "written to a file instead of printed, and the file it replaces is kept as `<out>.bak`;",
-      "run it on two rules files and diff the outputs to compare them. A file that does not load",
-      "is refused with exit code 2 before anything is written.",
-      "",
-      "Each command ends with an exit code scripts can test: 0 when it did its work, 1 when it",
-      "did its work but reported an error, 2 when it was refused before writing anything, 3",
-      "when a write failed.",
-    ].join("\n") },
-    { slug: "window", title: "The window", body: [
-      "The Ruleset editor's window builds an AATF ruleset through forms and saves it as a",
-      "`.rhai` rules file the Save editor and the Team creator can check against, like the",
-      "official one.",
-      "",
-      "**Start page.** With no ruleset open the window offers to start one: *New from",
-      "template* (the official rules and the VGL, VTL and DBC cup rulesets, then *Blank*,",
-      "one tier, no height brackets, universal rules on), *Open file* to pick an existing",
-      "rules file, and the recently used files below, newest first. A file that does not",
-      "open lists what is wrong with it under the buttons.",
-      "",
-      "**Editing.** The sections sit in a rail on the left; Custom checks joins only when",
-      "the file carries hand-written checks, and a \"⚠\" marks a section holding a problem",
-      "(the bar along the bottom names it). *General* holds the ruleset's name, the squad",
-      "size and the stat checklists: the rating stats pick the player's tier, the",
-      "\"may sit below the target\" stats are the only ones allowed under theirs. The other",
-      "sections' forms arrive in a later build; the Summary already spells the ruleset",
-      "out as readable rules text, with **Copy** putting it on the clipboard to post.",
-      "*Show preview* at the top right opens the rules file's data block, as the editor",
-      "writes it, with the lines the last edit changed highlighted.",
-      "",
-      "The File menu's *New from template…* brings the start page back over the open",
-      "ruleset. Undo and redo (Edit menu, Ctrl+Z and Ctrl+Y or Ctrl+Shift+Z) step through",
-      "the edits. A file whose checking code is not this build's, or is an older official",
-      "version, shows a banner under the toolbar: the first kind is kept as it is when",
-      "saving, the second offers *Update logic*.",
-      "",
-      "**Saving.** *Save* writes the rules file (Save as lets you choose where), but",
-      "never an invalid one: it lists what blocks the write instead. Closing the window,",
-      "opening another file or picking a template with unsaved changes asks whether to",
-      "save them first.",
-    ].join("\n") },
-  ] },
+const WHATS_NEW_SAMPLE = [
+  { slug: "changelog", title: "Changelog", body: [
+    "## [Unreleased]",
+    "- **General**: the help window, searched from one box.",
+    "",
+    "## [0.1.0] - 2026-10-04",
+    "- **The Compiler**: first release.",
+    "- **Save editor**: first release.",
+    "- **Export upgrader**: first release."
+  ].join("\n") },
 ];
-// The source tables' own third and fourth header names, per tool id.
-const CATALOG_HEADERS = {
-  "compiler": ["When", "Effect"],
-  "save-editor": ["When", "Effect"],
-  "export-upgrader": ["When", "Context"],
-};
-// Per tool id, its whole catalog, generated from the docs' tables
-// (spec/team_compiler/messages.md "Catalog", spec/save_editor.md
-// "Messages"; the Export upgrader's from its messages.rs CATALOG, the
-// When and Context cells from the plan's table where it holds the code,
-// else the code's own doc or the shared code's spec row): the code, the
-// severity spelled out (a combined cell like E/F kept as written), the
-// two text cells verbatim, Markdown spans included.
-const CATALOG = {
-  "compiler": [
-    { code: "export_extract_failed", severity: "Error", condition: "The archive (`.zip` or `.7z`) cannot be opened, or a path inside it is unusable: it leads outside the archive, or two names differ only in letter case or Unicode form.", consequence: "The export is not compiled. Repack the archive, or unpack it into a folder." },
-    { code: "no_exports_found", severity: "Warning", condition: "The exports folder holds no export folder, `.zip` or `.7z` (a fresh install's empty `exports/` reports this until you fill it).", consequence: "Nothing is checked or compiled." },
-    { code: "export_disabled", severity: "Info", condition: "The export's root holds a `NO_USE` or `NO_USE.txt` marker file.", consequence: "The export is not compiled, and it does not count toward the duplicate-referees check." },
-    { code: "export_upgrade_unfinished", severity: "Warning", condition: "A folder whose name ends in `.upgrading` was left behind by an Export upgrader run that did not finish.", consequence: "It is not compiled. Remove it, then upgrade the old export again." },
-    { code: "export_identified", severity: "Info", condition: "The export was recognized as a team or the referees, and the line names which.", consequence: "Nothing to do." },
-    { code: "export_balls_skipped", severity: "Info", condition: "The export's name starts with `balls`, so it is a balls export, and those belong to the Balls compiler.", consequence: "The export is not compiled." },
-    { code: "multiple_ref_exports", severity: "Error", condition: "More than one `refs` export is in the run (one marked `NO_USE` does not count).", consequence: "None of them is compiled. Disable or remove all but one." },
-    { code: "duplicate_aesthetics_export", severity: "Error", condition: "Two or more exports resolve to the same team (the line names the team's ID and the exports). An export already left out does not count.", consequence: "None of them is compiled, but the other teams still are. Remove the one that should not be used, or disable it with a `NO_USE` file." },
-    { code: "color_entry_invalid", severity: "Warning", condition: "A line of a `colors.txt` does not hold exactly one color (two colors on one line, the old Team Note kit entry among them), or a valid color sits past the most the file holds, which is two for a kit and four for the team.", consequence: "The line is ignored, but the rest of the file is still read." },
-    { code: "team_colors_missing", severity: "Info", condition: "The export's root has no `colors.txt` (it is optional).", consequence: "The team keeps the colors it has installed." },
-    { code: "kit_config_generated", severity: "Info", condition: "A kit has no `config.toml` and no installed one to keep. A `Full` export never keeps an installed config, and a `Midcup` export keeps the installed one wherever the slot has one it can read.", consequence: "The template config, which carries the FPC values, is written for the kit. Nothing to do." },
-    { code: "kit_config_invalid", severity: "Error", condition: "A kit's `config.toml` is not UTF-8 text, or it cannot be read as a kit config: it is not TOML, a value has the wrong type or is out of range, or a key that must be a table holds something else (the line names the error).", consequence: "The kit is left out, even with `pass_through` on." },
-    { code: "kit_config_version_clamped", severity: "Warning", condition: "A kit config value does not fit the PES version compiled for (a name `y` over 33 before PES 2021). The value is in the kit's own `config.toml`, or in an installed config that the run writes the FPC values or the collar into, for a kit the `Midcup` export does not hold.", consequence: "The value is lowered to one the version can hold when the config is written." },
-    { code: "kit_config_option_ignored", severity: "Warning", condition: "A kit's `config.toml` asks for a sleeve or fit option its shirt model does not take (cut-out short sleeves, undershirt-only long sleeves, or the tight fit, on a model other than 144 or 160). When a player folder of the team carries `fpc_on`, the FPC values make the shirt model 176, which takes none of them.", consequence: "The config is built as written and the game ignores the option." },
-    { code: "kit_config_fpc_adjusted", severity: "Info", condition: "A player folder carries `fpc_on`, and a kit config lacks the FPC values, whether it is one the export supplies (the goalkeeper kit's included) or the installed one of a kit a `Midcup` export does not hold.", consequence: "The FPC values are written into the built config. Your file is not changed, and a compile never removes them." },
-    { code: "kit_config_fpc_unpatched", severity: "Warning", condition: "A player folder carries `fpc_on`, and a kit the game lists for the team is not in the `Midcup` export and either has no installed config to patch or has one that cannot be read.", consequence: "The kit is left as it is. Send it in an export to give it the FPC values." },
-    { code: "kit_config_collar_unpatched", severity: "Warning", condition: "The export brings a collar, and a kit the game lists for the team is not in the `Midcup` export and has no installed config to carry it, or one that cannot be read (`kit_config_fpc_unpatched` has not named it).", consequence: "The kit keeps its own collar. Send it in an export to give it the new one." },
-    { code: "kit_placeholder", severity: "Info", condition: "A `Full` export's kit has no `kit` texture, its own or `all/`'s (an empty kit folder included). A `Midcup` kit without a `kit` texture keeps the installed textures.", consequence: "The bundled checkerboard stands in as its main texture, with the template config unless one is supplied. Its menu colors come from its `colors.txt`, or are magenta and black without a usable one (`kit_colors_missing`)." },
-    { code: "kit_texture_not_used", severity: "Info", condition: "A kit holds a texture the version compiled for does not read: a `kit_mask` for PES 2018 to 2021, a `kit_srm` for PES 2015 to 2017, or a `kit` name outside the ones the compiler builds.", consequence: "The file is left out and the rest of the kit is built. One map is never converted into the other." },
-    { code: "kit_colors_derived", severity: "Info", condition: "A `Full` export's kit has no `colors.txt`, or one with fewer than two valid colors. A `Midcup` kit without a usable `colors.txt` is not reported and keeps its installed colors.", consequence: "The kit's menu colors are taken from its main texture. Nothing to do." },
-    { code: "kit_colors_missing", severity: "Warning", condition: "A `Full` export's kit has no usable `colors.txt` and no main texture to take the menu colors from, as is always the case for a placeholder kit without a `colors.txt`.", consequence: "Magenta and black are written, so the gap shows in the game's menus. Give the kit a `colors.txt` or a `kit` texture." },
-    { code: "kit_layout_converted", severity: "Info", condition: "The kit's layout marker says its main texture was drawn for PES 2015 to 2017 (`pre-fox`) or PES 2018 to 2021 (`fox`), and the compile is for the other group.", consequence: "The sock parts of `kit`, and of its `kit_mask` or `kit_srm`, are moved to the layout of the version compiled for, and the other textures are untouched. Nothing to do." },
-    { code: "kit_collar_reserved", severity: "Error", condition: "A kit's collar or winter collar is 77, the referees' reserved collar, once the FPC and custom-collar rules have run.", consequence: "The kit is left out, because its players would wear the referees' marker. Give it another collar." },
-    { code: "collar_id_invalid", severity: "Error", condition: "A `Collars/` file's name is not `collar_` plus a number, or the number is not a stock collar a kit can wear on the version compiled for. The stock collars a kit can wear are 1-101 on PES 2015, 1-105 on PES 2016, 1-116 on PES 2017 and 2018, 1-124 on PES 2019, 1-127 on PES 2020 and 1-131 on PES 2021, and the 9xx collars are stock but no kit can wear one. `collar_105` and `collar_77` are `collar_id_conflict` instead.", consequence: "The file is left out." },
-    { code: "collar_id_conflict", severity: "Error", condition: "The collar number the file names is already taken: by an export earlier in this run, by another collar file of this export (an export brings one collar, since its kit configs take one ID), or by the compiler, which keeps 105 (the FPC collar) and 77 (the referees' marker). The line names who holds it.", consequence: "The file is left out and the team's kits keep their own collars." },
-    { code: "logo_fit_applied", severity: "Info", condition: "A logo image was not square and was made square, and the line names the file and the way (`fit` when the name has no tag, else `crop` or `stretch`).", consequence: "Nothing to do." },
-    { code: "logo_upscaled", severity: "Warning", condition: "A logo image is smaller than the size it is made into (512 pixels square for the main logo, 128 for `logo_small`), measured on its long side for `fit` and its short side for `crop` and `stretch`.", consequence: "It is built enlarged, and will look less sharp." },
-    { code: "boots_id_pool_exhausted", severity: "Error", condition: "More shared `Boots/` folders need a shared ID than the team's block of 17 IDs has free (a `Midcup` export can run out when the installed CPKs already spend some, but a `Full` export cannot).", consequence: "The export is not compiled." },
-    { code: "gloves_id_pool_exhausted", severity: "Error", condition: "More shared `Gloves/` folders need a shared ID than the team's block of 17 IDs has free (a `Midcup` export can run out when the installed CPKs already spend some, but a `Full` export cannot).", consequence: "The export is not compiled." },
-    { code: "shared_ids_unrecorded", severity: "Warning", condition: "A `Midcup` export holds shared `Boots/` or `Gloves/` folders that take a shared ID, and no installed CPK records the team's shared IDs.", consequence: "Its folders are numbered alphabetically, as a `Full` export's are, and may take IDs an installed CPK gives other folders." },
-    { code: "portrait_conflict", severity: "Error", condition: "A player has a portrait in his folder and a different one for his slot in `Portraits/` (two identical files count as one).", consequence: "The export is not compiled, because the compiler cannot tell which portrait is meant. Remove one, or make them the same file." },
-    { code: "link_combined", severity: "Info", condition: "A player folder holds a link file and models of its own for the same part (face, boots or gloves), so the shared folder's models are built into the player's own set.", consequence: "Nothing to do." },
-    { code: "settings_toml_invalid", severity: "Error", condition: "A player's `settings.toml` is not UTF-8 text or does not parse as the settings file (the line names the error). The in-game face's keys (`iris_color`, `[appearance.face]`, `[appearance.hair]`) are in `ingame_face.toml`, so one left here is an unknown key.", consequence: "The file is ignored, even with `pass_through` on. The player's look (his `ingame_face.toml`'s keys included) and the boots and gloves IDs his settings would give are left out of the patch, so the save keeps the ones it has. His models still build, and an ID they or a link give is still written to the patch." },
-    { code: "ingame_face_toml_invalid", severity: "Error", condition: "A player's `ingame_face.toml` is not UTF-8 text or does not parse as the in-game face file (the line names the error).", consequence: "Its keys are ignored, even with `pass_through` on. The player's look (his `settings.toml`'s keys included) and the boots and gloves IDs his settings would give are left out of the patch, so the save keeps the ones it has. His models still build, and an ID they or a link give is still written to the patch." },
-    { code: "settings_model_id_conflict", severity: "Warning", condition: "In team exports, a `settings.toml` sets `boots_id` or `gloves_id` for a part whose ID the compiler assigns on its own (from the folder's own models or a link file).", consequence: "The compiler's ID wins and the key is ignored." },
-    { code: "settings_value_out_of_range", severity: "Warning", condition: "A `settings.toml` or `ingame_face.toml` value is inside its key's widest range but outside the range of the version compiled for (the line names the key, the value and the version's range).", consequence: "The key's default is written in its place (a face type of 0, the template's motion, a custom skin written as 1)." },
-    { code: "settings_toml_name_shared", severity: "Warning", condition: "A folder of an export marked `write_names` maps to more than one player, and its `settings.toml` gives `name` or `shirt_name`.", consequence: "The name, if it fits the version (`settings_name_invalid`), is written for every one of those players." },
-    { code: "settings_name_invalid", severity: "Warning", condition: "A `name` or `shirt_name` in a `settings.toml` does not fit the version's field or character set (the line names the key).", consequence: "It is not written, so the name already in the save is kept." },
-    { code: "fpc_strip_conflict", severity: "Warning", condition: "A `settings.toml` sets a key the folder's `fpc_on` or `fpc_off` preset also sets, to another value (for `skin_color`, a custom skin where the preset sets a preset one). `boots_id` and `gloves_id` are checked separately.", consequence: "The preset's value wins and the file's key is ignored." },
-    { code: "fpc_inners_break_hiding", severity: "Warning", condition: "A player whose folder carries `fpc_on` wears inners under a hidden body, which breaks the hiding.", consequence: "It is written as authored. Take the inners off, or drop `fpc_on`, if the hiding should hold." },
-    { code: "fpc_undershorts_break_hiding", severity: "Warning", condition: "A player whose folder carries `fpc_on` wears undershorts under a hidden body, which breaks the hiding.", consequence: "It is written as authored. Take the undershorts off, or drop `fpc_on`, if the hiding should hold." },
-    { code: "fpc_taping_shows_pieces", severity: "Info", condition: "A player whose folder carries `fpc_on` wears wrist or ankle taping, which shows pieces of the hidden body.", consequence: "It is written as authored. Some custom setups do this on purpose. If yours does not, take the taping off." },
-    { code: "fpc_gloves_checkbox_winter_gloves", severity: "Warning", condition: "The gloves checkbox is on with gloves ID 0 (the ID `settings.toml` resolves to), on any player, whatever the FPC marker. A `Midcup` player keeping his installed row is not checked.", consequence: "It is written as authored, so the player wears winter gloves in winter conditions." },
-    { code: "fmdl_fcl_hair_fallback", severity: "Info", condition: "In PES 2018 to 2021, a model whose name says nothing about what it is (`torso.fmdl`) is taken for face content and merged into the face's `fcl_hair.fmdl`.", consequence: "Nothing to do. Name a model as boots or gloves when it is one." },
-    { code: "fmdl_merged", severity: "Info", condition: "In PES 2018 to 2021, several models resolved to the same name and were merged into one, in file-name order.", consequence: "Nothing to do." },
-    { code: "model_merged", severity: "Info", condition: "In PES 2015 to 2017, several `.model` files were merged into one `boots.model` and its `.mtl` (a shared `Boots/` folder holding several, an `ingame_face.toml` player's boots parts, or a combined boots link's model).", consequence: "Nothing to do." },
-    { code: "model_merge_flags_conflict", severity: "Error", condition: "In PES 2015 to 2017, `.model` files being merged carry different header `flags`, whose meaning is unknown, so there is no rule to combine them.", consequence: "That part of the folder (face, boots or gloves) is left out, as for `merge_material_conflict`. Drop all but one of the files being merged." },
-    { code: "model_hand_split", severity: "Info", condition: "A face model's vertices are weighted to the hand bones (`skh_`), so its hands were cut off at the wrist into the player's gloves (two more `face.xml` entries on PES 2015 to 2017).", consequence: "Nothing to do." },
-    { code: "merge_material_conflict", severity: "Error", condition: "Models merged into one define a material of the same name differently.", consequence: "That part of the folder (face, boots or gloves) is left out, but the rest still builds, so the player is built incomplete. Treat the folder as broken until the materials agree." },
-    { code: "skl_merge_conflict", severity: "Error", condition: "Models merged into one disagree on their skeleton (a bone differs, or their `.skl` files do).", consequence: "That part of the folder is left out, as for `merge_material_conflict`." },
-    { code: "skl_no_slot", severity: "Warning", condition: "In PES 2018 to 2021, a `.skl` pairs with a `face_high`, `hair_high` or `oral` model, and none of those has a skeleton slot (the `.skl` a `.common` link brings counts too).", consequence: "The `.skl` is ignored, but the model is still built." },
-    { code: "face_file_not_used", severity: "Info", condition: "A face file sits in a folder that builds no face. The face files are `face_diff.bin`, `face_diff.xml`, `fcl_hair_sim.fclo` on PES 2018 to 2021, and a member's `face.xml` under `ingame_face.toml` on PES 2015 to 2017. A folder builds no face when it is a player folder with no face model, no `Faces/` link bringing one and, on PES 2015 to 2017, no `face.xml` of its own; a shared `Faces/` folder with no face model and no such `face.xml`; or a shared `Boots/` or `Gloves/` folder.", consequence: "The file is not read." },
-    { code: "file_not_used", severity: "Warning", condition: "A file sits where the folder allows it, but nothing reads it: a `.skl` pairing no model, a `.common` link to a kind nothing takes, a `materials.toml`, an `.xml`, `.bin` or `.fclo` under no face name, a `.txt` note, a texture of a folder that builds no package (a player or referee folder holding `ingame_face.toml` and no model), a `Common/` file of a kind nothing reads, or a `refs` export's kit folder, logo, portrait or collar file.", consequence: "The file is not read and left out of the compile." },
-    { code: "shared_folder_no_model", severity: "Warning", condition: "A shared `Boots/` or `Gloves/` folder holds no model of its kind (textures only, or nothing, not even a `.common` link to one on PES 2018 to 2021), and a player links it without a model of his own for that part, so there is nothing to load.", consequence: "It is not built and the player wears the game's own. Put a model of the folder's kind in it. If the player has his own model for that part, the folder is a texture source for it." },
-    { code: "kit_variant_missing", severity: "Warning", condition: "A texture variant set (`pants_kit1`, `pants_kit3`), or on PES 2015 to 2017 a model set a `face.xml` lists, has no variant for a kit number the export defines and no `kitF` fallback.", consequence: "The lowest variant fills the gap. It is copied under the missing number's name on PES 2015 to 2017 (for a model set, the files the lowest variant's entries name), and written once as `pants_kitN` on PES 2018 to 2021." },
-    { code: "kit_variant_model_left_out", severity: "Warning", condition: "Per-kit model variants (`pants_kit1`, `pants_kit2`, and a `kitF` as the set's fallback) sit where nothing switches models with the kit: anywhere in PES 2018 to 2021, and in PES 2015 to 2017 in a shared `Boots/` or `Gloves/` folder or under `ingame_face.toml`, where no `face.xml` names the set.", consequence: "The set's `kitF` is used, or its lowest variant when it has none, and the other variants are left out. A variant made for the other group of games (PES 2015 to 2017 or PES 2018 to 2021) is converted." },
-    { code: "kit_variant_mtl_differs", severity: "Warning", condition: "In PES 2015 to 2017, a per-kit model variant's `.mtl` is not the one its set's `face.xml` entry implies for its kit number (the line names the model, the `.mtl` found and the one expected).", consequence: "The model is packed, but the game finds no `.mtl` for that kit. Give the `.mtl` the name the entry implies." },
-    { code: "xml_face_neck_added", severity: "Info", condition: "A face's `face.xml` has no `face_neck` entry (a generated one or a member's own, but not a blank face's).", consequence: "The invisible stand-in model and its `.mtl` are added. Nothing to do." },
-    { code: "xml_uniform_pes15", severity: "Info", condition: "When compiling for PES 2015, a face's `face.xml` (a generated one or a member's own) uses `type=\"uniform\"`, which PES 2015 names `uniform_sub`.", consequence: "It is rewritten for PES 2015. Nothing to do." },
-    { code: "face_diff_invalid", severity: "Error", condition: "A `face_diff.bin`, or the decoded content of a `face_diff.xml`, is not a face diff, or the `face_diff.xml` is not base64 text or a `<dif>` holding it (the line names the file and the reason).", consequence: "The folder is left out." },
-    { code: "xml_dif_conflict", severity: "Error", condition: "The folder gives its face diff twice. Its `face.xml` holds a `<dif>` beside a `face_diff.xml`, or it holds both `face_diff.bin` and `face_diff.xml` (a `<dif>` beside a `face_diff.bin` is no conflict, since each game reads its own).", consequence: "The folder is left out. Keep one source of the face diff." },
-    { code: "xml_broken", severity: "Error", condition: "A `face.xml` does not parse as XML (the finding's line names where in the file, by line and column).", consequence: "The folder is left out." },
-    { code: "mtl_texture_not_found", severity: "Warning", condition: "In PES 2015 to 2017 (and in PES 2018 to 2021 for the `.mtl` of a `.model` being converted), a material a mesh uses names a texture that nothing supplies: not in the folder, and for a Common path neither in `Common/` nor in a CPK listed before this run's own.", consequence: "The folder is still built, because the game still loads a face with a missing texture. Check the player in the game." },
-    { code: "mtl_texture_unused_missing", severity: "Info", condition: "A `.mtl` names a texture nobody supplies, but only on materials that no mesh uses.", consequence: "Nothing is left out. Nothing to do." },
-    { code: "mtl_common_path_invalid", severity: "Error", condition: "A `.mtl` texture path below `model/character/uniform/common/` names a folder there other than `team_folder`, the folder that stands for the team's Common: a team ID, `XXX` or another team's name. It is also reported for a folder after `common_folder/` (the game's own, where a reference names only a file directly below it), and for a path starting `common/`, the archive's own root folder, which no reference names.", consequence: "The `.mtl`'s folder is left out. For a `.mtl` in `Common/`, only the file is left out. Write the team's Common as `team_common_folder/`. An export upgraded before 0.0.2 needs upgrading again, from the original old export." },
-    { code: "xml_root_tag_invalid", severity: "Error", condition: "A member's `face.xml` root element is not `<config>`.", consequence: "The folder is left out." },
-    { code: "xml_model_type_missing", severity: "Error", condition: "A `<model>` of a member's `face.xml` has no `type`.", consequence: "The folder is left out." },
-    { code: "xml_model_path_missing", severity: "Error", condition: "A `<model>` of a member's `face.xml` has no `path`.", consequence: "The folder is left out." },
-    { code: "xml_model_not_found", severity: "Error", condition: "A `path` or `material` of a member's `face.xml` names a file the export does not hold, through a `./` or a Common path.", consequence: "The folder is left out." },
-    { code: "xml_common_path_invalid", severity: "Error", condition: "A `path` or `material` of a member's `face.xml` below `model/character/uniform/common/` names a folder there other than `team_folder`, the folder that stands for the team's Common: a team ID, `XXX` or another team's name. It is also reported for a folder after `common_folder/` (the game's own, where a reference names only a file directly below it), and for a value starting `common/`, the archive's own root folder, which no reference names.", consequence: "The folder is left out. Write the team's Common as `team_common_folder/`. An export upgraded before 0.0.2 needs upgrading again, from the original old export." },
-    { code: "xml_oral_prefix_missing", severity: "Error", condition: "In PES 2016, a model a member's `face.xml` names has a file name that starts with none of `face_high_`, `hair_high_` or `oral_`, one of which the game needs to load it.", consequence: "The folder is left out. Rename the model with one of those prefixes." },
-    { code: "xml_element_unknown", severity: "Warning", condition: "A member's `face.xml` holds a child of `<config>` other than `<model>` or `<dif>`.", consequence: "Kept as written, but the compiler cannot vouch for it." },
-    { code: "xml_attribute_unknown", severity: "Warning", condition: "A `<model>` of a member's `face.xml` carries an attribute other than `level`, `type`, `path`, `material` or `ratio`.", consequence: "Kept as written, but the compiler cannot vouch for it." },
-    { code: "xml_type_unknown", severity: "Warning", condition: "A `type` of a member's `face.xml` is one the compiler never generates, so it has not been tested in the game.", consequence: "Kept as written." },
-    { code: "xml_level_lod", severity: "Info", condition: "A member's `face.xml` gives a `level` (the model's level of detail) other than 0. Higher levels are uncommon but known to work.", consequence: "Kept as written. Nothing to do." },
-    { code: "xml_ratio_invalid", severity: "Warning", condition: "A `ratio` of a member's `face.xml` is not a number.", consequence: "Kept as written." },
-    { code: "xml_path_unchecked", severity: "Warning", condition: "A `path` or `material` of a member's `face.xml` is in a form the compiler cannot resolve (a game path such as `model/character/face/common/`), so the compiler does not check that it exists.", consequence: "Kept as written." },
-    { code: "xml_face_neck_multiple", severity: "Warning", condition: "A member's `face.xml` has more than one `face_neck` entry.", consequence: "Kept as written." },
-    { code: "xml_model_unlisted", severity: "Warning", condition: "A `.model` sits in a folder whose own `face.xml` does not list it (a reference to a per-kit set names every variant of the set).", consequence: "The file is not packed and not checked. A `.mtl` that no entry names is skipped the same way." },
-    { code: "xml_ignored_fox", severity: "Info", condition: "In PES 2018 to 2021, a player or shared folder holds its own `face.xml`, which these versions do not read.", consequence: "The xml is ignored, and the folder's models compile as they would without it." },
-    { code: "xml_ignored_shared", severity: "Info", condition: "In PES 2015 to 2017, a shared `Boots/` or `Gloves/` folder holds a `face.xml`, which its output (one model, one `glove.xml`) does not use.", consequence: "The xml is ignored and not checked, and the folder's models are read as they would be without it." },
-    { code: "xml_shared_face_conflict", severity: "Error", condition: "In PES 2015 to 2017, a player folder holding a `face.xml` links a `Faces/` folder, whether or not that folder holds one, because a face takes one xml.", consequence: "The player folder is left out, even with `pass_through` on. Remove the player folder's `face.xml`, or its link to `Faces/`." },
-    { code: "shared_texture_conflict", severity: "Error", condition: "Two shared folders a player combines hold a texture of one name with different bytes. A texture `.common` link in one of them stands for a file of its linked name, but it always counts as different from a real file, even one with the same content. The player's own copy wins over either (`shared_texture_overridden`).", consequence: "The player folder is left out. Make the copies identical, which packs them once, or put the texture in the player's own folder, whose copy wins." },
-    { code: "shared_texture_overridden", severity: "Info", condition: "A texture the player's own folder holds, as a file or a texture `.common` link, is also held by a shared folder he combines, and either the two differ or one of them is a link (two links naming the same `Common/` texture report nothing).", consequence: "The player's own is the one every model of his names, and the shared folder's copy is left out. Nothing to do." },
-    { code: "texture_too_small", severity: "Error", condition: "A texture has a side under 4 pixels, smaller than one compression block.", consequence: "It is left out, and where it sits decides what goes with it: a texture in a model folder or a kit folder takes the folder with it, while a `Common/` or portrait file is left out alone." },
-    { code: "texture_not_pow2", severity: "Error", condition: "A portrait has a side that is not a power of two (any version), or, on PES 2018 to 2021, a texture has a mip chain where neither side is a power of two. An image file always gets a chain, but a `.dds` or `.ftex` with a single level passes at any size. A kit's main texture on PES 2015 to 2017 is `kit_texture_too_big` instead.", consequence: "It is left out, as for `texture_too_small`." },
-    { code: "texture_not_div4", severity: "Error", condition: "In PES 2015 to 2017, a texture the compiler writes block-compressed has a side that is not a multiple of 4, and those games cannot make a compressed texture at such a size. A `.dds` or `.ftex` stored uncompressed is written uncompressed, so it does not get this finding, unless it is a normal map (a name ending in `_nrm`, or in `_nrm` and a kit number), which is always compressed.", consequence: "It is left out, as for `texture_too_small`, even with `pass_through` on." },
-    { code: "kit_texture_too_big", severity: "Error", condition: "In PES 2015 to 2017, a kit's main `kit` texture, its own or `all/`'s, is wider or taller than 2048 pixels, or has a side that is not a power of two.", consequence: "The kit is left out." },
-    { code: "texture_type_mismatch", severity: "Error", condition: "A texture's bytes open with the signature of a format other than its extension's (a PNG renamed `skin.dds`, not resaved).", consequence: "It is left out, as for `texture_too_small`, even with `pass_through` on." },
-    { code: "texture_unreadable", severity: "Error", condition: "A texture's header cannot be read at all, neither as the format its name declares nor as any other (not a texture, or cut short before its header ends).", consequence: "It is left out, as for `texture_too_small`, even with `pass_through` on." },
-    { code: "texture_codec_unsupported", severity: "Error", condition: "A texture is in a codec the compiler does not read, or is a kind of `.dds` it does not read (a signed block format, a volume, an array, a paletted `.dds`, a bad header).", consequence: "It is left out, as for `texture_too_small`, even with `pass_through` on. Resave it in a format the compiler reads." },
-    { code: "portrait_header_rewritten", severity: "Info", condition: "A `.dds` portrait under a DX10 extension header was written under the plain header of its format (the one the game reads), its pixels unchanged. A portrait with the DX10 header crashed PES 2019.", consequence: "Nothing to do." },
-    { code: "material_texture_unused", severity: "Info", condition: "A material names a texture for a role that has no sampler in the version compiled for (`metalness` on PES 2015 to 2017, or a sampler of the source game's material table that the target does not carry).", consequence: "The role is left out of the built material. Nothing to do." },
-    { code: "bone_folded_for_version", severity: "Info", condition: "A converted model uses a bone the target version's skeleton lacks, so its weights were moved to the bone the fold table names, or the nearest one.", consequence: "Nothing to do." },
-    { code: "skeleton_retargeted", severity: "Info", condition: "A converted model's pose was moved from its source version's skeleton onto the target's (bones moved by more than a small tolerance).", consequence: "Nothing to do." },
-    { code: "bone_matrix_unknown", severity: "Warning", condition: "A converted model has a bone with no companion `.skl` and a name in none of the target version's skeleton tables, so its pose is the identity and the mesh it skins sits where the identity puts it.", consequence: "The model is built as it is. Check the player in the game." },
-    { code: "bone_slot_dropped", severity: "Warning", condition: "A converted mesh's vertex was weighted to a bone slot past the mesh's bone group, so the slot was zeroed and the vertex's weights renormalized.", consequence: "The vertex now skins differently. Check the player in the game." },
-    { code: "bone_folded_by_position", severity: "Warning", condition: "A converted model uses a bone the target version lacks, with no fold-table entry, so it was folded onto the nearest target body bone by rest position, and that is a guess.", consequence: "Check the player in the game." },
-    { code: "material_family_approximated", severity: "Warning", condition: "No shader rule named a converted material's shader, so its family, and with it the target shader, is the closest fit.", consequence: "The material may render differently. Check the player in the game." },
-    { code: "material_split_by_flags", severity: "Info", condition: "Meshes of one material carried different flags, so it was split into two materials in the converted model.", consequence: "Nothing to do." },
-    { code: "material_parameter_dropped", severity: "Info", condition: "A parameter of the source game's material table that the target shader does not carry was dropped from a converted material.", consequence: "Nothing to do." },
-    { code: "sampler_settings_defaulted", severity: "Info", condition: "A `.mtl` sampler name with no stored settings was written with the default settings in the converted model.", consequence: "Nothing to do." },
-    { code: "vertex_bitangents_dropped", severity: "Info", condition: "A `.model` mesh's bitangents were dropped on conversion, because the `.fmdl` format has no place for them. The game derives them.", consequence: "Nothing to do." },
-    { code: "dummy_texture_added", severity: "Info", condition: "A shaded or metal material with no normal or specular map got the game's dummy texture for the sampler an `.fmdl` requires.", consequence: "Nothing to do." },
-    { code: "native_field_dropped", severity: "Info", condition: "A converted model had a non-default field that the target format has no place for, so the field was dropped. It holds nothing the game would show (the model's own local-space bone matrices, a `.skl` parent that the model's own parent wins over, a normal or tangent `w` a `.model` cannot carry).", consequence: "Nothing to do." },
-    { code: "mesh_flags_dropped", severity: "Warning", condition: "An `.fmdl` mesh flag a `.mtl` cannot express (`no_shadow_cast`) was dropped on conversion to `.model`, so the mesh casts a shadow where the source did not. An `.fmdl` whose meshes are all hidden is left out with `model_hidden_dropped`.", consequence: "Check the player in the game." },
-    { code: "model_hidden_dropped", severity: "Info", condition: "Every mesh of an `.fmdl` read for PES 2015 to 2017 is hidden (`invisible`), so in PES 2018 to 2021 the game drew nothing of it (a blank head's `oral.fmdl`, a one-sided `Gloves/` folder's other side). A `.common` link naming it is reported the same way.", consequence: "The file is left out and nothing is built from it, but the folder's other models are still built." },
-    { code: "static_bone_added", severity: "Info", condition: "An unskinned mesh was weighted to the `static` bone an `.fmdl` needs.", consequence: "Nothing to do." },
-    { code: "weight_clamped", severity: "Info", condition: "A vertex weight above 1 was clamped to the `.fmdl` weight's maximum.", consequence: "Nothing to do." },
-    { code: "empty_mesh_bone_group_dropped", severity: "Info", condition: "A mesh with no vertices had its bone group written empty, because it skins nothing.", consequence: "Nothing to do." },
-    { code: "model_gltf_unsupported", severity: "Error", condition: "A model is given as a `.glb` or `.gltf`, which the compiler does not read yet, with no `.fmdl` or `.model` of the version compiled for beside it (one of the other format is not used instead). It can sit in a player folder, a shared one (reported on each player linking it), `Collars/` or `Common/`. `compile` reports it, `check` does not.", consequence: "The folder is left out, and a player folder linking it is left out with it (a `Collars/` or `Common/` file is left out alone), even with `pass_through` on. Convert the model to the game's own format." },
-    { code: "model_conversion_failed", severity: "Error", condition: "A model the compiler must convert cannot be converted or written, or its converted form triggers an Error in its format's checks (the line names the source file).", consequence: "That part (face, boots or gloves) is left out, even with `pass_through` on, but the folder's other parts and textures still build. A collar file is left out alone, so the kits wear the game's own collar." },
-    { code: "vertex_too_far_from_origin", severity: "Error", condition: "A model has a vertex more than 5000 units from the origin, which lags the game for the whole matchday (an export's file is checked as it is, a converted one in its target form).", consequence: "If the export's own file has it, the folder is left out (a `Common/` file is left out alone). If a converted model has it, that part is left out. Either happens even with `pass_through` on." },
-    { code: "model_broken", severity: "Error", condition: "A model file (`.fmdl` or `.model`) cannot be read (the line names the error).", consequence: "The folder is left out (a `Common/` file is left out alone), even with `pass_through` on." },
-    { code: "mtl_broken", severity: "Error", condition: "A `.mtl` does not parse (the finding's line names where in the file, by line and column).", consequence: "The folder is left out (a `Common/` file is left out alone), even with `pass_through` on." },
-    { code: "common_model_beaten_dropped", severity: "Info", condition: "A `Common/` model was passed over for a file of the same name in the other format (a `.model` beside a `.fmdl` on PES 2018 to 2021, the reverse on PES 2015 to 2017), so it was never checked. When the chosen file is left out for a problem of its own, the passed-over one is left out with it, because it would otherwise be used unchecked in its place.", consequence: "The file is left out too, and the players linking it get `link_target_dropped`." },
-    { code: "fmdl_texture_not_found", severity: "Warning", condition: "In PES 2018 to 2021, one of the model's meshes names a texture that nothing supplies: not in the folder, not at the `./` path the mesh names, and for a Common path neither in `Common/` nor in a CPK the `DpFileList.bin` lists before this run's own. The texture may still be in an installed CPK that could not be checked.", consequence: "The part is kept, with one line per missing texture: a mesh naming it shows without it." },
-    { code: "fmdl_texture_kit_path", severity: "Warning", condition: "In PES 2018 to 2021, a texture path a mesh names points into the game's kit texture folder (`/Assets/pes16/model/character/uniform/texture/`), where the modded exe swaps those files per match, so the model would not show the kit it names.", consequence: "Kept with the path unchanged. A part that should follow the kit uses a `team_kit` or `kitN` texture instead." },
-    { code: "fmdl_common_path_invalid", severity: "Error", condition: "An `.fmdl` names a texture in a folder below the game's common folder (`/Assets/pes16/model/character/common/`) other than `team_folder`, the folder that stands for the team's Common, or `sourceimages`, the game's own. Such a folder is `000` (the placeholder of the community's model templates), a team ID, `XXX` or a team's name. It is also reported for a folder the short spellings cannot write: one after `common_folder/` (`common_folder/x/`), or a directory starting `common/`.", consequence: "The model's folder is left out (for a model in `Common/`, only the file is left out, and the players linking it get `link_target_dropped`). Write the team's Common as `team_common_folder/`, or `team_folder` in the long form. `export-upgrader upgrade` respells an `.fmdl` that names an old folder, in an old export (a Midcup export, for a model on its own)." },
-    { code: "dummy_kit_name_old", severity: "Error", condition: "A model names the kit stand-in by its old spelling, the game's `dummy_kit` or `dummy_gk_kit` (any letter case, and with any suffix after an `_`, such as `dummy_kit_srm`), in an `.fmdl` texture entry or a `.mtl` texture path, whatever folder the path names. The game's own `dummy_nrm`, `dummy_srm` and `dummy_bsm`, and any other `dummy_` name, are no stand-in.", consequence: "The model's or `.mtl`'s folder is left out (for a file in `Common/`, only the file is left out). Name the kit stand-in `team_kit` in the model (`team_gk_kit` for a keeper's); `export-upgrader upgrade` respells it in an old export (a Midcup export, for a model on its own)." },
-    { code: "kit_token_old", severity: "Error", condition: "The name of a file or folder inside a player, Boots or Gloves folder or in `Common/` holds the old kit token: `u0`, three letters or digits, then `p` or `g` and a digit, with `u0`, `p` and `g` in lowercase as shown (`kit6_u0827p0.dds`, `Common/u0XXXp1/`, `u0714g1`). So does a path to a file of the export that a model or `.mtl` there, or a player's own `face.xml`, names. In a player, Boots or Gloves model, a path into the game's folders counts too, except the game's kit texture folder and the folders below its common folder, which use the game's own names. A folder so named is reported once, not each file in it.", consequence: "The player, Boots or Gloves folder is left out, whichever of its files holds the name or names the path. In `Common/` only that file or folder is left out, and the players linking it get `link_target_dropped`. Spell the token `kit1` to `kit9`, `kitN` or `kitF` (`gk_kit` and the same ending for a keeper's); `export-upgrader upgrade` respells it in an old export (a Midcup export, for a model on its own)." },
-    { code: "folder_pack_failed", severity: "Error or Fatal", condition: "A folder's or `Common/`'s files could not be packed for the output, or the run's output could not be written.", consequence: "An Error leaves the folder out, while a Fatal stops the compile and nothing is written." },
-    { code: "dpfilelist_missing", severity: "Error or Warning", condition: "The game's `download/` folder has no `DpFileList.bin`, so no installed CPK could be checked.", consequence: "It is an Error when the run installs: the CPK is left in the output folder and the save is not touched. It is a Warning in `--mode test`, `--mode sideload` or with `--no-deploy`, which install nothing, so every bin is built on the bundled base." },
-    { code: "installed_bin_unreadable", severity: "Fatal", condition: "An installed `DpFileList.bin`, a CPK it lists, or a bin inside one cannot be read or parsed (the line names the file and the whole error).", consequence: "The compile stops before any export is read, and the previous CPK is kept." },
-    { code: "bin_source", severity: "Info", condition: "The line names which installed CPK supplied a file the compile builds on, or `bundled` for the compiler's own copy.", consequence: "Nothing to do." },
-    { code: "template_override_unreadable", severity: "Fatal", condition: "A file of the data folder's `templates/` exists but cannot be read, or is a bin that does not parse as its kind (the line names the file and the whole error).", consequence: "The compile stops before any export is read, and the previous CPK is kept. Fix or remove the file." },
-    { code: "template_override_active", severity: "Info", condition: "A file of the data folder's `templates/` replaces the compiler's built-in file of its name for the run.", consequence: "Nothing to do. The override is used." },
-    { code: "bin_header_repaired", severity: "Warning", condition: "A team color or kit color file the compile builds on held entries whose header was not their position's (a damaged installed bin, whatever wrote it). The line names the file and the teams.", consequence: "The headers are rewritten and each entry's other bytes kept, so those teams' colors may be wrong until their exports are compiled again." },
-    { code: "duplicate_path", severity: "Warning", condition: "A file built for the CPK lands at the path of a file of the data folder's `overrides/` (the line names the path).", consequence: "The `overrides/` file wins and the built one is left out." },
-    { code: "cpk_write_failed", severity: "Fatal", condition: "The CPK could not be written.", consequence: "The compile stops. The partial file is discarded and the previous CPK stays as it was." },
-    { code: "output_commit_failed", severity: "Fatal", condition: "A finished CPK or output folder could not be moved into its final place.", consequence: "The compile stops, and the previous output stays as it was." },
-    { code: "patch_written", severity: "Info", condition: "The run wrote `aesthetics_patch.toml` to the output folder (the line names the path and the teams it covers).", consequence: "Nothing to do." },
-    { code: "patch_write_failed", severity: "Fatal", condition: "The `aesthetics_patch.toml` could not be written (the line names the path and the error).", consequence: "The compile stops. A deployment is rolled back, putting the old CPKs back in `download/`, and nothing more is put in place. The files already written to `livecpk` stay in place." },
-    { code: "savefile_autodetected", severity: "Info", condition: "The `savefile_path` setting at `auto` found your save under `Documents\\KONAMI` (the line names it). When there are several account folders, the newest is used.", consequence: "Nothing to do." },
-    { code: "savefile_missing", severity: "Warning", condition: "The run's patch holds entries (each compiled player's look and his boots and gloves IDs, and his name and shirt name for an export marked `write_names`) and no savefile is configured or found. A configured path naming a folder is `savefile_invalid` instead.", consequence: "The save step is skipped. Apply the patch by hand with `UTW save-editor apply-patch`." },
-    { code: "savefile_skipped_pes_running", severity: "Warning", condition: "Savefile changes are pending and the PES version the run compiled for is running, but `compile` was not given `--edit-mode-closed` (another version running does not count). The line names the game and the flag.", consequence: "The save step is skipped, because the game writes the save it holds over the file when you leave its Edit mode after changing anything there. Close the game's Edit mode, then compile again from a terminal with `--edit-mode-closed`: the save is then written, and opening Edit mode reads it in without restarting the game. The window's Compile button cannot add the flag, so from the window, close the game and compile again." },
-    { code: "savefile_write_failed", severity: "Error or Fatal", condition: "The savefile could not be updated, because the patch could not be applied or the file could not be written back (the line names the path and the error).", consequence: "It is Fatal after a deployment, which is rolled back and its CPKs are left in the output folder. In `--mode sideload` it is an Error, with the new `livecpk` files in place." },
-    { code: "savefile_invalid", severity: "Error or Fatal", condition: "The configured or found savefile cannot be read, or it is for a PES version other than the one compiled for.", consequence: "It is Fatal after a deployment, which is rolled back and its CPKs are left in the output folder. In `--mode sideload` it is an Error, with the new `livecpk` files in place. The save is not modified." },
-    { code: "savefile_written", severity: "Info", condition: "The patch was applied to your save, which was replaced, with the previous file kept beside it as `.bak`.", consequence: "Nothing to do." },
-    { code: "savefile_team_missing", severity: "Error", condition: "A team the patch covers is not in the save.", consequence: "That team's entries are not applied, but the rest are. A save holding none of the patch's players is not rewritten." },
-    { code: "savefile_player_missing", severity: "Error", condition: "A player the patch covers is not in the save, though his team is (the save editor's `apply-patch` reports the same skip).", consequence: "His entries are not applied, but the rest are." },
-    { code: "deploy_skipped_by_flag", severity: "Info", condition: "`--no-deploy` was given, so the CPK was left in the output folder instead of being installed (one line per CPK with `multicpk_mode` on).", consequence: "Nothing to do. The save step is skipped and the run is clean." },
-    { code: "pes_folder_not_found", severity: "Error", condition: "The run installs, but `PES folder` does not point at an existing folder (no PES installed, or the setting is wrong).", consequence: "Deployment is skipped, so the CPK is left in the output folder and the save is not touched. Set `PES folder` to the game's install folder." },
-    { code: "pes_version_mismatch", severity: "Warning", condition: "The `PES folder` holds no exe of the version compiled for (`PES2021.exe` for PES 2021), which suggests a wrong `PES version` or `PES folder` setting.", consequence: "The CPK is still installed. Check the two settings." },
-    { code: "dpfilelist_not_official", severity: "Warning", condition: "The game's `DpFileList.bin` differs from the cup's official list (it is missing entries, it has entries the official list does not, or the order is different), while every CPK of this run is listed.", consequence: "The run compiles and installs anyway. Upgrade DpFileList, in the Compiler's toolbar, or `UTW compiler upgrade-dpfl` installs the official list." },
-    { code: "dpfilelist_cpk_missing", severity: "Warning", condition: "The game's `DpFileList.bin` names CPKs, other than this run's own, with no file in `download/`, so the game rejects the whole `download/` folder and loads none of its CPKs.", consequence: "The run compiles and installs anyway, but the save step is skipped. Upgrade DpFileList, in the Compiler's toolbar, or `UTW compiler upgrade-dpfl` writes a placeholder for each official entry missing its file." },
-    { code: "dpfilelist_outdated", severity: "Fatal", condition: "The cup's official list names one or more CPKs of this run that the game's older `DpFileList.bin` lacks (the line names them).", consequence: "A compile stops before compiling anything: nothing is installed or written, and the save is not touched. In the Compiler's window, Compile stays disabled until Upgrade DpFileList installs the official list; in a terminal, `UTW compiler upgrade-dpfl` installs it, then compile again." },
-    { code: "dpfilelist_cpk_renamed", severity: "Info", condition: "`upgrade-dpfl` renamed a CPK of an older DLC to the official name of its kind.", consequence: "Nothing to do. The game still loads it under the official list." },
-    { code: "dpfilelist_placeholder_written", severity: "Info", condition: "`upgrade-dpfl` wrote the empty placeholder CPK for an official entry with no file in `download/`.", consequence: "Nothing to do." },
-    { code: "dpfilelist_replaced", severity: "Info", condition: "`upgrade-dpfl` replaced the game's `DpFileList.bin` with the official one.", consequence: "The old list is kept beside it as `DpFileList.bin.bak`, replacing an older backup." },
-    { code: "dpfilelist_cpk_dropped", severity: "Warning", condition: "`upgrade-dpfl` could not rename a CPK of the old list that the official one does not have (no official name of its kind is left, its name is not of the `4cc_NN_kind.cpk` shape, or the official name it would take is in use). The line names its size.", consequence: "The game no longer loads it, and the file is left for you to remove." },
-    { code: "dpfilelist_up_to_date", severity: "Info", condition: "`upgrade-dpfl` found that the game's `DpFileList.bin` already is the official one, and every CPK it names is in `download/`.", consequence: "Nothing is written." },
-    { code: "dpfilelist_upgrade_planned", severity: "Info", condition: "`upgrade-dpfl` ran without `--yes`, so the lines before this one are what `--yes` would do.", consequence: "Nothing is written. Run it again with `--yes` to do them." },
-    { code: "cpk_name_unlisted", severity: "Fatal", condition: "The run's CPK name is in neither the game's `DpFileList.bin` nor the cup's official list.", consequence: "The run stops before compiling anything: nothing is installed or written, and the save is not touched. Set `cpk_name` to a name the list has; then compile again." },
-    { code: "cpk_slots_exhausted", severity: "Fatal", condition: "With `multicpk_mode` on, the teams do not fit the numbered CPK slots the official list has, at `cpk_part_max_size` each (the line names the first export left without room and how many slots there are).", consequence: "The compile stops and no CPK is written. Raise `cpk_part_max_size`, or ask for a list with more slots." },
-    { code: "cpk_team_exceeds_cap", severity: "Fatal", condition: "With `multicpk_mode` on, one team's content alone is larger than `cpk_part_max_size`, and a team is never split.", consequence: "The compile stops and no CPK is written. Raise `cpk_part_max_size`." },
-    { code: "cpk_size_over_limit", severity: "Warning", condition: "The single output CPK is larger than `cpk_part_max_size`.", consequence: "It is written whole and the game loads it, but the cup DLC's repository cannot hold a file that large." },
-    { code: "old_cpk_locked", severity: "Error", condition: "The old CPK in `download/` could not be replaced, most likely because PES is running.", consequence: "Deployment is skipped, so the CPK is left in the output folder and the save is not touched. Close PES and compile again." },
-    { code: "deploy_target_unwritable", severity: "Error", condition: "The `download/` folder, or the old CPK in it, cannot be written (usually a game installed under `Program Files`, which needs administrator rights).", consequence: "Deployment is skipped, so the CPK is left in the output folder and the save is not touched. Run Unlimited Tool Works as administrator and compile again." },
-    { code: "overrides_active", severity: "Info", condition: "The data folder's `overrides/` holds files, and each goes into the CPK at its path under the folder (into `livecpk\\` in `--mode sideload`).", consequence: "Nothing to do." },
-    { code: "teamnotes_write_failed", severity: "Error", condition: "`teamnotes.txt` could not be written, or a previous one could not be removed, in the output folder.", consequence: "The run's CPK stays in place, and the notes file is left as it was." },
-    { code: "source_changed_during_run", severity: "Fatal", condition: "A file the run read is gone, or its size or modified time changed since the export was listed (for an archive, the archive file's).", consequence: "The compile stops, so the output it was building is discarded and nothing is installed. Run it again." },
-    { code: "fmdl_mesh_over_bone_limit", severity: "Error", condition: "In PES 2018 to 2021, a mesh of an `.fmdl` is over a hard bone limit of the format, so the game cannot load it.", consequence: "The folder is left out (a `Common/` file is left out alone), but `pass_through` packs it as it is." },
-    { code: "fmdl_mesh_over_vertex_limit", severity: "Error", condition: "In PES 2018 to 2021, a mesh of an `.fmdl` is over a hard vertex limit of the format, so the game cannot load it.", consequence: "The folder is left out (a `Common/` file is left out alone), but `pass_through` packs it as it is." },
-    { code: "fmdl_mesh_over_face_limit", severity: "Error", condition: "In PES 2018 to 2021, a mesh of an `.fmdl` is over a hard face limit of the format, so the game cannot load it.", consequence: "The folder is left out (a `Common/` file is left out alone), but `pass_through` packs it as it is." },
-    { code: "fmdl_face_index_out_of_range", severity: "Error", condition: "In PES 2018 to 2021, a face of an `.fmdl` names a vertex that does not exist.", consequence: "The folder is left out (a `Common/` file is left out alone), but `pass_through` packs it as it is." },
-    { code: "fmdl_mesh_unassigned", severity: "Error", condition: "In PES 2018 to 2021, no mesh group of an `.fmdl` lists one of its meshes, so the file would not contain it.", consequence: "The folder is left out (a `Common/` file is left out alone), but `pass_through` packs it as it is." },
-    { code: "fmdl_bone_slot_out_of_range", severity: "Warning", condition: "In PES 2018 to 2021, a vertex is weighted to a bone slot past the mesh's bone group, so the game ignores that weight (the game's own models do this).", consequence: "Nothing to do." },
-    { code: "fmdl_mesh_empty", severity: "Warning", condition: "In PES 2018 to 2021, a mesh of an `.fmdl` has no faces.", consequence: "Nothing to do." },
-    { code: "fmdl_duplicate_bone_name", severity: "Warning", condition: "In PES 2018 to 2021, an `.fmdl` has two bones of one name, which makes merges and `.skl` matching ambiguous.", consequence: "Nothing to do." },
-    { code: "fmdl_weights_not_normalized", severity: "Info", condition: "In PES 2018 to 2021, a vertex's weights sum to neither 255 nor 0.", consequence: "Nothing to do." },
-    { code: "fmdl_material_unused", severity: "Info", condition: "In PES 2018 to 2021, an `.fmdl` has a material that no mesh uses.", consequence: "Nothing to do." },
-    { code: "model_mesh_over_bone_limit", severity: "Error", condition: "In PES 2015 to 2017, a mesh of a `.model` is over a hard bone limit of the format, so the game cannot load it.", consequence: "The folder is left out (a `Common/` file is left out alone), but `pass_through` packs it as it is." },
-    { code: "model_mesh_over_vertex_limit", severity: "Error", condition: "In PES 2015 to 2017, a mesh of a `.model` is over a hard vertex limit of the format, so the game cannot load it.", consequence: "The folder is left out (a `Common/` file is left out alone), but `pass_through` packs it as it is." },
-    { code: "model_mesh_over_face_limit", severity: "Error", condition: "In PES 2015 to 2017, a mesh of a `.model` is over a hard face limit of the format, so the game cannot load it.", consequence: "The folder is left out (a `Common/` file is left out alone), but `pass_through` packs it as it is." },
-    { code: "model_face_index_out_of_range", severity: "Error", condition: "In PES 2015 to 2017, a face of a `.model`, at any detail level, names a vertex that does not exist.", consequence: "The folder is left out (a `Common/` file is left out alone), but `pass_through` packs it as it is." },
-    { code: "model_bone_slot_out_of_range", severity: "Warning", condition: "In PES 2015 to 2017, a vertex is weighted to a bone slot past the mesh's bone group.", consequence: "Nothing to do." },
-    { code: "model_mesh_empty", severity: "Warning", condition: "In PES 2015 to 2017, a mesh of a `.model` has no faces.", consequence: "Nothing to do." },
-    { code: "model_duplicate_bone_name", severity: "Warning", condition: "In PES 2015 to 2017, a `.model` has two bones of one name.", consequence: "Nothing to do." },
-    { code: "model_lod_record_mismatch", severity: "Warning", condition: "In PES 2015 to 2017, a `.model`'s level-of-detail record disagrees with its meshes' levels.", consequence: "Nothing to do." },
-    { code: "model_weights_not_normalized", severity: "Info", condition: "In PES 2015 to 2017, a vertex's weights do not sum to 1.", consequence: "Nothing to do." },
-    { code: "model_degenerate_face", severity: "Info", condition: "In PES 2015 to 2017, a face of a `.model` uses one vertex twice.", consequence: "Nothing to do." },
-    { code: "model_material_unused", severity: "Info", condition: "In PES 2015 to 2017, a `.model` has a material name that no mesh uses.", consequence: "Nothing to do." },
-    { code: "mtl_material_duplicate", severity: "Error", condition: "A `.mtl` lists one material twice.", consequence: "The folder is left out." },
-    { code: "mtl_state_invalid", severity: "Error", condition: "A `.mtl` state value is out of range (a `ztest` other than 1, or a `blendmode` or `alphablend` other than 0 or 1).", consequence: "The folder is left out." },
-    { code: "mtl_blendmode_nonzero", severity: "Warning", condition: "A `.mtl` sets `blendmode` to 1 (it works, but is not recommended).", consequence: "Nothing to do." },
-    { code: "mtl_state_missing", severity: "Info", condition: "A `.mtl` has no state names, so the defaults are used.", consequence: "Nothing to do." },
-    { code: "mtl_state_nonrecommended", severity: "Info", condition: "A `.mtl`'s `alphablend` and `zwrite` combination is not recommended.", consequence: "Nothing to do." },
-    { code: "mtl_state_unknown", severity: "Info", condition: "A `.mtl` has a state name that is not one of the seven the compiler knows (`shadowcaster`, which some of the game's own files carry).", consequence: "Kept as written. Nothing to do." },
-    { code: "model_material_undefined", severity: "Error", condition: "A `.model` uses a material name its `.mtl` does not define (the mesh would render with the game's fallback), or no `.mtl` was found for it at all.", consequence: "The folder is left out. `pass_through` packs it as it is, but only when a `.mtl` was found." },
-    { code: "nested_folders_fixed", severity: "Warning", condition: "The export's content sits one level too deep, inside a single folder.", consequence: "The export is read as if the extra level were not there. Repack the export without it." },
-    { code: "nested_root_ambiguous", severity: "Error", condition: "Several folders inside the export each look like its root.", consequence: "The export is not compiled. Keep one root." },
-    { code: "nested_root_conflict", severity: "Error", condition: "A file at the export's root and one inside the nested folder resolve to the same place.", consequence: "The export is not compiled." },
-    { code: "players_txt_invalid", severity: "Error", condition: "`players.txt` cannot be read as a roster (an encoding failure or a roster-wide ambiguity), or a referee roster is left with no valid assignment.", consequence: "The export is not compiled. An empty team roster stays valid for a kit-only export." },
-    { code: "refs_txt_ignored", severity: "Warning", condition: "A referee export holds both `players.txt` and the old `refs.txt` name.", consequence: "`players.txt` is used and `refs.txt` is ignored." },
-    { code: "source_read_failed", severity: "Error or Fatal", condition: "A file of the export could not be read when it was needed.", consequence: "An optional root file that cannot be read is left out. When a folder's file cannot be read, the folder is left out, and when required metadata cannot be read or the source is unusable, the export is left out. A failure of the run's own output stops the compile." },
-    { code: "export_empty", severity: "Error", condition: "No usable content was found at the export's root.", consequence: "The export is not compiled." },
-    { code: "team_name_unknown", severity: "Error", condition: "The export's first word names no team in the `teams_list_path` file.", consequence: "The export is not compiled. Check the name against the `teams_list_path` file, or add the team to it." },
-    { code: "export_tag_missing", severity: "Error", condition: "A team export's name has neither `Full` nor `Midcup` as its second word.", consequence: "The export is not compiled. Rename it `<team> Full ...` or `<team> Midcup ...`." },
-    { code: "export_layout_old", severity: "Error", condition: "The export is in the old layout, which the compiler does not read: a root folder named `Kit Configs`, `Kit Textures` or `Other` (kits live in `Kits/`).", consequence: "The export is not compiled, and nothing else is reported about it. Run it through the Export upgrader once." },
-    { code: "players_txt_missing", severity: "Error", condition: "A referee export has no `players.txt` (nor the old `refs.txt` name).", consequence: "The export is not compiled." },
-    { code: "players_txt_line_invalid", severity: "Error", condition: "A nonblank line of `players.txt` does not give a slot number and a folder name.", consequence: "That line of `players.txt` is ignored." },
-    { code: "players_txt_slot_invalid", severity: "Error", condition: "A `players.txt` line's slot is outside 01-23 (teams) or 01-35 (refs).", consequence: "That line of `players.txt` is ignored." },
-    { code: "players_txt_slot_duplicate", severity: "Error", condition: "`players.txt` assigns the same slot more than once, so the roster is ambiguous.", consequence: "The export is not compiled." },
-    { code: "players_txt_target_missing", severity: "Error", condition: "A `players.txt` line names a folder that does not exist.", consequence: "That line of `players.txt` is ignored." },
-    { code: "player_unlisted", severity: "Warning", condition: "`players.txt` is present but does not list this player folder, whatever number its name carries.", consequence: "The folder is ignored." },
-    { code: "player_folder_number_invalid", severity: "Error", condition: "Without `players.txt`, a player folder's number is not in 01-23.", consequence: "The folder is left out." },
-    { code: "player_number_duplicate", severity: "Error", condition: "Without `players.txt`, two player folder names claim the same slot.", consequence: "Both folders are left out." },
-    { code: "file_type_disallowed", severity: "Error or Info", condition: "A file sits where its kind is not allowed, anywhere in a player or shared folder, in a kit folder, or in `Collars/`: its extension is disallowed, or, below a subfolder, it is a marker, a `settings.toml` or a per-player file.", consequence: "With `strict_file_type_check` on, this is an Error and the folder is left out (in `Collars/`, only the file is left out). With it off, it is an Info and nothing is left out." },
-    { code: "common_file_disallowed", severity: "Error or Info", condition: "A file sits in `Common/` that is not model content (a model, `.mtl`, `.skl`, `.fclo`, `.xml`, `.bin`, texture or `.txt` note would be).", consequence: "With `strict_file_type_check` on, this is an Error and the file is left out. With it off, it is an Info and nothing is left out." },
-    { code: "player_layout_proto", severity: "Error", condition: "A referee export's player folder has a `face/`, `boots/`, `gloves/` or `common/` subfolder directly inside, the layout of older referee exports (in a team export those are ordinary subfolders).", consequence: "The folder is left out, and nothing else is reported about it. Run the export through the Export upgrader once." },
-    { code: "shared_link_duplicate", severity: "Error", condition: "A player folder has more than one shared link for a part (face, boots or gloves), counted over the whole folder, subfolders included. Two links naming one folder count once.", consequence: "The folder is left out." },
-    { code: "link_target_missing", severity: "Error", condition: "A link file names a shared folder that does not exist.", consequence: "The folder is left out." },
-    { code: "common_link_missing", severity: "Error", condition: "A `.common` link names a file missing from `Common/` (a `kitN` name or folder stands for its set). In PES 2018 to 2021, a texture link is satisfied when a CPK listed before this run's own holds it at the team's Common path.", consequence: "The folder is left out." },
-    { code: "link_target_dropped", severity: "Error", condition: "A shared-folder or `.common` link names a target that was left out for its own finding (the line names the link, the target and the finding).", consequence: "The folder is left out, and `pass_through` does not apply (it is not reported when the setting keeps the target)." },
-    { code: "shared_folder_orphaned", severity: "Warning", condition: "A shared `Faces/`, `Boots/` or `Gloves/` folder is linked by no player.", consequence: "The folder is ignored." },
-    { code: "fpc_conflict", severity: "Error", condition: "A player folder holds both `fpc_on` and `fpc_off`.", consequence: "The folder is left out. Keep one marker." },
-    { code: "ingame_face_marker_renamed", severity: "Error", condition: "A player folder holds `ingame_face` or `ingame_face.txt`, the in-game face marker's old name. The marker is now `ingame_face.toml`, which also holds the in-game face's keys.", consequence: "The file is ignored, and the folder compiles as if the file were not there (a blank face package unless the folder gives a face). Rename it `ingame_face.toml`: an empty one gives the game's default face." },
-    { code: "ingame_face_explicit_face_model", severity: "Error", condition: "A player folder holds `ingame_face.toml` beside an explicit face model (`face_high`, `hair_high` or `oral`, in any format), a `.common` link to one, or a `Faces/` link, and any of them needs the face folder the marker suppresses.", consequence: "The player folder is left out." },
-    { code: "texture_stem_conflict", severity: "Error", condition: "Two image files share one stem in the same place, whatever their extensions (`hair.dds` beside `hair.png`, or a texture link `hair.png.common`; `hair.dds` beside `jessie/hair.dds` is no conflict). The place is a model folder, a kit folder, `Kits/all/`, a folder of `Common/`, or `Portraits/` (two files of one slot).", consequence: "The folder is left out (the model folder or the kit, or `all/` itself, so no kit inherits from it). In `Portraits/` and `Common/` the two files are left out." },
-    { code: "fmdl_name_invalid", severity: "Error", condition: "In PES 2018 to 2021, a model anywhere in a shared `Boots/` or `Gloves/` folder, or one a `.common` link there stands for, has a name that does not resolve to that category's allowed names.", consequence: "The folder is left out." },
-    { code: "model_name_invalid", severity: "Error", condition: "In PES 2015 to 2017, a model anywhere in a shared `Boots/` or `Gloves/` folder lacks that category's suffix.", consequence: "The folder is left out." },
-    { code: "edithair_unsupported", severity: "Error", condition: "In PES 2015 to 2017, a `face_edithair.xml` or `hair.xml` sits anywhere in a player or shared folder.", consequence: "The folder is left out." },
-    { code: "kit_folder_invalid", severity: "Error", condition: "A `Kits/` subfolder's name is not `<slot>` or `<slot> - <label>` with the slot in `p1`-`p9`, `g1` or `all`.", consequence: "The kit is left out." },
-    { code: "kit_slot_duplicate", severity: "Error", condition: "Two `Kits/` subfolders resolve to the same slot (`p1/` and `p1 - Lakers/`).", consequence: "Both kits are left out; neither is picked." },
-    { code: "kit_texture_name_invalid", severity: "Error", condition: "A kit texture's name does not carry the `kit` prefix (`kit.dds`, `kit_mask.dds`).", consequence: "The file is left out." },
-    { code: "kit_layout_conflict", severity: "Error", condition: "A kit folder holds both `pre-fox` and `fox` markers.", consequence: "The kit is left out. Keep one marker." },
-    { code: "kit_icon_invalid", severity: "Warning", condition: "A kit's `icon_<N>` marker is numbered above 23, or the kit holds two or more (each is reported).", consequence: "The default icon (3) is used." },
-    { code: "kit_all_file_ignored", severity: "Warning", condition: "`Kits/all/` holds something other than kit textures (`config.toml`, `colors.txt`, an `icon_<N>` marker, anything else).", consequence: "The file is ignored." },
-    { code: "kit_all_unused", severity: "Warning", condition: "`Kits/all/` is present but no kit folder inherits from it.", consequence: "Nothing to do. It is not used." },
-    { code: "kit_textures_inherited", severity: "Info", condition: "A kit lacks texture names that `Kits/all/` provides (the line lists them).", consequence: "The textures are inherited from `all/`. Nothing to do." },
-    { code: "portrait_name_invalid", severity: "Error", condition: "A `Portraits/` file is not a texture named `NN` with NN in 01-23 (the `NN` alone, or followed by ` - ` and any text).", consequence: "The file is left out." },
-    { code: "portrait_missing", severity: "Warning", condition: "In PES 2017 to 2021, a player has no portrait in his folder or in `Portraits/`; in a `Midcup` export, the CPKs installed before the one being compiled hold none for him either.", consequence: "The player is compiled without a portrait. Add a `portrait` image to his folder, or one named by his number (`05`) to `Portraits/`." },
-    { code: "logo_missing", severity: "Error", condition: "A `Full` export has no logo: no file at its root whose name starts with `logo`.", consequence: "The export is compiled without a logo. Add one at its root, or rename the export `<team> Midcup ...` if it only adds to what is installed." },
-    { code: "logo_file_invalid", severity: "Error", condition: "A root `logo*` file has an unknown tag in its name, is in a format the compiler does not read, or does not decode.", consequence: "No logo is built for the team: the `logo*` and `logo_small*` files are left out together, because the game needs all three logo sizes." },
-    { code: "logo_role_duplicate", severity: "Error", condition: "Two files claim the same logo role (two `logo*`, or two `logo_small*`).", consequence: "No logo is built for the team." },
-    { code: "logo_small_without_main", severity: "Error", condition: "A `logo_small*` image is present with no main `logo*`.", consequence: "No logo is built, because the small image is not a source for the large sizes." },
-    { code: "root_file_unexpected", severity: "Warning", condition: "An unknown file or folder sits at the export's root (a stale `wrapper/` beside a usable root included), or a file sits directly inside `Players/`, `Kits/`, `Faces/`, `Boots/` or `Gloves/`, all of which hold only folders.", consequence: "The file or folder is ignored." },
-    { code: "notes_found", severity: "Info", condition: "The export's root holds a non-empty `notes.txt`.", consequence: "`compile` gathers it into `teamnotes.txt` in the output folder." },
-    { code: "notes_encoding_invalid", severity: "Error", condition: "The root `notes.txt` is not valid UTF-8.", consequence: "The note is left out; the export otherwise compiles." },
-  ],
-  "save-editor": [
-    { code: "team_exported", severity: "Info", condition: "`export-toml` wrote one team's file (`team`, `path`)", consequence: "informational; goes on" },
-    { code: "import_key_not_in_version", severity: "Warning", condition: "`import-toml`: a key the document's version stores and the save's does not; dropped (`path`)", consequence: "warns and goes on" },
-    { code: "import_value_not_encodable", severity: "Warning", condition: "`import-toml`: a value the save's version cannot store (an instruction it lacks); written as off (`path`, `label`)", consequence: "warns and goes on" },
-    { code: "import_value_capped", severity: "Warning", condition: "`import-toml`: a face type above the save's version's cap, or a skin the version has no custom slot for; written as `to` (`path`, `from`, `to`)", consequence: "warns and goes on" },
-    { code: "import_slot_empty", severity: "Warning", condition: "`import-toml`: a `[players.NN]` whose roster slot is empty; skipped (`slot`)", consequence: "warns and goes on" },
-    { code: "patch_team_applied", severity: "Info", condition: "`apply-patch`: the save holds the team and at least one of its patch players was written (`team`); a team whose players the save all lacks is not listed", consequence: "informational; goes on" },
-    { code: "patch_team_not_in_save", severity: "Error", condition: "`apply-patch`: the save has no team with this id; its players were not looked at (`team`)", consequence: "the rest is written; exit 1" },
-    { code: "patch_player_not_in_save", severity: "Error", condition: "`apply-patch`: the save has no player with this id (`player`)", consequence: "the rest is written; exit 1" },
-    { code: "player_diff", severity: "Info", condition: "`diff`: one field of a player in both saves, old to new (`player`, `field`, `old`, `new`)", consequence: "the report's rows; differences are the output, exit 0" },
-    { code: "player_only_in", severity: "Info", condition: "`diff`: a player in one save alone (`player`, `save`: `first` or `second`)", consequence: "informational; goes on" },
-    { code: "teams_list_added", severity: "Info", condition: "`export-teams-list`: a team in the save that the list lacked, appended or put into a placeholder's slot (`team`, `name`)", consequence: "merged; written only with `--yes`" },
-    { code: "teams_list_overridden", severity: "Info", condition: "`export-teams-list`: a name in both whose id becomes the save's (`name`, `old`, `new`)", consequence: "merged; written only with `--yes`" },
-    { code: "teams_list_unresolved", severity: "Error", condition: "`export-teams-list`: a change dropped because two teams would then share one id in the merged list (`team`, `name`)", consequence: "the other changes written with `--yes`; exit 1" },
-    { code: "teams_list_name_duplicate", severity: "Error", condition: "`export-teams-list`: a team of the save left out because an earlier team has the same name, upper and lower case aside, and the list can hold a name once (`team`, `name`, `kept`)", consequence: "the team is left out; exit 1" },
-    { code: "teams_list_kept", severity: "Info", condition: "`export-teams-list`: the working rows that ended unchanged (`count`)", consequence: "informational; goes on" },
-    { code: "teams_list_written", severity: "Info", condition: "`export-teams-list`: the merged list was written (`path`)", consequence: "informational; goes on" },
-    { code: "teams_list_not_written", severity: "Info", condition: "`export-teams-list` without `--yes`: the summary only, the file untouched (`path`)", consequence: "nothing is written" },
-    { code: "teams_list_read_only", severity: "Error", condition: "`export-teams-list --yes`: the file could not be written into the data folder, because none is chosen yet or it cannot be written to (`path`, `error`)", consequence: "nothing is written; exit 1" },
-    { code: "aatf_violation", severity: "the violation's (Error or Warning)", condition: "`check-aatf`: one rule the team breaks under the ruleset (`team`; `player` for a player's violation; `rule`, then the rule's own fields)", consequence: "printed; an error-severity violation makes the exit code 1" },
-    { code: "aatf_check_failed", severity: "Error", condition: "`check-aatf`: the ruleset's check itself failed on the team, so the team has no result (`team`, `error`)", consequence: "the other teams are still checked; exit 1" },
-  ],
-  "export-upgrader": [
-    { code: "no_old_export", severity: "Error", condition: "step 1: the input holds nothing an old export holds; nothing is written", consequence: "-" },
-    { code: "refs_txt_missing", severity: "Error", condition: "A `refs` export without a `refs.txt` holds no roster to migrate: nothing is written (step 9).", consequence: "-" },
-    { code: "export_extract_failed", severity: "Error", condition: "the archive does not open or its listing is refused (the compiler's code); nothing is written", consequence: "`path`, `error`" },
-    { code: "unmigrated_content", severity: "Error", condition: "an input file no step migrates (step 10), entry by entry; a Note entry whose colors do not read is one, its line in the context, and so is a kit config that does not decode (step 5), its error in the context", consequence: "`line` (a Note entry), `error` (a kit config)" },
-    { code: "migration_clean", severity: "Info", condition: "last line: no Error finding, and no finding drops anything (\"Verification\"'s clean migrated export); exit 0", consequence: "-" },
-    { code: "migration_not_clean", severity: "Info", condition: "last line otherwise: the output is a draft for manual repair (\"Verification\"); exit 1, a Warning that drops a folder included, since the compile would lose it", consequence: "-" },
-    { code: "leftover_dropped", severity: "Warning", condition: "Content that never reached a player in game, outside the old format's layout or inside it (a refused portrait, a stray file, a second goalkeeper kit, a file directly in `Faces/`, `Boots/` or `Gloves/`); a Note entry's dropped part names its line.", consequence: "`line` (a Note entry)" },
-    { code: "mtl_stray_text_dropped", severity: "Info", condition: "An old `.mtl` held text between its elements, which the compiler's reader refuses.", consequence: "-" },
-    { code: "roster_slot_empty", severity: "Warning", condition: "A face folder whose slot the save's roster leaves empty: it still becomes its player folder, with no `settings.toml` (`slot`).", consequence: "-" },
-    { code: "merge_kept_shared", severity: "Info", condition: "A path a player folder and a merging item folder share with different bytes: the item folder is kept shared with a link instead (`path`, the first clashing path relative to the player folder).", consequence: "-" },
-    { code: "wearer_assumed", severity: "Info", condition: "`--loose` paired an item folder with the player its ID's position in the team's old block of 25 gives (the line names the folder's four-digit ID and the slot).", consequence: "`id`, `slot`" },
-    { code: "kit_without_config", severity: "Warning", condition: "A kit slot a Note kit entry gives and no `Kit Configs` config does: the kit still forms, a placeholder the compiler fills (`slot`).", consequence: "-" },
-    { code: "config_without_kit_entry", severity: "Warning", condition: "A kit slot a `Kit Configs` config gives and no Note kit entry does: its `config.toml` is written all the same, the kit offered as the old export never offered it (`slot`).", consequence: "-" },
-    { code: "kit_texture_copied", severity: "Info", condition: "A kit's config field named another texture: the named texture was copied into the kit under the field's generic name (`kit`, `stem` the field's, `from` the source's slot and stem).", consequence: "-" },
-    { code: "kit_texture_hoisted", severity: "Info", condition: "A texture every kit folder held byte-identically: it moved to `Kits/all/` (`stem`, the first kit's spelling).", consequence: "-" },
-    { code: "portrait_conflict", severity: "Error", condition: "A `Portraits/` file and its slot's face-folder portrait differ in bytes: the compiler's deep pass would refuse the export (`slot`).", consequence: "-" },
-    { code: "logo_small_carried", severity: "Info", condition: "The old `_r` small logo is a different drawing, kept as `logo_small.png` (`share`, the differing pixels' percentage).", consequence: "-" },
-    { code: "logo_small_dropped", severity: "Info", condition: "The old `_r` small logo is a downscale of the large one, dropped: the compiler regenerates it (`share`).", consequence: "-" },
-    { code: "logo_fallback", severity: "Warning", condition: "No usable `_r_ll` member: the largest usable one became `logo.png`.", consequence: "-" },
-    { code: "common_reference_kept", severity: "Warning", condition: "An `.mtl`/`.fmdl` reference into the team's `Common/` kept as written but its Common folder, respelled `team_common_folder/` (`team_folder` in an FMDL): the file is not in the input's `Common/`, a link would clash (the folder already holds a texture of that stem, which is the one the model will wear - the compiler looks a game path's file name up in the folder first), or a subfolder `.mtl` names a Common subfolder (`reference`, the path as written).", consequence: "-" },
-    { code: "custom_model_missing", severity: "Error", condition: "A rostered player of a Full output that the output gives no folder wears a custom boots or gloves ID (above 100) no migrated folder claims: the content is missing (step 8; `slot`, `name`, `key` the ID's own, `id`).", consequence: "-" },
-    { code: "custom_model_hidden", severity: "Warning", condition: "A rostered player the output gives a folder wears a custom boots or gloves ID (above 100) no migrated folder claims: his `settings.toml` gets the hide ID of its kind, boots 55 or gloves 11 (step 8; `slot`, `name`, `key`, `id`, `written` the hide ID).", consequence: "-" },
-    { code: "custom_model_not_worn", severity: "Info", condition: "A rostered player wears a custom boots or gloves ID that is the number of a folder of the other kind, the save's way of wearing no custom item of the kind: his `settings.toml` gets the hide ID, as for `custom_model_hidden` (step 3).", consequence: "`slot`, `name`, `key`, `id`, `written`" },
-    { code: "wearer_by_name", severity: "Warning", condition: "An unworn boots or gloves folder whose name part is a rostered player's name took the custom ID the save has him wear and no folder carries (step 3).", consequence: "`slot`, `id`" },
-    { code: "wearer_by_number", severity: "Warning", condition: "An unworn boots or gloves folder took the ID its same-numbered folder of the other kind was paired with (step 3).", consequence: "`slot`, `id`, `from`" },
-    { code: "wearer_by_order", severity: "Warning", condition: "A kind held as many unworn folders as worn custom IDs no folder carried: they were paired in order of ID and folder number (step 3).", consequence: "`slot`, `id`" },
-    { code: "custom_model_unpaired", severity: "Error", condition: "A rostered player wears a custom ID no folder carries and no rule pairs, while an unworn folder of the kind is left: nothing says which folder is his (step 3).", consequence: "`slot`, `key`, `id`" },
-    { code: "texture_duplicate_dropped", severity: "Warning", condition: "A folder held one texture stem as a `.dds` and a `.ftex` and a model uses it: the `.ftex` is dropped, the `.dds` kept (step 10).", consequence: "`kept`" },
-    { code: "settings_value_refused", severity: "Warning", condition: "A stored value no `settings.toml` key can hold, left out of the player's file (`slot`, `name`, `key` the dotted key, `value` the stored value).", consequence: "-" },
-    { code: "settings_not_generated", severity: "Error", condition: "A player's `settings.toml` could not be generated at all (`slot`, `name`, `error` the failure's text).", consequence: "-" },
-    { code: "nested_folders_fixed", severity: "Warning", condition: "content found nested one level down (exactly one usable root)", consequence: "-" },
-    { code: "nested_root_ambiguous", severity: "Error", condition: "several nested child folders are usable export roots", consequence: "-" },
-    { code: "nested_root_conflict", severity: "Error", condition: "loose root file collides with a flattened nested file at the same virtual path", consequence: "-" },
-    { code: "players_txt_invalid", severity: "Error", condition: "file-level encoding failure or roster-wide ambiguity prevents trustworthy normalization, or a referee roster retains zero valid assignments", consequence: "-" },
-    { code: "refs_txt_ignored", severity: "Warning", condition: "referee export has both `players.txt` and the legacy `refs.txt` alias", consequence: "-" },
-    { code: "source_read_failed", severity: "Error", condition: "a file of the input does not read after its listing did (the compiler's code); it is not migrated and the run goes on, unless it is the Note, which decides the team: then nothing is written", consequence: "`path`, `error`" },
-    { code: "export_empty", severity: "Error", condition: "no usable content found at root", consequence: "-" },
-    { code: "team_name_unknown", severity: "Error", condition: "the Note's `Team:` value, or the export name's first word, is no team name (empty, or holding a space or an inner `/`; the compiler's code), the `Team:` line's file or the export named; nothing is written", consequence: "`name`" },
-    { code: "save_team_name_repeated", severity: "Warning", condition: "a later team of the save folds to the export's team name; the first in record order is the export's, the later left out", consequence: "`team`, `kept`" },
-    { code: "export_tag_missing", severity: "Error", condition: "a team export's name has neither `Full` nor `Midcup` as its second word (context `name`: the export's name)", consequence: "-" },
-    { code: "export_layout_old", severity: "Error", condition: "the export is in the old layout, which the compiler does not read: a root folder named `Kit Configs`, `Kit Textures` or `Other`, names the Studio format never has (its kits live in `Kits/`); context `folder`: the first such folder. Reported alone: the export's other structure findings are not computed, since every one of them would describe the old layout again", consequence: "-" },
-    { code: "players_txt_missing", severity: "Error", condition: "referee export has no required root `players.txt` (nor a legacy `refs.txt` alias)", consequence: "-" },
-    { code: "players_txt_line_invalid", severity: "Error", condition: "one nonblank `players.txt` line cannot be parsed into decimal slot + folder name", consequence: "-" },
-    { code: "players_txt_slot_invalid", severity: "Error", condition: "a `players.txt` line's decimal slot is outside 01-23 (teams) / 01-35 (refs)", consequence: "-" },
-    { code: "players_txt_slot_duplicate", severity: "Error", condition: "authoritative `players.txt` assigns the same slot more than once, making roster identity ambiguous", consequence: "-" },
-    { code: "players_txt_target_missing", severity: "Error", condition: "`players.txt` entry names a nonexistent folder", consequence: "-" },
-    { code: "player_unlisted", severity: "Warning", condition: "authoritative `players.txt` is present but does not list this player folder, regardless of any number in its name", consequence: "-" },
-    { code: "player_folder_number_invalid", severity: "Error", condition: "without `players.txt`, a team player folder's number is not in 01-23", consequence: "-" },
-    { code: "player_number_duplicate", severity: "Error", condition: "without `players.txt`, two team folder names claim the same player slot", consequence: "-" },
-    { code: "file_type_disallowed", severity: "Info", condition: "a file in a player or shared folder's tree, in a kit folder or in `Collars/` that its position's allowlist row does not admit (`spec/aesthetics_export/object_model.md` \"File-type allowlist\": a disallowed extension, or a marker, `settings.toml` or per-player singleton below a subfolder; E if `strict_file_type_check`, else I)", consequence: "-" },
-    { code: "common_file_disallowed", severity: "Info", condition: "as `file_type_disallowed`, Common scope", consequence: "-" },
-    { code: "player_layout_proto", severity: "Error", condition: "a referee export's player folder has a direct `face/`, `boots/`, `gloves/` or `common/` subfolder: the AET referee layout, Red's prototype of the player folder, whose subfolders type their files by the subfolder's name where the Studio rule types a subfolder's files by their names (`spec/aesthetics_export/player_folders.md` \"Subfolders\"); in a team export those names are plain subfolders (context `folder`: the first such subfolder)", consequence: "-" },
-    { code: "shared_link_duplicate", severity: "Error", condition: "player folder has more than one shared link for any category (face, boots, or gloves), counted over its whole tree, two links naming one shared folder counting once", consequence: "-" },
-    { code: "link_target_missing", severity: "Error", condition: "link file references a nonexistent shared folder", consequence: "-" },
-    { code: "common_link_missing", severity: "Error", condition: "a `.common` link - model, material file or texture - names a file missing from the Common folder (a `kitN` stem or directory in it standing for its set, `spec/model_format.md` \"Kit-dependent assets\") (context: the link file, whose name shows its kind, and the Common path looked for); on PES 18-21 a texture link is satisfied by an installed CPK holding the texture at the team's Common path (`pipeline.md` \"Resolved decisions\", \"A texture a model names must exist\")", consequence: "-" },
-    { code: "link_target_dropped", severity: "Error", condition: "a shared-folder or `.common` link names a target the structure pass or the deep pass dropped, by its effective disposition (context: the link, the target and its finding)", consequence: "-" },
-    { code: "shared_folder_orphaned", severity: "Warning", condition: "shared folder referenced by no player", consequence: "-" },
-    { code: "fpc_conflict", severity: "Error", condition: "both `fpc_on` and `fpc_off` present in a player folder", consequence: "-" },
-    { code: "ingame_face_explicit_face_model", severity: "Error", condition: "`ingame_face` combined with explicit face models (`face_high`/`hair_high`/`oral`, in any supported source format) or a shared face link, which require the suppressed face folder", consequence: "-" },
-    { code: "texture_stem_conflict", severity: "Error", condition: "two image files with the same stem in one lookup namespace, whatever their extensions: one folder of a model folder's tree, the root or one subfolder (`hair.dds` beside `hair.png`, or a texture link `hair.png.common`, which counts as a file of its linked name; `hair.dds` beside `jessie/hair.dds` is no conflict, a model's texture name resolving nearest first, `spec/aesthetics_export/player_folders.md` \"Subfolders\"), `Common/` (`hair.dds` beside `hair.png`; each directory of `Common/` a namespace of its own), a kit folder, or `Kits/all/` (`kit.png` beside `kit.dds`; a kit's own file overriding an `all/` file of its stem is not a conflict), or `Portraits/` (`05.dds` beside `05 - Bob.png`, two files of one slot)", consequence: "-" },
-    { code: "fmdl_name_invalid", severity: "Error", condition: "Fox: FMDL anywhere in a boots/gloves shared folder not resolving to that category's allowed names", consequence: "-" },
-    { code: "model_name_invalid", severity: "Error", condition: "pre-Fox: a model anywhere in a shared boots or gloves folder without its category's suffix, the pre-Fox twin of `fmdl_name_invalid`", consequence: "-" },
-    { code: "edithair_unsupported", severity: "Error", condition: "pre-Fox: `face_edithair.xml` / `hair.xml` present (anywhere in a player or shared folder; reported by the structure pass, so `check` reports it)", consequence: "-" },
-    { code: "kit_folder_invalid", severity: "Error", condition: "subfolder name doesn't parse as `<slot>[ - <label>]` with the slot in `p1`-`p9`, `g1`, `all`", consequence: "-" },
-    { code: "kit_slot_duplicate", severity: "Error", condition: "two subfolders resolve to the same slot (`p1/` and `p1 - Lakers/`)", consequence: "-" },
-    { code: "kit_texture_name_invalid", severity: "Error", condition: "texture doesn't carry the `kit` prefix (`kit.dds`, `kit_mask.dds`, \u2026)", consequence: "-" },
-    { code: "kit_layout_conflict", severity: "Error", condition: "both `pre-fox` and `fox` markers in one kit folder", consequence: "-" },
-    { code: "kit_icon_invalid", severity: "Warning", condition: "a kit's `icon_<N>` marker is numbered above 23, or the kit holds two or more (each is reported)", consequence: "-" },
-    { code: "kit_all_file_ignored", severity: "Warning", condition: "`all/` holds something other than kit textures (`config.toml`, `colors.txt`, an `icon_<N>` marker, anything else)", consequence: "-" },
-    { code: "kit_all_unused", severity: "Warning", condition: "`all/` present but no kit folder to inherit from it", consequence: "-" },
-    { code: "kit_textures_inherited", severity: "Info", condition: "a kit lacks stems that `all/` provides; lists them (`p3: back, leg, name from all/`)", consequence: "-" },
-    { code: "portrait_name_invalid", severity: "Error", condition: "not a texture named `NN` with NN in 01-23 (alone or followed by ` - ` and any text, as a player folder is numbered)", consequence: "-" },
-    { code: "logo_file_invalid", severity: "Error", condition: "a root `logo*` file has an unknown tag in its stem, a disallowed format, or fails to decode in the deep pass", consequence: "-" },
-    { code: "logo_role_duplicate", severity: "Error", condition: "two files claim the same role (two `logo*`, or two `logo_small*`)", consequence: "-" },
-    { code: "logo_small_without_main", severity: "Error", condition: "`logo_small*` present with no main `logo*`", consequence: "-" },
-    { code: "root_file_unexpected", severity: "Warning", condition: "unknown file or folder at the export root (a folder other than the content folders - a stale `wrapper/` beside a usable root included), or a file directly inside `Players`, `Kits`, `Faces`, `Boots` or `Gloves`, which hold only folders (`Players/players.txt`)", consequence: "-" },
-    { code: "notes_found", severity: "Info", condition: "non-empty valid root `notes.txt` present", consequence: "-" },
-    { code: "notes_encoding_invalid", severity: "Error", condition: "root `notes.txt` is not valid UTF-8 after optional BOM handling", consequence: "-" },
-  ],
-};
+const HELP = BUILD_HELP.chapters.map(c => ({ id: c.id, title: c.title,
+  topics: c.id === "whats-new" ? WHATS_NEW_SAMPLE : c.topics }));
+// Per tool id, its whole catalog as the build holds it: { code, severity, when, effect }.
+const CATALOG = Object.fromEntries(BUILD_HELP.chapters
+  .filter(c => c.messages.length).map(c => [c.id, c.messages]));
 
 // ---- Settings menu (gui.md "Settings menu") ----
 // The settings file is written at the end of the frame, best-effort: a data
@@ -3432,7 +2933,7 @@ const LOG_CAP = 300;
 function mkLine(code, scope) {
   const r = CATALOG["compiler"].find(r => r.code === code);
   return { severity: r.severity, code, scope,
-    text: `${r.severity} - ${scope} - ${code}: ${r.condition.replaceAll("`", "")}` };
+    text: `${r.severity} - ${scope} - ${code}: ${r.when.replaceAll("`", "")}` };
 }
 // The Compiler's stub's options: the code links open its catalog, a line
 // click highlights the scope's grid row.

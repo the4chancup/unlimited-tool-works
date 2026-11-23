@@ -410,10 +410,7 @@ const L = { log: [], logHeight: 180, logCollapsed: false, logFilter: "all",
 const MODES = { normal: "Compile", sideload: "Compile for sideloading", test: "Test output" };
 const rowOf = key => S.rows.find(r => r.key === key);
 // Codes the plan adds that the build's catalog (the host's CATALOG) lacks yet.
-const PLANNED = {
-  dpfilelist_cpk_deleted: { code: "dpfilelist_cpk_deleted", severity: "Info",
-    condition: "The DpFileList upgrade deleted a CPK the game no longer loads under the official list, as its box was ticked in the dialog.",
-    consequence: "Nothing to do." } };
+const PLANNED = {};
 const catalog = code => CATALOG["compiler"].find(r => r.code === code) || PLANNED[code];
 const severity = code => {
   const s = (catalog(code) || {}).severity || "Error";
@@ -1053,8 +1050,8 @@ function detailPanel() {
             onclick: () => openHelp({ tool: "compiler", topic: "messages", anchor: code }) }, code),
           (cell.at || {})[code] ? h("div", { class: "mono at" }, cell.at[code]) : null,
           (cell.ctx || {})[code] ? h("div", { class: "mono at" }, cell.ctx[code]) : null,
-          h("div", { class: "what" }, mdInline(row_.condition || "")),
-          h("div", { class: "what weak" }, mdInline(row_.consequence || "")));
+          h("div", { class: "what" }, mdInline(row_.when || "")),
+          h("div", { class: "what weak" }, mdInline(row_.effect || "")));
       }) : h("div", { class: "find weak" }, "No findings."),
       row(folderPath(r, at.what, cell) === null ? null
           : button("Open folder", () => openFolder(folderPath(r, at.what, cell)),
