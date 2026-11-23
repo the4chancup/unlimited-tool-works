@@ -189,9 +189,9 @@ draft checked, for the maintainer to publish; running sidekicks and jobs are not
      - [x] The selection's edge on every blue fill (2026-11-23, merge `749dd2ae`, SWE-2, one
        rework with round S2's test fixes): a picked row drawn through `widgets::row` and the
        Save editor's selected player row draw the `#1e7a9e` edge at rest
-     - Report a problem keeps its "Saved to" line's room while hidden, so its buttons do not
-       move when the line shows (DECISIONS 2026-11-23, `plans/core/gui.md` "Modals"). SWE-2,
-       `studio_core`'s `shell/report.rs` alone, running on `sk/report_gap`
+     - [x] Report a problem keeps its "Saved to" line's room while hidden, so its buttons do
+       not move when the line shows (2026-11-23, merge `cb4b3fbd`, SWE-2, landed first time);
+       no changelog line, a spacing change
    - Then the kit cells' swatch (TC-GUI-10), the row actions, the ID cell's editing, the
      watcher and cache, Sizes and sorting, and the rest of the toolbar
      (`plans/team_compiler/gui.md` "Toolbar"; the build has a plain Compile button): the
