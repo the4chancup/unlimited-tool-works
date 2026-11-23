@@ -20001,3 +20001,13 @@ Why: iterating on a portrait, compiling and looking again, is one of the reasons
 shows portraits at all. Read once per PES folder, they stayed as they were until a restart.
 The cost is that reading on every return to the window, off the UI thread.
 Plan: `save_editor.md` "Tactics editor", the Portraits item.
+
+## 2026-11-23 — team_compiler — the stretched kit icon pattern is kept, a difference from the draft the maintainer accepts (maintainer)
+Decision: the kit cells keep drawing the kit's menu icon pattern stretched over the strip at
+the cell's foot (DECISIONS 2026-11-23 "a kit's menu icon pattern is a strip along its cell's
+foot, stretched to fit"). The draft still draws the kit's two colours as halves there; that
+difference is accepted by name, so a comparison of the build with the draft does not report
+it.
+Why: the maintainer's answer on the UI decisions page: "Pretty nice change."
+Plan: no plan edit needed: `team_compiler/gui.md` "GUI: the live-validating team grid"
+already describes the pattern.
