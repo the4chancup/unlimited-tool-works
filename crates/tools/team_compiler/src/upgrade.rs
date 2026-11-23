@@ -3,7 +3,9 @@
 //! renamed to the official names of their stem, so they keep loading. The placeholder CPK is
 //! written for every official entry with no file, since the game loads none of `download/`
 //! when a listed CPK is missing. Without `--yes` it
-//! lists what it would do and writes nothing. It never deletes or overwrites a CPK.
+//! lists what it would do and writes nothing; it never deletes or overwrites a CPK. The
+//! window's Upgrade DpFileList dialog alone deletes, one ticked box per dropped CPK:
+//! `preview` works out what it shows, and `run`'s `delete` carries the ticks.
 
 use std::collections::BTreeSet;
 use std::fs;
@@ -17,7 +19,7 @@ use crate::events::RunEvents;
 use crate::messages::{Code, size_text, tool_message};
 use crate::output::deploy::{DPFILELIST, UPGRADE_COMMAND};
 use crate::paths::replace_file;
-use crate::templates;
+use crate::templates::{self, Templates};
 
 /// The file the replaced list is kept as, beside it in `download/`.
 const BACKUP: &str = "DpFileList.bin.bak";
@@ -154,25 +156,36 @@ pub(crate) fn number_and_stem(name: &str) -> Option<(&str, &str)> {
     shaped.then_some((number, stem))
 }
 
-/// The `upgrade-dpfl` command in `download`, the PES folder's `download/` (checked to be a
-/// folder). It reports the upgrade's findings (`plan`) in the order `apply` (`--yes`) acts,
-/// each emitted once its action succeeded (renames, placeholders, the list, then the dropped
-/// entries). Without `apply` it reports `dpfilelist_upgrade_planned` last and writes nothing;
-/// `dpfilelist_up_to_date` alone when there is nothing to do. Returns the worst severity
-/// reported. A file that cannot be read or written is the error, naming it, and what was done
-/// before stays done: the list is replaced last, so the old one stays in place and a second
-/// run finishes the work.
-pub(crate) fn run(
+/// What `run` and `preview` work out about `download` before anything is written.
+struct WorkedOut {
+    /// The resources the run builds with: each embedded one or its `templates/` override.
+    templates: Templates,
+    /// The installed `DpFileList.bin`'s bytes; `None` when there is no file.
+    old_list: Option<Vec<u8>>,
+    /// `old_list`'s bytes did not read as a list: the error's text.
+    unreadable: Option<String>,
+    /// The file names in `download/` as the working-out listed them.
+    present: BTreeSet<String>,
+    /// The renames, placeholders and dropped entries.
+    plan: Plan,
+    /// The installed list is the official one byte for byte.
+    list_is_official: bool,
+    /// `list_is_official` and nothing to rename or write: the upgrade has nothing to do.
+    up_to_date: bool,
+}
+
+/// What the upgrade would do in `download`, worked out before anything is written (`run` and
+/// `preview` share it): the templates read first, their findings reported through `events`;
+/// `None` when a `templates/` file could not be read, its Fatal already reported.
+fn work_out(
     download: &Path,
-    apply: bool,
     ctx: &ToolContext,
-) -> anyhow::Result<Option<Severity>> {
-    let mut events = RunEvents::new(ctx, false);
-    let Some(templates) = templates::read_reported(ctx, &mut events) else {
-        return Ok(events.worst());
+    events: &mut RunEvents,
+) -> anyhow::Result<Option<WorkedOut>> {
+    let Some(templates) = templates::read_reported(ctx, events) else {
+        return Ok(None);
     };
-    let list_path = download.join(DPFILELIST);
-    let old_list = read_list_file(&list_path)?;
+    let old_list = read_list_file(&download.join(DPFILELIST))?;
     // A list that does not read as a list is replaced like any other, with nothing renamed.
     let (installed, unreadable) = match old_list.as_deref().map(cpk::dp_file_list::read) {
         None => (Vec::new(), None),
@@ -181,9 +194,106 @@ pub(crate) fn run(
     };
     let present = file_names(download)?;
     let plan = plan(&installed, &templates.official_list(), &present);
-    let official_file = templates.official_list_file();
-    let list_is_official = old_list.as_deref() == Some(official_file);
-    if list_is_official && plan.renames.is_empty() && plan.placeholders.is_empty() {
+    let list_is_official = old_list.as_deref() == Some(templates.official_list_file());
+    let up_to_date = list_is_official && plan.renames.is_empty() && plan.placeholders.is_empty();
+    Ok(Some(WorkedOut {
+        templates,
+        old_list,
+        unreadable,
+        present,
+        plan,
+        list_is_official,
+        up_to_date,
+    }))
+}
+
+/// What the DpFileList upgrade would do in `download/`, worked out before anything is
+/// written: the window's Upgrade DpFileList dialog shows it before the member confirms.
+#[derive(Debug, PartialEq, Eq)]
+#[cfg_attr(
+    not(test),
+    expect(
+        dead_code,
+        reason = "called only from the module's tests until the window's dialog calls it"
+    )
+)]
+pub(crate) struct Preview {
+    /// The CPKs renamed, as `(from, to)` file names, in the order the renames run.
+    pub(crate) renames: Vec<(String, String)>,
+    /// How many official entries have no file once the renames are made: each gets the
+    /// placeholder CPK.
+    pub(crate) placeholders: usize,
+    /// The installed entries the official list lacks that are not renamed, in the installed
+    /// order, each with its file's size in bytes when the file is in `download/` (`None`
+    /// when it is not): the game no longer loads them.
+    pub(crate) dropped: Vec<(String, Option<u64>)>,
+    /// The installed list already is the official one and every CPK it names is in
+    /// `download/`: nothing to do (the other fields are then empty).
+    pub(crate) up_to_date: bool,
+}
+
+/// `run` without `apply`'s plan for `download`, as data for the window's Upgrade DpFileList
+/// dialog rather than findings: what the run would rename, write and drop, and whether there
+/// is nothing to do. The templates' findings are reported as `run` reports them; a file that
+/// cannot be read, a `templates/` file among them, is the error.
+#[cfg_attr(
+    not(test),
+    expect(
+        dead_code,
+        reason = "called only from the module's tests until the window's dialog calls it"
+    )
+)]
+pub(crate) fn preview(download: &Path, ctx: &ToolContext) -> anyhow::Result<Preview> {
+    let mut events = RunEvents::new(ctx, false);
+    let Some(worked) = work_out(download, ctx, &mut events)? else {
+        bail!("the DpFileList upgrade cannot be planned: its templates could not be read");
+    };
+    let mut dropped = Vec::with_capacity(worked.plan.dropped.len());
+    for cpk in &worked.plan.dropped {
+        let size = dropped_size(download, &worked.present, cpk)?;
+        dropped.push((cpk.clone(), size));
+    }
+    Ok(Preview {
+        renames: worked.plan.renames,
+        placeholders: worked.plan.placeholders.len(),
+        dropped,
+        up_to_date: worked.up_to_date,
+    })
+}
+
+/// The `upgrade-dpfl` command in `download`, the PES folder's `download/` (checked to be a
+/// folder); `delete` is the window's dialog's ticked dropped CPKs, empty on the command
+/// line, which never deletes. It reports the upgrade's findings (`plan`) in the order `apply`
+/// (`--yes`) acts, each emitted once its action succeeded (renames, placeholders, the list,
+/// then the dropped entries). Applying, a dropped CPK named in `delete` whose file is
+/// present is removed, after the list is replaced, and its line is `dpfilelist_cpk_deleted`
+/// in place of `dpfilelist_cpk_dropped`; a `delete` name that is not a dropped CPK is
+/// ignored. Without `apply` it reports `dpfilelist_upgrade_planned` last and writes nothing;
+/// `dpfilelist_up_to_date` alone when there is nothing to do. Returns the worst severity
+/// reported. A file that cannot be read or written is the error, naming it, and what was
+/// done before stays done: the list is replaced last, so the old one stays in place and a
+/// second run finishes the work.
+pub(crate) fn run(
+    download: &Path,
+    apply: bool,
+    delete: &BTreeSet<String>,
+    ctx: &ToolContext,
+) -> anyhow::Result<Option<Severity>> {
+    let mut events = RunEvents::new(ctx, false);
+    let Some(WorkedOut {
+        templates,
+        old_list,
+        unreadable,
+        present,
+        plan,
+        list_is_official,
+        up_to_date,
+    }) = work_out(download, ctx, &mut events)?
+    else {
+        return Ok(events.worst());
+    };
+    let list_path = download.join(DPFILELIST);
+    if up_to_date {
         let path = ("path", list_path.display().to_string());
         events.message(finding(Code::DpfilelistUpToDate, vec![path]));
         return Ok(events.worst());
@@ -208,7 +318,7 @@ pub(crate) fn run(
             if let Some(old_list) = &old_list {
                 replace_file(&backup, old_list)?;
             }
-            replace_file(&list_path, official_file)?;
+            replace_file(&list_path, templates.official_list_file())?;
         }
         let mut context = vec![("path", list_path.display().to_string())];
         if old_list.is_some() {
@@ -221,14 +331,17 @@ pub(crate) fn run(
     }
     for cpk in &plan.dropped {
         let mut context = vec![("cpk", cpk.clone())];
-        if present.contains(cpk) {
-            let path = download.join(cpk);
-            let size = fs::metadata(&path)
-                .with_context(|| format!("cannot read the size of {}", path.display()))?
-                .len();
+        let mut code = Code::DpfilelistCpkDropped;
+        if let Some(size) = dropped_size(download, &present, cpk)? {
             context.push(("size", size_text(size)));
+            if apply && delete.contains(cpk) {
+                let path = download.join(cpk);
+                fs::remove_file(&path)
+                    .with_context(|| format!("cannot delete {}", path.display()))?;
+                code = Code::DpfilelistCpkDeleted;
+            }
         }
-        events.message(finding(Code::DpfilelistCpkDropped, context));
+        events.message(finding(code, context));
     }
     if !apply {
         let command = ("command", format!("{UPGRADE_COMMAND} --yes"));
@@ -251,6 +364,23 @@ fn read_list_file(path: &Path) -> anyhow::Result<Option<Vec<u8>>> {
             Err(error).with_context(|| format!("cannot read the installed list {}", path.display()))
         }
     }
+}
+
+/// The size of `download`'s file `cpk` in bytes; `None` when the file is not `present` (a
+/// dropped entry without a file has no size).
+fn dropped_size(
+    download: &Path,
+    present: &BTreeSet<String>,
+    cpk: &str,
+) -> anyhow::Result<Option<u64>> {
+    if !present.contains(cpk) {
+        return Ok(None);
+    }
+    let path = download.join(cpk);
+    let size = fs::metadata(&path)
+        .with_context(|| format!("cannot read the size of {}", path.display()))?
+        .len();
+    Ok(Some(size))
 }
 
 /// The names of the entries of `folder`, as they are spelled.
@@ -305,9 +435,14 @@ fn write_new(download: &Path, name: &str, bytes: &[u8]) -> anyhow::Result<()> {
 
 #[cfg(test)]
 mod tests {
+    use std::collections::BTreeMap;
+    use std::path::PathBuf;
+
+    use studio_core::PipelineEvent;
+
     use super::*;
     use crate::templates::Templates;
-    use crate::testing::scratch;
+    use crate::testing::{dpfilelist, scratch, tool_context};
 
     /// The entries of the PES 2017 install's `DpFileList.bin` (`examples/DpFileList.bin`).
     fn pes17_list() -> Vec<String> {
@@ -316,6 +451,51 @@ mod tests {
         )
         .unwrap();
         cpk::dp_file_list::read(&bytes).unwrap()
+    }
+
+    /// TC-DEP-09's install with a file for every listed CPK: the PES 2017 list in
+    /// `download`, and a `kib_of` file per entry of it.
+    fn install_pes17_full(download: &Path) {
+        fs::create_dir_all(download).unwrap();
+        let names = pes17_list();
+        let borrowed: Vec<&str> = names.iter().map(String::as_str).collect();
+        fs::write(download.join(DPFILELIST), dpfilelist(&borrowed)).unwrap();
+        for name in &names {
+            fs::write(download.join(name), kib_of(name)).unwrap();
+        }
+    }
+
+    /// A 1 KiB file of its own bytes: `name`'s bytes, repeated.
+    fn kib_of(name: &str) -> Vec<u8> {
+        name.bytes().cycle().take(1024).collect()
+    }
+
+    /// The files of `folder`, by name, with their bytes (the tests' folders hold no
+    /// subfolders).
+    fn snapshot(folder: &Path) -> BTreeMap<PathBuf, Vec<u8>> {
+        let mut files = BTreeMap::new();
+        for entry in fs::read_dir(folder).unwrap() {
+            let entry = entry.unwrap();
+            files.insert(entry.file_name().into(), fs::read(entry.path()).unwrap());
+        }
+        files
+    }
+
+    /// `message` as the line the console prints for it: severity, code, disposition and
+    /// context, so a test asserts all of them at once.
+    fn line(message: &Message) -> String {
+        let context: Vec<String> = message
+            .context
+            .iter()
+            .map(|(key, value)| format!("{key}={value}"))
+            .collect();
+        format!(
+            "{:?} {} [{:?}] ({})",
+            message.severity,
+            message.code.code,
+            message.disposition,
+            context.join(", ")
+        )
     }
 
     fn strings(names: &[&str]) -> Vec<String> {
@@ -559,5 +739,98 @@ mod tests {
             b"faces"
         );
         assert!(!download.join("4cc_40_faces.cpk").exists());
+    }
+
+    // TC-DEP-09's install with every listed CPK's file given: what the dialog shows.
+    #[test]
+    fn the_preview_lists_what_the_upgrade_would_do() {
+        let temp = scratch("upgrade_preview");
+        let download = temp.path().join("PES/download");
+        install_pes17_full(&download);
+        let ctx = tool_context(temp.path(), "");
+
+        let preview = preview(&download, &ctx).unwrap();
+
+        assert!(!preview.up_to_date);
+        assert_eq!(preview.renames.len(), 13);
+        assert!(
+            preview
+                .renames
+                .contains(&("4cc_40_faces.cpk".to_owned(), "4cc_41_teams.cpk".to_owned()))
+        );
+        assert_eq!(preview.placeholders, 19);
+        let mut dropped = vec![("4cc_60_midcup.cpk".to_owned(), Some(1024))];
+        dropped.extend((76..=79).map(|number| (format!("4cc_{number}_midcup.cpk"), Some(1024))));
+        assert_eq!(preview.dropped, dropped);
+    }
+
+    #[test]
+    fn the_preview_writes_nothing() {
+        let temp = scratch("upgrade_preview_readonly");
+        let download = temp.path().join("PES/download");
+        install_pes17_full(&download);
+        let before = snapshot(&download);
+        let ctx = tool_context(temp.path(), "");
+
+        preview(&download, &ctx).unwrap();
+
+        assert!(snapshot(&download) == before, "nothing written");
+    }
+
+    // The dialog's `delete` set: `4cc_60_midcup.cpk` ticked (a dropped CPK, deleted) and
+    // `4cc_16_balls.cpk` (an official name, not dropped, ignored).
+    #[test]
+    fn a_ticked_dropped_cpk_is_deleted_and_the_others_are_left() {
+        let temp = scratch("upgrade_delete");
+        let download = temp.path().join("PES/download");
+        install_pes17_full(&download);
+        let (events_tx, events) = crossbeam_channel::unbounded();
+        let ctx = tool_context(temp.path(), "").with_events(events_tx);
+        let delete = BTreeSet::from([
+            "4cc_60_midcup.cpk".to_owned(),
+            "4cc_16_balls.cpk".to_owned(),
+        ]);
+
+        let worst = run(&download, true, &delete, &ctx).unwrap();
+
+        // The four `dropped` findings are the run's worst.
+        assert_eq!(worst, Some(Severity::Warning));
+        let lines: Vec<String> = events
+            .try_iter()
+            .filter_map(|envelope| {
+                let PipelineEvent::Message(message) = envelope.event else {
+                    return None;
+                };
+                Some(line(&message))
+            })
+            .collect();
+        // 13 renames, 19 placeholders, the list's replacement, then the five dropped
+        // entries: the ticked one deleted, the others still dropped.
+        assert_eq!(lines.len(), 38);
+        assert_eq!(
+            lines[32..],
+            [
+                format!(
+                    "Info dpfilelist_replaced [Keep] (path={}, backup={})",
+                    download.join("DpFileList.bin").display(),
+                    download.join("DpFileList.bin.bak").display()
+                ),
+                "Info dpfilelist_cpk_deleted [Keep] (cpk=4cc_60_midcup.cpk, size=1 KiB)".to_owned(),
+                "Warning dpfilelist_cpk_dropped [Keep] (cpk=4cc_76_midcup.cpk, size=1 KiB)"
+                    .to_owned(),
+                "Warning dpfilelist_cpk_dropped [Keep] (cpk=4cc_77_midcup.cpk, size=1 KiB)"
+                    .to_owned(),
+                "Warning dpfilelist_cpk_dropped [Keep] (cpk=4cc_78_midcup.cpk, size=1 KiB)"
+                    .to_owned(),
+                "Warning dpfilelist_cpk_dropped [Keep] (cpk=4cc_79_midcup.cpk, size=1 KiB)"
+                    .to_owned(),
+            ]
+        );
+        assert!(!download.join("4cc_60_midcup.cpk").exists());
+        for number in 76..=79 {
+            let name = format!("4cc_{number}_midcup.cpk");
+            assert_eq!(fs::read(download.join(&name)).unwrap(), kib_of(&name));
+        }
+        assert!(download.join("4cc_16_balls.cpk").exists());
     }
 }
