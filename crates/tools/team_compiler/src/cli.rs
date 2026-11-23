@@ -79,9 +79,10 @@ struct CompileArgs {
     edit_mode_closed: bool,
 }
 
-/// The output mode of a compile.
+/// The output mode of a compile: the command line's `--mode`, and the Compile button's
+/// pick, which lasts the session.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum)]
-enum Mode {
+pub(crate) enum Mode {
     /// CPKs, installed into the game.
     Normal,
     /// Loose files in the output folder's test_output folder.
@@ -139,11 +140,11 @@ pub(crate) fn run(
             let settings = read_settings(&ctx.tool_settings(TOOL_ID), &common)?;
             let (layout, refs) = compile_settings(&settings, &mode)?;
             let exports_root = prepare_exports_root(&args.source, &common, ctx.paths())?;
-            // A relative output folder sits beside the executable; an absolute one replaces
-            // the base. A configured savefile path resolves the same way (`auto` runs no
-            // discovery here: it resolves at the savefile stage).
+            // A configured savefile path resolves beside the executable the way the
+            // output folder does (`auto` runs no discovery here: it resolves at the
+            // savefile stage).
             let paths = RunPaths {
-                output_folder: ctx.paths().exe_dir.join(&settings.output_folder_path),
+                output_folder: output_folder(ctx)?,
                 savefile_path: match &settings.savefile_path {
                     SavefilePath::Auto => SavefilePath::Auto,
                     SavefilePath::Path(path) => SavefilePath::Path(ctx.paths().exe_dir.join(path)),
@@ -231,6 +232,14 @@ pub(crate) fn download_folder(common: &CommonSettings) -> Result<PathBuf, CliErr
     )))
 }
 
+/// The folder a compile writes its output into: the settings read as `compile`'s preflight
+/// reads them, `output_folder_path` resolved against the executable's folder (a relative
+/// path joins it, an absolute one stands alone).
+pub(crate) fn output_folder(ctx: &ToolContext) -> Result<PathBuf, CliError> {
+    let settings = read_settings(&ctx.tool_settings(TOOL_ID), &ctx.common())?;
+    Ok(ctx.paths().exe_dir.join(&settings.output_folder_path))
+}
+
 /// A run's outcome as the exit code: its worst finding's, or `ABORTED` with the error when the
 /// run could not go on. The window's runs use it too, so their exit lines match the console's.
 pub(crate) fn verdict(outcome: anyhow::Result<Option<Severity>>) -> Result<u8, CliError> {
@@ -274,23 +283,30 @@ fn output_mode(
     }
 }
 
-/// Sideload mode for `common`'s PES version and folder: refused for PES 2015 and 2016, which
-/// no sideloading runtime serves, and when the PES folder is not a folder, since `livecpk/`
-/// goes in it.
-fn sideload_mode(common: &CommonSettings) -> Result<OutputMode, CliError> {
-    match common.pes_version {
-        PesVersion::Pes15 | PesVersion::Pes16 => {
-            return Err(invalid(anyhow!(
-                "--mode sideload is not available for {}, because no sideloading runtime \
-                 exists for it",
-                common.pes_version
-            )));
-        }
+/// Whether a runtime serving sideloaded files exists for `version`'s game: PES 2015 and
+/// 2016 have none, so sideload mode is refused for them (`sideload_mode`) and the Compile
+/// button's menu entry is disabled.
+pub(crate) fn sideload_served(version: PesVersion) -> bool {
+    match version {
+        PesVersion::Pes15 | PesVersion::Pes16 => false,
         PesVersion::Pes17
         | PesVersion::Pes18
         | PesVersion::Pes19
         | PesVersion::Pes20
-        | PesVersion::Pes21 => {}
+        | PesVersion::Pes21 => true,
+    }
+}
+
+/// Sideload mode for `common`'s PES version and folder: refused for PES 2015 and 2016, which
+/// no sideloading runtime serves, and when the PES folder is not a folder, since `livecpk/`
+/// goes in it.
+fn sideload_mode(common: &CommonSettings) -> Result<OutputMode, CliError> {
+    if !sideload_served(common.pes_version) {
+        return Err(invalid(anyhow!(
+            "--mode sideload is not available for {}, because no sideloading runtime \
+             exists for it",
+            common.pes_version
+        )));
     }
     let pes_folder = common.pes_folder();
     if !pes_folder.is_dir() {
@@ -304,7 +320,7 @@ fn sideload_mode(common: &CommonSettings) -> Result<OutputMode, CliError> {
 }
 
 /// The mode as `--mode` spells it.
-fn mode_name(mode: Mode) -> String {
+pub(crate) fn mode_name(mode: Mode) -> String {
     mode.to_possible_value()
         .expect("no `Mode` variant is skipped, so each has a value on the command line")
         .get_name()

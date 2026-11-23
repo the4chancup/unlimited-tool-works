@@ -18,6 +18,7 @@ use export_grid::{
 use studio_core::files::{open_folder, show_in_folder};
 use studio_core::{CatalogRow, HelpTarget, LogPanel, Severity, ToolContext};
 
+use crate::cli::Mode;
 use crate::gui_run::RunLog;
 use crate::messages::{self, TOOL_ID};
 use crate::view::pictures::Pictures;
@@ -28,14 +29,16 @@ use upgrade_dpfl::Outcome;
 /// A click's ask of the tool, reported for it to act on: the view is render-only, so a
 /// click never starts a run itself.
 pub(crate) enum Intent {
-    /// Compile.
-    Compile,
+    /// Compile in `Mode`: the split button's main part, labelled by the same mode.
+    Compile(Mode),
     /// Upgrade DpFileList: the upgrade's dialog opens on its preview, or the upgrade runs
     /// at once when the preview has nothing to do ([`crate::upgrade::Preview::up_to_date`]),
     /// with nothing deleted.
     UpgradeDpfl,
     /// The dialog's Upgrade: the upgrade applies, the ticked dropped CPKs deleted.
     Upgrade(BTreeSet<String>),
+    /// Open output folder: the folder a compile writes into, opened in the file manager.
+    OpenOutputFolder,
 }
 
 /// The grid's column groups: a player's 23 positions, the portraits, the 10 kits.
@@ -102,27 +105,32 @@ const LEGEND: [&[LegendEntry]; 6] = [
 ];
 
 /// The grid's detail window: what it keeps from frame to frame, the catalog it explains
-/// findings from, built once rather than on every frame, and the pictures of its top box.
-/// It also keeps whether `show` has already decided if the log starts collapsed, and the
-/// Upgrade DpFileList dialog while it is open.
+/// findings from, built once rather than on every frame, the pictures of its top box, and
+/// the Compile button's output mode, a pick for the session alone (the next launch starts
+/// on Normal; it is no setting). It also keeps whether `show` has already decided if the
+/// log starts collapsed, and the Upgrade DpFileList dialog while it is open.
 pub(crate) struct GridDetail {
     state: Detail,
     catalog: Vec<CatalogRow>,
     pictures: Pictures,
     log_start_decided: bool,
+    /// The output mode the Compile button's main part runs and reads: `Normal` until the
+    /// arrow's menu picks another, never written to the settings.
+    mode: Mode,
     /// The Upgrade DpFileList dialog's state while it is open: the preview it was
     /// opened on and the member's delete ticks.
     pub(crate) dpfl_dialog: Option<DpflDialog>,
 }
 
 impl GridDetail {
-    /// No window open, the Compiler's catalog, no picture read yet.
+    /// No window open, the Compiler's catalog, no picture read yet, the normal output mode.
     pub(crate) fn new() -> GridDetail {
         GridDetail {
             state: Detail::default(),
             catalog: messages::catalog(),
             pictures: Pictures::default(),
             log_start_decided: false,
+            mode: Mode::Normal,
             dpfl_dialog: None,
         }
     }
@@ -166,7 +174,7 @@ pub(crate) fn show(
     {
         detail.state.go_to(cell.clone());
     }
-    let mut intent = toolbar::show(ui, panel, rows, log);
+    let mut intent = toolbar::show(ui, ctx, panel, rows, log, &mut detail.mode);
     export_grid::legend(ui, (TOOL_ID, "legend"), &LEGEND);
     let egui_ctx = ui.ctx().clone();
     detail.pictures.receive(&egui_ctx);

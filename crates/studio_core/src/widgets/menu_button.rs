@@ -1,10 +1,17 @@
 //! The toolbars' menu button: egui's menu button, its label ending in the
-//! drafts' arrow and its entries meeting, and the separator between groups
-//! of entries.
+//! drafts' arrow and its entries meeting, the popup a plain button opens
+//! above itself (`menu_above`), and the separator between groups of entries.
 
 use egui::containers::menu::{MenuButton, MenuConfig, menu_style};
 
 use super::combo::rows_meet;
+
+/// The style `menu_button` and `menu_above` draw a menu in: egui's `menu_style`
+/// with the entries meeting (`combo::rows_meet` says why).
+fn menu_style_meeting(style: &mut egui::Style) {
+    menu_style(style);
+    rows_meet(&mut style.spacing);
+}
 
 /// A toolbar menu button: egui's menu button with `label` followed by ` ⏷`
 /// (U+23F7, the symbols font's), as the drafts draw every menu button. egui
@@ -23,14 +30,27 @@ pub fn menu_button<R>(
     label: &str,
     add_contents: impl FnOnce(&mut egui::Ui) -> R,
 ) -> egui::InnerResponse<Option<R>> {
-    let config = MenuConfig::find(ui).style(|style: &mut egui::Style| {
-        menu_style(style);
-        rows_meet(&mut style.spacing);
-    });
+    let config = MenuConfig::find(ui).style(menu_style_meeting);
     let (response, inner) = MenuButton::new(format!("{label} \u{23f7}"))
         .config(config)
         .ui(ui, add_contents);
     egui::InnerResponse::new(inner.map(|inner| inner.inner), response)
+}
+
+/// A menu drawn above `response`'s widget, their right edges meeting
+/// (`RectAlign::TOP_END`): a click on the widget opens it, one inside or
+/// outside it closes it. Styled as `menu_button`'s menu is, so its entries
+/// meet the same way; for a button that opens its menu upward rather than
+/// under itself (the Compile button's arrow, the log sitting below the toolbar).
+pub fn menu_above<R>(
+    response: &egui::Response,
+    add_contents: impl FnOnce(&mut egui::Ui) -> R,
+) -> Option<R> {
+    egui::Popup::menu(response)
+        .align(egui::RectAlign::TOP_END)
+        .style(menu_style_meeting)
+        .show(add_contents)
+        .map(|inner| inner.inner)
 }
 
 /// The line between two groups of a toolbar menu's entries, in the middle

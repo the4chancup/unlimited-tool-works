@@ -50,7 +50,7 @@ pub use enabled::{add_enabled, add_enabled_ui};
 pub use in_use_frame::in_use_frame;
 pub use ink::ink_span;
 pub use log_panel::{LogFilter, LogLine, LogPanel, LogResponse, well_frame};
-pub use menu_button::{menu_button, menu_separator};
+pub use menu_button::{menu_above, menu_button, menu_separator};
 pub use modal::{
     dialog_form, dialog_page, modal, modal_buttons, modal_fit_contents, modal_frame,
     modal_sentence_gap,

@@ -87,20 +87,27 @@ pub(crate) fn check_lines(rows: &[Row]) -> (Vec<LogLine>, Vec<CellKey>) {
 }
 
 impl RunLog {
-    /// Starts `compile` with no arguments on a thread of its own, through the command line's own
+    /// Starts `compile --mode <mode>` on a thread of its own, through the command line's own
     /// parser, preflight and verdict, so the button cannot compile anything the command line
-    /// would refuse. `running` is the tool's running-PES probe, handed to `cli::run`. The
-    /// previous run's lines go; the check's stay. Called only while no run is in flight (the
-    /// button is disabled while one runs).
-    pub(crate) fn start_compile(&mut self, ctx: &ToolContext, running: fn() -> Vec<RunningPes>) {
+    /// would refuse: a mode the command refuses (sideload where no runtime serves it) is
+    /// refused the same way, its `error:` line in the log. `running` is the tool's
+    /// running-PES probe, handed to `cli::run`. The previous run's lines go; the check's
+    /// stay. Called only while no run is in flight (the button is disabled while one runs).
+    pub(crate) fn start_compile(
+        &mut self,
+        ctx: &ToolContext,
+        mode: cli::Mode,
+        running: fn() -> Vec<RunningPes>,
+    ) {
         self.lines.truncate(self.check_len);
         // The check's verdict on the game's list stays: the run's preflight reports it again
         // when the list still is not the official one, and the check after the run sets it.
         // A fresh formatter: export ids restart with each run.
         self.formatter = EventLines::new();
+        let mode = cli::mode_name(mode);
         let matches = cli::command()
-            .try_get_matches_from([TOOL_ID, "compile"])
-            .expect("`compile` with no arguments is a valid compiler command line");
+            .try_get_matches_from([TOOL_ID, "compile", "--mode", mode.as_str()])
+            .expect("every `Mode` is a `--mode` value, a valid compiler command line");
         let (sender, events) = unbounded();
         let ctx = ctx.with_events(sender);
         let thread = std::thread::spawn(move || cli::run(&matches, &ctx, running));
@@ -209,6 +216,16 @@ impl RunLog {
     /// Whether a run is in flight.
     pub(crate) fn is_running(&self) -> bool {
         self.run.is_some()
+    }
+
+    /// Every line's text, the check's then the run's, joined with `\n`: the whole log, so a
+    /// report holds the findings too; the log panel's filter hides lines for drawing only.
+    pub(crate) fn report(&self) -> String {
+        self.lines
+            .iter()
+            .map(|line| line.text.as_str())
+            .collect::<Vec<_>>()
+            .join("\n")
     }
 
     /// The lines shown, oldest first.
@@ -391,13 +408,13 @@ mod tests {
         let mut log = RunLog::default();
         assert!(!log.is_running());
 
-        log.start_compile(&ctx, Vec::new);
+        log.start_compile(&ctx, cli::Mode::Normal, Vec::new);
         assert!(log.is_running());
         finish(&mut log);
         assert_eq!(log.texts(), tracer_lines(root));
         assert!(root.join("PES/download/4cc_99_test.cpk").is_file());
 
-        log.start_compile(&ctx, Vec::new);
+        log.start_compile(&ctx, cli::Mode::Normal, Vec::new);
         finish(&mut log);
         assert_eq!(log.texts(), tracer_lines(root));
     }
@@ -425,7 +442,8 @@ mod tests {
         install_pes(root);
         let ctx = tool_context(root, "");
         let mut tool = Tool::new();
-        tool.run_log.start_compile(&ctx, Vec::new);
+        tool.run_log
+            .start_compile(&ctx, cli::Mode::Normal, Vec::new);
         poll_until_done(|| {
             tool.tick(&ctx);
             tool.run_log.is_running()
@@ -773,7 +791,7 @@ mod tests {
         let root = temp.path();
         let ctx = tool_context(root, "[compiler]\ncpk_name = 'a/b'\n");
         let mut log = RunLog::default();
-        log.start_compile(&ctx, Vec::new);
+        log.start_compile(&ctx, cli::Mode::Normal, Vec::new);
         finish(&mut log);
         let lines = log.lines();
         assert_eq!(lines.len(), 2, "{lines:?}");

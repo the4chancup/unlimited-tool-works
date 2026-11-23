@@ -37,6 +37,8 @@ mod validation;
 mod view;
 
 use std::collections::BTreeSet;
+use std::fs;
+use std::path::PathBuf;
 
 use studio_core::{
     CliError, HelpSection, HelpTopic, LogPanel, RunningPes, StudioTool, ToolContext,
@@ -99,6 +101,30 @@ impl Tool {
             Err(error) => self.run_log.append_refusal(&error),
         }
     }
+
+    /// The Compile menu's Open output folder: `create_output_folder`'s folder opened in
+    /// the file manager; a folder that cannot be resolved or created is a line in the
+    /// log, as a refused run's is.
+    fn open_output_folder(&mut self, ctx: &ToolContext) {
+        match create_output_folder(ctx) {
+            Ok(folder) => studio_core::files::open_folder(&folder),
+            Err(error) => self.run_log.append_refusal(&error),
+        }
+    }
+}
+
+/// `ctx`'s output folder, `cli::output_folder`'s, created with `fs::create_dir_all` when
+/// no run has made it yet: a file manager asked for a missing folder opens another one
+/// instead. The path, or the error's text as `append_refusal` prints it.
+pub(crate) fn create_output_folder(ctx: &ToolContext) -> Result<PathBuf, String> {
+    let folder = cli::output_folder(ctx).map_err(|error| error.to_string())?;
+    fs::create_dir_all(&folder).map_err(|error| {
+        format!(
+            "cannot create the output folder {}: {error}",
+            folder.display()
+        )
+    })?;
+    Ok(folder)
 }
 
 impl Default for Tool {
@@ -151,7 +177,8 @@ impl StudioTool for Tool {
             checking,
             &mut self.detail,
         ) {
-            Some(Intent::Compile) => self.run_log.start_compile(ctx, self.running),
+            Some(Intent::Compile(mode)) => self.run_log.start_compile(ctx, mode, self.running),
+            Some(Intent::OpenOutputFolder) => self.open_output_folder(ctx),
             Some(Intent::UpgradeDpfl) => self.open_upgrade(ctx),
             Some(Intent::Upgrade(delete)) => self.run_log.start_upgrade(delete, ctx),
             None => {}
