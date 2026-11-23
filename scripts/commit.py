@@ -26,7 +26,10 @@ a draft is pushed for the maintainer to open on the project's pages, often befor
 checkpoint, and a template-literal image path once reached CI that way. A commit that
 changes a `.md` or `.html` file runs the doc-pointer gate (`scripts/gates/doc_pointers.py`,
 under a second) the same way: a broken pointer otherwise surfaces only at the next
-checkpoint, which then fails on a docs commit long since made.
+checkpoint, which then fails on a docs commit long since made. A commit that changes a `.rs`,
+`.toml` or `.py` file runs the comment gate (`scripts/gates/comment_refs.py`, a few seconds)
+likewise: a test fixture's `# Worklog` line, read as a comment, once failed `just gates` on
+main from a merge until a slice's review found it.
 
 Lead, sidekick, reviewer or script, nobody runs `git commit` or `git merge` with a message of
 their own any other way: a script that worded its own once made 49 commits no reader of the
@@ -93,6 +96,10 @@ def main(argv: list[str]) -> int:
     docs = any(path.endswith((".md", ".html")) for path in changed)
     if docs and not passes("scripts/gates/doc_pointers.py"):
         print("commit: nothing committed; a doc pointer is broken (above)")
+        return 1
+    sources = any(path.endswith((".rs", ".toml", ".py")) for path in changed)
+    if sources and not passes("scripts/gates/comment_refs.py"):
+        print("commit: nothing committed; a comment points at the project's history (above)")
         return 1
     code = subprocess.run(["git", "commit", "-F", str(message), *rest]).returncode
     if code == 0:
