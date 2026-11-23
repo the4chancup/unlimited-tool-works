@@ -219,9 +219,13 @@ draft checked, for the maintainer to publish; running sidekicks and jobs are not
        landed first time). Captured beside the draft (scene `.tmp/look_sw`, ten kits on ten
        icons): the strip's place and size match; the label's glyphs stand 1 pixel lower.
        The stretched pattern is a `ui_decisions.html` card
-     - [ ] SWE-2 round SW1 over a, b and c (two parts, running)
-     - [ ] d a compile's colours worked out from the texture, and a dropped kit's base
-       `UniColor.bin` colours
+     - SWE-2 round SW1 over a, b and c (two parts): 5 accepted, none of reach (a), so the
+       rounds end here; among them, a referee export's kits no longer carry an icon (the
+       compile writes none for them). The fixes: SWE-2, running
+     - [ ] d a compile's colours worked out from the texture, and the base `UniColor.bin`
+       colours for a kit the check dropped or whose compile failed (a failed kit keeps its
+       listed pair today, though its entry is never written). Its compile half waits on a
+       run updating the cells (TC-GUI-12)
    - Then the row actions, the ID cell's editing, the
      watcher and cache, Sizes and sorting, and the rest of the toolbar
      (`plans/team_compiler/gui.md` "Toolbar"; the build has a plain Compile button): the
