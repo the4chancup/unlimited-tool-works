@@ -22,7 +22,7 @@ use crate::messages::{
     patch_skip, version_mismatch_sentence,
 };
 use crate::session::{self, Session};
-use crate::{diff, settings, teams_list};
+use crate::{diff, replay, settings, teams_list};
 
 // The exit codes are the command line's contract with scripts, the Compiler's meanings.
 /// Exit code of a command that did its work with no Error finding.
@@ -50,6 +50,9 @@ enum SaveEditorCommand {
     CheckAatf(CheckAatfArgs),
     /// Merge the save's team names and ids into the data directory's teams_list.txt.
     ExportTeamsList(ExportTeamsListArgs),
+    /// Write a problem report's earlier session (a zip under its sessions/ folder) back as
+    /// files, its saves rebuilt.
+    UnpackSession(UnpackSessionArgs),
 }
 
 /// `check-aatf <save> [--teams <list>] [--rules <file|name>]`.
@@ -116,6 +119,15 @@ struct ApplyArgs {
     edit_mode_closed: bool,
 }
 
+/// `unpack-session <session zip> <folder>`.
+#[derive(Debug, Args)]
+struct UnpackSessionArgs {
+    /// The session's zip.
+    bundle: PathBuf,
+    /// The folder to write into: new, or empty.
+    folder: PathBuf,
+}
+
 /// `export-toml <save> --team <id> --out <file>` or `--all-teams --out-dir <folder>`: the
 /// two forms are exclusive, one is required, and each takes its own destination.
 #[derive(Debug, Args)]
@@ -161,6 +173,11 @@ pub(crate) fn run(
         SaveEditorCommand::CheckAatf(args) => check_aatf(&args, ctx, &mut report)?,
         SaveEditorCommand::ExportTeamsList(args) => {
             export_teams_list(&args, ctx.paths().data_dir.as_deref(), &mut report)?;
+        }
+        SaveEditorCommand::UnpackSession(args) => {
+            let bundle = replay::unpackable_bundle(&args.bundle, &args.folder).map_err(invalid)?;
+            replay::unpack_bundle(&bundle, &args.folder)
+                .map_err(|error| CliError::new(WRITE_FAILED, error))?;
         }
     }
     Ok(exit_code(report.worst()))

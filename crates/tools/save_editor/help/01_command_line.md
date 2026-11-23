@@ -10,6 +10,7 @@ UTW save-editor apply-patch <aesthetics_patch.toml> --base <save> --out <save> [
 UTW save-editor diff <first save> <second save> [--aesthetics | --gameplay] [--json]
 UTW save-editor check-aatf <save> [--teams <list>] [--rules <file|name>]
 UTW save-editor export-teams-list <save> [--yes]
+UTW save-editor unpack-session <session zip> <folder>
 ```
 
 **Writing a save**
@@ -149,6 +150,15 @@ list (`teams_list_written`), with the dropped changes left out. When the data fo
 take the file, or none is chosen yet, the command prints the error line `teams_list_read_only`
 and writes nothing.
 The exit code is 1 when an error line was printed, and 0 otherwise.
+
+**Unpacking a report's earlier sessions**
+
+A problem report saved with Include earlier sessions ticked holds each earlier session as a
+zip in its `sessions/` folder, with its saves packed. `unpack-session` writes such a zip's
+files back as they were: each file the session read into `<folder>/inputs/` and each file it
+wrote into `<folder>/outputs/`, named with its number in the session (`0-EDIT00000000`). The
+folder must be new or empty. A save that does not rebuild to the size and SHA-256 its session
+noted stops the command before anything is written.
 
 **Exit codes**
 
