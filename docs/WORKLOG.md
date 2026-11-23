@@ -250,9 +250,9 @@ draft checked, for the maintainer to publish; running sidekicks and jobs are not
      the hidden detail window, a double-click under the window opens nothing, Help opens
      behind it, a refused check's line stays in the log), so a round 4 is owed. The lead's
      draft text: the dialog's counts at one and the archive tooltip. Its fixes are two SWE-2
-     slices: G5a (`export_grid`'s detail window, the upward menu's test), running, and G5b
-     (`team_compiler`: the log, the dialog, the help links, the citations), merged
-     `51cab105`; then their SWE-2 loop, then Carbon round 4
+     slices, both merged: G5a (`export_grid`'s detail window, the upward menu's test),
+     `daab1034`, and G5b (`team_compiler`: the log, the dialog, the help links, the
+     citations), `51cab105`. Due: their SWE-2 loop, then Carbon round 4
    - [ ] The Compile button's mode list, Open output folder and Copy report (TC-GUI-11, and
      TC-GUI-33's clause that Compile for sideloading stays enabled while the DpFileList is
      outdated; DECISIONS 2026-11-23 "the Compile menu's Copy report copies the whole log").
@@ -3910,6 +3910,12 @@ pruned when their phase closes; they stay in git history. A question only the ma
 can answer is not an issue: it goes to `docs/maintainer/questions.html`, and an issue that waits on one
 points there.
 
+- open (2026-11-23) — the grid's detail window grows for a few frames after it opens: when it
+  replaces a smaller pinned window, it grows about 27 points a frame for four frames (387 to
+  485 points tall) before it settles, measured in `export_grid`'s tests by G5a. The findings'
+  `ScrollArea` sizes itself to the space the `Area` had last frame, so the window reaches its
+  height a step at a time. It predates G5a (the same growth with G5a's change undone). Due: a
+  look in the built window to see whether a member notices it, then a fix if one does.
 - open (2026-11-23) — `just corner-radius` reads only `CornerRadius::same(` and
   `.corner_radius(`, so a painter's `rect_filled(rect, 2.0, …)` passed (`export_grid`'s detail
   top box, Carbon "C-grid3-11"). Widening it to a numeric radius of `rect_filled` and
