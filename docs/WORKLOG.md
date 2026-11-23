@@ -13,8 +13,8 @@ is in `AGENTS.md` ("Working documents").
 
 One line per piece of work in flight; the items below hold the detail.
 
-- The Compiler's grid (item 6): Carbon's round 4 is ruled; its fixes are in three SWE-2
-  slices, then a SWE-2 round over them and Carbon's round 5.
+- The Compiler's grid (item 6): Carbon's round 4's fixes are merged; a SWE-2 round over
+  them is running, then Carbon's round 5.
 - `0.0.3-vgl27.2`, the next VGL build: built and checked, waiting for the maintainer to hand
   it over.
 - `0.0.2-pes14.3`, PES 2014 Build 3: tagged and checked, waiting for the maintainer to publish.
@@ -283,7 +283,9 @@ draft checked, for the maintainer to publish; running sidekicks and jobs are not
      lead's fixes: the draft's sideload button `172444d2`, the log line's click in the plan
      and TC-GUI-15 `81b7a48c`. The rest is three SWE-2 slices: G8a (`export_grid`'s Esc,
      Help raised again), G8c (the portraits box, the help texts, a dead branch), G8d (the
-     legend, a tooltip and an error line, tested). Then a SWE-2 round over them, then
+     legend, a tooltip and an error line, tested), all merged: G8a `e0215253`, G8c
+     `e75b033b` (the draft's help texts with it, `79ceba74`), G8d `8baf7779` (its error
+     line was tested already). Running: a SWE-2 round over the three, in two parts. Then
      Carbon's round 5.
    - [ ] The Compile button's mode list, Open output folder and Copy report (TC-GUI-11, and
      TC-GUI-33's clause that Compile for sideloading stays enabled while the DpFileList is
