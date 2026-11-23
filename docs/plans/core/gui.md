@@ -1285,6 +1285,21 @@ real libs. A draft that must travel as one attachment is bundled by
 `scripts/drafts/bundle_drafts.py` (the host, every tool script and its images inlined into one
 HTML file); easy prototyping comes first, so the bundle is a convenience, not the format.
 
+The help's texts are the one thing a draft takes from the build instead of sampling it.
+`docs/prototypes/help.js` holds the build's help: every chapter's topics, each tool's catalog,
+and the line above a Messages table. The host draws its help window and its log lines' texts
+from that file. A test in `studio` compares the file with the help the build assembles from
+the registered tools, and on a difference it fails naming `just draft-help`, which writes the
+file again. The file is generated because a hand-made copy fell behind each time a catalog
+row changed. Placeholder texts would not do either: the draft's windows show catalog text, so
+placeholders would change their sizes and spoil the comparisons with the built window. Two
+kinds of help text stay in the drafts:
+
+- the What's new chapter, a sample changelog: the real one changes with nearly every change a
+  member would notice, and a sample shows its layout as well;
+- texts the plan adds before the build has them (a code the build's catalog lacks yet), kept
+  in their tool's draft script until the build carries them.
+
 Each tool page is the first step of its view's build: Phase 8's list in `development_plan.md`
 names it ahead of every view, and each tool plan says where its draft sits in that tool's
 build order. A draft is drawn whole, every screen the tool's plan describes with sample data,

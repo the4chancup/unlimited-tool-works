@@ -20046,3 +20046,18 @@ change. The rolling whole runs catch that.
 Plan: no plan edit needed: it is how the work is verified, not what the suite does. RUNBOOK
 "Phases and releases" and CONTRIBUTING "Mutation runs" change when it is built; the worklog
 item holds it until then.
+
+## 2026-11-23 — prototypes — the drafts take the help's texts from the build, through a generated file a test checks (maintainer)
+Decision: `docs/prototypes/help.js` holds the build's help (every chapter's topics, each
+tool's catalog, the line above a Messages table), and the drafts draw their help window and
+log lines from it. A test in `studio` fails when the file differs from the help the build
+assembles, naming `just draft-help`, which writes it again. The What's new chapter, and texts
+the plan adds before the build has them, stay in the drafts.
+Why: the draft's copies were updated by hand each time a catalog row changed, and fell behind.
+Placeholder texts were the maintainer's fallback, not chosen: the draft's windows show catalog
+text, so placeholders would change their sizes and spoil the comparisons with the built
+window. What's new is left out because the changelog changes with nearly every change a member
+would notice, which would make the test fail on most commits, while a sample shows its layout
+as well.
+Plan: `core/gui.md` "Prototypes before implementation", the paragraph starting "The help's
+texts are the one thing".
