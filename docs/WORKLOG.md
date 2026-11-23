@@ -23,8 +23,8 @@ traced again at a phase's converge.
 
 One line per piece of work in flight; the items below hold the detail.
 
-- The Compiler's grid (item 6): Carbon's round 5's fixes are merged (G9); SWE-2's round over
-  them is running, then Carbon's round 6.
+- The Compiler's grid (item 6): Carbon's round 5's fixes and SWE-2's round over them are in;
+  Carbon's round 6 is running.
 - `0.0.3-vgl27.2`, the next VGL build: built and checked, waiting for the maintainer to hand
   it over.
 - `0.0.2-pes14.3`, PES 2014 Build 3: tagged and checked, waiting for the maintainer to publish.
@@ -321,8 +321,10 @@ draft checked, for the maintainer to publish; running sidekicks and jobs are not
        now states it) and the legend's title click tested; a dead portrait fallback and two
        stale doc comments gone (SWE-2; the lead fixed three DpFileList rows the slice's grep
        found)
-     - [ ] **S-g9** [after G9] SWE-2's round over G9
-     - [ ] **C6** [after S-g9] round 6
+     - [x] **S-g9** [after G9] SWE-2's round over G9 (rulings "S-g9 r1"): 1 accepted, a real
+       input (two `refs` exports read "is in the run" before any run); the lead reworded five
+       catalog rows the check logs before a run (`4e4c999b`)
+     - [ ] **C6** [after S-g9] round 6, at `4e4c999b`: running
    - [x] **tbmenu** The Compile button's mode list, Open output folder and Copy report (TC-GUI-11, and
      TC-GUI-33's clause that Compile for sideloading stays enabled while the DpFileList is
      outdated; DECISIONS 2026-11-23 "the Compile menu's Copy report copies the whole log").
