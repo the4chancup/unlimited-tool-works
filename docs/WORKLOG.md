@@ -173,8 +173,9 @@ draft checked, for the maintainer to publish; running sidekicks and jobs are not
        parts:
        - [x] 1c-iii-a (2026-11-23, merge `7a488e81`, SWE-2): `upgrade.rs`'s preview as data,
          the deletions the member ticked (`dpfilelist_cpk_deleted`), the catalog's texts
-       - 1c-iii-b (SWE-2, `sk/grid1c3`, running): the button and the dialog over them, the
-         button shown after a run's preflight, as briefed before the next part's decision
+       - [x] 1c-iii-b (2026-11-23, merge `bdfccc40`, SWE-2): the button and the dialog over
+         them (TC-GUI-33), the button shown after a run's preflight, as briefed before
+         1c-iii-c's decision. Review round S1's fixes run on `sk/review_s1`
        - 1c-iii-c: the list checked with each check of the exports and after an upgrade, not
          by a run alone; the button in the selection blue; Compile disabled while the list is
          outdated, sideloading and the test mode enabled (DECISIONS 2026-11-23); with review
