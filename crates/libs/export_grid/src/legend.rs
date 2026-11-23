@@ -111,7 +111,7 @@ fn entries(ui: &mut egui::Ui, id: egui::Id, columns: &[&[LegendEntry]]) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::testing::{Headless, press, release};
+    use crate::testing::{Headless, press, release, text_shape};
 
     /// The Export upgrader's pairs: two columns of two states.
     const COLUMNS: [&[LegendEntry]; 2] = [
@@ -219,5 +219,39 @@ mod tests {
             warning.center().y,
             "a lone entry centred over both rows"
         );
+    }
+
+    #[test]
+    fn a_line_runs_under_the_bar_across_the_legends_width() {
+        let drawn = Headless::new().frame(Vec::new(), |ui| legend(ui, "legend", &COLUMNS));
+        let stroke = crate::testing::dark().widgets.noninteractive.bg_stroke;
+        let lines: Vec<[egui::Pos2; 2]> = crate::testing::lines(&drawn, stroke)
+            .into_iter()
+            .filter(|[from, to]| from.y == to.y)
+            .collect();
+        assert_eq!(lines.len(), 1, "one line under the bar: {lines:?}");
+        let [from, to] = lines[0];
+        assert_eq!((from.x, to.x), (0.0, 1280.0), "across the legend's width");
+        // Under the entries: 3 margin, their two rows and gap (33.3125), 3 more: 39.3125.
+        assert_eq!(from.y, 39.3125, "at the bar's bottom");
+    }
+
+    // A name's node is no proof it is painted: the name is a text run beside its swatch.
+    #[test]
+    fn each_entrys_name_is_painted_beside_its_swatch() {
+        let drawn = Headless::new().frame(Vec::new(), |ui| legend(ui, "legend", &COLUMNS));
+        let visuals = crate::testing::dark();
+        for (fill, name) in [
+            (look(CellState::Unchecked, None, &visuals).fill, "Unchecked"),
+            (look(CellState::Checking, None, &visuals).fill, "Checking"),
+            (
+                look(CellState::FullOk, Some(Outline::Warning), &visuals).fill,
+                "Warning",
+            ),
+        ] {
+            let swatch = swatch(&drawn, fill);
+            let at = text_shape(&drawn, name).pos;
+            assert!(at.x > swatch.right(), "{name}'s run right of its swatch");
+        }
     }
 }
