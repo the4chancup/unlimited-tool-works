@@ -152,7 +152,9 @@ exist yet (every Phase 2 crate), the plan's data-shape rules stand in for one.
   write it unprompted.
 - `///` doc comment on every `pub` item, written for the PES-literate non-Rustacean: what it is in
   format or pipeline terms, and any invariant the signature does not show. A doc that restates the
-  name (`/// Returns the name.`) is worse than none. Inline `//` comments only for non-obvious
+  name (`/// Returns the name.`) is worse than none. A condition another item owns is linked, not
+  retold (``when the preview has nothing to do ([`Preview::up_to_date`])``): a retelling drops a
+  qualifier, and stays wrong when the owner changes. Inline `//` comments only for non-obvious
   *why* (format quirks, perf rationale, SAFETY), never to narrate what the next line does.
 - **Code does not refer to the legacy tools or to the project's history.** No tool the suite
   replaces or mirrors (Red, Blue, 4ccEditor, pes-file-tools, the Blender add-ons, the converters,
