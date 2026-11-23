@@ -20011,3 +20011,18 @@ it.
 Why: the maintainer's answer on the UI decisions page: "Pretty nice change."
 Plan: no plan edit needed: `team_compiler/gui.md` "GUI: the live-validating team grid"
 already describes the pattern.
+
+## 2026-11-23 — worklog — the worklog stays Markdown, and a roadmap page is generated from it (maintainer)
+Decision: what the lead is working on is read from a "Now" block at the top of
+`docs/WORKLOG.md`, one line per thread in flight, and shown in `docs/maintainer/roadmap.html`,
+which a script writes from the worklog whenever it is committed. The worklog itself stays
+Markdown. Its Issues section is audited and pruned first; whether it moves to a file of its
+own is decided after.
+Why: the maintainer, back from an absence, could not find a slice in flight (RX) in the
+worklog's 4,975 lines, where it was a mention inside another item. Writing the worklog in
+HTML would make every agent's frequent edits costlier and easier to break, and the five
+scripts that read it as Markdown would change; a page generated from it repeats nothing by
+hand, so it cannot drift. Moving the issues alone would not make them less stale: about 100
+are open, some since October, and 21 resolved ones are still listed.
+Plan: no plan edit needed: it is how the work is tracked, not what the suite does; the
+worklog's step holds it, and `AGENTS.md`'s table changes when the page exists.
