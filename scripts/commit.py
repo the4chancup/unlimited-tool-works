@@ -76,6 +76,13 @@ def main(argv: list[str]) -> int:
         print(f"commit: nothing committed; fix {message} (docs/CONTRIBUTING.md \"Commits\")")
         return 1
     if merge is not None:
+        # A merge with nothing to bring in is a slip: run in the branch's own worktree (a `cd`
+        # left behind), or the commit it follows failed. git only says "Already up to date".
+        contained = ["git", "merge-base", "--is-ancestor", merge, "HEAD"]
+        if subprocess.run(contained).returncode == 0:
+            print(f"commit: nothing merged; {merge} is already in {Path.cwd()}'s HEAD: merge "
+                  "from the tree that lacks it, after the branch's commit")
+            return 1
         return subprocess.run(["git", "merge", "--no-ff", merge, "-F", str(message)]).returncode
     add_new(rest)
     changed = changed_paths(rest)
