@@ -93,8 +93,9 @@ impl Tool {
     /// command finds it), read once now, opens the dialog on it, unless the list is already
     /// the official one with every CPK it names there (`up_to_date`, the member having fixed
     /// it by hand or through the command line), when the upgrade runs at once with nothing
-    /// deleted. The folder the preview was read from goes with the dialog and the run, since
-    /// the settings may have changed while the dialog was open. A preview that cannot be
+    /// deleted. The folder the preview was read from goes with the dialog and the run, so the
+    /// run acts on the folder the dialog showed, whatever else runs in the click's frame. A
+    /// preview that cannot be
     /// read, `download/` missing or a file in it unreadable, is a line in the log as a
     /// refused run's is, and opens nothing.
     fn open_upgrade(&mut self, ctx: &ToolContext) {

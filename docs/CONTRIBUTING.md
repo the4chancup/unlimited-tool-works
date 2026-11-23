@@ -189,8 +189,7 @@ exist yet (every Phase 2 crate), the plan's data-shape rules stand in for one.
   dialog's preview describe the install and settings they ran with, so when those change (the
   sidebar's PES version, the switch to a game that started running), the check runs again and
   an open dialog closes. A confirmation acts on what its preview showed, the folder included,
-  and never resolves it again from the settings: they may have changed while the dialog was
-  open.
+  never on a folder resolved again from the settings in the click's frame.
 - **A window fits the screen, and what covers a widget takes its pointer.** A window whose
   content grows with its input (a cell's findings) scrolls inside the screen, its buttons
   always in view. A panel painted over scrolled widgets (a sticky title row) also takes the
