@@ -161,8 +161,10 @@ fn export_row(checked: CheckedSource, teams_list: &TeamsList) -> Row {
         },
     };
     let shallow = disk.archive;
-    // An export set aside before its files were listed shows no box: nothing is known of it.
-    let boxes = (!disk.archive && checked.parsed.is_some()).then(|| Boxes {
+    // An export set aside before its files were listed shows no box: nothing is known of
+    // it. Nor does a `.7z`: reading a picture out of the solid archive decompresses it
+    // whole, which only its deep check does.
+    let boxes = (source.kind != SourceKind::SevenZ && checked.parsed.is_some()).then(|| Boxes {
         export: source.path.clone(),
         logo: logo_file(&checked, referee).map(|file| picture(&source.path, &file)),
     });
@@ -547,19 +549,20 @@ fn logo_file(checked: &CheckedSource, referee: bool) -> Option<FileDescriptor> {
     marker.or(main).cloned()
 }
 
-/// What a folder export's top boxes show: its files as pictures, and the file standing for
-/// the export (`logo_file`). An archive's cells show no picture: reading one out of an
-/// archive means decompressing it whole.
+/// What an export's top boxes show: its files as pictures, and the file standing for the
+/// export (`logo_file`). A `.7z` export is never given one: reading a picture out of the
+/// solid archive would decompress it whole.
 struct Boxes {
-    /// The export's folder.
+    /// The export's folder, or its `.zip` file.
     export: PathBuf,
     /// The logo, or a referee export's marker.
     logo: Option<PictureFile>,
 }
 
-/// `file`, a file of the export in the folder `export`, as the picture a window reads. Its
-/// path is the one on disk (`source`), which differs from the export's own under a folder
-/// layer the listing flattened.
+/// `file`, a file of the export `export`, as the picture a window reads. `export` is the
+/// export's folder, or its `.zip` file; `path` is the file's `source`: an entry name for
+/// a `.zip`, and the path on disk for a folder, which differs from the export's own under
+/// a folder layer the listing flattened.
 fn picture(export: &Path, file: &FileDescriptor) -> PictureFile {
     PictureFile {
         export: export.to_owned(),
