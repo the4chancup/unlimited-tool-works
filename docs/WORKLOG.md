@@ -474,6 +474,11 @@ has no manifest (DECISIONS 2026-11-12 "every export kind is recovered from an ol
 writes what is correctness-critical; sidekicks implement, two or three at once; a review's
 depth follows its surface's tier. A review that cannot run is queued in the lead's handover,
 and no phase closes with one outstanding.
+- [ ] A periodic review of the dev cycle itself (`PREVENTION.md`, DECISIONS 2026-11-23 "a
+  periodic review of the cycle"): designed, waiting on the maintainer's start. It begins with
+  a backfill of two weeks of prevention lines into the log, then the first review. At the
+  start, `AGENTS.md` gains the file's row (it is at its 16 KB cap: something is cut first)
+  and the dev cycle chart its loop.
 
 ---
 

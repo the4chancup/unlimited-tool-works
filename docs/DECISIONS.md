@@ -19909,3 +19909,14 @@ Compile stayed disabled for a list that was no longer the active one, or Upgrade
 stayed hidden for one that was outdated. The plan's live validation watched only the exports
 folder.
 Plan: `plans/team_compiler/gui.md` "Live validation (no Check or Refresh buttons)".
+
+## 2026-11-23 — dev cycle — a periodic review of the cycle looks for the causes prevention keeps answering
+Decision: every prevention line also goes into one log, `docs/PREVENTION.md`, named by its
+cause. After about 20 new entries, or at a phase's close, the lead and a reviewer of another
+model family review the cycle from the log: a cause that recurs despite its fix gets a stronger
+control (a script or gate over a written rule), and rules that duplicate, contradict or never
+fired are merged or deleted. It starts on the maintainer's go, with a backfill of two weeks.
+Why: prevention written one incident at a time cannot see a cause that returns after its fix,
+and its lines pile up whether they work or not: three slices in a row copied test setup
+although the briefing skill had gained a line against it twice.
+Plan: `PREVENTION.md` (new); its row in `AGENTS.md`'s documents table lands at the start.
