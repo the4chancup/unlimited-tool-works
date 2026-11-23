@@ -171,8 +171,8 @@ fn a_bc7_dds_skin_keeps_its_blocks_on_pes_21_and_is_bc3_on_pes_18() {
 #[test]
 fn a_raster_nrm_texture_is_a_bc3_normal_map_on_pes_21() {
     let sandbox = Sandbox::new("tex_png_nrm");
-    // A color raster of the same size would be BC7 on PES 21; the `_nrm` stem makes it a
-    // normal map, which is BC3 (DXT5nm) on every version.
+    // The fixture is opaque, so as a color raster it would be BC1; the `_nrm` stem makes it
+    // a normal map, which is BC3 (DXT5nm) on every version.
     write_skin_player(
         &sandbox,
         "co Midcup Nrm",
