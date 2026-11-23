@@ -108,6 +108,22 @@ fn assert_dialog_open(nodes: &[accesskit::Node]) {
     );
 }
 
+/// Stubs the Save… picker to answer `out` and clicks Save…; the frame
+/// returned draws the "Saved to" line and the Close-only buttons. The
+/// dialog must already be open.
+fn save_through(
+    egui_ctx: &egui::Context,
+    app: &mut crate::shell::StudioApp,
+    out: &Path,
+) -> FrameOutput {
+    let out_path = out.to_path_buf();
+    app.report.save_dialog = Box::new(move |_| Some(out_path.clone()));
+    let nodes = frame(egui_ctx, app, Vec::new(), true).nodes;
+    click(egui_ctx, app, entry(&nodes, "Save…"));
+    assert!(out.exists(), "the zip was written");
+    frame(egui_ctx, app, Vec::new(), true)
+}
+
 // ST-REP-01
 #[test]
 fn the_entry_opens_the_dialog_from_the_rail_and_the_opened_sidebar() {
@@ -278,13 +294,7 @@ fn save_writes_the_bundle_at_the_picked_path_and_the_words_stay() {
         vec![egui::Event::Text(words.clone())],
         true,
     );
-    let out_path = out.clone();
-    app.report.save_dialog = Box::new(move |_| Some(out_path.clone()));
-    let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
-    click(&egui_ctx, &mut app, entry(&nodes, "Save…"));
-    assert!(out.exists(), "the zip was written");
-    // The "Saved to" line and the Close-only buttons draw on the next frame.
-    let out_nodes = frame(&egui_ctx, &mut app, Vec::new(), true);
+    let out_nodes = save_through(&egui_ctx, &mut app, &out);
 
     // The dialog says where and offers only Close.
     let expected = format!(
@@ -387,6 +397,31 @@ fn save_writes_the_bundle_at_the_picked_path_and_the_words_stay() {
     assert!(!has_text(&nodes, "Saved to"), "no saved line");
 }
 
+// The "Saved to" line keeps its room while hidden, so Close shows where
+// Save… stood.
+#[test]
+fn the_buttons_do_not_move_when_the_saved_line_shows() {
+    let dir = TestDir::new("studio_core_report_gap");
+    let out = dir.path().join("utw-report.zip");
+    let Shell { mut app, _dir, .. } = shell();
+    let egui_ctx = test_context();
+
+    let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
+    click(&egui_ctx, &mut app, entry(&nodes, REPORT_LABEL));
+    // A modal's opening frame is an invisible sizing pass; the next draws it.
+    let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
+    let save_top = entry(&nodes, "Save…")
+        .bounds()
+        .expect("Save… has bounds")
+        .y0;
+    let out_nodes = save_through(&egui_ctx, &mut app, &out);
+    let close_top = entry(&out_nodes.nodes, "Close")
+        .bounds()
+        .expect("Close has bounds")
+        .y0;
+    assert_eq!(close_top, save_top, "Close stands where Save… stood");
+}
+
 // With a tool that gives no part (the trait's default), `README.txt` is
 // the core part alone: nothing is appended for it, not even a newline.
 #[test]
@@ -404,14 +439,10 @@ fn a_bundle_without_a_log_names_utw_log_under_missing() {
     let out = dir.path().join("utw-report.zip");
     let Shell { mut app, _dir, .. } = shell();
     let egui_ctx = test_context();
-    let out_path = out.clone();
-    app.report.save_dialog = Box::new(move |_| Some(out_path.clone()));
 
     let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
     click(&egui_ctx, &mut app, entry(&nodes, REPORT_LABEL));
-    let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
-    click(&egui_ctx, &mut app, entry(&nodes, "Save…"));
-    assert!(out.exists(), "the zip was written");
+    save_through(&egui_ctx, &mut app, &out);
 
     let journal =
         crate::repro::tests::journal_doc(&crate::repro::tests::zip_text(&out, "journal.toml"));
