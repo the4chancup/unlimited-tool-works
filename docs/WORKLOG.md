@@ -190,7 +190,8 @@ draft checked, for the maintainer to publish; running sidekicks and jobs are not
      watcher and cache, Sizes and sorting, and the rest of the toolbar
      (`plans/team_compiler/gui.md` "Toolbar"; the build has a plain Compile button): the
      split button with its mode list, Launch PES, the writability badge, and the dropdown's
-     Open output folder and Copy report. The log's lines also owe the plan's
+     Open output folder and Copy report. The mode list owes a clause of TC-GUI-33: while the
+     DpFileList is outdated, Compile for sideloading stays enabled. The log's lines also owe the plan's
      `Severity - /team/ - code` form (`plans/team_compiler/gui.md` "A message's log line"),
      their wrapping under that head (ST-LOG-05), and Open folder in a line's context menu.
      The watcher and cache's slice also owes TC-GUI-04's `.7z` order: 1a's check reads a
