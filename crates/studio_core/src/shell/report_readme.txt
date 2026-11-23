@@ -12,7 +12,8 @@ What each part holds:
   each in its usual file format.
 - sessions/: when the member ticked Include earlier sessions, one zip for each earlier
   time UTW was opened, laid out as this report's journal.toml, inputs/ and outputs/. A
-  save in them is packed (its name ends in .packed), and only UTW's replay rebuilds it.
+  save in them is packed (its name ends in .packed): UTW save-editor unpack-session
+  <zip> <folder> writes a zip's files back as they were.
 - utw.log: the window's log.
 - settings.toml: UTW's settings.
 - installs.txt: each PES version's folder in the settings, and what UTW found in it.

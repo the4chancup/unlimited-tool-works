@@ -11,6 +11,7 @@ mod diff;
 mod export_teams_list;
 mod export_toml;
 mod import_toml;
+mod unpack_session;
 
 use std::fs;
 use std::path::Path;

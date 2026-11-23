@@ -16,7 +16,10 @@ mod nations;
 #[cfg(not(target_arch = "wasm32"))]
 #[cfg_attr(
     not(test),
-    expect(dead_code, reason = "called only from the module's tests")
+    expect(
+        dead_code,
+        reason = "replay itself runs only in the module's tests; the command line uses its bundle read"
+    )
 )]
 mod replay;
 mod session;

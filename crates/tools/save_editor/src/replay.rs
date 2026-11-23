@@ -3,13 +3,19 @@
 //! output compared byte for byte under its own salt. A match puts the
 //! member's problem in what the editor writes or in the game; a
 //! `Stale` step or a `Differs` write puts it in a change the journal
-//! never saw or reads differently.
+//! never saw or reads differently. The same bundle read serves
+//! `unpack-session`, which writes the kept files back as files under a
+//! new or empty folder.
 
+use std::fs;
+use std::path::Path;
+
+use anyhow::Context;
 use pes_savefile::container::file_salt;
 use pes_savefile::file::EditFile;
 use pes_savefile::ops::apply::{ApplyError, apply_player};
 use pes_savefile::ops::compare::{PlayerDiff, compare};
-use studio_core::repro::{Bundle, BundleFile, BundleStep};
+use studio_core::repro::{Bundle, BundleFile, BundleStep, read_bundle};
 
 use crate::messages::TOOL_ID;
 use crate::session::journal::Op;
@@ -280,9 +286,60 @@ pub(crate) fn replay(bundle: &Bundle) -> Result<Vec<Outcome>, ReplayError> {
     Ok(outcomes)
 }
 
+/// `pes_savefile`'s packed-form rebuild as `read_bundle`'s closure.
+fn rebuild_save(packed: &[u8]) -> anyhow::Result<Vec<u8>> {
+    pes_savefile::container::rebuild(packed).map_err(anyhow::Error::from)
+}
+
+/// `path`'s file name, the part after its last separator. The path was
+/// recorded on the member's system and the bundle may be read on another
+/// OS, so `Path`'s own split does not serve: on Linux it treats `\` as a
+/// plain character, and a recorded Windows path holds no `/`.
+fn file_name(path: &str) -> &str {
+    path.rsplit(['/', '\\']).next().unwrap_or(path)
+}
+
+/// `unpack-session`'s refusals, run before a byte is written: a `folder`
+/// that already holds a file — the unpack would mix the bundle's files
+/// with another's — and a `bundle` `read_bundle` refuses, every kept
+/// file rebuilt to its journal row's size and SHA-256. The bundle it
+/// returns is what `unpack_bundle` writes.
+pub(crate) fn unpackable_bundle(bundle: &Path, folder: &Path) -> anyhow::Result<Bundle> {
+    if folder.exists() {
+        let mut entries = fs::read_dir(folder)
+            .with_context(|| format!("{}: cannot list the folder", folder.display()))?;
+        if entries.next().is_some() {
+            anyhow::bail!(
+                "{}: already holds files; unpack into a new or empty folder",
+                folder.display()
+            );
+        }
+    }
+    read_bundle(bundle, rebuild_save)
+}
+
+/// `bundle`'s kept files written under `folder`, `unpackable_bundle`'s
+/// refusals behind it: each input as `inputs/<index>-<file name>` and
+/// each output as `outputs/<index>-<file name>`, the file name the last
+/// part of the path the member's system recorded. With the read done,
+/// the only errors left are write failures.
+pub(crate) fn unpack_bundle(bundle: &Bundle, folder: &Path) -> anyhow::Result<()> {
+    for (dir, files) in [("inputs", &bundle.inputs), ("outputs", &bundle.outputs)] {
+        let dir = folder.join(dir);
+        fs::create_dir_all(&dir)
+            .with_context(|| format!("{}: cannot create the folder", dir.display()))?;
+        for (index, file) in files.iter().enumerate() {
+            let path = dir.join(format!("{index}-{}", file_name(&file.path)));
+            fs::write(&path, &file.bytes)
+                .with_context(|| format!("{}: cannot write the file", path.display()))?;
+        }
+    }
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
-    use std::path::Path;
+    use std::path::{Path, PathBuf};
 
     use pes_savefile::container::SaveContainer;
     use pes_savefile::model::ingame_face::IngameFace;
@@ -316,11 +373,6 @@ mod tests {
         let zip = dir.join("repro.zip");
         recorder.write_bundle(&zip, "", &[], &[], None).unwrap();
         read_bundle(&zip, |_| panic!("a bundle of the session holds raw files")).unwrap()
-    }
-
-    /// `pes_savefile`'s packed-form rebuild as `read_bundle`'s closure.
-    fn rebuild_save(packed: &[u8]) -> anyhow::Result<Vec<u8>> {
-        pes_savefile::container::rebuild(packed).map_err(anyhow::Error::from)
     }
 
     /// `player`'s Height nudged up, pushed as one edit under `key`.
@@ -771,6 +823,25 @@ mod tests {
         rx
     }
 
+    /// A session bundle of `version`'s `recorded_session` under `dir`:
+    /// the messages passed through `tweak` and written under `dir`'s
+    /// `sessions` child by `written_session`, the folder zipped to
+    /// `dir/<name>.zip` as a report's `sessions/` entry holds it. The
+    /// session's folder and the zip's path.
+    fn session_zip(
+        dir: &Path,
+        sessions: &str,
+        name: &str,
+        version: PesVersion,
+        tweak: impl Fn(&mut SessionMessage),
+    ) -> (PathBuf, PathBuf) {
+        let rx = recorded_session(dir, version);
+        let folder = written_session(&dir.join(sessions), rx, tweak);
+        let zip = dir.join(format!("{name}.zip"));
+        std::fs::write(&zip, session_bundle(&folder, None).unwrap()).unwrap();
+        (folder, zip)
+    }
+
     /// `rx`'s messages, `tweak` applied to each, written as a session
     /// under the `root` sessions folder and `Closed`: the folder's path.
     fn written_session(
@@ -837,8 +908,7 @@ mod tests {
         ] {
             let dir = scratch(&format!("replay_session_{version:?}"));
             let save = pes_savefile::fixture_save(version);
-            let rx = recorded_session(&dir, version);
-            let folder = written_session(&dir.join("sessions"), rx, |_| {});
+            let (folder, zip) = session_zip(&dir, "sessions", "session", version, |_| {});
             for entry in [
                 "inputs/0-EDIT00000000.packed",
                 "outputs/0-EDIT00000000.packed",
@@ -850,9 +920,7 @@ mod tests {
                     "{version:?}: {entry} is smaller than the save"
                 );
             }
-            let out = dir.join("session.zip");
-            std::fs::write(&out, session_bundle(&folder, None).unwrap()).unwrap();
-            let bundle = read_bundle(&out, rebuild_save).unwrap();
+            let bundle = read_bundle(&zip, rebuild_save).unwrap();
             let outcomes = replay(&bundle).unwrap();
             assert!(
                 matches!(&outcomes[..], [Outcome::Matches { .. }]),
@@ -861,17 +929,133 @@ mod tests {
 
             // A byte of a decrypted section flipped: the rebuilt save
             // fails the row's SHA-256 and nothing is replayed.
-            let rx = recorded_session(&dir, version);
-            let folder = written_session(&dir.join("flipped_sessions"), rx, flip_last_payload_byte);
-            let out = dir.join("flipped.zip");
-            std::fs::write(&out, session_bundle(&folder, None).unwrap()).unwrap();
-            let error = read_bundle(&out, rebuild_save)
+            let (_, flipped) = session_zip(
+                &dir,
+                "flipped_sessions",
+                "flipped",
+                version,
+                flip_last_payload_byte,
+            );
+            let error = read_bundle(&flipped, rebuild_save)
                 .err()
                 .expect("the flipped bundle is refused");
             assert!(
                 format!("{error:#}").contains("SHA-256"),
                 "{version:?}: the refusal names the SHA-256: {error:#}"
             );
+        }
+    }
+
+    // Each version's earlier session as the bundle a report's
+    // `sessions/` keeps, unpacked into a folder that does not exist:
+    // `inputs/` and `outputs/` alone are made, each holding
+    // `0-EDIT00000000` — the save the session opened byte for byte, and
+    // the one it wrote. A packed byte flipped refuses the bundle before
+    // the folder is made; a folder already holding a file refuses
+    // first, its file left as it was.
+    // SE-REP-08
+    #[test]
+    fn an_earlier_sessions_bundle_unpacks_its_saves_back() {
+        for version in [
+            PesVersion::Pes15,
+            PesVersion::Pes16,
+            PesVersion::Pes17,
+            PesVersion::Pes18,
+            PesVersion::Pes19,
+            PesVersion::Pes20,
+            PesVersion::Pes21,
+        ] {
+            let dir = scratch(&format!("unpack_session_{version:?}"));
+            let (_, zip) = session_zip(&dir, "sessions", "session", version, |_| {});
+            // What the session kept: the fixture it opened and the save
+            // it wrote, read now — the flipped bundle's own session
+            // writes a fresh-salted save over `written/`.
+            let expected_input = std::fs::read(dir.join("EDIT00000000")).unwrap();
+            let expected_output = std::fs::read(dir.join("written").join("EDIT00000000")).unwrap();
+            let (_, flipped) = session_zip(
+                &dir,
+                "flipped_sessions",
+                "flipped",
+                version,
+                flip_last_payload_byte,
+            );
+            let out = dir.join("unpacked");
+
+            let bundle = unpackable_bundle(&zip, &out).unwrap();
+            unpack_bundle(&bundle, &out).unwrap();
+
+            let mut top: Vec<String> = std::fs::read_dir(&out)
+                .unwrap()
+                .map(|entry| entry.unwrap().file_name().into_string().unwrap())
+                .collect();
+            top.sort();
+            assert_eq!(top, ["inputs", "outputs"], "{version:?}: only the two");
+            for (side, expected) in [("inputs", &expected_input), ("outputs", &expected_output)] {
+                let files: Vec<String> = std::fs::read_dir(out.join(side))
+                    .unwrap()
+                    .map(|entry| entry.unwrap().file_name().into_string().unwrap())
+                    .collect();
+                assert_eq!(
+                    files,
+                    ["0-EDIT00000000"],
+                    "{version:?}: {side} holds the one file"
+                );
+                assert_eq!(
+                    std::fs::read(out.join(side).join("0-EDIT00000000")).unwrap(),
+                    expected.as_slice(),
+                    "{version:?}: {side}/0-EDIT00000000 is the kept save byte for byte"
+                );
+            }
+
+            // A packed byte flipped: the bundle is refused and the
+            // folder is never made.
+            let flipped_out = dir.join("unpacked_flipped");
+            let error = unpackable_bundle(&flipped, &flipped_out)
+                .err()
+                .unwrap_or_else(|| panic!("{version:?}: the flipped bundle is refused"));
+            assert!(
+                format!("{error:#}").contains("SHA-256"),
+                "{version:?}: the refusal names the SHA-256: {error:#}"
+            );
+            assert!(!flipped_out.exists(), "{version:?}: nothing was written");
+
+            // A folder already holding a file refuses before the bundle
+            // is read (the flipped zip would fail its SHA-256 as well):
+            // its file is left as it was, nothing beside it.
+            let occupied = dir.join("occupied");
+            std::fs::create_dir_all(&occupied).unwrap();
+            std::fs::write(occupied.join("already.txt"), b"stay").unwrap();
+            let error = unpackable_bundle(&flipped, &occupied)
+                .err()
+                .unwrap_or_else(|| panic!("{version:?}: the occupied folder is refused"));
+            assert!(
+                format!("{error:#}").contains("already holds files"),
+                "{version:?}: the refusal names the folder: {error:#}"
+            );
+            let left: Vec<String> = std::fs::read_dir(&occupied)
+                .unwrap()
+                .map(|entry| entry.unwrap().file_name().into_string().unwrap())
+                .collect();
+            assert_eq!(left, ["already.txt"], "{version:?}: nothing else written");
+            assert_eq!(
+                std::fs::read(occupied.join("already.txt")).unwrap(),
+                b"stay",
+                "{version:?}: the file as it was"
+            );
+        }
+    }
+
+    // The kept file's path was recorded on the member's system: a
+    // Windows path holds `\`s, and `file_name` takes the part after
+    // either separator (a `/`-only split would keep the whole path).
+    #[test]
+    fn a_recorded_path_splits_on_either_separator() {
+        for (path, name) in [
+            (r"C:\Users\~\Documents\EDIT00000000", "EDIT00000000"),
+            ("a/EDIT00000000", "EDIT00000000"),
+            ("EDIT00000000", "EDIT00000000"),
+        ] {
+            assert_eq!(file_name(path), name, "{path}");
         }
     }
 
