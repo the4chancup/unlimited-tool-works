@@ -19941,3 +19941,16 @@ a picture of one would show the member something that never reaches the game. Ol
 exports carry a `portrait.dds` in each referee's folder, so an export made from one can still
 hold them.
 Plan: `plans/team_compiler/gui.md` "The detail window".
+
+## 2026-11-23 — dev cycle — a look-ahead every two or three phases looks for weak spots before they fail (maintainer)
+Decision: besides the review of what went wrong, a look-ahead runs every two or three phases,
+and before a phase that does something the cycle has never done. It works from evidence that
+needs no incident: near misses (now logged too), a map of each step's guards against what a
+miss there costs, drills that plant a known fault to see whether the cycle catches it, and
+what the next phases and the tools around the work will change. A reviewer of another model
+family reads each stage as an attacker would. A gap a drill shows gets a fix, a script or a
+gate before a written rule; its predictions are checked by the next look-ahead.
+Why: the review acts only on causes that have already gone wrong, and a weak spot that has
+not failed yet leaves nothing to review. A script that deletes worktrees listed three running
+ones in its dry run, though it had been patched once for that very case.
+Plan: `PREVENTION.md` "Looking ahead".
