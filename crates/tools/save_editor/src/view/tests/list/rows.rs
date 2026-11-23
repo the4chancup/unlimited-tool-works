@@ -422,6 +422,61 @@ fn a_hovered_selected_row_keeps_the_hovered_states_edge() {
     );
 }
 
+// The selected row's edge shows on all four sides, the draft's `.prow`
+// inside `.rows`'s border: the painted edge-stroke rect lies wholly inside
+// the scroll's clip and a point inside the frame's sides, where sharing the
+// frame's own stroke bands would leave it covered.
+#[test]
+fn the_selected_rows_edge_stands_inside_the_lists_frame() {
+    let path = fixture(PesVersion::Pes21, "row_edge_in_frame");
+    let mut view = SaveView::new();
+    view.open(&path);
+    view.team = TeamChoice::Team(701);
+    view.selected = Some(Selection::Player(701, 0));
+    let mut window = Headless::new();
+    let visuals = window.ctx.style_of(window.ctx.theme()).visuals.clone();
+    let edge = egui::Stroke::new(
+        1.0,
+        studio_core::theme::edge_color(&visuals, visuals.selection.bg_fill),
+    );
+
+    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let bounds = nodes
+        .iter()
+        .filter(|node| list_row(node))
+        .find(|node| node.toggled() == Some(accesskit::Toggled::True))
+        .and_then(accesskit::Node::bounds)
+        .expect("the selected row's bounds");
+    // The row's `Shape::Rect` carrying the edge stroke.
+    let edges: Vec<(&egui::epaint::RectShape, egui::Rect)> = shapes
+        .iter()
+        .filter_map(|clipped| match &clipped.shape {
+            egui::Shape::Rect(shape)
+                if shape.stroke == edge
+                    && (f64::from(shape.rect.min.y) - bounds.y0).abs() <= 0.5
+                    && (f64::from(shape.rect.max.y) - bounds.y1).abs() <= 0.5 =>
+            {
+                Some((shape, clipped.clip_rect))
+            }
+            _ => None,
+        })
+        .collect();
+    let [(edge_rect, clip)] = edges[..] else {
+        panic!("the selected row's edge rect: {edges:?}");
+    };
+    assert!(
+        clip.contains_rect(edge_rect.rect),
+        "the painted edge rect inside the scroll's clip: {:?} vs {clip:?}",
+        edge_rect.rect
+    );
+    let frame = list_frame(&window, &shapes);
+    assert!(
+        edge_rect.rect.min.x > frame.min.x && edge_rect.rect.max.x < frame.max.x,
+        "the edge's sides inside the frame's: {:?} vs {frame:?}",
+        edge_rect.rect
+    );
+}
+
 // SE-GUI-37's team-row dot: a team's own unsaved changes mark its row's
 // right end — after a short-name edit the `●` paints there in the
 // warning colour, right of the painted name — and no player row's label

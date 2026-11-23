@@ -818,3 +818,95 @@ fn the_first_part_shown_sits_where_the_first_paragraph_would() {
         below_title(true, "Upgrade replaces"),
     );
 }
+
+// The dialog's frame is 460 points wide (the draft's `width:460px`): the paragraphs wrap
+// at that instead of widening the window to fit their lines.
+#[test]
+fn the_dialog_is_460_points_wide() {
+    let temp = crate::testing::scratch("view_dpfl_width");
+    let root = temp.path();
+    install(root, 2017, &pes17_list(), None);
+    let ctx = tool_context_pes17(root);
+    let preview = upgrade::preview(&root.join("PES/download"), &ctx).unwrap();
+    assert!(
+        preview.replaces_list
+            && !preview.renames.is_empty()
+            && preview.placeholders > 0
+            && !preview.dropped.is_empty(),
+        "premise: the old list's preview shows every part"
+    );
+
+    let mut dialog = DpflDialog::new(preview);
+    let mut window = Headless::new();
+    for _ in 0..3 {
+        window.frame(Vec::new(), |ui| dialog.show(ui));
+    }
+    let frame = window
+        .ctx
+        .memory(|memory| memory.area_rect(egui::Id::unique("upgrade_dpfl")))
+        .expect("the dialog's area has a rect");
+    assert!(
+        (frame.width() - 460.0).abs() <= 1.0,
+        "the dialog's frame is 460 wide: {frame:?}"
+    );
+}
+
+// The delete list's lines draw in the monospace font, the draft's `mono` box holding
+// them: each delete box's `name (size)` and a file-less entry's name alike, as the
+// renames table's names draw.
+#[test]
+fn the_dropped_list_names_draw_in_the_monospace_font() {
+    let preview = Preview {
+        renames: Vec::new(),
+        placeholders: 0,
+        dropped: vec![
+            ("4cc_60_midcup.cpk".to_owned(), Some(6272)),
+            ("4cc_76_midcup.cpk".to_owned(), Some(6272)),
+            ("4cc_90_test.cpk".to_owned(), None),
+        ],
+        up_to_date: false,
+        replaces_list: true,
+    };
+    let mut dialog = DpflDialog::new(preview);
+    let mut window = Headless::new();
+    for _ in 0..3 {
+        window.frame(Vec::new(), |ui| dialog.show(ui));
+    }
+
+    for label in [
+        "4cc_60_midcup.cpk (6.1 KiB)",
+        "4cc_76_midcup.cpk (6.1 KiB)",
+        "4cc_90_test.cpk",
+    ] {
+        let text = text_shape_in(&window.shapes, label);
+        assert!(
+            text.galley
+                .job
+                .sections
+                .iter()
+                .all(|section| section.format.font_id.family == egui::FontFamily::Monospace),
+            "{label:?} in the monospace font: {:?}",
+            text.galley
+                .job
+                .sections
+                .iter()
+                .map(|section| section.format.font_id.family.clone())
+                .collect::<Vec<_>>()
+        );
+    }
+}
+
+/// The `Shape::Text` whose galley is exactly `text`.
+fn text_shape_in<'a>(
+    shapes: &'a [egui::epaint::ClippedShape],
+    text: &str,
+) -> &'a egui::epaint::TextShape {
+    shapes
+        .iter()
+        .filter_map(|clipped| match &clipped.shape {
+            egui::Shape::Text(shape) if shape.galley.text() == text => Some(shape),
+            _ => None,
+        })
+        .next()
+        .unwrap_or_else(|| panic!("no painted text {text:?}"))
+}
