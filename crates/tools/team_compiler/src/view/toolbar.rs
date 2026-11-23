@@ -18,6 +18,9 @@ const GAP: f32 = 8.0;
 const SPLIT_GAP: f32 = 1.0;
 /// The main part's smallest width (the draft's `.tc-split button:first-child`).
 const MAIN_MIN_WIDTH: f32 = 150.0;
+/// The disabled tooltip of the sideload menu entry and of the main part while its picked
+/// sideload mode has no runtime on the selected PES version.
+const SIDELOAD_UNSERVED_TIP: &str = "No runtime serves sideloaded files on PES 2015 and 2016";
 
 /// The grid summed up: its rows, how many of them a Compile skips, and how many of the others
 /// have an error or a warning.
@@ -133,23 +136,19 @@ fn mode_label(mode: Mode) -> &'static str {
 
 /// The arrow's menu (the draft's `modeMenu`): the three output modes, a pick writing
 /// `mode` and so relabelling the main part for the session, then Open output folder
-/// and Copy report. The `Intent` a non-mode entry asked for, when one was picked.
-fn mode_menu(
-    ui: &mut egui::Ui,
-    ctx: &ToolContext,
-    log: &RunLog,
-    mode: &mut Mode,
-) -> Option<Intent> {
+/// and Copy report. `served` is whether a sideloading runtime exists for the selected
+/// PES version, worked out once in `show`. The `Intent` a non-mode entry asked for,
+/// when one was picked.
+fn mode_menu(ui: &mut egui::Ui, log: &RunLog, mode: &mut Mode, served: bool) -> Option<Intent> {
     if ui.button(mode_label(Mode::Normal)).clicked() {
         *mode = Mode::Normal;
         ui.close();
     }
-    let served = cli::sideload_served(ctx.common().pes_version);
     let sideload = add_enabled(ui, served, egui::Button::new(mode_label(Mode::Sideload)));
     let sideload = if served {
         sideload.on_hover_text("Unpacked into the game folder's livecpk")
     } else {
-        sideload.on_disabled_hover_text("No runtime serves sideloaded files on PES 2015 and 2016")
+        sideload.on_disabled_hover_text(SIDELOAD_UNSERVED_TIP)
     };
     if sideload.clicked() {
         *mode = Mode::Sideload;
@@ -179,8 +178,9 @@ fn mode_menu(
 
 /// Draws the toolbar as a bottom panel of `ui`: the strip summing up `rows` while `log` has
 /// no run in flight, the Compile split button (its main part running a `mode` compile,
-/// disabled while one runs or, in the installing mode alone, while `log`'s findings say the
-/// game's list is the cup's outdated one; its arrow opening the mode menu, disabled
+/// disabled while one runs, in the installing mode alone while `log`'s findings say the
+/// game's list is the cup's outdated one, or in the sideload mode while the selected PES
+/// version has no runtime to serve it; its arrow opening the mode menu, disabled
 /// while a run is in flight), and the Upgrade DpFileList button beside it while the
 /// findings say the list is not the official one. A click on a count shows only its
 /// lines in `panel`. The `Intent` a click asked for, when one was made this frame.
@@ -193,6 +193,7 @@ pub(crate) fn show(
     mode: &mut Mode,
 ) -> Option<Intent> {
     let running = log.is_running();
+    let served = cli::sideload_served(ctx.common().pes_version);
     let frame = egui::Frame::side_top_panel(ui.style()).inner_margin(egui::Margin::symmetric(8, 4));
     egui::Panel::bottom((TOOL_ID, "toolbar"))
         .resizable(false)
@@ -217,9 +218,16 @@ pub(crate) fn show(
                 )
                 .on_hover_text("The output modes");
                 ui.spacing_mut().item_spacing.x = GAP;
+                // A Normal-mode run's preflight would stop it before anything is
+                // compiled, so the outdated list is why the installing mode is off; the
+                // loose-file modes install no CPK, and the two Warnings leave it enabled.
+                // A sideload pick the version can no longer serve is off too, since its
+                // click would only reach the preflight's refusal.
+                let normal_off = *mode == Mode::Normal && log.dpfl_outdated();
+                let sideload_off = *mode == Mode::Sideload && !served;
                 let compile = add_enabled(
                     ui,
-                    !running && !(*mode == Mode::Normal && log.dpfl_outdated()),
+                    !running && !normal_off && !sideload_off,
                     egui::Button::new(mode_label(*mode))
                         .min_size(egui::vec2(MAIN_MIN_WIDTH, 0.0))
                         .corner_radius(egui::CornerRadius {
@@ -228,14 +236,13 @@ pub(crate) fn show(
                             ..radius
                         }),
                 );
-                // A Normal-mode run's preflight would stop it before anything is
-                // compiled, so the outdated list is why the installing mode is off; the
-                // loose-file modes install no CPK, and the two Warnings leave it enabled.
-                let compile = if !running && *mode == Mode::Normal && log.dpfl_outdated() {
+                let compile = if !running && normal_off {
                     compile.on_disabled_hover_text(
                         "The game's DpFileList.bin does not list this compile's CPK, so the \
                          game would not load it. Upgrade DpFileList first",
                     )
+                } else if !running && sideload_off {
+                    compile.on_disabled_hover_text(SIDELOAD_UNSERVED_TIP)
                 } else {
                     compile
                 };
@@ -243,7 +250,7 @@ pub(crate) fn show(
                     intent = Some(Intent::Compile(*mode));
                 }
                 if let Some(asked) =
-                    menu_above(&arrow, |ui| mode_menu(ui, ctx, log, mode)).flatten()
+                    menu_above(&arrow, |ui| mode_menu(ui, log, mode, served)).flatten()
                 {
                     intent = Some(asked);
                 }

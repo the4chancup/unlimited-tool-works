@@ -39,7 +39,8 @@ pub fn menu_button<R>(
 
 /// A menu drawn above `response`'s widget, their right edges meeting
 /// (`RectAlign::TOP_END`): a click on the widget opens it, one inside or
-/// outside it closes it. Styled as `menu_button`'s menu is, so its entries
+/// outside it closes it, and a click on the widget while it is open closes
+/// it too. Styled as `menu_button`'s menu is, so its entries
 /// meet the same way; for a button that opens its menu upward rather than
 /// under itself (the Compile button's arrow, the log sitting below the toolbar).
 pub fn menu_above<R>(
