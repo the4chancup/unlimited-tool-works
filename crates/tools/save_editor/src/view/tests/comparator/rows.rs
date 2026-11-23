@@ -296,8 +296,9 @@ fn compared_long_name(test: &str, in_open: bool) -> (SaveView, Headless, NameRow
     (view, window, row)
 }
 
-/// Asserts `shape` is cut: elided, ending in the ellipsis and no wider
-/// than `width` points.
+/// Asserts `shape` is cut: elided, ending in the ellipsis and given no
+/// more room than `width` points (its wrap bound, exact where the
+/// ellipsis's landing point is not).
 #[track_caller]
 fn assert_cut(shape: &egui::epaint::TextShape, width: f32) {
     let text = &shape.galley.job.text;
@@ -314,9 +315,9 @@ fn assert_cut(shape: &egui::epaint::TextShape, width: f32) {
         "{text:?}'s cut ends in the ellipsis"
     );
     assert!(
-        shape.galley.size().x <= width,
-        "{text:?} no wider than {width}: {}",
-        shape.galley.size().x
+        shape.galley.job.wrap.max_width <= width,
+        "{text:?} given no more room than {width}: {}",
+        shape.galley.job.wrap.max_width
     );
 }
 
@@ -439,16 +440,7 @@ fn dragged_to_its_narrowest_the_window_keeps_heads_whole_and_cuts_elided() {
     // Drag the window's bottom-right resize corner far left, past where
     // the narrowest width puts it.
     let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
-    let frame = pairs
-        .iter()
-        .find(|(_, node)| {
-            node.role() == Role::Window
-                && node
-                    .label()
-                    .is_some_and(|label| label.starts_with("Comparator"))
-        })
-        .and_then(|(_, node)| node.bounds())
-        .expect("the Comparator window");
+    let frame = comparator_frame(&pairs);
     let (_, handle) = pairs
         .iter()
         .filter(|(_, node)| {
@@ -466,6 +458,19 @@ fn dragged_to_its_narrowest_the_window_keeps_heads_whole_and_cuts_elided() {
         from,
         egui::pos2(frame.x0 as f32 + 20.0, from.y),
         &mut view,
+    );
+
+    // The premise the asserts stand on: the drag left the window at its
+    // narrowest — its frame's width the minimum the code sets, within a
+    // point.
+    let (min, pairs, _) = window.frame_ids(Vec::new(), |ui| {
+        show(ui, &mut view, &|| Vec::new());
+        crate::view::comparator::min_window_width(ui)
+    });
+    let after = comparator_frame(&pairs);
+    assert!(
+        (after.width() - f64::from(min)).abs() <= 1.0,
+        "premise: the window at its narrowest ({after:?} vs {min})"
     );
 
     let name = format!("Name {LONG_NAME}X \u{2192} {LONG_NAME}");
@@ -520,7 +525,9 @@ fn dragged_to_its_narrowest_the_window_keeps_heads_whole_and_cuts_elided() {
 #[test]
 fn a_cut_new_value_ends_in_an_ellipsis_within_the_row() {
     let (mut view, mut window, row) = compared_long_name("comparator_cut_new", true);
-    let room = (row.bounds.x1 - row.bounds.x0) as f32 - 410.0;
+    // The room `field_row` gives the Open save's value: `column_offsets`'
+    // own, ending the inset inside the row's right edge.
+    let room = crate::view::comparator::column_offsets((row.bounds.x1 - row.bounds.x0) as f32).1;
     let uncut = {
         let font = egui::TextStyle::Body.resolve(&window.ctx.style_of(window.ctx.theme()));
         window.ctx.fonts_mut(|fonts| {

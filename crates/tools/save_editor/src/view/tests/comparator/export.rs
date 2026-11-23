@@ -361,14 +361,7 @@ fn the_pick_row_keeps_the_buttons_on_one_line_with_a_long_path() {
     view.panel = Some(Panel::Comparator);
     pick(&mut window, &mut view, picked);
     let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
-    let (_, window_node) = pairs
-        .iter()
-        .find(|(_, node)| {
-            node.label()
-                .is_some_and(|label| label.starts_with("Comparator"))
-        })
-        .expect("the window");
-    let window_rect = window_node.bounds().expect("the window's bounds");
+    let window_rect = comparator_frame(&pairs);
     let nodes = comparator_nodes(&pairs);
     let top = |keep: &dyn Fn(&accesskit::Node) -> bool| -> f64 {
         nodes

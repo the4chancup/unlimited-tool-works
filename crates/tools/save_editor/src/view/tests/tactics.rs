@@ -2933,31 +2933,12 @@ fn the_pitch_draws_a_starter_s_portrait_from_the_selected_game() {
     open_team_view(&mut window, &mut view, 701);
     view.select_portraits(&window.ctx, &folder, PesVersion::Pes21);
 
-    // Bounded: the worker answers off the UI thread, so frames poll it
-    // until a deadline only a hang reaches; a portrait never arriving
-    // fails rather than hangs. The portrait rect is matched by size and
-    // centre (a pixel's tolerance for the AccessKit bounds' rounding),
-    // not by exact rect equality.
-    let canvas_min = |canvas: accesskit::Rect| egui::pos2(canvas.x0 as f32, canvas.y0 as f32);
-    let canvas_max = |canvas: accesskit::Rect| egui::pos2(canvas.x1 as f32, canvas.y1 as f32);
-    let deadline = Instant::now() + Duration::from_secs(120);
-    loop {
-        let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
-        let canvas = canvas_of(&nodes);
-        let canvas_rect = egui::Rect::from_min_max(canvas_min(canvas), canvas_max(canvas));
-        let expected = portrait_spot(&view, canvas, 701, 4);
-        let portraits = portrait_meshes(canvas_rect, &shapes);
-        // Until the worker answers, every marker paints the placeholder's one
-        // texture; the starter's arriving shows as a texture id no other
-        // portrait shares, at his spot.
-        if lone_portrait_at(&portraits, expected).is_some() {
-            break;
-        }
-        assert!(
-            Instant::now() < deadline,
-            "the starter's marker never painted his portrait"
-        );
-    }
+    // The canvas is stable: the starter's spot computed once, the
+    // portrait rect matched by size and centre (a pixel's tolerance for
+    // the AccessKit bounds' rounding), not by exact rect equality.
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let spot = portrait_spot(&view, canvas_of(&nodes), 701, 4);
+    portrait_drawn(&mut window, &mut view, spot);
 }
 
 /// The pitch's portrait meshes in `shapes`: each 50-point image mesh drawn
@@ -2998,7 +2979,7 @@ fn lone_portrait_at(
             .filter(|(_, texture)| *texture == at[0])
             .count()
             == 1)
-        .then_some(at[0])
+        .then(|| at[0])
 }
 
 /// `player_id`'s formation position in `team_id`'s starting eleven.

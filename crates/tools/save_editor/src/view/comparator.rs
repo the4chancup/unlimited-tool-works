@@ -455,7 +455,7 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
 /// room for at least an ellipsis, the window frame's margin on top. Only
 /// this panel gets one (`panel_window` is shared): a narrower window cuts
 /// a head mid-word and clips the values with no ellipsis.
-fn min_window_width(ui: &egui::Ui) -> f32 {
+pub(super) fn min_window_width(ui: &egui::Ui) -> f32 {
     let font = egui::TextStyle::Body.resolve(ui.style());
     let weak = ui.visuals().weak_text_color();
     let galley = |text: &str| {
@@ -791,8 +791,8 @@ fn line(ui: &mut egui::Ui, line: &Line) -> Option<SelectedPlayer> {
 /// the label's column `RULE_COL` wide, then the Open save `RULE_GAP` past
 /// the Picked save's `OLD_COL`, its text cut `drow_columns`' right inset
 /// inside the row's right edge (the draft's `.drow` padding, so it clears
-/// the hover outline and the scroll bar).
-fn column_offsets(width: f32) -> ([f32; 3], f32) {
+/// the hover outline).
+pub(super) fn column_offsets(width: f32) -> ([f32; 3], f32) {
     let (label_x, old_x, rest) = drow_columns(width, RULE_COL);
     (
         [label_x, old_x, old_x + OLD_COL + RULE_GAP],
