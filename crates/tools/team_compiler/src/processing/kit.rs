@@ -21,7 +21,7 @@ use crate::plan::roles::{KIT_TEXTURE_STEMS, texture_format};
 use crate::plan::{EffectiveTeamKitFpc, TeamKitEdits, keeps_installed};
 
 /// The menu icon of a kit without an `icon_<N>` marker.
-const DEFAULT_ICON: u8 = 3;
+pub(crate) const DEFAULT_ICON: u8 = 3;
 
 /// The menu colors of a kit with none to give: magenta, then black. A pair nobody would pick,
 /// so the gap shows in the game's menus instead of looking chosen; it matches the placeholder
@@ -421,7 +421,7 @@ fn relaid_texture(
 }
 
 /// The two colors a kit's `colors.txt` holding `bytes` gives, or `None` when it gives fewer.
-fn listed_colors(bytes: &[u8]) -> Option<[Rgb; KIT_COLORS]> {
+pub(crate) fn listed_colors(bytes: &[u8]) -> Option<[Rgb; KIT_COLORS]> {
     match read_colors_txt(bytes, KIT_COLORS).colors.as_slice() {
         [first, second] => Some([*first, *second]),
         _ => None,

@@ -16,7 +16,7 @@ mod rows;
 #[cfg(test)]
 mod testing;
 
-pub use cells::{Cell, CellState, Open, Outline, PictureFile, Position, TopBox, Width};
+pub use cells::{Cell, CellState, KitIcon, Open, Outline, PictureFile, Position, TopBox, Width};
 pub use detail::{CellKey, Detail, GridResponse, Place, Sources, cell_places};
 pub use grid::show;
 pub use legend::{LegendEntry, legend};

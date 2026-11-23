@@ -1,6 +1,9 @@
 //! The grid's rows: the cells a finding colours, the folder a cell opens, a row's
 //! log lines, and the message shown in place of a row's cells.
 
+use egui::Color32;
+use export_grid::KitIcon;
+
 use super::*;
 
 /// The codes of `cell`'s findings.
@@ -260,6 +263,42 @@ fn a_dropped_kit_folder_keeps_its_cell() {
     let home = kit(team, 1).expect("K1 drawn");
     assert_eq!(codes(home), ["kit_layout_conflict"]);
     assert_eq!(home.outline, Some(Outline::Error));
+}
+
+// TC-GUI-10: a kept kit whose `colors.txt` gives two colors carries its menu icon and those
+// colors; one without two listed colors, or dropped by a finding, carries none.
+#[test]
+fn a_kit_cell_carries_its_menu_icon_and_menu_colours() {
+    let temp = sandbox("view_grid_kit_menu");
+    let root = temp.path();
+    list_teams(root);
+    add_player(root, "co Midcup Kits", "01 - A");
+    for folder in ["g1", "p1", "p2", "p3"] {
+        add_kit(root, "co Midcup Kits", folder);
+    }
+    add_file(root, "co Midcup Kits/Kits/p1/colors.txt", b"#c11200\n");
+    fs::remove_file(root.join("exports/co Midcup Kits/Kits/p2/icon_11")).unwrap();
+    add_file(root, "co Midcup Kits/Kits/p3/config.toml", b"not toml [");
+    let rows = checked_rows(root);
+    let team = row(&rows, "/co/");
+    let colors = [
+        Color32::from_rgb(0xc1, 0x12, 0x00),
+        Color32::from_rgb(0x41, 0x41, 0x41),
+    ];
+    assert_eq!(
+        kit(team, 0).unwrap().kit_icon,
+        Some(KitIcon { number: 11, colors }),
+        "g1"
+    );
+    assert_eq!(kit(team, 1).unwrap().kit_icon, None, "p1");
+    assert_eq!(
+        kit(team, 2).unwrap().kit_icon,
+        Some(KitIcon { number: 3, colors }),
+        "p2"
+    );
+    let p3 = kit(team, 3).unwrap();
+    assert_eq!(p3.outline, Some(Outline::Error), "p3");
+    assert_eq!(p3.kit_icon, None, "p3");
 }
 
 // An export dropped whole is drawn from its listing: here a team the teams list lacks,
