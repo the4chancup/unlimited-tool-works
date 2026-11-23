@@ -235,6 +235,37 @@ fn a_dropped_export_s_boxes_name_the_pictures_of_its_listing() {
     }
 }
 
+// A leftover `logo - Copy.png` is no logo by the grammar and sorts ahead of `logo.png`
+// in the listing's fold order (a space ranks before the dot): the label's box names the
+// main logo, not the first texture the listing holds.
+// TC-GUI-31
+#[test]
+fn a_dropped_export_s_label_names_its_logo_not_another_root_texture() {
+    let temp = sandbox("view_grid_dropped_logo_stray");
+    let root = temp.path();
+    list_teams(root);
+    let name = "v Midcup Map";
+    add_player(root, name, "03 - B");
+    add_file(root, &format!("{name}/logo - Copy.png"), b"leftover");
+    add_file(root, &format!("{name}/logo.png"), b"logo");
+    assert!(
+        vtree::fold_name("logo - Copy.png") < vtree::fold_name("logo.png"),
+        "premise: the stray comes first in the listing's order"
+    );
+    let rows = checked_rows(root);
+    let team = row(&rows, "/v/");
+    assert_eq!(
+        player(team, 3).unwrap().state,
+        CellState::Blocked,
+        "premise: the check dropped the export"
+    );
+    let export = export_folder(&team.label);
+    assert_eq!(
+        team.label.top,
+        TopBox::Logo(Some(picture(&export, "logo.png")))
+    );
+}
+
 /// Extracts the archive at `archive` into `folder`, which it creates.
 fn unzip(archive: &Path, folder: &Path) {
     let mut zip = archives::Archive::open(archive).unwrap();
