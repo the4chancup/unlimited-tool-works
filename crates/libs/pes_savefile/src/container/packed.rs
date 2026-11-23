@@ -144,6 +144,36 @@ mod tests {
         }
     }
 
+    // The fixture containers carry an empty logo and serial and a
+    // zeroed identifier, so a pack that dropped or blanked one of them
+    // would still rebuild a fixture byte for byte. This container fills
+    // the three with distinct bytes — the identifier's length the
+    // header's own, the serial's even — and each reads back beside the
+    // byte-for-byte check.
+    #[test]
+    fn a_packed_save_rebuilds_a_logo_identifier_and_serial() {
+        let mut container = fixture_container(PesVersion::Pes17);
+        container.logo = (0xa0..0xb0).collect();
+        container.identifier = vec![0x55; container.identifier.len()];
+        container.serial = (0xc0..0xc8).collect();
+        let save = container
+            .to_bytes(&test_salt())
+            .expect("the container encodes");
+        let packed = pack_file(&save).expect("the save packs");
+        assert_eq!(
+            rebuild(&packed).expect("the packed form rebuilds"),
+            save,
+            "the rebuilt bytes are the file's"
+        );
+        let (unpacked, _) = unpack(&packed).expect("the packed form unpacks");
+        assert_eq!(unpacked.logo, container.logo, "the logo reads back");
+        assert_eq!(
+            unpacked.identifier, container.identifier,
+            "the identifier reads back"
+        );
+        assert_eq!(unpacked.serial, container.serial, "the serial reads back");
+    }
+
     // A packed form is refused as `NotPacked` when it is empty, one byte
     // short, names a scheme no `MasterKey` owns or carries a byte after
     // `serial`.

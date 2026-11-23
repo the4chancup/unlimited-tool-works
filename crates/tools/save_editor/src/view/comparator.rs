@@ -524,12 +524,22 @@ fn mismatch_refusal(picked: PesVersion, open: PesVersion) -> String {
     version_mismatch_sentence("The picked save", picked, "the open save", open)
 }
 
+/// One comparison's work: `diff::build` and the line list over its
+/// report. `spawn_compare` runs it on the worker's thread; the panel's
+/// tests run it on their own, to write a reply they deliver themselves.
+pub(super) fn compare(
+    picked: &EditFile,
+    open: &EditFile,
+    scope: Option<DiffScope>,
+) -> Result<Vec<Line>, CompareError> {
+    diff::build(picked, open, scope).map(|report| lines(&report, picked, open))
+}
+
 /// One comparison's worker: both `EditFile`s cloned for the thread — the
 /// view keeps owning them and a worker may not hold a `&` across frames;
 /// the open save's clone costs ~4 ms on the PES 21 fixture (debug build,
 /// measured 2026-10-24), nothing against the ~600 ms run — then
-/// `diff::build` and the line list off it, the key riding the reply so the
-/// caller knows what landed.
+/// `compare`, the key riding the reply so the caller knows what landed.
 fn spawn_compare(
     ctx: &egui::Context,
     picked: &EditFile,
@@ -542,8 +552,7 @@ fn spawn_compare(
     let reply_key = key.clone();
     let ctx = ctx.clone();
     std::thread::spawn(move || {
-        let result =
-            diff::build(&picked, &open, scope).map(|report| lines(&report, &picked, &open));
+        let result = compare(&picked, &open, scope);
         // A newer comparison can replace the receiver mid-flight; that
         // send's failure is the superseded thread ending, not an error.
         if sender.send((reply_key, result)).is_err() {
