@@ -1139,6 +1139,107 @@ fn the_text_after_the_code_is_drawn() {
     );
 }
 
+/// Three lines, the second a finding whose code links to the help.
+fn three_lines() -> Vec<LogLine> {
+    let mut formatter = EventLines::new();
+    let event = PipelineEvent::Message(Message {
+        code: MessageCode {
+            tool_id: "compiler",
+            code: Cow::Borrowed("player_unlisted"),
+        },
+        severity: Severity::Warning,
+        disposition: Disposition::Keep,
+        scope: Scope::Folder {
+            export_id: ExportId(1),
+            path: ScopePath::new("Players/01 - T").unwrap(),
+        },
+        context: Vec::new(),
+    });
+    let finding =
+        LogLine::from_event(&mut formatter, &event).expect("a Message event gives a line");
+    vec![
+        LogLine::plain(Severity::Info, "the first line"),
+        finding,
+        LogLine::plain(Severity::Info, "the third line"),
+    ]
+}
+
+/// One frame of `panel` over `lines` with `events`: what the panel returned.
+fn respond(
+    window: &mut Headless,
+    panel: &mut LogPanel,
+    lines: &[LogLine],
+    events: Vec<egui::Event>,
+) -> LogResponse {
+    let mut response = LogResponse::default();
+    window.frame(events, |ui| response = panel.show(ui, lines));
+    response
+}
+
+/// A spot on the second line, right of its text, where no widget of the line's text is:
+/// the line senses the pointer over its whole row.
+fn right_of_second_line(nodes: &[accesskit::Node]) -> egui::Pos2 {
+    let rest = bounds(nodes, " at Players/01 - T");
+    egui::pos2(700.0, ((rest.y0 + rest.y1) / 2.0) as f32)
+}
+
+#[test]
+fn the_line_under_the_pointer_is_reported_over_its_whole_row() {
+    let lines = three_lines();
+    let mut panel = LogPanel::new("test-log");
+    let mut window = Headless::new();
+    let at = right_of_second_line(&window.idle(&mut panel, &lines));
+    let response = respond(
+        &mut window,
+        &mut panel,
+        &lines,
+        vec![egui::Event::PointerMoved(at)],
+    );
+    assert_eq!(response.hovered, Some(1));
+    assert_eq!(response.clicked, None, "no click");
+}
+
+#[test]
+fn a_click_on_a_line_is_reported() {
+    let lines = three_lines();
+    // Right of the text, and on the text, whose labels take the clicks on it.
+    for on_text in [false, true] {
+        let mut panel = LogPanel::new("test-log");
+        let mut window = Headless::new();
+        let nodes = window.idle(&mut panel, &lines);
+        let at = if on_text {
+            centre(
+                nodes
+                    .iter()
+                    .find(|node| node.value() == Some(" at Players/01 - T"))
+                    .expect("the text after the code"),
+            )
+        } else {
+            right_of_second_line(&nodes)
+        };
+        let pressed = respond(&mut window, &mut panel, &lines, pointer_at(at, true));
+        assert_eq!(pressed.clicked, None, "not before the release, {on_text}");
+        let released = respond(&mut window, &mut panel, &lines, pointer_at(at, false));
+        assert_eq!(released.clicked, Some(1), "on the text {on_text}");
+        assert_eq!(released.help, None);
+    }
+}
+
+#[test]
+fn a_click_on_a_line_s_code_link_opens_the_help_and_is_not_the_line_s_click() {
+    let lines = three_lines();
+    let mut panel = LogPanel::new("test-log");
+    let mut window = Headless::new();
+    let nodes = window.idle(&mut panel, &lines);
+    let at = centre(entry(&nodes, "player_unlisted"));
+    respond(&mut window, &mut panel, &lines, pointer_at(at, true));
+    let released = respond(&mut window, &mut panel, &lines, pointer_at(at, false));
+    let help = released.help.expect("the help asked for");
+    assert_eq!(help.code, "player_unlisted");
+    assert_eq!(released.clicked, None);
+    assert_eq!(released.hovered, Some(1), "the link is on the line");
+}
+
 #[test]
 fn a_codeless_line_stays_one_row_and_scrolls_sideways() {
     // A long line without a code must not wrap (the body's contract).

@@ -5,11 +5,13 @@
 
 use egui::text::{LayoutJob, TextFormat};
 use egui::{Align, Align2, Color32, FontId, Key, Layout, Modifiers, Pos2, Rect, RichText, Sense};
-use egui::{TextStyle, TextureHandle, Vec2, pos2, vec2};
+use egui::{Stroke, StrokeKind, TextStyle, TextureHandle, Vec2, pos2, vec2};
 use studio_core::theme::NO_TINT;
 use studio_core::{CatalogRow, Message, MessageCode, Scope, Severity};
 
-use crate::cells::{Cell, CellState, Open, Outline, PictureFile, Position, TopBox, state_name};
+use crate::cells::{
+    Cell, CellState, Open, Outline, PictureFile, Position, RADIUS, TopBox, state_name,
+};
 use crate::rows::{Columns, Row, RowBody};
 
 /// How long the pointer rests on a cell before its window opens. It is longer than the
@@ -53,29 +55,65 @@ const TILE_GAP: f32 = 2.0;
 const CORNER: Vec2 = vec2(44.0, 43.0);
 /// The font size of "No logo".
 const NO_LOGO_SIZE: f32 = 9.0;
+/// The width of the outline a log line's click draws around its cell.
+pub(crate) const OUTLINE_WIDTH: f32 = 2.0;
 
-/// A cell of the grid: its row's key and its place in the row.
+/// A cell of the grid, named from outside it: a tool's log line stands for one.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub(crate) struct CellKey {
-    pub(crate) row: String,
-    pub(crate) place: Place,
+pub struct CellKey {
+    /// The key of the cell's row: the export it belongs to ([`Row::key`]).
+    pub row: String,
+    /// Where the cell stands in its row.
+    pub place: Place,
 }
 
 /// Where a cell stands in its row.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(crate) enum Place {
-    /// The team label.
+pub enum Place {
+    /// The team label, which holds the export's own findings.
     Label,
-    /// A position: its line, its column group, and its index in the group.
+    /// A position in the row's lines (a player, the portraits, a kit).
     Position {
+        /// The row's line, counted from 0: a referee row's second line is 1.
         line: usize,
+        /// The column group ([`Columns::groups`]), counted from 0.
         group: usize,
+        /// The position in its group, counted from 0.
         index: usize,
     },
 }
 
+/// `row`'s cells with their places: its label, then the cells of each line, left to right.
+/// Empty positions are left out. It allocates nothing, since a tool's summary walks every
+/// cell each frame.
+pub fn cell_places(row: &Row) -> impl Iterator<Item = (Place, &Cell)> {
+    let lines = match &row.body {
+        RowBody::Lines(lines) => lines.as_slice(),
+        RowBody::Message { .. } => &[],
+    };
+    let positions = lines.iter().enumerate().flat_map(|(line, positions)| {
+        positions
+            .groups
+            .iter()
+            .enumerate()
+            .flat_map(move |(group, cells)| {
+                cells
+                    .iter()
+                    .enumerate()
+                    .filter_map(move |(index, position)| match position {
+                        Position::Cell(cell) => {
+                            Some((Place::Position { line, group, index }, cell.as_ref()))
+                        }
+                        Position::Empty => None,
+                    })
+            })
+    });
+    std::iter::once((Place::Label, &row.label)).chain(positions)
+}
+
 /// What the detail window keeps from one frame to the next: which cell is pinned, which one
-/// the pointer is on, where the window stands. A tool keeps one per grid, for the session.
+/// the pointer is on, which one a log line outlined, where the window stands. A tool keeps
+/// one per grid, for the session.
 #[derive(Debug, Default)]
 pub struct Detail {
     /// The pinned cell: the window stays open on it.
@@ -91,6 +129,13 @@ pub struct Detail {
     position: Option<Pos2>,
     /// The row whose label's Copy messages was clicked, and until when it reads "Copied".
     copied: Option<(String, f64)>,
+    /// The cell the tool's log line under the pointer stands for this frame (`point_at`).
+    pointed: Option<CellKey>,
+    /// The cell a log line's click outlined (`go_to`). It stays until another line's click
+    /// moves it.
+    outlined: Option<CellKey>,
+    /// The next `show` scrolls the outlined cell into view.
+    scroll_to_outlined: bool,
 }
 
 /// The cell under the pointer, and when its window opens on hover.
@@ -143,6 +188,8 @@ pub(crate) struct Found {
     /// The cell pinned when the frame began, and its rectangle. A cell a click pins gets its
     /// pin badge from the next frame on.
     pinned: Option<(CellKey, Rect)>,
+    /// The outlined cell's rectangle, when it was drawn.
+    outlined: Option<Rect>,
 }
 
 impl Found {
@@ -165,14 +212,44 @@ impl Found {
             self.clicked = Some(key());
             self.double_clicked = response.double_clicked();
         }
-        let pinned = detail.pinned.as_ref();
-        if pinned.is_some_and(|pinned| pinned.row == row && pinned.place == place) {
+        let is = |cell: &CellKey| cell.row == row && cell.place == place;
+        if detail.pinned.as_ref().is_some_and(is) {
             self.pinned = Some((key(), response.rect));
+        }
+        if detail.outlined.as_ref().is_some_and(is) {
+            self.outlined = Some(response.rect);
         }
     }
 }
 
 impl Detail {
+    /// The tool's log line under the pointer stands for `cell` this frame (`None`: no line, or
+    /// one that stands for no cell). While the pointer is on no cell of the grid, the window
+    /// treats `cell` as the cell under the pointer, with the same delay and rules. Called
+    /// every frame, before `show`.
+    pub fn point_at(&mut self, cell: Option<CellKey>) {
+        self.pointed = cell;
+    }
+
+    /// A click on the tool's log line standing for `cell`: it pins the cell's window as a
+    /// click on the cell does (or unpins it, when it is the pinned cell), outlines the cell
+    /// until another line's click, and the next `show` scrolls the cell into view.
+    pub fn go_to(&mut self, cell: CellKey) {
+        self.toggle_pin(&cell);
+        self.outlined = Some(cell);
+        self.scroll_to_outlined = true;
+    }
+
+    /// The cell `show` scrolls into view this frame: the outlined one, on the frame after
+    /// `go_to` alone.
+    pub(crate) fn take_scroll_target(&mut self) -> Option<&CellKey> {
+        if std::mem::take(&mut self.scroll_to_outlined) {
+            self.outlined.as_ref()
+        } else {
+            None
+        }
+    }
+
     /// Takes in the frame's pointer and keys: the hover that opens a window, the clicks that
     /// pin and unpin, Esc. `empty_clicked` is a click on the grid's empty space. Returns the
     /// cell a double-click landed on.
@@ -183,7 +260,8 @@ impl Detail {
         empty_clicked: bool,
     ) -> Option<CellKey> {
         let now = ui.input(|input| input.time);
-        self.follow(found.hovered.as_ref(), now);
+        let pointed = self.pointed.take();
+        self.follow(found.hovered.as_ref().or(pointed.as_ref()), now);
         let mut double_clicked = None;
         if let Some(cell) = &found.clicked {
             // egui reports the double-click with the click of its second press, so that
@@ -194,12 +272,7 @@ impl Detail {
                 double_clicked = Some(cell.clone());
             } else {
                 self.pinned_before_click = self.pinned.clone();
-                if self.pinned.as_ref() == Some(cell) {
-                    self.pinned = None;
-                    self.mute(cell);
-                } else {
-                    self.pinned = Some(cell.clone());
-                }
+                self.toggle_pin(cell);
             }
         } else if empty_clicked {
             self.pinned = None;
@@ -266,6 +339,32 @@ impl Detail {
             cell: cell.clone(),
             opens_at: None,
         });
+    }
+
+    /// A single click on `cell`: it pins it, or unpins it when it is the pinned cell, which
+    /// then opens nothing on hover until the pointer leaves it.
+    fn toggle_pin(&mut self, cell: &CellKey) {
+        if self.pinned.as_ref() == Some(cell) {
+            self.pinned = None;
+            self.mute(cell);
+        } else {
+            self.pinned = Some(cell.clone());
+        }
+    }
+
+    /// Paints the outline just outside the outlined cell's edge, over its own ring, when
+    /// `found` saw the cell drawn. The rows start at `rows_top` on screen, under the title
+    /// row, which covers the outline of a cell scrolled under it as it covers the cell.
+    pub(crate) fn paint_outline(&self, ui: &egui::Ui, found: &Found, rows_top: f32) {
+        let Some(rect) = found.outlined else {
+            return;
+        };
+        // The rows' area starts as high as the first row's outline reaches.
+        let view = ui.clip_rect();
+        let rows = Rect::from_min_max(pos2(view.left(), rows_top - OUTLINE_WIDTH), view.max);
+        let stroke = Stroke::new(OUTLINE_WIDTH, ui.visuals().selection.stroke.color);
+        ui.painter_at(rows)
+            .rect_stroke(rect, RADIUS, stroke, StrokeKind::Outside);
     }
 
     /// Paints the pin badge on the pinned cell, when `found` saw it drawn pinned. The rows

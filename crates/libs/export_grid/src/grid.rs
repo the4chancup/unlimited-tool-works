@@ -3,11 +3,13 @@
 //! cell is a rectangle the painter fills, with a node of its own for screen readers and
 //! tests, which senses the pointer for the detail window.
 
-use egui::{Align2, Color32, FontId, Rect, Sense, TextStyle, pos2, vec2};
+use egui::{Align2, Color32, FontId, Pos2, Rect, Sense, TextStyle, pos2, vec2};
 use studio_core::theme::palette;
 
 use crate::cells::{Cell, CellState, Outline, Position, Width, look, paint};
-use crate::detail::{Contents, Detail, Found, GridResponse, Place, Sources, open_of};
+use crate::detail::{
+    CellKey, Contents, Detail, Found, GridResponse, OUTLINE_WIDTH, Place, Sources, open_of,
+};
 use crate::rows::{Columns, IdCell, Line, Row, RowBody, Tone};
 
 /// A square position's side, and a line's height.
@@ -104,6 +106,13 @@ pub fn show(
                 top += height;
             }
             let double_clicked = detail.update(ui, &found, empty.clicked());
+            if let Some(key) = detail.take_scroll_target()
+                && let Some(cell) = cell_rect(&layout, rows, key, pos2(left, area.top() + rows_top))
+            {
+                // Taller by the title row, so the cell lands under it rather than behind it.
+                let target = cell.expand(OUTLINE_WIDTH);
+                ui.scroll_to_rect(target.with_min_y(target.top() - rows_top), None);
+            }
             // The title row is painted last, over the rows scrolled under it: it stays at
             // the top of the view.
             let title_top = view.top().max(area.top());
@@ -124,6 +133,7 @@ pub fn show(
                 let x = left + rule + RULE_AT + 0.5;
                 ui.painter().vline(x, title_top..=bottom, stroke);
             }
+            detail.paint_outline(ui, &found, cover.bottom());
             detail.paint_pin(ui, &found, cover.bottom());
             double_clicked
         });
@@ -149,6 +159,44 @@ fn row_height(row: &Row) -> f32 {
         RowBody::Message { .. } => 1,
     };
     (SQUARE + SPACING) * lines as f32
+}
+
+/// Where the cell `key` stands on screen, whether its row is drawn or not, in a grid whose
+/// left edge and first row's top are `origin`; `None` when no row has the cell.
+fn cell_rect(layout: &Layout, rows: &[Row], key: &CellKey, origin: Pos2) -> Option<Rect> {
+    let at = rows.iter().position(|row| row.key == key.row)?;
+    let top = origin.y + rows[..at].iter().map(row_height).sum::<f32>();
+    let (x, width, line) = match key.place {
+        Place::Label => (layout.label, LABEL_WIDTH, 0),
+        Place::Position { line, group, index } => {
+            let RowBody::Lines(lines) = &rows[at].body else {
+                return None;
+            };
+            let positions = lines.get(line)?.groups.get(group)?;
+            let Position::Cell(cell) = positions.get(index)? else {
+                return None;
+            };
+            let (start, column) = *layout.groups.get(group)?;
+            let x = positions[..index].iter().fold(start, |x, position| {
+                x + span(position, column) * (column + SPACING)
+            });
+            (x, column_width(cell.width), line)
+        }
+    };
+    let line_top = top + (SQUARE + SPACING) * line as f32;
+    Some(Rect::from_min_size(
+        pos2(origin.x + x, line_top),
+        vec2(width, SQUARE),
+    ))
+}
+
+/// How many of its group's columns `position` takes, the group's columns `column` wide: a
+/// wide cell in a group of square columns takes two.
+fn span(position: &Position, column: f32) -> f32 {
+    match position {
+        Position::Cell(cell) if cell.width == Width::Wide && column == SQUARE => 2.0,
+        Position::Cell(_) | Position::Empty => 1.0,
+    }
 }
 
 /// Where each column starts, from the grid's left edge.
@@ -316,10 +364,6 @@ impl Grid<'_> {
         {
             let mut x = *start;
             for (index, position) in positions.iter().enumerate() {
-                let span = match position {
-                    Position::Cell(cell) if cell.width == Width::Wide && *column == SQUARE => 2.0,
-                    Position::Cell(_) | Position::Empty => 1.0,
-                };
                 match position {
                     Position::Empty => {
                         let colour = palette(self.ui.visuals()).grid_empty;
@@ -332,7 +376,7 @@ impl Grid<'_> {
                         on_cell(group_index, index, &response);
                     }
                 }
-                x += span * (column + SPACING);
+                x += span(position, *column) * (column + SPACING);
             }
         }
     }

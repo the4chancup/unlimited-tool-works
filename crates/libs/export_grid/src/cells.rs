@@ -202,7 +202,7 @@ pub(crate) fn look(state: CellState, outline: Option<Outline>, visuals: &egui::V
 }
 
 /// A cell's and a swatch's corner radius.
-const RADIUS: f32 = 2.0;
+pub(crate) const RADIUS: f32 = 2.0;
 /// The width of a Warning's or an Error's ring, inside the cell's edge.
 const RING: f32 = 3.0;
 /// A blocked cell's dashes, and the gaps between them.

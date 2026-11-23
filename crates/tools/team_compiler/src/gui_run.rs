@@ -1,12 +1,14 @@
-//! The window's `compile`: the run the Compile button starts, on a thread of its own and through
-//! the command line's own parser, preflight and verdict (`cli`), its events drained into the
-//! window's log each frame.
+//! The window's log: the grid's check's findings, then the `compile` the Compile button starts,
+//! on a thread of its own and through the command line's own parser, preflight and verdict
+//! (`cli`), its events drained into the log each frame.
 
 use std::thread::JoinHandle;
 
 use crossbeam_channel::{Receiver, unbounded};
+use export_grid::{CellKey, Row, cell_places};
 use studio_core::{
-    CliError, EventLines, LogLine, PipelineEventEnvelope, RunningPes, Severity, ToolContext,
+    CliError, EventLines, LogLine, Message, PipelineEventEnvelope, RunningPes, Severity,
+    ToolContext, message_line,
 };
 
 use crate::cli;
@@ -18,23 +20,56 @@ struct Run {
     thread: JoinHandle<Result<u8, CliError>>,
 }
 
-/// The window's run log: the lines of the latest `compile`, as the console prints them, ending
-/// with the run's exit code.
+/// The window's log: the grid's last check's findings, then the lines of the latest `compile`, as
+/// the console prints them, ending with the run's exit code.
 #[derive(Default)]
 pub(crate) struct RunLog {
+    /// The check's lines, then the run's.
     lines: Vec<LogLine>,
+    /// The cell each of the check's lines acts for, one per line: the check's lines are the
+    /// first `cells.len()` of `lines`.
+    cells: Vec<CellKey>,
     formatter: EventLines,
     run: Option<Run>,
+}
+
+/// The findings of a check's `rows` as the log prints them, each with the grid cell its line
+/// acts for: row by row, each row's cells in `cell_places` order, Infos included. A finding two
+/// cells hold (a referee folder backing two slots) is one line, acting for the first.
+pub(crate) fn check_lines(rows: &[Row]) -> (Vec<LogLine>, Vec<CellKey>) {
+    let mut lines = Vec::new();
+    let mut cells = Vec::new();
+    for row in rows {
+        let mut earlier_cells: Vec<&Message> = Vec::new();
+        for (place, cell) in cell_places(row) {
+            for message in &cell.messages {
+                if earlier_cells.contains(&message) {
+                    continue;
+                }
+                lines.push(LogLine {
+                    severity: message.severity,
+                    code: Some(message.code.clone()),
+                    text: message_line(Some(&row.key), message),
+                });
+                cells.push(CellKey {
+                    row: row.key.clone(),
+                    place,
+                });
+            }
+            earlier_cells.extend(&cell.messages);
+        }
+    }
+    (lines, cells)
 }
 
 impl RunLog {
     /// Starts `compile` with no arguments on a thread of its own, through the command line's own
     /// parser, preflight and verdict, so the button cannot compile anything the command line
     /// would refuse. `running` is the tool's running-PES probe, handed to `cli::run`. The
-    /// previous run's lines go. Called only while no run is in flight (the button is disabled
-    /// while one runs).
+    /// previous run's lines go; the check's stay. Called only while no run is in flight (the
+    /// button is disabled while one runs).
     pub(crate) fn start_compile(&mut self, ctx: &ToolContext, running: fn() -> Vec<RunningPes>) {
-        self.lines.clear();
+        self.lines.truncate(self.cells.len());
         // A fresh formatter: export ids restart with each run.
         self.formatter = EventLines::new();
         let matches = cli::command()
@@ -89,6 +124,13 @@ impl RunLog {
             .push(LogLine::plain(Severity::Error, format!("error: {error}")));
     }
 
+    /// Replaces the check's lines with those of `rows`, a new check's, ahead of the run's.
+    pub(crate) fn set_check(&mut self, rows: &[Row]) {
+        let (lines, cells) = check_lines(rows);
+        self.lines.splice(..self.cells.len(), lines);
+        self.cells = cells;
+    }
+
     /// Whether a compile is in flight.
     pub(crate) fn is_running(&self) -> bool {
         self.run.is_some()
@@ -97,6 +139,12 @@ impl RunLog {
     /// The lines shown, oldest first.
     pub(crate) fn lines(&self) -> &[LogLine] {
         &self.lines
+    }
+
+    /// The grid cell the line at `line` in `lines` acts for: a check's line has one, a run's
+    /// line none.
+    pub(crate) fn cell_of(&self, line: usize) -> Option<&CellKey> {
+        self.cells.get(line)
     }
 
     fn append(&mut self, events: &Receiver<PipelineEventEnvelope>) {
@@ -117,6 +165,7 @@ impl RunLog {
         let thread = std::thread::spawn(move || Ok(u8::from(until.recv().is_err())));
         RunLog {
             lines: Vec::new(),
+            cells: Vec::new(),
             formatter: EventLines::new(),
             run: Some(Run { events, thread }),
         }
@@ -149,7 +198,12 @@ impl RunLog {
 mod tests {
     use studio_core::StudioTool;
 
+    use std::borrow::Cow;
     use std::path::Path;
+
+    use export_grid::{Cell, CellState, Line, Place, Position, RowBody};
+    use studio_core::{Disposition, ExportId, MessageCode, Scope};
+    use vtree::ScopePath;
 
     use super::*;
     use crate::Tool;
@@ -248,6 +302,192 @@ mod tests {
             tool.run_log.is_running()
         });
         assert_eq!(tool.run_log.texts(), tracer_lines(root));
+    }
+
+    /// A finding of the Compiler's `code` at `severity` about `scope`, with `context`.
+    fn finding(
+        code: &'static str,
+        severity: Severity,
+        scope: Scope,
+        context: &[(&str, &str)],
+    ) -> Message {
+        Message {
+            code: MessageCode {
+                tool_id: TOOL_ID,
+                code: Cow::Borrowed(code),
+            },
+            severity,
+            disposition: Disposition::Keep,
+            scope,
+            context: context
+                .iter()
+                .map(|(key, value)| ((*key).to_owned(), (*value).to_owned()))
+                .collect(),
+        }
+    }
+
+    /// The folder `path` of export 1.
+    fn folder(path: &str) -> Scope {
+        Scope::Folder {
+            export_id: ExportId(1),
+            path: ScopePath::new(path).unwrap(),
+        }
+    }
+
+    /// A checked cell showing `text`, holding `messages`.
+    fn cell(text: &str, messages: Vec<Message>) -> Position {
+        Position::Cell(Box::new(Cell {
+            messages,
+            ..Cell::new(text, CellState::FullOk)
+        }))
+    }
+
+    /// A row keyed `key` and labelled `label`, its label holding `label_messages`, its lines
+    /// `lines` of player positions alone.
+    fn row(key: &str, label: &str, label_messages: Vec<Message>, lines: Vec<Vec<Position>>) -> Row {
+        Row {
+            key: key.to_owned(),
+            label: Cell {
+                messages: label_messages,
+                ..Cell::new(label, CellState::FullOk)
+            },
+            id: None,
+            body: RowBody::Lines(
+                lines
+                    .into_iter()
+                    .map(|players| Line {
+                        name: None,
+                        groups: vec![players],
+                    })
+                    .collect(),
+            ),
+            log_lines: Vec::new(),
+        }
+    }
+
+    #[test]
+    fn the_check_s_lines_are_each_row_s_findings_in_cell_order_one_per_finding() {
+        let orphaned = finding(
+            "shared_folder_orphaned",
+            Severity::Warning,
+            folder("Boots/Solo"),
+            &[],
+        );
+        let identified = finding(
+            "export_identified",
+            Severity::Info,
+            Scope::Export {
+                export_id: ExportId(1),
+            },
+            &[("team", "/co/"), ("id", "714")],
+        );
+        let fpc = finding(
+            "fpc_conflict",
+            Severity::Error,
+            folder("Players/01 - A"),
+            &[],
+        );
+        let co = row(
+            "co Midcup Map",
+            "/co/",
+            vec![orphaned, identified],
+            vec![vec![cell("01", vec![fpc])]],
+        );
+        // A referee folder backing slots 01 and 35: its finding is on both cells.
+        let disallowed = finding(
+            "file_type_disallowed",
+            Severity::Error,
+            folder("Players/A"),
+            &[("file", "notes.exe")],
+        );
+        let mut second_line = vec![Position::Empty; 11];
+        second_line.push(cell("35", vec![disallowed.clone()]));
+        let refs = row(
+            "refs Cup",
+            "/refs/",
+            Vec::new(),
+            vec![vec![cell("01", vec![disallowed])], second_line],
+        );
+
+        let (lines, cells) = check_lines(&[co, refs]);
+        let texts: Vec<&str> = lines.iter().map(|line| line.text.as_str()).collect();
+        assert_eq!(
+            texts,
+            [
+                "- co Midcup Map: Warning shared_folder_orphaned at Boots/Solo",
+                "- co Midcup Map: Info export_identified (team=/co/, id=714)",
+                "- co Midcup Map: Error fpc_conflict at Players/01 - A",
+                "- refs Cup: Error file_type_disallowed at Players/A (file=notes.exe)",
+            ]
+        );
+        let severities: Vec<Severity> = lines.iter().map(|line| line.severity).collect();
+        assert_eq!(
+            severities,
+            [
+                Severity::Warning,
+                Severity::Info,
+                Severity::Error,
+                Severity::Error
+            ]
+        );
+        assert_eq!(
+            lines[0].code.as_ref().map(|code| code.code.as_ref()),
+            Some("shared_folder_orphaned"),
+            "the line keeps its help link"
+        );
+        let first_player = Place::Position {
+            line: 0,
+            group: 0,
+            index: 0,
+        };
+        let key = |row: &str, place| CellKey {
+            row: row.to_owned(),
+            place,
+        };
+        assert_eq!(
+            cells,
+            [
+                key("co Midcup Map", Place::Label),
+                key("co Midcup Map", Place::Label),
+                key("co Midcup Map", first_player),
+                key("refs Cup", first_player),
+            ]
+        );
+    }
+
+    #[test]
+    fn a_new_check_replaces_the_check_s_lines_and_keeps_the_run_s() {
+        let identified = |key: &str, team: &str, id: &str| {
+            let message = finding(
+                "export_identified",
+                Severity::Info,
+                Scope::Export {
+                    export_id: ExportId(1),
+                },
+                &[("team", team), ("id", id)],
+            );
+            row(key, team, vec![message], Vec::new())
+        };
+        let mut log = RunLog::default();
+        log.set_check(&[identified("co Midcup Map", "/co/", "714")]);
+        log.append_test_line(Severity::Info, "Run finished with exit code 0");
+        log.set_check(&[
+            identified("a Midcup Grid", "/a/", "702"),
+            identified("co Midcup Map", "/co/", "714"),
+        ]);
+        assert_eq!(
+            log.texts(),
+            [
+                "- a Midcup Grid: Info export_identified (team=/a/, id=702)",
+                "- co Midcup Map: Info export_identified (team=/co/, id=714)",
+                "Run finished with exit code 0",
+            ]
+        );
+        assert_eq!(
+            log.cell_of(1).map(|cell| cell.row.as_str()),
+            Some("co Midcup Map")
+        );
+        assert_eq!(log.cell_of(2), None, "a run's line acts for no cell");
     }
 
     #[test]
