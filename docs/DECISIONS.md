@@ -19811,3 +19811,19 @@ Plan: team_compiler/gui.md#Toolbar, team_compiler/README.md TC-GUI-33 and team_c
 Decision: the maintainer's "must be in it" meant the next VGL organizer's build, `0.0.3-vgl27.2`, which now waits for slice 1c-iii as well as 1b and 1c. The earlier entry's reading (built with slice 1c, in the toolbar) stands, and the maintainer agrees the toolbar is the place. What the button does on PES 2019, where the upgrade drops five of the DLC's CPKs (worklog item 8), is asked on `questions.html`.
 Why: the organizer compiles on PES 2019 with an old list, and the CLI command alone is a step a GUI user misses.
 Plan: no plan edit needed: gui.md "Toolbar" already holds the button; the build's line is in the worklog.
+
+## 2026-11-23 — team_compiler GUI — the DpFileList is checked when the Compiler opens; Upgrade DpFileList is blue, and an outdated list disables Compile
+Decision: the game's `DpFileList.bin` is checked with each check of the exports (when the view
+opens, after a run) and after an upgrade, not only by a run's preflight. While it is not the
+official one, Upgrade DpFileList stands beside Compile, filled in the selection blue with no
+edge. While it is outdated (`dpfilelist_outdated`), Compile is disabled in the mode that
+installs the CPKs, its tooltip naming the upgrade; Compile for sideloading and the test mode,
+which install no CPK, stay enabled, and so does Compile with the two Warnings
+(`dpfilelist_not_official`, `dpfilelist_cpk_missing`).
+Why: the maintainer asked for the blue button, for the list to be checked before Compile is
+clicked, since an outdated list only gives a run that fails, and for Compile to be disabled
+while the upgrade is offered, sideloading kept usable. The lead scoped the disabling to the
+outdated list, the one finding that stops a run: the other two are Warnings whose run deploys,
+and the spec keeps an edited or old DLC list usable. The test mode installs no CPK either, so
+it stays enabled with sideloading.
+Plan: `plans/team_compiler/gui.md` "Toolbar" (the two DpFileList paragraphs); TC-GUI-33.

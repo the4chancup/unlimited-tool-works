@@ -517,17 +517,25 @@ A single primary action:
   runs (the running-PES probe, `spec/core/architecture.md` "Crate structure", polled by the
   sidebar's selector). It starts the game and does nothing else.
 
-  When the last run's preflight found the game's `DpFileList.bin` not the official one
+  The game's `DpFileList.bin` is checked against the official list as the preflight checks it,
+  with each check of the exports (when the view opens, and after a run) and again after an
+  upgrade, its finding going to the log. While it is not the official one
   (`dpfilelist_outdated`, `dpfilelist_not_official` or `dpfilelist_cpk_missing`), an **Upgrade
-  DpFileList** button sits beside Compile. It opens the upgrade's dialog
-  (`pipeline.md` "DpFileList upgrade"). Once the member confirms, the upgrade does what
-  `upgrade-dpfl --yes` does and deletes the CPKs ticked in the dialog, its lines going to the
-  log. The button stays until an upgrade
-  replaces the list or a later run's preflight finds it official. It is in the toolbar, not
-  only in the finding's log line, because an outdated list stops every compile until it is
-  replaced: the remedy sits beside the button it unblocks. It shows after a run, not from a
-  live check, because the preflight stops a run before anything is compiled, so the member
-  loses one click and no time.
+  DpFileList** button sits beside Compile, filled in the selection blue with no edge, as a
+  picked chip is. It opens the upgrade's dialog (`pipeline.md` "DpFileList upgrade"). Once
+  the member confirms, the upgrade does what `upgrade-dpfl --yes` does and deletes the CPKs
+  ticked in the dialog, its lines going to the log. The button stays until a check finds the
+  list official. It is in the toolbar, not only in the finding's log line, because an
+  outdated list stops every compile until it is replaced: the remedy sits beside the button
+  it unblocks.
+
+  While the list is outdated, Compile is disabled in the mode that installs the CPKs, its
+  tooltip "The game's DpFileList.bin does not list this compile's CPK, so the game would not
+  load it. Upgrade DpFileList first", since its preflight would stop the run before anything
+  is compiled. Compile for sideloading and the test mode install no CPK, so they stay
+  enabled, as does Compile with the other two findings, which are Warnings: a list edited on
+  purpose, or an old DLC's, must stay usable. The list is checked before Compile is pressed,
+  not by a run's preflight alone, so the member is not sent into a run that only fails.
 
   Red's staged operations as separate runs ("extracted → contents", "contents → CPK") are
   superseded by the unified pipeline and are not exposed.

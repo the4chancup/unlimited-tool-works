@@ -173,7 +173,12 @@ draft checked, for the maintainer to publish; running sidekicks and jobs are not
        parts:
        - [x] 1c-iii-a (2026-11-23, merge `7a488e81`, SWE-2): `upgrade.rs`'s preview as data,
          the deletions the member ticked (`dpfilelist_cpk_deleted`), the catalog's texts
-       - 1c-iii-b: the button and the dialog over them, after 1c-ii and 1c-iii-a
+       - 1c-iii-b (SWE-2, `sk/grid1c3`, running): the button and the dialog over them, the
+         button shown after a run's preflight, as briefed before the next part's decision
+       - 1c-iii-c: the list checked with each check of the exports and after an upgrade, not
+         by a run alone; the button in the selection blue; Compile disabled while the list is
+         outdated, sideloading and the test mode enabled (DECISIONS 2026-11-23); with review
+         round S1's fixes, after 1c-iii-b
    - Then the kit cells' swatch (TC-GUI-10), the row actions, the ID cell's editing, the
      watcher and cache, Sizes and sorting, and the rest of the toolbar
      (`plans/team_compiler/gui.md` "Toolbar"; the build has a plain Compile button): the

@@ -321,15 +321,19 @@ TC-GUI-32  GIVEN a referee export holding ref_marker.dds and a logo.png, and one
                 "No logo"
 TC-GUI-33  GIVEN a PES 2017 install whose DpFileList.bin is the old faces/uniform list, every
                 CPK it names in download/
-           WHEN Compile is pressed, then Upgrade DpFileList, then Upgrade in its dialog
-           THEN the run stops with dpfilelist_outdated and the button appears beside Compile;
-                the dialog lists 4cc_40_faces.cpk → 4cc_41_teams.cpk among its renames and
-                4cc_60_midcup.cpk (6.1 KiB) among the CPKs no longer loaded, each with its
-                own delete box, unticked; after the upgrade download/ holds what
-                upgrade-dpfl --yes leaves, the log has its lines, the button is gone and the
-                next Compile passes the preflight; GIVEN a delete box ticked THEN that file
-                alone is deleted and its line is dpfilelist_cpk_deleted; GIVEN Cancel THEN
-                nothing in download/ changes
+           WHEN the Compiler's view opens, then Upgrade DpFileList is clicked, then Upgrade in
+                its dialog
+           THEN before any Compile the log has dpfilelist_outdated, the button stands beside
+                Compile in the selection blue, and Compile is disabled in the installing mode
+                while Compile for sideloading is enabled; the dialog lists 4cc_40_faces.cpk →
+                4cc_41_teams.cpk among its renames and 4cc_60_midcup.cpk (6.1 KiB) among the
+                CPKs no longer loaded, each with its own delete box, unticked; after the
+                upgrade download/ holds what upgrade-dpfl --yes leaves, the log has its lines,
+                the button is gone, Compile is enabled and the next Compile passes the
+                preflight; GIVEN the list another layout (dpfilelist_not_official) THEN the
+                button shows and Compile stays enabled; GIVEN a delete box ticked THEN that
+                file alone is deleted and its line is dpfilelist_cpk_deleted; GIVEN Cancel
+                THEN nothing in download/ changes
 TC-GUI-13  GIVEN a run in flight over two exports
            WHEN Cancel is clicked
            THEN the run ends after the task or texture in progress, no CPK is written or
