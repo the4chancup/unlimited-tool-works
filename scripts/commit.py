@@ -18,7 +18,9 @@ commits, or one sent beside it, could have written it, so it skipped the three r
 message gets (`~/.claude/rules/shakespeare.md`) between being written and being committed.
 
 With no paths and no `-a`, git commits the index alone; the script then names any tracked
-file left changed and unstaged.
+file left changed and unstaged. With `-a`, which takes tracked files alone, it commits
+nothing while a file is untracked and not ignored, and names it: a new file the commit
+needed was once left out that way, and found only after the commit.
 
 A commit that changes a file under `docs/prototypes/` first runs the drafts bundler's test
 (`scripts/drafts/bundle_drafts_test.py`, under a second) and commits nothing when it fails:
@@ -87,6 +89,11 @@ def main(argv: list[str]) -> int:
                   "from the tree that lacks it, after the branch's commit")
             return 1
         return subprocess.run(["git", "merge", "--no-ff", merge, "-F", str(message)]).returncode
+    new = untracked([]) if "-a" in rest else []
+    if new:
+        print(f"commit: nothing committed; `-a` leaves out the untracked {', '.join(new)}: "
+              "`git add` what the commit needs and delete the rest, then commit again")
+        return 1
     add_new(rest)
     changed = changed_paths(rest)
     drafts = any(path.startswith("docs/prototypes/") for path in changed)
@@ -128,12 +135,18 @@ def add_new(rest: list[str]) -> None:
     paths = [arg for arg in rest if not arg.startswith("-")]
     if not paths:
         return
-    new = subprocess.run(
+    new = untracked(paths)
+    if new:
+        subprocess.run(["git", "add", "--", *new], check=True)
+
+
+def untracked(paths: list[str]) -> list[str]:
+    """The files under `paths` (the whole tree when empty) git does not track and does not
+    ignore."""
+    return subprocess.run(
         ["git", "ls-files", "--others", "--exclude-standard", "--", *paths],
         capture_output=True, text=True, check=True,
     ).stdout.splitlines()
-    if new:
-        subprocess.run(["git", "add", "--", *new], check=True)
 
 
 def changed_paths(rest: list[str]) -> list[str]:
