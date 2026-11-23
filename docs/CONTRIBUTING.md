@@ -315,6 +315,12 @@ compares both sides resolved (`canonicalize` in Rust, as the running-PES probe's
 system names a process's file by its real path). A bare `cargo test -p <crate>` gets the
 machine's own temp folder, not the link: only the gates do.
 
+The link's path is also longer than the machine's own. So a view test that draws a temp path on
+screen and measures the layout gives it a path long enough to wrap whatever the temp folder is
+(a deep folder under it), never the temp path as handed out. A test that measured the "Saved to"
+line passed in the sidekick's tree and failed at the checkpoint (2026-11-23): the gate's
+longer temp path wrapped the line.
+
 Rules for the justfile, so it stays a command list and not a second build system:
 
 - A recipe is a list of commands, never logic. Anything with a branch or a loop is a Python

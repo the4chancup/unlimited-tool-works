@@ -229,9 +229,11 @@ impl Report {
                     ui.weak("Your user folder is written as ~ in the file's paths.");
                     // The draft's `visibility:hidden` line: its room is kept
                     // while hidden, so the buttons do not move when it shows.
+                    // One line, cut short with the whole path on hover: a long
+                    // path wrapped would take a second line and move them.
                     modal_sentence_gap(ui);
                     if let Some(saved_to) = &self.saved_to {
-                        ui.label(saved_to.as_str());
+                        ui.add(egui::Label::new(saved_to.as_str()).truncate());
                     } else {
                         ui.add_visible(false, egui::Label::new("Saved to"));
                     }

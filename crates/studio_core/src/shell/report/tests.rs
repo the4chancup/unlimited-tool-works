@@ -398,11 +398,16 @@ fn save_writes_the_bundle_at_the_picked_path_and_the_words_stay() {
 }
 
 // The "Saved to" line keeps its room while hidden, so Close shows where
-// Save… stood.
+// Save… stood, even for a path too long for one line.
 #[test]
 fn the_buttons_do_not_move_when_the_saved_line_shows() {
     let dir = TestDir::new("studio_core_report_gap");
-    let out = dir.path().join("utw-report.zip");
+    let deep = dir
+        .path()
+        .join("a folder whose name is long enough")
+        .join("that the saved line runs past the dialog's width");
+    fs::create_dir_all(&deep).unwrap();
+    let out = deep.join("utw-report.zip");
     let Shell { mut app, _dir, .. } = shell();
     let egui_ctx = test_context();
 
