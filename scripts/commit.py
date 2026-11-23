@@ -77,6 +77,7 @@ def main(argv: list[str]) -> int:
         return 1
     if merge is not None:
         return subprocess.run(["git", "merge", "--no-ff", merge, "-F", str(message)]).returncode
+    add_new(rest)
     changed = changed_paths(rest)
     drafts = any(path.startswith("docs/prototypes/") for path in changed)
     if drafts and not passes("scripts/drafts/bundle_drafts_test.py"):
@@ -103,6 +104,22 @@ def report_left_out(rest: list[str]) -> None:
     ).stdout.splitlines()
     if left:
         print(f"commit: left out, changed but not staged: {', '.join(left)}")
+
+
+def add_new(rest: list[str]) -> None:
+    """Stages the untracked files among the paths `rest` names: `git commit <paths>` refuses
+    a path git does not know ("did not match any file"), so a new file named beside changed
+    ones failed the whole commit. An ignored file is not listed as untracked, and stays
+    refused."""
+    paths = [arg for arg in rest if not arg.startswith("-")]
+    if not paths:
+        return
+    new = subprocess.run(
+        ["git", "ls-files", "--others", "--exclude-standard", "--", *paths],
+        capture_output=True, text=True, check=True,
+    ).stdout.splitlines()
+    if new:
+        subprocess.run(["git", "add", "--", *new], check=True)
 
 
 def changed_paths(rest: list[str]) -> list[str]:
