@@ -445,6 +445,53 @@ fn hold_from_to(
         .2
 }
 
+/// One wheel event of `delta` points (negative scrolls the list down).
+fn wheel(delta: f32) -> Vec<egui::Event> {
+    vec![egui::Event::MouseWheel {
+        unit: egui::MouseWheelUnit::Point,
+        delta: egui::vec2(0.0, delta),
+        phase: egui::TouchPhase::Move,
+        source: egui::MouseWheelSource::Wheel,
+        modifiers: egui::Modifiers::NONE,
+    }]
+}
+
+/// Frames until `label`'s row's bounds hold still (bounded, so a scroll
+/// that never settles fails rather than hangs): the list's scroll is
+/// settled. Returns the landing frame's nodes and shapes.
+fn settled_scroll(
+    window: &mut Headless,
+    view: &mut SaveView,
+    label: &str,
+) -> (Vec<accesskit::Node>, Vec<egui::epaint::ClippedShape>) {
+    let mut last = None;
+    for _ in 0..30 {
+        let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, view, &|| Vec::new()));
+        let bounds = row(&nodes, label).bounds();
+        if bounds.is_some() && bounds == last {
+            return (nodes, shapes);
+        }
+        last = bounds;
+    }
+    panic!("the scroll never settled on {label:?}")
+}
+
+/// The four texts a player row paints, by its label (`{place} {position}
+/// {name}`, a dirty row's `●` dropped): the `≡` handle, then the label's
+/// three parts.
+fn row_texts(label: &str) -> Vec<String> {
+    let label = label.strip_suffix(" \u{25cf}").unwrap_or(label);
+    let (place, rest) = label.split_once(' ').expect("a place and the rest");
+    let (position, name) = rest.split_once(' ').expect("a position and a name");
+    [
+        "\u{2261}".to_owned(),
+        place.to_owned(),
+        position.to_owned(),
+        name.to_owned(),
+    ]
+    .to_vec()
+}
+
 // The place a drop on the held row moves the dragged player to is marked
 // by a line between two rows, 2 thick in the selection colour with a
 // serif at each end (the draft's `.dropabove` and `.dropbelow`): on the
@@ -962,6 +1009,7 @@ fn texts_inside(
 // says the drop would move him), Esc pressed, then released there — the
 // row paints at its place again, no float and no mark draws, and the
 // release moves nothing.
+// SE-GUI-69
 #[test]
 fn escape_ends_a_held_drag_with_no_drop() {
     let (_file, mut view, mut window, visuals) = mark_scene("drag_esc", DEFAULT_PANE.y, |_| {});
@@ -995,6 +1043,11 @@ fn escape_ends_a_held_drag_with_no_drop() {
         ["\u{2261}", "02", "CB", "SECOND"],
         "the row back at its place after Esc"
     );
+    assert_eq!(
+        text_shapes(&shapes, "SECOND").len(),
+        1,
+        "SECOND painted once after Esc (no float)"
+    );
 
     // Released over row 06: no record moves and no mark is left.
     window.frame(pointer_at(sixth.center(), false), |ui| {
@@ -1018,10 +1071,12 @@ fn escape_ends_a_held_drag_with_no_drop() {
 }
 
 // The held row's float stays under the pointer while the list scrolls:
-// SECOND pressed and dragged under All teams, then the wheel turned until
-// his row leaves the view — the name keeps painting at its rest place
-// plus the pointer's travel since the press, which is the pressed point
-// kept under the pointer.
+// SECOND pressed and dragged under All teams, a small wheel keeping him
+// in view — his place paints nothing and every other row in view paints
+// its texts. Then the wheel turned until his row leaves the view — the
+// name keeps painting at its rest place plus the pointer's travel, which
+// is the pressed point kept under the pointer — and a release on a
+// teammate's row further down moves him there.
 // SE-GUI-69
 #[test]
 fn the_held_rows_float_stays_under_the_pointer_while_the_list_scrolls() {
@@ -1029,6 +1084,9 @@ fn the_held_rows_float_stays_under_the_pointer_while_the_list_scrolls() {
         mark_scene("drag_float_scroll", DEFAULT_PANE.y, |_| {});
     // All teams: enough rows that the wheel takes the held row out of view.
     view.team = TeamChoice::All;
+    // SIXTH selected, so `list_clip` can read the scroll's clip off its
+    // fill below: the open's own selection scrolls out with the wheel.
+    view.selected = Some(Selection::Player(701, 5));
     let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     let second = bounds(row(&nodes, "02 CB SECOND"));
     let rest = texts_inside(&shapes, second);
@@ -1041,22 +1099,76 @@ fn the_held_rows_float_stays_under_the_pointer_while_the_list_scrolls() {
     // Pressed 20 points right of the name's start, as SE-GUI-69.
     let name_rest = rest[3].1;
     let press = egui::pos2(name_rest.x + 20.0, second.center().y);
-    let over = press + egui::vec2(30.0, 40.0);
+    let travel = egui::vec2(30.0, 40.0);
+    let over = press + travel;
     hold_from_to(&mut window, &mut view, press, over);
+
+    // One wheel step, small enough that row 02 stays in view: the scroll
+    // must not hand the held row's lifted state to a bystander — every
+    // other player row in view paints its own texts.
+    window.frame(wheel(-40.0), |ui| show(ui, &mut view, &|| Vec::new()));
+    let (nodes, shapes) = settled_scroll(&mut window, &mut view, "02 CB SECOND");
+    let second_now = bounds(row(&nodes, "02 CB SECOND"));
+    assert!(
+        second_now.min.y < second.min.y - 10.0,
+        "premise: the small wheel scrolled the list ({second_now:?} vs {second:?})"
+    );
+    // Only the rows the clip holds paint anything: a row at the clip's
+    // edge has a node and no texts, like the lifted one's.
+    let clip = list_clip(
+        &window,
+        &shapes,
+        row(&nodes, "06 CB SIXTH").bounds().expect("its bounds"),
+    );
+    for node in nodes.iter().filter(|node| player_row(node)) {
+        let label = node.label().expect("a row has a label");
+        if label == "02 CB SECOND" || !bounds(node).intersects(clip) {
+            continue;
+        }
+        let painted: Vec<String> = texts_inside(&shapes, bounds(node))
+            .into_iter()
+            .map(|(text, _)| text)
+            .collect();
+        for text in row_texts(label) {
+            assert!(
+                painted.contains(&text),
+                "{label:?} paints {text:?} while the row is held and scrolled, got {painted:?}"
+            );
+        }
+    }
+    // The held row's place paints none; its four texts float under the
+    // pointer, each once.
+    assert!(
+        texts_inside(&shapes, second_now).is_empty(),
+        "row 02's place is blank while held, got {:?}",
+        texts_inside(&shapes, second_now)
+    );
+    for (text, at) in &rest {
+        let found: Vec<usize> = shapes
+            .iter()
+            .enumerate()
+            .filter_map(|(index, clipped)| match &clipped.shape {
+                egui::Shape::Text(shape)
+                    if shape.pos.distance(*at + travel) <= 1.0
+                        && shape.galley.job.text == *text =>
+                {
+                    Some(index)
+                }
+                _ => None,
+            })
+            .collect();
+        let [_one] = found[..] else {
+            panic!(
+                "{text:?} painted once at rest plus {travel:?} after the small scroll, got {found:?}"
+            )
+        };
+    }
+
     // Wheel, still holding, until the held row leaves the drawn rows
     // (bounded, so a list that never scrolls fails rather than hangs).
     let mut gone = false;
     for _ in 0..64 {
-        window.frame(
-            vec![egui::Event::MouseWheel {
-                unit: egui::MouseWheelUnit::Point,
-                delta: egui::vec2(0.0, -600.0),
-                phase: egui::TouchPhase::Move,
-                source: egui::MouseWheelSource::Wheel,
-                modifiers: egui::Modifiers::NONE,
-            }],
-            |ui| show(ui, &mut view, &|| Vec::new()),
-        );
+        window.frame(wheel(-600.0), |ui| show(ui, &mut view, &|| Vec::new()));
         let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
         if !nodes
             .iter()
@@ -1071,7 +1183,7 @@ fn the_held_rows_float_stays_under_the_pointer_while_the_list_scrolls() {
     // Still held: the float draws, the name at its rest place plus the
     // pointer's travel — the pressed point stays under the pointer.
     let (_, _, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
-    let at = name_rest + (over - press);
+    let at = name_rest + travel;
     let found: Vec<&str> = shapes
         .iter()
         .filter_map(|clipped| match &clipped.shape {
@@ -1086,9 +1198,190 @@ fn the_held_rows_float_stays_under_the_pointer_while_the_list_scrolls() {
         ["SECOND"],
         "the held row's name painted once at rest plus the travel ({at:?}), got {found:?}"
     );
-    window.frame(pointer_at(over, false), |ui| {
+
+    // Wheel back up until a teammate's row is in view (bounded), let the
+    // scroll settle, then move over it and release: the drop lands on
+    // its slot.
+    let mut back = false;
+    for _ in 0..64 {
+        let (_, nodes, _) = window.frame(wheel(300.0), |ui| show(ui, &mut view, &|| Vec::new()));
+        if nodes
+            .iter()
+            .any(|node| player_row(node) && node.label() == Some("06 CB SIXTH"))
+        {
+            back = true;
+            break;
+        }
+    }
+    assert!(
+        back,
+        "the wheel never brought a teammate's row back into view"
+    );
+    let _ = settled_scroll(&mut window, &mut view, "06 CB SIXTH");
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let target = centre(row(&nodes, "06 CB SIXTH"));
+    window.frame(vec![egui::Event::PointerMoved(target)], |ui| {
         show(ui, &mut view, &|| Vec::new())
     });
+    window.frame(pointer_at(target, false), |ui| {
+        show(ui, &mut view, &|| Vec::new())
+    });
+    let session = view.session.as_ref().unwrap();
+    assert_eq!(
+        session
+            .file()
+            .player(70106)
+            .map(|player| player.name.as_str()),
+        Some("SECOND"),
+        "the drop moved SECOND onto the released row's slot"
+    );
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let labels = row_labels(&nodes);
+    assert!(
+        labels.iter().any(|label| label == "06 CB SECOND \u{25cf}"),
+        "the next frame draws the new order: {labels:?}"
+    );
+}
+
+// A wheel turned between the press and the move lifts the pressed row,
+// not the row the scroll drew in its place: SECOND pressed, one wheel
+// step with the button still down (no move past egui's drag threshold
+// yet), then the move — the float paints SECOND under the pointer, the
+// row now drawn where 02 stood paints its own texts, and 02's own place
+// is blank.
+// SE-GUI-69
+#[test]
+fn a_wheel_between_the_press_and_the_drag_lifts_the_pressed_row() {
+    let (_file, mut view, mut window, _visuals) =
+        mark_scene("drag_press_wheel", DEFAULT_PANE.y, |_| {});
+    // All teams, as `the_held_rows_float_stays_under_the_pointer_while_the_list_scrolls`.
+    view.team = TeamChoice::All;
+    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let second = bounds(row(&nodes, "02 CB SECOND"));
+    let rest = texts_inside(&shapes, second);
+    assert_eq!(
+        rest.iter()
+            .map(|(text, _)| text.as_str())
+            .collect::<Vec<_>>(),
+        ["\u{2261}", "02", "CB", "SECOND"],
+        "premise: row 02 paints its handle, place, position and name"
+    );
+    let name_rest = rest[3].1;
+    let press = egui::pos2(name_rest.x + 20.0, second.center().y);
+    let travel = egui::vec2(30.0, 40.0);
+    window.frame(pointer_at(press, true), |ui| {
+        show(ui, &mut view, &|| Vec::new())
+    });
+    // One wheel step before the pointer moves past the drag threshold,
+    // then the scroll settles while the button is still down.
+    window.frame(wheel(-40.0), |ui| show(ui, &mut view, &|| Vec::new()));
+    let (settled, _) = settled_scroll(&mut window, &mut view, "02 CB SECOND");
+    let second_now = bounds(row(&settled, "02 CB SECOND"));
+    assert!(
+        second_now.min.y < second.min.y - 10.0,
+        "premise: the wheel scrolled the list ({second_now:?} vs {second:?})"
+    );
+    // The move starts the drag: the float lifts the pressed row —
+    // SECOND painted once at its rest place plus the travel.
+    let (_, nodes, shapes) = window.frame(vec![egui::Event::PointerMoved(press + travel)], |ui| {
+        show(ui, &mut view, &|| Vec::new())
+    });
+    let at = name_rest + travel;
+    let found: Vec<&str> = shapes
+        .iter()
+        .filter_map(|clipped| match &clipped.shape {
+            egui::Shape::Text(shape)
+                if shape.pos.distance(at) <= 1.0 && shape.galley.job.text == "SECOND" =>
+            {
+                Some(shape.galley.job.text.as_str())
+            }
+            _ => None,
+        })
+        .collect();
+    assert_eq!(
+        found,
+        ["SECOND"],
+        "the pressed row's name under the pointer, got {found:?}"
+    );
+    // The row now drawn where 02 stood — the third player row drawn —
+    // paints its own texts, and 02's own place is blank.
+    let mut drawn: Vec<&accesskit::Node> = nodes.iter().filter(|node| player_row(node)).collect();
+    drawn.sort_by(|a, b| a.bounds().unwrap().y0.total_cmp(&b.bounds().unwrap().y0));
+    let bystander = drawn.get(2).copied().expect("a third player row in view");
+    let label = bystander.label().expect("a label");
+    assert_ne!(
+        label, "02 CB SECOND",
+        "premise: the row drawn where 02 stood is another's"
+    );
+    let painted: Vec<String> = texts_inside(&shapes, bounds(bystander))
+        .into_iter()
+        .map(|(text, _)| text)
+        .collect();
+    for text in row_texts(label) {
+        assert!(
+            painted.contains(&text),
+            "{label:?} paints {text:?} beside the held row, got {painted:?}"
+        );
+    }
+    let second_now = bounds(row(&nodes, "02 CB SECOND"));
+    assert!(
+        texts_inside(&shapes, second_now).is_empty(),
+        "row 02's place is blank while held, got {:?}",
+        texts_inside(&shapes, second_now)
+    );
+    window.frame(pointer_at(press + travel, false), |ui| {
+        show(ui, &mut view, &|| Vec::new())
+    });
+}
+
+// A held drag released outside the list drops nothing — and the release
+// frame already shows it done: nothing follows the pointer from that
+// frame on, SECOND painted once at its row's place.
+// SE-GUI-69
+#[test]
+fn a_release_off_the_list_draws_no_float_on_the_release_frame() {
+    let (_file, mut view, mut window, _visuals) =
+        mark_scene("drag_release_frame", DEFAULT_PANE.y, |_| {});
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let second = bounds(row(&nodes, "02 CB SECOND"));
+    let from = second.center();
+    // Held over the team row — a release there would move nothing.
+    let over = centre(team_row(&nodes, &view, 701));
+    let shapes = hold_from_to(&mut window, &mut view, from, over);
+    let [float] = text_shapes(&shapes, "SECOND")[..] else {
+        panic!("premise: SECOND painted once while held")
+    };
+    assert!(
+        !second.contains(float.pos),
+        "premise: the held SECOND is the float, not the row's own"
+    );
+
+    // Moved off the list and released there: the release moves nothing,
+    // and its frame already draws the row at its place — SECOND painted
+    // once, no float.
+    let off = egui::pos2(600.0, 400.0);
+    window.frame(vec![egui::Event::PointerMoved(off)], |ui| {
+        show(ui, &mut view, &|| Vec::new())
+    });
+    let (_, _, shapes) = window.frame(pointer_at(off, false), |ui| {
+        show(ui, &mut view, &|| Vec::new())
+    });
+    assert_eq!(
+        texts_inside(&shapes, second)
+            .iter()
+            .map(|(text, _)| text.as_str())
+            .collect::<Vec<_>>(),
+        ["\u{2261}", "02", "CB", "SECOND"],
+        "row 02 back at its place on the release frame"
+    );
+    assert_eq!(
+        text_shapes(&shapes, "SECOND").len(),
+        1,
+        "SECOND painted once on the release frame (no float)"
+    );
+    let session = view.session.as_ref().unwrap();
+    assert!(!session.is_dirty(), "the release moved nothing");
+    assert!(!session.can_undo(), "no undo entry");
 }
 
 /// The text shapes in `shapes` that paint exactly `text`.
@@ -1153,55 +1446,110 @@ fn a_grouped_rows_float_is_painted_selected_as_its_row_is() {
 // The float is the row's own width — the list's span less the frame's
 // stroke on each side, the box `row_rect` lays the row in — so its name
 // is cut where the row's would be: 03's name overlong, held dragged 30
-// points right and 40 down, the name's painted right end stands the
-// row's right edge plus the travel less the row's right padding, within
-// half a point.
+// points right and 40 down, the float's name room equals the resting
+// row's, read before the drag — the row clean, dirty (the `●` its
+// unsaved changes take room for), and marked by a held Live AATF check,
+// since the float keeps the same right-end room the row leaves.
 // SE-GUI-69
 #[test]
 fn the_held_rows_float_is_the_rows_own_width() {
     let path = fixture(PesVersion::Pes21, "drag_float_width");
+    let name = "THE EXTRAORDINARILY LONG-LEGGED FORWARD WHO NEVER MISSES";
     let mut file = EditFile::from_bytes(&fixture_save(PesVersion::Pes21)).unwrap();
-    file.player_mut(70103).unwrap().name =
-        "THE EXTRAORDINARILY LONG-LEGGED FORWARD WHO NEVER MISSES".to_owned();
+    file.player_mut(70103).unwrap().name = name.to_owned();
     file.save(&path).unwrap();
     let mut view = SaveView::new();
     view.open(&path);
     view.team = TeamChoice::Team(701);
     let mut window = Headless::new();
-    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
-    let third = bounds(row(
-        &nodes,
-        "03 CB THE EXTRAORDINARILY LONG-LEGGED FORWARD WHO NEVER MISSES",
-    ));
-    let padding = window
-        .ctx
-        .style_of(window.ctx.theme())
-        .spacing
-        .button_padding
-        .x;
+    let label = format!("03 CB {name}");
     let travel = egui::vec2(30.0, 40.0);
-    let from = third.center();
-    let over = from + travel;
-    let shapes = hold_from_to(&mut window, &mut view, from, over);
-    let painted = text_shapes(
-        &shapes,
-        "THE EXTRAORDINARILY LONG-LEGGED FORWARD WHO NEVER MISSES",
-    );
-    let [name] = painted[..] else {
-        panic!("the float's name painted once, got {}", painted.len())
-    };
-    assert!(name.galley.elided, "premise: the name is cut");
-    // `pos.x` plus the wrap width is where the room the float gave the
-    // name runs out (`galley.size` stops at the ellipsis).
-    let right = f64::from(name.pos.x + name.galley.job.wrap.max_width);
-    let expected = f64::from(third.max.x + travel.x - padding);
-    assert!(
-        (right - expected).abs() <= 0.5,
-        "the float's name room ends at {right}, the row's right plus the travel less the padding {expected}"
-    );
-    window.frame(pointer_at(over, false), |ui| {
-        show(ui, &mut view, &|| Vec::new())
-    });
+
+    for case in ["clean", "marked", "dirty"] {
+        match case {
+            // A held Live AATF check for the team puts its mark on every
+            // row, the dragged row's included.
+            "marked" => {
+                view.live_aatf = true;
+                live_checked(&mut window, &mut view, &[701]);
+            }
+            // An edit through the session marks row 03 unsaved: its dot.
+            "dirty" => {
+                view.live_aatf = false;
+                let mut entry = player_entry(&view, 70103);
+                entry.basic.height = entry.basic.height.wrapping_add(1);
+                view.session
+                    .as_mut()
+                    .expect("the save opened")
+                    .edit_players(vec![entry]);
+                assert!(
+                    view.session.as_ref().unwrap().player_dirty(701, 2),
+                    "premise: row 03 is dirty"
+                );
+            }
+            _ => {}
+        }
+        let (_, nodes, resting_shapes) =
+            window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+        let row_label = if case == "dirty" {
+            format!("{label} \u{25cf}")
+        } else {
+            label.clone()
+        };
+        let third = bounds(row(&nodes, &row_label));
+        // The resting row's name room, read before the drag: the wrap
+        // bound `field_row`-style truncation leaves it.
+        let resting = text_shapes(&resting_shapes, name)
+            .into_iter()
+            .find(|shape| third.contains(shape.pos))
+            .expect("the resting row's name");
+        assert!(
+            resting.galley.elided,
+            "premise: the resting name is cut ({case})"
+        );
+        if case == "marked" {
+            assert!(
+                texts_inside(&resting_shapes, third)
+                    .iter()
+                    .any(|(text, _)| text == "\u{2714}" || text == "\u{2716}"),
+                "premise: row 03 carries the held check's mark"
+            );
+        }
+        let resting_width = resting.galley.job.wrap.max_width;
+        let resting_right = resting.pos.x + resting_width;
+
+        let from = third.center();
+        let over = from + travel;
+        let shapes = hold_from_to(&mut window, &mut view, from, over);
+        let painted = text_shapes(&shapes, name);
+        let [float] = painted[..] else {
+            panic!(
+                "the float's name painted once ({case}), got {}",
+                painted.len()
+            )
+        };
+        assert!(
+            float.galley.elided,
+            "premise: the float's name is cut ({case})"
+        );
+        assert!(
+            (float.galley.job.wrap.max_width - resting_width).abs() <= 0.5,
+            "the float's name room equals the resting row's ({case}): {} vs {resting_width}",
+            float.galley.job.wrap.max_width
+        );
+        // The cut's right end: the resting row's plus the travel.
+        let right = float.pos.x + float.galley.job.wrap.max_width;
+        let expected = resting_right + travel.x;
+        assert!(
+            (right - expected).abs() <= 0.5,
+            "the float's name room ends at {right}, the resting row's plus the travel {expected} ({case})"
+        );
+        // Released off the list: the drag ends without a drop, so the
+        // next case's order is this one's.
+        window.frame(pointer_at(egui::pos2(600.0, 400.0), false), |ui| {
+            show(ui, &mut view, &|| Vec::new())
+        });
+    }
 }
 
 // A draggable row shows the pointing hand wherever the pointer is on it
