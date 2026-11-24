@@ -4,7 +4,7 @@ artifact stem (`libfoo`, `foo`), every hash but the newest. Cargo names an artif
 toolchain change, and the old hash's files stay behind forever. Removing them is safe: an
 artifact cargo still wants is rebuilt, at the cost of that build's time.
 
-    python scripts/stale_deps.py DEPS_DIR [--older-than-days N] [--apply]
+    python scripts/builds/stale_deps.py DEPS_DIR [--older-than-days N] [--apply]
 
 Without `--apply` it only prints what it would remove (a dry run). A hash is stale when a
 newer hash of the same stem exists and every file of the stale hash is older than N days

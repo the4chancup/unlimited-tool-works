@@ -12,7 +12,7 @@ or a short new one where it has none. What a step waits on follows the ID as
 looked up among the step's siblings first, then among its parent's, and so on up to the
 top-level items; a path such as `GRID/1b` names a step inside another, its first name looked
 up the same way. The maintainer's roadmap
-(`scripts/roadmap.py`) draws its timeline from both, so a dependency written here is not
+(`scripts/pages/roadmap.py`) draws its timeline from both, so a dependency written here is not
 traced again at a phase's converge. A step being worked on is marked `[~]`, and the
 timeline draws it on its "now" line.
 
@@ -621,7 +621,7 @@ and no phase closes with one outstanding.
   - [x] **now** a "Now" block at the top of this file, one line per thread in flight (what, state,
     what it waits on, link); the handover keeps only session mechanics and points here:
     written 2026-11-23;
-  - [x] **page** 2026-11-24: `scripts/roadmap.py` writes `docs/maintainer/roadmap.html` from
+  - [x] **page** 2026-11-24: `scripts/pages/roadmap.py` writes `docs/maintainer/roadmap.html` from
     this file (merged `c8977365`, the timeline after the maintainer's first look), and
     `commit.py` makes it again in every commit (not a merge) that changes this file, the
     maintainer having approved the page;
@@ -630,12 +630,12 @@ and no phase closes with one outstanding.
     three parts. 13 closed, 3 made steps (two already tracked, Fox per-kit models added to
     the post-0.0.2 paragraph), 25 resolved entries pruned, 88 left;
   - [x] **issues** [after audit] the Issues section stays here (2026-11-23): AGENTS.md names this file its home,
-    `scripts/roadmap.py` counts its open entries, and pruned it no longer crowds the file;
+    `scripts/pages/roadmap.py` counts its open entries, and pruned it no longer crowds the file;
   - [x] **ids** every item and sub-step under "Where the work stands" given its checkbox, its
     ID and its `[after …]` dependencies (this file's header): the lead, 2026-11-23;
   - [x] **timeline** [after page, ids] the page shows each step's ID, and a vertical timeline
     with a lane per thread run in parallel and an edge from each step to what it waits on,
-    drawn as an SVG by `scripts/roadmap.py`: open steps above, done ones below on their
+    drawn as an SVG by `scripts/pages/roadmap.py`: open steps above, done ones below on their
     item's lane, dated by the commit their line names; `roadmap.py` refuses a worklog
     breaking the header's convention. SWE-2, merged `02da4763` with the lead's fixes; the
     new sample is on the tasks page's card.
@@ -2631,7 +2631,7 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       merged; the nations then taken from the games' own `Country.bin` per version (lead,
       `.tmp/lead/nations/`: `unwesys.py`, `table.py`, the seven `pes<NN>.tsv`)
     - [x] the plan ("The player view") and DECISIONS
-    - [x] the nation lists (lead): `scripts/derive_nations.py G:/Games` writes
+    - [x] the nation lists (lead): `scripts/derive/derive_nations.py G:/Games` writes
       `crates/tools/save_editor/data/nations.tsv` (220 IDs; 189, 191, 220, then 214 a
       version)
     - [x] the build (SWE-2 on `sk/geninfo`, worktree `4cc-studio-temp/geninfo2`, from
@@ -4385,7 +4385,7 @@ points there.
   upgrader should respell collars too (and `kit_token_old` follow). Check Red's
   `path_id_change` callers on `main`.
 
-- open (2026-11-11) — `scripts/derive_savefile_schema.py` no longer reproduces `schema/fields.rs`
+- open (2026-11-11) — `scripts/derive/derive_savefile_schema.py` no longer reproduces `schema/fields.rs`
   (from `Tools_4cc/4ccEditor-1` or `DBC7-Editor`): the file was edited by hand after it was
   generated (the serde derives, `ABILITY_FIELDS`, two doc comments). The version tables
   `pes15.rs`..`pes20.rs` still regenerate byte for byte (checked 2026-11-11, with `coaches`).

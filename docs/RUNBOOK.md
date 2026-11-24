@@ -463,15 +463,15 @@ The logs alone are large: a `pes_savefile` whole-crate run leaves about 20 GiB i
 `mutants.out/` (5.6b: 8.9 GiB local, 11 GiB fetched from the remote half), which the next run
 moves to `mutants.out.old`.
 A sidekick tree's `target/` goes once its slice is merged and no rework is coming
-(`python scripts/clear_targets.py sk_<step>`, which refuses an unmerged or unclean tree):
+(`python scripts/builds/clear_targets.py sk_<step>`, which refuses an unmerged or unclean tree):
 left for the next disk alarm, six finished trees held 108 GB on 2026-11-21.
 When C: fills, a finished tree's `target/` can go whole, and the main tree's `target/debug`
 once nothing builds there (254 GiB on 2026-10-26, mostly stale `deps`): cargo rebuilds them,
 each run rewrites its generated config, and the cost table lives outside every `target/`.
 A tree whose next build should stay quick (the gate's, main's) loses only its old copies: `python
-scripts/stale_deps.py <target>/debug/deps` lists every artifact a newer build of the same
+scripts/builds/stale_deps.py <target>/debug/deps` lists every artifact a newer build of the same
 crate replaced, and `--apply` removes them (6.6 GB of the gate's 120 GB on 2026-11-22).
-Such a tree's caches go too: `python scripts/clear_caches.py [--dry-run] <name>...` removes
+Such a tree's caches go too: `python scripts/builds/clear_caches.py [--dry-run] <name>...` removes
 its incremental caches, cargo's `tmp/` and the Save editor tests' scratch, refusing a tree a
 build or test runs from (86 GB from the gate, pes14 and `sk_mut` on 2026-11-23).
 
@@ -635,7 +635,7 @@ launcher;
 the tree the command runs in), never with the harness alone. The
 harness's stop ends a background command's outer shell, not the script it ran: on 2026-11-21 a
 stopped gate script went on to its next stage beside its rerun, both writing one log, and the
-doubled load pushed a test past its deadline. `scripts/stop_builds.py` stops the tree's cargo,
+doubled load pushed a test past its deadline. `scripts/builds/stop_builds.py` stops the tree's cargo,
 rustc and test binaries and the scripts that launched them, while an agent's own session in
 the tree keeps running; `--list` shows what it would stop.
 

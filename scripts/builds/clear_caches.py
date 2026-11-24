@@ -3,7 +3,7 @@ incremental caches (`<profile>/incremental`), cargo's `tmp/` and the Save editor
 (`debug/save_editor_tests`). For the worktrees `clear_targets.py` never clears whole (the gate,
 pes14, a release worktree), whose next build would otherwise start from nothing.
 
-    python scripts/clear_caches.py [--dry-run] NAME...   NAME = a folder under 4cc-studio-temp
+    python scripts/builds/clear_caches.py [--dry-run] NAME...   NAME = a folder under 4cc-studio-temp
 
 Each NAME is refused, with one line saying why (the exit code is then 1), while a cargo,
 rustc or test process runs from its folder, since a build or test would lose files it is
@@ -18,7 +18,7 @@ from pathlib import Path
 
 import psutil
 
-REPO = Path(__file__).resolve().parents[1]
+REPO = Path(__file__).resolve().parents[2]
 TEMP = REPO.parent / (REPO.name + "-temp")
 CACHES = ("debug/incremental", "release/incremental", "tmp", "debug/save_editor_tests")
 

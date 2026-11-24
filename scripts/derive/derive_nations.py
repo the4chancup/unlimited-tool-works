@@ -1,6 +1,6 @@
 """Derive the Save editor's nation lists from each PES version's own database.
 
-Usage: python scripts/derive_nations.py <games dir>
+Usage: python scripts/derive/derive_nations.py <games dir>
 
 <games dir> holds one install per version, `PES2015` .. `PES2021`, each with its `Data/dt10*.cpk`
 (the PES installs on G:, `G:/Games`). Build the CPK lister first:
@@ -24,7 +24,7 @@ import tempfile
 import zlib
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent.parent
+ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / "crates" / "tools" / "save_editor" / "data" / "nations.tsv"
 LISTER = ROOT / "target" / "debug" / "examples" / ("cpk_list.exe" if os.name == "nt" else "cpk_list")
 VERSIONS = (2015, 2016, 2017, 2018, 2019, 2020, 2021)

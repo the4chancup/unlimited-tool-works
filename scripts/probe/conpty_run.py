@@ -7,7 +7,7 @@ process attaches to it through AttachConsole(helper_pid). With our own standard
 handles then set to CONIN$/CONOUT$, a plainly spawned child inherits console
 handles: its std::io::IsTerminal checks all come out true.
 
-Run: python scripts/conpty_run.py "<command line>" [<working directory>]
+Run: python scripts/probe/conpty_run.py "<command line>" [<working directory>]
 """
 
 import ctypes

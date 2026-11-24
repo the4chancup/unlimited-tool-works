@@ -1,4 +1,4 @@
-"""python scripts/strings.py FILE [PATTERN]: print the file's printable ASCII runs of 4+ bytes, those matching the
+"""python scripts/probe/strings.py FILE [PATTERN]: print the file's printable ASCII runs of 4+ bytes, those matching the
 case-insensitive regex PATTERN if given."""
 import re, sys
 

@@ -24,7 +24,7 @@ from pathlib import Path
 
 import psutil
 
-REPO = Path(__file__).resolve().parents[1]
+REPO = Path(__file__).resolve().parents[2]
 BUILD_TOOLS = {"cargo", "rustc"}
 SHELLS = {"bash", "sh", "zsh", "pwsh", "powershell", "cmd"}
 COMMAND_FLAGS = {"-c", "-command", "-file", "/c"}

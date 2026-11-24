@@ -1,6 +1,6 @@
 """Inflate WESYS-wrapped files (16-byte header: magic, stored size, inflated size, then zlib).
 
-  python scripts/unwesys.py FILE...   writes FILE.raw beside each, prints its size and first bytes
+  python scripts/probe/unwesys.py FILE...   writes FILE.raw beside each, prints its size and first bytes
 """
 
 import struct

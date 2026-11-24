@@ -52,8 +52,8 @@ class PageRadiusTest(unittest.TestCase):
     def test_the_pages_and_their_generators_are_read(self):
         files = page_files()
         for path in ["docs/maintainer/maintainer.css", "docs/maintainer/tasks.html",
-                     "docs/web/dev_cycle.html", "scripts/roadmap.py",
-                     "scripts/dev_cycle_map.py", "scripts/crate_map.py"]:
+                     "docs/web/dev_cycle.html", "scripts/pages/roadmap.py",
+                     "scripts/pages/dev_cycle_map.py", "scripts/pages/crate_map.py"]:
             self.assertIn(path, files)
         self.assertNotIn("docs/prototypes/index.html", files)
 

@@ -67,7 +67,7 @@ def product_files() -> list[str]:
 # The project's pages take the same radius: the maintainer's pages, the web pages, and the
 # scripts that generate some of them (`docs/spec/core/design.md` "Corners").
 PAGE_GLOBS = ("docs/maintainer/*.css", "docs/maintainer/*.html", "docs/web/*.html")
-GENERATORS = ("scripts/roadmap.py", "scripts/dev_cycle_map.py", "scripts/crate_map.py")
+GENERATORS = ("scripts/pages/roadmap.py", "scripts/pages/dev_cycle_map.py", "scripts/pages/crate_map.py")
 BORDER_RADIUS = re.compile(r"border-radius:\s*([^;\"}]+)")
 RECT_RX = re.compile(r'\brx="([^"]*)"')
 # 0 is a square corner, 50% a round dot; neither is a rounded rectangle.

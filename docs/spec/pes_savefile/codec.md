@@ -157,7 +157,7 @@ more than once. The 15/16 offset is not checked in game.
 
 Variant names are the readable model names (`TightPossession`, not `tight_pos`). The table
 module's doc comment says which reference walk it was derived from, and this section is the
-evidence trail. The generator is `scripts/derive_savefile_schema.py <reference source dir>
+evidence trail. The generator is `scripts/derive/derive_savefile_schema.py <reference source dir>
 <crate>/src/schema`; it is committed so the tables can be regenerated, and the tables it wrote
 are committed as ordinary source.
 

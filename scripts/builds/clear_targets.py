@@ -3,7 +3,7 @@ reused under another name, `REUSED`) and the lead's
 look worktrees (`look_*`, a release build for a look), all regenerable, and of a hand-given
 build's worktree (`vgl27`).
 
-    python scripts/clear_targets.py NAME...     NAME = a folder under 4cc-studio-temp, e.g. sk_nocup
+    python scripts/builds/clear_targets.py NAME...     NAME = a folder under 4cc-studio-temp, e.g. sk_nocup
 
 Each NAME is checked first: its worktree's HEAD is in main, pes14 or a hand-given build's
 branch, its tree is clean, and no running process has an exe under its target. Everything in
@@ -21,7 +21,7 @@ from pathlib import Path
 
 import psutil
 
-REPO = Path(__file__).resolve().parents[1]
+REPO = Path(__file__).resolve().parents[2]
 TEMP = REPO.parent / (REPO.name + "-temp")
 NEVER = {"gate", "pes14", "release_003dev1"}
 # Hand-given builds' worktrees, each on the branch of its name.

@@ -45,7 +45,7 @@ cargo +args:
 
 # Stops a tree's cargo builds and tests and the scripts driving them; an agent's session there keeps running (`just stop`, `just stop sk_gloves14`, `--list` to preview)
 stop tree="." *flags:
-    {{python}} scripts/stop_builds.py {{tree}} {{flags}}
+    {{python}} scripts/builds/stop_builds.py {{tree}} {{flags}}
 
 # Gate 1: formatting
 fmt-check:
@@ -70,7 +70,7 @@ test:
     {{script_test}} scripts/census/census_test.py
     {{script_test}} scripts/library_parity/checkpoint_test.py
     {{script_test}} scripts/release/release_test.py
-    {{script_test}} scripts/roadmap_test.py
+    {{script_test}} scripts/pages/roadmap_test.py
     {{script_test}} scripts/commit_test.py
     {{python}} scripts/gates/run_tests.py
 
@@ -111,7 +111,7 @@ test-changed base="HEAD":
     {{script_test}} scripts/census/census_test.py
     {{script_test}} scripts/library_parity/checkpoint_test.py
     {{script_test}} scripts/release/release_test.py
-    {{script_test}} scripts/roadmap_test.py
+    {{script_test}} scripts/pages/roadmap_test.py
     {{script_test}} scripts/commit_test.py
     {{python}} scripts/gates/run_tests.py --changed {{base}}
 
@@ -223,11 +223,11 @@ parity:
 
 # docs/web/crate_map.html, the crates' dependency map, redrawn from the manifests (after a crate is added)
 crate-map:
-    {{python}} scripts/crate_map.py
+    {{python}} scripts/pages/crate_map.py
 
 # docs/maintainer/roadmap.html, the maintainer's roadmap, made again from the worklog and git's merges
 roadmap:
-    {{python}} scripts/roadmap.py
+    {{python}} scripts/pages/roadmap.py
 
 # docs/prototypes/help.js, the drafts' copy of the build's help, written again from the
 # build (a test in `studio` fails while it differs)

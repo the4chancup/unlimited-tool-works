@@ -49,7 +49,7 @@ Placement:
   leaves the map stale until the next. The map shows each crate's Cargo.toml `description` on
   one line above the chart, and the recipe refuses one too long for it, naming the manifest.
   `docs/web/dev_cycle.html` draws the development cycle the same way (who does what, from a
-  plan to a release); its steps and arrows are the tables in `scripts/dev_cycle_map.py`,
+  plan to a release); its steps and arrows are the tables in `scripts/pages/dev_cycle_map.py`,
   redrawn by hand when `AGENTS.md` or `RUNBOOK.md` changes the process.
 - Directory name = package name, with underscores (`pes_savefile`). Hyphens only in CLI subcommands
   and tool ids (`compiler`).

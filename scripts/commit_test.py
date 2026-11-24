@@ -10,10 +10,11 @@ import time
 import unittest
 from pathlib import Path
 
-from roadmap_test import wl
+sys.path.insert(0, str(Path(__file__).resolve().parent / "pages"))
+from roadmap_test import wl  # noqa: E402
 
 SCRIPT = Path(__file__).with_name("commit.py")
-ROADMAP = Path(__file__).with_name("roadmap.py")
+ROADMAP = Path(__file__).parent / "pages" / "roadmap.py"
 
 
 def git(repo: Path, *args: str) -> str:
@@ -76,7 +77,8 @@ class CommitAll(unittest.TestCase):
         """Commits a worklog whose one step is `item`, beside the roadmap script that
         checks it and writes the page, with `args` (`-a` when none)."""
         (self.repo / "scripts" / "gates").mkdir(parents=True)
-        shutil.copy(ROADMAP, self.repo / "scripts" / "roadmap.py")
+        (self.repo / "scripts" / "pages").mkdir(parents=True)
+        shutil.copy(ROADMAP, self.repo / "scripts" / "pages" / "roadmap.py")
         # Markdown and Python files also run two other gates, the scripts below: stubs that pass.
         for gate in ("doc_pointers.py", "comment_refs.py"):
             (self.repo / "scripts" / "gates" / gate).write_text("", encoding="utf-8")

@@ -1,4 +1,4 @@
-"""Tests of scripts/roadmap.py; `just test` runs them."""
+"""Tests of scripts/pages/roadmap.py; `just test` runs them."""
 
 import contextlib
 import io

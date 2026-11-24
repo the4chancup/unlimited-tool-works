@@ -32,7 +32,7 @@ checkpoint, which then fails on a docs commit long since made. A commit that cha
 `.toml` or `.py` file runs the comment gate (`scripts/gates/comment_refs.py`, a few seconds)
 likewise: a test fixture's `# Worklog` line, read as a comment, once failed `just gates` on
 main from a merge until a slice's review found it. A commit (not a merge) that changes
-`docs/WORKLOG.md` runs `scripts/roadmap.py` (under a second, before the doc-pointer gate,
+`docs/WORKLOG.md` runs `scripts/pages/roadmap.py` (under a second, before the doc-pointer gate,
 which then checks the page's links too), which refuses a worklog item breaking the
 convention its header states (otherwise found only by the next checkpoint's test), and
 writes the roadmap page, which goes into the same commit: rebuilt by hand, the page fell
@@ -109,7 +109,7 @@ def main(argv: list[str]) -> int:
         print("commit: nothing committed; the drafts bundler's test failed (above)")
         return 1
     if "docs/WORKLOG.md" in changed:
-        if not passes("scripts/roadmap.py"):
+        if not passes("scripts/pages/roadmap.py"):
             print("commit: nothing committed; a worklog item breaks the worklog's convention (above)")
             return 1
         subprocess.run(["git", "add", "--", ROADMAP_PAGE], check=True)
