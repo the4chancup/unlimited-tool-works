@@ -688,7 +688,7 @@ and no phase closes with one outstanding.
     every kind over the diff since that commit;
   - [ ] **rolling** [after closure] whole-crate runs as a rolling job on the VPS, the crate checked longest ago first;
     RUNBOOK "Phases and releases" and CONTRIBUTING "Mutation runs" rewritten to match.
-- [ ] **TESTSEL** Evaluate running only the tests that cover each mutant (the maintainer, 2026-11-23: worth
+- [x] **TESTSEL** Evaluate running only the tests that cover each mutant (the maintainer, 2026-11-23: worth
   a look, since it could cut a mutant's cost tenfold):
   - [x] **split** 2026-11-24 (`.tmp/testsel_split.py` over each run's `outcomes.json`): with
     `cargo test` (the whole `save_editor` run of 1,172 mutants, a partial remote one) the
@@ -716,7 +716,7 @@ and no phase closes with one outstanding.
     counts in both. Both ways ran under the Python test runner, which starts Python again
     for every test; the compiled runner (RUNNER) removes that cost, and removes more of it
     from the full suite, which runs more tests.
-  - [ ] **adopt** [after trial] selection in the whole-crate runs on the VPS (DECISIONS
+  - [x] **adopt** [after trial] selection in the whole-crate runs on the VPS (DECISIONS
     2026-11-24 "the whole-crate runs select each mutant's tests through a stand-in for
     cargo"):
     - [x] **wrap** 2026-11-24 `31554811`: `scripts/mutation/select_tests.py`, which
@@ -726,23 +726,12 @@ and no phase closes with one outstanding.
       test alone under instrumentation and writes each listed mutant's filter (74 of 77 on
       `teams_list`); a test whose coverage cannot be read fails the map. Their SWE-2 review
       round (5 accepted, the loop ends) is fixed in `b02123d4`;
-    - [~] **wire** [after cover] the remote job builds the map, then runs cargo-mutants with
-      the stand-in; merged `dfad127c` with the remote's needs, RUNBOOK and CONTRIBUTING; its
-      SWE-2 review round accepted none (the loop ends). `cargo-llvm-cov` 0.9.2 and
-      `llvm-tools-preview` are on the VPS (2026-11-24), and a whole run that selected its
-      tests no longer feeds the remote costs a diff run's split reads (`a132a379`). Left,
-      once the backfill frees the VPS: one whole-crate run, its survivors run again on the
-      full suite (a catch under selection is sound, so only they can differ) and its time
-      per mutant set against the cost table's last. The crate: `ruleset_editor` (474
-      mutants, 32 s each on the VPS, about two hours unselected; `team_compiler`'s 3,261
-      would hold the VPS, and with it the Linux gates, for a day), run after `parity`'s
-      `jobs` lands, so the same run measures the extra pass's memory with two mutants
-      building at once and no build cap. Its first run (2026-11-24) stopped when
-      cargo-mutants could not start the stand-in for cargo: the run's snapshot had lost its
-      executable mode (fixed in `working_tree`). The second refused to start, the first's
-      results still on the VPS (freed by hand; the refusal now says how, `0855f68e`); the
-      third is running.
-    - [ ] **extras** the extra kinds' runs (`scripts/mutation/extra_mutants.py`, their own
+    - [x] **wire** 2026-11-24 `dfad127c`: the remote job builds the map, then runs
+      cargo-mutants with the stand-in. Measured on `ruleset_editor`: 474 mutants in 4,702 s
+      (about 9.9 s each, against the cost table's 32.0 s unselected), 427 caught, 6 missed, 41
+      unviable; the 6 survivors were missed on the full suite too, so selection lost no catch.
+      The job peaked at 8.56 GiB under its 11.83 GiB cap with the extra pass at two jobs;
+    - [x] **extras** the extra kinds' runs (`scripts/mutation/extra_mutants.py`, their own
       loop per mutant, on `cargo test -p` until `backend`) take what the whole-crate runs
       have; then the `call` backfill resumes on its three largest crates:
       - [x] **backend** 2026-11-24 `3bc51827`: one test command for both runners
