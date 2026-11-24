@@ -2856,7 +2856,7 @@ class DiffRun(unittest.TestCase):
         # The local results of an uncollected remote half, which no crate of this run owns.
         self.keep(self.root / "mutants.out", "an uncollected half's survivor\n")
 
-        def run_crate(diff_path, tree, source, crate, count):
+        def run_crate(diff_path, tree, source, crate, count, busy=None):
             if crate == "cpk":
                 raise mutants.Refused("the remote half launched on bonfire is not collected")
             mutants.set_aside(self.root / "mutants.out")
@@ -2883,10 +2883,22 @@ class DiffRun(unittest.TestCase):
             ],
         )
 
+    def test_the_run_s_crates_share_one_busy_total(self):
+        seen = []
+
+        def run_crate(diff_path, tree, source, crate, count, busy=None):
+            seen.append(busy)
+            return 0
+
+        self.run_diff(run_crate)
+        self.assertGreaterEqual(len(seen), 2, "the listing has two crates")
+        self.assertIsNotNone(seen[0])
+        self.assertTrue(all(b is seen[0] for b in seen), "one total for the whole run")
+
     def test_a_run_that_lands_no_crate_keeps_the_last_results_through_the_next_one(self):
         self.keep(self.results, "the last run's survivor\n")
 
-        def refused(*_):
+        def refused(*_, **__):
             raise mutants.Refused("`just gates-remote` is running on bonfire")
 
         for _ in range(2):
@@ -3003,7 +3015,7 @@ class DiffRun(unittest.TestCase):
         ).encode()
         extra_calls = {}
 
-        def cargo_run(diff_path, tree, source, crate, count):
+        def cargo_run(diff_path, tree, source, crate, count, busy=None):
             out = self.root / "mutants.out"
             out.mkdir()
             (out / "missed.txt").write_text(
@@ -3056,11 +3068,14 @@ class DiffBusy(unittest.TestCase):
     (a whole run holds it for days) it runs here whole; `REMOTE_ONLY` is
     unchanged."""
 
-    def run_crate(self, state: str | None, remote_only: bool = False):
+    def run_crate(
+        self, state: str | None, remote_only: bool = False, estimate: float = 999.0,
+        busy: Counter | None = None,
+    ):
         calls = {}
         out = io.StringIO()
         with (
-            mock.patch.object(mutants, "estimate_seconds", lambda crates, share=1.0: 999.0),
+            mock.patch.object(mutants, "estimate_seconds", lambda crates, share=1.0: estimate),
             mock.patch.object(mutants, "remote_host", lambda: "bonfire"),
             mock.patch.object(mutants, "REMOTE_ONLY", remote_only),
             mock.patch.object(
@@ -3085,7 +3100,7 @@ class DiffBusy(unittest.TestCase):
             mock.patch.object(mutants, "report_killed", lambda code, **k: code),
             contextlib.redirect_stdout(out),
         ):
-            code = mutants_diff.run_crate("in.diff", HEAD_TREE, Path("src"), "cpk", 3)
+            code = mutants_diff.run_crate("in.diff", HEAD_TREE, Path("src"), "cpk", 3, busy=busy)
         return code, calls, out.getvalue()
 
     def test_a_busy_remote_runs_the_crate_here_whole(self):
@@ -3101,6 +3116,37 @@ class DiffBusy(unittest.TestCase):
             self.assertIn(
                 f"bonfire is busy (a remote half {word}): running here", out
             )
+
+    def test_a_crate_past_the_limit_is_left_untested_while_a_half_is_on_the_remote(self):
+        limit = mutants_diff.BUSY_LOCAL_LIMIT_SECONDS
+        for state in ("running", "finished", "died"):
+            with self.assertRaises(mutants.Refused) as refused:
+                self.run_crate(state, estimate=limit + 1)
+            self.assertIn(f"bonfire is busy (a remote half {state})", str(refused.exception))
+            self.assertIn("left untested", str(refused.exception))
+            code, calls, out = self.run_crate(state, estimate=limit)
+            self.assertEqual(code, 0, "at the limit the crate still runs here")
+            self.assertIn("local", calls)
+
+    def test_the_limit_counts_the_run_s_crates_together(self):
+        limit = mutants_diff.BUSY_LOCAL_LIMIT_SECONDS
+        busy = Counter()
+        code, calls, _ = self.run_crate("finished", estimate=limit * 0.6, busy=busy)
+        self.assertEqual(code, 0, "the first crate fits")
+        self.assertIn("local", calls)
+        with self.assertRaises(mutants.Refused):
+            self.run_crate("finished", estimate=limit * 0.6, busy=busy)
+        code, calls, _ = self.run_crate("finished", estimate=limit * 0.3, busy=busy)
+        self.assertEqual(code, 0, "a refused crate's time is not counted: a smaller one still fits")
+        code, calls, _ = self.run_crate("none", estimate=limit * 5, busy=busy)
+        self.assertIn("split", calls, "a free remote takes a split whatever the total here")
+
+    def test_an_unreachable_remote_runs_a_long_crate_here(self):
+        # No half waits to be collected, so nothing waits for this run's lock.
+        code, calls, out = self.run_crate(None, estimate=mutants_diff.BUSY_LOCAL_LIMIT_SECONDS * 10)
+        self.assertEqual(code, 0)
+        self.assertIn("local", calls)
+        self.assertIn("bonfire is busy (a remote half unreachable): running here", out)
 
     def test_a_free_remote_splits_as_today(self):
         code, calls, out = self.run_crate("none")

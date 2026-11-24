@@ -147,7 +147,11 @@ while it launches and while it fetches and summarizes, never while it waits
 run is under way: it keeps the split below, a round's diff being minutes and its result
 waited on, except while a mutation half is on the VPS (running, or ended and not collected)
 or the VPS cannot be reached, when it runs entirely on this
-machine instead of waiting days for its turn there. What follows
+machine instead of waiting days for its turn there, up to a limit: with a half on the VPS,
+a crate that would take the run's total time here past `BUSY_LOCAL_LIMIT_SECONDS` (an hour)
+is left untested, and the run says so. The diff holds the run lock throughout and the half's
+fetch waits for it, so the VPS sits idle as long as the diff runs here. A crate left untested
+is run again once the VPS is free. What follows
 describes the split: a diff uses it, and a whole run that needs this machine again would.
 
 A whole-crate run also selects each mutant's tests. The remote job first

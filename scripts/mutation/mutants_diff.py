@@ -58,6 +58,10 @@ ROOT = Path(__file__).resolve().parents[2]
 RESULTS = ROOT / "mutants.diff"
 # The crates' commits of record for a `--closure` run's diffs, written by `--checked`.
 CHECKED = ROOT / ".cargo" / "mutants_checked.toml"
+# The longest a diff run's crates run here, in total, while another run's half is on the
+# VPS. Not unbounded: this run holds the run lock throughout, that half's collect waits for
+# it, and the VPS stays idle meanwhile.
+BUSY_LOCAL_LIMIT_SECONDS = 3600
 
 
 def read_checked(path: Path = CHECKED) -> dict[str, str]:
@@ -285,13 +289,14 @@ def run(diff_path: str, tree: str, source: Path, diff: bytes) -> int:
     if not found and not crates:
         return 0
     codes = {}
+    busy = Counter()
     extra_missed: dict[str, list[str]] = {}
     for crate in sorted(counts.keys() | crates):
         count = counts.get(crate, 0)
         print(f"mutants_diff: {crate}, {count} mutants", flush=True)
         if count:
             try:
-                codes[crate] = run_crate(diff_path, tree, source, crate, count)
+                codes[crate] = run_crate(diff_path, tree, source, crate, count, busy=busy)
             except mutants.Refused as refusal:
                 # Refused before touching `mutants.out`: what is there is no result of this crate.
                 print(f"mutants_diff: {refusal}")
@@ -350,10 +355,16 @@ def run(diff_path: str, tree: str, source: Path, diff: bytes) -> int:
     return mutants.run_code(codes.values())
 
 
-def run_crate(diff_path: str, tree: str, source: Path, crate: str, count: int) -> int:
+def run_crate(
+    diff_path: str, tree: str, source: Path, crate: str, count: int,
+    busy: Counter | None = None,
+) -> int:
     """Runs one crate's mutants of the diff: on the remote whole (`REMOTE_ONLY`),
     split, or here — here too while the remote is busy: a whole-crate run holds
-    it for days."""
+    it for days. `busy["seconds"]` totals the estimates this run has run here
+    while another run's half was on the remote, across its crates: past
+    `BUSY_LOCAL_LIMIT_SECONDS` a crate is left untested."""
+    busy = Counter() if busy is None else busy
     selection = ["--in-diff", diff_path, "-p", crate]
     estimated = mutants.estimate_seconds([crate] * count)
     print(f"mutants_diff: estimated {estimated:.0f} s on this machine")
@@ -367,6 +378,15 @@ def run_crate(diff_path: str, tree: str, source: Path, crate: str, count: int) -
             half = mutants.estimate_seconds([crate] * count, share=0.5)
             print(f"mutants_diff: split, about {half:.0f} s a side, plus the transfer and polling")
             return mutants.split(selection, host, tree, source)
+        if state is not None:
+            if busy["seconds"] + estimated > BUSY_LOCAL_LIMIT_SECONDS:
+                raise mutants.Refused(
+                    f"{host} is busy (a remote half {state}) and {crate} would bring this "
+                    f"run's time here past {BUSY_LOCAL_LIMIT_SECONDS // 60} min: left untested. "
+                    "That half's collect waits for this run's lock, so the VPS would sit idle "
+                    "as long; rerun the crate once the VPS is free"
+                )
+            busy["seconds"] += estimated
         print(
             f"mutants_diff: {host} is busy (a remote half "
             f"{state or 'unreachable'}): running here",
