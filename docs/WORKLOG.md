@@ -662,10 +662,11 @@ and no phase closes with one outstanding.
   - [~] **triage** [after backfill] each crate's survivors triaged, the missing tests in
     SWE-2 slices crate by crate. The 71 survivors of the 14 crates finished by 2026-11-24
     are ruled: 16 excluded (equivalent, or seen only by an OS or a GPU), two timeouts that
-    are catches, the rest missing tests or dead code in eight slices (`pes_savefile`,
-    `model_convert`, `color_tools`, `kit_config`, `team_widgets`, `studio`,
-    `aesthetics_export`, and one for `aatf`, `teams_list`, `cpk` and `elevation`); the
-    crates still running get the same triage;
+    are catches, the rest missing tests or dead code in eight SWE-2 slices, all merged by
+    `68e678a5` (two more survivors ruled equivalent in review: one excluded, one statement
+    removed); the crates still running get the same triage;
+  - [ ] **teamrows** `teams_list`'s older reconcile tests pair 750 with `/zz/` and 701 with
+    `/co/`; the real rows are 750 `/sp/`, 714 `/co/` and 701 `/3/` (the test-data rule);
   - [ ] **figures** [after backfill] CONTRIBUTING's time for the extra kinds given each
     crate's measured run;
   - [ ] **winextra** [after RX] an extra-kind survivor in code only Windows compiles
