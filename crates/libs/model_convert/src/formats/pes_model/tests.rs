@@ -127,6 +127,23 @@ fn pes_model(bones: Vec<&str>, mesh: ::pes_model::model::Mesh) -> Model {
     }
 }
 
+/// A `Sampler` entry with only name and path set.
+fn sampler(name: &str, path: &str) -> mtl::MaterialEntry {
+    mtl::MaterialEntry::Sampler(mtl::Sampler {
+        name: name.to_string(),
+        path: path.to_string(),
+        srgb: None,
+        minfilter: None,
+        maxfilter: None,
+        magfilter: None,
+        mipfilter: None,
+        uaddr: None,
+        vaddr: None,
+        waddr: None,
+        maxaniso: None,
+    })
+}
+
 /// The entries of `entries` that are samplers (kind 0), states (1) or vectors (2).
 fn of_kind(entries: &[mtl::MaterialEntry], kind: u8) -> Vec<mtl::MaterialEntry> {
     entries
@@ -441,6 +458,23 @@ fn dropped_fields_report_each_field() {
                 detail: "order".to_string(),
             },
         ]
+    );
+}
+
+#[test]
+fn a_nonzero_flags_field_reports_native_field_dropped() {
+    // `flags` is 0 in every shipped file; a file carrying another value loses
+    // it, and the loss is reported.
+    let mut input = pes_model(vec!["sk_belly", "sk_chest"], pes_mesh(vec![0, 1]));
+    input.flags = 1;
+    let imported = model_to_ir(&input, &mtl_of("mat", "Basic_C")).expect("import");
+    assert_eq!(
+        imported.findings,
+        vec![Finding {
+            code: "native_field_dropped",
+            subject: Subject::Model,
+            detail: "flags".to_string(),
+        }]
     );
 }
 
@@ -979,6 +1013,34 @@ fn a_stored_sampler_name_without_settings_reports() {
 }
 
 #[test]
+fn a_canonical_role_without_a_prefox_sampler_is_reported_unused() {
+    // Metalness is a canonical role pre-Fox has no sampler for: the binding
+    // drops and is reported, like a `fox`-only native name but under the
+    // role's own spelling.
+    let mut ir = ir_over(
+        Vertices {
+            positions: vec![[0.0; 3]],
+            ..Vertices::default()
+        },
+        vec![[0, 0, 0]],
+    );
+    ir.textures = vec![Texture {
+        directory: "./".to_string(),
+        file_name: "t.dds".to_string(),
+    }];
+    ir.materials[0].textures = vec![(TextureRole::Metalness, 0)];
+    let exported = ir_to_model(&ir).expect("export");
+    assert_eq!(
+        exported.findings,
+        vec![Finding {
+            code: "material_texture_unused",
+            subject: Subject::Material(0),
+            detail: "Metalness".to_string(),
+        }]
+    );
+}
+
+#[test]
 fn states_reach_the_canonical_flags() {
     // `two_sided`/`transparent` come from the material's state entries.
     let mut mtl = mtl_of("mat", "Basic_C");
@@ -1002,21 +1064,6 @@ fn states_reach_the_canonical_flags() {
 fn a_second_sampler_for_one_role_stays_native() {
     // The first `DiffuseMap` wins the canonical Base role; a second sampler
     // mapping to the same role is a native one.
-    let sampler = |name: &str, path: &str| {
-        mtl::MaterialEntry::Sampler(mtl::Sampler {
-            name: name.to_string(),
-            path: path.to_string(),
-            srgb: None,
-            minfilter: None,
-            maxfilter: None,
-            magfilter: None,
-            mipfilter: None,
-            uaddr: None,
-            vaddr: None,
-            waddr: None,
-            maxaniso: None,
-        })
-    };
     let mut mtl = mtl_of("mat", "Basic_C");
     mtl.materials[0].entries = vec![
         sampler("DiffuseMap", "a.dds"),
@@ -1033,6 +1080,42 @@ fn a_second_sampler_for_one_role_stays_native() {
     assert_eq!(
         material.prefox.as_ref().expect("prefox").textures,
         vec![("DiffuseMap".to_string(), 0)]
+    );
+}
+
+#[test]
+fn a_texture_path_two_materials_share_is_one_texture() {
+    // Both bound materials' `DiffuseMap`s name the same (directory, file):
+    // one IR texture, and both canonical bindings index it.
+    let mut mtl = mtl_of("mat", "Basic_C");
+    mtl.materials[0].entries = vec![sampler("DiffuseMap", "./shared.dds")];
+    mtl.materials.push(mtl::Material {
+        name: "mat2".to_string(),
+        shader: "Basic_C".to_string(),
+        entries: vec![sampler("DiffuseMap", "./shared.dds")],
+    });
+    let mut input = pes_model(vec!["sk_belly"], pes_mesh(vec![0, 0]));
+    input.materials.push("mat2".to_string());
+    let mut second = pes_mesh(vec![0, 0]);
+    second.material = 1;
+    input.meshes.push(second);
+    let imported = model_to_ir(&input, &mtl).expect("import");
+    assert_eq!(
+        imported
+            .model
+            .textures
+            .iter()
+            .map(|texture| (texture.directory.as_str(), texture.file_name.as_str()))
+            .collect::<Vec<_>>(),
+        [("./", "shared.dds")]
+    );
+    assert_eq!(
+        imported.model.materials[0].textures,
+        vec![(TextureRole::Base, 0)]
+    );
+    assert_eq!(
+        imported.model.materials[1].textures,
+        vec![(TextureRole::Base, 0)]
     );
 }
 

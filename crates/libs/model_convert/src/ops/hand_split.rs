@@ -1289,6 +1289,74 @@ mod tests {
     }
 
     #[test]
+    fn each_class_key_part_splits_its_own_pair() {
+        // Three vertex pairs over the group [sk_forearm_l, skh_index_l], each
+        // pair's entries identical but for one `class_key` part — position,
+        // bone-index row, weights. In each pair one entry is selected (a seed,
+        // or grown through the seed triangle's face) and its twin's own face
+        // must stay on the body; merging the pair's classes is what a lost
+        // key part would do.
+        let unit = [1.0, 0.0, 0.0, 0.0];
+        let arm = [0u8, 0, 0, 0];
+        let hand = [1u8, 0, 0, 0];
+        let mesh = Mesh {
+            vertices: Vertices {
+                // 0: the seed triangle's forearm corner, selected by the grow.
+                // 1, 2: seeds. 3: entry 0's twin at a distant position.
+                positions: vec![
+                    [0.0, 0.0, 0.0],
+                    [1.0, 0.0, 0.0],
+                    [0.0, 1.0, 0.0],
+                    [10.0, 0.0, 0.0],
+                    [20.0, 0.0, 0.0],
+                    [20.0, 0.0, 0.0],
+                    [30.0, 0.0, 0.0],
+                    [30.0, 0.0, 0.0],
+                ],
+                // 4, 5: a seam pair differing only in the bone-index row —
+                // 5's row weights the forearm where 4's weights the hand.
+                // 6, 7: a seam pair differing only in weights — 7's all-zero
+                // row is under MIN_CARRIED_WEIGHT where 6's is over.
+                bone_indices: Some(vec![arm, hand, hand, arm, hand, arm, hand, hand]),
+                bone_weights: Some(vec![unit, unit, unit, unit, unit, unit, unit, [0.0; 4]]),
+                bone_weight_width: Some(4),
+                ..Vertices::default()
+            },
+            faces: vec![
+                [0, 1, 2],
+                [3, 3, 3],
+                [4, 4, 4],
+                [5, 5, 5],
+                [6, 6, 6],
+                [7, 7, 7],
+            ],
+            bone_group: vec![0, 1],
+            material: 0,
+            extension_headers: Default::default(),
+            custom_bounding_box: None,
+        };
+        let ir = model(vec![bone("sk_forearm_l"), bone("skh_index_l")], mesh);
+        let split = split_by_skeleton_group(&ir);
+        let glove = split.glove_l.expect("left glove");
+        let faces_at = |part: &CanonicalModel, position: [f32; 3]| {
+            face_set(part)
+                .iter()
+                .filter(|face| **face == [position; 3])
+                .count()
+        };
+        // The distant twin is its own class: the grow never reaches it.
+        assert_eq!(faces_at(&split.body, [10.0, 0.0, 0.0]), 1);
+        assert_eq!(faces_at(&glove, [10.0, 0.0, 0.0]), 0);
+        // One face per position on each side: the seed's in the glove, the
+        // forearm twin's on the body.
+        assert_eq!(faces_at(&split.body, [20.0, 0.0, 0.0]), 1);
+        assert_eq!(faces_at(&glove, [20.0, 0.0, 0.0]), 1);
+        // And the all-zero twin's face stays on the body likewise.
+        assert_eq!(faces_at(&split.body, [30.0, 0.0, 0.0]), 1);
+        assert_eq!(faces_at(&glove, [30.0, 0.0, 0.0]), 1);
+    }
+
+    #[test]
     fn hand_of_names() {
         assert_eq!(hand_of("skh_thumb_mata_l"), Some(Hand::Left));
         assert_eq!(hand_of("skh_index_dip_r"), Some(Hand::Right));
