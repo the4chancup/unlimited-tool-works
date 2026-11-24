@@ -670,10 +670,8 @@ and no phase closes with one outstanding.
     own tests;
   - [ ] **figures** [after backfill] CONTRIBUTING's time for the extra kinds given each
     crate's measured run;
-  - [ ] **winextra** [after RX] an extra-kind survivor in code only Windows compiles
-    (`elevation`'s `windows.rs`) survives on the Linux VPS whatever its test: run again
-    here when the run is collected, as `WINDOWS_ONLY_TESTS` does for cargo-mutants' own
-    survivors, whose recheck reads only their line format.
+  - [x] **winextra** 2026-11-24 (SWE-2, branch `sk/winextra`): the extra kinds' survivors in
+    Windows-only code (`WINDOWS_ONLY_EXTRA`) are rerun here when a whole run is collected.
 - [x] **DRAFTHELP** The drafts' help made from the build's, 2026-11-23 (`core/gui.md` "Prototypes before
   implementation", `f5c2934d`): `docs/prototypes/help.js`, written by `just draft-help` and
   checked by a test in `studio` (SWE-2, merge `7d8d2c15`); the drafts draw their help window

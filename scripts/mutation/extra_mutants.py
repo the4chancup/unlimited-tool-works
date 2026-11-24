@@ -265,16 +265,29 @@ def parse_args(argv: list[str]) -> tuple[str, list[str], bool]:
     return positional[0], sorted(set(kinds)) or list(ALL_KINDS), list_only
 
 
+def missed_line(crate_rel: Path, row: list[str], decided: str = "missed") -> str:
+    """`row`'s line in `run_crate`'s missed files, `path:line: [kind]
+    description` — cargo-mutants' missed.txt shape plus the kind's tag; a
+    `decided` other than missed is also tagged after the location
+    (`path:line: [timeout] [kind] ...`), as `mutants.timeout_lines` tags
+    cargo-mutants'."""
+    tag = "" if decided == "missed" else f"[{decided}] "
+    return f"{(crate_rel / row[0]).as_posix()}:{row[4]}: {tag}[{row[3]}] {row[6]}"
+
+
 def run_crate(
-    crate: str, kinds: list[str], tree: str | None = None
+    crate: str, kinds: list[str], tree: str | None = None,
+    only: set[str] | None = None,
 ) -> tuple[list[str], Counter, float]:
     """Run every `kinds` mutant the lister finds in `crate`, each applied in a
     copy of git `tree` (the working tree when None) and decided by one `cargo
-    test -p <crate>`. Writes `outcomes_<kinds>.tsv` and `missed_<kinds>.txt`
-    under `extra_mutants.out/`, plus `missed_<crate>.txt`, the same survivors
-    named for `just mutants`, which calls this for its EXTRA_KINDS and records
-    the run in `run.json` beside it for `just mutants-collect` to summarize.
-    Returns (the missed lines, the per-outcome counts, the wall seconds)."""
+    test -p <crate>`. With `only`, only the mutants whose missed line it
+    holds run (exclusions still apply first). Writes `outcomes_<kinds>.tsv`
+    and `missed_<kinds>.txt` under `extra_mutants.out/`, plus
+    `missed_<crate>.txt`, the same survivors named for `just mutants`, which
+    calls this for its EXTRA_KINDS and records the run in `run.json` beside
+    it for `just mutants-collect` to summarize. Returns (the missed lines,
+    the per-outcome counts, the wall seconds)."""
     tree = tree or mutants.working_tree()
     copy_dir = mutants.LOCAL_TMPDIR / f"extra-mutants-{os.getpid()}"
     if copy_dir.exists():
@@ -293,6 +306,8 @@ def run_crate(
             rows, crate_rel, exclusions(copy_dir), kinds
         )
         rows = [row for row, drop in zip(rows, excluded) if not drop]
+        if only is not None:
+            rows = [row for row in rows if missed_line(crate_rel, row) in only]
         # Reported before the baseline's minutes: a stale entry means the code
         # changed under a ruling, worth knowing before the run spends its time.
         for line in stale:
@@ -332,16 +347,11 @@ def run_crate(
             with open(tsv, "a", encoding="utf-8", newline="\n") as rows_file:
                 rows_file.write(decided + "\t" + "\t".join(row) + "\n")
             print(f"[{i}/{len(rows)}] {decided}: {rel}:{line} {description}", flush=True)
-        # cargo-mutants' missed.txt shape (workspace-relative path, line, then the
-        # description), tagged with the kind cargo-mutants' lines cannot carry; a timeout
-        # or an untested mutant also with its outcome after the location, as
-        # `mutants.timeout_lines` tags cargo-mutants' timeouts.
-        missed = []
-        for decided, row in outcomes:
-            if decided not in ("missed", "timeout", "untested"):
-                continue
-            tag = "" if decided == "missed" else f"[{decided}] "
-            missed.append(f"{(crate_rel / row[0]).as_posix()}:{row[4]}: {tag}[{row[3]}] {row[6]}")
+        missed = [
+            missed_line(crate_rel, row, decided)
+            for decided, row in outcomes
+            if decided in ("missed", "timeout", "untested")
+        ]
         missed_text = "".join(text + "\n" for text in missed + stale)
         write_out(OUT_DIR / f"missed_{kinds_key}.txt", missed_text)
         write_out(OUT_DIR / f"missed_{crate}.txt", missed_text)

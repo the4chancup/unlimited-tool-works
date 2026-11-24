@@ -581,10 +581,11 @@ Requirements:
   that covers it: no test could kill it, and kept in, it returns at every run. An entry that matches nothing in its crate is reported as a stale exclusion
   among the survivors, since the code under the ruling changed. The tool's other kind
   (`guard`) is not run (`just extra-mutants <crate> --kind guard` runs it by hand): too few
-  of its survivors were real gaps. A survivor of the remote half whose only
-  catching test is `#[cfg(windows)]` is rerun on this machine when the run is collected, and
-  the outcome here replaces the remote one; such a test's mutants are named in
-  `WINDOWS_ONLY_TESTS` in `scripts/mutation/mutants.py`, by file and function. So a guard that
+  of its survivors were real gaps. A survivor of the remote half, an extra kind's
+  included, whose only catching test is `#[cfg(windows)]` or whose code only Windows compiles
+  is rerun on this machine when the run is collected, and the outcome here replaces the remote
+  one. Such mutants are named by file and function in `scripts/mutation/mutants.py`:
+  cargo-mutants' in `WINDOWS_ONLY_TESTS`, the extra kinds' in `WINDOWS_ONLY_EXTRA`. So a guard that
   refuses an input the standard library would accept (a leading `+`, which `u8::from_str`
   takes) still gets a test of its own when written: no run will ask for it (the color grammar
   once had none, with all its mutants caught).

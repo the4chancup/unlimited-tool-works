@@ -145,6 +145,41 @@ WINDOWS_ONLY_TESTS = [
         r"|.* in (set_relaunch|set_relaunch_values)$)"
     ),
 ]
+# The extra kinds' missed lines (`path:line: [kind] in <fn>: ...`) in
+# Windows-only code get the same recheck as the cargo-mutants lines above:
+# matched in the extra pass's line shape, where a [timeout]/[untested] tag
+# before the kind does not match (only missed lines are rechecked).
+# elevation's windows.rs is #[cfg(windows)] whole; the other entries give
+# each WINDOWS_ONLY_TESTS entry the same file and functions. An entry added
+# to either list gets its twin in the other.
+_EXTRA_KIND = "(?:" + "|".join(EXTRA_KINDS) + ")"
+WINDOWS_ONLY_EXTRA = [
+    re.compile(rf"crates/libs/elevation/src/windows\.rs:\d+: \[{_EXTRA_KIND}\] "),
+    re.compile(
+        rf"crates/tools/team_compiler/src/output/deploy\.rs:\d+: "
+        rf"\[{_EXTRA_KIND}\] in (sweep_run|probe_download|promote_tree):"
+    ),
+    re.compile(
+        rf"crates/studio_core/src/pes_process\.rs:\d+: "
+        rf"\[{_EXTRA_KIND}\] in (processes|image_path|probe):"
+    ),
+    re.compile(
+        rf"crates/tools/export_upgrader/src/upgrade\.rs:\d+: "
+        rf"\[{_EXTRA_KIND}\] in retry_while_locked:"
+    ),
+    re.compile(
+        rf"crates/studio_core/src/updater/install\.rs:\d+: "
+        rf"\[{_EXTRA_KIND}\] in (remove_temp|remove_temp_folder):"
+    ),
+    re.compile(
+        rf"crates/studio/src/gui_log\.rs:\d+: "
+        rf"\[{_EXTRA_KIND}\] in (redact_any_spelling|redact_home):"
+    ),
+    re.compile(
+        rf"crates/studio_core/src/shell/taskbar\.rs:\d+: "
+        rf"\[{_EXTRA_KIND}\] in (set_relaunch|set_relaunch_values):"
+    ),
+]
 # The remote half's systemd unit: a transient service so its cgroup is
 # memory-capped and CPU-idle: an allocating mutant once OOM-killed the host,
 # and Fluxer's production services have priority.
@@ -1314,6 +1349,49 @@ def recheck_windows(missed: list[str]) -> set[str]:
     return caught & set(missed)
 
 
+def recheck_windows_extra(missed: list[str]) -> tuple[set[str], int]:
+    """`recheck_windows` for the extra kinds' survivors (`WINDOWS_ONLY_EXTRA`):
+    one `extra_mutants.run_crate` per crate the `missed` lines name, `only`
+    restricting it to just them, on the tree the remote pass ran
+    (`REMOTE_REF`), whose lines they name. Returns (the lines caught — a line
+    the run still lists, missed or tagged `[timeout]`/`[untested]`, is not
+    one — and how many mutants went untested, which fails the run as the
+    extra pass's own do; a line the run never reached counts there too)."""
+    tree = git(
+        "rev-parse", f"{REMOTE_REF}^{{tree}}", check=True, capture_output=True, text=True
+    ).stdout.strip()
+    crates: dict[str, set[str]] = {}
+    for line in missed:
+        crates.setdefault(mutant_crate(line.split(":", 1)[0]), set()).add(line)
+    import extra_mutants  # deferred: extra_mutants imports this module
+
+    untested = 0
+    returned: set[str] = set()
+    for crate in sorted(crates):
+        run_missed, counts, _ = extra_mutants.run_crate(
+            crate, list(EXTRA_KINDS), tree, only=crates[crate]
+        )
+        untested += counts["untested"]
+        # A line no listed mutant matched never ran: absent from the survivors,
+        # it would read as caught.
+        never_ran = len(crates[crate]) - sum(counts.values())
+        if never_ran > 0:
+            print(f"the recheck ran {len(crates[crate]) - never_ran} of {crate}'s "
+                  f"{len(crates[crate])} mutants; none counts as caught")
+            untested += never_ran
+            returned |= crates[crate]
+        returned |= set(run_missed)
+    caught = set()
+    for line in missed:
+        location, _, rest = line.partition(": ")
+        back = {line} | {
+            f"{location}: [{tag}] {rest}" for tag in ("timeout", "untested")
+        }
+        if not back & returned:
+            caught.add(line)
+    return caught, untested
+
+
 def coverage_map_exit(log_path: Path) -> str | None:
     """The coverage map's exit code as a whole run's job log records it, or
     None when the log has no such line (a diff run's, or no log): the run
@@ -1388,6 +1466,30 @@ def summarize(
         if missed_path.exists():
             extra_missed = missed_path.read_text(encoding="utf-8")
 
+    # The extra kinds' survivors in Windows-only code get the same recheck as
+    # the cargo-mutants ones — a fetched record's only: a local pass already
+    # ran on this machine, so its survivors really were missed.
+    extra_caught: set[str] = set()
+    extra_untested = 0
+    if extra_run == remote_extra_record():
+        windows_extra = [
+            line
+            for line in extra_missed.splitlines()
+            if any(pattern.search(line) for pattern in WINDOWS_ONLY_EXTRA)
+        ]
+        if windows_extra:
+            if os.name == "nt" and not REMOTE_ONLY:
+                extra_caught, extra_untested = recheck_windows_extra(windows_extra)
+                print(
+                    f"rechecked on this machine (Windows-only extra mutants): "
+                    f"{len(extra_caught)} caught, "
+                    f"{len(windows_extra) - len(extra_caught)} still missed"
+                )
+            else:
+                print("Windows-only extra mutants, not rechecked:")
+                for line in windows_extra:
+                    print(f"  {line}")
+
     map_exit = coverage_map_exit(log_path)
     if map_exit is not None:
         if map_exit == "0":
@@ -1413,6 +1515,9 @@ def summarize(
             f"{counts['timeout']:>8}{counts['unviable']:>9}{elapsed_text:>9}"
         )
     if extra_counts is not None:
+        # The recheck's catches move out of missed, as the remote row's do.
+        extra_counts["missed"] = extra_counts.get("missed", 0) - len(extra_caught)
+        extra_counts["caught"] = extra_counts.get("caught", 0) + len(extra_caught)
         for name in names:
             totals[name] += extra_counts.get(name, 0)
         print(
@@ -1435,7 +1540,7 @@ def summarize(
             *local_missed,
             *(line for line in remote_missed if line not in caught_here),
             *timeout_lines(remote),
-            *extra_missed.splitlines(),
+            *(line for line in extra_missed.splitlines() if line not in extra_caught),
         ]
     )
     # A half that died before cargo-mutants started may leave no mutants.out at
@@ -1461,8 +1566,12 @@ def summarize(
         code = 0
     # The script's own 1 is not folded with max(): it must outrank a 2 or 3
     # (`run_code` does that in `report_killed`). The extra pass's `untested`
-    # count means the same, outside the halves' lists.
-    untested = extra_missing or bool(extra_counts and extra_counts.get("untested"))
+    # count (and its Windows recheck's) means the same, outside the halves' lists.
+    untested = (
+        extra_missing
+        or bool(extra_counts and extra_counts.get("untested"))
+        or bool(extra_untested)
+    )
     # A local half stopped before cargo-mutants wrote its selection leaves nothing to count
     # (`never_ran` has no selection to compare), and its zero row would read as clean: the
     # fetch creates `mutants.out` for the remote half's copy whether the local half ran or not.
