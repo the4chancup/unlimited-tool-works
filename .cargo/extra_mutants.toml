@@ -332,3 +332,9 @@ path = "crates/libs/team_widgets/src/pitch/popover.rs"
 kind = "call"
 description = "in slot_popover: the memory_mut() statement is deleted | removed: ui.ctx() .memory_mut(|memory| memory.surrender_focus(focused));"
 why = "both hosts surrender focus on presses every frame, so the press already ends a drawn widget's focus, and egui clears a widget's that stopped drawing; re-check on a new host"
+
+[[exclude]]
+path = "crates/libs/pes_model/src/format/write.rs"
+kind = "call"
+description = "in push: the resize() statement is deleted | removed: bytes.resize(bytes.len() + pad4(bytes.len()), 0);"
+why = "every section is already a multiple of 4 when pushed: a 12-byte table of contents, a header of 0, 4 or 8 bytes, records of 4 to 28 bytes, and blobs that add_blob pads"

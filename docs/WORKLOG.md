@@ -659,7 +659,9 @@ and no phase closes with one outstanding.
     `68e678a5` (two more survivors ruled equivalent in review: one excluded, one statement
     removed); the crates still running get the same triage. `ruleset_editor`'s 57 survivors
     in its view wait until its draft is buildable, since its built UI is not worked on before
-    then; its other 4 are missing tests of the rules text;
+    then; its other 4 are missing tests of the rules text. `pes_model`'s 30: five timeouts
+    (catches), one excluded as equivalent, 24 missing tests; those and `ruleset_editor`'s 4
+    are in three SWE-2 slices (`sk/tri_pm_a`, `sk/tri_pm_b`, `sk/tri_ruleset_editor`);
   - [x] **teamrows** 2026-11-24, no change: `teams_list`'s reconcile tests keep their
     synthetic rows (750 `/zz/`, 701 `/co/`), which the test-data rule allows in a format's
     own tests;
