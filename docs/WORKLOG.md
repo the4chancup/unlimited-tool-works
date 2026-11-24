@@ -713,11 +713,13 @@ and no phase closes with one outstanding.
       changed lines and otherwise runs cargo unchanged;
     - [x] **cover** 2026-11-24 `de51563f`: `scripts/mutation/coverage_map.py` runs each
       test alone under instrumentation and writes each listed mutant's filter (74 of 77 on
-      `teams_list`); a test whose coverage cannot be read fails the map. The SWE-2 review
-      round over `wrap` and `cover` is running;
-    - [ ] **wire** [after cover] the remote job builds the map, then runs cargo-mutants with
-      the stand-in; the remote's needs, RUNBOOK and CONTRIBUTING updated; one whole-crate
-      run compared with that crate's last.
+      `teams_list`); a test whose coverage cannot be read fails the map. Their SWE-2 review
+      round (5 accepted, the loop ends) is fixed in `b02123d4`;
+    - [~] **wire** [after cover] the remote job builds the map, then runs cargo-mutants with
+      the stand-in; merged `dfad127c` with the remote's needs, RUNBOOK and CONTRIBUTING, its
+      SWE-2 review round running. Left, once the backfill frees the VPS: install
+      `cargo-llvm-cov` and `llvm-tools-preview` there, then one whole-crate run compared
+      with that crate's last.
 
 ---
 
