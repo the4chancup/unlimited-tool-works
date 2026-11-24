@@ -2477,6 +2477,10 @@ def remote_host() -> str | None:
 
 
 def main(argv: list[str]) -> int:
+    # A survivor's line quotes the source, any character of it, and a log file
+    # opened in Windows' cp1252 refuses some. A test's StringIO takes them all.
+    if isinstance(sys.stdout, io.TextIOWrapper):
+        sys.stdout.reconfigure(encoding="utf-8")
     host = remote_host()
     if argv[1] == "--collect":
         if host is None:

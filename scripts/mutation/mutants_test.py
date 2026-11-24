@@ -1406,6 +1406,19 @@ class WholeRun(unittest.TestCase):
         patcher.start()
         self.addCleanup(patcher.stop)
 
+    def test_the_output_is_utf8_whatever_the_console_takes(self):
+        """A survivor's line can hold any character of the source (a `✕` button
+        label), and a log opened in Windows' cp1252 cannot take it: a whole run's
+        summary once died there, after its fetch, before printing its survivors."""
+        console = io.TextIOWrapper(io.BytesIO(), encoding="cp1252")
+        with (
+            mock.patch.object(sys, "stdout", console),
+            mock.patch.object(mutants, "remote_host", lambda: None),
+        ):
+            mutants.main(["mutants.py", "--collect"])
+            print("✕")
+        self.assertEqual(console.encoding, "utf-8")
+
     def launch(self, remote_only: bool = False) -> tuple[int, dict, str]:
         """`whole_run` with everything past the refusals stubbed: the recorded
         `upload_and_launch` and `finish_remote_run` arguments, and the output."""
