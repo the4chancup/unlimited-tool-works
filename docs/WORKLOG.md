@@ -4123,8 +4123,7 @@ points there.
   test_runner.cmd`, the 6 GB cap), and Defender scanned its standard library at each start,
   the likely cause of the maintainer's input lag while tests ran. Slice RUNNER (`8750fd70`):
   the compiled `utw-test-runner`, installed by `just install-test-runner`; the `.cmd` falls
-  back to Python where it is not installed. Its review is owed ("vital scripts' first
-  reviews").
+  back to Python where it is not installed. Reviewed ("vital scripts' first reviews").
 
 - resolved (2026-11-24) — the app drew the opened sidebar above every window, where the
   maintainer wants every window above it (DECISIONS 2026-11-24 "every window stands above the
@@ -4414,8 +4413,8 @@ points there.
     `mutants_test.py`): SWE-2 rounds 1-3 (S-scripts), the loop ended (`bde2eafb`); then
     `scripts/`' root sorted by job (`6f37bf18`)
   - [ ] `run_tests.py`, `test_runner.py`, `remote_gates.py`
-  - [~] the compiled test runner, `crates/dev/test_runner` and `test_runner.cmd` (RUNNER): SWE-2
-    rounds
+  - [x] the compiled test runner, `crates/dev/test_runner` and `test_runner.cmd` (RUNNER):
+    SWE-2 round 1, nothing that misreports a result; 2 test gaps fixed, the loop ended
   - [x] `release.py`, `build_remapped.py`, `make_candidate.py`: SWE-2 rounds 1-2 (S-release),
     the loop ended (`82a5ca93`)
   - [ ] `scripts/census/`, `scripts/library_parity/`

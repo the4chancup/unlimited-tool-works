@@ -3,17 +3,20 @@
 
 use std::hint::black_box;
 
-/// Parses the arguments, commits `<mb>` MB and exits with `<code>`.
+/// Parses the arguments, commits `<mb>` MB, says so on stdout (the tests check the child's
+/// output reaches the runner's caller) and exits with `<code>`.
+#[expect(clippy::print_stdout, reason = "the line the runner's tests look for")]
 fn main() {
     let args: Vec<String> = std::env::args().skip(1).collect();
     let (mb, code) = parse(&args);
     let buffer = vec![1u8; mb << 20];
-    // One read per page, so the allocation is committed rather than only reserved.
+    // One read per page, so the filling writes cannot be optimised away.
     let mut sum = 0u64;
     for page in (0..buffer.len()).step_by(4096) {
         sum += u64::from(buffer[page]);
     }
     black_box(sum);
+    println!("utw-runner-probe: {mb} MB touched");
     std::process::exit(code);
 }
 
