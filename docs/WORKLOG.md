@@ -769,9 +769,8 @@ and no phase closes with one outstanding.
         mutant's outcome (the maintainer, 2026-11-24). Done on `4effe761`: 13 concerns, 10
         accepted (a lost console still caught on a Windows recheck, a build failing outside
         compilation unviable in one runner and untested in the other, a fork hazard in the
-        thread pool, excluded files and the build-job budget the extra kinds ignored), their
-        fixes and tests with SWE-2 (`sk/parity_c`); one SWE-2 round over those fixes closes
-        the review;
+        thread pool, excluded files and the build-job budget the extra kinds ignored), fixed
+        and tested in `ab57f2c6`; one SWE-2 round over those fixes closes the review;
       - [ ] **select** [after wire, backend] both runners through the same test-selecting
         stand-in for cargo (`scripts/mutation/select_tests.py`).
 
