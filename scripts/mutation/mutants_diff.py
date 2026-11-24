@@ -14,6 +14,13 @@ whose tests take two seconds waited out the slowest crate's suite (751 s here at
 to `mutants.diff/<crate>/` when its run ends, and `mutants.diff/missed_all.txt` lists every
 crate's survivors and, tagged `[timeout]`, its timeouts.
 
+After each crate's cargo-mutants run the extra kinds (`mutants.EXTRA_KINDS`,
+`extra_mutants.py`) run too, on this machine and over the lines the diff changed in its
+crate (`extra_mutants.diff_lines`): every crate a changed file belongs to gets its
+pass, cargo-mutants mutants or not — a diff can hold `call` mutants where
+cargo-mutants lists none. A pass's results move to `mutants.diff/<crate>/extra/` and
+its survivors join `missed_all.txt` after the crate's cargo-mutants ones.
+
 A crate run whose mutants would cost more than a few minutes locally splits with
 `STUDIO_MUTANTS_REMOTE` (the split `mutants.py` describes, by files to the two
 sides' measured speeds where it can, else in halves): the
@@ -22,7 +29,8 @@ measured (`mutants.estimate_seconds`), so a pes_savefile diff splits while a
 one-line `fpc` fix stays local. While the remote is busy — a whole-crate run
 holds it for days — the crate runs here whole instead. A crate in
 `mutants.LOCAL_ONLY_CRATES` never splits. With `mutants.REMOTE_ONLY` set every
-mutant runs on the remote, whatever the estimate.
+cargo-mutants mutant runs on the remote, whatever the estimate; the extra
+kinds still run here.
 """
 
 import json
@@ -33,6 +41,7 @@ import tempfile
 from collections import Counter
 from pathlib import Path
 
+import extra_mutants
 import mutants
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -72,16 +81,17 @@ def main(argv: list[str]) -> int:
         diff_path = f.name
     try:
         with mutants.run_lock(), mutants.snapshot_source(tree) as source:
-            return run(diff_path, tree, source)
+            return run(diff_path, tree, source, diff)
     finally:
         os.unlink(diff_path)
 
 
-def run(diff_path: str, tree: str, source: Path) -> int:
+def run(diff_path: str, tree: str, source: Path, diff: bytes) -> int:
     """Lists the diff's mutants and runs each crate's (`run_crate`), keeping each crate's
     results under `RESULTS`. `tree` is the working tree the diff was taken against, which the
-    remote is sent, and `source` its copy (`mutants.snapshot_source`), which the listing and
-    the local halves read."""
+    remote is sent, `source` its copy (`mutants.snapshot_source`), which the listing and
+    the local halves read, and `diff` the diff's bytes, whose changed lines
+    (`extra_mutants.diff_lines`) the extra kinds' passes run on."""
     # The mutant list, for the printed line and the local-run estimate. Each
     # entry's `file` names the crate (`crates/<group>/<crate>/...`).
     listing = subprocess.run(
@@ -102,28 +112,61 @@ def run(diff_path: str, tree: str, source: Path) -> int:
     results = RESULTS
     # Even with no mutant to run: an older run's results never stand as this one's.
     mutants.set_aside(results)
-    if not found:
+    # The extra kinds run for every crate a changed file under `crates/` belongs
+    # to, cargo-mutants mutants or not: a diff can hold `call` mutants where it
+    # lists none. A standalone extra run's `extra_mutants.out` is not this run's,
+    # so it is set aside like the rest.
+    lines = extra_mutants.diff_lines(diff)
+    crates = {
+        mutants.mutant_crate(path) for path in lines if path.startswith("crates/")
+    }
+    mutants.set_aside(extra_mutants.OUT_DIR)
+    if not found and not crates:
         return 0
     codes = {}
-    for crate, count in sorted(counts.items()):
+    extra_missed: dict[str, list[str]] = {}
+    for crate in sorted(counts.keys() | crates):
+        count = counts.get(crate, 0)
         print(f"mutants_diff: {crate}, {count} mutants", flush=True)
-        try:
-            codes[crate] = run_crate(diff_path, tree, source, crate, count)
-        except mutants.Refused as refusal:
-            # Refused before touching `mutants.out`: what is there is no result of this crate.
-            print(f"mutants_diff: {refusal}")
-            codes[crate] = 1
-            continue
-        out = ROOT / "mutants.out"
-        if out.exists():
-            # Made with the first results that land, so a run that lands none leaves no empty
-            # folder to be set aside over the last results.
+        if count:
+            try:
+                codes[crate] = run_crate(diff_path, tree, source, crate, count)
+            except mutants.Refused as refusal:
+                # Refused before touching `mutants.out`: what is there is no result of this crate.
+                print(f"mutants_diff: {refusal}")
+                codes[crate] = 1
+                continue
+            out = ROOT / "mutants.out"
+            if out.exists():
+                # Made with the first results that land, so a run that lands none leaves no empty
+                # folder to be set aside over the last results.
+                results.mkdir(exist_ok=True)
+                out.rename(results / crate)
+        missed, extra_counts, _ = extra_mutants.run_crate(
+            crate, list(mutants.EXTRA_KINDS), tree, lines=lines
+        )
+        extra_missed[crate] = missed
+        # The extra pass's code joins the crate codes `run_code` combines: 1
+        # when a mutant went untested, 2 when one was missed, else 0.
+        codes[crate] = mutants.run_code(
+            [
+                codes.get(crate, 0),
+                1 if extra_counts["untested"] else 2 if missed else 0,
+            ]
+        )
+        extra_out = extra_mutants.OUT_DIR
+        if extra_out.exists():
             results.mkdir(exist_ok=True)
-            out.rename(results / crate)
+            (results / crate).mkdir(exist_ok=True)
+            extra_out.rename(results / crate / "extra")
     if not results.exists():
         print(f"mutants_diff: no crate's results landed (the last run's, if any: {results.name}.old)")
         return mutants.run_code(codes.values())
-    survivors = [line for crate in sorted(codes) for line in missed_lines(results / crate)]
+    survivors = [
+        line
+        for crate in sorted(codes)
+        for line in missed_lines(results / crate) + extra_missed.get(crate, [])
+    ]
     (results / "missed_all.txt").write_text(
         "".join(line + "\n" for line in survivors), encoding="utf-8"
     )

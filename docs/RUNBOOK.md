@@ -202,7 +202,11 @@ loop waited 751 s here and about 1100 s on the VPS where its tests take 1 to 2 s
 cost about 2.5 h of job time, more than the two machines' speed difference. Each crate's
 results move to `mutants.diff/<crate>/` and their survivors are listed together in
 `mutants.diff/missed_all.txt`; a crate killed mid-run leaves its results in `mutants.out/` for
-`just mutants-collect`, and the crates after it did not run. Each crate's run splits the same
+`just mutants-collect`, and the crates after it did not run. After each crate's cargo-mutants
+run the extra kinds run here, over the lines the diff changed in that crate. Every crate a
+changed file belongs to gets this pass, even one with no cargo-mutants mutant; its results go
+to `mutants.diff/<crate>/extra/`, and its survivors follow the crate's cargo-mutants ones in
+`missed_all.txt`. Each crate's run splits the same
 way only when its estimated local time is at least 4 minutes (`SPLIT_THRESHOLD_SECONDS`): the estimate is the
 unmutated baseline plus each mutant's crate's measured mean seconds per mutant over the two
 jobs (the cost table, `%LOCALAPPDATA%/4cc-studio/mutants-cost.json`, `~/.cache/4cc-studio/` off
@@ -268,8 +272,8 @@ next time, and is off now. While the switch is on, the lead's checks run through
 and `just gates-remote`, and a sidekick's `cargo check`, test and clippy runs all go through
 `just remote`; only `cargo fmt` stays local.
 `REMOTE_ONLY = True` in `scripts/mutation/mutants.py` makes
-`just mutants-diff` run every mutant on the VPS as one whole run, as `just mutants` always does (no
-local half, no split threshold; the last local `mutants.out` set aside as
+`just mutants-diff` run every cargo-mutants mutant on the VPS as one whole run, as `just mutants` always does (no
+local half, no split threshold, the last local `mutants.out` set aside as
 `mutants.out.old`), and `just gates-remote` runs `just gates` there against a snapshot of
 the working tree (`scripts/mutation/remote_gates.py`: the same transfer and clone, so it refuses
 while a mutants half is running or uncollected; the transient service `studio-gates`,
