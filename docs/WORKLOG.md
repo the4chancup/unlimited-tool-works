@@ -739,8 +739,9 @@ and no phase closes with one outstanding.
       `jobs` lands, so the same run measures the extra pass's memory with two mutants
       building at once and no build cap. Its first run (2026-11-24) stopped when
       cargo-mutants could not start the stand-in for cargo: the run's snapshot had lost its
-      executable mode (fixed in `working_tree`). It runs again once `parity_c`, the
-      review's fixes, lands.
+      executable mode (fixed in `working_tree`). The second refused to start, the first's
+      results still on the VPS (freed by hand; the refusal now says how, `0855f68e`); the
+      third is running.
     - [ ] **extras** the extra kinds' runs (`scripts/mutation/extra_mutants.py`, their own
       loop per mutant, on `cargo test -p` until `backend`) take what the whole-crate runs
       have; then the `call` backfill resumes on its three largest crates:
@@ -749,7 +750,7 @@ and no phase closes with one outstanding.
         (mutfast had changed only cargo-mutants' config); outcomes from nextest's exit codes.
         Its SWE-2 round: 2 accepted (the config check now stops both runners on a key only
         one honors; the run's folder is asserted), the loop ends;
-      - [ ] **parity** [after backend] the rest of what cargo-mutants' runs have, each
+      - [x] **parity** [after backend] the rest of what cargo-mutants' runs have, each
         measured on one crate before the backfill resumes:
         - [x] **phases** 2026-11-24 `bc497a8f`: each mutant is built, then tested, as
           cargo-mutants runs them; the test phase times out by `.cargo/mutants.toml`'s
@@ -764,13 +765,14 @@ and no phase closes with one outstanding.
           against 154 s. On the VPS (`ruleset_editor`, 280 mutants in 2,794 s), the job
           peaked at 8.9 GiB under its 11.84 GiB cap, against 9.27 GiB for the last pass
           run one at a time with the cap;
-      - [~] **review** [after parity] one paid cross-family round (Carbon) over `backend` and
-        `parity` together, beyond the SWE-2 loop a script gets: this code decides every
-        mutant's outcome (the maintainer, 2026-11-24). Done on `4effe761`: 13 concerns, 10
-        accepted (a lost console still caught on a Windows recheck, a build failing outside
-        compilation unviable in one runner and untested in the other, a fork hazard in the
-        thread pool, excluded files and the build-job budget the extra kinds ignored), fixed
-        and tested in `ab57f2c6`; one SWE-2 round over those fixes closes the review;
+      - [x] **review** 2026-11-24 `13e68e44`: one paid cross-family round (Carbon) over
+        `backend` and `parity`, beyond the SWE-2 loop a script gets, because this code decides
+        every mutant's outcome. 10 of 13 concerns accepted (a lost console still caught on a
+        Windows recheck, a build failing outside compilation unviable in one runner and
+        untested in the other, a fork hazard in the thread pool, excluded files and the
+        build-job budget the extra kinds ignored), fixed in `ab57f2c6`. The SWE-2 round over
+        those fixes accepted 2 (the VPS's Python floor named, a test for the cargo children's
+        own session), and the loop ends;
       - [ ] **select** [after wire, backend] both runners through the same test-selecting
         stand-in for cargo (`scripts/mutation/select_tests.py`).
 
