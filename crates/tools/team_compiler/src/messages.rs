@@ -1524,6 +1524,19 @@ mod tests {
         assert!(effect.starts_with("A compile stops"), "{effect}");
     }
 
+    // The bins and refs CPKs' names reach the same list check as `cpk_name`'s
+    // (`compile::list_findings`), so the remedy names all three settings.
+    #[test]
+    fn cpk_name_unlisted_names_every_setting_a_cpk_name_comes_from() {
+        let (.., effect) = CATALOG
+            .iter()
+            .find(|row| row.0 == "cpk_name_unlisted")
+            .expect("the cpk_name_unlisted row");
+        for setting in ["`cpk_name`", "`bins_cpk_name`", "`refs_cpk_name`"] {
+            assert!(effect.contains(setting), "{setting}: {effect}");
+        }
+    }
+
     #[test]
     fn the_help_chapter_lists_the_whole_catalog_in_order() {
         use studio_core::StudioTool;

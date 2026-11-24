@@ -1057,9 +1057,10 @@ the output folder where it was left instead (`output=...`), `pes_version_mismatc
   CPK, so the game would not load it. The compile stops before compiling anything.
   `UTW compiler upgrade-dpfl` installs the cup's official list, which has it; then
   compile again.
-- `cpk_name_unlisted`: neither the game's `DpFileList.bin` nor the cup's official list has the
+- `cpk_name_unlisted`: neither the game's `DpFileList.bin` nor the cup's official list has a
   CPK's name, so the game would not load it. The compile stops before compiling anything.
-  Set `cpk_name` to a name the list has, then compile again.
+  Change each CPK name the line names to one the list has, in the setting that holds it
+  (`cpk_name`, `bins_cpk_name` or `refs_cpk_name`), then compile again.
 - `deploy_target_unwritable`: the `download` folder, or the old CPK in it, cannot be written,
   usually because the game is installed under `Program Files`. Run Unlimited Tool Works as
   administrator and compile again.

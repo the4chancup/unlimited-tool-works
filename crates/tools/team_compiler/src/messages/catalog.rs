@@ -960,7 +960,7 @@ pub(super) const CATALOG: &[(&str, CatalogSeverity, &str, &str)] = &[
         "cpk_name_unlisted",
         CatalogSeverity::Fatal,
         r#"One or more of this compile's CPK names are in neither the game's `DpFileList.bin` nor the cup's official list (the line names them)."#,
-        r#"A compile stops before compiling anything: nothing is installed or written, and the save is not touched. Set `cpk_name` to a name the list has; then compile again."#,
+        r#"A compile stops before compiling anything: nothing is installed or written, and the save is not touched. Change each CPK name the line names to one the list has, in the setting that holds it (`cpk_name`, `bins_cpk_name` or `refs_cpk_name`); then compile again."#,
     ),
     (
         "cpk_slots_exhausted",

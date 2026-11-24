@@ -90,7 +90,11 @@ would drift apart.
 - **The detail window** shows one cell (a player, the portraits, a kit, or a team label for its
   export's own messages): its folder, its state, and each message with the file it is about
   and the catalog's When and Effect texts, then Open folder (when the cell has a folder to
-  open, below) and, for a finding with one obvious fix, the rename that fixes it. The cells
+  open, below) and, for a finding with one obvious fix, the rename that fixes it. Its title
+  bar names the team and the cell (`/co/ 03`), or, for a cell alone in its group such as the
+  portraits, the team and the group (`/co/ portraits`). When the messages are too many for
+  the screen, the window stops at the screen's edge with its buttons in view, and the
+  messages scroll inside it. The cells
   carry no tooltip of their own; the ID cell and the buttons keep theirs.
 
   A team label's window also offers **Copy messages** when the export has a Warning or an
@@ -148,7 +152,8 @@ would drift apart.
     folder holding it, the archive selected as Open folder selects a file), and leaves the pin as it was before it.
     The portraits cell's folder is the export's `Portraits/` when it has one. Most exports have
     none and keep each portrait in its player's folder, so the cell has no folder: a
-    double-click does nothing, and the window shows no Open folder. A finding about such a
+    double-click does nothing, and the window reads "Portraits in the player folders" where
+    the folder would be, with no Open folder. A finding about such a
     portrait is on its player's cell, which opens his folder.
   - **Where it opens**: where the member last left it (at first, at the grid's right), not
     beside the cell, because a window sized for the 3D preview is too big to follow the pointer.

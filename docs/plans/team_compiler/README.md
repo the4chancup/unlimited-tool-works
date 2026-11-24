@@ -224,8 +224,11 @@ TC-GUI-08  GIVEN a team export whose name carries neither Full nor Midcup
                 revalidates under the new name
 TC-GUI-09  GIVEN a cell with findings and no cell pinned
            WHEN the pointer rests on it
-           THEN the detail window opens on it, showing the folder name and each finding's
-                code, file and catalog text, worst severity first, then by code; WHEN the
+           THEN the detail window opens on it, titled by the team and the cell (by the
+                group for a cell alone in its group: `/co/ portraits`), showing the folder
+                name, the cell's state and each finding's code, file and catalog text, worst
+                severity first, then by code; findings too many for the screen scroll inside
+                a window kept on screen, its buttons in view; WHEN the
                 pointer leaves the cell for empty grid THEN the window closes; WHEN it moves
                 onto another cell instead, one under the window included, THEN the window
                 shows that cell at once
