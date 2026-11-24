@@ -287,6 +287,20 @@ fn sections_appear_only_with_content() {
     assert!(!written.contains("rating:"), "{written}");
 }
 
+/// `wrap_list`'s only caller that does not guard on non-empty: a card
+/// group holding no cards writes `g: [],`, not an unterminated `[`,
+/// and the block reads back with the group still empty.
+#[test]
+fn an_empty_card_group_writes_an_empty_list() {
+    let mut ruleset = small_ruleset();
+    ruleset.card_groups = [("g".to_string(), Vec::new())].into_iter().collect();
+    let written = ruleset.to_data_block();
+    assert!(written.contains("g: [],"), "{written}");
+    let reread =
+        Ruleset::from_data_block(&written).unwrap_or_else(|error| panic!("{error}\n{written}"));
+    assert_eq!(reread, ruleset);
+}
+
 /// Every embedded ruleset: written, read back equal, written again
 /// byte-identical. `vtl10` and `vtl11` end in a CUSTOM CHECKS
 /// section the writer does not carry, so the comparison is of the
