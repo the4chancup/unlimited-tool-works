@@ -1,0 +1,23 @@
+[package]
+name = "test_runner"
+description = "Runs each test binary inside a memory-capped Job Object; scripts/gates/test_runner.cmd prefers it to test_runner.py"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+publish = false
+
+[[bin]]
+name = "utw-test-runner"
+path = "src/main.rs"
+
+[[bin]]
+name = "utw-runner-probe"
+path = "src/bin/probe.rs"
+
+[target.'cfg(windows)'.dependencies]
+windows.workspace = true
+
+[lints]
+workspace = true

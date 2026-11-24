@@ -4965,6 +4965,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "test_runner"
+version = "0.0.2"
+dependencies = [
+ "windows",
+]
+
+[[package]]
 name = "thin-vec"
 version = "0.2.21"
 source = "registry+https://github.com/rust-lang/crates.io-index"
