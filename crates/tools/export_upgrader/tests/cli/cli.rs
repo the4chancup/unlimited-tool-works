@@ -56,6 +56,25 @@ fn old_export(sandbox: &Sandbox, relative: &str, team: Option<&str>) {
     }
 }
 
+/// The bytes of a `.zip` whose one file entry lists but does not read back:
+/// written `Stored` so its data sits in the archive verbatim, then one byte of
+/// it flipped, which the checksum the read runs refuses.
+fn corrupt_entry_zip(name: &str) -> Vec<u8> {
+    const BYTES: &[u8] = b"the entry's data before the flip";
+    let options =
+        zip::write::SimpleFileOptions::default().compression_method(zip::CompressionMethod::Stored);
+    let mut writer = zip::ZipWriter::new(std::io::Cursor::new(Vec::new()));
+    writer.start_file(name, options).unwrap();
+    std::io::Write::write_all(&mut writer, BYTES).unwrap();
+    let mut bytes = writer.finish().unwrap().into_inner();
+    let at = bytes
+        .windows(BYTES.len())
+        .position(|window| window == BYTES)
+        .expect("a stored entry's data is in the archive verbatim");
+    bytes[at] ^= 0xFF;
+    bytes
+}
+
 // EU-CLI-01, EU-CLI-09
 #[test]
 fn the_output_name_carries_the_key_the_tag_and_the_rest() {
@@ -487,6 +506,60 @@ fn a_corrupt_archive_is_export_extract_failed() {
     assert_eq!(sandbox.listing(""), before, "nothing is written");
 }
 
+/// The run ids of `run`'s `ExportProcessed` events, in order: which exports
+/// the progress counter counted done.
+fn processed_runs(run: &Run) -> Vec<u64> {
+    run.events
+        .iter()
+        .filter(|envelope| matches!(envelope.event, PipelineEvent::ExportProcessed { .. }))
+        .map(|envelope| envelope.run_id.0)
+        .collect()
+}
+
+// EU-CLI-11
+#[test]
+fn an_export_stopping_inside_its_upgrade_is_still_counted_done() {
+    let sandbox = Sandbox::new("cli_early_done");
+    // Every way an upgrade ends inside the export's own run, before anything
+    // is written: nothing an old export holds, a name that is no team, an
+    // archive that does not open, and a file that lists but does not read
+    // (the Note, which decides the team). The counter counts each done once.
+    fs::create_dir_all(sandbox.path("co Empty")).unwrap();
+    fs::write(sandbox.path("co Empty/readme.pdf"), b"not an export").unwrap();
+    fs::create_dir_all(sandbox.path("---/Other")).unwrap();
+    fs::write(sandbox.path("---/Other/readme.txt"), b"x").unwrap();
+    fs::write(sandbox.path("broken.zip"), b"not a zip at all").unwrap();
+    sandbox.write("co Broken.zip", &corrupt_entry_zip("co Note.txt"));
+    // A referee export takes no flag, so it upgrades on its own run: a
+    // missing and an unreadable `refs.txt` (which decides the roster).
+    sandbox.write("refs Summer/Players/arbiter/boots.fmdl", b"boots");
+    sandbox.write("refs Broken.zip", &corrupt_entry_zip("refs.txt"));
+
+    let run = upgrade_several(
+        &sandbox,
+        &["co Empty", "---", "broken.zip", "co Broken.zip"],
+        &["--loose"],
+    );
+    assert_eq!(run.exit_code(), 1, "{}", run.stdout());
+    assert_eq!(processed_runs(&run), [1, 2, 3, 4], "{}", run.stdout());
+    assert!(
+        run.stdout()
+            .contains("- co Broken: Error source_read_failed at co Note.txt"),
+        "{}",
+        run.stdout()
+    );
+
+    let run = upgrade_several(&sandbox, &["refs Summer", "refs Broken.zip"], &[]);
+    assert_eq!(run.exit_code(), 1, "{}", run.stdout());
+    assert_eq!(processed_runs(&run), [1, 2], "{}", run.stdout());
+    assert!(
+        run.stdout()
+            .contains("- refs Broken: Error source_read_failed at refs.txt"),
+        "{}",
+        run.stdout()
+    );
+}
+
 /// Old exports at each of `names` whose runs are clean, the Note naming `team`.
 fn clean_old_exports(sandbox: &Sandbox, names: &[&str], team: &str) {
     for name in names {
@@ -558,13 +631,7 @@ fn several_exports_are_each_upgraded_as_if_alone() {
         run.events.first().map(|envelope| &envelope.event),
         Some(&PipelineEvent::ExportsExpected { total: 3 })
     );
-    let done: Vec<u64> = run
-        .events
-        .iter()
-        .filter(|envelope| matches!(envelope.event, PipelineEvent::ExportProcessed { .. }))
-        .map(|envelope| envelope.run_id.0)
-        .collect();
-    assert_eq!(done, [1, 2, 3]);
+    assert_eq!(processed_runs(&run), [1, 2, 3]);
 
     // One export named alone prints as it always did: no naming line, no
     // tally.
