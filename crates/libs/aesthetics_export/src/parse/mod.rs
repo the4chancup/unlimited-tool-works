@@ -373,13 +373,11 @@ fn try_flatten_child(tree: &mut CanonicalTree, child: &ScopePath) -> Result<(), 
                 | vtree::InsertError::FileFolderConflict { existing } => existing,
             })
     };
-    // The loose files first (the tree already held them: they cannot
-    // collide), then the flattened ones.
+    // The loose files first, then the flattened ones.
     for (path, entry) in tree.files.iter() {
-        if !path.fold_key().starts_with(&prefix)
-            && let Err(path) = insert(&mut moved, path.clone(), entry)
-        {
-            conflicts.push(path);
+        if !path.fold_key().starts_with(&prefix) {
+            insert(&mut moved, path.clone(), entry)
+                .expect("the loose files already share the tree");
         }
     }
     for (path, entry) in tree.files.iter() {
@@ -852,6 +850,32 @@ mod tests {
         assert_eq!(
             parsed.draft.players[0].files[0].path.as_str(),
             "Players/03 - A/face_high.fmdl"
+        );
+    }
+
+    #[test]
+    fn a_doubled_layer_removal_keeps_the_empty_folders() {
+        // The layer removal rebuilds the tree; the listed empty `Kits/p2`
+        // holds no file and must be carried over.
+        let parsed = parse(
+            "egg Midcup",
+            &[("Players/Players/03 - A/face_high.fmdl", 10)],
+            &["Kits/p2"],
+        );
+        assert!(
+            parsed
+                .issues
+                .iter()
+                .any(|issue| issue.code == "nested_folders_fixed")
+        );
+        assert_eq!(
+            parsed
+                .draft
+                .kits
+                .iter()
+                .map(|kit| kit.path.as_str())
+                .collect::<Vec<_>>(),
+            vec!["Kits/p2"]
         );
     }
 
