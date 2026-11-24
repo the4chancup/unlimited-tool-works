@@ -563,7 +563,7 @@ Requirements:
   vouch for: `cargo-mutants` rewrites operators, a `!`, match arms and guards, a field, and a
   function's whole return value; it never edits a literal or removes a method call. So `just
   mutants <crate>` first runs five such kinds (`EXTRA_KINDS` in `scripts/mutation/mutants.py`, listed by
-  `crates/dev/extra_mutants`, run locally in a copy of the tree, a few minutes per crate and
+  `crates/dev/extra_mutants`, run on the VPS like the rest, a few minutes per crate and
   about twenty for `team_compiler` before `call` joined them: `call` alone took ten minutes
   for `export_grid`'s 72 mutants, and makes hundreds in the largest crates), their survivors in the same `missed_all.txt` tagged with
   their kind and triaged the same way: `literal` removes one alternative of a `matches!` or
@@ -576,7 +576,9 @@ Requirements:
   that cargo-mutants never touches. An equivalent extra mutant goes into
   `.cargo/extra_mutants.toml` with its reason, matched by path, kind and whole description (no
   line number: a description names its function and its site, the field, or the call and its
-  receiver); an entry that matches nothing in its crate is reported as a stale exclusion
+  receiver). So does a survivor that only an OS or a device no test run drives can see (a
+  blocking dialog, a GPU, a real crash), with its `why` naming the test or manual scenario
+  that covers it: no test could kill it, and kept in, it returns at every run. An entry that matches nothing in its crate is reported as a stale exclusion
   among the survivors, since the code under the ruling changed. The tool's other kind
   (`guard`) is not run (`just extra-mutants <crate> --kind guard` runs it by hand): too few
   of its survivors were real gaps. A survivor of the remote half whose only

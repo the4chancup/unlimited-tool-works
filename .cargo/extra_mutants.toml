@@ -4,7 +4,10 @@
 # path, kind and whole description it names — exact text, no regex, no line
 # number — so two identically described flags share one entry and one reason.
 # Every entry's `why` names the equivalence that makes the mutant unkillable (or
-# the reason nothing reads it); a mutant that is merely hard to kill stays in.
+# the reason nothing reads it); a mutant that is merely hard to kill stays in. One
+# more reason excludes: only an OS or a device that no test run drives sees the
+# statement (a blocking dialog, a GPU, a real crash), and the `why` names the test or
+# manual scenario that covers it.
 # An entry that matches nothing its crate lists is stale — the code changed under
 # the ruling — and the run reports it for triage.
 
@@ -220,10 +223,106 @@ why = "every caller's range is its field's whole stored range (manager u32, stad
 path = "crates/tools/save_editor/src/teams_list.rs"
 kind = "literal"
 description = "in load_working: the matches! pattern loses an alternative | removed: | io::ErrorKind::NotADirectory"
-why = "killable only where a path under a file reports NotADirectory (Linux, the test a_teams_list_path_under_a_file_falls_back_to_upstream); Windows reports NotFound and the extra kinds run here"
+why = "killable only where a path under a file reports NotADirectory (Linux, the test a_teams_list_path_under_a_file_falls_back_to_upstream); a run on Windows, where it reports NotFound, cannot kill it"
 
 [[exclude]]
 path = "crates/libs/team_widgets/src/violations.rs"
 kind = "bool"
 description = "in part: draw_groups arg 5: true becomes false | removed: true"
 why = "the team's own groups: every violation there has no slot, and row selects only a slotted one"
+
+[[exclude]]
+path = "crates/studio/src/gui_log.rs"
+kind = "call"
+description = "in show_dialog: the show() statement is deleted | removed: rfd::MessageDialog::new() .set_level(level) .set_title(studio_core::app_name!()) .set_description(text) .set_buttons(rfd::MessageButtons::Ok) .show();"
+why = "OS boundary: the blocking dialog is the OS's; the text it shows goes through guard_gui's show callback, which the tests drive"
+
+[[exclude]]
+path = "crates/studio/src/crash_dump.rs"
+kind = "call"
+description = "in start_monitor: the set_ptracer() statement is deleted | removed: #[cfg(target_os = \"linux\")] handler.set_ptracer(Some(monitor.id()));"
+why = "killable only where Yama restricts ptrace (scope 1, Ubuntu's default), where ST-RUN-10's crash test needs it for the dump; the VPS runs at scope 0 and Windows has no such line"
+
+[[exclude]]
+path = "crates/libs/dds_convert/src/gpu.rs"
+kind = "call"
+description = "in gpu_encode_scoped: the add_compression_task() statement is deleted | removed: self.compressor.add_compression_task( variant, &view, padded.width, *rows, &blocks, Some(*start), Some(u32::try_from(offset).map_err(|_| \"block offset past u32\".to_string())?), );"
+why = "GPU only: no mutation run has a GPU; the ignored GPU test gpu_bc7_quality_within_1db_of_cpu fails on the zero blocks this leaves"
+
+[[exclude]]
+path = "crates/libs/dds_convert/src/gpu.rs"
+kind = "call"
+description = "in gpu_encode_scoped: the compress() statement is deleted | removed: self.compressor.compress(&mut pass);"
+why = "GPU only: no mutation run has a GPU; the ignored GPU test gpu_bc7_quality_within_1db_of_cpu fails on the zero blocks this leaves"
+
+[[exclude]]
+path = "crates/libs/dds_convert/src/gpu.rs"
+kind = "call"
+description = "in gpu_encode_scoped: the copy_buffer_to_buffer() statement is deleted | removed: encoder.copy_buffer_to_buffer(&blocks, 0, &staging, 0, size);"
+why = "GPU only: no mutation run has a GPU; the ignored GPU test gpu_bc7_quality_within_1db_of_cpu fails on the zero blocks this leaves"
+
+[[exclude]]
+path = "crates/libs/dds_convert/src/gpu.rs"
+kind = "call"
+description = "in gpu_encode_scoped: the submit() statement is deleted | removed: self.queue.submit([encoder.finish()]);"
+why = "GPU only: no mutation run has a GPU; the ignored GPU test gpu_bc7_quality_within_1db_of_cpu fails on the zero blocks this leaves"
+
+[[exclude]]
+path = "crates/libs/dds_convert/src/gpu.rs"
+kind = "call"
+description = "in start: the on_uncaptured_error() statement is deleted | removed: device.on_uncaptured_error(Arc::new({ let uncaptured = Arc::clone(&uncaptured); move |error: wgpu::Error| { let mut slot = uncaptured.lock().unwrap(); if slot.is_none() { *slot = Some(error.to_string()); } } }));"
+why = "GPU only: no test can induce an uncaptured wgpu error, and without the hook its panic still falls back to the CPU encoder"
+
+[[exclude]]
+path = "crates/libs/dds_convert/src/gpu.rs"
+kind = "call"
+description = "in gpu_encode_scoped: the unmap() statement is deleted | removed: staging.unmap();"
+why = "the staging buffer is dropped right after and nothing touches it past the map; a mapped buffer drops without error"
+
+[[exclude]]
+path = "crates/libs/pes_savefile/src/file.rs"
+kind = "call"
+description = "in fresh_salt: the update() statement is deleted | removed: hasher.update(0u64.to_be_bytes());"
+why = "a constant mixer adds no keying: payload and clock still seed the chain, and the salt has no expected value"
+
+[[exclude]]
+path = "crates/libs/pes_savefile/src/file.rs"
+kind = "call"
+description = "in fresh_salt: the update() statement is deleted | removed: hasher.update((n as u64).to_be_bytes());"
+why = "without the counter the chain is still an iterated SHA-256 of the payload-and-clock seed: ten distinct chunks, fresh per write"
+
+[[exclude]]
+path = "crates/libs/model_convert/src/ops/hand_split.rs"
+kind = "call"
+description = "in assemble: the expect() statement is deleted | removed: validate(&model).expect(\"hand split keeps a consistent IR\");"
+why = "a self-check of assemble's own output: it fails only on a bug in assemble, never on an input"
+
+[[exclude]]
+path = "crates/libs/model_convert/src/skeletons/retarget.rs"
+kind = "call"
+description = "in retarget: the push() statement is deleted | removed: seen.push(next);"
+why = "seen only breaks a fold-table cycle; the tables are tested loop-free, so every chase ends before seen is read"
+
+[[exclude]]
+path = "crates/libs/color_tools/src/picker.rs"
+kind = "call"
+description = "in popup_body: the memory_mut() statement is deleted | removed: ui.memory_mut(|memory| memory.surrender_focus(id));"
+why = "both hosts surrender focus on presses every frame, so egui already surrendered it on this press before the call"
+
+[[exclude]]
+path = "crates/libs/ftex/src/to_dds.rs"
+kind = "call"
+description = "in take: the set_position() statement is deleted | removed: cursor.set_position(end as u64);"
+why = "no caller reads its cursor after take: the outer cursor stops there and chunk_cursor is rebuilt per record"
+
+[[exclude]]
+path = "crates/libs/team_widgets/src/tactics/mod.rs"
+kind = "call"
+description = "in auto_row: the set_min_size() statement is deleted | removed: ui.set_min_size(egui::vec2(column, AUTO_ROW_HEIGHT));"
+why = "the right cell is the row's last child: the panel claims the full width itself and the left cell gives the row its height"
+
+[[exclude]]
+path = "crates/libs/aesthetics_export/src/test_exports.rs"
+kind = "call"
+description = "in missing: the retain() statement is deleted | removed: added.retain(|(path, _)| { !files .iter() .chain(folders.iter()) .any(|given| given.eq_ignore_ascii_case(path)) });"
+why = "removes only paths each requirement's own files check already blocks, or a folder named like a file, which no test gives"

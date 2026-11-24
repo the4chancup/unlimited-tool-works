@@ -20208,3 +20208,17 @@ would need a compiled stand-in.
 Plan: no plan covers the mutation runs' tooling; the worklog's TESTSEL "adopt" step holds the
 slices, and `docs/RUNBOOK.md` "Mutation runs and the VPS" and `docs/CONTRIBUTING.md` are
 updated when it lands.
+
+## 2026-11-24 — mutation runs — a survivor only an OS or a device can see is excluded, naming what covers it
+
+Context: the `call` backfill's triage met survivors that only something outside the test
+run observes: a blocking OS dialog, a ptrace permission a real crash on Linux needs, four
+GPU encode steps and a GPU error hook. The exclusion file kept every mutant that is merely
+hard to kill, so these would return at every whole run with nothing anyone could do.
+Decision: such a survivor goes into `.cargo/extra_mutants.toml` like an equivalent one, its
+`why` naming the boundary and the test (an ignored GPU test) or manual scenario that covers
+it. A survivor a small change inside its crate makes testable gets that change and a test
+instead (a pure function taking the clock value, a draw target the tests replace).
+Rejected: keeping them in, because they would be re-triaged at every run with the same answer.
+Plan: no plan covers the mutation tooling; `docs/CONTRIBUTING.md` "Mutation runs" and the
+file's header say it.

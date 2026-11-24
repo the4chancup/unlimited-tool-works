@@ -659,8 +659,13 @@ and no phase closes with one outstanding.
     crate, `pipeline`, after two with no survivors, `pes_strings` and `vtree`): 13 crates
     run, then `studio` stopped it, its baseline failing the drafts' help test on Linux (fixed
     in `efed4913`, the test Windows only); running again from `studio`;
-  - [ ] **triage** [after backfill] each crate's survivors triaged, the missing tests in
-    SWE-2 slices crate by crate;
+  - [~] **triage** [after backfill] each crate's survivors triaged, the missing tests in
+    SWE-2 slices crate by crate. The 71 survivors of the 14 crates finished by 2026-11-24
+    are ruled: 16 excluded (equivalent, or seen only by an OS or a GPU), two timeouts that
+    are catches, the rest missing tests or dead code in eight slices (`pes_savefile`,
+    `model_convert`, `color_tools`, `kit_config`, `team_widgets`, `studio`,
+    `aesthetics_export`, and one for `aatf`, `teams_list`, `cpk` and `elevation`); the
+    crates still running get the same triage;
   - [ ] **figures** [after backfill] CONTRIBUTING's time for the extra kinds given each
     crate's measured run.
 - [x] **DRAFTHELP** The drafts' help made from the build's, 2026-11-23 (`core/gui.md` "Prototypes before
