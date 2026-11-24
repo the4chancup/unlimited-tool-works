@@ -599,6 +599,19 @@ mod tests {
     }
 
     #[test]
+    fn a_shirt_model_outside_the_known_set_is_an_info_finding() {
+        // 144, 160 and 176 are the only models stock data carries; another
+        // value is worth a mention but breaks nothing.
+        let mut config = KitConfig::template();
+        config.shirt.model = 150;
+        assert!(
+            validate(&config, PesVersion::Pes21)
+                .iter()
+                .any(|f| f.code == "kit_shirt_model_unknown" && f.severity == Severity::Info)
+        );
+    }
+
+    #[test]
     fn pes15_pattern_remaps_and_warns() {
         let mut config = KitConfig::template();
         // The template preserves the byte's undecoded low nibble; drop it so
@@ -940,6 +953,38 @@ mod tests {
     }
 
     #[test]
+    fn update_toml_drops_a_stale_unknown_key() {
+        // A [unknown] key whose offset's remainder returned to the
+        // template's is removed; keys still differing are kept.
+        let value = TEMPLATE[0x13].wrapping_add(1);
+        let mut config = KitConfig::template();
+        config.unknown.insert(0x13, value);
+        let mut document = "[unknown]\n\"0x13\" = 1\n\"0x25\" = 3\n"
+            .parse::<toml_edit::DocumentMut>()
+            .unwrap();
+        config.update_toml(&mut document).unwrap();
+        let out = document.to_string();
+        assert!(out.contains("\"0x13\""), "{out}");
+        assert!(!out.contains("0x25"), "{out}");
+        assert_eq!(KitConfig::from_toml(&out).unwrap(), config);
+    }
+
+    #[test]
+    fn update_toml_removes_source_texture_names_the_config_lacks() {
+        // A document's stale [source_texture_names] table is dropped when
+        // the config carries no names.
+        let mut document = "[source_texture_names]\nkit = \"00112233445566778899aabbccddeeff\"\n"
+            .parse::<toml_edit::DocumentMut>()
+            .unwrap();
+        let mut config = KitConfig::template();
+        config.source_texture_names = None;
+        config.update_toml(&mut document).unwrap();
+        let out = document.to_string();
+        assert!(!out.contains("source_texture_names"), "{out}");
+        assert_eq!(KitConfig::from_toml(&out).unwrap(), config);
+    }
+
+    #[test]
     fn update_toml_is_byte_identical_when_nothing_changes() {
         // A commented [unknown] key and a commented standard
         // [badge.left_short] table survive a no-op update verbatim: values
@@ -964,6 +1009,19 @@ mod tests {
         let before = document.to_string();
         config.update_toml(&mut document).unwrap();
         assert_eq!(document.to_string(), before);
+    }
+
+    #[test]
+    fn update_toml_emits_a_missing_badge_entry() {
+        // A document without the badge entry gets the inline form `to_toml`
+        // writes, with both coordinates of the config's position.
+        let mut document = "[badge]\n".parse::<toml_edit::DocumentMut>().unwrap();
+        let mut config = KitConfig::template();
+        config.badges.right_short = Position { x: 3, y: 9 };
+        config.update_toml(&mut document).unwrap();
+        let out = document.to_string();
+        assert!(out.contains("right_short = { x = 3, y = 9 }"), "{out}");
+        assert_eq!(KitConfig::from_toml(&out).unwrap(), config);
     }
 
     #[test]
