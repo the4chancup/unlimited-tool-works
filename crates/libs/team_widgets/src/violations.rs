@@ -3994,4 +3994,49 @@ mod tests {
             "both columns start from the same top: {starter:?}, {bench:?}"
         );
     }
+
+    // A row that only reports (`select: None`) still shows the `hover`
+    // it was handed — the comparator's lines pass a hover with nothing
+    // to select.
+    #[test]
+    fn a_row_with_nothing_to_select_keeps_its_hover() {
+        let mut window = Headless::new();
+        window
+            .ctx
+            .global_style_mut(|style| style.interaction.tooltip_delay = 0.0);
+        // The row's own draw: a hover-only rect handed to `row_paint`
+        // with a hover and nothing to select.
+        let mut draw = |ui: &mut egui::Ui| {
+            let (_rect, response) =
+                ui.allocate_exact_size(egui::vec2(200.0, 20.0), egui::Sense::hover());
+            row_paint(ui, response, &[], "a row's line", None, Some("hint"));
+        };
+        window.frame(vec![egui::Event::PointerMoved(egui::Pos2::ZERO)], &mut draw);
+        let (nodes, _) = window.frame(vec![], &mut draw);
+        let row = nodes
+            .iter()
+            .find(|node| node.role() == Role::Label && node.value() == Some("a row's line"))
+            .and_then(|node| node.bounds())
+            .expect("the row's label");
+        let pos = egui::pos2(
+            ((row.x0 + row.x1) / 2.0) as f32,
+            ((row.y0 + row.y1) / 2.0) as f32,
+        );
+        window.frame(vec![egui::Event::PointerMoved(pos)], &mut draw);
+        // The pointer rests over the row; the tooltip joins the frame's
+        // values within a bounded run of frames (delay 0).
+        let mut shown = None;
+        for _ in 0..90 {
+            let (nodes, _) = window.frame(vec![], &mut draw);
+            shown = nodes.iter().find_map(|node| {
+                node.value()
+                    .filter(|value| *value == "hint")
+                    .map(str::to_owned)
+            });
+            if shown.is_some() {
+                break;
+            }
+        }
+        assert_eq!(shown, Some("hint".to_owned()), "the row's hover draws");
+    }
 }
