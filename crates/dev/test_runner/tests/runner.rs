@@ -3,6 +3,7 @@
 //! arguments.
 #![cfg(windows)]
 
+use std::path::{Path, PathBuf};
 use std::process::Command;
 
 const RUNNER: &str = env!("CARGO_BIN_EXE_utw-test-runner");
@@ -76,4 +77,44 @@ fn a_child_that_cannot_start_is_reported() {
         stderr.starts_with(&format!("test_runner: cannot start {missing}: ")),
         "stderr: {stderr}"
     );
+}
+
+/// `scripts/gates/test_runner.cmd`, the shim cargo runs every test binary through.
+fn shim() -> PathBuf {
+    Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../scripts/gates/test_runner.cmd")
+}
+
+/// The shim's exit code for `args`, run as cargo runs it, with `CARGO_HOME` at `home`.
+fn run_shim(home: &Path, args: &[&str]) -> Option<i32> {
+    Command::new(shim())
+        .args(args)
+        .env("CARGO_HOME", home)
+        .output()
+        .expect("the shim starts")
+        .status
+        .code()
+}
+
+// A failing test must fail through the shim on both branches: a parenthesized
+// `exit /b` once returned 0 for every child on the compiled branch.
+#[test]
+fn the_shim_passes_the_childs_exit_code_through_on_both_branches() {
+    let dir = std::env::temp_dir().join(format!("utw-shim-{}", std::process::id()));
+    let compiled = dir.join("compiled");
+    let python = dir.join("python");
+    std::fs::create_dir_all(compiled.join("bin")).expect("the compiled home");
+    std::fs::create_dir_all(&python).expect("the python home");
+    std::fs::copy(RUNNER, compiled.join("bin").join("utw-test-runner.exe"))
+        .expect("the runner copied into the compiled home");
+    for home in [&compiled, &python] {
+        for code in [7, 0] {
+            let code_text = code.to_string();
+            assert_eq!(
+                run_shim(home, &["64M", PROBE, "1", &code_text]),
+                Some(code),
+                "{home:?}, child exit {code}"
+            );
+        }
+    }
+    std::fs::remove_dir_all(&dir).expect("the temp homes removed");
 }

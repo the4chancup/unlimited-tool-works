@@ -4125,6 +4125,13 @@ points there.
   the compiled `utw-test-runner`, installed by `just install-test-runner`; the `.cmd` falls
   back to Python where it is not installed. Reviewed ("vital scripts' first reviews").
 
+- resolved (2026-11-24) — the compiled runner's branch of `test_runner.cmd` returned 0 for
+  every test: `exit /b` inside a parenthesized block does not keep the child's code when
+  cargo starts the `.cmd`. From its install (03:02) to the fix, a failing test on this
+  machine reported success to cargo; the test binaries' own `test result:` lines still said
+  FAILED, and no mutation run used it (the trial had ended, the backfill runs on Linux). The
+  `.cmd` now has no block, and a test runs it on both branches as cargo does.
+
 - resolved (2026-11-24) — the app drew the opened sidebar above every window, where the
   maintainer wants every window above it (DECISIONS 2026-11-24 "every window stands above the
   opened sidebar"). Slice WINSB (`2b3f8d6b`): the sidebar's layer is now under every window,
