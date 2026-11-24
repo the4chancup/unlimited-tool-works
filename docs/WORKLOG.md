@@ -665,8 +665,8 @@ and no phase closes with one outstanding.
     then; its other 4 are missing tests of the rules text. `pes_model`'s 30: five timeouts
     (catches), one excluded as equivalent, 24 missing tests; those and `ruleset_editor`'s 4
     are tested, in three SWE-2 slices merged by `37059dcb`. `export_upgrader`'s 33: eight
-    excluded as equivalent, three in a dead block of `output_issues` that goes, 22 missing
-    tests, in two SWE-2 slices (`eu_a`, `eu_b`);
+    excluded as equivalent, three in a dead block of `output_issues`, now removed, and 22
+    missing tests, now written, in two SWE-2 slices merged by `c07d0376`;
   - [x] **teamrows** 2026-11-24, no change: `teams_list`'s reconcile tests keep their
     synthetic rows (750 `/zz/`, 701 `/co/`), which the test-data rule allows in a format's
     own tests;
