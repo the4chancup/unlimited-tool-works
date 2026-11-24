@@ -62,6 +62,7 @@ test:
     {{script_test}} scripts/gates/low_priority_test.py
     {{script_test}} scripts/mutation/mutants_test.py
     {{script_test}} scripts/mutation/select_tests_test.py
+    {{script_test}} scripts/mutation/coverage_map_test.py
     {{script_test}} scripts/review/perturb_check_test.py
     {{script_test}} scripts/review/clones_test.py
     {{script_test}} scripts/drafts/bundle_drafts_test.py
@@ -102,6 +103,7 @@ test-changed base="HEAD":
     {{script_test}} scripts/gates/low_priority_test.py
     {{script_test}} scripts/mutation/mutants_test.py
     {{script_test}} scripts/mutation/select_tests_test.py
+    {{script_test}} scripts/mutation/coverage_map_test.py
     {{script_test}} scripts/review/perturb_check_test.py
     {{script_test}} scripts/review/clones_test.py
     {{script_test}} scripts/drafts/bundle_drafts_test.py
