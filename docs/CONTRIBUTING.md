@@ -318,7 +318,8 @@ transitive one included, because `just gates` does not run it: adding `eframe` o
 "Requirements"), `just parity` (the two Red-parity tests alone, `tests/parity.rs` and
 `tests/parity_prefox.rs`, which `just test` also runs), `just bindings` (the `maturin` build of
 `python_bindings`), `just release <version>` (the portable Windows release bundle, Windows only),
-`just mutants <crate>`, `just mutants-collect` and `just mutants-diff [base]` (the mutation runs,
+`just mutants <crate>`, `just mutants-collect`, `just mutants-diff [base]`, `just
+mutants-closure`, `just mutants-checked` and `just mutants-rolling` (the mutation runs,
 below), `just citation-audit` (the citation audit, below), `just gpu-tests` (`dds_convert`'s GPU
 encoder tests: the one sanctioned `#[ignore]`, each with the reason `"needs a Vulkan or Metal
 GPU"`, since no CI runner has one; whoever changes `dds_convert`'s `gpu` module runs them on a
@@ -549,8 +550,12 @@ Requirements:
   own tests the next checkpoint's run measures; not at the loop's end, where its survivors
   needed a rework slice of their own, and not once per rework round, since each run freezes
   the crates it mutates for its whole length and its baseline repeats the checkpoint's tests;
-  and `just mutants <crate>` over each of a phase's crates at converge (on the ssh host
-  `STUDIO_MUTANTS_REMOTE` names, alone; prerequisites in `scripts/mutation/mutants.py`). The whole-crate runs select each mutant's tests by line
+  and `just mutants-closure` over a phase's crates at converge: `mutants-diff` over what each
+  crate changed since its last triaged whole-crate run (`.cargo/mutants_checked.toml`).
+  The whole-crate runs (`just mutants <crate>`, on the ssh host `STUDIO_MUTANTS_REMOTE`
+  names, alone; prerequisites in `scripts/mutation/mutants.py`) run one after another as
+  the rolling job (`just mutants-rolling`), which nobody waits on, and each one's
+  survivors are triaged when it ends. The whole-crate runs select each mutant's tests by line
   coverage, the extra kinds' mutants included (`scripts/mutation/coverage_map.py`,
   `select_tests.py`; an extras-only run builds the map too); the checkpoint's diff
   runs do not. Every survivor is
