@@ -549,9 +549,10 @@ Requirements:
   own tests the next checkpoint's run measures; not at the loop's end, where its survivors
   needed a rework slice of their own, and not once per rework round, since each run freezes
   the crates it mutates for its whole length and its baseline repeats the checkpoint's tests;
-  and `just mutants <crate>` over each of a phase's crates at converge (when
-  `STUDIO_MUTANTS_REMOTE` names an ssh host, it runs half the mutants there; prerequisites in
-  `scripts/mutation/mutants.py`). Every survivor is
+  and `just mutants <crate>` over each of a phase's crates at converge (on the ssh host
+  `STUDIO_MUTANTS_REMOTE` names, alone; prerequisites in `scripts/mutation/mutants.py`). The whole-crate runs select each mutant's tests by line
+  coverage (`scripts/mutation/coverage_map.py`, `select_tests.py`); the checkpoint's diff
+  runs do not. Every survivor is
   triaged into one of three: a missing test (write it, or a worklog step), an equivalent mutant
   (the mutated code computes the same value; its pattern goes into `.cargo/mutants.toml` with
   the equivalence named, so that file is the list of what the runs no longer measure), or

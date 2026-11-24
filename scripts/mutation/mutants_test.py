@@ -1552,10 +1552,14 @@ class SplitShares(unittest.TestCase):
             "mutants.py --remote-extra cpk\n",
             job,
         )
-        self.assertLess(job.index("--remote-extra"), job.index("cargo mutants"))
+        self.assertLess(
+            job.index("--remote-extra"), job.index("cargo-mutants mutants -p cpk --jobs")
+        )
         self.assertIn('echo "extra pass exit $?"', job)
-        self.assertLess(job.index("extra pass exit"), job.index("cargo mutants"))
-        self.assertLess(job.index("cargo mutants"), job.index("code=$?"))
+        self.assertLess(
+            job.index("extra pass exit"), job.index("cargo-mutants mutants -p cpk --jobs")
+        )
+        self.assertLess(job.index("cargo-mutants mutants -p cpk --jobs"), job.index("code=$?"))
         self.assertTrue(
             any("extra_mutants.out" in remote for remote in self.remotes),
             "the launch's cleanup never removed the clone's extra_mutants.out",
@@ -1567,8 +1571,8 @@ class SplitShares(unittest.TestCase):
     def test_an_extras_only_job_is_the_extra_pass_alone(self):
         """An extras-only run's remote job is the extra pass alone (`extra_only`
         suffices for it and its record mark): no `cargo mutants` line, and
-        `run/exit` written from the pass's own code. A whole run's job stays
-        what it was, byte for byte."""
+        `run/exit` written from the pass's own code. A whole run's job is
+        pinned byte for byte below."""
         job = self.job(whole=True, extra=False, extra_only=True, kinds=["call"])
         self.assertNotIn("cargo mutants", job)
         self.assertNotIn("extra pass exit", job)
@@ -1588,13 +1592,90 @@ start=$(date +%s)
 export TMPDIR="$HOME/studio-mutants/tmp" && mkdir -p "$TMPDIR"
 . ~/.cargo/env && CARGO_BUILD_JOBS=1 nice -n 19 ionice -c3 python3 scripts/mutation/mutants.py --remote-extra cpk
 echo "extra pass exit $?"
-nice -n 19 ionice -c3 cargo mutants -p cpk --jobs 2 --jobserver-tasks 8 --config ../mutants.remote.toml
+cargo-mutants mutants -p cpk --list --json --config ../mutants.remote.toml > ../run/mutants.json
+CARGO_BUILD_JOBS=1 nice -n 19 ionice -c3 python3 scripts/mutation/coverage_map.py cpk ../run/mutants.json ../run/selection.json
+echo "coverage map exit $?"
+if [ -f ../run/selection.json ]; then
+CARGO=$PWD/scripts/mutation/select_tests.py UTW_REAL_CARGO=$(command -v cargo) UTW_MUTANTS_SOURCE=$PWD UTW_MUTANTS_SELECTION=$PWD/../run/selection.json nice -n 19 ionice -c3 cargo-mutants mutants -p cpk --jobs 2 --jobserver-tasks 8 --config ../mutants.remote.toml
+else
+nice -n 19 ionice -c3 cargo-mutants mutants -p cpk --jobs 2 --jobserver-tasks 8 --config ../mutants.remote.toml
+fi
 code=$?
 peak="/sys/fs/cgroup$(cut -d: -f3 /proc/self/cgroup)/memory.peak"
 [ -f "$peak" ] && cp "$peak" ../run/memory_peak
 echo "$code $(( $(date +%s) - start ))" > ../run/exit
 """
         self.assertEqual(self.job(whole=True, local_half=False, extra=True), whole)
+
+    def test_a_whole_runs_job_selects_each_mutants_tests(self):
+        """A whole run's remote job lists the crate's mutants, builds the
+        coverage map from them (at the extra pass's build cap, its code logged
+        but not `run/exit`'s) and starts cargo-mutants directly — `cargo
+        mutants` would overwrite `CARGO` — with the stand-in's four variables
+        on the selection-file branch only."""
+        job = self.job(whole=True, local_half=False, extra=True)
+        self.assertIn(
+            "cargo-mutants mutants -p cpk --list --json "
+            "--config ../mutants.remote.toml > ../run/mutants.json\n",
+            job,
+        )
+        self.assertIn(
+            "CARGO_BUILD_JOBS=1 nice -n 19 ionice -c3 python3 scripts/mutation/"
+            "coverage_map.py cpk ../run/mutants.json ../run/selection.json\n",
+            job,
+        )
+        self.assertIn('echo "coverage map exit $?"', job)
+        self.assertNotIn("cargo mutants", job)
+        self.assertIn("cargo-mutants mutants -p cpk --jobs 2 ", job)
+        # Order: extra pass, listing, map, cargo-mutants, `code=$?`.
+        self.assertLess(job.index("--remote-extra"), job.index("--list --json"))
+        self.assertLess(job.index("--list --json"), job.index("coverage_map.py"))
+        self.assertLess(job.index("coverage_map.py"), job.index('echo "coverage map exit'))
+        self.assertLess(
+            job.index('echo "coverage map exit'),
+            job.index("cargo-mutants mutants -p cpk --jobs"),
+        )
+        self.assertLess(
+            job.index("cargo-mutants mutants -p cpk --jobs"), job.index("code=$?")
+        )
+        # The four variables appear once each, on the selection branch.
+        self.assertIn("if [ -f ../run/selection.json ]; then\n", job)
+        args = "-p cpk --jobs 2 --jobserver-tasks 8 --config ../mutants.remote.toml"
+        self.assertIn(
+            "CARGO=$PWD/scripts/mutation/select_tests.py "
+            "UTW_REAL_CARGO=$(command -v cargo) UTW_MUTANTS_SOURCE=$PWD "
+            "UTW_MUTANTS_SELECTION=$PWD/../run/selection.json "
+            f"nice -n 19 ionice -c3 cargo-mutants mutants {args}\n"
+            "else\n"
+            f"nice -n 19 ionice -c3 cargo-mutants mutants {args}\n"
+            "fi\n",
+            job,
+        )
+        for var in ("UTW_REAL_CARGO", "UTW_MUTANTS_SOURCE", "UTW_MUTANTS_SELECTION"):
+            self.assertEqual(job.count(var), 1, var)
+        # The branch's `CARGO=` starts its line (`UTW_REAL_CARGO` ends in
+        # "CARGO=" too, so a bare count of it proves nothing).
+        self.assertEqual(job.count("\nCARGO="), 1)
+
+    def test_only_a_whole_runs_job_selects(self):
+        """A diff run's job and an extras-only one carry nothing of the
+        selection: no listing, no coverage map, no stand-in, no `CARGO=`."""
+        for job in (
+            self.job(whole=False),
+            self.job(whole=True, extra=False, extra_only=True, kinds=["call"]),
+        ):
+            for text in ("coverage_map", "select_tests", "CARGO=", "--list --json"):
+                self.assertNotIn(text, job)
+
+    def test_the_launch_cleanup_removes_the_last_runs_selection_files(self):
+        """`run/mutants.json` and `run/selection.json` are removed with the
+        rest at launch: a failed listing must not pair an old run's map."""
+        self.job(whole=True, local_half=False, extra=True)
+        cleanup = next(
+            remote for remote in self.remotes if "rm -f" in remote
+        )
+        self.assertIn("run/mutants.json", cleanup)
+        self.assertIn("run/selection.json", cleanup)
 
 
 class SummaryLists(unittest.TestCase):
@@ -1809,6 +1890,30 @@ class SummaryLists(unittest.TestCase):
         self.assertEqual(seen, [2])
         self.assertEqual(code, 1)
         self.assertIn("the extra pass left no record: see the remote log", out)
+
+    def test_the_summary_says_whether_the_run_selected_tests(self):
+        """A whole run's summary reports the coverage map's logged exit: "on"
+        at 0, "off" (the full suite ran) at any other code; a console without
+        the line (a diff run's) prints nothing."""
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            remote = root / "mutants.out" / "remote" / "mutants.out"
+            write_run(remote, 1, [{"scenario": mutant("r"), "summary": "CaughtMutant"}])
+            console = root / "remote_console.txt"
+            console.write_text("coverage map exit 0\n", encoding="utf-8")
+            _, out = self.summarize(root, local_half=False)
+            self.assertIn("test selection: on", out)
+            console.write_text("coverage map exit 1\n", encoding="utf-8")
+            _, out = self.summarize(root, local_half=False)
+            self.assertIn(
+                "test selection: off (the coverage map failed, exit 1; "
+                "every mutant ran the full suite)",
+                out,
+            )
+            self.assertNotIn("test selection: on", out)
+            console.write_text("extra pass exit 0\n", encoding="utf-8")
+            _, out = self.summarize(root, local_half=False)
+            self.assertNotIn("test selection", out)
 
 
 class RecheckWindows(unittest.TestCase):
