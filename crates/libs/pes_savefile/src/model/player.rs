@@ -758,6 +758,40 @@ mod tests {
         }
     }
 
+    /// The bare entry's ingame-face run is the version's: on PES 15/16 the
+    /// zeroed appearance record is decoded too, so the run has the
+    /// schema's length and a face field reads 0 rather than erroring
+    /// `NoIngameFaceRun` on an empty run.
+    #[test]
+    fn a_bare_entry_has_the_versions_ingame_face_run() {
+        use crate::schema::ingame_face::IngameFaceField;
+
+        for version in [PesVersion::Pes15, PesVersion::Pes16] {
+            let (_, appearance) = schema_for(version)
+                .appearance
+                .as_ref()
+                .expect("PES 15/16 store a separate appearance record");
+            let run = appearance
+                .ingame_face
+                .as_ref()
+                .expect("the appearance record carries the face run");
+            let bare = PlayerEntry::bare(version);
+            assert_eq!(
+                bare.appearance.ingame_face.bytes().len(),
+                run.len as usize,
+                "{version:?}"
+            );
+            assert_eq!(
+                bare.appearance
+                    .ingame_face
+                    .get(IngameFaceField::SkinColor)
+                    .expect("the run holds the field"),
+                0,
+                "{version:?}"
+            );
+        }
+    }
+
     /// A bare tactics record names no roster slot: every set-piece taker,
     /// man-marking byte, starting-eleven and bench entry is 0xFF, the
     /// record's none, so a document that omits them reads as nobody rather
