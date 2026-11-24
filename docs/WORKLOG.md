@@ -735,17 +735,19 @@ and no phase closes with one outstanding.
     - [ ] **extras** the extra kinds' runs (`scripts/mutation/extra_mutants.py`, their own
       loop of `cargo test -p` per mutant) take what the whole-crate runs have; then the `call`
       backfill resumes on its three largest crates:
-      - [ ] **backend** one test command for both runners (`mutants.test_command`, from
-        `.cargo/mutants.toml`), so the extra kinds get nextest, which stops at a mutant's first
-        failing test: mutfast changed only cargo-mutants' config (2026-11-19) and missed this
-        second runner; SWE-2, branch `sk/extras_nextest`;
+      - [x] **backend** 2026-11-24 `3bc51827`: one test command for both runners
+        (`mutants.test_command`, from `.cargo/mutants.toml`), so the extra kinds get nextest
+        (mutfast had changed only cargo-mutants' config); outcomes from nextest's exit codes.
+        Its SWE-2 review round is running;
       - [ ] **parity** [after backend] the rest of what cargo-mutants' runs have, each
         measured on one crate before the backfill resumes: the build cap (the remote extra
         pass and the coverage map build at `REMOTE_BUILD_JOBS = 1`, one rustc job, set for
         memory kills later traced to the tmpfs `/tmp` the job no longer uses, while
         cargo-mutants' half builds at the host's CPU count); two mutants at once
         (cargo-mutants' `--jobs 2`, the extra kinds one at a time); the timeouts from
-        `.cargo/mutants.toml` (the extra kinds use 3x the baseline, cargo-mutants 5x);
+        `.cargo/mutants.toml` (the extra kinds use 3x the baseline, cargo-mutants 5x); a
+        test killed by SIGKILL (the memory cap) counted caught as cargo-mutants' runs count
+        it, where the extra kinds count it untested;
       - [ ] **select** [after wire, backend] both runners through the same test-selecting
         stand-in for cargo (`scripts/mutation/select_tests.py`).
 
