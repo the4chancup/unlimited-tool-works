@@ -515,6 +515,28 @@ def transfer(host: str, remote_head: str | None) -> None:
         Path(bundle.name).unlink(missing_ok=True)
 
 
+def test_threads_arg(test_threads: int) -> str:
+    """The `--test-threads` argument nextest takes directly, without libtest's `--`."""
+    return f"--test-threads={test_threads}"
+
+
+def test_command(crate: str, config: dict, test_threads: int) -> list[str]:
+    """The command that tests `crate` the way a mutation run does: `cargo nextest run -p
+    <crate>` plus `config`'s `additional_cargo_args` and `test_threads` threads,
+    `config` being a parsed `.cargo/mutants.toml`. The file's own
+    `additional_cargo_test_args` is dropped, the same swap `sized_config` makes for
+    cargo-mutants. Only nextest is known: another `test_tool` raises `ValueError`
+    naming it, so a changed tool fails both runners loudly until this learns it."""
+    tool = config.get("test_tool", "cargo")
+    if tool != "nextest":
+        raise ValueError(f"test_command: unsupported test_tool {tool!r}")
+    return [
+        "cargo", "nextest", "run", "-p", crate,
+        *config.get("additional_cargo_args", []),
+        test_threads_arg(test_threads),
+    ]
+
+
 def sized_config(
     cpus: int, extra: dict | None = None, *, source: Path
 ) -> str:
@@ -532,7 +554,7 @@ def sized_config(
     half = max(1, cpus // 2)
     # The file's `test_tool` is nextest, which takes `--test-threads`
     # directly, without libtest's `--`.
-    config["additional_cargo_test_args"] = [f"--test-threads={half}"]
+    config["additional_cargo_test_args"] = [test_threads_arg(half)]
     for key, value in (extra or {}).items():
         base = config.get(key)
         config[key] = (

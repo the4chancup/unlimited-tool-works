@@ -387,6 +387,51 @@ class SizedConfig(unittest.TestCase):
         self.assertEqual(parsed["additional_cargo_test_args"], ["--test-threads=8"])
 
 
+class TestCommand(unittest.TestCase):
+    """`mutants.test_command` is the command both runners test a mutant with:
+    `sized_config` hands cargo-mutants the same nextest args the extra kinds'
+    `run_tests` starts, so how mutants are tested lives in one place."""
+
+    def test_the_nextest_command_runs_the_crate_with_the_sized_threads(self):
+        config = {
+            "test_tool": "nextest",
+            "additional_cargo_args": ["--frozen"],
+            "additional_cargo_test_args": ["--test-threads=7"],
+        }
+        self.assertEqual(
+            mutants.test_command("cpk", config, 13),
+            ["cargo", "nextest", "run", "-p", "cpk", "--frozen", "--test-threads=13"],
+        )
+
+    def test_another_test_tool_fails_naming_it(self):
+        for config in ({"test_tool": "cargo"}, {}):
+            with self.assertRaisesRegex(ValueError, "'cargo'"):
+                mutants.test_command("cpk", config, 8)
+
+    def test_run_tests_starts_the_commands_list(self):
+        """The extra kinds' `run_tests` builds `test_command`'s list from the run's
+        copy of `.cargo/mutants.toml`, so the two runners cannot part without this
+        failing."""
+        with tempfile.TemporaryDirectory() as tmp:
+            cwd = Path(tmp)
+            (cwd / ".cargo").mkdir()
+            (cwd / ".cargo" / "mutants.toml").write_text(
+                'test_tool = "nextest"\nadditional_cargo_args = ["--frozen"]\n',
+                encoding="utf-8",
+            )
+            proc = mock.Mock()
+            proc.communicate.return_value = ("out", None)
+            proc.returncode = 0
+            with mock.patch("subprocess.Popen", return_value=proc) as popen:
+                code, out = extra_mutants.run_tests("cpk", cwd, 1.0)
+            config = {"test_tool": "nextest", "additional_cargo_args": ["--frozen"]}
+            self.assertEqual(
+                popen.call_args.args[0],
+                mutants.test_command("cpk", config, os.cpu_count() or 1),
+            )
+            self.assertEqual((code, out), (0, "out"))
+
+
 class Partition(unittest.TestCase):
     def test_each_file_goes_to_the_side_further_below_its_share_largest_first(self):
         files = {"a.rs": 40, "b.rs": 30, "c.rs": 20, "d.rs": 10}
@@ -3102,24 +3147,36 @@ class RemoteRefusal(unittest.TestCase):
 
 
 class ExtraRun(unittest.TestCase):
-    """`extra_mutants.run_crate` with the lister, the copy and `cargo test` stubbed: how each
-    mutant's outcome is decided, and what lands in its files."""
+    """`extra_mutants.run_crate` with the lister, the copy and `cargo nextest run` stubbed:
+    how each mutant's outcome is decided, and what lands in its files."""
 
-    SOURCE = b"true true true true true true true\n"
-    # What `cargo test` printed for each mutant in turn, and the outcome it must give.
+    SOURCE = b"true true true true true true true true\n"
+    # What `cargo nextest run` printed for each mutant in turn, and the outcome it must give.
     TESTS = [
         ((None, ""), "timeout"),
-        ((0, "test result: ok. 12 passed; 0 failed"), "missed"),
-        ((101, "error[E0308]: mismatched types\nerror: could not compile `cpk` (lib) due to 1 "
-               "previous error"), "unviable"),
-        ((101, "test read::reads_the_header ... FAILED\ntest result: FAILED. 11 passed; 1 failed"
-               "\nerror: test failed, to rerun pass `-p cpk --lib`"), "caught"),
+        ((0, "        PASS [   0.309s] (13/14) pes_strings "
+             "tests::an_absent_section_or_string_is_none\n"
+             "     Summary [   0.313s] 14 tests run: 14 passed, 0 skipped"), "missed"),
+        ((101, "error[E0308]: `?` operator has incompatible types\n"
+               "error: could not compile `pes_strings` (lib) due to 1 previous error"),
+         "unviable"),
+        ((100, "        FAIL [   0.289s] (11/14) pes_strings "
+               "tests::an_absent_section_or_string_is_none\n"
+               "     Summary [   0.411s] 14 tests run: 13 passed, 1 failed, 0 skipped\n"
+               "error: test run failed"), "caught"),
+        # A test binary killed while its tests ran names the signal, so it is untested like
+        # a killed build: the exit code alone would read it as a catch.
+        ((100, "     SIGKILL [   4.120s] ( 9/14) pes_strings "
+               "tests::an_absent_section_or_string_is_none\n"
+               "     Summary [   9.405s] 14 tests run: 13 passed, 1 failed, 0 skipped"),
+         "untested"),
         ((101, "error: could not compile `cpk` (lib)\nCaused by:\n  process didn't exit "
                "successfully: `rustc --crate-name cpk` (signal: 9, SIGKILL: kill)"), "untested"),
-        # A test binary that lost its console never ran its tests, whatever cargo says.
-        ((101, "error: test failed, to rerun pass `-p cpk --lib`\nCaused by:\n  process didn't "
-               "exit successfully: `cpk-1f2e.exe` (exit code: 0xc0000142, STATUS_DLL_INIT_FAILED)"),
-         "untested"),
+        # A test binary that lost its console never ran its tests, whatever nextest says.
+        ((100, "        ABORT [   0.003s] ( 1/14) pes_strings "
+               "tests::an_absent_section_or_string_is_none\n"
+               "           - with code 0xc0000142: The application failed to initialize "
+               "properly."), "untested"),
         ((101, "error: failed to run custom build command for `cpk v0.1.0`\nCaused by:\n  "
                "No space left on device (os error 28)"), "untested"),
     ]
@@ -3157,14 +3214,14 @@ class ExtraRun(unittest.TestCase):
     def run_crate(self, results, only=None):
         results = iter(results)
 
-        def cargo_test(crate, cwd, timeout):
+        def run_tests(crate, cwd, timeout):
             result = next(results)
             if isinstance(result, BaseException):
                 raise result
             return result
 
         with (
-            mock.patch.object(extra_mutants, "cargo_test", cargo_test),
+            mock.patch.object(extra_mutants, "run_tests", run_tests),
             contextlib.redirect_stdout(io.StringIO()),
         ):
             return extra_mutants.run_crate("cpk", ["bool"], HEAD_TREE, only=only)
@@ -3172,7 +3229,7 @@ class ExtraRun(unittest.TestCase):
     def test_each_outcome_and_the_lines_triage_reads(self):
         listed, counts, _ = self.run_crate([result for result, _ in self.TESTS])
         self.assertEqual(
-            counts, {"timeout": 1, "missed": 1, "unviable": 1, "caught": 1, "untested": 3}
+            counts, {"timeout": 1, "missed": 1, "unviable": 1, "caught": 1, "untested": 4}
         )
         expected = [
             "crates/libs/cpk/src/lib.rs:1: [timeout] [bool] flip 1 | removed: true",
@@ -3180,6 +3237,7 @@ class ExtraRun(unittest.TestCase):
             "crates/libs/cpk/src/lib.rs:1: [untested] [bool] flip 5 | removed: true",
             "crates/libs/cpk/src/lib.rs:1: [untested] [bool] flip 6 | removed: true",
             "crates/libs/cpk/src/lib.rs:1: [untested] [bool] flip 7 | removed: true",
+            "crates/libs/cpk/src/lib.rs:1: [untested] [bool] flip 8 | removed: true",
             "crates/libs/cpk/src/read.rs: [bool] stale exclusion: flip 9 | removed: true",
         ]
         self.assertEqual(listed, expected)

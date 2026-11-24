@@ -6,7 +6,7 @@ condition replaced with `false`), `literal` (an element removed from a literal l
 deleted), `call` (any other method-call statement deleted)
 and `bool` (a `true`/`false` flipped). This script applies each listed patch
 in a copy of the working tree and lets
-`cargo test -p <crate>` decide whether the suite catches it. An `[[exclude]]`
+`cargo nextest run -p <crate>` decide whether the suite catches it. An `[[exclude]]`
 entry of `.cargo/extra_mutants.toml` (path, kind and whole description, never a
 line number) drops the mutants it matches before they run: the file is the extra
 kinds' list of what the runs no longer measure, each entry's `why` naming the
@@ -41,19 +41,24 @@ OUT_DIR = ROOT / "extra_mutants.out"
 LISTER = ["cargo", "run", "-q", "--release", "-p", "extra_mutants", "--", "list"]
 # Every kind the lister can emit; `--kind` restricts a run or listing to a subset.
 ALL_KINDS = ("bool", "call", "guard", "literal", "normalize", "order")
-# Each mutant's `cargo test` may take up to this multiple of the unmutated baseline.
+# Each mutant's `cargo nextest run` may take up to this multiple of the unmutated baseline.
 TIMEOUT_FACTOR = 3
 # Above a test's 120 s bound on a wait (`.cargo/mutants.toml`'s `minimum_test_timeout` says why).
 MIN_TIMEOUT_SECONDS = 150
-# What `cargo test` prints, lowercase, when a test ran and failed: the only proof a mutant was
-# caught. A failure without it (a build script that could not run, a full disk) tested nothing.
-TEST_FAILED_SIGNS = ("test result: failed", "error: test failed", "error: doctest failed")
+# Nextest's exit code for a run in which tests failed (`mutants.caught_by_tests` reads the
+# same for cargo-mutants' runs): the only proof a mutant was caught. A failure without it
+# (a build script that could not run, a full disk) tested nothing.
+TEST_RUN_FAILED = 100
+# Nextest's exit code when the build failed. The code alone also covers a build that
+# failed another way than the mutant not compiling (a build script's, a linker's);
+# cargo's "could not compile" in the output is what makes it unviable.
+BUILD_FAILED = 101
 
 
 def outcome(code: int | None, out: str) -> str:
-    """A mutant's outcome from its `cargo test` exit code (None: timed out) and output:
-    `timeout`, `missed`, `unviable` (it does not compile), `caught` (a test failed), or
-    `untested`. A build killed or starved for reasons outside the mutant
+    """A mutant's outcome from its `cargo nextest run` exit code (None: timed out) and
+    output: `timeout`, `missed`, `unviable` (it does not compile), `caught` (a test
+    failed), or `untested`. A build killed or starved for reasons outside the mutant
     (`mutants.KILLED_BUILD_SIGNS`, in a build or a test binary) or a failure with no failing
     test is untested: filed as caught, it hid a mutant nothing tested (4.y-conv lost 273
     builds' consoles at once), and filed as unviable, a mutant that does compile."""
@@ -64,9 +69,9 @@ def outcome(code: int | None, out: str) -> str:
     lowered = out.lower()
     if any(sign in lowered for sign in mutants.KILLED_BUILD_SIGNS):
         return "untested"
-    if "could not compile" in lowered:
+    if code == BUILD_FAILED and "could not compile" in lowered:
         return "unviable"
-    if any(sign in lowered for sign in TEST_FAILED_SIGNS):
+    if code == TEST_RUN_FAILED:
         return "caught"
     return "untested"
 
@@ -183,15 +188,18 @@ def kill_tree(proc: subprocess.Popen) -> None:
     proc.wait()
 
 
-def cargo_test(crate: str, cwd: Path, timeout: float | None) -> tuple[int | None, str]:
-    """`cargo test -p <crate>` in `cwd` at below-normal priority, output merged.
-    Returns (exit code, output); exit code is None when the timeout killed the
-    process tree."""
+def run_tests(crate: str, cwd: Path, timeout: float | None) -> tuple[int | None, str]:
+    """`mutants.test_command`'s `cargo nextest run` of `crate` in `cwd` (the run's copy
+    of the tree, whose `.cargo/mutants.toml` it reads) at below-normal priority,
+    output merged; `--test-threads` is this machine's logical CPUs, the extra kinds
+    testing one mutant at a time where cargo-mutants runs two. Returns (exit code,
+    output); the code is None when the timeout killed the process tree."""
     kwargs = mutants.below_normal()
     if os.name != "nt":
         kwargs["start_new_session"] = True
+    config = tomllib.loads((cwd / ".cargo" / "mutants.toml").read_text(encoding="utf-8"))
     proc = subprocess.Popen(
-        ["cargo", "test", "-p", crate],
+        mutants.test_command(crate, config, os.cpu_count() or 1),
         cwd=cwd,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
@@ -209,9 +217,10 @@ def cargo_test(crate: str, cwd: Path, timeout: float | None) -> tuple[int | None
 
 
 def baseline_seconds(crate: str, cwd: Path) -> float:
-    """The unmutated `cargo test` wall time in `cwd`; a failing baseline ends the run."""
+    """The unmutated `cargo nextest run` wall time in `cwd`; a failing baseline ends
+    the run."""
     start = time.monotonic()
-    code, out = cargo_test(crate, cwd, timeout=None)
+    code, out = run_tests(crate, cwd, timeout=None)
     if code != 0:
         print("extra_mutants: the unmutated baseline fails; last lines:")
         print("\n".join(out.splitlines()[-30:]))
@@ -281,7 +290,7 @@ def run_crate(
 ) -> tuple[list[str], Counter, float]:
     """Run every `kinds` mutant the lister finds in `crate`, each applied in a
     copy of git `tree` (the working tree when None) and decided by one `cargo
-    test -p <crate>`. With `only`, only the mutants whose missed line it
+    nextest run -p <crate>`. With `only`, only the mutants whose missed line it
     holds run (exclusions still apply first). Writes `outcomes_<kinds>.tsv`
     and `missed_<kinds>.txt` under `extra_mutants.out/`, plus
     `missed_<crate>.txt`, the same survivors named for `just mutants`, which
@@ -339,7 +348,7 @@ def run_crate(
                 apply_patch(
                     target, int(start), int(end), replacement, removed
                 )
-                code, out = cargo_test(crate, copy_dir, timeout)
+                code, out = run_tests(crate, copy_dir, timeout)
             finally:
                 target.write_bytes(original)
             decided = outcome(code, out)
