@@ -332,6 +332,13 @@ def working_tree() -> str:
         index_path = ROOT / index_path
     env = dict(os.environ, GIT_INDEX_FILE=str(index_path))
     try:
+        # Seeded from HEAD, so a tracked file keeps the mode git records: where
+        # `core.fileMode` is off (Windows), a fresh index adds every file as
+        # 100644, and the remote could not run the executable stand-in for
+        # cargo (`select_tests.py`).
+        seeded = git("read-tree", "HEAD", env=env, capture_output=True, text=True)
+        if seeded.returncode != 0:
+            raise RuntimeError(f"git read-tree HEAD failed:\n{seeded.stderr}")
         # A fresh index re-adds every file, flooding stderr with CRLF warnings;
         # silence it on success only.
         added = subprocess.run(

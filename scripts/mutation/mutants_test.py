@@ -3558,6 +3558,43 @@ class ExtraRun(unittest.TestCase):
                 self.assertEqual(extra_mutants.main(["extra_mutants.py", "cpk"]), code)
 
 
+class WorkingTree(unittest.TestCase):
+    def test_a_tracked_executable_keeps_its_mode_where_git_ignores_modes(self):
+        """The snapshot keeps a tracked file's executable mode even where `core.fileMode`
+        is off, as on Windows: the remote runs `select_tests.py` as cargo, and a 100644
+        copy of it refused to start ("Permission denied")."""
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = Path(tmp)
+
+            def git(*args: str) -> str:
+                return subprocess.run(
+                    ["git", *args], cwd=repo, check=True, capture_output=True, text=True
+                ).stdout
+
+            git("init", "-q")
+            git("config", "core.fileMode", "false")
+            git("config", "user.name", "test")
+            git("config", "user.email", "test@example.invalid")
+            (repo / "stand_in.py").write_text("#!/usr/bin/env python3\n", encoding="utf-8")
+            (repo / "plain.txt").write_text("x\n", encoding="utf-8")
+            git("add", "-A")
+            git("update-index", "--chmod=+x", "stand_in.py")
+            git("commit", "-q", "-m", "first")
+            # An edit and a new file: the snapshot is the working tree, not HEAD.
+            (repo / "plain.txt").write_text("y\n", encoding="utf-8")
+            (repo / "new.txt").write_text("z\n", encoding="utf-8")
+            with mock.patch.object(mutants, "ROOT", repo):
+                tree = mutants.working_tree()
+            modes = {
+                line.split("\t")[1]: line.split()[0]
+                for line in git("ls-tree", tree).splitlines()
+            }
+            self.assertEqual(
+                modes, {"stand_in.py": "100755", "plain.txt": "100644", "new.txt": "100644"}
+            )
+            self.assertEqual(git("show", f"{tree}:plain.txt"), "y\n")
+
+
 class LeftCopies(unittest.TestCase):
     def test_every_copy_a_killed_run_leaves_is_found_and_nothing_else(self):
         """cargo-mutants names its copy after the `--dir` folder, the run's `source-*` copy
