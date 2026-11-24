@@ -575,11 +575,25 @@ NAV = """\
 </nav>"""
 
 
+def items(top: list[Step]) -> str:
+    """Each step with an open step under it, in worklog order: its path and its own text,
+    which the timeline never shows, since it draws only the steps under it."""
+    entries = [
+        f"<dt><code>{html.escape(s.path)}</code></dt><dd>{inline(s.text.rstrip(';,:'))}</dd>"
+        for s in walk(top)
+        if any(d.mark in OPEN_MARKS for d in walk(s.children))
+    ]
+    if not entries:
+        return ""
+    return ("<h2>What the open steps belong to</h2>\n<dl>\n" + "\n".join(entries)
+            + "\n</dl>\n")
+
+
 def render(roadmap: Roadmap, merges: list[tuple[str, str]],
            dates: dict[str, str], today: str) -> str:
     """The page: a button that brings the timeline's "now" line to the middle of the
-    window, the timeline, the week's merges in one `<details>` per day, the open-issue
-    count."""
+    window, the timeline, what each step with open steps under it is for (`items`), the
+    week's merges in one `<details>` per day, the open-issue count."""
     days = [(day, [subject for _, subject in same_day])
             for day, same_day in groupby(merges, key=itemgetter(0))]
     if days:
@@ -616,6 +630,7 @@ def render(roadmap: Roadmap, merges: list[tuple[str, str]],
 <h2>Timeline</h2>
 {timeline(roadmap, dates, today)}
 
+{items(roadmap.steps)}
 <h2>Merged in the last 7 days</h2>
 {merged}
 <p>{issues}</p>

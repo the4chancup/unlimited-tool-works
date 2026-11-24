@@ -229,6 +229,28 @@ class Render(unittest.TestCase):
         self.assertIn('document.getElementById("now").scrollIntoView'
                       '({block: "center"', page)
 
+    def test_each_step_with_open_steps_under_it_says_what_it_is(self) -> None:
+        page = render(parse(WORKLOG), [], {}, TODAY)
+        section = page[page.index("<h2>What the open steps belong to</h2>"):
+                       page.index("<h2>Merged in the last 7 days</h2>")]
+        self.assertLess(page.index("<h2>Timeline</h2>"), page.index(section))
+        # TOP/a sits under TOP and has its own open step; DONE is done, with y open under it.
+        self.assertIn("<dt><code>TOP</code></dt><dd>A numbered item: its detail.</dd>",
+                      section)
+        self.assertIn("<dt><code>TOP/a</code></dt><dd>open sub bullet: its tail runs "
+                      "on here.</dd>", section)
+        self.assertIn("<dt><code>DONE</code></dt>", section)
+        self.assertLess(section.index("<code>TOP</code>"), section.index("<code>TOP/a</code>"))
+        self.assertLess(section.index("<code>TOP/a</code>"), section.index("<code>DONE</code>"))
+        # P2's steps are all done, so P2 is a timeline row itself; MODE has no steps.
+        self.assertNotIn("<code>P2</code>", section)
+        self.assertNotIn("<code>MODE</code>", section)
+
+    def test_no_step_with_open_steps_under_it_leaves_no_section(self) -> None:
+        page = render(parse(wl("- [ ] **A** alone.\n- [x] **B** done `1234567`.\n"
+                                "  - [x] **c** done `2345678`.\n")), [], {}, TODAY)
+        self.assertNotIn("What the open steps belong to", page)
+
     def test_one_open_issue_is_singular(self) -> None:
         found = parse(WORKLOG)
         found.open_issues = 1
