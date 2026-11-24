@@ -171,6 +171,23 @@ class Steps(unittest.TestCase):
         self.assertEqual(parse(text).problems, [])
 
 
+class Wrap(unittest.TestCase):
+    def test_lines_break_at_spaces_within_the_width(self) -> None:
+        self.assertEqual(roadmap.wrap("aa bb cc dd", 5), ["aa bb", "cc dd"])
+        self.assertEqual(roadmap.wrap("", 5), [""])
+
+    def test_a_backticked_or_quoted_span_is_never_split(self) -> None:
+        self.assertEqual(roadmap.wrap("x `a b c` y", 4), ["x", "`a b c`", "y"])
+        self.assertEqual(roadmap.wrap('x "a b c" y', 4), ["x", '"a b c"', "y"])
+
+    def test_a_path_stays_with_the_section_name_after_it(self) -> None:
+        self.assertEqual(roadmap.wrap('see `p.md` "A b" now', 12),
+                         ["see", '`p.md` "A b"', "now"])
+
+    def test_a_word_longer_than_the_width_stands_alone(self) -> None:
+        self.assertEqual(roadmap.wrap("a abcdefgh b", 4), ["a", "abcdefgh", "b"])
+
+
 class Inline(unittest.TestCase):
     def test_html_is_escaped_and_marks_rendered(self) -> None:
         self.assertEqual(inline("<b>"), "&lt;b&gt;")
@@ -263,9 +280,9 @@ class Timeline(unittest.TestCase):
 
     def test_a_row_is_its_monospace_label_and_its_description(self) -> None:
         svg = roadmap.timeline(parse(WORKLOG), self.DATES, TODAY)
-        self.assertRegex(svg, r'<text x="\d+" [^>]*font-family="Consolas, monospace" '
-                              r'font-weight="600">TOP/c</text><text x="\d+" [^>]*>'
-                              r'open bullet: tail\.</text>')
+        self.assertRegex(svg, r'<text x="\d+" y="(\d+)" [^>]*font-family="Consolas, '
+                              r'monospace" font-weight="600">TOP/c</text><text [^>]*>'
+                              r'<tspan x="\d+" y="\1">open bullet: tail\.</tspan></text>')
         self.assertIn('<title>TOP/c open bullet: tail. — waits on b, MODE</title>', svg)
 
     def test_the_phases_not_done_stand_above_the_open_steps_the_next_lowest(self) -> None:
@@ -284,14 +301,29 @@ class Timeline(unittest.TestCase):
         text = WORKLOG.replace("| 2 | Libs |", "| 0.1.0 | Libs |")
         svg = roadmap.timeline(parse(text), self.DATES, TODAY)
         rows = re.findall(r'<text x="(\d+)" [^>]*font-weight="600">([^<]*)</text>'
-                          r'<text x="(\d+)" ', svg)
+                          r'<text [^>]*><tspan x="(\d+)" ', svg)
         self.assertGreater(len(rows), 5)
         self.assertEqual(len({label_x for label_x, _, _ in rows}), 1)
         self.assertEqual(len({desc_x for _, _, desc_x in rows}), 1)
         label_x, desc_x = int(rows[0][0]), int(rows[0][2])
         longest = max(len(label) for _, label, _ in rows)
         self.assertEqual(longest, len("Release 0.1.0"))
-        self.assertEqual(desc_x - label_x, round(7.8 * longest) + 12)
+        self.assertEqual(desc_x - label_x, round(0.6 * 16 * longest) + 12)
+
+    def test_a_long_description_wraps_under_its_first_line_and_pushes_the_rows_below(self) -> None:
+        long = " ".join(["word"] * 60)
+        svg = roadmap.timeline(parse(wl(f"- [ ] **A** {long}\n- [ ] **B** short.\n")), {}, TODAY)
+        spans = re.findall(r'<tspan x="(\d+)" y="(\d+)">(word[^<]*)</tspan>', svg)
+        self.assertGreater(len(spans), 1)
+        self.assertEqual(len({x for x, _, _ in spans}), 1)
+        ys = [int(y) for _, y, _ in spans]
+        self.assertEqual(ys, [ys[0] + 22 * i for i in range(len(ys))])
+        self.assertEqual(" ".join(words for _, _, words in spans), long)
+        cy = {p: y for p, (_, y) in circles(svg).items()}
+        self.assertEqual(cy["A"], ys[0])                          # the code on the first line
+        self.assertEqual(cy["B"], ys[-1] + 22 + 8)                 # B below A's last line
+        self.assertIn(f'font-weight="600">A</text>', svg)
+        self.assertRegex(svg, rf'<text x="\d+" y="{ys[0]}" [^>]*font-weight="600">A</text>')
 
     def test_a_release_row_is_named_release_and_the_phases_lane_is_grey(self) -> None:
         text = WORKLOG.replace("| 2 | Libs |", "| 0.1.0 | Libs |")
@@ -376,8 +408,8 @@ class Edges(unittest.TestCase):
 
     def test_a_wait_on_an_unshown_parent_ends_at_its_topmost_descendant(self) -> None:
         svg = roadmap.timeline(parse(self.EDGES), {}, TODAY)
-        self.assertIn('d="M 10 78 C 10 45, 10 45, 10 12"', svg)   # b1 on A, ends at a2
-        self.assertIn('d="M 42 34 C 42 45, 10 45, 10 56"', svg)   # g1 on a1
+        self.assertIn('d="M 10 105 C 10 60, 10 60, 10 15"', svg)   # b1 on A, ends at a2
+        self.assertIn('d="M 42 45 C 42 60, 10 60, 10 75"', svg)   # g1 on a1
 
 
 class Main(unittest.TestCase):

@@ -36,13 +36,25 @@ OPEN_MARKS = " ~!"
 LANE_GAP = 32
 # The phases' lane: grey, apart from the palette the work's lanes take.
 PHASE_COLOUR = "#999999"
+# The timeline is drawn at its own size, never scaled, so its text is FONT_SIZE pixels; its
+# width is the roadmap page's (ROADMAP_WIDTH, the body's width there).
+FONT_SIZE = 16
+ROADMAP_WIDTH = 1400
+# A description's lines stand LINE_HEIGHT apart; a row is its lines plus ROW_PAD.
+LINE_HEIGHT = 22
+ROW_PAD = 8
 # The labels are monospace, so the descriptions' column is the longest label's length times
-# one character's width: 0.6 em at 13 points, Consolas's 0.55 em rounded up to the
-# 0.602 em of DejaVu Sans Mono, the fallback where Consolas is missing.
+# one character's width: 0.6 em, Consolas's 0.55 em rounded up to the 0.602 em of DejaVu
+# Sans Mono, the fallback where Consolas is missing.
 LABEL_FONT = "Consolas, monospace"
-LABEL_CHAR_WIDTH = 7.8
+LABEL_CHAR_WIDTH = 0.6 * FONT_SIZE
 # The room between the longest label and the descriptions' column.
 LABEL_GAP = 12
+# A description wraps at this many pixels a character: 0.55 em, above Segoe UI's average,
+# so a wrapped line stays inside its column.
+DESC_CHAR_WIDTH = 0.55 * FONT_SIZE
+# Room kept at the right for the band's "now" label.
+NOW_ROOM = 48
 # One per top-level step, in the order they are listed: the Okabe-Ito palette, every one readable on
 # the page's `#1e1e1e`.
 PALETTE = ["#E69F00", "#56B4E9", "#009E73", "#F0E442",
@@ -322,25 +334,33 @@ def lanes(rows: list[Step], slot: dict[int, int], top: list[Step],
     return tracks, member, len(columns)
 
 
-def cut(text: str, limit: int = 110) -> str:
-    """`text` cut at `limit` characters, `…` marking the cut; a cut that would split a
-    backticked or a double-quoted span moves back to before it, since half a section
-    pointer (`` `plans/x.md` "Phase 8: GUI" ``) fails `scripts/gates/doc_pointers.py`."""
-    if len(text) <= limit:
-        return text
+def wrap(text: str, width: int) -> list[str]:
+    """`text` in lines of at most `width` characters, broken at spaces, but never inside a
+    backticked or double-quoted span, nor between a backticked path and the quoted section
+    name after it: the doc-pointer gate (`scripts/gates/doc_pointers.py`) reads the page, and
+    a pointer split over two lines is one it cannot read. A word longer than `width` stands
+    on a line of its own."""
+    words: list[str] = []
     in_code = in_quote = False
-    opened = 0
-    for i, char in enumerate(text[:limit]):
-        if char == "`" and not in_quote:
-            if not in_code:
-                opened = i
-            in_code = not in_code
-        elif char == '"' and not in_code:
-            if not in_quote:
-                opened = i
-            in_quote = not in_quote
-    end = opened if in_code or in_quote else limit
-    return text[:end].rstrip() + "…"
+    for word in text.split():
+        glued = words and (in_code or in_quote
+                           or (words[-1].endswith("`") and word.startswith('"')))
+        if glued:
+            words[-1] += " " + word
+        else:
+            words.append(word)
+        for char in word:
+            if char == "`" and not in_quote:
+                in_code = not in_code
+            elif char == '"' and not in_code:
+                in_quote = not in_quote
+    lines: list[str] = []
+    for word in words:
+        if lines and len(lines[-1]) + 1 + len(word) <= width:
+            lines[-1] += " " + word
+        else:
+            lines.append(word)
+    return lines or [""]
 
 
 def mono(text: str) -> str:
@@ -397,9 +417,6 @@ def timeline(roadmap: Roadmap, dates: dict[str, str], today: str) -> str:
     slot = {id(s): i for i, s in enumerate(open_rows + now_rows)}
     slot.update({id(s): first_done + j for j, s in enumerate(done_rows)})
 
-    def cy(s: Step) -> int:
-        return 12 + 22 * slot[id(s)]
-
     tracks, member, ncols = lanes(rows, slot, top, phase_rows)
 
     def col_x(col: int) -> int:
@@ -408,12 +425,31 @@ def timeline(roadmap: Roadmap, dates: dict[str, str], today: str) -> str:
     text_x = col_x(ncols - 1) + 18 if ncols else 24
     desc_x = text_x + round(LABEL_CHAR_WIDTH * max((len(s.path) for s in rows),
                                                    default=0)) + LABEL_GAP
-    width = desc_x + 720
-    band_top = 1 + 22 * len(open_rows)
-    band_bottom = 1 + 22 * first_done
-    height = (cy(done_rows[-1]) + 12 if done_rows else band_bottom)
+    width = ROADMAP_WIDTH
+    chars = int((width - NOW_ROOM - desc_x) / DESC_CHAR_WIDTH)
+    lines = {id(s): wrap(s.text.rstrip(";,"), chars) for s in rows}
 
-    parts = [f'<svg viewBox="0 0 {width} {height}" width="100%" '
+    # Each slot's top: a row is as tall as its lines; the empty slot of the bare line one line.
+    tops = [0]
+    by_slot = {slot[id(s)]: s for s in rows}
+    for i in range(max([*slot.values(), first_done - 1]) + 1):
+        s = by_slot.get(i)
+        tops.append(tops[-1] + (LINE_HEIGHT * len(lines[id(s)]) + ROW_PAD if s
+                                else LINE_HEIGHT))
+
+    def slot_y(i: int) -> int:
+        """The middle of slot `i`'s first line."""
+        return tops[i] + (ROW_PAD + LINE_HEIGHT) // 2 if i in by_slot else \
+            (tops[i] + tops[i + 1]) // 2
+
+    def cy(s: Step) -> int:
+        return slot_y(slot[id(s)])
+
+    band_top = tops[len(open_rows)]
+    band_bottom = tops[first_done]
+    height = tops[-1]
+
+    parts = [f'<svg viewBox="0 0 {width} {height}" width="{width}" height="{height}" '
              'xmlns="http://www.w3.org/2000/svg">']
     if now_rows:
         parts.append(f'<rect id="now" x="0" y="{band_top}" width="{width}" '
@@ -425,11 +461,12 @@ def timeline(roadmap: Roadmap, dates: dict[str, str], today: str) -> str:
         parts.append(f'<line id="now" x1="0" y1="{sep_y:g}" x2="{width}" y2="{sep_y:g}" '
                      'stroke="#555"/>')
         label_y = sep_y - 7
-    parts.append(f'<text x="{width - 8}" y="{label_y:g}" fill="#999" font-size="13" '
+    parts.append(f'<text x="{width - 8}" y="{label_y:g}" fill="#999" '
+                 f'font-size="{FONT_SIZE}" '
                  'text-anchor="end" dominant-baseline="central">now</text>')
     for lo, hi, colour, col in tracks:
-        parts.append(f'<line x1="{col_x(col)}" y1="{12 + 22 * lo}" '
-                     f'x2="{col_x(col)}" y2="{12 + 22 * hi}" '
+        parts.append(f'<line x1="{col_x(col)}" y1="{slot_y(lo)}" '
+                     f'x2="{col_x(col)}" y2="{slot_y(hi)}" '
                      f'stroke="{colour}" stroke-width="2"/>')
     for s in rows:
         for name in s.after:
@@ -459,13 +496,15 @@ def timeline(roadmap: Roadmap, dates: dict[str, str], today: str) -> str:
         text = s.text.rstrip(";,")
         title = (f"{s.path} {text}"
                  + (f" — waits on {', '.join(s.after)}" if s.after else ""))
-        attrs = (f'y="{y}" fill="{"#fff" if open_ else "#ddd"}" font-size="13" '
+        attrs = (f'fill="{"#fff" if open_ else "#ddd"}" font-size="{FONT_SIZE}" '
                  'dominant-baseline="central"')
+        spans = "".join(f'<tspan x="{desc_x}" y="{y + LINE_HEIGHT * i}">{mono(part)}</tspan>'
+                        for i, part in enumerate(lines[id(s)]))
         parts.append(f'<g><title>{html.escape(title)}</title>{circle}'
-                     f'<text x="{text_x}" {attrs} font-family="{LABEL_FONT}" '
+                     f'<text x="{text_x}" y="{y}" {attrs} font-family="{LABEL_FONT}" '
                      'font-weight="600">'
                      f'{html.escape(s.path)}</text>'
-                     f'<text x="{desc_x}" {attrs}>{mono(cut(text, 100))}</text></g>')
+                     f'<text {attrs}>{spans}</text></g>')
     parts.append("</svg>")
     if undated:
         parts.append(f'<p class="from">{undated} done step'
@@ -541,6 +580,7 @@ def render(roadmap: Roadmap, merges: list[tuple[str, str]],
 <meta charset="utf-8">
 <title>Unlimited Tool Works: roadmap</title>
 <link rel="stylesheet" href="maintainer.css">
+<style>body {{ max-width: {ROADMAP_WIDTH}px; }}</style>
 </head>
 <body data-page="roadmap">
 {NAV}
