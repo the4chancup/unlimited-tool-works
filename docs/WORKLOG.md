@@ -689,10 +689,10 @@ and no phase closes with one outstanding.
     (`just mutants-checked`), and `just mutants-closure` runs `mutants-diff` since it;
   - [ ] **seed** [after closure] the record starts empty: the lead fills it with each crate's
     last triaged whole run, where the log names its commit;
-  - [ ] **rolling** [after closure] whole-crate runs as a rolling job on the VPS, the crate checked longest ago first;
-    RUNBOOK "Phases and releases" and CONTRIBUTING "Mutation runs" rewritten to match: merged
-    2026-11-24 (`1506d7f3`, docs `80043b4e`), its SWE-2 round running; the job starts on the
-    VPS once the `call` backfill ends.
+  - [x] **rolling** 2026-11-24 (`1506d7f3`, docs `80043b4e`, its SWE-2 round's fixes
+    `bf7b6aa0`): `just mutants-rolling` runs whole-crate runs one after another on the VPS,
+    the crate checked longest ago first; a phase closes on `mutants-closure`;
+  - [ ] **start** [after rolling] the job starts on the VPS once the `call` backfill ends;
 - [x] **TESTSEL** Evaluate running only the tests that cover each mutant (the maintainer, 2026-11-23: worth
   a look, since it could cut a mutant's cost tenfold):
   - [x] **split** 2026-11-24 (`.tmp/testsel_split.py` over each run's `outcomes.json`): with
