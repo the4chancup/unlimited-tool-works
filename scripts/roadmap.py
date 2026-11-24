@@ -5,10 +5,9 @@ merges so it cannot drift from them.
 It refuses a worklog whose "Where the work stands" items break the header's convention (no
 checkbox and ID, an ID twice among siblings, an `[after …]` naming no step, a wait that
 comes back to its step), so a wrong dependency fails when it is written, not at a converge.
-Run from the repository root (`just roadmap`) after the worklog changes; the page is never
-written by hand. A sample for the maintainer's look for now: writing the page at every
-commit waits on that look. `--check` looks for those problems alone and writes no page:
-`scripts/commit.py` runs it for a commit that changes the worklog."""
+`scripts/commit.py` runs it for every commit that changes the worklog and puts the page in
+that commit; `just roadmap` runs it from the repository root between such commits. The
+page itself is never edited. `--check` looks for those problems alone and writes no page."""
 import datetime
 import heapq
 import html

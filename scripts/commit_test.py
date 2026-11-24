@@ -1,4 +1,5 @@
-"""Tests for commit.py: `-a` and the files git does not track, and the worklog check."""
+"""Tests for commit.py: `-a` and the files git does not track, the worklog check, and the
+roadmap page each worklog commit carries."""
 
 import os
 import shutil
@@ -43,9 +44,9 @@ class CommitAll(unittest.TestCase):
     def tearDown(self) -> None:
         self.dir.cleanup()
 
-    def commit_all(self) -> subprocess.CompletedProcess[str]:
+    def commit_all(self, *args: str) -> subprocess.CompletedProcess[str]:
         return subprocess.run(
-            [sys.executable, str(SCRIPT), str(self.message), "-a"],
+            [sys.executable, str(SCRIPT), str(self.message), *(args or ("-a",))],
             cwd=self.repo, capture_output=True, text=True,
         )
 
@@ -71,18 +72,18 @@ class CommitAll(unittest.TestCase):
         files = git(self.repo, "show", "--name-only", "--format=", "HEAD").split()
         self.assertEqual(sorted(files), ["design.txt", "notes.txt"])
 
-    def commit_worklog(self, item: str) -> subprocess.CompletedProcess[str]:
+    def commit_worklog(self, item: str, *args: str) -> subprocess.CompletedProcess[str]:
         """Commits a worklog whose one step is `item`, beside the roadmap script that
-        checks it."""
+        checks it and writes the page, with `args` (`-a` when none)."""
         (self.repo / "scripts" / "gates").mkdir(parents=True)
         shutil.copy(ROADMAP, self.repo / "scripts" / "roadmap.py")
         # Markdown and Python files also run two other gates, the scripts below: stubs that pass.
         for gate in ("doc_pointers.py", "comment_refs.py"):
             (self.repo / "scripts" / "gates" / gate).write_text("", encoding="utf-8")
-        (self.repo / "docs").mkdir()
+        (self.repo / "docs" / "maintainer").mkdir(parents=True)
         (self.repo / "docs" / "WORKLOG.md").write_text(wl(item), encoding="utf-8")
         git(self.repo, "add", "-A")
-        return self.commit_all()
+        return self.commit_all(*args)
 
     def test_a_worklog_item_breaking_the_convention_stops_the_commit(self) -> None:
         head = git(self.repo, "rev-parse", "HEAD")
@@ -95,6 +96,25 @@ class CommitAll(unittest.TestCase):
         run = self.commit_worklog("- [ ] **A** a step.\n")
         self.assertEqual(run.returncode, 0, run.stdout + run.stderr)
         self.assertIn("docs/WORKLOG.md", git(self.repo, "show", "--name-only", "--format=", "HEAD"))
+
+    def assert_page_committed(self, run: subprocess.CompletedProcess[str]) -> None:
+        """The commit holds the roadmap page made from its worklog, and leaves no change to it."""
+        self.assertEqual(run.returncode, 0, run.stdout + run.stderr)
+        page = git(self.repo, "show", "HEAD:docs/maintainer/roadmap.html")
+        self.assertIn("a step only this worklog has", page)
+        self.assertEqual(git(self.repo, "status", "--porcelain", "--", "docs"), "")
+
+    def test_a_worklog_commit_carries_the_roadmap_made_from_it(self) -> None:
+        self.assert_page_committed(self.commit_worklog("- [ ] **A** a step only this worklog has.\n"))
+
+    def test_a_worklog_commit_naming_its_paths_carries_the_roadmap_too(self) -> None:
+        run = self.commit_worklog("- [ ] **A** a step only this worklog has.\n",
+                                  "docs/WORKLOG.md", "scripts")
+        self.assert_page_committed(run)
+
+    def test_a_worklog_commit_of_the_index_carries_the_roadmap_too(self) -> None:
+        run = self.commit_worklog("- [ ] **A** a step only this worklog has.\n", "-q")
+        self.assert_page_committed(run)
 
 
 if __name__ == "__main__":

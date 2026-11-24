@@ -32,8 +32,10 @@ checkpoint, which then fails on a docs commit long since made. A commit that cha
 `.toml` or `.py` file runs the comment gate (`scripts/gates/comment_refs.py`, a few seconds)
 likewise: a test fixture's `# Worklog` line, read as a comment, once failed `just gates` on
 main from a merge until a slice's review found it. A commit that changes `docs/WORKLOG.md`
-runs `scripts/roadmap.py --check` (under a second): a worklog item that breaks the
-convention its header states otherwise fails only the next checkpoint's test.
+runs `scripts/roadmap.py` (under a second), which refuses a worklog item breaking the
+convention its header states (otherwise found only by the next checkpoint's test), and
+writes the roadmap page, which goes into the same commit: rebuilt by hand, the page fell
+behind the worklog.
 
 Lead, sidekick, reviewer or script, nobody runs `git commit` or `git merge` with a message of
 their own any other way: a script that worded its own once made 49 commits no reader of the
@@ -54,6 +56,9 @@ from commit_message import problems
 # sent beside it; one written in the call before, and read, was measured at about 3 s, so
 # a 5 s bar refused ordinary commits too.
 FRESH_SECONDS = 2
+
+# The roadmap page, by a path from the repository's root whatever the directory run from.
+ROADMAP_PAGE = ":/docs/maintainer/roadmap.html"
 
 
 def main(argv: list[str]) -> int:
@@ -110,9 +115,13 @@ def main(argv: list[str]) -> int:
     if sources and not passes("scripts/gates/comment_refs.py"):
         print("commit: nothing committed; a comment points at the project's history (above)")
         return 1
-    if "docs/WORKLOG.md" in changed and not passes("scripts/roadmap.py", "--check"):
-        print("commit: nothing committed; a worklog item breaks the worklog's convention (above)")
-        return 1
+    if "docs/WORKLOG.md" in changed:
+        if not passes("scripts/roadmap.py"):
+            print("commit: nothing committed; a worklog item breaks the worklog's convention (above)")
+            return 1
+        subprocess.run(["git", "add", "--", ROADMAP_PAGE], check=True)
+        if [arg for arg in rest if not arg.startswith("-")]:
+            rest = [*rest, ROADMAP_PAGE]
     code = subprocess.run(["git", "commit", "-F", str(message), *rest]).returncode
     if code == 0:
         report_left_out(rest)
