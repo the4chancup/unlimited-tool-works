@@ -748,6 +748,9 @@ and no phase closes with one outstanding.
         `.cargo/mutants.toml` (the extra kinds use 3x the baseline, cargo-mutants 5x); a
         test killed by SIGKILL (the memory cap) counted caught as cargo-mutants' runs count
         it, where the extra kinds count it untested;
+      - [ ] **review** [after parity] one paid cross-family round (Carbon) over `backend` and
+        `parity` together, beyond the SWE-2 loop a script gets: this code decides every
+        mutant's outcome (the maintainer, 2026-11-24);
       - [ ] **select** [after wire, backend] both runners through the same test-selecting
         stand-in for cargo (`scripts/mutation/select_tests.py`).
 
