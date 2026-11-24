@@ -229,27 +229,19 @@ class Render(unittest.TestCase):
         self.assertIn('document.getElementById("now").scrollIntoView'
                       '({block: "center"', page)
 
-    def test_each_step_with_open_steps_under_it_says_what_it_is(self) -> None:
+    def test_a_steps_codename_says_what_its_groups_are_for(self) -> None:
         page = render(parse(WORKLOG), [], {}, TODAY)
-        section = page[page.index("<h2>What the open steps belong to</h2>"):
-                       page.index("<h2>Merged in the last 7 days</h2>")]
-        self.assertLess(page.index("<h2>Timeline</h2>"), page.index(section))
-        # TOP/a sits under TOP and has its own open step; DONE is done, with y open under it.
-        self.assertIn("<dt><code>TOP</code></dt><dd>A numbered item: its detail.</dd>",
-                      section)
-        self.assertIn("<dt><code>TOP/a</code></dt><dd>open sub bullet: its tail runs "
-                      "on here.</dd>", section)
-        self.assertIn("<dt><code>DONE</code></dt>", section)
-        self.assertLess(section.index("<code>TOP</code>"), section.index("<code>TOP/a</code>"))
-        self.assertLess(section.index("<code>TOP/a</code>"), section.index("<code>DONE</code>"))
-        # P2's steps are all done, so P2 is a timeline row itself; MODE has no steps.
-        self.assertNotIn("<code>P2</code>", section)
-        self.assertNotIn("<code>MODE</code>", section)
+        # TOP/a/ab sits two groups down; its codename names both, the outer first.
+        self.assertIn('font-weight="600"><title>TOP: A numbered item: its detail.\n'
+                      "TOP/a: open sub bullet: its tail runs on here.</title>TOP/a/ab</text>",
+                      page)
+        # A done group's text shows too: DONE is done, with y open under it.
+        self.assertIn('font-weight="600"><title>DONE: done item e5f6a7b 2026-11-22.</title>'
+                      "DONE/y</text>", page)
 
-    def test_no_step_with_open_steps_under_it_leaves_no_section(self) -> None:
-        page = render(parse(wl("- [ ] **A** alone.\n- [x] **B** done `1234567`.\n"
-                                "  - [x] **c** done `2345678`.\n")), [], {}, TODAY)
-        self.assertNotIn("What the open steps belong to", page)
+    def test_a_top_level_steps_codename_has_no_tooltip_of_its_own(self) -> None:
+        page = render(parse(WORKLOG), [], {}, TODAY)
+        self.assertIn('font-weight="600">MODE</text>', page)
 
     def test_one_open_issue_is_singular(self) -> None:
         found = parse(WORKLOG)
@@ -314,7 +306,8 @@ class Timeline(unittest.TestCase):
     def test_a_row_is_its_monospace_label_and_its_description(self) -> None:
         svg = roadmap.timeline(parse(WORKLOG), self.DATES, TODAY)
         self.assertRegex(svg, r'<text x="\d+" y="(\d+)" [^>]*font-family="Consolas, '
-                              r'monospace" font-weight="600">TOP/c</text><text [^>]*>'
+                              r'monospace" font-weight="600"><title>[^<]*</title>TOP/c'
+                              r'</text><text [^>]*>'
                               r'<tspan x="\d+" y="\1">open bullet: tail\.</tspan></text>')
         self.assertIn('<title>TOP/c open bullet: tail. — waits on b, MODE</title>', svg)
 

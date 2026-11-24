@@ -258,6 +258,12 @@ def inline(text: str) -> str:
     return "".join(out)
 
 
+def plain(text: str) -> str:
+    """`text` with the worklog's Markdown marks (`` ` `` and `**`) taken out, for a tooltip,
+    which shows them as typed."""
+    return text.replace("`", "").replace("**", "")
+
+
 def recent_merges(days: int = 7) -> list[tuple[str, str]]:
     """(date, subject) per merge of the last `days` days, newest first."""
     log = subprocess.run(["git", "log", "--merges", f"--since={days}.days",
@@ -521,12 +527,21 @@ def timeline(roadmap: Roadmap, dates: dict[str, str], today: str) -> str:
                  + (f" — waits on {', '.join(s.after)}" if s.after else ""))
         attrs = (f'fill="{"#fff" if open_ else "#ddd"}" font-size="{FONT_SIZE}" '
                  'dominant-baseline="central"')
+        # The timeline draws no row for a step with steps under it, so what it is for
+        # shows on its steps' codenames.
+        groups = []
+        parent = s.parent
+        while parent is not None:
+            groups.insert(0, f"{parent.path}: {plain(parent.text.rstrip(';,:'))}")
+            parent = parent.parent
+        label_title = (f"<title>{html.escape(chr(10).join(groups))}</title>"
+                       if groups else "")
         spans = "".join(f'<tspan x="{desc_x}" y="{y + LINE_HEIGHT * i}">{mono(part)}</tspan>'
                         for i, part in enumerate(lines[id(s)]))
         parts.append(f'<g><title>{html.escape(title)}</title>{circle}'
                      f'<text x="{text_x}" y="{y}" {attrs} font-family="{LABEL_FONT}" '
                      'font-weight="600">'
-                     f'{html.escape(s.path)}</text>'
+                     f'{label_title}{html.escape(s.path)}</text>'
                      f'<text {attrs}>{spans}</text></g>')
     parts.append("</svg>")
     if undated:
@@ -575,25 +590,11 @@ NAV = """\
 </nav>"""
 
 
-def items(top: list[Step]) -> str:
-    """Each step with an open step under it, in worklog order: its path and its own text,
-    which the timeline never shows, since it draws only the steps under it."""
-    entries = [
-        f"<dt><code>{html.escape(s.path)}</code></dt><dd>{inline(s.text.rstrip(';,:'))}</dd>"
-        for s in walk(top)
-        if any(d.mark in OPEN_MARKS for d in walk(s.children))
-    ]
-    if not entries:
-        return ""
-    return ("<h2>What the open steps belong to</h2>\n<dl>\n" + "\n".join(entries)
-            + "\n</dl>\n")
-
-
 def render(roadmap: Roadmap, merges: list[tuple[str, str]],
            dates: dict[str, str], today: str) -> str:
     """The page: a button that brings the timeline's "now" line to the middle of the
-    window, the timeline, what each step with open steps under it is for (`items`), the
-    week's merges in one `<details>` per day, the open-issue count."""
+    window, the timeline, the week's merges in one `<details>` per day, the open-issue
+    count."""
     days = [(day, [subject for _, subject in same_day])
             for day, same_day in groupby(merges, key=itemgetter(0))]
     if days:
@@ -630,7 +631,6 @@ def render(roadmap: Roadmap, merges: list[tuple[str, str]],
 <h2>Timeline</h2>
 {timeline(roadmap, dates, today)}
 
-{items(roadmap.steps)}
 <h2>Merged in the last 7 days</h2>
 {merged}
 <p>{issues}</p>
