@@ -482,6 +482,38 @@ fn a_split_material_never_reuses_an_instance_name() {
 }
 
 #[test]
+fn a_bone_off_the_template_reports_bone_matrix_unknown() {
+    // `custom_bone` is no template-table name and the import has no SKL: the
+    // bone keeps the identity pose and the gap is reported.
+    let mut model = fmdl_model(fmdl_mesh(0, 0), vec![instance("mat")]);
+    model.bones[0].name = "custom_bone".to_string();
+    let imported = fmdl_to_ir(&model, None).expect("import");
+    assert_eq!(imported.model.bones[0].matrix, Affine::IDENTITY);
+    assert_eq!(
+        imported.findings,
+        vec![Finding {
+            code: "bone_matrix_unknown",
+            subject: Subject::Bone(0),
+            detail: "custom_bone".to_string(),
+        }]
+    );
+}
+
+#[test]
+fn an_unreferenced_material_instance_keeps_its_place() {
+    // No mesh binds instance 0: it still imports with (0,0) flags so instance
+    // 1's IR index does not shift onto it.
+    let model = fmdl_model(fmdl_mesh(0, 1), vec![instance("unused"), instance("used")]);
+    let imported = fmdl_to_ir(&model, None).expect("import");
+    assert_eq!(imported.model.materials.len(), 2);
+    assert_eq!(imported.model.materials[0].name, "unused");
+    assert_eq!(imported.model.materials[0].two_sided, Some(false));
+    assert_eq!(imported.model.materials[1].name, "used");
+    assert_eq!(imported.model.meshes[0].material, 1);
+    assert!(imported.findings.is_empty());
+}
+
+#[test]
 fn bone_matrices_report_native_field_dropped() {
     let mut model = fmdl_model(fmdl_mesh(0, 0), vec![instance("mat")]);
     model.bone_matrices = Some(vec![0; 64]);

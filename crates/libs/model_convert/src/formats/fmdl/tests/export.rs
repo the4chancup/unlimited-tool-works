@@ -109,6 +109,32 @@ fn missing_maps_get_the_game_dummies() {
 }
 
 #[test]
+fn a_canonical_role_without_a_fox_sampler_is_reported_unused() {
+    // Environment is a role Fox has no sampler for: the binding drops and is
+    // reported, while the family-derived dummy maps still land.
+    let mut ir = minimal_ir();
+    ir.textures = vec![Texture {
+        directory: "./".to_string(),
+        file_name: "t.dds".to_string(),
+    }];
+    ir.materials[0].textures = vec![(TextureRole::Environment, 0)];
+    let exported = ir_to_fmdl(&ir).expect("export");
+    assert_eq!(
+        exported.model.materials[0]
+            .textures
+            .iter()
+            .map(|(sampler, _)| sampler.as_str())
+            .collect::<Vec<_>>(),
+        ["NormalMap_Tex_NRM", "SpecularMap_Tex_LIN"]
+    );
+    assert!(exported.findings.contains(&Finding {
+        code: "material_texture_unused",
+        subject: Subject::Material(0),
+        detail: "Environment".to_string(),
+    }));
+}
+
+#[test]
 fn an_export_writes_no_anti_blur_meshes() {
     // A Shadeless material and a Fox import whose mesh asks for the
     // anti-blur duplicates both export clean: no anti-blur mesh, neither
