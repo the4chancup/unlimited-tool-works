@@ -664,7 +664,9 @@ and no phase closes with one outstanding.
     are ruled: 16 excluded (equivalent, or seen only by an OS or a GPU), two timeouts that
     are catches, the rest missing tests or dead code in eight SWE-2 slices, all merged by
     `68e678a5` (two more survivors ruled equivalent in review: one excluded, one statement
-    removed); the crates still running get the same triage;
+    removed); the crates still running get the same triage. `ruleset_editor`'s 57 survivors
+    in its view wait until its draft is buildable, since its built UI is not worked on before
+    then; its other 4 are missing tests of the rules text;
   - [x] **teamrows** 2026-11-24, no change: `teams_list`'s reconcile tests keep their
     synthetic rows (750 `/zz/`, 701 `/co/`), which the test-data rule allows in a format's
     own tests;
