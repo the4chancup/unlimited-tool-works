@@ -737,7 +737,10 @@ and no phase closes with one outstanding.
       mutants, 32 s each on the VPS, about two hours unselected; `team_compiler`'s 3,261
       would hold the VPS, and with it the Linux gates, for a day), run after `parity`'s
       `jobs` lands, so the same run measures the extra pass's memory with two mutants
-      building at once and no build cap.
+      building at once and no build cap. Its first run (2026-11-24) stopped when
+      cargo-mutants could not start the stand-in for cargo: the run's snapshot had lost its
+      executable mode (fixed in `working_tree`). It runs again once `parity_c`, the
+      review's fixes, lands.
     - [ ] **extras** the extra kinds' runs (`scripts/mutation/extra_mutants.py`, their own
       loop per mutant, on `cargo test -p` until `backend`) take what the whole-crate runs
       have; then the `call` backfill resumes on its three largest crates:
@@ -753,13 +756,14 @@ and no phase closes with one outstanding.
           rule (it was 3x a baseline holding a cold build); a test killed at the memory
           cap counts caught; the remote's one-job build cap for the extra pass and the
           coverage map is gone. On `cpk`'s `call` pass: the same outcomes, 154 s against
-          135 s. Left: the memory peak of the first remote extra pass without the cap;
+          135 s;
         - [x] **jobs** 2026-11-24 `4effe761`: two mutants at once, each in its own copy
           with half the CPUs for its tests (`mutants.JOBS`, read by both runners), and
           cargo-mutants' runs count a test binary that never started (`0xc0000142`)
           untested, as the extra kinds do. On `cpk`'s `call` pass: the same outcomes, 119 s
-          against 154 s. Its memory on the VPS, two builds at once without the cap, is
-          measured by `wire`'s `ruleset_editor` run;
+          against 154 s. On the VPS (`ruleset_editor`, 280 mutants in 2,794 s), the job
+          peaked at 8.9 GiB under its 11.84 GiB cap, against 9.27 GiB for the last pass
+          run one at a time with the cap;
       - [~] **review** [after parity] one paid cross-family round (Carbon) over `backend` and
         `parity` together, beyond the SWE-2 loop a script gets: this code decides every
         mutant's outcome (the maintainer, 2026-11-24). Done on `4effe761`: 13 concerns, 10
