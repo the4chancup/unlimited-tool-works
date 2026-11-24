@@ -15,6 +15,7 @@ import subprocess
 import sys
 import tarfile
 import tempfile
+import threading
 import time
 import tomllib
 import unittest
@@ -188,6 +189,16 @@ class KilledBuilds(unittest.TestCase):
             "log/link": "error: linking with `rust-lld` failed: exit code: 1\n  = note: rust-lld: "
                         "error: could not open 'kernel32.lib': no such file or directory",
             "log/mutant": "error[E0308]: mismatched types",
+            # An ordinary failing test's log: the catch stands.
+            "log/caught.log": "        FAIL [   0.289s] pes_strings "
+                              "tests::an_absent_section_or_string_is_none\n"
+                              "error: test run failed",
+            # A test binary that lost its console ran nothing, whatever
+            # nextest's 100 says: the mutant is untested, not caught.
+            "log/lost_console.log": "        ABORT [   0.003s] pes_strings "
+                                    "tests::an_absent_section_or_string_is_none\n"
+                                    "           - with code 0xc0000142: The application "
+                                    "failed to initialize properly.",
         }
         outcomes = [
             {"scenario": mutant(name), "summary": "Unviable", "log_path": f"log/{name}"}
@@ -197,12 +208,14 @@ class KilledBuilds(unittest.TestCase):
         outcomes.append(caught_outcome("caught", {"Failure": 100}))
         # Nextest's exit when it cannot list the tests: no test ran, so nothing caught it.
         outcomes.append(caught_outcome("no_tests_ran", {"Failure": 104}))
+        outcomes.append(caught_outcome("lost_console", {"Failure": 100}))
         with tempfile.TemporaryDirectory() as tmp:
             out = Path(tmp)
             write_run(out, len(outcomes), outcomes, logs)
             self.assertEqual(
                 mutants.killed_builds(out),
-                ["oom", "linker", "llvm", "windows", "console", "link", "signal", "no_tests_ran"],
+                ["oom", "linker", "llvm", "windows", "console", "link", "signal",
+                 "no_tests_ran", "lost_console"],
             )
 
 
@@ -456,7 +469,9 @@ class TestCommand(unittest.TestCase):
         config = {"test_tool": "nextest", "additional_cargo_args": ["--frozen"]}
         self.assertEqual(
             popen.call_args.args[0],
-            mutants.test_command("cpk", config, os.cpu_count() or 1),
+            mutants.test_command(
+                "cpk", config, max(1, (os.cpu_count() or 1) // mutants.JOBS)
+            ),
         )
         # In the run's copy, where the mutant is applied, not the live tree.
         self.assertEqual(popen.call_args.kwargs["cwd"], cwd)
@@ -472,11 +487,29 @@ class TestCommand(unittest.TestCase):
         config = {"test_tool": "nextest", "additional_cargo_args": ["--frozen"]}
         self.assertEqual(
             popen.call_args.args[0],
-            mutants.test_command("cpk", config, os.cpu_count() or 1) + ["--no-run"],
+            mutants.test_command(
+                "cpk", config, max(1, (os.cpu_count() or 1) // mutants.JOBS)
+            ) + ["--no-run"],
         )
         self.assertEqual(popen.call_args.kwargs["cwd"], cwd)
         proc.communicate.assert_called_once_with(timeout=None)
         self.assertEqual((code, out), (0, "out"))
+
+    def test_build_and_run_tests_split_the_cpus_among_the_jobs(self):
+        """`run_crate`'s `JOBS` jobs share the machine as cargo-mutants' do:
+        each gets `cpus // JOBS` test threads, never under 1."""
+        for cpus, threads in ((8, 4), (1, 1)):
+            with mock.patch("os.cpu_count", return_value=cpus):
+                popen, *_ = self.started(
+                    lambda cwd: extra_mutants.run_tests("cpk", cwd, 1.0)
+                )
+                self.assertIn(
+                    f"--test-threads={threads}", popen.call_args.args[0]
+                )
+                popen, *_ = self.started(lambda cwd: extra_mutants.build("cpk", cwd))
+                self.assertIn(
+                    f"--test-threads={threads}", popen.call_args.args[0]
+                )
 
     def test_baseline_times_the_test_phase_alone(self):
         """`baseline_seconds` is the test phase's wall time: the build before
@@ -3316,24 +3349,38 @@ class ExtraRun(unittest.TestCase):
             patcher.start()
             self.addCleanup(patcher.stop)
 
+    def patched_index(self, cwd: Path) -> int:
+        """The `self.rows` index of the mutant patched into the copy at `cwd`:
+        the stubs learn which mutant a call is for from the patched file
+        itself, two jobs calling them at once in no fixed order."""
+        data = (cwd / "crates/libs/cpk/src/lib.rs").read_bytes()
+        changed = [
+            index for index, row in enumerate(self.rows)
+            if data[int(row[1]):int(row[1]) + len(row[5])] == row[5].encode()
+        ]
+        assert len(changed) == 1, changed
+        return changed[0]
+
     def run_crate(self, results, only=None):
-        """`results`: (build result, test result or None) pairs, one per mutant
-        the run decides, or an exception to raise at that point."""
-        results = iter(results)
+        """`results`: per row of `self.rows`, the mutant's (build result, test
+        result) pair — the test result None when the build decides it — or an
+        exception for `build` to raise; the test result may be a callable
+        taking `(crate, cwd, timeout)`."""
         self.timeouts = []
-        pending = []
+        self.build_cwds = []
 
         def build(crate, cwd):
-            item = next(results)
+            self.build_cwds.append(cwd)
+            item = results[self.patched_index(cwd)]
             if isinstance(item, BaseException):
                 raise item
-            build_result, test_result = item
-            pending.append(test_result)
-            return build_result
+            return item[0]
 
         def run_tests(crate, cwd, timeout):
             self.timeouts.append(timeout)
-            test_result = pending.pop()
+            test_result = results[self.patched_index(cwd)][1]
+            if callable(test_result):
+                test_result = test_result(crate, cwd, timeout)
             if test_result is None:
                 raise AssertionError("a test ran on a mutant whose build decided it")
             return test_result
@@ -3366,10 +3413,14 @@ class ExtraRun(unittest.TestCase):
             self.assertEqual(
                 (self.out_dir / name).read_text(encoding="utf-8").splitlines(), expected
             )
-        self.assertEqual(
-            [line.split("\t")[0] for line in
-             (self.out_dir / "outcomes_bool.tsv").read_text(encoding="utf-8").splitlines()],
-            [outcome for _, _, outcome in self.TESTS],
+        # The tsv lists each outcome as it is decided, so its order is the
+        # two jobs' finish order, not the listing's.
+        self.assertCountEqual(
+            (self.out_dir / "outcomes_bool.tsv").read_text(encoding="utf-8").splitlines(),
+            [
+                outcome + "\t" + "\t".join(row)
+                for row, (_, _, outcome) in zip(self.rows, self.TESTS)
+            ],
         )
 
     def test_only_runs_the_mutants_whose_missed_line_it_holds(self):
@@ -3390,13 +3441,90 @@ class ExtraRun(unittest.TestCase):
         self.assertEqual(counts, {"missed": 1})
 
     def test_a_run_stopped_midway_keeps_the_outcomes_it_decided(self):
-        results = [pair[:2] for pair in self.TESTS[:2]] + [RuntimeError("the PC went down")]
+        tsv = self.out_dir / "outcomes_bool.tsv"
+
+        def second_test(crate, cwd, timeout):
+            # Finishes only once the first mutant's outcome was written, so
+            # the tsv's order is fixed whatever order the jobs picked them up.
+            for _ in range(1200):
+                if tsv.exists() and tsv.read_text(encoding="utf-8").strip():
+                    return 0, "test result: ok. 12 passed; 0 failed"
+                time.sleep(0.1)
+            raise AssertionError("the first mutant's outcome was never written")
+
+        only = {
+            f"crates/libs/cpk/src/lib.rs:1: [bool] flip {i} | removed: true"
+            for i in (1, 2, 3)
+        }
+        results = [
+            ((0, ""), (None, "")),
+            ((0, ""), second_test),
+            RuntimeError("the PC went down"),
+        ]
         with self.assertRaisesRegex(RuntimeError, "the PC went down"):
-            self.run_crate(results)
+            self.run_crate(results, only=only)
         self.assertEqual(
-            (self.out_dir / "outcomes_bool.tsv").read_text(encoding="utf-8").splitlines(),
+            tsv.read_text(encoding="utf-8").splitlines(),
             ["timeout\t" + "\t".join(self.rows[0]), "missed\t" + "\t".join(self.rows[1])],
         )
+
+    def test_the_missed_files_keep_the_listings_order(self):
+        """The second mutant's outcome is written to the tsv before the
+        first's is decided; the missed files still list them in the
+        listing's order."""
+        tsv = self.out_dir / "outcomes_bool.tsv"
+
+        def first_test(crate, cwd, timeout):
+            for _ in range(1200):
+                if tsv.exists() and tsv.read_text(encoding="utf-8").strip():
+                    return 0, "test result: ok. 12 passed; 0 failed"
+                time.sleep(0.1)
+            raise AssertionError("the second mutant's outcome was never written")
+
+        only = {
+            f"crates/libs/cpk/src/lib.rs:1: [bool] flip {i} | removed: true"
+            for i in (1, 2)
+        }
+        listed, counts, _ = self.run_crate(
+            [((0, ""), first_test), ((0, ""), (0, ""))], only=only
+        )
+        self.assertEqual(counts, {"missed": 2})
+        self.assertEqual(
+            listed,
+            [
+                "crates/libs/cpk/src/lib.rs:1: [bool] flip 1 | removed: true",
+                "crates/libs/cpk/src/lib.rs:1: [bool] flip 2 | removed: true",
+                "crates/libs/cpk/src/read.rs: [bool] stale exclusion: "
+                "flip 11 | removed: true",
+            ],
+        )
+
+    def test_the_two_jobs_patch_and_build_in_two_copies(self):
+        """Each job holds one copy of the tree: the two mutants' `build`s run
+        in two different folders, and while both test phases run, a copy's
+        patched file holds its own mutant's change only."""
+        barrier = threading.Barrier(2)
+
+        def check_isolation(crate, cwd, timeout):
+            index = self.patched_index(cwd)
+            barrier.wait(timeout=120)
+            others = [path for path in cwd.parent.iterdir() if path != cwd]
+            self.assertEqual(len(others), 1)
+            data = (others[0] / "crates/libs/cpk/src/lib.rs").read_bytes()
+            patched = {
+                at
+                for at, row in enumerate(self.rows)
+                if data[int(row[1]):int(row[1]) + len(row[5])] == row[5].encode()
+            }
+            self.assertEqual(patched, {1 - index})
+            return 0, "test result: ok. 12 passed; 0 failed"
+
+        only = {
+            f"crates/libs/cpk/src/lib.rs:1: [bool] flip {i} | removed: true"
+            for i in (1, 2)
+        }
+        self.run_crate([((0, ""), check_isolation)] * 2, only=only)
+        self.assertEqual(len(set(self.build_cwds)), 2)
 
     def test_the_mutant_timeout_is_the_configs_on_both_sides_of_the_minimum(self):
         """`run_tests` gets `max(minimum_test_timeout, timeout_multiplier x
@@ -3436,7 +3564,10 @@ class LeftCopies(unittest.TestCase):
         of the snapshot: a pattern naming the repository's folder found none of them."""
         with tempfile.TemporaryDirectory() as tmp:
             folder = Path(tmp)
-            left = ["cargo-mutants-source-47472-TFiBQg.tmp", "source-47472", "extra-mutants-9120"]
+            left = [
+                "cargo-mutants-source-47472-TFiBQg.tmp", "source-47472",
+                "extra-mutants-9120-0", "extra-mutants-9120-1",
+            ]
             for name in left:
                 (folder / name).mkdir()
                 (folder / name / "Cargo.toml").write_text("[workspace]\n", encoding="utf-8")
