@@ -38,7 +38,7 @@ LANE_GAP = 32
 PHASE_COLOUR = "#999999"
 # The timeline is drawn at its own size, never scaled, so its text is FONT_SIZE pixels; its
 # width is the roadmap page's (ROADMAP_WIDTH, the body's width there).
-FONT_SIZE = 16
+FONT_SIZE = 14
 ROADMAP_WIDTH = 1400
 # A description's lines stand LINE_HEIGHT apart; a row is its lines plus ROW_PAD.
 LINE_HEIGHT = 22

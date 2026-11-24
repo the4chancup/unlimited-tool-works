@@ -2,7 +2,9 @@
 body { font: 15px/1.5 "Segoe UI", sans-serif; background: #1e1e1e; color: #ddd;
   max-width: 980px; margin: 0 auto; padding: 0 16px 80px; }
 nav.pages { position: sticky; top: 0; background: #1e1e1e; border-bottom: 1px solid #333;
-  padding: 10px 0; z-index: 1; display: flex; gap: 18px; align-items: center; }
+  padding: 10px 0; z-index: 1; display: flex; gap: 18px; align-items: center;
+  /* One width on every page, centred, so a wider page (the roadmap) does not move it. */
+  max-width: 980px; margin: 0 auto; }
 nav.pages a { color: #9cc3ff; text-decoration: none; }
 nav.pages a.here { color: #fff; font-weight: 600; }
 nav.pages .count { margin-left: auto; color: #aaa; font-size: 13px; }

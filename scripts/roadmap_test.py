@@ -308,7 +308,7 @@ class Timeline(unittest.TestCase):
         label_x, desc_x = int(rows[0][0]), int(rows[0][2])
         longest = max(len(label) for _, label, _ in rows)
         self.assertEqual(longest, len("Release 0.1.0"))
-        self.assertEqual(desc_x - label_x, round(0.6 * 16 * longest) + 12)
+        self.assertEqual(desc_x - label_x, round(0.6 * 14 * longest) + 12)
 
     def test_a_long_description_wraps_under_its_first_line_and_pushes_the_rows_below(self) -> None:
         long = " ".join(["word"] * 60)
