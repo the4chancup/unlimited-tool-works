@@ -326,7 +326,18 @@ draft checked, handed over by the maintainer 2026-11-23. **After the detour**, i
      - [x] **S-g9** [after G9] SWE-2's round over G9 (rulings "S-g9 r1"): 1 accepted, a real
        input (two `refs` exports read "is in the run" before any run); the lead reworded five
        catalog rows the check logs before a run (`4e4c999b`)
-     - [~] **C6** [after S-g9] round 6, at `4e4c999b`: running
+     - [x] **C6** [after S-g9] round 6, at `4e4c999b` (rulings "C-grid r6"): 7 of 9
+       accepted, one a real input whose outcome changes (`cpk_name_unlisted` named only
+       `cpk_name` as the setting to change, though the bins and refs CPKs reach the same
+       check). The lead's fixes: that remedy `2b91de78`; the window's title, its state line
+       and its scrolling now stated in gui.md and TC-GUI-09. Carbon's loop on the grid ends
+       here: past five rounds, the round it owes goes to Astra (DECISIONS 2026-11-24)
+     - [~] **G10** [after C6] the rest of that round's fixes: the state names, "Checking"
+       while a check runs, a roster finding's and an export finding's place line, the
+       monospace code spans, a finding's texts in order, shared test helpers (SWE-2,
+       `sk/g10`)
+     - [ ] **S-g10** [after G10] SWE-2's round over G10
+     - [ ] **A1** [after S-g10] Astra's round 1 over the grid
    - [x] **tbmenu** The Compile button's mode list, Open output folder and Copy report (TC-GUI-11, and
      TC-GUI-33's clause that Compile for sideloading stays enabled while the DpFileList is
      outdated; DECISIONS 2026-11-23 "the Compile menu's Copy report copies the whole log").
