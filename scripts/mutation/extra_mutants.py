@@ -482,7 +482,7 @@ def run_crate(
     runs only when its own lines — `byte_lines` of its byte range in the
     file it sits in — meet the set for its workspace-relative path; a crate
     none of whose mutants the diff touches prints its 0-mutants line, runs no
-    baseline, writes no files and returns empty. `selection` is the coverage
+    baseline, writes no files and returns its stale exclusions alone. `selection` is the coverage
     map's file (`coverage_map.py --extra` writes the extra kinds' entries too):
     each mutant's test phase runs the filter of the entries covering its
     lines, and every gap — a missing file (one line printed), a line no entry
@@ -565,7 +565,7 @@ def run_crate(
                 f"extra_mutants: {len(rows)} mutants, {sum(excluded)} excluded",
                 flush=True,
             )
-            return [], Counter(), time.monotonic() - wall_start
+            return stale, Counter(), time.monotonic() - wall_start
         check_timeout_config(config)
         baseline = baseline_seconds(crate, copies[0])
         timeout = timeout_seconds(config, baseline)

@@ -251,6 +251,11 @@ def run(diff_path: str, tree: str, source: Path, diff: bytes) -> int:
     # lists none. A standalone extra run's `extra_mutants.out` is not this run's,
     # so it is set aside like the rest.
     lines = extra_mutants.diff_lines(diff)
+    # Before anything is set aside: an uncollected split's local half keeps its
+    # record in `extra_mutants.out`, which its collection reads.
+    if refusal := mutants.local_refusal():
+        print(f"mutants_diff: {refusal}")
+        return 1
     crates = {
         mutants.mutant_crate(path) for path in lines if path.startswith("crates/")
     }
@@ -276,9 +281,15 @@ def run(diff_path: str, tree: str, source: Path, diff: bytes) -> int:
                 # folder to be set aside over the last results.
                 results.mkdir(exist_ok=True)
                 out.rename(results / crate)
-        missed, extra_counts, _ = extra_mutants.run_crate(
-            crate, list(mutants.EXTRA_KINDS), tree, lines=lines
-        )
+        try:
+            missed, extra_counts, _ = extra_mutants.run_crate(
+                crate, list(mutants.EXTRA_KINDS), tree, lines=lines
+            )
+        except SystemExit as stop:
+            # A failing baseline or a broken config ends this crate's pass, as
+            # cargo-mutants' exit 4 ends its run, and the crates after it run.
+            print(f"mutants_diff: {crate}'s extra pass stopped: {stop}")
+            missed, extra_counts = [], Counter(untested=1)
         extra_missed[crate] = missed
         # The extra pass's code joins the crate codes `run_code` combines: 1
         # when a mutant went untested, 2 when one was missed, else 0.
@@ -293,14 +304,17 @@ def run(diff_path: str, tree: str, source: Path, diff: bytes) -> int:
             results.mkdir(exist_ok=True)
             (results / crate).mkdir(exist_ok=True)
             extra_out.rename(results / crate / "extra")
-    if not results.exists():
-        print(f"mutants_diff: no crate's results landed (the last run's, if any: {results.name}.old)")
-        return mutants.run_code(codes.values())
     survivors = [
         line
         for crate in sorted(codes)
         for line in missed_lines(results / crate) + extra_missed.get(crate, [])
     ]
+    # An extra pass that kept no mutant writes no folder, yet its stale
+    # exclusions are survivors all the same.
+    if not results.exists() and not survivors:
+        print(f"mutants_diff: no crate's results landed (the last run's, if any: {results.name}.old)")
+        return mutants.run_code(codes.values())
+    results.mkdir(exist_ok=True)
     (results / "missed_all.txt").write_text(
         "".join(line + "\n" for line in survivors), encoding="utf-8"
     )

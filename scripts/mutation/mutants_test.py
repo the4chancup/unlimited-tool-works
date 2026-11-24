@@ -2905,6 +2905,63 @@ class DiffRun(unittest.TestCase):
             "kept\n",
         )
 
+    TWO_CRATES_DIFF = (
+        b"diff --git a/crates/libs/cpk/src/lib.rs b/crates/libs/cpk/src/lib.rs\n"
+        b"--- a/crates/libs/cpk/src/lib.rs\n"
+        b"+++ b/crates/libs/cpk/src/lib.rs\n"
+        b"@@ -1,1 +1,2 @@\n"
+        b" context\n"
+        b"+added\n"
+        b"diff --git a/crates/libs/fpc/src/lib.rs b/crates/libs/fpc/src/lib.rs\n"
+        b"--- a/crates/libs/fpc/src/lib.rs\n"
+        b"+++ b/crates/libs/fpc/src/lib.rs\n"
+        b"@@ -1,1 +1,2 @@\n"
+        b" context\n"
+        b"+added\n"
+    )
+
+    def test_an_extra_pass_that_stops_ends_its_crate_not_the_run(self):
+        """A crate whose baseline fails ends cargo-mutants with 4 and the run
+        goes on; the extra pass's `SystemExit` on the same baseline does too,
+        as an untested crate, and the later crates still run."""
+        ran = []
+
+        def extra_run(crate, kinds, tree, lines=None):
+            ran.append(crate)
+            if crate == "cpk":
+                raise SystemExit("extra_mutants: the unmutated baseline fails")
+            return [f"{crate}: [call] a survivor"], Counter(missed=1), 1.0
+
+        code, out = self.run_diff(
+            lambda *a: 0, listing=b"[]", diff=self.TWO_CRATES_DIFF, extra=extra_run
+        )
+        self.assertEqual(ran, ["cpk", "fpc"])
+        self.assertEqual(code, 1)
+        self.assertIn("cpk's extra pass stopped: extra_mutants: the unmutated baseline fails", out)
+        self.assertEqual(
+            (self.results / "missed_all.txt").read_text(encoding="utf-8"),
+            "fpc: [call] a survivor\n",
+        )
+
+    def test_an_uncollected_local_half_refuses_the_run_before_it_moves_anything(self):
+        """`local_refusal` holds every local run while this tree's split half
+        is uncollected: the diff run sets nothing aside and runs no pass."""
+        kept = self.root / "extra_mutants.out" / "split.json"
+        kept.parent.mkdir()
+        kept.write_text("{}", encoding="utf-8")
+
+        def extra_run(*_a, **_k):
+            raise AssertionError("an extra pass ran")
+
+        with mock.patch.object(mutants, "local_refusal", lambda: "a half is pending"):
+            code, out = self.run_diff(
+                lambda *a: self.fail("a crate ran"), listing=b"[]",
+                diff=self.TWO_CRATES_DIFF, extra=extra_run,
+            )
+        self.assertEqual(code, 1)
+        self.assertIn("a half is pending", out)
+        self.assertTrue(kept.exists(), "the split record was set aside")
+
     def test_every_crate_the_diff_touches_gets_an_extra_pass_on_its_lines(self):
         """The extra kinds run on this machine after each crate's
         cargo-mutants run — `fpc` gets its pass though the listing named no
@@ -4068,7 +4125,18 @@ class ExtraRun(unittest.TestCase):
             listed, counts, _ = self.run_crate(
                 [], lines={"crates/libs/cpk/src/lib.rs": {99}}
             )
-        self.assertEqual((listed, counts), ([], Counter()))
+        # The crate's stale exclusion still reaches the triage's list: the diff
+        # may be what made it stale.
+        self.assertEqual(
+            (listed, counts),
+            (
+                [
+                    "crates/libs/cpk/src/read.rs: [bool] stale exclusion: "
+                    "flip 11 | removed: true"
+                ],
+                Counter(),
+            ),
+        )
         self.assertEqual(self.built, [])
         self.assertIn("0 mutants", self.last_out)
         self.assertFalse(
