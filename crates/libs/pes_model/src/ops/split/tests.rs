@@ -565,6 +565,59 @@ fn combine_limits_the_bone_group_to_u8() {
     assert_eq!(model, before);
 }
 
+// A foreign split group can hold coincident vertices that differ in one
+// merge-key field — nontopological bytes, bone, or weight — and each
+// difference must keep them apart in the combined mesh.
+#[test]
+fn merge_key_keeps_coincident_vertices_apart() {
+    // Two `Split-Mesh: 1` components whose single vertices are identical
+    // except where `mutate` changes the second.
+    let welded_pair = |mutate: fn(&mut Mesh)| {
+        let component = Mesh {
+            name: None,
+            extension_headers: vec!["Split-Mesh: 1".to_owned()],
+            tags: Vec::new(),
+            vertices: MeshVertices {
+                positions: vec![[0.0; 3]],
+                normals: Some(vec![[0.0, 0.0, 1.0]]),
+                tangents: None,
+                bitangents: None,
+                colors: None,
+                uvs: vec![vec![[0.0, 0.0]]],
+                bone_indices: Some(vec![[0, 0, 0, 0]]),
+                bone_weights: Some(vec![[1.0, 0.0, 0.0, 0.0]]),
+                bone_weight_width: 4,
+            },
+            faces: Vec::new(),
+            lower_lods: Vec::new(),
+            bone_group: vec![0],
+            material: 0,
+            bounds: BoundingBox::of(&[]),
+            order: 0,
+            editor_data: Vec::new(),
+        };
+        let mut other = component.clone();
+        mutate(&mut other);
+        let mut model = grid_model(component, 2);
+        model.meshes.push(other);
+        model
+    };
+    let mutates: [fn(&mut Mesh); 3] = [
+        // nontopological bytes (a uv)
+        |mesh| mesh.vertices.uvs[0][0] = [1.0, 0.0],
+        // the positive-weight bone
+        |mesh| mesh.bone_group = vec![1],
+        // the weight
+        |mesh| mesh.vertices.bone_weights = Some(vec![[0.5, 0.0, 0.0, 0.0]]),
+    ];
+    for mutate in mutates {
+        let mut model = welded_pair(mutate);
+        decode(&mut model).unwrap();
+        assert_eq!(model.meshes.len(), 1);
+        assert_eq!(model.meshes[0].vertices.positions.len(), 2);
+    }
+}
+
 // A combined mesh keeps the emission order when every referenced index
 // fits u16: a loose loop stays right after its owner.
 #[test]
@@ -758,6 +811,28 @@ fn push_vertex_guards_past_group_slots() {
             offset: 5
         })
     );
+}
+
+// A normal-mapped part carries tangents, bitangents and colors: a split
+// must keep one value per vertex in every component.
+#[test]
+fn split_keeps_every_optional_attribute_per_vertex() {
+    let mut mesh = grid(65, 1, 65);
+    let count = mesh.vertices.positions.len();
+    mesh.vertices.tangents = Some(vec![[1.0, 0.0, 0.0]; count]);
+    mesh.vertices.bitangents = Some(vec![[0.0, 1.0, 0.0]; count]);
+    mesh.vertices.colors = Some(vec![[255, 0, 0, 255]; count]);
+    let mut model = grid_model(mesh, 65);
+    let parents = vec![None; 65];
+    assert!(encode(&mut model, &parents).unwrap());
+
+    for component in &model.meshes {
+        let vertices = &component.vertices;
+        let count = vertices.positions.len();
+        assert_eq!(vertices.tangents.as_ref().unwrap().len(), count);
+        assert_eq!(vertices.bitangents.as_ref().unwrap().len(), count);
+        assert_eq!(vertices.colors.as_ref().unwrap().len(), count);
+    }
 }
 
 #[test]

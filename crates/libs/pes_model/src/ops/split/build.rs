@@ -550,6 +550,22 @@ mod tests {
     }
 
     #[test]
+    fn split_key_covers_the_bone_mapping() {
+        // Coincident vertices that differ only in a positive-weight bone,
+        // or only in a weight, must not share an equipresent set.
+        let mesh = mesh_of(2);
+        let bone_0: BoneMapping = vec![(0, 1.0)];
+        let bone_1: BoneMapping = vec![(1, 1.0)];
+        assert_ne!(split_key(&mesh, 0, &bone_0), split_key(&mesh, 1, &bone_1));
+        let weight_half: BoneMapping = vec![(0, 0.5)];
+        assert_ne!(
+            split_key(&mesh, 0, &bone_0),
+            split_key(&mesh, 1, &weight_half)
+        );
+        assert_eq!(split_key(&mesh, 0, &bone_0), split_key(&mesh, 1, &bone_0));
+    }
+
+    #[test]
     fn dot_is_the_dot_product() {
         // `2 * 4` distinguishes the product from `2 / 4`.
         assert_eq!(dot([1.0, 2.0, 3.0], [0.5, 4.0, 2.0]), 14.5);
@@ -898,6 +914,62 @@ mod tests {
         assert_eq!(component.faces, vec![[0, 1, 2]]);
     }
 
+    /// `mesh_of(count)` with every vertex fully weighted to bone 0.
+    fn skinned_mesh_of(count: usize) -> Mesh {
+        let mut mesh = mesh_of(count);
+        mesh.bone_group = vec![0];
+        mesh.vertices.bone_indices = Some(vec![[0, 0, 0, 0]; count]);
+        mesh.vertices.bone_weights = Some(vec![[1.0, 0.0, 0.0, 0.0]; count]);
+        mesh
+    }
+
+    // The skinned variant: the progress branch must also select the
+    // face's bones, or `push_vertex` binds its vertices to slot 0.
+    #[test]
+    fn build_component_emits_one_skinned_over_limit_face_for_progress() {
+        let count = VERTEX_LIMIT_SOFT + 1;
+        let pieces = pieces_of(
+            vec![[0, 1, 2]],
+            vec![(0..count).collect()],
+            vec![vec![(0, 1.0)]; count],
+            true,
+        );
+        let mesh = skinned_mesh_of(count);
+        let mut items: HashMap<Option<usize>, StorableItems> = HashMap::new();
+        items.insert(None, items_with([0]));
+        items.insert(Some(0), items_with([0]));
+        let model = model_with(vec![bone("bone0")]);
+        let (component, taken) = build_component(&model, &mesh, &[None], &items, &pieces).unwrap();
+        assert_eq!(taken.faces.len(), 1);
+        assert_eq!(component.bone_group, vec![0]);
+    }
+
+    // A single loose set over the vertex limit and no faces: the loose
+    // progress branch takes the set whole and selects its bones.
+    #[test]
+    fn build_component_emits_one_over_limit_loose_set_for_progress() {
+        let count = VERTEX_LIMIT_SOFT + 1;
+        let pieces = pieces_of(
+            vec![],
+            vec![(0..count).collect()],
+            vec![vec![(0, 1.0)]; count],
+            true,
+        );
+        let mesh = skinned_mesh_of(count);
+        let loose = StorableItems {
+            faces: HashSet::new(),
+            loose: [0].into_iter().collect(),
+        };
+        let mut items: HashMap<Option<usize>, StorableItems> = HashMap::new();
+        items.insert(None, loose.clone());
+        items.insert(Some(0), loose);
+        let model = model_with(vec![bone("bone0")]);
+        let (component, taken) = build_component(&model, &mesh, &[None], &items, &pieces).unwrap();
+        assert_eq!(taken.loose, [0].into_iter().collect::<HashSet<usize>>());
+        assert_eq!(component.vertices.positions.len(), count);
+        assert_eq!(component.bone_group, vec![0]);
+    }
+
     // Faces whose equipresent sets hold four members each: the vertex
     // soft limit binds after 15750 faces, before the face one — a
     // miscounted member total takes them all.
@@ -1063,6 +1135,67 @@ mod tests {
             (1..SETS)
                 .map(|set| [set as f32, 0.0, 0.0])
                 .collect::<Vec<_>>()
+        );
+    }
+
+    // The sort cloud mixes face vertices and loose first members, so each
+    // half steers the axis. Here the loose sets sit on two y-spread
+    // columns (x = 0 and x = 4000) and the face vertices on the y axis
+    // below the loose cloud's centre: the columns' separation makes ~+x
+    // the principal axis and the face points tilt it toward +y. Under
+    // that axis the far column wins the vertex budget and its highest-y
+    // members go first; a loose-only cloud has axis exactly +x (the far
+    // column ties and the index order takes over), a face-only cloud
+    // axis exactly +y (the columns interleave by y).
+    #[test]
+    fn a_fragment_sorts_by_the_whole_cloud() {
+        const MEMBERS: usize = 3_000;
+        const FACES: usize = 20;
+        const LOOSE: usize = 12_000;
+        const COLUMN: usize = LOOSE / 2;
+        const FAR: f32 = 4_000.0;
+        let count = FACES * MEMBERS + LOOSE;
+        let mut mesh = mesh_of(count);
+        for face in 0..FACES {
+            for corner in 0..3 {
+                mesh.vertices.positions[face * MEMBERS + corner] = [0.0, face as f32 * 100.0, 0.0];
+            }
+        }
+        for set in 0..LOOSE {
+            mesh.vertices.positions[FACES * MEMBERS + set] = if set < COLUMN {
+                [0.0, set as f32, 0.0]
+            } else {
+                [FAR, (set - COLUMN) as f32, 0.0]
+            };
+        }
+        let mut sets: Vec<Vec<usize>> = (0..FACES)
+            .map(|face| (face * MEMBERS..(face + 1) * MEMBERS).collect())
+            .collect();
+        sets.extend((0..LOOSE).map(|set| vec![FACES * MEMBERS + set]));
+        let face_vertices: Vec<[usize; 3]> = (0..FACES)
+            .map(|face| [face * MEMBERS, face * MEMBERS + 1, face * MEMBERS + 2])
+            .collect();
+        let pieces = pieces_of(face_vertices, sets, vec![Vec::new(); count], false);
+        let mut items: HashMap<Option<usize>, StorableItems> = HashMap::new();
+        items.insert(
+            None,
+            StorableItems {
+                faces: (0..FACES).collect(),
+                loose: (FACES..FACES + LOOSE).collect(),
+            },
+        );
+        let model = model_with(vec![]);
+        let (component, taken) = build_component(&model, &mesh, &[], &items, &pieces).unwrap();
+        assert_eq!(taken.faces, (0..FACES).collect::<HashSet<usize>>());
+        // The far column takes the whole loose budget, highest y first:
+        // loose set `s` sits at y = s - FACES - COLUMN on that column.
+        assert_eq!(
+            taken.loose,
+            (FACES + COLUMN + COLUMN / 2..FACES + LOOSE).collect::<HashSet<usize>>()
+        );
+        assert_eq!(
+            component.vertices.positions.len(),
+            FACES * MEMBERS + COLUMN / 2
         );
     }
 
