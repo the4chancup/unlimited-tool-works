@@ -970,7 +970,10 @@ its reach ((a) a real input's outcome, (b) a contradiction, (c) an unobservable 
 wrong fact), and
 one that names none is rejected; a nit fixed in passing counts toward no round.
 Past the fifth round on one surface the lead reports the counts and the
-classes found to the user and continues unless told otherwise: a check-in, not a stop. A review stopped for quota is queued in the lead's handover. Each
+classes found to the user and continues unless told otherwise: a check-in, not a stop. A
+Carbon loop that still owes a round after its fifth has not converged, so it ends there and
+Astra's loop takes the surface: another family reads it, rather than a sixth or later round of
+the same blind spots. A review stopped for quota is queued in the lead's handover. Each
 round's reviewer is a fresh run, never a resumed one, even though resuming
 saves the re-exploration: when both once ran on one surface, the reviewer resumed from the
 round before returned four concerns, all among the fresh reviewer's seven, which found three

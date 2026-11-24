@@ -122,7 +122,8 @@ NODES = [
     ("argon", "Carbon rounds", "reviewers", 4, 1,
      "Gemini 4 Carbon High, the middle layer: better than SWE-2, much cheaper than Astra. "
      "Shipped code gets one paid round; only code writing what the game reads, or a member's "
-     "save, gets both paid loops, with the few surfaces RUNBOOK.md adds."),
+     "save, gets both paid loops, with the few surfaces RUNBOOK.md adds. A Carbon loop "
+     "still going after five rounds hands the surface to Astra."),
     ("astra", "Astra rounds", "reviewers", 4, 2,
      "GPT-6 Astra, the last layer, on what the cheaper ones could not see. Each layer loops "
      "until a round accepts fewer than five; a loop waiting for its reviewer's usage stays "

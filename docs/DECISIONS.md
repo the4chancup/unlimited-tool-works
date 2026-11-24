@@ -20117,3 +20117,19 @@ Why: the timeline already showed the open steps and what runs now, so the column
 and the hand-kept Now list went stale. Drawing the phases from the table keeps one source for
 the run order; the table's old order put Phase 7 before 8, though 7 runs after Release 0.1.0.
 Plan: none; the worklog's phase table says its order is the run order.
+
+## 2026-11-24 — review rounds — a Carbon loop that has not converged after five rounds hands the surface to Astra (maintainer)
+Decision: a Carbon loop that still owes a round after its fifth ends there, and Astra's loop
+takes the surface. The Compiler's grid is the first: Carbon's round 6 accepted seven concerns,
+one of them a real compile's defect, so the round it owes goes to Astra.
+Why: a reviewer that has not converged in five rounds keeps reading the surface with the same
+blind spots; another family reads it fresh.
+Plan: `docs/RUNBOOK.md` "Review rounds", the paragraph on the fifth round; the dev cycle
+chart's Carbon step.
+
+## 2026-11-24 — team_compiler — `cpk_name_unlisted` names all three CPK-name settings in its remedy
+Decision: the finding's Effect, and its help line, tell the member to change each CPK name the
+line names in the setting that holds it: `cpk_name`, `bins_cpk_name` or `refs_cpk_name`.
+Why: the list check covers the bins CPK in multi-CPK mode and the refs CPK when a refs export
+is compiled, so a remedy naming `cpk_name` alone sent the member to the wrong setting.
+Plan: none; the catalog row and `help/01_command_line.md` hold the text.
