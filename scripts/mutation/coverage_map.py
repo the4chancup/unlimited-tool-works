@@ -1,0 +1,339 @@
+"""Builds a whole-crate run's selection file: which tests cover each mutant's lines.
+
+`python scripts/mutation/coverage_map.py <crate> <mutants.json> <selection.json>`, run
+from the root of the tree the mutants run on. `<mutants.json>` is `cargo mutants -p
+<crate> --list --json`'s output; `<selection.json>` is written in the shape
+`select_tests.py` reads, one entry per mutant in the list's order, its `filter` the
+nextest expression of the tests covering the lines its `span` names, `null` when no
+test does.
+
+The crate's test binaries are built instrumented (`cargo llvm-cov`'s environment, into
+`target/llvm-cov-target/` so the normal build is untouched), each listed test runs alone
+with its own LLVM profile file, and `llvm-profdata` + `llvm-cov export` turn the profiles
+into the covered lines of the crate's `src/`. A test whose coverage cannot be read (no
+profile written, a timeout, a tool failing) fails the whole map, and nothing is written:
+a mutant that test alone catches would otherwise get a filter without it, and survive.
+
+Needs on the machine: cargo-llvm-cov, cargo-nextest and rustup's `llvm-tools-preview`
+component, which carries llvm-profdata and llvm-cov.
+"""
+
+import concurrent.futures
+import json
+import os
+import re
+import subprocess
+import sys
+import time
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import extra_mutants  # noqa: E402  (kill_tree)
+import mutants  # noqa: E402  (below_normal)
+
+# Half the cores, below normal: the parallel test runs leave the machine usable.
+JOBS = max(1, (os.cpu_count() or 2) // 2)
+# Well past a single test's wait bound, so an unmutated test never reaches it.
+TEST_TIMEOUT_SECONDS = 600
+
+_LLVM_BIN: Path | None = None
+
+
+def llvm_tool(name: str) -> str:
+    """`<sysroot>/lib/rustlib/<host>/bin/<name>` of the toolchain rustc selects."""
+    global _LLVM_BIN
+    if _LLVM_BIN is None:
+        sysroot = Path(
+            subprocess.run(
+                ["rustc", "--print", "sysroot"],
+                check=True, capture_output=True, text=True,
+            ).stdout.strip()
+        )
+        verbose = subprocess.run(
+            ["rustc", "-vV"], check=True, capture_output=True, text=True
+        ).stdout
+        host = next(
+            line.split(":", 1)[1].strip()
+            for line in verbose.splitlines()
+            if line.startswith("host:")
+        )
+        _LLVM_BIN = sysroot / "lib" / "rustlib" / host / "bin"
+    tool = _LLVM_BIN / (name + ".exe" if os.name == "nt" else name)
+    if not tool.exists():
+        raise SystemExit(
+            f"coverage_map: {tool} missing (rustup component llvm-tools-preview)"
+        )
+    return str(tool)
+
+
+def coverage_env(root: Path) -> dict[str, str]:
+    """os.environ plus the variables `cargo llvm-cov show-env` prints (the
+    RUSTC_WRAPPER that instruments workspace crates), with the build directed to
+    `root`'s `target/llvm-cov-target/`: show-env's CARGO_LLVM_COV_TARGET_DIR names
+    the normal target and it sets no CARGO_TARGET_DIR, so without the override the
+    instrumented build would overwrite the normal one."""
+    cov_target = root / "target" / "llvm-cov-target"
+    env = dict(os.environ)
+    shown = subprocess.run(
+        ["cargo", "llvm-cov", "show-env"],
+        cwd=root, check=True, capture_output=True, text=True,
+    ).stdout
+    for line in shown.splitlines():
+        key, eq, value = line.partition("=")
+        if eq and re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", key):
+            env[key] = value.removeprefix("'").removesuffix("'")
+    for key in (
+        "CARGO_TARGET_DIR",
+        "CARGO_LLVM_COV_TARGET_DIR",
+        "CARGO_LLVM_COV_BUILD_DIR",
+    ):
+        env[key] = str(cov_target)
+    # Profiles the instrumented build itself writes (build scripts, the listing)
+    # stay inside the coverage target too.
+    env["LLVM_PROFILE_FILE"] = str(cov_target / "profraws" / "%p-%16m.profraw")
+    return env
+
+
+def listed_tests(listing: dict) -> list[dict]:
+    """Every non-ignored test in a `nextest list --message-format json` listing,
+    as {binary_id, name, binary, cwd} — exactly the tests a mutation run runs."""
+    tests = []
+    for suite in listing["rust-suites"].values():
+        for name, case in suite["testcases"].items():
+            if not case["ignored"]:
+                tests.append(
+                    {
+                        "binary_id": suite["binary-id"],
+                        "name": name,
+                        "binary": suite["binary-path"],
+                        "cwd": suite["cwd"],
+                    }
+                )
+    return tests
+
+
+def nextest_list(crate: str, root: Path, env: dict) -> list[dict]:
+    """`cargo nextest list -p <crate>` in `root` under `env` (it builds the
+    instrumented test binaries), then the listing's non-ignored tests."""
+    out = subprocess.run(
+        ["cargo", "nextest", "list", "-p", crate, "--message-format", "json"],
+        cwd=root, env=env, capture_output=True, text=True,
+        **mutants.below_normal(),
+    )
+    if out.returncode != 0:
+        raise SystemExit(f"coverage_map: nextest list failed:\n{out.stderr[-4000:]}")
+    tests = listed_tests(json.loads(out.stdout))
+    if not tests:
+        raise SystemExit(f"coverage_map: nextest listed no tests for {crate}")
+    return tests
+
+
+def crate_src(crate: str, root: Path) -> str:
+    """The crate's `src/` folder relative to `root`, slash-separated with the
+    trailing slash, from the package's manifest in `cargo metadata` (not the
+    listed mutants' paths, which a crate with mutants in one subfolder would
+    narrow too far)."""
+    meta = subprocess.run(
+        ["cargo", "metadata", "--format-version", "1", "--no-deps"],
+        cwd=root, capture_output=True, text=True,
+    )
+    if meta.returncode != 0:
+        raise SystemExit(f"coverage_map: cargo metadata failed:\n{meta.stderr[-2000:]}")
+    for package in json.loads(meta.stdout)["packages"]:
+        if package["name"] == crate:
+            folder = Path(package["manifest_path"]).resolve().parent
+            return folder.relative_to(root).as_posix() + "/src/"
+    raise SystemExit(f"coverage_map: no package named {crate} in this workspace")
+
+
+def covered_lines(lcov: str, root: Path, src: str) -> set[tuple[str, int]]:
+    """The (file, line) pairs `lcov` (an `llvm-cov export -format=lcov` text)
+    reports covered in `src`: every `DA:<line>,<count>` with count > 0 whose
+    `SF:` file, relative to `root` and slash-separated, starts with `src`."""
+    covered = set()
+    wanted = False
+    for line in lcov.splitlines():
+        if line.startswith("SF:"):
+            try:
+                rel = Path(line[3:]).resolve().relative_to(root).as_posix()
+            except ValueError:
+                rel = ""
+            wanted = rel.startswith(src)
+        elif wanted and line.startswith("DA:"):
+            number, count = line[3:].split(",")[:2]
+            if int(count) > 0:
+                covered.add((rel, int(number)))
+    return covered
+
+
+def run_test(test: dict, profile: Path, env: dict) -> int | None:
+    """The test's binary with `--exact <name>` in its suite's cwd at below-normal
+    priority, its coverage profile going to `profile` (LLVM's %p/%16m pattern).
+    The exit code; None when TEST_TIMEOUT_SECONDS killed the process tree."""
+    kwargs = mutants.below_normal()
+    if os.name != "nt":
+        # A session of its own, so kill_tree's group kill hits the test's tree
+        # only, never this script's.
+        kwargs["start_new_session"] = True
+    proc = subprocess.Popen(
+        [test["binary"], "--exact", test["name"]],
+        cwd=test["cwd"],
+        env={**env, "LLVM_PROFILE_FILE": str(profile)},
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        **kwargs,
+    )
+    try:
+        proc.communicate(timeout=TEST_TIMEOUT_SECONDS)
+    except subprocess.TimeoutExpired:
+        extra_mutants.kill_tree(proc)
+        return None
+    return proc.returncode
+
+
+def one_coverage(
+    index: int, test: dict, env: dict, profiles: Path, root: Path, src: str
+) -> dict:
+    """One test's covered (file, line) pairs, run alone with its own profile
+    files (deleted once read). A failing or timed-out test still gives the
+    coverage it wrote; a tooling failure lands in `note` instead."""
+    profraw = profiles / f"{index}-%p-%16m.profraw"
+    profdata = profiles / f"{index}.profdata"
+    lines: set[tuple[str, int]] = set()
+    note = None
+    try:
+        code = run_test(test, profraw, env)
+        raws = sorted(profiles.glob(f"{index}-*.profraw"))
+        if not raws:
+            note = "no profraw"
+        else:
+            merged = subprocess.run(
+                [
+                    llvm_tool("llvm-profdata"), "merge", "-sparse",
+                    *(str(raw) for raw in raws), "-o", str(profdata),
+                ],
+                capture_output=True, text=True,
+            )
+            if merged.returncode != 0:
+                note = f"llvm-profdata: {merged.stderr.strip()[-200:]}"
+            else:
+                exported = subprocess.run(
+                    [
+                        llvm_tool("llvm-cov"), "export", "-format=lcov",
+                        "-instr-profile", str(profdata), test["binary"],
+                    ],
+                    capture_output=True, text=True,
+                    encoding="utf-8", errors="replace",
+                )
+                if exported.returncode != 0:
+                    note = f"llvm-cov: {exported.stderr.strip()[-200:]}"
+                else:
+                    lines = covered_lines(exported.stdout, root, src)
+    finally:
+        for stale in profiles.glob(f"{index}-*"):
+            stale.unlink(missing_ok=True)
+        profdata.unlink(missing_ok=True)
+    return {"index": index, "code": code, "lines": lines, "note": note}
+
+
+def selection(
+    listed: list[dict], coverage: dict[tuple[str, int], set[int]], tests: list[dict]
+) -> list[str | None]:
+    """Per mutant, in the list's order: the nextest filterset of the tests
+    covering any line of its span — one `(binary_id(=B) & test(=T))` term each,
+    sorted by the tests' index and joined with ` | ` — or None when no test
+    covers the span. Test names and binary ids hold only identifier characters,
+    safe unquoted in nextest's DSL."""
+    filters = []
+    for mutant in listed:
+        span = mutant["span"]
+        indexes = set()
+        for line in range(span["start"]["line"], span["end"]["line"] + 1):
+            indexes.update(coverage.get((mutant["file"], line), ()))
+        terms = [
+            f"(binary_id(={tests[i]['binary_id']}) & test(={tests[i]['name']}))"
+            for i in sorted(indexes)
+        ]
+        filters.append(" | ".join(terms) if terms else None)
+    return filters
+
+
+def main(argv: list[str]) -> int:
+    if len(argv) != 3:
+        print(
+            "usage: python scripts/mutation/coverage_map.py "
+            "<crate> <mutants.json> <selection.json>",
+            file=sys.stderr,
+        )
+        return 2
+    crate, mutants_path, out_path = argv
+    root = Path.cwd().resolve()
+    try:
+        listed = json.loads(Path(mutants_path).read_text(encoding="utf-8"))
+    except OSError as error:
+        raise SystemExit(f"coverage_map: cannot read {mutants_path} ({error})")
+    env = coverage_env(root)
+    src = crate_src(crate, root)
+    tests = nextest_list(crate, root, env)
+    profiles = root / "target" / "llvm-cov-target" / "test-profiles"
+    profiles.mkdir(parents=True, exist_ok=True)
+    started = time.monotonic()
+    print(f"coverage_map: {len(tests)} tests for {crate}", flush=True)
+    coverage: dict[tuple[str, int], set[int]] = {}
+    failed = 0
+    unread: list[str] = []
+    with concurrent.futures.ThreadPoolExecutor(max_workers=JOBS) as pool:
+        futures = [
+            pool.submit(one_coverage, index, test, env, profiles, root, src)
+            for index, test in enumerate(tests)
+        ]
+        done = 0
+        for future in concurrent.futures.as_completed(futures):
+            entry = future.result()
+            done += 1
+            if done % 100 == 0:
+                print(f"coverage_map: {done}/{len(tests)} tests", flush=True)
+            if entry["code"] != 0:
+                failed += 1
+            if entry["note"] is not None:
+                unread.append(f"{tests[entry['index']]['name']}: {entry['note']}")
+            for key in entry["lines"]:
+                coverage.setdefault(key, set()).add(entry["index"])
+    if unread:
+        print("\n".join(f"coverage_map: {line}" for line in unread), file=sys.stderr)
+        print(f"coverage_map: the coverage of {len(unread)} tests could not be read; "
+              "no selection file written", file=sys.stderr)
+        return 1
+    filters = selection(listed, coverage, tests)
+    entries = [
+        {
+            "file": mutant["file"],
+            "start": mutant["span"]["start"]["line"],
+            "end": mutant["span"]["end"]["line"],
+            "filter": filter_,
+        }
+        for mutant, filter_ in zip(listed, filters)
+    ]
+    out = Path(out_path)
+    temp = out.with_suffix(".tmp")
+    temp.write_text(
+        json.dumps({"mutants": entries}, indent=1) + "\n",
+        encoding="utf-8", newline="\n",
+    )
+    os.replace(temp, out)
+    minutes = (time.monotonic() - started) / 60
+    with_filter = sum(filter_ is not None for filter_ in filters)
+    print(
+        f"coverage_map: {len(tests)} tests, {len(coverage)} covered lines, "
+        f"{with_filter} mutants with a filter, {len(filters) - with_filter} "
+        f"without, {failed} failed, {minutes:.1f} min",
+        flush=True,
+    )
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))
