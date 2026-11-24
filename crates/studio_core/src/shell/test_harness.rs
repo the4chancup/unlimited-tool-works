@@ -74,6 +74,9 @@ pub(super) struct Calls {
     /// The `Ui::max_rect` the last `view` ran against: where the tool's view sits
     /// and how wide it is (the sidebar's overlay must never move it).
     pub(super) view_rect: Mutex<Option<egui::Rect>>,
+    /// While `Some`, the stub's `view` draws an `egui::Window` fixed at the rect:
+    /// a tool's floating window, as the Save editor's Comparator is.
+    pub(super) floating: Mutex<Option<egui::Rect>>,
     /// What `targets_pes_version` reports: `stub_parts` sets it, the sidebar's
     /// tests being about a selector in use, so they keep their meaning; a test
     /// clears it for a tool the selector is not shown for.
@@ -179,6 +182,14 @@ impl StudioTool for StubTool {
             && let Some(code) = panel.show(ui, lines).help
         {
             ctx.open_help(HelpTarget::message(&code));
+        }
+        if let Some(rect) = *self.calls.floating.lock().unwrap() {
+            egui::Window::new("Floating")
+                .fixed_rect(rect)
+                .collapsible(false)
+                .show(ui.ctx(), |ui| {
+                    ui.label("A tool's floating window.");
+                });
         }
     }
     fn tick(&mut self, ctx: &ToolContext) {
