@@ -623,8 +623,8 @@ and no phase closes with one outstanding.
     written 2026-11-23;
   - [x] **page** 2026-11-24: `scripts/roadmap.py` writes `docs/maintainer/roadmap.html` from
     this file (merged `c8977365`, the timeline after the maintainer's first look), and
-    `commit.py` makes it again in every commit that changes this file, the maintainer having
-    approved the page;
+    `commit.py` makes it again in every commit (not a merge) that changes this file, the
+    maintainer having approved the page;
   - [x] **audit** the Issues section audited (each open issue checked against today's code: closed,
     kept, or made a step) and its resolved entries pruned: 2026-11-23, SWE-2 read-only in
     three parts. 13 closed, 3 made steps (two already tracked, Fox per-kit models added to

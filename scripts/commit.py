@@ -31,11 +31,12 @@ under a second) the same way: a broken pointer otherwise surfaces only at the ne
 checkpoint, which then fails on a docs commit long since made. A commit that changes a `.rs`,
 `.toml` or `.py` file runs the comment gate (`scripts/gates/comment_refs.py`, a few seconds)
 likewise: a test fixture's `# Worklog` line, read as a comment, once failed `just gates` on
-main from a merge until a slice's review found it. A commit that changes `docs/WORKLOG.md`
-runs `scripts/roadmap.py` (under a second), which refuses a worklog item breaking the
+main from a merge until a slice's review found it. A commit (not a merge) that changes
+`docs/WORKLOG.md` runs `scripts/roadmap.py` (under a second, before the doc-pointer gate,
+which then checks the page's links too), which refuses a worklog item breaking the
 convention its header states (otherwise found only by the next checkpoint's test), and
 writes the roadmap page, which goes into the same commit: rebuilt by hand, the page fell
-behind the worklog.
+behind the worklog. A merge rebuilds nothing; the lead's worklog commit after it does.
 
 Lead, sidekick, reviewer or script, nobody runs `git commit` or `git merge` with a message of
 their own any other way: a script that worded its own once made 49 commits no reader of the
@@ -107,6 +108,13 @@ def main(argv: list[str]) -> int:
     if drafts and not passes("scripts/drafts/bundle_drafts_test.py"):
         print("commit: nothing committed; the drafts bundler's test failed (above)")
         return 1
+    if "docs/WORKLOG.md" in changed:
+        if not passes("scripts/roadmap.py"):
+            print("commit: nothing committed; a worklog item breaks the worklog's convention (above)")
+            return 1
+        subprocess.run(["git", "add", "--", ROADMAP_PAGE], check=True)
+        if [arg for arg in rest if not arg.startswith("-")]:
+            rest = [*rest, ROADMAP_PAGE]
     docs = any(path.endswith((".md", ".html")) for path in changed)
     if docs and not passes("scripts/gates/doc_pointers.py"):
         print("commit: nothing committed; a doc pointer is broken (above)")
@@ -115,13 +123,6 @@ def main(argv: list[str]) -> int:
     if sources and not passes("scripts/gates/comment_refs.py"):
         print("commit: nothing committed; a comment points at the project's history (above)")
         return 1
-    if "docs/WORKLOG.md" in changed:
-        if not passes("scripts/roadmap.py"):
-            print("commit: nothing committed; a worklog item breaks the worklog's convention (above)")
-            return 1
-        subprocess.run(["git", "add", "--", ROADMAP_PAGE], check=True)
-        if [arg for arg in rest if not arg.startswith("-")]:
-            rest = [*rest, ROADMAP_PAGE]
     code = subprocess.run(["git", "commit", "-F", str(message), *rest]).returncode
     if code == 0:
         report_left_out(rest)
@@ -174,14 +175,14 @@ def changed_paths(rest: list[str]) -> list[str]:
     return subprocess.run(command, capture_output=True, text=True, check=True).stdout.splitlines()
 
 
-def passes(script: str, *args: str) -> bool:
+def passes(script: str) -> bool:
     """Runs a check script of the tree being committed; whether it passed."""
     root = subprocess.run(
         ["git", "rev-parse", "--show-toplevel"], capture_output=True, text=True, check=True
     ).stdout.strip()
     # The tree being committed, which `--in` may make another worktree than this file's.
     # `roadmap.py` opens its input by a path relative to the root.
-    command = [sys.executable, str(Path(root) / script), *args]
+    command = [sys.executable, str(Path(root) / script)]
     return subprocess.run(command, cwd=root).returncode == 0
 
 
