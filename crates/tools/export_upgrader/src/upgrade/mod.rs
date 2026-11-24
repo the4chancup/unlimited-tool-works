@@ -1131,22 +1131,19 @@ fn is_leftover(path: &str, referees: bool, referees_at_root: bool) -> bool {
 /// every issue on the output export; nothing when the listing cannot be read
 /// or parsed (`export_extract_failed`, already reported).
 fn validate_output(output: &Path, output_name: &str, version: PesVersion, events: &mut RunEvents) {
-    for issue in output_issues(output, output_name, version, |path| path.to_owned(), events) {
+    for issue in output_issues(output, output_name, version, events) {
         events.message(issue_message(&issue, OUTPUT));
     }
 }
 
 /// The shared validation's issues on the folder `output` ("Verification"),
-/// each listed path given to the validation at `place(path)` (every
-/// ancestor of a placed path listed as a folder too), its small metadata
-/// read from where it was written, the listing named `display_name`. Empty,
-/// `export_extract_failed` on the output reported instead, when the
-/// listing cannot be read or parsed.
+/// its small metadata read from where it was written, the listing named
+/// `display_name`. Empty, `export_extract_failed` on the output reported
+/// instead, when the listing cannot be read or parsed.
 pub(crate) fn output_issues(
     output: &Path,
     display_name: &str,
     version: PesVersion,
-    place: impl Fn(&str) -> String,
     events: &mut RunEvents,
 ) -> Vec<ValidationIssue> {
     let (files, folders) = match source::list_folder(output) {
@@ -1159,43 +1156,18 @@ pub(crate) fn output_issues(
     let mut metadata = BTreeMap::new();
     let mut entries = Vec::new();
     for (path, size) in &files {
-        let placed = place(path);
-        if is_small_metadata(&placed) {
+        if is_small_metadata(path) {
             metadata.insert(
-                placed.clone(),
+                path.clone(),
                 fs::read(output.join(path)).map_err(|error| error.to_string()),
             );
         }
         entries.push(ListedEntry {
-            path: placed,
+            path: path.clone(),
             kind: ListedKind::File { size: *size },
         });
     }
-    let mut placed_folders: BTreeSet<String> = BTreeSet::new();
     for path in &folders {
-        placed_folders.insert(place(path));
-    }
-    // Every ancestor of a placed path is listed as a folder too: the staged
-    // `Players`/`Boots`/`Gloves` tops exist nowhere on disk.
-    let mut ancestors: BTreeSet<String> = BTreeSet::new();
-    for placed in placed_folders
-        .iter()
-        .cloned()
-        .chain(entries.iter().map(|entry| entry.path.clone()))
-    {
-        let mut rest = placed.as_str();
-        while let Some((parent, _)) = rest.rsplit_once('/') {
-            ancestors.insert(parent.to_owned());
-            rest = parent;
-        }
-    }
-    for path in &folders {
-        entries.push(ListedEntry {
-            path: place(path),
-            kind: ListedKind::Folder,
-        });
-    }
-    for path in ancestors.difference(&placed_folders) {
         entries.push(ListedEntry {
             path: path.clone(),
             kind: ListedKind::Folder,

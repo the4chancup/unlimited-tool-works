@@ -1,6 +1,47 @@
 use super::*;
 use crate::test_support::{complete_old, file_count, progress_events, scratch, test_ctx};
 
+/// The run's `unmigrated_content` findings as (scope path, context) pairs.
+fn unmigrated_findings(
+    events_rx: &crossbeam_channel::Receiver<PipelineEventEnvelope>,
+) -> Vec<(String, Vec<(String, String)>)> {
+    events_rx
+        .try_iter()
+        .filter_map(|envelope| match envelope.event {
+            PipelineEvent::Message(message)
+                if message.code.code.as_ref() == "unmigrated_content" =>
+            {
+                let path = match &message.scope {
+                    Scope::File { path, .. } | Scope::Folder { path, .. } => {
+                        path.as_str().to_owned()
+                    }
+                    Scope::Run | Scope::Export { .. } | Scope::RosterEntry { .. } => String::new(),
+                };
+                Some((path, message.context))
+            }
+            _ => None,
+        })
+        .collect()
+}
+
+/// Asserts `events_rx` holds exactly one `Message`, `export_extract_failed`
+/// scoped to the output export: the failure an output listing that cannot be
+/// read or parsed is reported with.
+fn assert_output_extract_failed(events_rx: &crossbeam_channel::Receiver<PipelineEventEnvelope>) {
+    let messages: Vec<Message> = events_rx
+        .try_iter()
+        .filter_map(|envelope| match envelope.event {
+            PipelineEvent::Message(message) => Some(message),
+            _ => None,
+        })
+        .collect();
+    let [message] = messages.as_slice() else {
+        panic!("one message: {messages:?}")
+    };
+    assert_eq!(message.code.code.as_ref(), "export_extract_failed");
+    assert_eq!(message.scope, Scope::Export { export_id: OUTPUT });
+}
+
 #[test]
 fn an_input_ending_in_a_dot_or_dot_dot_resolves_to_its_folder() {
     let root = scratch("resolve_input");
@@ -245,25 +286,8 @@ fn a_second_note_and_an_unclaimed_file_get_their_reasons() {
     let exit = run(&args, &ctx).unwrap();
     drop(ctx);
     assert_eq!(exit, ERRORS);
-    let findings: Vec<(String, Vec<(String, String)>)> = events_rx
-        .iter()
-        .filter_map(|envelope| match envelope.event {
-            PipelineEvent::Message(message)
-                if message.code.code.as_ref() == "unmigrated_content" =>
-            {
-                let path = match &message.scope {
-                    Scope::File { path, .. } | Scope::Folder { path, .. } => {
-                        path.as_str().to_owned()
-                    }
-                    Scope::Run | Scope::Export { .. } | Scope::RosterEntry { .. } => String::new(),
-                };
-                Some((path, message.context))
-            }
-            _ => None,
-        })
-        .collect();
     assert_eq!(
-        findings,
+        unmigrated_findings(&events_rx),
         [
             (
                 "Players/05 - A/face.fmdl".to_owned(),
@@ -281,6 +305,43 @@ fn a_second_note_and_an_unclaimed_file_get_their_reasons() {
 }
 
 #[test]
+fn two_carried_files_landing_on_one_output_name_report_the_later() {
+    // `Common/u0XXXp1.dds` respells to `Common/kit1.dds`, which a file of
+    // that name already takes: the later one's copy is dropped and it is
+    // unmigrated content naming the file that kept the place.
+    let root = scratch("carried_collision");
+    fs::create_dir_all(root.join("co Spring/Common")).unwrap();
+    fs::write(root.join("co Spring/Common/kit1.dds"), b"kept").unwrap();
+    fs::write(root.join("co Spring/Common/u0XXXp1.dds"), b"second").unwrap();
+    let (ctx, events_rx) = test_ctx();
+    let args = UpgradeArgs {
+        exports: vec![root.join("co Spring")],
+        all: None,
+        savefile: None,
+        loose: true,
+        coverage: None,
+        output: None,
+    };
+
+    let exit = run(&args, &ctx).unwrap();
+    drop(ctx);
+    assert_eq!(exit, ERRORS);
+    assert_eq!(
+        unmigrated_findings(&events_rx),
+        [(
+            "Common/u0XXXp1.dds".to_owned(),
+            vec![
+                ("reason".to_owned(), "path_taken".to_owned()),
+                ("other".to_owned(), "Common/kit1.dds".to_owned()),
+            ]
+        )]
+    );
+    // Not clean: nothing is written, the staging folder removed.
+    assert!(!root.join("co Full Spring").exists());
+    assert!(!root.join("co Full Spring.upgrading").exists());
+}
+
+#[test]
 fn a_disallowed_file_type_drops_its_folder_in_the_output_validation() {
     // The output's check runs with the strict file-type check on, as the
     // compiler's default has it: a disallowed file refuses the folder and
@@ -290,13 +351,7 @@ fn a_disallowed_file_type_drops_its_folder_in_the_output_validation() {
     fs::write(output.join("Players/03 - A/readme.doc"), b"x").unwrap();
     let (ctx, _events_rx) = test_ctx();
     let mut events = RunEvents::new(&ctx, FIRST_RUN);
-    let issues = output_issues(
-        &output,
-        "co Midcup",
-        PesVersion::Pes21,
-        |path| path.to_owned(),
-        &mut events,
-    );
+    let issues = output_issues(&output, "co Midcup", PesVersion::Pes21, &mut events);
     let issue = issues
         .iter()
         .find(|issue| issue.code == "file_type_disallowed")
@@ -317,13 +372,7 @@ fn a_missing_shared_link_target_drops_its_folder() {
     fs::write(output.join("Players/03 - A/Crocs.boots"), b"").unwrap();
     let (ctx, _events_rx) = test_ctx();
     let mut events = RunEvents::new(&ctx, FIRST_RUN);
-    let issues = output_issues(
-        &output,
-        "co Midcup",
-        PesVersion::Pes21,
-        |path| path.to_owned(),
-        &mut events,
-    );
+    let issues = output_issues(&output, "co Midcup", PesVersion::Pes21, &mut events);
     let issue = issues
         .iter()
         .find(|issue| issue.code == "link_target_missing")
@@ -333,6 +382,69 @@ fn a_missing_shared_link_target_drops_its_folder() {
         aesthetics_export::Disposition::DropFolder
     );
     assert!(!issue.passed_through);
+}
+
+#[test]
+fn an_output_that_cannot_be_listed_reports_export_extract_failed() {
+    // `list_folder` failing on the staging dir (here a path that is no
+    // folder) is reported on the output, not folded into an empty listing:
+    // `output_issues` returns empty either way, so the message is all the
+    // failure leaves.
+    let output = scratch("output_issues_unlistable");
+    let file = output.join("a file");
+    fs::write(&file, b"x").unwrap();
+    let (ctx, events_rx) = test_ctx();
+    let mut events = RunEvents::new(&ctx, FIRST_RUN);
+
+    let issues = output_issues(&file, "co Midcup", PesVersion::Pes21, &mut events);
+
+    assert!(issues.is_empty());
+    assert_output_extract_failed(&events_rx);
+}
+
+#[test]
+fn an_empty_player_folder_the_roster_does_not_list_is_reported() {
+    // A folder holding nothing reaches the validation only through the
+    // listing's folder entries: `Players/12 - B` is a player folder the
+    // roster does not name, so it is `player_unlisted`.
+    let output = scratch("output_issues_empty_folder");
+    fs::create_dir_all(output.join("Players/12 - B")).unwrap();
+    fs::write(output.join("players.txt"), b"03 Snuffy\n").unwrap();
+    let (ctx, _events_rx) = test_ctx();
+    let mut events = RunEvents::new(&ctx, FIRST_RUN);
+
+    let issues = output_issues(&output, "co Midcup", PesVersion::Pes21, &mut events);
+
+    let issue = issues
+        .iter()
+        .find(|issue| issue.code == "player_unlisted")
+        .expect("player_unlisted expected: {issues:?}");
+    assert_eq!(
+        issue.scope,
+        aesthetics_export::IssueScope::Folder(ScopePath::new("Players/12 - B").unwrap())
+    );
+    assert_eq!(
+        issue.disposition,
+        aesthetics_export::Disposition::DropFolder
+    );
+}
+
+#[test]
+fn an_output_listing_that_cannot_be_parsed_reports_export_extract_failed() {
+    // Two file names folding to one canonical path: `é` written NFC and
+    // `e` + U+0301, which NTFS, APFS and Linux file systems all hold side
+    // by side and `fold_key` collapses. `parse_listing` refuses the
+    // listing; the refusal is reported on the output.
+    let output = scratch("output_issues_collision");
+    fs::write(output.join("caf\u{e9}.dds"), b"x").unwrap();
+    fs::write(output.join("cafe\u{301}.dds"), b"x").unwrap();
+    let (ctx, events_rx) = test_ctx();
+    let mut events = RunEvents::new(&ctx, FIRST_RUN);
+
+    let issues = output_issues(&output, "co Midcup", PesVersion::Pes21, &mut events);
+
+    assert!(issues.is_empty());
+    assert_output_extract_failed(&events_rx);
 }
 
 #[test]
