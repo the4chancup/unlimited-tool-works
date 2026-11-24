@@ -56,6 +56,8 @@
 
 - **All tools**: the sidebar now marks the active tool with a thin outline around its
   highlight, in place of the bar at its left.
+- **All tools**: the sidebar no longer opens over a window: Help and a tool's windows now stay
+  on top of it.
 - **Save editor**: a PES 2017 Texport now carries the 4cc clover as its thumbnail, in place of
   the game's own picture.
 - **Save editor**: the Set PES path button on the Gameplan pitch is now blue.

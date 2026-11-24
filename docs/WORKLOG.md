@@ -4126,10 +4126,10 @@ points there.
   back to Python where it is not installed. Its review is owed ("vital scripts' first
   reviews").
 
-- open (2026-11-24) — the app draws the opened sidebar above every window, where the
+- resolved (2026-11-24) — the app drew the opened sidebar above every window, where the
   maintainer wants every window above it (DECISIONS 2026-11-24 "every window stands above the
-  opened sidebar"; the drafts already do). Slice WINSB (SWE-2, brief `.tmp/winsb/brief.md`):
-  the sidebar's layer goes under every window.
+  opened sidebar"). Slice WINSB (`2b3f8d6b`): the sidebar's layer is now under every window,
+  menu and modal. Its SWE-2 round is owed.
 
 - open (2026-11-23) — the grid's detail window grows for a few frames after it opens: when it
   replaces a smaller pinned window, it grows about 27 points a frame for four frames (387 to
