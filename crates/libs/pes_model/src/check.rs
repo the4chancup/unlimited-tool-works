@@ -415,6 +415,21 @@ mod tests {
         }
     }
 
+    fn material(name: &str, entries: Vec<MaterialEntry>) -> Material {
+        Material {
+            name: name.to_owned(),
+            shader: "s".to_owned(),
+            entries,
+        }
+    }
+
+    fn materials(materials: Vec<Material>) -> MaterialSet {
+        MaterialSet {
+            materials,
+            style: MtlStyle::default(),
+        }
+    }
+
     #[test]
     fn the_code_list_is_the_module_doc_s_rules_in_firing_order() {
         let codes: Vec<(&str, Severity)> = CODES.to_vec();
@@ -797,11 +812,6 @@ mod tests {
 
     #[test]
     fn mtl_rules() {
-        let material = |name: &str, entries: Vec<MaterialEntry>| Material {
-            name: name.to_owned(),
-            shader: "s".to_owned(),
-            entries,
-        };
         let state = |name: &str, value: u32| {
             MaterialEntry::State(State {
                 name: name.to_owned(),
@@ -821,11 +831,6 @@ mod tests {
             waddr: None,
             maxaniso: None,
         });
-        let materials = |materials: Vec<Material>| MaterialSet {
-            materials,
-            style: MtlStyle::default(),
-        };
-
         let set = materials(vec![
             material("a", vec![sampler.clone()]),
             material("a", vec![sampler.clone()]),
@@ -903,6 +908,18 @@ mod tests {
             "model_material_undefined",
             Severity::Error,
             Subject::Material(0),
+            1,
+        )));
+
+        // The `.mtl` rules run too: a material name listed twice.
+        let findings = check_bundle(
+            &load(CAP),
+            &materials(vec![material("a", vec![]), material("a", vec![])]),
+        );
+        assert!(findings.contains(&finding(
+            "mtl_material_duplicate",
+            Severity::Error,
+            Subject::MtlMaterial(1),
             1,
         )));
     }

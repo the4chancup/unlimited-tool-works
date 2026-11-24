@@ -593,6 +593,79 @@ mod tests {
         assert_eq!(decode(&mesh).unwrap(), vec![0, 1]);
     }
 
+    // Two coincident vertices keep separate owners when their
+    // positive-weight lanes differ in the bone index or in the weight
+    // alone: the key stores both halves of each lane.
+    #[test]
+    fn weighted_lanes_distinguish_coincident_vertices() {
+        let mesh = |bone_indices: [[u8; 4]; 2], bone_weights: [[f32; 4]; 2]| {
+            bare_mesh(
+                MeshVertices {
+                    positions: vec![[0.0; 3], [0.0; 3]],
+                    normals: None,
+                    tangents: None,
+                    bitangents: None,
+                    colors: None,
+                    uvs: vec![vec![[0.0, 0.0], [1.0, 0.0]]],
+                    bone_indices: Some(bone_indices.to_vec()),
+                    bone_weights: Some(bone_weights.to_vec()),
+                    bone_weight_width: 4,
+                },
+                Vec::new(),
+            )
+        };
+        // Only the weighted lane's bone index differs.
+        assert_eq!(
+            decode(&mesh(
+                [[0, 0, 0, 0], [1, 0, 0, 0]],
+                [[1.0, 0.0, 0.0, 0.0]; 2]
+            ))
+            .unwrap(),
+            [0, 1]
+        );
+        // Same weighted lanes, different weights.
+        assert_eq!(
+            decode(&mesh(
+                [[0, 1, 0, 0]; 2],
+                [[0.6, 0.4, 0.0, 0.0], [0.5, 0.5, 0.0, 0.0]]
+            ))
+            .unwrap(),
+            [0, 1]
+        );
+    }
+
+    // Two loops of one vertex identical but for a single nontopological
+    // field still encode as two loops: that field alone separates their
+    // encodings.
+    #[test]
+    fn each_nontopological_field_keeps_its_loops() {
+        let vertices = || MeshVertices {
+            positions: vec![[0.0; 3], [0.0; 3]],
+            normals: Some(vec![[0.0, 0.0, 1.0]; 2]),
+            tangents: Some(vec![[1.0, 0.0, 0.0]; 2]),
+            bitangents: Some(vec![[0.0, 1.0, 0.0]; 2]),
+            colors: Some(vec![[255, 0, 0, 255]; 2]),
+            uvs: vec![vec![[0.5, 0.5]; 2]],
+            bone_indices: None,
+            bone_weights: None,
+            bone_weight_width: 4,
+        };
+        for field in ["normal", "color", "uv v", "tangent", "bitangent"] {
+            let mut vertices = vertices();
+            match field {
+                "normal" => vertices.normals = Some(vec![[0.0, 0.0, 1.0], [0.0, 1.0, 0.0]]),
+                "color" => vertices.colors = Some(vec![[255, 0, 0, 255], [0, 255, 0, 255]]),
+                "uv v" => vertices.uvs = vec![vec![[0.5, 0.5], [0.5, 1.0]]],
+                "tangent" => vertices.tangents = Some(vec![[1.0, 0.0, 0.0], [-1.0, 0.0, 0.0]]),
+                "bitangent" => vertices.bitangents = Some(vec![[0.0, 1.0, 0.0], [0.0, -1.0, 0.0]]),
+                _ => unreachable!("the loop above lists every field"),
+            }
+            let mut mesh = bare_mesh(vertices, Vec::new());
+            encode(&mut mesh, &[0, 0]).unwrap();
+            assert_eq!(mesh.vertices.positions.len(), 2, "{field}");
+        }
+    }
+
     // A combine rewrites a zero-weight lane whose slot falls outside the
     // component's bone group; a topological key counting it would merge
     // the encoded owners on the way back.
