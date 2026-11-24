@@ -1442,6 +1442,10 @@ class WholeRun(unittest.TestCase):
             mock.patch.object(
                 mutants, "snapshot_source", lambda tree: contextlib.nullcontext(self.root)
             ),
+            mock.patch.object(
+                mutants, "git",
+                lambda *a, **k: subprocess.CompletedProcess(a, 0, stdout="f" * 40),
+            ),
             mock.patch.object(mutants, "remote_start", lambda host, tree: (None, None, 8)),
             mock.patch.object(mutants, "upload_and_launch", upload),
             mock.patch.object(mutants, "wait_remote", lambda host: (0, 9.0)),
@@ -1505,7 +1509,10 @@ class WholeRun(unittest.TestCase):
             )
             self.assertEqual(calls["finish"]["args"], ("bonfire", 0, 0, (None, 9.0)))
         self.assertTrue(
-            out.startswith("running every mutant on bonfire (a whole-crate run)"),
+            out.startswith(
+                "running every mutant on bonfire "
+                f"(a whole-crate run, launched from {'f' * 40})"
+            ),
             out,
         )
 
@@ -1517,6 +1524,10 @@ class WholeRun(unittest.TestCase):
             mock.patch.object(
                 mutants, "snapshot_source",
                 lambda tree: contextlib.nullcontext(self.root),
+            ),
+            mock.patch.object(
+                mutants, "git",
+                lambda *a, **k: subprocess.CompletedProcess(a, 0, stdout="f" * 40),
             ),
             mock.patch.object(
                 mutants, "remote_start",
@@ -3036,6 +3047,194 @@ class DiffBusy(unittest.TestCase):
         self.assertEqual(code, 0)
         self.assertNotIn("state", calls, "REMOTE_ONLY never asks the host's state")
         self.assertEqual(calls["split"][1], {"local": False})
+
+
+class Closure(unittest.TestCase):
+    """`mutants_diff --checked <crate> <commit>` records the commit `crate`'s
+    last triaged whole run was launched from in `.cargo/mutants_checked.toml`,
+    and `mutants_diff --closure [crate ...]` runs the diff run over what
+    changed in each crate since its own, a crate with none counted untested."""
+
+    CRATES = ("cpk", "fpc", "fpk")
+    COMMITS = {"cpk": "a" * 40, "fpc": "b" * 40, "fpk": "c" * 40}
+    TREE = "d" * 40
+    HEADER = (
+        "# Each crate's commit its last triaged whole-crate run was launched from;\n"
+        "# `just mutants-checked` writes it, `just mutants-closure` diffs since it.\n"
+    )
+
+    def setUp(self):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        self.root = Path(tmp.name)
+        self.checked = self.root / ".cargo" / "mutants_checked.toml"
+        self.checked.parent.mkdir(parents=True)
+        self.dirs = {name: self.root / "crates" / "libs" / name for name in self.CRATES}
+        for patcher in (
+            mock.patch.object(mutants_diff, "ROOT", self.root),
+            mock.patch.object(mutants_diff, "RESULTS", self.root / "mutants.diff"),
+            mock.patch.object(mutants_diff, "CHECKED", self.checked),
+            mock.patch.object(
+                extra_mutants, "workspace_crates",
+                lambda root: dict(self.dirs),
+            ),
+        ):
+            patcher.start()
+            self.addCleanup(patcher.stop)
+
+    def test_write_checked_keeps_the_header_orders_by_crate_and_moves_ones_line(self):
+        self.checked.write_text(self.HEADER + "[checked]\n", encoding="utf-8")
+        # Written out of name order, the file still lists them sorted.
+        mutants_diff.write_checked("fpc", self.COMMITS["fpc"], self.checked)
+        mutants_diff.write_checked("cpk", self.COMMITS["cpk"], self.checked)
+        self.assertEqual(
+            mutants_diff.read_checked(self.checked),
+            {"cpk": self.COMMITS["cpk"], "fpc": self.COMMITS["fpc"]},
+        )
+        written = self.checked.read_text(encoding="utf-8")
+        self.assertEqual(
+            written,
+            self.HEADER
+            + "[checked]\n"
+            + f'cpk = "{self.COMMITS["cpk"]}"\n'
+            + f'fpc = "{self.COMMITS["fpc"]}"\n',
+        )
+        # Writing a crate again changes only its line, header and order kept.
+        mutants_diff.write_checked("cpk", self.COMMITS["fpk"], self.checked)
+        self.assertEqual(
+            self.checked.read_text(encoding="utf-8"),
+            written.replace(self.COMMITS["cpk"], self.COMMITS["fpk"]),
+        )
+        # A missing file reads as no crate checked.
+        self.assertEqual(
+            mutants_diff.read_checked(self.root / "none.toml"), {}
+        )
+
+    def checked_mode(self, args, resolves=True, ancestor=True):
+        """`mutants_diff.main` on `--checked args` with git stubbed: `rev-parse`
+        answers the full `sha` (or fails), `merge-base` the ancestor question.
+        Returns its code, the subprocess argument lists, the output and `sha`."""
+        calls = []
+        sha = "e" * 40
+
+        def run(argv, **kwargs):
+            calls.append(argv)
+            if argv[1:3] == ["rev-parse", "--verify"]:
+                return subprocess.CompletedProcess(
+                    argv, 0 if resolves else 1,
+                    stdout=f"{sha}\n" if resolves else "", stderr="",
+                )
+            if argv[1:3] == ["merge-base", "--is-ancestor"]:
+                return subprocess.CompletedProcess(argv, 0 if ancestor else 1)
+            if argv[1] == "diff":
+                return subprocess.CompletedProcess(argv, 1, stdout=b"", stderr=b"err")
+            return self.fail(f"unexpected subprocess {argv}")
+
+        out = io.StringIO()
+        with (
+            mock.patch.object(subprocess, "run", run),
+            mock.patch.object(mutants, "working_tree", lambda: self.TREE),
+            contextlib.redirect_stdout(out),
+        ):
+            code = mutants_diff.main(["mutants_diff.py", "--checked", *args])
+        return code, calls, out.getvalue(), sha
+
+    def test_checked_refuses_a_commit_that_is_no_ancestor_and_an_unknown_crate(self):
+        self.checked.write_text(
+            self.HEADER + f'[checked]\ncpk = "{self.COMMITS["cpk"]}"\n',
+            encoding="utf-8",
+        )
+        kept = self.checked.read_bytes()
+        for args, kwargs, why in (
+            (("cpk", "deadbee"), {"ancestor": False}, "not an ancestor of HEAD"),
+            (("cpk", "deadbee"), {"resolves": False}, "does not resolve"),
+            (("nope", "deadbee"), {}, "no workspace crate named nope"),
+        ):
+            code, _, out, _ = self.checked_mode(args, **kwargs)
+            self.assertEqual(code, 1, args)
+            self.assertIn(why, out)
+            self.assertEqual(self.checked.read_bytes(), kept)
+
+    def test_checked_writes_the_full_sha_rev_parse_gave(self):
+        code, calls, out, sha = self.checked_mode(("cpk", "deadbee"))
+        self.assertEqual(code, 0)
+        self.assertIn(["git", "rev-parse", "--verify", "deadbee^{commit}"], calls)
+        # The recorded and printed sha is the resolved one, not the argument.
+        self.assertEqual(mutants_diff.read_checked(self.checked), {"cpk": sha})
+        self.assertIn(f"mutants_diff: cpk checked at {sha}", out)
+
+    def closure(self, args, diffs: dict, run_result: int = 0):
+        """`mutants_diff.main` on `--closure args` with each crate's `git diff`
+        answered from `diffs` (empty when absent), `working_tree` at TREE and
+        `run` stubbed to return `run_result`. Returns its code, the `git diff`
+        argument lists, `run`'s arguments when it ran, and the output."""
+        calls = []
+
+        def git(argv, **kwargs):
+            calls.append(argv)
+            if argv[1] == "diff":
+                crate = argv[-1].rsplit("/", 1)[-1]
+                return subprocess.CompletedProcess(argv, 0, stdout=diffs.get(crate, b""))
+            return self.fail(f"unexpected subprocess {argv}")
+
+        ran = {}
+        out = io.StringIO()
+        with (
+            mock.patch.object(subprocess, "run", git),
+            mock.patch.object(mutants, "working_tree", lambda: self.TREE),
+            mock.patch.object(mutants, "run_lock", contextlib.nullcontext),
+            mock.patch.object(
+                mutants, "snapshot_source",
+                lambda tree: contextlib.nullcontext(self.root),
+            ),
+            mock.patch.object(
+                mutants_diff, "run",
+                lambda *a: ran.__setitem__("args", a) or run_result,
+            ),
+            contextlib.redirect_stdout(out),
+        ):
+            code = mutants_diff.main(["mutants_diff.py", "--closure", *args])
+        return code, calls, ran.get("args"), out.getvalue()
+
+    def test_closure_diffs_each_recorded_crate_since_its_own_commit(self):
+        cpk_diff = b"diff --git a/crates/libs/cpk/src/lib.rs b/crates/libs/cpk/src/lib.rs\n"
+        # cpk has a record and changed since it, fpc has one and did not, fpk
+        # has none: the run's diff is cpk's alone and fpk is named unrecorded,
+        # its mutants counted untested (the 1 joining the run's 0).
+        for name in ("cpk", "fpc"):
+            mutants_diff.write_checked(name, self.COMMITS[name], self.checked)
+        code, calls, ran, out = self.closure(["cpk", "fpc", "fpk"], {"cpk": cpk_diff})
+        self.assertEqual(code, 1)
+        self.assertEqual(
+            calls,
+            [
+                ["git", "diff", self.COMMITS["cpk"], self.TREE, "--", "crates/libs/cpk"],
+                ["git", "diff", self.COMMITS["fpc"], self.TREE, "--", "crates/libs/fpc"],
+            ],
+        )
+        self.assertIsNotNone(ran)
+        self.assertEqual(ran[3], cpk_diff)
+        line = next(l for l in out.splitlines() if "no triaged whole run" in l)
+        self.assertIn("fpk", line)
+        self.assertNotIn("cpk", line)
+        self.assertNotIn("fpc", line)
+        # With every crate recorded the run's own code passes through.
+        mutants_diff.write_checked("fpk", self.COMMITS["fpk"], self.checked)
+        code, _, _, _ = self.closure(["cpk", "fpc", "fpk"], {"cpk": cpk_diff}, run_result=2)
+        self.assertEqual(code, 2)
+
+    def test_closure_with_nothing_changed_and_a_crate_unrecorded_runs_nothing(self):
+        mutants_diff.write_checked("cpk", self.COMMITS["cpk"], self.checked)
+        code, calls, ran, out = self.closure(["cpk", "fpk"], {})
+        self.assertEqual(code, 1)
+        self.assertIsNone(ran)
+        self.assertIn("no triaged whole run on record for fpk", out)
+        self.assertEqual(calls, [["git", "diff", self.COMMITS["cpk"], self.TREE, "--", "crates/libs/cpk"]])
+        # No crate named: every workspace crate, the unrecorded ones listed.
+        code, calls, ran, out = self.closure([], {})
+        self.assertEqual(code, 1)
+        self.assertEqual(len(calls), 1)
+        self.assertIn("no triaged whole run on record for fpc, fpk", out)
 
 
 class Fetch(unittest.TestCase):

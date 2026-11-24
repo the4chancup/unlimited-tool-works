@@ -1,0 +1,5 @@
+# For each crate, the commit its last triaged whole-crate mutation run was launched from.
+# `just mutants-checked <crate> <commit>` records it once the run's survivors are triaged;
+# `just mutants-closure` runs every mutant kind over what each crate changed since.
+
+[checked]
