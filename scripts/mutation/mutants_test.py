@@ -1082,7 +1082,9 @@ class LocalSource(unittest.TestCase):
         ):
             source = Path(tmp)
             self.assertEqual(mutants.list_mutants("fpc", source / "mutants.toml", source), [])
-            self.assertEqual(mutants_diff.run(str(source / "in.diff"), HEAD_TREE, source), 0)
+            self.assertEqual(
+                mutants_diff.run(str(source / "in.diff"), HEAD_TREE, source, b""), 0
+            )
             self.assertEqual(
                 extra_mutants.crate_dir("fpc", source),
                 (source / "crates" / "libs" / "fpc").resolve(),
@@ -2769,7 +2771,10 @@ class DiffRun(unittest.TestCase):
             patcher.start()
             self.addCleanup(patcher.stop)
 
-    def run_diff(self, run_crate, listing: bytes | None = None) -> tuple[int, str]:
+    def run_diff(
+        self, run_crate, listing: bytes | None = None, diff: bytes = b"",
+        extra=None,
+    ) -> tuple[int, str]:
         listing = self.LISTING if listing is None else listing
         real_run = subprocess.run
 
@@ -2782,9 +2787,17 @@ class DiffRun(unittest.TestCase):
         with (
             mock.patch.object(subprocess, "run", run),
             mock.patch.object(mutants_diff, "run_crate", run_crate),
+            mock.patch.object(
+                extra_mutants, "OUT_DIR", self.root / "extra_mutants.out"
+            ),
+            mock.patch.object(
+                extra_mutants, "run_crate",
+                extra if extra is not None
+                else lambda *a, **k: ([], Counter(), 0.0),
+            ),
             contextlib.redirect_stdout(out),
         ):
-            code = mutants_diff.run("in.diff", HEAD_TREE, self.root)
+            code = mutants_diff.run("in.diff", HEAD_TREE, self.root, diff)
         return code, out.getvalue()
 
     def keep(self, folder: Path, text: str) -> None:
@@ -2853,6 +2866,84 @@ class DiffRun(unittest.TestCase):
             (self.root / "mutants.diff.old" / "missed_all.txt").read_text(encoding="utf-8"),
             "kept\n",
         )
+
+    def test_every_crate_the_diff_touches_gets_an_extra_pass_on_its_lines(self):
+        """The extra kinds run on this machine after each crate's
+        cargo-mutants run — `fpc` gets its pass though the listing named no
+        mutant of its own — each crate's pass over the diff's changed lines,
+        its results in `mutants.diff/<crate>/extra/` and its survivors after
+        the crate's cargo-mutants ones in `missed_all.txt`. An untested
+        extra mutant fails the run with 1, a missed one with 2."""
+        diff = (
+            b"diff --git a/crates/libs/cpk/src/lib.rs b/crates/libs/cpk/src/lib.rs\n"
+            b"--- a/crates/libs/cpk/src/lib.rs\n"
+            b"+++ b/crates/libs/cpk/src/lib.rs\n"
+            b"@@ -1,1 +1,2 @@\n"
+            b" context\n"
+            b"+added\n"
+            b"diff --git a/crates/libs/fpc/src/lib.rs b/crates/libs/fpc/src/lib.rs\n"
+            b"--- a/crates/libs/fpc/src/lib.rs\n"
+            b"+++ b/crates/libs/fpc/src/lib.rs\n"
+            b"@@ -1,1 +1,2 @@\n"
+            b" context\n"
+            b"+added\n"
+        )
+        changed = {
+            "crates/libs/cpk/src/lib.rs": {2}, "crates/libs/fpc/src/lib.rs": {2}
+        }
+        # The listing names a mutant of cpk's alone: fpc's extra pass runs
+        # all the same.
+        listing = json.dumps(
+            [{"file": "crates/libs/cpk/src/lib.rs", "name": "a"}]
+        ).encode()
+        extra_calls = {}
+
+        def cargo_run(diff_path, tree, source, crate, count):
+            out = self.root / "mutants.out"
+            out.mkdir()
+            (out / "missed.txt").write_text(
+                "crates/libs/cpk/src/lib.rs:1:5: replace len -> usize with 1\n",
+                encoding="utf-8",
+            )
+            return 2
+
+        def extra_run(crate, kinds, tree, lines=None):
+            extra_calls[crate] = (kinds, lines)
+            extra_mutants.OUT_DIR.mkdir()
+            (extra_mutants.OUT_DIR / "missed.txt").write_text("x\n", encoding="utf-8")
+            return [f"{crate}: [call] a survivor"], Counter(missed=1), 1.0
+
+        code, _ = self.run_diff(
+            cargo_run, listing=listing, diff=diff, extra=extra_run
+        )
+        self.assertEqual(code, 2)
+        self.assertEqual(set(extra_calls), {"cpk", "fpc"})
+        for crate in ("cpk", "fpc"):
+            self.assertEqual(
+                extra_calls[crate], (list(mutants.EXTRA_KINDS), changed),
+                f"{crate}'s pass ran the EXTRA_KINDS on the diff's changed lines",
+            )
+        self.assertEqual(
+            (self.results / "missed_all.txt").read_text(encoding="utf-8").splitlines(),
+            [
+                "crates/libs/cpk/src/lib.rs:1:5: replace len -> usize with 1",
+                "cpk: [call] a survivor",
+                "fpc: [call] a survivor",
+            ],
+        )
+        for crate in ("cpk", "fpc"):
+            self.assertTrue(
+                (self.results / crate / "extra" / "missed.txt").exists(),
+                f"{crate}'s extra_mutants.out moved to mutants.diff/{crate}/extra/",
+            )
+
+        def untested_run(*_a, **_k):
+            return ["cpk: [untested] [call] m"], Counter(untested=1), 0.0
+
+        code, _ = self.run_diff(
+            cargo_run, listing=listing, diff=diff, extra=untested_run
+        )
+        self.assertEqual(code, 1)
 
 
 class DiffBusy(unittest.TestCase):
@@ -3613,13 +3704,14 @@ class ExtraRun(unittest.TestCase):
         assert len(changed) == 1, changed
         return changed[0]
 
-    def run_crate(self, results, only=None, selection=None):
+    def run_crate(self, results, only=None, selection=None, lines=None):
         """`results`: per row of `self.rows`, the mutant's (build result, test
         result) pair — the test result None when the build decides it — or an
         exception for `build` to raise; the test result may be a callable
         taking `(crate, cwd, timeout)`. `selection` is a path the run reads as
         its selection file; `self.filters` records each mutant's expression
-        (None: the full suite) and `self.last_out` the run's output."""
+        (None: the full suite) and `self.last_out` the run's output. `lines`
+        is a diff's changed lines per file, as `diff_lines` maps them."""
         self.timeouts = []
         self.build_cwds = []
         self.built = []
@@ -3652,7 +3744,8 @@ class ExtraRun(unittest.TestCase):
             contextlib.redirect_stdout(out),
         ):
             result = extra_mutants.run_crate(
-                "cpk", ["bool"], HEAD_TREE, only=only, selection=selection
+                "cpk", ["bool"], HEAD_TREE, only=only, selection=selection,
+                lines=lines,
             )
         self.last_out = out.getvalue()
         return result
@@ -3707,6 +3800,54 @@ class ExtraRun(unittest.TestCase):
             ],
         )
         self.assertEqual(counts, {"missed": 1})
+
+    def test_lines_keeps_only_the_mutants_the_diff_changed(self):
+        """`lines` (a diff's changed lines per file, `diff_lines`' map) keeps
+        a mutant when the lines its byte range spans meet them — the mutant
+        on line 1 runs not, the ones on line 3 and spanning lines 5 and 6 do
+        (the changed lines 3 and 6 each intersect one's range)."""
+        self.SOURCE = b"true \n" * 15
+        self.rows = [
+            ["src/lib.rs", "0", "4", "bool", "1", "false",
+             "flip 1 | removed: true"],
+            ["src/lib.rs", "12", "16", "bool", "3", "false",
+             "flip 3 | removed: true"],
+            ["src/lib.rs", "24", "34", "bool", "5", "false",
+             "flip 5 | removed: true true"],
+        ]
+        listed, counts, _ = self.run_crate(
+            [((0, ""), (0, "test result: ok"))] * 3,
+            lines={"crates/libs/cpk/src/lib.rs": {3, 6}},
+        )
+        self.assertCountEqual(self.built, [1, 2])
+        self.assertEqual(
+            listed,
+            [
+                "crates/libs/cpk/src/lib.rs:3: [bool] flip 3 | removed: true",
+                "crates/libs/cpk/src/lib.rs:5: [bool] flip 5 | removed: true true",
+                "crates/libs/cpk/src/read.rs: [bool] stale exclusion: "
+                "flip 11 | removed: true",
+            ],
+        )
+        self.assertEqual(counts, {"missed": 2})
+
+    def test_lines_meeting_no_mutant_runs_no_baseline_and_writes_nothing(self):
+        """A crate none of whose mutants sit on the diff's lines prints its
+        0-mutants line and ends there: no baseline, no outcomes, no missed
+        files."""
+        with mock.patch.object(
+            extra_mutants, "baseline_seconds",
+            mock.Mock(side_effect=AssertionError("the baseline ran")),
+        ):
+            listed, counts, _ = self.run_crate(
+                [], lines={"crates/libs/cpk/src/lib.rs": {99}}
+            )
+        self.assertEqual((listed, counts), ([], Counter()))
+        self.assertEqual(self.built, [])
+        self.assertIn("0 mutants", self.last_out)
+        self.assertFalse(
+            self.out_dir.exists(), "a crate with no kept mutant writes no files"
+        )
 
     def test_a_run_stopped_midway_keeps_the_outcomes_it_decided(self):
         tsv = self.out_dir / "outcomes_bool.tsv"
@@ -4086,6 +4227,72 @@ class DiffSurvivors(unittest.TestCase):
             self.assertEqual(mutants_diff.missed_lines(out), ["local only"])
             (out / "missed_all.txt").write_text("local\nremote\n", encoding="utf-8")
             self.assertEqual(mutants_diff.missed_lines(out), ["local", "remote"])
+
+    def test_diff_lines_counts_each_hunks_plus_lines_on_the_new_side(self):
+        # Two hunks in one file: an added line, a changed line whose `-` and
+        # `+` sit together (the `-` advances no new-side count), and context
+        # lines before, between and after, which do.
+        diff = (
+            b"diff --git a/crates/libs/cpk/src/lib.rs b/crates/libs/cpk/src/lib.rs\n"
+            b"index 1111111..2222222 100644\n"
+            b"--- a/crates/libs/cpk/src/lib.rs\n"
+            b"+++ b/crates/libs/cpk/src/lib.rs\n"
+            b"@@ -1,5 +1,6 @@\n"
+            b" fn a() {\n"
+            b"+    new_call();\n"
+            b"     b();\n"
+            b"-    old();\n"
+            b"+    replacement();\n"
+            b"     c();\n"
+            b" }\n"
+            b"@@ -10,3 +11,4 @@\n"
+            b" ctx1\n"
+            b"+    added2();\n"
+            b" ctx2\n"
+            b" ctx3\n"
+            b"\\ No newline at end of file\n"
+        )
+        self.assertEqual(
+            extra_mutants.diff_lines(diff),
+            {"crates/libs/cpk/src/lib.rs": {2, 4, 12}},
+        )
+
+    def test_diff_lines_a_new_file_a_second_file_and_a_deleted_one(self):
+        # A new file (`--- /dev/null`) gives every one of its lines, a second
+        # file in the same diff gets a set of its own, and a deleted file
+        # (`+++ /dev/null`) is absent.
+        diff = (
+            b"diff --git a/crates/libs/fpc/src/new.rs b/crates/libs/fpc/src/new.rs\n"
+            b"new file mode 100644\nindex 0000000..1111111\n"
+            b"--- /dev/null\n"
+            b"+++ b/crates/libs/fpc/src/new.rs\n"
+            b"@@ -0,0 +1,3 @@\n"
+            b"+one\n"
+            b"+two\n"
+            b"+three\n"
+            b"diff --git a/crates/libs/fpc/src/lib.rs b/crates/libs/fpc/src/lib.rs\n"
+            b"index 2222222..3333333 100644\n"
+            b"--- a/crates/libs/fpc/src/lib.rs\n"
+            b"+++ b/crates/libs/fpc/src/lib.rs\n"
+            b"@@ -5,2 +5,2 @@\n"
+            b"-before\n"
+            b"+after\n"
+            b" ctx\n"
+            b"diff --git a/crates/libs/fpc/src/old.rs b/crates/libs/fpc/src/old.rs\n"
+            b"deleted file mode 100644\nindex 4444444..0000000\n"
+            b"--- a/crates/libs/fpc/src/old.rs\n"
+            b"+++ /dev/null\n"
+            b"@@ -1,2 +0,0 @@\n"
+            b"-gone1\n"
+            b"-gone2\n"
+        )
+        self.assertEqual(
+            extra_mutants.diff_lines(diff),
+            {
+                "crates/libs/fpc/src/new.rs": {1, 2, 3},
+                "crates/libs/fpc/src/lib.rs": {5},
+            },
+        )
 
 
 if __name__ == "__main__":

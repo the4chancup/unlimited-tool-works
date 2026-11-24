@@ -356,6 +356,47 @@ def byte_lines(data: bytes, start: int, end: int) -> tuple[int, int]:
     )
 
 
+def diff_lines(diff: bytes) -> dict[str, set[int]]:
+    """Each changed file's new-side path (its `+++ b/<path>` line; a deleted
+    file's `/dev/null` names none) mapped to the 1-based new-side numbers of
+    its `+` lines, counted through each `@@ -a,b +c,d @@` hunk: a context line
+    advances the count, a `-` line does not, and the marker for a missing
+    newline at end of file is skipped. The hunk's own counts bound its body,
+    so an added line that looks like a header is still a `+` line."""
+    changed: dict[str, set[int]] = {}
+    path: str | None = None
+    new_line = 0
+    old_left = new_left = 0
+    # `replace`: a non-UTF-8 file's diffed lines garble but keep their line
+    # numbers, the only thing this map holds.
+    for raw in diff.decode("utf-8", errors="replace").splitlines():
+        if old_left or new_left:
+            if raw.startswith("+"):
+                if path is not None:
+                    changed[path].add(new_line)
+                new_line += 1
+                new_left -= 1
+            elif raw.startswith("-"):
+                old_left -= 1
+            elif not raw.startswith("\\"):
+                new_line += 1
+                old_left -= 1
+                new_left -= 1
+            continue
+        if raw.startswith("+++ "):
+            marker = raw[4:]
+            path = marker.removeprefix("b/") if marker != "/dev/null" else None
+            if path is not None:
+                changed.setdefault(path, set())
+        elif raw.startswith("@@ "):
+            match = re.match(r"@@ -\d+(?:,(\d+))? \+(\d+)(?:,(\d+))? @@", raw)
+            assert match is not None, raw
+            old_left = int(match.group(1) or 1)
+            new_line = int(match.group(2))
+            new_left = int(match.group(3) or 1)
+    return changed
+
+
 def apply_patch(path: Path, start: int, end: int, replacement: str, removed: str) -> None:
     """Replace `data[start:end]` with `replacement`, checking the range holds the text
     the lister described (so a drifted file cannot silently patch somewhere else)."""
@@ -415,6 +456,7 @@ def missed_line(crate_rel: Path, row: list[str], decided: str = "missed") -> str
 def run_crate(
     crate: str, kinds: list[str], tree: str | None = None,
     only: set[str] | None = None, selection: Path | None = None,
+    lines: dict[str, set[int]] | None = None,
 ) -> tuple[list[str], Counter, float]:
     """Run every `kinds` mutant the lister finds in `crate`, `mutants.JOBS` of
     them at once as cargo-mutants' jobs run: git `tree` (the working tree when
@@ -426,7 +468,12 @@ def run_crate(
     printed as it is decided — the main thread does both — while the missed
     files keep the listing's order whatever order the mutants finish in. With
     `only`, only the mutants whose missed line it
-    holds run (exclusions still apply first). `selection` is the coverage
+    holds run (exclusions still apply first). With `lines` (`diff_lines`' map
+    of a diff's changed lines per file, as `mutants-diff` passes) a mutant
+    runs only when its own lines — `byte_lines` of its byte range in the
+    file it sits in — meet the set for its workspace-relative path; a crate
+    none of whose mutants the diff touches prints its 0-mutants line, runs no
+    baseline, writes no files and returns empty. `selection` is the coverage
     map's file (`coverage_map.py --extra` writes the extra kinds' entries too):
     each mutant's test phase runs the filter of the entries covering its
     lines, and every gap — a missing file (one line printed), a line no entry
@@ -487,12 +534,29 @@ def run_crate(
             for row, drop in zip(rows, excluded)
         ]
         rows = [row for row, drop in zip(rows, excluded) if not drop]
+        if lines is not None:
+            kept = []
+            for row in rows:
+                changed = lines.get((crate_rel / row[0]).as_posix())
+                if not changed:
+                    continue
+                data = (copies[0] / crate_rel / row[0]).read_bytes()
+                first, last = byte_lines(data, int(row[1]), int(row[2]))
+                if not changed.isdisjoint(range(first, last + 1)):
+                    kept.append(row)
+            rows = kept
         if only is not None:
             rows = [row for row in rows if missed_line(crate_rel, row) in only]
         # Reported before the baseline's minutes: a stale entry means the code
         # changed under a ruling, worth knowing before the run spends its time.
         for line in stale:
             print(line, flush=True)
+        if lines is not None and not rows:
+            print(
+                f"extra_mutants: {len(rows)} mutants, {sum(excluded)} excluded",
+                flush=True,
+            )
+            return [], Counter(), time.monotonic() - wall_start
         check_timeout_config(config)
         baseline = baseline_seconds(crate, copies[0])
         timeout = timeout_seconds(config, baseline)

@@ -574,7 +574,11 @@ Requirements:
   other statement that is a method call alone, made for its effect (a repaint asked, a
   message sent, a shape painted); `bool`
   flips a `true`/`false` argument or struct field, the flags that land in a written file and
-  that cargo-mutants never touches. An equivalent extra mutant goes into
+  that cargo-mutants never touches. A diff run runs them too, on this machine, over the lines
+  the diff changed: after each crate's cargo-mutants run, and for every crate a changed file
+  belongs to, even one with no cargo-mutants mutant. Their results land in
+  `mutants.diff/<crate>/extra/`, their survivors in the same `mutants.diff/missed_all.txt`.
+  An equivalent extra mutant goes into
   `.cargo/extra_mutants.toml` with its reason, matched by path, kind and whole description (no
   line number: a description names its function and its site, the field, or the call and its
   receiver). So does a survivor that only an OS or a device no test run drives can see (a

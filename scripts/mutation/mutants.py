@@ -87,10 +87,11 @@ REMOTE_REF = "refs/mutants/remote"
 REMOTE_ONLY = False
 # The extra_mutants kinds `just mutants <crate>` runs before the cargo-mutants
 # run starts, so a whole-crate run stays one command and its missed_all.txt the
-# one list to triage. A kind is listed when about half its survivors are real
-# gaps, since each equivalent survivor costs a ruling every phase. `bool` joined
-# once `.cargo/extra_mutants.toml` gave its ruled equivalents a home.
-# `mutants-diff` does not run them: they run when a phase closes, only.
+# one list to triage; `mutants-diff` runs them too, on this machine over the
+# lines its diff changed, after each crate's cargo-mutants run. A kind is
+# listed when about half its survivors are real gaps, since each equivalent
+# survivor costs a ruling every phase. `bool` joined once
+# `.cargo/extra_mutants.toml` gave its ruled equivalents a home.
 EXTRA_KINDS = ("bool", "call", "literal", "normalize", "order")
 # missed.txt lines whose only catching tests are #[cfg(windows)]: they survive on
 # the Linux remote half, so summarize() reruns them on this machine when it is
@@ -2440,8 +2441,9 @@ def split(
         extra_run_record().unlink(missing_ok=True)
         split_run_record().unlink(missing_ok=True)
     else:
-        # A diff run has no extra pass: drop the last whole-crate run's record so
-        # the summary never reads its contents as this run's, and with no local
+        # A diff run's job has no extra pass (the diff's pass is `mutants_diff`'s
+        # own, here): drop the last whole-crate run's record so the summary
+        # never reads its contents as this run's, and with no local
         # half the last split's too.
         extra_run_record().unlink(missing_ok=True)
         if not local:
