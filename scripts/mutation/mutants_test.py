@@ -1189,7 +1189,7 @@ class PendingRemote(unittest.TestCase):
         ):
             # A whole run refuses for the VPS rule before the pending record matters.
             with self.assertRaisesRegex(mutants.Refused, "VPS"):
-                mutants.whole_run("fpc", None, HEAD_TREE)
+                mutants.whole_run("fpc", None, HEAD_TREE, "a" * 40)
             with self.assertRaisesRegex(mutants.Refused, "bonfire.*mutants-collect"):
                 mutants_diff.run_crate("in.diff", HEAD_TREE, self.root, "fpc", 3)
         # A standalone extra pass would replace the `missed_<crate>.txt` the collection merges.
@@ -1471,7 +1471,7 @@ class WholeRun(unittest.TestCase):
             ),
             contextlib.redirect_stdout(out),
         ):
-            code = mutants.whole_run("cpk", "bonfire", HEAD_TREE)
+            code = mutants.whole_run("cpk", "bonfire", HEAD_TREE, "a" * 40)
         return code, {"launch": launched, "finish": finished}, out.getvalue()
 
     def test_without_a_host_or_for_a_local_only_crate_a_whole_run_refuses(self):
@@ -1491,10 +1491,10 @@ class WholeRun(unittest.TestCase):
             contextlib.redirect_stdout(io.StringIO()),
         ):
             with self.assertRaisesRegex(mutants.Refused, "VPS.*STUDIO_MUTANTS_REMOTE"):
-                mutants.whole_run("cpk", None, HEAD_TREE)
+                mutants.whole_run("cpk", None, HEAD_TREE, "a" * 40)
             with mock.patch.object(mutants, "LOCAL_ONLY_CRATES", frozenset({"cpk"})):
                 with self.assertRaisesRegex(mutants.Refused, "cpk.*LOCAL_ONLY_CRATES"):
-                    mutants.whole_run("cpk", "bonfire", HEAD_TREE)
+                    mutants.whole_run("cpk", "bonfire", HEAD_TREE, "a" * 40)
 
     def test_every_mutant_runs_remote_whatever_remote_only_says(self):
         for remote_only in (False, True):
@@ -1518,7 +1518,9 @@ class WholeRun(unittest.TestCase):
         self.assertTrue(
             out.startswith(
                 "running every mutant on bonfire "
-                f"(a whole-crate run, launched from {'f' * 40})"
+                # The commit the caller resolved with its snapshot, not the
+                # HEAD `git` answers after the run lock's wait.
+                f"(a whole-crate run, launched from {'a' * 40})"
             ),
             out,
         )
@@ -1551,7 +1553,7 @@ class WholeRun(unittest.TestCase):
             ),
             contextlib.redirect_stdout(io.StringIO()),
         ):
-            self.assertEqual(mutants.whole_run("cpk", "bonfire", HEAD_TREE), 0)
+            self.assertEqual(mutants.whole_run("cpk", "bonfire", HEAD_TREE, "a" * 40), 0)
         self.assertEqual(
             probe.calls,
             [("start", False), ("launch", False), ("wait", True), ("finish", False)],
@@ -3125,6 +3127,7 @@ class Closure(unittest.TestCase):
     HEADER = (
         "# Each crate's commit its last triaged whole-crate run was launched from;\n"
         "# `just mutants-checked` writes it, `just mutants-closure` diffs since it.\n"
+        "\n"
     )
 
     def setUp(self):
@@ -3227,7 +3230,7 @@ class Closure(unittest.TestCase):
         self.assertEqual(mutants_diff.read_checked(self.checked), {"cpk": sha})
         self.assertIn(f"mutants_diff: cpk checked at {sha}", out)
 
-    def closure(self, args, diffs: dict, run_result: int = 0):
+    def closure(self, args, diffs: dict, run_result: int = 0, failing=()):
         """`mutants_diff.main` on `--closure args` with each crate's `git diff`
         answered from `diffs` (empty when absent), `working_tree` at TREE and
         `run` stubbed to return `run_result`. Returns its code, the `git diff`
@@ -3238,6 +3241,10 @@ class Closure(unittest.TestCase):
             calls.append(argv)
             if argv[1] == "diff":
                 crate = argv[-1].rsplit("/", 1)[-1]
+                if crate in failing:
+                    return subprocess.CompletedProcess(
+                        argv, 128, stdout=b"", stderr=b"fatal: bad object"
+                    )
                 return subprocess.CompletedProcess(argv, 0, stdout=diffs.get(crate, b""))
             return self.fail(f"unexpected subprocess {argv}")
 
@@ -3286,6 +3293,37 @@ class Closure(unittest.TestCase):
         mutants_diff.write_checked("fpk", self.COMMITS["fpk"], self.checked)
         code, _, _, _ = self.closure(["cpk", "fpc", "fpk"], {"cpk": cpk_diff}, run_result=2)
         self.assertEqual(code, 2)
+
+    def test_closure_refuses_an_unknown_crate_and_a_failed_diff(self):
+        code, calls, ran, out = self.closure(["nope"], {})
+        self.assertEqual((code, calls, ran), (1, [], None))
+        self.assertIn("no workspace crate named nope", out)
+        # A diff git could not take is a failure, never an empty diff.
+        mutants_diff.write_checked("cpk", self.COMMITS["cpk"], self.checked)
+        code, _, ran, out = self.closure(["cpk"], {"cpk": b"x"}, failing={"cpk"})
+        self.assertEqual((code, ran), (1, None))
+        self.assertIn("fatal: bad object", out)
+
+    def test_checked_reads_the_rolling_runs_commit_and_refuses_another(self):
+        """`--checked <crate>` alone records the commit the crate's kept
+        rolling run was launched from; a typed commit must be that one."""
+        launched = self.root / "mutants.rolling" / "cpk" / "launched_from.txt"
+        with mock.patch.object(rolling, "ROLLING", self.root / "mutants.rolling"):
+            code, _, out, _ = self.checked_mode(("cpk",))
+            self.assertEqual(code, 1)
+            self.assertIn("no rolling run of cpk", out)
+            launched.parent.mkdir(parents=True)
+            launched.write_text("1" * 40 + "\n", encoding="utf-8")
+            # rev-parse answers "e" * 40: not the kept run's commit.
+            code, _, out, _ = self.checked_mode(("cpk", "HEAD"))
+            self.assertEqual(code, 1)
+            self.assertIn("launched from " + "1" * 40, out)
+            self.assertEqual(mutants_diff.read_checked(self.checked), {})
+            launched.write_text("e" * 40 + "\n", encoding="utf-8")
+            code, calls, out, sha = self.checked_mode(("cpk",))
+        self.assertEqual(code, 0)
+        self.assertIn(["git", "rev-parse", "--verify", sha + "^{commit}"], calls)
+        self.assertEqual(mutants_diff.read_checked(self.checked), {"cpk": sha})
 
     def test_closure_with_nothing_changed_and_a_crate_unrecorded_runs_nothing(self):
         mutants_diff.write_checked("cpk", self.COMMITS["cpk"], self.checked)
@@ -3365,7 +3403,7 @@ class Rolling(unittest.TestCase):
         with `produce`, and `working_tree` failing if it is reached."""
         calls = []
 
-        def whole_run(crate, host, tree):
+        def whole_run(crate, host, tree, commit):
             calls.append((crate, host, tree))
             if error is not None:
                 raise error
@@ -3458,7 +3496,7 @@ class Rolling(unittest.TestCase):
         crates run and the output."""
         calls = []
 
-        def whole_run(crate, host, tree):
+        def whole_run(crate, host, tree, commit):
             calls.append(crate)
             return run(crate)
 
@@ -3502,7 +3540,7 @@ class Rolling(unittest.TestCase):
     def test_a_refused_run_is_printed_and_picks_again(self):
         calls = []
 
-        def whole_run(crate, host, tree):
+        def whole_run(crate, host, tree, commit):
             calls.append(crate)
             if len(calls) == 1:
                 raise mutants.Refused("bonfire is busy (a half running)")

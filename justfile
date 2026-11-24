@@ -197,8 +197,8 @@ mutants-closure *crates:
 mutants-rolling *args:
     {{python}} scripts/mutation/rolling.py {{args}}
 
-# Record <commit> as the one <crate>'s last whole run was launched from, once its survivors are triaged (.cargo/mutants_checked.toml)
-mutants-checked crate commit:
+# Record the commit <crate>'s last whole run was launched from, once its survivors are triaged (.cargo/mutants_checked.toml): a rolling run's is read from its results, a run started by hand names it
+mutants-checked crate *commit:
     {{python}} scripts/mutation/mutants_diff.py --checked {{crate}} {{commit}}
 
 # The mutants cargo-mutants lacks (dropped `if` guards, literal-list elements) over one crate;

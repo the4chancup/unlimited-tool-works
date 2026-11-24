@@ -69,15 +69,15 @@ def read_checked(path: Path = CHECKED) -> dict[str, str]:
 
 
 def write_checked(crate: str, commit: str, path: Path = CHECKED) -> None:
-    """Move `crate`'s entry in `path` to `commit`, keeping the file's leading
-    `#` lines and listing the entries by crate name. Written to a sibling temp
+    """Move `crate`'s entry in `path` to `commit`, keeping the file's lines
+    before its table and listing the entries by crate name. Written to a sibling temp
     file and moved over `path`: a write stopped midway never leaves a partial
     file standing as the record."""
     entries = {**read_checked(path), crate: commit}
     header = []
     if path.exists():
         for line in path.read_text(encoding="utf-8").splitlines(keepends=True):
-            if not line.startswith("#"):
+            if line.startswith("["):
                 break
             header.append(line)
     fd, tmp = tempfile.mkstemp(dir=path.parent, prefix=path.name + ".")
@@ -124,15 +124,30 @@ def main(argv: list[str]) -> int:
 
 
 def mark_checked(args: list[str]) -> int:
-    """`--checked <crate> <commit>`: record `commit` as the one `crate`'s last
-    triaged whole run was launched from, moving its `--closure` diff past it."""
-    if len(args) != 2:
-        print("usage: mutants_diff.py --checked <crate> <commit>")
+    """`--checked <crate> [<commit>]`: record `commit` as the one `crate`'s
+    last triaged whole run was launched from, moving its `--closure` diff past
+    it. Without `commit`, the crate's kept rolling run's; with one, it must be
+    that run's when the crate has one."""
+    if len(args) not in (1, 2):
+        print("usage: mutants_diff.py --checked <crate> [<commit>]")
         return 1
-    crate, commit = args
+    crate = args[0]
     if crate not in extra_mutants.workspace_crates(ROOT):
         print(f"mutants_diff: no workspace crate named {crate}")
         return 1
+    import rolling  # deferred: rolling imports this module
+
+    # A rolling run's commit is read, never typed: `HEAD`, the natural thing to
+    # type at triage, would record lines the run never measured.
+    record = rolling.ROLLING / crate / "launched_from.txt"
+    launched = record.read_text(encoding="utf-8").strip() if record.exists() else None
+    if len(args) == 1 and launched is None:
+        print(
+            f"mutants_diff: no rolling run of {crate} on record ({record}): name "
+            "the commit its whole run's first line gives"
+        )
+        return 1
+    commit = args[1] if len(args) == 2 else launched
     resolved = subprocess.run(
         ["git", "rev-parse", "--verify", f"{commit}^{{commit}}"],
         cwd=ROOT,
@@ -143,6 +158,9 @@ def mark_checked(args: list[str]) -> int:
         print(f"mutants_diff: {commit} does not resolve to a commit")
         return 1
     sha = resolved.stdout.strip()
+    if launched is not None and sha != launched:
+        print(f"mutants_diff: {crate}'s kept rolling run was launched from {launched}, not {sha}")
+        return 1
     ancestor = subprocess.run(
         ["git", "merge-base", "--is-ancestor", sha, "HEAD"],
         cwd=ROOT,

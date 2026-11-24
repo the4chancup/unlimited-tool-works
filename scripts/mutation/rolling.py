@@ -11,8 +11,8 @@ the commit its last rolling run was launched from,
 and runs `mutants.whole_run` on that commit's tree alone, never the working
 tree's uncommitted changes. The run's results stay under `mutants.rolling/<crate>/`
 (`out/` the fetched `mutants.out`, `extra/` its extra-mutant pass, `exit.txt`
-its code) for the triage that ends with `just mutants-checked <crate> <its
-launched_from commit>`.
+its code) for the triage that ends with `just mutants-checked <crate>`, which
+reads the commit from `launched_from.txt`.
 
 The lead starts it detached and leaves it running:
 
@@ -97,7 +97,7 @@ def run_one(crate: str, host: str) -> int:
     commit = mutants.git(
         "rev-parse", "HEAD", check=True, capture_output=True, text=True
     ).stdout.strip()
-    code = mutants.whole_run(crate, host, f"{commit}^{{tree}}")
+    code = mutants.whole_run(crate, host, f"{commit}^{{tree}}", commit)
     folder = ROLLING / crate
     mutants.set_aside(folder)
     folder.mkdir(parents=True, exist_ok=True)

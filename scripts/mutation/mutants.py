@@ -2538,22 +2538,29 @@ def main(argv: list[str]) -> int:
             print(refusal)
             return 1
     crate = argv[1]
+    # Resolved before the snapshot, not after the run lock's wait: a commit
+    # landing meanwhile would be named but not measured. One landing between
+    # the two lines only makes the next closure cover its lines again.
+    commit = git(
+        "rev-parse", "HEAD", check=True, capture_output=True, text=True
+    ).stdout.strip()
     tree = working_tree()
     try:
-        return whole_run(crate, host, tree)
+        return whole_run(crate, host, tree, commit)
     except Refused as refusal:
         print(refusal)
         return 1
 
 
-def whole_run(crate: str, host: str | None, tree: str) -> int:
+def whole_run(crate: str, host: str | None, tree: str, commit: str) -> int:
     """`just mutants <crate>` on the snapshot `tree`: every mutant on the
     remote, the coverage map and the extra kinds before cargo-mutants in the
     same service — a whole-crate run
     measures for days, and a local half would block this machine and die with
     it. The file split stays in `split` for when a whole run needs this machine
     again. The launch takes the run lock; the wait and `collect`'s take none,
-    so a diff run goes ahead meanwhile."""
+    so a diff run goes ahead meanwhile. `commit` is the one `tree` was taken
+    from, which the first line names for the triage's `mutants-checked`."""
     if host is None:
         raise Refused(
             'whole-crate runs go to the VPS alone (RUNBOOK "Mutation runs and '
@@ -2566,14 +2573,8 @@ def whole_run(crate: str, host: str | None, tree: str) -> int:
         )
     started = time.monotonic()
     with run_lock(), snapshot_source(tree) as source:
-        # The run's launch commit, named for the triage that moves the crate's
-        # `.cargo/mutants_checked.toml` entry to it. HEAD, not `tree`: the tree
-        # holds uncommitted changes, and the next closure covers them again.
-        head = git(
-            "rev-parse", "HEAD", check=True, capture_output=True, text=True
-        ).stdout.strip()
         print(
-            f"running every mutant on {host} (a whole-crate run, launched from {head})",
+            f"running every mutant on {host} (a whole-crate run, launched from {commit})",
             flush=True,
         )
         remote_head, remote_tree, nproc = remote_start(host, tree)

@@ -267,7 +267,9 @@ and cargo-mutants files the mutant as unviable (once 273 of 274 in 23 s).
 
 `.cargo/mutants_checked.toml` holds, for each crate, the commit its last triaged
 whole-crate run was launched from, which the run's first line names. Once the run's
-survivors are triaged, `just mutants-checked <crate> <commit>` records it there.
+survivors are triaged, `just mutants-checked <crate>` records it there: a rolling
+run's commit (below) is read from its results, and a run started by hand names it after the
+crate.
 `just mutants-closure [crate ...]` runs `mutants-diff` over what each crate (the named
 ones, or every workspace crate) changed since its recorded commit. A crate with no record
 is listed and makes the run exit 1, as untested mutants do, until a whole run of it is
@@ -281,8 +283,8 @@ working tree's edits). The lead starts it detached (`python
 ~/.claude/tools/run_detached.py <log> just mutants-rolling`) and leaves it
 running. A crate's results land in `mutants.rolling/<crate>/` (`out/` its
 fetched `mutants.out`, `extra/` its extra pass, `launched_from.txt` the commit
-it ran from), and triaging them ends with `just mutants-checked <crate> <its
-launched_from commit>`, which moves the closure's diff past it. When the VPS is
+it ran from), and triaging them ends with `just mutants-checked <crate>`, which
+moves the closure's diff past that commit. When the VPS is
 needed for the checkpoint's Linux gates before a push, `.tmp/rolling.hold` is
 the way to free it without stopping the job: create the file and the job
 finishes its crate and waits; delete it and it goes on. A run the VPS refuses
