@@ -2938,12 +2938,13 @@ class Fetch(unittest.TestCase):
         self.calls = []
 
     def ssh_stub(
-        self, code: int, members: dict[str, str] | None, extra_present: bool = False
+        self, code: int, members: dict[str, str] | None, extra_present: bool = False,
+        console: bytes = b"the remote log",
     ):
         """An ssh fake whose tar call writes `members` as a tar archive to the
         stdout it is given and exits `code`, whose `[ -d extra_mutants.out ]`
-        probe answers `extra_present`, and whose other calls answer a log or
-        two blank lines."""
+        probe answers `extra_present`, and whose other calls answer the job log
+        `console` or two blank lines."""
         archive = io.BytesIO()
         with tarfile.open(fileobj=archive, mode="w") as tar:
             for name, text in (members or {}).items():
@@ -2965,7 +2966,7 @@ class Fetch(unittest.TestCase):
                 )
             text = kwargs.get("text")
             return subprocess.CompletedProcess(
-                [host, remote], 0, stdout="\n\n" if text else b"the remote log"
+                [host, remote], 0, stdout="\n\n" if text else console
             )
 
         return ssh
@@ -2984,13 +2985,15 @@ class Fetch(unittest.TestCase):
 
     def finish(
         self, code: int, members: dict[str, str] | None = None, pass_code: int = 0,
-        partial: bool = False,
+        partial: bool = False, console: bytes = b"the remote log",
     ) -> int:
         """`finish_extra_run` through the same stub; `code` is the tar call's
-        exit, `pass_code` the remote pass's own."""
+        exit, `pass_code` the remote pass's own, `console` the job log."""
         out, err = io.StringIO(), io.StringIO()
         with (
-            mock.patch.object(mutants, "ssh", self.ssh_stub(code, members)),
+            mock.patch.object(
+                mutants, "ssh", self.ssh_stub(code, members, console=console)
+            ),
             contextlib.redirect_stdout(out),
             contextlib.redirect_stderr(err),
         ):
@@ -3120,6 +3123,20 @@ class Fetch(unittest.TestCase):
         {"crate": "cpk", "seconds": 2.0, "counts": {"caught": 3, "missed": 1}}
     )
 
+    def test_the_finish_says_whether_the_pass_selected_its_tests(self):
+        """The backfill's runs are extras-only: a coverage map that failed there
+        leaves every mutant on the full suite, and the finish says so as a whole
+        run's summary does."""
+        members = {"extra_mutants.out/run.json": self.EXTRA_RECORD + "\n"}
+        for console, line in (
+            (b"coverage map exit 0\n", "test selection: on"),
+            (b"coverage map exit 1\n", "test selection: off (the coverage map failed, exit 1"),
+        ):
+            with self.subTest(console=console):
+                pend(local_half=False, extra=True, extra_only=True)
+                self.finish(0, members, console=console)
+                self.assertIn(line, self.printed)
+
     def test_the_finish_fetches_the_pass_counts_and_survivors(self):
         """`finish_extra_run`, an extras-only run's finish: the remote tree's
         `extra_mutants.out` into `extra_mutants.out/remote/` on this machine,
@@ -3143,6 +3160,8 @@ class Fetch(unittest.TestCase):
         self.assertIn("missed 1", self.printed)
         self.assertIn(str(record.parent / "missed_cpk.txt"), self.printed)
         self.assertEqual((extra / "remote_console.txt").read_bytes(), b"the remote log")
+        # A log with no map line, as a run that built none: no selection line.
+        self.assertNotIn("test selection", self.printed)
         (tar_call,) = [call for call in self.calls if "tar -cf" in call]
         self.assertIn("[ -d extra_mutants.out ]", tar_call)
         # Every `mutants.out` the command names is the extra pass's, never the
@@ -3857,6 +3876,10 @@ class ExtraRun(unittest.TestCase):
              "false", f"flip {i + 1} | removed: true"]
             for i in range(3)
         ]
+        # Bytes 24 to 34 hold lines 5 and 6, and only line 6 is covered: a lookup by
+        # the first line alone, or by the lister's line column, misses the filter.
+        self.rows.append(["src/lib.rs", "24", "34", "bool", "5", "false",
+                          "flip both | removed: true true"])
         selection_file = self.tmp / "selection.json"
         selection_file.write_text(
             json.dumps({"mutants": [
@@ -3864,18 +3887,21 @@ class ExtraRun(unittest.TestCase):
                  "filter": "test(=covers_one)"},
                 {"file": "crates/libs/cpk/src/lib.rs", "start": 3, "end": 3,
                  "filter": None},
+                {"file": "crates/libs/cpk/src/lib.rs", "start": 6, "end": 6,
+                 "filter": "test(=covers_six)"},
             ]}),
             encoding="utf-8",
         )
         self.run_crate(
-            [((0, ""), (0, "test result: ok. 12 passed; 0 failed"))] * 3,
+            [((0, ""), (0, "test result: ok. 12 passed; 0 failed"))] * 4,
             selection=selection_file,
         )
         self.assertEqual(
-            self.filters, {0: "test(=covers_one)", 1: None, 2: None}
+            self.filters,
+            {0: "test(=covers_one)", 1: None, 2: None, 3: "test(=covers_six)"},
         )
         self.assertIn(
-            "1 mutants ran selected tests, 2 the full suite", self.last_out
+            "2 mutants ran selected tests, 2 the full suite", self.last_out
         )
 
     def test_a_missing_selection_file_runs_every_mutant_on_the_full_suite(self):

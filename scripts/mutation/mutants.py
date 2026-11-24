@@ -1581,6 +1581,21 @@ def recheck_remote_extra(missed: list[str]) -> tuple[set[str], int]:
     return caught, untested
 
 
+def print_selection(log_path: Path) -> None:
+    """The summary's "test selection" line, from the coverage map's exit code in
+    the job log at `log_path`; nothing for a run that built no map."""
+    map_exit = coverage_map_exit(log_path)
+    if map_exit is None:
+        return
+    if map_exit == "0":
+        print("test selection: on")
+    else:
+        print(
+            "test selection: off (the coverage map failed, exit "
+            f"{map_exit}; every mutant ran the full suite)"
+        )
+
+
 def coverage_map_exit(log_path: Path) -> str | None:
     """The coverage map's exit code as a whole run's job log records it, or
     None when the log has no such line (a diff run's, or no log): the run's
@@ -1664,15 +1679,7 @@ def summarize(
     if extra_run == remote_extra_record():
         extra_caught, extra_untested = recheck_remote_extra(extra_missed.splitlines())
 
-    map_exit = coverage_map_exit(log_path)
-    if map_exit is not None:
-        if map_exit == "0":
-            print("test selection: on")
-        else:
-            print(
-                "test selection: off (the coverage map failed, exit "
-                f"{map_exit}; every mutant ran the full suite)"
-            )
+    print_selection(log_path)
 
     print(f"{'':8}{'caught':>7}{'missed':>7}{'timeout':>8}{'unviable':>9}{'seconds':>9}")
     totals = dict.fromkeys(names, 0)
@@ -2378,6 +2385,7 @@ def finish_extra_run(host: str, code: int, *, partial: bool = False) -> int:
         f"extra pass ({crate}, {record['seconds']:.0f} s): "
         + (", ".join(f"{name} {counts[name]}" for name in sorted(counts)) or "none")
     )
+    print_selection(ROOT / "extra_mutants.out" / "remote" / "remote_console.txt")
     print(f"survivors: {survivors}")
     return 0 if code == 0 and not untested else 1
 
@@ -2477,7 +2485,7 @@ def main(argv: list[str]) -> int:
         return collect(host)
     if argv[1] == "--remote-extra":
         # The remote job runs this inside the unit: a whole run's job before
-        # cargo-mutants, an extras-only run's alone (`launch_remote`), the
+        # cargo-mutants, an extras-only run's after its map (`launch_remote`), the
         # kinds after the crate (EXTRA_KINDS when none) and `--selection`
         # naming the coverage map the job built first, each mutant's test
         # phase running the tests covering its lines. The pass runs in a
