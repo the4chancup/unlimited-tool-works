@@ -20222,3 +20222,8 @@ instead (a pure function taking the clock value, a draw target the tests replace
 Rejected: keeping them in, because they would be re-triaged at every run with the same answer.
 Plan: no plan covers the mutation tooling; `docs/CONTRIBUTING.md` "Mutation runs" and the
 file's header say it.
+
+## 2026-11-24 — mutation runs — the `call` backfill pauses for test selection before its three largest crates (maintainer)
+Decision: the backfill stops after `export_upgrader`; `studio_core`, `team_compiler` and `save_editor` run once the extra kinds' runs use nextest and the coverage map's selection (the worklog's TESTSEL `extras` step).
+Why: the extra kinds run their own loop of plain `cargo test -p` per mutant, which neither mutfast's nextest nor the stand-in for cargo reaches, and under `cargo test` the tests took 94-96% of a mutant's time. The three crates left are the largest, so the speedup would land where most of the backfill's time is. Not continuing now, because the VPS would stay busy for hours on the slow path while the owed `just pipeline` and the TESTSEL comparison run wait for it.
+Plan: no plan covers the mutation tooling; the worklog's TESTSEL and CALL items hold the steps.

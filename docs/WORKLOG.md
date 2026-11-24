@@ -651,7 +651,10 @@ and no phase closes with one outstanding.
     2026-11-23 once the checkpoint left the VPS (a first local start was stopped in its third
     crate, `pipeline`, after two with no survivors, `pes_strings` and `vtree`): 13 crates
     run, then `studio` stopped it, its baseline failing the drafts' help test on Linux (fixed
-    in `efed4913`, the test Windows only); running again from `studio`;
+    in `efed4913`, the test Windows only); running again from `studio`. Paused after
+    `export_upgrader` (2026-11-24, the maintainer's suggestion): the three crates left,
+    `studio_core`, `team_compiler` and `save_editor`, are the largest, and wait for TESTSEL's
+    `extras` step;
   - [~] **triage** [after backfill] each crate's survivors triaged, the missing tests in
     SWE-2 slices crate by crate. The 71 survivors of the 14 crates finished by 2026-11-24
     are ruled: 16 excluded (equivalent, or seen only by an OS or a GPU), two timeouts that
@@ -729,6 +732,10 @@ and no phase closes with one outstanding.
       once the backfill frees the VPS: one whole-crate run, its survivors run again on the
       full suite (a catch under selection is sound, so only they can differ) and its time
       per mutant set against the cost table's last.
+    - [ ] **extras** [after wire] the extra kinds' runs (`scripts/mutation/extra_mutants.py`,
+      their own loop of `cargo test -p` per mutant) take nextest, which stops at a mutant's
+      first failing test, and the coverage map's tests for the mutant's line, as the
+      whole-crate runs do; then the `call` backfill resumes on its three largest crates.
 
 ---
 
