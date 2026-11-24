@@ -83,7 +83,7 @@ class TestFilter(unittest.TestCase):
             {"f.rs": b"a\nb\n"}, {"f.rs": b"a\nb\n"}, selection
         )
         self.assertIsNone(expression)
-        self.assertEqual(reason, "no file differs from the source (the baseline)")
+        self.assertEqual(reason, "no listed file differs from the source (the baseline)")
 
     def test_several_files_changed(self):
         selection = [
@@ -207,7 +207,7 @@ class CargoCommand(unittest.TestCase):
         command, line = self.run_test_phase(b"1\n2\n", args)
         self.assertEqual(command, [self.REAL, *args])
         self.assertEqual(
-            line, "select_tests: no file differs from the source (the baseline)"
+            line, "select_tests: no listed file differs from the source (the baseline)"
         )
 
 

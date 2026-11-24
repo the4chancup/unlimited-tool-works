@@ -7,6 +7,7 @@ import contextlib
 import io
 import json
 import os
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -156,14 +157,14 @@ class Main(unittest.TestCase):
         listed = [{"file": "src/lib.rs", "span": {"start": {"line": 1}, "end": {"line": 1}}}]
         (root / "mutants.json").write_text(json.dumps(listed), encoding="utf-8")
 
-        def one(index, test, env, profiles, root, src):
+        def one(index, test, env, profiles, root, src, programs):
             lines = set() if notes[index] else {("src/lib.rs", 1)}
             return {"index": index, "code": 0, "lines": lines, "note": notes[index]}
 
         err = io.StringIO()
         with (
             mock.patch.object(coverage_map, "coverage_env", return_value={}),
-            mock.patch.object(coverage_map, "crate_src", return_value="src/"),
+            mock.patch.object(coverage_map, "package_layout", return_value=("src/", [])),
             mock.patch.object(coverage_map, "nextest_list", return_value=self.TESTS),
             mock.patch.object(coverage_map, "one_coverage", side_effect=one),
             contextlib.redirect_stdout(io.StringIO()),
@@ -183,9 +184,44 @@ class Main(unittest.TestCase):
         self.assertEqual(code, 0)
         written = json.loads(out.read_text(encoding="utf-8"))["mutants"]
         self.assertEqual(
-            written[0]["filter"],
-            "(binary_id(=c) & test(=tests::read)) | (binary_id(=c) & test(=tests::lost))",
+            written,
+            [{
+                "file": "src/lib.rs", "start": 1, "end": 1,
+                "filter": "(binary_id(=c) & test(=tests::read)) | (binary_id(=c) & test(=tests::lost))",
+            }],
         )
+
+
+class OneCoverage(unittest.TestCase):
+    TEST = {"binary_id": "c", "name": "tests::one", "binary": "b", "cwd": "."}
+
+    def note(self, profile_pids: list[int]) -> str | None:
+        """`one_coverage`'s note for test 3, whose process has id 100, when the
+        profiles left hold one for each of `profile_pids`. The tools fail with "x", so
+        a test past the profile check is noted `llvm-profdata: x`."""
+        temp = tempfile.TemporaryDirectory()
+        self.addCleanup(temp.cleanup)
+        profiles = Path(temp.name)
+
+        def run_test(test, profile, env):
+            for pid in profile_pids:
+                (profiles / f"3-{pid}-0.profraw").write_bytes(b"")
+            return 0, 100
+
+        failed = subprocess.CompletedProcess([], 1, "", "x")
+        with (
+            mock.patch.object(coverage_map, "run_test", side_effect=run_test),
+            mock.patch.object(coverage_map, "llvm_tool", return_value="tool"),
+            mock.patch.object(coverage_map.subprocess, "run", return_value=failed),
+        ):
+            entry = coverage_map.one_coverage(3, self.TEST, {}, profiles, profiles, "src/", [])
+        return entry["note"]
+
+    def test_a_child_s_profile_alone_does_not_stand_for_the_test_s(self):
+        self.assertEqual(self.note([200]), "the test's own process wrote no profile")
+
+    def test_the_test_s_own_profile_is_read(self):
+        self.assertEqual(self.note([100, 200]), "llvm-profdata: x")
 
 
 if __name__ == "__main__":

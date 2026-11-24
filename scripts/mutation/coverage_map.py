@@ -10,9 +10,11 @@ test does.
 The crate's test binaries are built instrumented (`cargo llvm-cov`'s environment, into
 `target/llvm-cov-target/` so the normal build is untouched), each listed test runs alone
 with its own LLVM profile file, and `llvm-profdata` + `llvm-cov export` turn the profiles
-into the covered lines of the crate's `src/`. A test whose coverage cannot be read (no
-profile written, a timeout, a tool failing) fails the whole map, and nothing is written:
-a mutant that test alone catches would otherwise get a filter without it, and survive.
+into the covered lines of the crate's `src/`. The crate's own programs are read with each
+test binary, so a test that starts one (a CLI test) is credited with the code it runs
+there. A test whose own process wrote no profile (a timeout, a crash) or whose profile
+cannot be read fails the whole map, and nothing is written: a mutant that test alone
+catches would otherwise get a filter without it, and survive.
 
 Needs on the machine: cargo-llvm-cov, cargo-nextest and rustup's `llvm-tools-preview`
 component, which carries llvm-profdata and llvm-cov.
@@ -128,11 +130,11 @@ def nextest_list(crate: str, root: Path, env: dict) -> list[dict]:
     return tests
 
 
-def crate_src(crate: str, root: Path) -> str:
+def package_layout(crate: str, root: Path) -> tuple[str, list[str]]:
     """The crate's `src/` folder relative to `root`, slash-separated with the
-    trailing slash, from the package's manifest in `cargo metadata` (not the
-    listed mutants' paths, which a crate with mutants in one subfolder would
-    narrow too far)."""
+    trailing slash, and the names of its programs (`bin` targets), from the
+    package's manifest in `cargo metadata` (not the listed mutants' paths, which a
+    crate with mutants in one subfolder would narrow too far)."""
     meta = subprocess.run(
         ["cargo", "metadata", "--format-version", "1", "--no-deps"],
         cwd=root, capture_output=True, text=True,
@@ -142,7 +144,8 @@ def crate_src(crate: str, root: Path) -> str:
     for package in json.loads(meta.stdout)["packages"]:
         if package["name"] == crate:
             folder = Path(package["manifest_path"]).resolve().parent
-            return folder.relative_to(root).as_posix() + "/src/"
+            bins = [t["name"] for t in package["targets"] if "bin" in t["kind"]]
+            return folder.relative_to(root).as_posix() + "/src/", bins
     raise SystemExit(f"coverage_map: no package named {crate} in this workspace")
 
 
@@ -166,49 +169,53 @@ def covered_lines(lcov: str, root: Path, src: str) -> set[tuple[str, int]]:
     return covered
 
 
-def run_test(test: dict, profile: Path, env: dict) -> int | None:
-    """The test's binary with `--exact <name>` in its suite's cwd at below-normal
-    priority, its coverage profile going to `profile` (LLVM's %p/%16m pattern).
-    The exit code; None when TEST_TIMEOUT_SECONDS killed the process tree."""
-    kwargs = mutants.below_normal()
-    if os.name != "nt":
-        # A session of its own, so kill_tree's group kill hits the test's tree
-        # only, never this script's.
-        kwargs["start_new_session"] = True
+def run_test(test: dict, profile: Path, env: dict) -> tuple[int | None, int]:
+    """The test's binary with `--exact <name>` in its suite's cwd, its coverage
+    profile going to `profile` (LLVM's %p/%16m pattern). The exit code (None when
+    TEST_TIMEOUT_SECONDS killed the process tree) and the test process's id."""
+    if os.name == "nt":
+        kwargs = mutants.below_normal()
+    else:
+        # No `below_normal()` here: its `preexec_fn` can deadlock a child forked from
+        # a worker thread, and the remote job already runs under `nice`, which the
+        # tests inherit. A session of their own, so kill_tree's group kill hits the
+        # test's tree only, never this script's.
+        kwargs = {"start_new_session": True}
     proc = subprocess.Popen(
         [test["binary"], "--exact", test["name"]],
         cwd=test["cwd"],
         env={**env, "LLVM_PROFILE_FILE": str(profile)},
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        text=True,
-        encoding="utf-8",
-        errors="replace",
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
         **kwargs,
     )
     try:
-        proc.communicate(timeout=TEST_TIMEOUT_SECONDS)
+        proc.wait(timeout=TEST_TIMEOUT_SECONDS)
     except subprocess.TimeoutExpired:
         extra_mutants.kill_tree(proc)
-        return None
-    return proc.returncode
+        return None, proc.pid
+    return proc.returncode, proc.pid
 
 
 def one_coverage(
-    index: int, test: dict, env: dict, profiles: Path, root: Path, src: str
+    index: int, test: dict, env: dict, profiles: Path, root: Path, src: str,
+    programs: list[str],
 ) -> dict:
     """One test's covered (file, line) pairs, run alone with its own profile
-    files (deleted once read). A failing or timed-out test still gives the
-    coverage it wrote; a tooling failure lands in `note` instead."""
+    files (deleted once read), read against its binary and `programs` (the
+    crate's own programs it may start). A failing test still gives its coverage;
+    a test whose own process wrote no profile, or a tool failing, lands in `note`."""
     profraw = profiles / f"{index}-%p-%16m.profraw"
     profdata = profiles / f"{index}.profdata"
     lines: set[tuple[str, int]] = set()
     note = None
     try:
-        code = run_test(test, profraw, env)
+        code, pid = run_test(test, profraw, env)
         raws = sorted(profiles.glob(f"{index}-*.profraw"))
-        if not raws:
-            note = "no profraw"
+        # A child's profile does not stand for the test's own: a test killed or
+        # crashed after its child exited would leave only the child's.
+        if not any(raw.name.startswith(f"{index}-{pid}-") for raw in raws):
+            note = "the test's own process wrote no profile"
         else:
             merged = subprocess.run(
                 [
@@ -224,6 +231,7 @@ def one_coverage(
                     [
                         llvm_tool("llvm-cov"), "export", "-format=lcov",
                         "-instr-profile", str(profdata), test["binary"],
+                        *(arg for program in programs for arg in ("-object", program)),
                     ],
                     capture_output=True, text=True,
                     encoding="utf-8", errors="replace",
@@ -276,10 +284,18 @@ def main(argv: list[str]) -> int:
     except OSError as error:
         raise SystemExit(f"coverage_map: cannot read {mutants_path} ({error})")
     env = coverage_env(root)
-    src = crate_src(crate, root)
+    src, bins = package_layout(crate, root)
     tests = nextest_list(crate, root, env)
+    built = root / "target" / "llvm-cov-target" / "debug"
+    suffix = ".exe" if os.name == "nt" else ""
+    # Only the programs the build made: a crate's tests that start none build none.
+    programs = [str(built / (name + suffix)) for name in bins]
+    programs = [program for program in programs if Path(program).exists()]
     profiles = root / "target" / "llvm-cov-target" / "test-profiles"
     profiles.mkdir(parents=True, exist_ok=True)
+    # Profiles an interrupted earlier run left would merge into this run's.
+    for stale in profiles.iterdir():
+        stale.unlink()
     started = time.monotonic()
     print(f"coverage_map: {len(tests)} tests for {crate}", flush=True)
     coverage: dict[tuple[str, int], set[int]] = {}
@@ -287,7 +303,7 @@ def main(argv: list[str]) -> int:
     unread: list[str] = []
     with concurrent.futures.ThreadPoolExecutor(max_workers=JOBS) as pool:
         futures = [
-            pool.submit(one_coverage, index, test, env, profiles, root, src)
+            pool.submit(one_coverage, index, test, env, profiles, root, src, programs)
             for index, test in enumerate(tests)
         ]
         done = 0

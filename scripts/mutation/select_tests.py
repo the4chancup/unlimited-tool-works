@@ -71,14 +71,14 @@ def test_filter(selection: list[dict], source: Path, copy: Path) -> tuple[str | 
     files = list(dict.fromkeys(entry["file"] for entry in selection))
     changed = [file for file in files if _read(source / file) != _read(copy / file)]
     if not changed:
-        return None, "no file differs from the source (the baseline)"
+        return None, "no listed file differs from the source (the baseline)"
     if len(changed) > 1:
         return None, "several files differ from the source: " + ", ".join(changed)
     file = changed[0]
-    start, end = changed_lines(_read(source / file) or b"", _read(copy / file) or b"") or (
-        1,
-        1,
-    )
+    lines = changed_lines(_read(source / file) or b"", _read(copy / file) or b"")
+    if lines is None:
+        return None, f"no line of {file} differs from the source"
+    start, end = lines
     where = f"{file}:{start}-{end}"
     mutants = [
         entry
@@ -132,7 +132,7 @@ def main(argv: list[str]) -> int:
     if os.name == "posix":
         # exec replaces this process, so a timeout's kill reaches cargo with no
         # process between; Windows only ever starts the script from its tests.
-        os.execv(command[0], command)
+        os.execvp(command[0], command)
     return subprocess.run(command).returncode
 
 
