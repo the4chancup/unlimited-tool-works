@@ -494,6 +494,11 @@ fn a_suggestion_swatch_draws_no_stroke_at_rest() {
         nodes = drawn;
     }
     let swatch = entry(&nodes, "#FF0000");
+    assert_eq!(
+        swatch.role(),
+        Role::ColorWell,
+        "a swatch's node is a colour well"
+    );
     let (outline, fill) = swatch_shapes(&window.shapes, egui_rect(swatch));
     assert_eq!(
         outline.stroke,
@@ -660,9 +665,11 @@ fn hex_text_committed_with_enter_is_one_change() {
     events.extend(key(egui::Key::Enter));
     let (_, out) = window.field(&mut color, &[], events);
     assert!(out.changed, "the Enter commit is one change");
+    assert!(out.response.changed(), "the response reports the commit");
     assert_eq!(color, [255, 128, 0], "the committed color");
     let (_, out) = window.field(&mut color, &[], Vec::new());
     assert!(!out.changed, "changed fires on the commit frame only");
+    assert!(!out.response.changed(), "the response reports it no longer");
 }
 
 // The `#` is optional, and the field commits on focus loss.
@@ -2152,6 +2159,25 @@ fn open_popup_with_recents(recents: u8) -> (Vec<accesskit::Node>, f32) {
     (nodes, popup.width())
 }
 
+/// Opens the popup of a field over `color` with `suggestions` and waits out its
+/// fade; returns the window, whose shapes are then settled, and the nodes of
+/// the popup's first drawn frame.
+fn open_settled_popup(
+    color: &mut [u8; 3],
+    suggestions: &[[u8; 3]],
+) -> (Headless, Vec<accesskit::Node>) {
+    let mut window = Headless::new();
+    let (nodes, _) = window.field(color, suggestions, Vec::new());
+    window.click_at(centre(field_button(&nodes, 0)), color, suggestions);
+    let (nodes, _) = window.field(color, suggestions, Vec::new());
+    // The Area fades in over about a third of a second: some twenty frames at
+    // the harness's dt.
+    for _ in 0..25 {
+        window.field(color, suggestions, Vec::new());
+    }
+    (window, nodes)
+}
+
 /// `node`'s drawn width.
 fn width(node: &accesskit::Node) -> f32 {
     egui_rect(node).width()
@@ -2249,22 +2275,13 @@ fn recents_keep_the_eight_newest_without_duplicates() {
 // rows.
 #[test]
 fn the_painted_shapes_match_the_working_color() {
-    let mut window = Headless::new();
     let mut color = [255, 128, 0];
     let suggestions = [[200, 16, 46]];
-    let (nodes, _) = window.field(&mut color, &suggestions, Vec::new());
-    window.click_at(centre(field_button(&nodes, 0)), &mut color, &suggestions);
-    let (nodes, _) = window.field(&mut color, &suggestions, Vec::new());
+    let (window, nodes) = open_settled_popup(&mut color, &suggestions);
 
     let square_rect = egui_rect(entry(&nodes, "saturation and value"));
     let strip_rect = egui_rect(entry(&nodes, "hue"));
     let swatch_rect = egui_rect(entry(&nodes, "#C8102E"));
-
-    // egui's Areas fade in over about a third of a second; the paint assertions
-    // need the fade done, which takes some twenty frames at the harness's dt.
-    for _ in 0..25 {
-        window.field(&mut color, &suggestions, Vec::new());
-    }
 
     // The square runs white to the hue color left to right, and darkens top to
     // bottom (the draft's canvas).
@@ -2330,6 +2347,13 @@ fn the_painted_shapes_match_the_working_color() {
         marker.rect.center().x,
         hue_x
     );
+    // Its edge is the 1px dark stroke on the same bounds.
+    let palette = theme::palette(&window.ctx.style_of(window.ctx.theme()).visuals);
+    assert_eq!(
+        outline_strokes(&window.shapes, marker.rect),
+        [Stroke::new(1.0, palette.picker_marker_edge)],
+        "the marker's dark edge"
+    );
 
     // A swatch's fill is its color.
     let fill = window
@@ -2352,20 +2376,79 @@ fn the_painted_shapes_match_the_working_color() {
     );
 }
 
+// The square's ring marks the working color's point (the draft's marker): a dark
+// edge stroke under a light one, both radius 4, centred on the (s, v) point.
+#[test]
+fn the_squares_marker_ring_marks_the_working_colors_point() {
+    let mut color = [255, 128, 0];
+    let (window, nodes) = open_settled_popup(&mut color, &[]);
+    let square_rect = egui_rect(entry(&nodes, "saturation and value"));
+    let palette = theme::palette(&window.ctx.style_of(window.ctx.theme()).visuals);
+    let working = hsva_of(color);
+    let center = egui::pos2(
+        lerp(square_rect.left()..=square_rect.right(), working.s),
+        lerp(square_rect.bottom()..=square_rect.top(), working.v),
+    );
+    let ring_with = |stroke: Stroke| {
+        window.shapes.iter().any(|clipped| {
+            matches!(&clipped.shape, egui::Shape::Circle(shape)
+                if (shape.center - center).length() < 0.5
+                    && (shape.radius - 4.0).abs() < 0.5
+                    && shape.fill == Color32::TRANSPARENT
+                    && shape.stroke == stroke)
+        })
+    };
+    assert!(
+        ring_with(Stroke::new(3.0, palette.picker_marker_edge)),
+        "the ring's dark edge"
+    );
+    assert!(
+        ring_with(Stroke::new(1.0, palette.picker_marker)),
+        "the ring's light centre"
+    );
+}
+
+// Each of the strip's six sectors is a quad of two triangles: a point in either
+// half of any sector lies inside a painted triangle.
+#[test]
+fn the_hue_strip_paints_every_sector_with_two_triangles() {
+    let mut color = [255, 128, 0];
+    let (window, nodes) = open_settled_popup(&mut color, &[]);
+    let strip_rect = egui_rect(entry(&nodes, "hue"));
+    let strip = mesh_at(&window.shapes, strip_rect, 0.5, |mesh| {
+        mesh.vertices
+            .iter()
+            .any(|vertex| vertex.color == Color32::RED)
+    });
+    assert_eq!(strip.indices.len(), 36, "six sectors of two triangles");
+    // The quad splits on the diagonal from the sector's bottom-left to its
+    // top-right: the points a third of the way into each half.
+    for sector in 0..6 {
+        let x0 = lerp(strip_rect.left()..=strip_rect.right(), sector as f32 / 6.0);
+        let x1 = lerp(
+            strip_rect.left()..=strip_rect.right(),
+            (sector + 1) as f32 / 6.0,
+        );
+        let (top, bottom) = (strip_rect.top(), strip_rect.bottom());
+        for point in [
+            egui::pos2((2.0 * x0 + x1) / 3.0, (2.0 * top + bottom) / 3.0),
+            egui::pos2((x0 + 2.0 * x1) / 3.0, (top + 2.0 * bottom) / 3.0),
+        ] {
+            assert!(
+                triangle_holding(strip, point).is_some(),
+                "sector {sector}'s half at {point:?} is painted"
+            );
+        }
+    }
+}
+
 // The gradients show the color a click there picks, HSV being taken over sRGB values.
 #[test]
 fn a_click_inside_the_gradients_picks_the_shown_color() {
-    let mut window = Headless::new();
     let mut color = [255, 128, 0];
-    let (nodes, _) = window.field(&mut color, &[], Vec::new());
-    window.click_at(centre(field_button(&nodes, 0)), &mut color, &[]);
-    let (nodes, _) = window.field(&mut color, &[], Vec::new());
+    let (mut window, nodes) = open_settled_popup(&mut color, &[]);
     let strip_rect = egui_rect(entry(&nodes, "hue"));
     let square_rect = egui_rect(entry(&nodes, "saturation and value"));
-    // The Area fade-in is over before the paints are read.
-    for _ in 0..25 {
-        window.field(&mut color, &[], Vec::new());
-    }
 
     // A click at hue 1/12, halfway between red's and yellow's columns, commits the
     // color the strip shows there.
