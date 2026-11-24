@@ -760,9 +760,14 @@ and no phase closes with one outstanding.
           untested, as the extra kinds do. On `cpk`'s `call` pass: the same outcomes, 119 s
           against 154 s. Its memory on the VPS, two builds at once without the cap, is
           measured by `wire`'s `ruleset_editor` run;
-      - [ ] **review** [after parity] one paid cross-family round (Carbon) over `backend` and
+      - [~] **review** [after parity] one paid cross-family round (Carbon) over `backend` and
         `parity` together, beyond the SWE-2 loop a script gets: this code decides every
-        mutant's outcome (the maintainer, 2026-11-24);
+        mutant's outcome (the maintainer, 2026-11-24). Done on `4effe761`: 13 concerns, 10
+        accepted (a lost console still caught on a Windows recheck, a build failing outside
+        compilation unviable in one runner and untested in the other, a fork hazard in the
+        thread pool, excluded files and the build-job budget the extra kinds ignored), their
+        fixes and tests with SWE-2 (`sk/parity_c`); one SWE-2 round over those fixes closes
+        the review;
       - [ ] **select** [after wire, backend] both runners through the same test-selecting
         stand-in for cargo (`scripts/mutation/select_tests.py`).
 
