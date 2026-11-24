@@ -771,7 +771,10 @@ only the crate's own: a change to `fmdl`'s reader that every game `body.skl` tri
 outside `just gates`: fixtures once added to both crates left the smoke test's fixture counts
 stale, and only CI's `bindings` job saw it. A brief whose tests cite a scenario ID lists
 `just acceptance` too, which takes seconds: a citation the scanner refused (one above a
-`#[cfg]` line, not the `#[test]`) once cost a second `gates-changed` run. A brief that adds
+`#[cfg]` line, not the `#[test]`) once cost a second `gates-changed` run. A brief that
+changes `studio_core` or a lib crate lists `just wasm-check` too: a native-only dependency
+used outside its `cfg` (`serde_json` in the help's draft export) passed every per-commit gate
+and failed CI's wasm check after a push. A brief that adds
 tests says to insert them with the editor tool inside the file's existing `#[cfg(test)]`
 module, never to append them with shell redirection, which lands them after the module's closing brace. The lead
 reads the whole diff before it lands, not the report about it; the report is a claim, the diff is

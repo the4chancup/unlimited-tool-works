@@ -6,7 +6,7 @@
 use std::io::Write;
 use std::path::Path;
 
-use crate::help::{CatalogRow, HelpSection, MESSAGES_SLUG, WHATS_NEW_ID, chapters};
+use crate::help::{CatalogRow, HelpSection, MESSAGES_SLUG, chapters};
 use crate::tool::{CliError, StudioTool};
 
 /// The chapter as one Markdown document: `# <title>`, then each topic as `## <title>` and its
@@ -141,12 +141,13 @@ pub fn run_help(
 /// changed topic or catalog row rewrites it rather than letting a hand-made copy drift. The
 /// What's new chapter keeps its place but not its topic: its body is the changelog, which
 /// changes with nearly every commit a member notices, and the drafts show a sample
-/// changelog in its place.
+/// changelog in its place. Native only: `serde_json` is not built for wasm32.
+#[cfg(not(target_arch = "wasm32"))]
 pub fn draft_script(tools: &[Box<dyn StudioTool>]) -> String {
     let chapters: Vec<serde_json::Value> = chapters(tools.iter().map(Box::as_ref))
         .into_iter()
         .map(|(id, section)| {
-            let topics = if id == WHATS_NEW_ID {
+            let topics = if id == crate::help::WHATS_NEW_ID {
                 &[][..]
             } else {
                 &section.topics[..]
