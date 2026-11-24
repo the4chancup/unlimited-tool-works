@@ -116,6 +116,12 @@ test-changed base="HEAD":
 gpu-tests:
     cargo test -p dds_convert --lib -- --ignored gpu::
 
+# The compiled test runner to the user-level cargo bin folder, which `test_runner.cmd` then
+# prefers over the Python runner (installed per user, not into the repo, so cargo-mutants'
+# copy of the tree finds it too)
+install-test-runner:
+    cargo install --path crates/dev/test_runner --locked --bin utw-test-runner
+
 # Gate 4: studio_core and every lib crate check for wasm32 (list derived from the workspace)
 wasm-check:
     {{python}} scripts/gates/wasm_check.py
