@@ -679,9 +679,9 @@ and no phase closes with one outstanding.
   checked by a test in `studio` (SWE-2, merge `7d8d2c15`); the drafts draw their help window
   and log lines from it (`3041aec7`). A changed topic or catalog row now fails that test
   until `just draft-help` runs.
-- [ ] **TIER** [after CALL] A mutation tier between `mutants-diff` and whole-crate runs (DECISIONS 2026-11-23 "a tier
-  between `mutants-diff` and whole-crate runs"), built after the `call` backfill's
-  measurements and before 1.0.0's first phase close, in slices:
+- [ ] **TIER** [after TESTSEL] A mutation tier between `mutants-diff` and whole-crate runs (DECISIONS 2026-11-23 "a tier
+  between `mutants-diff` and whole-crate runs"), built while the `call` backfill runs
+  (DECISIONS 2026-11-24 "TIER is built while the `call` backfill runs"), in slices:
   - [ ] **diff** the extra kinds take a diff (`extra_mutants.py` keeps a mutant only on a changed
     line), and `mutants-diff` runs them, so the review loops test `call` mutants too;
   - [ ] **closure** [after diff] a tracked record of each crate's last triaged whole-run commit, and the closure run:

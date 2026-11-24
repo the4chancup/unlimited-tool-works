@@ -20232,3 +20232,14 @@ Plan: no plan covers the mutation tooling; the worklog's TESTSEL and CALL items 
 Decision: `mutants.test_command` builds the command that tests a mutant from `.cargo/mutants.toml` (its test tool and arguments), and both cargo-mutants' runs and the extra kinds' loop use it; next, both go through the same test-selecting stand-in for cargo.
 Why: one backend, not a check that two copies agree, because the copies already parted once: mutfast moved cargo-mutants to nextest with one line of its config, which the extra kinds never read, so they kept running the whole suite per mutant for five days, the `call` backfill included. Not one runner for both, because cargo-mutants cannot run mutants it did not make, and replacing its loop with ours was rejected earlier (the TESTSEL stand-in's entry).
 Plan: no plan covers the mutation tooling; the worklog's TESTSEL `extras` step holds the slices.
+
+## 2026-11-24 — mutation runs — TIER is built while the `call` backfill runs (maintainer)
+Decision: the diff tier (worklog TIER: the extra kinds over a diff, the closure run, the
+rolling whole-crate job) is built while the `call` backfill runs on the VPS, no longer after
+it has measured each crate.
+Why: the backfill's three largest crates hold the VPS for days, and the maintainer wants
+every planned improvement to the mutation runs in place before the work pauses for Claude's
+weekly limit, so the runs made during the pause use it. None of the three slices needs the
+backfill's figures to be written; they only size the tier's costs, which CALL's `figures`
+step still records.
+Plan: no plan edit needed: it is how the work is verified. The worklog's TIER item says it.
