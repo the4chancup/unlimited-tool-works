@@ -716,8 +716,8 @@ and no phase closes with one outstanding.
       `teams_list`); a test whose coverage cannot be read fails the map. Their SWE-2 review
       round (5 accepted, the loop ends) is fixed in `b02123d4`;
     - [~] **wire** [after cover] the remote job builds the map, then runs cargo-mutants with
-      the stand-in; merged `dfad127c` with the remote's needs, RUNBOOK and CONTRIBUTING, its
-      SWE-2 review round running. Left, once the backfill frees the VPS: install
+      the stand-in; merged `dfad127c` with the remote's needs, RUNBOOK and CONTRIBUTING; its
+      SWE-2 review round accepted none (the loop ends). Left, once the backfill frees the VPS: install
       `cargo-llvm-cov` and `llvm-tools-preview` there, then one whole-crate run compared
       with that crate's last.
 
