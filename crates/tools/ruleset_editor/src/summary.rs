@@ -942,6 +942,59 @@ mod tests {
         assert_eq!(cond_text(&ruleset, &condition), "giants");
     }
 
+    /// A `name_colors` entry reads `named in color <code>`.
+    #[test]
+    fn a_condition_names_its_name_colors() {
+        let ruleset =
+            Ruleset::from_data_block(include_str!("../../../libs/aatf/rulesets/autumn26.rhai"))
+                .expect("the embedded ruleset loads");
+        let condition = Condition {
+            name_colors: vec!["cc9900ff".to_string()],
+            ..Condition::default()
+        };
+        assert_eq!(cond_text(&ruleset, &condition), "named in color cc9900ff");
+    }
+
+    /// A `fielded_only_at` condition reads `fielded only at <position>`.
+    #[test]
+    fn a_fielded_only_condition_names_the_position() {
+        let ruleset =
+            Ruleset::from_data_block(include_str!("../../../libs/aatf/rulesets/autumn26.rhai"))
+                .expect("the embedded ruleset loads");
+        let condition = Condition {
+            fielded_only_at: Some(aatf::Position::try_from("SS".to_string()).expect("a position")),
+            ..Condition::default()
+        };
+        assert_eq!(cond_text(&ruleset, &condition), "fielded only at SS");
+    }
+
+    /// A `strong_foot` condition reads `<foot>-footed`.
+    #[test]
+    fn a_condition_names_its_strong_foot() {
+        let ruleset =
+            Ruleset::from_data_block(include_str!("../../../libs/aatf/rulesets/autumn26.rhai"))
+                .expect("the embedded ruleset loads");
+        let condition = Condition {
+            strong_foot: Some(aatf::Foot::Left),
+            ..Condition::default()
+        };
+        assert_eq!(cond_text(&ruleset, &condition), "left-footed");
+    }
+
+    /// An `injury_resistance` effect reads `<bonus> injury resistance`,
+    /// the sign included.
+    #[test]
+    fn an_injury_resistance_effect_reads_with_its_sign() {
+        let ruleset =
+            Ruleset::from_data_block(include_str!("../../../libs/aatf/rulesets/autumn26.rhai"))
+                .expect("the embedded ruleset loads");
+        let effects = Effects {
+            injury_resistance: Some(PerTier::All(2)),
+            ..Effects::default()
+        };
+        assert_eq!(effects_text(&ruleset, &effects), "+2 injury resistance");
+    }
+
     /// A per-tier number reads with its sign: `+` above zero, none at zero
     /// or below (the minus is the number's own).
     #[test]
