@@ -3839,6 +3839,8 @@ class ExtraRun(unittest.TestCase):
                 for at, row in enumerate(self.rows)
                 if data[int(row[1]):int(row[1]) + len(row[5])] == row[5].encode()
             }
+            # Neither returns, which restores its copy, before both have read.
+            barrier.wait(timeout=120)
             self.assertEqual(patched, {1 - index})
             return 0, "test result: ok. 12 passed; 0 failed"
 
