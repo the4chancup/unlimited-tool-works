@@ -665,8 +665,9 @@ and no phase closes with one outstanding.
     are catches, the rest missing tests or dead code in eight SWE-2 slices, all merged by
     `68e678a5` (two more survivors ruled equivalent in review: one excluded, one statement
     removed); the crates still running get the same triage;
-  - [ ] **teamrows** `teams_list`'s older reconcile tests pair 750 with `/zz/` and 701 with
-    `/co/`; the real rows are 750 `/sp/`, 714 `/co/` and 701 `/3/` (the test-data rule);
+  - [x] **teamrows** 2026-11-24, no change: `teams_list`'s reconcile tests keep their
+    synthetic rows (750 `/zz/`, 701 `/co/`), which the test-data rule allows in a format's
+    own tests;
   - [ ] **figures** [after backfill] CONTRIBUTING's time for the extra kinds given each
     crate's measured run;
   - [ ] **winextra** [after RX] an extra-kind survivor in code only Windows compiles
