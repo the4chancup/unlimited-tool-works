@@ -265,6 +265,14 @@ never with the Bash tool's background mode: its two-hour cap kills the run, and 
 kills the console the run's children need, after which every build fails with `0xC0000142`
 and cargo-mutants files the mutant as unviable (once 273 of 274 in 23 s).
 
+`.cargo/mutants_checked.toml` holds, for each crate, the commit its last triaged
+whole-crate run was launched from, which the run's first line names. Once the run's
+survivors are triaged, `just mutants-checked <crate> <commit>` records it there.
+`just mutants-closure [crate ...]` runs `mutants-diff` over what each crate (the named
+ones, or every workspace crate) changed since its recorded commit. A crate with no record
+is listed and makes the run exit 1, as untested mutants do, until a whole run of it is
+triaged.
+
 **When the maintainer's PC is suspect, the heavy runs go to the VPS.** Four
 `MEMORY_MANAGEMENT` bugchecks there (the last during a run, all four in `rustc.exe` at one
 kernel site) once moved them until third-party drivers were removed; the switch stays for the

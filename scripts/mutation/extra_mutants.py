@@ -82,8 +82,9 @@ def test_outcome(code: int | None, out: str) -> str:
     return "untested"
 
 
-def crate_dir(name: str, root: Path) -> Path:
-    """The named workspace crate's directory in the tree at `root`, from `cargo metadata`."""
+def workspace_crates(root: Path) -> dict[str, Path]:
+    """Each workspace crate's name to its folder in the tree at `root`, from
+    `cargo metadata`."""
     out = subprocess.run(
         ["cargo", "metadata", "--format-version", "1", "--no-deps"],
         cwd=root,
@@ -92,10 +93,18 @@ def crate_dir(name: str, root: Path) -> Path:
         text=True,
         encoding="utf-8",
     ).stdout
-    for package in json.loads(out)["packages"]:
-        if package["name"] == name:
-            return Path(package["manifest_path"]).resolve().parent
-    raise SystemExit(f"extra_mutants: no workspace crate named {name}")
+    return {
+        package["name"]: Path(package["manifest_path"]).resolve().parent
+        for package in json.loads(out)["packages"]
+    }
+
+
+def crate_dir(name: str, root: Path) -> Path:
+    """The named workspace crate's directory in the tree at `root`, from `cargo metadata`."""
+    crates = workspace_crates(root)
+    if name not in crates:
+        raise SystemExit(f"extra_mutants: no workspace crate named {name}")
+    return crates[name]
 
 
 def list_mutants(directory: Path) -> list[list[str]]:

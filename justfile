@@ -189,6 +189,14 @@ mutants-collect:
 mutants-diff base="HEAD" *paths:
     {{python}} scripts/mutation/mutants_diff.py {{base}} {{paths}}
 
+# Mutation run over the lines each crate changed since its last triaged whole run — all crates, or the named ones (a phase's close)
+mutants-closure *crates:
+    {{python}} scripts/mutation/mutants_diff.py --closure {{crates}}
+
+# Record <commit> as the one <crate>'s last whole run was launched from, once its survivors are triaged (.cargo/mutants_checked.toml)
+mutants-checked crate commit:
+    {{python}} scripts/mutation/mutants_diff.py --checked {{crate}} {{commit}}
+
 # The mutants cargo-mutants lacks (dropped `if` guards, literal-list elements) over one crate;
 # `just mutants` runs the bool, call, literal, normalize and order kinds inside the whole-crate run, so this stays
 # for `--list`, single `--kind` runs and trials of the other kinds

@@ -2566,7 +2566,16 @@ def whole_run(crate: str, host: str | None, tree: str) -> int:
         )
     started = time.monotonic()
     with run_lock(), snapshot_source(tree) as source:
-        print(f"running every mutant on {host} (a whole-crate run)", flush=True)
+        # The run's launch commit, named for the triage that moves the crate's
+        # `.cargo/mutants_checked.toml` entry to it. HEAD, not `tree`: the tree
+        # holds uncommitted changes, and the next closure covers them again.
+        head = git(
+            "rev-parse", "HEAD", check=True, capture_output=True, text=True
+        ).stdout.strip()
+        print(
+            f"running every mutant on {host} (a whole-crate run, launched from {head})",
+            flush=True,
+        )
         remote_head, remote_tree, nproc = remote_start(host, tree)
         set_aside_last_run()
         # This run's extra pass runs on the remote (`--remote-extra`): a
