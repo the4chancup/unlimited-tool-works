@@ -44,11 +44,14 @@ whose collection summarizes the local `mutants.out`. A
 running half is stopped by hand with `sudo systemctl stop studio-mutants` on
 the host.
 
-The remote needs: git, a C toolchain, rustup, cargo-mutants, cargo-nextest and
-`just` (for `just gates-remote`) at the local versions, installed with
-`cargo install` run inside `~/studio-mutants/tree` where the pinned toolchain
-applies (the host has no default toolchain; the toolchain itself installs on
-first use there), `sudo -n systemd-run` for the ssh user, `ionice`,
+The remote needs: git, a C toolchain, rustup, cargo-mutants, cargo-nextest,
+cargo-llvm-cov and `just` (for `just gates-remote`) at the local versions,
+installed with `cargo install` run inside `~/studio-mutants/tree` where the
+pinned toolchain applies (the host has no default toolchain; the toolchain
+itself installs on first use there), rustup's `llvm-tools-preview` component
+added inside that tree so it lands on the pinned toolchain too (the whole
+run's coverage map needs both it and cargo-llvm-cov), `sudo -n systemd-run`
+for the ssh user, `ionice`,
 `tar`, `nproc`, `awk`, cgroup v2 (the unit's `memory.peak`) and `python3` (`just gates`'
 scripts).
 """
@@ -834,13 +837,21 @@ def launch_remote(
     transient service (`sudo -n systemd-run`): shard 1/2 of the selection, or
     all of it when `whole` (a whole-crate run, `REMOTE_ONLY`, and a whole-crate
     file split, whose shares the remote's `exclude_globs` carry instead of a
-    shard). Its `cargo mutants` line caps the jobserver at
+    shard). Its cargo-mutants line caps the jobserver at
     `REMOTE_JOBSERVER_TASKS` (`nproc` while unset), the build cap the config
     cannot carry (`sized_config`). With `extra` (a whole run) the job first
     runs the extra kinds (`--remote-extra`, at `REMOTE_BUILD_JOBS` for the
     unit's memory cap) and
-    logs `extra pass exit <code>`, then runs cargo-mutants whatever the code:
-    `run/exit` stays cargo-mutants'. An extras-only run (`extra_only`) writes
+    logs `extra pass exit <code>`, then lists the crate's mutants and builds
+    the coverage map from them (which tests cover each listed mutant's lines;
+    `coverage_map.py`, at the same build cap, logging `coverage map exit
+    <code>`), then runs cargo-mutants whatever the
+    codes: `run/exit` stays cargo-mutants'. cargo-mutants is started as
+    `cargo-mutants mutants` — `cargo mutants` would overwrite `CARGO` for the
+    subcommand — with the stand-in `select_tests.py` as `CARGO` when the map's
+    `run/selection.json` exists, so each mutant runs the tests covering its
+    lines; without the file the full suite runs, a failed map costing time,
+    never a wrong outcome. An extras-only run (`extra_only`) writes
     the pass alone, `kinds` naming the kinds after the crate — `run/exit` is
     the pass's own code, and the record carries `extra_only` for `collect`.
     The service is
@@ -864,20 +875,50 @@ def launch_remote(
         )
         if not extra_only:
             extra_pass += 'echo "extra pass exit $?"\n'
+    selection_map = ""
+    if extra and not extra_only:
+        # The map is built from the listing the run tests: same -p, same
+        # --config. Its failure leaves no selection.json, so the stand-in
+        # stays off and every mutant runs the full suite.
+        selection_map = (
+            f"cargo-mutants mutants {remote_args} --list --json "
+            "--config ../mutants.remote.toml > ../run/mutants.json\n"
+            f"CARGO_BUILD_JOBS={REMOTE_BUILD_JOBS} nice -n 19 ionice -c3 "
+            f"python3 scripts/mutation/coverage_map.py {selection[1]} "
+            "../run/mutants.json ../run/selection.json\n"
+            'echo "coverage map exit $?"\n'
+        )
     mutants_line = ""
     if not extra_only:
-        mutants_line = (
-            f"nice -n 19 ionice -c3 cargo mutants {remote_args} --jobs 2 "
+        cargo_args = (
+            f"{remote_args} --jobs 2 "
             f"--jobserver-tasks {REMOTE_JOBSERVER_TASKS or nproc} "
-            f"{shard}--config ../mutants.remote.toml\n"
+            f"{shard}--config ../mutants.remote.toml"
         )
+        if extra:
+            # `cargo mutants` would overwrite CARGO for the subcommand, so the
+            # binary is started directly; CARGO is set only with a selection.
+            mutants_line = (
+                "if [ -f ../run/selection.json ]; then\n"
+                "CARGO=$PWD/scripts/mutation/select_tests.py "
+                "UTW_REAL_CARGO=$(command -v cargo) UTW_MUTANTS_SOURCE=$PWD "
+                "UTW_MUTANTS_SELECTION=$PWD/../run/selection.json "
+                f"nice -n 19 ionice -c3 cargo-mutants mutants {cargo_args}\n"
+                "else\n"
+                f"nice -n 19 ionice -c3 cargo-mutants mutants {cargo_args}\n"
+                "fi\n"
+            )
+        else:
+            mutants_line = (
+                f"nice -n 19 ionice -c3 cargo mutants {cargo_args}\n"
+            )
     job = (
         "#!/bin/bash\n"
         "exec > ../run/log 2>&1\n"
         "start=$(date +%s)\n"
         # On disk, not the tmpfs `/tmp`: see REMOTE_TMPDIR.
         f'export TMPDIR="{REMOTE_TMPDIR}" && mkdir -p "$TMPDIR"\n'
-        f". ~/.cargo/env && {extra_pass}{mutants_line}"
+        f". ~/.cargo/env && {extra_pass}{selection_map}{mutants_line}"
         "code=$?\n"
         # `memory.peak` of this unit's cgroup tells whether the cap is tight;
         # `exit` stays the last file written: pollers treat it as finished.
@@ -890,7 +931,10 @@ def launch_remote(
         f"mkdir -p {REMOTE_RUN} && "
         f"rm -f {REMOTE_RUN}/pid {REMOTE_RUN}/log {REMOTE_RUN}/exit "
         f"{REMOTE_RUN}/collected {REMOTE_RUN}/memory_peak {REMOTE_RUN}/memory_max "
-        f"{REMOTE_RUN}/in.diff && "
+        # A whole run's mutant listing and its selection file are this run's:
+        # a failed listing must leave none, or an old map would pair with it.
+        f"{REMOTE_RUN}/in.diff {REMOTE_RUN}/mutants.json "
+        f"{REMOTE_RUN}/selection.json && "
         # The tree's `mutants.out` and `extra_mutants.out` are gitignored, so
         # the transfer keeps the last run's; a half that fails before
         # cargo-mutants starts must leave none, or the fetch would count the
@@ -1330,6 +1374,24 @@ def summarize(
         extra_seconds = record["seconds"]
         if missed_path.exists():
             extra_missed = missed_path.read_text(encoding="utf-8")
+
+    # A whole run's job log records its coverage map's exit: the run selected
+    # each mutant's tests only when the map succeeded. A diff run's log has no
+    # such line, and says nothing.
+    console = (
+        log_path.read_text(encoding="utf-8", errors="replace")
+        if log_path.exists()
+        else ""
+    )
+    map_exit = re.search(r"coverage map exit (\d+)", console)
+    if map_exit is not None:
+        if map_exit.group(1) == "0":
+            print("test selection: on")
+        else:
+            print(
+                "test selection: off (the coverage map failed, exit "
+                f"{map_exit.group(1)}; every mutant ran the full suite)"
+            )
 
     print(f"{'':8}{'caught':>7}{'missed':>7}{'timeout':>8}{'unviable':>9}{'seconds':>9}")
     totals = dict.fromkeys(names, 0)

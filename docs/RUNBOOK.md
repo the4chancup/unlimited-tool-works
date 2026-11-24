@@ -150,6 +150,14 @@ or the VPS cannot be reached, when it runs entirely on this
 machine instead of waiting days for its turn there. What follows
 describes the split: a diff uses it, and a whole run that needs this machine again would.
 
+A whole-crate run also selects each mutant's tests. Before cargo-mutants the remote job
+lists the crate's mutants and builds a coverage map: which tests cover which lines
+(`scripts/mutation/coverage_map.py`). cargo-mutants then runs with a stand-in for cargo
+(`scripts/mutation/select_tests.py`) that adds to each mutant's test phase the filter of
+the tests covering its changed lines. The summary's "test selection" line says whether it
+was on; a failed map leaves it off, so every mutant runs the full suite — time lost,
+never a wrong outcome.
+
 **The split with the maintainer's VPS.** On the maintainer's PC the
 user environment variable `STUDIO_MUTANTS_REMOTE=bonfire` (an alias in `~/.ssh/config`) makes
 `just mutants-diff` run part of a larger crate's mutants there (`scripts/mutation/mutants.py`: the working tree is
