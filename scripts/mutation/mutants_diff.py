@@ -159,7 +159,11 @@ def mark_checked(args: list[str]) -> int:
         return 1
     sha = resolved.stdout.strip()
     if launched is not None and sha != launched:
-        print(f"mutants_diff: {crate}'s kept rolling run was launched from {launched}, not {sha}")
+        print(
+            f"mutants_diff: {crate}'s kept rolling run was launched from {launched}, "
+            f"not {sha}: triage that run, or move `{record.parent}` aside to record a "
+            "run started by hand"
+        )
         return 1
     ancestor = subprocess.run(
         ["git", "merge-base", "--is-ancestor", sha, "HEAD"],

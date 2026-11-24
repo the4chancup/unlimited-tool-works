@@ -52,6 +52,7 @@ ISOLATION = [
     mock.patch.object(rolling, "ROOT", Path(SCRATCH.name) / "rolling"),
     mock.patch.object(rolling, "ROLLING", Path(SCRATCH.name) / "mutants.rolling"),
     mock.patch.object(rolling, "HOLD", Path(SCRATCH.name) / "rolling.hold"),
+    mock.patch.object(rolling, "CURRENT", Path(SCRATCH.name) / "rolling.current"),
     mock.patch.object(mutants, "COST_CACHE", Path(SCRATCH.name) / "mutants-cost.json"),
     mock.patch.object(mutants, "LOCAL_TMPDIR", Path(SCRATCH.name) / "copies"),
     # A run's refusals ask the real host and read this tree's pending record otherwise; a
@@ -84,7 +85,7 @@ class Isolation(unittest.TestCase):
         for path in (
             mutants_diff.RESULTS, extra_mutants.OUT_DIR, mutants.COST_CACHE,
             mutants.LOCAL_TMPDIR, mutants.remote_pending(),
-            rolling.ROOT, rolling.ROLLING, rolling.HOLD,
+            rolling.ROOT, rolling.ROLLING, rolling.HOLD, rolling.CURRENT,
         ):
             self.assertTrue(path.is_relative_to(scratch), path)
         self.assertIsNone(mutants.remote_host())
@@ -3350,8 +3351,9 @@ class Rolling(unittest.TestCase):
     CRATES = ("cpk", "fpc", "fpk")
     COMMIT = "a" * 40
 
-    class Stopped(Exception):
-        """Ends `main`'s until-stopped loop from inside a stub."""
+    class Stopped(BaseException):
+        """Ends `main`'s until-stopped loop from inside a stub: a
+        `BaseException`, since the loop prints any `Exception` and goes on."""
 
     def setUp(self):
         tmp = tempfile.TemporaryDirectory()
@@ -3362,6 +3364,7 @@ class Rolling(unittest.TestCase):
             mock.patch.object(rolling, "ROOT", self.root),
             mock.patch.object(rolling, "ROLLING", self.results),
             mock.patch.object(rolling, "HOLD", self.root / ".tmp" / "rolling.hold"),
+            mock.patch.object(rolling, "CURRENT", self.results / "current.txt"),
             mock.patch.object(mutants, "ROOT", self.root),
             mock.patch.object(mutants_diff, "CHECKED", self.root / "checked.toml"),
             mock.patch.object(
@@ -3374,28 +3377,82 @@ class Rolling(unittest.TestCase):
             self.addCleanup(patcher.stop)
 
     def test_pick_prefers_the_crate_checked_longest_ago(self):
-        dates = {
-            "cpk-checked": 300, "fpc-checked": 500,
-            "fpc-launched": 100, "fpk-launched": 200,
-        }
+        # `checked` holds commits, dated by `date`; `launched` holds the times
+        # the kept runs ended.
+        dates = {"cpk-checked": 300, "fpc-checked": 500}
         checked = {"cpk": "cpk-checked", "fpc": "fpc-checked"}
-        launched = {"fpc": "fpc-launched"}
+        launched = {"fpc": 100}
         date = dates.__getitem__
-        # fpk has neither a checked nor a launched commit, so it comes first.
+        # fpk has neither a checked commit nor a kept run, so it comes first.
         self.assertEqual(
             rolling.pick(list(self.CRATES), checked, launched, date), "fpk"
         )
-        # Its last check is then its launched commit's: 200 < 300 < 500.
-        launched = {**launched, "fpk": "fpk-launched"}
+        # Its last check is then its kept run's: 200 < 300 < 500.
+        launched = {**launched, "fpk": 200}
         self.assertEqual(
             rolling.pick(list(self.CRATES), checked, launched, date), "fpk"
         )
-        # A tie on the last check's date breaks on the name.
-        same = dict.fromkeys(dates, 400)
+        # A tie on the last check breaks on the name.
+        same = {"cpk-checked": 400, "fpc-checked": 400}
         self.assertEqual(
-            rolling.pick(list(self.CRATES), checked, launched, same.__getitem__),
+            rolling.pick(
+                list(self.CRATES), checked, {"fpc": 400, "fpk": 400}, same.__getitem__
+            ),
             "cpk",
         )
+
+    def test_a_run_that_just_ended_goes_last_while_head_stands_still(self):
+        """Every crate recorded at one commit, and cpk's run just ended,
+        launched from that same commit: cpk goes to the back, not to the
+        front again by its launch commit's old date and its name."""
+        checked = dict.fromkeys(self.CRATES, "c" * 40)
+        date = {"c" * 40: 100}.__getitem__
+        self.assertEqual(
+            rolling.pick(list(self.CRATES), checked, {"cpk": 900}, date), "fpc"
+        )
+        # The kept run's time is when it ended: its file's.
+        kept = self.results / "cpk" / "launched_from.txt"
+        kept.parent.mkdir(parents=True)
+        kept.write_text("c" * 40 + "\n", encoding="utf-8")
+        os.utime(kept, (900, 900))
+        self.assertEqual(rolling.launched_times(), {"cpk": 900})
+
+    def test_a_run_the_job_lost_is_collected_and_filed_under_its_crate(self):
+        """A job stopped during a run, or whose wait failed, left
+        `current.txt` and a whole run's launch record: the next turn collects
+        the half and files it as `run_one` would. A launch record that is
+        another run's (a split with a local half) is left to its owner."""
+        pending = self.root / ".tmp" / "mutants-remote-pending"
+        pending.parent.mkdir(parents=True)
+        pending.write_text("{}", encoding="utf-8")
+        collected = []
+
+        def collect(host):
+            collected.append(host)
+            self.fetched()
+            return 2
+
+        for record, expect in (
+            ({"host": "bonfire", "local_half": True, "extra": False}, []),
+            ({"host": "bonfire", "local_half": False, "extra": True}, ["bonfire"]),
+        ):
+            self.results.mkdir(exist_ok=True)
+            rolling.CURRENT.write_text(f"cpk {self.COMMIT}\n", encoding="utf-8")
+            with (
+                mock.patch.object(mutants, "remote_pending", lambda: pending),
+                mock.patch.object(mutants, "pending_record", lambda: record),
+                mock.patch.object(mutants, "collect", collect),
+                contextlib.redirect_stdout(io.StringIO()),
+            ):
+                rolling.recover("bonfire")
+            self.assertEqual(collected, expect)
+            self.assertFalse(rolling.CURRENT.exists())
+        kept = self.results / "cpk"
+        self.assertEqual((kept / "exit.txt").read_text(encoding="utf-8"), "2\n")
+        self.assertEqual(
+            (kept / "launched_from.txt").read_text(encoding="utf-8"), self.COMMIT + "\n"
+        )
+        self.assertTrue((kept / "extra" / "run.json").exists())
 
     def run_one(self, produce=lambda: None, code=0, error=None):
         """`rolling.run_one("cpk", "bonfire")` with `git rev-parse HEAD`
@@ -3404,7 +3461,7 @@ class Rolling(unittest.TestCase):
         calls = []
 
         def whole_run(crate, host, tree, commit):
-            calls.append((crate, host, tree))
+            calls.append((crate, host, tree, commit))
             if error is not None:
                 raise error
             produce()
@@ -3448,7 +3505,7 @@ class Rolling(unittest.TestCase):
         # The commit's tree, not a working-tree snapshot: uncommitted changes
         # are not the run's, and the closure covers them again.
         self.assertEqual(
-            calls, [("cpk", "bonfire", f"{self.COMMIT}^{{tree}}")]
+            calls, [("cpk", "bonfire", f"{self.COMMIT}^{{tree}}", self.COMMIT)]
         )
         kept = self.results / "cpk"
         self.assertFalse((self.root / "mutants.out").exists())
@@ -3493,12 +3550,20 @@ class Rolling(unittest.TestCase):
         """`rolling.main` on `args`: the host is `bonfire`, `git rev-parse HEAD`
         answers COMMIT, `whole_run` is `run` per crate (its calls returned), the
         waits are `sleep` and every commit dates at 0. Returns the code, the
-        crates run and the output."""
+        crates run and the output. A loop past 20 waits is stopped: the job
+        prints a failed assertion in a stub and goes on, so it would spin."""
         calls = []
+        waits = []
 
         def whole_run(crate, host, tree, commit):
             calls.append(crate)
             return run(crate)
+
+        def wait(seconds):
+            waits.append(seconds)
+            if len(waits) > 20:
+                raise self.Stopped
+            sleep(seconds)
 
         out = io.StringIO()
         with (
@@ -3513,7 +3578,7 @@ class Rolling(unittest.TestCase):
                 lambda: self.fail("the working tree was read"),
             ),
             mock.patch.object(rolling, "commit_date", lambda commit: 0),
-            mock.patch.object(time, "sleep", sleep),
+            mock.patch.object(time, "sleep", wait),
             contextlib.redirect_stdout(out),
         ):
             code = rolling.main(["rolling.py", *args])
@@ -3570,6 +3635,27 @@ class Rolling(unittest.TestCase):
         # again — it was never run; once it lands, the next pick moves on.
         self.assertEqual(calls, ["cpk", "cpk", "fpc"])
         self.assertIn("bonfire is busy", out.getvalue())
+
+    def test_a_run_that_fails_is_printed_and_the_job_goes_on(self):
+        """A died half, an hour of failed polls or a dropped link ends a run,
+        never the job: it is printed, and the next turn picks again."""
+        calls = []
+
+        def run(crate):
+            if len(calls) == 1:
+                raise RuntimeError("the remote half died")
+            raise self.Stopped
+
+        def counted(crate):
+            calls.append(crate)
+            return run(crate)
+
+        with (
+            mock.patch.object(mutants, "remote_pending", lambda: self.root / "none"),
+            self.assertRaises(self.Stopped),
+        ):
+            self.main([], run=counted)
+        self.assertEqual(calls, ["cpk", "cpk"])
 
     def test_once_runs_a_single_crate_and_returns_its_code(self):
         code, calls, _ = self.main(["--once"], run=lambda crate: 2)

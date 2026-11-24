@@ -288,7 +288,9 @@ moves the closure's diff past that commit. When the VPS is
 needed for the checkpoint's Linux gates before a push, `.tmp/rolling.hold` is
 the way to free it without stopping the job: create the file and the job
 finishes its crate and waits; delete it and it goes on. A run the VPS refuses
-(busy, a half uncollected) is retried after a wait, never counted.
+(busy) or that fails is retried after a wait, never counted. A run the job lost track of
+(the job was stopped, or its wait on the VPS failed) is collected and filed under its crate
+before the job picks its next crate, so a stopped job is just started again.
 
 **When the maintainer's PC is suspect, the heavy runs go to the VPS.** Four
 `MEMORY_MANAGEMENT` bugchecks there (the last during a run, all four in `rustc.exe` at one
