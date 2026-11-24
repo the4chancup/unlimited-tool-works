@@ -773,8 +773,10 @@ and no phase closes with one outstanding.
         build-job budget the extra kinds ignored), fixed in `ab57f2c6`. The SWE-2 round over
         those fixes accepted 2 (the VPS's Python floor named, a test for the cargo children's
         own session), and the loop ends;
-      - [ ] **select** [after wire, backend] both runners through the same test-selecting
-        stand-in for cargo (`scripts/mutation/select_tests.py`).
+      - [~] **select** [after backend] both runners select by the same coverage map and
+        lookup (`select_tests.filter_for`): the map lists the extra kinds' mutants too and is
+        built before the extra pass, extras-only runs included. Merged `4d8e935e` (SWE-2);
+        its SWE-2 review round is running. Measured on the backfill's first crate.
 
 ---
 
