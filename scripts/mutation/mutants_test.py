@@ -2126,6 +2126,18 @@ class SummaryLists(unittest.TestCase):
         self.assertEqual(missed, [self.ELEVATION_SURVIVOR])
         self.assertIn("found 1 of elevation's survivors unviable", out)
 
+    def test_a_timed_out_extra_recheck_stays_missed_and_tested(self):
+        """A rerun that times out is not a catch, nor an untested mutant: the
+        line stays missed and the run exits 2, not 1."""
+        timed_out = self.ELEVATION_SURVIVOR.replace(": [call]", ": [timeout] [call]")
+        code, _, missed = self.recheck_elevation(
+            lambda crate, kinds, tree=None, only=None: (
+                [timed_out], Counter(timeout=1), 0.5
+            )
+        )
+        self.assertEqual(code, 2)
+        self.assertEqual(missed, [self.ELEVATION_SURVIVOR])
+
     def test_a_failed_extra_recheck_leaves_the_summary_whole(self):
         """A rerun that cannot start (its baseline fails, the lister does not
         build: both `SystemExit`) is reported, the line stays missed and the
@@ -2299,6 +2311,18 @@ class RecheckWindows(unittest.TestCase):
              ["set_relaunch", "set_relaunch_values"], False),
         ]
         self.assertEqual(len(mutants.WINDOWS_ONLY_EXTRA), len(cases))
+        # The other direction: a `WINDOWS_ONLY_TESTS` entry with no case here
+        # would have no extra-kind twin.
+        for pattern in mutants.WINDOWS_ONLY_TESTS:
+            self.assertTrue(
+                any(
+                    pattern.search(f"{file}:9:5: replace x -> bool with true in {function}")
+                    for file, functions, whole in cases
+                    if not whole
+                    for function in functions
+                ),
+                pattern.pattern,
+            )
         for pattern, (file, functions, whole) in zip(
             mutants.WINDOWS_ONLY_EXTRA, cases
         ):
@@ -2732,6 +2756,49 @@ class Fetch(unittest.TestCase):
         self.assertNotIn("mutants.out", tar_call.replace("extra_mutants.out", ""))
         self.assertTrue(any("collected" in call for call in self.calls))
         self.assertFalse(pending.exists())
+
+    def finish_rechecking(self, recheck: tuple[set[str], int]) -> tuple[int, Path]:
+        """An extras-only finish on Windows whose survivors file holds
+        elevation's `windows.rs` line and a `cpk` one, the recheck answering
+        `recheck` (lines caught, untested count): the finish's code and the
+        fetched survivors file."""
+        pend(local_half=False, extra=True, extra_only=True)
+        with (
+            mock.patch.object(mutants.os, "name", "nt"),
+            mock.patch.object(mutants, "REMOTE_ONLY", False),
+            mock.patch.object(
+                mutants, "recheck_windows_extra", lambda lines: recheck
+            ),
+        ):
+            code = self.finish(
+                0,
+                {
+                    "extra_mutants.out/run.json": self.EXTRA_RECORD + "\n",
+                    "extra_mutants.out/missed_cpk.txt": (
+                        SummaryLists.ELEVATION_SURVIVOR + "\ncrates/x:1: [call] drop it\n"
+                    ),
+                },
+            )
+        survivors = (
+            self.root / "extra_mutants.out" / "remote" / "extra_mutants.out" / "missed_cpk.txt"
+        )
+        return code, survivors
+
+    def test_the_finish_reruns_windows_only_survivors_here(self):
+        """An extras-only run (a backfill's) gets the whole run's Windows
+        recheck: a catch leaves the survivors file and moves the counts."""
+        code, survivors = self.finish_rechecking(({SummaryLists.ELEVATION_SURVIVOR}, 0))
+        self.assertEqual(code, 0)
+        self.assertEqual(
+            survivors.read_text(encoding="utf-8"), "crates/x:1: [call] drop it\n"
+        )
+        self.assertIn("caught 4", self.printed)
+        self.assertIn("missed 0", self.printed)
+
+    def test_an_untested_rerun_fails_the_extras_only_finish(self):
+        code, survivors = self.finish_rechecking((set(), 1))
+        self.assertEqual(code, 1)
+        self.assertIn(SummaryLists.ELEVATION_SURVIVOR, survivors.read_text(encoding="utf-8"))
 
     def test_a_failed_fetch_leaves_the_half_uncollected_and_the_record(self):
         stale = self.stale("extra_mutants.out")

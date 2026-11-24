@@ -1412,6 +1412,31 @@ def recheck_windows_extra(missed: list[str]) -> tuple[set[str], int]:
     return caught, untested
 
 
+def recheck_remote_extra(missed: list[str]) -> tuple[set[str], int]:
+    """A remote extra pass's survivors (`missed`) in Windows-only code
+    (`WINDOWS_ONLY_EXTRA`), rerun here by `recheck_windows_extra` on Windows
+    outside REMOTE_ONLY, else listed as not rechecked. Returns its (lines
+    caught, untested count), empty when nothing reran."""
+    windows_extra = [
+        line
+        for line in missed
+        if any(pattern.search(line) for pattern in WINDOWS_ONLY_EXTRA)
+    ]
+    if not windows_extra:
+        return set(), 0
+    if os.name != "nt" or REMOTE_ONLY:
+        print("Windows-only extra mutants, not rechecked:")
+        for line in windows_extra:
+            print(f"  {line}")
+        return set(), 0
+    caught, untested = recheck_windows_extra(windows_extra)
+    print(
+        f"rechecked on this machine (Windows-only extra mutants): "
+        f"{len(caught)} caught, {len(windows_extra) - len(caught)} still missed"
+    )
+    return caught, untested
+
+
 def coverage_map_exit(log_path: Path) -> str | None:
     """The coverage map's exit code as a whole run's job log records it, or
     None when the log has no such line (a diff run's, or no log): the run
@@ -1492,23 +1517,7 @@ def summarize(
     extra_caught: set[str] = set()
     extra_untested = 0
     if extra_run == remote_extra_record():
-        windows_extra = [
-            line
-            for line in extra_missed.splitlines()
-            if any(pattern.search(line) for pattern in WINDOWS_ONLY_EXTRA)
-        ]
-        if windows_extra:
-            if os.name == "nt" and not REMOTE_ONLY:
-                extra_caught, extra_untested = recheck_windows_extra(windows_extra)
-                print(
-                    f"rechecked on this machine (Windows-only extra mutants): "
-                    f"{len(extra_caught)} caught, "
-                    f"{len(windows_extra) - len(extra_caught)} still missed"
-                )
-            else:
-                print("Windows-only extra mutants, not rechecked:")
-                for line in windows_extra:
-                    print(f"  {line}")
+        extra_caught, extra_untested = recheck_remote_extra(extra_missed.splitlines())
 
     map_exit = coverage_map_exit(log_path)
     if map_exit is not None:
@@ -2195,7 +2204,10 @@ def finish_extra_run(host: str, code: int, *, partial: bool = False) -> int:
     pass's `extra_mutants.out`, print its `run.json`'s counts and the path of
     the survivors file beside it. The pass's own code is the run's — no
     cargo-mutants ran to take precedence over it (an untested mutant is the
-    pass's 1; its missed mutants, like its caught, count but do not fail)."""
+    pass's 1; its missed mutants, like its caught, count but do not fail).
+    Survivors in Windows-only code are rerun here first
+    (`recheck_remote_extra`): a catch leaves the survivors file and moves the
+    counts, and an untested rerun fails the run."""
     fetch_remote(host, partial=partial, extra_only=True)
     record_path = (
         ROOT / "extra_mutants.out" / "remote" / "extra_mutants.out" / "run.json"
@@ -2206,12 +2218,22 @@ def finish_extra_run(host: str, code: int, *, partial: bool = False) -> int:
     record = json.loads(record_path.read_text(encoding="utf-8"))
     crate = record["crate"]
     counts = record["counts"]
+    survivors = record_path.parent / f"missed_{crate}.txt"
+    lines = read_lines(survivors)
+    caught, untested = recheck_remote_extra(lines)
+    if caught:
+        counts["missed"] = counts.get("missed", 0) - len(caught)
+        counts["caught"] = counts.get("caught", 0) + len(caught)
+        kept = "".join(line + "\n" for line in lines if line not in caught)
+        temporary = survivors.with_name(survivors.name + ".tmp")
+        temporary.write_text(kept, encoding="utf-8", newline="\n")
+        os.replace(temporary, survivors)
     print(
         f"extra pass ({crate}, {record['seconds']:.0f} s): "
         + (", ".join(f"{name} {counts[name]}" for name in sorted(counts)) or "none")
     )
-    print(f"survivors: {record_path.parent / f'missed_{crate}.txt'}")
-    return 0 if code == 0 else 1
+    print(f"survivors: {survivors}")
+    return 0 if code == 0 and not untested else 1
 
 
 def split(
