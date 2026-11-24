@@ -20243,3 +20243,18 @@ weekly limit, so the runs made during the pause use it. None of the three slices
 backfill's figures to be written; they only size the tier's costs, which CALL's `figures`
 step still records.
 Plan: no plan edit needed: it is how the work is verified. The worklog's TIER item says it.
+
+## 2026-11-24 — mutation runs — the rolling whole-crate job waits for a hold file, so the Linux gates get the VPS before a push
+Decision: the rolling job (`just mutants-rolling`) runs one whole-crate run after another on
+the VPS. Between crates it waits while `.tmp/rolling.hold` exists. When the checkpoint's Linux
+gates are owed before a push, the lead creates the file. The job then finishes the crate it is
+on and leaves the VPS free; deleting the file resumes it.
+Why: `just gates-remote` and a mutation run never share the VPS, since both rewrite its clone.
+With the job running, the VPS would otherwise
+never be free for the Linux gates. A push still needs them, and it is rare, so it can wait for
+a crate's run to end. Letting the Linux gates go and leaning on CI after the push was not
+chosen: a release is reported ready without waiting for CI, so the Linux gates are the only
+Linux check before members get a build. Stopping the job outright was not chosen either: it
+would kill the crate's run, and cargo-mutants cannot resume one, so its hours would be lost.
+Plan: no plan edit needed: it is how the work is verified. RUNBOOK "Mutation runs and the
+VPS" describes the job and the file once the worklog's TIER `rolling` slice lands.
