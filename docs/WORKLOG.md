@@ -332,11 +332,11 @@ draft checked, handed over by the maintainer 2026-11-23. **After the detour**, i
        check). The lead's fixes: that remedy `2b91de78`; the window's title, its state line
        and its scrolling now stated in gui.md and TC-GUI-09. Carbon's loop on the grid ends
        here: past five rounds, the round it owes goes to Astra (DECISIONS 2026-11-24)
-     - [~] **G10** [after C6] the rest of that round's fixes: the state names, "Checking"
-       while a check runs, a roster finding's and an export finding's place line, the
-       monospace code spans, a finding's texts in order, shared test helpers (SWE-2,
-       `sk/g10`)
-     - [ ] **S-g10** [after G10] SWE-2's round over G10
+     - [x] **G10** [after C6] 2026-11-24, `3f1f14da`: the rest of that round's fixes, tested:
+       the state names, "Checking" while a check runs, a roster finding's and an export
+       finding's place line, the monospace code spans, a finding's texts in order; shared
+       test helpers (SWE-2; the lead shared one more helper)
+     - [~] **S-g10** [after G10] SWE-2's round over G10 and the lead's fixes
      - [ ] **A1** [after S-g10] Astra's round 1 over the grid
    - [x] **tbmenu** The Compile button's mode list, Open output folder and Copy report (TC-GUI-11, and
      TC-GUI-33's clause that Compile for sideloading stays enabled while the DpFileList is
