@@ -251,4 +251,29 @@ mod tests {
             ]
         );
     }
+
+    #[test]
+    fn a_refs_txt_the_test_gave_is_never_replaced() {
+        // `refs.txt` is a root file — not content — so a referee export
+        // given one still lacks the referee defaults, but the default
+        // `refs.txt` must not replace the test's own.
+        let paths: Vec<String> = old_missing("refs X", &["refs.txt"], &[], &[])
+            .into_iter()
+            .map(|(path, _)| path)
+            .collect();
+        assert_eq!(paths, ["Players/arbiter/boots.fmdl"]);
+    }
+
+    #[test]
+    fn an_empty_folder_counts_as_content() {
+        // A referee export holding only an empty `Players/arbiter/` still
+        // has content: no default `refs.txt` or `boots.fmdl` is written
+        // into it.
+        let root = scratch("empty folder content");
+        let export = root.join("refs X");
+        fs::create_dir_all(export.join("Players/arbiter")).unwrap();
+        complete_old(&export, &[]);
+        assert!(!export.join("refs.txt").exists());
+        assert!(!export.join("Players/arbiter/boots.fmdl").exists());
+    }
 }

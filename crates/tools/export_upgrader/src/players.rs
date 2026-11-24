@@ -3271,4 +3271,66 @@ mod tests {
         );
         assert!(plan.leftovers.contains("Boots/k2701 - Other/boots.fmdl"));
     }
+
+    #[test]
+    fn an_empty_wearer_name_pairs_no_unworn_folder() {
+        // The face folder `XXX05` has no name part, so "" stands among the
+        // missing ID's wearer names: kept in, it would match the unworn
+        // folder whose name part folds to "" too (`k0430 - ---`), pairing
+        // it where nothing should. A second unworn folder keeps the order
+        // rule's counts apart, so only the name rule could pair `k0430`.
+        let files = files(&[
+            "Faces/XXX05/face.fmdl",
+            "Boots/k0430 - ---/boots.fmdl",
+            "Boots/k0500 - Other/boots.fmdl",
+        ]);
+        let roster = wearing(&[(5, ("SaveA", 2500, 0))]);
+        let plan = plan_with_bytes(&files, Some(&roster), Engine::Fox, &[]);
+        assert!(
+            plan.findings
+                .iter()
+                .all(|m| m.code.code != "wearer_by_name"),
+            "{:?}",
+            plan.findings
+        );
+        let refused = plan
+            .findings
+            .iter()
+            .find(|m| m.code.code == "custom_model_unpaired")
+            .expect("custom_model_unpaired expected");
+        assert_eq!(
+            refused.context,
+            [
+                ("slot".to_owned(), "05".to_owned()),
+                ("key".to_owned(), "boots_id".to_owned()),
+                ("id".to_owned(), "2500".to_owned()),
+            ]
+        );
+        for file in [
+            "Boots/k0430 - ---/boots.fmdl",
+            "Boots/k0500 - Other/boots.fmdl",
+        ] {
+            assert!(plan.leftovers.contains(file), "{file}");
+        }
+    }
+
+    #[test]
+    fn a_refused_item_folders_files_are_consumed() {
+        // The second `k0430` is refused `id_taken` as a whole folder: its
+        // files are still consumed, or the fallback reports each of them
+        // again on top of the folder finding.
+        let plan = plan_folders(&files(&[
+            "Boots/k0430 - A/x.model",
+            "Boots/k0430 - B/x.model",
+        ]));
+        let finding = finding_at(&plan, "unmigrated_content", "Boots/k0430 - B");
+        assert_eq!(
+            finding.context,
+            [
+                ("reason".to_owned(), "id_taken".to_owned()),
+                ("other".to_owned(), "Boots/k0430 - A".to_owned()),
+            ]
+        );
+        assert!(plan.consumed.contains("Boots/k0430 - B/x.model"));
+    }
 }
