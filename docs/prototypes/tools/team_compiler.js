@@ -128,8 +128,9 @@ const TEAM_COMPILER_CSS = `
   .tc-sw { position: absolute; left: 2px; right: 2px; bottom: 2px; height: 9px; }
   .tc-acts .row { flex-wrap: nowrap; }
   /* The detail window (egui: a Window inside the tool's panel, movable by its
-     title bar while pinned, where the member leaves it). */
-  .tc-detail { position: absolute; z-index: 5; width: 300px; background: var(--panel);
+     title bar while pinned, where the member leaves it). Above the opened
+     sidebar's 100, as every window is; below menus and modals. */
+  .tc-detail { position: absolute; z-index: 110; width: 300px; background: var(--panel);
     border: 1px solid var(--stroke); border-radius: 2px; box-shadow: 0 4px 16px #000a; }
   /* Opened by a hover, it lets the pointer through (egui: an Area that senses
      nothing), so a cell under it can still be hovered; only a pinned one is

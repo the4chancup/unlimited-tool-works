@@ -20169,3 +20169,13 @@ Objects safely, cannot set a per-process memory cap. The program is a developer 
 never contains it.
 Plan: `docs/CONTRIBUTING.md`, the `unsafe` bullet and the runner paragraph in "Testing and
 verification".
+
+## 2026-11-24 — studio GUI — every window stands above the opened sidebar (maintainer)
+Decision: the opened sidebar is drawn under every window (the help window, the Save editor's
+floating windows, the Compiler's detail window, a tool's start page) as well as under every
+menu and modal. Before, the app drew it above every window, and the Compiler's draft above its
+detail window.
+Why: the maintainer: "Windows have the highest priority." A window is what the member opened to
+read or work in, while the sidebar opens whenever the pointer rests on the rail.
+Plan: `docs/plans/core/gui.md` "Sidebar" item 4, and the paragraph after the floating windows'
+placement.

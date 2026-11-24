@@ -351,7 +351,8 @@ draft checked, handed over by the maintainer 2026-11-23. **After the detour**, i
      - [x] **S-g11** [after G11] SWE-2's round over G11 (rulings "S-g11"): 3 accepted, none a
        real input whose outcome changes, so the grid's review loops end. Fixed: two more tests
        no longer race the check's worker, a tool's start page stands under Help, the blocked
-       line's test proves the disposition filter. Open: questions.html `sidebar-over-help`
+       line's test proves the disposition filter. Its question was answered: every window
+       stands above the opened sidebar (slice WINSB, "Issues")
    - [x] **tbmenu** The Compile button's mode list, Open output folder and Copy report (TC-GUI-11, and
      TC-GUI-33's clause that Compile for sideloading stays enabled while the DpFileList is
      outdated; DECISIONS 2026-11-23 "the Compile menu's Copy report copies the whole log").
@@ -685,7 +686,7 @@ and no phase closes with one outstanding.
     mutant's tests take a median 1.4 s and 15 s, a missed one runs the whole suite (60 s in
     `team_compiler`). So selection can speed a run 1.9-3.1 times at most, not tenfold: the
     builds stay, and so does nextest's listing of every test binary;
-  - [~] **trial** [after split] run anyway, on `team_compiler` (the maintainer, 2026-11-24:
+  - [x] **trial** [after split] run anyway, on `team_compiler` (the maintainer, 2026-11-24:
     "even a 2x improvement is a huge amount considering tests can sometimes take up to 70
     hours"); SWE-2 builds the script (`.tmp/testsel/`), the lead runs it. The plan: each test's line
     coverage recorded once (`cargo llvm-cov`), each mutant run with only the tests covering
@@ -695,6 +696,18 @@ and no phase closes with one outstanding.
     2026-11-23): as a new lowest tier, or as an exact one with its survivors run again on
     the full suite. A catch under selection is sound (one of its tests failed), so only its
     survivors can be wrong, and they are few.
+
+    Result (2026-11-24, 60 mutants of `team_compiler`, `.tmp/testsel/trial60.log`):
+    - **No outcome differences**: every mutant had the same outcome both ways.
+    - **Tests: 4.8 times faster** (1,622 s with the full suite, 338 s selected).
+    - **Whole run: 2.0 times faster**, since the builds (940 s) are the same both ways.
+    - 18 mutants' selections were too long for one nextest filter (over 30,000 characters):
+      they ran the full suite in both arms, and their time counts in both.
+    - Both arms ran under the Python test runner, whose start at every test the compiled
+      runner (RUNNER) removes. That saving will be larger for the full suite, which starts
+      more tests.
+  - [ ] **adopt** [after trial] selection in the mutation runs (`mutants.py`) for every
+    tier, a mutant whose selection is too long running the full suite. Brief to come.
 
 ---
 
@@ -4113,6 +4126,11 @@ points there.
   RUNNER (SWE-2, brief `.tmp/runner/brief_runner.md`): a compiled runner,
   `crates/dev/test_runner`, installed by `just install-test-runner`, the `.cmd` falling back
   to Python started with `-S -I` where it is not installed.
+
+- open (2026-11-24) — the app draws the opened sidebar above every window, where the
+  maintainer wants every window above it (DECISIONS 2026-11-24 "every window stands above the
+  opened sidebar"; the drafts already do). Slice WINSB (SWE-2, brief `.tmp/winsb/brief.md`):
+  the sidebar's layer goes under every window.
 
 - open (2026-11-23) — the grid's detail window grows for a few frames after it opens: when it
   replaces a smaller pinned window, it grows about 27 points a frame for four frames (387 to

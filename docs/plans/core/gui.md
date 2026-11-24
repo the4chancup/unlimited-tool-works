@@ -85,7 +85,7 @@ the centred view rather than covering it.
 
 While open, the help window stays above every other window whatever is clicked: the Save
 editor's floating windows, the Compiler's detail window and a tool's start page included. Only
-a dialog, a menu, a tooltip and the open sidebar stand above it. Left to egui, a click on a
+a dialog, a menu and a tooltip stand above it. Left to egui, a click on a
 window it overlaps would lift that window over the text the member opened the help to read.
 
 We do not spread a view over a wider window, because a layout drawn for one size reads worse
@@ -440,10 +440,16 @@ Top to bottom:
    A click on a rail entry switches tools without waiting for the hover, so the rail alone is
    enough to work with, and keyboard users get the same overlay on focus.
 
-   While a modal is open (Settings, About, a tool's dialog) the opened sidebar is drawn under
-   the modal's dimmed backdrop and takes no input, as the view does: above the view, below
-   menus and modals (the draft's `#sb-open`). Drawn over the backdrop, its entries would switch
-   tools or open Help behind a dialog that asks for an answer first.
+   The opened sidebar stands above the view and below everything else (the draft's
+   `#sb-open`):
+   - **Under every window**: the help window, the Save editor's floating windows, the
+     Compiler's detail window and a tool's start page. A window is what the member opened
+     to read or work in, while the sidebar opens whenever the pointer rests on the rail, so
+     it never covers one.
+   - **Under every menu and modal.** While a modal is open (Settings, About, a tool's dialog)
+     the opened sidebar is under its dimmed backdrop and takes no input, as the view does.
+     Drawn over the backdrop, its entries would switch tools or open Help behind a dialog
+     that asks for an answer first.
 
    There is no collapse button and no expanded state to persist. We overlay rather than reserve
    the expanded width, because the expanded sidebar is needed only to read a label or pick a
