@@ -46,7 +46,7 @@ NODES = [
      "gated commit; the lead reads CI after it. A cut starts only once the maintainer has worked "
      "through the tasks page and approved or rewritten the release's CHANGELOG section. During 0.x.x "
      "a release does not wait for "
-     "whole-crate mutation runs: their findings ship in the next release or a patch."),
+     "the closure mutation run: its findings ship in the next release or a patch."),
     ("plans", "Plans", "docs", 0, 0,
      "docs/plans/: the design of what is not built yet, its rationale ('we do X, not Y, because "
      "Y causes Z') and the open phase's Acceptance sections."),
@@ -99,7 +99,7 @@ NODES = [
      "line, then scripts/commit.py checks the message and commits: the message is the log."),
     ("converge", "Converge audit", "lead", 6, 1,
      "Closing a phase: every plan section and acceptance ID checked against the code, then a "
-     "design-health pass (sweeps, whole-crate mutation runs, citation audit, pub items). "
+     "design-health pass (sweeps, the closure mutation run, citation audit, pub items). "
      "Every gap becomes a new worklog step, and the phase stays open until those are done."),
     ("implement", "Implement, red first", "sidekick", 3, 0,
      "An Opus sidekick in its own worktree (real slices) or SWE-2 (small ones) implements "
@@ -159,11 +159,15 @@ NODES = [
      "surviving mutant is an assertion nobody wrote. A larger crate's mutants are split "
      "between the lead's PC and the VPS, sized so both halves end together."),
     ("extra", "Extra mutant kinds", "mutation", 5, 1,
-     "bool, call, literal, normalize and order mutants cargo-mutants does not make, run before a "
-     "whole-crate run into the same survivor list."),
+     "bool, call, literal, normalize and order mutants cargo-mutants does not make, run in "
+     "every mutation run into the same survivor list: a diff run's over the lines it changed."),
     ("whole", "Whole-crate run (VPS)", "mutation", 5, 2,
-     "Every mutant of a crate, on the VPS alone: twice per crate, in the lead's audit and at "
-     "the phase's close. The next phase starts while it runs."),
+     "Every mutant of a crate, on the VPS alone, as a rolling job: one crate after another, "
+     "the one checked longest ago first, nobody waiting. Its triage records the commit it "
+     "ran from, where the closure run starts."),
+    ("closure", "Closure run", "mutation", 5, 3,
+     "mutants-diff over what each crate changed since its last triaged whole-crate run: twice "
+     "per phase, in the lead's audit and at the close. The next phase starts while it runs."),
     ("triage", "Survivor triage", "mutation", 6, 1,
      "Each survivor is a missing test (into a fix slice) or an equivalent mutant, ruled once "
      "and recorded."),
@@ -189,9 +193,10 @@ EDGES = [
     ("rulings", "rework"), ("rulings", "gates"), ("mdiff", "triage"),
     ("ingame_run", "ingame_ok"), ("ingame_ok", "worklog"),
     ("plans", "converge"), ("acceptance", "converge"), ("commit", "converge"),
-    ("converge", "worklog"), ("converge", "astra"), ("converge", "whole"), ("converge", "citation"),
+    ("converge", "worklog"), ("converge", "astra"), ("converge", "closure"), ("converge", "citation"),
     ("converge", "parity"), ("converge", "census"), ("converge", "spec"),
-    ("extra", "whole"), ("whole", "triage"), ("triage", "rework"),
+    ("extra", "whole"), ("extra", "closure"), ("whole", "triage"), ("whole", "closure"),
+    ("closure", "triage"), ("triage", "rework"),
     ("spec", "release"), ("converge", "release"), ("converge", "log"),
     # What a slice is built from and checked by.
     ("draft", "brief"), ("spec", "brief"), ("decisions", "brief"), ("brief", "critical"),
