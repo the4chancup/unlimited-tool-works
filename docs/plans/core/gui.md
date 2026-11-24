@@ -83,10 +83,10 @@ aesthetics patch and Team file interchange at the right, Live AATF's window at t
 right, Copy/swap stats at the bottom centre. So in a larger window they take the room beside
 the centred view rather than covering it.
 
-While open, the help window stays above every other window whatever is clicked, the Save
-editor's floating windows and the Compiler's detail window included; only a dialog, a menu and
-a tooltip stand above it. Left to egui, a click on a window it overlaps would lift that window
-over the text the member opened the help to read.
+While open, the help window stays above every other window whatever is clicked: the Save
+editor's floating windows, the Compiler's detail window and a tool's start page included. Only
+a dialog, a menu, a tooltip and the open sidebar stand above it. Left to egui, a click on a
+window it overlaps would lift that window over the text the member opened the help to read.
 
 We do not spread a view over a wider window, because a layout drawn for one size reads worse
 at another, and each size would then need a look of its own: the Save editor's Player

@@ -65,7 +65,9 @@ fn modal_with_min_width<R>(
 /// the modal's frame and centred title in the middle of `ui`'s rect, at
 /// least `modal`'s 360 points wide, no backdrop and nothing outside the
 /// frame blocked. A real `modal` would block the whole window, the
-/// sidebar's tool switch included.
+/// sidebar's tool switch included. It stands in `Order::Middle`, the help
+/// window's order, so the help stays above it as above any window; in
+/// `Foreground` it would cover the help opened over it.
 pub fn dialog_page<R>(
     ui: &egui::Ui,
     id: egui::Id,
@@ -78,7 +80,7 @@ pub fn dialog_page<R>(
         .pivot(egui::Align2::CENTER_CENTER)
         .fixed_pos(rect.center())
         .constrain_to(rect)
-        .order(egui::Order::Foreground)
+        .order(egui::Order::Middle)
         .interactable(true)
         .show(ui.ctx(), |ui| {
             // The extra scope keeps a click inside the frame from

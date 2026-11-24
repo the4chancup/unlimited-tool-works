@@ -348,7 +348,10 @@ draft checked, handed over by the maintainer 2026-11-23. **After the detour**, i
        Help stays above every other window whatever is clicked, and two tests no longer race
        the check's worker (rulings "G11 review"). The lead's: TC-GUI-09 names the blocked
        line, and the core plan states Help's place above the other windows
-     - [ ] **S-g11** [after G11] SWE-2's round over G11; the grid's review loops end with it
+     - [x] **S-g11** [after G11] SWE-2's round over G11 (rulings "S-g11"): 3 accepted, none a
+       real input whose outcome changes, so the grid's review loops end. Fixed: two more tests
+       no longer race the check's worker, a tool's start page stands under Help, the blocked
+       line's test proves the disposition filter. Open: questions.html `sidebar-over-help`
    - [x] **tbmenu** The Compile button's mode list, Open output folder and Copy report (TC-GUI-11, and
      TC-GUI-33's clause that Compile for sideloading stays enabled while the DpFileList is
      outdated; DECISIONS 2026-11-23 "the Compile menu's Copy report copies the whole log").
@@ -4102,6 +4105,13 @@ points there.
 - resolved (2026-11-24) — `scripts/commit.py -a` left a new file out silently, as `git commit
   -a` does: `9ac41d0a` needed an amend for `docs/spec/core/design.md`. With `-a` it now
   commits nothing while a file is untracked and not ignored, and names it (`69e1ac60`).
+
+- open (2026-11-24) — on Windows every test process starts Python (`scripts/gates/
+  test_runner.cmd`, the 6 GB cap), about 250 ms a test under a mutation trial's load, and
+  Defender scans its ~80 standard-library files at each start: most of Defender's CPU in the
+  maintainer's recording, and the likely cause of their input lag while tests ran. Starting it
+  with `-S -I` saves about a fifth. A compiled runner needs `unsafe` (`win32job`, the safe
+  wrapper, has no per-process memory cap): waits on questions.html `native-test-runner`.
 
 - open (2026-11-23) — the grid's detail window grows for a few frames after it opens: when it
   replaces a smaller pinned window, it grows about 27 points a frame for four frames (387 to

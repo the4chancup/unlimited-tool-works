@@ -73,6 +73,48 @@ text into the chat. The answered ones then leave this page, and each answer goes
   <textarea class="own" placeholder="Your own answer or a note (optional)"></textarea>
 </section>
 
+<h2>The app's look</h2>
+
+<section class="entry" id="sidebar-over-help">
+  <h3>The open sidebar and the Help window: which is on top</h3>
+  <p class="from">From: the last review round over the Compiler's grid</p>
+  <p>The sidebar opens when you point at it, and Help can be open at the same time; where the
+  two meet, one covers the other. The app draws the open sidebar on top, since it opens under
+  the pointer and closes once the pointer leaves it. The drafts draw Help on top. Every other
+  window, a tool's start page included, now stays under Help in both.</p>
+  <p class="ask">Where the open sidebar and Help overlap, which should be on top?</p>
+  <div class="options">
+    <label class="opt"><input type="radio" value="the open sidebar"><b>The open sidebar, as the app draws it now</b></label>
+    <label class="opt"><input type="radio" value="Help"><b>Help, as the drafts draw it</b></label>
+  </div>
+  <textarea class="own" placeholder="Your own answer or a note (optional)"></textarea>
+</section>
+
+<h2>Development tools</h2>
+
+<section class="entry" id="native-test-runner">
+  <h3>A compiled test runner in place of the Python one</h3>
+  <p class="from">From: Defender's CPU use while tests ran (2026-11-24)</p>
+  <p>On Windows every test process starts through <code>scripts/gates/test_runner.cmd</code>,
+  which starts Python to put the test under its 6 GB memory cap. Nextest runs each test in its
+  own process, so the Compiler's 1,706 tests start Python 1,706 times. Each start took about
+  250 ms while a mutation trial ran, and Defender scans the 80-odd standard library files it
+  reads every time. That was most of Defender's CPU in your recording. Starting Python without
+  its site setup saves about a fifth of that (it is applied). A small runner compiled in Rust
+  would start in a few milliseconds and read no Python files.</p>
+  <p class="ask">The runner's memory cap is a Windows Job Object setting, which Rust reaches
+  only through <code>unsafe</code> calls: the one crate that wraps Job Objects safely,
+  <code>win32job</code>, cannot set a per-process memory cap or report a test that hit it. The
+  runner would make four such calls, each inside a small safe function with its
+  <code>SAFETY:</code> comment, through the <code>windows</code> crate the workspace already has.
+  It is a developer tool only: the app never contains it. May it use <code>unsafe</code>?</p>
+  <div class="options">
+    <label class="opt"><input type="radio" value="yes, unsafe"><b>Yes: a compiled runner, with those four <code>unsafe</code> calls</b></label>
+    <label class="opt"><input type="radio" value="keep Python"><b>No: keep the Python runner</b></label>
+  </div>
+  <textarea class="own" placeholder="Your own answer or a note (optional)"></textarea>
+</section>
+
 <div class="picks">
   <button id="copy">Copy my answers</button>
   <button id="clear">Clear my answers</button>

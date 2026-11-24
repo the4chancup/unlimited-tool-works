@@ -169,13 +169,15 @@ fn a_compile_s_end_starts_a_check() {
     let (release_run, run_until) = unbounded();
     tool.run_log = RunLog::in_flight(run_until);
     tool.tick(&ctx);
-    assert!(!tool.live_check.is_running());
+    assert!(!tool.live_check.has_started());
     release_run.send(()).unwrap();
     poll_until_done(|| {
         tool.tick(&ctx);
         tool.run_log.is_running()
     });
-    assert!(tool.live_check.is_running());
+    // The `tick` that ends the run starts the check and polls it at once, so the
+    // check may already be over: whether one started is what holds either way.
+    assert!(tool.live_check.has_started());
     finish_check(&mut tool, &ctx);
     assert_eq!(
         row(tool.live_check.rows(), "/egg/").id,
@@ -194,7 +196,7 @@ fn the_window_starts_no_check_under_a_run_or_once_one_has_started() {
     tool.run_log = RunLog::in_flight(run_until);
     let mut window = Headless::new();
     window.frame(Vec::new(), |ui| tool.view(ui, &ctx));
-    assert!(!tool.live_check.is_running(), "none under the run");
+    assert!(!tool.live_check.has_started(), "none under the run");
 
     release_run.send(()).unwrap();
     poll_until_done(|| {
@@ -202,7 +204,7 @@ fn the_window_starts_no_check_under_a_run_or_once_one_has_started() {
         tool.run_log.is_running()
     });
     assert!(
-        tool.live_check.is_running(),
+        tool.live_check.has_started(),
         "premise: the run's end checks"
     );
     finish_check(&mut tool, &ctx);

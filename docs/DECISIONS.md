@@ -20147,3 +20147,12 @@ Decision: the button is drawn selected, filled in the selection blue with its la
 selection's text colour, as the Compiler's Upgrade DpFileList button is; the grey outline goes.
 Why: outlined in grey on the grass, it read as a message rather than a button.
 Plan: `docs/plans/save_editor.md` "Tactics editor" (the Set PES path bullet).
+
+## 2026-11-24 — studio GUI — a tool's start page stands under the help window
+Decision: the start page a tool shows with nothing open (the Save editor's, the Ruleset
+editor's) is drawn in the help window's layer order, not in front of it, so the help stays above
+it as above any other window. The open sidebar stays above the help; whether it should is a
+question on `docs/maintainer/questions.html`.
+Why: the earlier entry's "above every other window" was wrong for the start pages, which drew
+over the help opened on them, where the drafts draw the help on top.
+Plan: `docs/plans/core/gui.md`, the paragraph after the floating windows' placement.

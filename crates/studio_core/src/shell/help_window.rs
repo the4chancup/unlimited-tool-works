@@ -1810,6 +1810,36 @@ mod tests {
     // the top on every frame, so a retarget and any click leave it above.
     #[test]
     fn help_stays_on_top_of_the_window_it_covers() {
+        assert_help_stays_above("cover", |ui| {
+            egui::Window::new("Cover")
+                .id(egui::Id::unique("cover"))
+                .fixed_pos(egui::pos2(560.0, 420.0))
+                .default_size(egui::vec2(300.0, 210.0))
+                .show(ui.ctx(), |ui| {
+                    ui.label("the window over the help");
+                });
+        });
+    }
+
+    // A tool's start page (the Save editor's and the Ruleset editor's, with nothing
+    // open) is a window like the others: the help stays above it, as in the drafts.
+    #[test]
+    fn help_stays_on_top_of_a_start_page() {
+        assert_help_stays_above("start-page", |ui| {
+            let corner =
+                egui::Rect::from_min_max(egui::pos2(540.0, 400.0), egui::pos2(940.0, 720.0));
+            let page = ui.new_child(egui::UiBuilder::new().max_rect(corner));
+            crate::widgets::dialog_page(&page, egui::Id::unique("start-page"), "Start", |ui| {
+                ui.label("the start page under the help");
+            });
+        });
+    }
+
+    /// Opens the help window with `cover` drawn after it each frame (an area whose
+    /// id is `cover_id`, over the help's lower right and reaching past its right
+    /// edge), then asserts the help is on top where they overlap: at first, after a
+    /// click there, after a click on the cover's own part, and after a retarget.
+    fn assert_help_stays_above(cover_id: &str, cover: impl Fn(&mut egui::Ui)) {
         let egui_ctx = test_context();
         let mut window = HelpWindow::new(vec![("a", alpha_section())]);
         let target = |topic: &str| HelpTarget {
@@ -1818,20 +1848,13 @@ mod tests {
             anchor: None,
         };
         let help_layer = egui::LayerId::new(egui::Order::Middle, egui::Id::unique("help-window"));
-        let cover_layer = egui::LayerId::new(egui::Order::Middle, egui::Id::unique("cover"));
-        // The cover is drawn over the help window's lower right: where each of
-        // them stands is read off their areas once drawn.
+        let cover_layer = egui::LayerId::new(egui::Order::Middle, egui::Id::unique(cover_id));
+        // Where each window stands is read off their areas once drawn.
         let show = |window: &mut HelpWindow, events: Vec<egui::Event>| {
             egui_ctx
                 .run_ui(raw_input(events, true, None, None), |ui| {
                     window.show(ui.ctx());
-                    egui::Window::new("Cover")
-                        .id(egui::Id::unique("cover"))
-                        .fixed_pos(egui::pos2(560.0, 420.0))
-                        .default_size(egui::vec2(300.0, 210.0))
-                        .show(ui.ctx(), |ui| {
-                            ui.label("the window over the help");
-                        });
+                    cover(ui);
                 })
                 .drop_without_applying_deltas();
         };

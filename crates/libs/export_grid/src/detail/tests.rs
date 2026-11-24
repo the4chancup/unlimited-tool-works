@@ -795,12 +795,24 @@ fn blocked_scene(two_causes: bool) -> Scene {
             ..cell(
                 "/co/",
                 "co Midcup Map",
-                vec![dropped(
-                    "team_name_unknown",
-                    Scope::Export {
-                        export_id: ExportId(1),
-                    },
-                )],
+                // `export_identified` keeps its export: the line names only the
+                // findings that drop it.
+                vec![
+                    finding(
+                        "export_identified",
+                        Severity::Info,
+                        Scope::Export {
+                            export_id: ExportId(1),
+                        },
+                        &[],
+                    ),
+                    dropped(
+                        "team_name_unknown",
+                        Scope::Export {
+                            export_id: ExportId(1),
+                        },
+                    ),
+                ],
             )
         },
         id: Some(IdCell::Missing),

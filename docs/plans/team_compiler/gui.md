@@ -404,8 +404,9 @@ Processing eligibility follows the effective disposition, not severity alone:
 - `DropExport` skips everything belonging to that export;
 - `AbortRun` terminates the run.
 
-An effective `DropExport` gives every player and kit cell in that row a derived blocked state
-(not pending or processing), and each one's detail window names the export-level cause. A skipped
+An effective `DropExport` gives every player, portraits and kit cell in that row a derived
+blocked state (not pending or processing), and each one's detail window names the export-level
+cause. A skipped
 scope otherwise keeps its error status when Compile is pressed.
 
 Planning messages are applied before manifest tasks become pending: rows dropped by planning become
