@@ -144,9 +144,15 @@ class Main(unittest.TestCase):
         {"binary_id": "c", "name": "tests::lost", "binary": "b", "cwd": "."},
     ]
 
-    def run_main(self, notes: list) -> tuple[int, Path, str]:
+    def run_main(
+        self, notes: list, argv: list[str] | None = None,
+        extra_rows: list[list[str]] | None = None,
+    ) -> tuple[int, Path, str]:
         """`main` in a temporary root with the toolchain steps replaced: the two TESTS,
         each covering line 1 of `src/lib.rs`, with `notes[i]` as test i's tooling note.
+        `argv` defaults to the `--mutants` form; `extra_rows` stubs the extra kinds'
+        lister on a `crates/c` crate whose `src/lib.rs` is six two-byte lines, test 0
+        also covering its line 4.
         The exit code, the selection file's path and what went to stderr."""
         temp = tempfile.TemporaryDirectory()
         self.addCleanup(temp.cleanup)
@@ -156,9 +162,14 @@ class Main(unittest.TestCase):
         self.addCleanup(os.chdir, here)
         listed = [{"file": "src/lib.rs", "span": {"start": {"line": 1}, "end": {"line": 1}}}]
         (root / "mutants.json").write_text(json.dumps(listed), encoding="utf-8")
+        if extra_rows is not None:
+            (root / "crates" / "c" / "src").mkdir(parents=True)
+            (root / "crates" / "c" / "src" / "lib.rs").write_bytes(b"1\n2\n3\n4\n5\n6\n")
 
         def one(index, test, env, profiles, root, src, programs):
             lines = set() if notes[index] else {("src/lib.rs", 1)}
+            if extra_rows is not None and index == 0:
+                lines.add(("crates/c/src/lib.rs", 4))
             return {"index": index, "code": 0, "lines": lines, "note": notes[index]}
 
         err = io.StringIO()
@@ -167,10 +178,20 @@ class Main(unittest.TestCase):
             mock.patch.object(coverage_map, "package_layout", return_value=("src/", [])),
             mock.patch.object(coverage_map, "nextest_list", return_value=self.TESTS),
             mock.patch.object(coverage_map, "one_coverage", side_effect=one),
+            mock.patch.object(
+                coverage_map.extra_mutants, "list_mutants",
+                lambda directory: extra_rows or [],
+            ),
+            mock.patch.object(
+                coverage_map.extra_mutants, "crate_dir",
+                lambda crate, base: (base / "crates" / "c").resolve(),
+            ),
             contextlib.redirect_stdout(io.StringIO()),
             contextlib.redirect_stderr(err),
         ):
-            code = coverage_map.main(["c", "mutants.json", "selection.json"])
+            code = coverage_map.main(
+                argv or ["c", "selection.json", "--mutants", "mutants.json"]
+            )
         return code, root / "selection.json", err.getvalue()
 
     def test_a_test_whose_coverage_cannot_be_read_fails_the_map(self):
@@ -190,6 +211,45 @@ class Main(unittest.TestCase):
                 "filter": "(binary_id(=c) & test(=tests::read)) | (binary_id(=c) & test(=tests::lost))",
             }],
         )
+
+    def test_an_extra_row_is_mapped_to_the_lines_its_bytes_span(self):
+        """`--extra` alone lists the extra kinds' mutants and writes one entry
+        per row: the crate-relative file, the 1-based lines its byte range
+        spans (bytes 4-9 of the six-line file: lines 3 to 5), the filter of the
+        tests covering any of them."""
+        row = ["src/lib.rs", "4", "10", "call", "3", "", "drop f() | removed: f()"]
+        code, out, _ = self.run_main(
+            [None, None], argv=["c", "selection.json", "--extra"], extra_rows=[row]
+        )
+        self.assertEqual(code, 0)
+        written = json.loads(out.read_text(encoding="utf-8"))["mutants"]
+        self.assertEqual(
+            written,
+            [{
+                "file": "crates/c/src/lib.rs", "start": 3, "end": 5,
+                "filter": "(binary_id(=c) & test(=tests::read))",
+            }],
+        )
+
+    def test_the_cargo_mutants_entries_come_first(self):
+        row = ["src/lib.rs", "0", "2", "bool", "1", "false", "flip | removed: true"]
+        code, out, _ = self.run_main(
+            [None, None],
+            argv=["c", "selection.json", "--mutants", "mutants.json", "--extra"],
+            extra_rows=[row],
+        )
+        self.assertEqual(code, 0)
+        written = json.loads(out.read_text(encoding="utf-8"))["mutants"]
+        self.assertEqual(
+            [entry["file"] for entry in written],
+            ["src/lib.rs", "crates/c/src/lib.rs"],
+        )
+
+    def test_neither_option_is_an_error(self):
+        err = io.StringIO()
+        with contextlib.redirect_stderr(err):
+            self.assertEqual(coverage_map.main(["c", "selection.json"]), 2)
+        self.assertIn("--extra", err.getvalue())
 
 
 class OneCoverage(unittest.TestCase):

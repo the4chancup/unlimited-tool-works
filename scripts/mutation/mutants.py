@@ -1002,18 +1002,19 @@ def launch_remote(
     shard). Its cargo-mutants line caps the jobserver at
     `REMOTE_JOBSERVER_TASKS` (`nproc` while unset), the build cap the config
     cannot carry (`sized_config`). With `extra` (a whole run) the job first
-    runs the extra kinds (`--remote-extra`) and
-    logs `extra pass exit <code>`, then lists the crate's mutants and builds
-    the coverage map from them (which tests cover each listed mutant's lines;
-    `coverage_map.py`, logging `coverage map exit
-    <code>`), then runs cargo-mutants whatever the
+    lists the crate's mutants and builds the coverage map from them —
+    which tests cover each listed mutant's lines, the extra kinds' included
+    (`coverage_map.py --mutants --extra`, logging `coverage map exit
+    <code>`) — then runs the extra kinds on it (`--remote-extra --selection`,
+    logging `extra pass exit <code>`), then cargo-mutants whatever the
     codes: `run/exit` stays cargo-mutants'. cargo-mutants is started as
     `cargo-mutants mutants` — `cargo mutants` would overwrite `CARGO` for the
     subcommand — with the stand-in `select_tests.py` as `CARGO` when the map's
     `run/selection.json` exists, so each mutant runs the tests covering its
     lines; without the file the full suite runs, a failed map costing time,
-    never a wrong outcome. An extras-only run (`extra_only`) writes
-    the pass alone, `kinds` naming the kinds after the crate — `run/exit` is
+    never a wrong outcome. An extras-only run (`extra_only`) writes the map
+    (`--extra` alone, no cargo-mutants listing) and
+    the pass, `kinds` naming the kinds after the crate — `run/exit` is
     the pass's own code, and the record carries `extra_only` for `collect`.
     The service is
     detached from this ssh session
@@ -1026,29 +1027,38 @@ def launch_remote(
     starts: `local_refusal` and `collect` read the record."""
     remote_args = remote_selection(selection)
     shard = "" if whole else "--shard 1/2 --sharding round-robin "
+    selection_map = ""
+    if extra or extra_only:
+        # The map is built from the listing the run tests: same -p, same
+        # --config; `--extra` adds the extra kinds' mutants, whose pass then
+        # reads it through --selection. Its failure leaves no selection.json,
+        # so the stand-in stays off and every mutant runs the full suite.
+        listing = ""
+        if not extra_only:
+            listing = (
+                f"cargo-mutants mutants {remote_args} --list --json "
+                "--config ../mutants.remote.toml > ../run/mutants.json\n"
+            )
+        selection_map = (
+            listing
+            + "nice -n 19 ionice -c3 "
+            + f"python3 scripts/mutation/coverage_map.py {selection[1]} "
+            + "../run/selection.json"
+            + ("" if extra_only else " --mutants ../run/mutants.json")
+            + " --extra\n"
+            'echo "coverage map exit $?"\n'
+        )
     extra_pass = ""
     if extra or extra_only:
         # The selection is ["-p", crate].
         named = "".join(f" {kind}" for kind in kinds)
         extra_pass = (
             "nice -n 19 ionice -c3 "
-            f"python3 scripts/mutation/mutants.py --remote-extra {selection[1]}{named}\n"
+            f"python3 scripts/mutation/mutants.py --remote-extra "
+            f"{selection[1]}{named} --selection ../run/selection.json\n"
         )
         if not extra_only:
             extra_pass += 'echo "extra pass exit $?"\n'
-    selection_map = ""
-    if extra and not extra_only:
-        # The map is built from the listing the run tests: same -p, same
-        # --config. Its failure leaves no selection.json, so the stand-in
-        # stays off and every mutant runs the full suite.
-        selection_map = (
-            f"cargo-mutants mutants {remote_args} --list --json "
-            "--config ../mutants.remote.toml > ../run/mutants.json\n"
-            "nice -n 19 ionice -c3 "
-            f"python3 scripts/mutation/coverage_map.py {selection[1]} "
-            "../run/mutants.json ../run/selection.json\n"
-            'echo "coverage map exit $?"\n'
-        )
     mutants_line = ""
     if not extra_only:
         cargo_args = (
@@ -1079,7 +1089,7 @@ def launch_remote(
         "start=$(date +%s)\n"
         # On disk, not the tmpfs `/tmp`: see REMOTE_TMPDIR.
         f'export TMPDIR="{REMOTE_TMPDIR}" && mkdir -p "$TMPDIR"\n'
-        f". ~/.cargo/env && {extra_pass}{selection_map}{mutants_line}"
+        f". ~/.cargo/env && {selection_map}{extra_pass}{mutants_line}"
         "code=$?\n"
         # `memory.peak` of this unit's cgroup tells whether the cap is tight;
         # `exit` stays the last file written: pollers treat it as finished.
@@ -1573,8 +1583,9 @@ def recheck_remote_extra(missed: list[str]) -> tuple[set[str], int]:
 
 def coverage_map_exit(log_path: Path) -> str | None:
     """The coverage map's exit code as a whole run's job log records it, or
-    None when the log has no such line (a diff run's, or no log): the run
-    selected each mutant's tests only when the map exited 0."""
+    None when the log has no such line (a diff run's, or no log): the run's
+    mutants — cargo-mutants' and the extra pass's alike — selected their tests
+    only when the map exited 0."""
     console = (
         log_path.read_text(encoding="utf-8", errors="replace")
         if log_path.exists()
@@ -2467,13 +2478,27 @@ def main(argv: list[str]) -> int:
     if argv[1] == "--remote-extra":
         # The remote job runs this inside the unit: a whole run's job before
         # cargo-mutants, an extras-only run's alone (`launch_remote`), the
-        # kinds after the crate (EXTRA_KINDS when none). The pass runs in a
+        # kinds after the crate (EXTRA_KINDS when none) and `--selection`
+        # naming the coverage map the job built first, each mutant's test
+        # phase running the tests covering its lines. The pass runs in a
         # copy of the clone's own tree, its record where the fetch picks it up.
         # No lock, no refusal: the unit is alone on the clone.
         import extra_mutants  # deferred: extra_mutants imports this module
 
+        kinds = argv[3:]
+        selection = None
+        if "--selection" in kinds:
+            at = kinds.index("--selection")
+            if at + 1 == len(kinds):
+                print(
+                    "usage: mutants.py --remote-extra <crate> [kinds...] "
+                    "[--selection <path>]"
+                )
+                return 1
+            selection = Path(kinds[at + 1])
+            del kinds[at:at + 2]
         _, counts, seconds = extra_mutants.run_crate(
-            argv[2], argv[3:] or list(EXTRA_KINDS)
+            argv[2], kinds or list(EXTRA_KINDS), selection=selection
         )
         record_extra_run(argv[2], counts, seconds)
         return 1 if counts["untested"] else 0
@@ -2509,7 +2534,8 @@ def main(argv: list[str]) -> int:
 
 def whole_run(crate: str, host: str | None, tree: str) -> int:
     """`just mutants <crate>` on the snapshot `tree`: every mutant on the
-    remote, the extra kinds first in the same service — a whole-crate run
+    remote, the coverage map and the extra kinds before cargo-mutants in the
+    same service — a whole-crate run
     measures for days, and a local half would block this machine and die with
     it. The file split stays in `split` for when a whole run needs this machine
     again. The launch takes the run lock; the wait and `collect`'s take none,
@@ -2551,7 +2577,8 @@ def extra_only_run(crate: str, kinds: list[str], host: str | None, tree: str) ->
     """`just extra-mutants-remote <crate>` (`--extra-only`) on the snapshot
     `tree`: the extra kinds `kinds` alone on the remote (`EXTRA_KINDS` when
     empty) — a kind's backfill over the crates measures for days of its own, so
-    it goes where a whole run goes, without the cargo-mutants part. The
+    it goes where a whole run goes, the coverage map built first the same way,
+    without the cargo-mutants part. The
     refusals are `whole_run`'s and the launch, wait and finish are shaped the
     same; nothing of `mutants.out` is set aside, summarized or folded into the
     cost table — the finish reads the pass's own files."""
