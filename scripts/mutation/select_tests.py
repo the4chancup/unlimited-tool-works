@@ -64,21 +64,15 @@ def _read(path: Path) -> bytes | None:
         return None
 
 
-def test_filter(selection: list[dict], source: Path, copy: Path) -> tuple[str | None, str]:
-    """The nextest expression a mutant's test phase adds, and a one-line reason; `None` runs
-    the full suite. `selection` is the selection file's `mutants` list, `source` the run's
-    unmutated tree and `copy` cargo-mutants' copy of it with the mutant applied."""
-    files = list(dict.fromkeys(entry["file"] for entry in selection))
-    changed = [file for file in files if _read(source / file) != _read(copy / file)]
-    if not changed:
-        return None, "no listed file differs from the source (the baseline)"
-    if len(changed) > 1:
-        return None, "several files differ from the source: " + ", ".join(changed)
-    file = changed[0]
-    lines = changed_lines(_read(source / file) or b"", _read(copy / file) or b"")
-    if lines is None:
-        return None, f"no line of {file} differs from the source"
-    start, end = lines
+def filter_for(
+    selection: list[dict], file: str, start: int, end: int
+) -> tuple[str | None, str]:
+    """The nextest expression for `file`'s `start`-`end` lines (1-based,
+    inclusive): the filters of the listed mutants overlapping them joined,
+    and a one-line reason;
+    `None` runs the full suite (no listed mutant there, one no test covers, a
+    filter too long for one command line). `selection` is the selection file's
+    `mutants` list."""
     where = f"{file}:{start}-{end}"
     mutants = [
         entry
@@ -94,6 +88,31 @@ def test_filter(selection: list[dict], source: Path, copy: Path) -> tuple[str | 
     if len(expression) > MAX_FILTER_CHARS:
         return None, f"the filter is too long ({len(expression)} characters)"
     return expression, f"{len(mutants)} mutants' filters on {where}"
+
+
+def test_filter(selection: list[dict], source: Path, copy: Path) -> tuple[str | None, str]:
+    """The nextest expression a mutant's test phase adds, and a one-line reason; `None` runs
+    the full suite. `selection` is the selection file's `mutants` list, `source` the run's
+    unmutated tree and `copy` cargo-mutants' copy of it with the mutant applied."""
+    files = list(dict.fromkeys(entry["file"] for entry in selection))
+    changed = [file for file in files if _read(source / file) != _read(copy / file)]
+    if not changed:
+        return None, "no listed file differs from the source (the baseline)"
+    if len(changed) > 1:
+        return None, "several files differ from the source: " + ", ".join(changed)
+    file = changed[0]
+    lines = changed_lines(_read(source / file) or b"", _read(copy / file) or b"")
+    if lines is None:
+        return None, f"no line of {file} differs from the source"
+    start, end = lines
+    return filter_for(selection, file, start, end)
+
+
+def with_filter(args: list[str], expression: str) -> list[str]:
+    """`args` with `-E <expression>` added — before `--` when `args` carries
+    one, nextest handing what follows the separator to the test binaries."""
+    insert = args.index("--") if "--" in args else len(args)
+    return [*args[:insert], "-E", expression, *args[insert:]]
 
 
 def cargo_command(
@@ -112,8 +131,7 @@ def cargo_command(
         selection, Path(env["UTW_MUTANTS_SOURCE"]), copy
     )
     if expression is not None:
-        insert = args.index("--") if "--" in args else len(args)
-        args = [*args[:insert], "-E", expression, *args[insert:]]
+        args = with_filter(args, expression)
     return [cargo, *args], f"select_tests: {reason}"
 
 

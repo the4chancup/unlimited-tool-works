@@ -153,6 +153,34 @@ class TestFilter(unittest.TestCase):
         )
         self.assertEqual(expression, at_limit)
 
+    def test_filter_for_joins_the_overlapping_entries(self):
+        selection = [
+            {"file": "f.rs", "start": 5, "end": 7, "filter": "a"},
+            {"file": "f.rs", "start": 7, "end": 9, "filter": "b"},
+            {"file": "g.rs", "start": 5, "end": 9, "filter": "c"},
+        ]
+        expression, reason = select_tests.filter_for(selection, "f.rs", 6, 8)
+        self.assertEqual(expression, "a | b")
+        self.assertEqual(reason, "2 mutants' filters on f.rs:6-8")
+
+    def test_filter_for_no_listed_mutant(self):
+        selection = [{"file": "f.rs", "start": 5, "end": 7, "filter": "a"}]
+        expression, reason = select_tests.filter_for(selection, "f.rs", 1, 4)
+        self.assertIsNone(expression)
+        self.assertEqual(reason, "no listed mutant on f.rs:1-4")
+
+    def test_filter_for_a_null_filter_runs_the_full_suite(self):
+        selection = [{"file": "f.rs", "start": 5, "end": 7, "filter": None}]
+        expression, reason = select_tests.filter_for(selection, "f.rs", 6, 6)
+        self.assertIsNone(expression)
+        self.assertEqual(reason, "no test covers f.rs:6-6")
+
+    def test_filter_for_a_range_touching_an_entrys_edge_overlaps_it(self):
+        selection = [{"file": "f.rs", "start": 5, "end": 7, "filter": "a"}]
+        for start, end in ((3, 5), (7, 12)):
+            expression, _ = select_tests.filter_for(selection, "f.rs", start, end)
+            self.assertEqual(expression, "a", (start, end))
+
 
 class CargoCommand(unittest.TestCase):
     REAL = "real-cargo"
@@ -208,6 +236,18 @@ class CargoCommand(unittest.TestCase):
         self.assertEqual(command, [self.REAL, *args])
         self.assertEqual(
             line, "select_tests: no listed file differs from the source (the baseline)"
+        )
+
+    def test_with_filter_appends_without_a_separator(self):
+        self.assertEqual(
+            select_tests.with_filter(["nextest", "run", "-p", "x"], "expr"),
+            ["nextest", "run", "-p", "x", "-E", "expr"],
+        )
+
+    def test_with_filter_inserts_before_the_separator(self):
+        self.assertEqual(
+            select_tests.with_filter(["nextest", "run", "--", "--skip", "s"], "expr"),
+            ["nextest", "run", "-E", "expr", "--", "--skip", "s"],
         )
 
 

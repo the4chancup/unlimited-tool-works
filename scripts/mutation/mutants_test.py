@@ -681,6 +681,32 @@ class TestCommand(unittest.TestCase):
         ):
             extra_mutants.baseline_seconds("cpk", Path("."))
 
+    def test_run_tests_adds_an_expressions_filter_to_the_command(self):
+        """With `expression` (the coverage map's filter for the mutant's
+        lines), `run_tests` adds `-E` to its `cargo nextest run`; without one
+        the command is unchanged, as the tests above hold."""
+        popen, *_ = self.started(
+            lambda cwd: extra_mutants.run_tests("cpk", cwd, 1.0, "test(=covers)")
+        )
+        self.assertEqual(popen.call_args.args[0][-2:], ["-E", "test(=covers)"])
+
+    def test_the_baseline_runs_the_full_suite(self):
+        """The baseline's test phase takes no filter: a selection is a
+        mutant's, and the baseline times the whole suite."""
+        calls = []
+
+        def run_tests(crate, cwd, timeout, expression=None):
+            calls.append(expression)
+            return 0, ""
+
+        with mock.patch.multiple(
+            extra_mutants,
+            build=lambda crate, cwd: (0, ""),
+            run_tests=run_tests,
+        ):
+            extra_mutants.baseline_seconds("cpk", Path("x"))
+        self.assertEqual(calls, [None])
+
 
 class Partition(unittest.TestCase):
     def test_each_file_goes_to_the_side_further_below_its_share_largest_first(self):
@@ -1505,7 +1531,7 @@ class WholeRun(unittest.TestCase):
         with (
             mock.patch.object(
                 extra_mutants, "run_crate",
-                lambda *a: runs.append(a) or ([], Counter(caught=2), 3.5),
+                lambda *a, **k: runs.append((a, k)) or ([], Counter(caught=2), 3.5),
             ),
             mock.patch.object(
                 mutants, "run_lock", lambda *a, **k: self.fail("a lock was taken")
@@ -1513,7 +1539,9 @@ class WholeRun(unittest.TestCase):
             contextlib.redirect_stdout(io.StringIO()),
         ):
             self.assertEqual(mutants.main(["mutants.py", "--remote-extra", "cpk"]), 0)
-        self.assertEqual(runs, [("cpk", list(mutants.EXTRA_KINDS))])
+        self.assertEqual(
+            runs, [(("cpk", list(mutants.EXTRA_KINDS)), {"selection": None})]
+        )
         record = json.loads(
             (self.root / "extra_mutants.out" / "run.json").read_text(encoding="utf-8")
         )
@@ -1522,7 +1550,7 @@ class WholeRun(unittest.TestCase):
         )
         with (
             mock.patch.object(
-                extra_mutants, "run_crate", lambda *a: ([], Counter(untested=1), 1.0)
+                extra_mutants, "run_crate", lambda *a, **k: ([], Counter(untested=1), 1.0)
             ),
             contextlib.redirect_stdout(io.StringIO()),
         ):
@@ -1535,7 +1563,7 @@ class WholeRun(unittest.TestCase):
         with (
             mock.patch.object(
                 extra_mutants, "run_crate",
-                lambda *a: runs.append(a) or ([], Counter(caught=1), 1.0),
+                lambda *a, **k: runs.append((a, k)) or ([], Counter(caught=1), 1.0),
             ),
             contextlib.redirect_stdout(io.StringIO()),
         ):
@@ -1548,7 +1576,36 @@ class WholeRun(unittest.TestCase):
                 ),
                 0,
             )
-        self.assertEqual(runs, [("cpk", ["call"]), ("cpk", ["call", "bool"])])
+        self.assertEqual(
+            runs,
+            [
+                (("cpk", ["call"]), {"selection": None}),
+                (("cpk", ["call", "bool"]), {"selection": None}),
+            ],
+        )
+
+    def test_remote_extra_passes_its_selection_to_the_pass(self):
+        """`--selection <path>` on `--remote-extra` names the coverage map the
+        job built first; `run_crate` reads it for each mutant's filter."""
+        runs = []
+        with (
+            mock.patch.object(
+                extra_mutants, "run_crate",
+                lambda *a, **k: runs.append((a, k)) or ([], Counter(caught=1), 1.0),
+            ),
+            contextlib.redirect_stdout(io.StringIO()),
+        ):
+            self.assertEqual(
+                mutants.main(
+                    ["mutants.py", "--remote-extra", "cpk", "call",
+                     "--selection", "../run/selection.json"]
+                ),
+                0,
+            )
+        self.assertEqual(
+            runs,
+            [(("cpk", ["call"]), {"selection": Path("../run/selection.json")})],
+        )
 
 
 class ExtraOnlyRun(unittest.TestCase):
@@ -1838,9 +1895,10 @@ class SplitShares(unittest.TestCase):
         self.assertTrue(calls["whole"])
         self.assertNotIn("--shard", self.job(whole=True))
 
-    def test_a_whole_runs_job_runs_the_extra_pass_first_and_a_diffs_never(self):
-        """A whole run's remote job runs the extra kinds before cargo-mutants,
-        logging the pass's code but leaving `run/exit` cargo-mutants'; the
+    def test_a_whole_runs_job_runs_the_extra_pass_and_a_diffs_never(self):
+        """A whole run's remote job runs the extra kinds on the coverage map
+        before cargo-mutants, logging the pass's code but leaving `run/exit`
+        cargo-mutants'; the
         cleanup clears the clone's
         `extra_mutants.out` with its `mutants.out`, so a failed pass leaves no
         last run's record to fetch."""
@@ -1851,7 +1909,7 @@ class SplitShares(unittest.TestCase):
         )
         self.assertIn(
             "nice -n 19 ionice -c3 python3 scripts/mutation/"
-            "mutants.py --remote-extra cpk\n",
+            "mutants.py --remote-extra cpk --selection ../run/selection.json\n",
             job,
         )
         self.assertNotIn("CARGO_BUILD_JOBS", job)
@@ -1871,34 +1929,43 @@ class SplitShares(unittest.TestCase):
         self.assertNotIn("remote-extra", diff_job)
         self.assertNotIn("extra pass exit", diff_job)
 
-    def test_an_extras_only_job_is_the_extra_pass_alone(self):
-        """An extras-only run's remote job is the extra pass alone (`extra_only`
-        suffices for it and its record mark): no `cargo mutants` line, and
-        `run/exit` written from the pass's own code. A whole run's job is
+    def test_an_extras_only_job_is_the_map_then_the_extra_pass(self):
+        """An extras-only run's remote job is the coverage map (`--extra`
+        alone) then the extra pass on it (`extra_only` suffices for it and its
+        record mark): no `cargo mutants` line, and `run/exit` written from the
+        pass's own code. A whole run's job is
         pinned byte for byte below."""
         job = self.job(whole=True, extra=False, extra_only=True, kinds=["call"])
         self.assertNotIn("cargo mutants", job)
+        self.assertNotIn("cargo-mutants mutants", job)
         self.assertNotIn("extra pass exit", job)
         self.assertIn(
             ". ~/.cargo/env && nice -n 19 ionice -c3 python3 "
-            "scripts/mutation/mutants.py --remote-extra cpk call\ncode=$?\n",
+            "scripts/mutation/coverage_map.py cpk ../run/selection.json --extra\n"
+            'echo "coverage map exit $?"\n'
+            "nice -n 19 ionice -c3 python3 scripts/mutation/"
+            "mutants.py --remote-extra cpk call "
+            "--selection ../run/selection.json\ncode=$?\n",
             job,
         )
         self.assertNotIn("CARGO_BUILD_JOBS", job)
         job = self.job(
             whole=True, extra=False, extra_only=True, kinds=["bool", "call"]
         )
-        self.assertIn("--remote-extra cpk bool call\n", job)
+        self.assertIn(
+            "--remote-extra cpk bool call --selection ../run/selection.json\n",
+            job,
+        )
         whole = """\
 #!/bin/bash
 exec > ../run/log 2>&1
 start=$(date +%s)
 export TMPDIR="$HOME/studio-mutants/tmp" && mkdir -p "$TMPDIR"
-. ~/.cargo/env && nice -n 19 ionice -c3 python3 scripts/mutation/mutants.py --remote-extra cpk
-echo "extra pass exit $?"
-cargo-mutants mutants -p cpk --list --json --config ../mutants.remote.toml > ../run/mutants.json
-nice -n 19 ionice -c3 python3 scripts/mutation/coverage_map.py cpk ../run/mutants.json ../run/selection.json
+. ~/.cargo/env && cargo-mutants mutants -p cpk --list --json --config ../mutants.remote.toml > ../run/mutants.json
+nice -n 19 ionice -c3 python3 scripts/mutation/coverage_map.py cpk ../run/selection.json --mutants ../run/mutants.json --extra
 echo "coverage map exit $?"
+nice -n 19 ionice -c3 python3 scripts/mutation/mutants.py --remote-extra cpk --selection ../run/selection.json
+echo "extra pass exit $?"
 if [ -f ../run/selection.json ]; then
 CARGO=$PWD/scripts/mutation/select_tests.py UTW_REAL_CARGO=$(command -v cargo) UTW_MUTANTS_SOURCE=$PWD UTW_MUTANTS_SELECTION=$PWD/../run/selection.json nice -n 19 ionice -c3 cargo-mutants mutants -p cpk --jobs 2 --jobserver-tasks 8 --config ../mutants.remote.toml
 else
@@ -1925,19 +1992,21 @@ echo "$code $(( $(date +%s) - start ))" > ../run/exit
         )
         self.assertIn(
             "nice -n 19 ionice -c3 python3 scripts/mutation/"
-            "coverage_map.py cpk ../run/mutants.json ../run/selection.json\n",
+            "coverage_map.py cpk ../run/selection.json "
+            "--mutants ../run/mutants.json --extra\n",
             job,
         )
         self.assertNotIn("CARGO_BUILD_JOBS", job)
         self.assertIn('echo "coverage map exit $?"', job)
         self.assertNotIn("cargo mutants", job)
         self.assertIn("cargo-mutants mutants -p cpk --jobs 2 ", job)
-        # Order: extra pass, listing, map, cargo-mutants, `code=$?`.
-        self.assertLess(job.index("--remote-extra"), job.index("--list --json"))
+        # Order: listing, map, extra pass, cargo-mutants, `code=$?`.
         self.assertLess(job.index("--list --json"), job.index("coverage_map.py"))
         self.assertLess(job.index("coverage_map.py"), job.index('echo "coverage map exit'))
+        self.assertLess(job.index('echo "coverage map exit'), job.index("--remote-extra"))
+        self.assertLess(job.index("--remote-extra"), job.index("extra pass exit"))
         self.assertLess(
-            job.index('echo "coverage map exit'),
+            job.index("extra pass exit"),
             job.index("cargo-mutants mutants -p cpk --jobs"),
         )
         self.assertLess(
@@ -1962,17 +2031,17 @@ echo "$code $(( $(date +%s) - start ))" > ../run/exit
         # "CARGO=" too, so a bare count of it proves nothing).
         self.assertEqual(job.count("\nCARGO="), 1)
 
-    def test_only_a_whole_runs_job_selects(self):
-        """A diff run's job and an extras-only one carry nothing of the
-        selection: no listing, no coverage map, no stand-in, no `CARGO=`."""
+    def test_a_job_with_no_map_step_selects_nothing(self):
+        """A diff run's job and a remote-only one (no extra pass, no map) carry
+        nothing of the selection: no listing, no coverage map, no stand-in, no
+        `CARGO=`."""
         for job in (
             self.job(whole=False),
             self.job(whole=True),
-            self.job(whole=True, extra=False, extra_only=True, kinds=["call"]),
         ):
             for text in (
                 "coverage_map", "select_tests", "CARGO=", "--list --json",
-                "CARGO_BUILD_JOBS",
+                "--selection", "CARGO_BUILD_JOBS",
             ):
                 self.assertNotIn(text, job)
 
@@ -3525,14 +3594,17 @@ class ExtraRun(unittest.TestCase):
         assert len(changed) == 1, changed
         return changed[0]
 
-    def run_crate(self, results, only=None):
+    def run_crate(self, results, only=None, selection=None):
         """`results`: per row of `self.rows`, the mutant's (build result, test
         result) pair — the test result None when the build decides it — or an
         exception for `build` to raise; the test result may be a callable
-        taking `(crate, cwd, timeout)`."""
+        taking `(crate, cwd, timeout)`. `selection` is a path the run reads as
+        its selection file; `self.filters` records each mutant's expression
+        (None: the full suite) and `self.last_out` the run's output."""
         self.timeouts = []
         self.build_cwds = []
         self.built = []
+        self.filters = {}
 
         def build(crate, cwd):
             index = self.patched_index(cwd)
@@ -3543,21 +3615,28 @@ class ExtraRun(unittest.TestCase):
                 raise item
             return item[0]
 
-        def run_tests(crate, cwd, timeout):
+        def run_tests(crate, cwd, timeout, expression=None):
+            index = self.patched_index(cwd)
             self.timeouts.append(timeout)
-            test_result = results[self.patched_index(cwd)][1]
+            self.filters[index] = expression
+            test_result = results[index][1]
             if callable(test_result):
                 test_result = test_result(crate, cwd, timeout)
             if test_result is None:
                 raise AssertionError("a test ran on a mutant whose build decided it")
             return test_result
 
+        out = io.StringIO()
         with (
             mock.patch.object(extra_mutants, "build", build),
             mock.patch.object(extra_mutants, "run_tests", run_tests),
-            contextlib.redirect_stdout(io.StringIO()),
+            contextlib.redirect_stdout(out),
         ):
-            return extra_mutants.run_crate("cpk", ["bool"], HEAD_TREE, only=only)
+            result = extra_mutants.run_crate(
+                "cpk", ["bool"], HEAD_TREE, only=only, selection=selection
+            )
+        self.last_out = out.getvalue()
+        return result
 
     def test_each_outcome_and_the_lines_triage_reads(self):
         listed, counts, _ = self.run_crate(
@@ -3766,6 +3845,66 @@ class ExtraRun(unittest.TestCase):
                 self.assertRaisesRegex(SystemExit, key),
             ):
                 extra_mutants.run_crate("cpk", ["bool"], HEAD_TREE)
+
+    def test_a_selection_file_runs_each_mutants_own_tests(self):
+        """With `selection`, each mutant's test phase runs the filter of the
+        entries covering its lines — its byte range in the unpatched file — and
+        a mutant no entry covers, or whose covering entry's filter is None,
+        runs the full suite; the end line counts both."""
+        self.SOURCE = b"true \n" * 15
+        self.rows = [
+            ["src/lib.rs", str(6 * i), str(6 * i + 4), "bool", str(i + 1),
+             "false", f"flip {i + 1} | removed: true"]
+            for i in range(3)
+        ]
+        selection_file = self.tmp / "selection.json"
+        selection_file.write_text(
+            json.dumps({"mutants": [
+                {"file": "crates/libs/cpk/src/lib.rs", "start": 1, "end": 1,
+                 "filter": "test(=covers_one)"},
+                {"file": "crates/libs/cpk/src/lib.rs", "start": 3, "end": 3,
+                 "filter": None},
+            ]}),
+            encoding="utf-8",
+        )
+        self.run_crate(
+            [((0, ""), (0, "test result: ok. 12 passed; 0 failed"))] * 3,
+            selection=selection_file,
+        )
+        self.assertEqual(
+            self.filters, {0: "test(=covers_one)", 1: None, 2: None}
+        )
+        self.assertIn(
+            "1 mutants ran selected tests, 2 the full suite", self.last_out
+        )
+
+    def test_a_missing_selection_file_runs_every_mutant_on_the_full_suite(self):
+        only = {
+            f"crates/libs/cpk/src/lib.rs:1: [bool] flip {i} | removed: true"
+            for i in (1, 2)
+        }
+        self.run_crate(
+            [((0, ""), (0, "test result: ok. 12 passed; 0 failed"))] * 2,
+            only=only, selection=self.tmp / "missing.json",
+        )
+        missing = self.tmp / "missing.json"
+        self.assertIn(
+            f"extra_mutants: no selection file at {missing} (the coverage map "
+            "failed): every mutant runs the full suite",
+            self.last_out,
+        )
+        self.assertEqual(self.filters, {0: None, 1: None})
+        self.assertIn(
+            "0 mutants ran selected tests, 2 the full suite", self.last_out
+        )
+
+    def test_an_unreadable_selection_file_stops_the_run(self):
+        bad = self.tmp / "selection.json"
+        bad.write_text("not json", encoding="utf-8")
+        with self.assertRaisesRegex(SystemExit, "selection.json"):
+            self.run_crate(
+                [((0, ""), (0, "test result: ok"))], selection=bad,
+            )
 
     def test_a_standalone_run_with_an_untested_mutant_fails(self):
         for counts, code in ((Counter(caught=3, missed=1), 0), (Counter(caught=3, untested=1), 1)):

@@ -1,9 +1,13 @@
 """Builds a whole-crate run's selection file: which tests cover each mutant's lines.
 
-`python scripts/mutation/coverage_map.py <crate> <mutants.json> <selection.json>`, run
+`python scripts/mutation/coverage_map.py <crate> <selection.json> [--mutants
+<mutants.json>] [--extra]`, at least one of the two options, run
 from the root of the tree the mutants run on. `<mutants.json>` is `cargo mutants -p
-<crate> --list --json`'s output; `<selection.json>` is written in the shape
-`select_tests.py` reads, one entry per mutant in the list's order, its `filter` the
+<crate> --list --json`'s output; `--extra` appends the extra kinds' mutants
+(`extra_mutants.list_mutants`, every kind), each row's byte range mapped to the
+file's lines. `<selection.json>` is written in the shape
+`select_tests.py` reads, one entry per mutant in the list's order — the
+cargo-mutants entries first — its `filter` the
 nextest expression of the tests covering the lines its `span` names, `null` when no
 test does.
 
@@ -270,19 +274,51 @@ def selection(
 
 
 def main(argv: list[str]) -> int:
-    if len(argv) != 3:
+    extra = "--extra" in argv
+    mutants_path = None
+    positional = []
+    i = 0
+    while i < len(argv):
+        if argv[i] == "--extra":
+            i += 1
+        elif argv[i] == "--mutants" and i + 1 < len(argv):
+            mutants_path = argv[i + 1]
+            i += 2
+        else:
+            positional.append(argv[i])
+            i += 1
+    if len(positional) != 2 or (mutants_path is None and not extra):
         print(
             "usage: python scripts/mutation/coverage_map.py "
-            "<crate> <mutants.json> <selection.json>",
+            "<crate> <selection.json> [--mutants <mutants.json>] [--extra]",
             file=sys.stderr,
         )
         return 2
-    crate, mutants_path, out_path = argv
+    crate, out_path = positional
     root = Path.cwd().resolve()
-    try:
-        listed = json.loads(Path(mutants_path).read_text(encoding="utf-8"))
-    except (OSError, ValueError) as error:
-        raise SystemExit(f"coverage_map: cannot read {mutants_path} ({error})")
+    listed: list[dict] = []
+    if mutants_path is not None:
+        try:
+            listed.extend(
+                json.loads(Path(mutants_path).read_text(encoding="utf-8"))
+            )
+        except (OSError, ValueError) as error:
+            raise SystemExit(f"coverage_map: cannot read {mutants_path} ({error})")
+    if extra:
+        directory = extra_mutants.crate_dir(crate, root)
+        crate_rel = directory.relative_to(root)
+        contents: dict[str, bytes] = {}
+        for row in extra_mutants.list_mutants(directory):
+            if row[0] not in contents:
+                contents[row[0]] = (directory / row[0]).read_bytes()
+            start, end = extra_mutants.byte_lines(
+                contents[row[0]], int(row[1]), int(row[2])
+            )
+            # The `span` shape `selection` reads the cargo-mutants entries by.
+            listed.append({
+                "file": (crate_rel / row[0]).as_posix(),
+                "span": {"start": {"line": start}, "end": {"line": end}},
+            })
     env = coverage_env(root)
     src, bins = package_layout(crate, root)
     tests = nextest_list(crate, root, env)

@@ -45,6 +45,7 @@ from collections import Counter
 from pathlib import Path
 
 import mutants
+import select_tests
 
 ROOT = Path(__file__).resolve().parents[2]
 OUT_DIR = ROOT / "extra_mutants.out"
@@ -295,18 +296,21 @@ def build(crate: str, cwd: Path) -> tuple[int, str]:
     return code, out
 
 
-def run_tests(crate: str, cwd: Path, timeout: float | None) -> tuple[int | None, str]:
+def run_tests(
+    crate: str, cwd: Path, timeout: float | None, expression: str | None = None
+) -> tuple[int | None, str]:
     """`mutants.test_command`'s `cargo nextest run` of `crate` in `cwd` (the run's copy
     of the tree, whose `.cargo/mutants.toml` it reads): a mutant's test phase,
     run only after `build` succeeded; `--test-threads` is `test_threads()`'s
     `cpus // JOBS` share of this machine's logical CPUs, the same
-    `sized_config` gives each cargo-mutants job. Returns (exit code, output);
+    `sized_config` gives each cargo-mutants job. `expression` (a nextest
+    filterset, the tests covering the mutant's lines) is added with `-E`; None
+    runs the full suite. Returns (exit code, output);
     the code is None when the timeout killed the process tree."""
-    return _cargo(
-        mutants.test_command(crate, mutants_toml(cwd), test_threads()),
-        cwd,
-        timeout,
-    )
+    command = mutants.test_command(crate, mutants_toml(cwd), test_threads())
+    if expression is not None:
+        command = select_tests.with_filter(command, expression)
+    return _cargo(command, cwd, timeout)
 
 
 def check_timeout_config(config: dict) -> None:
@@ -340,6 +344,16 @@ def baseline_seconds(crate: str, cwd: Path) -> float:
         print("\n".join(out.splitlines()[-30:]))
         raise SystemExit(1)
     return time.monotonic() - start
+
+
+def byte_lines(data: bytes, start: int, end: int) -> tuple[int, int]:
+    """The 1-based, inclusive lines of `data` holding a mutant's byte range
+    `start:end` (end exclusive, as `apply_patch` reads it): the line of the
+    first byte and the line of the last."""
+    return (
+        data.count(b"\n", 0, start) + 1,
+        data.count(b"\n", 0, max(start, end - 1)) + 1,
+    )
 
 
 def apply_patch(path: Path, start: int, end: int, replacement: str, removed: str) -> None:
@@ -400,23 +414,48 @@ def missed_line(crate_rel: Path, row: list[str], decided: str = "missed") -> str
 
 def run_crate(
     crate: str, kinds: list[str], tree: str | None = None,
-    only: set[str] | None = None,
+    only: set[str] | None = None, selection: Path | None = None,
 ) -> tuple[list[str], Counter, float]:
     """Run every `kinds` mutant the lister finds in `crate`, `mutants.JOBS` of
     them at once as cargo-mutants' jobs run: git `tree` (the working tree when
     None) is extracted that many times, and each mutant is applied in one of
     the copies, built (`build`) and, when it built, decided by `cargo nextest
-    run -p <crate>` (`run_tests`), the baseline measured in the first copy
-    before any mutant. An outcome is appended to `outcomes_<kinds>.tsv` and
+    run -p <crate>` (`run_tests`), the baseline — always the full suite —
+    measured in the first copy before any mutant. An outcome is appended to
+    `outcomes_<kinds>.tsv` and
     printed as it is decided — the main thread does both — while the missed
     files keep the listing's order whatever order the mutants finish in. With
     `only`, only the mutants whose missed line it
-    holds run (exclusions still apply first). Writes `outcomes_<kinds>.tsv`
+    holds run (exclusions still apply first). `selection` is the coverage
+    map's file (`coverage_map.py --extra` writes the extra kinds' entries too):
+    each mutant's test phase runs the filter of the entries covering its
+    lines, and every gap — a missing file (one line printed), a line no entry
+    covers, a `null` filter, a filter too long — falls back to the full suite,
+    so a gap costs time and never hides a mutant; a file that cannot be read
+    is a wiring fault and stops the run. Writes `outcomes_<kinds>.tsv`
     and `missed_<kinds>.txt` under `extra_mutants.out/`, plus
     `missed_<crate>.txt`, the same survivors named for `just mutants`, which
     calls this for its EXTRA_KINDS and records the run in `run.json` beside
     it for `just mutants-collect` to summarize. Returns (the missed lines,
     the per-outcome counts, the wall seconds)."""
+    entries: list[dict] | None = None
+    if selection is not None:
+        if not selection.exists():
+            print(
+                f"extra_mutants: no selection file at {selection} (the "
+                "coverage map failed): every mutant runs the full suite",
+                flush=True,
+            )
+        else:
+            try:
+                entries = json.loads(
+                    selection.read_text(encoding="utf-8")
+                )["mutants"]
+            except (OSError, ValueError, KeyError, TypeError) as error:
+                raise SystemExit(
+                    f"extra_mutants: the selection file at {selection} cannot "
+                    f"be read ({error})"
+                )
     tree = tree or mutants.working_tree()
     copies = [
         mutants.LOCAL_TMPDIR / f"extra-mutants-{os.getpid()}-{index}"
@@ -472,9 +511,11 @@ def run_crate(
             free.put(copy_dir)
         stop = threading.Event()
 
-        def decide(row: list[str]) -> str | None:
-            """One mutant's outcome (None when `stop` ended the run before it
-            started): patched, built and tested in the copy this job holds
+        def decide(row: list[str]) -> tuple[str, bool | None] | None:
+            """One mutant's outcome and whether its test phase ran on its
+            filter (None for both when `stop` ended the run before it started,
+            for the flag alone when its build decided it — no test phase ran):
+            patched, built and tested in the copy this job holds
             alone, the file restored either way."""
             copy_dir = free.get()
             try:
@@ -491,16 +532,28 @@ def run_crate(
                 removed = description.rsplit(" | removed: ", 1)[-1]
                 target = copy_dir / crate_rel / rel_path
                 original = target.read_bytes()
+                # The lines are the unpatched file's: the map's entries name
+                # the mutants by where they sit before any patch is applied.
+                expression = None
+                if entries is not None:
+                    first, last = byte_lines(original, int(start), int(end))
+                    expression, _ = select_tests.filter_for(
+                        entries, (crate_rel / rel_path).as_posix(), first, last
+                    )
                 try:
                     apply_patch(
                         target, int(start), int(end), replacement, removed
                     )
                     decided = build_outcome(*build(crate, copy_dir))
+                    ran_selected = None
                     if decided is None:
-                        decided = test_outcome(*run_tests(crate, copy_dir, timeout))
+                        ran_selected = expression is not None
+                        decided = test_outcome(
+                            *run_tests(crate, copy_dir, timeout, expression)
+                        )
                 finally:
                     target.write_bytes(original)
-                return decided
+                return decided, ran_selected
             finally:
                 free.put(copy_dir)
 
@@ -508,6 +561,8 @@ def run_crate(
         # that order whatever order the jobs finish in.
         outcomes: list[tuple[str, list[str]] | None] = [None] * len(rows)
         failed: BaseException | None = None
+        selected_count = 0
+        full_count = 0
         with concurrent.futures.ThreadPoolExecutor(max_workers=mutants.JOBS) as pool:
             futures = {
                 pool.submit(decide, row): index for index, row in enumerate(rows)
@@ -526,12 +581,17 @@ def run_crate(
                     continue
                 if decided is None:
                     continue
+                outcome, ran_selected = decided
+                if ran_selected is True:
+                    selected_count += 1
+                elif ran_selected is False:
+                    full_count += 1
                 decided_count += 1
-                outcomes[index] = (decided, rows[index])
+                outcomes[index] = (outcome, rows[index])
                 with open(tsv, "a", encoding="utf-8", newline="\n") as rows_file:
-                    rows_file.write(decided + "\t" + "\t".join(rows[index]) + "\n")
+                    rows_file.write(outcome + "\t" + "\t".join(rows[index]) + "\n")
                 print(
-                    f"[{decided_count}/{len(rows)}] {decided}: "
+                    f"[{decided_count}/{len(rows)}] {outcome}: "
                     f"{rows[index][0]}:{rows[index][4]} {rows[index][6]}",
                     flush=True,
                 )
@@ -558,6 +618,12 @@ def run_crate(
         )
         wall = time.monotonic() - wall_start
         print(f"wall time: {wall:.0f} s")
+        if selection is not None:
+            print(
+                f"extra_mutants: {selected_count} mutants ran selected tests, "
+                f"{full_count} the full suite",
+                flush=True,
+            )
         if per_outcome["untested"]:
             print(
                 f"{per_outcome['untested']} mutants were NOT tested: a build or a test binary "
