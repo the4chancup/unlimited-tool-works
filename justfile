@@ -193,6 +193,10 @@ mutants-diff base="HEAD" *paths:
 mutants-closure *crates:
     {{python}} scripts/mutation/mutants_diff.py --closure {{crates}}
 
+# Whole-crate runs one after another on the mutants host, the crate checked longest ago first; started detached and left running, each run's results kept per crate in mutants.rolling/ for triage
+mutants-rolling *args:
+    {{python}} scripts/mutation/rolling.py {{args}}
+
 # Record <commit> as the one <crate>'s last whole run was launched from, once its survivors are triaged (.cargo/mutants_checked.toml)
 mutants-checked crate commit:
     {{python}} scripts/mutation/mutants_diff.py --checked {{crate}} {{commit}}
