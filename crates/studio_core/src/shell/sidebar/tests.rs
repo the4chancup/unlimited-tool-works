@@ -480,6 +480,38 @@ fn the_overlay_casts_no_shadow_and_ends_on_the_rails_line() {
     );
 }
 
+/// The version selector's popup opened from the overlay as a member opens it: a
+/// press on the rail's selector, whose release lands on the overlay's selector
+/// and drops the list. Returns the open frame's output and the rail's cell width.
+fn version_popup_opened(egui_ctx: &egui::Context, app: &mut StudioApp) -> (FrameOutput, f64) {
+    let nodes = frame_at(egui_ctx, app, Vec::new(), true, Some(0.9)).nodes;
+    let cell = entry(&nodes, "A").bounds().unwrap().width();
+    frame_at(
+        egui_ctx,
+        app,
+        pointer(combo(&nodes), true),
+        true,
+        Some(1.00),
+    );
+    frame_at(
+        egui_ctx,
+        app,
+        pointer(combo(&nodes), false),
+        true,
+        Some(1.05),
+    );
+
+    // The pointer resting at the selector, past the delay: the overlay is open
+    // and so is the popup, with the full labels.
+    let out = frame_at(egui_ctx, app, Vec::new(), true, Some(1.20));
+    entry(&out.nodes, "PES 2021");
+    assert!(
+        entry(&out.nodes, "A").bounds().unwrap().width() > f64::from(RAIL_WIDTH),
+        "the overlay is open"
+    );
+    (out, cell)
+}
+
 // ST-SIDE-02's popup rule: the overlay stays open while a popup it opened is
 // open.
 #[test]
@@ -491,34 +523,7 @@ fn the_open_version_popup_holds_the_overlay_open() {
         ..
     } = shell();
     let egui_ctx = test_context();
-
-    // The version combo clicked on the rail: the press opens the overlay, and
-    // the release opens the popup from the overlay's selector.
-    let nodes = frame_at(&egui_ctx, &mut app, Vec::new(), true, Some(0.9)).nodes;
-    let cell = entry(&nodes, "A").bounds().unwrap().width();
-    frame_at(
-        &egui_ctx,
-        &mut app,
-        pointer(combo(&nodes), true),
-        true,
-        Some(1.00),
-    );
-    frame_at(
-        &egui_ctx,
-        &mut app,
-        pointer(combo(&nodes), false),
-        true,
-        Some(1.05),
-    );
-
-    // The pointer resting at the selector, past the delay: the overlay is open
-    // and so is the popup, with the full labels.
-    let nodes = frame_at(&egui_ctx, &mut app, Vec::new(), true, Some(1.20)).nodes;
-    entry(&nodes, "PES 2021");
-    assert!(
-        entry(&nodes, "A").bounds().unwrap().width() > f64::from(RAIL_WIDTH),
-        "the overlay is open"
-    );
+    let (_open, cell) = version_popup_opened(&egui_ctx, &mut app);
 
     // With the popup open and the pointer moved to the view's middle, the
     // overlay stays open.
@@ -2356,8 +2361,11 @@ fn the_help_and_the_gear_are_marked_wip_as_the_help_window_is() {
     );
 }
 
+// Where the opened sidebar and a window overlap, the window is on top: the
+// sidebar opens whenever the pointer rests on the rail, and it must never cover
+// a window the member opened to read or work in.
 #[test]
-fn the_opened_sidebar_stays_above_the_help_window() {
+fn the_help_window_stands_above_the_opened_sidebar() {
     let Shell { mut app, _dir, .. } = shell();
     let egui_ctx = test_context();
     let nodes = frame_at(&egui_ctx, &mut app, Vec::new(), true, Some(0.9)).nodes;
@@ -2392,8 +2400,95 @@ fn the_opened_sidebar_stays_above_the_help_window() {
         "the help window is a drawn Middle layer"
     );
     assert!(
-        windows.iter().all(|&window| window < overlay),
-        "the overlay ({overlay}) is ordered above the help window ({windows:?})"
+        windows.iter().all(|&window| window > overlay),
+        "the help window ({windows:?}) is ordered above the overlay ({overlay})"
+    );
+}
+
+// A tool's floating window is `Order::Middle`, as the help window is: where it
+// overlaps the opened sidebar the window is on top, while the overlay still
+// covers the view's edge where no window stands.
+#[test]
+fn a_tools_window_stands_above_the_opened_sidebar_and_the_overlay_above_the_view() {
+    let Shell {
+        mut app,
+        calls,
+        _dir,
+        ..
+    } = shell();
+    let egui_ctx = test_context();
+    *calls[0].floating.lock().unwrap() = Some(egui::Rect::from_min_max(
+        egui::pos2(60.0, 100.0),
+        egui::pos2(360.0, 400.0),
+    ));
+    let nodes = frame_at(&egui_ctx, &mut app, Vec::new(), true, Some(0.9)).nodes;
+    open_sidebar(&egui_ctx, &mut app, entry(&nodes, "A"), 1.0);
+    // A frame after the opening one: the order the layers settle into, not the
+    // one egui raises a fresh area to.
+    frame_at(&egui_ctx, &mut app, Vec::new(), true, Some(1.3));
+    let overlay_rect = egui_ctx
+        .memory(|memory| memory.area_rect(overlay_id()))
+        .expect("the overlay is drawn");
+    let middle: Vec<egui::LayerId> = egui_ctx.memory(|memory| {
+        memory
+            .layer_ids()
+            .filter(|layer| layer.order == egui::Order::Middle && memory.areas().is_visible(layer))
+            .collect()
+    });
+    assert_eq!(
+        middle.len(),
+        1,
+        "only the tool's window is a drawn Middle layer: {middle:?}"
+    );
+    let window = middle[0];
+    let window_rect = egui_ctx
+        .memory(|memory| memory.area_rect(window.id))
+        .expect("the window is drawn");
+    let both = overlay_rect.intersect(window_rect);
+    assert!(
+        both.width() >= 40.0 && both.height() >= 40.0,
+        "the window {window_rect:?} overlaps the overlay {overlay_rect:?} with room"
+    );
+    assert_eq!(
+        egui_ctx.layer_id_at(both.center()),
+        Some(window),
+        "the window stands above the overlay at the overlap's centre"
+    );
+    let below = egui::pos2(RAIL_WIDTH + 20.0, 450.0);
+    assert!(
+        overlay_rect.contains(below),
+        "the overlay's rect {overlay_rect:?} holds {below:?}"
+    );
+    assert_eq!(
+        egui_ctx.layer_id_at(below),
+        Some(egui::LayerId::new(egui::Order::Background, overlay_id())),
+        "the overlay still covers the view under the window at {below:?}"
+    );
+    let overlay = layer_rank(&egui_ctx, overlay_id());
+    let window_rank = layer_rank(&egui_ctx, window.id);
+    assert!(
+        window_rank > overlay,
+        "the tool's window ({window_rank}) is ordered above the overlay ({overlay})"
+    );
+}
+
+// The popup the overlay's version selector opens stands above the overlay: it is
+// `Order::Foreground` to the overlay's `Order::Background`, so the orders alone
+// keep it there.
+#[test]
+fn the_version_popup_opened_from_the_overlay_stands_above_it() {
+    let Shell { mut app, _dir, .. } = shell();
+    let egui_ctx = test_context();
+    version_popup_opened(&egui_ctx, &mut app);
+    let popup = app
+        .sidebar
+        .combo_popup_id
+        .expect("the selector's popup is open");
+    let overlay = layer_rank(&egui_ctx, overlay_id());
+    let popup = layer_rank(&egui_ctx, popup);
+    assert!(
+        popup > overlay,
+        "the version popup ({popup}) is ordered above the overlay ({overlay})"
     );
 }
 

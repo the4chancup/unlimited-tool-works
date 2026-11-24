@@ -1487,7 +1487,17 @@ mod tests {
         );
         assert_eq!(app.help_window.showing(), Some(("b", "beta-topic")));
 
-        // The same with the report dialog open.
+        // The same with the report dialog open. The help window covers the
+        // opened sidebar's tail entries and takes the clicks there, so the
+        // pointer leaves the rail and the rail's own entry opens the dialog:
+        // its icon is the part of the sidebar the window leaves uncovered.
+        let nodes = frame(
+            &egui_ctx,
+            &mut app,
+            vec![egui::Event::PointerMoved(egui::pos2(400.0, 300.0))],
+            true,
+        )
+        .nodes;
         click(
             &egui_ctx,
             &mut app,

@@ -258,23 +258,13 @@ impl Sidebar {
             || rested
             || (self.open && on_overlay);
 
-        let order = overlay_order(&egui_ctx);
         let clicked = if self.open {
             // The rail panel draws only its own frame: the widgets move into the
             // overlay, so the panel and the view keep their rects.
-            self.show_overlay(&egui_ctx, order, geom, cell, &args)
+            self.show_overlay(&egui_ctx, geom, cell, &args)
         } else {
             self.contents(ui, cell, true, &args)
         };
-        if let Some(popup_id) = self.combo_popup_id {
-            // `move_to_top` sends the overlay to the front of the Foreground order
-            // on a re-open or a click on it, which would drop it over the combo's
-            // popup: `set_sublayer` splices the popup directly above it each frame.
-            egui_ctx.set_sublayer(
-                egui::LayerId::new(egui::Order::Foreground, overlay_id()),
-                egui::LayerId::new(egui::Order::Foreground, popup_id),
-            );
-        }
         if self.about_open {
             let help = about::show(
                 ui.ctx(),
@@ -294,11 +284,10 @@ impl Sidebar {
     }
 
     /// The overlay: the full sidebar as a floating layer over the view, at the
-    /// rail's top-left and as tall as it, in `order` (`overlay_order`).
+    /// rail's top-left and as tall as it, in `OVERLAY_ORDER`.
     fn show_overlay(
         &mut self,
         egui_ctx: &egui::Context,
-        order: egui::Order,
         geom: OverlayGeom,
         cell: f32,
         args: &SidebarFrame,
@@ -308,7 +297,7 @@ impl Sidebar {
             frame,
             inner,
         } = geom;
-        let layer = egui::LayerId::new(order, overlay_id());
+        let layer = egui::LayerId::new(OVERLAY_ORDER, overlay_id());
         if egui_ctx.memory(|m| m.area_rect(overlay_id())).is_none() {
             // An `egui::Area`'s first `show` is an invisible sizing pass; seeding
             // its state draws the overlay already on the opening frame — the rail
@@ -327,7 +316,7 @@ impl Sidebar {
             });
         }
         egui::Area::new(overlay_id())
-            .order(order)
+            .order(OVERLAY_ORDER)
             .fixed_pos(outer.min)
             // No fade-in: the rail's widgets leave on the opening frame, so a fading
             // overlay would flash a dim, half-empty sidebar on every open.
@@ -823,19 +812,15 @@ fn overlay_id() -> egui::Id {
     egui::Id::unique("sidebar-overlay")
 }
 
-/// The overlay's layer order this frame. `Foreground` puts it above the `Middle` help
-/// window: the open sidebar is where the pointer is. While a modal is open (egui's top
-/// modal layer, whatever opened it) it is `Middle`, under every modal's dimmed backdrop,
-/// and egui gives a layer below the top modal no input, as the view gets none. In
-/// `Foreground` it would not stay there: egui sends an area to the front of its order
-/// each time it opens or is clicked, which put it over the modal with its entries live.
-fn overlay_order(egui_ctx: &egui::Context) -> egui::Order {
-    if egui_ctx.memory(|memory| memory.top_modal_layer()).is_some() {
-        egui::Order::Middle
-    } else {
-        egui::Order::Foreground
-    }
-}
+/// The overlay `egui::Area`'s order: `Background`, under every window, menu and
+/// modal (the windows being `Middle`, the menus, popups and modals `Foreground`)
+/// and under tooltips. The only other `Background` layer is egui's root layer,
+/// where the rail's panel and the view paint: egui raises an area to the top of
+/// its order each time it opens or is pressed, and nothing raises the root layer,
+/// so the overlay stays above the view it opened over. Under a modal's dimmed
+/// backdrop it takes no input, as the view does: egui gives a layer below the top
+/// modal none.
+const OVERLAY_ORDER: egui::Order = egui::Order::Background;
 
 /// The planned entries the sidebar draws, in registry order: every entry whose
 /// id no registered window tool has (a window tool's own entry is drawn above;
