@@ -49,11 +49,6 @@ pub(super) struct HelpWindow {
     pending_open: Option<usize>,
     /// A jump scrolls the topic pane once: to the highlight, or to the top without one.
     scroll_pending: bool,
-    /// Set by `open`: the next `show` moves the window's layer to the top. egui raises
-    /// a window only when it first becomes visible or takes a pointer press, so a
-    /// retarget of a window already open would leave it behind the layer the
-    /// retargeting click raised (the detail window, on a finding code's click).
-    raise: bool,
     cache: CommonMarkCache,
 }
 
@@ -81,7 +76,6 @@ impl HelpWindow {
             search: String::new(),
             pending_open: None,
             scroll_pending: false,
-            raise: false,
             cache,
         }
     }
@@ -114,7 +108,6 @@ impl HelpWindow {
         self.search.clear();
         self.pending_open = Some(chapter);
         self.scroll_pending = true;
-        self.raise = true;
     }
 
     /// The extended topic index `slug` names within `chapter` — `messages` counts only
@@ -174,9 +167,10 @@ impl HelpWindow {
         let screen = egui_ctx.content_rect();
         let size = FIRST_SIZE.min((screen.size() * 0.9).round());
         let id = egui::Id::unique("help-window");
-        if std::mem::take(&mut self.raise) {
-            egui_ctx.move_to_top(egui::LayerId::new(egui::Order::Middle, id));
-        }
+        // egui raises a pressed layer over the others of its `Order`, so a click on the
+        // pinned detail window would lift it over Help; while Help is open its layer is
+        // moved to the top of `Order::Middle` on every frame, not only on `open`.
+        egui_ctx.move_to_top(egui::LayerId::new(egui::Order::Middle, id));
         egui::Window::new(crate::theme::window_title_text(HELP_LABEL))
             .id(id)
             .default_rect(egui::Rect::from_center_size(screen.center(), size))
@@ -1810,12 +1804,12 @@ mod tests {
         assert_eq!(window.showing(), Some(("a", "a-one")));
     }
 
-    // A retarget of a window already open asks for the top again: egui raises a
-    // window on its first frame and on a pointer press, so a window drawn over
-    // it (the grid's detail window, when a finding's code asks for the help)
-    // keeps the top while the help changes target.
+    // egui raises a pressed layer over the others of its `Order`, so a window drawn
+    // over the help (the grid's detail window, when a finding's code asks for the
+    // help) would take a click's frame; while the help is open its layer is moved to
+    // the top on every frame, so a retarget and any click leave it above.
     #[test]
-    fn retargeting_an_open_help_raises_it_over_the_window_above_it() {
+    fn help_stays_on_top_of_the_window_it_covers() {
         let egui_ctx = test_context();
         let mut window = HelpWindow::new(vec![("a", alpha_section())]);
         let target = |topic: &str| HelpTarget {
@@ -1878,22 +1872,21 @@ mod tests {
              {help_rect:?} {cover_rect:?}"
         );
 
-        // The cover keeps the top where the windows overlap, as the detail
-        // window does on a finding code's click.
+        // A click where the windows overlap lands on the help, which is on top.
         show(&mut window, pointer(both, true));
         show(&mut window, pointer(both, false));
-        assert_eq!(egui_ctx.layer_id_at(both), Some(cover_layer), "premise");
+        assert_eq!(egui_ctx.layer_id_at(both), Some(help_layer));
 
-        // A second `open` retargets the window: the help comes back to the top.
+        // A click on the cover's own part does not cover the help either: its layer
+        // is moved to the top on every frame, so after the click it still is.
+        show(&mut window, pointer(bare, true));
+        show(&mut window, pointer(bare, false));
+        assert_eq!(egui_ctx.layer_id_at(both), Some(help_layer));
+
+        // A second `open` retargets the window: it stays on top.
         window.open(&target("alpha-more"), "a");
         show(&mut window, Vec::new());
         assert_eq!(egui_ctx.layer_id_at(both), Some(help_layer));
-
-        // It is not raised on every frame: a click on the cover's own part puts
-        // the cover back on top.
-        show(&mut window, pointer(bare, true));
-        show(&mut window, pointer(bare, false));
-        assert_eq!(egui_ctx.layer_id_at(both), Some(cover_layer));
     }
 
     /// `beta_section` with 60 catalog rows: a Messages table longer than the pane,

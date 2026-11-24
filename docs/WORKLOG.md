@@ -344,9 +344,10 @@ draft checked, handed over by the maintainer 2026-11-23. **After the detour**, i
        its export's drop reads "No findings." instead of naming the cause), so Astra's loop
        ends after its fixes. The lead's: TC-GUI-24's portraits double-click limited to a
        folder export
-     - [~] **G11** [after A1] the rest: a blocked cell's window names the export-level cause,
-       Help stays above the detail window whatever is clicked, two tests that race the
-       check's worker (SWE-2, `sk/g11`)
+     - [x] **G11** [after A1] a blocked cell's window names the codes that skip its export,
+       Help stays above every other window whatever is clicked, and two tests no longer race
+       the check's worker (rulings "G11 review"). The lead's: TC-GUI-09 names the blocked
+       line, and the core plan states Help's place above the other windows
      - [ ] **S-g11** [after G11] SWE-2's round over G11; the grid's review loops end with it
    - [x] **tbmenu** The Compile button's mode list, Open output folder and Copy report (TC-GUI-11, and
      TC-GUI-33's clause that Compile for sideloading stays enabled while the DpFileList is

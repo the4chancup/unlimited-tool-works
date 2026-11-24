@@ -40,6 +40,14 @@ fn finding(
     }
 }
 
+/// `message` with `disposition` in place of `finding`'s `Keep`.
+fn disposed(message: Message, disposition: Disposition) -> Message {
+    Message {
+        disposition,
+        ..message
+    }
+}
+
 /// The folder `path` of the export.
 fn folder(path: &str) -> Scope {
     Scope::Folder {
@@ -737,6 +745,113 @@ fn no_findings_stands_where_a_windows_first_finding_would() {
         first,
         "as far down as a first finding"
     );
+}
+
+/// A scene of /co/ dropped whole: the label holds `team_name_unknown`, a `DropExport`
+/// finding, and every player cell is blocked; 05 holds the same code (a finding two
+/// cells can share, as a referee folder backing two slots does) and, when
+/// `two_causes`, 03's is `duplicate_aesthetics_export`, a second dropping finding
+/// that sits on the cell.
+fn blocked_scene(two_causes: bool) -> Scene {
+    let dropped = |code: &'static str, scope: Scope| {
+        disposed(
+            finding(code, Severity::Error, scope, &[]),
+            Disposition::DropExport,
+        )
+    };
+    let mut players = vec![Position::Empty; 23];
+    players[0] = Position::Cell(Box::new(Cell {
+        state: CellState::Blocked,
+        ..cell("01", "Players/01 - A", Vec::new())
+    }));
+    players[2] = Position::Cell(Box::new(Cell {
+        state: CellState::Blocked,
+        ..cell(
+            "03",
+            "Players/03 - B",
+            if two_causes {
+                vec![dropped(
+                    "duplicate_aesthetics_export",
+                    folder("Players/03 - B"),
+                )]
+            } else {
+                Vec::new()
+            },
+        )
+    }));
+    players[4] = Position::Cell(Box::new(Cell {
+        state: CellState::Blocked,
+        ..cell(
+            "05",
+            "Players/05 - C",
+            vec![dropped("team_name_unknown", folder("Players/05 - C"))],
+        )
+    }));
+    let mut scene = Scene::new();
+    scene.rows = vec![Row {
+        key: "co Midcup Map".to_owned(),
+        label: Cell {
+            top: TopBox::Logo(None),
+            ..cell(
+                "/co/",
+                "co Midcup Map",
+                vec![dropped(
+                    "team_name_unknown",
+                    Scope::Export {
+                        export_id: ExportId(1),
+                    },
+                )],
+            )
+        },
+        id: Some(IdCell::Missing),
+        body: RowBody::Lines(vec![Line {
+            name: None,
+            groups: vec![players, vec![Position::Empty], vec![Position::Empty; 10]],
+        }]),
+        log_lines: Vec::new(),
+    }];
+    scene
+}
+
+// TC-GUI-09
+#[test]
+fn a_blocked_cells_window_names_the_exports_cause() {
+    let mut scene = blocked_scene(false);
+    let drawn = scene.idle();
+    let (one, label) = (drawn.one("01").center(), drawn.one("/co/").center());
+
+    // The dropping finding sits on the label; a blocked cell's window names it under
+    // the state line, the code once though 05's finding repeats it.
+    let (_, drawn) = scene.click(one);
+    let state = drawn.one("Blocked");
+    let cause = drawn.one("Blocked: this export is skipped (team_name_unknown)");
+    assert!(
+        cause.top() > state.top(),
+        "{cause:?} under the state line {state:?}"
+    );
+    drawn.one("No findings.");
+
+    // The label is not blocked: its window shows no such line.
+    let (_, drawn) = scene.click(label);
+    assert!(
+        shows(&drawn, "co Midcup Map"),
+        "premise: the label's window"
+    );
+    let texts: Vec<&str> = drawn
+        .nodes
+        .iter()
+        .filter_map(|node| node.value().or(node.label()))
+        .collect();
+    assert!(
+        texts.iter().all(|text| !text.starts_with("Blocked:")),
+        "no blocked line in the label's window: {texts:?}"
+    );
+
+    // A second dropping finding on a cell joins the line, the label's code first.
+    let mut scene = blocked_scene(true);
+    let three = scene.idle().one("03").center();
+    let (_, drawn) = scene.click(three);
+    drawn.one("Blocked: this export is skipped (team_name_unknown, duplicate_aesthetics_export)");
 }
 
 // TC-GUI-09

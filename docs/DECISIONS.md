@@ -20133,3 +20133,11 @@ line names in the setting that holds it: `cpk_name`, `bins_cpk_name` or `refs_cp
 Why: the list check covers the bins CPK in multi-CPK mode and the refs CPK when a refs export
 is compiled, so a remedy naming `cpk_name` alone sent the member to the wrong setting.
 Plan: none; the catalog row and `help/01_command_line.md` hold the text.
+
+## 2026-11-24 — studio GUI — the help window stays above every other window, whatever is clicked
+Decision: while the help window is open, the app moves it to the top on every frame, so a
+click on a window it overlaps (the Compiler's detail window, a Save editor floating window) no
+longer lifts that window over it. A dialog, a menu and a tooltip still stand above it.
+Why: egui raises a clicked window over the others, so one click on the pinned detail window
+hid the help the member had opened from it. The drafts already keep the help above both.
+Plan: `docs/plans/core/gui.md`, the paragraph after the floating windows' placement.
