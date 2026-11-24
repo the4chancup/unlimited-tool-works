@@ -194,12 +194,6 @@ GATES_UNIT = "studio-gates"
 # either wasted what was free or squeezed the host. A service that grows during
 # a run eats into this margin, so it is not cut finer.
 REMOTE_MEMORY_RESERVE = 2**30
-# `CARGO_BUILD_JOBS` for the remote's extra-mutant pass (`--remote-extra`):
-# the one place it takes effect, the pass running outside cargo-mutants and
-# its jobserver. A build's memory grows with its parallel rustc processes and
-# the GUI crates' dependencies (naga, wgpu, wayland) are the largest the
-# workspace builds, so the pass builds one crate at a time.
-REMOTE_BUILD_JOBS = 1
 # The remote half's `--jobserver-tasks`: the build cap, since under
 # cargo-mutants 27.1.0's jobserver cargo ignores `-j`/`--build-jobs`. `None` is
 # the host's CPU count (`nproc`, already probed for the config), the default
@@ -655,13 +649,17 @@ def local_mutants(
     )
 
 
+# The Windows status of a process that lost its console: it never starts.
+# A killed-build sign (`KILLED_BUILD_SIGNS`), and in a test phase's output the
+# mark of a test binary that ran nothing.
+LOST_CONSOLE = "0xc0000142"
 # What a build killed or starved for reasons outside the mutant leaves in its log, lowercase:
 # rustc killed by the OOM killer, the linker killed by it (gcc's `collect2`), LLVM or rustc
 # out of memory, a Windows process that lost its console, a link that failed (a mutant
 # changes Rust code, which compiled; a Windows SDK update had removed the system libraries).
 KILLED_BUILD_SIGNS = (
     "sigkill", "signal 9 [killed]", "llvm error: out of memory", "memory allocation of",
-    "0xc0000142", "error: linking with",
+    LOST_CONSOLE, "error: linking with",
 )
 
 
@@ -921,11 +919,10 @@ def launch_remote(
     shard). Its cargo-mutants line caps the jobserver at
     `REMOTE_JOBSERVER_TASKS` (`nproc` while unset), the build cap the config
     cannot carry (`sized_config`). With `extra` (a whole run) the job first
-    runs the extra kinds (`--remote-extra`, at `REMOTE_BUILD_JOBS` for the
-    unit's memory cap) and
+    runs the extra kinds (`--remote-extra`) and
     logs `extra pass exit <code>`, then lists the crate's mutants and builds
     the coverage map from them (which tests cover each listed mutant's lines;
-    `coverage_map.py`, at the same build cap, logging `coverage map exit
+    `coverage_map.py`, logging `coverage map exit
     <code>`), then runs cargo-mutants whatever the
     codes: `run/exit` stays cargo-mutants'. cargo-mutants is started as
     `cargo-mutants mutants` — `cargo mutants` would overwrite `CARGO` for the
@@ -951,7 +948,7 @@ def launch_remote(
         # The selection is ["-p", crate].
         named = "".join(f" {kind}" for kind in kinds)
         extra_pass = (
-            f"CARGO_BUILD_JOBS={REMOTE_BUILD_JOBS} nice -n 19 ionice -c3 "
+            "nice -n 19 ionice -c3 "
             f"python3 scripts/mutation/mutants.py --remote-extra {selection[1]}{named}\n"
         )
         if not extra_only:
@@ -964,7 +961,7 @@ def launch_remote(
         selection_map = (
             f"cargo-mutants mutants {remote_args} --list --json "
             "--config ../mutants.remote.toml > ../run/mutants.json\n"
-            f"CARGO_BUILD_JOBS={REMOTE_BUILD_JOBS} nice -n 19 ionice -c3 "
+            "nice -n 19 ionice -c3 "
             f"python3 scripts/mutation/coverage_map.py {selection[1]} "
             "../run/mutants.json ../run/selection.json\n"
             'echo "coverage map exit $?"\n'
