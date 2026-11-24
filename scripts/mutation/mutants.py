@@ -52,8 +52,8 @@ itself installs on first use there), rustup's `llvm-tools-preview` component
 added inside that tree so it lands on the pinned toolchain too (the whole
 run's coverage map needs both it and cargo-llvm-cov), `sudo -n systemd-run`
 for the ssh user, `ionice`,
-`tar`, `nproc`, `awk`, cgroup v2 (the unit's `memory.peak`) and `python3` (`just gates`'
-scripts).
+`tar`, `nproc`, `awk`, cgroup v2 (the unit's `memory.peak`) and `python3` 3.13 or later (`just gates`'
+scripts; the extra kinds' `glob.translate` came in 3.13).
 """
 
 import contextlib

@@ -612,6 +612,8 @@ class TestCommand(unittest.TestCase):
             extra_mutants.run_tests("cpk", cwd, 1.0)
         self.assertNotIn("preexec_fn", popen.call_args.kwargs)
         self.assertNotIn("creationflags", popen.call_args.kwargs)
+        # Its own session, or kill_tree's group kill would hit the pass itself.
+        self.assertIs(popen.call_args.kwargs.get("start_new_session"), True)
 
     def test_cargo_merges_stderr_into_its_output(self):
         """A build's "could not compile" and a test binary's lost-console code
