@@ -668,11 +668,12 @@ table.grid.stats-grid td { padding: 3px 6px; }
    framed panel does (.group). */
 .pitch { border: 1px solid var(--stroke); border-radius: 2px; display: block;
   touch-action: none; }
-/* Set PES path, over the pitch's bottom right (placed by placeSetFolder), outlined in the
-   text's grey inside its own edge, so the outline adds no size: a plain button's fill alone
-   reads as a patch of the grass. Its side padding is 2 px, not a button's 4, so it fits the
-   79 px PES 2018-2021's wider box leaves beside it. */
-#set-pes-folder { position: absolute; box-shadow: inset 0 0 0 1px var(--text); padding: 1px 2px; }
+/* Set PES path, over the pitch's bottom right (placed by placeSetFolder), filled in the
+   selection blue as the Compiler's Upgrade DpFileList button is, so it reads as a button and
+   not as a notice: a plain button's grey fill reads as a patch of the grass. Its side padding
+   is 2 px, not a button's 4, so it fits the 79 px PES 2018-2021's wider box leaves beside it. */
+#set-pes-folder { position: absolute; background: var(--sel-bg); color: var(--sel-fg);
+  padding: 1px 2px; }
 .lcol { display: flex; flex-direction: column; gap: 6px; min-width: 210px; }
 .llist { background: var(--extreme); border: 1px solid var(--stroke); border-radius: 2px;
   max-height: 300px; overflow: auto; }

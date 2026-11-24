@@ -485,9 +485,11 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
 /// The Set PES path button in the corner `version`'s bottom penalty box
 /// leaves on the pitch `canvas` (the draft's `placeSetFolder`): centred
 /// between the box's right line and the canvas' right edge, its bottom as
-/// far above the canvas' bottom as its sides are from those two. Outlined
-/// 1 point inside its edge in the text's grey, since a plain button's fill
-/// alone reads as a patch of the grass. Answers whether it was clicked.
+/// far above the canvas' bottom as its sides are from those two. Drawn
+/// selected, in the selection blue as the Compiler's Upgrade DpFileList
+/// button is, so it reads as a button and not as a notice: a plain
+/// button's grey fill reads as a patch of the grass. Answers whether it
+/// was clicked.
 /// `version` is the open save's, `check` the exe check's failing verdict on
 /// `folder`, `version`'s resolved PES folder when known.
 fn set_pes_folder_button(
@@ -520,17 +522,10 @@ fn set_pes_folder_button(
             .layout(egui::Layout::bottom_up(egui::Align::Max)),
     );
     corner.spacing_mut().button_padding.x = SET_FOLDER_SIDE_PADDING;
-    let response = corner
-        .button(SET_FOLDER_LABEL)
-        .on_hover_text(set_folder_tip(version, check, folder));
-    let visuals = &corner.visuals().widgets;
-    corner.painter().rect_stroke(
-        response.rect,
-        visuals.inactive.corner_radius,
-        egui::Stroke::new(1.0, visuals.noninteractive.fg_stroke.color),
-        egui::StrokeKind::Inside,
-    );
-    response.clicked()
+    corner
+        .add(egui::Button::new(SET_FOLDER_LABEL).selected(true))
+        .on_hover_text(set_folder_tip(version, check, folder))
+        .clicked()
 }
 
 /// The Set PES path button's hover text: the version whose PES folder the

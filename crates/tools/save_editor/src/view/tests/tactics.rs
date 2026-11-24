@@ -3059,23 +3059,46 @@ fn a_set_pes_folder_button_stands_over_the_pitch_while_the_exe_check_fails() {
 
     let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     assert_set_path_margins(&nodes, 226.0, 9.0, "PES 2017");
-    // The outline: a 1-point stroke in the dark theme's text grey, inside
-    // the button's own rect, so it adds no size.
+    // Filled in the drafts' selection blue (`--sel-bg`), its label in the
+    // selection's text colour (`--sel-fg`), with no grey outline.
     let button = set_path_button(&nodes).expect("the button is drawn");
-    let outlined = shapes.iter().any(|clipped| match &clipped.shape {
-        egui::Shape::Rect(shape) => {
-            shape.stroke == egui::Stroke::new(1.0, egui::Color32::from_gray(0x8c))
-                && shape.stroke_kind == egui::StrokeKind::Inside
-                && (f64::from(shape.rect.min.x) - button.x0).abs() < 0.5
-                && (f64::from(shape.rect.max.x) - button.x1).abs() < 0.5
-                && (f64::from(shape.rect.min.y) - button.y0).abs() < 0.5
-                && (f64::from(shape.rect.max.y) - button.y1).abs() < 0.5
-        }
-        _ => false,
-    });
+    let on_button = |rect: egui::Rect| {
+        (f64::from(rect.min.x) - button.x0).abs() < 0.5
+            && (f64::from(rect.max.x) - button.x1).abs() < 0.5
+            && (f64::from(rect.min.y) - button.y0).abs() < 0.5
+            && (f64::from(rect.max.y) - button.y1).abs() < 0.5
+    };
+    let fills: Vec<egui::Color32> = shapes
+        .iter()
+        .filter_map(|clipped| match &clipped.shape {
+            egui::Shape::Rect(shape) if on_button(shape.rect) => Some(shape.fill),
+            _ => None,
+        })
+        .collect();
     assert!(
-        outlined,
-        "the button is outlined 1 point inside its edge in #8c8c8c"
+        fills.contains(&egui::Color32::from_rgb(0x00, 0x5c, 0x80)),
+        "the button is filled in the selection blue: {fills:?}"
+    );
+    let label_colours: Vec<egui::Color32> = shapes
+        .iter()
+        .filter_map(|clipped| match &clipped.shape {
+            egui::Shape::Text(shape) if shape.galley.job.text == "Set PES path" => {
+                Some(shape.fallback_color)
+            }
+            _ => None,
+        })
+        .collect();
+    assert_eq!(
+        label_colours,
+        [egui::Color32::from_rgb(0xc0, 0xde, 0xff)],
+        "the label in the selection's text colour"
+    );
+    assert!(
+        !shapes.iter().any(|clipped| matches!(&clipped.shape,
+            egui::Shape::Rect(shape)
+                if on_button(shape.rect)
+                    && shape.stroke.color == egui::Color32::from_gray(0x8c))),
+        "no grey outline on the button"
     );
     let canvas = canvas_of(&nodes);
     let canvas_rect = egui::Rect::from_min_max(

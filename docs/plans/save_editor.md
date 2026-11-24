@@ -1749,9 +1749,11 @@ Win32 original hurt the most):
     box leaves: centred between the box's right line (its outer edge) and the pitch's right
     edge, its bottom as far from the pitch's bottom edge as its sides are from those two.
 
-    It is outlined 1 point inside its edge in the text's grey (`#8c8c8c`; a plain button's
-    fill alone reads as a patch of the grass), and its side padding is 2 points, not a
-    button's 4, so it fits PES 2018-2021's corner: their box is 160 points wide, PES 2017's
+    It is drawn selected, in the selection blue with its label in the selection's text
+    colour, as the Compiler's Upgrade DpFileList button is, so it reads as a button and not
+    as a notice: a plain button's grey fill reads as a patch of the grass, and a grey outline
+    around it still read as a message. Its side padding is 2 points, not a button's 4, so it
+    fits PES 2018-2021's corner: their box is 160 points wide, PES 2017's
     130, which leaves 79 points beside it against 94. The margins are about 9 points on PES
     2017 and 1.5 on PES 2018-2021 (the label 72 points at the body font).
 

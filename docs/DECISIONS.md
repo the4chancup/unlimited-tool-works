@@ -20141,3 +20141,9 @@ longer lifts that window over it. A dialog, a menu and a tooltip still stand abo
 Why: egui raises a clicked window over the others, so one click on the pinned detail window
 hid the help the member had opened from it. The drafts already keep the help above both.
 Plan: `docs/plans/core/gui.md`, the paragraph after the floating windows' placement.
+
+## 2026-11-24 — save_editor — the pitch's Set PES path button is blue (maintainer)
+Decision: the button is drawn selected, filled in the selection blue with its label in the
+selection's text colour, as the Compiler's Upgrade DpFileList button is; the grey outline goes.
+Why: outlined in grey on the grass, it read as a message rather than a button.
+Plan: `docs/plans/save_editor.md` "Tactics editor" (the Set PES path bullet).
