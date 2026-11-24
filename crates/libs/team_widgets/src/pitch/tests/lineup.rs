@@ -149,3 +149,38 @@ fn each_rows_position_is_in_its_groups_lineup_colour_on_both_themes() {
         );
     }
 }
+
+// The draft's `.lrow .fpos`: a fixed 30-point position column, the name
+// the row's item gap after it, so every row's name starts the same
+// offset from its position's left edge — the starters' varied position
+// labels and the bench's alike.
+#[test]
+fn every_rows_name_starts_the_same_offset_from_its_position() {
+    let mut tactics = fixture_tactics(PesVersion::Pes21);
+    let mut view = TacticsView::default();
+    let rows = fixture_rows(PesVersion::Pes21);
+    let roster = roster_rows(&rows);
+    let mut window = Headless::sized(800.0, 900.0);
+    let (nodes, _) = window.lineup(PesVersion::Pes21, &mut tactics, &mut view, &roster, vec![]);
+    // The 30-point column plus the item gap to the name.
+    let gap = window
+        .ctx
+        .style_of(window.ctx.theme())
+        .spacing
+        .item_spacing
+        .x;
+    let offset = 30.0 + f64::from(gap);
+    let lineup = lineup_rows(&nodes);
+    assert!(lineup.len() > 11, "premise: bench rows are drawn");
+    for row in &lineup {
+        let [_handle, position, name] = row.as_slice() else {
+            panic!("a row's three labels, got {row:?}")
+        };
+        let position = position.bounds().expect("position bounds");
+        let name = name.bounds().expect("name bounds");
+        assert!(
+            (name.x0 - position.x0 - offset).abs() <= 0.5,
+            "the name {offset} past the position's left on every row: {position:?} vs {name:?}"
+        );
+    }
+}

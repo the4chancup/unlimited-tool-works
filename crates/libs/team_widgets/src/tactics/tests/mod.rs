@@ -3357,3 +3357,25 @@ fn an_unlocked_formation_selector_edges_held_and_unheld() {
         );
     }
 }
+
+// The draft's `#tac-side` group fills the pitch-high cell the host gives
+// the grid's row (`flex: 1` beside the pitch): the Player assignments
+// box's bottom is the cell's, not the chips'.
+#[test]
+fn the_player_assignments_box_fills_its_cells_height() {
+    let mut window = Headless::sized(422.0, 1200.0);
+    let version = PesVersion::Pes21;
+    let mut tactics = fixture_tactics(version);
+    let mut view = TacticsView::default();
+    let rows = fixture_rows(version);
+    let roster = roster_rows(&rows);
+    let (nodes, shapes) = window.settings_frame(version, &mut tactics, &mut view, &roster);
+
+    let heading = label_bounds(&nodes, "Player assignments");
+    let group = group_box(&shapes, heading);
+    assert!(
+        (f64::from(group.height()) - f64::from(crate::pitch::PITCH_BOX.y)).abs() <= 0.5,
+        "the box is the cell's height ({group:?} vs {} points)",
+        crate::pitch::PITCH_BOX.y
+    );
+}
