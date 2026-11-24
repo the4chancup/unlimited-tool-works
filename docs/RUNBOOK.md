@@ -545,11 +545,12 @@ commands, and the harness tells the lead only when a command exits; a run whose 
 quiet mid-turn never exits. A rework's resumed session once went idle in the middle of a red
 run, its hand perturbation still applied, and only a check by the lead found it; the
 background command's 2-hour cap would have ended it nearly two hours later. So every such run
-is waited on through `python ~/.claude/skills/duck/devin_watch.py <brief>`, chained before
-the wait for the run's log in one background command (timeout 7200000; one command, since
-each command's end is a notification): it exits when the run ends, and with `STALLED` (exit 3) when
-for 20 minutes neither the session's `last_activity_at` in Devin's `sessions.db` moved nor the
-run's process tree burned CPU (a build or test burns it without any step). The watcher never
+is handed to the lead's context and disk watcher, `watch.py --log <run log> --devin <brief>`,
+which already wakes the lead every 53 minutes: no command of the run's own adds a
+notification or meets the 2-hour cap. The watcher ends with `ENDED` when the log does, and with
+`STALLED` when for 20 minutes neither the session's `last_activity_at` in Devin's
+`sessions.db` moved nor the run's process tree burned CPU (a build or test burns it without
+any step); a restarted watcher starts the 20 minutes over. The watcher never
 stops the run: what to do is the lead's call, after reading `git diff`, since a stalled run can
 leave a half-done edit or a perturbation in the tree. Resumes are not counted: a run stopped
 midway (a stall, an interruption, a server error) carries about the context an uninterrupted
@@ -560,11 +561,10 @@ remaining items itself or briefs a fresh session.
 
 **A Devin CLI run is started detached**: `python
 ~/.claude/tools/run_detached.py <brief>.run.log "git add -A && python
-~/.claude/skills/sidekick/devin_sidekick.py ..."` (or `duck.py`), with a background waiter beside
-it (`until grep -q "^exit " <log>; do sleep 60; done; tail -40 <log>`) as the notification, and
-the stall watcher as before. A background command dies with the lead's session and at the
-2-hour cap; a
-detached run outlives both, and only its waiter needs re-arming. It runs at below-normal
+~/.claude/skills/sidekick/devin_sidekick.py ..."` (or `duck.py`), and handed to the watcher as
+above. A background command dies with the lead's session and at the 2-hour cap; a detached
+run outlives both, and after a compaction only the watcher is restarted, with the run's
+`--log` and `--devin` again. It runs at below-normal
 priority, as `run_detached.py` starts everything. Stopping one is a `taskkill` of its process
 tree, the lead's call as for a stall.
 
