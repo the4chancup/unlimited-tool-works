@@ -1,4 +1,7 @@
 /* The maintainer's pages: questions, proposals, tasks. Dark, like the drafts. */
+/* The scrollbar's room is kept on a page too short to scroll, so the centred column and the
+   menu stand where they do on the others. */
+html { scrollbar-gutter: stable; }
 body { font: 15px/1.5 "Segoe UI", sans-serif; background: #1e1e1e; color: #ddd;
   max-width: 980px; margin: 0 auto; padding: 0 16px 80px; }
 nav.pages { position: sticky; top: 0; background: #1e1e1e; border-bottom: 1px solid #333;
