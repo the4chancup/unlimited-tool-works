@@ -664,7 +664,9 @@ and no phase closes with one outstanding.
     in its view wait until its draft is buildable, since its built UI is not worked on before
     then; its other 4 are missing tests of the rules text. `pes_model`'s 30: five timeouts
     (catches), one excluded as equivalent, 24 missing tests; those and `ruleset_editor`'s 4
-    are tested, in three SWE-2 slices merged by `37059dcb`;
+    are tested, in three SWE-2 slices merged by `37059dcb`. `export_upgrader`'s 33: eight
+    excluded as equivalent, three in a dead block of `output_issues` that goes, 22 missing
+    tests, in two SWE-2 slices (`eu_a`, `eu_b`);
   - [x] **teamrows** 2026-11-24, no change: `teams_list`'s reconcile tests keep their
     synthetic rows (750 `/zz/`, 701 `/co/`), which the test-data rule allows in a format's
     own tests;
@@ -731,7 +733,11 @@ and no phase closes with one outstanding.
       tests no longer feeds the remote costs a diff run's split reads (`a132a379`). Left,
       once the backfill frees the VPS: one whole-crate run, its survivors run again on the
       full suite (a catch under selection is sound, so only they can differ) and its time
-      per mutant set against the cost table's last.
+      per mutant set against the cost table's last. The crate: `ruleset_editor` (474
+      mutants, 32 s each on the VPS, about two hours unselected; `team_compiler`'s 3,261
+      would hold the VPS, and with it the Linux gates, for a day), run after `parity`'s
+      `jobs` lands, so the same run measures the extra pass's memory with two mutants
+      building at once and no build cap.
     - [ ] **extras** the extra kinds' runs (`scripts/mutation/extra_mutants.py`, their own
       loop per mutant, on `cargo test -p` until `backend`) take what the whole-crate runs
       have; then the `call` backfill resumes on its three largest crates:

@@ -338,3 +338,51 @@ path = "crates/libs/pes_model/src/format/write.rs"
 kind = "call"
 description = "in push: the resize() statement is deleted | removed: bytes.resize(bytes.len() + pad4(bytes.len()), 0);"
 why = "every section is already a multiple of 4 when pushed: a 12-byte table of contents, a header of 0, 4 or 8 bytes, records of 4 to 28 bytes, and blobs that add_blob pads"
+
+[[exclude]]
+path = "crates/tools/export_upgrader/src/carried.rs"
+kind = "call"
+description = "in carried_files: the extend() statement is deleted | removed: carried.findings.extend(failures.into_values().flatten());"
+why = "every failures key is one of the input files, and the loop just before the statement removes each of those, so the map is empty by then"
+
+[[exclude]]
+path = "crates/tools/export_upgrader/src/kits.rs"
+kind = "call"
+description = "in kit_folders: the extend() statement is deleted | removed: folders.findings.extend(failures.into_values().flatten());"
+why = "every failures key is one of the input files (the Note's path among them), and the loop just before the statement removes each of those, so the map is empty by then"
+
+[[exclude]]
+path = "crates/tools/export_upgrader/src/materials/mod.rs"
+kind = "call"
+description = "in material_references: the extend() statement is deleted | removed: rewrites.findings.extend(failures.into_values().flatten());"
+why = "every failures key is a copy's input path, and the loop just before the statement removes each of those, so the map is empty by then"
+
+[[exclude]]
+path = "crates/tools/export_upgrader/src/kits.rs"
+kind = "call"
+description = "in kit_folders: the insert() statement is deleted | removed: kits.insert(KitSlot::P1);"
+why = "inserted only when no player kit was written: an empty p1 holds no texture, so no texture is hoisted with or without it"
+
+[[exclude]]
+path = "crates/tools/export_upgrader/src/players.rs"
+kind = "call"
+description = "in pair_wearers: the clear() statement is deleted | removed: state.missing.clear();"
+why = "unworn is already empty here, so no later step reads the missing IDs left behind"
+
+[[exclude]]
+path = "crates/tools/export_upgrader/src/players.rs"
+kind = "call"
+description = "in pair_wearers: the clear() statement is deleted | removed: state.unworn.clear();"
+why = "missing is already empty here, so every later step skips the unworn folders left behind"
+
+[[exclude]]
+path = "crates/tools/export_upgrader/src/upgrade/mod.rs"
+kind = "call"
+description = "in upgrade_export: the retain() statement is deleted | removed: kits.copies .retain(|(input, _)| !ftex_dropped.contains(input.as_str()));"
+why = "an .ftex kit texture is converted into the written files, never kits.copies, so no kits copy is ever the .ftex of a pair"
+
+[[exclude]]
+path = "crates/tools/export_upgrader/src/upgrade/mod.rs"
+kind = "call"
+description = "in upgrade_export: the retain() statement is deleted | removed: kits.copies .retain(|(input, _)| !dds_dropped.contains(input));"
+why = "every .ftex is converted to .dds, so no Kits/ output ends .ftex, no pair forms there, and no kits copy is ever a dropped .dds"

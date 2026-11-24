@@ -519,4 +519,18 @@ exclude_re = [
     # `2.0 / inset` at the 1-point stroke both themes give it (`theme.rs`,
     # `noninteractive.bg_stroke`). Re-check if that width changes.
     "save_editor/src/view/player_list\\.rs:\\d+:\\d+: replace \\* with / in row_size",
+    # test_runner: the probe's `sum` only keeps its page-touching loop from being optimized
+    # away (`black_box`); its value is never printed or returned, so `*=` (which keeps it 0)
+    # changes nothing a test reads.
+    "test_runner/src/bin/probe\\.rs:\\d+:\\d+: replace \\+= with \\*= in main",
+    # test_runner: the stub `main` exists only so the crate builds off Windows. Its tests
+    # (`tests/runner.rs`) run on Windows alone, where the stub is not compiled.
+    "test_runner/src/main\\.rs:\\d+:\\d+: replace main with \\(\\)",
+    # test_runner: `failed` only words a Win32 call's failure (creating the job object or its
+    # port), which no test can cause.
+    "test_runner/src/job\\.rs:\\d+:\\d+: replace failed -> String with",
+    # test_runner: in `hit_memory_limit`'s drain, `||` also stops on a message whose
+    # `lpOverlapped` is null; only `JOB_OBJECT_MSG_ACTIVE_PROCESS_ZERO` can carry one, and it
+    # arrives last, after any memory-limit message, so the result is the same.
+    "test_runner/src/job\\.rs:\\d+:\\d+: replace && with \\|\\| in hit_memory_limit",
 ]
