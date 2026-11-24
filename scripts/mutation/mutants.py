@@ -1361,10 +1361,16 @@ def fetch_remote(host: str, partial: bool = False, *, extra_only: bool = False) 
             if not extra_only and ssh(
                 host, f"cd {REMOTE_BASE}/tree && [ -d extra_mutants.out ]"
             ).returncode == 0:
+                # A whole run whose cargo-mutants never started leaves the
+                # same folders, and only its log tells the two apart.
                 raise RuntimeError(
-                    "the remote half is an extras-only run (it left "
-                    "extra_mutants.out, no mutants.out): collect it from the "
-                    "tree that launched it"
+                    "the remote half left extra_mutants.out and no mutants.out: if "
+                    "it is an extras-only run, collect it from the tree that "
+                    "launched it; if its log "
+                    f"({REMOTE_RUN}/log on {host}) ends with cargo-mutants' error, "
+                    "it is a whole run whose cargo-mutants never started: its "
+                    f"extra pass is in {REMOTE_BASE}/tree/extra_mutants.out, and "
+                    f"`rm -r {REMOTE_RUN}` there frees the host"
                 )
             raise RuntimeError(
                 f"the remote half finished but left no {name}: its log is "

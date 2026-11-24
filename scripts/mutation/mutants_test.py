@@ -3026,12 +3026,16 @@ class Fetch(unittest.TestCase):
         """The cargo-mutants fetch's "left no mutants.out" tells the user to
         `rm -r run` on the host — which would delete an extras-only half's
         results when a pending record is missing and this tree's collect takes
-        the cargo path. The probe for the pass's folder names the run first."""
+        the cargo path. The probe for the pass's folder names the run first, and
+        offers `rm -r` only for the whole run whose cargo-mutants never started,
+        which leaves the same folders."""
         with self.assertRaisesRegex(
-            RuntimeError, "extras-only run.*collect it from the tree that launched it"
+            RuntimeError, "extras-only run, collect it from the tree that launched it"
         ) as raised:
             self.fetch(3, extra_present=True)
-        self.assertNotIn("rm -r", str(raised.exception))
+        self.assertRegex(
+            str(raised.exception), "cargo-mutants never started.*`rm -r ~/studio-mutants/run`"
+        )
         self.assertFalse(any("collected" in call for call in self.calls))
 
     def test_a_failed_transfer_keeps_the_last_fetch_and_the_half_uncollected(self):
