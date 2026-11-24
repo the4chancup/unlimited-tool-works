@@ -520,16 +520,38 @@ def test_threads_arg(test_threads: int) -> str:
     return f"--test-threads={test_threads}"
 
 
+# The `.cargo/mutants.toml` keys both runners are known to honor alike: those that pick
+# which mutants run, their timeouts, and the test command's parts `test_command` builds.
+TEST_CONFIG_KEYS = {
+    "test_tool", "additional_cargo_args", "additional_cargo_test_args", "timeout_multiplier",
+    "minimum_test_timeout", "gitignore", "exclude_globs", "exclude_re", "examine_globs",
+}
+# Nextest's exit codes the runs read: tests ran and one failed, or the build failed.
+TEST_RUN_FAILED = 100
+BUILD_FAILED = 101
+
+
+def check_test_config(config: dict) -> None:
+    """Raises `ValueError` for a parsed `.cargo/mutants.toml` the two runners would not
+    test alike: a `test_tool` other than nextest, or a key outside `TEST_CONFIG_KEYS`
+    (`features`, `profile`...), which cargo-mutants would honor and the extra kinds'
+    `test_command` would not. Both `sized_config` and `test_command` call it, so such an
+    edit stops both runners until the key is handled in both."""
+    tool = config.get("test_tool", "cargo")
+    if tool != "nextest":
+        raise ValueError(f"mutants.toml: unsupported test_tool {tool!r}")
+    unknown = sorted(set(config) - TEST_CONFIG_KEYS)
+    if unknown:
+        raise ValueError(f"mutants.toml: keys the extra kinds' test command ignores: {unknown}")
+
+
 def test_command(crate: str, config: dict, test_threads: int) -> list[str]:
     """The command that tests `crate` the way a mutation run does: `cargo nextest run -p
     <crate>` plus `config`'s `additional_cargo_args` and `test_threads` threads,
-    `config` being a parsed `.cargo/mutants.toml`. The file's own
-    `additional_cargo_test_args` is dropped, the same swap `sized_config` makes for
-    cargo-mutants. Only nextest is known: another `test_tool` raises `ValueError`
-    naming it, so a changed tool fails both runners loudly until this learns it."""
-    tool = config.get("test_tool", "cargo")
-    if tool != "nextest":
-        raise ValueError(f"test_command: unsupported test_tool {tool!r}")
+    `config` being a parsed `.cargo/mutants.toml` that `check_test_config` accepts. The
+    file's own `additional_cargo_test_args` is dropped, the same swap `sized_config`
+    makes for cargo-mutants."""
+    check_test_config(config)
     return [
         "cargo", "nextest", "run", "-p", crate,
         *config.get("additional_cargo_args", []),
@@ -551,6 +573,7 @@ def sized_config(
     sets more keys — a file split's `examine_globs` or `exclude_globs`; a list
     value extends the base file's list of that key rather than replacing it."""
     config = tomllib.loads((source / ".cargo/mutants.toml").read_text(encoding="utf-8"))
+    check_test_config(config)
     half = max(1, cpus // 2)
     # The file's `test_tool` is nextest, which takes `--test-threads`
     # directly, without libtest's `--`.
@@ -646,7 +669,8 @@ def caught_by_tests(outcome: dict) -> bool:
     """Whether a caught mutant's test phase ended as nextest ends a run in which
     tests failed: exit code 100 (`{"Failure": 100}` in outcomes.json)."""
     return any(
-        phase["phase"] == "Test" and phase.get("process_status") == {"Failure": 100}
+        phase["phase"] == "Test"
+        and phase.get("process_status") == {"Failure": TEST_RUN_FAILED}
         for phase in outcome.get("phase_results", [])
     )
 

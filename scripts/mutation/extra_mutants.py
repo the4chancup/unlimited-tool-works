@@ -45,14 +45,6 @@ ALL_KINDS = ("bool", "call", "guard", "literal", "normalize", "order")
 TIMEOUT_FACTOR = 3
 # Above a test's 120 s bound on a wait (`.cargo/mutants.toml`'s `minimum_test_timeout` says why).
 MIN_TIMEOUT_SECONDS = 150
-# Nextest's exit code for a run in which tests failed (`mutants.caught_by_tests` reads the
-# same for cargo-mutants' runs): the only proof a mutant was caught. A failure without it
-# (a build script that could not run, a full disk) tested nothing.
-TEST_RUN_FAILED = 100
-# Nextest's exit code when the build failed. The code alone also covers a build that
-# failed another way than the mutant not compiling (a build script's, a linker's);
-# cargo's "could not compile" in the output is what makes it unviable.
-BUILD_FAILED = 101
 
 
 def outcome(code: int | None, out: str) -> str:
@@ -69,9 +61,14 @@ def outcome(code: int | None, out: str) -> str:
     lowered = out.lower()
     if any(sign in lowered for sign in mutants.KILLED_BUILD_SIGNS):
         return "untested"
-    if code == BUILD_FAILED and "could not compile" in lowered:
+    # A failed build is unviable only when cargo names a crate that could not compile; a
+    # build script's failure or a full disk is not the mutant's (a killed rustc or linker
+    # prints it too, which the signs above keep untested).
+    if code == mutants.BUILD_FAILED and "could not compile" in lowered:
         return "unviable"
-    if code == TEST_RUN_FAILED:
+    # Nextest's code for a failed test run, as `mutants.caught_by_tests` reads it for
+    # cargo-mutants' runs; a test binary that could not start ends the same way.
+    if code == mutants.TEST_RUN_FAILED:
         return "caught"
     return "untested"
 

@@ -733,12 +733,13 @@ and no phase closes with one outstanding.
       full suite (a catch under selection is sound, so only they can differ) and its time
       per mutant set against the cost table's last.
     - [ ] **extras** the extra kinds' runs (`scripts/mutation/extra_mutants.py`, their own
-      loop of `cargo test -p` per mutant) take what the whole-crate runs have; then the `call`
-      backfill resumes on its three largest crates:
+      loop per mutant, on `cargo test -p` until `backend`) take what the whole-crate runs
+      have; then the `call` backfill resumes on its three largest crates:
       - [x] **backend** 2026-11-24 `3bc51827`: one test command for both runners
         (`mutants.test_command`, from `.cargo/mutants.toml`), so the extra kinds get nextest
         (mutfast had changed only cargo-mutants' config); outcomes from nextest's exit codes.
-        Its SWE-2 review round is running;
+        Its SWE-2 round: 2 accepted (the config check now stops both runners on a key only
+        one honors; the run's folder is asserted), the loop ends;
       - [ ] **parity** [after backend] the rest of what cargo-mutants' runs have, each
         measured on one crate before the backfill resumes: the build cap (the remote extra
         pass and the coverage map build at `REMOTE_BUILD_JOBS = 1`, one rustc job, set for

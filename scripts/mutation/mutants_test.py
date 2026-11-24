@@ -361,6 +361,7 @@ class SizedConfig(unittest.TestCase):
             (source / ".cargo").mkdir()
             # Keys the live tree's file does not hold: only the snapshot's file has them.
             (source / ".cargo" / "mutants.toml").write_text(
+                'test_tool = "nextest"\n'
                 'exclude_globs = ["crates/libs/cpk/src/snapshot_only.rs"]\n'
                 "timeout_multiplier = 7.0\n",
                 encoding="utf-8",
@@ -408,6 +409,23 @@ class TestCommand(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "'cargo'"):
                 mutants.test_command("cpk", config, 8)
 
+    def test_a_key_only_cargo_mutants_would_honor_stops_both_runners(self):
+        config = {"test_tool": "nextest", "features": ["gpu"]}
+        with self.assertRaisesRegex(ValueError, "features"):
+            mutants.test_command("cpk", config, 8)
+        with tempfile.TemporaryDirectory() as tmp:
+            source = Path(tmp)
+            (source / ".cargo").mkdir()
+            (source / ".cargo" / "mutants.toml").write_text(
+                'test_tool = "nextest"\nfeatures = ["gpu"]\n', encoding="utf-8"
+            )
+            with self.assertRaisesRegex(ValueError, "features"):
+                mutants.sized_config(16, source=source)
+
+    def test_the_repositorys_config_passes_the_check(self):
+        text = (REPOSITORY / ".cargo" / "mutants.toml").read_text(encoding="utf-8")
+        mutants.check_test_config(tomllib.loads(text))
+
     def test_run_tests_starts_the_commands_list(self):
         """The extra kinds' `run_tests` builds `test_command`'s list from the run's
         copy of `.cargo/mutants.toml`, so the two runners cannot part without this
@@ -429,6 +447,9 @@ class TestCommand(unittest.TestCase):
                 popen.call_args.args[0],
                 mutants.test_command("cpk", config, os.cpu_count() or 1),
             )
+            # In the run's copy, where the mutant is applied, not the live tree.
+            self.assertEqual(popen.call_args.kwargs["cwd"], cwd)
+            proc.communicate.assert_called_once_with(timeout=1.0)
             self.assertEqual((code, out), (0, "out"))
 
 
