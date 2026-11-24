@@ -298,7 +298,7 @@ pub(crate) fn paint_swatch(painter: &egui::Painter, icon: KitIcon, rect: egui::R
 /// The text colour on `fill`: a soft dark grey on a light fill, a soft light grey on a dark
 /// one, whatever the theme. The threshold is 125, not the usual 140: the error red weighs 130
 /// and reads poorly under light text, and no other fill lies between.
-pub(crate) fn text_colour(fill: Color32, visuals: &egui::Visuals) -> Color32 {
+fn text_colour(fill: Color32, visuals: &egui::Visuals) -> Color32 {
     let colours = palette(visuals);
     let weight =
         0.299 * f32::from(fill.r()) + 0.587 * f32::from(fill.g()) + 0.114 * f32::from(fill.b());
@@ -394,5 +394,28 @@ mod tests {
             }
         }
         assert_eq!(drawn.fill_at(cell), None, "a blocked cell has no fill");
+    }
+
+    #[test]
+    fn state_name_names_each_state_and_a_ring_names_its_severity_on_the_ok_fills() {
+        for (state, outline, name) in [
+            (CellState::Unchecked, None, "Unchecked"),
+            (CellState::Checking, None, "Checking"),
+            (CellState::PartialOk, None, "Shallow check done (archive)"),
+            (CellState::FullOk, None, "Checked"),
+            (CellState::Done, None, "Done"),
+            (CellState::DoneWithWarnings, None, "Done with warnings"),
+            (CellState::DoneWithErrors, None, "Done with errors"),
+            (CellState::Blocked, None, "Blocked"),
+            (CellState::PartialOk, Some(Outline::Warning), "Warning"),
+            (CellState::PartialOk, Some(Outline::Error), "Error"),
+            (CellState::FullOk, Some(Outline::Warning), "Warning"),
+            (CellState::FullOk, Some(Outline::Error), "Error"),
+            // An outline changes the name of the two OK states alone.
+            (CellState::Done, Some(Outline::Error), "Done"),
+            (CellState::Blocked, Some(Outline::Error), "Blocked"),
+        ] {
+            assert_eq!(state_name(state, outline), name, "{state:?} {outline:?}");
+        }
     }
 }

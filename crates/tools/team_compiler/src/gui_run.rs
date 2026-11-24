@@ -62,7 +62,7 @@ pub(crate) struct RunLog {
 /// The findings of a check's `rows` as the log prints them, each with the grid cell its line
 /// acts for: row by row, each row's cells in `cell_places` order, Infos included. A finding two
 /// cells hold (a referee folder backing two slots) is one line, acting for the first.
-pub(crate) fn check_lines(rows: &[Row]) -> (Vec<LogLine>, Vec<CellKey>) {
+fn check_lines(rows: &[Row]) -> (Vec<LogLine>, Vec<CellKey>) {
     let mut lines = Vec::new();
     let mut cells = Vec::new();
     for row in rows {

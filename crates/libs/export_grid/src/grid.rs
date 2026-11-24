@@ -544,7 +544,7 @@ mod tests {
 
     use super::*;
     use crate::cells::KitIcon;
-    use crate::testing::{COLUMNS, Drawn, GROUPS, Headless, dark, text_shape};
+    use crate::testing::{COLUMNS, Drawn, GROUPS, Headless, dark, text_shape, wheel};
 
     /// A checked cell showing `text`.
     fn checked(text: &str) -> Position {
@@ -914,32 +914,6 @@ mod tests {
             .expect("the run of shapes")
     }
 
-    /// The scroll area's persisted state, for the grid `show` draws under `salt`: the salt
-    /// it hands the area is the grid's own id, so the state lands under it salted again.
-    fn scroll_state(ctx: &egui::Context, salt: &str) -> egui::containers::scroll_area::State {
-        let mut id = egui::Id::NULL;
-        ctx.run_ui(egui::RawInput::default(), |ui| {
-            id = ui.make_persistent_id(egui::IdSalt::new(ui.make_persistent_id(salt)));
-        })
-        .drop_without_applying_deltas();
-        egui::containers::scroll_area::State::load(ctx, id)
-            .expect("the scroll area stored its state")
-    }
-
-    /// A wheel at `pos` scrolled by `delta`, the pointer over the grid first.
-    fn wheel(pos: egui::Pos2, delta: egui::Vec2) -> Vec<egui::Event> {
-        vec![
-            egui::Event::PointerMoved(pos),
-            egui::Event::MouseWheel {
-                unit: egui::MouseWheelUnit::Point,
-                delta,
-                phase: egui::TouchPhase::Move,
-                source: egui::MouseWheelSource::Unknown,
-                modifiers: egui::Modifiers::default(),
-            },
-        ]
-    }
-
     /// A row of three named lines under `label`.
     fn named_row(label: &str) -> Row {
         let line = |name| Line {
@@ -1153,8 +1127,7 @@ mod tests {
         grid(Vec::new());
         grid(wheel(pos2(600.0, 300.0), vec2(-100000.0, -100000.0)));
         grid(Vec::new());
-        let state = scroll_state(&window.ctx, "grid");
-        assert_eq!(state.unclamped_offset(), vec2(168.25, 546.65625));
+        assert_eq!(scroll_offset_of(&window.ctx), vec2(168.25, 546.65625));
     }
 
     #[test]

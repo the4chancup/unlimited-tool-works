@@ -190,7 +190,7 @@ pub(crate) fn lines(drawn: &Drawn, stroke: egui::Stroke) -> Vec<[egui::Pos2; 2]>
 }
 
 /// A node's bounds, in points.
-fn bounds(node: &accesskit::Node) -> egui::Rect {
+pub(crate) fn bounds(node: &accesskit::Node) -> egui::Rect {
     let bounds = node.bounds().expect("a node has bounds");
     egui::Rect::from_min_max(
         egui::pos2(bounds.x0 as f32, bounds.y0 as f32),
@@ -219,4 +219,18 @@ pub(crate) fn release(pos: egui::Pos2) -> Vec<egui::Event> {
         pressed: false,
         modifiers: egui::Modifiers::default(),
     }]
+}
+
+/// The pointer moved to `pos`, then the wheel turned by `delta`.
+pub(crate) fn wheel(pos: egui::Pos2, delta: egui::Vec2) -> Vec<egui::Event> {
+    vec![
+        egui::Event::PointerMoved(pos),
+        egui::Event::MouseWheel {
+            unit: egui::MouseWheelUnit::Point,
+            delta,
+            phase: egui::TouchPhase::Move,
+            source: egui::MouseWheelSource::Unknown,
+            modifiers: egui::Modifiers::default(),
+        },
+    ]
 }

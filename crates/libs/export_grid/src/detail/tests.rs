@@ -4,6 +4,7 @@ use std::path::PathBuf;
 use std::time::Duration;
 
 use egui::epaint::Shape;
+use egui::epaint::text::ByteRangeExt as _;
 use studio_core::{Disposition, ExportId, message_line};
 use vtree::ScopePath;
 
@@ -11,7 +12,7 @@ use super::*;
 use crate::cells::Width;
 use crate::grid::show;
 use crate::rows::{IdCell, Line};
-use crate::testing::{COLUMNS, Drawn, Headless, dark, press, release};
+use crate::testing::{COLUMNS, Drawn, Headless, dark, press, release, wheel};
 
 /// More than egui's 0.3 s between the clicks of a double-click: two clicks this far apart
 /// are two clicks.
@@ -262,6 +263,8 @@ struct Scene {
     /// The cell the tool's log line under the pointer stands for, handed to `point_at`
     /// before each frame.
     pointing: Option<CellKey>,
+    /// Whether the grid is drawn as being checked, handed to `show` each frame.
+    checking: bool,
     /// A modal drawn over the grid (a tool's dialog). `modal_closed` holds whether its
     /// `should_close` has fired.
     modal: bool,
@@ -298,6 +301,7 @@ impl Scene {
             textures,
             asked: Vec::new(),
             pointing: None,
+            checking: false,
             modal: false,
             modal_closed: false,
             menu: false,
@@ -317,6 +321,7 @@ impl Scene {
             textures,
             asked,
             pointing,
+            checking,
             modal,
             modal_closed,
             menu,
@@ -340,7 +345,7 @@ impl Scene {
                     ui.label("An entry");
                 });
             }
-            let response = show(ui, "grid", &COLUMNS, rows, false, detail, &mut sources);
+            let response = show(ui, "grid", &COLUMNS, rows, *checking, detail, &mut sources);
             if *modal {
                 *modal_closed |= egui::Modal::new(egui::Id::unique("modal"))
                     .show(ui.ctx(), |ui| {
@@ -523,8 +528,13 @@ fn a_resting_pointer_opens_the_cells_window_after_the_delay_and_it_follows_at_on
     assert!(error.top() < info.top(), "the Error over the Info");
     drawn.one("file=boots.fmdl, count=1662");
     let when = drawn.one("A player folder holds both fpc_on and fpc_off.");
-    drawn.one("The folder is left out. Keep one marker.");
-    assert!(when.top() < info.top(), "a finding's texts under its code");
+    let effect = drawn.one("The folder is left out. Keep one marker.");
+    assert!(error.top() < when.top(), "the code over its When");
+    assert!(when.top() < effect.top(), "the When over its Effect");
+    assert!(
+        effect.top() < info.top(),
+        "a finding's texts under its code"
+    );
     assert!(drawn.all("No findings.").is_empty());
 
     // Straight onto 01: its window at once.
@@ -638,6 +648,83 @@ fn two_findings_of_one_severity_stand_by_code() {
     assert!(used.top() < orphaned.top(), "{used:?} over {orphaned:?}");
 }
 
+// TC-GUI-09
+#[test]
+fn a_catalog_text_s_code_spans_paint_in_the_monospace_font() {
+    let mut scene = Scene::new();
+    let at = spots(&scene.idle());
+    let (_, drawn) = scene.click(at.three);
+    let shape =
+        crate::testing::text_shape(&drawn, "A player folder holds both fpc_on and fpc_off.");
+    let job = &shape.galley.job;
+    assert_eq!(job.sections.len(), 5, "text and code spans: {job:?}");
+    for section in &job.sections {
+        let text = section.byte_range.slice(&job.text);
+        let expected = if matches!(text, "fpc_on" | "fpc_off") {
+            egui::FontFamily::Monospace
+        } else {
+            egui::FontFamily::Proportional
+        };
+        assert_eq!(section.format.font_id.family, expected, "{text:?}");
+    }
+}
+
+// TC-GUI-09
+#[test]
+fn a_roster_or_an_export_finding_s_place_line_says_what_it_is_about() {
+    let mut scene = Scene::new();
+    scene.rows[0].label.messages = vec![
+        finding(
+            "players_txt_slot_invalid",
+            Severity::Warning,
+            Scope::RosterEntry {
+                export_id: ExportId(1),
+                file: ScopePath::new("players.txt").unwrap(),
+                line: 2,
+                slot: Some(24),
+            },
+            &[],
+        ),
+        finding(
+            "export_identified",
+            Severity::Info,
+            Scope::Export {
+                export_id: ExportId(1),
+            },
+            &[],
+        ),
+    ];
+    let at = spots(&scene.idle());
+    let (_, drawn) = scene.click(at.label);
+
+    // A finding about a roster line names its file and line under its code.
+    let code = drawn.one("players_txt_slot_invalid");
+    let place = drawn.one("players.txt line 2");
+    assert!(place.top() > code.top(), "{place:?} under {code:?}");
+
+    // A finding about the export as a whole has no place line: nothing is
+    // drawn between its code and the buttons, where one would stand.
+    let window = window_rect(&drawn);
+    let identified = drawn.one("export_identified");
+    let first_button = ["Open folder", "Copy messages"]
+        .map(|text| drawn.one(text).top())
+        .into_iter()
+        .fold(f32::INFINITY, f32::min);
+    let texts: Vec<Rect> = drawn
+        .nodes
+        .iter()
+        .filter(|node| node.role() != egui::accesskit::Role::TextRun)
+        .filter(|node| node.value().is_some() || node.label().is_some())
+        .map(crate::testing::bounds)
+        .filter(|rect| window.contains(rect.center()))
+        .filter(|rect| rect.top() > identified.bottom() && rect.top() < first_button)
+        .collect();
+    assert!(
+        texts.is_empty(),
+        "no text between the code and the buttons: {texts:?}"
+    );
+}
+
 #[test]
 fn no_findings_stands_where_a_windows_first_finding_would() {
     let mut scene = Scene::new();
@@ -662,6 +749,39 @@ fn the_window_of_a_cell_alone_in_its_group_is_named_by_the_group() {
     assert!(shows(&drawn, "/co/ portraits"));
     drawn.one("Portraits in the player folders");
     drawn.one("Checked");
+}
+
+// TC-GUI-09
+#[test]
+fn the_window_reads_checking_while_a_check_runs() {
+    let mut scene = Scene::new();
+    let at = spots(&scene.idle());
+    scene.click(at.portraits);
+    let drawn = scene.idle();
+    assert!(shows(&drawn, "/co/ portraits"), "premise: pinned");
+    let inside = |drawn: &Drawn, text: &str| {
+        let window = window_rect(drawn);
+        drawn
+            .all(text)
+            .into_iter()
+            .filter(|rect| window.contains(rect.center()))
+            .count()
+    };
+    assert_eq!(inside(&drawn, "Checked"), 1, "the state line reads Checked");
+
+    scene.checking = true;
+    let drawn = scene.idle();
+    assert_eq!(inside(&drawn, "Checking"), 1, "Checking while a check runs");
+    assert_eq!(
+        inside(&drawn, "Checked"),
+        0,
+        "the cell's own state is not read"
+    );
+
+    scene.checking = false;
+    let drawn = scene.idle();
+    assert_eq!(inside(&drawn, "Checked"), 1, "Checked back");
+    assert_eq!(inside(&drawn, "Checking"), 0);
 }
 
 // TC-GUI-09
@@ -1511,20 +1631,6 @@ fn a_pinned_cell_scrolled_under_the_title_row_shows_no_badge() {
     );
     assert!(shows(&drawn, "/co/ 03"), "premise: still pinned");
     assert_eq!(badge(&drawn), None);
-}
-
-/// A wheel's events at `pos`: the pointer moved there, then the wheel turned by `delta`.
-fn wheel(pos: Pos2, delta: Vec2) -> Vec<egui::Event> {
-    vec![
-        egui::Event::PointerMoved(pos),
-        egui::Event::MouseWheel {
-            unit: egui::MouseWheelUnit::Point,
-            delta,
-            phase: egui::TouchPhase::Move,
-            source: egui::MouseWheelSource::Unknown,
-            modifiers: Modifiers::NONE,
-        },
-    ]
 }
 
 // TC-GUI-24
