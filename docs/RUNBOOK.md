@@ -876,7 +876,8 @@ neither; (d) reactively, when
 two attempts on the same premise have failed, the sidekick's included; (e) after a change to a
 **vital script**: one whose defect silently loses or misreports a measurement, which no gate
 catches because the gates run through it. The list: the mutation runs' `mutants.py`,
-`mutants_diff.py` and `extra_mutants.py`; the test runner `run_tests.py` and `test_runner.py`;
+`mutants_diff.py` and `extra_mutants.py`; the test runner `run_tests.py`, `test_runner.py` and
+`crates/dev/test_runner`;
 `remote_gates.py`; `scripts/census/` and `scripts/library_parity/`; the release build's
 `release.py`, `build_remapped.py` and `make_candidate.py`. Their review is SWE-2 rounds at
 least (the same loop, until the round rule below ends it), Astra when a change reshapes how

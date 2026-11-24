@@ -336,6 +336,13 @@ turn a mutant unviable. The figure matches the VPS mutation unit's `MemoryMax=6G
 number: that one caps the whole run (builds, both workers, page cache), this one each test
 binary alone. Linux relies on the kernel's OOM killer.
 
+The `.cmd` runs the compiled runner, `utw-test-runner` (`crates/dev/test_runner`), when it is
+installed in cargo's bin folder, and `scripts/gates/test_runner.py` otherwise, as on CI. Install
+it with `just install-test-runner`, and again after a change to `crates/dev/test_runner`, since
+the `.cmd` runs whichever version is installed. nextest starts a process per test, and the
+compiled runner starts in half the time Python takes (36 ms against 77, on an idle machine)
+without Microsoft Defender scanning Python's library at every start.
+
 Every test the gates run gets a temp folder that is not its own real path
 (`scripts/gates/temp_alias.py`): the test binaries from `run_tests.py`, each script's tests
 through the justfile's `script_test`. A CI runner's temp folder is named by something other than

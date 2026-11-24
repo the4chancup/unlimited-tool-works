@@ -4119,13 +4119,12 @@ points there.
   -a` does: `9ac41d0a` needed an amend for `docs/spec/core/design.md`. With `-a` it now
   commits nothing while a file is untracked and not ignored, and names it (`69e1ac60`).
 
-- open (2026-11-24) — on Windows every test process starts Python (`scripts/gates/
-  test_runner.cmd`, the 6 GB cap), about 250 ms a test under a mutation trial's load, and
-  Defender scans its ~80 standard-library files at each start: most of Defender's CPU in the
-  maintainer's recording, and the likely cause of their input lag while tests ran. Slice
-  RUNNER (SWE-2, brief `.tmp/runner/brief_runner.md`): a compiled runner,
-  `crates/dev/test_runner`, installed by `just install-test-runner`, the `.cmd` falling back
-  to Python started with `-S -I` where it is not installed.
+- resolved (2026-11-24) — on Windows every test process started Python (`scripts/gates/
+  test_runner.cmd`, the 6 GB cap), and Defender scanned its standard library at each start,
+  the likely cause of the maintainer's input lag while tests ran. Slice RUNNER (`8750fd70`):
+  the compiled `utw-test-runner`, installed by `just install-test-runner`; the `.cmd` falls
+  back to Python where it is not installed. Its review is owed ("vital scripts' first
+  reviews").
 
 - open (2026-11-24) — the app draws the opened sidebar above every window, where the
   maintainer wants every window above it (DECISIONS 2026-11-24 "every window stands above the
@@ -4415,6 +4414,8 @@ points there.
     `mutants_test.py`): SWE-2 rounds 1-3 (S-scripts), the loop ended (`bde2eafb`); then
     `scripts/`' root sorted by job (`6f37bf18`)
   - [ ] `run_tests.py`, `test_runner.py`, `remote_gates.py`
+  - [~] the compiled test runner, `crates/dev/test_runner` and `test_runner.cmd` (RUNNER): SWE-2
+    rounds
   - [x] `release.py`, `build_remapped.py`, `make_candidate.py`: SWE-2 rounds 1-2 (S-release),
     the loop ended (`82a5ca93`)
   - [ ] `scripts/census/`, `scripts/library_parity/`
