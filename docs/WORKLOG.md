@@ -682,11 +682,12 @@ and no phase closes with one outstanding.
 - [ ] **TIER** [after TESTSEL] A mutation tier between `mutants-diff` and whole-crate runs (DECISIONS 2026-11-23 "a tier
   between `mutants-diff` and whole-crate runs"), built while the `call` backfill runs
   (DECISIONS 2026-11-24 "TIER is built while the `call` backfill runs"), in slices:
-  - [ ] **diff** the extra kinds take a diff (`extra_mutants.py` keeps a mutant only on a changed
-    line), and `mutants-diff` runs them, so the review loops test `call` mutants too: merged
-    2026-11-24 (`d94498cc`), its SWE-2 round running;
+  - [x] **diff** 2026-11-24 (`d94498cc`, its SWE-2 round's fixes `b52fe547`): `mutants-diff`
+    runs the extra kinds after each crate's cargo-mutants run, over the lines the diff added;
   - [ ] **closure** [after diff] a tracked record of each crate's last triaged whole-run commit, and the closure run:
-    every kind over the diff since that commit;
+    every kind over the diff since that commit: merged 2026-11-24 (`fe44b001`), its SWE-2
+    round running; the record starts empty, and the lead fills it with each crate's last
+    triaged whole run, where the log names it;
   - [ ] **rolling** [after closure] whole-crate runs as a rolling job on the VPS, the crate checked longest ago first;
     RUNBOOK "Phases and releases" and CONTRIBUTING "Mutation runs" rewritten to match.
 - [x] **TESTSEL** Evaluate running only the tests that cover each mutant (the maintainer, 2026-11-23: worth
