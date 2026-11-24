@@ -70,7 +70,8 @@ pub(crate) fn log_panics(log: Arc<RunLog>) {
 
 /// Drains the channel on its own thread, printing each line to stdout, until every sender is
 /// gone. Whether stderr is a terminal decides whether the progress line is drawn; it is read
-/// here alone, so `print_events` takes the decision and its writers as arguments.
+/// here alone, so `print_events` takes the target the line switches to and its writers as
+/// arguments.
 pub(crate) fn spawn_printer(
     events: Receiver<PipelineEventEnvelope>,
     log: Option<Arc<RunLog>>,
@@ -80,7 +81,13 @@ pub(crate) fn spawn_printer(
         // The unlocked handles lock per write, as the notice printer's do.
         print_events(
             events,
-            draw,
+            move || {
+                if draw {
+                    ProgressDrawTarget::stderr_with_hz(10)
+                } else {
+                    ProgressDrawTarget::hidden()
+                }
+            },
             log.as_deref(),
             &mut io::stdout(),
             &mut io::stderr(),
@@ -89,28 +96,32 @@ pub(crate) fn spawn_printer(
 }
 
 /// The run's events as lines on `out`, as `EventLines` formats them, each after the time it
-/// was made when its envelope carries one (`--timestamps`, `timestamp_prefix`). With `draw`,
-/// the run's progress line (`[ 3/12 exports | 1,284/4,010 parts | 0:42 ]`) is drawn by
-/// indicatif on the process's stderr, redrawn in place at its rate and cleared while each line goes to `out`
-/// (`suspend`); on `Complete` it is replaced on `err` by the run's summary, and a stream that
-/// ends without one (a `check`, an upgrade, a run stopped before it compiled) leaves no line.
-/// Without `draw` the bar is hidden and nothing touches `err`, so piped stdout is
-/// byte-for-byte what it is on a terminal. With a `log`, every line `out` would get goes to
-/// the log first, and an Info finding's line goes to the log alone; the summary goes to the
-/// log whether or not it is drawn, and the progress line never does.
+/// was made when its envelope carries one (`--timestamps`, `timestamp_prefix`). When
+/// `draw_target` is a live one, the run's progress line
+/// (`[ 3/12 exports | 1,284/4,010 parts | 0:42 ]`) is drawn by indicatif on it — the
+/// process's stderr when `spawn_printer` calls — redrawn in place at its rate and cleared
+/// while each line goes to `out` (`suspend`); on `Complete` it is replaced on `err` by the
+/// run's summary, and a stream that ends without one (a `check`, an upgrade, a run stopped
+/// before it compiled) leaves no line. A `hidden` target draws nothing and nothing touches
+/// `err`, so piped stdout is byte-for-byte what it is on a terminal. With a `log`, every
+/// line `out` would get goes to the log first, and an Info finding's line goes to the log
+/// alone; the summary goes to the log whether or not it is drawn, and the progress line
+/// never does.
 fn print_events(
     events: Receiver<PipelineEventEnvelope>,
-    draw: bool,
+    draw_target: impl FnOnce() -> ProgressDrawTarget,
     log: Option<&RunLog>,
     out: &mut impl Write,
     err: &mut impl Write,
 ) -> io::Result<()> {
     let mut lines = EventLines::new();
     let mut counts = RunCounts::new();
-    let mut ended = false;
-    // indicatif draws to stderr itself (the Windows console handled), capped at ten draws a
-    // second once its target is set; the line is the counters message and the `{clock}` key,
-    // no bar graphic.
+    // indicatif draws on its target itself (the Windows console handled), at the rate the
+    // caller's target sets; the line is the counters message and the `{clock}` key, no bar
+    // graphic.
+    let target = draw_target();
+    let draw = !target.is_hidden();
+    let mut target = Some(target);
     let bar = if draw {
         // Hidden until the first export: a bar redraws after every `suspend`, so it would
         // draw an empty frame while the findings before it print.
@@ -142,7 +153,11 @@ fn print_events(
             bar.set_message(line);
             if draw && !drawing {
                 drawing = true;
-                bar.set_draw_target(ProgressDrawTarget::stderr_with_hz(10));
+                bar.set_draw_target(
+                    target
+                        .take()
+                        .expect("the draw target is switched to once, on the first counters"),
+                );
                 // The steady tick makes the clock tick between findings, from its own
                 // thread: enabled once the message is up, so no empty brackets draw.
                 bar.enable_steady_tick(Duration::from_millis(500));
@@ -173,7 +188,6 @@ fn print_events(
         };
         match summary {
             Some((files, skipped_exports, skipped_folders, folders_with_errors)) => {
-                ended = true;
                 bar.finish_and_clear();
                 let summary = summary_line(
                     files,
@@ -209,9 +223,8 @@ fn print_events(
             }
         }
     }
-    if !ended {
-        bar.finish_and_clear();
-    }
+    // A stream that ends without `Complete` leaves no line: dropping a bar still in
+    // progress clears it (indicatif's default finish), so no explicit clear is needed.
     Ok(())
 }
 
@@ -393,8 +406,10 @@ mod tests {
     use std::fs;
     use std::path::PathBuf;
     use std::sync::atomic::{AtomicBool, Ordering};
+    use std::time::Instant;
 
     use crossbeam_channel::unbounded;
+    use indicatif::TermLike;
     use pes_version::PesVersion;
     use studio_core::{
         AppPaths, Disposition, ExportId, Message, MessageCode, Notice, NoticeKind, RunId, Scope,
@@ -610,7 +625,14 @@ mod tests {
             }
             drop(tx);
             let (mut out, mut err) = (Vec::new(), Vec::new());
-            print_events(rx, draw, None, &mut out, &mut err).unwrap();
+            print_events(
+                rx,
+                draw_target(draw, TestTerm::default()),
+                None,
+                &mut out,
+                &mut err,
+            )
+            .unwrap();
             (out, err)
         };
         let (out_draw, _) = printed(true);
@@ -651,7 +673,7 @@ mod tests {
         let mut err_no_draw = Vec::new();
         print_events(
             run_events(),
-            false,
+            ProgressDrawTarget::hidden,
             None,
             &mut out_no_draw,
             &mut err_no_draw,
@@ -662,7 +684,14 @@ mod tests {
 
         let mut out_draw = Vec::new();
         let mut err_draw = Vec::new();
-        print_events(run_events(), true, None, &mut out_draw, &mut err_draw).unwrap();
+        print_events(
+            run_events(),
+            draw_target(true, TestTerm::default()),
+            None,
+            &mut out_draw,
+            &mut err_draw,
+        )
+        .unwrap();
         assert_eq!(out_draw, out_no_draw, "the line changes no stdout byte");
         let err = String::from_utf8(err_draw).unwrap();
         assert!(
@@ -680,6 +709,314 @@ mod tests {
             "3/12 exports | 1,284/4,010 parts"
         );
         assert_eq!(progress_line(0, 1, None), "0/1 exports");
+    }
+
+    /// A terminal the progress line draws on: `TermLike` over a shared `Screen`, so a
+    /// test reads what the draws left — every flushed bar line in `frames`, the screen's
+    /// rows in `lines`. `out`/`err` write on the same screen through `ScreenWrite`, as
+    /// they do on the real terminal.
+    #[derive(Clone, Debug, Default)]
+    struct TestTerm(Arc<Mutex<Screen>>);
+
+    /// What the terminal shows: `lines` is the screen, the bar's line the one the cursor
+    /// (`row`) is on; `frames` is every flushed bar line — a draw's line, padding trimmed,
+    /// a clear's emptiness.
+    #[derive(Debug, Default)]
+    struct Screen {
+        lines: Vec<String>,
+        row: usize,
+        frames: Vec<String>,
+    }
+
+    impl Screen {
+        /// The row the cursor is on, a blank row when nothing wrote there yet.
+        fn cursor_line(&mut self) -> &mut String {
+            while self.lines.len() <= self.row {
+                self.lines.push(String::new());
+            }
+            &mut self.lines[self.row]
+        }
+
+        /// `text` written where the cursor is, each `\n` moving to the next row.
+        fn write(&mut self, text: &str) {
+            for (index, part) in text.split('\n').enumerate() {
+                if index > 0 {
+                    self.row += 1;
+                }
+                self.cursor_line().push_str(part);
+            }
+        }
+    }
+
+    impl TermLike for TestTerm {
+        fn width(&self) -> u16 {
+            80
+        }
+
+        fn move_cursor_up(&self, n: usize) -> io::Result<()> {
+            let mut screen = self.0.lock().unwrap();
+            screen.row = screen.row.saturating_sub(n);
+            Ok(())
+        }
+
+        fn move_cursor_down(&self, n: usize) -> io::Result<()> {
+            self.0.lock().unwrap().row += n;
+            Ok(())
+        }
+
+        fn move_cursor_right(&self, _n: usize) -> io::Result<()> {
+            Ok(())
+        }
+
+        fn move_cursor_left(&self, _n: usize) -> io::Result<()> {
+            Ok(())
+        }
+
+        fn write_line(&self, s: &str) -> io::Result<()> {
+            self.0.lock().unwrap().write(&format!("{s}\n"));
+            Ok(())
+        }
+
+        fn write_str(&self, s: &str) -> io::Result<()> {
+            self.0.lock().unwrap().write(s);
+            Ok(())
+        }
+
+        fn clear_line(&self) -> io::Result<()> {
+            self.0.lock().unwrap().cursor_line().clear();
+            Ok(())
+        }
+
+        fn flush(&self) -> io::Result<()> {
+            let mut screen = self.0.lock().unwrap();
+            let line = screen.lines.get(screen.row).cloned().unwrap_or_default();
+            screen.frames.push(line.trim_end().to_owned());
+            Ok(())
+        }
+    }
+
+    impl TestTerm {
+        /// The line each bar draw flushed, a `""` for a clear nothing followed.
+        fn frames(&self) -> Vec<String> {
+            self.0.lock().unwrap().frames.clone()
+        }
+
+        /// The screen's rows as they stand.
+        fn lines(&self) -> Vec<String> {
+            self.0.lock().unwrap().lines.clone()
+        }
+    }
+
+    /// A `Write` whose bytes land on `term`'s screen: `out` and `err` write on the same
+    /// terminal the bar draws on.
+    struct ScreenWrite(TestTerm);
+
+    impl Write for ScreenWrite {
+        fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+            let text = String::from_utf8_lossy(buf);
+            self.0.0.lock().unwrap().write(&text);
+            Ok(buf.len())
+        }
+
+        fn flush(&mut self) -> io::Result<()> {
+            Ok(())
+        }
+    }
+
+    /// The `draw_target` `print_events` is given: `term` as the target for a drawn run,
+    /// `hidden` for a piped one — where `term` goes unused.
+    fn draw_target(draw: bool, term: TestTerm) -> impl FnOnce() -> ProgressDrawTarget {
+        move || {
+            if draw {
+                ProgressDrawTarget::term_like(Box::new(term))
+            } else {
+                ProgressDrawTarget::hidden()
+            }
+        }
+    }
+
+    /// `line` is a drawn progress line with `counters` and a clock: `[ <counters> | m:ss ]`.
+    fn is_progress_line(line: &str, counters: &str) -> bool {
+        let Some(inner) = line
+            .strip_prefix("[ ")
+            .and_then(|line| line.strip_suffix(" ]"))
+        else {
+            return false;
+        };
+        let Some((got, clock)) = inner.rsplit_once(" | ") else {
+            return false;
+        };
+        got == counters && is_clock(clock)
+    }
+
+    /// `m:ss`: one or more digits, a colon, two digits.
+    fn is_clock(text: &str) -> bool {
+        let Some((minutes, seconds)) = text.split_once(':') else {
+            return false;
+        };
+        !minutes.is_empty()
+            && seconds.len() == 2
+            && minutes.bytes().all(|byte| byte.is_ascii_digit())
+            && seconds.bytes().all(|byte| byte.is_ascii_digit())
+    }
+
+    // The line indicatif draws on the terminal: `[ <counters> | m:ss ]` — the counters
+    // message the run sets and the clock the style renders on every draw.
+    #[test]
+    fn the_drawn_progress_line_is_the_counters_and_the_clock() {
+        let term = TestTerm::default();
+        let (mut out, mut err) = (Vec::new(), Vec::new());
+        print_events(
+            run_events(),
+            draw_target(true, term.clone()),
+            None,
+            &mut out,
+            &mut err,
+        )
+        .unwrap();
+
+        let frames = term.frames();
+        assert!(
+            frames
+                .iter()
+                .any(|line| is_progress_line(line, "0/2 exports")),
+            "the first counters line drawn, with its clock: {frames:?}"
+        );
+        assert!(
+            frames
+                .iter()
+                .any(|line| is_progress_line(line, "2/2 exports | 3/3 parts")),
+            "the last counters line drawn: {frames:?}"
+        );
+    }
+
+    // The steady tick redraws the line from its own thread while no event comes, so the
+    // clock moves between findings: inside ~1.2 s of quiet (the tick is 500 ms) the line
+    // draws again.
+    #[test]
+    fn the_line_draws_again_while_no_event_comes() {
+        let term = TestTerm::default();
+        let (tx, rx) = unbounded();
+        let printer = {
+            let term = term.clone();
+            std::thread::spawn(move || {
+                let (mut out, mut err) = (Vec::new(), Vec::new());
+                print_events(rx, draw_target(true, term), None, &mut out, &mut err).unwrap();
+            })
+        };
+        for event in [
+            PipelineEvent::ExportStarted {
+                export_id: ExportId(1),
+                display_name: "co One".to_owned(),
+            },
+            PipelineEvent::Progress {
+                processed: 1,
+                total: 3,
+            },
+        ] {
+            tx.send(envelope(event)).unwrap();
+        }
+
+        // The events' own draw lands first.
+        let deadline = Instant::now() + Duration::from_secs(120);
+        while term.frames().is_empty() {
+            assert!(Instant::now() < deadline, "the events' draw never landed");
+            std::thread::sleep(Duration::from_millis(10));
+        }
+        // The next frame can only be the steady tick's: no event is coming. The
+        // count is read while the channel is still open — after it ends the run's
+        // own finish draws one more.
+        let seen = term.frames().len();
+        let deadline = Instant::now() + Duration::from_millis(1_200);
+        while term.frames().len() == seen && Instant::now() < deadline {
+            std::thread::sleep(Duration::from_millis(10));
+        }
+        let drew_again = term.frames().len() > seen;
+        drop(tx);
+        printer.join().unwrap();
+
+        assert!(
+            drew_again,
+            "no draw came while the channel was quiet: {:?}",
+            term.frames()
+        );
+    }
+
+    // `Complete` clears the line, then prints the summary where it stood: the terminal's
+    // last line is the `Done:` line, with nothing of the progress line left on it.
+    #[test]
+    fn a_completed_run_clears_the_line_before_the_summary() {
+        let term = TestTerm::default();
+        let (mut out, mut err) = (ScreenWrite(term.clone()), ScreenWrite(term.clone()));
+        print_events(
+            run_events(),
+            draw_target(true, term.clone()),
+            None,
+            &mut out,
+            &mut err,
+        )
+        .unwrap();
+
+        let frames = term.frames();
+        assert!(
+            frames
+                .iter()
+                .any(|line| is_progress_line(line, "2/2 exports | 3/3 parts")),
+            "the line drew before it was cleared: {frames:?}"
+        );
+        let lines = term.lines();
+        let last = lines.iter().rev().find(|line| !line.trim_end().is_empty());
+        assert!(
+            last.is_some_and(|line| {
+                line.starts_with(
+                    "Done: 12 files written, 1 export skipped, 2 folders skipped, 3 folders with errors, 0:",
+                )
+            }),
+            "the summary stands where the line was: {lines:?}"
+        );
+    }
+
+    // A stream that ends without `Complete` (a `check`, an upgrade stopped early) leaves
+    // the terminal as it was: the last draw is the cleared line.
+    #[test]
+    fn a_run_ending_without_complete_leaves_the_terminal_cleared() {
+        let term = TestTerm::default();
+        let (tx, rx) = unbounded();
+        for event in [
+            PipelineEvent::ExportStarted {
+                export_id: ExportId(1),
+                display_name: "co One".to_owned(),
+            },
+            PipelineEvent::Progress {
+                processed: 1,
+                total: 3,
+            },
+        ] {
+            tx.send(envelope(event)).unwrap();
+        }
+        drop(tx);
+        let (mut out, mut err) = (Vec::new(), Vec::new());
+        print_events(
+            rx,
+            draw_target(true, term.clone()),
+            None,
+            &mut out,
+            &mut err,
+        )
+        .unwrap();
+
+        let frames = term.frames();
+        assert!(
+            frames
+                .iter()
+                .any(|line| is_progress_line(line, "0/1 exports | 1/3 parts")),
+            "the line drew: {frames:?}"
+        );
+        assert_eq!(
+            frames.last().map(String::as_str),
+            Some(""),
+            "the last thing the terminal saw is the line cleared: {frames:?}"
+        );
     }
 
     #[test]
@@ -891,7 +1228,14 @@ mod tests {
         drop(tx);
 
         let (mut out, mut err) = (Vec::new(), Vec::new());
-        print_events(rx, false, Some(&log), &mut out, &mut err).unwrap();
+        print_events(
+            rx,
+            ProgressDrawTarget::hidden,
+            Some(&log),
+            &mut out,
+            &mut err,
+        )
+        .unwrap();
 
         assert_eq!(
             String::from_utf8(out).unwrap(),
@@ -1003,7 +1347,14 @@ mod tests {
         drop(tx);
 
         let mut out = Vec::new();
-        print_events(rx, false, None, &mut out, &mut Vec::new()).unwrap();
+        print_events(
+            rx,
+            ProgressDrawTarget::hidden,
+            None,
+            &mut out,
+            &mut Vec::new(),
+        )
+        .unwrap();
         assert_eq!(
             String::from_utf8(out).unwrap(),
             "+12.345 - co Spring.zip: Warning bad_file\n- co Spring.zip: Warning bad_file\n"
