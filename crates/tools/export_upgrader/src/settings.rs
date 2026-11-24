@@ -255,8 +255,10 @@ pub(crate) fn loose_settings_files(folders: &BTreeMap<u8, OutputFolder>) -> Sett
 
 #[cfg(test)]
 mod tests {
+    use pes_savefile::model::ingame_face::IngameFace;
     use pes_savefile::settings_toml::IngameFaceSettings;
     use pes_version::PesVersion;
+    use studio_core::Severity;
 
     use super::*;
 
@@ -537,5 +539,31 @@ mod tests {
             }
         );
         assert!(files.findings.is_empty());
+    }
+
+    #[test]
+    fn a_player_record_the_generation_cannot_read_loses_its_settings_file() {
+        // An empty ingame-face run — one never read from a record — makes
+        // the generation fail, and the `settings_not_generated` Error keeps
+        // the run unclean where the file's silent absence would not.
+        let save = save_edited(|file| {
+            file.player_mut(71405).unwrap().appearance.ingame_face = IngameFace::default();
+        });
+        let roster = roster_of(&save);
+        let mut folders = BTreeMap::new();
+        folders.insert(5, plain("Players/05 - A"));
+        let files = settings_files(&save, &roster, &folders, true, &BTreeSet::new());
+        let not_generated = findings_named(&files, "settings_not_generated");
+        assert_eq!(not_generated.len(), 1, "{:?}", files.findings);
+        assert_eq!(not_generated[0].severity, Severity::Error);
+        assert_eq!(context(not_generated[0], &["slot"]), ["05"]);
+        assert!(
+            files
+                .written
+                .iter()
+                .all(|(path, _)| path != "Players/05 - A/settings.toml"),
+            "{:?}",
+            files.written
+        );
     }
 }

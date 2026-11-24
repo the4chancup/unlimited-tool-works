@@ -196,9 +196,14 @@ fn retry_while_locked(mut step: impl FnMut() -> io::Result<()>) -> io::Result<()
 
 #[cfg(test)]
 mod tests {
+    use std::io::Write;
+
+    use studio_core::PipelineEvent;
+
     use super::*;
-    use crate::cli::ABORTED;
-    use crate::test_support::scratch;
+    use crate::cli::{ABORTED, UpgradeArgs};
+    use crate::test_support::{scratch, test_ctx};
+    use crate::upgrade::run;
 
     #[test]
     fn an_unwritable_parent_dir_aborts_naming_it_and_the_incomplete_output() {
@@ -289,5 +294,66 @@ mod tests {
         assert!(root.join("staging").exists());
         assert_eq!(fs::read(root.join("staging/held.txt")).unwrap(), b"held");
         drop(lock);
+    }
+
+    /// A `co Spring.zip` whose one `Collars/` entry's stored data is
+    /// corrupted: the archive still lists it, the contents' CRC fails at
+    /// read. Written in `root`, returned as the export's path.
+    fn corrupt_zip(root: &Path) -> PathBuf {
+        let mut writer = zip::ZipWriter::new(std::io::Cursor::new(Vec::new()));
+        writer
+            .start_file(
+                "Collars/collar.fmdl",
+                zip::write::SimpleFileOptions::default()
+                    .compression_method(zip::CompressionMethod::Stored),
+            )
+            .unwrap();
+        writer.write_all(b"collar").unwrap();
+        let mut bytes = writer.finish().unwrap().into_inner();
+        // The entry's first data byte flipped: the local header's variable
+        // part sits behind its fixed 30 bytes and the name and extra-field
+        // lengths.
+        let data_at = 30
+            + usize::from(u16::from_le_bytes([bytes[26], bytes[27]]))
+            + usize::from(u16::from_le_bytes([bytes[28], bytes[29]]));
+        bytes[data_at] ^= 0xFF;
+        let export = root.join("co Spring.zip");
+        fs::write(&export, &bytes).unwrap();
+        export
+    }
+
+    #[test]
+    fn a_planned_copy_whose_input_read_fails_is_reported() {
+        // A `Collars/` member is carried as a plain copy: its archive
+        // entry listed but unreadable, the copy loop's `read` fails and
+        // the `source_read_failed` Error reaches the run's events, where
+        // its absence would leave the file vanished silently.
+        let root = scratch("planned_read_failed");
+        let export = corrupt_zip(&root);
+        let (ctx, events_rx) = test_ctx();
+        let args = UpgradeArgs {
+            exports: vec![export],
+            all: None,
+            savefile: None,
+            loose: true,
+            coverage: None,
+            output: None,
+        };
+        let exit = run(&args, &ctx).unwrap();
+        drop(ctx);
+        assert_eq!(exit, 1);
+        let codes: Vec<String> = events_rx
+            .iter()
+            .filter_map(|envelope| match envelope.event {
+                PipelineEvent::Message(message) if message.scope.export_id() == Some(INPUT) => {
+                    Some(message.code.code.to_string())
+                }
+                _ => None,
+            })
+            .collect();
+        assert!(
+            codes.iter().any(|code| code == "source_read_failed"),
+            "{codes:?}"
+        );
     }
 }

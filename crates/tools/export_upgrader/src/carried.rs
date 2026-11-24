@@ -920,4 +920,34 @@ mod tests {
             assert!(!plan.consumed.contains(file), "{file}");
         }
     }
+
+    #[test]
+    fn a_logo_member_whose_read_fails_is_reported_and_consumed() {
+        // A member that listed but does not read is `source_read_failed`
+        // (the `plan` helper panics on a listed file with no bytes, so the
+        // `read` closure fails here instead) and still consumed: a file the
+        // old export held never vanishes silently, nor is it reported again
+        // by the run's fallback as unmigrated content.
+        let files = vec!["Logo/emblem_0XXX_r_ll.png".to_owned()];
+        let carried = carried_files(&files, &BTreeMap::new(), |path| {
+            Err(SourceFailure {
+                path: path.to_owned(),
+                error: "cannot read".to_owned(),
+            })
+        });
+        assert!(carried.consumed.contains("Logo/emblem_0XXX_r_ll.png"));
+        let finding = carried
+            .findings
+            .iter()
+            .find(|m| m.code.code.as_ref() == "source_read_failed")
+            .expect("source_read_failed expected");
+        assert_eq!(finding.disposition, Disposition::DropFile);
+        assert_eq!(
+            finding.scope,
+            Scope::File {
+                export_id: INPUT,
+                path: path_scope("Logo/emblem_0XXX_r_ll.png")
+            }
+        );
+    }
 }

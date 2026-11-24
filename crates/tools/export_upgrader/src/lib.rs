@@ -126,4 +126,22 @@ mod tests {
         assert_eq!(tool.help().topics.len(), 2);
         assert!(tool.targets_pes_version());
     }
+
+    #[test]
+    fn one_frame_of_the_view_paints_the_placeholder_line() {
+        let (ctx, _events_rx) = crate::test_support::test_ctx();
+        let mut tool = Tool::new();
+        let egui_ctx = egui::Context::default();
+        let mut output = egui_ctx.run_ui(egui::RawInput::default(), |ui| tool.view(ui, &ctx));
+        let shapes = std::mem::take(&mut output.shapes);
+        // Nothing renders here, so the frame's texture deltas are dropped on purpose.
+        output.drop_without_applying_deltas();
+        assert!(
+            shapes.iter().any(|clipped| matches!(
+                &clipped.shape,
+                egui::Shape::Text(shape) if shape.galley.text().contains("window is not built yet")
+            )),
+            "no painted text carried the placeholder line"
+        );
+    }
 }

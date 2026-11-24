@@ -623,4 +623,21 @@ mod tests {
             "<config><model path=\"team_common_folder/parts_body.model\"/></config>"
         );
     }
+
+    #[test]
+    fn a_respelled_face_xml_keeps_its_bom() {
+        // A `face.xml` whose payload carries a UTF-8 BOM keeps it through a
+        // respell: what the rewrite does not touch is written as it was.
+        let copies = vec![("Faces/x".to_owned(), "Players/07 - A/face.xml".to_owned())];
+        let bombed = format!("\u{feff}{}", face_xml_text());
+        let mut read = reader(vec![("Faces/x".to_owned(), bombed.into_bytes())]);
+        let rewrites = face_xml_rewrites(&copies, &team(), &mut read);
+        assert_eq!(rewrites.len(), 1);
+        let text = String::from_utf8(rewrites[0].1.clone()).unwrap();
+        assert!(text.starts_with('\u{feff}'), "{text}");
+        assert!(
+            text.contains("path=\"./kitN/jacket_win32.model\""),
+            "{text}"
+        );
+    }
 }
