@@ -2784,6 +2784,20 @@ class DiffRun(unittest.TestCase):
             patcher.start()
             self.addCleanup(patcher.stop)
 
+    def test_the_output_is_utf8_whatever_the_console_takes(self):
+        """`mutants_diff` prints survivors, which quote any character of the
+        source, as `mutants`' summary does (`WholeRun`'s test of the same)."""
+        console = io.TextIOWrapper(io.BytesIO(), encoding="cp1252")
+        failed = subprocess.CompletedProcess([], 1, stdout=b"", stderr=b"no")
+        with (
+            mock.patch.object(sys, "stdout", console),
+            mock.patch.object(mutants, "working_tree", lambda: HEAD_TREE),
+            mock.patch.object(subprocess, "run", lambda *a, **k: failed),
+        ):
+            self.assertEqual(mutants_diff.main(["mutants_diff.py"]), 1)
+            print("✕")
+        self.assertEqual(console.encoding, "utf-8")
+
     def run_diff(
         self, run_crate, listing: bytes | None = None, diff: bytes = b"",
         extra=None,

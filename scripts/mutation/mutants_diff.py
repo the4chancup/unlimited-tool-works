@@ -33,6 +33,7 @@ cargo-mutants mutant runs on the remote, whatever the estimate; the extra
 kinds still run here.
 """
 
+import io
 import json
 import os
 import subprocess
@@ -50,7 +51,11 @@ RESULTS = ROOT / "mutants.diff"
 
 
 def main(argv: list[str]) -> int:
-    base = argv[1] if len(argv) > 1 else "HEAD"
+    # A survivor's line quotes the source, any character of it, and a log file
+    # opened in Windows' cp1252 refuses some. A test's StringIO takes them all.
+    if isinstance(sys.stdout, io.TextIOWrapper):
+        sys.stdout.reconfigure(encoding="utf-8")
+    base =argv[1] if len(argv) > 1 else "HEAD"
     # A crate's folder narrows the diff to it: since an old base, `crates` as a whole holds
     # every other crate's changes too (6690 mutants over 20 crates for one crate's 568).
     paths = argv[2:] or ["crates"]
