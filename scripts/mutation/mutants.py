@@ -258,6 +258,12 @@ LOCK_POLL_SECONDS = 30
 # `extra_mutants` its own): a mutant's incremental build uses few cores, so a
 # second job keeps the rest busy.
 JOBS = 2
+# Mutants the remote's extra pass (`--remote-extra`) tests at once, its jobs
+# sharing the CPUs the same way. More than `JOBS`: that pass runs only the tests
+# covering each mutant, so a mutant's time is mostly its build, which runs
+# nearly serially (the crate's rustc, then its links), and at `JOBS` jobs the
+# remote's CPUs sat partly idle. This machine keeps `JOBS`: it is shared.
+REMOTE_EXTRA_JOBS = 3
 # The baseline (a cold build and test of the mutated packages in a fresh copy
 # of the tree) of a crate no local run has measured yet: one measured run's
 # 56 s + 8 s for team_compiler, studio_core and studio, rounded.
@@ -2512,7 +2518,8 @@ def main(argv: list[str]) -> int:
             selection = Path(kinds[at + 1])
             del kinds[at:at + 2]
         _, counts, seconds = extra_mutants.run_crate(
-            argv[2], kinds or list(EXTRA_KINDS), selection=selection
+            argv[2], kinds or list(EXTRA_KINDS), selection=selection,
+            jobs=REMOTE_EXTRA_JOBS,
         )
         record_extra_run(argv[2], counts, seconds)
         return 1 if counts["untested"] else 0

@@ -583,8 +583,9 @@ class TestCommand(unittest.TestCase):
             self.assertIn("--build-jobs=3", popen.call_args.args[0])
 
     def test_build_and_run_tests_split_the_cpus_among_the_jobs(self):
-        """`run_crate`'s `JOBS` jobs share the machine as cargo-mutants' do:
-        each gets `cpus // JOBS` test threads, never under 1."""
+        """`run_crate`'s jobs share the machine as cargo-mutants' do: each
+        gets `cpus // jobs` test threads, never under 1, `JOBS` jobs unless
+        the run names its count."""
         for cpus, threads in ((8, 4), (1, 1)):
             with mock.patch("os.cpu_count", return_value=cpus):
                 popen, *_ = self.started(
@@ -597,6 +598,14 @@ class TestCommand(unittest.TestCase):
                 self.assertIn(
                     f"--test-threads={threads}", popen.call_args.args[0]
                 )
+        with mock.patch("os.cpu_count", return_value=8):
+            popen, *_ = self.started(
+                lambda cwd: extra_mutants.run_tests("cpk", cwd, 1.0, jobs=3)
+            )
+            self.assertIn("--test-threads=2", popen.call_args.args[0])
+            popen, *_ = self.started(lambda cwd: extra_mutants.build("cpk", cwd, 3))
+            self.assertIn("--test-threads=2", popen.call_args.args[0])
+            self.assertIn("--build-jobs=2", popen.call_args.args[0])
 
     def test_cargo_passes_no_preexec_fn_off_windows(self):
         """`_cargo` runs on the pool's worker threads, where `below_normal()`'s
@@ -658,14 +667,17 @@ class TestCommand(unittest.TestCase):
     def test_baseline_times_the_test_phase_alone(self):
         """`baseline_seconds` is the test phase's wall time: the build before
         it is timed apart, so a cold build does not stretch the mutants'
-        timeouts."""
+        timeouts. Both phases run on the run's job share, as the mutants' do."""
         now = [0.0]
+        shares = []
 
-        def build(crate, cwd):
+        def build(crate, cwd, jobs):
+            shares.append(jobs)
             now[0] += 100.0
             return 0, ""
 
-        def run_tests(crate, cwd, timeout):
+        def run_tests(crate, cwd, timeout, jobs):
+            shares.append(jobs)
             now[0] += 10.0
             return 0, ""
 
@@ -673,13 +685,14 @@ class TestCommand(unittest.TestCase):
         with mock.patch.multiple(
             extra_mutants, build=build, run_tests=run_tests, time=clock
         ):
-            self.assertEqual(extra_mutants.baseline_seconds("cpk", Path(".")), 10.0)
+            self.assertEqual(extra_mutants.baseline_seconds("cpk", Path("."), 3), 10.0)
+        self.assertEqual(shares, [3, 3])
 
     def test_baseline_a_failed_build_stops_it_before_any_test(self):
-        def build(crate, cwd):
+        def build(crate, cwd, jobs):
             return 101, "error: could not compile `cpk`"
 
-        def run_tests(crate, cwd, timeout):
+        def run_tests(crate, cwd, timeout, jobs):
             raise AssertionError("the baseline tested a crate that did not build")
 
         with (
@@ -703,13 +716,13 @@ class TestCommand(unittest.TestCase):
         mutant's, and the baseline times the whole suite."""
         calls = []
 
-        def run_tests(crate, cwd, timeout, expression=None):
+        def run_tests(crate, cwd, timeout, expression=None, jobs=None):
             calls.append(expression)
             return 0, ""
 
         with mock.patch.multiple(
             extra_mutants,
-            build=lambda crate, cwd: (0, ""),
+            build=lambda crate, cwd, jobs: (0, ""),
             run_tests=run_tests,
         ):
             extra_mutants.baseline_seconds("cpk", Path("x"))
@@ -1576,7 +1589,7 @@ class WholeRun(unittest.TestCase):
         ):
             self.assertEqual(mutants.main(["mutants.py", "--remote-extra", "cpk"]), 0)
         self.assertEqual(
-            runs, [(("cpk", list(mutants.EXTRA_KINDS)), {"selection": None})]
+            runs, [(("cpk", list(mutants.EXTRA_KINDS)), {"selection": None, "jobs": mutants.REMOTE_EXTRA_JOBS})]
         )
         record = json.loads(
             (self.root / "extra_mutants.out" / "run.json").read_text(encoding="utf-8")
@@ -1615,8 +1628,8 @@ class WholeRun(unittest.TestCase):
         self.assertEqual(
             runs,
             [
-                (("cpk", ["call"]), {"selection": None}),
-                (("cpk", ["call", "bool"]), {"selection": None}),
+                (("cpk", ["call"]), {"selection": None, "jobs": mutants.REMOTE_EXTRA_JOBS}),
+                (("cpk", ["call", "bool"]), {"selection": None, "jobs": mutants.REMOTE_EXTRA_JOBS}),
             ],
         )
 
@@ -1640,7 +1653,7 @@ class WholeRun(unittest.TestCase):
             )
         self.assertEqual(
             runs,
-            [(("cpk", ["call"]), {"selection": Path("../run/selection.json")})],
+            [(("cpk", ["call"]), {"selection": Path("../run/selection.json"), "jobs": mutants.REMOTE_EXTRA_JOBS})],
         )
 
 
@@ -4404,7 +4417,7 @@ class ExtraRun(unittest.TestCase):
                               lambda name, root: (root / "crates/libs/cpk").resolve()),
             mock.patch.object(extra_mutants, "list_mutants", lambda directory: self.rows),
             mock.patch.object(extra_mutants, "exclusions", lambda root: [stale]),
-            mock.patch.object(extra_mutants, "baseline_seconds", lambda crate, cwd: 1.0),
+            mock.patch.object(extra_mutants, "baseline_seconds", lambda crate, cwd, jobs: 1.0),
         ):
             patcher.start()
             self.addCleanup(patcher.stop)
@@ -4421,7 +4434,7 @@ class ExtraRun(unittest.TestCase):
         assert len(changed) == 1, changed
         return changed[0]
 
-    def run_crate(self, results, only=None, selection=None, lines=None):
+    def run_crate(self, results, only=None, selection=None, lines=None, **kwargs):
         """`results`: per row of `self.rows`, the mutant's (build result, test
         result) pair — the test result None when the build decides it — or an
         exception for `build` to raise; the test result may be a callable
@@ -4433,8 +4446,10 @@ class ExtraRun(unittest.TestCase):
         self.build_cwds = []
         self.built = []
         self.filters = {}
+        self.jobs = set()
 
-        def build(crate, cwd):
+        def build(crate, cwd, jobs):
+            self.jobs.add(jobs)
             index = self.patched_index(cwd)
             self.build_cwds.append(cwd)
             self.built.append(index)
@@ -4443,7 +4458,8 @@ class ExtraRun(unittest.TestCase):
                 raise item
             return item[0]
 
-        def run_tests(crate, cwd, timeout, expression=None):
+        def run_tests(crate, cwd, timeout, expression=None, jobs=None):
+            self.jobs.add(jobs)
             index = self.patched_index(cwd)
             self.timeouts.append(timeout)
             self.filters[index] = expression
@@ -4462,7 +4478,7 @@ class ExtraRun(unittest.TestCase):
         ):
             result = extra_mutants.run_crate(
                 "cpk", ["bool"], HEAD_TREE, only=only, selection=selection,
-                lines=lines,
+                lines=lines, **kwargs,
             )
         self.last_out = out.getvalue()
         return result
@@ -4706,6 +4722,25 @@ class ExtraRun(unittest.TestCase):
         }
         self.run_crate([((0, ""), check_isolation)] * 2, only=only)
         self.assertEqual(len(set(self.build_cwds)), 2)
+        self.assertEqual(self.jobs, {mutants.JOBS})
+
+    def test_a_run_given_its_job_count_runs_that_many_mutants_at_once(self):
+        """`jobs` (the remote's extra pass passes `REMOTE_EXTRA_JOBS`) sets
+        the copies, the mutants in flight and each phase's share of the CPUs."""
+        barrier = threading.Barrier(3)
+
+        def together(crate, cwd, timeout):
+            # Three mutants reach their tests only when three run at once.
+            barrier.wait(timeout=10)
+            return 0, "test result: ok. 12 passed; 0 failed"
+
+        only = {
+            f"crates/libs/cpk/src/lib.rs:1: [bool] flip {i} | removed: true"
+            for i in (1, 2, 3)
+        }
+        self.run_crate([((0, ""), together)] * 3, only=only, jobs=3)
+        self.assertEqual(len(set(self.build_cwds)), 3)
+        self.assertEqual(self.jobs, {3})
 
     def test_the_mutant_timeout_is_the_configs_on_both_sides_of_the_minimum(self):
         """`run_tests` gets `max(minimum_test_timeout, timeout_multiplier x
@@ -4713,7 +4748,7 @@ class ExtraRun(unittest.TestCase):
         one = {"crates/libs/cpk/src/lib.rs:1: [bool] flip 1 | removed: true"}
         for baseline, expected in ((40.0, 200.0), (10.0, 150.0)):
             with mock.patch.object(
-                extra_mutants, "baseline_seconds", lambda crate, cwd: baseline
+                extra_mutants, "baseline_seconds", lambda crate, cwd, jobs: baseline
             ):
                 self.run_crate([((0, ""), (0, ""))], only=one)
             self.assertEqual(self.timeouts, [expected])

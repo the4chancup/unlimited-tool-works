@@ -759,6 +759,10 @@ and no phase closes with one outstanding.
           against 154 s. On the VPS (`ruleset_editor`, 280 mutants in 2,794 s), the job
           peaked at 8.9 GiB under its 11.84 GiB cap, against 9.27 GiB for the last pass
           run one at a time with the cap;
+        - [ ] **jobs3** 2026-11-25: the remote's extra pass tests
+          `REMOTE_EXTRA_JOBS` mutants at once, since its builds left the VPS's CPUs about a
+          third idle at two. Check on the backfill's `save_editor` pass: the CPUs' idle share
+          while it runs, no mutant untested at the memory cap, and the host's free disk;
       - [x] **review** 2026-11-24 `13e68e44`: one paid cross-family round (Carbon) over
         `backend` and `parity`, beyond the SWE-2 loop a script gets, because this code decides
         every mutant's outcome. 10 of 13 concerns accepted (a lost console still caught on a

@@ -5,8 +5,9 @@ condition replaced with `false`), `literal` (an element removed from a literal l
 `normalize` (a `.trim()`-style call removed), `order` (a `sort()`-style statement
 deleted), `call` (any other method-call statement deleted)
 and `bool` (a `true`/`false` flipped). This script applies each listed patch
-in one of `mutants.JOBS` copies of the working tree — that many mutants run
-at once, a copy each, as cargo-mutants' `--jobs` run them — builds it
+in one of `mutants.JOBS` copies of the working tree (`mutants.REMOTE_EXTRA_JOBS`
+on the remote) — that many mutants run at once, a copy each, as cargo-mutants'
+`--jobs` run them — builds it
 (`cargo nextest run --no-run`) and, when it built, lets `cargo nextest run
 -p <crate>` decide whether the suite catches it (`build_outcome`,
 `test_outcome`). An `[[exclude]]`
@@ -274,49 +275,49 @@ def _cargo(
     return proc.returncode, out
 
 
-def test_threads() -> int:
-    """One job's `--test-threads`: the logical CPUs split `mutants.JOBS` ways,
-    never under 1 — the share `sized_config` gives each cargo-mutants job."""
-    return max(1, (os.cpu_count() or 1) // mutants.JOBS)
+def test_threads(jobs: int) -> int:
+    """One job's `--test-threads`: the logical CPUs split `jobs` ways (the
+    run's job count), never under 1 — the share `sized_config` gives each
+    cargo-mutants job."""
+    return max(1, (os.cpu_count() or 1) // jobs)
 
 
-def build_jobs() -> int:
-    """One job's `--build-jobs`: the run's CPUs split `mutants.JOBS` ways, never
+def build_jobs(jobs: int) -> int:
+    """One job's `--build-jobs`: the run's CPUs split `jobs` ways, never
     under 1 — the machine's count, or `mutants.REMOTE_JOBSERVER_TASKS` when the
     build cap is set, the same budget the remote's cargo-mutants half runs on.
     There is no shared jobserver between the jobs' cargo processes, so each
     gets its own share."""
-    return max(
-        1, (mutants.REMOTE_JOBSERVER_TASKS or os.cpu_count() or 1) // mutants.JOBS
-    )
+    return max(1, (mutants.REMOTE_JOBSERVER_TASKS or os.cpu_count() or 1) // jobs)
 
 
-def build(crate: str, cwd: Path) -> tuple[int, str]:
+def build(crate: str, cwd: Path, jobs: int = mutants.JOBS) -> tuple[int, str]:
     """`mutants.test_command`'s `cargo nextest run` of `crate` in `cwd` plus
-    `--build-jobs` (this job's share of the run's CPUs, `build_jobs`) and
-    `--no-run` (the test binaries built, nothing run): a mutant's build phase,
-    split from its tests as cargo-mutants splits them. No timeout —
-    cargo-mutants sets none on builds either."""
-    command = mutants.test_command(crate, mutants_toml(cwd), test_threads())
+    `--build-jobs` (this job's share of the run's CPUs, `build_jobs`, among
+    `jobs` jobs) and `--no-run` (the test binaries built, nothing run): a
+    mutant's build phase, split from its tests as cargo-mutants splits them.
+    No timeout — cargo-mutants sets none on builds either."""
+    command = mutants.test_command(crate, mutants_toml(cwd), test_threads(jobs))
     code, out = _cargo(
-        [*command, f"--build-jobs={build_jobs()}", "--no-run"], cwd, timeout=None
+        [*command, f"--build-jobs={build_jobs(jobs)}", "--no-run"], cwd, timeout=None
     )
     assert code is not None  # only a timeout yields None, and a build sets none
     return code, out
 
 
 def run_tests(
-    crate: str, cwd: Path, timeout: float | None, expression: str | None = None
+    crate: str, cwd: Path, timeout: float | None, expression: str | None = None,
+    jobs: int = mutants.JOBS,
 ) -> tuple[int | None, str]:
     """`mutants.test_command`'s `cargo nextest run` of `crate` in `cwd` (the run's copy
     of the tree, whose `.cargo/mutants.toml` it reads): a mutant's test phase,
-    run only after `build` succeeded; `--test-threads` is `test_threads()`'s
-    `cpus // JOBS` share of this machine's logical CPUs, the same
+    run only after `build` succeeded; `--test-threads` is `test_threads`'
+    `cpus // jobs` share of this machine's logical CPUs, the same
     `sized_config` gives each cargo-mutants job. `expression` (a nextest
     filterset, the tests covering the mutant's lines) is added with `-E`; None
     runs the full suite. Returns (exit code, output);
     the code is None when the timeout killed the process tree."""
-    command = mutants.test_command(crate, mutants_toml(cwd), test_threads())
+    command = mutants.test_command(crate, mutants_toml(cwd), test_threads(jobs))
     if expression is not None:
         command = select_tests.with_filter(command, expression)
     return _cargo(command, cwd, timeout)
@@ -340,14 +341,15 @@ def timeout_seconds(config: dict, baseline: float) -> float:
     return max(config["minimum_test_timeout"], config["timeout_multiplier"] * baseline)
 
 
-def baseline_seconds(crate: str, cwd: Path) -> float:
-    """The unmutated test phase's wall time in `cwd`, the timeout's yardstick:
+def baseline_seconds(crate: str, cwd: Path, jobs: int = mutants.JOBS) -> float:
+    """The unmutated test phase's wall time in `cwd`, the timeout's yardstick,
+    on one job's share of the CPUs among `jobs`, as the mutants' tests run:
     the build runs first, timed apart, since `timeout_multiplier` is a
     multiple of the tests alone. A failing phase ends the run."""
-    code, out = build(crate, cwd)
+    code, out = build(crate, cwd, jobs)
     if code == 0:
         start = time.monotonic()
-        code, out = run_tests(crate, cwd, timeout=None)
+        code, out = run_tests(crate, cwd, timeout=None, jobs=jobs)
     if code != 0:
         print("extra_mutants: the unmutated baseline fails; last lines:")
         print("\n".join(out.splitlines()[-30:]))
@@ -465,9 +467,9 @@ def missed_line(crate_rel: Path, row: list[str], decided: str = "missed") -> str
 def run_crate(
     crate: str, kinds: list[str], tree: str | None = None,
     only: set[str] | None = None, selection: Path | None = None,
-    lines: dict[str, set[int]] | None = None,
+    lines: dict[str, set[int]] | None = None, jobs: int = mutants.JOBS,
 ) -> tuple[list[str], Counter, float]:
-    """Run every `kinds` mutant the lister finds in `crate`, `mutants.JOBS` of
+    """Run every `kinds` mutant the lister finds in `crate`, `jobs` of
     them at once as cargo-mutants' jobs run: git `tree` (the working tree when
     None) is extracted that many times, and each mutant is applied in one of
     the copies, built (`build`) and, when it built, decided by `cargo nextest
@@ -515,7 +517,7 @@ def run_crate(
     tree = tree or mutants.working_tree()
     copies = [
         mutants.LOCAL_TMPDIR / f"extra-mutants-{os.getpid()}-{index}"
-        for index in range(mutants.JOBS)
+        for index in range(jobs)
     ]
     for copy_dir in copies:
         if copy_dir.exists():
@@ -567,7 +569,7 @@ def run_crate(
             )
             return stale, Counter(), time.monotonic() - wall_start
         check_timeout_config(config)
-        baseline = baseline_seconds(crate, copies[0])
+        baseline = baseline_seconds(crate, copies[0], jobs)
         timeout = timeout_seconds(config, baseline)
         print(
             f"extra_mutants: baseline {baseline:.0f} s, timeout {timeout:.0f} s, "
@@ -617,12 +619,12 @@ def run_crate(
                     apply_patch(
                         target, int(start), int(end), replacement, removed
                     )
-                    decided = build_outcome(*build(crate, copy_dir))
+                    decided = build_outcome(*build(crate, copy_dir, jobs))
                     ran_selected = None
                     if decided is None:
                         ran_selected = expression is not None
                         decided = test_outcome(
-                            *run_tests(crate, copy_dir, timeout, expression)
+                            *run_tests(crate, copy_dir, timeout, expression, jobs)
                         )
                 finally:
                     target.write_bytes(original)
@@ -636,7 +638,7 @@ def run_crate(
         failed: BaseException | None = None
         selected_count = 0
         full_count = 0
-        with concurrent.futures.ThreadPoolExecutor(max_workers=mutants.JOBS) as pool:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=jobs) as pool:
             futures = {
                 pool.submit(decide, row): index for index, row in enumerate(rows)
             }
