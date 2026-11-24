@@ -708,10 +708,10 @@ and no phase closes with one outstanding.
   - [ ] **adopt** [after trial] selection in the whole-crate runs on the VPS (DECISIONS
     2026-11-24 "the whole-crate runs select each mutant's tests through a stand-in for
     cargo"):
-    - [ ] **wrap** `scripts/mutation/select_tests.py`, which cargo-mutants runs in cargo's
-      place: in a mutant's test phase it finds the changed lines in cargo-mutants' copy of
-      the tree and adds the filter of the tests covering them, and otherwise runs cargo
-      unchanged;
+    - [x] **wrap** 2026-11-24 `31554811`: `scripts/mutation/select_tests.py`, which
+      cargo-mutants runs in cargo's place, adds the filter of the tests covering a mutant's
+      changed lines and otherwise runs cargo unchanged; its SWE-2 review round is owed,
+      batched with `cover`;
     - [ ] **cover** [after wrap] the coverage map, each test run alone under
       instrumentation, and the selection file it gives each listed mutant, built on the VPS
       at the start of a whole run;
