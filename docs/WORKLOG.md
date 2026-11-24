@@ -754,10 +754,12 @@ and no phase closes with one outstanding.
           cap counts caught; the remote's one-job build cap for the extra pass and the
           coverage map is gone. On `cpk`'s `call` pass: the same outcomes, 154 s against
           135 s. Left: the memory peak of the first remote extra pass without the cap;
-        - [ ] **jobs** [after phases] two mutants at once (cargo-mutants' `--jobs 2`, the
-          extra kinds one at a time), and cargo-mutants' runs count a test binary that
-          never started (`0xc0000142`) untested, as the extra kinds do (`killed_builds`
-          reads only the exit code of a caught mutant's test phase);
+        - [x] **jobs** 2026-11-24 `4effe761`: two mutants at once, each in its own copy
+          with half the CPUs for its tests (`mutants.JOBS`, read by both runners), and
+          cargo-mutants' runs count a test binary that never started (`0xc0000142`)
+          untested, as the extra kinds do. On `cpk`'s `call` pass: the same outcomes, 119 s
+          against 154 s. Its memory on the VPS, two builds at once without the cap, is
+          measured by `wire`'s `ruleset_editor` run;
       - [ ] **review** [after parity] one paid cross-family round (Carbon) over `backend` and
         `parity` together, beyond the SWE-2 loop a script gets: this code decides every
         mutant's outcome (the maintainer, 2026-11-24);
