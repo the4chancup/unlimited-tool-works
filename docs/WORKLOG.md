@@ -717,9 +717,12 @@ and no phase closes with one outstanding.
       round (5 accepted, the loop ends) is fixed in `b02123d4`;
     - [~] **wire** [after cover] the remote job builds the map, then runs cargo-mutants with
       the stand-in; merged `dfad127c` with the remote's needs, RUNBOOK and CONTRIBUTING; its
-      SWE-2 review round accepted none (the loop ends). Left, once the backfill frees the VPS: install
-      `cargo-llvm-cov` and `llvm-tools-preview` there, then one whole-crate run compared
-      with that crate's last.
+      SWE-2 review round accepted none (the loop ends). `cargo-llvm-cov` 0.9.2 and
+      `llvm-tools-preview` are on the VPS (2026-11-24), and a whole run that selected its
+      tests no longer feeds the remote costs a diff run's split reads (`a132a379`). Left,
+      once the backfill frees the VPS: one whole-crate run, its survivors run again on the
+      full suite (a catch under selection is sound, so only they can differ) and its time
+      per mutant set against the cost table's last.
 
 ---
 
