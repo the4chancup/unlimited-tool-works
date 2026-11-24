@@ -252,6 +252,11 @@ COST_CACHE = (
 # meanwhile polls for it.
 RUN_LOCK = COST_CACHE.with_name("mutants.lock")
 LOCK_POLL_SECONDS = 30
+# Mutants a run tests at once, each in its own copy of the tree and given
+# `cpus // JOBS` test threads (`sized_config` sizes cargo-mutants' jobs,
+# `extra_mutants` its own): a mutant's incremental build uses few cores, so a
+# second job keeps the rest busy.
+JOBS = 2
 # The baseline (a cold build and test of the mutated packages in a fresh copy
 # of the tree) of a crate no local run has measured yet: one measured run's
 # 56 s + 8 s for team_compiler, studio_core and studio, rounded.
@@ -557,8 +562,8 @@ def sized_config(
     cpus: int, extra: dict | None = None, *, source: Path
 ) -> str:
     """`source`'s `.cargo/mutants.toml` (the run's copy, `snapshot_source`) as text,
-    with each of the two cargo processes (`--jobs
-    2`) given half of `cpus` logical CPUs for test threads, so together they
+    with each of the `JOBS` cargo processes (`--jobs`) given `cpus // JOBS`
+    logical CPUs for test threads, so together they
     use every CPU without oversubscribing it. The scripts run cargo-mutants at a low
     priority instead of holding CPUs back (`below_normal`), so the machine
     stays usable. The remote's build cap (`--jobserver-tasks`) is
@@ -568,7 +573,7 @@ def sized_config(
     value extends the base file's list of that key rather than replacing it."""
     config = tomllib.loads((source / ".cargo/mutants.toml").read_text(encoding="utf-8"))
     check_test_config(config)
-    half = max(1, cpus // 2)
+    half = max(1, cpus // JOBS)
     # The file's `test_tool` is nextest, which takes `--test-threads`
     # directly, without libtest's `--`.
     config["additional_cargo_test_args"] = [test_threads_arg(half)]
@@ -626,7 +631,7 @@ def below_normal() -> dict:
 def local_mutants(
     args: list[str], source: Path, config: Path | None = None
 ) -> subprocess.CompletedProcess:
-    """Runs `cargo mutants <args> --jobs 2` here on `source`, the run's copy of
+    """Runs `cargo mutants <args> --jobs <JOBS>` here on `source`, the run's copy of
     its snapshot (`snapshot_source`), sized by `local_config` and at `below_normal`
     priority, its copies of the tree in `LOCAL_TMPDIR`: Rust's `temp_dir`, which
     cargo-mutants copies into, reads `TMP` then `TEMP` on Windows and `TMPDIR`
@@ -641,7 +646,7 @@ def local_mutants(
     return subprocess.run(
         [
             "cargo", "mutants", *args, "--dir", str(source), *output,
-            "--jobs", "2", "--config", str(config),
+            "--jobs", str(JOBS), "--config", str(config),
         ],
         cwd=source,
         env={**os.environ, "TMP": folder, "TEMP": folder, "TMPDIR": folder},
@@ -690,7 +695,9 @@ def killed_builds(out_dir: Path) -> list[str]:
     Also those it filed as caught although no test failed: cargo-mutants counts
     any nonzero exit of the test phase as a catch, and nextest exits 100 only
     when tests failed (`caught_by_tests`); any other code means its run broke
-    before or around the tests, as a process that lost its console would."""
+    before or around the tests, as a process that lost its console would. A
+    catch by that code is untested too when the log shows a test binary that
+    never started (`LOST_CONSOLE`): it ran nothing, so it caught nothing."""
     path = out_dir / "outcomes.json"
     if not path.exists():
         return []
@@ -699,8 +706,19 @@ def killed_builds(out_dir: Path) -> list[str]:
         if outcome["summary"] == "Failure" and isinstance(outcome["scenario"], dict):
             killed.append(outcome["scenario"]["Mutant"]["name"])
             continue
-        if outcome["summary"] == "CaughtMutant" and not caught_by_tests(outcome):
-            killed.append(outcome["scenario"]["Mutant"]["name"])
+        if outcome["summary"] == "CaughtMutant":
+            name = outcome["scenario"]["Mutant"]["name"]
+            if not caught_by_tests(outcome):
+                killed.append(name)
+                continue
+            # A caught mutant's log is not always here (`REMOTE_FETCH_LIST`
+            # leaves them behind): the Windows status is a local run's anyway,
+            # and a missing log cannot clear the catch.
+            log_path = outcome.get("log_path")
+            if log_path and (out_dir / log_path).exists() and LOST_CONSOLE in (
+                (out_dir / log_path).read_text(encoding="utf-8", errors="replace").lower()
+            ):
+                killed.append(name)
             continue
         if outcome["summary"] != "Unviable" or not outcome.get("log_path"):
             continue
@@ -969,7 +987,7 @@ def launch_remote(
     mutants_line = ""
     if not extra_only:
         cargo_args = (
-            f"{remote_args} --jobs 2 "
+            f"{remote_args} --jobs {JOBS} "
             f"--jobserver-tasks {REMOTE_JOBSERVER_TASKS or nproc} "
             f"{shard}--config ../mutants.remote.toml"
         )

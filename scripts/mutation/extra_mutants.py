@@ -5,9 +5,11 @@ condition replaced with `false`), `literal` (an element removed from a literal l
 `normalize` (a `.trim()`-style call removed), `order` (a `sort()`-style statement
 deleted), `call` (any other method-call statement deleted)
 and `bool` (a `true`/`false` flipped). This script applies each listed patch
-in a copy of the working tree, builds it (`cargo nextest run --no-run`) and,
-when it built, lets `cargo nextest run -p <crate>` decide whether the suite
-catches it (`build_outcome`, `test_outcome`). An `[[exclude]]`
+in one of `mutants.JOBS` copies of the working tree — that many mutants run
+at once, a copy each, as cargo-mutants' `--jobs` run them — builds it
+(`cargo nextest run --no-run`) and, when it built, lets `cargo nextest run
+-p <crate>` decide whether the suite catches it (`build_outcome`,
+`test_outcome`). An `[[exclude]]`
 entry of `.cargo/extra_mutants.toml` (path, kind and whole description, never a
 line number) drops the mutants it matches before they run: the file is the extra
 kinds' list of what the runs no longer measure, each entry's `why` naming the
@@ -25,11 +27,14 @@ only prints the mutants and their counts, without running anything. `--kind <nam
 (repeatable) restricts the run or the listing to those kinds.
 """
 
+import concurrent.futures
 import json
 import os
+import queue
 import signal
 import subprocess
 import sys
+import threading
 import time
 import tomllib
 from collections import Counter
@@ -226,12 +231,18 @@ def _cargo(
     return proc.returncode, out
 
 
+def test_threads() -> int:
+    """One job's `--test-threads`: the logical CPUs split `mutants.JOBS` ways,
+    never under 1 — the share `sized_config` gives each cargo-mutants job."""
+    return max(1, (os.cpu_count() or 1) // mutants.JOBS)
+
+
 def build(crate: str, cwd: Path) -> tuple[int, str]:
     """`mutants.test_command`'s `cargo nextest run` of `crate` in `cwd` plus
     `--no-run` (the test binaries built, nothing run): a mutant's build phase,
     split from its tests as cargo-mutants splits them. No timeout —
     cargo-mutants sets none on builds either."""
-    command = mutants.test_command(crate, mutants_toml(cwd), os.cpu_count() or 1)
+    command = mutants.test_command(crate, mutants_toml(cwd), test_threads())
     code, out = _cargo([*command, "--no-run"], cwd, timeout=None)
     assert code is not None  # only a timeout yields None, and a build sets none
     return code, out
@@ -240,12 +251,12 @@ def build(crate: str, cwd: Path) -> tuple[int, str]:
 def run_tests(crate: str, cwd: Path, timeout: float | None) -> tuple[int | None, str]:
     """`mutants.test_command`'s `cargo nextest run` of `crate` in `cwd` (the run's copy
     of the tree, whose `.cargo/mutants.toml` it reads): a mutant's test phase,
-    run only after `build` succeeded; `--test-threads` is this machine's
-    logical CPUs, the extra kinds testing one mutant at a time where
-    cargo-mutants runs two. Returns (exit code, output); the code is None when
-    the timeout killed the process tree."""
+    run only after `build` succeeded; `--test-threads` is `test_threads()`'s
+    `cpus // JOBS` share of this machine's logical CPUs, the same
+    `sized_config` gives each cargo-mutants job. Returns (exit code, output);
+    the code is None when the timeout killed the process tree."""
     return _cargo(
-        mutants.test_command(crate, mutants_toml(cwd), os.cpu_count() or 1),
+        mutants.test_command(crate, mutants_toml(cwd), test_threads()),
         cwd,
         timeout,
     )
@@ -337,9 +348,14 @@ def run_crate(
     crate: str, kinds: list[str], tree: str | None = None,
     only: set[str] | None = None,
 ) -> tuple[list[str], Counter, float]:
-    """Run every `kinds` mutant the lister finds in `crate`, each applied in a
-    copy of git `tree` (the working tree when None), built (`build`) and, when
-    it built, decided by `cargo nextest run -p <crate>` (`run_tests`). With
+    """Run every `kinds` mutant the lister finds in `crate`, `mutants.JOBS` of
+    them at once as cargo-mutants' jobs run: git `tree` (the working tree when
+    None) is extracted that many times, and each mutant is applied in one of
+    the copies, built (`build`) and, when it built, decided by `cargo nextest
+    run -p <crate>` (`run_tests`), the baseline measured in the first copy
+    before any mutant. An outcome is appended to `outcomes_<kinds>.tsv` and
+    printed as it is decided — the main thread does both — while the missed
+    files keep the listing's order whatever order the mutants finish in. With
     `only`, only the mutants whose missed line it
     holds run (exclusions still apply first). Writes `outcomes_<kinds>.tsv`
     and `missed_<kinds>.txt` under `extra_mutants.out/`, plus
@@ -348,21 +364,26 @@ def run_crate(
     it for `just mutants-collect` to summarize. Returns (the missed lines,
     the per-outcome counts, the wall seconds)."""
     tree = tree or mutants.working_tree()
-    copy_dir = mutants.LOCAL_TMPDIR / f"extra-mutants-{os.getpid()}"
-    if copy_dir.exists():
-        # The copy of an interrupted run whose pid this one reuses: removed rather than
-        # tested against. Other interrupted runs' copies stay until
-        # `scripts/mutation/rm_mutant_copies.py` removes them.
-        mutants.remove_tree(copy_dir)
+    copies = [
+        mutants.LOCAL_TMPDIR / f"extra-mutants-{os.getpid()}-{index}"
+        for index in range(mutants.JOBS)
+    ]
+    for copy_dir in copies:
+        if copy_dir.exists():
+            # The copy of an interrupted run whose pid this one reuses: removed rather than
+            # tested against. Other interrupted runs' copies stay until
+            # `scripts/mutation/rm_mutant_copies.py` removes them.
+            mutants.remove_tree(copy_dir)
     wall_start = time.monotonic()
     try:
-        mutants.extract_tree(tree, copy_dir)
+        for copy_dir in copies:
+            mutants.extract_tree(tree, copy_dir)
         # The crate's folder as the snapshot holds it, not the live tree: a queued run
         # reaches its turn long after its snapshot.
-        crate_rel = crate_dir(crate, copy_dir).relative_to(copy_dir.resolve())
-        rows = [row for row in list_mutants(copy_dir / crate_rel) if row[3] in kinds]
+        crate_rel = crate_dir(crate, copies[0]).relative_to(copies[0].resolve())
+        rows = [row for row in list_mutants(copies[0] / crate_rel) if row[3] in kinds]
         excluded, stale = apply_exclusions(
-            rows, crate_rel, exclusions(copy_dir), kinds
+            rows, crate_rel, exclusions(copies[0]), kinds
         )
         rows = [row for row, drop in zip(rows, excluded) if not drop]
         if only is not None:
@@ -371,8 +392,8 @@ def run_crate(
         # changed under a ruling, worth knowing before the run spends its time.
         for line in stale:
             print(line, flush=True)
-        baseline = baseline_seconds(crate, copy_dir)
-        timeout = timeout_seconds(mutants_toml(copy_dir), baseline)
+        baseline = baseline_seconds(crate, copies[0])
+        timeout = timeout_seconds(mutants_toml(copies[0]), baseline)
         print(
             f"extra_mutants: baseline {baseline:.0f} s, timeout {timeout:.0f} s, "
             f"{len(rows)} mutants, {sum(excluded)} excluded",
@@ -383,40 +404,87 @@ def run_crate(
         # A row per mutant as it is decided, so a run stopped hours in keeps what it measured.
         tsv = OUT_DIR / f"outcomes_{kinds_key}.tsv"
         write_out(tsv, "")
-        outcomes: list[tuple[str, list[str]]] = []
-        for i, row in enumerate(rows, 1):
-            rel, start, end, kind, line, replacement, description = row
-            # A mutant path must stay inside the copy: an absolute or escaping one would
-            # patch the real working tree.
-            rel_path = Path(rel)
-            if rel_path.is_absolute() or ".." in rel_path.parts:
-                raise RuntimeError(f"extra_mutants: mutant path escapes the copy: {rel}")
-            removed = description.rsplit(" | removed: ", 1)[-1]
-            target = copy_dir / crate_rel / rel_path
-            original = target.read_bytes()
+        free = queue.Queue()
+        for copy_dir in copies:
+            free.put(copy_dir)
+        stop = threading.Event()
+
+        def decide(row: list[str]) -> str | None:
+            """One mutant's outcome (None when `stop` ended the run before it
+            started): patched, built and tested in the copy this job holds
+            alone, the file restored either way."""
+            copy_dir = free.get()
             try:
-                apply_patch(
-                    target, int(start), int(end), replacement, removed
-                )
-                decided = build_outcome(*build(crate, copy_dir))
-                if decided is None:
-                    decided = test_outcome(*run_tests(crate, copy_dir, timeout))
+                if stop.is_set():
+                    return None
+                rel, start, end, kind, line, replacement, description = row
+                # A mutant path must stay inside the copy: an absolute or
+                # escaping one would patch the real working tree.
+                rel_path = Path(rel)
+                if rel_path.is_absolute() or ".." in rel_path.parts:
+                    raise RuntimeError(
+                        f"extra_mutants: mutant path escapes the copy: {rel}"
+                    )
+                removed = description.rsplit(" | removed: ", 1)[-1]
+                target = copy_dir / crate_rel / rel_path
+                original = target.read_bytes()
+                try:
+                    apply_patch(
+                        target, int(start), int(end), replacement, removed
+                    )
+                    decided = build_outcome(*build(crate, copy_dir))
+                    if decided is None:
+                        decided = test_outcome(*run_tests(crate, copy_dir, timeout))
+                finally:
+                    target.write_bytes(original)
+                return decided
             finally:
-                target.write_bytes(original)
-            outcomes.append((decided, row))
-            with open(tsv, "a", encoding="utf-8", newline="\n") as rows_file:
-                rows_file.write(decided + "\t" + "\t".join(row) + "\n")
-            print(f"[{i}/{len(rows)}] {decided}: {rel}:{line} {description}", flush=True)
+                free.put(copy_dir)
+
+        # Indexed by the row's place in the listing: the missed files list in
+        # that order whatever order the jobs finish in.
+        outcomes: list[tuple[str, list[str]] | None] = [None] * len(rows)
+        failed: BaseException | None = None
+        with concurrent.futures.ThreadPoolExecutor(max_workers=mutants.JOBS) as pool:
+            futures = {
+                pool.submit(decide, row): index for index, row in enumerate(rows)
+            }
+            decided_count = 0
+            for future in concurrent.futures.as_completed(futures):
+                index = futures[future]
+                try:
+                    decided = future.result()
+                except BaseException as error:
+                    # One job's failure stops the run: no mutant not yet
+                    # started starts, the ones running finish.
+                    stop.set()
+                    if failed is None:
+                        failed = error
+                    continue
+                if decided is None:
+                    continue
+                decided_count += 1
+                outcomes[index] = (decided, rows[index])
+                with open(tsv, "a", encoding="utf-8", newline="\n") as rows_file:
+                    rows_file.write(decided + "\t" + "\t".join(rows[index]) + "\n")
+                print(
+                    f"[{decided_count}/{len(rows)}] {decided}: "
+                    f"{rows[index][0]}:{rows[index][4]} {rows[index][6]}",
+                    flush=True,
+                )
+        if failed is not None:
+            raise failed
+        decided_outcomes = [outcome for outcome in outcomes if outcome is not None]
         missed = [
             missed_line(crate_rel, row, decided)
-            for decided, row in outcomes
+            for decided, row in decided_outcomes
             if decided in ("missed", "timeout", "untested")
         ]
         missed_text = "".join(text + "\n" for text in missed + stale)
         write_out(OUT_DIR / f"missed_{kinds_key}.txt", missed_text)
         write_out(OUT_DIR / f"missed_{crate}.txt", missed_text)
-        per_outcome = Counter(decided for decided, _ in outcomes)
-        per_kind = Counter(row[3] for _, row in outcomes)
+        per_outcome = Counter(decided for decided, _ in decided_outcomes)
+        per_kind = Counter(row[3] for _, row in decided_outcomes)
         print(
             "outcomes: "
             + (", ".join(f"{name} {n}" for name, n in sorted(per_outcome.items())) or "none")
@@ -435,11 +503,12 @@ def run_crate(
             )
         return missed + stale, per_outcome, wall
     finally:
-        if copy_dir.exists():
-            try:
-                mutants.remove_tree(copy_dir)
-            except OSError as error:
-                print(f"extra_mutants: could not remove {copy_dir}: {error}")
+        for copy_dir in copies:
+            if copy_dir.exists():
+                try:
+                    mutants.remove_tree(copy_dir)
+                except OSError as error:
+                    print(f"extra_mutants: could not remove {copy_dir}: {error}")
 
 
 def main(argv: list[str]) -> int:
