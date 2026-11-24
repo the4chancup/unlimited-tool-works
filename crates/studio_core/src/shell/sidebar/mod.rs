@@ -141,8 +141,8 @@ pub(super) struct Sidebar {
     /// release lands on the overlay's selector and its list drops from there.
     selector_pressed: bool,
     /// The version combo's popup id (the same in the rail and the overlay): its
-    /// open state holds the overlay open, and its layer is pinned above the
-    /// overlay's each frame.
+    /// open state holds the overlay open. Its layer is `Foreground`, above the
+    /// overlay's `Background` and every window.
     combo_popup_id: Option<egui::Id>,
     /// What the last exe check ran against and found: the version, the resolved PES folder
     /// and the verdict. `None` until the first listing.

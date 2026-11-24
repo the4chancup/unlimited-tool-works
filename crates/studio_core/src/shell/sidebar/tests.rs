@@ -2484,6 +2484,19 @@ fn the_version_popup_opened_from_the_overlay_stands_above_it() {
         .sidebar
         .combo_popup_id
         .expect("the selector's popup is open");
+    // Above the windows too, not only above the overlay: a popup in the windows'
+    // `Middle` order would still outrank the `Background` overlay.
+    let order = egui_ctx.memory(|memory| {
+        memory
+            .layer_ids()
+            .find(|layer| layer.id == popup && memory.areas().is_visible(layer))
+            .map(|layer| layer.order)
+    });
+    assert_eq!(
+        order,
+        Some(egui::Order::Foreground),
+        "the version popup is drawn in the menus' order, above every window"
+    );
     let overlay = layer_rank(&egui_ctx, overlay_id());
     let popup = layer_rank(&egui_ctx, popup);
     assert!(

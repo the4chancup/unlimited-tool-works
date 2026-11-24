@@ -4128,7 +4128,8 @@ points there.
 - resolved (2026-11-24) — the app drew the opened sidebar above every window, where the
   maintainer wants every window above it (DECISIONS 2026-11-24 "every window stands above the
   opened sidebar"). Slice WINSB (`2b3f8d6b`): the sidebar's layer is now under every window,
-  menu and modal. Its SWE-2 round is owed.
+  menu and modal. SWE-2 round 1: 2 accepted (a test gap, a stale doc), the loop ended. Owed:
+  one paid round (shipped code), batched with the next `studio_core` slice.
 
 - open (2026-11-23) — the grid's detail window grows for a few frames after it opens: when it
   replaces a smaller pinned window, it grows about 27 points a frame for four frames (387 to
