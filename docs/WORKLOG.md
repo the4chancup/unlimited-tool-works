@@ -4109,9 +4109,10 @@ points there.
 - open (2026-11-24) — on Windows every test process starts Python (`scripts/gates/
   test_runner.cmd`, the 6 GB cap), about 250 ms a test under a mutation trial's load, and
   Defender scans its ~80 standard-library files at each start: most of Defender's CPU in the
-  maintainer's recording, and the likely cause of their input lag while tests ran. Starting it
-  with `-S -I` saves about a fifth. A compiled runner needs `unsafe` (`win32job`, the safe
-  wrapper, has no per-process memory cap): waits on questions.html `native-test-runner`.
+  maintainer's recording, and the likely cause of their input lag while tests ran. Slice
+  RUNNER (SWE-2, brief `.tmp/runner/brief_runner.md`): a compiled runner,
+  `crates/dev/test_runner`, installed by `just install-test-runner`, the `.cmd` falling back
+  to Python started with `-S -I` where it is not installed.
 
 - open (2026-11-23) — the grid's detail window grows for a few frames after it opens: when it
   replaces a smaller pinned window, it grows about 27 points a frame for four frames (387 to

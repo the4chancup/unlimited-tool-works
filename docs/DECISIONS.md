@@ -20156,3 +20156,16 @@ question on `docs/maintainer/questions.html`.
 Why: the earlier entry's "above every other window" was wrong for the start pages, which drew
 over the help opened on them, where the drafts draw the help on top.
 Plan: `docs/plans/core/gui.md`, the paragraph after the floating windows' placement.
+
+## 2026-11-24 — dev tools — the Windows test runner is a compiled program, with `unsafe` Job Object calls (maintainer)
+Decision: the runner that caps every Windows test process at 6 GB becomes a small Rust program,
+`crates/dev/test_runner`, installed into cargo's bin folder; its Job Object calls are `unsafe`
+Win32 calls through the `windows` crate, each behind a small safe function with its `SAFETY:`
+comment. `test_runner.cmd` runs it when installed, else the Python runner as before.
+Why: the Python runner started Python once per test (nextest runs a process per test), about
+250 ms each under load, and Defender scanned its standard-library files at every start, which
+slowed the maintainer's keyboard input while tests ran. `win32job`, the one crate wrapping Job
+Objects safely, cannot set a per-process memory cap. The program is a developer tool: the app
+never contains it.
+Plan: `docs/CONTRIBUTING.md`, the `unsafe` bullet and the runner paragraph in "Testing and
+verification".
