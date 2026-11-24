@@ -167,7 +167,8 @@ run hands each side a complementary set of its mutants' source files rather than
 halves: the local config's `examine_globs` name this machine's files and the remote's
 `exclude_globs` add them, the local share being `remote / (local + remote)` of the two sides'
 mean seconds per tested mutant of the crate (the cost table's `tested` and `remote_tested`,
-below), so a slower side tests fewer and the two end together: `save_editor`, whose suite
+below; a whole run that selected its tests adds nothing to the remote's, since a split's
+halves run the full suite), so a slower side tests fewer and the two end together: `save_editor`, whose suite
 this machine's 16 threads run in two thirds of the VPS's time, goes about 60 to 40, and most
 crates stay near halves. The split is by files, not by mutant names, because cargo-mutants
 27.1 applies no name filter to its "delete field" mutants, and by one run per side, not

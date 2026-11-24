@@ -2575,6 +2575,16 @@ class CollectRemote(unittest.TestCase):
             costs, [(self.root / "mutants.out" / "remote" / "mutants.out", "remote_mutant")]
         )
 
+    def test_a_half_that_selected_its_tests_leaves_the_remote_costs(self):
+        """A diff run's split reads the remote costs, and its halves run the
+        full suite: a whole run's selected tests would make the remote look
+        faster than it is. A failed map ran the full suite, and is folded."""
+        remote = (self.root / "mutants.out" / "remote" / "mutants.out", "remote_mutant")
+        _, _, costs = self.collect_fetching(extra=False, console="coverage map exit 0\n")
+        self.assertEqual(costs, [])
+        _, _, costs = self.collect_fetching(extra=False, console="coverage map exit 1\n")
+        self.assertEqual(costs, [remote])
+
     def test_with_no_record_a_half_that_ran_no_extra_pass_is_not_failed_for_it(self):
         """A diff run's half launched from another tree brings no extra record:
         no record here says it should have."""
@@ -2615,11 +2625,13 @@ class CollectRemote(unittest.TestCase):
             json.dumps({"names": ["a mutant of an earlier split"]}), encoding="utf-8"
         )
 
-    def collect_fetching(self, *, extra: bool) -> tuple[int, list[str], list]:
-        """Runs `collect` over a finished half whose fetch brings one survivor
-        and, with `extra`, the extra pass's record with one more; returns the
-        exit code, `missed_all.txt`'s lines and the cost-table updates, and
-        keeps what it printed in `self.printed`."""
+    def collect_fetching(
+        self, *, extra: bool, console: str = "log\n"
+    ) -> tuple[int, list[str], list]:
+        """Runs `collect` over a finished half whose fetch brings one survivor,
+        the job log `console` and, with `extra`, the extra pass's record with
+        one more; returns the exit code, `missed_all.txt`'s lines and the
+        cost-table updates, and keeps what it printed in `self.printed`."""
         remote = self.root / "mutants.out" / "remote"
         fetched = remote / "mutants.out"
 
@@ -2636,7 +2648,7 @@ class CollectRemote(unittest.TestCase):
                 (folder / "missed_cpk.txt").write_text(
                     REMOTE_EXTRA_SURVIVOR + "\n", encoding="utf-8"
                 )
-            (remote / "remote_console.txt").write_text("log\n", encoding="utf-8")
+            (remote / "remote_console.txt").write_text(console, encoding="utf-8")
 
         costs = []
         out = io.StringIO()

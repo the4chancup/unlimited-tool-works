@@ -1314,6 +1314,19 @@ def recheck_windows(missed: list[str]) -> set[str]:
     return caught & set(missed)
 
 
+def coverage_map_exit(log_path: Path) -> str | None:
+    """The coverage map's exit code as a whole run's job log records it, or
+    None when the log has no such line (a diff run's, or no log): the run
+    selected each mutant's tests only when the map exited 0."""
+    console = (
+        log_path.read_text(encoding="utf-8", errors="replace")
+        if log_path.exists()
+        else ""
+    )
+    found = re.search(r"coverage map exit (\d+)", console)
+    return found.group(1) if found else None
+
+
 def summarize(
     local_code: int, remote_code: int, log_path: Path,
     seconds: tuple[float | None, float | None], *,
@@ -1375,22 +1388,14 @@ def summarize(
         if missed_path.exists():
             extra_missed = missed_path.read_text(encoding="utf-8")
 
-    # A whole run's job log records its coverage map's exit: the run selected
-    # each mutant's tests only when the map succeeded. A diff run's log has no
-    # such line, and says nothing.
-    console = (
-        log_path.read_text(encoding="utf-8", errors="replace")
-        if log_path.exists()
-        else ""
-    )
-    map_exit = re.search(r"coverage map exit (\d+)", console)
+    map_exit = coverage_map_exit(log_path)
     if map_exit is not None:
-        if map_exit.group(1) == "0":
+        if map_exit == "0":
             print("test selection: on")
         else:
             print(
                 "test selection: off (the coverage map failed, exit "
-                f"{map_exit.group(1)}; every mutant ran the full suite)"
+                f"{map_exit}; every mutant ran the full suite)"
             )
 
     print(f"{'':8}{'caught':>7}{'missed':>7}{'timeout':>8}{'unviable':>9}{'seconds':>9}")
@@ -2033,21 +2038,25 @@ def finish_remote_run(
 ) -> int:
     """A remote run's end (the caller holds the run lock): fold the halves'
     measured costs into the cost table — the local table only when the run had
-    a local half — fetch the remote half's results (`partial`: it died, so it
-    may have left none) and summarize. With `extra_if_fetched` (a collect with
-    no launch record) the extra pass is the fetched record when the fetch
-    brought one: every launch empties the host's, so one there is this half's."""
+    a local half, the remote one only when its mutants ran the full suite —
+    fetch the remote half's results (`partial`: it died, so it may have left
+    none) and summarize. With `extra_if_fetched` (a collect with no launch
+    record) the extra pass is the fetched record when the fetch brought one:
+    every launch empties the host's, so one there is this half's."""
     if local_half:
         update_cost_cache()
     fetch_remote(host, partial=partial)
     if extra_if_fetched and remote_extra_record().exists():
         extra_run = remote_extra_record()
-    update_cost_cache(
-        ROOT / "mutants.out" / "remote" / "mutants.out", "remote_mutant"
-    )
+    console = ROOT / "mutants.out" / "remote" / "remote_console.txt"
+    # The remote table sizes a diff run's split, whose halves run the full
+    # suite: a whole run's selected tests would make the remote look faster.
+    if coverage_map_exit(console) != "0":
+        update_cost_cache(
+            ROOT / "mutants.out" / "remote" / "mutants.out", "remote_mutant"
+        )
     return summarize(
-        local_code, remote_code,
-        ROOT / "mutants.out" / "remote" / "remote_console.txt",
+        local_code, remote_code, console,
         seconds, local_half=local_half, extra_run=extra_run,
     )
 
