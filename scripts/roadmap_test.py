@@ -187,6 +187,17 @@ class Wrap(unittest.TestCase):
     def test_a_word_longer_than_the_width_stands_alone(self) -> None:
         self.assertEqual(roadmap.wrap("a abcdefgh b", 4), ["a", "abcdefgh", "b"])
 
+    def test_a_line_is_as_wide_as_the_measure_counts_it(self) -> None:
+        # "ii ii" is narrow and "WW WW" wide: at one width the first fits on a line, the
+        # second does not.
+        width = roadmap.text_width("ii ii")
+        self.assertEqual(roadmap.wrap("ii ii", width, roadmap.text_width), ["ii ii"])
+        self.assertEqual(roadmap.wrap("WW WW", width, roadmap.text_width), ["WW", "WW"])
+
+    def test_a_code_span_counts_the_monospace_width_and_not_its_backticks(self) -> None:
+        self.assertEqual(roadmap.text_width("`ab`"), 2 * roadmap.LABEL_CHAR_WIDTH)
+        self.assertLess(roadmap.text_width("i"), roadmap.text_width("W"))
+
 
 class Inline(unittest.TestCase):
     def test_html_is_escaped_and_marks_rendered(self) -> None:
@@ -324,6 +335,18 @@ class Timeline(unittest.TestCase):
         self.assertEqual(cy["B"], ys[-1] + 22 + 8)                 # B below A's last line
         self.assertIn(f'font-weight="600">A</text>', svg)
         self.assertRegex(svg, rf'<text x="\d+" y="{ys[0]}" [^>]*font-weight="600">A</text>')
+
+    def test_a_wrapped_line_fills_its_column_before_it_breaks(self) -> None:
+        long = " ".join(["word"] * 120)
+        svg = roadmap.timeline(parse(wl(f"- [ ] **A** {long}\n")), {}, TODAY)
+        spans = re.findall(r'<tspan x="(\d+)" y="\d+">(word[^<]*)</tspan>', svg)
+        room = roadmap.ROADMAP_WIDTH - roadmap.NOW_ROOM - int(spans[0][0])
+        lines = [text for _, text in spans]
+        self.assertGreater(len(lines), 2)
+        for line in lines:
+            self.assertLessEqual(roadmap.text_width(line), room, line)
+        for line in lines[:-1]:
+            self.assertGreater(roadmap.text_width(line + " word"), room, line)
 
     def test_a_release_row_is_named_release_and_the_phases_lane_is_grey(self) -> None:
         text = WORKLOG.replace("| 2 | Libs |", "| 0.1.0 | Libs |")

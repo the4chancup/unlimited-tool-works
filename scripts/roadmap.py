@@ -15,7 +15,7 @@ import os
 import re
 import subprocess
 import sys
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from dataclasses import dataclass, field
 from itertools import groupby
 from operator import itemgetter
@@ -50,9 +50,18 @@ LABEL_FONT = "Consolas, monospace"
 LABEL_CHAR_WIDTH = 0.6 * FONT_SIZE
 # The room between the longest label and the descriptions' column.
 LABEL_GAP = 12
-# A description wraps at this many pixels a character: 0.55 em, above Segoe UI's average,
-# so a wrapped line stays inside its column.
-DESC_CHAR_WIDTH = 0.55 * FONT_SIZE
+# Segoe UI's advance widths (regular, in 2048ths of an em), read from its font file, for the
+# characters the steps' descriptions use: a description wraps at the width its text takes
+# on the page. A character missing here counts a whole em, so a line still never overflows.
+SEGOE_UI = dict(zip("".join(map(chr, range(32, 127))) + "—–’‘“”…×é→≤≥", (
+    561, 582, 803, 1210, 1104, 1676, 1639, 471, 618, 618, 854, 1401, 444, 819, 444, 798,
+    1104, 1104, 1104, 1104, 1104, 1104, 1104, 1104, 1104, 1104, 444, 444, 1401, 1401, 1401, 918,
+    1956, 1321, 1174, 1268, 1436, 1036, 1000, 1405, 1454, 545, 731, 1188, 964, 1839, 1532, 1544,
+    1147, 1544, 1225, 1088, 1073, 1407, 1272, 1913, 1208, 1132, 1168, 618, 776, 618, 1401, 850,
+    549, 1042, 1204, 946, 1206, 1071, 641, 1206, 1159, 496, 496, 1018, 496, 1764, 1159, 1200,
+    1204, 1206, 712, 869, 694, 1159, 981, 1480, 940, 991, 926, 618, 490, 618, 1401, 2048,
+    1024, 469, 469, 772, 772, 1501, 1401, 1071, 1767, 1403, 1403,
+), strict=True))
 # Room kept at the right for the band's "now" label.
 NOW_ROOM = 48
 # One per top-level step, in the order they are listed: the Okabe-Ito palette, every one readable on
@@ -334,12 +343,26 @@ def lanes(rows: list[Step], slot: dict[int, int], top: list[Step],
     return tracks, member, len(columns)
 
 
-def wrap(text: str, width: int) -> list[str]:
-    """`text` in lines of at most `width` characters, broken at spaces, but never inside a
-    backticked or double-quoted span, nor between a backticked path and the quoted section
-    name after it: the doc-pointer gate (`scripts/gates/doc_pointers.py`) reads the page, and
-    a pointer split over two lines is one it cannot read. A word longer than `width` stands
-    on a line of its own."""
+def text_width(text: str) -> float:
+    """`text`'s width in pixels as a description draws it: Segoe UI at FONT_SIZE, each
+    backticked span in the labels' monospace font and its backticks dropped (`mono`)."""
+    width, code = 0.0, False
+    for char in text:
+        if char == "`":
+            code = not code
+        elif code:
+            width += LABEL_CHAR_WIDTH
+        else:
+            width += SEGOE_UI.get(char, 2048) * FONT_SIZE / 2048
+    return width
+
+
+def wrap(text: str, width: float, measure: Callable[[str], float] = len) -> list[str]:
+    """`text` in lines no wider than `width` as `measure` counts it (characters by default),
+    broken at spaces, but never inside a backticked or double-quoted span, nor between a
+    backticked path and the quoted section name after it: the doc-pointer gate
+    (`scripts/gates/doc_pointers.py`) reads the page, and a pointer split over two lines is
+    one it cannot read. A word wider than `width` stands on a line of its own."""
     words: list[str] = []
     in_code = in_quote = False
     for word in text.split():
@@ -356,7 +379,7 @@ def wrap(text: str, width: int) -> list[str]:
                 in_quote = not in_quote
     lines: list[str] = []
     for word in words:
-        if lines and len(lines[-1]) + 1 + len(word) <= width:
+        if lines and measure(lines[-1] + " " + word) <= width:
             lines[-1] += " " + word
         else:
             lines.append(word)
@@ -426,8 +449,8 @@ def timeline(roadmap: Roadmap, dates: dict[str, str], today: str) -> str:
     desc_x = text_x + round(LABEL_CHAR_WIDTH * max((len(s.path) for s in rows),
                                                    default=0)) + LABEL_GAP
     width = ROADMAP_WIDTH
-    chars = int((width - NOW_ROOM - desc_x) / DESC_CHAR_WIDTH)
-    lines = {id(s): wrap(s.text.rstrip(";,"), chars) for s in rows}
+    room = width - NOW_ROOM - desc_x
+    lines = {id(s): wrap(s.text.rstrip(";,"), room, text_width) for s in rows}
 
     # Each slot's top: a row is as tall as its lines; the empty slot of the bare line one line.
     tops = [0]

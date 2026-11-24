@@ -2,9 +2,10 @@
 body { font: 15px/1.5 "Segoe UI", sans-serif; background: #1e1e1e; color: #ddd;
   max-width: 980px; margin: 0 auto; padding: 0 16px 80px; }
 nav.pages { position: sticky; top: 0; background: #1e1e1e; border-bottom: 1px solid #333;
-  padding: 10px 0; z-index: 1; display: flex; gap: 18px; align-items: center;
-  /* One width on every page, centred, so a wider page (the roadmap) does not move it. */
-  max-width: 980px; margin: 0 auto; }
+  z-index: 1; display: flex; gap: 18px; align-items: center;
+  /* The bar spans the page, its links held to the 980 px column every page centres, so a
+     wider page (the roadmap) does not move them. */
+  padding: 10px max(0px, calc((100% - 980px) / 2)); }
 nav.pages a { color: #9cc3ff; text-decoration: none; }
 nav.pages a.here { color: #fff; font-weight: 600; }
 nav.pages .count { margin-left: auto; color: #aaa; font-size: 13px; }
