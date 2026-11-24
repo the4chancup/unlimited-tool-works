@@ -110,7 +110,7 @@ EXTRA_KINDS = ("bool", "call", "literal", "normalize", "order")
 # `#[cfg(windows)]` arm (processes, image_path, probe) the Linux half never
 # compiles, so its mutants all came back missed there; `probe` also names
 # the Linux and other-platform arms, which a rerun here leaves missed, as they are.
-# studio's log redaction matches the home folder in any letter case and with
+# studio_core's log redaction matches the home folder in any letter case and with
 # either slash on Windows alone, and its test is `#[cfg(windows)]`.
 # studio_core's update temp-folder removal is caught only by
 # the_succeeded_mark_stays_beside_a_backup_that_cannot_be_removed, which is
@@ -129,14 +129,14 @@ WINDOWS_ONLY_TESTS = [
         r"crates/studio_core/src/pes_process\.rs:\d+:\d+: "
         r"(replace (processes|image_path|probe) -> |.* in (processes|image_path|probe)$)"
     ),
-    re.compile(r"crates/tools/export_upgrader/src/upgrade\.rs:\d+:\d+: .* in retry_while_locked$"),
+    re.compile(r"crates/tools/export_upgrader/src/staging\.rs:\d+:\d+: .* in retry_while_locked$"),
     re.compile(
         r"crates/studio_core/src/updater/install\.rs:\d+:\d+: "
         r"(replace (remove_temp|remove_temp_folder) -> "
         r"|.* in (remove_temp|remove_temp_folder)$)"
     ),
     re.compile(
-        r"crates/studio/src/gui_log\.rs:\d+:\d+: "
+        r"crates/studio_core/src/redact\.rs:\d+:\d+: "
         r"(replace redact_any_spelling -> |.* in redact_(any_spelling|home)$)"
     ),
     re.compile(
@@ -164,7 +164,7 @@ WINDOWS_ONLY_EXTRA = [
         rf"\[{_EXTRA_KIND}\] in (processes|image_path|probe):"
     ),
     re.compile(
-        rf"crates/tools/export_upgrader/src/upgrade\.rs:\d+: "
+        rf"crates/tools/export_upgrader/src/staging\.rs:\d+: "
         rf"\[{_EXTRA_KIND}\] in retry_while_locked:"
     ),
     re.compile(
@@ -172,7 +172,7 @@ WINDOWS_ONLY_EXTRA = [
         rf"\[{_EXTRA_KIND}\] in (remove_temp|remove_temp_folder):"
     ),
     re.compile(
-        rf"crates/studio/src/gui_log\.rs:\d+: "
+        rf"crates/studio_core/src/redact\.rs:\d+: "
         rf"\[{_EXTRA_KIND}\] in (redact_any_spelling|redact_home):"
     ),
     re.compile(
@@ -1356,7 +1356,8 @@ def recheck_windows_extra(missed: list[str]) -> tuple[set[str], int]:
     (`REMOTE_REF`), whose lines they name. Returns (the lines caught — a line
     the run still lists, missed or tagged `[timeout]`/`[untested]`, is not
     one — and how many mutants went untested, which fails the run as the
-    extra pass's own do; a line the run never reached counts there too)."""
+    extra pass's own do; a line the run never reached counts there too). A
+    crate whose rerun fails, or finds a mutant unviable, catches nothing."""
     tree = git(
         "rev-parse", f"{REMOTE_REF}^{{tree}}", check=True, capture_output=True, text=True
     ).stdout.strip()
@@ -1368,19 +1369,38 @@ def recheck_windows_extra(missed: list[str]) -> tuple[set[str], int]:
     untested = 0
     returned: set[str] = set()
     for crate in sorted(crates):
-        run_missed, counts, _ = extra_mutants.run_crate(
-            crate, list(EXTRA_KINDS), tree, only=crates[crate]
-        )
+        lines = crates[crate]
+        try:
+            run_missed, counts, _ = extra_mutants.run_crate(
+                crate, list(EXTRA_KINDS), tree, only=lines
+            )
+        except (SystemExit, Exception) as error:
+            # The run is already marked collected: a traceback here would lose
+            # its summary for good. As in `recheck_windows`, the lines stay missed.
+            print(
+                f"the recheck of {crate} did not finish ({error}); "
+                f"its {len(lines)} survivors stay missed"
+            )
+            returned |= lines
+            continue
         untested += counts["untested"]
-        # A line no listed mutant matched never ran: absent from the survivors,
-        # it would read as caught.
-        never_ran = len(crates[crate]) - sum(counts.values())
-        if never_ran > 0:
-            print(f"the recheck ran {len(crates[crate]) - never_ran} of {crate}'s "
-                  f"{len(crates[crate])} mutants; none counts as caught")
-            untested += never_ran
-            returned |= crates[crate]
         returned |= set(run_missed)
+        # A line no listed mutant matched never ran, and an unviable rerun was
+        # caught by no test: absent from the survivors, either would read as caught.
+        never_ran = len(lines) - sum(counts.values())
+        if never_ran > 0:
+            print(
+                f"the recheck ran {len(lines) - never_ran} of {crate}'s "
+                f"{len(lines)} survivors; none counts as caught"
+            )
+            untested += never_ran
+            returned |= lines
+        elif counts["unviable"]:
+            print(
+                f"the recheck found {counts['unviable']} of {crate}'s survivors "
+                "unviable; none counts as caught"
+            )
+            returned |= lines
     caught = set()
     for line in missed:
         location, _, rest = line.partition(": ")

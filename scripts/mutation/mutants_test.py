@@ -1965,7 +1965,7 @@ class SummaryLists(unittest.TestCase):
             calls = []
 
             def run_crate(crate, kinds, tree=None, only=None):
-                calls.append((crate, only))
+                calls.append((crate, tree, only))
                 return [], Counter(caught=1), 0.5
 
             with self.windows_recheck(run_crate):
@@ -1979,7 +1979,8 @@ class SummaryLists(unittest.TestCase):
                 .splitlines(),
                 [self.TEAMS_SURVIVOR],
             )
-        self.assertEqual(calls, [("elevation", {self.ELEVATION_SURVIVOR})])
+        # "sometree": the remote run's tree, as `windows_recheck`'s git answers it.
+        self.assertEqual(calls, [("elevation", "sometree", {self.ELEVATION_SURVIVOR})])
         extra_row = next(
             line for line in out.splitlines() if line.startswith("extra")
         )
@@ -2086,9 +2087,9 @@ class SummaryLists(unittest.TestCase):
                 [self.ELEVATION_SURVIVOR],
             )
 
-    def test_a_survivor_the_extra_recheck_never_ran_is_not_caught(self):
-        """A line no listed mutant matches runs nothing and is in no list the
-        recheck returns: it stays missed and the run exits 1, not caught."""
+    def recheck_elevation(self, run_crate) -> tuple[int, str, list[str]]:
+        """A fetched record whose one survivor is elevation's, rechecked through
+        `run_crate`: the summary's code, its output and `missed_all.txt`."""
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             remote = root / "mutants.out" / "remote" / "mutants.out"
@@ -2096,20 +2097,46 @@ class SummaryLists(unittest.TestCase):
                 remote, 1, [{"scenario": mutant("r"), "summary": "CaughtMutant"}]
             )
             record = self.extra_record(root, [self.ELEVATION_SURVIVOR], {"missed": 1})
-
-            def run_crate(crate, kinds, tree=None, only=None):
-                return [], Counter(), 0.5
-
             with self.windows_recheck(run_crate):
                 code, out = self.summarize(root, local_half=False, extra_run=record)
-            self.assertEqual(code, 1)
-            self.assertEqual(
+            missed = (
                 (root / "mutants.out" / "missed_all.txt")
                 .read_text(encoding="utf-8")
-                .splitlines(),
-                [self.ELEVATION_SURVIVOR],
+                .splitlines()
             )
-        self.assertIn("the recheck ran 0 of elevation's 1 mutants", out)
+        return code, out, missed
+
+    def test_a_survivor_the_extra_recheck_never_ran_is_not_caught(self):
+        """A line no listed mutant matches runs nothing and is in no list the
+        recheck returns: it stays missed and the run exits 1, not caught."""
+        code, out, missed = self.recheck_elevation(
+            lambda crate, kinds, tree=None, only=None: ([], Counter(), 0.5)
+        )
+        self.assertEqual(code, 1)
+        self.assertEqual(missed, [self.ELEVATION_SURVIVOR])
+        self.assertIn("the recheck ran 0 of elevation's 1 survivors", out)
+
+    def test_an_unviable_extra_recheck_is_not_a_catch(self):
+        """A rerun that does not compile was caught by no test: the line stays
+        missed (the run exits 2, as for any survivor)."""
+        code, out, missed = self.recheck_elevation(
+            lambda crate, kinds, tree=None, only=None: ([], Counter(unviable=1), 0.5)
+        )
+        self.assertEqual(code, 2)
+        self.assertEqual(missed, [self.ELEVATION_SURVIVOR])
+        self.assertIn("found 1 of elevation's survivors unviable", out)
+
+    def test_a_failed_extra_recheck_leaves_the_summary_whole(self):
+        """A rerun that cannot start (its baseline fails, the lister does not
+        build: both `SystemExit`) is reported, the line stays missed and the
+        summary still writes `missed_all.txt`: the run is already collected."""
+        def run_crate(crate, kinds, tree=None, only=None):
+            raise SystemExit("extra_mutants: the baseline failed")
+
+        code, out, missed = self.recheck_elevation(run_crate)
+        self.assertEqual(code, 2)
+        self.assertEqual(missed, [self.ELEVATION_SURVIVOR])
+        self.assertIn("the recheck of elevation did not finish", out)
 
     def test_the_summary_says_whether_the_run_selected_tests(self):
         """A whole run's summary reports the coverage map's logged exit: "on"
@@ -2250,7 +2277,10 @@ class RecheckWindows(unittest.TestCase):
         tagged `[timeout]` or `[untested]` (only missed lines are rechecked),
         a kind the pass does not run (`guard`), another file's line, or a
         function the entry does not name; elevation's `windows.rs`, which is
-        `#[cfg(windows)]` whole, matching under any place at all."""
+        `#[cfg(windows)]` whole, matching under any place at all. Each file
+        still defines its functions, and cargo-mutants' line for each is in
+        `WINDOWS_ONLY_TESTS` (elevation's aside): both lists once named two
+        files their functions had left, so they matched nothing."""
         cases = [
             # (file, functions, whether any place in the file matches)
             ("crates/libs/elevation/src/windows.rs",
@@ -2259,11 +2289,11 @@ class RecheckWindows(unittest.TestCase):
              ["sweep_run", "probe_download", "promote_tree"], False),
             ("crates/studio_core/src/pes_process.rs",
              ["processes", "image_path", "probe"], False),
-            ("crates/tools/export_upgrader/src/upgrade.rs",
+            ("crates/tools/export_upgrader/src/staging.rs",
              ["retry_while_locked"], False),
             ("crates/studio_core/src/updater/install.rs",
              ["remove_temp", "remove_temp_folder"], False),
-            ("crates/studio/src/gui_log.rs",
+            ("crates/studio_core/src/redact.rs",
              ["redact_any_spelling", "redact_home"], False),
             ("crates/studio_core/src/shell/taskbar.rs",
              ["set_relaunch", "set_relaunch_values"], False),
@@ -2272,7 +2302,15 @@ class RecheckWindows(unittest.TestCase):
         for pattern, (file, functions, whole) in zip(
             mutants.WINDOWS_ONLY_EXTRA, cases
         ):
+            source = (REPOSITORY / file).read_text(encoding="utf-8")
             for function in functions:
+                self.assertIn(f"fn {function}(", source, file)
+                if not whole:
+                    cargo_line = f"{file}:9:5: replace x -> bool with true in {function}"
+                    self.assertTrue(
+                        any(p.search(cargo_line) for p in mutants.WINDOWS_ONLY_TESTS),
+                        cargo_line,
+                    )
                 line = (
                     f"{file}:9: [call] in {function}: the push() statement is "
                     "deleted | removed: x.push(0);"
