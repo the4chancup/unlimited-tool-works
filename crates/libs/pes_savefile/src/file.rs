@@ -425,11 +425,18 @@ impl EditFile {
 /// whose file key is its first 32 bytes.
 #[cfg(not(target_arch = "wasm32"))]
 pub fn fresh_salt(payload: &[u8]) -> [u8; 320] {
-    use sha2::{Digest, Sha256};
     let nanos = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .map(|d| d.as_nanos())
         .unwrap_or(0);
+    fresh_salt_at(payload, nanos)
+}
+
+/// `fresh_salt` with the clock reading passed in, so the salt is
+/// deterministic under test.
+#[cfg(not(target_arch = "wasm32"))]
+pub(crate) fn fresh_salt_at(payload: &[u8], nanos: u128) -> [u8; 320] {
+    use sha2::{Digest, Sha256};
     let mut salt = [0u8; 320];
     let mut block: Vec<u8> = {
         let mut hasher = Sha256::new();
@@ -791,6 +798,40 @@ mod tests {
         let back = EditFile::from_bytes(&bytes).expect("the save reopens");
         assert_eq!(back.player(player_id).expect("the player").name, "MUTATED");
         assert_eq!(back.team(team_id).expect("the team").short_name, "MTD");
+    }
+
+    /// Two payloads at one instant get different salts: the payload seeds
+    /// the hash, so two teams exported inside one clock tick still get
+    /// different file keys.
+    #[test]
+    #[cfg(not(target_arch = "wasm32"))]
+    fn fresh_salt_differs_by_payload() {
+        assert_ne!(
+            fresh_salt_at(b"one team", 42),
+            fresh_salt_at(b"another", 42)
+        );
+    }
+
+    /// One payload at two instants gets different salts: the clock is the
+    /// hash's second seed, so the salt differs per write.
+    #[test]
+    #[cfg(not(target_arch = "wasm32"))]
+    fn fresh_salt_differs_by_instant() {
+        assert_ne!(
+            fresh_salt_at(b"a payload", 1),
+            fresh_salt_at(b"a payload", 2)
+        );
+    }
+
+    /// Chunks 1 to 9 hash the previous block in, so the seed reaches the
+    /// tail too: two payloads' salts differ past the first 32 bytes.
+    #[test]
+    #[cfg(not(target_arch = "wasm32"))]
+    fn fresh_salt_tail_carries_the_seed() {
+        assert_ne!(
+            fresh_salt_at(b"one team", 42)[32..],
+            fresh_salt_at(b"another", 42)[32..]
+        );
     }
 
     /// The write salt is 320 fresh bytes: nonzero, and its ten 32-byte

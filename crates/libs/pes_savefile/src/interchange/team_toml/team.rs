@@ -692,6 +692,42 @@ mod tests {
         }
     }
 
+    /// Every table header opens its own block: a line starting with `[`
+    /// follows a blank line or a `#` comment line (the comment-led one is
+    /// `[tactics.preset_1.formation_1]`'s). The document is a PES 17
+    /// fixture team's: `from_team` emits every preset's three formations
+    /// and the version stores instructions, so with the roster passed the
+    /// text walks each blank-line site of the emit path.
+    #[test]
+    fn every_table_header_opens_its_own_block() {
+        let (file, _) = open(PesVersion::Pes17);
+        let team = file.teams().first().expect("a team");
+        let refs: Vec<&PlayerEntry> = file.players().iter().collect();
+        let doc = TeamToml::from_team(PesVersion::Pes17, team, &refs).expect("from_team");
+        let text = doc.to_toml().expect("to_toml");
+        // The tables the blank-line pushes open: each `[players.NN]`, its
+        // `stats`, the set pieces, the non-first formations, the instructions.
+        for header in [
+            "[players.01]",
+            "[players.01.stats]",
+            "[tactics.set_pieces]",
+            "[tactics.preset_1.formation_2]",
+            "[tactics.preset_1.instructions]",
+        ] {
+            assert!(text.contains(header), "{header} missing:\n{text}");
+        }
+        let mut previous = "";
+        for line in text.lines() {
+            if line.starts_with('[') {
+                assert!(
+                    previous.is_empty() || previous.starts_with('#'),
+                    "header {line:?} follows {previous:?}"
+                );
+            }
+            previous = line;
+        }
+    }
+
     /// (b) A one-key document changes exactly that key.
     #[test]
     fn a_one_key_document_changes_exactly_that_key() {
