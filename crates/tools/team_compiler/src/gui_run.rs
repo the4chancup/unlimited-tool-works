@@ -463,7 +463,15 @@ mod tests {
             tool.tick(&ctx);
             tool.run_log.is_running()
         });
-        assert_eq!(tool.run_log.texts(), tracer_lines(root));
+        // The run's end starts a check (`tick`), whose lines land ahead of the run's;
+        // whether they are already in depends on the worker, so the run's lines are
+        // read at the log's tail.
+        let (texts, run_lines) = (tool.run_log.texts(), tracer_lines(root));
+        assert!(
+            texts.len() >= run_lines.len(),
+            "the run's lines, a check's ahead: {texts:?}"
+        );
+        assert_eq!(texts[texts.len() - run_lines.len()..], run_lines[..]);
     }
 
     /// A finding of the Compiler's `code` at `severity` about `scope`, with `context`.

@@ -13,8 +13,13 @@ fn switch_install(
 ) {
     set_pes_folder(settings, &other.join("PES"));
     tool.tick(ctx);
-    assert!(
-        tool.live_check.is_running(),
+    // The check the change starts may be over within the same `tick`, which polls it:
+    // the settings a started check keeps are read.
+    assert_eq!(
+        tool.checked_settings
+            .as_ref()
+            .map(|(common, _)| common.pes_folder_path.clone()),
+        Some(other.join("PES").display().to_string()),
         "the settings change started a check"
     );
     finish_check(tool, ctx);

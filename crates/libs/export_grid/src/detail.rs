@@ -7,7 +7,7 @@ use egui::text::{LayoutJob, TextFormat};
 use egui::{Align, Align2, Color32, FontId, Key, Layout, Modifiers, Pos2, Rect, RichText, Sense};
 use egui::{Stroke, StrokeKind, TextStyle, TextureHandle, Vec2, pos2, vec2};
 use studio_core::theme::NO_TINT;
-use studio_core::{CatalogRow, Message, MessageCode, Scope, Severity};
+use studio_core::{CatalogRow, Disposition, Message, MessageCode, Scope, Severity};
 
 use crate::cells::{
     Cell, CellState, Open, Outline, PictureFile, Position, RADIUS, TopBox, state_name,
@@ -544,10 +544,10 @@ impl Detail {
                             body(
                                 ui,
                                 &key,
+                                row,
                                 cell,
                                 shown_state,
-                                catalog,
-                                pictures,
+                                &mut Sources { catalog, pictures },
                                 &mut response,
                             );
                             let copies = key.place == Place::Label && !row.log_lines.is_empty();
@@ -666,16 +666,17 @@ fn title_bar(ui: &mut egui::Ui, title: &str, pinned: bool) -> Bar {
 }
 
 /// The window's body above its buttons: the top box with the cell's pictures, the place,
-/// the state's name, then the findings worst first, or "No findings.". The findings
+/// the state's name with the export's cause under it when the cell is blocked (the
+/// draft's `cellNotes`), then the findings worst first, or "No findings.". The findings
 /// scroll when they would push the buttons off the screen, each cell's window keeping
 /// its own scroll offset. A finding's code clicked lands in `response`.
 fn body(
     ui: &mut egui::Ui,
     key: &CellKey,
+    row: &Row,
     cell: &Cell,
     (state, outline): (CellState, Option<Outline>),
-    catalog: &[CatalogRow],
-    pictures: &mut dyn FnMut(&PictureFile) -> Option<TextureHandle>,
+    sources: &mut Sources,
     response: &mut GridResponse,
 ) {
     let visuals = ui.visuals().clone();
@@ -684,9 +685,26 @@ fn body(
     ui.painter()
         .rect_filled(top_box, RADIUS, visuals.extreme_bg_color);
     let painter = ui.painter_at(top_box);
-    paint_top_box(&painter, &cell.top, pictures, visuals.weak_text_color());
+    paint_top_box(
+        &painter,
+        &cell.top,
+        sources.pictures,
+        visuals.weak_text_color(),
+    );
     ui.label(RichText::new(&cell.place).monospace());
     ui.label(RichText::new(state_name(state, outline)).color(visuals.weak_text_color()));
+    if state == CellState::Blocked {
+        let causes = drop_export_codes(row);
+        if !causes.is_empty() {
+            ui.label(
+                RichText::new(format!(
+                    "Blocked: this export is skipped ({})",
+                    causes.join(", ")
+                ))
+                .color(visuals.weak_text_color()),
+            );
+        }
+    }
     let mut messages: Vec<&Message> = cell.messages.iter().collect();
     messages.sort_by(|a, b| {
         b.severity
@@ -737,13 +755,35 @@ fn body(
                         .collect();
                     ui.label(RichText::new(fields.join(", ")).monospace().color(colour));
                 }
-                if let Some(row) = catalog.iter().find(|row| row.code == message.code.code) {
+                if let Some(row) = sources
+                    .catalog
+                    .iter()
+                    .find(|row| row.code == message.code.code)
+                {
                     ui.label(code_spans(ui, row.when, visuals.text_color()));
                     ui.label(code_spans(ui, row.effect, visuals.text_color()));
                 }
             }
         });
     ui.add_space(FINDING_GAP);
+}
+
+/// The codes of `row`'s findings that drop the whole export: the label's and every
+/// cell's, each once, in the order `cell_places` walks them. They are what a blocked
+/// cell's window names, since the dropping finding sits on the label alone.
+fn drop_export_codes(row: &Row) -> Vec<String> {
+    let mut codes: Vec<String> = Vec::new();
+    for (_, cell) in cell_places(row) {
+        for message in &cell.messages {
+            let code = message.code.code.as_ref();
+            if message.disposition == Disposition::DropExport
+                && !codes.iter().any(|seen| seen == code)
+            {
+                codes.push(code.to_owned());
+            }
+        }
+    }
+    codes
 }
 
 /// How a picture in the top box is fitted in its area: `Shrink` draws it at most at its

@@ -226,7 +226,8 @@ TC-GUI-09  GIVEN a cell with findings and no cell pinned
            WHEN the pointer rests on it
            THEN the detail window opens on it, titled by the team and the cell (by the
                 group for a cell alone in its group: `/co/ portraits`), showing the folder
-                name, the cell's state and each finding's code, file and catalog text, worst
+                name, the cell's state (a blocked cell's, with the codes of the findings that
+                skip its export) and each finding's code, file and catalog text, worst
                 severity first, then by code; findings too many for the screen scroll inside
                 a window kept on screen, its buttons in view; WHEN the
                 pointer leaves the cell for empty grid THEN the window closes; WHEN it moves
