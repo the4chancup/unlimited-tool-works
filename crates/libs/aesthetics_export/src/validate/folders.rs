@@ -98,7 +98,6 @@ pub(crate) fn player_folder(draft: &FolderDraft, roster_file: bool) -> PlayerFol
     };
     let depth = draft.path.segments().count() + 1;
     let mut files = Vec::new();
-    let mut links = Vec::new();
     let mut ingame_face = None;
     let mut fpc_on = false;
     let mut fpc_off = false;
@@ -115,13 +114,9 @@ pub(crate) fn player_folder(draft: &FolderDraft, roster_file: bool) -> PlayerFol
         }
         let name = file.path.name();
         match file.kind {
-            FileKind::SharedLink(_) => {
-                // `shared_link_name` and `classify` share the link table, so a
-                // SharedLink kind implies a non-empty stem.
-                let (kind, name) = shared_link_name(name)
-                    .expect("a SharedLink kind implies a non-empty link stem");
-                links.push(SharedLink { kind, name });
-            }
+            // A link file is no `files` entry; `links::player_links` resolves
+            // the folder's links and `validate_with` rebuilds `links` from them.
+            FileKind::SharedLink(_) => {}
             FileKind::Marker(Marker::OldIngameFace) => {}
             FileKind::Marker(Marker::FpcOn) => fpc_on = true,
             FileKind::Marker(Marker::FpcOff) => fpc_off = true,
@@ -165,7 +160,7 @@ pub(crate) fn player_folder(draft: &FolderDraft, roster_file: bool) -> PlayerFol
         path: draft.path.clone(),
         player_name,
         files,
-        links,
+        links: Vec::new(),
         ingame_face,
         fpc,
         portrait,
