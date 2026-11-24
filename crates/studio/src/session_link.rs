@@ -375,7 +375,7 @@ mod tests {
     use std::sync::{Arc, Mutex};
     use std::time::{Duration, Instant, SystemTime};
 
-    use studio_core::repro::{SessionFile, read_frame};
+    use studio_core::repro::{SessionFile, read_frame, session_folder_name};
 
     use super::*;
     use crate::test_dir::TestDir;
@@ -1117,5 +1117,53 @@ mod tests {
             1,
             "one Warn for the one bad write: {records:?}"
         );
+    }
+
+    // `main`'s close maps the run's exit code to the session's end: the panic
+    // guard's own code sends `crashed`, a clean close `closed` — the folder's
+    // `[end]` reads what the link sent. The read waits on the journal: `close`
+    // has already waited the writer out, and the wait bounds the case where
+    // the close never ran — the recorder's drop ends the queue and the writer
+    // ends the session `closed` behind it.
+    #[test]
+    fn the_windows_close_sends_the_end_the_exit_code_names() {
+        for (code, how) in [
+            (ExitCode::from(crate::gui_log::PANIC_EXIT), "crashed"),
+            (ExitCode::SUCCESS, "closed"),
+        ] {
+            let dir = TestDir::new("session_close_by_code");
+            let recorder = Recorder::default();
+            let header = header(4242);
+            let link = start(
+                &recorder,
+                None,
+                Box::new(|| None),
+                dir.path(),
+                header.clone(),
+            );
+            recorder.step("stub", "a step so the session's folder exists");
+
+            crate::close_session(Some(link), code);
+            drop(recorder);
+
+            let journal = dir
+                .path()
+                .join("sessions")
+                .join(session_folder_name(&header))
+                .join("journal.toml");
+            let deadline = Instant::now() + Duration::from_secs(120);
+            let journal = loop {
+                let journal = fs::read_to_string(&journal).unwrap_or_default();
+                if journal.contains("how =") {
+                    break journal;
+                }
+                assert!(Instant::now() < deadline, "the [end] never came");
+                std::thread::sleep(Duration::from_millis(10));
+            };
+            assert!(
+                journal.contains(&format!("how = \"{how}\"")),
+                "exit {code:?}: {journal}"
+            );
+        }
     }
 }

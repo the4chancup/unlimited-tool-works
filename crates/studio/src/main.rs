@@ -610,11 +610,7 @@ fn run_gui_mode(tools: Vec<Box<dyn StudioTool>>, test: Option<CrashTest>) -> Exi
         // logs (a monitor restarted over a pipe that broke while the window
         // sat idle, a stalled sender's warning) lands ahead of the closing
         // line, which must stay the log's last.
-        |code| {
-            if let Some(link) = session_link {
-                link.close(session_end(code));
-            }
-        },
+        |code| close_session(session_link, code),
         log::logger(),
     );
     // Restart now's program starts last: the window's session is closed in the log, and
@@ -648,6 +644,14 @@ fn session_end(code: ExitCode) -> SessionEnd {
         SessionEnd::Crashed
     } else {
         SessionEnd::Closed
+    }
+}
+
+/// Ends the window's session `link`, when the run opened one, with the ending the run's
+/// exit `code` maps to (`session_end`).
+fn close_session(link: Option<session_link::SessionLink>, code: ExitCode) {
+    if let Some(link) = link {
+        link.close(session_end(code));
     }
 }
 
