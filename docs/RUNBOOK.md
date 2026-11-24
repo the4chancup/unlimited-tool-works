@@ -474,6 +474,11 @@ crate replaced, and `--apply` removes them (6.6 GB of the gate's 120 GB on 2026-
 Such a tree's caches go too: `python scripts/builds/clear_caches.py [--dry-run] <name>...` removes
 its incremental caches, cargo's `tmp/` and the Save editor tests' scratch, refusing a tree a
 build or test runs from (86 GB from the gate, pes14 and `sk_mut` on 2026-11-23).
+Before a pause of days, when only mutation runs will build, the gate's and main's `target/`
+can go whole: `python scripts/builds/clear_for_pause.py main gate` lists what it would remove,
+and `--apply` removes it. It keeps a running mutation run's config, the test timings
+(`run_tests_times.json`) and packed archives, and refuses a target a running process uses
+(113 GB on 2026-11-24).
 
 **On the VPS the project leaves the host 2 GiB of free disk** and may hold the rest: the
 host's production service runs but is used by nobody, so the 40 GB the project's folder was
