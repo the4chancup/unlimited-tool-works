@@ -339,7 +339,7 @@ draft checked, handed over by the maintainer 2026-11-23. **After the detour**, i
      - [x] **S-g10** [after G10] SWE-2's round over G10 and the lead's fixes (rulings "S-g10
        r1"): 1 accepted, a wrong fact in gui.md (an archive export's portraits cell does open
        its folder), which ends the loop; the lead fixed it and named a team label's title
-     - [ ] **A1** [after S-g10] Astra's round 1 over the grid
+     - [~] **A1** [after S-g10] Astra's round 1 over the grid, at `153cce88`: running
    - [x] **tbmenu** The Compile button's mode list, Open output folder and Copy report (TC-GUI-11, and
      TC-GUI-33's clause that Compile for sideloading stays enabled while the DpFileList is
      outdated; DECISIONS 2026-11-23 "the Compile menu's Copy report copies the whole log").
