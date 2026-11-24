@@ -20179,3 +20179,32 @@ Why: the maintainer: "Windows have the highest priority." A window is what the m
 read or work in, while the sidebar opens whenever the pointer rests on the rail.
 Plan: `docs/plans/core/gui.md` "Sidebar" item 4, and the paragraph after the floating windows'
 placement.
+
+## 2026-11-24 — mutation runs — the whole-crate runs select each mutant's tests through a stand-in for cargo
+Decision: the whole-crate runs on the VPS run each mutant on only the tests whose line coverage
+reaches its changed lines. cargo-mutants stays the executor and is started with a stand-in for
+cargo, `scripts/mutation/select_tests.py`, as its `CARGO`. In a mutant's test phase the stand-in
+compares cargo-mutants' copy of the tree with the run's source to find the changed lines, and
+adds a nextest
+filter of the tests that cover them. It runs the full suite whenever the answer is not one clear
+filter: no file changed (the baseline), several files changed, no listed mutant on those lines,
+no test covering them, or a filter over 30,000 characters. The coverage map is built on the VPS
+at the start of each whole run, from the tree the mutants run on. Diff runs (the checkpoint's)
+keep the full suite.
+Why: the trial on 60 `team_compiler` mutants caught the same mutants both ways and ran the whole
+run 2 times faster, which matters for runs of up to 70 hours. cargo-mutants offers no per-mutant
+test filter, and no variable in the test process names the mutant, but it reads `CARGO` to find
+cargo. A stand-in keeps its builds, timeouts, parallel copies and the output files our scripts
+read. Our own run loop in its place would rewrite all of them (400-700 lines and the tests of
+every reader), and one cargo-mutants run per source file would pay two cold builds per file. A
+mutant with no covering test runs the full suite, not "missed" as in the trial, since a gap in
+the map must cost time, never a false survivor. The map is built on the machine that runs the
+mutants because a Windows map lacks the Linux-only tests. Diff runs keep the full suite because
+the map costs about 20 minutes for `team_compiler` on the development machine (an instrumented
+build, then each test alone), longer than most
+diff runs. The stand-in is a Python script because only the VPS runs it, where a script with a
+`#!` line starts like a program. Windows cannot start one in cargo's place, so a local run
+would need a compiled stand-in.
+Plan: no plan covers the mutation runs' tooling; the worklog's TESTSEL "adopt" step holds the
+slices, and `docs/RUNBOOK.md` "Mutation runs and the VPS" and `docs/CONTRIBUTING.md` are
+updated when it lands.
