@@ -336,7 +336,9 @@ draft checked, handed over by the maintainer 2026-11-23. **After the detour**, i
        the state names, "Checking" while a check runs, a roster finding's and an export
        finding's place line, the monospace code spans, a finding's texts in order; shared
        test helpers (SWE-2; the lead shared one more helper)
-     - [~] **S-g10** [after G10] SWE-2's round over G10 and the lead's fixes
+     - [x] **S-g10** [after G10] SWE-2's round over G10 and the lead's fixes (rulings "S-g10
+       r1"): 1 accepted, a wrong fact in gui.md (an archive export's portraits cell does open
+       its folder), which ends the loop; the lead fixed it and named a team label's title
      - [ ] **A1** [after S-g10] Astra's round 1 over the grid
    - [x] **tbmenu** The Compile button's mode list, Open output folder and Copy report (TC-GUI-11, and
      TC-GUI-33's clause that Compile for sideloading stays enabled while the DpFileList is
