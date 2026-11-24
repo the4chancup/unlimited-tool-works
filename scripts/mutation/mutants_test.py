@@ -1689,11 +1689,12 @@ class SummaryLists(unittest.TestCase):
         local_half: bool = True,
         extra_run: Path | None = None,
         codes: tuple[int, int] = (0, 0),
+        remote_only: bool = False,
     ) -> tuple[int, str]:
         out = io.StringIO()
         with (
             mock.patch.object(mutants, "ROOT", root),
-            mock.patch.object(mutants, "REMOTE_ONLY", False),
+            mock.patch.object(mutants, "REMOTE_ONLY", remote_only),
             contextlib.redirect_stdout(out),
         ):
             code = mutants.summarize(
@@ -1892,6 +1893,224 @@ class SummaryLists(unittest.TestCase):
         self.assertEqual(code, 1)
         self.assertIn("the extra pass left no record: see the remote log", out)
 
+    ELEVATION_SURVIVOR = (
+        "crates/libs/elevation/src/windows.rs:64: [call] in relaunch_elevated: "
+        "the push() statement is deleted | removed: parameters.push(0);"
+    )
+    TEAMS_SURVIVOR = (
+        "crates/libs/teams_list/src/reconcile.rs:74: [call] in appended_cells: "
+        "the resize() statement is deleted | removed: "
+        "cells.resize(width.max(cells.len()), String::new());"
+    )
+
+    def extra_record(
+        self, root: Path, lines: list[str], counts: dict, *, remote: bool = True
+    ) -> Path:
+        """The extra pass's `run.json` (crate `elevation`) and its
+        `missed_elevation.txt` holding `lines`: under `mutants.out/remote/`
+        when `remote` (the record a whole run's fetch lands), under
+        `extra_mutants.out/` else (a local pass's)."""
+        extra = (
+            root / "mutants.out" / "remote" / "extra_mutants.out"
+            if remote
+            else root / "extra_mutants.out"
+        )
+        extra.mkdir(parents=True, exist_ok=True)
+        (extra / "missed_elevation.txt").write_text(
+            "".join(line + "\n" for line in lines), encoding="utf-8"
+        )
+        record = extra / "run.json"
+        record.write_text(
+            json.dumps({"crate": "elevation", "seconds": 4.0, "counts": counts}),
+            encoding="utf-8",
+        )
+        return record
+
+    @contextlib.contextmanager
+    def windows_recheck(self, run_crate):
+        """The Windows recheck's surroundings mocked: `git rev-parse` answers
+        a tree, `mutant_crate` maps `crates/{libs,tools}/<crate>` and
+        `crates/<crate>` paths, this machine is Windows, and
+        `extra_mutants.run_crate` is `run_crate`."""
+        def git(*args, **kwargs):
+            return subprocess.CompletedProcess(args, 0, stdout="sometree")
+
+        def mutant_crate(file: str) -> str:
+            parts = file.split("/")
+            return parts[2] if parts[1] in ("libs", "tools") else parts[1]
+
+        with (
+            mock.patch.object(mutants, "git", git),
+            mock.patch.object(mutants, "mutant_crate", mutant_crate),
+            mock.patch.object(mutants.os, "name", "nt"),
+            mock.patch.object(extra_mutants, "run_crate", run_crate),
+        ):
+            yield
+
+    def test_a_fetched_extra_records_windows_only_survivors_are_rechecked(self):
+        """The remote pass's survivors in Windows-only code get the
+        cargo-mutants recheck's counterpart: `run_crate` reruns them alone on
+        this machine, a catch leaving `missed_all.txt` and moving the extra
+        row's counts (missed down, caught up) as the remote row's do."""
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            remote = root / "mutants.out" / "remote" / "mutants.out"
+            write_run(
+                remote, 1, [{"scenario": mutant("r"), "summary": "CaughtMutant"}]
+            )
+            record = self.extra_record(
+                root, [self.ELEVATION_SURVIVOR, self.TEAMS_SURVIVOR],
+                {"missed": 2, "caught": 1},
+            )
+            calls = []
+
+            def run_crate(crate, kinds, tree=None, only=None):
+                calls.append((crate, only))
+                return [], Counter(caught=1), 0.5
+
+            with self.windows_recheck(run_crate):
+                code, out = self.summarize(
+                    root, local_half=False, extra_run=record
+                )
+            self.assertEqual(code, 2)
+            self.assertEqual(
+                (root / "mutants.out" / "missed_all.txt")
+                .read_text(encoding="utf-8")
+                .splitlines(),
+                [self.TEAMS_SURVIVOR],
+            )
+        self.assertEqual(calls, [("elevation", {self.ELEVATION_SURVIVOR})])
+        extra_row = next(
+            line for line in out.splitlines() if line.startswith("extra")
+        )
+        self.assertEqual(extra_row.split()[1:5], ["2", "1", "0", "0"])
+        self.assertIn(
+            "rechecked on this machine (Windows-only extra mutants): "
+            "1 caught, 0 still missed",
+            out,
+        )
+
+    def test_windows_only_extra_survivors_are_listed_when_not_rechecked(self):
+        """Under REMOTE_ONLY this machine runs nothing: the survivors stay
+        missed, named under a heading like the cargo-mutants ones, and
+        `run_crate` is never called."""
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            remote = root / "mutants.out" / "remote" / "mutants.out"
+            write_run(
+                remote, 1, [{"scenario": mutant("r"), "summary": "CaughtMutant"}]
+            )
+            record = self.extra_record(
+                root, [self.ELEVATION_SURVIVOR, self.TEAMS_SURVIVOR],
+                {"missed": 2},
+            )
+            calls = []
+
+            def run_crate(crate, kinds, tree=None, only=None):
+                calls.append(crate)
+                return [], Counter(), 0.0
+
+            with self.windows_recheck(run_crate):
+                code, out = self.summarize(
+                    root, local_half=False, extra_run=record, remote_only=True
+                )
+            self.assertEqual(code, 2)
+            self.assertEqual(calls, [])
+            self.assertEqual(
+                (root / "mutants.out" / "missed_all.txt")
+                .read_text(encoding="utf-8")
+                .splitlines(),
+                [self.ELEVATION_SURVIVOR, self.TEAMS_SURVIVOR],
+            )
+        self.assertIn("Windows-only extra mutants, not rechecked:", out)
+        self.assertIn(f"  {self.ELEVATION_SURVIVOR}", out)
+        self.assertNotIn(f"  {self.TEAMS_SURVIVOR}", out)
+
+    def test_a_local_extra_records_survivors_are_never_rechecked(self):
+        """`extra_run_record()` is a local pass's record — the pass already ran
+        on this machine, so its survivors really were missed: nothing
+        rechecks them, whatever the machine."""
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            remote = root / "mutants.out" / "remote" / "mutants.out"
+            write_run(
+                remote, 1, [{"scenario": mutant("r"), "summary": "CaughtMutant"}]
+            )
+            record = self.extra_record(
+                root, [self.ELEVATION_SURVIVOR], {"missed": 1}, remote=False
+            )
+            calls = []
+
+            def run_crate(crate, kinds, tree=None, only=None):
+                calls.append(crate)
+                return [], Counter(), 0.0
+
+            with self.windows_recheck(run_crate):
+                code, out = self.summarize(
+                    root, local_half=False, extra_run=record
+                )
+            self.assertEqual(code, 2)
+            self.assertEqual(calls, [])
+            self.assertEqual(
+                (root / "mutants.out" / "missed_all.txt")
+                .read_text(encoding="utf-8")
+                .splitlines(),
+                [self.ELEVATION_SURVIVOR],
+            )
+        self.assertNotIn("not rechecked", out)
+
+    def test_an_untested_mutant_of_the_extra_recheck_fails_the_run(self):
+        """As the extra pass's own `untested` count does: a `[untested]`
+        return is not a catch (the line stays missed) and the run exits 1."""
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            remote = root / "mutants.out" / "remote" / "mutants.out"
+            write_run(
+                remote, 1, [{"scenario": mutant("r"), "summary": "CaughtMutant"}]
+            )
+            record = self.extra_record(root, [self.ELEVATION_SURVIVOR], {"missed": 1})
+            untested_line = self.ELEVATION_SURVIVOR.replace(
+                ": [call]", ": [untested] [call]"
+            )
+
+            def run_crate(crate, kinds, tree=None, only=None):
+                return [untested_line], Counter(untested=1), 0.5
+
+            with self.windows_recheck(run_crate):
+                code, _ = self.summarize(root, local_half=False, extra_run=record)
+            self.assertEqual(code, 1)
+            self.assertEqual(
+                (root / "mutants.out" / "missed_all.txt")
+                .read_text(encoding="utf-8")
+                .splitlines(),
+                [self.ELEVATION_SURVIVOR],
+            )
+
+    def test_a_survivor_the_extra_recheck_never_ran_is_not_caught(self):
+        """A line no listed mutant matches runs nothing and is in no list the
+        recheck returns: it stays missed and the run exits 1, not caught."""
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            remote = root / "mutants.out" / "remote" / "mutants.out"
+            write_run(
+                remote, 1, [{"scenario": mutant("r"), "summary": "CaughtMutant"}]
+            )
+            record = self.extra_record(root, [self.ELEVATION_SURVIVOR], {"missed": 1})
+
+            def run_crate(crate, kinds, tree=None, only=None):
+                return [], Counter(), 0.5
+
+            with self.windows_recheck(run_crate):
+                code, out = self.summarize(root, local_half=False, extra_run=record)
+            self.assertEqual(code, 1)
+            self.assertEqual(
+                (root / "mutants.out" / "missed_all.txt")
+                .read_text(encoding="utf-8")
+                .splitlines(),
+                [self.ELEVATION_SURVIVOR],
+            )
+        self.assertIn("the recheck ran 0 of elevation's 1 mutants", out)
+
     def test_the_summary_says_whether_the_run_selected_tests(self):
         """A whole run's summary reports the coverage map's logged exit: "on"
         at 0, "off" (the full suite ran) at any other code; a console without
@@ -2024,6 +2243,57 @@ class RecheckWindows(unittest.TestCase):
                 code = mutants.report_killed(0, local_half=False, rechecked=True)
         self.assertEqual(caught, set())
         self.assertEqual(code, 0)
+
+    def test_windows_only_extra_matches_its_files_untagged_lines_alone(self):
+        """Each `WINDOWS_ONLY_EXTRA` entry matches a missed line of its file
+        and functions (`path:line: [kind] in <fn>:`) — not the same line
+        tagged `[timeout]` or `[untested]` (only missed lines are rechecked),
+        a kind the pass does not run (`guard`), another file's line, or a
+        function the entry does not name; elevation's `windows.rs`, which is
+        `#[cfg(windows)]` whole, matching under any place at all."""
+        cases = [
+            # (file, functions, whether any place in the file matches)
+            ("crates/libs/elevation/src/windows.rs",
+             ["relaunch_elevated", "is_elevated", "wide_parameters"], True),
+            ("crates/tools/team_compiler/src/output/deploy.rs",
+             ["sweep_run", "probe_download", "promote_tree"], False),
+            ("crates/studio_core/src/pes_process.rs",
+             ["processes", "image_path", "probe"], False),
+            ("crates/tools/export_upgrader/src/upgrade.rs",
+             ["retry_while_locked"], False),
+            ("crates/studio_core/src/updater/install.rs",
+             ["remove_temp", "remove_temp_folder"], False),
+            ("crates/studio/src/gui_log.rs",
+             ["redact_any_spelling", "redact_home"], False),
+            ("crates/studio_core/src/shell/taskbar.rs",
+             ["set_relaunch", "set_relaunch_values"], False),
+        ]
+        self.assertEqual(len(mutants.WINDOWS_ONLY_EXTRA), len(cases))
+        for pattern, (file, functions, whole) in zip(
+            mutants.WINDOWS_ONLY_EXTRA, cases
+        ):
+            for function in functions:
+                line = (
+                    f"{file}:9: [call] in {function}: the push() statement is "
+                    "deleted | removed: x.push(0);"
+                )
+                self.assertTrue(pattern.search(line), line)
+                for tag in ("timeout", "untested"):
+                    tagged = line.replace(": [call]", f": [{tag}] [call]")
+                    self.assertFalse(pattern.search(tagged), tagged)
+                guarded = line.replace("[call]", "[guard]")
+                self.assertFalse(pattern.search(guarded), guarded)
+            other = (
+                f"crates/libs/cpk/src/lib.rs:9: [call] in {functions[0]}: "
+                "x | removed: x();"
+            )
+            self.assertFalse(pattern.search(other), other)
+            unnamed = (
+                f"{file}:9: [call] at top level: x | removed: x();"
+                if whole
+                else f"{file}:9: [call] in unrelated_function: x | removed: x();"
+            )
+            self.assertEqual(bool(pattern.search(unnamed)), whole, unnamed)
 
 
 class DiffRun(unittest.TestCase):
@@ -2779,7 +3049,7 @@ class ExtraRun(unittest.TestCase):
             patcher.start()
             self.addCleanup(patcher.stop)
 
-    def run_crate(self, results):
+    def run_crate(self, results, only=None):
         results = iter(results)
 
         def cargo_test(crate, cwd, timeout):
@@ -2792,7 +3062,7 @@ class ExtraRun(unittest.TestCase):
             mock.patch.object(extra_mutants, "cargo_test", cargo_test),
             contextlib.redirect_stdout(io.StringIO()),
         ):
-            return extra_mutants.run_crate("cpk", ["bool"], HEAD_TREE)
+            return extra_mutants.run_crate("cpk", ["bool"], HEAD_TREE, only=only)
 
     def test_each_outcome_and_the_lines_triage_reads(self):
         listed, counts, _ = self.run_crate([result for result, _ in self.TESTS])
@@ -2817,6 +3087,23 @@ class ExtraRun(unittest.TestCase):
              (self.out_dir / "outcomes_bool.tsv").read_text(encoding="utf-8").splitlines()],
             [outcome for _, outcome in self.TESTS],
         )
+
+    def test_only_runs_the_mutants_whose_missed_line_it_holds(self):
+        """`only` names the missed lines of the mutants to run (the Windows
+        recheck's survivors): the rest are never patched or tested."""
+        listed, counts, _ = self.run_crate(
+            [(0, "test result: ok. 12 passed; 0 failed")] * len(self.TESTS),
+            only={"crates/libs/cpk/src/lib.rs:1: [bool] flip 2 | removed: true"},
+        )
+        self.assertEqual(
+            listed,
+            [
+                "crates/libs/cpk/src/lib.rs:1: [bool] flip 2 | removed: true",
+                "crates/libs/cpk/src/read.rs: [bool] stale exclusion: "
+                "flip 9 | removed: true",
+            ],
+        )
+        self.assertEqual(counts, {"missed": 1})
 
     def test_a_run_stopped_midway_keeps_the_outcomes_it_decided(self):
         results = [result for result, _ in self.TESTS[:2]] + [RuntimeError("the PC went down")]
