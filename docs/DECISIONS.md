@@ -20227,3 +20227,8 @@ file's header say it.
 Decision: the backfill stops after `export_upgrader`; `studio_core`, `team_compiler` and `save_editor` run once the extra kinds' runs use nextest and the coverage map's selection (the worklog's TESTSEL `extras` step).
 Why: the extra kinds run their own loop of plain `cargo test -p` per mutant, which neither mutfast's nextest nor the stand-in for cargo reaches, and under `cargo test` the tests took 94-96% of a mutant's time. The three crates left are the largest, so the speedup would land where most of the backfill's time is. Not continuing now, because the VPS would stay busy for hours on the slow path while the owed `just pipeline` and the TESTSEL comparison run wait for it.
 Plan: no plan covers the mutation tooling; the worklog's TESTSEL and CALL items hold the steps.
+
+## 2026-11-24 — mutation runs — both mutation runners take their test command from one function (maintainer)
+Decision: `mutants.test_command` builds the command that tests a mutant from `.cargo/mutants.toml` (its test tool and arguments), and both cargo-mutants' runs and the extra kinds' loop use it; next, both go through the same test-selecting stand-in for cargo.
+Why: one backend, not a check that two copies agree, because the copies already parted once: mutfast moved cargo-mutants to nextest with one line of its config, which the extra kinds never read, so they kept running the whole suite per mutant for five days, the `call` backfill included. Not one runner for both, because cargo-mutants cannot run mutants it did not make, and replacing its loop with ours was rejected earlier (the TESTSEL stand-in's entry).
+Plan: no plan covers the mutation tooling; the worklog's TESTSEL `extras` step holds the slices.

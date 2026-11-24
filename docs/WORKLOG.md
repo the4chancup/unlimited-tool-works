@@ -732,10 +732,15 @@ and no phase closes with one outstanding.
       once the backfill frees the VPS: one whole-crate run, its survivors run again on the
       full suite (a catch under selection is sound, so only they can differ) and its time
       per mutant set against the cost table's last.
-    - [ ] **extras** [after wire] the extra kinds' runs (`scripts/mutation/extra_mutants.py`,
-      their own loop of `cargo test -p` per mutant) take nextest, which stops at a mutant's
-      first failing test, and the coverage map's tests for the mutant's line, as the
-      whole-crate runs do; then the `call` backfill resumes on its three largest crates.
+    - [ ] **extras** the extra kinds' runs (`scripts/mutation/extra_mutants.py`, their own
+      loop of `cargo test -p` per mutant) take what the whole-crate runs have; then the `call`
+      backfill resumes on its three largest crates:
+      - [ ] **backend** one test command for both runners (`mutants.test_command`, from
+        `.cargo/mutants.toml`), so the extra kinds get nextest, which stops at a mutant's first
+        failing test: mutfast changed only cargo-mutants' config (2026-11-19) and missed this
+        second runner; SWE-2, branch `sk/extras_nextest`;
+      - [ ] **select** [after wire, backend] both runners through the same test-selecting
+        stand-in for cargo (`scripts/mutation/select_tests.py`).
 
 ---
 
