@@ -292,10 +292,10 @@ system service `studio-mutants` (`sudo -n systemd-run`) with no swap and a `Memo
 host's available memory at launch less 1 GiB (`REMOTE_MEMORY_RESERVE`; printed as `remote
 memory cap`, and `just gates-remote`'s unit gets the same), not a constant raised by hand each
 time the maintainer frees memory on the host: a measured cap takes what is free without asking
-and leaves the host its margin. Builds are capped too:
-- cargo-mutants' builds by its jobserver, `REMOTE_JOBSERVER_TASKS` tasks (the host's CPU count
-  while unset), passed on its command line, since cargo ignores `-j` under a jobserver;
-- the extra pass's builds, which run outside cargo-mutants, by `REMOTE_BUILD_JOBS` (1).
+and leaves the host its margin. cargo-mutants' builds are capped by its jobserver,
+`REMOTE_JOBSERVER_TASKS` tasks (the host's CPU count while unset), passed on its command line,
+since cargo ignores `-j` under a jobserver. The extra pass and the coverage map build outside
+cargo-mutants, at cargo's default of one job per CPU.
 
 Under the memory cap, a runaway mutant is OOM-killed inside the unit and counts as caught; `OOMPolicy=continue`, so that kill does not stop
 cargo-mutants; `CPUWeight=idle`, because `nice` cannot keep a `user.slice` process off

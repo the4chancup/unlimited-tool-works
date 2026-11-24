@@ -741,14 +741,17 @@ and no phase closes with one outstanding.
         Its SWE-2 round: 2 accepted (the config check now stops both runners on a key only
         one honors; the run's folder is asserted), the loop ends;
       - [ ] **parity** [after backend] the rest of what cargo-mutants' runs have, each
-        measured on one crate before the backfill resumes: the build cap (the remote extra
-        pass and the coverage map build at `REMOTE_BUILD_JOBS = 1`, one rustc job, set for
-        memory kills later traced to the tmpfs `/tmp` the job no longer uses, while
-        cargo-mutants' half builds at the host's CPU count); two mutants at once
-        (cargo-mutants' `--jobs 2`, the extra kinds one at a time); the timeouts from
-        `.cargo/mutants.toml` (the extra kinds use 3x the baseline, cargo-mutants 5x); a
-        test killed by SIGKILL (the memory cap) counted caught as cargo-mutants' runs count
-        it, where the extra kinds count it untested;
+        measured on one crate before the backfill resumes:
+        - [x] **phases** 2026-11-24 `bc497a8f`: each mutant is built, then tested, as
+          cargo-mutants runs them; the test phase times out by `.cargo/mutants.toml`'s
+          rule (it was 3x a baseline holding a cold build); a test killed at the memory
+          cap counts caught; the remote's one-job build cap for the extra pass and the
+          coverage map is gone. On `cpk`'s `call` pass: the same outcomes, 154 s against
+          135 s. Left: the memory peak of the first remote extra pass without the cap;
+        - [ ] **jobs** [after phases] two mutants at once (cargo-mutants' `--jobs 2`, the
+          extra kinds one at a time), and cargo-mutants' runs count a test binary that
+          never started (`0xc0000142`) untested, as the extra kinds do (`killed_builds`
+          reads only the exit code of a caught mutant's test phase);
       - [ ] **review** [after parity] one paid cross-family round (Carbon) over `backend` and
         `parity` together, beyond the SWE-2 loop a script gets: this code decides every
         mutant's outcome (the maintainer, 2026-11-24);

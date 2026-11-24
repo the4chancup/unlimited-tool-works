@@ -1,4 +1,5 @@
-"""Remove the build folder `target/` of merged, clean sidekick worktrees (`sk_*`) and the lead's
+"""Remove the build folder `target/` of merged, clean sidekick worktrees (`sk_*`, and those
+reused under another name, `REUSED`) and the lead's
 look worktrees (`look_*`, a release build for a look), all regenerable, and of a hand-given
 build's worktree (`vgl27`).
 
@@ -25,6 +26,8 @@ TEMP = REPO.parent / (REPO.name + "-temp")
 NEVER = {"gate", "pes14", "release_003dev1"}
 # Hand-given builds' worktrees, each on the branch of its name.
 HAND_BUILDS = {"vgl27"}
+# Worktrees reused for one branch after another, under the first one's name.
+REUSED = {"grid9", "testsel"}
 
 
 def git(*args, cwd):
@@ -49,7 +52,7 @@ targets = []
 refused = []
 for name in names:
     assert name not in NEVER and "/" not in name and "\\" not in name, name
-    assert name.startswith(("sk_", "look_")) or name in HAND_BUILDS, name
+    assert name.startswith(("sk_", "look_")) or name in HAND_BUILDS | REUSED, name
     tree = TEMP / name
     target = tree / "target"
     if not target.exists():
