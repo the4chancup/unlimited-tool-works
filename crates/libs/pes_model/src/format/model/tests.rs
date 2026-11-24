@@ -293,6 +293,30 @@ fn editor_data_round_trips() {
 }
 
 #[test]
+fn a_text_item_is_nul_terminated() {
+    // A text whose length is a multiple of 4 gets no pad byte after it:
+    // only the item's own NUL keeps the read from scanning into the next
+    // item's kind word.
+    let mut model = PreFoxModel::read(CARD).unwrap();
+    let text = "node".to_owned();
+    assert_eq!(text.len() % 4, 0);
+    model.meshes[0].editor_data = Some(vec![
+        EditorItem {
+            kind: 1,
+            unknown: 0,
+            value: EditorValue::Text(text),
+        },
+        EditorItem {
+            kind: 2,
+            unknown: 0,
+            value: EditorValue::Word(0),
+        },
+    ]);
+    let written = model.write().unwrap();
+    assert_eq!(PreFoxModel::read(&written).unwrap(), model);
+}
+
+#[test]
 fn unsupported_and_dangling_references_error() {
     // A non-empty section 8 is cloth, which the typed layer does not cover.
     let mut container = ModelContainer::read(CARD).unwrap();

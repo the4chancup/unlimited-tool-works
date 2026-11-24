@@ -506,6 +506,16 @@ mod tests {
     }
 
     #[test]
+    fn blob_offsets_stay_four_aligned() {
+        // A 3-byte blob is zero-padded to 4, so the next blob's offset
+        // keeps the layout's alignment.
+        let mut builder = SectionBuilder::new(4, 0, &[]);
+        builder.add_blob(&[1, 2, 3]);
+        let second = builder.add_blob(&[4]);
+        assert_eq!(second % 4, 0);
+    }
+
+    #[test]
     fn to_container_allows_the_bone_limit() {
         // 65535 bones fit a u16 index; 65536 do not.
         let mut file = PreFoxModel::read(CAP).unwrap();
