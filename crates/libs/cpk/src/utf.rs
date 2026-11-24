@@ -592,6 +592,40 @@ mod tests {
     }
 
     #[test]
+    fn a_null_cell_in_a_variable_column_writes_the_zero_equivalent() {
+        // A `Null` cell (or one missing off a short row) in a Variable
+        // column stores the kind's zero: "" for String, nothing for Bytes.
+        let table = UtfTable {
+            name: "Sparse".to_owned(),
+            columns: vec![
+                UtfColumn {
+                    name: "Label".to_owned(),
+                    kind: UtfKind::String,
+                    storage: UtfStorage::Variable,
+                },
+                UtfColumn {
+                    name: "Data".to_owned(),
+                    kind: UtfKind::Bytes,
+                    storage: UtfStorage::Variable,
+                },
+            ],
+            rows: vec![
+                vec![
+                    UtfValue::String("one".to_owned()),
+                    UtfValue::Bytes(vec![1, 2, 3]),
+                ],
+                vec![UtfValue::Null],
+            ],
+        };
+        let bytes = table.write(b"TEST");
+        let back = UtfTable::read(&bytes, b"TEST").unwrap();
+        assert_eq!(back.get(0, "Label"), Some(&UtfValue::String("one".into())));
+        assert_eq!(back.get(0, "Data"), Some(&UtfValue::Bytes(vec![1, 2, 3])));
+        assert_eq!(back.get(1, "Label"), Some(&UtfValue::String(String::new())));
+        assert_eq!(back.get(1, "Data"), Some(&UtfValue::Bytes(Vec::new())));
+    }
+
+    #[test]
     fn a_non_utf8_pool_string_reads_as_latin1() {
         let mut bytes = sample_table().write(b"TEST");
         let length = usize::try_from(u64::from_le_bytes(bytes[8..16].try_into().unwrap())).unwrap();

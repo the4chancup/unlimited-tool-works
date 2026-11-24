@@ -22,6 +22,18 @@ fn wide(text: &str) -> Vec<u16> {
     text.encode_utf16().chain(std::iter::once(0)).collect()
 }
 
+/// The `lpParameters` buffer: `args` joined by [`command_line::join_arguments`],
+/// NUL-terminated as the wide API expects.
+fn wide_parameters(args: &[OsString]) -> Vec<u16> {
+    let arguments: Vec<Vec<u16>> = args
+        .iter()
+        .map(|arg| arg.as_os_str().encode_wide().collect())
+        .collect();
+    let mut parameters = command_line::join_arguments(&arguments);
+    parameters.push(0);
+    parameters
+}
+
 pub(crate) fn is_elevated() -> bool {
     // SAFETY: `GetCurrentProcess` returns the current process's pseudo-handle, which is always
     // valid for `OpenProcessToken`. `token` is only used after `OpenProcessToken` filled it.
@@ -56,12 +68,7 @@ pub(crate) fn relaunch_elevated(program: &Path, args: &[OsString]) -> Result<(),
         .encode_wide()
         .chain(std::iter::once(0))
         .collect();
-    let arguments: Vec<Vec<u16>> = args
-        .iter()
-        .map(|arg| arg.as_os_str().encode_wide().collect())
-        .collect();
-    let mut parameters = command_line::join_arguments(&arguments);
-    parameters.push(0);
+    let parameters = wide_parameters(args);
     // SAFETY: `info` is a zeroed `SHELLEXECUTEINFOW` with `cbSize` set as the API requires;
     // `verb`, `file` and `parameters` point at NUL-terminated wide buffers bound to locals
     // that outlive the call. `hProcess` is a handle we own (SEE_MASK_NOCLOSEPROCESS) and is
@@ -98,5 +105,19 @@ mod tests {
     fn wide_is_nul_terminated_utf16() {
         assert_eq!(wide("ab"), [0x61, 0x62, 0]);
         assert_eq!(wide(""), [0]);
+    }
+
+    #[test]
+    fn wide_parameters_joins_the_arguments_under_one_nul() {
+        let args: Vec<OsString> = ["abc", "a b"].into_iter().map(OsString::from).collect();
+        let buffer = wide_parameters(&args);
+        // `ShellExecuteExW` reads the buffer until NUL: the joined line, then
+        // exactly one terminator and no NUL inside it.
+        assert_eq!(buffer.last(), Some(&0));
+        assert!(buffer[..buffer.len() - 1].iter().all(|unit| *unit != 0));
+        let joined = String::from_utf16(&buffer[..buffer.len() - 1]).unwrap();
+        assert_eq!(joined, "abc \"a b\"");
+        // No arguments: the terminator alone.
+        assert_eq!(wide_parameters(&[]), [0]);
     }
 }

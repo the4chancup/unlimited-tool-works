@@ -380,6 +380,26 @@ mod tests {
     }
 
     #[test]
+    fn reconcile_pads_an_appended_row_shorter_than_the_header() {
+        // A ragged incoming line under a matching header: the cells are
+        // copied verbatim, then padded to the header's width so the merged
+        // row keeps its trailing cell.
+        let working = list("ID\tName\tNotes\n714\t/co/\tx\n");
+        let incoming = list("ID\tName\tNotes\n750\t/sp/\n");
+        let (merged, summary) = reconcile(&working, &incoming);
+        assert_eq!(
+            summary.added,
+            [(TeamId::new(750).unwrap(), TeamName::new("sp").unwrap())]
+        );
+        assert!(matches!(
+            merged.rows().last(),
+            Some(Row::Team { cells, .. })
+                if cells == &["750".to_owned(), "/sp/".to_owned(), String::new()]
+        ));
+        reparses(&merged);
+    }
+
+    #[test]
     fn reconcile_appends_new_incoming_placeholders() {
         // A placeholder only in the incoming list is carried over verbatim.
         let working = list("ID\tName\n");
