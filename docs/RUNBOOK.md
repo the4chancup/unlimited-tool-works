@@ -273,6 +273,21 @@ ones, or every workspace crate) changed since its recorded commit. A crate with 
 is listed and makes the run exit 1, as untested mutants do, until a whole run of it is
 triaged.
 
+**`just mutants-rolling` runs the whole-crate runs nobody waits on.** Each turn
+it picks the crate checked longest ago, the later of its
+`.cargo/mutants_checked.toml` commit and the commit its last rolling run was
+launched from, and runs a whole-crate run on that commit's tree (never the
+working tree's edits). The lead starts it detached (`python
+~/.claude/tools/run_detached.py <log> just mutants-rolling`) and leaves it
+running. A crate's results land in `mutants.rolling/<crate>/` (`out/` its
+fetched `mutants.out`, `extra/` its extra pass, `launched_from.txt` the commit
+it ran from), and triaging them ends with `just mutants-checked <crate> <its
+launched_from commit>`, which moves the closure's diff past it. When the VPS is
+needed for the checkpoint's Linux gates before a push, `.tmp/rolling.hold` is
+the way to free it without stopping the job: create the file and the job
+finishes its crate and waits; delete it and it goes on. A run the VPS refuses
+(busy, a half uncollected) is retried after a wait, never counted.
+
 **When the maintainer's PC is suspect, the heavy runs go to the VPS.** Four
 `MEMORY_MANAGEMENT` bugchecks there (the last during a run, all four in `rustc.exe` at one
 kernel site) once moved them until third-party drivers were removed; the switch stays for the

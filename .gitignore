@@ -10,6 +10,10 @@
 /mutants.diff/
 /mutants.diff.old/
 
+# The rolling job's kept whole-crate runs (`just mutants-rolling`)
+/mutants.rolling/
+/mutants.rolling.old/
+
 # extra-mutants results (`just extra-mutants`)
 /extra_mutants.out/
 
