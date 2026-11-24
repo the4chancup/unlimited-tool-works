@@ -683,7 +683,8 @@ and no phase closes with one outstanding.
   between `mutants-diff` and whole-crate runs"), built while the `call` backfill runs
   (DECISIONS 2026-11-24 "TIER is built while the `call` backfill runs"), in slices:
   - [ ] **diff** the extra kinds take a diff (`extra_mutants.py` keeps a mutant only on a changed
-    line), and `mutants-diff` runs them, so the review loops test `call` mutants too;
+    line), and `mutants-diff` runs them, so the review loops test `call` mutants too: merged
+    2026-11-24 (`d94498cc`), its SWE-2 round running;
   - [ ] **closure** [after diff] a tracked record of each crate's last triaged whole-run commit, and the closure run:
     every kind over the diff since that commit;
   - [ ] **rolling** [after closure] whole-crate runs as a rolling job on the VPS, the crate checked longest ago first;
