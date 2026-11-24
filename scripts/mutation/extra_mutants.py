@@ -13,7 +13,9 @@ at once, a copy each, as cargo-mutants' `--jobs` run them — builds it
 entry of `.cargo/extra_mutants.toml` (path, kind and whole description, never a
 line number) drops the mutants it matches before they run: the file is the extra
 kinds' list of what the runs no longer measure, each entry's `why` naming the
-equivalence. An entry that matches no listed mutant of its crate and kinds is
+equivalence. `exclude_globs` in the copy's `.cargo/mutants.toml` drops them too,
+the way cargo-mutants drops the files its entries match (`glob_matchers`).
+An `[[exclude]]` entry that matches no listed mutant of its crate and kinds is
 stale: printed, and written into the missed files as a `stale exclusion` line,
 so `just mutants`' merged `missed_all.txt` shows it for triage. Outcomes land in
 `extra_mutants.out/` (gitignored): `outcomes_<kinds>.tsv` has a row per mutant run (an
@@ -28,9 +30,11 @@ only prints the mutants and their counts, without running anything. `--kind <nam
 """
 
 import concurrent.futures
+import glob
 import json
 import os
 import queue
+import re
 import signal
 import subprocess
 import sys
@@ -51,21 +55,13 @@ ALL_KINDS = ("bool", "call", "guard", "literal", "normalize", "order")
 
 def build_outcome(code: int, out: str) -> str | None:
     """A mutant's outcome from its build phase, or None when it built and its
-    tests decide: `unviable` when cargo names a crate that could not compile,
-    `untested` otherwise. A build killed or starved for reasons outside the
-    mutant (`mutants.KILLED_BUILD_SIGNS`) is untested: unviable would say a
-    compiling mutant does not compile."""
+    tests decide: `unviable` or `untested` as `mutants.unviable_build` rules
+    the failure — a build killed or starved for reasons outside the mutant, or
+    failed another way, is untested, since unviable would say a compiling
+    mutant does not compile."""
     if code == 0:
         return None
-    lowered = out.lower()
-    if any(sign in lowered for sign in mutants.KILLED_BUILD_SIGNS):
-        return "untested"
-    # A failed build is unviable only when cargo names a crate that could not compile; a
-    # build script's failure or a full disk is not the mutant's (a killed rustc or linker
-    # prints it too, which the signs above keep untested).
-    if code == mutants.BUILD_FAILED and "could not compile" in lowered:
-        return "unviable"
-    return "untested"
+    return "unviable" if mutants.unviable_build(code, out) else "untested"
 
 
 def test_outcome(code: int | None, out: str) -> str:
@@ -183,6 +179,37 @@ def apply_exclusions(
     return excluded, stale
 
 
+def glob_matchers(globs: list[str]) -> list[re.Pattern]:
+    """`exclude_globs` entries compiled to match a path from the tree's root,
+    by cargo-mutants' rules (`cargo mutants --help`): an entry holding a `/`
+    matches the whole path; one without matches a file or folder of that name
+    anywhere in the tree, contents included. `*` stays inside one path
+    component and `**` crosses them. An entry with a `{a,b}` alternation,
+    which cargo-mutants accepts and `glob.translate` does not, stops the run:
+    spell its alternatives out as separate entries."""
+    matchers = []
+    for entry in globs:
+        if "{" in entry:
+            raise SystemExit(
+                f"extra_mutants: exclude_globs entry {entry!r} uses {{a,b}}, which the extra "
+                "kinds do not read: list each alternative as its own entry"
+            )
+        patterns = [entry] if "/" in entry else [f"**/{entry}", f"**/{entry}/**"]
+        for pattern in patterns:
+            matchers.append(
+                re.compile(
+                    glob.translate(pattern, recursive=True, include_hidden=True, seps="/")
+                )
+            )
+    return matchers
+
+
+def path_excluded(path: str, matchers: list[re.Pattern]) -> bool:
+    """Whether `path`, a `/`-separated path from the tree's root, is covered by
+    a compiled `exclude_globs` entry (`glob_matchers`)."""
+    return any(matcher.fullmatch(path) for matcher in matchers)
+
+
 def kill_tree(proc: subprocess.Popen) -> None:
     """Kill `proc` and every process it started (cargo's rustc and test children)."""
     if os.name == "nt":
@@ -207,15 +234,21 @@ def mutants_toml(cwd: Path) -> dict:
 def _cargo(
     command: list[str], cwd: Path, timeout: float | None
 ) -> tuple[int | None, str]:
-    """Start `command` in `cwd` at below-normal priority, output merged, and
-    return (exit code, output); the code is None when `timeout` killed the
-    process tree."""
-    kwargs = mutants.below_normal()
-    if os.name != "nt":
-        kwargs["start_new_session"] = True
+    """Start `command` in `cwd`, output merged and the temporary files in
+    `LOCAL_TMPDIR`, and return (exit code, output); the code is None when
+    `timeout` killed the process tree."""
+    if os.name == "nt":
+        kwargs = mutants.below_normal()
+    else:
+        # No `below_normal()` here: its `preexec_fn` can deadlock a child forked
+        # from a worker thread of the pool, and the remote job already runs the
+        # pass under `nice`, which the children inherit. A session of their own,
+        # so kill_tree's group kill hits the cargo tree only, never this script's.
+        kwargs = {"start_new_session": True}
     proc = subprocess.Popen(
         command,
         cwd=cwd,
+        env=mutants.tmpdir_env(),
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         text=True,
@@ -237,13 +270,27 @@ def test_threads() -> int:
     return max(1, (os.cpu_count() or 1) // mutants.JOBS)
 
 
+def build_jobs() -> int:
+    """One job's `--build-jobs`: the run's CPUs split `mutants.JOBS` ways, never
+    under 1 — the machine's count, or `mutants.REMOTE_JOBSERVER_TASKS` when the
+    build cap is set, the same budget the remote's cargo-mutants half runs on.
+    There is no shared jobserver between the jobs' cargo processes, so each
+    gets its own share."""
+    return max(
+        1, (mutants.REMOTE_JOBSERVER_TASKS or os.cpu_count() or 1) // mutants.JOBS
+    )
+
+
 def build(crate: str, cwd: Path) -> tuple[int, str]:
     """`mutants.test_command`'s `cargo nextest run` of `crate` in `cwd` plus
+    `--build-jobs` (this job's share of the run's CPUs, `build_jobs`) and
     `--no-run` (the test binaries built, nothing run): a mutant's build phase,
     split from its tests as cargo-mutants splits them. No timeout —
     cargo-mutants sets none on builds either."""
     command = mutants.test_command(crate, mutants_toml(cwd), test_threads())
-    code, out = _cargo([*command, "--no-run"], cwd, timeout=None)
+    code, out = _cargo(
+        [*command, f"--build-jobs={build_jobs()}", "--no-run"], cwd, timeout=None
+    )
     assert code is not None  # only a timeout yields None, and a build sets none
     return code, out
 
@@ -262,14 +309,21 @@ def run_tests(crate: str, cwd: Path, timeout: float | None) -> tuple[int | None,
     )
 
 
-def timeout_seconds(config: dict, baseline: float) -> float:
-    """A mutant's test-phase timeout from the run's parsed `.cargo/mutants.toml`:
-    `max(minimum_test_timeout, timeout_multiplier x baseline)`, the same rule
-    cargo-mutants reads from the file. A file lacking either key stops the
-    run, naming it — there is no default."""
+def check_timeout_config(config: dict) -> None:
+    """Stops the run, naming the key, when `config` (a parsed
+    `.cargo/mutants.toml`) lacks one a mutant's timeout needs — there is no
+    default."""
     for key in ("timeout_multiplier", "minimum_test_timeout"):
         if key not in config:
             raise SystemExit(f"extra_mutants: .cargo/mutants.toml lacks {key}")
+
+
+def timeout_seconds(config: dict, baseline: float) -> float:
+    """A mutant's test-phase timeout from the run's parsed `.cargo/mutants.toml`:
+    `max(minimum_test_timeout, timeout_multiplier x baseline)`, the same rule
+    cargo-mutants reads from the file. `check_timeout_config` stops the run on
+    a missing key."""
+    check_timeout_config(config)
     return max(config["minimum_test_timeout"], config["timeout_multiplier"] * baseline)
 
 
@@ -381,10 +435,18 @@ def run_crate(
         # The crate's folder as the snapshot holds it, not the live tree: a queued run
         # reaches its turn long after its snapshot.
         crate_rel = crate_dir(crate, copies[0]).relative_to(copies[0].resolve())
+        config = mutants_toml(copies[0])
         rows = [row for row in list_mutants(copies[0] / crate_rel) if row[3] in kinds]
         excluded, stale = apply_exclusions(
             rows, crate_rel, exclusions(copies[0]), kinds
         )
+        # The config's `exclude_globs` drop listed mutants the way cargo-mutants
+        # drops the files they match (`glob_matchers` holds its rules).
+        matchers = glob_matchers(config.get("exclude_globs", []))
+        excluded = [
+            drop or path_excluded((crate_rel / row[0]).as_posix(), matchers)
+            for row, drop in zip(rows, excluded)
+        ]
         rows = [row for row, drop in zip(rows, excluded) if not drop]
         if only is not None:
             rows = [row for row in rows if missed_line(crate_rel, row) in only]
@@ -392,8 +454,9 @@ def run_crate(
         # changed under a ruling, worth knowing before the run spends its time.
         for line in stale:
             print(line, flush=True)
+        check_timeout_config(config)
         baseline = baseline_seconds(crate, copies[0])
-        timeout = timeout_seconds(mutants_toml(copies[0]), baseline)
+        timeout = timeout_seconds(config, baseline)
         print(
             f"extra_mutants: baseline {baseline:.0f} s, timeout {timeout:.0f} s, "
             f"{len(rows)} mutants, {sum(excluded)} excluded",
@@ -521,6 +584,13 @@ def main(argv: list[str]) -> int:
         crate_rel = directory.relative_to(ROOT)
         rows = [row for row in list_mutants(directory) if row[3] in kinds]
         excluded, stale = apply_exclusions(rows, crate_rel, exclusions(ROOT), kinds)
+        matchers = glob_matchers(
+            mutants_toml(ROOT).get("exclude_globs", [])
+        )
+        excluded = [
+            drop or path_excluded((crate_rel / row[0]).as_posix(), matchers)
+            for row, drop in zip(rows, excluded)
+        ]
         for row, is_excluded in zip(rows, excluded):
             print("\t".join(row) + ("\t(excluded)" if is_excluded else ""))
         per_kind = Counter(row[3] for row in rows)

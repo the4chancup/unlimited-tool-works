@@ -526,11 +526,18 @@ def test_threads_arg(test_threads: int) -> str:
     return f"--test-threads={test_threads}"
 
 
-# The `.cargo/mutants.toml` keys both runners are known to honor alike: those that pick
-# which mutants run, their timeouts, and the test command's parts `test_command` builds.
+# The `.cargo/mutants.toml` keys `check_test_config` accepts: those that pick which
+# mutants run, their timeouts, and the test command's parts `test_command` builds.
+# cargo-mutants honors all of them; the extra kinds' pass reads `exclude_globs`
+# (which files its mutants land in), the timeout keys and the test command's parts.
+# `exclude_re` it ignores without diverging — its mutants' names never match a
+# cargo-mutants spelling, and `.cargo/extra_mutants.toml` holds its own exclusions —
+# and `gitignore` it cannot see, its snapshot copies holding no gitignored file.
+# `examine_globs` is not accepted: it would narrow cargo-mutants' run alone, so a
+# file split sets it through `sized_config`'s `extra`, past this check.
 TEST_CONFIG_KEYS = {
     "test_tool", "additional_cargo_args", "additional_cargo_test_args", "timeout_multiplier",
-    "minimum_test_timeout", "gitignore", "exclude_globs", "exclude_re", "examine_globs",
+    "minimum_test_timeout", "gitignore", "exclude_globs", "exclude_re",
 }
 # Nextest's exit codes the runs read: tests ran and one failed, or the build failed.
 TEST_RUN_FAILED = 100
@@ -539,16 +546,27 @@ BUILD_FAILED = 101
 
 def check_test_config(config: dict) -> None:
     """Raises `ValueError` for a parsed `.cargo/mutants.toml` the two runners would not
-    test alike: a `test_tool` other than nextest, or a key outside `TEST_CONFIG_KEYS`
-    (`features`, `profile`...), which cargo-mutants would honor and the extra kinds'
-    `test_command` would not. Both `sized_config` and `test_command` call it, so such an
-    edit stops both runners until the key is handled in both."""
+    test alike: a `test_tool` other than nextest; a key outside `TEST_CONFIG_KEYS`
+    (`features`, `profile`, `examine_globs` — a split's `sized_config` `extra`
+    carries that one, past this check); or an `additional_cargo_test_args` entry
+    other than `--test-threads=`, which `sized_config` overwrites and
+    `test_command` drops. Both `sized_config` and `test_command` call it, so such
+    an edit stops both runners until the key is handled in both."""
     tool = config.get("test_tool", "cargo")
     if tool != "nextest":
         raise ValueError(f"mutants.toml: unsupported test_tool {tool!r}")
     unknown = sorted(set(config) - TEST_CONFIG_KEYS)
     if unknown:
-        raise ValueError(f"mutants.toml: keys the extra kinds' test command ignores: {unknown}")
+        raise ValueError(f"mutants.toml: keys the extra kinds' pass does not honor: {unknown}")
+    dropped = [
+        arg for arg in config.get("additional_cargo_test_args", [])
+        if not arg.startswith("--test-threads=")
+    ]
+    if dropped:
+        raise ValueError(
+            "mutants.toml: additional_cargo_test_args entries the runs would "
+            f"drop (only --test-threads= is kept): {dropped}"
+        )
 
 
 def test_command(crate: str, config: dict, test_threads: int) -> list[str]:
@@ -635,18 +653,25 @@ def below_normal() -> dict:
     return {"preexec_fn": lambda: os.nice(10)}
 
 
+def tmpdir_env() -> dict:
+    """`os.environ` with `TMP`, `TEMP` and `TMPDIR` pointed at `LOCAL_TMPDIR`:
+    Rust's `temp_dir` reads `TMP` then `TEMP` on Windows and `TMPDIR`
+    elsewhere, so a run's copies of the tree and every cargo child's
+    temporary files share the one folder the antivirus exclusion covers."""
+    folder = str(LOCAL_TMPDIR)
+    return {**os.environ, "TMP": folder, "TEMP": folder, "TMPDIR": folder}
+
+
 def local_mutants(
     args: list[str], source: Path, config: Path | None = None
 ) -> subprocess.CompletedProcess:
     """Runs `cargo mutants <args> --jobs <JOBS>` here on `source`, the run's copy of
     its snapshot (`snapshot_source`), sized by `local_config` and at `below_normal`
-    priority, its copies of the tree in `LOCAL_TMPDIR`: Rust's `temp_dir`, which
-    cargo-mutants copies into, reads `TMP` then `TEMP` on Windows and `TMPDIR`
-    elsewhere. Its results land in the root's `mutants.out` unless `args`
+    priority, its copies of the tree in `LOCAL_TMPDIR` (`tmpdir_env`).
+    Its results land in the root's `mutants.out` unless `args`
     names an `--output`. `config` is a config a file split already wrote (its
     `examine_globs` must not be regenerated away)."""
     LOCAL_TMPDIR.mkdir(parents=True, exist_ok=True)
-    folder = str(LOCAL_TMPDIR)
     if config is None:
         config = local_config(source)
     output = [] if "--output" in args else ["--output", str(ROOT)]
@@ -656,7 +681,7 @@ def local_mutants(
             "--jobs", str(JOBS), "--config", str(config),
         ],
         cwd=source,
-        env={**os.environ, "TMP": folder, "TEMP": folder, "TMPDIR": folder},
+        env=tmpdir_env(),
         **below_normal(),
     )
 
@@ -668,43 +693,77 @@ LOST_CONSOLE = "0xc0000142"
 # What a build killed or starved for reasons outside the mutant leaves in its log, lowercase:
 # rustc killed by the OOM killer, the linker killed by it (gcc's `collect2`), LLVM or rustc
 # out of memory, a Windows process that lost its console, a link that failed (a mutant
-# changes Rust code, which compiled; a Windows SDK update had removed the system libraries).
+# changes Rust code, which compiled; a Windows SDK update had removed the system libraries),
+# and a full disk on Linux or Windows.
 KILLED_BUILD_SIGNS = (
     "sigkill", "signal 9 [killed]", "llvm error: out of memory", "memory allocation of",
     LOST_CONSOLE, "error: linking with",
+    "no space left on device", "there is not enough space on the disk",
 )
 
 
-def caught_by_tests(outcome: dict) -> bool:
-    """Whether a caught mutant's test phase ended as nextest ends a run in which
-    tests failed: exit code 100 (`{"Failure": 100}` in outcomes.json)."""
-    return any(
+def unviable_build(code: int | None, out: str) -> bool:
+    """Whether a failed build is the mutant's own: `True` only when cargo reported
+    a crate that could not compile — exit `BUILD_FAILED` with "could not compile"
+    in the output — and the log shows no sign the build was killed or starved for
+    reasons outside the mutant (`KILLED_BUILD_SIGNS`: a killed rustc, a full
+    disk). Anything else — another code, a build script's failure, cargo itself
+    dying — is `False`, meaning the mutant went untested."""
+    lowered = out.lower()
+    return (
+        code == BUILD_FAILED
+        and "could not compile" in lowered
+        and not any(sign in lowered for sign in KILLED_BUILD_SIGNS)
+    )
+
+
+def caught_by_tests(outcome: dict, out_dir: Path) -> bool:
+    """Whether a mutant's `CaughtMutant` outcome is a catch: its test phase ended
+    as nextest ends a run in which tests failed (exit code 100,
+    `{"Failure": 100}` in outcomes.json), and its log, when it is here, shows no
+    test binary that lost its console (`LOST_CONSOLE`) — one ran nothing, so it
+    caught nothing. `out_dir` is the `mutants.out` the outcome's `log_path` is
+    read under; a caught mutant's log is not always there (`REMOTE_FETCH_LIST`
+    leaves them behind), and a missing log cannot clear the catch."""
+    if not any(
         phase["phase"] == "Test"
         and phase.get("process_status") == {"Failure": TEST_RUN_FAILED}
         for phase in outcome.get("phase_results", [])
+    ):
+        return False
+    log_path = outcome.get("log_path")
+    return not (
+        log_path
+        and (out_dir / log_path).exists()
+        and LOST_CONSOLE
+        in (out_dir / log_path).read_text(encoding="utf-8", errors="replace").lower()
     )
 
 
 def killed_builds(out_dir: Path) -> list[str]:
     """The mutants under `out_dir` (a `mutants.out`) that went untested: those
-    cargo-mutants reported unviable because a build process was killed, not
-    because the mutant does not compile, and those it filed as a `Failure` (its
-    cargo process ended by a signal), which no list holds, so the counts would
-    come up short without a word. A test killed for memory is a caught mutant,
-    as intended: the mutant made the test blow up. The remote half's memory cap kills a rustc that
-    outgrows it, and cargo-mutants files the failed build as unviable, so the
-    mutant goes untested without a miss or an error: at 3.z, 18 of the remote
-    half's 19 mutants, eframe's dependency tree outgrowing 6 GiB. Windows has
-    no OOM killer: a rustc out of memory there aborts with "memory allocation
-    of N bytes failed". A build that lost its console fails to start with
-    0xC0000142 (4.y-conv: 273 of 274 mutants filed unviable that way).
+    cargo-mutants reported unviable although their build failed outside the
+    mutant's own compilation — killed or starved for reasons outside it, or
+    failed another way (`unviable_build` rules it) — and those it filed as a
+    `Failure` (its cargo process ended by a signal), which no list holds, so
+    the counts would come up short without a word. A test killed for memory is
+    a caught mutant, as intended: the mutant made the test blow up. The remote
+    half's memory cap kills a rustc that outgrows it, and cargo-mutants files
+    the failed build as unviable, so the mutant goes untested without a miss or
+    an error: at 3.z, 18 of the remote half's 19 mutants, eframe's dependency
+    tree outgrowing 6 GiB. Windows has no OOM killer: a rustc out of memory
+    there aborts with "memory allocation of N bytes failed". A build that lost
+    its console fails to start with 0xC0000142 (4.y-conv: 273 of 274 mutants
+    filed unviable that way), and a full disk's write fails either OS.
 
-    Also those it filed as caught although no test failed: cargo-mutants counts
-    any nonzero exit of the test phase as a catch, and nextest exits 100 only
-    when tests failed (`caught_by_tests`); any other code means its run broke
-    before or around the tests, as a process that lost its console would. A
-    catch by that code is untested too when the log shows a test binary that
-    never started (`LOST_CONSOLE`): it ran nothing, so it caught nothing."""
+    Also those it filed as caught although nothing proves the tests caught it
+    (`caught_by_tests` reads the outcome and the log the same way here):
+    cargo-mutants counts any nonzero exit of the test phase as a catch, and
+    nextest exits 100 only when tests failed; any other code means its run
+    broke before or around the tests, as a process that lost its console
+    would. A catch by that code is untested too when the log shows a test
+    binary that never started (`LOST_CONSOLE`): it ran nothing, so it caught
+    nothing."""
     path = out_dir / "outcomes.json"
     if not path.exists():
         return []
@@ -714,23 +773,22 @@ def killed_builds(out_dir: Path) -> list[str]:
             killed.append(outcome["scenario"]["Mutant"]["name"])
             continue
         if outcome["summary"] == "CaughtMutant":
-            name = outcome["scenario"]["Mutant"]["name"]
-            if not caught_by_tests(outcome):
-                killed.append(name)
-                continue
-            # A caught mutant's log is not always here (`REMOTE_FETCH_LIST`
-            # leaves them behind): the Windows status is a local run's anyway,
-            # and a missing log cannot clear the catch.
-            log_path = outcome.get("log_path")
-            if log_path and (out_dir / log_path).exists() and LOST_CONSOLE in (
-                (out_dir / log_path).read_text(encoding="utf-8", errors="replace").lower()
-            ):
-                killed.append(name)
+            if not caught_by_tests(outcome, out_dir):
+                killed.append(outcome["scenario"]["Mutant"]["name"])
             continue
         if outcome["summary"] != "Unviable" or not outcome.get("log_path"):
             continue
         log = (out_dir / outcome["log_path"]).read_text(encoding="utf-8", errors="replace")
-        if any(sign in log.lower() for sign in KILLED_BUILD_SIGNS):
+        build = next(
+            (
+                phase.get("process_status")
+                for phase in outcome.get("phase_results", [])
+                if phase["phase"] == "Build"
+            ),
+            None,
+        )
+        code = build.get("Failure") if isinstance(build, dict) else None
+        if not unviable_build(code, log):
             killed.append(outcome["scenario"]["Mutant"]["name"])
     return killed
 
@@ -1229,7 +1287,8 @@ caught = set()
 try:
     with open("mutants.out/outcomes.json", encoding="utf-8") as f:
         for outcome in json.load(f)["outcomes"]:
-            # As caught_by_tests: a catch whose tests never failed keeps its log.
+            # caught_by_tests' exit-code half: a catch whose tests never
+            # failed keeps its log (its lost-console half is Windows-only).
             tested = any(
                 phase["phase"] == "Test" and phase.get("process_status") == {"Failure": 100}
                 for phase in outcome.get("phase_results", [])
@@ -1378,9 +1437,10 @@ def recheck_windows(missed: list[str]) -> set[str]:
     """Rerun the remote half's `missed` survivors (missed.txt lines) in one
     cargo-mutants run on this machine, the tests that catch them being
     `#[cfg(windows)]` (WINDOWS_ONLY_TESTS) so the Linux remote cannot, and
-    return the lines it caught: a `CaughtMutant` outcome counts only with
-    failed tests (`caught_by_tests`), cargo-mutants filing any nonzero test
-    exit in `caught.txt`. `--re` names each mutant escaped and anchored,
+    return the lines it caught: a `CaughtMutant` outcome counts only as
+    `caught_by_tests` proves it (failed tests, and no lost-console log),
+    cargo-mutants filing any nonzero test exit in `caught.txt`. `--re` names
+    each mutant escaped and anchored,
     `-p` the crates they live in, `--output` a folder of its own under
     `mutants.out/` so the local half's results stay. It runs on the tree the
     remote half ran (`REMOTE_REF`), whose lines the survivors name. A run that
@@ -1412,7 +1472,7 @@ def recheck_windows(missed: list[str]) -> set[str]:
     caught = {
         outcome["scenario"]["Mutant"]["name"]
         for outcome in json.loads(outcomes_path.read_text(encoding="utf-8"))["outcomes"]
-        if outcome["summary"] == "CaughtMutant" and caught_by_tests(outcome)
+        if outcome["summary"] == "CaughtMutant" and caught_by_tests(outcome, results)
     }
     return caught & set(missed)
 
@@ -1731,7 +1791,8 @@ def report_killed(
     if here or remote:
         print(
             f"{len(here) + len(remote)} mutants were NOT tested: a build process was killed "
-            "for memory or lost its console, a link failed (their logs say which), cargo was "
+            "for memory or lost its console, a build failed outside the compilation, "
+            "a link failed (their logs say which), cargo was "
             "ended by a signal, or nextest failed without a failing test, and cargo-mutants "
             "counted them as unviable, caught or in no list."
         )
