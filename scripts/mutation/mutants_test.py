@@ -1662,6 +1662,7 @@ echo "$code $(( $(date +%s) - start ))" > ../run/exit
         selection: no listing, no coverage map, no stand-in, no `CARGO=`."""
         for job in (
             self.job(whole=False),
+            self.job(whole=True),
             self.job(whole=True, extra=False, extra_only=True, kinds=["call"]),
         ):
             for text in ("coverage_map", "select_tests", "CARGO=", "--list --json"):

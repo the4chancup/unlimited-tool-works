@@ -281,7 +281,7 @@ def main(argv: list[str]) -> int:
     root = Path.cwd().resolve()
     try:
         listed = json.loads(Path(mutants_path).read_text(encoding="utf-8"))
-    except OSError as error:
+    except (OSError, ValueError) as error:
         raise SystemExit(f"coverage_map: cannot read {mutants_path} ({error})")
     env = coverage_env(root)
     src, bins = package_layout(crate, root)
