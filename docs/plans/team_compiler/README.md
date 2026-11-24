@@ -247,9 +247,9 @@ TC-GUI-24  GIVEN the pointer on a cell with findings
                 stays; GIVEN Help opened from a finding's
                 code in the pinned window THEN Help sits above it, and a click on Help
                 reaches Help, not the window; GIVEN a double-click on a cell THEN its folder opens in the
-                file manager and the pin is as it was before the double-click; GIVEN an export
-                with no Portraits folder THEN a double-click on its portraits cell opens
-                nothing; GIVEN the pinned cell scrolled under the title row THEN the title row
+                file manager and the pin is as it was before the double-click; GIVEN a folder
+                export with no Portraits folder THEN a double-click on its portraits cell
+                opens nothing; GIVEN the pinned cell scrolled under the title row THEN the title row
                 covers its pin
 TC-GUI-25  GIVEN an export with three findings in the log, one on its label and two on its
                 players

@@ -339,7 +339,15 @@ draft checked, handed over by the maintainer 2026-11-23. **After the detour**, i
      - [x] **S-g10** [after G10] SWE-2's round over G10 and the lead's fixes (rulings "S-g10
        r1"): 1 accepted, a wrong fact in gui.md (an archive export's portraits cell does open
        its folder), which ends the loop; the lead fixed it and named a team label's title
-     - [~] **A1** [after S-g10] Astra's round 1 over the grid, at `153cce88`: running
+     - [x] **A1** [after S-g10] Astra's round 1 over the grid, at `153cce88` (rulings
+       "A-grid r1"): 4 accepted, one a real input whose outcome changes (a cell blocked by
+       its export's drop reads "No findings." instead of naming the cause), so Astra's loop
+       ends after its fixes. The lead's: TC-GUI-24's portraits double-click limited to a
+       folder export
+     - [~] **G11** [after A1] the rest: a blocked cell's window names the export-level cause,
+       Help stays above the detail window whatever is clicked, two tests that race the
+       check's worker (SWE-2, `sk/g11`)
+     - [ ] **S-g11** [after G11] SWE-2's round over G11; the grid's review loops end with it
    - [x] **tbmenu** The Compile button's mode list, Open output folder and Copy report (TC-GUI-11, and
      TC-GUI-33's clause that Compile for sideloading stays enabled while the DpFileList is
      outdated; DECISIONS 2026-11-23 "the Compile menu's Copy report copies the whole log").
