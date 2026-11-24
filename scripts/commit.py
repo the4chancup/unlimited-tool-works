@@ -31,7 +31,9 @@ under a second) the same way: a broken pointer otherwise surfaces only at the ne
 checkpoint, which then fails on a docs commit long since made. A commit that changes a `.rs`,
 `.toml` or `.py` file runs the comment gate (`scripts/gates/comment_refs.py`, a few seconds)
 likewise: a test fixture's `# Worklog` line, read as a comment, once failed `just gates` on
-main from a merge until a slice's review found it.
+main from a merge until a slice's review found it. A commit that changes `docs/WORKLOG.md`
+runs `scripts/roadmap.py --check` (under a second): a worklog item that breaks the
+convention its header states otherwise fails only the next checkpoint's test.
 
 Lead, sidekick, reviewer or script, nobody runs `git commit` or `git merge` with a message of
 their own any other way: a script that worded its own once made 49 commits no reader of the
@@ -108,6 +110,9 @@ def main(argv: list[str]) -> int:
     if sources and not passes("scripts/gates/comment_refs.py"):
         print("commit: nothing committed; a comment points at the project's history (above)")
         return 1
+    if "docs/WORKLOG.md" in changed and not passes("scripts/roadmap.py", "--check"):
+        print("commit: nothing committed; a worklog item breaks the worklog's convention (above)")
+        return 1
     code = subprocess.run(["git", "commit", "-F", str(message), *rest]).returncode
     if code == 0:
         report_left_out(rest)
@@ -160,13 +165,15 @@ def changed_paths(rest: list[str]) -> list[str]:
     return subprocess.run(command, capture_output=True, text=True, check=True).stdout.splitlines()
 
 
-def passes(script: str) -> bool:
+def passes(script: str, *args: str) -> bool:
     """Runs a check script of the tree being committed; whether it passed."""
     root = subprocess.run(
         ["git", "rev-parse", "--show-toplevel"], capture_output=True, text=True, check=True
     ).stdout.strip()
     # The tree being committed, which `--in` may make another worktree than this file's.
-    return subprocess.run([sys.executable, str(Path(root) / script)]).returncode == 0
+    # `roadmap.py` opens its input by a path relative to the root.
+    command = [sys.executable, str(Path(root) / script), *args]
+    return subprocess.run(command, cwd=root).returncode == 0
 
 
 if __name__ == "__main__":

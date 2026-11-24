@@ -1,6 +1,7 @@
-"""Tests for commit.py: `-a` and the files git does not track."""
+"""Tests for commit.py: `-a` and the files git does not track, and the worklog check."""
 
 import os
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -8,7 +9,10 @@ import time
 import unittest
 from pathlib import Path
 
+from roadmap_test import wl
+
 SCRIPT = Path(__file__).with_name("commit.py")
+ROADMAP = Path(__file__).with_name("roadmap.py")
 
 
 def git(repo: Path, *args: str) -> str:
@@ -66,6 +70,31 @@ class CommitAll(unittest.TestCase):
         self.assertEqual(run.returncode, 0, run.stdout + run.stderr)
         files = git(self.repo, "show", "--name-only", "--format=", "HEAD").split()
         self.assertEqual(sorted(files), ["design.txt", "notes.txt"])
+
+    def commit_worklog(self, item: str) -> subprocess.CompletedProcess[str]:
+        """Commits a worklog whose one step is `item`, beside the roadmap script that
+        checks it."""
+        (self.repo / "scripts" / "gates").mkdir(parents=True)
+        shutil.copy(ROADMAP, self.repo / "scripts" / "roadmap.py")
+        # Markdown and Python files also run two other gates, the scripts below: stubs that pass.
+        for gate in ("doc_pointers.py", "comment_refs.py"):
+            (self.repo / "scripts" / "gates" / gate).write_text("", encoding="utf-8")
+        (self.repo / "docs").mkdir()
+        (self.repo / "docs" / "WORKLOG.md").write_text(wl(item), encoding="utf-8")
+        git(self.repo, "add", "-A")
+        return self.commit_all()
+
+    def test_a_worklog_item_breaking_the_convention_stops_the_commit(self) -> None:
+        head = git(self.repo, "rev-parse", "HEAD")
+        run = self.commit_worklog("- a line with no checkbox and ID.\n")
+        self.assertEqual(run.returncode, 1, run.stdout + run.stderr)
+        self.assertIn("9: no checkbox and ID", run.stdout)
+        self.assertEqual(git(self.repo, "rev-parse", "HEAD"), head)
+
+    def test_a_worklog_keeping_the_convention_is_committed(self) -> None:
+        run = self.commit_worklog("- [ ] **A** a step.\n")
+        self.assertEqual(run.returncode, 0, run.stdout + run.stderr)
+        self.assertIn("docs/WORKLOG.md", git(self.repo, "show", "--name-only", "--format=", "HEAD"))
 
 
 if __name__ == "__main__":

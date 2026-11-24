@@ -6,8 +6,9 @@ It refuses a worklog whose "Where the work stands" items break the header's conv
 checkbox and ID, an ID twice among siblings, an `[after …]` naming no step, a wait that
 comes back to its step), so a wrong dependency fails when it is written, not at a converge.
 Run from the repository root (`just roadmap`) after the worklog changes; the page is never
-written by hand. A sample for the maintainer's look for now: wiring it into
-`scripts/commit.py` waits on that look."""
+written by hand. A sample for the maintainer's look for now: writing the page at every
+commit waits on that look. `--check` looks for those problems alone and writes no page:
+`scripts/commit.py` runs it for a commit that changes the worklog."""
 import datetime
 import heapq
 import html
@@ -628,12 +629,14 @@ document.getElementById("to-now").addEventListener("click", () =>
 """
 
 
-def main() -> None:
+def main(argv: list[str]) -> None:
     with open(WORKLOG, encoding="utf-8") as f:
         roadmap = parse(f.read())
     if roadmap.problems:
         print("\n".join(roadmap.problems))
         sys.exit(1)
+    if argv == ["--check"]:
+        return
     merges = recent_merges()
     page = render(roadmap, merges, step_dates(roadmap.steps),
                   datetime.date.today().isoformat())
@@ -645,4 +648,4 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    main(sys.argv[1:])

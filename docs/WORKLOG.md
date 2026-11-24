@@ -697,15 +697,14 @@ and no phase closes with one outstanding.
     the full suite. A catch under selection is sound (one of its tests failed), so only its
     survivors can be wrong, and they are few.
 
-    Result (2026-11-24, 60 mutants of `team_compiler`, `.tmp/testsel/trial60.log`):
-    - **No outcome differences**: every mutant had the same outcome both ways.
-    - **Tests: 4.8 times faster** (1,622 s with the full suite, 338 s selected).
-    - **Whole run: 2.0 times faster**, since the builds (940 s) are the same both ways.
-    - 18 mutants' selections were too long for one nextest filter (over 30,000 characters):
-      they ran the full suite in both arms, and their time counts in both.
-    - Both arms ran under the Python test runner, whose start at every test the compiled
-      runner (RUNNER) removes. That saving will be larger for the full suite, which starts
-      more tests.
+    Result (2026-11-24, 60 mutants of `team_compiler`, `.tmp/testsel/trial60.log`): every
+    mutant had the same outcome both ways. The tests ran 4.8 times faster (1,622 s with the
+    full suite, 338 s selected), but the whole run only 2.0 times faster, since the builds
+    (940 s) are the same both ways. 18 mutants' selections were too long for one nextest
+    filter (over 30,000 characters), so they ran the full suite both ways, and their time
+    counts in both. Both ways ran under the Python test runner, which starts Python again
+    for every test; the compiled runner (RUNNER) removes that cost, and removes more of it
+    from the full suite, which runs more tests.
   - [ ] **adopt** [after trial] selection in the mutation runs (`mutants.py`) for every
     tier, a mutant whose selection is too long running the full suite. Brief to come.
 

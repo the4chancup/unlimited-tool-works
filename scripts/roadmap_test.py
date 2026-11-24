@@ -436,8 +436,8 @@ class Edges(unittest.TestCase):
 
 
 class Main(unittest.TestCase):
-    def run_main(self, text: str) -> tuple[int, str, "str | None"]:
-        """`main()` with WORKLOG and OUT pointed at temp files: (code, output, page)."""
+    def run_main(self, text: str, argv: tuple[str, ...] = ()) -> tuple[int, str, "str | None"]:
+        """`main(argv)` with WORKLOG and OUT pointed at temp files: (code, output, page)."""
         with tempfile.TemporaryDirectory() as folder:
             worklog = os.path.join(folder, "WORKLOG.md")
             out = os.path.join(folder, "roadmap.html")
@@ -449,7 +449,7 @@ class Main(unittest.TestCase):
                 code = 0
                 with contextlib.redirect_stdout(shown):
                     try:
-                        roadmap.main()
+                        roadmap.main(list(argv))
                     except SystemExit as error:
                         code = error.code or 0
                 page = (Path(out).read_text(encoding="utf-8")
@@ -468,6 +468,17 @@ class Main(unittest.TestCase):
         code, _, page = self.run_main(WORKLOG)
         self.assertEqual(code, 0)
         self.assertIn("<h2>Timeline</h2>", page)
+
+    def test_check_passes_a_clean_worklog_and_writes_no_page(self) -> None:
+        code, out, page = self.run_main(WORKLOG, ("--check",))
+        self.assertEqual((code, out), (0, ""))
+        self.assertIsNone(page)
+
+    def test_check_refuses_a_worklog_with_a_problem(self) -> None:
+        code, out, page = self.run_main(wl("- a line with no checkbox and ID.\n"), ("--check",))
+        self.assertEqual(code, 1)
+        self.assertIsNone(page)
+        self.assertIn("9: no checkbox and ID", out)
 
 
 if __name__ == "__main__":
