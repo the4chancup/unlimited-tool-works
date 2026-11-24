@@ -666,10 +666,16 @@ and no phase closes with one outstanding.
     RUNBOOK "Phases and releases" and CONTRIBUTING "Mutation runs" rewritten to match.
 - [ ] **TESTSEL** Evaluate running only the tests that cover each mutant (the maintainer, 2026-11-23: worth
   a look, since it could cut a mutant's cost tenfold):
-  - [ ] **split** from the logs of a finished whole-crate run (`save_editor`, `pes_savefile`),
-    each mutant's time split into its build and its tests: selection only shortens the
-    tests, so this split bounds the gain;
-  - [ ] **trial** [after split] if the tests dominate, a trial on one crate: each test's line
+  - [x] **split** 2026-11-24 (`.tmp/testsel_split.py` over each run's `outcomes.json`): with
+    `cargo test` (the whole `save_editor` run of 1,172 mutants, a partial remote one) the
+    tests took 94-96% of the time; with nextest, which stops a mutant at its first failing
+    test, they take 46% (`export_grid`, 97 mutants) to 68% (`team_compiler`, 71): a caught
+    mutant's tests take a median 1.4 s and 15 s, a missed one runs the whole suite (60 s in
+    `team_compiler`). So selection can speed a run 1.9-3.1 times at most, not tenfold: the
+    builds stay, and so does nextest's listing of every test binary;
+  - [~] **trial** [after split] run anyway, on `team_compiler` (the maintainer, 2026-11-24:
+    "even a 2x improvement is a huge amount considering tests can sometimes take up to 70
+    hours"); SWE-2 builds the script (`.tmp/testsel/`), the lead runs it. The plan: each test's line
     coverage recorded once (`cargo llvm-cov`), each mutant run with only the tests covering
     its line, against the same mutants run with the full suite, the time measured both ways.
     Identical caught and missed sets make it a drop-in for every tier. A selection that
