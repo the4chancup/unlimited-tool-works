@@ -801,7 +801,9 @@ and no phase closes with one outstanding.
           on the VPS). The job runs each test under `prlimit --data` at Windows' 6 GB
           (`REMOTE_TEST_MEMORY`, through the Linux target's runner), so it aborts alone;
           checked on the VPS with nextest beforehand. `dds_convert`'s rolling run, launched
-          before it, reported `oom_kill 6`: its catches are owed a rerun under the cap;
+          before it, reported `oom_kill 6`: its catches are owed a rerun under the cap, so its
+          `launched_from.txt` is renamed `launched_from.oom_kills.txt`, leaving it undated like
+          a dead half's, and the job picks it again next;
         - [ ] **shards** (the maintainer's idea, 2026-11-25) a long run here survives an
           interruption, losing one shard rather than the whole run:
           - [x] **local** 2026-11-25 `c0a34ad3`, `673c8b11`: a diff crate run here past
