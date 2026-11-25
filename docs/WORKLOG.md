@@ -763,6 +763,10 @@ and no phase closes with one outstanding.
           `REMOTE_EXTRA_JOBS` mutants at once, since its builds left the VPS's CPUs about a
           third idle at two. Check on the backfill's `save_editor` pass: the CPUs' idle share
           while it runs, no mutant untested at the memory cap, and the host's free disk;
+        - [ ] **nodebug** 2026-11-25: mutation runs build with the `mutants` profile (dev
+          without debug info). Check on the next local run of a crate measured before (the
+          `studio` diff crate: 108 s baseline build, `mutants.diff/studio/`): its baseline
+          and per-mutant build seconds against those, and no `.pdb` in its copies;
       - [x] **review** 2026-11-24 `13e68e44`: one paid cross-family round (Carbon) over
         `backend` and `parity`, beyond the SWE-2 loop a script gets, because this code decides
         every mutant's outcome. 10 of 13 concerns accepted (a lost console still caught on a
