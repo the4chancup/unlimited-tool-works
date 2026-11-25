@@ -21,9 +21,20 @@ gates: line-endings fmt-check acceptance doc-pointers changelog comment-refs col
 gates-remote:
     {{python}} scripts/mutation/remote_gates.py
 
-# One cargo or just command on the mutants host against the working tree (`just remote cargo test -p save_editor`)
+# One cargo or just command on the mutants host against the working tree (`just remote cargo test -p save_editor`),
+# its arguments reaching remote_gates.py as given, the same dispatch as `cargo +args` below
+[windows]
+[positional-arguments]
+[script("python")]
 remote +command:
-    {{python}} scripts/mutation/remote_gates.py {{command}}
+    import subprocess, sys
+    sys.exit(subprocess.run([sys.executable, "scripts/gates/low_priority.py", sys.executable, "scripts/mutation/remote_gates.py", *sys.argv[1:]]).returncode)
+
+# The same on Linux and macOS, where `sh` keeps each argument whole in "$@"
+[unix]
+[positional-arguments]
+remote +command:
+    {{python}} scripts/mutation/remote_gates.py "$@"
 
 # Each argument reaches cargo as given, spaces included (`just cargo mutants --re "replace show with"`):
 # a recipe line would go through PowerShell, which splits them again, so on Windows the
