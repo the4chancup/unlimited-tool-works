@@ -119,6 +119,14 @@ def mutant(name: str) -> dict:
     return {"Mutant": {"name": name}}
 
 
+def cpk_package(root: Path) -> None:
+    """`crates/libs/cpk/Cargo.toml` under `root`, so `mutant_crate` names a
+    file under it `cpk` (the nearest `Cargo.toml` decides)."""
+    folder = root / "crates" / "libs" / "cpk"
+    folder.mkdir(parents=True, exist_ok=True)
+    (folder / "Cargo.toml").write_text("")
+
+
 def write_run(
     out: Path, selected: int, outcomes: list[dict], logs: dict[str, str] | None = None
 ) -> None:
@@ -203,14 +211,32 @@ LOCK_NAMES = {
 }
 
 
+def run_lock_recording(root: Path, taken: list):
+    """A `mutants.run_lock` taking each lock for real in `root/<its file's
+    name>` (their names kept distinct, so one hold does not shadow another)
+    and appending the name to `taken`. A take while already held raises
+    `AssertionError` where `run_lock` would poll forever."""
+    real_lock = mutants.run_lock
+
+    def record(path=mutants.RUN_LOCK):
+        name = Path(path).name
+        taken.append(name)
+        target = root / name
+        with open(target, "a+b") as handle:
+            if not mutants.try_lock(handle):
+                raise AssertionError(f"{name} taken while already held")
+        return real_lock(target)
+
+    return record
+
+
 @contextlib.contextmanager
 def lock_probes(root: Path):
-    """Patches `mutants.run_lock` to take each lock on `root/<its file's name>`
-    (their names kept distinct, so one hold does not shadow another) and yields
+    """Patches `mutants.run_lock` to `run_lock_recording(root)` and yields
     `probe`: `probe(tag)` appends (tag, the locks then held, named as
     `LOCK_NAMES` does) to `probe.calls`, asserted after the run — a whole run's
-    wait holds none."""
-    calls = []
+    wait holds none; `probe.taken` lists the takes' file names in order."""
+    calls, taken = [], []
 
     def probe(tag):
         held = set()
@@ -220,12 +246,8 @@ def lock_probes(root: Path):
                     held.add(name)
         calls.append((tag, held))
 
-    probe.calls = calls
-    real_lock = mutants.run_lock
-    with mock.patch.object(
-        mutants, "run_lock",
-        lambda path=mutants.RUN_LOCK: real_lock(root / Path(path).name),
-    ):
+    probe.calls, probe.taken = calls, taken
+    with mock.patch.object(mutants, "run_lock", run_lock_recording(root, taken)):
         yield probe
 
 
@@ -844,9 +866,10 @@ class CostCache(unittest.TestCase):
             mutants.ROOT, mutants.COST_CACHE, mutants.COST_LOCK = saved
 
     def test_the_cost_lock_wraps_the_read_and_the_write(self):
-        """`update_cost_cache` holds the cost lock from `load_cost_cache`'s
-        read through the replace that writes it: two runs' folds, possibly two
-        worktrees', never interleave a read-merge-write into a lost update."""
+        """`update_cost_cache` holds the cost lock in one take from
+        `load_cost_cache`'s read through the replace that writes it: two runs'
+        folds, possibly two worktrees', never interleave a read-merge-write
+        into a lost update."""
         outcomes = [
             {
                 "scenario": {"Mutant": {"name": "m", "file": "crates/libs/cpk/src/lib.rs"}},
@@ -856,8 +879,7 @@ class CostCache(unittest.TestCase):
         real_replace = os.replace
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            (root / "crates" / "libs" / "cpk").mkdir(parents=True)
-            (root / "crates" / "libs" / "cpk" / "Cargo.toml").write_text("")
+            cpk_package(root)
             write_run(root / "mutants.out", 1, outcomes)
             saved = mutants.ROOT, mutants.COST_CACHE
             mutants.ROOT, mutants.COST_CACHE = root, root / "cost.json"
@@ -882,6 +904,7 @@ class CostCache(unittest.TestCase):
         self.assertEqual(
             probe.calls, [("read", {"cost"}), ("write", {"cost"})]
         )
+        self.assertEqual(probe.taken, ["mutants.cost.lock"])
 
     def test_a_run_with_a_killed_build_leaves_the_measured_costs(self):
         def outcomes(summary: str) -> list[dict]:
@@ -897,8 +920,7 @@ class CostCache(unittest.TestCase):
 
         with tempfile.TemporaryDirectory() as tmp:
             # `mutant_crate` resolves the crate by the nearest Cargo.toml.
-            (Path(tmp) / "crates" / "libs" / "cpk").mkdir(parents=True)
-            (Path(tmp) / "crates" / "libs" / "cpk" / "Cargo.toml").write_text("")
+            cpk_package(Path(tmp))
             out = Path(tmp) / "mutants.out"
             killed = "process didn't exit successfully (exit code: 0xc0000142)"
             write_run(out, 5, outcomes("Unviable"), {"log/m": killed})
@@ -928,8 +950,7 @@ class CostCache(unittest.TestCase):
             ]
 
         with tempfile.TemporaryDirectory() as tmp:
-            (Path(tmp) / "crates" / "libs" / "cpk").mkdir(parents=True)
-            (Path(tmp) / "crates" / "libs" / "cpk" / "Cargo.toml").write_text("")
+            cpk_package(Path(tmp))
             out = Path(tmp) / "mutants.out"
             # Two tested at 100 s and 300 s, four unviable at 20 s, one timeout at 900 s:
             # the tested mean is 200 over two, where every outcome's is 197.
@@ -995,8 +1016,7 @@ class CostCache(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             # `mutant_crate` resolves the crate by the nearest Cargo.toml.
-            (root / "crates" / "libs" / "cpk").mkdir(parents=True)
-            (root / "crates" / "libs" / "cpk" / "Cargo.toml").write_text("")
+            cpk_package(root)
             remote = root / "mutants.out" / "remote" / "mutants.out"
             write_run(remote, 5, outcomes())
             saved = mutants.ROOT, mutants.COST_CACHE, mutants.COST_LOCK
@@ -1366,14 +1386,22 @@ class PendingRemote(unittest.TestCase):
         self.assertIn("mutants-collect", refusal)
 
     def test_a_collect_finding_no_half_clears_a_stale_record(self):
+        """A stale record is cleared only under the locks serializing the
+        launch that could have written it — a launch records its half before
+        the unit starts."""
         pending = pend()
         with (
-            mock.patch.object(mutants, "remote_run_state", lambda host: "none"),
-            mock.patch.object(mutants, "run_lock", contextlib.nullcontext),
+            lock_probes(self.root) as probe,
+            mock.patch.object(
+                mutants, "remote_run_state", lambda host: probe("state") or "none"
+            ),
             contextlib.redirect_stdout(io.StringIO()),
         ):
             self.assertEqual(mutants.collect("bonfire"), 1)
         self.assertFalse(pending.exists())
+        self.assertEqual(
+            probe.calls, [("state", set()), ("state", {"tree", "remote"})]
+        )
 
 
 class RunQueue(unittest.TestCase):
@@ -1414,18 +1442,31 @@ class RunQueue(unittest.TestCase):
             out, _ = second.communicate(timeout=30)
             self.assertTrue(entered.exists(), out.decode(errors="replace"))
 
+    def test_a_take_while_held_raises_instead_of_polling(self):
+        """`run_lock_recording` fails a double take at once: the real
+        `run_lock`'s poll loop would hang the test instead."""
+        with tempfile.TemporaryDirectory() as tmp:
+            taken = []
+            lock = run_lock_recording(Path(tmp), taken)
+            with lock():
+                with self.assertRaises(AssertionError):
+                    lock()
+            self.assertEqual(taken, ["mutants.lock", "mutants.lock"])
+
     def test_the_lock_is_the_users_not_one_worktrees(self):
         self.assertEqual(mutants.RUN_LOCK.name, "mutants.lock")
         self.assertEqual(mutants.REMOTE_LOCK.name, "mutants.remote.lock")
         self.assertEqual(mutants.COST_LOCK.name, "mutants.cost.lock")
         for lock in (mutants.RUN_LOCK, mutants.REMOTE_LOCK, mutants.COST_LOCK):
             self.assertFalse(lock.is_relative_to(mutants.ROOT), lock)
-        # The tree lock is each worktree's own: under its `.tmp/`, never
-        # `target/`, which a clean deletes under a holder.
-        self.assertEqual(mutants.tree_lock_path().name, "mutants.tree.lock")
-        self.assertEqual(
-            mutants.tree_lock_path().parent, mutants.ROOT / ".tmp"
-        )
+            self.assertEqual(lock.parent, mutants.RUN_LOCK.parent)
+        # The tree lock is each worktree's own: under its `.tmp/`, resolved at
+        # call time, never `target/`, which a clean deletes under a holder.
+        with tempfile.TemporaryDirectory() as tmp:
+            with mock.patch.object(mutants, "ROOT", Path(tmp)):
+                path = mutants.tree_lock_path()
+        self.assertEqual(path.parent, Path(tmp) / ".tmp")
+        self.assertEqual(path.name, "mutants.tree.lock")
 
     def order(self, call) -> list[str]:
         """The events of `call(events)`, with the snapshot, the lock and the snapshot's
@@ -1433,8 +1474,8 @@ class RunQueue(unittest.TestCase):
         events = []
 
         @contextlib.contextmanager
-        def lock(*_):
-            events.append("lock")
+        def lock(path=mutants.RUN_LOCK):
+            events.append(Path(path).name)
             yield
             events.append("unlock")
 
@@ -1461,7 +1502,8 @@ class RunQueue(unittest.TestCase):
 
         self.assertEqual(
             self.order(call),
-            ["snapshot", "lock", "lock", "copy", "run", "uncopy", "unlock", "unlock"],
+            ["snapshot", "mutants.tree.lock", "mutants.lock",
+             "copy", "run", "uncopy", "unlock", "unlock"],
         )
 
     def test_a_whole_crate_run_snapshots_before_it_waits(self):
@@ -1510,7 +1552,10 @@ class RunQueue(unittest.TestCase):
                     mutants_diff.main(["mutants_diff.py", HEAD_TREE, "scripts/mutation/mutants.py"]), 0
                 )
 
-        self.assertEqual(self.order(call), ["snapshot", "lock", "set aside", "unlock"])
+        self.assertEqual(
+            self.order(call),
+            ["snapshot", "mutants.tree.lock", "set aside", "unlock"],
+        )
 
     def test_an_extra_mutants_run_snapshots_before_it_waits(self):
         def call(events):
@@ -1522,7 +1567,9 @@ class RunQueue(unittest.TestCase):
                 extra_mutants.main(["extra_mutants.py", "fpc"])
 
         self.assertEqual(
-            self.order(call), ["snapshot", "lock", "lock", "run", "unlock", "unlock"]
+            self.order(call),
+            ["snapshot", "mutants.tree.lock", "mutants.lock",
+             "run", "unlock", "unlock"],
         )
 
     def test_the_last_runs_results_are_set_aside_not_deleted(self):
@@ -1554,21 +1601,14 @@ class RunQueue(unittest.TestCase):
 
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            (root / "crates" / "libs" / "cpk").mkdir(parents=True)
-            (root / "crates" / "libs" / "cpk" / "Cargo.toml").write_text("")
+            cpk_package(root)
             taken = []
-            real_lock = mutants.run_lock
-
-            def record(path=mutants.RUN_LOCK):
-                taken.append(Path(path).name)
-                return real_lock(root / Path(path).name)
-
             with (
                 mock.patch.object(mutants, "ROOT", root),
                 mock.patch.object(mutants_diff, "ROOT", root),
                 mock.patch.object(mutants_diff, "RESULTS", root / "mutants.diff"),
                 mock.patch.object(mutants_diff, "SHARDS", root / "mutants.shards"),
-                mock.patch.object(mutants, "run_lock", record),
+                mock.patch.object(mutants, "run_lock", run_lock_recording(root, taken)),
                 mock.patch.multiple(
                     mutants,
                     snapshot_source=lambda tree: contextlib.nullcontext(root),
@@ -1581,7 +1621,11 @@ class RunQueue(unittest.TestCase):
                                                 "local_files": [], "names": ["a"]},
                     local_refusal=lambda: None,
                     set_aside_last_run=lambda: None,
-                    run_split=lambda *a, **k: (0, 0, 1.0, 1.0),
+                    local_mutants=lambda *a, **k: subprocess.CompletedProcess(a, 0),
+                    transfer=lambda *a: None,
+                    remote_config=lambda *a, **k: None,
+                    launch_remote=lambda *a, **k: None,
+                    wait_remote=lambda host: (0, 1.0),
                     update_cost_cache=lambda *a, **k: None,
                     fetch_remote=lambda *a, **k: None,
                     summarize=lambda *a, **k: 0,
@@ -1601,15 +1645,16 @@ class RunQueue(unittest.TestCase):
             taken,
             [
                 "mutants.tree.lock", "mutants.lock",
-                "mutants.remote.lock", "mutants.remote.lock",
+                "mutants.remote.lock", "mutants.remote.lock", "mutants.remote.lock",
             ],
         )
 
 
 class WholeRun(unittest.TestCase):
     """`just mutants <crate>` runs every mutant on the VPS alone (RUNBOOK
-    "Mutation runs and the VPS"): the launch under the run lock, the days-long
-    wait without it, and nothing cargo-mutants or extra on this machine."""
+    "Mutation runs and the VPS"): the launch under this tree's and the remote's
+    locks (never the build's), the days-long wait without any, and nothing
+    cargo-mutants or extra on this machine."""
 
     def setUp(self):
         tmp = tempfile.TemporaryDirectory()
@@ -1773,14 +1818,8 @@ class WholeRun(unittest.TestCase):
         tree's, the remote's inside around the fetch — and the build lock
         (`mutants.lock`) at no point."""
         taken = []
-        real_lock = mutants.run_lock
-
-        def record(path=mutants.RUN_LOCK):
-            taken.append(Path(path).name)
-            return real_lock(self.root / Path(path).name)
-
         with (
-            mock.patch.object(mutants, "run_lock", record),
+            mock.patch.object(mutants, "run_lock", run_lock_recording(self.root, taken)),
             mock.patch.object(
                 mutants, "snapshot_source",
                 lambda tree: contextlib.nullcontext(self.root),
@@ -1946,8 +1985,9 @@ class ExtraOnlyRun(unittest.TestCase):
                 mutants.extra_only_run("cpk", ["call"], "bonfire", HEAD_TREE)
 
     def test_the_launch_waits_and_finishes_as_a_whole_run_does(self):
-        """The launch and the finish hold the run lock, the wait none, and
-        nothing of `mutants.out` is set aside or folded into the cost table."""
+        """The launch holds the tree and remote locks and the finish the
+        tree's — never the build lock — the wait none, and nothing of
+        `mutants.out` is set aside or folded into the cost table."""
         launched, finished = {}, {}
         with (
             lock_probes(self.root) as probe,
@@ -2052,7 +2092,7 @@ class SplitShares(unittest.TestCase):
                 mutants,
                 local_mutants=local_mutants,
                 launch_remote=launch_remote,
-                remote_refusal=lambda host: None,
+                remote_start=lambda host, tree: (None, None, 8),
                 run_lock=lambda *a, **k: contextlib.nullcontext(),
                 transfer=lambda *_: None,
                 remote_config=lambda *_: None,
@@ -2062,7 +2102,7 @@ class SplitShares(unittest.TestCase):
             contextlib.redirect_stdout(io.StringIO()),
         ):
             mutants.run_split(
-                ["-p", "cpk"], "bonfire", HEAD_TREE, Path("source"), None, None, 8,
+                ["-p", "cpk"], "bonfire", HEAD_TREE, Path("source"),
                 local_files=local_files,
             )
         return calls
@@ -2113,6 +2153,48 @@ class SplitShares(unittest.TestCase):
         with mock.patch.object(mutants, "REMOTE_JOBSERVER_TASKS", 2):
             self.assertIn("--jobserver-tasks 2 ", self.job(whole=False))
 
+    def test_the_shadow_launch_re_snapshots_and_re_probes_for_the_transfer(self):
+        """Between `remote_start`'s hold and the shadow launch's another tree
+        can move `REMOTE_REF` and the clone — `remote_half` runs `remote_start`
+        again inside its own hold, so the transfer bundles this run's snapshot
+        and the clone's current head."""
+        starts = []
+        transferred = {}
+
+        def remote_start(host, tree):
+            starts.append(tree)
+            return f"head-{len(starts)}", f"tree-{len(starts)}", 8
+
+        with (
+            tempfile.TemporaryDirectory() as tmp,
+            mock.patch.object(mutants, "ROOT", Path(tmp)),
+            mock.patch.multiple(
+                mutants,
+                remote_start=remote_start,
+                remote_refusal=lambda host: None,
+                plan_file_split=lambda *a: {"crate": "cpk", "method": "round-robin",
+                                            "target": 0.5, "achieved": 0.5,
+                                            "local_files": [], "names": ["m"]},
+                finish_remote_run=lambda *a, **k: 0,
+                local_mutants=lambda *a, **k: subprocess.CompletedProcess(a, 0),
+                run_lock=lambda *a, **k: contextlib.nullcontext(),
+                transfer=lambda host, remote_head: transferred.setdefault("head", remote_head),
+                remote_config=lambda *_: None,
+                launch_remote=lambda *a, **k: None,
+                local_config=lambda source, extra=None: Path("local.toml"),
+                wait_remote=lambda host: (0, 1.0),
+            ),
+            contextlib.redirect_stdout(io.StringIO()),
+        ):
+            mutants.split(
+                ["--in-diff", "in.diff", "-p", "cpk"], "bonfire", HEAD_TREE,
+                Path("source"),
+            )
+        self.assertEqual(starts, [HEAD_TREE, HEAD_TREE])
+        # The second probe, not `remote_start`'s stale one, feeds the transfer
+        # (the first's `remote_tree == tree` would skip it).
+        self.assertEqual(transferred["head"], "head-2")
+
     def test_a_split_refuses_before_it_touches_any_result(self):
         """A refusal the caller counted as a run filed the last run's `mutants.out` as its
         own (`mutants_diff.run`): a split refuses by raising, before setting anything aside."""
@@ -2152,7 +2234,7 @@ class SplitShares(unittest.TestCase):
                 planned.append(selection)
                 return {"method": method, "local_files": files, "names": ["m"]}
 
-            def run_split(selection, host, tree, source, head, remote_tree, nproc, local, local_files):
+            def run_split(selection, host, tree, source, local, local_files):
                 ran["local_files"] = local_files
                 return 0, 0, 1.0, 1.0
 
@@ -3457,6 +3539,67 @@ class DiffBusy(unittest.TestCase):
             self.run_crate("none", reprobe=["none"], refused=True)
         self.assertEqual(len(self.states_seen), 2)
 
+    def test_a_shadow_launch_refused_for_busy_runs_here(self):
+        """The busy re-check inside the split's shadow launch can refuse too:
+        re-raised as `Refused`, `run_crate`'s re-probe sees a busy host and the
+        crate runs here rather than crashing the diff run."""
+        calls = {}
+        states = iter(["none", "running"])
+        starts = iter([(None, None, 8), mutants.Refused("a busy host")])
+        out = io.StringIO()
+
+        def remote_start(host, tree):
+            result = next(starts)
+            if isinstance(result, Exception):
+                raise result
+            return result
+
+        with (
+            tempfile.TemporaryDirectory() as tmp,
+            mock.patch.object(mutants, "ROOT", Path(tmp)),
+            mock.patch.object(
+                mutants, "estimate_seconds",
+                lambda crates, share=1.0: mutants.SPLIT_THRESHOLD_SECONDS,
+            ),
+            mock.patch.object(mutants, "remote_host", lambda: "bonfire"),
+            mock.patch.object(
+                mutants, "remote_run_state", lambda host: next(states)
+            ),
+            mock.patch.object(mutants, "remote_start", remote_start),
+            mock.patch.multiple(
+                mutants,
+                run_lock=lambda *a, **k: contextlib.nullcontext(),
+                plan_file_split=lambda *a: {"crate": "cpk", "method": "round-robin",
+                                            "target": 0.5, "achieved": 0.5,
+                                            "local_files": [], "names": ["m"]},
+                local_mutants=lambda *a, **k: calls.__setitem__("local", a)
+                or subprocess.CompletedProcess(a, 0),
+                remote_refusal=lambda host: "a busy host",
+                transfer=lambda *a: None,
+                remote_config=lambda *_: None,
+                launch_remote=lambda *a, **k: None,
+                local_refusal=lambda: None,
+                set_aside_last_run=lambda: None,
+                update_cost_cache=lambda *a, **k: None,
+                report_killed=lambda code, **k: code,
+            ),
+            mock.patch.object(mutants_diff, "kept_shards", lambda crate, key: False),
+            mock.patch.object(
+                mutants_diff, "sharded_run",
+                lambda *a: calls.__setitem__("sharded", a) or 0,
+            ),
+            contextlib.redirect_stdout(out),
+            tempfile.TemporaryDirectory() as tmp2,
+        ):
+            diff = Path(tmp2) / "in.diff"
+            diff.write_bytes(b"")
+            code = mutants_diff.run_crate(
+                str(diff), HEAD_TREE, Path("src"), "cpk", 3
+            )
+        self.assertEqual(code, 0)
+        self.assertIn("local", calls, "the crate ran here after the refused shadow")
+        self.assertIn("busy", out.getvalue())
+
     def test_an_unreachable_remote_runs_a_long_crate_here(self):
         # No half waits to be collected, so nothing waits for this run's lock.
         code, calls, out = self.run_crate(None, estimate=mutants_diff.BUSY_LOCAL_LIMIT_SECONDS * 10)
@@ -3474,7 +3617,7 @@ class DiffBusy(unittest.TestCase):
     def test_remote_only_still_sends_every_mutant_remote(self):
         code, calls, out = self.run_crate("running", remote_only=True)
         self.assertEqual(code, 0)
-        self.assertNotIn("state", calls, "REMOTE_ONLY never asks the host's state")
+        self.assertEqual(self.states_seen, [], "REMOTE_ONLY never asks the host's state")
         self.assertEqual(calls["split"][1], {"local": False})
 
 
@@ -4108,17 +4251,65 @@ class Rolling(unittest.TestCase):
 
     def test_file_results_takes_the_tree_lock(self):
         """`run_one` and `recover` call `file_results` holding no lock, so its
-        renames take this tree's themselves."""
+        renames, its two record writes and `CURRENT`'s removal take this
+        tree's themselves."""
         self.fetched()
+        real_rename, real_write_text, real_unlink = (
+            Path.rename, Path.write_text, Path.unlink
+        )
+
+        def rename(path, target):
+            probe("rename")
+            return real_rename(path, target)
+
+        def write_text(path, *a, **k):
+            probe("write")
+            return real_write_text(path, *a, **k)
+
+        def unlink(path, **k):
+            probe("unlink")
+            return real_unlink(path, **k)
+
         with (
             lock_probes(self.root) as probe,
-            mock.patch.object(mutants, "set_aside", lambda folder: probe("set_aside")),
+            mock.patch.object(Path, "rename", rename),
+            mock.patch.object(Path, "write_text", write_text),
+            mock.patch.object(Path, "unlink", unlink),
         ):
             rolling.file_results("cpk", self.COMMIT, 2)
-        self.assertEqual(probe.calls, [("set_aside", {"tree"})])
+        self.assertEqual(
+            probe.calls,
+            [
+                ("rename", {"tree"}), ("rename", {"tree"}),
+                ("write", {"tree"}), ("write", {"tree"}),
+                ("unlink", {"tree"}),
+            ],
+        )
         kept = self.results / "cpk"
         self.assertTrue((kept / "out" / "remote" / "mutants.out" / "missed.txt").exists())
         self.assertEqual((kept / "exit.txt").read_text(encoding="utf-8"), "2\n")
+
+    def test_file_results_leaves_the_crate_undated_when_nothing_landed(self):
+        """A finish that landed no `mutants.out` files nothing: the crate
+        keeps its earlier results, gets no `launched_from.txt` and comes up
+        for a fresh pick — a missing folder must not be filed as a run."""
+        earlier = self.results / "cpk" / "earlier"
+        earlier.mkdir(parents=True)
+        (earlier / "x").write_text("kept\n", encoding="utf-8")
+        self.results.mkdir(exist_ok=True)
+        rolling.CURRENT.write_text(f"cpk {self.COMMIT}\n", encoding="utf-8")
+        out = io.StringIO()
+        with (
+            mock.patch.object(mutants, "run_lock", contextlib.nullcontext),
+            contextlib.redirect_stdout(out),
+        ):
+            rolling.file_results("cpk", self.COMMIT, 2)
+        self.assertTrue(earlier.exists(), "the earlier results were set aside")
+        self.assertFalse((self.results / "cpk.old").exists())
+        self.assertFalse((self.results / "cpk" / "launched_from.txt").exists())
+        self.assertFalse((self.results / "cpk" / "exit.txt").exists())
+        self.assertFalse(rolling.CURRENT.exists())
+        self.assertIn("no mutants.out", out.getvalue())
 
     def main(self, args, run=lambda crate: 0, sleep=lambda seconds: None):
         """`rolling.main` on `args`: the host is `bonfire`, `git rev-parse HEAD`
@@ -4185,6 +4376,7 @@ class Rolling(unittest.TestCase):
                 raise mutants.Refused("bonfire is busy (a half running)")
             if len(calls) == 3:
                 raise self.Stopped
+            self.fetched()
             return 0
 
         out = io.StringIO()
@@ -4515,9 +4707,18 @@ class Fetch(unittest.TestCase):
         `recheck` (lines caught, untested count): the finish's code and the
         fetched survivors file."""
         pend(local_half=False, extra=True, extra_only=True)
+        # The "nt" patch is scoped to the recheck, which runs after the
+        # finish's lock: a real `try_lock` under it would `import msvcrt`,
+        # which Linux lacks.
+        real_recheck = mutants.recheck_remote_extra
+
+        def in_windows(lines, tree):
+            with mock.patch.object(mutants.os, "name", "nt"):
+                return real_recheck(lines, tree)
+
         with (
-            mock.patch.object(mutants.os, "name", "nt"),
             mock.patch.object(mutants, "REMOTE_ONLY", False),
+            mock.patch.object(mutants, "recheck_remote_extra", in_windows),
             mock.patch.object(
                 mutants, "recheck_windows_extra", lambda lines, tree: recheck
             ),
@@ -4603,6 +4804,14 @@ class Fetch(unittest.TestCase):
             )
 
         real_summarize = mutants.summarize
+
+        def summarize(*a, **k):
+            probe("summary")
+            # The "nt" patch is scoped to the recheck's gate: a real `try_lock`
+            # under it would `import msvcrt`, which Linux lacks.
+            with mock.patch.object(mutants.os, "name", "nt"):
+                return real_summarize(*a, **k)
+
         with (
             lock_probes(self.root) as probe,
             mock.patch.object(
@@ -4610,16 +4819,12 @@ class Fetch(unittest.TestCase):
                 lambda *a, **k: probe("fetch") or fetch(*a, **k),
             ),
             mock.patch.object(mutants, "update_cost_cache", lambda *a, **k: None),
-            mock.patch.object(mutants.os, "name", "nt"),
             mock.patch.object(mutants, "REMOTE_ONLY", False),
             mock.patch.object(
                 mutants, "recheck_windows",
                 lambda missed, tree: probe("recheck") or set(),
             ),
-            mock.patch.object(
-                mutants, "summarize",
-                lambda *a, **k: probe("summary") or real_summarize(*a, **k),
-            ),
+            mock.patch.object(mutants, "summarize", summarize),
             contextlib.redirect_stdout(io.StringIO()),
         ):
             with mutants.run_lock(mutants.tree_lock_path()):
@@ -4634,6 +4839,37 @@ class Fetch(unittest.TestCase):
                 ("fetch", {"tree", "remote"}),
                 ("summary", {"tree"}), ("recheck", {"tree"}),
             ],
+        )
+
+    def test_the_extra_finish_holds_the_remote_lock_for_its_fetch(self):
+        """The extras-only finish's fetch is under the remote lock too, and
+        ends at it: the record's read, the recheck and the prints get the tree
+        lock alone."""
+        def fetch(host, partial=False, extra_only=False):
+            extra = self.root / "extra_mutants.out" / "remote" / "extra_mutants.out"
+            extra.mkdir(parents=True)
+            (extra / "run.json").write_text(
+                json.dumps({"crate": "cpk", "seconds": 1.0, "counts": {"caught": 1}}),
+                encoding="utf-8",
+            )
+
+        with (
+            lock_probes(self.root) as probe,
+            mock.patch.object(
+                mutants, "fetch_remote",
+                lambda *a, **k: probe("fetch") or fetch(*a, **k),
+            ),
+            mock.patch.object(
+                mutants, "recheck_remote_extra",
+                lambda lines, tree: probe("recheck") or (set(), 0),
+            ),
+            contextlib.redirect_stdout(io.StringIO()),
+        ):
+            with mutants.run_lock(mutants.tree_lock_path()):
+                code = mutants.finish_extra_run("bonfire", 0, tree="t")
+        self.assertEqual(code, 0)
+        self.assertEqual(
+            probe.calls, [("fetch", {"tree", "remote"}), ("recheck", {"tree"})]
         )
 
 
@@ -5072,6 +5308,10 @@ class GatesRemote(unittest.TestCase):
                 lock_probes(root) as probe,
                 mock.patch.object(mutants, "remote_host", lambda: "bonfire"),
                 mock.patch.object(
+                    mutants, "working_tree",
+                    lambda: probe("working_tree") or "t",
+                ),
+                mock.patch.object(
                     mutants, "remote_refusal", lambda host: probe("refusal") or None
                 ),
                 mock.patch.object(
@@ -5093,6 +5333,7 @@ class GatesRemote(unittest.TestCase):
         self.assertEqual(
             probe.calls,
             [
+                ("working_tree", set()),
                 ("refusal", {"remote"}), ("snapshot", {"remote"}),
                 ("transfer", {"remote"}), ("unit", {"remote"}),
                 ("clean", {"remote"}),
