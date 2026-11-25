@@ -262,9 +262,9 @@ JOBS = 2
 # sharing the CPUs the same way. That pass runs only the tests covering each
 # mutant, so a mutant's time is mostly its build, which runs nearly serially
 # (the crate's rustc, then its links), and at two jobs the remote's CPUs sit
-# partly idle. Not three: on `save_editor`, the heaviest crate, a third job's
-# pass filled the host's disk and reached the memory cap, so the pass keeps two
-# until what fills the disk is known.
+# partly idle. Not three: each job builds in a copy of its own, and on
+# `save_editor`, the heaviest crate, three copies' build folders beside the
+# coverage map's filled the host's disk.
 REMOTE_EXTRA_JOBS = 2
 # The baseline (a cold build and test of the mutated packages in a fresh copy
 # of the tree) of a crate no local run has measured yet: one measured run's
