@@ -109,24 +109,26 @@ def run_one(crate: str, host: str) -> int:
 
 
 def file_results(crate: str, commit: str, code: int) -> None:
-    """A finished run's local results moved under `ROLLING / crate`, the
-    crate's earlier run set aside, and `CURRENT` cleared."""
-    folder = ROLLING / crate
-    mutants.set_aside(folder)
-    folder.mkdir(parents=True, exist_ok=True)
-    out = ROOT / "mutants.out"
-    if out.exists():
-        out.rename(folder / "out")
-    # A whole run's fetch lands the extra pass's results beside the remote
-    # half's (`remote_extra_record`).
-    extra = folder / "out" / "remote" / "extra_mutants.out"
-    if extra.exists():
-        extra.rename(folder / "extra")
-    (folder / "exit.txt").write_text(f"{code}\n", encoding="utf-8", newline="\n")
-    (folder / "launched_from.txt").write_text(
-        f"{commit}\n", encoding="utf-8", newline="\n"
-    )
-    CURRENT.unlink(missing_ok=True)
+    """A finished run's local results moved under `ROLLING / crate` under the
+    tree lock (its callers hold none), the crate's earlier run set aside, and
+    `CURRENT` cleared."""
+    with mutants.run_lock(mutants.tree_lock_path()):
+        folder = ROLLING / crate
+        mutants.set_aside(folder)
+        folder.mkdir(parents=True, exist_ok=True)
+        out = ROOT / "mutants.out"
+        if out.exists():
+            out.rename(folder / "out")
+        # A whole run's fetch lands the extra pass's results beside the remote
+        # half's (`remote_extra_record`).
+        extra = folder / "out" / "remote" / "extra_mutants.out"
+        if extra.exists():
+            extra.rename(folder / "extra")
+        (folder / "exit.txt").write_text(f"{code}\n", encoding="utf-8", newline="\n")
+        (folder / "launched_from.txt").write_text(
+            f"{commit}\n", encoding="utf-8", newline="\n"
+        )
+        CURRENT.unlink(missing_ok=True)
 
 
 def recover(host: str) -> None:

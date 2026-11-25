@@ -60,9 +60,11 @@ ROOT = Path(__file__).resolve().parents[2]
 RESULTS = ROOT / "mutants.diff"
 # The crates' commits of record for a `--closure` run's diffs, written by `--checked`.
 CHECKED = ROOT / ".cargo" / "mutants_checked.toml"
-# The longest a diff run's crates run here, in total, while another run's half is on the
-# VPS. Not unbounded: this run holds the run lock throughout, that half's collect waits for
-# it, and the VPS stays idle meanwhile; two hours of that idle is what the maintainer allows.
+# The longest a diff run's crates run here, in total, while this tree's own
+# half is on the VPS (`mutants.remote_pending`). Not unbounded: this run
+# holds its tree's lock throughout, that half's collect waits for it, and the
+# VPS stays idle meanwhile; two hours of that idle is what the maintainer
+# allows. Another tree's half waits for nothing of this run: no cap then.
 BUSY_LOCAL_LIMIT_SECONDS = 7200
 # A crate run here estimated past this runs as cargo-mutants shards of about this length
 # (`sharded_run`), each kept as it ends: an interruption (a restart, a crash) then loses
@@ -242,14 +244,18 @@ def diff_run(diff: bytes, tree: str, where: str, codes: Iterable[int] = ()) -> i
         print(f"mutants_diff: no changes {where}")
         # Nothing to measure, and an older run's results never stand as this one's; moved in
         # this run's turn, since a run in progress writes them.
-        with mutants.run_lock():
+        with mutants.run_lock(mutants.tree_lock_path()):
             mutants.set_aside(RESULTS)
         return mutants.run_code([0, *codes])
     with tempfile.NamedTemporaryFile("wb", suffix=".diff", delete=False) as f:
         f.write(diff)
         diff_path = f.name
     try:
-        with mutants.run_lock(), mutants.snapshot_source(tree) as source:
+        with (
+            mutants.run_lock(mutants.tree_lock_path()),
+            mutants.run_lock(),
+            mutants.snapshot_source(tree) as source,
+        ):
             return mutants.run_code([run(diff_path, tree, source, diff), *codes])
     finally:
         os.unlink(diff_path)
@@ -371,8 +377,8 @@ def run_crate(
     """Runs one crate's mutants of the diff: on the remote whole (`REMOTE_ONLY`),
     split, or here — here too while the remote is busy: a whole-crate run holds
     it for days. `busy["seconds"]` totals the estimates this run has run here
-    while another run's half was on the remote, across its crates: past
-    `BUSY_LOCAL_LIMIT_SECONDS` a crate is left untested."""
+    while this tree's own half was on the remote (`mutants.remote_pending`),
+    across its crates: past `BUSY_LOCAL_LIMIT_SECONDS` a crate is left untested."""
     busy = Counter() if busy is None else busy
     selection = ["--in-diff", diff_path, "-p", crate]
     estimated = mutants.estimate_seconds([crate] * count)
@@ -386,14 +392,23 @@ def run_crate(
         if state == "none":
             half = mutants.estimate_seconds([crate] * count, share=0.5)
             print(f"mutants_diff: split, about {half:.0f} s a side, plus the transfer and polling")
-            return mutants.split(selection, host, tree, source)
-        if state is not None:
+            try:
+                return mutants.split(selection, host, tree, source)
+            except mutants.Refused:
+                state = mutants.remote_run_state(host)
+                if state in (None, "none"):
+                    # Not a busy host: a version or disk refusal fails as before.
+                    raise
+                # Another run took the host since the probe: run here, as below.
+        # The cap counts only this tree's own half (`remote_pending`): another
+        # tree's waits for nothing of this run.
+        if state is not None and mutants.remote_pending().exists():
             if busy["seconds"] + estimated > BUSY_LOCAL_LIMIT_SECONDS:
                 raise mutants.Refused(
                     f"{host} is busy (a remote half {state}) and {crate} would bring this "
                     f"run's time here past {BUSY_LOCAL_LIMIT_SECONDS // 60} min: left untested. "
-                    "That half's collect waits for this run's lock, so the VPS would sit idle "
-                    "as long; rerun the crate once the VPS is free"
+                    "That half's collect waits for this tree's lock, so the VPS would sit "
+                    "idle as long; rerun the crate once the VPS is free"
                 )
             busy["seconds"] += estimated
         print(
