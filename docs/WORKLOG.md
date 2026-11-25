@@ -802,9 +802,17 @@ and no phase closes with one outstanding.
           - [x] **lock** 2026-11-25 `5e247656` (merged `5dd07b00`): the run lock splits into a
             tree's, the builds', the VPS's and the cost table's (RUNBOOK "Mutation runs and the
             VPS"), so a long diff run from a second worktree runs beside the rolling job; the
-            test module fails any test that reaches ssh. Its SWE-2 round (four parts) is owed;
+            test module fails any test that reaches ssh. Its SWE-2 round (four parts) accepted
+            a split that could send another tree's snapshot, a refused split ending the whole
+            diff run, and tests that pass with a lock removed (`.tmp/lock/rulings_code_r1.md`);
+            rework 2 fixes them, then one SWE-2 round over it, then item `deep`;
           - [ ] **split** [after local] the same for a split's local half: its shards a
             round-robin subset of the split's `0/2` (`0/2n`, `2/2n`, …);
+        - [ ] **deep** [after shards/lock, shards/rename, orphans] 2026-11-25 (the maintainer): the mutation
+          machinery is reviewed at Tier 1's depth (RUNBOOK "Review rounds" (e)). Carbon's loop
+          over `scripts/mutation/` whole, in parts, then Astra's, each paid round between SWE-2
+          subloops. After the open fixes to the same files, so no paid round reads code about
+          to change;
       - [x] **review** 2026-11-24 `13e68e44`: one paid cross-family round (Carbon) over
         `backend` and `parity`, beyond the SWE-2 loop a script gets, because this code decides
         every mutant's outcome. 10 of 13 concerns accepted (a lost console still caught on a

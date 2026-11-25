@@ -962,7 +962,10 @@ catches because the gates run through it. The list: the mutation runs' `mutants.
 `release.py`, `build_remapped.py` and `make_candidate.py`. Their review is SWE-2 rounds at
 least (the same loop, until the round rule below ends it), Astra when a change reshapes how
 a run measures; the first review of each covers the whole script, later ones the changed
-functions and their callers. Unreviewed, `mutants_diff.py` once deleted the previous run's
+functions and their callers. The mutation machinery, `scripts/mutation/`, gets Tier 1's
+three loops instead: its runs share two machines, four locks and state that resumes, so a
+race there (a split sending another tree's snapshot) misreports a crate's outcomes with every
+test green. Unreviewed, `mutants_diff.py` once deleted the previous run's
 results whenever two runs followed each other. A test a
 change adds to one is shown to fail by `scripts/review/perturb_check.py` (a list of perturbations,
 each with its test, applied and undone one at a time).
@@ -991,7 +994,7 @@ debugs from, so a wrong one misleads the fix): the three loops above. *Tier 2*, 
 loop, then one round of one paid reviewer, which runs again only by the round rule.
 *Tier 3*, scripts, CI, documents and drafts: one SWE-2 round, a second only by that rule (a
 vital script, (e) above, keeps its own: SWE-2 rounds at least, Astra when a change reshapes
-how a run measures). A step's worklog line names its tier when it lands. A loop that waits
+how a run measures; the mutation machinery, Tier 1's three loops). A step's worklog line names its tier when it lands. A loop that waits
 for its reviewer's usage stays queued until the usage comes back: the limits reset weekly at
 most, so the wait is bounded, and dropping the loop would lose its first round, the one that
 finds the most. We do not give every slice the full stack: ten loops were once queued, some over code a week old, while it was the first rounds
