@@ -141,17 +141,25 @@ in-game checks on the Fox versions and a restart of this machine for an update, 
 failure here kills hours of a local half's progress, while the VPS rarely goes down.
 The run refuses when `STUDIO_MUTANTS_REMOTE` names no host, and for a crate in
 `LOCAL_ONLY_CRATES`; its extra kinds run on the VPS in the same service before
-cargo-mutants and their results come home with the fetch. It holds the run lock only
-while it launches and while it fetches and summarizes, never while it waits
-(`just mutants-collect` waits the same way), so `just mutants-diff` runs while a whole
-run is under way: it keeps the split below, a round's diff being minutes and its result
-waited on, except while a mutation half is on the VPS (running, or ended and not collected)
-or the VPS cannot be reached, when it runs entirely on this
-machine instead of waiting days for its turn there, up to a limit: with a half on the VPS,
-a crate that would take the run's total time here past `BUSY_LOCAL_LIMIT_SECONDS` (two hours, the VPS idle time the maintainer allows)
-is left untested, and the run says so. The diff holds the run lock throughout and the half's
-fetch waits for it, so the VPS sits idle as long as the diff runs here. A crate left untested
-is run again once the VPS is free. A crate run here that is estimated past `SHARD_SECONDS`
+cargo-mutants and their results come home with the fetch.
+
+The runs share four locks, always taken in this order: the tree's own
+(`.tmp/mutants.tree.lock`) for its result folders and records, the build lock for any run
+that builds on this machine, the remote lock for the VPS, and the cost table's. A whole
+run takes its tree's lock and the remote's to launch, and to fetch; the remote lock ends at
+the fetch, and the summary and its Windows rechecks run under the tree's alone. It never
+takes the build lock, and it holds nothing while it waits (`just mutants-collect` waits
+the same way). So `just mutants-diff` runs while a whole run is under way: it keeps the
+split below, a round's diff being minutes and its result waited on, except while a
+mutation half is on the VPS (running, or ended and not collected) or the VPS cannot be
+reached, when it runs entirely on this machine instead of waiting days for its turn there.
+Started from another worktree than the whole run's, it runs here as long as it needs and
+the VPS waits for nothing of it: a long diff run goes to a worktree under
+`4cc-studio-temp/`. In the whole run's own tree, the diff holds the tree's lock throughout
+and that half's fetch waits for it, so there a crate that would take the run's total time
+here past `BUSY_LOCAL_LIMIT_SECONDS` (two hours, the VPS idle time the maintainer allows)
+is left untested, the run says so, and the crate is run again once the VPS is free. A
+`just gates-remote` holds the remote lock for its whole run. A crate run here that is estimated past `SHARD_SECONDS`
 (half an hour) runs as cargo-mutants shards (`--shard`) of about that length, each kept in
 `mutants.shards/<crate>/` as it ends. After an interruption, the same command goes on from
 the first shard not done, unless the working tree changed in between, which starts the
@@ -258,11 +266,11 @@ Windows agent that holds the key. **A run snapshots the working tree when its co
 listing, the config and the local half read a copy of it extracted under the temp folder
 (`mutants.snapshot_source`), never the working tree, so
 edits and merges are safe once the run has started, every crate of one `mutants-diff`
-included. **One run at a time, each queued with its snapshot**: `just mutants`,
-`mutants-diff` and `extra-mutants` snapshot first, then take the user's lock (`mutants.lock`
-beside the cost table, so a worktree's run queues too) for the run's whole length
-(`mutants.run_lock`; a whole run and `mutants-collect` let go of it while they wait on the
-VPS, above), so a run launched while another is under way waits
+included. **One run building here at a time, each queued with its snapshot**: `just mutants`,
+`mutants-diff` and `extra-mutants` snapshot first, then take the locks above (the build
+lock, `mutants.lock` beside the cost table, makes a worktree's run that builds here queue
+too; a whole run takes the tree's and the remote's instead, and lets go of them while it
+waits on the VPS), so a run launched while another is under way waits
 its turn with the tree it was launched on, and edits and merges are safe while it waits. Runs
 are launched as separate commands, never chained: a chain's later run snapshots only when
 the one before ends, and a run queued that way once snapshotted a half-edited crate and had
