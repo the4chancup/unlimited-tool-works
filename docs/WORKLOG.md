@@ -809,11 +809,20 @@ and no phase closes with one outstanding.
           with every test below 6 GB, and the cgroup's OOM kill took a test of
           `kit_magic.rs:287:16` (`+=` to `-=` in `token_markers`) at 3.7 GB after 61 s, which
           counted it as caught (its log, on the VPS only: a caught mutant's log is not
-          fetched, says `SIGKILL`). Its catch is owed a recheck on the VPS beside
-          `utf.rs:405:49`; the rest of the run stands (one kill, no other log names a
-          `SIGKILL`). Find what the processes summed to (parallel tests of one mutant, two
-          workers, a build beside them) and bound it, or make a kill not by the test's own cap
-          leave its mutant untested;
+          fetched, says `SIGKILL`). Its catch is owed a recheck here, as the fix would make
+          it; the rest of the run stands (one kill, no other log names a `SIGKILL`). The
+          cause: each worker runs its mutant's tests `cpus // JOBS` at a time, each under its
+          own cap, so one mutant whose allocation runs away in code several tests share can
+          pass the unit's cap with every test under 6 GB. The fix (DECISIONS 2026-11-26 "a
+          test the OOM killer ends leaves its mutant untested"): in a run whose
+          `memory_events` counts an `oom_kill`, a mutant whose log has a test ended by
+          `SIGKILL` is not filed caught but rechecked here when the run is filed, beside the
+          Windows-only rechecks, and takes that recheck's outcome; the VPS's caps stay as
+          they are. A retest on the VPS would most likely meet the same kill. A test its
+          `prlimit` cap stops aborts (`SIGABRT`), and nothing else on the VPS sends a test
+          `SIGKILL` (no nextest `terminate-after`; a power-off is a dead half), so the signal
+          tells the two apart. Caught mutants' logs stay on the VPS, so the job reads them
+          there;
         - [ ] **shards** (the maintainer's idea, 2026-11-25) a long run here survives an
           interruption, losing one shard rather than the whole run:
           - [x] **local** 2026-11-25 `c0a34ad3`, `673c8b11`: a diff crate run here past
