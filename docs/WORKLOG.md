@@ -805,7 +805,8 @@ and no phase closes with one outstanding.
             test module fails any test that reaches ssh. Its SWE-2 round (four parts) accepted
             a split that could send another tree's snapshot, a refused split ending the whole
             diff run, and tests that pass with a lock removed (`.tmp/lock/rulings_code_r1.md`);
-            rework 2 fixes them, then one SWE-2 round over it, then item `deep`;
+            rework 2 fixed them (`3492e4c5`, merged `fb4b68bb`). One SWE-2 round over rework 2
+            is owed, then item `deep`;
           - [ ] **split** [after local] the same for a split's local half: its shards a
             round-robin subset of the split's `0/2` (`0/2n`, `2/2n`, …);
         - [ ] **deep** [after shards/lock, shards/rename, orphans] 2026-11-25 (the maintainer): the mutation
