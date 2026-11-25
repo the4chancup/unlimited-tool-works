@@ -1499,7 +1499,7 @@ class PendingRemote(unittest.TestCase):
             ),
             contextlib.redirect_stdout(io.StringIO()),
         ):
-            self.assertEqual(mutants.collect("bonfire"), (1, False))
+            self.assertEqual(mutants.collect("bonfire"), (1, "none"))
         self.assertFalse(pending.exists())
         self.assertEqual(
             probe.calls, [("state", set()), ("state", {"tree", "remote"})]
@@ -1640,9 +1640,10 @@ class RunQueue(unittest.TestCase):
             with mock.patch.object(mutants, "remote_host", lambda: "bonfire"), \
                     mock.patch.object(
                         mutants, "collect",
-                        lambda *_: events.append("run") or (0, False),
+                        lambda *_: events.append("run") or (2, "finished"),
                     ):
-                mutants.main(["mutants.py", "--collect"])
+                # The collect's code is `main`'s.
+                self.assertEqual(mutants.main(["mutants.py", "--collect"]), 2)
 
         self.assertEqual(self.order(call), ["run"])
 
@@ -2438,6 +2439,7 @@ class SplitShares(unittest.TestCase):
 exec > ../run/log 2>&1
 start=$(date +%s)
 export TMPDIR="$HOME/studio-mutants/tmp" && mkdir -p "$TMPDIR"
+export CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_RUNNER="prlimit --data=6442450944 --"
 . ~/.cargo/env && cargo-mutants mutants -p cpk --list --json --config ../mutants.remote.toml > ../run/mutants.json
 nice -n 19 ionice -c3 python3 scripts/mutation/coverage_map.py cpk ../run/selection.json --mutants ../run/mutants.json --extra
 echo "coverage map exit $?"
@@ -2524,6 +2526,25 @@ echo "$code $(( $(date +%s) - start ))" > ../run/exit
                 "--selection", "CARGO_BUILD_JOBS",
             ):
                 self.assertNotIn(text, job)
+
+    def test_the_test_runner_export_stands_before_every_command(self):
+        """The per-test memory cap's runner is exported with the job's
+        environment, before the `. ~/.cargo/env` line that precedes every
+        command: the extra pass and cargo-mutants' tests run capped, in every
+        job form, while rustc, cargo and the coverage map's own runs do
+        not."""
+        for job in (
+            self.job(whole=True, local_half=False, extra=True),
+            self.job(whole=False),
+            self.job(whole=True, extra=False, extra_only=True, kinds=["call"]),
+        ):
+            self.assertIn(
+                "CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_RUNNER", job
+            )
+            self.assertLess(
+                job.index("CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_RUNNER"),
+                job.index(". ~/.cargo/env"),
+            )
 
     def test_the_launch_cleanup_removes_the_last_runs_selection_files(self):
         """`run/mutants.json` and `run/selection.json` are removed with the
@@ -4359,7 +4380,7 @@ class Rolling(unittest.TestCase):
         def collect(host):
             collected.append(host)
             self.fetched()
-            return 2, False
+            return 2, "finished"
 
         for record, expect in (
             ({"host": "bonfire", "local_half": True, "extra": False}, []),
@@ -4383,18 +4404,13 @@ class Rolling(unittest.TestCase):
         )
         self.assertTrue((kept / "extra" / "run.json").exists())
 
-    def test_a_recovered_died_half_is_filed_without_dating_the_crate(self):
-        """A collect that found the remote half dead files its partial results
-        but writes no `launched_from.txt`: a dated crate would go to the back
-        of the queue untested, an undated one comes up at the next pick."""
+    def recover_with(self, collect) -> tuple[bool, str]:
+        """`rolling.recover("bonfire")` with `current.txt` naming cpk, a whole
+        run's launch record pending and `collect` as `mutants.collect`.
+        Returns recover's result and its output."""
         pending = self.root / ".tmp" / "mutants-remote-pending"
         pending.parent.mkdir(parents=True)
         pending.write_text("{}", encoding="utf-8")
-
-        def collect(host):
-            self.fetched()
-            return 1, True
-
         self.results.mkdir(exist_ok=True)
         rolling.CURRENT.write_text(f"cpk {self.COMMIT}\n", encoding="utf-8")
         out = io.StringIO()
@@ -4407,7 +4423,19 @@ class Rolling(unittest.TestCase):
             mock.patch.object(mutants, "collect", collect),
             contextlib.redirect_stdout(out),
         ):
-            rolling.recover("bonfire")
+            result = rolling.recover("bonfire")
+        return result, out.getvalue()
+
+    def test_a_recovered_died_half_is_filed_without_dating_the_crate(self):
+        """A collect that found the remote half dead files its partial results
+        but writes no `launched_from.txt`: a dated crate would go to the back
+        of the queue untested, an undated one comes up at the next pick."""
+
+        def collect(host):
+            self.fetched()
+            return 1, "died"
+
+        _, out = self.recover_with(collect)
         kept = self.results / "cpk"
         self.assertEqual((kept / "exit.txt").read_text(encoding="utf-8"), "1\n")
         self.assertTrue(
@@ -4415,7 +4443,7 @@ class Rolling(unittest.TestCase):
         )
         self.assertFalse((kept / "launched_from.txt").exists())
         self.assertFalse(rolling.CURRENT.exists())
-        self.assertIn("picked again", out.getvalue())
+        self.assertIn("picked again", out)
         # With no date of its own the crate comes before one just checked.
         self.assertEqual(
             rolling.pick(
@@ -4424,6 +4452,35 @@ class Rolling(unittest.TestCase):
             ),
             "cpk",
         )
+
+    def test_a_recover_that_found_nothing_files_nothing(self):
+        """`collect` answering `"none"` (nothing on the host to collect)
+        files nothing (a `mutants.out` standing in the tree is some earlier
+        run's, and stays) and clears `current.txt` so the turn goes on."""
+        self.fetched()
+        result, out = self.recover_with(lambda host: (1, "none"))
+        self.assertIs(result, True)
+        self.assertTrue(
+            (self.root / "mutants.out").exists(),
+            "the stale results were filed as the crate's run",
+        )
+        self.assertFalse((self.results / "cpk").exists())
+        self.assertFalse(rolling.CURRENT.exists())
+        self.assertIn("nothing", out)
+
+    def test_a_recover_that_cannot_reach_the_host_retries_next_turn(self):
+        """`collect` answering `None` (the host cannot be reached) files
+        nothing and keeps `current.txt`, so the next turn's recover collects
+        the half the first time the host answers: the powered-down VPS comes
+        back to a job that never wedges on its uncollected half."""
+        self.fetched()
+        result, out = self.recover_with(lambda host: (1, None))
+        self.assertIs(result, False)
+        self.assertEqual(
+            rolling.CURRENT.read_text(encoding="utf-8"), f"cpk {self.COMMIT}\n"
+        )
+        self.assertFalse((self.results / "cpk").exists())
+        self.assertIn("cannot be reached", out)
 
     def run_one(self, produce=lambda: None, code=0, error=None):
         """`rolling.run_one("cpk", "bonfire")` with `git rev-parse HEAD`
@@ -4595,11 +4652,14 @@ class Rolling(unittest.TestCase):
         self.assertFalse(rolling.CURRENT.exists())
         self.assertIn("no mutants.out", out.getvalue())
 
-    def main(self, args, run=lambda crate: 0, sleep=lambda seconds: None):
+    def main(
+        self, args, run=lambda crate: 0, sleep=lambda seconds: None, recover=None
+    ):
         """`rolling.main` on `args`: the host is `bonfire`, `git rev-parse HEAD`
         answers COMMIT, `whole_run` is `run` per crate (its calls returned), the
-        waits are `sleep` and every commit dates at 0. Returns the code, the
-        crates run and the output. A loop past 20 waits is stopped: the job
+        waits are `sleep`, `recover` replaces the turn's own (`None`: the real
+        one) and every commit dates at 0. Returns the code, the crates run and
+        the output. A loop past 20 waits is stopped: the job
         prints a failed assertion in a stub and goes on, so it would spin."""
         calls = []
         waits = []
@@ -4618,6 +4678,7 @@ class Rolling(unittest.TestCase):
         with (
             mock.patch.object(mutants, "remote_host", lambda: "bonfire"),
             mock.patch.object(mutants, "whole_run", whole_run),
+            mock.patch.object(rolling, "recover", recover or rolling.recover),
             mock.patch.object(
                 mutants, "git",
                 lambda *a, **k: subprocess.CompletedProcess(a, 0, stdout=self.COMMIT),
@@ -4706,6 +4767,38 @@ class Rolling(unittest.TestCase):
         ):
             self.main([], run=counted)
         self.assertEqual(calls, ["cpk", "cpk"])
+
+    def test_a_failed_recover_skips_the_turns_pick_and_retries(self):
+        """`recover` returning False (the host cannot be reached) ends the
+        turn: no pick, no run, one `RETRY_MINUTES` sleep, and the next turn's
+        recover tries again. `--once` returns 1 on it."""
+        recovers, sleeps, calls = [], [], []
+
+        def recover(host):
+            recovers.append(host)
+            return len(recovers) == 2
+
+        def run(crate):
+            calls.append(crate)
+            if len(calls) == 4:
+                raise self.Stopped
+            return 0
+
+        def sleep(seconds):
+            sleeps.append(seconds)
+            if len(sleeps) == 3:
+                raise self.Stopped
+
+        with self.assertRaises(self.Stopped):
+            self.main([], recover=recover, run=run, sleep=sleep)
+        # Each False recover ended its turn before the pick: only the one True
+        # turn ran a crate, each skip costing one retry sleep.
+        self.assertEqual(calls, ["cpk"])
+        self.assertEqual(sleeps, [rolling.RETRY_MINUTES * 60] * 3)
+        self.assertEqual(len(recovers), 4)
+        code, once_calls, _ = self.main(["--once"], recover=lambda host: False)
+        self.assertEqual(code, 1)
+        self.assertEqual(once_calls, [])
 
     def test_once_runs_a_single_crate_and_returns_its_code(self):
         code, calls, _ = self.main(["--once"], run=lambda crate: 2)
@@ -5249,7 +5342,7 @@ class CollectRemote(unittest.TestCase):
             mock.patch.object(mutants, "summarize", lambda *a, **k: probe("summary") or 0),
             contextlib.redirect_stdout(io.StringIO()),
         ):
-            self.assertEqual(mutants.collect("bonfire"), (0, False))
+            self.assertEqual(mutants.collect("bonfire"), (0, "finished"))
         self.assertEqual(
             probe.calls,
             [
@@ -5299,7 +5392,7 @@ class CollectRemote(unittest.TestCase):
             ),
             contextlib.redirect_stdout(io.StringIO()),
         ):
-            self.assertEqual(mutants.collect("bonfire"), (1, False))
+            self.assertEqual(mutants.collect("bonfire"), (1, "finished"))
         self.assertEqual(finished["fetch"], {"partial": False, "extra_only": True})
         self.assertEqual(finished["args"], ("bonfire", 2))
         self.assertEqual(
@@ -5332,7 +5425,7 @@ class CollectRemote(unittest.TestCase):
             ),
             contextlib.redirect_stdout(io.StringIO()),
         ):
-            self.assertEqual(mutants.collect("bonfire"), (1, True))
+            self.assertEqual(mutants.collect("bonfire"), (1, "died"))
         self.assertEqual(finished["fetch"], {"partial": True, "extra_only": True})
         self.assertEqual(finished["args"], ("bonfire", 1))
         self.assertEqual(
@@ -5368,7 +5461,7 @@ class CollectRemote(unittest.TestCase):
                     ),
                     contextlib.redirect_stdout(io.StringIO()),
                 ):
-                    self.assertEqual(mutants.collect("bonfire"), (1, True))
+                    self.assertEqual(mutants.collect("bonfire"), (1, "died"))
                 self.assertTrue(finished["fetch"]["partial"])
                 self.assertFalse(finished["fetch"]["extra_only"])
                 self.assertTrue(finished["kwargs"]["partial"])
@@ -5421,7 +5514,7 @@ class CollectRemote(unittest.TestCase):
             ),
             contextlib.redirect_stdout(out),
         ):
-            self.assertEqual(mutants.collect("bonfire"), (1, False))
+            self.assertEqual(mutants.collect("bonfire"), (1, "none"))
         self.assertIn("names no tree", out.getvalue())
         self.assertIn("mutants-remote-pending", out.getvalue())
 
@@ -5439,7 +5532,7 @@ class CollectRemote(unittest.TestCase):
             ),
             contextlib.redirect_stdout(out),
         ):
-            self.assertEqual(mutants.collect("bonfire"), (1, False))
+            self.assertEqual(mutants.collect("bonfire"), (1, "none"))
         self.assertIn("names no tree", out.getvalue())
         self.assertIn(str(pending), out.getvalue())
 
@@ -5504,7 +5597,7 @@ class CollectRemote(unittest.TestCase):
             mock.patch.object(extra_mutants, "run_crate", run_crate),
             contextlib.redirect_stdout(io.StringIO()),
         ):
-            self.assertEqual(mutants.collect("bonfire"), (2, False))
+            self.assertEqual(mutants.collect("bonfire"), (2, "finished"))
         self.assertEqual(trees, ["launchtree", "launchtree"])
 
     def test_with_no_record_the_rechecks_run_on_the_remote_clones_checkout(self):
@@ -5526,7 +5619,7 @@ class CollectRemote(unittest.TestCase):
             ),
             contextlib.redirect_stdout(io.StringIO()),
         ):
-            self.assertEqual(mutants.collect("bonfire"), (0, False))
+            self.assertEqual(mutants.collect("bonfire"), (0, "finished"))
         self.assertEqual(trees, ["clonetree"])
 
     def stale_local_run(self) -> None:
@@ -5608,8 +5701,20 @@ class CollectRemote(unittest.TestCase):
             ),
             contextlib.redirect_stdout(out),
         ):
-            self.assertEqual(mutants.collect("bonfire"), (1, False))
+            self.assertEqual(mutants.collect("bonfire"), (1, "none"))
         self.assertIn("already collected", out.getvalue())
+
+    def test_an_unreachable_host_reports_the_state_it_found(self):
+        """`remote_run_state` answering None (the host cannot be reached) is
+        the one collect outcome a caller retries later, so it comes back as
+        None, not `"none"`: the rolling job keeps `current.txt` on it."""
+        out = io.StringIO()
+        with (
+            mock.patch.object(mutants, "remote_run_state", lambda host: None),
+            contextlib.redirect_stdout(out),
+        ):
+            self.assertEqual(mutants.collect("bonfire"), (1, None))
+        self.assertIn("cannot reach", out.getvalue())
 
 
 class RemoteRefusal(unittest.TestCase):
