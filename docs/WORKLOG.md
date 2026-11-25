@@ -790,7 +790,15 @@ and no phase closes with one outstanding.
             not `--iterate`, which a second interruption would rob of the first part's
             outcomes. One SWE-2 round: 5 of 10 accepted, fixed in `673c8b11`. Check on the
             first real long run here (with `STUDIO_MUTANTS_REMOTE` empty while a VPS half is
-            out, since the cap of `BUSY_LOCAL_LIMIT_SECONDS`, two hours, still holds);
+            out, since the cap of `BUSY_LOCAL_LIMIT_SECONDS`, two hours, still holds).
+            Checked 2026-11-25 on CATCHUP's `studio_core` (532 mutants, 4 shards, each kept as
+            it ended); its end failed, item `rename`;
+          - [ ] **rename** 2026-11-25: after `studio_core`'s 4 shards, `mutants_diff.run`'s
+            rename of the root's `mutants.out` into `mutants.diff/studio_core` failed with
+            `PermissionError` (WinError 5) and crashed the run, so `team_compiler` and
+            `team_widgets` never started; the same move by hand a minute later worked (a
+            transient handle, likely the antivirus or an indexer). The results' moves retry a
+            `PermissionError` for a short while, then fail naming the folder, with a test;
           - [x] **lock** 2026-11-25 `5e247656` (merged `5dd07b00`): the run lock splits into a
             tree's, the builds', the VPS's and the cost table's (RUNBOOK "Mutation runs and the
             VPS"), so a long diff run from a second worktree runs beside the rolling job; the
