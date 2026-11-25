@@ -309,7 +309,9 @@ finishes its crate and waits; delete it and it goes on. A run the VPS refuses
 (the job was stopped, or its wait on the VPS failed) is collected and filed under its crate
 before the job picks its next crate, so a stopped job is just started again. When that run's
 VPS half died (the VPS was rebooted under it), its partial results are filed with no
-`launched_from.txt`, so the crate is not dated and comes up again.
+`launched_from.txt`, so the crate is not dated and comes up again. While the VPS cannot be
+reached, the job keeps the lost run's record and tries the collect again each turn, running
+no other crate meanwhile.
 
 **When the maintainer's PC is suspect, the heavy runs go to the VPS.** Four
 `MEMORY_MANAGEMENT` bugchecks there (the last during a run, all four in `rustc.exe` at one

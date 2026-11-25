@@ -9,7 +9,10 @@ jobs = -2
 # forever) pages until the commit limit runs out and an unrelated process fails
 # instead. The runner wraps every binary `cargo test`/`run`/`bench` launches in
 # a 6 GB per-process Job Object so it fails its own allocation and aborts alone.
-# Linux needs none: the kernel OOM-kills, and the VPS half runs memory-capped.
+# Linux needs none here: the kernel OOM-kills. The VPS mutation job gives its
+# tests the same 6 GB cap through a runner of its own (`REMOTE_TEST_MEMORY` in
+# scripts/mutation/mutants.py), since one test's OOM kill there also took the
+# other worker's build.
 [target.'cfg(windows)']
 runner = ["scripts/gates/test_runner.cmd", "6G"]
 

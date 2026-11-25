@@ -787,17 +787,20 @@ and no phase closes with one outstanding.
           from the hypervisor mid `color_tools`, and `rolling.recover` would have dated the
           crate from a dead half that tested no mutant of the main pass. `collect` returns
           whether the half died (before it or during its wait), and `recover` files the
-          partial results with no `launched_from.txt`. Its SWE-2 round is owed (with `oom`);
+          partial results with no `launched_from.txt`. Its SWE-2 round (with `oom`) accepted
+          3: a collect that collected nothing (the VPS unreachable) still dropped the turn's
+          record and wedged the job, and an untested exit code; fixed in `8d935432` (merged
+          `315e5fa8`), ending the loop (`.tmp/fixes/rulings_oomdied.md`);
         - [x] **oom** 2026-11-25 `57f88d90` (merged `8f1eb160`): a kernel OOM kill, which a
           mutant counts as caught, went unseen without `sudo journalctl -k`. The job copies
           the unit's `memory.events`, and a fetch with `oom_kill` above zero prints it and
           writes `oom_kills.txt` beside the results;
-        - [ ] **memcap** 2026-11-25: in `cpk`'s rolling run a mutant's test grew to 14.6 GB, the
-          unit's cap, and the cgroup's OOM kill also took the other worker's `cargo metadata`,
-          leaving `utf.rs:405:49` untested (listed, owed a rerun on the VPS). Windows caps each
-          test process at 6 GB (`test_runner.cmd`), so the allocating test fails alone; give
-          the VPS's test processes the same cap (the Linux target's runner, or a `prlimit` in
-          the job), never cargo's or rustc's;
+        - [x] **memcap** 2026-11-25 `8d935432` (merged `315e5fa8`): in `cpk`'s rolling run a
+          mutant's test grew to 14.6 GB, the unit's cap, and the cgroup's OOM kill also took
+          the other worker's `cargo metadata`, leaving `utf.rs:405:49` untested (owed a rerun
+          on the VPS). The job runs each test under `prlimit --data` at Windows' 6 GB
+          (`REMOTE_TEST_MEMORY`, through the Linux target's runner), so it aborts alone;
+          checked on the VPS with nextest beforehand;
         - [ ] **shards** (the maintainer's idea, 2026-11-25) a long run here survives an
           interruption, losing one shard rather than the whole run:
           - [x] **local** 2026-11-25 `c0a34ad3`, `673c8b11`: a diff crate run here past

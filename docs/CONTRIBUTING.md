@@ -336,7 +336,9 @@ binary peaks under 0.5 GB (`pes_savefile`, 2026-09-29). rustc is not capped, so 
 turn a mutant unviable. The VPS mutation unit's `MemoryMax` (the host's available memory less
 1 GiB, `remote_memory_max` in `scripts/mutation/mutants.py`) is another kind of cap: it covers
 the whole run (builds, both workers, page cache), this one each test binary alone. Linux relies
-on the kernel's OOM killer.
+on the kernel's OOM killer, except in that unit: its job runs each test under `prlimit --data`
+at the same 6 GB (`REMOTE_TEST_MEMORY`), since the cgroup's kill of one runaway test also took
+the other worker's build.
 
 The `.cmd` runs the compiled runner, `utw-test-runner` (`crates/dev/test_runner`), when it is
 installed in cargo's bin folder, and `scripts/gates/test_runner.py` otherwise, as on CI. Install
