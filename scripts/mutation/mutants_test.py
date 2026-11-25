@@ -2015,6 +2015,7 @@ class SplitShares(unittest.TestCase):
             ". ~/.cargo/env && nice -n 19 ionice -c3 python3 "
             "scripts/mutation/coverage_map.py cpk ../run/selection.json --extra\n"
             'echo "coverage map exit $?"\n'
+            "rm -rf target/llvm-cov-target\n"
             "nice -n 19 ionice -c3 python3 scripts/mutation/"
             "mutants.py --remote-extra cpk call "
             "--selection ../run/selection.json\ncode=$?\n",
@@ -2036,6 +2037,7 @@ export TMPDIR="$HOME/studio-mutants/tmp" && mkdir -p "$TMPDIR"
 . ~/.cargo/env && cargo-mutants mutants -p cpk --list --json --config ../mutants.remote.toml > ../run/mutants.json
 nice -n 19 ionice -c3 python3 scripts/mutation/coverage_map.py cpk ../run/selection.json --mutants ../run/mutants.json --extra
 echo "coverage map exit $?"
+rm -rf target/llvm-cov-target
 nice -n 19 ionice -c3 python3 scripts/mutation/mutants.py --remote-extra cpk --selection ../run/selection.json
 echo "extra pass exit $?"
 if [ -f ../run/selection.json ]; then

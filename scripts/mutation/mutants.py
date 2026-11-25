@@ -1029,7 +1029,7 @@ def launch_remote(
     lists the crate's mutants and builds the coverage map from them —
     which tests cover each listed mutant's lines, the extra kinds' included
     (`coverage_map.py --mutants --extra`, logging `coverage map exit
-    <code>`) — then runs the extra kinds on it (`--remote-extra --selection`,
+    <code>`, then removing its instrumented build) — then runs the extra kinds on it (`--remote-extra --selection`,
     logging `extra pass exit <code>`), then cargo-mutants whatever the
     codes: `run/exit` stays cargo-mutants'. cargo-mutants is started as
     `cargo-mutants mutants` — `cargo mutants` would overwrite `CARGO` for the
@@ -1071,6 +1071,10 @@ def launch_remote(
             + ("" if extra_only else " --mutants ../run/mutants.json")
             + " --extra\n"
             'echo "coverage map exit $?"\n'
+            # The map's instrumented build is read by nothing after it;
+            # kept beside the pass's copies it fills the disk on the largest
+            # crates, so the next map rebuilds it instead.
+            "rm -rf target/llvm-cov-target\n"
         )
     extra_pass = ""
     if extra or extra_only:
