@@ -235,8 +235,10 @@ def kill_session(pid: int) -> None:
     each test in one, so a test that never ends would otherwise outlive the
     pass. The session is `pid` itself, not read from `pid`'s stat: a child
     started without a session of its own would read as this script's, and the
-    sweep would kill the pass. A process whose stat cannot be read or that
-    exits first is skipped."""
+    sweep would kill the pass. `pid` must not be reaped yet (`kill_tree` waits
+    after the sweep): a reaped pid can be reused by an unrelated session's
+    leader. A process whose stat cannot be read or that exits first is
+    skipped."""
     for stat in Path("/proc").glob("[0-9]*/stat"):
         try:
             if stat_session(stat.read_text()) == pid:

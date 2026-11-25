@@ -780,8 +780,9 @@ and no phase closes with one outstanding.
         - [x] **orphans** 2026-11-25 `a4776af7` (merged `74205bbc`): nextest starts each test
           in a process group of its own, so the extra pass's timeout missed a looping test,
           which ran on under `init` at a full core; `kill_tree` also kills the session the
-          child leads. Its POSIX test is first run by the checkpoint's Linux gates. One SWE-2
-          round owed (with `rename`);
+          child leads. Its POSIX test is first run by the checkpoint's Linux gates. Its SWE-2
+          round (with `rename`) accepted 4, none a run's defect: the loop ends
+          (`.tmp/fixes/rulings.md`);
         - [ ] **died** 2026-11-25: the VPS was powered down from the hypervisor at 17:55
           (`qemu-ga: guest-shutdown called`), mid `color_tools`, and `rolling.recover` would
           have filed the dead half's partial results (its extra pass, no mutant of the main
@@ -808,7 +809,7 @@ and no phase closes with one outstanding.
           - [x] **rename** 2026-11-25 `a4776af7` (merged `74205bbc`): a results folder's move
             denied by a passing handle (WinError 5) crashed a diff run before its later crates;
             every such move retries a `PermissionError` for `MOVE_RETRY_SECONDS`, then fails
-            naming both folders. One SWE-2 round owed (with `orphans`);
+            naming both folders. Its SWE-2 round: item `orphans`;
           - [x] **lock** 2026-11-25 `5e247656` (merged `5dd07b00`): the run lock splits into a
             tree's, the builds', the VPS's and the cost table's (RUNBOOK "Mutation runs and the
             VPS"), so a long diff run from a second worktree runs beside the rolling job; the

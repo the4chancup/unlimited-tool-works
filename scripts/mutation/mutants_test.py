@@ -13,6 +13,7 @@ import io
 import json
 import math
 import os
+import signal
 import stat
 import subprocess
 import sys
@@ -871,7 +872,8 @@ class KillTree(unittest.TestCase):
                     "import subprocess, sys, time\n"
                     "grandchild = subprocess.Popen([sys.executable, '-c', "
                     "'import os, time; os.setpgid(0, 0); time.sleep(600)'])\n"
-                    "open(sys.argv[1], 'w').write(str(grandchild.pid))\n"
+                    "open(sys.argv[1] + '.tmp', 'w').write(str(grandchild.pid))\n"
+                    "import os; os.replace(sys.argv[1] + '.tmp', sys.argv[1])\n"
                     "time.sleep(600)\n",
                     str(pid_file),
                 ],
@@ -914,7 +916,7 @@ class KillTree(unittest.TestCase):
                     child.kill()
                     child.wait()
                 if grandchild is not None and not dead(grandchild):
-                    os.kill(grandchild, 9)  # SIGKILL: a failed try leaves none
+                    os.kill(grandchild, signal.SIGKILL)  # a failed try leaves none
 
 
 class Partition(unittest.TestCase):
@@ -3215,12 +3217,16 @@ class MoveResults(unittest.TestCase):
 
     def denied_rename(self, failures: int):
         """A `Path.rename` raising PermissionError its first `failures` calls,
-        then moving for real; returns (the fake, the count of its calls)."""
+        then moving for real; returns (the fake, the count of its calls). Past
+        a thousand calls, far beyond the bound's, it fails the test: a retry
+        that never ends spins on the fake clock instead of hanging."""
         real = Path.rename
         calls = [0]
 
         def rename(self, target):
             calls[0] += 1
+            if calls[0] > 1000:
+                raise AssertionError("move_results never stopped retrying")
             if calls[0] <= failures:
                 raise PermissionError(5, "Access is denied", str(target))
             return real(self, target)
