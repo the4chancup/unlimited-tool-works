@@ -322,7 +322,7 @@ def run(diff_path: str, tree: str, source: Path, diff: bytes) -> int:
                 # Made with the first results that land, so a run that lands none leaves no empty
                 # folder to be set aside over the last results.
                 results.mkdir(exist_ok=True)
-                out.rename(results / crate)
+                mutants.move_results(out, results / crate)
         try:
             missed, extra_counts, _ = extra_mutants.run_crate(
                 crate, list(mutants.EXTRA_KINDS), tree, lines=lines
@@ -345,7 +345,7 @@ def run(diff_path: str, tree: str, source: Path, diff: bytes) -> int:
         if extra_out.exists():
             results.mkdir(exist_ok=True)
             (results / crate).mkdir(exist_ok=True)
-            extra_out.rename(results / crate / "extra")
+            mutants.move_results(extra_out, results / crate / "extra")
     survivors = [
         line
         for crate in sorted(codes)
@@ -462,7 +462,7 @@ def kept_shards(crate: str, key: dict) -> bool:
             if candidate != folder:
                 mutants.set_aside(folder)
                 folder.parent.mkdir(parents=True, exist_ok=True)
-                candidate.rename(folder)
+                mutants.move_results(candidate, folder)
             return True
     return False
 
@@ -531,7 +531,7 @@ def sharded_run(
             baseline = next(o for o in outcomes if o["scenario"] == "Baseline")
             tests = next(p["duration"] for p in baseline["phase_results"] if p["phase"] == "Test")
             timeout = extra_mutants.timeout_seconds(extra_mutants.mutants_toml(source), tests)
-    folder.rename(mutants.ROOT / "mutants.out")
+    mutants.move_results(folder, mutants.ROOT / "mutants.out")
     return mutants.report_killed(mutants.run_code(codes), local_half=True)
 
 

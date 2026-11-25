@@ -222,8 +222,33 @@ def path_excluded(path: str, matchers: list[re.Pattern]) -> bool:
     return any(matcher.fullmatch(path) for matcher in matchers)
 
 
+def stat_session(stat: str) -> int:
+    """The session id of a `/proc/<pid>/stat` line (its sixth field): the
+    command name in the second field can hold spaces and parentheses itself,
+    so the fields are counted after the line's last `)`."""
+    return int(stat[stat.rindex(")") + 1:].split()[3])
+
+
+def kill_session(pid: int) -> None:
+    """SIGKILL to every process in the session `pid` leads (a `start_new_session`
+    child's), where a group of its own hides from the group kill: nextest runs
+    each test in one, so a test that never ends would otherwise outlive the
+    pass. The session is `pid` itself, not read from `pid`'s stat: a child
+    started without a session of its own would read as this script's, and the
+    sweep would kill the pass. A process whose stat cannot be read or that
+    exits first is skipped."""
+    for stat in Path("/proc").glob("[0-9]*/stat"):
+        try:
+            if stat_session(stat.read_text()) == pid:
+                os.kill(int(stat.parent.name), signal.SIGKILL)
+        except OSError:
+            continue
+
+
 def kill_tree(proc: subprocess.Popen) -> None:
-    """Kill `proc` and every process it started (cargo's rustc and test children)."""
+    """Kill `proc` and every process it started: on POSIX its process group
+    (cargo's rustc children) and the rest of its session (nextest's test
+    processes, each in a group of its own)."""
     if os.name == "nt":
         subprocess.run(
             ["taskkill", "/F", "/T", "/PID", str(proc.pid)], capture_output=True
@@ -233,6 +258,7 @@ def kill_tree(proc: subprocess.Popen) -> None:
             os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
         except ProcessLookupError:
             pass
+        kill_session(proc.pid)
     proc.wait()
 
 

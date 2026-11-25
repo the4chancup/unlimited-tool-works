@@ -127,12 +127,12 @@ def file_results(crate: str, commit: str, code: int) -> None:
         folder = ROLLING / crate
         mutants.set_aside(folder)
         folder.mkdir(parents=True, exist_ok=True)
-        out.rename(folder / "out")
+        mutants.move_results(out, folder / "out")
         # A whole run's fetch lands the extra pass's results beside the remote
         # half's (`remote_extra_record`).
         extra = folder / "out" / "remote" / "extra_mutants.out"
         if extra.exists():
-            extra.rename(folder / "extra")
+            mutants.move_results(extra, folder / "extra")
         (folder / "exit.txt").write_text(f"{code}\n", encoding="utf-8", newline="\n")
         (folder / "launched_from.txt").write_text(
             f"{commit}\n", encoding="utf-8", newline="\n"

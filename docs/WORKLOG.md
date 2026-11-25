@@ -777,12 +777,17 @@ and no phase closes with one outstanding.
           Windows executables, so this machine keeps `rust-lld`). Measure one crate's per-mutant
           build seconds on the VPS with it and without, set only in the remote job's
           environment, never in `.cargo/config.toml` (CI and the Linux gates would need it);
-        - [ ] **orphans** 2026-11-25: on the VPS the extra pass's timeout leaves the test
-          binary of a mutant that loops forever running under `init` (`aatf`'s
-          `rules::tests::a_script_that_loops_forever_...` and a `ruleset` sibling, an hour past the pass's
-          `extra pass exit 0`, each at a full core beside cargo-mutants), until the unit ends.
-          Killed by hand. The timeout kills its child's whole process group (or session), with
-          a test on Linux that a looping grandchild is gone;
+        - [x] **orphans** 2026-11-25 `a4776af7` (merged `74205bbc`): nextest starts each test
+          in a process group of its own, so the extra pass's timeout missed a looping test,
+          which ran on under `init` at a full core; `kill_tree` also kills the session the
+          child leads. Its POSIX test is first run by the checkpoint's Linux gates. One SWE-2
+          round owed (with `rename`);
+        - [ ] **oom** 2026-11-25: `aesthetics_export`'s remote run peaked at its memory cap
+          (`memory.peak` counts the page cache, which the cap reclaims). The kernel log showed
+          no OOM kill since 2026-11-20, but only `sudo journalctl -k` tells, so a kill, which
+          a mutant would count as caught, goes unseen. The job copies the unit's
+          `memory.events` beside `memory.peak`, and the finish prints its `oom_kill`, flagging
+          the run when it is above zero;
         - [ ] **shards** (the maintainer's idea, 2026-11-25) a long run here survives an
           interruption, losing one shard rather than the whole run:
           - [x] **local** 2026-11-25 `c0a34ad3`, `673c8b11`: a diff crate run here past
@@ -793,22 +798,22 @@ and no phase closes with one outstanding.
             out, since the cap of `BUSY_LOCAL_LIMIT_SECONDS`, two hours, still holds).
             Checked 2026-11-25 on CATCHUP's `studio_core` (532 mutants, 4 shards, each kept as
             it ended); its end failed, item `rename`;
-          - [ ] **rename** 2026-11-25: after `studio_core`'s 4 shards, `mutants_diff.run`'s
-            rename of the root's `mutants.out` into `mutants.diff/studio_core` failed with
-            `PermissionError` (WinError 5) and crashed the run, so `team_compiler` and
-            `team_widgets` never started; the same move by hand a minute later worked (a
-            transient handle, likely the antivirus or an indexer). The results' moves retry a
-            `PermissionError` for a short while, then fail naming the folder, with a test;
+          - [x] **rename** 2026-11-25 `a4776af7` (merged `74205bbc`): a results folder's move
+            denied by a passing handle (WinError 5) crashed a diff run before its later crates;
+            every such move retries a `PermissionError` for `MOVE_RETRY_SECONDS`, then fails
+            naming both folders. One SWE-2 round owed (with `orphans`);
           - [x] **lock** 2026-11-25 `5e247656` (merged `5dd07b00`): the run lock splits into a
             tree's, the builds', the VPS's and the cost table's (RUNBOOK "Mutation runs and the
             VPS"), so a long diff run from a second worktree runs beside the rolling job; the
             test module fails any test that reaches ssh. Its SWE-2 round (four parts) accepted
             a split that could send another tree's snapshot, a refused split ending the whole
             diff run, and tests that pass with a lock removed (`.tmp/lock/rulings_code_r1.md`);
-            rework 2 fixes them, then one SWE-2 round over it, then item `deep`;
+            rework 2 fixed them (`3492e4c5`, merged `fb4b68bb`). Its SWE-2 round accepted 7,
+            none a run's defect, so the loop ends with rework 3 (tests and wording;
+            `.tmp/lock/rulings_code_r2.md`); then item `deep`;
           - [ ] **split** [after local] the same for a split's local half: its shards a
             round-robin subset of the split's `0/2` (`0/2n`, `2/2n`, …);
-        - [ ] **deep** [after shards/lock, shards/rename, orphans] 2026-11-25 (the maintainer): the mutation
+        - [ ] **deep** [after shards/lock, shards/rename, orphans, oom] 2026-11-25 (the maintainer): the mutation
           machinery is reviewed at Tier 1's depth (RUNBOOK "Review rounds" (e)). Carbon's loop
           over `scripts/mutation/` whole, in parts, then Astra's, each paid round between SWE-2
           subloops. After the open fixes to the same files, so no paid round reads code about
