@@ -833,8 +833,13 @@ and no phase closes with one outstanding.
           machinery is reviewed at Tier 1's depth (RUNBOOK "Review rounds" (e)). Carbon's loop
           over `scripts/mutation/` whole, in parts, then Astra's, each paid round between SWE-2
           subloops. After the open fixes to the same files, so no paid round reads code about
-          to change. Carbon round 1 running at `cfb20c06`, four parts (the VPS side; outcomes
-          and shares; diff runs and test selection; the extra kinds' runner);
+          to change. Carbon round 1 at `cfb20c06`, four parts (the VPS side; outcomes and
+          shares; diff runs and test selection; the extra kinds' runner): 73 accepted, among
+          them wrong outcomes (a Windows recheck's unviable mutant voiding its crate's
+          catches, a coverage map missing a child's profile, failed rolling runs dated), lost
+          runs (a crate taking another's shards, a killed shard marked done, a torn
+          `outcomes.json` ending the rolling job) and a diff split that silently drops later
+          files' extra mutants; fixed in slices, each with its SWE-2 round, then round 2;
       - [x] **review** 2026-11-24 `13e68e44`: one paid cross-family round (Carbon) over
         `backend` and `parity`, beyond the SWE-2 loop a script gets, because this code decides
         every mutant's outcome. 10 of 13 concerns accepted (a lost console still caught on a
