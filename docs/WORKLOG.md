@@ -783,19 +783,15 @@ and no phase closes with one outstanding.
           child leads. Its POSIX test is first run by the checkpoint's Linux gates. Its SWE-2
           round (with `rename`) accepted 4, none a run's defect: the loop ends
           (`.tmp/fixes/rulings.md`);
-        - [ ] **died** 2026-11-25: the VPS was powered down from the hypervisor at 17:55
-          (`qemu-ga: guest-shutdown called`), mid `color_tools`, and `rolling.recover` would
-          have filed the dead half's partial results (its extra pass, no mutant of the main
-          pass) as the crate's run, `launched_from.txt` and all, so the crate went to the back
-          of the queue untested. Collected by hand instead (`just mutants-collect`), which
-          leaves it undated. A collect that finds the half dead files its partial results
-          but writes no `launched_from.txt`, with a test;
-        - [ ] **oom** 2026-11-25: `aesthetics_export`'s remote run peaked at its memory cap
-          (`memory.peak` counts the page cache, which the cap reclaims). The kernel log showed
-          no OOM kill since 2026-11-20, but only `sudo journalctl -k` tells, so a kill, which
-          a mutant would count as caught, goes unseen. The job copies the unit's
-          `memory.events` beside `memory.peak`, and the finish prints its `oom_kill`, flagging
-          the run when it is above zero;
+        - [x] **died** 2026-11-25 `57f88d90` (merged `8f1eb160`): the VPS was powered down
+          from the hypervisor mid `color_tools`, and `rolling.recover` would have dated the
+          crate from a dead half that tested no mutant of the main pass. `collect` returns
+          whether the half died (before it or during its wait), and `recover` files the
+          partial results with no `launched_from.txt`. Its SWE-2 round is owed (with `oom`);
+        - [x] **oom** 2026-11-25 `57f88d90` (merged `8f1eb160`): a kernel OOM kill, which a
+          mutant counts as caught, went unseen without `sudo journalctl -k`. The job copies
+          the unit's `memory.events`, and a fetch with `oom_kill` above zero prints it and
+          writes `oom_kills.txt` beside the results;
         - [ ] **shards** (the maintainer's idea, 2026-11-25) a long run here survives an
           interruption, losing one shard rather than the whole run:
           - [x] **local** 2026-11-25 `c0a34ad3`, `673c8b11`: a diff crate run here past
