@@ -151,7 +151,11 @@ machine instead of waiting days for its turn there, up to a limit: with a half o
 a crate that would take the run's total time here past `BUSY_LOCAL_LIMIT_SECONDS` (an hour)
 is left untested, and the run says so. The diff holds the run lock throughout and the half's
 fetch waits for it, so the VPS sits idle as long as the diff runs here. A crate left untested
-is run again once the VPS is free. What follows
+is run again once the VPS is free. A crate run here that is estimated past `SHARD_SECONDS`
+(half an hour) runs as cargo-mutants shards (`--shard`) of about that length, each kept in
+`mutants.shards/<crate>/` as it ends. After an interruption, the same command goes on from
+the first shard not done, unless the working tree changed in between, which starts the
+crate over. What follows
 describes the split: a diff uses it, and a whole run that needs this machine again would.
 
 A whole-crate run also selects each mutant's tests. The remote job first

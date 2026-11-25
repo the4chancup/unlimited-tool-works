@@ -39,8 +39,10 @@ cargo-mutants mutant runs on the remote, whatever the estimate; the extra
 kinds still run here.
 """
 
+import hashlib
 import io
 import json
+import math
 import os
 import subprocess
 import sys
@@ -62,6 +64,13 @@ CHECKED = ROOT / ".cargo" / "mutants_checked.toml"
 # VPS. Not unbounded: this run holds the run lock throughout, that half's collect waits for
 # it, and the VPS stays idle meanwhile.
 BUSY_LOCAL_LIMIT_SECONDS = 3600
+# A crate run here estimated past this runs as cargo-mutants shards of about this length
+# (`sharded_run`), each kept as it ends: an interruption (a restart, a crash) then loses
+# one shard, not the crate's run, and the same command rerun goes on from there.
+SHARD_SECONDS = 1800
+# The shards of a crate run under way, a folder per crate, until the run makes them its
+# `mutants.out`.
+SHARDS = ROOT / "mutants.shards"
 
 
 def read_checked(path: Path = CHECKED) -> dict[str, str]:
@@ -397,6 +406,10 @@ def run_crate(
     if refusal := mutants.local_refusal():
         raise mutants.Refused(refusal)
     print("mutants_diff: running here", flush=True)
+    if estimated > SHARD_SECONDS:
+        return sharded_run(
+            diff_path, tree, source, crate, selection, math.ceil(estimated / SHARD_SECONDS)
+        )
     print(f"mutants_diff: cargo mutants {' '.join(selection)}", flush=True)
     mutants.set_aside_last_run()
     code = mutants.local_mutants(selection, source).returncode
@@ -404,11 +417,73 @@ def run_crate(
     return mutants.report_killed(code, local_half=True)
 
 
+def sharded_run(
+    diff_path: str, tree: str, source: Path, crate: str, selection: list[str], count: int
+) -> int:
+    """Runs `crate`'s mutants here as `count` cargo-mutants shards, each into
+    `SHARDS/<crate>/shard-<k>` and marked done (its `exit`) as it ends; the
+    folder then becomes the root's `mutants.out`. A folder an interrupted run
+    left for the same tree and diff is resumed from its first shard not done,
+    at its own shard count, since the estimate moves as shards fold in their
+    costs; one for another tree or diff is set aside. The first shard runs the
+    baseline, and the others skip it with the timeout its test phase sets. A
+    shard ending other than 0, 2 (missed) or 3 (timed out) stops the crate
+    without its mark, so a rerun tries it again."""
+    # Before anything runs, as the whole-crate path does: an older run's
+    # `mutants.out` left here would be moved into this crate's results.
+    mutants.set_aside_last_run()
+    folder = SHARDS / crate
+    record = folder / "run.json"
+    key = {"tree": tree, "diff": hashlib.sha256(Path(diff_path).read_bytes()).hexdigest()}
+    kept = json.loads(record.read_text(encoding="utf-8")) if record.exists() else {}
+    if {name: kept.get(name) for name in key} == key:
+        count = kept["shards"]
+        print(f"mutants_diff: resuming {crate}'s {count} shards", flush=True)
+    else:
+        mutants.set_aside(folder)
+        folder.mkdir(parents=True)
+        record.write_text(json.dumps({**key, "shards": count}), encoding="utf-8")
+    codes = []
+    timeout = 0.0
+    for k in range(count):
+        shard = folder / f"shard-{k}"
+        done = shard / "exit"
+        if not done.exists():
+            args = [
+                *selection, "--shard", f"{k}/{count}", "--sharding", "round-robin",
+                "--output", str(shard),
+            ]
+            if k:
+                args += ["--baseline", "skip", "--timeout", f"{timeout:.0f}"]
+            print(f"mutants_diff: shard {k + 1} of {count}: cargo mutants {' '.join(args)}",
+                  flush=True)
+            shard.mkdir(exist_ok=True)
+            code = mutants.local_mutants(args, source).returncode
+            if code not in (0, 2, 3):
+                print(f"mutants_diff: shard {k + 1} exited {code}: {crate} stops here, "
+                      f"its shards kept in {folder}")
+                return code
+            mutants.update_cost_cache(shard / "mutants.out")
+            done.write_text(str(code), encoding="utf-8")
+        codes.append(int(done.read_text(encoding="utf-8")))
+        if not k:
+            outcomes = json.loads(
+                (shard / "mutants.out" / "outcomes.json").read_text(encoding="utf-8")
+            )["outcomes"]
+            baseline = next(o for o in outcomes if o["scenario"] == "Baseline")
+            tests = next(p["duration"] for p in baseline["phase_results"] if p["phase"] == "Test")
+            timeout = extra_mutants.timeout_seconds(extra_mutants.mutants_toml(source), tests)
+    folder.rename(mutants.ROOT / "mutants.out")
+    return mutants.report_killed(mutants.run_code(codes), local_half=True)
+
+
 def missed_lines(out: Path) -> list[str]:
     """The survivors of one crate's finished run in `out` (its `mutants.out`): a split run's
     summary list, which merges both halves, their timeouts included, and drops what the
-    Windows recheck caught; else a local run's own list and its timeouts
-    (`mutants.timeout_lines`)."""
+    Windows recheck caught; a sharded run's shards' lists, in shard order; else a local
+    run's own list and its timeouts (`mutants.timeout_lines`)."""
+    if shards := mutants.shard_outputs(out):
+        return [line for shard in shards for line in missed_lines(shard)]
     summary = out / "missed_all.txt"
     if summary.exists():
         return mutants.read_lines(summary)

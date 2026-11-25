@@ -187,6 +187,18 @@ def lock_probes(root: Path):
 
 
 class KilledBuilds(unittest.TestCase):
+    def test_a_sharded_run_s_untested_mutants_are_every_shard_s(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp)
+            for k in (0, 1):
+                shard = out / f"shard-{k}" / "mutants.out"
+                shard.mkdir(parents=True)
+                (shard / "outcomes.json").write_text(json.dumps({"outcomes": [
+                    {"scenario": mutant(f"signalled {k}"), "summary": "Failure",
+                     "phase_results": []},
+                ]}), encoding="utf-8")
+            self.assertEqual(mutants.killed_builds(out), ["signalled 0", "signalled 1"])
+
     def test_every_spelling_of_a_killed_build_and_a_signal_ended_cargo_count(self):
         logs = {
             "log/oom": "error: could not compile (signal: 9, SIGKILL: kill)",
@@ -3120,6 +3132,10 @@ class DiffBusy(unittest.TestCase):
                 lambda *a, **k: calls.__setitem__("local", a)
                 or subprocess.CompletedProcess(a, 0),
             ),
+            # A long crate here runs as shards (`DiffShards`): run here all the same.
+            mock.patch.object(
+                mutants_diff, "sharded_run", lambda *a: calls.__setitem__("local", a) or 0
+            ),
             mock.patch.object(mutants, "update_cost_cache", lambda *a, **k: None),
             mock.patch.object(mutants, "report_killed", lambda code, **k: code),
             contextlib.redirect_stdout(out),
@@ -3184,6 +3200,163 @@ class DiffBusy(unittest.TestCase):
         self.assertEqual(code, 0)
         self.assertNotIn("state", calls, "REMOTE_ONLY never asks the host's state")
         self.assertEqual(calls["split"][1], {"local": False})
+
+
+def shard_of(args: list[str]) -> str:
+    return args[args.index("--shard") + 1]
+
+
+class DiffShards(unittest.TestCase):
+    """A diff crate run here past `SHARD_SECONDS` runs as cargo-mutants
+    shards, each kept as it ends, and the same command rerun resumes at the
+    first shard not done."""
+
+    def setUp(self):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        self.root = Path(tmp.name)
+        self.source = self.root / "src"
+        (self.source / ".cargo").mkdir(parents=True)
+        (self.source / ".cargo" / "mutants.toml").write_text(
+            "timeout_multiplier = 5.0\nminimum_test_timeout = 150\n", encoding="utf-8"
+        )
+        self.diff = self.root / "in.diff"
+        self.diff.write_bytes(b"diff one\n")
+
+    def run_crate(
+        self, tree: str = HEAD_TREE, estimate: float | None = None, stop_at: int | None = None,
+        codes: dict[int, int] | None = None, baseline: float = 40.0,
+    ):
+        """`cpk`'s crate run here, by default with an estimate of three shards.
+        Each shard the fake runs writes its outcomes and a survivor, a shard
+        running the baseline a `baseline`-second test phase; `stop_at`
+        interrupts the run at that shard, as a restart of the machine would,
+        and `codes` gives shards' exit codes (0 when absent). Returns the
+        code (None when interrupted), each cargo-mutants call's arguments and
+        the folders the cost table was given."""
+        calls, costed = [], []
+
+        def local_mutants(args, source, config=None):
+            calls.append(args)
+            k = int(shard_of(args).split("/")[0]) if "--shard" in args else 0
+            if k == stop_at:
+                raise KeyboardInterrupt
+            out = Path(args[args.index("--output") + 1]) if "--output" in args else self.root
+            out = out / "mutants.out"
+            out.mkdir(parents=True, exist_ok=True)
+            outcomes = []
+            if "--baseline" not in args:
+                outcomes.append({
+                    "scenario": "Baseline", "summary": "Success",
+                    "phase_results": [
+                        {"phase": "Build", "duration": 30.0},
+                        {"phase": "Test", "duration": baseline},
+                    ],
+                })
+            (out / "outcomes.json").write_text(
+                json.dumps({"outcomes": outcomes}), encoding="utf-8"
+            )
+            (out / "missed.txt").write_text(f"missed in shard {k}\n", encoding="utf-8")
+            return subprocess.CompletedProcess(args, (codes or {}).get(k, 0))
+
+        if estimate is None:
+            estimate = mutants_diff.SHARD_SECONDS * 2.5
+        with (
+            mock.patch.object(mutants, "ROOT", self.root),
+            mock.patch.object(mutants_diff, "SHARDS", self.root / "mutants.shards"),
+            mock.patch.object(mutants, "estimate_seconds", lambda crates, share=1.0: estimate),
+            mock.patch.object(mutants, "remote_host", lambda: None),
+            mock.patch.object(mutants, "local_refusal", lambda: None),
+            mock.patch.object(mutants, "local_mutants", local_mutants),
+            mock.patch.object(
+                mutants, "update_cost_cache", lambda out_dir=None, *a: costed.append(out_dir)
+            ),
+            mock.patch.object(mutants, "report_killed", lambda code, **k: code),
+            contextlib.redirect_stdout(io.StringIO()),
+        ):
+            try:
+                code = mutants_diff.run_crate(str(self.diff), tree, self.source, "cpk", 9)
+            except KeyboardInterrupt:
+                code = None
+        return code, calls, costed
+
+    def test_a_long_crate_runs_as_shards_the_first_alone_running_the_baseline(self):
+        code, calls, costed = self.run_crate()
+        self.assertEqual(code, 0)
+        self.assertEqual([shard_of(args) for args in calls], ["0/3", "1/3", "2/3"])
+        for args in calls:
+            self.assertEqual(args[:4], ["--in-diff", str(self.diff), "-p", "cpk"])
+            self.assertEqual(args[args.index("--sharding") + 1], "round-robin")
+        self.assertNotIn("--baseline", calls[0])
+        for args in calls[1:]:
+            self.assertEqual(args[args.index("--baseline") + 1], "skip")
+            # 5 x the first shard's 40 s test phase, above the 150 s floor.
+            self.assertEqual(args[args.index("--timeout") + 1], "200")
+        self.assertEqual(
+            [path.parent.name for path in costed], ["shard-0", "shard-1", "shard-2"],
+            "each shard's costs are folded in as it ends",
+        )
+        out = self.root / "mutants.out"
+        self.assertFalse((self.root / "mutants.shards" / "cpk").exists())
+        self.assertEqual(
+            mutants_diff.missed_lines(out),
+            ["missed in shard 0", "missed in shard 1", "missed in shard 2"],
+        )
+
+    def test_the_timeout_keeps_the_config_s_floor(self):
+        _, calls, _ = self.run_crate(baseline=20.0)
+        self.assertEqual(calls[1][calls[1].index("--timeout") + 1], "150")
+
+    def test_a_crate_within_one_shard_runs_whole(self):
+        code, calls, _ = self.run_crate(estimate=mutants_diff.SHARD_SECONDS)
+        self.assertEqual(code, 0)
+        self.assertEqual(len(calls), 1)
+        self.assertNotIn("--shard", calls[0])
+        self.assertNotIn("--output", calls[0])
+
+    def test_a_rerun_resumes_at_the_first_shard_not_done(self):
+        code, calls, _ = self.run_crate(stop_at=1)
+        self.assertIsNone(code)
+        self.assertEqual([shard_of(args) for args in calls], ["0/3", "1/3"])
+        # The kept shard's costs changed the estimate: the shards stay three.
+        code, calls, _ = self.run_crate(estimate=mutants_diff.SHARD_SECONDS * 4.5)
+        self.assertEqual(code, 0)
+        self.assertEqual([shard_of(args) for args in calls], ["1/3", "2/3"])
+        self.assertEqual(
+            calls[0][calls[0].index("--timeout") + 1], "200",
+            "the kept first shard's baseline still sets the timeout",
+        )
+        self.assertEqual(
+            mutants_diff.missed_lines(self.root / "mutants.out"),
+            ["missed in shard 0", "missed in shard 1", "missed in shard 2"],
+        )
+
+    def test_another_tree_or_diff_starts_the_crate_over(self):
+        self.run_crate(stop_at=1)
+        _, calls, _ = self.run_crate(tree="0" * 40)
+        self.assertEqual([shard_of(args) for args in calls], ["0/3", "1/3", "2/3"])
+        self.run_crate(stop_at=1)
+        self.diff.write_bytes(b"diff two\n")
+        _, calls, _ = self.run_crate()
+        self.assertEqual([shard_of(args) for args in calls], ["0/3", "1/3", "2/3"])
+
+    def test_a_failed_shard_stops_the_crate_and_a_rerun_tries_it_again(self):
+        (self.root / "mutants.out").mkdir()
+        (self.root / "mutants.out" / "missed.txt").write_text("an older run's\n", encoding="utf-8")
+        code, calls, _ = self.run_crate(codes={0: 4})
+        self.assertEqual(code, 4)
+        self.assertEqual(len(calls), 1)
+        self.assertFalse(
+            (self.root / "mutants.out").exists(),
+            "an older run's results are set aside, never left to pass as this crate's",
+        )
+        code, calls, _ = self.run_crate()
+        self.assertEqual(code, 0)
+        self.assertEqual([shard_of(args) for args in calls], ["0/3", "1/3", "2/3"])
+
+    def test_the_shards_codes_combine(self):
+        code, _, _ = self.run_crate(codes={1: 2, 2: 3})
+        self.assertEqual(code, 3)
 
 
 class Closure(unittest.TestCase):
@@ -5003,6 +5176,20 @@ class DiffSurvivors(unittest.TestCase):
             self.assertEqual(mutants_diff.missed_lines(out), ["local only"])
             (out / "missed_all.txt").write_text("local\nremote\n", encoding="utf-8")
             self.assertEqual(mutants_diff.missed_lines(out), ["local", "remote"])
+
+    def test_a_sharded_crate_run_gives_every_shard_s_survivors_and_timeouts(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp)
+            # Ten shards, so a name order would put shard-10 before shard-2.
+            for k in (2, 10):
+                shard = out / f"shard-{k}" / "mutants.out"
+                shard.mkdir(parents=True)
+                (shard / "missed.txt").write_text(f"missed {k}\n", encoding="utf-8")
+                (shard / "timeout.txt").write_text(f"a.rs:{k}: slow\n", encoding="utf-8")
+            self.assertEqual(
+                mutants_diff.missed_lines(out),
+                ["missed 2", "a.rs:2: [timeout] slow", "missed 10", "a.rs:10: [timeout] slow"],
+            )
 
     def test_diff_lines_counts_each_hunks_plus_lines_on_the_new_side(self):
         # Two hunks in one file: an added line, a changed line whose `-` and

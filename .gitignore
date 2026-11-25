@@ -9,6 +9,7 @@
 /mutants.out.old/
 /mutants.diff/
 /mutants.diff.old/
+/mutants.shards/
 
 # The rolling job's kept whole-crate runs (`just mutants-rolling`)
 /mutants.rolling/

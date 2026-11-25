@@ -772,7 +772,12 @@ def killed_builds(out_dir: Path) -> list[str]:
     broke before or around the tests, as a process that lost its console
     would. A catch by that code is untested too when the log shows a test
     binary that never started (`LOST_CONSOLE`): it ran nothing, so it caught
-    nothing."""
+    nothing.
+
+    A sharded run's `out_dir` holds a `mutants.out` per shard (`shard_outputs`):
+    the list is theirs, in shard order."""
+    if shards := shard_outputs(out_dir):
+        return [name for shard in shards for name in killed_builds(shard)]
     path = out_dir / "outcomes.json"
     if not path.exists():
         return []
@@ -800,6 +805,14 @@ def killed_builds(out_dir: Path) -> list[str]:
         if not unviable_build(code, log):
             killed.append(outcome["scenario"]["Mutant"]["name"])
     return killed
+
+
+def shard_outputs(out_dir: Path) -> list[Path]:
+    """The `mutants.out` of each shard under `out_dir`, a sharded crate run's
+    results (`mutants_diff.sharded_run`: `shard-<k>/mutants.out`), in shard
+    order; empty for any other run's."""
+    shards = [path for path in out_dir.glob("shard-*") if path.name[6:].isdigit()]
+    return [path / "mutants.out" for path in sorted(shards, key=lambda p: int(p.name[6:]))]
 
 
 def local_mutants_version() -> str:
