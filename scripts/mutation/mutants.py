@@ -196,6 +196,13 @@ GATES_UNIT = "studio-gates"
 # either wasted what was free or squeezed the host. A service that grows during
 # a run eats into this margin, so it is not cut finer.
 REMOTE_MEMORY_RESERVE = 2**30
+# The cap each remote run's test binaries get, the per-process figure
+# Windows' runner gives them (`.cargo/config.toml`): a test allocating past
+# it aborts alone (a failed test, the mutant caught) instead of the cgroup's
+# OOM kill taking the unit's other workers with it. `prlimit --data`, not
+# `--as`: glibc reserves address space per thread arena that a test never
+# touches.
+REMOTE_TEST_MEMORY = 6 * 2**30
 # The remote half's `--jobserver-tasks`: the build cap, since under
 # cargo-mutants 27.1.0's jobserver cargo ignores `-j`/`--build-jobs`. `None` is
 # the host's CPU count (`nproc`, already probed for the config), the default
@@ -1154,6 +1161,10 @@ def launch_remote(
         "start=$(date +%s)\n"
         # On disk, not the tmpfs `/tmp`: see REMOTE_TMPDIR.
         f'export TMPDIR="{REMOTE_TMPDIR}" && mkdir -p "$TMPDIR"\n'
+        # A target runner wraps only the test binaries cargo and nextest run,
+        # so each test caps at the per-test figure while rustc, cargo and the
+        # coverage map's own runs keep the unit's.
+        f'export CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_RUNNER="prlimit --data={REMOTE_TEST_MEMORY} --"\n'
         f". ~/.cargo/env && {selection_map}{extra_pass}{mutants_line}"
         "code=$?\n"
         # `memory.peak` of this unit's cgroup tells whether the cap is tight,
@@ -1933,7 +1944,7 @@ def report_killed(
     return run_code([code, 1] if untested else [code])
 
 
-def collect(host: str) -> tuple[int, bool]:
+def collect(host: str) -> tuple[int, str | None]:
     """`just mutants-collect`: waits for a remote half this script launched but
     did not fetch (it was stopped, or gave up polling), fetches it and prints the
     summary. The wait holds no lock — a whole run's lasts days; the finish takes
@@ -1953,12 +1964,14 @@ def collect(host: str) -> tuple[int, bool]:
     (`finish_extra_run`): the pass's results and counts, no `mutants.out`. A
     died half's partial results
     are fetched too, whether it died before or during the wait, and the run
-    exits 1. Returns the run's exit code and whether the half died before it
-    finished."""
+    exits 1. Returns the run's exit code and, in `remote_run_state`'s words,
+    what it found: `"finished"` (it fetched a finished half), `"died"` (a
+    died half's partials), `"none"` (there was nothing to collect) or None
+    (the host could not be reached)."""
     state = remote_run_state(host)
     if state is None:
         print(f"cannot reach {host}")
-        return 1, False
+        return 1, None
     if state == "none":
         # The record could still be a launch's, written before its unit
         # starts: re-check under the locks that serialize those.
@@ -1974,7 +1987,7 @@ def collect(host: str) -> tuple[int, bool]:
                         "a local half's results in this tree's mutants.out are in "
                         "no summary)"
                     )
-                return 1, False
+                return 1, "none"
     try:
         if state == "died":
             raise RemoteDied("the remote half died")
@@ -1992,7 +2005,7 @@ def collect(host: str) -> tuple[int, bool]:
             if remote_run_state(host) == "none":
                 # The half's own run fetched it while this collect waited.
                 print("the remote half is already collected")
-                return 1, False
+                return 1, "none"
             if pending:
                 launched_tree = record.get("tree") if isinstance(record, dict) else None
                 if launched_tree is None:
@@ -2001,7 +2014,7 @@ def collect(host: str) -> tuple[int, bool]:
                         "half ran on: written before records carried it — "
                         "collect from the tree that launched the run"
                     )
-                    return 1, False
+                    return 1, "none"
             else:
                 # Another tree launched the half: its clone's checkout is the
                 # snapshot it still runs, under this lock.
@@ -2055,7 +2068,7 @@ def collect(host: str) -> tuple[int, bool]:
                 local_half=local_half, extra_run=extra_run, tree=launched_tree,
                 partial=partial, extra_if_fetched=extra_if_fetched, fetched=True,
             )
-        return code, partial
+        return code, "died" if partial else "finished"
 
 
 def mutant_crate(file: str) -> str:

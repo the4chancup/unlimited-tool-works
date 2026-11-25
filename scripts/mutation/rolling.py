@@ -24,7 +24,9 @@ for the checkpoint's Linux gates before a push; delete it and it goes on. A run
 the VPS refuses (busy) is retried after a wait, never counted, and so is one
 that fails; a run the job lost (it was stopped, or its wait failed) is
 collected and filed under its crate at the next turn — one whose remote half
-died is filed without `launched_from.txt`, so the crate is picked again.
+died is filed without `launched_from.txt`, so the crate is picked again; a
+collect that finds nothing files nothing, and one that cannot reach the host
+keeps the turn's `current.txt` and skips its pick.
 """
 
 import io
@@ -152,24 +154,42 @@ def file_results(crate: str, commit: str, code: int, *, died: bool = False) -> N
         CURRENT.unlink(missing_ok=True)
 
 
-def recover(host: str) -> None:
+def recover(host: str) -> bool:
     """A run the job lost track of (it was stopped, or its wait failed) left
     `CURRENT`: when this tree's launch record is a whole run's (no local half),
     its half is collected (`mutants.collect` waits for one still running) and
     filed as `run_one` would have — a half that died keeps its partial results
-    but does not date the crate. Any other record is another run's, left to
-    its owner, and `CURRENT` goes."""
+    but does not date the crate. A collect that found nothing files nothing
+    and `CURRENT` goes; one that could not reach the host keeps it and returns
+    False, so the turn skips its pick and the next turn's collect tries again.
+    Any other record is another run's, left to its owner, and `CURRENT` goes.
+    Returns whether the turn may go on."""
     if not CURRENT.exists():
-        return
+        return True
     crate, commit = CURRENT.read_text(encoding="utf-8").split()
     record = mutants.pending_record() if mutants.remote_pending().exists() else None
     if record is not None and not record.get("local_half", True) and not record.get(
         "extra_only"
     ):
         print(f"rolling: collecting {crate}'s run, launched from {commit}", flush=True)
-        code, died = mutants.collect(host)
-        file_results(crate, commit, code, died=died)
+        code, state = mutants.collect(host)
+        if state is None:
+            print(
+                f"rolling: {crate}'s run could not be collected: the host "
+                "cannot be reached, so its collect is retried next turn",
+                flush=True,
+            )
+            return False
+        if state == "none":
+            print(
+                f"rolling: {crate}'s run left nothing to collect: filing "
+                "nothing",
+                flush=True,
+            )
+        else:
+            file_results(crate, commit, code, died=state == "died")
     CURRENT.unlink(missing_ok=True)
+    return True
 
 
 def main(argv: list[str]) -> int:
@@ -197,7 +217,11 @@ def main(argv: list[str]) -> int:
             while HOLD.exists():
                 time.sleep(HOLD_POLL_MINUTES * 60)
             print("rolling: hold lifted", flush=True)
-        recover(host)
+        if not recover(host):
+            if once:
+                return 1
+            time.sleep(RETRY_MINUTES * 60)
+            continue
         crates = sorted(
             set(extra_mutants.workspace_crates(ROOT)) - mutants.LOCAL_ONLY_CRATES
         )
