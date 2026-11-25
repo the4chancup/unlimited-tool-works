@@ -313,6 +313,10 @@ SSH_OPTIONS = [
     "-o", "ServerAliveInterval=15",
     "-o", "ServerAliveCountMax=4",
 ]
+# A results folder's move retries a PermissionError this long before failing:
+# a transient handle (the antivirus, an indexer) holds the folder briefly after
+# a run writes it, and the retry outlives it.
+MOVE_RETRY_SECONDS = 60
 
 
 def ssh_binary() -> str:
@@ -2198,7 +2202,28 @@ def set_aside(results: Path) -> None:
     old = results.with_name(results.name + ".old")
     if old.exists():
         remove_tree(old)
-    results.rename(old)
+    move_results(results, old)
+
+
+def move_results(folder: Path, target: Path) -> None:
+    """`folder.rename(target)`, a PermissionError retried for up to
+    MOVE_RETRY_SECONDS: a handle on a results folder (the antivirus, an
+    indexer) releases shortly after a run ends, and a move denied once left a
+    run's later crates unstarted. Any other error raises at once; still denied
+    past the bound raises a RuntimeError naming both folders, chained to the
+    last PermissionError."""
+    deadline = time.monotonic() + MOVE_RETRY_SECONDS
+    while True:
+        try:
+            folder.rename(target)
+            return
+        except PermissionError as error:
+            if time.monotonic() >= deadline:
+                raise RuntimeError(
+                    f"cannot move {folder} to {target}: still denied "
+                    f"after {MOVE_RETRY_SECONDS} s"
+                ) from error
+            time.sleep(0.5)
 
 
 def extra_run_record() -> Path:
