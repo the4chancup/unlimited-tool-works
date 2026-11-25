@@ -804,6 +804,16 @@ and no phase closes with one outstanding.
           before it, reported `oom_kill 6`: its catches are owed a rerun under the cap, so its
           `launched_from.txt` is renamed `launched_from.oom_kills.txt`, leaving it undated like
           a dead half's, and the job picks it again next;
+        - [ ] **memsum** 2026-11-26: the per-test cap does not bound the unit. In
+          `export_upgrader`'s rolling run, under the cap, the unit reached its `MemoryMax`
+          with every test below 6 GB, and the cgroup's OOM kill took a test of
+          `kit_magic.rs:287:16` (`+=` to `-=` in `token_markers`) at 3.7 GB after 61 s, which
+          counted it as caught (its log, on the VPS only: a caught mutant's log is not
+          fetched, says `SIGKILL`). Its catch is owed a recheck on the VPS beside
+          `utf.rs:405:49`; the rest of the run stands (one kill, no other log names a
+          `SIGKILL`). Find what the processes summed to (parallel tests of one mutant, two
+          workers, a build beside them) and bound it, or make a kill not by the test's own cap
+          leave its mutant untested;
         - [ ] **shards** (the maintainer's idea, 2026-11-25) a long run here survives an
           interruption, losing one shard rather than the whole run:
           - [x] **local** 2026-11-25 `c0a34ad3`, `673c8b11`: a diff crate run here past
