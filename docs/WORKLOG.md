@@ -777,6 +777,12 @@ and no phase closes with one outstanding.
           Windows executables, so this machine keeps `rust-lld`). Measure one crate's per-mutant
           build seconds on the VPS with it and without, set only in the remote job's
           environment, never in `.cargo/config.toml` (CI and the Linux gates would need it);
+        - [ ] **orphans** 2026-11-25: on the VPS the extra pass's timeout leaves the test
+          binary of a mutant that loops forever running under `init` (`aatf`'s
+          `rules::tests::a_script_that_loops_forever_...` and a `ruleset` sibling, an hour past the pass's
+          `extra pass exit 0`, each at a full core beside cargo-mutants), until the unit ends.
+          Killed by hand. The timeout kills its child's whole process group (or session), with
+          a test on Linux that a looping grandchild is gone;
         - [ ] **shards** (the maintainer's idea, 2026-11-25) a long run here survives an
           interruption, losing one shard rather than the whole run:
           - [x] **local** 2026-11-25 `c0a34ad3`, `673c8b11`: a diff crate run here past
