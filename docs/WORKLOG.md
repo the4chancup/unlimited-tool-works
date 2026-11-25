@@ -765,6 +765,14 @@ and no phase closes with one outstanding.
           first build, then grows about 25 MB per mutant (the incremental cache), the tests
           leave nothing, and the coverage map's build holds 24 GiB beside them. A third copy
           does not fit that disk on this crate; the CPUs left idle stay a cost of two jobs;
+        - [ ] **mapcache** 2026-11-25: the remote job keeps the coverage map's build
+          (`tree/target/llvm-cov-target`, 24 GiB on `save_editor`) through the pass that
+          follows, and the launch's free-space floor (`REMOTE_FREE_FLOOR`) does not count it.
+          The `save_editor` rerun at two jobs lost about 50 MB of disk per mutant past its
+          first 150 and would have filled the disk again; the folder was removed by hand at
+          mutant 358 (`.tmp/vps_rm_llvm_cov.sh`). Have the job remove it once the map has
+          written its selection, with a test on the job script, and weigh what the next map
+          then rebuilds;
         - [ ] **nodebug** 2026-11-25: mutation runs build with the `mutants` profile (dev
           without debug info). Check on the next local run of a crate measured before (the
           `studio` diff crate: 108 s baseline build, `mutants.diff/studio/`): its baseline
