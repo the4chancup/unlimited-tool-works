@@ -747,7 +747,7 @@ def main(argv: list[str]) -> int:
             print(line)
         return 0
     tree = mutants.working_tree()
-    with mutants.run_lock():
+    with mutants.run_lock(mutants.tree_lock_path()), mutants.run_lock():
         # An uncollected remote half with a local half's collection merges this
         # crate's `missed_<crate>.txt`.
         if refusal := mutants.local_refusal():

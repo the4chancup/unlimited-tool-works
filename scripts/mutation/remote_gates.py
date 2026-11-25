@@ -5,8 +5,10 @@ load (2026-10-10: four MEMORY_MANAGEMENT bugchecks here, the last during a run;
 
 The tree goes over as a mutation run sends it (`mutants.snapshot`,
 `mutants.transfer`), into the same remote clone, so this refuses to start while
-a remote mutants half is running or uncollected, or other gates run there
-(`mutants.remote_refusal`). The whole gates' build cache, the clone's
+a remote mutants half is running or uncollected, or other gates run there —
+the refusal's check through the unit's start under the remote lock
+(`mutants.REMOTE_LOCK`, `mutants.remote_refusal`), so a run launched meanwhile
+waits rather than racing the clone. The whole gates' build cache, the clone's
 `target/`, is removed when they end (`remote_clean_target.sh`), since it held
 the disk under the mutation runs' floor; `just remote` keeps it, so a crate's
 reruns build incrementally. The gates run as the transient
@@ -51,61 +53,67 @@ def main(command: list[str]) -> int:
     if host is None:
         print("STUDIO_MUTANTS_REMOTE is not set")
         return 1
-    refusal = mutants.remote_refusal(host)
-    if refusal is not None:
-        print(refusal)
-        return 1
-    local_just = subprocess.run(
-        ["just", "--version"], check=True, capture_output=True, text=True
-    ).stdout.strip()
-    probe = mutants.ssh(host, "~/.cargo/bin/just --version", capture_output=True, text=True)
-    if probe.returncode == 255:
-        print(f"cannot reach {host}")
-        return 1
-    remote_just = probe.stdout.strip()
-    if local_just != remote_just:
-        print(
-            f"just versions differ: local {local_just}, remote {remote_just or 'none'}; fix: "
-            f"cargo install --locked just@{local_just.split()[-1]} on the remote"
+    with mutants.run_lock(mutants.REMOTE_LOCK):
+        refusal = mutants.remote_refusal(host)
+        if refusal is not None:
+            print(refusal)
+            return 1
+        local_just = subprocess.run(
+            ["just", "--version"], check=True, capture_output=True, text=True
+        ).stdout.strip()
+        probe = mutants.ssh(host, "~/.cargo/bin/just --version", capture_output=True, text=True)
+        if probe.returncode == 255:
+            print(f"cannot reach {host}")
+            return 1
+        remote_just = probe.stdout.strip()
+        if local_just != remote_just:
+            print(
+                f"just versions differ: local {local_just}, remote {remote_just or 'none'}; fix: "
+                f"cargo install --locked just@{local_just.split()[-1]} on the remote"
+            )
+            return 1
+        tree = mutants.snapshot()
+        remote_head, remote_tree, _nproc, _version = mutants.remote_state(host)
+        if remote_tree == tree:
+            print("remote tree up to date", flush=True)
+        else:
+            mutants.transfer(host, remote_head)
+        job = (
+            "set -e\n"
+            ". ~/.cargo/env\n"
+            # On disk, not the tmpfs `/tmp`, which counts against the unit's memory
+            # (`mutants.REMOTE_TMPDIR`); the CLI tests write a sandbox export each.
+            f'export TMPDIR="{mutants.REMOTE_TMPDIR}" && mkdir -p "$TMPDIR"\n'
+            f"nice -n 19 ionice -c3 {run_line}\n"
         )
-        return 1
-    tree = mutants.snapshot()
-    remote_head, remote_tree, _nproc, _version = mutants.remote_state(host)
-    if remote_tree == tree:
-        print("remote tree up to date", flush=True)
-    else:
-        mutants.transfer(host, remote_head)
-    job = (
-        "set -e\n"
-        ". ~/.cargo/env\n"
-        # On disk, not the tmpfs `/tmp`, which counts against the unit's memory
-        # (`mutants.REMOTE_TMPDIR`); the CLI tests write a sandbox export each.
-        f'export TMPDIR="{mutants.REMOTE_TMPDIR}" && mkdir -p "$TMPDIR"\n'
-        f"nice -n 19 ionice -c3 {run_line}\n"
-    )
-    # A file, not bash's stdin, which a test reading stdin would eat lines of.
-    mutants.ssh(
-        host,
-        f"cat > {GATES_JOB}",
-        # Bytes, not text: a CRLF in the script would break bash on the host.
-        input=job.encode("utf-8"),
-        check=True,
-    )
-    memory_max = mutants.remote_memory_max(host)
-    print(f"running `{run_line}` on {host}", flush=True)
-    run = mutants.ssh(
-        host,
-        f"sudo -n systemd-run --unit={mutants.GATES_UNIT} --uid=debian --wait --pipe "
-        f"--collect -p MemoryMax={memory_max} -p MemorySwapMax=0 -p CPUWeight=idle "
-        f'--working-directory="$HOME/studio-mutants/tree" /bin/bash {GATES_JOB} '
-        "< /dev/null",
-    )
-    print(f"`{run_line}` on {host}: exit {run.returncode}")
-    if not command:
-        # The whole gates leave a 30 GB build cache, which put the disk under the mutation
-        # runs' free floor, so the next pipeline was refused every time (2026-11-23): a
-        # cold build costs those gates a few minutes, a refusal a whole run.
-        mutants.ssh(host, "bash -s -- --delete", input=CLEAN_TARGET.read_bytes())
+        # A file, not bash's stdin, which a test reading stdin would eat lines of.
+        mutants.ssh(
+            host,
+            f"cat > {GATES_JOB}",
+            # Bytes, not text: a CRLF in the script would break bash on the host.
+            input=job.encode("utf-8"),
+            check=True,
+        )
+        memory_max = mutants.remote_memory_max(host)
+        print(f"running `{run_line}` on {host}", flush=True)
+        # The `--wait --pipe` call is the unit's whole run: the remote lock
+        # stays held through it, so a mutants launch or collect waits rather
+        # than racing the clone mid-gates.
+        run = mutants.ssh(
+            host,
+            f"sudo -n systemd-run --unit={mutants.GATES_UNIT} --uid=debian --wait --pipe "
+            f"--collect -p MemoryMax={memory_max} -p MemorySwapMax=0 -p CPUWeight=idle "
+            f'--working-directory="$HOME/studio-mutants/tree" /bin/bash {GATES_JOB} '
+            "< /dev/null",
+        )
+        print(f"`{run_line}` on {host}: exit {run.returncode}")
+        if not command:
+            # The whole gates leave a 30 GB build cache, which put the disk under the mutation
+            # runs' free floor, so the next pipeline was refused every time (2026-11-23): a
+            # cold build costs those gates a few minutes, a refusal a whole run. The removal
+            # itself stays under the remote lock: it deletes `target/` under the clone a
+            # launch's builds would write back into.
+            mutants.ssh(host, "bash -s -- --delete", input=CLEAN_TARGET.read_bytes())
     return run.returncode
 
 
