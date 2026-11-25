@@ -771,6 +771,13 @@ and no phase closes with one outstanding.
           Windows executables, so this machine keeps `rust-lld`). Measure one crate's per-mutant
           build seconds on the VPS with it and without, set only in the remote job's
           environment, never in `.cargo/config.toml` (CI and the Linux gates would need it);
+        - [ ] **shards** (the maintainer's idea, 2026-11-25) a long run here as a sequence
+          of short cargo-mutants shards (`--shard k/n`), each one's results kept as it ends
+          and a restart resuming at the first shard not kept, so an interruption loses one
+          shard, not the run. Each shard takes the run lock alone, so a VPS half's fetch gets
+          in between shards and the VPS never waits a whole run. The baseline runs once and
+          the shards skip it (`--baseline skip` with the timeout it set). Weigh against
+          `--iterate`, cargo-mutants' own skip of mutants an earlier run caught;
       - [x] **review** 2026-11-24 `13e68e44`: one paid cross-family round (Carbon) over
         `backend` and `parity`, beyond the SWE-2 loop a script gets, because this code decides
         every mutant's outcome. 10 of 13 concerns accepted (a lost console still caught on a
