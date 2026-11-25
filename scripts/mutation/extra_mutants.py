@@ -33,6 +33,7 @@ only prints the mutants and their counts, without running anything. `--kind <nam
 import concurrent.futures
 import glob
 import json
+import math
 import os
 import queue
 import re
@@ -277,18 +278,24 @@ def _cargo(
 
 def test_threads(jobs: int) -> int:
     """One job's `--test-threads`: the logical CPUs split `jobs` ways (the
-    run's job count), never under 1 — the share `sized_config` gives each
-    cargo-mutants job."""
-    return max(1, (os.cpu_count() or 1) // jobs)
+    run's job count), rounded up, as `cpu_share` splits them."""
+    return cpu_share(os.cpu_count() or 1, jobs)
 
 
 def build_jobs(jobs: int) -> int:
-    """One job's `--build-jobs`: the run's CPUs split `jobs` ways, never
-    under 1 — the machine's count, or `mutants.REMOTE_JOBSERVER_TASKS` when the
+    """One job's `--build-jobs`: the run's CPUs split `jobs` ways, rounded
+    up — the machine's count, or `mutants.REMOTE_JOBSERVER_TASKS` when the
     build cap is set, the same budget the remote's cargo-mutants half runs on.
     There is no shared jobserver between the jobs' cargo processes, so each
     gets its own share."""
-    return max(1, (mutants.REMOTE_JOBSERVER_TASKS or os.cpu_count() or 1) // jobs)
+    return cpu_share(mutants.REMOTE_JOBSERVER_TASKS or os.cpu_count() or 1, jobs)
+
+
+def cpu_share(cpus: int, jobs: int) -> int:
+    """`cpus` split `jobs` ways, rounded up: rounded down, a count that does
+    not divide (8 CPUs, 3 jobs) leaves CPUs no job may use, idle whenever every
+    job is in a parallel stretch, while one thread too many only waits its turn."""
+    return math.ceil(cpus / jobs)
 
 
 def build(crate: str, cwd: Path, jobs: int = mutants.JOBS) -> tuple[int, str]:
@@ -312,8 +319,7 @@ def run_tests(
     """`mutants.test_command`'s `cargo nextest run` of `crate` in `cwd` (the run's copy
     of the tree, whose `.cargo/mutants.toml` it reads): a mutant's test phase,
     run only after `build` succeeded; `--test-threads` is `test_threads`'
-    `cpus // jobs` share of this machine's logical CPUs, the same
-    `sized_config` gives each cargo-mutants job. `expression` (a nextest
+    share of this machine's logical CPUs among `jobs` jobs. `expression` (a nextest
     filterset, the tests covering the mutant's lines) is added with `-E`; None
     runs the full suite. Returns (exit code, output);
     the code is None when the timeout killed the process tree."""

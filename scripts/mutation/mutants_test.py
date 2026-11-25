@@ -11,6 +11,7 @@ run's results kept for triage, and `main`'s hold, retry and `--once`. Run by
 import contextlib
 import io
 import json
+import math
 import os
 import stat
 import subprocess
@@ -538,7 +539,7 @@ class TestCommand(unittest.TestCase):
         self.assertEqual(
             popen.call_args.args[0],
             mutants.test_command(
-                "cpk", config, max(1, (os.cpu_count() or 1) // mutants.JOBS)
+                "cpk", config, math.ceil((os.cpu_count() or 1) / mutants.JOBS)
             ),
         )
         # In the run's copy, where the mutant is applied, not the live tree.
@@ -557,9 +558,9 @@ class TestCommand(unittest.TestCase):
         self.assertEqual(
             popen.call_args.args[0],
             mutants.test_command(
-                "cpk", config, max(1, (os.cpu_count() or 1) // mutants.JOBS)
+                "cpk", config, math.ceil((os.cpu_count() or 1) / mutants.JOBS)
             ) + [
-                f"--build-jobs={max(1, (os.cpu_count() or 1) // mutants.JOBS)}",
+                f"--build-jobs={math.ceil((os.cpu_count() or 1) / mutants.JOBS)}",
                 "--no-run",
             ],
         )
@@ -584,8 +585,8 @@ class TestCommand(unittest.TestCase):
 
     def test_build_and_run_tests_split_the_cpus_among_the_jobs(self):
         """`run_crate`'s jobs share the machine as cargo-mutants' do: each
-        gets `cpus // jobs` test threads, never under 1, `JOBS` jobs unless
-        the run names its count."""
+        gets `cpus / jobs` test threads rounded up (8 CPUs, 3 jobs: 3, none
+        left idle), `JOBS` jobs unless the run names its count."""
         for cpus, threads in ((8, 4), (1, 1)):
             with mock.patch("os.cpu_count", return_value=cpus):
                 popen, *_ = self.started(
@@ -602,10 +603,10 @@ class TestCommand(unittest.TestCase):
             popen, *_ = self.started(
                 lambda cwd: extra_mutants.run_tests("cpk", cwd, 1.0, jobs=3)
             )
-            self.assertIn("--test-threads=2", popen.call_args.args[0])
+            self.assertIn("--test-threads=3", popen.call_args.args[0])
             popen, *_ = self.started(lambda cwd: extra_mutants.build("cpk", cwd, 3))
-            self.assertIn("--test-threads=2", popen.call_args.args[0])
-            self.assertIn("--build-jobs=2", popen.call_args.args[0])
+            self.assertIn("--test-threads=3", popen.call_args.args[0])
+            self.assertIn("--build-jobs=3", popen.call_args.args[0])
 
     def test_cargo_passes_no_preexec_fn_off_windows(self):
         """`_cargo` runs on the pool's worker threads, where `below_normal()`'s
