@@ -339,9 +339,10 @@ time the maintainer frees memory on the host: a measured cap takes what is free 
 and leaves the host its margin. cargo-mutants' builds are capped by its jobserver,
 `REMOTE_JOBSERVER_TASKS` tasks (the host's CPU count while unset), passed on its command line,
 since cargo ignores `-j` under a jobserver. The extra pass and the coverage map build outside
-cargo-mutants. The extra pass tests `REMOTE_EXTRA_JOBS` mutants at once there, more than a
-local run's `JOBS`, because it runs only the tests covering each mutant: its time goes to
-builds, which run nearly serially and leave CPUs idle with fewer jobs. Each build gets its
+cargo-mutants. The extra pass tests `REMOTE_EXTRA_JOBS` mutants at once there. It runs only
+the tests covering each mutant, so its time goes to builds, which run nearly serially and
+leave CPUs idle; a third job would fill them, but on `save_editor` it filled the host's disk
+too, so the pass keeps two until that is measured. Each build gets its
 share of the CPUs (`--build-jobs`, a share of `REMOTE_JOBSERVER_TASKS` when it is set). The
 coverage map builds at `.cargo/config.toml`'s `build.jobs`, two fewer than the CPUs.
 

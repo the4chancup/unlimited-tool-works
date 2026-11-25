@@ -759,10 +759,14 @@ and no phase closes with one outstanding.
           against 154 s. On the VPS (`ruleset_editor`, 280 mutants in 2,794 s), the job
           peaked at 8.9 GiB under its 11.84 GiB cap, against 9.27 GiB for the last pass
           run one at a time with the cap;
-        - [ ] **jobs3** 2026-11-25: the remote's extra pass tests
-          `REMOTE_EXTRA_JOBS` mutants at once, since its builds left the VPS's CPUs about a
-          third idle at two. Check on the backfill's `save_editor` pass: the CPUs' idle share
-          while it runs, no mutant untested at the memory cap, and the host's free disk;
+        - [ ] **jobs3** 2026-11-25: the remote's extra pass at three jobs, since its builds
+          left the VPS's CPUs about a third idle at two. Failed on the backfill's `save_editor`
+          pass: the disk filled at mutant 195 of 846 (the pass stopped, its last mutants
+          untested) and the memory peak reached the cap, so `REMOTE_EXTRA_JOBS` is back at two.
+          The rerun at two samples the VPS's disk every 5 minutes
+          (`~/studio-mutants/disk_samples.log`: the copies' `target/`, the tests' leftovers,
+          the coverage map's `llvm-cov-target`); three again only once the sample says what
+          filled it and that is bounded;
         - [ ] **nodebug** 2026-11-25: mutation runs build with the `mutants` profile (dev
           without debug info). Check on the next local run of a crate measured before (the
           `studio` diff crate: 108 s baseline build, `mutants.diff/studio/`): its baseline
