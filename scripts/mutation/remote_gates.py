@@ -76,7 +76,8 @@ def main(command: list[str]) -> int:
                 f"cargo install --locked just@{local_just.split()[-1]} on the remote"
             )
             return 1
-        tree = mutants.snapshot(tree)
+        # The pre-wait tree, committed to `REMOTE_REF` here under the lock.
+        mutants.snapshot(tree)
         remote_head, remote_tree, _nproc, _version = mutants.remote_state(host)
         if remote_tree == tree:
             print("remote tree up to date", flush=True)

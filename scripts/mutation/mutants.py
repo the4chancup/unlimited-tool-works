@@ -2530,8 +2530,8 @@ def split(
 ) -> int:
     """The whole split run for one selection (the caller holds the tree and
     build locks throughout, as a diff run does): the remote launch under the
-    remote lock (`remote_start`, and `run_split`'s shadow launch re-checking
-    the busy host under it), both halves, the fetch and the summary. Without `local` (`REMOTE_ONLY`,
+    remote lock (`remote_start`, and `run_split`'s shadow launch running it
+    again whole under it), both halves, the fetch and the summary. Without `local` (`REMOTE_ONLY`,
     a diff run) the
     remote runs every mutant. A split is planned first (`plan_file_split`) and
     recorded, a diff's as a whole crate's, so the summary checks the halves'
