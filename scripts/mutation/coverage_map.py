@@ -37,8 +37,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import extra_mutants  # noqa: E402  (kill_tree)
 import mutants  # noqa: E402  (below_normal)
 
-# Half the cores, below normal: the parallel test runs leave the machine usable.
-JOBS = max(1, (os.cpu_count() or 2) // 2)
+# Every core: the map runs only in the remote's job, whose unit (`CPUWeight=idle`, under
+# `nice`) already yields the CPUs to the host's own services, so a share held back stays idle.
+JOBS = os.cpu_count() or 1
 # Well past a single test's wait bound, so an unmutated test never reaches it.
 TEST_TIMEOUT_SECONDS = 600
 
