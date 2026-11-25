@@ -4215,6 +4215,25 @@ pruned when their phase closes; they stay in git history. A question only the ma
 can answer is not an issue: it goes to `docs/maintainer/questions.html`, and an issue that waits on one
 points there.
 
+- open (2026-11-25, after the Claude reset of 2026-11-26) — **LEAN**: the test suite is
+  heavy and likely redundant (the maintainer's idea): for example, one test per instance of
+  a button where a single test of the button's class, plus light per-instance tests, would
+  do. A mutant runs every test covering its line, so the weight is paid again by every
+  mutation run: the `save_editor` backfill slowed from about 14 s a mutant to minutes in the
+  view code. Coverage must not drop: a light per-instance test still checks what belongs
+  to that instance (its label, what clicking it does, when it is enabled), since a presence
+  check alone lets a mis-wired button survive.
+  - [ ] **census** per-test durations by module for the heaviest crates (`save_editor`,
+    `team_compiler`, `studio_core`), the share spent in setup (fixture loads, egui frames),
+    and the tests each mutant selects (a coverage map's `selection.json`);
+  - [ ] **patterns** [after census] the cheaper shapes in CONTRIBUTING "Testing and
+    verification": a fixture loaded once per test binary, each instance's wiring checked
+    in one table-driven scene, a shared widget's behavior tested once in its own crate.
+    Revisit the helium brief rules that ask for a test per call site or per place a text
+    shows, which built much of the repetition;
+  - [ ] **pilot** [after patterns] one heavy module, mutation-run before and after: its
+    caught set must not shrink while its test time falls; then the rest, heaviest first.
+
 - resolved (2026-11-24) — `scripts/commit.py -a` left a new file out silently, as `git commit
   -a` does: `9ac41d0a` needed an amend for `docs/spec/core/design.md`. With `-a` it now
   commits nothing while a file is untracked and not ignored, and names it (`69e1ac60`).
