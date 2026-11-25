@@ -829,6 +829,15 @@ and no phase closes with one outstanding.
             `.tmp/lock/rulings_code_r2.md`); then item `deep`;
           - [ ] **split** [after local] the same for a split's local half: its shards a
             round-robin subset of the split's `0/2` (`0/2n`, `2/2n`, …);
+          - [ ] **warm** 2026-11-25 (the maintainer: an improvement keeps its own costs as small
+            as it can, RUNBOOK "How the work runs"), once `deep`'s slice S4 has merged, since
+            both edit `mutants_diff.py`: each shard starts with a
+            cold build of its crate in each of its copies (152-176 s against 3-25 s for every
+            later build, CATCHUP's `save_editor` shards 1-4), about a tenth of a 25-minute
+            shard. The shards share one snapshot: warm its `target/` once and run them with
+            `--copy-target=true`, once the copy's time and disk are measured against the cold
+            build. The same measurement checks why each copy's first test also runs longer
+            (350-730 s against 75-510 s);
         - [ ] **deep** [after shards/lock, shards/rename, orphans, oom, died, memcap] 2026-11-25 (the maintainer): the mutation
           machinery is reviewed at Tier 1's depth (RUNBOOK "Review rounds" (e)). Carbon's loop
           over `scripts/mutation/` whole, in parts, then Astra's, each paid round between SWE-2

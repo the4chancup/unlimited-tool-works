@@ -20278,3 +20278,8 @@ Plan: `docs/WORKLOG.md` TESTSEL/adopt/extras/parity/shards `lock`.
 Decision: a change to `scripts/mutation/` gets the three loops (SWE-2, Carbon, Astra), not a vital script's SWE-2 rounds; the first Carbon and Astra loops cover the folder whole, after the lock split's rework and the open `rename` and `orphans` fixes.
 Why: the maintainer, as the scripts became delicate. Their runs share two machines, four locks and state that resumes, so a race misreports a crate's outcomes while every test passes; the lock split's SWE-2 round found one (a split that could send another tree's snapshot).
 Plan: `docs/RUNBOOK.md` "Review rounds" (e) and Tier 3's note; worklog item `deep`.
+
+## 2026-11-25 — process — an improvement keeps its own costs as small as it can
+Decision: a change to the code or to how the work runs is measured for what it costs (time per unit of work, disk, memory, the CPU left to the maintainer) as well as what it fixes, and its fixed costs are made as small as the gain allows before it lands. First case: the mutation shards' cold builds, worklog `shards`/`warm`.
+Why: the maintainer, on learning that each resumable shard of a long run started with a cold build of its crate, about a tenth of the run (some six hours over `save_editor`'s 145 shards). Resumability was weighed when the split was designed, its per-shard cost was not.
+Plan: `docs/RUNBOOK.md` "How the work runs"; worklog item `shards`/`warm`.

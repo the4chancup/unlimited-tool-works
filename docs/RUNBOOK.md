@@ -25,6 +25,14 @@ names it. We do not just rerun and move on: save_editor's mutation run held a ch
 about 12.5 hours before anyone asked why, and the answer was that each caught mutant still
 ran most of the test suite.
 
+**An improvement counts what it costs, not only what it gains.** A change to the code or to
+how the work runs is measured for what it adds as well as what it fixes: time per unit of
+work, disk, memory, the CPU left to the maintainer. Its fixed costs are made as small as the
+gain allows before it lands, not left for later. When a mutation run was split into
+resumable shards, nobody measured a shard's fixed cost, and each shard started with a cold
+build of its crate: about 2.5 of a shard's 25 minutes, some six hours over `save_editor`'s
+145 shards.
+
 **A checkpoint is one command.** `just checkpoint` runs `gates-changed` and `mutants-diff`
 since the last gated commit and then moves that commit, the git ref
 `refs/checkpoints/gated`, to the commit it started on (`scripts/gates/checkpoint.py`; a
