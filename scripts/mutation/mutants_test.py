@@ -462,6 +462,16 @@ class TestCommand(unittest.TestCase):
             ["cargo", "nextest", "run", "-p", "cpk", "--frozen", "--test-threads=13"],
         )
 
+    def test_the_file_s_profile_reaches_nextest(self):
+        """cargo-mutants builds with the file's `profile`; the extra kinds'
+        runner passes it to nextest, so both test the same binaries."""
+        config = {"test_tool": "nextest", "profile": "mutants"}
+        self.assertEqual(
+            mutants.test_command("cpk", config, 4),
+            ["cargo", "nextest", "run", "-p", "cpk", "--cargo-profile", "mutants",
+             "--test-threads=4"],
+        )
+
     def test_another_test_tool_fails_naming_it(self):
         for config in ({"test_tool": "cargo"}, {}):
             with self.assertRaisesRegex(ValueError, "'cargo'"):

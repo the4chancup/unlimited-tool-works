@@ -44,6 +44,11 @@ minimum_test_timeout = 150
 # the disk and killed two diff runs. No test reads a gitignored file.
 gitignore = true
 
+# The workspace's `mutants` profile: `dev` without debug info, which no mutant's outcome reads
+# and every mutant's links paid for (`Cargo.toml` says how much). The extra kinds' runner
+# passes it to nextest as `--cargo-profile` (`test_command`).
+profile = "mutants"
+
 # python_bindings is a `test = false` cdylib whose one test is the wheel's smoke test (`just
 # bindings`). cargo-mutants cannot run that, and `cargo test`/`cargo check` never compile the
 # lib, so every mutant came back "missed" in 0 s without building (`PyResult::new()`

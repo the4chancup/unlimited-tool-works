@@ -155,6 +155,14 @@ debug = "line-tables-only"
 [profile.dev.package."*"]
 debug = false
 
+# Mutation runs (`.cargo/mutants.toml`'s `profile`) link every mutant's test binaries and
+# never read their debug info: a test failure names its file and line without it, and the
+# panic hook's backtraces are unresolved addresses. Without it each link writes no `.pdb` on
+# Windows (`utw`'s alone is several times its exe) and much smaller binaries on Linux.
+[profile.mutants]
+inherits = "dev"
+debug = false
+
 # The BC7 encoder is unusable unoptimized: one 1024x1024 texture took 56 s in a test build
 # against 9 s optimized, and every mutant reruns that test.
 [profile.dev.package.block_compression]

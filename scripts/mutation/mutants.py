@@ -544,7 +544,7 @@ def test_threads_arg(test_threads: int) -> str:
 # file split sets it through `sized_config`'s `extra`, past this check.
 TEST_CONFIG_KEYS = {
     "test_tool", "additional_cargo_args", "additional_cargo_test_args", "timeout_multiplier",
-    "minimum_test_timeout", "gitignore", "exclude_globs", "exclude_re",
+    "minimum_test_timeout", "gitignore", "exclude_globs", "exclude_re", "profile",
 }
 # Nextest's exit codes the runs read: tests ran and one failed, or the build failed.
 TEST_RUN_FAILED = 100
@@ -554,7 +554,7 @@ BUILD_FAILED = 101
 def check_test_config(config: dict) -> None:
     """Raises `ValueError` for a parsed `.cargo/mutants.toml` the two runners would not
     test alike: a `test_tool` other than nextest; a key outside `TEST_CONFIG_KEYS`
-    (`features`, `profile`, `examine_globs` — a split's `sized_config` `extra`
+    (`features`, `examine_globs` — a split's `sized_config` `extra`
     carries that one, past this check); or an `additional_cargo_test_args` entry
     other than `--test-threads=`, which `sized_config` overwrites and
     `test_command` drops. Both `sized_config` and `test_command` call it, so such
@@ -578,13 +578,15 @@ def check_test_config(config: dict) -> None:
 
 def test_command(crate: str, config: dict, test_threads: int) -> list[str]:
     """The command that tests `crate` the way a mutation run does: `cargo nextest run -p
-    <crate>` plus `config`'s `additional_cargo_args` and `test_threads` threads,
+    <crate>` plus `config`'s `profile` (nextest's `--cargo-profile`, cargo-mutants'
+    `--profile`), its `additional_cargo_args` and `test_threads` threads,
     `config` being a parsed `.cargo/mutants.toml` that `check_test_config` accepts. The
     file's own `additional_cargo_test_args` is dropped, the same swap `sized_config`
     makes for cargo-mutants."""
     check_test_config(config)
+    profile = ["--cargo-profile", config["profile"]] if "profile" in config else []
     return [
-        "cargo", "nextest", "run", "-p", crate,
+        "cargo", "nextest", "run", "-p", crate, *profile,
         *config.get("additional_cargo_args", []),
         test_threads_arg(test_threads),
     ]
