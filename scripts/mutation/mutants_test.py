@@ -127,6 +127,25 @@ def cpk_package(root: Path) -> None:
     (folder / "Cargo.toml").write_text("")
 
 
+def round_robin_plan(crate: str = "cpk", names: list | None = None) -> dict:
+    """A `plan_file_split` stub's record: round-robin halves of `crate`'s
+    `names` mutants."""
+    return {
+        "crate": crate, "method": "round-robin", "target": 0.5,
+        "achieved": 0.5, "local_files": [], "names": names or ["m"],
+    }
+
+
+# The remote-launch no-ops `run_split` needs past its shadow `remote_start`:
+# the transfer, the clone's config write, the unit's start and the wait.
+REMOTE_STUBS = {
+    "transfer": lambda *a: None,
+    "remote_config": lambda *a, **k: None,
+    "launch_remote": lambda *a, **k: None,
+    "wait_remote": lambda host: (0, 1.0),
+}
+
+
 def write_run(
     out: Path, selected: int, outcomes: list[dict], logs: dict[str, str] | None = None
 ) -> None:
@@ -215,8 +234,20 @@ def run_lock_recording(root: Path, taken: list):
     """A `mutants.run_lock` taking each lock for real in `root/<its file's
     name>` (their names kept distinct, so one hold does not shadow another)
     and appending the name to `taken`. A take while already held raises
-    `AssertionError` where `run_lock` would poll forever."""
+    `AssertionError` where `run_lock` would poll forever. `record.held` is
+    the set of file names held right now: `probe` reads it rather than
+    `try_lock`, so no `os.name` patch can reach a real lock."""
     real_lock = mutants.run_lock
+    held = set()
+
+    @contextlib.contextmanager
+    def hold(name, lock):
+        held.add(name)
+        try:
+            with lock:
+                yield
+        finally:
+            held.discard(name)
 
     def record(path=mutants.RUN_LOCK):
         name = Path(path).name
@@ -225,8 +256,9 @@ def run_lock_recording(root: Path, taken: list):
         with open(target, "a+b") as handle:
             if not mutants.try_lock(handle):
                 raise AssertionError(f"{name} taken while already held")
-        return real_lock(target)
+        return hold(name, real_lock(target))
 
+    record.held = held
     return record
 
 
@@ -237,17 +269,13 @@ def lock_probes(root: Path):
     `LOCK_NAMES` does) to `probe.calls`, asserted after the run — a whole run's
     wait holds none; `probe.taken` lists the takes' file names in order."""
     calls, taken = [], []
+    record = run_lock_recording(root, taken)
 
     def probe(tag):
-        held = set()
-        for filename, name in LOCK_NAMES.items():
-            with open(root / filename, "a+b") as handle:
-                if not mutants.try_lock(handle):
-                    held.add(name)
-        calls.append((tag, held))
+        calls.append((tag, {LOCK_NAMES[filename] for filename in record.held}))
 
     probe.calls, probe.taken = calls, taken
-    with mock.patch.object(mutants, "run_lock", run_lock_recording(root, taken)):
+    with mock.patch.object(mutants, "run_lock", record):
         yield probe
 
 
@@ -1688,19 +1716,14 @@ class RunQueue(unittest.TestCase):
                     remote_host=lambda: "bonfire",
                     remote_run_state=lambda host: "none",
                     remote_start=lambda host, tree: (None, None, 8),
-                    plan_file_split=lambda *a: {"crate": "cpk", "method": "round-robin",
-                                                "target": 0.5, "achieved": 0.5,
-                                                "local_files": [], "names": ["a"]},
+                    plan_file_split=lambda *a: round_robin_plan(names=["a"]),
                     local_refusal=lambda: None,
                     set_aside_last_run=lambda: None,
                     local_mutants=lambda *a, **k: subprocess.CompletedProcess(a, 0),
-                    transfer=lambda *a: None,
-                    remote_config=lambda *a, **k: None,
-                    launch_remote=lambda *a, **k: None,
-                    wait_remote=lambda host: (0, 1.0),
                     update_cost_cache=lambda *a, **k: None,
                     fetch_remote=lambda *a, **k: None,
                     summarize=lambda *a, **k: 0,
+                    **REMOTE_STUBS,
                 ),
                 mock.patch.object(subprocess, "run", run),
                 mock.patch.object(
@@ -2162,14 +2185,11 @@ class SplitShares(unittest.TestCase):
         with (
             mock.patch.multiple(
                 mutants,
+                **{**REMOTE_STUBS, "launch_remote": launch_remote},
                 local_mutants=local_mutants,
-                launch_remote=launch_remote,
                 remote_start=lambda host, tree: (None, None, 8),
                 run_lock=lambda *a, **k: contextlib.nullcontext(),
-                transfer=lambda *_: None,
-                remote_config=lambda *_: None,
                 local_config=lambda source, extra=None: Path("local.toml"),
-                wait_remote=lambda host: (0, 1.0),
             ),
             contextlib.redirect_stdout(io.StringIO()),
         ):
@@ -2234,27 +2254,24 @@ class SplitShares(unittest.TestCase):
         transferred = {}
 
         def remote_start(host, tree):
+            probe("start")
             starts.append(tree)
             return f"head-{len(starts)}", f"tree-{len(starts)}", 8
 
         with (
             tempfile.TemporaryDirectory() as tmp,
+            lock_probes(Path(tmp)) as probe,
             mock.patch.object(mutants, "ROOT", Path(tmp)),
             mock.patch.multiple(
                 mutants,
                 remote_start=remote_start,
                 remote_refusal=lambda host: None,
-                plan_file_split=lambda *a: {"crate": "cpk", "method": "round-robin",
-                                            "target": 0.5, "achieved": 0.5,
-                                            "local_files": [], "names": ["m"]},
+                plan_file_split=lambda *a: round_robin_plan(),
                 finish_remote_run=lambda *a, **k: 0,
                 local_mutants=lambda *a, **k: subprocess.CompletedProcess(a, 0),
-                run_lock=lambda *a, **k: contextlib.nullcontext(),
-                transfer=lambda host, remote_head: transferred.setdefault("head", remote_head),
-                remote_config=lambda *_: None,
-                launch_remote=lambda *a, **k: None,
                 local_config=lambda source, extra=None: Path("local.toml"),
-                wait_remote=lambda host: (0, 1.0),
+                **{**REMOTE_STUBS, "transfer": lambda host, remote_head:
+                   transferred.setdefault("head", remote_head)},
             ),
             contextlib.redirect_stdout(io.StringIO()),
         ):
@@ -2263,6 +2280,11 @@ class SplitShares(unittest.TestCase):
                 Path("source"),
             )
         self.assertEqual(starts, [HEAD_TREE, HEAD_TREE])
+        # Both calls sit inside a remote-lock hold: a `remote_start` outside
+        # the `with` would pass the counts above and race the clone anyway.
+        self.assertEqual(
+            probe.calls, [("start", {"remote"}), ("start", {"remote"})]
+        )
         # The second probe, not `remote_start`'s stale one, feeds the transfer
         # (the first's `remote_tree == tree` would skip it).
         self.assertEqual(transferred["head"], "head-2")
@@ -3763,19 +3785,15 @@ class DiffBusy(unittest.TestCase):
             mock.patch.multiple(
                 mutants,
                 run_lock=lambda *a, **k: contextlib.nullcontext(),
-                plan_file_split=lambda *a: {"crate": "cpk", "method": "round-robin",
-                                            "target": 0.5, "achieved": 0.5,
-                                            "local_files": [], "names": ["m"]},
+                plan_file_split=lambda *a: round_robin_plan(),
                 local_mutants=lambda *a, **k: calls.__setitem__("local", a)
                 or subprocess.CompletedProcess(a, 0),
                 remote_refusal=lambda host: "a busy host",
-                transfer=lambda *a: None,
-                remote_config=lambda *_: None,
-                launch_remote=lambda *a, **k: None,
                 local_refusal=lambda: None,
                 set_aside_last_run=lambda: None,
                 update_cost_cache=lambda *a, **k: None,
                 report_killed=lambda code, **k: code,
+                **REMOTE_STUBS,
             ),
             mock.patch.object(mutants_diff, "kept_shards", lambda crate, key: False),
             mock.patch.object(
@@ -3792,6 +3810,9 @@ class DiffBusy(unittest.TestCase):
             )
         self.assertEqual(code, 0)
         self.assertIn("local", calls, "the crate ran here after the refused shadow")
+        # The refused attempt's `local_mutants` carried `--shard 0/2`; the
+        # fallback's, last recorded, runs the crate whole.
+        self.assertNotIn("--shard", calls["local"][0])
         self.assertIn("busy", out.getvalue())
 
     def test_an_unreachable_remote_runs_a_long_crate_here(self):
@@ -4448,6 +4469,11 @@ class Rolling(unittest.TestCase):
         renames, its two record writes and `CURRENT`'s removal take this
         tree's themselves."""
         self.fetched()
+        # Earlier results in place, so `set_aside`'s `cpk` -> `cpk.old` move
+        # joins the probed sequence first.
+        earlier = self.results / "cpk" / "earlier"
+        earlier.mkdir(parents=True)
+        (earlier / "x").write_text("kept\n", encoding="utf-8")
         real_rename, real_write_text, real_unlink = (
             Path.rename, Path.write_text, Path.unlink
         )
@@ -4474,13 +4500,14 @@ class Rolling(unittest.TestCase):
         self.assertEqual(
             probe.calls,
             [
-                ("rename", {"tree"}), ("rename", {"tree"}),
+                ("rename", {"tree"}), ("rename", {"tree"}), ("rename", {"tree"}),
                 ("write", {"tree"}), ("write", {"tree"}),
                 ("unlink", {"tree"}),
             ],
         )
         kept = self.results / "cpk"
         self.assertTrue((kept / "out" / "remote" / "mutants.out" / "missed.txt").exists())
+        self.assertTrue((self.results / "cpk.old" / "earlier" / "x").exists())
         self.assertEqual((kept / "exit.txt").read_text(encoding="utf-8"), "2\n")
 
     def test_file_results_leaves_the_crate_undated_when_nothing_landed(self):
@@ -4490,7 +4517,6 @@ class Rolling(unittest.TestCase):
         earlier = self.results / "cpk" / "earlier"
         earlier.mkdir(parents=True)
         (earlier / "x").write_text("kept\n", encoding="utf-8")
-        self.results.mkdir(exist_ok=True)
         rolling.CURRENT.write_text(f"cpk {self.COMMIT}\n", encoding="utf-8")
         out = io.StringIO()
         with (
@@ -5488,6 +5514,7 @@ class GatesRemote(unittest.TestCase):
     def test_the_launch_takes_the_remote_lock(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
+            snapshotted = []
 
             def ssh(host, remote, **kwargs):
                 if "systemd-run" in remote:
@@ -5514,7 +5541,8 @@ class GatesRemote(unittest.TestCase):
                 ),
                 mock.patch.object(mutants, "ssh", ssh),
                 mock.patch.object(
-                    mutants, "snapshot", lambda *a, **k: probe("snapshot") or "t"
+                    mutants, "snapshot",
+                    lambda tree: snapshotted.append(tree) or probe("snapshot") or "t",
                 ),
                 mock.patch.object(
                     mutants, "remote_state", lambda host: (None, "t2", 8, "v")
@@ -5533,6 +5561,9 @@ class GatesRemote(unittest.TestCase):
                 ("clean", {"remote"}),
             ],
         )
+        # The snapshot is of the tree read before the lock's wait, not a
+        # fresh `snapshot()` inside it.
+        self.assertEqual(snapshotted, ["t"])
 
 
 class ExtraRun(unittest.TestCase):
