@@ -817,6 +817,78 @@ class TestCommand(unittest.TestCase):
         self.assertEqual(calls, [None])
 
 
+class KillTree(unittest.TestCase):
+    """`extra_mutants.kill_tree` ends a timed-out cargo's whole session: the
+    group kill alone misses a test process, which nextest puts in a process
+    group of its own in that session, so a test that never ends would outlive
+    the pass."""
+
+    def test_stat_session_reads_the_field_after_a_command_name_holding_parens(self):
+        """A `/proc/<pid>/stat` command name can hold spaces and parentheses
+        itself, so the session (the line's sixth field) is counted from the
+        line's last `)`."""
+        stat = "1234 () () S 5678 90 4242 0 -1 4194304 100 0 0 0 20 0 1 0 25 0"
+        self.assertEqual(extra_mutants.stat_session(stat), 4242)
+
+    @unittest.skipUnless(os.name == "posix", "sessions and setpgid are POSIX only")
+    def test_a_grandchild_in_its_own_process_group_dies_with_the_tree(self):
+        """A child started the way `_cargo` starts cargo (a session of its
+        own) whose grandchild moved to a process group of its own, as nextest's
+        test processes do: `kill_tree` on the child takes the grandchild too."""
+        with tempfile.TemporaryDirectory() as tmp:
+            pid_file = Path(tmp) / "pid"
+            child = subprocess.Popen(
+                [
+                    sys.executable, "-c",
+                    "import subprocess, sys, time\n"
+                    "grandchild = subprocess.Popen([sys.executable, '-c', "
+                    "'import os, time; os.setpgid(0, 0); time.sleep(600)'])\n"
+                    "open(sys.argv[1], 'w').write(str(grandchild.pid))\n"
+                    "time.sleep(600)\n",
+                    str(pid_file),
+                ],
+                start_new_session=True,
+            )
+
+            def dead(pid: int) -> bool:
+                """`pid` is gone or a zombie (killed, not yet reaped)."""
+                try:
+                    line = Path(f"/proc/{pid}/stat").read_text()
+                except OSError:
+                    return True
+                return line[line.rindex(")") + 1:].split()[0] == "Z"
+
+            grandchild = None
+            try:
+                deadline = time.monotonic() + 120
+                while not pid_file.exists():
+                    self.assertLess(time.monotonic(), deadline, "the child wrote no pid")
+                    time.sleep(0.05)
+                grandchild = int(pid_file.read_text())
+                # Wait for the grandchild's own group before the kill: reached
+                # through the child's, the group kill would end it too and the
+                # test would prove nothing.
+                while os.getpgid(grandchild) != grandchild:
+                    self.assertLess(
+                        time.monotonic(), deadline,
+                        "the grandchild never left the child's group",
+                    )
+                    time.sleep(0.05)
+                extra_mutants.kill_tree(child)
+                while not dead(grandchild):
+                    self.assertLess(
+                        time.monotonic(), deadline,
+                        "the grandchild survived the tree kill",
+                    )
+                    time.sleep(0.05)
+            finally:
+                if child.poll() is None:
+                    child.kill()
+                    child.wait()
+                if grandchild is not None and not dead(grandchild):
+                    os.kill(grandchild, 9)  # SIGKILL: a failed try leaves none
+
+
 class Partition(unittest.TestCase):
     def test_each_file_goes_to_the_side_further_below_its_share_largest_first(self):
         files = {"a.rs": 40, "b.rs": 30, "c.rs": 20, "d.rs": 10}
@@ -3114,6 +3186,90 @@ class RecheckWindows(unittest.TestCase):
             self.assertEqual(bool(pattern.search(unnamed)), whole, unnamed)
 
 
+class MoveResults(unittest.TestCase):
+    """`mutants.move_results` retries a results folder's denied move for a
+    while — a transient handle (the antivirus, an indexer) releases it — and
+    past the bound fails naming both folders; another error is not retried."""
+
+    def denied_rename(self, failures: int):
+        """A `Path.rename` raising PermissionError its first `failures` calls,
+        then moving for real; returns (the fake, the count of its calls)."""
+        real = Path.rename
+        calls = [0]
+
+        def rename(self, target):
+            calls[0] += 1
+            if calls[0] <= failures:
+                raise PermissionError(5, "Access is denied", str(target))
+            return real(self, target)
+
+        return rename, calls
+
+    def clock(self):
+        """`mutants.time` faked: `monotonic` the fake now, `sleep` advancing it."""
+        now = [0.0]
+        clock = mock.Mock(monotonic=lambda: now[0])
+        clock.sleep = mock.Mock(
+            side_effect=lambda seconds: now.__setitem__(0, now[0] + seconds)
+        )
+        return clock
+
+    def test_a_move_denied_twice_then_allowed_moves_the_folder(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            folder = Path(tmp) / "mutants.out"
+            folder.mkdir()
+            (folder / "missed.txt").write_text("a survivor\n", encoding="utf-8")
+            target = Path(tmp) / "mutants.diff"
+            rename, calls = self.denied_rename(2)
+            with (
+                mock.patch.object(Path, "rename", rename),
+                mock.patch.object(mutants, "time", self.clock()),
+            ):
+                mutants.move_results(folder, target)
+            self.assertEqual(calls[0], 3)
+            self.assertFalse(folder.exists())
+            self.assertEqual(
+                (target / "missed.txt").read_text(encoding="utf-8"), "a survivor\n"
+            )
+
+    def test_a_move_denied_past_the_bound_fails_naming_both_folders(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            folder = Path(tmp) / "mutants.out"
+            folder.mkdir()
+            target = Path(tmp) / "mutants.diff"
+            rename, _ = self.denied_rename(10**9)
+            with (
+                mock.patch.object(Path, "rename", rename),
+                mock.patch.object(mutants, "time", self.clock()),
+                self.assertRaises(RuntimeError) as raised,
+            ):
+                mutants.move_results(folder, target)
+            self.assertIn(str(folder), str(raised.exception))
+            self.assertIn(str(target), str(raised.exception))
+            self.assertIsInstance(raised.exception.__cause__, PermissionError)
+            self.assertTrue(folder.exists(), "the folder is still where it was")
+
+    def test_a_move_failing_otherwise_raises_at_once(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            folder = Path(tmp) / "mutants.out"
+            folder.mkdir()
+            calls = [0]
+
+            def missing(self, target):
+                calls[0] += 1
+                raise FileNotFoundError(2, "no such file or directory")
+
+            clock = self.clock()
+            with (
+                mock.patch.object(Path, "rename", missing),
+                mock.patch.object(mutants, "time", clock),
+                self.assertRaises(FileNotFoundError),
+            ):
+                mutants.move_results(folder, Path(tmp) / "mutants.diff")
+            self.assertEqual(calls[0], 1)
+            clock.sleep.assert_not_called()
+
+
 class DiffRun(unittest.TestCase):
     """`mutants_diff.run`'s filing of each crate's results, `run_crate` stubbed."""
 
@@ -3256,6 +3412,44 @@ class DiffRun(unittest.TestCase):
             (self.root / "mutants.diff.old" / "missed_all.txt").read_text(encoding="utf-8"),
             "kept\n",
         )
+
+    def test_a_crate_move_denied_once_retries_and_the_run_goes_on(self):
+        """The move of a crate's `mutants.out` into `mutants.diff/<crate>`
+        retries a transient PermissionError instead of ending the run (a
+        handle held the folder briefly once, and the crates after it never
+        ran)."""
+        ran = []
+        real = Path.rename
+        denials = [1]
+
+        def rename(self, target):
+            if denials[0]:
+                denials[0] -= 1
+                raise PermissionError(5, "Access is denied", str(target))
+            return real(self, target)
+
+        def run_crate(diff_path, tree, source, crate, count, busy=None):
+            ran.append(crate)
+            out = self.root / "mutants.out"
+            out.mkdir()
+            (out / "missed.txt").write_text(f"{crate} survivor\n", encoding="utf-8")
+            return 0
+
+        now = [0.0]
+        clock = mock.Mock(monotonic=lambda: now[0])
+        clock.sleep = mock.Mock(side_effect=lambda s: now.__setitem__(0, now[0] + s))
+        with (
+            mock.patch.object(Path, "rename", rename),
+            mock.patch.object(mutants, "time", clock),
+        ):
+            code, _ = self.run_diff(run_crate)
+        self.assertEqual(code, 0)
+        self.assertEqual(ran, ["cpk", "fpc"], "the crates after the denied one still ran")
+        for crate in ("cpk", "fpc"):
+            self.assertEqual(
+                (self.results / crate / "missed.txt").read_text(encoding="utf-8"),
+                f"{crate} survivor\n",
+            )
 
     TWO_CRATES_DIFF = (
         b"diff --git a/crates/libs/cpk/src/lib.rs b/crates/libs/cpk/src/lib.rs\n"
