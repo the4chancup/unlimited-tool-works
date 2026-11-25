@@ -45,7 +45,12 @@ def main(argv: list[str]) -> int:
     # The checkpoint's mutation step and the Linux gates both refuse a remote that is busy or
     # short of disk, but only once they start, after the checkpoint's tests: ask it first.
     host = mutants.remote_host()
-    refusal = host and mutants.remote_refusal(host)
+    refusal = None
+    if host:
+        # `remote_refusal` empties the host's tmp folder, so it runs under the
+        # remote lock, which keeps a launch from placing work there meanwhile.
+        with mutants.run_lock(mutants.REMOTE_LOCK):
+            refusal = mutants.remote_refusal(host)
     if refusal:
         sys.exit(f"the remote cannot take this run: {refusal}")
     head = git(ROOT, "rev-parse", "HEAD")

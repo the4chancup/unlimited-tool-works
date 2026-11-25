@@ -5727,10 +5727,18 @@ class RemoteRefusal(unittest.TestCase):
         def ssh(host, command, **kwargs):
             return subprocess.CompletedProcess([host, command], gates)
 
+        def disk_use(host):
+            if state != "none" or gates != 3:
+                self.fail(
+                    f"remote_disk_use emptied the host's tmp with a {state!r} "
+                    f"half and the gates probe at {gates}"
+                )
+            return 2**30, free
+
         with (
             mock.patch.object(mutants, "remote_run_state", lambda host: state),
             mock.patch.object(mutants, "ssh", ssh),
-            mock.patch.object(mutants, "remote_disk_use", lambda host: (2**30, free)),
+            mock.patch.object(mutants, "remote_disk_use", disk_use),
             contextlib.redirect_stdout(io.StringIO()),
         ):
             return mutants.remote_refusal("bonfire")
@@ -5761,31 +5769,44 @@ class RemoteRefusal(unittest.TestCase):
 class GatesRemote(unittest.TestCase):
     """`just gates-remote` (`remote_gates.py`): the refusal, the snapshot's
     transfer and the unit's start under the remote lock, so a launch from
-    another tree cannot race the clone."""
+    another tree cannot race the clone; and `just remote <command>`, one
+    `cargo` or `just` command sent the same way."""
 
-    def test_the_launch_takes_the_remote_lock(self):
+    @contextlib.contextmanager
+    def gate(
+        self, *, refusal=None, remote_tree="t2", remote_just="just 1.0",
+        run_code=0, interrupt=False,
+    ):
+        """`remote_gates.main`'s seams stubbed: host `bonfire`, this tree `t`,
+        the remote clone's `remote_tree`, `remote_refusal` answering `refusal`,
+        the host's just at `remote_just` and the unit's run exiting `run_code`,
+        or raising `KeyboardInterrupt` when `interrupt`. Yields `(probe,
+        snapshotted, calls, out)`: `calls` holds each ssh's remote command and
+        stdin, in order."""
+        snapshotted, calls, out = [], [], io.StringIO()
+
+        def ssh(host, remote, **kwargs):
+            calls.append((remote, kwargs.get("input")))
+            code = run_code if "systemd-run" in remote else 0
+            stdout = remote_just if "--version" in remote else ""
+            if "systemd-run" in remote:
+                probe("unit")
+                if interrupt:
+                    raise KeyboardInterrupt
+            elif "bash -s" in remote:
+                probe("clean")
+            return subprocess.CompletedProcess([host, remote], code, stdout=stdout)
+
         with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
-            snapshotted = []
-
-            def ssh(host, remote, **kwargs):
-                if "systemd-run" in remote:
-                    probe("unit")
-                elif "bash -s" in remote:
-                    probe("clean")
-                return subprocess.CompletedProcess(
-                    [host, remote], 0, stdout="just 1.0"
-                )
-
             with (
-                lock_probes(root) as probe,
+                lock_probes(Path(tmp)) as probe,
                 mock.patch.object(mutants, "remote_host", lambda: "bonfire"),
                 mock.patch.object(
-                    mutants, "working_tree",
-                    lambda: probe("working_tree") or "t",
+                    mutants, "working_tree", lambda: probe("working_tree") or "t"
                 ),
                 mock.patch.object(
-                    mutants, "remote_refusal", lambda host: probe("refusal") or None
+                    mutants, "remote_refusal",
+                    lambda host: probe("refusal") or refusal,
                 ),
                 mock.patch.object(
                     remote_gates.subprocess, "run",
@@ -5797,13 +5818,17 @@ class GatesRemote(unittest.TestCase):
                     lambda tree: snapshotted.append(tree) or probe("snapshot") or "t",
                 ),
                 mock.patch.object(
-                    mutants, "remote_state", lambda host: (None, "t2", 8, "v")
+                    mutants, "remote_state", lambda host: (None, remote_tree, 8, "v")
                 ),
                 mock.patch.object(mutants, "transfer", lambda *a: probe("transfer")),
                 mock.patch.object(mutants, "remote_memory_max", lambda host: 2**30),
-                contextlib.redirect_stdout(io.StringIO()),
+                contextlib.redirect_stdout(out),
             ):
-                self.assertEqual(remote_gates.main([]), 0)
+                yield probe, snapshotted, calls, out
+
+    def test_the_launch_takes_the_remote_lock(self):
+        with self.gate() as (probe, snapshotted, calls, out):
+            self.assertEqual(remote_gates.main([]), 0)
         self.assertEqual(
             probe.calls,
             [
@@ -5816,6 +5841,76 @@ class GatesRemote(unittest.TestCase):
         # The snapshot is of the tree read before the lock's wait, not a
         # fresh `snapshot()` inside it.
         self.assertEqual(snapshotted, ["t"])
+
+    def test_a_command_keeps_the_cache_and_returns_its_code(self):
+        """`just remote cargo test -p cpk` runs the command quoted for the
+        host's bash (`shlex.join`: a filter with a space reaches it as typed),
+        cleans no `target/` — the clone's cache is for its reruns — and its
+        exit code is the run's."""
+        with self.gate(run_code=7) as (probe, snapshotted, calls, out):
+            code = remote_gates.main(["cargo", "test", "-p", "cpk", "a b", "--", "-x"])
+        self.assertEqual(code, 7)
+        self.assertNotIn("clean", [tag for tag, _held in probe.calls])
+        job = next(stdin for remote, stdin in calls if "cat >" in remote)
+        self.assertIn(b"cargo test -p cpk 'a b' -- -x", job)
+
+    def test_an_up_to_date_remote_tree_is_not_sent_again(self):
+        with self.gate(remote_tree="t") as (probe, snapshotted, calls, out):
+            self.assertEqual(remote_gates.main([]), 0)
+        self.assertNotIn("transfer", [tag for tag, _held in probe.calls])
+
+    def test_a_command_other_than_cargo_or_just_is_refused(self):
+        with self.gate() as (probe, snapshotted, calls, out):
+            self.assertEqual(remote_gates.main(["rm", "-rf", "target"]), 1)
+        self.assertEqual(calls, [])
+        self.assertEqual(probe.calls, [])
+
+    def test_a_recipe_that_reads_what_changed_is_refused(self):
+        """`gates-changed`, `test-changed` and `commit-messages` read the diff
+        or the messages since a base, which the remote's HEAD — the snapshot
+        commit — empties or misreads: refused with nothing sent."""
+        for recipe in ("gates-changed", "test-changed", "commit-messages"):
+            with self.subTest(recipe=recipe):
+                with self.gate() as (probe, snapshotted, calls, out):
+                    self.assertEqual(remote_gates.main(["just", recipe]), 1)
+                    self.assertEqual(calls, [])
+                    self.assertIn("gates-remote", out.getvalue())
+
+    def test_a_busy_host_or_other_gates_refuse(self):
+        with self.gate(refusal="a busy host") as (probe, snapshotted, calls, out):
+            self.assertEqual(remote_gates.main([]), 1)
+        self.assertEqual(calls, [])
+        self.assertIn("a busy host", out.getvalue())
+
+    def test_a_just_version_mismatch_refuses(self):
+        with self.gate(remote_just="just 2.0") as (probe, snapshotted, calls, out):
+            self.assertEqual(remote_gates.main([]), 1)
+        self.assertIn("versions differ", out.getvalue())
+        self.assertEqual(snapshotted, [])
+        self.assertNotIn("transfer", [tag for tag, _held in probe.calls])
+
+    def test_an_interrupt_or_a_dropped_link_stops_the_unit_then_cleans(self):
+        """Ctrl+C or a dropped link (ssh's 255) ends the `--wait` here while
+        the unit runs on at the host, so the run stops it — once, best
+        effort — before the whole gates' `target/` clean."""
+        for interrupt, code in ((True, 130), (False, 255)):
+            with self.subTest(interrupt=interrupt):
+                with self.gate(interrupt=interrupt, run_code=code) as (
+                    probe, snapshotted, calls, out
+                ):
+                    self.assertEqual(remote_gates.main([]), code)
+                remotes = [remote for remote, _stdin in calls]
+                self.assertLess(
+                    remotes.index(f"sudo -n systemctl stop {mutants.GATES_UNIT}"),
+                    remotes.index("bash -s -- --delete"),
+                )
+
+    def test_an_interrupted_command_stops_the_unit_but_cleans_nothing(self):
+        with self.gate(interrupt=True) as (probe, snapshotted, calls, out):
+            self.assertEqual(remote_gates.main(["cargo", "test", "-p", "cpk"]), 130)
+        remotes = [remote for remote, _stdin in calls]
+        self.assertIn(f"sudo -n systemctl stop {mutants.GATES_UNIT}", remotes)
+        self.assertNotIn("bash -s -- --delete", remotes)
 
 
 class ExtraRun(unittest.TestCase):

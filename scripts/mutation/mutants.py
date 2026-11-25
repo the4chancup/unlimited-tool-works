@@ -899,13 +899,14 @@ def remote_run_state(host: str) -> str | None:
 
 
 def remote_refusal(host: str) -> str | None:
-    """Why a new run that uses the remote cannot start, or None — every caller
-    does (`local_refusal` asks this tree's launch record alone). It refuses
-    while a remote half is running or finished but uncollected, whose
-    collection summarizes the run's `mutants.out` with it; while the host
-    cannot be reached or `just gates-remote` runs there, since each rewrites
-    the remote clone under the other; and below the disk's free floor
-    (`disk_refusal`, after `remote_disk_use` has emptied the tests' leftovers)."""
+    """Why a run that uses the remote cannot start, or None (`local_refusal`
+    asks this tree's launch record alone). The caller holds `REMOTE_LOCK`:
+    `remote_disk_use` empties `REMOTE_TMPDIR`, which is safe only while the
+    lock keeps a launch from placing work there. It refuses while the host
+    cannot be reached, while an earlier remote half is running, finished or
+    died without being collected, while `just gates-remote` runs there, since
+    each rewrites the remote clone under the other, and below the disk's free
+    floor (`disk_refusal`)."""
     state = remote_run_state(host)
     if state is None:
         return f"cannot reach {host}"
