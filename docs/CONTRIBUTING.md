@@ -333,9 +333,10 @@ written by mistake) would otherwise page the machine down until some unrelated p
 allocation failed. At the cap the test's own allocation fails, it aborts (`0xC0000409`), and the
 runner prints `test_runner: <exe> hit the 6G per-process memory cap`. The largest normal test
 binary peaks under 0.5 GB (`pes_savefile`, 2026-09-29). rustc is not capped, so the cap cannot
-turn a mutant unviable. The figure matches the VPS mutation unit's `MemoryMax=6G` only in
-number: that one caps the whole run (builds, both workers, page cache), this one each test
-binary alone. Linux relies on the kernel's OOM killer.
+turn a mutant unviable. The VPS mutation unit's `MemoryMax` (the host's available memory less
+1 GiB, `remote_memory_max` in `scripts/mutation/mutants.py`) is another kind of cap: it covers
+the whole run (builds, both workers, page cache), this one each test binary alone. Linux relies
+on the kernel's OOM killer.
 
 The `.cmd` runs the compiled runner, `utw-test-runner` (`crates/dev/test_runner`), when it is
 installed in cargo's bin folder, and `scripts/gates/test_runner.py` otherwise, as on CI. Install
