@@ -782,6 +782,12 @@ and no phase closes with one outstanding.
           which ran on under `init` at a full core; `kill_tree` also kills the session the
           child leads. Its POSIX test is first run by the checkpoint's Linux gates. One SWE-2
           round owed (with `rename`);
+        - [ ] **oom** 2026-11-25: `aesthetics_export`'s remote run peaked at its memory cap
+          (`memory.peak` counts the page cache, which the cap reclaims). The kernel log showed
+          no OOM kill since 2026-11-20, but only `sudo journalctl -k` tells, so a kill, which
+          a mutant would count as caught, goes unseen. The job copies the unit's
+          `memory.events` beside `memory.peak`, and the finish prints its `oom_kill`, flagging
+          the run when it is above zero;
         - [ ] **shards** (the maintainer's idea, 2026-11-25) a long run here survives an
           interruption, losing one shard rather than the whole run:
           - [x] **local** 2026-11-25 `c0a34ad3`, `673c8b11`: a diff crate run here past
@@ -807,7 +813,7 @@ and no phase closes with one outstanding.
             `.tmp/lock/rulings_code_r2.md`); then item `deep`;
           - [ ] **split** [after local] the same for a split's local half: its shards a
             round-robin subset of the split's `0/2` (`0/2n`, `2/2n`, …);
-        - [ ] **deep** [after shards/lock, shards/rename, orphans] 2026-11-25 (the maintainer): the mutation
+        - [ ] **deep** [after shards/lock, shards/rename, orphans, oom] 2026-11-25 (the maintainer): the mutation
           machinery is reviewed at Tier 1's depth (RUNBOOK "Review rounds" (e)). Carbon's loop
           over `scripts/mutation/` whole, in parts, then Astra's, each paid round between SWE-2
           subloops. After the open fixes to the same files, so no paid round reads code about
