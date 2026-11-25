@@ -800,7 +800,8 @@ and no phase closes with one outstanding.
           the other worker's `cargo metadata`, leaving `utf.rs:405:49` untested (owed a rerun
           on the VPS). The job runs each test under `prlimit --data` at Windows' 6 GB
           (`REMOTE_TEST_MEMORY`, through the Linux target's runner), so it aborts alone;
-          checked on the VPS with nextest beforehand;
+          checked on the VPS with nextest beforehand. `dds_convert`'s rolling run, launched
+          before it, reported `oom_kill 6`: its catches are owed a rerun under the cap;
         - [ ] **shards** (the maintainer's idea, 2026-11-25) a long run here survives an
           interruption, losing one shard rather than the whole run:
           - [x] **local** 2026-11-25 `c0a34ad3`, `673c8b11`: a diff crate run here past
@@ -830,7 +831,8 @@ and no phase closes with one outstanding.
           machinery is reviewed at Tier 1's depth (RUNBOOK "Review rounds" (e)). Carbon's loop
           over `scripts/mutation/` whole, in parts, then Astra's, each paid round between SWE-2
           subloops. After the open fixes to the same files, so no paid round reads code about
-          to change;
+          to change. Carbon round 1 running at `cfb20c06`, four parts (the VPS side; outcomes
+          and shares; diff runs and test selection; the extra kinds' runner);
       - [x] **review** 2026-11-24 `13e68e44`: one paid cross-family round (Carbon) over
         `backend` and `parity`, beyond the SWE-2 loop a script gets, because this code decides
         every mutant's outcome. 10 of 13 concerns accepted (a lost console still caught on a
