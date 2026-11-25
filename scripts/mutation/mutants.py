@@ -33,7 +33,7 @@ construction, memory-capped and CPU-idle: the host also runs the production
 Fluxer instance, an allocating mutant filled its RAM and swap at 2.20i, and
 `nice` alone cannot keep the run off Fluxer's CPU (cgroup v2 weights ignore
 it). Its state lives in `~/studio-mutants/run/` (`job.sh`, `in.diff`, `pid`,
-`memory_max`, `log`, `exit`, `memory_peak`, `collected`), and this machine only
+`memory_max`, `log`, `exit`, `memory_peak`, `memory_events`, `collected`), and this machine only
 polls it with short ssh calls, so a dropped connection costs one poll, not the run:
 cargo-mutants cannot resume, and a remote half tied to one long ssh session
 died with it (2.20i). If this script itself stops, `just mutants-collect`
@@ -238,8 +238,9 @@ LOCAL_TMPDIR = Path(tempfile.gettempdir()) / "studio-mutants"
 # The detached remote half's files: `job.sh`, `in.diff` (a diff run's diff),
 # `pid` (the service's MainPID), `memory_max` (its cap, `remote_memory_max`),
 # `log`, `exit` ("<code> <seconds>", written when cargo-mutants returns),
-# `memory_peak` (the unit cgroup's peak memory) and `collected` (written by
-# the fetch).
+# `memory_peak` (the unit cgroup's peak memory), `memory_events` (the
+# cgroup's `oom_kill` counter: above zero, the kernel killed processes in
+# the run) and `collected` (written by the fetch).
 REMOTE_RUN = f"{REMOTE_BASE}/run"
 # What a run costs on this machine, measured per crate from the local half of
 # every run: the mean seconds of one mutant and the unmutated baseline's
@@ -1155,10 +1156,13 @@ def launch_remote(
         f'export TMPDIR="{REMOTE_TMPDIR}" && mkdir -p "$TMPDIR"\n'
         f". ~/.cargo/env && {selection_map}{extra_pass}{mutants_line}"
         "code=$?\n"
-        # `memory.peak` of this unit's cgroup tells whether the cap is tight;
+        # `memory.peak` of this unit's cgroup tells whether the cap is tight,
+        # `memory.events`'s `oom_kill` whether the kernel killed a process;
         # `exit` stays the last file written: pollers treat it as finished.
         'peak="/sys/fs/cgroup$(cut -d: -f3 /proc/self/cgroup)/memory.peak"\n'
         '[ -f "$peak" ] && cp "$peak" ../run/memory_peak\n'
+        'events="/sys/fs/cgroup$(cut -d: -f3 /proc/self/cgroup)/memory.events"\n'
+        '[ -f "$events" ] && cp "$events" ../run/memory_events\n'
         'echo "$code $(( $(date +%s) - start ))" > ../run/exit\n'
     )
     ssh(
@@ -1166,6 +1170,7 @@ def launch_remote(
         f"mkdir -p {REMOTE_RUN} && "
         f"rm -f {REMOTE_RUN}/pid {REMOTE_RUN}/log {REMOTE_RUN}/exit "
         f"{REMOTE_RUN}/collected {REMOTE_RUN}/memory_peak {REMOTE_RUN}/memory_max "
+        f"{REMOTE_RUN}/memory_events "
         # A whole run's mutant listing and its selection file are this run's:
         # a failed listing must leave none, or an old map would pair with it.
         f"{REMOTE_RUN}/in.diff {REMOTE_RUN}/mutants.json "
@@ -1468,15 +1473,29 @@ def fetch_remote(host: str, partial: bool = False, *, extra_only: bool = False) 
             )
     log = ssh(host, f"cat {REMOTE_RUN}/log 2>/dev/null || true", capture_output=True, check=True)
     (out / "remote_console.txt").write_bytes(log.stdout)
-    peak, cap = ssh(
+    peak, cap, *events = ssh(
         host,
-        f'for f in memory_peak memory_max; do echo "$(cat {REMOTE_RUN}/$f 2>/dev/null)"; done',
+        f'for f in memory_peak memory_max memory_events; do echo "$(cat {REMOTE_RUN}/$f 2>/dev/null)"; done',
         capture_output=True, text=True, check=True,
     ).stdout.splitlines()
     if peak and cap:
         print(
             f"remote memory peak: {int(peak) / 2**30:.2f} GiB "
             f"(cap {int(cap) / 2**30:.2f} GiB)"
+        )
+    counts = dict(
+        parts for line in events if len(parts := line.split()) == 2
+    )
+    oom_kill = int(counts.get("oom_kill", 0))
+    if oom_kill:
+        warning = (
+            "the kernel killed processes in the remote run "
+            f"(oom_kill {oom_kill}), so its caught counts may include "
+            "mutants a kill ended"
+        )
+        print(warning)
+        (out / "oom_kills.txt").write_text(
+            warning + "\n", encoding="utf-8", newline="\n"
         )
     ssh(host, f"touch {REMOTE_RUN}/collected", check=True)
     remote_pending().unlink(missing_ok=True)
@@ -1914,7 +1933,7 @@ def report_killed(
     return run_code([code, 1] if untested else [code])
 
 
-def collect(host: str) -> int:
+def collect(host: str) -> tuple[int, bool]:
     """`just mutants-collect`: waits for a remote half this script launched but
     did not fetch (it was stopped, or gave up polling), fetches it and prints the
     summary. The wait holds no lock — a whole run's lasts days; the finish takes
@@ -1934,11 +1953,12 @@ def collect(host: str) -> int:
     (`finish_extra_run`): the pass's results and counts, no `mutants.out`. A
     died half's partial results
     are fetched too, whether it died before or during the wait, and the run
-    exits 1."""
+    exits 1. Returns the run's exit code and whether the half died before it
+    finished."""
     state = remote_run_state(host)
     if state is None:
         print(f"cannot reach {host}")
-        return 1
+        return 1, False
     if state == "none":
         # The record could still be a launch's, written before its unit
         # starts: re-check under the locks that serialize those.
@@ -1954,7 +1974,7 @@ def collect(host: str) -> int:
                         "a local half's results in this tree's mutants.out are in "
                         "no summary)"
                     )
-                return 1
+                return 1, False
     try:
         if state == "died":
             raise RemoteDied("the remote half died")
@@ -1972,7 +1992,7 @@ def collect(host: str) -> int:
             if remote_run_state(host) == "none":
                 # The half's own run fetched it while this collect waited.
                 print("the remote half is already collected")
-                return 1
+                return 1, False
             if pending:
                 launched_tree = record.get("tree") if isinstance(record, dict) else None
                 if launched_tree is None:
@@ -1981,7 +2001,7 @@ def collect(host: str) -> int:
                         "half ran on: written before records carried it — "
                         "collect from the tree that launched the run"
                     )
-                    return 1
+                    return 1, False
             else:
                 # Another tree launched the half: its clone's checkout is the
                 # snapshot it still runs, under this lock.
@@ -2026,14 +2046,16 @@ def collect(host: str) -> int:
                     )
             fetch_remote(host, partial=partial, extra_only=extra_only)
         if extra_only:
-            return finish_extra_run(
+            code = finish_extra_run(
                 host, remote_code, tree=launched_tree, partial=partial, fetched=True
             )
-        return finish_remote_run(
-            host, local_code, remote_code, (None, remote_seconds),
-            local_half=local_half, extra_run=extra_run, tree=launched_tree,
-            partial=partial, extra_if_fetched=extra_if_fetched, fetched=True,
-        )
+        else:
+            code = finish_remote_run(
+                host, local_code, remote_code, (None, remote_seconds),
+                local_half=local_half, extra_run=extra_run, tree=launched_tree,
+                partial=partial, extra_if_fetched=extra_if_fetched, fetched=True,
+            )
+        return code, partial
 
 
 def mutant_crate(file: str) -> str:
@@ -2625,7 +2647,7 @@ def main(argv: list[str]) -> int:
         if host is None:
             print("STUDIO_MUTANTS_REMOTE is not set")
             return 1
-        return collect(host)
+        return collect(host)[0]
     if argv[1] == "--remote-extra":
         # The remote job runs this inside the unit: a whole run's job before
         # cargo-mutants, an extras-only run's after its map (`launch_remote`), the

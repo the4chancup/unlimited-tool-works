@@ -23,7 +23,8 @@ hold file: while it stands the job waits between crates, the way to free the VPS
 for the checkpoint's Linux gates before a push; delete it and it goes on. A run
 the VPS refuses (busy) is retried after a wait, never counted, and so is one
 that fails; a run the job lost (it was stopped, or its wait failed) is
-collected and filed under its crate at the next turn.
+collected and filed under its crate at the next turn — one whose remote half
+died is filed without `launched_from.txt`, so the crate is picked again.
 """
 
 import io
@@ -108,12 +109,15 @@ def run_one(crate: str, host: str) -> int:
     return code
 
 
-def file_results(crate: str, commit: str, code: int) -> None:
+def file_results(crate: str, commit: str, code: int, *, died: bool = False) -> None:
     """A finished run's local results moved under `ROLLING / crate` under the
     tree lock (its callers hold none), the crate's earlier run set aside, and
     `CURRENT` cleared. With no `mutants.out` to move — a same-tree run set it
     aside in the gap after the finish's lock — nothing is filed but the word:
-    the crate is not recorded as run and comes up for a fresh pick."""
+    the crate is not recorded as run and comes up for a fresh pick. With
+    `died` the results are a remote half's partials, filed the same but with
+    no `launched_from.txt`: dating the crate would queue it behind every
+    other as if it had run."""
     with mutants.run_lock(mutants.tree_lock_path()):
         out = ROOT / "mutants.out"
         if not out.exists():
@@ -134,9 +138,17 @@ def file_results(crate: str, commit: str, code: int) -> None:
         if extra.exists():
             mutants.move_results(extra, folder / "extra")
         (folder / "exit.txt").write_text(f"{code}\n", encoding="utf-8", newline="\n")
-        (folder / "launched_from.txt").write_text(
-            f"{commit}\n", encoding="utf-8", newline="\n"
-        )
+        if died:
+            print(
+                f"rolling: {crate}'s remote half died before it finished: "
+                "its partial results are filed, but the crate is not dated "
+                "and will be picked again",
+                flush=True,
+            )
+        else:
+            (folder / "launched_from.txt").write_text(
+                f"{commit}\n", encoding="utf-8", newline="\n"
+            )
         CURRENT.unlink(missing_ok=True)
 
 
@@ -144,7 +156,8 @@ def recover(host: str) -> None:
     """A run the job lost track of (it was stopped, or its wait failed) left
     `CURRENT`: when this tree's launch record is a whole run's (no local half),
     its half is collected (`mutants.collect` waits for one still running) and
-    filed as `run_one` would have. Any other record is another run's, left to
+    filed as `run_one` would have — a half that died keeps its partial results
+    but does not date the crate. Any other record is another run's, left to
     its owner, and `CURRENT` goes."""
     if not CURRENT.exists():
         return
@@ -154,7 +167,8 @@ def recover(host: str) -> None:
         "extra_only"
     ):
         print(f"rolling: collecting {crate}'s run, launched from {commit}", flush=True)
-        file_results(crate, commit, mutants.collect(host))
+        code, died = mutants.collect(host)
+        file_results(crate, commit, code, died=died)
     CURRENT.unlink(missing_ok=True)
 
 
