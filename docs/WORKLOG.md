@@ -782,6 +782,13 @@ and no phase closes with one outstanding.
           which ran on under `init` at a full core; `kill_tree` also kills the session the
           child leads. Its POSIX test is first run by the checkpoint's Linux gates. One SWE-2
           round owed (with `rename`);
+        - [ ] **died** 2026-11-25: the VPS was powered down from the hypervisor at 17:55
+          (`qemu-ga: guest-shutdown called`), mid `color_tools`, and `rolling.recover` would
+          have filed the dead half's partial results (its extra pass, no mutant of the main
+          pass) as the crate's run, `launched_from.txt` and all, so the crate went to the back
+          of the queue untested. Collected by hand instead (`just mutants-collect`), which
+          leaves it undated. A collect that finds the half dead files its partial results
+          but writes no `launched_from.txt`, with a test;
         - [ ] **oom** 2026-11-25: `aesthetics_export`'s remote run peaked at its memory cap
           (`memory.peak` counts the page cache, which the cap reclaims). The kernel log showed
           no OOM kill since 2026-11-20, but only `sudo journalctl -k` tells, so a kill, which
@@ -813,7 +820,7 @@ and no phase closes with one outstanding.
             `.tmp/lock/rulings_code_r2.md`); then item `deep`;
           - [ ] **split** [after local] the same for a split's local half: its shards a
             round-robin subset of the split's `0/2` (`0/2n`, `2/2n`, …);
-        - [ ] **deep** [after shards/lock, shards/rename, orphans, oom] 2026-11-25 (the maintainer): the mutation
+        - [ ] **deep** [after shards/lock, shards/rename, orphans, oom, died] 2026-11-25 (the maintainer): the mutation
           machinery is reviewed at Tier 1's depth (RUNBOOK "Review rounds" (e)). Carbon's loop
           over `scripts/mutation/` whole, in parts, then Astra's, each paid round between SWE-2
           subloops. After the open fixes to the same files, so no paid round reads code about
