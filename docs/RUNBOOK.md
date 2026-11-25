@@ -307,7 +307,9 @@ the way to free it without stopping the job: create the file and the job
 finishes its crate and waits; delete it and it goes on. A run the VPS refuses
 (busy) or that fails is retried after a wait, never counted. A run the job lost track of
 (the job was stopped, or its wait on the VPS failed) is collected and filed under its crate
-before the job picks its next crate, so a stopped job is just started again.
+before the job picks its next crate, so a stopped job is just started again. When that run's
+VPS half died (the VPS was rebooted under it), its partial results are filed with no
+`launched_from.txt`, so the crate is not dated and comes up again.
 
 **When the maintainer's PC is suspect, the heavy runs go to the VPS.** Four
 `MEMORY_MANAGEMENT` bugchecks there (the last during a run, all four in `rustc.exe` at one
@@ -379,7 +381,9 @@ it), then `just mutants-collect`. The VPS itself is never stopped: it hosts a pr
 service.
 
 **The remote half runs detached** from any ssh session (`~/studio-mutants/run/`: `job.sh`,
-`pid`, `log`, `exit`, `memory_peak`), and the script polls it every 15 s with short ssh calls.
+`pid`, `log`, `exit`, `memory_peak`, `memory_events`), and the script polls it every 15 s with
+short ssh calls. A fetch whose `memory_events` counts an `oom_kill` says so and leaves
+`oom_kills.txt` beside the results: a mutant whose test the kernel killed counts as caught.
 A dropped link costs a poll, not the run: a remote half that hung off one long ssh session
 once died with it. Its progress is read while it runs, with one read-only call each, nothing
 chained: `/c/Windows/System32/OpenSSH/ssh.exe bonfire "wc -l ~/studio-mutants/tree/mutants.out/caught.txt ~/studio-mutants/tree/mutants.out/missed.txt ~/studio-mutants/tree/mutants.out/unviable.txt ~/studio-mutants/tree/mutants.out/timeout.txt"`
