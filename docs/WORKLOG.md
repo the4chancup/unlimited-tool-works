@@ -792,6 +792,12 @@ and no phase closes with one outstanding.
           mutant counts as caught, went unseen without `sudo journalctl -k`. The job copies
           the unit's `memory.events`, and a fetch with `oom_kill` above zero prints it and
           writes `oom_kills.txt` beside the results;
+        - [ ] **memcap** 2026-11-25: in `cpk`'s rolling run a mutant's test grew to 14.6 GB, the
+          unit's cap, and the cgroup's OOM kill also took the other worker's `cargo metadata`,
+          leaving `utf.rs:405:49` untested (listed, owed a rerun on the VPS). Windows caps each
+          test process at 6 GB (`test_runner.cmd`), so the allocating test fails alone; give
+          the VPS's test processes the same cap (the Linux target's runner, or a `prlimit` in
+          the job), never cargo's or rustc's;
         - [ ] **shards** (the maintainer's idea, 2026-11-25) a long run here survives an
           interruption, losing one shard rather than the whole run:
           - [x] **local** 2026-11-25 `c0a34ad3`, `673c8b11`: a diff crate run here past
@@ -817,7 +823,7 @@ and no phase closes with one outstanding.
             `.tmp/lock/rulings_code_r2.md`); then item `deep`;
           - [ ] **split** [after local] the same for a split's local half: its shards a
             round-robin subset of the split's `0/2` (`0/2n`, `2/2n`, …);
-        - [ ] **deep** [after shards/lock, shards/rename, orphans, oom, died] 2026-11-25 (the maintainer): the mutation
+        - [ ] **deep** [after shards/lock, shards/rename, orphans, oom, died, memcap] 2026-11-25 (the maintainer): the mutation
           machinery is reviewed at Tier 1's depth (RUNBOOK "Review rounds" (e)). Carbon's loop
           over `scripts/mutation/` whole, in parts, then Astra's, each paid round between SWE-2
           subloops. After the open fixes to the same files, so no paid round reads code about
