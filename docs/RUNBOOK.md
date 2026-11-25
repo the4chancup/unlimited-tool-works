@@ -463,7 +463,11 @@ extracts its snapshot to `%TEMP%\studio-mutants\source-*` and builds in
 exclusion covers every run), the extra pass in `extra-mutants-*`, all deleted when the run
 ends normally; a killed run leaves its copies behind (some with a multi-GB `target/`), so
 after stopping one, delete them (`scripts/mutation/rm_mutant_copies.py`, which refuses
-anything else). `.cargo/mutants.toml` sets `gitignore = true` so the copies leave out `.tmp/`
+anything else). When Defender's CPU is high during a run, the maintainer records a minute of
+it in an administrator PowerShell, `New-MpPerformanceRecording -RecordTo
+C:\Data\Downloads\mp.etl` (Enter stops it), and `Get-MpPerformanceReport -Path
+C:\Data\Downloads\mp.etl -TopFiles 15 -TopProcesses 10 -TopExtensions 10` names what it
+scanned, to compare with the exclusions, `(Get-MpPreference).ExclusionPath`. `.cargo/mutants.toml` sets `gitignore = true` so the copies leave out `.tmp/`
 and `target/`: without it each copy carried all of `.tmp/`, and two runs died of a full disk.
 The logs alone are large: a `pes_savefile` whole-crate run leaves about 20 GiB in
 `mutants.out/` (5.6b: 8.9 GiB local, 11 GiB fetched from the remote half), which the next run
