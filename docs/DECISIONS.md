@@ -20258,3 +20258,13 @@ Linux check before members get a build. Stopping the job outright was not chosen
 would kill the crate's run, and cargo-mutants cannot resume one, so its hours would be lost.
 Plan: no plan edit needed: it is how the work is verified. RUNBOOK "Mutation runs and the
 VPS" describes the job and the file once the worklog's TIER `rolling` slice lands.
+
+## 2026-11-25 — mutation — the run lock splits by what it guards: a tree's folders, this machine's builds, the VPS
+Decision: the one machine-wide run lock becomes four: each tree's own lock for its result folders and records (held as the run lock is now), the build lock (the old `RUN_LOCK`) for runs that build here, the remote lock for the VPS and `refs/mutants/remote` (around the busy check and the launch, and the fetch and finish), and a short lock around the cost table's read and write. A whole run on the VPS takes its tree's lock and the remote's, never the build lock. A long run here started from another worktree then runs beside the rolling job without idling the VPS, and the hour's cap on runs here while a half is on the VPS (`BUSY_LOCAL_LIMIT_SECONDS`) is removed.
+Why: the single lock made a VPS half's collect wait for a local diff run's whole length, so the VPS sat idle, and the cap left the long crates untested while the rolling job keeps the VPS busy. Releasing the lock between shards (the earlier `lock` item) was not chosen: a crate's extra pass runs unsharded after its shards, for hours on the largest crates, and each pause would need every per-tree file the diff run keeps checked against what a collect writes. The whole run's Windows recheck builds here without the build lock, which costs CPU beside a run that holds it but cannot change an outcome: each run builds in its own copies.
+Plan: `docs/WORKLOG.md` TESTSEL/adopt/extras/parity/shards `lock`; RUNBOOK "Mutation runs and the VPS" when it lands.
+
+## 2026-11-25 — mutation — a diff run here may hold the VPS idle for two hours, not one
+Decision: `BUSY_LOCAL_LIMIT_SECONDS` is 7,200: while a half is on the VPS, a diff run's crates run here up to two hours in total before the next is left untested.
+Why: the maintainer allows that much VPS idle time, and with the rolling job keeping the VPS busy, the one-hour cap left most of a catch-up untested. Not unbounded: the half's collect still waits for this run's lock until the lock splits (worklog `lock`).
+Plan: `docs/RUNBOOK.md` "Mutation runs and the VPS" and the constant's comment in `scripts/mutation/mutants_diff.py`.

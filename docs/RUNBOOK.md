@@ -148,7 +148,7 @@ run is under way: it keeps the split below, a round's diff being minutes and its
 waited on, except while a mutation half is on the VPS (running, or ended and not collected)
 or the VPS cannot be reached, when it runs entirely on this
 machine instead of waiting days for its turn there, up to a limit: with a half on the VPS,
-a crate that would take the run's total time here past `BUSY_LOCAL_LIMIT_SECONDS` (an hour)
+a crate that would take the run's total time here past `BUSY_LOCAL_LIMIT_SECONDS` (two hours, the VPS idle time the maintainer allows)
 is left untested, and the run says so. The diff holds the run lock throughout and the half's
 fetch waits for it, so the VPS sits idle as long as the diff runs here. A crate left untested
 is run again once the VPS is free. A crate run here that is estimated past `SHARD_SECONDS`

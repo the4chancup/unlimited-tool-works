@@ -62,8 +62,8 @@ RESULTS = ROOT / "mutants.diff"
 CHECKED = ROOT / ".cargo" / "mutants_checked.toml"
 # The longest a diff run's crates run here, in total, while another run's half is on the
 # VPS. Not unbounded: this run holds the run lock throughout, that half's collect waits for
-# it, and the VPS stays idle meanwhile.
-BUSY_LOCAL_LIMIT_SECONDS = 3600
+# it, and the VPS stays idle meanwhile; two hours of that idle is what the maintainer allows.
+BUSY_LOCAL_LIMIT_SECONDS = 7200
 # A crate run here estimated past this runs as cargo-mutants shards of about this length
 # (`sharded_run`), each kept as it ends: an interruption (a restart, a crash) then loses
 # one shard, not the crate's run, and the same command rerun goes on from there.

@@ -784,11 +784,21 @@ and no phase closes with one outstanding.
             not `--iterate`, which a second interruption would rob of the first part's
             outcomes. One SWE-2 round: 5 of 10 accepted, fixed in `673c8b11`. Check on the
             first real long run here (with `STUDIO_MUTANTS_REMOTE` empty while a VPS half is
-            out, since the hour's cap still holds);
-          - [ ] **lock** [after local] release the run lock between shards, so a VPS half's
-            collect gets in and a long run here no longer needs the cap. Blocked on shared
-            folders: a collect writes `mutants.out/remote/` and `extra_mutants.out/`, which a
-            diff run sets aside or moves into its own results;
+            out, since the cap of `BUSY_LOCAL_LIMIT_SECONDS`, two hours, still holds);
+          - [ ] **lock** [after local] the one run lock (`RUN_LOCK`) guards three things a
+            VPS-only whole run and a run here do not share, so it splits by what it guards:
+            each tree's own lock for its folders and records (`mutants.out`, `mutants.diff/`,
+            `mutants.shards/`, `extra_mutants.out/`, the pending record), held as the run lock
+            is now; the build lock (`RUN_LOCK` itself) for this machine's builds, held by every
+            run that builds here; the remote lock for the VPS and `refs/mutants/remote`, held
+            around the busy check and the launch, and the fetch and finish; the cost table
+            under a short lock of its own. A whole run takes its tree's and the remote's,
+            never the build lock: its finish's Windows recheck builds here beside a run that
+            holds it, at the CPU's cost, not the result's. So a long run here, launched from
+            another worktree (`4cc-studio-temp/`) than the rolling job's, no longer idles
+            the VPS, and the cap of `BUSY_LOCAL_LIMIT_SECONDS` goes: not the lock
+            released between shards, which leaves a crate's unsharded extra pass (hours on
+            the largest) holding it, and needs every per-tree file audited for each pause;
           - [ ] **split** [after local] the same for a split's local half: its shards a
             round-robin subset of the split's `0/2` (`0/2n`, `2/2n`, …);
       - [x] **review** 2026-11-24 `13e68e44`: one paid cross-family round (Carbon) over
