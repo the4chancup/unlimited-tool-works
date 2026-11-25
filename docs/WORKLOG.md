@@ -785,20 +785,28 @@ and no phase closes with one outstanding.
             outcomes. One SWE-2 round: 5 of 10 accepted, fixed in `673c8b11`. Check on the
             first real long run here (with `STUDIO_MUTANTS_REMOTE` empty while a VPS half is
             out, since the cap of `BUSY_LOCAL_LIMIT_SECONDS`, two hours, still holds);
-          - [ ] **lock** [after local] the one run lock (`RUN_LOCK`) guards three things a
-            VPS-only whole run and a run here do not share, so it splits by what it guards:
-            each tree's own lock for its folders and records (`mutants.out`, `mutants.diff/`,
-            `mutants.shards/`, `extra_mutants.out/`, the pending record), held as the run lock
-            is now; the build lock (`RUN_LOCK` itself) for this machine's builds, held by every
-            run that builds here; the remote lock for the VPS and `refs/mutants/remote`, held
-            around the busy check and the launch, and the fetch and finish; the cost table
-            under a short lock of its own. A whole run takes its tree's and the remote's,
-            never the build lock: its finish's Windows recheck builds here beside a run that
-            holds it, at the CPU's cost, not the result's. So a long run here, launched from
-            another worktree (`4cc-studio-temp/`) than the rolling job's, no longer idles
-            the VPS, and the cap of `BUSY_LOCAL_LIMIT_SECONDS` goes: not the lock
-            released between shards, which leaves a crate's unsharded extra pass (hours on
-            the largest) holding it, and needs every per-tree file audited for each pause;
+          - [ ] **lock** [after local] the one run lock (`RUN_LOCK`) guards things a VPS-only
+            whole run and a run here do not share, so it splits by what it guards, always
+            taken in this order: `tree_lock` (`.tmp/mutants.tree.lock`, never `target/`,
+            which a clean deletes under a holder) for the tree's folders and records
+            (`mutants.out`, `mutants.diff/`, `mutants.shards/`, `extra_mutants.out/`,
+            `mutants.rolling/`, their `.old` siblings, the pending record), held as the run
+            lock is now, `rolling.file_results` included; then `build_lock` (`RUN_LOCK`
+            itself) for every run that builds here; then `remote_lock` for the VPS, from the
+            busy check through the launch, and from the collect's state check to the fetch's
+            `collected` mark, `just gates-remote` included. The cost table's read-merge-write
+            in `update_cost_cache` takes a lock of its own, innermost. A whole run never takes
+            the build lock: its finish's Windows recheck builds beside a run that holds it,
+            which can starve a build (a killed build fails the run, retried) but never files a
+            wrong outcome, and taking it there would order remote before build, a deadlock
+            with a split. The rechecks run on the tree the pending record names, not on
+            `refs/mutants/remote`, which any launch from another tree moves. A diff crate whose
+            split the VPS refuses (taken since the busy check) runs here instead. So a long run
+            launched from another worktree (`4cc-studio-temp/`) than the rolling job's no longer
+            idles the VPS, and `BUSY_LOCAL_LIMIT_SECONDS` applies only while this tree's own
+            half is on the VPS. Not the lock released between shards: a crate's unsharded extra
+            pass (hours on the largest) would still hold it, and each pause would need every
+            per-tree file checked against what a collect writes;
           - [ ] **split** [after local] the same for a split's local half: its shards a
             round-robin subset of the split's `0/2` (`0/2n`, `2/2n`, …);
       - [x] **review** 2026-11-24 `13e68e44`: one paid cross-family round (Carbon) over
