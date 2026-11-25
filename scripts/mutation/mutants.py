@@ -1272,8 +1272,7 @@ def upload_and_launch(
 
 
 def run_split(
-    selection: list[str], host: str, tree: str, source: Path, remote_head: str | None,
-    remote_tree: str | None, nproc: int, local: bool = True,
+    selection: list[str], host: str, tree: str, source: Path, local: bool = True,
     local_files: set[str] | None = None,
 ) -> tuple[int, int, float | None, float]:
     """The local half starts at once on `source`, the copy of the snapshot `tree`, in the
@@ -1300,16 +1299,16 @@ def run_split(
     def remote_half() -> None:
         try:
             with run_lock(REMOTE_LOCK):
-                # Another tree's run or gates can have taken the host since
-                # `remote_start`'s check: refuse again under the lock, before
-                # the transfer rewrites the clone under their run.
-                refusal = remote_refusal(host)
-                if refusal is not None:
-                    raise Refused(refusal)
+                # Another tree's launch can have taken the host since
+                # `remote_start`'s check — and moved `REMOTE_REF` and the
+                # clone even when it then failed before its unit started:
+                # check, snapshot and probe again, so the transfer bundles
+                # this run's ref and tests it against the clone's real state.
+                head, clone_tree, count = remote_start(host, tree)
                 # A file split's remote runs with no `--shard`: its config's
                 # exclude_globs already name the local half's share.
                 upload_and_launch(
-                    host, selection, tree, source, remote_head, remote_tree, nproc,
+                    host, selection, tree, source, head, clone_tree, count,
                     config_extra,
                     whole=whole or local_files is not None,
                     local_half=local, extra=False,
@@ -1343,6 +1342,10 @@ def run_split(
     local_seconds = time.monotonic() - start
     thread.join()
     if "error" in remote:
+        if isinstance(remote["error"], Refused):
+            # As on the `local=False` path: the crate runs here on
+            # `run_crate`'s re-probe; the local half's results are orphaned.
+            raise remote["error"]
         share = "shard 0/2" if local_files is None else "its share of the files"
         raise RuntimeError(
             f"the remote half failed to launch; the local half covered {share} only. The "
@@ -2519,7 +2522,7 @@ def split(
         print(f"running every mutant on {host} (REMOTE_ONLY)", flush=True)
     started = time.monotonic()
     with run_lock(REMOTE_LOCK):
-        remote_head, remote_tree, nproc = remote_start(host, tree)
+        _head, _tree, nproc = remote_start(host, tree)
 
     set_aside_last_run()
     local_files: set[str] | None = None
@@ -2558,7 +2561,7 @@ def split(
         if not local:
             split_run_record().unlink(missing_ok=True)
     local_code, remote_code, local_seconds, remote_seconds = run_split(
-        selection, host, tree, source, remote_head, remote_tree, nproc, local, local_files
+        selection, host, tree, source, local, local_files
     )
     code = finish_remote_run(
         host, local_code, remote_code, (local_seconds, remote_seconds),

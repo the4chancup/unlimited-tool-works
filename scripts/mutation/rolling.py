@@ -111,14 +111,23 @@ def run_one(crate: str, host: str) -> int:
 def file_results(crate: str, commit: str, code: int) -> None:
     """A finished run's local results moved under `ROLLING / crate` under the
     tree lock (its callers hold none), the crate's earlier run set aside, and
-    `CURRENT` cleared."""
+    `CURRENT` cleared. With no `mutants.out` to move — a same-tree run set it
+    aside in the gap after the finish's lock — nothing is filed but the word:
+    the crate is not recorded as run and comes up for a fresh pick."""
     with mutants.run_lock(mutants.tree_lock_path()):
+        out = ROOT / "mutants.out"
+        if not out.exists():
+            print(
+                f"rolling: {crate} left no mutants.out to file (exit {code}): "
+                "the crate is unfiled and will be picked again",
+                flush=True,
+            )
+            CURRENT.unlink(missing_ok=True)
+            return
         folder = ROLLING / crate
         mutants.set_aside(folder)
         folder.mkdir(parents=True, exist_ok=True)
-        out = ROOT / "mutants.out"
-        if out.exists():
-            out.rename(folder / "out")
+        out.rename(folder / "out")
         # A whole run's fetch lands the extra pass's results beside the remote
         # half's (`remote_extra_record`).
         extra = folder / "out" / "remote" / "extra_mutants.out"

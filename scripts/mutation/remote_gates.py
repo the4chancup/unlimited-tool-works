@@ -6,7 +6,8 @@ load (2026-10-10: four MEMORY_MANAGEMENT bugchecks here, the last during a run;
 The tree goes over as a mutation run sends it (`mutants.snapshot`,
 `mutants.transfer`), into the same remote clone, so this refuses to start while
 a remote mutants half is running or uncollected, or other gates run there —
-the refusal's check through the unit's start under the remote lock
+the refusal's check through the unit's whole run (the `--wait --pipe` call)
+and the `target/` removal under the remote lock
 (`mutants.REMOTE_LOCK`, `mutants.remote_refusal`), so a run launched meanwhile
 waits rather than racing the clone. The whole gates' build cache, the clone's
 `target/`, is removed when they end (`remote_clean_target.sh`), since it held
@@ -53,6 +54,9 @@ def main(command: list[str]) -> int:
     if host is None:
         print("STUDIO_MUTANTS_REMOTE is not set")
         return 1
+    # Before the lock's wait, as every entry point does: the run measures the
+    # tree as it stood when its command started, whatever is edited meanwhile.
+    tree = mutants.working_tree()
     with mutants.run_lock(mutants.REMOTE_LOCK):
         refusal = mutants.remote_refusal(host)
         if refusal is not None:
@@ -72,7 +76,7 @@ def main(command: list[str]) -> int:
                 f"cargo install --locked just@{local_just.split()[-1]} on the remote"
             )
             return 1
-        tree = mutants.snapshot()
+        tree = mutants.snapshot(tree)
         remote_head, remote_tree, _nproc, _version = mutants.remote_state(host)
         if remote_tree == tree:
             print("remote tree up to date", flush=True)
