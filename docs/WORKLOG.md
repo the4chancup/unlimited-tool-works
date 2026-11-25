@@ -767,6 +767,10 @@ and no phase closes with one outstanding.
           without debug info). Check on the next local run of a crate measured before (the
           `studio` diff crate: 108 s baseline build, `mutants.diff/studio/`): its baseline
           and per-mutant build seconds against those, and no `.pdb` in its copies;
+        - [ ] **mold** [after nodebug] weigh `mold` for the VPS's links: it links ELF only (no
+          Windows executables, so this machine keeps `rust-lld`). Measure one crate's per-mutant
+          build seconds on the VPS with it and without, set only in the remote job's
+          environment, never in `.cargo/config.toml` (CI and the Linux gates would need it);
       - [x] **review** 2026-11-24 `13e68e44`: one paid cross-family round (Carbon) over
         `backend` and `parity`, beyond the SWE-2 loop a script gets, because this code decides
         every mutant's outcome. 10 of 13 concerns accepted (a lost console still caught on a
