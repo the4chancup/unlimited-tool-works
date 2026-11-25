@@ -790,31 +790,29 @@ and no phase closes with one outstanding.
             not `--iterate`, which a second interruption would rob of the first part's
             outcomes. One SWE-2 round: 5 of 10 accepted, fixed in `673c8b11`. Check on the
             first real long run here (with `STUDIO_MUTANTS_REMOTE` empty while a VPS half is
-            out, since the cap of `BUSY_LOCAL_LIMIT_SECONDS`, two hours, still holds);
-          - [ ] **lock** [after local] the one run lock (`RUN_LOCK`) guards things a VPS-only
-            whole run and a run here do not share, so it splits by what it guards, always
-            taken in this order: `tree_lock` (`.tmp/mutants.tree.lock`, never `target/`,
-            which a clean deletes under a holder) for the tree's folders and records
-            (`mutants.out`, `mutants.diff/`, `mutants.shards/`, `extra_mutants.out/`,
-            `mutants.rolling/`, their `.old` siblings, the pending record), held as the run
-            lock is now, `rolling.file_results` included; then `build_lock` (`RUN_LOCK`
-            itself) for every run that builds here; then `remote_lock` for the VPS, from the
-            busy check through the launch, and from the collect's state check to the fetch's
-            `collected` mark, `just gates-remote` included. The cost table's read-merge-write
-            in `update_cost_cache` takes a lock of its own, innermost. A whole run never takes
-            the build lock: its finish's Windows recheck builds beside a run that holds it,
-            which can starve a build (a killed build fails the run, retried) but never files a
-            wrong outcome, and taking it there would order remote before build, a deadlock
-            with a split. The rechecks run on the tree the pending record names, not on
-            `refs/mutants/remote`, which any launch from another tree moves. A diff crate whose
-            split the VPS refuses (taken since the busy check) runs here instead. So a long run
-            launched from another worktree (`4cc-studio-temp/`) than the rolling job's no longer
-            idles the VPS, and `BUSY_LOCAL_LIMIT_SECONDS` applies only while this tree's own
-            half is on the VPS. Not the lock released between shards: a crate's unsharded extra
-            pass (hours on the largest) would still hold it, and each pause would need every
-            per-tree file checked against what a collect writes;
+            out, since the cap of `BUSY_LOCAL_LIMIT_SECONDS`, two hours, still holds).
+            Checked 2026-11-25 on CATCHUP's `studio_core` (532 mutants, 4 shards, each kept as
+            it ended); its end failed, item `rename`;
+          - [ ] **rename** 2026-11-25: after `studio_core`'s 4 shards, `mutants_diff.run`'s
+            rename of the root's `mutants.out` into `mutants.diff/studio_core` failed with
+            `PermissionError` (WinError 5) and crashed the run, so `team_compiler` and
+            `team_widgets` never started; the same move by hand a minute later worked (a
+            transient handle, likely the antivirus or an indexer). The results' moves retry a
+            `PermissionError` for a short while, then fail naming the folder, with a test;
+          - [x] **lock** 2026-11-25 `5e247656` (merged `5dd07b00`): the run lock splits into a
+            tree's, the builds', the VPS's and the cost table's (RUNBOOK "Mutation runs and the
+            VPS"), so a long diff run from a second worktree runs beside the rolling job; the
+            test module fails any test that reaches ssh. Its SWE-2 round (four parts) accepted
+            a split that could send another tree's snapshot, a refused split ending the whole
+            diff run, and tests that pass with a lock removed (`.tmp/lock/rulings_code_r1.md`);
+            rework 2 fixes them, then one SWE-2 round over it, then item `deep`;
           - [ ] **split** [after local] the same for a split's local half: its shards a
             round-robin subset of the split's `0/2` (`0/2n`, `2/2n`, …);
+        - [ ] **deep** [after shards/lock, shards/rename, orphans] 2026-11-25 (the maintainer): the mutation
+          machinery is reviewed at Tier 1's depth (RUNBOOK "Review rounds" (e)). Carbon's loop
+          over `scripts/mutation/` whole, in parts, then Astra's, each paid round between SWE-2
+          subloops. After the open fixes to the same files, so no paid round reads code about
+          to change;
       - [x] **review** 2026-11-24 `13e68e44`: one paid cross-family round (Carbon) over
         `backend` and `parity`, beyond the SWE-2 loop a script gets, because this code decides
         every mutant's outcome. 10 of 13 concerns accepted (a lost console still caught on a
