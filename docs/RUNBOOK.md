@@ -210,7 +210,8 @@ loop waited 751 s here and about 1100 s on the VPS where its tests take 1 to 2 s
 cost about 2.5 h of job time, more than the two machines' speed difference. Each crate's
 results move to `mutants.diff/<crate>/` and their survivors are listed together in
 `mutants.diff/missed_all.txt`; a crate killed mid-run leaves its results in `mutants.out/` for
-`just mutants-collect`, and the crates after it did not run. After each crate's cargo-mutants
+`just mutants-collect` (a sharded crate keeps its finished shards for the same command rerun,
+as above), and the crates after it did not run. After each crate's cargo-mutants
 run the extra kinds run here, over the lines the diff changed in that crate. Every crate a
 changed file belongs to gets this pass, even one with no cargo-mutants mutant; its results go
 to `mutants.diff/<crate>/extra/`, and its survivors follow the crate's cargo-mutants ones in

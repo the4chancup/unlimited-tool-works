@@ -3136,11 +3136,15 @@ class DiffBusy(unittest.TestCase):
             mock.patch.object(
                 mutants_diff, "sharded_run", lambda *a: calls.__setitem__("local", a) or 0
             ),
+            mock.patch.object(mutants_diff, "kept_shards", lambda crate, key: False),
             mock.patch.object(mutants, "update_cost_cache", lambda *a, **k: None),
             mock.patch.object(mutants, "report_killed", lambda code, **k: code),
             contextlib.redirect_stdout(out),
+            tempfile.TemporaryDirectory() as tmp,
         ):
-            code = mutants_diff.run_crate("in.diff", HEAD_TREE, Path("src"), "cpk", 3, busy=busy)
+            diff = Path(tmp) / "in.diff"
+            diff.write_bytes(b"")
+            code = mutants_diff.run_crate(str(diff), HEAD_TREE, Path("src"), "cpk", 3, busy=busy)
         return code, calls, out.getvalue()
 
     def test_a_busy_remote_runs_the_crate_here_whole(self):
@@ -3239,11 +3243,12 @@ class DiffShards(unittest.TestCase):
         def local_mutants(args, source, config=None):
             calls.append(args)
             k = int(shard_of(args).split("/")[0]) if "--shard" in args else 0
-            if k == stop_at:
-                raise KeyboardInterrupt
             out = Path(args[args.index("--output") + 1]) if "--output" in args else self.root
             out = out / "mutants.out"
             out.mkdir(parents=True, exist_ok=True)
+            if k == stop_at:
+                (out / "partial").write_text("", encoding="utf-8")
+                raise KeyboardInterrupt
             outcomes = []
             if "--baseline" not in args:
                 outcomes.append({
@@ -3264,6 +3269,7 @@ class DiffShards(unittest.TestCase):
         with (
             mock.patch.object(mutants, "ROOT", self.root),
             mock.patch.object(mutants_diff, "SHARDS", self.root / "mutants.shards"),
+            mock.patch.object(mutants_diff, "RESULTS", self.root / "mutants.diff"),
             mock.patch.object(mutants, "estimate_seconds", lambda crates, share=1.0: estimate),
             mock.patch.object(mutants, "remote_host", lambda: None),
             mock.patch.object(mutants, "local_refusal", lambda: None),
@@ -3330,6 +3336,45 @@ class DiffShards(unittest.TestCase):
             mutants_diff.missed_lines(self.root / "mutants.out"),
             ["missed in shard 0", "missed in shard 1", "missed in shard 2"],
         )
+
+    def test_a_rerun_empties_the_interrupted_shard_first(self):
+        self.run_crate(stop_at=1)
+        self.run_crate()
+        shard = self.root / "mutants.out" / "shard-1"
+        self.assertEqual(sorted(p.name for p in shard.iterdir()), ["exit", "mutants.out"])
+        self.assertEqual(sorted(p.name for p in (shard / "mutants.out").iterdir()),
+                         ["missed.txt", "outcomes.json"])
+
+    def test_a_resume_ignores_an_estimate_now_within_one_shard(self):
+        self.run_crate(stop_at=1)
+        _, calls, _ = self.run_crate(estimate=mutants_diff.SHARD_SECONDS / 2)
+        self.assertEqual([shard_of(args) for args in calls], ["1/3", "2/3"])
+
+    def test_shards_that_ended_before_the_run_took_them_are_reused(self):
+        # The first run ends with the shards at the root's `mutants.out`, as
+        # an interruption before the diff run moves them leaves them.
+        self.run_crate()
+        for where in ("mutants.out", "mutants.out.old"):
+            if where != "mutants.out":
+                (self.root / "mutants.out").rename(self.root / where)
+            code, calls, _ = self.run_crate()
+            self.assertEqual((code, calls), (0, []), where)
+            self.assertEqual(
+                mutants_diff.missed_lines(self.root / "mutants.out"),
+                ["missed in shard 0", "missed in shard 1", "missed in shard 2"],
+            )
+
+    def test_an_unfinished_diff_run_s_finished_crate_is_reused_a_finished_one_s_not(self):
+        self.run_crate()
+        old = self.root / "mutants.diff.old"
+        old.mkdir()
+        (self.root / "mutants.out").rename(old / "cpk")
+        code, calls, _ = self.run_crate()
+        self.assertEqual((code, calls), (0, []))
+        (self.root / "mutants.out").rename(old / "cpk")
+        (old / "missed_all.txt").write_text("", encoding="utf-8")
+        _, calls, _ = self.run_crate()
+        self.assertEqual([shard_of(args) for args in calls], ["0/3", "1/3", "2/3"])
 
     def test_another_tree_or_diff_starts_the_crate_over(self):
         self.run_crate(stop_at=1)
