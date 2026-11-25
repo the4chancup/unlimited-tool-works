@@ -773,17 +773,12 @@ and no phase closes with one outstanding.
           environment, never in `.cargo/config.toml` (CI and the Linux gates would need it);
         - [ ] **shards** (the maintainer's idea, 2026-11-25) a long run here survives an
           interruption, losing one shard rather than the whole run:
-          - [ ] **local** a diff crate run here whose estimate passes `SHARD_SECONDS` runs as
-            cargo-mutants shards (`--shard k/n --sharding round-robin`), each into its own
-            folder under `mutants.shards/<crate>/`, marked done as it ends. The same command
-            rerun on the same tree and diff resumes at the first shard not done; an edit or a
-            commit in between starts the crate over. The first shard runs the baseline, and
-            the others skip it (`--baseline skip`) with the timeout its test phase sets
-            (`extra_mutants.timeout_seconds`). Not `--iterate`: it reads what to skip from the
-            last `mutants.out` alone and moves that folder aside at each start, so a second
-            interruption loses the first part's outcomes, the list of mutants left untested among
-            them. While a VPS half is out, the `BUSY_LOCAL_LIMIT_SECONDS` cap still holds;
-            with `STUDIO_MUTANTS_REMOTE` empty a run here has none;
+          - [x] **local** 2026-11-25 `c0a34ad3`, `673c8b11`: a diff crate run here past
+            `SHARD_SECONDS` runs as resumable shards (RUNBOOK "Mutation runs and the VPS");
+            not `--iterate`, which a second interruption would rob of the first part's
+            outcomes. One SWE-2 round: 5 of 10 accepted, fixed in `673c8b11`. Check on the
+            first real long run here (with `STUDIO_MUTANTS_REMOTE` empty while a VPS half is
+            out, since the hour's cap still holds);
           - [ ] **lock** [after local] release the run lock between shards, so a VPS half's
             collect gets in and a long run here no longer needs the cap. Blocked on shared
             folders: a collect writes `mutants.out/remote/` and `extra_mutants.out/`, which a
