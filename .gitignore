@@ -17,6 +17,7 @@
 
 # extra-mutants results (`just extra-mutants`)
 /extra_mutants.out/
+/extra_mutants.out.old/
 
 # Citation audit report and answer cache (`just citation-audit`)
 /snap.out/
