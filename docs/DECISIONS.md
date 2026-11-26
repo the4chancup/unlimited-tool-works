@@ -20308,3 +20308,8 @@ removes (isolation, not locks); reviewing code about to be replaced spends revie
 and asks for fixes to code that will not survive.
 Plan: no plan edit needed — the mutation machinery has no plan section; the worklog's `deep`
 item carries the pause.
+
+## 2026-11-26 — build — dev builds keep line tables only
+Decision: the dev profile builds the workspace's own crates with `debug = "line-tables-only"`; dependencies stay without debug info, and the release keeps its line tables.
+Why: the maintainer never steps through UTW in a debugger, and a member's repro is read against the release's `.pdb`, which this leaves as it was. A panic still names its file and line, while the full debug info's `.pdb` files took 4.6 GiB of the main tree's `target/`.
+Plan: no plan edit needed — `Cargo.toml`'s profile comments carry the reason.

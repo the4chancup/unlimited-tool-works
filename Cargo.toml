@@ -150,8 +150,14 @@ todo = "warn"
 [profile.release]
 debug = "line-tables-only"
 
+# The workspace's own crates keep line tables only, so a panic still names its file and line,
+# and their `.pdb` files shrink: nobody steps through them in a debugger, and a member's
+# repro is read against the release's symbols above.
+[profile.dev]
+debug = "line-tables-only"
+
 # Dependencies build without debug info: nobody steps into them, and theirs was most of a dev
-# build's target folder. The workspace's own crates keep theirs.
+# build's target folder.
 [profile.dev.package."*"]
 debug = false
 
