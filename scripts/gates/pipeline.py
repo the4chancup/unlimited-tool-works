@@ -12,7 +12,9 @@ as a checkpoint run in main does, and `just checkpoint-status` in main reads it.
 What it gates is a commit: work not committed in main is not part of the run, and commits
 made while it runs wait for the next one. A failure is fixed by a commit on top, as one CI
 finds is. One run at a time: a second would move the worktree under the first, so a marker
-file under the worktree's `.tmp/` refuses it. Start it detached and logged, as any long
+file under the worktree's `.tmp/` refuses it. `--local` runs the checkpoint alone, without
+asking the VPS first: for while a whole-crate run is on the VPS, beside which the Linux gates
+must not run, so they are left owed. Start it detached and logged, as any long
 command (`RUNBOOK.md` "How the work runs").
 """
 
@@ -34,8 +36,11 @@ def git(where: Path, *args: str) -> str:
 
 
 def main(argv: list[str]) -> int:
-    if argv[1:] not in ([], ["--no-mutants"]):
-        sys.exit("usage: pipeline.py [--no-mutants]")
+    flags = argv[1:]
+    if not set(flags) <= {"--no-mutants", "--local"} or len(set(flags)) != len(flags):
+        sys.exit("usage: pipeline.py [--no-mutants] [--local]")
+    local = "--local" in flags
+    checkpoint = ["just", "checkpoint"] + (["--no-mutants"] if "--no-mutants" in flags else [])
     if not (GATE / ".git").exists():
         sys.exit(f"no gate worktree at {GATE}: create it once with `git worktree add --detach {GATE} HEAD`")
     if MARKER.exists():
@@ -44,7 +49,7 @@ def main(argv: list[str]) -> int:
         sys.exit(f"the gate worktree is not clean: {GATE}")
     # The checkpoint's mutation step and the Linux gates both refuse a remote that is busy or
     # short of disk, but only once they start, after the checkpoint's tests: ask it first.
-    host = mutants.remote_host()
+    host = None if local else mutants.remote_host()
     refusal = None
     if host:
         # `remote_refusal` empties the host's tmp folder, so it runs under the
@@ -59,12 +64,15 @@ def main(argv: list[str]) -> int:
     try:
         git(GATE, "checkout", "-q", "--detach", head)
         print(f"gating {head[:8]} in {GATE}", flush=True)
-        for step in (["just", "checkpoint", *argv[1:]], ["just", "gates-remote"]):
+        for step in [checkpoint] if local else [checkpoint, ["just", "gates-remote"]]:
             code = subprocess.run(step, cwd=GATE).returncode
             if code != 0:
                 print(f"`{' '.join(step)}` failed on {head[:8]} (exit code {code})")
                 return code
-        print(f"{head[:8]} passed the checkpoint and the Linux gates")
+        if local:
+            print(f"{head[:8]} passed the checkpoint; the Linux gates are still owed")
+        else:
+            print(f"{head[:8]} passed the checkpoint and the Linux gates")
         return 0
     finally:
         MARKER.unlink()
