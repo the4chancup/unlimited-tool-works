@@ -413,11 +413,11 @@ impl UnmigratedReason {
 /// Every code this tool emits, with its severity and its member-facing
 /// `when`/`effect`: the tool's own, then the structure pass's
 /// (`aesthetics_export::ISSUE_CODES`) in `ISSUE_CODES` order. A structure-pass
-/// row's `when` is the Compiler's cell word for word (the same condition on
-/// the upgraded export), unless this tool's own table describes the row
-/// (`team_name_unknown`, `source_read_failed`, `logo_missing`) or the
-/// Compiler's names what only a compile sees (`portrait_missing`'s installed
-/// portraits), and its `effect` the upgrade's.
+/// row copies the Compiler's `when` word for word when the same condition holds
+/// on the upgraded export. It uses this table's own `when` where the upgrader's
+/// input differs from the upgraded export (`team_name_unknown`, `source_read_failed`,
+/// `logo_missing`), or where the Compiler's `when` names what only a compile sees
+/// (`portrait_missing`'s installed portraits). Every row's `effect` is the upgrade's.
 /// The issue severities are the Compiler's catalog's, each run-dependent
 /// row taken as for a compile that deploys with pass-through and the strict
 /// file-type check on (the output's check runs with it), and an E/F row as an

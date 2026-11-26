@@ -9,8 +9,9 @@
 //! first: it holds each team's shared-IDs record, which the run's output replaces. The walk
 //! passes over the installed refs CPK when the run writes one,
 //! since the run replaces it. The same walk keeps every entry path of the CPKs below the
-//! boundary, for the texture lookup, which `check` makes too, reading no bin. On PES 15-17 it
-//! also gathers the loose kit configs (`WorkingBins::loose_kit_configs`).
+//! boundary, for the lookups of installed textures and portraits. `check` makes the
+//! same walk, reading no bin. On PES 15-17 it also gathers the loose kit configs
+//! (`WorkingBins::loose_kit_configs`).
 
 use std::collections::{BTreeMap, BTreeSet, HashSet};
 use std::fs::{self, File};
@@ -42,7 +43,9 @@ pub(crate) struct Unreadable {
 }
 
 /// The entries of the CPKs the installed `DpFileList.bin` lists before the run's, for the
-/// texture lookup: a midcup export's models may name textures an earlier CPK holds.
+/// lookups of installed textures and portraits: a midcup export's models may name textures
+/// an earlier CPK holds, and a midcup player with no portrait in the export may have one in
+/// an earlier CPK.
 #[derive(Debug, PartialEq)]
 pub(crate) enum InstalledPaths {
     /// The lookup cannot be made: no PES folder, no `DpFileList.bin`, or a list that does not
@@ -291,9 +294,10 @@ pub(crate) fn working_bins(
 }
 
 /// The entry paths of the installed CPKs listed before `cpk_name`'s but the refs CPK
-/// `refs_name`, when given, and each team's shared-IDs record, for `check`'s texture links
-/// and shared-ID findings: the walk `compile` makes, reading each CPK's table of contents
-/// and no bin, so `check` and `compile` agree on a link and a `Midcup` export's record.
+/// `refs_name`, when given, and each team's shared-IDs record, for `check`'s texture links,
+/// installed portraits and shared-ID findings. `check` reads each CPK's table of contents and
+/// no working bin. `compile` makes the same walk, so the two commands see the same installed
+/// textures, portraits and shared-ID records.
 /// `multicpk` is the run writing the parts layout: the record of the bins CPK `cpk_name`
 /// itself is then read first, as `compile`'s is. `check` reports nothing about the walk: a
 /// name that is no valid CPK name, a missing list, or a list, CPK or record that cannot be
@@ -341,12 +345,12 @@ type InstalledCpk = CpkArchive<BufReader<File>>;
 
 /// Walks every CPK `pes_folder`'s `download/DpFileList.bin` lists before `cpk_stem`'s, nearest
 /// first, keeping every entry path of each, folded, and calling `take` on each with its listed
-/// name and `Place`: the texture lookup needs every path, so the walk does not stop once the
-/// bins are found. With `from_boundary` (a multi-CPK run, whose boundary is the bins CPK),
-/// the boundary CPK itself is walked first as `Place::Boundary`, for the shared-IDs records
-/// that start there; its paths do not join the texture lookup's, it being no CPK listed before
-/// the run's. A listed CPK with no file is passed over, and so is the refs CPK `refs` when
-/// given;
+/// name and `Place`: the lookups of installed textures and portraits need every path, so the
+/// walk does not stop once the bins are found. With `from_boundary` (a multi-CPK run, whose
+/// boundary is the bins CPK), the boundary CPK itself is walked first as `Place::Boundary`,
+/// for the shared-IDs records that start there; its paths are not kept for the lookups, since
+/// it is not listed before the run's. A listed CPK with no file is passed over, and so is the
+/// refs CPK `refs` when given;
 /// one that cannot be opened, or that `take` fails on, is the error, naming that CPK.
 fn walk(
     pes_folder: &Path,

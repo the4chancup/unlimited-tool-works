@@ -1444,13 +1444,13 @@ pub(super) const CATALOG: &[(&str, CatalogSeverity, &str, &str)] = &[
     (
         "portrait_missing",
         CatalogSeverity::Warning,
-        r#"In PES 2017 to 2021, a player has no portrait in his folder or in `Portraits/`; in a `Midcup` export, the CPKs installed before the one being compiled hold none for him either."#,
+        r#"In PES 2017 to 2021, a player in a team export has no portrait in his folder or in `Portraits/`; in a `Midcup` export, the CPKs installed before the one being compiled hold no portrait for him either."#,
         r#"The player is compiled without a portrait. Add a `portrait` image to his folder, or one named by his number (`05`) to `Portraits/`."#,
     ),
     (
         "logo_missing",
         CatalogSeverity::Error,
-        r#"A `Full` export has no logo: no file at its root whose name starts with `logo`."#,
+        r#"A `Full` team export has no logo: no file at its root whose name starts with `logo`."#,
         r#"The export is compiled without a logo. Add one at its root, or rename the export `<team> Midcup ...` if it only adds to what is installed."#,
     ),
     (
