@@ -867,8 +867,12 @@ and no phase closes with one outstanding.
           Its outline, for the maintainer's look before any slice. Two lanes, the VPS and
           this PC, and a queue: a free lane takes the next job, a queued one first (a
           checkpoint's or a closure's diff crates), else the rolling job's oldest-checked
-          crate. A lane runs one crate at a time, whole, here as resumable shards; the VPS
-          lane's Windows rechecks run on this PC's lane between its shards. A small
+          crate. A lane runs one crate at a time, whole, here as resumable shards. The VPS
+          lane runs on the VPS itself, so it goes on through every crate with this PC off:
+          it picks from the last snapshot it holds, takes what this PC queued for it first,
+          and keeps each run's results in a folder of their own until this PC fetches them.
+          The fetch, the filing and the Windows-only rechecks happen here, the rechecks on
+          this PC's lane between its shards, and never hold the VPS's next crate. A small
           single-crate run (under the split's size estimate) is split as today, `0/2` here
           and `1/2` on the VPS, when both lanes are free; otherwise the free lane runs it
           whole, so it never waits behind the other lane's crate. `mutants-diff`, the
@@ -878,7 +882,8 @@ and no phase closes with one outstanding.
           folder of its own, filed by one rename; each run's timings a file of its own,
           merged when the estimate reads them; the VPS run and `gates-remote` clones of
           their own, the VPS unit's name refusing a second launch (checked on the VPS before
-          it is relied on). One guard remains, so that one driver runs. No test selection
+          it is relied on). One guard remains on each machine, so that one driver runs
+          there. No test selection
           here: the coverage map runs on Linux only (an item of its own if wanted). `memsum`
           and `warm` carry over; `deep`'s open fixes (S1-S7) and its Carbon round 2 wait for
           a triage of which the driver makes moot (races between separate commands) and
