@@ -20383,3 +20383,18 @@ is planned the same way, since it has no reason to differ and a member reads one
 progress as they read the other's.
 Plan: `export_upgrader.md` "GUI", the run's bullet, edited; the Compiler's plan says nothing
 about the order, and its draft rulings in the worklog are corrected.
+
+## 2026-11-27 — mutation — the driver deals shards to both machines, in place of the split
+Decision: both lanes of the mutation driver take cargo-mutants shards of about `SHARD_SECONDS` from one queue, a queued job's shards before the rolling job's. This replaces the clause of "one mutation driver owns both machines" that ran each crate whole on a lane and kept the split by files for small single-crate runs; the split's share tables go.
+Why: the maintainer's answer on `maintainer/driver.html`. With crates run whole, queued work could wait hours behind a rolling crate on the VPS; with shards it waits at most one shard on either lane, and a run long enough to split gets two shards or more, the faster machine taking more of them. Not the split kept beside the shards: it needs its own tables and a both-lanes-free condition, while the shards already give a small run both machines. The cost: each lane runs a job's baseline once, and each shard starts with a cold build (the worklog's `warm` item measures sharing one).
+Plan: `docs/WORKLOG.md` TESTSEL/adopt/extras/parity `driver`.
+
+## 2026-11-27 — mutation — this PC's lane runs the rolling job's shards when nothing is queued
+Decision: when no queued job has a shard for it, this PC's driver lane runs the rolling job's shards, at below-normal priority on all cores like every cargo job here. RUNBOOK "Mutation runs and the VPS" ("whole-crate mutation runs go to the VPS alone") changes in the driver slice that lands this, not before: until then the rolling job stays on the VPS.
+Why: the maintainer's answer on `maintainer/driver.html`. The runbook rule kept whole-crate runs off this PC because a long run blocked in-game checks on PES 2018-2021 and restarts, and a power cut lost hours of it. The lane's hold takes effect when its shard ends, about half an hour, and a power cut loses one shard. The desktop lag that kept jobs to cores 6-15 came from Windhawk's file-sizes mod, not from the jobs, so the maintainer unlocked every core; two logical cores are left free again if the desktop slows.
+Plan: `docs/WORKLOG.md` TESTSEL/adopt/extras/parity `driver`.
+
+## 2026-11-27 — mutation — a Task Scheduler task starts the driver at logon
+Decision: a Task Scheduler task starts this PC's mutation driver when the maintainer logs on.
+Why: the maintainer's answer on `maintainer/driver.html`. The driver resumes from its folders, so after a restart starting it is the only step left, which today waits for a lead session to relaunch the rolling job by hand.
+Plan: `docs/WORKLOG.md` TESTSEL/adopt/extras/parity `driver`.

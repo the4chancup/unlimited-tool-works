@@ -36,8 +36,9 @@
 <p class="intro">Today each mutation command (the rolling job, a diff run, the closure, the extra
 kinds, the collect, <code>gates-remote</code>) runs on its own and takes locks so it does not
 trip over the others on this PC's tree and on the VPS. The driver replaces them with one program
-that owns both machines and schedules everything. This page shows the design, revised after my
-own look at the first outline, and asks three things only you can decide, at the bottom.</p>
+that owns both machines and schedules everything. This page shows the design as you settled it:
+shards on both machines, the rolling job's shards on this PC too, and a task that starts the
+driver when you log on.</p>
 <ul id="toc"></ul>
 
 <h2>How the work flows</h2>
@@ -105,7 +106,7 @@ next from the queue: work a command is waiting on first, the rolling job's after
     <text x="512" y="50" font-weight="600" fill="#fff">This PC's lane</text>
     <text x="512" y="74">One shard at a time</text>
     <text x="512" y="94">Runs every test</text>
-    <text x="512" y="114">Low priority, cores 6-15</text>
+    <text x="512" y="114">Low priority, all cores</text>
     <rect x="512" y="130" width="186" height="26" rx="2" fill="#2a2a2a" stroke="#555" stroke-dasharray="4 3"/>
     <text x="522" y="148" fill="#aaa" font-size="12">Hold: in-game checks, restarts</text>
 
@@ -237,8 +238,8 @@ one on each. The VPS is slower, so its shard takes longer.</p>
     they hold this PC's lane instead, since they use its CPUs.</li>
   <li><b>Everything kept on disk.</b> The queue is a folder of job files, a lane claims a shard by
     renaming it, and each shard's results land in a folder of their own. A restarted driver
-    picks up from those folders, so after this PC restarts nothing needs recovering. If you
-    agree, it starts when you log on, which removes the relaunch I do by hand today.</li>
+    picks up from those folders, so after this PC restarts nothing needs recovering. It starts
+    when you log on, which removes the relaunch I do by hand today.</li>
   <li><b>Copies go with their shard.</b> Each shard's copies of the tree live in its own folder
     and are deleted when it ends. When the driver starts, it deletes any copies whose shard is
     not running. A stopped run then leaves nothing behind (the 153 GiB in <code>%TEMP%</code>
@@ -261,7 +262,7 @@ one on each. The VPS is slower, so its shard takes longer.</p>
 <tr><td><code>.tmp/rolling.hold</code>, for the VPS only</td><td>A hold per lane</td></tr>
 <tr><td>The VPS idle while this PC is off</td><td>The VPS lane picks its own next shard</td></tr>
 <tr><td>The rolling job relaunched by hand after this PC restarts</td>
-  <td>The driver picks up from its folders (and starts at logon, if you agree)</td></tr>
+  <td>The driver picks up from its folders, and starts when you log on</td></tr>
 <tr><td>Copies a stopped run leaves in <code>%TEMP%</code>, deleted by hand</td>
   <td>Deleted with their shard, or when the driver starts</td></tr>
 </table>
@@ -269,59 +270,5 @@ one on each. The VPS is slower, so its shard takes longer.</p>
 Windows-only rechecks; test selection by coverage, on the VPS only (it needs Linux); the VPS's
 memory cap and low priority, which keep its production service first.</p>
 
-<h2>Your call</h2>
-
-<section class="entry" id="driver-shards">
-  <h3>Shards on both machines, in place of the split</h3>
-  <p class="from">From change 1 above.</p>
-  <p class="ask">Should both machines take shards from one queue, replacing the split by files?</p>
-  <div class="options">
-    <label class="opt"><input type="radio" value="shards"><b>Yes, shards on both machines</b>
-      <div class="note">Queued work waits at most one shard; the split and its tables go.</div></label>
-    <label class="opt"><input type="radio" value="first outline"><b>No, keep the first outline</b>
-      <div class="note">Each lane runs a crate whole; a small run is split by files when both
-      machines are free.</div></label>
-  </div>
-  <textarea class="own" placeholder="Your own answer or a note (optional)"></textarea>
-</section>
-
-<section class="entry" id="driver-pc-rolling">
-  <h3>The rolling job on this PC</h3>
-  <p class="from">From both outlines. It goes against a runbook rule, so it needs your
-  word.</p>
-  <p>Today whole-crate runs go to the VPS only, because a long run here blocked in-game checks
-  on PES 2018-2021 and restarts for updates, and a power cut lost hours of it. Shards and the
-  hold answer those: a hold takes effect within half an hour, and a power cut loses one shard.
-  What remains is that one build job would then run here nearly all the time, at below-normal
-  priority on cores 6-15, as one of the two or three jobs this PC runs at once.</p>
-  <p class="ask">When this PC's lane has no queued work, should it run the rolling job's shards?</p>
-  <div class="options">
-    <label class="opt"><input type="radio" value="yes"><b>Yes, run the rolling job's shards here too</b></label>
-    <label class="opt"><input type="radio" value="queued only"><b>No, only queued work here</b>
-      <div class="note">This PC's lane stays idle between queued jobs, and the rolling job runs
-      on the VPS alone.</div></label>
-  </div>
-  <textarea class="own" placeholder="Your own answer or a note (optional)"></textarea>
-</section>
-
-<section class="entry" id="driver-logon">
-  <h3>Starting the driver at logon</h3>
-  <p class="from">From change 3 above.</p>
-  <p class="ask">Should a Task Scheduler task start the driver when you log on to this PC?</p>
-  <div class="options">
-    <label class="opt"><input type="radio" value="logon task"><b>Yes, start it at logon</b></label>
-    <label class="opt"><input type="radio" value="by hand"><b>No, the lead starts it</b>
-      <div class="note">After a restart it waits until a session starts it again; the VPS lane
-      goes on meanwhile.</div></label>
-  </div>
-  <textarea class="own" placeholder="Your own answer or a note (optional)"></textarea>
-</section>
-
-<div class="picks">
-  <button id="copy">Copy my answers</button>
-  <button id="clear">Clear my answers</button>
-  <textarea id="out" readonly placeholder="Your answers appear here, ready to paste into the chat"></textarea>
-</div>
-<script src="maintainer.js"></script>
 </body>
 </html>

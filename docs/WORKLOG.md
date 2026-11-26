@@ -646,7 +646,9 @@ and no phase closes with one outstanding.
     `.tmp/lead/wslgates_trial.sh`), and the disk image's growth.
 - [ ] **RESUME** Before work on the suite resumes (the maintainer, 2026-11-26): the move to the
   new system drive, and the workflow improvements queued since the usage reset of 2026-11-26.
-  - [ ] **migration** Windows moved to the 905P: waits on the maintainer's two lists;
+  - [ ] **migration** Windows moved to the 905P: waits on the maintainer's two lists, and is
+    postponed until the maintainer starts it;
+    the rest of the work goes on meanwhile (the maintainer, 2026-11-27);
   - [~] **optimize** the queued improvements: `WSLGATES` and `CYCLE` above, the mutation
     driver's `warm` and `driver` steps below, and the issue `LEAN` (`TESTSCRATCH` resolved);
   - [ ] **axiom** [after optimize] an Axiomatic Design pilot, on SWE-2: the suite's functional
@@ -887,8 +889,8 @@ and no phase closes with one outstanding.
             rework 2 fixed them (`3492e4c5`, merged `fb4b68bb`). Its SWE-2 round accepted 7,
             none a run's defect, so the loop ends with rework 3 (tests and wording;
             `.tmp/lock/rulings_code_r2.md`); then item `deep`;
-          - [ ] **split** [after local] the same for a split's local half: its shards a
-            round-robin subset of the split's `0/2` (`0/2n`, `2/2n`, …);
+          - [x] **split** dropped 2026-11-27: the driver's shards replace the split (DECISIONS
+            2026-11-27 "the driver deals shards to both machines");
           - [ ] **warm** 2026-11-25 (the maintainer: an improvement keeps its own costs as small
             as it can, RUNBOOK "How the work runs"), once `deep`'s slice S4 has merged, since
             both edit `mutants_diff.py`: each shard starts with a
@@ -907,14 +909,17 @@ and no phase closes with one outstanding.
             copy's cold build (`--timings`) into dependencies and the workspace's crates. A
             cache serves only the dependencies, while the warm copy serves both;
         - [ ] **driver** 2026-11-26 (DECISIONS 2026-11-26 "one mutation driver owns both
-          machines", "the VPS lane drives itself"): the separate commands that each take locks
-          give way to one driver. Its outline, revised after the lead's look, waits for the
-          maintainer's three answers on `maintainer/driver.html`, which pictures it, before any
-          slice; a yes to its shards replaces the split clause of the first decision above
-          with a new entry. Two lanes, this PC and the VPS, and a queue of jobs, each job a crate's
+          machines", "the VPS lane drives itself"; 2026-11-27 "the driver deals shards to both
+          machines", "this PC's lane runs the rolling job's shards", "a Task Scheduler task
+          starts the driver at logon"): the separate commands that each take locks give way to
+          one driver, pictured on `maintainer/driver.html`; next, its slices. Two lanes, this
+          PC and the VPS, and a queue of jobs, each job a crate's
           mutants cut into cargo-mutants shards of about `SHARD_SECONDS`. A lane that ends a
           shard takes the next: a queued job's first (a checkpoint's or a closure's diff crates,
-          the extra kinds' runs), else the rolling job's, from its oldest-checked crate. So
+          the extra kinds' runs), else the rolling job's, from its oldest-checked crate, on
+          this PC's lane too (at below-normal priority, all cores; the slice that lands it
+          rewrites RUNBOOK "Mutation runs and the VPS", whose whole-crate runs go to the VPS
+          alone until then). So
           queued work waits at most one shard on either lane, and a run past
           `SPLIT_THRESHOLD_SECONDS` gets at least two shards, taken by whichever lane frees
           first: this replaces the split by files and its share tables, the faster lane simply
@@ -926,7 +931,7 @@ and no phase closes with one outstanding.
           survivors list run on this PC between its shards, and never hold the VPS's next one.
           State lives on disk: the queue a folder of job files, a shard claimed by a rename,
           its results a folder of their own, so a restarted driver goes on from the folders
-          (and this PC's starts at logon, if the maintainer agrees). A hold per lane, replacing
+          and this PC's starts at logon (a Task Scheduler task). A hold per lane, replacing
           `.tmp/rolling.hold`, takes effect when its shard ends: this PC's for an in-game check
           on a Fox version, a restart or a build slot the lead needs; the VPS's for
           `gates-remote` (WSL's gates, if `WSLGATES` lands, hold this PC's instead). Each
@@ -936,9 +941,7 @@ and no phase closes with one outstanding.
           locks: each run's timings a file of their own, merged when the estimate reads them;
           the VPS's shards and `gates-remote` in clones of their own; one guard per machine so
           one driver runs there. No test selection here: the coverage map runs on Linux only.
-          Open for the maintainer, on the page: this PC's lane running the rolling job's shards,
-          against RUNBOOK "Mutation runs and the VPS" (whole-crate runs on the VPS alone).
-          `memsum` and `warm` carry over, and `shards`' `split` would go with the split; `deep`'s open
+          `memsum` and `warm` carry over, and `shards`' `split` goes with the split; `deep`'s open
           fixes (S1-S7) wait for a triage of which the driver makes moot (races between
           separate commands) and which it keeps (diff parsing, outcome accounting);
         - [ ] **deep** [after shards/lock, shards/rename, orphans, oom, died, memcap] 2026-11-25 (the maintainer): the mutation
