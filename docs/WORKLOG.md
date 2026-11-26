@@ -486,6 +486,11 @@ draft checked, handed over by the maintainer 2026-11-23. **After the detour**, i
     - [ ] **run** the catch-up: `mutants-diff abbae531` over the range, sized first with its own
       estimate; per crate past about an hour a side, the crate's run goes to the VPS (RUNBOOK
       "Mutation runs and the VPS"), the rest here; then its triage as the checkpoints' are.
+      Part 4 (`save_editor`, `team_compiler`, `team_widgets`) stopped 2026-11-26 after 9 of
+      `save_editor`'s 145 shards (the maintainer): run here it had no test selection, and the
+      rolling job's whole runs of the three on the VPS cover every mutant its diff picks, so
+      their triage closes the catch-up for them (the shards kept in
+      `4cc-studio-temp/catchup/mutants.shards/`, their survivors for that triage).
 12. [ ] **IMAGES** The suite's own images (DECISIONS 2026-11-20 "the placeholder portraits and the Team
     Export thumbnail are the suite's own"): the three placeholder portraits drawn as SVGs and
     the 4cc clover thumbnail, both rendered to the PNGs the binary embeds by one script; a
@@ -857,6 +862,27 @@ and no phase closes with one outstanding.
             `--copy-target=true`, once the copy's time and disk are measured against the cold
             build. The same measurement checks why each copy's first test also runs longer
             (350-730 s against 75-510 s);
+        - [ ] **driver** 2026-11-26 (DECISIONS 2026-11-26 "one mutation driver owns both
+          machines"): the separate commands that each take locks give way to one driver.
+          Its outline, for the maintainer's look before any slice. Two lanes, the VPS and
+          this PC, and a queue: a free lane takes the next job, a queued one first (a
+          checkpoint's or a closure's diff crates), else the rolling job's oldest-checked
+          crate. A lane runs one crate at a time, whole, here as resumable shards; the VPS
+          lane's Windows rechecks run on this PC's lane between its shards. A small
+          single-crate run (under the split's size estimate) is split as today, `0/2` here
+          and `1/2` on the VPS, when both lanes are free; otherwise the free lane runs it
+          whole, so it never waits behind the other lane's crate. `mutants-diff`, the
+          checkpoint, `mutants-closure` and the extra kinds' runs queue work and wait for its
+          results, never running cargo-mutants themselves; `gates-remote` takes the VPS lane
+          between crates, as `.tmp/rolling.hold` does. Isolation, not locks: each run writes a
+          folder of its own, filed by one rename; each run's timings a file of its own,
+          merged when the estimate reads them; the VPS run and `gates-remote` clones of
+          their own, the VPS unit's name refusing a second launch (checked on the VPS before
+          it is relied on). One guard remains, so that one driver runs. No test selection
+          here: the coverage map runs on Linux only (an item of its own if wanted). `memsum`
+          and `warm` carry over; `deep`'s open fixes (S1-S7) and its Carbon round 2 wait for
+          a triage of which the driver makes moot (races between separate commands) and
+          which it keeps (diff parsing, outcome accounting);
         - [ ] **deep** [after shards/lock, shards/rename, orphans, oom, died, memcap] 2026-11-25 (the maintainer): the mutation
           machinery is reviewed at Tier 1's depth (RUNBOOK "Review rounds" (e)). Carbon's loop
           over `scripts/mutation/` whole, in parts, then Astra's, each paid round between SWE-2
