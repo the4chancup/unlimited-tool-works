@@ -352,7 +352,8 @@ fn menu_dialogs(version: PesVersion) -> Screens {
             "Generate in-game face\u{2026}",
         ),
     ] {
-        let (mut view, mut window) = from_menu(version, screen, menu, item);
+        // "Copy/swap stats" names a folder too, which holds no separator.
+        let (mut view, mut window) = from_menu(version, &screen.replace('/', "-"), menu, item);
         screens.push((screen, settled_over(&mut window, &mut view, screen)));
     }
 
