@@ -630,7 +630,9 @@ and no phase closes with one outstanding.
   given the wrong `bash` fails at once. To find out: whether every Linux gate passes there (the GUI and process-group tests
   included), its cost against the VPS's run (a cold build in a target folder on WSL's own
   disk, not `/mnt/c`), how its cores and memory are bounded (`.wslconfig`, since
-  `confine_jobs.ps1` does not reach inside the VM) beside the local mutation lane, and what
+  `confine_jobs.ps1` does not reach inside the VM; there is no `.wslconfig` yet, so the VM
+  may take all 16 logical cores and 15 GB of memory, where the gates' build once crashed
+  this machine under memory pressure) beside the local mutation lane, and what
   then still needs the VPS.
 - [ ] **RESUME** Before work on the suite resumes (the maintainer, 2026-11-26): the move to the
   new system drive, and the workflow improvements queued since the usage reset of 2026-11-26.
