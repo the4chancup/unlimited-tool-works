@@ -616,7 +616,9 @@ depth follows its surface's tier. A review that cannot run is queued in the lead
 and no phase closes with one outstanding.
 - [ ] **CYCLE** A periodic review of the dev cycle itself (`PREVENTION.md`, DECISIONS 2026-11-23 "a
   periodic review of the cycle", and "a look-ahead every two or three phases"): designed,
-  waiting on the maintainer's start. At the start, `AGENTS.md` gains the file's row (it is at
+  waiting on the maintainer's start. It runs with the lead on Claude Fable: the maintainer
+  switches the lead's model and then says go, and no part of it starts before that, however
+  free the queue (the maintainer, 2026-11-27). At the start, `AGENTS.md` gains the file's row (it is at
   its 16 KB cap: something is cut first) and the dev cycle chart its loop. Then:
   - [ ] **backfill** two weeks of prevention lines written into the log;
   - [ ] **review1** [after backfill] the first review;
@@ -649,7 +651,8 @@ and no phase closes with one outstanding.
   - [ ] **migration** Windows moved to the 905P: waits on the maintainer's two lists, and is
     postponed until the maintainer starts it;
     the rest of the work goes on meanwhile (the maintainer, 2026-11-27);
-  - [~] **optimize** the queued improvements: `WSLGATES` and `CYCLE` above, the mutation
+  - [~] **optimize** the queued improvements: `WSLGATES` and `CYCLE` above (`CYCLE` on Fable,
+    at the maintainer's go), the mutation
     driver's `warm` and `driver` steps below, and the issue `LEAN` (`TESTSCRATCH` resolved);
   - [ ] **axiom** [after optimize] an Axiomatic Design pilot, on SWE-2: the suite's functional
     requirements split level by level, each mapped to the crate or module that meets it, and
