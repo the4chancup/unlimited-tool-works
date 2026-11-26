@@ -20313,3 +20313,20 @@ item carries the pause.
 Decision: the dev profile builds the workspace's own crates with `debug = "line-tables-only"`; dependencies stay without debug info, and the release keeps its line tables.
 Why: the maintainer never steps through UTW in a debugger, and a member's repro is read against the release's `.pdb`, which this leaves as it was. A panic still names its file and line, while the full debug info's `.pdb` files took 4.6 GiB of the main tree's `target/`.
 Plan: no plan edit needed — `Cargo.toml`'s profile comments carry the reason.
+
+## 2026-11-26 — team_compiler, export_upgrader — correction: three Red facts in earlier entries
+Decision: three statements about Red in earlier entries are corrected; no rule they set changes.
+- The 2026-10-19 portrait correction says Red converted a `player_???NN` portrait of another
+  texture format. Red renamed it to the game's `.dds` name with its bytes unchanged (a jpg
+  named `.dds`): its texture check lets the extension through (`texture_check.py:149-151`),
+  and its portrait step converts nothing (`export_move.py:483-511`). The migration rule
+  stands: `player_XXX08.jpg` still migrates.
+- The 2026-10-11 `hair_parts` entry cites `referee_tools.py:222-229`. The copy is at
+  `:215-220`, and Red makes it on every version, not only before its pre-Fox move to Common.
+- The 2026-10-11 inventory of Red behaviors says Red's `sideload/` went into the refs CPK when
+  only refs compiled. That holds for Red's `main` alone; `stable` always used the team CPK, as
+  ours does.
+Why: an Opus re-check of every `spec/team_compiler/red_divergences.md` entry against Red's
+`main` and `stable` found these (RD-23, RD-71, RD-8 there).
+Plan: no plan edit needed: `red_divergences.md` and `spec/export_upgrader.md` already state
+the corrected facts.

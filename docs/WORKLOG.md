@@ -4513,9 +4513,9 @@ points there.
   - skip the baseline's test when the gates passed (`cargo mutants --baseline=skip` needs an
     explicit `--timeout`, which the baseline now sets);
   - run a crate of one or two mutants on this machine alone.
-- open (2026-11-20) — `spec/team_compiler/red_divergences.md` holds 52 differences from Red's
-  output marked Not checked, and 3 where two records disagree (RD-17, RD-23, RD-53). Each
-  needs the check the file's head describes: which real exports reach it, what Red's output
+- open (2026-11-20) — `spec/team_compiler/red_divergences.md` holds differences from Red's
+  output marked Not checked (none marked Records disagree since every entry was re-checked
+  against Red's code on 2026-11-26). Each needs the check the file's head describes: which real exports reach it, what Red's output
   did for each, that ours is right. Its Status then becomes Checked, or the behavior changes
   where ours is wrong. Also owed: the parity rows' reasons, the spec's "unlike Red" sentences
   and `scripts/library_parity/classes.md`'s I-classes point at the entries, not restate them.
