@@ -13,10 +13,11 @@ use crate::messages::{Code, tool_message};
 use crate::reader::{self, ExportSource};
 use crate::validation::{ValidationPass, run_budget, run_pool, validation_pass};
 
-/// The `check` command: validation, each export reported between its start and its end, a
-/// texture link looked for in the installed CPKs `compile` would look in, the refs CPK passed
-/// over when the exports hold a refs export, as `compile` passes it over. Returns the worst
-/// severity reported; an exports folder that cannot be read is an error.
+/// The `check` command: validation, each export reported between its start and its end.
+/// Textures for links and installed portraits are looked up in the installed CPKs `compile`
+/// would use, with the refs CPK passed over when the exports hold a refs export, as `compile`
+/// passes it over. Returns the worst severity reported; an exports folder that cannot be read
+/// is an error.
 pub(crate) fn run(inputs: &RunInputs, ctx: &ToolContext) -> anyhow::Result<Option<Severity>> {
     let mut events = RunEvents::new(ctx, inputs.timestamps);
     let discovery = reader::discover(&inputs.exports_root, &inputs.exports)?;
@@ -42,8 +43,9 @@ pub(crate) fn run(inputs: &RunInputs, ctx: &ToolContext) -> anyhow::Result<Optio
     Ok(events.worst())
 }
 
-/// `check`'s validation of `sources`: a texture link looked for in the installed CPKs
-/// `compile` would look in, the refs CPK passed over when the sources hold a refs export.
+/// `check`'s validation of `sources`: textures for links and installed portraits looked up in
+/// the installed CPKs `compile` would use, the refs CPK passed over when the sources hold a
+/// refs export.
 pub(crate) fn validate(
     inputs: &RunInputs,
     sources: Vec<ExportSource>,

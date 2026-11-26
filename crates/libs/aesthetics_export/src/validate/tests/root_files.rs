@@ -343,6 +343,7 @@ fn logo_missing_is_only_for_a_full_team_export_with_no_logo_file() {
         // A `Midcup` export keeps the installed logo.
         ("co Midcup Day 5", vec![player]),
         ("co Full Spring", vec![("logo.png", 9), player]),
+        ("co Full Spring", vec![("logo_crop.png", 9), player]),
         // A logo file that is there but refused reports its own finding.
         ("co Full Spring", vec![("logo.txt", 9), player]),
         ("co Full Spring", vec![("logo_small.png", 9), player]),

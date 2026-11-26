@@ -137,9 +137,10 @@ pub(crate) fn run_pool(inputs: &RunInputs) -> anyhow::Result<rayon::ThreadPool> 
 /// pass and identity on each one headed for validation, on `pool`; a `.7z` export is read once
 /// for both passes, charged to `budget`, and with `keep_archives` (`compile`'s, not `check`'s)
 /// kept decompressed for its tasks when `keeps_archive` admits it. A texture `.common` link
-/// may name a texture of the team's Common output that one of the `installed` CPKs holds.
-/// Then the exports of a team several resolve to are refused (`refuse_duplicate_teams`). No
-/// source at all is `no_exports_found`, on the run.
+/// may name a texture of the team's Common output that one of the `installed` CPKs holds. The
+/// same paths say which player slots already have an installed portrait. Then the exports of
+/// a team several resolve to are refused (`refuse_duplicate_teams`). No source at all is
+/// `no_exports_found`, on the run.
 pub(crate) fn validation_pass(
     inputs: &RunInputs,
     sources: Vec<ExportSource>,

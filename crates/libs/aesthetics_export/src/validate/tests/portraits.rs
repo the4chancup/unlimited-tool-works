@@ -83,6 +83,18 @@ fn a_full_export_reports_each_player_with_no_portrait_from_pes_17() {
 }
 
 #[test]
+fn a_portraits_file_counts_for_the_slot_players_txt_maps_its_player_to() {
+    let export = TestExport::new("co Full Spring", PesVersion::Pes21)
+        .file("players.txt", "03 A\n05 B\n")
+        .sized("Players/A/hair.dds", 9)
+        .sized("Players/B/hair.dds", 9)
+        .sized("Portraits/05.dds", 9)
+        .without(Requirement::Portraits);
+    let report = report_of(&export);
+    assert_eq!(portraits_missing(&report), vec![("Players/A", "03")]);
+}
+
+#[test]
 fn a_midcup_export_reports_only_the_slots_the_installed_cpks_hold_no_portrait_for() {
     let files = [
         ("Players/03 - C/hair.dds", 9),

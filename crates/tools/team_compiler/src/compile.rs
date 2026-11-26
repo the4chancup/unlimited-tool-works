@@ -120,9 +120,11 @@ pub(crate) enum CpkLayout {
 }
 
 impl CpkLayout {
-    /// The CPK the working-bin walk and the installed texture lookup start below: the run's
-    /// first CPK in the list's order, which is the bins CPK in multi-CPK mode. Every part the
-    /// run writes replaces the one installed under its name, so the lookup starts below them.
+    /// The run's first CPK in the list's order, which is the bins CPK in multi-CPK mode. The
+    /// working-bin walk reads the CPKs below it, plus the boundary itself for shared-IDs records
+    /// in multi-CPK mode; the lookups of installed textures and portraits use the paths below
+    /// it. Every part the run writes replaces the one installed under its name, so the lookups
+    /// leave those installed copies out.
     pub(crate) fn boundary(&self) -> &CpkStem {
         match self {
             CpkLayout::Single { name, .. } => name,
@@ -285,12 +287,12 @@ pub(crate) fn list_findings(
 
 /// The bins the run builds on, from the installed CPKs of the PES folder listed before
 /// `layout`'s boundary but the refs CPK `refs` the run replaces, or the bundled bases in
-/// `templates`, and the entry paths of the installed CPKs walked, for the texture lookup,
-/// their findings reported first. In multi-CPK mode the boundary is the bins CPK, whose
-/// installed copy the shared-IDs records' walk starts at. A file of the walk that cannot be
-/// read is `installed_bin_unreadable`, Fatal, and `None`: the run stops before any export is read,
-/// the previous CPK kept, rather than build on an older copy that its CPK, loaded above it,
-/// would put back for every team.
+/// `templates`, and the entry paths of the installed CPKs walked, for the lookups of installed
+/// textures and portraits, with the walk's findings reported first. In multi-CPK mode the
+/// boundary is the bins CPK, whose installed copy the shared-IDs records' walk starts at. A
+/// file of the walk that cannot be read is `installed_bin_unreadable`, Fatal, and `None`: the
+/// run stops before any export is read, the previous CPK kept, rather than build on an older
+/// copy that its CPK, loaded above it, would put back for every team.
 fn working_bins(
     inputs: &RunInputs,
     layout: &CpkLayout,

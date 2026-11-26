@@ -489,8 +489,9 @@ TC-ROOT-17 GIVEN "co Midcup Day 5" whose player folders 03 and 04 hold no portra
                  21 install whose DpFileList.bin lists a CPK before the run's holding
                  common/render/symbol/player/71403.dds
            WHEN it is compiled for PES 21
-           THEN portrait_missing is reported on Players/04 (slot 04) and not on Players/03;
-                GIVEN no PES folder instead THEN no portrait_missing is reported
+           THEN portrait_missing is reported on Players/04 (slot 04) and not on Players/03,
+                the exit code is 0 and the CPK holds both players; GIVEN no PES folder instead
+                THEN no portrait_missing is reported and the exit code is 0
 ```
 
 **0.0.2-poc2 scope.** What exists of this is in `spec/team_compiler/pipeline.md` "Resolved

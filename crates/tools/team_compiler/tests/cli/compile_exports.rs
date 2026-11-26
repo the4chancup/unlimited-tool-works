@@ -386,6 +386,8 @@ fn a_midcup_player_with_no_portrait_is_portrait_missing_only_when_none_is_instal
             TEAM_COLORS_MISSING,
         ]
     );
+    assert_eq!(run.exit_code(), 0);
+    assert_eq!(compiled_players(&sandbox), [71403, 71404]);
 
     // A folder that does not exist: the sandbox's own `PES/` would stand in for a missing key.
     let settings = format!(
@@ -401,6 +403,7 @@ fn a_midcup_player_with_no_portrait_is_portrait_missing_only_when_none_is_instal
             TEAM_COLORS_MISSING
         ]
     );
+    assert_eq!(run.exit_code(), 0);
 }
 
 // TC-PRT-02
