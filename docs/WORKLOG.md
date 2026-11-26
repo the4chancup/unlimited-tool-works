@@ -4360,14 +4360,17 @@ points there.
     test should draw the button after that check and see Test output still picked;
   - no test reads the disabled sideload entry's tooltip, the only place its reason shows
     (`upgrade_dpfl.rs`'s `disabled_tooltip_is` reads one).
-- open (2026-11-26) — A SWE-2.1 XHigh trial review of the logo slices (`logo_missing`,
-  `portrait_missing`) raised ten concerns no earlier round did. They are in
-  `.tmp/swe21_trial/logo_xhigh.findings.md` (numbers 3, 9-12 and 14-18), and their summary
-  is in `.tmp/duck_rulings.md` under "SWE-2.1 trial: XHigh on the logo brief". Each is to be
-  checked against HEAD and ruled. They name rule texts that say "a `Full` export" or "a
-  player" where referee exports are excluded, an empty `Full` export reporting
-  `export_empty` alone, and three test gaps: a fit-tagged logo, a `players.txt` roster, and
-  TC-ROOT-17's exit code.
+- open (2026-11-26) — The logo slices' texts and tests, from a SWE-2.1 XHigh trial review,
+  checked and ruled at `9963fc71`. One small SWE-2 slice:
+  - texts: the Compiler's catalog row, help and CHANGELOG say "a `Full` export" for
+    `logo_missing` and "a player" for `portrait_missing`, where both checks skip referee
+    exports: say "team export"; the upgrader's help says "no logo in its `Logo/` folder"
+    where its catalog row already has the right words;
+  - tests: a `Full` export with a fit-tagged logo (`logo_crop.png`) and no `logo_missing`; a
+    `portrait_missing` slot mapped through `players.txt`; TC-ROOT-17 asserting its exit
+    code;
+  - comments: the installed walk's six doc comments name the portrait lookup too, and the
+    upgrader catalog's doc comment on copied `when` texts is split.
 - open (2026-11-26) — **TESTSCRATCH**: tests leave their scratch folders behind. Each
   `save_editor` unit test empties its folder (`test_support::scratch`) when it next starts,
   never when it ends, so after a run all its folders stay: `target/debug/save_editor_tests`
