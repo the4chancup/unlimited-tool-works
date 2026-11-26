@@ -621,6 +621,14 @@ and no phase closes with one outstanding.
   - [ ] **backfill** two weeks of prevention lines written into the log;
   - [ ] **review1** [after backfill] the first review;
   - [ ] **lookahead1** [after review1] the first look-ahead.
+- [ ] **WSLGATES** The pipeline's Linux gates on WSL rather than the VPS (the maintainer, 2026-11-26,
+  to look into after the usage reset): the VPS is usually busy with whole-crate runs, so a
+  pipeline waiting for it waits for nothing it needs. This PC has WSL 2 with Ubuntu 22.04.
+  To find out: whether every Linux gate passes there (the GUI and process-group tests
+  included), its cost against the VPS's run (a cold build in a target folder on WSL's own
+  disk, not `/mnt/c`), how its cores and memory are bounded (`.wslconfig`, since
+  `confine_jobs.ps1` does not reach inside the VM) beside the local mutation lane, and what
+  then still needs the VPS.
 - [x] **ROADMAP** A roadmap page for the maintainer (DECISIONS 2026-11-23 "the worklog stays Markdown,
   and a roadmap page is generated from it"), in steps:
   - [x] **now** a "Now" block at the top of this file, one line per thread in flight (what, state,
