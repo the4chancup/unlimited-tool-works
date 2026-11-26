@@ -4357,10 +4357,20 @@ points there.
   never when it ends, so after a run all its folders stay: `target/debug/save_editor_tests`
   held 13.5 GiB of the main tree's 40 GiB `target/`, and the integration tests'
   `target/tmp` 5.3 GiB more. Every worktree and every mutation copy that runs the suites
-  carries its own set. The fix: a test removes its folder when it passes (a guard dropped
-  at the test's end, kept when the thread is panicking, so a failure's files stay to look
-  at), and the same for the integration tests writing under `target/tmp`. Measure a
-  `target/` before and after.
+  carries its own set. The fix: a test removes its folder when it passes and keeps it when
+  it fails, so a failure's files stay to look at. It is not a guard returned by `scratch`,
+  like `team_compiler`'s `ScratchFolder`, because helpers such as `fixture` return a path
+  inside the folder, and the guard would drop before the test used it. Instead `scratch`
+  records the folder in a thread-local list that removes it when the test's thread ends,
+  unless a panic hook marked the thread as failed. Slices:
+  - a: `save_editor`, its unit tests and its in-process sandbox; measured before and after
+    under `cargo test` and nextest.
+  - b: the other suites' scratch under `target/tmp` (`export_upgrader_in_process`,
+    `team_compiler_cli`, `team_compiler_in_process`, `ruleset_editor`'s and `studio`'s),
+    through the same file once slice a shows it works.
+
+  Until both land, `scripts/builds/clear_caches.py` clears these folders in a tree no job
+  runs in.
 - open (2026-11-26) — **COPYGROWTH**: a local mutation run's tree copies grow without bound.
   `%TEMP%\studio-mutants` held 173 GiB, almost all of it two copies left by the stopped
   CATCHUP run (79 and 74 GiB), the reason this machine's drive needed constant cleaning.
@@ -4442,17 +4452,6 @@ points there.
   them again. Fix: one home for them that every crate's tests can use, which `studio_core`
   does not offer today (no test-support module or feature). That is a crate-boundary choice,
   to be ruled before it is built.
-- open (2026-11-22) — The Save editor's tests leave their scratch behind:
-  `test_support::scratch` empties `target/<profile>/save_editor_tests/<test>` when a test
-  starts and never removes it after, so every checkout keeps 1,064 folders, many holding a
-  save copy: 12.8 GB in main's `target/`, 13.2 GB in the gate's, and the same in each
-  sidekick's tree until its `target/` goes. Fix (SWE-2): `scratch` returns a guard that
-  removes the folder when it drops and the test did not panic (a failed test's folder stays
-  to be read); check the other crates' scratch helpers for the same: main's `target/tmp/`
-  held 5.6 GB of other suites' leftovers on 2026-11-22 (`export_upgrader_in_process`,
-  `team_compiler_cli`, `save_editor_in_process`, `team_compiler_in_process`, ...). Until the
-  fix, these folders are what to delete when the disk runs low, in a tree no job runs in
-  (28.5 GB from main and `pes14` on 2026-11-22).
 - open (2026-11-22) — Panics on file content (DECISIONS 2026-11-22 "What a file holds is never
   an invariant an `expect` rests on"; `CONTRIBUTING.md` "Code style", the Errors bullet). A
   census of the 885 `expect`, `unwrap`, `panic!`, `unreachable!` and `assert!` calls in
