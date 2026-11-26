@@ -6,15 +6,16 @@ use std::sync::{Arc, Mutex, OnceLock};
 
 use studio_core::{AppPaths, PipelineEvent, PipelineEventEnvelope, Settings, ToolContext};
 
-/// A scratch folder under the temp dir (`CARGO_TARGET_TMPDIR` is set for
-/// integration tests only).
+/// A fresh, empty scratch folder for `name` under the test binary's build
+/// folder (`target/<profile>/export_upgrader_tests/<name>`): per checkout, so
+/// a mutation run's copy has its own. A passing test's folder is removed when
+/// its thread ends; a panicking test's stays for reading and is emptied at the
+/// start of its next run.
 pub(crate) fn scratch(name: &str) -> PathBuf {
-    let root = std::env::temp_dir().join(format!("export_upgrader_{name}_{}", std::process::id()));
-    if root.exists() {
-        fs::remove_dir_all(&root).unwrap();
-    }
-    fs::create_dir_all(&root).unwrap();
-    root
+    test_scratch::fresh(
+        &test_scratch::build_folder().join("export_upgrader_tests"),
+        name,
+    )
 }
 
 /// Writes into the old export at `export` the files it still lacks for its
@@ -48,11 +49,22 @@ pub(crate) fn progress_events(
         .collect()
 }
 
-/// The unit tests' data directory, made once per process: it holds nothing
-/// (the upgrader reads no list of its own).
+/// The unit tests' data directory, under the test binary's build folder
+/// (`target/<profile>/export_upgrader_tests/data_dir`), made if missing and
+/// never removed. It holds nothing (the upgrader reads no list of its own), so
+/// every test, and every test process, shares it. Not a `scratch` folder: a
+/// `scratch` folder goes when the test that made it ends.
 fn data_dir() -> PathBuf {
     static DATA_DIR: OnceLock<PathBuf> = OnceLock::new();
-    DATA_DIR.get_or_init(|| scratch("data_dir")).clone()
+    DATA_DIR
+        .get_or_init(|| {
+            let dir = test_scratch::build_folder()
+                .join("export_upgrader_tests")
+                .join("data_dir");
+            fs::create_dir_all(&dir).unwrap();
+            dir
+        })
+        .clone()
 }
 
 /// A `ToolContext` whose events land on the returned receiver, its data

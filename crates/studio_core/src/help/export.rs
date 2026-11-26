@@ -185,6 +185,7 @@ pub fn draft_script(tools: &[Box<dyn StudioTool>]) -> String {
 mod tests {
     use super::*;
     use crate::help::{HelpTopic, chapters};
+    use crate::shell::test_harness::test_dir;
 
     fn section() -> HelpSection {
         HelpSection {
@@ -560,10 +561,7 @@ mod tests {
 
     #[test]
     fn the_export_writes_each_chapter_and_prints_nothing() {
-        let dir = std::env::temp_dir().join(format!("studio_help_export_{}", std::process::id()));
-        if dir.exists() {
-            std::fs::remove_dir_all(&dir).unwrap();
-        }
+        let dir = test_dir("help_export");
         let tools = stub_tools();
         let mut out = Vec::new();
         run_help(&tools, None, None, Some(dir.as_path()), &mut out).unwrap();
@@ -592,18 +590,15 @@ mod tests {
                 "{id}"
             );
         }
-        std::fs::remove_dir_all(&dir).unwrap();
     }
 
     #[test]
     fn an_export_into_a_path_that_is_a_file_fails_with_exit_3() {
-        let file =
-            std::env::temp_dir().join(format!("studio_help_export_file_{}", std::process::id()));
+        let file = test_dir("help_export_file").join("file");
         std::fs::write(&file, "").unwrap();
         let mut out = Vec::new();
         let error =
             run_help(&stub_tools(), None, None, Some(file.as_path()), &mut out).unwrap_err();
-        std::fs::remove_file(&file).unwrap();
         assert_eq!(error.exit_code, 3);
         assert!(
             error.to_string().contains(&file.display().to_string()),

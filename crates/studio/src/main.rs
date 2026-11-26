@@ -932,9 +932,10 @@ mod tests {
     }
 
     /// What `report_update` writes to a fresh run's log for `reply`, with `skipped` as the
-    /// settings' `skipped_version`, once asserted that it wrote the same to stderr.
-    fn reported(reply: Option<&Receiver<CheckReply>>, skipped: Option<&str>) -> String {
-        let dir = TestDir::new("update_report");
+    /// settings' `skipped_version`, once asserted that it wrote the same to stderr. The
+    /// log's folder is `update_report_<case>`.
+    fn reported(case: &str, reply: Option<&Receiver<CheckReply>>, skipped: Option<&str>) -> String {
+        let dir = TestDir::new(&format!("update_report_{case}"));
         let path = dir.path().join("run_log.txt");
         let log = RunLog::open(&path).unwrap();
         let mut stderr = Vec::new();
@@ -983,13 +984,20 @@ mod tests {
         let line = updater::command_line_notice(offer.as_ref().unwrap().as_ref(), None)
             .expect("the premise: the release is offered");
         assert!(line.contains("v999.0.0"), "{line}");
-        assert_eq!(reported(Some(&arrived(offer)), None), format!("{line}\n"));
+        assert_eq!(
+            reported("offered", Some(&arrived(offer)), None),
+            format!("{line}\n")
+        );
 
         let skipped = arrived(reply_of(&newer_release()));
-        assert_eq!(reported(Some(&skipped), Some("999.0.0")), "", "skipped");
+        assert_eq!(
+            reported("skipped", Some(&skipped), Some("999.0.0")),
+            "",
+            "skipped"
+        );
         let failed = arrived(reply_of("not json"));
-        assert_eq!(reported(Some(&failed), None), "", "failed");
-        assert_eq!(reported(None, None), "", "checks off");
+        assert_eq!(reported("failed", Some(&failed), None), "", "failed");
+        assert_eq!(reported("checks_off", None, None), "", "checks off");
     }
 
     // ST-CLI-05
@@ -1004,7 +1012,7 @@ mod tests {
                 tx.send(reply_of(&newer_release())).unwrap();
             }
         });
-        let written = reported(Some(&rx), None);
+        let written = reported("not_arrived", Some(&rx), None);
         assert_eq!(written, "");
         assert!(
             matches!(rx.try_recv(), Err(crossbeam_channel::TryRecvError::Empty)),

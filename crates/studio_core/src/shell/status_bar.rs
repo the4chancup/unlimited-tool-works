@@ -1356,7 +1356,7 @@ mod tests {
         egui_ctx.all_styles_mut(|style| style.interaction.tooltip_delay = 0.0);
 
         // A `data_dir` that is a regular file fails the save on every platform.
-        let dir = test_dir("studio_core_status_bar_read_only");
+        let dir = test_dir("status_bar_read_only");
         fs::create_dir_all(&dir).unwrap();
         let data_dir = dir.join("data");
         fs::write(&data_dir, b"").unwrap();

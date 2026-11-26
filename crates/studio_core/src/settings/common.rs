@@ -283,6 +283,7 @@ pub enum Theme {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::shell::test_harness::test_dir;
 
     fn settings(version: PesVersion, path: &str) -> CommonSettings {
         CommonSettings {
@@ -525,11 +526,7 @@ pes_folder_path = '/games/Pro Evolution Soccer 20**'
     // `skip_serializing_if` keeps an empty map from appearing as a table.
     #[test]
     fn a_file_without_per_version_folders_saves_unchanged() {
-        let dir = std::env::temp_dir().join(format!(
-            "studio_core_common_no_folders_{}",
-            std::process::id()
-        ));
-        std::fs::create_dir_all(&dir).unwrap();
+        let dir = test_dir("common_no_folders");
         let path = dir.join("settings.toml");
         crate::settings::Settings::default().save(&path).unwrap();
         let original = std::fs::read_to_string(&path).unwrap();
@@ -546,16 +543,13 @@ pes_folder_path = '/games/Pro Evolution Soccer 20**'
             original,
             "nothing changed: the file is byte-identical"
         );
-        std::fs::remove_dir_all(&dir).unwrap();
     }
 
     // A filled row's table is keyed by the version's number (`21 = '…'`), loads back
     // as the same map, and is gone from the file once emptied.
     #[test]
     fn per_version_folders_round_trip_and_disappear_when_emptied() {
-        let dir =
-            std::env::temp_dir().join(format!("studio_core_common_folders_{}", std::process::id()));
-        std::fs::create_dir_all(&dir).unwrap();
+        let dir = test_dir("common_folders");
         let path = dir.join("settings.toml");
         let mut settings = crate::settings::Settings::default();
         settings
@@ -584,7 +578,6 @@ pes_folder_path = '/games/Pro Evolution Soccer 20**'
             !text.contains("pes_folders"),
             "the emptied table leaves the file: {text}"
         );
-        std::fs::remove_dir_all(&dir).unwrap();
     }
 
     // A per-version key reads as `pes_version`'s value does: the number or the year
@@ -722,11 +715,7 @@ pes_folder_path = '/games/Pro Evolution Soccer 20**'
         };
         assert_eq!(settings.common.window_main, Some(place));
 
-        let dir = std::env::temp_dir().join(format!(
-            "studio_core_common_window_place_{}",
-            std::process::id()
-        ));
-        std::fs::create_dir_all(&dir).unwrap();
+        let dir = test_dir("common_window_place");
         let path = dir.join("settings.toml");
         settings.save(&path).unwrap();
         let loaded = crate::settings::Settings::load(&path).unwrap();
@@ -744,17 +733,12 @@ pes_folder_path = '/games/Pro Evolution Soccer 20**'
         if let Some(next) = text[common_at..].find("\n[").map(|i| common_at + i) {
             assert!(key_at < next, "the key sits before the next section");
         }
-        std::fs::remove_dir_all(&dir).unwrap();
     }
 
     // A record of six numbers round-trips its sixth: 1 as maximized, 0 as not.
     #[test]
     fn a_window_place_of_six_numbers_round_trips_the_maximized_flag() {
-        let dir = std::env::temp_dir().join(format!(
-            "studio_core_common_window_place_six_{}",
-            std::process::id()
-        ));
-        std::fs::create_dir_all(&dir).unwrap();
+        let dir = test_dir("common_window_place_six");
         let path = dir.join("settings.toml");
         for (flag, maximized) in [(1, true), (0, false)] {
             let text = format!("[common]\nwindow_main = [100, 50, 1100, 700, 1, {flag}]\n");
@@ -780,7 +764,6 @@ pes_folder_path = '/games/Pro Evolution Soccer 20**'
             );
             std::fs::remove_file(&path).unwrap();
         }
-        std::fs::remove_dir_all(&dir).unwrap();
     }
 
     // A record of any other length is refused, as a malformed value of any

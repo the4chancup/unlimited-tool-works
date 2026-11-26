@@ -351,7 +351,7 @@ mod tests {
     // the swap works through come out in byte order, `B` before `a` before `z`.
     #[test]
     fn list_orders_the_bundles_files_and_folders_by_byte() {
-        let dir = TestDir::new("studio_core_swap_order");
+        let dir = TestDir::new("swap_order");
         let bundle = dir.path().to_path_buf();
         for name in ["z.txt", "a.txt", "B.txt"] {
             fs::write(bundle.join(name), "a file").unwrap();

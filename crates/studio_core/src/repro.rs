@@ -740,16 +740,11 @@ pub(crate) mod tests {
     use std::io::Read;
 
     use super::*;
+    use crate::shell::test_harness::test_dir;
 
-    /// A fresh scratch folder for `test` under the system temp.
+    /// A fresh scratch folder for `test`, `test_dir("repro_<test>")`.
     pub(crate) fn scratch(test: &str) -> PathBuf {
-        let dir =
-            std::env::temp_dir().join(format!("studio_core_repro_{test}_{}", std::process::id()));
-        if dir.exists() {
-            fs::remove_dir_all(&dir).unwrap();
-        }
-        fs::create_dir_all(&dir).unwrap();
-        dir
+        test_dir(&format!("repro_{test}"))
     }
 
     /// The zip's entry names at `path`, in write order.

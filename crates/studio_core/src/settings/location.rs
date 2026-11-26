@@ -50,16 +50,11 @@ mod tests {
     use std::fs;
 
     use super::*;
+    use crate::shell::test_harness::test_dir;
 
-    /// A fresh `<temp>/studio_core_location_<name>_<pid>` folder with `exe/` and `config/` inside.
+    /// A fresh `test_dir("location_<name>")` with `exe/` and `config/` inside.
     fn sandbox(name: &str) -> PathBuf {
-        let root = std::env::temp_dir().join(format!(
-            "studio_core_location_{name}_{}",
-            std::process::id()
-        ));
-        if root.exists() {
-            fs::remove_dir_all(&root).unwrap();
-        }
+        let root = test_dir(&format!("location_{name}"));
         fs::create_dir_all(root.join("exe")).unwrap();
         fs::create_dir_all(root.join("config")).unwrap();
         root

@@ -1004,7 +1004,7 @@ mod tests {
     // ST-HELP-05
     #[test]
     fn the_help_window_first_opens_at_1000_by_600_capped_at_ninety_percent_of_the_shells_window() {
-        let dir = TestDir::new("studio_core_help_size");
+        let dir = TestDir::new("help_size");
         for (screen, min, size) in [
             (
                 egui::vec2(1037.0, 648.0),
@@ -1050,7 +1050,7 @@ mod tests {
     // ST-HELP-01
     #[test]
     fn f1_or_the_question_mark_opens_the_help_on_the_active_tools_chapter() {
-        let dir = TestDir::new("studio_core_help_open");
+        let dir = TestDir::new("help_open");
         let Shell { mut app, .. } = help_shell(dir.path());
         let egui_ctx = test_context();
 
@@ -1155,7 +1155,7 @@ mod tests {
         let (c, calls_c) = stub_help("c", "Gamma", None, gamma);
         let (a, calls_a) = stub_help("a", "Alpha", None, alpha_section());
         let (b, calls_b) = stub_help("b", "Beta", None, beta_section());
-        let dir = TestDir::new("studio_core_help_rail_order");
+        let dir = TestDir::new("help_rail_order");
         let Shell { mut app, .. } = shell_in(
             test_settings(dir.path()),
             vec![c, a, b],
@@ -1210,7 +1210,7 @@ mod tests {
     // ST-HELP-02
     #[test]
     fn the_search_lists_row_and_paragraph_hits_and_jumps_to_them() {
-        let dir = TestDir::new("studio_core_help_search");
+        let dir = TestDir::new("help_search");
         let Shell { mut app, .. } = help_shell(dir.path());
         let egui_ctx = test_context();
 
@@ -1279,7 +1279,7 @@ mod tests {
     // margin).
     #[test]
     fn every_result_row_spans_the_panes_width() {
-        let dir = TestDir::new("studio_core_help_res_span");
+        let dir = TestDir::new("help_res_span");
         let Shell { mut app, .. } = help_shell(dir.path());
         let egui_ctx = test_context();
 
@@ -1327,7 +1327,7 @@ mod tests {
     // than the pane shows on one line ending in "…", not wrapped over two.
     #[test]
     fn a_result_too_long_for_the_pane_is_one_row_ending_in_an_ellipsis() {
-        let dir = TestDir::new("studio_core_help_res_elide");
+        let dir = TestDir::new("help_res_elide");
         let mut alpha = alpha_section();
         alpha.topics[0].body = Box::leak("zzwide ".repeat(40).into_boxed_str());
         let (a, calls_a) = stub_help("a", "Alpha", None, alpha);
@@ -1368,7 +1368,7 @@ mod tests {
     // ST-HELP-03
     #[test]
     fn an_in_doc_link_opens_the_topic_it_names() {
-        let dir = TestDir::new("studio_core_help_link");
+        let dir = TestDir::new("help_link");
         let (a, calls_a) = stub_help("a", "Alpha", None, alpha_section());
         let (b, calls_b) = stub_help("b", "Beta", None, beta_section());
         let Shell { mut app, .. } = shell_with(
@@ -1397,7 +1397,7 @@ mod tests {
     // ST-HELP-03
     #[test]
     fn a_log_lines_message_code_opens_the_help_at_its_catalog_row() {
-        let dir = TestDir::new("studio_core_help_loglink");
+        let dir = TestDir::new("help_loglink");
         // Alpha's view is a log panel showing a finding line of its own catalog.
         let (a, calls_a) = stub_log(
             "a",
@@ -1445,7 +1445,7 @@ mod tests {
 
     #[test]
     fn an_openhelp_notice_opens_the_window_at_the_target_closing_a_modal() {
-        let dir = TestDir::new("studio_core_help_notice");
+        let dir = TestDir::new("help_notice");
         let Shell { mut app, ctx, .. } = help_shell(dir.path());
         let egui_ctx = test_context();
 
@@ -1515,7 +1515,7 @@ mod tests {
 
     #[test]
     fn a_long_catalog_cell_wraps_inside_the_pane() {
-        let dir = TestDir::new("studio_core_help_wrap");
+        let dir = TestDir::new("help_wrap");
         // A When cell the Compiler's size: ~400 characters.
         let long = Box::leak("plain words and more words ".repeat(16).into_boxed_str());
         let mut section = alpha_section();
@@ -1578,7 +1578,7 @@ mod tests {
 
     #[test]
     fn a_wrapping_catalog_cell_pushes_the_next_row_down() {
-        let dir = TestDir::new("studio_core_help_rowheight");
+        let dir = TestDir::new("help_rowheight");
         let mut section = alpha_section();
         // Long enough to wrap onto at least four lines in the default window.
         let long = Box::leak(
@@ -1670,7 +1670,7 @@ mod tests {
     // measures in a browser.
     #[test]
     fn one_line_catalog_rows_stand_19_apart() {
-        let dir = TestDir::new("studio_core_help_rowpitch");
+        let dir = TestDir::new("help_rowpitch");
         let mut section = alpha_section();
         section.messages = ["first_code", "second_code", "third_code"]
             .into_iter()
@@ -1714,7 +1714,7 @@ mod tests {
     #[test]
     fn f1_opens_nothing_while_the_first_run_dialog_is_up() {
         let (a, calls_a) = stub_help("a", "Alpha", None, alpha_section());
-        let dir = TestDir::new("studio_core_help_firstrun");
+        let dir = TestDir::new("help_firstrun");
         // No data directory: the first-run dialog is up and nothing else is drawn.
         let Shell { mut app, .. } =
             shell_with(test_settings(dir.path()), vec![a], &[], None, vec![calls_a]);
@@ -1730,7 +1730,7 @@ mod tests {
 
     #[test]
     fn the_tree_marks_the_current_topic_entry_selected() {
-        let dir = TestDir::new("studio_core_help_sel");
+        let dir = TestDir::new("help_sel");
         let Shell { mut app, .. } = help_shell(dir.path());
         let egui_ctx = test_context();
 
@@ -1760,7 +1760,7 @@ mod tests {
     // title bar falls back to `Heading`'s 15.
     #[test]
     fn the_help_windows_title_is_14_points_and_strong() {
-        let dir = TestDir::new("studio_core_help_title");
+        let dir = TestDir::new("help_title");
         let Shell { mut app, .. } = help_shell(dir.path());
         let egui_ctx = test_context();
 
@@ -2009,7 +2009,7 @@ mod tests {
 
     #[test]
     fn a_topics_paragraphs_stand_8_apart() {
-        let dir = TestDir::new("studio_core_help_paragap");
+        let dir = TestDir::new("help_paragap");
         let (_, alpha) = sections().remove(0);
         let (a, calls_a) = stub_help("a", "Alpha", None, alpha);
         let Shell { mut app, .. } = shell_with(
@@ -2041,7 +2041,7 @@ mod tests {
 
     #[test]
     fn a_long_paragraph_wraps_at_720_in_a_wider_pane() {
-        let dir = TestDir::new("studio_core_help_readwidth");
+        let dir = TestDir::new("help_readwidth");
         let body = "A sentence long enough to wrap the paragraph over several lines. ".repeat(20);
         let section = HelpSection {
             title: "Alpha",
@@ -2096,7 +2096,7 @@ mod tests {
 
     #[test]
     fn the_highlighted_paragraph_is_scrolled_into_view() {
-        let dir = TestDir::new("studio_core_help_parascroll");
+        let dir = TestDir::new("help_parascroll");
         let (a, calls_a) = stub_help("a", "Long", None, long_section(5));
         let Shell { mut app, .. } = shell_with(
             test_settings(dir.path()),
@@ -2149,7 +2149,7 @@ mod tests {
     // under it.
     #[test]
     fn a_paragraph_jump_scrolls_the_paragraph_to_the_topic_panes_top() {
-        let dir = TestDir::new("studio_core_help_paratop");
+        let dir = TestDir::new("help_paratop");
         let (a, calls_a) = stub_help("a", "Long", None, long_section(30));
         let Shell { mut app, .. } = shell_with(
             test_settings(dir.path()),
@@ -2192,7 +2192,7 @@ mod tests {
 
     #[test]
     fn a_jump_scrolls_the_pane_to_its_top_only_once() {
-        let dir = TestDir::new("studio_core_help_scrolltop");
+        let dir = TestDir::new("help_scrolltop");
         let (a, calls_a) = stub_help("a", "Long", None, long_section(5));
         let Shell { mut app, .. } = shell_with(
             test_settings(dir.path()),
@@ -2249,7 +2249,7 @@ mod tests {
 
     #[test]
     fn an_openhelp_anchor_scrolls_the_catalog_row_into_view() {
-        let dir = TestDir::new("studio_core_help_rowscroll");
+        let dir = TestDir::new("help_rowscroll");
         let (b, calls_b) = stub_help("b", "Beta", None, rows_section());
         let Shell { mut app, ctx, .. } = shell_with(
             test_settings(dir.path()),
@@ -2299,7 +2299,7 @@ mod tests {
 
     #[test]
     fn a_row_jump_scrolls_only_once() {
-        let dir = TestDir::new("studio_core_help_rowonce");
+        let dir = TestDir::new("help_rowonce");
         let (b, calls_b) = stub_help("b", "Beta", None, rows_section());
         let Shell { mut app, ctx, .. } = shell_with(
             test_settings(dir.path()),
@@ -2366,7 +2366,7 @@ mod tests {
     // middle and the mark's top is the row's.
     #[test]
     fn a_row_jump_scrolls_the_row_to_the_topic_panes_top() {
-        let dir = TestDir::new("studio_core_help_rowtop");
+        let dir = TestDir::new("help_rowtop");
         let mut section = rows_section();
         section.messages[30].when = Box::leak("when it happens ".repeat(12).into_boxed_str());
         let (b, calls_b) = stub_help("b", "Beta", None, section);
@@ -2434,7 +2434,7 @@ mod tests {
 
     #[test]
     fn a_when_cell_link_jumps_to_its_target() {
-        let dir = TestDir::new("studio_core_help_celllink");
+        let dir = TestDir::new("help_celllink");
         let mut alpha = alpha_section();
         alpha.messages[0].when = "see [the other topic](b#beta-topic) for it";
         let (a, calls_a) = stub_help("a", "Alpha", None, alpha);
@@ -2467,7 +2467,7 @@ mod tests {
 
     #[test]
     fn a_tree_click_during_search_shows_the_topic() {
-        let dir = TestDir::new("studio_core_help_treeselect");
+        let dir = TestDir::new("help_treeselect");
         let Shell { mut app, .. } = help_shell(dir.path());
         let egui_ctx = test_context();
 
@@ -2549,7 +2549,7 @@ mod tests {
 
     #[test]
     fn a_wide_code_is_not_wrapped() {
-        let dir = TestDir::new("studio_core_help_codewidth");
+        let dir = TestDir::new("help_codewidth");
         let mut section = alpha_section();
         section.messages[0].code = "a_very_long_message_code_with_forty_characters_x";
         let (a, calls_a) = stub_help("a", "Alpha", None, section);
@@ -2577,7 +2577,7 @@ mod tests {
 
     #[test]
     fn catalog_cells_render_markdown_not_its_source() {
-        let dir = TestDir::new("studio_core_help_markup");
+        let dir = TestDir::new("help_markup");
         let mut section = alpha_section();
         section.messages[0].when = "has **bold** and `code` inside";
         let (a, calls_a) = stub_help("a", "Alpha", None, section);
@@ -2608,7 +2608,7 @@ mod tests {
     // the default cursor and registers no splitter.
     #[test]
     fn the_tree_panels_fixed_width_edge_shows_no_resize_cursor() {
-        let dir = TestDir::new("studio_core_help_tree_edge");
+        let dir = TestDir::new("help_tree_edge");
         let Shell { mut app, .. } = help_shell(dir.path());
         let egui_ctx = test_context();
 
@@ -2671,7 +2671,7 @@ mod tests {
     // and both names end left of it.
     #[test]
     fn the_tree_is_220_points_wide_and_holds_the_longest_names() {
-        let dir = TestDir::new("studio_core_help_tree_width");
+        let dir = TestDir::new("help_tree_width");
         let (tool, calls) = stub_help("save-editor", "Save editor", None, terminal_section());
         let shell = shell_with(
             test_settings(dir.path()),
@@ -2725,7 +2725,7 @@ mod tests {
     // the fill's `edge_color` at rest.
     #[test]
     fn the_shown_topics_row_draws_its_blue_with_its_edge() {
-        let dir = TestDir::new("studio_core_help_tree_row_edge");
+        let dir = TestDir::new("help_tree_row_edge");
         let (tool, calls) = stub_help("save-editor", "Save editor", None, terminal_section());
         let shell = shell_with(
             test_settings(dir.path()),
@@ -2786,7 +2786,7 @@ mod tests {
     // tree and an unselected entry's response rect is the same span.
     #[test]
     fn every_tree_entry_spans_the_bodys_width() {
-        let dir = TestDir::new("studio_core_help_tree_span");
+        let dir = TestDir::new("help_tree_span");
         let Shell { mut app, .. } = help_shell(dir.path());
         let egui_ctx = test_context();
 
@@ -2863,7 +2863,7 @@ mod tests {
     // blue, which marks a choice.
     #[test]
     fn a_search_jump_fills_the_paragraph_in_the_hit_green() {
-        let dir = TestDir::new("studio_core_help_parahit");
+        let dir = TestDir::new("help_parahit");
         let Shell { mut app, .. } = help_shell(dir.path());
         let egui_ctx = test_context();
 
@@ -2902,7 +2902,7 @@ mod tests {
     // row's text (the shapes are in paint order: a lower index is under).
     #[test]
     fn a_row_jump_marks_the_row_in_the_hit_green_under_its_text() {
-        let dir = TestDir::new("studio_core_help_rowhit");
+        let dir = TestDir::new("help_rowhit");
         let Shell { mut app, .. } = help_shell(dir.path());
         let egui_ctx = test_context();
 

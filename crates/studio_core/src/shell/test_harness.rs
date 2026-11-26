@@ -2,7 +2,6 @@
 //! frames, read the AccessKit tree and click widgets. What a scenario observes is what a frame
 //! draws.
 
-use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
@@ -360,8 +359,7 @@ pub(super) struct Shell {
     pub(super) ctx: ToolContext,
     pub(super) settings: Arc<Mutex<Settings>>,
     pub(super) calls: Vec<Arc<Calls>>,
-    /// The `TestDir` a `shell()` made: held here so the data folder lives as long as the
-    /// `Shell`. A destructure must bind it (`_dir`), since `..` drops it at once.
+    /// The `TestDir` a `shell()` made, its data folder.
     pub(super) _dir: Option<TestDir>,
 }
 
@@ -442,11 +440,11 @@ pub(super) fn shell_with(
 
 /// A shell over the stub tools `a` (labeled `A`) and `b` (`B`), its data directory a
 /// `TestDir` the `Shell` holds so the first-run dialog does not stand in front of the
-/// views and the folder dies with the `Shell`.
+/// views. The folder is named after the calling test, so two tests never share one.
 pub(super) fn shell() -> Shell {
     let (a, calls_a) = stub("a", "A", None);
     let (b, calls_b) = stub("b", "B", None);
-    let dir = TestDir::new("studio_core_shell");
+    let dir = TestDir::new(&format!("shell-{}", this_test()));
     let mut shell = shell_with(
         test_settings(dir.path()),
         vec![a, b],
@@ -458,43 +456,51 @@ pub(super) fn shell() -> Shell {
     shell
 }
 
-/// A temp folder unique to this test process, as `settings`' `test_dir` does it.
-pub(super) fn test_dir(name: &str) -> PathBuf {
-    std::env::temp_dir().join(format!("{name}_{}", std::process::id()))
+/// The folder that holds the crate's unit-test folders, in the test binary's build folder.
+fn tests_folder() -> PathBuf {
+    test_scratch::build_folder().join("studio_core_tests")
 }
 
-/// A temp folder the test owns: `<temp>/<name>_<pid>_<n>` (`n` from a process counter,
-/// so no two calls share a folder), created in `new` and removed in `Drop` — a test
-/// that panics still leaves the temp folder clean. For the tests that want a real
-/// data directory: a `None` `data_dir` opens the first-run dialog (ST-RUN-01) and a
-/// missing folder raises `data_dir_read_only` at the first save.
+/// A fresh, empty folder `name` for the calling test, under the test binary's build
+/// folder (`target/<profile>/studio_core_tests/<name>`): per checkout, so a mutation
+/// run's copy has its own. A passing test's folder is removed when its thread ends; a
+/// panicking test's stays for reading and is emptied at the start of its next run.
+/// `name` is unique among the crate's tests: two tests running at once must not share
+/// a folder.
+pub(crate) fn test_dir(name: &str) -> PathBuf {
+    test_scratch::fresh(&tests_folder(), name)
+}
+
+/// The calling test's name as a folder name (`shell-tests-…`), for a helper several
+/// tests call to name their folders apart. libtest runs each test on a thread named
+/// after it, the one name no two tests share.
+pub(super) fn this_test() -> String {
+    std::thread::current()
+        .name()
+        .expect("a test runs on a named thread")
+        .replace("::", "-")
+}
+
+/// The path `test_dir(name)` returns, without making or emptying the folder: for a
+/// probe `fn` that rebuilds its test's path by name while the test runs.
+pub(super) fn test_dir_path(name: &str) -> PathBuf {
+    tests_folder().join(name)
+}
+
+/// A test's folder, `test_dir(name)`, held as a value: for the tests that want a real
+/// data directory, since a `None` `data_dir` opens the first-run dialog (ST-RUN-01)
+/// and a missing folder raises `data_dir_read_only` at the first save.
 pub(crate) struct TestDir(PathBuf);
 
 impl TestDir {
-    /// Creates `<temp>/<name>_<pid>_<n>`: unique in this process run.
+    /// Makes `test_dir(name)`.
     pub(crate) fn new(name: &str) -> TestDir {
-        static SEQUENCE: AtomicUsize = AtomicUsize::new(0);
-        let dir = test_dir(&format!(
-            "{name}_{}",
-            SEQUENCE.fetch_add(1, Ordering::SeqCst)
-        ));
-        fs::create_dir_all(&dir).unwrap();
-        TestDir(dir)
+        TestDir(test_dir(name))
     }
 
     /// The folder's path.
     pub(crate) fn path(&self) -> &Path {
         &self.0
-    }
-}
-
-impl Drop for TestDir {
-    fn drop(&mut self) {
-        // A drop cannot fail the test, and a leftover folder in the temp folder harms
-        // nothing: the failure is logged, not raised.
-        if let Err(error) = fs::remove_dir_all(&self.0) {
-            log::debug!("test folder {} not removed: {error}", self.0.display());
-        }
     }
 }
 

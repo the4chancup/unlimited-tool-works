@@ -23,6 +23,7 @@ directories.workspace = true
 
 [dev-dependencies]
 flate2.workspace = true
+test_scratch.workspace = true
 
 [features]
 # The fixture saves as whole encrypted files (`fixture_save`), for other

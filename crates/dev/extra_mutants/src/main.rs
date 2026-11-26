@@ -138,8 +138,15 @@ fn relative(path: &Path, crate_dir: &Path) -> String {
 mod tests {
     use super::*;
 
+    /// A fresh, empty folder for a test's crate tree, under the test binary's build folder
+    /// (`target/<profile>/extra_mutants_tests/<name>`). A passing test's folder is removed
+    /// when its thread ends; a panicking test's stays for reading and is emptied at the
+    /// start of its next run.
     fn temp_dir(name: &str) -> PathBuf {
-        std::env::temp_dir().join(format!("extra_mutants_{name}_{}", std::process::id()))
+        test_scratch::fresh(
+            &test_scratch::build_folder().join("extra_mutants_tests"),
+            name,
+        )
     }
 
     fn write(dir: &Path, rel: &str, text: &str) {

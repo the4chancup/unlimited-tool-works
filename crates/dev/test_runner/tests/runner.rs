@@ -99,7 +99,10 @@ fn run_shim(home: &Path, args: &[&str]) -> Option<i32> {
 // `exit /b` once returned 0 for every child on the compiled branch.
 #[test]
 fn the_shim_passes_the_childs_exit_code_through_on_both_branches() {
-    let dir = std::env::temp_dir().join(format!("utw-shim-{}", std::process::id()));
+    let dir = test_scratch::fresh(
+        &Path::new(env!("CARGO_TARGET_TMPDIR")).join("test_runner_runner"),
+        "utw-shim",
+    );
     let compiled = dir.join("compiled");
     let python = dir.join("python");
     std::fs::create_dir_all(compiled.join("bin")).expect("the compiled home");
@@ -116,5 +119,4 @@ fn the_shim_passes_the_childs_exit_code_through_on_both_branches() {
             );
         }
     }
-    std::fs::remove_dir_all(&dir).expect("the temp homes removed");
 }

@@ -541,28 +541,23 @@ fn merge_missing(into: &mut Table, defaults: &Table) {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::shell::test_harness::test_dir;
     use pes_version::PesVersion;
 
     fn table(text: &str) -> Table {
         toml::from_str(text).unwrap()
     }
 
-    /// A temp folder unique to this test process, as `location.rs`'s `sandbox` does: two
-    /// test binaries running at once (the mutation run's workers) must not share fixtures.
-    fn test_dir(name: &str) -> std::path::PathBuf {
-        std::env::temp_dir().join(format!("{name}_{}", std::process::id()))
-    }
-
     #[test]
     fn missing_file_loads_as_defaults() {
-        let dir = test_dir("studio_core_settings_missing");
+        let dir = test_dir("settings_missing");
         let loaded = Settings::load(&dir.join("does_not_exist.toml")).unwrap();
         assert_eq!(loaded, Settings::default());
     }
 
     #[test]
     fn a_settings_path_that_exists_but_is_not_a_file_is_an_error() {
-        let dir = test_dir("studio_core_settings_dir_path");
+        let dir = test_dir("settings_dir_path");
         fs::create_dir_all(&dir).unwrap();
         // Only a missing file yields the defaults; a folder at the path is a read failure.
         assert!(matches!(
@@ -583,7 +578,7 @@ mod tests {
             table("dt00_overwrite_allow = true\nlabel = 'x'"),
         );
 
-        let dir = test_dir("studio_core_settings_roundtrip");
+        let dir = test_dir("settings_roundtrip");
         fs::create_dir_all(&dir).unwrap();
         let path = dir.join("settings.toml");
         settings.save(&path).unwrap();
@@ -599,7 +594,7 @@ mod tests {
 
     #[test]
     fn concurrent_saves_leave_a_complete_file() {
-        let dir = test_dir("studio_core_settings_concurrent");
+        let dir = test_dir("settings_concurrent");
         fs::create_dir_all(&dir).unwrap();
         let path = dir.join("settings.toml");
         std::thread::scope(|scope| {
@@ -619,7 +614,7 @@ mod tests {
 
     #[test]
     fn a_failed_save_leaves_no_tmp_sibling() {
-        let dir = test_dir("studio_core_settings_save_fail");
+        let dir = test_dir("settings_save_fail");
         drop(fs::remove_dir_all(&dir));
         fs::create_dir_all(&dir).unwrap();
         // `path` is a directory: the rename over it fails after the .tmp was written.
@@ -641,7 +636,7 @@ mod tests {
     // a `last_tool` save.
     #[test]
     fn save_edits_in_place_and_only_the_changed_line_moves() {
-        let dir = test_dir("studio_core_settings_inplace");
+        let dir = test_dir("settings_inplace");
         fs::create_dir_all(&dir).unwrap();
         let path = dir.join("settings.toml");
         let original = "# the member's note about this file\n\
@@ -710,7 +705,7 @@ mod tests {
     // file stays the member's.
     #[test]
     fn an_inline_section_is_written_as_a_table_keeping_its_comment() {
-        let dir = test_dir("studio_core_settings_inline_section");
+        let dir = test_dir("settings_inline_section");
         fs::create_dir_all(&dir).unwrap();
         let path = dir.join("settings.toml");
         fs::write(&path, "# my cup settings\ncommon = { pes_version = 21 }\n").unwrap();
@@ -731,7 +726,7 @@ mod tests {
     // A file broken by hand since the session loaded it is written fresh from the session.
     #[test]
     fn save_writes_fresh_over_a_file_that_does_not_parse() {
-        let dir = test_dir("studio_core_settings_broken_file");
+        let dir = test_dir("settings_broken_file");
         fs::create_dir_all(&dir).unwrap();
         let path = dir.join("settings.toml");
         let mut settings = Settings::default();
@@ -793,7 +788,7 @@ mod tests {
     // session's values.
     #[test]
     fn a_fresh_save_starts_from_the_template() {
-        let dir = test_dir("studio_core_settings_template_fresh");
+        let dir = test_dir("settings_template_fresh");
         fs::create_dir_all(&dir).unwrap();
         let path = dir.join("settings.toml");
 
@@ -808,7 +803,7 @@ mod tests {
     // bare values take without one.
     #[test]
     fn a_file_that_is_not_toml_is_replaced_from_the_template() {
-        let dir = test_dir("studio_core_settings_template_broken");
+        let dir = test_dir("settings_template_broken");
         fs::create_dir_all(&dir).unwrap();
         let path = dir.join("settings.toml");
         fs::write(&path, "[common\nnot toml").unwrap();
@@ -824,7 +819,7 @@ mod tests {
     // template comment is added.
     #[test]
     fn a_file_that_parses_is_edited_ignoring_the_template() {
-        let dir = test_dir("studio_core_settings_template_kept");
+        let dir = test_dir("settings_template_kept");
         fs::create_dir_all(&dir).unwrap();
         let path = dir.join("settings.toml");
         fs::write(
@@ -853,7 +848,7 @@ mod tests {
     // fresh, without its comments.
     #[test]
     fn a_key_becoming_a_list_of_tables_keeps_the_comment_above_it() {
-        let dir = test_dir("studio_core_settings_tables_comment");
+        let dir = test_dir("settings_tables_comment");
         fs::create_dir_all(&dir).unwrap();
         let path = dir.join("settings.toml");
         fs::write(
@@ -892,7 +887,7 @@ mod tests {
     // its `[[key]]` header, moved back above the `key =` line.
     #[test]
     fn an_emptied_list_of_tables_keeps_the_comment_above_its_key() {
-        let dir = test_dir("studio_core_settings_emptied_comment");
+        let dir = test_dir("settings_emptied_comment");
         fs::create_dir_all(&dir).unwrap();
         let path = dir.join("settings.toml");
         fs::write(
@@ -934,7 +929,7 @@ mod tests {
     // `recent_files` keeps every comment line the file carries.
     #[test]
     fn the_bundled_settings_keep_every_comment_when_a_recent_save_lands() {
-        let dir = test_dir("studio_core_settings_bundled_comment");
+        let dir = test_dir("settings_bundled_comment");
         fs::create_dir_all(&dir).unwrap();
         let path = dir.join("settings.toml");
         const BUNDLED: &str = include_str!("../../../../resources/bundle/data/settings.toml");
@@ -1002,7 +997,7 @@ mod tests {
     // later sections it sorts behind. At the root a new section renders last.
     #[test]
     fn an_inserted_table_key_stays_inside_its_section() {
-        let dir = test_dir("studio_core_settings_insert_position");
+        let dir = test_dir("settings_insert_position");
         fs::create_dir_all(&dir).unwrap();
         let path = dir.join("settings.toml");
         fs::write(
@@ -1064,7 +1059,7 @@ mod tests {
     // for the split to show.
     #[test]
     fn an_inserted_section_renders_as_one_block() {
-        let dir = test_dir("studio_core_settings_insert_block");
+        let dir = test_dir("settings_insert_block");
         fs::create_dir_all(&dir).unwrap();
         let path = dir.join("settings.toml");
         fs::write(
@@ -1122,7 +1117,7 @@ mod tests {
     // after all of them.
     #[test]
     fn an_inserted_section_renders_after_the_files_deepest_table() {
-        let dir = test_dir("studio_core_settings_deepest");
+        let dir = test_dir("settings_deepest");
         fs::create_dir_all(&dir).unwrap();
         let path = dir.join("settings.toml");
         fs::write(
@@ -1163,7 +1158,7 @@ mod tests {
     // the key being earlier in the file).
     #[test]
     fn an_inline_root_section_becomes_a_header_after_the_last_one() {
-        let dir = test_dir("studio_core_settings_root_inline");
+        let dir = test_dir("settings_root_inline");
         fs::create_dir_all(&dir).unwrap();
         let path = dir.join("settings.toml");
         fs::write(&path, "x = { a = 1 }\n\n[z-one]\nk = 1\n\n[z-two]\nk = 2\n").unwrap();
@@ -1184,7 +1179,7 @@ mod tests {
     // edited like any other file: the comment moves above the new table header.
     #[test]
     fn a_template_that_does_not_parse_falls_back_to_the_values() {
-        let dir = test_dir("studio_core_settings_template_fallback");
+        let dir = test_dir("settings_template_fallback");
         fs::create_dir_all(&dir).unwrap();
         let path = dir.join("settings.toml");
 
@@ -1214,7 +1209,7 @@ mod tests {
     // the comment inside it survives a change of its sibling.
     #[test]
     fn save_writes_an_empty_tool_table_and_edits_a_nested_one_in_place() {
-        let dir = test_dir("studio_core_settings_nested");
+        let dir = test_dir("settings_nested");
         fs::create_dir_all(&dir).unwrap();
         let path = dir.join("settings.toml");
         let original = "[compiler.kits]\n\
@@ -1251,7 +1246,7 @@ mod tests {
     // version selector rewrites `pes_version`, the key a member most likely annotated.
     #[test]
     fn save_keeps_the_comments_around_a_changed_value() {
-        let dir = test_dir("studio_core_settings_changed_comments");
+        let dir = test_dir("settings_changed_comments");
         fs::create_dir_all(&dir).unwrap();
         let path = dir.join("settings.toml");
         let original = "[common]\n\
@@ -1280,7 +1275,7 @@ mod tests {
 
     #[test]
     fn save_removes_dropped_keys_and_appends_new_sections() {
-        let dir = test_dir("studio_core_settings_inplace_keys");
+        let dir = test_dir("settings_inplace_keys");
         fs::create_dir_all(&dir).unwrap();
         let path = dir.join("settings.toml");
         let original = "[common]\n\
@@ -1328,7 +1323,7 @@ mod tests {
     // ST-SET-05
     #[test]
     fn each_sessions_save_writes_only_its_own_changes() {
-        let dir = test_dir("studio_core_settings_two_sessions");
+        let dir = test_dir("settings_two_sessions");
         fs::create_dir_all(&dir).unwrap();
         let path = dir.join("settings.toml");
         fs::write(
@@ -1412,7 +1407,7 @@ mod tests {
     // version's later key in key order.
     #[test]
     fn a_changed_folder_row_drops_its_four_digit_key() {
-        let dir = test_dir("studio_core_settings_year_key_changed");
+        let dir = test_dir("settings_year_key_changed");
         fs::create_dir_all(&dir).unwrap();
         let path = dir.join("settings.toml");
         fs::write(&path, HAND_FOLDER_FILE).unwrap();
@@ -1444,7 +1439,7 @@ mod tests {
     // row the session removed.
     #[test]
     fn an_emptied_folder_row_drops_its_four_digit_key() {
-        let dir = test_dir("studio_core_settings_year_key_emptied");
+        let dir = test_dir("settings_year_key_emptied");
         fs::create_dir_all(&dir).unwrap();
         let path = dir.join("settings.toml");
         fs::write(&path, HAND_FOLDER_FILE).unwrap();
@@ -1466,7 +1461,7 @@ mod tests {
     // change: it stays in the file exactly as the member wrote it.
     #[test]
     fn an_untouched_folder_row_keeps_its_four_digit_key() {
-        let dir = test_dir("studio_core_settings_year_key_untouched");
+        let dir = test_dir("settings_year_key_untouched");
         fs::create_dir_all(&dir).unwrap();
         let path = dir.join("settings.toml");
         fs::write(&path, HAND_FOLDER_FILE).unwrap();
@@ -1495,7 +1490,7 @@ mod tests {
     // ST-SET-05
     #[test]
     fn the_later_save_of_the_same_value_wins() {
-        let dir = test_dir("studio_core_settings_same_value");
+        let dir = test_dir("settings_same_value");
         fs::create_dir_all(&dir).unwrap();
         let path = dir.join("settings.toml");
         fs::write(&path, "[common]\nthread_count = 4\ntheme = \"dark\"\n").unwrap();
@@ -1515,7 +1510,7 @@ mod tests {
     // ST-SET-05
     #[test]
     fn a_key_the_other_session_removed_stays_removed() {
-        let dir = test_dir("studio_core_settings_removed_key");
+        let dir = test_dir("settings_removed_key");
         fs::create_dir_all(&dir).unwrap();
         let path = dir.join("settings.toml");
         fs::write(
@@ -1549,7 +1544,7 @@ mod tests {
     // the second session never saw it, so it is no change of its own.
     #[test]
     fn a_key_the_other_session_added_survives() {
-        let dir = test_dir("studio_core_settings_added_key");
+        let dir = test_dir("settings_added_key");
         fs::create_dir_all(&dir).unwrap();
         let path = dir.join("settings.toml");
         fs::write(
@@ -1587,7 +1582,7 @@ mod tests {
     // not this session's change at the save after next.
     #[test]
     fn a_save_remembers_the_sessions_values_not_the_files() {
-        let dir = test_dir("studio_core_settings_remembered");
+        let dir = test_dir("settings_remembered");
         fs::create_dir_all(&dir).unwrap();
         let path = dir.join("settings.toml");
         fs::write(&path, "[common]\nthread_count = 4\ntheme = \"dark\"\n").unwrap();
@@ -1630,7 +1625,7 @@ mod tests {
     // still the session's change at the next save that succeeds.
     #[test]
     fn a_failed_save_keeps_the_change_for_the_next_one() {
-        let dir = test_dir("studio_core_settings_retry");
+        let dir = test_dir("settings_retry");
         fs::create_dir_all(&dir).unwrap();
         let path = dir.join("settings.toml");
         fs::write(&path, "[common]\nthread_count = 4\n").unwrap();
@@ -1652,7 +1647,7 @@ mod tests {
     // over an existing file they write their whole state, as before.
     #[test]
     fn a_settings_from_no_file_writes_its_whole_state() {
-        let dir = test_dir("studio_core_settings_no_file");
+        let dir = test_dir("settings_no_file");
         fs::create_dir_all(&dir).unwrap();
         let path = dir.join("settings.toml");
         fs::write(&path, "# hand note\n[compiler]\nlabel = 'x'\nstale = 1\n").unwrap();
@@ -1673,7 +1668,7 @@ mod tests {
     // to their defaults by the other's save.
     #[test]
     fn a_default_filled_in_at_start_is_not_the_sessions_change() {
-        let dir = test_dir("studio_core_settings_defaults");
+        let dir = test_dir("settings_defaults");
         fs::create_dir_all(&dir).unwrap();
         let path = dir.join("settings.toml");
         fs::write(
@@ -1756,7 +1751,7 @@ mod tests {
     // no table at all: the second's row must not replace the first's.
     #[test]
     fn two_sessions_each_filling_a_folder_row_keep_both() {
-        let dir = test_dir("studio_core_settings_folder_rows");
+        let dir = test_dir("settings_folder_rows");
         fs::create_dir_all(&dir).unwrap();
         let path = dir.join("settings.toml");
         fs::write(&path, "[common]\ntheme = \"dark\"\n").unwrap();
@@ -1789,7 +1784,7 @@ mod tests {
     // with it, as a file with no per-version folder has none.
     #[test]
     fn a_session_emptying_its_folder_row_keeps_the_other_sessions_row() {
-        let dir = test_dir("studio_core_settings_folder_emptied");
+        let dir = test_dir("settings_folder_emptied");
         fs::create_dir_all(&dir).unwrap();
         let path = dir.join("settings.toml");
         let original = "[common]\ntheme = \"dark\"\n\n[common.pes_folders]\n19 = 'G:\\PES 2019'\n";

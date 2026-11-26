@@ -317,22 +317,19 @@ mod tests {
         }
     }
 
-    /// Kills the fake game and removes its folder on drop, so a failed
-    /// assertion leaves neither behind.
+    /// Kills the fake game on drop, so a failed assertion leaves no game running.
     #[cfg(any(windows, target_os = "linux"))]
     struct FakeGame {
         child: std::process::Child,
-        folder: PathBuf,
     }
 
     #[cfg(any(windows, target_os = "linux"))]
     impl Drop for FakeGame {
         fn drop(&mut self) {
             // Cleanup only: the test already killed and reaped the child, so these
-            // usually fail on a dead process, and a leftover folder fails no assertion.
+            // usually fail on a dead process.
             drop(self.child.kill());
             drop(self.child.wait());
-            drop(std::fs::remove_dir_all(&self.folder));
         }
     }
 
@@ -349,13 +346,7 @@ mod tests {
         // parallel mutation job, the Save editor's or Compiler's own
         // tests) sees a running PES 2020 and a PES 2020 write refuses, so the
         // window is kept to the one poll that lists it.
-        let folder =
-            std::env::temp_dir().join(format!("studio_core_running_pes_{}", std::process::id()));
-        if folder.exists() {
-            std::fs::remove_dir_all(&folder).unwrap();
-        }
-        std::fs::create_dir_all(&folder).unwrap();
-        let exe = folder.join("PES2020.exe");
+        let exe = crate::shell::test_harness::test_dir("running_pes").join("PES2020.exe");
 
         // A small system program that runs until killed, copied under the name
         // the game ships with so the probe's by-name match sees it.
@@ -385,12 +376,10 @@ mod tests {
                 .stderr(Stdio::null())
                 .spawn()
                 .expect("the fake game starts"),
-            folder,
         };
 
-        // The system names a process's file by its real path, which the temp
-        // folder's name need not be (a short name on a CI runner, a link in the
-        // gates): both sides are compared resolved.
+        // The system names a process's file by its real path, which the path
+        // built here need not be: both sides are compared resolved.
         let real_exe = exe.canonicalize().expect("the fake game's file resolves");
         let lists_it = |games: &[RunningPes]| {
             games.iter().any(|game| {

@@ -62,7 +62,7 @@ fn offer_shell(name: &str) -> (Shell, PathBuf) {
 
 /// `offer_shell` whose program's folder, the one Update now installs into,
 /// holds `bundle_files` when the shell starts. The data folder and the
-/// program's folder share the shell's test folder, removed with the shell.
+/// program's folder share the shell's test folder.
 /// Returns the shell, its data folder and the program's folder.
 fn offer_shell_in(name: &str, bundle_files: &Files) -> (Shell, PathBuf, PathBuf) {
     let dir = TestDir::new(name);
@@ -90,8 +90,7 @@ fn offer_shell_in(name: &str, bundle_files: &Files) -> (Shell, PathBuf, PathBuf)
 /// returned sender sends or is dropped. Returns the shell, the program's
 /// folder and that sender.
 fn update_shell(name: &str, assets: Vec<(String, Vec<u8>)>) -> (Shell, PathBuf, Sender<()>) {
-    let (mut shell, _data, bundle) =
-        offer_shell_in(&format!("studio_core_update_{name}"), &old_files());
+    let (mut shell, _data, bundle) = offer_shell_in(&format!("update_{name}"), &old_files());
     let (go_on, gate) = bounded(0);
     shell.app.update_open_url = Arc::from(serve(assets, Some(gate)));
     (shell, bundle, go_on)
@@ -291,7 +290,7 @@ fn key(key: egui::Key, pressed: bool) -> egui::Event {
 // ST-UPD-01
 #[test]
 fn the_offers_text_is_in_the_link_blue_with_details_on_the_bar() {
-    let (mut shell, _data) = offer_shell("studio_core_update_offer_link");
+    let (mut shell, _data) = offer_shell("update_offer_link");
     let egui_ctx = test_context();
     let out = frame_until_offer(&egui_ctx, &mut shell.app);
 
@@ -312,7 +311,7 @@ fn the_offers_text_is_in_the_link_blue_with_details_on_the_bar() {
 // ST-UPD-02
 #[test]
 fn the_offer_text_and_details_each_open_the_dialog() {
-    let (mut shell, _data) = offer_shell("studio_core_update_details_open");
+    let (mut shell, _data) = offer_shell("update_details_open");
     let egui_ctx = test_context();
     let out = frame_until_offer(&egui_ctx, &mut shell.app);
 
@@ -341,7 +340,7 @@ fn the_offer_text_and_details_each_open_the_dialog() {
 // ST-UPD-02
 #[test]
 fn the_sentence_names_the_version_the_window_is_running() {
-    let (mut shell, _data) = offer_shell("studio_core_update_own_version");
+    let (mut shell, _data) = offer_shell("update_own_version");
     shell.app.version = "0.0.0";
     let egui_ctx = test_context();
     let nodes = frame_until_offer(&egui_ctx, &mut shell.app).nodes;
@@ -360,7 +359,7 @@ fn the_sentence_names_the_version_the_window_is_running() {
 // ST-UPD-02
 #[test]
 fn skip_this_version_stores_the_version_and_drops_the_offer() {
-    let (mut shell, data) = offer_shell("studio_core_update_skip");
+    let (mut shell, data) = offer_shell("update_skip");
     let egui_ctx = test_context();
     let nodes = open_details(&egui_ctx, &mut shell.app);
 
@@ -384,7 +383,7 @@ fn skip_this_version_stores_the_version_and_drops_the_offer() {
 // ST-UPD-02
 #[test]
 fn remind_me_later_closes_the_dialog_and_keeps_the_offer() {
-    let (mut shell, _data) = offer_shell("studio_core_update_remind");
+    let (mut shell, _data) = offer_shell("update_remind");
     let egui_ctx = test_context();
     let nodes = open_details(&egui_ctx, &mut shell.app);
 
@@ -397,7 +396,7 @@ fn remind_me_later_closes_the_dialog_and_keeps_the_offer() {
 // ST-UPD-02
 #[test]
 fn escape_closes_the_dialog_like_remind_me_later() {
-    let (mut shell, _data) = offer_shell("studio_core_update_escape");
+    let (mut shell, _data) = offer_shell("update_escape");
     let egui_ctx = test_context();
     open_details(&egui_ctx, &mut shell.app);
 
@@ -415,7 +414,7 @@ fn escape_closes_the_dialog_like_remind_me_later() {
 // ST-UPD-02
 #[test]
 fn open_release_page_opens_the_page_and_keeps_the_dialog() {
-    let (mut shell, _data) = offer_shell("studio_core_update_page");
+    let (mut shell, _data) = offer_shell("update_page");
     let egui_ctx = test_context();
     let nodes = open_details(&egui_ctx, &mut shell.app);
 
@@ -440,7 +439,7 @@ fn open_release_page_opens_the_page_and_keeps_the_dialog() {
 // settings menu and the About popup.
 #[test]
 fn a_help_link_opened_over_the_dialog_closes_it() {
-    let (mut shell, _data) = offer_shell("studio_core_update_help_close");
+    let (mut shell, _data) = offer_shell("update_help_close");
     let egui_ctx = test_context();
     open_details(&egui_ctx, &mut shell.app);
 
@@ -839,7 +838,7 @@ fn update_now_is_refused_when_another_window_replaced_the_program() {
 // ST-UPD-03
 #[test]
 fn update_failed_says_nothing_was_changed_only_when_so() {
-    let (mut shell, _data) = offer_shell("studio_core_update_not_restored");
+    let (mut shell, _data) = offer_shell("update_not_restored");
     let egui_ctx = test_context();
     open_details(&egui_ctx, &mut shell.app);
 

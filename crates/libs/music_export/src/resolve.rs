@@ -161,17 +161,16 @@ mod tests {
     use super::*;
     use crate::parse::parse;
 
-    /// A unique temp folder holding `files` (each `<name>=<bytes>`, a `/`
-    /// naming a subfolder), removed by hand at the test's end.
+    /// A fresh folder holding `files` (each `<name>=<bytes>`, a `/` naming a
+    /// subfolder), under the test binary's build folder
+    /// (`target/<profile>/music_export_tests/resolve_<name>`). A passing
+    /// test's folder is removed when its thread ends; a panicking test's stays
+    /// for reading and is emptied at the start of its next run.
     fn temp_dir(name: &str, files: &[(&str, &[u8])]) -> PathBuf {
-        let dir = std::env::temp_dir().join(format!(
-            "music_export_resolve_{}_{}",
-            name,
-            std::process::id()
-        ));
-        if dir.exists() {
-            std::fs::remove_dir_all(&dir).expect("a stale folder is removed");
-        }
+        let dir = test_scratch::fresh(
+            &test_scratch::build_folder().join("music_export_tests"),
+            &format!("resolve_{name}"),
+        );
         for (file, bytes) in files {
             let path = dir.join(file);
             std::fs::create_dir_all(path.parent().expect("a parent")).expect("mkdir");
