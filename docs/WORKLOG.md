@@ -4352,12 +4352,22 @@ points there.
   `python`, which writes anywhere. To weigh: a separate Windows user whose rights reach only
   the worktree (and the toolchains it runs), Windows Sandbox, or WSL, each against what the
   runs need (cargo's caches, the Windows-only tests, Everything's index).
-- open (2026-11-26) — The Compile menu's tests miss two picks (found by a SWE-2.1 trial
-  review of TC-GUI-11). No test picks Compile for sideloading and checks what it does: the
-  main part's label, and its click's `Intent::Compile(Mode::Sideload)`. And no test checks
-  that a picked mode survives the check that closes a run: the tool-level test should draw
-  the button after that check and see Test output still picked. Both go in
-  `view/tests/compile_menu.rs`, for SWE-2.
+- open (2026-11-26) — The Compile menu's tests miss three things (found by SWE-2.1 trial
+  reviews of TC-GUI-11), all for `view/tests/compile_menu.rs`, for SWE-2:
+  - no test picks Compile for sideloading and checks what it does: the main part's label,
+    and its click's `Intent::Compile(Mode::Sideload)`;
+  - no test checks that a picked mode survives the check that closes a run: the tool-level
+    test should draw the button after that check and see Test output still picked;
+  - no test reads the disabled sideload entry's tooltip, the only place its reason shows
+    (`upgrade_dpfl.rs`'s `disabled_tooltip_is` reads one).
+- open (2026-11-26) — A SWE-2.1 XHigh trial review of the logo slices (`logo_missing`,
+  `portrait_missing`) raised ten concerns no earlier round did. They are in
+  `.tmp/swe21_trial/logo_xhigh.findings.md` (numbers 3, 9-12 and 14-18), and their summary
+  is in `.tmp/duck_rulings.md` under "SWE-2.1 trial: XHigh on the logo brief". Each is to be
+  checked against HEAD and ruled. They name rule texts that say "a `Full` export" or "a
+  player" where referee exports are excluded, an empty `Full` export reporting
+  `export_empty` alone, and three test gaps: a fit-tagged logo, a `players.txt` roster, and
+  TC-ROOT-17's exit code.
 - open (2026-11-26) — **TESTSCRATCH**: tests leave their scratch folders behind. Each
   `save_editor` unit test empties its folder (`test_support::scratch`) when it next starts,
   never when it ends, so after a run all its folders stay: `target/debug/save_editor_tests`
@@ -4369,11 +4379,16 @@ points there.
   inside the folder, and the guard would drop before the test used it. Instead `scratch`
   records the folder in a thread-local list that removes it when the test's thread ends,
   unless a panic hook marked the thread as failed. Slices:
-  - a: `save_editor`, its unit tests and its in-process sandbox; measured before and after
-    under `cargo test` and nextest.
+  - a: `save_editor`'s unit tests and in-process sandbox, through `test_support/scratch.rs`.
+    Built three times (SWE-2 High, SWE-2.1 High and XHigh), and the best is merged. SWE-2's
+    measured 14.5 GB + 1.0 GB left by a full run before, nothing after, under `cargo test`
+    and nextest alike.
   - b: the other suites' scratch under `target/tmp` (`export_upgrader_in_process`,
     `team_compiler_cli`, `team_compiler_in_process`, `ruleset_editor`'s and `studio`'s),
-    through the same file once slice a shows it works.
+    through the same mechanism. Each crate would need its own copy of the file, since no
+    crate offers test helpers to the others yet: the item below on the GUI tests' copied
+    shape helpers holds that crate-boundary question. The measurement clears the folders with
+    `scripts/builds/clear_caches.py`, never by hand.
 
   Until both land, `scripts/builds/clear_caches.py` clears these folders in a tree no job
   runs in.
