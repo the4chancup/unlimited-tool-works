@@ -4435,10 +4435,16 @@ points there.
   - 12 GB in `debug/deps`, where a fresh worktree's build holds 2.4 GB: test binaries, their
     `.pdb` files and libraries of earlier builds, which Cargo never removes.
 
-  `clear_caches.py` clears the incremental caches and the scratch, but not the stale outputs.
-  To weigh: a `cargo clean` of a long-lived tree when its `target/` passes a size, which
-  costs one cold build, against `cargo-sweep`, whose age rules read access times that Cargo
-  does not update on Windows. Looked at and set aside, since none saves disk here:
+  `clear_caches.py` clears the incremental caches and the scratch. The stale outputs are what
+  `scripts/builds/stale_deps.py` removes: every hash of an artifact but the newest. Counting
+  outputs of any age, it would have removed 8.7 GB of those 12 GB; with its default floor of
+  one day, which keeps a running build's files, 0.6 GB, since most were left that day by a
+  change to the dev profile. The remedy agreed on 2026-11-26 is a `cargo clean` of a
+  long-lived tree when its `target/` passes a size, which costs one cold build. Put to the
+  maintainer in its place: at that size, `clear_caches.py` and `stale_deps.py --apply`,
+  which keep the current build. Looked at and set aside: `cargo-sweep`, whose age rules read
+  access times that Cargo does not update on Windows, and these, none of which saves disk
+  here:
   - sccache, like kache on Windows, copies each cache hit into the worktree's `target/`: it
     saves build time, and its own cache adds to the disk;
   - a `build.build-dir` shared by the worktrees shares only the dependencies (about 2 GB a
