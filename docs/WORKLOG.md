@@ -869,7 +869,10 @@ and no phase closes with one outstanding.
             shard. The shards share one snapshot: warm its `target/` once and run them with
             `--copy-target=true`, once the copy's time and disk are measured against the cold
             build. The same measurement checks why each copy's first test also runs longer
-            (350-730 s against 75-510 s);
+            (350-730 s against 75-510 s). A candidate for the VPS, weighed in the same
+            measurement: `kache` (a `rustc` wrapper caching compiler outputs across
+            checkouts), which restores by hard link on Linux; on Windows it copies bytes, so it
+            would save no disk here;
         - [ ] **driver** 2026-11-26 (DECISIONS 2026-11-26 "one mutation driver owns both
           machines", "the VPS lane drives itself"): the separate commands that each take locks
           give way to one driver. Its outline, revised after the lead's look, waits for the
@@ -4349,11 +4352,21 @@ points there.
   `python`, which writes anywhere. To weigh: a separate Windows user whose rights reach only
   the worktree (and the toolchains it runs), Windows Sandbox, or WSL, each against what the
   runs need (cargo's caches, the Windows-only tests, Everything's index).
+- open (2026-11-26) — **TESTSCRATCH**: tests leave their scratch folders behind. Each
+  `save_editor` unit test empties its folder (`test_support::scratch`) when it next starts,
+  never when it ends, so after a run all its folders stay: `target/debug/save_editor_tests`
+  held 13.5 GiB of the main tree's 40 GiB `target/`, and the integration tests'
+  `target/tmp` 5.3 GiB more. Every worktree and every mutation copy that runs the suites
+  carries its own set. The fix: a test removes its folder when it passes (a guard dropped
+  at the test's end, kept when the thread is panicking, so a failure's files stay to look
+  at), and the same for the integration tests writing under `target/tmp`. Measure a
+  `target/` before and after.
 - open (2026-11-26) — **COPYGROWTH**: a local mutation run's tree copies grow without bound.
   `%TEMP%\studio-mutants` held 173 GiB, almost all of it two copies left by the stopped
   CATCHUP run (79 and 74 GiB), the reason this machine's drive needed constant cleaning.
   On the VPS a copy's `target/` grew by 25-50 MB per mutant after its first build,
-  likely the incremental cache. Measure a local copy's `target/` by folder, try
+  likely the incremental cache, or the tests' scratch (`TESTSCRATCH`): each mutant runs
+  tests the earlier ones did not, each leaving its folder. Measure a local copy's `target/` by folder, try
   `incremental = false` in the `mutants` profile against the rebuild time it costs, and
   have a stopped run's copies removed (`rm_mutant_copies.py`) as part of stopping it.
   Matters more after the migration, where `%TEMP%` sits on the 480 GB 905P.
