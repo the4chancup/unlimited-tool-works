@@ -886,7 +886,12 @@ and no phase closes with one outstanding.
             (350-730 s against 75-510 s). A candidate for the VPS, weighed in the same
             measurement: `kache` (a `rustc` wrapper caching compiler outputs across
             checkouts), which restores by hard link on Linux; on Windows it copies bytes, so it
-            would save no disk here;
+            would save no disk here. Here, sccache is weighed the same way (the maintainer,
+            2026-11-26: a moderate disk cost is fine for speed). A compiler cache serves only
+            each copy's first build: every mutant changes its own crate's input and so the
+            crates built on it, and a link is never cached. So the measurement first splits a
+            copy's cold build (`--timings`) into dependencies and the workspace's crates. A
+            cache serves only the dependencies, while the warm copy serves both;
         - [ ] **driver** 2026-11-26 (DECISIONS 2026-11-26 "one mutation driver owns both
           machines", "the VPS lane drives itself"): the separate commands that each take locks
           give way to one driver. Its outline, revised after the lead's look, waits for the
