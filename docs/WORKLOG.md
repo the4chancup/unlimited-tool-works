@@ -4457,8 +4457,10 @@ points there.
     in one table-driven scene, a shared widget's behavior tested once in its own crate.
     Revisit the helium brief rules that ask for a test per call site or per place a text
     shows, which built much of the repetition;
-  - [ ] **pilot** [after patterns] one heavy module, mutation-run before and after: its
-    caught set must not shrink while its test time falls; then the rest, heaviest first.
+  - [ ] **pilot** [after patterns] one mid-size crate, whose whole mutation run takes about
+    an hour, run before and after the lighter tests: a large crate's runs take too long to
+    compare. A few mutants that newly survive are accepted when the run time falls clearly,
+    and each is then killed by a test aimed at it. Then the rest, heaviest first.
 
 - resolved (2026-11-24) — `scripts/commit.py -a` left a new file out silently, as `git commit
   -a` does: `9ac41d0a` needed an amend for `docs/spec/core/design.md`. With `-a` it now

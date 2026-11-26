@@ -20330,3 +20330,13 @@ Why: an Opus re-check of every `spec/team_compiler/red_divergences.md` entry aga
 `main` and `stable` found these (RD-23, RD-71, RD-8 there).
 Plan: no plan edit needed: `red_divergences.md` and `spec/export_upgrader.md` already state
 the corrected facts.
+
+## 2026-11-26 — tests — the lighter test suite is piloted on a mid-size crate, and may let a few mutants survive
+Decision: `LEAN`'s pilot compares mutation runs before and after on a mid-size crate whose
+whole run takes about an hour, not on the largest crates. When the run time falls clearly, a
+few mutants that newly survive are accepted, and each is then killed by a test aimed at it.
+Why: a mid-size crate gives a clear enough result in an hour, where the largest crates' runs
+take many hours each. A rule that no survivor may appear would keep tests whose weight every
+mutation run pays, while a survivor found is cheap to kill afterwards.
+Plan: no plan edit needed: the test suite's weight has no plan section; the worklog's `LEAN`
+issue carries the pilot.
