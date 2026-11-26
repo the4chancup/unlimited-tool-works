@@ -1244,8 +1244,13 @@ function modeMenu(btn, sideloadOff) {
 // order, export after export, and the pool starts them first come, first
 // served: the cells change down the grid, BUSY at once as on a 16-thread
 // machine. Not in lockstep: each ends when its own task does, so a longer one
-// ends after some started later (the lengths vary, the same every run).
+// ends after some started later.
 const BUSY = 16;
+// A task lasts as long as its folder is large: two ticks a MB on disk (an
+// average player's 7.8 MB is about 16, BUSY's worth), at least two. A cell
+// with no size (an export dropped on the grid) takes a length that varies, the
+// same every run.
+const taskTicks = (cell, i) => cell.size ? Math.max(2, Math.round(cell.size.disk * 2)) : 8 + (i * 7919) % 17;
 const OUTCOME = { fullOk: "done", partialOk: "done", warning: "doneWarn" };
 function startRun(only) {
   if (S.run) return;
@@ -1260,7 +1265,7 @@ function startRun(only) {
   const tasks = rows.flatMap(r => cellsOf(r)
     // A red cell is skipped and keeps its colour, unless only one file is dropped.
     .filter(cell => OUTCOME[cell.status] || cell.dropFile).map(cell => ({ r, cell })))
-    .map((task, i) => ({ ...task, ticks: 8 + (i * 7919) % 17 }));
+    .map((task, i) => ({ ...task, ticks: taskTicks(task.cell, i) }));
   const start = Date.now();
   S.finished = false;
   S.run = { stage: "Processing", elapsed: 0, files: 0, mb: 0, memory: 310, tasks, at: 0, done: 0,
@@ -1276,7 +1281,7 @@ function startRun(only) {
       if (task.endsAt > run.tick) return true;
       delete task.cell.busy;
       task.cell.out = task.cell.dropFile ? "doneErr" : OUTCOME[task.cell.status];
-      run.files += 4; run.mb += 2.1; run.done++;
+      run.files += 4; run.mb += task.cell.size ? task.cell.size.disk : 2.1; run.done++;
       return false;
     });
     while (run.inFlight.length < BUSY && run.at < run.tasks.length) {
