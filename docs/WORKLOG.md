@@ -4371,14 +4371,9 @@ points there.
   `python`, which writes anywhere. To weigh: a separate Windows user whose rights reach only
   the worktree (and the toolchains it runs), Windows Sandbox, or WSL, each against what the
   runs need (cargo's caches, the Windows-only tests, Everything's index).
-- open (2026-11-26) — The Compile menu's tests miss three things (found by SWE-2.1 trial
-  reviews of TC-GUI-11), all for `view/tests/compile_menu.rs`, for SWE-2:
-  - no test picks Compile for sideloading and checks what it does: the main part's label,
-    and its click's `Intent::Compile(Mode::Sideload)`;
-  - no test checks that a picked mode survives the check that closes a run: the tool-level
-    test should draw the button after that check and see Test output still picked;
-  - no test reads the disabled sideload entry's tooltip, the only place its reason shows
-    (`upgrade_dpfl.rs`'s `disabled_tooltip_is` reads one).
+- resolved (2026-11-26) — The Compile menu's tests missed three things TC-GUI-11 promises
+  (found by SWE-2.1 trial reviews): the sideload mode's pick and click, a pick lasting past
+  a run's closing check, and the sideload entry's tooltips. SWE-2, merged `6012ef17`.
 - open (2026-11-26) — The logo slices' texts and tests, from a SWE-2.1 XHigh trial review,
   checked and ruled at `9963fc71`. One small SWE-2 slice:
   - texts: the Compiler's catalog row, help and CHANGELOG say "a `Full` export" for
@@ -4401,10 +4396,10 @@ points there.
   inside the folder, and the guard would drop before the test used it. Instead `scratch`
   records the folder in a thread-local list that removes it when the test's thread ends,
   unless a panic hook marked the thread as failed. Slices:
-  - a: `save_editor`'s unit tests and in-process sandbox, through `test_support/scratch.rs`.
-    Built three times (SWE-2 High, SWE-2.1 High and XHigh), and the best is merged. SWE-2's
-    measured 14.5 GB + 1.0 GB left by a full run before, nothing after, under `cargo test`
-    and nextest alike.
+  - a: done 2026-11-26, merge `0b32f8a3`: `save_editor`'s unit tests and in-process sandbox,
+    through `test_support/scratch.rs`. A full run left 14.5 GB + 1.0 GB before, and nothing
+    after, under `cargo test` and nextest alike. A scratch name holding a path separator is
+    refused, since the folder it nested stayed behind.
   - b: the other suites' scratch under `target/tmp` (`export_upgrader_in_process`,
     `team_compiler_cli`, `team_compiler_in_process`, `ruleset_editor`'s and `studio`'s),
     through the same mechanism. Each crate would need its own copy of the file, since no
