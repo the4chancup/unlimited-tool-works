@@ -20340,3 +20340,16 @@ take many hours each. A rule that no survivor may appear would keep tests whose 
 mutation run pays, while a survivor found is cheap to kill afterwards.
 Plan: no plan edit needed: the test suite's weight has no plan section; the worklog's `LEAN`
 issue carries the pilot.
+
+## 2026-11-26 — tests — the tests' scratch folders come from one dev crate, `test_scratch`
+Decision: the scratch-folder code `save_editor`'s tests use (a passing test's folder removed
+when its thread ends, a failing one's kept) moves to a new crate, `crates/dev/test_scratch`,
+which every crate's tests take as a dev-dependency, rather than a copy per crate or a
+test-support feature on `studio_core`.
+Why: several more crates need it, so copies would break the third-copy rule. A feature on
+`studio_core` is switched on whenever tests build, so `studio_core` and every crate above it
+would be compiled twice, once for the tests and once for the app, a cost in build time and
+in `target/` space. The code needs nothing from `studio_core`. A dev-dependency is never
+linked into a release binary.
+Plan: `plans/core/architecture.md` "Crate structure" lists the crate; the worklog's
+`TESTSCRATCH` slices b and c carry the work.

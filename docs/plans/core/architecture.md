@@ -13,6 +13,9 @@ These planned crates extend the spec's workspace tree:
 ```
 4cc-studio/
 ├── crates/
+│   ├── dev/
+│   │   └── test_scratch/             # Tests' scratch folders: a passing test's is removed, a
+│   │                                 #   failing one's kept to read; a dev-dependency only
 │   ├── tools/
 │   │   ├── save_editor/              # Save editor (player/team editing, AATF checks, comparator)
 │   │   ├── stadium_compiler/         # Stadium compiler (stadium pipeline, billboards)

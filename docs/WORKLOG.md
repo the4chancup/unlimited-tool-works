@@ -4400,14 +4400,21 @@ points there.
     through `test_support/scratch.rs`. A full run left 14.5 GB + 1.0 GB before, and nothing
     after, under `cargo test` and nextest alike. A scratch name holding a path separator is
     refused, since the folder it nested stayed behind.
-  - b: the other suites' scratch under `target/tmp` (`export_upgrader_in_process`,
-    `team_compiler_cli`, `team_compiler_in_process`, `ruleset_editor`'s and `studio`'s),
-    through the same mechanism. Each crate would need its own copy of the file, since no
-    crate offers test helpers to the others yet: the item below on the GUI tests' copied
-    shape helpers holds that crate-boundary question. The measurement clears the folders with
+  - b: slice a's code moves to a dev crate, `test_scratch` (DECISIONS 2026-11-26), and the
+    other suites' sandboxes use it: those under `target/tmp` (`export_upgrader_in_process`,
+    `team_compiler_cli`, `team_compiler_in_process`, `ruleset_editor_in_process`, and
+    `studio`'s `launchers`, `crash_dump`, `help_cli_*` and `fixture_save`) and
+    `ruleset_editor`'s unit tests (`target/debug/ruleset_editor_tests`). Brief
+    `.tmp/lead/brief_testscratch_b.md`. The measurement clears the folders with
     `scripts/builds/clear_caches.py`, never by hand.
+  - c: the unit tests that make a `<name>_<process id>` folder in the system temp folder
+    (`studio_core`, `export_upgrader`, `team_compiler`, `pes_savefile`, `music_export`,
+    `extra_mutants`, `test_runner`, `studio`: `git grep "temp_dir().join"`, test code only). A new process
+    id each run means no later run empties them, so they pile up: 78 runs of
+    `export_upgrader`'s `upgrade_processed` held 0.6 GB on 2026-11-26. They move under the
+    build folder through `test_scratch`, which also gives each worktree its own.
 
-  Until both land, `scripts/builds/clear_caches.py` clears these folders in a tree no job
+  Until b and c land, `scripts/builds/clear_caches.py` clears these folders in a tree no job
   runs in.
 - open (2026-11-26) — **COPYGROWTH**: a local mutation run's tree copies grow without bound.
   `%TEMP%\studio-mutants` held 173 GiB, almost all of it two copies left by the stopped
