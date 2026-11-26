@@ -36,14 +36,14 @@ approach in production, in `Engines/stages/lib/dxt.py` + the `texture2ddecoder` 
   - Fox `R = 255`, `B = 0` (the DirectXTex `DXT5nm` layout).
 
   The legacy compilers never produced this conversion at all, so there is no legacy output to
-  be parity with; the Konami files are the standard. Released Red converts every DX10 texture
-  for PES 15–18 with texconv's `-f DXT5 -srgb`, which drops X when the source is BC5 (its
-  unreleased development branch asks for a format name texconv rejects, `DX5nm`).
+  be parity with; the Konami files are the standard. For PES 15–18 Red asks texconv to make a
+  DX10 BC5 texture `DX5nm`, a misspelling of `DXT5nm` that texconv rejects, so the texture is
+  packed as it was.
 - **Passthrough**: compressed blocks a target can read are kept and only the container changes.
   PES 15–18 read BC1, BC2 and BC3; PES 19–21 also read BC4, BC5 and BC7 (the legacy compilers
   passed BC5 through to PES 19–21 as FTEX format 9). A DX10-header BC1/BC3 is therefore
-  rewritten with a legacy header for PES 15–18 rather than re-encoded (the legacy compilers
-  re-encoded every DX10 header to DXT5, a lossy step with no purpose).
+  rewritten with a legacy header for PES 15–18 rather than re-encoded (Red re-encoded every
+  DX10 texture but a BC5 one to DXT5, a lossy step with no purpose).
 
   The role narrows this: a normal-role source passes through only as BC3 (taken to be laid out
   already) or, on PES 19–21, as BC5. A normal-role BC7 or BC1 source is decoded and encoded to

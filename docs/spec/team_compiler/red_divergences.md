@@ -4,7 +4,8 @@ Part of the [Compiler spec](README.md).
 
 This is the one list of every place the compiler's output — or the Export upgrader's
 migrated export, once compiled — knowingly differs from what Red produced from the same old
-export. A difference is intended only once it has been checked against the real exports on
+export. Red's side is its published `main` branch, the one members install. A difference is
+intended only once it has been checked against the real exports on
 the maintainer's machine: which real exports reach the case, what Red's output does for each,
 that ours is right for each. Each entry's **Status** says honestly whether that check exists:
 **Checked** (real exports or an in-game check named), **No census needed** (the difference
@@ -19,7 +20,7 @@ check on record), or **Records disagree** (the repository states two different t
   Fox it packed the member's `face.fpk.xml`, `boots.fpk.xml` or `glove.fpk.xml` into the CPK
   unchanged. Like every file of a model folder that the FPK does not take, the file landed in
   the model's `#windx11/` folder with the textures (a face's `sourceimages/#windx11/`), not
-  beside the FPK in `#Win/` (`model_packing.py:87-123`, `main` and `stable`).
+  beside the FPK in `#Win/` (`model_packing.py:87-123`).
 - **Ours:** no `*.fpk.xml` is produced; the compiler writes each FPK from the folder's own
   files.
 - **Why:** the file is the source-side member list of an FPK, which no game reads; carried
@@ -110,8 +111,8 @@ check on record), or **Records disagree** (the repository states two different t
 - **Red:** wrote no such copies either. `dummy_kit_replace.py` would copy the team's kit 1
   textures over the `dummy_kit*` files in Common on Fox, but the check that calls it looks for
   `Common/<team>` in Red's own folder rather than in `extracted_teams/`, Red's working copy
-  of the exports, where the export's Common is moved (`extracted_from_exports.py:241-243`,
-  `main` and `stable`), so it never ran.
+  of the exports, where the export's Common is moved (`extracted_from_exports.py:241-243`), so
+  it never ran.
   A member's own `dummy_kit*` file in Common was packed as it was.
 - **Ours:** no such copies are emitted; the stand-in stems are written in the game's
   spelling for the exes to substitute.
@@ -139,10 +140,9 @@ check on record), or **Records disagree** (the repository states two different t
 
 ### RD-8: Overrides always land in the team side
 
-- **Red:** ignored the `sideload/` folder in multi-CPK mode. Otherwise `main` routed its files
+- **Red:** ignored the `sideload/` folder in multi-CPK mode. Otherwise it routed its files
   into the refs CPK when only refs compiled, and into the team CPK when teams did
-  (`contents_from_extracted.py:133-143`); `stable` always put them in the team CPK, as ours
-  does.
+  (`contents_from_extracted.py:133-143`).
 - **Ours:** `overrides/` entries always go into the team CPK (or the bins CPK in multi-CPK
   mode), whichever export commits.
 - **Why:** Red's routing is an accident of its CPK naming; an override is an operator's file
@@ -281,8 +281,10 @@ check on record), or **Records disagree** (the repository states two different t
 
 ### RD-18: DX10-header textures pass through; normal maps go to DXT5nm
 
-- **Red:** on PES 15-18, re-encoded every DX10-header texture with texconv's `-f DXT5 -srgb`,
-  a lossy step that drops a BC5 normal map's X channel (`texture_conversion.py:73-79`). On
+- **Red:** on PES 15-18, re-encoded every DX10-header texture to DXT5 with texconv
+  (`-f DXT5 -srgbi -srgbo`), except a BC5 one, for which it asked for `-f DX5nm`, a misspelling
+  of texconv's `DXT5nm`. Texconv refused the run, so a BC5 texture was packed as it was,
+  in BC5, which PES 15-18 cannot read (`texture_conversion.py:35-51`, `:89-96`). On
   PES 19-21 it converted a DX10 texture to FTEX as stored, a BC5 one as format 9
   (`ftex.py:460-500`).
 - **Ours:** rewrites a DX10-header BC1/BC3 with a legacy header rather than re-encoding,
@@ -354,7 +356,7 @@ check on record), or **Records disagree** (the repository states two different t
   its bytes unchanged (a jpg named `.dds`), as `spec/export_upgrader.md` says. Its texture
   check passes a file whose extension is neither `.dds` nor `.ftex`
   (`texture_check.py:149-151`), and its portrait step renames without converting
-  (`export_move.py:483-511`, `main` and `stable`). The DECISIONS correction entry of
+  (`export_move.py:483-511`). The DECISIONS correction entry of
   2026-10-19, which says Red converted such a portrait, is wrong on this point.
 - **Ours:** migrates the file keeping its format and the compiler's `Portraits/` pass
   converts it to a real DDS.
@@ -557,7 +559,7 @@ check on record), or **Records disagree** (the repository states two different t
 ### RD-37: No PES 16 "no models from Common" refusal
 
 - **Red:** has the refusal in its code, but it never fires: it compares the version, read as
-  text, with the number 16 (`xml_check.py:73`, `:139`, `main` and `stable`), so released Red
+  text, with the number 16 (`xml_check.py:73`, `:139`), so released Red
   accepted Common-model references on PES 16 too.
 - **Ours:** the check is intentionally not ported; the PES16 exe is treated as patched to
   load models from Common.
@@ -750,9 +752,8 @@ check on record), or **Records disagree** (the repository states two different t
 ### RD-50: `face_diff` validation and two-source conflicts
 
 - **Red:** let the `.bin` win silently when both `face_diff.bin` and `face_diff.xml` stand,
-  and never checked a `face_diff.bin`. `main` checks a `face_diff.xml`'s decoded length for
-  equality with what its header gives (`utils/diff_data.py:7-30`); `stable` checks only that
-  the xml parses with a `<dif>` root, and on Fox ignores a `face_diff.xml` altogether.
+  and never checked a `face_diff.bin`. It required a `face_diff.xml`'s decoded length to
+  equal what its header gives (`utils/diff_data.py:7-30`).
 - **Ours:** both files in one folder is `xml_dif_conflict`; a diff in either form must have
   the `FACE` magic and at least the length its header gives — a longer file passes.
 - **Why:** a shorter file makes the game read past its end; equality would refuse the text
@@ -861,7 +862,7 @@ check on record), or **Records disagree** (the repository states two different t
 - **Red:** the run installs nothing for a kit the export neither resends nor lists. When the
   export holds `Kit Configs/` and its Note lists a kit with no config there, Red writes its
   generic template config for that kit into the run's CPK (`kitconfigs_fill_missing`,
-  `export_move.py:102-179`, called at `:338`, `main` and `stable`).
+  `export_move.py:102-179`, called at `:338`).
 - **Ours:** a `Midcup` kit without `config.toml` emits no config — the installed entry is
   edited in place — and where nothing is installed or the installed config does not
   decode, the template is written (`kit_config_generated`).
@@ -1074,7 +1075,7 @@ check on record), or **Records disagree** (the repository states two different t
 ### RD-71: A referee's `hair_parts` textures move to Common with no copy left behind
 
 - **Red:** left a copy of a referee's `hair_parts` textures beside the face on every version
-  (`referee_tools.py:215-220`, called at `:343-344`, `main` and `stable`). It serves the hair
+  (`referee_tools.py:215-220`, called at `:343-344`). It serves the hair
   model and `hair.mtl`, which stay in the face folder when Red's pre-Fox pass moves the other
   models to Common (`:305`).
 - **Ours:** moves them to the referee's Common output with the rest of his textures; no
@@ -1212,7 +1213,7 @@ check on record), or **Records disagree** (the repository states two different t
 ### RD-81: A `.dds`+`.ftex` pair of one stem keeps the `.dds` alone
 
 - **Red:** on Fox, converted the `.dds` to an `.ftex` of the same stem, written over the
-  member's `.ftex`, and dropped the `.dds` (`texture_conversion.py:96-125`), so the CPK held
+  member's `.ftex`, and dropped the `.dds` (`texture_conversion.py:112-141`), so the CPK held
   the `.dds`'s texture alone, used or not. On PES 15-17 the `.ftex` was refused (RD-40).
 - **Ours:** drops the `.ftex`, keeps the `.dds` (`texture_duplicate_dropped`, W); when no
   model of the export uses the stem, both are leftovers. For a used stem the compiled
