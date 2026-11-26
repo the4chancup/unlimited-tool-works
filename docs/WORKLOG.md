@@ -871,31 +871,40 @@ and no phase closes with one outstanding.
             build. The same measurement checks why each copy's first test also runs longer
             (350-730 s against 75-510 s);
         - [ ] **driver** 2026-11-26 (DECISIONS 2026-11-26 "one mutation driver owns both
-          machines"): the separate commands that each take locks give way to one driver.
-          Its outline, for the maintainer's look before any slice. Two lanes, the VPS and
-          this PC, and a queue: a free lane takes the next job, a queued one first (a
-          checkpoint's or a closure's diff crates), else the rolling job's oldest-checked
-          crate. A lane runs one crate at a time, whole, here as resumable shards. The VPS
-          lane runs on the VPS itself, so it goes on through every crate with this PC off:
-          it picks from the last snapshot it holds, takes what this PC queued for it first,
-          and keeps each run's results in a folder of their own until this PC fetches them.
-          The fetch, the filing and the Windows-only rechecks happen here, the rechecks on
-          this PC's lane between its shards, and never hold the VPS's next crate. A small
-          single-crate run (under the split's size estimate) is split as today, `0/2` here
-          and `1/2` on the VPS, when both lanes are free; otherwise the free lane runs it
-          whole, so it never waits behind the other lane's crate. `mutants-diff`, the
-          checkpoint, `mutants-closure` and the extra kinds' runs queue work and wait for its
-          results, never running cargo-mutants themselves; `gates-remote` takes the VPS lane
-          between crates, as `.tmp/rolling.hold` does. Isolation, not locks: each run writes a
-          folder of its own, filed by one rename; each run's timings a file of its own,
-          merged when the estimate reads them; the VPS run and `gates-remote` clones of
-          their own, the VPS unit's name refusing a second launch (checked on the VPS before
-          it is relied on). One guard remains on each machine, so that one driver runs
-          there. No test selection
-          here: the coverage map runs on Linux only (an item of its own if wanted). `memsum`
-          and `warm` carry over; `deep`'s open fixes (S1-S7) and its Carbon round 2 wait for
-          a triage of which the driver makes moot (races between separate commands) and
-          which it keeps (diff parsing, outcome accounting);
+          machines", "the VPS lane drives itself"): the separate commands that each take locks
+          give way to one driver. Its outline, revised after the lead's look, waits for the
+          maintainer's three answers on `maintainer/driver.html`, which pictures it, before any
+          slice; a yes to its shards replaces the split clause of the first decision above
+          with a new entry. Two lanes, this PC and the VPS, and a queue of jobs, each job a crate's
+          mutants cut into cargo-mutants shards of about `SHARD_SECONDS`. A lane that ends a
+          shard takes the next: a queued job's first (a checkpoint's or a closure's diff crates,
+          the extra kinds' runs), else the rolling job's, from its oldest-checked crate. So
+          queued work waits at most one shard on either lane, and a run past
+          `SPLIT_THRESHOLD_SECONDS` gets at least two shards, taken by whichever lane frees
+          first: this replaces the split by files and its share tables, the faster lane simply
+          taking more. Each lane runs a job's baseline once, in its first shard of it. A
+          `LOCAL_ONLY_CRATES` crate's shards go to this PC alone. The VPS lane runs on the VPS,
+          goes on with this PC off from the jobs and snapshots already sent, builds a job's
+          coverage map once before its first shard there, and keeps each shard's results until
+          this PC fetches them. The fetch, the filing, the Windows-only rechecks and the
+          survivors list run on this PC between its shards, and never hold the VPS's next one.
+          State lives on disk: the queue a folder of job files, a shard claimed by a rename,
+          its results a folder of their own, so a restarted driver goes on from the folders
+          (and this PC's starts at logon, if the maintainer agrees). A hold per lane, replacing
+          `.tmp/rolling.hold`, takes effect when its shard ends: this PC's for an in-game check
+          on a Fox version, a restart or a build slot the lead needs; the VPS's for
+          `gates-remote` (WSL's gates, if `WSLGATES` lands, hold this PC's instead). Each
+          shard's tree copies live in its folder and go when it ends, and the driver at start
+          deletes those of shards not running (`COPYGROWTH`). The commands that queue work
+          read their job's folder from any tree; none runs cargo-mutants itself. Isolation, not
+          locks: each run's timings a file of their own, merged when the estimate reads them;
+          the VPS's shards and `gates-remote` in clones of their own; one guard per machine so
+          one driver runs there. No test selection here: the coverage map runs on Linux only.
+          Open for the maintainer, on the page: this PC's lane running the rolling job's shards,
+          against RUNBOOK "Mutation runs and the VPS" (whole-crate runs on the VPS alone).
+          `memsum` and `warm` carry over, and `shards`' `split` would go with the split; `deep`'s open
+          fixes (S1-S7) wait for a triage of which the driver makes moot (races between
+          separate commands) and which it keeps (diff parsing, outcome accounting);
         - [ ] **deep** [after shards/lock, shards/rename, orphans, oom, died, memcap] 2026-11-25 (the maintainer): the mutation
           machinery is reviewed at Tier 1's depth (RUNBOOK "Review rounds" (e)). Carbon's loop
           over `scripts/mutation/` whole, in parts, then Astra's, each paid round between SWE-2

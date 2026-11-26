@@ -1,0 +1,327 @@
+<!doctype html>
+<!-- The mutation driver's design, pictured for the maintainer's look before any slice
+     (docs/WORKLOG.md TESTSEL/adopt/extras/parity `driver`). Written by hand; once the driver
+     lands, RUNBOOK "Mutation runs and the VPS" describes it and this page goes. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Unlimited Tool Works: the mutation driver</title>
+<link rel="stylesheet" href="maintainer.css">
+<style>
+  .viz { --run: #3987e5; --queued: #d95926; --filing: #199e70; --box: #222; --edge: #555;
+    --grid: #333; --ink: #ddd; --ink-2: #aaa; }
+  svg text { font-family: "Segoe UI", sans-serif; }
+  .legend { display: flex; gap: 18px; font-size: 13.5px; color: #bbb; margin: 6px 0 10px; }
+  .legend span::before { content: ""; display: inline-block; width: 12px; height: 12px;
+    margin-right: 6px; vertical-align: -1px; border-radius: 2px; background: var(--c); }
+  table.plain { border-collapse: collapse; font-size: 14px; margin: 8px 0; width: 100%; }
+  table.plain th, table.plain td { border: 1px solid #383838; padding: 5px 8px;
+    text-align: left; vertical-align: top; }
+  table.plain th { color: #fff; background: #262626; }
+  details { margin: 6px 0 0; color: #bbb; font-size: 14px; }
+  svg rect.bar:hover { stroke: #fff; stroke-width: 2; }
+</style>
+</head>
+<body data-page="driver">
+<nav class="pages">
+  <a href="roadmap.html">Roadmap</a>
+  <a href="questions.html">Questions</a>
+  <a href="proposals.html">Proposals</a>
+  <a href="tasks.html">Tasks</a>
+  <a href="ui_decisions.html">UI decisions</a>
+  <span class="count" id="count"></span>
+</nav>
+
+<h1>The mutation driver: one scheduler for both machines</h1>
+<p class="intro">Today each mutation command (the rolling job, a diff run, the closure, the extra
+kinds, the collect, <code>gates-remote</code>) runs on its own and takes locks so it does not
+trip over the others on this PC's tree and on the VPS. The driver replaces them with one program
+that owns both machines and schedules everything. This page shows the design, revised after my
+own look at the first outline, and asks three things only you can decide, at the bottom.</p>
+<ul id="toc"></ul>
+
+<h2>How the work flows</h2>
+<p>The commands no longer run cargo-mutants themselves. They put a job in a queue and wait for
+its results. A job is a crate's mutants cut into <b>shards</b> of about half an hour each.
+Each machine is a <b>lane</b> that runs one shard at a time, and when it ends one it takes the
+next from the queue: work a command is waiting on first, the rolling job's after.</p>
+
+<div class="viz">
+<div class="legend">
+  <span style="--c: var(--queued)">Work a command waits on</span>
+  <span style="--c: var(--run)">The rolling job (nobody waits)</span>
+  <span style="--c: var(--filing)">Filing, on this PC</span>
+</div>
+<svg viewBox="0 0 940 400" width="940" height="400" xmlns="http://www.w3.org/2000/svg"
+  role="img" aria-label="Commands queue jobs; this PC's lane and the VPS lane take shards from the queue; results are filed on this PC">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7"
+      orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#888"/></marker>
+  </defs>
+  <g font-size="13" fill="#ddd">
+    <!-- Who asks -->
+    <text x="10" y="16" fill="#aaa">Who asks</text>
+    <rect x="10" y="28" width="190" height="38" rx="2" fill="#222" stroke="#d95926" stroke-width="2"/>
+    <text x="22" y="52">Checkpoint</text>
+    <rect x="10" y="78" width="190" height="38" rx="2" fill="#222" stroke="#d95926" stroke-width="2"/>
+    <text x="22" y="102">mutants-diff</text>
+    <rect x="10" y="128" width="190" height="38" rx="2" fill="#222" stroke="#d95926" stroke-width="2"/>
+    <text x="22" y="152">mutants-closure</text>
+    <rect x="10" y="178" width="190" height="38" rx="2" fill="#222" stroke="#d95926" stroke-width="2"/>
+    <text x="22" y="202">The extra kinds' runs</text>
+    <rect x="10" y="250" width="190" height="56" rx="2" fill="#222" stroke="#3987e5" stroke-width="2"/>
+    <text x="22" y="272">Rolling job</text>
+    <text x="22" y="292" fill="#aaa" font-size="12">the crate checked longest ago</text>
+
+    <line x1="200" y1="47" x2="248" y2="130" stroke="#888" marker-end="url(#arrow)"/>
+    <line x1="200" y1="97" x2="248" y2="140" stroke="#888" marker-end="url(#arrow)"/>
+    <line x1="200" y1="147" x2="248" y2="150" stroke="#888" marker-end="url(#arrow)"/>
+    <line x1="200" y1="197" x2="248" y2="160" stroke="#888" marker-end="url(#arrow)"/>
+    <line x1="200" y1="278" x2="248" y2="232" stroke="#888" marker-end="url(#arrow)"/>
+
+    <!-- Queue -->
+    <text x="252" y="96" fill="#aaa">Queue</text>
+    <rect x="252" y="108" width="200" height="150" rx="2" fill="#222" stroke="#555"/>
+    <text x="264" y="130">Jobs, each a list of shards</text>
+    <g>
+      <rect x="264" y="144" width="26" height="26" rx="2" fill="#d95926"/>
+      <rect x="294" y="144" width="26" height="26" rx="2" fill="#d95926"/>
+      <rect x="324" y="144" width="26" height="26" rx="2" fill="#d95926"/>
+      <text x="360" y="162" fill="#aaa" font-size="12">first</text>
+      <rect x="264" y="200" width="26" height="26" rx="2" fill="#3987e5"/>
+      <rect x="294" y="200" width="26" height="26" rx="2" fill="#3987e5"/>
+      <rect x="324" y="200" width="26" height="26" rx="2" fill="#3987e5"/>
+      <rect x="354" y="200" width="26" height="26" rx="2" fill="#3987e5"/>
+      <rect x="384" y="200" width="26" height="26" rx="2" fill="#3987e5"/>
+      <text x="264" y="246" fill="#aaa" font-size="12">then the rolling job's</text>
+    </g>
+
+    <line x1="452" y1="150" x2="498" y2="100" stroke="#888" marker-end="url(#arrow)"/>
+    <line x1="452" y1="215" x2="498" y2="275" stroke="#888" marker-end="url(#arrow)"/>
+    <text x="456" y="190" fill="#aaa" font-size="12">next shard</text>
+
+    <!-- Lanes -->
+    <rect x="500" y="28" width="210" height="140" rx="2" fill="#222" stroke="#555"/>
+    <text x="512" y="50" font-weight="600" fill="#fff">This PC's lane</text>
+    <text x="512" y="74">One shard at a time</text>
+    <text x="512" y="94">Runs every test</text>
+    <text x="512" y="114">Low priority, cores 6-15</text>
+    <rect x="512" y="130" width="186" height="26" rx="2" fill="#2a2a2a" stroke="#555" stroke-dasharray="4 3"/>
+    <text x="522" y="148" fill="#aaa" font-size="12">Hold: in-game checks, restarts</text>
+
+    <rect x="500" y="200" width="210" height="160" rx="2" fill="#222" stroke="#555"/>
+    <text x="512" y="222" font-weight="600" fill="#fff">VPS lane</text>
+    <text x="512" y="246">Runs on the VPS itself</text>
+    <text x="512" y="266">One shard at a time</text>
+    <text x="512" y="286">Tests picked by coverage</text>
+    <text x="512" y="306">Goes on with this PC off</text>
+    <rect x="512" y="322" width="186" height="26" rx="2" fill="#2a2a2a" stroke="#555" stroke-dasharray="4 3"/>
+    <text x="522" y="340" fill="#aaa" font-size="12">Hold: gates-remote</text>
+
+    <!-- Results and filing -->
+    <rect x="750" y="28" width="180" height="70" rx="2" fill="#222" stroke="#555"/>
+    <text x="762" y="52">Results</text>
+    <text x="762" y="74" fill="#aaa" font-size="12">a folder per shard</text>
+    <line x1="710" y1="80" x2="748" y2="66" stroke="#888" marker-end="url(#arrow)"/>
+    <line x1="710" y1="270" x2="748" y2="90" stroke="#888" marker-end="url(#arrow)"/>
+    <text x="716" y="196" fill="#aaa" font-size="12" transform="rotate(-78 716 196)">fetched</text>
+
+    <rect x="750" y="150" width="180" height="120" rx="2" fill="#222" stroke="#199e70" stroke-width="2"/>
+    <text x="762" y="172" font-weight="600" fill="#fff">Filing, on this PC</text>
+    <text x="762" y="196">Windows-only rechecks</text>
+    <text x="762" y="216">Survivors listed</text>
+    <text x="762" y="236">Between its own shards</text>
+    <line x1="840" y1="98" x2="840" y2="148" stroke="#888" marker-end="url(#arrow)"/>
+    <text x="750" y="296" fill="#aaa" font-size="12">The command that queued the</text>
+    <text x="750" y="313" fill="#aaa" font-size="12">job reads its results, from</text>
+    <text x="750" y="330" fill="#aaa" font-size="12">whichever tree it ran in.</text>
+  </g>
+</svg>
+</div>
+
+<h2>What a waiting checkpoint gains</h2>
+<p>An illustration, not a measurement: the durations are made up, to show the shape. Both
+machines are busy with the rolling job when a checkpoint queues a diff run. In the first
+outline a lane ran a crate whole, so the diff waited for this PC's crate to end. With shards it
+waits at most for the next shard boundary on either machine, and its two shards run at once,
+one on each. The VPS is slower, so its shard takes longer.</p>
+
+<div class="viz">
+<div class="legend">
+  <span style="--c: var(--queued)">The checkpoint's diff</span>
+  <span style="--c: var(--run)">The rolling job</span>
+  <span style="--c: var(--filing)">Filing, on this PC</span>
+</div>
+<svg viewBox="0 0 940 300" width="940" height="300" xmlns="http://www.w3.org/2000/svg"
+  role="img" aria-label="Two timelines of the same afternoon: the diff's results arrive much sooner with shards">
+  <g font-size="13" fill="#ddd">
+    <!-- grid: 0-4 h over x 140-920, 195 px an hour -->
+    <g stroke="#333">
+      <line x1="140" y1="30" x2="140" y2="250"/><line x1="335" y1="30" x2="335" y2="250"/>
+      <line x1="530" y1="30" x2="530" y2="250"/><line x1="725" y1="30" x2="725" y2="250"/>
+      <line x1="920" y1="30" x2="920" y2="250"/>
+    </g>
+    <g fill="#aaa" font-size="12" text-anchor="middle">
+      <text x="140" y="268">0 h</text><text x="335" y="268">1 h</text><text x="530" y="268">2 h</text>
+      <text x="725" y="268">3 h</text><text x="920" y="268">4 h</text>
+    </g>
+    <!-- the diff is queued at 0.25 h -->
+    <line x1="189" y1="22" x2="189" y2="250" stroke="#d95926" stroke-dasharray="4 3"/>
+    <text x="195" y="20" fill="#aaa" font-size="12">diff queued</text>
+
+    <!-- First outline -->
+    <text x="10" y="44" font-weight="600" fill="#fff">First outline</text>
+    <text x="10" y="64" fill="#aaa">This PC</text>
+    <text x="10" y="98" fill="#aaa">VPS</text>
+    <rect class="bar" x="140" y="50" width="486" height="24" rx="2" fill="#3987e5"><title>This PC: the rolling job's crate, run whole, 0:00 to 2:30</title></rect>
+    <rect class="bar" x="628" y="50" width="160" height="24" rx="2" fill="#d95926"><title>This PC: the diff, 2:30 to 3:20</title></rect>
+    <rect class="bar" x="790" y="50" width="32" height="24" rx="2" fill="#199e70"><title>This PC: filing the diff, 3:20 to 3:30</title></rect>
+    <rect class="bar" x="824" y="50" width="96" height="24" rx="2" fill="#3987e5"><title>This PC: the rolling job's next crate, from 3:30</title></rect>
+    <rect class="bar" x="140" y="84" width="780" height="24" rx="2" fill="#3987e5"><title>VPS: the rolling job's crate, run whole, past 4:00</title></rect>
+    <line x1="822" y1="44" x2="822" y2="80" stroke="#fff" stroke-width="2"/>
+    <text x="816" y="40" fill="#fff" font-size="12" text-anchor="end">results</text>
+
+    <!-- Revised -->
+    <text x="10" y="148" font-weight="600" fill="#fff">With shards</text>
+    <text x="10" y="168" fill="#aaa">This PC</text>
+    <text x="10" y="202" fill="#aaa">VPS</text>
+    <rect class="bar" x="140" y="154" width="96" height="24" rx="2" fill="#3987e5"><title>This PC: a rolling-job shard, 0:00 to 0:30</title></rect>
+    <rect class="bar" x="238" y="154" width="86" height="24" rx="2" fill="#d95926"><title>This PC: the diff's first shard, 0:30 to 0:57</title></rect>
+    <rect class="bar" x="326" y="154" width="96" height="24" rx="2" fill="#3987e5"><title>This PC: a rolling-job shard, 0:57 to 1:27</title></rect>
+    <rect class="bar" x="424" y="154" width="30" height="24" rx="2" fill="#199e70"><title>This PC: filing the diff, 1:27 to 1:36</title></rect>
+    <rect class="bar" x="456" y="154" width="92" height="24" rx="2" fill="#3987e5"><title>This PC: a rolling-job shard</title></rect>
+    <rect class="bar" x="550" y="154" width="96" height="24" rx="2" fill="#3987e5"><title>This PC: a rolling-job shard</title></rect>
+    <rect class="bar" x="648" y="154" width="95" height="24" rx="2" fill="#3987e5"><title>This PC: a rolling-job shard</title></rect>
+    <rect class="bar" x="745" y="154" width="96" height="24" rx="2" fill="#3987e5"><title>This PC: a rolling-job shard</title></rect>
+    <rect class="bar" x="843" y="154" width="77" height="24" rx="2" fill="#3987e5"><title>This PC: a rolling-job shard</title></rect>
+    <rect class="bar" x="140" y="188" width="76" height="24" rx="2" fill="#3987e5"><title>VPS: a rolling-job shard, ending 0:24</title></rect>
+    <rect class="bar" x="218" y="188" width="132" height="24" rx="2" fill="#d95926"><title>VPS: the diff's second shard, 0:24 to 1:05</title></rect>
+    <rect class="bar" x="352" y="188" width="95" height="24" rx="2" fill="#3987e5"><title>VPS: a rolling-job shard</title></rect>
+    <rect class="bar" x="449" y="188" width="96" height="24" rx="2" fill="#3987e5"><title>VPS: a rolling-job shard</title></rect>
+    <rect class="bar" x="547" y="188" width="96" height="24" rx="2" fill="#3987e5"><title>VPS: a rolling-job shard</title></rect>
+    <rect class="bar" x="645" y="188" width="95" height="24" rx="2" fill="#3987e5"><title>VPS: a rolling-job shard</title></rect>
+    <rect class="bar" x="742" y="188" width="96" height="24" rx="2" fill="#3987e5"><title>VPS: a rolling-job shard</title></rect>
+    <rect class="bar" x="840" y="188" width="80" height="24" rx="2" fill="#3987e5"><title>VPS: a rolling-job shard</title></rect>
+    <line x1="454" y1="148" x2="454" y2="184" stroke="#fff" stroke-width="2"/>
+    <text x="460" y="144" fill="#fff" font-size="12">results</text>
+  </g>
+</svg>
+<details><summary>The bars as a table</summary>
+<table class="plain">
+<tr><th>Timeline</th><th>Machine</th><th>From</th><th>To</th><th>What</th></tr>
+<tr><td>First outline</td><td>This PC</td><td>0:00</td><td>2:30</td><td>The rolling job's crate, whole</td></tr>
+<tr><td>First outline</td><td>This PC</td><td>2:30</td><td>3:20</td><td>The diff</td></tr>
+<tr><td>First outline</td><td>This PC</td><td>3:20</td><td>3:30</td><td>Filing; results ready</td></tr>
+<tr><td>First outline</td><td>VPS</td><td>0:00</td><td>past 4:00</td><td>The rolling job's crate, whole</td></tr>
+<tr><td>With shards</td><td>This PC</td><td>0:30</td><td>0:57</td><td>The diff's first shard</td></tr>
+<tr><td>With shards</td><td>VPS</td><td>0:24</td><td>1:05</td><td>The diff's second shard</td></tr>
+<tr><td>With shards</td><td>This PC</td><td>1:27</td><td>1:36</td><td>Filing, after the shard it was running; results ready</td></tr>
+</table>
+</details>
+</div>
+
+<h2>What changed after my look</h2>
+<ol>
+  <li><b>Shards on both machines, dealt from one queue.</b> The first outline ran each crate
+    whole on a lane, so queued work could wait hours behind a rolling crate on the VPS. With
+    shards, each lane is free again within half an hour. They also replace the split by
+    files: a diff long enough to split gets at least two shards, and whichever machine frees
+    first takes the next one, so the faster machine simply takes more. The split's share
+    tables go. A VPS reboot loses a shard rather than a whole crate. The cost: each lane runs
+    a job's baseline once, as each half of a split does today, and every shard starts with a
+    cold build in its own copy (the worklog's <code>warm</code> item measures sharing one).</li>
+  <li><b>A hold per lane.</b> <code>.tmp/rolling.hold</code> frees the VPS today. Each lane gets
+    a hold of its own, which takes effect when its current shard ends: this PC's for an in-game
+    check on PES 2018-2021, a restart, or a build slot I need; the VPS's for
+    <code>gates-remote</code>. If the Linux gates move to WSL (worklog <code>WSLGATES</code>),
+    they hold this PC's lane instead, since they use its CPUs.</li>
+  <li><b>Everything kept on disk.</b> The queue is a folder of job files, a lane claims a shard by
+    renaming it, and each shard's results land in a folder of their own. A restarted driver
+    picks up from those folders, so after this PC restarts nothing needs recovering. If you
+    agree, it starts when you log on, which removes the relaunch I do by hand today.</li>
+  <li><b>Copies go with their shard.</b> Each shard's copies of the tree live in its own folder
+    and are deleted when it ends. When the driver starts, it deletes any copies whose shard is
+    not running. A stopped run then leaves nothing behind (the 153 GiB in <code>%TEMP%</code>
+    were two such leftovers).</li>
+  <li><b>Results belong to the job, not to a tree.</b> Today a run's results live in the tree
+    that launched it, and <code>mutants-collect</code> must run there. With the driver, the
+    command that queued a job reads that job's folder, from any worktree.</li>
+</ol>
+
+<h2>What goes away</h2>
+<table class="plain">
+<tr><th>Today</th><th>With the driver</th></tr>
+<tr><td>Four locks: the tree's, the builds', the VPS's and the cost table's</td>
+  <td>None. Each shard writes its own folder; one guard per machine keeps a second driver
+  from starting</td></tr>
+<tr><td>The split by files, with its tables of each machine's speed</td>
+  <td>Shards, taken by whichever machine frees first</td></tr>
+<tr><td><code>just mutants-collect</code>, run from the tree that launched</td>
+  <td>The command that queued the job reads its results, from any tree</td></tr>
+<tr><td><code>.tmp/rolling.hold</code>, for the VPS only</td><td>A hold per lane</td></tr>
+<tr><td>The VPS idle while this PC is off</td><td>The VPS lane picks its own next shard</td></tr>
+<tr><td>The rolling job relaunched by hand after this PC restarts</td>
+  <td>The driver picks up from its folders (and starts at logon, if you agree)</td></tr>
+<tr><td>Copies a stopped run leaves in <code>%TEMP%</code>, deleted by hand</td>
+  <td>Deleted with their shard, or when the driver starts</td></tr>
+</table>
+<p>What stays: the checkpoint and the closure still wait for their diff's results; the
+Windows-only rechecks; test selection by coverage, on the VPS only (it needs Linux); the VPS's
+memory cap and low priority, which keep its production service first.</p>
+
+<h2>Your call</h2>
+
+<section class="entry" id="driver-shards">
+  <h3>Shards on both machines, in place of the split</h3>
+  <p class="from">From change 1 above.</p>
+  <p class="ask">Should both machines take shards from one queue, replacing the split by files?</p>
+  <div class="options">
+    <label class="opt"><input type="radio" value="shards"><b>Yes, shards on both machines</b>
+      <div class="note">Queued work waits at most one shard; the split and its tables go.</div></label>
+    <label class="opt"><input type="radio" value="first outline"><b>No, keep the first outline</b>
+      <div class="note">Each lane runs a crate whole; a small run is split by files when both
+      machines are free.</div></label>
+  </div>
+  <textarea class="own" placeholder="Your own answer or a note (optional)"></textarea>
+</section>
+
+<section class="entry" id="driver-pc-rolling">
+  <h3>The rolling job on this PC</h3>
+  <p class="from">From both outlines. It goes against a runbook rule, so it needs your
+  word.</p>
+  <p>Today whole-crate runs go to the VPS only, because a long run here blocked in-game checks
+  on PES 2018-2021 and restarts for updates, and a power cut lost hours of it. Shards and the
+  hold answer those: a hold takes effect within half an hour, and a power cut loses one shard.
+  What remains is that one build job would then run here nearly all the time, at below-normal
+  priority on cores 6-15, as one of the two or three jobs this PC runs at once.</p>
+  <p class="ask">When this PC's lane has no queued work, should it run the rolling job's shards?</p>
+  <div class="options">
+    <label class="opt"><input type="radio" value="yes"><b>Yes, run the rolling job's shards here too</b></label>
+    <label class="opt"><input type="radio" value="queued only"><b>No, only queued work here</b>
+      <div class="note">This PC's lane stays idle between queued jobs, and the rolling job runs
+      on the VPS alone.</div></label>
+  </div>
+  <textarea class="own" placeholder="Your own answer or a note (optional)"></textarea>
+</section>
+
+<section class="entry" id="driver-logon">
+  <h3>Starting the driver at logon</h3>
+  <p class="from">From change 3 above.</p>
+  <p class="ask">Should a Task Scheduler task start the driver when you log on to this PC?</p>
+  <div class="options">
+    <label class="opt"><input type="radio" value="logon task"><b>Yes, start it at logon</b></label>
+    <label class="opt"><input type="radio" value="by hand"><b>No, the lead starts it</b>
+      <div class="note">After a restart it waits until a session starts it again; the VPS lane
+      goes on meanwhile.</div></label>
+  </div>
+  <textarea class="own" placeholder="Your own answer or a note (optional)"></textarea>
+</section>
+
+<div class="picks">
+  <button id="copy">Copy my answers</button>
+  <button id="clear">Clear my answers</button>
+  <textarea id="out" readonly placeholder="Your answers appear here, ready to paste into the chat"></textarea>
+</div>
+<script src="maintainer.js"></script>
+</body>
+</html>
