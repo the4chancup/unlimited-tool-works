@@ -623,8 +623,11 @@ and no phase closes with one outstanding.
   - [ ] **lookahead1** [after review1] the first look-ahead.
 - [ ] **WSLGATES** The pipeline's Linux gates on WSL rather than the VPS (the maintainer, 2026-11-26,
   to look into after the usage reset): the VPS is usually busy with whole-crate runs, so a
-  pipeline waiting for it waits for nothing it needs. This PC has WSL 2 with Ubuntu 22.04.
-  To find out: whether every Linux gate passes there (the GUI and process-group tests
+  pipeline waiting for it waits for nothing it needs. This PC has WSL 2 with Ubuntu 22.04,
+  whose user `utwbuild` already has Rust and `just` at this machine's versions
+  (`scripts/release/wsl/setup.sh`, for `just release-wsl`); WSL's default user, the one a
+  bare `bash` from Windows reaches, has neither, and stays without them, so a launcher
+  given the wrong `bash` fails at once. To find out: whether every Linux gate passes there (the GUI and process-group tests
   included), its cost against the VPS's run (a cold build in a target folder on WSL's own
   disk, not `/mnt/c`), how its cores and memory are bounded (`.wslconfig`, since
   `confine_jobs.ps1` does not reach inside the VM) beside the local mutation lane, and what
