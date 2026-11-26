@@ -4422,6 +4422,9 @@ points there.
 - open (2026-11-26) — **COPYGROWTH**: a local mutation run's tree copies grow without bound.
   `%TEMP%\studio-mutants` held 173 GiB, almost all of it two copies left by the stopped
   CATCHUP run (79 and 74 GiB), the reason this machine's drive needed constant cleaning.
+  Counted directly later that day, the folder held 64.8 GB, in copies of 22, 22, 8, 6 and
+  3 GB, while Everything listed 186 GB: its index keeps files a build deletes at once, so
+  the measurement counts each copy with an `os.scandir` walk.
   On the VPS a copy's `target/` grew by 25-50 MB per mutant after its first build,
   likely the incremental cache, or the tests' scratch (`TESTSCRATCH`): each mutant runs
   tests the earlier ones did not, each leaving its folder. Measure a local copy's `target/` by folder, try
