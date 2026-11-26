@@ -907,8 +907,11 @@ and no phase closes with one outstanding.
           runs (a crate taking another's shards, a killed shard marked done, a torn
           `outcomes.json` ending the rolling job) and a diff split that silently drops later
           files' extra mutants; fixed in slices, each with its SWE-2 round, then round 2.
-          S6c (the remote gates) merged `84815133`, its SWE-2 round owed; S1, S3, S4 and S5
-          wait, unmerged, for the lead's diff review in their worktrees; S2, S6a, S6b, S7 unlaunched;
+          S6c (the remote gates) merged `84815133`; S1, S3, S4 and S5 wait, unmerged, in their
+          worktrees; S2, S6a, S6b, S7 unlaunched. **No review rounds on `scripts/mutation/`
+          until it is reworked** (DECISIONS 2026-11-26 "no reviews of the mutation scripts
+          before the rework"): S6c's owed SWE-2 round and Carbon round 2 are off, and the
+          reworked code gets its reviews from the start;
       - [x] **review** 2026-11-24 `13e68e44`: one paid cross-family round (Carbon) over
         `backend` and `parity`, beyond the SWE-2 loop a script gets, because this code decides
         every mutant's outcome. 10 of 13 concerns accepted (a lost console still caught on a

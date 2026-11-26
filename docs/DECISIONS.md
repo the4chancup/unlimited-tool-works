@@ -20298,3 +20298,13 @@ Plan: `docs/WORKLOG.md` TESTSEL/adopt/extras/parity `driver`.
 Decision: the mutation driver's VPS lane runs on the VPS: it picks and runs its crates from the last snapshot it holds, this PC's queued work first, and keeps each run's results until this PC fetches them. The fetch, the filing and the Windows-only rechecks run here and never hold the VPS's next crate.
 Why: the maintainer, on learning that the rolling job's driver runs on this PC, so with the PC off the VPS ends its crate and idles. The Windows-only rechecks need this PC but nothing on the VPS waits for them: a crate's filing can follow its run by hours without changing any outcome.
 Plan: `docs/WORKLOG.md` TESTSEL/adopt/extras/parity `driver`.
+
+## 2026-11-26 — mutation — no reviews of the mutation scripts before the rework
+Decision: no review round (SWE-2, Carbon or Astra) runs on `scripts/mutation/` until the
+`driver` rework has landed and the scripts are optimized; the rounds owed now (S6c's SWE-2
+round, `deep`'s Carbon round 2) are dropped, and the reworked code is reviewed from the start.
+Why: much of what the owed rounds would read is lock management, which the `driver` design
+removes (isolation, not locks); reviewing code about to be replaced spends review usage on it
+and asks for fixes to code that will not survive.
+Plan: no plan edit needed — the mutation machinery has no plan section; the worklog's `deep`
+item carries the pause.
