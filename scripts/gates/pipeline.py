@@ -28,8 +28,12 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "scripts" / "mutation"))
 import mutants  # noqa: E402 (found through the line above)
 
-GATE = Path(os.environ.get("STUDIO_GATE_WORKTREE") or ROOT.parent / "4cc-studio-temp" / "gate")
+TEMP = ROOT.parent / "4cc-studio-temp"
+GATE = Path(os.environ.get("STUDIO_GATE_WORKTREE") or TEMP / "gate")
 MARKER = GATE / ".tmp" / "pipeline.running"
+# Past this, a long-lived tree's `target/` is mostly caches and older builds: main's held 49
+# GB, and 8 GB once `clear_caches.py` had removed them.
+TRIM_GB = 30
 
 
 def git(where: Path, *args: str) -> str:
@@ -65,6 +69,11 @@ def main(argv: list[str]) -> int:
     MARKER.parent.mkdir(exist_ok=True)
     MARKER.write_text(f"{head[:8]}, pid {os.getpid()}\n", encoding="utf-8")
     try:
+        # Main's and the gate's `target/` keep every older build and cache; past TRIM_GB they
+        # go, and the current builds stay. A tree a build or test runs in is skipped.
+        trees = ["main"] + ([GATE.name] if GATE.parent.resolve() == TEMP.resolve() else [])
+        clear = [sys.executable, str(ROOT / "scripts" / "builds" / "clear_caches.py"), "--over", str(TRIM_GB)]
+        subprocess.run([*clear, *trees], cwd=ROOT)
         git(GATE, "checkout", "-q", "--detach", head)
         print(f"gating {head[:8]} in {GATE}", flush=True)
         steps = [checkpoint]

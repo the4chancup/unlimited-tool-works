@@ -82,6 +82,8 @@ test:
     {{script_test}} scripts/library_parity/checkpoint_test.py
     {{script_test}} scripts/release/release_test.py
     {{script_test}} scripts/pages/roadmap_test.py
+    {{script_test}} scripts/builds/stale_deps_test.py
+    {{script_test}} scripts/builds/clear_caches_test.py
     {{script_test}} scripts/commit_test.py
     {{python}} scripts/gates/run_tests.py
 
@@ -123,6 +125,8 @@ test-changed base="HEAD":
     {{script_test}} scripts/library_parity/checkpoint_test.py
     {{script_test}} scripts/release/release_test.py
     {{script_test}} scripts/pages/roadmap_test.py
+    {{script_test}} scripts/builds/stale_deps_test.py
+    {{script_test}} scripts/builds/clear_caches_test.py
     {{script_test}} scripts/commit_test.py
     {{python}} scripts/gates/run_tests.py --changed {{base}}
 

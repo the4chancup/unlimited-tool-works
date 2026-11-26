@@ -509,12 +509,12 @@ left for the next disk alarm, six finished trees held 108 GB on 2026-11-21.
 When C: fills, a finished tree's `target/` can go whole, and the main tree's `target/debug`
 once nothing builds there (254 GiB on 2026-10-26, mostly stale `deps`): cargo rebuilds them,
 each run rewrites its generated config, and the cost table lives outside every `target/`.
-A tree whose next build should stay quick (the gate's, main's) loses only its old copies: `python
-scripts/builds/stale_deps.py <target>/debug/deps` lists every artifact a newer build of the same
-crate replaced, and `--apply` removes them (6.6 GB of the gate's 120 GB on 2026-11-22).
-Such a tree's caches go too: `python scripts/builds/clear_caches.py [--dry-run] <name>...` removes
-its incremental caches, cargo's `tmp/` and the Save editor tests' scratch, refusing a tree a
-build or test runs from (86 GB from the gate, pes14 and `sk_mut` on 2026-11-23).
+A tree whose next build should stay quick (main's, the gate's) loses only what its current build
+does not need: `python scripts/builds/clear_caches.py [--dry-run] [--over GB] <name>...` (`main`
+or a folder under `4cc-studio-temp`) removes its incremental caches, cargo's `tmp/`, the tests'
+scratch and the older builds `scripts/builds/stale_deps.py` finds, refusing a tree a build or
+test runs in. `just pipeline` runs it for main and the gate before each run, for a tree whose
+`target/` holds more than `pipeline.py`'s `TRIM_GB`, so neither needs it by hand.
 Before a pause of days, when only mutation runs will build, the gate's and main's `target/`
 can go whole: `python scripts/builds/clear_for_pause.py main gate` lists what it would remove,
 and `--apply` removes it. It keeps a running mutation run's config, the test timings

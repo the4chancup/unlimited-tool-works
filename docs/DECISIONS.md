@@ -20353,3 +20353,18 @@ in `target/` space. The code needs nothing from `studio_core`. A dev-dependency 
 linked into a release binary.
 Plan: `plans/core/architecture.md` "Crate structure" lists the crate; the worklog's
 `TESTSCRATCH` slices b and c carry the work.
+
+## 2026-11-26 — builds — a long-lived tree's `target/` loses its caches and older builds past a size, not its build
+Decision: `just pipeline` runs `scripts/builds/clear_caches.py --over 30` on main and the
+gate before each run. Past 30 GB it removes the incremental caches, cargo's `tmp/`, the
+tests' scratch and, in each `deps` folder, the older builds `stale_deps.py` finds, and
+keeps the current build. A tree a build or test runs in is skipped.
+Why: main's `target/` had grown to 49 GB, and held 8 GB after this. A `cargo clean` at a size,
+agreed first, frees as much but costs a cold build of every crate; this keeps the current
+build, so only the crates the next build changes recompile, in full rather than
+incrementally. `cargo-sweep` decides by access times, which Cargo does not update on
+Windows. Older builds are grouped by root source and kind of output, not by name, since
+several builds of one name are in use at once (every crate's `cli` test, two versions of a
+dependency, a clippy check beside a build).
+Plan: no plan edit needed: build housekeeping has no plan section; `RUNBOOK.md` names the
+script and the trigger.

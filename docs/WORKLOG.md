@@ -638,8 +638,8 @@ and no phase closes with one outstanding.
   new system drive, and the workflow improvements queued since the usage reset of 2026-11-26.
   - [ ] **migration** Windows moved to the 905P: waits on the maintainer's two lists;
   - [~] **optimize** the queued improvements: `WSLGATES` and `CYCLE` above, the mutation
-    driver's `warm` and `driver` steps below, and the issues `TESTSCRATCH`, `COPYGROWTH`,
-    `TARGETGROWTH` and `LEAN`;
+    driver's `warm` and `driver` steps below, and the issues `TESTSCRATCH`, `COPYGROWTH` and
+    `LEAN`;
   - [ ] **axiom** [after optimize] an Axiomatic Design pilot, on SWE-2: the suite's functional
     requirements split level by level, each mapped to the crate or module that meets it, and
     each level's design matrix checked for coupling (diagonal is uncoupled, triangular is
@@ -4433,29 +4433,19 @@ points there.
   `incremental = false` in the `mutants` profile against the rebuild time it costs, and
   have a stopped run's copies removed (`rm_mutant_copies.py`) as part of stopping it.
   Matters more after the migration, where `%TEMP%` sits on the 480 GB 905P.
-- open (2026-11-26) — **TARGETGROWTH**: a long-lived tree's build folder keeps every stale
-  output. The main tree's `target/` held 54 GB on 2026-11-26:
-  - 14.5 GB of Save editor test scratch and 5.7 GB in `tmp/`, both `TESTSCRATCH`;
-  - 13.9 GB of incremental caches;
-  - 12 GB in `debug/deps`, where a fresh worktree's build holds 2.4 GB: test binaries, their
-    `.pdb` files and libraries of earlier builds, which Cargo never removes.
-
-  `clear_caches.py` clears the incremental caches and the scratch. The stale outputs are what
-  `scripts/builds/stale_deps.py` removes: every hash of an artifact but the newest. Counting
-  outputs of any age, it would have removed 8.7 GB of those 12 GB; with its default floor of
-  one day, which keeps a running build's files, 0.6 GB, since most were left that day by a
-  change to the dev profile. The remedy agreed on 2026-11-26 is a `cargo clean` of a
-  long-lived tree when its `target/` passes a size, which costs one cold build. Put to the
-  maintainer in its place: at that size, `clear_caches.py` and `stale_deps.py --apply`,
-  which keep the current build. Looked at and set aside: `cargo-sweep`, whose age rules read
-  access times that Cargo does not update on Windows, and these, none of which saves disk
-  here:
-  - sccache, like kache on Windows, copies each cache hit into the worktree's `target/`: it
-    saves build time, and its own cache adds to the disk;
-  - a `build.build-dir` shared by the worktrees shares only the dependencies (about 2 GB a
-    worktree here). It needs an unstable flag to keep two worktrees' own crates apart, and
-    it locks the whole folder, so our parallel builds would wait on each other;
-  - `-Zembed-metadata=no` is nightly only.
+- resolved (2026-11-26) — **TARGETGROWTH**: a long-lived tree's build folder kept every older
+  build and cache: the main tree's `target/` held 49 GB, of which 14.5 GB Save editor test
+  scratch, 14.3 GB incremental caches, 5.7 GB in `tmp/` and 6.8 GB of older builds in
+  `debug/deps`. `just pipeline` now runs `scripts/builds/clear_caches.py --over 30` on main
+  and the gate before each run, which removes the caches, the scratch and the older builds
+  and keeps the current build (main's then held 7.8 GB), in place of the `cargo clean` first
+  agreed, which costs a cold build (DECISIONS 2026-11-26). `stale_deps.py` now groups builds
+  by root source and kind of output, since grouping by name took in-use builds too (every
+  crate's `cli` test, two versions of one dependency, a clippy check beside a build). Set
+  aside: `cargo-sweep` (it reads access times, which Cargo does not update on Windows), and,
+  since none saves disk here, sccache (a cache hit is copied into `target/`), a shared
+  `build.build-dir` (it shares only dependencies and locks the whole folder) and
+  `-Zembed-metadata=no` (nightly only).
 
 - open (2026-11-25, after the Claude reset of 2026-11-26) — **LEAN**: the test suite is
   heavy and likely redundant (the maintainer's idea): for example, one test per instance of
