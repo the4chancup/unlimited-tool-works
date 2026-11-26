@@ -638,8 +638,7 @@ and no phase closes with one outstanding.
   new system drive, and the workflow improvements queued since the usage reset of 2026-11-26.
   - [ ] **migration** Windows moved to the 905P: waits on the maintainer's two lists;
   - [~] **optimize** the queued improvements: `WSLGATES` and `CYCLE` above, the mutation
-    driver's `warm` and `driver` steps below, and the issues `TESTSCRATCH`, `COPYGROWTH` and
-    `LEAN`;
+    driver's `warm` and `driver` steps below, and the issues `TESTSCRATCH` and `LEAN`;
   - [ ] **axiom** [after optimize] an Axiomatic Design pilot, on SWE-2: the suite's functional
     requirements split level by level, each mapped to the crate or module that meets it, and
     each level's design matrix checked for coupling (diagonal is uncoupled, triangular is
@@ -4421,18 +4420,16 @@ points there.
 
   Until b and c land, `scripts/builds/clear_caches.py` clears these folders in a tree no job
   runs in.
-- open (2026-11-26) — **COPYGROWTH**: a local mutation run's tree copies grow without bound.
-  `%TEMP%\studio-mutants` held 173 GiB, almost all of it two copies left by the stopped
-  CATCHUP run (79 and 74 GiB), the reason this machine's drive needed constant cleaning.
-  Counted directly later that day, the folder held 64.8 GB, in copies of 22, 22, 8, 6 and
-  3 GB, while Everything listed 186 GB: its index keeps files a build deletes at once, so
-  the measurement counts each copy with an `os.scandir` walk.
-  On the VPS a copy's `target/` grew by 25-50 MB per mutant after its first build,
-  likely the incremental cache, or the tests' scratch (`TESTSCRATCH`): each mutant runs
-  tests the earlier ones did not, each leaving its folder. Measure a local copy's `target/` by folder, try
-  `incremental = false` in the `mutants` profile against the rebuild time it costs, and
-  have a stopped run's copies removed (`rm_mutant_copies.py`) as part of stopping it.
-  Matters more after the migration, where `%TEMP%` sits on the 480 GB 905P.
+- resolved (2026-11-26) — **COPYGROWTH**: a local mutation run's tree copies grew without
+  bound. `%TEMP%\studio-mutants` held 65 GB, all of it copies left by stopped runs, since a
+  run that ends normally removes its own. Counted by folder, most of each copy's `target/`
+  is the Save editor tests' scratch (14.4 of 22 GB, 5.1 of 8.4, all of 2.2). The
+  incremental cache is 10-15% of it, so `incremental = false` in the `mutants` profile stays
+  untried: it would slow every mutant's rebuild to save a small share of a copy that goes
+  at the run's end anyway. What is left belongs to two open items: the scratch to
+  `TESTSCRATCH`, and the copies a stopped run leaves to the mutation `driver`, which at its
+  start deletes the copies of shards not running. Until then, `rm_mutant_copies.py` removes
+  them after a run is stopped (RUNBOOK "The scratch folder").
 - resolved (2026-11-26) — **TARGETGROWTH**: a long-lived tree's build folder kept every older
   build and cache: the main tree's `target/` held 49 GB, of which 14.5 GB Save editor test
   scratch, 14.3 GB incremental caches, 5.7 GB in `tmp/` and 6.8 GB of older builds in
