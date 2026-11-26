@@ -1718,7 +1718,8 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       fill the cell's foot edge to edge; the portraits column is 50 wide; a disabled or
       unticked row is flat grey; the detail panel is a window the member places and
       finds again where it was left, with room for a player's 3D preview; cells change
-      scattered over the grid as parallel tasks end; a team's label takes the export's
+      down the grid, a few at once, in the order the run starts their tasks, each as its
+      task ends (DECISIONS 2026-11-26); a team's label takes the export's
       outcome once every cell of its row is through the run (done, done with warnings or
       done with errors, the worst of its cells and its own findings, a skipped cell
       counting as an error); the legend's archive entry reads "Shallow check done

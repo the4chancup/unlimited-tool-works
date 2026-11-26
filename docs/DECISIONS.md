@@ -20368,3 +20368,18 @@ several builds of one name are in use at once (every crate's `cli` test, two ver
 dependency, a clippy check beside a build).
 Plan: no plan edit needed: build housekeeping has no plan section; `RUNBOOK.md` names the
 script and the trigger.
+
+## 2026-11-26 — Compiler and Export upgrader GUI — a run's cells change down the grid, not scattered
+Decision: during a compile or an upgrade, the cells change down the grid, a few at once, in
+the order the run starts their tasks: folder order, which is the grid's own unless the
+Compiler's Sort picks another. Each cell ends when its own task does, so a longer task ends
+after some started later. The two drafts' fake runs show this, in place of the shuffled
+order they showed before.
+Why: the order follows the compile's code. Its coordinator reads each task's files in
+manifest order (export after export, in folder order) on the run's own thread, and hands
+the tasks to the worker pool, which starts them first come, first served (`compile.rs`
+`coordinate`). A scattered order would show a run the code never makes. The upgrader's run is not built: it
+is planned the same way, since it has no reason to differ and a member reads one grid's
+progress as they read the other's.
+Plan: `export_upgrader.md` "GUI", the run's bullet, edited; the Compiler's plan says nothing
+about the order, and its draft rulings in the worklog are corrected.

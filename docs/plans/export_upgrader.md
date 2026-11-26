@@ -304,9 +304,10 @@ members use (`quick_upgrade.bat`) reads the same two.
     asking for help in the cup's thread). Upgrade is enabled once any export is ready,
     and during the run it reads Cancel.
 - **The run** upgrades every ready export, in parallel, through the command's own code, so
-  the view upgrades nothing the command line would refuse. Cells change as their folders
-  are written, scattered over the exports a few at a time. The run ends with the notice
-  `Upgraded N exports`, carrying Open exports folder.
+  the view upgrades nothing the command line would refuse. The run takes the exports in the
+  grid's order, a few folders at a time, so the cells change down the grid as their folders
+  are written. The run ends with the notice `Upgraded N exports`, carrying Open exports
+  folder.
   - **Cancel** stops the run. Exports already written stay in `exports`, and one being
     written leaves nothing, by the upgrade's own staging (never a half-migrated output).
   - The window's close during a run asks, as the Compiler's does.

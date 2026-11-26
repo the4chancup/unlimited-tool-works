@@ -1238,10 +1238,11 @@ function modeMenu(btn, sideloadOff) {
 }
 
 // ---- The run: a fake compile over the eligible rows' cells ----
-// The app's tasks run in parallel and end in no fixed order, so the cells
-// change scattered over the grid, a few at once: the fake run takes them in
-// a shuffled order (the same one every time), BUSY of them in hand, as a
-// 16-thread machine's.
+// The app's coordinator hands the tasks to the worker pool in manifest
+// order, export after export, and the pool starts them first come, first
+// served: the cells change down the grid, BUSY at once as on a 16-thread
+// machine. Not in lockstep: each ends when its own task does, so a longer one
+// ends after some started later (the lengths vary, the same every run).
 const BUSY = 16;
 const OUTCOME = { fullOk: "done", partialOk: "done", warning: "doneWarn" };
 function startRun(only) {
@@ -1257,30 +1258,40 @@ function startRun(only) {
   const tasks = rows.flatMap(r => cellsOf(r)
     // A red cell is skipped and keeps its colour, unless only one file is dropped.
     .filter(cell => OUTCOME[cell.status] || cell.dropFile).map(cell => ({ r, cell })))
-    .map((task, i) => ({ ...task, order: (i * 7919) % 211 })).sort((a, b) => a.order - b.order);
+    .map((task, i) => ({ ...task, ticks: 8 + (i * 7919) % 17 }));
   const start = Date.now();
   S.finished = false;
-  S.run = { stage: "Processing", elapsed: 0, files: 0, mb: 0, memory: 310, tasks, at: 0, rows: rows.length };
+  S.run = { stage: "Processing", elapsed: 0, files: 0, mb: 0, memory: 310, tasks, at: 0, done: 0,
+    tick: 0, inFlight: [], rows: rows.length };
   L.log.push({ severity: "Info", code: null, scope: null,
     text: `Info - ${MODES[S.mode]}: ${rows.length} exports` });
   S.run.timer = setInterval(() => {
     const run = S.run;
     if (!run) return;
     run.elapsed = Math.floor((Date.now() - start) / 1000);
-    const ended = run.tasks[run.at - BUSY];
-    if (ended) { delete ended.cell.busy;
-      ended.cell.out = ended.cell.dropFile ? "doneErr" : OUTCOME[ended.cell.status];
-      run.files += 4; run.mb += 2.1; }
-    const next = run.tasks[run.at++];
-    if (next) { next.cell.busy = true; next.cell.busyAt = performance.now(); run.memory = 310 + (run.at * 37) % 900; }
-    else if (run.at - BUSY < run.tasks.length) { /* the last ones in hand end */ }
+    run.tick++;
+    run.inFlight = run.inFlight.filter(task => {
+      if (task.endsAt > run.tick) return true;
+      delete task.cell.busy;
+      task.cell.out = task.cell.dropFile ? "doneErr" : OUTCOME[task.cell.status];
+      run.files += 4; run.mb += 2.1; run.done++;
+      return false;
+    });
+    while (run.inFlight.length < BUSY && run.at < run.tasks.length) {
+      const next = run.tasks[run.at++];
+      next.endsAt = run.tick + next.ticks;
+      next.cell.busy = true; next.cell.busyAt = performance.now();
+      run.inFlight.push(next);
+      run.memory = 310 + (run.at * 37) % 900;
+    }
+    if (run.inFlight.length) { /* tasks still in hand */ }
     else if (run.stage === "Processing" && S.mode === "normal") run.stage = "Packing the CPKs";
     else if (run.stage === "Packing the CPKs") {
       run.stage = "Updating the save";
       if (D.writable === "running") { stopTimer(); return askEditMode(run); }
     }
     else return endRun();
-    toolActivity("compiler", { done: Math.min(run.at, run.tasks.length), total: run.tasks.length, elapsed: run.elapsed });
+    toolActivity("compiler", { done: run.done, total: run.tasks.length, elapsed: run.elapsed });
     render();
   }, 60);
   render();
@@ -1512,7 +1523,7 @@ const WALK = [
   ["TC-GUI-09", "rest the pointer on a cell or a team label: the detail window shows its folder and findings, and follows the pointer to the next cell; leaving for empty grid closes it (/a/ 07 a warning, /a/'s label a player folder named 15_Snuffy, which claims no slot, with its one-click rename, /a/'s portraits an old file name in Portraits with its rename, which colours the portraits cell alone; /adv/ 11's portrait, kept in the player's folder, colours his cell and the portraits cell)"],
   ["TC-GUI-10", "a kit cell shows its two menu colours under its label; /a/ K2's black pair is the derived one"],
   ["TC-GUI-11", "the Compile button's arrow: the three modes (sideloading disabled with the sidebar at PES 2015 or 2016), the compile column and Open output folder; picking a mode relabels the main part, and sideloading adds Launch PES"],
-  ["TC-GUI-12", "Compile: the cells change scattered over the grid, a few at once, as parallel tasks end; each turns bold, then green, amber or red (/adv/ 05, one file dropped); the strip counts; the button reads Cancel"],
+  ["TC-GUI-12", "Compile: the cells change down the grid, a few at once; each turns bold, then green, amber or red (/adv/ 05, one file dropped); the strip counts; the button reads Cancel"],
   ["TC-GUI-13", "Cancel during a run: every cell returns to its check colour, the log's last line says so"],
   ["TC-GUI-14", "Compile with /egg/ or the two /biz/ exports unresolved: their cells are blocked, each one's detail window naming the cause"],
   ["TC-GUI-24", "click a cell: a pin on it and in the window's title bar, the window stays and hovering other cells leaves it; drag it by its title bar; click another cell to pin that one, the pinned cell, the window's pin or empty grid to unpin; double-click a cell to open its folder"],

@@ -776,8 +776,10 @@ function askRun() {
         "I understand the players' looks will be lost")),
     [go, button("Cancel", closeWindow)], "loose-ask");
 }
-// The cells change scattered over the exports, a few at once, as the
-// parallel tasks end; an export with an Error is not written at all.
+// The exports are taken in the grid's order, BUSY of their folders at once,
+// so the cells change down the grid; each ends when its own folder is
+// written, so a longer one ends after some started later (the lengths vary,
+// the same every run). An export with an Error is not written at all.
 const BUSY = 6;
 function startRun() {
   if (S.run) return;
@@ -787,20 +789,27 @@ function startRun() {
     lines.push(line("Error", x, cellAt(x.key, "label"), "migration_not_clean", x.name)); }
   const ready = rows().filter(eligible);
   const tasks = ready.flatMap(x => everyCell(x).map(c => ({ x, c })))
-    .map((t, i) => ({ ...t, order: (i * 7919) % 211 })).sort((a, b) => a.order - b.order);
+    .map((t, i) => ({ ...t, ticks: 3 + (i * 7919) % 7 }));
   const start = Date.now();
   S.finished = false; S.last = null;
-  S.run = { tasks, at: 0, done: 0, elapsed: 0, exports: ready.length };
+  S.run = { tasks, at: 0, done: 0, tick: 0, inFlight: [], elapsed: 0, exports: ready.length };
   appendLog([{ severity: "Info", code: null, scope: null, text: `Info - Upgrade: ${ready.length} exports` }, ...lines], L);
   S.run.timer = setInterval(() => {
     const run = S.run;
     if (!run) return;
     run.elapsed = Math.floor((Date.now() - start) / 1000);
-    const ended = run.tasks[run.at - BUSY];
-    if (ended) { delete ended.c.busy; ended.c.out = OUTCOME[ended.c.status]; run.done++; }
-    const next = run.tasks[run.at++];
-    if (next) next.c.busy = true;
-    else if (run.at - BUSY >= run.tasks.length) return endRun();
+    run.tick++;
+    run.inFlight = run.inFlight.filter(task => {
+      if (task.endsAt > run.tick) return true;
+      delete task.c.busy; task.c.out = OUTCOME[task.c.status]; run.done++;
+      return false;
+    });
+    while (run.inFlight.length < BUSY && run.at < run.tasks.length) {
+      const next = run.tasks[run.at++];
+      next.endsAt = run.tick + next.ticks; next.c.busy = true;
+      run.inFlight.push(next);
+    }
+    if (!run.inFlight.length) return endRun();
     toolActivity("export-upgrader", { done: run.done, total: run.tasks.length, elapsed: run.elapsed });
     render();
   }, 40);
