@@ -401,7 +401,8 @@ pass-through-eligible, and the logo goes as one unit.
 
 Red's "no models from Common on PES16" check is intentionally **not** ported: the spec treats the
 PES16 exe as patched to load models from Common (the patch is made when the cup next plays PES
-16), so the compiler must not reject such references.
+16), so the compiler must not reject such references. Released Red never refused them either:
+its check compares the version, read as text, with the number 16, so it never fires.
 
 **User-supplied `face.xml`.** A pre-Fox model folder may ship its own `face.xml` instead of having
 the compiler generate one. This is **second-class, accepted on purpose**: the generated xml covers

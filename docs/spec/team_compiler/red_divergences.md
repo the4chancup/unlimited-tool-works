@@ -15,14 +15,18 @@ check on record), or **Records disagree** (the repository states two different t
 
 ### RD-1: No `*.fpk.xml` in the CPK
 
-- **Red:** copied the source-side `face.fpk.xml`/`boots.fpk.xml`/`glove.fpk.xml` into the CPK
-  beside each FPK it lists.
+- **Red:** wrote no `.fpk.xml` of its own, packing each FPK from the folder's files, but on
+  Fox it packed the member's `face.fpk.xml`, `boots.fpk.xml` or `glove.fpk.xml` into the CPK
+  unchanged. Like every file of a model folder that the FPK does not take, the file landed in
+  the model's `#windx11/` folder with the textures (a face's `sourceimages/#windx11/`), not
+  beside the FPK in `#Win/` (`model_packing.py:87-123`, `main` and `stable`).
 - **Ours:** no `*.fpk.xml` is produced; the compiler writes each FPK from the folder's own
   files.
 - **Why:** the file is the source-side member list of an FPK, which no game reads; carried
   over it would only make a `file_not_used` Warning per model at every compile.
 - **Evidence:** about 5,400 such files sit in the maintainer's export folders
-  (`docs/spec/export_upgrader.md`, step 1); "a file no game reads".
+  (`docs/spec/export_upgrader.md`, step 1); "a file no game reads"; the tracer fixture's
+  Red output holds its three, byte-identical to the export's.
 - **Status:** Checked.
 - **Stated in:** `parity.rs` `NotProduced` rows (tracer and referee tracer);
   `tests/fixtures/tracer/README.md`, `tracer_refs/README.md`;
@@ -32,7 +36,9 @@ check on record), or **Records disagree** (the repository states two different t
 ### RD-2: Boots and gloves pack under planned IDs, not the folder-name ID
 
 - **Red:** packed a boots or gloves folder under the ID its name carried (`k2180`, `g2180`),
-  inside the team's 25-ID block.
+  whatever that ID was (`export_move.py:530`, `:589`). It checked only the `k` or `g`, the four
+  digits and that no two folders shared an ID (`export_check.py:760-764`, `:950-954`); the
+  team's block of 25 IDs was the community's convention, which Red never read.
 - **Ours:** the Studio format has no ID-named folders; the compiler packs the models under
   the IDs its 40-ID per-team block assigns (the parity tracer fixture's `k3745`/`g3745`).
 - **Why:** the Studio format assigns boots/gloves IDs itself; the old folder-name ID is the
@@ -46,8 +52,10 @@ check on record), or **Records disagree** (the repository states two different t
 ### RD-3: Player textures relocated to a per-player common subfolder
 
 - **Red:** kept a team player's textures inside his face CPK beside the `.mtl` files that
-  name them `./<name>` (pre-Fox), or packed them inside each model folder's structure (Fox);
-  for a Pre-Studio `Players/` export it relocated them to `common/<team>/<name part>/`.
+  name them `./<name>` (pre-Fox), or packed them inside each model folder's structure (Fox).
+  Released Red relocated textures to Common only for referees (`referee_tools.py:175-222`);
+  the relocation of a team player's textures to `common/<team>/<name part>/` is its unreleased
+  development branch's (`players_process.py` there).
 - **Ours:** every texture of a player folder goes to that player's one common subfolder
   (`common/<team>/<folder>/` on Fox, packed under `common/character1/` on pre-Fox), the
   model's texture paths rewritten to point there. A shared folder merged into several
@@ -80,8 +88,9 @@ check on record), or **Records disagree** (the repository states two different t
 
 ### RD-5: `kitN`/`kit1`…`kit9`/`kitF` spellings in packed names and paths
 
-- **Red:** emitted the legacy `u0???p0`/`u0???p<d>`/`u0???g<d>` spellings (with the `XXX`
-  placeholder or a baked-in team ID) in file names and in FMDL/MTL/XML paths; the modded
+- **Red:** emitted the legacy `u0???p0`/`u0???p<d>`/`u0???g<d>` spellings in file names and
+  in FMDL/MTL/XML paths, the `???` respelled to the team's ID from the export's `XXX`
+  placeholder or baked-in ID (`path_id_change`, `name_editing.py:163-179`); the modded
   exes' (the community's patched game executables) swap served them.
 - **Ours:** emits the Studio spellings (`kitN` in paths, `kitF` in file names, `gk_kit<d>`
   for the goalkeeper token), and refuses the legacy token in an export (`kit_token_old`,
@@ -98,14 +107,18 @@ check on record), or **Records disagree** (the repository states two different t
 
 ### RD-6: No `dummy_kit_replace` fallback copies
 
-- **Red:** `dummy_kit_replace.py` copied the team's kit 1 textures over `dummy_kit*` files in
-  Common, a fallback for the kit substitution.
+- **Red:** wrote no such copies either. `dummy_kit_replace.py` would copy the team's kit 1
+  textures over the `dummy_kit*` files in Common on Fox, but the check that calls it looks for
+  `Common/<team>` in Red's own folder rather than in `extracted_teams/`, Red's working copy
+  of the exports, where the export's Common is moved (`extracted_from_exports.py:241-243`,
+  `main` and `stable`), so it never ran.
+  A member's own `dummy_kit*` file in Common was packed as it was.
 - **Ours:** no such copies are emitted; the stand-in stems are written in the game's
   spelling for the exes to substitute.
 - **Why:** the fallback dates from when the substitution lived in Sider scripts; it is in
   the exes now and stable.
-- **Evidence:** none cited.
-- **Status:** Not checked.
+- **Evidence:** Red's code, as read; no real export checked.
+- **Status:** No census needed: not a divergence, since neither side writes the copies.
 - **Stated in:** `pipeline.md` "Per-export non-model steps" (Kit-dependent assets, last
   paragraph).
 
@@ -126,8 +139,10 @@ check on record), or **Records disagree** (the repository states two different t
 
 ### RD-8: Overrides always land in the team side
 
-- **Red:** routed `sideload/` files into the refs CPK when only refs compiled, and ignored
-  the folder in multi-CPK mode.
+- **Red:** ignored the `sideload/` folder in multi-CPK mode. Otherwise `main` routed its files
+  into the refs CPK when only refs compiled, and into the team CPK when teams did
+  (`contents_from_extracted.py:133-143`); `stable` always put them in the team CPK, as ours
+  does.
 - **Ours:** `overrides/` entries always go into the team CPK (or the bins CPK in multi-CPK
   mode), whichever export commits.
 - **Why:** Red's routing is an accident of its CPK naming; an override is an operator's file
@@ -139,7 +154,8 @@ check on record), or **Records disagree** (the repository states two different t
 
 ### RD-9: `pass_through` keeps fewer file kinds
 
-- **Red:** packed whatever it found under `pass_through`.
+- **Red:** with its `pass_through` setting on, kept and packed every folder and file its
+  checks flagged (each discard in `export_check.py` is skipped under the setting).
 - **Ours:** `pass_through` keeps fewer kinds of file.
 - **Why:** Red's broad keep is an accident of its folder walk.
 - **Evidence:** none cited.
@@ -162,11 +178,11 @@ check on record), or **Records disagree** (the repository states two different t
 
 ### RD-11: A pre-Fox `Common/` model named `oral_x` is not double-prefixed
 
-- **Red:** packed it as `oral_oral_x_win32.model` (the `oral_` prefix applied again).
+- **Red:** packed it as `oral_oral_x_win32.model` (the `oral_` prefix applied again): its
+  Common rename skips a name only when it carries both affixes (`name_editing.py:82-117`).
 - **Ours:** packed as `oral_x_win32.model` — affixes are added only when the stem lacks
   them.
-- **Why:** doubling the affixes would type `oral` content wrongly; Red lowercases and skips
-  affixes already present only because old exports carry them.
+- **Why:** doubling the affixes would type `oral` content wrongly.
 - **Evidence:** none cited.
 - **Status:** Not checked.
 - **Stated in:** classes.md I35; `pipeline.md` "Per-model-folder parallel steps" step 4
@@ -184,8 +200,11 @@ check on record), or **Records disagree** (the repository states two different t
 
 ### RD-13: Files the game never reads are reported, not packed
 
-- **Red:** packed files the game never reads (a `.txt` note, a `.png` beside a model) into
-  the CPK.
+- **Red:** packed files the game never reads into the CPK: a `.txt` note beside a model, and
+  any file in a subfolder of a model folder or of Common (a `.png` there), since its file-type
+  check reads only a folder's top level (`get_files_list`, `export_check.py:20-34`). A `.png`
+  at a model folder's top level made Red discard the whole folder, under its default strict
+  file-type check.
 - **Ours:** a `.txt` in a player or shared folder is admitted as a note and reported
   `file_not_used`; it is not packed.
 - **Why:** a note beside a model is a comment; dead content in the CPK tells the member
@@ -198,8 +217,10 @@ check on record), or **Records disagree** (the repository states two different t
 
 ### RD-14: Pre-Fox gloves `.mtl` files are packed flattened at the root
 
-- **Red:** not stated in the text (the reference's gloves `.mtl` placement is what the rows
-  compare against).
+- **Red:** packed the gloves folder whole, every `.mtl` where the member put it
+  (`model_packing.py:65-74`). The `glove.xml` it generated names only `./glove_l.mtl` or
+  `./glove_r.mtl` beside the model, or else `./materials.mtl` (`utils/elements.py:45-73`), so
+  a `.mtl` in a subfolder was used only when the member's own `glove.xml` named it.
 - **Ours:** every `.mtl` a gloves output packs sits at the output's root, its name the path
   below the folder with each `/` written `_`, lowercased (`grip/materials.mtl` →
   `grip_materials.mtl`); `glove.xml` names it there.
@@ -260,8 +281,10 @@ check on record), or **Records disagree** (the repository states two different t
 
 ### RD-18: DX10-header textures pass through; normal maps go to DXT5nm
 
-- **Red:** re-encoded every DX10-header texture with texconv's `-f DXT5 -srgb`, a lossy
-  step that drops a BC5 normal map's X channel.
+- **Red:** on PES 15-18, re-encoded every DX10-header texture with texconv's `-f DXT5 -srgb`,
+  a lossy step that drops a BC5 normal map's X channel (`texture_conversion.py:73-79`). On
+  PES 19-21 it converted a DX10 texture to FTEX as stored, a BC5 one as format 9
+  (`ftex.py:460-500`).
 - **Ours:** rewrites a DX10-header BC1/BC3 with a legacy header rather than re-encoding,
   keeps BC5 on PES 19-21 (FTEX format 9), and encodes a normal-role source to DXT5nm
   (pre-Fox: the grey-Y layout).
@@ -284,7 +307,8 @@ check on record), or **Records disagree** (the repository states two different t
 
 ### RD-20: A PNG or other raster source becomes the `.dds` its material names
 
-- **Red:** packed the source file.
+- **Red:** packed the source file as it was where its file-type check let it through, in a
+  subfolder (RD-13); a PNG at a model folder's top level made it discard the folder.
 - **Ours:** converts the raster source to the `.dds` (or `.ftex`) the model's material
   names.
 - **Why:** material references name textures by stem and the compiler resolves each stem to
@@ -308,7 +332,7 @@ check on record), or **Records disagree** (the repository states two different t
 ### RD-22: Logos are produced, not passed through; portraits re-encoded canonically
 
 - **Red:** packed the member's own emblem files (the 512² `_r_ll`, 256² `_r_l` and 128² `_r`
-  PNGs) and the portrait file as it was.
+  PNGs) and the portrait file as it was (but for a DX10 one on PES 15-18, RD-18).
 - **Ours:** produces the three PNGs — decodes `logo*` (and `logo_small*` when present),
   squares per the `_crop`/`_stretch`/`_fit` name tag, Lanczos3-resamples to 512²/256²/128²,
   PNG-encodes — under Red's destination names; a portrait is encoded in the canonical form
@@ -326,16 +350,18 @@ check on record), or **Records disagree** (the repository states two different t
 
 ### RD-23: A portrait in a texture format is converted properly
 
-- **Red:** **the records disagree.** `spec/export_upgrader.md` says Red renamed a
-  `player_???NN` portrait of another texture format to the game's `.dds` name with its
-  bytes unchanged (a jpg named `.dds`); the DECISIONS entry of 2026-10-19 (correcting the
-  earlier reading) says Red converted every portrait to DDS before placing it.
+- **Red:** renamed a `player_???NN` portrait of another format to the game's `.dds` name with
+  its bytes unchanged (a jpg named `.dds`), as `spec/export_upgrader.md` says. Its texture
+  check passes a file whose extension is neither `.dds` nor `.ftex`
+  (`texture_check.py:149-151`), and its portrait step renames without converting
+  (`export_move.py:483-511`, `main` and `stable`). The DECISIONS correction entry of
+  2026-10-19, which says Red converted such a portrait, is wrong on this point.
 - **Ours:** migrates the file keeping its format and the compiler's `Portraits/` pass
   converts it to a real DDS.
 - **Why:** the portrait its author meant, readable by the game.
 - **Evidence:** BAG VGL18.5's `player_XXX08.jpg` sits in Red's own output as `78808.dds`
-  (6.12c, 2026-10-19); the maintainer asked whether Red really converted those.
-- **Status:** Records disagree.
+  (6.12c, 2026-10-19).
+- **Status:** Not checked: whether the game drew Red's renamed jpg is not on record.
 - **Stated in:** `export_upgrader.md` step 7 "Portraits"; DECISIONS 2026-10-19 "a portrait
   Red converted or read by its short name migrates" and the correction entry under it.
 
@@ -417,7 +443,10 @@ check on record), or **Records disagree** (the repository states two different t
 
 ### RD-29: An `.mtl` is re-serialized, not copied
 
-- **Red:** copied each `.mtl` file as it was (unwrapping a WESYS one).
+- **Red:** copied each `.mtl` as written but for its rewrites: a WESYS one unwrapped, every
+  team-ID token in it respelled to the team's ID (`txt_id_change`, `name_editing.py:182-219`),
+  and in Common a line starting `./` given the team's Common directory (`fix_mtl_paths`,
+  `name_editing.py:151-160`).
 - **Ours:** writes it back through `MaterialSet` — the same materials, possibly a different
   text layout.
 - **Why:** the compiler's own writer emits the parsed set; the comparison is on materials,
@@ -427,23 +456,33 @@ check on record), or **Records disagree** (the repository states two different t
 - **Stated in:** `parity_prefox.rs` `Nested::Mtl` doc comment;
   `tests/fixtures/tracer_prefox/README.md`.
 
-### RD-30: FMDL directory strings are appended, not rewritten in place
+### RD-30: An FMDL's unreferenced directory strings differ
 
-- **Red:** rewrote the old texture-directory strings in the FMDL string table in place.
-- **Ours:** appends the new directory strings and leaves the old ones unreferenced — the
-  model bytes differ in the string table alone, the decoded model identical.
-- **Why:** the writer's canonical layout; the parity test compares decoded models.
-- **Evidence:** none cited.
+- **Red:** its referee pass appended a moved texture's new directory string and left the old
+  one unreferenced (`fmdl_editing.py:410-474`); its ID pass then respelled the team ID in
+  every string, the unreferenced ones included (`fmdl_editing.py:324-331`). Its team pass
+  rewrote a directory string in place (`fmdl_editing.py:152-160`).
+- **Ours:** appends the new directory strings and leaves the old ones unreferenced, as the
+  export wrote them, so the string tables hold different unused strings; the decoded models
+  are identical.
+- **Why:** appending leaves every other string index valid; the parity test compares decoded
+  models.
+- **Evidence:** the referee tracer's Red `boots.fmdl` holds the appended
+  `.../common/999/masterchef/sourceimages/` beside the unreferenced, respelled
+  `.../common/999/sourceimages/`.
 - **Status:** Not checked.
 - **Stated in:** `tests/fixtures/tracer_refs/README.md` ("What the comparison found").
 
 ### RD-31: A mesh group without a bounding box gets one computed
 
-- **Red:** its writer wrote `None` for a box it never read (a group without meshes).
-- **Ours:** computes a box over the group's meshes and its child groups' boxes, as the
-  community add-on computes it; a group without meshes or box gets no assignment record
-  (Konami's own layout).
-- **Why:** Konami files hold such groups, and Red's writer stopped on them.
+- **Red:** kept a model's bounding boxes as stored. Its compile edits only an FMDL's strings
+  and texture table, through `FmdlContainer` (`fmdl_editing.py`), and never runs the
+  `FmdlFile.py` writer it ships, which writes `None` for a box it never read.
+- **Ours:** when the compiler writes a model anew, it computes a box over the group's meshes
+  and its child groups' boxes, as the community add-on computes it; a group without meshes or
+  box gets no assignment record (Konami's own layout).
+- **Why:** Konami files hold groups without meshes, on which a writer that writes every
+  group's box stops.
 - **Evidence:** Konami files hold such groups (real game files observed).
 - **Status:** Not checked: the groups were seen in Konami's files, not in a real export.
 - **Stated in:** `spec/libs/format_crates.md` (`fmdl`, the writer's bounding-box rule).
@@ -517,19 +556,22 @@ check on record), or **Records disagree** (the repository states two different t
 
 ### RD-37: No PES 16 "no models from Common" refusal
 
-- **Red:** refused Common-model references on PES 16.
+- **Red:** has the refusal in its code, but it never fires: it compares the version, read as
+  text, with the number 16 (`xml_check.py:73`, `:139`, `main` and `stable`), so released Red
+  accepted Common-model references on PES 16 too.
 - **Ours:** the check is intentionally not ported; the PES16 exe is treated as patched to
   load models from Common.
 - **Why:** the patch is made when the cup next plays PES 16.
-- **Evidence:** none cited; the exe patch is planned, not yet made.
-- **Status:** Not checked.
+- **Evidence:** Red's code, as read; the exe patch is planned, not yet made.
+- **Status:** No census needed: not a divergence, since neither side refuses the references.
 - **Stated in:** `messages.md` under "XML/MTL checks".
 
 ### RD-38: The pre-Fox `.mtl` search is exact `materials.mtl` in a defined order
 
-- **Red:** its default `.mtl` kind accepted any stem `materials` starts or ends with
-  (`mat.mtl` counts) and took the listing's order; finding nothing, it named a missing
-  `materials.mtl` in the xml — a file the game cannot load.
+- **Red:** its default `.mtl` kind accepted any stem `materials` starts with (`mat.mtl`
+  counts), and on `main` also one it ends with (`xml_editing.py:55-71`); it took the
+  listing's order, and finding nothing, it named a missing `materials.mtl` in the xml — a file
+  the game cannot load.
 - **Ours:** takes an exact `materials.mtl`, then any `.mtl`, in case-folded name order;
   finding nothing is `model_material_undefined` (Error) instead of a broken reference.
 - **Why:** an exact name and a defined order give the same answer on every real export and
@@ -551,7 +593,8 @@ check on record), or **Records disagree** (the repository states two different t
 ### RD-40: Other-engine files: ignored or converted, never a reason to drop the folder
 
 - **Red:** per-engine allowlists discarded the folder holding a file of the other engine's
-  format (a `.fmdl` in a pre-Fox export, a `.model` on Fox).
+  format at its top level (a `.fmdl` in a pre-Fox export, a `.model` on Fox;
+  `export_check.py:20-46`).
 - **Ours:** the allowlist is the same on every target: a face folder's other-engine file is
   ignored, an item folder's is converted (`pipeline.md` step 3's conversion path).
 - **Why:** Red's per-engine lists predate conversion, which makes every model format a
@@ -593,10 +636,17 @@ check on record), or **Records disagree** (the repository states two different t
 
 ### RD-42: An empty old face folder migrates to the blank face, not an empty package
 
-- **Red:** packed an empty face package for an empty face folder — how a player with a
-  full-body model removes the placeholder face, as part of the FPC system.
+- **Red:** packed a face with no model of the member's for an empty face folder — how a
+  player with a full-body model removes the placeholder face, as part of the FPC system. It
+  is filled from Red's templates: on Fox a `face.fpk` holding the template `face_diff.bin`
+  (`export_move.py:281-284`), on pre-Fox the dummy model, `dummy.mtl` and a generated
+  `face.xml` carrying the template diff (`utils/elements.py:13-42`, `xml_editing.py`
+  `xml_create`).
 - **Ours:** the folder migrates to nothing of its own: the player folder holds no face
-  file and no marker, and the compiler writes the blank face of RD-41.
+  file and no marker, and the compiler writes the blank face of RD-41, built from the same
+  template files (`resources/templates/` holds Red's `face_diff.bin`, `dummy.model` and
+  `dummy.mtl` byte for byte). From both sides' code the compiled face is the same, so only
+  the migrated export differs; no compiled output has been compared.
 - **Why:** the maintainer's answer — the empty folder's whole meaning is the
   full-body-model-hides-face case, which the blank face reproduces.
 - **Evidence:** census: PMMM VGL26 holds 18 such folders, GIG VGL26 10, the 4.2.2 test
@@ -635,7 +685,9 @@ check on record), or **Records disagree** (the repository states two different t
 
 ### RD-45: `face_neck` is typed for any `face_high` model, not only the exact name
 
-- **Red:** gave the `face_neck` type only to a file named exactly `face_high_win32.model`.
+- **Red:** gave the `face_neck` type to a file named `face_high_win32.model` in any letter
+  case, and to a model whose name starts `face_neck`, but to no other `face_high` name, such
+  as `face_high.model` (`xml_editing.py:300`, `:385-391`).
 - **Ours:** gives it to any model whose suffix is `face_high`.
 - **Why:** the game's `face.mtl` name-matches either stem, so the wider typing is safe.
 - **Evidence:** none cited.
@@ -669,7 +721,9 @@ check on record), or **Records disagree** (the repository states two different t
 
 ### RD-48: Packed model names and a generated `face.xml`'s types
 
-- **Red:** its own packed names (`face_high_win32.model` kept as listed).
+- **Red:** its own packed names (`face_high_win32.model` kept as listed); its generated
+  `face.xml` left out a model named `hair_high_win32.model` altogether (`xml_editing.py:20-22`,
+  `:296`).
 - **Ours:** packed names differ where the compiler generates the xml — `oral_`/`_win32`
   affixes and lowercasing are applied, the types and materials the same — and a generated
   `face.xml` lists `hair_high` as `parts`.
@@ -696,7 +750,9 @@ check on record), or **Records disagree** (the repository states two different t
 ### RD-50: `face_diff` validation and two-source conflicts
 
 - **Red:** let the `.bin` win silently when both `face_diff.bin` and `face_diff.xml` stand,
-  and checked the decoded length for equality only for the xml.
+  and never checked a `face_diff.bin`. `main` checks a `face_diff.xml`'s decoded length for
+  equality with what its header gives (`utils/diff_data.py:7-30`); `stable` checks only that
+  the xml parses with a `<dif>` root, and on Fox ignores a `face_diff.xml` altogether.
 - **Ours:** both files in one folder is `xml_dif_conflict`; a diff in either form must have
   the `FACE` magic and at least the length its header gives — a longer file passes.
 - **Why:** a shorter file makes the game read past its end; equality would refuse the text
@@ -709,8 +765,10 @@ check on record), or **Records disagree** (the repository states two different t
 
 ### RD-51: An unresolvable path in a member's `face.xml` is a Warning kept verbatim
 
-- **Red:** let only `model/character/face/common/…` through silently and reported any other
-  unresolvable path form as an Error for a model or `.mtl`, a Warning for a texture.
+- **Red:** let `model/character/face/common/…`, a file directly in
+  `model/character/uniform/common/` and the `dummy_kit.dds`/`dummy_gk_kit.dds` names through
+  silently, and reported any other unresolvable path form as an Error for a model or `.mtl`,
+  a Warning for a texture (`xml_check.py:70-208`).
 - **Ours:** `xml_path_unchecked` (W) for any path form the compiler cannot resolve, the
   value kept verbatim.
 - **Why:** a warning is "I can't vouch for this", never "I changed this"; it is recorded as
@@ -725,8 +783,9 @@ check on record), or **Records disagree** (the repository states two different t
 ### RD-52: The kit config's texture-name fields are re-derived, not kept
 
 - **Red:** copied the member's binary config, rewriting only the team ID in the texture-name
-  fields, so a kit keeps the names the maker wrote — including names for textures the kit
-  does not ship (a copied-from-kit-1 config naming kit 1's fonts).
+  fields (and the kit's letter and number in the first field and any `p0` one,
+  `export_move.py:383-403`), so a kit keeps the names the maker wrote — including names for
+  textures the kit does not ship (a copied-from-kit-1 config naming kit 1's fonts).
 - **Ours:** `config.toml` drops the name fields and the compiler re-derives them from the
   kit's effective texture set (for a `Midcup` kit, from the set plus the installed CPKs):
   an absent texture's name field is left empty.
@@ -745,7 +804,8 @@ check on record), or **Records disagree** (the repository states two different t
 ### RD-53: Mask and srm are engine-specific
 
 - **Red:** converted a `kit_mask` to FTEX and shipped it on Fox targets (a file the game
-  never opens), and wrote its flat template mask `u0NNNg1_mask.dds` for a kit with no mask.
+  never opens), and on PES 15-17 wrote its flat template mask `u0NNNg1_mask.dds` for a kit
+  with no mask (`kit_masks_check`, `export_move.py:76-99`, called at `:431-433`).
 - **Ours:** emits `kit_mask` only for PES 15-17 targets and `kit_srm` only for 18-21; the
   other engine's map is not emitted (`kit_texture_not_used`, I). A pre-Fox target without
   a mask gets the bundled template (as Red's `kit_masks_check` filled it); a Fox target
@@ -755,10 +815,11 @@ check on record), or **Records disagree** (the repository states two different t
   things; neither is ever converted into the other.
 - **Evidence:** census: all 788 PES 17 and 1,359 PES 21 stock kit configs checked name
   neither map; 0 of 365 kits in the maintainer's library ship an `_srm`, 14 ship a mask;
-  70 of 641 surveyed ship no mask. **The records disagree:** `tracer_prefox/README.md`
-  says "the mask is byte-identical (both write Red's template)" while `parity_prefox.rs`'s
-  `NotProduced` row asserts a Midcup compile emits none.
-- **Status:** Records disagree.
+  70 of 641 surveyed ship no mask. The pre-Fox tracer, a `Midcup` export, gets no mask from
+  ours where Red wrote its template (`parity_prefox.rs`'s `NotProduced` row, since commit
+  `29f21d99`).
+- **Status:** Not checked: the census counts the kits that reach the case, but nothing shows
+  ours right for each.
 - **Stated in:** `parity_prefox.rs` `OUTER` mask row; `pipeline.md` "Per-export non-model
   steps" (Kits); DECISIONS 2026-09-12 "kit `_mask` (pre-Fox) and `_srm` (Fox)";
   `tests/fixtures/tracer_prefox/README.md`; classes.md I13, I13b.
@@ -797,7 +858,10 @@ check on record), or **Records disagree** (the repository states two different t
 
 ### RD-56: A `Midcup` kit's absent config may be generated from the template
 
-- **Red:** the run installs nothing for a kit it does not resend.
+- **Red:** the run installs nothing for a kit the export neither resends nor lists. When the
+  export holds `Kit Configs/` and its Note lists a kit with no config there, Red writes its
+  generic template config for that kit into the run's CPK (`kitconfigs_fill_missing`,
+  `export_move.py:102-179`, called at `:338`, `main` and `stable`).
 - **Ours:** a `Midcup` kit without `config.toml` emits no config — the installed entry is
   edited in place — and where nothing is installed or the installed config does not
   decode, the template is written (`kit_config_generated`).
@@ -924,7 +988,8 @@ check on record), or **Records disagree** (the repository states two different t
 
 ### RD-65: A referee's modelless item folder packs nothing
 
-- **Red:** packed an empty package for a referee's modelless boots or gloves folder.
+- **Red:** packed a package with no model for a referee's modelless boots or gloves folder (on
+  Fox, a boots one holds the template skeleton Red adds, `export_move.py:540-543`).
 - **Ours:** writes nothing for it (referees are full FPC; compare RD-79's team-player
   `fpc_on` marker).
 - **Why:** an empty package and no package look the same in game.
@@ -935,9 +1000,11 @@ check on record), or **Records disagree** (the repository states two different t
 
 ### RD-66: The referee marker is a reserved collar, not a system-file write
 
-- **Red:** on Fox wrote `cup_logo.ftex` into the system file `Data/dt00_x64.cpk` after an
-  interactive prompt (pre-Fox: replaced the referee template prop's texture in the refs
-  CPK); `ref_marker_needs_consent` and `dt00_write_failed` went with it.
+- **Red:** on Fox, with its Move Cpks setting on, wrote `cup_logo.ftex` into the system file
+  `Data/dt00_x64.cpk` after an interactive prompt the first time; on pre-Fox it moved the
+  marker over the referee template prop's texture in Red's own template folder, from which
+  the refs CPK is built (`referee_tools.py:441-509`). The findings that went with the Fox
+  route, `ref_marker_needs_consent` and `dt00_write_failed`, are retired.
 - **Ours:** shows the marker through reserved collar 77 — a prop model (`referee_prop.fmdl`
   on Fox, the template's `referee_prop.model` on pre-Fox) and a texture inside the refs
   CPK; nothing outside the refs CPK is written and no consent/backup is needed.
@@ -1006,8 +1073,10 @@ check on record), or **Records disagree** (the repository states two different t
 
 ### RD-71: A referee's `hair_parts` textures move to Common with no copy left behind
 
-- **Red:** left a copy of a referee's `hair_parts` textures beside the face
-  (`referee_tools.py:222-229`, a special case for its pre-Fox move of models to Common).
+- **Red:** left a copy of a referee's `hair_parts` textures beside the face on every version
+  (`referee_tools.py:215-220`, called at `:343-344`, `main` and `stable`). It serves the hair
+  model and `hair.mtl`, which stay in the face folder when Red's pre-Fox pass moves the other
+  models to Common (`:305`).
 - **Ours:** moves them to the referee's Common output with the rest of his textures; no
   copy remains beside the face.
 - **Why:** Red's copy only "preserved originals"; the hair model and `hair.mtl` stay in
@@ -1044,8 +1113,8 @@ check on record), or **Records disagree** (the repository states two different t
 
 ### RD-74: A modelless boots/gloves folder marks the wearer `fpc_on`
 
-- **Red:** packed an empty package under the folder's ID — how a member hid a player's
-  boots or hands.
+- **Red:** packed a package with no model under the folder's ID (on Fox, a boots one holds
+  the template skeleton Red adds, RD-65) — how a member hid a player's boots or hands.
 - **Ours:** each player wearing one gets the `fpc_on` marker, which gives him the preset's
   blank-model IDs; no empty package is written, and the folder's files are leftovers.
 - **Why:** the maintainer — "Giving a player a boots/gloves ID for an inexistent folder
@@ -1142,9 +1211,12 @@ check on record), or **Records disagree** (the repository states two different t
 
 ### RD-81: A `.dds`+`.ftex` pair of one stem keeps the `.dds` alone
 
-- **Red:** packed both files of the pair.
+- **Red:** on Fox, converted the `.dds` to an `.ftex` of the same stem, written over the
+  member's `.ftex`, and dropped the `.dds` (`texture_conversion.py:96-125`), so the CPK held
+  the `.dds`'s texture alone, used or not. On PES 15-17 the `.ftex` was refused (RD-40).
 - **Ours:** drops the `.ftex`, keeps the `.dds` (`texture_duplicate_dropped`, W); when no
-  model of the export uses the stem, both are leftovers.
+  model of the export uses the stem, both are leftovers. For a used stem the compiled
+  texture is the one Red packed; only an unused stem's differs.
 - **Why:** the shared validation refuses the pair (`texture_stem_conflict`), and the
   `.dds` is the one Red's Fox mode itself preferred.
 - **Evidence:** real example: /akg/ VGL26's `Common/dummy_srm.dds` + `dummy_srm.ftex`, its
@@ -1156,9 +1228,11 @@ check on record), or **Records disagree** (the repository states two different t
 
 ### RD-82: An `unmigrated_content` Error where Red picked silently
 
-- **Red:** kept the first or made an order-dependent pick and compiled the rest — two
-  folders of one slot or ID (Red kept the first in directory order), a whole folder under
-  a name it refused, a config deeper than one subfolder.
+- **Red:** of two folders of one slot or ID, kept the first in directory order and compiled
+  it (`export_check.py:164-166`, `:764`). It refused the other cases outright: a whole folder
+  under a name it refused was discarded, and a config deeper than one subfolder left a folder
+  in `Kit Configs/` whose name fails the config-name check, which discards every config
+  (`export_check.py:349-391`).
 - **Ours:** the entry is `unmigrated_content` (E): two candidates for one place, a
   misnamed whole folder — nothing is written until the author decides.
 - **Why:** of two candidates only the author knows the meant one; Red's pick was a refusal
@@ -1211,8 +1285,9 @@ check on record), or **Records disagree** (the repository states two different t
 
 ### RD-86: A face whose Common path names the team by name is migrated
 
-- **Red:** discarded the face folder (its check refuses a Common path whose subfolder is
-  not the three-character team folder).
+- **Red:** discarded the face folder: its check refuses a Common path whose subfolder is not
+  three characters long (`xml_check.py:122-133`). A three-character one it accepted whoever's
+  it was, and respelled to the team's ID (`path_id_change`, `name_editing.py:163-179`).
 - **Ours:** the upgrader keeps the member's `.mtl` and respells the path to
   `team_common_folder/` — the team names (`common/o/`, `common/vg/`, another team's) are
   respelled as the team's Common.

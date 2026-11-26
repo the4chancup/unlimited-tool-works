@@ -717,12 +717,13 @@ accepted image format).
 - Any other accepted image format is encoded to BC3 (DXT5) at its own size with a full mip chain.
 
 A DX10 portrait is re-headered rather than re-encoded, because the blocks are fine and a re-encode
-is lossy (the legacy compilers re-encoded every DX10 header to DXT5). The game's own DDS reader is
-the reason for the rewrite: a 128x128 single-level BC3 portrait under a DX10 header with the sRGB
-id (DXGI 78) crashed PES 19 when its slot was hovered (VGL, 2026-10-09), and the same blocks under
-a `DXT5` header did not. Of the cup corpus's 1218 portraits, 520 are single-level legacy ones and
-12 DX10 BC7 ones, none under a DX10 sRGB id. An in-game check found the DX10 header itself, not the sRGB
-id, is what the game cannot take (worklog 4.y-ingame2). The rewrite is reported as `portrait_header_rewritten`.
+is lossy (the legacy compilers re-encoded every DX10 header to DXT5 for PES 15-18). The game's
+own DDS reader is the reason for the rewrite: a 128x128 single-level BC3 portrait under a DX10
+header with the sRGB id (DXGI 78) crashed PES 19 when its slot was hovered (VGL, 2026-10-09),
+and the same blocks under a `DXT5` header did not. Of the cup corpus's 1218 portraits, 520 are
+single-level legacy ones and 12 DX10 BC7 ones, none under a DX10 sRGB id. An in-game check found
+the DX10 header itself, not the sRGB id, is what the game cannot take (worklog 4.y-ingame2). The
+rewrite is reported as `portrait_header_rewritten`.
 
 The game is not fussy: the 1534 portraits in the installed PES 2021 cup CPKs are all DDS passed
 through as their makers made them, in size classes from 64x64 DXT5 to 512x512 DXT5 (uncompressed

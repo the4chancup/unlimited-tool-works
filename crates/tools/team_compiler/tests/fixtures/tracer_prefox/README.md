@@ -96,8 +96,9 @@ What the comparison found when it was written (the test's tables carry each row)
 - `face.xml`: the same `<dif>` bytes; the generated entries type the boots `parts`, as Red's own
   generator does (the member's file, which Red keeps, says `boots`);
 - `TeamColor.bin` is byte-identical;
-- since 4.16a, with the twin's `Kits/g1/`: the mask is byte-identical (both write Red's
-  template, which the compiler bundles); `u0731g1.dds` has the same pixels, Red copying the
+- since 4.16a, with the twin's `Kits/g1/`: Red writes its template mask, which the compiler
+  wrote too until a `Midcup` kit began keeping the installed textures it does not resend
+  (commit `29f21d99`), so it now writes none; `u0731g1.dds` has the same pixels, Red copying the
   source file as it is (GIMP's reserved header bytes, no mip flags) and the compiler writing
   its canonical header; Red's kit config keeps the names of the four number textures the cut
   does not ship, where the compiler's encoder leaves an absent texture's name empty, and the
