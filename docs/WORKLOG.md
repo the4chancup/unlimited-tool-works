@@ -634,6 +634,16 @@ and no phase closes with one outstanding.
   may take all 16 logical cores and 15 GB of memory, where the gates' build once crashed
   this machine under memory pressure) beside the local mutation lane, and what
   then still needs the VPS.
+  - [x] **trial1** 2026-11-26: `%USERPROFILE%\.wslconfig` caps the VM at 4 processors and
+    8 GB. `just gates` passed at `a0e0e243` as `utwbuild`, in a clone on WSL's own disk
+    (`~/gates/utw`, fetched from this repository's git folder like `wsl/build.sh`), in 1,417 s
+    with clippy already built (about 2 min more cold) and two Windows builds running beside
+    it; its `target/` holds 12 GB in WSL's disk image, which grows and does not shrink by
+    itself. Python is a venv (`~/gates/venv`: 3.13, Pillow and psutil at CI's versions) that
+    `setup.sh` does not make yet: deadsnakes' 3.13 ships without pip. The first runs found
+    two Linux failures in an unpushed commit, both fixed (`c0852606`, `a0e0e243`). Left: the
+    VPS run's time to compare, a recipe for it (the trial's script is
+    `.tmp/lead/wslgates_trial.sh`), the venv in `setup.sh`, and the disk image's growth.
 - [ ] **RESUME** Before work on the suite resumes (the maintainer, 2026-11-26): the move to the
   new system drive, and the workflow improvements queued since the usage reset of 2026-11-26.
   - [ ] **migration** Windows moved to the 905P: waits on the maintainer's two lists;
@@ -4378,17 +4388,11 @@ points there.
 - resolved (2026-11-26) — The Compile menu's tests missed three things TC-GUI-11 promises
   (found by SWE-2.1 trial reviews): the sideload mode's pick and click, a pick lasting past
   a run's closing check, and the sideload entry's tooltips. SWE-2, merged `6012ef17`.
-- open (2026-11-26) — The logo slices' texts and tests, from a SWE-2.1 XHigh trial review,
-  checked and ruled at `9963fc71`. One small SWE-2 slice:
-  - texts: the Compiler's catalog row, help and CHANGELOG say "a `Full` export" for
-    `logo_missing` and "a player" for `portrait_missing`, where both checks skip referee
-    exports: say "team export"; the upgrader's help says "no logo in its `Logo/` folder"
-    where its catalog row already has the right words;
-  - tests: a `Full` export with a fit-tagged logo (`logo_crop.png`) and no `logo_missing`; a
-    `portrait_missing` slot mapped through `players.txt`; TC-ROOT-17 asserting its exit
-    code;
-  - comments: the installed walk's six doc comments name the portrait lookup too, and the
-    upgrader catalog's doc comment on copied `when` texts is split.
+- resolved (2026-11-26, merge `e13bd5e5`) — The logo slices' texts and tests: the Compiler's
+  catalog rows, help and CHANGELOG say `logo_missing` and `portrait_missing` cover team
+  exports; the upgrader's help names the old export's `Logo/` folder; three tests (a
+  fit-tagged logo, a `Portraits/` file mapped through `players.txt`, TC-ROOT-17's exit code
+  and players) and the installed walk's doc comments.
 - open (2026-11-26) — **TESTSCRATCH**: tests leave their scratch folders behind. Each
   `save_editor` unit test empties its folder (`test_support::scratch`) when it next starts,
   never when it ends, so after a run all its folders stay: `target/debug/save_editor_tests`
