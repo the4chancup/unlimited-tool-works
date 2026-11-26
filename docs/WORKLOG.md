@@ -629,6 +629,20 @@ and no phase closes with one outstanding.
   disk, not `/mnt/c`), how its cores and memory are bounded (`.wslconfig`, since
   `confine_jobs.ps1` does not reach inside the VM) beside the local mutation lane, and what
   then still needs the VPS.
+- [ ] **RESUME** Before work on the suite resumes (the maintainer, 2026-11-26): the move to the
+  new system drive, and the workflow improvements queued since the usage reset of 2026-11-26.
+  - [ ] **migration** Windows moved to the 905P: waits on the maintainer's two lists;
+  - [~] **optimize** the queued improvements: `WSLGATES` and `CYCLE` above, the mutation
+    driver's `warm` and `driver` steps below, and the issues `TESTSCRATCH`, `COPYGROWTH` and
+    `LEAN`;
+  - [ ] **axiom** [after optimize] an Axiomatic Design pilot, on SWE-2: the suite's functional
+    requirements split level by level, each mapped to the crate or module that meets it, and
+    each level's design matrix checked for coupling (diagonal is uncoupled, triangular is
+    decoupled only when its parameters are set in order). Levels 1 and 2 for the whole suite
+    and level 3 for the Compiler alone, then a cross-family check.
+    Since Cargo refuses dependency cycles between crates, coupling can only show inside a
+    crate or through shared data and texts kept in step by hand. Whether the other tools'
+    level 3 follows depends on what the pilot finds.
 - [x] **ROADMAP** A roadmap page for the maintainer (DECISIONS 2026-11-23 "the worklog stays Markdown,
   and a roadmap page is generated from it"), in steps:
   - [x] **now** a "Now" block at the top of this file, one line per thread in flight (what, state,
