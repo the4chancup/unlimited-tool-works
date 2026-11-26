@@ -6,11 +6,23 @@ use std::io::Read;
 use std::path::{Path, PathBuf};
 
 pub(crate) mod cup_save;
+pub(crate) mod scratch;
 
 /// A fresh, empty scratch folder for `test` under the test binary's build folder
 /// (`target/<profile>/save_editor_tests/<test>`): per checkout, so a mutation run's copy
-/// has its own, and emptied at the start of each run, so no process id is needed.
+/// has its own. A passing test's folder is removed when its thread ends; a panicking test's
+/// stays for reading and is emptied at the start of its next run.
 pub(crate) fn scratch(test: &str) -> PathBuf {
+    // A separator would nest the folder, and only the innermost one is removed.
+    assert!(
+        !test.contains(['/', '\\']),
+        "a scratch name holds no path separator: {test}"
+    );
+    scratch::fresh(scratch_dir(test))
+}
+
+/// The path `scratch` gives `test`, without creating it.
+fn scratch_dir(test: &str) -> PathBuf {
     // `CARGO_TARGET_TMPDIR` is set for integration tests only, so the build folder
     // comes from the test binary's path (`target/<profile>/deps/<exe>`).
     let deps = std::env::current_exe()
@@ -18,16 +30,10 @@ pub(crate) fn scratch(test: &str) -> PathBuf {
         .parent()
         .expect("the test binary sits under target/<profile>/deps")
         .to_path_buf();
-    let dir = deps
-        .parent()
+    deps.parent()
         .expect("deps sits under target/<profile>")
         .join("save_editor_tests")
-        .join(test);
-    if dir.exists() {
-        std::fs::remove_dir_all(&dir).expect("the scratch folder is removable");
-    }
-    std::fs::create_dir_all(&dir).expect("the scratch folder is creatable");
-    dir
+        .join(test)
 }
 
 /// A `ToolContext` for a `tool.view`/`settings_view`/CLI test, with the
@@ -247,4 +253,105 @@ pub(crate) fn pes_folder(test: &str, cpks: &[(&str, CpkEntries<'_>)]) -> PathBuf
         write_cpk(&download.join(name), entries);
     }
     download.parent().unwrap().to_path_buf()
+}
+
+#[cfg(test)]
+mod tests {
+    use std::fs;
+    use std::path::{Path, PathBuf};
+    use std::thread;
+
+    use super::scratch::fresh;
+    use super::scratch_dir;
+
+    fn write_file(folder: &Path, name: &str) -> PathBuf {
+        let path = folder.join(name);
+        fs::write(&path, name).unwrap();
+        path
+    }
+
+    #[test]
+    fn a_passing_thread_removes_its_folders() {
+        let first = scratch_dir("scratch_passing_first");
+        let second = scratch_dir("scratch_passing_second");
+        let thread_first = first.clone();
+        let thread_second = second.clone();
+        thread::spawn(move || {
+            let first = fresh(thread_first);
+            write_file(&first, "first");
+            let second = fresh(thread_second);
+            write_file(&second, "second");
+        })
+        .join()
+        .unwrap();
+        assert!(
+            !first.exists(),
+            "a passing thread's first folder remains: {}",
+            first.display()
+        );
+        assert!(
+            !second.exists(),
+            "a passing thread's second folder remains: {}",
+            second.display()
+        );
+    }
+
+    #[test]
+    fn a_panicking_thread_keeps_its_folder() {
+        let folder = scratch_dir("scratch_panicking_keeps");
+        let file = folder.join("kept");
+        let thread_folder = folder.clone();
+        let thread_file = file.clone();
+        let join = thread::spawn(move || {
+            fresh(thread_folder);
+            fs::write(&thread_file, "kept").unwrap();
+            panic!("the panicking-thread test's intentional panic");
+        })
+        .join();
+        assert!(join.is_err(), "the thread did not panic");
+        assert!(
+            folder.exists(),
+            "a panicking thread's folder was removed: {}",
+            folder.display()
+        );
+        assert!(
+            file.exists(),
+            "a panicking thread's file was removed: {}",
+            file.display()
+        );
+        fs::remove_dir_all(&folder).unwrap();
+    }
+
+    /// The view tests' fixture helper in miniature: a fresh folder, one file written inside it,
+    /// and the file's path returned.
+    fn fixture_like(folder: PathBuf) -> PathBuf {
+        let folder = fresh(folder);
+        assert!(
+            folder.exists(),
+            "fresh returned no folder: {}",
+            folder.display()
+        );
+        write_file(&folder, "fixture")
+    }
+
+    #[test]
+    fn a_path_a_helper_returns_outlives_the_helper() {
+        let folder = scratch_dir("scratch_helper_path");
+        let thread_folder = folder.clone();
+        thread::spawn(move || {
+            let path = fixture_like(thread_folder);
+            assert!(
+                path.exists(),
+                "the helper's file is gone before the thread ends: {}",
+                path.display()
+            );
+        })
+        .join()
+        .unwrap();
+        assert!(
+            !folder.exists(),
+            "the helper's folder remains after its thread ends: {}",
+            folder.display()
+        );
+    }
 }

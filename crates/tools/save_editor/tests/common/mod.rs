@@ -18,6 +18,8 @@ use studio_core::{
 // The unit tests' own builder, compiled here too, so both suites read the same save.
 #[path = "../../src/test_support/cup_save.rs"]
 pub mod cup_save;
+#[path = "../../src/test_support/scratch.rs"]
+mod scratch;
 
 /// A fresh folder standing in for the executable's folder; `data/` is the data directory.
 pub struct Sandbox {
@@ -32,12 +34,11 @@ pub struct Run {
 
 impl Sandbox {
     pub fn new(name: &str) -> Sandbox {
-        let root = Path::new(env!("CARGO_TARGET_TMPDIR"))
-            .join("save_editor_in_process")
-            .join(name);
-        if root.exists() {
-            fs::remove_dir_all(&root).unwrap();
-        }
+        let root = scratch::fresh(
+            Path::new(env!("CARGO_TARGET_TMPDIR"))
+                .join("save_editor_in_process")
+                .join(name),
+        );
         fs::create_dir_all(root.join("data")).unwrap();
         Sandbox { root }
     }
