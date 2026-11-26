@@ -633,8 +633,8 @@ and no phase closes with one outstanding.
   new system drive, and the workflow improvements queued since the usage reset of 2026-11-26.
   - [ ] **migration** Windows moved to the 905P: waits on the maintainer's two lists;
   - [~] **optimize** the queued improvements: `WSLGATES` and `CYCLE` above, the mutation
-    driver's `warm` and `driver` steps below, and the issues `TESTSCRATCH`, `COPYGROWTH` and
-    `LEAN`;
+    driver's `warm` and `driver` steps below, and the issues `TESTSCRATCH`, `COPYGROWTH`,
+    `TARGETGROWTH` and `LEAN`;
   - [ ] **axiom** [after optimize] an Axiomatic Design pilot, on SWE-2: the suite's functional
     requirements split level by level, each mapped to the crate or module that meets it, and
     each level's design matrix checked for coupling (diagonal is uncoupled, triangular is
@@ -4418,6 +4418,23 @@ points there.
   `incremental = false` in the `mutants` profile against the rebuild time it costs, and
   have a stopped run's copies removed (`rm_mutant_copies.py`) as part of stopping it.
   Matters more after the migration, where `%TEMP%` sits on the 480 GB 905P.
+- open (2026-11-26) — **TARGETGROWTH**: a long-lived tree's build folder keeps every stale
+  output. The main tree's `target/` held 54 GB on 2026-11-26:
+  - 14.5 GB of Save editor test scratch and 5.7 GB in `tmp/`, both `TESTSCRATCH`;
+  - 13.9 GB of incremental caches;
+  - 12 GB in `debug/deps`, where a fresh worktree's build holds 2.4 GB: test binaries, their
+    `.pdb` files and libraries of earlier builds, which Cargo never removes.
+
+  `clear_caches.py` clears the incremental caches and the scratch, but not the stale outputs.
+  To weigh: a `cargo clean` of a long-lived tree when its `target/` passes a size, which
+  costs one cold build, against `cargo-sweep`, whose age rules read access times that Cargo
+  does not update on Windows. Looked at and set aside, since none saves disk here:
+  - sccache, like kache on Windows, copies each cache hit into the worktree's `target/`: it
+    saves build time, and its own cache adds to the disk;
+  - a `build.build-dir` shared by the worktrees shares only the dependencies (about 2 GB a
+    worktree here). It needs an unstable flag to keep two worktrees' own crates apart, and
+    it locks the whole folder, so our parallel builds would wait on each other;
+  - `-Zembed-metadata=no` is nightly only.
 
 - open (2026-11-25, after the Claude reset of 2026-11-26) — **LEAN**: the test suite is
   heavy and likely redundant (the maintainer's idea): for example, one test per instance of
