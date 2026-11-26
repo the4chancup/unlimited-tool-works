@@ -4329,6 +4329,15 @@ pruned when their phase closes; they stay in git history. A question only the ma
 can answer is not an issue: it goes to `docs/maintainer/questions.html`, and an issue that waits on one
 points there.
 
+- open (2026-11-26) — **COPYGROWTH**: a local mutation run's tree copies grow without bound.
+  `%TEMP%\studio-mutants` held 173 GiB, almost all of it two copies left by the stopped
+  CATCHUP run (79 and 74 GiB), the reason this machine's drive needed constant cleaning.
+  On the VPS a copy's `target/` grew by 25-50 MB per mutant after its first build,
+  likely the incremental cache. Measure a local copy's `target/` by folder, try
+  `incremental = false` in the `mutants` profile against the rebuild time it costs, and
+  have a stopped run's copies removed (`rm_mutant_copies.py`) as part of stopping it.
+  Matters more after the migration, where `%TEMP%` sits on the 480 GB 905P.
+
 - open (2026-11-25, after the Claude reset of 2026-11-26) — **LEAN**: the test suite is
   heavy and likely redundant (the maintainer's idea): for example, one test per instance of
   a button where a single test of the button's class, plus light per-instance tests, would
