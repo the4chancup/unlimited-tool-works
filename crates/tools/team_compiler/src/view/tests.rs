@@ -386,11 +386,11 @@ fn click_labeled(
     })
 }
 
-/// Asserts the disabled widget `node` shows the disabled hover text `expected`, `frame`
-/// running the frames that draw it (as `click_on`'s does): the pointer rests on it until
-/// the tooltip shows, failing rather than hanging. The wait needs no real time with
-/// `tooltip_delay` turned off, only the frames the pointer needs to read as still.
-fn disabled_tooltip_is(
+/// Asserts the widget `node` shows the hover text `expected`, its enabled state aside,
+/// `frame` running the frames that draw it (as `click_on`'s does): the pointer rests on
+/// it until the tooltip shows, failing rather than hanging. The wait needs no real time
+/// with `tooltip_delay` turned off, only the frames the pointer needs to read as still.
+fn tooltip_is(
     window: &mut Headless,
     node: &accesskit::Node,
     expected: &str,
@@ -405,7 +405,7 @@ fn disabled_tooltip_is(
             return;
         }
     }
-    panic!("no tooltip {expected:?} showed over the disabled widget");
+    panic!("no tooltip {expected:?} showed over the widget");
 }
 
 /// The view's first frames: the check the window opens with ended, and the frame after's

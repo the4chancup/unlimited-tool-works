@@ -79,7 +79,7 @@ fn the_outdated_list_brings_the_button_whose_dialog_upgrades_it() {
     assert!(labeled(&nodes, "Upgrade DpFileList"));
     let compile = button(&nodes, "Compile");
     assert!(compile.is_disabled());
-    disabled_tooltip_is(
+    tooltip_is(
         &mut window,
         compile,
         "The game's DpFileList.bin does not list this compile's CPK, so the game would \
