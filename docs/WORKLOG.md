@@ -648,7 +648,7 @@ and no phase closes with one outstanding.
   new system drive, and the workflow improvements queued since the usage reset of 2026-11-26.
   - [ ] **migration** Windows moved to the 905P: waits on the maintainer's two lists;
   - [~] **optimize** the queued improvements: `WSLGATES` and `CYCLE` above, the mutation
-    driver's `warm` and `driver` steps below, and the issues `TESTSCRATCH` and `LEAN`;
+    driver's `warm` and `driver` steps below, and the issue `LEAN` (`TESTSCRATCH` resolved);
   - [ ] **axiom** [after optimize] an Axiomatic Design pilot, on SWE-2: the suite's functional
     requirements split level by level, each mapped to the crate or module that meets it, and
     each level's design matrix checked for coupling (diagonal is uncoupled, triangular is
@@ -4394,7 +4394,7 @@ points there.
   exports; the upgrader's help names the old export's `Logo/` folder; three tests (a
   fit-tagged logo, a `Portraits/` file mapped through `players.txt`, TC-ROOT-17's exit code
   and players) and the installed walk's doc comments.
-- open (2026-11-26) — **TESTSCRATCH**: tests leave their scratch folders behind. Each
+- resolved (2026-11-27) — **TESTSCRATCH**: tests left their scratch folders behind. Each
   `save_editor` unit test empties its folder (`test_support::scratch`) when it next starts,
   never when it ends, so after a run all its folders stay: `target/debug/save_editor_tests`
   held 13.5 GiB of the main tree's 40 GiB `target/`, and the integration tests'
@@ -4413,24 +4413,28 @@ points there.
     which every integration suite's sandbox under `target/tmp` and `ruleset_editor`'s unit
     tests use. A green run left 4.6 GB in 12,153 files before, and nothing after, under
     `cargo test` and nextest alike.
-  - c: the unit tests that make a `<name>_<process id>` folder in the system temp folder
-    (`studio_core`, `export_upgrader`, `team_compiler`, `pes_savefile`, `music_export`,
-    `extra_mutants`, `test_runner`, `studio`: `git grep "temp_dir().join"`, test code only). A new process
-    id each run means no later run empties them, so they pile up: 78 runs of
-    `export_upgrader`'s `upgrade_processed` held 0.6 GB on 2026-11-26. They move under the
-    build folder through `test_scratch`, which also gives each worktree its own.
+  - c: done 2026-11-27, merge `e48c3895`: the unit tests that made a `<name>_<process id>`
+    folder in the system temp folder, which no later run emptied (78 runs of
+    `export_upgrader`'s `upgrade_processed` held 0.6 GB), make it under their crate's
+    `<crate>_tests` folder through `test_scratch`. A run under `cargo test` and one under
+    nextest each left the temp folder's count as it was (before: 48 more folders per
+    `cargo test` run), and no file in the new folders. What stays is empty: a few folders
+    that a test's worker thread, never joined, makes again after the test's cleanup
+    (`session_link_stalled`, three `team_compiler` view tests), and the upgrader's shared
+    data folder, kept on purpose.
 
-  Until b and c land, `scripts/builds/clear_caches.py` clears these folders in a tree no job
-  runs in.
+  A failed test's folder stays until its next run, and `scripts/builds/clear_caches.py` clears
+  the `*_tests` folders in a tree no job runs in. Owed: review rounds on slices b and c
+  together, shipped test code: a SWE-2 loop, then one paid round.
 - resolved (2026-11-26) — **COPYGROWTH**: a local mutation run's tree copies grew without
   bound. `%TEMP%\studio-mutants` held 65 GB, all of it copies left by stopped runs, since a
   run that ends normally removes its own. Counted by folder, most of each copy's `target/`
   is the Save editor tests' scratch (14.4 of 22 GB, 5.1 of 8.4, all of 2.2). The
   incremental cache is 10-15% of it, so `incremental = false` in the `mutants` profile stays
   untried: it would slow every mutant's rebuild to save a small share of a copy that goes
-  at the run's end anyway. What is left belongs to two open items: the scratch to
-  `TESTSCRATCH`, and the copies a stopped run leaves to the mutation `driver`, which at its
-  start deletes the copies of shards not running. Until then, `rm_mutant_copies.py` removes
+  at the run's end anyway. The scratch went with `TESTSCRATCH`; the copies a stopped run
+  leaves belong to the mutation `driver`, which at its start deletes the copies of shards
+  not running. Until then, `rm_mutant_copies.py` removes
   them after a run is stopped (RUNBOOK "The scratch folder").
 - resolved (2026-11-26) — **TARGETGROWTH**: a long-lived tree's build folder kept every older
   build and cache: the main tree's `target/` held 49 GB, of which 14.5 GB Save editor test
