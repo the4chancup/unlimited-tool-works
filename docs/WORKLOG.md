@@ -4404,13 +4404,10 @@ points there.
     through `test_support/scratch.rs`. A full run left 14.5 GB + 1.0 GB before, and nothing
     after, under `cargo test` and nextest alike. A scratch name holding a path separator is
     refused, since the folder it nested stayed behind.
-  - b: slice a's code moves to a dev crate, `test_scratch` (DECISIONS 2026-11-26), and the
-    other suites' sandboxes use it: those under `target/tmp` (`export_upgrader_in_process`,
-    `team_compiler_cli`, `team_compiler_in_process`, `ruleset_editor_in_process`, and
-    `studio`'s `launchers`, `crash_dump`, `help_cli_*` and `fixture_save`) and
-    `ruleset_editor`'s unit tests (`target/debug/ruleset_editor_tests`). Brief
-    `.tmp/lead/brief_testscratch_b.md`. The measurement clears the folders with
-    `scripts/builds/clear_caches.py`, never by hand.
+  - b: done 2026-11-26, merge `2fb4e028`: slice a's code is the dev crate `test_scratch`,
+    which every integration suite's sandbox under `target/tmp` and `ruleset_editor`'s unit
+    tests use. A green run left 4.6 GB in 12,153 files before, and nothing after, under
+    `cargo test` and nextest alike.
   - c: the unit tests that make a `<name>_<process id>` folder in the system temp folder
     (`studio_core`, `export_upgrader`, `team_compiler`, `pes_savefile`, `music_export`,
     `extra_mutants`, `test_runner`, `studio`: `git grep "temp_dir().join"`, test code only). A new process
