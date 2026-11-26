@@ -511,9 +511,9 @@ once nothing builds there (254 GiB on 2026-10-26, mostly stale `deps`): cargo re
 each run rewrites its generated config, and the cost table lives outside every `target/`.
 A tree whose next build should stay quick (main's, the gate's) loses only what its current build
 does not need: `python scripts/builds/clear_caches.py [--dry-run] [--over GB] <name>...` (`main`
-or a folder under `4cc-studio-temp`) removes its incremental caches, cargo's `tmp/`, the tests'
-scratch and the older builds `scripts/builds/stale_deps.py` finds, refusing a tree a build or
-test runs in. `just pipeline` runs it for main and the gate before each run, for a tree whose
+or a folder under `4cc-studio-temp`) removes its incremental caches, the tests' scratch and the
+older builds `scripts/builds/stale_deps.py` finds, refusing a tree a build or test runs in.
+Before each run, `just pipeline` runs it on main and the gate; a tree is cleared only when its
 `target/` holds more than `pipeline.py`'s `TRIM_GB`, so neither needs it by hand.
 Before a pause of days, when only mutation runs will build, the gate's and main's `target/`
 can go whole: `python scripts/builds/clear_for_pause.py main gate` lists what it would remove,

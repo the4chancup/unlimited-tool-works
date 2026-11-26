@@ -31,8 +31,7 @@ import mutants  # noqa: E402 (found through the line above)
 TEMP = ROOT.parent / "4cc-studio-temp"
 GATE = Path(os.environ.get("STUDIO_GATE_WORKTREE") or TEMP / "gate")
 MARKER = GATE / ".tmp" / "pipeline.running"
-# Past this, a long-lived tree's `target/` is mostly caches and older builds: main's held 49
-# GB, and 8 GB once `clear_caches.py` had removed them.
+# Past this, a long-lived tree's `target/` is mostly caches and older builds.
 TRIM_GB = 30
 
 

@@ -67,6 +67,82 @@ class Clear(unittest.TestCase):
             self.assertTrue(path.exists(), path)
 
 
+class Process:
+    """A stand-in for a `psutil.Process`: what `busy` reads of one."""
+
+    def __init__(self, name, exe="", cwd="", env=None):
+        self.info = {"name": name, "exe": exe}
+        self._cwd, self._env = cwd, env or {}
+
+    def cwd(self):
+        return self._cwd
+
+    def environ(self):
+        return self._env
+
+
+class Busy(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.tree = Path(self.tmp.name).resolve() / "wt"
+        self.elsewhere = str(Path(self.tmp.name).resolve() / "other")
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def busy_with(self, *processes):
+        with mock.patch.object(clear_caches.psutil, "process_iter", return_value=list(processes)):
+            return clear_caches.busy(self.tree)
+
+    def test_a_builder_working_in_the_tree_makes_it_busy(self):
+        self.assertEqual(self.busy_with(Process("cargo.exe", cwd=str(self.tree / "crates"))), "cargo.exe")
+
+    def test_a_builder_building_into_its_target_from_another_tree_makes_it_busy(self):
+        staging = Process("rustc.exe", cwd=self.elsewhere, env={"CARGO_TARGET_DIR": str(self.tree / "target")})
+        self.assertEqual(self.busy_with(staging), "rustc.exe")
+
+    def test_a_test_binary_run_from_its_target_makes_it_busy(self):
+        test = Process("aatf-0123.exe", exe=str(self.tree / "target" / "debug" / "deps" / "aatf-0123.exe"))
+        self.assertEqual(self.busy_with(test), "aatf-0123.exe")
+
+    def test_the_app_built_there_or_another_program_working_there_does_not(self):
+        app = Process("utw.exe", exe=str(self.tree / "target" / "debug" / "utw.exe"))
+        shell = Process("python.exe", exe=self.elsewhere, cwd=str(self.tree))
+        builder_elsewhere = Process("cargo.exe", cwd=self.elsewhere, env={"CARGO_TARGET_DIR": self.elsewhere})
+        self.assertIsNone(self.busy_with(app, shell, builder_elsewhere))
+
+    def test_a_busy_tree_is_skipped_with_exit_code_1(self):
+        write(self.tree / ".git")
+        cache = write(self.tree / "target" / "tmp" / "x")
+        out = io.StringIO()
+        cargo = Process("cargo.exe", cwd=str(self.tree))
+        with (
+            mock.patch.object(clear_caches, "TEMP", self.tree.parent),
+            mock.patch.object(clear_caches.psutil, "process_iter", return_value=[cargo]),
+            redirect_stdout(out),
+        ):
+            code = clear_caches.main(["wt"])
+        self.assertEqual(code, 1)
+        self.assertTrue(cache.exists())
+        self.assertIn("skipped wt: cargo.exe runs from it", out.getvalue())
+
+
+class Arguments(unittest.TestCase):
+    def test_an_unknown_option_stops_the_run_before_any_removal(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            write(Path(tmp) / "wt" / ".git")
+            cache = write(Path(tmp) / "wt" / "target" / "tmp" / "x")
+            with (
+                mock.patch.object(clear_caches, "TEMP", Path(tmp)),
+                mock.patch.object(clear_caches.psutil, "process_iter", return_value=[]),
+                redirect_stdout(io.StringIO()),
+                mock.patch("sys.stderr", io.StringIO()),
+                self.assertRaises(SystemExit),
+            ):
+                clear_caches.main(["--dryrun", "wt"])
+            self.assertTrue(cache.exists())
+
+
 class Over(unittest.TestCase):
     def test_a_tree_under_the_floor_is_left(self):
         with tempfile.TemporaryDirectory() as tmp:
