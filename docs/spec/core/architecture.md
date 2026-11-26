@@ -28,8 +28,8 @@ The suite follows a **platform + plugins** model with strict modularity rules:
 │   ├── dev/
 │   │   ├── extra_mutants/            # The mutants cargo-mutants lacks (the `just extra-mutants`
 │   │   │                             #   scanner); a dev tool, linked into no release binary
-│   │   └── test_scratch/             # Tests' scratch folders: a passing test's is removed, a
-│   │                                 #   failing one's kept to read; a dev-dependency only
+│   │   └── test_scratch/             # Tests' scratch folders: removed when the test ends, kept
+│   │                                 #   when it panics; a dev-dependency only
 │   ├── studio/                       # The binary: registers tools, launches GUI or dispatches CLI
 │   ├── studio_core/                  # Platform: app shell, tool trait, settings framework,
 │   │                                 #   common widgets (grid, log panel), PipelineEvent types
