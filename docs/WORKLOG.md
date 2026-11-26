@@ -4352,6 +4352,12 @@ points there.
   `python`, which writes anywhere. To weigh: a separate Windows user whose rights reach only
   the worktree (and the toolchains it runs), Windows Sandbox, or WSL, each against what the
   runs need (cargo's caches, the Windows-only tests, Everything's index).
+- open (2026-11-26) — The Compile menu's tests miss two picks (found by a SWE-2.1 trial
+  review of TC-GUI-11). No test picks Compile for sideloading and checks what it does: the
+  main part's label, and its click's `Intent::Compile(Mode::Sideload)`. And no test checks
+  that a picked mode survives the check that closes a run: the tool-level test should draw
+  the button after that check and see Test output still picked. Both go in
+  `view/tests/compile_menu.rs`, for SWE-2.
 - open (2026-11-26) — **TESTSCRATCH**: tests leave their scratch folders behind. Each
   `save_editor` unit test empties its folder (`test_support::scratch`) when it next starts,
   never when it ends, so after a run all its folders stay: `target/debug/save_editor_tests`

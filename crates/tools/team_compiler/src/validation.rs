@@ -2426,14 +2426,18 @@ mod tests {
 
     #[test]
     fn installed_portrait_slots_are_the_team_s_slots_whose_portrait_the_walk_holds() {
+        // Slot 23, the last, so a range that stops short of it fails.
         let walked = InstalledPaths::Known(crate::bins::installed::WalkedCpks::from(
-            std::collections::HashSet::from(["common/render/symbol/player/71403.dds".to_owned()]),
+            std::collections::HashSet::from([
+                "common/render/symbol/player/71403.dds".to_owned(),
+                "common/render/symbol/player/71423.dds".to_owned(),
+            ]),
         ));
         let co = TeamId::new(714).ok();
-        let slot_03 = BTreeSet::from([PlayerSlot::new(3).unwrap()]);
+        let slots = BTreeSet::from([PlayerSlot::new(3).unwrap(), PlayerSlot::new(23).unwrap()]);
         for (version, installed, team_id, expected) in [
-            (PesVersion::Pes21, &walked, co, Some(slot_03)),
-            // PES 18 names slot 03's portrait `player_71403.dds`, which the walk does not hold.
+            (PesVersion::Pes21, &walked, co, Some(slots)),
+            // PES 18 names the portraits `player_<id>.dds`, which the walk does not hold.
             (PesVersion::Pes18, &walked, co, Some(BTreeSet::new())),
             (PesVersion::Pes21, &InstalledPaths::Unknown, co, None),
             (PesVersion::Pes21, &walked, None, None),
