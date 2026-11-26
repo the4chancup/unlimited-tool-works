@@ -51,6 +51,7 @@ pes_savefile = { workspace = true, features = ["test-support"] }
 # The integration tests are their own crate, which `cfg(test)` does not reach: they turn on
 # `test-support` to complete their exports with `test_files`' bytes.
 team_compiler = { workspace = true, features = ["test-support"] }
+test_scratch.workspace = true
 
 [lints]
 workspace = true

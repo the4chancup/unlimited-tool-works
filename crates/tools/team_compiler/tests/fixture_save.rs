@@ -9,10 +9,8 @@ use pes_version::PesVersion;
 
 #[test]
 fn fixture_save_is_a_whole_encrypted_save() {
-    // Under CARGO_TARGET_TMPDIR like the `common::Sandbox` tests use: the
-    // fixed path is overwritten each run and `cargo clean` removes it.
-    let dir = Path::new(env!("CARGO_TARGET_TMPDIR")).join("fixture_save");
-    std::fs::create_dir_all(&dir).expect("temp dir");
+    // Under CARGO_TARGET_TMPDIR like the `common::Sandbox` tests use.
+    let dir = test_scratch::fresh(Path::new(env!("CARGO_TARGET_TMPDIR")), "fixture_save");
     let path = dir.join("EDIT00000000");
     std::fs::write(&path, fixture_save(PesVersion::Pes21)).expect("the bytes write");
     let save = EditFile::load(&path).expect("the fixture opens");

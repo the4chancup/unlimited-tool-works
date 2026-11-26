@@ -1,0 +1,15 @@
+[package]
+name = "test_scratch"
+description = "Tests' scratch folders, removed when the test passes and kept when it fails"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+publish = false
+
+[dependencies]
+log.workspace = true
+
+[lints]
+workspace = true

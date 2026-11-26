@@ -347,6 +347,14 @@ the `.cmd` runs whichever version is installed. nextest starts a process per tes
 compiled runner starts in half the time Python takes (36 ms against 77, on an idle machine)
 without Microsoft Defender scanning Python's library at every start.
 
+A Rust test that needs a folder of its own gets it from the dev crate `test_scratch`:
+`fresh(parent, name)` makes it fresh and empty, removes it when the test passes and keeps it
+when the test fails, so a failure's files stay to read. Its parent is under the build folder
+(`build_folder()` in a unit test, `CARGO_TARGET_TMPDIR` in an integration test), never the
+system temp folder, so each checkout keeps its own and the next run empties a kept one. The
+folder belongs to the thread that made it: one made on a thread the test spawns is removed
+when that thread ends.
+
 Every test the gates run gets a temp folder that is not its own real path
 (`scripts/gates/temp_alias.py`): the test binaries from `run_tests.py`, each script's tests
 through the justfile's `script_test`. A CI runner's temp folder is named by something other than

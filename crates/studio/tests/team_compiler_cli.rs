@@ -25,14 +25,12 @@ impl Sandbox {
         // Rebuilt from its components, so every separator is the platform's: a target folder
         // set as `C:/...` on Windows would otherwise keep its slashes, and the paths the
         // binary prints, all backslashes, would not match the ones the tests expect.
-        let root: PathBuf = Path::new(env!("CARGO_TARGET_TMPDIR"))
-            .join("team_compiler_cli")
-            .join(name)
-            .components()
-            .collect();
-        if root.exists() {
-            fs::remove_dir_all(&root).unwrap();
-        }
+        let root: PathBuf = test_scratch::fresh(
+            &Path::new(env!("CARGO_TARGET_TMPDIR")).join("team_compiler_cli"),
+            name,
+        )
+        .components()
+        .collect();
         fs::create_dir_all(root.join("data")).unwrap();
         let built = Path::new(env!("CARGO_BIN_EXE_utw"));
         let exe = root.join(built.file_name().unwrap());

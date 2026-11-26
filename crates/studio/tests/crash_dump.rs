@@ -73,12 +73,10 @@ struct Sandbox {
 
 impl Sandbox {
     fn new(name: &str) -> Sandbox {
-        let root = Path::new(env!("CARGO_TARGET_TMPDIR"))
-            .join("crash_dump")
-            .join(name);
-        if root.exists() {
-            fs::remove_dir_all(&root).unwrap();
-        }
+        let root = test_scratch::fresh(
+            &Path::new(env!("CARGO_TARGET_TMPDIR")).join("crash_dump"),
+            name,
+        );
         fs::create_dir_all(root.join("data")).unwrap();
         let built = Path::new(env!("CARGO_BIN_EXE_utw"));
         let exe = root.join(built.file_name().unwrap());

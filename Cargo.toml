@@ -127,6 +127,7 @@ studio_core = { path = "crates/studio_core" }
 team_compiler = { path = "crates/tools/team_compiler" }
 team_widgets = { path = "crates/libs/team_widgets" }
 teams_list = { path = "crates/libs/teams_list" }
+test_scratch = { path = "crates/dev/test_scratch" }
 uniparam = { path = "crates/libs/uniparam" }
 vtree = { path = "crates/libs/vtree" }
 wezlib = { path = "crates/libs/wezlib" }

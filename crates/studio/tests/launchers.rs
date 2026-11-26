@@ -26,12 +26,10 @@ impl Sandbox {
         // The parent folder's name holds a space, a parenthesis pair and an
         // `&`, so the `%~dp0` paths a bat passes carry them: an unquoted
         // path in a launcher fails here.
-        let root = Path::new(env!("CARGO_TARGET_TMPDIR"))
-            .join("launchers (the) & real")
-            .join(name);
-        if root.exists() {
-            fs::remove_dir_all(&root).unwrap();
-        }
+        let root = test_scratch::fresh(
+            &Path::new(env!("CARGO_TARGET_TMPDIR")).join("launchers (the) & real"),
+            name,
+        );
         fs::create_dir_all(root.join("data")).unwrap();
         fs::create_dir_all(root.join("exports")).unwrap();
         fs::create_dir_all(root.join("old_exports")).unwrap();

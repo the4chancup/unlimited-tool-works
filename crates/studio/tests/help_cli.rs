@@ -52,10 +52,7 @@ fn a_chapter_prints_its_markdown_ending_with_the_messages_table() {
 // ST-HELP-04
 #[test]
 fn the_export_writes_one_markdown_file_per_chapter() {
-    let dir = Path::new(env!("CARGO_TARGET_TMPDIR")).join("help_cli_export");
-    if dir.exists() {
-        fs::remove_dir_all(&dir).unwrap();
-    }
+    let dir = test_scratch::fresh(Path::new(env!("CARGO_TARGET_TMPDIR")), "help_cli_export");
     let output = studio(&["help", "--export", dir.to_str().unwrap()]);
     assert_eq!(output.status.code(), Some(0), "stderr: {}", stderr(&output));
     assert!(output.stdout.is_empty(), "the export prints nothing");
@@ -143,10 +140,7 @@ fn commands_of(help: &str) -> Vec<String> {
 // none spells the executable `UnlimitedToolWorks`: it is `UTW`.
 #[test]
 fn no_member_visible_text_names_4cc_studio() {
-    let dir = Path::new(env!("CARGO_TARGET_TMPDIR")).join("help_cli_names");
-    if dir.exists() {
-        fs::remove_dir_all(&dir).unwrap();
-    }
+    let dir = test_scratch::fresh(Path::new(env!("CARGO_TARGET_TMPDIR")), "help_cli_names");
     let output = studio(&["help", "--export", dir.to_str().unwrap()]);
     assert_eq!(output.status.code(), Some(0), "stderr: {}", stderr(&output));
 
