@@ -639,11 +639,11 @@ and no phase closes with one outstanding.
     (`~/gates/utw`, fetched from this repository's git folder like `wsl/build.sh`), in 1,417 s
     with clippy already built (about 2 min more cold) and two Windows builds running beside
     it; its `target/` holds 12 GB in WSL's disk image, which grows and does not shrink by
-    itself. Python is a venv (`~/gates/venv`: 3.13, Pillow and psutil at CI's versions) that
-    `setup.sh` does not make yet: deadsnakes' 3.13 ships without pip. The first runs found
+    itself. Python is a venv (`~/gates/venv`: 3.13, with the script tests' packages at CI's versions),
+    which `setup.sh` makes. The first runs found
     two Linux failures in an unpushed commit, both fixed (`c0852606`, `a0e0e243`). Left: the
     VPS run's time to compare, a recipe for it (the trial's script is
-    `.tmp/lead/wslgates_trial.sh`), the venv in `setup.sh`, and the disk image's growth.
+    `.tmp/lead/wslgates_trial.sh`), and the disk image's growth.
 - [ ] **RESUME** Before work on the suite resumes (the maintainer, 2026-11-26): the move to the
   new system drive, and the workflow improvements queued since the usage reset of 2026-11-26.
   - [ ] **migration** Windows moved to the 905P: waits on the maintainer's two lists;

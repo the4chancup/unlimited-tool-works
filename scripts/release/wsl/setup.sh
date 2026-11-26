@@ -1,5 +1,6 @@
 #!/bin/bash
-# One-time setup of WSL's Ubuntu 22.04 for `just release-wsl` (RUNBOOK "A hand-given build").
+# One-time setup of WSL's Ubuntu 22.04 for `just release-wsl` (RUNBOOK "A hand-given build")
+# and for running the Linux gates there.
 # Run it as root from the repository's root, again whenever this file changes (every step is
 # skipped when already done):
 #
@@ -35,6 +36,11 @@ if [ ! -x /usr/bin/python3.13 ]; then
     add-apt-repository -y ppa:deadsnakes/ppa
     apt-get install -y -q python3.13
 fi
+# deadsnakes' 3.13 ships without pip: the gates' venv below needs the venv module.
+apt-get install -y -q python3.13-venv
+# The script tests' packages, at CI's versions, read from its install line.
+packages=$(sed -n 's/.*python -m pip install \(pillow==.*\)$/\1/p' "$repo/.github/workflows/ci.yml")
+[ -n "$packages" ] || { echo "error: no 'pip install pillow==...' line in .github/workflows/ci.yml"; exit 1; }
 
 id "$BUILD_USER" >/dev/null 2>&1 || useradd -m -s /bin/bash "$BUILD_USER"
 su - "$BUILD_USER" -c "set -euo pipefail
@@ -47,9 +53,14 @@ su - "$BUILD_USER" -c "set -euo pipefail
     mkdir -p \"\$HOME/bin\"
     ln -sf /usr/bin/python3.13 \"\$HOME/bin/python3\"
     ln -sf /usr/bin/python3.13 \"\$HOME/bin/python\"
+    # The Linux gates' Python, kept apart from the build's: a venv with CI's packages.
+    venv=\"\$HOME/gates/venv\"
+    [ -x \"\$venv/bin/pip\" ] || /usr/bin/python3.13 -m venv --clear \"\$venv\"
+    \"\$venv/bin/python3\" -m pip install -q $packages
     # The source repository sits on the Windows drive, owned by another user.
     git config --global --get-all safe.directory | grep -qx '\*' || git config --global --add safe.directory '*'
     just --version 2>/dev/null | grep -q ' $JUST_VERSION\$' || cargo +$channel install --locked just@$JUST_VERSION
     cargo about --version 2>/dev/null | grep -q ' $CARGO_ABOUT_VERSION\$' || cargo +$channel install --locked cargo-about@$CARGO_ABOUT_VERSION --features cli
-    just --version; cargo about --version; \"\$HOME/bin/python3\" --version"
+    just --version; cargo about --version; \"\$HOME/bin/python3\" --version
+    \"\$venv/bin/python3\" -c 'import PIL, psutil; print(\"gates venv: Pillow\", PIL.__version__, \"psutil\", psutil.__version__)'"
 echo "ready: $(ldd --version | sed -n 1p)"
