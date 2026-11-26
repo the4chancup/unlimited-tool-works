@@ -7,6 +7,12 @@ use super::*;
 /// menu buttons carry their text first).
 const ARROW: &str = "\u{23f7}";
 
+/// The sideload entry's hover text while no sideloading runtime serves the selected
+/// PES version.
+const UNSERVED_TIP: &str = "No runtime serves sideloaded files on PES 2015 and 2016";
+/// Its hover text while one does: where the sideloaded files are unpacked.
+const SERVED_TIP: &str = "Unpacked into the game folder's livecpk";
+
 /// The bare view's frame over `log` and `detail`, for `click_on`: one frame with the
 /// events it is given, its nodes returned.
 fn view_frame<'a>(
@@ -41,6 +47,30 @@ fn open_mode_menu(
     )
 }
 
+/// A click on the main part labelled `label`: the press frame asserting nothing comes
+/// before the release, which is where the click lands. Returns that frame's `Intent`
+/// and nodes.
+fn main_part_click(
+    window: &mut Headless,
+    ctx: &ToolContext,
+    log: &RunLog,
+    panel: &mut LogPanel,
+    detail: &mut GridDetail,
+    label: &str,
+) -> (Option<Intent>, Vec<accesskit::Node>) {
+    let (_, nodes) = window.frame(Vec::new(), |ui| {
+        show(ui, ctx, log, panel, &[], false, detail)
+    });
+    let at = centre(button(&nodes, label));
+    let (clicked, _) = window.frame(press(at), |ui| {
+        show(ui, ctx, log, panel, &[], false, detail)
+    });
+    assert!(clicked.is_none(), "not before the release");
+    window.frame(release(at), |ui| {
+        show(ui, ctx, log, panel, &[], false, detail)
+    })
+}
+
 // TC-GUI-11
 #[test]
 fn a_mode_pick_relabels_the_main_part_and_its_click_runs_that_mode() {
@@ -49,7 +79,7 @@ fn a_mode_pick_relabels_the_main_part_and_its_click_runs_that_mode() {
     let mut panel = LogPanel::new(TOOL_ID);
     let mut detail = GridDetail::new();
     let mut window = Headless::new();
-    let nodes = open_mode_menu(&mut window, &ctx, &log, &mut panel, &mut detail);
+    let mut nodes = open_mode_menu(&mut window, &ctx, &log, &mut panel, &mut detail);
     // The menu is open over the toolbar: the modes, then the two actions.
     for label in [
         "Compile",
@@ -60,61 +90,32 @@ fn a_mode_pick_relabels_the_main_part_and_its_click_runs_that_mode() {
     ] {
         button(&nodes, label);
     }
-    let nodes = click_on(
-        &mut window,
-        button(&nodes, "Test output"),
-        view_frame(&ctx, &log, &mut panel, &mut detail),
-    );
-    assert!(
-        !labeled(&nodes, "Open output folder"),
-        "the pick closed the menu"
-    );
-    // The main part relabelled: the pick sticks for the session.
-    let at = centre(button(&nodes, "Test output"));
-    let (clicked, _) = window.frame(press(at), |ui| {
-        show(ui, &ctx, &log, &mut panel, &[], false, &mut detail)
-    });
-    assert!(clicked.is_none(), "not before the release");
-    let (clicked, nodes) = window.frame(release(at), |ui| {
-        show(ui, &ctx, &log, &mut panel, &[], false, &mut detail)
-    });
-    assert!(
-        matches!(clicked, Some(Intent::Compile(Mode::Test))),
-        "the main part runs the picked mode"
-    );
-
-    // A pick back: while the main part reads "Test output", "Compile" is the menu's
-    // entry alone, so this click lands on it.
-    let nodes = click_on(
-        &mut window,
-        button(&nodes, ARROW),
-        view_frame(&ctx, &log, &mut panel, &mut detail),
-    );
-    let nodes = click_on(
-        &mut window,
-        button(&nodes, "Compile"),
-        view_frame(&ctx, &log, &mut panel, &mut detail),
-    );
-    assert!(
-        !labeled(&nodes, "Open output folder"),
-        "the pick closed the menu"
-    );
-    assert!(
-        !labeled(&nodes, "Test output"),
-        "the main part reads Compile again"
-    );
-    let at = centre(button(&nodes, "Compile"));
-    let (clicked, _) = window.frame(press(at), |ui| {
-        show(ui, &ctx, &log, &mut panel, &[], false, &mut detail)
-    });
-    assert!(clicked.is_none(), "not before the release");
-    let (clicked, _) = window.frame(release(at), |ui| {
-        show(ui, &ctx, &log, &mut panel, &[], false, &mut detail)
-    });
-    assert!(
-        matches!(clicked, Some(Intent::Compile(Mode::Normal))),
-        "the main part runs Normal again"
-    );
+    // Normal to Test output to Compile for sideloading to Compile: each pick is
+    // looked up while the main part reads another mode, so its label is the menu
+    // entry's alone, and the main part relabels to it for the rest of the session.
+    for (pick, mode) in [
+        ("Test output", Mode::Test),
+        ("Compile for sideloading", Mode::Sideload),
+        ("Compile", Mode::Normal),
+    ] {
+        nodes = click_on(
+            &mut window,
+            button(&nodes, pick),
+            view_frame(&ctx, &log, &mut panel, &mut detail),
+        );
+        assert!(
+            !labeled(&nodes, "Open output folder"),
+            "the pick closed the menu"
+        );
+        assert!(labeled(&nodes, pick), "the main part reads {pick}");
+        let (clicked, _) = main_part_click(&mut window, &ctx, &log, &mut panel, &mut detail, pick);
+        assert!(
+            matches!(clicked, Some(Intent::Compile(ran)) if ran == mode),
+            "the main part runs the picked mode"
+        );
+        // Reopened for the next pick.
+        nodes = open_mode_menu(&mut window, &ctx, &log, &mut panel, &mut detail);
+    }
 }
 
 // TC-GUI-11
@@ -200,6 +201,15 @@ fn a_picked_mode_reaches_the_run_through_the_tool() {
         Some("Run finished with exit code 0")
     );
 
+    // The run's end started the grid's check again, whose rows replace the last
+    // check's; the picked mode survives it.
+    finish_check(&mut tool, &ctx);
+    let (_, nodes) = window.frame(Vec::new(), |ui| tool.view(ui, &ctx));
+    assert!(
+        labeled(&nodes, "Test output") && !labeled(&nodes, "Compile"),
+        "the run's closing check left the main part on the picked mode"
+    );
+
     // The mode lasted the session alone: a fresh tool over the same context draws the
     // main part as "Compile", the mode not a saved one.
     let mut fresh = Tool::new();
@@ -226,10 +236,22 @@ fn sideloading_is_off_on_pes_2015_and_2016_and_on_later_ones() {
         let mut window = Headless::new();
         let (_, nodes) = window.frame(Vec::new(), |ui| tool.view(ui, &ctx));
         let nodes = click_labeled(&mut window, &nodes, ARROW, &mut tool, &ctx);
-        assert_eq!(
-            button(&nodes, "Compile for sideloading").is_disabled(),
-            disabled,
-            "{version}"
+        let entry = button(&nodes, "Compile for sideloading");
+        assert_eq!(entry.is_disabled(), disabled, "{version}");
+        // The entry's hover text is the member's only why on a greyed-out version;
+        // the pointer resting on the entry holds the menu open while it shows.
+        let (tip, other) = if disabled {
+            (UNSERVED_TIP, SERVED_TIP)
+        } else {
+            (SERVED_TIP, UNSERVED_TIP)
+        };
+        tooltip_is(&mut window, entry, tip, |window, events| {
+            window.frame(events, |ui| tool.view(ui, &ctx)).1
+        });
+        let (_, nodes) = window.frame(Vec::new(), |ui| tool.view(ui, &ctx));
+        assert!(
+            !shows_text(&nodes, other),
+            "{version}: no {other:?} shows beside {tip:?}"
         );
     }
 }
@@ -262,10 +284,10 @@ fn a_sideload_pick_disables_the_main_part_on_an_unserved_version() {
         main.is_disabled(),
         "the pick stays but PES 2016 cannot serve it: the main part is disabled"
     );
-    disabled_tooltip_is(
+    tooltip_is(
         &mut window,
         main,
-        "No runtime serves sideloaded files on PES 2015 and 2016",
+        UNSERVED_TIP,
         view_frame(&ctx, &log, &mut panel, &mut detail),
     );
     settings.lock().unwrap().common.pes_version = PesVersion::Pes17;
