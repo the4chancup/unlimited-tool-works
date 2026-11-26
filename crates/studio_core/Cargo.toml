@@ -39,6 +39,9 @@ tar.workspace = true
 ureq.workspace = true
 zip.workspace = true
 
+[dev-dependencies]
+test_scratch.workspace = true
+
 # The updater's tests pack a fake release as a `.7z`; the shipped build only reads one.
 [target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
 sevenz-rust2 = { workspace = true, features = ["compress"] }

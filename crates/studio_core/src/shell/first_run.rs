@@ -204,7 +204,7 @@ mod tests {
     // ST-RUN-01
     #[test]
     fn the_first_run_dialog_writes_the_settings_file_to_the_user_folder() {
-        let guard = TestDir::new("studio_core_first_run_config");
+        let guard = TestDir::new("first_run_config");
         let dir = guard.path();
         let config = dir.join("config");
         let settings = test_settings(dir);
@@ -265,7 +265,7 @@ mod tests {
     // takes more.
     #[test]
     fn the_two_choices_are_equal_columns_with_full_width_buttons_and_wrapped_hints() {
-        let dir = TestDir::new("studio_core_first_run_layout");
+        let dir = TestDir::new("first_run_layout");
         let config = PathBuf::from(r"C:\Users\you\AppData\Roaming\unlimited-tool-works");
         let Shell { mut app, .. } = first_run_shell(
             test_settings(dir.path()),
@@ -321,7 +321,7 @@ mod tests {
     // browser's button does.
     #[test]
     fn each_choice_buttons_label_is_centred_in_it() {
-        let dir = TestDir::new("studio_core_first_run_centred");
+        let dir = TestDir::new("first_run_centred");
         let config = PathBuf::from(r"C:\Users\you\AppData\Roaming\unlimited-tool-works");
         let Shell { mut app, .. } = first_run_shell(
             test_settings(dir.path()),
@@ -359,7 +359,7 @@ mod tests {
     // the title's line, and the footer line 8 points under the row's lowest hint.
     #[test]
     fn the_choices_row_sits_12_under_the_title_and_8_above_the_footer() {
-        let dir = TestDir::new("studio_core_first_run_margins");
+        let dir = TestDir::new("first_run_margins");
         let config = PathBuf::from(r"C:\Users\you\AppData\Roaming\unlimited-tool-works");
         let Shell { mut app, .. } = first_run_shell(
             test_settings(dir.path()),
@@ -404,7 +404,7 @@ mod tests {
     // ST-RUN-01
     #[test]
     fn the_portable_choice_writes_next_to_the_program() {
-        let guard = TestDir::new("studio_core_first_run_portable");
+        let guard = TestDir::new("first_run_portable");
         let dir = guard.path();
         let exe = dir.join("exe");
         fs::create_dir_all(&exe).unwrap();
@@ -437,7 +437,7 @@ mod tests {
     // ST-RUN-01
     #[test]
     fn an_existing_data_dir_shows_no_dialog() {
-        let dir = TestDir::new("studio_core_first_run_existing");
+        let dir = TestDir::new("first_run_existing");
         let (a, calls_a) = stub("a", "A", None);
         let Shell { mut app, calls, .. } = shell_with(
             test_settings(dir.path()),
@@ -457,7 +457,7 @@ mod tests {
     // ST-RUN-01
     #[test]
     fn without_a_config_dir_the_dialog_offers_the_portable_choice_alone() {
-        let dir = TestDir::new("studio_core_first_run_noconfig");
+        let dir = TestDir::new("first_run_noconfig");
         let Shell { mut app, .. } =
             first_run_shell(test_settings(dir.path()), dir.path().join("exe"), None);
         let egui_ctx = test_context();
@@ -478,7 +478,7 @@ mod tests {
     // regular file, so `<exe>/data` cannot be created on any platform.
     #[test]
     fn a_failed_write_keeps_the_dialog_open_with_the_error() {
-        let guard = TestDir::new("studio_core_first_run_denied");
+        let guard = TestDir::new("first_run_denied");
         let dir = guard.path();
         let exe = dir.join("exe");
         fs::write(&exe, b"not a folder").unwrap();

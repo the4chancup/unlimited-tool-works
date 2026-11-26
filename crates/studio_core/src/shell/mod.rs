@@ -1156,7 +1156,7 @@ mod tests {
     // ST-RUN-02
     #[test]
     fn the_gui_reopens_on_the_tool_active_when_it_closed_on() {
-        let dir = test_dir("studio_core_sidebar_last_tool");
+        let dir = test_dir("sidebar_last_tool");
         fs::create_dir_all(&dir).unwrap();
         let egui_ctx = test_context();
 
@@ -1204,7 +1204,7 @@ mod tests {
     #[test]
     fn the_contexts_exe_checks_are_dropped_on_the_windows_regained_focus() {
         let egui_ctx = test_context();
-        let dir = TestDir::new("studio_core_shell_exe_focus");
+        let dir = TestDir::new("shell_exe_focus");
         let (a, calls_a) = stub("a", "A", None);
         let mut settings = Settings::default();
         settings.common.pes_version = PesVersion::Pes21;
@@ -1272,7 +1272,7 @@ mod tests {
     // ST-RUN-05
     #[test]
     fn ctrl_q_requests_the_close_as_the_close_button_does() {
-        let dir = TestDir::new("studio_core_close_ctrl_q");
+        let dir = TestDir::new("close_ctrl_q");
         let egui_ctx = test_context();
         let Shell { mut app, calls, .. } = close_shell(dir.path());
         *calls[0].unsaved.lock().unwrap() = true;
@@ -1333,7 +1333,7 @@ mod tests {
     // ST-RUN-05
     #[test]
     fn a_close_is_held_by_the_first_tool_with_unsaved_work_then_the_next() {
-        let dir = TestDir::new("studio_core_close_unsaved");
+        let dir = TestDir::new("close_unsaved");
         let egui_ctx = test_context();
         let Shell { mut app, calls, .. } = close_shell(dir.path());
         *calls[0].unsaved.lock().unwrap() = true;
@@ -1383,7 +1383,7 @@ mod tests {
     // ST-RUN-05
     #[test]
     fn a_cancelled_prompt_keeps_the_window_and_asks_no_other_tool() {
-        let dir = TestDir::new("studio_core_close_cancel");
+        let dir = TestDir::new("close_cancel");
         let egui_ctx = test_context();
         let Shell { mut app, calls, .. } = close_shell(dir.path());
         *calls[0].unsaved.lock().unwrap() = true;
@@ -1414,7 +1414,7 @@ mod tests {
     // ST-RUN-05
     #[test]
     fn a_held_close_closes_the_settings_menu_over_the_prompt() {
-        let dir = TestDir::new("studio_core_close_menu");
+        let dir = TestDir::new("close_menu");
         let egui_ctx = test_context();
         let (a, calls_a) = stub("a", "A", None);
         let (b, calls_b) = stub("b", "B", None);
@@ -1470,7 +1470,7 @@ mod tests {
         // Each modal is seen by its own button: the About popup's Copy, the
         // report dialog's Save….
         for (button, report) in [("Copy", false), ("Save…", true)] {
-            let dir = TestDir::new("studio_core_close_modal");
+            let dir = TestDir::new(&format!("close_modal_report_{report}"));
             let egui_ctx = test_context();
             let Shell { mut app, calls, .. } = close_shell(dir.path());
             *calls[0].unsaved.lock().unwrap() = true;
@@ -1517,7 +1517,7 @@ mod tests {
     // ST-RUN-05
     #[test]
     fn a_held_close_closes_an_open_popup_over_the_prompt() {
-        let dir = TestDir::new("studio_core_close_popup");
+        let dir = TestDir::new("close_popup");
         let egui_ctx = test_context();
         let (a, calls_a) = stub("a", "A", None);
         let (b, calls_b) = stub("b", "B", None);
@@ -1553,7 +1553,7 @@ mod tests {
     // ST-RUN-06
     #[test]
     fn a_run_in_flight_holds_the_close_until_the_run_ends() {
-        let dir = TestDir::new("studio_core_close_run");
+        let dir = TestDir::new("close_run");
         let egui_ctx = test_context();
         let (a, calls_a) = stub("a", "A", None);
         let (b, calls_b) = stub("b", "B", None);
@@ -1608,7 +1608,7 @@ mod tests {
     // ST-RUN-06
     #[test]
     fn keeping_the_window_lets_the_run_go_on() {
-        let dir = TestDir::new("studio_core_close_keep");
+        let dir = TestDir::new("close_keep");
         let egui_ctx = test_context();
         let (a, calls_a) = stub("a", "A", None);
         let (b, calls_b) = stub("b", "B", None);
@@ -1686,7 +1686,7 @@ mod tests {
     // ST-UPD-01
     #[test]
     fn a_due_check_offers_the_newest_release() {
-        let dir = TestDir::new("studio_core_update_offer");
+        let dir = TestDir::new("update_offer");
         let data = dir.path().join("data");
         fs::create_dir_all(&data).unwrap();
         let (a, calls_a) = stub("a", "A", None);
@@ -1754,7 +1754,7 @@ mod tests {
             ),
             ("0.0.1", Some("0.0.2"), "the skipped release is not offered"),
         ] {
-            let dir = TestDir::new("studio_core_update_not_newer");
+            let dir = TestDir::new(&format!("update_not_newer_{version}"));
             let data = dir.path().join("data");
             fs::create_dir_all(&data).unwrap();
             let (a, calls_a) = stub("a", "A", None);
@@ -1786,7 +1786,7 @@ mod tests {
     #[test]
     fn no_check_runs_while_checks_are_off() {
         let egui_ctx = test_context();
-        let dir = TestDir::new("studio_core_update_not_due");
+        let dir = TestDir::new("update_not_due");
         let (a, calls_a) = stub("a", "A", None);
         let settings = test_settings(dir.path());
         assert!(
@@ -1819,7 +1819,7 @@ mod tests {
     // ST-UPD-01
     #[test]
     fn a_failed_check_shows_no_offer() {
-        let dir = TestDir::new("studio_core_update_failed");
+        let dir = TestDir::new("update_failed");
         let data = dir.path().join("data");
         fs::create_dir_all(&data).unwrap();
         let (a, calls_a) = stub("a", "A", None);
@@ -1851,7 +1851,7 @@ mod tests {
     // ST-UPD-01
     #[test]
     fn a_window_left_open_checks_again_once_the_period_passes() {
-        let dir = TestDir::new("studio_core_update_again");
+        let dir = TestDir::new("update_again");
         let (a, calls_a) = stub("a", "A", None);
         let mut settings = test_settings(dir.path());
         settings.common.check_for_updates = true;
@@ -1922,7 +1922,7 @@ mod tests {
     // ST-UPD-01
     #[test]
     fn a_failed_check_retries_only_once_the_period_passes() {
-        let dir = TestDir::new("studio_core_update_backoff");
+        let dir = TestDir::new("update_backoff");
         let (a, calls_a) = stub("a", "A", None);
         let mut settings = test_settings(dir.path());
         settings.common.check_for_updates = true;
@@ -1989,7 +1989,7 @@ mod tests {
     #[test]
     fn an_idle_window_wakes_for_the_moment_a_check_falls_due() {
         for check_on in [true, false] {
-            let dir = TestDir::new("studio_core_update_repaint");
+            let dir = TestDir::new(&format!("update_repaint_{check_on}"));
             let (a, calls_a) = stub("a", "A", None);
             let mut settings = test_settings(dir.path());
             settings.common.check_for_updates = check_on;
@@ -2060,7 +2060,7 @@ mod tests {
     #[test]
     fn the_frame_that_drains_a_check_schedules_the_next_one() {
         for succeeds in [true, false] {
-            let dir = TestDir::new("studio_core_update_drain_wake");
+            let dir = TestDir::new(&format!("update_drain_wake_{succeeds}"));
             let (a, calls_a) = stub("a", "A", None);
             let mut settings = test_settings(dir.path());
             settings.common.check_for_updates = true;
@@ -2145,7 +2145,7 @@ mod tests {
     // ST-UPD-01
     #[test]
     fn a_later_checks_newer_release_replaces_the_offer() {
-        let dir = TestDir::new("studio_core_update_newer");
+        let dir = TestDir::new("update_newer");
         let (a, calls_a) = stub("a", "A", None);
         let mut settings = test_settings(dir.path());
         settings.common.check_for_updates = true;
@@ -2217,7 +2217,7 @@ mod tests {
     // ST-UPD-01
     #[test]
     fn a_shell_reopened_right_after_its_check_checks_again() {
-        let dir = TestDir::new("studio_core_update_reopened");
+        let dir = TestDir::new("update_reopened");
         let data = dir.path().join("data");
         fs::create_dir_all(&data).unwrap();
         let (a, calls_a) = stub("a", "A", None);
@@ -2292,7 +2292,7 @@ mod tests {
             (Some("0.0.10"), false),
             (Some("not a version"), false),
         ] {
-            let dir = TestDir::new("studio_core_updated_to");
+            let dir = TestDir::new(&format!("updated_to_{}", stored.unwrap_or("none")));
             let file = dir.path().join(crate::settings::SETTINGS_FILE_NAME);
             assert!(!file.exists(), "the premise: no settings file yet");
             let (_app, _egui_ctx, nodes) = started_as_0_0_2(&dir, stored);
@@ -2322,7 +2322,7 @@ mod tests {
     // ST-UPD-06
     #[test]
     fn the_updated_to_notices_whats_new_opens_the_help_on_the_changelog() {
-        let dir = TestDir::new("studio_core_updated_whats_new");
+        let dir = TestDir::new("updated_whats_new");
         let (mut app, egui_ctx, nodes) = started_as_0_0_2(&dir, Some("0.0.1"));
         assert_eq!(app.help_window.showing(), None, "the help window is closed");
         click(&egui_ctx, &mut app, entry(&nodes, "What's new"));

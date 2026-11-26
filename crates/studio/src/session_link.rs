@@ -1131,7 +1131,7 @@ mod tests {
             (ExitCode::from(crate::gui_log::PANIC_EXIT), "crashed"),
             (ExitCode::SUCCESS, "closed"),
         ] {
-            let dir = TestDir::new("session_close_by_code");
+            let dir = TestDir::new(&format!("session_close_by_code_{how}"));
             let recorder = Recorder::default();
             let header = header(4242);
             let link = start(

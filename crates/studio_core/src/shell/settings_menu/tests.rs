@@ -62,7 +62,7 @@ fn the_gear_opens_the_menu_on_the_active_tools_section_and_resets_each_opening()
     let (c, calls_c) = stub("c", "C", None);
     // A tool with no settings form gets no section.
     *calls_c.has_settings_view.lock().unwrap() = false;
-    let dir = TestDir::new("studio_core_settings_sections");
+    let dir = TestDir::new("settings_sections");
     let Shell { mut app, ctx, .. } = shell_with(
         test_settings(dir.path()),
         vec![a, b, c],
@@ -172,7 +172,7 @@ fn a_tool_with_settings_but_no_form_has_no_section() {
         ("recent_files".to_owned(), toml::Value::Array(Vec::new())),
     ]);
     *calls_c.has_settings_view.lock().unwrap() = false;
-    let dir = TestDir::new("studio_core_settings_no_form");
+    let dir = TestDir::new("settings_no_form");
     let Shell { mut app, ctx, .. } = shell_with(
         test_settings(dir.path()),
         vec![a, c],
@@ -202,7 +202,7 @@ fn a_cli_only_tool_has_no_section_even_with_settings() {
         ("last_folder".to_owned(), toml::Value::String(String::new())),
         ("recent_files".to_owned(), toml::Value::Array(Vec::new())),
     ]);
-    let dir = TestDir::new("studio_core_settings_cli_only");
+    let dir = TestDir::new("settings_cli_only");
     let Shell { mut app, .. } = shell_in(
         test_settings(dir.path()),
         vec![a, c],
@@ -229,7 +229,7 @@ fn a_cli_only_tool_has_no_section_even_with_settings() {
 // ST-SET-02
 #[test]
 fn a_threads_change_writes_the_common_setting_and_keeps_the_tool_tables() {
-    let dir = test_dir("studio_core_settings_threads");
+    let dir = test_dir("settings_threads");
     let data = dir.join("data");
     fs::create_dir_all(&data).unwrap();
     let (a, calls_a) = stub("a", "A", None);
@@ -295,7 +295,7 @@ fn a_threads_change_writes_the_common_setting_and_keeps_the_tool_tables() {
 
 #[test]
 fn a_wheel_notch_over_threads_steps_the_thread_count_by_one() {
-    let dir = TestDir::new("studio_core_settings_threads_wheel");
+    let dir = TestDir::new("settings_threads_wheel");
     let (a, calls_a) = stub("a", "A", None);
     let Shell { mut app, ctx, .. } = shell_with(
         test_settings(dir.path()),
@@ -324,7 +324,7 @@ fn a_wheel_notch_over_threads_steps_the_thread_count_by_one() {
 
 #[test]
 fn an_arrow_up_on_the_threads_box_steps_the_thread_count_by_one() {
-    let dir = TestDir::new("studio_core_settings_threads_arrow");
+    let dir = TestDir::new("settings_threads_arrow");
     let (a, calls_a) = stub("a", "A", None);
     let Shell { mut app, ctx, .. } = shell_with(
         test_settings(dir.path()),
@@ -363,7 +363,7 @@ fn an_arrow_up_on_the_threads_box_steps_the_thread_count_by_one() {
 // settings allow `0 < percent <= 100`).
 #[test]
 fn the_memory_cap_row_accepts_a_fraction_of_a_percent() {
-    let dir = TestDir::new("studio_core_settings_memcap");
+    let dir = TestDir::new("settings_memcap");
     let (a, calls_a) = stub("a", "A", None);
     let settings = test_settings(dir.path());
     assert_ne!(
@@ -401,7 +401,7 @@ fn the_memory_cap_row_accepts_a_fraction_of_a_percent() {
 // after it as the row's own text.
 #[test]
 fn the_memory_cap_box_holds_the_number_and_the_percent_sign_follows_it() {
-    let dir = TestDir::new("studio_core_settings_memcap_percent");
+    let dir = TestDir::new("settings_memcap_percent");
     let (a, calls_a) = stub("a", "A", None);
     let Shell { mut app, .. } = shell_with(
         test_settings(dir.path()),
@@ -438,7 +438,7 @@ fn the_memory_cap_box_holds_the_number_and_the_percent_sign_follows_it() {
 // typed value writes the common setting.
 #[test]
 fn the_hide_id_rows_write_the_common_settings() {
-    let dir = TestDir::new("studio_core_settings_hide_ids");
+    let dir = TestDir::new("settings_hide_ids");
     let (a, calls_a) = stub("a", "A", None);
     let settings = test_settings(dir.path());
     assert_ne!(
@@ -507,7 +507,7 @@ fn the_hide_id_rows_write_the_common_settings() {
 // `check_for_updates`.
 #[test]
 fn the_update_check_row_writes_the_common_setting() {
-    let dir = TestDir::new("studio_core_settings_update_rows");
+    let dir = TestDir::new("settings_update_rows");
     let (a, calls_a) = stub("a", "A", None);
     let Shell { mut app, ctx, .. } = shell_with(
         test_settings(dir.path()),
@@ -553,7 +553,7 @@ fn the_update_check_row_writes_the_common_setting() {
 #[test]
 fn opening_the_menu_keeps_a_thread_count_above_the_core_count() {
     let (a, calls_a) = stub("a", "A", None);
-    let dir = TestDir::new("studio_core_settings_no_clamp");
+    let dir = TestDir::new("settings_no_clamp");
     let mut settings = test_settings(dir.path());
     settings.common.thread_count = 4096;
     let Shell { mut app, ctx, .. } = shell_with(
@@ -576,7 +576,7 @@ fn opening_the_menu_keeps_a_thread_count_above_the_core_count() {
 // the next frame. No acceptance scenario covers it.
 #[test]
 fn the_theme_setting_decides_and_a_pick_applies_at_the_next_frame() {
-    let dir = test_dir("studio_core_settings_theme");
+    let dir = test_dir("settings_theme");
     let data = dir.join("data");
     fs::create_dir_all(&data).unwrap();
     let (a, calls_a) = stub("a", "A", None);
@@ -646,7 +646,7 @@ fn the_theme_setting_decides_and_a_pick_applies_at_the_next_frame() {
 // shell turns the wheel over number boxes by it from the next frame on.
 #[test]
 fn the_invert_number_scrolling_row_writes_the_setting_and_turns_the_wheel() {
-    let dir = TestDir::new("studio_core_settings_invert_wheel");
+    let dir = TestDir::new("settings_invert_wheel");
     let (a, calls_a) = stub("a", "A", None);
     let Shell { mut app, ctx, .. } = shell_with(
         test_settings(dir.path()),
@@ -730,7 +730,7 @@ fn the_invert_number_scrolling_row_writes_the_setting_and_turns_the_wheel() {
 // keystroke.
 #[test]
 fn a_path_row_commits_on_enter_not_per_keystroke() {
-    let dir = test_dir("studio_core_settings_path_commit");
+    let dir = test_dir("settings_path_commit");
     let data = dir.join("data");
     fs::create_dir_all(&data).unwrap();
     let (a, calls_a) = stub("a", "A", None);
@@ -796,7 +796,7 @@ fn a_path_row_commits_on_enter_not_per_keystroke() {
 // only on the edit's own focus loss, not on an Alt+Tab.
 #[test]
 fn a_path_row_edit_survives_the_window_losing_focus() {
-    let dir = test_dir("studio_core_settings_focus_loss");
+    let dir = test_dir("settings_focus_loss");
     let data = dir.join("data");
     fs::create_dir_all(&data).unwrap();
     let (a, calls_a) = stub("a", "A", None);
@@ -856,7 +856,7 @@ fn a_path_row_edit_survives_the_window_losing_focus() {
 // `rfd`'s native dialog, so the test sees the button, never a click.
 #[test]
 fn a_path_row_draws_browse_right_of_the_edit() {
-    let dir = TestDir::new("studio_core_settings_browse");
+    let dir = TestDir::new("settings_browse");
     let (a, calls_a) = stub("a", "A", None);
     let Shell { mut app, .. } = shell_with(
         test_settings(dir.path()),
@@ -885,7 +885,7 @@ fn a_path_row_draws_browse_right_of_the_edit() {
 // 7 under a field's box, 8 under another square and 7 above the next field.
 #[test]
 fn the_common_fields_stand_24_apart_and_the_checkboxes_squares_8() {
-    let dir = TestDir::new("studio_core_settings_row_gaps");
+    let dir = TestDir::new("settings_row_gaps");
     let (a, calls_a) = stub("a", "A", None);
     let Shell { mut app, .. } = shell_with(
         test_settings(dir.path()),
@@ -978,7 +978,7 @@ fn a_menu_pick_writes_pes_version_and_spends_the_auto_switch() {
         }]
     }
     let (a, calls_a) = stub("a", "A", None);
-    let dir = TestDir::new("studio_core_settings_pick");
+    let dir = TestDir::new("settings_pick");
     let mut settings = test_settings(dir.path());
     settings.common.pes_version = PesVersion::Pes19;
     let Shell { mut app, ctx, .. } = shell_with(
@@ -1019,7 +1019,7 @@ fn a_menu_pick_writes_pes_version_and_spends_the_auto_switch() {
 fn a_blocking_tool_disables_the_menu_version_row_with_its_reason() {
     let (a, calls_a) = stub("a", "A", Some("a compile is running"));
     let (b, calls_b) = stub("b", "B", None);
-    let dir = TestDir::new("studio_core_settings_blocked");
+    let dir = TestDir::new("settings_blocked");
     let Shell { mut app, .. } = shell_with(
         test_settings(dir.path()),
         vec![a, b],
@@ -1052,7 +1052,7 @@ fn a_blocking_tool_disables_the_menu_version_row_with_its_reason() {
 fn a_notice_with_open_settings_opens_the_menu_on_the_active_tool() {
     let (a, calls_a) = stub("a", "A", None);
     let (b, calls_b) = stub("b", "B", None);
-    let dir = TestDir::new("studio_core_settings_notice");
+    let dir = TestDir::new("settings_notice");
     let Shell { mut app, ctx, .. } = shell_with(
         test_settings(dir.path()),
         vec![a, b],
@@ -1087,7 +1087,7 @@ fn a_notice_with_open_settings_opens_the_menu_on_the_active_tool() {
 #[test]
 fn a_row_labels_tooltip_leads_with_the_settings_key() {
     let (a, calls_a) = stub("a", "A", None);
-    let dir = TestDir::new("studio_core_settings_tooltip");
+    let dir = TestDir::new("settings_tooltip");
     let Shell { mut app, .. } = shell_with(
         test_settings(dir.path()),
         vec![a],
@@ -1192,7 +1192,7 @@ fn a_picked_pes_folder_stores_the_year_as_the_pattern() {
 // ST-SET-04
 #[test]
 fn a_folder_per_version_overrides_the_main_row_until_emptied() {
-    let dir = TestDir::new("studio_core_settings_per_version");
+    let dir = TestDir::new("settings_per_version");
     let data = dir.path().join("data");
     fs::create_dir_all(&data).unwrap();
     let (a, calls_a) = stub("a", "A", None);
@@ -1350,7 +1350,7 @@ fn a_folder_per_version_overrides_the_main_row_until_emptied() {
 // ST-SET-04
 #[test]
 fn emptying_the_last_folder_of_a_version_leaves_the_rows_shown() {
-    let dir = TestDir::new("studio_core_settings_per_version_reopened");
+    let dir = TestDir::new("settings_per_version_reopened");
     let data = dir.path().join("data");
     fs::create_dir_all(&data).unwrap();
     let (a, calls_a) = stub("a", "A", None);
@@ -1414,7 +1414,7 @@ fn emptying_the_last_folder_of_a_version_leaves_the_rows_shown() {
 fn every_path_edit_shows_steams_pes_2019_folder_whole() {
     const STEAM_2019: &str =
         r"C:\Program Files (x86)\Steam\steamapps\common\Pro Evolution Soccer 2019";
-    let dir = TestDir::new("studio_core_settings_path_width");
+    let dir = TestDir::new("settings_path_width");
     let (a, calls_a) = stub("a", "A", None);
     *calls_a.file_row.lock().unwrap() = Some(STEAM_2019.to_owned());
     let mut settings = test_settings(dir.path());
@@ -1518,7 +1518,7 @@ fn every_path_edit_shows_steams_pes_2019_folder_whole() {
 // margin.
 #[test]
 fn the_menu_starts_its_grid_12_under_the_title_and_ends_in_close_at_the_right() {
-    let dir = TestDir::new("studio_core_settings_window");
+    let dir = TestDir::new("settings_window");
     let (a, calls_a) = stub("a", "A", None);
     let Shell { mut app, .. } = shell_with(
         test_settings(dir.path()),

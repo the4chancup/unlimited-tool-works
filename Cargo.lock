@@ -1637,6 +1637,7 @@ version = "0.0.2"
 dependencies = [
  "proc-macro2",
  "syn 3.0.5",
+ "test_scratch",
 ]
 
 [[package]]
@@ -2836,6 +2837,7 @@ name = "music_export"
 version = "0.0.2"
 dependencies = [
  "indexmap",
+ "test_scratch",
  "thiserror 2.0.20",
 ]
 
@@ -3490,6 +3492,7 @@ dependencies = [
  "pes_version",
  "serde",
  "sha2",
+ "test_scratch",
  "thiserror 2.0.20",
  "toml_edit 0.23.10+spec-1.0.0",
 ]
@@ -4814,6 +4817,7 @@ dependencies = [
  "sevenz-rust2",
  "sha2",
  "tar",
+ "test_scratch",
  "thiserror 2.0.20",
  "toml",
  "toml_edit 0.23.10+spec-1.0.0",
@@ -4973,6 +4977,7 @@ dependencies = [
 name = "test_runner"
 version = "0.0.2"
 dependencies = [
+ "test_scratch",
  "windows",
 ]
 

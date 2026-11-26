@@ -1255,7 +1255,7 @@ mod tests {
     // ST-REP-06
     #[test]
     fn a_session_folder_holds_the_record_and_bundles_it() {
-        let dir = TestDir::new("studio_core_session");
+        let dir = TestDir::new("session");
         let root = dir.path().join("sessions");
         let mut writer = SessionWriter::new(&root, header(4242));
         for message in messages() {
@@ -1338,7 +1338,7 @@ mod tests {
     // ST-REP-07
     #[test]
     fn the_first_end_block_says_how_the_session_ended() {
-        let dir = TestDir::new("studio_core_session_end");
+        let dir = TestDir::new("session_end");
         let root = dir.path().join("sessions");
         let mut writer = SessionWriter::new(&root, header(4242));
         for message in messages() {
@@ -1376,7 +1376,7 @@ mod tests {
     // ST-REP-07
     #[test]
     fn a_journal_block_cut_mid_write_is_dropped() {
-        let dir = TestDir::new("studio_core_session_cut");
+        let dir = TestDir::new("session_cut");
         let folder = dir.path().join("2026-11-21-093015-4242");
         fs::create_dir(&folder).unwrap();
         let head = "version = \"v-test\"\nos = \"test-os\"\n\
@@ -1425,7 +1425,7 @@ mod tests {
     // ST-REP-06
     #[test]
     fn two_tools_writing_one_path_keep_two_outputs() {
-        let dir = TestDir::new("studio_core_session_two_tools");
+        let dir = TestDir::new("session_two_tools");
         let root = dir.path().join("sessions");
         let mut writer = SessionWriter::new(&root, header(4242));
         for tool in ["stub", "other"] {
@@ -1450,7 +1450,7 @@ mod tests {
     // ST-REP-06
     #[test]
     fn the_session_keeps_every_input_and_the_outputs_in_write_order() {
-        let dir = TestDir::new("studio_core_session_files");
+        let dir = TestDir::new("session_files");
         let root = dir.path().join("sessions");
         let mut writer = SessionWriter::new(&root, header(4242));
         for (path, bytes) in [
@@ -1506,7 +1506,7 @@ mod tests {
     // ST-REP-08
     #[test]
     fn a_new_session_keeps_only_the_five_newest_session_folders() {
-        let dir = TestDir::new("studio_core_session_prune");
+        let dir = TestDir::new("session_prune");
         let root = dir.path().join("sessions");
         for day in 10..=16 {
             fs::create_dir_all(root.join(format!("2026-11-{day}-120000-1"))).unwrap();
@@ -1557,7 +1557,7 @@ mod tests {
     // ST-REP-08
     #[test]
     fn a_session_that_records_nothing_leaves_no_folder() {
-        let dir = TestDir::new("studio_core_session_empty");
+        let dir = TestDir::new("session_empty");
         let root = dir.path().join("sessions");
         let mut writer = SessionWriter::new(&root, header(4242));
         writer.end(SessionEnd::Closed).unwrap();
@@ -1569,7 +1569,7 @@ mod tests {
     // `~` in step lines and file paths, as `write_bundle` does.
     #[test]
     fn the_bundle_redacts_the_home_folder_the_journal_keeps_it_whole() {
-        let dir = TestDir::new("studio_core_session_redact");
+        let dir = TestDir::new("session_redact");
         let root = dir.path().join("sessions");
         let mut writer = SessionWriter::new(&root, header(4242));
         writer
@@ -1693,7 +1693,7 @@ mod tests {
     // ST-REP-10
     #[test]
     fn a_second_writer_adopts_the_folder_and_writes_on() {
-        let dir = TestDir::new("studio_core_session_adopt");
+        let dir = TestDir::new("session_adopt");
         let root = dir.path().join("sessions");
         let mut first = SessionWriter::new(&root, header(4242));
         for (path, bytes) in [
@@ -1763,7 +1763,7 @@ mod tests {
     // ST-REP-10
     #[test]
     fn an_unreadable_journal_is_an_error_not_a_fresh_folder() {
-        let dir = TestDir::new("studio_core_session_journal_dir");
+        let dir = TestDir::new("session_journal_dir");
         let root = dir.path().join("sessions");
         let folder = root.join("2026-11-21-093015-4242");
         fs::create_dir_all(folder.join("journal.toml")).unwrap();
@@ -1794,7 +1794,7 @@ mod tests {
     // ST-REP-10
     #[test]
     fn adoption_keeps_one_index_per_tool_and_path() {
-        let dir = TestDir::new("studio_core_session_adopt_dedupe");
+        let dir = TestDir::new("session_adopt_dedupe");
         let root = dir.path().join("sessions");
         let mut first = SessionWriter::new(&root, header(4242));
         for (tool, path, bytes) in [
@@ -1840,7 +1840,7 @@ mod tests {
     // ST-REP-10
     #[test]
     fn adoption_cuts_the_journal_back_to_its_last_marker() {
-        let dir = TestDir::new("studio_core_session_adopt_cut");
+        let dir = TestDir::new("session_adopt_cut");
         let root = dir.path().join("sessions");
         let mut first = SessionWriter::new(&root, header(4242));
         first
@@ -1885,7 +1885,7 @@ mod tests {
     // ST-REP-10
     #[test]
     fn an_end_before_any_write_adopts_the_folder_and_ends_it() {
-        let dir = TestDir::new("studio_core_session_end_adopt");
+        let dir = TestDir::new("session_end_adopt");
         let root = dir.path().join("sessions");
         let mut first = SessionWriter::new(&root, header(4242));
         first
@@ -1912,7 +1912,7 @@ mod tests {
     // ST-REP-10
     #[test]
     fn an_adopted_end_counts_as_the_first() {
-        let dir = TestDir::new("studio_core_session_end_twice");
+        let dir = TestDir::new("session_end_twice");
         let root = dir.path().join("sessions");
         let mut first = SessionWriter::new(&root, header(4242));
         first
@@ -2031,7 +2031,7 @@ mod tests {
     // the window's own, which the list never holds.
     #[test]
     fn earlier_sessions_lists_each_kept_session_newest_first() {
-        let dir = TestDir::new("studio_core_earlier_sessions");
+        let dir = TestDir::new("earlier_sessions");
         let root = dir.path().join("sessions");
         let input = |tool: &str, path: &str, bytes: &'static [u8]| SessionMessage::Input {
             tool: tool.to_owned(),
@@ -2150,7 +2150,7 @@ mod tests {
     // ST-REP-06
     #[test]
     fn a_packed_input_is_kept_compressed_and_rebuilt() {
-        let dir = TestDir::new("studio_core_session_packed");
+        let dir = TestDir::new("session_packed");
         // The toy pack keeps the file's first half; `rebuild` doubles
         // it back, the halves being equal. Shorter than the file, so a
         // row's `size` holding the packed form's length stands out.
@@ -2210,7 +2210,7 @@ mod tests {
     // checks like a raw entry's do.
     #[test]
     fn a_rebuilt_entry_mismatching_its_row_is_refused() {
-        let dir = TestDir::new("studio_core_session_bad_rebuild");
+        let dir = TestDir::new("session_bad_rebuild");
         let raw = b"THE_FILE_BYTES".to_vec();
         let form: Vec<u8> = raw.iter().rev().copied().collect();
         let folder = packed_folder(

@@ -127,7 +127,7 @@ fn save_through(
 // ST-REP-01
 #[test]
 fn the_entry_opens_the_dialog_from_the_rail_and_the_opened_sidebar() {
-    let dir = TestDir::new("studio_core_report_open");
+    let dir = TestDir::new("report_open");
     let Shell {
         mut app, ctx, _dir, ..
     } = shell();
@@ -181,7 +181,7 @@ fn the_entry_opens_the_dialog_from_the_rail_and_the_opened_sidebar() {
 // three kept inputs read ", and 2 more".
 #[test]
 fn the_opened_clause_names_the_first_input_and_counts_the_rest() {
-    let dir = TestDir::new("studio_core_report_more_inputs");
+    let dir = TestDir::new("report_more_inputs");
     let Shell {
         mut app, ctx, _dir, ..
     } = shell();
@@ -250,7 +250,7 @@ fn the_list_holds_the_fixed_lines_only_when_nothing_was_recorded() {
 // ST-REP-02
 #[test]
 fn save_writes_the_bundle_at_the_picked_path_and_the_words_stay() {
-    let dir = TestDir::new("studio_core_report_bundle");
+    let dir = TestDir::new("report_bundle");
     let home = dir.path().join("member");
     fs::create_dir_all(&home).unwrap();
     let out = home.join("utw-report.zip");
@@ -401,7 +401,7 @@ fn save_writes_the_bundle_at_the_picked_path_and_the_words_stay() {
 // Save… stood, even for a path too long for one line.
 #[test]
 fn the_buttons_do_not_move_when_the_saved_line_shows() {
-    let dir = TestDir::new("studio_core_report_gap");
+    let dir = TestDir::new("report_gap");
     let deep = dir
         .path()
         .join("a folder whose name is long enough")
@@ -440,7 +440,7 @@ fn the_readme_is_the_core_part_alone_when_no_tool_has_a_part() {
 // `missing` names it — the dialog lists `utw.log` among the contents.
 #[test]
 fn a_bundle_without_a_log_names_utw_log_under_missing() {
-    let dir = TestDir::new("studio_core_report_no_log");
+    let dir = TestDir::new("report_no_log");
     let out = dir.path().join("utw-report.zip");
     let Shell { mut app, _dir, .. } = shell();
     let egui_ctx = test_context();
@@ -469,7 +469,7 @@ fn a_bundle_without_a_log_names_utw_log_under_missing() {
 // ST-REP-03
 #[test]
 fn a_cancelled_or_failed_save_writes_nothing_and_keeps_save() {
-    let dir = TestDir::new("studio_core_report_failed");
+    let dir = TestDir::new("report_failed");
     let Shell { mut app, _dir, .. } = shell();
     let egui_ctx = test_context();
     let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
@@ -577,7 +577,7 @@ fn cancel_and_escape_close_the_dialog_and_keep_the_words() {
 // recorded in: B records before A, and A is listed first.
 #[test]
 fn the_tools_lines_follow_the_sidebar_order() {
-    let dir = TestDir::new("studio_core_report_order");
+    let dir = TestDir::new("report_order");
     let Shell {
         mut app, ctx, _dir, ..
     } = shell();
@@ -620,7 +620,7 @@ fn save_offers_the_suggested_file_name() {
 // recorded while it is up shows at the next open.
 #[test]
 fn the_lines_are_built_at_open() {
-    let dir = TestDir::new("studio_core_report_built_once");
+    let dir = TestDir::new("report_built_once");
     let Shell {
         mut app, ctx, _dir, ..
     } = shell();
@@ -645,7 +645,7 @@ fn the_lines_are_built_at_open() {
 // at its first line's top.
 #[test]
 fn a_long_line_wraps_inside_the_dialog() {
-    let dir = TestDir::new("studio_core_report_wrap");
+    let dir = TestDir::new("report_wrap");
     let Shell {
         mut app, ctx, _dir, ..
     } = shell();
@@ -684,7 +684,7 @@ fn a_long_line_wraps_inside_the_dialog() {
 // over the 15), and the 84-point box right under its label.
 #[test]
 fn the_rows_and_the_box_stand_as_the_draft_spaces_them() {
-    let dir = TestDir::new("studio_core_report_rows");
+    let dir = TestDir::new("report_rows");
     let Shell {
         mut app, ctx, _dir, ..
     } = shell();
@@ -810,7 +810,7 @@ fn session_folder(
 // ST-REP-09
 #[test]
 fn the_box_lists_the_kept_sessions_and_ticked_packs_each() {
-    let dir = TestDir::new("studio_core_report_sessions");
+    let dir = TestDir::new("report_sessions");
     let Shell {
         mut app, ctx, _dir, ..
     } = shell();
@@ -1236,7 +1236,7 @@ fn a_tools_line_reads_whole() {
 // found there, every outcome on its own line.
 #[test]
 fn installs_names_each_versions_folder_and_check() {
-    let dir = TestDir::new("studio_core_report_installs");
+    let dir = TestDir::new("report_installs");
     let games = dir.path().join("games");
     for (folder, exe) in [
         ("PES 2015", Some("PES2015.exe")),

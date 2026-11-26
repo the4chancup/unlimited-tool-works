@@ -20,7 +20,7 @@ use crate::plan::ExportToPlan;
 use crate::settings::default_table;
 use crate::templates::Templates;
 
-/// A test's temporary folder, removed when the guard drops (a test that panics included).
+/// A test's scratch folder, made by `scratch`.
 pub(crate) struct ScratchFolder {
     path: PathBuf,
 }
@@ -31,24 +31,16 @@ impl ScratchFolder {
     }
 }
 
-impl Drop for ScratchFolder {
-    fn drop(&mut self) {
-        // Best effort: the cleanup must not mask the test's result (a panic here during a failed
-        // test's unwind would abort the whole test process), so a folder that cannot be removed
-        // (a handle still open on Windows) is only logged.
-        if let Err(error) = fs::remove_dir_all(&self.path) {
-            log::debug!("{}: not removed: {error}", self.path.display());
-        }
-    }
-}
-
-/// A fresh, empty `<temp>/team_compiler_<name>_<pid>` folder; `name` is unique per test.
+/// A fresh, empty scratch folder for `name` under the test binary's build folder
+/// (`target/<profile>/team_compiler_tests/<name>`): per checkout, so a mutation run's copy
+/// has its own. A passing test's folder is removed when its thread ends; a panicking
+/// test's stays for reading and is emptied at the start of its next run. `name` is unique
+/// per test.
 pub(crate) fn scratch(name: &str) -> ScratchFolder {
-    let path = std::env::temp_dir().join(format!("team_compiler_{name}_{}", std::process::id()));
-    if path.exists() {
-        fs::remove_dir_all(&path).unwrap();
-    }
-    fs::create_dir_all(&path).unwrap();
+    let path = test_scratch::fresh(
+        &test_scratch::build_folder().join("team_compiler_tests"),
+        name,
+    );
     ScratchFolder { path }
 }
 

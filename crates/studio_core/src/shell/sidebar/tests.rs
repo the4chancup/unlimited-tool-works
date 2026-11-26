@@ -194,7 +194,7 @@ fn the_gui_opens_on_the_tool_last_tool_names_and_lists_all_tools() {
     let (a, calls_a) = stub("a", "A", None);
     let (b, calls_b) = stub("b", "B", None);
     let (c, calls_c) = stub("c", "C", None);
-    let dir = TestDir::new("studio_core_sidebar_last_named");
+    let dir = TestDir::new("sidebar_last_named");
     let mut settings = test_settings(dir.path());
     settings.common.last_tool = Some("b".to_owned());
     let Shell { mut app, calls, .. } = shell_with(
@@ -740,7 +740,7 @@ fn the_overlay_opens_on_keyboard_focus_and_a_click_gives_none() {
 fn the_overlay_is_as_wide_as_the_longest_label_on_one_line() {
     let (a, calls_a) = stub("a", "A", None);
     let (b, calls_b) = stub("b", "Player aesthetics editor", None);
-    let dir = TestDir::new("studio_core_sidebar_width");
+    let dir = TestDir::new("sidebar_width");
     let Shell { mut app, .. } = shell_with(
         test_settings(dir.path()),
         vec![a, b],
@@ -856,7 +856,7 @@ fn the_labels_are_painted_in_the_overlay_and_never_on_the_rail() {
     }];
     let (a, calls_a) = stub("a", "A", None);
     let (b, calls_b) = stub("b", "B", None);
-    let dir = TestDir::new("studio_core_sidebar_painted_labels");
+    let dir = TestDir::new("sidebar_painted_labels");
     let Shell { mut app, .. } = shell_with(
         test_settings(dir.path()),
         vec![a, b],
@@ -1176,7 +1176,7 @@ fn the_selector_is_colored_by_the_exe_found_in_the_pes_folder() {
         |app: &StudioApp| selector_color(app.sidebar.exe_check.as_ref().unwrap().2, &visuals);
 
     // Another version's exe: red, the tooltip names what was found.
-    let dir = test_dir("studio_core_sidebar_pes19");
+    let dir = test_dir("sidebar_pes19");
     fs::create_dir_all(&dir).unwrap();
     fs::write(dir.join("PES2019.exe"), b"").unwrap();
     let Shell { mut app, .. } = with_pes_folder(&dir);
@@ -1195,7 +1195,7 @@ fn the_selector_is_colored_by_the_exe_found_in_the_pes_folder() {
     fs::remove_dir_all(&dir).unwrap();
 
     // No PES exe: amber, the tooltip says none was found.
-    let dir = test_dir("studio_core_sidebar_noexe");
+    let dir = test_dir("sidebar_noexe");
     fs::create_dir_all(&dir).unwrap();
     let Shell { mut app, .. } = with_pes_folder(&dir);
     frame(&egui_ctx, &mut app, Vec::new(), true);
@@ -1213,7 +1213,7 @@ fn the_selector_is_colored_by_the_exe_found_in_the_pes_folder() {
 
     // A name the games never ship is not an exe either: `PES20021.exe` is not PES 21's
     // (`PES2021.exe`), so the folder reads as no exe at all.
-    let dir = test_dir("studio_core_sidebar_pes20021");
+    let dir = test_dir("sidebar_pes20021");
     fs::create_dir_all(&dir).unwrap();
     fs::write(dir.join("PES20021.exe"), b"").unwrap();
     let Shell { mut app, .. } = with_pes_folder(&dir);
@@ -1227,7 +1227,7 @@ fn the_selector_is_colored_by_the_exe_found_in_the_pes_folder() {
 
     // A directory named like the exe is not an exe (the compiler's preflight
     // counts files only): amber like an empty folder.
-    let dir = test_dir("studio_core_sidebar_dir_named_exe");
+    let dir = test_dir("sidebar_dir_named_exe");
     fs::create_dir_all(dir.join("PES2021.exe")).unwrap();
     let Shell { mut app, .. } = with_pes_folder(&dir);
     frame(&egui_ctx, &mut app, Vec::new(), true);
@@ -1239,7 +1239,7 @@ fn the_selector_is_colored_by_the_exe_found_in_the_pes_folder() {
     fs::remove_dir_all(&dir).unwrap();
 
     // The folder missing: amber too, the tooltip names it.
-    let dir = test_dir("studio_core_sidebar_missing");
+    let dir = test_dir("sidebar_missing").join("missing");
     let Shell { mut app, .. } = with_pes_folder(&dir);
     frame(&egui_ctx, &mut app, Vec::new(), true);
     assert_eq!(
@@ -1254,7 +1254,7 @@ fn the_selector_is_colored_by_the_exe_found_in_the_pes_folder() {
     ));
 
     // The selected version's exe: no colour.
-    let dir = test_dir("studio_core_sidebar_pes21");
+    let dir = test_dir("sidebar_pes21");
     fs::create_dir_all(&dir).unwrap();
     fs::write(dir.join("PES2021.exe"), b"").unwrap();
     let Shell { mut app, .. } = with_pes_folder(&dir);
@@ -1310,7 +1310,7 @@ fn the_light_themes_selector_colours_read_on_the_buttons_fill() {
 #[test]
 fn the_exe_check_relists_on_a_change_or_on_focus_never_per_frame() {
     let egui_ctx = test_context();
-    let dir = TestDir::new("studio_core_sidebar_recheck");
+    let dir = TestDir::new("sidebar_recheck");
     fs::write(dir.path().join("PES2021.exe"), b"").unwrap();
 
     let (a, calls_a) = stub("a", "A", None);
@@ -1358,7 +1358,7 @@ fn a_version_change_blocker_disables_the_selector_and_a_pick_saves_the_version()
     // While a tool blocks, the selector is disabled and its tooltip is the reason.
     let (a, calls_a) = stub("a", "A", Some("a compile is running"));
     let (b, calls_b) = stub("b", "B", None);
-    let dir = test_dir("studio_core_sidebar_blocked");
+    let dir = test_dir("sidebar_blocked");
     fs::create_dir_all(&dir).unwrap();
     let Shell {
         mut app, settings, ..
@@ -1423,7 +1423,7 @@ fn a_version_change_blocker_disables_the_selector_and_a_pick_saves_the_version()
 
 #[test]
 fn a_wheel_notch_over_the_selector_steps_the_version_once_and_saves() {
-    let dir = TestDir::new("studio_core_sidebar_wheel");
+    let dir = TestDir::new("sidebar_wheel");
     let (a, calls_a) = stub("a", "A", None);
     let Shell {
         mut app, settings, ..
@@ -1501,7 +1501,7 @@ fn the_exe_tooltips_found_line_is_the_callers() {
 // line, never the selector's "this tool".
 #[test]
 fn the_settings_rows_tooltips_name_the_tools_with_one_game() {
-    let dir = TestDir::new("studio_core_settings_row_found_tip");
+    let dir = TestDir::new("settings_row_found_tip");
     fs::write(dir.path().join("PES2021.exe"), b"").unwrap();
     let (a, calls_a) = stub("a", "A", None);
     let mut settings = test_settings(dir.path());
@@ -1568,7 +1568,7 @@ fn under_a_tool_that_does_not_use_it_the_selector_stands_disabled_and_empty() {
     // Stub A targets the version, stub B does not. The resolved PES folder
     // holds no exe, so the exe check fails: under A the selector takes the
     // check's amber, the premise B must not share.
-    let dir = TestDir::new("studio_core_sidebar_not_targeted");
+    let dir = TestDir::new("sidebar_not_targeted");
     let (a, calls_a) = stub("a", "A", None);
     let (b, calls_b) = stub("b", "B", None);
     *calls_b.targets.lock().unwrap() = false;
@@ -1778,7 +1778,7 @@ fn under_a_tool_that_does_not_use_it_the_selector_stands_disabled_and_empty() {
 #[test]
 fn the_selectors_open_list_closes_when_a_tool_that_does_not_use_it_takes_over() {
     let egui_ctx = test_context();
-    let dir = TestDir::new("studio_core_sidebar_list_across_switch");
+    let dir = TestDir::new("sidebar_list_across_switch");
     let (a, calls_a) = stub("a", "A", None);
     let (b, calls_b) = stub("b", "B", None);
     *calls_b.targets.lock().unwrap() = false;
@@ -1832,7 +1832,7 @@ fn the_planned_tools_follow_the_registered_ones_grayed_and_inert() {
     ];
     let (a, calls_a) = stub("a", "A", None);
     let (b, calls_b) = stub("b", "B", None);
-    let dir = TestDir::new("studio_core_sidebar_planned");
+    let dir = TestDir::new("sidebar_planned");
     let Shell { mut app, .. } = shell_with(
         test_settings(dir.path()),
         vec![a, b],
@@ -1925,7 +1925,7 @@ fn a_cli_only_tool_is_a_planned_entry_never_active_and_still_registered() {
             messages: Vec::new(),
         },
     );
-    let dir = TestDir::new("studio_core_sidebar_cli_only");
+    let dir = TestDir::new("sidebar_cli_only");
     let mut settings = test_settings(dir.path());
     settings.common.last_tool = Some("c".to_owned());
     // C registered first, as `studio` registers the Compiler: the fallback must skip
@@ -2054,7 +2054,7 @@ fn a_cli_only_tool_is_a_planned_entry_never_active_and_still_registered() {
 // ST-SIDE-06
 #[test]
 fn the_logo_opens_about_and_copy_puts_the_version_block_on_the_clipboard() {
-    let dir = test_dir("studio_core_sidebar_about");
+    let dir = test_dir("sidebar_about");
     fs::create_dir_all(&dir).unwrap();
     let (a, calls_a) = stub("a", "A", None);
     let mut settings = test_settings(&dir);
@@ -2154,7 +2154,7 @@ fn the_logo_opens_about_and_copy_puts_the_version_block_on_the_clipboard() {
 // which a page's heading keeps.
 #[test]
 fn the_about_popups_title_is_14_points_and_strong() {
-    let dir = test_dir("studio_core_about_title");
+    let dir = test_dir("about_title");
     fs::create_dir_all(&dir).unwrap();
     let (a, calls_a) = stub("a", "A", None);
     let Shell { mut app, .. } = shell_with(
@@ -2518,7 +2518,7 @@ fn running_pes_2019(dir: &std::path::Path) -> (PathBuf, PathBuf) {
 
 #[test]
 fn the_poll_switches_to_the_running_version_once_and_offers_fix_pes_path() {
-    let dir = test_dir("studio_core_autoswitch");
+    let dir = test_dir("autoswitch");
     fs::create_dir_all(dir.join("data")).unwrap();
     let (running_folder, running_exe) = running_pes_2019(&dir);
     // The action is offered only for a folder that exists on this system: the running
@@ -2527,11 +2527,11 @@ fn the_poll_switches_to_the_running_version_once_and_offers_fix_pes_path() {
     fs::write(&running_exe, b"").unwrap();
 
     // The probe is a `fn`, so the exe path is rebuilt inside it (a closure could not be
-    // one): `test_dir` gives the same path.
+    // one): `test_dir_path` gives the same path, leaving the folder as it is.
     fn probe() -> Vec<RunningPes> {
         vec![RunningPes {
             version: PesVersion::Pes19,
-            exe: Some(running_pes_2019(&test_dir("studio_core_autoswitch")).1),
+            exe: Some(running_pes_2019(&test_dir_path("autoswitch")).1),
         }]
     }
 
@@ -2636,7 +2636,7 @@ fn a_version_change_blocker_defers_the_auto_switch_without_spending_it() {
         }]
     }
     let (a, calls_a) = stub("a", "A", Some("a compile is running"));
-    let dir = TestDir::new("studio_core_autoswitch_blocked");
+    let dir = TestDir::new("autoswitch_blocked");
     let mut settings = test_settings(dir.path());
     settings.common.pes_version = PesVersion::Pes21;
     let Shell {
@@ -2677,9 +2677,9 @@ fn a_version_change_blocker_defers_the_auto_switch_without_spending_it() {
 
 #[test]
 fn the_switch_notice_offers_fix_pes_path_only_when_the_exe_sits_elsewhere() {
-    // `test_dir`, not `TestDir`: the probes are `fn` items that recompute the path by
-    // name, which a `TestDir`'s counter suffix would break.
-    let dir = test_dir("studio_core_autoswitch_notice");
+    // The probes are `fn` items, which rebuild the folder's path by name through
+    // `test_dir_path`.
+    let dir = test_dir("autoswitch_notice");
     let egui_ctx = test_context();
 
     // The probe found no exe path: the notice has no action.
@@ -2692,7 +2692,7 @@ fn the_switch_notice_offers_fix_pes_path_only_when_the_exe_sits_elsewhere() {
     let (a, calls_a) = stub("a", "A", None);
     let mut settings = test_settings(&dir);
     settings.common.pes_version = PesVersion::Pes21;
-    let data = TestDir::new("studio_core_autoswitch_notice_data");
+    let data = TestDir::new("autoswitch_notice_data_no_exe");
     let Shell { mut app, .. } = shell_with(
         settings,
         vec![a],
@@ -2717,7 +2717,7 @@ fn the_switch_notice_offers_fix_pes_path_only_when_the_exe_sits_elsewhere() {
         vec![RunningPes {
             version: PesVersion::Pes19,
             exe: Some(
-                test_dir("studio_core_autoswitch_notice")
+                test_dir_path("autoswitch_notice")
                     .join("installed")
                     .join("Pro Evolution Soccer 2019")
                     .join("PES2019.exe"),
@@ -2735,7 +2735,7 @@ fn the_switch_notice_offers_fix_pes_path_only_when_the_exe_sits_elsewhere() {
         .join("Pro Evolution Soccer 20**")
         .display()
         .to_string();
-    let data = TestDir::new("studio_core_autoswitch_notice_data");
+    let data = TestDir::new("autoswitch_notice_data_matching");
     let Shell { mut app, .. } = shell_with(
         settings,
         vec![a],
@@ -2761,7 +2761,7 @@ fn the_switch_notice_offers_fix_pes_path_only_when_the_exe_sits_elsewhere() {
         vec![RunningPes {
             version: PesVersion::Pes19,
             exe: Some(
-                test_dir("studio_core_autoswitch_notice")
+                test_dir_path("autoswitch_notice")
                     .join("running-missing")
                     .join("Pro Evolution Soccer 2019")
                     .join("PES2019.exe"),
@@ -2771,7 +2771,7 @@ fn the_switch_notice_offers_fix_pes_path_only_when_the_exe_sits_elsewhere() {
     let (a, calls_a) = stub("a", "A", None);
     let mut settings = test_settings(&dir);
     settings.common.pes_version = PesVersion::Pes21;
-    let data = TestDir::new("studio_core_autoswitch_notice_data");
+    let data = TestDir::new("autoswitch_notice_data_missing_folder");
     let Shell { mut app, .. } = shell_with(
         settings,
         vec![a],
@@ -2795,7 +2795,7 @@ fn the_switch_notice_offers_fix_pes_path_only_when_the_exe_sits_elsewhere() {
 
 #[test]
 fn the_fix_pes_path_click_rewrites_the_year_the_notice_was_raised_for() {
-    let dir = test_dir("studio_core_autoswitch_fixpick");
+    let dir = test_dir("autoswitch_fixpick");
     fs::create_dir_all(dir.join("data")).unwrap();
     let (running_folder, running_exe) = running_pes_2019(&dir);
     fs::create_dir_all(&running_folder).unwrap();
@@ -2804,7 +2804,7 @@ fn the_fix_pes_path_click_rewrites_the_year_the_notice_was_raised_for() {
     fn probe() -> Vec<RunningPes> {
         vec![RunningPes {
             version: PesVersion::Pes19,
-            exe: Some(running_pes_2019(&test_dir("studio_core_autoswitch_fixpick")).1),
+            exe: Some(running_pes_2019(&test_dir_path("autoswitch_fixpick")).1),
         }]
     }
 
@@ -2866,7 +2866,7 @@ fn the_poll_takes_the_first_detected_game_and_stays_put_when_it_is_the_selection
         ]
     }
     let (a, calls_a) = stub("a", "A", None);
-    let dir = TestDir::new("studio_core_autoswitch_first");
+    let dir = TestDir::new("autoswitch_first");
     let mut settings = test_settings(dir.path());
     settings.common.pes_version = PesVersion::Pes19;
     let Shell { mut app, ctx, .. } = shell_with(
@@ -2906,7 +2906,7 @@ fn the_poll_calls_the_probe_every_five_seconds_and_schedules_its_repaint() {
     }
 
     let (a, calls_a) = stub("a", "A", None);
-    let dir = TestDir::new("studio_core_autoswitch_poll");
+    let dir = TestDir::new("autoswitch_poll");
     let Shell { mut app, .. } = shell_with(
         test_settings(dir.path()),
         vec![a],
@@ -3057,7 +3057,7 @@ const REGISTRY: &[PlannedTool] = &[
 /// planned entries: fourteen entries, as the build shows them.
 fn draft_window_shell() -> Shell {
     let (save_editor, calls) = stub("save-editor", "Save editor", None);
-    let dir = TestDir::new("studio_core_sidebar_draft_window");
+    let dir = TestDir::new(&format!("sidebar_draft_window-{}", this_test()));
     let mut shell = shell_with(
         test_settings(dir.path()),
         vec![save_editor],

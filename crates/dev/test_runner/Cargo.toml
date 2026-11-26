@@ -19,5 +19,8 @@ path = "src/bin/probe.rs"
 [target.'cfg(windows)'.dependencies]
 windows.workspace = true
 
+[dev-dependencies]
+test_scratch.workspace = true
+
 [lints]
 workspace = true

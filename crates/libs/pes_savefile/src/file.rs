@@ -876,14 +876,15 @@ mod tests {
         }
     }
 
-    /// A unique temp folder for the native save/load test.
+    /// A fresh, empty folder for the native save/load tests, under the test binary's
+    /// build folder (`target/<profile>/pes_savefile_tests/test_<name>`). A passing test's
+    /// folder is removed when its thread ends; a panicking test's stays for reading and
+    /// is emptied at the start of its next run.
     fn temp_dir(name: &str) -> std::path::PathBuf {
-        let dir =
-            std::env::temp_dir().join(format!("pes_savefile_test_{}_{}", name, std::process::id()));
-        if dir.exists() {
-            std::fs::remove_dir_all(&dir).expect("cleanup");
-        }
-        dir
+        test_scratch::fresh(
+            &test_scratch::build_folder().join("pes_savefile_tests"),
+            &format!("test_{name}"),
+        )
     }
 
     #[test]

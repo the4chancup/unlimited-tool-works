@@ -5,8 +5,15 @@
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
+/// A fresh, empty folder for a test's crate tree, under the integration tests' build
+/// folder (`target/tmp/extra_mutants_cli/cli_<name>`). A passing test's folder is removed
+/// when its thread ends; a panicking test's stays for reading and is emptied at the start
+/// of its next run.
 fn temp_dir(name: &str) -> PathBuf {
-    std::env::temp_dir().join(format!("extra_mutants_cli_{name}_{}", std::process::id()))
+    test_scratch::fresh(
+        &Path::new(env!("CARGO_TARGET_TMPDIR")).join("extra_mutants_cli"),
+        &format!("cli_{name}"),
+    )
 }
 
 fn write(dir: &Path, rel: &str, text: &str) {

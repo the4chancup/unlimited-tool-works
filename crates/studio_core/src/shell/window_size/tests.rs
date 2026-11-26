@@ -787,7 +787,7 @@ fn the_place_is_written_at_exit_and_the_next_start_opens_there() {
 #[test]
 fn a_place_on_no_monitor_opens_fitted_and_an_empty_list_trusts_it() {
     let egui_ctx = test_context();
-    let dir = TestDir::new("studio_core_window_place_offscreen");
+    let dir = TestDir::new("window_place_offscreen");
     let mut settings = test_settings(dir.path());
     settings.common.window_main = Some(WindowPlace {
         x: 2500.0,
@@ -861,7 +861,7 @@ fn a_place_on_no_monitor_opens_fitted_and_an_empty_list_trusts_it() {
 #[test]
 fn a_maximized_place_on_no_monitor_is_unmaximized_before_the_fit() {
     let egui_ctx = test_context();
-    let dir = TestDir::new("studio_core_window_place_offscreen_maximized");
+    let dir = TestDir::new("window_place_offscreen_maximized");
     let mut settings = test_settings(dir.path());
     settings.common.window_main = Some(WindowPlace {
         x: 2500.0,
@@ -967,7 +967,7 @@ fn a_window_on_a_200_percent_display_records_its_points_and_reopens_in_them() {
 #[test]
 fn the_placed_windows_position_is_sent_in_points_of_the_scale_times_the_zoom() {
     let egui_ctx = test_context();
-    let dir = TestDir::new("studio_core_window_place_zoomed");
+    let dir = TestDir::new("window_place_zoomed");
     let mut settings = test_settings(dir.path());
     settings.common.window_main = Some(WindowPlace {
         x: 100.0,
@@ -1154,7 +1154,7 @@ fn first_frame_commands(
     monitors: fn(&eframe::Frame) -> Vec<Monitor>,
     native: f32,
 ) -> Vec<ViewportCommand> {
-    let dir = TestDir::new("studio_core_window_place_maximized");
+    let dir = TestDir::new(&format!("window_place_maximized-{}", this_test()));
     let mut settings = test_settings(dir.path());
     settings.common.window_main = Some(place);
     let (a, calls_a) = stub("a", "A", None);
@@ -1367,7 +1367,7 @@ fn a_window_centred_on_no_monitor_stands_on_the_primary() {
 // ST-WIN-04
 #[test]
 fn a_five_number_record_opens_not_maximized() {
-    let dir = TestDir::new("studio_core_window_place_five");
+    let dir = TestDir::new("window_place_five");
     let mut settings = test_settings(dir.path());
     settings.common.window_main =
         Settings::parse("[common]\nwindow_main = [100, 50, 1100, 700, 1]\n")

@@ -1252,7 +1252,7 @@ mod tests {
             (Some(SessionEnd::Closed), true, "crashed"),
             (Some(SessionEnd::Crashed), true, "crashed"),
         ] {
-            let dir = TestDir::new("session_pipe");
+            let dir = TestDir::new(&format!("session_pipe_{told:?}_{dumped}"));
             let bytes = session_bytes(&frames(4242), told);
             let session = read_session(&mut &bytes[..], dir.path(), 1, None);
             let dump_requested = Arc::new(AtomicBool::new(false));
@@ -1337,8 +1337,11 @@ mod tests {
     // no header there is no writer, so no folder.
     #[test]
     fn a_closing_message_before_the_header_warns_and_writes_nothing() {
-        for closing in [SessionFrame::Closed, SessionFrame::Crashed] {
-            let dir = TestDir::new("session_early_close");
+        for (closing, name) in [
+            (SessionFrame::Closed, "closed"),
+            (SessionFrame::Crashed, "crashed"),
+        ] {
+            let dir = TestDir::new(&format!("session_early_close_{name}"));
             fs::write(dir.path().join(LOG_FILE_NAME), "v\n").unwrap();
             let mut bytes = Vec::new();
             write_frame(&mut bytes, &closing).unwrap();

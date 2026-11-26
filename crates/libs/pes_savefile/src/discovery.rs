@@ -110,17 +110,15 @@ pub fn discover_savefiles(version: PesVersion) -> Vec<SavefileCandidate> {
 mod tests {
     use super::*;
 
-    /// A unique temp root for the discovery tree.
+    /// A fresh, empty root for a discovery tree, under the test binary's build folder
+    /// (`target/<profile>/pes_savefile_tests/discovery_<name>`). A passing test's folder
+    /// is removed when its thread ends; a panicking test's stays for reading and is
+    /// emptied at the start of its next run.
     fn temp_dir(name: &str) -> PathBuf {
-        let dir = std::env::temp_dir().join(format!(
-            "pes_savefile_discovery_{}_{}",
-            name,
-            std::process::id()
-        ));
-        if dir.exists() {
-            std::fs::remove_dir_all(&dir).expect("cleanup");
-        }
-        dir
+        test_scratch::fresh(
+            &test_scratch::build_folder().join("pes_savefile_tests"),
+            &format!("discovery_{name}"),
+        )
     }
 
     /// The native entry point is `discover_savefiles_in` over the shell's

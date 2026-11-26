@@ -55,10 +55,10 @@ pub(crate) fn old_files() -> Files {
     ]
 }
 
-/// A fresh temp folder of its own holding `files`, removed when the guard is
-/// dropped, so a test that fails still leaves no folder behind.
+/// A fresh test folder of its own, `TestDir::new("updater_<name>")`, holding
+/// `files`.
 pub(crate) fn folder_with(name: &str, files: &Files) -> TestDir {
-    let dir = TestDir::new(&format!("studio_core_updater_{name}"));
+    let dir = TestDir::new(&format!("updater_{name}"));
     write_files(dir.path(), files);
     dir
 }
