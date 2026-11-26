@@ -37,8 +37,8 @@ approach in production, in `Engines/stages/lib/dxt.py` + the `texture2ddecoder` 
 
   The legacy compilers never produced this conversion at all, so there is no legacy output to
   be parity with; the Konami files are the standard. Released Red converts every DX10 texture
-  with texconv's `-f DXT5 -srgb`, which drops X when the source is BC5 (its unreleased
-  development branch asks for a format name texconv rejects, `DX5nm`).
+  for PES 15–18 with texconv's `-f DXT5 -srgb`, which drops X when the source is BC5 (its
+  unreleased development branch asks for a format name texconv rejects, `DX5nm`).
 - **Passthrough**: compressed blocks a target can read are kept and only the container changes.
   PES 15–18 read BC1, BC2 and BC3; PES 19–21 also read BC4, BC5 and BC7 (the legacy compilers
   passed BC5 through to PES 19–21 as FTEX format 9). A DX10-header BC1/BC3 is therefore

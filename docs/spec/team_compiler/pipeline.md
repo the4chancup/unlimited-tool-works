@@ -1413,7 +1413,8 @@ not a serial scheduling requirement.
 
   Red's `dummy_kit_replace.py` (copying the team's kit 1 textures over `dummy_kit*` in Common
   as a fallback for the substitution) is **not ported**: that fallback dates from when the
-  substitution lived in Sider scripts; it is in the exes now and stable.
+  substitution lived in Sider scripts; it is in the exes now and stable. Released Red never
+  ran it either: the check that calls it looks for the team's Common in the wrong folder.
 - **Bins accumulation**: team colors and per-kit colors are staged for in-memory copies of
   `TeamColor.bin` and `UniColor.bin` (fixed per-team byte offsets; Red: `bins_update.py`):
   - team colors come from the root `colors.txt`, when present: its first four valid colors,

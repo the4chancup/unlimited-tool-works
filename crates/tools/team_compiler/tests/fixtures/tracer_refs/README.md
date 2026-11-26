@@ -66,8 +66,9 @@ test's table carries each row):
   byte-identical; the three models decode to the same model, texture table included: Red and
   the compiler both point the `common/` textures at the referee's name-keyed common folder,
   `/Assets/pes16/model/character/common/999/masterchef/sourceimages/`. The model bytes differ
-  in the string table alone, where Red rewrote the old directory strings in place and the
-  compiler appends the new ones, the old ones left unreferenced;
+  in the string table alone, in the unreferenced strings: both append the new directory and
+  leave the old one unreferenced, Red respelling the team ID in it
+  (`.../common/999/sourceimages/`) where the compiler keeps the upgraded file's;
 - the five textures are at the same paths with the same headers and pixels
   (`masterchef.ftex` byte-identical, the others differing in their zlib chunks only);
 - the `.fpkd` files and the 31 template entries are byte-identical;
