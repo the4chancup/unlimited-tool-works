@@ -4341,6 +4341,14 @@ pruned when their phase closes; they stay in git history. A question only the ma
 can answer is not an issue: it goes to `docs/maintainer/questions.html`, and an issue that waits on one
 points there.
 
+- open (2026-11-26, the maintainer: "eventually") — **SANDBOX**: a SWE-2 reviewer or sidekick
+  is fenced only by Devin's deny list (deletes, git commands that discard work), not by
+  where it may read or write. A SWE-2.1 trial run handed a brief naming the main repository worked
+  there instead of its worktree, read the earlier reviewer's findings and wrote over them.
+  Devin's `Write(<path>)` rules cannot hold it either, since bypass mode lets it run
+  `python`, which writes anywhere. To weigh: a separate Windows user whose rights reach only
+  the worktree (and the toolchains it runs), Windows Sandbox, or WSL, each against what the
+  runs need (cargo's caches, the Windows-only tests, Everything's index).
 - open (2026-11-26) — **COPYGROWTH**: a local mutation run's tree copies grow without bound.
   `%TEMP%\studio-mutants` held 173 GiB, almost all of it two copies left by the stopped
   CATCHUP run (79 and 74 GiB), the reason this machine's drive needed constant cleaning.
