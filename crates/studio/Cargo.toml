@@ -37,6 +37,7 @@ pes_savefile = { workspace = true, features = ["test-support"] }
 pes_version.workspace = true
 # `test-support` completes `team_compiler_cli.rs`'s exports with `test_files`.
 team_compiler = { workspace = true, features = ["test-support"] }
+test_scratch.workspace = true
 
 [target.'cfg(windows)'.dependencies]
 windows.workspace = true

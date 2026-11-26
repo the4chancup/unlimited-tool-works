@@ -32,12 +32,10 @@ pub struct Run {
 
 impl Sandbox {
     pub fn new(name: &str) -> Sandbox {
-        let root = Path::new(env!("CARGO_TARGET_TMPDIR"))
-            .join("team_compiler_in_process")
-            .join(name);
-        if root.exists() {
-            fs::remove_dir_all(&root).unwrap();
-        }
+        let root = test_scratch::fresh(
+            &Path::new(env!("CARGO_TARGET_TMPDIR")).join("team_compiler_in_process"),
+            name,
+        );
         fs::create_dir_all(root.join("data")).unwrap();
         fs::write(root.join("data/teams_list.txt"), TEAMS_LIST).unwrap();
         Sandbox { root }

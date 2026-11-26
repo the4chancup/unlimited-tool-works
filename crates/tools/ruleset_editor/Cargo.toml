@@ -29,6 +29,7 @@ toml.workspace = true
 crossbeam-channel.workspace = true
 # Writes the JPEG the event logo tests pick.
 image.workspace = true
+test_scratch.workspace = true
 
 [lints]
 workspace = true

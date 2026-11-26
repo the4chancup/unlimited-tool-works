@@ -1624,6 +1624,7 @@ dependencies = [
  "roxmltree",
  "studio_core",
  "teams_list",
+ "test_scratch",
  "toml",
  "vtree",
  "wezlib",
@@ -4158,6 +4159,7 @@ dependencies = [
  "serde",
  "studio_core",
  "team_widgets",
+ "test_scratch",
  "thiserror 2.0.20",
  "toml",
 ]
@@ -4329,6 +4331,7 @@ dependencies = [
  "studio_core",
  "team_widgets",
  "teams_list",
+ "test_scratch",
  "thiserror 2.0.20",
  "toml",
  "toml_edit 0.23.10+spec-1.0.0",
@@ -4781,6 +4784,7 @@ dependencies = [
  "save_editor",
  "studio_core",
  "team_compiler",
+ "test_scratch",
  "windows",
  "winresource",
 ]
@@ -4916,6 +4920,7 @@ dependencies = [
  "studio_core",
  "team_compiler",
  "teams_list",
+ "test_scratch",
  "toml",
  "uniparam",
  "vtree",
@@ -4969,6 +4974,13 @@ name = "test_runner"
 version = "0.0.2"
 dependencies = [
  "windows",
+]
+
+[[package]]
+name = "test_scratch"
+version = "0.0.2"
+dependencies = [
+ "log",
 ]
 
 [[package]]
