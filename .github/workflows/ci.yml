@@ -27,11 +27,12 @@ jobs:
         with:
           tool: just
       # `just test` runs the drafts tooling's tests, whose ink measurements read images
-      # through Pillow; setup-python, as the system Python of a Linux runner refuses pip.
+      # through Pillow, and the build-folder scripts' tests, which read processes through
+      # psutil; setup-python, as the system Python of a Linux runner refuses pip.
       - uses: actions/setup-python@v7
         with:
           python-version: "3.13"
-      - run: python -m pip install pillow==12.3.0
+      - run: python -m pip install pillow==12.3.0 psutil==7.1.0
       - run: just gates
 
   # Guardrail 4's real test: the python_bindings wheel builds and loads (core plan, "Phase 2").
