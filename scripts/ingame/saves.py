@@ -14,15 +14,34 @@ all assertions. `put` refuses unless the live EDIT's content is kept under this 
 backup or a saves_<version>/ copy), so nothing the game wrote is lost; `restore` and `put`
 refuse while the game runs.
 """
+import ctypes
 import hashlib
 import os
 import shutil
 import subprocess
 import sys
+import uuid
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parents[2] / ".tmp" / "ingame_saves"
-KONAMI = Path(r"C:\Data\Documents\KONAMI")
+FOLDERID_DOCUMENTS = uuid.UUID("FDD39AD0-238F-46AF-ADB4-6C85480369C7")
+
+
+def documents() -> Path:
+    """The Documents known folder, wherever it is redirected, as the game resolves it
+    (`docs/spec/pes_savefile/codec.md`): not `%USERPROFILE%\\Documents`."""
+    guid = ctypes.create_string_buffer(FOLDERID_DOCUMENTS.bytes_le, 16)
+    path = ctypes.c_wchar_p()
+    result = ctypes.windll.shell32.SHGetKnownFolderPath(guid, 0, None, ctypes.byref(path))
+    try:
+        if result != 0:
+            raise OSError(f"SHGetKnownFolderPath(Documents) failed: {result & 0xFFFFFFFF:#010x}")
+        return Path(path.value)
+    finally:
+        ctypes.windll.ole32.CoTaskMemFree(path)
+
+
+KONAMI = documents() / "KONAMI"
 LIVE = {
     "14": (KONAMI / "Pro Evolution Soccer 2014/save", "EDIT.bin", ["SYSTEM.bin"], "pes2014.exe"),
     "15": (KONAMI / "Pro Evolution Soccer 2015/save", "EDIT.bin", ["SYSTEM.bin"], "pes2015.exe"),
