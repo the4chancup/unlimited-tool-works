@@ -12,9 +12,10 @@ as a checkpoint run in main does, and `just checkpoint-status` in main reads it.
 What it gates is a commit: work not committed in main is not part of the run, and commits
 made while it runs wait for the next one. A failure is fixed by a commit on top, as one CI
 finds is. One run at a time: a second would move the worktree under the first, so a marker
-file under the worktree's `.tmp/` refuses it. `--local` runs the checkpoint alone, without
-asking the VPS first: for while a whole-crate run is on the VPS, beside which the Linux gates
-must not run, so they are left owed (its mutation step still uses the VPS when it is free).
+file under the worktree's `.tmp/` refuses it. `--local` is for the time a whole-crate run
+occupies the VPS, when the Linux gates must not run there: it skips the remote check and
+`just gates-remote`, runs the checkpoint alone, and leaves the Linux gates owed. Its mutation
+step still splits with the VPS when the VPS is free.
 Start it detached and logged, as any long command (`RUNBOOK.md` "How the work runs").
 """
 
@@ -49,6 +50,8 @@ def main(argv: list[str]) -> int:
         sys.exit(f"the gate worktree is not clean: {GATE}")
     # The checkpoint's mutation step and the Linux gates both refuse a remote that is busy or
     # short of disk, but only once they start, after the checkpoint's tests: ask it first.
+    # `--local` skips the check safely: it runs no remote gates, and while a whole-crate run
+    # occupies the VPS the mutation step runs here instead of splitting.
     host = None if local else mutants.remote_host()
     refusal = None
     if host:
