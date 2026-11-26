@@ -244,17 +244,21 @@ mod tests {
 
         let exe = std::env::current_exe().expect("the test program's path");
         assert_eq!(window::held(window, PKEY_AppUserModel_ID), app_id(&exe));
+        // The store gives a path back with its drive letter in capitals, while the
+        // program's own path keeps the case it was started with (`c:\…` from a working
+        // folder spelled so). A Windows path is the same in any case, so the two
+        // path-holding values are compared lowercased.
         assert_eq!(
-            window::held(window, PKEY_AppUserModel_RelaunchCommand),
-            relaunch_command(&exe)
+            window::held(window, PKEY_AppUserModel_RelaunchCommand).to_lowercase(),
+            relaunch_command(&exe).to_lowercase()
         );
         assert_eq!(
             window::held(window, PKEY_AppUserModel_RelaunchDisplayNameResource),
             crate::shell::APP_NAME
         );
         assert_eq!(
-            window::held(window, PKEY_AppUserModel_RelaunchIconResource),
-            icon_resource(&exe)
+            window::held(window, PKEY_AppUserModel_RelaunchIconResource).to_lowercase(),
+            icon_resource(&exe).to_lowercase()
         );
         window::destroy(window);
     }
