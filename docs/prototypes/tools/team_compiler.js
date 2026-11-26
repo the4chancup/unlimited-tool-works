@@ -389,7 +389,9 @@ function sampleRows() {
 // checked when the view opens, with the exports, and again after an upgrade.
 const D = { writable: "yes", dataReadOnly: false, empty: false, closeOnSuccess: false, dpfl: "official" };
 // A compiling cell's bar, sliding left to right along its bottom edge,
-// entering and leaving it, once every 0.9 s.
+// entering and leaving it, once every 0.9 s. The upgrader's draft draws the
+// same grid from a copy of this machinery (export_upgrader.js, the same
+// names): a change to the grid here is made there too.
 const sweepEl = cell => h("span", { class: "tc-sweep",
   style: `left:${(-40 + 140 * busyPhase(cell, 900)).toFixed(1)}%` });
 // The phase of a compiling cell's motion, 0 to 1, counted from when the cell

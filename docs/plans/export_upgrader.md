@@ -239,8 +239,9 @@ members use (`quick_upgrade.bat`) reads the same two.
     every one is through), so the two looks never disagree.
 - **Cell states** are the Compiler's colours with the upgrader's words: `Not read yet`,
   `Reading`, `Ready`, `Warning` and `Error` (outlines), `Upgraded`, `Upgraded with warnings`,
-  and `Not written` (the dashed red outline). The legend, above the grid, lists them as the
-  Compiler's does.
+  and `Not written` (the dashed red outline). A cell being written keeps its colour, and the
+  Compiler's light bar sweeps its bottom edge (`plans/team_compiler/gui.md` "Cell states").
+  The legend, above the grid, lists them as the Compiler's does.
 - **An export with an Error is not written.** Its cells turn `Not written` once the run
   passes it, the Error's cell keeping its red outline so the eye finds what to fix, and the
   log gives `migration_not_clean` for it. The others are written. This is the upgrader's

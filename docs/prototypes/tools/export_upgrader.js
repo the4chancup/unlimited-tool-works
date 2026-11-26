@@ -264,6 +264,11 @@ function look(x, c) {
 }
 const lookStyle = l => `background:${l.fill}; color:${l.text}` + (l.outline ? `; --ol:${l.outline}` : "");
 const scopeOf = (x, what, slot) => `${x.name} ${what}${slot ? " " + slot : ""}`;
+// A cell being written moves: the Compiler's light bar sweeps its bottom
+// edge, phased from the cell's own start (team_compiler.js, the same names).
+const busyPhase = (c, periodMs) => ((performance.now() - c.busyAt) % periodMs) / periodMs;
+const sweepEl = c => h("span", { class: "tc-sweep",
+  style: `left:${(-40 + 140 * busyPhase(c, 900)).toFixed(1)}%` });
 
 // ---- The detail window's cell: hover opens it, a click pins it ----
 // The Compiler's machinery (team_compiler.js, the same names), one shared
@@ -390,6 +395,7 @@ function cellEl(x, c, text, what, slot, cls = "") {
       + (l.outline ? " ol" : "") + (swatch ? " kit" : "") + (S.highlight === scope ? " hl" : ""),
     style: lookStyle(l), "data-scope": scope, ...detailEvents(x, at) },
     text,
+    c.busy ? sweepEl(c) : null,
     swatch ? h("span", { class: "tc-sw", style: `background:linear-gradient(90deg, ${c.swatch[0]} 50%, ${c.swatch[1]} 50%)` }) : null),
     pinEl(at)];
 }
@@ -806,7 +812,7 @@ function startRun() {
     });
     while (run.inFlight.length < BUSY && run.at < run.tasks.length) {
       const next = run.tasks[run.at++];
-      next.endsAt = run.tick + next.ticks; next.c.busy = true;
+      next.endsAt = run.tick + next.ticks; next.c.busy = true; next.c.busyAt = performance.now();
       run.inFlight.push(next);
     }
     if (!run.inFlight.length) return endRun();
