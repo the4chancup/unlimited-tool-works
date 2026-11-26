@@ -360,6 +360,10 @@ compares both sides resolved (`canonicalize` in Rust, as the running-PES probe's
 system names a process's file by its real path). A bare `cargo test -p <crate>` gets the
 machine's own temp folder, not the link: only the gates do.
 
+CI runs the script tests on Linux as well as Windows, so a test builds every path it checks
+from such a folder with `Path`, never spells one (`C:\x\tree`): on Linux a spelled Windows
+path is a relative name with no separator in it.
+
 The link's path is also longer than the machine's own. So a view test that draws a temp path on
 screen and measures the layout gives it a path long enough to wrap whatever the temp folder is
 (a deep folder under it), never the temp path as handed out. A test that measured the "Saved to"

@@ -23,15 +23,21 @@ def write(path: Path, age_days: float = 0.0) -> Path:
 
 
 class Inside(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.tree = Path(self.tmp.name).resolve() / "4cc-studio"
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
     def test_a_path_under_the_tree_or_the_tree_itself_is_inside(self):
-        tree = Path("C:/x/4cc-studio")
-        self.assertTrue(clear_caches.inside("C:\\x\\4cc-studio\\target\\debug\\t.exe", tree))
-        self.assertTrue(clear_caches.inside("C:\\x\\4cc-studio", tree))
+        self.assertTrue(clear_caches.inside(str(self.tree / "target" / "debug" / "t.exe"), self.tree))
+        self.assertTrue(clear_caches.inside(str(self.tree), self.tree))
 
     def test_a_sibling_whose_name_extends_the_trees_is_not(self):
-        tree = Path("C:/x/4cc-studio")
-        self.assertFalse(clear_caches.inside("C:\\x\\4cc-studio-temp\\sk_a\\cargo.exe", tree))
-        self.assertFalse(clear_caches.inside("", tree))
+        sibling = self.tree.parent / "4cc-studio-temp" / "sk_a" / "cargo.exe"
+        self.assertFalse(clear_caches.inside(str(sibling), self.tree))
+        self.assertFalse(clear_caches.inside("", self.tree))
 
 
 class Clear(unittest.TestCase):
