@@ -3,7 +3,8 @@
 //! the heights and a list of conditional "specials" — read here into
 //! `Ruleset` and checked against the rules the types cannot carry. A
 //! `Rules` loads a whole rules file (steps 1 to 3 of "Loading and
-//! validation": shape, `RULESET`, `check_team` on the sample team) and
+//! validation": shape, `RULESET`, `check_team` on the sample team; an
+//! embedded ruleset skips the third, which a test runs on each) and
 //! runs its `check_team` on a `TeamView`, which a save or a Team TOML
 //! document builds; a file knows its `logic()` identity. The shipped
 //! logic (`logic/logic.rhai`) is the generic interpreter: `check_team`,
