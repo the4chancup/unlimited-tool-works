@@ -4522,7 +4522,22 @@ points there.
     and the tests each mutant selects (a coverage map's `selection.json`). Each crate's
     tests run under nextest with 4 test threads and `--message-format libtest-json`
     (`NEXTEST_EXPERIMENTAL_LIBTEST_JSON=1`), each test's own time read from it, into
-    `.tmp/lean/<crate>.jsonl`;
+    `.tmp/lean/<crate>.jsonl`, summed by `.tmp/lean/census.py` and `floor.py`.
+    `save_editor` (2026-11-27, at `f8136441`): 1,192 tests, 2,642 s of test time summed
+    (663 s wall on 4 threads), 2.2 s a test on average; the CLI tests are the slowest
+    (`diff`, `import_toml`: 15-19 s each). About half of the summed time (1,346 s) is each
+    module's floor, its cheapest test's time (about 0.7 s for a view test): a fixed cost
+    per test, setup most likely, not yet profiled. Under nextest's process per test, a
+    fixture shared in memory saves nothing; a prepared one cached on disk might. Run alone,
+    `view::tests::list::keys::down_on_the_lists_last_row_moves_nothing` (one key press)
+    takes 0.67-0.72 s over three runs, so the floor is not contention. `team_compiler`:
+    1,706 tests, 806 s summed (202 s wall), 0.5 s a test, the CLI tests the heaviest.
+    `studio_core`: 617 tests, 57 s summed, 0.1 s a test, so it leaves the list. That test
+    draws no frame: its cost is `fixture` (`pes_savefile::fixture_save`, which encrypts a
+    whole save each call) and `view.open` (which decrypts and parses it). The inflate and
+    hashes are already optimized in test builds (`Cargo.toml` `[profile.dev.package]`),
+    the cipher in `pes_savefile` is not: the likeliest cost, not yet measured. Left: a
+    profile of that setup, and the tests each mutant selects;
   - [ ] **patterns** [after census] the cheaper shapes in CONTRIBUTING "Testing and
     verification": a fixture loaded once per test binary, each instance's wiring checked
     in one table-driven scene, a shared widget's behavior tested once in its own crate.
