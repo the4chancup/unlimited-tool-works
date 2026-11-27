@@ -1,6 +1,7 @@
 """Tests of `driver.py`: the queue's job folders, the shard count, both
 lanes taking a job's shards, resuming after a restart and waiting, a job's
-sending to the VPS, this PC's side of a sent job and the VPS lane's deploy.
+sending to the VPS, this PC's side of a sent job, the VPS lane's coverage
+map and its deploy.
 Every test runs on a temporary `driver.DRIVER` and cost table, with
 cargo-mutants, the tree's extraction, the mutant listing, the cost fold and
 the build-slot lock stubbed. The VPS lane's systemd and sudo are stubbed too.
@@ -52,6 +53,11 @@ def shard_of(args: list[str]) -> str:
 
 def option(args: list[str], name: str) -> str | None:
     return args[args.index(name) + 1] if name in args else None
+
+
+def cargo_line(script: str) -> str:
+    """The line of a VPS unit script that starts cargo-mutants."""
+    return next(line for line in script.splitlines() if line.startswith(". ~/.cargo/env"))
 
 
 class Driver(unittest.TestCase):
@@ -129,6 +135,9 @@ class Driver(unittest.TestCase):
         # Shards whose unit is killed (no `exit`), or never starts (no `log`).
         self.killed: set[int] = set()
         self.unstarted: set[int] = set()
+        # How a map unit ends: "built", "failed" (exit 1, no selection),
+        # "killed" (no `map-exit`) or "unstarted" (no `map.log`).
+        self.map_outcome = "built"
         self.enter([
             mock.patch.object(driver, "unit_active", lambda unit: unit in self.active),
             mock.patch.object(
@@ -150,22 +159,39 @@ class Driver(unittest.TestCase):
         return subprocess.CompletedProcess(args, 0)
 
     def run_unit(self, script: Path, memory_max: int) -> None:
-        """A shard unit: runs the script's cargo-mutants arguments through
-        `local_mutants`, then writes the `log` and `exit` the script would."""
+        """A map unit (`map.sh`) writes what its script would for
+        `self.map_outcome`. A shard unit runs the script's cargo-mutants
+        arguments through `local_mutants`, then writes the `log` and `exit`
+        the script would."""
         text = script.read_text(encoding="utf-8")
         self.units.append((script.name, text, sorted(os.listdir(driver.DRIVER / "tmp"))))
+        if script.name == "map.sh":
+            self.map_unit(script.parent)
+            return
         k = int(script.stem[len("shard-"):])
         if k in self.unstarted:
             return
         shard = script.parent / f"shard-{k}"
         (shard / "log").write_text("", encoding="utf-8")
-        command = shlex.split(next(
-            line for line in text.splitlines() if line.startswith(". ~/.cargo/env")
-        ))
+        command = shlex.split(cargo_line(text))
         args = command[command.index("mutants") + 1:]
         code = self.local_mutants(args, script.parent / "source").returncode
         if k not in self.killed:
             (shard / "exit").write_text(f"{code} 12\n", encoding="utf-8")
+
+    def map_unit(self, job: Path) -> None:
+        """`job`'s map unit ending as `self.map_outcome` says. A killed one
+        dies after its selection is written, while it removes its build."""
+        if self.map_outcome == "unstarted":
+            return
+        (job / "map.log").write_text("", encoding="utf-8")
+        (job / "mutants.json").write_text("[]\n", encoding="utf-8")
+        if self.map_outcome == "failed":
+            (job / "map-exit").write_text("1\n", encoding="utf-8")
+            return
+        (job / "selection.json").write_text('{"mutants": []}\n', encoding="utf-8")
+        if self.map_outcome == "built":
+            (job / "map-exit").write_text("0\n", encoding="utf-8")
 
     def fake_vps(self, version: str = VERSION, fail: str | None = None) -> None:
         """`mutants.ssh` replaced by bash run in `self.home`, a temporary remote
@@ -869,7 +895,7 @@ class Driver(unittest.TestCase):
 
         with mock.patch.object(mutants, "sized_config", sizing):
             self.assertEqual(driver.run(once=True), 0)
-        self.assertEqual([unit[0] for unit in self.units], ["shard-0.sh", "shard-1.sh"])
+        self.assertEqual([unit[0] for unit in self.units], ["map.sh", "shard-0.sh", "shard-1.sh"])
         self.assertEqual([shard_of(args) for args in self.calls], ["0/2", "1/2"])
         self.assertNotIn("--baseline", self.calls[0])
         self.assertEqual(option(self.calls[1], "--baseline"), "skip")
@@ -896,6 +922,168 @@ class Driver(unittest.TestCase):
         self.assertEqual(driver.run(once=True), 0)
         self.assertTrue(job.exists())
 
+    def stand_in(self, job: Path) -> str:
+        """The words a VPS shard script puts before `nice` when `job` has a selection."""
+        source = job / "source"
+        return (
+            f"CARGO={shlex.quote(str(source / 'scripts' / 'mutation' / 'select_tests.py'))} "
+            "UTW_REAL_CARGO=$(command -v cargo) "
+            f"UTW_MUTANTS_SOURCE={shlex.quote(str(source))} "
+            f"UTW_MUTANTS_SELECTION={shlex.quote(str(job / 'selection.json'))} "
+        )
+
+    def assert_full_suite(self, job: Path, reason: str) -> None:
+        """`job`'s map ran once, before its two shards, and failed for
+        `reason`, printed once: both shards run with no stand-in for cargo."""
+        self.assertEqual([unit[0] for unit in self.units], ["map.sh", "shard-0.sh", "shard-1.sh"])
+        for name, text, _ in self.units[1:]:
+            self.assertNotIn("CARGO=", text, name)
+            self.assertNotIn("UTW_", text, name)
+        self.assertFalse((job / "selection.json").exists())
+        out = self.out.getvalue()
+        self.assertEqual(out.count("coverage map failed"), 1, out)
+        self.assertIn(f"driver: {job.name} coverage map failed ({reason}): its shards run the "
+                      f"full suite, log {job / 'map.log'}\n", out)
+        self.assertEqual(
+            [(job / f"shard-{k}.done").read_text(encoding="utf-8") for k in range(2)], ["0", "0"]
+        )
+
+    def test_the_vps_lane_builds_a_job_s_map_once_and_its_shards_select_their_tests(self):
+        job = self.queue(shards=2)
+        self.vps_lane()
+        self.assertEqual(driver.run(once=True), 0)
+        self.assertEqual([unit[0] for unit in self.units], ["map.sh", "shard-0.sh", "shard-1.sh"])
+        for name, text, _ in self.units[1:]:
+            self.assertTrue(
+                cargo_line(text).startswith(
+                    f". ~/.cargo/env && {self.stand_in(job)}"
+                    "nice -n 19 ionice -c3 cargo-mutants mutants "
+                ),
+                cargo_line(text),
+            )
+        script = (job / "map.sh").read_bytes()
+        self.assertNotIn(b"\r", script)
+        lines = script.decode("utf-8").splitlines()
+        self.assertEqual(lines[1], f"exec > {shlex.quote(str(job / 'map.log'))} 2>&1")
+        self.assertIn(f"export TMPDIR={shlex.quote(str(self.driver / 'tmp'))}", lines)
+        self.assertIn(f"--data={mutants.REMOTE_TEST_MEMORY} --", script.decode("utf-8"))
+        listing = shlex.split(cargo_line(script.decode("utf-8")))
+        self.assertEqual(listing[:5], [".", "~/.cargo/env", "&&", "cargo-mutants", "mutants"])
+        self.assertEqual(option(listing, "-p"), "cpk")
+        self.assertNotIn("--shard", listing)
+        self.assertEqual(option(listing, "--config"), str(job / "mutants-vps.toml"))
+        self.assertEqual(option(listing, "--dir"), str(job / "source"))
+        self.assertIn("--list", listing)
+        self.assertIn("--json", listing)
+        self.assertEqual(listing[-2:], [">", str(job / "mutants.json")])
+        (mapped,) = [i for i, line in enumerate(lines) if "coverage_map.py" in line]
+        self.assertEqual(
+            shlex.split(lines[mapped]),
+            ["nice", "-n", "19", "ionice", "-c3", "python3", "scripts/mutation/coverage_map.py",
+             "cpk", str(job / "selection.json"), "--mutants", str(job / "mutants.json")],
+        )
+        self.assertGreater(lines.index("rm -rf target/llvm-cov-target"), mapped)
+        self.assertEqual(lines[-1], f'echo "$code" > {shlex.quote(str(job / "map-exit"))}')
+
+    def run_map_script(
+        self, crate: str, listing_code: int, map_code: int
+    ) -> tuple[str, list[str]]:
+        """Run the `map.sh` of a job of `crate` in bash, with cargo-mutants exiting
+        `listing_code`, `coverage_map.py` `map_code`, and `nice` and `ionice`
+        passing their command through. Returns its `map-exit` and the
+        arguments `python3` was called with; checks the build is removed."""
+        if BASH is None:
+            self.skipTest("no bash to run the map script (Git Bash on Windows)")
+        job = self.queue(crate, shards=1)
+        home = self.root / f"map-home-{crate}"
+        stubs = home / "bin"
+        stubs.mkdir(parents=True)
+        (home / ".cargo").mkdir()
+        (home / ".cargo" / "env").write_bytes(f'export PATH="{stubs.as_posix()}:$PATH"\n'.encode())
+        for name, body in [
+            ("cargo-mutants", f"echo '[]'; exit {listing_code}"),
+            ("python3", f'echo "$*" >> "$HOME/python3.calls"; exit {map_code}'),
+            ("nice", 'shift 2; exec "$@"'),
+            ("ionice", 'shift; exec "$@"'),
+        ]:
+            (stubs / name).write_bytes(f"#!/bin/bash\n{body}\n".encode())
+            (stubs / name).chmod(0o755)
+        (job / "source" / "target" / "llvm-cov-target").mkdir(parents=True)
+        (job / "map.sh").write_bytes(driver.map_script(job, self.root / "map-tmp"))
+        subprocess.run(
+            [BASH, str(job / "map.sh")], cwd=job / "source",
+            env={**os.environ, "HOME": home.as_posix()}, check=True,
+        )
+        self.assertFalse((job / "source" / "target" / "llvm-cov-target").exists())
+        calls = home / "python3.calls"
+        called = calls.read_text(encoding="utf-8").splitlines() if calls.exists() else []
+        return (job / "map-exit").read_text(encoding="utf-8").strip(), called
+
+    def test_the_map_script_s_exit_is_the_listing_s_when_it_failed_else_the_map_s(self):
+        self.assertEqual(self.run_map_script("cpk", 0, 0)[0], "0")
+        exit_code, called = self.run_map_script("fpk", 0, 1)
+        self.assertEqual(exit_code, "1")
+        self.assertEqual(len(called), 1)
+        self.assertTrue(called[0].startswith("scripts/mutation/coverage_map.py fpk "), called)
+        self.assertEqual(
+            self.run_map_script("ftex", 3, 1), ("3", []), "no map after a failed listing"
+        )
+
+    def test_a_failed_coverage_map_leaves_its_shards_the_full_suite(self):
+        job = self.queue(shards=2)
+        self.vps_lane()
+        self.map_outcome = "failed"
+        self.assertEqual(driver.run(once=True), 0)
+        self.assert_full_suite(job, "exit 1")
+        self.assertEqual((job / "map-exit").read_text(encoding="utf-8"), "1\n")
+
+    def test_a_killed_coverage_map_is_marked_killed_and_leaves_its_shards_the_full_suite(self):
+        job = self.queue(shards=2)
+        self.vps_lane()
+        self.map_outcome = "killed"
+        self.assertEqual(driver.run(once=True), 0)
+        self.assert_full_suite(job, "killed")
+        self.assertEqual((job / "map-exit").read_text(encoding="utf-8"), "killed")
+
+    def test_a_map_unit_that_never_started_ends_the_driver_and_marks_nothing_done(self):
+        job = self.queue(shards=2)
+        self.vps_lane()
+        self.map_outcome = "unstarted"
+        with self.assertRaisesRegex(RuntimeError, "did not start .*map.sh"):
+            driver.run(once=True)
+        self.assertEqual([unit[0] for unit in self.units], ["map.sh"])
+        self.assertEqual(list(job.glob("shard-*.done")), [])
+        self.assertFalse((job / "map-exit").exists(), "the next start builds the map again")
+        self.assertTrue((job / "shard-0.vps").exists(), "the next start puts it back")
+
+    def test_the_vps_lane_s_recover_removes_a_half_built_map_and_keeps_a_finished_one(self):
+        half = self.queue("cpk", shards=1)
+        built = self.queue("fpk", shards=1)
+        self.vps_lane()
+        files = ["map.log", "mutants.json", "selection.json"]
+        for job in (half, built):
+            for name in files:
+                (job / name).write_text("", encoding="utf-8")
+        (built / "map-exit").write_text("0\n", encoding="utf-8")
+        driver.recover()
+        self.assertEqual([name for name in [*files, "map-exit"] if (half / name).exists()], [])
+        self.assertEqual([name for name in [*files, "map-exit"] if (built / name).exists()],
+                         [*files, "map-exit"])
+        self.assertTrue((half / "shard-0.todo").exists())
+
+    def test_this_pc_s_lane_runs_no_coverage_map_for_a_sent_job(self):
+        job, _ = self.sent_job(shards=1)
+        self.vps_fakes()
+        self.assertEqual(driver.run(once=True), 0)
+        self.assertEqual(self.units, [], "no unit started here")
+        self.assertEqual(
+            self.calls,
+            [["-p", "cpk", "--shard", "0/1", "--sharding", "round-robin",
+              "--output", str(job / "shard-0")]],
+        )
+        self.assertEqual(list(self.done(job).glob("map*")), [])
+        self.assertFalse((self.done(job) / "selection.json").exists())
+
     def test_the_vps_lane_s_shard_script(self):
         job = self.queue(shards=1)
         self.vps_lane()
@@ -903,7 +1091,7 @@ class Driver(unittest.TestCase):
         script = (job / "shard-0.sh").read_bytes()
         self.assertNotIn(b"\r", script)
         lines = script.decode("utf-8").splitlines()
-        command = shlex.split(next(line for line in lines if line.startswith(". ~/.cargo/env")))
+        command = shlex.split(cargo_line(script.decode("utf-8")))
         self.assertEqual(option(command, "--output"), str(job / "shard-0"))
         self.assertEqual(option(command, "--config"), str(job / "mutants-vps.toml"))
         self.assertEqual(option(command, "--dir"), str(job / "source"))
@@ -912,15 +1100,29 @@ class Driver(unittest.TestCase):
             option(command, "--jobserver-tasks"),
             str(mutants.REMOTE_JOBSERVER_TASKS or os.cpu_count() or 2),
         )
-        cargo = command.index("cargo")
+        cargo = command.index("cargo-mutants")
         self.assertEqual(command[cargo - 5:cargo + 2],
-                         ["nice", "-n", "19", "ionice", "-c3", "cargo", "mutants"])
+                         ["nice", "-n", "19", "ionice", "-c3", "cargo-mutants", "mutants"])
         self.assertIn(f"export TMPDIR={shlex.quote(str(self.driver / 'tmp'))}", lines)
         self.assertIn(f"exec > {shlex.quote(str(job / 'shard-0' / 'log'))} 2>&1", lines)
         self.assertIn(f"--data={mutants.REMOTE_TEST_MEMORY} --", script.decode("utf-8"))
         self.assertEqual(
             lines[-1],
             f'echo "$code $(( $(date +%s) - start ))" > {shlex.quote(str(job / "shard-0" / "exit"))}',
+        )
+        # The stand-in is set when the script is written with a selection, and only then.
+        args = ["-p", "cpk", "--shard", "0/1"]
+        with_selection = driver.shard_script(job, 0, args, self.driver / "tmp").decode("utf-8")
+        (job / "selection.json").unlink()
+        without = driver.shard_script(job, 0, args, self.driver / "tmp").decode("utf-8")
+        self.assertNotIn("CARGO=", without)
+        self.assertNotIn("UTW_", without)
+        self.assertTrue(cargo_line(without).startswith(
+            ". ~/.cargo/env && nice -n 19 ionice -c3 cargo-mutants mutants -p cpk "
+        ))
+        self.assertEqual(
+            with_selection,
+            without.replace(". ~/.cargo/env && ", f". ~/.cargo/env && {self.stand_in(job)}"),
         )
 
     def test_a_shard_with_no_exit_file_is_done_with_code_1(self):
@@ -992,7 +1194,7 @@ class Driver(unittest.TestCase):
         self.active = {"fluxer"}
         self.free = mutants.REMOTE_FREE_FLOOR
         self.assertEqual(driver.run(once=True), 0)
-        self.assertEqual(len(self.units), 1)
+        self.assertEqual([unit[0] for unit in self.units], ["map.sh", "shard-0.sh"])
         self.assertTrue((job / "shard-0.done").exists())
 
     def test_this_pc_s_lane_asks_neither_systemd_nor_the_disk(self):
@@ -1039,7 +1241,9 @@ class Driver(unittest.TestCase):
         (self.driver / "tmp" / "left" / "deep" / "file").write_text("", encoding="utf-8")
         (self.driver / "tmp" / "stray.txt").write_text("", encoding="utf-8")
         driver.run(once=True)
-        self.assertEqual([unit[2] for unit in self.units], [[]])
+        self.assertEqual(
+            [unit[2] for unit in self.units], [[], []], "the map's unit, then the shard's"
+        )
 
     def test_run_unit_starts_the_shard_unit_capped_and_waits(self):
         self.sudo_calls = []
@@ -1113,7 +1317,7 @@ class Driver(unittest.TestCase):
         self.vps_fakes()
         with mock.patch.object(driver, "VPS_DRIVER", vps):
             self.assertEqual(driver.main(["driver.py", "run", "--lane", "vps", "--once"]), 0)
-        self.assertEqual(len(self.units), 1)
+        self.assertEqual([unit[0] for unit in self.units], ["map.sh", "shard-0.sh"])
         self.assertTrue((job / "shard-0.done").exists())
         self.assertTrue((job / "baseline-vps.json").exists())
         with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit):

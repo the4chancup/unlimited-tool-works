@@ -16,7 +16,10 @@ markers are copied into the VPS's queue, and this PC keeps the job with a
 `sent.json` and no marker, since two machines cannot share one rename. The
 VPS lane (`run --lane vps`, a service that `just driver deploy` installs
 there) takes a sent job's shards, so they go on while this PC is off, and
-keeps their results there; it finishes no job. This PC's lane takes the
+keeps their results there; it finishes no job. Before its first shard of a
+job it builds the job's coverage map, so each mutant of its shards runs only
+the tests that cover the mutant's lines, while this PC's shards of the job
+run the full suite. This PC's lane takes the
 shards of every job, a sent job's by renaming its marker on the VPS. Between
 its shards it syncs each sent job with the VPS (`sync`): a claim it lost goes
 back to `.todo` there, and the shards the VPS ended are fetched. It finishes
@@ -37,6 +40,12 @@ Everything lives under `DRIVER`, one folder per machine shared by every tree
       sent.json              {"host": host}: on this PC, a job sent to the VPS
       source/                the job's tree, extracted once
       mutants-vps.toml       the VPS lane's cargo-mutants config for the job
+      map.sh                 the VPS lane's script for the job's coverage map
+      map.log                its output
+      mutants.json           the job's mutants, as the map lists them
+      selection.json         the tests covering each mutant's lines, the map's result;
+                             missing when the map failed
+      map-exit               the map's exit code, or `killed`, as text, written last
       shard-<k>.todo         an empty marker for each shard not taken yet
       shard-<k>.<lane>       the marker, renamed by the lane that took the shard; a
                              sent job's `.pc` is on the VPS, and here while this PC
@@ -396,11 +405,17 @@ def recover() -> None:
     `.done` was written (the driver died before removing the marker) stays done.
     A sent job's marker is removed with no `.todo` here, since the VPS holds
     its markers: `sync` puts the VPS's back. On the VPS lane a shard unit a
-    dead driver left running is stopped first, so no shard still writes the
-    results this removes."""
-    if LANE == "vps" and unit_active(SHARD_UNIT):
-        if sudo("systemctl", "stop", SHARD_UNIT).returncode != 0:
+    dead driver left running is stopped first, so no shard or map still
+    writes the results this removes. A coverage map it left half done (a
+    `map.log` and no `map-exit`) loses its files, and the job's next shard
+    builds it again."""
+    if LANE == "vps":
+        if unit_active(SHARD_UNIT) and sudo("systemctl", "stop", SHARD_UNIT).returncode != 0:
             raise RuntimeError(f"could not stop {SHARD_UNIT}, left running by an earlier driver")
+        for log in (DRIVER / "queue").glob("*/map.log"):
+            if not log.with_name("map-exit").exists():
+                for name in ("map.log", "mutants.json", "selection.json"):
+                    log.with_name(name).unlink(missing_ok=True)
     for marker in (DRIVER / "queue").glob(f"*/shard-*.{LANE}"):
         if marker.with_suffix(".done").exists():
             marker.unlink()
@@ -507,30 +522,119 @@ def empty_tmp() -> Path:
     return tmp
 
 
-def shard_script(job: Path, k: int, args: list[str], tmp: Path) -> bytes:
-    """The bash script the VPS lane's shard unit runs: cargo-mutants on the
-    job's source at the lowest priority, its output to `shard-<k>/log`, its
-    copies of the tree in `tmp`, each test binary capped at
-    `mutants.REMOTE_TEST_MEMORY`. Then the unit's memory figures, and last
-    `shard-<k>/exit`, "<code> <seconds>". LF line ends, as bash needs."""
-    shard = job / f"shard-{k}"
-    tasks = mutants.REMOTE_JOBSERVER_TASKS or os.cpu_count() or 2
-    command = shlex.join([
-        "cargo", "mutants", *args, "--dir", str(job / "source"),
-        "--jobs", str(mutants.JOBS), "--jobserver-tasks", str(tasks),
-        "--config", str(job / "mutants-vps.toml"),
-    ])
-    quoted = shlex.quote(str(shard))
-    lines = [
-        "#!/bin/bash",
-        f"exec > {shlex.quote(str(shard / 'log'))} 2>&1",
-        "start=$(date +%s)",
+def unit_environment(tmp: Path) -> list[str]:
+    """The lines that set the environment of both VPS unit scripts, the
+    shard's and the map's: their copies of the tree in `tmp`, each test
+    binary capped at `mutants.REMOTE_TEST_MEMORY`."""
+    return [
         f"export TMPDIR={shlex.quote(str(tmp))}",
         # A target runner wraps only the test binaries, so each test caps at
         # the per-test figure while rustc and cargo keep the unit's.
         'export CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_RUNNER='
         f'"prlimit --data={mutants.REMOTE_TEST_MEMORY} --"',
-        f". ~/.cargo/env && nice -n 19 ionice -c3 {command}",
+    ]
+
+
+def map_script(job: Path, tmp: Path) -> bytes:
+    """The bash script that builds `job`'s coverage map in the VPS lane's
+    unit, from the job's source (the unit's working directory):
+
+    - its output to `map.log`, its environment as a shard's (`unit_environment`);
+    - the job's mutants listed into `mutants.json`, with the shards'
+      arguments and config but no `--shard`, so the map covers every shard;
+    - `coverage_map.py` writing `selection.json` from that list, at the
+      lowest priority;
+    - the map's instrumented build removed;
+    - last, `map-exit`: the listing's code when it failed, else the map's.
+
+    LF line ends, as bash needs."""
+    spec = read_job(job)
+    listed = job / "mutants.json"
+    listing = shlex.join([
+        "cargo-mutants", "mutants", *spec["args"], "--dir", str(job / "source"),
+        "--list", "--json", "--config", str(job / "mutants-vps.toml"),
+    ])
+    coverage = shlex.join([
+        "python3", "scripts/mutation/coverage_map.py", spec["crate"],
+        str(job / "selection.json"), "--mutants", str(listed),
+    ])
+    lines = [
+        "#!/bin/bash",
+        f"exec > {shlex.quote(str(job / 'map.log'))} 2>&1",
+        *unit_environment(tmp),
+        f". ~/.cargo/env && {listing} > {shlex.quote(str(listed))}",
+        "code=$?",
+        'if [ "$code" = 0 ]; then',
+        f"nice -n 19 ionice -c3 {coverage}",
+        "code=$?",
+        "fi",
+        # Read by nothing after the map, the instrumented build would fill
+        # the disk beside the shards' copies of the tree.
+        "rm -rf target/llvm-cov-target",
+        f'echo "$code" > {shlex.quote(str(job / "map-exit"))}',
+    ]
+    return ("\n".join(lines) + "\n").encode("utf-8")
+
+
+def build_map(job: Path, tmp: Path) -> None:
+    """Build `job`'s coverage map through `run_unit` (`map_script`). A failed
+    map is printed, and the job's shards run the full suite. A killed one (no
+    `map-exit` after the unit) is a failed map whose `map-exit` is then
+    written as `killed`, so no later shard retries it. Raises when the unit
+    never ran the script."""
+    script = job / "map.sh"
+    script.write_bytes(map_script(job, tmp))
+    run_unit(script, memory_max())
+    if not (job / "map.log").exists():
+        raise RuntimeError(f"{SHARD_UNIT} did not start {script}")
+    exit_file = job / "map-exit"
+    if exit_file.exists():
+        code = exit_file.read_text(encoding="utf-8").strip()
+        reason = f"exit {code}"
+    else:
+        code = reason = "killed"
+        mutants_diff.replace_text(exit_file, code)
+    selection = job / "selection.json"
+    if code != "0" or not selection.exists():
+        # A map killed after it wrote its selection is still a failed map:
+        # its shards run the full suite, as the print says.
+        selection.unlink(missing_ok=True)
+        print(f"driver: {job.name} coverage map failed ({reason}): its shards run the full "
+              f"suite, log {job / 'map.log'}", flush=True)
+
+
+def shard_script(job: Path, k: int, args: list[str], tmp: Path) -> bytes:
+    """The bash script the VPS lane's shard unit runs: cargo-mutants on the
+    job's source at the lowest priority, its output to `shard-<k>/log`, its
+    environment from `unit_environment`. When the job's `selection.json`
+    exists, `select_tests.py` stands in for cargo, so each mutant runs the
+    tests covering its lines. Then the unit's memory figures, and last
+    `shard-<k>/exit`, "<code> <seconds>". LF line ends, as bash needs."""
+    shard = job / f"shard-{k}"
+    source = job / "source"
+    tasks = mutants.REMOTE_JOBSERVER_TASKS or os.cpu_count() or 2
+    # `cargo mutants` would set `CARGO` for the subcommand, overriding the stand-in.
+    command = shlex.join([
+        "cargo-mutants", "mutants", *args, "--dir", str(source),
+        "--jobs", str(mutants.JOBS), "--jobserver-tasks", str(tasks),
+        "--config", str(job / "mutants-vps.toml"),
+    ])
+    selection = job / "selection.json"
+    stand_in = ""
+    if selection.exists():
+        stand_in = (
+            f"CARGO={shlex.quote(str(source / 'scripts' / 'mutation' / 'select_tests.py'))} "
+            "UTW_REAL_CARGO=$(command -v cargo) "
+            f"UTW_MUTANTS_SOURCE={shlex.quote(str(source))} "
+            f"UTW_MUTANTS_SELECTION={shlex.quote(str(selection))} "
+        )
+    quoted = shlex.quote(str(shard))
+    lines = [
+        "#!/bin/bash",
+        f"exec > {shlex.quote(str(shard / 'log'))} 2>&1",
+        "start=$(date +%s)",
+        *unit_environment(tmp),
+        f". ~/.cargo/env && {stand_in}nice -n 19 ionice -c3 {command}",
         "code=$?",
         'cgroup="/sys/fs/cgroup$(cut -d: -f3 /proc/self/cgroup)"',
         f'[ -f "$cgroup/memory.peak" ] && cp "$cgroup/memory.peak" {quoted}',
@@ -567,13 +671,17 @@ def shard_code(job: Path, k: int) -> int:
 
 
 def run_vps_shard(job: Path, k: int, args: list[str]) -> int:
-    """Run shard `k` of `job` through `run_unit`, and return its code (`shard_code`)."""
+    """Run shard `k` of `job` through `run_unit`, and return its code
+    (`shard_code`). The job's coverage map is built first (`build_map`)
+    unless the job has a `map-exit`, so the map runs once per job."""
     config = job / "mutants-vps.toml"
     if not config.exists():
         mutants_diff.replace_text(
             config, mutants.sized_config(os.cpu_count() or 2, source=job / "source")
         )
     tmp = empty_tmp()
+    if not (job / "map-exit").exists():
+        build_map(job, tmp)
     shard = job / f"shard-{k}"
     shard.mkdir()
     script = job / f"shard-{k}.sh"
