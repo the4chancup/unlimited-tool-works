@@ -319,7 +319,10 @@ the host. Both lanes, the PC's and the VPS's, take its shards, but only the VPS 
 those of the extra pass. A finished job lands in `mutants.rolling/<crate>/` of the tree the
 driver runs from, the crate's earlier one set aside as `<crate>.old`:
 
-- `result.json` holds the run's exit code and its missed, untested and rechecked mutants;
+- `result.json` holds the run's exit code and its missed, untested, rechecked and starved
+  mutants. The starved ones were caught only by a test stopped at the 180-second limit on
+  this PC, where other work may have starved it, so look at their logs before trusting the
+  catch;
 - `shard-<k>/` holds each shard's results;
 - `launched_from.txt` holds the commit it ran from.
 
@@ -330,8 +333,9 @@ file frees it without stopping the driver. Each lane has one: while it exists, t
 finishes the shard it is running and takes no new one, and once it is deleted the lane goes
 on. The VPS lane's is `~/studio-driver/hold-vps` on the VPS. The PC lane's is `hold-pc` in
 the driver's folder (`%LOCALAPPDATA%\4cc-studio\driver`), and it also stops the PC from
-queuing a crate. Both are made and deleted by hand, until `just gates-remote` handles the
-VPS's.
+queuing a crate. `just gates-remote` and `just remote` make the VPS lane's hold
+themselves, wait for its running shard to end, and delete the hold when they end, unless it
+was there before. The PC lane's hold is made and deleted by hand.
 
 **When the maintainer's PC is suspect, the heavy runs go to the VPS.** Four
 `MEMORY_MANAGEMENT` bugchecks there (the last during a run, all four in `rustc.exe` at one

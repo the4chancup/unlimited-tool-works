@@ -3,10 +3,14 @@ against the whole working tree, for while this machine should not carry the
 load (the gates' build once crashed it under memory pressure;
 `mutants.REMOTE_ONLY` moves the diff mutation runs the same way).
 
+The mutation driver's VPS lane builds on the same host, so the run first makes
+the lane's hold (`mutants.VPS_HOLD`) and waits for the shard it is running
+(`mutants.SHARD_UNIT`) to end. The run deletes the hold when it ends, unless
+the hold was there before.
+
 The tree goes over as a mutation run sends it (`mutants.snapshot`,
 `mutants.transfer`), into the same remote clone, so this refuses to start while
-a remote mutants half is running or uncollected, other gates run there, or the
-mutation driver's VPS lane runs a shard there (`mutants.SHARD_UNIT`) —
+a remote mutants half is running or uncollected, or other gates run there —
 the refusal's check through the unit's whole run (the `--wait --pipe` call)
 and the `target/` removal under the remote lock
 (`mutants.REMOTE_LOCK`, `mutants.remote_refusal`), so a run launched meanwhile
@@ -38,6 +42,7 @@ this machine.
 import shlex
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 import mutants
@@ -70,7 +75,46 @@ def main(command: list[str]) -> int:
     # Before the lock's wait, as every entry point does: the run measures the
     # tree as it stood when its command started, whatever is edited meanwhile.
     tree = mutants.working_tree()
+    hold = mutants.ssh(
+        host,
+        f"[ -e {mutants.VPS_HOLD} ] && echo kept || {{ touch {mutants.VPS_HOLD} && echo made; }}",
+        capture_output=True, text=True,
+    )
+    if hold.returncode == 255:
+        print(f"cannot reach {host}")
+        return 1
+    try:
+        waiting = False
+        while (
+            shard := mutants.ssh(host, f"systemctl is-active --quiet {mutants.SHARD_UNIT}")
+        ).returncode == 0:
+            if not waiting:
+                print(
+                    "waiting for the mutation driver's VPS shard to end (its lane is held)",
+                    flush=True,
+                )
+                waiting = True
+            time.sleep(mutants.LOCK_POLL_SECONDS)
+        if shard.returncode == 255:
+            print(f"cannot reach {host}")
+            return 1
+        return run_on_host(host, tree, command, run_line)
+    finally:
+        # A hold that was there before (the maintainer's, or another run's) stays.
+        if hold.stdout.strip() == "made":
+            if mutants.ssh(host, f"rm -f {mutants.VPS_HOLD}").returncode != 0:
+                print(
+                    f"could not delete {mutants.VPS_HOLD} on {host}: the VPS lane takes "
+                    "no new shard until it is deleted"
+                )
+
+
+def run_on_host(host: str, tree: str, command: list[str], run_line: str) -> int:
+    """`run_line` run on `host` against `tree`, under the remote lock (the
+    module's docstring says how). Returns the run's exit code."""
     with mutants.run_lock(mutants.REMOTE_LOCK):
+        # The refusal still covers a running shard: a lane that checked its hold
+        # just before the hold landed can start one after the wait's last poll.
         refusal = mutants.remote_refusal(host)
         if refusal is not None:
             print(refusal)

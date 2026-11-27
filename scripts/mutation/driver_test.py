@@ -77,6 +77,8 @@ class Driver(unittest.TestCase):
         self.unwritten: set[tuple[str, int]] = set()
         # Shards whose run files a mutant ended by a signal: it went untested.
         self.untested: set[tuple[str, int]] = set()
+        # Shards whose run files a catch by a test nextest stopped at its time limit.
+        self.starved: set[tuple[str, int]] = set()
         self.calls: list[list[str]] = []
         self.locked_calls: list[bool] = []
         self.costed: list[Path] = []
@@ -299,6 +301,18 @@ class Driver(unittest.TestCase):
                     "scenario": {"Mutant": {"name": f"killed in {crate} shard {k}"}},
                     "summary": "Failure", "phase_results": [],
                 })
+            if (crate, k) in self.starved:
+                (out / "log").mkdir()
+                (out / "log" / "starved.log").write_text(
+                    "     TIMEOUT [ 180.035s] (1/1) cpk tests::starved\n", encoding="utf-8"
+                )
+                outcomes.append({
+                    "scenario": {"Mutant": {"name": f"starved in {crate} shard {k}"}},
+                    "summary": "CaughtMutant", "log_path": "log/starved.log",
+                    "phase_results": [
+                        {"phase": "Test", "duration": 1.0, "process_status": {"Failure": 100}}
+                    ],
+                })
             (out / "outcomes.json").write_text(
                 json.dumps({"outcomes": outcomes}), encoding="utf-8"
             )
@@ -424,6 +438,7 @@ class Driver(unittest.TestCase):
                 "missed": ["missed in cpk shard 0", "missed in cpk shard 1", "missed in cpk shard 2"],
                 "untested": [],
                 "rechecked": [],
+                "starved": [],
             },
         )
         self.assertFalse((self.done(job) / "source").exists())
@@ -433,6 +448,29 @@ class Driver(unittest.TestCase):
         )
         self.assertEqual(list(self.done(job).glob("shard-*.pc")), [])
         self.assertIn("cpk", self.out.getvalue().splitlines()[-1])
+
+    def test_a_catch_by_a_test_stopped_at_the_time_limit_is_listed_and_said(self):
+        """It stays caught: the job's code and lists are a run's without it."""
+        job = self.queue(shards=2)
+        self.starved.add(("cpk", 1))
+        self.assertEqual(driver.run(once=True), 0)
+        self.assertEqual(
+            self.result(job),
+            {
+                "code": 2,
+                "missed": ["missed in cpk shard 0", "missed in cpk shard 1"],
+                "untested": [],
+                "rechecked": [],
+                "starved": ["starved in cpk shard 1"],
+            },
+        )
+        self.assertEqual(
+            self.out.getvalue().count(
+                f"driver: {job.name}: 1 caught only by a test stopped at the time limit "
+                "(starved in result.json)"
+            ),
+            1,
+        )
 
     def test_a_shard_another_lane_claimed_is_skipped_and_waited_for(self):
         job = self.queue()
@@ -1021,6 +1059,7 @@ class Driver(unittest.TestCase):
                 "missed": ["missed in cpk shard 0", "missed in cpk shard 1"],
                 "untested": [],
                 "rechecked": [],
+                "starved": [],
             },
         )
         fetched = self.done(job) / "shard-0"
@@ -1289,7 +1328,8 @@ class Driver(unittest.TestCase):
         self.ended_shard(job, 1, [], 0, vps=False)
         self.assertEqual(driver.finish(job), self.done(job))
         self.assertEqual(
-            self.result(job), {"code": 2, "missed": [], "untested": [], "rechecked": []}
+            self.result(job),
+            {"code": 2, "missed": [], "untested": [], "rechecked": [], "starved": []},
         )
 
     WINDOWS_EXTRA = "crates/libs/elevation/src/windows.rs:10: [bool] flip to false"
@@ -1414,7 +1454,10 @@ class Driver(unittest.TestCase):
         )
         self.assertEqual(
             json.loads((filed / "result.json").read_text(encoding="utf-8")),
-            {"code": 2, "missed": ["missed in cpk shard 0"], "untested": [], "rechecked": []},
+            {
+                "code": 2, "missed": ["missed in cpk shard 0"], "untested": [], "rechecked": [],
+                "starved": [],
+            },
         )
         self.assertEqual(
             (filed / "shard-0" / "mutants.out" / "missed.txt").read_text(encoding="utf-8"),
@@ -1970,6 +2013,19 @@ class Driver(unittest.TestCase):
         self.assertTrue((job / "baseline-vps.json").exists())
         with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit):
             driver.main(["driver.py", "run", "--lane", "wsl", "--once"])
+
+    def test_the_vps_lane_s_hold_is_the_one_gates_remote_makes(self):
+        """`mutants.VPS_HOLD` is the path an ssh command makes and deletes; the
+        VPS lane, run from `VPS_DRIVER`, must look for that same file."""
+        self.vps_fakes()
+        looked = []
+        with (
+            mock.patch.object(driver, "DRIVER", driver.VPS_DRIVER),
+            mock.patch.object(driver, "LANE", "vps"),
+            mock.patch.object(Path, "exists", lambda path: looked.append(path) or True),
+        ):
+            self.assertIsNotNone(driver.blocked())
+        self.assertEqual(looked, [Path.home() / mutants.VPS_HOLD.removeprefix("~/")])
 
 
 if __name__ == "__main__":
