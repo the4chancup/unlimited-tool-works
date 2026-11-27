@@ -27,16 +27,16 @@ while it runs, so a maintainer who meets it in a report finds it on that line.
 One line per piece of work in flight; the items below hold the detail.
 
 - The workflow improvements before the suite resumes (`RESUME/optimize`): the mutation
-  driver's slices (`driver/d2`, the VPS lane, is deployed and passed its trial; `d3` is
-  next), and the lighter tests (`LEAN/pilot`: an `aatf` run through the driver, against its
-  last rolling run, is on the VPS; `LEAN/rest`: no review owed; what is left waits for the
-  pilot).
+  driver's slices (`driver/d3a`, a job's extra pass as extra shards, merged and deployed,
+  its review round owed; `d3b`, the rolling job, next), and the lighter tests (`LEAN/pilot`:
+  done, a whole `aatf` run's test phases halved with no new survivor; `LEAN/rest`: the
+  heaviest `save_editor` tests left).
 - The per-player rules calls read a team once (`AATFSPEED`): the slice `reading` is merged
   and its reviews are closed, and `86dab4ed` passed the checkpoint.
 - The checkpoint: `86dab4ed` passed it (`19fda006`, an earlier one, is pushed); the Linux
   gates are owed.
-- The rolling mutation job: on the VPS, crate by crate; held while the pilot's `aatf` job
-  has the VPS (`LEAN/pilot`).
+- The rolling mutation job: on the VPS, crate by crate; `save_editor`'s stopped run is
+  collected first.
 - The move to the 905P (`RESUME/migration`): postponed until the maintainer starts it.
 - The periodic review of the dev cycle (`CYCLE`): waits for the lead on Fable and the
   maintainer's go.
@@ -688,6 +688,11 @@ and no phase closes with one outstanding.
       had no position when no step was in progress or done that week. In Chromium the page matches the old one element by
       element, with and without steps in progress. Its tests pass on Windows and on the VPS,
       which now has node for them;
+      - [~] **roadmapcols** the rows take their lane's x from the lane's line when the page
+        opens, so a lane moving to another column changes that lane's line alone: in
+        `79c169f9` a lane added moved others' columns and rewrote about 40 rows. SWE-2
+        sidekick on `.tmp/brief_roadmapcols.md` in the worktree `4cc-studio-temp/roadmapcols`
+        (branch `sk/roadmapcols`); then the lead's review;
       - [x] **S1roadmapdiff** 2026-11-27 `782055a8`, SWE-2's round: 3 accepted (the
         page's own script now runs under test, with values worked out by hand; the lanes'
         ends and the band label asserted; a line count corrected), none on a real input,
@@ -1029,13 +1034,16 @@ and no phase closes with one outstanding.
           - [~] **d3** [after d2] the rolling job's shards when nothing is queued, on both
             lanes, in two slices (SWE-2's code map of what it replaces:
             `.tmp/swe_map_d3.findings.md` in the `review_lean` worktree);
-            - [~] **d3a** a job's extra pass as extra shards (DECISIONS 2026-11-27 "a job's
-              extra pass runs as shards of its own, on the VPS lane"): `queue --extra`, the
-              extra pass cut round-robin as cargo-mutants' shards are, the map built with
-              `--extra`, the finish counting and rechecking the extra survivors. SWE-2
-              sidekick on `.tmp/brief_d3a.md` in the worktree `4cc-studio-temp/d3a` (branch
-              `sk/d3a`, log `.tmp/brief_d3a.run.log` there); then the lead's review and the
-              Linux run of its tests;
+            - [x] **d3a** 2026-11-27, merge `efa83a28` (DECISIONS 2026-11-27 "a job's extra
+              pass runs as shards of its own, on the VPS lane"): `just driver queue <crate>
+              --extra` cuts the crate's extra pass round-robin into extra shards after the
+              cargo-mutants ones, which the VPS lane alone runs, after a coverage map that
+              covers the extra kinds; the finish adds their survivors and reruns here those
+              only a Windows-only test catches. SWE-2 implemented it; the lead's review made
+              an extra survivor alone set the code 2, as a whole run's summary does, and gave
+              a crate with no extra mutant no extra shard. Its tests pass on Windows and on
+              the VPS. Deployed 2026-11-27, once the `LEAN/pilot` job had ended;
+              - [ ] **S1d3a** one SWE-2 review round over `684f1e96` (scripts);
             - [ ] **d3b** [after d3a] the rolling job itself. When the queue holds no job,
               this PC's driver queues the crate checked longest ago, with its extra pass;
               with this PC off, the VPS lane finishes what was sent and waits. `job.json`
@@ -4637,20 +4645,16 @@ points there.
     1,475 times, about half of it each picture's rasterizing: see rest), the Multi-team AATF
     every-team test (7.9 s, its own all-teams check beside the dialog's), the toolbar's
     shortcut test (a save opened per case, twelve times);
-  - [~] **pilot** [after patterns, driver/d2a] the lighter tests measured on whole runs
-    (DECISIONS 2026-11-27 "the lighter tests' pilot runs on `aatf`, about an hour a run").
-    `aatf`'s filed rolling run (`mutants.rolling/aatf/`, from `a2a97e42`: 482 mutants, 55
-    minutes on the VPS) is compared with one `aatf` run queued through the driver: the summed
-    test-phase time per mutant, from each run's `outcomes.json`, on the same machine.
-    Queued 2026-11-27 as `20261127T105300-aatf` (3 shards, sent to the VPS), with the
-    rolling job held (`.tmp/rolling.hold`) so the VPS lane gets the host. Once all three
-    `shard-<k>.done` are in `~/studio-driver/queue/` on the VPS: `just driver run --once`
-    here finishes the job (never earlier: this PC's lane would take a shard and run it with
-    the full suite), then the hold is removed and the runs compared. A few
-    mutants that newly survive are accepted when the run time falls clearly, and each is then
-    killed by a test aimed at it. `save_editor`'s rolling run from `cdf62953`, once this
-    pilot's "before", was stopped at 194 of its 3359 cargo-mutants mutants (its extra pass
-    finished, 1011) so the trial could have the VPS;
+  - [x] **pilot** [after patterns, driver/d2a] 2026-11-27: the lighter tests measured on
+    whole runs (DECISIONS 2026-11-27 "the lighter tests' pilot runs on `aatf`, about an hour
+    a run"). `aatf`'s filed rolling run (from `a2a97e42`) against one run through the
+    driver (`20261127T105300-aatf`, three shards), both on the VPS and both selecting each
+    mutant's tests. On the 409 mutants both runs tested, the summed test phases fell from
+    77.2 to 37.3 minutes (−52%), and the whole run from 55 minutes to about 34 of wall
+    time. No mutant newly survives: both runs missed the same two `official_file` mutants,
+    two lines lower now. The runs also differ by the driver's sharding, and the VPS was
+    otherwise idle for the second while the first's load is not known
+    (`.tmp/lead/pilot_compare.py` compares them);
   - [~] **rest** [after patterns] the heaviest `save_editor` tests left (listed under patterns),
     heaviest first, each change measured by the weighted estimate as patterns was. The
     pictures tests (11% of a run's weighted test time) spend about half of each picture's
