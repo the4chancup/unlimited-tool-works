@@ -3,7 +3,8 @@ phases not yet done, the open steps and what they wait on, the steps in progress
 line and the last week's done steps, made from `docs/WORKLOG.md` and the git log's recent
 merges so it cannot drift from them. The timeline's vertical positions are not in the page:
 its `<script>` computes them when it opens, from `roadmap_layout.js` embedded in it. A
-worklog row added or wrapped onto another line then moves only its own lines of the page.
+worklog row added or wrapped onto another line then moves only its own lines of the
+page, and a lane taking a new column moves only its `<line>`'s.
 It refuses a worklog whose "Where the work stands" items break the header's convention (no
 checkbox and ID, an ID twice among siblings, an `[after …]` naming no step, a wait that
 comes back to its step), so a wrong dependency fails when it is written, not at a converge.
@@ -415,8 +416,9 @@ def timeline(roadmap: Roadmap, dates: dict[str, str], today: str) -> str:
     then the last week's done steps, newest first; a lane per track and an edge to what
     each step waits on. `dates` maps a step's path to its commit's ISO time or a bare
     `YYYY-MM-DD`, which sorts before the times of its day. The SVG writes no vertical
-    position: the inputs the page's `layout` needs go out as `data-*` attributes, and its
-    `<script>` turns them into positions when the page opens."""
+    position, and a lane's x only on its `<line>`: the inputs the page's `layout` needs
+    go out as `data-*` attributes, and its `<script>` turns them into positions when the
+    page opens, copying each lane's x to its rows' circles and its edges' ends."""
     top = roadmap.steps
     phase_rows = []
     for phase, scope, status in reversed(roadmap.phases):
@@ -465,9 +467,10 @@ def timeline(roadmap: Roadmap, dates: dict[str, str], today: str) -> str:
     lines = {id(s): wrap(s.text.rstrip(";,"), room, text_width) for s in rows}
     by_slot = {slot[id(s)]: s for s in rows}
 
-    # No vertical position is written: the `data-*` attributes carry what the page's
-    # `layout` needs to place each element when the page opens (the svg's own height and
-    # viewBox height included), so a row added changes only its own page lines.
+    # No vertical position is written, and a lane's x only on its `<line>`: the
+    # `data-*` attributes carry what the page's `layout` needs to place each element
+    # when the page opens (the svg's own height and viewBox height included), so a
+    # row added or a lane taking a new column changes only its own page lines.
     parts = [f'<svg viewBox="0 0 {width} 0" width="{width}" '
              f'data-line-height="{LINE_HEIGHT}" data-row-pad="{ROW_PAD}" '
              'xmlns="http://www.w3.org/2000/svg">']
@@ -497,21 +500,18 @@ def timeline(roadmap: Roadmap, dates: dict[str, str], today: str) -> str:
                 t = min(inside, key=lambda d: slot[id(d)])
             if member[id(t)] == member[id(s)]:
                 continue
-            x1 = col_x(tracks[member[id(s)]][4])
-            x2 = col_x(tracks[member[id(t)]][4])
             parts.append(f'<path data-from="{html.escape(s.path)}" '
                          f'data-to="{html.escape(t.path)}" '
-                         f'data-x1="{x1}" data-x2="{x2}" '
                          f'stroke="{tracks[member[id(s)]][2]}" stroke-width="1.5" '
                          'opacity="0.6" fill="none"/>')
     first_row = len(parts)
     for s in rows:
         ti = member[id(s)]
-        colour, x = tracks[ti][2], col_x(tracks[ti][4])
+        colour = tracks[ti][2]
         open_ = s.mark in OPEN_MARKS
-        circle = (f'<circle cx="{x}" cy="0" r="5" fill="#1e1e1e" '
+        circle = (f'<circle cx="0" cy="0" r="5" fill="#1e1e1e" '
                   f'stroke="{colour}" stroke-width="2"/>' if open_ else
-                  f'<circle cx="{x}" cy="0" r="5" fill="{colour}"/>')
+                  f'<circle cx="0" cy="0" r="5" fill="{colour}"/>')
         text = s.text.rstrip(";,")
         title = (f"{s.path} {text}"
                  + (f" — waits on {', '.join(s.after)}" if s.after else ""))
@@ -530,7 +530,8 @@ def timeline(roadmap: Roadmap, dates: dict[str, str], today: str) -> str:
                         for i, part in enumerate(lines[id(s)]))
         now = ' data-now="1"' if s.mark == "~" else ""
         parts.append(f'<g data-row="{html.escape(s.path)}" '
-                     f'data-lines="{len(lines[id(s)])}"{now}>'
+                     f'data-lines="{len(lines[id(s)])}"{now} '
+                     f'data-track="{html.escape(tracks[ti][3])}">'
                      f'<title>{html.escape(title)}</title>{circle}'
                      f'<text x="{text_x}" y="0" {attrs} font-family="{LABEL_FONT}" '
                      'font-weight="600">'
@@ -610,7 +611,8 @@ def render(roadmap: Roadmap, merges: list[tuple[str, str]],
     layout_js = (Path(__file__).with_name("roadmap_layout.js")
                  .read_text(encoding="utf-8"))
     # Reads the `data-*` attributes the timeline's SVG carries, in document order, calls
-    # `layout`, and writes the vertical positions it returns back into the elements.
+    # `layout`, and writes the positions it returns back into the elements. A lane's x
+    # is taken from its `<line>` and copied to its rows' circles and its edges' ends.
     run = """\
 function placeTimeline() {
   const svg = document.querySelector("svg[data-line-height]");
@@ -623,10 +625,19 @@ function placeTimeline() {
     el: line,
     input: {key: line.dataset.track, first: line.dataset.first, last: line.dataset.last},
   }));
+  // A lane's x is written on its <line> alone and copied to the lane's rows and edges,
+  // so a lane taking a new column rewrites one page line.
+  const laneX = {};
+  for (const t of tracks)
+    laneX[t.input.key] = +t.el.getAttribute("x1");
+  const rowLane = {};
+  for (const g of groups)
+    if (!g.slot.gap) rowLane[g.slot.path] = g.el.dataset.track;
   const edges = [...svg.querySelectorAll("path[data-from]")].map(path => ({
     el: path,
     input: {from: path.dataset.from, to: path.dataset.to,
-            x1: +path.dataset.x1, x2: +path.dataset.x2},
+            x1: laneX[rowLane[path.dataset.from]],
+            x2: laneX[rowLane[path.dataset.to]]},
   }));
   const out = layout({
     lineHeight: +svg.dataset.lineHeight,
@@ -637,8 +648,10 @@ function placeTimeline() {
     nowRows: groups.filter(g => g.now).map(g => g.slot.path),
   });
   for (const g of groups)
-    if (!g.slot.gap)
+    if (!g.slot.gap) {
       g.el.setAttribute("transform", `translate(0,${out.rows[g.slot.path]})`);
+      g.el.querySelector(":scope > circle").setAttribute("cx", laneX[g.el.dataset.track]);
+    }
   for (const t of tracks) {
     const [y1, y2] = out.tracks[t.input.key];
     t.el.setAttribute("y1", y1);

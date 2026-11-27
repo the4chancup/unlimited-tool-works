@@ -1,7 +1,6 @@
 """Tests of scripts/pages/roadmap.py; `just test` runs them."""
 
 import contextlib
-import difflib
 import io
 import json
 import os
@@ -96,6 +95,10 @@ def laid_out(svg: str) -> dict:
 
     head = attrs(re.search(r"<svg [^>]*>", svg)[0])
     groups = [attrs(tag) for tag in re.findall(r"<g [^>]*>", svg)]
+    lanes = [a for a in map(attrs, re.findall(r"<line [^>]*>", svg))
+             if "data-track" in a]
+    lane_x = {a["data-track"]: int(a["x1"]) for a in lanes}
+    row_lane = {a["data-row"]: a["data-track"] for a in groups if "data-row" in a}
     layout_input = {
         "lineHeight": int(head["data-line-height"]),
         "rowPad": int(head["data-row-pad"]),
@@ -104,10 +107,10 @@ def laid_out(svg: str) -> dict:
                   for a in groups],
         "tracks": [{"key": a["data-track"], "first": a["data-first"],
                     "last": a["data-last"]}
-                   for a in map(attrs, re.findall(r"<line [^>]*>", svg))
-                   if "data-track" in a],
+                   for a in lanes],
         "edges": [{"from": a["data-from"], "to": a["data-to"],
-                   "x1": int(a["data-x1"]), "x2": int(a["data-x2"])}
+                   "x1": lane_x[row_lane[a["data-from"]]],
+                   "x2": lane_x[row_lane[a["data-to"]]]}
                   for a in map(attrs, re.findall(r"<path [^>]*>", svg))],
         "nowRows": [a["data-row"] for a in groups if "data-now" in a],
     }
@@ -123,13 +126,13 @@ def laid_out(svg: str) -> dict:
 
 
 def circles(svg: str) -> dict[str, tuple[int, int]]:
-    """Each row's circle: path -> (cx, cy), the cy `layout` gives the row."""
+    """Each row's circle's place: path -> (cx, cy), the cx its lane's `<line>`'s x
+    (the circle's own `cx` is the script's to set), the cy `layout` gives the row."""
     rows = laid_out(svg)["rows"]
+    lane_x = dict(re.findall(r'<line data-track="([^"]+)"[^>]*x1="(\d+)"', svg))
     found = {}
-    for match in re.finditer(
-            r'<g data-row="([^"]+)"[^>]*><title>[^<]*</title>'
-            r'<circle cx="(\d+)" cy="0"', svg):
-        found[match[1]] = (int(match[2]), rows[match[1]])
+    for match in re.finditer(r'<g data-row="([^"]+)"[^>]*data-track="([^"]+)"', svg):
+        found[match[1]] = (int(lane_x[match[2]]), rows[match[1]])
     return found
 
 
@@ -211,7 +214,8 @@ const document = {
 def placed(page: str) -> dict:
     """The attributes the page's own `<script>` leaves set, the script run under node on
     a stand-in DOM of the page's elements: `svg`, `now` and `now-label` keys, `rows` by
-    `data-row`, `tracks` by `data-track`, `edges` by (`data-from`, `data-to`)."""
+    `data-row`, `tracks` by `data-track`, `edges` by (`data-from`, `data-to`), `circles`
+    by the `data-row` of the `<g>` the circle sits in."""
     script = re.search(r"<script>\n(.*)\n</script>", page, re.S)[1]
     parser = Elements()
     parser.feed(page)
@@ -222,8 +226,9 @@ def placed(page: str) -> dict:
                              check=True)
     except FileNotFoundError:
         raise AssertionError("node is not on PATH") from None
-    found = {"rows": {}, "tracks": {}, "edges": {}}
-    for node in json.loads(out.stdout):
+    nodes = json.loads(out.stdout)
+    found = {"rows": {}, "tracks": {}, "edges": {}, "circles": {}}
+    for node in nodes:
         tag, attrs = node["tag"], node["attrs"]
         if "data-row" in attrs:
             found["rows"][attrs["data-row"]] = attrs
@@ -237,7 +242,20 @@ def placed(page: str) -> dict:
             found["now-label"] = attrs
         elif tag == "svg":
             found["svg"] = attrs
+    for node in nodes:
+        row = (nodes[node["parent"]]["attrs"].get("data-row")
+               if node["tag"] == "circle" and node["parent"] != -1 else None)
+        if row:
+            found["circles"][row] = node["attrs"]
     return found
+
+
+def page_lines_diff(before: str, after: str) -> tuple[set[str], set[str]]:
+    """(removed, added): the page lines the `after` worklog's render drops and gains
+    against `before`'s, a line that only moved in the page counting as unchanged."""
+    old = set(render(parse(before), [], {}, TODAY).splitlines())
+    new = set(render(parse(after), [], {}, TODAY).splitlines())
+    return old - new, new - old
 
 
 class Parse(unittest.TestCase):
@@ -420,18 +438,42 @@ class Render(unittest.TestCase):
         after = before.replace("   - [ ] **g** group.",
                                "   - [ ] **n** group.\n     - [ ] **n1** s.\n"
                                "   - [ ] **g** group.")
-        old = render(parse(before), [], {}, TODAY).splitlines()
-        new = render(parse(after), [], {}, TODAY).splitlines()
-        added, removed = [], []
-        for line in difflib.unified_diff(old, new, lineterm=""):
-            if line.startswith("-") and not line.startswith("---"):
-                removed.append(line)
-            elif line.startswith("+") and not line.startswith("+++"):
-                added.append(line)
-        self.assertEqual(removed, [])
+        removed, added = page_lines_diff(before, after)
+        self.assertEqual(removed, set())
         self.assertTrue(added)
         for line in added:
             self.assertIn("A/n", line)
+
+    def test_a_lane_taking_a_new_column_changes_only_its_own_line(self) -> None:
+        # The A/n lane's arrival reorders the rows so A/g's lane leaves its column
+        # for A's: the page writes a lane's x on its <line> alone, so A/g's moved
+        # lane is the only page line that changes.
+        before = wl("""\
+1. [ ] **A** item.
+   - [ ] **a1** s.
+   - [ ] **a2** s.
+   - [ ] **g** group.
+     - [ ] **g1** s.
+     - [ ] **g2** s.
+   - [ ] **h** group.
+     - [ ] **h1** s.
+     - [ ] **h2** [after a1] s.
+""")
+        after = before.replace("   - [ ] **h** group.",
+                               "   - [ ] **n** group.\n"
+                               "     - [ ] **n1** s.\n"
+                               "     - [ ] **n2** [after a2] s.\n"
+                               "   - [ ] **h** group.")
+        lane = r'<line data-track="A/g"[^>]*x1="(\d+)"'
+        xs = [re.search(lane, render(parse(text), [], {}, TODAY))[1]
+              for text in (before, after)]
+        self.assertNotEqual(xs[0], xs[1])
+        removed, _ = page_lines_diff(before, after)
+        self.assertEqual(
+            removed,
+            {'<line data-track="A/g" data-first="A/g/g1" '
+             'data-last="A/g/g2" x1="42" x2="42" stroke="#E69F00" '
+             'stroke-width="2"/>'})
 
     def test_place_timeline_lays_out_the_rows_the_line_its_label_and_the_height(self) -> None:
         # No step in progress and no done step: the bare "now" line in the gap slot.
@@ -439,6 +481,7 @@ class Render(unittest.TestCase):
         put = placed(page)
         self.assertEqual(put["rows"]["A"]["transform"], "translate(0,15)")
         self.assertEqual(put["rows"]["B"]["transform"], "translate(0,45)")
+        self.assertEqual(put["circles"]["A"]["cx"], "10")   # A's lane's column
         self.assertEqual((put["now"]["y1"], put["now"]["y2"]), ("71", "71"))
         self.assertEqual(put["now-label"]["y"], "64")
         self.assertEqual((put["svg"]["height"], put["svg"]["viewBox"]),
@@ -460,6 +503,9 @@ class Render(unittest.TestCase):
                          "M 42 45 C 42 60, 10 60, 10 75")
         self.assertEqual(put["edges"][("B/b1", "A/a2")]["d"],
                          "M 10 105 C 10 60, 10 60, 10 15")
+        # A/g's lane sits one column in, B's shares A's column.
+        self.assertEqual(put["circles"]["A/g/g1"]["cx"], "42")
+        self.assertEqual(put["circles"]["B/b1"]["cx"], "10")
         # A's track runs from a2's row to a1's.
         self.assertEqual((put["tracks"]["A"]["y1"], put["tracks"]["A"]["y2"]), ("15", "75"))
 
@@ -570,8 +616,9 @@ class Timeline(unittest.TestCase):
         text = WORKLOG.replace("| 2 | Libs |", "| 0.2.0 | Release 0.2.0, a later one |")
         self.assertIn("<title>Release 0.2.0 a later one (todo)</title>",
                       roadmap.timeline(parse(text), self.DATES, TODAY))
-        self.assertRegex(svg, r'<title>Release 0\.1\.0[^<]*</title><circle cx="\d+" '
-                              r'cy="\d+" r="5" fill="#1e1e1e" stroke="#999999"')
+        self.assertRegex(svg, r'<g data-row="Release 0\.1\.0"[^>]*data-track="phases">'
+                              r'<title>Release 0\.1\.0[^<]*</title><circle cx="0" '
+                              r'cy="0" r="5" fill="#1e1e1e" stroke="#999999"')
 
     NOW = wl("""\
 1. [ ] **A** item.
@@ -642,11 +689,12 @@ class Lanes(unittest.TestCase):
 
     def test_an_open_rows_circle_is_hollow_and_a_done_rows_filled(self) -> None:
         svg = roadmap.timeline(parse(WORKLOG), Timeline.DATES, TODAY)
-        cx = circles(svg)["TOP/c"][0]
-        self.assertIn(f'<circle cx="{cx}" cy="0" r="5" fill="#1e1e1e" '
-                      f'stroke="#E69F00" stroke-width="2"/>', svg)
-        cx = circles(svg)["TOP/b"][0]
-        self.assertIn(f'<circle cx="{cx}" cy="0" r="5" fill="#E69F00"/>', svg)
+        self.assertRegex(svg, r'<g data-row="TOP/c"[^>]*data-track="TOP">'
+                              r'<title>[^<]*</title><circle cx="0" cy="0" r="5" '
+                              r'fill="#1e1e1e" stroke="#E69F00" stroke-width="2"/>')
+        self.assertRegex(svg, r'<g data-row="TOP/b"[^>]*data-track="TOP">'
+                              r'<title>[^<]*</title><circle cx="0" cy="0" r="5" '
+                              r'fill="#E69F00"/>')
 
 
 class Edges(unittest.TestCase):
