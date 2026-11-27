@@ -30,16 +30,15 @@ One line per piece of work in flight; the items below hold the detail.
   driver's slices (`driver/d3a`, a job's extra pass as extra shards, merged and deployed,
   its fixes `f1d3a` merged and reviewed; `d3b1`, the rolling job moved into the driver,
   merged, its `switch` from `rolling.py` under way; `d3b2`, `gates-remote` taking the VPS
-  lane's hold, merged). The lighter tests (`LEAN`) are done: a whole `aatf` run's test phases
+  lane's hold, merged; `d4a`, the diff runs as driver jobs, with an Opus sidekick). The lighter tests (`LEAN`) are done: a whole `aatf` run's test phases
   halved with no new survivor, and no further slice is worth its cost.
 - The per-player rules calls read a team once (`AATFSPEED`): the slice `reading` is merged
   and its reviews are closed, and `86dab4ed` passed the checkpoint.
-- The checkpoint: `86dab4ed` passed it (`19fda006`, an earlier one, is pushed), and the
-  Linux gates passed at `1900348b` on WSL (`WSLGATES/trial2`). `just pipeline --local` runs
-  on `64b2eb82` (`.tmp/pipeline_64b2.log`), the VPS being on a whole-crate run; on its pass
-  the Linux gates go to WSL the same way (`.tmp/lead/wslgates_run.sh 64b2eb82`).
-- The rolling mutation job: `rolling.py` is held and files `epaint_raster`, then the
-  driver takes the job over (`driver/switch`).
+- The checkpoint: `64b2eb82` passed it locally (`just pipeline --local`, the VPS being on a
+  whole-crate run; `19fda006`, an earlier one, is pushed), and its Linux gates passed on
+  WSL as `WSLGATES/trial2` ran them (6959 tests).
+- The rolling mutation job: `rolling.py` is held but files its whole `save_editor` run
+  first, then the driver takes the job over (`driver/switch`).
 - The move to the 905P (`RESUME/migration`): postponed until the maintainer starts it.
 - The periodic review of the dev cycle (`CYCLE`): waits for the lead on Fable and the
   maintainer's go.
@@ -636,6 +635,35 @@ and no phase closes with one outstanding.
   - [ ] **backfill** two weeks of prevention lines written into the log;
   - [ ] **review1** [after backfill] the first review;
   - [ ] **lookahead1** [after review1] the first look-ahead.
+- [~] **INBOX** A page that tells the maintainer what is new on the card pages
+  (`questions.html`, `proposals.html`, `tasks.html`, `ui_decisions.html`; the maintainer,
+  2026-11-27): a low-priority card can wait there for days
+  while the maintainer gathers what an answer needs, and `.tmp/report.md` is read only for
+  detail, so a new card went unnoticed. `docs/maintainer/inbox.html` holds one pointer per
+  card that landed on either page, newest first, each a link to its card. A pointer the
+  maintainer marks noticed is hidden in that browser (as the pages keep their picks), and a
+  pointer leaves the file once its card has left its page. A script builds it from the four
+  pages, remembering which cards it has pointed to, so a card noticed and still open never
+  comes back; it runs where the pages' other generated parts are rebuilt, so no card can land
+  without its pointer.
+- [ ] **OVERSEER** An agent beside the lead that keeps the larger picture (the maintainer,
+  2026-11-27): every 50 minutes it reads what the lead did since its last firing (the
+  maintainer's messages and the lead's own words verbatim, the tool calls, their results
+  cut short, no thinking) against the worklog, the rules and a ledger of its own (open
+  promises and where each must land, patterns seen, corrections sent). It answers "nothing to
+  say", a correction for the lead (a notes file a hook shows the lead at its next tool call;
+  the lead acts or answers, and a dispute goes to the maintainer) or a card on
+  `questions.html` or `proposals.html` (so `INBOX` points to it). It reads everything and
+  writes only its ledger and notes. It judges the process, never the diffs, which the
+  reviewers own. In slices:
+  - [ ] **slicer** a script that cuts the session transcript into the windows the overseer
+    reads, the cuts above applied;
+  - [ ] **backtest** [after slicer] a dozen past windows of this session, holding catches the
+    maintainer made (the SWE-2.1 routing never written to where routing lives, docs-only
+    worklog commits, the handover deleted by its own sync, a personal detail committed),
+    replayed through SWE-2.1 XHigh and Claude Opus, each scored on catches made before the
+    maintainer's, catches missed and noise; the maintainer picks the model from the numbers;
+  - [ ] **live** [after backtest] the detached 50-minute loop, the notes hook and the ledger.
 - [ ] **WSLGATES** The pipeline's Linux gates on WSL rather than the VPS (the maintainer, 2026-11-26): the VPS is usually busy with whole-crate runs, so a
   pipeline waiting for it waits for nothing it needs. This PC has WSL 2 with Ubuntu 22.04,
   whose user `utwbuild` already has Rust and `just` at this machine's versions
@@ -1130,9 +1158,34 @@ and no phase closes with one outstanding.
                   one once did for five hours) would have stalled the gates for good; they
                   now stop after the module's poll timeout and read as an unreachable host.
                   The lead's fixes, with a docstring and a missing test;
-          - [ ] **d4** [after d3] the diff, closure and extra-kind commands and the
-            checkpoint queue jobs and wait for their results; the file split, its share
-            tables and the locks they made needed go; each run's timings a file of its own;
+          - [~] **d4** [after d3] (d3's code; its `switch` is not needed) the diff, closure
+            and extra-kind commands and the checkpoint queue jobs and wait for their
+            results; the file split, its share tables and the locks they made needed go;
+            each run's timings a file of its own. In three subslices:
+            - [x] **d4a** 2026-11-27, `1bc96820` (Opus; DECISIONS 2026-11-27 "a diff
+              run is driver jobs, one per crate"): `just mutants-diff` and `just
+              mutants-closure`, so the checkpoint too, queue one job per changed crate with
+              the diff (`in.diff`) and wait for them, holding no lock, then file them under
+              `mutants.diff/<crate>/`; they refuse when no driver runs on this PC. Both lanes
+              take a queued job's shards before the rolling job's, a job gets no more shards
+              than mutants, and an extra pass dropped because the job stayed here counts as
+              untested. The old diff run's own path (`run_crate`, its busy cap, its local
+              shards) is gone. Its tests pass on Windows and Linux (WSL). Its report's
+              contradictions are ruled in `.tmp/lead/driver/rulings_d4a.md`: one race fixed
+              in the slice, four items moved to d4b. Its review round (SWE-2.1 High) is
+              owed;
+            - [ ] **d4b** [after d4a] `just mutants <crate>`, `mutants-collect` and the
+              extra-kind commands queue jobs too; the split by files, its share tables,
+              the remote half and the locks only they needed go, with the texts that still
+              describe them (`REMOTE_ONLY`, the split: d4a's report lists them, rulings
+              `.tmp/lead/driver/rulings_d4a.md` C5). Also from d4a's report: a per-tree lock
+              a diff run holds through its wait, so two in one tree never mix their results
+              (C6); this PC's lane syncing and finishing while held, skipping only the claim,
+              so a diff run never waits out an in-game check (C8); `claim` skipping a job
+              whose `job.json` vanished (C9); and a measurement of what the VPS's coverage
+              map costs a small diff job against what its selection saves (C10);
+            - [ ] **d4c** [after d4b] each run's timings a file of its own, merged when the
+              estimate reads them, in place of the cost table's lock;
           - [ ] **d5** [after d4] the logon task, each shard's tree copies in its own folder
             (deleted at start for shards not running), and `deep`'s open fixes triaged;
           - [x] **timeouts** 2026-11-27 `c4bed274` (DECISIONS 2026-11-27 "a test past 180

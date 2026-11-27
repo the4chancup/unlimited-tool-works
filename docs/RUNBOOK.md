@@ -1000,7 +1000,8 @@ test green. Unreviewed, `mutants_diff.py` once deleted the previous run's
 results whenever two runs followed each other. A test a
 change adds to one is shown to fail by `scripts/review/perturb_check.py` (a list of perturbations,
 each with its test, applied and undone one at a time).
-**Three reviewer loops, cheapest first, one after the other.** SWE-2 runs its loop first; then
+**Three reviewer loops, cheapest first, one after the other.** SWE-2 runs its loop first (its
+2.1 release on High, `duck.py --reviewer swe21`, which in its trial found most of what the paid rounds accepted); then
 the loop of Gemini 4 Carbon on High thinking (`duck.py --reviewer carbon`, model
 `gemini-4-carbon-high`: paid, much cheaper than Astra, better than SWE-2 and not as good as
 Astra); then Astra's loop. Each loops

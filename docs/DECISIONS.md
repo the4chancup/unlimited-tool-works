@@ -20569,3 +20569,25 @@ and dating it moves the rotation on. Filing under `mutants.rolling/` keeps the t
 `launched_from.txt` check and the rotation's dates where they are.
 Plan: no plan edit needed: the driver's design is its worklog item (`driver`), whose `d3b`
 carries this out.
+
+## 2026-11-27 — mutation runs — a diff run is driver jobs, one per crate
+Decision: `just mutants-diff` and `just mutants-closure`, and so the checkpoint, queue one
+driver job per crate that a changed file under `crates/` belongs to. Each job carries the
+diff: its cargo-mutants shards run with `--in-diff`, and its extra shards run the extra kinds
+over the diff's changed lines. A crate with neither kind of mutant in the diff gets no job.
+The command then waits for its jobs, moves each finished one to `mutants.diff/<crate>/`,
+lists their survivors in `mutants.diff/missed_all.txt`, and exits with the codes it gave
+before (0 clean, 2 survivors, 3 timeouts, 1 a mutant untested). Both lanes take a queued
+job's shards before the rolling job's. When no driver runs on this PC, the command refuses
+with exit 1 rather than run a lane itself. A job queued with its extra pass but not sent to
+the VPS gets no extra shards, as before, and its result now counts that pass as untested
+(1), so a checkpoint whose diff never reached the VPS leaves `refs/checkpoints/mutated`
+where it was.
+Why: queued work waits at most one shard only if the diff runs are in the queue. Beside it,
+a diff run waited for the build slot behind this PC's shard and, with the VPS lane busy, ran
+every crate on this PC alone. A lane run from inside the command would take the jobs queued
+before its own, the rolling job's included, and could hold a checkpoint for hours. An extra
+pass left out with no code let a checkpoint count extra kinds as tested when they never ran.
+Plan: no plan edit needed: the driver's design is its worklog item (`driver`), whose `d4` is
+split into `d4a` (this), `d4b` (the whole-crate and extra-kind commands, the split, its share
+tables and the locks) and `d4c` (each run's timings in a file of its own).
