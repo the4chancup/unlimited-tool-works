@@ -1931,9 +1931,12 @@ Win32 original hurt the most):
   in an egui context of its own that is never shown, by the view's own paint functions (the
   pitch painter among them), at one pixel per point, with the portraits loaded into that
   context as textures. epaint tessellates the frame's shapes into triangles, as it does for
-  the screen, and a small rasterizer of the tool's own fills them into an `image::RgbaImage`,
-  sampling the textures the frame used (the font atlas and the portraits), which is then
-  written as a PNG. egui's own font code shapes and draws the text from the view's fonts, `↳`
+  the screen, and a small rasterizer of our own, the `epaint_raster` lib crate, fills them
+  into an `image::RgbaImage`, sampling the textures the frame used (the font atlas and the
+  portraits), which is then written as a PNG. The rasterizer is a crate, not a module of the
+  tool, so that test builds compile it optimized while the tool's own code stays quick to
+  rebuild for each of its mutants: unoptimized, one picture took over a second to
+  rasterize, paid again by every mutant whose tests write one. egui's own font code shapes and draws the text from the view's fonts, `↳`
   included, so a picture's text is the view's. We do not draw through a target that both the
   `Painter` and an `RgbaImage` implement: that is a second painter for every shape kind, kept
   in step with the first by hand, and its text would need `ab_glyph`, which egui 0.37 no

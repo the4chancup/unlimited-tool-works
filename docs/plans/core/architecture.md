@@ -39,6 +39,8 @@ These planned crates extend the spec's workspace tree:
 │       ├── team_widgets/             # (Phase 8) Shared egui widgets over the pes_savefile team model: tactics
 │       │                             #   pitch/instructions, card pickers, AATF violations list
 │       │                             #   (Save editor + Team creator)
+│       ├── epaint_raster/            # Fills epaint's triangles into an RGBA image (the Save editor's
+│       │                             #   formation pictures); a crate so test builds optimize it
 │       ├── model_convert/            # glTF+PES_bone/PES_mesh extension import/export + materials.toml
 │       │                             #   read/write lives here, via the external `gltf` crate
 │       ├── model_viewport/           # (future) shared wgpu model-preview widget — created with the

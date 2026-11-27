@@ -4569,7 +4569,7 @@ points there.
     call site stay: the heavy tests came from clock waits and whole-save inputs, not from
     them; helium got a line on a test's input and waits instead. Heaviest left, each a
     candidate for pilot's "the rest": the pictures dialog's range runs (7.8 s, selected
-    1,475 times, most of it the picking steps before each run), the Multi-team AATF
+    1,475 times, most of it each picture's rasterizing: see rest), the Multi-team AATF
     every-team test (7.9 s, its own all-teams check beside the dialog's), the toolbar's
     shortcut test (a save opened per case, twelve times);
   - [ ] **pilot** [after patterns] the lighter tests measured on whole runs (DECISIONS
@@ -4583,8 +4583,15 @@ points there.
     (`.tmp/lean/<crate>/`, `.tmp/lean/census_crate.sh`) found none whose test time the
     patterns can cut. `aatf`'s goes to its rules calls (`AATFSPEED`), `export_grid`'s suite
     is 4 s, and `ruleset_editor`'s heaviest tests are one case per field;
-  - [ ] **rest** [after patterns] the heaviest `save_editor` tests left (listed under patterns),
-    heaviest first, each change measured by the weighted estimate as patterns was.
+  - [~] **rest** [after patterns] the heaviest `save_editor` tests left (listed under patterns),
+    heaviest first, each change measured by the weighted estimate as patterns was. The
+    pictures tests (11% of a run's weighted test time) spend about half of each picture's
+    2.3 s in our rasterizer, unoptimized in test builds (1.2 s for a 448 by 1238 picture;
+    the dialog's frames take 2 to 3 ms, and the image and PNG crates optimized saved 7%);
+    - [ ] **raster** SWE-2: `view/pictures/raster.rs` moved to the `epaint_raster` lib
+      crate, optimized in test builds (DECISIONS 2026-11-27 "the formation pictures'
+      rasterizer moves to its own lib crate"), measured on the pictures tests before and
+      after.
 
 - resolved (2026-11-24) — `scripts/commit.py -a` left a new file out silently, as `git commit
   -a` does: `9ac41d0a` needed an amend for `docs/spec/core/design.md`. With `-a` it now

@@ -20422,3 +20422,16 @@ test time, so its run is builds. `ruleset_editor`'s heaviest tests are one case 
 which the rule of a light test per instance keeps. Two runs bought for a gain of a few minutes would cost more
 than they measure, while the rolling job runs `save_editor` anyway.
 Plan: no plan edit needed: the lighter tests are a worklog issue (`LEAN`), not a plan section.
+
+## 2026-11-27 — save_editor — the formation pictures' rasterizer moves to its own lib crate, optimized in test builds
+Decision: `save_editor`'s `view/pictures/raster.rs` becomes the `epaint_raster` lib crate
+(`crates/libs/epaint_raster`), with `opt-level = 3` in the dev profile, as `pes_savefile` has.
+Its one caller, the pictures painter, calls it there.
+Why: a crate, not the tool's module, because test builds compile the tool unoptimized, and
+there one 448 by 1238 picture took 1.2 s to rasterize against 8 ms for egui's frame and its
+tessellation. The pictures tests, 11% of a whole `save_editor` mutation run's test time
+weighted by the mutants that select them, spend about half of each picture's 2.3 s there. Not the whole tool
+optimized, because each of its mutants rebuilds it. Not the image and PNG crates optimized:
+that saved 7% of the pictures tests' time (77 s against 83).
+Plan: `plans/save_editor.md` "Drawing the picture" and `plans/core/architecture.md`'s crate
+tree edited.
