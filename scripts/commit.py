@@ -44,7 +44,9 @@ checkpoint's format gate after the commit. A commit (not a merge) that changes
 which then checks the page's links too), which refuses a worklog item breaking the
 convention its header states (otherwise found only by the next checkpoint's test), and
 writes the roadmap page, which goes into the same commit: rebuilt by hand, the page fell
-behind the worklog. A merge rebuilds nothing; the lead's worklog commit after it does.
+behind the worklog. After the commit it prints the lines the page changed apart from the
+other files' (`report_scripted`), which git's summary counts together. A merge rebuilds
+nothing; the lead's worklog commit after it does.
 
 Lead, sidekick, reviewer or script, nobody runs `git commit` or `git merge` with a message of
 their own any other way: a script that worded its own once made 49 commits no reader of the
@@ -71,8 +73,10 @@ FRESH_SECONDS = 2
 # file alone cannot read: without it, rustfmt parses as Rust 2015.
 EDITION = "2024"
 
-# The roadmap page, by a path from the repository's root whatever the directory run from.
-ROADMAP_PAGE = ":/docs/maintainer/roadmap.html"
+# The roadmap page, and the same by a path from the repository's root whatever the directory
+# run from.
+ROADMAP_FILE = "docs/maintainer/roadmap.html"
+ROADMAP_PAGE = f":/{ROADMAP_FILE}"
 
 # Phrases saying where the maintainer is, when they are free or that they are ill, which no
 # tracked file or message holds (docs/CONTRIBUTING.md "Commits"). Another wording slips past
@@ -136,11 +140,13 @@ def main(argv: list[str]) -> int:
     if drafts and not passes("scripts/drafts/bundle_drafts_test.py"):
         print("commit: nothing committed; the drafts bundler's test failed (above)")
         return 1
+    scripted = []
     if "docs/WORKLOG.md" in changed:
         if not passes("scripts/pages/roadmap.py"):
             print("commit: nothing committed; a worklog item breaks the worklog's convention (above)")
             return 1
         subprocess.run(["git", "add", "--", ROADMAP_PAGE], check=True)
+        scripted.append(ROADMAP_FILE)
         if [arg for arg in rest if not arg.startswith("-")]:
             rest = [*rest, ROADMAP_PAGE]
     docs = any(path.endswith((".md", ".html")) for path in changed)
@@ -158,7 +164,30 @@ def main(argv: list[str]) -> int:
     code = subprocess.run(["git", "commit", "-F", str(message), *rest]).returncode
     if code == 0:
         report_left_out(rest)
+        report_scripted(scripted)
     return code
+
+
+def report_scripted(scripted: list[str]) -> None:
+    """Prints the lines the files this command rebuilt changed in the commit just made, apart
+    from the other files': git's summary counts them together, and the roadmap page alone can
+    move hundreds of lines. Prints nothing when none of them changed."""
+    numstat = subprocess.run(["git", "show", "--numstat", "--format=", "HEAD"],
+                             capture_output=True, text=True, encoding="utf-8", check=True).stdout
+    rebuilt = []
+    added = deleted = 0
+    for row in numstat.splitlines():
+        plus, minus, path = row.split("\t", 2)
+        if plus == "-":  # a binary file, which has no line counts
+            continue
+        if path in scripted:
+            rebuilt.append(f"{path} +{plus} -{minus}")
+        else:
+            added += int(plus)
+            deleted += int(minus)
+    if rebuilt:
+        print(f"commit: rebuilt by script: {', '.join(rebuilt)}; the other files: "
+              f"+{added} -{deleted}")
 
 
 def report_left_out(rest: list[str]) -> None:

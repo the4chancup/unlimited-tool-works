@@ -120,6 +120,25 @@ class CommitAll(unittest.TestCase):
         run = self.commit_worklog("- [ ] **A** a step only this worklog has.\n", "-q")
         self.assert_page_committed(run)
 
+    def test_a_worklog_commit_reports_the_pages_lines_apart_from_the_others(self) -> None:
+        run = self.commit_worklog("- [ ] **A** a step only this worklog has.\n")
+        self.assertEqual(run.returncode, 0, run.stdout + run.stderr)
+        rows = [row.split("\t") for row in
+                git(self.repo, "show", "--numstat", "--format=", "HEAD").splitlines()]
+        page = next(row for row in rows if row[2] == "docs/maintainer/roadmap.html")
+        others = [row for row in rows if row is not page]
+        self.assertTrue(others, "premise: the commit has other files")
+        added = sum(int(row[0]) for row in others)
+        deleted = sum(int(row[1]) for row in others)
+        self.assertIn(
+            f"commit: rebuilt by script: docs/maintainer/roadmap.html +{page[0]} -{page[1]}; "
+            f"the other files: +{added} -{deleted}\n", run.stdout)
+
+    def test_a_commit_rebuilding_nothing_reports_no_scripted_lines(self) -> None:
+        run = self.commit_all()
+        self.assertEqual(run.returncode, 0, run.stdout + run.stderr)
+        self.assertNotIn("rebuilt by script", run.stdout)
+
     def test_a_personal_line_warns_and_the_commit_goes_on(self) -> None:
         (self.repo / "notes.txt").write_text(
             "two\nThe move waits: the maintainer is\n  away from the PC.\n", encoding="utf-8")
