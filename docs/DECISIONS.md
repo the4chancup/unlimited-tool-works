@@ -20408,3 +20408,17 @@ Plan: no plan edit needed — test build settings have no plan section; `Cargo.t
 Decision: `Cargo.toml` builds `egui`, `epaint`, `emath`, `ecolor` and the font, shaping and rasterizing crates epaint uses (`skrifa`, `read-fonts`, `font-types`, `harfrust`, `vello_cpu` and its crates, among them) at opt-level 3 in the dev profile, beside the dependencies already optimized there.
 Why: the test-suite census (worklog `LEAN/census`) found a view test's frames spent mostly in egui's layout, shaping and glyph rasterizing unoptimized. With these crates optimized, save_editor's whole suite took 676 s of test time against 988 s, and team_compiler's 193 s against 205 (4 test threads, one run each, every test passing on both). The cost is a cold build of egui taking 59 s against 24 s (4 jobs); a mutant's build never recompiles a dependency, so a mutation run pays it once per copy, against seconds saved on each mutant's tests. The earlier finding that optimizing every dependency gained little was measured on `check-aatf` runs (`Cargo.toml`'s comment on `rhai`), which draw no frames.
 Plan: no plan edit needed — test build settings have no plan section; `Cargo.toml`'s comment carries the reason.
+
+## 2026-11-27 — testing — the lighter tests are measured on save_editor's rolling runs, not a pilot crate
+Decision: the lighter tests' whole-run measure compares `save_editor`'s rolling run launched
+from `cdf62953`, before the test-build optimizations and the lighter tests, with its next
+rolling run from a commit that holds both. The census's estimates split the gain between them:
+summed test time for the optimizations, test time weighted by each test's mutants for the
+lighter tests. No mid-size crate gets a before-and-after run of its own.
+Why: the pilot was to run a mid-size crate before and after, since `save_editor`'s runs take
+too long to buy twice. But no such crate has test time the patterns can cut. `aatf`'s goes to the rules
+logic each case needs, and building it optimized saved 3%. `export_grid`'s suite is 4 s of
+test time, so its run is builds. `ruleset_editor`'s heaviest tests are one case per field,
+which the rule of a light test per instance keeps. Two runs bought for a gain of a few minutes would cost more
+than they measure, while the rolling job runs `save_editor` anyway.
+Plan: no plan edit needed: the lighter tests are a worklog issue (`LEAN`), not a plan section.

@@ -28,7 +28,8 @@ One line per piece of work in flight; the items below hold the detail.
 
 - The workflow improvements before the suite resumes (`RESUME/optimize`): the mutation
   driver's slices (`driver/d2`, the VPS lane: d2b and d2c merged, d2a's trial pending), and
-  the lighter tests (`LEAN/pilot` next, a crate's whole mutation run before and after).
+  the lighter tests (`LEAN/pilot`: `save_editor`'s next rolling run against the one now
+  running; `LEAN/rest` meanwhile).
 - The checkpoint: `19fda006` passed it and is pushed; its Linux gates are owed.
 - The rolling mutation job: on the VPS, crate by crate, held after its current crate so the
   driver's VPS lane runs its trial job (`driver/d2a`).
@@ -4571,19 +4572,19 @@ points there.
     1,475 times, most of it the picking steps before each run), the Multi-team AATF
     every-team test (7.9 s, its own all-teams check beside the dialog's), the toolbar's
     shortcut test (a save opened per case, twelve times);
-  - [ ] **pilot** [after patterns] one mid-size crate, whose whole mutation run takes about
-    an hour, run before and after the lighter tests: a large crate's runs take too long to
-    compare. A few mutants that newly survive are accepted when the run time falls clearly,
-    and each is then killed by a test aimed at it. Then the rest, heaviest first. Not `aatf`
-    (2026-11-27): its last whole run took 55 minutes, four fifths of it in tests, but its
-    census (`.tmp/lean/aatf/`) finds that time in the rules logic itself, which every case
-    needs. The `dbc7` fixtures, 38% of a run's test time once each test is weighted by the
-    mutants that select it, spend it in `apply_tier`, each of whose script calls reads the
-    whole team (`AATFSPEED`). Built optimized, `aatf`'s suite took 172 s of test time
-    against 177, and a test building each legal team once, on the rules it already loaded,
-    would save about a twentieth of a run. Next: the same census (`.tmp/lean/aatf_census.sh`'s shape) of `ruleset_editor`
-    and `export_grid`, crates of headless view tests whose last runs took 27 and 20 minutes
-    (`.tmp/lean/crate_run_times.py`), and the pilot on the one the patterns cut most.
+  - [ ] **pilot** [after patterns] the lighter tests measured on whole runs (DECISIONS
+    2026-11-27 "the lighter tests are measured on save_editor's rolling runs"). The
+    `save_editor` rolling run launched from `cdf62953`, before the test-build optimizations
+    and the lighter tests, is compared with its next rolling run from a commit holding both:
+    the summed test-phase time per mutant, from each run's `outcomes.json`, on the same
+    machine. The census's estimates split the gain between the two. A few mutants that
+    newly survive are accepted when the run time falls clearly, and each is then killed by
+    a test aimed at it. No mid-size crate got a pilot of its own: the censuses
+    (`.tmp/lean/<crate>/`, `.tmp/lean/census_crate.sh`) found none whose test time the
+    patterns can cut. `aatf`'s goes to its rules calls (`AATFSPEED`), `export_grid`'s suite
+    is 4 s, and `ruleset_editor`'s heaviest tests are one case per field;
+  - [ ] **rest** [after patterns] the heaviest `save_editor` tests left (listed under patterns),
+    heaviest first, each change measured by the weighted estimate as patterns was.
 
 - resolved (2026-11-24) — `scripts/commit.py -a` left a new file out silently, as `git commit
   -a` does: `9ac41d0a` needed an amend for `docs/spec/core/design.md`. With `-a` it now
