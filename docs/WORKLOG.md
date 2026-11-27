@@ -657,6 +657,11 @@ and no phase closes with one outstanding.
   - [~] **optimize** the queued improvements: `WSLGATES` and `CYCLE` above (`CYCLE` on Fable,
     at the maintainer's go), the mutation
     driver's `warm` and `driver` steps below, and the issue `LEAN` (`TESTSCRATCH` resolved);
+    - [~] **personal** `scripts/commit.py` warns when a message, or a line the commit adds,
+      says where the maintainer is or when they are free (CONTRIBUTING "Commits"): built,
+      its tests passing on Windows with a red run per call; left uncommitted until they run
+      under WSL, whose VM refuses to start (`HCS/ERROR_NO_SYSTEM_RESOURCES`, 2026-11-27, about
+      11 GB free against its 8 GB, after a `wsl --shutdown` too): `.tmp/lead/wsl_commit_test.sh`;
     - [~] **TSREVIEW** the review rounds owed on the issue `TESTSCRATCH`'s slices b and c
       (shipped test code: a SWE-2 loop, then one paid round, RUNBOOK "Review rounds"); the
       rulings in `.tmp/lead/review_scratch_bc/rulings_draft.md`:
