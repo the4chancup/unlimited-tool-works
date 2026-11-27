@@ -985,6 +985,21 @@ and no phase closes with one outstanding.
           `memsum` and `warm` carry over, and `shards`' `split` goes with the split; `deep`'s open
           fixes (S1-S7) wait for a triage of which the driver makes moot (races between
           separate commands) and which it keeps (diff parsing, outcome accounting);
+          - [~] **d1** the queue on disk and this PC's lane: `scripts/mutation/driver.py`
+            (`just driver queue <crate>`, `just driver run`), whole-crate jobs only, beside
+            the old commands and replacing none; Opus in `4cc-studio-temp/sk_driver1`, brief
+            `.tmp/lead/driver/brief_d1.md`;
+          - [ ] **d2** [after d1] the VPS lane: a driver there taking shards of the jobs sent
+            with their snapshots, the coverage map once per job before its first shard there,
+            results kept until this PC fetches them between its own shards;
+          - [ ] **d3** [after d2] the rolling job's shards when nothing is queued, on both
+            lanes; `rolling.py` and `.tmp/rolling.hold` go, `gates-remote` takes the VPS
+            lane's hold, and RUNBOOK "Mutation runs and the VPS" is rewritten;
+          - [ ] **d4** [after d3] the diff, closure and extra-kind commands and the
+            checkpoint queue jobs and wait for their results; the file split, its share
+            tables and the locks they made needed go; each run's timings a file of its own;
+          - [ ] **d5** [after d4] the logon task, each shard's tree copies in its own folder
+            (deleted at start for shards not running), and `deep`'s open fixes triaged;
         - [ ] **deep** [after shards/lock, shards/rename, orphans, oom, died, memcap] 2026-11-25 (the maintainer): the mutation
           machinery is reviewed at Tier 1's depth (RUNBOOK "Review rounds" (e)). Carbon's loop
           over `scripts/mutation/` whole, in parts, then Astra's, each paid round between SWE-2
