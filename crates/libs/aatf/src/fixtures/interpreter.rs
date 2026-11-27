@@ -237,7 +237,11 @@ fn a_special_fires_through_any_and_applies_once() {
         p.strong_foot = Some(Foot::Right);
     });
     let limits = rules
-        .card_limits(&team, team.player(3).expect("slot 3"), "regular")
+        .card_limits(
+            &reading(&rules, &team),
+            team.player(3).expect("slot 3"),
+            "regular",
+        )
         .expect("limits");
     assert_eq!(limits.limit, 4);
 }
@@ -263,7 +267,11 @@ fn form_and_injury_resistance_effects_move_the_targets() {
         p.injury_resistance = 1;
     });
     let values = rules
-        .tier_values(&team, team.player(3).expect("slot 3"), "regular")
+        .tier_values(
+            &reading(&rules, &team),
+            team.player(3).expect("slot 3"),
+            "regular",
+        )
         .expect("values");
     assert_eq!((values.form, values.injury_resistance), (6, 2));
     let found = problems(&rules, &team);
@@ -392,7 +400,12 @@ fn a_tiers_name_color_is_checked_and_written() {
         let view = records.view();
         let player = view.player(slot).expect("filled").clone();
         rules
-            .apply_tier(&view, &player, tier, records.player_mut(slot))
+            .apply_tier(
+                &reading(&rules, &view),
+                &player,
+                tier,
+                records.player_mut(slot),
+            )
             .expect("the tier applies");
     }
     assert_eq!(name_colors(&records.view()), 0);
@@ -459,7 +472,11 @@ fn a_free_option_is_not_used_by_a_card_free_by_name() {
         p.cards = vec![card("long_ranger"), card("trickster"), card("captaincy")];
     });
     let limits = rules
-        .card_limits(&team, team.player(3).expect("slot 3"), "regular")
+        .card_limits(
+            &reading(&rules, &team),
+            team.player(3).expect("slot 3"),
+            "regular",
+        )
         .expect("limits");
     assert_eq!(limits.limit, 1, "the `cards` option, not the `free` one");
     assert_eq!(limits.free.get("com"), Some(&1));
@@ -512,7 +529,11 @@ fn a_stat_target_replaces_the_tier_target() {
         )]
     );
     let values = rules
-        .tier_values(&team, team.player(3).expect("slot 3"), "regular")
+        .tier_values(
+            &reading(&rules, &team),
+            team.player(3).expect("slot 3"),
+            "regular",
+        )
         .expect("values");
     assert_eq!(values.stats.get(&speed), Some(&90));
 }
@@ -565,7 +586,11 @@ fn max_a_positions_caps_the_a_positions() {
         )]
     );
     let limits = rules
-        .card_limits(&three, three.player(3).expect("slot 3"), "regular")
+        .card_limits(
+            &reading(&rules, &three),
+            three.player(3).expect("slot 3"),
+            "regular",
+        )
         .expect("limits");
     assert_eq!(limits.max_a_positions, Some(2));
 }
@@ -862,7 +887,11 @@ fn a_free_option_for_another_tier_is_not_used() {
     });
     assert_eq!(findings_at(&rules, &team, 3), vec![]);
     let limits = rules
-        .card_limits(&team, team.player(3).expect("slot 3"), "regular")
+        .card_limits(
+            &reading(&rules, &team),
+            team.player(3).expect("slot 3"),
+            "regular",
+        )
         .expect("limits");
     assert_eq!(limits.free.get("com"), Some(&2), "the second option's free");
 }
@@ -905,7 +934,11 @@ fn an_a_positions_option_for_another_tier_is_not_used() {
     });
     assert_eq!(findings_at(&rules, &team, 3), vec![]);
     let limits = rules
-        .card_limits(&team, team.player(3).expect("slot 3"), "regular")
+        .card_limits(
+            &reading(&rules, &team),
+            team.player(3).expect("slot 3"),
+            "regular",
+        )
         .expect("limits");
     assert_eq!(limits.a_positions, 2, "the second option's allowance");
 }
@@ -944,7 +977,11 @@ fn a_stat_bonus_option_for_another_tier_is_not_used() {
     });
     assert_eq!(findings_at(&rules, &team, 3), vec![]);
     let values = rules
-        .tier_values(&team, team.player(3).expect("slot 3"), "regular")
+        .tier_values(
+            &reading(&rules, &team),
+            team.player(3).expect("slot 3"),
+            "regular",
+        )
         .expect("values");
     assert_eq!(
         values.stats.get(&stat("speed")),
@@ -1162,7 +1199,12 @@ fn apply_tier_resolves_specials_against_the_values_it_writes() {
     let player = view.player(3).expect("slot 3").clone();
     assert_eq!(player.form, 2, "form 2 on the game's scale");
     rules
-        .apply_tier(&view, &player, "regular", records.player_mut(3))
+        .apply_tier(
+            &reading(&rules, &view),
+            &player,
+            "regular",
+            records.player_mut(3),
+        )
         .expect("the tier applies");
     let entry = records.player_mut(3);
     assert_eq!(entry.stats.form, 3, "form 4 stored");
@@ -1195,7 +1237,12 @@ fn apply_tier_refuses_values_that_never_settle() {
     let view = records.view();
     let player = view.player(3).expect("slot 3").clone();
     let err = rules
-        .apply_tier(&view, &player, "regular", records.player_mut(3))
+        .apply_tier(
+            &reading(&rules, &view),
+            &player,
+            "regular",
+            records.player_mut(3),
+        )
         .expect_err("values that never settle are refused");
     assert_eq!(
         err,
@@ -1240,7 +1287,12 @@ fn apply_tier_resolves_specials_against_the_written_name_color() {
         let view = records.view();
         let player = view.player(3).expect("slot 3").clone();
         rules
-            .apply_tier(&view, &player, tier, records.player_mut(3))
+            .apply_tier(
+                &reading(&rules, &view),
+                &player,
+                tier,
+                records.player_mut(3),
+            )
             .expect("the tier applies");
         records
     };

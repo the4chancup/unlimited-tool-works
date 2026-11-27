@@ -8,9 +8,11 @@
 //! runs its `check_team` on a `TeamView`, which a save or a Team TOML
 //! document builds; a file knows its `logic()` identity. The shipped
 //! logic (`logic/logic.rhai`) is the generic interpreter: `check_team`,
-//! `tier_values` (behind `apply_tier`, the one writing operation),
-//! `card_limits` and `player_tier` (the tier a player is recognized
-//! as).
+//! `team_height_system` (the height system `check_team` reads a team
+//! under, read once per team as a `TeamReading`), then, for one player
+//! of that reading, `tier_values` (behind `apply_tier`, the one writing
+//! operation), `card_limits` and `player_tier` (the tier a player is
+//! recognized as).
 //!
 //! The host reads a team as a `TeamView` of `PlayerView`s on the game's
 //! own scale, and every script runs on the one engine of `engine.rs`.
@@ -68,7 +70,7 @@ mod violation;
 mod writer;
 
 pub use file::{FileSections, LogicIdentity, assemble_file, file_sections};
-pub use rules::{RULES_FILE_EXTENSION, Rules, official_file};
+pub use rules::{RULES_FILE_EXTENSION, Rules, TeamReading, official_file};
 pub use team::{PlayerView, TeamView, TeamViewError};
 pub use templates::{Template, builtin, builtin_descriptions, templates};
 pub use values::CardLimits;

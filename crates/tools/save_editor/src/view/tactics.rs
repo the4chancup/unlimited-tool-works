@@ -654,7 +654,9 @@ pub(super) fn medal_team_view(file: &EditFile, team_id: u32) -> Option<TeamView>
 /// (the pitch markers' badge outlines): the tier `player_tier` reads the
 /// slot's player as, mapped through `Medal::from_tier_id`; `None` for an
 /// empty slot, no tier, a check that failed or a tier that is no medal
-/// — and for every slot when the team cannot be viewed (`None`).
+/// — and for every slot when the team cannot be viewed (`None`) or its
+/// height system cannot be read. The team is read once for all its
+/// slots: working out its height system reads the whole team.
 pub(super) fn slot_medals(
     rules: &aatf::Rules,
     team: Option<&TeamView>,
@@ -663,12 +665,19 @@ pub(super) fn slot_medals(
     let Some(team) = team else {
         return vec![None; slots];
     };
+    let reading = match rules.team_reading(team.clone()) {
+        Ok(reading) => reading,
+        Err(error) => {
+            log::debug!("the team's badges get no medal: its height system was not read: {error}");
+            return vec![None; slots];
+        }
+    };
     (0..slots)
         .map(|slot| {
             u8::try_from(slot)
                 .ok()
                 .and_then(|slot| team.player(slot))
-                .and_then(|player| match rules.player_tier(team, player) {
+                .and_then(|player| match rules.player_tier(&reading, player) {
                     Ok(tier) => tier,
                     Err(error) => {
                         log::debug!("roster slot {slot}'s badge gets no medal: {error}");

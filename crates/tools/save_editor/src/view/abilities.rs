@@ -1445,9 +1445,9 @@ fn spawn_badge(
 
 /// What `rules` read `team`'s roster `slot` as: his own tier with its
 /// card economy, no tier, or a check that failed with its error (an
-/// empty slot fails too). The two script calls run on the badge run's
-/// worker thread: each reads the whole team under every candidate
-/// height system.
+/// empty slot fails too). The script calls run on the badge run's
+/// worker thread: the team's reading reads the whole team under every
+/// candidate height system, and the two per-player calls share it.
 fn own_badge(rules: &aatf::Rules, team: &TeamView, slot: u8) -> OwnBadge {
     let Some(player) = team.player(slot) else {
         // The slot as the player list numbers it, from 01.
@@ -1456,8 +1456,12 @@ fn own_badge(rules: &aatf::Rules, team: &TeamView, slot: u8) -> OwnBadge {
             u32::from(slot) + 1
         ));
     };
-    match rules.player_tier(team, player) {
-        Ok(Some(tier)) => match rules.card_limits(team, player, &tier.id) {
+    let reading = match rules.team_reading(team.clone()) {
+        Ok(reading) => reading,
+        Err(error) => return OwnBadge::Failed(error.to_string()),
+    };
+    match rules.player_tier(&reading, player) {
+        Ok(Some(tier)) => match rules.card_limits(&reading, player, &tier.id) {
             Ok(limits) => OwnBadge::Tier {
                 label: tier.label.clone(),
                 limits,

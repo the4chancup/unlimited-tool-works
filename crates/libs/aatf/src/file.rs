@@ -129,7 +129,7 @@ pub enum LogicIdentity {
 /// version would read as modified.
 pub(crate) const LOGIC_VERSIONS: &[(u32, &str)] = &[(
     1,
-    "00fec8341f9caac13641a075de64a843dcd0098770911b741b74f0da1c421fc1",
+    "9a43bf6ea787a6884e6aeb3303698bf01cdc0bd1d7b08911807c9d219a0dbcf0",
 )];
 
 /// `text`'s logic section: from the line starting `// ==== LOGIC` to

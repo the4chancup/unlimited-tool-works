@@ -669,8 +669,10 @@ pub enum CheckError {
     },
     /// A function's result does not convert (`function` names it): a
     /// `tier_values` or `card_limits` map that is not its values, a
-    /// `player_tier` answer that is neither `()` nor a tier's id, or a
-    /// `check_team` system that is neither `()` nor a name.
+    /// `player_tier` answer that is neither `()` nor a tier's id, a
+    /// `team_height_system` answer that is neither `()` nor a height
+    /// system's id, or a `check_team` system that is neither `()` nor a
+    /// name.
     #[error("{function} did not return its values: {message}")]
     Values {
         /// The script function.

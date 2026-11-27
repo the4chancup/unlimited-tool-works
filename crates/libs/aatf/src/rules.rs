@@ -1,14 +1,16 @@
 //! `Rules`: a loaded rules file — its ruleset, its compiled script and
 //! the engine it runs on — and the host API over a `TeamView`:
-//! `check_team`, `tier_values`, `card_limits`, `player_tier` and
-//! `apply_tier`.
+//! `check_team` and `team_reading`, then, over a `TeamReading`,
+//! `tier_values`, `card_limits`, `player_tier` and `apply_tier`.
 
 use pes_savefile::model::player::PlayerEntry;
 use serde::de::DeserializeOwned;
 
 use crate::file::{LogicIdentity, assemble, identity};
 use crate::illegal_formation::illegal_formations;
-use crate::ruleset::{LoadError, Ruleset, Severity, Tier, ruleset_from_scope, run_top_level};
+use crate::ruleset::{
+    LoadError, Ruleset, Severity, SystemId, Tier, ruleset_from_scope, run_top_level,
+};
 use crate::team::{PlayerView, TeamView};
 use crate::values::{CardLimits, TierValues};
 use crate::violation::{CheckError, TeamCheck, Violation, ViolationKind, team_check};
@@ -37,8 +39,9 @@ pub fn official_file() -> String {
 pub struct Rules {
     /// The ruleset the file's `RULESET` deserialized into.
     ruleset: Ruleset,
-    /// The compiled script (`check_team`, `tier_values`, `card_limits`,
-    /// `player_tier`, `custom_checks` live in it).
+    /// The compiled script (`check_team`, `team_height_system`,
+    /// `tier_values`, `card_limits`, `player_tier`, `custom_checks` live
+    /// in it).
     ast: rhai::AST,
     /// The engine the script runs on (`engine.rs` — same one as every
     /// other path).
@@ -47,12 +50,44 @@ pub struct Rules {
     logic: LogicIdentity,
 }
 
+/// A team with the height system `check_team` reads it under, worked out once
+/// (`Rules::team_reading`) for every per-player call about that team.
+#[derive(Debug)]
+pub struct TeamReading {
+    /// The team the system was worked out for.
+    team: TeamView,
+    /// The system's id, `None` when no height system holds for the team.
+    system: Option<SystemId>,
+}
+
+impl TeamReading {
+    /// The team this reading is of.
+    pub fn team(&self) -> &TeamView {
+        &self.team
+    }
+
+    /// The id of the height system the team is read under, as
+    /// `check_team` reports it (`TeamCheck::height_system`); `None` when
+    /// no system holds.
+    pub fn height_system(&self) -> Option<&SystemId> {
+        self.system.as_ref()
+    }
+
+    /// The system as the script takes it: its id, or `()` for none.
+    fn system_arg(&self) -> rhai::Dynamic {
+        self.system
+            .clone()
+            .map_or(rhai::Dynamic::UNIT, rhai::Dynamic::from)
+    }
+}
+
 /// The functions the file must define, and their arities.
-const REQUIRED: [(&str, usize); 4] = [
+const REQUIRED: [(&str, usize); 5] = [
     ("check_team", 1),
-    ("tier_values", 3),
-    ("card_limits", 3),
-    ("player_tier", 2),
+    ("team_height_system", 1),
+    ("tier_values", 4),
+    ("card_limits", 4),
+    ("player_tier", 3),
 ];
 
 impl Rules {
@@ -74,7 +109,7 @@ impl Rules {
     /// `from_data_block` skips).
     fn load_without_step_three(text: &str) -> Result<Rules, LoadError> {
         let (engine, ast, scope) = run_top_level(text)?;
-        // Step 1: the four functions with their arities, and every
+        // Step 1: the five functions with their arities, and every
         // `custom_checks` with one.
         for (name, arity) in REQUIRED {
             if !ast
@@ -161,70 +196,81 @@ impl Rules {
         Ok(check)
     }
 
-    /// The targets `player` (of `team`) must carry as tier `tier`, the
-    /// specials applied: the file's `tier_values`.
+    /// `team` with the height system `check_team` reads it under: the
+    /// file's `team_height_system`, whose `()` is no system. An answer
+    /// that is no id of the ruleset's height systems is `Values` naming
+    /// the function. Working the system out reads the whole team, so a
+    /// caller reads a team once and hands the reading to every
+    /// per-player call about it. An edit to any of the team's players can
+    /// change the system, so after one the caller reads the team again.
+    pub fn team_reading(&self, team: TeamView) -> Result<TeamReading, CheckError> {
+        let answer = self.call("team_height_system", (team.clone(),))?;
+        let system = known_id("team_height_system", "height system", answer, |id| {
+            let known = self
+                .ruleset
+                .heights
+                .systems
+                .iter()
+                .any(|system| system.id == id);
+            known.then(|| id.to_string())
+        })?;
+        Ok(TeamReading { team, system })
+    }
+
+    /// The targets `player` (of the reading's team) must carry as tier
+    /// `tier`, the specials applied, under the reading's height system:
+    /// the file's `tier_values`.
     pub(crate) fn tier_values(
         &self,
-        team: &TeamView,
+        reading: &TeamReading,
         player: &PlayerView,
         tier: &str,
     ) -> Result<TierValues, CheckError> {
-        self.values("tier_values", team, player, tier)
+        self.values("tier_values", reading, player, tier)
     }
 
-    /// The card economy of `player` (of `team`) as tier `tier`: the
-    /// file's `card_limits`, behind the card pickers' remaining counts.
+    /// The card economy of `player` (of the reading's team) as tier
+    /// `tier`, under the reading's height system: the file's
+    /// `card_limits`, behind the card pickers' remaining counts.
     pub fn card_limits(
         &self,
-        team: &TeamView,
+        reading: &TeamReading,
         player: &PlayerView,
         tier: &str,
     ) -> Result<CardLimits, CheckError> {
-        self.values("card_limits", team, player, tier)
+        self.values("card_limits", reading, player, tier)
     }
 
-    /// The tier `player` (of `team`) is recognized as, as `check_team`
-    /// reads him: the team's height system, then the first tier in list
-    /// order whose condition holds and whose expected rating he reaches,
-    /// else the last whose condition holds (`spec/aatf_rules.md` "How a
-    /// player is read", steps 1 and 2): the file's `player_tier`. A player
-    /// rated under every such tier still has one; `None` only when no
-    /// tier's condition holds, where `check_team` reports `NoTier`. Behind
-    /// the Save editor's cards badge, which then asks `card_limits` for
-    /// this tier.
+    /// The tier `player` (of the reading's team) is recognized as, as
+    /// `check_team` reads him: under the reading's height system, the
+    /// first tier in list order whose condition holds and whose expected
+    /// rating he reaches, else the last whose condition holds
+    /// (`spec/aatf_rules.md` "How a player is read", steps 1 and 2): the
+    /// file's `player_tier`. A player rated under every such tier still
+    /// has one; `None` only when no tier's condition holds, where
+    /// `check_team` reports `NoTier`. Behind the Save editor's cards
+    /// badge, which then asks `card_limits` for this tier.
     pub fn player_tier(
         &self,
-        team: &TeamView,
+        reading: &TeamReading,
         player: &PlayerView,
     ) -> Result<Option<&Tier>, CheckError> {
-        let result = self.call("player_tier", (player.clone(), team.clone()))?;
-        if result.is_unit() {
-            return Ok(None);
-        }
-        let id = result
-            .into_immutable_string()
-            .map_err(|type_name| CheckError::Values {
-                function: "player_tier",
-                message: format!("{type_name} is no tier id"),
-            })?;
-        self.ruleset
-            .tiers
-            .iter()
-            .find(|tier| tier.id == id.as_str())
-            .map(Some)
-            .ok_or_else(|| CheckError::Values {
-                function: "player_tier",
-                message: format!("\"{id}\" names no tier"),
-            })
+        let answer = self.call(
+            "player_tier",
+            (player.clone(), reading.team.clone(), reading.system_arg()),
+        )?;
+        known_id("player_tier", "tier", answer, |id| {
+            self.ruleset.tiers.iter().find(|tier| tier.id == id)
+        })
     }
 
     /// Writes tier `tier`'s targets into `entry`, the record `player`
-    /// views (of `team`): stats, form, injury resistance and weak foot,
-    /// and the tier's `name_color` over the name's leading colour code
-    /// (a code another tier sets stripped under a tier that sets none),
-    /// so the quick actions and the Team creator's defaults produce a
-    /// player `check_team` accepts on those. The lib's one writing
-    /// operation; the check itself never fixes anything.
+    /// views (of the reading's team): stats, form, injury resistance and
+    /// weak foot, and the tier's `name_color` over the name's leading
+    /// colour code (a code another tier sets stripped under a tier that
+    /// sets none), so the quick actions and the Team creator's defaults
+    /// produce a player `check_team` accepts on those. The lib's one
+    /// writing operation; the check itself never fixes anything.
     ///
     /// The values resolve against what is written, not what the player
     /// held: a special conditioned on a value the tier sets (form, a
@@ -232,15 +278,17 @@ impl Rules {
     /// colour lands on a copy first, then each pass writes the values
     /// and recomputes `tier_values` on it until they stop changing,
     /// three writes at most, then commits; still changing is
-    /// `CheckError::Unsettled` and `entry` is left as it was.
+    /// `CheckError::Unsettled` and `entry` is left as it was. Every pass
+    /// keeps the reading's height system: a pass changes only this
+    /// player's view, never the team's.
     pub fn apply_tier(
         &self,
-        team: &TeamView,
+        reading: &TeamReading,
         player: &PlayerView,
         tier: &str,
         entry: &mut PlayerEntry,
     ) -> Result<(), CheckError> {
-        let mut values = self.tier_values(team, player, tier)?;
+        let mut values = self.tier_values(reading, player, tier)?;
         let tier = self
             .ruleset
             .tiers
@@ -257,8 +305,8 @@ impl Rules {
         crate::values::write_name_color(&mut copy.name, tier.name_color.as_deref(), &tier_colors);
         for _ in 0..3 {
             values.write(&mut copy);
-            let view = PlayerView::of_entry(team.version, player.slot, &copy);
-            let settled = self.tier_values(team, &view, &tier.id)?;
+            let view = PlayerView::of_entry(reading.team.version, player.slot, &copy);
+            let settled = self.tier_values(reading, &view, &tier.id)?;
             if settled == values {
                 *entry = copy;
                 return Ok(());
@@ -282,12 +330,12 @@ impl Rules {
     }
 
     /// `function` (`tier_values` or `card_limits`) called on `player` as
-    /// `tier`, its map converted; an id no tier has is refused here, not
-    /// by the script.
+    /// `tier`, with the reading's team and height system, its map
+    /// converted; an id no tier has is refused here, not by the script.
     fn values<T: DeserializeOwned>(
         &self,
         function: &'static str,
-        team: &TeamView,
+        reading: &TeamReading,
         player: &PlayerView,
         tier: &str,
     ) -> Result<T, CheckError> {
@@ -296,12 +344,47 @@ impl Rules {
                 tier: tier.to_string(),
             });
         }
-        let map = self.call(function, (player.clone(), tier.to_string(), team.clone()))?;
+        let map = self.call(
+            function,
+            (
+                player.clone(),
+                tier.to_string(),
+                reading.team.clone(),
+                reading.system_arg(),
+            ),
+        )?;
         rhai::serde::from_dynamic(&map).map_err(|e| CheckError::Values {
             function,
             message: e.to_string(),
         })
     }
+}
+
+/// `function`'s `answer` read as the id of a `kind` (a tier, a height
+/// system) or `()`: `None` for `()`, what `find` gives for an id it
+/// knows, and `CheckError::Values` naming `function` for an id it does
+/// not know or a value that is no string.
+fn known_id<T>(
+    function: &'static str,
+    kind: &str,
+    answer: rhai::Dynamic,
+    find: impl FnOnce(&str) -> Option<T>,
+) -> Result<Option<T>, CheckError> {
+    if answer.is_unit() {
+        return Ok(None);
+    }
+    let id = answer
+        .into_immutable_string()
+        .map_err(|type_name| CheckError::Values {
+            function,
+            message: format!("{type_name} is no {kind} id"),
+        })?;
+    find(id.as_str())
+        .map(Some)
+        .ok_or_else(|| CheckError::Values {
+            function,
+            message: format!("\"{id}\" names no {kind}"),
+        })
 }
 
 #[cfg(test)]
@@ -317,10 +400,34 @@ mod tests {
         TeamView::new(&file, 701).expect("team 701 views")
     }
 
-    /// The smallest file that loads: the four functions and a
+    /// The smallest file that loads: the five functions and a
     /// one-tier `RULESET`.
     fn minimal_file() -> String {
-        "const RULESET = #{ schema: 1, name: \"x\", universal: #{ max_skill_cards: 10 }, tiers: [#{ id: \"regular\", label: \"Regular\", rate: 77 }] };\nfn check_team(team) { [] }\nfn tier_values(player, tier, team) { #{} }\nfn card_limits(player, tier, team) { #{} }\nfn player_tier(player, team) { () }".to_string()
+        "const RULESET = #{ schema: 1, name: \"x\", universal: #{ max_skill_cards: 10 }, tiers: [#{ id: \"regular\", label: \"Regular\", rate: 77 }] };\nfn check_team(team) { [] }\nfn team_height_system(team) { () }\nfn tier_values(player, tier, team, system) { #{} }\nfn card_limits(player, tier, team, system) { #{} }\nfn player_tier(player, team, system) { () }".to_string()
+    }
+
+    /// A file with one height system, `flat`, and a tier of the same id,
+    /// whose `team_height_system` answers `()` and whose per-player
+    /// functions answer from the `system` they are given: `player_tier`
+    /// names it as the tier, `tier_values` sets form 2 under it and 1
+    /// under none, `card_limits` gives a group of its name one free card.
+    fn system_file() -> &'static str {
+        "const RULESET = #{ schema: 1, name: \"x\", universal: #{ max_skill_cards: 10 },
+            tiers: [#{ id: \"flat\", label: \"Flat\", rate: 77, count: 1 },
+                    #{ id: \"regular\", label: \"Regular\", rate: 77 }],
+            heights: #{ systems: [#{ id: \"flat\", label: \"Flat\" }] } };
+        fn check_team(team) { [] }
+        fn team_height_system(team) { () }
+        fn tier_values(player, tier, team, system) {
+            #{ stats: #{}, form: if system == \"flat\" { 2 } else { 1 }, injury_resistance: 1,
+               weak_foot: #{ usage: 1, accuracy: 1 } }
+        }
+        fn card_limits(player, tier, team, system) {
+            let free = #{};
+            if system != () { free[system] = 1; }
+            #{ non_free: 0, limit: 0, free: free, free_cards: [], required_cards: [], a_positions: 1 }
+        }
+        fn player_tier(player, team, system) { system }"
     }
 
     /// Two threads check on one loaded file and agree: the whole-save
@@ -772,17 +879,19 @@ mod tests {
     #[test]
     fn a_values_map_that_does_not_convert_is_values() {
         let rules = Rules::load(&minimal_file()).expect("the file loads");
-        let team = fixture_team(PesVersion::Pes15);
-        let player = team.player(0).expect("slot 0");
+        let reading = rules
+            .team_reading(fixture_team(PesVersion::Pes15))
+            .expect("the team reads");
+        let player = reading.team().player(0).expect("slot 0");
         match rules
-            .tier_values(&team, player, "regular")
+            .tier_values(&reading, player, "regular")
             .expect_err("an empty map")
         {
             CheckError::Values { function, .. } => assert_eq!(function, "tier_values"),
             other => panic!("expected Values, got {other:?}"),
         }
         match rules
-            .card_limits(&team, player, "regular")
+            .card_limits(&reading, player, "regular")
             .expect_err("an empty map")
         {
             CheckError::Values { function, .. } => assert_eq!(function, "card_limits"),
@@ -794,24 +903,27 @@ mod tests {
     /// type, is `Values` naming the function; a tier's id is that tier.
     #[test]
     fn player_tier_reads_unit_as_none_and_refuses_an_id_no_tier_has() {
-        let team = fixture_team(PesVersion::Pes15);
-        let player = team.player(0).expect("slot 0");
+        let reading = Rules::load(&minimal_file())
+            .expect("the file loads")
+            .team_reading(fixture_team(PesVersion::Pes15))
+            .expect("the team reads");
+        let player = reading.team().player(0).expect("slot 0");
         let with_body = |body: &str| {
             Rules::load(&minimal_file().replacen(
-                "fn player_tier(player, team) { () }",
-                &format!("fn player_tier(player, team) {{ {body} }}"),
+                "fn player_tier(player, team, system) { () }",
+                &format!("fn player_tier(player, team, system) {{ {body} }}"),
                 1,
             ))
             .expect("the file loads")
         };
         assert_eq!(
             with_body("()")
-                .player_tier(&team, player)
+                .player_tier(&reading, player)
                 .expect("the call runs"),
             None
         );
         let err = with_body("\"bronze\"")
-            .player_tier(&team, player)
+            .player_tier(&reading, player)
             .expect_err("an id no tier has");
         match err {
             CheckError::Values { function, message } => {
@@ -821,7 +933,7 @@ mod tests {
             other => panic!("expected Values, got {other:?}"),
         }
         let err = with_body("42")
-            .player_tier(&team, player)
+            .player_tier(&reading, player)
             .expect_err("not a string");
         match err {
             CheckError::Values { function, .. } => assert_eq!(function, "player_tier"),
@@ -829,10 +941,86 @@ mod tests {
         }
         let rules = with_body("\"regular\"");
         let tier = rules
-            .player_tier(&team, player)
+            .player_tier(&reading, player)
             .expect("the call runs")
             .expect("a tier");
         assert_eq!(tier.id, "regular");
+    }
+
+    /// `team_height_system`'s `()` is no system; an id no system has, or
+    /// another type, is `Values` naming the function; a system's id is
+    /// that system, the team kept beside it.
+    #[test]
+    fn team_reading_reads_unit_as_none_and_refuses_an_id_no_system_has() {
+        let team = fixture_team(PesVersion::Pes15);
+        let with_answer = |answer: &str| {
+            Rules::load(&system_file().replacen(
+                "fn team_height_system(team) { () }",
+                &format!("fn team_height_system(team) {{ {answer} }}"),
+                1,
+            ))
+            .expect("the file loads")
+        };
+        let reading = with_answer("()")
+            .team_reading(team.clone())
+            .expect("the call runs");
+        assert_eq!(reading.height_system(), None);
+        for (answer, quoted) in [("\"tall\"", Some("tall")), ("42", None)] {
+            match with_answer(answer).team_reading(team.clone()) {
+                Err(CheckError::Values { function, message }) => {
+                    assert_eq!(function, "team_height_system", "{answer}");
+                    if let Some(id) = quoted {
+                        assert!(message.contains(id), "{message}");
+                    }
+                }
+                other => panic!(
+                    "{answer}: expected Values, got {:?}",
+                    other.map(|reading| reading.system)
+                ),
+            }
+        }
+        let reading = with_answer("\"flat\"")
+            .team_reading(team.clone())
+            .expect("the call runs");
+        assert_eq!(reading.height_system().map(String::as_str), Some("flat"));
+        assert_eq!(reading.team(), &team);
+    }
+
+    /// Each per-player function answers under the reading's height system,
+    /// not one worked out again from the team: the file's
+    /// `team_height_system` names none, the reading names `flat`, and
+    /// `player_tier`, `tier_values` and `card_limits` each answer from
+    /// the `system` the host passes them.
+    #[test]
+    fn the_readings_system_reaches_each_per_player_function() {
+        let rules = Rules::load(system_file()).expect("the file loads");
+        let team = fixture_team(PesVersion::Pes15);
+        assert_eq!(
+            rules
+                .team_reading(team.clone())
+                .expect("the team reads")
+                .height_system(),
+            None,
+            "premise: the team alone is read under no system"
+        );
+        let reading = TeamReading {
+            team,
+            system: Some("flat".to_string()),
+        };
+        let player = reading.team().player(0).expect("slot 0");
+        let tier = rules.player_tier(&reading, player).expect("the call runs");
+        assert_eq!(tier.map(|tier| tier.id.as_str()), Some("flat"));
+        let values = rules
+            .tier_values(&reading, player, "regular")
+            .expect("values");
+        assert_eq!(values.form, 2);
+        let limits = rules
+            .card_limits(&reading, player, "regular")
+            .expect("limits");
+        assert_eq!(
+            limits.free,
+            std::collections::BTreeMap::from([("flat".to_string(), 1)])
+        );
     }
 
     /// A script that loops forever stops at the operation limit with a
@@ -916,16 +1104,25 @@ mod tests {
         for (remove, name, arity) in [
             ("fn check_team(team) { [] }", "check_team", 1usize),
             (
-                "fn tier_values(player, tier, team) { #{} }",
-                "tier_values",
-                3,
+                "fn team_height_system(team) { () }",
+                "team_height_system",
+                1,
             ),
             (
-                "fn card_limits(player, tier, team) { #{} }",
+                "fn tier_values(player, tier, team, system) { #{} }",
+                "tier_values",
+                4,
+            ),
+            (
+                "fn card_limits(player, tier, team, system) { #{} }",
                 "card_limits",
+                4,
+            ),
+            (
+                "fn player_tier(player, team, system) { () }",
+                "player_tier",
                 3,
             ),
-            ("fn player_tier(player, team) { () }", "player_tier", 2),
         ] {
             let text = minimal_file().replacen(remove, "", 1);
             assert!(!text.contains(remove));

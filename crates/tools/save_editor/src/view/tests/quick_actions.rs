@@ -343,11 +343,15 @@ fn type_number(window: &mut Headless, view: &mut SaveView, field: &accesskit::No
 /// click should leave his entry.
 fn tiered(view: &SaveView, rules: &aatf::Rules, team_id: u32, slot: u8, tier: &str) -> PlayerEntry {
     let file = view.session.as_ref().unwrap().file();
-    let team = aatf::TeamView::new(file, team_id).unwrap();
-    let player = team.player(slot).unwrap();
+    let reading = rules
+        .team_reading(aatf::TeamView::new(file, team_id).unwrap())
+        .unwrap();
+    let player = reading.team().player(slot).unwrap();
     let id = file.team(team_id).unwrap().roster[usize::from(slot)].player_id;
     let mut entry = file.player(id).unwrap().clone();
-    rules.apply_tier(&team, player, tier, &mut entry).unwrap();
+    rules
+        .apply_tier(&reading, player, tier, &mut entry)
+        .unwrap();
     entry
 }
 
@@ -651,8 +655,8 @@ fn a_failed_make_shows_the_refusal_and_changes_nothing() {
     // file assembled, with a `throw` added at the function's head for "silver"
     // alone.
     let text = aatf::assemble_file(aatf::Rules::official().ruleset(), None, None).replacen(
-        "fn tier_values(player, tier, team) {",
-        "fn tier_values(player, tier, team) {\n    if tier == \"silver\" { throw \"a staged failure\"; }",
+        "fn tier_values(player, tier, team, system) {",
+        "fn tier_values(player, tier, team, system) {\n    if tier == \"silver\" { throw \"a staged failure\"; }",
         1,
     );
     pick_imported(&mut view, "broken_tier.4ccrules", &text);

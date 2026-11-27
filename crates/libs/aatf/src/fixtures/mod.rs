@@ -19,7 +19,7 @@ use crate::ruleset::{Card, Position, Severity, Stat, WeakFoot};
 use crate::team::records_from_team_toml;
 use crate::values::TierValues;
 use crate::violation::ViolationKind;
-use crate::{PlayerView, Rules, TeamView, Violation};
+use crate::{PlayerView, Rules, TeamReading, TeamView, Violation};
 
 mod autumn25;
 mod dbc7;
@@ -124,11 +124,17 @@ fn player(team: &TeamView, slot: u8) -> &PlayerView {
         .unwrap_or_else(|| panic!("roster slot {slot} is filled"))
 }
 
-/// The id of the tier `rules` recognizes roster `slot`'s player as
-/// (`Rules::player_tier`), `None` for no tier.
-fn tier_of<'r>(rules: &'r Rules, team: &TeamView, slot: u8) -> Option<&'r str> {
+/// `team` read under `rules` (`Rules::team_reading`), for the per-player
+/// calls about it.
+fn reading(rules: &Rules, team: &TeamView) -> TeamReading {
+    rules.team_reading(team.clone()).expect("the team reads")
+}
+
+/// The id of the tier `rules` recognizes roster `slot`'s player of the
+/// reading's team as (`Rules::player_tier`), `None` for no tier.
+fn tier_of<'r>(rules: &'r Rules, reading: &TeamReading, slot: u8) -> Option<&'r str> {
     rules
-        .player_tier(team, player(team, slot))
+        .player_tier(reading, player(reading.team(), slot))
         .expect("the call runs")
         .map(|tier| tier.id.as_str())
 }
@@ -267,9 +273,10 @@ type Economy<'a> = (u8, &'a str, i8, u8, &'a [(&'a str, u8)], (u8, u8));
 /// Asserts each row of `rows` against `rules` on `team`: the `free` map
 /// compared whole, so a group the row does not name fails too.
 fn assert_economy(rules: &Rules, team: &TeamView, rows: &[Economy]) {
+    let reading = reading(rules, team);
     for &(slot, tier, limit, a_positions, expected_free, (usage, accuracy)) in rows {
         let limits = rules
-            .card_limits(team, team.player(slot).expect("filled"), tier)
+            .card_limits(&reading, team.player(slot).expect("filled"), tier)
             .expect("limits");
         assert_eq!(
             (limits.limit, limits.a_positions, limits.max_a_positions),
@@ -282,7 +289,7 @@ fn assert_economy(rules: &Rules, team: &TeamView, rows: &[Economy]) {
             .collect();
         assert_eq!(limits.free, expected_free, "{tier} (slot {slot})");
         let weak_foot = rules
-            .tier_values(team, team.player(slot).expect("filled"), tier)
+            .tier_values(&reading, team.player(slot).expect("filled"), tier)
             .expect("values")
             .weak_foot;
         assert_eq!(
@@ -327,8 +334,9 @@ fn player_tier_is_none_exactly_where_check_team_reports_no_tier() {
                 })
                 .collect();
             let mut unanswered = BTreeSet::new();
+            let reading = reading(&rules, &team);
             for p in &team.players {
-                if tier_of(&rules, &team, p.slot).is_some() {
+                if tier_of(&rules, &reading, p.slot).is_some() {
                     some += 1;
                 } else {
                     none += 1;
@@ -339,4 +347,38 @@ fn player_tier_is_none_exactly_where_check_team_reports_no_tier() {
         }
     }
     assert!(none > 0 && some > 0, "{none} `None`, {some} `Some`");
+}
+
+/// A team's reading names the height system `check_team` reads it under:
+/// every embedded data block, the sample team on three versions.
+#[test]
+fn team_reading_names_the_system_check_team_reads_the_team_under() {
+    let mut systems = BTreeSet::new();
+    for (name, block) in [
+        ("autumn26", include_str!("../../rulesets/autumn26.rhai")),
+        ("autumn25", include_str!("../../rulesets/autumn25.rhai")),
+        ("spring26", include_str!("../../rulesets/spring26.rhai")),
+        ("vgl25", include_str!("../../rulesets/vgl25.rhai")),
+        ("vgl26", include_str!("../../rulesets/vgl26.rhai")),
+        ("vgl27", include_str!("../../rulesets/vgl27.rhai")),
+        ("vtl10", include_str!("../../rulesets/vtl10.rhai")),
+        ("vtl11", include_str!("../../rulesets/vtl11.rhai")),
+        ("dbc7", include_str!("../../rulesets/dbc7.rhai")),
+    ] {
+        let rules = Rules::from_data_block(block).unwrap_or_else(|e| panic!("{name}: {e}"));
+        for version in [PesVersion::Pes15, PesVersion::Pes17, PesVersion::Pes21] {
+            let team = Records::sample_on(version).view();
+            let checked = rules
+                .check_team(&team)
+                .unwrap_or_else(|e| panic!("{name} {version:?}: {e}"))
+                .height_system;
+            let read = reading(&rules, &team).height_system().cloned();
+            assert_eq!(read, checked, "{name} {version:?}");
+            systems.insert(read);
+        }
+    }
+    assert!(
+        systems.len() > 1,
+        "premise: the cases tell systems apart: {systems:?}"
+    );
 }

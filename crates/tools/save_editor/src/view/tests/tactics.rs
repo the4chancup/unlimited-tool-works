@@ -4052,11 +4052,13 @@ fn the_badges_name_the_starters_medal_tiers() {
     let vtl11 = aatf::builtin("vtl11").expect("VTL11 is built in");
     let under_vtl11 = {
         let file = view.session.as_ref().unwrap().file();
-        let team = aatf::TeamView::new(file, 734).unwrap();
+        let reading = vtl11
+            .team_reading(aatf::TeamView::new(file, 734).unwrap())
+            .expect("VTL11 reads the team");
         team_entry(&view, 734).tactics.starting_eleven.map(|slot| {
-            let player = team.player(slot).expect("a starter");
+            let player = reading.team().player(slot).expect("a starter");
             vtl11
-                .player_tier(&team, player)
+                .player_tier(&reading, player)
                 .expect("VTL11 reads his tier")
                 .and_then(|tier| team_widgets::tactics::Medal::from_tier_id(&tier.id))
         })

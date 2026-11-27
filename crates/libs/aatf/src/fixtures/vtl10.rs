@@ -77,7 +77,12 @@ fn legalize(mut records: Records) -> Records {
         let view = records.view();
         let player = view.player(slot).expect("a filled slot").clone();
         rules
-            .apply_tier(&view, &player, tier, records.player_mut(slot))
+            .apply_tier(
+                &reading(&rules, &view),
+                &player,
+                tier,
+                records.player_mut(slot),
+            )
             .expect("the tier applies");
     }
     for (slot, height) in [
@@ -96,7 +101,12 @@ fn legalize(mut records: Records) -> Records {
         let view = records.view();
         let player = view.player(slot).expect("a filled slot").clone();
         rules
-            .apply_tier(&view, &player, "regular", records.player_mut(slot))
+            .apply_tier(
+                &reading(&rules, &view),
+                &player,
+                "regular",
+                records.player_mut(slot),
+            )
             .expect("the tier applies");
     }
     for slot in 0..23u8 {
@@ -159,7 +169,12 @@ fn apply_tier_then_check_reports_nothing_for_every_tier() {
         assert!(!problems(&rules, &broken).is_empty(), "{tier} {slot}");
         let player = broken.player(slot).expect("filled").clone();
         rules
-            .apply_tier(&broken, &player, tier, records.player_mut(slot))
+            .apply_tier(
+                &reading(&rules, &broken),
+                &player,
+                tier,
+                records.player_mut(slot),
+            )
             .expect("the tier applies");
         assert_eq!(problems(&rules, &records.view()), vec![], "{tier} {slot}");
     }
@@ -724,7 +739,11 @@ fn card_limits_name_the_economy() {
     let team = legal_team();
     let limits = |slot: u8, tier: &str| {
         rules
-            .card_limits(&team, team.player(slot).expect("filled"), tier)
+            .card_limits(
+                &reading(&rules, &team),
+                team.player(slot).expect("filled"),
+                tier,
+            )
             .expect("limits")
     };
     let free_skills = [
@@ -793,7 +812,11 @@ fn card_limits_name_the_economy() {
     // ruleset file holds.
     let weak_foot = |slot: u8, tier: &str| {
         rules
-            .tier_values(&team, team.player(slot).expect("filled"), tier)
+            .tier_values(
+                &reading(&rules, &team),
+                team.player(slot).expect("filled"),
+                tier,
+            )
             .expect("values")
             .weak_foot
     };
