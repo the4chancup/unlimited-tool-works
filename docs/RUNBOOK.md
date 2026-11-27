@@ -263,7 +263,7 @@ out a bounded wait (the update dialog's tests wait up to 10 s for a frame, and a
 `updater::install` fails a dozen of them under a 20 s limit). A single test past 180 s is
 not a timeout but a catch: nextest stops it (CONTRIBUTING.md "A test fails, it never hangs"),
 so the timeouts left are runs in which each test ends in time but the whole run does not. A
-test starved that long would be filed as caught unseen; the worklog's `timeouts` item watches
+test starved that long would be filed as caught unseen; the worklog's `driver/d3` item watches
 for it once this PC's lane runs shards. A build
 killed for memory (the remote half's cap) is filed by cargo-mutants as unviable, which hides
 an untested mutant: eframe's dependency tree once outgrew a 6 GiB cap and 12 remote mutants

@@ -20498,5 +20498,33 @@ A test stopped by the limit is not filed as a timeout to review, because telling
 needs the caught mutants' logs, which the VPS does not send back. Such a false catch needs a
 test starved past 180 s, nine times the slowest test's 20 s in a loaded gate run; the VPS, with
 no other load, does not starve, and the risk is watched once this PC's lane takes shards
-(worklog `timeouts`).
+(worklog `driver/d3`).
 Plan: `CONTRIBUTING.md` "A test fails, it never hangs" edited.
+
+## 2026-11-27 — mutation runs — the lighter tests' pilot runs on `aatf`, about an hour a run
+Decision: the pilot that measures the lighter tests on whole mutation runs compares `aatf`'s
+filed rolling run (from `a2a97e42`: 482 mutants, 55 minutes on the VPS) with one `aatf` run
+from a commit holding `AATFSPEED`, not `save_editor`'s rolling runs. The after run is queued
+through the mutation driver once its VPS lane's trial (`driver/d2a`) closes and d2b and d2c
+are deployed, so both runs select each mutant's tests.
+Why: a pilot answers in about an hour of VPS time; `save_editor`'s whole run took about 35
+hours (27.5 for its extra pass alone) and held the VPS from other work. `a2a97e42` already
+builds with the `mutants` profile, so the two runs differ by the test changes alone
+(`AATFSPEED` cut `aatf`'s suite from 133 s to 109 s of summed test time). Replaces the
+2026-11-27 entry "the lighter tests are measured on save_editor's rolling runs".
+Plan: no plan edit needed: the pilot is a worklog step (`LEAN/pilot`), rewritten.
+
+## 2026-11-27 — worklog, roadmap — the roadmap page places its timeline's rows when it opens
+Decision: `roadmap.py` writes the timeline with no vertical positions. Each row, lane line,
+dependency curve and the "now" band or line carries its inputs as `data-*` attributes, and
+the page's script, `scripts/pages/roadmap_layout.js`, computes the positions when the page
+opens. The tests run the same script under Node.js. The order of the rows, the lanes, their
+columns and colours, and the wrapping stay in Python.
+Why: with the positions written into the page, a row added or wrapped onto a second line
+moved every row below it, so each worklog commit rewrote most of the page. Now a commit
+changes about as many page lines as worklog lines. Only the arithmetic that depends on row
+heights moved to the script, because the rest needs the worklog's structure, which Python
+already reads. The tests run the page's own script, not a Python copy of it, so they test
+the code the page runs.
+Plan: no plan edit needed: the page is the lead's tooling, described in `roadmap.py`'s
+docstring; `CONTRIBUTING.md` lists Node.js beside Pillow and psutil for `just test`.
