@@ -4541,7 +4541,7 @@ points there.
     quarter of a run's test time (`.tmp/lean/selection_census.py`). An A/B's override goes
     in a throwaway worktree's `.cargo/config.toml`: a `cargo --config` before `nextest`
     never reaches nextest's build;
-  - [ ] **patterns** [after census] the cheaper shapes in CONTRIBUTING "Testing and
+  - [~] **patterns** [after census] the cheaper shapes in CONTRIBUTING "Testing and
     verification": a fixture loaded once per test binary, each instance's wiring checked
     in one table-driven scene, a shared widget's behavior tested once in its own crate.
     SWE-2's reading of the 25 heaviest save_editor tests
@@ -4553,7 +4553,12 @@ points there.
     `savefile/multi.rs` and `overlap.rs`); a fresh save opened per screen in the menus'
     overlap test; the 20 ms sleep of `frames_until`'s poll; the pictures dialog's picking
     steps repeated before each run. One was a plain slip, fixed at once: the turf picture
-    test built an egui context per pixel checked (`dark()` in its loop), 23.9 s to 8.1;
+    test built an egui context per pixel checked (`dark()` in its loop), 23.9 s to 8.1.
+    Next: a slice on save_editor's test helpers (`view/tests.rs`: a frame that advances
+    egui's input time past a wait in one step, `frames_until`'s poll sleep, the scroll
+    loops), with the per-test narrowings the findings name where every assertion keeps its
+    case, timed before and after on the suite (`.tmp/lean/suite_ab2.sh` shape); then the
+    shapes it proves go into CONTRIBUTING "Testing and verification";
     Revisit the helium brief rules that ask for a test per call site or per place a text
     shows, which built much of the repetition;
   - [ ] **pilot** [after patterns] one mid-size crate, whose whole mutation run takes about
