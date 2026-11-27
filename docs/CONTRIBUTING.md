@@ -413,7 +413,9 @@ Rules for the justfile, so it stays a command list and not a second build system
   Pillow, and `scripts/builds/clear_caches_test.py` tests a check that reads processes through
   psutil. A script test that joins `just test` needing any other package adds it to the
   `pip install` line of `.github/workflows/ci.yml` in the same commit, or CI's gates fail on
-  the import.
+  the import. Node.js is needed the same way: `scripts/pages/roadmap_test.py` runs the
+  roadmap page's layout script (`roadmap_layout.js`) under `node`. GitHub's runners already
+  have it, so CI installs nothing for it.
 
 Requirements:
 

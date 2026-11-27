@@ -81,6 +81,8 @@ class CommitAll(unittest.TestCase):
         (self.repo / "scripts" / "gates").mkdir(parents=True)
         (self.repo / "scripts" / "pages").mkdir(parents=True)
         shutil.copy(ROADMAP, self.repo / "scripts" / "pages" / "roadmap.py")
+        shutil.copy(ROADMAP.with_name("roadmap_layout.js"),
+                    self.repo / "scripts" / "pages" / "roadmap_layout.js")
         # Markdown and Python files also run two other gates, the scripts below: stubs that pass.
         for gate in ("doc_pointers.py", "comment_refs.py"):
             (self.repo / "scripts" / "gates" / gate).write_text("", encoding="utf-8")

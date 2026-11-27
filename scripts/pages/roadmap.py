@@ -1,7 +1,9 @@
 """Writes `docs/maintainer/roadmap.html`: the maintainer's at-a-glance page, a timeline of the
 phases not yet done, the open steps and what they wait on, the steps in progress on its "now"
 line and the last week's done steps, made from `docs/WORKLOG.md` and the git log's recent
-merges so it cannot drift from them.
+merges so it cannot drift from them. The timeline's vertical positions are not in the page:
+its `<script>` computes them when it opens, from `roadmap_layout.js` embedded in it. A
+worklog row added or wrapped onto another line then moves only its own lines of the page.
 It refuses a worklog whose "Where the work stands" items break the header's convention (no
 checkbox and ID, an ID twice among siblings, an `[after …]` naming no step, a wait that
 comes back to its step), so a wrong dependency fails when it is written, not at a converge.
@@ -19,6 +21,7 @@ from collections.abc import Callable, Iterator
 from dataclasses import dataclass, field
 from itertools import groupby
 from operator import itemgetter
+from pathlib import Path
 
 WORKLOG = "docs/WORKLOG.md"
 OUT = "docs/maintainer/roadmap.html"
@@ -305,10 +308,11 @@ def order_open(shown: list[Step], top: list[Step]) -> list[Step]:
 
 def lanes(rows: list[Step], slot: dict[int, int], top: list[Step],
           phases: list[Step]):
-    """The timeline's tracks, `[top slot, bottom slot, colour, column]` each, and every
-    shown step's track index. The phases not done are one grey track; besides it, a track
-    is the shown rows of one top-level step and its direct leaf children, or of one
-    second-level step's whole subtree. Columns are greedy: tracks sorted by top row, each
+    """The timeline's tracks, `[top slot, bottom slot, colour, key, column]` each, and every
+    shown step's track index. The phases not done are one grey track keyed `phases`; besides
+    it, a track is the shown rows of one top-level step and its direct leaf children, or of
+    one second-level step's whole subtree, keyed by that step's path so it is stable while
+    the worklog's structure is. Columns are greedy: tracks sorted by top row, each
     takes the lowest column no track already in it overlaps (spans sharing a row
     overlap)."""
     shown = {id(s) for s in rows}
@@ -316,24 +320,24 @@ def lanes(rows: list[Step], slot: dict[int, int], top: list[Step],
     if phases:
         member.update((id(s), 0) for s in phases)
         tracks.append([min(slot[id(s)] for s in phases),
-                       max(slot[id(s)] for s in phases), PHASE_COLOUR])
+                       max(slot[id(s)] for s in phases), PHASE_COLOUR, "phases"])
     for i, t in enumerate(top):
         colour = PALETTE[i % len(PALETTE)]
 
-        def add(members: list[Step]) -> None:
+        def add(members: list[Step], key: str) -> None:
             ids = [id(m) for m in members if id(m) in shown]
             if ids:
                 member.update((m, len(tracks)) for m in ids)
                 tracks.append([min(slot[m] for m in ids),
-                               max(slot[m] for m in ids), colour])
+                               max(slot[m] for m in ids), colour, key])
 
         if not t.children:
-            add([t])
+            add([t], t.path)
             continue
-        add([t] + [c for c in t.children if not c.children])
+        add([t] + [c for c in t.children if not c.children], t.path)
         for c in t.children:
             if c.children:
-                add(list(walk([c])))
+                add(list(walk([c])), c.path)
 
     columns: list[list[tuple[int, int]]] = []
     for k in sorted(range(len(tracks)), key=lambda k: tracks[k][0]):
@@ -410,7 +414,9 @@ def timeline(roadmap: Roadmap, dates: dict[str, str], today: str) -> str:
     steps in progress (`[~]`) on a band labelled `now` (a bare line when there are none),
     then the last week's done steps, newest first; a lane per track and an edge to what
     each step waits on. `dates` maps a step's path to its commit's ISO time or a bare
-    `YYYY-MM-DD`, which sorts before the times of its day."""
+    `YYYY-MM-DD`, which sorts before the times of its day. The SVG writes no vertical
+    position: the inputs the page's `layout` needs go out as `data-*` attributes, and its
+    `<script>` turns them into positions when the page opens."""
     top = roadmap.steps
     phase_rows = []
     for phase, scope, status in reversed(roadmap.phases):
@@ -457,45 +463,27 @@ def timeline(roadmap: Roadmap, dates: dict[str, str], today: str) -> str:
     width = ROADMAP_WIDTH
     room = width - NOW_ROOM - desc_x
     lines = {id(s): wrap(s.text.rstrip(";,"), room, text_width) for s in rows}
-
-    # Each slot's top: a row is as tall as its lines; the empty slot of the bare line one line.
-    tops = [0]
     by_slot = {slot[id(s)]: s for s in rows}
-    for i in range(max([*slot.values(), first_done - 1]) + 1):
-        s = by_slot.get(i)
-        tops.append(tops[-1] + (LINE_HEIGHT * len(lines[id(s)]) + ROW_PAD if s
-                                else LINE_HEIGHT))
 
-    def slot_y(i: int) -> int:
-        """The middle of slot `i`'s first line."""
-        return tops[i] + (ROW_PAD + LINE_HEIGHT) // 2 if i in by_slot else \
-            (tops[i] + tops[i + 1]) // 2
-
-    def cy(s: Step) -> int:
-        return slot_y(slot[id(s)])
-
-    band_top = tops[len(open_rows)]
-    band_bottom = tops[first_done]
-    height = tops[-1]
-
-    parts = [f'<svg viewBox="0 0 {width} {height}" width="{width}" height="{height}" '
+    # No vertical position is written: the `data-*` attributes carry what the page's
+    # `layout` needs to place each element when the page opens (the svg's own height and
+    # viewBox height included), so a row added changes only its own page lines.
+    parts = [f'<svg viewBox="0 0 {width} 0" width="{width}" '
+             f'data-line-height="{LINE_HEIGHT}" data-row-pad="{ROW_PAD}" '
              'xmlns="http://www.w3.org/2000/svg">']
     if now_rows:
-        parts.append(f'<rect id="now" x="0" y="{band_top}" width="{width}" '
-                     f'height="{band_bottom - band_top}" rx="2" fill="#2b2b2b" '
+        parts.append(f'<rect id="now" x="0" width="{width}" rx="2" fill="#2b2b2b" '
                      'stroke="#555"/>')
-        label_y = (band_top + band_bottom) / 2
     else:
-        sep_y = (band_top + band_bottom) / 2
-        parts.append(f'<line id="now" x1="0" y1="{sep_y:g}" x2="{width}" y2="{sep_y:g}" '
-                     'stroke="#555"/>')
-        label_y = sep_y - 7
-    parts.append(f'<text x="{width - 8}" y="{label_y:g}" fill="#999" '
+        parts.append(f'<line id="now" x1="0" x2="{width}" stroke="#555"/>')
+    parts.append(f'<text id="now-label" x="{width - 8}" fill="#999" '
                  f'font-size="{FONT_SIZE}" '
                  'text-anchor="end" dominant-baseline="central">now</text>')
-    for lo, hi, colour, col in tracks:
-        parts.append(f'<line x1="{col_x(col)}" y1="{slot_y(lo)}" '
-                     f'x2="{col_x(col)}" y2="{slot_y(hi)}" '
+    for lo, hi, colour, key, col in tracks:
+        parts.append(f'<line data-track="{html.escape(key)}" '
+                     f'data-first="{html.escape(by_slot[lo].path)}" '
+                     f'data-last="{html.escape(by_slot[hi].path)}" '
+                     f'x1="{col_x(col)}" x2="{col_x(col)}" '
                      f'stroke="{colour}" stroke-width="2"/>')
     for s in rows:
         for name in s.after:
@@ -509,19 +497,21 @@ def timeline(roadmap: Roadmap, dates: dict[str, str], today: str) -> str:
                 t = min(inside, key=lambda d: slot[id(d)])
             if member[id(t)] == member[id(s)]:
                 continue
-            x1 = col_x(tracks[member[id(s)]][3])
-            x2 = col_x(tracks[member[id(t)]][3])
-            y1, y2, ym = cy(s), cy(t), (cy(s) + cy(t)) / 2
-            parts.append(f'<path d="M {x1} {y1} C {x1} {ym:g}, {x2} {ym:g}, {x2} {y2}" '
+            x1 = col_x(tracks[member[id(s)]][4])
+            x2 = col_x(tracks[member[id(t)]][4])
+            parts.append(f'<path data-from="{html.escape(s.path)}" '
+                         f'data-to="{html.escape(t.path)}" '
+                         f'data-x1="{x1}" data-x2="{x2}" '
                          f'stroke="{tracks[member[id(s)]][2]}" stroke-width="1.5" '
                          'opacity="0.6" fill="none"/>')
+    first_row = len(parts)
     for s in rows:
         ti = member[id(s)]
-        colour, x, y = tracks[ti][2], col_x(tracks[ti][3]), cy(s)
+        colour, x = tracks[ti][2], col_x(tracks[ti][4])
         open_ = s.mark in OPEN_MARKS
-        circle = (f'<circle cx="{x}" cy="{y}" r="5" fill="#1e1e1e" '
+        circle = (f'<circle cx="{x}" cy="0" r="5" fill="#1e1e1e" '
                   f'stroke="{colour}" stroke-width="2"/>' if open_ else
-                  f'<circle cx="{x}" cy="{y}" r="5" fill="{colour}"/>')
+                  f'<circle cx="{x}" cy="0" r="5" fill="{colour}"/>')
         text = s.text.rstrip(";,")
         title = (f"{s.path} {text}"
                  + (f" — waits on {', '.join(s.after)}" if s.after else ""))
@@ -536,13 +526,19 @@ def timeline(roadmap: Roadmap, dates: dict[str, str], today: str) -> str:
             parent = parent.parent
         label_title = (f"<title>{html.escape(chr(10).join(groups))}</title>"
                        if groups else "")
-        spans = "".join(f'<tspan x="{desc_x}" y="{y + LINE_HEIGHT * i}">{mono(part)}</tspan>'
+        spans = "".join(f'<tspan x="{desc_x}" y="{LINE_HEIGHT * i}">{mono(part)}</tspan>'
                         for i, part in enumerate(lines[id(s)]))
-        parts.append(f'<g><title>{html.escape(title)}</title>{circle}'
-                     f'<text x="{text_x}" y="{y}" {attrs} font-family="{LABEL_FONT}" '
+        now = ' data-now="1"' if s.mark == "~" else ""
+        parts.append(f'<g data-row="{html.escape(s.path)}" '
+                     f'data-lines="{len(lines[id(s)])}"{now}>'
+                     f'<title>{html.escape(title)}</title>{circle}'
+                     f'<text x="{text_x}" y="0" {attrs} font-family="{LABEL_FONT}" '
                      'font-weight="600">'
                      f'{label_title}{html.escape(s.path)}</text>'
                      f'<text {attrs}>{spans}</text></g>')
+    # The bare line's empty slot, after the open rows even when no done row follows.
+    if not now_rows:
+        parts.insert(first_row + len(open_rows), '<g data-gap="1"/>')
     parts.append("</svg>")
     if undated:
         parts.append(f'<p class="from">{undated} done step'
@@ -594,7 +590,8 @@ def render(roadmap: Roadmap, merges: list[tuple[str, str]],
            dates: dict[str, str], today: str) -> str:
     """The page: a button that brings the timeline's "now" line to the middle of the
     window, the timeline, the week's merges in one `<details>` per day, the open-issue
-    count."""
+    count. Its `<script>` embeds `roadmap_layout.js`, whose `layout` gives the timeline
+    its vertical positions when the page opens."""
     days = [(day, [subject for _, subject in same_day])
             for day, same_day in groupby(merges, key=itemgetter(0))]
     if days:
@@ -609,6 +606,59 @@ def render(roadmap: Roadmap, merges: list[tuple[str, str]],
     issues = (f"{roadmap.open_issues} open issue"
               + ("s" if roadmap.open_issues != 1 else "")
               + " in the worklog's Issues section.")
+
+    layout_js = (Path(__file__).with_name("roadmap_layout.js")
+                 .read_text(encoding="utf-8"))
+    # Reads the `data-*` attributes the timeline's SVG carries, in document order, calls
+    # `layout`, and writes the vertical positions it returns back into the elements.
+    run = """\
+function placeTimeline() {
+  const svg = document.querySelector("svg[data-line-height]");
+  const groups = [...svg.querySelectorAll(":scope > g")].map(g => ({
+    el: g,
+    slot: g.dataset.gap ? {gap: true} : {path: g.dataset.row, lines: +g.dataset.lines},
+    now: g.dataset.now !== undefined,
+  }));
+  const tracks = [...svg.querySelectorAll("line[data-track]")].map(line => ({
+    el: line,
+    input: {key: line.dataset.track, first: line.dataset.first, last: line.dataset.last},
+  }));
+  const edges = [...svg.querySelectorAll("path[data-from]")].map(path => ({
+    el: path,
+    input: {from: path.dataset.from, to: path.dataset.to,
+            x1: +path.dataset.x1, x2: +path.dataset.x2},
+  }));
+  const out = layout({
+    lineHeight: +svg.dataset.lineHeight,
+    rowPad: +svg.dataset.rowPad,
+    slots: groups.map(g => g.slot),
+    tracks: tracks.map(t => t.input),
+    edges: edges.map(e => e.input),
+    nowRows: groups.filter(g => g.now).map(g => g.slot.path),
+  });
+  for (const g of groups)
+    if (!g.slot.gap)
+      g.el.setAttribute("transform", `translate(0,${out.rows[g.slot.path]})`);
+  for (const t of tracks) {
+    const [y1, y2] = out.tracks[t.input.key];
+    t.el.setAttribute("y1", y1);
+    t.el.setAttribute("y2", y2);
+  }
+  edges.forEach((e, i) => e.el.setAttribute("d", out.edges[i]));
+  const now = document.getElementById("now");
+  if (out.now.band) {
+    now.setAttribute("y", out.now.band[0]);
+    now.setAttribute("height", out.now.band[1]);
+  } else {
+    now.setAttribute("y1", out.now.line);
+    now.setAttribute("y2", out.now.line);
+  }
+  document.getElementById("now-label").setAttribute("y", out.now.labelY);
+  svg.setAttribute("height", out.height);
+  svg.setAttribute("viewBox", `0 0 ${svg.getAttribute("width")} ${out.height}`);
+}
+placeTimeline();
+"""
 
     return f"""<!doctype html>
 <!-- Made by scripts/pages/roadmap.py from docs/WORKLOG.md and git's merges: do not edit this file
@@ -635,6 +685,8 @@ def render(roadmap: Roadmap, merges: list[tuple[str, str]],
 {merged}
 <p>{issues}</p>
 <script>
+{layout_js}
+{run}
 document.getElementById("to-now").addEventListener("click", () =>
   document.getElementById("now").scrollIntoView({{block: "center", behavior: "smooth"}}));
 </script>

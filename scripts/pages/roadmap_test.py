@@ -1,9 +1,12 @@
 """Tests of scripts/pages/roadmap.py; `just test` runs them."""
 
 import contextlib
+import difflib
 import io
+import json
 import os
 import re
+import subprocess
 import tempfile
 import unittest
 from pathlib import Path
@@ -84,13 +87,48 @@ def wl(body: str) -> str:
             "- open (2026-01-01) — one.\n\n## Log\n")
 
 
+def laid_out(svg: str) -> dict:
+    """`layout()`'s output for `svg`: its input built from the svg's `data-*` attributes,
+    run through `roadmap_layout.js` under node. Node not being on PATH fails the test."""
+    def attrs(tag: str) -> dict[str, str]:
+        return dict(re.findall(r'([\w-]+)="([^"]*)"', tag))
+
+    head = attrs(re.search(r"<svg [^>]*>", svg)[0])
+    groups = [attrs(tag) for tag in re.findall(r"<g [^>]*>", svg)]
+    layout_input = {
+        "lineHeight": int(head["data-line-height"]),
+        "rowPad": int(head["data-row-pad"]),
+        "slots": [{"gap": True} if "data-gap" in a
+                  else {"path": a["data-row"], "lines": int(a["data-lines"])}
+                  for a in groups],
+        "tracks": [{"key": a["data-track"], "first": a["data-first"],
+                    "last": a["data-last"]}
+                   for a in map(attrs, re.findall(r"<line [^>]*>", svg))
+                   if "data-track" in a],
+        "edges": [{"from": a["data-from"], "to": a["data-to"],
+                   "x1": int(a["data-x1"]), "x2": int(a["data-x2"])}
+                  for a in map(attrs, re.findall(r"<path [^>]*>", svg))],
+        "nowRows": [a["data-row"] for a in groups if "data-now" in a],
+    }
+    source = Path(__file__).with_name("roadmap_layout.js").read_text(encoding="utf-8")
+    script = (source + "\nconsole.log(JSON.stringify(layout("
+              + json.dumps(layout_input) + ")));")
+    try:
+        out = subprocess.run(["node", "-e", script], capture_output=True, text=True,
+                             check=True)
+    except FileNotFoundError:
+        raise AssertionError("node is not on PATH") from None
+    return json.loads(out.stdout)
+
+
 def circles(svg: str) -> dict[str, tuple[int, int]]:
-    """Each row's circle by the path its `<title>` opens with: path -> (cx, cy)."""
+    """Each row's circle: path -> (cx, cy), the cy `layout` gives the row."""
+    rows = laid_out(svg)["rows"]
     found = {}
     for match in re.finditer(
-            r'<g><title>([^<]*)</title><circle cx="(\d+)" cy="(\d+)"', svg):
-        path = match[1].split(" ")[0]
-        found[path] = (int(match[2]), int(match[3]))
+            r'<g data-row="([^"]+)"[^>]*><title>[^<]*</title>'
+            r'<circle cx="(\d+)" cy="0"', svg):
+        found[match[1]] = (int(match[2]), rows[match[1]])
     return found
 
 
@@ -261,6 +299,32 @@ class Render(unittest.TestCase):
         self.assertIn("No merges in the last 7 days.",
                       render(parse(WORKLOG), [], {}, TODAY))
 
+    def test_a_new_row_changes_only_its_own_lines(self) -> None:
+        before = wl("""\
+1. [ ] **A** item.
+   - [ ] **a1** s.
+   - [ ] **g** group.
+     - [ ] **g1** s.
+   - [ ] **h** group.
+     - [ ] **h1** s.
+""")
+        # A second-level step inserted second opens a new track before g's and h's.
+        after = before.replace("   - [ ] **g** group.",
+                               "   - [ ] **n** group.\n     - [ ] **n1** s.\n"
+                               "   - [ ] **g** group.")
+        old = render(parse(before), [], {}, TODAY).splitlines()
+        new = render(parse(after), [], {}, TODAY).splitlines()
+        added, removed = [], []
+        for line in difflib.unified_diff(old, new, lineterm=""):
+            if line.startswith("-") and not line.startswith("---"):
+                removed.append(line)
+            elif line.startswith("+") and not line.startswith("+++"):
+                added.append(line)
+        self.assertEqual(removed, [])
+        self.assertTrue(added)
+        for line in added:
+            self.assertIn("A/n", line)
+
 
 class Timeline(unittest.TestCase):
     DATES = {"TOP/a/aa": "2026-11-20", "TOP/b": "2026-11-23",
@@ -315,12 +379,10 @@ class Timeline(unittest.TestCase):
         svg = roadmap.timeline(parse(WORKLOG), self.DATES, TODAY)
         cy = {p: y for p, (_, y) in circles(svg).items()}
         self.assertNotIn("Phase 1", svg)    # done
-        rows = re.findall(r'<g><title>(Phase \d)', svg)
+        rows = re.findall(r'<g data-row="(Phase \d)"', svg)
         self.assertEqual(rows, ["Phase 3", "Phase 2"])     # 3 runs after 2: higher
         top_step = min(cy[p] for p in ("TOP/a/ab", "TOP/c", "MODE", "NEXT", "b"))
-        phase_2 = re.search(r'<g><title>Phase 2[^<]*</title><circle cx="\d+" cy="(\d+)"',
-                            svg)
-        self.assertLess(int(phase_2[1]), top_step)
+        self.assertLess(cy["Phase 2"], top_step)
         self.assertIn('<title>Phase 3 GUI after Phase 2 (in progress)</title>', svg)
 
     def test_every_description_starts_at_one_column_past_the_longest_label(self) -> None:
@@ -346,10 +408,10 @@ class Timeline(unittest.TestCase):
         self.assertEqual(ys, [ys[0] + 22 * i for i in range(len(ys))])
         self.assertEqual(" ".join(words for _, _, words in spans), long)
         cy = {p: y for p, (_, y) in circles(svg).items()}
-        self.assertEqual(cy["A"], ys[0])                          # the code on the first line
-        self.assertEqual(cy["B"], ys[-1] + 22 + 8)                 # B below A's last line
+        self.assertEqual(ys[0], 0)                               # first line on the row's circle
+        self.assertEqual(cy["B"], cy["A"] + ys[-1] + 22 + 8)     # B below A's last line
         self.assertIn(f'font-weight="600">A</text>', svg)
-        self.assertRegex(svg, rf'<text x="\d+" y="{ys[0]}" [^>]*font-weight="600">A</text>')
+        self.assertRegex(svg, r'<text x="\d+" y="0" [^>]*font-weight="600">A</text>')
 
     def test_a_wrapped_line_fills_its_column_before_it_breaks(self) -> None:
         long = " ".join(["word"] * 120)
@@ -384,8 +446,9 @@ class Timeline(unittest.TestCase):
     def test_steps_in_progress_sit_on_the_now_band_between_open_and_done(self) -> None:
         svg = roadmap.timeline(parse(self.NOW), {"A/a3": TODAY}, TODAY)
         cy = {p: y for p, (_, y) in circles(svg).items()}
-        band = re.search(r'<rect id="now" x="0" y="(\d+)" width="\d+" height="(\d+)" rx="2"', svg)
-        top, bottom = int(band[1]), int(band[1]) + int(band[2])
+        self.assertIn('<rect id="now" x="0" width="1400" rx="2"', svg)
+        top, height = laid_out(svg)["now"]["band"]
+        bottom = top + height
         self.assertLess(cy["A/a1"], top)
         for path in ("A/a2", "B"):
             self.assertTrue(top < cy[path] < bottom, (path, cy[path], top, bottom))
@@ -396,10 +459,19 @@ class Timeline(unittest.TestCase):
     def test_without_steps_in_progress_a_line_labelled_now_parts_open_from_done(self) -> None:
         svg = roadmap.timeline(parse(WORKLOG), self.DATES, TODAY)
         self.assertNotIn("<rect", svg)
-        line = re.search(r'<line id="now" x1="0" y1="(\d+)" x2="\d+" y2="\d+" stroke="#555"/>', svg)
+        self.assertIn('<line id="now" x1="0" x2="1400" stroke="#555"/>', svg)
+        line_y = laid_out(svg)["now"]["line"]
         cy = {p: y for p, (_, y) in circles(svg).items()}
-        self.assertTrue(cy["NEXT"] < int(line[1]) < cy["TOP/b"])
+        self.assertTrue(cy["NEXT"] < line_y < cy["TOP/b"])
         self.assertIn('dominant-baseline="central">now</text>', svg)
+
+    def test_with_only_open_steps_the_now_line_sits_below_them(self) -> None:
+        svg = roadmap.timeline(parse(wl("- [ ] **A** open.\n- [ ] **B** open too.\n")), {},
+                               TODAY)
+        out = laid_out(svg)
+        # Two rows of one line (22 + 8 each), then the line's empty slot of 22.
+        self.assertEqual(out["now"], {"line": 71, "labelY": 64})
+        self.assertEqual(out["height"], 82)
 
 
 class Lanes(unittest.TestCase):
@@ -415,17 +487,16 @@ class Lanes(unittest.TestCase):
 
     def test_overlapping_tracks_take_different_columns_a_later_one_reuses(self) -> None:
         svg = roadmap.timeline(parse(self.LANES), {}, TODAY)
-        xs = re.findall(r'<line x1="(\d+)" y1="\d+" x2="\d+" y2="\d+" '
-                        r'stroke="#[0-9A-F]+" stroke-width="2"/>', svg)
+        xs = re.findall(r'<line data-track="[^"]+"[^>]*x1="(\d+)"', svg)
         self.assertEqual([int(x) for x in xs], [10, 42, 10])
 
     def test_an_open_rows_circle_is_hollow_and_a_done_rows_filled(self) -> None:
         svg = roadmap.timeline(parse(WORKLOG), Timeline.DATES, TODAY)
-        cx, cy = circles(svg)["TOP/c"]
-        self.assertIn(f'<circle cx="{cx}" cy="{cy}" r="5" fill="#1e1e1e" '
+        cx = circles(svg)["TOP/c"][0]
+        self.assertIn(f'<circle cx="{cx}" cy="0" r="5" fill="#1e1e1e" '
                       f'stroke="#E69F00" stroke-width="2"/>', svg)
-        cx, cy = circles(svg)["TOP/b"]
-        self.assertIn(f'<circle cx="{cx}" cy="{cy}" r="5" fill="#E69F00"/>', svg)
+        cx = circles(svg)["TOP/b"][0]
+        self.assertIn(f'<circle cx="{cx}" cy="0" r="5" fill="#E69F00"/>', svg)
 
 
 class Edges(unittest.TestCase):
@@ -446,8 +517,9 @@ class Edges(unittest.TestCase):
 
     def test_a_wait_on_an_unshown_parent_ends_at_its_topmost_descendant(self) -> None:
         svg = roadmap.timeline(parse(self.EDGES), {}, TODAY)
-        self.assertIn('d="M 10 105 C 10 60, 10 60, 10 15"', svg)   # b1 on A, ends at a2
-        self.assertIn('d="M 42 45 C 42 60, 10 60, 10 75"', svg)   # g1 on a1
+        edges = laid_out(svg)["edges"]
+        self.assertIn('M 10 105 C 10 60, 10 60, 10 15', edges)   # b1 on A, ends at a2
+        self.assertIn('M 42 45 C 42 60, 10 60, 10 75', edges)   # g1 on a1
 
 
 class Main(unittest.TestCase):
