@@ -228,7 +228,7 @@ fn two_notches_over_a_second_apart_are_two_undo_steps() {
 
     notch(&mut window, &mut view, at, true);
     // A second of idle ends the run: the next notch is its own entry.
-    idle_frames(&mut window, &mut view, 61);
+    wait_out(&mut window, &mut view, RUN_PAUSE);
     notch(&mut window, &mut view, at, true);
     assert_eq!(speed(&view), 79, "two notches took Speed to 79");
 

@@ -379,12 +379,15 @@ fn open_multi_aatf(window: &mut Headless, view: &mut SaveView) {
 
 /// Frames until the dialog's check of `ids` lands (bounded, so a worker
 /// that never replies fails rather than hangs). Returns the landing
-/// frame's node pairs.
+/// frame's node pairs. Its first frame waits out the range's rest
+/// (`multi_aatf::REST`), so ends picked just before have rested when the
+/// polling starts.
 fn multi_checked(
     window: &mut Headless,
     view: &mut SaveView,
     ids: &[u32],
 ) -> Vec<(accesskit::NodeId, accesskit::Node)> {
+    wait_out(window, view, multi_aatf::REST);
     frames_until(
         window,
         view,

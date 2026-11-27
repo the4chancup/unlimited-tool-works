@@ -47,7 +47,7 @@ const LIST_MARGIN: egui::Margin = egui::Margin::symmetric(6, 2);
 /// checked: the wheel over an end steps one team a frame, and a check
 /// started per step left the window unresponsive for about two minutes
 /// over 220 teams.
-const REST: f64 = 0.5;
+pub(super) const REST: f64 = 0.5;
 
 /// The list's opacity while it is checking, the draft's
 /// `.live-body.checking`.

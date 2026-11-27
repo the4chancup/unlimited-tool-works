@@ -292,7 +292,7 @@ fn a_second_gesture_on_the_same_control_is_its_own_entry() {
     drag(&mut window, &mut view, at);
     // Past the run's one-second pause: a second gesture within it would
     // join the first's run instead.
-    idle_frames(&mut window, &mut view, 61);
+    wait_out(&mut window, &mut view, RUN_PAUSE);
     drag(&mut window, &mut view, at);
     assert_eq!(undo_entries(&mut window, &mut view), 2, "two entries");
 }

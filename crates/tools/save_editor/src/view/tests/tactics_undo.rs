@@ -793,27 +793,27 @@ fn wheel_notches_over_the_tactics_controls_are_one_undo_step_each() {
         6,
         "a notch down over the rail adds one"
     );
-    idle_frames(&mut window, &mut view, 61);
+    wait_out(&mut window, &mut view, RUN_PAUSE);
     notch(&mut window, &mut view, value_box, true);
     assert_eq!(
         preset(&view).sliders.support_range,
         7,
         "a notch up over the value box adds one more"
     );
-    idle_frames(&mut window, &mut view, 61);
+    wait_out(&mut window, &mut view, RUN_PAUSE);
     notch(&mut window, &mut view, attacking_style, false);
     assert!(
         preset(&view).style.attacking_style,
         "a notch down takes Possession, the right choice"
     );
-    idle_frames(&mut window, &mut view, 61);
+    wait_out(&mut window, &mut view, RUN_PAUSE);
     notch(&mut window, &mut view, numbers_in_attack, true);
     assert_eq!(
         preset(&view).sliders.numbers_in_attack,
         2,
         "a notch up takes Medium, the choice left of Many"
     );
-    idle_frames(&mut window, &mut view, 61);
+    wait_out(&mut window, &mut view, RUN_PAUSE);
     notch(&mut window, &mut view, preset_two, false);
     assert_eq!(
         view.tactics.preset, 1,
@@ -855,34 +855,34 @@ fn wheel_notches_over_the_tactics_controls_are_one_undo_step_each() {
     studio_core::widgets::set_inverted(&window.ctx, true);
     notch(&mut window, &mut view, preset_two, true);
     assert_eq!(view.tactics.preset, 0, "back on preset 1");
-    idle_frames(&mut window, &mut view, 61);
+    wait_out(&mut window, &mut view, RUN_PAUSE);
     notch(&mut window, &mut view, rail, false);
     assert_eq!(
         preset(&view).sliders.support_range,
         6,
         "inverted, the rail's notch down still adds one"
     );
-    idle_frames(&mut window, &mut view, 61);
+    wait_out(&mut window, &mut view, RUN_PAUSE);
     notch(&mut window, &mut view, value_box, false);
     assert_eq!(
         preset(&view).sliders.support_range,
         7,
         "inverted, a notch down over the value box adds one more"
     );
-    idle_frames(&mut window, &mut view, 61);
+    wait_out(&mut window, &mut view, RUN_PAUSE);
     notch(&mut window, &mut view, attacking_style, false);
     assert!(
         preset(&view).style.attacking_style,
         "inverted, a notch down still takes the right choice"
     );
-    idle_frames(&mut window, &mut view, 61);
+    wait_out(&mut window, &mut view, RUN_PAUSE);
     notch(&mut window, &mut view, numbers_in_attack, true);
     assert_eq!(
         preset(&view).sliders.numbers_in_attack,
         2,
         "inverted, a notch up still takes the left choice"
     );
-    idle_frames(&mut window, &mut view, 61);
+    wait_out(&mut window, &mut view, RUN_PAUSE);
     notch(&mut window, &mut view, preset_two, false);
     assert_eq!(
         view.tactics.preset, 1,
