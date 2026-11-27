@@ -15,6 +15,8 @@ from roadmap_test import wl  # noqa: E402
 
 SCRIPT = Path(__file__).with_name("commit.py")
 ROADMAP = Path(__file__).parent / "pages" / "roadmap.py"
+sys.path.insert(0, str(SCRIPT.parent))
+from commit import personal_matches  # noqa: E402
 
 
 def git(repo: Path, *args: str) -> str:
@@ -117,6 +119,45 @@ class CommitAll(unittest.TestCase):
     def test_a_worklog_commit_of_the_index_carries_the_roadmap_too(self) -> None:
         run = self.commit_worklog("- [ ] **A** a step only this worklog has.\n", "-q")
         self.assert_page_committed(run)
+
+    def test_a_personal_line_warns_and_the_commit_goes_on(self) -> None:
+        (self.repo / "notes.txt").write_text(
+            "two\nThe move waits: the maintainer is\n  away from the PC.\n", encoding="utf-8")
+        run = self.commit_all()
+        self.assertEqual(run.returncode, 0, run.stdout + run.stderr)
+        self.assertIn("commit: warning: the changes may say something personal", run.stdout)
+        self.assertIn("the maintainer is away from the PC", run.stdout)
+        self.assertEqual(git(self.repo, "status", "--porcelain"), "")
+
+    def test_a_personal_message_warns_too(self) -> None:
+        self.message.write_text("chore(test): change the notes\n\nThe maintainer is on holiday.\n",
+                                encoding="utf-8")
+        old = time.time() - 60
+        os.utime(self.message, (old, old))
+        run = self.commit_all()
+        self.assertEqual(run.returncode, 0, run.stdout + run.stderr)
+        self.assertIn("commit: warning: the message may say something personal", run.stdout)
+
+    def test_a_commit_saying_nothing_personal_warns_nothing(self) -> None:
+        run = self.commit_all()
+        self.assertEqual(run.returncode, 0, run.stdout + run.stderr)
+        self.assertNotIn("warning", run.stdout)
+
+
+class Personal(unittest.TestCase):
+    def test_each_kind_of_phrase_matches(self) -> None:
+        for text in ("postponed until the maintainer is back", "the user's away",
+                     "the user was sick", "the maintainer will be on vacation",
+                     "while they are away from this PC", "back at the desk",
+                     "away from 2000-01-01 for two days", "away for 2 weeks",
+                     "taking time off", "out of office"):
+            self.assertTrue(personal_matches(text), text)
+
+    def test_work_that_comes_back_is_no_match(self) -> None:
+        for text in ("the button is back", "the 262K limit is back", "the maintainer's yes",
+                     "waits until the maintainer starts it", "a folder kept away from the tree",
+                     "the check is off by one", "four days of logs"):
+            self.assertEqual(personal_matches(text), [], text)
 
 
 if __name__ == "__main__":

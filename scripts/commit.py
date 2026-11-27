@@ -13,6 +13,11 @@ in another worktree (a sidekick's under `4cc-studio-temp/`): a `cd` chained befo
 command makes the agent harness ask the maintainer for permission. The message file is read
 from where the script was run, while paths name the worktree's files.
 
+The message, and the lines the commit adds, are searched for phrases saying where the
+maintainer is, when they are free or that they are ill (`PERSONAL`), which no tracked file
+holds: each match is printed as a warning, and the commit goes on, since a match may be about
+something else.
+
 A message file written under `FRESH_SECONDS` ago is refused too: only the command that
 commits, or one sent beside it, could have written it, so it skipped the three readings every
 message gets (`~/.claude/rules/shakespeare.md`) between being written and being committed.
@@ -45,6 +50,7 @@ around this file before it is pushed.
 """
 
 import os
+import re
 import subprocess
 import sys
 import time
@@ -60,6 +66,19 @@ FRESH_SECONDS = 2
 
 # The roadmap page, by a path from the repository's root whatever the directory run from.
 ROADMAP_PAGE = ":/docs/maintainer/roadmap.html"
+
+# Phrases saying where the maintainer is, when they are free or that they are ill, which no
+# tracked file or message holds (docs/CONTRIBUTING.md "Commits"). Another wording slips past
+# them and a match can be about something else, so they warn and the commit goes on.
+PERSONAL = re.compile(
+    r"\b(?:maintainer|user)(?:'s|'re| is| was| are| will be) (?:away|back|off|sick|ill"
+    r"|unavailable|travel+ing|on (?:holiday|vacation|leave))\b"
+    r"|\b(?:away from|back at) (?:this|the|their) (?:pc|computer|desk|machine)\b"
+    r"|\baway (?:from \d{4}-\d{2}-\d{2} )?for (?:a|an|one|two|three|four|five|six|seven|\d+)"
+    r" (?:days?|weeks?|months?)\b"
+    r"|\b(?:on holiday|on vacation|out of office|out of town|sick leave|days off|time off)\b",
+    re.IGNORECASE,
+)
 
 
 def main(argv: list[str]) -> int:
@@ -88,6 +107,7 @@ def main(argv: list[str]) -> int:
     if found:
         print(f"commit: nothing committed; fix {message} (docs/CONTRIBUTING.md \"Commits\")")
         return 1
+    warn_personal(message.read_text(encoding="utf-8"), "the message")
     if merge is not None:
         # A merge with nothing to bring in is a slip: run in the branch's own worktree (a `cd`
         # left behind), or the commit it follows failed. git only says "Already up to date".
@@ -104,6 +124,7 @@ def main(argv: list[str]) -> int:
         return 1
     add_new(rest)
     changed = changed_paths(rest)
+    warn_personal(added_text(rest), "the changes")
     drafts = any(path.startswith("docs/prototypes/") for path in changed)
     if drafts and not passes("scripts/drafts/bundle_drafts_test.py"):
         print("commit: nothing committed; the drafts bundler's test failed (above)")
@@ -173,6 +194,32 @@ def changed_paths(rest: list[str]) -> list[str]:
     else:
         command = ["git", "diff", "--cached", "--name-only"]
     return subprocess.run(command, capture_output=True, text=True, check=True).stdout.splitlines()
+
+
+def added_text(rest: list[str]) -> str:
+    """The lines the commit `rest` describes adds, over the same files as `changed_paths`."""
+    paths = [arg for arg in rest if not arg.startswith("-")]
+    if paths or "-a" in rest:
+        command = ["git", "diff", "-U0", "HEAD", "--", *paths]
+    else:
+        command = ["git", "diff", "--cached", "-U0"]
+    diff = subprocess.run(command, capture_output=True, text=True, encoding="utf-8",
+                          errors="replace", check=True).stdout
+    return "\n".join(line[1:] for line in diff.splitlines()
+                     if line.startswith("+") and not line.startswith("+++"))
+
+
+def personal_matches(text: str) -> list[str]:
+    """Each `PERSONAL` match in `text`, with some words around it. The text is flattened
+    first, so a sentence wrapped across lines still matches."""
+    flat = " ".join(text.split())
+    return [flat[max(0, m.start() - 40):m.end() + 40] for m in PERSONAL.finditer(flat)]
+
+
+def warn_personal(text: str, where: str) -> None:
+    for snippet in personal_matches(text):
+        print(f"commit: warning: {where} may say something personal about the maintainer, "
+              f"which no tracked file holds (docs/CONTRIBUTING.md \"Commits\"): ...{snippet}...")
 
 
 def passes(script: str) -> bool:
