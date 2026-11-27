@@ -20398,3 +20398,8 @@ Plan: `docs/WORKLOG.md` TESTSEL/adopt/extras/parity `driver`.
 Decision: a Task Scheduler task starts this PC's mutation driver when the maintainer logs on.
 Why: the maintainer's answer on `maintainer/driver.html`. The driver resumes from its folders, so after a restart starting it is the only step left, which today waits for a lead session to relaunch the rolling job by hand.
 Plan: `docs/WORKLOG.md` TESTSEL/adopt/extras/parity `driver`.
+
+## 2026-11-27 — testing — pes_savefile is optimized in test builds
+Decision: `Cargo.toml` builds `pes_savefile` at opt-level 3 in the dev profile (and so in `profile.mutants`, which inherits it), the first workspace crate there.
+Why: the test-suite census (worklog `LEAN/census`) timed a save_editor test's setup step by step: making the fixture save (encrypting it) and opening it (decrypting and parsing) were over half of it. With `pes_savefile` optimized, save_editor's whole suite took 968 s of test time against 2,159 s (243 s wall against 542, 4 test threads, 1,192 tests passing on both). Not every crate optimized: a workspace crate's mutants rebuild it, and an optimized build would slow each one; for `pes_savefile` a one-line change to its cipher rebuilt save_editor's test binary in 11 s either way, so only its cold build per copy costs more.
+Plan: no plan edit needed — test build settings have no plan section; `Cargo.toml`'s comment carries the reason.

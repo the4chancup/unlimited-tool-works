@@ -4538,11 +4538,16 @@ points there.
     setup is `fixture` (`pes_savefile::fixture_save`, which encrypts a whole save each
     call) and `view.open` (which decrypts and parses it), then two headless frames. The inflate and
     hashes are already optimized in test builds (`Cargo.toml` `[profile.dev.package]`),
-    the cipher in `pes_savefile` is not. Building `pes_savefile` optimized barely moves
-    that test (0.672-0.680 s against 0.685-0.695 s, three runs a side in one target
-    folder, `.tmp/lean/{opt_ab,base_ab}.sh`), so the cipher is not the floor. Left: timing
-    the test's two setup steps apart (`fixture`, `view.open`) and the process start
-    around them, in a throwaway copy, and the tests each mutant selects;
+    the cipher in `pes_savefile` was not. Timed step by step (3 runs, wall), that test's
+    fixture took ~133 ms, `view.open` ~220 ms and its first frame ~248 ms. With
+    `pes_savefile` optimized, fixture and open fell to ~14 and ~22 ms, and save_editor's whole
+    suite to 968 s summed from 2,159 (243 s wall from 542), while a one-line change to the
+    cipher rebuilt in 11 s either way; so `Cargo.toml` now optimizes `pes_savefile` in test
+    builds (DECISIONS 2026-11-27). A `cargo --config` placed before `nextest` never reaches
+    nextest's own build: an A/B sets its override in a throwaway worktree's
+    `.cargo/config.toml` and shows its side rebuilt (`.tmp/lean/probe_ab2.sh`). Left: the
+    first frame's ~200 ms that egui's crates optimized do not remove (egui's at opt-level 3
+    took it from ~248), and the tests each mutant selects;
   - [ ] **patterns** [after census] the cheaper shapes in CONTRIBUTING "Testing and
     verification": a fixture loaded once per test binary, each instance's wiring checked
     in one table-driven scene, a shared widget's behavior tested once in its own crate.

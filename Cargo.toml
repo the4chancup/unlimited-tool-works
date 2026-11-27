@@ -191,3 +191,10 @@ opt-level = 3
 
 [profile.dev.package.sha2]
 opt-level = 3
+
+# The save container's cipher and parse are most of a save test's setup unoptimized:
+# save_editor's suite took 2,159 s of test time against 968 s with this crate optimized,
+# and a one-line change to it rebuilt that crate's tests in 11 s either way, so its own
+# mutants build no slower.
+[profile.dev.package.pes_savefile]
+opt-level = 3
