@@ -630,6 +630,13 @@ function:
 
 What exists of this is in `spec/aatf_rules.md` "Loading and validation".
 
+**The embedded rulesets load without step 3**, the check on the sample team. `libs/aatf`'s
+tests run that step on every embedded ruleset, so none that fails it ships, and running it
+again at each load would repeat the test at the cost of a whole team check. That cost would
+land wherever an embedded ruleset loads: the Save editor's first frame, each change of ruleset,
+and every test that loads one. A file someone imports or names (`check-aatf --rules`) still
+goes through all three steps.
+
 The Ruleset editor validates a file before saving it (`plans/ruleset_editor.md`). A logic
 change that needs a new data shape bumps `schema`; `libs/aatf` keeps a migration from every
 earlier schema, run by the update.

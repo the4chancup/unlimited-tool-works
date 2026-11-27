@@ -29,7 +29,7 @@ One line per piece of work in flight; the items below hold the detail.
 - The workflow improvements before the suite resumes (`RESUME/optimize`): the mutation
   driver's slices (`driver/d2`, the VPS lane: d2b and d2c merged, d2a's trial pending), and
   the lighter tests (`LEAN/pilot`: `save_editor`'s next rolling run against the one now
-  running; `LEAN/rest/firstdraw` next).
+  running; `LEAN/rest/samplecheck` next).
 - The checkpoint: `19fda006` passed it and is pushed; its Linux gates are owed.
 - The rolling mutation job: on the VPS, crate by crate, held after its current crate so the
   driver's VPS lane runs its trial job (`driver/d2a`).
@@ -4598,8 +4598,20 @@ points there.
       next `save_editor` slice. The heaviest tests left each weigh under 2% of a run, while
       every test pays the view's first draw (~160 ms), an estimated third of a run's test
       time (213 tests a mutant on average);
-    - [ ] **firstdraw** what the view's first draw spends its ~160 ms on (the fonts, the
-      save's open, the first layout), measured by a probe before any change is briefed.
+    - [x] **firstdraw** 2026-11-27, a probe test (five runs, each its own process, warm build;
+      `.tmp/lean/firstdraw_probe*.log`). A view test of about 270 ms spends about 115 ms of it
+      on the view's first frame loading its ruleset (`aatf::builtin`, for each new view): 85 ms
+      checking the sample team (load step 3), 17 ms building that team and 9 ms compiling the
+      script. The ruleset picker's `builtins()` takes 29 ms once a process, loading all seven
+      rulesets' data. Writing the fixture save takes 28 ms and opening it 33, drawing the frame
+      about 15 and starting the process 30; fonts and egui's start take under 1 ms. With `aatf`
+      optimized the check took 79 ms against 85 (Rhai is already optimized), so it stays
+      unoptimized;
+    - [ ] **samplecheck** the embedded rulesets load without step 3 (DECISIONS 2026-11-27
+      "the embedded rulesets load without the sample team's check"): `Rules::from_data_block`
+      skips it, a test runs it on every embedded block; then `spec/aatf_rules.md` gets the
+      plan's paragraph. A small `aatf` slice for SWE-2, measured on `save_editor`'s suite as
+      raster was. Left after it: the `builtins()` 29 ms and the fixture's write and open.
 
 - resolved (2026-11-24) — `scripts/commit.py -a` left a new file out silently, as `git commit
   -a` does: `9ac41d0a` needed an amend for `docs/spec/core/design.md`. With `-a` it now

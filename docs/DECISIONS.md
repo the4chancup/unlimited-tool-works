@@ -20436,3 +20436,16 @@ that saved 7% of the pictures tests' time (77 s against 83).
 Plan: `plans/save_editor.md` "Drawing the picture" and `plans/core/architecture.md`'s crate
 tree edited; guardrail 3 (`spec/core/architecture.md` and CONTRIBUTING), which admitted a lib
 crate only for several consumers or a standalone format, now names this case.
+
+## 2026-11-27 — aatf — the embedded rulesets load without the sample team's check
+Decision: `Rules::from_data_block`, which loads the embedded rulesets (`builtin`,
+`Rules::official`) and the other rulesets' test fixtures, runs load steps 1 and 2 and skips
+step 3, `check_team` on the sample team. A test runs step 3 on every embedded ruleset instead.
+`Rules::load`, for a file someone imports or names, keeps all three steps.
+Why: the step guards against a file whose logic fails before any real check runs, and for an
+embedded ruleset a test settles that once. Run at each load, it cost a whole team check: in a
+test build, about 100 ms of the 125 ms a Save editor view's first frame takes, which every view
+test pays out of its 270 ms or so (worklog `LEAN/rest/firstdraw`). Not
+`aatf` optimized in test builds instead, because the check is spent in Rhai, already
+optimized: with `aatf` optimized it took 79 ms against 85.
+Plan: `plans/aatf_rules.md` "Loading and validation" edited.
