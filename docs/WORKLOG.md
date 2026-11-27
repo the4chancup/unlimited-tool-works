@@ -28,13 +28,14 @@ One line per piece of work in flight; the items below hold the detail.
 
 - The workflow improvements before the suite resumes (`RESUME/optimize`): the mutation
   driver's slices (`driver/d3a`, a job's extra pass as extra shards, merged and deployed,
-  its review round `S1d3a` ruled, its fixes `f1d3a` with a sidekick; `d3b1`, the rolling
-  job moved into the driver, merged, its `switch` from `rolling.py` under way). The lighter tests (`LEAN`) are done: a whole `aatf` run's test phases
+  its fixes `f1d3a` merged and under SWE-2's round `S2d3a`; `d3b1`, the rolling job moved
+  into the driver, merged, its `switch` from `rolling.py` under way; `d3b2`, `gates-remote`
+  taking the VPS lane's hold, with a sidekick). The lighter tests (`LEAN`) are done: a whole `aatf` run's test phases
   halved with no new survivor, and no further slice is worth its cost.
 - The per-player rules calls read a team once (`AATFSPEED`): the slice `reading` is merged
   and its reviews are closed, and `86dab4ed` passed the checkpoint.
-- The checkpoint: `86dab4ed` passed it (`19fda006`, an earlier one, is pushed); the Linux
-  gates are owed.
+- The checkpoint: `86dab4ed` passed it (`19fda006`, an earlier one, is pushed), and the
+  Linux gates passed at `1900348b` on WSL (`WSLGATES/trial2`).
 - The rolling mutation job: `rolling.py` is held and files `epaint_raster`, then the
   driver takes the job over (`driver/switch`).
 - The move to the 905P (`RESUME/migration`): postponed until the maintainer starts it.
@@ -655,9 +656,17 @@ and no phase closes with one outstanding.
     two Linux failures in an unpushed commit, both fixed (`c0852606`, `a0e0e243`). Left: the
     VPS run's time to compare, a recipe for it (the trial's script is
     `.tmp/lead/wslgates_trial.sh`), and the disk image's growth.
-  - [ ] **wslstart** WSL's VM refuses to start (`HCS/ERROR_NO_SYSTEM_RESOURCES`, from
-    2026-11-27, three tries, one after `wsl --shutdown`, with 12 GB of memory free against
-    the VM's 8 GB): find why before any WSL gates run; script tests run on the VPS meanwhile.
+  - [x] **wslstart** 2026-11-27: WSL's VM refused to start in the morning
+    (`HCS/ERROR_NO_SYSTEM_RESOURCES`, three tries, one after `wsl --shutdown`, with 12 GB
+    of memory free against the VM's 8 GB), then started at 13:16 with nothing changed; the
+    cause is unknown. If it recurs, read the commit charge (Task Manager's "Committed")
+    before anything else, since free memory did not explain it;
+  - [x] **trial2** 2026-11-27: the checkpoint's Linux gates passed at `1900348b` on WSL
+    (`.tmp/lead/wslgates_run.sh`), in 329 s with the build cache of trial1, standing in for
+    the VPS's while its lane ran the rolling job. The first two runs stopped at the roadmap's
+    tests: WSL had no Node.js, then only 22.04's own 12, which cannot parse the tests' `??`.
+    `setup.sh` now installs Node.js 20 from NodeSource, and WSL has it. Left as trial1
+    says: the VPS's time to compare, a recipe, the disk image's growth (`target/` 15 GB).
     WSL 3.0.5, kernel 6.18.58; `vmcompute` and `WslService` running, `LxssManager` stopped;
     the Hyper-V compute log needs an administrator to read. `memory=4GB` failed the same way
     (2026-11-27, with 10.6 GB free; set back to 8 GB), and no other VM was running (VMware
@@ -1063,11 +1072,14 @@ and no phase closes with one outstanding.
                 could get empty shards, each still running the crate's whole baseline. The
                 rest: a code of 2 with no survivor listed read clean, an untestable guard,
                 three texts, a test gap;
-              - [~] **f1d3a** [after S1d3a] the fixes, by `d3b1`'s sidekick (its
-                session resumed on `.tmp/brief_f1d3a.md` in the worktree `4cc-studio-temp/d3b1`)
-                as a second commit there; on its end the lead reviews, commits with `--in` and
-                merges;
-              - [ ] **S2d3a** [after f1d3a] SWE-2's round over the fixes;
+              - [x] **f1d3a** 2026-11-27, merge `76b52dbb` (Opus): a VPS shard's memory
+                figures reach this PC (the unit script and the fetch read one table of
+                names), a job's 2 clears only when a recheck caught every survivor, an
+                extra pass gets no more shards than mutants, and the texts match the code.
+                Its tests pass on Windows and on the VPS; the VPS lane runs the new shard
+                script once redeployed (`switch`);
+              - [~] **S2d3a** [after f1d3a] SWE-2's round over `a163b399` (brief
+                `.tmp/lead/swe_review_s2d3a.md`, run in `4cc-studio-temp/review_cols`);
             - [ ] **d3b** [after d3a] the rolling job itself (DECISIONS 2026-11-27 "the
               rolling job becomes this PC's driver's, filing each job under
               `mutants.rolling/`"), in two subslices. The finish stays the point where
@@ -1090,15 +1102,20 @@ and no phase closes with one outstanding.
                   `low_priority.py` parents), delete `.tmp/rolling.hold` and
                   `mutants.rolling/current.txt` if left, then start `python
                   ~/.claude/tools/run_detached.py .tmp/driver_pc.log just driver run` from
-                  main and read its start. The VPS lane is redeployed (`just driver deploy`,
-                  while the lane is idle) after `f1d3a`, which changes its unit script;
-              - [ ] **d3b2** [after d3b1] `gates-remote` takes the VPS lane's hold
+                  main and read its start. The VPS lane was redeployed with `f1d3a`'s shard
+                  script at `76b52dbb`;
+              - [~] **d3b2** [after d3b1] (Opus, `4cc-studio-temp/d3b2`, brief
+                `.tmp/brief_d3b2.md` there) `gates-remote` takes the VPS lane's hold
                 (`hold-vps`) and waits for the running shard to end; this PC's shards'
                 mutant logs are read for a catch whose only failure is nextest's `TIMEOUT`
                 (no `FAIL`): a test starved past the 180-second limit, filed as caught
                 (DECISIONS 2026-11-27 "a test past 180 seconds fails in every run"). The
                 lines nextest 0.9.146 prints for both, from a real run:
-                `.tmp/lead/nextest_timeout_sample.log`;
+                `.tmp/lead/nextest_timeout_sample.log`. Such a catch stays filed caught, as
+                the decision says, and is listed for a look; a PC shard keeps every
+                mutant's log, and `mutants.caught_by_tests` already reads a caught mutant's
+                log for a lost console, so the reading goes beside it, where `memsum`'s
+                `SIGKILL` reading can go too;
           - [ ] **d4** [after d3] the diff, closure and extra-kind commands and the
             checkpoint queue jobs and wait for their results; the file split, its share
             tables and the locks they made needed go; each run's timings a file of its own;

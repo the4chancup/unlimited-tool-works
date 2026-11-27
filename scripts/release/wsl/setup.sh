@@ -38,6 +38,12 @@ if [ ! -x /usr/bin/python3.13 ]; then
 fi
 # deadsnakes' 3.13 ships without pip: the gates' venv below needs the venv module.
 apt-get install -y -q python3.13-venv
+# Node.js for the roadmap page's tests, which run its layout script: 20, from NodeSource,
+# since 22.04's own nodejs (12) cannot parse the `??` the tests' stand-in DOM uses.
+if ! node --version 2>/dev/null | grep -q '^v20\.'; then
+    curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+    apt-get install -y -q nodejs
+fi
 # The script tests' packages, at CI's versions, read from its install line.
 packages=$(sed -n 's/.*python -m pip install \(pillow==.*\)$/\1/p' "$repo/.github/workflows/ci.yml")
 [ -n "$packages" ] || { echo "error: no 'pip install pillow==...' line in .github/workflows/ci.yml"; exit 1; }
