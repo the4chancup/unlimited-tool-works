@@ -69,8 +69,19 @@ impl TeamReading {
     /// The id of the height system the team is read under, as
     /// `check_team` reports it (`TeamCheck::height_system`); `None` when
     /// no system holds.
-    pub fn height_system(&self) -> Option<&SystemId> {
+    #[cfg(test)]
+    pub(crate) fn height_system(&self) -> Option<&SystemId> {
         self.system.as_ref()
+    }
+
+    /// `team` paired with `system` as given, for a test that needs a
+    /// system the team is not read under.
+    #[cfg(test)]
+    pub(crate) fn under(team: TeamView, system: Option<&str>) -> TeamReading {
+        TeamReading {
+            team,
+            system: system.map(str::to_string),
+        }
     }
 
     /// The system as the script takes it: its id, or `()` for none.

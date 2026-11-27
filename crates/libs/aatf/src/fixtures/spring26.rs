@@ -42,6 +42,36 @@ fn red_legal_records() -> Records {
     records
 }
 
+/// The logic reads a player under the height system the reading
+/// carries, never one it works out from the team again: on the team
+/// Red takes, slot 3's manlet regular gets the Red manlet bonus in his
+/// targets under Red, and not when the same team is paired with Green.
+#[test]
+fn tier_values_read_the_player_under_the_readings_system() {
+    let rules = rules();
+    let team = red_legal_records().view();
+    let red = reading(&rules, &team);
+    assert_eq!(
+        red.height_system().map(String::as_str),
+        Some("red"),
+        "premise: the team reads under Red"
+    );
+    let green = TeamReading::under(team.clone(), Some("green"));
+    let manlet = player(&team, 3);
+    assert_eq!(manlet.height, 175, "premise: slot 3 is a manlet");
+    let values = |reading: &TeamReading| {
+        rules
+            .tier_values(reading, manlet, "regular")
+            .expect("values")
+            .stats
+    };
+    assert_ne!(
+        values(&red),
+        values(&green),
+        "the Red manlet bonus applies under Red alone"
+    );
+}
+
 /// The sample team as written reports nothing: two golds at 99, three
 /// silvers at 88, goalkeepers at 74, Green with 5 giants.
 #[test]

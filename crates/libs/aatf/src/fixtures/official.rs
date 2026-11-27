@@ -1605,11 +1605,7 @@ fn tier_values_carry_the_specials() {
     );
     assert_eq!((regular.form, regular.injury_resistance), (4, 1));
     let unknown = rules
-        .tier_values(
-            &reading(&rules, &team),
-            team.player(3).expect("filled"),
-            "platinum",
-        )
+        .tier_values(&team_reading, team.player(3).expect("filled"), "platinum")
         .expect_err("no such tier");
     assert_eq!(
         unknown,
