@@ -985,10 +985,11 @@ and no phase closes with one outstanding.
           `memsum` and `warm` carry over, and `shards`' `split` goes with the split; `deep`'s open
           fixes (S1-S7) wait for a triage of which the driver makes moot (races between
           separate commands) and which it keeps (diff parsing, outcome accounting);
-          - [~] **d1** the queue on disk and this PC's lane: `scripts/mutation/driver.py`
-            (`just driver queue <crate>`, `just driver run`), whole-crate jobs only, beside
-            the old commands and replacing none; Opus in `4cc-studio-temp/sk_driver1`, brief
-            `.tmp/lead/driver/brief_d1.md`;
+          - [x] **d1** 2026-11-27, merge `bc935014`: the queue on disk and this PC's lane,
+            `scripts/mutation/driver.py` (`just driver queue <crate>`, `just driver run`),
+            whole-crate jobs only, beside the old commands and replacing none. A restart
+            puts back its lane's claimed shards and finishes jobs whose shards all ended; a
+            job with untested mutants exits 1. Its 20 tests pass on Windows and Linux;
           - [ ] **d2** [after d1] the VPS lane: a driver there taking shards of the jobs sent
             with their snapshots, the coverage map once per job before its first shard there,
             results kept until this PC fetches them between its own shards;
