@@ -107,8 +107,10 @@ const RULESET = #{ ... };
 
 // ==== LOGIC (ruleset-logic 1): the Ruleset editor replaces this section ====
 fn check_team(team) { ... }
-fn tier_values(player, tier, team) { ... }
-fn card_limits(player, tier, team) { ... }
+fn team_height_system(team) { ... }
+fn tier_values(player, tier, team, system) { ... }
+fn card_limits(player, tier, team, system) { ... }
+fn player_tier(player, team, system) { ... }
 // ... the interpreter's own functions
 
 // ==== CUSTOM CHECKS: optional, hand-written; the Ruleset editor keeps this section as it is ====
@@ -841,18 +843,29 @@ other team fails both.
 
 ## The interpreter
 
-The logic section implements the three functions the host calls, over `global::RULESET` and the
+The logic section implements the five functions the host calls, over `global::RULESET` and the
 host's registered accessors:
 
 - `check_team(team) -> [violation]`: steps 1–4 of "How a player is read" for every player.
-- `tier_values(player, tier, team) -> map`: the targets a player of `tier` must carry (per stat,
+- `team_height_system(team) -> system id or ()`: the height system `check_team` reads the
+  team under (step 1), `()` when none holds. The other three take its answer as `system`.
+- `player_tier(player, team, system) -> tier id or ()`: the tier `check_team` reads the player
+  as (step 2's recognition under `system`), `()` when no tier's `when` holds (`check_team`'s
+  `NoTier`). Behind the Save editor's cards badge, which then asks `card_limits` for that tier,
+  and the tactics view's medals.
+- `tier_values(player, tier, team, system) -> map`: the targets a player of `tier` must carry (per stat,
   form, injury resistance, weak foot), specials applied. Behind `apply_tier`.
-- `card_limits(player, tier, team) -> map`: the non-free cards the player holds now and their
+- `card_limits(player, tier, team, system) -> map`: the non-free cards the player holds now and their
   limit (below zero when the extra A positions outnumber the cards), free count per group, free
   and required cards, A positions allowed, and the `max_a_positions` cap when a special sets one.
   Behind the card pickers' remaining-count badges (the Save editor's, Phase 8), each `limit -
   non_free`: the logic counts the non-free cards, so a widget never recounts them with a second
   card economy that could drift from the checks.
+
+`player_tier` sits in the logic, beside `check_team`'s own reading, for the reason
+`card_limits` does: a widget that recognized tiers in Rust would be a second recognition that
+drifts from the checks (recognition before choices, a height system told apart by its quotas, a
+special that moves a threshold), and from a file whose logic is not the build's.
 
 A violation crosses back as a map the host converts into:
 
@@ -972,7 +985,7 @@ below its target is otherwise a manager's choice, not an allowance, and is never
 ## The host
 
 `libs/aatf` compiles a file once per load, reads `RULESET` from the global scope, and calls the
-three functions on demand. What a script sees is registered by the host and nothing else: a team
+five functions on demand. What a script sees is registered by the host and nothing else: a team
 as a `TeamView` built from `pes_savefile`'s model (`TeamView::new(&EditFile, team_id)`) and its
 roster as `PlayerView`s, every value on the game's own scale (form 1 to 8, injury resistance 1 to
 3, weak foot 1 to 4, where the save stores each less one). They are views, not `PlayerEntry` and
@@ -1019,6 +1032,30 @@ team's check takes about 56 ms, of which building the team's view, copying it an
 the script take under 1%. The rest is the script's own work, `read_player`'s profile of each
 tier the most of it. `sync` costs about 3% per team, and the parallel check takes 1.8 s on 16
 threads where one thread took 12.8 s.
+
+**One team reading per team.** Working out a team's height system reads the whole team under
+each candidate system; under a ruleset whose last system takes a team after a quota system
+failed, it also runs every check under each candidate (the logic's `team_reading`). So the
+per-player functions take the system instead of working it out. `Rules::team_reading(team)`
+asks `team_height_system` once and returns a `TeamReading`, the team with its system, and
+`player_tier`, `card_limits`, `tier_values` and `apply_tier` take that reading in place of the
+team, so a caller cannot pair a player with another team's system. An answer that names no
+system of the ruleset is `CheckError::Values`. Each caller reads once per trigger:
+
+- the tactics view's medals and a formation picture, once per team;
+- the cards badge, once per run;
+- a quick action, once per click: `apply_tier`'s settling passes change only the player's
+  view, so the team's system stands for all of them.
+
+A reading is not kept between triggers, since an edit to any player can change the system.
+Measured 2026-11-27 (test build, Rhai optimized, DBC7 on the PES 17 sample's team 701): the 23
+slots' medals took about 115 ms, against 2.0 s when each call worked the system out.
+
+We do not keep the system inside the logic, because Rhai keeps no state from one call to the
+next. We do not cache it on the host by team either: the medals and the badge already run once
+per change of the save and a quick action once per click, and such a cache would need the
+save's revision to stay right. Nor does one call return every slot's tier: the badge and the
+quick actions ask for one player, and would read the team as often as before.
 
 Since Rhai copies every map a call passes, the logic computes once what does not change between
 the calls that would repeat it: a choice's card summary, targets and weak-foot limits once per
@@ -1119,8 +1156,8 @@ The embedded rulesets ("Embedded rulesets") load from the binary; the Save edito
 `check-aatf --rules` names a file. A file is validated on load (`Rules::load`, so `check-aatf`
 refuses one that fails, and the Save editor refuses to import one):
 
-1. It parses, and defines `RULESET`, `check_team`, `tier_values`, `card_limits` and
-   `player_tier` with their arities, and `custom_checks`, if defined, with one parameter (with another, `check_team`
+1. It parses, and defines `RULESET`, `check_team`, `team_height_system`, `tier_values`,
+   `card_limits` and `player_tier` with their arities, and `custom_checks`, if defined, with one parameter (with another, `check_team`
    would skip it without a word).
 2. `RULESET` deserializes into `Ruleset` of a known `schema`, and passes the rules under "The
    ruleset schema".

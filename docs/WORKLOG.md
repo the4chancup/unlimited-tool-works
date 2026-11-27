@@ -30,6 +30,8 @@ One line per piece of work in flight; the items below hold the detail.
   driver's slices (`driver/d2`, the VPS lane: d2b and d2c merged, d2a's trial pending), and
   the lighter tests (`LEAN/pilot`: `save_editor`'s next rolling run against the one now
   running; `LEAN/rest`: no review owed; what is left waits for the pilot's rolling run).
+- The per-player rules calls read a team once (`AATFSPEED`): the slice `reading` merged, its
+  SWE-2 round **S1reading** owed, then one paid round.
 - The checkpoint: `19fda006` passed it and is pushed; its Linux gates are owed.
 - The rolling mutation job: on the VPS, crate by crate, held after its current crate so the
   driver's VPS lane runs its trial job (`driver/d2a`).
@@ -4451,23 +4453,19 @@ pruned when their phase closes; they stay in git history. A question only the ma
 can answer is not an issue: it goes to `docs/maintainer/questions.html`, and an issue that waits on one
 points there.
 
-- open (2026-11-27) — **AATFSPEED**: each per-player call into a rules file
-  (`tier_values`, `card_limits`, `player_tier`, and so `apply_tier`) first normalizes the
-  ruleset and reads the team's height system (`logic/logic.rhai`, `team_reading`). That
-  reading reads the whole team under each candidate system, and runs every check under each
-  one for a team no quota system takes. Under DBC7 one call took 88 ms in a test build,
-  with Rhai optimized, as long as a whole team check (86 ms); under the other built-in
-  rulesets about 8 ms, worked out from the heaviest test. A team's picture asks for its 23
-  slots' medals one call each (`tactics::slot_medals`), about 2 s a team under DBC7, and
-  the abilities badge makes two calls per player. Direction: one reading per team, which
-  every slot's answer then uses (a call returning each slot's tier, or the reading passed
-  in). That changes the rules file's functions, so a plan section and a decision come
-  first (`spec/aatf_rules.md`). Planned 2026-11-27 (`plans/aatf_rules.md` "The interpreter",
-  "One team reading per team"; DECISIONS 2026-11-27 "the per-player rules calls take the
-  team's height system, read once per team"), from a SWE-2 code map of every host caller
-  (`.tmp/swe_map_aatfspeed.findings.md` in the `review_lean` worktree).
-  - [ ] **reading** (Opus): the slice the plan section describes, `aatf` and its
-    `save_editor` callers.
+- resolved (2026-11-27) — **AATFSPEED**: each per-player call into a rules file
+  (`tier_values`, `card_limits`, `player_tier`, and so `apply_tier`) worked out the team's
+  height system first, reading the whole team under each candidate system, and under DBC7
+  running every check under each: 88 ms a call in a test build, so a team's 23 medals took
+  about 2 s. Now the host reads a team once and passes the system to each call
+  (`spec/aatf_rules.md` "The host", "One team reading per team"; DECISIONS 2026-11-27 "the
+  per-player rules calls take the team's height system, read once per team").
+  - [x] **reading** 2026-11-27 (merge `be595ca3`, Opus): `team_height_system` in the logic,
+    `Rules::team_reading` and `TeamReading` on the host, the Save editor's callers reading
+    once per trigger. Measured (test build): a 23-slot medal run under DBC7 took about
+    115 ms against 2.0 s; `aatf`'s suite 109 s of summed test time against 133 s and
+    `save_editor`'s 352 s against 374 s (nextest, 4 test threads, warm, twice each).
+  - [ ] **S1reading**: the SWE-2 round owed over it, then one paid round (shipped code).
 
 - open (2026-11-26, the maintainer: "eventually") — **SANDBOX**: a SWE-2 reviewer or sidekick
   is fenced only by Devin's deny list (deletes, git commands that discard work), not by
