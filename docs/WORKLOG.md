@@ -682,14 +682,18 @@ and no phase closes with one outstanding.
         accepted four, under five, which ends the SWE-2 loop: a scratch test that hung on a
         setup panic now fails, and every scratch helper says a test's folder name must be
         unique; the history rewrite's old objects were pruned (`.tmp/lead/scrub_gc.py`);
-      - [~] **paid** [after TS2] one paid round (Carbon), over the whole work at `93cb6115`:
-        brief `.tmp/lead/review_scratch_bc/carbon_paid.md`, its diff `paid.diff`, the report
-        `carbon_paid.report.md` when it ends (its first run was refused at its first
-        request; it runs again on another login once the code map's run below ends, a
-        login never being switched under a run); the lead rules it into `.tmp/duck_rulings.md`
-        as "Round TSP" with prevention lines and fixes the accepted concerns, after which a
-        SWE-2 round over the fixes follows (RUNBOOK "Review rounds": SWE-2 around each paid
-        round);
+      - [x] **paid** 2026-11-27: Carbon's round over the whole work, ruled as "Round TSP" in
+        `.tmp/duck_rulings.md`: ten of twelve concerns accepted, one a real input (a test
+        that swaps the panic hook could erase `test_scratch`'s for the rest of the process);
+      - [~] **tspfix** [after paid] the accepted concerns' fixes. The contract's own texts
+        are the lead's (`test_scratch`'s docs, its `Cargo.toml`, the spec's tree line, two
+        CONTRIBUTING paragraphs, uncommitted). The rest is SWE-2's: brief
+        `.tmp/lead/brief_tsp.md`, log `brief_tsp.run.log`, report `brief_tsp.notes.md`. The
+        helper docs link `fresh` rather than retell it, the two hook-swapping tests install
+        its hook first, and `help_cli`'s export goes into a missing folder. On its end:
+        review the diff, run its Verify list, commit everything as one;
+      - [ ] **TS3** [after tspfix] a SWE-2.1 round over the fixes (RUNBOOK "Review rounds":
+        SWE-2 around each paid round), briefed like TS2's parts;
   - [ ] **axiom** [after optimize] an Axiomatic Design pilot, on SWE-2: the suite's functional
     requirements split level by level, each mapped to the crate or module that meets it, and
     each level's design matrix checked for coupling (diagonal is uncoupled, triangular is
@@ -990,9 +994,26 @@ and no phase closes with one outstanding.
             whole-crate jobs only, beside the old commands and replacing none. A restart
             puts back its lane's claimed shards and finishes jobs whose shards all ended; a
             job with untested mutants exits 1. Its 20 tests pass on Windows and Linux;
-          - [ ] **d2** [after d1] the VPS lane: a driver there taking shards of the jobs sent
-            with their snapshots, the coverage map once per job before its first shard there,
-            results kept until this PC fetches them between its own shards;
+          - [~] **d2** [after d1] the VPS lane, in three slices. A job sent to the VPS keeps
+            its shards' markers there alone, and both lanes claim by a rename on the VPS: two
+            machines cannot share one rename, and the VPS is the one that stays on;
+            - [~] **d2a** the VPS lane itself: `queue` sends a job (its tree, `job.json`, the
+              markers) unless the host is unreachable, its cargo-mutants version differs or
+              the crate is `LOCAL_ONLY_CRATES`'s, and the job then stays this PC's;
+              `just driver deploy` installs the lane as the VPS's `studio-driver` service.
+              There each shard runs in a memory-capped `studio-shard` unit, and the lane waits
+              while `studio-mutants` or `studio-gates` runs, below the disk floor, or under
+              `hold-vps`; `remote_refusal` refuses while a shard runs. This PC's lane skips
+              sent jobs until d2b. Brief `.tmp/lead/driver/brief_d2a.md`, Opus in
+              `4cc-studio-temp/sk_driver2a`. On its end: review, merge, `just driver
+              deploy`, then one small crate queued with the rolling job held, and its results
+              read on the VPS;
+            - [ ] **d2b** [after d2a] this PC's side: it claims a sent job's shards on the
+              VPS, and between its own shards puts back the ones it lost, fetches the VPS's
+              finished ones (all but caught mutants' logs), and rechecks their Windows-only
+              survivors in `finish`; the VPS's copy goes once the job is finished;
+            - [ ] **d2c** [after d2b] the coverage map once per job before the VPS's first
+              shard of it, and its shards' tests selected from it;
           - [ ] **d3** [after d2] the rolling job's shards when nothing is queued, on both
             lanes; `rolling.py` and `.tmp/rolling.hold` go, `gates-remote` takes the VPS
             lane's hold, and RUNBOOK "Mutation runs and the VPS" is rewritten;
