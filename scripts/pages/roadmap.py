@@ -4,7 +4,7 @@ line and the last week's done steps, made from `docs/WORKLOG.md` and the git log
 merges so it cannot drift from them. The timeline's vertical positions are not in the page:
 its `<script>` computes them when it opens, from `roadmap_layout.js` embedded in it. A
 worklog row added or wrapped onto another line then moves only its own lines of the
-page, and a lane taking a new column moves only its `<line>`'s.
+page, and a lane moving to another column changes only its `<line>`.
 It refuses a worklog whose "Where the work stands" items break the header's convention (no
 checkbox and ID, an ID twice among siblings, an `[after …]` naming no step, a wait that
 comes back to its step), so a wrong dependency fails when it is written, not at a converge.
@@ -418,7 +418,8 @@ def timeline(roadmap: Roadmap, dates: dict[str, str], today: str) -> str:
     `YYYY-MM-DD`, which sorts before the times of its day. The SVG writes no vertical
     position, and a lane's x only on its `<line>`: the inputs the page's `layout` needs
     go out as `data-*` attributes, and its `<script>` turns them into positions when the
-    page opens, copying each lane's x to its rows' circles and its edges' ends."""
+    page opens, copying each lane's x to its rows' circles and to the curve ends that
+    touch it."""
     top = roadmap.steps
     phase_rows = []
     for phase, scope, status in reversed(roadmap.phases):
@@ -612,7 +613,8 @@ def render(roadmap: Roadmap, merges: list[tuple[str, str]],
                  .read_text(encoding="utf-8"))
     # Reads the `data-*` attributes the timeline's SVG carries, in document order, calls
     # `layout`, and writes the positions it returns back into the elements. A lane's x
-    # is taken from its `<line>` and copied to its rows' circles and its edges' ends.
+    # is taken from its `<line>` and copied to its rows' circles and to the curve ends
+    # that touch it.
     run = """\
 function placeTimeline() {
   const svg = document.querySelector("svg[data-line-height]");

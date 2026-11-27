@@ -88,7 +88,7 @@ def wl(body: str) -> str:
 
 
 def laid_out(svg: str) -> dict:
-    """`layout()`'s output for `svg`: its input built from the svg's `data-*` attributes,
+    """`layout()`'s output for `svg`: its input built from the svg's attributes,
     run through `roadmap_layout.js` under node. Node not being on PATH fails the test."""
     def attrs(tag: str) -> dict[str, str]:
         return dict(re.findall(r'([\w-]+)="([^"]*)"', tag))
@@ -125,15 +125,9 @@ def laid_out(svg: str) -> dict:
     return json.loads(out.stdout)
 
 
-def circles(svg: str) -> dict[str, tuple[int, int]]:
-    """Each row's circle's place: path -> (cx, cy), the cx its lane's `<line>`'s x
-    (the circle's own `cx` is the script's to set), the cy `layout` gives the row."""
-    rows = laid_out(svg)["rows"]
-    lane_x = dict(re.findall(r'<line data-track="([^"]+)"[^>]*x1="(\d+)"', svg))
-    found = {}
-    for match in re.finditer(r'<g data-row="([^"]+)"[^>]*data-track="([^"]+)"', svg):
-        found[match[1]] = (int(lane_x[match[2]]), rows[match[1]])
-    return found
+def circles(svg: str) -> dict[str, int]:
+    """Each row's circle's height: path -> the cy `layout` gives the row."""
+    return laid_out(svg)["rows"]
 
 
 class Elements(HTMLParser):
@@ -515,14 +509,12 @@ class Timeline(unittest.TestCase):
              "DONE/x": "2026-11-17", "P2/x": "2026-11-16"}
 
     def test_an_open_step_sits_above_the_open_step_it_waits_on(self) -> None:
-        cy = {p: y for p, (_, y) in
-              circles(roadmap.timeline(parse(WORKLOG), self.DATES, TODAY)).items()}
+        cy = circles(roadmap.timeline(parse(WORKLOG), self.DATES, TODAY))
         self.assertLess(cy["NEXT"], cy["MODE"])     # NEXT is listed after MODE
         self.assertLess(cy["TOP/c"], cy["MODE"])    # c waits on MODE too
 
     def test_done_rows_are_newest_first_and_within_the_week(self) -> None:
-        cy = {p: y for p, (_, y) in
-              circles(roadmap.timeline(parse(WORKLOG), self.DATES, TODAY)).items()}
+        cy = circles(roadmap.timeline(parse(WORKLOG), self.DATES, TODAY))
         self.assertLess(cy["TOP/b"], cy["TOP/a/aa"])
         self.assertLess(cy["TOP/a/aa"], cy["DONE/x"])
         self.assertNotIn("P2/x", cy)    # 7 days before today is out
@@ -532,13 +524,11 @@ class Timeline(unittest.TestCase):
         # TOP/b is listed after TOP/a/aa: their times, not the listing's order, place them.
         dates = {**self.DATES, "TOP/a/aa": "2026-11-23T09:00:00+01:00",
                  "TOP/b": "2026-11-23T08:00:00+01:00"}
-        cy = {p: y for p, (_, y) in
-              circles(roadmap.timeline(parse(WORKLOG), dates, TODAY)).items()}
+        cy = circles(roadmap.timeline(parse(WORKLOG), dates, TODAY))
         self.assertLess(cy["TOP/a/aa"], cy["TOP/b"])
         dates.update({"TOP/a/aa": "2026-11-23T08:00:00+01:00",
                       "TOP/b": "2026-11-23T09:00:00+01:00"})
-        cy = {p: y for p, (_, y) in
-              circles(roadmap.timeline(parse(WORKLOG), dates, TODAY)).items()}
+        cy = circles(roadmap.timeline(parse(WORKLOG), dates, TODAY))
         self.assertLess(cy["TOP/b"], cy["TOP/a/aa"])
 
     def test_done_steps_without_a_date_are_counted(self) -> None:
@@ -561,7 +551,7 @@ class Timeline(unittest.TestCase):
 
     def test_the_phases_not_done_stand_above_the_open_steps_the_next_lowest(self) -> None:
         svg = roadmap.timeline(parse(WORKLOG), self.DATES, TODAY)
-        cy = {p: y for p, (_, y) in circles(svg).items()}
+        cy = circles(svg)
         self.assertNotIn("Phase 1", svg)    # done
         rows = re.findall(r'<g data-row="(Phase \d)"', svg)
         self.assertEqual(rows, ["Phase 3", "Phase 2"])     # 3 runs after 2: higher
@@ -591,7 +581,7 @@ class Timeline(unittest.TestCase):
         ys = [int(y) for _, y, _ in spans]
         self.assertEqual(ys, [ys[0] + 22 * i for i in range(len(ys))])
         self.assertEqual(" ".join(words for _, _, words in spans), long)
-        cy = {p: y for p, (_, y) in circles(svg).items()}
+        cy = circles(svg)
         self.assertEqual(ys[0], 0)                               # first line on the row's circle
         self.assertEqual(cy["B"], cy["A"] + ys[-1] + 22 + 8)     # B below A's last line
         self.assertIn(f'font-weight="600">A</text>', svg)
@@ -630,7 +620,7 @@ class Timeline(unittest.TestCase):
 
     def test_steps_in_progress_sit_on_the_now_band_between_open_and_done(self) -> None:
         svg = roadmap.timeline(parse(self.NOW), {"A/a3": TODAY}, TODAY)
-        cy = {p: y for p, (_, y) in circles(svg).items()}
+        cy = circles(svg)
         self.assertIn('<rect id="now" x="0" width="1400" rx="2"', svg)
         now = laid_out(svg)["now"]
         top, height = now["band"]
@@ -648,7 +638,7 @@ class Timeline(unittest.TestCase):
         self.assertNotIn("<rect", svg)
         self.assertIn('<line id="now" x1="0" x2="1400" stroke="#555"/>', svg)
         line_y = laid_out(svg)["now"]["line"]
-        cy = {p: y for p, (_, y) in circles(svg).items()}
+        cy = circles(svg)
         self.assertTrue(cy["NEXT"] < line_y < cy["TOP/b"])
         self.assertIn('dominant-baseline="central">now</text>', svg)
 
@@ -679,7 +669,7 @@ class Lanes(unittest.TestCase):
 
     def test_each_tracks_ends_are_its_first_and_last_member_rows_ys(self) -> None:
         svg = roadmap.timeline(parse(self.LANES), {}, TODAY)
-        cy = {p: y for p, (_, y) in circles(svg).items()}
+        cy = circles(svg)
         out = laid_out(svg)
         tracks = re.findall(r'<line data-track="([^"]+)" data-first="([^"]+)" '
                             r'data-last="([^"]+)"', svg)

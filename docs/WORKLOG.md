@@ -697,13 +697,14 @@ and no phase closes with one outstanding.
           `.tmp/lead/rulings_s1roadmapcols.md`): 3 accepted, so the loop ended; no review
           is owed. A new lane column or a longer step ID still moves the label column and
           rewrites every row, which predates roadmapcols (`roadmaplabels`);
-        - [ ] **fixcols** [after S1roadmapcols] the lead's fixes: `laid_out`'s docstring,
-          `circles` returning `laid_out`'s rows alone, two wording nits (the rulings name
-          them); tests on Windows and the VPS;
-        - [ ] **roadmaplabels** [after S1roadmapcols] count, over the worklog commits since
-          `aa38ed7b`, how often the label column moved (a new lane column, or a step ID
-          longer than every other), before any fix: a fixed label column would change
-          the page's look;
+        - [x] **fixcols** 2026-11-27, the lead's fixes: the test helper `circles` returns
+          only each row's height, and three docstrings say what the code does. Tests pass
+          on Windows and on the VPS;
+        - [x] **roadmaplabels** 2026-11-27, no fix: since the page's look settled
+          (`01a55ed7`), 9 of 131 page commits moved the label or description column, all
+          from the worklog (two new lane columns, seven longer step IDs), and none of the 8
+          since `aa38ed7b`. A fixed column would leave the page wider than its rows need,
+          to spare about two rewrites of every row a day;
       - [x] **S1roadmapdiff** 2026-11-27 `782055a8`, SWE-2's round: 3 accepted (the
         page's own script now runs under test, with values worked out by hand; the lanes'
         ends and the band label asserted; a line count corrected), none on a real input,
