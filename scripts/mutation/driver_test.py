@@ -1,17 +1,24 @@
-"""Tests of `driver.py`: the queue's job folders, the shard count, and this
-PC's lane taking a job's shards, resuming after a restart and holding. Every
-test runs on a temporary `driver.DRIVER` and cost table, with cargo-mutants,
-the tree's extraction, the mutant listing, the cost fold and the build-slot
-lock stubbed; only `git rev-parse` reaches the repository. Run by `just test`
+"""Tests of `driver.py`: the queue's job folders, the shard count, both
+lanes taking a job's shards, resuming after a restart and waiting, a job's
+sending to the VPS and the VPS lane's deploy. Every test runs on a temporary
+`driver.DRIVER` and cost table, with cargo-mutants, the tree's extraction,
+the mutant listing, the cost fold and the build-slot lock stubbed. The VPS
+lane's systemd and sudo are stubbed too. `send` and `deploy` reach a fake
+VPS: ssh replaced by bash run in a temporary home. Only `git rev-parse` and
+`git archive` reach the repository. Run by `just test`
 (`python scripts/mutation/driver_test.py`)."""
 
 import contextlib
 import io
 import json
+import os
+import shlex
+import shutil
 import subprocess
 import sys
 import tempfile
 import time
+import types
 import unittest
 from pathlib import Path
 from unittest import mock
@@ -25,6 +32,13 @@ import mutants_diff  # noqa: E402
 HEAD_TREE = subprocess.run(
     ["git", "rev-parse", "HEAD^{tree}"], cwd=SCRIPTS, capture_output=True, text=True, check=True
 ).stdout.strip()
+# The fake VPS's shell. On Windows a bare `bash` may be WSL's, so Git Bash's.
+if os.name == "nt":
+    BASH = Path(os.environ.get("ProgramFiles", "C:/Program Files")) / "Git" / "bin" / "bash.exe"
+    BASH = str(BASH) if BASH.exists() else None
+else:
+    BASH = shutil.which("bash")
+VERSION = "cargo-mutants 27.1.0"
 
 
 class Stop(BaseException):
@@ -60,8 +74,12 @@ class Driver(unittest.TestCase):
         self.extracted: list[str] = []
         self.locked = False
         self.out = io.StringIO()
-        patches = [
+        self.enter([
+            # `main` sets both for the VPS lane: the patches put them back.
             mock.patch.object(driver, "DRIVER", self.driver),
+            mock.patch.object(driver, "LANE", "pc"),
+            mock.patch.object(mutants, "remote_host", lambda: None),
+            mock.patch.object(mutants, "LOCAL_TMPDIR", self.root / "local-tmp"),
             mock.patch.object(mutants, "COST_CACHE", self.root / "mutants-cost.json"),
             mock.patch.object(mutants, "extract_tree", self.extract_tree),
             mock.patch.object(mutants, "local_mutants", self.local_mutants),
@@ -73,19 +91,119 @@ class Driver(unittest.TestCase):
                 lambda selection, config, source: [{"name": str(i)} for i in range(9)],
             ),
             contextlib.redirect_stdout(self.out),
-        ]
+        ])
+        self.assertTrue(driver.DRIVER.is_relative_to(self.root))
+        self.assertTrue(mutants.COST_CACHE.is_relative_to(self.root))
+
+    def enter(self, patches) -> None:
         for patch in patches:
             patch.__enter__()
             self.addCleanup(patch.__exit__, None, None, None)
-        self.assertTrue(driver.DRIVER.is_relative_to(self.root))
-        self.assertTrue(mutants.COST_CACHE.is_relative_to(self.root))
 
     def extract_tree(self, tree: str, dest: Path) -> None:
         self.extracted.append(tree)
         (dest / ".cargo").mkdir(parents=True)
         (dest / ".cargo" / "mutants.toml").write_text(
-            "timeout_multiplier = 5.0\nminimum_test_timeout = 150\n", encoding="utf-8"
+            'test_tool = "nextest"\ntimeout_multiplier = 5.0\nminimum_test_timeout = 150\n',
+            encoding="utf-8",
         )
+
+    def vps_lane(self) -> None:
+        """Make this the VPS lane, on the same temporary `DRIVER`: see `vps_fakes`."""
+        self.vps_fakes()
+        self.enter([mock.patch.object(driver, "LANE", "vps")])
+
+    def vps_fakes(self) -> None:
+        """The VPS lane's host stubbed: systemd answers that the units in
+        `self.active` run, the disk has `self.free` bytes free, `sudo` is
+        recorded in `self.sudo_calls`, and `run_unit` is `self.run_unit`. A
+        wait raises `Stop` unless the test patches the sleep again, so a lane
+        that waits where it should not fails the test rather than hanging it."""
+        self.active: set[str] = set()
+        self.free = 100 * 2**30
+        self.sudo_calls: list[tuple[str, ...]] = []
+        # (script name, its text, what DRIVER/tmp held when the unit started)
+        self.units: list[tuple[str, str, list[str]]] = []
+        # Shards whose unit is killed (no `exit`), or never starts (no `log`).
+        self.killed: set[int] = set()
+        self.unstarted: set[int] = set()
+        self.enter([
+            mock.patch.object(driver, "unit_active", lambda unit: unit in self.active),
+            mock.patch.object(
+                driver.shutil, "disk_usage", lambda path: types.SimpleNamespace(free=self.free)
+            ),
+            mock.patch.object(driver, "sudo", self.sudo),
+            mock.patch.object(driver, "run_unit", self.run_unit),
+            mock.patch.object(driver, "memory_max", lambda: 8 * 2**30),
+            mock.patch.object(driver.time, "sleep", self.unexpected_sleep),
+        ])
+
+    def unexpected_sleep(self, seconds):
+        raise Stop(f"the lane waited: {self.out.getvalue().splitlines()[-1:]}")
+
+    def sudo(self, *args):
+        self.sudo_calls.append(args)
+        if args[:2] == ("systemctl", "stop"):
+            self.active.discard(args[2])
+        return subprocess.CompletedProcess(args, 0)
+
+    def run_unit(self, script: Path, memory_max: int) -> None:
+        """A shard unit: runs the script's cargo-mutants arguments through
+        `local_mutants`, then writes the `log` and `exit` the script would."""
+        text = script.read_text(encoding="utf-8")
+        self.units.append((script.name, text, sorted(os.listdir(driver.DRIVER / "tmp"))))
+        k = int(script.stem[len("shard-"):])
+        if k in self.unstarted:
+            return
+        shard = script.parent / f"shard-{k}"
+        (shard / "log").write_text("", encoding="utf-8")
+        command = shlex.split(next(
+            line for line in text.splitlines() if line.startswith(". ~/.cargo/env")
+        ))
+        args = command[command.index("mutants") + 1:]
+        code = self.local_mutants(args, script.parent / "source").returncode
+        if k not in self.killed:
+            (shard / "exit").write_text(f"{code} 12\n", encoding="utf-8")
+
+    def fake_vps(self, version: str = VERSION, fail: str | None = None) -> None:
+        """`mutants.ssh` replaced by bash run in `self.home`, a temporary remote
+        home whose cargo-mutants answers `version`. A command holding `fail`
+        runs and then fails. In front of each command, `sudo` logs its
+        arguments to `$HOME/sudo.log` (and a `tee`'s input to `$HOME/tee.in`),
+        and `systemctl` answers 3."""
+        if BASH is None:
+            self.skipTest("no bash for the fake VPS (Git Bash on Windows)")
+        self.home = self.root / "vps-home"
+        (self.home / ".cargo" / "bin").mkdir(parents=True)
+        cargo_mutants = self.home / ".cargo" / "bin" / "cargo-mutants"
+        cargo_mutants.write_bytes(f'#!/bin/bash\necho "{version}"\n'.encode())
+        cargo_mutants.chmod(0o755)
+        self.ssh_calls: list[str] = []
+        functions = (
+            'sudo() { echo "$*" >> "$HOME/sudo.log"; '
+            'if [ "$2" = tee ]; then cat > "$HOME/tee.in"; fi; }; '
+            "systemctl() { return 3; }; "
+        )
+
+        def ssh(host, remote, **kwargs):
+            self.ssh_calls.append(remote)
+            if fail is not None and fail in remote:
+                remote = f"{remote} && false"
+            if "input" not in kwargs:
+                kwargs.setdefault("stdin", subprocess.DEVNULL)
+            return subprocess.run(
+                [BASH, "-c", functions + remote], cwd=self.home,
+                env={**os.environ, "HOME": self.home.as_posix()}, **kwargs,
+            )
+
+        self.enter([
+            mock.patch.object(mutants, "ssh", ssh),
+            mock.patch.object(mutants, "remote_host", lambda: "bonfire"),
+            mock.patch.object(mutants, "local_mutants_version", lambda: VERSION),
+        ])
+
+    def remote_queue(self) -> Path:
+        return self.home / "studio-driver" / "queue"
 
     @contextlib.contextmanager
     def run_lock(self):
@@ -410,6 +528,345 @@ class Driver(unittest.TestCase):
         with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit):
             driver.main(["driver.py", "queue", "cpk", "--shards", "0"])
         self.assertEqual(list((self.driver / "queue").iterdir()), [])
+
+    def assert_local_job(self, job: Path, shards: int) -> None:
+        """`job` stayed this PC's: every `.todo` here, no `sent.json`."""
+        self.assertEqual(
+            sorted(p.name for p in job.iterdir()),
+            ["job.json", *(f"shard-{k}.todo" for k in range(shards)), "source"],
+        )
+
+    def test_a_queued_job_is_sent_to_the_vps_with_its_markers_there_alone(self):
+        self.fake_vps()
+        job = self.queue(shards=2)
+        remote = self.remote_queue() / job.name
+        self.assertEqual([p.name for p in self.remote_queue().iterdir()], [job.name], "no .tmp")
+        self.assertEqual(
+            sorted(p.name for p in remote.iterdir()),
+            ["job.json", "shard-0.todo", "shard-1.todo", "source"],
+        )
+        self.assertTrue((remote / "source" / "scripts" / "mutation" / "driver.py").is_file())
+        self.assertEqual((remote / "job.json").read_bytes(), (job / "job.json").read_bytes())
+        self.assertEqual(
+            sorted(p.name for p in job.iterdir()), ["job.json", "sent.json", "source"]
+        )
+        self.assertEqual(
+            json.loads((job / "sent.json").read_text(encoding="utf-8")), {"host": "bonfire"}
+        )
+        self.assertIn("sent to bonfire", self.out.getvalue())
+
+    def test_a_job_stays_here_when_the_vps_s_cargo_mutants_differs(self):
+        self.fake_vps(version="cargo-mutants 26.0.0")
+        job = self.queue(shards=2)
+        self.assert_local_job(job, 2)
+        self.assertFalse((self.home / "studio-driver").exists())
+        self.assertIn("cargo-mutants differs, cargo-mutants 27.1.0 here, cargo-mutants 26.0.0 "
+                      "on bonfire", self.out.getvalue())
+
+    def test_a_job_stays_here_when_the_vps_cannot_be_asked_its_version(self):
+        self.fake_vps(fail="--version")
+        job = self.queue(shards=2)
+        self.assert_local_job(job, 2)
+        self.assertFalse((self.home / "studio-driver").exists())
+        self.assertIn("cannot ask bonfire for its cargo-mutants version", self.out.getvalue())
+
+    def test_a_send_failing_midway_leaves_the_job_here_and_nothing_on_the_vps(self):
+        self.fake_vps(fail="tar -xf")
+        job = self.queue(shards=2)
+        self.assert_local_job(job, 2)
+        self.assertEqual(list(self.remote_queue().iterdir()), [], "the half-sent job is removed")
+        self.assertIn("sending it to bonfire failed", self.out.getvalue())
+
+    def test_a_local_only_crate_or_no_host_sends_nothing(self):
+        def no_call(*args, **kwargs):
+            self.fail("the VPS was asked")
+
+        with (
+            mock.patch.object(mutants, "ssh", no_call),
+            mock.patch.object(mutants, "local_mutants_version", no_call),
+        ):
+            with (
+                mock.patch.object(mutants, "remote_host", lambda: "bonfire"),
+                mock.patch.object(mutants, "LOCAL_ONLY_CRATES", frozenset({"cpk"})),
+            ):
+                local_only = self.queue("cpk", 2)
+            no_host = self.queue("fpk", 2)
+        self.assert_local_job(local_only, 2)
+        self.assert_local_job(no_host, 2)
+
+    def test_a_sent_job_is_left_queued_by_this_pc_s_lane(self):
+        with (
+            mock.patch.object(mutants, "remote_host", lambda: "bonfire"),
+            mock.patch.object(driver, "send", lambda host, building, name: True),
+        ):
+            job = self.queue(shards=2)
+        self.assertIsNone(driver.claim())
+        self.assertEqual(driver.run(once=True), 0)
+        self.assertEqual(self.calls, [])
+        self.assertEqual(sorted(p.name for p in job.iterdir()), ["job.json", "sent.json", "source"])
+
+    def test_the_vps_lane_runs_a_job_s_shards_and_finishes_nothing(self):
+        job = self.queue(shards=2)
+        self.codes[("cpk", 1)] = 2
+        self.vps_lane()
+        sized = []
+        sized_config = mutants.sized_config
+
+        def sizing(cpus, extra=None, *, source):
+            sized.append(source)
+            return sized_config(cpus, extra, source=source)
+
+        with mock.patch.object(mutants, "sized_config", sizing):
+            self.assertEqual(driver.run(once=True), 0)
+        self.assertEqual([unit[0] for unit in self.units], ["shard-0.sh", "shard-1.sh"])
+        self.assertEqual([shard_of(args) for args in self.calls], ["0/2", "1/2"])
+        self.assertNotIn("--baseline", self.calls[0])
+        self.assertEqual(option(self.calls[1], "--baseline"), "skip")
+        self.assertEqual(option(self.calls[1], "--timeout"), "200")
+        self.assertTrue((job / "baseline-vps.json").exists())
+        self.assertEqual(
+            [(job / f"shard-{k}.done").read_text(encoding="utf-8") for k in range(2)], ["0", "2"]
+        )
+        self.assertEqual(list(job.glob("shard-*.vps")), [])
+        self.assertTrue(job.exists(), "the job stays queued: this PC finishes it")
+        self.assertFalse((self.driver / "done").exists())
+        self.assertEqual(sized, [job / "source"], "the job's config is written once")
+        self.assertEqual(
+            (job / "mutants-vps.toml").read_text(encoding="utf-8"),
+            sized_config(os.cpu_count() or 2, source=job / "source"),
+        )
+        self.assertEqual(self.costed, [], "another machine's timings are not folded in")
+
+    def test_a_job_finished_on_the_vps_lane_s_start_is_left_for_this_pc(self):
+        job = self.queue(shards=1)
+        (job / "shard-0.todo").unlink()
+        (job / "shard-0.done").write_text("0", encoding="utf-8")
+        self.vps_lane()
+        self.assertEqual(driver.run(once=True), 0)
+        self.assertTrue(job.exists())
+
+    def test_the_vps_lane_s_shard_script(self):
+        job = self.queue(shards=1)
+        self.vps_lane()
+        driver.run(once=True)
+        script = (job / "shard-0.sh").read_bytes()
+        self.assertNotIn(b"\r", script)
+        lines = script.decode("utf-8").splitlines()
+        command = shlex.split(next(line for line in lines if line.startswith(". ~/.cargo/env")))
+        self.assertEqual(option(command, "--output"), str(job / "shard-0"))
+        self.assertEqual(option(command, "--config"), str(job / "mutants-vps.toml"))
+        self.assertEqual(option(command, "--dir"), str(job / "source"))
+        self.assertEqual(option(command, "--jobs"), str(mutants.JOBS))
+        self.assertEqual(
+            option(command, "--jobserver-tasks"),
+            str(mutants.REMOTE_JOBSERVER_TASKS or os.cpu_count() or 2),
+        )
+        cargo = command.index("cargo")
+        self.assertEqual(command[cargo - 5:cargo + 2],
+                         ["nice", "-n", "19", "ionice", "-c3", "cargo", "mutants"])
+        self.assertIn(f"export TMPDIR={shlex.quote(str(self.driver / 'tmp'))}", lines)
+        self.assertIn(f"exec > {shlex.quote(str(job / 'shard-0' / 'log'))} 2>&1", lines)
+        self.assertIn(f"--data={mutants.REMOTE_TEST_MEMORY} --", script.decode("utf-8"))
+        self.assertEqual(
+            lines[-1],
+            f'echo "$code $(( $(date +%s) - start ))" > {shlex.quote(str(job / "shard-0" / "exit"))}',
+        )
+
+    def test_a_shard_with_no_exit_file_is_done_with_code_1(self):
+        job = self.queue(shards=2)
+        self.vps_lane()
+        self.killed.add(0)
+        driver.run(once=True)
+        self.assertEqual(
+            [(job / f"shard-{k}.done").read_text(encoding="utf-8") for k in range(2)], ["1", "0"]
+        )
+        self.assertIn("shard 1 was killed before it ended: untested", self.out.getvalue())
+
+    def test_a_shard_unit_that_never_started_ends_the_driver_and_marks_nothing_done(self):
+        job = self.queue(shards=2)
+        self.vps_lane()
+        self.unstarted.add(0)
+        with self.assertRaisesRegex(RuntimeError, "did not start"):
+            driver.run(once=True)
+        self.assertEqual(list(job.glob("shard-*.done")), [])
+        self.assertTrue((job / "shard-0.vps").exists(), "the next start puts it back")
+
+    def assert_waits(self, job: Path, sleep=None) -> None:
+        """Run the lane until its second sleep, and check it claimed nothing."""
+        sleeps = []
+
+        def stop_at_second(seconds):
+            sleeps.append(seconds)
+            if sleep is not None:
+                sleep(len(sleeps))
+            if len(sleeps) == 2:
+                raise Stop
+
+        with mock.patch.object(driver.time, "sleep", stop_at_second), self.assertRaises(Stop):
+            driver.run(once=True)
+        self.assertEqual(self.units, [])
+        self.assertEqual(sorted(p.name for p in job.glob("shard-*")), ["shard-0.todo"])
+
+    def test_the_vps_lane_waits_under_its_hold(self):
+        job = self.queue(shards=1)
+        self.vps_lane()
+        (self.driver / "hold-vps").write_text("", encoding="utf-8")
+        self.assert_waits(job)
+        self.assertEqual(self.out.getvalue().count("hold-vps"), 1)
+
+    def test_the_vps_lane_waits_for_the_old_commands_units_and_says_each(self):
+        job = self.queue(shards=1)
+        self.vps_lane()
+        self.active = {mutants.REMOTE_UNIT}
+
+        def switch(count):
+            if count == 1:
+                self.active = {mutants.GATES_UNIT}
+
+        self.assert_waits(job, switch)
+        out = self.out.getvalue()
+        self.assertEqual(out.count(f"{mutants.REMOTE_UNIT} is running"), 1)
+        self.assertEqual(out.count(f"{mutants.GATES_UNIT} is running"), 1)
+
+    def test_the_vps_lane_waits_while_its_disk_is_below_the_floor(self):
+        job = self.queue(shards=1)
+        self.vps_lane()
+        self.free = mutants.REMOTE_FREE_FLOOR - 1
+        self.assert_waits(job)
+        self.assertEqual(self.out.getvalue().count("free on the disk"), 1)
+
+    def test_the_vps_lane_claims_with_nothing_in_its_way(self):
+        job = self.queue(shards=1)
+        self.vps_lane()
+        self.active = {"fluxer"}
+        self.free = mutants.REMOTE_FREE_FLOOR
+        self.assertEqual(driver.run(once=True), 0)
+        self.assertEqual(len(self.units), 1)
+        self.assertTrue((job / "shard-0.done").exists())
+
+    def test_this_pc_s_lane_asks_neither_systemd_nor_the_disk(self):
+        self.queue(shards=1)
+        self.vps_fakes()
+
+        def asked(*args):
+            self.fail("this PC's lane asked the VPS lane's question")
+
+        with (
+            mock.patch.object(driver, "unit_active", asked),
+            mock.patch.object(driver.shutil, "disk_usage", asked),
+        ):
+            self.assertEqual(driver.run(once=True), 0)
+        self.assertEqual(len(self.calls), 1)
+        self.assertEqual(self.units, [])
+
+    def test_the_vps_lane_s_recover_stops_a_running_shard_unit_first(self):
+        job = self.queue(shards=2)
+        self.vps_lane()
+        (job / "shard-0.todo").rename(job / "shard-0.vps")
+        (job / "shard-0" / "mutants.out").mkdir(parents=True)
+        self.active = {driver.SHARD_UNIT}
+        partial_at_stop = []
+        sudo = self.sudo
+
+        def recorded(*args):
+            partial_at_stop.append((job / "shard-0").exists())
+            return sudo(*args)
+
+        with mock.patch.object(driver, "sudo", recorded):
+            driver.recover()
+        self.assertEqual(self.sudo_calls, [("systemctl", "stop", driver.SHARD_UNIT)])
+        self.assertEqual(partial_at_stop, [True], "stopped before its results are removed")
+        self.assertEqual(sorted(p.name for p in job.glob("shard-*")),
+                         ["shard-0.todo", "shard-1.todo"])
+        driver.recover()
+        self.assertEqual(len(self.sudo_calls), 1, "no unit running: no stop")
+
+    def test_the_vps_lane_empties_its_tmp_before_a_shard(self):
+        self.queue(shards=1)
+        self.vps_lane()
+        (self.driver / "tmp" / "left" / "deep").mkdir(parents=True)
+        (self.driver / "tmp" / "left" / "deep" / "file").write_text("", encoding="utf-8")
+        (self.driver / "tmp" / "stray.txt").write_text("", encoding="utf-8")
+        driver.run(once=True)
+        self.assertEqual([unit[2] for unit in self.units], [[]])
+
+    def test_run_unit_starts_the_shard_unit_capped_and_waits(self):
+        self.sudo_calls = []
+        self.active = set()
+        script = self.root / "job" / "shard-3.sh"
+        with mock.patch.object(driver, "sudo", self.sudo):
+            driver.run_unit(script, 123)
+        (args,) = self.sudo_calls
+        self.assertEqual(args[:5], ("systemd-run", "--wait", "--collect", "--quiet",
+                                    f"--unit={driver.SHARD_UNIT}"))
+        for setting in ("MemoryMax=123", "MemorySwapMax=0", "OOMPolicy=continue",
+                        "CPUWeight=idle"):
+            self.assertEqual(args[args.index(setting) - 1], "-p")
+        self.assertIn(f"--working-directory={self.root / 'job' / 'source'}", args)
+        self.assertEqual(args[-2:], ("/bin/bash", str(script)))
+
+    def test_memory_max_is_the_available_memory_less_the_reserve(self):
+        meminfo = self.root / "meminfo"
+        meminfo.write_text("MemTotal: 16777216 kB\nMemAvailable:    8388608 kB\n",
+                           encoding="utf-8")
+        self.assertEqual(driver.memory_max(meminfo), 8 * 2**30 - mutants.REMOTE_MEMORY_RESERVE)
+        meminfo.write_text(f"MemAvailable: {mutants.REMOTE_MEMORY_RESERVE // 1024} kB\n",
+                           encoding="utf-8")
+        with self.assertRaisesRegex(RuntimeError, "no memory cap"):
+            driver.memory_max(meminfo)
+
+    def test_deploy_installs_the_lane_from_head_and_restarts_it(self):
+        self.fake_vps()
+        (self.home / "studio-driver" / "bin" / "old").mkdir(parents=True)
+        driver.deploy("bonfire")
+        installed = self.home / "studio-driver" / "bin"
+        self.assertTrue((installed / "scripts" / "mutation" / "driver.py").is_file())
+        self.assertFalse((installed / "old").exists(), "the old install is replaced")
+        self.assertFalse((self.home / "studio-driver" / "bin.new").exists())
+        self.assertEqual(
+            (self.home / "sudo.log").read_text(encoding="utf-8").splitlines(),
+            [
+                "-n tee /etc/systemd/system/studio-driver.service",
+                "-n systemctl daemon-reload",
+                "-n systemctl enable studio-driver",
+                "-n systemctl restart studio-driver",
+            ],
+        )
+        user, home = mutants.ssh(
+            "bonfire", 'id -un; echo "$HOME"', capture_output=True, text=True
+        ).stdout.splitlines()
+        self.assertEqual(
+            (self.home / "tee.in").read_bytes(), driver.service_unit(user, home).encode("utf-8")
+        )
+
+    def test_the_service_unit(self):
+        unit = driver.service_unit("debian", "/home/debian").splitlines()
+        for line in (
+            "User=debian",
+            "ExecStart=/usr/bin/python3 -u "
+            "/home/debian/studio-driver/bin/scripts/mutation/driver.py run --lane vps",
+            "Restart=always",
+            "RestartSec=60",
+            "StandardOutput=append:/home/debian/studio-driver/driver.log",
+            "StandardError=append:/home/debian/studio-driver/driver.log",
+            "Nice=10",
+            "CPUWeight=idle",
+            "WantedBy=multi-user.target",
+        ):
+            self.assertIn(line, unit)
+
+    def test_main_runs_the_vps_lane_on_its_folder(self):
+        vps = self.root / "vps"
+        with mock.patch.object(driver, "DRIVER", vps):
+            job = self.queue(shards=1)
+        self.vps_fakes()
+        with mock.patch.object(driver, "VPS_DRIVER", vps):
+            self.assertEqual(driver.main(["driver.py", "run", "--lane", "vps", "--once"]), 0)
+        self.assertEqual(len(self.units), 1)
+        self.assertTrue((job / "shard-0.done").exists())
+        self.assertTrue((job / "baseline-vps.json").exists())
+        with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit):
+            driver.main(["driver.py", "run", "--lane", "wsl", "--once"])
 
 
 if __name__ == "__main__":

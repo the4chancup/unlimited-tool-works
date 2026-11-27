@@ -189,6 +189,9 @@ REMOTE_UNIT = "studio-mutants"
 # `just gates-remote`'s unit (`remote_gates.py`), which a mutants run waits for:
 # both rewrite the remote clone.
 GATES_UNIT = "studio-gates"
+# The mutation driver's VPS lane runs each shard in this unit (`driver.py`),
+# which a run that uses the remote waits for: both build on the host at once.
+SHARD_UNIT = "studio-shard"
 # What a unit's MemoryMax (with MemorySwapMax=0) leaves the host: the cap is the
 # host's available memory when the unit starts, less this, so at the cap the
 # kernel OOM-kills inside the unit only, never in Fluxer's. Measured at launch,
@@ -902,11 +905,15 @@ def remote_refusal(host: str) -> str | None:
     """Why a run that uses the remote cannot start, or None (`local_refusal`
     asks this tree's launch record alone). The caller holds `REMOTE_LOCK`:
     `remote_disk_use` empties `REMOTE_TMPDIR`, which is safe only while the
-    lock keeps a launch from placing work there. It refuses while the host
-    cannot be reached, while an earlier remote half is running, finished or
-    died without being collected, while `just gates-remote` runs there, since
-    each rewrites the remote clone under the other, and below the disk's free
-    floor (`disk_refusal`)."""
+    lock keeps a launch from placing work there. It refuses:
+
+    - while the host cannot be reached;
+    - while an earlier remote half is running, finished or died without being
+      collected, or while `just gates-remote` runs there, since each rewrites
+      the remote clone under the other;
+    - while the mutation driver's VPS lane runs a shard there (`SHARD_UNIT`),
+      since both would build on the host at once;
+    - below the disk's free floor (`disk_refusal`)."""
     state = remote_run_state(host)
     if state is None:
         return f"cannot reach {host}"
@@ -925,6 +932,15 @@ def remote_refusal(host: str) -> str | None:
         return f"cannot reach {host}"
     if gates == 0:
         return f"`just gates-remote` is running on {host}: start the new run when it ends"
+    shard = ssh(host, f"systemctl is-active --quiet {SHARD_UNIT}").returncode
+    if shard == 255:
+        return f"cannot reach {host}"
+    if shard == 0:
+        return (
+            f"the mutation driver's VPS lane is running a shard on {host}: start the new "
+            "run when it ends, after creating ~/studio-driver/hold-vps there, or the lane "
+            "takes its next shard first"
+        )
     return disk_refusal(*remote_disk_use(host))
 
 

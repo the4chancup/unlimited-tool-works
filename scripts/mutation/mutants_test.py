@@ -5722,16 +5722,22 @@ class RemoteRefusal(unittest.TestCase):
     every caller does (`local_refusal` asks this tree's record alone)."""
 
     def refusal(
-        self, state: str | None, gates: int = 3, free: int = 100 * 2**30
+        self, state: str | None, gates: int = 3, free: int = 100 * 2**30, shard: int = 3
     ) -> str | None:
+        """The refusal with the host's systemd answering `gates` for the gates'
+        unit and `shard` for the driver's shard unit."""
         def ssh(host, command, **kwargs):
-            return subprocess.CompletedProcess([host, command], gates)
+            codes = {mutants.GATES_UNIT: gates, mutants.SHARD_UNIT: shard}
+            unit = command.split()[-1]
+            if unit not in codes:
+                self.fail(f"an unexpected ssh call: {command}")
+            return subprocess.CompletedProcess([host, command], codes[unit])
 
         def disk_use(host):
-            if state != "none" or gates != 3:
+            if state != "none" or gates != 3 or shard != 3:
                 self.fail(
                     f"remote_disk_use emptied the host's tmp with a {state!r} "
-                    f"half and the gates probe at {gates}"
+                    f"half, the gates probe at {gates} and the shard probe at {shard}"
                 )
             return 2**30, free
 
@@ -5764,6 +5770,10 @@ class RemoteRefusal(unittest.TestCase):
             "below the floor",
             self.refusal("none", gates=3, free=mutants.REMOTE_FREE_FLOOR - 1),
         )
+
+    def test_a_shard_of_the_driver_s_vps_lane_stops_the_run(self):
+        self.assertIn("VPS lane is running a shard", self.refusal("none", shard=0))
+        self.assertEqual(self.refusal("none", shard=255), "cannot reach bonfire")
 
 
 class GatesRemote(unittest.TestCase):

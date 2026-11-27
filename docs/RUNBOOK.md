@@ -409,7 +409,8 @@ and fetches it, including a died half's partial results. It is run from the tree
 launched the half, whose `.tmp/mutants-remote-pending` says what the run was: from another
 tree it summarizes the remote half alone and says so. A run that uses the VPS refuses to start while a
 remote half is running or uncollected, or while `just gates-remote` runs there: both rewrite
-the remote clone. A run on this machine alone refuses only while this tree's launch record
+the remote clone. It also refuses while the mutation driver's VPS lane runs a shard there
+(`studio-shard`), since both would build on the host at once. A run on this machine alone refuses only while this tree's launch record
 (`.tmp/mutants-remote-pending`, kept until the fetch) names a half whose run also had a local
 half, since that collection summarizes the local `mutants.out`; a whole run's has none, and
 the record is read with no call to the host, so `STUDIO_MUTANTS_REMOTE` set empty changes
