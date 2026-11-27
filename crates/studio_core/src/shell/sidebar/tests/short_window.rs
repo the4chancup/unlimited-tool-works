@@ -33,15 +33,13 @@ fn shell14() -> Shell {
         tools.push(tool);
         calls.push(tool_calls);
     }
-    let mut shell = shell_with(
+    shell_with(
         test_settings(dir.path()),
         tools,
         &[],
         Some(dir.path().to_path_buf()),
         calls,
-    );
-    shell._dir = Some(dir);
-    shell
+    )
 }
 
 /// `frame_at` on a window `height` points tall (800 wide).

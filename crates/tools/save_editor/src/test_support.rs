@@ -9,9 +9,8 @@ pub(crate) mod cup_save;
 
 /// A fresh, empty scratch folder for `test` under the test binary's build folder
 /// (`target/<profile>/save_editor_tests/<test>`): per checkout, so a mutation run's copy
-/// has its own. A passing test's folder is removed when its thread ends; a panicking test's
-/// stays for reading and is emptied at the start of its next run. `test` must be unique
-/// among the tests that call it: two tests running at once must not share a folder.
+/// has its own. [`test_scratch::fresh`] says when the folder is removed and what `test`
+/// must be.
 pub(crate) fn scratch(test: &str) -> PathBuf {
     test_scratch::fresh(
         &test_scratch::build_folder().join("save_editor_tests"),

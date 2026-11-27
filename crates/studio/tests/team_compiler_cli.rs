@@ -21,6 +21,9 @@ struct Sandbox {
 }
 
 impl Sandbox {
+    /// The sandbox's root, a fresh folder under `CARGO_TARGET_TMPDIR`
+    /// (`target/tmp/team_compiler_cli/<name>`). [`test_scratch::fresh`] says when the
+    /// folder is removed and what `name` must be.
     fn new(name: &str, settings: &str) -> Sandbox {
         // Rebuilt from its components, so every separator is the platform's: a target folder
         // set as `C:/...` on Windows would otherwise keep its slashes, and the paths the

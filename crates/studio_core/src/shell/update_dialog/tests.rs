@@ -81,7 +81,6 @@ fn offer_shell_in(name: &str, bundle_files: &Files) -> (Shell, PathBuf, PathBuf)
     let mut shell = shell_in(settings, vec![a], &[], &[], paths, None, vec![calls_a]);
     shell.app.version = "0.0.1";
     shell.app.update_fetch = Arc::new(|| Ok(crate::updater::releases_fixture()));
-    shell._dir = Some(dir);
     (shell, data, bundle)
 }
 

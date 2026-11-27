@@ -3040,15 +3040,13 @@ const REGISTRY: &[PlannedTool] = &[
 fn draft_window_shell() -> Shell {
     let (save_editor, calls) = stub("save-editor", "Save editor", None);
     let dir = TestDir::new(&format!("sidebar_draft_window-{}", this_test()));
-    let mut shell = shell_with(
+    shell_with(
         test_settings(dir.path()),
         vec![save_editor],
         REGISTRY,
         Some(dir.path().to_path_buf()),
         vec![calls],
-    );
-    shell._dir = Some(dir);
-    shell
+    )
 }
 
 /// One frame of `app` at the draft's 1280 by 780 window, with `events` as its input

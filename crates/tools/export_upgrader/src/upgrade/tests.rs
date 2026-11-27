@@ -54,7 +54,7 @@ fn an_input_ending_in_a_dot_or_dot_dot_resolves_to_its_folder() {
         assert_eq!(source::source_name(&resolved), "co Spring", "{input:?}");
         // Compared by their real paths: a trailing `..` is resolved through the
         // file system on POSIX, and the scratch folder's own name need not be its
-        // real path (a temp folder reached through a link).
+        // real path.
         assert_eq!(
             resolved.parent().unwrap().canonicalize().unwrap(),
             root.canonicalize().unwrap(),

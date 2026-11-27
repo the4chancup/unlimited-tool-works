@@ -52,7 +52,8 @@ fn a_chapter_prints_its_markdown_ending_with_the_messages_table() {
 // ST-HELP-04
 #[test]
 fn the_export_writes_one_markdown_file_per_chapter() {
-    let dir = test_scratch::fresh(Path::new(env!("CARGO_TARGET_TMPDIR")), "help_cli_export");
+    let dir =
+        test_scratch::fresh(Path::new(env!("CARGO_TARGET_TMPDIR")), "help_cli_export").join("out");
     let output = studio(&["help", "--export", dir.to_str().unwrap()]);
     assert_eq!(output.status.code(), Some(0), "stderr: {}", stderr(&output));
     assert!(output.stdout.is_empty(), "the export prints nothing");

@@ -25,8 +25,7 @@ pub struct Run {
 }
 
 impl Sandbox {
-    /// `name` must be unique among the tests that call it: two tests running at once must
-    /// not share a folder.
+    /// [`test_scratch::fresh`] says when the folder is removed and what `name` must be.
     pub fn new(name: &str) -> Sandbox {
         let root = test_scratch::fresh(
             &Path::new(env!("CARGO_TARGET_TMPDIR")).join("ruleset_editor_in_process"),

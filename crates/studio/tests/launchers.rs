@@ -22,6 +22,9 @@ struct Sandbox {
 }
 
 impl Sandbox {
+    /// The sandbox's root, a fresh folder under `CARGO_TARGET_TMPDIR`
+    /// (`target/tmp/launchers (the) & real/<name>`). [`test_scratch::fresh`] says when
+    /// the folder is removed and what `name` must be.
     fn new(name: &str) -> Sandbox {
         // The parent folder's name holds a space, a parenthesis pair and an
         // `&`, so the `%~dp0` paths a bat passes carry them: an unquoted

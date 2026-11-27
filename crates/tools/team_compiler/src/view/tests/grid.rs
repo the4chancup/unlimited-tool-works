@@ -457,7 +457,7 @@ fn a_dropped_export_counts_no_portrait_missing_from_a_player_s_own_folder() {
 }
 
 /// The canonical path of what `open` opens, so a test compares it with a path it built
-/// whatever link the temp folder is reached through.
+/// whatever link its folder is reached through.
 fn opened(open: Option<&Open>) -> Option<(&'static str, PathBuf)> {
     open.map(|open| match open {
         Open::Folder(path) => ("folder", fs::canonicalize(path).unwrap()),

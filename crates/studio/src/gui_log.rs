@@ -573,6 +573,8 @@ mod tests {
 
     #[test]
     fn the_panic_hook_writes_the_panic_and_its_backtrace_to_the_log() {
+        // Before the swap: installed inside it, test_scratch's hook would be lost at the restore.
+        test_scratch::install_panic_hook();
         let logger: &'static CollectLog = Box::leak(Box::default());
         // The harness's hook is parked aside and restored before any assertion, so a
         // failing assertion panics through it; meanwhile the hook under test chains the

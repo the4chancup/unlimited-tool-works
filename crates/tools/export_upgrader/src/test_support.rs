@@ -8,10 +8,8 @@ use studio_core::{AppPaths, PipelineEvent, PipelineEventEnvelope, Settings, Tool
 
 /// A fresh, empty scratch folder for `name` under the test binary's build
 /// folder (`target/<profile>/export_upgrader_tests/<name>`): per checkout, so
-/// a mutation run's copy has its own. A passing test's folder is removed when
-/// its thread ends; a panicking test's stays for reading and is emptied at the
-/// start of its next run. `name` must be unique among the tests that call it:
-/// two tests running at once must not share a folder.
+/// a mutation run's copy has its own. [`test_scratch::fresh`] says when the
+/// folder is removed and what `name` must be.
 pub(crate) fn scratch(name: &str) -> PathBuf {
     test_scratch::fresh(
         &test_scratch::build_folder().join("export_upgrader_tests"),
@@ -53,8 +51,8 @@ pub(crate) fn progress_events(
 /// The unit tests' data directory, under the test binary's build folder
 /// (`target/<profile>/export_upgrader_tests/data_dir`), made if missing and
 /// never removed. It holds nothing (the upgrader reads no list of its own), so
-/// every test, and every test process, shares it. Not a `scratch` folder: a
-/// `scratch` folder goes when the test that made it ends.
+/// every test and every test process shares it. Not a [`scratch`] folder
+/// ([`test_scratch::fresh`] says when those go).
 fn data_dir() -> PathBuf {
     static DATA_DIR: OnceLock<PathBuf> = OnceLock::new();
     DATA_DIR

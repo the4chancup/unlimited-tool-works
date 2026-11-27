@@ -72,6 +72,9 @@ struct Sandbox {
 }
 
 impl Sandbox {
+    /// The sandbox's root, a fresh folder under `CARGO_TARGET_TMPDIR`
+    /// (`target/tmp/crash_dump/<name>`). [`test_scratch::fresh`] says when the folder is
+    /// removed and what `name` must be.
     fn new(name: &str) -> Sandbox {
         let root = test_scratch::fresh(
             &Path::new(env!("CARGO_TARGET_TMPDIR")).join("crash_dump"),

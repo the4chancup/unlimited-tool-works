@@ -359,7 +359,7 @@ pub(super) struct Shell {
     pub(super) ctx: ToolContext,
     pub(super) settings: Arc<Mutex<Settings>>,
     pub(super) calls: Vec<Arc<Calls>>,
-    /// The `TestDir` a `shell()` made, its data folder.
+    /// The data folder's `TestDir`, kept by `shell()` so a test can read its path.
     pub(super) _dir: Option<TestDir>,
 }
 
@@ -439,10 +439,9 @@ pub(super) fn shell_with(
 }
 
 /// A shell over the stub tools `a` (labeled `A`) and `b` (`B`), its data directory a
-/// real folder: a `Some` `data_dir` keeps the first-run dialog from standing in front
-/// of the views, and `fresh` keeps the folder for the test's thread, the `Shell`
-/// holding the `TestDir` only so a test can read its path. The folder is named after
-/// the calling test, so two tests never share one.
+/// fresh folder named after the calling test ([`test_dir`]). A `Some` `data_dir` keeps
+/// the first-run dialog from standing in front of the views. Two tests never share the
+/// folder, since no two share a name ([`this_test`]).
 pub(super) fn shell() -> Shell {
     let (a, calls_a) = stub("a", "A", None);
     let (b, calls_b) = stub("b", "B", None);
@@ -465,10 +464,8 @@ fn tests_folder() -> PathBuf {
 
 /// A fresh, empty folder `name` for the calling test, under the test binary's build
 /// folder (`target/<profile>/studio_core_tests/<name>`): per checkout, so a mutation
-/// run's copy has its own. A passing test's folder is removed when its thread ends; a
-/// panicking test's stays for reading and is emptied at the start of its next run.
-/// `name` must be unique among the crate's tests: two tests running at once must not
-/// share a folder.
+/// run's copy has its own. [`test_scratch::fresh`] says when the folder is removed and
+/// what `name` must be.
 pub(crate) fn test_dir(name: &str) -> PathBuf {
     test_scratch::fresh(&tests_folder(), name)
 }

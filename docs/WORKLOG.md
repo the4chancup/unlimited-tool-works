@@ -685,13 +685,9 @@ and no phase closes with one outstanding.
       - [x] **paid** 2026-11-27: Carbon's round over the whole work, ruled as "Round TSP" in
         `.tmp/duck_rulings.md`: ten of twelve concerns accepted, one a real input (a test
         that swaps the panic hook could erase `test_scratch`'s for the rest of the process);
-      - [~] **tspfix** [after paid] the accepted concerns' fixes. The contract's own texts
-        are the lead's (`test_scratch`'s docs, its `Cargo.toml`, the spec's tree line, two
-        CONTRIBUTING paragraphs, uncommitted). The rest is SWE-2's: brief
-        `.tmp/lead/brief_tsp.md`, log `brief_tsp.run.log`, report `brief_tsp.notes.md`. The
-        helper docs link `fresh` rather than retell it, the two hook-swapping tests install
-        its hook first, and `help_cli`'s export goes into a missing folder. On its end:
-        review the diff, run its Verify list, commit everything as one;
+      - [x] **tspfix** 2026-11-27: the accepted concerns' fixes. The helper docs link `fresh`
+        rather than retell it, the two hook-swapping tests install its hook first, and
+        `help_cli`'s export goes into a missing folder;
       - [ ] **TS3** [after tspfix] a SWE-2.1 round over the fixes (RUNBOOK "Review rounds":
         SWE-2 around each paid round), briefed like TS2's parts;
   - [ ] **axiom** [after optimize] an Axiomatic Design pilot, on SWE-2: the suite's functional
@@ -4554,12 +4550,15 @@ points there.
     `view::tests::list::keys::down_on_the_lists_last_row_moves_nothing` (one key press)
     takes 0.67-0.72 s over three runs, so the floor is not contention. `team_compiler`:
     1,706 tests, 806 s summed (202 s wall), 0.5 s a test, the CLI tests the heaviest.
-    `studio_core`: 617 tests, 57 s summed, 0.1 s a test, so it leaves the list. That test
-    draws no frame: its cost is `fixture` (`pes_savefile::fixture_save`, which encrypts a
-    whole save each call) and `view.open` (which decrypts and parses it). The inflate and
+    `studio_core`: 617 tests, 57 s summed, 0.1 s a test, so it leaves the list. That test's
+    setup is `fixture` (`pes_savefile::fixture_save`, which encrypts a whole save each
+    call) and `view.open` (which decrypts and parses it), then two headless frames. The inflate and
     hashes are already optimized in test builds (`Cargo.toml` `[profile.dev.package]`),
-    the cipher in `pes_savefile` is not: the likeliest cost, not yet measured. Left: a
-    profile of that setup, and the tests each mutant selects;
+    the cipher in `pes_savefile` is not. Building `pes_savefile` optimized barely moves
+    that test (0.672-0.680 s against 0.685-0.695 s, three runs a side in one target
+    folder, `.tmp/lean/{opt_ab,base_ab}.sh`), so the cipher is not the floor. Left: timing
+    the test's two setup steps apart (`fixture`, `view.open`) and the process start
+    around them, in a throwaway copy, and the tests each mutant selects;
   - [ ] **patterns** [after census] the cheaper shapes in CONTRIBUTING "Testing and
     verification": a fixture loaded once per test binary, each instance's wiring checked
     in one table-driven scene, a shared widget's behavior tested once in its own crate.

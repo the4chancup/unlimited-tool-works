@@ -163,11 +163,8 @@ mod tests {
 
     /// A fresh folder holding `files` (each `<name>=<bytes>`, a `/` naming a
     /// subfolder), under the test binary's build folder
-    /// (`target/<profile>/music_export_tests/resolve_<name>`). A passing
-    /// test's folder is removed when its thread ends; a panicking test's stays
-    /// for reading and is emptied at the start of its next run. `name` must be
-    /// unique among the tests that call it: two tests running at once must not
-    /// share a folder.
+    /// (`target/<profile>/music_export_tests/resolve_<name>`). [`test_scratch::fresh`]
+    /// says when the folder is removed and what `name` must be.
     fn temp_dir(name: &str, files: &[(&str, &[u8])]) -> PathBuf {
         let dir = test_scratch::fresh(
             &test_scratch::build_folder().join("music_export_tests"),

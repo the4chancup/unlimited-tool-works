@@ -1284,6 +1284,7 @@ mod tests {
 
     #[test]
     fn the_panic_hook_writes_the_panic_and_its_frames_to_the_run_log() {
+        test_scratch::install_panic_hook();
         let dir = TestDir::new("console_panic");
         let (log, path) = run_log(&dir);
         // The harness's hook is parked aside and restored before any assertion, so a
