@@ -4450,6 +4450,19 @@ pruned when their phase closes; they stay in git history. A question only the ma
 can answer is not an issue: it goes to `docs/maintainer/questions.html`, and an issue that waits on one
 points there.
 
+- open (2026-11-27) — **AATFSPEED**: each per-player call into a rules file
+  (`tier_values`, `card_limits`, `player_tier`, and so `apply_tier`) first normalizes the
+  ruleset and reads the team's height system (`logic/logic.rhai`, `team_reading`). That
+  reading reads the whole team under each candidate system, and runs every check under each
+  one for a team no quota system takes. Under DBC7 one call took 88 ms in a test build,
+  with Rhai optimized, as long as a whole team check (86 ms); under the other built-in
+  rulesets about 8 ms, worked out from the heaviest test. A team's picture asks for its 23
+  slots' medals one call each (`tactics::slot_medals`), about 2 s a team under DBC7, and
+  the abilities badge makes two calls per player. Direction: one reading per team, which
+  every slot's answer then uses (a call returning each slot's tier, or the reading passed
+  in). That changes the rules file's functions, so a plan section and a decision come
+  first (`spec/aatf_rules.md`).
+
 - open (2026-11-26, the maintainer: "eventually") — **SANDBOX**: a SWE-2 reviewer or sidekick
   is fenced only by Devin's deny list (deletes, git commands that discard work), not by
   where it may read or write. A SWE-2.1 trial run handed a brief naming the main repository worked
@@ -4561,7 +4574,16 @@ points there.
   - [ ] **pilot** [after patterns] one mid-size crate, whose whole mutation run takes about
     an hour, run before and after the lighter tests: a large crate's runs take too long to
     compare. A few mutants that newly survive are accepted when the run time falls clearly,
-    and each is then killed by a test aimed at it. Then the rest, heaviest first.
+    and each is then killed by a test aimed at it. Then the rest, heaviest first. Not `aatf`
+    (2026-11-27): its last whole run took 55 minutes, four fifths of it in tests, but its
+    census (`.tmp/lean/aatf/`) finds that time in the rules logic itself, which every case
+    needs. The `dbc7` fixtures, 38% of a run's test time once each test is weighted by the
+    mutants that select it, spend it in `apply_tier`, each of whose script calls reads the
+    whole team (`AATFSPEED`). Built optimized, `aatf`'s suite took 172 s of test time
+    against 177, and a test building each legal team once, on the rules it already loaded,
+    would save about a twentieth of a run. Next: the same census (`.tmp/lean/aatf_census.sh`'s shape) of `ruleset_editor`
+    and `export_grid`, crates of headless view tests whose last runs took 27 and 20 minutes
+    (`.tmp/lean/crate_run_times.py`), and the pilot on the one the patterns cut most.
 
 - resolved (2026-11-24) — `scripts/commit.py -a` left a new file out silently, as `git commit
   -a` does: `9ac41d0a` needed an amend for `docs/spec/core/design.md`. With `-a` it now
