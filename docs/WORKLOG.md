@@ -942,11 +942,13 @@ and no phase closes with one outstanding.
             crates built on it, and a link is never cached. So the measurement first splits a
             copy's cold build (`--timings`) into dependencies and the workspace's crates. A
             cache serves only the dependencies, while the warm copy serves both;
-        - [ ] **driver** 2026-11-26 (DECISIONS 2026-11-26 "one mutation driver owns both
+        - [~] **driver** 2026-11-26 (DECISIONS 2026-11-26 "one mutation driver owns both
           machines", "the VPS lane drives itself"; 2026-11-27 "the driver deals shards to both
           machines", "this PC's lane runs the rolling job's shards", "a Task Scheduler task
           starts the driver at logon"): the separate commands that each take locks give way to
-          one driver, pictured on `maintainer/driver.html`; next, its slices. Two lanes, this
+          one driver, pictured on `maintainer/driver.html`; next, its slices, planned from a
+          SWE-2 map of the code it replaces and keeps (`.tmp/lead/driver/swe_map.md`, the map
+          in `swe_map.findings.md`), then listed under this item. Two lanes, this
           PC and the VPS, and a queue of jobs, each job a crate's
           mutants cut into cargo-mutants shards of about `SHARD_SECONDS`. A lane that ends a
           shard takes the next: a queued job's first (a checkpoint's or a closure's diff crates,
@@ -4487,7 +4489,7 @@ points there.
   `build.build-dir` (it shares only dependencies and locks the whole folder) and
   `-Zembed-metadata=no` (nightly only).
 
-- open (2026-11-25, after the Claude reset of 2026-11-26) — **LEAN**: the test suite is
+- open (2026-11-25) — **LEAN**: the test suite is
   heavy and likely redundant (the maintainer's idea): for example, one test per instance of
   a button where a single test of the button's class, plus light per-instance tests, would
   do. A mutant runs every test covering its line, so the weight is paid again by every
@@ -4495,9 +4497,12 @@ points there.
   view code. Coverage must not drop: a light per-instance test still checks what belongs
   to that instance (its label, what clicking it does, when it is enabled), since a presence
   check alone lets a mis-wired button survive.
-  - [ ] **census** per-test durations by module for the heaviest crates (`save_editor`,
+  - [~] **census** per-test durations by module for the heaviest crates (`save_editor`,
     `team_compiler`, `studio_core`), the share spent in setup (fixture loads, egui frames),
-    and the tests each mutant selects (a coverage map's `selection.json`);
+    and the tests each mutant selects (a coverage map's `selection.json`). Each crate's
+    tests run under nextest with 4 test threads and `--message-format libtest-json`
+    (`NEXTEST_EXPERIMENTAL_LIBTEST_JSON=1`), each test's own time read from it, into
+    `.tmp/lean/<crate>.jsonl`;
   - [ ] **patterns** [after census] the cheaper shapes in CONTRIBUTING "Testing and
     verification": a fixture loaded once per test binary, each instance's wiring checked
     in one table-driven scene, a shared widget's behavior tested once in its own crate.
