@@ -242,9 +242,10 @@ their specs) plus the `format/`–`ops/` split of `fmdl` and `pes_model` (in
   future `model_viewport`) may use egui/wgpu.
 - Formats exclusive to one consumer still get their own crate when they are conceptually
   standalone formats (e.g. `uniparam`); single-consumer helpers stay with their owner (e.g.
-  CRILAYLA lives inside `cpk`).
+  CRILAYLA lives inside `cpk`), unless test builds must compile them optimized while their
+  owner stays unoptimized (guardrail 3's exception, `epaint_raster`).
 
-**No per-tool companion libs.** Even the largest tool, the Compiler, at an estimated 15–25k
+**No per-tool companion libs**, beyond guardrail 3's exception. Even the largest tool, the Compiler, at an estimated 15–25k
 lines, stays a single crate, organized by internal modules mirroring its pipeline stages
 (`reader/`, `check/`, `plan/`, `processing/`, `bins/`, `output/`, `view/`; the full tree and
 placement rules are the "Crate layout" section of the [Compiler

@@ -8,7 +8,8 @@ rule here is enforced in review.
 
 Workspace guardrails (details: `spec/core/architecture.md` "Workspace guardrails"). A decision
 that adds, splits or moves a crate is read against them first, and one that breaks a guardrail
-amends it in the same commit, here and in the spec:
+amends it in the same commit, here, in the spec and wherever else a search for the rule's
+words finds it stated (the spec's "Crate structure" restates guardrail 3):
 
 1. Tool crates never depend on tool crates. Shared logic moves down into a lib crate.
 2. Every shared dependency is declared once in the root `Cargo.toml` `[workspace.dependencies]`;
