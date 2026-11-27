@@ -524,7 +524,7 @@ mod multi;
 mod multi_copy;
 
 /// The open save's team ids, in id order.
-fn all_team_ids(view: &SaveView) -> Vec<u32> {
+pub(super) fn all_team_ids(view: &SaveView) -> Vec<u32> {
     let file = view.session.as_ref().expect("the save opened").file();
     let mut ids: Vec<u32> = file.teams().iter().map(|team| team.id).collect();
     ids.sort_unstable();
