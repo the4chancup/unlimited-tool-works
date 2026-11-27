@@ -537,7 +537,7 @@ is the default and the fallback. Each file's `name` is its description:
 The dropdown reads these descriptions from a table: `libs/aatf` keeps each one's stem and
 description beside its file, and a test keeps each description equal to the file's `name`.
 Loading the seven files only for their names took about 30 ms in a test build, which every test
-that draws the Save editor paid. The table costs an edit when a file's `name` changes, which the
+that draws the Save editor paid, since nextest runs each test in its own process. The table costs an edit when a file's `name` changes, which the
 test catches.
 
 All seven are the ones the parity runs checked ("Development phase and verification"; DBC7's,

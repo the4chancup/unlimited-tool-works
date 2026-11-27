@@ -20456,7 +20456,8 @@ file, a test keeping each description equal to the file's `name`. The Save edito
 dropdown, its width and the import's refusal of a built-in's description read that table (`session::rules::builtins`),
 instead of loading the seven rulesets (`aatf::templates`).
 Why: the dropdown draws on every frame, so its first frame loaded all seven files for their
-names: 29 ms a process in a test build, which every test drawing the editor paid, an
+names: 29 ms a process in a test build, which every test drawing the editor paid (nextest
+runs each test in its own process), an
 estimated 30 s of `save_editor`'s 396 s of summed test time (worklog `LEAN/rest`). Not the names parsed from the files'
 text, which would be a second reader of the rules format; the table costs an edit when a
 `name` changes, and the test fails until it is made.
