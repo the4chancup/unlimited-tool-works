@@ -28,7 +28,7 @@ One line per piece of work in flight; the items below hold the detail.
 
 - The workflow improvements before the suite resumes (`RESUME/optimize`): the mutation
   driver's slices (`driver/d2`, the VPS lane: d2b and d2c merged, d2a's trial pending), and
-  the lighter tests (`LEAN/patterns`, from the census's findings).
+  the lighter tests (`LEAN/pilot` next, a crate's whole mutation run before and after).
 - The checkpoint: `19fda006` passed it and is pushed; its Linux gates are owed.
 - The rolling mutation job: on the VPS, crate by crate, held after its current crate so the
   driver's VPS lane runs its trial job (`driver/d2a`).
@@ -4541,38 +4541,23 @@ points there.
     quarter of a run's test time (`.tmp/lean/selection_census.py`). An A/B's override goes
     in a throwaway worktree's `.cargo/config.toml`: a `cargo --config` before `nextest`
     never reaches nextest's build;
-  - [~] **patterns** [after census] the cheaper shapes in CONTRIBUTING "Testing and
-    verification": a fixture loaded once per test binary, each instance's wiring checked
-    in one table-driven scene, a shared widget's behavior tested once in its own crate.
-    SWE-2's reading of the 25 heaviest save_editor tests
-    (`.tmp/lean/swe_heavy_tests.findings.md`, inferred from the code, not measured) ranks
-    what they share: headless frames spent waiting out egui's input time (the Multi-team
-    AATF dialog's 0.5 s rest after a range change, about 30 frames each time; a tactics
-    test's 549 idle frames) and scrolling the player list by wheel steps; the whole-save AATF
-    check (about 220 teams) where two or thirty teams check the same thing (tests in
-    `savefile/multi.rs` and `overlap.rs`); a fresh save opened per screen in the menus'
-    overlap test; the 20 ms sleep of `frames_until`'s poll; the pictures dialog's picking
-    steps repeated before each run. One was a plain slip, fixed at once: the turf picture
-    test built an egui context per pixel checked (`dark()` in its loop), 23.9 s to 8.1.
-    Two slices run side by side, on disjoint files, then the lead times the suite before and
-    after both (`.tmp/lean/suite_ab2.sh` shape), and the shapes they prove go into
-    CONTRIBUTING "Testing and verification". Revisit the helium brief rules that ask for a
-    test per call site or per place a text shows, which built much of the repetition;
-    - [x] **p1** 2026-11-27, merge `ce6239fb` (Opus): a headless frame that moves egui's
-      clock as far as a wait needs (`Headless::frame_after`, `wait_out`), used for the undo
-      run's one-second pause, the Multi-team AATF dialog's rest (`multi_checked`) and the
-      wheel helpers' drains; the player list is wheeled to its end in 13 frames instead of
-      342. `frames_until`'s 20 ms sleep stays: once the rest is out of the polling, it adds
-      at most one sleep to a wait;
-    - [x] **p2** 2026-11-27, merge `7204f255` (SWE-2), with the overlap test's rest wait
-      `efd28d32`: four tests narrowed, every assertion kept. The id-order test checks
-      701-703 and the 360-point list test thirty teams, not all ~220; the overlap test's
-      Multi-team AATF screens use thirty teams, its menu dialogs one save per version, each
-      dialog closed before the next opens. One team's rows already overflow the list, so
-      thirty is a margin, not a bound;
-    - [~] **S1lean** one SWE-2 round over p1 and p2 (Tier 3), from the worktree
-      `review_lean` at `efd28d32`; the lead's suite timing before and after both
-      (`.tmp/lean/suite_ab3.sh`) runs beside it;
+  - [x] **patterns** 2026-11-27: the shapes in CONTRIBUTING "A test spends its time on what
+    it checks" (`caab0e71`), from SWE-2's reading of the 25 heaviest save_editor tests
+    (`.tmp/lean/swe_heavy_tests.findings.md`). Slices **p1** (merge `ce6239fb`, Opus: one
+    headless frame waits out a pause on egui's clock, `wait_out`, `Headless::frame_after`),
+    **p2** (merge `7204f255`, SWE-2: four tests narrowed to the smallest input that keeps
+    their case, the menus' overlap test on one save) and the SWE-2 round **S1lean** (3
+    accepted, none of reach (a), fixes `3a29e6c2`; no review owed). Measured
+    (`.tmp/lean/suite_ab3.sh`, the whole suite twice each side at `6fedcf50` and after,
+    nextest, 4 test threads, warm): its wall time 157 s to 143, its summed test time 589 s
+    to 538, and a whole-crate mutation run's summed test time, weighted by the census's
+    coverage map, 559,960 s to 505,415 (about a tenth). The helium rules asking for a test per
+    call site stay: the heavy tests came from clock waits and whole-save inputs, not from
+    them; helium got a line on a test's input and waits instead. Heaviest left, each a
+    candidate for pilot's "the rest": the pictures dialog's range runs (7.8 s, selected
+    1,475 times, most of it the picking steps before each run), the Multi-team AATF
+    every-team test (7.9 s, its own all-teams check beside the dialog's), the toolbar's
+    shortcut test (a save opened per case, twelve times);
   - [ ] **pilot** [after patterns] one mid-size crate, whose whole mutation run takes about
     an hour, run before and after the lighter tests: a large crate's runs take too long to
     compare. A few mutants that newly survive are accepted when the run time falls clearly,
