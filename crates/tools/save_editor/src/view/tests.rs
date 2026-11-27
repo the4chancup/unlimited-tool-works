@@ -1145,8 +1145,8 @@ fn list_scroll_bar(nodes: &[accesskit::Node]) -> accesskit::Rect {
 /// 0.1 s, so a longer frame applies no more of the delta.
 const WHEEL_DRAIN_STEP: f32 = 0.1;
 
-/// Wheels the player list to its end, each wheel the height of all its
-/// rows (bounded: a list that never stops scrolling fails rather than
+/// Wheels the player list to its end, each wheel its row count times a
+/// drawn row's height (bounded: a list that never stops scrolling fails rather than
 /// hangs), the pointer over a drawn row so the wheel goes to the list.
 /// The end is held once two frames draw the same top row, but the return
 /// also waits on egui's wheel action to be over: the wheel's spread-out

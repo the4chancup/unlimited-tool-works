@@ -156,6 +156,7 @@ fn the_multi_list_and_combos_run_in_id_order_not_record_order() {
 
     // The checked list's rows: 702's line above 703's. The wait compares
     // the ids as a set, not their order — the order is what's asserted.
+    wait_out(&mut window, &mut view, crate::view::multi_aatf::REST);
     let pairs = frames_until(
         &mut window,
         &mut view,

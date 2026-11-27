@@ -388,8 +388,7 @@ fn menu_dialogs(version: PesVersion) -> Screens {
             "Generate in-game face\u{2026}",
         ),
     ] {
-        let nodes = open_menu(&mut window, &mut view, menu, item);
-        click(&mut window, menu_item(&nodes, item), &mut view);
+        choose(&mut window, &mut view, menu, item);
         let drawn = settled_over(&mut window, &mut view, screen);
         close_screen(&mut window, &mut view, &drawn);
         closed(&mut window, &mut view, screen);
@@ -397,16 +396,11 @@ fn menu_dialogs(version: PesVersion) -> Screens {
     }
 
     // Generate settings.toml with no folder, then with one picked.
-    let nodes = open_menu(
+    choose(
         &mut window,
         &mut view,
         "Player",
         "Generate settings.toml\u{2026}",
-    );
-    click(
-        &mut window,
-        menu_item(&nodes, "Generate settings.toml\u{2026}"),
-        &mut view,
     );
     screens.push((
         "Generate settings.toml",
@@ -434,16 +428,7 @@ fn multi_aatf(version: PesVersion) -> Screens {
     let (mut view, mut window) =
         from_menu(version, "multi_aatf", "Savefile", "Multi-team AATF\u{2026}");
     let ids = super::savefile::all_team_ids(&view);
-    let landed = |view: &SaveView, ids: &[u32]| {
-        let check = &view.multi_aatf.check;
-        check.pending.is_none() && check.result.as_ref().is_some_and(|(key, _)| key.ids == ids)
-    };
-    frames_until(
-        &mut window,
-        &mut view,
-        |view| landed(view, &ids[..1]),
-        "the Multi-team AATF check never returned",
-    );
+    super::savefile::multi_checked(&mut window, &mut view, &ids[..1]);
     let last = {
         let file = view.session.as_ref().expect("an open save").file();
         let id = ids[29];
@@ -453,13 +438,7 @@ fn multi_aatf(version: PesVersion) -> Screens {
     // `settled`'s three frames are well inside the thirty-team range's
     // 500 ms rest.
     let checking = settled_over(&mut window, &mut view, "Multi-team AATF");
-    wait_out(&mut window, &mut view, crate::view::multi_aatf::REST);
-    frames_until(
-        &mut window,
-        &mut view,
-        |view| landed(view, &ids[..30]),
-        "the Multi-team AATF check of the thirty teams never returned",
-    );
+    super::savefile::multi_checked(&mut window, &mut view, &ids[..30]);
     let listed = settled_over(&mut window, &mut view, "Multi-team AATF");
     assert!(
         listed.iter().any(|drawn| {

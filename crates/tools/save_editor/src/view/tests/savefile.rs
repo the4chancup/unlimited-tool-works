@@ -382,7 +382,7 @@ fn open_multi_aatf(window: &mut Headless, view: &mut SaveView) {
 /// frame's node pairs. Its first frame waits out the range's rest
 /// (`multi_aatf::REST`), so ends picked just before have rested when the
 /// polling starts.
-fn multi_checked(
+pub(super) fn multi_checked(
     window: &mut Headless,
     view: &mut SaveView,
     ids: &[u32],
