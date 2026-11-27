@@ -1,11 +1,11 @@
 """Tests of `driver.py`: the queue's job folders, the shard count, both
 lanes taking a job's shards, resuming after a restart and waiting, a job's
-sending to the VPS and the VPS lane's deploy. Every test runs on a temporary
-`driver.DRIVER` and cost table, with cargo-mutants, the tree's extraction,
-the mutant listing, the cost fold and the build-slot lock stubbed. The VPS
-lane's systemd and sudo are stubbed too. `send` and `deploy` reach a fake
-VPS: ssh replaced by bash run in a temporary home. Only `git rev-parse` and
-`git archive` reach the repository. Run by `just test`
+sending to the VPS, this PC's side of a sent job and the VPS lane's deploy.
+Every test runs on a temporary `driver.DRIVER` and cost table, with
+cargo-mutants, the tree's extraction, the mutant listing, the cost fold and
+the build-slot lock stubbed. The VPS lane's systemd and sudo are stubbed too.
+Every ssh call reaches a fake VPS: bash run in a temporary home. Only `git
+rev-parse` and `git archive` reach the repository. Run by `just test`
 (`python scripts/mutation/driver_test.py`)."""
 
 import contextlib
@@ -73,11 +73,13 @@ class Driver(unittest.TestCase):
         self.costed: list[Path] = []
         self.extracted: list[str] = []
         self.locked = False
+        self.vps_down = False
         self.out = io.StringIO()
         self.enter([
             # `main` sets both for the VPS lane: the patches put them back.
             mock.patch.object(driver, "DRIVER", self.driver),
             mock.patch.object(driver, "LANE", "pc"),
+            mock.patch.object(driver, "unreachable", set()),
             mock.patch.object(mutants, "remote_host", lambda: None),
             mock.patch.object(mutants, "LOCAL_TMPDIR", self.root / "local-tmp"),
             mock.patch.object(mutants, "COST_CACHE", self.root / "mutants-cost.json"),
@@ -168,9 +170,11 @@ class Driver(unittest.TestCase):
     def fake_vps(self, version: str = VERSION, fail: str | None = None) -> None:
         """`mutants.ssh` replaced by bash run in `self.home`, a temporary remote
         home whose cargo-mutants answers `version`. A command holding `fail`
-        runs and then fails. In front of each command, `sudo` logs its
-        arguments to `$HOME/sudo.log` (and a `tee`'s input to `$HOME/tee.in`),
-        and `systemctl` answers 3."""
+        runs and then fails; while `self.vps_down` is set, every call fails
+        with ssh's 255 and runs nothing. In front of each command, `sudo` logs
+        its arguments to `$HOME/sudo.log` (and a `tee`'s input to
+        `$HOME/tee.in`), `systemctl` answers 3, and `python3` is this Python,
+        its printed paths with `/` and no `\\r`, as the VPS's would print them."""
         if BASH is None:
             self.skipTest("no bash for the fake VPS (Git Bash on Windows)")
         self.home = self.root / "vps-home"
@@ -179,14 +183,20 @@ class Driver(unittest.TestCase):
         cargo_mutants.write_bytes(f'#!/bin/bash\necho "{version}"\n'.encode())
         cargo_mutants.chmod(0o755)
         self.ssh_calls: list[str] = []
+        python = shlex.quote(Path(sys.executable).as_posix())
         functions = (
             'sudo() { echo "$*" >> "$HOME/sudo.log"; '
             'if [ "$2" = tee ]; then cat > "$HOME/tee.in"; fi; }; '
             "systemctl() { return 3; }; "
+            # `\134` is a backslash: a `\\` would reach Git Bash as one.
+            f"python3() {{ {python} \"$@\" | tr -d '\\r' | tr '\\134' /; }}; "
         )
 
         def ssh(host, remote, **kwargs):
             self.ssh_calls.append(remote)
+            if self.vps_down:
+                nothing = "" if kwargs.get("text") else b""
+                return subprocess.CompletedProcess(remote, 255, nothing, nothing)
             if fail is not None and fail in remote:
                 remote = f"{remote} && false"
             if "input" not in kwargs:
@@ -317,6 +327,7 @@ class Driver(unittest.TestCase):
                 "code": 2,
                 "missed": ["missed in cpk shard 0", "missed in cpk shard 1", "missed in cpk shard 2"],
                 "untested": [],
+                "rechecked": [],
             },
         )
         self.assertFalse((self.done(job) / "source").exists())
@@ -594,16 +605,256 @@ class Driver(unittest.TestCase):
         self.assert_local_job(local_only, 2)
         self.assert_local_job(no_host, 2)
 
-    def test_a_sent_job_is_left_queued_by_this_pc_s_lane(self):
+    def sent_job(self, shards: int = 2, stamp: str | None = None) -> tuple[Path, Path]:
+        """A job queued and sent to the fake VPS: its folder here and the VPS's."""
+        self.fake_vps()
+        job = self.queue(shards=shards, stamp=stamp)
+        return job, self.remote_queue() / job.name
+
+    def vps_shard(self, remote: Path, k: int, files: dict[str, str]) -> None:
+        """Shard `k` of the VPS's job `remote` ended there: `files` (paths
+        relative to its folder) written, its marker gone, its `.done` last."""
+        shard = remote / f"shard-{k}"
+        for name, text in files.items():
+            (shard / name).parent.mkdir(parents=True, exist_ok=True)
+            (shard / name).write_text(text, encoding="utf-8")
+        for marker in ("todo", "vps"):
+            (remote / f"shard-{k}.{marker}").unlink(missing_ok=True)
+        (remote / f"shard-{k}.done").write_text("0", encoding="utf-8")
+
+    def ended_shard(self, job: Path, k: int, missed: list[str], code: int, vps: bool) -> None:
+        """Shard `k` of `job` ended with `missed` and `code`: fetched from the
+        VPS when `vps`, else run here. A fetched shard has its `log` beside
+        and here no `exit`, as a VPS shard killed before its end has: only the
+        `log` tells it from this PC's."""
+        out = job / f"shard-{k}" / "mutants.out"
+        out.mkdir(parents=True)
+        (out / "missed.txt").write_text("".join(f"{line}\n" for line in missed), encoding="utf-8")
+        if vps:
+            (job / f"shard-{k}" / "log").write_text("console\n", encoding="utf-8")
+        (job / f"shard-{k}.done").write_text(str(code), encoding="utf-8")
+
+    def test_a_sent_job_s_shards_run_on_both_lanes_and_finish_here_as_one_run(self):
+        job, remote = self.sent_job(shards=2)
+        self.codes[("cpk", 0)] = 3
+        self.vps_fakes()
+        vps_claims = iter([driver.claim])
         with (
-            mock.patch.object(mutants, "remote_host", lambda: "bonfire"),
-            mock.patch.object(driver, "send", lambda host, building, name: True),
+            mock.patch.object(driver, "DRIVER", self.home / "studio-driver"),
+            mock.patch.object(driver, "LANE", "vps"),
+            # One shard, then none: shard 1 is left for this PC.
+            mock.patch.object(driver, "claim", lambda: next(vps_claims, lambda: None)()),
         ):
-            job = self.queue(shards=2)
-        self.assertIsNone(driver.claim())
+            self.assertEqual(driver.run(once=True), 0)
+        self.assertTrue((remote / "shard-0.done").exists())
+        self.assertTrue((remote / "shard-1.todo").exists())
         self.assertEqual(driver.run(once=True), 0)
-        self.assertEqual(self.calls, [])
-        self.assertEqual(sorted(p.name for p in job.iterdir()), ["job.json", "sent.json", "source"])
+        self.assertEqual([shard_of(args) for args in self.calls], ["0/2", "1/2"])
+        self.assertFalse(remote.exists(), "the VPS's copy goes with the finish")
+        self.assertEqual(
+            self.result(job),
+            {
+                "code": 3,
+                "missed": ["missed in cpk shard 0", "missed in cpk shard 1"],
+                "untested": [],
+                "rechecked": [],
+            },
+        )
+        fetched = self.done(job) / "shard-0"
+        self.assertTrue((fetched / "mutants.out" / "outcomes.json").is_file())
+        self.assertEqual((fetched / "exit").read_text(encoding="utf-8"), "3 12\n")
+        self.assertEqual((self.done(job) / "shard-0.done").read_text(encoding="utf-8"), "3")
+
+    def test_a_fetch_leaves_a_tested_caught_mutant_s_log_there_and_copies_the_rest(self):
+        job, remote = self.sent_job()
+        tested = [{"phase": "Test", "duration": 1.0, "process_status": {"Failure": 100}}]
+        outcomes = {"outcomes": [
+            {"scenario": {"Mutant": {"name": "caught"}}, "summary": "CaughtMutant",
+             "log_path": "log/caught.log", "phase_results": tested},
+            {"scenario": {"Mutant": {"name": "missed"}}, "summary": "MissedMutant",
+             "log_path": "log/missed.log",
+             "phase_results": [{"phase": "Test", "duration": 1.0, "process_status": "Success"}]},
+        ]}
+        self.vps_shard(remote, 0, {
+            "mutants.out/outcomes.json": json.dumps(outcomes),
+            "mutants.out/missed.txt": "missed\n",
+            "mutants.out/log/caught.log": "caught\n",
+            "mutants.out/log/missed.log": "missed\n",
+            "log": "console\n",
+            "exit": "2 12\n",
+            "memory_peak": "123\n",
+            "memory_events": "oom 0\noom_kill 0\n",
+        })
+        # A partial fetch from before: removed first.
+        (job / "shard-0").mkdir()
+        (job / "shard-0" / "stale").write_text("", encoding="utf-8")
+        self.assertTrue(driver.fetch_shard(job, 0))
+        shard = job / "shard-0"
+        self.assertEqual(
+            sorted(p.relative_to(shard).as_posix() for p in shard.rglob("*") if p.is_file()),
+            ["exit", "log", "memory_events", "memory_peak", "mutants.out/log/missed.log",
+             "mutants.out/missed.txt", "mutants.out/outcomes.json"],
+        )
+        self.assertEqual((shard / "mutants.out" / "outcomes.json").read_text(encoding="utf-8"),
+                         json.dumps(outcomes))
+        self.assertEqual((job / "shard-0.done").read_text(encoding="utf-8"), "2")
+        self.assertTrue((remote / "shard-0" / "mutants.out" / "log" / "caught.log").exists())
+
+    def test_a_vps_shard_with_no_exit_is_done_with_code_1_and_an_oom_kill_is_kept(self):
+        job, remote = self.sent_job()
+        self.vps_shard(remote, 0, {"log": "", "memory_events": "oom 3\noom_kill 2\n"})
+        self.vps_shard(remote, 1, {"log": "", "exit": "0 5\n", "memory_events": "oom_kill 0\n"})
+        self.assertTrue(driver.fetch_shard(job, 0))
+        self.assertTrue(driver.fetch_shard(job, 1))
+        self.assertEqual(
+            [(job / f"shard-{k}.done").read_text(encoding="utf-8") for k in range(2)], ["1", "0"]
+        )
+        warning = ("the kernel killed processes in the remote run (oom_kill 2), so its caught "
+                   "counts may include mutants a kill ended")
+        self.assertEqual((job / "shard-0" / "oom_kills.txt").read_text(encoding="utf-8"),
+                         warning + "\n")
+        self.assertFalse((job / "shard-1" / "oom_kills.txt").exists())
+        out = self.out.getvalue()
+        self.assertIn(warning, out)
+        self.assertIn("shard 1 was killed before it ended: untested", out)
+
+    def test_a_sent_job_s_claim_takes_the_vps_s_lowest_shard_and_skips_it_while_unreachable(self):
+        job, remote = self.sent_job(shards=11, stamp="20261127T110000")
+        for k in range(9):
+            (remote / f"shard-{k}.todo").unlink()
+        with mock.patch.object(mutants, "remote_host", lambda: None):
+            local = self.queue("fpk", 2, stamp="20261127T120000")
+        self.assertEqual(driver.claim(), (job, 9), "9 before 10")
+        self.assertTrue((job / "shard-9.pc").exists())
+        self.assertTrue((remote / "shard-9.pc").exists())
+        driver.run_shard(job, 9)
+        self.assertEqual(sorted(p.name for p in job.glob("shard-9*")), ["shard-9", "shard-9.done"])
+        self.assertFalse((remote / "shard-9.pc").exists(), "the VPS's marker goes with the run")
+        self.vps_down = True
+        self.assertEqual(driver.claim(), (local, 0))
+        self.assertEqual(driver.claim(), (local, 1))
+        outage = "a call to bonfire failed"
+        self.assertEqual(self.out.getvalue().count(outage), 1, "printed once over two turns")
+        self.vps_down = False
+        self.assertEqual(driver.claim(), (job, 10))
+        self.assertTrue((remote / "shard-10.pc").exists())
+        self.assertIsNone(driver.claim(), "none left anywhere")
+        self.vps_down = True
+        self.assertIsNone(driver.claim())
+        self.assertEqual(self.out.getvalue().count(outage), 2, "a new outage is printed again")
+
+    def test_sync_puts_back_a_lost_claim_and_marks_a_fetched_shard_without_a_second_fetch(self):
+        job, remote = self.sent_job(shards=3)
+        # A claim this PC lost.
+        (remote / "shard-0.todo").rename(remote / "shard-0.pc")
+        # Run here, and the VPS's marker not removed.
+        (remote / "shard-1.todo").rename(remote / "shard-1.pc")
+        (job / "shard-1.done").write_text("0", encoding="utf-8")
+        # Fetched before a crash, and not yet marked fetched there.
+        self.vps_shard(remote, 2, {"log": "", "exit": "0 5\n"})
+        self.ended_shard(job, 2, [], 0, vps=True)
+        before = sorted(p.name for p in remote.iterdir())
+        self.vps_down = True
+        driver.sync(job)
+        self.assertEqual(sorted(p.name for p in remote.iterdir()), before)
+        self.vps_down = False
+
+        def fetch_shard(job, k):
+            self.fail(f"shard {k} fetched again")
+
+        with mock.patch.object(driver, "fetch_shard", fetch_shard):
+            driver.sync(job)
+        self.assertEqual(sorted(p.name for p in remote.glob("shard-*")),
+                         ["shard-0.todo", "shard-2.done", "shard-2.fetched"])
+
+    def test_a_sent_job_whose_last_shard_ends_on_the_vps_is_finished_by_the_waiting_lane(self):
+        job, remote = self.sent_job(shards=1)
+        (remote / "shard-0.todo").rename(remote / "shard-0.vps")
+        sleeps = []
+
+        def sleep(seconds):
+            sleeps.append(seconds)
+            if len(sleeps) == 1:
+                self.vps_shard(remote, 0, {"log": "", "exit": "0 5\n"})
+            else:
+                raise Stop
+
+        with mock.patch.object(driver.time, "sleep", sleep), self.assertRaises(Stop):
+            driver.run()
+        self.assertEqual(len(sleeps), 2)
+        self.assertTrue(self.done(job).exists(), "finished between the two waits")
+        self.assertFalse(remote.exists())
+
+    def test_recover_leaves_a_sent_job_s_claims_to_the_vps(self):
+        job, _ = self.sent_job(shards=2)
+        (job / "shard-0.pc").touch()
+        (job / "shard-0" / "mutants.out").mkdir(parents=True)
+        (job / "shard-1.pc").touch()
+        (job / "shard-1.done").write_text("0", encoding="utf-8")
+        driver.recover()
+        self.assertEqual(sorted(p.name for p in job.iterdir()),
+                         ["job.json", "sent.json", "shard-1.done", "source"])
+
+    WINDOWS_ONLY = ("crates/studio_core/src/redact.rs:10:5: replace redact_any_spelling -> "
+                    "String with String::new()")
+    WINDOWS_ONLY_HERE = "crates/studio_core/src/pes_process.rs:20:9: replace probe -> bool with true"
+    ANYWHERE = "crates/libs/cpk/src/lib.rs:10:5: replace pad -> usize with 0"
+
+    def finish_with_recheck(
+        self, vps_missed: list[str], on_windows: bool, caught: set[str],
+        here_missed: tuple[str, ...] = (WINDOWS_ONLY_HERE,),
+    ) -> tuple[Path, list[tuple]]:
+        """A sent job finished after shard 0 ended on the VPS with
+        `vps_missed` and shard 1 here with `here_missed`, `on_windows` or
+        not, the patched recheck catching `caught`. Returns the job and the
+        recheck's calls: (lines, tree, out, whether under the build slot)."""
+        for line, windows in [(self.WINDOWS_ONLY, True), (self.WINDOWS_ONLY_HERE, True),
+                              (self.ANYWHERE, False)]:
+            self.assertEqual(
+                any(p.search(line) for p in mutants.WINDOWS_ONLY_TESTS), windows, line
+            )
+        job, remote = self.sent_job(shards=2)
+        self.ended_shard(job, 0, vps_missed, 2, vps=True)
+        self.ended_shard(job, 1, list(here_missed), 2 if here_missed else 0, vps=False)
+        calls = []
+
+        def recheck(missed, tree, out=None):
+            calls.append((missed, tree, out, self.locked))
+            return caught
+
+        with (
+            mock.patch.object(mutants, "recheck_windows", recheck),
+            mock.patch.object(driver, "ON_WINDOWS", on_windows),
+        ):
+            self.assertEqual(driver.finish(job), self.done(job))
+        self.assertFalse(remote.exists())
+        return job, calls
+
+    def test_finish_rechecks_here_the_vps_shards_windows_only_survivors(self):
+        job, calls = self.finish_with_recheck(
+            [self.WINDOWS_ONLY, self.ANYWHERE], True, {self.WINDOWS_ONLY}
+        )
+        self.assertEqual(calls, [([self.WINDOWS_ONLY], HEAD_TREE, job / "recheck", True)])
+        self.assertEqual(self.result(job)["missed"], [self.ANYWHERE, self.WINDOWS_ONLY_HERE])
+        self.assertEqual(self.result(job)["rechecked"], [self.WINDOWS_ONLY])
+        self.assertEqual(self.result(job)["code"], 2)
+
+    def test_off_windows_the_vps_shards_windows_only_survivors_are_printed_not_rechecked(self):
+        job, calls = self.finish_with_recheck([self.WINDOWS_ONLY, self.ANYWHERE], False, set())
+        self.assertEqual(calls, [])
+        self.assertEqual(self.result(job)["missed"],
+                         [self.WINDOWS_ONLY, self.ANYWHERE, self.WINDOWS_ONLY_HERE])
+        self.assertEqual(self.result(job)["rechecked"], [])
+        self.assertIn(f"Windows-only tests, not rechecked:\n  {self.WINDOWS_ONLY}\n",
+                      self.out.getvalue())
+
+    def test_a_job_whose_every_survivor_the_recheck_caught_exits_clean(self):
+        job, calls = self.finish_with_recheck(
+            [self.WINDOWS_ONLY], True, {self.WINDOWS_ONLY}, here_missed=()
+        )
+        self.assertEqual(len(calls), 1)
+        self.assertEqual(self.result(job)["missed"], [])
+        self.assertEqual(self.result(job)["code"], 0, "cargo-mutants' 2 no longer holds")
 
     def test_the_vps_lane_runs_a_job_s_shards_and_finishes_nothing(self):
         job = self.queue(shards=2)

@@ -17,7 +17,12 @@ markers are copied into the VPS's queue, and this PC keeps the job with a
 VPS lane (`run --lane vps`, a service that `just driver deploy` installs
 there) takes a sent job's shards, so they go on while this PC is off, and
 keeps their results there; it finishes no job. This PC's lane takes the
-shards of the jobs that stayed here, and finishes them.
+shards of every job, a sent job's by renaming its marker on the VPS. Between
+its shards it syncs each sent job with the VPS (`sync`): a claim it lost goes
+back to `.todo` there, and the shards the VPS ended are fetched. It finishes
+each job once all its shards are done. For a sent job, the finish also reruns
+here the VPS's survivors that only a Windows-only test catches, and removes
+the VPS's copy.
 
 Everything lives under `DRIVER`, one folder per machine shared by every tree
 (`VPS_DRIVER` on the VPS):
@@ -33,19 +38,27 @@ Everything lives under `DRIVER`, one folder per machine shared by every tree
       source/                the job's tree, extracted once
       mutants-vps.toml       the VPS lane's cargo-mutants config for the job
       shard-<k>.todo         an empty marker for each shard not taken yet
-      shard-<k>.<lane>       the marker, renamed by the lane that took the shard
+      shard-<k>.<lane>       the marker, renamed by the lane that took the shard; a
+                             sent job's `.pc` is on the VPS, and here while this PC
+                             runs the shard
       shard-<k>.sh           the VPS lane's script for the shard
-      shard-<k>/             the shard's cargo-mutants `--output` folder; on the
-                             VPS also its `log`, `exit` and memory figures
+      shard-<k>/             the shard's cargo-mutants `--output` folder; a VPS
+                             shard's also holds its `log`, `exit` and memory figures,
+                             on this PC once fetched
       shard-<k>.done         the shard's exit code, as text, written last
+      shard-<k>.fetched      on the VPS: the shard's results are on this PC, and
+                             removed there
       baseline-<lane>.json   {"timeout": seconds}, after the lane's first shard of the job
+      recheck/               on this PC: a sent job's Windows-only recheck, run when
+                             the job finishes
     done/<job>/              the job once every shard is done, with result.json
 
 A lane takes a shard by renaming its marker, which only one lane can do.
 A restarted driver goes on from the folders:
 
 - each shard its lane had taken but not ended goes back to `.todo`, its
-  partial results removed;
+  partial results removed (for a sent job, the VPS's marker goes back at
+  the next `sync`);
 - each job whose shards all ended is finished.
 
 An error ends the driver as a stop does, and the next start resumes the same way.
@@ -60,6 +73,7 @@ import shlex
 import shutil
 import subprocess
 import sys
+import tarfile
 import tempfile
 import time
 from pathlib import Path
@@ -78,6 +92,10 @@ REMOTE_DRIVER = "studio-driver"
 SHARD_UNIT = mutants.SHARD_UNIT
 SHARD_SECONDS = mutants_diff.SHARD_SECONDS
 POLL_SECONDS = 60
+ON_WINDOWS = os.name == "nt"
+# The hosts whose last call failed, so an outage is printed once and not at
+# every turn.
+unreachable: set[str] = set()
 
 
 def jobs() -> list[Path]:
@@ -220,6 +238,147 @@ def remove_remote(host: str, path: str) -> None:
         print(f"driver: could not remove {path} on {host}", flush=True)
 
 
+def sent_host(job: Path) -> str | None:
+    """The host `job` was sent to (its `sent.json`), or None for a job that stayed here."""
+    sent = job / "sent.json"
+    if not sent.exists():
+        return None
+    return json.loads(sent.read_text(encoding="utf-8"))["host"]
+
+
+def remote_job(job: Path) -> str:
+    """`job`'s folder on the VPS, in an ssh command."""
+    return f"~/{REMOTE_DRIVER}/queue/{job.name}"
+
+
+def call_remote(host: str, command: str, **kwargs) -> subprocess.CompletedProcess | None:
+    """Run `command` on `host` through `mutants.ssh`. Returns None when the
+    call fails. The first failure of an outage is printed; the next ones are
+    not, until a call to `host` succeeds again."""
+    try:
+        called = mutants.ssh(host, command, **kwargs)
+    except OSError as error:
+        failure = str(error)
+    else:
+        if called.returncode == 0:
+            unreachable.discard(host)
+            return called
+        failure = f"exit {called.returncode}"
+    if host not in unreachable:
+        unreachable.add(host)
+        print(f"driver: a call to {host} failed ({failure}): its jobs wait until it answers",
+              flush=True)
+    return None
+
+
+# Renames the job's lowest-numbered `.todo` to `.pc` and prints its number;
+# prints nothing when none is left or the folder is gone. `mv` fails when the
+# VPS lane renamed the marker first, and the next one is tried.
+CLAIM_SCRIPT = (
+    "cd {folder} 2>/dev/null || exit 0; "
+    "for todo in $(ls shard-*.todo 2>/dev/null | sort -t- -k2 -n); do "
+    'k=${{todo#shard-}}; k=${{k%.todo}}; '
+    'if mv "$todo" "shard-$k.pc" 2>/dev/null; then echo "$k"; exit 0; fi; '
+    "done"
+)
+
+
+def claim_remote(job: Path, host: str) -> int | None:
+    """Take a shard of the sent `job` on `host`, where its markers live, and
+    mark it here too. Returns its number, or None when none is left or the
+    call failed."""
+    called = call_remote(
+        host, CLAIM_SCRIPT.format(folder=remote_job(job)), capture_output=True, text=True
+    )
+    if called is None or not called.stdout.strip():
+        return None
+    k = int(called.stdout.strip())
+    (job / f"shard-{k}.{LANE}").touch()
+    return k
+
+
+def sync(job: Path) -> None:
+    """Bring the sent `job`'s VPS folder in line with this PC's, between this
+    lane's shards:
+
+    - a `shard-<k>.pc` there is removed once this PC's `.done` exists, and
+      otherwise goes back to `.todo`: a claim this PC lost, since no shard
+      runs here while it syncs;
+    - a `shard-<k>.done` there with no `shard-<k>.fetched` is fetched
+      (`fetch_shard`) unless this PC already has its `.done`, and is then
+      marked fetched there and its results removed.
+
+    A failed call ends the sync for this turn. A job that stayed here, or
+    whose VPS folder is gone, has nothing to sync."""
+    host = sent_host(job)
+    if host is None:
+        return
+    folder = remote_job(job)
+    listed = call_remote(host, f"ls -1 {folder} 2>/dev/null || true",
+                         capture_output=True, text=True)
+    if listed is None:
+        return
+    names = set(listed.stdout.split())
+    for name in sorted(names):
+        marker = job / name
+        if marker.suffix not in (".pc", ".done"):
+            continue
+        k = shard_number(marker)
+        done_here = (job / f"shard-{k}.done").exists()
+        if marker.suffix == ".pc":
+            if done_here:
+                command = f"rm -f {folder}/{name}"
+            else:
+                command = f"mv {folder}/{name} {folder}/shard-{k}.todo"
+        elif f"shard-{k}.fetched" in names:
+            continue
+        else:
+            if not done_here and not fetch_shard(job, k):
+                return
+            command = f"touch {folder}/shard-{k}.fetched && rm -rf {folder}/shard-{k}"
+        if call_remote(host, command) is None:
+            return
+
+
+def fetch_shard(job: Path, k: int) -> bool:
+    """Copy shard `k` of the sent `job` from the VPS into `job/shard-<k>/`,
+    replacing a partial copy, and mark it done here. The copy holds:
+
+    - its `mutants.out` but the logs of mutants their tests caught
+      (`mutants.REMOTE_FETCH_LIST`);
+    - its `log`, `exit`, `memory_peak` and `memory_events`, those present.
+
+    A `memory_events` counting an `oom_kill` writes `oom_kills.txt` beside
+    them. The `.done`, written last, holds the shard's code (`shard_code`).
+    Returns False, with nothing marked done, when the call failed."""
+    shard = job / f"shard-{k}"
+    if shard.exists():
+        mutants.remove_tree(shard)
+    shard.mkdir()
+    mutants.LOCAL_TMPDIR.mkdir(parents=True, exist_ok=True)
+    # Through a file, not memory, as `mutants.fetch_remote` takes a run's results.
+    with tempfile.TemporaryFile(dir=mutants.LOCAL_TMPDIR) as archive:
+        fetched = call_remote(
+            sent_host(job),
+            f"cd {remote_job(job)}/shard-{k} && set -o pipefail && "
+            "{ python3 -; for name in log exit memory_peak memory_events; do "
+            'if [ -f "$name" ]; then echo "$name"; fi; done; } '
+            "| tar -cf - --verbatim-files-from -T -",
+            input=mutants.REMOTE_FETCH_LIST.encode(), stdout=archive,
+        )
+        if fetched is None:
+            return False
+        archive.seek(0)
+        with tarfile.open(fileobj=archive, mode="r|") as tar:
+            tar.extractall(shard, filter="data")
+    warning = mutants.oom_warning(mutants.read_lines(shard / "memory_events"))
+    if warning is not None:
+        print(f"driver: {job.name} shard {k + 1}: {warning}", flush=True)
+        mutants_diff.replace_text(shard / "oom_kills.txt", warning + "\n")
+    mutants_diff.replace_text(job / f"shard-{k}.done", str(shard_code(job, k)))
+    return True
+
+
 def shard_count(estimate: float) -> int:
     """The shards a run estimated at `estimate` seconds here is cut into: one per
     `SHARD_SECONDS`, and at least two past `mutants.SPLIT_THRESHOLD_SECONDS`,
@@ -235,8 +394,10 @@ def recover() -> None:
     so only a dead driver of this lane can have left one. A claimed shard's
     partial results are removed, and its marker goes back to `.todo`; one whose
     `.done` was written (the driver died before removing the marker) stays done.
-    On the VPS lane a shard unit a dead driver left running is stopped first,
-    so no shard still writes the results this removes."""
+    A sent job's marker is removed with no `.todo` here, since the VPS holds
+    its markers: `sync` puts the VPS's back. On the VPS lane a shard unit a
+    dead driver left running is stopped first, so no shard still writes the
+    results this removes."""
     if LANE == "vps" and unit_active(SHARD_UNIT):
         if sudo("systemctl", "stop", SHARD_UNIT).returncode != 0:
             raise RuntimeError(f"could not stop {SHARD_UNIT}, left running by an earlier driver")
@@ -249,13 +410,23 @@ def recover() -> None:
         partial = marker.with_suffix("")
         if partial.exists():
             mutants.remove_tree(partial)
-        marker.rename(marker.with_suffix(".todo"))
+        if sent_host(marker.parent) is None:
+            marker.rename(marker.with_suffix(".todo"))
+        else:
+            marker.unlink()
 
 
 def claim() -> tuple[Path, int] | None:
     """Take the next shard: the oldest job's lowest `.todo` one, renamed to this
-    lane's marker. Returns the job and the shard, or None when no shard is left."""
+    lane's marker, on the VPS for a sent job (`claim_remote`). Returns the job
+    and the shard, or None when no shard is left."""
     for job in jobs():
+        host = sent_host(job)
+        if host is not None:
+            k = claim_remote(job, host)
+            if k is not None:
+                return job, k
+            continue
         for todo in sorted(job.glob("shard-*.todo"), key=shard_number):
             try:
                 os.rename(todo, todo.with_suffix(f".{LANE}"))
@@ -383,10 +554,20 @@ def run_unit(script: Path, memory_max: int) -> None:
     )
 
 
+def shard_code(job: Path, k: int) -> int:
+    """The code of shard `k` of `job` run on the VPS: the first number of its
+    `exit`, or 1 when there is none (the unit, or its bash, was killed), so
+    the job's result ranks it as untested."""
+    exit_file = job / f"shard-{k}" / "exit"
+    if not exit_file.exists():
+        print(f"driver: {job.name} shard {k + 1} was killed before it ended: untested",
+              flush=True)
+        return 1
+    return int(exit_file.read_text(encoding="utf-8").split()[0])
+
+
 def run_vps_shard(job: Path, k: int, args: list[str]) -> int:
-    """Run shard `k` of `job` through `run_unit`, and return its code: the
-    first number of its `exit`, or 1 when there is none (the unit, or its
-    bash, was killed), so the job's result ranks it as untested."""
+    """Run shard `k` of `job` through `run_unit`, and return its code (`shard_code`)."""
     config = job / "mutants-vps.toml"
     if not config.exists():
         mutants_diff.replace_text(
@@ -402,12 +583,7 @@ def run_vps_shard(job: Path, k: int, args: list[str]) -> int:
         # The script never ran (sudo refused, the unit could not start): marking
         # the shard done would mark every next shard done the same way.
         raise RuntimeError(f"{SHARD_UNIT} did not start {script}")
-    exit_file = shard / "exit"
-    if not exit_file.exists():
-        print(f"driver: {job.name} shard {k + 1} was killed before it ended: untested",
-              flush=True)
-        return 1
-    return int(exit_file.read_text(encoding="utf-8").split()[0])
+    return shard_code(job, k)
 
 
 def run_shard(job: Path, k: int) -> int:
@@ -417,7 +593,8 @@ def run_shard(job: Path, k: int) -> int:
     lane's next shards, which skip it. This PC's lane builds under the build
     slot and folds the shard's timings into the cost table; the VPS lane runs
     it through `run_vps_shard`, and its timings, another machine's, are not
-    folded. Returns the code."""
+    folded. A sent job's marker on the VPS is removed once the shard is done
+    here, best effort: `sync` retries. Returns the code."""
     spec = read_job(job)
     shard = job / f"shard-{k}"
     args = [
@@ -450,13 +627,45 @@ def run_shard(job: Path, k: int) -> int:
         mutants.update_cost_cache(out)
     mutants_diff.replace_text(job / f"shard-{k}.done", str(code))
     (job / f"shard-{k}.{LANE}").unlink()
+    host = sent_host(job)
+    if host is not None:
+        remove_remote(host, f"{remote_job(job)}/shard-{k}.{LANE}")
     return code
+
+
+def recheck(job: Path, spec: dict) -> list[str]:
+    """Rerun here, under the build slot and into `job/recheck/`, the survivors
+    of `job`'s VPS shards that only a Windows-only test catches
+    (`mutants.WINDOWS_ONLY_TESTS`). A VPS shard's folder holds its `log`,
+    which this PC's shards never write; its `exit` is missing when the shard
+    was killed. Returns the ones it caught. Off Windows they are printed, and
+    none is rerun."""
+    lines = [
+        line
+        for k in range(spec["shards"])
+        if (job / f"shard-{k}" / "log").exists()
+        for line in mutants.read_lines(job / f"shard-{k}" / "mutants.out" / "missed.txt")
+        if any(pattern.search(line) for pattern in mutants.WINDOWS_ONLY_TESTS)
+    ]
+    if not lines:
+        return []
+    if not ON_WINDOWS:
+        print("Windows-only tests, not rechecked:", flush=True)
+        for line in lines:
+            print(f"  {line}", flush=True)
+        return []
+    with mutants.run_lock():
+        caught = mutants.recheck_windows(lines, spec["tree"], out=job / "recheck")
+    print(f"rechecked on this machine (Windows-only tests): {len(caught)} caught, "
+          f"{len(lines) - len(caught)} still missed", flush=True)
+    return [line for line in lines if line in caught]
 
 
 def finish(job: Path) -> Path | None:
     """Once every shard of `job` is done: write its `result.json` (the combined
-    code, the survivors in shard order, the untested mutants), remove its
-    source and move it to `done/`. Returns the new folder, or None while a
+    code, the survivors in shard order, the untested mutants, the survivors
+    `recheck` caught), remove its source and move it to `done/`, and for a
+    sent job remove its VPS folder. Returns the new folder, or None while a
     shard is not done."""
     spec = read_job(job)
     done = [job / f"shard-{k}.done" for k in range(spec["shards"])]
@@ -464,17 +673,26 @@ def finish(job: Path) -> Path | None:
         return None
     codes = [int(path.read_text(encoding="utf-8")) for path in done]
     missed = mutants_diff.missed_lines(job)
+    rechecked = recheck(job, spec)
+    missed = [line for line in missed if line not in rechecked]
     untested = mutants.killed_builds(job)
     # Untested mutants count as `run_code`'s 1, as a run outside the driver reports them.
     code = mutants.run_code([*codes, 1 if untested else 0])
+    # cargo-mutants' 2 says mutants were missed: once the recheck caught them all, none is.
+    if rechecked and not missed and code == 2:
+        code = 0
     mutants_diff.replace_text(
-        job / "result.json", json.dumps({"code": code, "missed": missed, "untested": untested})
+        job / "result.json",
+        json.dumps({"code": code, "missed": missed, "untested": untested, "rechecked": rechecked}),
     )
     if (job / "source").exists():
         mutants.remove_tree(job / "source")
     finished = DRIVER / "done" / job.name
     finished.parent.mkdir(parents=True, exist_ok=True)
     job.rename(finished)
+    host = sent_host(finished)
+    if host is not None:
+        remove_remote(host, remote_job(finished))
     print(f"driver: {spec['crate']} done, exit {code}: {len(missed)} missed or timed out, "
           f"{len(untested)} untested, in {finished}", flush=True)
     return finished
@@ -495,15 +713,22 @@ def run(once: bool = False) -> int:
             mutants.unlock(guard)
 
 
+def settle() -> None:
+    """This PC's lane between its shards: each sent job synced with the VPS
+    (`sync`), then each job whose shards are all done finished. So a job
+    whose last shard ended on the VPS, or before a driver stopped, is
+    finished though no shard of it is left to run here."""
+    for job in jobs():
+        sync(job)
+        finish(job)
+
+
 def take_shards(once: bool) -> int:
     """The lane's loop. Only this PC's lane finishes jobs: the VPS lane's are
     this PC's to finish once it has their results."""
     recover()
     if LANE == "pc":
-        # A driver stopped between a job's last shard and its finish left it queued
-        # with no shard to claim, so no later shard would finish it.
-        for job in jobs():
-            finish(job)
+        settle()
     waiting = None
     while True:
         reason = blocked()
@@ -514,6 +739,8 @@ def take_shards(once: bool) -> int:
             time.sleep(POLL_SECONDS)
             continue
         waiting = None
+        if LANE == "pc":
+            settle()
         claimed = claim()
         if claimed is None:
             if once:

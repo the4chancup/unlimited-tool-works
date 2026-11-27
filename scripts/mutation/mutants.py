@@ -1428,6 +1428,20 @@ for base in ("mutants.out", "extra_mutants.out"):
 """
 
 
+def oom_warning(events: list[str]) -> str | None:
+    """The warning for a remote run whose cgroup's `memory.events` lines
+    (`events`) count an `oom_kill`, or None when they count none."""
+    counts = dict(parts for line in events if len(parts := line.split()) == 2)
+    oom_kill = int(counts.get("oom_kill", 0))
+    if not oom_kill:
+        return None
+    return (
+        "the kernel killed processes in the remote run "
+        f"(oom_kill {oom_kill}), so its caught counts may include "
+        "mutants a kill ended"
+    )
+
+
 def fetch_remote(host: str, partial: bool = False, *, extra_only: bool = False) -> None:
     """Copies the remote half's `mutants.out` (all but the caught mutants' logs:
     `REMOTE_FETCH_LIST`) and, for a whole run, its `extra_mutants.out`, plus the
@@ -1511,16 +1525,8 @@ def fetch_remote(host: str, partial: bool = False, *, extra_only: bool = False) 
             f"remote memory peak: {int(peak) / 2**30:.2f} GiB "
             f"(cap {int(cap) / 2**30:.2f} GiB)"
         )
-    counts = dict(
-        parts for line in events if len(parts := line.split()) == 2
-    )
-    oom_kill = int(counts.get("oom_kill", 0))
-    if oom_kill:
-        warning = (
-            "the kernel killed processes in the remote run "
-            f"(oom_kill {oom_kill}), so its caught counts may include "
-            "mutants a kill ended"
-        )
+    warning = oom_warning(events)
+    if warning is not None:
         print(warning)
         (out / "oom_kills.txt").write_text(
             warning + "\n", encoding="utf-8", newline="\n"
@@ -1575,7 +1581,7 @@ def run_code(codes: Iterable[int]) -> int:
     return 1 if 1 in codes and top < 4 else top
 
 
-def recheck_windows(missed: list[str], tree: str) -> set[str]:
+def recheck_windows(missed: list[str], tree: str, out: Path | None = None) -> set[str]:
     """Rerun the remote half's `missed` survivors (missed.txt lines) in one
     cargo-mutants run on this machine, the tests that catch them being
     `#[cfg(windows)]` (WINDOWS_ONLY_TESTS) so the Linux remote cannot, and
@@ -1584,13 +1590,15 @@ def recheck_windows(missed: list[str], tree: str) -> set[str]:
     cargo-mutants filing any nonzero test exit in `caught.txt`. `--re` names
     each mutant escaped and anchored,
     `-p` the crates they live in, `--output` a folder of its own under
-    `mutants.out/` so the local half's results stay. It runs on `tree`, the
+    `mutants.out/` so the local half's results stay, or `out` when given
+    (the driver's job folder). It runs on `tree`, the
     snapshot the remote half ran (its launch record's, since `REMOTE_REF` may
     have moved to another tree's launch), whose lines the survivors name. A
     run that cannot start or whose baseline fails (exit 4) is reported and
     returns empty, leaving every survivor in the list."""
     crates = sorted({mutant_crate(line.split(":", 1)[0]) for line in missed})
-    out = ROOT / "mutants.out" / "recheck"
+    if out is None:
+        out = ROOT / "mutants.out" / "recheck"
     # An earlier recheck's results are not this one's: a run that fails before
     # cargo-mutants rotates them away would read them otherwise.
     if out.exists():

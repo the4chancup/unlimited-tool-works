@@ -3161,6 +3161,40 @@ class RecheckWindows(unittest.TestCase):
         self.assertEqual(caught, set())
         self.assertEqual(code, 0)
 
+    def test_out_is_the_recheck_s_output_and_defaults_to_mutants_out_recheck(self):
+        """A given `out` is where the run's `--output` points and where its
+        catches are read; without one it is `mutants.out/recheck`, which the
+        summary reads."""
+        missed = ["crates/libs/cpk/src/lib.rs:10:5: replace pad -> usize with 0"]
+        outputs = []
+
+        def local_mutants(args, source, config=None):
+            out = Path(args[args.index("--output") + 1])
+            outputs.append(out)
+            write_run(out / "mutants.out", 1, [caught_outcome(missed[0], {"Failure": 100})])
+            return subprocess.CompletedProcess(args, 0)
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            given = root / "queue" / "job" / "recheck"
+            with (
+                mock.patch.multiple(
+                    mutants,
+                    ROOT=root,
+                    local_mutants=local_mutants,
+                    mutant_crate=lambda file: "cpk",
+                    snapshot_source=lambda tree: contextlib.nullcontext(root),
+                ),
+                contextlib.redirect_stdout(io.StringIO()),
+            ):
+                # The given folder first: read from the default instead, it
+                # would find no results yet.
+                caught_given = mutants.recheck_windows(missed, "sometree", out=given)
+                caught_default = mutants.recheck_windows(missed, "sometree")
+        self.assertEqual(outputs, [given, root / "mutants.out" / "recheck"])
+        self.assertEqual(caught_given, {missed[0]})
+        self.assertEqual(caught_default, {missed[0]})
+
     def test_windows_only_extra_matches_its_files_untagged_lines_alone(self):
         """Each `WINDOWS_ONLY_EXTRA` entry matches a missed line of its file
         and functions (`path:line: [kind] in <fn>:`) — not the same line
