@@ -210,10 +210,6 @@ mutants-diff base="HEAD" *paths:
 mutants-closure *crates:
     {{python}} scripts/mutation/mutants_diff.py --closure {{crates}}
 
-# Whole-crate runs one after another on the mutants host, the crate checked longest ago first; started detached and left running, each run's results kept per crate in mutants.rolling/ for triage
-mutants-rolling *args:
-    {{python}} scripts/mutation/rolling.py {{args}}
-
 # The mutation driver: `queue <crate>` adds a whole-crate job, `run` takes its shards on this PC (`--lane vps` on the VPS), `deploy` installs the VPS lane
 driver *args:
     {{python}} scripts/mutation/driver.py {{args}}

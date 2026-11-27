@@ -324,7 +324,7 @@ transitive one included, because `just gates` does not run it: adding `eframe` o
 `tests/parity_prefox.rs`, which `just test` also runs), `just bindings` (the `maturin` build of
 `python_bindings`), `just release <version>` (the portable Windows release bundle, Windows only),
 `just mutants <crate>`, `just mutants-collect`, `just mutants-diff [base]`, `just
-mutants-closure`, `just mutants-checked` and `just mutants-rolling` (the mutation runs,
+mutants-closure`, `just mutants-checked` and `just driver` (the mutation runs,
 below), `just citation-audit` (the citation audit, below), `just gpu-tests` (`dds_convert`'s GPU
 encoder tests: the one sanctioned `#[ignore]`, each with the reason `"needs a Vulkan or Metal
 GPU"`, since no CI runner has one; whoever changes `dds_convert`'s `gpu` module runs them on a
@@ -607,10 +607,12 @@ Requirements:
   the crates it mutates for its whole length and its baseline repeats the checkpoint's tests;
   and `just mutants-closure` over a phase's crates at converge: `mutants-diff` over what each
   crate changed since its last triaged whole-crate run (`.cargo/mutants_checked.toml`).
-  The whole-crate runs (`just mutants <crate>`, on the ssh host `STUDIO_MUTANTS_REMOTE`
-  names, alone; prerequisites in `scripts/mutation/mutants.py`) run one after another as
-  the rolling job (`just mutants-rolling`), which nobody waits on, and each one's
-  survivors are triaged when it ends. The whole-crate runs select each mutant's tests by line
+  The whole-crate runs are the mutation driver's rolling job (`just driver run`), which
+  nobody waits on: the driver on the maintainer's PC queues one crate after another, and
+  each crate's run is split between that PC and the VPS, the ssh host
+  `STUDIO_MUTANTS_REMOTE` names (prerequisites in `scripts/mutation/mutants.py`). `just
+  mutants <crate>` runs one by hand, on the VPS alone. Each run's survivors are triaged
+  when it ends. On the VPS, the whole-crate runs select each mutant's tests by line
   coverage, the extra kinds' mutants included (`scripts/mutation/coverage_map.py`,
   `select_tests.py`; an extras-only run builds the map too); the checkpoint's diff
   runs do not. Every survivor is

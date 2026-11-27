@@ -5,9 +5,7 @@ temporary directory the way cargo-mutants writes one; nothing reaches the host. 
 source the local half, the listings and the config read (cargo itself stubbed), that a run
 snapshots before it waits for the one in progress (`run_lock`), and that no run here starts
 while this tree's own remote half with a local one is uncollected (`remote_pending`,
-ssh stubbed). The `Rolling` class covers `rolling.py`: the oldest-first pick, a
-run's results kept for triage, and `main`'s hold, retry and `--once`. Run by
-`just test` (`python scripts/mutation/mutants_test.py`)."""
+ssh stubbed). Run by `just test` (`python scripts/mutation/mutants_test.py`)."""
 import contextlib
 import io
 import json
@@ -34,7 +32,6 @@ import mutants  # noqa: E402
 import mutants_diff  # noqa: E402
 import remote_gates  # noqa: E402
 import rm_mutant_copies  # noqa: E402
-import rolling  # noqa: E402
 
 HEAD_TREE = subprocess.run(
     ["git", "rev-parse", "HEAD^{tree}"], cwd=SCRIPTS, capture_output=True, text=True, check=True
@@ -61,10 +58,7 @@ ISOLATION = [
     mock.patch.object(mutants, "ssh_binary", no_ssh),
     mock.patch.object(mutants_diff, "RESULTS", Path(SCRATCH.name) / "mutants.diff"),
     mock.patch.object(extra_mutants, "OUT_DIR", Path(SCRATCH.name) / "extra_mutants.out"),
-    mock.patch.object(rolling, "ROOT", Path(SCRATCH.name) / "rolling"),
-    mock.patch.object(rolling, "ROLLING", Path(SCRATCH.name) / "mutants.rolling"),
-    mock.patch.object(rolling, "HOLD", Path(SCRATCH.name) / "rolling.hold"),
-    mock.patch.object(rolling, "CURRENT", Path(SCRATCH.name) / "rolling.current"),
+    mock.patch.object(mutants_diff, "ROLLING", Path(SCRATCH.name) / "mutants.rolling"),
     mock.patch.object(mutants, "COST_CACHE", Path(SCRATCH.name) / "mutants-cost.json"),
     mock.patch.object(mutants, "LOCAL_TMPDIR", Path(SCRATCH.name) / "copies"),
     # A run's refusals ask the real host and read this tree's pending record otherwise; a
@@ -103,8 +97,7 @@ class Isolation(unittest.TestCase):
         scratch = Path(SCRATCH.name)
         for path in (
             mutants_diff.RESULTS, extra_mutants.OUT_DIR, mutants.COST_CACHE,
-            mutants.LOCAL_TMPDIR, mutants.remote_pending(),
-            rolling.ROOT, rolling.ROLLING, rolling.HOLD, rolling.CURRENT,
+            mutants.LOCAL_TMPDIR, mutants.remote_pending(), mutants_diff.ROLLING,
         ):
             self.assertTrue(path.is_relative_to(scratch), path)
         self.assertIsNone(mutants.remote_host())
@@ -4355,7 +4348,7 @@ class Closure(unittest.TestCase):
         """`--checked <crate>` alone records the commit the crate's kept
         rolling run was launched from; a typed commit must be that one."""
         launched = self.root / "mutants.rolling" / "cpk" / "launched_from.txt"
-        with mock.patch.object(rolling, "ROLLING", self.root / "mutants.rolling"):
+        with mock.patch.object(mutants_diff, "ROLLING", self.root / "mutants.rolling"):
             code, _, out, _ = self.checked_mode(("cpk",))
             self.assertEqual(code, 1)
             self.assertIn("no rolling run of cpk", out)
@@ -4384,541 +4377,6 @@ class Closure(unittest.TestCase):
         self.assertEqual(code, 1)
         self.assertEqual(len(calls), 1)
         self.assertIn("no triaged whole run on record for fpc, fpk", out)
-
-
-class Rolling(unittest.TestCase):
-    """`rolling.py`'s rolling whole-crate job: `pick` chooses the crate checked
-    longest ago (the later of its `.cargo/mutants_checked.toml` commit and its
-    own `mutants.rolling/<crate>/launched_from.txt`), `run_one` runs
-    `mutants.whole_run` on HEAD's commit tree alone and keeps the results for a
-    later triage, and `main` waits on the hold file, retries a refused run and
-    stops at `--once` or a missing host."""
-
-    CRATES = ("cpk", "fpc", "fpk")
-    COMMIT = "a" * 40
-
-    class Stopped(BaseException):
-        """Ends `main`'s until-stopped loop from inside a stub: a
-        `BaseException`, since the loop prints any `Exception` and goes on."""
-
-    def setUp(self):
-        tmp = tempfile.TemporaryDirectory()
-        self.addCleanup(tmp.cleanup)
-        self.root = Path(tmp.name)
-        self.results = self.root / "mutants.rolling"
-        for patcher in (
-            mock.patch.object(rolling, "ROOT", self.root),
-            mock.patch.object(rolling, "ROLLING", self.results),
-            mock.patch.object(rolling, "HOLD", self.root / ".tmp" / "rolling.hold"),
-            mock.patch.object(rolling, "CURRENT", self.results / "current.txt"),
-            mock.patch.object(mutants, "ROOT", self.root),
-            mock.patch.object(mutants_diff, "CHECKED", self.root / "checked.toml"),
-            mock.patch.object(
-                extra_mutants,
-                "workspace_crates",
-                lambda root: {name: self.root / name for name in self.CRATES},
-            ),
-        ):
-            patcher.start()
-            self.addCleanup(patcher.stop)
-
-    def test_pick_prefers_the_crate_checked_longest_ago(self):
-        # `checked` holds commits, dated by `date`; `launched` holds the times
-        # the kept runs ended.
-        dates = {"cpk-checked": 300, "fpc-checked": 500}
-        checked = {"cpk": "cpk-checked", "fpc": "fpc-checked"}
-        launched = {"fpc": 100}
-        date = dates.__getitem__
-        # fpk has neither a checked commit nor a kept run, so it comes first.
-        self.assertEqual(
-            rolling.pick(list(self.CRATES), checked, launched, date), "fpk"
-        )
-        # Its last check is then its kept run's: 200 < 300 < 500.
-        launched = {**launched, "fpk": 200}
-        self.assertEqual(
-            rolling.pick(list(self.CRATES), checked, launched, date), "fpk"
-        )
-        # A tie on the last check breaks on the name.
-        same = {"cpk-checked": 400, "fpc-checked": 400}
-        self.assertEqual(
-            rolling.pick(
-                list(self.CRATES), checked, {"fpc": 400, "fpk": 400}, same.__getitem__
-            ),
-            "cpk",
-        )
-
-    def test_a_run_that_just_ended_goes_last_while_head_stands_still(self):
-        """Every crate recorded at one commit, and cpk's run just ended,
-        launched from that same commit: cpk goes to the back, not to the
-        front again by its launch commit's old date and its name."""
-        checked = dict.fromkeys(self.CRATES, "c" * 40)
-        date = {"c" * 40: 100}.__getitem__
-        self.assertEqual(
-            rolling.pick(list(self.CRATES), checked, {"cpk": 900}, date), "fpc"
-        )
-        # The kept run's time is when it ended: its file's.
-        kept = self.results / "cpk" / "launched_from.txt"
-        kept.parent.mkdir(parents=True)
-        kept.write_text("c" * 40 + "\n", encoding="utf-8")
-        os.utime(kept, (900, 900))
-        self.assertEqual(rolling.launched_times(), {"cpk": 900})
-
-    def test_a_run_the_job_lost_is_collected_and_filed_under_its_crate(self):
-        """A job stopped during a run, or whose wait failed, left
-        `current.txt` and a whole run's launch record: the next turn collects
-        the half and files it as `run_one` would. A launch record that is
-        another run's (a split with a local half) is left to its owner."""
-        pending = self.root / ".tmp" / "mutants-remote-pending"
-        pending.parent.mkdir(parents=True)
-        pending.write_text("{}", encoding="utf-8")
-        collected = []
-
-        def collect(host):
-            collected.append(host)
-            self.fetched()
-            return 2, "finished"
-
-        for record, expect in (
-            ({"host": "bonfire", "local_half": True, "extra": False}, []),
-            ({"host": "bonfire", "local_half": False, "extra": True}, ["bonfire"]),
-        ):
-            self.results.mkdir(exist_ok=True)
-            rolling.CURRENT.write_text(f"cpk {self.COMMIT}\n", encoding="utf-8")
-            with (
-                mock.patch.object(mutants, "remote_pending", lambda: pending),
-                mock.patch.object(mutants, "pending_record", lambda: record),
-                mock.patch.object(mutants, "collect", collect),
-                contextlib.redirect_stdout(io.StringIO()),
-            ):
-                rolling.recover("bonfire")
-            self.assertEqual(collected, expect)
-            self.assertFalse(rolling.CURRENT.exists())
-        kept = self.results / "cpk"
-        self.assertEqual((kept / "exit.txt").read_text(encoding="utf-8"), "2\n")
-        self.assertEqual(
-            (kept / "launched_from.txt").read_text(encoding="utf-8"), self.COMMIT + "\n"
-        )
-        self.assertTrue((kept / "extra" / "run.json").exists())
-
-    def recover_with(self, collect) -> tuple[bool, str]:
-        """`rolling.recover("bonfire")` with `current.txt` naming cpk, a whole
-        run's launch record pending and `collect` as `mutants.collect`.
-        Returns recover's result and its output."""
-        pending = self.root / ".tmp" / "mutants-remote-pending"
-        pending.parent.mkdir(parents=True)
-        pending.write_text("{}", encoding="utf-8")
-        self.results.mkdir(exist_ok=True)
-        rolling.CURRENT.write_text(f"cpk {self.COMMIT}\n", encoding="utf-8")
-        out = io.StringIO()
-        with (
-            mock.patch.object(mutants, "remote_pending", lambda: pending),
-            mock.patch.object(
-                mutants, "pending_record",
-                lambda: {"host": "bonfire", "local_half": False, "extra": True},
-            ),
-            mock.patch.object(mutants, "collect", collect),
-            contextlib.redirect_stdout(out),
-        ):
-            result = rolling.recover("bonfire")
-        return result, out.getvalue()
-
-    def test_a_recovered_died_half_is_filed_without_dating_the_crate(self):
-        """A collect that found the remote half dead files its partial results
-        but writes no `launched_from.txt`: a dated crate would go to the back
-        of the queue untested, an undated one comes up at the next pick."""
-
-        def collect(host):
-            self.fetched()
-            return 1, "died"
-
-        _, out = self.recover_with(collect)
-        kept = self.results / "cpk"
-        self.assertEqual((kept / "exit.txt").read_text(encoding="utf-8"), "1\n")
-        self.assertTrue(
-            (kept / "out" / "remote" / "mutants.out" / "missed.txt").exists()
-        )
-        self.assertFalse((kept / "launched_from.txt").exists())
-        self.assertFalse(rolling.CURRENT.exists())
-        self.assertIn("picked again", out)
-        # With no date of its own the crate comes before one just checked.
-        self.assertEqual(
-            rolling.pick(
-                list(self.CRATES), {"fpc": "c" * 40}, rolling.launched_times(),
-                lambda commit: 0,
-            ),
-            "cpk",
-        )
-
-    def test_a_recover_that_found_nothing_files_nothing(self):
-        """`collect` answering `"none"` (nothing on the host to collect)
-        files nothing (a `mutants.out` standing in the tree is some earlier
-        run's, and stays) and clears `current.txt` so the turn goes on."""
-        self.fetched()
-        result, out = self.recover_with(lambda host: (1, "none"))
-        self.assertIs(result, True)
-        self.assertTrue(
-            (self.root / "mutants.out").exists(),
-            "the stale results were filed as the crate's run",
-        )
-        self.assertFalse((self.results / "cpk").exists())
-        self.assertFalse(rolling.CURRENT.exists())
-        self.assertIn("nothing", out)
-
-    def test_a_recover_that_cannot_reach_the_host_retries_next_turn(self):
-        """`collect` answering `None` (the host cannot be reached) files
-        nothing and keeps `current.txt`, so the next turn's recover collects
-        the half the first time the host answers: the powered-down VPS comes
-        back to a job that never wedges on its uncollected half."""
-        self.fetched()
-        result, out = self.recover_with(lambda host: (1, None))
-        self.assertIs(result, False)
-        self.assertEqual(
-            rolling.CURRENT.read_text(encoding="utf-8"), f"cpk {self.COMMIT}\n"
-        )
-        self.assertFalse((self.results / "cpk").exists())
-        self.assertIn("cannot be reached", out)
-
-    def run_one(self, produce=lambda: None, code=0, error=None):
-        """`rolling.run_one("cpk", "bonfire")` with `git rev-parse HEAD`
-        answering COMMIT, `whole_run` recording its call and producing results
-        with `produce`, and `working_tree` failing if it is reached."""
-        calls = []
-
-        def whole_run(crate, host, tree, commit):
-            calls.append((crate, host, tree, commit))
-            if error is not None:
-                raise error
-            produce()
-            return code
-
-        with (
-            mock.patch.object(
-                mutants, "git",
-                lambda *a, **k: subprocess.CompletedProcess(a, 0, stdout=self.COMMIT),
-            ),
-            mock.patch.object(mutants, "whole_run", whole_run),
-            mock.patch.object(
-                mutants, "working_tree",
-                lambda: self.fail("the working tree was read"),
-            ),
-            contextlib.redirect_stdout(io.StringIO()),
-        ):
-            result = rolling.run_one("cpk", "bonfire")
-        return result, calls
-
-    def fetched(self, tag=""):
-        """The results a whole run's fetch leaves in `mutants.out`: the remote
-        half's `mutants.out`, its extra pass's `extra_mutants.out` and the
-        summary list."""
-        remote = self.root / "mutants.out" / "remote"
-        (remote / "mutants.out").mkdir(parents=True)
-        (remote / "mutants.out" / "missed.txt").write_text(
-            f"missed{tag}\n", encoding="utf-8"
-        )
-        (remote / "extra_mutants.out").mkdir()
-        (remote / "extra_mutants.out" / "run.json").write_text(
-            f"extra{tag}\n", encoding="utf-8"
-        )
-        (self.root / "mutants.out" / "missed_all.txt").write_text(
-            f"missed{tag}\n", encoding="utf-8"
-        )
-
-    def test_run_one_runs_the_commit_tree_and_keeps_the_results(self):
-        code, calls = self.run_one(produce=self.fetched, code=2)
-        self.assertEqual(code, 2)
-        # The commit's tree, not a working-tree snapshot: uncommitted changes
-        # are not the run's, and the closure covers them again.
-        self.assertEqual(
-            calls, [("cpk", "bonfire", f"{self.COMMIT}^{{tree}}", self.COMMIT)]
-        )
-        kept = self.results / "cpk"
-        self.assertFalse((self.root / "mutants.out").exists())
-        self.assertEqual(
-            (kept / "out" / "remote" / "mutants.out" / "missed.txt").read_text(
-                encoding="utf-8"
-            ),
-            "missed\n",
-        )
-        # The extra pass's fetched folder lands beside `out`, not inside it.
-        self.assertEqual(
-            (kept / "extra" / "run.json").read_text(encoding="utf-8"), "extra\n"
-        )
-        self.assertFalse((kept / "out" / "remote" / "extra_mutants.out").exists())
-        self.assertEqual(
-            (kept / "exit.txt").read_text(encoding="utf-8"), "2\n"
-        )
-        self.assertEqual(
-            (kept / "launched_from.txt").read_text(encoding="utf-8"),
-            self.COMMIT + "\n",
-        )
-
-    def test_a_second_run_sets_the_first_aside(self):
-        self.run_one(produce=lambda: self.fetched("-old"))
-        self.run_one(produce=self.fetched)
-        old = self.results / "cpk.old" / "out" / "remote" / "mutants.out"
-        self.assertEqual(
-            (old / "missed.txt").read_text(encoding="utf-8"), "missed-old\n"
-        )
-        kept = self.results / "cpk" / "out" / "remote" / "mutants.out"
-        self.assertEqual(
-            (kept / "missed.txt").read_text(encoding="utf-8"), "missed\n"
-        )
-        self.assertTrue((self.results / "cpk.old" / "launched_from.txt").exists())
-
-    def test_a_run_that_raises_leaves_no_record(self):
-        with self.assertRaisesRegex(mutants.Refused, "busy"):
-            self.run_one(error=mutants.Refused("the VPS is busy"))
-        self.assertFalse((self.results / "cpk" / "launched_from.txt").exists())
-
-    def test_a_died_run_leaves_current_for_the_next_turns_recover(self):
-        """`whole_run` raising `RemoteDied` (the VPS died mid-run) ends the
-        run before `file_results` could date the crate, and `current.txt`
-        stands so the next turn's `recover` files what the half left."""
-        with self.assertRaises(mutants.RemoteDied):
-            self.run_one(error=mutants.RemoteDied("the remote half died"))
-        self.assertFalse((self.results / "cpk" / "launched_from.txt").exists())
-        self.assertEqual(
-            rolling.CURRENT.read_text(encoding="utf-8"), f"cpk {self.COMMIT}\n"
-        )
-
-    def test_file_results_takes_the_tree_lock(self):
-        """`run_one` and `recover` call `file_results` holding no lock, so its
-        renames, its two record writes and `CURRENT`'s removal take this
-        tree's themselves."""
-        self.fetched()
-        # Earlier results in place, so `set_aside`'s `cpk` -> `cpk.old` move
-        # joins the probed sequence first.
-        earlier = self.results / "cpk" / "earlier"
-        earlier.mkdir(parents=True)
-        (earlier / "x").write_text("kept\n", encoding="utf-8")
-        real_rename, real_write_text, real_unlink = (
-            Path.rename, Path.write_text, Path.unlink
-        )
-
-        def rename(path, target):
-            probe("rename")
-            return real_rename(path, target)
-
-        def write_text(path, *a, **k):
-            probe("write")
-            return real_write_text(path, *a, **k)
-
-        def unlink(path, **k):
-            probe("unlink")
-            return real_unlink(path, **k)
-
-        with (
-            lock_probes(self.root) as probe,
-            mock.patch.object(Path, "rename", rename),
-            mock.patch.object(Path, "write_text", write_text),
-            mock.patch.object(Path, "unlink", unlink),
-        ):
-            rolling.file_results("cpk", self.COMMIT, 2)
-        self.assertEqual(
-            probe.calls,
-            [
-                ("rename", {"tree"}), ("rename", {"tree"}), ("rename", {"tree"}),
-                ("write", {"tree"}), ("write", {"tree"}),
-                ("unlink", {"tree"}),
-            ],
-        )
-        kept = self.results / "cpk"
-        self.assertTrue((kept / "out" / "remote" / "mutants.out" / "missed.txt").exists())
-        self.assertTrue((self.results / "cpk.old" / "earlier" / "x").exists())
-        self.assertEqual((kept / "exit.txt").read_text(encoding="utf-8"), "2\n")
-
-    def test_file_results_leaves_the_crate_undated_when_nothing_landed(self):
-        """A finish that landed no `mutants.out` files nothing: the crate
-        keeps its earlier results, gets no `launched_from.txt` and comes up
-        for a fresh pick — a missing folder must not be filed as a run."""
-        earlier = self.results / "cpk" / "earlier"
-        earlier.mkdir(parents=True)
-        (earlier / "x").write_text("kept\n", encoding="utf-8")
-        rolling.CURRENT.write_text(f"cpk {self.COMMIT}\n", encoding="utf-8")
-        out = io.StringIO()
-        with (
-            mock.patch.object(mutants, "run_lock", contextlib.nullcontext),
-            contextlib.redirect_stdout(out),
-        ):
-            rolling.file_results("cpk", self.COMMIT, 2)
-        self.assertTrue(earlier.exists(), "the earlier results were set aside")
-        self.assertFalse((self.results / "cpk.old").exists())
-        self.assertFalse((self.results / "cpk" / "launched_from.txt").exists())
-        self.assertFalse((self.results / "cpk" / "exit.txt").exists())
-        self.assertFalse(rolling.CURRENT.exists())
-        self.assertIn("no mutants.out", out.getvalue())
-
-    def main(
-        self, args, run=lambda crate: 0, sleep=lambda seconds: None, recover=None
-    ):
-        """`rolling.main` on `args`: the host is `bonfire`, `git rev-parse HEAD`
-        answers COMMIT, `whole_run` is `run` per crate (its calls returned), the
-        waits are `sleep`, `recover` replaces the turn's own (`None`: the real
-        one) and every commit dates at 0. Returns the code, the crates run and
-        the output. A loop past 20 waits is stopped: the job
-        prints a failed assertion in a stub and goes on, so it would spin."""
-        calls = []
-        waits = []
-
-        def whole_run(crate, host, tree, commit):
-            calls.append(crate)
-            return run(crate)
-
-        def wait(seconds):
-            waits.append(seconds)
-            if len(waits) > 20:
-                raise self.Stopped
-            sleep(seconds)
-
-        out = io.StringIO()
-        with (
-            mock.patch.object(mutants, "remote_host", lambda: "bonfire"),
-            mock.patch.object(mutants, "whole_run", whole_run),
-            mock.patch.object(rolling, "recover", recover or rolling.recover),
-            mock.patch.object(
-                mutants, "git",
-                lambda *a, **k: subprocess.CompletedProcess(a, 0, stdout=self.COMMIT),
-            ),
-            mock.patch.object(
-                mutants, "working_tree",
-                lambda: self.fail("the working tree was read"),
-            ),
-            mock.patch.object(rolling, "commit_date", lambda commit: 0),
-            mock.patch.object(time, "sleep", wait),
-            contextlib.redirect_stdout(out),
-        ):
-            code = rolling.main(["rolling.py", *args])
-        return code, calls, out.getvalue()
-
-    def test_main_holds_while_the_hold_file_stands(self):
-        rolling.HOLD.parent.mkdir(parents=True, exist_ok=True)
-        rolling.HOLD.write_text("")
-        events = []
-
-        def sleep(_seconds):
-            events.append("wait")
-            rolling.HOLD.unlink()
-
-        code, calls, out = self.main(
-            ["--once"], run=lambda crate: events.append("run") or 0, sleep=sleep
-        )
-        self.assertEqual(code, 0)
-        self.assertEqual(calls, ["cpk"])
-        # The wait ran before the crate did: nothing runs while the file stands.
-        self.assertEqual(events, ["wait", "run"])
-        self.assertIn("hold", out)
-
-    def test_a_refused_run_is_printed_and_picks_again(self):
-        calls = []
-
-        def whole_run(crate, host, tree, commit):
-            calls.append(crate)
-            if len(calls) == 1:
-                raise mutants.Refused("bonfire is busy (a half running)")
-            if len(calls) == 3:
-                raise self.Stopped
-            self.fetched()
-            return 0
-
-        out = io.StringIO()
-        with (
-            mock.patch.object(mutants, "remote_host", lambda: "bonfire"),
-            mock.patch.object(mutants, "whole_run", whole_run),
-            mock.patch.object(
-                mutants, "git",
-                lambda *a, **k: subprocess.CompletedProcess(a, 0, stdout=self.COMMIT),
-            ),
-            mock.patch.object(
-                mutants, "working_tree",
-                lambda: self.fail("the working tree was read"),
-            ),
-            mock.patch.object(rolling, "commit_date", lambda commit: 0),
-            mock.patch.object(time, "sleep", lambda seconds: None),
-            contextlib.redirect_stdout(out),
-            self.assertRaises(self.Stopped),
-        ):
-            rolling.main(["rolling.py"])
-        # The refusal is printed, the retry waited and the same crate picked
-        # again — it was never run; once it lands, the next pick moves on.
-        self.assertEqual(calls, ["cpk", "cpk", "fpc"])
-        self.assertIn("bonfire is busy", out.getvalue())
-
-    def test_a_run_that_fails_is_printed_and_the_job_goes_on(self):
-        """A died half, an hour of failed polls or a dropped link ends a run,
-        never the job: it is printed, and the next turn picks again."""
-        calls = []
-
-        def run(crate):
-            if len(calls) == 1:
-                raise RuntimeError("the remote half died")
-            raise self.Stopped
-
-        def counted(crate):
-            calls.append(crate)
-            return run(crate)
-
-        with (
-            mock.patch.object(mutants, "remote_pending", lambda: self.root / "none"),
-            self.assertRaises(self.Stopped),
-        ):
-            self.main([], run=counted)
-        self.assertEqual(calls, ["cpk", "cpk"])
-
-    def test_a_failed_recover_skips_the_turns_pick_and_retries(self):
-        """`recover` returning False (the host cannot be reached) ends the
-        turn: no pick, no run, one `RETRY_MINUTES` sleep, and the next turn's
-        recover tries again. `--once` returns 1 on it."""
-        recovers, sleeps, calls = [], [], []
-
-        def recover(host):
-            recovers.append(host)
-            return len(recovers) == 2
-
-        def run(crate):
-            calls.append(crate)
-            if len(calls) == 4:
-                raise self.Stopped
-            return 0
-
-        def sleep(seconds):
-            sleeps.append(seconds)
-            if len(sleeps) == 3:
-                raise self.Stopped
-
-        with self.assertRaises(self.Stopped):
-            self.main([], recover=recover, run=run, sleep=sleep)
-        # Each False recover ended its turn before the pick: only the one True
-        # turn ran a crate, each skip costing one retry sleep.
-        self.assertEqual(calls, ["cpk"])
-        self.assertEqual(sleeps, [rolling.RETRY_MINUTES * 60] * 3)
-        self.assertEqual(len(recovers), 4)
-        code, once_calls, _ = self.main(["--once"], recover=lambda host: False)
-        self.assertEqual(code, 1)
-        self.assertEqual(once_calls, [])
-
-    def test_once_runs_a_single_crate_and_returns_its_code(self):
-        code, calls, _ = self.main(["--once"], run=lambda crate: 2)
-        self.assertEqual(code, 2)
-        self.assertEqual(calls, ["cpk"])
-
-    def test_without_a_remote_host_main_refuses_and_runs_nothing(self):
-        out = io.StringIO()
-        with (
-            mock.patch.object(mutants, "remote_host", lambda: None),
-            mock.patch.object(
-                mutants, "whole_run", lambda *a: self.fail("a crate ran")
-            ),
-            contextlib.redirect_stdout(out),
-        ):
-            code = rolling.main(["rolling.py"])
-        self.assertEqual(code, 1)
-        self.assertIn("STUDIO_MUTANTS_REMOTE", out.getvalue())
-
-    def test_a_local_only_crate_is_never_picked(self):
-        with mock.patch.object(mutants, "LOCAL_ONLY_CRATES", frozenset({"cpk"})):
-            code, calls, _ = self.main(["--once"])
-        self.assertEqual(code, 0)
-        self.assertEqual(calls, ["fpc"])
 
 
 class Fetch(unittest.TestCase):
@@ -5530,9 +4988,10 @@ class CollectRemote(unittest.TestCase):
         )
 
     def test_a_whole_runs_died_half_says_it_died(self):
-        """The rolling job's `recover` dates a crate unless its collect says
-        the half died: a whole run's half found dead, and one that dies during
-        the wait (the VPS powered down), both return it, and pass `partial` on."""
+        """A whole run's half found dead, and one that dies during the wait
+        (the VPS powered down), are both collected as died: `just
+        mutants-collect` exits 1, and the fetch and the summary take the
+        partial results (`partial`)."""
 
         def died_in_wait(host):
             raise mutants.RemoteDied("the remote half died")
@@ -5801,9 +5260,10 @@ class CollectRemote(unittest.TestCase):
         self.assertIn("already collected", out.getvalue())
 
     def test_an_unreachable_host_reports_the_state_it_found(self):
-        """`remote_run_state` answering None (the host cannot be reached) is
-        the one collect outcome a caller retries later, so it comes back as
-        None, not `"none"`: the rolling job keeps `current.txt` on it."""
+        """`remote_run_state` answering None (the host cannot be reached)
+        comes back as None, not `"none"`: `just mutants-collect` says it
+        cannot reach the host, not that nothing is left to collect, so it is
+        run again once the host answers."""
         out = io.StringIO()
         with (
             mock.patch.object(mutants, "remote_run_state", lambda host: None),

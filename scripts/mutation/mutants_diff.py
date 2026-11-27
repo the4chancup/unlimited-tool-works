@@ -60,6 +60,10 @@ ROOT = Path(__file__).resolve().parents[2]
 RESULTS = ROOT / "mutants.diff"
 # The crates' commits of record for a `--closure` run's diffs, written by `--checked`.
 CHECKED = ROOT / ".cargo" / "mutants_checked.toml"
+# The rolling job's last whole-crate run of each crate, `<crate>/` as the driver
+# files it, for the triage that ends with `--checked` recording the commit its
+# `launched_from.txt` holds.
+ROLLING = ROOT / "mutants.rolling"
 # The longest a diff run's crates run here, in total, while this tree's own
 # half is on the VPS (`mutants.remote_pending`). Not unbounded: this run
 # holds its tree's lock throughout, that half's collect waits for it, and the
@@ -150,11 +154,9 @@ def mark_checked(args: list[str]) -> int:
     if crate not in extra_mutants.workspace_crates(ROOT):
         print(f"mutants_diff: no workspace crate named {crate}")
         return 1
-    import rolling  # deferred: rolling imports this module
-
     # A rolling run's commit is read, never typed: `HEAD`, the natural thing to
     # type at triage, would record lines the run never measured.
-    record = rolling.ROLLING / crate / "launched_from.txt"
+    record = ROLLING / crate / "launched_from.txt"
     launched = record.read_text(encoding="utf-8").strip() if record.exists() else None
     if len(args) == 1 and launched is None:
         print(
