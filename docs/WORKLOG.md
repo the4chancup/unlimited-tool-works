@@ -28,15 +28,15 @@ One line per piece of work in flight; the items below hold the detail.
 
 - The workflow improvements before the suite resumes (`RESUME/optimize`): the mutation
   driver's slices (`driver/d3a`, a job's extra pass as extra shards, merged and deployed,
-  its review round `S1d3a` running; `d3b1`, the rolling job moving into the driver, with
-  its sidekick). The lighter tests (`LEAN`) are done: a whole `aatf` run's test phases
+  its review round `S1d3a` ruled, its fixes `f1d3a` with a sidekick; `d3b1`, the rolling
+  job moved into the driver, merged, its `switch` from `rolling.py` under way). The lighter tests (`LEAN`) are done: a whole `aatf` run's test phases
   halved with no new survivor, and no further slice is worth its cost.
 - The per-player rules calls read a team once (`AATFSPEED`): the slice `reading` is merged
   and its reviews are closed, and `86dab4ed` passed the checkpoint.
 - The checkpoint: `86dab4ed` passed it (`19fda006`, an earlier one, is pushed); the Linux
   gates are owed.
-- The rolling mutation job: on the VPS, crate by crate, until `d3b1` moves it into the
-  driver; `save_editor`'s stopped run is filed with what it tested.
+- The rolling mutation job: `rolling.py` is held and files `epaint_raster`, then the
+  driver takes the job over (`driver/switch`).
 - The move to the 905P (`RESUME/migration`): postponed until the maintainer starts it.
 - The periodic review of the dev cycle (`CYCLE`): waits for the lead on Fable and the
   maintainer's go.
@@ -693,7 +693,8 @@ and no phase closes with one outstanding.
         changes that lane's line alone (in `79c169f9` a lane added moved others' columns and
         rewrote about 40 rows). Its tests pass on Windows and on the VPS, and in Chromium the
         page lays out as before, element for element;
-        - [ ] **S1roadmapcols** one SWE-2 review round over `dabd71ff` (scripts);
+        - [~] **S1roadmapcols** one SWE-2 review round over `dabd71ff` (scripts), running in
+          the worktree `4cc-studio-temp/review_cols`;
       - [x] **S1roadmapdiff** 2026-11-27 `782055a8`, SWE-2's round: 3 accepted (the
         page's own script now runs under test, with values worked out by hand; the lanes'
         ends and the band label asserted; a line count corrected), none on a real input,
@@ -1044,23 +1045,43 @@ and no phase closes with one outstanding.
               an extra survivor alone set the code 2, as a whole run's summary does, and gave
               a crate with no extra mutant no extra shard. Its tests pass on Windows and on
               the VPS. Deployed 2026-11-27, once the `LEAN/pilot` job had ended;
-              - [~] **S1d3a** one SWE-2 review round over `684f1e96` (scripts), in two parts
-                (`driver.py` with its tests; the extra pass's side), running in the
-                `review_lean` worktree;
+              - [x] **S1d3a** 2026-11-27, SWE-2's round over `684f1e96`, in two parts
+                (rulings `.tmp/lead/rulings_s1d3a.md`): 7 accepted, two on real runs. A VPS
+                shard's memory figures never came back to this PC (the unit kept the
+                cgroup's file names, the fetch asked for others), so an OOM kill in a shard
+                went unreported, a fault older than d3a; and an extra pass of few mutants
+                could get empty shards, each still running the crate's whole baseline. The
+                rest: a code of 2 with no survivor listed read clean, an untestable guard,
+                three texts, a test gap;
+              - [~] **f1d3a** [after S1d3a] the fixes, by `d3b1`'s sidekick (its
+                session resumed on `.tmp/brief_f1d3a.md` in the worktree `4cc-studio-temp/d3b1`)
+                as a second commit there; on its end the lead reviews, commits with `--in` and
+                merges;
+              - [ ] **S2d3a** [after f1d3a] SWE-2's round over the fixes;
             - [ ] **d3b** [after d3a] the rolling job itself (DECISIONS 2026-11-27 "the
               rolling job becomes this PC's driver's, filing each job under
               `mutants.rolling/`"), in two subslices. The finish stays the point where
               `memsum`'s recheck of tests the OOM killer ended will run;
-              - [~] **d3b1** the Opus sidekick, in the worktree `4cc-studio-temp/d3b1`
-                (brief `.tmp/brief_d3b1.md` there): when the queue holds no job, this PC's
-                driver queues the crate checked longest ago, with its extra pass; with
-                this PC off, the VPS lane finishes what was sent and waits. `job.json`
+              - [x] **d3b1** 2026-11-27, merge `5a5a6828` (Opus): when the queue holds no
+                job, this PC's driver (`just driver run`, not `--once`) queues the crate
+                checked longest ago, with its extra pass, only once it is sent to the VPS,
+                and tries again half an hour after a try that queued nothing. `job.json`
                 records the launch commit, and a rolling job's finish files it under
-                `mutants.rolling/<crate>/`, `launched_from.txt` last. `rolling.py`,
-                `.tmp/rolling.hold` and `just mutants-rolling` go, and the RUNBOOK's
-                rolling-job text is rewritten. Its deploy: create `.tmp/rolling.hold`,
-                wait until `rolling.py` has filed the crate it is running, stop it while
-                it waits on the hold, then start `just driver run` detached on this PC;
+                `mutants.rolling/<crate>/`, `launched_from.txt` last. `rolling.py` and
+                `just mutants-rolling` are gone, the lanes' hold files replace
+                `.tmp/rolling.hold`, and RUNBOOK, CONTRIBUTING and the dev cycle chart say
+                so. Its tests pass on Windows and on the VPS. Left for later slices: an error
+                while queuing ends the driver, which nothing restarts (d5's logon task), and
+                the finish's move needs the tree on the driver's drive (C:);
+                - [~] **switch** the rolling job moves to the driver: `rolling.py`, still
+                  running from memory, is held by `.tmp/rolling.hold` (created 13:09) and
+                  files `epaint_raster` first. Once `.tmp/rolling6.log` says it waits on
+                  the hold, stop its process tree (`rolling.py`, its `just` and
+                  `low_priority.py` parents), delete `.tmp/rolling.hold` and
+                  `mutants.rolling/current.txt` if left, then start `python
+                  ~/.claude/tools/run_detached.py .tmp/driver_pc.log just driver run` from
+                  main and read its start. The VPS lane is redeployed (`just driver deploy`,
+                  while the lane is idle) after `f1d3a`, which changes its unit script;
               - [ ] **d3b2** [after d3b1] `gates-remote` takes the VPS lane's hold
                 (`hold-vps`) and waits for the running shard to end; this PC's shards'
                 mutant logs are read for a catch whose only failure is nextest's `TIMEOUT`
