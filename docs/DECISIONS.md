@@ -20449,3 +20449,15 @@ test pays out of its 270 ms or so (worklog `LEAN/rest/firstdraw`). Not
 `aatf` optimized in test builds instead, because the check is spent in Rhai, already
 optimized: with `aatf` optimized it took 79 ms against 85.
 Plan: `plans/aatf_rules.md` "Loading and validation" edited.
+
+## 2026-11-27 — aatf, save_editor — the ruleset dropdown reads the embedded rulesets' descriptions from a table
+Decision: `libs/aatf` keeps each embedded ruleset's stem and description in a table beside its
+file, a test keeping each description equal to the file's `name`. The Save editor's ruleset
+dropdown, its width and the import's refusal of a built-in's description read that table (`session::rules::builtins`),
+instead of loading the seven rulesets (`aatf::templates`).
+Why: the dropdown draws on every frame, so its first frame loaded all seven files for their
+names: 29 ms a process in a test build, which every test drawing the editor paid, an
+estimated 30 s of `save_editor`'s 396 s of summed test time (worklog `LEAN/rest`). Not the names parsed from the files'
+text, which would be a second reader of the rules format; the table costs an edit when a
+`name` changes, and the test fails until it is made.
+Plan: `plans/aatf_rules.md` "Embedded rulesets" edited.

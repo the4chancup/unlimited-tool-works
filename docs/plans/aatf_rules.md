@@ -458,6 +458,12 @@ ruleset carries its event's logo and page (the event's wiki page, and the logo i
 
 What exists of this is in `spec/aatf_rules.md` "Embedded rulesets".
 
+**The dropdown reads the embedded rulesets' descriptions from a table.** `libs/aatf` keeps each
+one's stem and description beside its file, and a test keeps each description equal to the
+file's `name`. Loading the seven files only for their names took about 30 ms in a test build,
+which every test that draws the Save editor paid. The table costs an edit when a file's `name`
+changes, which the test catches.
+
 ## DBC7
 
 A built-in ruleset in `rulesets/dbc7.rhai` (`spec/aatf_rules.md` "Embedded rulesets"), for

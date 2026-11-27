@@ -4614,7 +4614,16 @@ points there.
       block. Measured (nextest, 4 test threads, warm): `save_editor`'s suite took 395 s and
       397 s of summed test time against 525 s and 523 s, 99 s of wall time against 131 s;
       `aatf`'s 133 s summed against 172 s. Its SWE-2 round **S1samplecheck** runs; owed after
-      it: one paid round. Left after it: the `builtins()` 29 ms and the fixture's write and open.
+      it: one paid round. Left after it: the `builtins()` 29 ms a process (`names`). The fixture's write
+      and open stay: a second probe found them the price of an 11 MB save in the optimized
+      `pes_savefile` (24 ms to build and encrypt it, 24 ms to decrypt and parse it, 7 ms more
+      for the open's baselines), the file's write and read 2 ms each.
+    - [ ] **names** [after samplecheck's review fixes, which touch the same file] the ruleset
+      dropdown reads the embedded rulesets' descriptions from a table in `aatf` (DECISIONS
+      2026-11-27 "the ruleset dropdown reads the embedded rulesets' descriptions from a
+      table"; `plans/aatf_rules.md` "Embedded rulesets"). A small slice over `aatf` and
+      `save_editor` for SWE-2, measured on `save_editor`'s suite against samplecheck's 395 s
+      and 397 s.
 
 - resolved (2026-11-24) — `scripts/commit.py -a` left a new file out silently, as `git commit
   -a` does: `9ac41d0a` needed an amend for `docs/spec/core/design.md`. With `-a` it now
