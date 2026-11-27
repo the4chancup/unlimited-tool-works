@@ -15,6 +15,7 @@ from roadmap_test import wl  # noqa: E402
 
 SCRIPT = Path(__file__).with_name("commit.py")
 ROADMAP = Path(__file__).parent / "pages" / "roadmap.py"
+INBOX = Path(__file__).parent / "pages" / "inbox.py"
 sys.path.insert(0, str(SCRIPT.parent))
 from commit import personal_matches  # noqa: E402
 
@@ -148,6 +149,58 @@ class CommitAll(unittest.TestCase):
         added = sum(int(row[0]) for row in others)
         deleted = sum(int(row[1]) for row in others)
         self.assertIn(f"; the other files: +{added} -{deleted}\n", run.stdout)
+
+    def commit_cards(self, page: str | None) -> subprocess.CompletedProcess[str]:
+        """Sets up the inbox build (its script, stub gates, the two card pages) in its
+        own commit, then commits a change to `page` (the notes file when None) with
+        `-a`."""
+        (self.repo / "scripts" / "gates").mkdir(parents=True)
+        (self.repo / "scripts" / "pages").mkdir(parents=True)
+        shutil.copy(INBOX, self.repo / "scripts" / "pages" / "inbox.py")
+        # An .html or .py file also runs the two doc gates: stubs that pass.
+        for gate in ("doc_pointers.py", "comment_refs.py"):
+            (self.repo / "scripts" / "gates" / gate).write_text("", encoding="utf-8")
+        maintainer = self.repo / "docs" / "maintainer"
+        maintainer.mkdir(parents=True)
+        card = '<section class="entry" id="{0}"><h3>Card {0}</h3></section>\n'
+        for name in ("questions", "proposals", "tasks", "ui_decisions"):
+            (maintainer / f"{name}.html").write_text(card.format(name[0] + "1"),
+                                                    encoding="utf-8")
+        git(self.repo, "add", "-A")
+        git(self.repo, "commit", "-q", "-m", "chore(test): the inbox machinery")
+        if page is not None:
+            (maintainer / page).write_text(card.format(page[0] + "2"), encoding="utf-8")
+        else:
+            (self.repo / "notes.txt").write_text("three\n", encoding="utf-8")
+        return self.commit_all()
+
+    def test_a_questions_commit_stages_the_rebuilt_inbox_page(self) -> None:
+        run = self.commit_cards("questions.html")
+        self.assertEqual(run.returncode, 0, run.stdout + run.stderr)
+        files = git(self.repo, "show", "--name-only", "--format=", "HEAD").split()
+        self.assertIn("docs/maintainer/inbox.html", files)
+        page = git(self.repo, "show", "HEAD:docs/maintainer/inbox.html")
+        self.assertIn('data-key="questions#q2"', page)
+        self.assertNotIn('data-key="questions#q1"', page)
+        self.assertIn('data-key="proposals#p1"', page)
+        self.assertEqual(git(self.repo, "status", "--porcelain"), "")
+
+    def test_a_ui_decisions_commit_stages_the_rebuilt_inbox_page(self) -> None:
+        run = self.commit_cards("ui_decisions.html")
+        self.assertEqual(run.returncode, 0, run.stdout + run.stderr)
+        files = git(self.repo, "show", "--name-only", "--format=", "HEAD").split()
+        self.assertIn("docs/maintainer/inbox.html", files)
+        page = git(self.repo, "show", "HEAD:docs/maintainer/inbox.html")
+        self.assertIn('data-key="ui_decisions#u2"', page)
+        self.assertIn('data-key="questions#q1"', page)
+        self.assertEqual(git(self.repo, "status", "--porcelain"), "")
+
+    def test_a_commit_changing_neither_card_page_leaves_the_inbox_out(self) -> None:
+        run = self.commit_cards(None)
+        self.assertEqual(run.returncode, 0, run.stdout + run.stderr)
+        files = git(self.repo, "show", "--name-only", "--format=", "HEAD").split()
+        self.assertNotIn("docs/maintainer/inbox.html", files)
+        self.assertFalse((self.repo / "docs" / "maintainer" / "inbox.html").exists())
 
     def test_a_commit_rebuilding_nothing_reports_no_scripted_lines(self) -> None:
         run = self.commit_all()

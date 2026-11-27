@@ -9,6 +9,27 @@
   const entries = [...document.querySelectorAll("section.entry")];
   const title = (entry) => entry.querySelector("h3").textContent.trim();
   const store = () => localStorage.setItem(key, JSON.stringify(saved));
+
+  // The inbox has no picks: each `li[data-key]` is a pointer to a card, hidden once
+  // its Noticed button is pressed, and a remembered key stays hidden on the next load.
+  if (page === "inbox") {
+    const items = [...document.querySelectorAll("li[data-key]")];
+    const retitle = () => {
+      document.title = "Inbox (" + items.filter((li) => !li.hidden).length + ")";
+    };
+    for (const li of items) {
+      li.hidden = !!saved[li.dataset.key];
+      li.querySelector("button.noticed").addEventListener("click", () => {
+        saved[li.dataset.key] = true;
+        store();
+        li.hidden = true;
+        retitle();
+      });
+    }
+    retitle();
+    return;
+  }
+
   const answered = (id) => {
     const s = saved[id];
     return !!s && (Object.keys(s.picks || {}).length > 0 || !!(s.note || "").trim());

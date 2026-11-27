@@ -580,6 +580,7 @@ def step_dates(top: list[Step]) -> dict[str, str]:
 
 NAV = """\
 <nav class="pages">
+  <a href="inbox.html">Inbox</a>
   <a class="here" href="roadmap.html">Roadmap</a>
   <a href="questions.html">Questions</a>
   <a href="proposals.html">Proposals</a>

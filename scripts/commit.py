@@ -44,9 +44,12 @@ checkpoint's format gate after the commit. A commit (not a merge) that changes
 which then checks the page's links too), which refuses a worklog item breaking the
 convention its header states (otherwise found only by the next checkpoint's test), and
 writes the roadmap page, which goes into the same commit: rebuilt by hand, the page fell
-behind the worklog. After the commit it prints the lines the page changed apart from the
-other files' (`report_scripted`), which git's summary counts together. A merge rebuilds
-nothing; the lead's worklog commit after it does.
+behind the worklog. A commit that changes `docs/maintainer/questions.html`,
+`proposals.html`, `tasks.html` or `ui_decisions.html` runs `scripts/pages/inbox.py` the
+same way and puts the rebuilt inbox page in the commit. After the commit it prints the
+lines the scripted pages changed apart from the other files' (`report_scripted`),
+which git's summary counts together. A merge rebuilds nothing; the lead's worklog
+commit after it does.
 
 Lead, sidekick, reviewer or script, nobody runs `git commit` or `git merge` with a message of
 their own any other way: a script that worded its own once made 49 commits no reader of the
@@ -77,6 +80,12 @@ EDITION = "2024"
 # run from.
 ROADMAP_FILE = "docs/maintainer/roadmap.html"
 ROADMAP_PAGE = f":/{ROADMAP_FILE}"
+
+# The inbox page, likewise, and the card pages whose change rebuilds it.
+INBOX_FILE = "docs/maintainer/inbox.html"
+INBOX_PAGE = f":/{INBOX_FILE}"
+CARD_PAGES = ("docs/maintainer/questions.html", "docs/maintainer/proposals.html",
+              "docs/maintainer/tasks.html", "docs/maintainer/ui_decisions.html")
 
 # Phrases saying where the maintainer is, when they are free or that they are ill, which no
 # tracked file or message holds (docs/CONTRIBUTING.md "Commits"). Another wording slips past
@@ -149,6 +158,14 @@ def main(argv: list[str]) -> int:
         scripted.append(ROADMAP_FILE)
         if [arg for arg in rest if not arg.startswith("-")]:
             rest = [*rest, ROADMAP_PAGE]
+    if any(path in CARD_PAGES for path in changed):
+        if not passes("scripts/pages/inbox.py"):
+            print("commit: nothing committed; the inbox page could not be rebuilt (above)")
+            return 1
+        subprocess.run(["git", "add", "--", INBOX_PAGE], check=True)
+        scripted.append(INBOX_FILE)
+        if [arg for arg in rest if not arg.startswith("-")]:
+            rest = [*rest, INBOX_PAGE]
     docs = any(path.endswith((".md", ".html")) for path in changed)
     if docs and not passes("scripts/gates/doc_pointers.py"):
         print("commit: nothing committed; a doc pointer is broken (above)")

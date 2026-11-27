@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Unlimited Tool Works: inbox</title>
+<link rel="stylesheet" href="maintainer.css">
+<!--
+For the lead: one pointer per card on the maintainer's card pages (questions.html,
+proposals.html, tasks.html, ui_decisions.html), newest first, so a card that lands
+while its page goes unread is still seen. scripts/pages/inbox.py writes the page, which
+is never edited by hand: scripts/commit.py runs it on every commit that changes one of
+the pages (a merge rebuilds nothing), and it runs by hand as `python
+scripts/pages/inbox.py` from the repository's root. A pointer keeps the date it
+landed; it leaves the file once its card has left its page.
+-->
+</head>
+<body data-page="inbox">
+<nav class="pages">
+  <a class="here" href="inbox.html">Inbox</a>
+  <a href="roadmap.html">Roadmap</a>
+  <a href="questions.html">Questions</a>
+  <a href="proposals.html">Proposals</a>
+  <a href="tasks.html">Tasks</a>
+  <a href="ui_decisions.html">UI decisions</a>
+</nav>
+
+<h1>Inbox</h1>
+<p class="intro">New cards on the Questions, Proposals, Tasks and UI decisions pages,
+newest first. Press <b>Noticed</b> once you have seen a card, and its pointer leaves this
+list; the card itself stays on its page until you deal with it.</p>
+
+<ul>
+<li data-key="questions#wrist-tape-colours" data-landed="2026-11-27"><a href="questions.html#wrist-tape-colours">The wrist tape's colours in the other games</a> <span class="from">Question, landed 2026-11-27</span> <button class="noticed" type="button">Noticed</button></li>
+<li data-key="questions#swipe-source-files" data-landed="2026-11-27"><a href="questions.html#swipe-source-files">What the cup's video makers export their swipes as</a> <span class="from">Question, landed 2026-11-27</span> <button class="noticed" type="button">Noticed</button></li>
+<li data-key="proposals#p40" data-landed="2026-11-27"><a href="proposals.html#p40">P40: The Music export editor reorders its players</a> <span class="from">Proposal, landed 2026-11-27</span> <button class="noticed" type="button">Noticed</button></li>
+<li data-key="proposals#p41" data-landed="2026-11-27"><a href="proposals.html#p41">P41: The Kit config editor shows what a collar, shorts model or pattern looks like</a> <span class="from">Proposal, landed 2026-11-27</span> <button class="noticed" type="button">Noticed</button></li>
+<li data-key="proposals#p42" data-landed="2026-11-27"><a href="proposals.html#p42">P42: The color picker's hex field takes Kit Manager's spellings too</a> <span class="from">Proposal, landed 2026-11-27</span> <button class="noticed" type="button">Noticed</button></li>
+<li data-key="proposals#p51" data-landed="2026-11-27"><a href="proposals.html#p51">P51: A button that goes back to the version an update replaced</a> <span class="from">Proposal, landed 2026-11-27</span> <button class="noticed" type="button">Noticed</button></li>
+<li data-key="proposals#p55" data-landed="2026-11-27"><a href="proposals.html#p55">P55: The Compiler's help as two topics</a> <span class="from">Proposal, landed 2026-11-27</span> <button class="noticed" type="button">Noticed</button></li>
+<li data-key="proposals#p56" data-landed="2026-11-27"><a href="proposals.html#p56">P56: The window can say the game's Edit mode is closed</a> <span class="from">Proposal, landed 2026-11-27</span> <button class="noticed" type="button">Noticed</button></li>
+<li data-key="proposals#p59" data-landed="2026-11-27"><a href="proposals.html#p59">P59: After Select all similar players, the list scrolls to the player</a> <span class="from">Proposal, landed 2026-11-27</span> <button class="noticed" type="button">Noticed</button></li>
+<li data-key="tasks#poc5-in-game" data-landed="2026-11-27"><a href="tasks.html#poc5-in-game">The 0.0.2-poc.5 bundle in the game</a> <span class="from">Task, landed 2026-11-27</span> <button class="noticed" type="button">Noticed</button></li>
+<li data-key="tasks#grid-1a-look" data-landed="2026-11-27"><a href="tasks.html#grid-1a-look">The Compiler's grid, its first slice</a> <span class="from">Task, landed 2026-11-27</span> <button class="noticed" type="button">Noticed</button></li>
+</ul>
+<script src="maintainer.js"></script>
+</body>
+</html>
