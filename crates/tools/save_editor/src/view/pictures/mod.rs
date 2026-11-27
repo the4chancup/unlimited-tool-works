@@ -897,11 +897,12 @@ mod tests {
             // Preset 3's row draws Kick-off alone: the room beside it is
             // the background's.
             let empty = cell(grid, 2, 1);
+            let panel = dark().panel_fill.to_array();
             for y in empty.top() as u32..empty.bottom() as u32 {
                 for x in empty.left() as u32..empty.right() as u32 {
                     assert_eq!(
                         image.get_pixel(x, y).0,
-                        dark().panel_fill.to_array(),
+                        panel,
                         "preset 3's In-possession room, flat {flat}, ({x}, {y})"
                     );
                 }
