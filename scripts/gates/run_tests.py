@@ -191,8 +191,8 @@ def run(binary: Binary, pkgs: dict[str, Package], wrapper: list[str],
     variables cargo sets, in `temp_env` (`temp_alias.py` says what its temp folder is).
 
     A test that libtest reports past 60 seconds and that has not ended `limit` seconds in
-    stops the binary (on Windows the wrapper, whose job takes the binary with it). The binary
-    then fails, its output ending with the test's name."""
+    stops the binary (on Windows the wrapper's whole process tree). The binary then fails,
+    its output ending with the test's name."""
     pkg = pkgs[binary.package]
     env = dict(temp_env, CARGO_MANIFEST_DIR=str(pkg.dir), CARGO_PKG_NAME=pkg.name)
     start = time.monotonic()
@@ -223,7 +223,12 @@ def run(binary: Binary, pkgs: dict[str, Package], wrapper: list[str],
                           if now - at >= limit - NOTICE_SECONDS)
     if not over:
         return proc.wait(), time.monotonic() - start, "".join(lines)
-    proc.kill()
+    if os.name == "nt":
+        # The wrapper is a `.cmd`, so `proc` is its `cmd.exe`: killing that alone would leave
+        # the runner, and the binary in its job, running.
+        subprocess.run(["taskkill", "/F", "/T", "/PID", str(proc.pid)], capture_output=True)
+    else:
+        proc.kill()
     proc.wait()
     # Not waited for to the end: a process a test started can still hold the pipe.
     reader.join(timeout=5)

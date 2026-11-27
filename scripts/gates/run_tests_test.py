@@ -171,6 +171,28 @@ class Limit(unittest.TestCase):
             'run_tests: stopped: a::hangs ran past 61 s '
             '(CONTRIBUTING.md "A test fails, it never hangs")\n'), output)
 
+    @unittest.skipUnless(os.name == "nt", "the wrapper chain exists on Windows alone")
+    def test_on_windows_the_stop_reaches_the_binary_under_the_wrapper(self) -> None:
+        import psutil
+
+        from run_tests import runner
+
+        with tempfile.TemporaryDirectory() as tmp:
+            pid_file = Path(tmp) / "pid"
+            script = self.binary(tmp, (
+                f"open({str(pid_file)!r}, 'w').write(str(__import__('os').getpid()))\n"
+                "print('test a::hangs has been running for over 60 seconds', flush=True)\n"
+                "time.sleep(60)\n"))
+            # The real chain: the `.cmd` wrapper's cmd.exe, the memory-cap runner, then the
+            # stand-in binary, which the runner starts as `python <script>`.
+            wrapper = [*runner(), sys.executable]
+            code, _, output = run(script, PKGS, wrapper, dict(os.environ), 61)
+            pid = int(pid_file.read_text())
+        self.assertNotEqual(code, 0)
+        self.assertIn("run_tests: stopped: a::hangs", output)
+        self.assertFalse(psutil.pid_exists(pid) and psutil.Process(pid).is_running(),
+                         "the stand-in binary outlived the stop")
+
     def test_a_test_that_ends_after_the_notice_is_not_stopped(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             binary = self.binary(tmp, (

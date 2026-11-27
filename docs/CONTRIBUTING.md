@@ -453,8 +453,9 @@ Requirements:
   seconds, is a test that fails under a loaded full-suite run. Past 180 seconds a test fails
   in every run, whatever it is doing, so a loop in the code under test that never ends fails
   it too:
-  - every nextest run stops the test (`.config/nextest.toml`), the mutation runs and the
-    coverage map included;
+  - every nextest run stops the test (`.config/nextest.toml`), the mutation runs included
+    (the coverage map runs each test itself and keeps its own cap, since it only records
+    what a test reaches);
   - the gates' runner, `scripts/gates/run_tests.py`, runs each binary whole under libtest,
     which cannot stop a single test, so it stops the binary when a test libtest reported
     still running at 60 seconds has not ended by 180.

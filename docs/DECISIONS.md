@@ -20482,7 +20482,8 @@ Plan: `plans/aatf_rules.md` "The interpreter" edited.
 ## 2026-11-27 — tests and mutation runs — a test past 180 seconds fails in every run
 Decision: one per-test limit, 180 seconds, everywhere tests run. nextest stops a test past
 it (`.config/nextest.toml`'s `slow-timeout`, 60 s three times), which every nextest run reads,
-the mutation runs and the coverage map included. The gates' `scripts/gates/run_tests.py` runs
+the mutation runs included; the coverage map runs each test itself and keeps its own cap
+(`TEST_TIMEOUT_SECONDS`), since it only records what a test reaches. The gates' `scripts/gates/run_tests.py` runs
 whole libtest binaries, and stops one whose test libtest reported at 60 seconds and that has
 not ended by 180. A mutant whose test is stopped this way is filed as caught: nextest ends the
 run with its failed-tests code, which both mutation runners read as a catch. The run-level

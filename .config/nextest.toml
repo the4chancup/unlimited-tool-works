@@ -1,5 +1,4 @@
-# cargo-nextest's settings for every nextest run: the mutation runs, the coverage map and any
-# `just cargo nextest`. The gates run whole libtest binaries instead, and their runner
+# cargo-nextest's settings for every nextest run: the mutation runs and any `just cargo nextest`. The gates run whole libtest binaries instead, and their runner
 # (`scripts/gates/run_tests.py`) reads this file's limit.
 
 [profile.default]
