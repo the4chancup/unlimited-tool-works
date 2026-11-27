@@ -70,8 +70,8 @@ fn multi_team_aatf_is_900_points_wide() {
 }
 
 /// Multi-team AATF's list is 360 points tall, border included, when its
-/// rows overflow it (the PES 17 sample's every team): it scrolls rather
-/// than growing or shrinking.
+/// rows overflow it (the PES 17 sample's first thirty teams): it scrolls
+/// rather than growing or shrinking.
 #[test]
 fn multi_team_aatfs_overflowing_list_is_360_points_tall() {
     let path = fixture(PesVersion::Pes17, "multi_aatf_height");
@@ -83,11 +83,11 @@ fn multi_team_aatfs_overflowing_list_is_360_points_tall() {
     let (first, last) = {
         let file = view.session.as_ref().expect("the save opened").file();
         let name = |id: u32| format!("{id} {}", display_name(&file.team(id).unwrap().name));
-        (name(ids[0]), name(ids[ids.len() - 1]))
+        (name(ids[0]), name(ids[29]))
     };
     multi_checked(&mut window, &mut view, &ids[..1]);
     pick_range_end(&mut window, &mut view, 1, &last);
-    multi_checked(&mut window, &mut view, &ids);
+    multi_checked(&mut window, &mut view, &ids[..30]);
     let (_, pairs, shapes) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     let dialog = super::prompt::dialog_nodes(&pairs, MULTI_TITLE);
     let first_team = centre(

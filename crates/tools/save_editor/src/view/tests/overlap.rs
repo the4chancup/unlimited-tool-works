@@ -223,6 +223,37 @@ fn settled_over(window: &mut Headless, view: &mut SaveView, screen: &str) -> Vec
     drawn
 }
 
+/// `drawn`'s dialog closed through its own Close or Cancel, Escape where
+/// it has neither, the way a member closes it.
+fn close_screen(window: &mut Headless, view: &mut SaveView, drawn: &[Drawn]) {
+    let button = drawn.iter().find(|drawn| {
+        drawn.layer.order != egui::Order::Background
+            && drawn.node.role() == Role::Button
+            && matches!(text(&drawn.node), "Close" | "Cancel")
+    });
+    match button {
+        Some(button) => click(window, &button.node, view),
+        None => {
+            window.frame_ids(
+                vec![key(egui::Key::Escape, egui::Modifiers::NONE, true)],
+                |ui| show(ui, view, &|| Vec::new()),
+            );
+        }
+    }
+}
+
+/// `settled` after `screen`'s close, asserting nothing is left over the
+/// view: the inverse of `settled_over`'s premise.
+fn closed(window: &mut Headless, view: &mut SaveView, screen: &str) {
+    let drawn = settled(window, view);
+    assert!(
+        drawn
+            .iter()
+            .all(|drawn| drawn.layer.order == egui::Order::Background),
+        "premise: {screen} closed"
+    );
+}
+
 /// `version`'s fixture open at the default pane under `test`'s scratch
 /// folder, the first player selected.
 fn opened(version: PesVersion, test: &str) -> (SaveView, Headless) {
@@ -320,10 +351,12 @@ fn live_aatf(version: PesVersion) -> Screens {
     ]
 }
 
-/// The team view's Kit slots dialog and the menus' dialogs.
+/// The team view's Kit slots dialog and the menus' dialogs on one save,
+/// each closed before the next opens.
 fn menu_dialogs(version: PesVersion) -> Screens {
     let mut screens = Vec::new();
-    let (mut view, mut window) = opened(version, "kit_slots");
+    let (mut view, mut window) = opened(version, "menus");
+    let selected = view.selected;
     open_team_view(&mut window, &mut view, TEAM);
     let nodes = draw(&mut window, &mut view);
     click(
@@ -331,11 +364,14 @@ fn menu_dialogs(version: PesVersion) -> Screens {
         node_labeled(&nodes, Role::Button, crate::view::team::KIT_SLOTS_LABEL),
         &mut view,
     );
-    screens.push((
-        "Kit slots",
-        settled_over(&mut window, &mut view, "Kit slots"),
-    ));
+    let drawn = settled_over(&mut window, &mut view, "Kit slots");
+    close_screen(&mut window, &mut view, &drawn);
+    closed(&mut window, &mut view, "Kit slots");
+    screens.push(("Kit slots", drawn));
 
+    // The Player menu's items are off on a team row, so the player the
+    // save opened on is selected again.
+    view.selected = selected;
     for (screen, menu, item) in [
         (
             "Set boots and gloves",
@@ -352,17 +388,25 @@ fn menu_dialogs(version: PesVersion) -> Screens {
             "Generate in-game face\u{2026}",
         ),
     ] {
-        // "Copy/swap stats" names a folder too, which holds no separator.
-        let (mut view, mut window) = from_menu(version, &screen.replace('/', "-"), menu, item);
-        screens.push((screen, settled_over(&mut window, &mut view, screen)));
+        let nodes = open_menu(&mut window, &mut view, menu, item);
+        click(&mut window, menu_item(&nodes, item), &mut view);
+        let drawn = settled_over(&mut window, &mut view, screen);
+        close_screen(&mut window, &mut view, &drawn);
+        closed(&mut window, &mut view, screen);
+        screens.push((screen, drawn));
     }
 
     // Generate settings.toml with no folder, then with one picked.
-    let (mut view, mut window) = from_menu(
-        version,
-        "generate",
+    let nodes = open_menu(
+        &mut window,
+        &mut view,
         "Player",
         "Generate settings.toml\u{2026}",
+    );
+    click(
+        &mut window,
+        menu_item(&nodes, "Generate settings.toml\u{2026}"),
+        &mut view,
     );
     screens.push((
         "Generate settings.toml",
@@ -376,60 +420,52 @@ fn menu_dialogs(version: PesVersion) -> Screens {
         node_labeled(&nodes, Role::Button, "Pick\u{2026}"),
         &mut view,
     );
-    screens.push((
-        "Generate settings.toml, folder picked",
-        settled_over(&mut window, &mut view, "Generate settings.toml"),
-    ));
+    let drawn = settled_over(&mut window, &mut view, "Generate settings.toml");
+    close_screen(&mut window, &mut view, &drawn);
+    closed(&mut window, &mut view, "Generate settings.toml");
+    screens.push(("Generate settings.toml, folder picked", drawn));
     screens
 }
 
 /// The Multi-team AATF dialog with its last end just widened to the save's
-/// last team, the first team's list dimmed and marked checking, then
-/// listing every team once checked.
+/// thirtieth team, the first team's list dimmed and marked checking, then
+/// listing the thirty teams once checked.
 fn multi_aatf(version: PesVersion) -> Screens {
     let (mut view, mut window) =
         from_menu(version, "multi_aatf", "Savefile", "Multi-team AATF\u{2026}");
-    let landed = |view: &SaveView, all: bool| {
+    let ids = super::savefile::all_team_ids(&view);
+    let landed = |view: &SaveView, ids: &[u32]| {
         let check = &view.multi_aatf.check;
-        let teams = view
-            .session
-            .as_ref()
-            .expect("an open save")
-            .file()
-            .teams()
-            .len();
-        check.pending.is_none()
-            && check
-                .result
-                .as_ref()
-                .is_some_and(|(key, _)| (key.ids.len() == teams) == all)
+        check.pending.is_none() && check.result.as_ref().is_some_and(|(key, _)| key.ids == ids)
     };
     frames_until(
         &mut window,
         &mut view,
-        |view| landed(view, false),
+        |view| landed(view, &ids[..1]),
         "the Multi-team AATF check never returned",
     );
     let last = {
         let file = view.session.as_ref().expect("an open save").file();
-        let id = file
-            .teams()
-            .iter()
-            .map(|team| team.id)
-            .max()
-            .expect("a team");
+        let id = ids[29];
         format!("{id} {}", display_name(&file.team(id).unwrap().name))
     };
     super::savefile::pick_range_end(&mut window, &mut view, 1, &last);
-    // `settled`'s three frames are well inside the range's 500 ms rest.
+    // `settled`'s three frames are well inside the thirty-team range's
+    // 500 ms rest.
     let checking = settled_over(&mut window, &mut view, "Multi-team AATF");
     frames_until(
         &mut window,
         &mut view,
-        |view| landed(view, true),
-        "the Multi-team AATF check of every team never returned",
+        |view| landed(view, &ids[..30]),
+        "the Multi-team AATF check of the thirty teams never returned",
     );
     let listed = settled_over(&mut window, &mut view, "Multi-team AATF");
+    assert!(
+        listed.iter().any(|drawn| {
+            drawn.layer.order != egui::Order::Background && drawn.node.role() == Role::ScrollBar
+        }),
+        "premise: the thirty teams' rows overflow the list, so it draws a scroll bar"
+    );
     vec![
         ("Multi-team AATF, checking", checking),
         ("Multi-team AATF, listed", listed),

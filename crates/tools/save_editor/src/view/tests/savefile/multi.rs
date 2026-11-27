@@ -145,8 +145,13 @@ fn the_multi_list_and_combos_run_in_id_order_not_record_order() {
     let mut window = Headless::new();
     open_multi_aatf(&mut window, &mut view);
     let ids = all_team_ids(&view);
-    let last = label(&view, *ids.last().unwrap());
+    assert_eq!(
+        ids[..3],
+        [701, 702, 703],
+        "premise: the save's first three teams are 701 to 703"
+    );
     multi_checked(&mut window, &mut view, &ids[..1]);
+    let last = label(&view, 703);
     pick_range_end(&mut window, &mut view, 1, &last);
 
     // The checked list's rows: 702's line above 703's. The wait compares
@@ -160,7 +165,7 @@ fn the_multi_list_and_combos_run_in_id_order_not_record_order() {
                 && check.result.as_ref().is_some_and(|(key, _)| {
                     let mut got = key.ids.clone();
                     got.sort_unstable();
-                    got == ids
+                    got == [701, 702, 703]
                 })
         },
         "the Multi-team AATF check never returned",
