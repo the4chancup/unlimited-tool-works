@@ -156,8 +156,8 @@ NODES = [
     ("mdiff", "mutants-diff", "mutation", 5, 0,
      "Part of just checkpoint, over the commits since the last gated one, and run once as "
      "each review loop starts, beside its first round, over the loop's slices: each "
-     "surviving mutant is an assertion nobody wrote. A larger crate's mutants are split "
-     "between the lead's PC and the VPS, sized so both halves end together."),
+     "surviving mutant is an assertion nobody wrote. Each crate it changes becomes a job of "
+     "the mutation driver, which the lead's PC and the VPS run ahead of the rolling job."),
     ("extra", "Extra mutant kinds", "mutation", 5, 1,
      "bool, call, literal, normalize and order mutants cargo-mutants does not make, run in "
      "every mutation run into the same survivor list: a diff run's over the lines it changed."),

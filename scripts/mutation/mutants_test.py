@@ -27,6 +27,7 @@ from unittest import mock
 
 SCRIPTS = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPTS))
+import driver  # noqa: E402
 import extra_mutants  # noqa: E402
 import mutants  # noqa: E402
 import mutants_diff  # noqa: E402
@@ -274,7 +275,7 @@ def lock_probes(root: Path):
 
 
 class KilledBuilds(unittest.TestCase):
-    def test_a_sharded_run_s_untested_mutants_are_every_shard_s(self):
+    def test_a_driver_job_s_untested_mutants_are_every_shard_s(self):
         with tempfile.TemporaryDirectory() as tmp:
             out = Path(tmp)
             for k in (0, 1):
@@ -385,7 +386,7 @@ class StarvedCatches(unittest.TestCase):
             write_run(out, len(outcomes), outcomes, logs)
             self.assertEqual(mutants.starved_catches(out), ["timeout", "named"])
 
-    def test_a_sharded_run_s_starved_catches_are_every_shard_s(self):
+    def test_a_driver_job_s_starved_catches_are_every_shard_s(self):
         with tempfile.TemporaryDirectory() as tmp:
             out = Path(tmp)
             for k in (1, 0):
@@ -1347,14 +1348,14 @@ class LocalSource(unittest.TestCase):
         self.assertIn("could not remove", err.getvalue())
 
     def test_the_listings_and_the_extra_pass_read_the_snapshot(self):
-        """A queued run reaches its turn long after its snapshot: its listings and the extra
+        """A queued run reaches its turn long after its snapshot: its listing and the extra
         pass's crate folder come from the snapshot's copy, not from the working tree."""
         cwds = {}
         real_run = subprocess.run
 
         def run(args, **kwargs):
             if args[:2] == ["cargo", "mutants"]:
-                cwds["diff listing" if "--in-diff" in args else "crate listing"] = kwargs["cwd"]
+                cwds["crate listing"] = kwargs["cwd"]
                 return subprocess.CompletedProcess(args, 0, stdout="" if kwargs.get("text") else b"")
             if args[:2] == ["cargo", "metadata"]:
                 cwds["metadata"] = kwargs["cwd"]
@@ -1371,14 +1372,11 @@ class LocalSource(unittest.TestCase):
             source = Path(tmp)
             self.assertEqual(mutants.list_mutants("fpc", source / "mutants.toml", source), [])
             self.assertEqual(
-                mutants_diff.run(str(source / "in.diff"), HEAD_TREE, source, b""), 0
-            )
-            self.assertEqual(
                 extra_mutants.crate_dir("fpc", source),
                 (source / "crates" / "libs" / "fpc").resolve(),
             )
         self.assertEqual(
-            cwds, {"crate listing": source, "diff listing": source, "metadata": source}
+            cwds, {"crate listing": source, "metadata": source}
         )
 
 
@@ -1471,8 +1469,6 @@ class PendingRemote(unittest.TestCase):
             # A whole run refuses for the VPS rule before the pending record matters.
             with self.assertRaisesRegex(mutants.Refused, "VPS"):
                 mutants.whole_run("fpc", None, HEAD_TREE, "a" * 40)
-            with self.assertRaisesRegex(mutants.Refused, "bonfire.*mutants-collect"):
-                mutants_diff.run_crate("in.diff", HEAD_TREE, self.root, "fpc", 3)
         # A standalone extra pass would replace the `missed_<crate>.txt` the collection merges.
         extra_runs = []
         with (
@@ -1632,17 +1628,6 @@ class RunQueue(unittest.TestCase):
             call(events)
         return events
 
-    def test_a_diff_run_snapshots_before_it_waits(self):
-        def call(events):
-            with mock.patch.object(mutants_diff, "run", lambda *_: events.append("run") or 0):
-                mutants_diff.main(["mutants_diff.py", EMPTY_TREE, "scripts/mutation/mutants.py"])
-
-        self.assertEqual(
-            self.order(call),
-            ["snapshot", "mutants.tree.lock", "mutants.lock",
-             "copy", "run", "uncopy", "unlock", "unlock"],
-        )
-
     def test_a_whole_crate_run_snapshots_before_it_waits(self):
         """The lock and the snapshot's copy moved into `whole_run`, which must be
         free to drop the lock while the remote half runs: what `main` still
@@ -1725,65 +1710,6 @@ class RunQueue(unittest.TestCase):
             self.assertFalse(results.exists())
             self.assertEqual((old / "missed_all.txt").read_text(encoding="utf-8"), "a survivor\n")
             self.assertFalse((old / "older").exists())
-
-    def test_a_diff_run_takes_tree_then_build_then_remote(self):
-        """A diff run holds its tree's lock and the build lock for its whole
-        length, and takes the remote's inside, at the split's launch and the
-        fetch: always tree, then build, then remote."""
-        listing = json.dumps(
-            [{"file": "crates/libs/cpk/src/lib.rs", "name": "a"}]
-        ).encode()
-        real_run = subprocess.run
-
-        def run(args, **kwargs):
-            if args[:2] == ["cargo", "mutants"]:
-                return subprocess.CompletedProcess(args, 0, stdout=listing)
-            return real_run(args, **kwargs)
-
-        with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
-            cpk_package(root)
-            taken = []
-            with (
-                mock.patch.object(mutants, "ROOT", root),
-                mock.patch.object(mutants_diff, "ROOT", root),
-                mock.patch.object(mutants_diff, "RESULTS", root / "mutants.diff"),
-                mock.patch.object(mutants_diff, "SHARDS", root / "mutants.shards"),
-                mock.patch.object(mutants, "run_lock", run_lock_recording(root, taken)),
-                mock.patch.multiple(
-                    mutants,
-                    snapshot_source=lambda tree: contextlib.nullcontext(root),
-                    estimate_seconds=lambda crates, share=1.0: mutants.SPLIT_THRESHOLD_SECONDS,
-                    remote_host=lambda: "bonfire",
-                    remote_run_state=lambda host: "none",
-                    remote_start=lambda host, tree: (None, None, 8),
-                    plan_file_split=lambda *a: round_robin_plan(names=["a"]),
-                    local_refusal=lambda: None,
-                    set_aside_last_run=lambda: None,
-                    local_mutants=lambda *a, **k: subprocess.CompletedProcess(a, 0),
-                    update_cost_cache=lambda *a, **k: None,
-                    fetch_remote=lambda *a, **k: None,
-                    summarize=lambda *a, **k: 0,
-                    **REMOTE_STUBS,
-                ),
-                mock.patch.object(subprocess, "run", run),
-                mock.patch.object(
-                    extra_mutants, "OUT_DIR", root / "extra_mutants.out"
-                ),
-                mock.patch.object(
-                    extra_mutants, "run_crate", lambda *a, **k: ([], Counter(), 0.0)
-                ),
-                contextlib.redirect_stdout(io.StringIO()),
-            ):
-                code = mutants_diff.diff_run(b"diff\n", HEAD_TREE, "a diff")
-        self.assertEqual(code, 0)
-        self.assertEqual(
-            taken,
-            [
-                "mutants.tree.lock", "mutants.lock",
-                "mutants.remote.lock", "mutants.remote.lock", "mutants.remote.lock",
-            ],
-        )
 
 
 class WholeRun(unittest.TestCase):
@@ -1998,7 +1924,7 @@ class WholeRun(unittest.TestCase):
             self.assertEqual(mutants.main(["mutants.py", "--remote-extra", "cpk"]), 0)
         self.assertEqual(
             runs, [(("cpk", list(mutants.EXTRA_KINDS)), {
-                "selection": None, "shard": None, "source": None,
+                "selection": None, "lines": None, "shard": None, "source": None,
                 "jobs": mutants.REMOTE_EXTRA_JOBS,
             })]
         )
@@ -2040,11 +1966,11 @@ class WholeRun(unittest.TestCase):
             runs,
             [
                 (("cpk", ["call"]), {
-                    "selection": None, "shard": None, "source": None,
+                    "selection": None, "lines": None, "shard": None, "source": None,
                     "jobs": mutants.REMOTE_EXTRA_JOBS,
                 }),
                 (("cpk", ["call", "bool"]), {
-                    "selection": None, "shard": None, "source": None,
+                    "selection": None, "lines": None, "shard": None, "source": None,
                     "jobs": mutants.REMOTE_EXTRA_JOBS,
                 }),
             ],
@@ -2072,7 +1998,8 @@ class WholeRun(unittest.TestCase):
             runs,
             [(("cpk", ["call"]), {
                 "selection": Path("../run/selection.json"),
-                "shard": None, "source": None, "jobs": mutants.REMOTE_EXTRA_JOBS,
+                "lines": None, "shard": None, "source": None,
+                "jobs": mutants.REMOTE_EXTRA_JOBS,
             })],
         )
 
@@ -2099,11 +2026,44 @@ class WholeRun(unittest.TestCase):
                 self.assertEqual(mutants.main(argv), 0)
         expected = {
             "selection": Path("../run/selection.json"),
+            "lines": None,
             "shard": (1, 2),
             "source": Path("../job/source"),
             "jobs": mutants.REMOTE_EXTRA_JOBS,
         }
         self.assertEqual(runs, [(("cpk", ["call"]), expected)] * 2)
+
+    def test_remote_extra_passes_its_diff_s_changed_lines_to_the_pass(self):
+        """A diff job's extra shard names the job's `in.diff`: `run_crate` gets
+        the lines `diff_lines` reads from it, and with no `--diff` none (the
+        tests above)."""
+        diff = (
+            b"diff --git a/crates/libs/cpk/src/lib.rs b/crates/libs/cpk/src/lib.rs\n"
+            b"--- a/crates/libs/cpk/src/lib.rs\n"
+            b"+++ b/crates/libs/cpk/src/lib.rs\n"
+            b"@@ -1,1 +1,2 @@\n"
+            b" context\n"
+            b"+added\n"
+        )
+        runs = []
+        with (
+            tempfile.TemporaryDirectory() as tmp,
+            mock.patch.object(
+                extra_mutants, "run_crate",
+                lambda *a, **k: runs.append(k["lines"]) or ([], Counter(caught=1), 1.0),
+            ),
+            contextlib.redirect_stdout(io.StringIO()),
+        ):
+            path = Path(tmp) / "in.diff"
+            path.write_bytes(diff)
+            self.assertEqual(
+                mutants.main(
+                    ["mutants.py", "--remote-extra", "cpk", "--shard", "0/1",
+                     "--diff", str(path), "--source", "../job/source"]
+                ),
+                0,
+            )
+        self.assertEqual(runs, [{"crates/libs/cpk/src/lib.rs": {2}}])
 
     def test_a_malformed_remote_extra_shard_prints_the_usage(self):
         # The last case is `--shard` with no value after it.
@@ -2395,7 +2355,7 @@ class SplitShares(unittest.TestCase):
 
     def test_a_split_refuses_before_it_touches_any_result(self):
         """A refusal the caller counted as a run filed the last run's `mutants.out` as its
-        own (`mutants_diff.run`): a split refuses by raising, before setting anything aside."""
+        own: a split refuses by raising, before setting anything aside."""
         with (
             mock.patch.object(mutants, "remote_refusal", lambda host: "busy"),
             mock.patch.object(mutants, "run_lock", contextlib.nullcontext),
@@ -3457,12 +3417,8 @@ class MoveResults(unittest.TestCase):
 
 
 class DiffRun(unittest.TestCase):
-    """`mutants_diff.run`'s filing of each crate's results, `run_crate` stubbed."""
-
-    LISTING = json.dumps([
-        {"file": "crates/libs/cpk/src/lib.rs", "name": "a"},
-        {"file": "crates/libs/fpc/src/lib.rs", "name": "b"},
-    ]).encode()
+    """`mutants_diff`'s output and its results folder (the run itself, its
+    driver jobs: `driver_test.py`)."""
 
     def setUp(self):
         tmp = tempfile.TemporaryDirectory()
@@ -3491,103 +3447,41 @@ class DiffRun(unittest.TestCase):
             print("✕")
         self.assertEqual(console.encoding, "utf-8")
 
-    def run_diff(
-        self, run_crate, listing: bytes | None = None, diff: bytes = b"",
-        extra=None,
-    ) -> tuple[int, str]:
-        listing = self.LISTING if listing is None else listing
-        real_run = subprocess.run
-
-        def run(args, **kwargs):
-            if args[:2] == ["cargo", "mutants"]:
-                return subprocess.CompletedProcess(args, 0, stdout=listing)
-            return real_run(args, **kwargs)
-
-        out = io.StringIO()
-        with (
-            mock.patch.object(subprocess, "run", run),
-            mock.patch.object(mutants_diff, "run_crate", run_crate),
-            mock.patch.object(
-                extra_mutants, "OUT_DIR", self.root / "extra_mutants.out"
-            ),
-            mock.patch.object(
-                extra_mutants, "run_crate",
-                extra if extra is not None
-                else lambda *a, **k: ([], Counter(), 0.0),
-            ),
-            contextlib.redirect_stdout(out),
-        ):
-            code = mutants_diff.run("in.diff", HEAD_TREE, self.root, diff)
-        return code, out.getvalue()
-
     def keep(self, folder: Path, text: str) -> None:
         folder.mkdir()
         (folder / "missed_all.txt").write_text(text, encoding="utf-8")
 
-    def test_a_refused_crate_files_nothing_and_a_run_ones_survivors_and_timeouts_merge(self):
-        # The local results of an uncollected remote half, which no crate of this run owns.
-        self.keep(self.root / "mutants.out", "an uncollected half's survivor\n")
-
-        def run_crate(diff_path, tree, source, crate, count, busy=None):
-            if crate == "cpk":
-                raise mutants.Refused("the remote half launched on bonfire is not collected")
-            mutants.set_aside(self.root / "mutants.out")
-            out = self.root / "mutants.out"
-            out.mkdir()
-            (out / "missed.txt").write_text(
-                "crates/libs/fpc/src/lib.rs:1:5: replace len -> usize with 1\n", encoding="utf-8"
-            )
-            (out / "timeout.txt").write_text(
-                "crates/libs/fpc/src/lib.rs:2:9: replace + with * in len\n", encoding="utf-8"
-            )
-            return 3
-
-        code, out = self.run_diff(run_crate)
-        # A refused crate's mutants went untested: its 1 outranks the other's 3.
-        self.assertEqual(code, 1)
-        self.assertIn("mutants_diff: the remote half launched on bonfire is not collected", out)
-        self.assertFalse((self.results / "cpk").exists(), "a refused crate files no results")
-        self.assertEqual(
-            (self.results / "missed_all.txt").read_text(encoding="utf-8").splitlines(),
-            [
-                "crates/libs/fpc/src/lib.rs:1:5: replace len -> usize with 1",
-                "crates/libs/fpc/src/lib.rs:2:9: [timeout] replace + with * in len",
-            ],
+    def test_a_diff_queuing_no_job_sets_the_last_results_aside_through_the_next_run(self):
+        """A diff whose crates each have no mutant on its lines queues no job:
+        the run exits 0 with the last results set aside, and a second such run
+        leaves them there rather than replacing them with nothing."""
+        self.keep(self.results, "the last run's survivor\n")
+        diff = (
+            b"diff --git a/crates/libs/cpk/src/lib.rs b/crates/libs/cpk/src/lib.rs\n"
+            b"--- a/crates/libs/cpk/src/lib.rs\n"
+            b"+++ b/crates/libs/cpk/src/lib.rs\n"
+            b"@@ -1,1 +1,2 @@\n"
+            b" context\n"
+            b"+added\n"
         )
-
-    def test_the_run_s_crates_share_one_busy_total(self):
-        seen = []
-
-        def run_crate(diff_path, tree, source, crate, count, busy=None):
-            seen.append(busy)
-            return 0
-
-        self.run_diff(run_crate)
-        self.assertGreaterEqual(len(seen), 2, "the listing has two crates")
-        self.assertIsNotNone(seen[0])
-        self.assertTrue(all(b is seen[0] for b in seen), "one total for the whole run")
-
-    def test_a_run_that_lands_no_crate_keeps_the_last_results_through_the_next_one(self):
-        self.keep(self.results, "the last run's survivor\n")
-
-        def refused(*_, **__):
-            raise mutants.Refused("`just gates-remote` is running on bonfire")
-
-        for _ in range(2):
-            code, _ = self.run_diff(refused)
-            self.assertEqual(code, 1)
-            self.assertFalse(self.results.exists())
-            self.assertEqual(
-                (self.root / "mutants.diff.old" / "missed_all.txt").read_text(encoding="utf-8"),
-                "the last run's survivor\n",
-            )
-
-    def test_a_diff_with_no_mutants_sets_the_last_results_aside(self):
-        self.keep(self.results, "the last run's survivor\n")
-        code, _ = self.run_diff(lambda *_: self.fail("no crate to run"), listing=b"")
-        self.assertEqual(code, 0)
-        self.assertFalse(self.results.exists())
-        self.assertTrue((self.root / "mutants.diff.old" / "missed_all.txt").exists())
+        queued = []
+        with (
+            mock.patch.object(mutants, "ROOT", self.root),
+            mock.patch.object(driver, "running", lambda: True),
+            mock.patch.object(driver, "queue", lambda crate, **_: queued.append(crate)),
+            mock.patch.object(mutants, "run_lock", contextlib.nullcontext),
+            contextlib.redirect_stdout(io.StringIO()),
+        ):
+            for _ in range(2):
+                self.assertEqual(mutants_diff.diff_run(diff, HEAD_TREE, "a diff"), 0)
+                self.assertFalse(self.results.exists())
+                self.assertEqual(
+                    (self.root / "mutants.diff.old" / "missed_all.txt").read_text(
+                        encoding="utf-8"
+                    ),
+                    "the last run's survivor\n",
+                )
+        self.assertEqual(queued, ["cpk", "cpk"])
 
     def test_an_empty_folder_is_never_kept_over_the_last_results(self):
         self.results.mkdir()
@@ -3598,604 +3492,6 @@ class DiffRun(unittest.TestCase):
             (self.root / "mutants.diff.old" / "missed_all.txt").read_text(encoding="utf-8"),
             "kept\n",
         )
-
-    def test_a_crate_move_denied_once_retries_and_the_run_goes_on(self):
-        """The move of a crate's `mutants.out` into `mutants.diff/<crate>`
-        retries a transient PermissionError instead of ending the run (a
-        handle held the folder briefly once, and the crates after it never
-        ran)."""
-        ran = []
-        real = Path.rename
-        denials = [1]
-
-        def rename(self, target):
-            if denials[0]:
-                denials[0] -= 1
-                raise PermissionError(5, "Access is denied", str(target))
-            return real(self, target)
-
-        def run_crate(diff_path, tree, source, crate, count, busy=None):
-            ran.append(crate)
-            out = self.root / "mutants.out"
-            out.mkdir()
-            (out / "missed.txt").write_text(f"{crate} survivor\n", encoding="utf-8")
-            return 0
-
-        now = [0.0]
-        clock = mock.Mock(monotonic=lambda: now[0])
-        clock.sleep = mock.Mock(side_effect=lambda s: now.__setitem__(0, now[0] + s))
-        with (
-            mock.patch.object(Path, "rename", rename),
-            mock.patch.object(mutants, "time", clock),
-        ):
-            code, _ = self.run_diff(run_crate)
-        self.assertEqual(code, 0)
-        self.assertEqual(ran, ["cpk", "fpc"], "the crates after the denied one still ran")
-        for crate in ("cpk", "fpc"):
-            self.assertEqual(
-                (self.results / crate / "missed.txt").read_text(encoding="utf-8"),
-                f"{crate} survivor\n",
-            )
-
-    TWO_CRATES_DIFF = (
-        b"diff --git a/crates/libs/cpk/src/lib.rs b/crates/libs/cpk/src/lib.rs\n"
-        b"--- a/crates/libs/cpk/src/lib.rs\n"
-        b"+++ b/crates/libs/cpk/src/lib.rs\n"
-        b"@@ -1,1 +1,2 @@\n"
-        b" context\n"
-        b"+added\n"
-        b"diff --git a/crates/libs/fpc/src/lib.rs b/crates/libs/fpc/src/lib.rs\n"
-        b"--- a/crates/libs/fpc/src/lib.rs\n"
-        b"+++ b/crates/libs/fpc/src/lib.rs\n"
-        b"@@ -1,1 +1,2 @@\n"
-        b" context\n"
-        b"+added\n"
-    )
-
-    def test_an_extra_pass_that_stops_ends_its_crate_not_the_run(self):
-        """A crate whose baseline fails ends cargo-mutants with 4 and the run
-        goes on; the extra pass's `SystemExit` on the same baseline does too,
-        as an untested crate, and the later crates still run."""
-        ran = []
-
-        def extra_run(crate, kinds, tree, lines=None):
-            ran.append(crate)
-            if crate == "cpk":
-                raise SystemExit("extra_mutants: the unmutated baseline fails")
-            return [f"{crate}: [call] a survivor"], Counter(missed=1), 1.0
-
-        code, out = self.run_diff(
-            lambda *a: 0, listing=b"[]", diff=self.TWO_CRATES_DIFF, extra=extra_run
-        )
-        self.assertEqual(ran, ["cpk", "fpc"])
-        self.assertEqual(code, 1)
-        self.assertIn("cpk's extra pass stopped: extra_mutants: the unmutated baseline fails", out)
-        self.assertEqual(
-            (self.results / "missed_all.txt").read_text(encoding="utf-8"),
-            "fpc: [call] a survivor\n",
-        )
-
-    def test_an_uncollected_local_half_refuses_the_run_before_it_moves_anything(self):
-        """`local_refusal` holds every local run while this tree's split half
-        is uncollected: the diff run sets nothing aside and runs no pass."""
-        kept = self.root / "extra_mutants.out" / "split.json"
-        kept.parent.mkdir()
-        kept.write_text("{}", encoding="utf-8")
-
-        def extra_run(*_a, **_k):
-            raise AssertionError("an extra pass ran")
-
-        with mock.patch.object(mutants, "local_refusal", lambda: "a half is pending"):
-            code, out = self.run_diff(
-                lambda *a: self.fail("a crate ran"), listing=b"[]",
-                diff=self.TWO_CRATES_DIFF, extra=extra_run,
-            )
-        self.assertEqual(code, 1)
-        self.assertIn("a half is pending", out)
-        self.assertTrue(kept.exists(), "the split record was set aside")
-
-    def test_every_crate_the_diff_touches_gets_an_extra_pass_on_its_lines(self):
-        """The extra kinds run on this machine after each crate's
-        cargo-mutants run — `fpc` gets its pass though the listing named no
-        mutant of its own — each crate's pass over the diff's changed lines,
-        its results in `mutants.diff/<crate>/extra/` and its survivors after
-        the crate's cargo-mutants ones in `missed_all.txt`. An untested
-        extra mutant fails the run with 1, a missed one with 2."""
-        diff = (
-            b"diff --git a/crates/libs/cpk/src/lib.rs b/crates/libs/cpk/src/lib.rs\n"
-            b"--- a/crates/libs/cpk/src/lib.rs\n"
-            b"+++ b/crates/libs/cpk/src/lib.rs\n"
-            b"@@ -1,1 +1,2 @@\n"
-            b" context\n"
-            b"+added\n"
-            b"diff --git a/crates/libs/fpc/src/lib.rs b/crates/libs/fpc/src/lib.rs\n"
-            b"--- a/crates/libs/fpc/src/lib.rs\n"
-            b"+++ b/crates/libs/fpc/src/lib.rs\n"
-            b"@@ -1,1 +1,2 @@\n"
-            b" context\n"
-            b"+added\n"
-        )
-        changed = {
-            "crates/libs/cpk/src/lib.rs": {2}, "crates/libs/fpc/src/lib.rs": {2}
-        }
-        # The listing names a mutant of cpk's alone: fpc's extra pass runs
-        # all the same.
-        listing = json.dumps(
-            [{"file": "crates/libs/cpk/src/lib.rs", "name": "a"}]
-        ).encode()
-        extra_calls = {}
-
-        def cargo_run(diff_path, tree, source, crate, count, busy=None):
-            out = self.root / "mutants.out"
-            out.mkdir()
-            (out / "missed.txt").write_text(
-                "crates/libs/cpk/src/lib.rs:1:5: replace len -> usize with 1\n",
-                encoding="utf-8",
-            )
-            return 2
-
-        def extra_run(crate, kinds, tree, lines=None):
-            extra_calls[crate] = (kinds, lines)
-            extra_mutants.OUT_DIR.mkdir()
-            (extra_mutants.OUT_DIR / "missed.txt").write_text("x\n", encoding="utf-8")
-            return [f"{crate}: [call] a survivor"], Counter(missed=1), 1.0
-
-        code, _ = self.run_diff(
-            cargo_run, listing=listing, diff=diff, extra=extra_run
-        )
-        self.assertEqual(code, 2)
-        self.assertEqual(set(extra_calls), {"cpk", "fpc"})
-        for crate in ("cpk", "fpc"):
-            self.assertEqual(
-                extra_calls[crate], (list(mutants.EXTRA_KINDS), changed),
-                f"{crate}'s pass ran the EXTRA_KINDS on the diff's changed lines",
-            )
-        self.assertEqual(
-            (self.results / "missed_all.txt").read_text(encoding="utf-8").splitlines(),
-            [
-                "crates/libs/cpk/src/lib.rs:1:5: replace len -> usize with 1",
-                "cpk: [call] a survivor",
-                "fpc: [call] a survivor",
-            ],
-        )
-        for crate in ("cpk", "fpc"):
-            self.assertTrue(
-                (self.results / crate / "extra" / "missed.txt").exists(),
-                f"{crate}'s extra_mutants.out moved to mutants.diff/{crate}/extra/",
-            )
-
-        def untested_run(*_a, **_k):
-            return ["cpk: [untested] [call] m"], Counter(untested=1), 0.0
-
-        code, _ = self.run_diff(
-            cargo_run, listing=listing, diff=diff, extra=untested_run
-        )
-        self.assertEqual(code, 1)
-
-
-class DiffBusy(unittest.TestCase):
-    """A diff crate run asks the host before splitting: busy or unreachable
-    (a whole run holds it for days) it runs here whole, capped only while this
-    tree's own half is the one out there (`remote_pending`); `REMOTE_ONLY` is
-    unchanged."""
-
-    def run_crate(
-        self, state: str | None, remote_only: bool = False, estimate: float = 999.0,
-        busy: Counter | None = None, pending: bool = False, reprobe: list = (),
-        refused: bool = False,
-    ):
-        """`mutants_diff.run_crate` on a stubbed host: `state` answers
-        `remote_run_state`, `reprobe` its calls after a refused split;
-        `pending` writes this tree's launch record; `refused` makes `split`
-        raise `Refused`."""
-        calls = {}
-        out = io.StringIO()
-        if pending:
-            pend(local_half=False)
-            self.addCleanup(
-                lambda: mutants.remote_pending().unlink(missing_ok=True)
-            )
-        else:
-            mutants.remote_pending().unlink(missing_ok=True)
-        states = iter([state, *reprobe])
-        self.states_seen = []
-
-        def split(*a, **k):
-            calls["split"] = (a, k)
-            if refused:
-                raise mutants.Refused("refused")
-            return 0
-
-        with (
-            mock.patch.object(mutants, "estimate_seconds", lambda crates, share=1.0: estimate),
-            mock.patch.object(mutants, "remote_host", lambda: "bonfire"),
-            mock.patch.object(mutants, "REMOTE_ONLY", remote_only),
-            mock.patch.object(
-                mutants, "remote_run_state",
-                lambda host: self.states_seen.append(host) or next(states),
-            ),
-            mock.patch.object(mutants, "split", split),
-            mock.patch.object(
-                mutants, "local_refusal",
-                lambda: calls.__setitem__("refusal", True) or None,
-            ),
-            mock.patch.object(mutants, "set_aside_last_run", lambda: None),
-            mock.patch.object(
-                mutants, "local_mutants",
-                lambda *a, **k: calls.__setitem__("local", a)
-                or subprocess.CompletedProcess(a, 0),
-            ),
-            # A long crate here runs as shards (`DiffShards`): run here all the same.
-            mock.patch.object(
-                mutants_diff, "sharded_run", lambda *a: calls.__setitem__("local", a) or 0
-            ),
-            mock.patch.object(mutants_diff, "kept_shards", lambda crate, key: False),
-            mock.patch.object(mutants, "update_cost_cache", lambda *a, **k: None),
-            mock.patch.object(mutants, "report_killed", lambda code, **k: code),
-            contextlib.redirect_stdout(out),
-            tempfile.TemporaryDirectory() as tmp,
-        ):
-            diff = Path(tmp) / "in.diff"
-            diff.write_bytes(b"")
-            code = mutants_diff.run_crate(str(diff), HEAD_TREE, Path("src"), "cpk", 3, busy=busy)
-        return code, calls, out.getvalue()
-
-    def test_a_busy_remote_runs_the_crate_here_whole(self):
-        for state, word in (
-            ("running", "running"), ("finished", "finished"),
-            ("died", "died"), (None, "unreachable"),
-        ):
-            code, calls, out = self.run_crate(state)
-            self.assertEqual(code, 0)
-            self.assertNotIn("split", calls)
-            self.assertIn("local", calls)
-            self.assertIn("refusal", calls, "local_refusal still runs first")
-            self.assertIn(
-                f"bonfire is busy (a remote half {word}): running here", out
-            )
-
-    def test_a_crate_past_the_limit_is_left_untested_while_this_trees_half_is_out(self):
-        """The cap on runs here holds only while the half on the VPS is this
-        tree's (`remote_pending`): its collect waits for this tree's lock, so
-        the VPS would sit idle as long as the run."""
-        limit = mutants_diff.BUSY_LOCAL_LIMIT_SECONDS
-        for state in ("running", "finished", "died"):
-            with self.assertRaises(mutants.Refused) as refused:
-                self.run_crate(state, estimate=limit + 1, pending=True)
-            self.assertIn(f"bonfire is busy (a remote half {state})", str(refused.exception))
-            self.assertIn("left untested", str(refused.exception))
-            code, calls, out = self.run_crate(state, estimate=limit, pending=True)
-            self.assertEqual(code, 0, "at the limit the crate still runs here")
-            self.assertIn("local", calls)
-
-    def test_another_trees_half_runs_here_with_no_cap(self):
-        """A half launched from another tree waits for nothing of this run:
-        the crate runs here whole, past the cap that only guards this tree's."""
-        limit = mutants_diff.BUSY_LOCAL_LIMIT_SECONDS
-        for state in ("running", "finished", "died"):
-            code, calls, out = self.run_crate(state, estimate=limit * 2)
-            self.assertEqual(code, 0)
-            self.assertIn("local", calls)
-            self.assertIn("running here", out)
-
-    def test_the_limit_counts_the_run_s_crates_together(self):
-        limit = mutants_diff.BUSY_LOCAL_LIMIT_SECONDS
-        busy = Counter()
-        code, calls, _ = self.run_crate("finished", estimate=limit * 0.6, busy=busy, pending=True)
-        self.assertEqual(code, 0, "the first crate fits")
-        self.assertIn("local", calls)
-        with self.assertRaises(mutants.Refused):
-            self.run_crate("finished", estimate=limit * 0.6, busy=busy, pending=True)
-        code, calls, _ = self.run_crate("finished", estimate=limit * 0.3, busy=busy, pending=True)
-        self.assertEqual(code, 0, "a refused crate's time is not counted: a smaller one still fits")
-        code, calls, _ = self.run_crate("none", estimate=limit * 5, busy=busy)
-        self.assertIn("split", calls, "a free remote takes a split whatever the total here")
-
-    def test_a_split_the_remote_refused_since_the_probe_runs_here(self):
-        """Between the busy check and the launch another tree can take the
-        host: `remote_start`'s refusal then means busy on re-probe, and the
-        crate runs here like a busy-remote one."""
-        code, calls, out = self.run_crate("none", reprobe=["running"], refused=True)
-        self.assertEqual(code, 0)
-        self.assertIn("split", calls)
-        self.assertIn("local", calls)
-        self.assertIn("bonfire is busy (a remote half running): running here", out)
-
-    def test_a_refused_split_keeps_the_cap_for_this_trees_half(self):
-        """The crate refused mid-launch runs here under the same cap: past it,
-        this tree's own half out there means untested, not a run."""
-        limit = mutants_diff.BUSY_LOCAL_LIMIT_SECONDS
-        with self.assertRaisesRegex(mutants.Refused, "left untested"):
-            self.run_crate(
-                "none", reprobe=["running"], refused=True,
-                estimate=limit + 1, pending=True,
-            )
-
-    def test_a_split_refused_for_another_reason_fails_the_crate(self):
-        """The re-probe, not the message, tells a busy host's refusal from a
-        version or disk one: the host answering free, the `Refused` passes
-        through and the crate is left untested."""
-        with self.assertRaisesRegex(mutants.Refused, "refused"):
-            self.run_crate("none", reprobe=["none"], refused=True)
-        self.assertEqual(len(self.states_seen), 2)
-
-    def test_a_shadow_launch_refused_for_busy_runs_here(self):
-        """The busy re-check inside the split's shadow launch can refuse too:
-        re-raised as `Refused`, `run_crate`'s re-probe sees a busy host and the
-        crate runs here rather than crashing the diff run."""
-        calls = {}
-        states = iter(["none", "running"])
-        starts = iter([(None, None, 8), mutants.Refused("a busy host")])
-        out = io.StringIO()
-
-        def remote_start(host, tree):
-            result = next(starts)
-            if isinstance(result, Exception):
-                raise result
-            return result
-
-        with (
-            tempfile.TemporaryDirectory() as tmp,
-            mock.patch.object(mutants, "ROOT", Path(tmp)),
-            mock.patch.object(
-                mutants, "estimate_seconds",
-                lambda crates, share=1.0: mutants.SPLIT_THRESHOLD_SECONDS,
-            ),
-            mock.patch.object(mutants, "remote_host", lambda: "bonfire"),
-            mock.patch.object(
-                mutants, "remote_run_state", lambda host: next(states)
-            ),
-            mock.patch.object(mutants, "remote_start", remote_start),
-            mock.patch.multiple(
-                mutants,
-                run_lock=lambda *a, **k: contextlib.nullcontext(),
-                plan_file_split=lambda *a: round_robin_plan(),
-                local_mutants=lambda *a, **k: calls.__setitem__("local", a)
-                or subprocess.CompletedProcess(a, 0),
-                remote_refusal=lambda host: "a busy host",
-                local_refusal=lambda: None,
-                set_aside_last_run=lambda: None,
-                update_cost_cache=lambda *a, **k: None,
-                report_killed=lambda code, **k: code,
-                **REMOTE_STUBS,
-            ),
-            mock.patch.object(mutants_diff, "kept_shards", lambda crate, key: False),
-            mock.patch.object(
-                mutants_diff, "sharded_run",
-                lambda *a: calls.__setitem__("sharded", a) or 0,
-            ),
-            contextlib.redirect_stdout(out),
-            tempfile.TemporaryDirectory() as tmp2,
-        ):
-            diff = Path(tmp2) / "in.diff"
-            diff.write_bytes(b"")
-            code = mutants_diff.run_crate(
-                str(diff), HEAD_TREE, Path("src"), "cpk", 3
-            )
-        self.assertEqual(code, 0)
-        self.assertIn("local", calls, "the crate ran here after the refused shadow")
-        # The refused attempt's `local_mutants` carried `--shard 0/2`; the
-        # fallback's, last recorded, runs the crate whole.
-        self.assertNotIn("--shard", calls["local"][0])
-        self.assertIn("busy", out.getvalue())
-
-    def test_an_unreachable_remote_runs_a_long_crate_here(self):
-        # No half waits to be collected, so nothing waits for this run's lock.
-        code, calls, out = self.run_crate(None, estimate=mutants_diff.BUSY_LOCAL_LIMIT_SECONDS * 10)
-        self.assertEqual(code, 0)
-        self.assertIn("local", calls)
-        self.assertIn("bonfire is busy (a remote half unreachable): running here", out)
-
-    def test_a_free_remote_splits_as_today(self):
-        code, calls, out = self.run_crate("none")
-        self.assertEqual(code, 0)
-        self.assertIn("split", calls)
-        self.assertNotIn("local", calls)
-        self.assertIn("split, about", out)
-
-    def test_remote_only_still_sends_every_mutant_remote(self):
-        code, calls, out = self.run_crate("running", remote_only=True)
-        self.assertEqual(code, 0)
-        self.assertEqual(self.states_seen, [], "REMOTE_ONLY never asks the host's state")
-        self.assertEqual(calls["split"][1], {"local": False})
-
-
-def shard_of(args: list[str]) -> str:
-    return args[args.index("--shard") + 1]
-
-
-class DiffShards(unittest.TestCase):
-    """A diff crate run here past `SHARD_SECONDS` runs as cargo-mutants
-    shards, each kept as it ends, and the same command rerun resumes at the
-    first shard not done."""
-
-    def setUp(self):
-        tmp = tempfile.TemporaryDirectory()
-        self.addCleanup(tmp.cleanup)
-        self.root = Path(tmp.name)
-        self.source = self.root / "src"
-        (self.source / ".cargo").mkdir(parents=True)
-        (self.source / ".cargo" / "mutants.toml").write_text(
-            "timeout_multiplier = 5.0\nminimum_test_timeout = 150\n", encoding="utf-8"
-        )
-        self.diff = self.root / "in.diff"
-        self.diff.write_bytes(b"diff one\n")
-
-    def run_crate(
-        self, tree: str = HEAD_TREE, estimate: float | None = None, stop_at: int | None = None,
-        codes: dict[int, int] | None = None, baseline: float = 40.0,
-    ):
-        """`cpk`'s crate run here, by default with an estimate of three shards.
-        Each shard the fake runs writes its outcomes and a survivor, a shard
-        running the baseline a `baseline`-second test phase; `stop_at`
-        interrupts the run at that shard, as a restart of the machine would,
-        and `codes` gives shards' exit codes (0 when absent). Returns the
-        code (None when interrupted), each cargo-mutants call's arguments and
-        the folders the cost table was given."""
-        calls, costed = [], []
-
-        def local_mutants(args, source, config=None):
-            calls.append(args)
-            k = int(shard_of(args).split("/")[0]) if "--shard" in args else 0
-            out = Path(args[args.index("--output") + 1]) if "--output" in args else self.root
-            out = out / "mutants.out"
-            out.mkdir(parents=True, exist_ok=True)
-            if k == stop_at:
-                (out / "partial").write_text("", encoding="utf-8")
-                raise KeyboardInterrupt
-            outcomes = []
-            if "--baseline" not in args:
-                outcomes.append({
-                    "scenario": "Baseline", "summary": "Success",
-                    "phase_results": [
-                        {"phase": "Build", "duration": 30.0},
-                        {"phase": "Test", "duration": baseline},
-                    ],
-                })
-            (out / "outcomes.json").write_text(
-                json.dumps({"outcomes": outcomes}), encoding="utf-8"
-            )
-            (out / "missed.txt").write_text(f"missed in shard {k}\n", encoding="utf-8")
-            return subprocess.CompletedProcess(args, (codes or {}).get(k, 0))
-
-        if estimate is None:
-            estimate = mutants_diff.SHARD_SECONDS * 2.5
-        with (
-            mock.patch.object(mutants, "ROOT", self.root),
-            mock.patch.object(mutants_diff, "SHARDS", self.root / "mutants.shards"),
-            mock.patch.object(mutants_diff, "RESULTS", self.root / "mutants.diff"),
-            mock.patch.object(mutants, "estimate_seconds", lambda crates, share=1.0: estimate),
-            mock.patch.object(mutants, "remote_host", lambda: None),
-            mock.patch.object(mutants, "local_refusal", lambda: None),
-            mock.patch.object(mutants, "local_mutants", local_mutants),
-            mock.patch.object(
-                mutants, "update_cost_cache", lambda out_dir=None, *a: costed.append(out_dir)
-            ),
-            mock.patch.object(mutants, "report_killed", lambda code, **k: code),
-            contextlib.redirect_stdout(io.StringIO()),
-        ):
-            try:
-                code = mutants_diff.run_crate(str(self.diff), tree, self.source, "cpk", 9)
-            except KeyboardInterrupt:
-                code = None
-        return code, calls, costed
-
-    def test_a_long_crate_runs_as_shards_the_first_alone_running_the_baseline(self):
-        code, calls, costed = self.run_crate()
-        self.assertEqual(code, 0)
-        self.assertEqual([shard_of(args) for args in calls], ["0/3", "1/3", "2/3"])
-        for args in calls:
-            self.assertEqual(args[:4], ["--in-diff", str(self.diff), "-p", "cpk"])
-            self.assertEqual(args[args.index("--sharding") + 1], "round-robin")
-        self.assertNotIn("--baseline", calls[0])
-        for args in calls[1:]:
-            self.assertEqual(args[args.index("--baseline") + 1], "skip")
-            # 5 x the first shard's 40 s test phase, above the 150 s floor.
-            self.assertEqual(args[args.index("--timeout") + 1], "200")
-        self.assertEqual(
-            [path.parent.name for path in costed], ["shard-0", "shard-1", "shard-2"],
-            "each shard's costs are folded in as it ends",
-        )
-        out = self.root / "mutants.out"
-        self.assertFalse((self.root / "mutants.shards" / "cpk").exists())
-        self.assertEqual(
-            mutants_diff.missed_lines(out),
-            ["missed in shard 0", "missed in shard 1", "missed in shard 2"],
-        )
-
-    def test_the_timeout_keeps_the_config_s_floor(self):
-        _, calls, _ = self.run_crate(baseline=20.0)
-        self.assertEqual(calls[1][calls[1].index("--timeout") + 1], "150")
-
-    def test_a_crate_within_one_shard_runs_whole(self):
-        code, calls, _ = self.run_crate(estimate=mutants_diff.SHARD_SECONDS)
-        self.assertEqual(code, 0)
-        self.assertEqual(len(calls), 1)
-        self.assertNotIn("--shard", calls[0])
-        self.assertNotIn("--output", calls[0])
-
-    def test_a_rerun_resumes_at_the_first_shard_not_done(self):
-        code, calls, _ = self.run_crate(stop_at=1)
-        self.assertIsNone(code)
-        self.assertEqual([shard_of(args) for args in calls], ["0/3", "1/3"])
-        # The kept shard's costs changed the estimate: the shards stay three.
-        code, calls, _ = self.run_crate(estimate=mutants_diff.SHARD_SECONDS * 4.5)
-        self.assertEqual(code, 0)
-        self.assertEqual([shard_of(args) for args in calls], ["1/3", "2/3"])
-        self.assertEqual(
-            calls[0][calls[0].index("--timeout") + 1], "200",
-            "the kept first shard's baseline still sets the timeout",
-        )
-        self.assertEqual(
-            mutants_diff.missed_lines(self.root / "mutants.out"),
-            ["missed in shard 0", "missed in shard 1", "missed in shard 2"],
-        )
-
-    def test_a_rerun_empties_the_interrupted_shard_first(self):
-        self.run_crate(stop_at=1)
-        self.run_crate()
-        shard = self.root / "mutants.out" / "shard-1"
-        self.assertEqual(sorted(p.name for p in shard.iterdir()), ["exit", "mutants.out"])
-        self.assertEqual(sorted(p.name for p in (shard / "mutants.out").iterdir()),
-                         ["missed.txt", "outcomes.json"])
-
-    def test_a_resume_ignores_an_estimate_now_within_one_shard(self):
-        self.run_crate(stop_at=1)
-        _, calls, _ = self.run_crate(estimate=mutants_diff.SHARD_SECONDS / 2)
-        self.assertEqual([shard_of(args) for args in calls], ["1/3", "2/3"])
-
-    def test_shards_that_ended_before_the_run_took_them_are_reused(self):
-        # The first run ends with the shards at the root's `mutants.out`, as
-        # an interruption before the diff run moves them leaves them.
-        self.run_crate()
-        for where in ("mutants.out", "mutants.out.old"):
-            if where != "mutants.out":
-                (self.root / "mutants.out").rename(self.root / where)
-            code, calls, _ = self.run_crate()
-            self.assertEqual((code, calls), (0, []), where)
-            self.assertEqual(
-                mutants_diff.missed_lines(self.root / "mutants.out"),
-                ["missed in shard 0", "missed in shard 1", "missed in shard 2"],
-            )
-
-    def test_an_unfinished_diff_run_s_finished_crate_is_reused_a_finished_one_s_not(self):
-        self.run_crate()
-        old = self.root / "mutants.diff.old"
-        old.mkdir()
-        (self.root / "mutants.out").rename(old / "cpk")
-        code, calls, _ = self.run_crate()
-        self.assertEqual((code, calls), (0, []))
-        (self.root / "mutants.out").rename(old / "cpk")
-        (old / "missed_all.txt").write_text("", encoding="utf-8")
-        _, calls, _ = self.run_crate()
-        self.assertEqual([shard_of(args) for args in calls], ["0/3", "1/3", "2/3"])
-
-    def test_another_tree_or_diff_starts_the_crate_over(self):
-        self.run_crate(stop_at=1)
-        _, calls, _ = self.run_crate(tree="0" * 40)
-        self.assertEqual([shard_of(args) for args in calls], ["0/3", "1/3", "2/3"])
-        self.run_crate(stop_at=1)
-        self.diff.write_bytes(b"diff two\n")
-        _, calls, _ = self.run_crate()
-        self.assertEqual([shard_of(args) for args in calls], ["0/3", "1/3", "2/3"])
-
-    def test_a_failed_shard_stops_the_crate_and_a_rerun_tries_it_again(self):
-        (self.root / "mutants.out").mkdir()
-        (self.root / "mutants.out" / "missed.txt").write_text("an older run's\n", encoding="utf-8")
-        code, calls, _ = self.run_crate(codes={0: 4})
-        self.assertEqual(code, 4)
-        self.assertEqual(len(calls), 1)
-        self.assertFalse(
-            (self.root / "mutants.out").exists(),
-            "an older run's results are set aside, never left to pass as this crate's",
-        )
-        code, calls, _ = self.run_crate()
-        self.assertEqual(code, 0)
-        self.assertEqual([shard_of(args) for args in calls], ["0/3", "1/3", "2/3"])
-
-    def test_the_shards_codes_combine(self):
-        code, _, _ = self.run_crate(codes={1: 2, 2: 3})
-        self.assertEqual(code, 3)
 
 
 class Closure(unittest.TestCase):
@@ -4316,8 +3612,8 @@ class Closure(unittest.TestCase):
     def closure(self, args, diffs: dict, run_result: int = 0, failing=()):
         """`mutants_diff.main` on `--closure args` with each crate's `git diff`
         answered from `diffs` (empty when absent), `working_tree` at TREE and
-        `run` stubbed to return `run_result`. Returns its code, the `git diff`
-        argument lists, `run`'s arguments when it ran, and the output."""
+        `run_jobs` stubbed to return `run_result`. Returns its code, the `git diff`
+        argument lists, `run_jobs`' arguments when it ran, and the output."""
         calls = []
 
         def git(argv, **kwargs):
@@ -4338,11 +3634,7 @@ class Closure(unittest.TestCase):
             mock.patch.object(mutants, "working_tree", lambda: self.TREE),
             mock.patch.object(mutants, "run_lock", contextlib.nullcontext),
             mock.patch.object(
-                mutants, "snapshot_source",
-                lambda tree: contextlib.nullcontext(self.root),
-            ),
-            mock.patch.object(
-                mutants_diff, "run",
+                mutants_diff, "run_jobs",
                 lambda *a: ran.__setitem__("args", a) or run_result,
             ),
             contextlib.redirect_stdout(out),
@@ -4367,7 +3659,7 @@ class Closure(unittest.TestCase):
             ],
         )
         self.assertIsNotNone(ran)
-        self.assertEqual(ran[3], cpk_diff)
+        self.assertEqual(ran, (cpk_diff, self.TREE))
         line = next(l for l in out.splitlines() if "no triaged whole run" in l)
         self.assertIn("fpk", line)
         self.assertNotIn("cpk", line)
@@ -6467,6 +5759,28 @@ class DiffSurvivors(unittest.TestCase):
                 "crates/libs/fpc/src/lib.rs": {5},
             },
         )
+
+    def test_in_lines_keeps_the_rows_whose_mutant_meets_the_changed_lines(self):
+        """A row's lines are those of its byte range in its file: a mutant on
+        a changed line is kept, one on another line of the same file and one
+        in a file the diff leaves alone are dropped."""
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            crate_rel = Path("crates/libs/cpk")
+            (root / crate_rel / "src").mkdir(parents=True)
+            # Line 1 "a", line 2 "bb" at bytes 2..4, line 3 "ccc" at bytes 5..8.
+            (root / crate_rel / "src" / "lib.rs").write_bytes(b"a\nbb\nccc\n")
+            (root / crate_rel / "src" / "other.rs").write_bytes(b"bb\n")
+            on_line_2 = ["src/lib.rs", "2", "4", "bool", "2", "false", "on line 2"]
+            on_line_3 = ["src/lib.rs", "5", "8", "bool", "3", "false", "on line 3"]
+            elsewhere = ["src/other.rs", "0", "2", "bool", "1", "false", "other file"]
+            self.assertEqual(
+                extra_mutants.in_lines(
+                    [on_line_2, on_line_3, elsewhere], crate_rel, root,
+                    {"crates/libs/cpk/src/lib.rs": {2}},
+                ),
+                [on_line_2],
+            )
 
 
 if __name__ == "__main__":

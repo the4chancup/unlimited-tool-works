@@ -1,10 +1,9 @@
 """`just mutants-diff [base] [path...]`: mutation-test only the lines changed since `base`,
 under `crates` or the paths given (a crate's folder).
 
-Runs `cargo mutants --in-diff` over the diff from `base` (default HEAD) to the working tree,
-untracked files included, so a review measures the tests of the code under review rather than the whole
-workspace (CONTRIBUTING.md "Testing and verification", "Mutation runs"). The diff goes through
-a file because the justfile forbids pipes and redirection in recipe lines.
+The diff runs from `base` (default HEAD) to the working tree, untracked files included, so a
+review measures the tests of the code under review rather than the whole workspace
+(CONTRIBUTING.md "Testing and verification", "Mutation runs").
 
 Two other modes share the same run. `--closure [crate ...]` (`just mutants-closure`) diffs
 each crate — the named ones, or every workspace crate — since the commit
@@ -12,43 +11,32 @@ each crate — the named ones, or every workspace crate — since the commit
 launched from, instead of `base`; `--checked <crate> <commit>` (`just mutants-checked`)
 writes that record once the run's survivors are triaged.
 
-Each crate the diff mutates gets a cargo-mutants run of its own (`-p <crate>`), one after the
-other, not one run for the whole diff: cargo-mutants times a mutant's tests out at a multiple of
-the baseline, and one run's baseline tests every crate it mutates, so a hung mutant of a crate
-whose tests take two seconds waited out the slowest crate's suite (751 s here at `mutants-diff
-95f20eac`). A run costs one more baseline per crate, about a minute. Each crate's results move
-to `mutants.diff/<crate>/` when its run ends, and `mutants.diff/missed_all.txt` lists every
-crate's survivors and, tagged `[timeout]`, its timeouts.
+The mutation driver (`driver.py`) runs the mutants, so it must be running on this machine
+(`just driver run`); the command refuses with exit 1 otherwise. The command queues one
+driver job per crate a changed file under `crates/` belongs to, each carrying the diff: the
+job's cargo-mutants shards test the diff's mutants alone (`--in-diff`), and its extra
+shards the extra kinds (`mutants.EXTRA_KINDS`, `extra_mutants.py`) on the diff's changed
+lines. Each crate gets a job of its own, not one for the whole diff, because cargo-mutants
+times a mutant's tests out at a multiple of the baseline, and one run's baseline tests
+every crate it mutates: a hung mutant of a crate whose tests take two seconds waited out
+the slowest crate's suite (751 s at `mutants-diff 95f20eac`). A crate with neither kind of
+mutant on the changed lines gets no job.
 
-After each crate's cargo-mutants run the extra kinds (`mutants.EXTRA_KINDS`,
-`extra_mutants.py`) run too, on this machine and over the lines the diff changed in its
-crate (`extra_mutants.diff_lines`): every crate a changed file belongs to gets its
-pass, cargo-mutants mutants or not — a diff can hold `call` mutants where
-cargo-mutants lists none. A pass's results move to `mutants.diff/<crate>/extra/` and
-its survivors join `missed_all.txt` after the crate's cargo-mutants ones.
-
-A crate run whose mutants would cost more than a few minutes locally splits with
-`STUDIO_MUTANTS_REMOTE` (the split `mutants.py` describes, by files to the two
-sides' measured speeds where it can, else in halves): the
-estimate is the baseline plus the per-crate per-mutant costs this machine has
-measured (`mutants.estimate_seconds`), so a pes_savefile diff splits while a
-one-line `fpc` fix stays local. While the remote is busy — a whole-crate run
-holds it for days — the crate runs here whole instead. A crate in
-`mutants.LOCAL_ONLY_CRATES` never splits. With `mutants.REMOTE_ONLY` set every
-cargo-mutants mutant runs on the remote, whatever the estimate; the extra
-kinds still run here.
+The command then waits for its jobs, holding no lock, and moves each finished one from the
+driver's `done/` folder to `mutants.diff/<crate>/`. `mutants.diff/missed_all.txt` lists
+every crate's survivors and, tagged `[timeout]`, its timeouts; the exit code combines the
+jobs' (`mutants.run_code`). A command stopped while it waits leaves its jobs running, and
+their results then stay in the driver's `done/` folder.
 """
 
-import hashlib
 import io
 import json
-import math
 import os
 import subprocess
 import sys
 import tempfile
+import time
 import tomllib
-from collections import Counter
 from collections.abc import Iterable
 from pathlib import Path
 
@@ -56,7 +44,7 @@ import extra_mutants
 import mutants
 
 ROOT = Path(__file__).resolve().parents[2]
-# Each crate's `mutants.out` of the last diff run, and their survivors' `missed_all.txt`.
+# Each crate's driver job of the last diff run, and their survivors' `missed_all.txt`.
 RESULTS = ROOT / "mutants.diff"
 # The crates' commits of record for a `--closure` run's diffs, written by `--checked`.
 CHECKED = ROOT / ".cargo" / "mutants_checked.toml"
@@ -64,19 +52,6 @@ CHECKED = ROOT / ".cargo" / "mutants_checked.toml"
 # files it, for the triage that ends with `--checked` recording the commit its
 # `launched_from.txt` holds.
 ROLLING = ROOT / "mutants.rolling"
-# The longest a diff run's crates run here, in total, while this tree's own
-# half is on the VPS (`mutants.remote_pending`). Not unbounded: this run
-# holds its tree's lock throughout, that half's collect waits for it, and the
-# VPS stays idle meanwhile; two hours of that idle is what the maintainer
-# allows. Another tree's half waits for nothing of this run: no cap then.
-BUSY_LOCAL_LIMIT_SECONDS = 7200
-# A crate run here estimated past this runs as cargo-mutants shards of about this length
-# (`sharded_run`), each kept as it ends: an interruption (a restart, a crash) then loses
-# one shard, not the crate's run, and the same command rerun goes on from there.
-SHARD_SECONDS = 1800
-# The shards of a crate run under way, a folder per crate, until the run makes them its
-# `mutants.out`.
-SHARDS = ROOT / "mutants.shards"
 
 
 def read_checked(path: Path = CHECKED) -> dict[str, str]:
@@ -249,224 +224,79 @@ def diff_run(diff: bytes, tree: str, where: str, codes: Iterable[int] = ()) -> i
         with mutants.run_lock(mutants.tree_lock_path()):
             mutants.set_aside(RESULTS)
         return mutants.run_code([0, *codes])
-    with tempfile.NamedTemporaryFile("wb", suffix=".diff", delete=False) as f:
-        f.write(diff)
-        diff_path = f.name
-    try:
-        with (
-            mutants.run_lock(mutants.tree_lock_path()),
-            mutants.run_lock(),
-            mutants.snapshot_source(tree) as source,
-        ):
-            return mutants.run_code([run(diff_path, tree, source, diff), *codes])
-    finally:
-        os.unlink(diff_path)
+    return mutants.run_code([run_jobs(diff, tree), *codes])
 
 
-def run(diff_path: str, tree: str, source: Path, diff: bytes) -> int:
-    """Lists the diff's mutants and runs each crate's (`run_crate`), keeping each crate's
-    results under `RESULTS`. `tree` is the working tree the diff was taken against, which the
-    remote is sent, `source` its copy (`mutants.snapshot_source`), which the listing and
-    the local halves read, and `diff` the diff's bytes, whose changed lines
-    (`extra_mutants.diff_lines`) the extra kinds' passes run on."""
-    # The mutant list, for the printed line and the local-run estimate. Each
-    # entry's `file` names the crate (`crates/<group>/<crate>/...`).
-    listing = subprocess.run(
-        ["cargo", "mutants", "--in-diff", diff_path, "--list", "--json"],
-        cwd=source,
-        capture_output=True,
-    )
-    if listing.returncode != 0:
-        print(f"mutants_diff: listing failed:\n{listing.stderr.decode(errors='replace')}")
+def run_jobs(diff: bytes, tree: str) -> int:
+    """Queue `diff`'s driver jobs, on `tree` (the working tree it was taken
+    against), one per crate a changed file under `crates/` belongs to, and
+    wait for them: each finished job moves to `RESULTS/<crate>/`, and their
+    survivors go into `RESULTS/missed_all.txt`. Returns the jobs' combined
+    code; 0 when no crate has a mutant on the diff's lines; 1, queuing
+    nothing, when no driver runs on this machine."""
+    # Imported here, not at the top: `driver` imports this module.
+    import driver
+
+    if not driver.running():
+        print("mutants_diff: no mutation driver runs on this machine: start `just driver "
+              "run`, then run this command again")
         return 1
-    listed = listing.stdout
-    # A diff with no mutable lines prints nothing at all (an "INFO" line on
-    # stderr), not an empty array.
-    found = json.loads(listed) if listed.strip() else []
-    counts = Counter(mutants.mutant_crate(m["file"]) for m in found)
-    names = ", ".join(f"{crate}: {count}" for crate, count in sorted(counts.items()))
-    print(f"mutants_diff: {len(found)} mutants ({names}), one run per crate")
-    results = RESULTS
-    # Even with no mutant to run: an older run's results never stand as this one's.
-    mutants.set_aside(results)
-    # The extra kinds run for every crate a changed file under `crates/` belongs
-    # to, cargo-mutants mutants or not: a diff can hold `call` mutants where it
-    # lists none. A standalone extra run's `extra_mutants.out` is not this run's,
-    # so it is set aside like the rest.
-    lines = extra_mutants.diff_lines(diff)
-    # Before anything is set aside: an uncollected split's local half keeps its
-    # record in `extra_mutants.out`, which its collection reads.
-    if refusal := mutants.local_refusal():
-        print(f"mutants_diff: {refusal}")
-        return 1
-    crates = {
-        mutants.mutant_crate(path) for path in lines if path.startswith("crates/")
-    }
-    mutants.set_aside(extra_mutants.OUT_DIR)
-    if not found and not crates:
+    # Every crate a cargo-mutants mutant of the diff sits in has a changed
+    # file, and so does every crate with an extra mutant on its lines.
+    crates = sorted({
+        mutants.mutant_crate(path)
+        for path in extra_mutants.diff_lines(diff)
+        if path.startswith("crates/")
+    })
+    with mutants.run_lock(mutants.tree_lock_path()):
+        # Even with no job to queue: an older run's results never stand as this one's.
+        mutants.set_aside(RESULTS)
+    jobs = {}
+    for crate in crates:
+        job = driver.queue(crate, extra=None, diff=diff, tree=tree)
+        if job is not None:
+            jobs[crate] = job.name
+    if not jobs:
+        print(f"mutants_diff: no crate's results landed (the last run's, if any: {RESULTS.name}.old)")
         return 0
-    codes = {}
-    busy = Counter()
-    extra_missed: dict[str, list[str]] = {}
-    for crate in sorted(counts.keys() | crates):
-        count = counts.get(crate, 0)
-        print(f"mutants_diff: {crate}, {count} mutants", flush=True)
-        if count:
-            try:
-                codes[crate] = run_crate(diff_path, tree, source, crate, count, busy=busy)
-            except mutants.Refused as refusal:
-                # Refused before touching `mutants.out`: what is there is no result of this crate.
-                print(f"mutants_diff: {refusal}")
-                codes[crate] = 1
-                continue
-            out = ROOT / "mutants.out"
-            if out.exists():
-                # Made with the first results that land, so a run that lands none leaves no empty
-                # folder to be set aside over the last results.
-                results.mkdir(exist_ok=True)
-                mutants.move_results(out, results / crate)
-        try:
-            missed, extra_counts, _ = extra_mutants.run_crate(
-                crate, list(mutants.EXTRA_KINDS), tree, lines=lines
-            )
-        except SystemExit as stop:
-            # A failing baseline or a broken config ends this crate's pass, as
-            # cargo-mutants' exit 4 ends its run, and the crates after it run.
-            print(f"mutants_diff: {crate}'s extra pass stopped: {stop}")
-            missed, extra_counts = [], Counter(untested=1)
-        extra_missed[crate] = missed
-        # The extra pass's code joins the crate codes `run_code` combines: 1
-        # when a mutant went untested, 2 when one was missed, else 0.
-        codes[crate] = mutants.run_code(
-            [
-                codes.get(crate, 0),
-                1 if extra_counts["untested"] else 2 if missed else 0,
-            ]
+    results = wait_for(jobs, driver.DRIVER / "done", driver.POLL_SECONDS)
+    survivors = [line for crate in sorted(results) for line in results[crate]["missed"]]
+    with mutants.run_lock(mutants.tree_lock_path()):
+        (RESULTS / "missed_all.txt").write_text(
+            "".join(line + "\n" for line in survivors), encoding="utf-8"
         )
-        extra_out = extra_mutants.OUT_DIR
-        if extra_out.exists():
-            results.mkdir(exist_ok=True)
-            (results / crate).mkdir(exist_ok=True)
-            mutants.move_results(extra_out, results / crate / "extra")
-    survivors = [
-        line
-        for crate in sorted(codes)
-        for line in missed_lines(results / crate) + extra_missed.get(crate, [])
-    ]
-    # An extra pass that kept no mutant writes no folder, yet its stale
-    # exclusions are survivors all the same.
-    if not results.exists() and not survivors:
-        print(f"mutants_diff: no crate's results landed (the last run's, if any: {results.name}.old)")
-        return mutants.run_code(codes.values())
-    results.mkdir(exist_ok=True)
-    (results / "missed_all.txt").write_text(
-        "".join(line + "\n" for line in survivors), encoding="utf-8"
-    )
-    print(f"mutants_diff: results in {results.name}/<crate>/")
-    for crate, code in sorted(codes.items()):
-        print(f"  {crate}: exit {code}")
+    print(f"mutants_diff: results in {RESULTS.name}/<crate>/")
+    for crate in sorted(results):
+        print(f"  {crate}: exit {results[crate]['code']}")
     if survivors:
-        print(f"missed or timed out ({len(survivors)}), in {results.name}/missed_all.txt:")
+        print(f"missed or timed out ({len(survivors)}), in {RESULTS.name}/missed_all.txt:")
         for line in survivors:
             print(f"  {line}")
-    return mutants.run_code(codes.values())
+    return mutants.run_code([result["code"] for result in results.values()])
 
 
-def run_crate(
-    diff_path: str, tree: str, source: Path, crate: str, count: int,
-    busy: Counter | None = None,
-) -> int:
-    """Runs one crate's mutants of the diff: on the remote whole (`REMOTE_ONLY`),
-    split, or here — here too while the remote is busy: a whole-crate run holds
-    it for days. `busy["seconds"]` totals the estimates this run has run here
-    while this tree's own half was on the remote (`mutants.remote_pending`),
-    across its crates: past `BUSY_LOCAL_LIMIT_SECONDS` a crate is left untested."""
-    busy = Counter() if busy is None else busy
-    selection = ["--in-diff", diff_path, "-p", crate]
-    estimated = mutants.estimate_seconds([crate] * count)
-    print(f"mutants_diff: estimated {estimated:.0f} s on this machine")
-    host = mutants.remote_host()
-    if host is not None and mutants.REMOTE_ONLY:
-        return mutants.split(selection, host, tree, source, local=False)
-    local_only = crate in mutants.LOCAL_ONLY_CRATES
-    if host is not None and estimated >= mutants.SPLIT_THRESHOLD_SECONDS and not local_only:
-        state = mutants.remote_run_state(host)
-        if state == "none":
-            half = mutants.estimate_seconds([crate] * count, share=0.5)
-            print(f"mutants_diff: split, about {half:.0f} s a side, plus the transfer and polling")
-            try:
-                return mutants.split(selection, host, tree, source)
-            except mutants.Refused:
-                state = mutants.remote_run_state(host)
-                if state in (None, "none"):
-                    # Not a busy host: a version or disk refusal fails as before.
-                    raise
-                # Another run took the host since the probe: run here, as below.
-        # The cap counts only this tree's own half (`remote_pending`): another
-        # tree's waits for nothing of this run.
-        if state is not None and mutants.remote_pending().exists():
-            if busy["seconds"] + estimated > BUSY_LOCAL_LIMIT_SECONDS:
-                raise mutants.Refused(
-                    f"{host} is busy (a remote half {state}) and {crate} would bring this "
-                    f"run's time here past {BUSY_LOCAL_LIMIT_SECONDS // 60} min: left untested. "
-                    "That half's collect waits for this tree's lock, so the VPS would sit "
-                    "idle as long; rerun the crate once the VPS is free"
-                )
-            busy["seconds"] += estimated
-        print(
-            f"mutants_diff: {host} is busy (a remote half "
-            f"{state or 'unreachable'}): running here",
-            flush=True,
-        )
-    if host is not None and local_only:
-        print(f"mutants_diff: {crate} is local-only (LOCAL_ONLY_CRATES)")
-    if refusal := mutants.local_refusal():
-        raise mutants.Refused(refusal)
-    print("mutants_diff: running here", flush=True)
-    key = {"tree": tree, "diff": hashlib.sha256(Path(diff_path).read_bytes()).hexdigest()}
-    # Kept shards are resumed whatever the estimate says now: the shards' own
-    # costs, folded in as each ended, move it.
-    if kept_shards(crate, key) or estimated > SHARD_SECONDS:
-        return sharded_run(source, crate, selection, key, math.ceil(estimated / SHARD_SECONDS))
-    print(f"mutants_diff: cargo mutants {' '.join(selection)}", flush=True)
-    mutants.set_aside_last_run()
-    code = mutants.local_mutants(selection, source).returncode
-    mutants.update_cost_cache()
-    return mutants.report_killed(code, local_half=True)
-
-
-def recorded_key(folder: Path) -> dict | None:
-    """The tree and diff a sharded run's `folder` was run for (its `run.json`),
-    or None when it holds no record."""
-    record = folder / "run.json"
-    if not record.exists():
-        return None
-    kept = json.loads(record.read_text(encoding="utf-8"))
-    return {"tree": kept.get("tree"), "diff": kept.get("diff")}
-
-
-def kept_shards(crate: str, key: dict) -> bool:
-    """Whether an interrupted sharded run of `crate` for `key` (its tree and
-    diff) left shards to resume, moved back to `SHARDS/<crate>` from wherever
-    the interruption left them: there still; at the root's `mutants.out`, or
-    set aside from there as `mutants.out.old`, when it came after the shards
-    ended but before the diff run took them; or among the results of a diff run
-    that never finished, when it came at a later crate. A finished diff run's
-    results (its last write is `missed_all.txt`) are never taken: the same
-    command rerun after one measures again."""
-    folder = SHARDS / crate
-    candidates = [folder, mutants.ROOT / "mutants.out", mutants.ROOT / "mutants.out.old"]
-    old = RESULTS.with_name(RESULTS.name + ".old")
-    if not (old / "missed_all.txt").exists():
-        candidates.append(old / crate)
-    for candidate in candidates:
-        if recorded_key(candidate) == key:
-            if candidate != folder:
-                mutants.set_aside(folder)
-                folder.parent.mkdir(parents=True, exist_ok=True)
-                mutants.move_results(candidate, folder)
-            return True
-    return False
+def wait_for(jobs: dict[str, str], done: Path, poll_seconds: float) -> dict[str, dict]:
+    """Wait for each crate's job in `jobs` (crate -> job name) to finish in the
+    driver's `done` folder, polling every `poll_seconds`, and move each to
+    `RESULTS/<crate>/` as it does. Returns each crate's `result.json`.
+    No lock is held while it waits: this machine's driver takes the tree lock
+    of the tree it runs from to file a rolling job, so a diff run holding it
+    in that tree would stop the very driver it waits for."""
+    print(f"mutants_diff: waiting for the driver's jobs: {', '.join(jobs.values())}", flush=True)
+    results = {}
+    while True:
+        for crate, name in jobs.items():
+            finished = done / name
+            if crate in results or not (finished / "result.json").exists():
+                continue
+            result = json.loads((finished / "result.json").read_text(encoding="utf-8"))
+            with mutants.run_lock(mutants.tree_lock_path()):
+                RESULTS.mkdir(exist_ok=True)
+                mutants.move_results(finished, RESULTS / crate)
+            results[crate] = result
+        if len(results) == len(jobs):
+            return results
+        time.sleep(poll_seconds)
 
 
 def replace_text(path: Path, text: str) -> None:
@@ -477,70 +307,10 @@ def replace_text(path: Path, text: str) -> None:
     os.replace(temp, path)
 
 
-def sharded_run(
-    source: Path, crate: str, selection: list[str], key: dict, count: int
-) -> int:
-    """Runs `crate`'s mutants here as `count` cargo-mutants shards, each into
-    `SHARDS/<crate>/shard-<k>` and marked done (its `exit`) as it ends; the
-    folder then becomes the root's `mutants.out`. Shards kept for `key` (the
-    tree and diff, `kept_shards`) are resumed from the first not done, at their
-    own shard count; a folder for another tree or diff is set aside. The first
-    shard runs the baseline, and the others skip it with the timeout its test
-    phase sets. A shard ending other than 0, 2 (missed) or 3 (timed out) stops
-    the crate without its mark, so a rerun tries it again."""
-    # Before anything runs, as the whole-crate path does: an older run's
-    # `mutants.out` left here would be moved into this crate's results.
-    mutants.set_aside_last_run()
-    folder = SHARDS / crate
-    if recorded_key(folder) == key:
-        count = json.loads((folder / "run.json").read_text(encoding="utf-8"))["shards"]
-        print(f"mutants_diff: resuming {crate}'s {count} shards", flush=True)
-    else:
-        mutants.set_aside(folder)
-        folder.mkdir(parents=True)
-        replace_text(folder / "run.json", json.dumps({**key, "shards": count}))
-    codes = []
-    timeout = 0.0
-    for k in range(count):
-        shard = folder / f"shard-{k}"
-        done = shard / "exit"
-        if not done.exists():
-            args = [
-                *selection, "--shard", f"{k}/{count}", "--sharding", "round-robin",
-                "--output", str(shard),
-            ]
-            if k:
-                args += ["--baseline", "skip", "--timeout", f"{timeout:.0f}"]
-            print(f"mutants_diff: shard {k + 1} of {count}: cargo mutants {' '.join(args)}",
-                  flush=True)
-            # An interrupted shard's partial results go first: cargo-mutants
-            # would keep them beside the new ones as `mutants.out.old`.
-            if shard.exists():
-                mutants.remove_tree(shard)
-            shard.mkdir()
-            code = mutants.local_mutants(args, source).returncode
-            if code not in (0, 2, 3):
-                print(f"mutants_diff: shard {k + 1} exited {code}: {crate} stops here, "
-                      f"its shards kept in {folder}")
-                return code
-            mutants.update_cost_cache(shard / "mutants.out")
-            replace_text(done, str(code))
-        codes.append(int(done.read_text(encoding="utf-8")))
-        if not k:
-            outcomes = json.loads(
-                (shard / "mutants.out" / "outcomes.json").read_text(encoding="utf-8")
-            )["outcomes"]
-            baseline = next(o for o in outcomes if o["scenario"] == "Baseline")
-            tests = next(p["duration"] for p in baseline["phase_results"] if p["phase"] == "Test")
-            timeout = extra_mutants.timeout_seconds(extra_mutants.mutants_toml(source), tests)
-    mutants.move_results(folder, mutants.ROOT / "mutants.out")
-    return mutants.report_killed(mutants.run_code(codes), local_half=True)
-
-
 def missed_lines(out: Path) -> list[str]:
     """The survivors of one crate's finished run in `out` (its `mutants.out`): a split run's
     summary list, which merges both halves, their timeouts included, and drops what the
-    Windows recheck caught; a sharded run's shards' lists, in shard order; else a local
+    Windows recheck caught; a driver job's shards' lists, in shard order; else a local
     run's own list and its timeouts (`mutants.timeout_lines`)."""
     if shards := mutants.shard_outputs(out):
         return [line for shard in shards for line in missed_lines(shard)]

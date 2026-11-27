@@ -520,6 +520,25 @@ def listed(
     return crate_rel, rows, stale, sum(excluded)
 
 
+def in_lines(
+    rows: list[list[str]], crate_rel: Path, root: Path, lines: dict[str, set[int]]
+) -> list[list[str]]:
+    """The `rows` (of `listed`, in the crate at `crate_rel` of the tree at
+    `root`) whose mutant's own lines, `byte_lines` of its byte range in its
+    file, meet the set `lines` (`diff_lines`' map) holds for that file's
+    workspace-relative path."""
+    kept = []
+    for row in rows:
+        changed = lines.get((crate_rel / row[0]).as_posix())
+        if not changed:
+            continue
+        data = (root / crate_rel / row[0]).read_bytes()
+        first, last = byte_lines(data, int(row[1]), int(row[2]))
+        if not changed.isdisjoint(range(first, last + 1)):
+            kept.append(row)
+    return kept
+
+
 def copy_source(source: Path, dest: Path) -> None:
     """Copy `source`, an extracted tree, into `dest`, without its top-level
     `target/` or `extra_mutants.out/`: the first holds the coverage map's
@@ -553,9 +572,9 @@ def run_crate(
     files keep the listing's order whatever order the mutants finish in. With
     `only`, only the mutants whose missed line it
     holds run (exclusions still apply first). With `lines` (`diff_lines`' map
-    of a diff's changed lines per file, as `mutants-diff` passes) a mutant
-    runs only when its own lines — `byte_lines` of its byte range in the
-    file it sits in — meet the set for its workspace-relative path; a crate
+    of a diff's changed lines per file, as a diff job's extra shard passes it
+    through `mutants.py --remote-extra --diff`) only the mutants on those
+    lines run (`in_lines`); a crate
     none of whose mutants the diff touches prints its 0-mutants line, runs no
     baseline, writes no files and returns its stale exclusions alone. With
     `shard` (k, n), after the `lines` and `only` filters, only the rows whose
@@ -618,16 +637,7 @@ def run_crate(
         crate_rel, rows, stale, excluded_count = listed(crate, copies[0], kinds)
         config = mutants_toml(copies[0])
         if lines is not None:
-            kept = []
-            for row in rows:
-                changed = lines.get((crate_rel / row[0]).as_posix())
-                if not changed:
-                    continue
-                data = (copies[0] / crate_rel / row[0]).read_bytes()
-                first, last = byte_lines(data, int(row[1]), int(row[2]))
-                if not changed.isdisjoint(range(first, last + 1)):
-                    kept.append(row)
-            rows = kept
+            rows = in_lines(rows, crate_rel, copies[0], lines)
         if only is not None:
             rows = [row for row in rows if missed_line(crate_rel, row) in only]
         if shard is not None:

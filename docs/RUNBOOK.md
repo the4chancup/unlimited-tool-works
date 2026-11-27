@@ -36,7 +36,8 @@ build of its crate: about 2.5 of a shard's 25 minutes, some six hours over `save
 **A checkpoint is one command.** `just checkpoint` runs `gates-changed` and `mutants-diff`
 since the last gated commit and then moves that commit, the git ref
 `refs/checkpoints/gated`, to the commit it started on (`scripts/gates/checkpoint.py`; a
-clone seeds the ref once, as the script says). The mutation run starts from a ref of its own,
+clone seeds the ref once, as the script says). Its mutants run as jobs of the mutation driver
+(below), so the driver must be running on this PC. The mutation run starts from a ref of its own,
 `refs/checkpoints/mutated`, which only a run whose mutants all ran moves: a checkpoint with
 `--no-mutants` leaves it behind, so the next run's mutants cover what it skipped (one ref
 serving both once left 166 commits out of every mutation run). The gates read the working tree, so a commit
@@ -161,22 +162,14 @@ that builds on this machine, the remote lock for the VPS, and the cost table's. 
 run takes its tree's lock and the remote's to launch, and to fetch; the remote lock ends at
 the fetch, and the summary and its Windows rechecks run under the tree's alone. It never
 takes the build lock, and it holds nothing while it waits (`just mutants-collect` waits
-the same way). So `just mutants-diff` runs while a whole run is under way: it keeps the
-split below, a round's diff being minutes and its result waited on, except while a
-mutation half is on the VPS (running, or ended and not collected) or the VPS cannot be
-reached, when it runs entirely on this machine instead of waiting days for its turn there.
-Started from another worktree than the whole run's, it runs here as long as it needs and
-the VPS waits for nothing of it: a long diff run goes to a worktree under
-`4cc-studio-temp/`. In the whole run's own tree, the diff holds the tree's lock throughout
-and that half's fetch waits for it, so there a crate that would take the run's total time
-here past `BUSY_LOCAL_LIMIT_SECONDS` (two hours, the VPS idle time the maintainer allows)
-is left untested, the run says so, and the crate is run again once the VPS is free. A
-`just gates-remote` holds the remote lock for its whole run. A crate run here that is estimated past `SHARD_SECONDS`
-(half an hour) runs as cargo-mutants shards (`--shard`) of about that length, each kept in
-`mutants.shards/<crate>/` as it ends. After an interruption, the same command goes on from
-the first shard not done, unless the working tree changed in between, which starts the
-crate over. What follows
-describes the split: a diff uses it, and a whole run that needs this machine again would.
+the same way). So `just mutants-diff` runs while a whole run is under way. It runs no
+mutant itself: it queues a job per crate on the mutation driver (below) and waits for
+them, holding no lock while it waits, because the driver on this PC takes the tree's lock
+to file a rolling job, and a diff run holding it there would stop the driver it waits for.
+Its jobs go ahead of the rolling job's shards, so they wait at most one shard on either
+lane, and the VPS lane takes none while a whole run's half runs there. A
+`just gates-remote` holds the remote lock for its whole run. What follows describes the
+split, which a whole run that needs this machine again would use.
 
 A whole-crate run also selects each mutant's tests. The remote job first
 lists the crate's mutants and builds a coverage map — which tests cover which
@@ -191,8 +184,8 @@ built; a failed one leaves it off, so every mutant runs the full suite —
 time lost, never a wrong outcome.
 
 **The split with the maintainer's VPS.** On the maintainer's PC the
-user environment variable `STUDIO_MUTANTS_REMOTE=bonfire` (an alias in `~/.ssh/config`) makes
-`just mutants-diff` run part of a larger crate's mutants there (`scripts/mutation/mutants.py`: the working tree is
+user environment variable `STUDIO_MUTANTS_REMOTE=bonfire` (an alias in `~/.ssh/config`) lets
+a split run send part of a crate's mutants there (`scripts/mutation/mutants.py`: the working tree is
 sent as a git bundle, the remote half runs at low priority, its results land in
 `mutants.out/remote/` and the combined survivors in `mutants.out/missed_all.txt`). A split
 run hands each side a complementary set of its mutants' source files rather than `--shard`
@@ -219,24 +212,23 @@ roughly halves a whole-crate run whose sides rate the same, and it moves part of
 the home machine either way.
 Agent and IDE shells started before the variable was set do not see it, so the script also
 reads it from the user's registry environment; the run's first line says which mode it took
-("splitting the run with bonfire", "running every mutant on bonfire" or, from `mutants-diff`,
-"running here"). An agent
+("splitting the run with bonfire" or "running every mutant on bonfire"). An agent
 shell without the variable once ran all 806 `pes_savefile` mutants locally, over three
-hours. An empty value in the process opts out. `mutants-diff` runs one cargo-mutants per crate
-the diff mutates, one after the other, each with its own baseline and so its own timeout, not
+hours. An empty value in the process opts out. `mutants-diff` queues one driver job per crate
+the diff mutates, each with its own baseline and so its own timeout, not
 one run for the diff: one run's baseline tests every crate it mutates, and at `mutants-diff
 95f20eac` (`music_export`, `pes_savefile`, `save_editor`) a `music_export` mutant that hung a
 loop waited 751 s here and about 1100 s on the VPS where its tests take 1 to 2 s; nine timeouts
-cost about 2.5 h of job time, more than the two machines' speed difference. Each crate's
-results move to `mutants.diff/<crate>/` and their survivors are listed together in
-`mutants.diff/missed_all.txt`; a crate killed mid-run leaves its results in `mutants.out/` for
-`just mutants-collect` (a sharded crate keeps its finished shards for the same command rerun,
-as above), and the crates after it did not run. After each crate's cargo-mutants
-run the extra kinds run here, over the lines the diff changed in that crate. Every crate a
-changed file belongs to gets this pass, even one with no cargo-mutants mutant; its results go
-to `mutants.diff/<crate>/extra/`, and its survivors follow the crate's cargo-mutants ones in
-`missed_all.txt`. Each crate's run splits the same
-way only when its estimated local time is at least 4 minutes (`SPLIT_THRESHOLD_SECONDS`): the estimate is the
+cost about 2.5 h of job time, more than the two machines' speed difference. A job's
+cargo-mutants shards test the diff's mutants alone (`--in-diff`), and its extra shards, which
+the VPS lane alone runs, test the extra kinds over the lines the diff changed in its crate. A
+crate with neither kind of mutant on those lines gets no job. A job that could not be sent to
+the VPS drops its extra shards and ends with exit 1, as untested mutants do. Each finished job
+moves from the driver's `done/` folder to `mutants.diff/<crate>/`, and the survivors of all
+of them are listed together in `mutants.diff/missed_all.txt`, each crate's cargo-mutants ones
+before its extra ones. A `mutants-diff` stopped while it waits leaves its jobs running, and
+their results then stay in the driver's `done/` folder. The split starts
+only when a run's estimated local time is at least 4 minutes (`SPLIT_THRESHOLD_SECONDS`): the estimate is the
 unmutated baseline plus each mutant's crate's measured mean seconds per mutant over the two
 jobs (the cost table, `%LOCALAPPDATA%/4cc-studio/mutants-cost.json`, `~/.cache/4cc-studio/` off
 Windows, refreshed by every local run; one per user rather than per tree, so the main tree and
@@ -259,7 +251,7 @@ its two cargo processes given half the logical CPUs (`sized_config`, the remote 
 sizing), not with two CPUs held back: the machine stays usable by priority, and the run gets
 what the user leaves idle (measured level with the old cap). A starved test can then time
 out, so a timeout that no infinite loop explains is rerun before it counts as caught, unless
-its log (`mutants.diff/<crate>/log/`) already shows tests reported `FAILED`: the mutant is
+its log (`mutants.diff/<crate>/shard-<k>/mutants.out/log/`) already shows tests reported `FAILED`: the mutant is
 then caught, and the run only outlasted its limit because several failing tests each waited
 out a bounded wait (the update dialog's tests wait up to 10 s for a frame, and a mutant of
 `updater::install` fails a dozen of them under a 20 s limit). A single test past 180 s is
@@ -281,13 +273,15 @@ Windows agent that holds the key. **A run snapshots the working tree when its co
 (a git tree object, `mutants.working_tree`): the remote half runs on a transfer of it, and the
 listing, the config and the local half read a copy of it extracted under the temp folder
 (`mutants.snapshot_source`), never the working tree, so
-edits and merges are safe once the run has started, every crate of one `mutants-diff`
-included. **One run building here at a time, each queued with its snapshot**: `just mutants`,
-`mutants-diff` and `extra-mutants` snapshot first, then take the locks above (the build
+edits and merges are safe once the run has started. A `mutants-diff` queues each crate's job
+with its own copy of the snapshot, so every crate of one diff runs on the same tree.
+**One run building here at a time, each queued with its snapshot**: `just mutants`
+and `extra-mutants` snapshot first, then take the locks above (the build
 lock, `mutants.lock` beside the cost table, makes a worktree's run that builds here queue
 too; a whole run takes the tree's and the remote's instead, and lets go of them while it
 waits on the VPS), so a run launched while another is under way waits
-its turn with the tree it was launched on, and edits and merges are safe while it waits. Runs
+its turn with the tree it was launched on, and edits and merges are safe while it waits.
+This PC's driver lane builds under the same build lock. Runs
 are launched as separate commands, never chained: a chain's later run snapshots only when
 the one before ends, and a run queued that way once snapshotted a half-edited crate and had
 to be stopped. A run sets the last one's
@@ -310,13 +304,15 @@ triaged.
 
 **The mutation driver's rolling job runs the whole-crate runs nobody waits on.** The lead
 starts the driver on the maintainer's PC detached (`python ~/.claude/tools/run_detached.py
-<log> just driver run`) and leaves it running. Whenever its queue holds no job, it queues
+<log> just driver run`) and leaves it running: the diff runs (`mutants-diff`,
+`mutants-closure` and so the checkpoint) queue their jobs on it, and refuse when it is not
+running. Whenever its queue holds no job, it queues
 the crate checked longest ago, with its extra pass, on `HEAD`'s commit (never the working
 tree's edits). "Checked longest ago" means the later of the crate's
 `.cargo/mutants_checked.toml` commit's date and the time its last rolling job was filed.
 The job is queued only when it can be sent to the VPS, so `STUDIO_MUTANTS_REMOTE` must name
 the host. Both lanes, the PC's and the VPS's, take its shards, but only the VPS lane runs
-those of the extra pass. A finished job lands in `mutants.rolling/<crate>/` of the tree the
+those of the extra pass, and both take a diff run's shards first. A finished job lands in `mutants.rolling/<crate>/` of the tree the
 driver runs from, the crate's earlier one set aside as `<crate>.old`:
 
 - `result.json` holds the run's exit code and its missed, untested, rechecked and starved
@@ -343,10 +339,10 @@ kernel site) once moved them until third-party drivers were removed; the switch 
 next time, and is off now. While the switch is on, the lead's checks run through `just remote`
 and `just gates-remote`, and a sidekick's `cargo check`, test and clippy runs all go through
 `just remote`; only `cargo fmt` stays local.
-`REMOTE_ONLY = True` in `scripts/mutation/mutants.py` makes
-`just mutants-diff` run every cargo-mutants mutant on the VPS as one whole run, as `just mutants` always does (no
-local half, no split threshold, the last local `mutants.out` set aside as
-`mutants.out.old`), and `just gates-remote` runs `just gates` there against a snapshot of
+`REMOTE_ONLY = True` in `scripts/mutation/mutants.py` no longer moves the diff runs: their
+crates are mutation driver jobs, whose shards this PC's lane takes too, so they still build
+here while the switch is on (the worklog's `driver/d4b` removes the switch).
+`just gates-remote` runs `just gates` on the VPS against a snapshot of
 the working tree (`scripts/mutation/remote_gates.py`: the same transfer and clone, so it refuses
 while a mutants half is running or uncollected; the transient service `studio-gates`,
 memory-capped and CPU-idle, run synchronously). The VPS's `just` is installed in
@@ -433,12 +429,12 @@ nothing. **A failed half is reported, never restarted:**
 restarted the VPS half and waited on it although the local half had already tested every
 mutant). A brief that starts a whole-crate run says so.
 
-**An agent starts the local half detached too:** `python ~/.claude/tools/run_detached.py <log>
+**An agent starts `mutants-diff` detached too:** `python ~/.claude/tools/run_detached.py <log>
 just mutants-diff ...`, one command per run, never as the harness's background command. The
-harness ends a background command at two hours, and the processes it started with it: a
-`mutants-diff` chained behind a long one under one background command once died at that cap
-with its local half 25 minutes in, and the run started again from zero. A detached run
-outlives the harness and ends its log with `exit N`; the lead waits on that line.
+harness ends a background command at two hours, and the processes it started with it. A
+`mutants-diff` stopped that way loses no mutant, since its jobs run on in the driver, but
+their results then stay in the driver's `done/` folder and never reach `mutants.diff/`. A
+detached run outlives the harness and ends its log with `exit N`; the lead waits on that line.
 
 ## The scratch folder
 
