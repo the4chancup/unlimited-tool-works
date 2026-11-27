@@ -59,6 +59,20 @@ impl Rules {
     /// Loads a rules file through steps 1 to 3 of `spec/aatf_rules.md`
     /// "Loading and validation"; the first failure is returned.
     pub fn load(text: &str) -> Result<Rules, LoadError> {
+        let rules = Rules::load_without_step_three(text)?;
+        // Step 3: `check_team` runs on the sample team; a `CheckError`
+        // there is a load failure — the file's own logic and custom
+        // checks must run before any real check does.
+        if let Err(error) = rules.check_team(&TeamView::sample_team()) {
+            return Err(LoadError::SampleTeam { error });
+        }
+        Ok(rules)
+    }
+
+    /// Steps 1 and 2 of `spec/aatf_rules.md` "Loading and validation"
+    /// (`load` adds step 3, `check_team` on the sample team, which
+    /// `from_data_block` skips).
+    fn load_without_step_three(text: &str) -> Result<Rules, LoadError> {
         let (engine, ast, scope) = run_top_level(text)?;
         // Step 1: the four functions with their arities, and every
         // `custom_checks` with one.
@@ -80,19 +94,12 @@ impl Rules {
             }
         }
         let ruleset = ruleset_from_scope(&scope)?;
-        let rules = Rules {
+        Ok(Rules {
             ruleset,
             ast,
             engine,
             logic: identity(text),
-        };
-        // Step 3: `check_team` runs on the sample team; a `CheckError`
-        // there is a load failure — the file's own logic and custom
-        // checks must run before any real check does.
-        if let Err(error) = rules.check_team(&TeamView::sample_team()) {
-            return Err(LoadError::SampleTeam { error });
-        }
-        Ok(rules)
+        })
     }
 
     /// The official ruleset, the default file: `rulesets/autumn26.rhai`
@@ -104,10 +111,13 @@ impl Rules {
     }
 
     /// The rules of an embedded data block assembled with the current
-    /// logic: the built-in rulesets (`templates::builtin`) and the other
-    /// rulesets' fixtures run on these.
+    /// logic: the built-in rulesets (`templates::builtin`) run on
+    /// these, the other callers being test fixtures. The load skips
+    /// step 3, `check_team` on the sample team —
+    /// `every_embedded_ruleset_passes_load_step_three` runs that step
+    /// on every embedded ruleset, so one that fails it never ships.
     pub(crate) fn from_data_block(data_block: &str) -> Result<Rules, LoadError> {
-        Rules::load(&assemble(data_block))
+        Rules::load_without_step_three(&assemble(data_block))
     }
 
     /// The file's ruleset.
@@ -997,6 +1007,29 @@ mod tests {
                 error: CheckError::Violation { index, .. },
             } => assert_eq!(*index, 0),
             other => panic!("expected SampleTeam holding Violation, got {other:?}"),
+        }
+    }
+
+    /// An embedded ruleset's load (`from_data_block`) skips step 3,
+    /// `check_team` on the sample team: a data block whose
+    /// `custom_checks` throws on the sample team's version (PES 15)
+    /// still loads, where the same text's `load` fails that step.
+    #[test]
+    fn from_data_block_skips_load_step_three() {
+        let block = format!(
+            "{AUTUMN26}\n{banner}\nfn custom_checks(team) {{ if team.version == 15 {{ throw \"boom\" }} [] }}\n",
+            banner = crate::file::CUSTOM_CHECKS,
+        );
+        Rules::from_data_block(&block).expect("the block loads without step 3");
+        let err = Rules::load(&assemble(&block)).expect_err("the same text fails step 3");
+        match &err {
+            LoadError::SampleTeam { error } => {
+                assert!(
+                    matches!(error, CheckError::Script { message } if message.contains("boom")),
+                    "{err:?}"
+                );
+            }
+            other => panic!("expected SampleTeam, got {other:?}"),
         }
     }
 }

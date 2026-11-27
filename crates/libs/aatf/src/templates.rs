@@ -132,4 +132,14 @@ mod tests {
             );
         }
     }
+
+    /// The step `builtin` skips: step 3 of the load, `check_team`
+    /// running without an error on the sample team, for every embedded
+    /// ruleset.
+    #[test]
+    fn every_embedded_ruleset_passes_load_step_three() {
+        for &(stem, block) in BLOCKS {
+            Rules::load(&crate::file::assemble(block)).unwrap_or_else(|e| panic!("{stem}: {e}"));
+        }
+    }
 }
