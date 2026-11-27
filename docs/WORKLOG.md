@@ -28,7 +28,7 @@ One line per piece of work in flight; the items below hold the detail.
 
 - The workflow improvements before the suite resumes (`RESUME/optimize`): the mutation
   driver's slices (`driver/d2`, the VPS lane: d2b merged, d2a's trial pending, d2c next), and
-  the test-suite census (`LEAN/census`, its egui A/B running).
+  the lighter tests (`LEAN/patterns`, from the census's findings).
 - The checkpoint: `19fda006` passed it and is pushed; its Linux gates are owed.
 - The rolling mutation job: on the VPS, crate by crate, held after its current crate so the
   driver's VPS lane runs its trial job (`driver/d2a`).
@@ -998,8 +998,13 @@ and no phase closes with one outstanding.
               pass on Windows and Linux (the VPS). Not done: a VPS copy whose removal failed
               at the finish stays there (no shard results, no `.todo`, so the VPS lane
               ignores it);
-            - [ ] **d2c** [after d2b] the coverage map once per job before the VPS's first
-              shard of it, and its shards' tests selected from it;
+            - [~] **d2c** [after d2b] the coverage map once per job before the VPS's first
+              shard of it, and its shards' tests selected from it; this PC's shards keep the
+              full suite (the map is Linux's alone). Brief `.tmp/lead/driver/brief_d2c.md`,
+              Opus in `4cc-studio-temp/sk_driver2c`, log `.tmp/lead/driver/sk_driver2c.run.log`;
+              when it ends: the whole diff reviewed as d2b's was, its tests on Windows and the
+              VPS (`.tmp/lead/vps_script_test.sh`), merged, and deployed with d2b after d2a's
+              trial;
           - [ ] **d3** [after d2] the rolling job's shards when nothing is queued, on both
             lanes; `rolling.py` and `.tmp/rolling.hold` go, `gates-remote` takes the VPS
             lane's hold, and RUNBOOK "Mutation runs and the VPS" is rewritten;
@@ -4525,58 +4530,30 @@ points there.
   view code. Coverage must not drop: a light per-instance test still checks what belongs
   to that instance (its label, what clicking it does, when it is enabled), since a presence
   check alone lets a mis-wired button survive.
-  - [~] **census** per-test durations by module for the heaviest crates (`save_editor`,
-    `team_compiler`, `studio_core`), the share spent in setup (fixture loads, egui frames),
-    and the tests each mutant selects (a coverage map's `selection.json`). Each crate's
-    tests run under nextest with 4 test threads and `--message-format libtest-json`
-    (`NEXTEST_EXPERIMENTAL_LIBTEST_JSON=1`), each test's own time read from it, into
-    `.tmp/lean/<crate>.jsonl`, summed by `.tmp/lean/census.py` and `floor.py`.
-    `save_editor` (2026-11-27, at `f8136441`): 1,192 tests, 2,642 s of test time summed
-    (663 s wall on 4 threads), 2.2 s a test on average; the CLI tests are the slowest
-    (`diff`, `import_toml`: 15-19 s each). About half of the summed time (1,346 s) is each
-    module's floor, its cheapest test's time (about 0.7 s for a view test): a fixed cost
-    per test, setup most likely, not yet profiled. Under nextest's process per test, a
-    fixture shared in memory saves nothing; a prepared one cached on disk might. Run alone,
-    `view::tests::list::keys::down_on_the_lists_last_row_moves_nothing` (one key press)
-    takes 0.67-0.72 s over three runs, so the floor is not contention. `team_compiler`:
-    1,706 tests, 806 s summed (202 s wall), 0.5 s a test, the CLI tests the heaviest.
-    `studio_core`: 617 tests, 57 s summed, 0.1 s a test, so it leaves the list. That test's
-    setup is `fixture` (`pes_savefile::fixture_save`, which encrypts a whole save each
-    call) and `view.open` (which decrypts and parses it), then two headless frames. The inflate and
-    hashes are already optimized in test builds (`Cargo.toml` `[profile.dev.package]`),
-    the cipher in `pes_savefile` was not. Timed step by step (3 runs, wall), that test's
-    fixture took ~133 ms, `view.open` ~220 ms and its first frame ~248 ms. With
-    `pes_savefile` optimized, fixture and open fell to ~14 and ~22 ms, and save_editor's whole
-    suite to 968 s summed from 2,159 (243 s wall from 542), while a one-line change to the
-    cipher rebuilt in 11 s either way; so `Cargo.toml` now optimizes `pes_savefile` in test
-    builds (DECISIONS 2026-11-27). A `cargo --config` placed before `nextest` never reaches
-    nextest's own build: an A/B sets its override in a throwaway worktree's
-    `.cargo/config.toml` and shows its side rebuilt (`.tmp/lean/probe_ab2.sh`). The first
-    frame: egui's crates and its font parsers at opt-level 3 took it from ~248 ms to ~200,
-    and the later frames from ~15 to ~4.5; adding epaint's rasterizer (`vello_cpu` and its
-    crates) and shaper (`harfrust`) took the first to ~158 (`probe_ab3.sh`). An empty first
-    frame (one label) costs ~1 ms (`probe_c.sh`), so what is left is the view's own first
-    draw, each glyph rasterized the first time it shows included: code that is mutated, so
-    it stays unoptimized. Whether those egui crates go to opt-level 3 is decided by a
-    whole-suite A/B with its build cost (`.tmp/lean/suite_ab2.sh`, save_editor and
-    team_compiler).
-    The tests each mutant selects (`.tmp/lean/selection_census.py`, over the VPS run's
-    `save_editor` coverage map of 2026-11-26, each test weighed by its time in the suite
-    with `pes_savefile` optimized): of 4,465 mutants, 74 have no covering test; the median
-    mutant selects 33 tests (43 s summed), but a tenth select 859 or more of the 1,192
-    (812 s and up): the view's shared draw code is covered by nearly every view test.
-    Summed over the run that is 916,000 test-seconds, an upper bound: a caught mutant may
-    stop at its first failing test (whether cargo-mutants keeps nextest's fail-fast is not
-    checked). The 25 tests weighing most (times selected by own time) are a quarter of it:
-    most run 5-24 s and are selected by about 1,000-1,500 mutants (the multi-team AATF
-    tests, the overlap checks of its dialog and the menus' dialogs, the pictures run tests).
-    By module: `pictures`, `savefile::multi`, `overlap`,
-    `live_aatf`, `clipboard`, `changes_popup`, `tactics`. So `patterns` starts from those
-    tests: each slow one made cheaper, or kept out of the selection of code it does not
-    check, saves more than a fixed cost shaved off every test;
+  - [x] **census** 2026-11-27: per-test times of the heaviest crates' suites (nextest, 4
+    test threads, `.tmp/lean/`), where a test's setup goes, and the tests each mutant
+    selects. Two test-build optimizations came of it (DECISIONS 2026-11-27): `pes_savefile`
+    (a view test's fixture and open fell from ~350 ms to ~36) and egui with its text and
+    raster crates (save_editor's suite from 988 s of test time to 676, a cold build of egui
+    35 s longer). What stays fixed per test is the view's own first draw (~160 ms). In
+    `save_editor`'s coverage map the median mutant selects 33 tests, but a tenth select 859
+    or more of the 1,192, and the 25 tests weighing most (times selected by own time) are a
+    quarter of a run's test time (`.tmp/lean/selection_census.py`). An A/B's override goes
+    in a throwaway worktree's `.cargo/config.toml`: a `cargo --config` before `nextest`
+    never reaches nextest's build;
   - [ ] **patterns** [after census] the cheaper shapes in CONTRIBUTING "Testing and
     verification": a fixture loaded once per test binary, each instance's wiring checked
     in one table-driven scene, a shared widget's behavior tested once in its own crate.
+    SWE-2's reading of the 25 heaviest save_editor tests
+    (`.tmp/lean/swe_heavy_tests.findings.md`, inferred from the code, not measured) ranks
+    what they share: headless frames spent waiting out egui's input time (the Multi-team
+    AATF dialog's 0.5 s rest after a range change, about 30 frames each time; a tactics
+    test's 549 idle frames) and scrolling the player list by wheel steps; the whole-save AATF
+    check (about 220 teams) where two or thirty teams check the same thing (tests in
+    `savefile/multi.rs` and `overlap.rs`); a fresh save opened per screen in the menus'
+    overlap test; the 20 ms sleep of `frames_until`'s poll; the pictures dialog's picking
+    steps repeated before each run. One was a plain slip, fixed at once: the turf picture
+    test built an egui context per pixel checked (`dark()` in its loop), 23.9 s to 8.1;
     Revisit the helium brief rules that ask for a test per call site or per place a text
     shows, which built much of the repetition;
   - [ ] **pilot** [after patterns] one mid-size crate, whose whole mutation run takes about
