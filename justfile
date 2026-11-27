@@ -202,11 +202,12 @@ mutants-collect:
     {{python}} scripts/mutation/mutants.py --collect
 
 # Mutation run over the lines changed since `base` (review of a landed diff), under
-# `crates` or the paths given (a crate's folder)
+# `crates` or the paths given (a crate's folder), as a mutation driver job per crate: the
+# driver (`just driver run`) must be running
 mutants-diff base="HEAD" *paths:
     {{python}} scripts/mutation/mutants_diff.py {{base}} {{paths}}
 
-# Mutation run over the lines each crate changed since its last triaged whole run — all crates, or the named ones (a phase's close)
+# Mutation run over the lines each crate changed since its last triaged whole run — all crates, or the named ones (a phase's close); driver jobs, as `mutants-diff`'s
 mutants-closure *crates:
     {{python}} scripts/mutation/mutants_diff.py --closure {{crates}}
 

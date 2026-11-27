@@ -3,22 +3,29 @@ cargo-mutants shards from a queue of jobs.
 
 `just driver queue <crate> [--shards N] [--extra]` adds a job: a whole-crate
 run of `<crate>` at the committed `HEAD`, cut into shards of about
-`SHARD_SECONDS`. `--extra` adds the crate's extra pass (the extra kinds
-cargo-mutants does not make) as extra shards, numbered after the
-cargo-mutants ones so the markers, claims, fetches, restarts and finish
-work on them unchanged. The VPS lane alone runs an extra shard — this PC's
-lane never claims one, and a job that stays here gets none.
+`SHARD_SECONDS`, never more than it has mutants. `--extra` adds the crate's
+extra pass (the extra kinds cargo-mutants does not make) as extra shards,
+numbered after the cargo-mutants ones so the markers, claims, fetches,
+restarts and finish work on them unchanged. The VPS lane alone runs an
+extra shard — this PC's lane never claims one, and a job that stays here
+gets none, its finish then counting the pass as untested.
+`just mutants-diff` and `just mutants-closure` queue diff jobs
+(`mutants_diff.py`): one per crate, on the working tree, carrying the diff,
+so each job's cargo-mutants shards test the diff's mutants alone and its
+extra shards the extra mutants on the diff's changed lines.
 A lane is a machine taking the queue's shards, named in the markers below:
 `pc` for this one, `vps` for the host `STUDIO_MUTANTS_REMOTE` names.
 `just driver run [--once]` starts this PC's lane, which runs one shard at a
-time, oldest job first, and then waits for more; with `--once` it stops when
-nothing is left. So queued work waits at most one shard, and where several
-lanes share the queue, the faster one takes more.
+time and then waits for more; with `--once` it stops when nothing is left.
+Both lanes take the oldest job's shards first, a rolling job's (below) only
+when no other job has one left. So queued work waits at most one shard, and
+where several lanes share the queue, the faster one takes more.
 
 A job is sent to the VPS as it is queued, unless no host is set or the crate
-is in `mutants.LOCAL_ONLY_CRATES`. Its source, `job.json` and `.todo`
-markers are copied into the VPS's queue, and this PC keeps the job with a
-`sent.json` and no marker, since two machines cannot share one rename. The
+is in `mutants.LOCAL_ONLY_CRATES`. Its source, `job.json`, a diff job's
+`in.diff` and the `.todo` markers are copied into the VPS's queue, and this
+PC keeps the job with a `sent.json` and no marker, since two machines cannot
+share one rename. The
 VPS lane (`run --lane vps`, a service that `just driver deploy` installs
 there) takes a sent job's shards, so they go on while this PC is off, and
 keeps their results there; it finishes no job. Before its first shard of a
@@ -50,11 +57,14 @@ Everything lives under `DRIVER`, one folder per machine shared by every tree
     tmp/                     the VPS lane's TMPDIR, emptied before each shard
     queue/<job>/             <job> is <UTC %Y%m%dT%H%M%S>-<crate>; name order is queue order
       job.json               {"crate", "commit", "tree", "args", "shards", "extra",
-                             "queued"}, and "rolling": true for a rolling job;
-                             `commit` is the `HEAD` it was queued from, `tree`
-                             that commit's tree; `extra` counts the last
-                             shards, which run the extra pass instead of
-                             cargo-mutants
+                             "queued"}, and "rolling": true for a rolling job,
+                             "diff": true for a diff job; `commit` is the
+                             `HEAD` it was queued from, `tree` that commit's
+                             tree, or a diff job's working tree; `extra`
+                             counts the last shards, which run the extra
+                             pass instead of cargo-mutants; "extra_dropped"
+                             counts those a job not sent dropped
+      in.diff                a diff job's diff
       sent.json              {"host": host}: on this PC, a job sent to the VPS
       source/                the job's tree, extracted once
       mutants-vps.toml       the VPS lane's cargo-mutants config for the job
@@ -83,7 +93,9 @@ Everything lives under `DRIVER`, one folder per machine shared by every tree
                              {"code", "missed", "untested", "rechecked",
                              "starved"}, the run's exit code and its mutant
                              lists ("starved": caught only by a test stopped
-                             at the time limit). A rolling job goes to
+                             at the time limit); the diff command that
+                             queued a diff job moves it on to its tree's
+                             `mutants.diff/<crate>/`. A rolling job goes to
                              `mutants.rolling/<crate>/`
                              instead, the crate's earlier one set aside as
                              `<crate>.old`, with `launched_from.txt` (its
@@ -127,7 +139,10 @@ LANE = "pc"
 VPS_DRIVER = Path.home() / mutants.REMOTE_DRIVER
 REMOTE_DRIVER = mutants.REMOTE_DRIVER
 SHARD_UNIT = mutants.SHARD_UNIT
-SHARD_SECONDS = mutants_diff.SHARD_SECONDS
+# The length a job's shards are cut to (`shard_count`): queued work waits at
+# most one shard for a lane, and a driver stopped midway loses one shard's
+# work, not the job's.
+SHARD_SECONDS = 1800
 POLL_SECONDS = 60
 # How long this PC's lane waits, after its rolling job queued nothing, before
 # it tries again: each try extracts the whole tree, too much for every poll.
@@ -166,52 +181,78 @@ def cargo_shards(spec: dict) -> int:
 
 
 def queue(
-    crate: str, shards: int | None = None, extra: int | None = 0, rolling: bool = False
+    crate: str, shards: int | None = None, extra: int | None = 0, rolling: bool = False,
+    diff: bytes | None = None, tree: str | None = None,
 ) -> Path | None:
     """Queue a whole-crate run of `crate` at `HEAD`'s commit, in `shards` shards, or
-    as many as its estimate needs (`shard_count`). `extra` adds that many
+    as many as its estimate needs (`shard_count`), at most one per mutant
+    listed. `extra` adds that many
     extra shards of the crate's extra pass (the extra kinds), numbered
     after the cargo-mutants ones; None means as many as the pass's estimate
     needs, at most one per mutant, from its listing on the extracted source.
+    With `diff` (a diff's bytes, kept as the job's `in.diff`) the job is a diff
+    job: its source is `tree` (the working tree the diff was taken against,
+    `mutants.working_tree`), its cargo-mutants shards test the diff's mutants
+    alone (`mutant_args`) and its extra pass the extra mutants on the diff's
+    changed lines (`extra_mutants.in_lines`); a diff job with neither kind of
+    mutant is not queued.
     The job is written under a `.tmp` name and renamed when complete, so a
     driver never sees half a job.
     Before the rename it is sent to the VPS (`send`), unless no host is set or
     the crate is in `mutants.LOCAL_ONLY_CRATES`; a job that stays gets no
-    extra shards, this PC's lane never running one. `rolling` marks the job as
-    the rolling job's (`queue_rolling`), filed under `mutants_diff.ROLLING`
-    when it finishes; such a job that stays is not queued at all, since the
-    rolling job runs every crate's extra pass. Returns the job's folder, or
-    None when a rolling job was not queued."""
+    extra shards, this PC's lane never running one, and records how many it
+    dropped (`extra_dropped`), so its finish counts the pass untested.
+    `rolling` marks the job as the rolling job's (`queue_rolling`), filed
+    under `mutants_diff.ROLLING` when it finishes; such a job that stays is
+    not queued at all, since the rolling job runs every crate's extra pass.
+    Returns the job's folder, or None when a rolling job or a diff job was
+    not queued."""
     commit = mutants.git(
         "rev-parse", "HEAD", check=True, capture_output=True, text=True
     ).stdout.strip()
-    tree = mutants.git(
-        "rev-parse", f"{commit}^{{tree}}", check=True, capture_output=True, text=True
-    ).stdout.strip()
+    if tree is None:
+        tree = mutants.git(
+            "rev-parse", f"{commit}^{{tree}}", check=True, capture_output=True, text=True
+        ).stdout.strip()
     moment = time.gmtime()
     job = DRIVER / "queue" / f"{time.strftime('%Y%m%dT%H%M%S', moment)}-{crate}"
     building = job.with_name(job.name + ".tmp")
     building.mkdir(parents=True)
     source = building / "source"
     mutants.extract_tree(tree, source)
-    args = ["-p", crate]
+    record = {"crate": crate, "commit": commit, "tree": tree, "args": ["-p", crate]}
+    if diff is not None:
+        record["diff"] = True
+        (building / "in.diff").write_bytes(diff)
     if shards is None:
-        listed = mutants.list_mutants(args, mutants.local_config(source), source)
-        shards = shard_count(mutants.estimate_seconds([crate] * len(listed)))
+        listed = mutants.list_mutants(
+            mutant_args(building, record), mutants.local_config(source), source
+        )
+        # No shard is left without a mutant of its own, and a diff touching
+        # no cargo-mutants mutant gets no cargo-mutants shard.
+        shards = min(shard_count(mutants.estimate_seconds([crate] * len(listed))), len(listed))
     if extra is None:
-        _, rows, _, _ = extra_mutants.listed(
+        crate_rel, rows, _, _ = extra_mutants.listed(
             crate, source, list(mutants.EXTRA_KINDS)
         )
+        if diff is not None:
+            rows = extra_mutants.in_lines(
+                rows, crate_rel, source, extra_mutants.diff_lines(diff)
+            )
         # A crate with no extra mutant gets no shard to run a baseline for
         # nothing, and no shard is left without a mutant of its own.
         extra = 0
         if rows:
             extra = min(shard_count(mutants.estimate_seconds([crate] * len(rows))), len(rows))
+    if diff is not None and shards + extra == 0:
+        mutants.remove_tree(building)
+        print(f"driver: {crate} not queued: no mutant in the diff", flush=True)
+        return None
     total = shards + extra
-    record = {
-        "crate": crate, "commit": commit, "tree": tree, "args": args, "shards": total,
-        "extra": extra, "queued": time.strftime("%Y-%m-%dT%H:%M:%SZ", moment),
-    }
+    record.update({
+        "shards": total, "extra": extra,
+        "queued": time.strftime("%Y-%m-%dT%H:%M:%SZ", moment),
+    })
     if rolling:
         record["rolling"] = True
     mutants_diff.replace_text(building / "job.json", json.dumps(record))
@@ -236,7 +277,7 @@ def queue(
     elif extra:
         for k in range(shards, total):
             (building / f"shard-{k}.todo").unlink()
-        record["shards"], record["extra"] = shards, 0
+        record["shards"], record["extra"], record["extra_dropped"] = shards, 0, extra
         mutants_diff.replace_text(building / "job.json", json.dumps(record))
         print(f"driver: {job.name}'s extra pass needs the VPS: queued without "
               f"its {extra} extra shards", flush=True)
@@ -248,6 +289,16 @@ def queue(
         counts += f" and {extra} extra shards"
     print(f"driver: {crate} queued in {counts}, as {job.name}{where}", flush=True)
     return job
+
+
+def mutant_args(job: Path, spec: dict) -> list[str]:
+    """The cargo-mutants selection of `job`, whose `job.json` is `spec`: its
+    `args`, and for a diff job `--in-diff` naming the job's `in.diff`. Built
+    where it is used, never kept in `job.json`: the job's folder is another
+    path on the VPS."""
+    if spec.get("diff"):
+        return [*spec["args"], "--in-diff", str(job / "in.diff")]
+    return list(spec["args"])
 
 
 def queue_rolling() -> Path | None:
@@ -348,16 +399,17 @@ def send(host: str, building: Path, name: str) -> bool:
 
 def upload(host: str, building: Path, remote: str) -> None:
     """`send`'s copy into `<remote>.tmp` and its rename to `remote`; raises on
-    any failed call."""
+    any failed call. A diff job's `in.diff` goes with its `job.json`."""
     spec = read_job(building)
     ssh_archive(
         host, [spec["tree"]], f"mkdir -p {remote}.tmp/source && tar -xf - -C {remote}.tmp/source"
     )
-    # Bytes, not text: `text=True` would turn `\n` into `\r\n` on Windows.
-    mutants.ssh(
-        host, f"cat > {remote}.tmp/job.json", input=(building / "job.json").read_bytes(),
-        check=True,
-    )
+    for name in ["job.json", *(["in.diff"] if spec.get("diff") else [])]:
+        # Bytes, not text: `text=True` would turn `\n` into `\r\n` on Windows.
+        mutants.ssh(
+            host, f"cat > {remote}.tmp/{name}", input=(building / name).read_bytes(),
+            check=True,
+        )
     markers = " ".join(f"{remote}.tmp/shard-{k}.todo" for k in range(spec["shards"]))
     mutants.ssh(host, f"touch {markers} && mv {remote}.tmp {remote}", check=True)
 
@@ -578,10 +630,14 @@ def recover() -> None:
 
 
 def claim() -> tuple[Path, int] | None:
-    """Take the next shard: the oldest job's lowest `.todo` one, renamed to this
-    lane's marker, on the VPS for a sent job (`claim_remote`). Returns the job
-    and the shard, or None when no shard is left."""
-    for job in jobs():
+    """Take the next shard: the lowest `.todo` one of the oldest job not
+    marked `rolling`, else of the rolling job, renamed to this lane's marker,
+    on the VPS for a sent job (`claim_remote`). Returns the job and the shard,
+    or None when no shard is left."""
+    # Queued work goes before the rolling job's, so it waits at most the
+    # shard a lane is running; the sort is stable, so each group keeps its
+    # name order.
+    for job in sorted(jobs(), key=lambda job: bool(read_job(job).get("rolling"))):
         host = sent_host(job)
         if host is not None:
             k = claim_remote(job, host)
@@ -702,7 +758,7 @@ def map_script(job: Path, tmp: Path) -> bytes:
     spec = read_job(job)
     listed = job / "mutants.json"
     listing = shlex.join([
-        "cargo-mutants", "mutants", *spec["args"], "--dir", str(job / "source"),
+        "cargo-mutants", "mutants", *mutant_args(job, spec), "--dir", str(job / "source"),
         "--list", "--json", "--config", str(job / "mutants-vps.toml"),
     ])
     coverage = shlex.join([
@@ -821,7 +877,8 @@ def extra_script(job: Path, k: int, tmp: Path) -> bytes:
     extracted archive, not a git repository — at the same priority as a
     shard, its `extra_mutants.out` moved into `shard-<k>/`, the pass's
     previous output removed first. `selection.json` is named only when the
-    job's coverage map left one."""
+    job's coverage map left one, and a diff job's `in.diff` passed with
+    `--diff`, so the pass tests the mutants on the diff's changed lines."""
     spec = read_job(job)
     j = k - cargo_shards(spec)
     m = spec["shards"] - cargo_shards(spec)
@@ -831,6 +888,7 @@ def extra_script(job: Path, k: int, tmp: Path) -> bytes:
         "python3", "scripts/mutation/mutants.py", "--remote-extra", spec["crate"],
         "--shard", f"{j}/{m}", "--source", str(job / "source"),
         *(["--selection", str(selection)] if selection.exists() else []),
+        *(["--diff", str(job / "in.diff")] if spec.get("diff") else []),
     ])
     return unit_script(tmp, shard, [
         "rm -rf extra_mutants.out",
@@ -908,7 +966,7 @@ def run_shard(job: Path, k: int) -> int:
     baseline = job / f"baseline-{LANE}.json"
     if k < cargo:
         args = [
-            *spec["args"], "--shard", f"{k}/{cargo}", "--sharding", "round-robin",
+            *mutant_args(job, spec), "--shard", f"{k}/{cargo}", "--sharding", "round-robin",
             "--output", str(shard),
         ]
         if baseline.exists():
@@ -923,7 +981,7 @@ def run_shard(job: Path, k: int) -> int:
     if LANE == "vps":
         code = run_vps_shard(job, k, args)
     else:
-        # Under the build slot a diff run started outside the driver takes too.
+        # Under the build slot the mutation commands run outside the driver take too.
         with mutants.run_lock():
             shard.mkdir()
             code = mutants.local_mutants(args, job / "source").returncode
@@ -977,7 +1035,8 @@ def recheck(job: Path, spec: dict) -> list[str]:
 
 def finish(job: Path) -> Path | None:
     """Once every shard of `job` is done: write its `result.json` (the combined
-    code, the survivors in shard order, the untested mutants, the survivors
+    code, in which an extra pass `queue` dropped ranks as untested mutants
+    do; the survivors in shard order, the untested mutants, the survivors
     `recheck` caught, and the catches `mutants.starved_catches` lists, whose
     count it prints when there are any), remove its source and move it to
     `done/`, and for a sent job remove its VPS folder. A rolling job moves
@@ -1013,8 +1072,10 @@ def finish(job: Path) -> Path | None:
             )
         rechecked += [line for line in extra_missed if line in extra_caught]
         missed += [line for line in extra_missed if line not in extra_caught]
-    # Untested mutants count as `run_code`'s 1, as a run outside the driver reports them.
-    code = mutants.run_code([*codes, 1 if untested or extra_untested else 0])
+    # Untested mutants count as `run_code`'s 1, as a run outside the driver reports them,
+    # and so does an extra pass dropped because the job was not sent to the VPS.
+    dropped = spec.get("extra_dropped", 0)
+    code = mutants.run_code([*codes, 1 if untested or extra_untested or dropped else 0])
     # cargo-mutants' 2 says mutants were missed. An extra survivor is one too, though
     # its shard exits 0; and once the recheck caught every survivor, none was.
     if missed:
@@ -1034,6 +1095,9 @@ def finish(job: Path) -> Path | None:
               "limit (starved in result.json)", flush=True)
     if (job / "source").exists():
         mutants.remove_tree(job / "source")
+    # Read before the move: a diff command moves a finished job out of
+    # `done/` as soon as it sees its `result.json`.
+    host = sent_host(job)
     if spec.get("rolling"):
         finished = mutants_diff.ROLLING / spec["crate"]
         with mutants.run_lock(mutants.tree_lock_path()):
@@ -1047,12 +1111,12 @@ def finish(job: Path) -> Path | None:
         finished = DRIVER / "done" / job.name
         finished.parent.mkdir(parents=True, exist_ok=True)
         job.rename(finished)
-    host = sent_host(finished)
     if host is not None:
         # The VPS's folder has the job's name; a rolling job's is now its crate's here.
         remove_remote(host, remote_job(job))
+    not_run = ", its extra pass not run" if dropped else ""
     print(f"driver: {spec['crate']} done, exit {code}: {len(missed)} missed or timed out, "
-          f"{len(untested)} untested, in {finished}", flush=True)
+          f"{len(untested)} untested{not_run}, in {finished}", flush=True)
     return finished
 
 
@@ -1069,6 +1133,19 @@ def run(once: bool = False) -> int:
             return take_shards(once)
         finally:
             mutants.unlock(guard)
+
+
+def running() -> bool:
+    """Whether a driver runs on this machine: `run` holds `DRIVER/guard.lock`
+    for its whole life. The lock is tried and, when taken, released at once."""
+    guard = DRIVER / "guard.lock"
+    if not guard.exists():
+        return False
+    with open(guard, "a+b") as handle:
+        if not mutants.try_lock(handle):
+            return True
+        mutants.unlock(handle)
+    return False
 
 
 def settle() -> None:

@@ -1,7 +1,8 @@
 """Tests of `driver.py`: the queue's job folders, the shard count, both
 lanes taking a job's shards, resuming after a restart and waiting, a job's
 sending to the VPS, this PC's side of a sent job, the VPS lane's coverage
-map and its deploy.
+map and its deploy, and diff jobs with the diff command that queues them
+and waits (`mutants_diff.diff_run`).
 Every test runs on a temporary `driver.DRIVER` and cost table, with
 cargo-mutants, the tree's extraction, the mutant listing, the cost fold and
 the build-slot lock stubbed. The VPS lane's systemd and sudo are stubbed too.
@@ -36,6 +37,25 @@ HEAD_TREE = subprocess.run(
 HEAD_COMMIT = subprocess.run(
     ["git", "rev-parse", "HEAD"], cwd=SCRIPTS, capture_output=True, text=True, check=True
 ).stdout.strip()
+# A tree object other than HEAD's, which `git archive` can still send: a diff
+# job's working tree stands in for it.
+SCRIPTS_TREE = subprocess.run(
+    ["git", "rev-parse", "HEAD:scripts"], cwd=SCRIPTS, capture_output=True, text=True, check=True
+).stdout.strip()
+# A diff adding line 2 to a file of each of two real crates: `mutants.mutant_crate`
+# reads the tree's own `Cargo.toml` files.
+TWO_CRATES_DIFF = b"".join(
+    b"diff --git a/crates/libs/%s/src/lib.rs b/crates/libs/%s/src/lib.rs\n"
+    b"--- a/crates/libs/%s/src/lib.rs\n"
+    b"+++ b/crates/libs/%s/src/lib.rs\n"
+    b"@@ -1,1 +1,2 @@\n"
+    b" context\n"
+    b"+added\n" % ((crate,) * 4)
+    for crate in (b"cpk", b"fpk")
+)
+# The real `run_lock`, before a test patches it: a test of the tree lock holds
+# the real one on a file of its own.
+REAL_RUN_LOCK = mutants.run_lock
 # The fake VPS's shell. On Windows a bare `bash` may be WSL's, so Git Bash's.
 if os.name == "nt":
     BASH = Path(os.environ.get("ProgramFiles", "C:/Program Files")) / "Git" / "bin" / "bash.exe"
@@ -340,7 +360,7 @@ class Driver(unittest.TestCase):
 
         def estimate(crates, share=1.0):
             estimated.append(crates)
-            return mutants_diff.SHARD_SECONDS * 2.5
+            return driver.SHARD_SECONDS * 2.5
 
         with mock.patch.object(mutants, "estimate_seconds", estimate):
             job = driver.queue("cpk")
@@ -379,6 +399,32 @@ class Driver(unittest.TestCase):
         )
         self.assertNotIn("rolling", spec, "a job queued by hand is no rolling job")
 
+    def test_a_diff_job_keeps_its_diff_lists_its_mutants_and_sends_the_diff(self):
+        """`in.diff` holds the diff's bytes; the job runs on the given tree, its
+        commit still HEAD's; the listing names `in.diff` where the job is being
+        written, and the VPS gets `in.diff` beside `job.json`."""
+        self.fake_vps()
+        listings = []
+
+        def list_mutants(selection, config, source):
+            listings.append(selection)
+            return [{"name": "a"}]
+
+        with mock.patch.object(mutants, "list_mutants", list_mutants):
+            job = driver.queue("cpk", diff=TWO_CRATES_DIFF, tree=SCRIPTS_TREE)
+        self.assertEqual((job / "in.diff").read_bytes(), TWO_CRATES_DIFF)
+        spec = driver.read_job(job)
+        self.assertEqual(
+            (spec["diff"], spec["tree"], spec["commit"], spec["args"]),
+            (True, SCRIPTS_TREE, HEAD_COMMIT, ["-p", "cpk"]),
+        )
+        self.assertEqual(self.extracted, [SCRIPTS_TREE])
+        building = job.with_name(job.name + ".tmp")
+        self.assertEqual(listings, [["-p", "cpk", "--in-diff", str(building / "in.diff")]])
+        self.assertEqual(
+            (self.remote_queue() / job.name / "in.diff").read_bytes(), TWO_CRATES_DIFF
+        )
+
     def test_a_sent_rolling_job_is_marked_rolling(self):
         self.fake_vps()
         job = driver.queue("cpk", 2, 0, rolling=True)
@@ -404,7 +450,7 @@ class Driver(unittest.TestCase):
 
     def test_shard_count(self):
         threshold = mutants.SPLIT_THRESHOLD_SECONDS
-        shard = mutants_diff.SHARD_SECONDS
+        shard = driver.SHARD_SECONDS
         for estimate, expected in [
             (0.0, 1), (threshold - 1, 1), (threshold, 2),
             (2 * shard - 1, 2), (2 * shard, 2), (2 * shard + 1, 3),
@@ -569,6 +615,20 @@ class Driver(unittest.TestCase):
         )
         self.assertTrue(self.done(older).exists())
         self.assertTrue(self.done(newer).exists())
+
+    def test_a_queued_job_s_shards_come_before_an_older_rolling_job_s_on_both_lanes(self):
+        for lane, (rolling, plain) in {
+            "pc": ("cpk", "fpk"), "vps": ("fmdl", "ftex"),
+        }.items():
+            older = self.queue(rolling, 1, stamp="20261127T110000")
+            spec = driver.read_job(older)
+            spec["rolling"] = True
+            (older / "job.json").write_text(json.dumps(spec), encoding="utf-8")
+            newer = self.queue(plain, 1, stamp="20261127T120000")
+            with mock.patch.object(driver, "LANE", lane):
+                self.assertEqual(driver.claim(), (newer, 0), lane)
+                self.assertEqual(driver.claim(), (older, 0), lane)
+                self.assertIsNone(driver.claim(), lane)
 
     def test_a_job_still_being_queued_is_not_claimed(self):
         job = self.queue()
@@ -805,6 +865,113 @@ class Driver(unittest.TestCase):
         self.assertEqual(sorted(p.name for p in job.iterdir()), before)
         self.assertEqual(self.calls, [])
 
+    def test_running_is_whether_another_handle_holds_the_guard(self):
+        self.assertFalse(driver.running(), "no guard file")
+        guard = self.driver / "guard.lock"
+        self.driver.mkdir(parents=True)
+        guard.touch()
+        self.assertFalse(driver.running(), "a guard nobody holds")
+        with open(guard, "a+b") as held:
+            self.assertTrue(mutants.try_lock(held))
+            try:
+                self.assertTrue(driver.running())
+            finally:
+                mutants.unlock(held)
+        self.assertFalse(driver.running(), "released by its holder")
+
+    def diff_run_setup(self) -> Path:
+        """`mutants_diff.diff_run` on this temporary driver: a driver runs,
+        `RESULTS` and the tree lock are under the test's folder, the tree lock
+        is the real one (other locks keep `self.run_lock`), each crate's
+        estimate is one shard's and its extra pass lists no mutant. Returns
+        the tree lock's path."""
+        tree_lock = self.root / ".tmp" / "mutants.tree.lock"
+        fake = mutants.run_lock
+
+        def run_lock(path=None):
+            if path == tree_lock:
+                return REAL_RUN_LOCK(path)
+            return fake() if path is None else fake(path)
+
+        self.enter([
+            mock.patch.object(driver, "running", lambda: True),
+            mock.patch.object(mutants_diff, "RESULTS", self.root / "mutants.diff"),
+            mock.patch.object(mutants, "tree_lock_path", lambda: tree_lock),
+            mock.patch.object(mutants, "run_lock", run_lock),
+            mock.patch.object(mutants, "estimate_seconds", lambda crates, share=1.0: 0.0),
+            mock.patch.object(
+                driver.extra_mutants, "listed",
+                lambda crate, root, kinds: (Path(f"crates/libs/{crate}"), [], [], 0),
+            ),
+        ])
+        return tree_lock
+
+    def test_a_diff_run_queues_a_job_per_crate_and_files_their_results(self):
+        """The two crates' jobs run on this PC's lane while the command waits;
+        each lands in `mutants.diff/<crate>/`, their survivors crate by crate
+        in `missed_all.txt`, and the code combines the jobs' (2 and 3)."""
+        self.diff_run_setup()
+        self.codes[("fpk", 0)] = 3
+        sleeps = []
+
+        def sleep(seconds):
+            sleeps.append(seconds)
+            if len(sleeps) > 1:
+                raise Stop("waited again after the jobs ran")
+            driver.run(once=True)
+
+        with mock.patch.object(mutants_diff.time, "sleep", sleep):
+            code = mutants_diff.diff_run(TWO_CRATES_DIFF, HEAD_TREE, "a diff")
+        self.assertEqual(code, 3)
+        self.assertEqual(sleeps, [driver.POLL_SECONDS])
+        self.assertEqual([option(args, "-p") for args in self.calls], ["cpk", "fpk"])
+        results = mutants_diff.RESULTS
+        for crate, crate_code in (("cpk", 2), ("fpk", 3)):
+            self.assertEqual(
+                json.loads((results / crate / "result.json").read_text(encoding="utf-8"))["code"],
+                crate_code,
+            )
+        self.assertEqual(
+            (results / "missed_all.txt").read_text(encoding="utf-8"),
+            "missed in cpk shard 0\nmissed in fpk shard 0\n",
+        )
+        self.assertEqual(list((self.driver / "done").iterdir()), [])
+        self.assertEqual(self.out.getvalue().count("waiting for the driver's jobs"), 1)
+
+    def test_a_diff_run_with_no_driver_refuses_and_queues_nothing(self):
+        self.diff_run_setup()
+        results = mutants_diff.RESULTS
+        results.mkdir()
+        (results / "missed_all.txt").write_text("the last run's survivor\n", encoding="utf-8")
+        with (
+            mock.patch.object(driver, "running", lambda: False),
+            mock.patch.object(driver, "queue", lambda *a, **k: self.fail("a job was queued")),
+        ):
+            self.assertEqual(mutants_diff.diff_run(TWO_CRATES_DIFF, HEAD_TREE, "a diff"), 1)
+        self.assertIn("just driver run", self.out.getvalue())
+        self.assertEqual(
+            (results / "missed_all.txt").read_text(encoding="utf-8"), "the last run's survivor\n"
+        )
+        self.assertFalse(results.with_name("mutants.diff.old").exists())
+
+    def test_a_diff_run_holds_no_tree_lock_while_it_waits(self):
+        """This PC's driver takes the tree lock of the tree it runs from to
+        file a rolling job: a diff run waiting with it held would stop it."""
+        tree_lock = self.diff_run_setup()
+        free = []
+
+        def sleep(seconds):
+            with open(tree_lock, "a+b") as handle:
+                taken = mutants.try_lock(handle)
+                if taken:
+                    mutants.unlock(handle)
+            free.append(taken)
+            driver.run(once=True)
+
+        with mock.patch.object(mutants_diff.time, "sleep", sleep):
+            mutants_diff.diff_run(TWO_CRATES_DIFF, HEAD_TREE, "a diff")
+        self.assertEqual(free, [True])
+
     def test_a_failed_baseline_leaves_the_next_shard_to_run_it(self):
         job = self.queue()
         self.codes[("cpk", 0)] = 4
@@ -918,6 +1085,20 @@ class Driver(unittest.TestCase):
         self.assert_local_job(job, 2)
         self.assertIn("extra pass needs the VPS", self.out.getvalue())
 
+    def test_a_job_whose_extra_pass_was_dropped_finishes_untested(self):
+        """Every shard exits 0 with no survivor: the job dropped at `queue`
+        ends 1, as untested mutants do, and the same job with none dropped 0."""
+        dropped = self.queue("cpk", shards=1, extra=2)
+        kept = self.queue("fpk", shards=1)
+        self.assertEqual(driver.read_job(dropped)["extra_dropped"], 2)
+        self.assertNotIn("extra_dropped", driver.read_job(kept))
+        self.unwritten.update({("cpk", 0), ("fpk", 0)})
+        self.assertEqual(driver.run(once=True), 0)
+        self.assertEqual(self.result(dropped)["code"], 1)
+        self.assertEqual(self.result(kept)["code"], 0)
+        self.assertIn("cpk done, exit 1: 0 missed or timed out, 0 untested, its extra pass "
+                      "not run", self.out.getvalue())
+
     def test_extra_none_sizes_the_pass_from_the_extracted_source_s_listing(self):
         calls = []
         rows = [
@@ -937,7 +1118,7 @@ class Driver(unittest.TestCase):
             mock.patch.object(
                 mutants, "estimate_seconds",
                 lambda crates, share=1.0: estimates.append(crates)
-                or mutants_diff.SHARD_SECONDS * 2.5,
+                or driver.SHARD_SECONDS * 2.5,
             ),
         ):
             job = self.queue(shards=2, extra=None)
@@ -983,6 +1164,65 @@ class Driver(unittest.TestCase):
             sorted(p.name for p in (self.remote_queue() / job.name).glob("shard-*.todo")),
             ["shard-0.todo", "shard-1.todo", "shard-2.todo"],
         )
+
+    def queue_diff_listing(
+        self, listed: int, rows: list[list[str]], estimate: float = 0.0
+    ) -> Path | None:
+        """cpk queued as a sent diff job of `TWO_CRATES_DIFF` (which adds
+        cpk's line 2), with `extra=None`: cargo-mutants lists `listed`
+        mutants, the extra pass lists `rows` in `src/lib.rs`, which reads
+        "a\\nbb\\nccc\\n", and each estimate is `estimate` seconds. Records
+        each estimate's crate list in `self.estimates`."""
+        self.fake_vps()
+        self.estimates = []
+
+        def extract_tree(tree, dest):
+            self.extract_tree(tree, dest)
+            (dest / "crates" / "libs" / "cpk" / "src").mkdir(parents=True)
+            (dest / "crates" / "libs" / "cpk" / "src" / "lib.rs").write_bytes(b"a\nbb\nccc\n")
+
+        with (
+            mock.patch.object(mutants, "extract_tree", extract_tree),
+            mock.patch.object(
+                mutants, "list_mutants",
+                lambda selection, config, source: [{"name": str(i)} for i in range(listed)],
+            ),
+            mock.patch.object(
+                driver.extra_mutants, "listed",
+                lambda crate, root, kinds: (Path("crates/libs/cpk"), rows, [], 0),
+            ),
+            mock.patch.object(
+                mutants, "estimate_seconds",
+                lambda crates, share=1.0: self.estimates.append(crates) or estimate,
+            ),
+        ):
+            return driver.queue("cpk", extra=None, diff=TWO_CRATES_DIFF, tree=HEAD_TREE)
+
+    # Extra mutants of cpk's `src/lib.rs`: two on line 2, which the diff
+    # changes, one on line 3, which it does not.
+    ON_LINE_2 = [["src/lib.rs", "2", "4", "bool", "2", "false", f"on line 2, {i}"]
+                 for i in range(2)]
+    ON_LINE_3 = ["src/lib.rs", "5", "8", "bool", "3", "false", "on line 3"]
+
+    def test_a_job_gets_no_more_shards_than_listed_mutants(self):
+        job = self.queue_diff_listing(1, [], estimate=driver.SHARD_SECONDS * 2.5)
+        spec = driver.read_job(job)
+        self.assertEqual((spec["shards"], spec["extra"]), (1, 0))
+        self.assertEqual(self.estimates, [["cpk"]], "an estimate worth three shards")
+
+    def test_a_diff_job_s_extra_shards_count_the_mutants_on_its_lines_alone(self):
+        job = self.queue_diff_listing(0, [*self.ON_LINE_2, self.ON_LINE_3])
+        spec = driver.read_job(job)
+        self.assertEqual((spec["shards"], spec["extra"]), (1, 1))
+        self.assertTrue((job / "sent.json").exists())
+        self.assertEqual(self.estimates, [[], ["cpk"] * 2], "line 3's mutant is not counted")
+        self.assertIn("queued in 0 shards and 1 extra shards", self.out.getvalue())
+
+    def test_a_diff_job_with_no_mutant_on_its_lines_is_not_queued(self):
+        self.assertIsNone(self.queue_diff_listing(0, [self.ON_LINE_3]))
+        self.assertEqual(list((self.driver / "queue").iterdir()), [], "no job and no .tmp")
+        self.assertFalse((self.home / "studio-driver").exists(), "nothing sent")
+        self.assertEqual(self.out.getvalue().count("cpk not queued: no mutant in the diff"), 1)
 
     def sent_job(
         self, shards: int = 2, stamp: str | None = None, extra: int | None = 0
@@ -1825,6 +2065,27 @@ class Driver(unittest.TestCase):
             line for line in lines if "--remote-extra" in line
         ))
         self.assertEqual(option(command, "--selection"), str(job / "selection.json"))
+
+    def test_a_diff_job_s_diff_reaches_its_shards_its_map_and_its_extra_pass(self):
+        """`--in-diff <job>/in.diff` on this PC's shard and in the map's
+        listing, `--diff <job>/in.diff` on the extra pass, each for the diff
+        job alone: the whole-crate job beside it gets neither."""
+        diffed = driver.queue("cpk", 1, 0, diff=TWO_CRATES_DIFF, tree=HEAD_TREE)
+        whole = self.queue("fpk", 1)
+        tmp = self.driver / "tmp"
+        for job, expected in ((diffed, str(diffed / "in.diff")), (whole, None)):
+            listing = shlex.split(cargo_line(driver.map_script(job, tmp).decode("utf-8")))
+            self.assertEqual(option(listing, "--in-diff"), expected, job.name)
+            extra = shlex.split(next(
+                line for line in driver.extra_script(job, 1, tmp).decode("utf-8").splitlines()
+                if "--remote-extra" in line
+            ))
+            self.assertEqual(option(extra, "--diff"), expected, job.name)
+        self.assertEqual(driver.run(once=True), 0)
+        self.assertEqual(
+            {option(args, "-p"): option(args, "--in-diff") for args in self.calls},
+            {"cpk": str(diffed / "in.diff"), "fpk": None},
+        )
 
     def test_a_shard_with_no_exit_file_is_done_with_code_1(self):
         job = self.queue(shards=2)

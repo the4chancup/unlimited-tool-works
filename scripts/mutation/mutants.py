@@ -12,19 +12,19 @@ over the crates measures for days of its own — its results into
 `extra_mutants.out/remote/`. The run waits for its remote half holding
 no lock — the launch takes this tree's and the remote's, the finish the
 tree's and, around the fetch, the remote's again — so `just mutants-diff`
-runs meanwhile; it runs on this machine whole while the remote is busy
-(`mutants_diff.py`).
+runs meanwhile, as jobs of the mutation driver (`driver.py`).
 
-A `mutants-diff` crate run still splits with the host when the split pays, by
-the file split below (`plan_file_split`, `partition`, `check_split`,
-`split.json`): it hands each half a complementary set of the selection's
+The file split below (`plan_file_split`, `partition`, `check_split`,
+`split.json`) shares a run's mutants with the host: it hands each half a
+complementary set of the selection's
 source files, sized by the two halves' measured seconds per tested mutant
 (`COST_CACHE`, `local_share`), through `examine_globs` in the local config and
 `exclude_globs` in the remote's, so the slower half tests fewer mutants and
 the two end together. Where no file split can be planned (a half not measured
 yet, shares within `SHARE_MIN_GAIN` of halves, mutants in too few files) the
-remote gets the even `--shard 1/2` round-robin share. A whole run that needs
-this machine again splits the same way, with the local extra pass in `split`.
+remote gets the even `--shard 1/2` round-robin share. No command splits now: a
+diff's crates run as driver jobs, and a whole run that needs this machine
+again would split this way, with the local extra pass in `split`.
 The remote half's results merge into `mutants.out/remote/`.
 
 The remote half runs as a transient systemd service on the host (`sudo -n
@@ -88,8 +88,8 @@ REMOTE_REF = "refs/mutants/remote"
 REMOTE_ONLY = False
 # The extra_mutants kinds `just mutants <crate>` runs before the cargo-mutants
 # run starts, so a whole-crate run stays one command and its missed_all.txt the
-# one list to triage; `mutants-diff` runs them too, on this machine over the
-# lines its diff changed, after each crate's cargo-mutants run. A kind is
+# one list to triage; `mutants-diff` runs them too, over the lines its diff
+# changed, as its driver jobs' extra shards on the VPS. A kind is
 # listed when about half its survivors are real gaps, since each equivalent
 # survivor costs a ruling every phase. `bool` joined once
 # `.cargo/extra_mutants.toml` gave its ruled equivalents a home.
@@ -217,10 +217,10 @@ REMOTE_TEST_MEMORY = 6 * 2**30
 # the unit's memory cap.
 REMOTE_JOBSERVER_TASKS: int | None = None
 # Crates whose mutants never go to the remote because their builds outgrow the
-# cap even at one jobserver task. A `mutants-diff` holding any of their mutants
-# runs locally whole. Empty now: team_compiler was listed after two of its
-# builds were killed at 9 GiB, until the cause turned out to be the host's
-# tmpfs `/tmp`, where cargo-mutants put its two build copies
+# cap even at one jobserver task. A mutation driver job of one stays on this
+# PC, its extra pass dropped and counted untested. Empty now: team_compiler
+# was listed after two of its builds were killed at 9 GiB, until the cause
+# turned out to be the host's tmpfs `/tmp`, where cargo-mutants put its two build copies
 # (`REMOTE_TMPDIR` below). If a crate's builds are killed again with the
 # copies on disk, list it here.
 LOCAL_ONLY_CRATES: frozenset[str] = frozenset()
@@ -898,9 +898,9 @@ def killed_builds(out_dir: Path) -> list[str]:
 
 
 def shard_outputs(out_dir: Path) -> list[Path]:
-    """The `mutants.out` of each shard under `out_dir`, a sharded crate run's
-    results (`mutants_diff.sharded_run`: `shard-<k>/mutants.out`), in shard
-    order; empty for any other run's."""
+    """The `mutants.out` of each shard under `out_dir`, a mutation driver
+    job's results (`shard-<k>/mutants.out`), in shard order; empty for any
+    other run's."""
     shards = [path for path in out_dir.glob("shard-*") if path.name[6:].isdigit()]
     return [path / "mutants.out" for path in sorted(shards, key=lambda p: int(p.name[6:]))]
 
@@ -2680,9 +2680,9 @@ def split(
         extra_run_record().unlink(missing_ok=True)
         split_run_record().unlink(missing_ok=True)
     else:
-        # A diff run's job has no extra pass (the diff's pass is `mutants_diff`'s
-        # own, here): drop the last whole-crate run's record so the summary
-        # never reads its contents as this run's, and with no local
+        # A selection other than `-p <crate>` (a diff's, with `--in-diff`) has
+        # no extra pass here: drop the last whole-crate run's record so the
+        # summary never reads its contents as this run's, and with no local
         # half the last split's too.
         extra_run_record().unlink(missing_ok=True)
         if not local:
@@ -2733,7 +2733,8 @@ def main(argv: list[str]) -> int:
         # cargo-mutants, an extras-only run's after its map (`launch_remote`),
         # a driver job's extra shard (`--shard` its (k, n) share, `--source`
         # the job's extracted tree — an archive, not a git repository, so no
-        # git tree is read), the
+        # git tree is read; `--diff` its diff, whose changed lines alone
+        # the pass tests, for a diff job), the
         # kinds after the crate (EXTRA_KINDS when none) and `--selection`
         # naming the coverage map the job built first, each mutant's test
         # phase running the tests covering its lines. The pass runs in copies
@@ -2745,14 +2746,14 @@ def main(argv: list[str]) -> int:
 
         usage = (
             "usage: mutants.py --remote-extra <crate> [kinds...] "
-            "[--selection <path>] [--shard <k>/<n>] [--source <path>]"
+            "[--selection <path>] [--shard <k>/<n>] [--source <path>] [--diff <path>]"
         )
         kinds = []
-        selection = source = shard = None
+        selection = source = shard = lines = None
         args = argv[3:]
         i = 0
         while i < len(args):
-            if args[i] in ("--selection", "--shard", "--source"):
+            if args[i] in ("--selection", "--shard", "--source", "--diff"):
                 if i + 1 == len(args):
                     print(usage)
                     return 1
@@ -2760,6 +2761,8 @@ def main(argv: list[str]) -> int:
                     selection = Path(args[i + 1])
                 elif args[i] == "--source":
                     source = Path(args[i + 1])
+                elif args[i] == "--diff":
+                    lines = extra_mutants.diff_lines(Path(args[i + 1]).read_bytes())
                 else:
                     parts = args[i + 1].split("/")
                     if (
@@ -2777,7 +2780,7 @@ def main(argv: list[str]) -> int:
                 i += 1
         _, counts, seconds = extra_mutants.run_crate(
             argv[2], kinds or list(EXTRA_KINDS), selection=selection,
-            shard=shard, source=source, jobs=REMOTE_EXTRA_JOBS,
+            lines=lines, shard=shard, source=source, jobs=REMOTE_EXTRA_JOBS,
         )
         record_extra_run(argv[2], counts, seconds)
         return 1 if counts["untested"] else 0

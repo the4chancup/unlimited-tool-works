@@ -613,16 +613,17 @@ Requirements:
   each crate's run is split between that PC and the VPS, the ssh host
   `STUDIO_MUTANTS_REMOTE` names (prerequisites in `scripts/mutation/mutants.py`). `just
   mutants <crate>` runs one by hand, on the VPS alone. Each run's survivors are triaged
-  when it ends. On the VPS, the whole-crate runs select each mutant's tests by line
+  when it ends. The diff runs are driver jobs too, one per crate, so the driver must be
+  running. On the VPS, every run selects each mutant's tests by line
   coverage, the extra kinds' mutants included (`scripts/mutation/coverage_map.py`,
-  `select_tests.py`; an extras-only run builds the map too); the checkpoint's diff
-  runs do not. Every survivor is
+  `select_tests.py`; an extras-only run builds the map too); the shards this PC runs
+  take the full suite. Every survivor is
   triaged into one of three: a missing test (write it, or a worklog step), an equivalent mutant
   (the mutated code computes the same value; its pattern goes into `.cargo/mutants.toml` with
   the equivalence named, so that file is the list of what the runs no longer measure), or
   unreachable code (a design finding). A survivor with no bucket is a review finding, not a
   number to accept. Results land in `mutants.out/` (gitignored); a diff run's in
-  `mutants.diff/<crate>/`, one cargo-mutants run per crate so each times its mutants out
+  `mutants.diff/<crate>/`, one job per crate so each times its mutants out
   against its own baseline, every crate's survivors in `mutants.diff/missed_all.txt`. What a clean run cannot
   vouch for: `cargo-mutants` rewrites operators, a `!`, match arms and guards, a field, and a
   function's whole return value; it never edits a literal or removes a method call. So `just
@@ -637,10 +638,11 @@ Requirements:
   other statement that is a method call alone, made for its effect (a repaint asked, a
   message sent, a shape painted); `bool`
   flips a `true`/`false` argument or struct field, the flags that land in a written file and
-  that cargo-mutants never touches. A diff run runs them too, on this machine, over the lines
-  the diff changed: after each crate's cargo-mutants run, and for every crate a changed file
-  belongs to, even one with no cargo-mutants mutant. Their results land in
-  `mutants.diff/<crate>/extra/`, their survivors in the same `mutants.diff/missed_all.txt`.
+  that cargo-mutants never touches. A diff run runs them too, over the lines the diff
+  changed, as its jobs' extra shards on the VPS: a crate with extra mutants on those lines
+  gets a job even with no cargo-mutants mutant, and a job that could not be sent to the VPS
+  ends with exit 1, as untested mutants do. Their survivors join the same
+  `mutants.diff/missed_all.txt`.
   An equivalent extra mutant goes into
   `.cargo/extra_mutants.toml` with its reason, matched by path, kind and whole description (no
   line number: a description names its function and its site, the field, or the call and its

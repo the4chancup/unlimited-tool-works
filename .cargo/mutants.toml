@@ -13,8 +13,8 @@
 # does not run.
 test_tool = "nextest"
 
-# This line sizes a bare `cargo mutants` only. `just mutants`/`mutants-diff` run two cargo
-# processes at once (`--jobs 2`) from a copy of this file that `scripts/mutation/mutants.py`
+# This line sizes a bare `cargo mutants` only. `just mutants` and the mutation driver's shards
+# run two cargo processes at once (`--jobs 2`) from a copy of this file that `scripts/mutation/mutants.py`
 # (`sized_config`) writes per machine, giving each process half the logical CPUs, and start
 # cargo-mutants at below-normal priority, so the run uses every CPU the user's own work leaves
 # idle rather than holding two back. A bare run keeps the old fixed budget of 7 test threads;
@@ -31,7 +31,7 @@ additional_cargo_test_args = ["--test-threads=7"]
 # A mutant's tests time out at five times the baseline's test time, cargo-mutants' default,
 # which leaves a starved low-priority local run (RUNBOOK "Mutation runs") room before a slow
 # test counts as a hang. The baseline is one crate's suite: `just mutants` takes one crate and
-# `mutants-diff` runs each crate on its own (`scripts/mutation/mutants_diff.py`). When one diff run tested
+# `mutants-diff` queues a driver job per crate (`scripts/mutation/mutants_diff.py`). When one diff run tested
 # every crate, its baseline summed them, and a `music_export` mutant that hung a loop (its tests
 # take 1-2 s) waited 751 s here; three times was tried then, and per-crate baselines replaced it.
 timeout_multiplier = 5.0
