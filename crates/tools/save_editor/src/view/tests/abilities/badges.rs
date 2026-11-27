@@ -1,5 +1,13 @@
 use super::*;
 
+/// Team `team_id` of `session`'s file read under `rules`
+/// (`Rules::team_reading`), for the per-player calls about it.
+fn team_reading(rules: &aatf::Rules, session: &Session, team_id: u32) -> aatf::TeamReading {
+    rules
+        .team_reading(aatf::TeamView::new(session.file(), team_id).unwrap())
+        .unwrap()
+}
+
 // The Cards used badge is one badge, the player's own tier under the
 // active ruleset (`label: non-free of limit`); a ticked skill that no free
 // group covers raises it by one; the active ruleset's reading is the
@@ -13,10 +21,10 @@ fn the_cards_used_badge_reads_the_players_own_tier() {
     /// not the list's head.
     fn expected(view: &SaveView, rules: &aatf::Rules, slot: u8) -> String {
         let session = view.session.as_ref().unwrap();
-        let team = aatf::TeamView::new(session.file(), 701).unwrap();
-        let player = team.player(slot).unwrap();
+        let reading = team_reading(rules, session, 701);
+        let player = reading.team().player(slot).unwrap();
         let tier = rules
-            .player_tier(&team, player)
+            .player_tier(&reading, player)
             .unwrap()
             .expect("the checked player matches a tier");
         assert_ne!(
@@ -24,7 +32,7 @@ fn the_cards_used_badge_reads_the_players_own_tier() {
             rules.ruleset().tiers[0].id,
             "premise: slot {slot}'s own tier is not the ruleset's first"
         );
-        let limits = rules.card_limits(&team, player, &tier.id).unwrap();
+        let limits = rules.card_limits(&reading, player, &tier.id).unwrap();
         format!("{}: {} of {}", tier.label, limits.non_free, limits.limit)
     }
     /// The `non_free` an `expected` badge text carries (`"Regular: 3 of 7"`
@@ -155,13 +163,13 @@ fn an_overdrawn_badge_paints_in_the_error_colour() {
     let rules = aatf::Rules::official();
     let badge = {
         let session = view.session.as_ref().unwrap();
-        let team = aatf::TeamView::new(session.file(), 701).unwrap();
-        let player = team.player(0).unwrap();
+        let reading = team_reading(&rules, session, 701);
+        let player = reading.team().player(0).unwrap();
         let tier = rules
-            .player_tier(&team, player)
+            .player_tier(&reading, player)
             .unwrap()
             .expect("the player matches a tier");
-        let limits = rules.card_limits(&team, player, &tier.id).unwrap();
+        let limits = rules.card_limits(&reading, player, &tier.id).unwrap();
         assert!(
             i32::from(limits.non_free) > i32::from(limits.limit),
             "premise: overdrawn (non-free {} of {})",
@@ -237,10 +245,10 @@ fn a_player_no_tier_matches_gets_the_stand_in() {
     view.selected = Some(Selection::Player(781, 0));
     {
         let session = view.session.as_ref().unwrap();
-        let team = aatf::TeamView::new(session.file(), 781).unwrap();
-        let player = team.player(0).unwrap();
+        let reading = team_reading(&rules, session, 781);
+        let player = reading.team().player(0).unwrap();
         assert_eq!(
-            rules.player_tier(&team, player).unwrap().map(|t| &t.id),
+            rules.player_tier(&reading, player).unwrap().map(|t| &t.id),
             None,
             "premise: 78101 matches no VTL11 tier"
         );
@@ -267,7 +275,7 @@ fn a_failing_tier_check_shows_its_error_in_the_badges_place() {
         std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../libs/aatf/logic/logic.rhai"),
     )
     .unwrap();
-    let head = "fn player_tier(player, team) {\n";
+    let head = "fn player_tier(player, team, system) {\n";
     assert_eq!(logic.matches(head).count(), 1, "premise: one player_tier");
     let failing = logic.replacen(
         head,
@@ -281,9 +289,11 @@ fn a_failing_tier_check_shows_its_error_in_the_badges_place() {
     pick_imported(&mut view, "failing.4ccrules", &text);
     {
         let session = view.session.as_ref().unwrap();
-        let team = aatf::TeamView::new(session.file(), 701).unwrap();
+        let reading = team_reading(&rules, session, 701);
         assert!(
-            rules.player_tier(&team, team.player(0).unwrap()).is_err(),
+            rules
+                .player_tier(&reading, reading.team().player(0).unwrap())
+                .is_err(),
             "premise: the check fails on the selected player"
         );
     }
@@ -368,14 +378,14 @@ fn the_captains_untaken_choice_counts_its_card_in_the_badges_limit() {
             0,
             "premise: roster slot 0 is the captain"
         );
-        let team = aatf::TeamView::new(session.file(), 781).unwrap();
-        let player = team.player(0).unwrap();
+        let reading = team_reading(&rules, session, 781);
+        let player = reading.team().player(0).unwrap();
         let tier = rules
-            .player_tier(&team, player)
+            .player_tier(&reading, player)
             .unwrap()
             .expect("the captain matches a tier");
         assert_eq!(tier.id.as_str(), "regular", "premise: a regular");
-        let limits = rules.card_limits(&team, player, &tier.id).unwrap();
+        let limits = rules.card_limits(&reading, player, &tier.id).unwrap();
         assert!(
             limits.non_free <= tier.cards,
             "premise: his non-free cards under the tier's limit"
@@ -407,9 +417,9 @@ fn the_captains_untaken_choice_counts_its_card_in_the_badges_limit() {
     view.selected = Some(Selection::Player(781, 0));
     {
         let session = view.session.as_ref().unwrap();
-        let team = aatf::TeamView::new(session.file(), 781).unwrap();
+        let reading = team_reading(&rules, session, 781);
         let limits = rules
-            .card_limits(&team, team.player(0).unwrap(), "regular")
+            .card_limits(&reading, reading.team().player(0).unwrap(), "regular")
             .unwrap();
         assert_eq!(
             limits.free.get("com"),

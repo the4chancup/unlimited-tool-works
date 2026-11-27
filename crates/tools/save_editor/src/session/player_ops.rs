@@ -12,9 +12,11 @@ use crate::session::Session;
 
 impl Session {
     /// One "Make <tier>" click in the quick actions: `Rules::apply_tier` on
-    /// the roster slot's player, as one sealed `edit_players` entry. A team that does
-    /// not view, an empty slot or a failed `apply_tier` is the error the
-    /// view's refusal dialog shows; the player is untouched.
+    /// the roster slot's player, as one sealed `edit_players` entry, the
+    /// team read once for it (`Rules::team_reading`). A team that does
+    /// not view, an empty slot, a failed reading or a failed `apply_tier`
+    /// is the error the view's refusal dialog shows; the player is
+    /// untouched.
     pub(crate) fn apply_tier(
         &mut self,
         rules: &aatf::Rules,
@@ -26,13 +28,17 @@ impl Session {
         let player_id = self
             .slot_player(team_id, slot)
             .ok_or_else(|| anyhow!("team {team_id}'s roster slot {slot} is empty"))?;
-        let player = team.player(slot).expect("a filled roster slot views");
+        let reading = rules.team_reading(team)?;
+        let player = reading
+            .team()
+            .player(slot)
+            .expect("a filled roster slot views");
         let mut edited = self
             .file
             .player(player_id)
             .expect("a viewed player exists")
             .clone();
-        rules.apply_tier(&team, player, tier, &mut edited)?;
+        rules.apply_tier(&reading, player, tier, &mut edited)?;
         self.edit_players(vec![edited]);
         Ok(())
     }
@@ -323,10 +329,14 @@ mod tests {
         let before = session.file().player(70101).unwrap().clone();
         let rules = aatf::Rules::official();
         let expected = {
-            let team = aatf::TeamView::new(session.file(), 701).unwrap();
-            let player = team.player(0).unwrap();
+            let reading = rules
+                .team_reading(aatf::TeamView::new(session.file(), 701).unwrap())
+                .unwrap();
+            let player = reading.team().player(0).unwrap();
             let mut entry = before.clone();
-            rules.apply_tier(&team, player, "gold", &mut entry).unwrap();
+            rules
+                .apply_tier(&reading, player, "gold", &mut entry)
+                .unwrap();
             entry
         };
         assert_ne!(expected, before, "premise: Gold changes him");

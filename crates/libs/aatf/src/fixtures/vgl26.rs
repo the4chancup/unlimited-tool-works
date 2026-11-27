@@ -77,7 +77,12 @@ fn legalize(mut records: Records) -> Records {
         let view = records.view();
         let player = view.player(slot).expect("a filled slot").clone();
         rules
-            .apply_tier(&view, &player, tier, records.player_mut(slot))
+            .apply_tier(
+                &reading(&rules, &view),
+                &player,
+                tier,
+                records.player_mut(slot),
+            )
             .expect("the tier applies");
     }
     for formation in &mut records.team.tactics.presets[2].formations {
@@ -155,7 +160,12 @@ fn apply_tier_then_check_reports_nothing_for_every_tier() {
         assert!(!problems(&rules, &broken).is_empty(), "{tier} {slot}");
         let player = broken.player(slot).expect("filled").clone();
         rules
-            .apply_tier(&broken, &player, tier, records.player_mut(slot))
+            .apply_tier(
+                &reading(&rules, &broken),
+                &player,
+                tier,
+                records.player_mut(slot),
+            )
             .expect("the tier applies");
         assert_eq!(problems(&rules, &records.view()), vec![], "{tier} {slot}");
     }
@@ -196,7 +206,12 @@ fn a_goalkeeper_at_185_rated_85_reads_as_goalkeeper() {
     assert_eq!(keeper.position, Some(position("GK")));
     assert_eq!(keeper.height, 185);
     rules
-        .apply_tier(&view, &keeper, "buffed", records.player_mut(0))
+        .apply_tier(
+            &reading(&rules, &view),
+            &keeper,
+            "buffed",
+            records.player_mut(0),
+        )
         .expect("buffed applies");
     let found = problems(&rules, &records.view());
     assert_eq!(found.len(), 19, "{found:?}");
@@ -521,7 +536,11 @@ fn the_captains_special_covers_the_limit_and_the_card() {
     });
     assert_eq!(problems(&rules, &team), vec![]);
     let limits = rules
-        .card_limits(&team, team.player(10).expect("slot 10"), "silver")
+        .card_limits(
+            &reading(&rules, &team),
+            team.player(10).expect("slot 10"),
+            "silver",
+        )
         .expect("limits");
     assert_eq!(limits.limit, 9, "the special's +1 over the silver 8");
     assert!(

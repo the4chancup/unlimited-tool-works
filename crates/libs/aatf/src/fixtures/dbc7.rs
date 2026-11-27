@@ -155,7 +155,12 @@ fn legalize(mut records: Records, heights: &[u8; 23], medals: &[(u8, &str)]) -> 
         let view = records.view();
         let player = view.player(slot).expect("a filled slot").clone();
         rules
-            .apply_tier(&view, &player, tier, records.player_mut(slot))
+            .apply_tier(
+                &reading(&rules, &view),
+                &player,
+                tier,
+                records.player_mut(slot),
+            )
             .expect("the tier applies");
     }
     records
@@ -326,8 +331,13 @@ fn a_manlet_silver_taking_part_of_the_bonus_is_read_as_a_silver() {
     let mut team = legal_team(&MANLET_BONUS, GGSS);
     set_tier(player_mut(&mut team, 9), 92, 8, 3);
     set_tier(player_mut(&mut team, 3), 82, 8, 3);
+    let reading = reading(&rules, &team);
     for (slot, expected) in [(9, "silver"), (3, "regular"), (2, "gold"), (10, "gold")] {
-        assert_eq!(tier_of(&rules, &team, slot), Some(expected), "slot {slot}");
+        assert_eq!(
+            tier_of(&rules, &reading, slot),
+            Some(expected),
+            "slot {slot}"
+        );
     }
 }
 
@@ -1202,7 +1212,7 @@ fn a_tier_helper_reads_cookie_under_manlet() {
     let rules = rules();
     let team = cookie_team();
     let values = rules
-        .tier_values(&team, player(&team, 10), "regular")
+        .tier_values(&reading(&rules, &team), player(&team, 10), "regular")
         .expect("the values");
     assert_eq!(values.stats.get(&stat("dribbling")), Some(&82));
     assert_eq!(values.stats.get(&stat("speed")), Some(&82));

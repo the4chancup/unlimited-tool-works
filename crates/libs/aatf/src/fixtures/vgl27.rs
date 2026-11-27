@@ -60,7 +60,12 @@ fn legalize(mut records: Records) -> Records {
         let view = records.view();
         let player = view.player(slot).expect("a filled slot").clone();
         rules
-            .apply_tier(&view, &player, tier, records.player_mut(slot))
+            .apply_tier(
+                &reading(&rules, &view),
+                &player,
+                tier,
+                records.player_mut(slot),
+            )
             .expect("the tier applies");
     }
     for (slot, height) in [
@@ -85,7 +90,12 @@ fn legalize(mut records: Records) -> Records {
         let view = records.view();
         let player = view.player(slot).expect("a filled slot").clone();
         rules
-            .apply_tier(&view, &player, "regular", records.player_mut(slot))
+            .apply_tier(
+                &reading(&rules, &view),
+                &player,
+                "regular",
+                records.player_mut(slot),
+            )
             .expect("the tier applies");
     }
     records
@@ -149,7 +159,12 @@ fn apply_tier_then_check_reports_nothing_for_every_tier() {
         assert!(!problems(&rules, &broken).is_empty(), "{tier} {slot}");
         let player = broken.player(slot).expect("filled").clone();
         rules
-            .apply_tier(&broken, &player, tier, records.player_mut(slot))
+            .apply_tier(
+                &reading(&rules, &broken),
+                &player,
+                tier,
+                records.player_mut(slot),
+            )
             .expect("the tier applies");
         assert_eq!(problems(&rules, &records.view()), vec![], "{tier} {slot}");
     }
@@ -225,7 +240,12 @@ fn a_goalkeeper_rated_99_is_a_goalkeeper() {
     assert_eq!(keeper.position, Some(position("GK")));
     assert_eq!(keeper.height, 189);
     rules
-        .apply_tier(&view, &keeper, "gold", records.player_mut(0))
+        .apply_tier(
+            &reading(&rules, &view),
+            &keeper,
+            "gold",
+            records.player_mut(0),
+        )
         .expect("gold applies");
     let found = problems(&rules, &records.view());
     assert_eq!(found.len(), 23, "{found:?}");
@@ -639,7 +659,11 @@ fn the_captains_com_option_frees_his_second_com() {
     let rules = rules();
     let team = legal_team();
     let limits = rules
-        .card_limits(&team, team.player(10).expect("slot 10"), "silver")
+        .card_limits(
+            &reading(&rules, &team),
+            team.player(10).expect("slot 10"),
+            "silver",
+        )
         .expect("limits");
     assert_eq!(
         limits.free.get("com"),
@@ -672,7 +696,11 @@ fn the_captains_a_positions_option_raises_his_allowance() {
         p.ratings[usize::from(dmf.0)] = 2;
     });
     let limits = rules
-        .card_limits(&team, team.player(10).expect("slot 10"), "silver")
+        .card_limits(
+            &reading(&rules, &team),
+            team.player(10).expect("slot 10"),
+            "silver",
+        )
         .expect("limits");
     assert_eq!(limits.a_positions, 3, "the option's +1 over the silver 2");
     assert_eq!(limits.limit, 5, "the tier's limit, not `cards`");
@@ -702,7 +730,11 @@ fn the_captains_untaken_choice_counts_its_card_in_the_limit() {
     );
     let limits_of = |team: &TeamView, slot| {
         rules
-            .card_limits(team, team.player(slot).expect("a filled slot"), "silver")
+            .card_limits(
+                &reading(&rules, team),
+                team.player(slot).expect("a filled slot"),
+                "silver",
+            )
             .expect("limits")
     };
     assert_eq!(

@@ -115,7 +115,12 @@ fn apply_tier_then_check_reports_nothing_for_every_tier() {
         assert!(!problems(&rules, &broken).is_empty(), "{tier} {slot}");
         let player = broken.player(slot).expect("filled").clone();
         rules
-            .apply_tier(&broken, &player, tier, records.player_mut(slot))
+            .apply_tier(
+                &reading(&rules, &broken),
+                &player,
+                tier,
+                records.player_mut(slot),
+            )
             .expect("the tier applies");
         assert_eq!(problems(&rules, &records.view()), vec![], "{tier} {slot}");
     }
@@ -150,7 +155,9 @@ fn card_limits_and_tier_values_report_the_tiers_values() {
     // card show in his limits — two and four, his one A inside them.
     let manlet = player(&team, 3);
     assert_eq!(manlet.height, 175);
-    let limits = rules.card_limits(&team, manlet, "regular").expect("limits");
+    let limits = rules
+        .card_limits(&reading(&rules, &team), manlet, "regular")
+        .expect("limits");
     assert_eq!((limits.a_positions, limits.limit), (2, 4));
 }
 

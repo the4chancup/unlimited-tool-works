@@ -413,7 +413,11 @@ fn an_overspend_in_a_positions_is_over_the_limit() {
         )]
     );
     let limits = rules
-        .card_limits(&team, team.player(12).expect("slot 12"), "regular")
+        .card_limits(
+            &reading(&rules, &team),
+            team.player(12).expect("slot 12"),
+            "regular",
+        )
         .expect("limits");
     assert_eq!(limits.limit, -1);
 }
@@ -1350,13 +1354,18 @@ fn the_player_tier_is_read_under_the_teams_height_system() {
         .filter_map(|stat| giant.abilities[usize::from(stat.0)])
         .max();
     assert_eq!(best, Some(89));
+    let reading = reading(&rules, &team);
     for (slot, expected) in [(5, "silver"), (2, "gold"), (9, "bronze")] {
-        assert_eq!(tier_of(&rules, &team, slot), Some(expected), "slot {slot}");
+        assert_eq!(
+            tier_of(&rules, &reading, slot),
+            Some(expected),
+            "slot {slot}"
+        );
     }
     // A registered goalkeeper reads `goalkeeper`.
     let keeper = player(&team, 0);
     assert_eq!(keeper.position, Some(position("GK")));
-    assert_eq!(tier_of(&rules, &team, 0), Some("goalkeeper"));
+    assert_eq!(tier_of(&rules, &reading, 0), Some("goalkeeper"));
 }
 
 /// The medals' trades: each free COM style a medal may hold is instead a
@@ -1414,7 +1423,11 @@ fn medals_trade_a_free_com_style_for_a_free_a_position() {
     // Non-free 4 is legal at a limit of 5 too: the limit itself shows both
     // trades taken, three A positions free and no card spent on them.
     let limits = rules
-        .card_limits(&team, team.player(2).expect("filled"), "gold")
+        .card_limits(
+            &reading(&rules, &team),
+            team.player(2).expect("filled"),
+            "gold",
+        )
         .expect("limits");
     assert_eq!((limits.a_positions, limits.limit), (3, 6));
     // One style kept, one trade on the extra A: non-free 4 of 6.
@@ -1534,7 +1547,12 @@ fn apply_tier_then_check_reports_nothing_for_every_official_tier() {
         assert!(!problems(&rules, &broken).is_empty(), "{tier} {slot}");
         let player = broken.player(slot).expect("filled").clone();
         rules
-            .apply_tier(&broken, &player, tier, records.player_mut(slot))
+            .apply_tier(
+                &reading(&rules, &broken),
+                &player,
+                tier,
+                records.player_mut(slot),
+            )
             .expect("the tier applies");
         assert_eq!(problems(&rules, &records.view()), vec![], "{tier} {slot}");
     }
@@ -1550,7 +1568,11 @@ fn tier_values_carry_the_specials() {
     let team = legal_team();
     let values = |team: &TeamView, slot: u8, tier: &str| {
         rules
-            .tier_values(team, team.player(slot).expect("filled"), tier)
+            .tier_values(
+                &reading(&rules, team),
+                team.player(slot).expect("filled"),
+                tier,
+            )
             .expect("values")
     };
     let giant = values(&team, 5, "silver");
@@ -1586,7 +1608,11 @@ fn tier_values_carry_the_specials() {
     );
     assert_eq!((regular.form, regular.injury_resistance), (4, 1));
     let unknown = rules
-        .tier_values(&team, team.player(3).expect("filled"), "platinum")
+        .tier_values(
+            &reading(&rules, &team),
+            team.player(3).expect("filled"),
+            "platinum",
+        )
         .expect_err("no such tier");
     assert_eq!(
         unknown,
@@ -1610,7 +1636,11 @@ fn card_limits_name_the_economy() {
     let team = legal_team();
     let limits = |slot: u8, tier: &str| {
         rules
-            .card_limits(&team, team.player(slot).expect("filled"), tier)
+            .card_limits(
+                &reading(&rules, &team),
+                team.player(slot).expect("filled"),
+                tier,
+            )
             .expect("limits")
     };
     assert_eq!(
@@ -1693,7 +1723,9 @@ fn card_limits_reports_the_non_free_count() {
         4,
         "premise: four of the gold's nine cards are tricks"
     );
-    let limits = rules.card_limits(&team, gold, "gold").expect("limits");
+    let limits = rules
+        .card_limits(&reading(&rules, &team), gold, "gold")
+        .expect("limits");
     assert_eq!(limits.free.get("com"), Some(&2));
     assert_eq!(limits.free.get("tricks"), Some(&3));
     assert_eq!(limits.non_free, 4);

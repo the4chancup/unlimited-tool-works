@@ -94,7 +94,12 @@ fn legalize(mut records: Records) -> Records {
         let view = records.view();
         let player = view.player(slot).expect("a filled slot").clone();
         rules
-            .apply_tier(&view, &player, tier, records.player_mut(slot))
+            .apply_tier(
+                &reading(&rules, &view),
+                &player,
+                tier,
+                records.player_mut(slot),
+            )
             .expect("the tier applies");
     }
     for slot in [0, 1, 8, 11, 13, 14, 17, 18, 19, 21] {
@@ -102,7 +107,12 @@ fn legalize(mut records: Records) -> Records {
         let view = records.view();
         let player = view.player(slot).expect("a filled slot").clone();
         rules
-            .apply_tier(&view, &player, "regular", records.player_mut(slot))
+            .apply_tier(
+                &reading(&rules, &view),
+                &player,
+                "regular",
+                records.player_mut(slot),
+            )
             .expect("the tier applies");
     }
     for slot in 0..23u8 {
@@ -165,7 +175,12 @@ fn apply_tier_then_check_reports_nothing_for_every_tier() {
         assert!(!problems(&rules, &broken).is_empty(), "{tier} {slot}");
         let player = broken.player(slot).expect("filled").clone();
         rules
-            .apply_tier(&broken, &player, tier, records.player_mut(slot))
+            .apply_tier(
+                &reading(&rules, &broken),
+                &player,
+                tier,
+                records.player_mut(slot),
+            )
             .expect("the tier applies");
         assert_eq!(problems(&rules, &records.view()), vec![], "{tier} {slot}");
     }
@@ -273,9 +288,9 @@ fn a_player_no_tier_takes_has_no_tier() {
     let rules = rules();
     let swerve = usize::from(stat("swerve").0);
     let team = edited(5, |p| p.abilities[swerve] = Some(90));
-    assert_eq!(tier_of(&rules, &team, 5), None);
+    assert_eq!(tier_of(&rules, &reading(&rules, &team), 5), None);
     let team = edited(5, |p| p.abilities[swerve] = Some(99));
-    assert_eq!(tier_of(&rules, &team, 5), Some("gold"));
+    assert_eq!(tier_of(&rules, &reading(&rules, &team), 5), Some("gold"));
 }
 
 /// The gold's playing-style bonuses: slot 9's creative_playmaker moves
@@ -680,7 +695,11 @@ fn the_permitted_b_at_cb_spends_the_a_allowance() {
         )]
     );
     let limits = rules
-        .card_limits(&team, team.player(3).expect("slot 3"), "buffed")
+        .card_limits(
+            &reading(&rules, &team),
+            team.player(3).expect("slot 3"),
+            "buffed",
+        )
         .expect("limits");
     assert_eq!(limits.limit, 6, "the allowance spent costs a card");
 }
@@ -855,7 +874,11 @@ fn card_limits_name_the_economy() {
     let team = legal_team();
     let limits = |slot: u8, tier: &str| {
         rules
-            .card_limits(&team, team.player(slot).expect("filled"), tier)
+            .card_limits(
+                &reading(&rules, &team),
+                team.player(slot).expect("filled"),
+                tier,
+            )
             .expect("limits")
     };
     let free_skills = [

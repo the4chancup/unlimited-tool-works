@@ -83,7 +83,7 @@ fn normalized(rules) {
     rules
 }
 
-// ---- The four functions the host calls
+// ---- The five functions the host calls
 
 // The team's violations, with the medal system its counts matched (its label, `()` when none
 // did or the ruleset has none) and the height system it was read under (its id, or `()`).
@@ -129,13 +129,23 @@ fn checks_under(team, system, read, failed) {
     #{ found: found, medal_system: team_found.medal_system }
 }
 
-// The targets `player` must carry as tier `tier` (its id): every ability stat's, form, injury
-// resistance and the weak-foot limits, the specials applied as `check_team` applies them.
-fn tier_values(player, tier, team) {
+// The id of the height system `check_team` reads `team` under, `()` when none holds. Working
+// it out reads the whole team, so the host asks once per team and passes the answer to the
+// three functions below as `system`.
+fn team_height_system(team) {
+    let rules = normalized(global::RULESET);
+    let system = rules.height_system(team);
+    if system == () { () } else { system.id }
+}
+
+// The targets `player` must carry as tier `tier` (its id) on `team` read under height system
+// `system` (`team_height_system`'s answer): every ability stat's, form, injury resistance and
+// the weak-foot limits, the specials applied as `check_team` applies them.
+fn tier_values(player, tier, team, system) {
     let rules = normalized(global::RULESET);
     let t = rules.tier(tier);
     if t == () { throw "unknown tier " + tier; }
-    let system = rules.height_system(team);
+    let system = rules.system_named(system);
     let p = rules.profile(team, system, player, tier, rules.tier_free_whens(team, system, player));
     let weak_foot = weak_foot_of(t, p);
     #{
@@ -146,14 +156,15 @@ fn tier_values(player, tier, team) {
     }
 }
 
-// The card economy of `player` as tier `tier`: the card limit (his extra A positions
-// deducted, an untaken choice's `cards` counted), the free count per group, the free and
-// required cards, the A positions allowed.
-fn card_limits(player, tier, team) {
+// The card economy of `player` as tier `tier` on `team` read under height system `system`
+// (`team_height_system`'s answer): the card limit (his extra A positions deducted, an untaken
+// choice's `cards` counted), the free count per group, the free and required cards, the A
+// positions allowed.
+fn card_limits(player, tier, team, system) {
     let rules = normalized(global::RULESET);
     let t = rules.tier(tier);
     if t == () { throw "unknown tier " + tier; }
-    let system = rules.height_system(team);
+    let system = rules.system_named(system);
     let p = rules.profile(team, system, player, tier, rules.tier_free_whens(team, system, player));
     let cards = rules.card_summary(t, p, player);
     // The check resolves a choice only when an option is needed, so `p`
@@ -184,11 +195,12 @@ fn card_limits(player, tier, team) {
     }
 }
 
-// The tier `player` is read as by `check_team`: the team's height system, then recognition
-// (`read_player`); its id, or `()` when no tier's `when` holds (`check_team`'s `NoTier`).
-fn player_tier(player, team) {
+// The tier `player` is read as by `check_team` on `team` read under height system `system`
+// (`team_height_system`'s answer): recognition (`read_player`) under that system; its id, or
+// `()` when no tier's `when` holds (`check_team`'s `NoTier`).
+fn player_tier(player, team, system) {
     let rules = normalized(global::RULESET);
-    let r = rules.read_player(team, rules.height_system(team), player);
+    let r = rules.read_player(team, rules.system_named(system), player);
     if r.tier == () { () } else { r.tier.id }
 }
 
@@ -301,6 +313,14 @@ fn rated_at(positions, rating) {
 // ruleset.
 fn height_system(team) {
     this.team_reading(team).system
+}
+
+// The height system whose id is `id`, `()` for `()`: the `system` the host passes back from
+// `team_height_system`. An id no system has is thrown. `this` is the ruleset.
+fn system_named(id) {
+    if id == () { return (); }
+    for system in this.heights.systems { if system.id == id { return system; } }
+    throw "unknown height system " + id;
 }
 
 // The first height system that holds as `system`: its `any_player` holds for some player
