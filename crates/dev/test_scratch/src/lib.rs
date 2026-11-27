@@ -1,5 +1,7 @@
 //! Tests' scratch folders: each test gets a fresh, empty folder, removed when the test's
-//! thread ends without a panic and kept for reading when it panics (a failed assertion).
+//! thread ends without a panic and kept for reading when it panics (a failed assertion). A
+//! folder's name must be unique among the tests that share its parent: two tests running at
+//! once under one name empty each other's folder.
 //!
 //! A guard returned by `fresh` cannot remove the folder: helpers hand their test a path inside
 //! it, and the guard would drop when the helper returned, deleting the folder before the test
@@ -34,8 +36,8 @@ impl Drop for ScratchFolders {
 
 /// `parent/name` as a fresh, empty folder, recorded for removal when the current thread ends.
 ///
-/// `name` is one plain folder name, unique among the tests that share `parent`: two tests
-/// running at once under one name empty each other's folder.
+/// `name` is one plain folder name, and must be unique among the tests that share `parent`:
+/// two tests running at once under one name empty each other's folder.
 ///
 /// Panics when the folder cannot be removed or created, or when `name` holds a path separator.
 /// When the thread panics, the folder is kept so the test's files can be read.
@@ -89,7 +91,8 @@ fn install_panic_hook() {
 mod tests {
     use std::fs;
     use std::path::{Path, PathBuf};
-    use std::sync::{Arc, Barrier};
+    use std::panic;
+    use std::sync::{mpsc, Arc, Barrier};
     use std::thread;
 
     use super::{build_folder, fresh};
@@ -212,17 +215,20 @@ mod tests {
         let passing_folder = tests_folder().join("beside_passing");
         let panicking_folder = tests_folder().join("beside_panicking");
         let panicking_file = panicking_folder.join("kept");
-        let made = Arc::new(Barrier::new(2));
+        // A channel, not a barrier, says the folder is made: a barrier would wait forever for
+        // a thread whose setup panicked, where a receive fails once the sender is dropped.
+        let (made, made_receiver) = mpsc::channel();
         let release = Arc::new(Barrier::new(2));
-        let thread_made = made.clone();
         let thread_release = release.clone();
         let passing = thread::spawn(move || {
             let folder = fresh(&tests_folder(), "beside_passing");
             write_file(&folder, "file");
-            thread_made.wait();
+            made.send(()).unwrap();
             thread_release.wait();
         });
-        made.wait();
+        if made_receiver.recv().is_err() {
+            panic::resume_unwind(passing.join().unwrap_err());
+        }
         assert!(
             passing_folder.exists(),
             "the passing thread's folder is not there yet: {}",

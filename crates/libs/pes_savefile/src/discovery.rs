@@ -113,7 +113,8 @@ mod tests {
     /// A fresh, empty root for a discovery tree, under the test binary's build folder
     /// (`target/<profile>/pes_savefile_tests/discovery_<name>`). A passing test's folder
     /// is removed when its thread ends; a panicking test's stays for reading and is
-    /// emptied at the start of its next run.
+    /// emptied at the start of its next run. `name` must be unique among the tests that
+    /// call it: two tests running at once must not share a folder.
     fn temp_dir(name: &str) -> PathBuf {
         test_scratch::fresh(
             &test_scratch::build_folder().join("pes_savefile_tests"),

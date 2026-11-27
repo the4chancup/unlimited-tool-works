@@ -1,6 +1,6 @@
 [package]
 name = "test_scratch"
-description = "Tests' scratch folders, removed when the test's thread ends without a panic and kept when it panics (a failed assertion)"
+description = "Tests' scratch folders, one per test name, removed when the test's thread ends without a panic and kept when it panics (a failed assertion)"
 version.workspace = true
 edition.workspace = true
 license.workspace = true

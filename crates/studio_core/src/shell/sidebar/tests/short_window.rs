@@ -23,8 +23,7 @@ const TOOLS: [(&str, &str); 14] = [
     ("t14", "T14"),
 ];
 
-/// A shell over the fourteen stub tools, the settings' own folder held by the
-/// `Shell`.
+/// A shell over the fourteen stub tools, its settings in a fresh test folder.
 fn shell14() -> Shell {
     let dir = TestDir::new(&format!("sidebar_short_window-{}", this_test()));
     let mut tools = Vec::new();

@@ -29,6 +29,8 @@ pub struct Run {
 }
 
 impl Sandbox {
+    /// `name` must be unique among the tests that call it: two tests running at once must
+    /// not share a folder.
     pub fn new(name: &str) -> Sandbox {
         let root = test_scratch::fresh(
             &Path::new(env!("CARGO_TARGET_TMPDIR")).join("export_upgrader_in_process"),
