@@ -1335,11 +1335,11 @@ fn green_silver_giants_rate_three_below() {
     );
 }
 
-/// `player_tier` reads under the team's height system: the Green silver
-/// giant (slot 5) rates 89 — under no system his target would be 92 and
-/// he would read as bronze — and reads `silver`
-/// (`green_silver_giants_rate_three_below`); the goalkeepers' tier is
-/// theirs.
+/// `player_tier` reads under the reading's height system: the Green silver
+/// giant (slot 5) rates 89 and reads `silver`
+/// (`green_silver_giants_rate_three_below`), while a reading of the same
+/// team under no system, where his target is 92, reads him `bronze`; the
+/// goalkeepers' tier is theirs.
 #[test]
 fn the_player_tier_is_read_under_the_teams_height_system() {
     let rules = Rules::official();
@@ -1362,6 +1362,8 @@ fn the_player_tier_is_read_under_the_teams_height_system() {
             "slot {slot}"
         );
     }
+    let no_system = TeamReading::under(team.clone(), None);
+    assert_eq!(tier_of(&rules, &no_system, 5), Some("bronze"));
     // A registered goalkeeper reads `goalkeeper`.
     let keeper = player(&team, 0);
     assert_eq!(keeper.position, Some(position("GK")));

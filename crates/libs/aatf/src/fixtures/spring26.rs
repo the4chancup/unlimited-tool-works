@@ -42,7 +42,7 @@ fn red_legal_records() -> Records {
     records
 }
 
-/// The logic reads a player under the height system the reading
+/// `tier_values` reads a player under the height system the reading
 /// carries, never one it works out from the team again: on the team
 /// Red takes, slot 3's manlet regular gets the Red manlet bonus in his
 /// targets under Red, and not when the same team is paired with Green.

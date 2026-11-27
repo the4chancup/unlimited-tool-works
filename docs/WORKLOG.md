@@ -30,9 +30,10 @@ One line per piece of work in flight; the items below hold the detail.
   driver's slices (`driver/d2`, the VPS lane: d2b and d2c merged, d2a's trial pending), and
   the lighter tests (`LEAN/pilot`: `save_editor`'s next rolling run against the one now
   running; `LEAN/rest`: no review owed; what is left waits for the pilot's rolling run).
-- The per-player rules calls read a team once (`AATFSPEED`): the slice `reading` merged, its
-  reviews closed but the SWE-2 round **S2reading** over the paid round's fixes.
-- The checkpoint: `19fda006` passed it and is pushed; its Linux gates are owed.
+- The per-player rules calls read a team once (`AATFSPEED`): the slice `reading` is merged
+  and its reviews are closed; its checkpoint is running.
+- The checkpoint: `19fda006` passed it and is pushed; its Linux gates are owed. A run on
+  `86dab4ed` is going (the `reading` item says what follows).
 - The rolling mutation job: on the VPS, crate by crate, held after its current crate so the
   driver's VPS lane runs its trial job (`driver/d2a`).
 - The move to the 905P (`RESUME/migration`): postponed until the maintainer starts it.
@@ -4465,14 +4466,21 @@ points there.
     once per trigger. Measured (test build): a 23-slot medal run under DBC7 took about
     115 ms against 2.0 s; `aatf`'s suite 109 s of summed test time against 133 s and
     `save_editor`'s 352 s against 374 s (nextest, 4 test threads, warm, twice each).
+    Checkpoint: `just pipeline --local` on `f5e460f2` failed in `release_test.py`, whose
+    bundled-settings test still read the rulesets table's old row type (the `names` slice
+    changed it); fixed in `86dab4ed`, and the rerun on it is running (log
+    `.tmp/pipeline_86dab4ed.log`). A pass moves the gated ref, a failure is fixed on top;
+    its Linux gates stay owed while the VPS runs the rolling job.
   - [x] **S1reading** 2026-11-27, SWE-2's round over it in two halves: 6 accepted, none of
     reach (a) (stale texts on the calls' cost and wiring, the spec's pairing claim, fixture
     closures reading at every call), so the loop ended.
   - [x] **P1reading** 2026-11-27, Astra's round: 3 accepted (a test of the real logic
     reading a player under the reading's system, one more fixture reading reused,
     `TeamReading::height_system` test-only), so the loop ended.
-  - [ ] **S2reading**: the SWE-2 round owed over P1reading's fixes, brief
-    `.tmp/swe_review_s2reading.md` in the `review_lean` worktree.
+  - [x] **S2reading** 2026-11-27, SWE-2's round over P1reading's fixes: 1 accepted (a test
+    that `player_tier` reads under the reading's system, as `tier_values` already had), so
+    the loop ended and the reviews are closed. `card_limits` has no such test, because no
+    embedded ruleset sets card limits by height system.
 
 - open (2026-11-26, the maintainer: "eventually") — **SANDBOX**: a SWE-2 reviewer or sidekick
   is fenced only by Devin's deny list (deletes, git commands that discard work), not by
