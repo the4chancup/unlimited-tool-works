@@ -4554,13 +4554,17 @@ points there.
     overlap test; the 20 ms sleep of `frames_until`'s poll; the pictures dialog's picking
     steps repeated before each run. One was a plain slip, fixed at once: the turf picture
     test built an egui context per pixel checked (`dark()` in its loop), 23.9 s to 8.1.
-    Next: a slice on save_editor's test helpers (`view/tests.rs`: a frame that advances
-    egui's input time past a wait in one step, `frames_until`'s poll sleep, the scroll
-    loops), with the per-test narrowings the findings name where every assertion keeps its
-    case, timed before and after on the suite (`.tmp/lean/suite_ab2.sh` shape); then the
-    shapes it proves go into CONTRIBUTING "Testing and verification";
-    Revisit the helium brief rules that ask for a test per call site or per place a text
-    shows, which built much of the repetition;
+    Two slices run side by side, on disjoint files, then the lead times the suite before and
+    after both (`.tmp/lean/suite_ab2.sh` shape), and the shapes they prove go into
+    CONTRIBUTING "Testing and verification". Revisit the helium brief rules that ask for a
+    test per call site or per place a text shows, which built much of the repetition;
+    - [~] **p1** (Opus, `sk/lean_p1`) a headless frame that moves egui's clock as far as a
+      wait needs: the undo run's one-second pause, the Multi-team AATF dialog's rest, the
+      wheel helpers' drains in one frame each. `frames_until`'s 20 ms sleep stays: once the
+      rest is out of the polling, it adds at most one sleep to a wait;
+    - [~] **p2** (SWE-2) four tests narrowed, every assertion kept: the id-order test checks
+      701-703 and the overflowing-list test thirty teams, not all ~220; the overlap test's
+      Multi-team AATF screens use thirty teams, its menu dialogs one save per version;
   - [ ] **pilot** [after patterns] one mid-size crate, whose whole mutation run takes about
     an hour, run before and after the lighter tests: a large crate's runs take too long to
     compare. A few mutants that newly survive are accepted when the run time falls clearly,
