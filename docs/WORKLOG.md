@@ -675,14 +675,10 @@ and no phase closes with one outstanding.
         exports into a missing folder, the sideload loop joins its check, two comments that
         still described the removed `Drop` are fixed, and about 130 lines that created or
         removed a folder `fresh` already handles are gone;
-      - [~] **TS2** [after ts1b] the second round (SWE-2.1 High), over the fixes in three
-        parts: `.tmp/lead/review_scratch_bc/swe_ts2{a,b,c}.md`, findings in
-        `swe_ts2{a,b,c}.findings.md`. When each ends, the lead rules its concerns into
-        `.tmp/duck_rulings.md` as "Round TS2" with prevention lines, and fixes the accepted
-        ones; another round follows only if five are accepted and one of them is a real
-        input. The briefs cite the fixes by their hashes before a history rewrite of the
-        unpushed range: once all three reviews end, `git reflog expire --expire=now` on
-        `main` and `HEAD`, then `git gc --prune=now`, so the old objects go;
+      - [x] **TS2** 2026-11-27 `712ccf84`: the second round (SWE-2.1 High, three parts)
+        accepted four, under five, which ends the SWE-2 loop: a scratch test that hung on a
+        setup panic now fails, and every scratch helper says a test's folder name must be
+        unique; the history rewrite's old objects were pruned (`.tmp/lead/scrub_gc.py`);
       - [ ] **paid** [after TS2] one paid round (Carbon), once the SWE-2 loop has ended;
   - [ ] **axiom** [after optimize] an Axiomatic Design pilot, on SWE-2: the suite's functional
     requirements split level by level, each mapped to the crate or module that meets it, and
