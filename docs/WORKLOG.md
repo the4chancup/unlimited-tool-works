@@ -669,8 +669,12 @@ and no phase closes with one outstanding.
       - [~] **ts1b** the other crates' fixes: `help_export` exports into a missing folder,
         the sideload loop joins its check, two comments that still describe the removed
         `Drop` are fixed, and the lines that create or remove a folder `fresh` already
-        handles go;
-      - [ ] **TS2** [after ts1b] the second SWE-2 round, over both slices' fixes;
+        handles go. SWE-2 High in `4cc-studio-temp/sk_ts1b` on `.tmp/lead/brief_ts1b.md`, its
+        report in `brief_ts1b.notes.md` beside it; when it ends, the lead reviews the whole
+        diff, reruns its tests and merges;
+      - [ ] **TS2** [after ts1b] the second SWE-2 round, over both slices' fixes, its brief
+        written like TS1's (`.tmp/lead/review_scratch_bc/brief_template.md`) and naming the
+        rulings file; parts of at most 650 lines;
       - [ ] **paid** [after TS2] one paid round (Carbon), once the SWE-2 loop has ended;
   - [ ] **axiom** [after optimize] an Axiomatic Design pilot, on SWE-2: the suite's functional
     requirements split level by level, each mapped to the crate or module that meets it, and
