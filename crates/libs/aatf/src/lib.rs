@@ -70,7 +70,7 @@ mod writer;
 pub use file::{FileSections, LogicIdentity, assemble_file, file_sections};
 pub use rules::{RULES_FILE_EXTENSION, Rules, official_file};
 pub use team::{PlayerView, TeamView, TeamViewError};
-pub use templates::{Template, builtin, templates};
+pub use templates::{Template, builtin, builtin_descriptions, templates};
 pub use values::CardLimits;
 pub use violation::{CheckError, FormationStarter, TeamCheck, Violation, ViolationKind};
 

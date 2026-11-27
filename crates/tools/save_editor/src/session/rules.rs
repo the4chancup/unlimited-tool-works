@@ -88,17 +88,12 @@ pub(crate) struct Import {
     text: String,
 }
 
-/// The built-in rulesets' stems and descriptions, in the templates' order,
-/// read once: `aatf::templates` parses every embedded block, and the list
-/// never changes while the binary runs.
-pub(crate) fn builtins() -> &'static [(&'static str, String)] {
-    static BUILTINS: OnceLock<Vec<(&'static str, String)>> = OnceLock::new();
-    BUILTINS.get_or_init(|| {
-        aatf::templates()
-            .into_iter()
-            .map(|template| (template.stem, template.ruleset.name))
-            .collect()
-    })
+/// The built-in rulesets' stems and descriptions, in the templates'
+/// order, collected once: the dropdown reads the list every frame, and
+/// it never changes while the binary runs.
+pub(crate) fn builtins() -> &'static [(&'static str, &'static str)] {
+    static BUILTINS: OnceLock<Vec<(&'static str, &'static str)>> = OnceLock::new();
+    BUILTINS.get_or_init(|| aatf::builtin_descriptions().collect())
 }
 
 /// The rules file `text` at `path` checked for import against the

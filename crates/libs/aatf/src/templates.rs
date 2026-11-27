@@ -1,7 +1,8 @@
 //! The embedded rulesets: every cup's current ones, the latest two of the
 //! 4cc, VGL and VTL, Autumn 26 first, then DBC7. The Ruleset editor's
 //! start page offers them as templates; the Save editor's ruleset
-//! dropdown lists them and loads the one picked (`builtin`).
+//! dropdown lists them (`builtin_descriptions`) and loads the one picked
+//! (`builtin`).
 
 use crate::file::file_sections;
 use crate::rules::Rules;
@@ -20,16 +21,43 @@ pub struct Template {
     pub custom_checks: Option<String>,
 }
 
-/// The embedded blocks under their file stems, in the start page's order
-/// (Autumn 26 is `rules.rs`' embedded official block).
-const BLOCKS: &[(&str, &str)] = &[
-    ("autumn26", crate::rules::AUTUMN26),
-    ("spring26", include_str!("../rulesets/spring26.rhai")),
-    ("vgl27", include_str!("../rulesets/vgl27.rhai")),
-    ("vgl26", include_str!("../rulesets/vgl26.rhai")),
-    ("vtl11", include_str!("../rulesets/vtl11.rhai")),
-    ("vtl10", include_str!("../rulesets/vtl10.rhai")),
-    ("dbc7", include_str!("../rulesets/dbc7.rhai")),
+/// The embedded blocks under their file stems and descriptions, in the
+/// start page's order (Autumn 26 is `rules.rs`' embedded official
+/// block). A description is the file's `name`, written out beside the
+/// block so the names list without loading a ruleset; a test below keeps
+/// the two equal.
+const BLOCKS: &[(&str, &str, &str)] = &[
+    ("autumn26", "4cc Autumn 26", crate::rules::AUTUMN26),
+    (
+        "spring26",
+        "4cc Spring 26",
+        include_str!("../rulesets/spring26.rhai"),
+    ),
+    (
+        "vgl27",
+        "/vg/ League 27",
+        include_str!("../rulesets/vgl27.rhai"),
+    ),
+    (
+        "vgl26",
+        "/vg/ League 26",
+        include_str!("../rulesets/vgl26.rhai"),
+    ),
+    (
+        "vtl11",
+        "/vt/ League 11",
+        include_str!("../rulesets/vtl11.rhai"),
+    ),
+    (
+        "vtl10",
+        "/vt/ League 10",
+        include_str!("../rulesets/vtl10.rhai"),
+    ),
+    (
+        "dbc7",
+        "Divegrass Before Christmas 7",
+        include_str!("../rulesets/dbc7.rhai"),
+    ),
 ];
 
 /// The start page's templates, in its order: Autumn 26, Spring 26, VGL27,
@@ -39,12 +67,21 @@ const BLOCKS: &[(&str, &str)] = &[
 pub fn templates() -> Vec<Template> {
     BLOCKS
         .iter()
-        .map(|&(stem, block)| Template {
+        .map(|&(stem, _, block)| Template {
             stem,
             ruleset: Ruleset::from_data_block(block).expect("an embedded ruleset loads"),
             custom_checks: file_sections(block).custom_checks,
         })
         .collect()
+}
+
+/// The embedded rulesets' `(stem, description)` pairs in the start
+/// page's order, read from `BLOCKS` without loading a ruleset: the Save
+/// editor's ruleset dropdown lists them.
+pub fn builtin_descriptions() -> impl Iterator<Item = (&'static str, &'static str)> {
+    BLOCKS
+        .iter()
+        .map(|&(stem, description, _)| (stem, description))
 }
 
 /// The embedded ruleset whose file stem is `stem` (`vtl11`), assembled
@@ -53,7 +90,7 @@ pub fn templates() -> Vec<Template> {
 ///
 /// Panics only if an embedded file does not load, which a test rules out.
 pub fn builtin(stem: &str) -> Option<Rules> {
-    let (_, block) = BLOCKS.iter().find(|(name, _)| *name == stem)?;
+    let (_, _, block) = BLOCKS.iter().find(|(name, ..)| *name == stem)?;
     Some(Rules::from_data_block(block).expect("an embedded ruleset loads"))
 }
 
@@ -123,7 +160,7 @@ mod tests {
     /// the game's rule.
     #[test]
     fn only_autumn26_and_dbc7_allow_illegal_formations() {
-        for &(stem, _) in BLOCKS {
+        for &(stem, ..) in BLOCKS {
             let rules = builtin(stem).unwrap_or_else(|| panic!("{stem} is built in"));
             assert_eq!(
                 rules.ruleset().universal.illegal_formations,
@@ -133,12 +170,22 @@ mod tests {
         }
     }
 
+    /// Each embedded ruleset's description in `BLOCKS` is the file's
+    /// `name`, so the dropdown's table cannot drift from the files.
+    #[test]
+    fn every_description_is_its_files_name() {
+        for &(stem, description, block) in BLOCKS {
+            let ruleset = Ruleset::from_data_block(block).expect("an embedded ruleset loads");
+            assert_eq!(ruleset.name, description, "{stem}");
+        }
+    }
+
     /// The step `builtin` skips: step 3 of the load, `check_team`
     /// running without an error on the sample team, for every embedded
     /// ruleset.
     #[test]
     fn every_embedded_ruleset_passes_load_step_three() {
-        for &(stem, block) in BLOCKS {
+        for &(stem, _, block) in BLOCKS {
             Rules::load(&crate::file::assemble(block)).unwrap_or_else(|e| panic!("{stem}: {e}"));
         }
     }
