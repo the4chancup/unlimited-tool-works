@@ -27,6 +27,8 @@ walk and the Save editor's portraits; the layout is in the Compiler's
 - The AATF rules engine (`aatf`) is specified in the [AATF rules](../aatf_rules.md).
 - The shared tactics/card widgets (`team_widgets`) are specified in the [Save editor
   spec](../save_editor.md).
+- The rasterizer of the Save editor's formation pictures (`epaint_raster`) is specified in
+  the [Save editor plan](../../plans/save_editor.md).
 - The export grid (`export_grid`), which the Compiler and the Export upgrader draw, is
   specified in the [Compiler's GUI plan](../../plans/team_compiler/gui.md).
 - The fox2 parser is specified in [fox2](fox2.md).

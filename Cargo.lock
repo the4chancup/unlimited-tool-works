@@ -1533,6 +1533,14 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cfc1cc505827f4c23eedc297975a0fd038268d41293f389dd8ff3b574aefab19"
 
 [[package]]
+name = "epaint_raster"
+version = "0.0.2"
+dependencies = [
+ "egui",
+ "image",
+]
+
+[[package]]
 name = "equivalent"
 version = "1.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4321,6 +4329,7 @@ dependencies = [
  "crossbeam-channel",
  "dds_convert",
  "egui",
+ "epaint_raster",
  "fpc",
  "image",
  "log",

@@ -1,9 +1,10 @@
-//! The formation pictures' rasterizer: the triangles epaint tessellates a
-//! frame into, filled into an RGBA image as egui's GPU renderers fill a
-//! window. Each pixel whose centre a triangle covers takes the triangle's
-//! interpolated colour times its texture's texel, blended over what is
-//! already there, all in premultiplied alpha and in the bytes' own
-//! (gamma) space.
+//! The rasterizer of the Save editor's formation pictures: the
+//! triangles epaint tessellates a frame into, filled into an RGBA
+//! image as egui's GPU renderers fill a window. Each pixel whose centre
+//! a triangle covers takes the triangle's interpolated colour times its
+//! texture's texel, blended over what is already there, all in
+//! premultiplied alpha and in the bytes' own (gamma) space. It is a
+//! crate of its own so that test builds compile it optimized.
 
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -28,7 +29,7 @@ struct Texture {
 /// The image starts transparent and holds premultiplied alpha, which
 /// equals plain alpha wherever the pixels are opaque: a picture paints
 /// its opaque background first, so all of it is.
-pub(super) fn rasterize(
+pub fn rasterize(
     width: u32,
     height: u32,
     primitives: &[ClippedPrimitive],
