@@ -675,7 +675,9 @@ and no phase closes with one outstanding.
         `swe_ts2{a,b,c}.findings.md`. When each ends, the lead rules its concerns into
         `.tmp/duck_rulings.md` as "Round TS2" with prevention lines, and fixes the accepted
         ones; another round follows only if five are accepted and one of them is a real
-        input;
+        input. The briefs cite the fixes by their hashes before a history rewrite of the
+        unpushed range: once all three reviews end, `git reflog expire --expire=now` on
+        `main` and `HEAD`, then `git gc --prune=now`, so the old objects go;
       - [ ] **paid** [after TS2] one paid round (Carbon), once the SWE-2 loop has ended;
   - [ ] **axiom** [after optimize] an Axiomatic Design pilot, on SWE-2: the suite's functional
     requirements split level by level, each mapped to the crate or module that meets it, and
