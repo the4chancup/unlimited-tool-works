@@ -28,15 +28,15 @@ One line per piece of work in flight; the items below hold the detail.
 
 - The workflow improvements before the suite resumes (`RESUME/optimize`): the mutation
   driver's slices (`driver/d3a`, a job's extra pass as extra shards, merged and deployed,
-  its review round owed; `d3b`, the rolling job, next), and the lighter tests (`LEAN/pilot`:
-  done, a whole `aatf` run's test phases halved with no new survivor; `LEAN/rest`: the
-  heaviest `save_editor` tests left).
+  its review round `S1d3a` running; `d3b1`, the rolling job moving into the driver, with
+  its sidekick). The lighter tests (`LEAN`) are done: a whole `aatf` run's test phases
+  halved with no new survivor, and no further slice is worth its cost.
 - The per-player rules calls read a team once (`AATFSPEED`): the slice `reading` is merged
   and its reviews are closed, and `86dab4ed` passed the checkpoint.
 - The checkpoint: `86dab4ed` passed it (`19fda006`, an earlier one, is pushed); the Linux
   gates are owed.
-- The rolling mutation job: on the VPS, crate by crate; `save_editor`'s stopped run is
-  collected first.
+- The rolling mutation job: on the VPS, crate by crate, until `d3b1` moves it into the
+  driver; `save_editor`'s stopped run is filed with what it tested.
 - The move to the 905P (`RESUME/migration`): postponed until the maintainer starts it.
 - The periodic review of the dev cycle (`CYCLE`): waits for the lead on Fable and the
   maintainer's go.
@@ -670,7 +670,7 @@ and no phase closes with one outstanding.
     the rest of the work goes on meanwhile (the maintainer, 2026-11-27);
   - [~] **optimize** the queued improvements: `WSLGATES` and `CYCLE` above (`CYCLE` on Fable,
     at the maintainer's go), the mutation
-    driver's `warm` and `driver` steps below, and the issue `LEAN` (`TESTSCRATCH` resolved);
+    driver's `warm` and `driver` steps below (`LEAN` and `TESTSCRATCH` resolved);
     - [x] **personal** 2026-11-27 `c88f6153`: `scripts/commit.py` warns when a message, or a
       line the commit adds, may say something personal about the maintainer (CONTRIBUTING
       "Commits"); its tests passed on Windows and, with WSL down (`WSLGATES/wslstart`), on the VPS;
@@ -1050,7 +1050,7 @@ and no phase closes with one outstanding.
               rolling job becomes this PC's driver's, filing each job under
               `mutants.rolling/`"), in two subslices. The finish stays the point where
               `memsum`'s recheck of tests the OOM killer ended will run;
-              - [ ] **d3b1** the Opus sidekick, in the worktree `4cc-studio-temp/d3b1`
+              - [~] **d3b1** the Opus sidekick, in the worktree `4cc-studio-temp/d3b1`
                 (brief `.tmp/brief_d3b1.md` there): when the queue holds no job, this PC's
                 driver queues the crate checked longest ago, with its extra pass; with
                 this PC off, the VPS lane finishes what was sent and waits. `job.json`
@@ -1064,7 +1064,9 @@ and no phase closes with one outstanding.
                 (`hold-vps`) and waits for the running shard to end; this PC's shards'
                 mutant logs are read for a catch whose only failure is nextest's `TIMEOUT`
                 (no `FAIL`): a test starved past the 180-second limit, filed as caught
-                (DECISIONS 2026-11-27 "a test past 180 seconds fails in every run");
+                (DECISIONS 2026-11-27 "a test past 180 seconds fails in every run"). The
+                lines nextest 0.9.146 prints for both, from a real run:
+                `.tmp/lead/nextest_timeout_sample.log`;
           - [ ] **d4** [after d3] the diff, closure and extra-kind commands and the
             checkpoint queue jobs and wait for their results; the file split, its share
             tables and the locks they made needed go; each run's timings a file of its own;
@@ -4617,7 +4619,7 @@ points there.
   `build.build-dir` (it shares only dependencies and locks the whole folder) and
   `-Zembed-metadata=no` (nightly only).
 
-- open (2026-11-25) — **LEAN**: the test suite is
+- resolved (2026-11-27) — **LEAN**: the test suite is
   heavy and likely redundant (the maintainer's idea): for example, one test per instance of
   a button where a single test of the button's class, plus light per-instance tests, would
   do. A mutant runs every test covering its line, so the weight is paid again by every
@@ -4663,10 +4665,17 @@ points there.
     two lines lower now. The runs also differ by the driver's sharding, and the VPS was
     otherwise idle for the second while the first's load is not known
     (`.tmp/lead/pilot_compare.py` compares them);
-  - [~] **rest** [after patterns] the heaviest `save_editor` tests left (listed under patterns),
-    heaviest first, each change measured by the weighted estimate as patterns was. The
-    pictures tests (11% of a run's weighted test time) spend about half of each picture's
-    2.3 s in our rasterizer, unoptimized in test builds (1.2 s for a 448 by 1238 picture;
+  - [x] **rest** [after patterns] 2026-11-27, closed with no further slice. Once `everyteam`
+    had landed, no test weighed over 1% of a run, and `pilot` measured a whole run's test
+    phases halved. What is left is every view test's floor of about 0.11 s: the process's
+    start (30 ms), the 11 MB fixture save written (28 ms) and opened (33 ms), and the first
+    frame. Only the write could go, by keeping one written fixture for every test process,
+    which would save an estimated twentieth of a run for a file shared between processes
+    (the floor is about a quarter of a run's weighted test time, the write a quarter of the
+    floor). Its slices below took the heaviest tests first, each measured by the weighted
+    estimate as patterns was, starting with the pictures tests (11% of a run's weighted
+    test time), which spent about half of each picture's 2.3 s in our rasterizer,
+    unoptimized in test builds (1.2 s for a 448 by 1238 picture;
     the dialog's frames take 2 to 3 ms, and the image and PNG crates optimized saved 7%);
     - [x] **raster** 2026-11-27 (merge `577415f0`, SWE-2): `view/pictures/raster.rs` moved
       to the `epaint_raster` lib crate, optimized in test builds (DECISIONS 2026-11-27 "the
