@@ -192,6 +192,10 @@ GATES_UNIT = "studio-gates"
 # The mutation driver's VPS lane runs each shard in this unit (`driver.py`),
 # which a run that uses the remote waits for: both build on the host at once.
 SHARD_UNIT = "studio-shard"
+# The driver's folder on the VPS, relative to the remote home.
+REMOTE_DRIVER = "studio-driver"
+# The VPS lane's hold in an ssh command: while it exists, the lane takes no new shard.
+VPS_HOLD = f"~/{REMOTE_DRIVER}/hold-vps"
 # What a unit's MemoryMax (with MemorySwapMax=0) leaves the host: the cap is the
 # host's available memory when the unit starts, less this, so at the cap the
 # kernel OOM-kills inside the unit only, never in Fluxer's. Measured at launch,
@@ -797,6 +801,44 @@ def caught_by_tests(outcome: dict, out_dir: Path) -> bool:
     )
 
 
+# Nextest's status lines for a test it stopped at its time limit and for a
+# failed test. The status word opens the line after spaces, followed by ` [`
+# and the test's duration, so a test name holding the word does not match.
+TIMEOUT_STATUS = re.compile(r"^ *TIMEOUT \[", re.MULTILINE)
+FAIL_STATUS = re.compile(r"^ *FAIL \[", re.MULTILINE)
+
+
+def starved_catches(out_dir: Path) -> list[str]:
+    """The names of the `CaughtMutant` outcomes under `out_dir` (a
+    `mutants.out`) whose log shows a test nextest stopped at its time limit
+    (`TIMEOUT_STATUS`) and no failed test (`FAIL_STATUS`). Such a mutant stays
+    caught. But on a machine running other work beside the shard, that work
+    rather than the mutant may have slowed the test past the limit, so its log
+    is worth a look. A caught mutant whose log is not here is not listed
+    (`REMOTE_FETCH_LIST` leaves those behind).
+
+    A sharded run's `out_dir` holds a `mutants.out` per shard (`shard_outputs`):
+    the list is theirs, in shard order."""
+    if shards := shard_outputs(out_dir):
+        return [name for shard in shards for name in starved_catches(shard)]
+    path = out_dir / "outcomes.json"
+    if not path.exists():
+        return []
+    starved = []
+    for outcome in json.loads(path.read_text(encoding="utf-8"))["outcomes"]:
+        log_path = outcome.get("log_path")
+        if (
+            outcome["summary"] != "CaughtMutant"
+            or not log_path
+            or not (out_dir / log_path).exists()
+        ):
+            continue
+        log = (out_dir / log_path).read_text(encoding="utf-8", errors="replace")
+        if TIMEOUT_STATUS.search(log) and not FAIL_STATUS.search(log):
+            starved.append(outcome["scenario"]["Mutant"]["name"])
+    return starved
+
+
 def killed_builds(out_dir: Path) -> list[str]:
     """The mutants under `out_dir` (a `mutants.out`) that went untested: those
     cargo-mutants reported unviable although their build failed outside the
@@ -938,7 +980,7 @@ def remote_refusal(host: str) -> str | None:
     if shard == 0:
         return (
             f"the mutation driver's VPS lane is running a shard on {host}: start the new "
-            "run when it ends, after creating ~/studio-driver/hold-vps there, or the lane "
+            f"run when it ends, after creating {VPS_HOLD} there, or the lane "
             "takes its next shard first"
         )
     return disk_refusal(*remote_disk_use(host))

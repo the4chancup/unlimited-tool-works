@@ -79,8 +79,12 @@ Everything lives under `DRIVER`, one folder per machine shared by every tree
       baseline-<lane>.json   {"timeout": seconds}, after the lane's first shard of the job
       recheck/               on this PC: a sent job's Windows-only recheck, run when
                              the job finishes
-    done/<job>/              the job once every shard is done, with result.json;
-                             a rolling job goes to `mutants.rolling/<crate>/`
+    done/<job>/              the job once every shard is done, with result.json:
+                             {"code", "missed", "untested", "rechecked",
+                             "starved"}, the run's exit code and its mutant
+                             lists ("starved": caught only by a test stopped
+                             at the time limit). A rolling job goes to
+                             `mutants.rolling/<crate>/`
                              instead, the crate's earlier one set aside as
                              `<crate>.old`, with `launched_from.txt` (its
                              commit) written last
@@ -120,8 +124,8 @@ DRIVER = mutants.COST_CACHE.with_name("driver")
 LANE = "pc"
 # The VPS lane's folder, as the driver running there sees it, and the same
 # folder in an ssh command, relative to the remote home.
-VPS_DRIVER = Path.home() / "studio-driver"
-REMOTE_DRIVER = "studio-driver"
+VPS_DRIVER = Path.home() / mutants.REMOTE_DRIVER
+REMOTE_DRIVER = mutants.REMOTE_DRIVER
 SHARD_UNIT = mutants.SHARD_UNIT
 SHARD_SECONDS = mutants_diff.SHARD_SECONDS
 POLL_SECONDS = 60
@@ -757,10 +761,11 @@ def unit_script(tmp: Path, out: Path, middle: list[str]) -> bytes:
     Around `middle`, the unit's command lines, which set `code`, it:
 
     - sends the unit's output to `out/log`;
+    - records the time it starts;
     - sets the environment (`unit_environment`);
     - copies the cgroup's memory figures into `out` (`MEMORY_FILES`);
-    - writes `out/exit` last, "<code> <seconds>": a shard with no `exit` was
-      killed before it ended."""
+    - writes `out/exit` last, "<code> <seconds>", the seconds since that start:
+      a shard with no `exit` was killed before it ended."""
     quoted = shlex.quote(str(out))
     lines = [
         "#!/bin/bash",
@@ -973,11 +978,13 @@ def recheck(job: Path, spec: dict) -> list[str]:
 def finish(job: Path) -> Path | None:
     """Once every shard of `job` is done: write its `result.json` (the combined
     code, the survivors in shard order, the untested mutants, the survivors
-    `recheck` caught), remove its source and move it to `done/`, and for a
-    sent job remove its VPS folder. A rolling job moves instead, under the
-    tree lock, to `mutants_diff.ROLLING/<crate>/`, the crate's earlier one set
-    aside as `<crate>.old`, and gets `launched_from.txt`, its commit. Returns
-    the new folder, or None while a shard is not done."""
+    `recheck` caught, and the catches `mutants.starved_catches` lists, whose
+    count it prints when there are any), remove its source and move it to
+    `done/`, and for a sent job remove its VPS folder. A rolling job moves
+    instead, under the tree lock, to `mutants_diff.ROLLING/<crate>/`, the
+    crate's earlier one set aside as `<crate>.old`, and gets
+    `launched_from.txt`, its commit. Returns the new folder, or None while a
+    shard is not done."""
     spec = read_job(job)
     done = [job / f"shard-{k}.done" for k in range(spec["shards"])]
     if not all(path.exists() for path in done):
@@ -1014,10 +1021,17 @@ def finish(job: Path) -> Path | None:
         code = mutants.run_code([code, 2])
     elif rechecked and code == 2:
         code = 0
+    starved = mutants.starved_catches(job)
     mutants_diff.replace_text(
         job / "result.json",
-        json.dumps({"code": code, "missed": missed, "untested": untested, "rechecked": rechecked}),
+        json.dumps({
+            "code": code, "missed": missed, "untested": untested, "rechecked": rechecked,
+            "starved": starved,
+        }),
     )
+    if starved:
+        print(f"driver: {job.name}: {len(starved)} caught only by a test stopped at the time "
+              "limit (starved in result.json)", flush=True)
     if (job / "source").exists():
         mutants.remove_tree(job / "source")
     if spec.get("rolling"):

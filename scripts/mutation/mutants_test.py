@@ -355,6 +355,48 @@ class KilledBuilds(unittest.TestCase):
             )
 
 
+class StarvedCatches(unittest.TestCase):
+    """`starved_catches`: the catches whose log shows a test nextest stopped at
+    its time limit and none that failed. The status lines are nextest's own."""
+
+    TIMEOUT = "     TIMEOUT [ 180.035s] (3/3) cpk tests::starved\n"
+    FAIL = "        FAIL [   0.051s] (2/3) cpk tests::fails\n"
+
+    def test_a_catch_by_a_timeout_alone_is_listed(self):
+        logs = {
+            "log/timeout.log": self.TIMEOUT,
+            "log/both.log": self.FAIL + self.TIMEOUT,
+            "log/fail.log": self.FAIL,
+            # Each status word in a test's name, under the other status.
+            "log/named.log": "     TIMEOUT [ 180.035s] (1/1) cpk tests::FAIL_on_empty\n",
+            "log/killed.log": "     SIGKILL [   4.120s] (1/1) cpk tests::TIMEOUT_is_read\n",
+            "log/missed.log": self.TIMEOUT,
+        }
+        outcomes = [
+            caught_outcome(name, {"Failure": 100})
+            for name in ("timeout", "both", "fail", "named", "killed", "no_log")
+        ]
+        outcomes.append({
+            "scenario": mutant("missed"), "summary": "MissedMutant",
+            "log_path": "log/missed.log",
+        })
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp)
+            write_run(out, len(outcomes), outcomes, logs)
+            self.assertEqual(mutants.starved_catches(out), ["timeout", "named"])
+
+    def test_a_sharded_run_s_starved_catches_are_every_shard_s(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp)
+            for k in (1, 0):
+                write_run(
+                    out / f"shard-{k}" / "mutants.out", 1,
+                    [caught_outcome(f"starved {k}", {"Failure": 100})],
+                    {f"log/starved {k}.log": self.TIMEOUT},
+                )
+            self.assertEqual(mutants.starved_catches(out), ["starved 0", "starved 1"])
+
+
 class Summarize(unittest.TestCase):
     def summarize(
         self,
@@ -5342,21 +5384,36 @@ class GatesRemote(unittest.TestCase):
     @contextlib.contextmanager
     def gate(
         self, *, refusal=None, remote_tree="t2", remote_just="just 1.0",
-        run_code=0, interrupt=False,
+        run_code=0, interrupt=False, hold="made", hold_code=0, busy_polls=0,
+        poll_code=3, sleep=None,
     ):
         """`remote_gates.main`'s seams stubbed: host `bonfire`, this tree `t`,
         the remote clone's `remote_tree`, `remote_refusal` answering `refusal`,
         the host's just at `remote_just` and the unit's run exiting `run_code`,
-        or raising `KeyboardInterrupt` when `interrupt`. Yields `(probe,
-        snapshotted, calls, out)`: `calls` holds each ssh's remote command and
-        stdin, in order."""
+        or raising `KeyboardInterrupt` when `interrupt`. The VPS lane's hold
+        call prints `hold` and exits `hold_code`; the shard unit's first
+        `busy_polls` polls answer 0 (running), the next ones `poll_code`. The
+        wait's sleep is the probe `sleep`, then `sleep(seconds)` when given.
+        Yields `(probe, snapshotted, calls, out)`: `calls` holds each ssh's
+        remote command and stdin, in order; `probe.calls` tags the hold
+        `hold`, a shard poll `poll` and the hold's deletion `release`."""
         snapshotted, calls, out = [], [], io.StringIO()
+        polls = []
 
         def ssh(host, remote, **kwargs):
             calls.append((remote, kwargs.get("input")))
             code = run_code if "systemd-run" in remote else 0
             stdout = remote_just if "--version" in remote else ""
-            if "systemd-run" in remote:
+            if remote.startswith(f"[ -e {mutants.VPS_HOLD} ]"):
+                probe("hold")
+                code, stdout = hold_code, f"{hold}\n"
+            elif remote == f"systemctl is-active --quiet {mutants.SHARD_UNIT}":
+                probe("poll")
+                polls.append(remote)
+                code = 0 if len(polls) <= busy_polls else poll_code
+            elif remote == f"rm -f {mutants.VPS_HOLD}":
+                probe("release")
+            elif "systemd-run" in remote:
                 probe("unit")
                 if interrupt:
                     raise KeyboardInterrupt
@@ -5389,6 +5446,10 @@ class GatesRemote(unittest.TestCase):
                 ),
                 mock.patch.object(mutants, "transfer", lambda *a: probe("transfer")),
                 mock.patch.object(mutants, "remote_memory_max", lambda host: 2**30),
+                mock.patch.object(
+                    time, "sleep",
+                    lambda seconds: probe(f"sleep {seconds}") or (sleep and sleep(seconds)),
+                ),
                 contextlib.redirect_stdout(out),
             ):
                 yield probe, snapshotted, calls, out
@@ -5399,10 +5460,10 @@ class GatesRemote(unittest.TestCase):
         self.assertEqual(
             probe.calls,
             [
-                ("working_tree", set()),
+                ("working_tree", set()), ("hold", set()), ("poll", set()),
                 ("refusal", {"remote"}), ("snapshot", {"remote"}),
                 ("transfer", {"remote"}), ("unit", {"remote"}),
-                ("clean", {"remote"}),
+                ("clean", {"remote"}), ("release", set()),
             ],
         )
         # The snapshot is of the tree read before the lock's wait, not a
@@ -5444,10 +5505,81 @@ class GatesRemote(unittest.TestCase):
                     self.assertIn("gates-remote", out.getvalue())
 
     def test_a_busy_host_or_other_gates_refuse(self):
+        """Nothing is sent past the VPS lane's hold, which is deleted again."""
         with self.gate(refusal="a busy host") as (probe, snapshotted, calls, out):
             self.assertEqual(remote_gates.main([]), 1)
-        self.assertEqual(calls, [])
+        self.assertEqual(
+            [tag for tag, _held in probe.calls],
+            ["working_tree", "hold", "poll", "refusal", "release"],
+        )
+        self.assertEqual(len(calls), 3, "the hold, the poll and the deletion")
         self.assertIn("a busy host", out.getvalue())
+
+    def test_the_vps_lane_s_hold_is_made_before_the_lock_and_deleted_last(self):
+        """The hold lands before the remote lock's wait, the run waits out the
+        lane's running shard polling, sleeping between polls, and deletes the
+        hold after the unit and the clean step."""
+        with self.gate(busy_polls=2) as (probe, snapshotted, calls, out):
+            self.assertEqual(remote_gates.main([]), 0)
+        sleep = f"sleep {mutants.LOCK_POLL_SECONDS}"
+        self.assertEqual(
+            probe.calls,
+            [
+                ("working_tree", set()), ("hold", set()),
+                ("poll", set()), (sleep, set()), ("poll", set()), (sleep, set()),
+                ("poll", set()),
+                ("refusal", {"remote"}), ("snapshot", {"remote"}),
+                ("transfer", {"remote"}), ("unit", {"remote"}),
+                ("clean", {"remote"}), ("release", set()),
+            ],
+        )
+        self.assertEqual(out.getvalue().count("waiting for the mutation driver's VPS shard"), 1)
+
+    def test_a_hold_that_was_there_before_stays(self):
+        with self.gate(hold="kept") as (probe, snapshotted, calls, out):
+            self.assertEqual(remote_gates.main([]), 0)
+        self.assertIn("unit", [tag for tag, _held in probe.calls])
+        self.assertNotIn("release", [tag for tag, _held in probe.calls])
+
+    def test_an_interrupt_still_deletes_the_hold_the_run_made(self):
+        """Ctrl+C in the unit's run, or in the wait for the lane's shard."""
+        with self.gate(interrupt=True) as (probe, snapshotted, calls, out):
+            self.assertEqual(remote_gates.main([]), 130)
+        tags = [tag for tag, _held in probe.calls]
+        self.assertEqual(tags[-3:], ["unit", "clean", "release"])
+
+        def interrupt(seconds):
+            raise KeyboardInterrupt
+
+        with self.gate(busy_polls=1, sleep=interrupt) as (probe, snapshotted, calls, out):
+            with self.assertRaises(KeyboardInterrupt):
+                remote_gates.main([])
+        self.assertEqual(
+            [tag for tag, _held in probe.calls],
+            ["working_tree", "hold", "poll", f"sleep {mutants.LOCK_POLL_SECONDS}", "release"],
+        )
+
+    def test_an_unreachable_host_stops_the_run_at_the_hold_or_the_wait(self):
+        """Exit 255 on the hold's call: nothing else runs. On a poll: the hold
+        made is deleted, and nothing else runs."""
+        for options, tags in (
+            ({"hold_code": 255, "hold": ""}, ["working_tree", "hold"]),
+            ({"poll_code": 255}, ["working_tree", "hold", "poll", "release"]),
+        ):
+            with self.subTest(**options):
+                with self.gate(**options) as (probe, snapshotted, calls, out):
+                    self.assertEqual(remote_gates.main([]), 1)
+                self.assertEqual([tag for tag, _held in probe.calls], tags)
+                self.assertEqual(probe.taken, [], "no lock taken")
+                self.assertEqual(snapshotted, [])
+                self.assertIn("cannot reach bonfire", out.getvalue())
+
+    def test_a_command_takes_and_deletes_the_hold_too(self):
+        with self.gate() as (probe, snapshotted, calls, out):
+            self.assertEqual(remote_gates.main(["cargo", "test", "-p", "cpk"]), 0)
+        tags = [tag for tag, _held in probe.calls]
+        self.assertEqual(tags[:3], ["working_tree", "hold", "poll"])
+        self.assertEqual(tags[-2:], ["unit", "release"])
 
     def test_a_just_version_mismatch_refuses(self):
         with self.gate(remote_just="just 2.0") as (probe, snapshotted, calls, out):
