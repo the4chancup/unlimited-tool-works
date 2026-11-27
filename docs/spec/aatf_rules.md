@@ -1123,6 +1123,11 @@ refuses one that fails, and the Save editor refuses to import one):
    every player renamed and no appearance table). What it reports does not matter here; the
    fixtures check that.
 
+The embedded rulesets load without step 3. `libs/aatf`'s tests run that step on every one of
+them, so none that fails it ships, and running it again at each load would repeat the test at
+the cost of a whole team check: on the Save editor's first frame, at each change of ruleset,
+and in every test that loads one.
+
 A failure is a finding with the file's line and column for parse errors and the key path
 (`tiers[2].free.tricks`) for schema errors, before any real check runs. The schema error's path
 comes from `serde_path_to_error` wrapping the deserializer, not a wrapper of our own: that is

@@ -29,7 +29,7 @@ One line per piece of work in flight; the items below hold the detail.
 - The workflow improvements before the suite resumes (`RESUME/optimize`): the mutation
   driver's slices (`driver/d2`, the VPS lane: d2b and d2c merged, d2a's trial pending), and
   the lighter tests (`LEAN/pilot`: `save_editor`'s next rolling run against the one now
-  running; `LEAN/rest/samplecheck` next).
+  running; `LEAN/rest/samplecheck`'s review round running).
 - The checkpoint: `19fda006` passed it and is pushed; its Linux gates are owed.
 - The rolling mutation job: on the VPS, crate by crate, held after its current crate so the
   driver's VPS lane runs its trial job (`driver/d2a`).
@@ -4607,11 +4607,14 @@ points there.
       about 15 and starting the process 30; fonts and egui's start take under 1 ms. With `aatf`
       optimized the check took 79 ms against 85 (Rhai is already optimized), so it stays
       unoptimized;
-    - [ ] **samplecheck** the embedded rulesets load without step 3 (DECISIONS 2026-11-27
-      "the embedded rulesets load without the sample team's check"): `Rules::from_data_block`
-      skips it, a test runs it on every embedded block; then `spec/aatf_rules.md` gets the
-      plan's paragraph. A small `aatf` slice for SWE-2, measured on `save_editor`'s suite as
-      raster was. Left after it: the `builtins()` 29 ms and the fixture's write and open.
+    - [~] **samplecheck** 2026-11-27 (merge `cfaab0d0`, SWE-2): the embedded rulesets load
+      without step 3 (DECISIONS 2026-11-27 "the embedded rulesets load without the sample
+      team's check"; `spec/aatf_rules.md` "Loading and validation"). `Rules::from_data_block`
+      skips it, and `every_embedded_ruleset_passes_load_step_three` runs it on every embedded
+      block. Measured (nextest, 4 test threads, warm): `save_editor`'s suite took 395 s and
+      397 s of summed test time against 525 s and 523 s, 99 s of wall time against 131 s;
+      `aatf`'s 133 s summed against 172 s. Its SWE-2 round **S1samplecheck** runs; owed after
+      it: one paid round. Left after it: the `builtins()` 29 ms and the fixture's write and open.
 
 - resolved (2026-11-24) — `scripts/commit.py -a` left a new file out silently, as `git commit
   -a` does: `9ac41d0a` needed an amend for `docs/spec/core/design.md`. With `-a` it now
