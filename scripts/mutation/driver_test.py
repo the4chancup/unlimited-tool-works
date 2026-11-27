@@ -913,17 +913,38 @@ class Driver(unittest.TestCase):
             [f"shard-{k}.todo" for k in range(5)],
         )
 
-    def test_a_crate_with_no_extra_mutant_gets_no_extra_shard(self):
+    def queue_listing(self, rows: list[list[str]], estimate: float = 0.0) -> Path:
+        """cpk queued in 2 shards and sent, with `extra=None`: the extra pass
+        lists `rows`, and its estimate is `estimate` seconds."""
         self.fake_vps()
-        with mock.patch.object(
-            driver.extra_mutants, "listed",
-            lambda crate, root, kinds: (Path("crates/libs/cpk"), [], [], 0),
+        with (
+            mock.patch.object(
+                driver.extra_mutants, "listed",
+                lambda crate, root, kinds: (Path("crates/libs/cpk"), rows, [], 0),
+            ),
+            mock.patch.object(mutants, "estimate_seconds", lambda crates, share=1.0: estimate),
         ):
-            job = self.queue(shards=2, extra=None)
+            return self.queue(shards=2, extra=None)
+
+    def test_a_crate_with_no_extra_mutant_gets_no_extra_shard(self):
+        job = self.queue_listing([])
         spec = driver.read_job(job)
         self.assertEqual((spec["shards"], spec["extra"]), (2, 0))
         self.assertEqual(sorted(p.name for p in (self.remote_queue() / job.name).glob("shard-*.todo")),
                          ["shard-0.todo", "shard-1.todo"])
+
+    def test_a_crate_gets_no_more_extra_shards_than_extra_mutants(self):
+        """An estimate past the split threshold asks for two shards; one
+        mutant fills one."""
+        self.assertEqual(driver.shard_count(mutants.SPLIT_THRESHOLD_SECONDS + 1), 2)
+        row = ["src/lib.rs", "0", "4", "bool", "1", "false", "flip 0 | removed: true"]
+        job = self.queue_listing([row], mutants.SPLIT_THRESHOLD_SECONDS + 1)
+        spec = driver.read_job(job)
+        self.assertEqual((spec["shards"], spec["extra"]), (3, 1))
+        self.assertEqual(
+            sorted(p.name for p in (self.remote_queue() / job.name).glob("shard-*.todo")),
+            ["shard-0.todo", "shard-1.todo", "shard-2.todo"],
+        )
 
     def sent_job(
         self, shards: int = 2, stamp: str | None = None, extra: int | None = 0
@@ -1260,6 +1281,17 @@ class Driver(unittest.TestCase):
         self.assertEqual(self.result(job)["missed"], [])
         self.assertEqual(self.result(job)["code"], 0, "cargo-mutants' 2 no longer holds")
 
+    def test_a_code_2_with_no_survivor_and_nothing_rechecked_stays_2(self):
+        """Only a recheck that caught every survivor clears cargo-mutants' 2:
+        a shard ending 2 with empty survivor lists keeps it."""
+        job = self.queue(shards=2)
+        self.ended_shard(job, 0, [], 2, vps=False)
+        self.ended_shard(job, 1, [], 0, vps=False)
+        self.assertEqual(driver.finish(job), self.done(job))
+        self.assertEqual(
+            self.result(job), {"code": 2, "missed": [], "untested": [], "rechecked": []}
+        )
+
     WINDOWS_EXTRA = "crates/libs/elevation/src/windows.rs:10: [bool] flip to false"
 
     def test_finish_lists_the_extra_survivors_after_the_cargo_mutants_ones(self):
@@ -1454,8 +1486,9 @@ class Driver(unittest.TestCase):
         self.assertTrue(job.exists(), "this PC finishes the job")
 
     def test_a_vps_extra_shard_records_no_baseline(self):
-        """The lane's baseline comes from a cargo-mutants shard's outcomes;
-        an extra shard's pass measures its own."""
+        """The lane's baseline comes from a cargo-mutants shard's
+        `mutants.out/outcomes.json`, which an extra shard never writes, so
+        its run records none."""
         job, remote = self.sent_job(shards=1, extra=1)
         self.vps_fakes()
         with (
@@ -1654,6 +1687,13 @@ class Driver(unittest.TestCase):
         self.assertEqual(list(self.done(job).glob("map*")), [])
         self.assertFalse((self.done(job) / "selection.json").exists())
 
+    def assert_memory_copies(self, script: str, shard: Path) -> None:
+        """`script` copies its unit cgroup's memory figures into `shard` under
+        the names `fetch_shard` takes and a whole run keeps."""
+        folder = shlex.quote(str(shard))
+        self.assertIn(f'cp "$cgroup/memory.peak" {folder}/memory_peak\n', script)
+        self.assertIn(f'cp "$cgroup/memory.events" {folder}/memory_events\n', script)
+
     def test_the_vps_lane_s_shard_script(self):
         job = self.queue(shards=1)
         self.vps_lane()
@@ -1676,6 +1716,7 @@ class Driver(unittest.TestCase):
         self.assertIn(f"export TMPDIR={shlex.quote(str(self.driver / 'tmp'))}", lines)
         self.assertIn(f"exec > {shlex.quote(str(job / 'shard-0' / 'log'))} 2>&1", lines)
         self.assertIn(f"--data={mutants.REMOTE_TEST_MEMORY} --", script.decode("utf-8"))
+        self.assert_memory_copies(script.decode("utf-8"), job / "shard-0")
         self.assertEqual(
             lines[-1],
             f'echo "$code $(( $(date +%s) - start ))" > {shlex.quote(str(job / "shard-0" / "exit"))}',
@@ -1719,6 +1760,7 @@ class Driver(unittest.TestCase):
             i for i, line in enumerate(lines) if line.startswith("mv extra_mutants.out")
         )
         self.assertGreater(moved, run)
+        self.assert_memory_copies(script.decode("utf-8"), shard)
         self.assertEqual(
             lines[-1],
             f'echo "$code $(( $(date +%s) - start ))" > '

@@ -615,7 +615,7 @@ def run_crate(
                 mutants.extract_tree(tree, copy_dir)
         # The crate's folder as the snapshot holds it, not the live tree: a queued run
         # reaches its turn long after its snapshot.
-        crate_rel, rows, stale, excluded = listed(crate, copies[0], kinds)
+        crate_rel, rows, stale, excluded_count = listed(crate, copies[0], kinds)
         config = mutants_toml(copies[0])
         if lines is not None:
             kept = []
@@ -643,7 +643,7 @@ def run_crate(
             print(line, flush=True)
         if lines is not None and not rows:
             print(
-                f"extra_mutants: {len(rows)} mutants, {excluded} excluded",
+                f"extra_mutants: {len(rows)} mutants, {excluded_count} excluded",
                 flush=True,
             )
             return stale, Counter(), time.monotonic() - wall_start
@@ -652,7 +652,7 @@ def run_crate(
         timeout = timeout_seconds(config, baseline)
         print(
             f"extra_mutants: baseline {baseline:.0f} s, timeout {timeout:.0f} s, "
-            f"{len(rows)} mutants, {excluded} excluded",
+            f"{len(rows)} mutants, {excluded_count} excluded",
             flush=True,
         )
         OUT_DIR.mkdir(exist_ok=True)
