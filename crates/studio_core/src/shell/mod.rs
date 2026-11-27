@@ -1157,7 +1157,6 @@ mod tests {
     #[test]
     fn the_gui_reopens_on_the_tool_active_when_it_closed_on() {
         let dir = test_dir("sidebar_last_tool");
-        fs::create_dir_all(&dir).unwrap();
         let egui_ctx = test_context();
 
         {
@@ -1195,7 +1194,6 @@ mod tests {
         frame(&egui_ctx, &mut app, Vec::new(), true);
         assert_eq!(app.active, 1, "the GUI reopens on the second tool");
         assert_eq!(calls[1].views(), 1);
-        fs::remove_dir_all(&dir).unwrap();
     }
 
     // The context's per-version exe checks re-list on the window's regained

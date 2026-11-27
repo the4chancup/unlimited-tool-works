@@ -893,7 +893,6 @@ mod tests {
         // once in 256 saves, which made the `assert_ne` below flaky.
         let (file, bytes) = open(PesVersion::Pes16);
         let dir = temp_dir("save");
-        std::fs::create_dir_all(&dir).expect("temp dir");
         let path = dir.join("EDIT00000000");
         std::fs::write(&path, &bytes).expect("seed file");
 
@@ -910,15 +909,12 @@ mod tests {
         // A save whose folder does not exist is an io::Error.
         let missing = dir.join("nope").join("EDIT00000000");
         assert!(matches!(file.save(&missing), Err(SaveError::Io(_))));
-
-        std::fs::remove_dir_all(&dir).expect("cleanup");
     }
 
     #[test]
     fn a_failed_save_leaves_no_tmp_sibling() {
         let (file, _bytes) = open(PesVersion::Pes15);
         let dir = temp_dir("save_fail");
-        std::fs::create_dir_all(&dir).expect("temp dir");
         // `path` is a directory: the copy to `.bak` fails after `.tmp` was written.
         let path = dir.join("EDIT.bin");
         std::fs::create_dir(&path).expect("directory in the way");
@@ -930,7 +926,5 @@ mod tests {
             !std::path::Path::new(&tmp).exists(),
             "the .tmp sibling was cleaned up"
         );
-
-        std::fs::remove_dir_all(&dir).expect("cleanup");
     }
 }

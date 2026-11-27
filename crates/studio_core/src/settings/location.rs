@@ -83,7 +83,6 @@ mod tests {
             resolve_data_dir(&root.join("exe"), Some(&root.join("config"))),
             Some(root.join("exe/data"))
         );
-        fs::remove_dir_all(&root).unwrap();
     }
 
     #[test]
@@ -94,7 +93,6 @@ mod tests {
             resolve_data_dir(&root.join("exe"), Some(&root.join("config"))),
             Some(root.join("config"))
         );
-        fs::remove_dir_all(&root).unwrap();
     }
 
     #[test]
@@ -110,7 +108,6 @@ mod tests {
             resolve_data_dir(&root.join("exe"), Some(&root.join("config"))),
             Some(root.join("config"))
         );
-        fs::remove_dir_all(&root).unwrap();
     }
 
     #[test]
@@ -125,14 +122,12 @@ mod tests {
             before,
             (listing(&root.join("exe")), listing(&root.join("config")))
         );
-        fs::remove_dir_all(&root).unwrap();
     }
 
     #[test]
     fn no_config_dir_and_no_portable_file_resolves_to_none() {
         let root = sandbox("no_config");
         assert_eq!(resolve_data_dir(&root.join("exe"), None), None);
-        fs::remove_dir_all(&root).unwrap();
     }
 
     #[test]
@@ -184,6 +179,5 @@ mod tests {
             modified_after_read_only, modified,
             "the probe leaves the modified time alone"
         );
-        fs::remove_dir_all(&root).unwrap();
     }
 }

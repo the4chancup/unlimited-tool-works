@@ -222,7 +222,6 @@ mod tests {
             "the name matches case-insensitively inside its own subfolder"
         );
         assert_eq!(resolved(&dir, "Gone.mp3", true), None);
-        std::fs::remove_dir_all(&dir).expect("cleanup");
     }
 
     #[test]
@@ -233,7 +232,6 @@ mod tests {
             Some("sub/deep/Other.MP3"),
             "a path written on Windows, its name matched case-insensitively in its own subfolder"
         );
-        std::fs::remove_dir_all(&dir).expect("cleanup");
     }
 
     /// A leading separator is dropped: the song is always under the export's
@@ -257,7 +255,6 @@ mod tests {
             Some("y.mp3"),
             "a root-level anchor is the folder's file too"
         );
-        std::fs::remove_dir_all(&dir).expect("cleanup");
     }
 
     #[test]
@@ -267,7 +264,6 @@ mod tests {
             resolved(&dir, "SONG.MP3", true).as_deref(),
             Some("song.mp3")
         );
-        std::fs::remove_dir_all(&dir).expect("cleanup");
     }
 
     /// A name whose only dot is its first byte (`.intro`) has no
@@ -280,7 +276,6 @@ mod tests {
             resolved(&dir, ".intro", true).as_deref(),
             Some(".intro_normalized")
         );
-        std::fs::remove_dir_all(&dir).expect("cleanup");
     }
 
     /// Real exports pair `X.mp3` with `X_normalized.opus` (IZAKAYA's, 17
@@ -309,7 +304,6 @@ mod tests {
             Some("gone_normalized.opus"),
             "the plain file missing: the companion of another extension serves"
         );
-        std::fs::remove_dir_all(&dir).expect("cleanup");
     }
 
     #[test]
@@ -339,7 +333,6 @@ mod tests {
             Some("song_NORMALIZED.ogg"),
             "the companion's stem matches case-insensitively"
         );
-        std::fs::remove_dir_all(&dir).expect("cleanup");
     }
 
     /// The companion's stem folds like the plain name does, Unicode included:
@@ -351,7 +344,6 @@ mod tests {
             resolved(&dir, "café.mp3", false).as_deref(),
             Some("CAFÉ_normalized.opus")
         );
-        std::fs::remove_dir_all(&dir).expect("cleanup");
     }
 
     #[test]
@@ -369,7 +361,6 @@ mod tests {
             Some("sub/x_normalized.opus"),
             "no plain file in the subfolder: the top folder's is not it"
         );
-        std::fs::remove_dir_all(&dir).expect("cleanup");
     }
 
     /// A name with no dot has no extension: it still folds, and its companion
@@ -388,7 +379,6 @@ mod tests {
             resolved(&dir, "anthem", false).as_deref(),
             Some("anthem_normalized.opus")
         );
-        std::fs::remove_dir_all(&dir).expect("cleanup");
     }
 
     /// A path with no file name (`sub/`, the empty string) is no song: a folder
@@ -399,7 +389,6 @@ mod tests {
         assert_eq!(resolved(&dir, "sub/", true), None);
         assert_eq!(resolved(&dir, "sub\\", true), None);
         assert_eq!(resolve_song(&dir, "", true), None, "not the folder itself");
-        std::fs::remove_dir_all(&dir).expect("cleanup");
     }
 
     /// A path whose first component names a drive (`C:`) is never under the
@@ -444,7 +433,6 @@ mod tests {
             Some(name.as_str()),
             "the relative spelling is found"
         );
-        std::fs::remove_dir_all(&dir).expect("cleanup");
     }
 
     #[test]
@@ -455,7 +443,6 @@ mod tests {
             Some("gone_normalized.mp3"),
             "the plain file missing: the normalized file is used regardless"
         );
-        std::fs::remove_dir_all(&dir).expect("cleanup");
     }
 
     #[test]
@@ -476,6 +463,5 @@ mod tests {
             ["a.mp3".to_string(), "b.mp3".to_string()],
             "the slot and the event clip's missing files, in file order"
         );
-        std::fs::remove_dir_all(&dir).expect("cleanup");
     }
 }

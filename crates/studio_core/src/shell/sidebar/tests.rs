@@ -1177,7 +1177,6 @@ fn the_selector_is_colored_by_the_exe_found_in_the_pes_folder() {
 
     // Another version's exe: red, the tooltip names what was found.
     let dir = test_dir("sidebar_pes19");
-    fs::create_dir_all(&dir).unwrap();
     fs::write(dir.join("PES2019.exe"), b"").unwrap();
     let Shell { mut app, .. } = with_pes_folder(&dir);
     frame(&egui_ctx, &mut app, Vec::new(), true);
@@ -1192,11 +1191,9 @@ fn the_selector_is_colored_by_the_exe_found_in_the_pes_folder() {
         has_text(&nodes, &expected),
         "the tooltip names the exe found"
     );
-    fs::remove_dir_all(&dir).unwrap();
 
     // No PES exe: amber, the tooltip says none was found.
     let dir = test_dir("sidebar_noexe");
-    fs::create_dir_all(&dir).unwrap();
     let Shell { mut app, .. } = with_pes_folder(&dir);
     frame(&egui_ctx, &mut app, Vec::new(), true);
     assert_eq!(
@@ -1209,12 +1206,10 @@ fn the_selector_is_colored_by_the_exe_found_in_the_pes_folder() {
         &nodes,
         &format!("There is no PES exe in {}", dir.display())
     ));
-    fs::remove_dir_all(&dir).unwrap();
 
     // A name the games never ship is not an exe either: `PES20021.exe` is not PES 21's
     // (`PES2021.exe`), so the folder reads as no exe at all.
     let dir = test_dir("sidebar_pes20021");
-    fs::create_dir_all(&dir).unwrap();
     fs::write(dir.join("PES20021.exe"), b"").unwrap();
     let Shell { mut app, .. } = with_pes_folder(&dir);
     frame(&egui_ctx, &mut app, Vec::new(), true);
@@ -1223,7 +1218,6 @@ fn the_selector_is_colored_by_the_exe_found_in_the_pes_folder() {
         Some(ExeCheck::NoExe)
     );
     assert_eq!(color_of(&app), Some(visuals.warn_fg_color), "amber");
-    fs::remove_dir_all(&dir).unwrap();
 
     // A directory named like the exe is not an exe (the compiler's preflight
     // counts files only): amber like an empty folder.
@@ -1236,7 +1230,6 @@ fn the_selector_is_colored_by_the_exe_found_in_the_pes_folder() {
         Some(ExeCheck::NoExe)
     );
     assert_eq!(color_of(&app), Some(visuals.warn_fg_color), "amber");
-    fs::remove_dir_all(&dir).unwrap();
 
     // The folder missing: amber too, the tooltip names it.
     let dir = test_dir("sidebar_missing").join("missing");
@@ -1255,7 +1248,6 @@ fn the_selector_is_colored_by_the_exe_found_in_the_pes_folder() {
 
     // The selected version's exe: no colour.
     let dir = test_dir("sidebar_pes21");
-    fs::create_dir_all(&dir).unwrap();
     fs::write(dir.join("PES2021.exe"), b"").unwrap();
     let Shell { mut app, .. } = with_pes_folder(&dir);
     frame(&egui_ctx, &mut app, Vec::new(), true);
@@ -1264,7 +1256,6 @@ fn the_selector_is_colored_by_the_exe_found_in_the_pes_folder() {
         Some(ExeCheck::Found)
     );
     assert_eq!(color_of(&app), None, "no colour");
-    fs::remove_dir_all(&dir).unwrap();
 }
 
 // The light theme's amber and red are tuned for the panel's grey 240,
@@ -1359,7 +1350,6 @@ fn a_version_change_blocker_disables_the_selector_and_a_pick_saves_the_version()
     let (a, calls_a) = stub("a", "A", Some("a compile is running"));
     let (b, calls_b) = stub("b", "B", None);
     let dir = test_dir("sidebar_blocked");
-    fs::create_dir_all(&dir).unwrap();
     let Shell {
         mut app, settings, ..
     } = shell_with(
@@ -1418,7 +1408,6 @@ fn a_version_change_blocker_disables_the_selector_and_a_pick_saves_the_version()
     assert_eq!(written.common.pes_version, PesVersion::Pes21);
     assert_eq!(calls[0].version_seen(), Some(PesVersion::Pes21));
     assert_eq!(calls[1].version_seen(), Some(PesVersion::Pes21));
-    fs::remove_dir_all(&dir).unwrap();
 }
 
 #[test]
@@ -2055,7 +2044,6 @@ fn a_cli_only_tool_is_a_planned_entry_never_active_and_still_registered() {
 #[test]
 fn the_logo_opens_about_and_copy_puts_the_version_block_on_the_clipboard() {
     let dir = test_dir("sidebar_about");
-    fs::create_dir_all(&dir).unwrap();
     let (a, calls_a) = stub("a", "A", None);
     let mut settings = test_settings(&dir);
     settings.common.pes_version = PesVersion::Pes21;
@@ -2146,7 +2134,6 @@ fn the_logo_opens_about_and_copy_puts_the_version_block_on_the_clipboard() {
         has_text(&nodes, "unpack it anywhere"),
         "the chapter's first topic is drawn"
     );
-    fs::remove_dir_all(&dir).unwrap();
 }
 
 // The About popup's title draws in the window-title style (the drafts'
@@ -2155,7 +2142,6 @@ fn the_logo_opens_about_and_copy_puts_the_version_block_on_the_clipboard() {
 #[test]
 fn the_about_popups_title_is_14_points_and_strong() {
     let dir = test_dir("about_title");
-    fs::create_dir_all(&dir).unwrap();
     let (a, calls_a) = stub("a", "A", None);
     let Shell { mut app, .. } = shell_with(
         test_settings(&dir),
@@ -2193,7 +2179,6 @@ fn the_about_popups_title_is_14_points_and_strong() {
         shape.galley.job.sections[0].format.color, strong,
         "the title's strong colour"
     );
-    fs::remove_dir_all(&dir).unwrap();
 }
 
 /// The place of the drawn layer with `id` in egui's back-to-front layer order.
@@ -2624,7 +2609,6 @@ fn the_poll_switches_to_the_running_version_once_and_offers_fix_pes_path() {
         PesVersion::Pes21,
         "the spent switch never fires again"
     );
-    fs::remove_dir_all(&dir).unwrap();
 }
 
 #[test]
@@ -2790,7 +2774,6 @@ fn the_switch_notice_offers_fix_pes_path_only_when_the_exe_sits_elsewhere() {
             .all(|node| node.label() != Some("Fix PES path")),
         "no action for a folder that does not exist"
     );
-    fs::remove_dir_all(&dir).unwrap();
 }
 
 #[test]
@@ -2846,7 +2829,6 @@ fn the_fix_pes_path_click_rewrites_the_year_the_notice_was_raised_for() {
         "the running game's year is rewritten, not the selection's: {}",
         ctx.common().pes_folder_path
     );
-    fs::remove_dir_all(&dir).unwrap();
 }
 
 // If several PES versions are running, the first detected wins: the probe's first game is

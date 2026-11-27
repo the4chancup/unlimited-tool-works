@@ -1357,7 +1357,6 @@ mod tests {
 
         // A `data_dir` that is a regular file fails the save on every platform.
         let dir = test_dir("status_bar_read_only");
-        fs::create_dir_all(&dir).unwrap();
         let data_dir = dir.join("data");
         fs::write(&data_dir, b"").unwrap();
 
@@ -1453,6 +1452,5 @@ mod tests {
             "a save that succeeds drops the condition"
         );
         assert_eq!(ctx.common().pes_version, PesVersion::Pes20);
-        fs::remove_dir_all(&dir).unwrap();
     }
 }

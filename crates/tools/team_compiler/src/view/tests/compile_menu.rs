@@ -253,6 +253,9 @@ fn sideloading_is_off_on_pes_2015_and_2016_and_on_later_ones() {
             !shows_text(&nodes, other),
             "{version}: no {other:?} shows beside {tip:?}"
         );
+        // The first frame started the grid's check on a worker reading the sandbox:
+        // join it before the next iteration's `sandbox` empties the folder under it.
+        finish_check(&mut tool, &ctx);
     }
 }
 

@@ -290,7 +290,6 @@ fn a_threads_change_writes_the_common_setting_and_keeps_the_tool_tables() {
         "b's table as it was"
     );
     assert_eq!(ctx.common().thread_count, 1);
-    fs::remove_dir_all(&dir).unwrap();
 }
 
 #[test]
@@ -638,7 +637,6 @@ fn the_theme_setting_decides_and_a_pick_applies_at_the_next_frame() {
     let text = fs::read_to_string(data.join(crate::settings::SETTINGS_FILE_NAME)).unwrap();
     let file: toml::Table = toml::from_str(&text).unwrap();
     assert_eq!(file["common"]["theme"].as_str(), Some("light"));
-    fs::remove_dir_all(&dir).unwrap();
 }
 
 // The `Invert number scrolling` row, drawn after Theme: its label's tooltip
@@ -789,7 +787,6 @@ fn a_path_row_commits_on_enter_not_per_keystroke() {
         written.common.pes_folder_path,
         dir.join("PES2019").display().to_string()
     );
-    fs::remove_dir_all(&dir).unwrap();
 }
 
 // A half-typed path survives the window losing focus mid-edit: the buffer resets
@@ -849,7 +846,6 @@ fn a_path_row_edit_survives_the_window_losing_focus() {
         pes_folder,
         "Enter commits the edit"
     );
-    fs::remove_dir_all(&dir).unwrap();
 }
 
 // A path row draws its Browse button right of the edit. The picker itself is

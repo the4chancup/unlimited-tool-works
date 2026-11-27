@@ -219,7 +219,5 @@ mod tests {
         // A missing KONAMI folder finds nothing.
         let other = temp_dir("empty");
         assert!(discover_savefiles_in(&other, PesVersion::Pes17).is_empty());
-
-        std::fs::remove_dir_all(&root).expect("cleanup");
     }
 }
