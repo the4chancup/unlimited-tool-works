@@ -5,8 +5,9 @@ use super::*;
 /// one row, both on the save's first team, 701, which the list holds
 /// alone. Widened to the save's fifth team, the summary counts what
 /// `check_teams` finds for the same five, every one listed under its id
-/// and name and the sixth not. Narrowed to the fifth team by the first
-/// combo, it lists that team alone.
+/// and name and the sixth not; the second combo's popup still offers the
+/// save's last team. Narrowed to the first team by the second combo, it
+/// lists that team alone.
 // SE-GUI-41
 #[test]
 fn multi_team_aatf_checks_and_lists_every_team_of_the_range() {
@@ -102,17 +103,22 @@ fn multi_team_aatf_checks_and_lists_every_team_of_the_range() {
         "no suggestion is listed"
     );
     assert!(!multi_button(&pairs, "Copy to clipboard").is_disabled());
+    assert_eq!(
+        range_items(&mut window, &mut view, 1).last(),
+        names.last(),
+        "the second combo's popup reaches the save's last team"
+    );
 
-    // Narrowed to the fifth team alone: the second end is already there.
-    pick_range_end(&mut window, &mut view, 0, &names[4]);
-    let pairs = multi_checked(&mut window, &mut view, &[ids[4]]);
+    // Narrowed to the first team alone: the second end moves down to it.
+    pick_range_end(&mut window, &mut view, 1, &names[0]);
+    let pairs = multi_checked(&mut window, &mut view, &ids[..1]);
     let lines = multi_lines(&pairs);
     assert!(
         lines.contains(&"1 team checked, 1 with issues".to_owned()),
         "{lines:?}"
     );
     let listed: Vec<&String> = names.iter().filter(|name| lines.contains(name)).collect();
-    assert_eq!(listed, [&names[4]], "the fifth team alone is listed");
+    assert_eq!(listed, [&names[0]], "the first team alone is listed");
 }
 
 // A save whose team records are out of id order still lists and offers

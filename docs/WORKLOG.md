@@ -29,7 +29,7 @@ One line per piece of work in flight; the items below hold the detail.
 - The workflow improvements before the suite resumes (`RESUME/optimize`): the mutation
   driver's slices (`driver/d2`, the VPS lane: d2b and d2c merged, d2a's trial pending), and
   the lighter tests (`LEAN/pilot`: `save_editor`'s next rolling run against the one now
-  running; `LEAN/rest`: the slice **everyteam** running).
+  running; `LEAN/rest`: weigh what is left once the pilot's rolling run is in).
 - The checkpoint: `19fda006` passed it and is pushed; its Linux gates are owed.
 - The rolling mutation job: on the VPS, crate by crate, held after its current crate so the
   driver's VPS lane runs its trial job (`driver/d2a`).
@@ -4640,10 +4640,19 @@ points there.
         because nextest runs each test in its own process), so the loop ended.
       - [x] **S2names** 2026-11-27, SWE-2's round over P1aatf's fix (`9b98ef41`): 2 accepted
         (two worklog figures' wording), none of reach (a), so the loop ended; no review owed.
-    - [~] **everyteam** (SWE-2, branch `sk/everyteam` in the `sk_samplecheck` worktree, brief
-      `.tmp/brief_everyteam.md` there): the every-team test widens the range to the save's
-      fifth team instead of its last, its oracle checking those five, and narrows to the fifth.
-      SE-GUI-41 asks for every team of the range listed, not for a whole save.
+    - [x] **everyteam** 2026-11-27 (merge `f69e9688`, SWE-2): the every-team test widens the
+      range to the save's fifth team instead of its last, its oracle checking those five and
+      the sixth asserted unlisted, and narrows to the fifth. SE-GUI-41 asks for every team of
+      the range listed, not for a whole save. Every team of the PES 17 sample has issues
+      under Autumn 26, so the count is pinned as a premise. The test took 0.75 s against
+      7.8 s (nextest, warm), about 7,500 s less of a whole run's weighted test time (1,059
+      mutants select it). Left after it: no test weighs over 1% of a run, and what remains is
+      every view test's floor of about 0.11 s, weighed against pilot's whole runs before any
+      further slice.
+      - [x] **S1everyteam** 2026-11-27, SWE-2's round over it: 2 accepted, none of reach
+        (a), so the loop ended; no review owed. The test now also reads the second combo's
+        popup down to the save's last team, and narrows by moving the second end down, as
+        the old test did.
 
 - resolved (2026-11-24) — `scripts/commit.py -a` left a new file out silently, as `git commit
   -a` does: `9ac41d0a` needed an amend for `docs/spec/core/design.md`. With `-a` it now
