@@ -3,10 +3,10 @@ use super::*;
 /// The Savefile menu's Multi-team AATF… on the PES 17 sample under 4cc
 /// Autumn 26: the title names the ruleset; the range's two combos sit on
 /// one row, both on the save's first team, 701, which the list holds
-/// alone. Widened to the save's last team, the summary counts what
-/// `check_teams` finds for the same teams; every team is listed under its
-/// id and name with no suggestion. Narrowed to one team, it lists that
-/// team alone.
+/// alone. Widened to the save's fifth team, the summary counts what
+/// `check_teams` finds for the same five, every one listed under its id
+/// and name and the sixth not. Narrowed to the fifth team by the first
+/// combo, it lists that team alone.
 // SE-GUI-41
 #[test]
 fn multi_team_aatf_checks_and_lists_every_team_of_the_range() {
@@ -49,7 +49,7 @@ fn multi_team_aatf_checks_and_lists_every_team_of_the_range() {
         "702 is not listed: {lines:?}"
     );
 
-    // Widened to every team.
+    // Widened to the save's fifth team.
     let (names, expected_issues) = {
         let file = view.session.as_ref().expect("the save opened").file();
         let names: Vec<String> = ids
@@ -59,7 +59,7 @@ fn multi_team_aatf_checks_and_lists_every_team_of_the_range() {
         let choice = crate::session::rules::resolve("autumn26", &[]);
         let checks = crate::session::rules::check_teams(
             &choice.rules,
-            &crate::session::rules::team_views(file, &ids),
+            &crate::session::rules::team_views(file, &ids[..5]),
         );
         let with_issues = checks
             .iter()
@@ -79,31 +79,40 @@ fn multi_team_aatf_checks_and_lists_every_team_of_the_range() {
             .count();
         (names, with_issues)
     };
-    pick_range_end(&mut window, &mut view, 1, &names[names.len() - 1]);
-    let pairs = multi_checked(&mut window, &mut view, &ids);
+    // Every team of the sample checks with issues under Autumn 26, so no
+    // range can mix a clean one in: the count is pinned whole instead.
+    assert_eq!(
+        expected_issues, 5,
+        "premise: the five checked teams all have issues"
+    );
+    pick_range_end(&mut window, &mut view, 1, &names[4]);
+    let pairs = multi_checked(&mut window, &mut view, &ids[..5]);
     let lines = multi_lines(&pairs);
-    let summary = format!("{} teams checked, {expected_issues} with issues", ids.len());
+    let summary = format!("5 teams checked, {expected_issues} with issues");
     assert!(lines.contains(&summary), "{summary:?} in {lines:?}");
-    for name in &names {
+    for name in &names[..5] {
         assert!(lines.contains(name), "{name:?} is listed");
     }
+    assert!(
+        !lines.contains(&names[5]),
+        "the range's end holds: the sixth team is not listed: {lines:?}"
+    );
     assert!(
         !lines.iter().any(|line| line.starts_with("Unused")),
         "no suggestion is listed"
     );
     assert!(!multi_button(&pairs, "Copy to clipboard").is_disabled());
 
-    // Narrowed to one team.
-    pick_range_end(&mut window, &mut view, 0, "734 /lit/");
-    pick_range_end(&mut window, &mut view, 1, "734 /lit/");
-    let pairs = multi_checked(&mut window, &mut view, &[734]);
+    // Narrowed to the fifth team alone: the second end is already there.
+    pick_range_end(&mut window, &mut view, 0, &names[4]);
+    let pairs = multi_checked(&mut window, &mut view, &[ids[4]]);
     let lines = multi_lines(&pairs);
     assert!(
         lines.contains(&"1 team checked, 1 with issues".to_owned()),
         "{lines:?}"
     );
     let listed: Vec<&String> = names.iter().filter(|name| lines.contains(name)).collect();
-    assert_eq!(listed, ["734 /lit/"], "734 alone is listed");
+    assert_eq!(listed, [&names[4]], "the fifth team alone is listed");
 }
 
 // A save whose team records are out of id order still lists and offers
