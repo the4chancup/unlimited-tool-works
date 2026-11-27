@@ -172,6 +172,8 @@ def report_scripted(scripted: list[str]) -> None:
     """Prints the lines the files this command rebuilt changed in the commit just made, apart
     from the other files': git's summary counts them together, and the roadmap page alone can
     move hundreds of lines. Prints nothing when none of them changed."""
+    if not scripted:
+        return
     numstat = subprocess.run(["git", "show", "--numstat", "--format=", "HEAD"],
                              capture_output=True, text=True, encoding="utf-8", check=True).stdout
     rebuilt = []

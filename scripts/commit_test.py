@@ -134,6 +134,19 @@ class CommitAll(unittest.TestCase):
             f"commit: rebuilt by script: docs/maintainer/roadmap.html +{page[0]} -{page[1]}; "
             f"the other files: +{added} -{deleted}\n", run.stdout)
 
+    def test_a_binary_file_beside_the_worklog_counts_no_lines(self) -> None:
+        (self.repo / "picture.png").write_bytes(b"\x89PNG\x00\x01\x02")
+        run = self.commit_worklog("- [ ] **A** a step only this worklog has.\n")
+        self.assertEqual(run.returncode, 0, run.stdout + run.stderr)
+        rows = [row.split("\t") for row in
+                git(self.repo, "show", "--numstat", "--format=", "HEAD").splitlines()]
+        self.assertIn(["-", "-", "picture.png"], rows, "premise: git counts no lines in it")
+        others = [row for row in rows
+                  if row[2] not in ("docs/maintainer/roadmap.html", "picture.png")]
+        added = sum(int(row[0]) for row in others)
+        deleted = sum(int(row[1]) for row in others)
+        self.assertIn(f"; the other files: +{added} -{deleted}\n", run.stdout)
+
     def test_a_commit_rebuilding_nothing_reports_no_scripted_lines(self) -> None:
         run = self.commit_all()
         self.assertEqual(run.returncode, 0, run.stdout + run.stderr)

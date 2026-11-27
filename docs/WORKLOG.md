@@ -673,6 +673,11 @@ and no phase closes with one outstanding.
     - [x] **personal** 2026-11-27 `c88f6153`: `scripts/commit.py` warns when a message, or a
       line the commit adds, may say something personal about the maintainer (CONTRIBUTING
       "Commits"); its tests passed on Windows and, with WSL down (`WSLGATES/wslstart`), on the VPS;
+    - [x] **scriptedlines** 2026-11-27 `155a09ae`: `scripts/commit.py` prints the lines the
+      roadmap page it rebuilt changed, apart from the other files', which git's summary
+      counts together (the maintainer's ask); its tests passed on Windows and on the VPS.
+      - [x] **S1scriptedlines** 2026-11-27, SWE-2's round: 1 accepted (a test of a binary
+        file beside the worklog), so the loop ended; no review is owed;
     - [x] **TSREVIEW** 2026-11-27: the review rounds on `TESTSCRATCH`'s slices b and c,
       rulings in `.tmp/duck_rulings.md`. The SWE-2.1 loop (**TS1**, fixed in **ts1a** and
       **ts1b**, merges `07781646` and `008bcacd`; **TS2**, `712ccf84`), Carbon's paid round
@@ -1022,10 +1027,11 @@ and no phase closes with one outstanding.
             whole-suite baseline)`, 2.0 h of the 10.0 h of test time in `mutants.rolling/`'s
             filed runs, though on the VPS each mutant runs only its selected tests. Now
             every run fails a test past 180 s: nextest by `.config/nextest.toml`, the
-            gates' `run_tests.py` from libtest's 60-second notice. Owed: one SWE-2 round
-            (scripts and docs). To watch once this PC's lane runs shards (d3): a local
+            gates' `run_tests.py` from libtest's 60-second notice (`c4bed274`). To watch once this PC's lane runs shards (d3): a local
             mutant log whose only failure is nextest's `TIMEOUT` (no `FAIL`) may be a
             starved test filed as caught;
+            - [~] **S1timeouts**: SWE-2's round over `c4bed274` (scripts and docs, one
+              round), brief `.tmp/swe_review_s1timeouts.md` in the `review_lean` worktree;
         - [ ] **deep** [after shards/lock, shards/rename, orphans, oom, died, memcap] 2026-11-25 (the maintainer): the mutation
           machinery is reviewed at Tier 1's depth (RUNBOOK "Review rounds" (e)). Carbon's loop
           over `scripts/mutation/` whole, in parts, then Astra's, each paid round between SWE-2
