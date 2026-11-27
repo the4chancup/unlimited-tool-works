@@ -626,8 +626,7 @@ and no phase closes with one outstanding.
   - [ ] **backfill** two weeks of prevention lines written into the log;
   - [ ] **review1** [after backfill] the first review;
   - [ ] **lookahead1** [after review1] the first look-ahead.
-- [ ] **WSLGATES** The pipeline's Linux gates on WSL rather than the VPS (the maintainer, 2026-11-26,
-  to look into after the usage reset): the VPS is usually busy with whole-crate runs, so a
+- [ ] **WSLGATES** The pipeline's Linux gates on WSL rather than the VPS (the maintainer, 2026-11-26): the VPS is usually busy with whole-crate runs, so a
   pipeline waiting for it waits for nothing it needs. This PC has WSL 2 with Ubuntu 22.04,
   whose user `utwbuild` already has Rust and `just` at this machine's versions
   (`scripts/release/wsl/setup.sh`, for `just release-wsl`); WSL's default user, the one a
@@ -649,19 +648,20 @@ and no phase closes with one outstanding.
     two Linux failures in an unpushed commit, both fixed (`c0852606`, `a0e0e243`). Left: the
     VPS run's time to compare, a recipe for it (the trial's script is
     `.tmp/lead/wslgates_trial.sh`), and the disk image's growth.
+  - [ ] **wslstart** WSL's VM refuses to start (`HCS/ERROR_NO_SYSTEM_RESOURCES`, from
+    2026-11-27, three tries, one after `wsl --shutdown`, with 12 GB of memory free against
+    the VM's 8 GB): find why before any WSL gates run; script tests run on the VPS meanwhile.
 - [ ] **RESUME** Before work on the suite resumes (the maintainer, 2026-11-26): the move to the
-  new system drive, and the workflow improvements queued since the usage reset of 2026-11-26.
+  new system drive, and the workflow improvements queued since 2026-11-26.
   - [ ] **migration** Windows moved to the 905P: waits on the maintainer's two lists, and is
     postponed until the maintainer starts it;
     the rest of the work goes on meanwhile (the maintainer, 2026-11-27);
   - [~] **optimize** the queued improvements: `WSLGATES` and `CYCLE` above (`CYCLE` on Fable,
     at the maintainer's go), the mutation
     driver's `warm` and `driver` steps below, and the issue `LEAN` (`TESTSCRATCH` resolved);
-    - [~] **personal** `scripts/commit.py` warns when a message, or a line the commit adds,
-      says where the maintainer is or when they are free (CONTRIBUTING "Commits"): built,
-      its tests passing on Windows with a red run per call; left uncommitted until they run
-      under WSL, whose VM refuses to start (`HCS/ERROR_NO_SYSTEM_RESOURCES`, 2026-11-27, about
-      11 GB free against its 8 GB, after a `wsl --shutdown` too): `.tmp/lead/wsl_commit_test.sh`;
+    - [x] **personal** 2026-11-27 `c88f6153`: `scripts/commit.py` warns when a message, or a
+      line the commit adds, may say something personal about the maintainer (CONTRIBUTING
+      "Commits"); its tests passed on Windows and, with WSL down (`WSLGATES/wslstart`), on the VPS;
     - [~] **TSREVIEW** the review rounds owed on the issue `TESTSCRATCH`'s slices b and c
       (shipped test code: a SWE-2 loop, then one paid round, RUNBOOK "Review rounds"); the
       rulings in `.tmp/lead/review_scratch_bc/rulings_draft.md`:
