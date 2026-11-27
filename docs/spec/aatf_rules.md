@@ -1113,8 +1113,8 @@ The embedded rulesets ("Embedded rulesets") load from the binary; the Save edito
 `check-aatf --rules` names a file. A file is validated on load (`Rules::load`, so `check-aatf`
 refuses one that fails, and the Save editor refuses to import one):
 
-1. It parses, and defines `RULESET`, `check_team`, `tier_values` and `card_limits` with their
-   arities, and `custom_checks`, if defined, with one parameter (with another, `check_team`
+1. It parses, and defines `RULESET`, `check_team`, `tier_values`, `card_limits` and
+   `player_tier` with their arities, and `custom_checks`, if defined, with one parameter (with another, `check_team`
    would skip it without a word).
 2. `RULESET` deserializes into `Ruleset` of a known `schema`, and passes the rules under "The
    ruleset schema".
