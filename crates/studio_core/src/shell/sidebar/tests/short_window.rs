@@ -24,7 +24,7 @@ const TOOLS: [(&str, &str); 14] = [
 ];
 
 /// A shell over the fourteen stub tools, the settings' own folder held by the
-/// `Shell` so it lives as long as the test.
+/// `Shell`.
 fn shell14() -> Shell {
     let dir = TestDir::new(&format!("sidebar_short_window-{}", this_test()));
     let mut tools = Vec::new();

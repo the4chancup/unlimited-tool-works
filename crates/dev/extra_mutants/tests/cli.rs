@@ -75,8 +75,6 @@ fn lists_the_mutants_of_a_small_crate() {
     for path in &paths {
         assert!(!path.contains('\\'), "path: {path}");
     }
-
-    std::fs::remove_dir_all(&dir).expect("cleanup");
 }
 
 #[test]

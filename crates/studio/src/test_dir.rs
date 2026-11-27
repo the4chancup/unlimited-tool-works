@@ -1,12 +1,12 @@
-//! A folder a unit test owns, shared by the binary's test modules.
+//! The binary's unit-test folder helper, which each test module uses.
 
 use std::path::{Path, PathBuf};
 
 /// A fresh, empty folder for a test under the test binary's build folder
 /// (`target/<profile>/studio_tests/<name>`): per checkout, so a mutation run's copy has its
 /// own. A passing test's folder is removed when its thread ends; a panicking test's stays
-/// for reading and is emptied at the start of its next run. `name` is unique among the
-/// binary's tests: two tests running at once must not share a folder.
+/// for reading and is emptied at the start of its next run. `name` must be unique among
+/// the binary's tests: two tests running at once must not share a folder.
 pub(crate) struct TestDir(PathBuf);
 
 impl TestDir {

@@ -439,8 +439,10 @@ pub(super) fn shell_with(
 }
 
 /// A shell over the stub tools `a` (labeled `A`) and `b` (`B`), its data directory a
-/// `TestDir` the `Shell` holds so the first-run dialog does not stand in front of the
-/// views. The folder is named after the calling test, so two tests never share one.
+/// real folder: a `Some` `data_dir` keeps the first-run dialog from standing in front
+/// of the views, and `fresh` keeps the folder for the test's thread, the `Shell`
+/// holding the `TestDir` only so a test can read its path. The folder is named after
+/// the calling test, so two tests never share one.
 pub(super) fn shell() -> Shell {
     let (a, calls_a) = stub("a", "A", None);
     let (b, calls_b) = stub("b", "B", None);
@@ -465,8 +467,8 @@ fn tests_folder() -> PathBuf {
 /// folder (`target/<profile>/studio_core_tests/<name>`): per checkout, so a mutation
 /// run's copy has its own. A passing test's folder is removed when its thread ends; a
 /// panicking test's stays for reading and is emptied at the start of its next run.
-/// `name` is unique among the crate's tests: two tests running at once must not share
-/// a folder.
+/// `name` must be unique among the crate's tests: two tests running at once must not
+/// share a folder.
 pub(crate) fn test_dir(name: &str) -> PathBuf {
     test_scratch::fresh(&tests_folder(), name)
 }

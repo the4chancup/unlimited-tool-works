@@ -558,13 +558,11 @@ mod tests {
     #[test]
     fn a_settings_path_that_exists_but_is_not_a_file_is_an_error() {
         let dir = test_dir("settings_dir_path");
-        fs::create_dir_all(&dir).unwrap();
         // Only a missing file yields the defaults; a folder at the path is a read failure.
         assert!(matches!(
             Settings::load(&dir),
             Err(SettingsError::Io(error)) if error.kind() != io::ErrorKind::NotFound
         ));
-        fs::remove_dir_all(&dir).unwrap();
     }
 
     #[test]
@@ -579,7 +577,6 @@ mod tests {
         );
 
         let dir = test_dir("settings_roundtrip");
-        fs::create_dir_all(&dir).unwrap();
         let path = dir.join("settings.toml");
         settings.save(&path).unwrap();
         let loaded = Settings::load(&path).unwrap();
@@ -589,13 +586,11 @@ mod tests {
             1,
             "no temporary file left behind"
         );
-        fs::remove_dir_all(&dir).unwrap();
     }
 
     #[test]
     fn concurrent_saves_leave_a_complete_file() {
         let dir = test_dir("settings_concurrent");
-        fs::create_dir_all(&dir).unwrap();
         let path = dir.join("settings.toml");
         std::thread::scope(|scope| {
             for thread_count in 1..=8 {
@@ -609,14 +604,11 @@ mod tests {
         });
         let loaded = Settings::load(&path).unwrap();
         assert!((1..=8).contains(&loaded.common.thread_count));
-        fs::remove_dir_all(&dir).unwrap();
     }
 
     #[test]
     fn a_failed_save_leaves_no_tmp_sibling() {
         let dir = test_dir("settings_save_fail");
-        drop(fs::remove_dir_all(&dir));
-        fs::create_dir_all(&dir).unwrap();
         // `path` is a directory: the rename over it fails after the .tmp was written.
         let path = dir.join("settings.toml");
         fs::create_dir(&path).unwrap();
@@ -628,8 +620,6 @@ mod tests {
             .filter(|entry| entry.file_name().to_string_lossy().ends_with(".tmp"))
             .collect();
         assert!(leftovers.is_empty(), "no .tmp sibling left behind");
-
-        fs::remove_dir_all(&dir).unwrap();
     }
 
     // A save edits the file in place: hand-written comments, blank lines and key order survive
@@ -637,7 +627,6 @@ mod tests {
     #[test]
     fn save_edits_in_place_and_only_the_changed_line_moves() {
         let dir = test_dir("settings_inplace");
-        fs::create_dir_all(&dir).unwrap();
         let path = dir.join("settings.toml");
         let original = "# the member's note about this file\n\
                         [common]\n\
@@ -697,7 +686,6 @@ mod tests {
             "the changed key is appended where its section ends"
         );
         assert_eq!(Settings::load(&path).unwrap(), settings);
-        fs::remove_dir_all(&dir).unwrap();
     }
 
     // A section a member wrote inline, under a comment, becomes a `[section]` table on
@@ -706,7 +694,6 @@ mod tests {
     #[test]
     fn an_inline_section_is_written_as_a_table_keeping_its_comment() {
         let dir = test_dir("settings_inline_section");
-        fs::create_dir_all(&dir).unwrap();
         let path = dir.join("settings.toml");
         fs::write(&path, "# my cup settings\ncommon = { pes_version = 21 }\n").unwrap();
 
@@ -720,14 +707,12 @@ mod tests {
             "the comment sits above the table the inline section became: {text}"
         );
         assert_eq!(Settings::load(&path).unwrap(), settings);
-        fs::remove_dir_all(&dir).unwrap();
     }
 
     // A file broken by hand since the session loaded it is written fresh from the session.
     #[test]
     fn save_writes_fresh_over_a_file_that_does_not_parse() {
         let dir = test_dir("settings_broken_file");
-        fs::create_dir_all(&dir).unwrap();
         let path = dir.join("settings.toml");
         let mut settings = Settings::default();
         settings.common.last_tool = Some("save-editor".to_owned());
@@ -739,7 +724,6 @@ mod tests {
             fs::read_to_string(&path).unwrap(),
             toml::to_string_pretty(&settings.to_table().unwrap()).unwrap()
         );
-        fs::remove_dir_all(&dir).unwrap();
     }
 
     /// A small settings-file template: two leading comments, a `[common]` table whose one
@@ -789,14 +773,12 @@ mod tests {
     #[test]
     fn a_fresh_save_starts_from_the_template() {
         let dir = test_dir("settings_template_fresh");
-        fs::create_dir_all(&dir).unwrap();
         let path = dir.join("settings.toml");
 
         let mut settings = templated_settings();
         settings.save(&path).unwrap();
 
         assert_templated_save(&path, &settings);
-        fs::remove_dir_all(&dir).unwrap();
     }
 
     // Over a file broken since the session loaded it, the template takes the same place the
@@ -804,7 +786,6 @@ mod tests {
     #[test]
     fn a_file_that_is_not_toml_is_replaced_from_the_template() {
         let dir = test_dir("settings_template_broken");
-        fs::create_dir_all(&dir).unwrap();
         let path = dir.join("settings.toml");
         fs::write(&path, "[common\nnot toml").unwrap();
 
@@ -812,7 +793,6 @@ mod tests {
         settings.save(&path).unwrap();
 
         assert_templated_save(&path, &settings);
-        fs::remove_dir_all(&dir).unwrap();
     }
 
     // A file that parses is edited in place, template or not: its own comments stay, and no
@@ -820,7 +800,6 @@ mod tests {
     #[test]
     fn a_file_that_parses_is_edited_ignoring_the_template() {
         let dir = test_dir("settings_template_kept");
-        fs::create_dir_all(&dir).unwrap();
         let path = dir.join("settings.toml");
         fs::write(
             &path,
@@ -839,7 +818,6 @@ mod tests {
             !text.contains("the template's first line"),
             "the template never touches a file that parses: {text}"
         );
-        fs::remove_dir_all(&dir).unwrap();
     }
 
     // A `key = value` the session turns into a list of tables keeps the comment above
@@ -849,7 +827,6 @@ mod tests {
     #[test]
     fn a_key_becoming_a_list_of_tables_keeps_the_comment_above_it() {
         let dir = test_dir("settings_tables_comment");
-        fs::create_dir_all(&dir).unwrap();
         let path = dir.join("settings.toml");
         fs::write(
             &path,
@@ -880,7 +857,6 @@ mod tests {
             "the other key and its comment are byte for byte: {text}"
         );
         assert_eq!(Settings::load(&path).unwrap(), settings);
-        fs::remove_dir_all(&dir).unwrap();
     }
 
     // The way back: a list of tables emptied to `[]` keeps the comment that sat above
@@ -888,7 +864,6 @@ mod tests {
     #[test]
     fn an_emptied_list_of_tables_keeps_the_comment_above_its_key() {
         let dir = test_dir("settings_emptied_comment");
-        fs::create_dir_all(&dir).unwrap();
         let path = dir.join("settings.toml");
         fs::write(
             &path,
@@ -922,7 +897,6 @@ mod tests {
             "the other key and its comment are byte for byte: {text}"
         );
         assert_eq!(Settings::load(&path).unwrap(), settings);
-        fs::remove_dir_all(&dir).unwrap();
     }
 
     // The shipped settings file itself: a save that fills `save-editor`'s
@@ -930,7 +904,6 @@ mod tests {
     #[test]
     fn the_bundled_settings_keep_every_comment_when_a_recent_save_lands() {
         let dir = test_dir("settings_bundled_comment");
-        fs::create_dir_all(&dir).unwrap();
         let path = dir.join("settings.toml");
         const BUNDLED: &str = include_str!("../../../../resources/bundle/data/settings.toml");
         fs::write(&path, BUNDLED).unwrap();
@@ -988,7 +961,6 @@ mod tests {
         );
         assert!(before_compiler(&text), "{text}");
         assert_eq!(Settings::load(&path).unwrap(), settings);
-        fs::remove_dir_all(&dir).unwrap();
     }
 
     // A key the file lacks lands at the end of its section's keys, but its tables take
@@ -998,7 +970,6 @@ mod tests {
     #[test]
     fn an_inserted_table_key_stays_inside_its_section() {
         let dir = test_dir("settings_insert_position");
-        fs::create_dir_all(&dir).unwrap();
         let path = dir.join("settings.toml");
         fs::write(
             &path,
@@ -1049,7 +1020,6 @@ mod tests {
             "the new section renders last: {text}"
         );
         assert_eq!(Settings::load(&path).unwrap(), settings);
-        fs::remove_dir_all(&dir).unwrap();
     }
 
     // A section the file lacks is inserted whole: its own tables take the new position
@@ -1060,7 +1030,6 @@ mod tests {
     #[test]
     fn an_inserted_section_renders_as_one_block() {
         let dir = test_dir("settings_insert_block");
-        fs::create_dir_all(&dir).unwrap();
         let path = dir.join("settings.toml");
         fs::write(
             &path,
@@ -1108,7 +1077,6 @@ mod tests {
             "the inserted section and its tables render last: {text}"
         );
         assert_eq!(Settings::load(&path).unwrap(), settings);
-        fs::remove_dir_all(&dir).unwrap();
     }
 
     // The new section's position is one past the file's deepest table, not its last
@@ -1118,7 +1086,6 @@ mod tests {
     #[test]
     fn an_inserted_section_renders_after_the_files_deepest_table() {
         let dir = test_dir("settings_deepest");
-        fs::create_dir_all(&dir).unwrap();
         let path = dir.join("settings.toml");
         fs::write(
             &path,
@@ -1149,7 +1116,6 @@ mod tests {
         let last_header = text.lines().rfind(|line| line.starts_with('[')).unwrap();
         assert_eq!(last_header, "[compiler]", "{text}");
         assert_eq!(Settings::load(&path).unwrap(), settings);
-        fs::remove_dir_all(&dir).unwrap();
     }
 
     // A root `key = {}` line ahead of the sections, turned into `[key]` on save, lands
@@ -1159,7 +1125,6 @@ mod tests {
     #[test]
     fn an_inline_root_section_becomes_a_header_after_the_last_one() {
         let dir = test_dir("settings_root_inline");
-        fs::create_dir_all(&dir).unwrap();
         let path = dir.join("settings.toml");
         fs::write(&path, "x = { a = 1 }\n\n[z-one]\nk = 1\n\n[z-two]\nk = 2\n").unwrap();
 
@@ -1171,7 +1136,6 @@ mod tests {
         let last_header = text.lines().rfind(|line| line.starts_with('[')).unwrap();
         assert_eq!(last_header, "[x]", "{text}");
         assert_eq!(Settings::load(&path).unwrap(), settings);
-        fs::remove_dir_all(&dir).unwrap();
     }
 
     // A template that does not parse falls back to the bare values. One that parses but
@@ -1180,7 +1144,6 @@ mod tests {
     #[test]
     fn a_template_that_does_not_parse_falls_back_to_the_values() {
         let dir = test_dir("settings_template_fallback");
-        fs::create_dir_all(&dir).unwrap();
         let path = dir.join("settings.toml");
 
         let mut settings = Settings::default().with_template("[common\nnot toml");
@@ -1202,7 +1165,6 @@ mod tests {
         let text = fs::read_to_string(&path).unwrap();
         assert!(text.starts_with("# my cup settings\n[common]\n"), "{text}");
         assert_eq!(Settings::load(&path).unwrap().common, settings.common);
-        fs::remove_dir_all(&dir).unwrap();
     }
 
     // A tool with no settings keeps an empty table, and a nested table is edited key by key:
@@ -1210,7 +1172,6 @@ mod tests {
     #[test]
     fn save_writes_an_empty_tool_table_and_edits_a_nested_one_in_place() {
         let dir = test_dir("settings_nested");
-        fs::create_dir_all(&dir).unwrap();
         let path = dir.join("settings.toml");
         let original = "[compiler.kits]\n\
                         # kept\n\
@@ -1239,7 +1200,6 @@ mod tests {
             "the empty table is written: {text}"
         );
         assert_eq!(Settings::load(&path).unwrap(), settings);
-        fs::remove_dir_all(&dir).unwrap();
     }
 
     // A changed value keeps the comment above its key and the one after it: a pick in the
@@ -1247,7 +1207,6 @@ mod tests {
     #[test]
     fn save_keeps_the_comments_around_a_changed_value() {
         let dir = test_dir("settings_changed_comments");
-        fs::create_dir_all(&dir).unwrap();
         let path = dir.join("settings.toml");
         let original = "[common]\n\
                         # the version to target\n\
@@ -1270,13 +1229,11 @@ mod tests {
             "the comments around the changed value survive"
         );
         assert_eq!(Settings::load(&path).unwrap(), settings);
-        fs::remove_dir_all(&dir).unwrap();
     }
 
     #[test]
     fn save_removes_dropped_keys_and_appends_new_sections() {
         let dir = test_dir("settings_inplace_keys");
-        fs::create_dir_all(&dir).unwrap();
         let path = dir.join("settings.toml");
         let original = "[common]\n\
                         pes_version = 19\n\
@@ -1315,7 +1272,6 @@ mod tests {
                         speed = 1\n";
         assert_eq!(fs::read_to_string(&path).unwrap(), expected);
         assert_eq!(Settings::load(&path).unwrap(), settings);
-        fs::remove_dir_all(&dir).unwrap();
     }
 
     // Two sessions that read the same file: each save writes only the session's own
@@ -1324,7 +1280,6 @@ mod tests {
     #[test]
     fn each_sessions_save_writes_only_its_own_changes() {
         let dir = test_dir("settings_two_sessions");
-        fs::create_dir_all(&dir).unwrap();
         let path = dir.join("settings.toml");
         fs::write(
             &path,
@@ -1390,7 +1345,6 @@ mod tests {
             loaded.tool("compiler").unwrap()["dt00_overwrite_allow"],
             Value::Boolean(true)
         );
-        fs::remove_dir_all(&dir).unwrap();
     }
 
     /// A settings file whose `[common.pes_folders]` table a member wrote by hand, the
@@ -1408,7 +1362,6 @@ mod tests {
     #[test]
     fn a_changed_folder_row_drops_its_four_digit_key() {
         let dir = test_dir("settings_year_key_changed");
-        fs::create_dir_all(&dir).unwrap();
         let path = dir.join("settings.toml");
         fs::write(&path, HAND_FOLDER_FILE).unwrap();
 
@@ -1432,7 +1385,6 @@ mod tests {
             !text.contains("2019 ="),
             "the old-spelling key went with the save: {text}"
         );
-        fs::remove_dir_all(&dir).unwrap();
     }
 
     // The same when the session empties the row: a kept `2019` would read back as the
@@ -1440,7 +1392,6 @@ mod tests {
     #[test]
     fn an_emptied_folder_row_drops_its_four_digit_key() {
         let dir = test_dir("settings_year_key_emptied");
-        fs::create_dir_all(&dir).unwrap();
         let path = dir.join("settings.toml");
         fs::write(&path, HAND_FOLDER_FILE).unwrap();
 
@@ -1454,7 +1405,6 @@ mod tests {
             BTreeMap::from([(PesVersion::Pes21, r"F:\PES2021".to_owned())]),
             "PES 2019's row is gone: {text}"
         );
-        fs::remove_dir_all(&dir).unwrap();
     }
 
     // A four-digit row whose version the session did not touch is not the session's
@@ -1462,7 +1412,6 @@ mod tests {
     #[test]
     fn an_untouched_folder_row_keeps_its_four_digit_key() {
         let dir = test_dir("settings_year_key_untouched");
-        fs::create_dir_all(&dir).unwrap();
         let path = dir.join("settings.toml");
         fs::write(&path, HAND_FOLDER_FILE).unwrap();
 
@@ -1483,7 +1432,6 @@ mod tests {
             Some(r"G:\PES2021"),
             "{text}"
         );
-        fs::remove_dir_all(&dir).unwrap();
     }
 
     // Two sessions changing the same value leave the later save's.
@@ -1491,7 +1439,6 @@ mod tests {
     #[test]
     fn the_later_save_of_the_same_value_wins() {
         let dir = test_dir("settings_same_value");
-        fs::create_dir_all(&dir).unwrap();
         let path = dir.join("settings.toml");
         fs::write(&path, "[common]\nthread_count = 4\ntheme = \"dark\"\n").unwrap();
 
@@ -1503,7 +1450,6 @@ mod tests {
         session_b.save(&path).unwrap();
 
         assert_eq!(Settings::load(&path).unwrap().common.thread_count, 2);
-        fs::remove_dir_all(&dir).unwrap();
     }
 
     // A key one session removed stays removed when the other saves.
@@ -1511,7 +1457,6 @@ mod tests {
     #[test]
     fn a_key_the_other_session_removed_stays_removed() {
         let dir = test_dir("settings_removed_key");
-        fs::create_dir_all(&dir).unwrap();
         let path = dir.join("settings.toml");
         fs::write(
             &path,
@@ -1537,7 +1482,6 @@ mod tests {
             &table("label = 'x'"),
             "`stale` stayed removed"
         );
-        fs::remove_dir_all(&dir).unwrap();
     }
 
     // A key one session added survives the other's save of an unrelated change:
@@ -1545,7 +1489,6 @@ mod tests {
     #[test]
     fn a_key_the_other_session_added_survives() {
         let dir = test_dir("settings_added_key");
-        fs::create_dir_all(&dir).unwrap();
         let path = dir.join("settings.toml");
         fs::write(
             &path,
@@ -1574,7 +1517,6 @@ mod tests {
             Some(&table("speed = 1")),
             "and a section it never had"
         );
-        fs::remove_dir_all(&dir).unwrap();
     }
 
     // A save remembers the session's own values, not the file's: a value another
@@ -1583,7 +1525,6 @@ mod tests {
     #[test]
     fn a_save_remembers_the_sessions_values_not_the_files() {
         let dir = test_dir("settings_remembered");
-        fs::create_dir_all(&dir).unwrap();
         let path = dir.join("settings.toml");
         fs::write(&path, "[common]\nthread_count = 4\ntheme = \"dark\"\n").unwrap();
 
@@ -1618,7 +1559,6 @@ mod tests {
             Some("export-upgrader".to_owned()),
             "A's third save kept B's value"
         );
-        fs::remove_dir_all(&dir).unwrap();
     }
 
     // A failed save leaves the remembered values as they were, so the change is
@@ -1626,7 +1566,6 @@ mod tests {
     #[test]
     fn a_failed_save_keeps_the_change_for_the_next_one() {
         let dir = test_dir("settings_retry");
-        fs::create_dir_all(&dir).unwrap();
         let path = dir.join("settings.toml");
         fs::write(&path, "[common]\nthread_count = 4\n").unwrap();
         let mut settings = Settings::load(&path).unwrap();
@@ -1640,7 +1579,6 @@ mod tests {
 
         settings.save(&path).unwrap();
         assert_eq!(Settings::load(&path).unwrap().common.thread_count, 8);
-        fs::remove_dir_all(&dir).unwrap();
     }
 
     // Settings that came from no file hold nothing to compare against: saved
@@ -1648,7 +1586,6 @@ mod tests {
     #[test]
     fn a_settings_from_no_file_writes_its_whole_state() {
         let dir = test_dir("settings_no_file");
-        fs::create_dir_all(&dir).unwrap();
         let path = dir.join("settings.toml");
         fs::write(&path, "# hand note\n[compiler]\nlabel = 'x'\nstale = 1\n").unwrap();
 
@@ -1660,7 +1597,6 @@ mod tests {
         let text = fs::read_to_string(&path).unwrap();
         assert!(text.starts_with("# hand note\n"), "{text}");
         assert_eq!(Settings::load(&path).unwrap(), settings);
-        fs::remove_dir_all(&dir).unwrap();
     }
 
     // A default a tool fills in at start is no change of the session's: a key the file
@@ -1669,7 +1605,6 @@ mod tests {
     #[test]
     fn a_default_filled_in_at_start_is_not_the_sessions_change() {
         let dir = test_dir("settings_defaults");
-        fs::create_dir_all(&dir).unwrap();
         let path = dir.join("settings.toml");
         fs::write(
             &path,
@@ -1701,7 +1636,6 @@ mod tests {
         );
         assert_eq!(loaded.tool("save-editor"), Some(&table("speed = 3")));
         assert_eq!(loaded.common.theme, Theme::Light);
-        fs::remove_dir_all(&dir).unwrap();
     }
 
     // An edit is kept only when it reads back as the values it meant to leave.
@@ -1752,7 +1686,6 @@ mod tests {
     #[test]
     fn two_sessions_each_filling_a_folder_row_keep_both() {
         let dir = test_dir("settings_folder_rows");
-        fs::create_dir_all(&dir).unwrap();
         let path = dir.join("settings.toml");
         fs::write(&path, "[common]\ntheme = \"dark\"\n").unwrap();
 
@@ -1776,7 +1709,6 @@ mod tests {
             BTreeMap::from([(PesVersion::Pes19, pes19), (PesVersion::Pes21, pes21)]),
             "{text}"
         );
-        fs::remove_dir_all(&dir).unwrap();
     }
 
     // The other way round: a session that empties its only row removes that row, not
@@ -1785,7 +1717,6 @@ mod tests {
     #[test]
     fn a_session_emptying_its_folder_row_keeps_the_other_sessions_row() {
         let dir = test_dir("settings_folder_emptied");
-        fs::create_dir_all(&dir).unwrap();
         let path = dir.join("settings.toml");
         let original = "[common]\ntheme = \"dark\"\n\n[common.pes_folders]\n19 = 'G:\\PES 2019'\n";
         fs::write(&path, original).unwrap();
@@ -1818,7 +1749,6 @@ mod tests {
             !text.contains("pes_folders"),
             "no empty table is left: {text}"
         );
-        fs::remove_dir_all(&dir).unwrap();
     }
 
     #[test]

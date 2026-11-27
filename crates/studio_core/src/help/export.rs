@@ -561,7 +561,7 @@ mod tests {
 
     #[test]
     fn the_export_writes_each_chapter_and_prints_nothing() {
-        let dir = test_dir("help_export");
+        let dir = test_dir("help_export").join("out");
         let tools = stub_tools();
         let mut out = Vec::new();
         run_help(&tools, None, None, Some(dir.as_path()), &mut out).unwrap();
