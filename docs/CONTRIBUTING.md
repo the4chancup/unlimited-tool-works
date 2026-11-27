@@ -471,6 +471,20 @@ Requirements:
   shape and node finders). A GUI test needs a scene and a few frames for each assertion, so
   copied setup multiplies fastest there: one slice copied fifty lines of the lit-area test into
   a second one, until review moved them into `held_dims` and `check_dims`.
+- **A test spends its time on what it checks.** A whole-crate mutation run reruns each test
+  for every mutant whose lines it covers, a thousand times or more for the heaviest view
+  tests, so a second wasted in one costs the run about a quarter of an hour. Three shapes keep
+  a headless view test cheap:
+  - A wait on egui's clock is one frame. The view reads a pause (the undo run's, a dialog's
+    rest) off the input time, and `wait_out` draws one frame that moves the clock past it,
+    rather than a frame per 1/60 s, each drawing the whole view; `Headless::frame_after`
+    gives a frame any other step (a wheel's delta drains in frames of 0.1 s). Frames are
+    counted only where the code under test counts them.
+  - The input is the smallest that keeps the case, with a premise that it does: three teams
+    for a test of their order, thirty for a list that must overflow (asserting its scroll
+    bar), not every team of the save.
+  - Screens of one kind share one opened save: each is closed the way a member closes it,
+    and the next opens only once a frame shows nothing left over the view.
 - **Acceptance IDs.** Each tool plan has an "Acceptance" section listing that tool's user-observable
   behavior as scenarios with stable IDs, written before the phase that delivers them (procedure in
   `RUNBOOK.md` "Before a tool phase"). Format, one entry per behavior:
