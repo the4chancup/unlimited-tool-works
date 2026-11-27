@@ -2064,7 +2064,8 @@ class WholeRun(unittest.TestCase):
         self.assertEqual(runs, [(("cpk", ["call"]), expected)] * 2)
 
     def test_a_malformed_remote_extra_shard_prints_the_usage(self):
-        for bad in ("0", "x/2", "0/0", "2/2"):
+        # The last case is `--shard` with no value after it.
+        for bad in (["0"], ["x/2"], ["0/0"], ["2/2"], []):
             out = io.StringIO()
             with (
                 mock.patch.object(
@@ -2074,7 +2075,7 @@ class WholeRun(unittest.TestCase):
                 contextlib.redirect_stdout(out),
             ):
                 code = mutants.main(
-                    ["mutants.py", "--remote-extra", "cpk", "--shard", bad]
+                    ["mutants.py", "--remote-extra", "cpk", "--shard", *bad]
                 )
             self.assertEqual(code, 1, bad)
             self.assertIn(

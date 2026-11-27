@@ -2694,9 +2694,11 @@ def main(argv: list[str]) -> int:
         # git tree is read), the
         # kinds after the crate (EXTRA_KINDS when none) and `--selection`
         # naming the coverage map the job built first, each mutant's test
-        # phase running the tests covering its lines. The pass runs in a
-        # copy of the clone's own tree, its record where the fetch picks it up.
-        # No lock, no refusal: the unit is alone on the clone.
+        # phase running the tests covering its lines. The pass runs in copies
+        # of the job's tree (the clone's own, or `--source` for a driver
+        # shard), its output in `extra_mutants.out/`, where the fetch or the
+        # shard script's `mv` takes it.
+        # No lock, no refusal: the unit is alone on its tree.
         import extra_mutants  # deferred: extra_mutants imports this module
 
         usage = (

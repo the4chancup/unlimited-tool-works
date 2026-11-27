@@ -129,6 +129,9 @@ POLL_SECONDS = 60
 # it tries again: each try extracts the whole tree, too much for every poll.
 ROLLING_RETRY_SECONDS = 30 * 60
 ON_WINDOWS = os.name == "nt"
+# Each memory figure a VPS shard's unit copies from its cgroup, and the name
+# the shard folder keeps it under, as a whole run's folder does.
+MEMORY_FILES = {"memory.peak": "memory_peak", "memory.events": "memory_events"}
 # The hosts whose last call failed, so an outage is printed once and not at
 # every turn.
 unreachable: set[str] = set()
@@ -163,10 +166,11 @@ def queue(
 ) -> Path | None:
     """Queue a whole-crate run of `crate` at `HEAD`'s commit, in `shards` shards, or
     as many as its estimate needs (`shard_count`). `extra` adds that many
-    extra shards of the crate's extra pass (`extra_mutants`'s kinds), numbered
+    extra shards of the crate's extra pass (the extra kinds), numbered
     after the cargo-mutants ones; None means as many as the pass's estimate
-    needs, from its listing on the extracted source. The job is written under a
-    `.tmp` name and renamed when complete, so a driver never sees half a job.
+    needs, at most one per mutant, from its listing on the extracted source.
+    The job is written under a `.tmp` name and renamed when complete, so a
+    driver never sees half a job.
     Before the rename it is sent to the VPS (`send`), unless no host is set or
     the crate is in `mutants.LOCAL_ONLY_CRATES`; a job that stays gets no
     extra shards, this PC's lane never running one. `rolling` marks the job as
@@ -194,8 +198,11 @@ def queue(
         _, rows, _, _ = extra_mutants.listed(
             crate, source, list(mutants.EXTRA_KINDS)
         )
-        # A crate with no extra mutant gets no shard to run a baseline for nothing.
-        extra = shard_count(mutants.estimate_seconds([crate] * len(rows))) if rows else 0
+        # A crate with no extra mutant gets no shard to run a baseline for
+        # nothing, and no shard is left without a mutant of its own.
+        extra = 0
+        if rows:
+            extra = min(shard_count(mutants.estimate_seconds([crate] * len(rows))), len(rows))
     total = shards + extra
     record = {
         "crate": crate, "commit": commit, "tree": tree, "args": args, "shards": total,
@@ -505,7 +512,7 @@ def fetch_shard(job: Path, k: int) -> bool:
         fetched = call_remote(
             sent_host(job),
             f"cd {remote_job(job)}/shard-{k} && set -o pipefail && "
-            "{ python3 -; for name in log exit memory_peak memory_events; do "
+            f"{{ python3 -; for name in log exit {' '.join(MEMORY_FILES.values())}; do "
             'if [ -f "$name" ]; then echo "$name"; fi; done; } '
             "| tar -cf - --verbatim-files-from -T -",
             input=mutants.REMOTE_FETCH_LIST.encode(), stdout=archive,
@@ -663,9 +670,9 @@ def empty_tmp() -> Path:
 
 
 def unit_environment(tmp: Path) -> list[str]:
-    """The lines that set the environment of both VPS unit scripts, the
-    shard's and the map's: their copies of the tree in `tmp`, each test
-    binary capped at `mutants.REMOTE_TEST_MEMORY`."""
+    """The lines that set the environment of the VPS lane's unit scripts (a
+    shard's, an extra shard's and the coverage map's): their copies of the
+    tree in `tmp`, each test binary capped at `mutants.REMOTE_TEST_MEMORY`."""
     return [
         f"export TMPDIR={shlex.quote(str(tmp))}",
         # A target runner wraps only the test binaries, so each test caps at
@@ -746,11 +753,14 @@ def build_map(job: Path, tmp: Path) -> None:
 
 
 def unit_script(tmp: Path, out: Path, middle: list[str]) -> bytes:
-    """The bash script a VPS shard unit runs, LF line ends, as bash needs:
-    `middle` — the unit's command lines, ending with `code=$?` — with the
-    unit's output to `out/log`, its environment from `unit_environment`, the
-    cgroup's memory figures copied into `out`, and last `out/exit`,
-    "<code> <seconds>": a shard with no `exit` was killed before it ended."""
+    """The bash script a VPS shard unit runs, LF line ends, as bash needs.
+    Around `middle`, the unit's command lines, which set `code`, it:
+
+    - sends the unit's output to `out/log`;
+    - sets the environment (`unit_environment`);
+    - copies the cgroup's memory figures into `out` (`MEMORY_FILES`);
+    - writes `out/exit` last, "<code> <seconds>": a shard with no `exit` was
+      killed before it ended."""
     quoted = shlex.quote(str(out))
     lines = [
         "#!/bin/bash",
@@ -759,8 +769,10 @@ def unit_script(tmp: Path, out: Path, middle: list[str]) -> bytes:
         *unit_environment(tmp),
         *middle,
         'cgroup="/sys/fs/cgroup$(cut -d: -f3 /proc/self/cgroup)"',
-        f'[ -f "$cgroup/memory.peak" ] && cp "$cgroup/memory.peak" {quoted}',
-        f'[ -f "$cgroup/memory.events" ] && cp "$cgroup/memory.events" {quoted}',
+        *(
+            f'[ -f "$cgroup/{name}" ] && cp "$cgroup/{name}" {quoted}/{kept}'
+            for name, kept in MEMORY_FILES.items()
+        ),
         f'echo "$code $(( $(date +%s) - start ))" > {shlex.quote(str(out / "exit"))}',
     ]
     return ("\n".join(lines) + "\n").encode("utf-8")
@@ -913,7 +925,8 @@ def run_shard(job: Path, k: int) -> int:
     out = shard / "mutants.out"
     # Only a passed baseline sets the timeout: a failed one (exit 4), or a
     # shard that ran none, leaves the next shard to run the baseline again.
-    if k < cargo and not baseline.exists() and code in (0, 2, 3):
+    # An extra shard writes no `mutants.out`, so it never sets one.
+    if not baseline.exists() and code in (0, 2, 3):
         tests = baseline_test_seconds(out)
         if tests is not None:
             config = extra_mutants.mutants_toml(job / "source")
@@ -999,7 +1012,7 @@ def finish(job: Path) -> Path | None:
     # its shard exits 0; and once the recheck caught every survivor, none was.
     if missed:
         code = mutants.run_code([code, 2])
-    elif code == 2:
+    elif rechecked and code == 2:
         code = 0
     mutants_diff.replace_text(
         job / "result.json",
