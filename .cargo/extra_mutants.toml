@@ -14,7 +14,7 @@
 [[exclude]]
 path = "crates/tools/team_compiler/src/check.rs"
 kind = "bool"
-description = "in run: validation_pass arg 6: false becomes true | removed: false"
+description = "in validate: validation_pass arg 6: false becomes true | removed: false"
 why = "memory only: check never reads the decompressed content"
 
 [[exclude]]
@@ -282,13 +282,13 @@ why = "the staging buffer is dropped right after and nothing touches it past the
 [[exclude]]
 path = "crates/libs/pes_savefile/src/file.rs"
 kind = "call"
-description = "in fresh_salt: the update() statement is deleted | removed: hasher.update(0u64.to_be_bytes());"
+description = "in fresh_salt_at: the update() statement is deleted | removed: hasher.update(0u64.to_be_bytes());"
 why = "a constant mixer adds no keying: payload and clock still seed the chain, and the salt has no expected value"
 
 [[exclude]]
 path = "crates/libs/pes_savefile/src/file.rs"
 kind = "call"
-description = "in fresh_salt: the update() statement is deleted | removed: hasher.update((n as u64).to_be_bytes());"
+description = "in fresh_salt_at: the update() statement is deleted | removed: hasher.update((n as u64).to_be_bytes());"
 why = "without the counter the chain is still an iterated SHA-256 of the payload-and-clock seed: ten distinct chunks, fresh per write"
 
 [[exclude]]
