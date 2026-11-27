@@ -355,10 +355,11 @@ pub(crate) struct SaveView {
     /// `export_dialog` pattern).
     rosters_dialog: comparator::SaveFileDialog,
     /// The "Cards used" badge's last answer with the `BadgeKey` it ran
-    /// for, and the run in flight: `player_tier` then `card_limits` on a
-    /// worker thread, each reading the whole team under every candidate
-    /// height system (50 to 70 ms apiece on a PES 2017 save). On the UI
-    /// thread they made one wheel notch over a stat box cost over 100 ms.
+    /// for, and the run in flight: the team's reading (`Rules::team_reading`,
+    /// which works the height system out over the whole team), then
+    /// `player_tier` and `card_limits`, on a worker thread. On the UI
+    /// thread such a run made one wheel notch over a stat box cost over
+    /// 100 ms.
     cards: abilities::Cards,
     /// The pitch badges' medal letters per roster slot, computed on a
     /// worker thread for a `MedalKey`: the last answer with its key and
@@ -486,8 +487,8 @@ pub(crate) enum OwnBadge {
     },
     /// No tier's condition holds for him (`check_team`'s `NoTier`).
     NoTier,
-    /// `player_tier` or `card_limits` failed (or the team could not be
-    /// read), with the error's text: the row draws the red click line
+    /// The team's reading, `player_tier` or `card_limits` failed (or the
+    /// team could not be viewed), with the error's text: the row draws the red click line
     /// `TIER_CHECK_FAILED_LINE` in the badge's place, opening the error.
     /// The AATF check never calls
     /// these two functions, so a member's logic edit that breaks only them

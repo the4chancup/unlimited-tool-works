@@ -1039,7 +1039,7 @@ failed, it also runs every check under each candidate (the logic's `team_reading
 per-player functions take the system instead of working it out. `Rules::team_reading(team)`
 asks `team_height_system` once and returns a `TeamReading`, the team with its system, and
 `player_tier`, `card_limits`, `tier_values` and `apply_tier` take that reading in place of the
-team, so a caller cannot pair a player with another team's system. An answer that names no
+team, so a call cannot pair a team with another team's system. An answer that names no
 system of the ruleset is `CheckError::Values`. Each caller reads once per trigger:
 
 - the tactics view's medals and a formation picture, once per team;
@@ -1201,7 +1201,8 @@ crates/libs/aatf/
 ├── src/
 │   ├── lib.rs          # the crate doc (the script API) and the re-exports
 │   ├── rules.rs        # Rules (a loaded file): load steps 1-3, the official file, the host
-│   │                   #   API: check_team, card_limits, apply_tier (over the file's
+│   │                   #   API: check_team, team_reading, player_tier, card_limits,
+│   │                   #   apply_tier (over the file's
 │   │                   #   tier_values, which the host keeps crate-private)
 │   ├── violation.rs    # Violation, ViolationKind, CheckError; the conversion from the map
 │   ├── values.rs       # TierValues and CardLimits from the script's maps, and the write of

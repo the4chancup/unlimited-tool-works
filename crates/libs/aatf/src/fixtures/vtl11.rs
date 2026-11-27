@@ -872,13 +872,10 @@ fn card_limits_name_the_economy() {
 
     let rules = rules();
     let team = legal_team();
+    let team_reading = reading(&rules, &team);
     let limits = |slot: u8, tier: &str| {
         rules
-            .card_limits(
-                &reading(&rules, &team),
-                team.player(slot).expect("filled"),
-                tier,
-            )
+            .card_limits(&team_reading, team.player(slot).expect("filled"), tier)
             .expect("limits")
     };
     let free_skills = [

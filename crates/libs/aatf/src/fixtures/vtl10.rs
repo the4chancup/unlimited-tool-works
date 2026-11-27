@@ -737,13 +737,10 @@ fn card_limits_name_the_economy() {
 
     let rules = rules();
     let team = legal_team();
+    let team_reading = reading(&rules, &team);
     let limits = |slot: u8, tier: &str| {
         rules
-            .card_limits(
-                &reading(&rules, &team),
-                team.player(slot).expect("filled"),
-                tier,
-            )
+            .card_limits(&team_reading, team.player(slot).expect("filled"), tier)
             .expect("limits")
     };
     let free_skills = [
@@ -812,11 +809,7 @@ fn card_limits_name_the_economy() {
     // ruleset file holds.
     let weak_foot = |slot: u8, tier: &str| {
         rules
-            .tier_values(
-                &reading(&rules, &team),
-                team.player(slot).expect("filled"),
-                tier,
-            )
+            .tier_values(&team_reading, team.player(slot).expect("filled"), tier)
             .expect("values")
             .weak_foot
     };

@@ -1566,16 +1566,13 @@ fn apply_tier_then_check_reports_nothing_for_every_official_tier() {
 fn tier_values_carry_the_specials() {
     let rules = Rules::official();
     let team = legal_team();
-    let values = |team: &TeamView, slot: u8, tier: &str| {
+    let team_reading = reading(&rules, &team);
+    let values = |reading: &TeamReading, slot: u8, tier: &str| {
         rules
-            .tier_values(
-                &reading(&rules, team),
-                team.player(slot).expect("filled"),
-                tier,
-            )
+            .tier_values(reading, reading.team().player(slot).expect("filled"), tier)
             .expect("values")
     };
-    let giant = values(&team, 5, "silver");
+    let giant = values(&team_reading, 5, "silver");
     assert_eq!(giant.stats.len(), 25);
     assert!(giant.stats.values().all(|v| *v == 89), "{giant:?}");
     assert_eq!((giant.form, giant.injury_resistance), (8, 3));
@@ -1586,7 +1583,7 @@ fn tier_values_carry_the_specials() {
             accuracy: 4
         }
     );
-    let manlet = values(&team, 3, "regular");
+    let manlet = values(&team_reading, 3, "regular");
     assert!(manlet.stats.values().all(|v| *v == 77), "{manlet:?}");
     assert_eq!(
         manlet.weak_foot,
@@ -1596,9 +1593,9 @@ fn tier_values_carry_the_specials() {
         }
     );
     let red = red_legal_team();
-    let manlet = values(&red, 3, "regular");
+    let manlet = values(&reading(&rules, &red), 3, "regular");
     assert!(manlet.stats.values().all(|v| *v == 82), "{manlet:?}");
-    let regular = values(&team, 12, "regular");
+    let regular = values(&team_reading, 12, "regular");
     assert_eq!(
         regular.weak_foot,
         WeakFoot {
@@ -1634,13 +1631,10 @@ fn tier_values_carry_the_specials() {
 fn card_limits_name_the_economy() {
     let rules = Rules::official();
     let team = legal_team();
+    let team_reading = reading(&rules, &team);
     let limits = |slot: u8, tier: &str| {
         rules
-            .card_limits(
-                &reading(&rules, &team),
-                team.player(slot).expect("filled"),
-                tier,
-            )
+            .card_limits(&team_reading, team.player(slot).expect("filled"), tier)
             .expect("limits")
     };
     assert_eq!(

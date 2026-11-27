@@ -31,7 +31,7 @@ One line per piece of work in flight; the items below hold the detail.
   the lighter tests (`LEAN/pilot`: `save_editor`'s next rolling run against the one now
   running; `LEAN/rest`: no review owed; what is left waits for the pilot's rolling run).
 - The per-player rules calls read a team once (`AATFSPEED`): the slice `reading` merged, its
-  SWE-2 round **S1reading** owed, then one paid round.
+  SWE-2 round S1reading closed, the paid round **P1reading** owed.
 - The checkpoint: `19fda006` passed it and is pushed; its Linux gates are owed.
 - The rolling mutation job: on the VPS, crate by crate, held after its current crate so the
   driver's VPS lane runs its trial job (`driver/d2a`).
@@ -4465,7 +4465,11 @@ points there.
     once per trigger. Measured (test build): a 23-slot medal run under DBC7 took about
     115 ms against 2.0 s; `aatf`'s suite 109 s of summed test time against 133 s and
     `save_editor`'s 352 s against 374 s (nextest, 4 test threads, warm, twice each).
-  - [ ] **S1reading**: the SWE-2 round owed over it, then one paid round (shipped code).
+  - [x] **S1reading** 2026-11-27, SWE-2's round over it in two halves: 6 accepted, none of
+    reach (a) (stale texts on the calls' cost and wiring, the spec's pairing claim, fixture
+    closures reading at every call), so the loop ended.
+  - [ ] **P1reading**: the paid round owed (shipped code), brief
+    `.tmp/lean/paid_brief_reading.md` in the `review_lean` worktree.
 
 - open (2026-11-26, the maintainer: "eventually") — **SANDBOX**: a SWE-2 reviewer or sidekick
   is fenced only by Devin's deny list (deletes, git commands that discard work), not by

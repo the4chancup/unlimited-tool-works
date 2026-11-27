@@ -728,22 +728,23 @@ fn the_captains_untaken_choice_counts_its_card_in_the_limit() {
             .expect("the silver tier")
             .cards,
     );
-    let limits_of = |team: &TeamView, slot| {
+    let team_reading = reading(&rules, &team);
+    let limits_of = |reading: &TeamReading, slot| {
         rules
             .card_limits(
-                &reading(&rules, team),
-                team.player(slot).expect("a filled slot"),
+                reading,
+                reading.team().player(slot).expect("a filled slot"),
                 "silver",
             )
             .expect("limits")
     };
     assert_eq!(
-        i32::from(limits_of(&team, 5).limit),
+        i32::from(limits_of(&team_reading, 5).limit),
         tier_limit,
         "a non-captain silver: `when: captain` does not hold for him"
     );
     assert_eq!(
-        i32::from(limits_of(&team, 10).limit),
+        i32::from(limits_of(&team_reading, 10).limit),
         tier_limit,
         "a COM style past the free one takes the choice"
     );
@@ -767,7 +768,7 @@ fn the_captains_untaken_choice_counts_its_card_in_the_limit() {
             "premise: one A position"
         );
     });
-    let limits = limits_of(&team, 10);
+    let limits = limits_of(&reading(&rules, &team), 10);
     assert!(
         i32::from(limits.non_free) <= tier_limit,
         "premise: his non-free cards under the tier's limit"

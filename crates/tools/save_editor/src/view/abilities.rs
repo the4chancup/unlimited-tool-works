@@ -1413,8 +1413,8 @@ fn skill_index(card: &aatf::Card) -> Option<u8> {
 pub(super) type Cards = WorkerResult<BadgeKey, OwnBadge>;
 
 /// One badge run's worker: `key`'s team viewed on the caller's thread
-/// (the `EditFile` lives there), then `player_tier` and `card_limits` on
-/// the shared ruleset off it, the key riding the reply and a repaint
+/// (the `EditFile` lives there), then the team's reading, `player_tier`
+/// and `card_limits` on the shared ruleset off it, the key riding the reply and a repaint
 /// asked for with it.
 fn spawn_badge(
     ctx: &egui::Context,

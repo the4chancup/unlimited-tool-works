@@ -308,9 +308,9 @@ fn rated_at(positions, rating) {
     false
 }
 
-// The height system `team` is read under (`team_reading`), `()` when no system holds; the
-// tier helpers read a player under it, so a quick action and the check agree. `this` is the
-// ruleset.
+// The height system `team` is read under (`team_reading`), `()` when no system holds:
+// `team_height_system`'s answer, which the host passes back to the tier helpers, so a quick
+// action and the check agree. `this` is the ruleset.
 fn height_system(team) {
     this.team_reading(team).system
 }
