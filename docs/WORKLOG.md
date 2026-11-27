@@ -679,7 +679,12 @@ and no phase closes with one outstanding.
         accepted four, under five, which ends the SWE-2 loop: a scratch test that hung on a
         setup panic now fails, and every scratch helper says a test's folder name must be
         unique; the history rewrite's old objects were pruned (`.tmp/lead/scrub_gc.py`);
-      - [ ] **paid** [after TS2] one paid round (Carbon), once the SWE-2 loop has ended;
+      - [~] **paid** [after TS2] one paid round (Carbon), over the whole work at `93cb6115`:
+        brief `.tmp/lead/review_scratch_bc/carbon_paid.md`, its diff `paid.diff`, the report
+        `carbon_paid.report.md` when it ends; the lead rules it into `.tmp/duck_rulings.md`
+        as "Round TSP" with prevention lines and fixes the accepted concerns, after which a
+        SWE-2 round over the fixes follows (RUNBOOK "Review rounds": SWE-2 around each paid
+        round);
   - [ ] **axiom** [after optimize] an Axiomatic Design pilot, on SWE-2: the suite's functional
     requirements split level by level, each mapped to the crate or module that meets it, and
     each level's design matrix checked for coupling (diagonal is uncoupled, triangular is
