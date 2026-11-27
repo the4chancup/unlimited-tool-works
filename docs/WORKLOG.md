@@ -1043,20 +1043,28 @@ and no phase closes with one outstanding.
               an extra survivor alone set the code 2, as a whole run's summary does, and gave
               a crate with no extra mutant no extra shard. Its tests pass on Windows and on
               the VPS. Deployed 2026-11-27, once the `LEAN/pilot` job had ended;
-              - [ ] **S1d3a** one SWE-2 review round over `684f1e96` (scripts);
-            - [ ] **d3b** [after d3a] the rolling job itself. When the queue holds no job,
-              this PC's driver queues the crate checked longest ago, with its extra pass;
-              with this PC off, the VPS lane finishes what was sent and waits. `job.json`
-              records the launch commit, and a rolling job's finish files it under
-              `mutants.rolling/<crate>/` (`launched_from.txt` included, which
-              `mutants-checked` reads). `gates-remote` takes the VPS lane's hold (`hold-vps`)
-              and waits for the shard running to end. `rolling.py`, `.tmp/rolling.hold` and
-              `just mutants-rolling` go, and RUNBOOK "Mutation runs and the VPS" is rewritten.
-              This PC's shards' mutant logs are read for a catch whose only failure is
-              nextest's `TIMEOUT` (no `FAIL`): a test starved past the 180-second limit,
-              filed as caught (DECISIONS 2026-11-27 "a test past 180 seconds fails in every
-              run"). The finish stays the point where `memsum`'s recheck of tests the OOM
-              killer ended will run;
+              - [~] **S1d3a** one SWE-2 review round over `684f1e96` (scripts), in two parts
+                (`driver.py` with its tests; the extra pass's side), running in the
+                `review_lean` worktree;
+            - [ ] **d3b** [after d3a] the rolling job itself (DECISIONS 2026-11-27 "the
+              rolling job becomes this PC's driver's, filing each job under
+              `mutants.rolling/`"), in two subslices. The finish stays the point where
+              `memsum`'s recheck of tests the OOM killer ended will run;
+              - [ ] **d3b1** the Opus sidekick, in the worktree `4cc-studio-temp/d3b1`
+                (brief `.tmp/brief_d3b1.md` there): when the queue holds no job, this PC's
+                driver queues the crate checked longest ago, with its extra pass; with
+                this PC off, the VPS lane finishes what was sent and waits. `job.json`
+                records the launch commit, and a rolling job's finish files it under
+                `mutants.rolling/<crate>/`, `launched_from.txt` last. `rolling.py`,
+                `.tmp/rolling.hold` and `just mutants-rolling` go, and the RUNBOOK's
+                rolling-job text is rewritten. Its deploy: create `.tmp/rolling.hold`,
+                wait until `rolling.py` has filed the crate it is running, stop it while
+                it waits on the hold, then start `just driver run` detached on this PC;
+              - [ ] **d3b2** [after d3b1] `gates-remote` takes the VPS lane's hold
+                (`hold-vps`) and waits for the running shard to end; this PC's shards'
+                mutant logs are read for a catch whose only failure is nextest's `TIMEOUT`
+                (no `FAIL`): a test starved past the 180-second limit, filed as caught
+                (DECISIONS 2026-11-27 "a test past 180 seconds fails in every run");
           - [ ] **d4** [after d3] the diff, closure and extra-kind commands and the
             checkpoint queue jobs and wait for their results; the file split, its share
             tables and the locks they made needed go; each run's timings a file of its own;

@@ -20544,3 +20544,28 @@ PC's lane would run every mutant against the full suite, since the coverage map 
 Linux alone, and the pass would need a second output path there; a VPS-only part keeps one.
 Plan: no plan edit needed: the driver's design is its worklog item (`driver`), whose `d3`
 is split into `d3a` (extra shards) and `d3b` (the rolling job).
+
+## 2026-11-27 — mutation runs — the rolling job becomes this PC's driver's, filing each job under `mutants.rolling/`
+Decision: when the queue holds no job, this PC's driver (`just driver run`, not `--once`)
+queues the crate checked longest ago, with its extra pass. "Checked longest ago" keeps
+`rolling.py`'s rule: the later of the crate's `.cargo/mutants_checked.toml` commit's date
+and the time its last rolling job was filed. It queues only when a VPS host is set, so the
+job is sent and gets its extra shards. Every `job.json` records the
+commit it was queued from. A job the driver queued this way is marked `rolling`; its finish
+moves the finished job folder (its `result.json` and shard folders) to
+`mutants.rolling/<crate>/`, setting the crate's earlier one aside as `<crate>.old`, and
+writes `launched_from.txt` last. That file dates the crate and gives `just mutants-checked`
+its commit. A job queued by hand still goes to `done/`. A rolling job always dates its
+crate: a shard stopped midway is rerun, and the mutants it could not test are listed in
+`result.json` for the triage. The PC lane's hold file (`hold-pc`) replaces
+`.tmp/rolling.hold`. `rolling.py`, `just mutants-rolling` and `mutants.rolling/current.txt`
+go.
+Why: the driver already restarts stopped shards and splits each crate between both
+machines, so `rolling.py`'s own collect-after-loss and whole runs only duplicate it. Only
+this PC queues, because the finish runs here: the VPS lane queuing too would grow a queue
+this PC never empties while it is off. A rolling run whose VPS half died was not dated, so
+its crate came up again at once; with shards rerun, a finished job has tested all it could,
+and dating it moves the rotation on. Filing under `mutants.rolling/` keeps the triage, its
+`launched_from.txt` check and the rotation's dates where they are.
+Plan: no plan edit needed: the driver's design is its worklog item (`driver`), whose `d3b`
+carries this out.
