@@ -14,7 +14,9 @@ top-level items; a path such as `GRID/1b` names a step inside another, its first
 up the same way. The maintainer's roadmap
 (`scripts/pages/roadmap.py`) draws its timeline from both, so a dependency written here is not
 traced again at a phase's converge. A step being worked on is marked `[~]`, and the
-timeline draws it on its "now" line.
+timeline draws it on its "now" line. Every code the lead names to the maintainer (a step, a
+slice, a review round) is an item here under that ID from the moment it is first named, `[~]`
+while it runs, so a maintainer who meets it in a report finds it on that line.
 
 ---
 
@@ -24,12 +26,13 @@ timeline draws it on its "now" line.
 
 One line per piece of work in flight; the items below hold the detail.
 
-- The Compiler's grid (item 6): Carbon's round 5's fixes and SWE-2's round over them are in;
-  Carbon's round 6 is running.
-- The checkpoint: `fb053617` passed it and is pushed; the next one waits for the VPS, which
-  the `call` backfill holds.
-- The `call` mutant kind's backfill: running on the VPS, crate by crate.
-- The periodic review of the dev cycle: waiting for the maintainer's start.
+- The workflow improvements before the suite resumes (`RESUME/optimize`): the review rounds
+  on the tests' scratch folders (`TSREVIEW`), the mutation driver's slices next.
+- The checkpoint: `19fda006` passed it and is pushed; its Linux gates are owed.
+- The rolling mutation job: running on the VPS, crate by crate.
+- The move to the 905P (`RESUME/migration`): postponed until the maintainer starts it.
+- The periodic review of the dev cycle (`CYCLE`): waits for the lead on Fable and the
+  maintainer's go.
 
 ### Where the work stands
 
@@ -654,6 +657,21 @@ and no phase closes with one outstanding.
   - [~] **optimize** the queued improvements: `WSLGATES` and `CYCLE` above (`CYCLE` on Fable,
     at the maintainer's go), the mutation
     driver's `warm` and `driver` steps below, and the issue `LEAN` (`TESTSCRATCH` resolved);
+    - [~] **TSREVIEW** the review rounds owed on the issue `TESTSCRATCH`'s slices b and c
+      (shipped test code: a SWE-2 loop, then one paid round, RUNBOOK "Review rounds"); the
+      rulings in `.tmp/lead/review_scratch_bc/rulings_draft.md`:
+      - [x] **TS1** 2026-11-27: SWE-2.1 High over the slices' code in three parts. Nine
+        concerns accepted, one of them a real input (a test's loop empties the folder a
+        background check it started may still read), so a second round follows the fixes;
+      - [x] **ts1a** 2026-11-27, merge `f8b8dad8`: `test_scratch`'s own fixes: tests that a
+        folder left by an earlier run is emptied, that the panic flag is per thread, where the
+        build folder is and that the panic hook chains, and its texts;
+      - [~] **ts1b** the other crates' fixes: `help_export` exports into a missing folder,
+        the sideload loop joins its check, two comments that still describe the removed
+        `Drop` are fixed, and the lines that create or remove a folder `fresh` already
+        handles go;
+      - [ ] **TS2** [after ts1b] the second SWE-2 round, over both slices' fixes;
+      - [ ] **paid** [after TS2] one paid round (Carbon), once the SWE-2 loop has ended;
   - [ ] **axiom** [after optimize] an Axiomatic Design pilot, on SWE-2: the suite's functional
     requirements split level by level, each mapped to the crate or module that meets it, and
     each level's design matrix checked for coupling (diagonal is uncoupled, triangular is
