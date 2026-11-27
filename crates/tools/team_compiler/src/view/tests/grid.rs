@@ -456,8 +456,8 @@ fn a_dropped_export_counts_no_portrait_missing_from_a_player_s_own_folder() {
     assert_eq!(portraits(team).unwrap().text, "0/2");
 }
 
-/// The canonical path of what `open` opens, so a test compares it with a path it built
-/// whatever link its folder is reached through.
+/// The canonical path of what `open` opens, so a test compares it with a path it built even
+/// when the path it built is not the folder's real path.
 fn opened(open: Option<&Open>) -> Option<(&'static str, PathBuf)> {
     open.map(|open| match open {
         Open::Folder(path) => ("folder", fs::canonicalize(path).unwrap()),

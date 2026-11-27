@@ -4,7 +4,7 @@
 //!
 //! A guard returned by `fresh` cannot remove the folder: helpers hand their test a path inside
 //! it, and the guard would drop when the helper returned, deleting the folder before the test
-//! used the path. The folders are therefore tied to the thread libtest gives each test.
+//! used the path. The folders are therefore tied to the thread that calls `fresh`.
 
 use std::cell::{Cell, RefCell};
 use std::fs;
@@ -34,7 +34,8 @@ impl Drop for ScratchFolders {
 }
 
 /// `parent/name` as a fresh, empty folder, removed when the current thread ends without a
-/// panic. When the thread panics, the folder is kept so the test's files can be read, and
+/// panic (best effort: a folder that cannot be removed, such as one a handle still holds on
+/// Windows, stays and is logged). When the thread panics, the folder is kept so the test's files can be read, and
 /// the next `fresh` of the same path empties it.
 ///
 /// `name` is one plain folder name, and must be unique among the tests that share `parent`:
@@ -74,9 +75,9 @@ pub fn build_folder() -> PathBuf {
 }
 
 /// Installs, once per process, the panic hook that tells [`fresh`] a thread panicked; the
-/// hook it replaces still runs, so the panic prints. `fresh` calls it, and so does a test
-/// that swaps the process's panic hook, before its swap: installed inside the swap, the hook
-/// would be lost when the swap restores the old one, and every later panicking test's folder
+/// hook it replaces still runs after it. `fresh` calls it, and so does a test that swaps the
+/// process's panic hook, before its swap: installed inside the swap, the hook would be lost
+/// when the swap restores the old one, and every later panicking test's folder would be
 /// removed.
 pub fn install_panic_hook() {
     // `std::thread::panicking` is false when `ScratchFolders::drop` runs: libtest catches the

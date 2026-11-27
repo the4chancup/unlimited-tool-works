@@ -357,9 +357,9 @@ integration test), never the system temp folder, so each checkout keeps its own.
 name is fixed, the test's next run empties a kept folder.
 
 The gates hand every test a temp folder that is not its own real path
-(`scripts/gates/temp_alias.py`): each script's tests through the justfile's `script_test`,
-and the test binaries from `run_tests.py`, for the code under test that uses the system temp
-folder (a Rust test's own folders are under `target/`). A CI runner's temp folder is named by something other than
+(`scripts/gates/temp_alias.py`). Each script's tests get it through the justfile's
+`script_test`. The Rust test binaries get it from `run_tests.py` because the code they test
+may use the system temp folder, although a Rust test's own folders are under `target/`. A CI runner's temp folder is named by something other than
 its real path (an 8.3 short name on GitHub's Windows runner, `RUNNER~1`; a symlink on macOS),
 while a developer's is its own real path. A test that compares a temp path as it was handed out
 with one the code resolved therefore passed every local gate and failed after the push

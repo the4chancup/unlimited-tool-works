@@ -26,10 +26,11 @@ while it runs, so a maintainer who meets it in a report finds it on that line.
 
 One line per piece of work in flight; the items below hold the detail.
 
-- The workflow improvements before the suite resumes (`RESUME/optimize`): the review rounds
-  on the tests' scratch folders (`TSREVIEW`), the mutation driver's slices next.
+- The workflow improvements before the suite resumes (`RESUME/optimize`): the mutation
+  driver's slices (`driver/d2`, the VPS lane), and the test-suite census (`LEAN/census`).
 - The checkpoint: `19fda006` passed it and is pushed; its Linux gates are owed.
-- The rolling mutation job: running on the VPS, crate by crate.
+- The rolling mutation job: on the VPS, crate by crate, held after its current crate so the
+  driver's VPS lane runs its trial job (`driver/d2a`).
 - The move to the 905P (`RESUME/migration`): postponed until the maintainer starts it.
 - The periodic review of the dev cycle (`CYCLE`): waits for the lead on Fable and the
   maintainer's go.
@@ -665,31 +666,12 @@ and no phase closes with one outstanding.
     - [x] **personal** 2026-11-27 `c88f6153`: `scripts/commit.py` warns when a message, or a
       line the commit adds, may say something personal about the maintainer (CONTRIBUTING
       "Commits"); its tests passed on Windows and, with WSL down (`WSLGATES/wslstart`), on the VPS;
-    - [~] **TSREVIEW** the review rounds owed on the issue `TESTSCRATCH`'s slices b and c
-      (shipped test code: a SWE-2 loop, then one paid round, RUNBOOK "Review rounds"); the
-      rulings in `.tmp/lead/review_scratch_bc/rulings_draft.md`:
-      - [x] **TS1** 2026-11-27: SWE-2.1 High over the slices' code in three parts. Nine
-        concerns accepted, one of them a real input (a test's loop empties the folder a
-        background check it started may still read), so a second round follows the fixes;
-      - [x] **ts1a** 2026-11-27, merge `07781646`: `test_scratch`'s own fixes: tests that a
-        folder left by an earlier run is emptied, that the panic flag is per thread, where the
-        build folder is and that the panic hook chains, and its texts;
-      - [x] **ts1b** 2026-11-27, merge `008bcacd`: the other crates' fixes: `help_export`
-        exports into a missing folder, the sideload loop joins its check, two comments that
-        still described the removed `Drop` are fixed, and about 130 lines that created or
-        removed a folder `fresh` already handles are gone;
-      - [x] **TS2** 2026-11-27 `712ccf84`: the second round (SWE-2.1 High, three parts)
-        accepted four, under five, which ends the SWE-2 loop: a scratch test that hung on a
-        setup panic now fails, and every scratch helper says a test's folder name must be
-        unique; the history rewrite's old objects were pruned (`.tmp/lead/scrub_gc.py`);
-      - [x] **paid** 2026-11-27: Carbon's round over the whole work, ruled as "Round TSP" in
-        `.tmp/duck_rulings.md`: ten of twelve concerns accepted, one a real input (a test
-        that swaps the panic hook could erase `test_scratch`'s for the rest of the process);
-      - [x] **tspfix** 2026-11-27: the accepted concerns' fixes. The helper docs link `fresh`
-        rather than retell it, the two hook-swapping tests install its hook first, and
-        `help_cli`'s export goes into a missing folder;
-      - [ ] **TS3** [after tspfix] a SWE-2.1 round over the fixes (RUNBOOK "Review rounds":
-        SWE-2 around each paid round), briefed like TS2's parts;
+    - [x] **TSREVIEW** 2026-11-27: the review rounds on `TESTSCRATCH`'s slices b and c,
+      rulings in `.tmp/duck_rulings.md`. The SWE-2.1 loop (**TS1**, fixed in **ts1a** and
+      **ts1b**, merges `07781646` and `008bcacd`; **TS2**, `712ccf84`), Carbon's paid round
+      (**paid**, ruled as TSP, fixed in **tspfix**, `07f19592`: helper docs link `fresh`, the
+      hook-swapping tests install its hook first) and a SWE-2.1 round over those fixes
+      (**TS3**, three accepted, docs only, which ends the loop). No review is owed;
   - [ ] **axiom** [after optimize] an Axiomatic Design pilot, on SWE-2: the suite's functional
     requirements split level by level, each mapped to the crate or module that meets it, and
     each level's design matrix checked for coupling (diagonal is uncoupled, triangular is
@@ -1000,11 +982,13 @@ and no phase closes with one outstanding.
               There each shard runs in a memory-capped `studio-shard` unit, and the lane waits
               while `studio-mutants` or `studio-gates` runs, below the disk floor, or under
               `hold-vps`; `remote_refusal` refuses while a shard runs. This PC's lane skips
-              sent jobs until d2b. Brief `.tmp/lead/driver/brief_d2a.md`, Opus in
-              `4cc-studio-temp/sk_driver2a`. On its end: review, merge, `just driver
-              deploy`, then one small crate queued with the rolling job held, and its results
-              read on the VPS;
-            - [ ] **d2b** [after d2a] this PC's side: it claims a sent job's shards on the
+              sent jobs until d2b. Merged `2c86c0d0` and deployed (2026-11-27). The trial:
+              `color_tools` queued and sent (`20261127T021741-color_tools`), the rolling job
+              held (`.tmp/rolling.hold`) so the lane gets the VPS when the rolling job's
+              crate ends. Then: both shards' `.done` and `shard-<k>/log` read on the VPS
+              (`~/studio-driver/`), the hold removed, this item closed;
+            - [~] **d2b** [after d2a] this PC's side (brief `.tmp/lead/driver/brief_d2b.md`,
+              Opus in `4cc-studio-temp/sk_driver2b`): it claims a sent job's shards on the
               VPS, and between its own shards puts back the ones it lost, fetches the VPS's
               finished ones (all but caught mutants' logs), and rechecks their Windows-only
               survivors in `finish`; the VPS's copy goes once the job is finished;
