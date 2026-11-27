@@ -688,11 +688,12 @@ and no phase closes with one outstanding.
       had no position when no step was in progress or done that week. In Chromium the page matches the old one element by
       element, with and without steps in progress. Its tests pass on Windows and on the VPS,
       which now has node for them;
-      - [~] **roadmapcols** the rows take their lane's x from the lane's line when the page
-        opens, so a lane moving to another column changes that lane's line alone: in
-        `79c169f9` a lane added moved others' columns and rewrote about 40 rows. SWE-2
-        sidekick on `.tmp/brief_roadmapcols.md` in the worktree `4cc-studio-temp/roadmapcols`
-        (branch `sk/roadmapcols`); then the lead's review;
+      - [x] **roadmapcols** 2026-11-27, merge `7eb9245a` (SWE-2): the rows take their lane's
+        x from the lane's line when the page opens, so a lane moving to another column
+        changes that lane's line alone (in `79c169f9` a lane added moved others' columns and
+        rewrote about 40 rows). Its tests pass on Windows and on the VPS, and in Chromium the
+        page lays out as before, element for element;
+        - [ ] **S1roadmapcols** one SWE-2 review round over `dabd71ff` (scripts);
       - [x] **S1roadmapdiff** 2026-11-27 `782055a8`, SWE-2's round: 3 accepted (the
         page's own script now runs under test, with values worked out by hand; the lanes'
         ends and the band label asserted; a line count corrected), none on a real input,
