@@ -468,7 +468,9 @@ rust-analyzer's crate graph). The following rules keep it healthy:
    workspace-wide).
 3. **Don't split finer than this.** Warning signs of over-splitting: crates with one function, lib
    crates with a single permanent consumer, changes that routinely touch four crates at once. A lib
-   crate earns its existence through multiple consumers or the standalone-format exception above.
+   crate earns its existence through multiple consumers or the standalone-format exception above,
+   or as code that test builds must compile optimized while its one consumer stays unoptimized,
+   quick to rebuild for each mutant (`epaint_raster`, the Save editor's picture rasterizer).
 4. **`fmdl` and `pes_model` must stay PyO3-buildable.** These two crates have a second consumer
    outside this workspace (the Blender addons, via `python_bindings`). They may not depend on
    `studio_core`, `studio` (the binary), any tool crate, `model_convert`, or any crate from this

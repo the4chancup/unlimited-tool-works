@@ -29,7 +29,7 @@ One line per piece of work in flight; the items below hold the detail.
 - The workflow improvements before the suite resumes (`RESUME/optimize`): the mutation
   driver's slices (`driver/d2`, the VPS lane: d2b and d2c merged, d2a's trial pending), and
   the lighter tests (`LEAN/pilot`: `save_editor`'s next rolling run against the one now
-  running; `LEAN/rest` meanwhile).
+  running; `LEAN/rest/firstdraw` next).
 - The checkpoint: `19fda006` passed it and is pushed; its Linux gates are owed.
 - The rolling mutation job: on the VPS, crate by crate, held after its current crate so the
   driver's VPS lane runs its trial job (`driver/d2a`).
@@ -4569,7 +4569,7 @@ points there.
     call site stay: the heavy tests came from clock waits and whole-save inputs, not from
     them; helium got a line on a test's input and waits instead. Heaviest left, each a
     candidate for pilot's "the rest": the pictures dialog's range runs (7.8 s, selected
-    1,475 times, most of it each picture's rasterizing: see rest), the Multi-team AATF
+    1,475 times, about half of it each picture's rasterizing: see rest), the Multi-team AATF
     every-team test (7.9 s, its own all-teams check beside the dialog's), the toolbar's
     shortcut test (a save opened per case, twelve times);
   - [ ] **pilot** [after patterns] the lighter tests measured on whole runs (DECISIONS
@@ -4588,10 +4588,18 @@ points there.
     pictures tests (11% of a run's weighted test time) spend about half of each picture's
     2.3 s in our rasterizer, unoptimized in test builds (1.2 s for a 448 by 1238 picture;
     the dialog's frames take 2 to 3 ms, and the image and PNG crates optimized saved 7%);
-    - [ ] **raster** SWE-2: `view/pictures/raster.rs` moved to the `epaint_raster` lib
-      crate, optimized in test builds (DECISIONS 2026-11-27 "the formation pictures'
-      rasterizer moves to its own lib crate"), measured on the pictures tests before and
-      after.
+    - [x] **raster** 2026-11-27 (merge `577415f0`, SWE-2): `view/pictures/raster.rs` moved
+      to the `epaint_raster` lib crate, optimized in test builds (DECISIONS 2026-11-27 "the
+      formation pictures' rasterizer moves to its own lib crate"). The pictures tests took
+      21.6 s of summed test time against 83 s (nextest, 4 test threads, warm), and a whole
+      `save_editor` run's test time, weighted by the census's coverage map, 469,676 s
+      against 502,055. SWE-2 round **S1raster**: 2 accepted, none of reach (a), so the loop
+      ended; guardrail 3 now names the crate's case. Owed: one paid round, batched with the
+      next `save_editor` slice. The heaviest tests left each weigh under 2% of a run, while
+      every test pays the view's first draw (~160 ms), an estimated third of a run's test
+      time (213 tests a mutant on average);
+    - [ ] **firstdraw** what the view's first draw spends its ~160 ms on (the fonts, the
+      save's open, the first layout), measured by a probe before any change is briefed.
 
 - resolved (2026-11-24) — `scripts/commit.py -a` left a new file out silently, as `git commit
   -a` does: `9ac41d0a` needed an amend for `docs/spec/core/design.md`. With `-a` it now

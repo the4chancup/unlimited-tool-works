@@ -6,13 +6,17 @@ rule here is enforced in review.
 
 ## Architecture rules
 
-Workspace guardrails (details: `spec/core/architecture.md` "Workspace guardrails"):
+Workspace guardrails (details: `spec/core/architecture.md` "Workspace guardrails"). A decision
+that adds, splits or moves a crate is read against them first, and one that breaks a guardrail
+amends it in the same commit, here and in the spec:
 
 1. Tool crates never depend on tool crates. Shared logic moves down into a lib crate.
 2. Every shared dependency is declared once in the root `Cargo.toml` `[workspace.dependencies]`;
    crates inherit with `dep.workspace = true`. egui must be in lock-step workspace-wide.
-3. Don't over-split. A lib crate earns its existence through multiple consumers or by being a
-   conceptually standalone format. No per-tool companion libs; the Compiler stays one crate.
+3. Don't over-split. A lib crate earns its existence through multiple consumers, by being a
+   conceptually standalone format, or as code that test builds must compile optimized while its
+   one consumer stays unoptimized (`epaint_raster`). No other per-tool companion libs; the
+   Compiler stays one crate.
 4. `fmdl` and `pes_model` stay PyO3-buildable: no dependency on `studio_core`, `studio`, any tool
    crate, `model_convert`, `egui`, `eframe`, `wgpu`, `tokio`, `smol`, `async-std`, `pyo3`.
 5. `cargo clippy` is clean with `-D warnings` from the first commit. Lints are declared once in

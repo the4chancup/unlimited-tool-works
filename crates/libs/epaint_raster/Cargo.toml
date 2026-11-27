@@ -1,6 +1,6 @@
 [package]
 name = "epaint_raster"
-description = "The Save editor's formation pictures: epaint's triangles filled into an RGBA image"
+description = "The rasterizer of the Save editor's formation pictures: epaint's triangles into an RGBA image"
 version.workspace = true
 edition.workspace = true
 license.workspace = true

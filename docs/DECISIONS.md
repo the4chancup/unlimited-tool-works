@@ -20434,4 +20434,5 @@ weighted by the mutants that select them, spend about half of each picture's 2.3
 optimized, because each of its mutants rebuilds it. Not the image and PNG crates optimized:
 that saved 7% of the pictures tests' time (77 s against 83).
 Plan: `plans/save_editor.md` "Drawing the picture" and `plans/core/architecture.md`'s crate
-tree edited.
+tree edited; guardrail 3 (`spec/core/architecture.md` and CONTRIBUTING), which admitted a lib
+crate only for several consumers or a standalone format, now names this case.
