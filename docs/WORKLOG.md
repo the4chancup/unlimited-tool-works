@@ -29,7 +29,7 @@ One line per piece of work in flight; the items below hold the detail.
 - The workflow improvements before the suite resumes (`RESUME/optimize`): the mutation
   driver's slices (`driver/d2`, the VPS lane: d2b and d2c merged, d2a's trial pending), and
   the lighter tests (`LEAN/pilot`: `save_editor`'s next rolling run against the one now
-  running; `LEAN/rest/names` running).
+  running; `LEAN/rest/names`'s review round running).
 - The checkpoint: `19fda006` passed it and is pushed; its Linux gates are owed.
 - The rolling mutation job: on the VPS, crate by crate, held after its current crate so the
   driver's VPS lane runs its trial job (`driver/d2a`).
@@ -4619,12 +4619,13 @@ points there.
       stay: a second probe found them the price of an 11 MB save in the optimized
       `pes_savefile` (24 ms to build and encrypt it, 24 ms to decrypt and parse it, 7 ms more
       for the open's baselines), the file's write and read 2 ms each.
-    - [~] **names** [after samplecheck] (SWE-2, `4cc-studio-temp/sk_names`) the ruleset
-      dropdown reads the embedded rulesets' descriptions from a table in `aatf` (DECISIONS
-      2026-11-27 "the ruleset dropdown reads the embedded rulesets' descriptions from a
-      table"; `plans/aatf_rules.md` "Embedded rulesets"). A small slice over `aatf` and
-      `save_editor` for SWE-2, measured on `save_editor`'s suite against samplecheck's 395 s
-      and 397 s.
+    - [~] **names** 2026-11-27 (merge `228248bc`, SWE-2): the ruleset dropdown reads the
+      embedded rulesets' descriptions from a table in `aatf` (DECISIONS 2026-11-27 "the ruleset
+      dropdown reads the embedded rulesets' descriptions from a table"; `spec/aatf_rules.md`
+      "Embedded rulesets"), `every_description_is_its_files_name` keeping it equal to the
+      files. Measured (nextest, 4 test threads, warm): `save_editor`'s suite took 376 s and
+      374 s of summed test time against 395 s and 397 s, 94 s of wall time against 99 s. Its
+      SWE-2 round **S1names** runs; owed after it: one paid round, batched with samplecheck's.
 
 - resolved (2026-11-24) — `scripts/commit.py -a` left a new file out silently, as `git commit
   -a` does: `9ac41d0a` needed an amend for `docs/spec/core/design.md`. With `-a` it now

@@ -534,6 +534,12 @@ is the default and the fallback. Each file's `name` is its description:
 - for VGL and VTL, the league's name then its edition number, which counts editions, not years;
 - for DBC7, the cup's name then its edition.
 
+The dropdown reads these descriptions from a table: `libs/aatf` keeps each one's stem and
+description beside its file, and a test keeps each description equal to the file's `name`.
+Loading the seven files only for their names took about 30 ms in a test build, which every test
+that draws the Save editor paid. The table costs an edit when a file's `name` changes, which the
+test catches.
+
 All seven are the ones the parity runs checked ("Development phase and verification"; DBC7's,
 `plans/aatf_rules.md` "Development phase and verification").
 
