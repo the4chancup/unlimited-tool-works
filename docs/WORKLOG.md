@@ -651,6 +651,9 @@ and no phase closes with one outstanding.
   - [ ] **wslstart** WSL's VM refuses to start (`HCS/ERROR_NO_SYSTEM_RESOURCES`, from
     2026-11-27, three tries, one after `wsl --shutdown`, with 12 GB of memory free against
     the VM's 8 GB): find why before any WSL gates run; script tests run on the VPS meanwhile.
+    WSL 3.0.5, kernel 6.18.58; `vmcompute` and `WslService` running, `LxssManager` stopped;
+    the Hyper-V compute log needs an administrator to read. To try, one at a time: after the
+    PC's next restart, then with `.wslconfig`'s `memory=` lowered;
 - [ ] **RESUME** Before work on the suite resumes (the maintainer, 2026-11-26): the move to the
   new system drive, and the workflow improvements queued since 2026-11-26.
   - [ ] **migration** Windows moved to the 905P: waits on the maintainer's two lists, and is
@@ -681,7 +684,9 @@ and no phase closes with one outstanding.
         unique; the history rewrite's old objects were pruned (`.tmp/lead/scrub_gc.py`);
       - [~] **paid** [after TS2] one paid round (Carbon), over the whole work at `93cb6115`:
         brief `.tmp/lead/review_scratch_bc/carbon_paid.md`, its diff `paid.diff`, the report
-        `carbon_paid.report.md` when it ends; the lead rules it into `.tmp/duck_rulings.md`
+        `carbon_paid.report.md` when it ends (its first run was refused at its first
+        request; it runs again on another login once the code map's run below ends, a
+        login never being switched under a run); the lead rules it into `.tmp/duck_rulings.md`
         as "Round TSP" with prevention lines and fixes the accepted concerns, after which a
         SWE-2 round over the fixes follows (RUNBOOK "Review rounds": SWE-2 around each paid
         round);
