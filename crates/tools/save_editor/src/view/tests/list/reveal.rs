@@ -322,7 +322,7 @@ fn a_double_click_on_a_team_row_scrolls_the_list_to_its_row() {
                 if !window.ctx.input(|input| input.is_scrolling()) {
                     break;
                 }
-                draw(&mut window, &mut view);
+                drain_frame(&mut window, &mut view);
             }
         }
         panic!("no team row drawn")

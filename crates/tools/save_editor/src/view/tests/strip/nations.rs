@@ -253,8 +253,7 @@ fn a_seconds_pause_between_digits_starts_a_new_id() {
         show(ui, &mut view, &|| Vec::new())
     });
     assert_eq!(nation_of(&view, player_id), 2, "the typed 2 picked BAHRAIN");
-    // 61 frames with no input move egui's clock past the run's second.
-    idle_frames(&mut window, &mut view, 61);
+    wait_out(&mut window, &mut view, RUN_PAUSE);
     window.frame(vec![egui::Event::Text("1".to_owned())], |ui| {
         show(ui, &mut view, &|| Vec::new())
     });
@@ -481,8 +480,7 @@ fn a_space_joins_a_name_run_never_an_id_run() {
         231,
         "premise: the typed 231 picks SAN MARINO"
     );
-    // 61 frames with no input move egui's clock past the run's second.
-    idle_frames(&mut window, &mut view, 61);
+    wait_out(&mut window, &mut view, RUN_PAUSE);
     for text in ["2", "3", " ", "1"] {
         window.frame(vec![egui::Event::Text(text.to_owned())], |ui| {
             show(ui, &mut view, &|| Vec::new())
@@ -646,8 +644,7 @@ fn a_pause_between_picks_keeps_the_openings_one_undo_entry() {
         show(ui, &mut view, &|| Vec::new())
     });
     assert_eq!(nation_of(&view, player_id), 2, "the typed 2 picked BAHRAIN");
-    // 61 frames with no input move egui's clock past the run's second.
-    idle_frames(&mut window, &mut view, 61);
+    wait_out(&mut window, &mut view, RUN_PAUSE);
     window.frame(vec![egui::Event::Text("1".to_owned())], |ui| {
         show(ui, &mut view, &|| Vec::new())
     });
@@ -689,8 +686,7 @@ fn a_late_escape_still_leaves_nothing_to_undo() {
         show(ui, &mut view, &|| Vec::new())
     });
     assert_eq!(nation_of(&view, player_id), 231, "the typed 231 picked");
-    // 61 frames with no input move egui's clock past the run's second.
-    idle_frames(&mut window, &mut view, 61);
+    wait_out(&mut window, &mut view, RUN_PAUSE);
     window.frame(
         vec![key(egui::Key::Escape, egui::Modifiers::NONE, true)],
         |ui| show(ui, &mut view, &|| Vec::new()),
@@ -720,7 +716,7 @@ fn pauses_between_picks_do_not_part_the_openings_undo() {
         show(ui, &mut view, &|| Vec::new())
     });
     assert_eq!(nation_of(&view, player_id), 2, "the typed 2 picked BAHRAIN");
-    idle_frames(&mut window, &mut view, 61);
+    wait_out(&mut window, &mut view, RUN_PAUSE);
     window.frame(vec![egui::Event::Text("1".to_owned())], |ui| {
         show(ui, &mut view, &|| Vec::new())
     });
@@ -729,7 +725,7 @@ fn pauses_between_picks_do_not_part_the_openings_undo() {
         1,
         "the 1 after the pause picked AFGHANISTAN"
     );
-    idle_frames(&mut window, &mut view, 61);
+    wait_out(&mut window, &mut view, RUN_PAUSE);
     window.frame(
         vec![key(egui::Key::Escape, egui::Modifiers::NONE, true)],
         |ui| show(ui, &mut view, &|| Vec::new()),

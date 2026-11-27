@@ -17,6 +17,7 @@ use pes_savefile::{EditFile, fixture_save};
 use pes_version::PesVersion;
 
 use super::*;
+use crate::session::undo::RUN_PAUSE;
 
 /// A headless window: one egui context with AccessKit on and animations off,
 /// run a frame at a time over the pane the shell leaves a tool at the
@@ -76,6 +77,21 @@ impl Headless {
     fn frame_ids<R>(
         &mut self,
         events: Vec<egui::Event>,
+        contents: impl FnMut(&mut egui::Ui) -> R,
+    ) -> (
+        R,
+        Vec<(accesskit::NodeId, accesskit::Node)>,
+        Vec<egui::epaint::ClippedShape>,
+    ) {
+        self.frame_after(1.0 / 60.0, events, contents)
+    }
+
+    /// `frame_ids` for a frame `seconds` after the last on egui's clock,
+    /// where `frame_ids` is 1/60 s after it.
+    fn frame_after<R>(
+        &mut self,
+        seconds: f32,
+        events: Vec<egui::Event>,
         mut contents: impl FnMut(&mut egui::Ui) -> R,
     ) -> (
         R,
@@ -85,6 +101,7 @@ impl Headless {
         let input = egui::RawInput {
             screen_rect: Some(egui::Rect::from_min_size(egui::Pos2::ZERO, self.screen)),
             events,
+            predicted_dt: seconds,
             ..Default::default()
         };
         let mut result = None;
@@ -1123,20 +1140,31 @@ fn list_scroll_bar(nodes: &[accesskit::Node]) -> accesskit::Rect {
         .expect("the list's scroll bar")
 }
 
-/// Wheels the player list to its end (bounded: a list that never stops
-/// scrolling fails rather than hangs), the pointer over a drawn row so
-/// the wheel goes to the list. The end is held once two frames draw the
-/// same top row, but the return also waits on egui's wheel action to be
-/// over: the wheel's spread-out delta would otherwise still apply on the
-/// caller's next input frame and race a reveal back down.
+/// How far apart, in seconds, the frames are that wait for a wheel's delta
+/// to be applied: egui's wheel smoothing reads a frame's step capped at
+/// 0.1 s, so a longer frame applies no more of the delta.
+const WHEEL_DRAIN_STEP: f32 = 0.1;
+
+/// Wheels the player list to its end, each wheel the height of all its
+/// rows (bounded: a list that never stops scrolling fails rather than
+/// hangs), the pointer over a drawn row so the wheel goes to the list.
+/// The end is held once two frames draw the same top row, but the return
+/// also waits on egui's wheel action to be over: the wheel's spread-out
+/// delta would otherwise still apply on the caller's next input frame and
+/// race a reveal back down.
 fn scroll_player_list_to_bottom(window: &mut Headless, view: &mut SaveView) {
+    let session = view.session.as_ref().expect("a save is open");
+    let rows = selection::list(session.file(), &view.team, &view.filter, view.team_category).len();
     let mut top = None;
     for _ in 0..900 {
-        let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, view, &|| Vec::new()));
-        let top_row = nodes
+        let nodes = drain_frame(window, view);
+        let drawn: Vec<accesskit::Rect> = nodes
             .iter()
             .filter(|node| list_row(node))
             .filter_map(accesskit::Node::bounds)
+            .collect();
+        let top_row = drawn
+            .iter()
             .map(|bounds| bounds.y0)
             .fold(f64::MAX, f64::min);
         if top == Some(top_row) && !window.ctx.input(|input| input.is_scrolling()) {
@@ -1148,13 +1176,14 @@ fn scroll_player_list_to_bottom(window: &mut Headless, view: &mut SaveView) {
             continue;
         }
         top = Some(top_row);
+        let row_height = drawn[0].y1 - drawn[0].y0;
         let at = mid_row(&nodes);
         window.frame(
             vec![
                 egui::Event::PointerMoved(at),
                 egui::Event::MouseWheel {
                     unit: egui::MouseWheelUnit::Point,
-                    delta: egui::vec2(0.0, -600.0),
+                    delta: egui::vec2(0.0, -(rows as f64 * row_height) as f32),
                     phase: egui::TouchPhase::Move,
                     source: egui::MouseWheelSource::Wheel,
                     modifiers: egui::Modifiers::NONE,
@@ -1206,7 +1235,7 @@ fn wheel_row_out_of_clip(
         if !window.ctx.input(|input| input.is_scrolling()) {
             return;
         }
-        draw(window, view);
+        drain_frame(window, view);
     }
     panic!("the wheel's delta never drained")
 }
@@ -1980,6 +2009,14 @@ fn draw(window: &mut Headless, view: &mut SaveView) -> Vec<accesskit::Node> {
     nodes
 }
 
+/// One frame with no input, `WHEEL_DRAIN_STEP` after the last: its nodes.
+fn drain_frame(window: &mut Headless, view: &mut SaveView) -> Vec<accesskit::Node> {
+    let (_, pairs, _) = window.frame_after(WHEEL_DRAIN_STEP, Vec::new(), |ui| {
+        show(ui, view, &|| Vec::new())
+    });
+    pairs.into_iter().map(|(_, node)| node).collect()
+}
+
 /// One wheel notch (`up` or down) with the pointer at `at`: a pointer
 /// move and the wheel event in one frame.
 fn notch(window: &mut Headless, view: &mut SaveView, at: egui::Pos2, up: bool) {
@@ -1995,13 +2032,24 @@ fn notch(window: &mut Headless, view: &mut SaveView, at: egui::Pos2, up: bool) {
     });
 }
 
-/// `frames` frames with no input: each moves egui's clock by 1/60 s, so
-/// 61 idle past the undo run's one-second pause and 31 past the wheel's
-/// 500 ms pane rest.
+/// `frames` frames with no input, each moving egui's clock 1/60 s: for a
+/// wait counted in frames, a wheel's delta left to run out at 60 frames a
+/// second, or the wheel's 500 ms pane rest, whose constant `studio_core`
+/// keeps private (31 frames pass it). A pause whose constant this crate
+/// holds is waited out with `wait_out`.
 fn idle_frames(window: &mut Headless, view: &mut SaveView, frames: usize) {
     for _ in 0..frames {
         window.frame(Vec::new(), |ui| show(ui, view, &|| Vec::new()));
     }
+}
+
+/// One frame with no input that moves egui's clock `seconds` and one
+/// 60 Hz frame more, so a pause of `seconds` has passed by its end, one
+/// that still holds at exactly `seconds` included.
+fn wait_out(window: &mut Headless, view: &mut SaveView, seconds: f64) {
+    window.frame_after((seconds + 1.0 / 60.0) as f32, Vec::new(), |ui| {
+        show(ui, view, &|| Vec::new())
+    });
 }
 
 /// `text` loaded as an imported ruleset named `file_name` and picked, as
