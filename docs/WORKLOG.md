@@ -4558,10 +4558,13 @@ points there.
     after both (`.tmp/lean/suite_ab2.sh` shape), and the shapes they prove go into
     CONTRIBUTING "Testing and verification". Revisit the helium brief rules that ask for a
     test per call site or per place a text shows, which built much of the repetition;
-    - [~] **p1** (Opus, `sk/lean_p1`) a headless frame that moves egui's clock as far as a
-      wait needs: the undo run's one-second pause, the Multi-team AATF dialog's rest, the
-      wheel helpers' drains in one frame each. `frames_until`'s 20 ms sleep stays: once the
-      rest is out of the polling, it adds at most one sleep to a wait;
+    - [x] **p1** 2026-11-27, merge `ce6239fb` (Opus): a headless frame that moves egui's
+      clock as far as a wait needs (`Headless::frame_after`, `wait_out`), used for the undo
+      run's one-second pause, the Multi-team AATF dialog's rest (`multi_checked`) and the
+      wheel helpers' drains; the player list is wheeled to its end in 13 frames instead of
+      342. `frames_until`'s 20 ms sleep stays: once the rest is out of the polling, it adds
+      at most one sleep to a wait. Tier 3: one SWE-2 round over p1 and p2 together, once p2
+      lands;
     - [~] **p2** (SWE-2) four tests narrowed, every assertion kept: the id-order test checks
       701-703 and the overflowing-list test thirty teams, not all ~220; the overlap test's
       Multi-team AATF screens use thirty teams, its menu dialogs one save per version;
