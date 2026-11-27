@@ -693,8 +693,17 @@ and no phase closes with one outstanding.
         changes that lane's line alone (in `79c169f9` a lane added moved others' columns and
         rewrote about 40 rows). Its tests pass on Windows and on the VPS, and in Chromium the
         page lays out as before, element for element;
-        - [~] **S1roadmapcols** one SWE-2 review round over `dabd71ff` (scripts), running in
-          the worktree `4cc-studio-temp/review_cols`;
+        - [x] **S1roadmapcols** 2026-11-27, SWE-2's round over `dabd71ff` (rulings
+          `.tmp/lead/rulings_s1roadmapcols.md`): 3 accepted, so the loop ended; no review
+          is owed. A new lane column or a longer step ID still moves the label column and
+          rewrites every row, which predates roadmapcols (`roadmaplabels`);
+        - [ ] **fixcols** [after S1roadmapcols] the lead's fixes: `laid_out`'s docstring,
+          `circles` returning `laid_out`'s rows alone, two wording nits (the rulings name
+          them); tests on Windows and the VPS;
+        - [ ] **roadmaplabels** [after S1roadmapcols] count, over the worklog commits since
+          `aa38ed7b`, how often the label column moved (a new lane column, or a step ID
+          longer than every other), before any fix: a fixed label column would change
+          the page's look;
       - [x] **S1roadmapdiff** 2026-11-27 `782055a8`, SWE-2's round: 3 accepted (the
         page's own script now runs under test, with values worked out by hand; the lanes'
         ends and the band label asserted; a line count corrected), none on a real input,
