@@ -1962,7 +1962,10 @@ class WholeRun(unittest.TestCase):
         ):
             self.assertEqual(mutants.main(["mutants.py", "--remote-extra", "cpk"]), 0)
         self.assertEqual(
-            runs, [(("cpk", list(mutants.EXTRA_KINDS)), {"selection": None, "jobs": mutants.REMOTE_EXTRA_JOBS})]
+            runs, [(("cpk", list(mutants.EXTRA_KINDS)), {
+                "selection": None, "shard": None, "source": None,
+                "jobs": mutants.REMOTE_EXTRA_JOBS,
+            })]
         )
         record = json.loads(
             (self.root / "extra_mutants.out" / "run.json").read_text(encoding="utf-8")
@@ -2001,8 +2004,14 @@ class WholeRun(unittest.TestCase):
         self.assertEqual(
             runs,
             [
-                (("cpk", ["call"]), {"selection": None, "jobs": mutants.REMOTE_EXTRA_JOBS}),
-                (("cpk", ["call", "bool"]), {"selection": None, "jobs": mutants.REMOTE_EXTRA_JOBS}),
+                (("cpk", ["call"]), {
+                    "selection": None, "shard": None, "source": None,
+                    "jobs": mutants.REMOTE_EXTRA_JOBS,
+                }),
+                (("cpk", ["call", "bool"]), {
+                    "selection": None, "shard": None, "source": None,
+                    "jobs": mutants.REMOTE_EXTRA_JOBS,
+                }),
             ],
         )
 
@@ -2026,8 +2035,61 @@ class WholeRun(unittest.TestCase):
             )
         self.assertEqual(
             runs,
-            [(("cpk", ["call"]), {"selection": Path("../run/selection.json"), "jobs": mutants.REMOTE_EXTRA_JOBS})],
+            [(("cpk", ["call"]), {
+                "selection": Path("../run/selection.json"),
+                "shard": None, "source": None, "jobs": mutants.REMOTE_EXTRA_JOBS,
+            })],
         )
+
+    def test_remote_extra_passes_its_shard_and_source_to_the_pass(self):
+        """A driver's extra shard runs `run_crate` on the job's source with
+        its (k, n) share of the listing; `--selection` may come before or
+        after `--shard` and `--source`."""
+        runs = []
+        with (
+            mock.patch.object(
+                extra_mutants, "run_crate",
+                lambda *a, **k: runs.append((a, k)) or ([], Counter(caught=1), 1.0),
+            ),
+            contextlib.redirect_stdout(io.StringIO()),
+        ):
+            for argv in (
+                ["mutants.py", "--remote-extra", "cpk", "call",
+                 "--shard", "1/2", "--source", "../job/source",
+                 "--selection", "../run/selection.json"],
+                ["mutants.py", "--remote-extra", "cpk", "call",
+                 "--selection", "../run/selection.json",
+                 "--shard", "1/2", "--source", "../job/source"],
+            ):
+                self.assertEqual(mutants.main(argv), 0)
+        expected = {
+            "selection": Path("../run/selection.json"),
+            "shard": (1, 2),
+            "source": Path("../job/source"),
+            "jobs": mutants.REMOTE_EXTRA_JOBS,
+        }
+        self.assertEqual(runs, [(("cpk", ["call"]), expected)] * 2)
+
+    def test_a_malformed_remote_extra_shard_prints_the_usage(self):
+        for bad in ("0", "x/2", "0/0", "2/2"):
+            out = io.StringIO()
+            with (
+                mock.patch.object(
+                    extra_mutants, "run_crate",
+                    lambda *a, **k: self.fail("the pass ran on a bad shard"),
+                ),
+                contextlib.redirect_stdout(out),
+            ):
+                code = mutants.main(
+                    ["mutants.py", "--remote-extra", "cpk", "--shard", bad]
+                )
+            self.assertEqual(code, 1, bad)
+            self.assertIn(
+                "usage: mutants.py --remote-extra <crate> [kinds...] "
+                "[--selection <path>] [--shard <k>/<n>] [--source <path>]",
+                out.getvalue(),
+                bad,
+            )
 
 
 class ExtraOnlyRun(unittest.TestCase):
@@ -6056,7 +6118,9 @@ class ExtraRun(unittest.TestCase):
         assert len(changed) == 1, changed
         return changed[0]
 
-    def run_crate(self, results, only=None, selection=None, lines=None, **kwargs):
+    def run_crate(
+        self, results, only=None, selection=None, lines=None, tree=HEAD_TREE, **kwargs
+    ):
         """`results`: per row of `self.rows`, the mutant's (build result, test
         result) pair — the test result None when the build decides it — or an
         exception for `build` to raise; the test result may be a callable
@@ -6099,7 +6163,7 @@ class ExtraRun(unittest.TestCase):
             contextlib.redirect_stdout(out),
         ):
             result = extra_mutants.run_crate(
-                "cpk", ["bool"], HEAD_TREE, only=only, selection=selection,
+                "cpk", ["bool"], tree, only=only, selection=selection,
                 lines=lines, **kwargs,
             )
         self.last_out = out.getvalue()
@@ -6459,6 +6523,78 @@ class ExtraRun(unittest.TestCase):
             self.run_crate(
                 [((0, ""), (0, "test result: ok"))], selection=bad,
             )
+
+    def test_a_shard_runs_its_round_robin_share_of_the_filtered_list(self):
+        """`shard` (k, n) keeps the rows whose index in the filtered listing
+        is k modulo n, as cargo-mutants' `--sharding round-robin` splits its
+        own mutants."""
+        self.rows = self.rows[:5]
+        results = [((0, ""), (0, "test result: ok"))] * 5
+        _, counts, _ = self.run_crate(results, shard=(0, 2))
+        self.assertCountEqual(self.built, [0, 2, 4])
+        self.assertEqual(sum(counts.values()), 3)
+        _, counts, _ = self.run_crate(results, shard=(1, 2))
+        self.assertCountEqual(self.built, [1, 3])
+        self.assertEqual(sum(counts.values()), 2)
+
+    def test_a_stale_entry_is_written_in_shard_0_alone(self):
+        """Every shard lists the same stale entries; only shard 0 prints and
+        files them, so the triage's list does not repeat them per shard."""
+        self.rows = self.rows[:5]
+        results = [((0, ""), (0, "test result: ok"))] * 5
+        stale = (
+            "crates/libs/cpk/src/read.rs: [bool] stale exclusion: "
+            "flip 11 | removed: true"
+        )
+        listed, _, _ = self.run_crate(results, shard=(0, 2))
+        self.assertIn(stale, listed)
+        self.assertIn(stale, self.last_out)
+        self.assertIn(stale, (self.out_dir / "missed_cpk.txt").read_text(encoding="utf-8"))
+        listed, _, _ = self.run_crate(results, shard=(1, 2))
+        self.assertNotIn(stale, listed)
+        self.assertNotIn(stale, self.last_out)
+        self.assertNotIn(
+            stale, (self.out_dir / "missed_cpk.txt").read_text(encoding="utf-8")
+        )
+
+    def test_a_run_given_its_source_copies_it_without_target_or_its_output(self):
+        """`source` is a job's extracted tree, not a git object: the copies
+        are copied from it, leaving out its top-level `target/` (the map's
+        build) and `extra_mutants.out/` (a pass's own results), and no git
+        tree is read."""
+        source = self.tmp / "source"
+        (source / "crates/libs/cpk/src").mkdir(parents=True)
+        (source / "crates/libs/cpk/src/lib.rs").write_bytes(self.SOURCE)
+        (source / ".cargo").mkdir()
+        (source / ".cargo" / "mutants.toml").write_text(
+            "timeout_multiplier = 5.0\nminimum_test_timeout = 150\n", encoding="utf-8"
+        )
+        (source / "target" / "builds").mkdir(parents=True)
+        (source / "extra_mutants.out").mkdir()
+        # The copies are removed when the run ends: its contents are checked
+        # inside the mutant's own test phase.
+        seen = []
+
+        def check_copy(crate, cwd, timeout):
+            seen.append((
+                (cwd / "crates/libs/cpk/src/lib.rs").exists(),
+                (cwd / "target").exists(),
+                (cwd / "extra_mutants.out").exists(),
+            ))
+            return 0, "test result: ok"
+
+        only = {"crates/libs/cpk/src/lib.rs:1: [bool] flip 1 | removed: true"}
+        with mock.patch.object(
+            mutants, "extract_tree",
+            mock.Mock(side_effect=AssertionError("a git tree was extracted")),
+        ):
+            self.run_crate([((0, ""), check_copy)], only=only, tree=None, source=source)
+        self.assertEqual(len(set(self.build_cwds)), 1)
+        self.assertEqual(seen, [(True, False, False)])
+
+    def test_tree_and_source_together_are_refused(self):
+        with self.assertRaises(ValueError):
+            self.run_crate([], tree=HEAD_TREE, source=self.tmp / "source")
 
     def test_a_standalone_run_with_an_untested_mutant_fails(self):
         for counts, code in ((Counter(caught=3, missed=1), 0), (Counter(caught=3, untested=1), 1)):

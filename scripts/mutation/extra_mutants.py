@@ -37,6 +37,7 @@ import math
 import os
 import queue
 import re
+import shutil
 import signal
 import subprocess
 import sys
@@ -498,14 +499,52 @@ def missed_line(crate_rel: Path, row: list[str], decided: str = "missed") -> str
     return f"{(crate_rel / row[0]).as_posix()}:{row[4]}: {tag}[{row[3]}] {row[6]}"
 
 
+def listed(
+    crate: str, root: Path, kinds: list[str]
+) -> tuple[Path, list[list[str]], list[str], int]:
+    """`crate`'s mutants of `kinds` in the tree at `root`, as `run_crate` reads
+    them: the crate's folder relative to `root`, the lister's rows left after
+    the `[[exclude]]` entries and the config's `exclude_globs`, the
+    stale-entry lines and how many rows were excluded."""
+    crate_rel = crate_dir(crate, root).relative_to(root.resolve())
+    rows = [row for row in list_mutants(root / crate_rel) if row[3] in kinds]
+    excluded, stale = apply_exclusions(rows, crate_rel, exclusions(root), kinds)
+    # The config's `exclude_globs` drop listed mutants the way cargo-mutants
+    # drops the files they match (`glob_matchers` holds its rules).
+    matchers = glob_matchers(mutants_toml(root).get("exclude_globs", []))
+    excluded = [
+        drop or path_excluded((crate_rel / row[0]).as_posix(), matchers)
+        for row, drop in zip(rows, excluded)
+    ]
+    rows = [row for row, drop in zip(rows, excluded) if not drop]
+    return crate_rel, rows, stale, sum(excluded)
+
+
+def copy_source(source: Path, dest: Path) -> None:
+    """Copy `source`, an extracted tree, into `dest`, without its top-level
+    `target/` or `extra_mutants.out/`: the first holds the coverage map's
+    builds, the second another pass's results, and both are large."""
+
+    def leave_out(directory, names):
+        if Path(directory) == source:
+            return {"target", "extra_mutants.out"} & set(names)
+        return set()
+
+    shutil.copytree(source, dest, ignore=leave_out)
+
+
 def run_crate(
     crate: str, kinds: list[str], tree: str | None = None,
     only: set[str] | None = None, selection: Path | None = None,
     lines: dict[str, set[int]] | None = None, jobs: int = mutants.JOBS,
+    shard: tuple[int, int] | None = None, source: Path | None = None,
 ) -> tuple[list[str], Counter, float]:
     """Run every `kinds` mutant the lister finds in `crate`, `jobs` of
     them at once as cargo-mutants' jobs run: git `tree` (the working tree when
-    None) is extracted that many times, and each mutant is applied in one of
+    None) is extracted that many times — or `source`, an extracted tree, is
+    copied that many times, its top-level `target/` and `extra_mutants.out/`
+    left out (`copy_source`); giving both raises ValueError — and each mutant
+    is applied in one of
     the copies, built (`build`) and, when it built, decided by `cargo nextest
     run -p <crate>` (`run_tests`), the baseline — always the full suite —
     measured in the first copy before any mutant. An outcome is appended to
@@ -518,7 +557,12 @@ def run_crate(
     runs only when its own lines — `byte_lines` of its byte range in the
     file it sits in — meet the set for its workspace-relative path; a crate
     none of whose mutants the diff touches prints its 0-mutants line, runs no
-    baseline, writes no files and returns its stale exclusions alone. `selection` is the coverage
+    baseline, writes no files and returns its stale exclusions alone. With
+    `shard` (k, n), after the `lines` and `only` filters, only the rows whose
+    index in the filtered list is k modulo n run (round-robin, as
+    cargo-mutants' `--sharding round-robin` splits its mutants), and the
+    stale-entry lines are shard 0's alone: every shard lists the same ones.
+    `selection` is the coverage
     map's file (`coverage_map.py --extra` writes the extra kinds' entries too):
     each mutant's test phase runs the filter of the entries covering its
     lines, and every gap — a missing file (one line printed), a line no entry
@@ -548,7 +592,10 @@ def run_crate(
                     f"extra_mutants: the selection file at {selection} cannot "
                     f"be read ({error})"
                 )
-    tree = tree or mutants.working_tree()
+    if tree is not None and source is not None:
+        raise ValueError("run_crate takes `tree` or `source`, not both")
+    if source is None:
+        tree = tree or mutants.working_tree()
     copies = [
         mutants.LOCAL_TMPDIR / f"extra-mutants-{os.getpid()}-{index}"
         for index in range(jobs)
@@ -562,23 +609,14 @@ def run_crate(
     wall_start = time.monotonic()
     try:
         for copy_dir in copies:
-            mutants.extract_tree(tree, copy_dir)
+            if source is not None:
+                copy_source(source, copy_dir)
+            else:
+                mutants.extract_tree(tree, copy_dir)
         # The crate's folder as the snapshot holds it, not the live tree: a queued run
         # reaches its turn long after its snapshot.
-        crate_rel = crate_dir(crate, copies[0]).relative_to(copies[0].resolve())
+        crate_rel, rows, stale, excluded = listed(crate, copies[0], kinds)
         config = mutants_toml(copies[0])
-        rows = [row for row in list_mutants(copies[0] / crate_rel) if row[3] in kinds]
-        excluded, stale = apply_exclusions(
-            rows, crate_rel, exclusions(copies[0]), kinds
-        )
-        # The config's `exclude_globs` drop listed mutants the way cargo-mutants
-        # drops the files they match (`glob_matchers` holds its rules).
-        matchers = glob_matchers(config.get("exclude_globs", []))
-        excluded = [
-            drop or path_excluded((crate_rel / row[0]).as_posix(), matchers)
-            for row, drop in zip(rows, excluded)
-        ]
-        rows = [row for row, drop in zip(rows, excluded) if not drop]
         if lines is not None:
             kept = []
             for row in rows:
@@ -592,13 +630,20 @@ def run_crate(
             rows = kept
         if only is not None:
             rows = [row for row in rows if missed_line(crate_rel, row) in only]
+        if shard is not None:
+            rows = [
+                row for index, row in enumerate(rows) if index % shard[1] == shard[0]
+            ]
+        # Every shard lists the same stale entries: shard 0's alone are filed.
+        if shard is not None and shard[0] != 0:
+            stale = []
         # Reported before the baseline's minutes: a stale entry means the code
         # changed under a ruling, worth knowing before the run spends its time.
         for line in stale:
             print(line, flush=True)
         if lines is not None and not rows:
             print(
-                f"extra_mutants: {len(rows)} mutants, {sum(excluded)} excluded",
+                f"extra_mutants: {len(rows)} mutants, {excluded} excluded",
                 flush=True,
             )
             return stale, Counter(), time.monotonic() - wall_start
@@ -607,7 +652,7 @@ def run_crate(
         timeout = timeout_seconds(config, baseline)
         print(
             f"extra_mutants: baseline {baseline:.0f} s, timeout {timeout:.0f} s, "
-            f"{len(rows)} mutants, {sum(excluded)} excluded",
+            f"{len(rows)} mutants, {excluded} excluded",
             flush=True,
         )
         OUT_DIR.mkdir(exist_ok=True)
