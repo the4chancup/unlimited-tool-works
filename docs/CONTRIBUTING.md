@@ -639,6 +639,11 @@ is not caught by the gate and is asked about all the same.
 
 ## Commits
 
+Nothing personal about the maintainer goes into a tracked file or a commit message: where
+they are or will be, when they are away or free, their health, accounts or plans. A wait on
+the maintainer is written as what it waits for ("until the maintainer starts it"), never as
+why. A push publishes it, and the history keeps what a later commit removes.
+
 The first line is `type(scope): summary` (Conventional Commits), scope being the crate or area
 (`fix(vtree): ...`, `feat(studio_core): ...`, `docs(plans): ...`, `chore(workspace): ...`; a
 multi-crate step uses its phase, `feat(phase2): ...`). Types: `feat`, `fix`, `docs`, `test`,
