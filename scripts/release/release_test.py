@@ -289,8 +289,8 @@ class Pure(unittest.TestCase):
         # PES 2017, DBC's game, so the window opens on the save its testers bring.
         self.assertEqual(settings["common"]["pes_version"], 17)
         source = (ROOT / "crates/libs/aatf/src/templates.rs").read_text(encoding="utf-8")
-        blocks = source.split("const BLOCKS: &[(&str, &str)] = &[", 1)[1].split("];", 1)[0]
-        stems = re.findall(r'^\s*\("([a-z0-9]+)",', blocks, re.MULTILINE)
+        blocks = source.split("const BLOCKS: ", 1)[1].split(" = &[", 1)[1].split("];", 1)[0]
+        stems = re.findall(r'\(\s*"([a-z0-9]+)",', blocks)
         self.assertIn("autumn26", stems, "the stems are read from the table")
         self.assertIn(settings["save-editor"]["aatf_ruleset"], stems)
         self.assertIs(settings["compiler"]["multicpk_mode"], False)
