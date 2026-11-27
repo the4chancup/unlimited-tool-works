@@ -214,7 +214,7 @@ mutants-closure *crates:
 mutants-rolling *args:
     {{python}} scripts/mutation/rolling.py {{args}}
 
-# The mutation driver: `queue <crate>` adds a whole-crate job, `run` takes its shards on this PC
+# The mutation driver: `queue <crate>` adds a whole-crate job, `run` takes its shards on this PC (`--lane vps` on the VPS), `deploy` installs the VPS lane
 driver *args:
     {{python}} scripts/mutation/driver.py {{args}}
 

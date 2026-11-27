@@ -5,7 +5,8 @@ load (the gates' build once crashed it under memory pressure;
 
 The tree goes over as a mutation run sends it (`mutants.snapshot`,
 `mutants.transfer`), into the same remote clone, so this refuses to start while
-a remote mutants half is running or uncollected, or other gates run there —
+a remote mutants half is running or uncollected, other gates run there, or the
+mutation driver's VPS lane runs a shard there (`mutants.SHARD_UNIT`) —
 the refusal's check through the unit's whole run (the `--wait --pipe` call)
 and the `target/` removal under the remote lock
 (`mutants.REMOTE_LOCK`, `mutants.remote_refusal`), so a run launched meanwhile
