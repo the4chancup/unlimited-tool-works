@@ -170,11 +170,15 @@ mod tests {
         }
     }
 
-    /// Each embedded ruleset's description in `BLOCKS` is the file's
-    /// `name`, so the dropdown's table cannot drift from the files.
+    /// `builtin_descriptions` gives every embedded ruleset's stem and
+    /// its file's `name`, in `BLOCKS`' order, so the dropdown's table
+    /// cannot drift from the files.
     #[test]
     fn every_description_is_its_files_name() {
-        for &(stem, description, block) in BLOCKS {
+        let descriptions: Vec<(&str, &str)> = builtin_descriptions().collect();
+        assert_eq!(descriptions.len(), BLOCKS.len());
+        for (&(stem, description), &(block_stem, _, block)) in descriptions.iter().zip(BLOCKS) {
+            assert_eq!(stem, block_stem);
             let ruleset = Ruleset::from_data_block(block).expect("an embedded ruleset loads");
             assert_eq!(ruleset.name, description, "{stem}");
         }

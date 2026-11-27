@@ -356,7 +356,7 @@ pub(super) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
         .show_ui(ui, |ui| {
             for &(stem, name) in builtins() {
                 if combo_label(ui, key == *stem, name).clicked() {
-                    picked = Some((*stem).to_owned());
+                    picked = Some(stem.to_owned());
                 }
             }
             if !view.imported.is_empty() {
