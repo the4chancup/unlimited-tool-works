@@ -453,6 +453,7 @@ fn multi_aatf(version: PesVersion) -> Screens {
     // `settled`'s three frames are well inside the thirty-team range's
     // 500 ms rest.
     let checking = settled_over(&mut window, &mut view, "Multi-team AATF");
+    wait_out(&mut window, &mut view, crate::view::multi_aatf::REST);
     frames_until(
         &mut window,
         &mut view,
