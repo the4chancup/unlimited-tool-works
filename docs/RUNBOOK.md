@@ -143,8 +143,10 @@ they were next needed.
 
 ## Mutation runs and the VPS
 
-**Whole-crate mutation runs go to the VPS alone.** A whole-crate run (`just mutants
-<crate>`, its extra kinds included) runs every mutant on bonfire, nothing on this machine:
+**A whole-crate run started by hand goes to the VPS alone.** The rolling job's runs are the
+mutation driver's, split between both machines in shards (below), so a stop here loses one
+shard at most. A run by hand (`just mutants <crate>`, its extra kinds included) runs
+every mutant on bonfire, nothing on this machine:
 it is medium priority, so a slower result (about 2.5 times the split's: `save_editor`'s
 1990 mutants ran about 27 an hour here and 17 there) is fine, while a long local run blocks
 in-game checks on the Fox versions and a restart of this machine for an update, and a power
@@ -306,26 +308,30 @@ ones, or every workspace crate) changed since its recorded commit. A crate with 
 is listed and makes the run exit 1, as untested mutants do, until a whole run of it is
 triaged.
 
-**`just mutants-rolling` runs the whole-crate runs nobody waits on.** Each turn
-it picks the crate checked longest ago, the later of its
-`.cargo/mutants_checked.toml` commit and the commit its last rolling run was
-launched from, and runs a whole-crate run on that commit's tree (never the
-working tree's edits). The lead starts it detached (`python
-~/.claude/tools/run_detached.py <log> just mutants-rolling`) and leaves it
-running. A crate's results land in `mutants.rolling/<crate>/` (`out/` its
-fetched `mutants.out`, `extra/` its extra pass, `launched_from.txt` the commit
-it ran from), and triaging them ends with `just mutants-checked <crate>`, which
-moves the closure's diff past that commit. When the VPS is
-needed for the checkpoint's Linux gates before a push, `.tmp/rolling.hold` is
-the way to free it without stopping the job: create the file and the job
-finishes its crate and waits; delete it and it goes on. A run the VPS refuses
-(busy) or that fails is retried after a wait, never counted. A run the job lost track of
-(the job was stopped, or its wait on the VPS failed) is collected and filed under its crate
-before the job picks its next crate, so a stopped job is just started again. When that run's
-VPS half died (the VPS was rebooted under it), its partial results are filed with no
-`launched_from.txt`, so the crate is not dated and comes up again. While the VPS cannot be
-reached, the job keeps the lost run's record and tries the collect again each turn, running
-no other crate meanwhile.
+**The mutation driver's rolling job runs the whole-crate runs nobody waits on.** The lead
+starts the driver on the maintainer's PC detached (`python ~/.claude/tools/run_detached.py
+<log> just driver run`) and leaves it running. Whenever its queue holds no job, it queues
+the crate checked longest ago, with its extra pass, on `HEAD`'s commit (never the working
+tree's edits). "Checked longest ago" means the later of the crate's
+`.cargo/mutants_checked.toml` commit's date and the time its last rolling job was filed.
+The job is queued only when it can be sent to the VPS, so `STUDIO_MUTANTS_REMOTE` must name
+the host. Both lanes, the PC's and the VPS's, take its shards, but only the VPS lane runs
+those of the extra pass. A finished job lands in `mutants.rolling/<crate>/` of the tree the
+driver runs from, the crate's earlier one set aside as `<crate>.old`:
+
+- `result.json` holds the run's exit code and its missed, untested and rechecked mutants;
+- `shard-<k>/` holds each shard's results;
+- `launched_from.txt` holds the commit it ran from.
+
+Triaging its survivors ends with `just mutants-checked <crate>`, which moves the closure's
+diff past that commit. A driver that was stopped resumes from its folders at its next start.
+When the VPS is needed for the checkpoint's Linux gates before a push, the VPS lane's hold
+file frees it without stopping the driver. Each lane has one: while it exists, the lane
+finishes the shard it is running and takes no new one, and once it is deleted the lane goes
+on. The VPS lane's is `~/studio-driver/hold-vps` on the VPS. The PC lane's is `hold-pc` in
+the driver's folder (`%LOCALAPPDATA%\4cc-studio\driver`), and it also stops the PC from
+queuing a crate. Both are made and deleted by hand, until `just gates-remote` handles the
+VPS's.
 
 **When the maintainer's PC is suspect, the heavy runs go to the VPS.** Four
 `MEMORY_MANAGEMENT` bugchecks there (the last during a run, all four in `rustc.exe` at one

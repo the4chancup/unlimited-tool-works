@@ -11,7 +11,7 @@
 /mutants.diff.old/
 /mutants.shards/
 
-# The rolling job's kept whole-crate runs (`just mutants-rolling`)
+# The rolling job's kept whole-crate runs (`just driver run`)
 /mutants.rolling/
 /mutants.rolling.old/
 

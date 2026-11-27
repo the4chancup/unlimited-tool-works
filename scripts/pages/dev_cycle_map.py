@@ -161,10 +161,11 @@ NODES = [
     ("extra", "Extra mutant kinds", "mutation", 5, 1,
      "bool, call, literal, normalize and order mutants cargo-mutants does not make, run in "
      "every mutation run into the same survivor list: a diff run's over the lines it changed."),
-    ("whole", "Whole-crate run (VPS)", "mutation", 5, 2,
-     "Every mutant of a crate, on the VPS alone, as a rolling job: one crate after another, "
-     "the one checked longest ago first, nobody waiting. Its triage records the commit it "
-     "ran from, where the closure run starts."),
+    ("whole", "Whole-crate run (VPS, PC)", "mutation", 5, 2,
+     "Every mutant of a crate, run as the mutation driver's rolling job with nobody "
+     "waiting: whenever the driver's queue is empty, it queues the crate checked longest "
+     "ago and splits its mutants between the VPS and the lead's PC. Its triage records the "
+     "commit it ran from, where the closure run starts."),
     ("closure", "Closure run", "mutation", 5, 3,
      "mutants-diff over what each crate changed since its last triaged whole-crate run: twice "
      "per phase, in the lead's audit and at the close. The next phase starts while it runs."),

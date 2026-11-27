@@ -33,6 +33,9 @@ import mutants_diff  # noqa: E402
 HEAD_TREE = subprocess.run(
     ["git", "rev-parse", "HEAD^{tree}"], cwd=SCRIPTS, capture_output=True, text=True, check=True
 ).stdout.strip()
+HEAD_COMMIT = subprocess.run(
+    ["git", "rev-parse", "HEAD"], cwd=SCRIPTS, capture_output=True, text=True, check=True
+).stdout.strip()
 # The fake VPS's shell. On Windows a bare `bash` may be WSL's, so Git Bash's.
 if os.name == "nt":
     BASH = Path(os.environ.get("ProgramFiles", "C:/Program Files")) / "Git" / "bin" / "bash.exe"
@@ -89,6 +92,13 @@ class Driver(unittest.TestCase):
             mock.patch.object(mutants, "remote_host", lambda: None),
             mock.patch.object(mutants, "LOCAL_TMPDIR", self.root / "local-tmp"),
             mock.patch.object(mutants, "COST_CACHE", self.root / "mutants-cost.json"),
+            mock.patch.object(mutants_diff, "ROLLING", self.root / "mutants.rolling"),
+            mock.patch.object(mutants_diff, "CHECKED", self.root / "mutants_checked.toml"),
+            # The rolling job's crate list runs cargo: a test reaching it fails.
+            mock.patch.object(
+                driver.extra_mutants, "workspace_crates",
+                lambda root: self.fail("a test reached cargo metadata"),
+            ),
             mock.patch.object(mutants, "extract_tree", self.extract_tree),
             mock.patch.object(mutants, "local_mutants", self.local_mutants),
             mock.patch.object(mutants, "update_cost_cache", self.costed.append),
@@ -102,6 +112,8 @@ class Driver(unittest.TestCase):
         ])
         self.assertTrue(driver.DRIVER.is_relative_to(self.root))
         self.assertTrue(mutants.COST_CACHE.is_relative_to(self.root))
+        self.assertTrue(mutants_diff.ROLLING.is_relative_to(self.root))
+        self.assertTrue(mutants_diff.CHECKED.is_relative_to(self.root))
 
     def enter(self, patches) -> None:
         for patch in patches:
@@ -253,8 +265,10 @@ class Driver(unittest.TestCase):
         return self.home / "studio-driver" / "queue"
 
     @contextlib.contextmanager
-    def run_lock(self):
-        self.locked = True
+    def run_lock(self, path=None):
+        """`mutants.run_lock`: `self.locked` is True under the build slot, or
+        the path of any other lock, while it is held."""
+        self.locked = True if path is None else path
         try:
             yield
         finally:
@@ -331,6 +345,48 @@ class Driver(unittest.TestCase):
         )
         self.assertEqual(self.extracted, [HEAD_TREE])
         self.assertRegex(spec["queued"], r"^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ$")
+
+    def test_queue_records_head_s_commit_and_takes_the_tree_from_it(self):
+        """One resolution of `HEAD`: the tree is the recorded commit's, so a
+        commit landing between two reads cannot pair one with the other."""
+        asked = []
+        git = mutants.git
+
+        def recording(*args, **kwargs):
+            asked.append(args)
+            return git(*args, **kwargs)
+
+        with mock.patch.object(mutants, "git", recording):
+            job = driver.queue("cpk", 1)
+        spec = driver.read_job(job)
+        self.assertEqual((spec["commit"], spec["tree"]), (HEAD_COMMIT, HEAD_TREE))
+        self.assertEqual(
+            asked, [("rev-parse", "HEAD"), ("rev-parse", f"{HEAD_COMMIT}^{{tree}}")]
+        )
+        self.assertNotIn("rolling", spec, "a job queued by hand is no rolling job")
+
+    def test_a_sent_rolling_job_is_marked_rolling(self):
+        self.fake_vps()
+        job = driver.queue("cpk", 2, 0, rolling=True)
+        self.assertIs(driver.read_job(job)["rolling"], True)
+        self.assertTrue((job / "sent.json").exists())
+        self.assertIs(
+            json.loads((self.remote_queue() / job.name / "job.json").read_text(encoding="utf-8"))
+            ["rolling"],
+            True,
+        )
+
+    def test_a_rolling_job_that_is_not_sent_is_not_queued(self):
+        """With no host, or when the send fails, the job is dropped whole:
+        a rolling job runs its extra pass, which only the VPS lane runs."""
+        self.assertIsNone(driver.queue("cpk", 2, 0, rolling=True))
+        self.assertEqual(list((self.driver / "queue").iterdir()), [], "no job and no .tmp")
+        self.assertEqual(self.out.getvalue().count("cpk not queued"), 1)
+        self.fake_vps(fail="tar -xf")
+        self.assertIsNone(driver.queue("cpk", 2, 0, rolling=True))
+        self.assertEqual(list((self.driver / "queue").iterdir()), [], "no job and no .tmp")
+        self.assertEqual(list(self.remote_queue().iterdir()), [])
+        self.assertEqual(self.out.getvalue().count("cpk not queued"), 2)
 
     def test_shard_count(self):
         threshold = mutants.SPLIT_THRESHOLD_SECONDS
@@ -539,6 +595,163 @@ class Driver(unittest.TestCase):
             driver.run()
         self.assertEqual(sleeps, [driver.POLL_SECONDS] * 3)
         self.assertEqual(self.out.getvalue().count("hold-pc"), 2)
+
+    def rolling_turns(self, queue=lambda: None) -> list[float]:
+        """`driver.queue_rolling` replaced by `queue` for the test; each call's
+        `time.monotonic()` is appended to the list returned."""
+        turns = []
+
+        def queue_rolling():
+            turns.append(driver.time.monotonic())
+            return queue()
+
+        self.enter([mock.patch.object(driver, "queue_rolling", queue_rolling)])
+        return turns
+
+    def test_this_pc_s_lane_queues_the_rolling_job_on_an_empty_queue_and_claims_it(self):
+        queued = []
+
+        def queue():
+            if queued:
+                raise Stop
+            queued.append(driver.queue("cpk", 2, 0))
+            return queued[0]
+
+        turns = self.rolling_turns(queue)
+        with (
+            mock.patch.object(driver.time, "sleep", self.unexpected_sleep),
+            self.assertRaises(Stop),
+        ):
+            driver.run()
+        self.assertEqual(len(turns), 2, "queued, then the next empty pass stopped")
+        # Claimed at once: a wait would have raised Stop before either shard.
+        self.assertEqual([shard_of(args) for args in self.calls], ["0/2", "1/2"])
+        self.assertTrue(self.done(queued[0]).exists())
+
+    def test_with_once_the_lane_never_queues_the_rolling_job(self):
+        turns = self.rolling_turns()
+        self.assertEqual(driver.run(once=True), 0)
+        self.assertEqual(turns, [])
+
+    def test_the_vps_lane_never_queues_the_rolling_job(self):
+        self.vps_lane()
+        turns = self.rolling_turns()
+        with self.assertRaises(Stop):
+            driver.run()
+        self.assertEqual(turns, [])
+
+    def test_a_job_in_the_queue_keeps_the_rolling_job_out(self):
+        """A sent job whose every shard runs on the VPS leaves this lane
+        nothing to claim, and still no rolling job is queued beside it."""
+        job, remote = self.sent_job(shards=1)
+        (remote / "shard-0.todo").rename(remote / "shard-0.vps")
+        turns = self.rolling_turns()
+        with (
+            mock.patch.object(driver.time, "sleep", self.unexpected_sleep),
+            self.assertRaises(Stop),
+        ):
+            driver.run()
+        self.assertEqual(turns, [])
+        self.assertTrue(job.exists())
+
+    def test_after_queuing_nothing_the_lane_waits_the_retry_time_before_trying_again(self):
+        # Each wait moves the clock by 2/5 of the retry time: the third pass,
+        # at 4/5, is inside it, and the fourth, at 6/5, past it.
+        step = driver.ROLLING_RETRY_SECONDS * 2 // 5
+        clock = [0]
+
+        def sleep(seconds):
+            self.assertEqual(seconds, driver.POLL_SECONDS)
+            if clock[0] == 6 * step:
+                raise Stop
+            clock[0] += step
+
+        turns = self.rolling_turns()
+        with (
+            mock.patch.object(driver.time, "monotonic", lambda: clock[0]),
+            mock.patch.object(driver.time, "sleep", sleep),
+            self.assertRaises(Stop),
+        ):
+            driver.run()
+        self.assertEqual(turns, [0, 3 * step, 6 * step])
+
+    CRATES = ("cpk", "fpc", "fpk")
+
+    def test_pick_prefers_the_crate_checked_longest_ago(self):
+        # `checked` holds commits, dated by `date`; `launched` holds the times
+        # the kept runs ended.
+        dates = {"cpk-checked": 300, "fpc-checked": 500}
+        checked = {"cpk": "cpk-checked", "fpc": "fpc-checked"}
+        launched = {"fpc": 100}
+        date = dates.__getitem__
+        # fpk has neither a checked commit nor a kept run, so it comes first.
+        self.assertEqual(
+            driver.pick(list(self.CRATES), checked, launched, date), "fpk"
+        )
+        # Its last check is then its kept run's: 200 < 300 < 500.
+        launched = {**launched, "fpk": 200}
+        self.assertEqual(
+            driver.pick(list(self.CRATES), checked, launched, date), "fpk"
+        )
+        # A tie on the last check breaks on the name.
+        same = {"cpk-checked": 400, "fpc-checked": 400}
+        self.assertEqual(
+            driver.pick(
+                list(self.CRATES), checked, {"fpc": 400, "fpk": 400}, same.__getitem__
+            ),
+            "cpk",
+        )
+
+    def test_a_run_that_just_ended_goes_last_while_head_stands_still(self):
+        """Every crate recorded at one commit, and cpk's run just ended,
+        launched from that same commit: cpk goes to the back, not to the
+        front again by its launch commit's old date and its name."""
+        checked = dict.fromkeys(self.CRATES, "c" * 40)
+        date = {"c" * 40: 100}.__getitem__
+        self.assertEqual(
+            driver.pick(list(self.CRATES), checked, {"cpk": 900}, date), "fpc"
+        )
+        # The kept run's time is when it ended: its file's.
+        kept = mutants_diff.ROLLING / "cpk" / "launched_from.txt"
+        kept.parent.mkdir(parents=True)
+        kept.write_text("c" * 40 + "\n", encoding="utf-8")
+        os.utime(kept, (900, 900))
+        self.assertEqual(driver.launched_times(), {"cpk": 900})
+
+    def test_queue_rolling_queues_the_crate_pick_names_with_its_extra_pass(self):
+        """Each of the three readings decides: with the checked commits left
+        out cpk would come first, with the kept runs' times left out fmdl, and
+        fpc, never checked, is a local-only crate."""
+        commits = {"cpk": "c" * 40, "fmdl": "d" * 40, "fpk": "e" * 40}
+        dates = {"c" * 40: 700, "d" * 40: 300, "e" * 40: 650}
+        for crate, commit in commits.items():
+            mutants_diff.write_checked(crate, commit, mutants_diff.CHECKED)
+        for crate, ended in {"cpk": 400, "fmdl": 800, "fpk": 650}.items():
+            kept = mutants_diff.ROLLING / crate / "launched_from.txt"
+            kept.parent.mkdir(parents=True)
+            kept.write_text(commits[crate] + "\n", encoding="utf-8")
+            os.utime(kept, (ended, ended))
+        queued = []
+        job = self.root / "a job"
+        with (
+            mock.patch.object(mutants, "remote_host", lambda: "bonfire"),
+            mock.patch.object(
+                driver.extra_mutants, "workspace_crates",
+                lambda root: {name: root / name for name in ("cpk", "fmdl", "fpc", "fpk")},
+            ),
+            mock.patch.object(mutants, "LOCAL_ONLY_CRATES", frozenset({"fpc"})),
+            mock.patch.object(driver, "commit_date", dates.__getitem__),
+            mock.patch.object(
+                driver, "queue", lambda *args, **kwargs: queued.append((args, kwargs)) or job
+            ),
+        ):
+            self.assertEqual(driver.queue_rolling(), job)
+        self.assertEqual(queued, [(("fpk",), {"extra": None, "rolling": True})])
+
+    def test_queue_rolling_without_a_host_queues_nothing(self):
+        with mock.patch.object(driver, "queue", lambda *a, **k: self.fail("a job was queued")):
+            self.assertIsNone(driver.queue_rolling())
+        self.assertIn("STUDIO_MUTANTS_REMOTE", self.out.getvalue())
 
     def test_a_second_driver_leaves_the_queue_alone(self):
         job = self.queue()
@@ -967,9 +1180,12 @@ class Driver(unittest.TestCase):
             else:
                 raise Stop
 
+        # The finish empties the queue, so the lane's next pass turns to the rolling job.
+        turns = self.rolling_turns()
         with mock.patch.object(driver.time, "sleep", sleep), self.assertRaises(Stop):
             driver.run()
         self.assertEqual(len(sleeps), 2)
+        self.assertEqual(len(turns), 1)
         self.assertTrue(self.done(job).exists(), "finished between the two waits")
         self.assertFalse(remote.exists())
 
@@ -1127,6 +1343,58 @@ class Driver(unittest.TestCase):
             driver.finish(job)
         self.assertEqual(self.result(job)["code"], 1)
         self.assertEqual(self.result(job)["missed"], ["extra missed"])
+
+    def test_a_rolling_job_s_finish_files_it_under_its_crate(self):
+        """A rolling job ends in `mutants.rolling/<crate>/`, where the triage
+        and `mutants-checked` read it: the crate's earlier one set aside as
+        `<crate>.old`, and `launched_from.txt` holding the job's commit. A
+        job queued by hand ends in `done/`
+        (`test_a_job_s_first_shard_runs_the_baseline_and_the_job_ends_in_done`)."""
+        filed = mutants_diff.ROLLING / "cpk"
+        filed.mkdir(parents=True)
+        (filed / "result.json").write_text("earlier\n", encoding="utf-8")
+        (filed / "launched_from.txt").write_text("c" * 40 + "\n", encoding="utf-8")
+        self.fake_vps()
+        job = driver.queue("cpk", 2, 0, rolling=True)
+        remote = self.remote_queue() / job.name
+        self.ended_shard(job, 0, ["missed in cpk shard 0"], 2, vps=True)
+        self.ended_shard(job, 1, [], 0, vps=False)
+        moved_under = []
+        move_results = mutants.move_results
+
+        def recording(folder, target):
+            moved_under.append(self.locked)
+            move_results(folder, target)
+
+        with mock.patch.object(mutants, "move_results", recording):
+            self.assertEqual(driver.finish(job), filed)
+        self.assertEqual(
+            moved_under, [mutants.tree_lock_path()] * 2,
+            "the earlier folder's move aside and the job's, both under the tree lock",
+        )
+        self.assertFalse(job.exists())
+        self.assertEqual(list(self.driver.glob("done/*")), [])
+        self.assertFalse(remote.exists(), "the VPS's copy goes with the finish")
+        self.assertEqual(
+            sorted(p.name for p in filed.iterdir()),
+            ["job.json", "launched_from.txt", "result.json", "sent.json",
+             "shard-0", "shard-0.done", "shard-1", "shard-1.done"],
+        )
+        self.assertEqual(
+            json.loads((filed / "result.json").read_text(encoding="utf-8")),
+            {"code": 2, "missed": ["missed in cpk shard 0"], "untested": [], "rechecked": []},
+        )
+        self.assertEqual(
+            (filed / "shard-0" / "mutants.out" / "missed.txt").read_text(encoding="utf-8"),
+            "missed in cpk shard 0\n",
+        )
+        self.assertEqual(
+            (filed / "launched_from.txt").read_text(encoding="utf-8"), HEAD_COMMIT + "\n"
+        )
+        old = mutants_diff.ROLLING / "cpk.old"
+        self.assertEqual((old / "result.json").read_text(encoding="utf-8"), "earlier\n")
+        self.assertEqual((old / "launched_from.txt").read_text(encoding="utf-8"), "c" * 40 + "\n")
+        self.assertIn(str(filed), self.out.getvalue().splitlines()[-1])
 
     def test_the_vps_lane_runs_a_job_s_shards_and_finishes_nothing(self):
         job = self.queue(shards=2)
