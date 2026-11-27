@@ -74,6 +74,7 @@ test:
     {{script_test}} scripts/mutation/mutants_test.py
     {{script_test}} scripts/mutation/select_tests_test.py
     {{script_test}} scripts/mutation/coverage_map_test.py
+    {{script_test}} scripts/mutation/driver_test.py
     {{script_test}} scripts/review/perturb_check_test.py
     {{script_test}} scripts/review/clones_test.py
     {{script_test}} scripts/drafts/bundle_drafts_test.py
@@ -117,6 +118,7 @@ test-changed base="HEAD":
     {{script_test}} scripts/mutation/mutants_test.py
     {{script_test}} scripts/mutation/select_tests_test.py
     {{script_test}} scripts/mutation/coverage_map_test.py
+    {{script_test}} scripts/mutation/driver_test.py
     {{script_test}} scripts/review/perturb_check_test.py
     {{script_test}} scripts/review/clones_test.py
     {{script_test}} scripts/drafts/bundle_drafts_test.py
@@ -211,6 +213,10 @@ mutants-closure *crates:
 # Whole-crate runs one after another on the mutants host, the crate checked longest ago first; started detached and left running, each run's results kept per crate in mutants.rolling/ for triage
 mutants-rolling *args:
     {{python}} scripts/mutation/rolling.py {{args}}
+
+# The mutation driver: `queue <crate>` adds a whole-crate job, `run` takes its shards on this PC
+driver *args:
+    {{python}} scripts/mutation/driver.py {{args}}
 
 # Record the commit <crate>'s last whole run was launched from, once its survivors are triaged (.cargo/mutants_checked.toml): a rolling run's is read from its results, a run started by hand names it
 mutants-checked crate *commit:
