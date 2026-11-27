@@ -90,9 +90,9 @@ fn install_panic_hook() {
 #[cfg(test)]
 mod tests {
     use std::fs;
-    use std::path::{Path, PathBuf};
     use std::panic;
-    use std::sync::{mpsc, Arc, Barrier};
+    use std::path::{Path, PathBuf};
+    use std::sync::{Arc, Barrier, mpsc};
     use std::thread;
 
     use super::{build_folder, fresh};
