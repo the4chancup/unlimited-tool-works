@@ -663,10 +663,10 @@ and no phase closes with one outstanding.
       - [x] **TS1** 2026-11-27: SWE-2.1 High over the slices' code in three parts. Nine
         concerns accepted, one of them a real input (a test's loop empties the folder a
         background check it started may still read), so a second round follows the fixes;
-      - [x] **ts1a** 2026-11-27, merge `f8b8dad8`: `test_scratch`'s own fixes: tests that a
+      - [x] **ts1a** 2026-11-27, merge `07781646`: `test_scratch`'s own fixes: tests that a
         folder left by an earlier run is emptied, that the panic flag is per thread, where the
         build folder is and that the panic hook chains, and its texts;
-      - [x] **ts1b** 2026-11-27, merge `ef177392`: the other crates' fixes: `help_export`
+      - [x] **ts1b** 2026-11-27, merge `008bcacd`: the other crates' fixes: `help_export`
         exports into a missing folder, the sideload loop joins its check, two comments that
         still described the removed `Drop` are fixed, and about 130 lines that created or
         removed a folder `fresh` already handles are gone;
