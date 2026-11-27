@@ -20462,3 +20462,19 @@ estimated 30 s of `save_editor`'s 396 s of summed test time (worklog `LEAN/rest`
 text, which would be a second reader of the rules format; the table costs an edit when a
 `name` changes, and the test fails until it is made.
 Plan: `plans/aatf_rules.md` "Embedded rulesets" edited.
+
+## 2026-11-27 — aatf, save_editor — the per-player rules calls take the team's height system, read once per team
+Decision: the logic gains a fifth function the host calls, `team_height_system(team)`, and
+`tier_values`, `card_limits` and `player_tier` take its answer as a last parameter instead of
+working the system out. The host reads a team once (`Rules::team_reading`, a `TeamReading`
+holding the team and its system), and the per-player methods and `apply_tier` take that
+reading in place of the team.
+Why: each per-player call read the whole team under every candidate system first, and under
+DBC7 ran every check under each candidate too: 88 ms a call in a test build with Rhai
+optimized, so a formation picture's 23 slots took about 2 s a team (worklog `AATFSPEED`).
+Not the system kept inside the logic, which Rhai cannot do between calls; not a host cache
+by team, which would need the save's revision to stay right; not one call returning every
+slot's tier, since the badge and the quick actions ask for one player. The logic stays
+version 1 until 1.0.0, so a file saved under the earlier logic reads as modified and fails
+load step 1; no such file has been made outside the tests.
+Plan: `plans/aatf_rules.md` "The interpreter" edited.

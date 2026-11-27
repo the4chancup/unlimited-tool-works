@@ -549,10 +549,10 @@ Every surface that shows results (the Save editor's Live AATF, the Team creator'
 suggestions" toggle, off by default, and lists them apart from errors and warnings, uncounted.
 
 **The player's own tier.** The logic implements a fourth function the host calls,
-`player_tier(player, team) -> tier id or ()`: the tier `check_team` reads the player as (step
-1's height system for the team, then step 2's recognition), `()` when no tier's `when` holds
-(`check_team`'s `NoTier`). The host's `Rules::player_tier(team, player)` returns the ruleset's
-`Tier`, or none.
+`player_tier(player, team, system) -> tier id or ()`: the tier `check_team` reads the player
+as (step 1's height system for the team, given as `system`, then step 2's recognition), `()`
+when no tier's `when` holds (`check_team`'s `NoTier`). The host's
+`Rules::player_tier(reading, player)` returns the ruleset's `Tier`, or none.
 
 `player_tier` is behind the Save editor's one cards badge (`plans/save_editor.md`, the Cards
 used bullet: "the tier his stats, registered position and height match under that ruleset, as
@@ -563,7 +563,40 @@ does: a widget that recognized tiers in Rust would be a second recognition that 
 checks (recognition before choices, a height system told apart by its quotas, a special that
 moves a threshold), and from a file whose logic is not the build's.
 
-Loading step 1 requires it with its two parameters, like the other three.
+Loading step 1 requires it like the others, with the parameters the next paragraph gives.
+
+**One team reading per team.** The per-player functions take the team's height system instead
+of working it out. The logic implements a fifth function the host calls,
+`team_height_system(team) -> system id or ()`: the system `check_team` reads the team under
+(step 1). `tier_values(player, tier, team, system)`, `card_limits(player, tier, team, system)`
+and `player_tier(player, team, system)` take that id and read the player under it.
+
+Working the system out reads the whole team under each candidate system; under a ruleset whose
+last system takes a team after a quota system failed, it also runs every check under each
+candidate (`team_reading`). Under DBC7 one per-player call took 88 ms in a test build with Rhai
+optimized, as long as the team's whole check. A formation picture asks for its 23 slots' tiers
+one call each, about 2 s a team. Read once, the system serves every slot's call.
+
+On the host, `Rules::team_reading(team: TeamView) -> Result<TeamReading, CheckError>` holds
+the team and its system. `player_tier`, `card_limits`, `tier_values` and `apply_tier` take a
+`&TeamReading` in place of the team, so a caller cannot pair a player with another team's
+system. Each caller reads once per trigger:
+
+- the tactics view's medals and a formation picture, once per team;
+- the cards badge, once per run;
+- a quick action, once per click: `apply_tier`'s settling passes change only the player's
+  view, so the team's system stands for all of them.
+
+A `TeamReading` is not kept between triggers, since a change to any player can change the
+system. We do not keep the system inside the logic between calls, because Rhai keeps no state
+from one call to the next. We do not cache it on the host by team either: the medals and the badge
+already run once per change of the save and a quick action once per click, and such a cache
+would need the save's revision to stay right. Nor does one call return every slot's tier: the badge and the
+quick actions ask for one player, and would read the team as often as now.
+
+Loading step 1 requires the five functions with these parameters. The logic is still version 1
+(frozen at 1.0.0, "Loading and validation"), so a file saved under the earlier logic reads as
+modified and fails step 1; no such file has been made outside the tests.
 
 **Violations in words.** A violation's kind and fields are the program's spelling
 (`FieldedNotA`, `stat=attacking_prowess`); no surface shows them to a person. `team_widgets`

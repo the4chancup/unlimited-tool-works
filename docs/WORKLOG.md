@@ -4462,7 +4462,12 @@ points there.
   the abilities badge makes two calls per player. Direction: one reading per team, which
   every slot's answer then uses (a call returning each slot's tier, or the reading passed
   in). That changes the rules file's functions, so a plan section and a decision come
-  first (`spec/aatf_rules.md`).
+  first (`spec/aatf_rules.md`). Planned 2026-11-27 (`plans/aatf_rules.md` "The interpreter",
+  "One team reading per team"; DECISIONS 2026-11-27 "the per-player rules calls take the
+  team's height system, read once per team"), from a SWE-2 code map of every host caller
+  (`.tmp/swe_map_aatfspeed.findings.md` in the `review_lean` worktree).
+  - [ ] **reading** (Opus): the slice the plan section describes, `aatf` and its
+    `save_editor` callers.
 
 - open (2026-11-26, the maintainer: "eventually") — **SANDBOX**: a SWE-2 reviewer or sidekick
   is fenced only by Devin's deny list (deletes, git commands that discard work), not by
