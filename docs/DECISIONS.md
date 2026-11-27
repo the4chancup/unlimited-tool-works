@@ -20528,3 +20528,19 @@ already reads. The tests run the page's own script, not a Python copy of it, so 
 the code the page runs.
 Plan: no plan edit needed: the page is the lead's tooling, described in `roadmap.py`'s
 docstring; `CONTRIBUTING.md` lists Node.js beside Pillow and psutil for `just test`.
+
+## 2026-11-27 — mutation runs — a job's extra pass runs as shards of its own, on the VPS lane
+Decision: a job queued with its extra pass (the extra kinds' mutants, `EXTRA_KINDS`) gets
+extra shards beside its cargo-mutants shards. They are numbered after them, so they use the
+same markers, claims, fetches and restarts. The VPS lane alone runs them, after the job's
+coverage map, which then also covers the extra kinds (`coverage_map.py --extra`); this PC's
+lane leaves them. A job that stays on this PC gets no extra shards. The finish adds the extra
+survivors to the job's, after rerunning on this PC those that only a Windows-only test
+catches, as a whole run does today. The rolling job (driver slice `d3b`) queues its crates
+this way, so `rolling.py`'s extra pass moves into the driver with it.
+Why: one unsharded extra pass would hold the VPS lane for hours (`save_editor`'s took 27.5),
+which breaks the driver's rule that queued work waits at most one shard. Extra shards on this
+PC's lane would run every mutant against the full suite, since the coverage map is built on
+Linux alone, and the pass would need a second output path there; a VPS-only part keeps one.
+Plan: no plan edit needed: the driver's design is its worklog item (`driver`), whose `d3`
+is split into `d3a` (extra shards) and `d3b` (the rolling job).

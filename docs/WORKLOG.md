@@ -683,12 +683,15 @@ and no phase closes with one outstanding.
       2026-11-27 "the roadmap page places its timeline's rows when it opens"): the page
       computes its timeline's vertical positions when it opens
       (`scripts/pages/roadmap_layout.js`, run by the page and by the tests through node),
-      so a new step adds two page lines; the order, lanes, columns and wrapping stay in
+      so a new step adds two or three page lines; the order, lanes, columns and wrapping stay in
       `roadmap.py`. SWE-2 implemented it; the lead's review fixed the "now" line, which
       had no position when no step was in progress or done that week. In Chromium the page matches the old one element by
       element, with and without steps in progress. Its tests pass on Windows and on the VPS,
       which now has node for them;
-      - [ ] **S1roadmapdiff** one SWE-2 review round over `aa38ed7b` (scripts);
+      - [x] **S1roadmapdiff** 2026-11-27 `782055a8`, SWE-2's round: 3 accepted (the
+        page's own script now runs under test, with values worked out by hand; the lanes'
+        ends and the band label asserted; a line count corrected), none on a real input,
+        so the loop ended; no review is owed;
     - [x] **TSREVIEW** 2026-11-27: the review rounds on `TESTSCRATCH`'s slices b and c,
       rulings in `.tmp/duck_rulings.md`. The SWE-2.1 loop (**TS1**, fixed in **ts1a** and
       **ts1b**, merges `07781646` and `008bcacd`; **TS2**, `712ccf84`), Carbon's paid round
@@ -1023,13 +1026,29 @@ and no phase closes with one outstanding.
               Its tests pass on Windows and Linux (the VPS). d2b and d2c are deployed
               (2026-11-27). d2b's first real run finished the trial job on this PC: it
               fetched both shards, filed the job and removed the VPS's copy;
-          - [ ] **d3** [after d2] the rolling job's shards when nothing is queued, on both
-            lanes; `rolling.py` and `.tmp/rolling.hold` go, `gates-remote` takes the VPS
-            lane's hold, and RUNBOOK "Mutation runs and the VPS" is rewritten. Once this
-            PC's lane runs shards, its mutant logs are read for a catch whose only failure
-            is nextest's `TIMEOUT` (no `FAIL`): a test starved past the 180-second limit,
-            filed as caught (DECISIONS 2026-11-27 "a test past 180 seconds fails in every
-            run");
+          - [~] **d3** [after d2] the rolling job's shards when nothing is queued, on both
+            lanes, in two slices (SWE-2's code map of what it replaces:
+            `.tmp/swe_map_d3.findings.md` in the `review_lean` worktree);
+            - [~] **d3a** a job's extra pass as extra shards (DECISIONS 2026-11-27 "a job's
+              extra pass runs as shards of its own, on the VPS lane"): `queue --extra`, the
+              extra pass cut round-robin as cargo-mutants' shards are, the map built with
+              `--extra`, the finish counting and rechecking the extra survivors. SWE-2
+              sidekick on `.tmp/brief_d3a.md` in the worktree `4cc-studio-temp/d3a` (branch
+              `sk/d3a`, log `.tmp/brief_d3a.run.log` there); then the lead's review and the
+              Linux run of its tests;
+            - [ ] **d3b** [after d3a] the rolling job itself. When the queue holds no job,
+              this PC's driver queues the crate checked longest ago, with its extra pass;
+              with this PC off, the VPS lane finishes what was sent and waits. `job.json`
+              records the launch commit, and a rolling job's finish files it under
+              `mutants.rolling/<crate>/` (`launched_from.txt` included, which
+              `mutants-checked` reads). `gates-remote` takes the VPS lane's hold (`hold-vps`)
+              and waits for the shard running to end. `rolling.py`, `.tmp/rolling.hold` and
+              `just mutants-rolling` go, and RUNBOOK "Mutation runs and the VPS" is rewritten.
+              This PC's shards' mutant logs are read for a catch whose only failure is
+              nextest's `TIMEOUT` (no `FAIL`): a test starved past the 180-second limit,
+              filed as caught (DECISIONS 2026-11-27 "a test past 180 seconds fails in every
+              run"). The finish stays the point where `memsum`'s recheck of tests the OOM
+              killer ended will run;
           - [ ] **d4** [after d3] the diff, closure and extra-kind commands and the
             checkpoint queue jobs and wait for their results; the file split, its share
             tables and the locks they made needed go; each run's timings a file of its own;
