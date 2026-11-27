@@ -198,3 +198,68 @@ opt-level = 3
 # mutants build no slower.
 [profile.dev.package.pes_savefile]
 opt-level = 3
+
+# Unoptimized, egui's layout, text shaping and glyph rasterizing are most of a view test's
+# frames: with egui, epaint and their font, shaping and raster crates optimized,
+# save_editor's suite took 676 s of test time against 988 s (team_compiler's 193 s against
+# 205), and a cold build of egui took 59 s against 24 s. They are dependencies, so no
+# mutant's build recompiles them.
+[profile.dev.package.egui]
+opt-level = 3
+
+[profile.dev.package.epaint]
+opt-level = 3
+
+[profile.dev.package.emath]
+opt-level = 3
+
+[profile.dev.package.ecolor]
+opt-level = 3
+
+[profile.dev.package.epaint_default_fonts]
+opt-level = 3
+
+[profile.dev.package.ab_glyph]
+opt-level = 3
+
+[profile.dev.package.ab_glyph_rasterizer]
+opt-level = 3
+
+[profile.dev.package.ttf-parser]
+opt-level = 3
+
+[profile.dev.package.owned_ttf_parser]
+opt-level = 3
+
+[profile.dev.package.skrifa]
+opt-level = 3
+
+[profile.dev.package.read-fonts]
+opt-level = 3
+
+[profile.dev.package.font-types]
+opt-level = 3
+
+[profile.dev.package.harfrust]
+opt-level = 3
+
+[profile.dev.package.vello_cpu]
+opt-level = 3
+
+[profile.dev.package.vello_common]
+opt-level = 3
+
+[profile.dev.package.glifo]
+opt-level = 3
+
+[profile.dev.package.fearless_simd]
+opt-level = 3
+
+[profile.dev.package.peniko]
+opt-level = 3
+
+[profile.dev.package.kurbo]
+opt-level = 3
+
+[profile.dev.package.guillotiere]
+opt-level = 3
