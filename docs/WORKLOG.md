@@ -29,7 +29,7 @@ One line per piece of work in flight; the items below hold the detail.
 - The workflow improvements before the suite resumes (`RESUME/optimize`): the mutation
   driver's slices (`driver/d2`, the VPS lane: d2b and d2c merged, d2a's trial pending), and
   the lighter tests (`LEAN/pilot`: `save_editor`'s next rolling run against the one now
-  running; `LEAN/rest`: the SWE-2 round **S2raster** over the paid round's fix running).
+  running; `LEAN/rest`: no review owed; what is left waits for the pilot's rolling run).
 - The checkpoint: `19fda006` passed it and is pushed; its Linux gates are owed.
 - The rolling mutation job: on the VPS, crate by crate, held after its current crate so the
   driver's VPS lane runs its trial job (`driver/d2a`).
@@ -4602,7 +4602,9 @@ points there.
         accepted (the spec's "Crate structure" now names guardrail 3's exception, and
         CONTRIBUTING's guardrails ask for every text stating a rule to be amended), so the
         loop ended;
-      - [~] **S2raster**: the SWE-2 round over P1raster's fix, running;
+      - [x] **S2raster** 2026-11-27, SWE-2's round over P1raster's fix: 1 accepted (the core
+        spec's decisions summary now names guardrail 3's exception too), none of reach (a),
+        so the loop ended; no review owed;
     - [x] **firstdraw** 2026-11-27, a probe test (five runs, each its own process, warm build;
       `.tmp/lean/firstdraw_probe*.log`). A view test of about 270 ms spends about 115 ms of it
       on the view's first frame loading its ruleset (`aatf::builtin`, for each new view): 85 ms
