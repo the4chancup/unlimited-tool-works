@@ -354,7 +354,7 @@ pub(super) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
         .selected_text(selected)
         .width(widest + chrome)
         .show_ui(ui, |ui| {
-            for (stem, name) in builtins() {
+            for &(stem, name) in builtins() {
                 if combo_label(ui, key == *stem, name).clicked() {
                     picked = Some((*stem).to_owned());
                 }
