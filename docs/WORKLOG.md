@@ -28,9 +28,9 @@ One line per piece of work in flight; the items below hold the detail.
 
 - The workflow improvements before the suite resumes (`RESUME/optimize`): the mutation
   driver's slices (`driver/d3a`, a job's extra pass as extra shards, merged and deployed,
-  its fixes `f1d3a` merged and under SWE-2's round `S2d3a`; `d3b1`, the rolling job moved
-  into the driver, merged, its `switch` from `rolling.py` under way; `d3b2`, `gates-remote`
-  taking the VPS lane's hold, with a sidekick). The lighter tests (`LEAN`) are done: a whole `aatf` run's test phases
+  its fixes `f1d3a` merged and reviewed; `d3b1`, the rolling job moved into the driver,
+  merged, its `switch` from `rolling.py` under way; `d3b2`, `gates-remote` taking the VPS
+  lane's hold, merged). The lighter tests (`LEAN`) are done: a whole `aatf` run's test phases
   halved with no new survivor, and no further slice is worth its cost.
 - The per-player rules calls read a team once (`AATFSPEED`): the slice `reading` is merged
   and its reviews are closed, and `86dab4ed` passed the checkpoint.
@@ -1078,8 +1078,13 @@ and no phase closes with one outstanding.
                 extra pass gets no more shards than mutants, and the texts match the code.
                 Its tests pass on Windows and on the VPS; the VPS lane runs the new shard
                 script once redeployed (`switch`);
-              - [~] **S2d3a** [after f1d3a] SWE-2's round over `a163b399` (brief
-                `.tmp/lead/swe_review_s2d3a.md`, run in `4cc-studio-temp/review_cols`);
+              - [x] **S2d3a** 2026-11-27, SWE-2's round over `a163b399` (rulings in
+                `.tmp/lead/rulings_s1d3a.md`): 1 accepted, not on a real input, so the
+                loop ended and no review is owed;
+                - [x] **f2d3a** 2026-11-27 `5fe19abc`, in d3b2's merge: a test that a job
+                  whose shard timed out (3) beside its survivor keeps its 3 when the
+                  recheck caught the survivor, red with `finish`'s `code == 2` dropped, and
+                  `unit_script`'s docstring saying where its seconds count from;
             - [ ] **d3b** [after d3a] the rolling job itself (DECISIONS 2026-11-27 "the
               rolling job becomes this PC's driver's, filing each job under
               `mutants.rolling/`"), in two subslices. The finish stays the point where
@@ -1096,26 +1101,33 @@ and no phase closes with one outstanding.
                 while queuing ends the driver, which nothing restarts (d5's logon task), and
                 the finish's move needs the tree on the driver's drive (C:);
                 - [~] **switch** the rolling job moves to the driver: `rolling.py`, still
-                  running from memory, is held by `.tmp/rolling.hold` (created 13:09) and
-                  files `epaint_raster` first. Once `.tmp/rolling6.log` says it waits on
-                  the hold, stop its process tree (`rolling.py`, its `just` and
+                  running from memory, is held by `.tmp/rolling.hold` (created 13:09), which
+                  it reads only between crates: it had launched `save_editor` at 12:45,
+                  so it files that whole run first (its VPS half is `studio-mutants`, which
+                  the driver's VPS lane waits behind). Once `.tmp/rolling6.log` says it
+                  waits on the hold, stop its process tree (`rolling.py`, its `just` and
                   `low_priority.py` parents), delete `.tmp/rolling.hold` and
                   `mutants.rolling/current.txt` if left, then start `python
                   ~/.claude/tools/run_detached.py .tmp/driver_pc.log just driver run` from
                   main and read its start. The VPS lane was redeployed with `f1d3a`'s shard
                   script at `76b52dbb`;
-              - [~] **d3b2** [after d3b1] (Opus, `4cc-studio-temp/d3b2`, brief
-                `.tmp/brief_d3b2.md` there) `gates-remote` takes the VPS lane's hold
-                (`hold-vps`) and waits for the running shard to end; this PC's shards'
-                mutant logs are read for a catch whose only failure is nextest's `TIMEOUT`
-                (no `FAIL`): a test starved past the 180-second limit, filed as caught
-                (DECISIONS 2026-11-27 "a test past 180 seconds fails in every run"). The
-                lines nextest 0.9.146 prints for both, from a real run:
-                `.tmp/lead/nextest_timeout_sample.log`. Such a catch stays filed caught, as
-                the decision says, and is listed for a look; a PC shard keeps every
-                mutant's log, and `mutants.caught_by_tests` already reads a caught mutant's
-                log for a lost console, so the reading goes beside it, where `memsum`'s
-                `SIGKILL` reading can go too;
+              - [x] **d3b2** 2026-11-27, merge `60749546` (Opus): `just gates-remote` and
+                `just remote` make the VPS lane's hold, wait for its running shard to end
+                and delete the hold unless it was there before, so the checkpoint's Linux
+                gates no longer need it made by hand. A finished job's `result.json` lists
+                as "starved" the catches whose log shows nextest's `TIMEOUT` and no `FAIL`
+                (`mutants.starved_catches`): they stay caught, as DECISIONS 2026-11-27 "a
+                test past 180 seconds fails in every run" says, and RUNBOOK says to read
+                their logs first. Only this PC's shards keep caught mutants' logs, so only
+                theirs are read; `memsum`'s `SIGKILL` reading can take the same shape. Its
+                tests pass on Windows and on the VPS, and the VPS lane is redeployed;
+                - [x] **S1d3b2** 2026-11-27, SWE-2's round over `76b52dbb..60749546`
+                  (rulings `.tmp/lead/rulings_s1d3b2.md`): 3 accepted, so the loop ended
+                  and no review is owed. The one on a real input: the hold's call, the
+                  shard polls and the deletion had no timeout, so a link that hangs (as
+                  one once did for five hours) would have stalled the gates for good; they
+                  now stop after the module's poll timeout and read as an unreachable host.
+                  The lead's fixes, with a docstring and a missing test;
           - [ ] **d4** [after d3] the diff, closure and extra-kind commands and the
             checkpoint queue jobs and wait for their results; the file split, its share
             tables and the locks they made needed go; each run's timings a file of its own;

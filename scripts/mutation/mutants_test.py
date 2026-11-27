@@ -5385,7 +5385,7 @@ class GatesRemote(unittest.TestCase):
     def gate(
         self, *, refusal=None, remote_tree="t2", remote_just="just 1.0",
         run_code=0, interrupt=False, hold="made", hold_code=0, busy_polls=0,
-        poll_code=3, sleep=None,
+        poll_code=3, sleep=None, hang=(), release_code=0,
     ):
         """`remote_gates.main`'s seams stubbed: host `bonfire`, this tree `t`,
         the remote clone's `remote_tree`, `remote_refusal` answering `refusal`,
@@ -5394,11 +5394,19 @@ class GatesRemote(unittest.TestCase):
         call prints `hold` and exits `hold_code`; the shard unit's first
         `busy_polls` polls answer 0 (running), the next ones `poll_code`. The
         wait's sleep is the probe `sleep`, then `sleep(seconds)` when given.
+        The hold's deletion exits `release_code`. A call whose tag is in `hang`
+        hangs: it raises `TimeoutExpired` when given a timeout, and fails the
+        test when not, since it would never return.
         Yields `(probe, snapshotted, calls, out)`: `calls` holds each ssh's
         remote command and stdin, in order; `probe.calls` tags the hold
         `hold`, a shard poll `poll` and the hold's deletion `release`."""
         snapshotted, calls, out = [], [], io.StringIO()
         polls = []
+
+        def hangs(tag, remote, kwargs):
+            if tag in hang:
+                self.assertIn("timeout", kwargs, f"the {tag} call has no timeout")
+                raise subprocess.TimeoutExpired(remote, kwargs["timeout"])
 
         def ssh(host, remote, **kwargs):
             calls.append((remote, kwargs.get("input")))
@@ -5406,13 +5414,17 @@ class GatesRemote(unittest.TestCase):
             stdout = remote_just if "--version" in remote else ""
             if remote.startswith(f"[ -e {mutants.VPS_HOLD} ]"):
                 probe("hold")
+                hangs("hold", remote, kwargs)
                 code, stdout = hold_code, f"{hold}\n"
             elif remote == f"systemctl is-active --quiet {mutants.SHARD_UNIT}":
                 probe("poll")
+                hangs("poll", remote, kwargs)
                 polls.append(remote)
                 code = 0 if len(polls) <= busy_polls else poll_code
             elif remote == f"rm -f {mutants.VPS_HOLD}":
                 probe("release")
+                hangs("release", remote, kwargs)
+                code = release_code
             elif "systemd-run" in remote:
                 probe("unit")
                 if interrupt:
@@ -5573,6 +5585,38 @@ class GatesRemote(unittest.TestCase):
                 self.assertEqual(probe.taken, [], "no lock taken")
                 self.assertEqual(snapshotted, [])
                 self.assertIn("cannot reach bonfire", out.getvalue())
+
+    def test_a_hung_call_ends_as_an_unreachable_host(self):
+        """The hold's call or a shard poll that hangs past its timeout stops the
+        run as an unreachable host does; a hung deletion warns, and the run
+        keeps its own exit code."""
+        for hang, tags, code in (
+            ("hold", ["working_tree", "hold"], 1),
+            ("poll", ["working_tree", "hold", "poll", "release"], 1),
+            ("release", None, 0),
+        ):
+            with self.subTest(hang=hang):
+                with self.gate(hang=(hang,)) as (probe, snapshotted, calls, out):
+                    self.assertEqual(remote_gates.main([]), code)
+                if tags is not None:
+                    self.assertEqual([tag for tag, _held in probe.calls], tags)
+                    self.assertIn("cannot reach bonfire", out.getvalue())
+                else:
+                    self.assertIn("unit", [tag for tag, _held in probe.calls])
+                    self.assertIn(f"could not delete {mutants.VPS_HOLD}", out.getvalue())
+
+    def test_a_failed_deletion_of_the_hold_is_said(self):
+        with self.gate(release_code=1) as (probe, snapshotted, calls, out):
+            self.assertEqual(remote_gates.main([]), 0)
+        self.assertEqual([tag for tag, _held in probe.calls][-1], "release")
+        self.assertIn(
+            f"could not delete {mutants.VPS_HOLD} on bonfire: the VPS lane takes no new "
+            "shard until it is deleted",
+            out.getvalue(),
+        )
+        with self.gate() as (probe, snapshotted, calls, out):
+            self.assertEqual(remote_gates.main([]), 0)
+        self.assertNotIn("could not delete", out.getvalue())
 
     def test_a_command_takes_and_deletes_the_hold_too(self):
         with self.gate() as (probe, snapshotted, calls, out):

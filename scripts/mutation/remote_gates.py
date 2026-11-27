@@ -10,7 +10,8 @@ the hold was there before.
 
 The tree goes over as a mutation run sends it (`mutants.snapshot`,
 `mutants.transfer`), into the same remote clone, so this refuses to start while
-a remote mutants half is running or uncollected, or other gates run there —
+a remote mutants half is running or uncollected, other gates run there, or a
+shard the lane started just before its hold landed is running —
 the refusal's check through the unit's whole run (the `--wait --pipe` call)
 and the `target/` removal under the remote lock
 (`mutants.REMOTE_LOCK`, `mutants.remote_refusal`), so a run launched meanwhile
@@ -75,7 +76,7 @@ def main(command: list[str]) -> int:
     # Before the lock's wait, as every entry point does: the run measures the
     # tree as it stood when its command started, whatever is edited meanwhile.
     tree = mutants.working_tree()
-    hold = mutants.ssh(
+    hold = status_call(
         host,
         f"[ -e {mutants.VPS_HOLD} ] && echo kept || {{ touch {mutants.VPS_HOLD} && echo made; }}",
         capture_output=True, text=True,
@@ -86,7 +87,7 @@ def main(command: list[str]) -> int:
     try:
         waiting = False
         while (
-            shard := mutants.ssh(host, f"systemctl is-active --quiet {mutants.SHARD_UNIT}")
+            shard := status_call(host, f"systemctl is-active --quiet {mutants.SHARD_UNIT}")
         ).returncode == 0:
             if not waiting:
                 print(
@@ -102,11 +103,22 @@ def main(command: list[str]) -> int:
     finally:
         # A hold that was there before (the maintainer's, or another run's) stays.
         if hold.stdout.strip() == "made":
-            if mutants.ssh(host, f"rm -f {mutants.VPS_HOLD}").returncode != 0:
+            if status_call(host, f"rm -f {mutants.VPS_HOLD}").returncode != 0:
                 print(
                     f"could not delete {mutants.VPS_HOLD} on {host}: the VPS lane takes "
                     "no new shard until it is deleted"
                 )
+
+
+def status_call(host: str, remote: str, **kwargs) -> subprocess.CompletedProcess:
+    """`mutants.ssh` for a short call, stopped after
+    `mutants.POLL_CALL_TIMEOUT_SECONDS`: such a call once hung for hours with the
+    link up, which ssh's keepalives never notice. A call stopped so reads as one
+    that could not reach the host (exit 255)."""
+    try:
+        return mutants.ssh(host, remote, timeout=mutants.POLL_CALL_TIMEOUT_SECONDS, **kwargs)
+    except subprocess.TimeoutExpired:
+        return subprocess.CompletedProcess([host, remote], 255, stdout="", stderr="")
 
 
 def run_on_host(host: str, tree: str, command: list[str], run_line: str) -> int:
