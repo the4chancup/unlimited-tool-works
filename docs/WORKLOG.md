@@ -4626,7 +4626,9 @@ points there.
       files. Measured (nextest, 4 test threads, warm): `save_editor`'s suite took 376 s and
       374 s of summed test time against 395 s and 397 s, 94 s of wall time against 99 s. SWE-2
       round **S1names**: 1 accepted (the test now reads `builtin_descriptions` itself), so the
-      loop ended. Owed: one paid round over samplecheck and names together. Heaviest
+      loop ended. Owed: one paid round over samplecheck and names together, **P1aatf**
+      (brief `.tmp/lean/paid_brief_lean_aatf.md`; reviewer and login per the duck skill's
+      `accounts.md`, read at launch; rulings beside the S1 ones). Heaviest
       `save_editor` tests left, by their own time (weight by the census's coverage map
       first): `session::tests::journal::every_model_change_records_its_steps` (10.9 s) and
       Multi-team AATF's every-team test (7.8 s); a view test's floor is now about 0.11 s.
