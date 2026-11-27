@@ -9,6 +9,7 @@ import re
 import subprocess
 import tempfile
 import unittest
+from html.parser import HTMLParser
 from pathlib import Path
 
 import roadmap
@@ -129,6 +130,113 @@ def circles(svg: str) -> dict[str, tuple[int, int]]:
             r'<g data-row="([^"]+)"[^>]*><title>[^<]*</title>'
             r'<circle cx="(\d+)" cy="0"', svg):
         found[match[1]] = (int(match[2]), rows[match[1]])
+    return found
+
+
+class Elements(HTMLParser):
+    """The page's elements as `{"tag", "attrs", "parent"}` dicts in document order,
+    `parent` the index of the enclosing element or -1."""
+
+    VOID = {"meta", "link", "br", "hr", "img", "input", "wbr"}
+
+    def __init__(self) -> None:
+        super().__init__(convert_charrefs=True)
+        self.nodes = []
+        self.stack = []
+
+    def handle_starttag(self, tag: str, attrs: list) -> None:
+        self.nodes.append({"tag": tag, "attrs": dict(attrs),
+                           "parent": self.stack[-1] if self.stack else -1})
+        if tag not in self.VOID:
+            self.stack.append(len(self.nodes) - 1)
+
+    def handle_startendtag(self, tag: str, attrs: list) -> None:
+        self.nodes.append({"tag": tag, "attrs": dict(attrs),
+                           "parent": self.stack[-1] if self.stack else -1})
+
+    def handle_endtag(self, tag: str) -> None:
+        for i in range(len(self.stack) - 1, -1, -1):
+            if self.nodes[self.stack[i]]["tag"] == tag:
+                del self.stack[i:]
+                return
+
+
+# A DOM for the page's script under node: the attribute reads and writes and the
+# queries `placeTimeline` and the "Go to now" handler make, nothing more.
+DOM = """\
+const NODES = __NODES__;
+function desc(root) {
+  return NODES.map((n, i) => i).filter(i => {
+    for (let p = NODES[i].parent; p !== -1; p = NODES[p].parent)
+      if (p === root) return true;
+    return false;
+  });
+}
+function select(sel, root) {
+  const child = sel.match(/^:scope > (\\w+)$/);
+  if (child)
+    return NODES.map((n, i) => i)
+      .filter(i => NODES[i].parent === root && NODES[i].tag === child[1]);
+  const m = sel.match(/^(\\w+)\\[([\\w-]+)\\]$/);
+  if (m) {
+    const scope = root === -1 ? NODES.map((n, i) => i) : desc(root);
+    return scope.filter(i => NODES[i].tag === m[1] && m[2] in NODES[i].attrs);
+  }
+  throw new Error("unsupported selector " + sel);
+}
+class El {
+  constructor(i) { this._i = i; }
+  get dataset() {
+    const d = {};
+    for (const [k, v] of Object.entries(NODES[this._i].attrs))
+      if (k.startsWith("data-"))
+        d[k.slice(5).replace(/-([a-z])/g, (m, c) => c.toUpperCase())] = v;
+    return d;
+  }
+  getAttribute(n) { return NODES[this._i].attrs[n] ?? null; }
+  setAttribute(n, v) { NODES[this._i].attrs[n] = String(v); }
+  addEventListener() {}
+  querySelector(sel) { const m = select(sel, this._i); return m.length ? new El(m[0]) : null; }
+  querySelectorAll(sel) { return select(sel, this._i).map(i => new El(i)); }
+}
+const document = {
+  querySelector: sel => { const m = select(sel, -1); return m.length ? new El(m[0]) : null; },
+  querySelectorAll: sel => select(sel, -1).map(i => new El(i)),
+  getElementById: id => { const i = NODES.findIndex(n => n.attrs.id === id);
+                          return i === -1 ? null : new El(i); },
+};
+"""
+
+
+def placed(page: str) -> dict:
+    """The attributes the page's own `<script>` leaves set, the script run under node on
+    a stand-in DOM of the page's elements: `svg`, `now` and `now-label` keys, `rows` by
+    `data-row`, `tracks` by `data-track`, `edges` by (`data-from`, `data-to`)."""
+    script = re.search(r"<script>\n(.*)\n</script>", page, re.S)[1]
+    parser = Elements()
+    parser.feed(page)
+    program = (DOM.replace("__NODES__", json.dumps(parser.nodes)) + script
+               + "\nconsole.log(JSON.stringify(NODES));")
+    try:
+        out = subprocess.run(["node", "-e", program], capture_output=True, text=True,
+                             check=True)
+    except FileNotFoundError:
+        raise AssertionError("node is not on PATH") from None
+    found = {"rows": {}, "tracks": {}, "edges": {}}
+    for node in json.loads(out.stdout):
+        tag, attrs = node["tag"], node["attrs"]
+        if "data-row" in attrs:
+            found["rows"][attrs["data-row"]] = attrs
+        elif "data-track" in attrs:
+            found["tracks"][attrs["data-track"]] = attrs
+        elif "data-from" in attrs:
+            found["edges"][(attrs["data-from"], attrs["data-to"])] = attrs
+        elif attrs.get("id") == "now":
+            found["now"] = attrs
+        elif attrs.get("id") == "now-label":
+            found["now-label"] = attrs
+        elif tag == "svg":
+            found["svg"] = attrs
     return found
 
 
@@ -325,6 +433,36 @@ class Render(unittest.TestCase):
         for line in added:
             self.assertIn("A/n", line)
 
+    def test_place_timeline_lays_out_the_rows_the_line_its_label_and_the_height(self) -> None:
+        # No step in progress and no done step: the bare "now" line in the gap slot.
+        page = render(parse(wl("- [ ] **A** open.\n- [ ] **B** open too.\n")), [], {}, TODAY)
+        put = placed(page)
+        self.assertEqual(put["rows"]["A"]["transform"], "translate(0,15)")
+        self.assertEqual(put["rows"]["B"]["transform"], "translate(0,45)")
+        self.assertEqual((put["now"]["y1"], put["now"]["y2"]), ("71", "71"))
+        self.assertEqual(put["now-label"]["y"], "64")
+        self.assertEqual((put["svg"]["height"], put["svg"]["viewBox"]),
+                         ("82", "0 0 1400 82"))
+
+    def test_place_timeline_lays_out_the_band_its_label_the_rows_and_an_edge(self) -> None:
+        # Timeline.NOW: the band covers the two in-progress rows; its label is its middle.
+        page = render(parse(Timeline.NOW), [], {"A/a3": TODAY}, TODAY)
+        put = placed(page)
+        self.assertEqual((put["now"]["y"], put["now"]["height"]), ("30", "60"))
+        self.assertEqual(put["now-label"]["y"], "60")
+        self.assertEqual(
+            {p: put["rows"][p]["transform"] for p in ("A/a1", "A/a2", "B", "A/a3")},
+            {"A/a1": "translate(0,15)", "A/a2": "translate(0,45)",
+             "B": "translate(0,75)", "A/a3": "translate(0,105)"})
+        # NOW's waits are inside one track, so no edge shows; Edges.EDGES has two.
+        put = placed(render(parse(Edges.EDGES), [], {}, TODAY))
+        self.assertEqual(put["edges"][("A/g/g1", "A/a1")]["d"],
+                         "M 42 45 C 42 60, 10 60, 10 75")
+        self.assertEqual(put["edges"][("B/b1", "A/a2")]["d"],
+                         "M 10 105 C 10 60, 10 60, 10 15")
+        # A's track runs from a2's row to a1's.
+        self.assertEqual((put["tracks"]["A"]["y1"], put["tracks"]["A"]["y2"]), ("15", "75"))
+
 
 class Timeline(unittest.TestCase):
     DATES = {"TOP/a/aa": "2026-11-20", "TOP/b": "2026-11-23",
@@ -447,7 +585,9 @@ class Timeline(unittest.TestCase):
         svg = roadmap.timeline(parse(self.NOW), {"A/a3": TODAY}, TODAY)
         cy = {p: y for p, (_, y) in circles(svg).items()}
         self.assertIn('<rect id="now" x="0" width="1400" rx="2"', svg)
-        top, height = laid_out(svg)["now"]["band"]
+        now = laid_out(svg)["now"]
+        top, height = now["band"]
+        self.assertEqual(now["labelY"], top + height / 2)
         bottom = top + height
         self.assertLess(cy["A/a1"], top)
         for path in ("A/a2", "B"):
@@ -489,6 +629,16 @@ class Lanes(unittest.TestCase):
         svg = roadmap.timeline(parse(self.LANES), {}, TODAY)
         xs = re.findall(r'<line data-track="[^"]+"[^>]*x1="(\d+)"', svg)
         self.assertEqual([int(x) for x in xs], [10, 42, 10])
+
+    def test_each_tracks_ends_are_its_first_and_last_member_rows_ys(self) -> None:
+        svg = roadmap.timeline(parse(self.LANES), {}, TODAY)
+        cy = {p: y for p, (_, y) in circles(svg).items()}
+        out = laid_out(svg)
+        tracks = re.findall(r'<line data-track="([^"]+)" data-first="([^"]+)" '
+                            r'data-last="([^"]+)"', svg)
+        self.assertEqual([key for key, _, _ in tracks], ["A", "B", "C"])
+        for key, first, last in tracks:
+            self.assertEqual(out["tracks"][key], [cy[first], cy[last]], key)
 
     def test_an_open_rows_circle_is_hollow_and_a_done_rows_filled(self) -> None:
         svg = roadmap.timeline(parse(WORKLOG), Timeline.DATES, TODAY)
