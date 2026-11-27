@@ -1,8 +1,13 @@
 """`just driver`: the mutation driver, one process per machine taking
 cargo-mutants shards from a queue of jobs.
 
-`just driver queue <crate> [--shards N]` adds a job: a whole-crate run of
-`<crate>` at the committed `HEAD`, cut into shards of about `SHARD_SECONDS`.
+`just driver queue <crate> [--shards N] [--extra]` adds a job: a whole-crate
+run of `<crate>` at the committed `HEAD`, cut into shards of about
+`SHARD_SECONDS`. `--extra` adds the crate's extra pass (the extra kinds
+cargo-mutants does not make) as extra shards, numbered after the
+cargo-mutants ones so the markers, claims, fetches, restarts and finish
+work on them unchanged. The VPS lane alone runs an extra shard — this PC's
+lane never claims one, and a job that stays here gets none.
 A lane is a machine taking the queue's shards, named in the markers below:
 `pc` for this one, `vps` for the host `STUDIO_MUTANTS_REMOTE` names.
 `just driver run [--once]` starts this PC's lane, which runs one shard at a
@@ -18,7 +23,8 @@ VPS lane (`run --lane vps`, a service that `just driver deploy` installs
 there) takes a sent job's shards, so they go on while this PC is off, and
 keeps their results there; it finishes no job. Before its first shard of a
 job it builds the job's coverage map, so each mutant of its shards runs only
-the tests that cover the mutant's lines, while this PC's shards of the job
+the tests that cover the mutant's lines — the extra kinds' included when
+the job has extra shards — while this PC's shards of the job
 run the full suite. This PC's lane takes the
 shards of every job, a sent job's by renaming its marker on the VPS. Between
 its shards it syncs each sent job with the VPS (`sync`): a claim it lost goes
@@ -36,7 +42,9 @@ Everything lives under `DRIVER`, one folder per machine shared by every tree
     bin/                     the VPS lane's scripts, installed by `deploy`
     tmp/                     the VPS lane's TMPDIR, emptied before each shard
     queue/<job>/             <job> is <UTC %Y%m%dT%H%M%S>-<crate>; name order is queue order
-      job.json               {"crate", "tree", "args", "shards", "queued"}
+      job.json               {"crate", "tree", "args", "shards", "extra", "queued"};
+                             `extra` counts the last shards, which run the
+                             extra pass instead of cargo-mutants
       sent.json              {"host": host}: on this PC, a job sent to the VPS
       source/                the job's tree, extracted once
       mutants-vps.toml       the VPS lane's cargo-mutants config for the job
@@ -53,7 +61,8 @@ Everything lives under `DRIVER`, one folder per machine shared by every tree
       shard-<k>.sh           the VPS lane's script for the shard
       shard-<k>/             the shard's cargo-mutants `--output` folder; a VPS
                              shard's also holds its `log`, `exit` and memory figures,
-                             on this PC once fetched
+                             on this PC once fetched; an extra shard's holds its
+                             `extra_mutants.out` instead of `mutants.out`
       shard-<k>.done         the shard's exit code, as text, written last
       shard-<k>.fetched      on the VPS: the shard's results are on this PC, and
                              removed there
@@ -124,12 +133,23 @@ def shard_number(marker: Path) -> int:
     return int(marker.name.split(".")[0][len("shard-"):])
 
 
-def queue(crate: str, shards: int | None = None) -> Path:
+def cargo_shards(spec: dict) -> int:
+    """How many of `spec`'s `shards` are cargo-mutants shards: the job's
+    `extra` last shards run the extra pass instead. A job without the key
+    (queued before it existed) has none."""
+    return spec["shards"] - spec.get("extra", 0)
+
+
+def queue(crate: str, shards: int | None = None, extra: int | None = 0) -> Path:
     """Queue a whole-crate run of `crate` at `HEAD`'s tree, in `shards` shards, or
-    as many as its estimate needs (`shard_count`). The job is written under a
+    as many as its estimate needs (`shard_count`). `extra` adds that many
+    extra shards of the crate's extra pass (`extra_mutants`'s kinds), numbered
+    after the cargo-mutants ones; None means as many as the pass's estimate
+    needs, from its listing on the extracted source. The job is written under a
     `.tmp` name and renamed when complete, so a driver never sees half a job.
     Before the rename it is sent to the VPS (`send`), unless no host is set or
-    the crate is in `mutants.LOCAL_ONLY_CRATES`. Returns the job's folder."""
+    the crate is in `mutants.LOCAL_ONLY_CRATES`; a job that stays gets no
+    extra shards, this PC's lane never running one. Returns the job's folder."""
     tree = mutants.git(
         "rev-parse", "HEAD^{tree}", check=True, capture_output=True, text=True
     ).stdout.strip()
@@ -143,12 +163,19 @@ def queue(crate: str, shards: int | None = None) -> Path:
     if shards is None:
         listed = mutants.list_mutants(args, mutants.local_config(source), source)
         shards = shard_count(mutants.estimate_seconds([crate] * len(listed)))
+    if extra is None:
+        _, rows, _, _ = extra_mutants.listed(
+            crate, source, list(mutants.EXTRA_KINDS)
+        )
+        # A crate with no extra mutant gets no shard to run a baseline for nothing.
+        extra = shard_count(mutants.estimate_seconds([crate] * len(rows))) if rows else 0
+    total = shards + extra
     record = {
-        "crate": crate, "tree": tree, "args": args, "shards": shards,
-        "queued": time.strftime("%Y-%m-%dT%H:%M:%SZ", moment),
+        "crate": crate, "tree": tree, "args": args, "shards": total,
+        "extra": extra, "queued": time.strftime("%Y-%m-%dT%H:%M:%SZ", moment),
     }
     mutants_diff.replace_text(building / "job.json", json.dumps(record))
-    for k in range(shards):
+    for k in range(total):
         (building / f"shard-{k}.todo").touch()
     host = mutants.remote_host()
     sent = (
@@ -159,11 +186,22 @@ def queue(crate: str, shards: int | None = None) -> Path:
         # The VPS holds the job's markers alone. The source stays for the
         # rechecks this PC runs on the VPS's results.
         mutants_diff.replace_text(building / "sent.json", json.dumps({"host": host}))
-        for k in range(shards):
+        for k in range(total):
             (building / f"shard-{k}.todo").unlink()
+    elif extra:
+        for k in range(shards, total):
+            (building / f"shard-{k}.todo").unlink()
+        record["shards"], record["extra"] = shards, 0
+        mutants_diff.replace_text(building / "job.json", json.dumps(record))
+        print(f"driver: {job.name}'s extra pass needs the VPS: queued without "
+              f"its {extra} extra shards", flush=True)
+        extra = 0
     building.rename(job)
     where = f", sent to {host}" if sent else ""
-    print(f"driver: {crate} queued in {shards} shards, as {job.name}{where}", flush=True)
+    counts = f"{shards} shards"
+    if extra:
+        counts += f" and {extra} extra shards"
+    print(f"driver: {crate} queued in {counts}, as {job.name}{where}", flush=True)
     return job
 
 
@@ -280,24 +318,29 @@ def call_remote(host: str, command: str, **kwargs) -> subprocess.CompletedProces
     return None
 
 
-# Renames the job's lowest-numbered `.todo` to `.pc` and prints its number;
-# prints nothing when none is left or the folder is gone. `mv` fails when the
-# VPS lane renamed the marker first, and the next one is tried.
+# Renames the job's lowest-numbered `.todo` below {limit} to `.pc` and prints
+# its number; prints nothing when none is left or the folder is gone. `mv`
+# fails when the VPS lane renamed the marker first, and the next one is tried.
 CLAIM_SCRIPT = (
     "cd {folder} 2>/dev/null || exit 0; "
     "for todo in $(ls shard-*.todo 2>/dev/null | sort -t- -k2 -n); do "
     'k=${{todo#shard-}}; k=${{k%.todo}}; '
+    '[ "$k" -lt {limit} ] || break; '
     'if mv "$todo" "shard-$k.pc" 2>/dev/null; then echo "$k"; exit 0; fi; '
     "done"
 )
 
 
 def claim_remote(job: Path, host: str) -> int | None:
-    """Take a shard of the sent `job` on `host`, where its markers live, and
-    mark it here too. Returns its number, or None when none is left or the
-    call failed."""
+    """Take a cargo-mutants shard of the sent `job` on `host`, where its
+    markers live, and mark it here too — this lane never claims an extra
+    shard. Returns its number, or None when none is left or the call failed."""
     called = call_remote(
-        host, CLAIM_SCRIPT.format(folder=remote_job(job)), capture_output=True, text=True
+        host,
+        CLAIM_SCRIPT.format(
+            folder=remote_job(job), limit=cargo_shards(read_job(job))
+        ),
+        capture_output=True, text=True,
     )
     if called is None or not called.stdout.strip():
         return None
@@ -442,7 +485,12 @@ def claim() -> tuple[Path, int] | None:
             if k is not None:
                 return job, k
             continue
+        # The extra shards are the VPS lane's: this PC's lane stops at them.
+        spec = read_job(job)
+        limit = spec["shards"] if LANE == "vps" else cargo_shards(spec)
         for todo in sorted(job.glob("shard-*.todo"), key=shard_number):
+            if shard_number(todo) >= limit:
+                break
             try:
                 os.rename(todo, todo.with_suffix(f".{LANE}"))
             except FileNotFoundError:
@@ -557,6 +605,8 @@ def map_script(job: Path, tmp: Path) -> bytes:
     coverage = shlex.join([
         "python3", "scripts/mutation/coverage_map.py", spec["crate"],
         str(job / "selection.json"), "--mutants", str(listed),
+        # The extra shards' mutants too: their pass reads the same selection.
+        *(["--extra"] if spec.get("extra") else []),
     ])
     lines = [
         "#!/bin/bash",
@@ -603,13 +653,33 @@ def build_map(job: Path, tmp: Path) -> None:
               f"suite, log {job / 'map.log'}", flush=True)
 
 
+def unit_script(tmp: Path, out: Path, middle: list[str]) -> bytes:
+    """The bash script a VPS shard unit runs, LF line ends, as bash needs:
+    `middle` — the unit's command lines, ending with `code=$?` — with the
+    unit's output to `out/log`, its environment from `unit_environment`, the
+    cgroup's memory figures copied into `out`, and last `out/exit`,
+    "<code> <seconds>": a shard with no `exit` was killed before it ended."""
+    quoted = shlex.quote(str(out))
+    lines = [
+        "#!/bin/bash",
+        f"exec > {shlex.quote(str(out / 'log'))} 2>&1",
+        "start=$(date +%s)",
+        *unit_environment(tmp),
+        *middle,
+        'cgroup="/sys/fs/cgroup$(cut -d: -f3 /proc/self/cgroup)"',
+        f'[ -f "$cgroup/memory.peak" ] && cp "$cgroup/memory.peak" {quoted}',
+        f'[ -f "$cgroup/memory.events" ] && cp "$cgroup/memory.events" {quoted}',
+        f'echo "$code $(( $(date +%s) - start ))" > {shlex.quote(str(out / "exit"))}',
+    ]
+    return ("\n".join(lines) + "\n").encode("utf-8")
+
+
 def shard_script(job: Path, k: int, args: list[str], tmp: Path) -> bytes:
-    """The bash script the VPS lane's shard unit runs: cargo-mutants on the
-    job's source at the lowest priority, its output to `shard-<k>/log`, its
-    environment from `unit_environment`. When the job's `selection.json`
-    exists, `select_tests.py` stands in for cargo, so each mutant runs the
-    tests covering its lines. Then the unit's memory figures, and last
-    `shard-<k>/exit`, "<code> <seconds>". LF line ends, as bash needs."""
+    """The bash script the VPS lane's shard unit runs (`unit_script`):
+    cargo-mutants on the job's source at the lowest priority, its output to
+    `shard-<k>/log`. When the job's `selection.json` exists,
+    `select_tests.py` stands in for cargo, so each mutant runs the tests
+    covering its lines."""
     shard = job / f"shard-{k}"
     source = job / "source"
     tasks = mutants.REMOTE_JOBSERVER_TASKS or os.cpu_count() or 2
@@ -628,21 +698,37 @@ def shard_script(job: Path, k: int, args: list[str], tmp: Path) -> bytes:
             f"UTW_MUTANTS_SOURCE={shlex.quote(str(source))} "
             f"UTW_MUTANTS_SELECTION={shlex.quote(str(selection))} "
         )
-    quoted = shlex.quote(str(shard))
-    lines = [
-        "#!/bin/bash",
-        f"exec > {shlex.quote(str(shard / 'log'))} 2>&1",
-        "start=$(date +%s)",
-        *unit_environment(tmp),
+    return unit_script(tmp, shard, [
         f". ~/.cargo/env && {stand_in}nice -n 19 ionice -c3 {command}",
         "code=$?",
-        'cgroup="/sys/fs/cgroup$(cut -d: -f3 /proc/self/cgroup)"',
-        f'[ -f "$cgroup/memory.peak" ] && cp "$cgroup/memory.peak" {quoted}',
-        f'[ -f "$cgroup/memory.events" ] && cp "$cgroup/memory.events" {quoted}',
-        # Last: a shard with no `exit` was killed before it ended.
-        f'echo "$code $(( $(date +%s) - start ))" > {shlex.quote(str(shard / "exit"))}',
-    ]
-    return ("\n".join(lines) + "\n").encode("utf-8")
+    ])
+
+
+def extra_script(job: Path, k: int, tmp: Path) -> bytes:
+    """The bash script the VPS lane's unit runs for extra shard `k` of `job`
+    (`unit_script`): the extra pass's shard `j` of `m` (`j` is `k` less the
+    job's cargo-mutants count, `m` is the job's extra shard count) through
+    `--remote-extra` on the job's source — an
+    extracted archive, not a git repository — at the same priority as a
+    shard, its `extra_mutants.out` moved into `shard-<k>/`, the pass's
+    previous output removed first. `selection.json` is named only when the
+    job's coverage map left one."""
+    spec = read_job(job)
+    j = k - cargo_shards(spec)
+    m = spec["shards"] - cargo_shards(spec)
+    shard = job / f"shard-{k}"
+    selection = job / "selection.json"
+    command = shlex.join([
+        "python3", "scripts/mutation/mutants.py", "--remote-extra", spec["crate"],
+        "--shard", f"{j}/{m}", "--source", str(job / "source"),
+        *(["--selection", str(selection)] if selection.exists() else []),
+    ])
+    return unit_script(tmp, shard, [
+        "rm -rf extra_mutants.out",
+        f". ~/.cargo/env && nice -n 19 ionice -c3 {command}",
+        "code=$?",
+        f"mv extra_mutants.out {shlex.quote(str(shard))}",
+    ])
 
 
 def run_unit(script: Path, memory_max: int) -> None:
@@ -672,7 +758,8 @@ def shard_code(job: Path, k: int) -> int:
 
 def run_vps_shard(job: Path, k: int, args: list[str]) -> int:
     """Run shard `k` of `job` through `run_unit`, and return its code
-    (`shard_code`). The job's coverage map is built first (`build_map`)
+    (`shard_code`) — `shard_script` for a cargo-mutants shard, `extra_script`
+    for an extra one. The job's coverage map is built first (`build_map`)
     unless the job has a `map-exit`, so the map runs once per job."""
     config = job / "mutants-vps.toml"
     if not config.exists():
@@ -685,7 +772,10 @@ def run_vps_shard(job: Path, k: int, args: list[str]) -> int:
     shard = job / f"shard-{k}"
     shard.mkdir()
     script = job / f"shard-{k}.sh"
-    script.write_bytes(shard_script(job, k, args, tmp))
+    if k < cargo_shards(read_job(job)):
+        script.write_bytes(shard_script(job, k, args, tmp))
+    else:
+        script.write_bytes(extra_script(job, k, tmp))
     run_unit(script, memory_max())
     if not (shard / "log").exists():
         # The script never ran (sudo refused, the unit could not start): marking
@@ -705,16 +795,22 @@ def run_shard(job: Path, k: int) -> int:
     here, best effort: `sync` retries. Returns the code."""
     spec = read_job(job)
     shard = job / f"shard-{k}"
-    args = [
-        *spec["args"], "--shard", f"{k}/{spec['shards']}", "--sharding", "round-robin",
-        "--output", str(shard),
-    ]
+    cargo = cargo_shards(spec)
     baseline = job / f"baseline-{LANE}.json"
-    if baseline.exists():
-        timeout = json.loads(baseline.read_text(encoding="utf-8"))["timeout"]
-        args += ["--baseline", "skip", "--timeout", f"{timeout:.0f}"]
-    print(f"driver: {job.name} shard {k + 1} of {spec['shards']}: cargo mutants {' '.join(args)}",
-          flush=True)
+    if k < cargo:
+        args = [
+            *spec["args"], "--shard", f"{k}/{cargo}", "--sharding", "round-robin",
+            "--output", str(shard),
+        ]
+        if baseline.exists():
+            timeout = json.loads(baseline.read_text(encoding="utf-8"))["timeout"]
+            args += ["--baseline", "skip", "--timeout", f"{timeout:.0f}"]
+        print(f"driver: {job.name} shard {k + 1} of {cargo}: cargo mutants {' '.join(args)}",
+              flush=True)
+    else:
+        args = []
+        print(f"driver: {job.name} extra shard {k - cargo + 1} of {spec['shards'] - cargo}",
+              flush=True)
     if LANE == "vps":
         code = run_vps_shard(job, k, args)
     else:
@@ -725,7 +821,7 @@ def run_shard(job: Path, k: int) -> int:
     out = shard / "mutants.out"
     # Only a passed baseline sets the timeout: a failed one (exit 4), or a
     # shard that ran none, leaves the next shard to run the baseline again.
-    if not baseline.exists() and code in (0, 2, 3):
+    if k < cargo and not baseline.exists() and code in (0, 2, 3):
         tests = baseline_test_seconds(out)
         if tests is not None:
             config = extra_mutants.mutants_toml(job / "source")
@@ -750,7 +846,7 @@ def recheck(job: Path, spec: dict) -> list[str]:
     none is rerun."""
     lines = [
         line
-        for k in range(spec["shards"])
+        for k in range(cargo_shards(spec))
         if (job / f"shard-{k}" / "log").exists()
         for line in mutants.read_lines(job / f"shard-{k}" / "mutants.out" / "missed.txt")
         if any(pattern.search(line) for pattern in mutants.WINDOWS_ONLY_TESTS)
@@ -784,10 +880,32 @@ def finish(job: Path) -> Path | None:
     rechecked = recheck(job, spec)
     missed = [line for line in missed if line not in rechecked]
     untested = mutants.killed_builds(job)
+    # The extra shards' survivors follow the cargo-mutants ones, in shard
+    # order; those in Windows-only code get the same rerun here, under the
+    # build slot (`recheck_remote_extra` prints them and reruns nothing off
+    # Windows).
+    extra_missed = [
+        line
+        for k in range(cargo_shards(spec), spec["shards"])
+        for line in mutants.read_lines(
+            job / f"shard-{k}" / "extra_mutants.out" / f"missed_{spec['crate']}.txt"
+        )
+    ]
+    extra_untested = 0
+    if extra_missed:
+        with mutants.run_lock():
+            extra_caught, extra_untested = mutants.recheck_remote_extra(
+                extra_missed, spec["tree"]
+            )
+        rechecked += [line for line in extra_missed if line in extra_caught]
+        missed += [line for line in extra_missed if line not in extra_caught]
     # Untested mutants count as `run_code`'s 1, as a run outside the driver reports them.
-    code = mutants.run_code([*codes, 1 if untested else 0])
-    # cargo-mutants' 2 says mutants were missed: once the recheck caught them all, none is.
-    if rechecked and not missed and code == 2:
+    code = mutants.run_code([*codes, 1 if untested or extra_untested else 0])
+    # cargo-mutants' 2 says mutants were missed. An extra survivor is one too, though
+    # its shard exits 0; and once the recheck caught every survivor, none was.
+    if missed:
+        code = mutants.run_code([code, 2])
+    elif code == 2:
         code = 0
     mutants_diff.replace_text(
         job / "result.json",
@@ -917,6 +1035,10 @@ def main(argv: list[str]) -> int:
     queued = commands.add_parser("queue", help="add a whole-crate job", allow_abbrev=False)
     queued.add_argument("crate")
     queued.add_argument("--shards", type=int)
+    queued.add_argument(
+        "--extra", action="store_true",
+        help="add the crate's extra pass as extra shards",
+    )
     running = commands.add_parser("run", help="take shards on this machine", allow_abbrev=False)
     running.add_argument("--once", action="store_true")
     running.add_argument("--lane", choices=["pc", "vps"], default="pc")
@@ -927,7 +1049,7 @@ def main(argv: list[str]) -> int:
     if options.command == "queue":
         if options.shards is not None and options.shards < 1:
             parser.error("--shards must be at least 1")
-        queue(options.crate, options.shards)
+        queue(options.crate, options.shards, None if options.extra else 0)
         return 0
     if options.command == "deploy":
         host = mutants.remote_host()

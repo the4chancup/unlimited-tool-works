@@ -2688,7 +2688,10 @@ def main(argv: list[str]) -> int:
         return collect(host)[0]
     if argv[1] == "--remote-extra":
         # The remote job runs this inside the unit: a whole run's job before
-        # cargo-mutants, an extras-only run's after its map (`launch_remote`), the
+        # cargo-mutants, an extras-only run's after its map (`launch_remote`),
+        # a driver job's extra shard (`--shard` its (k, n) share, `--source`
+        # the job's extracted tree — an archive, not a git repository, so no
+        # git tree is read), the
         # kinds after the crate (EXTRA_KINDS when none) and `--selection`
         # naming the coverage map the job built first, each mutant's test
         # phase running the tests covering its lines. The pass runs in a
@@ -2696,21 +2699,41 @@ def main(argv: list[str]) -> int:
         # No lock, no refusal: the unit is alone on the clone.
         import extra_mutants  # deferred: extra_mutants imports this module
 
-        kinds = argv[3:]
-        selection = None
-        if "--selection" in kinds:
-            at = kinds.index("--selection")
-            if at + 1 == len(kinds):
-                print(
-                    "usage: mutants.py --remote-extra <crate> [kinds...] "
-                    "[--selection <path>]"
-                )
-                return 1
-            selection = Path(kinds[at + 1])
-            del kinds[at:at + 2]
+        usage = (
+            "usage: mutants.py --remote-extra <crate> [kinds...] "
+            "[--selection <path>] [--shard <k>/<n>] [--source <path>]"
+        )
+        kinds = []
+        selection = source = shard = None
+        args = argv[3:]
+        i = 0
+        while i < len(args):
+            if args[i] in ("--selection", "--shard", "--source"):
+                if i + 1 == len(args):
+                    print(usage)
+                    return 1
+                if args[i] == "--selection":
+                    selection = Path(args[i + 1])
+                elif args[i] == "--source":
+                    source = Path(args[i + 1])
+                else:
+                    parts = args[i + 1].split("/")
+                    if (
+                        len(parts) != 2
+                        or not all(part.isdigit() for part in parts)
+                        or int(parts[1]) == 0
+                        or int(parts[0]) >= int(parts[1])
+                    ):
+                        print(usage)
+                        return 1
+                    shard = (int(parts[0]), int(parts[1]))
+                i += 2
+            else:
+                kinds.append(args[i])
+                i += 1
         _, counts, seconds = extra_mutants.run_crate(
             argv[2], kinds or list(EXTRA_KINDS), selection=selection,
-            jobs=REMOTE_EXTRA_JOBS,
+            shard=shard, source=source, jobs=REMOTE_EXTRA_JOBS,
         )
         record_extra_run(argv[2], counts, seconds)
         return 1 if counts["untested"] else 0

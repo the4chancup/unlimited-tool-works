@@ -174,8 +174,19 @@ class Driver(unittest.TestCase):
         shard = script.parent / f"shard-{k}"
         (shard / "log").write_text("", encoding="utf-8")
         command = shlex.split(cargo_line(text))
-        args = command[command.index("mutants") + 1:]
-        code = self.local_mutants(args, script.parent / "source").returncode
+        if "--remote-extra" in command:
+            # An extra shard's unit: the pass's `extra_mutants.out` moved into
+            # the shard's folder, with a survivor naming its crate and shard.
+            crate = command[command.index("--remote-extra") + 1]
+            out = shard / "extra_mutants.out"
+            out.mkdir()
+            (out / f"missed_{crate}.txt").write_text(
+                f"extra missed in {crate} shard {k}\n", encoding="utf-8"
+            )
+            code = self.codes.get((crate, k), 0)
+        else:
+            args = command[command.index("mutants") + 1:]
+            code = self.local_mutants(args, script.parent / "source").returncode
         if k not in self.killed:
             (shard / "exit").write_text(f"{code} 12\n", encoding="utf-8")
 
@@ -280,12 +291,15 @@ class Driver(unittest.TestCase):
             (out / "missed.txt").write_text(f"missed in {crate} shard {k}\n", encoding="utf-8")
         return subprocess.CompletedProcess(args, self.codes.get((crate, k), 0))
 
-    def queue(self, crate: str = "cpk", shards: int | None = 3, stamp: str | None = None) -> Path:
+    def queue(
+        self, crate: str = "cpk", shards: int | None = 3, stamp: str | None = None,
+        extra: int | None = 0,
+    ) -> Path:
         if stamp is None:
-            return driver.queue(crate, shards)
+            return driver.queue(crate, shards, extra)
         moment = time.strptime(stamp, "%Y%m%dT%H%M%S")
         with mock.patch.object(driver.time, "gmtime", lambda: moment):
-            return driver.queue(crate, shards)
+            return driver.queue(crate, shards, extra)
 
     def done(self, job: Path) -> Path:
         return self.driver / "done" / job.name
@@ -631,10 +645,79 @@ class Driver(unittest.TestCase):
         self.assert_local_job(local_only, 2)
         self.assert_local_job(no_host, 2)
 
-    def sent_job(self, shards: int = 2, stamp: str | None = None) -> tuple[Path, Path]:
+    def test_a_job_queued_with_extra_sends_every_shard_s_marker_to_the_vps(self):
+        self.fake_vps()
+        job = self.queue(shards=2, extra=2)
+        remote = self.remote_queue() / job.name
+        self.assertEqual(
+            sorted(p.name for p in remote.glob("shard-*.todo")),
+            [f"shard-{k}.todo" for k in range(4)],
+        )
+        spec = driver.read_job(job)
+        self.assertEqual((spec["shards"], spec["extra"]), (4, 2))
+        self.assertEqual(
+            sorted(p.name for p in job.iterdir()), ["job.json", "sent.json", "source"]
+        )
+        self.assertIn("queued in 2 shards and 2 extra shards", self.out.getvalue())
+
+    def test_a_job_not_sent_drops_its_extra_shards_and_says_the_pass_needs_the_vps(self):
+        job = self.queue(shards=2, extra=2)
+        spec = driver.read_job(job)
+        self.assertEqual((spec["shards"], spec["extra"]), (2, 0))
+        self.assert_local_job(job, 2)
+        self.assertIn("extra pass needs the VPS", self.out.getvalue())
+
+    def test_extra_none_sizes_the_pass_from_the_extracted_source_s_listing(self):
+        calls = []
+        rows = [
+            ["src/lib.rs", str(5 * i), str(5 * i + 4), "bool", "1", "false",
+             f"flip {i} | removed: true"]
+            for i in range(5)
+        ]
+
+        def listed(crate, root, kinds):
+            calls.append((crate, root.name, kinds))
+            return Path("crates/libs/cpk"), rows, [], 0
+
+        estimates = []
+        self.fake_vps()
+        with (
+            mock.patch.object(driver.extra_mutants, "listed", listed),
+            mock.patch.object(
+                mutants, "estimate_seconds",
+                lambda crates, share=1.0: estimates.append(crates)
+                or mutants_diff.SHARD_SECONDS * 2.5,
+            ),
+        ):
+            job = self.queue(shards=2, extra=None)
+        spec = driver.read_job(job)
+        self.assertEqual((spec["shards"], spec["extra"]), (5, 3))
+        self.assertEqual(calls, [("cpk", "source", list(mutants.EXTRA_KINDS))])
+        self.assertEqual(estimates, [["cpk"] * 5])
+        remote = self.remote_queue() / job.name
+        self.assertEqual(
+            sorted(p.name for p in remote.glob("shard-*.todo")),
+            [f"shard-{k}.todo" for k in range(5)],
+        )
+
+    def test_a_crate_with_no_extra_mutant_gets_no_extra_shard(self):
+        self.fake_vps()
+        with mock.patch.object(
+            driver.extra_mutants, "listed",
+            lambda crate, root, kinds: (Path("crates/libs/cpk"), [], [], 0),
+        ):
+            job = self.queue(shards=2, extra=None)
+        spec = driver.read_job(job)
+        self.assertEqual((spec["shards"], spec["extra"]), (2, 0))
+        self.assertEqual(sorted(p.name for p in (self.remote_queue() / job.name).glob("shard-*.todo")),
+                         ["shard-0.todo", "shard-1.todo"])
+
+    def sent_job(
+        self, shards: int = 2, stamp: str | None = None, extra: int | None = 0
+    ) -> tuple[Path, Path]:
         """A job queued and sent to the fake VPS: its folder here and the VPS's."""
         self.fake_vps()
-        job = self.queue(shards=shards, stamp=stamp)
+        job = self.queue(shards=shards, stamp=stamp, extra=extra)
         return job, self.remote_queue() / job.name
 
     def vps_shard(self, remote: Path, k: int, files: dict[str, str]) -> None:
@@ -659,6 +742,26 @@ class Driver(unittest.TestCase):
         if vps:
             (job / f"shard-{k}" / "log").write_text("console\n", encoding="utf-8")
         (job / f"shard-{k}.done").write_text(str(code), encoding="utf-8")
+
+    def ended_extra(self, job: Path, k: int, missed: list[str], code: int) -> None:
+        """Extra shard `k` of `job` ended, as `ended_shard` ends a
+        cargo-mutants one: its `extra_mutants.out` holds `missed_<crate>.txt`,
+        its `.done` last."""
+        crate = driver.read_job(job)["crate"]
+        out = job / f"shard-{k}" / "extra_mutants.out"
+        out.mkdir(parents=True)
+        (out / f"missed_{crate}.txt").write_text(
+            "".join(f"{line}\n" for line in missed), encoding="utf-8"
+        )
+        (job / f"shard-{k}.done").write_text(str(code), encoding="utf-8")
+
+    def mark_extra(self, job: Path, extra: int) -> None:
+        """Give `job`'s job.json `extra` extra shards (its last `extra` shard
+        numbers): a local job's queue never writes it — the extra pass needs
+        the VPS — so a test of one writes it by hand."""
+        spec = driver.read_job(job)
+        spec["extra"] = extra
+        (job / "job.json").write_text(json.dumps(spec), encoding="utf-8")
 
     def test_a_sent_job_s_shards_run_on_both_lanes_and_finish_here_as_one_run(self):
         job, remote = self.sent_job(shards=2)
@@ -726,6 +829,24 @@ class Driver(unittest.TestCase):
         self.assertEqual((job / "shard-0.done").read_text(encoding="utf-8"), "2")
         self.assertTrue((remote / "shard-0" / "mutants.out" / "log" / "caught.log").exists())
 
+    def test_an_extra_shard_s_fetch_copies_its_extra_mutants_out_log_and_exit(self):
+        job, remote = self.sent_job(shards=1, extra=1)
+        self.vps_shard(remote, 1, {
+            "extra_mutants.out/missed_cpk.txt": "extra missed\n",
+            "extra_mutants.out/run.json": "{}\n",
+            "extra_mutants.out/outcomes_bool.tsv": "missed\trow\n",
+            "log": "console\n",
+            "exit": "2 9\n",
+        })
+        self.assertTrue(driver.fetch_shard(job, 1))
+        shard = job / "shard-1"
+        self.assertEqual(
+            sorted(p.relative_to(shard).as_posix() for p in shard.rglob("*") if p.is_file()),
+            ["exit", "extra_mutants.out/missed_cpk.txt",
+             "extra_mutants.out/outcomes_bool.tsv", "extra_mutants.out/run.json", "log"],
+        )
+        self.assertEqual((job / "shard-1.done").read_text(encoding="utf-8"), "2")
+
     def test_a_vps_shard_with_no_exit_is_done_with_code_1_and_an_oom_kill_is_kept(self):
         job, remote = self.sent_job()
         self.vps_shard(remote, 0, {"log": "", "memory_events": "oom 3\noom_kill 2\n"})
@@ -768,6 +889,47 @@ class Driver(unittest.TestCase):
         self.vps_down = True
         self.assertIsNone(driver.claim())
         self.assertEqual(self.out.getvalue().count(outage), 2, "a new outage is printed again")
+
+    def test_this_pc_s_claim_script_takes_only_a_sent_job_s_cargo_mutants_shards(self):
+        job, remote = self.sent_job(shards=2, extra=2)
+        self.assertEqual(driver.claim(), (job, 0))
+        self.assertEqual(driver.claim(), (job, 1))
+        self.assertIsNone(driver.claim(), "the extra shards are the VPS lane's")
+        self.assertEqual(
+            sorted(p.name for p in remote.glob("shard-*")),
+            ["shard-0.pc", "shard-1.pc", "shard-2.todo", "shard-3.todo"],
+        )
+
+    def test_this_pc_s_lane_passes_over_a_local_job_s_extra_shards(self):
+        job = self.queue(shards=3)
+        self.mark_extra(job, 1)
+        self.assertEqual(driver.claim(), (job, 0))
+        self.assertEqual(driver.claim(), (job, 1))
+        self.assertIsNone(driver.claim())
+        self.assertTrue((job / "shard-2.todo").exists())
+
+    def test_the_vps_lane_claims_a_job_s_extra_shards_too(self):
+        job, remote = self.sent_job(shards=2, extra=2)
+        self.vps_fakes()
+        claimed = []
+        with (
+            mock.patch.object(driver, "DRIVER", self.home / "studio-driver"),
+            mock.patch.object(driver, "LANE", "vps"),
+        ):
+            while taken := driver.claim():
+                claimed.append(taken)
+        self.assertEqual(claimed, [(remote, k) for k in range(4)])
+
+    def test_a_job_without_an_extra_key_claims_runs_and_finishes(self):
+        """A job queued before `extra` existed has none: every shard is a
+        cargo-mutants shard."""
+        job = self.queue(shards=2)
+        spec = driver.read_job(job)
+        del spec["extra"]
+        (job / "job.json").write_text(json.dumps(spec), encoding="utf-8")
+        self.assertEqual(driver.run(once=True), 0)
+        self.assertEqual([shard_of(args) for args in self.calls], ["0/2", "1/2"])
+        self.assertTrue(self.done(job).exists())
 
     def test_sync_puts_back_a_lost_claim_and_marks_a_fetched_shard_without_a_second_fetch(self):
         job, remote = self.sent_job(shards=3)
@@ -882,6 +1044,90 @@ class Driver(unittest.TestCase):
         self.assertEqual(self.result(job)["missed"], [])
         self.assertEqual(self.result(job)["code"], 0, "cargo-mutants' 2 no longer holds")
 
+    WINDOWS_EXTRA = "crates/libs/elevation/src/windows.rs:10: [bool] flip to false"
+
+    def test_finish_lists_the_extra_survivors_after_the_cargo_mutants_ones(self):
+        """The extra shards' `missed_<crate>.txt` files join the job's
+        survivors after the cargo-mutants ones, in shard order; nothing else
+        in an extra shard's folder is read (its decoy mutants.out-shaped
+        files included)."""
+        self.assertTrue(
+            any(p.search(self.WINDOWS_EXTRA) for p in mutants.WINDOWS_ONLY_EXTRA)
+        )
+        # Three shards, the last an extra one.
+        job = self.queue(shards=3)
+        self.mark_extra(job, 1)
+        self.ended_shard(job, 0, ["cargo missed 0"], 2, vps=False)
+        self.ended_shard(job, 1, ["cargo missed 1"], 2, vps=False)
+        self.ended_extra(job, 2, ["extra missed a"], 2)
+        # A decoy: a reader confusing the extra shard for a cargo-mutants one
+        # (`missed_lines`, `killed_builds` read `shard-<k>/mutants.out`) would
+        # pick it up.
+        (job / "shard-2" / "extra_mutants.out" / "missed.txt").write_text(
+            "decoy\n", encoding="utf-8"
+        )
+        calls = []
+
+        def recheck_extra(lines, tree):
+            calls.append((lines, tree, self.locked))
+            return set(), 0
+
+        with mock.patch.object(mutants, "recheck_remote_extra", recheck_extra):
+            self.assertEqual(driver.finish(job), self.done(job))
+        self.assertEqual(
+            calls,
+            [(["extra missed a"], HEAD_TREE, True)],
+            "the extra survivors are rechecked under the build slot",
+        )
+        self.assertEqual(
+            self.result(job)["missed"],
+            ["cargo missed 0", "cargo missed 1", "extra missed a"],
+        )
+        self.assertEqual(self.result(job)["untested"], [])
+
+    def test_an_extra_survivor_alone_makes_the_job_s_code_2(self):
+        # An extra shard exits 0 with survivors (the pass's 1 is for untested
+        # mutants alone), so the survivor itself must make the code 2.
+        job = self.queue(shards=2)
+        self.mark_extra(job, 1)
+        self.ended_shard(job, 0, [], 0, vps=False)
+        self.ended_extra(job, 1, ["extra missed a"], 0)
+        with mock.patch.object(mutants, "recheck_remote_extra", lambda lines, tree: (set(), 0)):
+            driver.finish(job)
+        self.assertEqual(self.result(job)["missed"], ["extra missed a"])
+        self.assertEqual(self.result(job)["code"], 2)
+
+    def test_finish_moves_a_windows_only_extra_survivor_the_recheck_caught(self):
+        job = self.queue(shards=2)
+        self.mark_extra(job, 1)
+        self.ended_shard(job, 0, [], 0, vps=False)
+        self.ended_extra(job, 1, [self.WINDOWS_EXTRA, "extra missed elsewhere"], 2)
+        calls = []
+
+        def recheck_extra(lines, tree):
+            calls.append((lines, tree, self.locked))
+            return {self.WINDOWS_EXTRA}, 0
+
+        with mock.patch.object(mutants, "recheck_remote_extra", recheck_extra):
+            self.assertEqual(driver.finish(job), self.done(job))
+        self.assertEqual(calls[0][:2], ([self.WINDOWS_EXTRA, "extra missed elsewhere"],
+                                        HEAD_TREE))
+        self.assertTrue(calls[0][2], "rechecked under the build slot")
+        self.assertEqual(self.result(job)["missed"], ["extra missed elsewhere"])
+        self.assertEqual(self.result(job)["rechecked"], [self.WINDOWS_EXTRA])
+
+    def test_an_untested_extra_recheck_mutant_makes_the_job_s_code_1(self):
+        job = self.queue(shards=2)
+        self.mark_extra(job, 1)
+        self.ended_shard(job, 0, [], 0, vps=False)
+        self.ended_extra(job, 1, ["extra missed"], 2)
+        with mock.patch.object(
+            mutants, "recheck_remote_extra", lambda lines, tree: (set(), 2)
+        ):
+            driver.finish(job)
+        self.assertEqual(self.result(job)["code"], 1)
+        self.assertEqual(self.result(job)["missed"], ["extra missed"])
+
     def test_the_vps_lane_runs_a_job_s_shards_and_finishes_nothing(self):
         job = self.queue(shards=2)
         self.codes[("cpk", 1)] = 2
@@ -913,6 +1159,48 @@ class Driver(unittest.TestCase):
             sized_config(os.cpu_count() or 2, source=job / "source"),
         )
         self.assertEqual(self.costed, [], "another machine's timings are not folded in")
+
+    def test_the_vps_lane_runs_a_job_s_extra_shards_through_their_own_script(self):
+        job, remote = self.sent_job(shards=2, extra=2)
+        self.vps_fakes()
+        with (
+            mock.patch.object(driver, "DRIVER", self.home / "studio-driver"),
+            mock.patch.object(driver, "LANE", "vps"),
+        ):
+            self.assertEqual(driver.run(once=True), 0)
+        self.assertEqual(
+            [unit[0] for unit in self.units],
+            ["map.sh", "shard-0.sh", "shard-1.sh", "shard-2.sh", "shard-3.sh"],
+        )
+        # cargo-mutants' `--shard` divides by the cargo-mutants count alone.
+        self.assertEqual([shard_of(args) for args in self.calls], ["0/2", "1/2"])
+        out = self.out.getvalue()
+        self.assertIn("shard 1 of 2: cargo mutants", out)
+        self.assertIn("extra shard 1 of 2", out)
+        for k in range(4):
+            self.assertEqual((remote / f"shard-{k}.done").read_text(encoding="utf-8"), "0")
+        for k in (2, 3):
+            shard = remote / f"shard-{k}"
+            self.assertTrue((shard / "extra_mutants.out" / "missed_cpk.txt").is_file())
+            self.assertFalse((shard / "mutants.out").exists())
+        self.assertTrue(job.exists(), "this PC finishes the job")
+
+    def test_a_vps_extra_shard_records_no_baseline(self):
+        """The lane's baseline comes from a cargo-mutants shard's outcomes;
+        an extra shard's pass measures its own."""
+        job, remote = self.sent_job(shards=1, extra=1)
+        self.vps_fakes()
+        with (
+            mock.patch.object(driver, "DRIVER", self.home / "studio-driver"),
+            mock.patch.object(driver, "LANE", "vps"),
+        ):
+            self.assertEqual(driver.claim(), (remote, 0))
+            self.assertEqual(driver.claim(), (remote, 1))
+            driver.run_shard(remote, 1)
+        self.assertTrue((remote / "shard-1.done").exists())
+        self.assertTrue((remote / "shard-1" / "extra_mutants.out" /
+                         "missed_cpk.txt").is_file())
+        self.assertFalse((remote / "baseline-vps.json").exists())
 
     def test_a_job_finished_on_the_vps_lane_s_start_is_left_for_this_pc(self):
         job = self.queue(shards=1)
@@ -984,6 +1272,20 @@ class Driver(unittest.TestCase):
         )
         self.assertGreater(lines.index("rm -rf target/llvm-cov-target"), mapped)
         self.assertEqual(lines[-1], f'echo "$code" > {shlex.quote(str(job / "map-exit"))}')
+
+    def test_the_map_script_covers_the_extra_kinds_for_a_job_with_extra_shards(self):
+        """`--extra` makes the map list the extra kinds' mutants too, so the
+        job's extra shards get the selection like its cargo-mutants ones."""
+        self.fake_vps()
+        job = self.queue(shards=1, extra=1)
+        script = driver.map_script(job, self.driver / "tmp").decode("utf-8")
+        mapped = next(line for line in script.splitlines() if "coverage_map.py" in line)
+        self.assertIn("--extra", shlex.split(mapped))
+        plain = self.queue("fpk", shards=1)
+        self.assertNotIn(
+            "--extra",
+            driver.map_script(plain, self.driver / "tmp").decode("utf-8"),
+        )
 
     def run_map_script(
         self, crate: str, listing_code: int, map_code: int
@@ -1124,6 +1426,42 @@ class Driver(unittest.TestCase):
             with_selection,
             without.replace(". ~/.cargo/env && ", f". ~/.cargo/env && {self.stand_in(job)}"),
         )
+
+    def test_the_vps_lane_s_extra_script(self):
+        """An extra shard's script runs `--remote-extra` on the job's source
+        with the shard's own (j, m) of the extra count: `rm` of the pass's
+        output before it, its move into `shard-<k>/` after, `exit` last;
+        `--selection` names `selection.json` only when the map left one."""
+        job, _ = self.sent_job(shards=2, extra=2)
+        shard = job / "shard-3"
+        script = driver.extra_script(job, 3, self.driver / "tmp")
+        self.assertNotIn(b"\r", script)
+        lines = script.decode("utf-8").splitlines()
+        self.assertEqual(lines[1], f"exec > {shlex.quote(str(shard / 'log'))} 2>&1")
+        rm = lines.index("rm -rf extra_mutants.out")
+        run = next(i for i, line in enumerate(lines) if "--remote-extra" in line)
+        self.assertLess(rm, run)
+        command = shlex.split(lines[run])
+        self.assertEqual(option(command, "--shard"), "1/2")
+        self.assertEqual(option(command, "--source"), str(job / "source"))
+        self.assertIsNone(option(command, "--selection"))
+        self.assertIn(f"export TMPDIR={shlex.quote(str(self.driver / 'tmp'))}", lines)
+        self.assertIn(f"--data={mutants.REMOTE_TEST_MEMORY} --", script.decode("utf-8"))
+        moved = next(
+            i for i, line in enumerate(lines) if line.startswith("mv extra_mutants.out")
+        )
+        self.assertGreater(moved, run)
+        self.assertEqual(
+            lines[-1],
+            f'echo "$code $(( $(date +%s) - start ))" > '
+            f'{shlex.quote(str(shard / "exit"))}',
+        )
+        (job / "selection.json").write_text('{"mutants": []}\n', encoding="utf-8")
+        lines = driver.extra_script(job, 3, self.driver / "tmp").decode("utf-8").splitlines()
+        command = shlex.split(next(
+            line for line in lines if "--remote-extra" in line
+        ))
+        self.assertEqual(option(command, "--selection"), str(job / "selection.json"))
 
     def test_a_shard_with_no_exit_file_is_done_with_code_1(self):
         job = self.queue(shards=2)
