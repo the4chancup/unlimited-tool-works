@@ -1,0 +1,15 @@
+[package]
+name = "epaint_raster"
+description = "The Save editor's formation pictures: epaint's triangles filled into an RGBA image"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+egui.workspace = true
+image.workspace = true
+
+[lints]
+workspace = true

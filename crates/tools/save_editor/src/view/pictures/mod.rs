@@ -7,13 +7,12 @@
 //!
 //! A picture is painted in an egui context of its own that is never
 //! shown, by the Tactics view's own pitch painter (`pitch::still_pitch`),
-//! and `raster` fills the triangles epaint tessellates the frame into.
+//! and `epaint_raster` fills the triangles epaint tessellates the frame into.
 //! A second painter drawing straight into an image would have to be kept
 //! in step with the view's by hand, one shape kind at a time.
 
 mod dialog;
 mod range;
-mod raster;
 
 use std::path::Path;
 
@@ -330,7 +329,7 @@ fn paint(
     });
     let shapes = output.shapes.clone();
     let primitives = ctx.tessellate(output.shapes, 1.0);
-    let image = raster::rasterize(
+    let image = epaint_raster::rasterize(
         size.x as u32,
         size.y as u32,
         &primitives,

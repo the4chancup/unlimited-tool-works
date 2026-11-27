@@ -106,6 +106,7 @@ color_tools = { path = "crates/libs/color_tools" }
 cpk = { path = "crates/libs/cpk" }
 dds_convert = { path = "crates/libs/dds_convert" }
 elevation = { path = "crates/libs/elevation" }
+epaint_raster = { path = "crates/libs/epaint_raster" }
 export_grid = { path = "crates/libs/export_grid" }
 export_upgrader = { path = "crates/tools/export_upgrader" }
 fmdl = { path = "crates/libs/fmdl" }
@@ -197,6 +198,13 @@ opt-level = 3
 # and a one-line change to it rebuilt that crate's tests in 11 s either way, so its own
 # mutants build no slower.
 [profile.dev.package.pes_savefile]
+opt-level = 3
+
+# The formation pictures' rasterizer fills a picture pixel by pixel, which unoptimized took
+# 1.2 s for a 448 by 1238 picture: save_editor's pictures tests took 83 s of test time against
+# 21.6 s with it optimized. It is a crate of its own so that it can be optimized while
+# save_editor, which every one of its mutants rebuilds, stays unoptimized.
+[profile.dev.package.epaint_raster]
 opt-level = 3
 
 # Unoptimized, egui's layout, text shaping and glyph rasterizing are most of a view test's
