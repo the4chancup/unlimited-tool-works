@@ -666,15 +666,16 @@ and no phase closes with one outstanding.
       - [x] **ts1a** 2026-11-27, merge `f8b8dad8`: `test_scratch`'s own fixes: tests that a
         folder left by an earlier run is emptied, that the panic flag is per thread, where the
         build folder is and that the panic hook chains, and its texts;
-      - [~] **ts1b** the other crates' fixes: `help_export` exports into a missing folder,
-        the sideload loop joins its check, two comments that still describe the removed
-        `Drop` are fixed, and the lines that create or remove a folder `fresh` already
-        handles go. SWE-2 High in `4cc-studio-temp/sk_ts1b` on `.tmp/lead/brief_ts1b.md`, its
-        report in `brief_ts1b.notes.md` beside it; when it ends, the lead reviews the whole
-        diff, reruns its tests and merges;
-      - [ ] **TS2** [after ts1b] the second SWE-2 round, over both slices' fixes, its brief
-        written like TS1's (`.tmp/lead/review_scratch_bc/brief_template.md`) and naming the
-        rulings file; parts of at most 650 lines;
+      - [x] **ts1b** 2026-11-27, merge `ef177392`: the other crates' fixes: `help_export`
+        exports into a missing folder, the sideload loop joins its check, two comments that
+        still described the removed `Drop` are fixed, and about 130 lines that created or
+        removed a folder `fresh` already handles are gone;
+      - [~] **TS2** [after ts1b] the second round (SWE-2.1 High), over the fixes in three
+        parts: `.tmp/lead/review_scratch_bc/swe_ts2{a,b,c}.md`, findings in
+        `swe_ts2{a,b,c}.findings.md`. When each ends, the lead rules its concerns into
+        `.tmp/duck_rulings.md` as "Round TS2" with prevention lines, and fixes the accepted
+        ones; another round follows only if five are accepted and one of them is a real
+        input;
       - [ ] **paid** [after TS2] one paid round (Carbon), once the SWE-2 loop has ended;
   - [ ] **axiom** [after optimize] an Axiomatic Design pilot, on SWE-2: the suite's functional
     requirements split level by level, each mapped to the crate or module that meets it, and
