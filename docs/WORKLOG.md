@@ -35,7 +35,9 @@ One line per piece of work in flight; the items below hold the detail.
 - The per-player rules calls read a team once (`AATFSPEED`): the slice `reading` is merged
   and its reviews are closed, and `86dab4ed` passed the checkpoint.
 - The checkpoint: `86dab4ed` passed it (`19fda006`, an earlier one, is pushed), and the
-  Linux gates passed at `1900348b` on WSL (`WSLGATES/trial2`).
+  Linux gates passed at `1900348b` on WSL (`WSLGATES/trial2`). `just pipeline --local` runs
+  on `64b2eb82` (`.tmp/pipeline_64b2.log`), the VPS being on a whole-crate run; on its pass
+  the Linux gates go to WSL the same way (`.tmp/lead/wslgates_run.sh 64b2eb82`).
 - The rolling mutation job: `rolling.py` is held and files `epaint_raster`, then the
   driver takes the job over (`driver/switch`).
 - The move to the 905P (`RESUME/migration`): postponed until the maintainer starts it.
