@@ -1266,11 +1266,11 @@ class Driver(unittest.TestCase):
 
     def finish_with_recheck(
         self, vps_missed: list[str], on_windows: bool, caught: set[str],
-        here_missed: tuple[str, ...] = (WINDOWS_ONLY_HERE,),
+        here_missed: tuple[str, ...] = (WINDOWS_ONLY_HERE,), vps_code: int = 2,
     ) -> tuple[Path, list[tuple]]:
         """A sent job finished after shard 0 ended on the VPS with
-        `vps_missed` and shard 1 here with `here_missed`, `on_windows` or
-        not, the patched recheck catching `caught`. Returns the job and the
+        `vps_missed` and `vps_code`, and shard 1 here with `here_missed`,
+        `on_windows` or not, the patched recheck catching `caught`. Returns the job and the
         recheck's calls: (lines, tree, out, whether under the build slot)."""
         for line, windows in [(self.WINDOWS_ONLY, True), (self.WINDOWS_ONLY_HERE, True),
                               (self.ANYWHERE, False)]:
@@ -1278,7 +1278,7 @@ class Driver(unittest.TestCase):
                 any(p.search(line) for p in mutants.WINDOWS_ONLY_TESTS), windows, line
             )
         job, remote = self.sent_job(shards=2)
-        self.ended_shard(job, 0, vps_missed, 2, vps=True)
+        self.ended_shard(job, 0, vps_missed, vps_code, vps=True)
         self.ended_shard(job, 1, list(here_missed), 2 if here_missed else 0, vps=False)
         calls = []
 
@@ -1319,6 +1319,16 @@ class Driver(unittest.TestCase):
         self.assertEqual(len(calls), 1)
         self.assertEqual(self.result(job)["missed"], [])
         self.assertEqual(self.result(job)["code"], 0, "cargo-mutants' 2 no longer holds")
+
+    def test_a_recheck_that_caught_every_survivor_clears_only_a_2(self):
+        """A shard that timed out (3) beside its survivor keeps the job's 3
+        once the recheck caught the survivor: only cargo-mutants' 2 says
+        mutants were missed."""
+        job, _calls = self.finish_with_recheck(
+            [self.WINDOWS_ONLY], True, {self.WINDOWS_ONLY}, here_missed=(), vps_code=3
+        )
+        self.assertEqual(self.result(job)["rechecked"], [self.WINDOWS_ONLY])
+        self.assertEqual(self.result(job)["code"], 3)
 
     def test_a_code_2_with_no_survivor_and_nothing_rechecked_stays_2(self):
         """Only a recheck that caught every survivor clears cargo-mutants' 2:

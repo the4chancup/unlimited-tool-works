@@ -761,10 +761,11 @@ def unit_script(tmp: Path, out: Path, middle: list[str]) -> bytes:
     Around `middle`, the unit's command lines, which set `code`, it:
 
     - sends the unit's output to `out/log`;
+    - records the time it starts;
     - sets the environment (`unit_environment`);
     - copies the cgroup's memory figures into `out` (`MEMORY_FILES`);
-    - writes `out/exit` last, "<code> <seconds>": a shard with no `exit` was
-      killed before it ended."""
+    - writes `out/exit` last, "<code> <seconds>", the seconds since that start:
+      a shard with no `exit` was killed before it ended."""
     quoted = shlex.quote(str(out))
     lines = [
         "#!/bin/bash",
