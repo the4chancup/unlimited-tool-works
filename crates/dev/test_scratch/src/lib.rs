@@ -1,9 +1,9 @@
-//! Tests' scratch folders: each test gets a fresh, empty folder, removed when the test passes
-//! and kept for reading when it fails.
+//! Tests' scratch folders: each test gets a fresh, empty folder, removed when the test's
+//! thread ends without a panic and kept for reading when it panics (a failed assertion).
 //!
 //! A guard returned by `fresh` cannot remove the folder: helpers hand their test a path inside
-//! the folder, and the guard would drop when the helper returned. The folders are therefore
-//! tied to the thread libtest gives each test, and a panicking thread keeps them for reading.
+//! it, and the guard would drop when the helper returned, deleting the folder before the test
+//! used the path. The folders are therefore tied to the thread libtest gives each test.
 
 use std::cell::{Cell, RefCell};
 use std::fs;
@@ -34,6 +34,9 @@ impl Drop for ScratchFolders {
 
 /// `parent/name` as a fresh, empty folder, recorded for removal when the current thread ends.
 ///
+/// `name` is one plain folder name, unique among the tests that share `parent`: two tests
+/// running at once under one name empty each other's folder.
+///
 /// Panics when the folder cannot be removed or created, or when `name` holds a path separator.
 /// When the thread panics, the folder is kept so the test's files can be read.
 pub fn fresh(parent: &Path, name: &str) -> PathBuf {
@@ -45,9 +48,11 @@ pub fn fresh(parent: &Path, name: &str) -> PathBuf {
     install_panic_hook();
     let dir = parent.join(name);
     if dir.exists() {
-        fs::remove_dir_all(&dir).expect("the scratch folder is removable");
+        fs::remove_dir_all(&dir)
+            .unwrap_or_else(|error| panic!("{}: not removable: {error}", dir.display()));
     }
-    fs::create_dir_all(&dir).expect("the scratch folder is creatable");
+    fs::create_dir_all(&dir)
+        .unwrap_or_else(|error| panic!("{}: not creatable: {error}", dir.display()));
     FOLDERS.with(|folders| folders.0.borrow_mut().push(dir.clone()));
     dir
 }
@@ -84,6 +89,7 @@ fn install_panic_hook() {
 mod tests {
     use std::fs;
     use std::path::{Path, PathBuf};
+    use std::sync::{Arc, Barrier};
     use std::thread;
 
     use super::{build_folder, fresh};
@@ -176,6 +182,86 @@ mod tests {
             !folder.exists(),
             "the helper's folder remains after its thread ends: {}",
             folder.display()
+        );
+    }
+
+    #[test]
+    fn a_reused_folder_starts_empty() {
+        let folder = tests_folder().join("reused");
+        fs::create_dir_all(&folder).unwrap();
+        let stale = write_file(&folder, "stale");
+        thread::spawn(move || {
+            let folder = fresh(&tests_folder(), "reused");
+            assert!(
+                folder.exists(),
+                "fresh returned no folder: {}",
+                folder.display()
+            );
+            assert!(
+                !stale.exists(),
+                "a file an earlier run left survives fresh: {}",
+                stale.display()
+            );
+        })
+        .join()
+        .unwrap();
+    }
+
+    #[test]
+    fn a_passing_thread_beside_a_panicking_one_keeps_only_the_panicking_folder() {
+        let passing_folder = tests_folder().join("beside_passing");
+        let panicking_folder = tests_folder().join("beside_panicking");
+        let panicking_file = panicking_folder.join("kept");
+        let made = Arc::new(Barrier::new(2));
+        let release = Arc::new(Barrier::new(2));
+        let thread_made = made.clone();
+        let thread_release = release.clone();
+        let passing = thread::spawn(move || {
+            let folder = fresh(&tests_folder(), "beside_passing");
+            write_file(&folder, "file");
+            thread_made.wait();
+            thread_release.wait();
+        });
+        made.wait();
+        assert!(
+            passing_folder.exists(),
+            "the passing thread's folder is not there yet: {}",
+            passing_folder.display()
+        );
+        let panicking = thread::spawn(|| {
+            let folder = fresh(&tests_folder(), "beside_panicking");
+            write_file(&folder, "kept");
+            panic!("the beside-panicking test's intentional panic");
+        });
+        assert!(
+            panicking.join().is_err(),
+            "the panicking thread did not panic"
+        );
+        release.wait();
+        passing.join().unwrap();
+        assert!(
+            !passing_folder.exists(),
+            "a passing thread's folder stays beside a panicking one: {}",
+            passing_folder.display()
+        );
+        assert!(
+            panicking_folder.exists(),
+            "a panicking thread's folder was removed: {}",
+            panicking_folder.display()
+        );
+        assert!(
+            panicking_file.exists(),
+            "a panicking thread's file was removed: {}",
+            panicking_file.display()
+        );
+        fs::remove_dir_all(&panicking_folder).unwrap();
+    }
+
+    #[test]
+    fn build_folder_is_the_test_binary_s_profile_folder() {
+        assert_eq!(
+            build_folder().join("deps"),
+            std::env::current_exe().unwrap().parent().unwrap()
         );
     }
 
