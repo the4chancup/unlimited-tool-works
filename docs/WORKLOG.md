@@ -27,7 +27,7 @@ while it runs, so a maintainer who meets it in a report finds it on that line.
 One line per piece of work in flight; the items below hold the detail.
 
 - The workflow improvements before the suite resumes (`RESUME/optimize`): the mutation
-  driver's slices (`driver/d2`, the VPS lane: d2b merged, d2a's trial pending, d2c next), and
+  driver's slices (`driver/d2`, the VPS lane: d2b and d2c merged, d2a's trial pending), and
   the lighter tests (`LEAN/patterns`, from the census's findings).
 - The checkpoint: `19fda006` passed it and is pushed; its Linux gates are owed.
 - The rolling mutation job: on the VPS, crate by crate, held after its current crate so the
@@ -998,13 +998,13 @@ and no phase closes with one outstanding.
               pass on Windows and Linux (the VPS). Not done: a VPS copy whose removal failed
               at the finish stays there (no shard results, no `.todo`, so the VPS lane
               ignores it);
-            - [~] **d2c** [after d2b] the coverage map once per job before the VPS's first
-              shard of it, and its shards' tests selected from it; this PC's shards keep the
-              full suite (the map is Linux's alone). Brief `.tmp/lead/driver/brief_d2c.md`,
-              Opus in `4cc-studio-temp/sk_driver2c`, log `.tmp/lead/driver/sk_driver2c.run.log`;
-              when it ends: the whole diff reviewed as d2b's was, its tests on Windows and the
-              VPS (`.tmp/lead/vps_script_test.sh`), merged, and deployed with d2b after d2a's
-              trial;
+            - [x] **d2c** 2026-11-27, merge `9286249f`: the VPS lane builds each job's
+              coverage map once, before its first shard of the job, in the shards' unit, and
+              its shards run each mutant's tests alone (`select_tests.py` in cargo's place).
+              A failed or killed map leaves the shards the full suite and is not retried; one
+              a dead driver left half built is rebuilt. This PC's shards keep the full suite.
+              Its tests pass on Windows and Linux (the VPS). d2b and d2c are deployed once
+              d2a's trial closes;
           - [ ] **d3** [after d2] the rolling job's shards when nothing is queued, on both
             lanes; `rolling.py` and `.tmp/rolling.hold` go, `gates-remote` takes the VPS
             lane's hold, and RUNBOOK "Mutation runs and the VPS" is rewritten;
